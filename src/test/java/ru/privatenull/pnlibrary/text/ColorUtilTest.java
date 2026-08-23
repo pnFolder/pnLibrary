@@ -24,4 +24,15 @@ class ColorUtilTest {
     void hexColorClearsBoldFormatting() {
         assertEquals("§lPrefix §x§d§8§d§f§9§dNormal", ColorUtil.colorize("§lPrefix &#D8DF9DNormal"));
     }
+
+    @Test
+    void supportsNestedMiniMessageFormatting() {
+        assertEquals("§cError: §lcritical", ColorUtil.colorize("<red>Error: <bold>critical</bold></red>"));
+    }
+
+    @Test
+    void handlesNullAndUnknownLegacyCodesSafely() {
+        assertEquals("", ColorUtil.colorize(null));
+        assertEquals("&zliteral", ColorUtil.colorize("&zliteral"));
+    }
 }

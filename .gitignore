@@ -2,3 +2,7 @@
 build/
 bin/
 .junie/
+.idea/
+*.iml
+out/
+*.log

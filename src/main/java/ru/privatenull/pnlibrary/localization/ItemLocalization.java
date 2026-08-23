@@ -7,7 +7,6 @@ import org.bukkit.enchantments.Enchantment;
 import org.bukkit.inventory.ItemStack;
 import org.bukkit.inventory.meta.ItemMeta;
 import org.bukkit.inventory.meta.PotionMeta;
-import org.bukkit.potion.PotionData;
 import org.bukkit.potion.PotionType;
 
 import java.io.IOException;
@@ -78,7 +77,7 @@ public final class ItemLocalization {
             if (!name.isEmpty()) return name;
         }
         if (meta instanceof PotionMeta potionMeta) {
-            return getPotionName(stack.getType(), potionMeta.getBasePotionData());
+            return getPotionName(stack.getType(), potionMeta.getBasePotionType());
         }
         return getMaterialName(stack.getType());
     }
@@ -86,9 +85,9 @@ public final class ItemLocalization {
     public String getItemKey(ItemStack stack) {
         if (stack == null || stack.getType().isAir()) return Material.AIR.name();
         if (stack.getItemMeta() instanceof PotionMeta potionMeta) {
-            PotionData data = potionMeta.getBasePotionData();
-            return stack.getType().name() + ":" + data.getType().name() + ":"
-                    + data.isExtended() + ":" + data.isUpgraded();
+            PotionVariant variant = PotionVariant.from(potionMeta.getBasePotionType());
+            return stack.getType().name() + ":" + variant.baseType() + ":"
+                    + variant.extended() + ":" + variant.upgraded();
         }
         return stack.getType().name();
     }
@@ -105,8 +104,12 @@ public final class ItemLocalization {
         String[] parts = key.split(":");
         if (parts.length == 4 && item.getItemMeta() instanceof PotionMeta meta) {
             try {
-                meta.setBasePotionData(new PotionData(PotionType.valueOf(parts[1]),
-                        Boolean.parseBoolean(parts[2]), Boolean.parseBoolean(parts[3])));
+                PotionVariant variant = new PotionVariant(
+                        normalizeLegacyPotionType(parts[1]),
+                        Boolean.parseBoolean(parts[2]),
+                        Boolean.parseBoolean(parts[3])
+                );
+                meta.setBasePotionType(variant.toPotionType());
                 item.setItemMeta(meta);
             } catch (IllegalArgumentException ignored) {
                 // The base material remains a safe fallback for outdated saved potion variants.
@@ -147,26 +150,38 @@ public final class ItemLocalization {
         return null;
     }
 
-    private String getPotionName(Material material, PotionData data) {
+    private String getPotionName(Material material, PotionType potionType) {
         String prefix = switch (material.name()) {
             case "SPLASH_POTION" -> "splash_potion";
             case "LINGERING_POTION" -> "lingering_potion";
             case "TIPPED_ARROW" -> "tipped_arrow";
             default -> "potion";
         };
-        String effect = switch (data.getType().name()) {
+        PotionVariant variant = PotionVariant.from(potionType);
+        String effect = switch (variant.baseType()) {
             case "JUMP" -> "leaping";
             case "SPEED" -> "swiftness";
             case "INSTANT_HEAL" -> "healing";
             case "INSTANT_DAMAGE" -> "harming";
             case "REGEN" -> "regeneration";
-            default -> data.getType().name().toLowerCase(Locale.ROOT);
+            default -> variant.baseType().toLowerCase(Locale.ROOT);
         };
         String localized = translate("item.minecraft." + prefix + ".effect." + effect);
         if (localized == null || localized.isBlank()) localized = getMaterialName(material);
-        if (data.isUpgraded()) return localized + " (" + locale.upgraded() + ")";
-        if (data.isExtended()) return localized + " (" + locale.extended() + ")";
+        if (variant.upgraded()) return localized + " (" + locale.upgraded() + ")";
+        if (variant.extended()) return localized + " (" + locale.extended() + ")";
         return localized;
+    }
+
+    private static String normalizeLegacyPotionType(String type) {
+        return switch (type.toUpperCase(Locale.ROOT)) {
+            case "SPEED" -> "SWIFTNESS";
+            case "JUMP" -> "LEAPING";
+            case "INSTANT_HEAL" -> "HEALING";
+            case "INSTANT_DAMAGE" -> "HARMING";
+            case "REGEN" -> "REGENERATION";
+            default -> type.toUpperCase(Locale.ROOT);
+        };
     }
 
     private String readableFallback(String value) {
@@ -179,5 +194,30 @@ public final class ItemLocalization {
     private String normalize(String value) {
         String normalized = value.trim().toLowerCase(Locale.ROOT).replaceAll("\\s{2,}", " ");
         return locale == MinecraftLocale.RU_RU ? normalized.replace('ё', 'е') : normalized;
+    }
+
+    private record PotionVariant(String baseType, boolean extended, boolean upgraded) {
+
+        private PotionVariant {
+            if (extended && upgraded) {
+                throw new IllegalArgumentException("A potion cannot be both extended and upgraded");
+            }
+        }
+
+        static PotionVariant from(PotionType type) {
+            String name = type == null ? PotionType.WATER.name() : type.name();
+            if (name.startsWith("LONG_")) {
+                return new PotionVariant(name.substring("LONG_".length()), true, false);
+            }
+            if (name.startsWith("STRONG_")) {
+                return new PotionVariant(name.substring("STRONG_".length()), false, true);
+            }
+            return new PotionVariant(name, false, false);
+        }
+
+        PotionType toPotionType() {
+            String prefix = extended ? "LONG_" : upgraded ? "STRONG_" : "";
+            return PotionType.valueOf(prefix + baseType);
+        }
     }
 }

@@ -2,13 +2,24 @@
 
 Общая встраиваемая библиотека для плагинов экосистемы PrivateNull.
 
+## Требования и сборка
+
+- JDK 25;
+- Paper API 26.2 для Bukkit/Paper-модулей;
+- BungeeCord API 1.21 или Velocity API 3.3 для соответствующего модуля метрик.
+
+Проект собирается включённым Gradle Wrapper, поэтому отдельная установка Gradle
+не нужна. На Windows запустите `gradlew.bat clean test jar`, на Linux/macOS —
+`./gradlew clean test jar`. Готовый JAR появится в `build/libs`.
+
 Сейчас предоставляет:
 
 - единый banner включения и выключения;
+- единый bStats lifecycle для Bukkit/Paper, BungeeCord и Velocity;
 - асинхронную проверку обновлений через GitHub;
 - единое уведомление об обновлении в консоли и для персонала с заданным permission;
 - кликабельные ссылки, title и звук для уведомлений об обновлении;
-- единый парсер обычных `&`/`§`-цветов, RGB и RGBA без MiniMessage;
+- единый парсер MiniMessage, обычных `&`/`§`-цветов, RGB и RGBA;
 - единый публичный маршрутизатор SQLite, MySQL, MongoDB и Redis;
 - HikariCP-пул для JDBC и версионные миграции схемы;
 - один управляемый пул/клиент на плагин и безопасное закрытие всех ресурсов;
@@ -19,17 +30,30 @@
 
 ## Единый lifecycle плагина
 
-`PluginRuntime` заменяет отдельную настройку updater, bStats, join-уведомлений и
-banner. GitHub-репозиторий берётся из `website` в `plugin.yml`; если ссылки нет,
-используется `Dy6HiLa/<plugin-name>`. Permission выбирается из объявленных
-`.admin`/`.update`, проверка обновлений выполняется библиотекой каждые шесть часов.
+`PluginRuntime` объединяет bStats, базовую инфраструктуру, lifecycle-баннер и
+новую систему обновлений. Вся конфигурация задаётся явно через один
+`PluginBanner.Identity`: библиотека не читает `website`, `bstats-id` или
+permissions из `plugin.yml` и не подставляет скрытые значения.
+
+GitHub и bStats опциональны. Если не вызвать `github(...)` или `bStats(...)`,
+runtime продолжит запуск и покажет для соответствующего модуля статус `SKIP`.
 
 ```java
 private PluginRuntime pnRuntime;
 
 @Override
 public void onEnable() {
-    pnRuntime = PluginRuntime.start(this)
+    PluginBanner.Identity identity = new PluginBanner.Identity(this, "PnFolder")
+            .github("owner", "repository")
+            .bStats(12345)
+            .autoDownloadUpdates(true)
+            .notifyAdministrators(true)
+            .notificationPermission("myplugin.admin")
+            .notifyOnlineAdministrators(true)
+            .notifyAdministratorsOnJoin(true)
+            .supportUrl("https://example.com/support");
+
+    pnRuntime = PluginRuntime.start(identity)
             .simplePie("database_type", () -> database.type().name());
 }
 
@@ -39,9 +63,75 @@ public void onDisable() {
 }
 ```
 
-ID проекта bStats указывается один раз как `bstats-id` в `plugin.yml`. В коде
-плагина больше не нужны `BSTATS_PLUGIN_ID`, `GITHUB_REPOSITORY`, период updater,
-Discord URL, ручной `PlayerJoinEvent`, прямой `Metrics` и отдельный banner.
+В `plugin.yml` остаётся только само объявление permission с нужным `default`.
+GitHub, bStats ID, permission уведомлений, ссылка поддержки, интервалы и режим
+автоскачивания принадлежат `Identity`.
+
+При включённом `autoDownloadUpdates` новый JAR скачивается в `plugins/update`
+под именем работающего плагина. Перед сохранением проверяются ограничение
+размера, структура JAR и наличие `plugin.yml`/`paper-plugin.yml`. Bukkit/Paper
+заменяет старый JAR подготовленным при следующем **полном перезапуске** сервера;
+`/reload` для применения обновления использовать не следует.
+
+Администратор с выбранным permission получает кликабельное уведомление сразу,
+если он онлайн, либо при следующем входе. Для каждой новой версии уведомление
+отправляется один раз. Фактическое право можно посмотреть через
+`pnRuntime.updates().notificationPermission()`.
+
+## Метрики на трёх платформах
+
+`PluginMetrics` выбирает корректную реализацию bStats фабричным методом. В API
+нет локального флага `enabled`, поэтому конфигурация самого плагина не может
+случайно выключить сбор. Штатный глобальный opt-out bStats при этом сохраняется.
+
+```java
+// Bukkit/Paper
+metrics = PluginMetrics.bukkit(this, 12345);
+
+// BungeeCord
+metrics = PluginMetrics.bungeeCord(this, 12345);
+
+// Velocity: Metrics.Factory внедряется самой Velocity
+metrics = PluginMetrics.velocity(this, metricsFactory, 12345);
+
+metrics.simplePie("mode", () -> "production");
+```
+
+Во всех трёх случаях владелец плагина вручную вызывает
+`metrics.close()` в `onDisable()` или обработчике `ProxyShutdownEvent`.
+Повторное закрытие безопасно. Оно останавливает внутренний планировщик bStats;
+никакой автоматический hook выключения библиотека не регистрирует.
+
+Полные русские примеры находятся в JavaDoc пакета
+`ru.privatenull.pnlibrary.metrics`.
+
+## Единый логгер и MBox
+
+После запуска логгер сразу доступен через `runtime.log()`. До создания runtime
+его можно получить через `identity.log()`.
+
+```java
+runtime = PluginRuntime.start(identity, startup -> startup
+        .ok("Конфигурация", "Файл загружен")
+        .ok("Команды", "Зарегистрировано: 5")
+        .skip("Vault", "Плагин не установлен"));
+
+runtime.log().info("Загрузка данных");
+runtime.log().success("Данные загружены");
+runtime.log().warn("Vault не найден");
+runtime.log().error("Ошибка базы данных", exception); // плюс полный stack trace
+
+runtime.mBox("Инициализация модулей")
+        .ok("Конфигурация", "Файл загружен")
+        .ok("Команды", "Зарегистрировано: 5")
+        .skip("Discord", "Интеграция отключена")
+        .fail("База данных", exception)
+        .show();
+```
+
+`MBox` сохраняет порядок строк и сам вычисляет итоговое состояние. Исключение,
+переданное в `fail`, выводится понятной строкой в блоке и полным stack trace в
+штатном серверном логе.
 
 ## Экономика
 

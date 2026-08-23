@@ -1,16 +1,15 @@
 package ru.privatenull.pnlibrary.text;
 
 import net.kyori.adventure.text.Component;
-import net.kyori.adventure.text.TextComponent;
 import net.kyori.adventure.text.format.NamedTextColor;
-import net.kyori.adventure.text.format.Style;
 import net.kyori.adventure.text.format.TextColor;
 import net.kyori.adventure.text.format.TextDecoration;
+import net.kyori.adventure.text.minimessage.MiniMessage;
 import net.kyori.adventure.text.serializer.legacy.LegacyComponentSerializer;
 
 import java.util.Map;
 
-/** Parses pnFolder legacy, RGB and RGBA colors without MiniMessage. */
+/** Parses MiniMessage together with pnFolder legacy, RGB and RGBA colors. */
 public final class ColorUtil {
 
     private static final LegacyComponentSerializer LEGACY = LegacyComponentSerializer.builder()
@@ -18,6 +17,7 @@ public final class ColorUtil {
             .hexColors()
             .useUnusualXRepeatedCharacterHexFormat()
             .build();
+    private static final MiniMessage MINI_MESSAGE = MiniMessage.miniMessage();
     private static final Map<Character, TextColor> COLORS = Map.ofEntries(
             Map.entry('0', NamedTextColor.BLACK), Map.entry('1', NamedTextColor.DARK_BLUE),
             Map.entry('2', NamedTextColor.DARK_GREEN), Map.entry('3', NamedTextColor.DARK_AQUA),
@@ -33,56 +33,52 @@ public final class ColorUtil {
     }
 
     public static Component component(String value) {
-        String input = value == null ? "" : value;
-        TextComponent.Builder result = Component.text();
-        StringBuilder text = new StringBuilder(input.length());
-        Style.Builder style = Style.style();
+        return MINI_MESSAGE.deserialize(toMiniMessage(value == null ? "" : value));
+    }
+
+    private static String toMiniMessage(String input) {
+        StringBuilder result = new StringBuilder(input.length());
 
         for (int index = 0; index < input.length();) {
             char marker = input.charAt(index);
             if (marker != '&' && marker != '\u00A7') {
-                text.append(marker);
+                result.append(marker);
                 index++;
                 continue;
             }
             HexColor hex = readHex(input, index);
             if (hex != null) {
-                flush(result, text, style);
-                style = Style.style().color(hex.color());
+                result.append("<reset><#").append(hex.color().asHexString(), 1, 7).append('>');
                 index += hex.length();
                 continue;
             }
             if (index + 1 >= input.length()) {
-                text.append(marker);
+                result.append(marker);
                 index++;
                 continue;
             }
             char code = Character.toLowerCase(input.charAt(index + 1));
             TextColor color = COLORS.get(code);
             if (color != null) {
-                flush(result, text, style);
-                style = Style.style().color(color);
+                result.append("<reset><").append(colorTag(code)).append('>');
                 index += 2;
                 continue;
             }
             TextDecoration decoration = decoration(code);
             if (decoration != null) {
-                flush(result, text, style);
-                style.decoration(decoration, true);
+                result.append('<').append(decoration.toString()).append('>');
                 index += 2;
                 continue;
             }
             if (code == 'r') {
-                flush(result, text, style);
-                style = Style.style();
+                result.append("<reset>");
                 index += 2;
                 continue;
             }
-            text.append(marker);
+            result.append(marker);
             index++;
         }
-        flush(result, text, style);
-        return result.build();
+        return result.toString();
     }
 
     public static String colorize(String value) {
@@ -139,16 +135,32 @@ public final class ColorUtil {
         };
     }
 
+    private static String colorTag(char code) {
+        return switch (code) {
+            case '0' -> "black";
+            case '1' -> "dark_blue";
+            case '2' -> "dark_green";
+            case '3' -> "dark_aqua";
+            case '4' -> "dark_red";
+            case '5' -> "dark_purple";
+            case '6' -> "gold";
+            case '7' -> "gray";
+            case '8' -> "dark_gray";
+            case '9' -> "blue";
+            case 'a' -> "green";
+            case 'b' -> "aqua";
+            case 'c' -> "red";
+            case 'd' -> "light_purple";
+            case 'e' -> "yellow";
+            case 'f' -> "white";
+            default -> throw new IllegalArgumentException("Unknown legacy color code: " + code);
+        };
+    }
+
     private static boolean isHex(char value) {
         return value >= '0' && value <= '9'
                 || value >= 'a' && value <= 'f'
                 || value >= 'A' && value <= 'F';
-    }
-
-    private static void flush(TextComponent.Builder result, StringBuilder text, Style.Builder style) {
-        if (text.isEmpty()) return;
-        result.append(Component.text(text.toString()).style(style.build()));
-        text.setLength(0);
     }
 
     private record HexColor(TextColor color, int length) {

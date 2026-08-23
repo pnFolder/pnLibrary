@@ -1,181 +1,238 @@
 package ru.privatenull.pnlibrary.lifecycle;
 
-import org.bstats.bukkit.Metrics;
-import org.bstats.charts.SimplePie;
-import org.bukkit.event.EventHandler;
-import org.bukkit.event.HandlerList;
-import org.bukkit.event.Listener;
-import org.bukkit.event.player.PlayerJoinEvent;
-import org.bukkit.configuration.file.YamlConfiguration;
-import org.bukkit.permissions.Permission;
-import org.bukkit.plugin.java.JavaPlugin;
-import ru.privatenull.pnlibrary.update.GitHubUpdater;
-import ru.privatenull.pnlibrary.database.DatabaseExecutor;
-
-import java.io.InputStream;
-import java.io.InputStreamReader;
-import java.nio.charset.StandardCharsets;
-import java.util.List;
-import java.util.Locale;
 import java.util.Objects;
+import java.util.function.Consumer;
 import java.util.function.Supplier;
-import java.util.regex.Matcher;
-import java.util.regex.Pattern;
+
+import org.bukkit.plugin.java.JavaPlugin;
+
+import ru.privatenull.pnlibrary.banner.PluginBanner;
+import ru.privatenull.pnlibrary.database.DatabaseExecutor;
+import ru.privatenull.pnlibrary.metrics.PluginMetrics;
+import ru.privatenull.pnlibrary.logging.MBox;
+import ru.privatenull.pnlibrary.logging.PluginLogger;
+import ru.privatenull.pnlibrary.update.PluginUpdateService;
 
 /**
- * Owns the infrastructure shared by PrivateNull plugins: updater, join
- * notifications, bStats and lifecycle banners.
- *
- * <p>The GitHub repository and notification permission are derived from the
- * plugin metadata, including {@code bstats-id} from plugin.yml.</p>
+ * Подключает доступную инфраструктуру к {@link PluginBanner.Identity}.
+ * Ничего не извлекает из {@code plugin.yml} и не придумывает автоматически.
+ * Неуказанные GitHub и bStats считаются намеренно отключёнными модулями.
  */
 public final class PluginRuntime implements AutoCloseable {
 
-    private static final Pattern GITHUB_REPOSITORY = Pattern.compile(
-            "(?i)(?:https?://)?(?:www\\.)?github\\.com/([A-Za-z0-9_.-]+)/([A-Za-z0-9_.-]+)(?:/.*)?");
-
+    private final PluginBanner.Identity identity;
     private final JavaPlugin plugin;
-    private final GitHubUpdater updates;
-    private final Metrics metrics;
-    private final Listener joinListener;
+    private final PluginLogger logger;
+    private final PluginUpdateService updates;
+    private final PluginMetrics metrics;
     private DatabaseExecutor databaseExecutor;
     private boolean closed;
 
-    private PluginRuntime(JavaPlugin plugin, int bStatsPluginId) {
-        this.plugin = Objects.requireNonNull(plugin, "plugin");
-        if (bStatsPluginId <= 0) {
-            throw new IllegalArgumentException("bStats plugin id must be positive");
-        }
+    private PluginRuntime(
+            PluginBanner.Identity identity,
+            Consumer<PluginBanner.Data> startupSetup
+    ) {
+        this.identity = Objects.requireNonNull(identity, "identity");
+        Objects.requireNonNull(startupSetup, "startupSetup");
+        plugin = identity.plugin();
+        logger = identity.log();
 
-        String pluginName = plugin.getDescription().getName();
-        String repository = repository(pluginName, plugin.getDescription().getWebsite());
-        List<String> permissions = plugin.getDescription().getPermissions().stream()
-                .map(Permission::getName)
-                .toList();
-        String notifyPermission = notificationPermission(pluginName, permissions);
-
-        updates = new GitHubUpdater(plugin, repository, notifyPermission, supportUrl());
-        metrics = new Metrics(plugin, bStatsPluginId);
-        joinListener = new Listener() {
-            @EventHandler
-            public void onJoin(PlayerJoinEvent event) {
-                updates.notifyAdminOnJoin(event.getPlayer());
+        PluginMetrics startedMetrics = null;
+        PluginUpdateService startedUpdates = null;
+        try {
+            PluginBanner.Data startup = new PluginBanner.Data(identity);
+            Integer bStatsPluginId = identity.bStatsPluginId();
+            if (bStatsPluginId == null) {
+                startup.skip("bStats", "ID проекта не указан");
+            } else {
+                startedMetrics = PluginMetrics.bukkit(plugin, bStatsPluginId);
+                startup.ok("bStats", "Метрики запущены");
             }
-        };
 
-        plugin.getServer().getPluginManager().registerEvents(joinListener, plugin);
-        updates.start();
-        printBanner("ENABLED");
+            if (identity.github() == null) {
+                startup.skip("Обновления", "GitHub-репозиторий не указан");
+            } else {
+                startup.ok("Обновления", "Проверка GitHub запущена");
+            }
+
+            startupSetup.accept(startup);
+            PluginBanner.broadcastEnable(startup);
+            startedUpdates = identity.github() == null ? null : identity.updates();
+        } catch (RuntimeException | Error exception) {
+            if (startedUpdates != null) startedUpdates.close();
+            if (startedMetrics != null) startedMetrics.close();
+            throw exception;
+        }
+        metrics = startedMetrics;
+        updates = startedUpdates;
     }
 
-    public static PluginRuntime start(JavaPlugin plugin) {
-        return new PluginRuntime(plugin, bStatsId(plugin));
+    /**
+     * Запускает runtime из готового идентификатора.
+     *
+     * <pre>{@code
+     * PluginBanner.Identity identity = new PluginBanner.Identity(this, "PnFolder");
+     * // github(...) и bStats(...) подключаются только при необходимости.
+     * runtime = PluginRuntime.start(identity);
+     * }</pre>
+     *
+     * @param identity полностью настроенный идентификатор
+     * @return запущенный runtime
+     */
+    public static PluginRuntime start(PluginBanner.Identity identity) {
+        return new PluginRuntime(identity, startup -> { });
     }
 
-    public GitHubUpdater updates() {
+    /**
+     * Запускает runtime и добавляет пользовательские компоненты прямо в
+     * основной баннер включения.
+     *
+     * <pre>{@code
+     * runtime = PluginRuntime.start(identity, startup -> startup
+     *         .ok("Конфигурация", "Файл загружен")
+     *         .ok("Команды", "Зарегистрировано: 5")
+     *         .skip("Vault", "Плагин не установлен"));
+     * }</pre>
+     *
+     * @param identity идентификатор плагина
+     * @param startupSetup заполнение пользовательской части стартового отчёта
+     * @return запущенный runtime
+     */
+    public static PluginRuntime start(
+            PluginBanner.Identity identity,
+            Consumer<PluginBanner.Data> startupSetup
+    ) {
+        return new PluginRuntime(identity, startupSetup);
+    }
+
+    /** @return идентификатор, с которым был запущен runtime */
+    public PluginBanner.Identity identity() {
+        return identity;
+    }
+
+    /** @return единый логгер этого плагина */
+    public PluginLogger log() {
+        return logger;
+    }
+
+    /**
+     * Быстрый доступ к построению красивого структурированного блока.
+     *
+     * @param title заголовок блока
+     * @return новый MBox
+     */
+    public MBox mBox(String title) {
+        return logger.mBox(title);
+    }
+
+    /**
+     * Возвращает систему обновлений.
+     *
+     * @return запущенная система обновлений
+     * @throws IllegalStateException если GitHub не был настроен
+     */
+    public PluginUpdateService updates() {
+        if (updates == null) {
+            throw new IllegalStateException("GitHub updates are not configured");
+        }
         return updates;
     }
 
+    /** @return {@code true}, если bStats ID указан и метрики запущены */
+    public boolean hasMetrics() {
+        return metrics != null;
+    }
+
+    /** @return {@code true}, если GitHub указан и система обновлений запущена */
+    public boolean hasUpdates() {
+        return updates != null;
+    }
+
+    /** Лениво создаёт общий асинхронный исполнитель операций с базой данных. */
     public synchronized DatabaseExecutor databaseExecutor() {
-        if (closed) throw new IllegalStateException("Plugin runtime is closed");
+        ensureOpen();
         if (databaseExecutor == null) databaseExecutor = new DatabaseExecutor(plugin);
         return databaseExecutor;
     }
 
-    /** Adds a string-valued bStats chart without exposing bStats in consumer code. */
+    /**
+     * Добавляет строковую диаграмму bStats без раскрытия bStats в коде плагина.
+     * Если bStats ID не указан, вызов безопасно пропускается.
+     */
     public PluginRuntime simplePie(String chartId, Supplier<String> value) {
-        if (closed) throw new IllegalStateException("Plugin runtime is closed");
-        Supplier<String> source = Objects.requireNonNull(value, "value");
-        metrics.addCustomChart(new SimplePie(
-                Objects.requireNonNull(chartId, "chartId"),
-                source::get
-        ));
+        ensureOpen();
+        if (metrics != null) {
+            metrics.simplePie(chartId, value);
+        }
         return this;
     }
 
-    /** Restarts the shared updater; plugin configuration is not involved. */
+    /**
+     * Немедленно запускает внеочередную проверку обновлений.
+     * Если GitHub не настроен, вызов безопасно пропускается.
+     */
     public void reload() {
-        if (closed) throw new IllegalStateException("Plugin runtime is closed");
-        updates.restart();
+        ensureOpen();
+        if (updates != null) {
+            updates.checkNow();
+        }
     }
 
-    public static String supportUrl() {
-        return "https://discord.gg/SZxPP9surw";
-    }
-
+    /**
+     * Закрывает инфраструктуру и выводит отчёт выключения.
+     * Вызывается владельцем плагина вручную из {@code onDisable()}.
+     */
     @Override
-    public void close() {
+    public synchronized void close() {
         if (closed) return;
         closed = true;
-        HandlerList.unregisterAll(joinListener);
-        if (databaseExecutor != null) databaseExecutor.close();
-        updates.close();
-        metrics.shutdown();
-        printBanner("DISABLED");
-    }
 
-    static String repository(String pluginName, String website) {
-        String configured = website == null ? "" : website.trim();
-        Matcher matcher = GITHUB_REPOSITORY.matcher(configured);
-        if (matcher.matches()) {
-            String repository = matcher.group(2);
-            if (repository.toLowerCase(Locale.ROOT).endsWith(".git")) {
-                repository = repository.substring(0, repository.length() - 4);
+        PluginBanner.Data shutdown = new PluginBanner.Data(identity);
+        if (updates == null) {
+            shutdown.skip("Обновления", "Система не запускалась");
+        } else {
+            try {
+                updates.close();
+                shutdown.ok("Обновления", "Планировщик и listener'ы остановлены");
+            } catch (Exception exception) {
+                logger.error("Не удалось остановить систему обновлений", exception);
+                shutdown.warn("Обновления", message(exception));
             }
-            return matcher.group(1) + "/" + repository;
         }
-        String name = Objects.requireNonNull(pluginName, "pluginName").trim();
-        if (name.isEmpty()) throw new IllegalArgumentException("Plugin name cannot be blank");
-        return "Dy6HiLa/" + name;
-    }
 
-    static String notificationPermission(String pluginName, List<String> declaredPermissions) {
-        String normalizedName = Objects.requireNonNull(pluginName, "pluginName")
-                .toLowerCase(Locale.ROOT);
-        List<String> permissions = declaredPermissions == null ? List.of() : declaredPermissions;
-        String conventional = normalizedName + ".admin";
-        if (permissions.stream().anyMatch(conventional::equalsIgnoreCase)) return conventional;
-        return permissions.stream()
-                .filter(Objects::nonNull)
-                .filter(permission -> permission.toLowerCase(Locale.ROOT).endsWith(".admin"))
-                .findFirst()
-                .orElseGet(() -> permissions.stream()
-                        .filter(Objects::nonNull)
-                        .filter(permission -> permission.toLowerCase(Locale.ROOT).endsWith(".update"))
-                        .findFirst()
-                        .orElse(conventional));
-    }
-
-    private static int bStatsId(JavaPlugin plugin) {
-        Objects.requireNonNull(plugin, "plugin");
-        try (InputStream stream = plugin.getResource("plugin.yml")) {
-            if (stream == null) throw new IllegalStateException("plugin.yml is unavailable");
-            YamlConfiguration metadata = YamlConfiguration.loadConfiguration(
-                    new InputStreamReader(stream, StandardCharsets.UTF_8));
-            int id = metadata.getInt("bstats-id", 0);
-            if (id <= 0) throw new IllegalStateException("plugin.yml must contain a positive bstats-id");
-            return id;
-        } catch (java.io.IOException exception) {
-            throw new IllegalStateException("Cannot read bstats-id from plugin.yml", exception);
+        if (databaseExecutor != null) {
+            try {
+                databaseExecutor.close();
+                shutdown.ok("База данных", "Исполнитель остановлен");
+            } catch (Exception exception) {
+                logger.error("Не удалось остановить исполнитель базы данных", exception);
+                shutdown.fail("База данных", message(exception));
+            }
+        } else {
+            shutdown.skip("База данных", "Исполнитель не создавался");
         }
+
+        if (metrics == null) {
+            shutdown.skip("bStats", "Метрики не запускались");
+        } else {
+            try {
+                metrics.close();
+                shutdown.ok("bStats", "Метрики остановлены");
+            } catch (Exception exception) {
+                logger.error("Не удалось остановить bStats", exception);
+                shutdown.warn("bStats", message(exception));
+            }
+        }
+        PluginBanner.broadcastDisable(shutdown);
     }
 
-    private void printBanner(String state) {
-        String[] lines = {
-                " ________  ________  ___  ___      ___ ________  _________  _______   ________   ___  ___  ___       ___",
-                "|@   __  @|@   __  @|@  @|@  @    /  /|@   __  @|@___   ___@@  ___ @ |@   ___  @|@  @|@  @|@  @     |@  @",
-                "@ @  @|@  @ @  @|@  @ @  @ @  @  /  / | @  @|@  @|___ @  @_@ @   __/|@ @  @@ @  @ @  @@@  @ @  @    @ @  @",
-                " @ @   ____@ @   _  _@ @  @ @  @/  / / @ @   __  @   @ @  @ @ @  @_|/_@ @  @@ @  @ @  @@@  @ @  @    @ @  @",
-                "  @ @  @___|@ @  @@  @@ @  @ @    / /   @ @  @ @  @   @ @  @ @ @  @_|@ @ @  @@ @  @ @  @@@  @ @  @____@ @  @____",
-                "   @ @__@    @ @__@@ _@@ @__@ @__/ /     @ @__@ @__@   @ @__@ @ @_______@ @__@@ @__@ @_______@ @_______@ @_______@",
-                "    @|__|     @|__|@|__|@|__|@|__|/       @|__|@|__|    @|__|  @|_______|@|__| @|__|@|_______|@|_______|@|_______|"
-        };
-        plugin.getLogger().info(" ");
-        for (String line : lines) plugin.getLogger().info(line.replace('@', '\\'));
-        plugin.getLogger().info(" ");
-        plugin.getLogger().info(plugin.getDescription().getName() + " v"
-                + plugin.getDescription().getVersion() + " | " + state);
-        plugin.getLogger().info("Support: " + supportUrl());
-        plugin.getLogger().info(" ");
+    private void ensureOpen() {
+        if (closed) throw new IllegalStateException("Plugin runtime is closed");
+    }
+
+    private static String message(Exception exception) {
+        return exception.getMessage() == null
+                ? exception.getClass().getSimpleName()
+                : exception.getMessage();
     }
 }
