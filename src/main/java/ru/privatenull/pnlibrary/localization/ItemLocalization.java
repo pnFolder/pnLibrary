@@ -15,12 +15,15 @@ import java.util.Collections;
 import java.util.LinkedHashMap;
 import java.util.Locale;
 import java.util.Map;
+import java.util.concurrent.ConcurrentHashMap;
 
 /**
  * Public Minecraft item localization service backed by pnLibrary's bundled language files.
  * Instances are immutable and safe to share for the lifetime of a plugin configuration.
  */
 public final class ItemLocalization {
+    private static final Map<MinecraftLocale, ItemLocalization> CACHE = new ConcurrentHashMap<>();
+
     private final MinecraftLocale locale;
     private final Map<String, String> translations;
 
@@ -35,6 +38,10 @@ public final class ItemLocalization {
 
     public static ItemLocalization load(MinecraftLocale locale) {
         MinecraftLocale selected = locale == null ? MinecraftLocale.RU_RU : locale;
+        return CACHE.computeIfAbsent(selected, ItemLocalization::loadResource);
+    }
+
+    private static ItemLocalization loadResource(MinecraftLocale selected) {
         String resource = "/pnlibrary/lang/" + selected.id() + ".json";
         try (InputStream input = ItemLocalization.class.getResourceAsStream(resource)) {
             return new ItemLocalization(selected, FlatJsonTranslations.read(input));
