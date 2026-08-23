@@ -13,7 +13,7 @@ import java.util.Map;
 public final class ColorUtil {
 
     private static final LegacyComponentSerializer LEGACY = LegacyComponentSerializer.builder()
-            .character('\u00A7')
+            .character('§')
             .hexColors()
             .useUnusualXRepeatedCharacterHexFormat()
             .build();
