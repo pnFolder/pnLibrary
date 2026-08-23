@@ -30,14 +30,14 @@ repositories {
 }
 
 dependencies {
-    compileOnly 'io.papermc.paper:paper-api:26.2.build.115-stable'
+    compileOnly 'com.destroystokyo.paper:paper-api:1.16.5-R0.1-SNAPSHOT'
     compileOnly 'net.md-5:bungeecord-api:1.21-R0.4'
     compileOnly 'com.velocitypowered:velocity-api:3.3.0-SNAPSHOT'
 
     compileOnly 'com.mojang:authlib:1.5.25'
     compileOnly 'net.dmulloy2:ProtocolLib:5.4.0'
 
-    compileOnly platform('net.kyori:adventure-bom:5.2.0')
+    compileOnly platform('net.kyori:adventure-bom:4.17.0')
     compileOnly 'net.kyori:adventure-api'
     compileOnly 'net.kyori:adventure-text-minimessage'
     compileOnly 'net.kyori:adventure-text-serializer-legacy'
@@ -54,20 +54,18 @@ dependencies {
 
     testImplementation 'org.junit.jupiter:junit-jupiter:5.11.4'
     testRuntimeOnly 'org.junit.platform:junit-platform-launcher'
-    testImplementation 'io.papermc.paper:paper-api:26.2.build.115-stable'
+    testImplementation 'com.destroystokyo.paper:paper-api:1.16.5-R0.1-SNAPSHOT'
 }
 
 java {
-    toolchain {
-        languageVersion = JavaLanguageVersion.of(25)
-    }
-
+    sourceCompatibility = JavaVersion.VERSION_17
+    targetCompatibility = JavaVersion.VERSION_17
     withSourcesJar()
 }
 
 tasks.withType(JavaCompile).configureEach {
     options.encoding = 'UTF-8'
-    options.release = 25
+    options.release = 17
 }
 
 tasks.withType(Test).configureEach {

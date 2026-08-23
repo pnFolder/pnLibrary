@@ -194,7 +194,7 @@ final class BannerRenderer {
     }
 
     private String authors() {
-        List<String> authors = data.plugin().getPluginMeta().getAuthors();
+        List<String> authors = data.plugin().getDescription().getAuthors();
         if (authors.isEmpty()) return "не указан";
         return String.join(", ", authors);
     }
@@ -206,11 +206,11 @@ final class BannerRenderer {
     }
 
     private String pluginName() {
-        return data.plugin().getPluginMeta().getName().toLowerCase(Locale.ROOT);
+        return data.plugin().getDescription().getName().toLowerCase(Locale.ROOT);
     }
 
     private String version() {
-        return data.plugin().getPluginMeta().getVersion();
+        return data.plugin().getDescription().getVersion();
     }
 
     private ConsoleCommandSender console() {

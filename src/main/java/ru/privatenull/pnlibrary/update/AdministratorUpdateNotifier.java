@@ -84,7 +84,7 @@ final class AdministratorUpdateNotifier implements Listener, AutoCloseable {
         player.sendMessage(ColorUtil.component("&#94CA85&l" + plugin.getName() + " &8• &fОБНОВЛЕНИЕ"));
         player.sendMessage(Component.empty());
         player.sendMessage(ColorUtil.component("&fДоступна новая версия: &7"
-                + plugin.getPluginMeta().getVersion() + " &8→ &#9EFC65" + current.latestVersion()));
+                + plugin.getDescription().getVersion() + " &8→ &#9EFC65" + current.latestVersion()));
 
         if (current.updateDownloaded()) {
             player.sendMessage(ColorUtil.component("&#9EFC65Обновление уже загружено."

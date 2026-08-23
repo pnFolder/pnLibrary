@@ -110,7 +110,7 @@ final class StagedUpdateInstaller {
             try (InputStream descriptorStream = jar.getInputStream(descriptor)) {
                 metadata = new PluginDescriptionFile(descriptorStream);
             }
-            String expectedName = identity.plugin().getPluginMeta().getName();
+            String expectedName = identity.plugin().getDescription().getName();
             if (!metadata.getName().equalsIgnoreCase(expectedName)) {
                 throw new IllegalStateException("Скачанный JAR предназначен для другого плагина: "
                         + metadata.getName());

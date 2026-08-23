@@ -4,8 +4,8 @@
 
 ## Требования и сборка
 
-- JDK 25;
-- Paper API 26.2 для Bukkit/Paper-модулей;
+- JDK 17 или новее;
+- Paper/Purpur 1.16.5–1.21.11 для Bukkit/Paper-модулей;
 - BungeeCord API 1.21 или Velocity API 3.3 для соответствующего модуля метрик.
 
 Проект собирается включённым Gradle Wrapper, поэтому отдельная установка Gradle

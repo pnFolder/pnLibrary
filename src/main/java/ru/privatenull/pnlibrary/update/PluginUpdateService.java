@@ -1,13 +1,12 @@
 package ru.privatenull.pnlibrary.update;
 
 import java.util.Objects;
-import java.util.concurrent.TimeUnit;
 import java.util.concurrent.atomic.AtomicBoolean;
 
 import org.bukkit.entity.Player;
 import org.bukkit.plugin.java.JavaPlugin;
+import org.bukkit.scheduler.BukkitTask;
 
-import io.papermc.paper.threadedregions.scheduler.ScheduledTask;
 import ru.privatenull.pnlibrary.banner.PluginBanner;
 
 /**
@@ -27,7 +26,7 @@ public final class PluginUpdateService implements AutoCloseable {
     private final AtomicBoolean checkRunning = new AtomicBoolean();
 
     private volatile UpdateSnapshot snapshot = UpdateSnapshot.initial();
-    private ScheduledTask scheduledTask;
+    private BukkitTask scheduledTask;
     private volatile boolean closed;
 
     /** Создаёт сервис. Обычно напрямую вызывать конструктор не требуется. */
@@ -51,7 +50,7 @@ public final class PluginUpdateService implements AutoCloseable {
     /** Немедленно ставит внеочередную проверку в асинхронный планировщик. */
     public void checkNow() {
         ensureOpen();
-        plugin.getServer().getAsyncScheduler().runNow(plugin, task -> performCheck());
+        plugin.getServer().getScheduler().runTaskAsynchronously(plugin, this::performCheck);
     }
 
     /** Перезапускает периодический планировщик и сразу выполняет новую проверку. */
@@ -128,7 +127,7 @@ public final class PluginUpdateService implements AutoCloseable {
             }
 
             SemanticVersion latest = SemanticVersion.parse(release.version());
-            SemanticVersion current = SemanticVersion.parse(plugin.getPluginMeta().getVersion());
+            SemanticVersion current = SemanticVersion.parse(plugin.getDescription().getVersion());
             if (latest.compareTo(current) <= 0) {
                 snapshot = UpdateSnapshot.upToDate(release);
                 if (identity.showUpToDateMessage()
@@ -183,18 +182,15 @@ public final class PluginUpdateService implements AutoCloseable {
     }
 
     private void schedule() {
-        scheduledTask = plugin.getServer().getAsyncScheduler().runAtFixedRate(
-                plugin,
-                task -> performCheck(),
-                1L,
-                identity.updateCheckInterval().toMillis(),
-                TimeUnit.MILLISECONDS
-        );
+        long periodTicks = Math.max(1L,
+                (identity.updateCheckInterval().toMillis() + 49L) / 50L);
+        scheduledTask = plugin.getServer().getScheduler().runTaskTimerAsynchronously(
+                plugin, this::performCheck, 1L, periodTicks);
     }
 
     private void runGlobal(Runnable action) {
         if (plugin.isEnabled() && !closed) {
-            plugin.getServer().getGlobalRegionScheduler().execute(plugin, () -> {
+            plugin.getServer().getScheduler().runTask(plugin, () -> {
                 if (plugin.isEnabled() && !closed) action.run();
             });
         }
