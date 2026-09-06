@@ -26,6 +26,9 @@ jobs:
           java-version: '26'
           cache: gradle
 
+      - name: Make Gradle wrapper executable
+        run: chmod +x gradlew
+
       - name: Validate publishing configuration
         shell: bash
         env:
