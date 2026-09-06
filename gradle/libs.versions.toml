@@ -1,6 +1,7 @@
 [versions]
 kotlin        = "2.1.21"
 shadow        = "9.6.1"
+mavenPublish  = "0.35.0"
 gson          = "2.11.0"
 snakeyaml     = "2.3"
 junit         = "5.11.4"
@@ -29,5 +30,6 @@ bungeecord-api      = { module = "net.md-5:bungeecord-api",                     
 velocity-api        = { module = "com.velocitypowered:velocity-api",                 version.ref = "velocity" }
 
 [plugins]
-kotlin-jvm  = { id = "org.jetbrains.kotlin.jvm", version.ref = "kotlin" }
-shadow      = { id = "com.gradleup.shadow",        version.ref = "shadow" }
+kotlin-jvm    = { id = "org.jetbrains.kotlin.jvm",             version.ref = "kotlin" }
+shadow        = { id = "com.gradleup.shadow",                  version.ref = "shadow" }
+maven-publish = { id = "com.vanniktech.maven.publish",         version.ref = "mavenPublish" }
