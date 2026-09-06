@@ -20,15 +20,15 @@ import org.bukkit.event.player.PlayerJoinEvent
 import org.bukkit.event.server.PluginDisableEvent
 import org.bukkit.plugin.Plugin
 import org.bukkit.plugin.java.JavaPlugin
-import ru.privatenull.pnlibrary.api.DebugRequest
-import ru.privatenull.pnlibrary.api.PlatformAdapter
-import ru.privatenull.pnlibrary.api.PlatformMetricsFactory
-import ru.privatenull.pnlibrary.api.LogLevel
-import ru.privatenull.pnlibrary.api.PnLibraryBrand
-import ru.privatenull.pnlibrary.api.UpdateState
+import ru.privatenull.pnlibrary.api.diagnostics.DebugRequest
+import ru.privatenull.pnlibrary.api.platform.PlatformAdapter
+import ru.privatenull.pnlibrary.api.metrics.PlatformMetricsFactory
+import ru.privatenull.pnlibrary.api.logging.LogLevel
+import ru.privatenull.pnlibrary.api.runtime.PnLibraryBrand
+import ru.privatenull.pnlibrary.api.updates.UpdateState
 import java.util.logging.Level
 import ru.privatenull.pnlibrary.bukkit.compat.ServerCapabilities
-import ru.privatenull.pnlibrary.core.PnLibraryImpl
+import ru.privatenull.pnlibrary.core.runtime.PnLibraryImpl
 import java.io.File
 import java.lang.reflect.Constructor
 import java.time.Instant
@@ -439,7 +439,7 @@ class BukkitPlatformAdapter @JvmOverloads constructor(
         player.spigot().sendMessage(button)
     }
 
-    private fun sendUpdateLine(sender: CommandSender, snapshot: ru.privatenull.pnlibrary.api.UpdateSnapshot) {
+    private fun sendUpdateLine(sender: CommandSender, snapshot: ru.privatenull.pnlibrary.api.updates.UpdateSnapshot) {
         val state = when (snapshot.state) {
             UpdateState.CHECKING -> "§eпроверяется"
             UpdateState.CURRENT -> "§aактуальная версия"

@@ -1,9 +1,18 @@
 package ru.privatenull.pnlibrary.core
 
+import ru.privatenull.pnlibrary.core.metrics.MetricsRegistry
+
+
 import org.junit.jupiter.api.Assertions.assertEquals
 import org.junit.jupiter.api.Assertions.assertThrows
 import org.junit.jupiter.api.Test
-import ru.privatenull.pnlibrary.api.*
+import ru.privatenull.pnlibrary.api.diagnostics.*
+import ru.privatenull.pnlibrary.api.logging.*
+import ru.privatenull.pnlibrary.api.metrics.*
+import ru.privatenull.pnlibrary.api.platform.*
+import ru.privatenull.pnlibrary.api.runtime.*
+import ru.privatenull.pnlibrary.api.tasks.*
+import ru.privatenull.pnlibrary.api.updates.*
 import java.util.function.Supplier
 
 class MetricsRegistryTest {

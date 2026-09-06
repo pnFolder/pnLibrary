@@ -5,11 +5,11 @@ import net.md_5.bungee.api.CommandSender
 import net.md_5.bungee.api.ChatColor
 import net.md_5.bungee.api.chat.TextComponent
 import net.md_5.bungee.api.plugin.Command
-import ru.privatenull.pnlibrary.api.DebugRequest
-import ru.privatenull.pnlibrary.api.PlatformAdapter
-import ru.privatenull.pnlibrary.api.PlatformMetricsFactory
-import ru.privatenull.pnlibrary.api.LogLevel
-import ru.privatenull.pnlibrary.core.PnLibraryImpl
+import ru.privatenull.pnlibrary.api.diagnostics.DebugRequest
+import ru.privatenull.pnlibrary.api.platform.PlatformAdapter
+import ru.privatenull.pnlibrary.api.metrics.PlatformMetricsFactory
+import ru.privatenull.pnlibrary.api.logging.LogLevel
+import ru.privatenull.pnlibrary.core.runtime.PnLibraryImpl
 import java.util.concurrent.atomic.AtomicBoolean
 import java.util.logging.Level
 

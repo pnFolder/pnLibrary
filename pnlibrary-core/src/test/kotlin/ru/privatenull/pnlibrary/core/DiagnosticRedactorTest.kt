@@ -1,5 +1,8 @@
 package ru.privatenull.pnlibrary.core
 
+import ru.privatenull.pnlibrary.core.diagnostics.DiagnosticRedactor
+
+
 import org.junit.jupiter.api.Assertions.assertFalse
 import org.junit.jupiter.api.Assertions.assertTrue
 import org.junit.jupiter.api.Test

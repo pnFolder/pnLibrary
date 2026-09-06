@@ -1,9 +1,9 @@
 package ru.privatenull.pnlibrary.velocity
 
 import org.bstats.velocity.Metrics
-import ru.privatenull.pnlibrary.api.PlatformMetricsFactory
-import ru.privatenull.pnlibrary.api.PluginMetrics
-import ru.privatenull.pnlibrary.core.BStatsMetricsSession
+import ru.privatenull.pnlibrary.api.metrics.PlatformMetricsFactory
+import ru.privatenull.pnlibrary.api.metrics.PluginMetrics
+import ru.privatenull.pnlibrary.core.metrics.BStatsMetricsSession
 
 class VelocityMetricsFactory(private val factory: Metrics.Factory) : PlatformMetricsFactory {
     override fun open(owner: Any, projectId: Int): PluginMetrics {

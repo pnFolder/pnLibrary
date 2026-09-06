@@ -1,10 +1,10 @@
 package ru.privatenull.pnlibrary.velocity
 
 import com.velocitypowered.api.proxy.ProxyServer
-import ru.privatenull.pnlibrary.api.PlatformAdapter
-import ru.privatenull.pnlibrary.api.PlatformMetricsFactory
-import ru.privatenull.pnlibrary.api.DebugRequest
-import ru.privatenull.pnlibrary.core.PnLibraryImpl
+import ru.privatenull.pnlibrary.api.platform.PlatformAdapter
+import ru.privatenull.pnlibrary.api.metrics.PlatformMetricsFactory
+import ru.privatenull.pnlibrary.api.diagnostics.DebugRequest
+import ru.privatenull.pnlibrary.core.runtime.PnLibraryImpl
 import com.velocitypowered.api.command.SimpleCommand
 import com.velocitypowered.api.proxy.ConsoleCommandSource
 import net.kyori.adventure.text.Component
@@ -12,7 +12,7 @@ import net.kyori.adventure.text.serializer.legacy.LegacyComponentSerializer
 import java.util.concurrent.atomic.AtomicBoolean
 import java.nio.file.Path
 import org.slf4j.Logger
-import ru.privatenull.pnlibrary.api.LogLevel
+import ru.privatenull.pnlibrary.api.logging.LogLevel
 
 /**
  * Platform adapter targeting Velocity 3.x proxy servers.

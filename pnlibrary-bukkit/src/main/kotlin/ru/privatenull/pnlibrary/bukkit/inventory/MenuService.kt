@@ -14,7 +14,7 @@ import org.bukkit.inventory.Inventory
 import org.bukkit.inventory.InventoryHolder
 import org.bukkit.inventory.ItemStack
 import org.bukkit.plugin.Plugin
-import ru.privatenull.pnlibrary.api.TaskScope
+import ru.privatenull.pnlibrary.api.tasks.TaskScope
 import java.time.Duration
 import java.util.IdentityHashMap
 import java.util.UUID

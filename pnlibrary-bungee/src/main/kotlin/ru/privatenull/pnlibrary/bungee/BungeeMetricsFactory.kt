@@ -2,9 +2,9 @@ package ru.privatenull.pnlibrary.bungee
 
 import net.md_5.bungee.api.plugin.Plugin
 import org.bstats.bungeecord.Metrics
-import ru.privatenull.pnlibrary.api.PlatformMetricsFactory
-import ru.privatenull.pnlibrary.api.PluginMetrics
-import ru.privatenull.pnlibrary.core.BStatsMetricsSession
+import ru.privatenull.pnlibrary.api.metrics.PlatformMetricsFactory
+import ru.privatenull.pnlibrary.api.metrics.PluginMetrics
+import ru.privatenull.pnlibrary.core.metrics.BStatsMetricsSession
 
 class BungeeMetricsFactory : PlatformMetricsFactory {
     override fun open(owner: Any, projectId: Int): PluginMetrics {

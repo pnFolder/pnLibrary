@@ -9,14 +9,14 @@ import com.velocitypowered.api.plugin.annotation.DataDirectory
 import com.velocitypowered.api.proxy.ProxyServer
 import org.bstats.velocity.Metrics
 import org.slf4j.Logger
-import ru.privatenull.pnlibrary.api.PnLibrary
-import ru.privatenull.pnlibrary.core.PnLibraryBootstrap
-import ru.privatenull.pnlibrary.core.PnLibraryImpl
-import ru.privatenull.pnlibrary.core.MandatoryUpdateService
+import ru.privatenull.pnlibrary.api.runtime.PnLibrary
+import ru.privatenull.pnlibrary.core.runtime.PnLibraryBootstrap
+import ru.privatenull.pnlibrary.core.runtime.PnLibraryImpl
+import ru.privatenull.pnlibrary.core.updates.MandatoryUpdateService
 import java.nio.file.Paths
 import java.nio.file.Path
 
-@Plugin(id = "pnlibrary", name = "pnLibrary", version = "2.0.0-beta.3", authors = ["pnFolder"])
+@Plugin(id = "pnlibrary", name = "pnLibrary", version = "2.0.0-beta.4", authors = ["pnFolder"])
 class PnLibraryVelocityPlugin @Inject constructor(
     private val server: ProxyServer,
     private val logger: Logger,
@@ -31,7 +31,7 @@ class PnLibraryVelocityPlugin @Inject constructor(
         val loaded = PnLibraryBootstrap.bootstrap(this, adapter)
         adapter.attachLibrary(loaded as PnLibraryImpl)
         runtime = loaded
-        MandatoryUpdateService.start(this, adapter, "2.0.0-beta.3", "velocity",
+        MandatoryUpdateService.start(this, adapter, "2.0.0-beta.4", "velocity",
             Paths.get(javaClass.protectionDomain.codeSource.location.toURI()),
             dataDirectory.parent.resolve("update"))
         logger.info("pnLibrary enabled (velocity)")

@@ -4,8 +4,18 @@ import org.jetbrains.kotlin.gradle.dsl.JvmTarget
 plugins {
     alias(libs.plugins.kotlin.jvm)
     `java-library`
+    `maven-publish`
 }
 
+
+publishing {
+    publications {
+        create<MavenPublication>("core") {
+            from(components["java"])
+            artifactId = "pnlibrary-core"
+        }
+    }
+}
 base { archivesName = "pnLibrary-core" }
 
 kotlin {

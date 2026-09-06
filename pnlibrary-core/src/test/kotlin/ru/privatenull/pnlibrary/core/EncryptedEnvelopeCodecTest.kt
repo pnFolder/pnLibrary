@@ -1,5 +1,8 @@
 package ru.privatenull.pnlibrary.core
 
+import ru.privatenull.pnlibrary.core.security.EncryptedEnvelopeCodec
+
+
 import com.google.gson.Gson
 import com.google.gson.JsonObject
 import org.junit.jupiter.api.Assertions.assertEquals

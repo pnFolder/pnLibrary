@@ -1,9 +1,12 @@
 package ru.privatenull.pnlibrary.core
 
+import ru.privatenull.pnlibrary.core.tasks.TaskServiceImpl
+
+
 import org.junit.jupiter.api.Assertions.assertEquals
 import org.junit.jupiter.api.Assertions.assertTrue
 import org.junit.jupiter.api.Test
-import ru.privatenull.pnlibrary.api.PlatformAdapter
+import ru.privatenull.pnlibrary.api.platform.PlatformAdapter
 import java.time.Duration
 import java.util.concurrent.CountDownLatch
 import java.util.concurrent.TimeUnit

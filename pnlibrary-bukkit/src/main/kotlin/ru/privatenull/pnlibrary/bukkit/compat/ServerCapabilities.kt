@@ -1,5 +1,7 @@
 package ru.privatenull.pnlibrary.bukkit.compat
 
+import ru.privatenull.pnlibrary.api.version.minecraft.MinecraftVersion
+
 import org.bukkit.Bukkit
 
 /**
@@ -11,13 +13,13 @@ object ServerCapabilities {
      * Определённая версия Minecraft в виде [MinecraftVersion].
      * Значение вычисляется один раз и затем кэшируется до остановки сервера.
      */
-    val minecraftVersion: MinecraftVersion by lazy { MinecraftVersion.current() }
+    val minecraftVersion: MinecraftVersion by lazy { BukkitMinecraftVersion.current() }
 
     /**
      * Исходная строка версии Minecraft от ядра. Полезна для диагностики, когда
      * [minecraftVersion] равна [MinecraftVersion.UNKNOWN].
      */
-    val rawMinecraftVersion: String by lazy { MinecraftVersion.rawCurrent() }
+    val rawMinecraftVersion: String by lazy { BukkitMinecraftVersion.rawCurrent() }
 
     val isPaper: Boolean by lazy {
         hasClass("io.papermc.paper.configuration.Configuration") ||
@@ -68,3 +70,4 @@ object ServerCapabilities {
         }
     }
 }
+

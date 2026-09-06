@@ -1,10 +1,10 @@
 package ru.privatenull.pnlibrary.bungee
 
 import net.md_5.bungee.api.plugin.Plugin
-import ru.privatenull.pnlibrary.api.PnLibrary
-import ru.privatenull.pnlibrary.core.PnLibraryBootstrap
-import ru.privatenull.pnlibrary.core.PnLibraryImpl
-import ru.privatenull.pnlibrary.core.MandatoryUpdateService
+import ru.privatenull.pnlibrary.api.runtime.PnLibrary
+import ru.privatenull.pnlibrary.core.runtime.PnLibraryBootstrap
+import ru.privatenull.pnlibrary.core.runtime.PnLibraryImpl
+import ru.privatenull.pnlibrary.core.updates.MandatoryUpdateService
 import java.nio.file.Paths
 
 class PnLibraryBungeePlugin : Plugin() {

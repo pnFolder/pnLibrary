@@ -48,9 +48,9 @@ gradlew.bat clean test :pnlibrary-distribution:build
 
 Готовые файлы находятся в `pnlibrary-distribution/build/libs`:
 
-- `pnLibrary-bukkit-2.0.0-beta.3.jar`;
-- `pnLibrary-bungee-2.0.0-beta.3.jar`;
-- `pnLibrary-velocity-2.0.0-beta.3.jar`.
+- `pnLibrary-bukkit-2.0.0-beta.4.jar`;
+- `pnLibrary-bungee-2.0.0-beta.4.jar`;
+- `pnLibrary-velocity-2.0.0-beta.4.jar`.
 
 Положите один подходящий JAR в папку `plugins` и полностью перезапустите сервер.
 
@@ -70,7 +70,7 @@ repositories {
 }
 
 dependencies {
-    compileOnly("ru.privatenull:pnlibrary-api:2.0.0-beta.3")
+    compileOnly("ru.privatenull:pnlibrary-api:2.0.0-beta.4")
 }
 ```
 
@@ -247,20 +247,20 @@ val anvil = Menus.anvil("Название клана")
 
 ## Версия Minecraft
 
-В Bukkit-модуле есть единый `MinecraftVersion` со всеми известными версиями от
+В общем API-модуле есть единый `MinecraftVersion` со всеми известными версиями от
 1.8 до 26.2. Он читает нативный `getMinecraftVersion()` новых ядер, а на старых
 использует `Bukkit.getBukkitVersion()`. Незнакомый будущий релиз безопасно
 возвращает `UNKNOWN`, при этом исходная строка доступна через `rawCurrent()`.
 
 ```kotlin
-val version = MinecraftVersion.current()
+val version = BukkitMinecraftVersion.current()
 
 if (version.isAtLeast(MinecraftVersion.V1_20_5)) enableDataComponents()
 if (version.isBetween(MinecraftVersion.V1_8_8, MinecraftVersion.V1_12_2)) {
     enableLegacyInventoryAdapter()
 }
 
-logger.info("Minecraft: ${version.text}; raw=${MinecraftVersion.rawCurrent()}")
+logger.info("Minecraft: ${version.text}; raw=${BukkitMinecraftVersion.rawCurrent()}")
 ```
 
 Те же значения кэшируются в `ServerCapabilities.minecraftVersion` и

@@ -8,8 +8,8 @@ Spigot, Purpur и Leaf. Система не сравнивает `enum.ordinal`:
 ## Получение версии
 
 ```kotlin
-val version = MinecraftVersion.current()
-val original = MinecraftVersion.rawCurrent()
+val version = BukkitMinecraftVersion.current()
+val original = BukkitMinecraftVersion.rawCurrent()
 ```
 
 На новых ядрах сначала вызывается `Server#getMinecraftVersion()` через
@@ -128,7 +128,7 @@ private val flattening = MinecraftVersion.V1_13..MinecraftVersion.V1_20_4
 private val components = MinecraftVersionRange.atLeast(MinecraftVersion.V1_20_5)
 
 fun createMenuIcon(): ItemStack {
-    val version = MinecraftVersion.current()
+    val version = BukkitMinecraftVersion.current()
     return when (version) {
         in legacy -> createLegacyIcon()
         in flattening -> createFlattenedIcon()
@@ -166,14 +166,14 @@ fun createMenuIcon(): ItemStack {
 Получение версии и обычная проверка:
 
 ```java
-MinecraftVersion version = MinecraftVersion.current();
+MinecraftVersion version = BukkitMinecraftVersion.current();
 
 if (version.isAtLeast(MinecraftVersion.V1_20_5)) {
     enableDataComponents();
 }
 
 if (version == MinecraftVersion.UNKNOWN) {
-    logger.warning("Неизвестная версия Minecraft: " + MinecraftVersion.rawCurrent());
+    logger.warning("Неизвестная версия Minecraft: " + BukkitMinecraftVersion.rawCurrent());
 }
 ```
 

@@ -2,11 +2,11 @@ package ru.privatenull.pnlibrary.bukkit
 
 import org.bukkit.plugin.ServicePriority
 import org.bukkit.plugin.java.JavaPlugin
-import ru.privatenull.pnlibrary.api.DiagnosticsService
-import ru.privatenull.pnlibrary.api.PnLibrary
-import ru.privatenull.pnlibrary.core.PnLibraryBootstrap
-import ru.privatenull.pnlibrary.core.PnLibraryImpl
-import ru.privatenull.pnlibrary.core.MandatoryUpdateService
+import ru.privatenull.pnlibrary.api.diagnostics.DiagnosticsService
+import ru.privatenull.pnlibrary.api.runtime.PnLibrary
+import ru.privatenull.pnlibrary.core.runtime.PnLibraryBootstrap
+import ru.privatenull.pnlibrary.core.runtime.PnLibraryImpl
+import ru.privatenull.pnlibrary.core.updates.MandatoryUpdateService
 import ru.privatenull.pnlibrary.bukkit.inventory.MenuService
 import ru.privatenull.pnlibrary.bukkit.inventory.MenuServiceImpl
 import java.nio.file.Paths

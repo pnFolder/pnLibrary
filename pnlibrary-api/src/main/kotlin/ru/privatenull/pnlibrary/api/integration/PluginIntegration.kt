@@ -1,12 +1,12 @@
 package ru.privatenull.pnlibrary.api.integration
 
-import ru.privatenull.pnlibrary.api.DiagnosticContainer
-import ru.privatenull.pnlibrary.api.DiagnosticRegistration
-import ru.privatenull.pnlibrary.api.PluginMetrics
-import ru.privatenull.pnlibrary.api.PluginUpdateRequest
-import ru.privatenull.pnlibrary.api.PnLibrary
-import ru.privatenull.pnlibrary.api.TaskScope
-import ru.privatenull.pnlibrary.api.UpdateRegistration
+import ru.privatenull.pnlibrary.api.diagnostics.DiagnosticContainer
+import ru.privatenull.pnlibrary.api.diagnostics.DiagnosticRegistration
+import ru.privatenull.pnlibrary.api.metrics.PluginMetrics
+import ru.privatenull.pnlibrary.api.updates.PluginUpdateRequest
+import ru.privatenull.pnlibrary.api.runtime.PnLibrary
+import ru.privatenull.pnlibrary.api.tasks.TaskScope
+import ru.privatenull.pnlibrary.api.updates.UpdateRegistration
 import java.nio.file.Path
 import java.util.function.Consumer
 

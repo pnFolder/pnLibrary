@@ -1,5 +1,8 @@
 package ru.privatenull.pnlibrary.core
 
+import ru.privatenull.pnlibrary.core.security.EncryptedEnvelopeCodec
+
+
 import org.junit.jupiter.api.Assertions.assertEquals
 import org.junit.jupiter.api.Assertions.assertTrue
 import org.junit.jupiter.api.Test

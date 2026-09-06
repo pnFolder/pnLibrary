@@ -1,11 +1,14 @@
 package ru.privatenull.pnlibrary.core
 
+import ru.privatenull.pnlibrary.core.diagnostics.ConfigReader
+
+
 import org.junit.jupiter.api.Assertions.assertEquals
 import org.junit.jupiter.api.Assertions.assertNotNull
 import org.junit.jupiter.api.Assertions.assertTrue
 import org.junit.jupiter.api.Test
 import org.junit.jupiter.api.io.TempDir
-import ru.privatenull.pnlibrary.api.DiagnosticConfiguration
+import ru.privatenull.pnlibrary.api.diagnostics.DiagnosticConfiguration
 import java.nio.file.Path
 
 class ConfigReaderTest {
