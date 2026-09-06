@@ -24,10 +24,8 @@ package ru.privatenull.pnlibrary.api.version.minecraft
  * }
  * ```
  *
- * @property minimum нижняя граница либо 
-ull`.
- * @property maximum верхняя граница либо 
-ull`.
+ * @property minimum нижняя граница либо `null`.
+ * @property maximum верхняя граница либо `null`.
  * @property includeMinimum входит ли нижняя граница в диапазон.
  * @property includeMaximum входит ли верхняя граница в диапазон.
  */
@@ -57,7 +55,7 @@ data class MinecraftVersionRange(
         val beforeMaximum = maximum == null || if (includeMaximum) version.isAtMost(maximum) else version.isOlderThan(maximum)
         return afterMinimum && beforeMaximum
     }
-/** Возвращает `true`, когда [version] не входит в диапазон. */
+    /** Возвращает `true`, когда [version] не входит в диапазон. */
     fun excludes(version: MinecraftVersion): Boolean = version !in this
 
     /** Возвращает `true`, если диапазон содержит ровно одну версию. */
@@ -72,8 +70,7 @@ data class MinecraftVersionRange(
     fun overlaps(other: MinecraftVersionRange): Boolean = intersection(other) != null
 
     /**
-     * Возвращает пересечение с [other] или 
-ull`, если общей части нет.
+     * Возвращает пересечение с [other] или `null`, если общей части нет.
      * Учитывает открытость обеих границ.
      * ```java
      * MinecraftVersionRange common = supported.intersection(featureVersions);
