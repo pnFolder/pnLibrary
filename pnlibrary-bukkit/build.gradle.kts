@@ -5,16 +5,7 @@ import org.jetbrains.kotlin.gradle.dsl.JvmTarget
 plugins {
     alias(libs.plugins.kotlin.jvm)
     `java-library`
-    `maven-publish`
-}
-
-publishing {
-    publications {
-        create<MavenPublication>("bukkit") {
-            from(components["java"])
-            artifactId = "pnlibrary-bukkit"
-        }
-    }
+    alias(libs.plugins.maven.publish)
 }
 
 base { archivesName = "pnLibrary-bukkit" }
@@ -50,7 +41,46 @@ tasks.named<ProcessResources>("processResources") {
 }
 
 java {
-    withSourcesJar()
     sourceCompatibility = JavaVersion.VERSION_1_8
     targetCompatibility = JavaVersion.VERSION_1_8
+}
+
+mavenPublishing {
+    publishToMavenCentral()
+    signAllPublications()
+
+    coordinates(
+        groupId = "io.github.pnfolder",
+        artifactId = "pnlibrary-bukkit",
+        version = project.version.toString()
+    )
+
+    pom {
+        name.set("pnLibrary Bukkit")
+        description.set("Bukkit, Spigot, Paper, Leaf and Purpur adapter for pnLibrary.")
+        inceptionYear.set("2026")
+        url.set("https://github.com/pnFolder/pnLibrary")
+
+        licenses {
+            license {
+                name.set(providers.gradleProperty("POM_LICENSE_NAME"))
+                url.set(providers.gradleProperty("POM_LICENSE_URL"))
+                distribution.set(providers.gradleProperty("POM_LICENSE_DIST").orElse("repo"))
+            }
+        }
+
+        developers {
+            developer {
+                id.set("pnFolder")
+                name.set("pnFolder")
+                url.set("https://github.com/pnFolder")
+            }
+        }
+
+        scm {
+            url.set("https://github.com/pnFolder/pnLibrary")
+            connection.set("scm:git:git://github.com/pnFolder/pnLibrary.git")
+            developerConnection.set("scm:git:ssh://git@github.com/pnFolder/pnLibrary.git")
+        }
+    }
 }
