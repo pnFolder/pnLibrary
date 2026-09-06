@@ -4,18 +4,9 @@ import org.jetbrains.kotlin.gradle.dsl.JvmTarget
 plugins {
     alias(libs.plugins.kotlin.jvm)
     `java-library`
-    `maven-publish`
+    alias(libs.plugins.maven.publish)
 }
 
-
-publishing {
-    publications {
-        create<MavenPublication>("core") {
-            from(components["java"])
-            artifactId = "pnlibrary-core"
-        }
-    }
-}
 base { archivesName = "pnLibrary-core" }
 
 kotlin {
@@ -39,7 +30,46 @@ dependencies {
 }
 
 java {
-    withSourcesJar()
     sourceCompatibility = JavaVersion.VERSION_1_8
     targetCompatibility = JavaVersion.VERSION_1_8
+}
+
+mavenPublishing {
+    publishToMavenCentral()
+    signAllPublications()
+
+    coordinates(
+        groupId = "io.github.pnfolder",
+        artifactId = "pnlibrary-core",
+        version = project.version.toString()
+    )
+
+    pom {
+        name.set("pnLibrary Core")
+        description.set("Core implementation shared by pnLibrary platform modules.")
+        inceptionYear.set("2026")
+        url.set("https://github.com/pnFolder/pnLibrary")
+
+        licenses {
+            license {
+                name.set(providers.gradleProperty("POM_LICENSE_NAME"))
+                url.set(providers.gradleProperty("POM_LICENSE_URL"))
+                distribution.set(providers.gradleProperty("POM_LICENSE_DIST").orElse("repo"))
+            }
+        }
+
+        developers {
+            developer {
+                id.set("pnFolder")
+                name.set("pnFolder")
+                url.set("https://github.com/pnFolder")
+            }
+        }
+
+        scm {
+            url.set("https://github.com/pnFolder/pnLibrary")
+            connection.set("scm:git:git://github.com/pnFolder/pnLibrary.git")
+            developerConnection.set("scm:git:ssh://git@github.com/pnFolder/pnLibrary.git")
+        }
+    }
 }
