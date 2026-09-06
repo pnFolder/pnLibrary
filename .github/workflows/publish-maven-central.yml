@@ -4,12 +4,15 @@ on:
   workflow_dispatch:
   release:
     types: [published]
+  push:
+    branches: [main]
 
 permissions:
   contents: read
 
 jobs:
   publish:
+    if: github.event_name != 'push' || github.event.head_commit.message == 'Trigger Maven Central publish'
     runs-on: ubuntu-latest
 
     steps:
