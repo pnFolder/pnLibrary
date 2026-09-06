@@ -59,3 +59,5 @@ jobs:
           ORG_GRADLE_PROJECT_POM_LICENSE_URL: ${{ vars.MAVEN_LICENSE_URL }}
           ORG_GRADLE_PROJECT_POM_LICENSE_DIST: repo
         run: ./gradlew --no-daemon :${{ matrix.module }}:publishAndReleaseToMavenCentral
+
+# platform modules publish trigger
