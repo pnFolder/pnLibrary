@@ -48,9 +48,9 @@ gradlew.bat clean test :pnlibrary-distribution:build
 
 Готовые файлы находятся в `pnlibrary-distribution/build/libs`:
 
-- `pnLibrary-bukkit-2.0.0-beta.2.jar`;
-- `pnLibrary-bungee-2.0.0-beta.2.jar`;
-- `pnLibrary-velocity-2.0.0-beta.2.jar`.
+- `pnLibrary-bukkit-2.0.0-beta.3.jar`;
+- `pnLibrary-bungee-2.0.0-beta.3.jar`;
+- `pnLibrary-velocity-2.0.0-beta.3.jar`.
 
 Положите один подходящий JAR в папку `plugins` и полностью перезапустите сервер.
 
@@ -70,7 +70,7 @@ repositories {
 }
 
 dependencies {
-    compileOnly("ru.privatenull:pnlibrary-api:2.0.0-beta.2")
+    compileOnly("ru.privatenull:pnlibrary-api:2.0.0-beta.3")
 }
 ```
 

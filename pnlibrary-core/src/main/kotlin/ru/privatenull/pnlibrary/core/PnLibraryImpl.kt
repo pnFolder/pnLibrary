@@ -7,6 +7,7 @@ import ru.privatenull.pnlibrary.api.PnLibraryConfig
 import ru.privatenull.pnlibrary.api.MetricsService
 import ru.privatenull.pnlibrary.api.PnLibraryProvider
 import ru.privatenull.pnlibrary.api.LoggingService
+import ru.privatenull.pnlibrary.api.version.SemanticVersion
 import java.io.ByteArrayOutputStream
 import java.io.IOException
 import java.io.InputStream
@@ -31,14 +32,8 @@ class PnLibraryImpl(
 ) : PnLibrary {
 
     override val version: String = platform.ownerDetails(owner)["version"] ?: "unknown"
-    override fun isAtLeastVersion(minimumVersion: String): Boolean {
-        fun parts(value: String) = value.removePrefix("v").substringBefore('-').split('.')
-            .take(3).map { it.toIntOrNull() ?: 0 }.let { it + List(3 - it.size) { 0 } }
-        val installed = parts(version)
-        val required = parts(minimumVersion)
-        return installed.zip(required).firstOrNull { it.first != it.second }
-            ?.let { it.first > it.second } ?: true
-    }
+    override fun isAtLeastVersion(minimumVersion: String): Boolean =
+        SemanticVersion.tryParse(version)?.isAtLeast(minimumVersion) ?: false
 
     private val closedFlag = AtomicBoolean(false)
     override val isClosed: Boolean get() = closedFlag.get()
