@@ -1,0 +1,5 @@
+name: pnLibrary
+version: '${version}'
+main: ru.privatenull.pnlibrary.bungee.PnLibraryBungeePlugin
+author: pnFolder
+description: Shared runtime and diagnostics for pnFolder plugins

@@ -1,307 +1,394 @@
 # pnLibrary
 
-Общая встраиваемая библиотека для плагинов экосистемы PrivateNull.
+`pnLibrary` — единый runtime и API для плагинов pnFolder. Владелец сервера устанавливает один JAR для своей платформы, а pnMarket, pnClans и другие плагины подключаются к общему экземпляру библиотеки.
 
-## Требования и сборка
+В pnLibrary находятся:
 
-- JDK 17 или новее;
-- Paper/Purpur 1.16.5–1.21.11 для Bukkit/Paper-модулей;
-- BungeeCord API 1.21 или Velocity API 3.3 для соответствующего модуля метрик.
+- единая команда `/pndebug`;
+- сбор и шифрование диагностических отчётов;
+- регистрация состояний, предупреждений и ошибок других плагинов;
+- безопасный сбор разрешённых конфигураций;
+- единое красивое логирование и MBox;
+- собственный Kotlin API метрик поверх официальных классов bStats;
+- адаптеры Bukkit/Paper/Leaf/Folia, BungeeCord и Velocity.
 
-Проект собирается включённым Gradle Wrapper, поэтому отдельная установка Gradle
-не нужна. На Windows запустите `gradlew.bat clean test jar`, на Linux/macOS —
-`./gradlew clean test jar`. Готовый JAR появится в `build/libs`.
+## Как это устроено
 
-Сейчас предоставляет:
+```text
+Сервер или прокси
+├── pnLibrary-<platform>.jar     один общий runtime
+├── pnMarket.jar ───────────────┐
+├── pnClans.jar ────────────────┼── pnlibrary-api (compileOnly)
+└── другие pnFolder-плагины ────┘
+```
 
-- единый banner включения и выключения;
-- единый bStats lifecycle для Bukkit/Paper, BungeeCord и Velocity;
-- асинхронную проверку обновлений через GitHub;
-- единое уведомление об обновлении в консоли и для персонала с заданным permission;
-- кликабельные ссылки, title и звук для уведомлений об обновлении;
-- единый парсер MiniMessage, обычных `&`/`§`-цветов, RGB и RGBA;
-- единый публичный маршрутизатор SQLite, MySQL, MongoDB и Redis;
-- HikariCP-пул для JDBC и версионные миграции схемы;
-- один управляемый пул/клиент на плагин и безопасное закрытие всех ресурсов;
-- сравнение версий;
-- публичную локализацию предметов, блоков, чар и зелий Minecraft на русском и английском;
-- общую абстракцию экономики для Vault и PlayerPoints;
-- анимацию открытия GUI: предметы и заголовок появляются постепенно.
+Каждый процесс имеет собственный runtime. Если сеть состоит из Velocity и трёх Paper-серверов, pnLibrary устанавливается на прокси и на каждый Paper-сервер. Внутри одного процесса регистрируется только одна команда `/pndebug`.
 
-## Единый lifecycle плагина
+## Модули
 
-`PluginRuntime` объединяет bStats, базовую инфраструктуру, lifecycle-баннер и
-новую систему обновлений. Вся конфигурация задаётся явно через один
-`PluginBanner.Identity`: библиотека не читает `website`, `bstats-id` или
-permissions из `plugin.yml` и не подставляет скрытые значения.
+| Модуль | Назначение | JVM target |
+|---|---|---:|
+| `pnlibrary-api` | Публичные интерфейсы для pnFolder-плагинов | 8 |
+| `pnlibrary-core` | Диагностика, шифрование, отчёты, logging и lifecycle | 8 |
+| `pnlibrary-bstats-base` | Неизменённые общие классы официального bStats | 8 |
+| `pnlibrary-bukkit` | Bukkit, Spigot, Paper, Purpur, Leaf и Folia | 8 |
+| `pnlibrary-bungee` | BungeeCord и совместимые прокси | 8 |
+| `pnlibrary-velocity` | Velocity | 17 |
+| `pnlibrary-distribution` | Сборка готовых платформенных JAR | — |
 
-GitHub и bStats опциональны. Если не вызвать `github(...)` или `bStats(...)`,
-runtime продолжит запуск и покажет для соответствующего модуля статус `SKIP`.
+Проект собирается на JDK 26. Bukkit и BungeeCord получают байткод Java 8; Velocity — Java 17.
 
-```java
-private PluginRuntime pnRuntime;
+## Установка
 
-@Override
-public void onEnable() {
-    PluginBanner.Identity identity = new PluginBanner.Identity(this, "PnFolder")
-            .github("owner", "repository")
-            .bStats(12345)
-            .autoDownloadUpdates(true)
-            .notifyAdministrators(true)
-            .notificationPermission("myplugin.admin")
-            .notifyOnlineAdministrators(true)
-            .notifyAdministratorsOnJoin(true)
-            .supportUrl("https://example.com/support");
+Сборка:
 
-    pnRuntime = PluginRuntime.start(identity)
-            .simplePie("database_type", () -> database.type().name());
+```text
+gradlew.bat clean test :pnlibrary-distribution:build
+```
+
+Готовые файлы находятся в `pnlibrary-distribution/build/libs`:
+
+- `pnLibrary-bukkit-2.0.0-beta.1.jar`;
+- `pnLibrary-bungee-2.0.0-beta.1.jar`;
+- `pnLibrary-velocity-2.0.0-beta.1.jar`.
+
+Положите один подходящий JAR в папку `plugins` и полностью перезапустите сервер.
+
+## Подключение API
+
+Сначала можно опубликовать API в локальный Maven-кэш:
+
+```text
+gradlew.bat :pnlibrary-api:publishToMavenLocal
+```
+
+В плагине:
+
+```kotlin
+repositories {
+    mavenLocal()
 }
 
-@Override
-public void onDisable() {
-    if (pnRuntime != null) pnRuntime.close();
+dependencies {
+    compileOnly("ru.privatenull:pnlibrary-api:2.0.0-beta.1")
 }
 ```
 
-В `plugin.yml` остаётся только само объявление permission с нужным `default`.
-GitHub, bStats ID, permission уведомлений, ссылка поддержки, интервалы и режим
-автоскачивания принадлежат `Identity`.
+API нельзя встраивать через `implementation`, Shadow или relocation: его предоставляет установленная pnLibrary.
 
-При включённом `autoDownloadUpdates` новый JAR скачивается в `plugins/update`
-под именем работающего плагина. Перед сохранением проверяются ограничение
-размера, структура JAR и наличие `plugin.yml`/`paper-plugin.yml`. Bukkit/Paper
-заменяет старый JAR подготовленным при следующем **полном перезапуске** сервера;
-`/reload` для применения обновления использовать не следует.
+Bukkit/Paper, `plugin.yml`:
 
-Администратор с выбранным permission получает кликабельное уведомление сразу,
-если он онлайн, либо при следующем входе. Для каждой новой версии уведомление
-отправляется один раз. Фактическое право можно посмотреть через
-`pnRuntime.updates().notificationPermission()`.
-
-## Метрики на трёх платформах
-
-`PluginMetrics` выбирает корректную реализацию bStats фабричным методом. В API
-нет локального флага `enabled`, поэтому конфигурация самого плагина не может
-случайно выключить сбор. Штатный глобальный opt-out bStats при этом сохраняется.
-
-```java
-// Bukkit/Paper
-metrics = PluginMetrics.bukkit(this, 12345);
-
-// BungeeCord
-metrics = PluginMetrics.bungeeCord(this, 12345);
-
-// Velocity: Metrics.Factory внедряется самой Velocity
-metrics = PluginMetrics.velocity(this, metricsFactory, 12345);
-
-metrics.simplePie("mode", () -> "production");
+```yaml
+depend: [pnLibrary]
 ```
 
-Во всех трёх случаях владелец плагина вручную вызывает
-`metrics.close()` в `onDisable()` или обработчике `ProxyShutdownEvent`.
-Повторное закрытие безопасно. Оно останавливает внутренний планировщик bStats;
-никакой автоматический hook выключения библиотека не регистрирует.
+BungeeCord, `bungee.yml`:
 
-Полные русские примеры находятся в JavaDoc пакета
-`ru.privatenull.pnlibrary.metrics`.
-
-## Единый логгер и MBox
-
-После запуска логгер сразу доступен через `runtime.log()`. До создания runtime
-его можно получить через `identity.log()`.
-
-```java
-runtime = PluginRuntime.start(identity, startup -> startup
-        .ok("Конфигурация", "Файл загружен")
-        .ok("Команды", "Зарегистрировано: 5")
-        .skip("Vault", "Плагин не установлен"));
-
-runtime.log().info("Загрузка данных");
-runtime.log().success("Данные загружены");
-runtime.log().warn("Vault не найден");
-runtime.log().error("Ошибка базы данных", exception); // плюс полный stack trace
-
-runtime.mBox("Инициализация модулей")
-        .ok("Конфигурация", "Файл загружен")
-        .ok("Команды", "Зарегистрировано: 5")
-        .skip("Discord", "Интеграция отключена")
-        .fail("База данных", exception)
-        .show();
+```yaml
+depends: [pnLibrary]
 ```
 
-`MBox` сохраняет порядок строк и сам вычисляет итоговое состояние. Исключение,
-переданное в `fail`, выводится понятной строкой в блоке и полным stack trace в
-штатном серверном логе.
+Velocity:
 
-## Экономика
-
-`EconomyService` даёт одинаковый публичный интерфейс для Vault и PlayerPoints.
-Интеграции опциональны: если нужного плагина или Vault-провайдера нет, объект
-валюты остаётся безопасным, а `available()` возвращает `false`.
-
-```java
-import ru.privatenull.pnlibrary.economy.EconomyService;
-
-private EconomyService economies;
-
-@Override
-public void onEnable() {
-    economies = EconomyService.create(this);
-}
-
-public boolean buy(Player player, double price) {
-    EconomyService.Currency money = economies.vault();
-    return money.available()
-            && money.has(player, price)
-            && money.withdraw(player, price);
-}
-
-public boolean givePoints(Player player, int amount) {
-    return economies.playerPoints().deposit(player, amount);
-}
+```kotlin
+@Plugin(
+    id = "pnmarket",
+    name = "pnMarket",
+    version = "1.0.5",
+    dependencies = [Dependency(id = "pnlibrary")]
+)
+class PnMarketPlugin
 ```
 
-Обе валюты поддерживают `balance`, `has`, `withdraw`, `deposit` и `format`.
-Также доступен поиск через `economies.find("vault")` или
-`economies.find("points")`. PlayerPoints принимает только целые положительные
-значения, Vault — положительные конечные `double`.
+## Получение pnLibrary
 
-## Маршрутизатор баз данных
+Bukkit:
 
-`DatabaseRouter` — общедоступная точка подключения для любого плагина. На один
-экземпляр плагина создаётся один router: он открывает только выбранный backend,
-владеет единственным HikariCP-пулом, `MongoClient` или `JedisPooled` и закрывается
-в `onDisable`. Репозитории не создают собственные подключения.
+```kotlin
+val pn = server.servicesManager.load(PnLibrary::class.java)
+    ?: error("pnLibrary не загрузилась")
+```
 
-```java
-import ru.privatenull.pnlibrary.database.DatabaseRouter;
+BungeeCord и Velocity:
 
-public final class ExamplePlugin extends JavaPlugin {
-    private DatabaseRouter databases;
+```kotlin
+val pn = PnLibraryProvider.get()
+```
 
-    @Override
-    public void onEnable() {
-        databases = DatabaseRouter.from(
-                getConfig().getConfigurationSection("storage"), getDataFolder());
+Для необязательной интеграции доступен `PnLibraryProvider.getOrNull()`.
 
-        UserRepository users = databases.route(
-                jdbc -> new JdbcUserRepository(jdbc),
-                mongo -> new MongoUserRepository(mongo.collection("users")),
-                redis -> new RedisUserRepository(redis.client(), redis.key("users"))
-        );
+## Логирование и MBox
+
+```kotlin
+val log = pn.logging.logger(this, "pnMarket")
+
+log.info("Загрузка аукциона")
+log.success("Аукцион загружен")
+log.warning("Vault не найден")
+log.error("Не удалось подключиться к базе", exception)
+```
+
+Красивый блок запуска:
+
+```kotlin
+pn.logging.box(this, "pnMarket 1.0.5")
+    .ok("Конфигурация", "загружена")
+    .ok("Команды", "зарегистрированы")
+    .skip("PlaceholderAPI", "не установлен")
+    .fail("Database", "подключение не установлено", exception)
+    .show()
+```
+
+MBox работает на всех платформах:
+
+- Bukkit/Paper/Leaf/Folia — через logger Bukkit-плагина;
+- BungeeCord — через logger Bungee-плагина;
+- Velocity — через штатный SLF4J logger.
+
+## Метрики
+
+Плагин передаёт собственный project ID со страницы bStats:
+
+```kotlin
+private var metrics: PluginMetrics? = null
+
+metrics = pn.metrics.open(this, projectId = 12345)
+    .simplePie("storage_type") { database.type }
+    .singleLineChart("active_lots") { auction.activeLots }
+    .advancedPie("features") {
+        mapOf("delivery" to 1, "favorites" to 1)
     }
+```
 
-    @Override
-    public void onDisable() {
-        if (databases != null) databases.close();
-    }
+Поддерживаются `SimplePie`, `AdvancedPie`, `DrilldownPie`, `SingleLineChart`, `MultiLineChart`, `SimpleBarChart` и `AdvancedBarChart`.
+
+В конфигурации pnFolder-плагина нет локального параметра `metrics.enabled`: указание положительного project ID запускает сессию. Официальный глобальный opt-out bStats сохраняется согласно требованиям сервиса.
+
+Наш публичный API написан на Kotlin. Официальные Java-классы bStats хранятся внутри проекта без функциональных изменений и при сборке переносятся в `ru.privatenull.pnlibrary.libs.bstats`.
+
+## Диагностика
+
+## Кроссплатформенные задачи
+
+Каждый плагин получает собственный scope. Таймер работает внутри pnLibrary, а
+само действие передаётся правильному планировщику платформы: глобальному или
+entity scheduler на Folia, основному потоку Bukkit/Paper либо планировщику
+прокси. На Bukkit scope автоматически закрывается при `PluginDisableEvent`.
+
+```kotlin
+private val tasks = pn.tasks.scope(this)
+
+tasks.global(Runnable { reloadMenus() })
+tasks.async(Runnable { database.cleanup() })
+tasks.entity(player, Runnable { player.openInventory(menu) })
+tasks.later(Duration.ofSeconds(5), Runnable { refreshCache() })
+tasks.repeat(Duration.ZERO, Duration.ofMinutes(1), Runnable { refreshCache() })
+tasks.repeatEntity(player, Duration.ZERO, Duration.ofSeconds(1), Runnable { updateHud(player) })
+
+tasks.asyncThen(
+    Supplier { repository.load() },
+    Consumer { result -> applyOnServerThread(result) },
+    Consumer { error -> report(error) },
+)
+
+override fun onDisable() {
+    tasks.close()
 }
 ```
 
-```yml
-storage:
-  type: sqlite # sqlite, mysql, mongodb или redis
-  sqlite:
-    file: data.db
-    connection-timeout-ms: 10000
-  mysql:
-    url: "" # либо jdbc:mysql://host:3306/database
-    host: localhost
-    port: 3306
-    database: plugin
-    username: root
-    password: ""
-    pool-size: 10
-  mongodb:
-    uri: mongodb://localhost:27017
-    database: plugin
-    collection: data
-  redis:
-    uri: redis://localhost:6379/0
-    namespace: plugin
+`TaskHandle.cancel()` останавливает отдельную задачу, `TaskScope.cancelAll()` —
+все задачи плагина. Ошибка одного callback перехватывается, журналируется с
+владельцем и не останавливает остальные повторяющиеся задачи.
+
+## Инвентари Bukkit, Paper и Folia
+
+pnLibrary регистрирует один общий обработчик инвентарей. Каждый открытый GUI имеет
+закрытый `InventoryHolder` с уникальным идентификатором сессии: заголовок меню не
+используется для определения GUI. Плагины получают сервис
+через `PnMenus.get()`, а владельца передают при открытии. Поддерживаются сундук,
+наковальня, воронка, раздатчик, выбрасыватель и верстак. Реализация собрана против
+Spigot 1.8.8, не использует NMS и работает на новых Paper/Folia через тот же JAR.
+
+```kotlin
+private val menus by lazy { PnMenus.get() }
+
+val menu = Menus.chest("Кланы")
+    .rows(3)
+    .border(glass)
+    .button(13, clanIcon, MenuClickHandler { click ->
+        click.player.sendMessage("Открываем клан")
+        click.close()
+    })
+    .onClose(MenuCloseHandler { close -> saveDraft(close.session.player) })
+    .build()
+
+menus.open(this, player, menu)
 ```
 
-SQLite принудительно использует пул размером `1`; поэтому JDBC-репозитории должны
-брать connection на время одной операции через `jdbc.connection()` и сразу
-возвращать его через try-with-resources. Для MongoDB используйте
-`mongo.collection(suffix)`, для Redis — `redis.key(suffix)`: namespace будет
-добавлен библиотекой без копирования этой логики по плагинам.
+Динамическое содержимое задаётся через `render`: оно вызывается при открытии и
+после `session.refresh()`. `refreshAfter(Duration)` выполняется через общий
+планировщик pnLibrary и поэтому безопасен для Folia.
 
-## Локализация предметов
-
-pnLibrary содержит официальные таблицы `ru_ru` и `en_us` из Minecraft 1.21.11.
-Сервис работает со всеми `Material`, доступными на запущенной версии Paper, и
-предоставляет стабильные ключи для обычных предметов и вариантов зелий.
-
-```java
-import ru.privatenull.pnlibrary.localization.ItemLocalization;
-import ru.privatenull.pnlibrary.localization.MinecraftLocale;
-
-ItemLocalization items = ItemLocalization.load(MinecraftLocale.RU_RU);
-
-String stone = items.getMaterialName(Material.STONE); // Камень
-String displayName = items.getPlainName(itemStack);
-Material material = items.matchMaterial("алмазный меч");
-Map<Material, String> allRussianMaterials = items.materialNames();
+```kotlin
+val anvil = Menus.anvil("Название клана")
+    .editable(0, paperWithCurrentName)
+    .button(2, confirmItem, MenuClickHandler { click ->
+        renameClan(click.player, click.renameText.orEmpty())
+        click.close()
+    })
+    .build()
 ```
 
-Для английского языка используйте `MinecraftLocale.EN_US` или
-`ItemLocalization.load("en_us")`. Экземпляр неизменяемый, поэтому его можно
-создать при запуске плагина и безопасно переиспользовать до перезагрузки конфигурации.
-Загруженные таблицы кэшируются по локали и не требуют повторного чтения ресурсов
-при повторном включении плагина.
+По умолчанию запрещены клики, shift-click и drag, способные переносить предметы
+в защищённые слоты. Разрешить ввод можно только для нужного слота через
+`editable(slot)`. При выключении плагина все принадлежащие ему меню закрываются и
+удаляются из памяти. Обработчики представлены SAM-интерфейсами, поэтому Kotlin
+лямбды не создают зависимости от конкретного экземпляра Kotlin runtime.
 
-## Предметы и визуальные сущности
+## Версия Minecraft
 
-`ItemFactory` читает предметы из Bukkit `ConfigurationSection` или `Map`,
-сохраняет точный `ItemStack`, применяет имя, lore, чары и Base64-головы.
-`HeadUtil.normalizeTexture(...)` является общей точкой проверки Base64, ссылки
-`textures.minecraft.net` и хеша текстуры. `VisualEntity` предоставляет общий
-armor-stand fallback для предмета, блока и текста на старых версиях сервера.
+В Bukkit-модуле есть единый `MinecraftVersion` со всеми известными версиями от
+1.8 до 26.2. Он читает нативный `getMinecraftVersion()` новых ядер, а на старых
+использует `Bukkit.getBukkitVersion()`. Незнакомый будущий релиз безопасно
+возвращает `UNKNOWN`, при этом исходная строка доступна через `rawCurrent()`.
 
-## Анимация GUI
+```kotlin
+val version = MinecraftVersion.current()
 
-```java
-import ru.privatenull.pnlibrary.gui.GuiOpenAnimationService;
-import ru.privatenull.pnlibrary.gui.GuiAnimationType;
-import ru.privatenull.pnlibrary.gui.GuiAnimationProfile;
+if (version.isAtLeast(MinecraftVersion.V1_20_5)) enableDataComponents()
+if (version.isBetween(MinecraftVersion.V1_8_8, MinecraftVersion.V1_12_2)) {
+    enableLegacyInventoryAdapter()
+}
 
-GuiOpenAnimationService guiAnimations = new GuiOpenAnimationService(this);
-guiAnimations.open(player, inventory);
-
-GuiAnimationProfile profile = new GuiAnimationProfile(
-        GuiAnimationType.CENTER_OUT,
-        GuiAnimationType.RIGHT_TO_LEFT, List.of(0, 3, 9, 12),
-        GuiAnimationType.LEFT_TO_RIGHT, List.of(5, 8, 14, 17),
-        GuiAnimationType.CENTER_OUT);
-guiAnimations.open(player, nextInventory, true, profile, clickedSlot);
-
-// При выключении плагина:
-guiAnimations.shutdown();
+logger.info("Minecraft: ${version.text}; raw=${MinecraftVersion.rawCurrent()}")
 ```
 
-Сервис не зависит от pnCases: передайте свой `Plugin`, игрока и уже заполненный
-`Inventory`. Доступны `CENTER_OUT`, `LEFT_TO_RIGHT`,
-`RIGHT_TO_LEFT`, `TOP_TO_BOTTOM`, `BOTTOM_TO_TOP`, `DIAGONAL_DOWN`,
-`DIAGONAL_UP` и `NONE`. `GuiAnimationProfile` связывает эффекты с произвольными
-группами слотов левого и правого отсеков; номера слотов библиотека не навязывает.
-На поддерживаемых версиях Minecraft также анимируется заголовок окна. Цвета
-`&`, `§`, `&#RRGGBB`, `&#RRGGBBAA` и `§x§R§R§G§G§B§B` сохраняются при
-ProtocolLib-обновлении заголовка. Minecraft не отображает прозрачность текста,
-поэтому в RGBA alpha поглощается, а видимый цвет определяется RGB-компонентом.
+Те же значения кэшируются в `ServerCapabilities.minecraftVersion` и
+`ServerCapabilities.rawMinecraftVersion`.
 
-## Обновление открытого GUI
+Полное описание сравнений, открытых и закрытых диапазонов находится в
+[docs/MINECRAFT_VERSIONS_RU.md](docs/MINECRAFT_VERSIONS_RU.md).
 
-```java
-import ru.privatenull.pnlibrary.gui.GuiUpdateService;
+## Code-first конфигурации
 
-GuiUpdateService guiUpdates = new GuiUpdateService();
-guiUpdates.setTopSlot(player, 13, item);
+`CodeFirstYaml<T>` автоматически добавляет новые поля типизированной модели в
+старый YAML, включая вложенные секции и комментарии. Пользовательские значения,
+неизвестные ключи и существующие комментарии сохраняются. Изменённый файл
+проходит декодирование и проверку до атомарной записи; перед синхронизацией
+создаётся резервная копия.
+
+Полное подключение Kaml, валидация, сохранение и Java-пример описаны в
+[docs/CONFIGURATION_RU.md](docs/CONFIGURATION_RU.md).
+
+## Обновления
+
+При первом запуске создаётся `plugins/pnLibrary/updates.yml`:
+
+```yaml
+# stable — только стабильные релизы (рекомендуется).
+# beta   — стабильные и beta-релизы.
+# alpha  — все релизы, включая экспериментальные alpha.
+# Автоматическую загрузку можно отключить; проверка и уведомления останутся активными.
+channel: stable
+auto-download: true
 ```
 
-Обновляется только указанный слот открытого меню, без переоткрытия и мигания.
-Сервис использует Bukkit-отправку корректного контейнерного пакета, поэтому
-безопасно работает и на серверах с ProtocolLib.
+pnLibrary проверяет релизы `pnFolder/pnLibrary` при запуске и каждые 30 минут,
+выбирает JAR текущей платформы, ограничивает загрузку размером 512 МБ, сверяет
+SHA-256, проверяет дескриптор плагина и помещает
+обновление в каталог `plugins/update`. Обновление применяется после перезапуска.
+Одинаковое найденное обновление проверяется по расписанию, но повторное сообщение
+о нём выводится не чаще одного раза в 6 часов. Смена состояния, например успешная
+ручная загрузка, показывается сразу.
+При `auto-download: false` библиотека продолжает проверять релизы, уведомлять
+консоль и администраторов, а ручная загрузка остаётся доступна через `/pn update`.
+На Bukkit/Paper/Folia `/pn restart` показывает число игроков и требует отдельное
+подтверждение в течение 30 секунд; только после него выполняется перезапуск.
 
-`pnLibrary` должна попадать внутрь JAR плагина через Shadow с relocation. Отдельный
-`pnLibrary.jar` на Minecraft-сервер устанавливать не требуется.
+```kotlin
+private var diagnostics: DiagnosticRegistration? = null
+
+diagnostics = pn.diagnostics.register(
+    plugin = name,
+    dataDirectory = dataFolder.toPath(),
+    contributor = DiagnosticContainer.builder("auction")
+        .snapshot(Supplier {
+            mapOf(
+                "activeLots" to auction.activeLots,
+                "cacheSize" to auction.cacheSize,
+                "databaseConnected" to database.isConnected
+            )
+        })
+        .configuration(DiagnosticConfiguration.file("config.yml")
+            .exclude("storage.internalPool")
+            .secretKeyRegex("(?i).*(password|token|secret|webhook).*")
+            .redactValueRegex("license-[A-Za-z0-9-]+")
+            .build())
+        .configuration("messages.yml")
+        .configuration("gui.yml")
+        .build()
+)
+```
+
+`snapshot` должен быстро читать готовое состояние из памяти и не выполнять сетевые или блокирующие запросы.
+
+Состояние компонента:
+
+```kotlin
+pn.diagnostics.status(
+    plugin = name,
+    component = "database",
+    state = "CONNECTED",
+    detail = "MySQL pool готов",
+    fields = mapOf("poolSize" to database.poolSize)
+)
+```
+
+Ошибка:
+
+```kotlin
+pn.diagnostics.record(
+    plugin = name,
+    level = DiagnosticLevel.ERROR,
+    component = "auction",
+    code = "LOTS_LOAD_FAILED",
+    message = "Не удалось загрузить лоты",
+    error = exception,
+    fields = mapOf("storage" to database.type)
+)
+```
+
+При выключении:
+
+```kotlin
+override fun onDisable() {
+    diagnostics?.close()
+    metrics?.close()
+}
+```
+
+## Команда
+
+```text
+/pndebug all
+/pndebug pnMarket
+/pndebug pnMarket --config
+/pndebug all --full
+/pndebug all --local
+```
+
+Право: `pnlibrary.debug`.
+
+Отчёт содержит сведения о JVM, операционной системе, памяти, потоках, платформе, установленных плагинах и зарегистрированных контейнерах. Конфигурации читаются только из переданной папки плагина. Выход за неё и симлинки блокируются. Секреты удаляются перед шифрованием.
+
+По умолчанию локальный файл имеет расширение `.pndebug`, а загрузка отправляет только зашифрованный конверт. Приватный ключ в серверные JAR не входит.
+
+## Правильный lifecycle
+
+1. Установите pnLibrary и объявите зависимость.
+2. Получите общий `PnLibrary` при включении плагина.
+3. Создайте MBox, метрики и диагностическую регистрацию.
+4. Сохраните `PluginMetrics` и `DiagnosticRegistration`.
+5. Закройте их при выключении плагина.
+
+Расширенный пример находится в [INTEGRATION.md](INTEGRATION.md).

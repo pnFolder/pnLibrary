@@ -1,0 +1,70 @@
+package ru.privatenull.pnlibrary.bukkit.compat
+
+import org.bukkit.Bukkit
+
+/**
+ * Safe runtime capability and version detection without triggering NoClassDefFoundError.
+ */
+object ServerCapabilities {
+
+    /**
+     * Определённая версия Minecraft в виде [MinecraftVersion].
+     * Значение вычисляется один раз и затем кэшируется до остановки сервера.
+     */
+    val minecraftVersion: MinecraftVersion by lazy { MinecraftVersion.current() }
+
+    /**
+     * Исходная строка версии Minecraft от ядра. Полезна для диагностики, когда
+     * [minecraftVersion] равна [MinecraftVersion.UNKNOWN].
+     */
+    val rawMinecraftVersion: String by lazy { MinecraftVersion.rawCurrent() }
+
+    val isPaper: Boolean by lazy {
+        hasClass("io.papermc.paper.configuration.Configuration") ||
+        hasClass("com.destroystokyo.paper.PaperConfig")
+    }
+
+    val isFolia: Boolean by lazy {
+        hasClass("io.papermc.paper.threadedregions.RegionizedServer")
+    }
+
+    val isPurpur: Boolean by lazy {
+        hasClass("org.purpurmc.purpur.PurpurConfig")
+    }
+
+    val isLeaf: Boolean by lazy {
+        hasClass("org.leaf.LeafConfig") || hasClass("cn.dreeam.leaf.LeafConfig")
+    }
+
+    val hasTPS: Boolean by lazy {
+        hasMethod(Bukkit.getServer().javaClass, "getTPS")
+    }
+
+    fun getTPS(): DoubleArray? {
+        if (!hasTPS) return null
+        return try {
+            val method = Bukkit.getServer().javaClass.getMethod("getTPS")
+            method.invoke(Bukkit.getServer()) as DoubleArray
+        } catch (_: Exception) {
+            null
+        }
+    }
+
+    fun hasClass(className: String): Boolean {
+        return try {
+            Class.forName(className)
+            true
+        } catch (_: Throwable) {
+            false
+        }
+    }
+
+    fun hasMethod(clazz: Class<*>, methodName: String, vararg paramTypes: Class<*>): Boolean {
+        return try {
+            clazz.getMethod(methodName, *paramTypes)
+            true
+        } catch (_: Throwable) {
+            false
+        }
+    }
+}

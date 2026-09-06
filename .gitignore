@@ -6,3 +6,4 @@ bin/
 *.iml
 out/
 *.log
+/pnlibrary-core/plugins/

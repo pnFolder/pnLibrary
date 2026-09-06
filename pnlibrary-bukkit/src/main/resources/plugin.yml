@@ -1,0 +1,23 @@
+name: pnLibrary
+version: '${version}'
+main: ru.privatenull.pnlibrary.bukkit.PnLibraryBukkitPlugin
+author: pnFolder
+description: Shared runtime and diagnostics for pnFolder plugins
+load: STARTUP
+commands:
+  pn:
+    description: Управление плагинами pnFolder
+    usage: /pn [status|updates|check|update|restart|debug|support]
+    permission: pnlibrary.admin
+  pndebug:
+    description: Creates an encrypted pnLibrary diagnostic report
+    usage: /pndebug [all|plugin] [--full|--config|--logs] [--local]
+    aliases: [pnlib]
+    permission: pnlibrary.debug
+permissions:
+  pnlibrary.admin:
+    description: Управление pnLibrary и обновлениями pnFolder
+    default: op
+  pnlibrary.debug:
+    description: Allows creating encrypted pnLibrary diagnostic reports
+    default: op
