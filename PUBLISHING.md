@@ -5,13 +5,13 @@ Only `pnlibrary-api` is published as a developer dependency. Platform runtime JA
 Published coordinates:
 
 ```text
-io.github.overdyn:pnlibrary-api:<version>
+io.github.pnfolder:pnlibrary-api:<version>
 ```
 
 ## One-time Maven Central setup
 
-1. Sign in to https://central.sonatype.com with the GitHub account `overdyn`.
-2. Verify that the namespace `io.github.overdyn` is present and verified.
+1. Sign in to https://central.sonatype.com using the account that can manage the pnFolder organization namespace.
+2. Verify that the namespace `io.github.pnfolder` is present and verified for Org: `Pnfolder`.
 3. In Central Portal -> Account, generate a **User Token**. Save its generated username and password.
 4. Create a GPG key if you do not already have one:
 
@@ -117,7 +117,7 @@ repositories {
 }
 
 dependencies {
-    compileOnly("io.github.overdyn:pnlibrary-api:2.0.0-beta.4")
+    compileOnly("io.github.pnfolder:pnlibrary-api:2.0.0-beta.4")
 }
 ```
 
