@@ -8,7 +8,7 @@ plugins {
 }
 
 // ── Shared version catalogue ─────────────────────────────────────────────────
-val pnVersion = "2.0.0-beta.1"
+val pnVersion = "2.0.0-beta.2"
 
 // ── Convention for every subproject ─────────────────────────────────────────
 subprojects {

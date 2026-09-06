@@ -16,7 +16,7 @@ import ru.privatenull.pnlibrary.core.MandatoryUpdateService
 import java.nio.file.Paths
 import java.nio.file.Path
 
-@Plugin(id = "pnlibrary", name = "pnLibrary", version = "2.0.0-beta.1", authors = ["pnFolder"])
+@Plugin(id = "pnlibrary", name = "pnLibrary", version = "2.0.0-beta.2", authors = ["pnFolder"])
 class PnLibraryVelocityPlugin @Inject constructor(
     private val server: ProxyServer,
     private val logger: Logger,
@@ -31,7 +31,7 @@ class PnLibraryVelocityPlugin @Inject constructor(
         val loaded = PnLibraryBootstrap.bootstrap(this, adapter)
         adapter.attachLibrary(loaded as PnLibraryImpl)
         runtime = loaded
-        MandatoryUpdateService.start(this, adapter, "2.0.0-beta.1", "velocity",
+        MandatoryUpdateService.start(this, adapter, "2.0.0-beta.2", "velocity",
             Paths.get(javaClass.protectionDomain.codeSource.location.toURI()),
             dataDirectory.parent.resolve("update"))
         logger.info("pnLibrary enabled (velocity)")
