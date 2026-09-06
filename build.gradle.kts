@@ -12,7 +12,7 @@ val pnVersion = "2.0.0-beta.4"
 
 // ── Convention for every subproject ─────────────────────────────────────────
 subprojects {
-    group   = "ru.privatenull"
+    group   = "io.github.pnfolder"
     version = pnVersion
 
     repositories {
