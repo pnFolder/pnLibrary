@@ -4,16 +4,7 @@ import org.jetbrains.kotlin.gradle.dsl.JvmTarget
 plugins {
     alias(libs.plugins.kotlin.jvm)
     `java-library`
-    `maven-publish`
-}
-
-publishing {
-    publications {
-        create<MavenPublication>("api") {
-            from(components["java"])
-            artifactId = "pnlibrary-api"
-        }
-    }
+    alias(libs.plugins.maven.publish)
 }
 
 base { archivesName = "pnLibrary-api" }
@@ -34,8 +25,51 @@ dependencies {
 }
 
 java {
-    withSourcesJar()
-    withJavadocJar()
     sourceCompatibility = JavaVersion.VERSION_1_8
     targetCompatibility = JavaVersion.VERSION_1_8
+}
+
+// Public developer dependency. Runtime/platform JARs continue to be distributed
+// through GitHub Releases and are intentionally not published to Maven Central.
+mavenPublishing {
+    publishToMavenCentral()
+    signAllPublications()
+
+    coordinates(
+        groupId = "io.github.overdyn",
+        artifactId = "pnlibrary-api",
+        version = project.version.toString()
+    )
+
+    pom {
+        name.set("pnLibrary API")
+        description.set("Public API for integrating Minecraft plugins with pnLibrary.")
+        inceptionYear.set("2026")
+        url.set("https://github.com/pnFolder/pnLibrary")
+
+        licenses {
+            license {
+                // Maven Central requires explicit license metadata. These values are
+                // supplied as Gradle properties/CI variables so no license is silently
+                // chosen on behalf of the project owner.
+                name.set(providers.gradleProperty("POM_LICENSE_NAME"))
+                url.set(providers.gradleProperty("POM_LICENSE_URL"))
+                distribution.set(providers.gradleProperty("POM_LICENSE_DIST").orElse("repo"))
+            }
+        }
+
+        developers {
+            developer {
+                id.set("overdyn")
+                name.set("overdyn")
+                url.set("https://github.com/overdyn")
+            }
+        }
+
+        scm {
+            url.set("https://github.com/pnFolder/pnLibrary")
+            connection.set("scm:git:git://github.com/pnFolder/pnLibrary.git")
+            developerConnection.set("scm:git:ssh://git@github.com/pnFolder/pnLibrary.git")
+        }
+    }
 }
