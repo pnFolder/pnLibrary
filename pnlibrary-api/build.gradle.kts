@@ -36,7 +36,7 @@ mavenPublishing {
     signAllPublications()
 
     coordinates(
-        groupId = "io.github.overdyn",
+        groupId = "io.github.pnfolder",
         artifactId = "pnlibrary-api",
         version = project.version.toString()
     )
@@ -60,9 +60,9 @@ mavenPublishing {
 
         developers {
             developer {
-                id.set("overdyn")
-                name.set("overdyn")
-                url.set("https://github.com/overdyn")
+                id.set("pnFolder")
+                name.set("pnFolder")
+                url.set("https://github.com/pnFolder")
             }
         }
 
