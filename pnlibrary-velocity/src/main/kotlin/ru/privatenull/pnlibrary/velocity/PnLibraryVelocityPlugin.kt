@@ -9,12 +9,7 @@ import com.velocitypowered.api.plugin.annotation.DataDirectory
 import com.velocitypowered.api.proxy.ProxyServer
 import org.bstats.velocity.Metrics
 import org.slf4j.Logger
-import ru.privatenull.pnlibrary.api.runtime.PnLibrary
-import ru.privatenull.pnlibrary.core.runtime.PnLibraryBootstrap
-import ru.privatenull.pnlibrary.core.runtime.PnLibraryImpl
-import ru.privatenull.pnlibrary.core.runtime.PnLibraryConfigLoader
-import ru.privatenull.pnlibrary.core.updates.MandatoryUpdateService
-import java.nio.file.Paths
+import ru.privatenull.pnlibrary.core.runtime.PnLibraryRuntimeHost
 import java.nio.file.Path
 
 @Plugin(id = "pnlibrary", name = "pnLibrary", authors = ["pnFolder"])
@@ -24,28 +19,21 @@ class PnLibraryVelocityPlugin @Inject constructor(
     private val metricsFactory: Metrics.Factory,
     @DataDirectory private val dataDirectory: Path,
 ) {
-    private var runtime: PnLibrary? = null
-    private var updateMonitor: AutoCloseable? = null
+    private var runtimeHost: PnLibraryRuntimeHost? = null
 
     @Subscribe
     fun onInitialize(event: ProxyInitializeEvent) {
         val adapter = VelocityPlatformAdapter(this, server, VelocityMetricsFactory(metricsFactory), dataDirectory, logger)
-        val loaded = PnLibraryBootstrap.bootstrap(this, adapter, PnLibraryConfigLoader.load(dataDirectory))
-        adapter.attachLibrary(loaded as PnLibraryImpl)
-        runtime = loaded
-        val currentVersion = adapter.ownerDetails(this)["version"]
-            ?: error("Velocity did not expose the pnLibrary version")
-        updateMonitor = MandatoryUpdateService.start(this, adapter, currentVersion, "velocity",
-            Paths.get(javaClass.protectionDomain.codeSource.location.toURI()),
-            dataDirectory.parent.resolve("update"))
-        logger.info("pnLibrary enabled (velocity)")
+        runtimeHost = PnLibraryRuntimeHost.start(
+            this,
+            adapter,
+            dataDirectory.parent.resolve("update"),
+        )
     }
 
     @Subscribe
     fun onShutdown(event: ProxyShutdownEvent) {
-        runCatching { updateMonitor?.close() }
-        updateMonitor = null
-        runtime?.close()
-        runtime = null
+        runtimeHost?.close()
+        runtimeHost = null
     }
 }

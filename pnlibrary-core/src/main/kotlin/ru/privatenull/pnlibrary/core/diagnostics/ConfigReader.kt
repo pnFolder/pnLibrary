@@ -1,8 +1,5 @@
 package ru.privatenull.pnlibrary.core.diagnostics
 
-
-
-
 import com.google.gson.Gson
 import com.google.gson.JsonParser
 import org.yaml.snakeyaml.LoaderOptions

@@ -2,7 +2,6 @@ package ru.privatenull.pnlibrary.core.upload
 
 import ru.privatenull.pnlibrary.core.security.EncryptedEnvelopeCodec
 
-
 import com.google.gson.Gson
 import java.io.IOException
 import java.nio.charset.StandardCharsets

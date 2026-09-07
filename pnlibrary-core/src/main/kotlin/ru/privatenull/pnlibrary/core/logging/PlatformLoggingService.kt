@@ -1,12 +1,11 @@
 package ru.privatenull.pnlibrary.core.logging
 
-import ru.privatenull.pnlibrary.api.diagnostics.*
-import ru.privatenull.pnlibrary.api.logging.*
-import ru.privatenull.pnlibrary.api.metrics.*
-import ru.privatenull.pnlibrary.api.platform.*
-import ru.privatenull.pnlibrary.api.runtime.*
-import ru.privatenull.pnlibrary.api.tasks.*
-import ru.privatenull.pnlibrary.api.updates.*
+import ru.privatenull.pnlibrary.api.logging.LogLevel
+import ru.privatenull.pnlibrary.api.logging.LoggingService
+import ru.privatenull.pnlibrary.api.logging.MessageBox
+import ru.privatenull.pnlibrary.api.logging.PnLogger
+import ru.privatenull.pnlibrary.api.platform.PlatformAdapter
+import ru.privatenull.pnlibrary.api.runtime.PnLibraryBrand
 
 internal class PlatformLoggingService(
     private val platform: PlatformAdapter,

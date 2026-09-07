@@ -1,8 +1,5 @@
 package ru.privatenull.pnlibrary.core.upload
 
-
-
-
 import java.io.IOException
 
 /** Abstraction over a remote report backend (mclo.gs, encrypted storage, …). */

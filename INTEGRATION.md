@@ -8,12 +8,12 @@
 
 ```kotlin
 dependencies {
-    compileOnly("ru.privatenull:pnlibrary-api:2.0.0-beta.5")
+    compileOnly("ru.privatenull:pnlibrary-api:2.0.0-beta.6")
 }
 ```
 
 Если используются Bukkit-специфичные меню или определение текущей версии ядра,
-добавьте `compileOnly("ru.privatenull:pnlibrary-bukkit:2.0.0-beta.5") { isTransitive = false }`.
+добавьте `compileOnly("ru.privatenull:pnlibrary-bukkit:2.0.0-beta.6") { isTransitive = false }`.
 
 Для Bukkit/Paper добавьте в `plugin.yml`:
 

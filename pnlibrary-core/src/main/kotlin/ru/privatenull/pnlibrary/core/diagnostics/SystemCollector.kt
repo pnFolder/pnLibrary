@@ -1,8 +1,5 @@
 package ru.privatenull.pnlibrary.core.diagnostics
 
-
-
-
 import java.io.File
 import java.lang.management.GarbageCollectorMXBean
 import java.lang.management.ManagementFactory

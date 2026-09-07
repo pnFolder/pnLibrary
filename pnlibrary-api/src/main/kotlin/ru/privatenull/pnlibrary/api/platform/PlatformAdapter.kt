@@ -3,30 +3,42 @@ package ru.privatenull.pnlibrary.api.platform
 import ru.privatenull.pnlibrary.api.logging.LogLevel
 import ru.privatenull.pnlibrary.api.metrics.NoopMetricsFactory
 import ru.privatenull.pnlibrary.api.metrics.PlatformMetricsFactory
+import ru.privatenull.pnlibrary.api.runtime.PnLibrary
 
 /**
- * Minimal contract between the platform-agnostic library core and a concrete
- * server platform (Bukkit, BungeeCord, Velocity, …).
+ * The only boundary between the shared core and a concrete server platform.
  *
- * Implementations **must not** import classes from other platforms.
- * The interface itself lives in the API module which has zero server-platform
- * compile-time dependencies.
+ * An adapter owns platform operations only: native logging, server metadata,
+ * scheduler dispatch, commands, and listeners. Shared behavior belongs in
+ * `core`, and an adapter must never import another platform API.
  */
 interface PlatformAdapter : AutoCloseable {
 
-    /**
-     * A stable identifier for this adapter.
-     * Examples: `"bukkit-legacy"`, `"bukkit-folia"`, `"bungee"`, `"velocity"`.
-     */
-    val id: String
+    /** Concrete server or proxy implementation detected at runtime. */
+    val variant: PlatformVariant
+
+    /** Base API family used by this implementation. */
+    val type: PlatformType get() = variant.type
+
+    /** Stable identifier used in logs and diagnostics. */
+    val id: String get() = variant.id
+
+    /** Human-readable name of the concrete implementation. */
+    val displayName: String get() = variant.displayName
 
     /** Data directory owned by the installed pnLibrary runtime. */
     val dataFolder: java.nio.file.Path? get() = null
 
-    /** Creates the platform-specific bStats bridge. */
+    /** Factory for native bStats sessions on this platform. */
     val metricsFactory: PlatformMetricsFactory get() = NoopMetricsFactory
 
-    /** Writes through the native platform logger. */
+    /**
+     * Binds a fully initialized runtime and registers native commands/listeners.
+     * Called once by the bootstrap after the global provider is installed.
+     */
+    fun bind(library: PnLibrary) = Unit
+
+    /** Writes a message through the owner's native platform logger. */
     fun log(owner: Any, level: LogLevel, message: String, error: Throwable? = null) {
         val prefix = "[pnLibrary/${level.name}] "
         if (error == null) System.out.println(prefix + message)
@@ -36,16 +48,13 @@ interface PlatformAdapter : AutoCloseable {
         }
     }
 
-    /** Writes one already formatted line directly to the native server console. */
+    /** Writes an already formatted line directly to the server console. */
     fun console(owner: Any, message: String) = log(owner, LogLevel.INFO, message)
 
-    /** Public metadata of the plugin that owns a log message. */
+    /** Returns public metadata for the plugin that owns a resource. */
     fun ownerDetails(owner: Any): Map<String, String> = emptyMap()
 
-    /**
-     * Returns a snapshot of platform-specific diagnostics to include in reports.
-     * May be an empty map when no extra information is available.
-     */
+    /** Returns platform-specific data for diagnostic reports. */
     fun details(): Map<String, Any?>
 
     /**
@@ -67,6 +76,6 @@ interface PlatformAdapter : AutoCloseable {
      */
     fun executeReply(recipient: Any, task: Runnable)
 
-    /** Cancels pending scheduled tasks and releases held resources. */
+    /** Cancels platform work and unregisters native handlers. */
     override fun close()
 }

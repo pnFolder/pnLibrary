@@ -1,9 +1,10 @@
 package ru.privatenull.pnlibrary.api.config
 
 /**
- * Группа конфигураций одного плагина с единым жизненным циклом.
- * Handles остаются типизированными у владельца, а группа только вызывает их
- * общие операции.
+ * Lifecycle group for multiple configuration files owned by one plugin.
+ *
+ * The owner keeps typed handles; this group only invokes their common lifecycle
+ * operations.
  *
  * ```kotlin
  * val configs = ConfigGroup().add(settings).add(messages)
@@ -13,25 +14,24 @@ package ru.privatenull.pnlibrary.api.config
 class ConfigGroup : AutoCloseable {
     private val configs = linkedSetOf<ManagedConfig<*>>()
 
-    /** Регистрирует [config] и возвращает группу для fluent-вызовов. */
+    /** Adds [config] and returns this group for fluent calls. */
     fun add(config: ManagedConfig<*>) = apply { configs += config }
 
-    /** Загружает все файлы в порядке регистрации. */
+    /** Loads all files in registration order. */
     fun loadAll() { configs.forEach { it.load() } }
 
-    /** Перезагружает все файлы; каждый handle сохраняет старое значение при своей ошибке. */
+    /** Reloads all files; each handle preserves its previous value on failure. */
     fun reloadAll() { configs.forEach { it.reload() } }
 
-    /** Сохраняет все загруженные конфигурации. */
+    /** Saves every currently loaded configuration. */
     fun saveAll() { configs.filter { it.isLoaded }.forEach { it.save() } }
 
-    /** Выгружает все значения из памяти, не удаляя файлы. */
+    /** Removes all values from memory without deleting their files. */
     fun unloadAll() { configs.forEach { it.unload() } }
 
-    /** Количество зарегистрированных handles. */
+    /** Number of registered configuration handles. */
     fun size(): Int = configs.size
 
-    /** Выгружает всю группу. */
+    /** Unloads the entire group. */
     override fun close() = unloadAll()
 }
-

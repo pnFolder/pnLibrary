@@ -10,6 +10,7 @@ import ru.privatenull.pnlibrary.core.upload.UploadReceipt
 import com.google.gson.Gson
 import com.google.gson.GsonBuilder
 import ru.privatenull.pnlibrary.api.diagnostics.DebugRequest
+import ru.privatenull.pnlibrary.api.diagnostics.DiagnosticReport
 import ru.privatenull.pnlibrary.api.platform.PlatformAdapter
 import ru.privatenull.pnlibrary.api.runtime.PnLibraryConfig
 import java.io.File
@@ -37,7 +38,7 @@ class ReportGenerator(
     private val configReader = ConfigReader(dataFolder, config)
     private val gson: Gson = GsonBuilder().setPrettyPrinting().disableHtmlEscaping().create()
 
-    fun generateAndSave(request: DebugRequest): ReportResult {
+    fun generateAndSave(request: DebugRequest): DiagnosticReport {
         val encryptionMode = config.uploadMode.startsWith("encrypted")
         val includeNetworkAddresses = encryptionMode
 
@@ -112,10 +113,10 @@ class ReportGenerator(
             }
         }
 
-        return ReportResult(
+        return DiagnosticReport(
             localFile = targetFile,
-            isEncrypted = encryptionMode,
-            uploadReceipt = uploadReceipt,
+            encrypted = encryptionMode,
+            uploadedUrl = uploadReceipt?.link?.toString(),
             uploadError = uploadError,
         )
     }
@@ -164,10 +165,4 @@ class ReportGenerator(
         } catch (_: Exception) { }
     }
 
-    data class ReportResult(
-        val localFile: Path,
-        val isEncrypted: Boolean,
-        val uploadReceipt: UploadReceipt?,
-        val uploadError: String?,
-    )
 }

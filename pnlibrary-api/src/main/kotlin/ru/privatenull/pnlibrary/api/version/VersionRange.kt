@@ -1,7 +1,7 @@
 package ru.privatenull.pnlibrary.api.version
 
 /**
- * Диапазон версий с включаемыми или исключаемыми границами.
+ * Semantic version range with inclusive or exclusive boundaries.
  *
  * Kotlin: `VersionRange.atLeast("2.0.0-beta.2").contains(version)`.
  * Java: `VersionRange.closed("2.0.0", "3.0.0").contains(version)`.
@@ -17,14 +17,14 @@ class VersionRange private constructor(
             "minimum version must not be newer than maximum version"
         }
     }
-    /** Проверяет, входит ли [version] в диапазон. */
+    /** Returns whether [version] belongs to this range. */
     operator fun contains(version: SemanticVersion): Boolean {
         val afterMinimum = minimum == null || if (includeMinimum) version >= minimum else version > minimum
         val beforeMaximum = maximum == null || if (includeMaximum) version <= maximum else version < maximum
         return afterMinimum && beforeMaximum
     }
 
-    /** Проверяет строковое представление версии. */
+    /** Parses and checks a version string. */
     fun contains(version: String): Boolean = contains(SemanticVersion.parse(version))
 
     companion object {

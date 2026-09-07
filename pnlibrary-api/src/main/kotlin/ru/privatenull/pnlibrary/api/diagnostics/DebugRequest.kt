@@ -26,7 +26,7 @@ data class DebugRequest(
          */
         @JvmStatic
         @JvmOverloads
-        fun parse(args: Array<String>, prefixed: Boolean = false): DebugRequest {
+        fun parse(args: Array<out String>, prefixed: Boolean = false): DebugRequest {
             var offset = 0
             if (prefixed) {
                 require(args.isNotEmpty() && args[0].equals("debug", ignoreCase = true)) { "usage" }

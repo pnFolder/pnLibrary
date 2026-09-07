@@ -1,13 +1,13 @@
 package ru.privatenull.pnlibrary.api.version.minecraft
 
 /**
- * Диапазон версий Minecraft с настраиваемыми границами.
+ * Minecraft version range with configurable boundaries.
  *
- * Отсутствующая [minimum] означает отсутствие нижней границы, отсутствующая
- * [maximum] — отсутствие верхней. [MinecraftVersion.UNKNOWN] не может быть
- * границей и никогда не входит ни в один диапазон.
+ * A missing [minimum] means there is no lower bound; a missing [maximum] means
+ * there is no upper bound. [MinecraftVersion.UNKNOWN] cannot be a boundary and
+ * never belongs to a range.
  *
- * Обычно удобнее использовать фабрики из [Companion]:
+ * Prefer the factory methods in [Companion]:
  * ```kotlin
  * val legacy = MinecraftVersionRange.between(V1_8_8, V1_12_2)
  * val modern = MinecraftVersionRange.atLeast(V1_20_5)
@@ -24,10 +24,10 @@ package ru.privatenull.pnlibrary.api.version.minecraft
  * }
  * ```
  *
- * @property minimum нижняя граница либо `null`.
- * @property maximum верхняя граница либо `null`.
- * @property includeMinimum входит ли нижняя граница в диапазон.
- * @property includeMaximum входит ли верхняя граница в диапазон.
+ * @property minimum lower boundary, or `null`.
+ * @property maximum upper boundary, or `null`.
+ * @property includeMinimum whether the lower boundary is included.
+ * @property includeMaximum whether the upper boundary is included.
  */
 data class MinecraftVersionRange(
     val minimum: MinecraftVersion?,
@@ -43,8 +43,7 @@ data class MinecraftVersionRange(
     }
 
     /**
-     * Поддерживает Kotlin-выражение `version in range`.
-     * Из Java вызывается как обычный метод:
+     * Supports `version in range` in Kotlin. Java calls it as a regular method:
      * ```java
      * if (range.contains(version)) enableAdapter();
      * ```
@@ -55,14 +54,14 @@ data class MinecraftVersionRange(
         val beforeMaximum = maximum == null || if (includeMaximum) version.isAtMost(maximum) else version.isOlderThan(maximum)
         return afterMinimum && beforeMaximum
     }
-    /** Возвращает `true`, когда [version] не входит в диапазон. */
+    /** Returns `true` when [version] does not belong to this range. */
     fun excludes(version: MinecraftVersion): Boolean = version !in this
 
-    /** Возвращает `true`, если диапазон содержит ровно одну версию. */
+    /** Returns `true` when this range contains exactly one version. */
     fun isExact(): Boolean = minimum != null && minimum == maximum && includeMinimum && includeMaximum
 
     /**
-     * Проверяет наличие хотя бы одной общей версии с [other].
+     * Returns whether this range and [other] share at least one version.
      * ```java
      * if (supported.overlaps(featureVersions)) registerFeature();
      * ```
@@ -70,11 +69,11 @@ data class MinecraftVersionRange(
     fun overlaps(other: MinecraftVersionRange): Boolean = intersection(other) != null
 
     /**
-     * Возвращает пересечение с [other] или `null`, если общей части нет.
-     * Учитывает открытость обеих границ.
+     * Returns the intersection with [other], or `null` when none exists.
+     * Inclusive and exclusive boundaries are preserved.
      * ```java
      * MinecraftVersionRange common = supported.intersection(featureVersions);
-     * if (common != null) logger.info("Общие версии: " + common);
+     * if (common != null) logger.info("Shared versions: " + common);
      * ```
      */
     fun intersection(other: MinecraftVersionRange): MinecraftVersionRange? {
@@ -87,7 +86,7 @@ data class MinecraftVersionRange(
         return MinecraftVersionRange(min, max, includeMin, includeMax)
     }
 
-    /** Формирует значение вроде `[1.8.8, 1.12.2]`, `>=1.20.5` или `<1.13`. */
+    /** Formats a value such as `[1.8.8, 1.12.2]`, `>=1.20.5`, or `<1.13`. */
     override fun toString(): String = when {
         minimum == null && maximum == null -> "all known versions"
         minimum == null -> "${if (includeMaximum) "<=" else "<"}${maximum!!.text}"
@@ -97,7 +96,7 @@ data class MinecraftVersionRange(
 
     companion object {
         /**
-         * Включённый диапазон `[minimum, maximum]`.
+         * Inclusive range `[minimum, maximum]`.
          * ```java
          * MinecraftVersionRange range = MinecraftVersionRange.between(
          *     MinecraftVersion.V1_16_5,
@@ -109,7 +108,7 @@ data class MinecraftVersionRange(
             MinecraftVersionRange(minimum, maximum, true, true)
 
         /**
-         * Открытый диапазон `(minimum, maximum)`, не включающий границы.
+         * Exclusive range `(minimum, maximum)`.
          * ```java
          * MinecraftVersionRange range = MinecraftVersionRange.betweenExclusive(
          *     MinecraftVersion.V1_16_5,
@@ -121,8 +120,8 @@ data class MinecraftVersionRange(
             MinecraftVersionRange(minimum, maximum, false, false)
 
         /**
-         * Диапазон от [minimum] без верхней границы.
-         * Java может передать второй аргумент либо использовать перегрузку:
+         * Range from [minimum] without an upper boundary. Java may pass the
+         * second argument or use the overload:
          * ```java
          * MinecraftVersionRange inclusive = MinecraftVersionRange.from(MinecraftVersion.V1_20_5);
          * MinecraftVersionRange exclusive = MinecraftVersionRange.from(MinecraftVersion.V1_20_5, false);
@@ -131,26 +130,26 @@ data class MinecraftVersionRange(
         @JvmStatic @JvmOverloads fun from(minimum: MinecraftVersion, inclusive: Boolean = true) =
             MinecraftVersionRange(minimum, null, inclusive, false)
 
-        /** Диапазон до [maximum] без нижней границы. */
+        /** Range up to [maximum] without a lower boundary. */
         @JvmStatic @JvmOverloads fun until(maximum: MinecraftVersion, inclusive: Boolean = true) =
             MinecraftVersionRange(null, maximum, false, inclusive)
 
-        /** Диапазон `[minimum, +∞)`. */
+        /** Range `[minimum, +∞)`. */
         @JvmStatic fun atLeast(minimum: MinecraftVersion) = from(minimum, true)
 
-        /** Диапазон `(minimum, +∞)`. */
+        /** Range `(minimum, +∞)`. */
         @JvmStatic fun newerThan(minimum: MinecraftVersion) = from(minimum, false)
 
-        /** Диапазон `(-∞, maximum]`. */
+        /** Range `(-∞, maximum]`. */
         @JvmStatic fun atMost(maximum: MinecraftVersion) = until(maximum, true)
 
-        /** Диапазон `(-∞, maximum)`. */
+        /** Range `(-∞, maximum)`. */
         @JvmStatic fun olderThan(maximum: MinecraftVersion) = until(maximum, false)
 
-        /** Диапазон, содержащий только [version]. */
+        /** Range containing only [version]. */
         @JvmStatic fun exact(version: MinecraftVersion) = MinecraftVersionRange(version, version, true, true)
 
-        /** Все известные библиотеке версии; [MinecraftVersion.UNKNOWN] не входит. */
+        /** Every known version; [MinecraftVersion.UNKNOWN] is excluded. */
         @JvmStatic fun allKnown() = MinecraftVersionRange(null, null, false, false)
 
         private fun newer(a: MinecraftVersion?, b: MinecraftVersion?): MinecraftVersion? = when {

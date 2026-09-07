@@ -1,10 +1,10 @@
 package ru.privatenull.pnlibrary.api.version
 
 /**
- * Платформенно-независимая семантическая версия.
+ * Platform-independent semantic version.
  *
- * Поддерживает стабильные версии и суффиксы `alpha`, `beta`, `rc`. Числовые
- * идентификаторы сравниваются как числа: `beta.10` новее `beta.2`.
+ * Supports stable versions and `alpha`, `beta`, and `rc` suffixes. Numeric
+ * identifiers are compared numerically, so `beta.10` is newer than `beta.2`.
  *
  * Kotlin: `SemanticVersion.parse("2.0.0-beta.2").isAtLeast("2.0.0-beta.1")`.
  * Java: `SemanticVersion.parse("2.0.0").isAtLeast("1.9.0")`.
@@ -16,13 +16,13 @@ class SemanticVersion private constructor(
     val prerelease: List<String>,
 ) : Comparable<SemanticVersion> {
 
-    /** Возвращает `true`, если версия не старее [minimum]. */
+    /** Returns `true` when this version is not older than [minimum]. */
     fun isAtLeast(minimum: SemanticVersion): Boolean = this >= minimum
 
-    /** Удобная перегрузка, принимающая строку версии. */
+    /** Convenience overload accepting a version string. */
     fun isAtLeast(minimum: String): Boolean = isAtLeast(parse(minimum))
 
-    /** Проверяет попадание в диапазон. */
+    /** Returns whether this version belongs to [range]. */
     fun isIn(range: VersionRange): Boolean = range.contains(this)
 
     override fun compareTo(other: SemanticVersion): Int {
@@ -52,12 +52,12 @@ class SemanticVersion private constructor(
         prerelease.takeIf(List<String>::isNotEmpty)?.joinToString(".", prefix = "-").orEmpty()
 
     companion object {
-        /** Разбирает SemVer; начальный `v` и build metadata допускаются. */
+        /** Parses SemVer, allowing a leading `v` and build metadata. */
         @JvmStatic
         fun parse(raw: String): SemanticVersion = tryParse(raw)
             ?: throw IllegalArgumentException("Invalid semantic version: $raw")
 
-        /** Возвращает версию либо `null`, если строка некорректна. */
+        /** Returns a parsed version, or `null` for invalid input. */
         @JvmStatic
         fun tryParse(raw: String): SemanticVersion? {
             val value = raw.trim().removePrefix("v").substringBefore('+')

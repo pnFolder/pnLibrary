@@ -1,5 +1,15 @@
 # Changelog
 
+## 2.0.0-beta.6
+
+- Separated the three `PlatformType` API families from their concrete `PlatformVariant` implementations.
+- Added a high-level `PnLibraryRuntimeHost` shared by all native entry points.
+- Removed platform adapter casts to the internal `PnLibraryImpl` implementation.
+- Centralized `/pndebug` parsing, cooldown, execution, and reply dispatch.
+- Added consistent pnLibrary startup and shutdown message boxes.
+- Standardized Kotlin API and architecture documentation in English.
+- Replaced wildcard imports and clarified ownership between API, core, and adapters.
+
 ## 2.0.0-beta.5
 
 - Реализован сбор ограниченного и отредактированного журнала для `--logs`.

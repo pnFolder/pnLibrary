@@ -103,7 +103,9 @@ object MandatoryUpdateService {
                 ?.substringBefore(' ')?.lowercase(Locale.ROOT)
                 ?: error("В checksums.sha256 отсутствует $assetName")
             require(sha256(temp) == expected) { "SHA-256 обновления не совпадает" }
-            validateJar(temp, platform.id)
+            val distribution = platform.type.distributionArtifact
+                ?: error("Неподдерживаемая платформа обновления: ${platform.type}")
+            validateJar(temp, distribution)
             val target = updateDir.resolve(currentJar.fileName.toString())
             Files.move(temp, target, StandardCopyOption.REPLACE_EXISTING)
             observer(snapshot(repositoryName, currentVersion, latest, channel, UpdateState.DOWNLOADED,

@@ -3,46 +3,46 @@ package ru.privatenull.pnlibrary.api.config
 import java.io.File
 import java.util.function.UnaryOperator
 
-/** Адаптер между типизированной code-first моделью [T] и текстом YAML. */
+/** Converts between a typed code-first model [T] and YAML text. */
 interface ConfigCodec<T> {
-    /** Сериализует [value], включая default-поля и комментарии документации. */
+    /** Serializes [value], including default fields and documentation comments. */
     fun encode(value: T): String
 
-    /** Десериализует YAML. Ошибка по возможности должна содержать путь неправильного поля. */
+    /** Deserializes YAML. Errors should identify the invalid field path when possible. */
     fun decode(yaml: String): T
 }
 
-/** Выполняет дополнительные проверки после успешной десериализации YAML. */
+/** Performs semantic validation after successful YAML deserialization. */
 fun interface ConfigValueValidator<T> {
-    /** Возвращает найденные проблемы; пустой список означает корректное значение. */
+    /** Returns validation problems; an empty list means that the value is valid. */
     fun validate(value: T): List<ConfigProblem>
 }
 
-/** Одно типизированное условие корректности конфигурации. */
+/** One typed configuration condition. */
 fun interface ConfigCondition<T> {
-    /** Возвращает `true`, если проверяемое значение корректно. */
+    /** Returns `true` when the tested value is valid. */
     fun test(value: T): Boolean
 }
 
 /**
- * Собирает несколько понятных правил проверки без ручного создания списков.
+ * Builds readable validation rules without manually creating problem lists.
  *
  * ```kotlin
  * val validator = ConfigValidatorBuilder<Settings>()
- *     .require("database.port", "должен быть от 1 до 65535") { it.database.port in 1..65535 }
+ *     .require("database.port", "must be between 1 and 65535") { it.database.port in 1..65535 }
  *     .build()
  * ```
  */
 class ConfigValidatorBuilder<T> {
     private val rules = mutableListOf<Rule<T>>()
 
-    /** Добавляет правило для YAML-пути [path]. */
+    /** Adds a rule for the YAML [path]. */
     fun require(path: String, message: String, condition: ConfigCondition<T>) = apply {
         require(path.isNotBlank()) { "Configuration path cannot be blank" }
         rules += Rule(path, message, condition)
     }
 
-    /** Создаёт неизменяемый валидатор из добавленных правил. */
+    /** Creates an immutable validator from the configured rules. */
     fun build(): ConfigValueValidator<T> {
         val snapshot = rules.toList()
         return ConfigValueValidator { value ->
@@ -55,66 +55,65 @@ class ConfigValidatorBuilder<T> {
     private data class Rule<T>(val path: String, val message: String, val condition: ConfigCondition<T>)
 }
 
-/** Одна проблема конфигурации, связанная с полным YAML-путём [path]. */
+/** One configuration problem associated with a full YAML [path]. */
 data class ConfigProblem(val path: String, val message: String)
 
-/** Результат загрузки и синхронизации одного code-first файла. */
+/** Result of loading and synchronizing one code-first file. */
 data class ConfigLoadResult<T>(
     val value: T,
     val addedPaths: List<String>,
     val backup: File?,
 )
 
-/** Ошибка семантической проверки типизированной конфигурации. */
+/** Semantic validation failure for a typed configuration. */
 class ConfigValidationException(val problems: List<ConfigProblem>) : IllegalArgumentException(
     problems.joinToString(prefix = "Invalid configuration: ", separator = "; ") { "${it.path}: ${it.message}" }
 )
 
 /**
- * Высокоуровневый жизненный цикл одной типизированной конфигурации.
- * `unload()` очищает значение только из памяти и никогда не удаляет YAML-файл.
+ * High-level lifecycle of one typed configuration.
+ * `unload()` only clears the in-memory value and never deletes the YAML file.
  */
 interface ManagedConfig<T> : AutoCloseable {
-    /** Загружена ли конфигурация в память. */
+    /** Whether a configuration value is currently loaded in memory. */
     val isLoaded: Boolean
 
-    /** Kotlin-свойство с текущим значением; эквивалент [get]. */
+    /** Kotlin property alias for [get]. */
     val value: T get() = get()
 
-    /** Возвращает загруженное значение или сообщает, что сначала нужен [load]. */
+    /** Returns the loaded value or fails when [load] has not completed. */
     fun get(): T
 
-    /** Загружает файл, синхронизирует defaults и сохраняет значение в памяти. */
+    /** Loads the file, synchronizes defaults, and stores the value in memory. */
     fun load(): ConfigLoadResult<T>
 
-    /** Повторно читает файл. При ошибке прежнее рабочее значение остаётся в памяти. */
+    /** Reloads the file while preserving the previous valid value on failure. */
     fun reload(): ConfigLoadResult<T>
 
-    /** Загружает файл и сразу возвращает только типизированное значение. */
+    /** Loads the file and returns only its typed value. */
     fun loadValue(): T = load().value
 
-    /** Перезагружает файл и сразу возвращает только типизированное значение. */
+    /** Reloads the file and returns only its typed value. */
     fun reloadValue(): T = reload().value
 
-    /** Сохраняет текущее значение из памяти. */
+    /** Saves the current in-memory value. */
     fun save()
 
-    /** Проверяет, сохраняет [value] и делает его текущим значением в памяти. */
+    /** Validates and saves [value], then makes it the current in-memory value. */
     fun save(value: T)
 
-    /** Атомарно изменяет текущее значение, проверяет его и сохраняет на диск. */
+    /** Atomically updates, validates, and persists the current value. */
     fun update(updater: UnaryOperator<T>): T
 
-    /** Проверяет текущее значение без записи файла. */
+    /** Validates the current value without writing the file. */
     fun validate(): List<ConfigProblem>
 
-    /** Возвращает файл к defaults из кода и делает их текущим значением. */
+    /** Resets the file and current value to code-defined defaults. */
     fun resetToDefaults(): T
 
-    /** Удаляет загруженное значение из памяти, сохраняя файл на диске. */
+    /** Clears the in-memory value while preserving the file on disk. */
     fun unload()
 
-    /** Эквивалент [unload], позволяющий использовать `use`/try-with-resources. */
+    /** Alias for [unload] suitable for `use` and try-with-resources. */
     override fun close() = unload()
 }
-

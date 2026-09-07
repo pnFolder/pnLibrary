@@ -1,8 +1,5 @@
 package ru.privatenull.pnlibrary.core.diagnostics
 
-
-
-
 import ru.privatenull.pnlibrary.api.diagnostics.DiagnosticConfiguration
 import ru.privatenull.pnlibrary.api.diagnostics.DiagnosticLevel
 import ru.privatenull.pnlibrary.api.diagnostics.DiagnosticRegistration

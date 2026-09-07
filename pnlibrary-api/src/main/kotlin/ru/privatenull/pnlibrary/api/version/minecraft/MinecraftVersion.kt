@@ -2,13 +2,13 @@ package ru.privatenull.pnlibrary.api.version.minecraft
 
 
 /**
- * Известная версия Minecraft, для сравнения на любой JVM-платформе.
+ * Known Minecraft version that can be compared on any JVM platform.
  *
- * Сравнение выполняется по числам [major], [minor] и [patch], а не по
- * [Enum.ordinal]. Поэтому добавление новых констант не меняет смысл сравнений.
- * Для ещё не известного библиотеке релиза используется [UNKNOWN].
+ * Comparisons use [major], [minor], and [patch], never [Enum.ordinal]. Adding
+ * enum constants therefore cannot change existing ordering. [UNKNOWN] represents
+ * a release that has not been added to the library yet.
  *
- * Пример:
+ * Kotlin:
  * ```kotlin
  * val version = MinecraftVersion.parse("1.21.11")
  * if (version.isAtLeast(MinecraftVersion.V1_20_5)) enableComponents()
@@ -21,10 +21,10 @@ package ru.privatenull.pnlibrary.api.version.minecraft
  * }
  * ```
  *
- * @property text каноническое отображение, например `1.21.11`.
- * @property major первая числовая часть версии.
- * @property minor вторая числовая часть версии.
- * @property patch третья числовая часть или `0`, когда она отсутствует.
+ * @property text canonical representation, for example `1.21.11`.
+ * @property major first numeric component.
+ * @property minor second numeric component.
+ * @property patch third numeric component, or `0` when omitted.
  */
 enum class MinecraftVersion(val text: String, val major: Int, val minor: Int, val patch: Int) {
     V1_8("1.8", 1, 8, 0), V1_8_1("1.8.1", 1, 8, 1), V1_8_2("1.8.2", 1, 8, 2),
@@ -56,32 +56,32 @@ enum class MinecraftVersion(val text: String, val major: Int, val minor: Int, va
     V26_1("26.1", 26, 1, 0), V26_2("26.2", 26, 2, 0),
     UNKNOWN("unknown", -1, -1, -1);
 
-    /** Возвращает `true`, если версия равна [other] или вышла позже неё. */
+    /** Returns whether this version is equal to or newer than [other]. */
     fun isAtLeast(other: MinecraftVersion): Boolean = known && other.known && coordinates >= other.coordinates
 
-    /** Возвращает `true`, если версия равна [other] или вышла раньше неё. */
+    /** Returns whether this version is equal to or older than [other]. */
     fun isAtMost(other: MinecraftVersion): Boolean = known && other.known && coordinates <= other.coordinates
 
-    /** Строгое сравнение: текущая версия должна быть новее [other]. */
+    /** Strict comparison: this version must be newer than [other]. */
     fun isNewerThan(other: MinecraftVersion): Boolean = known && other.known && coordinates > other.coordinates
 
-    /** Строгое сравнение: текущая версия должна быть старее [other]. */
+    /** Strict comparison: this version must be older than [other]. */
     fun isOlderThan(other: MinecraftVersion): Boolean = known && other.known && coordinates < other.coordinates
 
-    /** Читаемый псевдоним [isAtLeast]. */
+    /** Readable alias for [isAtLeast]. */
     fun isSameOrNewerThan(other: MinecraftVersion): Boolean = isAtLeast(other)
 
-    /** Читаемый псевдоним [isAtMost]. */
+    /** Readable alias for [isAtMost]. */
     fun isSameOrOlderThan(other: MinecraftVersion): Boolean = isAtMost(other)
 
     /**
-     * Проверяет совпадение линии релиза без учёта patch.
-     * Например, `1.20.4` и `1.20.6` принадлежат одной линии `1.20`.
+     * Checks whether both versions belong to the same release line, ignoring
+     * patch. For example, `1.20.4` and `1.20.6` share the `1.20` line.
      */
     fun isSameReleaseLine(other: MinecraftVersion): Boolean = known && other.known && major == other.major && minor == other.minor
 
     /**
-     * Проверяет попадание во включённый диапазон от [minimum] до [maximum].
+     * Checks the inclusive range from [minimum] to [maximum].
      *
      * Java:
      * ```java
@@ -95,7 +95,7 @@ enum class MinecraftVersion(val text: String, val major: Int, val minor: Int, va
         isAtLeast(minimum) && isAtMost(maximum)
 
     /**
-     * Эквивалент выражения `this in range`, удобный для вызова из Java.
+     * Java-friendly equivalent of the Kotlin expression `this in range`.
      * ```java
      * MinecraftVersionRange range = MinecraftVersionRange.atLeast(MinecraftVersion.V1_20_5);
      * if (version.inRange(range)) enableModernApi();
@@ -104,23 +104,22 @@ enum class MinecraftVersion(val text: String, val major: Int, val minor: Int, va
     fun inRange(range: MinecraftVersionRange): Boolean = this in range
 
     /**
-     * Создаёт включённый диапазон для Kotlin-выражения `V1_8_8..V1_12_2`.
+     * Creates an inclusive range for `V1_8_8..V1_12_2` in Kotlin.
      */
     operator fun rangeTo(maximum: MinecraftVersion): MinecraftVersionRange = MinecraftVersionRange.between(this, maximum)
 
-    /** `false` только для [UNKNOWN]. */
+    /** `false` only for [UNKNOWN]. */
     val known: Boolean get() = this != UNKNOWN
     private val coordinates: Long get() = major * 1_000_000L + minor * 1_000L + patch
 
     companion object {
         private val byCoordinates = values().filter { it.known }.associateBy { Triple(it.major, it.minor, it.patch) }
         /**
-         * Находит первую версию формата `число.число[.число]` в [value].
+         * Finds the first `number.number[.number]` version in [value].
          *
-         * Поддерживает строки наподобие `1.20.6-R0.1-SNAPSHOT`,
-         * `git-Paper-123 (MC: 1.21.11)` и `26.2-112-c9e894d`.
-         * Возвращает [UNKNOWN], если строка пуста, повреждена или релиз ещё не
-         * добавлен в enum.
+         * Supports strings such as `1.20.6-R0.1-SNAPSHOT`,
+         * `git-Paper-123 (MC: 1.21.11)`, and `26.2-112-c9e894d`. Returns
+         * [UNKNOWN] for empty, malformed, or not-yet-listed releases.
          */
         @JvmStatic fun parse(value: String?): MinecraftVersion {
             val match = Regex("(?<!\\d)(\\d+)\\.(\\d+)(?:\\.(\\d+))?").find(value.orEmpty()) ?: return UNKNOWN
@@ -130,7 +129,7 @@ enum class MinecraftVersion(val text: String, val major: Int, val minor: Int, va
             return byCoordinates[coordinates] ?: UNKNOWN
         }
 /**
-         * Создаёт включённый диапазон от [minimum] до [maximum].
+         * Creates an inclusive range from [minimum] to [maximum].
          * ```java
          * MinecraftVersionRange legacy = MinecraftVersion.range(
          *     MinecraftVersion.V1_8_8,
@@ -141,10 +140,10 @@ enum class MinecraftVersion(val text: String, val major: Int, val minor: Int, va
         @JvmStatic fun range(minimum: MinecraftVersion, maximum: MinecraftVersion): MinecraftVersionRange =
             MinecraftVersionRange.between(minimum, maximum)
 
-        /** Создаёт диапазон `[minimum, +∞)`. */
+        /** Creates `[minimum, +∞)`. */
         @JvmStatic fun atLeast(minimum: MinecraftVersion): MinecraftVersionRange = MinecraftVersionRange.atLeast(minimum)
 
-        /** Создаёт диапазон `(-∞, maximum]`. */
+        /** Creates `(-∞, maximum]`. */
         @JvmStatic fun atMost(maximum: MinecraftVersion): MinecraftVersionRange = MinecraftVersionRange.atMost(maximum)
     }
 }

@@ -52,8 +52,8 @@ Bukkit/Paper/Folia: текущая версия доступна через
 ```kotlin
 repositories { mavenLocal() }
 dependencies {
-    compileOnly("ru.privatenull:pnlibrary-api:2.0.0-beta.5")
-    compileOnly("ru.privatenull:pnlibrary-core:2.0.0-beta.5") { isTransitive = false }
+    compileOnly("ru.privatenull:pnlibrary-api:2.0.0-beta.6")
+    compileOnly("ru.privatenull:pnlibrary-core:2.0.0-beta.6") { isTransitive = false }
 }
 ```
 

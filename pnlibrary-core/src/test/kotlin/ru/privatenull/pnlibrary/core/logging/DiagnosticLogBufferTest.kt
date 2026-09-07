@@ -6,6 +6,7 @@ import org.junit.jupiter.api.Assertions.assertTrue
 import org.junit.jupiter.api.Test
 import ru.privatenull.pnlibrary.api.logging.LogLevel
 import ru.privatenull.pnlibrary.api.platform.PlatformAdapter
+import ru.privatenull.pnlibrary.api.platform.PlatformVariant
 
 class DiagnosticLogBufferTest {
     @Test
@@ -24,6 +25,7 @@ class DiagnosticLogBufferTest {
     }
 
     private class TestPlatform : PlatformAdapter {
+        override val variant = PlatformVariant.BUKKIT
         override val id = "test"
         override fun ownerDetails(owner: Any) = mapOf("name" to "test-plugin")
         override fun details(): Map<String, Any?> = emptyMap()

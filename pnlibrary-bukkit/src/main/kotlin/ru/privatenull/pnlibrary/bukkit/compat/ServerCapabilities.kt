@@ -10,14 +10,14 @@ import org.bukkit.Bukkit
 object ServerCapabilities {
 
     /**
-     * Определённая версия Minecraft в виде [MinecraftVersion].
-     * Значение вычисляется один раз и затем кэшируется до остановки сервера.
+     * Resolved Minecraft version. The value is computed once and cached for the
+     * lifetime of the server process.
      */
     val minecraftVersion: MinecraftVersion by lazy { BukkitMinecraftVersion.current() }
 
     /**
-     * Исходная строка версии Minecraft от ядра. Полезна для диагностики, когда
-     * [minecraftVersion] равна [MinecraftVersion.UNKNOWN].
+     * Raw Minecraft version reported by the server. Useful when
+     * [minecraftVersion] is [MinecraftVersion.UNKNOWN].
      */
     val rawMinecraftVersion: String by lazy { BukkitMinecraftVersion.rawCurrent() }
 

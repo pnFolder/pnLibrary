@@ -1,15 +1,17 @@
 package ru.privatenull.pnlibrary.bungee
 
-import net.md_5.bungee.api.plugin.Plugin
-import net.md_5.bungee.api.CommandSender
 import net.md_5.bungee.api.ChatColor
+import net.md_5.bungee.api.CommandSender
 import net.md_5.bungee.api.chat.TextComponent
 import net.md_5.bungee.api.plugin.Command
-import ru.privatenull.pnlibrary.api.diagnostics.DebugRequest
-import ru.privatenull.pnlibrary.api.platform.PlatformAdapter
-import ru.privatenull.pnlibrary.api.metrics.PlatformMetricsFactory
+import net.md_5.bungee.api.plugin.Plugin
 import ru.privatenull.pnlibrary.api.logging.LogLevel
-import ru.privatenull.pnlibrary.core.runtime.PnLibraryImpl
+import ru.privatenull.pnlibrary.api.metrics.PlatformMetricsFactory
+import ru.privatenull.pnlibrary.api.platform.PlatformAdapter
+import ru.privatenull.pnlibrary.api.platform.PlatformVariant
+import ru.privatenull.pnlibrary.api.runtime.PnLibrary
+import ru.privatenull.pnlibrary.core.diagnostics.DiagnosticCommandEvent
+import ru.privatenull.pnlibrary.core.diagnostics.DiagnosticCommandExecutor
 import java.util.concurrent.atomic.AtomicBoolean
 import java.util.logging.Level
 
@@ -22,7 +24,12 @@ class BungeePlatformAdapter(
 
     private val closedFlag = AtomicBoolean(false)
 
-    override val id: String get() = "bungeecord"
+    override val variant: PlatformVariant
+        get() = when {
+            plugin.proxy.name.equals("Waterfall", ignoreCase = true) -> PlatformVariant.WATERFALL
+            plugin.proxy.name.equals("XCord", ignoreCase = true) -> PlatformVariant.XCORD
+            else -> PlatformVariant.BUNGEECORD
+        }
     override val metricsFactory: PlatformMetricsFactory = BungeeMetricsFactory()
     override val dataFolder = plugin.dataFolder.toPath()
 
@@ -49,28 +56,19 @@ class BungeePlatformAdapter(
             "authors" to (target.description.author ?: "pnFolder"),
         )
     }
-    private var library: PnLibraryImpl? = null
+    private var diagnosticCommands: DiagnosticCommandExecutor? = null
     private val debugCommand = object : Command("pndebug", "pnlibrary.debug", "pnlib") {
         override fun execute(sender: CommandSender, args: Array<String>) {
-            val active = library ?: return sender.sendMessage(TextComponent("${ChatColor.RED}pnLibrary is not ready"))
-            val request = runCatching { DebugRequest.parse(args, false) }.getOrElse {
-                return sender.sendMessage(TextComponent("${ChatColor.YELLOW}/pndebug [all|plugin] [--full|--config|--logs] [--local]"))
-            }
-            sender.sendMessage(TextComponent("${ChatColor.GRAY}Collecting encrypted diagnostic report..."))
-            plugin.proxy.scheduler.runAsync(plugin) {
-                runCatching { active.generateReport(request) }
-                    .onSuccess { result ->
-                        val output = result.uploadReceipt?.link ?: result.localFile.toString()
-                        sender.sendMessage(TextComponent("${ChatColor.GREEN}Report ready: $output"))
-                        result.uploadError?.let { sender.sendMessage(TextComponent("${ChatColor.YELLOW}Upload failed; local report kept: $it")) }
-                    }
-                    .onFailure { sender.sendMessage(TextComponent("${ChatColor.RED}Report failed: ${it.message}")) }
+            val executor = diagnosticCommands
+                ?: return sender.sendMessage(TextComponent("${ChatColor.RED}pnLibrary is not ready"))
+            executor.execute(args, false, sender.name, sender) { event ->
+                sender.sendMessage(TextComponent(message(event)))
             }
         }
     }
 
-    fun attachLibrary(runtime: PnLibraryImpl) {
-        library = runtime
+    override fun bind(library: PnLibrary) {
+        diagnosticCommands = DiagnosticCommandExecutor(library)
         plugin.proxy.pluginManager.registerCommand(plugin, debugCommand)
     }
 
@@ -110,6 +108,22 @@ class BungeePlatformAdapter(
     override fun close() {
         closedFlag.set(true)
         plugin.proxy.pluginManager.unregisterCommand(debugCommand)
-        library = null
+        diagnosticCommands = null
+    }
+
+    private fun message(event: DiagnosticCommandEvent): String = when (event) {
+        DiagnosticCommandEvent.InvalidUsage ->
+            "${ChatColor.YELLOW}/pndebug [all|plugin] [--full|--config|--logs] [--local]"
+        is DiagnosticCommandEvent.CoolingDown ->
+            "${ChatColor.YELLOW}Wait ${event.seconds}s before creating another report."
+        is DiagnosticCommandEvent.Started ->
+            "${ChatColor.GRAY}Collecting diagnostic report for ${event.target}..."
+        is DiagnosticCommandEvent.Completed -> {
+            val report = event.report
+            val output = report.uploadedUrl ?: report.localFile.toString()
+            val warning = report.uploadError?.let { " Upload failed; local report kept: $it" }.orEmpty()
+            "${ChatColor.GREEN}Report ready: $output${if (warning.isEmpty()) "" else "${ChatColor.YELLOW}$warning"}"
+        }
+        is DiagnosticCommandEvent.Failed -> "${ChatColor.RED}Report failed: ${event.message}"
     }
 }

@@ -36,6 +36,8 @@
 | `pnlibrary-velocity` | Velocity | 17 |
 | `pnlibrary-distribution` | Сборка готовых платформенных JAR | — |
 
+Краткая карта кода для разработчика: [HELP-README.md](HELP-README.md).
+
 Проект собирается на JDK 17 или новее. Bukkit, включая Folia-ветку планировщика,
 и BungeeCord получают байткод Java 8; Velocity — Java 17. Жёсткой привязки к
 конкретной установленной JDK нет.
@@ -50,10 +52,10 @@ gradlew.bat clean test :pnlibrary-distribution:build
 
 Готовые файлы находятся в `pnlibrary-distribution/build/libs`:
 
-- `pnLibrary-bukkit-2.0.0-beta.5.jar`;
-- `pnLibrary-bungee-2.0.0-beta.5.jar`;
-- `pnLibrary-velocity-2.0.0-beta.5.jar`;
-- `pnLibrary-api-2.0.0-beta.5.jar` и sources для разработчиков.
+- `pnLibrary-bukkit-2.0.0-beta.6.jar`;
+- `pnLibrary-bungee-2.0.0-beta.6.jar`;
+- `pnLibrary-velocity-2.0.0-beta.6.jar`;
+- `pnLibrary-api-2.0.0-beta.6.jar` и sources для разработчиков.
 
 Положите один подходящий JAR в папку `plugins` и полностью перезапустите сервер.
 
@@ -79,14 +81,14 @@ repositories {
 }
 
 dependencies {
-    compileOnly("ru.privatenull:pnlibrary-api:2.0.0-beta.5")
+    compileOnly("ru.privatenull:pnlibrary-api:2.0.0-beta.6")
 }
 ```
 
 Для Bukkit-специфичных API (`PnMenus`, `BukkitMinecraftVersion`) дополнительно:
 
 ```kotlin
-compileOnly("ru.privatenull:pnlibrary-bukkit:2.0.0-beta.5") { isTransitive = false }
+compileOnly("ru.privatenull:pnlibrary-bukkit:2.0.0-beta.6") { isTransitive = false }
 ```
 
 API нельзя встраивать через `implementation`, Shadow или relocation: его предоставляет установленная pnLibrary.

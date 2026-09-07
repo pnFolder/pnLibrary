@@ -1,8 +1,5 @@
 package ru.privatenull.pnlibrary.core.security
 
-
-
-
 import com.google.gson.Gson
 import java.io.ByteArrayOutputStream
 import java.io.IOException

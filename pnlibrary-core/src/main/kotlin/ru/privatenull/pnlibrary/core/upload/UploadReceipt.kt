@@ -1,8 +1,5 @@
 package ru.privatenull.pnlibrary.core.upload
 
-
-
-
 import java.net.URI
 
 /**

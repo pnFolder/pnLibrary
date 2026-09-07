@@ -1,8 +1,5 @@
 package ru.privatenull.pnlibrary.core.diagnostics
 
-
-
-
 import java.util.regex.Pattern
 
 /**

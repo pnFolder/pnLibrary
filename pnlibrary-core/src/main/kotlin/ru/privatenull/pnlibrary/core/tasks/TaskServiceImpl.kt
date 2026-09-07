@@ -1,15 +1,10 @@
 package ru.privatenull.pnlibrary.core.tasks
 
-
-
-
-import ru.privatenull.pnlibrary.api.diagnostics.*
-import ru.privatenull.pnlibrary.api.logging.*
-import ru.privatenull.pnlibrary.api.metrics.*
-import ru.privatenull.pnlibrary.api.platform.*
-import ru.privatenull.pnlibrary.api.runtime.*
-import ru.privatenull.pnlibrary.api.tasks.*
-import ru.privatenull.pnlibrary.api.updates.*
+import ru.privatenull.pnlibrary.api.logging.LogLevel
+import ru.privatenull.pnlibrary.api.platform.PlatformAdapter
+import ru.privatenull.pnlibrary.api.tasks.TaskHandle
+import ru.privatenull.pnlibrary.api.tasks.TaskScope
+import ru.privatenull.pnlibrary.api.tasks.TaskService
 import java.time.Duration
 import java.util.Collections
 import java.util.IdentityHashMap

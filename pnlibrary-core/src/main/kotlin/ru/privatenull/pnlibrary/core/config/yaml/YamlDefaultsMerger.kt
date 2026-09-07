@@ -1,6 +1,6 @@
 package ru.privatenull.pnlibrary.core.config.yaml
 
-/** Рекурсивное слияние YAML с сохранением комментариев для [CodeFirstYaml]. */
+/** Recursively merges YAML defaults while preserving comments for [CodeFirstYaml]. */
 internal object YamlDefaultsMerger {
     data class Result(val content: String, val addedPaths: List<String>) {
         val changed: Boolean get() = addedPaths.isNotEmpty()

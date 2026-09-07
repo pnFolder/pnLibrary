@@ -1,15 +1,13 @@
 package ru.privatenull.pnlibrary.core.updates
 
-
-
-
-import ru.privatenull.pnlibrary.api.diagnostics.*
-import ru.privatenull.pnlibrary.api.logging.*
-import ru.privatenull.pnlibrary.api.metrics.*
-import ru.privatenull.pnlibrary.api.platform.*
-import ru.privatenull.pnlibrary.api.runtime.*
-import ru.privatenull.pnlibrary.api.tasks.*
-import ru.privatenull.pnlibrary.api.updates.*
+import ru.privatenull.pnlibrary.api.logging.LogLevel
+import ru.privatenull.pnlibrary.api.platform.PlatformAdapter
+import ru.privatenull.pnlibrary.api.updates.PluginUpdateArtifact
+import ru.privatenull.pnlibrary.api.updates.PluginUpdateRequest
+import ru.privatenull.pnlibrary.api.updates.UpdateRegistration
+import ru.privatenull.pnlibrary.api.updates.UpdateService
+import ru.privatenull.pnlibrary.api.updates.UpdateSnapshot
+import ru.privatenull.pnlibrary.api.updates.UpdateState
 import java.nio.file.Files
 import java.nio.file.Paths
 import java.util.concurrent.CopyOnWriteArrayList

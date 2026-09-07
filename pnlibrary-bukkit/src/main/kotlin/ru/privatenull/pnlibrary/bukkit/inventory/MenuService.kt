@@ -19,6 +19,7 @@ import java.time.Duration
 import java.util.IdentityHashMap
 import java.util.UUID
 
+/** Opens menus and tracks their owner-bound sessions. */
 interface MenuService {
     fun open(owner: Plugin, player: Player, menu: Menu): MenuSession
     fun session(player: Player): MenuSession?
@@ -30,7 +31,10 @@ object PnMenus {
         ?: error("pnLibrary menu service is unavailable")
 }
 
-internal class MenuServiceImpl(private val host: Plugin, private val tasks: TaskScope) : MenuService, Listener {
+internal class MenuServiceImpl(
+    private val host: Plugin,
+    private val tasks: TaskScope,
+) : MenuService, Listener, AutoCloseable {
     private val sessions = hashMapOf<java.util.UUID, Session>()
     private val owners = IdentityHashMap<Plugin, MutableSet<Session>>()
 
@@ -54,6 +58,13 @@ internal class MenuServiceImpl(private val host: Plugin, private val tasks: Task
 
     override fun session(player: Player): MenuSession? = sessions[player.uniqueId]
     override fun close(owner: Plugin) = owners.remove(owner)?.toList()?.forEach { it.close() } ?: Unit
+
+    /** Closes every active menu and unregisters this shared listener. */
+    override fun close() {
+        owners.keys.toList().forEach(::close)
+        tasks.close()
+        org.bukkit.event.HandlerList.unregisterAll(this)
+    }
 
     @EventHandler(priority = EventPriority.HIGHEST, ignoreCancelled = false)
     fun click(event: InventoryClickEvent) {

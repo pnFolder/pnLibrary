@@ -1,15 +1,17 @@
 package ru.privatenull.pnlibrary.core.runtime
 
-import ru.privatenull.pnlibrary.core.diagnostics.DiagnosticsRegistry
-
-
 import ru.privatenull.pnlibrary.api.platform.PlatformAdapter
 import ru.privatenull.pnlibrary.api.runtime.PnLibrary
 import ru.privatenull.pnlibrary.api.runtime.PnLibraryConfig
 import ru.privatenull.pnlibrary.api.runtime.PnLibraryProvider
+import ru.privatenull.pnlibrary.core.diagnostics.DiagnosticsRegistry
 
 /**
- * Internal lifecycle bootstrap for the one platform runtime in this process.
+ * Creates and publishes the single pnLibrary runtime in the current JVM.
+ *
+ * This bootstrap owns initialization order only: create the implementation,
+ * start internal services, install [PnLibraryProvider], then bind the
+ * [PlatformAdapter]. Repeated calls return the active instance.
  */
 object PnLibraryBootstrap {
 
@@ -25,20 +27,27 @@ object PnLibraryBootstrap {
 
         val current = instance
         if (current != null && !current.isClosed) return current
-        return PnLibraryImpl(
-                owner = owner,
-                platform = platform,
-                diagnostics = globalRegistry,
-                config = config,
-                onClose = { instance = null }
-            ).also { impl ->
-            instance = impl
-            impl.init()
-            PnLibraryProvider.install(impl)
+        val created = PnLibraryImpl(
+            owner = owner,
+            platform = platform,
+            diagnostics = globalRegistry,
+            config = config,
+            onClose = { instance = null },
+        )
+        instance = created
+
+        return try {
+            created.init()
+            PnLibraryProvider.install(created)
+            platform.bind(created)
+            created
+        } catch (error: Throwable) {
+            created.close()
+            throw error
         }
     }
 
-    /** Returns the shared global diagnostics registry instance. */
+    /** Shared diagnostics registry of the active process. */
     @JvmStatic
     fun globalRegistry(): DiagnosticsRegistry = globalRegistry
 }

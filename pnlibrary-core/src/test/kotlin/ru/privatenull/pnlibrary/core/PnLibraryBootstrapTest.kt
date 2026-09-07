@@ -12,6 +12,9 @@ import org.junit.jupiter.api.Test
 import ru.privatenull.pnlibrary.api.diagnostics.DiagnosticLevel
 import ru.privatenull.pnlibrary.api.diagnostics.DiagnosticContainer
 import ru.privatenull.pnlibrary.api.platform.PlatformAdapter
+import ru.privatenull.pnlibrary.api.platform.PlatformVariant
+import ru.privatenull.pnlibrary.api.runtime.PnLibrary
+import ru.privatenull.pnlibrary.api.runtime.PnLibraryProvider
 import java.util.function.Supplier
 
 class PnLibraryBootstrapTest {
@@ -26,9 +29,11 @@ class PnLibraryBootstrapTest {
 
         assertSame(lib1, lib2)
         assertEquals(dummyOwner, lib1.owner)
+        assertSame(lib1, dummyPlatform.boundLibrary)
 
         lib1.close()
         assertTrue(lib1.isClosed)
+        assertEquals(null, PnLibraryProvider.getOrNull())
     }
 
     @Test
@@ -62,7 +67,13 @@ class PnLibraryBootstrapTest {
 
     private class DummyPlugin(val name: String)
     private class DummyPlatformAdapter : PlatformAdapter {
+        var boundLibrary: PnLibrary? = null
+        override val variant = PlatformVariant.BUKKIT
         override val id: String get() = "dummy"
+        override fun bind(library: PnLibrary) {
+            assertSame(library, PnLibraryProvider.get())
+            boundLibrary = library
+        }
         override fun details(): Map<String, Any?> = mapOf("test" to true)
         override fun executeGlobal(task: Runnable) { task.run() }
         override fun executeReply(recipient: Any, task: Runnable) { task.run() }

@@ -11,11 +11,10 @@ import java.nio.file.Path
 import java.util.function.Consumer
 
 /**
- * Единая регистрация плагина в pnLibrary.
+ * Unified pnLibrary registration for one consumer plugin.
  *
- * Объект объединяет задачи, метрики, диагностику и обновления. Владельцу не
- * требуется хранить и закрывать каждую регистрацию отдельно: достаточно вызвать
- * [close] при выключении плагина.
+ * This object groups tasks, metrics, diagnostics, and updates. The owner only
+ * needs to keep this integration and call [close] during plugin shutdown.
  *
  * Kotlin:
  * ```kotlin
@@ -37,18 +36,18 @@ import java.util.function.Consumer
  * ```
  */
 class PluginIntegration private constructor(
-    /** Область задач, автоматически отменяемая при [close]. */
+    /** Owner-bound task scope cancelled by [close]. */
     val tasks: TaskScope,
-    /** Метрики плагина или `null`, если они не регистрировались. */
+    /** Plugin metrics, or `null` when metrics were not configured. */
     val metrics: PluginMetrics?,
-    /** Диагностическая регистрация или `null`. */
+    /** Diagnostics registration, or `null`. */
     val diagnostics: DiagnosticRegistration?,
-    /** Регистрация обновлений или `null`. */
+    /** Update registration, or `null`. */
     val updates: UpdateRegistration?,
     private val diagnosticsCleanup: (() -> Unit)?,
 ) : AutoCloseable {
 
-    /** Закрывает обновления, диагностику, метрики и задачи в безопасном порядке. */
+    /** Closes updates, diagnostics, metrics, and tasks in a safe order. */
     override fun close() {
         runCatching { updates?.close() }
         runCatching { diagnostics?.close() }
@@ -57,7 +56,7 @@ class PluginIntegration private constructor(
         runCatching { tasks.close() }
     }
 
-    /** Конструктор единой интеграции, доступный одинаково на всех платформах. */
+    /** Cross-platform builder for a unified plugin integration. */
     class Builder internal constructor(
         private val library: PnLibrary,
         private val owner: Any,
@@ -69,23 +68,23 @@ class PluginIntegration private constructor(
         private var diagnosticContainer: DiagnosticContainer? = null
         private var updateRequest: PluginUpdateRequest? = null
 
-        /** Включает метрики и настраивает графики через переданный callback. */
+        /** Opens metrics and configures charts through [configure]. */
         fun metrics(projectId: Int, configure: Consumer<PluginMetrics>): Builder = apply {
             require(projectId > 0) { "projectId must be positive" }
             metricsProjectId = projectId
             metricsConfigurer = configure
         }
 
-        /** Регистрирует диагностический контейнер и разрешённую папку данных. */
+        /** Registers a diagnostics container and its allowed data directory. */
         fun diagnostics(dataDirectory: Path, container: DiagnosticContainer): Builder = apply {
             diagnosticsDirectory = dataDirectory
             diagnosticContainer = container
         }
 
-        /** Регистрирует проверку и загрузку обновлений плагина. */
+        /** Registers update checks and downloads for this plugin. */
         fun updates(request: PluginUpdateRequest): Builder = apply { updateRequest = request }
 
-        /** Создаёт все выбранные подсистемы как одну атомарную регистрацию. */
+        /** Creates all selected subsystems as one failure-safe registration. */
         fun build(): PluginIntegration {
             require(pluginId.matches(Regex("[A-Za-z0-9_.-]+"))) { "invalid pluginId" }
             val tasks = library.tasks.scope(owner)
@@ -122,7 +121,7 @@ class PluginIntegration private constructor(
     }
 
     companion object {
-        /** Начинает описание интеграции [pluginId] для объекта-владельца [owner]. */
+        /** Starts an integration for [pluginId] owned by [owner]. */
         @JvmStatic
         fun builder(library: PnLibrary, owner: Any, pluginId: String): Builder =
             Builder(library, owner, pluginId)

@@ -4,44 +4,44 @@ import org.bukkit.plugin.ServicePriority
 import org.bukkit.plugin.java.JavaPlugin
 import ru.privatenull.pnlibrary.api.diagnostics.DiagnosticsService
 import ru.privatenull.pnlibrary.api.runtime.PnLibrary
-import ru.privatenull.pnlibrary.core.runtime.PnLibraryBootstrap
-import ru.privatenull.pnlibrary.core.runtime.PnLibraryImpl
-import ru.privatenull.pnlibrary.core.runtime.PnLibraryConfigLoader
-import ru.privatenull.pnlibrary.core.updates.MandatoryUpdateService
 import ru.privatenull.pnlibrary.bukkit.inventory.MenuService
 import ru.privatenull.pnlibrary.bukkit.inventory.MenuServiceImpl
-import java.nio.file.Paths
+import ru.privatenull.pnlibrary.core.runtime.PnLibraryRuntimeHost
 
-/** The single Bukkit/Paper runtime host installed in the server plugins directory. */
+/** Bukkit entry point that owns the pnLibrary runtime and Bukkit-only services. */
 class PnLibraryBukkitPlugin : JavaPlugin() {
-    private var runtime: PnLibrary? = null
-    private var menus: MenuService? = null
-    private var updateMonitor: AutoCloseable? = null
+    private var runtimeHost: PnLibraryRuntimeHost? = null
+    private var menuService: MenuServiceImpl? = null
 
     override fun onEnable() {
         val adapter = BukkitPlatformAdapter(this)
-        val loaded = PnLibraryBootstrap.bootstrap(this, adapter, PnLibraryConfigLoader.load(dataFolder.toPath()))
-        adapter.attachLibrary(loaded as PnLibraryImpl)
-        server.servicesManager.register(PnLibrary::class.java, loaded, this, ServicePriority.Normal)
-        server.servicesManager.register(DiagnosticsService::class.java, loaded.diagnostics, this, ServicePriority.Normal)
-        val menuService = MenuServiceImpl(this, loaded.tasks.scope(this))
-        server.servicesManager.register(MenuService::class.java, menuService, this, ServicePriority.Normal)
-        menus = menuService
-        runtime = loaded
-
-        updateMonitor = MandatoryUpdateService.start(this, adapter, description.version, "bukkit",
-            Paths.get(javaClass.protectionDomain.codeSource.location.toURI()),
-            server.updateFolderFile.toPath())
-
-        logger.info("pnLibrary ${description.version} enabled (${adapter.id})")
+        val host = PnLibraryRuntimeHost.start(
+            this,
+            adapter,
+            server.updateFolderFile.toPath(),
+        )
+        try {
+            registerBukkitServices(host.library)
+            runtimeHost = host
+        } catch (error: Throwable) {
+            host.close()
+            throw error
+        }
     }
 
     override fun onDisable() {
+        menuService?.close()
+        menuService = null
         server.servicesManager.unregisterAll(this)
-        runCatching { updateMonitor?.close() }
-        updateMonitor = null
-        runtime?.close()
-        menus = null
-        runtime = null
+        runtimeHost?.close()
+        runtimeHost = null
+    }
+
+    private fun registerBukkitServices(library: PnLibrary) {
+        server.servicesManager.register(PnLibrary::class.java, library, this, ServicePriority.Normal)
+        server.servicesManager.register(DiagnosticsService::class.java, library.diagnostics, this, ServicePriority.Normal)
+        val menuService = MenuServiceImpl(this, library.tasks.scope(this))
+        server.servicesManager.register(MenuService::class.java, menuService, this, ServicePriority.Normal)
+        this.menuService = menuService
     }
 }

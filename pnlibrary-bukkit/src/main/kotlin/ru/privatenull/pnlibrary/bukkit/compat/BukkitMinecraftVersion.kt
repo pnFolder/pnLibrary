@@ -3,12 +3,12 @@ package ru.privatenull.pnlibrary.bukkit.compat
 import org.bukkit.Bukkit
 import ru.privatenull.pnlibrary.api.version.minecraft.MinecraftVersion
 
-/** Определяет версию Minecraft через Bukkit, не смешивая Bukkit API с общим API версий. */
+/** Resolves Minecraft versions through Bukkit without leaking Bukkit into the shared version API. */
 object BukkitMinecraftVersion {
-    /** Возвращает разобранную версию текущего Bukkit/Paper/Folia-ядра. */
+    /** Returns the parsed version of the current Bukkit/Paper/Folia server. */
     @JvmStatic fun current(): MinecraftVersion = MinecraftVersion.parse(rawCurrent())
 
-    /** Возвращает исходную строку версии Minecraft, сообщённую ядром. */
+    /** Returns the raw Minecraft version reported by the server. */
     @JvmStatic fun rawCurrent(): String = try {
         val server = Bukkit.getServer()
         val method = server.javaClass.methods.firstOrNull {

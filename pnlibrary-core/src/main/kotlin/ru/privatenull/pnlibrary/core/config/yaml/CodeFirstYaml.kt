@@ -1,6 +1,11 @@
 package ru.privatenull.pnlibrary.core.config.yaml
 
-import ru.privatenull.pnlibrary.api.config.*
+import ru.privatenull.pnlibrary.api.config.ConfigCodec
+import ru.privatenull.pnlibrary.api.config.ConfigLoadResult
+import ru.privatenull.pnlibrary.api.config.ConfigProblem
+import ru.privatenull.pnlibrary.api.config.ConfigValidationException
+import ru.privatenull.pnlibrary.api.config.ConfigValueValidator
+import ru.privatenull.pnlibrary.api.config.ManagedConfig
 import java.io.File
 import java.nio.file.Files
 import java.nio.file.StandardCopyOption
@@ -9,12 +14,12 @@ import java.util.logging.Logger
 import java.util.function.UnaryOperator
 
 /**
- * Загружает типизированный YAML и синхронизирует его с defaults из кода.
+ * Loads typed YAML and synchronizes it with code-defined defaults.
  *
- * Отсутствующие ключи добавляются рекурсивно вместе с комментариями. Существующие
- * значения, порядок, комментарии и неизвестные ключи расширений сохраняются.
- * Перед первым изменением создаётся `.bak`, а файл заменяется атомарно только
- * после успешного декодирования.
+ * Missing keys and their comments are added recursively. Existing values,
+ * ordering, comments, and extension keys are preserved. A `.bak` file is
+ * created before synchronization, and the target is replaced atomically only
+ * after successful decoding.
  *
  * ```kotlin
  * val config = CodeFirstYaml(file, Settings(), codec, logger).load().value
@@ -29,15 +34,15 @@ class CodeFirstYaml<T> @JvmOverloads constructor(
 ) : ManagedConfig<T> {
     @Volatile private var loadedValue: T? = null
 
-    /** `true`, когда [load] или [reload] завершились успешно и значение не выгружено. */
+    /** `true` after a successful [load] or [reload] and before [unload]. */
     override val isLoaded: Boolean get() = loadedValue != null
 
-    /** Возвращает текущее значение из памяти. */
+    /** Returns the current in-memory value. */
     override fun get(): T = loadedValue ?: error("Configuration ${file.name} is not loaded")
 
     /**
-     * Создаёт отсутствующий файл, дополняет существующий новыми полями, проверяет
-     * значение и возвращает подробный результат синхронизации.
+     * Creates a missing file, adds new fields to an existing file, validates the
+     * value, and returns synchronization details.
      */
     @Synchronized
     override fun load(): ConfigLoadResult<T> {
@@ -66,15 +71,15 @@ class CodeFirstYaml<T> @JvmOverloads constructor(
         return ConfigLoadResult(value, merged.addedPaths, backup)
     }
 
-    /** Повторно загружает файл; присваивание происходит только после полной успешной проверки. */
+    /** Reloads the file and replaces the value only after full validation. */
     @Synchronized
     override fun reload(): ConfigLoadResult<T> = load()
 
-    /** Сохраняет текущее значение из памяти. */
+    /** Saves the current in-memory value. */
     @Synchronized
     override fun save() = save(get())
 
-    /** Атомарно сохраняет [value] после декодирования и семантической проверки. */
+    /** Atomically saves [value] after decoding and semantic validation. */
     @Synchronized
     override fun save(value: T) {
         val encoded = normalize(codec.encode(value))
@@ -83,7 +88,7 @@ class CodeFirstYaml<T> @JvmOverloads constructor(
         loadedValue = value
     }
 
-    /** Изменяет и сохраняет конфигурацию одной операцией. */
+    /** Updates and saves the configuration as one synchronized operation. */
     @Synchronized
     override fun update(updater: UnaryOperator<T>): T {
         val updated = updater.apply(get())
@@ -91,17 +96,17 @@ class CodeFirstYaml<T> @JvmOverloads constructor(
         return updated
     }
 
-    /** Запускает валидатор для текущего значения. */
+    /** Runs the validator against the current value. */
     override fun validate(): List<ConfigProblem> = validator.validate(get())
 
-    /** Сохраняет code-first defaults и возвращает их. */
+    /** Saves and returns the code-defined defaults. */
     @Synchronized
     override fun resetToDefaults(): T {
         save(defaults)
         return defaults
     }
 
-    /** Очищает значение из памяти. Файл остаётся без изменений. */
+    /** Clears the in-memory value without changing the file. */
     @Synchronized
     override fun unload() { loadedValue = null }
 

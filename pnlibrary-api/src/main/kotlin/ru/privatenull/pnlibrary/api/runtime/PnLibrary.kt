@@ -1,6 +1,8 @@
 package ru.privatenull.pnlibrary.api.runtime
 
 import ru.privatenull.pnlibrary.api.diagnostics.DiagnosticsService
+import ru.privatenull.pnlibrary.api.diagnostics.DebugRequest
+import ru.privatenull.pnlibrary.api.diagnostics.DiagnosticReport
 import ru.privatenull.pnlibrary.api.logging.LoggingService
 import ru.privatenull.pnlibrary.api.metrics.MetricsService
 import ru.privatenull.pnlibrary.api.platform.PlatformAdapter
@@ -8,38 +10,50 @@ import ru.privatenull.pnlibrary.api.tasks.TaskService
 import ru.privatenull.pnlibrary.api.updates.UpdateService
 import java.io.Closeable
 
-/** Shared service owned by the single installed pnLibrary platform runtime. */
+/**
+ * Main pnLibrary facade shared by all plugins in one server process.
+ *
+ * Consumers obtain this interface through [PnLibraryProvider]. They must not
+ * depend on `core` implementation classes, so the internals can evolve without
+ * breaking installed plugins.
+ */
 interface PnLibrary : Closeable {
-    /** Runtime version used for dependency compatibility checks. */
+    /** Version of the installed runtime. */
     val version: String
 
-    /** Checks whether this runtime provides at least the requested release. */
+    /** Returns `true` when this runtime is not older than [minimumVersion]. */
     fun isAtLeastVersion(minimumVersion: String): Boolean
 
-    /** The owning plugin instance (e.g. Bukkit Plugin, Bungee Plugin, or Velocity object). */
+    /** Native platform plugin instance that owns this runtime. */
     val owner: Any
 
-    /** Platform adapter supplying scheduler dispatch and platform diagnostics. */
+    /** Bridge from the platform-independent core to the current server. */
     val platform: PlatformAdapter
 
-    /** Public diagnostic service for container registration and status updates. */
+    /** Validated configuration of the installed runtime. */
+    val configuration: PnLibraryConfig
+
+    /** Registry for diagnostic data contributed by consumer plugins. */
     val diagnostics: DiagnosticsService
 
-    /** pnLibrary-owned abstraction over bStats. The project ID is supplied per plugin. */
+    /** Managed bStats sessions; every plugin supplies its own project ID. */
     val metrics: MetricsService
 
-    /** Unified native logging and startup/status boxes. */
+    /** Native logging and formatted lifecycle summaries. */
     val logging: LoggingService
 
-    /** Centralized mandatory updater for registered pnFolder plugins. */
+    /** Update checks and staged downloads for registered plugins. */
     val updates: UpdateService
 
-    /** Cross-platform task scopes with automatic lifecycle cancellation. */
+    /** Cross-platform tasks grouped by their owner lifecycle. */
     val tasks: TaskService
 
-    /** Whether this library instance has been closed. */
+    /** Builds a diagnostic report from an already validated request. */
+    fun createDiagnosticReport(request: DebugRequest): DiagnosticReport
+
+    /** Whether the runtime has released its resources. */
     val isClosed: Boolean
 
+    /** Stops every service and removes this runtime from [PnLibraryProvider]. */
     override fun close()
-
 }

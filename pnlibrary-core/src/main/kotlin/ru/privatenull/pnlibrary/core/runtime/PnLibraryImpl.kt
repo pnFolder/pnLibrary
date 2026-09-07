@@ -1,9 +1,18 @@
 package ru.privatenull.pnlibrary.core.runtime
 
+import ru.privatenull.pnlibrary.api.diagnostics.DebugRequest
+import ru.privatenull.pnlibrary.api.diagnostics.DiagnosticReport
+import ru.privatenull.pnlibrary.api.logging.LoggingService
+import ru.privatenull.pnlibrary.api.metrics.MetricsService
+import ru.privatenull.pnlibrary.api.platform.PlatformAdapter
+import ru.privatenull.pnlibrary.api.runtime.PnLibrary
+import ru.privatenull.pnlibrary.api.runtime.PnLibraryConfig
+import ru.privatenull.pnlibrary.api.runtime.PnLibraryProvider
+import ru.privatenull.pnlibrary.api.version.SemanticVersion
 import ru.privatenull.pnlibrary.core.diagnostics.DiagnosticsRegistry
 import ru.privatenull.pnlibrary.core.diagnostics.ReportGenerator
-import ru.privatenull.pnlibrary.core.logging.PlatformLoggingService
 import ru.privatenull.pnlibrary.core.logging.DiagnosticLogBuffer
+import ru.privatenull.pnlibrary.core.logging.PlatformLoggingService
 import ru.privatenull.pnlibrary.core.metrics.MetricsRegistry
 import ru.privatenull.pnlibrary.core.security.EncryptedEnvelopeCodec
 import ru.privatenull.pnlibrary.core.tasks.TaskServiceImpl
@@ -12,16 +21,6 @@ import ru.privatenull.pnlibrary.core.upload.EncryptedReportUploader
 import ru.privatenull.pnlibrary.core.upload.MclogsUploader
 import ru.privatenull.pnlibrary.core.upload.ReportUploader
 import ru.privatenull.pnlibrary.core.upload.UploadLedger
-
-
-import ru.privatenull.pnlibrary.api.diagnostics.DebugRequest
-import ru.privatenull.pnlibrary.api.platform.PlatformAdapter
-import ru.privatenull.pnlibrary.api.runtime.PnLibrary
-import ru.privatenull.pnlibrary.api.runtime.PnLibraryConfig
-import ru.privatenull.pnlibrary.api.metrics.MetricsService
-import ru.privatenull.pnlibrary.api.runtime.PnLibraryProvider
-import ru.privatenull.pnlibrary.api.logging.LoggingService
-import ru.privatenull.pnlibrary.api.version.SemanticVersion
 import java.io.ByteArrayOutputStream
 import java.io.IOException
 import java.io.InputStream
@@ -35,7 +34,11 @@ import java.util.concurrent.TimeUnit
 import java.util.concurrent.atomic.AtomicBoolean
 
 /**
- * Concrete implementation of embedded [PnLibrary].
+ * Composes all service implementations into one [PnLibrary] runtime.
+ *
+ * This is the internal composition root for diagnostics, logging, metrics,
+ * updates, and tasks. Platform modules depend on [PnLibrary] and must not cast
+ * the facade to this implementation.
  */
 class PnLibraryImpl(
     override val owner: Any,
@@ -44,6 +47,8 @@ class PnLibraryImpl(
     val config: PnLibraryConfig = PnLibraryConfig(),
     private val onClose: () -> Unit = {},
 ) : PnLibrary {
+
+    override val configuration: PnLibraryConfig get() = config
 
     override val version: String = platform.ownerDetails(owner)["version"] ?: "unknown"
     override fun isAtLeastVersion(minimumVersion: String): Boolean =
@@ -92,7 +97,7 @@ class PnLibraryImpl(
         }
     }
 
-    fun generateReport(request: DebugRequest): ReportGenerator.ReportResult {
+    override fun createDiagnosticReport(request: DebugRequest): DiagnosticReport {
         check(!isClosed) { "pnLibrary instance is closed" }
         check(reportInProgress.compareAndSet(false, true)) { "A diagnostic report is already being generated" }
         return try {

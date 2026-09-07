@@ -1,11 +1,11 @@
 package ru.privatenull.pnlibrary.bukkit
 
-import org.bukkit.Bukkit
 import net.md_5.bungee.api.ChatColor
 import net.md_5.bungee.api.chat.ClickEvent
 import net.md_5.bungee.api.chat.ComponentBuilder
 import net.md_5.bungee.api.chat.HoverEvent
 import net.md_5.bungee.api.chat.TextComponent
+import org.bukkit.Bukkit
 import org.bukkit.command.Command
 import org.bukkit.command.CommandExecutor
 import org.bukkit.command.CommandMap
@@ -13,28 +13,30 @@ import org.bukkit.command.CommandSender
 import org.bukkit.command.PluginCommand
 import org.bukkit.command.TabCompleter
 import org.bukkit.entity.Player
-import org.bukkit.event.HandlerList
 import org.bukkit.event.EventHandler
+import org.bukkit.event.HandlerList
 import org.bukkit.event.Listener
 import org.bukkit.event.player.PlayerJoinEvent
 import org.bukkit.event.server.PluginDisableEvent
 import org.bukkit.plugin.Plugin
 import org.bukkit.plugin.java.JavaPlugin
-import ru.privatenull.pnlibrary.api.diagnostics.DebugRequest
-import ru.privatenull.pnlibrary.api.platform.PlatformAdapter
-import ru.privatenull.pnlibrary.api.metrics.PlatformMetricsFactory
 import ru.privatenull.pnlibrary.api.logging.LogLevel
+import ru.privatenull.pnlibrary.api.metrics.PlatformMetricsFactory
+import ru.privatenull.pnlibrary.api.platform.PlatformAdapter
+import ru.privatenull.pnlibrary.api.platform.PlatformVariant
+import ru.privatenull.pnlibrary.api.runtime.PnLibrary
 import ru.privatenull.pnlibrary.api.runtime.PnLibraryBrand
 import ru.privatenull.pnlibrary.api.updates.UpdateState
-import java.util.logging.Level
 import ru.privatenull.pnlibrary.bukkit.compat.ServerCapabilities
-import ru.privatenull.pnlibrary.core.runtime.PnLibraryImpl
+import ru.privatenull.pnlibrary.core.diagnostics.DiagnosticCommandEvent
+import ru.privatenull.pnlibrary.core.diagnostics.DiagnosticCommandExecutor
 import java.io.File
 import java.lang.reflect.Constructor
 import java.time.Instant
 import java.util.Locale
 import java.util.concurrent.ConcurrentHashMap
 import java.util.concurrent.atomic.AtomicBoolean
+import java.util.logging.Level
 
 /**
  * Platform adapter for Bukkit, Spigot, Paper (1.12.2 to modern 1.21+), Leaf, and Purpur.
@@ -45,17 +47,17 @@ class BukkitPlatformAdapter @JvmOverloads constructor(
 ) : PlatformAdapter, CommandExecutor, TabCompleter, Listener {
 
     private val closedFlag = AtomicBoolean(false)
-    private val lastRequestTimes = ConcurrentHashMap<String, Long>()
     private val restartConfirmations = ConcurrentHashMap<String, Long>()
-    private var libraryImpl: PnLibraryImpl? = null
+    private var library: PnLibrary? = null
+    private var diagnosticCommands: DiagnosticCommandExecutor? = null
 
-    override val id: String
+    override val variant: PlatformVariant
         get() = when {
-            ServerCapabilities.isPurpur -> "purpur"
-            ServerCapabilities.isLeaf -> "leaf"
-            ServerCapabilities.isFolia -> "folia-bukkit"
-            ServerCapabilities.isPaper -> "paper"
-            else -> "bukkit"
+            ServerCapabilities.isPurpur -> PlatformVariant.PURPUR
+            ServerCapabilities.isLeaf -> PlatformVariant.LEAF
+            ServerCapabilities.isFolia -> PlatformVariant.FOLIA
+            ServerCapabilities.isPaper -> PlatformVariant.PAPER
+            else -> PlatformVariant.BUKKIT
         }
     override val metricsFactory: PlatformMetricsFactory = BukkitMetricsFactory()
     override val dataFolder = plugin.dataFolder.toPath()
@@ -83,8 +85,9 @@ class BukkitPlatformAdapter @JvmOverloads constructor(
         )
     }
 
-    fun attachLibrary(impl: PnLibraryImpl) {
-        this.libraryImpl = impl
+    override fun bind(library: PnLibrary) {
+        this.library = library
+        diagnosticCommands = DiagnosticCommandExecutor(library)
         registerCommands()
         Bukkit.getPluginManager().registerEvents(this, plugin)
     }
@@ -196,6 +199,8 @@ class BukkitPlatformAdapter @JvmOverloads constructor(
     override fun close() {
         if (closedFlag.compareAndSet(false, true)) {
             HandlerList.unregisterAll(this)
+            diagnosticCommands = null
+            library = null
         }
     }
 
@@ -206,52 +211,35 @@ class BukkitPlatformAdapter @JvmOverloads constructor(
             return true
         }
 
-        val request = try {
-            DebugRequest.parse(args, prefixed = command.name.equals("pnlib", ignoreCase = true))
-        } catch (_: IllegalArgumentException) {
-            sender.sendMessage("§e/$commandAlias [all|plugin] [--full|--config|--logs] [--local]")
-            return true
-        }
-
-        val impl = libraryImpl
-        if (impl == null || impl.isClosed) {
+        val executor = diagnosticCommands
+        if (executor == null || library?.isClosed != false) {
             sender.sendMessage("§cpnLibrary не готова.")
             return true
         }
-
-        val cooldown = impl.config.cooldownSeconds
-        val senderKey = sender.name
-        val now = System.currentTimeMillis()
-        val lastTime = lastRequestTimes[senderKey] ?: 0L
-        if (now - lastTime < cooldown * 1000L) {
-            val remain = cooldown - ((now - lastTime) / 1000)
-            sender.sendMessage("§eПодождите $remain сек. перед следующим отчётом.")
-            return true
+        executor.execute(args, command.name.equals("pnlib", true), sender.name, sender) { event ->
+            sendDiagnosticEvent(sender, event)
         }
-
-        lastRequestTimes[senderKey] = now
-        sender.sendMessage("§7Собираю отчёт: ${request.target} ...")
-
-        impl.tasks.scope(plugin).async(Runnable {
-            try {
-                val result = impl.generateReport(request)
-                executeReply(sender, Runnable {
-                    val receipt = result.uploadReceipt
-                    if (receipt != null) {
-                        sender.sendMessage("§aОтчёт готов: ${receipt.link}")
-                    } else {
-                        sender.sendMessage("§aОтчёт сохранён локально: plugins/${plugin.name}/reports/${result.localFile.fileName}")
-                        result.uploadError?.let { sender.sendMessage("§eЗагрузить отчёт не удалось: $it") }
-                    }
-                })
-            } catch (e: Exception) {
-                executeReply(sender, Runnable {
-                    sender.sendMessage("§cОшибка при создании отчёта: ${e.message}")
-                })
-            }
-        })
-
         return true
+    }
+
+    private fun sendDiagnosticEvent(sender: CommandSender, event: DiagnosticCommandEvent) {
+        when (event) {
+            DiagnosticCommandEvent.InvalidUsage ->
+                sender.sendMessage("§e/$commandAlias [all|plugin] [--full|--config|--logs] [--local]")
+            is DiagnosticCommandEvent.CoolingDown ->
+                sender.sendMessage("§eПодождите ${event.seconds} сек. перед следующим отчётом.")
+            is DiagnosticCommandEvent.Started ->
+                sender.sendMessage("§7Собираю отчёт: ${event.target} ...")
+            is DiagnosticCommandEvent.Completed -> {
+                val report = event.report
+                val output = report.uploadedUrl
+                    ?: "plugins/${plugin.name}/reports/${report.localFile.fileName}"
+                sender.sendMessage("§aОтчёт готов: $output")
+                report.uploadError?.let { sender.sendMessage("§eЗагрузить отчёт не удалось: $it") }
+            }
+            is DiagnosticCommandEvent.Failed ->
+                sender.sendMessage("§cОшибка при создании отчёта: ${event.message}")
+        }
     }
 
     override fun onTabComplete(sender: CommandSender, command: Command, alias: String, args: Array<out String>): List<String> {
@@ -260,7 +248,7 @@ class BukkitPlatformAdapter @JvmOverloads constructor(
             val values = when (args.size) {
                 1 -> listOf("status", "updates", "check", "update", "restart", "debug", "support")
                 2 -> if (args[0].equals("status", true) || args[0].equals("update", true))
-                    libraryImpl?.updates?.registrations()?.map { it.snapshot.product } ?: emptyList()
+                    library?.updates?.registrations()?.map { it.snapshot.product } ?: emptyList()
                 else emptyList()
                 else -> emptyList()
             }
@@ -321,30 +309,30 @@ class BukkitPlatformAdapter @JvmOverloads constructor(
             sender.sendMessage("§cНедостаточно прав.")
             return true
         }
-        val impl = libraryImpl ?: run { sender.sendMessage("§cpnLibrary не готова."); return true }
+        val runtime = library ?: run { sender.sendMessage("§cpnLibrary не готова."); return true }
         val action = args.firstOrNull()?.lowercase(Locale.ROOT) ?: "status"
         when (action) {
             "status" -> {
                 val requested = args.getOrNull(1)
-                val entries = if (requested == null) impl.updates.registrations()
-                    else listOfNotNull(impl.updates.find(requested))
+                val entries = if (requested == null) runtime.updates.registrations()
+                    else listOfNotNull(runtime.updates.find(requested))
                 sender.sendMessage("")
                 sender.sendMessage("§a «Состояние pnFolder»")
                 sender.sendMessage(" §7- §fЯдро: §6${Bukkit.getName()} ${Bukkit.getBukkitVersion()}")
                 sender.sendMessage(" §7- §fJava: §6${Runtime.version().feature()} §7(${System.getProperty("java.version")})")
-                sender.sendMessage(" §7- §fpnLibrary: §6${impl.version}")
+                sender.sendMessage(" §7- §fpnLibrary: §6${runtime.version}")
                 if (entries.isEmpty()) sender.sendMessage(" §7- §fПлагины: §7нет зарегистрированных обновлений")
                 entries.forEach { sendUpdateLine(sender, it.snapshot) }
                 sender.sendMessage(" §7- §fПоддержка: §e${PnLibraryBrand.SUPPORT_URL}")
                 sender.sendMessage("")
             }
-            "updates" -> sendUpdates(sender, impl)
+            "updates" -> sendUpdates(sender, runtime)
             "update" -> {
                 val name = args.getOrNull(1)
                 if (name == null) {
                     sender.sendMessage("§eИспользование: /pn update <плагин>")
                 } else {
-                    val registration = impl.updates.find(name)
+                    val registration = runtime.updates.find(name)
                     if (registration == null) sender.sendMessage("§cПлагин $name не зарегистрирован в pnLibrary.")
                     else {
                         registration.downloadNow()
@@ -353,7 +341,7 @@ class BukkitPlatformAdapter @JvmOverloads constructor(
                 }
             }
             "check" -> {
-                impl.updates.registrations().forEach { it.checkNow() }
+                runtime.updates.registrations().forEach { it.checkNow() }
                 sender.sendMessage("§eПовторная проверка обновлений запущена.")
             }
             "restart" -> handleRestart(sender, args.drop(1))
@@ -366,8 +354,8 @@ class BukkitPlatformAdapter @JvmOverloads constructor(
 
     @Suppress("DEPRECATION")
     private fun handleRestart(sender: CommandSender, args: List<String>) {
-        val impl = libraryImpl ?: return
-        if (impl.updates.registrations().none { it.snapshot.state == UpdateState.DOWNLOADED }) {
+        val runtime = library ?: return
+        if (runtime.updates.registrations().none { it.snapshot.state == UpdateState.DOWNLOADED }) {
             sender.sendMessage("§eНет подготовленных обновлений, требующих перезапуска.")
             return
         }
@@ -400,10 +388,10 @@ class BukkitPlatformAdapter @JvmOverloads constructor(
         sender.sendMessage("")
     }
 
-    private fun sendUpdates(sender: CommandSender, impl: PnLibraryImpl) {
+    private fun sendUpdates(sender: CommandSender, runtime: PnLibrary) {
         sender.sendMessage("")
         sender.sendMessage("§e «Обновления pnFolder»")
-        val entries = impl.updates.registrations()
+        val entries = runtime.updates.registrations()
         if (entries.isEmpty()) sender.sendMessage(" §7Нет зарегистрированных плагинов.")
         entries.forEach {
             sendUpdateLine(sender, it.snapshot)
@@ -460,10 +448,10 @@ class BukkitPlatformAdapter @JvmOverloads constructor(
     fun onAdministratorJoin(event: PlayerJoinEvent) {
         val player = event.player
         if (!player.hasPermission("pnlibrary.admin")) return
-        val impl = libraryImpl ?: return
-        impl.tasks.scope(plugin).laterEntity(player, java.time.Duration.ofSeconds(5), Runnable {
-            val impl = libraryImpl ?: return@Runnable
-            val actionable = impl.updates.registrations().map { it.snapshot }
+        val runtime = library ?: return
+        runtime.tasks.scope(plugin).laterEntity(player, java.time.Duration.ofSeconds(5), Runnable {
+            val active = library ?: return@Runnable
+            val actionable = active.updates.registrations().map { it.snapshot }
                 .filter { it.state == UpdateState.AVAILABLE || it.state == UpdateState.DOWNLOADED }
             if (actionable.isEmpty() || !player.isOnline) return@Runnable
             player.sendMessage("")
@@ -478,7 +466,7 @@ class BukkitPlatformAdapter @JvmOverloads constructor(
 
     @EventHandler
     fun onPluginDisable(event: PluginDisableEvent) {
-        libraryImpl?.tasks?.close(event.plugin)
+        library?.tasks?.close(event.plugin)
     }
 
     private fun getPapiExpansionsCount(): Int {

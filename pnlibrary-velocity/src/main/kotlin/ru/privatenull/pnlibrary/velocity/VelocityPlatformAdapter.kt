@@ -1,18 +1,20 @@
 package ru.privatenull.pnlibrary.velocity
 
-import com.velocitypowered.api.proxy.ProxyServer
-import ru.privatenull.pnlibrary.api.platform.PlatformAdapter
-import ru.privatenull.pnlibrary.api.metrics.PlatformMetricsFactory
-import ru.privatenull.pnlibrary.api.diagnostics.DebugRequest
-import ru.privatenull.pnlibrary.core.runtime.PnLibraryImpl
 import com.velocitypowered.api.command.SimpleCommand
 import com.velocitypowered.api.proxy.ConsoleCommandSource
+import com.velocitypowered.api.proxy.ProxyServer
 import net.kyori.adventure.text.Component
 import net.kyori.adventure.text.serializer.legacy.LegacyComponentSerializer
-import java.util.concurrent.atomic.AtomicBoolean
-import java.nio.file.Path
 import org.slf4j.Logger
 import ru.privatenull.pnlibrary.api.logging.LogLevel
+import ru.privatenull.pnlibrary.api.metrics.PlatformMetricsFactory
+import ru.privatenull.pnlibrary.api.platform.PlatformAdapter
+import ru.privatenull.pnlibrary.api.platform.PlatformVariant
+import ru.privatenull.pnlibrary.api.runtime.PnLibrary
+import ru.privatenull.pnlibrary.core.diagnostics.DiagnosticCommandEvent
+import ru.privatenull.pnlibrary.core.diagnostics.DiagnosticCommandExecutor
+import java.nio.file.Path
+import java.util.concurrent.atomic.AtomicBoolean
 
 /**
  * Platform adapter targeting Velocity 3.x proxy servers.
@@ -26,9 +28,7 @@ class VelocityPlatformAdapter(
 ) : PlatformAdapter {
 
     private val closedFlag = AtomicBoolean(false)
-    private var library: PnLibraryImpl? = null
-
-    override val id: String get() = "velocity"
+    override val variant = PlatformVariant.VELOCITY
 
     override fun log(owner: Any, level: LogLevel, message: String, error: Throwable?) {
         when (level) {
@@ -53,8 +53,8 @@ class VelocityPlatformAdapter(
         )
     }
 
-    fun attachLibrary(runtime: PnLibraryImpl) {
-        library = runtime
+    override fun bind(library: PnLibrary) {
+        val diagnosticCommands = DiagnosticCommandExecutor(library)
         val meta = server.commandManager.metaBuilder("pndebug").aliases("pnlib").plugin(plugin).build()
         server.commandManager.register(meta, object : SimpleCommand {
             override fun execute(invocation: SimpleCommand.Invocation) {
@@ -63,19 +63,12 @@ class VelocityPlatformAdapter(
                     sender.sendMessage(Component.text("Недостаточно прав."))
                     return
                 }
-                val request = runCatching { DebugRequest.parse(invocation.arguments(), false) }.getOrElse {
-                    sender.sendMessage(Component.text("/pndebug [all|plugin] [--full|--config|--logs] [--local]"))
-                    return
-                }
-                sender.sendMessage(Component.text("Собираю зашифрованный диагностический отчёт..."))
-                server.scheduler.buildTask(plugin, Runnable {
-                    runCatching { runtime.generateReport(request) }
-                        .onSuccess { result ->
-                            sender.sendMessage(Component.text("Отчёт готов: ${result.uploadReceipt?.link ?: result.localFile}"))
-                            result.uploadError?.let { sender.sendMessage(Component.text("Загрузка не удалась; локальный отчёт сохранён: $it")) }
-                        }
-                        .onFailure { sender.sendMessage(Component.text("Ошибка отчёта: ${it.message}")) }
-                }).schedule()
+                diagnosticCommands.execute(
+                    invocation.arguments(),
+                    prefixed = false,
+                    requesterId = sender.toString(),
+                    recipient = sender,
+                ) { event -> sender.sendMessage(Component.text(message(event))) }
             }
         })
     }
@@ -121,6 +114,20 @@ class VelocityPlatformAdapter(
     override fun close() {
         closedFlag.set(true)
         server.commandManager.unregister("pndebug")
-        library = null
+    }
+
+    private fun message(event: DiagnosticCommandEvent): String = when (event) {
+        DiagnosticCommandEvent.InvalidUsage ->
+            "/pndebug [all|plugin] [--full|--config|--logs] [--local]"
+        is DiagnosticCommandEvent.CoolingDown ->
+            "Wait ${event.seconds}s before creating another report."
+        is DiagnosticCommandEvent.Started ->
+            "Collecting diagnostic report for ${event.target}..."
+        is DiagnosticCommandEvent.Completed -> {
+            val report = event.report
+            val output = report.uploadedUrl ?: report.localFile.toString()
+            "Report ready: $output" + (report.uploadError?.let { " (upload failed: $it)" } ?: "")
+        }
+        is DiagnosticCommandEvent.Failed -> "Report failed: ${event.message}"
     }
 }
