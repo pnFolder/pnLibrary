@@ -6,6 +6,7 @@ import ru.privatenull.pnlibrary.api.diagnostics.DiagnosticsService
 import ru.privatenull.pnlibrary.api.runtime.PnLibrary
 import ru.privatenull.pnlibrary.core.runtime.PnLibraryBootstrap
 import ru.privatenull.pnlibrary.core.runtime.PnLibraryImpl
+import ru.privatenull.pnlibrary.core.runtime.PnLibraryConfigLoader
 import ru.privatenull.pnlibrary.core.updates.MandatoryUpdateService
 import ru.privatenull.pnlibrary.bukkit.inventory.MenuService
 import ru.privatenull.pnlibrary.bukkit.inventory.MenuServiceImpl
@@ -15,10 +16,11 @@ import java.nio.file.Paths
 class PnLibraryBukkitPlugin : JavaPlugin() {
     private var runtime: PnLibrary? = null
     private var menus: MenuService? = null
+    private var updateMonitor: AutoCloseable? = null
 
     override fun onEnable() {
         val adapter = BukkitPlatformAdapter(this)
-        val loaded = PnLibraryBootstrap.bootstrap(this, adapter)
+        val loaded = PnLibraryBootstrap.bootstrap(this, adapter, PnLibraryConfigLoader.load(dataFolder.toPath()))
         adapter.attachLibrary(loaded as PnLibraryImpl)
         server.servicesManager.register(PnLibrary::class.java, loaded, this, ServicePriority.Normal)
         server.servicesManager.register(DiagnosticsService::class.java, loaded.diagnostics, this, ServicePriority.Normal)
@@ -27,7 +29,7 @@ class PnLibraryBukkitPlugin : JavaPlugin() {
         menus = menuService
         runtime = loaded
 
-        MandatoryUpdateService.start(this, adapter, description.version, "bukkit",
+        updateMonitor = MandatoryUpdateService.start(this, adapter, description.version, "bukkit",
             Paths.get(javaClass.protectionDomain.codeSource.location.toURI()),
             server.updateFolderFile.toPath())
 
@@ -36,6 +38,8 @@ class PnLibraryBukkitPlugin : JavaPlugin() {
 
     override fun onDisable() {
         server.servicesManager.unregisterAll(this)
+        runCatching { updateMonitor?.close() }
+        updateMonitor = null
         runtime?.close()
         menus = null
         runtime = null

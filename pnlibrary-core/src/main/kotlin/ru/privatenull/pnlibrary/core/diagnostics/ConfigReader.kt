@@ -50,6 +50,22 @@ class ConfigReader(
             result["error"] = "[file not found or not a regular file]"
             return result
         }
+        val realRoot = try {
+            normalizedRoot.toRealPath()
+        } catch (_: Exception) {
+            result["error"] = "[SECURITY: configuration root cannot be resolved]"
+            return result
+        }
+        val realTarget = try {
+            targetPath.toRealPath()
+        } catch (_: Exception) {
+            result["error"] = "[SECURITY: configuration path cannot be resolved]"
+            return result
+        }
+        if (!realTarget.startsWith(realRoot)) {
+            result["error"] = "[SECURITY: symlink escape blocked]"
+            return result
+        }
         if (isForbiddenExtension(relPath)) {
             result["error"] = "[SECURITY: binary or database file extension blocked]"
             return result

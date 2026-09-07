@@ -14,6 +14,7 @@ import java.nio.file.Files
 import java.nio.file.Paths
 import java.util.concurrent.CopyOnWriteArrayList
 import java.util.concurrent.atomic.AtomicReference
+import java.util.concurrent.atomic.AtomicBoolean
 
 internal class UpdateServiceImpl(private val platform: PlatformAdapter) : UpdateService, AutoCloseable {
     private val entries = CopyOnWriteArrayList<Registration>()
@@ -58,6 +59,8 @@ internal class UpdateServiceImpl(private val platform: PlatformAdapter) : Update
             Runtime.version().feature(), artifact.minimumJava, request.automaticDownload, null, null,
         ))
         private var thread: Thread? = null
+        private val closed = AtomicBoolean(false)
+        private val actionThreads = java.util.concurrent.CopyOnWriteArraySet<Thread>()
         override val repository = "${request.repositoryOwner}/${request.repositoryName}"
         override val snapshot: UpdateSnapshot get() = state.get()
 
@@ -65,7 +68,7 @@ internal class UpdateServiceImpl(private val platform: PlatformAdapter) : Update
             thread = MandatoryUpdateService.startProduct(
                 owner, platform, version, request.repositoryOwner, request.repositoryName,
                 request.channel.name.lowercase(), artifact.pattern, jar, updateDir,
-                request.automaticDownload, artifact.minimumJava, state::set,
+                request.automaticDownload, artifact.minimumJava, ::updateState,
             )
         }
 
@@ -73,24 +76,36 @@ internal class UpdateServiceImpl(private val platform: PlatformAdapter) : Update
         override fun downloadNow() = runOnce(download = true)
 
         private fun runOnce(download: Boolean) {
-            Thread({
+            check(!closed.get()) { "Update registration is closed" }
+            val action = Thread({
                 runCatching {
                     MandatoryUpdateService.checkOnce(
                         owner, platform, version, request.repositoryOwner, request.repositoryName,
                         request.channel.name.lowercase(), artifact.pattern, jar, updateDir,
-                        download, artifact.minimumJava, state::set,
+                        download, artifact.minimumJava, ::updateState,
                     )
                 }.onFailure {
-                    state.set(UpdateSnapshot(product, version, snapshot.latestVersion, request.channel,
+                    if (!closed.get()) state.set(UpdateSnapshot(product, version, snapshot.latestVersion, request.channel,
                         UpdateState.FAILED, Runtime.version().feature(), artifact.minimumJava,
                         request.automaticDownload, snapshot.releaseUrl, it.message))
-                    platform.log(owner, LogLevel.WARNING, "[$product] Не удалось выполнить обновление: ${it.message}")
+                    if (!closed.get()) platform.log(owner, LogLevel.WARNING, "[$product] Не удалось выполнить обновление: ${it.message}")
+                }.also {
+                    actionThreads.remove(Thread.currentThread())
                 }
-            }, "pnLibrary-update-action-${request.repositoryName}").apply { isDaemon = true; start() }
+            }, "pnLibrary-update-action-${request.repositoryName}").apply { isDaemon = true }
+            actionThreads += action
+            action.start()
+        }
+
+        private fun updateState(value: UpdateSnapshot) {
+            if (!closed.get()) state.set(value)
         }
 
         override fun close() {
+            if (!closed.compareAndSet(false, true)) return
             thread?.interrupt()
+            actionThreads.forEach { it.interrupt() }
+            actionThreads.clear()
             entries.remove(this)
         }
     }

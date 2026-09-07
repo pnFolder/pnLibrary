@@ -185,7 +185,10 @@ class BukkitPlatformAdapter @JvmOverloads constructor(
                 val runMethod = taskScheduler.javaClass.getMethod("run", Plugin::class.java, java.util.function.Consumer::class.java, Runnable::class.java)
                 runMethod.invoke(taskScheduler, plugin, java.util.function.Consumer<Any> { task.run() }, null)
                 return
-            } catch (_: Exception) { }
+            } catch (error: Exception) {
+                log(plugin, LogLevel.ERROR, "Не удалось передать задачу Folia EntityScheduler", error)
+                return
+            }
         }
         executeGlobal(task)
     }
@@ -229,7 +232,7 @@ class BukkitPlatformAdapter @JvmOverloads constructor(
         lastRequestTimes[senderKey] = now
         sender.sendMessage("§7Собираю отчёт: ${request.target} ...")
 
-        Bukkit.getScheduler().runTaskAsynchronously(plugin, Runnable {
+        impl.tasks.scope(plugin).async(Runnable {
             try {
                 val result = impl.generateReport(request)
                 executeReply(sender, Runnable {
@@ -238,6 +241,7 @@ class BukkitPlatformAdapter @JvmOverloads constructor(
                         sender.sendMessage("§aОтчёт готов: ${receipt.link}")
                     } else {
                         sender.sendMessage("§aОтчёт сохранён локально: plugins/${plugin.name}/reports/${result.localFile.fileName}")
+                        result.uploadError?.let { sender.sendMessage("§eЗагрузить отчёт не удалось: $it") }
                     }
                 })
             } catch (e: Exception) {
@@ -452,10 +456,12 @@ class BukkitPlatformAdapter @JvmOverloads constructor(
     }
 
     @EventHandler
+    @Suppress("DEPRECATION")
     fun onAdministratorJoin(event: PlayerJoinEvent) {
         val player = event.player
         if (!player.hasPermission("pnlibrary.admin")) return
-        Bukkit.getScheduler().runTaskLater(plugin, Runnable {
+        val impl = libraryImpl ?: return
+        impl.tasks.scope(plugin).laterEntity(player, java.time.Duration.ofSeconds(5), Runnable {
             val impl = libraryImpl ?: return@Runnable
             val actionable = impl.updates.registrations().map { it.snapshot }
                 .filter { it.state == UpdateState.AVAILABLE || it.state == UpdateState.DOWNLOADED }
@@ -467,7 +473,7 @@ class BukkitPlatformAdapter @JvmOverloads constructor(
             sendActionButtons(player)
             player.sendMessage("")
             player.sendTitle("§eОбновления pnFolder", "§fДоступно: §e${actionable.size} §8• §7/pn updates")
-        }, 100L)
+        })
     }
 
     @EventHandler

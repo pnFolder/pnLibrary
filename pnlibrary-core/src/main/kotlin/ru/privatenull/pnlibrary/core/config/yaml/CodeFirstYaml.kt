@@ -41,7 +41,8 @@ class CodeFirstYaml<T> @JvmOverloads constructor(
      */
     @Synchronized
     override fun load(): ConfigLoadResult<T> {
-        file.absoluteFile.parentFile?.mkdirs()
+        val parent = file.absoluteFile.parentFile
+        require(parent.isDirectory || parent.mkdirs()) { "Cannot create configuration directory $parent" }
         val defaultsYaml = normalize(codec.encode(defaults))
         if (!file.exists()) {
             writeAtomic(defaultsYaml)
@@ -117,8 +118,12 @@ class CodeFirstYaml<T> @JvmOverloads constructor(
     }
 
     private fun backup(content: String): File {
-        val target = File(file.parentFile, "${file.name}.before-sync.bak")
-        if (!target.exists()) target.writeText(content)
+        val target = Files.createTempFile(file.absoluteFile.parentFile.toPath(), "${file.name}.before-sync-", ".bak").toFile()
+        target.writeText(content, Charsets.UTF_8)
+        val backups = file.absoluteFile.parentFile.listFiles { candidate ->
+            candidate.name.startsWith("${file.name}.before-sync-") && candidate.name.endsWith(".bak")
+        }?.sortedByDescending(File::lastModified).orEmpty()
+        backups.drop(MAX_BACKUPS).forEach { runCatching { it.delete() } }
         return target
     }
 
@@ -138,5 +143,8 @@ class CodeFirstYaml<T> @JvmOverloads constructor(
     }
 
     private fun normalize(value: String): String = value.replace("\r\n", "\n").trimEnd() + "\n"
-}
 
+    private companion object {
+        const val MAX_BACKUPS = 5
+    }
+}

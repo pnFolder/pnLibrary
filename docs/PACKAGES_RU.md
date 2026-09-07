@@ -4,7 +4,7 @@
 
 | Модуль / пакет | Назначение |
 |---|---|
-| `pnlibrary-api` / `api.runtime` | PnLibrary, провайдер, результат запуска, настройки runtime |
+| `pnlibrary-api` / `api.runtime` | PnLibrary, провайдер и настройки runtime |
 | `api.integration` | Общий конструктор интеграции плагина |
 | `api.diagnostics` | Контейнеры, конфигурации и регистрация диагностики |
 | `api.logging`, `api.metrics`, `api.tasks`, `api.updates` | Контракты соответствующих сервисов |
@@ -52,8 +52,8 @@ Bukkit/Paper/Folia: текущая версия доступна через
 ```kotlin
 repositories { mavenLocal() }
 dependencies {
-    compileOnly("ru.privatenull:pnlibrary-api:2.0.0-beta.4")
-    compileOnly("ru.privatenull:pnlibrary-core:2.0.0-beta.4") { isTransitive = false }
+    compileOnly("ru.privatenull:pnlibrary-api:2.0.0-beta.5")
+    compileOnly("ru.privatenull:pnlibrary-core:2.0.0-beta.5") { isTransitive = false }
 }
 ```
 

@@ -2,12 +2,14 @@ package ru.privatenull.pnlibrary.api.logging
 
 enum class LogLevel { INFO, SUCCESS, WARNING, ERROR }
 
+/** Creates native loggers and formatted lifecycle summaries for one plugin. */
 interface LoggingService {
     fun logger(owner: Any, name: String): PnLogger
     fun box(owner: Any, title: String): MessageBox
     fun shutdownBox(owner: Any, title: String): MessageBox
 }
 
+/** Logger whose warning and error messages can be included in `/pndebug --logs`. */
 interface PnLogger {
     fun info(message: String)
     fun success(message: String)
@@ -15,6 +17,7 @@ interface PnLogger {
     fun error(message: String, error: Throwable? = null)
 }
 
+/** Fluent startup/shutdown summary. A box can be displayed exactly once. */
 interface MessageBox {
     fun ok(label: String, detail: String): MessageBox
     fun warn(label: String, detail: String): MessageBox

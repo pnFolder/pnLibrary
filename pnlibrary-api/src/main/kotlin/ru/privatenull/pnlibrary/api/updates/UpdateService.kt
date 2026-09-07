@@ -3,6 +3,7 @@ package ru.privatenull.pnlibrary.api.updates
 enum class UpdateChannel { STABLE, BETA, ALPHA }
 enum class UpdateState { CHECKING, CURRENT, AVAILABLE, DOWNLOADED, FAILED }
 
+/** Immutable current state of one registered product updater. */
 class UpdateSnapshot(
     val product: String,
     val currentVersion: String,
@@ -16,6 +17,7 @@ class UpdateSnapshot(
     val message: String?,
 )
 
+/** Selects a release asset compatible with the running Java version. */
 class PluginUpdateArtifact(
     val pattern: String,
     val minimumJava: Int,
@@ -25,6 +27,7 @@ class PluginUpdateArtifact(
         javaFeature >= minimumJava && (maximumJava == null || javaFeature <= maximumJava)
 }
 
+/** Validated GitHub release and artifact-selection policy for one plugin. */
 class PluginUpdateRequest private constructor(builder: Builder) {
     val repositoryOwner: String = builder.repositoryOwner
     val repositoryName: String = builder.repositoryName
@@ -67,6 +70,7 @@ class PluginUpdateRequest private constructor(builder: Builder) {
     companion object { @JvmStatic fun builder(): Builder = Builder() }
 }
 
+/** Lifecycle and manual controls for one updater registration. */
 interface UpdateRegistration : AutoCloseable {
     val repository: String
     val snapshot: UpdateSnapshot
@@ -75,6 +79,7 @@ interface UpdateRegistration : AutoCloseable {
     override fun close()
 }
 
+/** Registers and queries plugin update monitors owned by this runtime. */
 interface UpdateService {
     fun register(owner: Any, request: PluginUpdateRequest): UpdateRegistration
     fun registrations(): List<UpdateRegistration>

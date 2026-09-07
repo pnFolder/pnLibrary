@@ -12,11 +12,12 @@ import org.slf4j.Logger
 import ru.privatenull.pnlibrary.api.runtime.PnLibrary
 import ru.privatenull.pnlibrary.core.runtime.PnLibraryBootstrap
 import ru.privatenull.pnlibrary.core.runtime.PnLibraryImpl
+import ru.privatenull.pnlibrary.core.runtime.PnLibraryConfigLoader
 import ru.privatenull.pnlibrary.core.updates.MandatoryUpdateService
 import java.nio.file.Paths
 import java.nio.file.Path
 
-@Plugin(id = "pnlibrary", name = "pnLibrary", version = "2.0.0-beta.4", authors = ["pnFolder"])
+@Plugin(id = "pnlibrary", name = "pnLibrary", authors = ["pnFolder"])
 class PnLibraryVelocityPlugin @Inject constructor(
     private val server: ProxyServer,
     private val logger: Logger,
@@ -24,14 +25,17 @@ class PnLibraryVelocityPlugin @Inject constructor(
     @DataDirectory private val dataDirectory: Path,
 ) {
     private var runtime: PnLibrary? = null
+    private var updateMonitor: AutoCloseable? = null
 
     @Subscribe
     fun onInitialize(event: ProxyInitializeEvent) {
         val adapter = VelocityPlatformAdapter(this, server, VelocityMetricsFactory(metricsFactory), dataDirectory, logger)
-        val loaded = PnLibraryBootstrap.bootstrap(this, adapter)
+        val loaded = PnLibraryBootstrap.bootstrap(this, adapter, PnLibraryConfigLoader.load(dataDirectory))
         adapter.attachLibrary(loaded as PnLibraryImpl)
         runtime = loaded
-        MandatoryUpdateService.start(this, adapter, "2.0.0-beta.4", "velocity",
+        val currentVersion = adapter.ownerDetails(this)["version"]
+            ?: error("Velocity did not expose the pnLibrary version")
+        updateMonitor = MandatoryUpdateService.start(this, adapter, currentVersion, "velocity",
             Paths.get(javaClass.protectionDomain.codeSource.location.toURI()),
             dataDirectory.parent.resolve("update"))
         logger.info("pnLibrary enabled (velocity)")
@@ -39,6 +43,8 @@ class PnLibraryVelocityPlugin @Inject constructor(
 
     @Subscribe
     fun onShutdown(event: ProxyShutdownEvent) {
+        runCatching { updateMonitor?.close() }
+        updateMonitor = null
         runtime?.close()
         runtime = null
     }

@@ -12,6 +12,11 @@ class VersionRange private constructor(
     val includeMinimum: Boolean,
     val includeMaximum: Boolean,
 ) {
+    init {
+        require(minimum == null || maximum == null || minimum <= maximum) {
+            "minimum version must not be newer than maximum version"
+        }
+    }
     /** Проверяет, входит ли [version] в диапазон. */
     operator fun contains(version: SemanticVersion): Boolean {
         val afterMinimum = minimum == null || if (includeMinimum) version >= minimum else version > minimum

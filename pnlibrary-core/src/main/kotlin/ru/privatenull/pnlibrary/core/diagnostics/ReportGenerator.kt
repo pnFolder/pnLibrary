@@ -30,6 +30,7 @@ class ReportGenerator(
     private val encryptionCodec: EncryptedEnvelopeCodec?,
     private val uploader: ReportUploader?,
     private val uploadLedger: UploadLedger?,
+    private val diagnosticLogs: () -> List<Map<String, Any?>> = { emptyList() },
 ) {
 
     private val systemCollector = SystemCollector()
@@ -54,15 +55,21 @@ class ReportGenerator(
         // Plugin diagnostic containers & status entries
         reportData["pluginDiagnostics"] = diagnosticsRegistry.snapshot(request.target)
 
+        if (request.logs && config.logs) {
+            reportData["logs"] = diagnosticLogs().takeLast(config.logRecords.coerceIn(1, 2_000))
+        }
+
         // Config files
         if (request.configs && config.configs) {
             val configsList = mutableListOf<Map<String, Any?>>()
             val declaredConfigs = diagnosticsRegistry.configurations(request.target)
             for (registered in declaredConfigs) {
-                configsList.add(configReader.readAndRedact(
+                val collected = linkedMapOf<String, Any?>("plugin" to registered.plugin)
+                collected.putAll(configReader.readAndRedact(
                     registered.configuration,
                     registered.dataDirectory ?: dataFolder,
                 ))
+                configsList.add(collected)
             }
             reportData["configurations"] = configsList
         }
@@ -86,7 +93,7 @@ class ReportGenerator(
         Files.createDirectories(reportsDir)
         val fileExtension = if (encryptionMode) ".pndebug" else ".txt"
         val timestamp = System.currentTimeMillis()
-        val targetFile = reportsDir.resolve("report-$timestamp$fileExtension")
+        val targetFile = Files.createTempFile(reportsDir, "report-$timestamp-", fileExtension)
         Files.write(targetFile, finalPayload.toByteArray(StandardCharsets.UTF_8))
 
         // Cleanup old local reports
@@ -94,16 +101,22 @@ class ReportGenerator(
 
         // Upload if enabled and not local-only
         var uploadReceipt: UploadReceipt? = null
+        var uploadError: String? = null
         if (!request.local && config.upload && uploader != null) {
-            val multipartUploader = MultipartUploader(uploader, encryptionCodec, uploadLedger, config.deleteAfterDays)
-            uploadReceipt = multipartUploader.upload(finalPayload)
-            uploadLedger?.record(uploadReceipt, config.deleteAfterDays)
+            try {
+                val multipartUploader = MultipartUploader(uploader, encryptionCodec, uploadLedger, config.deleteAfterDays)
+                uploadReceipt = multipartUploader.upload(finalPayload)
+                uploadLedger?.record(uploadReceipt, config.deleteAfterDays)
+            } catch (error: Exception) {
+                uploadError = error.message ?: error.javaClass.simpleName
+            }
         }
 
         return ReportResult(
             localFile = targetFile,
             isEncrypted = encryptionMode,
-            uploadReceipt = uploadReceipt
+            uploadReceipt = uploadReceipt,
+            uploadError = uploadError,
         )
     }
 
@@ -129,15 +142,19 @@ class ReportGenerator(
         minimal["target"] = report["target"]
         minimal["system"] = report["system"]
         minimal["truncated"] = "Report exceeded configured byte limit."
+        json = gson.toJson(minimal)
+        if (json.toByteArray(StandardCharsets.UTF_8).size <= maxBytes) return json
+        minimal.remove("system")
         return gson.toJson(minimal)
     }
 
     private fun cleanupOldReports(dir: Path, keepCount: Int) {
         try {
-            val files = Files.list(dir)
-                .filter { Files.isRegularFile(it) }
-                .sorted { p1, p2 -> Files.getLastModifiedTime(p2).compareTo(Files.getLastModifiedTime(p1)) }
-                .toList()
+            val files = Files.list(dir).use { stream ->
+                stream.filter { Files.isRegularFile(it) }
+                    .sorted { p1, p2 -> Files.getLastModifiedTime(p2).compareTo(Files.getLastModifiedTime(p1)) }
+                    .toList()
+            }
 
             if (files.size > keepCount) {
                 for (i in keepCount until files.size) {
@@ -151,5 +168,6 @@ class ReportGenerator(
         val localFile: Path,
         val isEncrypted: Boolean,
         val uploadReceipt: UploadReceipt?,
+        val uploadError: String?,
     )
 }

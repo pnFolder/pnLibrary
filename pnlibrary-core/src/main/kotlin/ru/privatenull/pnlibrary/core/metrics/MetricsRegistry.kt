@@ -36,7 +36,10 @@ private class ManagedMetrics(
     override fun close() {
         if (closed) return
         closed = true
-        delegate.close()
-        onClose(this)
+        try {
+            delegate.close()
+        } finally {
+            onClose(this)
+        }
     }
 }

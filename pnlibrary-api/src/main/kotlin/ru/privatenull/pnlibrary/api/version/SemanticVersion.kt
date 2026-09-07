@@ -61,14 +61,16 @@ class SemanticVersion private constructor(
         @JvmStatic
         fun tryParse(raw: String): SemanticVersion? {
             val value = raw.trim().removePrefix("v").substringBefore('+')
-            val match = Regex("^(\\d+)\\.(\\d+)\\.(\\d+)(?:-([0-9A-Za-z.-]+))?$").matchEntire(value) ?: return null
+            val match = Regex("^(0|[1-9]\\d*)\\.(0|[1-9]\\d*)\\.(0|[1-9]\\d*)(?:-([0-9A-Za-z-]+(?:\\.[0-9A-Za-z-]+)*))?$")
+                .matchEntire(value) ?: return null
+            val prerelease = match.groupValues[4].split('.').filter(String::isNotBlank)
+            if (prerelease.any { it.length > 1 && it.all(Char::isDigit) && it.startsWith('0') }) return null
             return SemanticVersion(
                 match.groupValues[1].toIntOrNull() ?: return null,
                 match.groupValues[2].toIntOrNull() ?: return null,
                 match.groupValues[3].toIntOrNull() ?: return null,
-                match.groupValues[4].split('.').filter(String::isNotBlank),
+                prerelease,
             )
         }
     }
 }
-

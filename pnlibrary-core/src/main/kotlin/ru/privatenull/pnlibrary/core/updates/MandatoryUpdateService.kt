@@ -9,8 +9,8 @@ import ru.privatenull.pnlibrary.api.platform.PlatformAdapter
 import ru.privatenull.pnlibrary.api.updates.UpdateChannel
 import ru.privatenull.pnlibrary.api.updates.UpdateSnapshot
 import ru.privatenull.pnlibrary.api.updates.UpdateState
+import ru.privatenull.pnlibrary.api.version.SemanticVersion
 import java.net.HttpURLConnection
-import java.net.URL
 import java.nio.charset.StandardCharsets
 import java.nio.file.Files
 import java.nio.file.Path
@@ -18,22 +18,20 @@ import java.nio.file.StandardCopyOption
 import java.util.Locale
 import java.util.jar.JarFile
 import java.security.MessageDigest
-import java.util.concurrent.atomic.AtomicBoolean
 
 /** Mandatory pnLibrary updater. Only the release channel is configurable. */
 object MandatoryUpdateService {
     private const val MAX_BYTES = 512L * 1024L * 1024L
     private const val CHECK_INTERVAL_MS = 30L * 60L * 1000L
     private const val NOTIFICATION_INTERVAL_MS = 6L * 60L * 60L * 1000L
-    private val started = AtomicBoolean(false)
     private val lastAnnouncements = java.util.concurrent.ConcurrentHashMap<String, Long>()
 
     @JvmStatic
-    fun start(owner: Any, platform: PlatformAdapter, currentVersion: String, artifact: String, currentJar: Path, updateDir: Path) {
-        if (!started.compareAndSet(false, true)) return
+    fun start(owner: Any, platform: PlatformAdapter, currentVersion: String, artifact: String, currentJar: Path, updateDir: Path): AutoCloseable {
         val settings = loadSettings(platform.dataFolder ?: currentJar.parent.resolve("pnLibrary"))
-        startProduct(owner, platform, currentVersion, "pnFolder", "pnLibrary", settings.channel,
+        val thread = startProduct(owner, platform, currentVersion, "pnFolder", "pnLibrary", settings.channel,
             "(?i)^pnLibrary-$artifact-.*\\.jar$", currentJar, updateDir, settings.automaticDownload, 8) { }
+        return AutoCloseable { thread.interrupt() }
     }
 
     internal fun startProduct(owner: Any, platform: PlatformAdapter, currentVersion: String,
@@ -61,14 +59,18 @@ object MandatoryUpdateService {
         val candidate = releases.map { it.asJsonObject }
             .filter { !it["draft"].asBoolean }
             .filter { allowed(it["tag_name"].asString, it["prerelease"].asBoolean, channel) }
-            .maxByOrNull { Version.parse(it["tag_name"].asString) }
+            .mapNotNull { release -> SemanticVersion.tryParse(release["tag_name"].asString)?.let { it to release } }
+            .maxByOrNull { it.first }
+            ?.second
         if (candidate == null) {
             observer(snapshot(repositoryName, currentVersion, null, channel, UpdateState.CURRENT,
                 minimumJava, automaticDownload, null, null))
             return
         }
         val latest = candidate["tag_name"].asString.removePrefix("v")
-        if (Version.parse(latest) <= Version.parse(currentVersion)) {
+        val current = SemanticVersion.parse(currentVersion)
+        val newest = SemanticVersion.parse(latest)
+        if (newest <= current) {
             observer(snapshot(repositoryName, currentVersion, latest, channel, UpdateState.CURRENT,
                 minimumJava, automaticDownload, candidate["html_url"].asString, null))
             return
@@ -206,16 +208,11 @@ object MandatoryUpdateService {
         return digest.digest().joinToString("") { "%02x".format(it) }
     }
 
-    private fun connection(url: String): HttpURLConnection = (URL(url).openConnection() as HttpURLConnection).apply {
+    private fun connection(url: String): HttpURLConnection = (java.net.URI.create(url).toURL().openConnection() as HttpURLConnection).apply {
         connectTimeout = 8_000; readTimeout = 20_000; instanceFollowRedirects = true
         setRequestProperty("Accept", "application/vnd.github+json")
         setRequestProperty("User-Agent", "pnLibrary-Updater")
         require(responseCode in 200..299) { "GitHub вернул HTTP $responseCode" }
     }
 
-    private data class Version(val major: Int, val minor: Int, val patch: Int, val pre: String) : Comparable<Version> {
-        override fun compareTo(other: Version): Int = compareValuesBy(this, other, Version::major, Version::minor, Version::patch)
-            .takeIf { it != 0 } ?: when { pre.isEmpty() && other.pre.isNotEmpty() -> 1; pre.isNotEmpty() && other.pre.isEmpty() -> -1; else -> pre.compareTo(other.pre) }
-        companion object { fun parse(raw: String): Version { val value=raw.removePrefix("v"); val base=value.substringBefore('-').split('.'); return Version(base.getOrNull(0)?.toIntOrNull()?:0,base.getOrNull(1)?.toIntOrNull()?:0,base.getOrNull(2)?.toIntOrNull()?:0,value.substringAfter('-',"")) } }
-    }
 }

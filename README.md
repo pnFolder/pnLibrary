@@ -36,7 +36,9 @@
 | `pnlibrary-velocity` | Velocity | 17 |
 | `pnlibrary-distribution` | Сборка готовых платформенных JAR | — |
 
-Проект собирается на JDK 26. Bukkit и BungeeCord получают байткод Java 8; Velocity — Java 17.
+Проект собирается на JDK 17 или новее. Bukkit, включая Folia-ветку планировщика,
+и BungeeCord получают байткод Java 8; Velocity — Java 17. Жёсткой привязки к
+конкретной установленной JDK нет.
 
 ## Установка
 
@@ -48,11 +50,18 @@ gradlew.bat clean test :pnlibrary-distribution:build
 
 Готовые файлы находятся в `pnlibrary-distribution/build/libs`:
 
-- `pnLibrary-bukkit-2.0.0-beta.4.jar`;
-- `pnLibrary-bungee-2.0.0-beta.4.jar`;
-- `pnLibrary-velocity-2.0.0-beta.4.jar`.
+- `pnLibrary-bukkit-2.0.0-beta.5.jar`;
+- `pnLibrary-bungee-2.0.0-beta.5.jar`;
+- `pnLibrary-velocity-2.0.0-beta.5.jar`;
+- `pnLibrary-api-2.0.0-beta.5.jar` и sources для разработчиков.
 
 Положите один подходящий JAR в папку `plugins` и полностью перезапустите сервер.
+
+При первом запуске создаётся `plugins/pnLibrary/config.yml`. В нём настраиваются
+загрузка отчётов, режим шифрования, сбор конфигураций и журналов, cooldown и сроки
+хранения. Неизвестные параметры и некорректные значения останавливают запуск с
+понятной ошибкой, чтобы опечатка не меняла политику приватности незаметно.
+Полная таблица находится в [docs/RUNTIME_CONFIGURATION_RU.md](docs/RUNTIME_CONFIGURATION_RU.md).
 
 ## Подключение API
 
@@ -70,8 +79,14 @@ repositories {
 }
 
 dependencies {
-    compileOnly("ru.privatenull:pnlibrary-api:2.0.0-beta.4")
+    compileOnly("ru.privatenull:pnlibrary-api:2.0.0-beta.5")
 }
+```
+
+Для Bukkit-специфичных API (`PnMenus`, `BukkitMinecraftVersion`) дополнительно:
+
+```kotlin
+compileOnly("ru.privatenull:pnlibrary-bukkit:2.0.0-beta.5") { isTransitive = false }
 ```
 
 API нельзя встраивать через `implementation`, Shadow или relocation: его предоставляет установленная pnLibrary.
@@ -167,6 +182,12 @@ metrics = pn.metrics.open(this, projectId = 12345)
 Наш публичный API написан на Kotlin. Официальные Java-классы bStats хранятся внутри проекта без функциональных изменений и при сборке переносятся в `ru.privatenull.pnlibrary.libs.bstats`.
 
 ## Диагностика
+
+`/pndebug` всегда собирает безопасный системный снимок и зарегистрированные
+контейнеры. Флаг `--config` добавляет разрешённые конфигурации, `--logs` —
+ограниченную историю предупреждений и ошибок, записанных через `pn.logging`, а
+`--full` включает оба набора. Для `all` данные собираются по всем плагинам с
+явным указанием владельца каждого файла.
 
 ## Кроссплатформенные задачи
 

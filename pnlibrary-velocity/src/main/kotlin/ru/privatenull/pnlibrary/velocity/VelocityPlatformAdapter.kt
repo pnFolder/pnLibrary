@@ -70,7 +70,10 @@ class VelocityPlatformAdapter(
                 sender.sendMessage(Component.text("Собираю зашифрованный диагностический отчёт..."))
                 server.scheduler.buildTask(plugin, Runnable {
                     runCatching { runtime.generateReport(request) }
-                        .onSuccess { result -> sender.sendMessage(Component.text("Отчёт готов: ${result.uploadReceipt?.link ?: result.localFile}")) }
+                        .onSuccess { result ->
+                            sender.sendMessage(Component.text("Отчёт готов: ${result.uploadReceipt?.link ?: result.localFile}"))
+                            result.uploadError?.let { sender.sendMessage(Component.text("Загрузка не удалась; локальный отчёт сохранён: $it")) }
+                        }
                         .onFailure { sender.sendMessage(Component.text("Ошибка отчёта: ${it.message}")) }
                 }).schedule()
             }

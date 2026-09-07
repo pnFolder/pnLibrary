@@ -46,6 +46,7 @@ class PnLibraryBootstrapTest {
             .build())
 
         val snap = registry.snapshot("pnMarket")
+        @Suppress("UNCHECKED_CAST")
         val pluginData = (snap["pnmarket"] ?: snap["pnMarket"]) as? Map<String, Any?>
         assertNotNull(pluginData)
         @Suppress("UNCHECKED_CAST")

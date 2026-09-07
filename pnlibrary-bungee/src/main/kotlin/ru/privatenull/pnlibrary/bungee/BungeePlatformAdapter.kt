@@ -36,6 +36,7 @@ class BungeePlatformAdapter(
         else plugin.logger.log(nativeLevel, message, error)
     }
 
+    @Suppress("DEPRECATION")
     override fun console(owner: Any, message: String) {
         plugin.proxy.console.sendMessage(*TextComponent.fromLegacyText(message))
     }
@@ -61,6 +62,7 @@ class BungeePlatformAdapter(
                     .onSuccess { result ->
                         val output = result.uploadReceipt?.link ?: result.localFile.toString()
                         sender.sendMessage(TextComponent("${ChatColor.GREEN}Report ready: $output"))
+                        result.uploadError?.let { sender.sendMessage(TextComponent("${ChatColor.YELLOW}Upload failed; local report kept: $it")) }
                     }
                     .onFailure { sender.sendMessage(TextComponent("${ChatColor.RED}Report failed: ${it.message}")) }
             }

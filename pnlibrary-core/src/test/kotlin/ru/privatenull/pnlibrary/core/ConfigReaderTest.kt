@@ -7,9 +7,11 @@ import org.junit.jupiter.api.Assertions.assertEquals
 import org.junit.jupiter.api.Assertions.assertNotNull
 import org.junit.jupiter.api.Assertions.assertTrue
 import org.junit.jupiter.api.Test
+import org.junit.jupiter.api.Assumptions.assumeTrue
 import org.junit.jupiter.api.io.TempDir
 import ru.privatenull.pnlibrary.api.diagnostics.DiagnosticConfiguration
 import java.nio.file.Path
+import java.nio.file.Files
 
 class ConfigReaderTest {
 
@@ -61,5 +63,24 @@ class ConfigReaderTest {
         // Try reading outside directory
         val result = reader.readAndRedact(spec)
         assertNotNull(result["error"])
+    }
+
+    @Test
+    fun `blocks escape through a symlinked parent directory`() {
+        val outside = Files.createTempDirectory("pnlibrary-outside")
+        try {
+            Files.writeString(outside.resolve("config.yml"), "safe: false\n")
+            val link = dataFolder.resolve("linked")
+            val linked = runCatching { Files.createSymbolicLink(link, outside); true }.getOrDefault(false)
+            assumeTrue(linked, "symbolic links are unavailable on this test host")
+
+            val spec = DiagnosticConfiguration.file("linked/config.yml").build()
+            val result = ConfigReader(dataFolder).readAndRedact(spec)
+
+            assertEquals("[SECURITY: symlink escape blocked]", result["error"])
+        } finally {
+            runCatching { Files.deleteIfExists(outside.resolve("config.yml")) }
+            runCatching { Files.deleteIfExists(outside) }
+        }
     }
 }

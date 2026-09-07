@@ -42,10 +42,11 @@ dependencies {
     testRuntimeOnly(libs.junit.launcher)
 }
 
+val resourceVersion = version.toString()
 tasks.named<ProcessResources>("processResources") {
-    inputs.property("version", project.version.toString())
+    inputs.property("version", resourceVersion)
     filesMatching("plugin.yml") {
-        expand(mapOf("version" to project.version.toString()))
+        expand(mapOf("version" to resourceVersion))
     }
 }
 

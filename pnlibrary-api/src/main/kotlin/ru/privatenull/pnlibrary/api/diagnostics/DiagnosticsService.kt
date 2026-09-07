@@ -59,6 +59,9 @@ interface DiagnosticsService {
     /** Removes the component status entry previously set by [status]. */
     fun clearStatus(plugin: String, component: String)
 
+    /** Removes every contributor, status and event owned by one plugin. */
+    fun clearPlugin(plugin: String) = Unit
+
     /**
      * Records a bounded diagnostic event for the given plugin.
      *

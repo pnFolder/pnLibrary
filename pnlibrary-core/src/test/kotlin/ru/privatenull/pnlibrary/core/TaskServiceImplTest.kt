@@ -11,6 +11,9 @@ import java.time.Duration
 import java.util.concurrent.CountDownLatch
 import java.util.concurrent.TimeUnit
 import java.util.concurrent.atomic.AtomicInteger
+import java.util.concurrent.atomic.AtomicReference
+import java.util.function.Consumer
+import java.util.function.Supplier
 
 class TaskServiceImplTest {
     @Test
@@ -57,6 +60,26 @@ class TaskServiceImplTest {
         service.close()
     }
 
+    @Test
+    fun `closing scope suppresses queued async continuation`() {
+        val platform = QueuedPlatform()
+        val service = TaskServiceImpl(platform)
+        val scope = service.scope(Any())
+        val calls = AtomicInteger()
+        scope.asyncThen(
+            Supplier { "loaded" },
+            Consumer { calls.incrementAndGet() },
+            Consumer { calls.incrementAndGet() },
+        )
+        assertTrue(platform.dispatched.await(1, TimeUnit.SECONDS))
+
+        scope.close()
+        platform.queued.get().run()
+
+        assertEquals(0, calls.get())
+        service.close()
+    }
+
     private class ImmediatePlatform : PlatformAdapter {
         val globalCalls = AtomicInteger()
         val replyCalls = AtomicInteger()
@@ -65,5 +88,15 @@ class TaskServiceImplTest {
         override fun executeGlobal(task: Runnable) { globalCalls.incrementAndGet(); task.run() }
         override fun executeReply(recipient: Any, task: Runnable) { replyCalls.incrementAndGet(); task.run() }
         override fun close() {}
+    }
+
+    private class QueuedPlatform : PlatformAdapter {
+        val dispatched = CountDownLatch(1)
+        val queued = AtomicReference<Runnable>()
+        override val id = "queued"
+        override fun details(): Map<String, Any?> = emptyMap()
+        override fun executeGlobal(task: Runnable) { queued.set(task); dispatched.countDown() }
+        override fun executeReply(recipient: Any, task: Runnable) = executeGlobal(task)
+        override fun close() = Unit
     }
 }

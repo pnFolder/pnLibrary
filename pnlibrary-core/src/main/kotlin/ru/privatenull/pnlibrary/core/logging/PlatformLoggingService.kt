@@ -1,8 +1,5 @@
 package ru.privatenull.pnlibrary.core.logging
 
-
-
-
 import ru.privatenull.pnlibrary.api.diagnostics.*
 import ru.privatenull.pnlibrary.api.logging.*
 import ru.privatenull.pnlibrary.api.metrics.*
@@ -11,12 +8,18 @@ import ru.privatenull.pnlibrary.api.runtime.*
 import ru.privatenull.pnlibrary.api.tasks.*
 import ru.privatenull.pnlibrary.api.updates.*
 
-internal class PlatformLoggingService(private val platform: PlatformAdapter) : LoggingService {
+internal class PlatformLoggingService(
+    private val platform: PlatformAdapter,
+    private val diagnosticLogs: DiagnosticLogBuffer? = null,
+) : LoggingService {
     private data class Row(val status: String, val label: String, val detail: String, val error: Throwable?)
 
     override fun logger(owner: Any, name: String): PnLogger = object : PnLogger {
-        private fun write(level: LogLevel, message: String, error: Throwable? = null) =
-            platform.log(owner, level, "[$name] $message", error)
+        private fun write(level: LogLevel, message: String, error: Throwable? = null) {
+            val formatted = "[$name] $message"
+            diagnosticLogs?.record(platform, owner, level, formatted, error)
+            platform.log(owner, level, formatted, error)
+        }
         override fun info(message: String) = write(LogLevel.INFO, message)
         override fun success(message: String) = write(LogLevel.SUCCESS, message)
         override fun warning(message: String) = write(LogLevel.WARNING, message)
@@ -77,11 +80,21 @@ internal class PlatformLoggingService(private val platform: PlatformAdapter) : L
 
     private inner class MBox(private val owner: Any, private val title: String, private val shutdown: Boolean) : MessageBox {
         private val rows = mutableListOf<Row>()
-        override fun ok(label: String, detail: String) = apply { rows += Row("OK", label, detail, null) }
-        override fun warn(label: String, detail: String) = apply { rows += Row("WARN", label, detail, null) }
-        override fun skip(label: String, detail: String) = apply { rows += Row("SKIP", label, detail, null) }
-        override fun fail(label: String, detail: String, error: Throwable?) = apply { rows += Row("FAIL", label, detail, error) }
+        private var shown = false
+        override fun ok(label: String, detail: String) = add(Row("OK", label, detail, null))
+        override fun warn(label: String, detail: String) = add(Row("WARN", label, detail, null))
+        override fun skip(label: String, detail: String) = add(Row("SKIP", label, detail, null))
+        override fun fail(label: String, detail: String, error: Throwable?) = add(Row("FAIL", label, detail, error))
+
+        private fun add(row: Row) = apply {
+            check(!shown) { "MessageBox has already been shown" }
+            require(row.label.isNotBlank()) { "MessageBox label must not be blank" }
+            rows += row
+        }
+
         override fun show() {
+            check(!shown) { "MessageBox has already been shown" }
+            shown = true
             val accent = "§e"
             val success = "§a"
             val warning = "§6"
@@ -133,7 +146,11 @@ internal class PlatformLoggingService(private val platform: PlatformAdapter) : L
                 if (row.detail.isNotBlank()) {
                     platform.console(owner, "$dark            └ $gray${row.detail}")
                 }
-                row.error?.let { platform.log(owner, LogLevel.ERROR, "$title — ${row.label}", it) }
+                row.error?.let {
+                    val message = "$title — ${row.label}"
+                    diagnosticLogs?.record(platform, owner, LogLevel.ERROR, message, it)
+                    platform.log(owner, LogLevel.ERROR, message, it)
+                }
             }
             platform.console(owner, "")
             platform.console(owner, "$dark          ───────────────────────────────────────────────")

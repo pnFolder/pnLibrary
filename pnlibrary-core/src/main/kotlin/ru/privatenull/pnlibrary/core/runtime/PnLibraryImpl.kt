@@ -3,6 +3,7 @@ package ru.privatenull.pnlibrary.core.runtime
 import ru.privatenull.pnlibrary.core.diagnostics.DiagnosticsRegistry
 import ru.privatenull.pnlibrary.core.diagnostics.ReportGenerator
 import ru.privatenull.pnlibrary.core.logging.PlatformLoggingService
+import ru.privatenull.pnlibrary.core.logging.DiagnosticLogBuffer
 import ru.privatenull.pnlibrary.core.metrics.MetricsRegistry
 import ru.privatenull.pnlibrary.core.security.EncryptedEnvelopeCodec
 import ru.privatenull.pnlibrary.core.tasks.TaskServiceImpl
@@ -49,12 +50,17 @@ class PnLibraryImpl(
         SemanticVersion.tryParse(version)?.isAtLeast(minimumVersion) ?: false
 
     private val closedFlag = AtomicBoolean(false)
+    private val reportInProgress = AtomicBoolean(false)
     override val isClosed: Boolean get() = closedFlag.get()
     private val metricsRegistry = MetricsRegistry(platform.metricsFactory)
+    private val diagnosticLogs = DiagnosticLogBuffer(config.logRecords.coerceIn(10, 2_000))
     override val metrics: MetricsService get() = metricsRegistry
-    override val logging: LoggingService = PlatformLoggingService(platform)
+    override val logging: LoggingService = PlatformLoggingService(platform, diagnosticLogs)
     override val updates: ru.privatenull.pnlibrary.api.updates.UpdateService = UpdateServiceImpl(platform)
-    override val tasks: ru.privatenull.pnlibrary.api.tasks.TaskService = TaskServiceImpl(platform)
+    override val tasks: ru.privatenull.pnlibrary.api.tasks.TaskService = TaskServiceImpl(platform) { taskOwner, message, error ->
+        diagnosticLogs.record(platform, taskOwner, ru.privatenull.pnlibrary.api.logging.LogLevel.ERROR, message, error)
+        platform.log(taskOwner, ru.privatenull.pnlibrary.api.logging.LogLevel.ERROR, message, error)
+    }
 
     val dataFolder: Path = platform.dataFolder ?: extractDataFolder(owner)
     val uploadLedger: UploadLedger = UploadLedger(dataFolder.resolve("upload-ledger.json"))
@@ -68,6 +74,7 @@ class PnLibraryImpl(
         encryptionCodec = encryptionCodec,
         uploader = uploader,
         uploadLedger = uploadLedger,
+        diagnosticLogs = diagnosticLogs::snapshot,
     )
 
     private val workerExecutor: ScheduledExecutorService = Executors.newSingleThreadScheduledExecutor { r ->
@@ -87,7 +94,12 @@ class PnLibraryImpl(
 
     fun generateReport(request: DebugRequest): ReportGenerator.ReportResult {
         check(!isClosed) { "pnLibrary instance is closed" }
-        return reportGenerator.generateAndSave(request)
+        check(reportInProgress.compareAndSet(false, true)) { "A diagnostic report is already being generated" }
+        return try {
+            reportGenerator.generateAndSave(request)
+        } finally {
+            reportInProgress.set(false)
+        }
     }
 
     override fun close() {
@@ -96,6 +108,7 @@ class PnLibraryImpl(
             runCatching { metricsRegistry.close() }
             runCatching { (updates as AutoCloseable).close() }
             runCatching { tasks.close() }
+            diagnostics.clear()
             PnLibraryProvider.clear(this)
             runCatching { platform.close() }
             onClose()
@@ -107,8 +120,8 @@ class PnLibraryImpl(
         return try {
             val keyPem = resolvePublicKey(config)
             EncryptedEnvelopeCodec(keyPem, config.uploadKeyId)
-        } catch (_: Exception) {
-            null
+        } catch (error: Exception) {
+            throw IllegalStateException("Unable to initialize diagnostic encryption", error)
         }
     }
 
@@ -116,16 +129,10 @@ class PnLibraryImpl(
         if (!config.upload) return null
         return when (config.uploadMode) {
             "mclogs", "encrypted-mclogs" -> MclogsUploader()
-            "encrypted" -> {
-                try {
-                    EncryptedReportUploader(
-                        endpoint = URI.create(config.uploadEndpoint),
-                        publicBase = URI.create(config.uploadPublicBase)
-                    )
-                } catch (_: Exception) {
-                    null
-                }
-            }
+            "encrypted" -> EncryptedReportUploader(
+                endpoint = URI.create(config.uploadEndpoint),
+                publicBase = URI.create(config.uploadPublicBase)
+            )
             else -> null
         }
     }

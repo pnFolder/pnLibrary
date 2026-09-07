@@ -4,6 +4,7 @@ main: ru.privatenull.pnlibrary.bukkit.PnLibraryBukkitPlugin
 author: pnFolder
 description: Shared runtime and diagnostics for pnFolder plugins
 load: STARTUP
+folia-supported: true
 commands:
   pn:
     description: Управление плагинами pnFolder

@@ -21,7 +21,12 @@ import java.util.concurrent.atomic.AtomicBoolean
 import java.util.function.Consumer
 import java.util.function.Supplier
 
-internal class TaskServiceImpl(private val platform: PlatformAdapter) : TaskService {
+internal class TaskServiceImpl(
+    private val platform: PlatformAdapter,
+    private val errorLogger: (Any, String, Throwable) -> Unit = { owner, message, error ->
+        platform.log(owner, LogLevel.ERROR, message, error)
+    },
+) : TaskService {
     private val executor = Executors.newScheduledThreadPool(4) { runnable ->
         Thread(runnable, "pnLibrary-tasks").apply { isDaemon = true }
     }
@@ -65,11 +70,28 @@ internal class TaskServiceImpl(private val platform: PlatformAdapter) : TaskServ
             repeating(Dispatch.ASYNC, null, delay, interval, task)
 
         override fun <T> asyncThen(work: Supplier<T>, success: Consumer<T>, failure: Consumer<Throwable>): TaskHandle {
-            return once(Dispatch.ASYNC, null, Duration.ZERO, Runnable {
-                runCatching { work.get() }
-                    .onSuccess { value -> dispatch(Dispatch.GLOBAL, null, Runnable { success.accept(value) }) }
-                    .onFailure { error -> dispatch(Dispatch.GLOBAL, null, Runnable { failure.accept(error) }) }
-            })
+            ensureOpen()
+            val handle = Handle()
+            handles += handle
+            val future = executor.submit {
+                if (handle.isCancelled || scopeClosed.get()) {
+                    handles.remove(handle)
+                    return@submit
+                }
+                val continuation = runCatching { work.get() }.fold(
+                    onSuccess = { value -> Runnable { success.accept(value) } },
+                    onFailure = { error -> Runnable { failure.accept(error) } },
+                )
+                dispatch(Dispatch.GLOBAL, null, Runnable {
+                    try {
+                        guarded(handle, continuation).run()
+                    } finally {
+                        handles.remove(handle)
+                    }
+                })
+            }
+            handle.attach(future)
+            return handle
         }
 
         private fun once(dispatch: Dispatch, recipient: Any?, delay: Duration, task: Runnable): Handle {
@@ -104,7 +126,7 @@ internal class TaskServiceImpl(private val platform: PlatformAdapter) : TaskServ
         private fun guarded(handle: Handle, task: Runnable) = Runnable {
             if (handle.isCancelled || scopeClosed.get()) return@Runnable
             runCatching { task.run() }.onFailure {
-                platform.log(owner, LogLevel.ERROR, "[pnLibrary/tasks] Ошибка задачи ${owner.javaClass.simpleName}", it)
+                errorLogger(owner, "[pnLibrary/tasks] Ошибка задачи ${owner.javaClass.simpleName}", it)
             }
         }
 

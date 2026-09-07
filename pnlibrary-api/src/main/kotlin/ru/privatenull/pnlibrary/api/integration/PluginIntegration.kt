@@ -45,12 +45,14 @@ class PluginIntegration private constructor(
     val diagnostics: DiagnosticRegistration?,
     /** Регистрация обновлений или `null`. */
     val updates: UpdateRegistration?,
+    private val diagnosticsCleanup: (() -> Unit)?,
 ) : AutoCloseable {
 
     /** Закрывает обновления, диагностику, метрики и задачи в безопасном порядке. */
     override fun close() {
         runCatching { updates?.close() }
         runCatching { diagnostics?.close() }
+        runCatching { diagnosticsCleanup?.invoke() }
         runCatching { metrics?.close() }
         runCatching { tasks.close() }
     }
@@ -102,7 +104,13 @@ class PluginIntegration private constructor(
                     )
                 }
                 updateRequest?.let { updates = library.updates.register(owner, it) }
-                return PluginIntegration(tasks, metrics, diagnostics, updates)
+                return PluginIntegration(
+                    tasks,
+                    metrics,
+                    diagnostics,
+                    updates,
+                    diagnosticContainer?.let { { library.diagnostics.clearPlugin(pluginId) } },
+                )
             } catch (error: Throwable) {
                 runCatching { updates?.close() }
                 runCatching { diagnostics?.close() }

@@ -4,12 +4,14 @@ import java.time.Duration
 import java.util.function.Consumer
 import java.util.function.Supplier
 
+/** Cancellation handle for one scheduled action. */
 interface TaskHandle : AutoCloseable {
     val isCancelled: Boolean
     fun cancel()
     override fun close() = cancel()
 }
 
+/** Owner-bound group of tasks that are cancelled together on close. */
 interface TaskScope : AutoCloseable {
     val owner: Any
     fun global(task: Runnable): TaskHandle
@@ -25,6 +27,7 @@ interface TaskScope : AutoCloseable {
     override fun close() = cancelAll()
 }
 
+/** Cross-platform scheduling service with Folia-aware entity dispatch. */
 interface TaskService : AutoCloseable {
     fun scope(owner: Any): TaskScope
     fun close(owner: Any)

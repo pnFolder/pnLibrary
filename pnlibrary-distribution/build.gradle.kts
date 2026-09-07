@@ -14,7 +14,7 @@ tasks.named<ShadowJar>("shadowJar") { enabled = false }
 val pnVer = project.version.toString()
 
 // ── Relocation config shared by all shadow tasks ─────────────────────────────
-fun ShadowJar.applyCommonConfig(suffix: String) {
+fun ShadowJar.applyCommonConfig() {
     archiveClassifier = ""
     archiveVersion    = pnVer
     duplicatesStrategy = DuplicatesStrategy.EXCLUDE
@@ -51,7 +51,7 @@ tasks.register<ShadowJar>("shadowBukkit") {
     description = "Fat JAR for Bukkit/Spigot/Paper/Folia with relocated Kotlin runtime"
     archiveBaseName = "pnLibrary-bukkit"
     configurations = listOf(bukkitRuntime)
-    applyCommonConfig("bukkit")
+    applyCommonConfig()
     filesMatching("plugin.yml") { expand("version" to pnVer) }
 }
 
@@ -66,7 +66,7 @@ tasks.register<ShadowJar>("shadowBungee") {
     description = "Fat JAR for BungeeCord / Waterfall with relocated Kotlin runtime"
     archiveBaseName = "pnLibrary-bungee"
     configurations = listOf(bungeeRuntime)
-    applyCommonConfig("bungee")
+    applyCommonConfig()
     filesMatching("bungee.yml") { expand("version" to pnVer) }
 }
 
@@ -81,10 +81,21 @@ tasks.register<ShadowJar>("shadowVelocity") {
     description = "Fat JAR for Velocity 3.x with relocated Kotlin runtime"
     archiveBaseName = "pnLibrary-velocity"
     configurations = listOf(velocityRuntime)
-    applyCommonConfig("velocity")
+    applyCommonConfig()
     filesMatching("velocity-plugin.json") { expand("version" to pnVer) }
 }
 
 tasks.named("build") {
-    dependsOn("shadowBukkit", "shadowBungee", "shadowVelocity")
+    dependsOn("shadowBukkit", "shadowBungee", "shadowVelocity", "copyDeveloperArtifacts")
+}
+
+val apiJar = project(":pnlibrary-api").tasks.named<Jar>("jar")
+val apiSources = project(":pnlibrary-api").tasks.named<Jar>("sourcesJar")
+tasks.register<Copy>("copyDeveloperArtifacts") {
+    group = "distribution"
+    description = "Copies the public API binary and sources next to platform distributions"
+    dependsOn(apiJar, apiSources)
+    from(apiJar.flatMap { it.archiveFile })
+    from(apiSources.flatMap { it.archiveFile })
+    into(layout.buildDirectory.dir("libs"))
 }

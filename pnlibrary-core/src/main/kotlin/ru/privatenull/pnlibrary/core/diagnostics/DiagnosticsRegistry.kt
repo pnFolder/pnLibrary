@@ -71,7 +71,16 @@ class DiagnosticsRegistry(eventLimit: Int = DEFAULT_EVENT_LIMIT) : DiagnosticsSe
     }
 
     override fun clearStatus(plugin: String, component: String) {
-        stateOf(plugin).statuses.remove(key(component))
+        plugins[key(plugin)]?.statuses?.remove(key(component))
+    }
+
+    override fun clearPlugin(plugin: String) {
+        plugins.remove(key(plugin))
+    }
+
+    /** Clears process state when the installed runtime is shut down or reloaded. */
+    fun clear() {
+        plugins.clear()
     }
 
     // ── Event recording ──────────────────────────────────────────────────────
@@ -132,17 +141,25 @@ class DiagnosticsRegistry(eventLimit: Int = DEFAULT_EVENT_LIMIT) : DiagnosticsSe
 
     /** Returns merged [DiagnosticConfiguration] objects for a given plugin. */
     fun configurations(plugin: String): List<RegisteredConfiguration> {
-        val st = plugins[key(plugin)] ?: return emptyList()
+        if (plugin.equals("all", ignoreCase = true)) {
+            return plugins.keys.sorted().flatMap { pluginKey -> configurationsFor(pluginKey, plugins[pluginKey] ?: return@flatMap emptyList()) }
+        }
+        val pluginKey = key(plugin)
+        val st = plugins[pluginKey] ?: return emptyList()
+        return configurationsFor(pluginKey, st)
+    }
+
+    private fun configurationsFor(plugin: String, st: PluginState): List<RegisteredConfiguration> {
         val files = linkedMapOf<String, RegisteredConfiguration>()
         st.contributors.values.forEach { registered ->
             try {
                 val contrib = registered.contributor
                 contrib.configurations().forEach { cfg ->
-                    if (files.size < 64) files.putIfAbsent(cfg.path, RegisteredConfiguration(registered.dataDirectory, cfg))
+                    if (files.size < 64) files.putIfAbsent(cfg.path, RegisteredConfiguration(plugin, registered.dataDirectory, cfg))
                 }
                 contrib.configurationFiles().forEach { path ->
                     if (files.size < 64 && !files.containsKey(path)) {
-                        runCatching { files[path] = RegisteredConfiguration(registered.dataDirectory, DiagnosticConfiguration.file(path).build()) }
+                        runCatching { files[path] = RegisteredConfiguration(plugin, registered.dataDirectory, DiagnosticConfiguration.file(path).build()) }
                     }
                 }
             } catch (_: Throwable) { /* never let a contributor break the report */ }
@@ -150,7 +167,11 @@ class DiagnosticsRegistry(eventLimit: Int = DEFAULT_EVENT_LIMIT) : DiagnosticsSe
         return files.values.toList()
     }
 
-    data class RegisteredConfiguration(val dataDirectory: Path?, val configuration: DiagnosticConfiguration)
+    data class RegisteredConfiguration(
+        val plugin: String,
+        val dataDirectory: Path?,
+        val configuration: DiagnosticConfiguration,
+    )
 
     // ── Internals ────────────────────────────────────────────────────────────
 
