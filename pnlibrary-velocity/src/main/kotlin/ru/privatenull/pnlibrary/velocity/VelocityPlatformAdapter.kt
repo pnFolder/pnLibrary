@@ -9,7 +9,7 @@ import org.slf4j.Logger
 import ru.privatenull.pnlibrary.api.logging.LogLevel
 import ru.privatenull.pnlibrary.api.metrics.PlatformMetricsFactory
 import ru.privatenull.pnlibrary.api.platform.PlatformAdapter
-import ru.privatenull.pnlibrary.api.platform.PlatformVariant
+import ru.privatenull.pnlibrary.api.platform.PlatformType
 import ru.privatenull.pnlibrary.api.runtime.PnLibrary
 import ru.privatenull.pnlibrary.core.diagnostics.DiagnosticCommandEvent
 import ru.privatenull.pnlibrary.core.diagnostics.DiagnosticCommandExecutor
@@ -28,7 +28,8 @@ class VelocityPlatformAdapter(
 ) : PlatformAdapter {
 
     private val closedFlag = AtomicBoolean(false)
-    override val variant = PlatformVariant.VELOCITY
+    override val type = PlatformType.VELOCITY
+    override val implementationName: String get() = server.version.name.ifBlank { type.displayName }
 
     override fun log(owner: Any, level: LogLevel, message: String, error: Throwable?) {
         when (level) {

@@ -8,7 +8,7 @@ import org.junit.jupiter.api.io.TempDir
 import ru.privatenull.pnlibrary.api.diagnostics.DebugRequest
 import ru.privatenull.pnlibrary.api.diagnostics.DiagnosticContainer
 import ru.privatenull.pnlibrary.api.platform.PlatformAdapter
-import ru.privatenull.pnlibrary.api.platform.PlatformVariant
+import ru.privatenull.pnlibrary.api.platform.PlatformType
 import ru.privatenull.pnlibrary.api.runtime.PnLibraryConfig
 import ru.privatenull.pnlibrary.core.diagnostics.DiagnosticsRegistry
 import ru.privatenull.pnlibrary.core.diagnostics.ReportGenerator
@@ -47,7 +47,7 @@ class ReportGeneratorTest {
     }
 
     private class TestPlatform : PlatformAdapter {
-        override val variant = PlatformVariant.BUKKIT
+        override val type = PlatformType.BUKKIT
         override val id = "test"
         override fun details(): Map<String, Any?> = emptyMap()
         override fun executeGlobal(task: Runnable) = task.run()

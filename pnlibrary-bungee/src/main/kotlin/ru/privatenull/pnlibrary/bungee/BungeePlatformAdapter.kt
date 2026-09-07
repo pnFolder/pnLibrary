@@ -8,7 +8,7 @@ import net.md_5.bungee.api.plugin.Plugin
 import ru.privatenull.pnlibrary.api.logging.LogLevel
 import ru.privatenull.pnlibrary.api.metrics.PlatformMetricsFactory
 import ru.privatenull.pnlibrary.api.platform.PlatformAdapter
-import ru.privatenull.pnlibrary.api.platform.PlatformVariant
+import ru.privatenull.pnlibrary.api.platform.PlatformType
 import ru.privatenull.pnlibrary.api.runtime.PnLibrary
 import ru.privatenull.pnlibrary.core.diagnostics.DiagnosticCommandEvent
 import ru.privatenull.pnlibrary.core.diagnostics.DiagnosticCommandExecutor
@@ -24,12 +24,8 @@ class BungeePlatformAdapter(
 
     private val closedFlag = AtomicBoolean(false)
 
-    override val variant: PlatformVariant
-        get() = when {
-            plugin.proxy.name.equals("Waterfall", ignoreCase = true) -> PlatformVariant.WATERFALL
-            plugin.proxy.name.equals("NullCordX", ignoreCase = true) -> PlatformVariant.NULLCORDX
-            else -> PlatformVariant.BUNGEECORD
-        }
+    override val type = PlatformType.BUNGEECORD
+    override val implementationName: String get() = plugin.proxy.name.ifBlank { type.displayName }
     override val metricsFactory: PlatformMetricsFactory = BungeeMetricsFactory()
     override val dataFolder = plugin.dataFolder.toPath()
 

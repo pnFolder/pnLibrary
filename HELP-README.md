@@ -79,8 +79,8 @@ Start here when you need to know where a service comes from.
 [`PlatformAdapter`](pnlibrary-api/src/main/kotlin/ru/privatenull/pnlibrary/api/platform/PlatformAdapter.kt)
 handles native logging, metadata, scheduler dispatch, diagnostics, bStats, and
 binding platform commands/listeners. `PlatformType` describes one of the three
-API families (`BUKKIT`, `BUNGEECORD`, or `VELOCITY`), while `PlatformVariant`
-identifies the concrete fork such as Paper, Purpur, Folia, Waterfall, or NullCordX.
+API families (`BUKKIT`, `BUNGEECORD`, or `VELOCITY`). A concrete implementation
+such as Paper, Folia, NullCordX, or a private fork is runtime metadata only.
 
 ## Startup and shutdown
 
@@ -231,7 +231,7 @@ handle and must close it.
 | Public consumer contract | `pnlibrary-api` |
 | Service composition | `PnLibraryImpl` |
 | Startup/shutdown | `PnLibraryRuntimeHost`, then native entry points |
-| Platform identity | `PlatformType`, `PlatformVariant`, and adapters |
+| Platform identity | `PlatformType` and adapters |
 | `/pndebug` flow | `DiagnosticCommandExecutor`, then platform rendering |
 | Report contents/security | `core/diagnostics` |
 | Threads/timers | `TaskServiceImpl`, then `PlatformAdapter` |
@@ -248,7 +248,7 @@ handle and must close it.
 Read these files, in order:
 
 1. `PnLibrary.kt`
-2. `PlatformAdapter.kt`, `PlatformType.kt`, and `PlatformVariant.kt`
+2. `PlatformAdapter.kt` and `PlatformType.kt`
 3. `PnLibraryRuntimeHost.kt`
 4. `PnLibraryBootstrap.kt`
 5. `PnLibraryImpl.kt`

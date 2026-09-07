@@ -2,7 +2,7 @@
 
 ## 2.0.0-beta.6
 
-- Separated the three `PlatformType` API families from their concrete `PlatformVariant` implementations.
+- Reduced platform identity to the three supported `PlatformType` API families; fork names are runtime metadata.
 - Added a high-level `PnLibraryRuntimeHost` shared by all native entry points.
 - Removed platform adapter casts to the internal `PnLibraryImpl` implementation.
 - Centralized `/pndebug` parsing, cooldown, execution, and reply dispatch.

@@ -12,7 +12,7 @@ import org.junit.jupiter.api.Test
 import ru.privatenull.pnlibrary.api.diagnostics.DiagnosticLevel
 import ru.privatenull.pnlibrary.api.diagnostics.DiagnosticContainer
 import ru.privatenull.pnlibrary.api.platform.PlatformAdapter
-import ru.privatenull.pnlibrary.api.platform.PlatformVariant
+import ru.privatenull.pnlibrary.api.platform.PlatformType
 import ru.privatenull.pnlibrary.api.runtime.PnLibrary
 import ru.privatenull.pnlibrary.api.runtime.PnLibraryProvider
 import java.util.function.Supplier
@@ -68,7 +68,7 @@ class PnLibraryBootstrapTest {
     private class DummyPlugin(val name: String)
     private class DummyPlatformAdapter : PlatformAdapter {
         var boundLibrary: PnLibrary? = null
-        override val variant = PlatformVariant.BUKKIT
+        override val type = PlatformType.BUKKIT
         override val id: String get() = "dummy"
         override fun bind(library: PnLibrary) {
             assertSame(library, PnLibraryProvider.get())

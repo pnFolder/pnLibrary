@@ -5,7 +5,7 @@ import org.junit.jupiter.api.Assertions.assertTrue
 import org.junit.jupiter.api.Test
 import org.junit.jupiter.api.io.TempDir
 import ru.privatenull.pnlibrary.api.platform.PlatformAdapter
-import ru.privatenull.pnlibrary.api.platform.PlatformVariant
+import ru.privatenull.pnlibrary.api.platform.PlatformType
 import ru.privatenull.pnlibrary.api.runtime.PnLibraryConfig
 import ru.privatenull.pnlibrary.core.diagnostics.DiagnosticCommandEvent
 import ru.privatenull.pnlibrary.core.diagnostics.DiagnosticCommandExecutor
@@ -50,7 +50,7 @@ class DiagnosticCommandExecutorTest {
     }
 
     private class TestPlatform(override val dataFolder: Path) : PlatformAdapter {
-        override val variant = PlatformVariant.BUKKIT
+        override val type = PlatformType.BUKKIT
         override val id = "test"
         override fun ownerDetails(owner: Any) = mapOf("name" to "pnLibrary", "version" to "2.0.0")
         override fun details(): Map<String, Any?> = emptyMap()

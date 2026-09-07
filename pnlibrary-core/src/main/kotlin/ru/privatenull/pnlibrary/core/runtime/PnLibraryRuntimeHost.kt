@@ -29,7 +29,7 @@ class PnLibraryRuntimeHost private constructor(
         runCatching { updateMonitor.close() }
         runCatching {
             library.logging.shutdownBox(library.owner, "pnLibrary ${library.version}")
-                .ok("Платформа", library.platform.displayName)
+                .ok("Платформа", library.platform.summaryName())
                 .ok("Ресурсы", "задачи и регистрации освобождаются")
                 .show()
         }
@@ -64,7 +64,6 @@ class PnLibraryRuntimeHost private constructor(
                     ?.takeIf { it.isNotBlank() }
                     ?: error("The platform did not expose the pnLibrary version")
                 val artifactId = platform.type.distributionArtifact
-                    ?: error("Unsupported pnLibrary platform: ${platform.type}")
                 val currentJar = Paths.get(owner.javaClass.protectionDomain.codeSource.location.toURI())
                 val monitor = MandatoryUpdateService.start(
                     owner,
@@ -78,7 +77,7 @@ class PnLibraryRuntimeHost private constructor(
                     runCatching {
                         library.logging.box(owner, "pnLibrary $currentVersion")
                             .ok("Runtime", "общие сервисы запущены")
-                            .ok("Платформа", platform.displayName)
+                            .ok("Платформа", platform.summaryName())
                             .ok("Обновления", "проверка релизов запущена")
                             .show()
                     }
@@ -90,3 +89,7 @@ class PnLibraryRuntimeHost private constructor(
         }
     }
 }
+
+private fun PlatformAdapter.summaryName(): String =
+    if (implementationName.equals(type.displayName, ignoreCase = true)) type.displayName
+    else "${type.displayName} · $implementationName"

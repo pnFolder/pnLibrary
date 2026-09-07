@@ -14,17 +14,24 @@ import ru.privatenull.pnlibrary.api.runtime.PnLibrary
  */
 interface PlatformAdapter : AutoCloseable {
 
-    /** Concrete server or proxy implementation detected at runtime. */
-    val variant: PlatformVariant
+    /** API family used by the current server or proxy implementation. */
+    val type: PlatformType
 
-    /** Base API family used by this implementation. */
-    val type: PlatformType get() = variant.type
+    /** Stable family identifier used for program logic and diagnostics. */
+    val id: String get() = type.id
 
-    /** Stable identifier used in logs and diagnostics. */
-    val id: String get() = variant.id
+    /**
+     * Human-readable implementation name reported by the running software.
+     * This may be Paper, Folia, NullCordX, a private fork, or any future fork.
+     * Consumers must not use this value for compatibility decisions.
+     */
+    val implementationName: String get() = type.displayName
 
-    /** Human-readable name of the concrete implementation. */
-    val displayName: String get() = variant.displayName
+    /** Whether the current platform family is a proxy. */
+    val isProxy: Boolean get() = type.isProxy
+
+    /** Whether the current platform family is a game server. */
+    val isServer: Boolean get() = type.isServer
 
     /** Data directory owned by the installed pnLibrary runtime. */
     val dataFolder: java.nio.file.Path? get() = null

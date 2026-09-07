@@ -48,6 +48,7 @@ class ReportGenerator(
         reportData["generatedUtc"] = Instant.now().toString()
         reportData["target"] = request.target
         reportData["platform"] = platformAdapter.id
+        reportData["platformImplementation"] = platformAdapter.implementationName
 
         // Platform & System info
         reportData["platformDetails"] = platformAdapter.details()

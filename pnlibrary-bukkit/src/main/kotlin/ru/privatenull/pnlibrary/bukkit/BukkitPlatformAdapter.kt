@@ -23,7 +23,7 @@ import org.bukkit.plugin.java.JavaPlugin
 import ru.privatenull.pnlibrary.api.logging.LogLevel
 import ru.privatenull.pnlibrary.api.metrics.PlatformMetricsFactory
 import ru.privatenull.pnlibrary.api.platform.PlatformAdapter
-import ru.privatenull.pnlibrary.api.platform.PlatformVariant
+import ru.privatenull.pnlibrary.api.platform.PlatformType
 import ru.privatenull.pnlibrary.api.runtime.PnLibrary
 import ru.privatenull.pnlibrary.api.runtime.PnLibraryBrand
 import ru.privatenull.pnlibrary.api.updates.UpdateState
@@ -51,14 +51,8 @@ class BukkitPlatformAdapter @JvmOverloads constructor(
     private var library: PnLibrary? = null
     private var diagnosticCommands: DiagnosticCommandExecutor? = null
 
-    override val variant: PlatformVariant
-        get() = when {
-            ServerCapabilities.isPurpur -> PlatformVariant.PURPUR
-            ServerCapabilities.isLeaf -> PlatformVariant.LEAF
-            ServerCapabilities.isFolia -> PlatformVariant.FOLIA
-            ServerCapabilities.isPaper -> PlatformVariant.PAPER
-            else -> PlatformVariant.BUKKIT
-        }
+    override val type = PlatformType.BUKKIT
+    override val implementationName: String get() = Bukkit.getName().ifBlank { type.displayName }
     override val metricsFactory: PlatformMetricsFactory = BukkitMetricsFactory()
     override val dataFolder = plugin.dataFolder.toPath()
 

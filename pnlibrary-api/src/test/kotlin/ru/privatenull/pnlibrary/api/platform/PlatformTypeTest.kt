@@ -26,20 +26,10 @@ class PlatformTypeTest {
     }
 
     @Test
-    fun `variants belong to their compatible API family`() {
-        val bukkitVariants = listOf(
-            PlatformVariant.BUKKIT,
-            PlatformVariant.PAPER,
-            PlatformVariant.PURPUR,
-            PlatformVariant.LEAF,
-            PlatformVariant.FOLIA,
-        )
-        bukkitVariants.forEach { assertEquals(PlatformType.BUKKIT, it.type) }
-
-        assertEquals(PlatformType.BUNGEECORD, PlatformVariant.BUNGEECORD.type)
-        assertEquals(PlatformType.BUNGEECORD, PlatformVariant.WATERFALL.type)
-        assertEquals(PlatformType.BUNGEECORD, PlatformVariant.NULLCORDX.type)
-        assertEquals(PlatformType.VELOCITY, PlatformVariant.VELOCITY.type)
+    fun `type identifiers are stable and independent of implementations`() {
+        assertEquals("bukkit", PlatformType.BUKKIT.id)
+        assertEquals("bungeecord", PlatformType.BUNGEECORD.id)
+        assertEquals("velocity", PlatformType.VELOCITY.id)
     }
 
     @Test

@@ -7,7 +7,7 @@ import org.junit.jupiter.api.Assertions.assertEquals
 import org.junit.jupiter.api.Assertions.assertTrue
 import org.junit.jupiter.api.Test
 import ru.privatenull.pnlibrary.api.platform.PlatformAdapter
-import ru.privatenull.pnlibrary.api.platform.PlatformVariant
+import ru.privatenull.pnlibrary.api.platform.PlatformType
 import java.time.Duration
 import java.util.concurrent.CountDownLatch
 import java.util.concurrent.TimeUnit
@@ -84,7 +84,7 @@ class TaskServiceImplTest {
     private class ImmediatePlatform : PlatformAdapter {
         val globalCalls = AtomicInteger()
         val replyCalls = AtomicInteger()
-        override val variant = PlatformVariant.BUKKIT
+        override val type = PlatformType.BUKKIT
         override val id = "test"
         override fun details(): Map<String, Any?> = emptyMap()
         override fun executeGlobal(task: Runnable) { globalCalls.incrementAndGet(); task.run() }
@@ -95,7 +95,7 @@ class TaskServiceImplTest {
     private class QueuedPlatform : PlatformAdapter {
         val dispatched = CountDownLatch(1)
         val queued = AtomicReference<Runnable>()
-        override val variant = PlatformVariant.BUKKIT
+        override val type = PlatformType.BUKKIT
         override val id = "queued"
         override fun details(): Map<String, Any?> = emptyMap()
         override fun executeGlobal(task: Runnable) { queued.set(task); dispatched.countDown() }
