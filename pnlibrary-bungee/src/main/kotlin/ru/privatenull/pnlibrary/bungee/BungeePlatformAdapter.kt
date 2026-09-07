@@ -27,7 +27,7 @@ class BungeePlatformAdapter(
     override val variant: PlatformVariant
         get() = when {
             plugin.proxy.name.equals("Waterfall", ignoreCase = true) -> PlatformVariant.WATERFALL
-            plugin.proxy.name.equals("XCord", ignoreCase = true) -> PlatformVariant.XCORD
+            plugin.proxy.name.equals("NullCordX", ignoreCase = true) -> PlatformVariant.NULLCORDX
             else -> PlatformVariant.BUNGEECORD
         }
     override val metricsFactory: PlatformMetricsFactory = BungeeMetricsFactory()

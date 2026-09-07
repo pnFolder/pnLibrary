@@ -38,7 +38,7 @@ class PlatformTypeTest {
 
         assertEquals(PlatformType.BUNGEECORD, PlatformVariant.BUNGEECORD.type)
         assertEquals(PlatformType.BUNGEECORD, PlatformVariant.WATERFALL.type)
-        assertEquals(PlatformType.BUNGEECORD, PlatformVariant.XCORD.type)
+        assertEquals(PlatformType.BUNGEECORD, PlatformVariant.NULLCORDX.type)
         assertEquals(PlatformType.VELOCITY, PlatformVariant.VELOCITY.type)
     }
 

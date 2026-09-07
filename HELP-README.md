@@ -80,7 +80,7 @@ Start here when you need to know where a service comes from.
 handles native logging, metadata, scheduler dispatch, diagnostics, bStats, and
 binding platform commands/listeners. `PlatformType` describes one of the three
 API families (`BUKKIT`, `BUNGEECORD`, or `VELOCITY`), while `PlatformVariant`
-identifies the concrete fork such as Paper, Purpur, Folia, Waterfall, or XCord.
+identifies the concrete fork such as Paper, Purpur, Folia, Waterfall, or NullCordX.
 
 ## Startup and shutdown
 

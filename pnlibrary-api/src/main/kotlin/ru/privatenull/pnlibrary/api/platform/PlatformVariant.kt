@@ -23,6 +23,6 @@ enum class PlatformVariant(
     FOLIA(PlatformType.BUKKIT, "folia-bukkit", "Folia"),
     BUNGEECORD(PlatformType.BUNGEECORD, "bungeecord", "BungeeCord"),
     WATERFALL(PlatformType.BUNGEECORD, "waterfall", "Waterfall"),
-    XCORD(PlatformType.BUNGEECORD, "xcord", "XCord"),
+    NULLCORDX(PlatformType.BUNGEECORD, "nullcordx", "NullCordX"),
     VELOCITY(PlatformType.VELOCITY, "velocity", "Velocity"),
 }
