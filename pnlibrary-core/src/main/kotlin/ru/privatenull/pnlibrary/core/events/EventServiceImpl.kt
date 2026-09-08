@@ -1,14 +1,14 @@
 package ru.privatenull.pnlibrary.core.events
 
-import ru.privatenull.pnlibrary.api.events.CancellablePnEvent
+import ru.privatenull.pnlibrary.api.events.CancellableEvent
 import ru.privatenull.pnlibrary.api.events.EventDispatchResult
 import ru.privatenull.pnlibrary.api.events.EventListenerRegistration
+import ru.privatenull.pnlibrary.api.events.EventSubscriber
 import ru.privatenull.pnlibrary.api.events.EventScope
 import ru.privatenull.pnlibrary.api.events.EventService
 import ru.privatenull.pnlibrary.api.events.EventSubscription
-import ru.privatenull.pnlibrary.api.events.PnEvent
-import ru.privatenull.pnlibrary.api.events.PnEventHandler
-import ru.privatenull.pnlibrary.api.events.PnEventListener
+import ru.privatenull.pnlibrary.api.events.HandlesEvent
+import ru.privatenull.pnlibrary.api.events.LibraryEvent
 import java.lang.reflect.InvocationTargetException
 import java.lang.reflect.Method
 import java.lang.reflect.Modifier
@@ -25,7 +25,7 @@ internal class EventServiceImpl(
 ) : EventService {
 
     private val scopes = Collections.synchronizedMap(IdentityHashMap<Any, Scope>())
-    private val subscriptions = CopyOnWriteArrayList<Subscription<out PnEvent>>()
+    private val subscriptions = CopyOnWriteArrayList<Subscription<out LibraryEvent>>()
     private val sequence = AtomicLong()
     private val closed = AtomicBoolean(false)
 
@@ -36,7 +36,7 @@ internal class EventServiceImpl(
         }
     }
 
-    override fun publish(event: PnEvent): EventDispatchResult {
+    override fun publish(event: LibraryEvent): EventDispatchResult {
         check(!closed.get()) { "EventService is closed" }
         var delivered = 0
         var skipped = 0
@@ -44,12 +44,12 @@ internal class EventServiceImpl(
 
         val matching = subscriptions.asSequence()
             .filter { !it.isClosed && it.eventType.isAssignableFrom(event.javaClass) }
-            .sortedWith(compareBy<Subscription<out PnEvent>> { it.priority }.thenBy { it.order })
+            .sortedWith(compareBy<Subscription<out LibraryEvent>> { it.priority }.thenBy { it.order })
             .toList()
 
         matching.forEach { subscription ->
             if (subscription.isClosed) return@forEach
-            if (subscription.ignoreCancelled && (event as? CancellablePnEvent)?.isCancelled == true) {
+            if (subscription.ignoreCancelled && (event as? CancellableEvent)?.isCancelled == true) {
                 skipped++
                 return@forEach
             }
@@ -70,7 +70,7 @@ internal class EventServiceImpl(
             delivered = delivered,
             skipped = skipped,
             failed = failed,
-            cancelled = (event as? CancellablePnEvent)?.isCancelled == true,
+            cancelled = (event as? CancellableEvent)?.isCancelled == true,
         )
     }
 
@@ -87,14 +87,14 @@ internal class EventServiceImpl(
 
     private inner class Scope(override val owner: Any) : EventScope {
         private val scopeClosed = AtomicBoolean(false)
-        private val ownedSubscriptions = CopyOnWriteArrayList<Subscription<out PnEvent>>()
+        private val ownedSubscriptions = CopyOnWriteArrayList<Subscription<out LibraryEvent>>()
         override val isClosed: Boolean get() = scopeClosed.get()
 
-        override fun register(listener: PnEventListener): EventListenerRegistration {
+        override fun register(listener: EventSubscriber): EventListenerRegistration {
             check(!closed.get() && !scopeClosed.get()) { "EventScope is closed" }
             val handlers = discoverHandlers(listener)
             require(handlers.isNotEmpty()) {
-                "${listener.javaClass.name} does not declare any @PnEventHandler methods"
+                "${listener.javaClass.name} does not declare any @HandlesEvent methods"
             }
 
             val registered = mutableListOf<EventSubscription>()
@@ -109,7 +109,7 @@ internal class EventServiceImpl(
             }
         }
 
-        override fun <E : PnEvent> subscribe(
+        override fun <E : LibraryEvent> subscribe(
             eventType: Class<E>,
             priority: Int,
             ignoreCancelled: Boolean,
@@ -130,7 +130,7 @@ internal class EventServiceImpl(
             return subscription
         }
 
-        override fun publish(event: PnEvent): EventDispatchResult = this@EventServiceImpl.publish(event)
+        override fun publish(event: LibraryEvent): EventDispatchResult = this@EventServiceImpl.publish(event)
 
         override fun close() {
             closeInternal()
@@ -143,13 +143,13 @@ internal class EventServiceImpl(
             ownedSubscriptions.clear()
         }
 
-        fun remove(subscription: Subscription<out PnEvent>) {
+        fun remove(subscription: Subscription<out LibraryEvent>) {
             ownedSubscriptions.remove(subscription)
         }
 
-        private fun subscribeHandler(listener: PnEventListener, handler: HandlerMethod): EventSubscription {
+        private fun subscribeHandler(listener: EventSubscriber, handler: HandlerMethod): EventSubscription {
             @Suppress("UNCHECKED_CAST")
-            val eventType = handler.eventType as Class<PnEvent>
+            val eventType = handler.eventType as Class<LibraryEvent>
             return subscribe(
                 eventType,
                 handler.annotation.priority,
@@ -159,7 +159,7 @@ internal class EventServiceImpl(
         }
     }
 
-    private inner class Subscription<E : PnEvent>(
+    private inner class Subscription<E : LibraryEvent>(
         val scope: Scope,
         val eventType: Class<E>,
         val priority: Int,
@@ -170,7 +170,7 @@ internal class EventServiceImpl(
         private val subscriptionClosed = AtomicBoolean(false)
         override val isClosed: Boolean get() = subscriptionClosed.get()
 
-        fun invoke(event: PnEvent) {
+        fun invoke(event: LibraryEvent) {
             listener.accept(eventType.cast(event))
         }
 
@@ -182,7 +182,7 @@ internal class EventServiceImpl(
     }
 
     private class ListenerRegistration(
-        override val listener: PnEventListener,
+        override val listener: EventSubscriber,
         private val subscriptions: List<EventSubscription>,
     ) : EventListenerRegistration {
         private val registrationClosed = AtomicBoolean(false)
@@ -198,11 +198,11 @@ internal class EventServiceImpl(
 
     private data class HandlerMethod(
         val method: Method,
-        val annotation: PnEventHandler,
-        val eventType: Class<out PnEvent>,
+        val annotation: HandlesEvent,
+        val eventType: Class<out LibraryEvent>,
     )
 
-    private fun discoverHandlers(listener: PnEventListener): List<HandlerMethod> {
+    private fun discoverHandlers(listener: EventSubscriber): List<HandlerMethod> {
         val methods = linkedMapOf<String, Method>()
         var type: Class<*>? = listener.javaClass
         while (type != null && type != Any::class.java) {
@@ -214,24 +214,24 @@ internal class EventServiceImpl(
         }
 
         return methods.values.mapNotNull { method ->
-            val annotation = method.getAnnotation(PnEventHandler::class.java) ?: return@mapNotNull null
+            val annotation = method.getAnnotation(HandlesEvent::class.java) ?: return@mapNotNull null
             require(!Modifier.isStatic(method.modifiers)) {
-                "@PnEventHandler method must not be static: ${methodDescription(method)}"
+                "@HandlesEvent method must not be static: ${methodDescription(method)}"
             }
             require(!Modifier.isAbstract(method.modifiers)) {
-                "@PnEventHandler method must not be abstract: ${methodDescription(method)}"
+                "@HandlesEvent method must not be abstract: ${methodDescription(method)}"
             }
             require(method.parameterCount == 1) {
-                "@PnEventHandler method must have exactly one parameter: ${methodDescription(method)}"
+                "@HandlesEvent method must have exactly one parameter: ${methodDescription(method)}"
             }
-            require(PnEvent::class.java.isAssignableFrom(method.parameterTypes[0])) {
-                "@PnEventHandler parameter must implement PnEvent: ${methodDescription(method)}"
+            require(LibraryEvent::class.java.isAssignableFrom(method.parameterTypes[0])) {
+                "@HandlesEvent parameter must implement LibraryEvent: ${methodDescription(method)}"
             }
             require(method.returnType == Void.TYPE) {
-                "@PnEventHandler method must return Unit or void: ${methodDescription(method)}"
+                "@HandlesEvent method must return Unit or void: ${methodDescription(method)}"
             }
             method.isAccessible = true
-            HandlerMethod(method, annotation, method.parameterTypes[0].asSubclass(PnEvent::class.java))
+            HandlerMethod(method, annotation, method.parameterTypes[0].asSubclass(LibraryEvent::class.java))
         }.sortedWith(
             compareBy<HandlerMethod> { it.annotation.priority }
                 .thenBy { it.method.name }
@@ -247,7 +247,7 @@ internal class EventServiceImpl(
     private fun methodDescription(method: Method): String =
         "${method.declaringClass.name}#${method.name}"
 
-    private fun invokeHandler(method: Method, listener: PnEventListener, event: PnEvent) {
+    private fun invokeHandler(method: Method, listener: EventSubscriber, event: LibraryEvent) {
         try {
             method.invoke(listener, event)
         } catch (error: InvocationTargetException) {

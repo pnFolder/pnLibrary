@@ -12,7 +12,7 @@ interface EventService : AutoCloseable {
     fun scope(owner: Any): EventScope
 
     /** Publishes [event] synchronously on the calling thread. */
-    fun publish(event: PnEvent): EventDispatchResult
+    fun publish(event: LibraryEvent): EventDispatchResult
 
     /** Removes and closes the scope belonging to [owner]. */
     fun close(owner: Any)

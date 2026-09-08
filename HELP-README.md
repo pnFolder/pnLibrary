@@ -165,11 +165,11 @@ through `PlatformAdapter`. Callback failures are caught and logged.
 ### Events
 
 `EventService` is the platform-independent event bus. Event classes implement
-`PnEvent`; cancellable events implement `CancellablePnEvent`. A plugin obtains
+`LibraryEvent`; cancellable events implement `CancellableEvent`. A plugin obtains
 one owner scope and registers typed listeners on it:
 
 ```kotlin
-data class ClanCreatedEvent(val clanId: String) : PnEvent
+data class ClanCreatedEvent(val clanId: String) : LibraryEvent
 
 val events = pn.events.scope(plugin)
 events.subscribe<ClanCreatedEvent> { event ->
@@ -181,8 +181,8 @@ events.publish(ClanCreatedEvent("knights"))
 The annotation style uses the same dispatcher:
 
 ```kotlin
-class ClanListener : PnEventListener {
-    @PnEventHandler(priority = 250)
+class ClanListener : EventSubscriber {
+    @HandlesEvent(priority = 250)
     fun created(event: ClanCreatedEvent) { /* handle */ }
 }
 
@@ -190,7 +190,7 @@ events.register(ClanListener())
 ```
 
 Registration validates every annotated method up front. A handler accepts
-exactly one `PnEvent` subtype and returns `Unit`/`void`. The returned
+exactly one `LibraryEvent` subtype and returns `Unit`/`void`. The returned
 `EventListenerRegistration` can remove all methods from that listener at once.
 
 Dispatch is synchronous on the publishing thread. Priority is any integer;

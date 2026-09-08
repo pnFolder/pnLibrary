@@ -227,10 +227,10 @@ override fun onDisable() {
 ## Кроссплатформенные события
 
 Собственные события плагинов не должны зависеть от Bukkit, BungeeCord или
-Velocity. Событие реализует `PnEvent`, а подписки хранятся в scope владельца:
+Velocity. Событие реализует `LibraryEvent`, а подписки хранятся в scope владельца:
 
 ```kotlin
-data class ClanCreatedEvent(val clanId: String) : PnEvent
+data class ClanCreatedEvent(val clanId: String) : LibraryEvent
 
 private val events = pn.events.scope(this)
 
@@ -249,8 +249,8 @@ events.publish(ClanCreatedEvent("knights"))
 класс с аннотированными методами:
 
 ```kotlin
-class ClanListener : PnEventListener {
-    @PnEventHandler(priority = 250, ignoreCancelled = true)
+class ClanListener : EventSubscriber {
+    @HandlesEvent(priority = 250, ignoreCancelled = true)
     fun onClanCreated(event: ClanCreatedEvent) {
         audit.save(event)
     }
@@ -259,14 +259,14 @@ class ClanListener : PnEventListener {
 val registration = events.register(ClanListener())
 ```
 
-Метод обработчика принимает ровно один `PnEvent` и возвращает `Unit`. Некорректная
+Метод обработчика принимает ровно один `LibraryEvent` и возвращает `Unit`. Некорректная
 сигнатура отклоняется сразу при регистрации. Закрытие `registration` снимает все
 методы этого listener’а; закрытие `events` снимает вообще все подписки владельца.
 
 Обработка синхронная и выполняется в вызывающем потоке. Меньший числовой
 приоритет запускается раньше: доступны готовые значения `LOWEST = -1000`,
 `NORMAL = 0`, `HIGH = 500`, но можно передать любое целое число. При одинаковом
-значении сохраняется порядок регистрации. Отмена через `CancellablePnEvent` и
+значении сохраняется порядок регистрации. Отмена через `CancellableEvent` и
 изоляция ошибок одинаковы на всех платформах.
 `events.close()` снимает сразу все подписки плагина. Нативные игровые события
 адаптируются на границе платформенного модуля только там, где это действительно

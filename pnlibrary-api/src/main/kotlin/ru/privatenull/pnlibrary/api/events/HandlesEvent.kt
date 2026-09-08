@@ -1,10 +1,10 @@
 package ru.privatenull.pnlibrary.api.events
 
 /**
- * Marks a method as a pnLibrary event handler.
+ * Marks a method as a library event handler.
  *
- * The method must accept exactly one [PnEvent] parameter and return `Unit` or
- * `void`. It may use any visibility. Smaller numeric priorities run first.
+ * The method must accept exactly one [LibraryEvent] parameter and return `Unit`
+ * or `void`. It may use any visibility. Smaller numeric priorities run first.
  *
  * @property priority Numeric dispatch order; any integer is valid.
  * @property ignoreCancelled Skip the method after a cancellable event is cancelled.
@@ -12,7 +12,7 @@ package ru.privatenull.pnlibrary.api.events
 @Target(AnnotationTarget.FUNCTION)
 @Retention(AnnotationRetention.RUNTIME)
 @MustBeDocumented
-annotation class PnEventHandler(
+annotation class HandlesEvent(
     val priority: Int = EventPriority.NORMAL,
     val ignoreCancelled: Boolean = false,
 )

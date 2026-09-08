@@ -13,17 +13,17 @@ interface EventScope : AutoCloseable {
     val isClosed: Boolean
 
     /**
-     * Discovers and registers every [PnEventHandler] method on [listener].
+     * Discovers and registers every [HandlesEvent] method on [listener].
      * Invalid handler signatures fail immediately during registration.
      */
-    fun register(listener: PnEventListener): EventListenerRegistration
+    fun register(listener: EventSubscriber): EventListenerRegistration
 
     /** Registers [listener] for [eventType] using the default priority. */
-    fun <E : PnEvent> subscribe(eventType: Class<E>, listener: Consumer<E>): EventSubscription =
+    fun <E : LibraryEvent> subscribe(eventType: Class<E>, listener: Consumer<E>): EventSubscription =
         subscribe(eventType, EventPriority.NORMAL, false, listener)
 
     /** Registers [listener] at [priority]. */
-    fun <E : PnEvent> subscribe(
+    fun <E : LibraryEvent> subscribe(
         eventType: Class<E>,
         priority: Int,
         listener: Consumer<E>,
@@ -33,9 +33,9 @@ interface EventScope : AutoCloseable {
      * Registers a listener with complete dispatch options.
      *
      * A listener also receives subclasses and implementations of [eventType].
-     * Set [ignoreCancelled] to skip a [CancellablePnEvent] after cancellation.
+     * Set [ignoreCancelled] to skip a [CancellableEvent] after cancellation.
      */
-    fun <E : PnEvent> subscribe(
+    fun <E : LibraryEvent> subscribe(
         eventType: Class<E>,
         priority: Int,
         ignoreCancelled: Boolean,
@@ -43,7 +43,7 @@ interface EventScope : AutoCloseable {
     ): EventSubscription
 
     /** Publishes [event] synchronously to every matching listener. */
-    fun publish(event: PnEvent): EventDispatchResult
+    fun publish(event: LibraryEvent): EventDispatchResult
 
     /** Removes every listener registered through this scope. */
     override fun close()
