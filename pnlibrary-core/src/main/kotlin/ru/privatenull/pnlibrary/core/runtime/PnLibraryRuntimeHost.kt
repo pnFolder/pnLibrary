@@ -3,6 +3,7 @@ package ru.privatenull.pnlibrary.core.runtime
 import ru.privatenull.pnlibrary.spi.platform.PlatformAdapter
 import ru.privatenull.pnlibrary.api.runtime.PnLibrary
 import ru.privatenull.pnlibrary.api.platform.PlatformType
+import ru.privatenull.pnlibrary.core.services.ServiceManagerImpl
 import ru.privatenull.pnlibrary.core.updates.MandatoryUpdateService
 import java.nio.file.Path
 import java.nio.file.Paths
@@ -24,6 +25,14 @@ class PnLibraryRuntimeHost private constructor(
 ) : AutoCloseable {
 
     private val closed = AtomicBoolean(false)
+
+    /** Registers a platform service owned and cleaned up by the pnLibrary runtime. */
+    fun <T : Any> registerService(
+        type: Class<T>,
+        service: T,
+        priority: Int = 0,
+    ) =
+        (library.services as ServiceManagerImpl).registerSystem(type, service, priority)
 
     /** Stops the self-updater and closes the runtime. Safe to call repeatedly. */
     override fun close() {

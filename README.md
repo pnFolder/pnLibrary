@@ -146,7 +146,7 @@ interface EconomyService {
 }
 
 // Публикация от имени уже зарегистрированного плагина.
-val registration = context.services.publish<EconomyService>(economyService, priority = 100)
+context.registerService<EconomyService>(economyService, priority = 100)
 
 // Получение из любого плагина в этом процессе.
 val economy = pn.services.require<EconomyService>()
@@ -156,8 +156,9 @@ val optionalEconomy = pn.services.get<EconomyService>()
 Приоритет — любое `Int`; выбирается провайдер с наибольшим значением. Один
 `PluginId` не может дважды опубликовать один контракт, поэтому случайная
 дубликация обнаруживается сразу. Разные плагины могут предложить реализации
-одного контракта. `registration.close()` удаляет одну реализацию, а
-`context.close()` автоматически удаляет все сервисы владельца.
+одного контракта. `context.unregisterService<EconomyService>()` удаляет одну
+реализацию, а `context.close()` автоматически удаляет все сервисы владельца. Создавать scope
+или вручную передавать `PluginId` для регистрации не требуется.
 
 ## Глобальная регистрация плагина
 

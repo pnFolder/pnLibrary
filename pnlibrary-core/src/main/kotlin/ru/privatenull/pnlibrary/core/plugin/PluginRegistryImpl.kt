@@ -23,11 +23,10 @@ import ru.privatenull.pnlibrary.api.plugin.PluginMessages
 import ru.privatenull.pnlibrary.api.plugin.PluginRegistry
 import ru.privatenull.pnlibrary.api.tasks.TaskScope
 import ru.privatenull.pnlibrary.api.tasks.TaskService
-import ru.privatenull.pnlibrary.api.services.ServiceManager
-import ru.privatenull.pnlibrary.api.services.ServiceScope
 import ru.privatenull.pnlibrary.api.updates.PluginUpdateRequest
 import ru.privatenull.pnlibrary.api.updates.UpdateRegistration
 import ru.privatenull.pnlibrary.api.updates.UpdateService
+import ru.privatenull.pnlibrary.core.services.ServiceManagerImpl
 import java.nio.file.Path
 import java.util.IdentityHashMap
 import java.util.concurrent.atomic.AtomicBoolean
@@ -37,7 +36,7 @@ internal class PluginRegistryImpl(
     private val platform: PlatformAdapter,
     private val events: EventService,
     private val tasks: TaskService,
-    private val services: ServiceManager,
+    private val services: ServiceManagerImpl,
     private val logging: LoggingService,
     private val metrics: MetricsService,
     private val diagnostics: DiagnosticsService,
@@ -101,14 +100,12 @@ internal class PluginRegistryImpl(
         val metadata = metadata(owner, id, definition)
         var taskScope: TaskScope? = null
         var eventScope: EventScope? = null
-        var serviceScope: ServiceScope? = null
         var metricsController: MetricsControllerImpl? = null
         var diagnosticRegistration: DiagnosticRegistration? = null
         var updateRegistration: UpdateRegistration? = null
         try {
             taskScope = tasks.scope(owner)
             eventScope = events.scope(id)
-            serviceScope = services.scope(id)
             definition.listeners.forEach { eventScope.register(it) }
             metricsController = MetricsControllerImpl(
                 owner,
@@ -131,7 +128,6 @@ internal class PluginRegistryImpl(
                 metadata,
                 taskScope,
                 eventScope,
-                serviceScope,
                 logging.logger(owner, id.value),
                 metricsController,
                 diagnosticRegistration,
@@ -143,7 +139,7 @@ internal class PluginRegistryImpl(
             runCatching { diagnosticRegistration?.close() }
             runCatching { metricsController?.close() }
             runCatching { eventScope?.close() }
-            runCatching { serviceScope?.close() }
+            runCatching { services.unregisterAll(id) }
             runCatching { taskScope?.close() }
             throw error
         }
@@ -175,7 +171,6 @@ internal class PluginRegistryImpl(
         override val metadata: PluginMetadata,
         override val tasks: TaskScope,
         override val events: EventScope,
-        override val services: ServiceScope,
         override val logger: PnLogger,
         override val metrics: MetricsController,
         override val diagnostics: DiagnosticRegistration?,
@@ -184,6 +179,17 @@ internal class PluginRegistryImpl(
     ) : PluginContext {
         private val contextClosed = AtomicBoolean(false)
         override val isClosed: Boolean get() = contextClosed.get()
+
+        override fun <T : Any> registerService(
+            type: Class<T>,
+            service: T,
+            priority: Int,
+        ) {
+            check(!isClosed) { "Plugin context $id is closed" }
+            services.register(id, type, service, priority)
+        }
+
+        override fun <T : Any> unregisterService(type: Class<T>) = services.unregister(id, type)
         override val lifecycle: PluginLifecycle = object : PluginLifecycle {
             override val metadata: PluginMetadata get() = this@Context.metadata
             override fun enabled(): MessageBox =
@@ -221,7 +227,7 @@ internal class PluginRegistryImpl(
             runCatching { this@PluginRegistryImpl.diagnostics.clearPlugin(id.value) }
             runCatching { metrics.close() }
             runCatching { events.close() }
-            runCatching { services.close() }
+            runCatching { services.unregisterAll(id) }
             runCatching { tasks.close() }
         }
 

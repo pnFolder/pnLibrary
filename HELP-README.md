@@ -238,20 +238,21 @@ rows and renders them together only on explicit `show()`.
 ### Services
 
 `ServiceManager` is pnLibrary's platform-independent typed registry. Every
-publication belongs to a `PluginId`, and a `PluginContext` exposes the matching
-owner-bound `ServiceScope`.
+consumer publication belongs to a `PluginId`, but ownership is taken
+automatically from the `PluginContext`.
 
 ```kotlin
 interface EconomyService
 
-context.services.publish(EconomyService::class.java, economy, priority = 100)
+context.registerService(EconomyService::class.java, economy, priority = 100)
 val selected = pn.services.require(EconomyService::class.java)
 ```
 
 The provider with the highest numeric priority wins; `getAll()` returns every
 provider in priority order. One owner cannot publish the same contract twice.
-Closing a registration removes one provider, while closing the plugin context
-removes all services belonging to that owner. `ServiceManagerImpl` is the
+`context.unregisterService(...)` removes one provider, while closing the plugin
+context removes all services belonging to that owner. Consumers never create
+scopes or pass a `PluginId` during registration. `ServiceManagerImpl` is the
 thread-safe core implementation; consumers only compile against its interfaces.
 
 ### Metrics
@@ -349,7 +350,7 @@ handle and must close it.
 | Public Bukkit contract | `pnlibrary-bukkit-api` |
 | Platform implementation boundary | `pnlibrary-runtime-spi` |
 | Service composition | `PnLibraryImpl` |
-| Typed service contracts/registry | `ServiceManager`, `ServiceScope`, then `ServiceManagerImpl` |
+| Typed service contracts/registry | `ServiceManager`, `PluginContext.registerService`, then `ServiceManagerImpl` |
 | Startup/shutdown | `PnLibraryRuntimeHost`, then native entry points |
 | Platform identity | `PlatformType` and adapters |
 | `/pndebug` flow | `DiagnosticCommandExecutor`, then platform rendering |
@@ -372,7 +373,7 @@ handle and must close it.
 Read these files, in order:
 
 1. `PnLibrary.kt`
-2. `PlatformType.kt`; for Bukkit code, `BukkitEnvironment.kt` and `ServerInfo.kt`
+2. `PlatformType.kt`; for Bukkit code, `PnBukkit.kt` and `ServerInfo.kt`
 3. `PlatformAdapter.kt` in `pnlibrary-runtime-spi`
 4. `PnLibraryBootstrap.kt`
 5. `PnLibraryImpl.kt`
