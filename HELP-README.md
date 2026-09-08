@@ -274,11 +274,19 @@ private lateinit var context: PluginContext
 
 override fun onEnable() {
     val pn = PnLibraryProvider.get()
-    context = pn.plugins.register(this, "pnclans") {
+    context = pn.plugins.register(this) {
         it.metrics(12345) { metrics -> metrics.simplePie("storage") { "SQLITE" } }
         it.listener(ClanListener())
         it.diagnostics(dataFolder.toPath(), diagnosticContainer)
-        it.updates(updateRequest)
+        it.updates("pnFolder", "pnClans") { updates ->
+            updates.channel(UpdateChannel.STABLE)
+                .automaticDownload(true)
+                .artifact("(?i)^pnClans-.*\\.jar$", minimumJava = 17)
+        }
+        it.lifecycle { lifecycle ->
+            lifecycle.enabled { it.ok("Storage", "ready") }
+            lifecycle.disabled { it.ok("Storage", "saved") }
+        }
     }
 }
 
@@ -287,8 +295,10 @@ override fun onDisable() {
 }
 ```
 
-`pn.plugins.require("pnclans")` returns the same context globally. The context
-also provides its `logger`, `messageBox(...)`, and `shutdownBox(...)`. One `close()`
+`pn.plugins.require("pnclans")` returns the same context globally. Native plugin
+metadata, Java, and platform data are exposed by `context.metadata`. Automatic
+enabled/disabled summaries combine standard service rows with custom
+`lifecycle` rows. `lifecycleMessages(false)` disables them. One `close()`
 releases updates, diagnostics, metrics, events, and tasks. General rule:
 the code that calls `open`, `register`, `scope`, or `start` owns the returned
 handle and must close it.
@@ -306,6 +316,7 @@ handle and must close it.
 | Threads/timers | `TaskServiceImpl`, then `PlatformAdapter` |
 | Cross-platform events | `EventService`, `EventScope`, then `EventServiceImpl` |
 | Global plugin context | `PluginRegistry`, `PluginContext`, then `PluginRegistryImpl` |
+| Plugin lifecycle UI | `PluginLifecycle`, `LifecycleReport`, then `PluginRegistryImpl` |
 | Logs/message boxes | `PlatformLoggingService` |
 | Metrics | `MetricsRegistry`, `BStatsMetricsSession`, platform factory |
 | Updater | `UpdateServiceImpl`, `MandatoryUpdateService` |

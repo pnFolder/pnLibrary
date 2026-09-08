@@ -77,6 +77,7 @@ class PnLibraryImpl(
     }
     override val tasks: ru.privatenull.pnlibrary.api.tasks.TaskService get() = taskService
     override val plugins: ru.privatenull.pnlibrary.api.plugin.PluginRegistry = PluginRegistryImpl(
+        platform = platform,
         events = eventService,
         tasks = taskService,
         logging = logging,

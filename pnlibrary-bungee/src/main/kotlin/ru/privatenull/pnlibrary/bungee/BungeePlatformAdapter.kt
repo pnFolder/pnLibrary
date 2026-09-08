@@ -47,6 +47,7 @@ class BungeePlatformAdapter(
     override fun ownerDetails(owner: Any): Map<String, String> {
         val target = owner as? Plugin ?: return emptyMap()
         return linkedMapOf(
+            "id" to target.description.name,
             "name" to target.description.name,
             "version" to target.description.version,
             "authors" to (target.description.author ?: "pnFolder"),

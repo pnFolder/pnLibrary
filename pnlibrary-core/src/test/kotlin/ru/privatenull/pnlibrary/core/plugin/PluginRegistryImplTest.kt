@@ -16,6 +16,8 @@ import ru.privatenull.pnlibrary.api.logging.MessageBox
 import ru.privatenull.pnlibrary.api.logging.PnLogger
 import ru.privatenull.pnlibrary.api.metrics.MetricsService
 import ru.privatenull.pnlibrary.api.metrics.PluginMetrics
+import ru.privatenull.pnlibrary.api.platform.PlatformAdapter
+import ru.privatenull.pnlibrary.api.platform.PlatformType
 import ru.privatenull.pnlibrary.api.plugin.PluginId
 import ru.privatenull.pnlibrary.api.tasks.TaskScope
 import ru.privatenull.pnlibrary.api.tasks.TaskService
@@ -33,6 +35,7 @@ class PluginRegistryImplTest {
         val events = EventServiceImpl { _, _, _ -> }
         val metrics = RecordingMetricsService()
         val registry = PluginRegistryImpl(
+            platform(),
             events,
             tasks,
             loggingService(),
@@ -68,6 +71,7 @@ class PluginRegistryImplTest {
         val taskScope = RecordingTaskScope(owner)
         val tasks = RecordingTaskService(taskScope)
         val registry = PluginRegistryImpl(
+            platform(),
             EventServiceImpl { _, _, _ -> },
             tasks,
             loggingService(),
@@ -88,6 +92,7 @@ class PluginRegistryImplTest {
         val owner = Any()
         val taskScope = RecordingTaskScope(owner)
         val registry = PluginRegistryImpl(
+            platform(),
             EventServiceImpl { _, _, _ -> },
             RecordingTaskService(taskScope),
             loggingService(),
@@ -108,6 +113,7 @@ class PluginRegistryImplTest {
         val owner = Any()
         val taskScope = RecordingTaskScope(owner)
         val registry = PluginRegistryImpl(
+            platform(),
             EventServiceImpl { _, _, _ -> },
             RecordingTaskService(taskScope),
             loggingService(),
@@ -122,6 +128,56 @@ class PluginRegistryImplTest {
         assertTrue(context.isClosed)
         assertNull(registry.get("example"))
         assertTrue(taskScope.closed)
+    }
+
+    @Test
+    fun `native registration resolves metadata and prints lifecycle summaries`() {
+        val owner = Any()
+        val taskScope = RecordingTaskScope(owner)
+        val logging = RecordingLoggingService()
+        var enabledCallbackCount = 0
+        var savedCount = 0
+        var disabledSavedCount = -1
+        val registry = PluginRegistryImpl(
+            platform(),
+            EventServiceImpl { _, _, _ -> },
+            RecordingTaskService(taskScope),
+            logging,
+            RecordingMetricsService(),
+            emptyProxy(DiagnosticsService::class.java),
+            emptyProxy(UpdateService::class.java),
+        )
+
+        val context = registry.register(owner) { plugin ->
+            plugin.metadata { metadata ->
+                metadata.name("Custom Example").version("2.0.0").authors("Library Team")
+            }
+            plugin.lifecycle { lifecycle ->
+                lifecycle.enabled { report ->
+                    enabledCallbackCount++
+                    report.ok("Configuration", "loaded")
+                }
+                lifecycle.disabled { report ->
+                    disabledSavedCount = savedCount
+                    report.ok("Storage", "saved: $savedCount")
+                }
+            }
+        }
+
+        assertEquals("example", context.id.value)
+        assertEquals("Custom Example", context.metadata.name)
+        assertEquals("2.0.0", context.metadata.version)
+        assertEquals("Library Team", context.metadata.authors)
+        assertEquals(PlatformType.BUKKIT, context.metadata.platform)
+        assertEquals("Paper", context.metadata.platformImplementation)
+        assertEquals(1, logging.startupMessages)
+        assertEquals(1, enabledCallbackCount)
+
+        savedCount = 7
+        context.close()
+
+        assertEquals(1, logging.shutdownMessages)
+        assertEquals(7, disabledSavedCount)
     }
 
     private class RecordingListener : Listener {
@@ -167,10 +223,42 @@ class PluginRegistryImplTest {
         override fun close() { scope.value.close() }
     }
 
+    private class RecordingLoggingService : LoggingService {
+        var startupMessages = 0
+        var shutdownMessages = 0
+        override fun logger(owner: Any, name: String): PnLogger = emptyProxy(PnLogger::class.java)
+        override fun box(owner: Any, title: String): MessageBox =
+            RecordingMessageBox { startupMessages++ }
+        override fun shutdownBox(owner: Any, title: String): MessageBox =
+            RecordingMessageBox { shutdownMessages++ }
+    }
+
+    private class RecordingMessageBox(private val onShow: () -> Unit) : MessageBox {
+        override fun ok(label: String, detail: String) = this
+        override fun warn(label: String, detail: String) = this
+        override fun skip(label: String, detail: String) = this
+        override fun fail(label: String, detail: String, error: Throwable?) = this
+        override fun show() = onShow()
+    }
+
     private companion object {
+        fun platform(): PlatformAdapter = proxy(PlatformAdapter::class.java) { methodName ->
+            when (methodName) {
+                "getType" -> PlatformType.BUKKIT
+                "getImplementationName" -> "Paper"
+                "ownerDetails" -> mapOf(
+                    "id" to "example",
+                    "name" to "Example",
+                    "version" to "1.0.0",
+                    "authors" to "pnFolder",
+                )
+                else -> null
+            }
+        }
+
         fun loggingService(): LoggingService {
             val logger = emptyProxy(PnLogger::class.java)
-            val box = emptyProxy(MessageBox::class.java)
+            val box = NoopMessageBox()
             return proxy(LoggingService::class.java) { methodName ->
                 when (methodName) {
                     "logger" -> logger
@@ -194,5 +282,13 @@ class PluginRegistryImplTest {
             }
             return type.cast(value)
         }
+    }
+
+    private class NoopMessageBox : MessageBox {
+        override fun ok(label: String, detail: String) = this
+        override fun warn(label: String, detail: String) = this
+        override fun skip(label: String, detail: String) = this
+        override fun fail(label: String, detail: String, error: Throwable?) = this
+        override fun show() = Unit
     }
 }

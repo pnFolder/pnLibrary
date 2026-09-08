@@ -137,21 +137,36 @@ val pn = PnLibraryProvider.get()
 
 ## Глобальная регистрация плагина
 
-Плагин один раз регистрируется в pnLibrary под платформенно-независимым
-`PluginId`. Все подключённые возможности доступны из одного `PluginContext`:
+Плагин один раз регистрируется в pnLibrary. Адаптер сам получает его стабильный
+ID, имя, версию и авторов из Bukkit, BungeeCord или Velocity. Все подключённые
+возможности доступны из одного `PluginContext`:
 
 ```kotlin
 private lateinit var context: PluginContext
 
 override fun onEnable() {
     val pn = PnLibraryProvider.get()
-    context = pn.plugins.register(this, "pnmarket") {
+    context = pn.plugins.register(this) {
         it.metrics(projectId = 12345, enabled = true) { metrics ->
             metrics.simplePie("storage_type") { database.type }
         }
         it.listener(MarketListener())
         it.diagnostics(dataFolder.toPath(), diagnosticContainer)
-        it.updates(updateRequest)
+        it.updates("pnFolder", "pnMarket") { updates ->
+            updates.channel(UpdateChannel.STABLE)
+                .automaticDownload(true)
+                .artifact("(?i)^pnMarket-.*\\.jar$", minimumJava = 17)
+        }
+
+        it.lifecycle { lifecycle ->
+            lifecycle.enabled { report ->
+                report.ok("Configuration", "loaded")
+                report.ok("Database", "${database.type}, lots: ${auction.activeLots}")
+            }
+            lifecycle.disabled { report ->
+                report.ok("Storage", "saved lots: ${auction.savedLots}")
+            }
+        }
     }
 }
 
@@ -168,10 +183,46 @@ context.logger.success("Market loaded")
 context.events.publish(MarketReloadEvent())
 context.tasks.async(Runnable { repository.cleanup() })
 
-context.messageBox("pnMarket 1.0.5")
-    .ok("Platform", pn.platform.type.name)
-    .ok("Metrics", if (context.metrics.isEnabled) "enabled" else "disabled")
+context.metadata.version
+context.metadata.javaFeature
+context.metadata.platformImplementation
+context.updates?.snapshot
+```
+
+Блок включения показывается автоматически после регистрации, а блок выключения
+— внутри `context.close()`. Библиотека сама добавляет ID, версию, платформу,
+Java, metrics, updater, diagnostics и listeners. Callback `disabled` выполняется
+только во время закрытия, поэтому видит итоговые счётчики. Автоматику можно
+отключить через `it.lifecycleMessages(false)`.
+
+Явный ID остаётся override для нестандартных случаев:
+
+```kotlin
+pn.plugins.register(this, "custom-id") { plugin ->
+    plugin.metadata { metadata ->
+        metadata.name("pnMarket")
+            .version("1.5.0")
+            .authors("pnFolder")
+    }
+}
+```
+
+Если сообщения нужно показывать вручную после собственных стадий загрузки и
+сохранения, автоматический режим отключается, но native owner больше передавать
+не требуется:
+
+```kotlin
+context = pn.plugins.register(this) { it.lifecycleMessages(false) }
+
+context.lifecycle.enabled()
+    .ok("Configuration", "7 files loaded")
+    .ok("Database", "connected")
     .show()
+
+context.lifecycle.disabled()
+    .ok("Storage", "saved: $savedCount")
+    .show()
+context.close()
 ```
 
 Метрики управляются во время работы без повторной регистрации плагина:

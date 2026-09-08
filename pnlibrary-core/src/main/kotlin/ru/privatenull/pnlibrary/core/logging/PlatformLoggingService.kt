@@ -27,6 +27,10 @@ internal class PlatformLoggingService(
 
     override fun box(owner: Any, title: String): MessageBox = MBox(owner, title, false)
     override fun shutdownBox(owner: Any, title: String): MessageBox = MBox(owner, title, true)
+    override fun box(owner: Any, name: String, version: String): MessageBox =
+        MBox(owner, "$name $version", false, name, version)
+    override fun shutdownBox(owner: Any, name: String, version: String): MessageBox =
+        MBox(owner, "$name $version", true, name, version)
 
     internal fun showUpdateNotice(owner: Any, product: String, current: String, latest: String, channel: String,
         minimumJava: Int, currentJava: Int, url: String) {
@@ -77,7 +81,13 @@ internal class PlatformLoggingService(
         platform.console(owner, "")
     }
 
-    private inner class MBox(private val owner: Any, private val title: String, private val shutdown: Boolean) : MessageBox {
+    private inner class MBox(
+        private val owner: Any,
+        private val title: String,
+        private val shutdown: Boolean,
+        private val explicitName: String? = null,
+        private val explicitVersion: String? = null,
+    ) : MessageBox {
         private val rows = mutableListOf<Row>()
         private var shown = false
         override fun ok(label: String, detail: String) = add(Row("OK", label, detail, null))
@@ -113,8 +123,9 @@ internal class PlatformLoggingService(
             val titleParts = title.split(Regex("\\s+"), limit = 2)
             val ownerInfo = platform.ownerDetails(owner)
             val platformInfo = platform.details()
-            val product = ownerInfo["name"] ?: titleParts.firstOrNull().orEmpty()
-            val version = ownerInfo["version"] ?: titleParts.getOrNull(1).orEmpty().ifBlank { "неизвестна" }
+            val product = explicitName ?: ownerInfo["name"] ?: titleParts.firstOrNull().orEmpty()
+            val version = explicitVersion ?: ownerInfo["version"]
+                ?: titleParts.getOrNull(1).orEmpty().ifBlank { "неизвестна" }
             val authors = ownerInfo["authors"] ?: "pnFolder"
             val engineName = (platformInfo["serverName"] ?: platformInfo["proxyName"]
                 ?: platformInfo["velocityName"] ?: platform.id).toString()

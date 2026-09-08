@@ -48,6 +48,7 @@ class VelocityPlatformAdapter(
             .firstOrNull { it.instance.orElse(null) === owner }
             ?.description ?: return emptyMap()
         return linkedMapOf(
+            "id" to description.id,
             "name" to description.name.orElse(description.id),
             "version" to description.version.orElse("неизвестна"),
             "authors" to description.authors.joinToString(", ").ifBlank { "pnFolder" },

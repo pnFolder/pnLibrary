@@ -7,6 +7,13 @@ interface LoggingService {
     fun logger(owner: Any, name: String): PnLogger
     fun box(owner: Any, title: String): MessageBox
     fun shutdownBox(owner: Any, title: String): MessageBox
+
+    /** Creates an enabled box with explicit display metadata. */
+    fun box(owner: Any, name: String, version: String): MessageBox = box(owner, "$name $version")
+
+    /** Creates a disabled box with explicit display metadata. */
+    fun shutdownBox(owner: Any, name: String, version: String): MessageBox =
+        shutdownBox(owner, "$name $version")
 }
 
 /** Logger whose warning and error messages can be included in `/pndebug --logs`. */

@@ -58,7 +58,10 @@ interface PlatformAdapter : AutoCloseable {
     /** Writes an already formatted line directly to the server console. */
     fun console(owner: Any, message: String) = log(owner, LogLevel.INFO, message)
 
-    /** Returns public metadata for the plugin that owns a resource. */
+    /**
+     * Returns public metadata for the plugin that owns a resource.
+     * Supported keys are `id`, `name`, `version`, and `authors`.
+     */
     fun ownerDetails(owner: Any): Map<String, String> = emptyMap()
 
     /** Returns platform-specific data for diagnostic reports. */

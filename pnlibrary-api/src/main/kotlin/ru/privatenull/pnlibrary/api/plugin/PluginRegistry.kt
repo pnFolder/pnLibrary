@@ -4,6 +4,9 @@ import java.util.function.Consumer
 
 /** Global registry of plugins integrated with one pnLibrary runtime. */
 interface PluginRegistry : AutoCloseable {
+    /** Registers a native plugin using the stable ID exposed by its platform. */
+    fun register(owner: Any, configure: Consumer<PluginBuilder>): PluginContext
+
     /** Registers one plugin and atomically creates all configured capabilities. */
     fun register(owner: Any, id: PluginId, configure: Consumer<PluginBuilder>): PluginContext
 

@@ -1,7 +1,8 @@
 # Подключение pnLibrary к плагину
 
 На сервер устанавливается один платформенный runtime. Плагин подключает
-`pnlibrary-api` как `compileOnly` и один раз регистрируется под собственным ID.
+`pnlibrary-api` как `compileOnly` и один раз регистрируется. Стабильный ID и
+metadata библиотека получает из нативного описания плагина.
 
 ```kotlin
 dependencies {
@@ -17,14 +18,28 @@ private lateinit var context: PluginContext
 
 override fun onEnable() {
     pn = PnLibraryProvider.get()
-    context = pn.plugins.register(this, "pnmarket") {
+    context = pn.plugins.register(this) {
         it.metrics(12345, enabled = true) { metrics ->
             metrics.simplePie("storage_type") { database.type }
             metrics.singleLineChart("active_lots") { auction.activeLots }
         }
         it.listener(MarketListener())
         it.diagnostics(dataFolder.toPath(), diagnosticContainer)
-        it.updates(updateRequest)
+        it.updates("pnFolder", "pnMarket") { updates ->
+            updates.channel(UpdateChannel.STABLE)
+                .automaticDownload(true)
+                .artifact("(?i)^pnMarket-.*\\.jar$", minimumJava = 17)
+        }
+        it.lifecycle { lifecycle ->
+            lifecycle.enabled { report ->
+                report.ok("Configuration", "loaded")
+                if (database.isConnected) report.ok("Database", "connected")
+                else report.warn("Database", "offline")
+            }
+            lifecycle.disabled { report ->
+                report.ok("Storage", "saved lots: ${auction.savedLots}")
+            }
+        }
     }
 }
 
@@ -33,7 +48,11 @@ override fun onDisable() {
 }
 ```
 
-`context.close()` закрывает события, задачи, метрики, диагностику и обновления.
+После регистрации автоматически показывается MBox включения; `context.close()`
+закрывает ресурсы и показывает MBox выключения. Стандартные строки ID, версии,
+платформы, Java и сервисов библиотека добавляет сама. Кастомные строки задаются
+через `lifecycle`; callback `disabled` вычисляется только при закрытии.
+
 Повторная регистрация занятого ID отклоняется. Регистр не зависит от регистра
 букв и пробелов по краям: `pn.plugins.require("PNMARKET")` вернёт тот же контекст.
 
@@ -46,10 +65,10 @@ market.logger.success("Market loaded")
 market.events.publish(AuctionCreatedEvent(auctionId))
 market.tasks.async(Runnable { repository.cleanup() })
 
-market.messageBox("pnMarket 1.0.5")
-    .ok("Platform", pn.platform.type.name)
-    .ok("Metrics", if (market.metrics.isEnabled) "enabled" else "disabled")
-    .show()
+market.metadata.version
+market.metadata.javaVersion
+market.metadata.javaFeature
+market.metadata.platformImplementation
 
 market.metrics.disable()
 market.metrics.enable()

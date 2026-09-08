@@ -73,6 +73,7 @@ class BukkitPlatformAdapter @JvmOverloads constructor(
     override fun ownerDetails(owner: Any): Map<String, String> {
         val target = owner as? Plugin ?: return emptyMap()
         return linkedMapOf(
+            "id" to target.name,
             "name" to target.name,
             "version" to target.description.version,
             "authors" to target.description.authors.joinToString(", ").ifBlank { "pnFolder" },
