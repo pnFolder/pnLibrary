@@ -9,11 +9,10 @@ import ru.privatenull.pnlibrary.api.events.EventScope
 import ru.privatenull.pnlibrary.api.events.EventService
 import ru.privatenull.pnlibrary.api.events.EventSubscription
 import ru.privatenull.pnlibrary.api.events.Listener
+import ru.privatenull.pnlibrary.api.plugin.PluginId
 import java.lang.reflect.InvocationTargetException
 import java.lang.reflect.Method
 import java.lang.reflect.Modifier
-import java.util.Collections
-import java.util.IdentityHashMap
 import java.util.concurrent.CopyOnWriteArrayList
 import java.util.concurrent.atomic.AtomicBoolean
 import java.util.concurrent.atomic.AtomicLong
@@ -21,18 +20,18 @@ import java.util.function.Consumer
 
 /** Thread-safe synchronous implementation of the platform-independent event bus. */
 internal class EventServiceImpl(
-    private val errorLogger: (Any, String, Throwable) -> Unit,
+    private val errorLogger: (PluginId, String, Throwable) -> Unit,
 ) : EventService {
 
-    private val scopes = Collections.synchronizedMap(IdentityHashMap<Any, Scope>())
+    private val scopes = HashMap<PluginId, Scope>()
     private val subscriptions = CopyOnWriteArrayList<Subscription<out Event>>()
     private val sequence = AtomicLong()
     private val closed = AtomicBoolean(false)
 
-    override fun scope(owner: Any): EventScope {
+    override fun scope(pluginId: PluginId): EventScope {
         return synchronized(scopes) {
             check(!closed.get()) { "EventService is closed" }
-            scopes.getOrPut(owner) { Scope(owner) }
+            scopes.getOrPut(pluginId) { Scope(pluginId) }
         }
     }
 
@@ -59,7 +58,7 @@ internal class EventServiceImpl(
             } catch (error: Throwable) {
                 failed++
                 errorLogger(
-                    subscription.scope.owner,
+                    subscription.scope.pluginId,
                     "[pnLibrary/events] Listener failed for ${event.javaClass.name}",
                     error,
                 )
@@ -74,8 +73,8 @@ internal class EventServiceImpl(
         )
     }
 
-    override fun close(owner: Any) {
-        synchronized(scopes) { scopes.remove(owner) }?.closeInternal()
+    override fun unregisterAll(pluginId: PluginId) {
+        synchronized(scopes) { scopes.remove(pluginId) }?.closeInternal()
     }
 
     override fun close() {
@@ -85,7 +84,7 @@ internal class EventServiceImpl(
         subscriptions.clear()
     }
 
-    private inner class Scope(override val owner: Any) : EventScope {
+    private inner class Scope(override val pluginId: PluginId) : EventScope {
         private val scopeClosed = AtomicBoolean(false)
         private val ownedSubscriptions = CopyOnWriteArrayList<Subscription<out Event>>()
         override val isClosed: Boolean get() = scopeClosed.get()
@@ -134,7 +133,7 @@ internal class EventServiceImpl(
 
         override fun close() {
             closeInternal()
-            synchronized(scopes) { if (scopes[owner] === this) scopes.remove(owner) }
+            synchronized(scopes) { if (scopes[pluginId] === this) scopes.remove(pluginId) }
         }
 
         fun closeInternal() {

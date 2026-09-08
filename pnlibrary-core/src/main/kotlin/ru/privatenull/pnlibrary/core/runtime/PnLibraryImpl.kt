@@ -15,6 +15,7 @@ import ru.privatenull.pnlibrary.core.events.EventServiceImpl
 import ru.privatenull.pnlibrary.core.logging.DiagnosticLogBuffer
 import ru.privatenull.pnlibrary.core.logging.PlatformLoggingService
 import ru.privatenull.pnlibrary.core.metrics.MetricsRegistry
+import ru.privatenull.pnlibrary.core.plugin.PluginRegistryImpl
 import ru.privatenull.pnlibrary.core.security.EncryptedEnvelopeCodec
 import ru.privatenull.pnlibrary.core.tasks.TaskServiceImpl
 import ru.privatenull.pnlibrary.core.updates.UpdateServiceImpl
@@ -62,15 +63,27 @@ class PnLibraryImpl(
     private val diagnosticLogs = DiagnosticLogBuffer(config.logRecords.coerceIn(10, 2_000))
     override val metrics: MetricsService get() = metricsRegistry
     override val logging: LoggingService = PlatformLoggingService(platform, diagnosticLogs)
-    override val updates: ru.privatenull.pnlibrary.api.updates.UpdateService = UpdateServiceImpl(platform)
-    override val events: ru.privatenull.pnlibrary.api.events.EventService = EventServiceImpl { eventOwner, message, error ->
-        diagnosticLogs.record(platform, eventOwner, ru.privatenull.pnlibrary.api.logging.LogLevel.ERROR, message, error)
-        platform.log(eventOwner, ru.privatenull.pnlibrary.api.logging.LogLevel.ERROR, message, error)
+    private val updateService = UpdateServiceImpl(platform)
+    override val updates: ru.privatenull.pnlibrary.api.updates.UpdateService get() = updateService
+    private val eventService = EventServiceImpl { pluginId, message, error ->
+        val identifiedMessage = "[$pluginId] $message"
+        diagnosticLogs.record(platform, owner, ru.privatenull.pnlibrary.api.logging.LogLevel.ERROR, identifiedMessage, error)
+        platform.log(owner, ru.privatenull.pnlibrary.api.logging.LogLevel.ERROR, identifiedMessage, error)
     }
-    override val tasks: ru.privatenull.pnlibrary.api.tasks.TaskService = TaskServiceImpl(platform) { taskOwner, message, error ->
+    override val events: ru.privatenull.pnlibrary.api.events.EventService get() = eventService
+    private val taskService = TaskServiceImpl(platform) { taskOwner, message, error ->
         diagnosticLogs.record(platform, taskOwner, ru.privatenull.pnlibrary.api.logging.LogLevel.ERROR, message, error)
         platform.log(taskOwner, ru.privatenull.pnlibrary.api.logging.LogLevel.ERROR, message, error)
     }
+    override val tasks: ru.privatenull.pnlibrary.api.tasks.TaskService get() = taskService
+    override val plugins: ru.privatenull.pnlibrary.api.plugin.PluginRegistry = PluginRegistryImpl(
+        events = eventService,
+        tasks = taskService,
+        logging = logging,
+        metrics = metricsRegistry,
+        diagnostics = diagnostics,
+        updates = updateService,
+    )
 
     val dataFolder: Path = platform.dataFolder ?: extractDataFolder(owner)
     val uploadLedger: UploadLedger = UploadLedger(dataFolder.resolve("upload-ledger.json"))
@@ -115,10 +128,11 @@ class PnLibraryImpl(
     override fun close() {
         if (closedFlag.compareAndSet(false, true)) {
             workerExecutor.shutdownNow()
+            runCatching { plugins.close() }
             runCatching { metricsRegistry.close() }
-            runCatching { (updates as AutoCloseable).close() }
-            runCatching { events.close() }
-            runCatching { tasks.close() }
+            runCatching { updateService.close() }
+            runCatching { eventService.close() }
+            runCatching { taskService.close() }
             diagnostics.clear()
             PnLibraryProvider.clear(this)
             runCatching { platform.close() }

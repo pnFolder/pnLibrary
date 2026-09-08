@@ -1,15 +1,17 @@
 package ru.privatenull.pnlibrary.api.events
 
+import ru.privatenull.pnlibrary.api.plugin.PluginId
 import java.util.function.Consumer
 
 /**
- * Owner-bound access to the pnLibrary event bus.
+ * Plugin-ID-bound access to the pnLibrary event bus.
  *
  * Closing the scope removes every listener registered through it. Dispatch is
  * synchronous and happens on the thread that calls [publish].
  */
 interface EventScope : AutoCloseable {
-    val owner: Any
+    /** Plugin identity that owns every subscription in this scope. */
+    val pluginId: PluginId
     val isClosed: Boolean
 
     /**

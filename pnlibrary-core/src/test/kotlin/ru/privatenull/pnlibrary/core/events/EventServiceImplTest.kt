@@ -10,6 +10,7 @@ import ru.privatenull.pnlibrary.api.events.Event
 import ru.privatenull.pnlibrary.api.events.EventHandler
 import ru.privatenull.pnlibrary.api.events.EventPriority
 import ru.privatenull.pnlibrary.api.events.Listener
+import ru.privatenull.pnlibrary.api.plugin.PluginId
 import java.util.function.Consumer
 
 class EventServiceImplTest {
@@ -17,7 +18,7 @@ class EventServiceImplTest {
     fun `listeners run by priority and registration order`() {
         val calls = mutableListOf<String>()
         EventServiceImpl { _, _, _ -> }.use { events ->
-            val scope = events.scope(Any())
+            val scope = events.scope(PluginId.of("test"))
             scope.subscribe(TestEvent::class.java, EventPriority.HIGH, Consumer { calls += "high" })
             scope.subscribe(Event::class.java, EventPriority.LOW, Consumer { calls += "base" })
             scope.subscribe(TestEvent::class.java, EventPriority.LOW, Consumer { calls += "low" })
@@ -34,7 +35,7 @@ class EventServiceImplTest {
     fun `arbitrary numeric priorities fit between presets`() {
         val calls = mutableListOf<Int>()
         EventServiceImpl { _, _, _ -> }.use { events ->
-            val scope = events.scope(Any())
+            val scope = events.scope(PluginId.of("test"))
             scope.subscribe(TestEvent::class.java, EventPriority.HIGH, Consumer { calls += 500 })
             scope.subscribe(TestEvent::class.java, 250, Consumer { calls += 250 })
             scope.subscribe(TestEvent::class.java, EventPriority.NORMAL, Consumer { calls += 0 })
@@ -49,7 +50,7 @@ class EventServiceImplTest {
     fun `annotated listener registers all valid handler methods`() {
         val calls = mutableListOf<String>()
         EventServiceImpl { _, _, _ -> }.use { events ->
-            val scope = events.scope(Any())
+            val scope = events.scope(PluginId.of("test"))
             val registration = scope.register(AnnotatedListener(calls))
 
             val result = events.publish(TestEvent())
@@ -69,7 +70,7 @@ class EventServiceImplTest {
     fun `invalid annotated signature fails during registration`() {
         EventServiceImpl { _, _, _ -> }.use { events ->
             val error = assertThrows(IllegalArgumentException::class.java) {
-                events.scope(Any()).register(InvalidListener())
+                events.scope(PluginId.of("test")).register(InvalidListener())
             }
             assertTrue(error.message.orEmpty().contains("exactly one parameter"))
         }
@@ -79,7 +80,7 @@ class EventServiceImplTest {
     fun `cancelled events skip only listeners that request it`() {
         val calls = mutableListOf<String>()
         EventServiceImpl { _, _, _ -> }.use { events ->
-            val scope = events.scope(Any())
+            val scope = events.scope(PluginId.of("test"))
             scope.subscribe(CancelEvent::class.java, EventPriority.LOW, Consumer {
                 calls += "cancel"
                 it.isCancelled = true
@@ -101,7 +102,7 @@ class EventServiceImplTest {
         val errors = mutableListOf<Throwable>()
         var completed = false
         EventServiceImpl { _, _, error -> errors += error }.use { events ->
-            val scope = events.scope(Any())
+            val scope = events.scope(PluginId.of("test"))
             scope.subscribe(TestEvent::class.java, Consumer { error("broken") })
             scope.subscribe(TestEvent::class.java, Consumer { completed = true })
 
@@ -115,9 +116,9 @@ class EventServiceImplTest {
     }
 
     @Test
-    fun `owner scope closes all of its subscriptions`() {
-        val owner = Any()
-        val otherOwner = Any()
+    fun `plugin scope closes all of its subscriptions`() {
+        val owner = PluginId.of("owner")
+        val otherOwner = PluginId.of("other")
         var ownerCalls = 0
         var otherCalls = 0
         EventServiceImpl { _, _, _ -> }.use { events ->
@@ -126,7 +127,7 @@ class EventServiceImplTest {
             scope.subscribe(TestEvent::class.java, Consumer { ownerCalls++ })
             events.scope(otherOwner).subscribe(TestEvent::class.java, Consumer { otherCalls++ })
 
-            events.close(owner)
+            events.unregisterAll(owner)
             events.publish(TestEvent())
 
             assertTrue(scope.isClosed)
@@ -143,7 +144,7 @@ class EventServiceImplTest {
         val events = EventServiceImpl { _, _, _ -> }
         events.close()
 
-        assertThrows(IllegalStateException::class.java) { events.scope(Any()) }
+        assertThrows(IllegalStateException::class.java) { events.scope(PluginId.of("test")) }
         assertThrows(IllegalStateException::class.java) { events.publish(TestEvent()) }
     }
 

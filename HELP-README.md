@@ -74,6 +74,7 @@ is the public facade:
 
 ```text
 PnLibrary
+├── plugins      global PluginId → PluginContext registry
 ├── diagnostics  contributed state and diagnostic history
 ├── events       cross-platform application event bus
 ├── logging      native logs and message boxes
@@ -166,12 +167,12 @@ through `PlatformAdapter`. Callback failures are caught and logged.
 
 `EventService` is the platform-independent event bus. Event classes implement
 `Event`; cancellable events additionally implement `Cancellable`. A plugin obtains
-one owner scope and registers typed listeners on it:
+one plugin-ID scope and registers typed listeners on it:
 
 ```kotlin
 data class ClanCreatedEvent(val clanId: String) : Event()
 
-val events = pn.events.scope(plugin)
+val events = pn.plugins.require("pnclans").events
 events.subscribe<ClanCreatedEvent> { event ->
     logger.info("Created clan ${event.clanId}")
 }
@@ -225,7 +226,9 @@ MetricsService → MetricsRegistry → PlatformMetricsFactory
 ```
 
 Every consumer supplies its own bStats project ID. The registry owns open
-sessions and closes leftovers during runtime shutdown.
+sessions and closes leftovers during runtime shutdown. A `PluginContext` exposes
+`MetricsController`, which can enable or disable metrics and change the project
+ID at runtime while preserving chart configuration.
 
 ### Updates
 
@@ -264,26 +267,29 @@ entity scheduler.
 ## Consumer lifecycle
 
 Consumers declare `pnlibrary-api` as `compileOnly`; they must not embed or
-relocate it. Prefer one `PluginIntegration` to own all registrations:
+relocate it. Register once and keep one high-level `PluginContext`:
 
 ```kotlin
-private var integration: PluginIntegration? = null
+private lateinit var context: PluginContext
 
 override fun onEnable() {
     val pn = PnLibraryProvider.get()
-    integration = PluginIntegration.builder(pn, this, name)
-        .metrics(12345) { it.simplePie("storage") { "SQLITE" } }
-        .diagnostics(dataFolder.toPath(), diagnosticContainer)
-        .updates(updateRequest)
-        .build()
+    context = pn.plugins.register(this, "pnclans") {
+        it.metrics(12345) { metrics -> metrics.simplePie("storage") { "SQLITE" } }
+        it.listener(ClanListener())
+        it.diagnostics(dataFolder.toPath(), diagnosticContainer)
+        it.updates(updateRequest)
+    }
 }
 
 override fun onDisable() {
-    integration?.close()
+    context.close()
 }
 ```
 
-One `close()` releases updates, diagnostics, metrics, events, and tasks. General rule:
+`pn.plugins.require("pnclans")` returns the same context globally. The context
+also provides its `logger`, `messageBox(...)`, and `shutdownBox(...)`. One `close()`
+releases updates, diagnostics, metrics, events, and tasks. General rule:
 the code that calls `open`, `register`, `scope`, or `start` owns the returned
 handle and must close it.
 
@@ -299,6 +305,7 @@ handle and must close it.
 | Report contents/security | `core/diagnostics` |
 | Threads/timers | `TaskServiceImpl`, then `PlatformAdapter` |
 | Cross-platform events | `EventService`, `EventScope`, then `EventServiceImpl` |
+| Global plugin context | `PluginRegistry`, `PluginContext`, then `PluginRegistryImpl` |
 | Logs/message boxes | `PlatformLoggingService` |
 | Metrics | `MetricsRegistry`, `BStatsMetricsSession`, platform factory |
 | Updater | `UpdateServiceImpl`, `MandatoryUpdateService` |

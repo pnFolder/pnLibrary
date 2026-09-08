@@ -7,6 +7,7 @@ import ru.privatenull.pnlibrary.api.events.EventService
 import ru.privatenull.pnlibrary.api.logging.LoggingService
 import ru.privatenull.pnlibrary.api.metrics.MetricsService
 import ru.privatenull.pnlibrary.api.platform.PlatformAdapter
+import ru.privatenull.pnlibrary.api.plugin.PluginRegistry
 import ru.privatenull.pnlibrary.api.tasks.TaskService
 import ru.privatenull.pnlibrary.api.updates.UpdateService
 import java.io.Closeable
@@ -49,8 +50,11 @@ interface PnLibrary : Closeable {
     /** Cross-platform tasks grouped by their owner lifecycle. */
     val tasks: TaskService
 
-    /** Synchronous cross-platform event bus with owner-bound subscriptions. */
+    /** Synchronous cross-platform event bus with plugin-ID-bound subscriptions. */
     val events: EventService
+
+    /** Global registry and high-level entry point for consumer plugins. */
+    val plugins: PluginRegistry
 
     /** Builds a diagnostic report from an already validated request. */
     fun createDiagnosticReport(request: DebugRequest): DiagnosticReport

@@ -135,6 +135,57 @@ val pn = PnLibraryProvider.get()
 
 Для необязательной интеграции доступен `PnLibraryProvider.getOrNull()`.
 
+## Глобальная регистрация плагина
+
+Плагин один раз регистрируется в pnLibrary под платформенно-независимым
+`PluginId`. Все подключённые возможности доступны из одного `PluginContext`:
+
+```kotlin
+private lateinit var context: PluginContext
+
+override fun onEnable() {
+    val pn = PnLibraryProvider.get()
+    context = pn.plugins.register(this, "pnmarket") {
+        it.metrics(projectId = 12345, enabled = true) { metrics ->
+            metrics.simplePie("storage_type") { database.type }
+        }
+        it.listener(MarketListener())
+        it.diagnostics(dataFolder.toPath(), diagnosticContainer)
+        it.updates(updateRequest)
+    }
+}
+
+override fun onDisable() {
+    context.close()
+}
+```
+
+Контекст можно получить из любого места по идентификатору:
+
+```kotlin
+val context = pn.plugins.require("pnmarket")
+context.logger.success("Market loaded")
+context.events.publish(MarketReloadEvent())
+context.tasks.async(Runnable { repository.cleanup() })
+
+context.messageBox("pnMarket 1.0.5")
+    .ok("Platform", pn.platform.type.name)
+    .ok("Metrics", if (context.metrics.isEnabled) "enabled" else "disabled")
+    .show()
+```
+
+Метрики управляются во время работы без повторной регистрации плагина:
+
+```kotlin
+context.metrics.disable()
+context.metrics.enable()
+context.metrics.changeProjectId(54321)
+```
+
+При смене ID активная bStats-сессия безопасно перезапускается, а настроенные
+диаграммы применяются повторно. Нативный объект плагина используется внутри
+только для платформенных операций; события принадлежат стабильному `PluginId`.
+
 ## Логирование и MBox
 
 ```kotlin
@@ -232,7 +283,7 @@ Velocity. Событие реализует `Event`, а подписки хра�
 ```kotlin
 data class ClanCreatedEvent(val clanId: String) : Event()
 
-private val events = pn.events.scope(this)
+private val events = pn.plugins.require("pnclans").events
 
 events.subscribe<ClanCreatedEvent> { event ->
     logger.info("Создан клан ${event.clanId}")
