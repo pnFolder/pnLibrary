@@ -176,13 +176,12 @@ val events = pn.plugins.require("pnclans").events
 events.subscribe<ClanCreatedEvent> { event ->
     logger.info("Created clan ${event.clanId}")
 }
-val result = ClanCreatedEvent("knights").call()
+val allowed = ClanCreatedEvent("knights").callEvent()
 ```
 
-`Event` exposes `eventName`, `isAsynchronous`, `call()`, `callEvent()`,
-`callAsync()`, and `callEventAsync()`. Async events declare
-`Event(isAsynchronous = true)` and run on a bounded pnLibrary event executor.
-Sync and async invocation methods cannot be mixed.
+`Event` exposes `eventName`, `isAsynchronous`, and one convenience method:
+`callEvent()`. As in Bukkit, the asynchronous flag never creates a thread;
+dispatch runs inline and the caller owns the execution context.
 
 A cancellable event composes both contracts instead of using a separate event
 subclass:
@@ -208,8 +207,7 @@ Registration validates every annotated method up front. A handler accepts
 exactly one `Event` subtype and returns `Unit`/`void`. The returned
 `EventListenerRegistration` can remove all methods from that listener at once.
 
-Normal dispatch is synchronous on the publishing thread. Async dispatch uses a
-bounded event executor and returns `CompletionStage<EventDispatchResult>`.
+Dispatch runs synchronously on the publishing thread for both event modes.
 Priority is any integer;
 smaller values run first. `EventPriority` provides spaced presets from `LOWEST`
 (`-1000`) to `MONITOR` (`2000`), while callers may insert values such as `250`.

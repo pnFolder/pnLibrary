@@ -6,7 +6,7 @@
 - Added automatic native metadata, explicit buffered plugin lifecycle reports, and inline updater configuration.
 - Added context-bound neutral MBox messages for arbitrary plugin operations.
 - Added a synchronous, plugin-ID-scoped, platform-independent event bus with extensible numeric priorities and annotated listeners.
-- Added self-dispatching events with names, cancellation results, and bounded asynchronous dispatch.
+- Added self-dispatching events with names and Bukkit-like caller-owned async metadata.
 - Reduced platform identity to the three supported `PlatformType` API families; fork names are runtime metadata.
 - Added a high-level `PnLibraryRuntimeHost` shared by all native entry points.
 - Removed platform adapter casts to the internal `PnLibraryImpl` implementation.

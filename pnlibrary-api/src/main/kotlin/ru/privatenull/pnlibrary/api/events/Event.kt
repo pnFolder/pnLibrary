@@ -1,14 +1,14 @@
 package ru.privatenull.pnlibrary.api.events
 
 import ru.privatenull.pnlibrary.api.runtime.PnLibraryProvider
-import java.util.concurrent.CompletionStage
 
 /**
  * Base class for every event published through the library event system.
  *
- * A synchronous event is dispatched inline on the calling thread. An asynchronous
- * event must use [callAsync] or [EventService.publishAsync] and runs on the event
- * executor. Async listeners must not call thread-confined native platform APIs.
+ * Like Bukkit, [isAsynchronous] describes how callers are allowed to use the
+ * event; it does not select or create a thread. Dispatch always runs inline on
+ * the calling thread. Code firing an asynchronous event is responsible for
+ * already running in a suitable asynchronous context.
  */
 abstract class Event @JvmOverloads constructor(
     val isAsynchronous: Boolean = false,
@@ -18,16 +18,12 @@ abstract class Event @JvmOverloads constructor(
         javaClass.simpleName.ifBlank { javaClass.name }
     }
 
-    /** Dispatches this synchronous event through the installed pnLibrary runtime. */
-    fun call(): EventDispatchResult = PnLibraryProvider.get().events.publish(this)
-
-    /** Dispatches synchronously and returns `false` when this event ends cancelled. */
-    fun callEvent(): Boolean = !call().cancelled
-
-    /** Dispatches this asynchronous event on the event executor. */
-    fun callAsync(): CompletionStage<EventDispatchResult> =
-        PnLibraryProvider.get().events.publishAsync(this)
-
-    /** Dispatches asynchronously and resolves to `false` when the event ends cancelled. */
-    fun callEventAsync(): CompletionStage<Boolean> = callAsync().thenApply { !it.cancelled }
+    /**
+     * Dispatches this event through the installed runtime and tests cancellation.
+     * Returns `false` only when this event implements [Cancellable] and ends cancelled.
+     */
+    fun callEvent(): Boolean {
+        val result = PnLibraryProvider.get().events.publish(this)
+        return !result.cancelled
+    }
 }

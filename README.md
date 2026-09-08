@@ -346,27 +346,28 @@ events.subscribe<ClanCreatedEvent>(priority = 250) { event ->
     audit.save(event)
 }
 
-val result = ClanCreatedEvent("knights").call()
+val allowed = ClanCreatedEvent("knights").callEvent()
 ```
 
-`event.call()` возвращает `EventDispatchResult`, а `event.callEvent()` — простой
-`Boolean`: `false`, если событие реализует `Cancellable` и было отменено.
-Имя доступно через `event.eventName` и по умолчанию равно имени класса.
+`event.callEvent()` возвращает `false`, если событие реализует `Cancellable` и
+было отменено. Подробный `EventDispatchResult` остаётся доступен через
+`events.publish(event)`. Имя события находится в `event.eventName` и по умолчанию
+равно имени класса.
 
-Асинхронность объявляется самим событием и действительно переносит dispatch на
-ограниченный executor pnLibrary:
+Как и в Bukkit, `isAsynchronous` не создаёт поток и не меняет метод вызова. Флаг
+описывает событие, а вызывающий код сам выбирает execution context:
 
 ```kotlin
 data class ClanCacheLoadedEvent(val clans: Int) : Event(isAsynchronous = true)
 
-ClanCacheLoadedEvent(loadedClans).callAsync().thenAccept { result ->
-    logger.info("Delivered asynchronously: ${result.delivered}")
+context.tasks.async {
+    ClanCacheLoadedEvent(loadedClans).callEvent()
 }
 ```
 
-Для async-события используется только `callAsync()`/`publishAsync()`, для
-обычного — `call()`/`publish()`. Это не разрешает обращаться из async-listener к
-Bukkit/Velocity API, которое требует platform thread.
+Один `callEvent()` работает для обоих режимов и выполняет listeners в текущем
+потоке. Async-listener не должен обращаться к Bukkit/Velocity API, которому
+требуется platform thread.
 
 Для привычного Bukkit/Bungee/Velocity-подобного стиля можно зарегистрировать
 класс с аннотированными методами:

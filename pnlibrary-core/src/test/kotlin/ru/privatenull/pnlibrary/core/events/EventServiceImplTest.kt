@@ -13,7 +13,6 @@ import ru.privatenull.pnlibrary.api.events.EventPriority
 import ru.privatenull.pnlibrary.api.events.Listener
 import ru.privatenull.pnlibrary.api.plugin.PluginId
 import java.util.function.Consumer
-import java.util.concurrent.TimeUnit
 
 class EventServiceImplTest {
     @Test
@@ -159,22 +158,19 @@ class EventServiceImplTest {
     }
 
     @Test
-    fun `asynchronous events run on the dedicated executor`() {
+    fun `asynchronous flag does not perform a hidden thread switch`() {
         val callingThread = Thread.currentThread().name
         var listenerThread = callingThread
         EventServiceImpl { _, _, _ -> }.use { events ->
             events.scope(PluginId.of("test"))
                 .subscribe(AsyncEvent::class.java, Consumer { listenerThread = Thread.currentThread().name })
 
-            val result = events.publishAsync(AsyncEvent())
-                .toCompletableFuture()
-                .get(3, TimeUnit.SECONDS)
+            val event = AsyncEvent()
+            val result = events.publish(event)
 
             assertEquals(1, result.delivered)
-            assertTrue(listenerThread.startsWith("pnLibrary-events-"))
-            assertFalse(listenerThread == callingThread)
-            assertThrows(IllegalArgumentException::class.java) { events.publish(AsyncEvent()) }
-            assertThrows(IllegalArgumentException::class.java) { events.publishAsync(TestEvent()) }
+            assertTrue(event.isAsynchronous)
+            assertEquals(callingThread, listenerThread)
         }
     }
 
