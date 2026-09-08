@@ -8,6 +8,8 @@ import org.junit.jupiter.api.Test
 import ru.privatenull.pnlibrary.api.events.CancellablePnEvent
 import ru.privatenull.pnlibrary.api.events.EventPriority
 import ru.privatenull.pnlibrary.api.events.PnEvent
+import ru.privatenull.pnlibrary.api.events.PnEventHandler
+import ru.privatenull.pnlibrary.api.events.PnEventListener
 import java.util.function.Consumer
 
 class EventServiceImplTest {
@@ -40,6 +42,36 @@ class EventServiceImplTest {
             events.publish(TestEvent())
 
             assertEquals(listOf(0, 250, 500), calls)
+        }
+    }
+
+    @Test
+    fun `annotated listener registers all valid handler methods`() {
+        val calls = mutableListOf<String>()
+        EventServiceImpl { _, _, _ -> }.use { events ->
+            val scope = events.scope(Any())
+            val registration = scope.register(AnnotatedListener(calls))
+
+            val result = events.publish(TestEvent())
+
+            assertEquals(2, registration.handlerCount)
+            assertEquals(listOf("early", "normal"), calls)
+            assertEquals(2, result.delivered)
+
+            registration.close()
+            assertTrue(registration.isClosed)
+            events.publish(TestEvent())
+            assertEquals(2, calls.size)
+        }
+    }
+
+    @Test
+    fun `invalid annotated signature fails during registration`() {
+        EventServiceImpl { _, _, _ -> }.use { events ->
+            val error = assertThrows(IllegalArgumentException::class.java) {
+                events.scope(Any()).register(InvalidListener())
+            }
+            assertTrue(error.message.orEmpty().contains("exactly one parameter"))
         }
     }
 
@@ -119,5 +151,22 @@ class EventServiceImplTest {
 
     private class CancelEvent : CancellablePnEvent {
         override var isCancelled: Boolean = false
+    }
+
+    private class AnnotatedListener(private val calls: MutableList<String>) : PnEventListener {
+        @PnEventHandler(priority = -250)
+        private fun early(event: TestEvent) {
+            calls += "early"
+        }
+
+        @PnEventHandler
+        fun normal(event: TestEvent) {
+            calls += "normal"
+        }
+    }
+
+    private class InvalidListener : PnEventListener {
+        @PnEventHandler
+        fun invalid() = Unit
     }
 }

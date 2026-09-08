@@ -178,6 +178,21 @@ events.subscribe<ClanCreatedEvent> { event ->
 events.publish(ClanCreatedEvent("knights"))
 ```
 
+The annotation style uses the same dispatcher:
+
+```kotlin
+class ClanListener : PnEventListener {
+    @PnEventHandler(priority = 250)
+    fun created(event: ClanCreatedEvent) { /* handle */ }
+}
+
+events.register(ClanListener())
+```
+
+Registration validates every annotated method up front. A handler accepts
+exactly one `PnEvent` subtype and returns `Unit`/`void`. The returned
+`EventListenerRegistration` can remove all methods from that listener at once.
+
 Dispatch is synchronous on the publishing thread. Priority is any integer;
 smaller values run first. `EventPriority` provides spaced presets from `LOWEST`
 (`-1000`) to `MONITOR` (`2000`), while callers may insert values such as `250`.

@@ -2,10 +2,16 @@ package ru.privatenull.pnlibrary.core.events
 
 import ru.privatenull.pnlibrary.api.events.CancellablePnEvent
 import ru.privatenull.pnlibrary.api.events.EventDispatchResult
+import ru.privatenull.pnlibrary.api.events.EventListenerRegistration
 import ru.privatenull.pnlibrary.api.events.EventScope
 import ru.privatenull.pnlibrary.api.events.EventService
 import ru.privatenull.pnlibrary.api.events.EventSubscription
 import ru.privatenull.pnlibrary.api.events.PnEvent
+import ru.privatenull.pnlibrary.api.events.PnEventHandler
+import ru.privatenull.pnlibrary.api.events.PnEventListener
+import java.lang.reflect.InvocationTargetException
+import java.lang.reflect.Method
+import java.lang.reflect.Modifier
 import java.util.Collections
 import java.util.IdentityHashMap
 import java.util.concurrent.CopyOnWriteArrayList
@@ -84,6 +90,25 @@ internal class EventServiceImpl(
         private val ownedSubscriptions = CopyOnWriteArrayList<Subscription<out PnEvent>>()
         override val isClosed: Boolean get() = scopeClosed.get()
 
+        override fun register(listener: PnEventListener): EventListenerRegistration {
+            check(!closed.get() && !scopeClosed.get()) { "EventScope is closed" }
+            val handlers = discoverHandlers(listener)
+            require(handlers.isNotEmpty()) {
+                "${listener.javaClass.name} does not declare any @PnEventHandler methods"
+            }
+
+            val registered = mutableListOf<EventSubscription>()
+            try {
+                handlers.forEach { handler ->
+                    registered += subscribeHandler(listener, handler)
+                }
+                return ListenerRegistration(listener, registered)
+            } catch (error: Throwable) {
+                registered.forEach { runCatching { it.close() } }
+                throw error
+            }
+        }
+
         override fun <E : PnEvent> subscribe(
             eventType: Class<E>,
             priority: Int,
@@ -121,6 +146,17 @@ internal class EventServiceImpl(
         fun remove(subscription: Subscription<out PnEvent>) {
             ownedSubscriptions.remove(subscription)
         }
+
+        private fun subscribeHandler(listener: PnEventListener, handler: HandlerMethod): EventSubscription {
+            @Suppress("UNCHECKED_CAST")
+            val eventType = handler.eventType as Class<PnEvent>
+            return subscribe(
+                eventType,
+                handler.annotation.priority,
+                handler.annotation.ignoreCancelled,
+                Consumer { event -> invokeHandler(handler.method, listener, event) },
+            )
+        }
     }
 
     private inner class Subscription<E : PnEvent>(
@@ -142,6 +178,80 @@ internal class EventServiceImpl(
             if (!subscriptionClosed.compareAndSet(false, true)) return
             subscriptions.remove(this)
             scope.remove(this)
+        }
+    }
+
+    private class ListenerRegistration(
+        override val listener: PnEventListener,
+        private val subscriptions: List<EventSubscription>,
+    ) : EventListenerRegistration {
+        private val registrationClosed = AtomicBoolean(false)
+        override val handlerCount: Int get() = subscriptions.size
+        override val isClosed: Boolean
+            get() = registrationClosed.get() || subscriptions.all { it.isClosed }
+
+        override fun close() {
+            if (!registrationClosed.compareAndSet(false, true)) return
+            subscriptions.forEach { it.close() }
+        }
+    }
+
+    private data class HandlerMethod(
+        val method: Method,
+        val annotation: PnEventHandler,
+        val eventType: Class<out PnEvent>,
+    )
+
+    private fun discoverHandlers(listener: PnEventListener): List<HandlerMethod> {
+        val methods = linkedMapOf<String, Method>()
+        var type: Class<*>? = listener.javaClass
+        while (type != null && type != Any::class.java) {
+            type.declaredMethods
+                .asSequence()
+                .filterNot { it.isBridge || it.isSynthetic }
+                .forEach { method -> methods.putIfAbsent(methodKey(method), method) }
+            type = type.superclass
+        }
+
+        return methods.values.mapNotNull { method ->
+            val annotation = method.getAnnotation(PnEventHandler::class.java) ?: return@mapNotNull null
+            require(!Modifier.isStatic(method.modifiers)) {
+                "@PnEventHandler method must not be static: ${methodDescription(method)}"
+            }
+            require(!Modifier.isAbstract(method.modifiers)) {
+                "@PnEventHandler method must not be abstract: ${methodDescription(method)}"
+            }
+            require(method.parameterCount == 1) {
+                "@PnEventHandler method must have exactly one parameter: ${methodDescription(method)}"
+            }
+            require(PnEvent::class.java.isAssignableFrom(method.parameterTypes[0])) {
+                "@PnEventHandler parameter must implement PnEvent: ${methodDescription(method)}"
+            }
+            require(method.returnType == Void.TYPE) {
+                "@PnEventHandler method must return Unit or void: ${methodDescription(method)}"
+            }
+            method.isAccessible = true
+            HandlerMethod(method, annotation, method.parameterTypes[0].asSubclass(PnEvent::class.java))
+        }.sortedWith(
+            compareBy<HandlerMethod> { it.annotation.priority }
+                .thenBy { it.method.name }
+                .thenBy { it.eventType.name },
+        )
+    }
+
+    private fun methodKey(method: Method): String {
+        val visibilityOwner = if (Modifier.isPrivate(method.modifiers)) method.declaringClass.name else ""
+        return "$visibilityOwner#${method.name}(${method.parameterTypes.joinToString(",") { it.name }})"
+    }
+
+    private fun methodDescription(method: Method): String =
+        "${method.declaringClass.name}#${method.name}"
+
+    private fun invokeHandler(method: Method, listener: PnEventListener, event: PnEvent) {
+        try {
+            method.invoke(listener, event)
+        } catch (error: InvocationTargetException) {
+            throw error.targetException
         }
     }
 }

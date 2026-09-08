@@ -245,6 +245,24 @@ events.subscribe<ClanCreatedEvent>(priority = 250) { event ->
 events.publish(ClanCreatedEvent("knights"))
 ```
 
+Для привычного Bukkit/Bungee/Velocity-подобного стиля можно зарегистрировать
+класс с аннотированными методами:
+
+```kotlin
+class ClanListener : PnEventListener {
+    @PnEventHandler(priority = 250, ignoreCancelled = true)
+    fun onClanCreated(event: ClanCreatedEvent) {
+        audit.save(event)
+    }
+}
+
+val registration = events.register(ClanListener())
+```
+
+Метод обработчика принимает ровно один `PnEvent` и возвращает `Unit`. Некорректная
+сигнатура отклоняется сразу при регистрации. Закрытие `registration` снимает все
+методы этого listener’а; закрытие `events` снимает вообще все подписки владельца.
+
 Обработка синхронная и выполняется в вызывающем потоке. Меньший числовой
 приоритет запускается раньше: доступны готовые значения `LOWEST = -1000`,
 `NORMAL = 0`, `HIGH = 500`, но можно передать любое целое число. При одинаковом

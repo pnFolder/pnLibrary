@@ -12,6 +12,12 @@ interface EventScope : AutoCloseable {
     val owner: Any
     val isClosed: Boolean
 
+    /**
+     * Discovers and registers every [PnEventHandler] method on [listener].
+     * Invalid handler signatures fail immediately during registration.
+     */
+    fun register(listener: PnEventListener): EventListenerRegistration
+
     /** Registers [listener] for [eventType] using the default priority. */
     fun <E : PnEvent> subscribe(eventType: Class<E>, listener: Consumer<E>): EventSubscription =
         subscribe(eventType, EventPriority.NORMAL, false, listener)
