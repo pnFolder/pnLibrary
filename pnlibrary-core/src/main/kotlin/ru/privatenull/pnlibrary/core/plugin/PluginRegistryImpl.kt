@@ -19,6 +19,7 @@ import ru.privatenull.pnlibrary.api.plugin.PluginId
 import ru.privatenull.pnlibrary.api.plugin.PluginLifecycle
 import ru.privatenull.pnlibrary.api.plugin.PluginMetadata
 import ru.privatenull.pnlibrary.api.plugin.PluginMetadataBuilder
+import ru.privatenull.pnlibrary.api.plugin.PluginMessages
 import ru.privatenull.pnlibrary.api.plugin.PluginRegistry
 import ru.privatenull.pnlibrary.api.tasks.TaskScope
 import ru.privatenull.pnlibrary.api.tasks.TaskService
@@ -191,6 +192,12 @@ internal class PluginRegistryImpl(
                     .status("Updates", if (updates == null) null else if (isClosed) "stopped" else "registered")
                     .status("Metrics", if (metrics.projectId == null) null else if (isClosed) "stopped" else metricsStatus())
                     .status("Events", if (listenerCount == 0) null else if (isClosed) "$listenerCount listener(s) removed" else "$listenerCount listener(s)")
+        }
+        override val messages: PluginMessages = object : PluginMessages {
+            override fun box(title: String): MessageBox {
+                require(title.isNotBlank()) { "message box title must not be blank" }
+                return logging.box(owner, title.trim())
+            }
         }
 
         override fun close() {

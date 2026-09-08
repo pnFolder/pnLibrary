@@ -28,7 +28,7 @@ class PnLibraryRuntimeHost private constructor(
         if (!closed.compareAndSet(false, true)) return
         runCatching { updateMonitor.close() }
         runCatching {
-            library.logging.shutdownBox(library.owner, "pnLibrary ${library.version}")
+            library.logging.shutdownBox(library.owner, "pnLibrary", library.version)
                 .ok("Платформа", library.platform.summaryName())
                 .ok("Ресурсы", "задачи и регистрации освобождаются")
                 .show()
@@ -75,7 +75,7 @@ class PnLibraryRuntimeHost private constructor(
                 )
                 PnLibraryRuntimeHost(library, monitor).also {
                     runCatching {
-                        library.logging.box(owner, "pnLibrary $currentVersion")
+                        library.logging.box(owner, "pnLibrary", currentVersion)
                             .ok("Runtime", "общие сервисы запущены")
                             .ok("Платформа", platform.summaryName())
                             .ok("Обновления", "проверка релизов запущена")

@@ -12,6 +12,7 @@ internal class PlatformLoggingService(
     private val diagnosticLogs: DiagnosticLogBuffer? = null,
 ) : LoggingService {
     private data class Row(val status: String, val label: String, val detail: String, val error: Throwable?)
+    private enum class MessageKind { GENERIC, ENABLED, DISABLED }
 
     override fun logger(owner: Any, name: String): PnLogger = object : PnLogger {
         private fun write(level: LogLevel, message: String, error: Throwable? = null) {
@@ -25,12 +26,14 @@ internal class PlatformLoggingService(
         override fun error(message: String, error: Throwable?) = write(LogLevel.ERROR, message, error)
     }
 
-    override fun box(owner: Any, title: String): MessageBox = MBox(owner, title, false)
-    override fun shutdownBox(owner: Any, title: String): MessageBox = MBox(owner, title, true)
+    override fun box(owner: Any, title: String): MessageBox =
+        MBox(owner, title, MessageKind.GENERIC, title)
+    override fun shutdownBox(owner: Any, title: String): MessageBox =
+        MBox(owner, title, MessageKind.DISABLED)
     override fun box(owner: Any, name: String, version: String): MessageBox =
-        MBox(owner, "$name $version", false, name, version)
+        MBox(owner, "$name $version", MessageKind.ENABLED, name, version)
     override fun shutdownBox(owner: Any, name: String, version: String): MessageBox =
-        MBox(owner, "$name $version", true, name, version)
+        MBox(owner, "$name $version", MessageKind.DISABLED, name, version)
 
     internal fun showUpdateNotice(owner: Any, product: String, current: String, latest: String, channel: String,
         minimumJava: Int, currentJava: Int, url: String) {
@@ -84,7 +87,7 @@ internal class PlatformLoggingService(
     private inner class MBox(
         private val owner: Any,
         private val title: String,
-        private val shutdown: Boolean,
+        private val kind: MessageKind,
         private val explicitName: String? = null,
         private val explicitVersion: String? = null,
     ) : MessageBox {
@@ -111,8 +114,16 @@ internal class PlatformLoggingService(
             val white = "§f"
             val gray = "§7"
             val dark = "§8"
-            val stateColor = if (shutdown) danger else success
-            val stateLabel = if (shutdown) "ПЛАГИН ВЫКЛЮЧЕН" else "ПЛАГИН ВКЛЮЧЁН"
+            val stateColor = when (kind) {
+                MessageKind.ENABLED -> success
+                MessageKind.DISABLED -> danger
+                MessageKind.GENERIC -> accent
+            }
+            val stateLabel = when (kind) {
+                MessageKind.ENABLED -> "ПЛАГИН ВКЛЮЧЁН"
+                MessageKind.DISABLED -> "ПЛАГИН ВЫКЛЮЧЁН"
+                MessageKind.GENERIC -> "СООБЩЕНИЕ"
+            }
             val longestLabel = rows.maxOfOrNull { it.label.length } ?: 0
             fun statusColor(status: String) = when (status) {
                 "OK" -> success
@@ -145,7 +156,11 @@ internal class PlatformLoggingService(
             platform.console(owner, "$dark            ├ ${gray}Java         $white$javaVersion")
             platform.console(owner, "$dark            └ ${gray}Библиотека   ${white}pnLibrary $dark• $gray${platform.id}")
             platform.console(owner, "")
-            val sectionTitle = if (shutdown) "ЗАВЕРШЕНИЕ РАБОТЫ" else "СОСТОЯНИЕ СИСТЕМЫ"
+            val sectionTitle = when (kind) {
+                MessageKind.ENABLED -> "СОСТОЯНИЕ СИСТЕМЫ"
+                MessageKind.DISABLED -> "ЗАВЕРШЕНИЕ РАБОТЫ"
+                MessageKind.GENERIC -> "ПОДРОБНОСТИ"
+            }
             platform.console(owner, "$dark          ─────────── ${white}§l$sectionTitle$dark ───────────")
             platform.console(owner, "")
             rows.forEach { row ->
@@ -164,13 +179,22 @@ internal class PlatformLoggingService(
             }
             platform.console(owner, "")
             platform.console(owner, "$dark          ───────────────────────────────────────────────")
-            val resultText = if (shutdown) "$product корректно выключен" else "$product успешно включён"
-            val resultDetail = if (shutdown) {
-                "Все зарегистрированные ресурсы освобождены. До следующего запуска."
-            } else {
-                "Все основные системы готовы. Плагин работает в штатном режиме."
+            val resultText = when (kind) {
+                MessageKind.ENABLED -> "$product успешно включён"
+                MessageKind.DISABLED -> "$product корректно выключен"
+                MessageKind.GENERIC -> "$product — готово"
             }
-            platform.console(owner, "$stateColor          ${if (shutdown) "■" else "✓"} $white§l$resultText")
+            val resultDetail = when (kind) {
+                MessageKind.ENABLED -> "Все основные системы готовы. Плагин работает в штатном режиме."
+                MessageKind.DISABLED -> "Все зарегистрированные ресурсы освобождены. До следующего запуска."
+                MessageKind.GENERIC -> "Все строки сообщения выведены одним блоком."
+            }
+            val resultSymbol = when (kind) {
+                MessageKind.ENABLED -> "✓"
+                MessageKind.DISABLED -> "■"
+                MessageKind.GENERIC -> "◆"
+            }
+            platform.console(owner, "$stateColor          $resultSymbol $white§l$resultText")
             platform.console(owner, "$gray            $resultDetail")
             platform.console(owner, "")
             platform.console(owner, "$accent          ✦ §lPNFOLDER SUPPORT $dark• ${white}НА СВЯЗИ")
@@ -183,7 +207,7 @@ internal class PlatformLoggingService(
         }
 
         private fun face() = when {
-            shutdown -> "-.-"
+            kind == MessageKind.DISABLED -> "-.-"
             rows.any { it.status == "FAIL" } -> "x.x"
             rows.any { it.status == "WARN" } -> "o.o"
             else -> "^.^"

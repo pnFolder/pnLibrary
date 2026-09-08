@@ -159,6 +159,12 @@ class PluginRegistryImplTest {
         assertEquals("Paper", context.metadata.platformImplementation)
         assertEquals(0, logging.startupMessages)
 
+        val operationMessage = context.messages.box("Cache refresh")
+            .ok("Loaded", "25 entries")
+        assertEquals(0, logging.genericMessages)
+        operationMessage.show()
+        assertEquals(1, logging.genericMessages)
+
         context.lifecycle.enabled().ok("Configuration", "loaded").show()
 
         assertEquals(1, logging.startupMessages)
@@ -216,10 +222,13 @@ class PluginRegistryImplTest {
     }
 
     private class RecordingLoggingService : LoggingService {
+        var genericMessages = 0
         var startupMessages = 0
         var shutdownMessages = 0
         override fun logger(owner: Any, name: String): PnLogger = emptyProxy(PnLogger::class.java)
         override fun box(owner: Any, title: String): MessageBox =
+            RecordingMessageBox { genericMessages++ }
+        override fun box(owner: Any, name: String, version: String): MessageBox =
             RecordingMessageBox { startupMessages++ }
         override fun shutdownBox(owner: Any, title: String): MessageBox =
             RecordingMessageBox { shutdownMessages++ }

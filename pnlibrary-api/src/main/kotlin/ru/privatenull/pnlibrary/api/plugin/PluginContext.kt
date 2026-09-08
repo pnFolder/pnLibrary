@@ -11,6 +11,7 @@ interface PluginContext : AutoCloseable {
     val id: PluginId
     val metadata: PluginMetadata
     val lifecycle: PluginLifecycle
+    val messages: PluginMessages
     val events: EventScope
     val tasks: TaskScope
     val logger: PnLogger

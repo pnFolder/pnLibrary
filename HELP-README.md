@@ -215,8 +215,10 @@ domain events through this bus.
 ### Logging
 
 `PlatformLoggingService` creates `PnLogger` and `MessageBox`. `PnLogger` writes to
-the owner's native logger and stores a bounded diagnostic copy. `MessageBox`
-renders consistent startup, shutdown, and update summaries.
+the owner's native logger and stores a bounded diagnostic copy. A registered
+plugin uses `context.lifecycle` for enabled/disabled boxes and
+`context.messages.box(title)` for neutral operation reports. Every box buffers
+rows and renders them together only on explicit `show()`.
 
 ### Metrics
 

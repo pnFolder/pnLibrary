@@ -70,6 +70,12 @@ market.metadata.javaVersion
 market.metadata.javaFeature
 market.metadata.platformImplementation
 
+val report = market.messages.box("AUCTION CACHE")
+    .ok("Loaded", "1,250 lots")
+    .warn("Expired", "12 lots removed")
+// Rows are buffered; this prints the complete box once.
+report.show()
+
 market.metrics.disable()
 market.metrics.enable()
 market.metrics.changeProjectId(54321)
