@@ -2,6 +2,7 @@ package ru.privatenull.pnlibrary.api.integration
 
 import ru.privatenull.pnlibrary.api.diagnostics.DiagnosticContainer
 import ru.privatenull.pnlibrary.api.diagnostics.DiagnosticRegistration
+import ru.privatenull.pnlibrary.api.events.EventScope
 import ru.privatenull.pnlibrary.api.metrics.PluginMetrics
 import ru.privatenull.pnlibrary.api.updates.PluginUpdateRequest
 import ru.privatenull.pnlibrary.api.runtime.PnLibrary
@@ -13,7 +14,7 @@ import java.util.function.Consumer
 /**
  * Unified pnLibrary registration for one consumer plugin.
  *
- * This object groups tasks, metrics, diagnostics, and updates. The owner only
+ * This object groups events, tasks, metrics, diagnostics, and updates. The owner only
  * needs to keep this integration and call [close] during plugin shutdown.
  *
  * Kotlin:
@@ -38,6 +39,8 @@ import java.util.function.Consumer
 class PluginIntegration private constructor(
     /** Owner-bound task scope cancelled by [close]. */
     val tasks: TaskScope,
+    /** Owner-bound event scope whose subscriptions are removed by [close]. */
+    val events: EventScope,
     /** Plugin metrics, or `null` when metrics were not configured. */
     val metrics: PluginMetrics?,
     /** Diagnostics registration, or `null`. */
@@ -47,12 +50,13 @@ class PluginIntegration private constructor(
     private val diagnosticsCleanup: (() -> Unit)?,
 ) : AutoCloseable {
 
-    /** Closes updates, diagnostics, metrics, and tasks in a safe order. */
+    /** Closes updates, diagnostics, metrics, events, and tasks in a safe order. */
     override fun close() {
         runCatching { updates?.close() }
         runCatching { diagnostics?.close() }
         runCatching { diagnosticsCleanup?.invoke() }
         runCatching { metrics?.close() }
+        runCatching { events.close() }
         runCatching { tasks.close() }
     }
 
@@ -88,10 +92,12 @@ class PluginIntegration private constructor(
         fun build(): PluginIntegration {
             require(pluginId.matches(Regex("[A-Za-z0-9_.-]+"))) { "invalid pluginId" }
             val tasks = library.tasks.scope(owner)
+            var events: EventScope? = null
             var metrics: PluginMetrics? = null
             var diagnostics: DiagnosticRegistration? = null
             var updates: UpdateRegistration? = null
             try {
+                val eventScope = library.events.scope(owner).also { events = it }
                 metricsProjectId?.let { projectId ->
                     metrics = library.metrics.open(owner, projectId).also { metricsConfigurer?.accept(it) }
                 }
@@ -105,6 +111,7 @@ class PluginIntegration private constructor(
                 updateRequest?.let { updates = library.updates.register(owner, it) }
                 return PluginIntegration(
                     tasks,
+                    eventScope,
                     metrics,
                     diagnostics,
                     updates,
@@ -114,6 +121,7 @@ class PluginIntegration private constructor(
                 runCatching { updates?.close() }
                 runCatching { diagnostics?.close() }
                 runCatching { metrics?.close() }
+                runCatching { events?.close() }
                 runCatching { tasks.close() }
                 throw error
             }

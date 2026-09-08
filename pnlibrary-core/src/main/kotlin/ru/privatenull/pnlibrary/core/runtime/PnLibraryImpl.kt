@@ -11,6 +11,7 @@ import ru.privatenull.pnlibrary.api.runtime.PnLibraryProvider
 import ru.privatenull.pnlibrary.api.version.SemanticVersion
 import ru.privatenull.pnlibrary.core.diagnostics.DiagnosticsRegistry
 import ru.privatenull.pnlibrary.core.diagnostics.ReportGenerator
+import ru.privatenull.pnlibrary.core.events.EventServiceImpl
 import ru.privatenull.pnlibrary.core.logging.DiagnosticLogBuffer
 import ru.privatenull.pnlibrary.core.logging.PlatformLoggingService
 import ru.privatenull.pnlibrary.core.metrics.MetricsRegistry
@@ -36,9 +37,9 @@ import java.util.concurrent.atomic.AtomicBoolean
 /**
  * Composes all service implementations into one [PnLibrary] runtime.
  *
- * This is the internal composition root for diagnostics, logging, metrics,
- * updates, and tasks. Platform modules depend on [PnLibrary] and must not cast
- * the facade to this implementation.
+ * This is the internal composition root for diagnostics, events, logging,
+ * metrics, updates, and tasks. Platform modules depend on [PnLibrary] and must
+ * not cast the facade to this implementation.
  */
 class PnLibraryImpl(
     override val owner: Any,
@@ -62,6 +63,10 @@ class PnLibraryImpl(
     override val metrics: MetricsService get() = metricsRegistry
     override val logging: LoggingService = PlatformLoggingService(platform, diagnosticLogs)
     override val updates: ru.privatenull.pnlibrary.api.updates.UpdateService = UpdateServiceImpl(platform)
+    override val events: ru.privatenull.pnlibrary.api.events.EventService = EventServiceImpl { eventOwner, message, error ->
+        diagnosticLogs.record(platform, eventOwner, ru.privatenull.pnlibrary.api.logging.LogLevel.ERROR, message, error)
+        platform.log(eventOwner, ru.privatenull.pnlibrary.api.logging.LogLevel.ERROR, message, error)
+    }
     override val tasks: ru.privatenull.pnlibrary.api.tasks.TaskService = TaskServiceImpl(platform) { taskOwner, message, error ->
         diagnosticLogs.record(platform, taskOwner, ru.privatenull.pnlibrary.api.logging.LogLevel.ERROR, message, error)
         platform.log(taskOwner, ru.privatenull.pnlibrary.api.logging.LogLevel.ERROR, message, error)
@@ -112,6 +117,7 @@ class PnLibraryImpl(
             workerExecutor.shutdownNow()
             runCatching { metricsRegistry.close() }
             runCatching { (updates as AutoCloseable).close() }
+            runCatching { events.close() }
             runCatching { tasks.close() }
             diagnostics.clear()
             PnLibraryProvider.clear(this)

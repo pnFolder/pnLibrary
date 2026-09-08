@@ -61,7 +61,8 @@ is the public facade:
 
 ```text
 PnLibrary
-├── diagnostics  contributed state and events
+├── diagnostics  contributed state and diagnostic history
+├── events       cross-platform application event bus
 ├── logging      native logs and message boxes
 ├── metrics      managed bStats sessions
 ├── updates      consumer plugin updates
@@ -104,8 +105,8 @@ native plugin starts
 three Paper servers therefore have four independent pnLibrary instances.
 
 `PnLibraryRuntimeHost.close()` stops the self-updater, prints the shutdown box,
-and closes the runtime. `PnLibraryImpl.close()` then releases tasks, updates,
-metrics, diagnostics, the provider, and the adapter.
+and closes the runtime. `PnLibraryImpl.close()` then releases events, tasks,
+updates, metrics, diagnostics, the provider, and the adapter.
 
 ## Subsystems
 
@@ -147,6 +148,29 @@ cancels all of its task handles.
 
 The timer may run inside pnLibrary, but callbacks that touch the server are sent
 through `PlatformAdapter`. Callback failures are caught and logged.
+
+### Events
+
+`EventService` is the platform-independent event bus. Event classes implement
+`PnEvent`; cancellable events implement `CancellablePnEvent`. A plugin obtains
+one owner scope and registers typed listeners on it:
+
+```kotlin
+data class ClanCreatedEvent(val clanId: String) : PnEvent
+
+val events = pn.events.scope(plugin)
+events.subscribe<ClanCreatedEvent> { event ->
+    logger.info("Created clan ${event.clanId}")
+}
+events.publish(ClanCreatedEvent("knights"))
+```
+
+Dispatch is synchronous on the publishing thread. Listeners run from `LOWEST`
+to `MONITOR`, equal priorities retain registration order, listener failures are
+isolated and logged, and `ignoreCancelled` has identical behavior everywhere.
+Closing the scope removes all of its subscriptions. Native Bukkit, BungeeCord,
+or Velocity events remain inside adapters; shared plugins expose their own
+domain events through this bus.
 
 ### Logging
 
@@ -220,7 +244,7 @@ override fun onDisable() {
 }
 ```
 
-One `close()` releases updates, diagnostics, metrics, and tasks. General rule:
+One `close()` releases updates, diagnostics, metrics, events, and tasks. General rule:
 the code that calls `open`, `register`, `scope`, or `start` owns the returned
 handle and must close it.
 
@@ -235,6 +259,7 @@ handle and must close it.
 | `/pndebug` flow | `DiagnosticCommandExecutor`, then platform rendering |
 | Report contents/security | `core/diagnostics` |
 | Threads/timers | `TaskServiceImpl`, then `PlatformAdapter` |
+| Cross-platform events | `EventService`, `EventScope`, then `EventServiceImpl` |
 | Logs/message boxes | `PlatformLoggingService` |
 | Metrics | `MetricsRegistry`, `BStatsMetricsSession`, platform factory |
 | Updater | `UpdateServiceImpl`, `MandatoryUpdateService` |

@@ -3,6 +3,7 @@ package ru.privatenull.pnlibrary.api.runtime
 import ru.privatenull.pnlibrary.api.diagnostics.DiagnosticsService
 import ru.privatenull.pnlibrary.api.diagnostics.DebugRequest
 import ru.privatenull.pnlibrary.api.diagnostics.DiagnosticReport
+import ru.privatenull.pnlibrary.api.events.EventService
 import ru.privatenull.pnlibrary.api.logging.LoggingService
 import ru.privatenull.pnlibrary.api.metrics.MetricsService
 import ru.privatenull.pnlibrary.api.platform.PlatformAdapter
@@ -47,6 +48,9 @@ interface PnLibrary : Closeable {
 
     /** Cross-platform tasks grouped by their owner lifecycle. */
     val tasks: TaskService
+
+    /** Synchronous cross-platform event bus with owner-bound subscriptions. */
+    val events: EventService
 
     /** Builds a diagnostic report from an already validated request. */
     fun createDiagnosticReport(request: DebugRequest): DiagnosticReport

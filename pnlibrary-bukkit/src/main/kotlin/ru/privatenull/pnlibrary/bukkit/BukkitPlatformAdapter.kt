@@ -460,6 +460,7 @@ class BukkitPlatformAdapter @JvmOverloads constructor(
 
     @EventHandler
     fun onPluginDisable(event: PluginDisableEvent) {
+        library?.events?.close(event.plugin)
         library?.tasks?.close(event.plugin)
     }
 
