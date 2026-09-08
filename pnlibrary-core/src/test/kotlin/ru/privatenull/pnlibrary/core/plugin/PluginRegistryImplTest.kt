@@ -23,6 +23,7 @@ import ru.privatenull.pnlibrary.api.tasks.TaskScope
 import ru.privatenull.pnlibrary.api.tasks.TaskService
 import ru.privatenull.pnlibrary.api.updates.UpdateService
 import ru.privatenull.pnlibrary.core.events.EventServiceImpl
+import ru.privatenull.pnlibrary.core.testing.TestTaskService
 import java.lang.reflect.Proxy
 import java.util.function.Supplier
 
@@ -32,7 +33,7 @@ class PluginRegistryImplTest {
         val owner = Any()
         val taskScope = RecordingTaskScope(owner)
         val tasks = RecordingTaskService(taskScope)
-        val events = EventServiceImpl { _, _, _ -> }
+        val events = EventServiceImpl(TestTaskService()) { _, _, _ -> }
         val metrics = RecordingMetricsService()
         val registry = PluginRegistryImpl(
             platform(),
@@ -55,13 +56,13 @@ class PluginRegistryImplTest {
         context.metrics.enable()
         assertTrue(context.metrics.isEnabled)
         assertEquals(42, metrics.lastProjectId)
-        assertEquals(1, events.publish(TestEvent()).delivered)
+        assertEquals(1, events.publish(TestEvent()).join().delivered)
 
         context.close()
 
         assertNull(registry.get("pnclans"))
         assertTrue(context.isClosed)
-        assertEquals(0, events.publish(TestEvent()).delivered)
+        assertEquals(0, events.publish(TestEvent()).join().delivered)
         assertTrue(taskScope.closed)
     }
 
@@ -72,7 +73,7 @@ class PluginRegistryImplTest {
         val tasks = RecordingTaskService(taskScope)
         val registry = PluginRegistryImpl(
             platform(),
-            EventServiceImpl { _, _, _ -> },
+            EventServiceImpl(TestTaskService()) { _, _, _ -> },
             tasks,
             loggingService(),
             RecordingMetricsService(),
@@ -93,7 +94,7 @@ class PluginRegistryImplTest {
         val taskScope = RecordingTaskScope(owner)
         val registry = PluginRegistryImpl(
             platform(),
-            EventServiceImpl { _, _, _ -> },
+            EventServiceImpl(TestTaskService()) { _, _, _ -> },
             RecordingTaskService(taskScope),
             loggingService(),
             RecordingMetricsService(),
@@ -114,7 +115,7 @@ class PluginRegistryImplTest {
         val taskScope = RecordingTaskScope(owner)
         val registry = PluginRegistryImpl(
             platform(),
-            EventServiceImpl { _, _, _ -> },
+            EventServiceImpl(TestTaskService()) { _, _, _ -> },
             RecordingTaskService(taskScope),
             loggingService(),
             RecordingMetricsService(),
@@ -137,7 +138,7 @@ class PluginRegistryImplTest {
         val logging = RecordingLoggingService()
         val registry = PluginRegistryImpl(
             platform(),
-            EventServiceImpl { _, _, _ -> },
+            EventServiceImpl(TestTaskService()) { _, _, _ -> },
             RecordingTaskService(taskScope),
             logging,
             RecordingMetricsService(),

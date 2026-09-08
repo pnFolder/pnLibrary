@@ -1,6 +1,6 @@
 package ru.privatenull.pnlibrary.api.events
 
-/** Detailed result of one completed event dispatch through [EventService.publish]. */
+/** Detailed result produced when an [EventService.publish] future completes. */
 data class EventDispatchResult(
     /** Number of listeners invoked successfully. */
     val delivered: Int,

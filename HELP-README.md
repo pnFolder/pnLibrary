@@ -176,12 +176,16 @@ val events = pn.plugins.require("pnclans").events
 events.subscribe<ClanCreatedEvent> { event ->
     logger.info("Created clan ${event.clanId}")
 }
-val allowed = ClanCreatedEvent("knights").callEvent()
+ClanCreatedEvent("knights").callEvent().thenAccept { allowed ->
+    if (!allowed) logger.warn("Clan creation was cancelled")
+}
 ```
 
-`Event` exposes `eventName`, `isAsynchronous`, and one convenience method:
-`callEvent()`. As in Bukkit, the asynchronous flag never creates a thread;
-dispatch runs inline and the caller owns the execution context.
+`Event` exposes `eventName`, `mode`, `isAsynchronous`, and one convenience method:
+`callEvent()`. `EventMode.SYNC` routes listeners through the platform's main/global
+scheduler; `EventMode.ASYNC` routes them through pnLibrary's background executor.
+The returned `CompletableFuture<Boolean>` completes after all listeners finish.
+Compose it with `thenAccept`; do not block a platform-owned thread with `join()`.
 
 A cancellable event composes both contracts instead of using a separate event
 subclass:

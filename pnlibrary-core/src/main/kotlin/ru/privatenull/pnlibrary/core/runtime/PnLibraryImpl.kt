@@ -65,17 +65,17 @@ class PnLibraryImpl(
     override val logging: LoggingService = PlatformLoggingService(platform, diagnosticLogs)
     private val updateService = UpdateServiceImpl(platform)
     override val updates: ru.privatenull.pnlibrary.api.updates.UpdateService get() = updateService
-    private val eventService = EventServiceImpl { pluginId, message, error ->
-        val identifiedMessage = "[$pluginId] $message"
-        diagnosticLogs.record(platform, owner, ru.privatenull.pnlibrary.api.logging.LogLevel.ERROR, identifiedMessage, error)
-        platform.log(owner, ru.privatenull.pnlibrary.api.logging.LogLevel.ERROR, identifiedMessage, error)
-    }
-    override val events: ru.privatenull.pnlibrary.api.events.EventService get() = eventService
     private val taskService = TaskServiceImpl(platform) { taskOwner, message, error ->
         diagnosticLogs.record(platform, taskOwner, ru.privatenull.pnlibrary.api.logging.LogLevel.ERROR, message, error)
         platform.log(taskOwner, ru.privatenull.pnlibrary.api.logging.LogLevel.ERROR, message, error)
     }
     override val tasks: ru.privatenull.pnlibrary.api.tasks.TaskService get() = taskService
+    private val eventService = EventServiceImpl(taskService) { pluginId, message, error ->
+        val identifiedMessage = "[$pluginId] $message"
+        diagnosticLogs.record(platform, owner, ru.privatenull.pnlibrary.api.logging.LogLevel.ERROR, identifiedMessage, error)
+        platform.log(owner, ru.privatenull.pnlibrary.api.logging.LogLevel.ERROR, identifiedMessage, error)
+    }
+    override val events: ru.privatenull.pnlibrary.api.events.EventService get() = eventService
     override val plugins: ru.privatenull.pnlibrary.api.plugin.PluginRegistry = PluginRegistryImpl(
         platform = platform,
         events = eventService,

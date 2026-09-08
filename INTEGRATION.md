@@ -62,7 +62,9 @@ override fun onDisable() {
 val market = pn.plugins.require("pnmarket")
 
 market.logger.success("Market loaded")
-val allowed = AuctionCreatedEvent(auctionId).callEvent()
+AuctionCreatedEvent(auctionId).callEvent().thenAccept { allowed ->
+    if (!allowed) logger.warn("Создание аукциона отменено")
+}
 market.tasks.async(Runnable { repository.cleanup() })
 
 market.metadata.version
@@ -94,14 +96,12 @@ class MarketListener : Listener {
 data class AuctionCreatedEvent(val id: Long) : Event()
 ```
 
-Async event example; the task scope chooses the thread, not the event:
+Async event example; the event mode chooses the execution context:
 
 ```kotlin
-data class AuctionCacheLoadedEvent(val lots: Int) : Event(isAsynchronous = true)
+data class AuctionCacheLoadedEvent(val lots: Int) : Event(EventMode.ASYNC)
 
-market.tasks.async {
-    AuctionCacheLoadedEvent(auction.activeLots).callEvent()
-}
+AuctionCacheLoadedEvent(auction.activeLots).callEvent()
 ```
 
 Нативный объект плагина передаётся только один раз в `register`: он нужен

@@ -50,7 +50,7 @@ interface PnLibrary : Closeable {
     /** Cross-platform tasks grouped by their owner lifecycle. */
     val tasks: TaskService
 
-    /** Synchronous cross-platform event bus with plugin-ID-bound subscriptions. */
+    /** Mode-aware cross-platform event bus with plugin-ID-bound subscriptions. */
     val events: EventService
 
     /** Global registry and high-level entry point for consumer plugins. */

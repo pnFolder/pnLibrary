@@ -4,22 +4,28 @@ import ru.privatenull.pnlibrary.api.events.Cancellable
 import ru.privatenull.pnlibrary.api.events.Event
 import ru.privatenull.pnlibrary.api.events.EventDispatchResult
 import ru.privatenull.pnlibrary.api.events.EventHandler
+import ru.privatenull.pnlibrary.api.events.EventMode
 import ru.privatenull.pnlibrary.api.events.EventListenerRegistration
 import ru.privatenull.pnlibrary.api.events.EventScope
 import ru.privatenull.pnlibrary.api.events.EventService
 import ru.privatenull.pnlibrary.api.events.EventSubscription
 import ru.privatenull.pnlibrary.api.events.Listener
 import ru.privatenull.pnlibrary.api.plugin.PluginId
+import ru.privatenull.pnlibrary.api.tasks.TaskService
 import java.lang.reflect.InvocationTargetException
 import java.lang.reflect.Method
 import java.lang.reflect.Modifier
 import java.util.concurrent.CopyOnWriteArrayList
+import java.util.concurrent.CompletableFuture
+import java.util.concurrent.ConcurrentHashMap
+import java.util.concurrent.CancellationException
 import java.util.concurrent.atomic.AtomicBoolean
 import java.util.concurrent.atomic.AtomicLong
 import java.util.function.Consumer
 
-/** Thread-safe synchronous implementation of the platform-independent event bus. */
+/** Thread-safe, mode-aware implementation of the platform-independent event bus. */
 internal class EventServiceImpl(
+    tasks: TaskService,
     private val errorLogger: (PluginId, String, Throwable) -> Unit,
 ) : EventService {
 
@@ -27,6 +33,8 @@ internal class EventServiceImpl(
     private val subscriptions = CopyOnWriteArrayList<Subscription<out Event>>()
     private val sequence = AtomicLong()
     private val closed = AtomicBoolean(false)
+    private val taskScope = tasks.scope(this)
+    private val pendingCalls = ConcurrentHashMap.newKeySet<CompletableFuture<EventDispatchResult>>()
 
     override fun scope(pluginId: PluginId): EventScope {
         return synchronized(scopes) {
@@ -35,7 +43,30 @@ internal class EventServiceImpl(
         }
     }
 
-    override fun publish(event: Event): EventDispatchResult {
+    override fun publish(event: Event): CompletableFuture<EventDispatchResult> {
+        check(!closed.get()) { "EventService is closed" }
+        val future = CompletableFuture<EventDispatchResult>()
+        pendingCalls += future
+        future.whenComplete { _, _ -> pendingCalls.remove(future) }
+        val dispatch = Runnable {
+            try {
+                future.complete(dispatchInline(event))
+            } catch (error: Throwable) {
+                future.completeExceptionally(error)
+            }
+        }
+        try {
+            when (event.mode) {
+                EventMode.SYNC -> taskScope.global(dispatch)
+                EventMode.ASYNC -> taskScope.async(dispatch)
+            }
+        } catch (error: Throwable) {
+            future.completeExceptionally(error)
+        }
+        return future
+    }
+
+    private fun dispatchInline(event: Event): EventDispatchResult {
         check(!closed.get()) { "EventService is closed" }
         var delivered = 0
         var skipped = 0
@@ -79,6 +110,11 @@ internal class EventServiceImpl(
 
     override fun close() {
         if (!closed.compareAndSet(false, true)) return
+        taskScope.close()
+        pendingCalls.forEach { future ->
+            future.completeExceptionally(CancellationException("EventService was closed before dispatch completed"))
+        }
+        pendingCalls.clear()
         val current = synchronized(scopes) { scopes.values.toList().also { scopes.clear() } }
         current.forEach { it.closeInternal() }
         subscriptions.clear()
@@ -129,7 +165,8 @@ internal class EventServiceImpl(
             return subscription
         }
 
-        override fun publish(event: Event): EventDispatchResult = this@EventServiceImpl.publish(event)
+        override fun publish(event: Event): CompletableFuture<EventDispatchResult> =
+            this@EventServiceImpl.publish(event)
 
         override fun close() {
             closeInternal()
