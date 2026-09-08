@@ -227,10 +227,10 @@ override fun onDisable() {
 ## Кроссплатформенные события
 
 Собственные события плагинов не должны зависеть от Bukkit, BungeeCord или
-Velocity. Событие реализует `LibraryEvent`, а подписки хранятся в scope владельца:
+Velocity. Событие реализует `Event`, а подписки хранятся в scope владельца:
 
 ```kotlin
-data class ClanCreatedEvent(val clanId: String) : LibraryEvent
+data class ClanCreatedEvent(val clanId: String) : Event
 
 private val events = pn.events.scope(this)
 
@@ -249,8 +249,8 @@ events.publish(ClanCreatedEvent("knights"))
 класс с аннотированными методами:
 
 ```kotlin
-class ClanListener : EventSubscriber {
-    @HandlesEvent(priority = 250, ignoreCancelled = true)
+class ClanListener : Listener {
+    @EventHandler(priority = 250, ignoreCancelled = true)
     fun onClanCreated(event: ClanCreatedEvent) {
         audit.save(event)
     }
@@ -259,7 +259,7 @@ class ClanListener : EventSubscriber {
 val registration = events.register(ClanListener())
 ```
 
-Метод обработчика принимает ровно один `LibraryEvent` и возвращает `Unit`. Некорректная
+Метод обработчика принимает ровно один `Event` и возвращает `Unit`. Некорректная
 сигнатура отклоняется сразу при регистрации. Закрытие `registration` снимает все
 методы этого listener’а; закрытие `events` снимает вообще все подписки владельца.
 

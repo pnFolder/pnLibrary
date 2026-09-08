@@ -6,10 +6,10 @@ import org.junit.jupiter.api.Assertions.assertThrows
 import org.junit.jupiter.api.Assertions.assertTrue
 import org.junit.jupiter.api.Test
 import ru.privatenull.pnlibrary.api.events.CancellableEvent
-import ru.privatenull.pnlibrary.api.events.EventSubscriber
+import ru.privatenull.pnlibrary.api.events.Event
+import ru.privatenull.pnlibrary.api.events.EventHandler
 import ru.privatenull.pnlibrary.api.events.EventPriority
-import ru.privatenull.pnlibrary.api.events.HandlesEvent
-import ru.privatenull.pnlibrary.api.events.LibraryEvent
+import ru.privatenull.pnlibrary.api.events.Listener
 import java.util.function.Consumer
 
 class EventServiceImplTest {
@@ -19,7 +19,7 @@ class EventServiceImplTest {
         EventServiceImpl { _, _, _ -> }.use { events ->
             val scope = events.scope(Any())
             scope.subscribe(TestEvent::class.java, EventPriority.HIGH, Consumer { calls += "high" })
-            scope.subscribe(LibraryEvent::class.java, EventPriority.LOW, Consumer { calls += "base" })
+            scope.subscribe(Event::class.java, EventPriority.LOW, Consumer { calls += "base" })
             scope.subscribe(TestEvent::class.java, EventPriority.LOW, Consumer { calls += "low" })
 
             val result = events.publish(TestEvent())
@@ -147,26 +147,26 @@ class EventServiceImplTest {
         assertThrows(IllegalStateException::class.java) { events.publish(TestEvent()) }
     }
 
-    private open class TestEvent : LibraryEvent
+    private open class TestEvent : Event
 
     private class CancelEvent : CancellableEvent {
         override var isCancelled: Boolean = false
     }
 
-    private class AnnotatedListener(private val calls: MutableList<String>) : EventSubscriber {
-        @HandlesEvent(priority = -250)
+    private class AnnotatedListener(private val calls: MutableList<String>) : Listener {
+        @EventHandler(priority = -250)
         private fun early(event: TestEvent) {
             calls += "early"
         }
 
-        @HandlesEvent
+        @EventHandler
         fun normal(event: TestEvent) {
             calls += "normal"
         }
     }
 
-    private class InvalidListener : EventSubscriber {
-        @HandlesEvent
+    private class InvalidListener : Listener {
+        @EventHandler
         fun invalid() = Unit
     }
 }

@@ -3,7 +3,7 @@ package ru.privatenull.pnlibrary.api.events
 /** Registration containing every annotated handler discovered on one listener. */
 interface EventListenerRegistration : AutoCloseable {
     /** Registered listener instance. */
-    val listener: EventSubscriber
+    val listener: Listener
 
     /** Number of handler methods registered from the listener. */
     val handlerCount: Int

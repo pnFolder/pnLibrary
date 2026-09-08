@@ -13,17 +13,17 @@ interface EventScope : AutoCloseable {
     val isClosed: Boolean
 
     /**
-     * Discovers and registers every [HandlesEvent] method on [listener].
+     * Discovers and registers every [EventHandler] method on [listener].
      * Invalid handler signatures fail immediately during registration.
      */
-    fun register(listener: EventSubscriber): EventListenerRegistration
+    fun register(listener: Listener): EventListenerRegistration
 
     /** Registers [listener] for [eventType] using the default priority. */
-    fun <E : LibraryEvent> subscribe(eventType: Class<E>, listener: Consumer<E>): EventSubscription =
+    fun <E : Event> subscribe(eventType: Class<E>, listener: Consumer<E>): EventSubscription =
         subscribe(eventType, EventPriority.NORMAL, false, listener)
 
     /** Registers [listener] at [priority]. */
-    fun <E : LibraryEvent> subscribe(
+    fun <E : Event> subscribe(
         eventType: Class<E>,
         priority: Int,
         listener: Consumer<E>,
@@ -35,7 +35,7 @@ interface EventScope : AutoCloseable {
      * A listener also receives subclasses and implementations of [eventType].
      * Set [ignoreCancelled] to skip a [CancellableEvent] after cancellation.
      */
-    fun <E : LibraryEvent> subscribe(
+    fun <E : Event> subscribe(
         eventType: Class<E>,
         priority: Int,
         ignoreCancelled: Boolean,
@@ -43,7 +43,7 @@ interface EventScope : AutoCloseable {
     ): EventSubscription
 
     /** Publishes [event] synchronously to every matching listener. */
-    fun publish(event: LibraryEvent): EventDispatchResult
+    fun publish(event: Event): EventDispatchResult
 
     /** Removes every listener registered through this scope. */
     override fun close()
