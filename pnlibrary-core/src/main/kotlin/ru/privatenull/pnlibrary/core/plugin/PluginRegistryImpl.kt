@@ -128,6 +128,7 @@ internal class PluginRegistryImpl(
                 metadata,
                 taskScope,
                 eventScope,
+                services.ownedBy(id),
                 logging.logger(owner, id.value),
                 metricsController,
                 diagnosticRegistration,
@@ -171,6 +172,7 @@ internal class PluginRegistryImpl(
         override val metadata: PluginMetadata,
         override val tasks: TaskScope,
         override val events: EventScope,
+        override val services: ServiceManagerImpl.OwnedServices,
         override val logger: PnLogger,
         override val metrics: MetricsController,
         override val diagnostics: DiagnosticRegistration?,
@@ -180,16 +182,6 @@ internal class PluginRegistryImpl(
         private val contextClosed = AtomicBoolean(false)
         override val isClosed: Boolean get() = contextClosed.get()
 
-        override fun <T : Any> registerService(
-            type: Class<T>,
-            service: T,
-            priority: Int,
-        ) {
-            check(!isClosed) { "Plugin context $id is closed" }
-            services.register(id, type, service, priority)
-        }
-
-        override fun <T : Any> unregisterService(type: Class<T>) = services.unregister(id, type)
         override val lifecycle: PluginLifecycle = object : PluginLifecycle {
             override val metadata: PluginMetadata get() = this@Context.metadata
             override fun enabled(): MessageBox =
@@ -227,7 +219,7 @@ internal class PluginRegistryImpl(
             runCatching { this@PluginRegistryImpl.diagnostics.clearPlugin(id.value) }
             runCatching { metrics.close() }
             runCatching { events.close() }
-            runCatching { services.unregisterAll(id) }
+            runCatching { services.close() }
             runCatching { tasks.close() }
         }
 

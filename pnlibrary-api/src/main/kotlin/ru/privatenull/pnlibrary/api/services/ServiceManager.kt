@@ -1,7 +1,13 @@
 package ru.privatenull.pnlibrary.api.services
 
-/** Read-only access to the process-wide, platform-independent service registry. */
+/** Simple platform-independent registry of typed services. */
 interface ServiceManager {
+    /** Registers one provider. A [ru.privatenull.pnlibrary.api.plugin.PluginContext] supplies its owner automatically. */
+    fun <T : Any> register(type: Class<T>, service: T, priority: Int = 0)
+
+    /** Removes the provider of [type] registered through this manager. */
+    fun <T : Any> unregister(type: Class<T>)
+
     /** Returns the highest-priority provider of [type], or `null`. */
     fun <T : Any> get(type: Class<T>): T?
 

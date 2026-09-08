@@ -244,13 +244,13 @@ automatically from the `PluginContext`.
 ```kotlin
 interface EconomyService
 
-context.registerService(EconomyService::class.java, economy, priority = 100)
+context.services.register(EconomyService::class.java, economy, priority = 100)
 val selected = pn.services.require(EconomyService::class.java)
 ```
 
 The provider with the highest numeric priority wins; `getAll()` returns every
 provider in priority order. One owner cannot publish the same contract twice.
-`context.unregisterService(...)` removes one provider, while closing the plugin
+`context.services.unregister(...)` removes one provider, while closing the plugin
 context removes all services belonging to that owner. Consumers never create
 scopes or pass a `PluginId` during registration. `ServiceManagerImpl` is the
 thread-safe core implementation; consumers only compile against its interfaces.
@@ -350,7 +350,7 @@ handle and must close it.
 | Public Bukkit contract | `pnlibrary-bukkit-api` |
 | Platform implementation boundary | `pnlibrary-runtime-spi` |
 | Service composition | `PnLibraryImpl` |
-| Typed service contracts/registry | `ServiceManager`, `PluginContext.registerService`, then `ServiceManagerImpl` |
+| Typed service contracts/registry | `ServiceManager`, `PluginContext.services`, then `ServiceManagerImpl` |
 | Startup/shutdown | `PnLibraryRuntimeHost`, then native entry points |
 | Platform identity | `PlatformType` and adapters |
 | `/pndebug` flow | `DiagnosticCommandExecutor`, then platform rendering |

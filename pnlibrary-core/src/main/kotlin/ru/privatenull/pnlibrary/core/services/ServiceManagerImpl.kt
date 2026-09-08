@@ -13,6 +13,16 @@ internal class ServiceManagerImpl : ServiceManager, AutoCloseable {
     private val sequence = AtomicLong()
     private val closed = AtomicBoolean(false)
 
+    override fun <T : Any> register(type: Class<T>, service: T, priority: Int) =
+        add(null, type, service, priority)
+
+    override fun <T : Any> unregister(type: Class<T>) {
+        val registration = synchronized(lock) {
+            providers[type]?.firstOrNull { !it.isClosed && it.owner == null }
+        }
+        registration?.close()
+    }
+
     internal fun <T : Any> register(
         owner: PluginId,
         type: Class<T>,
@@ -20,8 +30,7 @@ internal class ServiceManagerImpl : ServiceManager, AutoCloseable {
         priority: Int = 0,
     ) = add(owner, type, service, priority)
 
-    internal fun <T : Any> registerSystem(type: Class<T>, service: T, priority: Int = 0) =
-        add(null, type, service, priority)
+    internal fun ownedBy(owner: PluginId): OwnedServices = OwnedServices(owner)
 
     private fun <T : Any> add(owner: PluginId?, type: Class<T>, service: T, priority: Int) {
         synchronized(lock) {
@@ -55,6 +64,26 @@ internal class ServiceManagerImpl : ServiceManager, AutoCloseable {
             registrationsByOwner[owner]?.firstOrNull { !it.isClosed && it.type == type }
         }
         registration?.close()
+    }
+
+    internal inner class OwnedServices(private val owner: PluginId) : ServiceManager, AutoCloseable {
+        private val ownerClosed = AtomicBoolean(false)
+
+        override fun <T : Any> register(type: Class<T>, service: T, priority: Int) {
+            check(!ownerClosed.get()) { "Services for plugin $owner are closed" }
+            add(owner, type, service, priority)
+        }
+
+        override fun <T : Any> unregister(type: Class<T>) =
+            this@ServiceManagerImpl.unregister(owner, type)
+
+        override fun <T : Any> get(type: Class<T>): T? = this@ServiceManagerImpl.get(type)
+
+        override fun <T : Any> getAll(type: Class<T>): List<T> = this@ServiceManagerImpl.getAll(type)
+
+        override fun close() {
+            if (ownerClosed.compareAndSet(false, true)) unregisterAll(owner)
+        }
     }
 
     override fun close() {

@@ -8,6 +8,17 @@ import ru.privatenull.pnlibrary.api.plugin.PluginId
 
 class ServiceManagerImplTest {
     @Test
+    fun `service manager directly registers and unregisters a service`() {
+        ServiceManagerImpl().use { services ->
+            services.register(GreetingService::class.java, Greeting("hello"))
+
+            assertEquals("hello", services.require(GreetingService::class.java).value)
+            services.unregister(GreetingService::class.java)
+            assertNull(services.get(GreetingService::class.java))
+        }
+    }
+
+    @Test
     fun `highest numeric priority wins and all providers remain available`() {
         ServiceManagerImpl().use { services ->
             services.register(PluginId.of("fallback"), GreetingService::class.java, Greeting("fallback"), -100)
@@ -30,13 +41,16 @@ class ServiceManagerImplTest {
     @Test
     fun `all services owned by a plugin are removed together`() {
         ServiceManagerImpl().use { services ->
-            val owner = PluginId.of("example")
-            services.register(owner, GreetingService::class.java, Greeting("hello"))
+            val owned = services.ownedBy(PluginId.of("example"))
+            owned.register(GreetingService::class.java, Greeting("hello"))
 
             assertEquals("hello", services.get(GreetingService::class.java)?.value)
-            services.unregisterAll(owner)
+            owned.close()
 
             assertNull(services.get(GreetingService::class.java))
+            assertThrows(IllegalStateException::class.java) {
+                owned.register(GreetingService::class.java, Greeting("late"))
+            }
         }
     }
 
