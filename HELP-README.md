@@ -33,7 +33,7 @@ Remember this rule:
 | Module | Responsibility |
 |---|---|
 | `pnlibrary-api` | Public runtime, diagnostics, tasks, logging, metrics, updates, configuration, and version contracts |
-| `pnlibrary-core` | Implementations with no Bukkit, Bungee, or Velocity imports |
+| `pnlibrary-core` | Common runtime implementations with no Bukkit, Bungee, or Velocity imports |
 | `pnlibrary-bukkit` | Bukkit/Paper/Purpur/Leaf/Folia adapter, commands, inventory GUI, and bStats |
 | `pnlibrary-bungee` | BungeeCord/Waterfall adapter, commands, scheduler, and bStats |
 | `pnlibrary-velocity` | Velocity adapter, commands, scheduler, SLF4J, and bStats |
@@ -50,6 +50,19 @@ distribution → platform → core → api
 `api` never depends on `core`. `core` never imports a native platform API. If
 shared code needs a platform operation, add the smallest useful operation to
 `PlatformAdapter` and implement it for every platform.
+
+The boundary is intentional:
+
+- `api` contains public interfaces, data models, builders, and small
+  API conveniences only;
+- `core` is the common executable engine and keeps implementations `internal`
+  whenever consumers do not need their concrete classes;
+- a platform module translates between the common engine and one native API;
+- `distribution` assembles the engine and exactly one platform adapter.
+
+Do not create a second implementation in `api`, and do not move a native server
+type into a public common contract. A new subsystem normally gets one API
+package and one matching implementation package in `core`.
 
 Folia is not a separate module. The Bukkit adapter detects it at runtime and
 uses its schedulers through reflection.
@@ -165,9 +178,11 @@ events.subscribe<ClanCreatedEvent> { event ->
 events.publish(ClanCreatedEvent("knights"))
 ```
 
-Dispatch is synchronous on the publishing thread. Listeners run from `LOWEST`
-to `MONITOR`, equal priorities retain registration order, listener failures are
-isolated and logged, and `ignoreCancelled` has identical behavior everywhere.
+Dispatch is synchronous on the publishing thread. Priority is any integer;
+smaller values run first. `EventPriority` provides spaced presets from `LOWEST`
+(`-1000`) to `MONITOR` (`2000`), while callers may insert values such as `250`.
+Equal priorities retain registration order, listener failures are isolated and
+logged, and `ignoreCancelled` has identical behavior everywhere.
 Closing the scope removes all of its subscriptions. Native Bukkit, BungeeCord,
 or Velocity events remain inside adapters; shared plugins expose their own
 domain events through this bus.

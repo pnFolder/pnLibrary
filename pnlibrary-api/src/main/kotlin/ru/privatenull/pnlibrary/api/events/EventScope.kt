@@ -19,7 +19,7 @@ interface EventScope : AutoCloseable {
     /** Registers [listener] at [priority]. */
     fun <E : PnEvent> subscribe(
         eventType: Class<E>,
-        priority: EventPriority,
+        priority: Int,
         listener: Consumer<E>,
     ): EventSubscription = subscribe(eventType, priority, false, listener)
 
@@ -31,7 +31,7 @@ interface EventScope : AutoCloseable {
      */
     fun <E : PnEvent> subscribe(
         eventType: Class<E>,
-        priority: EventPriority,
+        priority: Int,
         ignoreCancelled: Boolean,
         listener: Consumer<E>,
     ): EventSubscription

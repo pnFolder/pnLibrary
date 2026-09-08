@@ -2,7 +2,7 @@
 
 ## 2.0.0-beta.6
 
-- Added a synchronous, owner-scoped, platform-independent event bus.
+- Added a synchronous, owner-scoped, platform-independent event bus with extensible numeric priorities.
 - Reduced platform identity to the three supported `PlatformType` API families; fork names are runtime metadata.
 - Added a high-level `PnLibraryRuntimeHost` shared by all native entry points.
 - Removed platform adapter casts to the internal `PnLibraryImpl` implementation.

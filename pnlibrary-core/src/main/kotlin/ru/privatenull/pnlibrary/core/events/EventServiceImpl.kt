@@ -2,7 +2,6 @@ package ru.privatenull.pnlibrary.core.events
 
 import ru.privatenull.pnlibrary.api.events.CancellablePnEvent
 import ru.privatenull.pnlibrary.api.events.EventDispatchResult
-import ru.privatenull.pnlibrary.api.events.EventPriority
 import ru.privatenull.pnlibrary.api.events.EventScope
 import ru.privatenull.pnlibrary.api.events.EventService
 import ru.privatenull.pnlibrary.api.events.EventSubscription
@@ -39,7 +38,7 @@ internal class EventServiceImpl(
 
         val matching = subscriptions.asSequence()
             .filter { !it.isClosed && it.eventType.isAssignableFrom(event.javaClass) }
-            .sortedWith(compareBy<Subscription<out PnEvent>> { it.priority.ordinal }.thenBy { it.order })
+            .sortedWith(compareBy<Subscription<out PnEvent>> { it.priority }.thenBy { it.order })
             .toList()
 
         matching.forEach { subscription ->
@@ -87,7 +86,7 @@ internal class EventServiceImpl(
 
         override fun <E : PnEvent> subscribe(
             eventType: Class<E>,
-            priority: EventPriority,
+            priority: Int,
             ignoreCancelled: Boolean,
             listener: Consumer<E>,
         ): EventSubscription {
@@ -127,7 +126,7 @@ internal class EventServiceImpl(
     private inner class Subscription<E : PnEvent>(
         val scope: Scope,
         val eventType: Class<E>,
-        val priority: EventPriority,
+        val priority: Int,
         val ignoreCancelled: Boolean,
         private val listener: Consumer<E>,
         val order: Long,

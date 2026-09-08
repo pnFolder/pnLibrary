@@ -29,6 +29,21 @@ class EventServiceImplTest {
     }
 
     @Test
+    fun `arbitrary numeric priorities fit between presets`() {
+        val calls = mutableListOf<Int>()
+        EventServiceImpl { _, _, _ -> }.use { events ->
+            val scope = events.scope(Any())
+            scope.subscribe(TestEvent::class.java, EventPriority.HIGH, Consumer { calls += 500 })
+            scope.subscribe(TestEvent::class.java, 250, Consumer { calls += 250 })
+            scope.subscribe(TestEvent::class.java, EventPriority.NORMAL, Consumer { calls += 0 })
+
+            events.publish(TestEvent())
+
+            assertEquals(listOf(0, 250, 500), calls)
+        }
+    }
+
+    @Test
     fun `cancelled events skip only listeners that request it`() {
         val calls = mutableListOf<String>()
         EventServiceImpl { _, _, _ -> }.use { events ->
