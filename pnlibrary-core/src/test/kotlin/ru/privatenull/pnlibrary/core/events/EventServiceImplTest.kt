@@ -5,7 +5,7 @@ import org.junit.jupiter.api.Assertions.assertSame
 import org.junit.jupiter.api.Assertions.assertThrows
 import org.junit.jupiter.api.Assertions.assertTrue
 import org.junit.jupiter.api.Test
-import ru.privatenull.pnlibrary.api.events.CancellableEvent
+import ru.privatenull.pnlibrary.api.events.Cancellable
 import ru.privatenull.pnlibrary.api.events.Event
 import ru.privatenull.pnlibrary.api.events.EventHandler
 import ru.privatenull.pnlibrary.api.events.EventPriority
@@ -147,9 +147,9 @@ class EventServiceImplTest {
         assertThrows(IllegalStateException::class.java) { events.publish(TestEvent()) }
     }
 
-    private open class TestEvent : Event
+    private open class TestEvent : Event()
 
-    private class CancelEvent : CancellableEvent {
+    private class CancelEvent : Event(), Cancellable {
         override var isCancelled: Boolean = false
     }
 

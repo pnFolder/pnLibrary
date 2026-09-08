@@ -33,7 +33,7 @@ interface EventScope : AutoCloseable {
      * Registers a listener with complete dispatch options.
      *
      * A listener also receives subclasses and implementations of [eventType].
-     * Set [ignoreCancelled] to skip a [CancellableEvent] after cancellation.
+     * Set [ignoreCancelled] to skip an event implementing [Cancellable] after cancellation.
      */
     fun <E : Event> subscribe(
         eventType: Class<E>,

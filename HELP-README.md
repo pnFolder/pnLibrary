@@ -165,17 +165,26 @@ through `PlatformAdapter`. Callback failures are caught and logged.
 ### Events
 
 `EventService` is the platform-independent event bus. Event classes implement
-`Event`; cancellable events implement `CancellableEvent`. A plugin obtains
+`Event`; cancellable events additionally implement `Cancellable`. A plugin obtains
 one owner scope and registers typed listeners on it:
 
 ```kotlin
-data class ClanCreatedEvent(val clanId: String) : Event
+data class ClanCreatedEvent(val clanId: String) : Event()
 
 val events = pn.events.scope(plugin)
 events.subscribe<ClanCreatedEvent> { event ->
     logger.info("Created clan ${event.clanId}")
 }
 events.publish(ClanCreatedEvent("knights"))
+```
+
+A cancellable event composes both contracts instead of using a separate event
+subclass:
+
+```kotlin
+class PurchaseEvent : Event(), Cancellable {
+    override var isCancelled: Boolean = false
+}
 ```
 
 The annotation style uses the same dispatcher:
