@@ -1,4 +1,4 @@
-package ru.privatenull.pnlibrary.api.version.minecraft
+package ru.privatenull.pnlibrary.bukkit.version
 
 import org.junit.jupiter.api.Assertions.*
 import org.junit.jupiter.api.Test

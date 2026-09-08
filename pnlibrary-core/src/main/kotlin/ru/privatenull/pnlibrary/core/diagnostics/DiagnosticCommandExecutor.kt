@@ -19,7 +19,7 @@ class DiagnosticCommandExecutor(private val library: PnLibrary) {
      * Parses and submits one diagnostic command.
      *
      * Immediate events are published on the caller thread. Completion events are
-     * dispatched through [ru.privatenull.pnlibrary.api.platform.PlatformAdapter.executeReply].
+     * dispatched through the public task service to the recipient context.
      */
     fun execute(
         arguments: Array<out String>,
@@ -42,12 +42,13 @@ class DiagnosticCommandExecutor(private val library: PnLibrary) {
 
         lastRequestTimes[requesterId] = System.currentTimeMillis()
         publish(DiagnosticCommandEvent.Started(request.target))
-        library.tasks.scope(library.owner).async(Runnable {
+        val tasks = library.tasks.scope(library.owner)
+        tasks.async(Runnable {
             val event = runCatching { library.createDiagnosticReport(request) }.fold(
                 onSuccess = { DiagnosticCommandEvent.Completed(it) },
                 onFailure = { DiagnosticCommandEvent.Failed(it.message ?: it.javaClass.simpleName) },
             )
-            library.platform.executeReply(recipient, Runnable { publish(event) })
+            tasks.entity(recipient, Runnable { publish(event) })
         })
     }
 

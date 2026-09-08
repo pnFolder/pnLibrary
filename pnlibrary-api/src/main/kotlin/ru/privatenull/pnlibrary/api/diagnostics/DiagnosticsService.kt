@@ -3,22 +3,18 @@ package ru.privatenull.pnlibrary.api.diagnostics
 import java.nio.file.Path
 
 /**
- * Public diagnostic service exposed by pnLibrary to other pnFolder plugins.
- *
- * On Bukkit, this is registered in the [org.bukkit.plugin.ServicesManager] so
- * that other plugins can look it up without a direct class-loader dependency.
+ * Public diagnostic service exposed through [ru.privatenull.pnlibrary.api.runtime.PnLibrary].
  *
  * ### Usage from Kotlin
  * ```kotlin
- * val service = server.servicesManager.getRegistration(DiagnosticsService::class.java)?.provider
- * val reg = service?.register("pnMarket", DiagnosticContainer.builder("auction")
+ * val service = PnLibraryProvider.get().diagnostics
+ * val reg = service.register("pnMarket", DiagnosticContainer.builder("auction")
  *     .snapshot(Supplier { mapOf(...) }).build())
  * ```
  *
  * ### Usage from Java
  * ```java
- * DiagnosticsService svc = server.getServicesManager()
- *     .getRegistration(DiagnosticsService.class).getProvider();
+ * DiagnosticsService svc = PnLibraryProvider.get().getDiagnostics();
  * DiagnosticRegistration reg = svc.register("pnMarket",
  *     DiagnosticContainer.builder("auction").snapshot(() -> Map.of(...)).build());
  * ```

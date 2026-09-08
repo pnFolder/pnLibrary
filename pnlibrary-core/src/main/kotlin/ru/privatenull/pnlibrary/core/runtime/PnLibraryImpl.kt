@@ -4,7 +4,7 @@ import ru.privatenull.pnlibrary.api.diagnostics.DebugRequest
 import ru.privatenull.pnlibrary.api.diagnostics.DiagnosticReport
 import ru.privatenull.pnlibrary.api.logging.LoggingService
 import ru.privatenull.pnlibrary.api.metrics.MetricsService
-import ru.privatenull.pnlibrary.api.platform.PlatformAdapter
+import ru.privatenull.pnlibrary.spi.platform.PlatformAdapter
 import ru.privatenull.pnlibrary.api.runtime.PnLibrary
 import ru.privatenull.pnlibrary.api.runtime.PnLibraryConfig
 import ru.privatenull.pnlibrary.api.runtime.PnLibraryProvider
@@ -17,6 +17,7 @@ import ru.privatenull.pnlibrary.core.logging.PlatformLoggingService
 import ru.privatenull.pnlibrary.core.metrics.MetricsRegistry
 import ru.privatenull.pnlibrary.core.plugin.PluginRegistryImpl
 import ru.privatenull.pnlibrary.core.security.EncryptedEnvelopeCodec
+import ru.privatenull.pnlibrary.core.services.ServiceManagerImpl
 import ru.privatenull.pnlibrary.core.tasks.TaskServiceImpl
 import ru.privatenull.pnlibrary.core.updates.UpdateServiceImpl
 import ru.privatenull.pnlibrary.core.upload.EncryptedReportUploader
@@ -44,7 +45,7 @@ import java.util.concurrent.atomic.AtomicBoolean
  */
 class PnLibraryImpl(
     override val owner: Any,
-    override val platform: PlatformAdapter,
+    private val platform: PlatformAdapter,
     override val diagnostics: DiagnosticsRegistry,
     val config: PnLibraryConfig = PnLibraryConfig(),
     private val onClose: () -> Unit = {},
@@ -70,6 +71,8 @@ class PnLibraryImpl(
         platform.log(taskOwner, ru.privatenull.pnlibrary.api.logging.LogLevel.ERROR, message, error)
     }
     override val tasks: ru.privatenull.pnlibrary.api.tasks.TaskService get() = taskService
+    private val serviceManager = ServiceManagerImpl()
+    override val services: ru.privatenull.pnlibrary.api.services.ServiceManager get() = serviceManager
     private val eventService = EventServiceImpl(taskService) { pluginId, message, error ->
         val identifiedMessage = "[$pluginId] $message"
         diagnosticLogs.record(platform, owner, ru.privatenull.pnlibrary.api.logging.LogLevel.ERROR, identifiedMessage, error)
@@ -80,6 +83,7 @@ class PnLibraryImpl(
         platform = platform,
         events = eventService,
         tasks = taskService,
+        services = serviceManager,
         logging = logging,
         metrics = metricsRegistry,
         diagnostics = diagnostics,
@@ -133,6 +137,7 @@ class PnLibraryImpl(
             runCatching { metricsRegistry.close() }
             runCatching { updateService.close() }
             runCatching { eventService.close() }
+            runCatching { serviceManager.close() }
             runCatching { taskService.close() }
             diagnostics.clear()
             PnLibraryProvider.clear(this)

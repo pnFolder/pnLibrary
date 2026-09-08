@@ -19,18 +19,7 @@ import java.time.Duration
 import java.util.IdentityHashMap
 import java.util.UUID
 
-/** Opens menus and tracks their owner-bound sessions. */
-interface MenuService {
-    fun open(owner: Plugin, player: Player, menu: Menu): MenuSession
-    fun session(player: Player): MenuSession?
-    fun close(owner: Plugin)
-}
-
-object PnMenus {
-    @JvmStatic fun get(): MenuService = Bukkit.getServicesManager().load(MenuService::class.java)
-        ?: error("pnLibrary menu service is unavailable")
-}
-
+/** Runtime implementation of the public Bukkit menu contract. */
 internal class MenuServiceImpl(
     private val host: Plugin,
     private val tasks: TaskScope,

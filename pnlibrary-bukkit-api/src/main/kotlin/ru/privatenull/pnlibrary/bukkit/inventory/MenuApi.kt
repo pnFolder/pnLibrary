@@ -29,22 +29,22 @@ data class MenuClick(
 
 data class MenuClose(val session: MenuSession)
 
-class MenuItem internal constructor(
+data class MenuItem(
     val item: ItemStack?,
     val handler: MenuClickHandler?,
     val editable: Boolean,
 )
 
-class Menu internal constructor(
+data class Menu(
     val title: String,
     val rows: Int,
     val type: MenuType,
-    internal val items: Map<Int, MenuItem>,
-    internal val renderer: MenuRenderer?,
-    internal val openHandler: MenuOpenHandler?,
-    internal val closeHandler: MenuCloseHandler?,
-    internal val clickHandler: MenuClickHandler?,
-    internal val cancelPlayerInventory: Boolean,
+    val items: Map<Int, MenuItem>,
+    val renderer: MenuRenderer?,
+    val openHandler: MenuOpenHandler?,
+    val closeHandler: MenuCloseHandler?,
+    val clickHandler: MenuClickHandler?,
+    val cancelPlayerInventory: Boolean,
 ) {
     val size: Int get() = if (type == MenuType.CHEST) rows * 9 else type.defaultSize
 }
@@ -90,7 +90,8 @@ class MenuBuilder internal constructor(private val title: String, private val ty
     fun border(item: ItemStack) = apply {
         require(type == MenuType.CHEST) { "Borders are available for chest menus" }
         for (slot in 0 until effectiveSize()) {
-            val row = slot / 9; val column = slot % 9
+            val row = slot / 9
+            val column = slot % 9
             if (row == 0 || row == rows - 1 || column == 0 || column == 8) {
                 if (slot !in items) items[slot] = MenuItem(item.clone(), null, false)
             }
@@ -99,7 +100,10 @@ class MenuBuilder internal constructor(private val title: String, private val ty
     fun render(renderer: MenuRenderer) = apply { this.renderer = renderer }
     fun onOpen(handler: MenuOpenHandler) = apply { openHandler = handler }
     fun onClose(handler: MenuCloseHandler) = apply { closeHandler = handler }
-    fun build() = Menu(title, rows, type, items.toMap(), renderer, openHandler, closeHandler, clickHandler, cancelPlayerInventory)
+    fun build() = Menu(
+        title, rows, type, items.toMap(), renderer, openHandler,
+        closeHandler, clickHandler, cancelPlayerInventory,
+    )
     private fun effectiveSize() = if (type == MenuType.CHEST) rows * 9 else type.defaultSize
 }
 

@@ -4,17 +4,6 @@ import org.jetbrains.kotlin.gradle.dsl.JvmTarget
 plugins {
     alias(libs.plugins.kotlin.jvm)
     `java-library`
-    `maven-publish`
-}
-
-
-publishing {
-    publications {
-        create<MavenPublication>("core") {
-            from(components["java"])
-            artifactId = "pnlibrary-core"
-        }
-    }
 }
 base { archivesName = "pnLibrary-core" }
 
@@ -27,7 +16,8 @@ kotlin {
 tasks.withType<JavaCompile>().configureEach { options.release = 8 }
 
 dependencies {
-    api(project(":pnlibrary-api"))
+    implementation(project(":pnlibrary-api"))
+    implementation(project(":pnlibrary-runtime-spi"))
     implementation(libs.kotlin.stdlib)
     implementation(libs.gson)
     implementation(libs.snakeyaml)

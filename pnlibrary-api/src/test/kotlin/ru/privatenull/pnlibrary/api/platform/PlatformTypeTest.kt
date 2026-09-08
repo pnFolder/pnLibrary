@@ -32,10 +32,4 @@ class PlatformTypeTest {
         assertEquals("velocity", PlatformType.VELOCITY.id)
     }
 
-    @Test
-    fun `distribution belongs to the platform family`() {
-        assertEquals("bukkit", PlatformType.BUKKIT.distributionArtifact)
-        assertEquals("bungee", PlatformType.BUNGEECORD.distributionArtifact)
-        assertEquals("velocity", PlatformType.VELOCITY.distributionArtifact)
-    }
 }

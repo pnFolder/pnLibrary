@@ -1,20 +1,16 @@
 package ru.privatenull.pnlibrary.core.diagnostics
 
+import com.google.gson.Gson
+import com.google.gson.GsonBuilder
+import ru.privatenull.pnlibrary.api.diagnostics.DebugRequest
+import ru.privatenull.pnlibrary.api.diagnostics.DiagnosticReport
+import ru.privatenull.pnlibrary.api.runtime.PnLibraryConfig
 import ru.privatenull.pnlibrary.core.security.EncryptedEnvelopeCodec
 import ru.privatenull.pnlibrary.core.upload.MultipartUploader
 import ru.privatenull.pnlibrary.core.upload.ReportUploader
 import ru.privatenull.pnlibrary.core.upload.UploadLedger
 import ru.privatenull.pnlibrary.core.upload.UploadReceipt
-
-
-import com.google.gson.Gson
-import com.google.gson.GsonBuilder
-import ru.privatenull.pnlibrary.api.diagnostics.DebugRequest
-import ru.privatenull.pnlibrary.api.diagnostics.DiagnosticReport
-import ru.privatenull.pnlibrary.api.platform.PlatformAdapter
-import ru.privatenull.pnlibrary.api.runtime.PnLibraryConfig
-import java.io.File
-import java.io.IOException
+import ru.privatenull.pnlibrary.spi.platform.PlatformAdapter
 import java.nio.charset.StandardCharsets
 import java.nio.file.Files
 import java.nio.file.Path

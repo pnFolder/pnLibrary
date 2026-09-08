@@ -21,15 +21,16 @@ import org.bukkit.event.server.PluginDisableEvent
 import org.bukkit.plugin.Plugin
 import org.bukkit.plugin.java.JavaPlugin
 import ru.privatenull.pnlibrary.api.logging.LogLevel
-import ru.privatenull.pnlibrary.api.metrics.PlatformMetricsFactory
-import ru.privatenull.pnlibrary.api.platform.PlatformAdapter
 import ru.privatenull.pnlibrary.api.platform.PlatformType
+import ru.privatenull.pnlibrary.bukkit.server.ServerInfo
 import ru.privatenull.pnlibrary.api.runtime.PnLibrary
 import ru.privatenull.pnlibrary.api.runtime.PnLibraryBrand
 import ru.privatenull.pnlibrary.api.updates.UpdateState
 import ru.privatenull.pnlibrary.bukkit.compat.ServerCapabilities
 import ru.privatenull.pnlibrary.core.diagnostics.DiagnosticCommandEvent
 import ru.privatenull.pnlibrary.core.diagnostics.DiagnosticCommandExecutor
+import ru.privatenull.pnlibrary.spi.metrics.PlatformMetricsFactory
+import ru.privatenull.pnlibrary.spi.platform.PlatformAdapter
 import java.io.File
 import java.lang.reflect.Constructor
 import java.time.Instant
@@ -53,6 +54,14 @@ class BukkitPlatformAdapter @JvmOverloads constructor(
 
     override val type = PlatformType.BUKKIT
     override val implementationName: String get() = Bukkit.getName().ifBlank { type.displayName }
+    val serverInfo: ServerInfo by lazy {
+        ServerInfo(
+            name = implementationName,
+            version = Bukkit.getVersion(),
+            minecraftVersion = ServerCapabilities.minecraftVersion,
+            rawMinecraftVersion = ServerCapabilities.rawMinecraftVersion,
+        )
+    }
     override val metricsFactory: PlatformMetricsFactory = BukkitMetricsFactory()
     override val dataFolder = plugin.dataFolder.toPath()
 

@@ -8,21 +8,18 @@ Spigot, Purpur и Leaf. Система не сравнивает `enum.ordinal`:
 ## Получение версии
 
 ```kotlin
-val version = BukkitMinecraftVersion.current()
-val original = BukkitMinecraftVersion.rawCurrent()
+val server = PnBukkit.server()
+val version = server.minecraftVersion
+val original = server.rawMinecraftVersion
 ```
 
 На новых ядрах сначала вызывается `Server#getMinecraftVersion()` через
-reflection. На старых используется `Bukkit.getBukkitVersion()`. Значение можно
-получить и из кэша:
+reflection. На старых используется `Bukkit.getBukkitVersion()`. Этот разбор
+выполняет закрытый Bukkit runtime; пользовательский плагин видит только
+`ServerInfo` из отдельного `pnlibrary-bukkit-api`.
 
-```kotlin
-ServerCapabilities.minecraftVersion
-ServerCapabilities.rawMinecraftVersion
-```
-
-Если вышла ещё не добавленная версия, `current()` вернёт `UNKNOWN`, а
-`rawCurrent()` сохранит настоящую строку ядра. Это позволяет включить безопасный
+Если вышла ещё не добавленная версия, `minecraftVersion` вернёт `UNKNOWN`, а
+`rawMinecraftVersion` сохранит настоящую строку ядра. Это позволяет включить безопасный
 режим и записать точную версию в диагностику.
 
 ## Одна граница
@@ -117,7 +114,6 @@ if (supported.overlaps(dataComponents)) {
 - `overlaps` сообщает, пересекаются ли диапазоны.
 - `intersection` возвращает общую часть или `null`.
 - `isExact` сообщает, содержит ли диапазон ровно одну версию.
-- `containsCurrent` проверяет непосредственно версию запущенного ядра.
 - `toString` создаёт читаемое значение: `[1.8.8, 1.12.2]`, `>=1.20.5`.
 
 ## Пример адаптера
@@ -128,7 +124,7 @@ private val flattening = MinecraftVersion.V1_13..MinecraftVersion.V1_20_4
 private val components = MinecraftVersionRange.atLeast(MinecraftVersion.V1_20_5)
 
 fun createMenuIcon(): ItemStack {
-    val version = BukkitMinecraftVersion.current()
+    val version = PnBukkit.server().minecraftVersion
     return when (version) {
         in legacy -> createLegacyIcon()
         in flattening -> createFlattenedIcon()
@@ -143,8 +139,8 @@ fun createMenuIcon(): ItemStack {
 | Метод | Значение |
 |---|---|
 | `parse(text)` | Разобрать строку версии |
-| `current()` | Определить enum текущего ядра |
-| `rawCurrent()` | Получить исходную версию ядра |
+| `PnBukkit.server().minecraftVersion` | Определить enum текущего Bukkit-ядра |
+| `PnBukkit.server().rawMinecraftVersion` | Получить исходную версию Minecraft |
 | `isAtLeast(version)` | Эта версия не старее указанной |
 | `isAtMost(version)` | Эта версия не новее указанной |
 | `isNewerThan(version)` | Эта версия строго новее |
@@ -153,7 +149,6 @@ fun createMenuIcon(): ItemStack {
 | `isSameReleaseLine(version)` | Совпадают major и minor |
 | `rangeTo(version)` | Создать диапазон оператором `..` |
 | `contains(version)` | Диапазон содержит версию |
-| `containsCurrent()` | Диапазон содержит текущее ядро |
 | `excludes(version)` | Диапазон не содержит версию |
 | `overlaps(range)` | Диапазоны пересекаются |
 | `intersection(range)` | Получить общую часть диапазонов |
@@ -166,14 +161,15 @@ fun createMenuIcon(): ItemStack {
 Получение версии и обычная проверка:
 
 ```java
-MinecraftVersion version = BukkitMinecraftVersion.current();
+ServerInfo server = PnBukkit.server();
+MinecraftVersion version = server.getMinecraftVersion();
 
 if (version.isAtLeast(MinecraftVersion.V1_20_5)) {
     enableDataComponents();
 }
 
 if (version == MinecraftVersion.UNKNOWN) {
-    logger.warning("Неизвестная версия Minecraft: " + BukkitMinecraftVersion.rawCurrent());
+    logger.warning("Неизвестная версия Minecraft: " + server.getRawMinecraftVersion());
 }
 ```
 
@@ -206,10 +202,10 @@ MinecraftVersionRange strictlyNewer = MinecraftVersionRange.newerThan(
 );
 ```
 
-Проверка текущего ядра без промежуточной переменной:
+Проверка текущего ядра:
 
 ```java
-if (modern.containsCurrent()) {
+if (modern.contains(PnBukkit.server().getMinecraftVersion())) {
     registerModernListeners();
 }
 ```

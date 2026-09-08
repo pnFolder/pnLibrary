@@ -1,7 +1,7 @@
 package ru.privatenull.pnlibrary.velocity
 
 import org.bstats.velocity.Metrics
-import ru.privatenull.pnlibrary.api.metrics.PlatformMetricsFactory
+import ru.privatenull.pnlibrary.spi.metrics.PlatformMetricsFactory
 import ru.privatenull.pnlibrary.api.metrics.PluginMetrics
 import ru.privatenull.pnlibrary.core.metrics.BStatsMetricsSession
 

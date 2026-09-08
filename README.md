@@ -29,8 +29,10 @@
 
 | Модуль | Назначение | JVM target |
 |---|---|---:|
-| `pnlibrary-api` | Публичные интерфейсы для pnFolder-плагинов | 8 |
-| `pnlibrary-core` | Диагностика, шифрование, отчёты, logging и lifecycle | 8 |
+| `pnlibrary-api` | Публичные интерфейсы: runtime, сервисы, события, задачи и остальные общие возможности | 8 |
+| `pnlibrary-bukkit-api` | Публичные Bukkit-контракты: окружение сервера и меню | 8 |
+| `pnlibrary-runtime-spi` | Внутренняя граница между core и платформами | 8 |
+| `pnlibrary-core` | Закрытое исполнение общих сервисов | 8 |
 | `pnlibrary-bstats-base` | Неизменённые общие классы официального bStats | 8 |
 | `pnlibrary-bukkit` | Bukkit, Spigot, Paper, Purpur, Leaf и Folia | 8 |
 | `pnlibrary-bungee` | BungeeCord и совместимые прокси | 8 |
@@ -56,7 +58,8 @@ gradlew.bat clean test :pnlibrary-distribution:build
 - `pnLibrary-bukkit-2.0.0-beta.6.jar`;
 - `pnLibrary-bungee-2.0.0-beta.6.jar`;
 - `pnLibrary-velocity-2.0.0-beta.6.jar`;
-- `pnLibrary-api-2.0.0-beta.6.jar` и sources для разработчиков.
+- `pnLibrary-api-2.0.0-beta.6.jar` и sources для разработчиков;
+- `pnLibrary-bukkit-api-2.0.0-beta.6.jar` и sources для Bukkit-разработчиков.
 
 Положите один подходящий JAR в папку `plugins` и полностью перезапустите сервер.
 
@@ -71,7 +74,7 @@ gradlew.bat clean test :pnlibrary-distribution:build
 Сначала можно опубликовать API в локальный Maven-кэш:
 
 ```text
-gradlew.bat :pnlibrary-api:publishToMavenLocal
+gradlew.bat :pnlibrary-api:publishToMavenLocal :pnlibrary-bukkit-api:publishToMavenLocal
 ```
 
 В плагине:
@@ -86,13 +89,16 @@ dependencies {
 }
 ```
 
-Для Bukkit-специфичных API (`PnMenus`, `BukkitMinecraftVersion`) дополнительно:
+Для Bukkit-меню подключается отдельный публичный артефакт:
 
 ```kotlin
-compileOnly("ru.privatenull:pnlibrary-bukkit:2.0.0-beta.6") { isTransitive = false }
+compileOnly("ru.privatenull:pnlibrary-bukkit-api:2.0.0-beta.6")
 ```
 
-API нельзя встраивать через `implementation`, Shadow или relocation: его предоставляет установленная pnLibrary.
+Для Bukkit достаточно объявить `pnlibrary-bukkit-api`: общий API подтянется как
+транзитивная зависимость. `pnlibrary-core`, `pnlibrary-runtime-spi` и платформенные runtime
+модули не подключаются к пользовательскому плагину. API нельзя встраивать через
+`implementation`, Shadow или relocation: его предоставляет установленная pnLibrary.
 
 Bukkit/Paper, `plugin.yml`:
 
@@ -120,20 +126,38 @@ class PnMarketPlugin
 
 ## Получение pnLibrary
 
-Bukkit:
-
-```kotlin
-val pn = server.servicesManager.load(PnLibrary::class.java)
-    ?: error("pnLibrary не загрузилась")
-```
-
-BungeeCord и Velocity:
+Bukkit, BungeeCord и Velocity:
 
 ```kotlin
 val pn = PnLibraryProvider.get()
 ```
 
 Для необязательной интеграции доступен `PnLibraryProvider.getOrNull()`.
+
+## Собственный ServiceManager
+
+`pnLibrary` не использует сервис-менеджеры Bukkit, BungeeCord или Velocity.
+Общий реестр одинаково работает на любой платформе. Контракт сервиса находится
+в API плагина, а реализация остаётся внутри самого плагина:
+
+```kotlin
+interface EconomyService {
+    fun balance(userId: UUID): BigDecimal
+}
+
+// Публикация от имени уже зарегистрированного плагина.
+val registration = context.services.publish<EconomyService>(economyService, priority = 100)
+
+// Получение из любого плагина в этом процессе.
+val economy = pn.services.require<EconomyService>()
+val optionalEconomy = pn.services.get<EconomyService>()
+```
+
+Приоритет — любое `Int`; выбирается провайдер с наибольшим значением. Один
+`PluginId` не может дважды опубликовать один контракт, поэтому случайная
+дубликация обнаруживается сразу. Разные плагины могут предложить реализации
+одного контракта. `registration.close()` удаляет одну реализацию, а
+`context.close()` автоматически удаляет все сервисы владельца.
 
 ## Глобальная регистрация плагина
 
@@ -445,26 +469,35 @@ val anvil = Menus.anvil("Название клана")
 удаляются из памяти. Обработчики представлены SAM-интерфейсами, поэтому Kotlin
 лямбды не создают зависимости от конкретного экземпляра Kotlin runtime.
 
-## Версия Minecraft
+## Сервер и версия Minecraft
 
-В общем API-модуле есть единый `MinecraftVersion` со всеми известными версиями от
-1.8 до 26.2. Он читает нативный `getMinecraftVersion()` новых ядер, а на старых
-использует `Bukkit.getBukkitVersion()`. Незнакомый будущий релиз безопасно
-возвращает `UNKNOWN`, при этом исходная строка доступна через `rawCurrent()`.
+Версии относятся только к игровому Bukkit-серверу, поэтому находятся в
+`pnlibrary-bukkit-api`, а не в общем API. BungeeCord и Velocity могут обслуживать
+backend-серверы разных версий и единственной Minecraft-версии не имеют.
 
 ```kotlin
-val version = BukkitMinecraftVersion.current()
+val server = PnBukkit.server()
+val version = server.minecraftVersion
 
 if (version.isAtLeast(MinecraftVersion.V1_20_5)) enableDataComponents()
 if (version.isBetween(MinecraftVersion.V1_8_8, MinecraftVersion.V1_12_2)) {
     enableLegacyInventoryAdapter()
 }
 
-logger.info("Minecraft: ${version.text}; raw=${BukkitMinecraftVersion.rawCurrent()}")
+logger.info("Ядро: ${server.name} ${server.version}")
+logger.info("Minecraft: ${version.text}; raw=${server.rawMinecraftVersion}")
 ```
 
-Те же значения кэшируются в `ServerCapabilities.minecraftVersion` и
-`ServerCapabilities.rawMinecraftVersion`.
+Можно проверять версию через готовые методы:
+
+```kotlin
+val server = PnBukkit.server()
+if (server.isMinecraftAtLeast(MinecraftVersion.V1_20_5)) enableDataComponents()
+```
+
+`server.version` содержит версию ядра, например сборку Paper, а
+`server.minecraftVersion` — сравнимую версию Minecraft. `ServerCapabilities` и
+нативный разбор остаются внутри Bukkit runtime.
 
 Полное описание сравнений, открытых и закрытых диапазонов находится в
 [docs/MINECRAFT_VERSIONS_RU.md](docs/MINECRAFT_VERSIONS_RU.md).

@@ -5,16 +5,6 @@ import org.jetbrains.kotlin.gradle.dsl.JvmTarget
 plugins {
     alias(libs.plugins.kotlin.jvm)
     `java-library`
-    `maven-publish`
-}
-
-publishing {
-    publications {
-        create<MavenPublication>("bukkit") {
-            from(components["java"])
-            artifactId = "pnlibrary-bukkit"
-        }
-    }
 }
 
 base { archivesName = "pnLibrary-bukkit" }
@@ -28,7 +18,10 @@ kotlin {
 tasks.withType<JavaCompile>().configureEach { options.release = 8 }
 
 dependencies {
-    api(project(":pnlibrary-core"))
+    implementation(project(":pnlibrary-api"))
+    implementation(project(":pnlibrary-runtime-spi"))
+    implementation(project(":pnlibrary-core"))
+    implementation(project(":pnlibrary-bukkit-api"))
     implementation(libs.kotlin.stdlib)
     implementation(project(":pnlibrary-bstats-base"))
 

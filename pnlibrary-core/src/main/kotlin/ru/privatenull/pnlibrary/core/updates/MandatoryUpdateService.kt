@@ -5,8 +5,9 @@ import ru.privatenull.pnlibrary.core.logging.PlatformLoggingService
 
 import com.google.gson.JsonParser
 import ru.privatenull.pnlibrary.api.logging.LogLevel
-import ru.privatenull.pnlibrary.api.platform.PlatformAdapter
+import ru.privatenull.pnlibrary.spi.platform.PlatformAdapter
 import ru.privatenull.pnlibrary.api.updates.UpdateChannel
+import ru.privatenull.pnlibrary.api.platform.PlatformType
 import ru.privatenull.pnlibrary.api.updates.UpdateSnapshot
 import ru.privatenull.pnlibrary.api.updates.UpdateState
 import ru.privatenull.pnlibrary.api.version.SemanticVersion
@@ -103,8 +104,11 @@ object MandatoryUpdateService {
                 ?.substringBefore(' ')?.lowercase(Locale.ROOT)
                 ?: error("В checksums.sha256 отсутствует $assetName")
             require(sha256(temp) == expected) { "SHA-256 обновления не совпадает" }
-            val distribution = platform.type.distributionArtifact
-                ?: error("Неподдерживаемая платформа обновления: ${platform.type}")
+            val distribution = when (platform.type) {
+                PlatformType.BUKKIT -> "bukkit"
+                PlatformType.BUNGEECORD -> "bungee"
+                PlatformType.VELOCITY -> "velocity"
+            }
             validateJar(temp, distribution)
             val target = updateDir.resolve(currentJar.fileName.toString())
             Files.move(temp, target, StandardCopyOption.REPLACE_EXISTING)

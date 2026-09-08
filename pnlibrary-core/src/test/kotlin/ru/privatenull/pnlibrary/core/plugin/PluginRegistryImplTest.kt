@@ -16,7 +16,7 @@ import ru.privatenull.pnlibrary.api.logging.MessageBox
 import ru.privatenull.pnlibrary.api.logging.PnLogger
 import ru.privatenull.pnlibrary.api.metrics.MetricsService
 import ru.privatenull.pnlibrary.api.metrics.PluginMetrics
-import ru.privatenull.pnlibrary.api.platform.PlatformAdapter
+import ru.privatenull.pnlibrary.spi.platform.PlatformAdapter
 import ru.privatenull.pnlibrary.api.platform.PlatformType
 import ru.privatenull.pnlibrary.api.plugin.PluginId
 import ru.privatenull.pnlibrary.api.tasks.TaskScope
@@ -24,6 +24,7 @@ import ru.privatenull.pnlibrary.api.tasks.TaskService
 import ru.privatenull.pnlibrary.api.updates.UpdateService
 import ru.privatenull.pnlibrary.core.events.EventServiceImpl
 import ru.privatenull.pnlibrary.core.testing.TestTaskService
+import ru.privatenull.pnlibrary.core.services.ServiceManagerImpl
 import java.lang.reflect.Proxy
 import java.util.function.Supplier
 
@@ -39,6 +40,7 @@ class PluginRegistryImplTest {
             platform(),
             events,
             tasks,
+            ServiceManagerImpl(),
             loggingService(),
             metrics,
             emptyProxy(DiagnosticsService::class.java),
@@ -75,6 +77,7 @@ class PluginRegistryImplTest {
             platform(),
             EventServiceImpl(TestTaskService()) { _, _, _ -> },
             tasks,
+            ServiceManagerImpl(),
             loggingService(),
             RecordingMetricsService(),
             emptyProxy(DiagnosticsService::class.java),
@@ -96,6 +99,7 @@ class PluginRegistryImplTest {
             platform(),
             EventServiceImpl(TestTaskService()) { _, _, _ -> },
             RecordingTaskService(taskScope),
+            ServiceManagerImpl(),
             loggingService(),
             RecordingMetricsService(),
             emptyProxy(DiagnosticsService::class.java),
@@ -117,6 +121,7 @@ class PluginRegistryImplTest {
             platform(),
             EventServiceImpl(TestTaskService()) { _, _, _ -> },
             RecordingTaskService(taskScope),
+            ServiceManagerImpl(),
             loggingService(),
             RecordingMetricsService(),
             emptyProxy(DiagnosticsService::class.java),
@@ -140,6 +145,7 @@ class PluginRegistryImplTest {
             platform(),
             EventServiceImpl(TestTaskService()) { _, _, _ -> },
             RecordingTaskService(taskScope),
+            ServiceManagerImpl(),
             logging,
             RecordingMetricsService(),
             emptyProxy(DiagnosticsService::class.java),

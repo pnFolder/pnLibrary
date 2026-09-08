@@ -9,7 +9,7 @@ import org.junit.jupiter.api.Test
 import ru.privatenull.pnlibrary.api.diagnostics.*
 import ru.privatenull.pnlibrary.api.logging.*
 import ru.privatenull.pnlibrary.api.metrics.*
-import ru.privatenull.pnlibrary.api.platform.*
+import ru.privatenull.pnlibrary.spi.metrics.PlatformMetricsFactory
 import ru.privatenull.pnlibrary.api.runtime.*
 import ru.privatenull.pnlibrary.api.tasks.*
 import ru.privatenull.pnlibrary.api.updates.*

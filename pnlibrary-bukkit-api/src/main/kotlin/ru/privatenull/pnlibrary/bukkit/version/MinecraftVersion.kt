@@ -1,8 +1,8 @@
-package ru.privatenull.pnlibrary.api.version.minecraft
+package ru.privatenull.pnlibrary.bukkit.version
 
 
 /**
- * Known Minecraft version that can be compared on any JVM platform.
+ * Known Minecraft game version exposed by the Bukkit-specific API.
  *
  * Comparisons use [major], [minor], and [patch], never [Enum.ordinal]. Adding
  * enum constants therefore cannot change existing ordering. [UNKNOWN] represents

@@ -1,7 +1,7 @@
 package ru.privatenull.pnlibrary.core.metrics
 
 import ru.privatenull.pnlibrary.api.metrics.MetricsService
-import ru.privatenull.pnlibrary.api.metrics.PlatformMetricsFactory
+import ru.privatenull.pnlibrary.spi.metrics.PlatformMetricsFactory
 import ru.privatenull.pnlibrary.api.metrics.PluginMetrics
 import java.util.Collections
 import java.util.IdentityHashMap

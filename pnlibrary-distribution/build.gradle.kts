@@ -91,11 +91,15 @@ tasks.named("build") {
 
 val apiJar = project(":pnlibrary-api").tasks.named<Jar>("jar")
 val apiSources = project(":pnlibrary-api").tasks.named<Jar>("sourcesJar")
+val bukkitApiJar = project(":pnlibrary-bukkit-api").tasks.named<Jar>("jar")
+val bukkitApiSources = project(":pnlibrary-bukkit-api").tasks.named<Jar>("sourcesJar")
 tasks.register<Copy>("copyDeveloperArtifacts") {
     group = "distribution"
     description = "Copies the public API binary and sources next to platform distributions"
-    dependsOn(apiJar, apiSources)
+    dependsOn(apiJar, apiSources, bukkitApiJar, bukkitApiSources)
     from(apiJar.flatMap { it.archiveFile })
     from(apiSources.flatMap { it.archiveFile })
+    from(bukkitApiJar.flatMap { it.archiveFile })
+    from(bukkitApiSources.flatMap { it.archiveFile })
     into(layout.buildDirectory.dir("libs"))
 }

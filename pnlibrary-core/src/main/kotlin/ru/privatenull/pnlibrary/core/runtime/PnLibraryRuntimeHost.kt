@@ -1,7 +1,8 @@
 package ru.privatenull.pnlibrary.core.runtime
 
-import ru.privatenull.pnlibrary.api.platform.PlatformAdapter
+import ru.privatenull.pnlibrary.spi.platform.PlatformAdapter
 import ru.privatenull.pnlibrary.api.runtime.PnLibrary
+import ru.privatenull.pnlibrary.api.platform.PlatformType
 import ru.privatenull.pnlibrary.core.updates.MandatoryUpdateService
 import java.nio.file.Path
 import java.nio.file.Paths
@@ -19,6 +20,7 @@ class PnLibraryRuntimeHost private constructor(
     /** Public runtime that may be registered in the platform service registry. */
     val library: PnLibrary,
     private val updateMonitor: AutoCloseable,
+    private val platformName: String,
 ) : AutoCloseable {
 
     private val closed = AtomicBoolean(false)
@@ -29,7 +31,7 @@ class PnLibraryRuntimeHost private constructor(
         runCatching { updateMonitor.close() }
         runCatching {
             library.logging.shutdownBox(library.owner, "pnLibrary", library.version)
-                .ok("Платформа", library.platform.summaryName())
+                .ok("Платформа", platformName)
                 .ok("Ресурсы", "задачи и регистрации освобождаются")
                 .show()
         }
@@ -63,7 +65,7 @@ class PnLibraryRuntimeHost private constructor(
                 val currentVersion = platform.ownerDetails(owner)["version"]
                     ?.takeIf { it.isNotBlank() }
                     ?: error("The platform did not expose the pnLibrary version")
-                val artifactId = platform.type.distributionArtifact
+                val artifactId = platform.type.distributionArtifact()
                 val currentJar = Paths.get(owner.javaClass.protectionDomain.codeSource.location.toURI())
                 val monitor = MandatoryUpdateService.start(
                     owner,
@@ -73,13 +75,13 @@ class PnLibraryRuntimeHost private constructor(
                     currentJar,
                     updateDirectory,
                 )
-                PnLibraryRuntimeHost(library, monitor).also {
+                PnLibraryRuntimeHost(library, monitor, platform.summaryName()).also {
                     runCatching {
-                        library.logging.box(owner, "pnLibrary", currentVersion)
+                        val box = library.logging.box(owner, "pnLibrary", currentVersion)
                             .ok("Runtime", "общие сервисы запущены")
                             .ok("Платформа", platform.summaryName())
                             .ok("Обновления", "проверка релизов запущена")
-                            .show()
+                        box.show()
                     }
                 }
             } catch (error: Throwable) {
@@ -93,3 +95,9 @@ class PnLibraryRuntimeHost private constructor(
 private fun PlatformAdapter.summaryName(): String =
     if (implementationName.equals(type.displayName, ignoreCase = true)) type.displayName
     else "${type.displayName} · $implementationName"
+
+private fun PlatformType.distributionArtifact(): String = when (this) {
+    PlatformType.BUKKIT -> "bukkit"
+    PlatformType.BUNGEECORD -> "bungee"
+    PlatformType.VELOCITY -> "velocity"
+}

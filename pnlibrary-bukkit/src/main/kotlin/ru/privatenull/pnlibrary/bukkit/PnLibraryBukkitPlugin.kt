@@ -1,17 +1,19 @@
 package ru.privatenull.pnlibrary.bukkit
 
-import org.bukkit.plugin.ServicePriority
 import org.bukkit.plugin.java.JavaPlugin
-import ru.privatenull.pnlibrary.api.diagnostics.DiagnosticsService
-import ru.privatenull.pnlibrary.api.runtime.PnLibrary
 import ru.privatenull.pnlibrary.bukkit.inventory.MenuService
 import ru.privatenull.pnlibrary.bukkit.inventory.MenuServiceImpl
+import ru.privatenull.pnlibrary.bukkit.server.BukkitEnvironment
+import ru.privatenull.pnlibrary.bukkit.server.ServerInfo
+import ru.privatenull.pnlibrary.api.plugin.PluginId
+import ru.privatenull.pnlibrary.api.services.ServiceScope
 import ru.privatenull.pnlibrary.core.runtime.PnLibraryRuntimeHost
 
 /** Bukkit entry point that owns the pnLibrary runtime and Bukkit-only services. */
 class PnLibraryBukkitPlugin : JavaPlugin() {
     private var runtimeHost: PnLibraryRuntimeHost? = null
     private var menuService: MenuServiceImpl? = null
+    private var serviceScope: ServiceScope? = null
 
     override fun onEnable() {
         val adapter = BukkitPlatformAdapter(this)
@@ -21,7 +23,7 @@ class PnLibraryBukkitPlugin : JavaPlugin() {
             server.updateFolderFile.toPath(),
         )
         try {
-            registerBukkitServices(host.library)
+            installBukkitApi(host, adapter)
             runtimeHost = host
         } catch (error: Throwable) {
             host.close()
@@ -30,18 +32,23 @@ class PnLibraryBukkitPlugin : JavaPlugin() {
     }
 
     override fun onDisable() {
+        serviceScope?.close()
+        serviceScope = null
         menuService?.close()
         menuService = null
-        server.servicesManager.unregisterAll(this)
         runtimeHost?.close()
         runtimeHost = null
     }
 
-    private fun registerBukkitServices(library: PnLibrary) {
-        server.servicesManager.register(PnLibrary::class.java, library, this, ServicePriority.Normal)
-        server.servicesManager.register(DiagnosticsService::class.java, library.diagnostics, this, ServicePriority.Normal)
-        val menuService = MenuServiceImpl(this, library.tasks.scope(this))
-        server.servicesManager.register(MenuService::class.java, menuService, this, ServicePriority.Normal)
+    private fun installBukkitApi(host: PnLibraryRuntimeHost, adapter: BukkitPlatformAdapter) {
+        val menuService = MenuServiceImpl(this, host.library.tasks.scope(this))
+        val environment = object : BukkitEnvironment {
+            override val server: ServerInfo get() = adapter.serverInfo
+            override val menus: MenuService get() = menuService
+        }
+        val serviceScope = host.library.services.scope(PluginId.of("pnlibrary"))
+        serviceScope.publish(BukkitEnvironment::class.java, environment)
         this.menuService = menuService
+        this.serviceScope = serviceScope
     }
 }

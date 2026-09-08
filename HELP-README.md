@@ -11,11 +11,11 @@ consumer plugins
       │
       ▼
 pnlibrary-api          public contracts
-      ▲
-      │ implemented by
-pnlibrary-core         platform-independent behavior
       │
-PlatformAdapter        boundary to native server APIs
+      ▼
+pnlibrary-runtime-spi  private platform boundary
+      │
+pnlibrary-core         platform-independent behavior
   ┌───┼────┐
   ▼   ▼    ▼
 Bukkit Bungee Velocity
@@ -32,9 +32,11 @@ Remember this rule:
 
 | Module | Responsibility |
 |---|---|
-| `pnlibrary-api` | Public runtime, diagnostics, tasks, logging, metrics, updates, configuration, and version contracts |
+| `pnlibrary-api` | Public runtime, services, diagnostics, tasks, logging, metrics, updates, and configuration contracts |
+| `pnlibrary-bukkit-api` | Public Bukkit-only server environment, Minecraft version, menu contracts, and builders |
+| `pnlibrary-runtime-spi` | Private bridges used only by core and platform runtimes |
 | `pnlibrary-core` | Common runtime implementations with no Bukkit, Bungee, or Velocity imports |
-| `pnlibrary-bukkit` | Bukkit/Paper/Purpur/Leaf/Folia adapter, commands, inventory GUI, and bStats |
+| `pnlibrary-bukkit` | Private Bukkit/Paper/Purpur/Leaf/Folia adapter, commands, menu implementation, and bStats |
 | `pnlibrary-bungee` | BungeeCord/Waterfall adapter, commands, scheduler, and bStats |
 | `pnlibrary-velocity` | Velocity adapter, commands, scheduler, SLF4J, and bStats |
 | `pnlibrary-bstats-base` | Shared official bStats classes |
@@ -43,13 +45,14 @@ Remember this rule:
 Dependencies point in one direction:
 
 ```text
-distribution → platform → core → api
-                      ↘ bstats-base
+distribution → platform runtime → core → runtime-spi → api
+                    │
+                    └── bukkit-api
 ```
 
-`api` never depends on `core`. `core` never imports a native platform API. If
-shared code needs a platform operation, add the smallest useful operation to
-`PlatformAdapter` and implement it for every platform.
+`api` never depends on runtime modules. `core` never imports a native platform
+API. If shared code needs a platform operation, add the smallest useful
+operation to the private `runtime-spi` and implement it for every platform.
 
 The boundary is intentional:
 
@@ -57,7 +60,8 @@ The boundary is intentional:
   API conveniences only;
 - `core` is the common executable engine and keeps implementations `internal`
   whenever consumers do not need their concrete classes;
-- a platform module translates between the common engine and one native API;
+- `runtime-spi` contains technical bridges that consumers must not see;
+- a platform runtime translates between the common engine and one native API;
 - `distribution` assembles the engine and exactly one platform adapter.
 
 Do not create a second implementation in `api`, and do not move a native server
@@ -75,25 +79,25 @@ is the public facade:
 ```text
 PnLibrary
 ├── plugins      global PluginId → PluginContext registry
+├── services     typed PluginId-owned service providers
 ├── diagnostics  contributed state and diagnostic history
 ├── events       cross-platform application event bus
 ├── logging      native logs and message boxes
 ├── metrics      managed bStats sessions
 ├── updates      consumer plugin updates
 ├── tasks        owner-bound task scopes
-└── platform     current native adapter
 ```
 
-Consumers call `PnLibraryProvider.get()`. Bukkit also publishes the facade in
-its `ServicesManager`.
+Consumers call `PnLibraryProvider.get()` on every platform. Platform-native
+service registries are not used.
 
 [`PnLibraryImpl`](pnlibrary-core/src/main/kotlin/ru/privatenull/pnlibrary/core/runtime/PnLibraryImpl.kt)
 is the composition root: it constructs and connects all service implementations.
 Start here when you need to know where a service comes from.
 
-[`PlatformAdapter`](pnlibrary-api/src/main/kotlin/ru/privatenull/pnlibrary/api/platform/PlatformAdapter.kt)
+[`PlatformAdapter`](pnlibrary-runtime-spi/src/main/kotlin/ru/privatenull/pnlibrary/spi/platform/PlatformAdapter.kt)
 handles native logging, metadata, scheduler dispatch, diagnostics, bStats, and
-binding platform commands/listeners. `PlatformType` describes one of the three
+binding platform commands/listeners. It is SPI, not consumer API. `PlatformType` describes one of the three
 API families (`BUKKIT`, `BUNGEECORD`, or `VELOCITY`). A concrete implementation
 such as Paper, Folia, NullCordX, or a private fork is runtime metadata only.
 
@@ -211,7 +215,7 @@ Registration validates every annotated method up front. A handler accepts
 exactly one `Event` subtype and returns `Unit`/`void`. The returned
 `EventListenerRegistration` can remove all methods from that listener at once.
 
-Dispatch runs synchronously on the publishing thread for both event modes.
+Dispatch is routed to the execution context selected by the event mode.
 Priority is any integer;
 smaller values run first. `EventPriority` provides spaced presets from `LOWEST`
 (`-1000`) to `MONITOR` (`2000`), while callers may insert values such as `250`.
@@ -230,6 +234,25 @@ the owner's native logger and stores a bounded diagnostic copy. A registered
 plugin uses `context.lifecycle` for enabled/disabled boxes and
 `context.messages.box(title)` for neutral operation reports. Every box buffers
 rows and renders them together only on explicit `show()`.
+
+### Services
+
+`ServiceManager` is pnLibrary's platform-independent typed registry. Every
+publication belongs to a `PluginId`, and a `PluginContext` exposes the matching
+owner-bound `ServiceScope`.
+
+```kotlin
+interface EconomyService
+
+context.services.publish(EconomyService::class.java, economy, priority = 100)
+val selected = pn.services.require(EconomyService::class.java)
+```
+
+The provider with the highest numeric priority wins; `getAll()` returns every
+provider in priority order. One owner cannot publish the same contract twice.
+Closing a registration removes one provider, while closing the plugin context
+removes all services belonging to that owner. `ServiceManagerImpl` is the
+thread-safe core implementation; consumers only compile against its interfaces.
 
 ### Metrics
 
@@ -272,10 +295,11 @@ There are two separate systems:
 
 ### Bukkit inventory GUI
 
-`pnlibrary-bukkit/inventory` contains `MenuApi`, `MenuService`, its single shared
-listener, and `PnMenus`. Sessions use a private `InventoryHolder` UUID instead of
-the title. Owner menus close on plugin shutdown; Folia refreshes use the player's
-entity scheduler.
+`pnlibrary-bukkit-api/inventory` contains `Menu`, builders, `MenuService`, and
+`PnMenus`. `pnlibrary-bukkit/inventory` contains the private shared listener and
+service implementation. Sessions use a private `InventoryHolder` UUID instead
+of the title. Owner menus close on plugin shutdown; Folia refreshes use the
+player's entity scheduler.
 
 ## Consumer lifecycle
 
@@ -308,6 +332,9 @@ override fun onDisable() {
 
 `pn.plugins.require("pnclans")` returns the same context globally. Native plugin
 metadata, Java, and platform data are exposed by `context.metadata`.
+The Bukkit-only `PnBukkit.server()` entry point exposes the core name, core
+version, and parsed/raw Minecraft version without adding Bukkit concepts to the
+cross-platform facade.
 `context.lifecycle.enabled()` and `disabled()` return buffered message boxes;
 rows print together only after explicit `show()`. One `close()`
 releases updates, diagnostics, metrics, events, and tasks. General rule:
@@ -318,8 +345,11 @@ handle and must close it.
 
 | Change | Start here |
 |---|---|
-| Public consumer contract | `pnlibrary-api` |
+| Public cross-platform contract | `pnlibrary-api` |
+| Public Bukkit contract | `pnlibrary-bukkit-api` |
+| Platform implementation boundary | `pnlibrary-runtime-spi` |
 | Service composition | `PnLibraryImpl` |
+| Typed service contracts/registry | `ServiceManager`, `ServiceScope`, then `ServiceManagerImpl` |
 | Startup/shutdown | `PnLibraryRuntimeHost`, then native entry points |
 | Platform identity | `PlatformType` and adapters |
 | `/pndebug` flow | `DiagnosticCommandExecutor`, then platform rendering |
@@ -333,7 +363,8 @@ handle and must close it.
 | Updater | `UpdateServiceImpl`, `MandatoryUpdateService` |
 | pnLibrary config | `PnLibraryConfig`, `PnLibraryConfigLoader` |
 | Consumer code-first config | `ManagedConfig`, `CodeFirstYaml`, `YamlDefaultsMerger` |
-| Bukkit GUI | `pnlibrary-bukkit/inventory` |
+| Bukkit GUI contract | `pnlibrary-bukkit-api/inventory` |
+| Bukkit GUI execution | `pnlibrary-bukkit/inventory` |
 | Final JAR contents | `pnlibrary-distribution/build.gradle.kts` |
 
 ## Fast reading order
@@ -341,8 +372,8 @@ handle and must close it.
 Read these files, in order:
 
 1. `PnLibrary.kt`
-2. `PlatformAdapter.kt` and `PlatformType.kt`
-3. `PnLibraryRuntimeHost.kt`
+2. `PlatformType.kt`; for Bukkit code, `BukkitEnvironment.kt` and `ServerInfo.kt`
+3. `PlatformAdapter.kt` in `pnlibrary-runtime-spi`
 4. `PnLibraryBootstrap.kt`
 5. `PnLibraryImpl.kt`
 6. One native entry point and its adapter

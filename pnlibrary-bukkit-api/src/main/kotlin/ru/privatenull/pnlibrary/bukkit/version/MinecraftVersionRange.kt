@@ -1,4 +1,4 @@
-package ru.privatenull.pnlibrary.api.version.minecraft
+package ru.privatenull.pnlibrary.bukkit.version
 
 /**
  * Minecraft version range with configurable boundaries.

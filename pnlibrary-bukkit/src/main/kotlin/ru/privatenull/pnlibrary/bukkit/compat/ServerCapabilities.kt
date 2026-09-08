@@ -1,6 +1,6 @@
 package ru.privatenull.pnlibrary.bukkit.compat
 
-import ru.privatenull.pnlibrary.api.version.minecraft.MinecraftVersion
+import ru.privatenull.pnlibrary.bukkit.version.MinecraftVersion
 
 import org.bukkit.Bukkit
 

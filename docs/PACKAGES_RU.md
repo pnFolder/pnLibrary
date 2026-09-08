@@ -1,4 +1,4 @@
-# Структура pnLibrary и переход на beta.4
+# Структура pnLibrary
 
 Пакеты соответствуют папкам исходников. Общие возможности не требуют Bukkit, BungeeCord или Velocity API.
 
@@ -7,20 +7,22 @@
 | `pnlibrary-api` / `api.runtime` | PnLibrary, провайдер и настройки runtime |
 | `api.integration` | Общий конструктор интеграции плагина |
 | `api.diagnostics` | Контейнеры, конфигурации и регистрация диагностики |
-| `api.logging`, `api.metrics`, `api.tasks`, `api.updates` | Контракты соответствующих сервисов |
-| `api.platform` | Контракт платформенного адаптера |
+| `api.logging`, `api.metrics`, `api.tasks`, `api.updates`, `api.services` | Контракты соответствующих сервисов |
+| `api.platform` | Публичный тип семейства платформы без исполнительного адаптера |
 | `api.version` | Семантические версии плагинов и диапазоны |
-| `api.version.minecraft` | Enum MinecraftVersion, разбор строк, сравнение и диапазоны |
+| `pnlibrary-bukkit-api` / `bukkit.version` | MinecraftVersion, сравнение и диапазоны только для игровых серверов |
 | `api.config` | ManagedConfig, ConfigGroup, кодек и валидация |
 | `pnlibrary-core` / `core.config.yaml` | CodeFirstYaml и слияние новых ключей YAML |
+| `pnlibrary-runtime-spi` / `spi.platform` | Закрытая граница core и платформенных runtime |
+| `pnlibrary-bukkit-api` / `bukkit.inventory` | Публичный Bukkit API меню |
 | `core.runtime`, `core.tasks`, `core.logging`, `core.metrics`, `core.updates` | Реализации общих сервисов |
 | `core.diagnostics`, `core.security`, `core.upload` | Сбор, шифрование и загрузка отчётов |
 | `pnlibrary-bukkit` / `bukkit.compat` | Определение текущей версии Bukkit и его возможностей |
 
-## Сравнение версий на любой платформе
+## Версии игрового Bukkit-сервера
 
 ```kotlin
-import ru.privatenull.pnlibrary.api.version.minecraft.MinecraftVersion
+import ru.privatenull.pnlibrary.bukkit.version.MinecraftVersion
 
 val version = MinecraftVersion.parse("1.21.11")
 val supported = MinecraftVersion.V1_12_2..MinecraftVersion.V26_2
@@ -30,19 +32,23 @@ if (version in supported) {
 ```
 
 ```java
-import ru.privatenull.pnlibrary.api.version.minecraft.MinecraftVersion;
+import ru.privatenull.pnlibrary.bukkit.version.MinecraftVersion;
 
 MinecraftVersion version = MinecraftVersion.parse("1.21.11");
 boolean supported = version.isBetween(MinecraftVersion.V1_12_2, MinecraftVersion.V26_2);
 ```
 
-Bukkit/Paper/Folia: текущая версия доступна через
-`ru.privatenull.pnlibrary.bukkit.compat.BukkitMinecraftVersion.current()`
-или `ServerCapabilities.minecraftVersion`.
+Bukkit/Paper/Folia: текущая версия доступна через публичный facade:
 
-У прокси нет единственной версии Minecraft-ядра: версия клиента и версия подключённого backend могут отличаться.
-Передайте строку нужной версии в общий `MinecraftVersion.parse(...)`.
-Версию самого прокси нельзя подставлять вместо версии Minecraft.
+```kotlin
+val server = PnBukkit.server()
+val minecraft = server.minecraftVersion
+val coreVersion = server.version
+```
+
+У прокси нет единственной версии Minecraft-ядра: версия клиента и версия
+подключённого backend могут отличаться. Поэтому этот API отсутствует в
+платформенных модулях BungeeCord и Velocity.
 Неизвестная enum-версия возвращает `UNKNOWN` и не попадает в диапазон.
 
 ## Конфигурации на любой платформе
@@ -53,7 +59,7 @@ Bukkit/Paper/Folia: текущая версия доступна через
 repositories { mavenLocal() }
 dependencies {
     compileOnly("ru.privatenull:pnlibrary-api:2.0.0-beta.6")
-    compileOnly("ru.privatenull:pnlibrary-core:2.0.0-beta.6") { isTransitive = false }
+    compileOnly("ru.privatenull:pnlibrary-bukkit-api:2.0.0-beta.6") // меню и версии Bukkit
 }
 ```
 

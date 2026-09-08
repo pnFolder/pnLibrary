@@ -1,7 +1,7 @@
 package ru.privatenull.pnlibrary.core.logging
 
 import ru.privatenull.pnlibrary.api.logging.LogLevel
-import ru.privatenull.pnlibrary.api.platform.PlatformAdapter
+import ru.privatenull.pnlibrary.spi.platform.PlatformAdapter
 import ru.privatenull.pnlibrary.core.diagnostics.DiagnosticRedactor
 import java.time.Instant
 import java.util.ArrayDeque

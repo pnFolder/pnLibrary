@@ -2,7 +2,7 @@ package ru.privatenull.pnlibrary.bukkit
 
 import org.bstats.bukkit.Metrics
 import org.bukkit.plugin.Plugin
-import ru.privatenull.pnlibrary.api.metrics.PlatformMetricsFactory
+import ru.privatenull.pnlibrary.spi.metrics.PlatformMetricsFactory
 import ru.privatenull.pnlibrary.api.metrics.PluginMetrics
 import ru.privatenull.pnlibrary.core.metrics.BStatsMetricsSession
 
