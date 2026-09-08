@@ -1,6 +1,7 @@
 package ru.privatenull.pnlibrary.api.events
 
 import ru.privatenull.pnlibrary.api.plugin.PluginId
+import java.util.concurrent.CompletionStage
 import java.util.function.Consumer
 
 /**
@@ -8,7 +9,8 @@ import java.util.function.Consumer
  *
  * Use [scope] once per [PluginId] and retain the returned handle. Event
  * classes and listeners depend only on `pnlibrary-api`, so the same code runs on
- * Bukkit, BungeeCord, and Velocity.
+ * Bukkit, BungeeCord, and Velocity. Synchronous and asynchronous event modes
+ * are explicit and cannot be invoked through the wrong publish method.
  */
 interface EventService : AutoCloseable {
     /** Returns the existing plugin scope or creates it atomically. */
@@ -34,8 +36,11 @@ interface EventService : AutoCloseable {
         listener: Consumer<E>,
     ): EventSubscription = scope(pluginId).subscribe(eventType, priority, ignoreCancelled, listener)
 
-    /** Publishes [event] synchronously on the calling thread. */
+    /** Publishes a non-asynchronous [event] inline on the calling thread. */
     fun publish(event: Event): EventDispatchResult
+
+    /** Publishes an asynchronous [event] on the event executor. */
+    fun publishAsync(event: Event): CompletionStage<EventDispatchResult>
 
     /** Removes and closes the scope belonging to [pluginId]. */
     fun unregisterAll(pluginId: PluginId)

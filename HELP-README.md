@@ -176,8 +176,13 @@ val events = pn.plugins.require("pnclans").events
 events.subscribe<ClanCreatedEvent> { event ->
     logger.info("Created clan ${event.clanId}")
 }
-events.publish(ClanCreatedEvent("knights"))
+val result = ClanCreatedEvent("knights").call()
 ```
+
+`Event` exposes `eventName`, `isAsynchronous`, `call()`, `callEvent()`,
+`callAsync()`, and `callEventAsync()`. Async events declare
+`Event(isAsynchronous = true)` and run on a bounded pnLibrary event executor.
+Sync and async invocation methods cannot be mixed.
 
 A cancellable event composes both contracts instead of using a separate event
 subclass:
@@ -203,7 +208,9 @@ Registration validates every annotated method up front. A handler accepts
 exactly one `Event` subtype and returns `Unit`/`void`. The returned
 `EventListenerRegistration` can remove all methods from that listener at once.
 
-Dispatch is synchronous on the publishing thread. Priority is any integer;
+Normal dispatch is synchronous on the publishing thread. Async dispatch uses a
+bounded event executor and returns `CompletionStage<EventDispatchResult>`.
+Priority is any integer;
 smaller values run first. `EventPriority` provides spaced presets from `LOWEST`
 (`-1000`) to `MONITOR` (`2000`), while callers may insert values such as `250`.
 Equal priorities retain registration order, listener failures are isolated and
@@ -211,6 +218,8 @@ logged, and `ignoreCancelled` has identical behavior everywhere.
 Closing the scope removes all of its subscriptions. Native Bukkit, BungeeCord,
 or Velocity events remain inside adapters; shared plugins expose their own
 domain events through this bus.
+There is no per-event `HandlerList`: the central thread-safe bus already owns
+registrations and plugin scopes own their lifecycle.
 
 ### Logging
 

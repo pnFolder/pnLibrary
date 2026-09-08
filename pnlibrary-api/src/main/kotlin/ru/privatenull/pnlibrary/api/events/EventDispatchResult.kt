@@ -1,6 +1,6 @@
 package ru.privatenull.pnlibrary.api.events
 
-/** Result of one synchronous event dispatch. */
+/** Result of one completed synchronous or asynchronous event dispatch. */
 data class EventDispatchResult(
     /** Number of listeners invoked successfully. */
     val delivered: Int,

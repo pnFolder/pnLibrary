@@ -1,6 +1,7 @@
 package ru.privatenull.pnlibrary.core.events
 
 import org.junit.jupiter.api.Assertions.assertEquals
+import org.junit.jupiter.api.Assertions.assertFalse
 import org.junit.jupiter.api.Assertions.assertSame
 import org.junit.jupiter.api.Assertions.assertThrows
 import org.junit.jupiter.api.Assertions.assertTrue
@@ -12,8 +13,17 @@ import ru.privatenull.pnlibrary.api.events.EventPriority
 import ru.privatenull.pnlibrary.api.events.Listener
 import ru.privatenull.pnlibrary.api.plugin.PluginId
 import java.util.function.Consumer
+import java.util.concurrent.TimeUnit
 
 class EventServiceImplTest {
+    @Test
+    fun `event exposes a friendly name and synchronous mode by default`() {
+        val event = TestEvent()
+
+        assertEquals("TestEvent", event.eventName)
+        assertFalse(event.isAsynchronous)
+    }
+
     @Test
     fun `listeners run by priority and registration order`() {
         val calls = mutableListOf<String>()
@@ -148,7 +158,29 @@ class EventServiceImplTest {
         assertThrows(IllegalStateException::class.java) { events.publish(TestEvent()) }
     }
 
+    @Test
+    fun `asynchronous events run on the dedicated executor`() {
+        val callingThread = Thread.currentThread().name
+        var listenerThread = callingThread
+        EventServiceImpl { _, _, _ -> }.use { events ->
+            events.scope(PluginId.of("test"))
+                .subscribe(AsyncEvent::class.java, Consumer { listenerThread = Thread.currentThread().name })
+
+            val result = events.publishAsync(AsyncEvent())
+                .toCompletableFuture()
+                .get(3, TimeUnit.SECONDS)
+
+            assertEquals(1, result.delivered)
+            assertTrue(listenerThread.startsWith("pnLibrary-events-"))
+            assertFalse(listenerThread == callingThread)
+            assertThrows(IllegalArgumentException::class.java) { events.publish(AsyncEvent()) }
+            assertThrows(IllegalArgumentException::class.java) { events.publishAsync(TestEvent()) }
+        }
+    }
+
     private open class TestEvent : Event()
+
+    private class AsyncEvent : Event(isAsynchronous = true)
 
     private class CancelEvent : Event(), Cancellable {
         override var isCancelled: Boolean = false

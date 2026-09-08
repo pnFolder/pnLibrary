@@ -346,8 +346,27 @@ events.subscribe<ClanCreatedEvent>(priority = 250) { event ->
     audit.save(event)
 }
 
-events.publish(ClanCreatedEvent("knights"))
+val result = ClanCreatedEvent("knights").call()
 ```
+
+`event.call()` возвращает `EventDispatchResult`, а `event.callEvent()` — простой
+`Boolean`: `false`, если событие реализует `Cancellable` и было отменено.
+Имя доступно через `event.eventName` и по умолчанию равно имени класса.
+
+Асинхронность объявляется самим событием и действительно переносит dispatch на
+ограниченный executor pnLibrary:
+
+```kotlin
+data class ClanCacheLoadedEvent(val clans: Int) : Event(isAsynchronous = true)
+
+ClanCacheLoadedEvent(loadedClans).callAsync().thenAccept { result ->
+    logger.info("Delivered asynchronously: ${result.delivered}")
+}
+```
+
+Для async-события используется только `callAsync()`/`publishAsync()`, для
+обычного — `call()`/`publish()`. Это не разрешает обращаться из async-listener к
+Bukkit/Velocity API, которое требует platform thread.
 
 Для привычного Bukkit/Bungee/Velocity-подобного стиля можно зарегистрировать
 класс с аннотированными методами:
@@ -367,12 +386,14 @@ val registration = events.register(ClanListener())
 сигнатура отклоняется сразу при регистрации. Закрытие `registration` снимает все
 методы этого listener’а; закрытие `events` снимает вообще все подписки владельца.
 
-Обработка синхронная и выполняется в вызывающем потоке. Меньший числовой
+Обычная обработка синхронная и выполняется в вызывающем потоке. Меньший числовой
 приоритет запускается раньше: доступны готовые значения `LOWEST = -1000`,
 `NORMAL = 0`, `HIGH = 500`, но можно передать любое целое число. При одинаковом
 значении сохраняется порядок регистрации. Отменяемое событие дополнительно
 реализует `Cancellable`; изоляция ошибок и обработка отмены одинаковы на всех
 платформах.
+`HandlerList` событиям не нужен: подписки централизованно и потокобезопасно
+хранятся в `EventServiceImpl`, а закрываются через plugin scope.
 `events.close()` снимает сразу все подписки плагина. Нативные игровые события
 адаптируются на границе платформенного модуля только там, где это действительно
 нужно; прикладные события остаются полностью независимыми от сервера.

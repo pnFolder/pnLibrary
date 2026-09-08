@@ -1,8 +1,8 @@
 package ru.privatenull.pnlibrary.core.events
 
 import ru.privatenull.pnlibrary.api.events.Cancellable
-import ru.privatenull.pnlibrary.api.events.EventDispatchResult
 import ru.privatenull.pnlibrary.api.events.Event
+import ru.privatenull.pnlibrary.api.events.EventDispatchResult
 import ru.privatenull.pnlibrary.api.events.EventHandler
 import ru.privatenull.pnlibrary.api.events.EventListenerRegistration
 import ru.privatenull.pnlibrary.api.events.EventScope
@@ -13,7 +13,10 @@ import ru.privatenull.pnlibrary.api.plugin.PluginId
 import java.lang.reflect.InvocationTargetException
 import java.lang.reflect.Method
 import java.lang.reflect.Modifier
+import java.util.concurrent.CompletableFuture
+import java.util.concurrent.CompletionStage
 import java.util.concurrent.CopyOnWriteArrayList
+import java.util.concurrent.Executors
 import java.util.concurrent.atomic.AtomicBoolean
 import java.util.concurrent.atomic.AtomicLong
 import java.util.function.Consumer
@@ -26,6 +29,12 @@ internal class EventServiceImpl(
     private val scopes = HashMap<PluginId, Scope>()
     private val subscriptions = CopyOnWriteArrayList<Subscription<out Event>>()
     private val sequence = AtomicLong()
+    private val asyncThreadSequence = AtomicLong()
+    private val asyncExecutor = Executors.newFixedThreadPool(
+        Runtime.getRuntime().availableProcessors().coerceIn(2, 8),
+    ) { task ->
+        Thread(task, "pnLibrary-events-${asyncThreadSequence.incrementAndGet()}").apply { isDaemon = true }
+    }
     private val closed = AtomicBoolean(false)
 
     override fun scope(pluginId: PluginId): EventScope {
@@ -36,6 +45,21 @@ internal class EventServiceImpl(
     }
 
     override fun publish(event: Event): EventDispatchResult {
+        require(!event.isAsynchronous) {
+            "Asynchronous event ${event.eventName} must use publishAsync()"
+        }
+        return dispatch(event)
+    }
+
+    override fun publishAsync(event: Event): CompletionStage<EventDispatchResult> {
+        require(event.isAsynchronous) {
+            "Synchronous event ${event.eventName} must use publish()"
+        }
+        check(!closed.get()) { "EventService is closed" }
+        return CompletableFuture.supplyAsync({ dispatch(event) }, asyncExecutor)
+    }
+
+    private fun dispatch(event: Event): EventDispatchResult {
         check(!closed.get()) { "EventService is closed" }
         var delivered = 0
         var skipped = 0
@@ -82,6 +106,7 @@ internal class EventServiceImpl(
         val current = synchronized(scopes) { scopes.values.toList().also { scopes.clear() } }
         current.forEach { it.closeInternal() }
         subscriptions.clear()
+        asyncExecutor.shutdownNow()
     }
 
     private inner class Scope(override val pluginId: PluginId) : EventScope {
@@ -130,6 +155,9 @@ internal class EventServiceImpl(
         }
 
         override fun publish(event: Event): EventDispatchResult = this@EventServiceImpl.publish(event)
+
+        override fun publishAsync(event: Event): CompletionStage<EventDispatchResult> =
+            this@EventServiceImpl.publishAsync(event)
 
         override fun close() {
             closeInternal()
