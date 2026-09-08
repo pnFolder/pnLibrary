@@ -3,7 +3,7 @@
 ## 2.0.0-beta.6
 
 - Added the global `PluginId` / `PluginRegistry` / `PluginContext` integration model and runtime metrics control.
-- Added automatic native metadata, symmetric plugin lifecycle reports, and inline updater configuration.
+- Added automatic native metadata, explicit buffered plugin lifecycle reports, and inline updater configuration.
 - Added a synchronous, plugin-ID-scoped, platform-independent event bus with extensible numeric priorities and annotated listeners.
 - Reduced platform identity to the three supported `PlatformType` API families; fork names are runtime metadata.
 - Added a high-level `PnLibraryRuntimeHost` shared by all native entry points.

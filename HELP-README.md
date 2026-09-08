@@ -283,22 +283,20 @@ override fun onEnable() {
                 .automaticDownload(true)
                 .artifact("(?i)^pnClans-.*\\.jar$", minimumJava = 17)
         }
-        it.lifecycle { lifecycle ->
-            lifecycle.enabled { it.ok("Storage", "ready") }
-            lifecycle.disabled { it.ok("Storage", "saved") }
-        }
     }
+    context.lifecycle.enabled().ok("Storage", "ready").show()
 }
 
 override fun onDisable() {
     context.close()
+    context.lifecycle.disabled().ok("Storage", "saved").show()
 }
 ```
 
 `pn.plugins.require("pnclans")` returns the same context globally. Native plugin
-metadata, Java, and platform data are exposed by `context.metadata`. Automatic
-enabled/disabled summaries combine standard service rows with custom
-`lifecycle` rows. `lifecycleMessages(false)` disables them. One `close()`
+metadata, Java, and platform data are exposed by `context.metadata`.
+`context.lifecycle.enabled()` and `disabled()` return buffered message boxes;
+rows print together only after explicit `show()`. One `close()`
 releases updates, diagnostics, metrics, events, and tasks. General rule:
 the code that calls `open`, `register`, `scope`, or `start` owns the returned
 handle and must close it.

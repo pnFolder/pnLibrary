@@ -158,20 +158,20 @@ override fun onEnable() {
                 .artifact("(?i)^pnMarket-.*\\.jar$", minimumJava = 17)
         }
 
-        it.lifecycle { lifecycle ->
-            lifecycle.enabled { report ->
-                report.ok("Configuration", "loaded")
-                report.ok("Database", "${database.type}, lots: ${auction.activeLots}")
-            }
-            lifecycle.disabled { report ->
-                report.ok("Storage", "saved lots: ${auction.savedLots}")
-            }
-        }
     }
+
+    context.lifecycle.enabled()
+        .ok("Configuration", "loaded")
+        .ok("Database", "${database.type}, lots: ${auction.activeLots}")
+        .show()
 }
 
 override fun onDisable() {
+    val savedLots = auction.saveAll()
     context.close()
+    context.lifecycle.disabled()
+        .ok("Storage", "saved lots: $savedLots")
+        .show()
 }
 ```
 
@@ -189,11 +189,11 @@ context.metadata.platformImplementation
 context.updates?.snapshot
 ```
 
-Блок включения показывается автоматически после регистрации, а блок выключения
-— внутри `context.close()`. Библиотека сама добавляет ID, версию, платформу,
-Java, metrics, updater, diagnostics и listeners. Callback `disabled` выполняется
-только во время закрытия, поэтому видит итоговые счётчики. Автоматику можно
-отключить через `it.lifecycleMessages(false)`.
+`enabled()` и `disabled()` создают буферизованный MBox: вызовы `ok`, `warn`,
+`skip` и `fail` ничего не печатают. Весь блок выводится одним вызовом `show()`.
+Библиотека заранее добавляет ID, версию, платформу, Java, metrics, updater,
+diagnostics и listeners; плагин дописывает только свои строки и сам выбирает
+правильный момент показа.
 
 Явный ID остаётся override для нестандартных случаев:
 
@@ -207,13 +207,9 @@ pn.plugins.register(this, "custom-id") { plugin ->
 }
 ```
 
-Если сообщения нужно показывать вручную после собственных стадий загрузки и
-сохранения, автоматический режим отключается, но native owner больше передавать
-не требуется:
+Native owner повторно передавать не требуется:
 
 ```kotlin
-context = pn.plugins.register(this) { it.lifecycleMessages(false) }
-
 context.lifecycle.enabled()
     .ok("Configuration", "7 files loaded")
     .ok("Database", "connected")

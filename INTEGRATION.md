@@ -30,28 +30,28 @@ override fun onEnable() {
                 .automaticDownload(true)
                 .artifact("(?i)^pnMarket-.*\\.jar$", minimumJava = 17)
         }
-        it.lifecycle { lifecycle ->
-            lifecycle.enabled { report ->
-                report.ok("Configuration", "loaded")
-                if (database.isConnected) report.ok("Database", "connected")
-                else report.warn("Database", "offline")
-            }
-            lifecycle.disabled { report ->
-                report.ok("Storage", "saved lots: ${auction.savedLots}")
-            }
-        }
     }
+
+    val message = context.lifecycle.enabled()
+        .ok("Configuration", "loaded")
+    if (database.isConnected) message.ok("Database", "connected")
+    else message.warn("Database", "offline")
+    message.show()
 }
 
 override fun onDisable() {
+    val savedLots = auction.saveAll()
     context.close()
+    context.lifecycle.disabled()
+        .ok("Storage", "saved lots: $savedLots")
+        .show()
 }
 ```
 
-После регистрации автоматически показывается MBox включения; `context.close()`
-закрывает ресурсы и показывает MBox выключения. Стандартные строки ID, версии,
-платформы, Java и сервисов библиотека добавляет сама. Кастомные строки задаются
-через `lifecycle`; callback `disabled` вычисляется только при закрытии.
+`enabled()` и `disabled()` возвращают готовый MBox со стандартными строками ID,
+версии, платформы, Java и сервисов. Дополнительные строки накапливаются в памяти,
+а весь блок печатается только после явного `show()`. Момент показа контролирует
+плагин. `context.close()` только освобождает принадлежащие контексту ресурсы.
 
 Повторная регистрация занятого ID отклоняется. Регистр не зависит от регистра
 букв и пробелов по краям: `pn.plugins.require("PNMARKET")` вернёт тот же контекст.

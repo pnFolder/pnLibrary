@@ -9,14 +9,8 @@ import java.util.function.Consumer
 
 /** Declarative setup used by [PluginRegistry.register]. */
 interface PluginBuilder {
-    /** Enables or disables automatic startup and shutdown summaries. Enabled by default. */
-    fun lifecycleMessages(enabled: Boolean): PluginBuilder
-
     /** Overrides native metadata only when a plugin needs custom display values. */
     fun metadata(configure: Consumer<PluginMetadataBuilder>): PluginBuilder
-
-    /** Adds plugin-specific rows to the automatic enabled and disabled messages. */
-    fun lifecycle(configure: Consumer<PluginLifecycleBuilder>): PluginBuilder
 
     fun metrics(projectId: Int): PluginBuilder = metrics(projectId, true, Consumer { })
     fun metrics(projectId: Int, enabled: Boolean): PluginBuilder =

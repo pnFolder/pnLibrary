@@ -131,13 +131,10 @@ class PluginRegistryImplTest {
     }
 
     @Test
-    fun `native registration resolves metadata and prints lifecycle summaries`() {
+    fun `native registration resolves metadata and lifecycle messages are explicit`() {
         val owner = Any()
         val taskScope = RecordingTaskScope(owner)
         val logging = RecordingLoggingService()
-        var enabledCallbackCount = 0
-        var savedCount = 0
-        var disabledSavedCount = -1
         val registry = PluginRegistryImpl(
             platform(),
             EventServiceImpl { _, _, _ -> },
@@ -152,16 +149,6 @@ class PluginRegistryImplTest {
             plugin.metadata { metadata ->
                 metadata.name("Custom Example").version("2.0.0").authors("Library Team")
             }
-            plugin.lifecycle { lifecycle ->
-                lifecycle.enabled { report ->
-                    enabledCallbackCount++
-                    report.ok("Configuration", "loaded")
-                }
-                lifecycle.disabled { report ->
-                    disabledSavedCount = savedCount
-                    report.ok("Storage", "saved: $savedCount")
-                }
-            }
         }
 
         assertEquals("example", context.id.value)
@@ -170,14 +157,19 @@ class PluginRegistryImplTest {
         assertEquals("Library Team", context.metadata.authors)
         assertEquals(PlatformType.BUKKIT, context.metadata.platform)
         assertEquals("Paper", context.metadata.platformImplementation)
-        assertEquals(1, logging.startupMessages)
-        assertEquals(1, enabledCallbackCount)
+        assertEquals(0, logging.startupMessages)
 
-        savedCount = 7
+        context.lifecycle.enabled().ok("Configuration", "loaded").show()
+
+        assertEquals(1, logging.startupMessages)
+
         context.close()
 
+        assertEquals(0, logging.shutdownMessages)
+
+        context.lifecycle.disabled().ok("Storage", "saved: 7").show()
+
         assertEquals(1, logging.shutdownMessages)
-        assertEquals(7, disabledSavedCount)
     }
 
     private class RecordingListener : Listener {
