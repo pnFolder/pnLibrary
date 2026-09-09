@@ -8,6 +8,8 @@ import ru.privatenull.pnlibrary.api.diagnostics.DiagnosticsService
 import java.time.Instant
 import java.io.PrintWriter
 import java.io.StringWriter
+import java.nio.charset.StandardCharsets
+import java.security.MessageDigest
 import java.util.ArrayDeque
 import java.util.Locale
 import java.util.concurrent.ConcurrentHashMap
@@ -89,17 +91,46 @@ class DiagnosticsRegistry(eventLimit: Int = DEFAULT_EVENT_LIMIT) : DiagnosticsSe
         component: String, code: String, message: String,
         error: Throwable?, fields: Map<String, Any?>,
     ) {
-        val event = linkedMapOf<String, Any?>(
-            "timeUtc"   to Instant.now().toString(),
-            "level"     to level.name,
-            "component" to bounded(component, 96),
-            "code"      to bounded(code, 96),
-            "message"   to bounded(message, 4096),
-            "fields"    to safeMap(fields),
-        )
-        if (error != null) event["exception"] = formatException(error)
+        val now = Instant.now().toString()
+        val safeComponent = bounded(component, 96)
+        val safeCode = bounded(code, 96)
+        val safeMessage = bounded(message, 4096)
+        val safeFields = safeMap(fields)
+        val incidentId = incidentId(plugin, level, safeComponent, safeCode, safeMessage, error)
         val st = stateOf(plugin)
         synchronized(st.events) {
+            val existing = st.events.firstOrNull { it["incidentId"] == incidentId }
+            if (existing != null) {
+                val count = (existing["occurrenceCount"] as? Number)?.toLong() ?: 1L
+                existing["occurrenceCount"] = count + 1
+                existing["lastSeenUtc"] = now
+                @Suppress("UNCHECKED_CAST")
+                val timeline = existing["occurrenceTimeline"] as MutableList<Map<String, Any?>>
+                if (timeline.size < MAX_EVENT_TIMELINE) {
+                    timeline += occurrence(now, safeFields)
+                } else {
+                    existing["omittedOccurrences"] =
+                        ((existing["omittedOccurrences"] as? Number)?.toLong() ?: 0L) + 1
+                }
+                return
+            }
+
+            val event = linkedMapOf<String, Any?>(
+                "incidentId" to incidentId,
+                "timeUtc" to now,
+                "firstSeenUtc" to now,
+                "lastSeenUtc" to now,
+                "occurrenceCount" to 1L,
+                "omittedOccurrences" to 0L,
+                "level" to level.name,
+                "component" to safeComponent,
+                "code" to safeCode,
+                "message" to safeMessage,
+                "fields" to safeFields,
+                "origin" to error?.let(::exceptionOrigin),
+                "occurrenceTimeline" to mutableListOf(occurrence(now, safeFields)),
+            )
+            if (error != null) event["exception"] = formatException(error)
             st.events.addLast(event)
             while (st.events.size > limit) st.events.removeFirst()
         }
@@ -239,6 +270,66 @@ class DiagnosticsRegistry(eventLimit: Int = DEFAULT_EVENT_LIMIT) : DiagnosticsSe
             "\n[TRUNCATED: throwable exceeded the hard $MAX_EXCEPTION_CHARS-character safety limit]"
     }
 
+    private fun occurrence(timeUtc: String, fields: Map<String, Any?>): Map<String, Any?> = linkedMapOf(
+        "timeUtc" to timeUtc,
+        "thread" to Thread.currentThread().name,
+        "fields" to fields,
+    )
+
+    private fun incidentId(
+        plugin: String,
+        level: DiagnosticLevel,
+        component: String,
+        code: String,
+        message: String,
+        error: Throwable?,
+    ): String {
+        val significant = unwrap(error)
+        val frame = significant?.stackTrace?.firstOrNull(::isApplicationFrame)
+            ?: significant?.stackTrace?.firstOrNull()
+        val source = listOf(
+            key(plugin), level.name, component, code, normalize(message),
+            significant?.javaClass?.name.orEmpty(), normalize(significant?.message.orEmpty()),
+            frame?.className.orEmpty(), frame?.methodName.orEmpty(),
+        ).joinToString("\u0000")
+        return MessageDigest.getInstance("SHA-256")
+            .digest(source.toByteArray(StandardCharsets.UTF_8))
+            .take(8)
+            .joinToString("") { "%02x".format(it) }
+    }
+
+    private fun exceptionOrigin(error: Throwable): Map<String, Any?>? {
+        val significant = unwrap(error) ?: error
+        val frame = significant.stackTrace.firstOrNull(::isApplicationFrame)
+            ?: significant.stackTrace.firstOrNull()
+            ?: return null
+        return linkedMapOf(
+            "class" to frame.className,
+            "method" to frame.methodName,
+            "file" to frame.fileName,
+            "line" to frame.lineNumber.takeIf { it >= 0 },
+        )
+    }
+
+    private fun unwrap(error: Throwable?): Throwable? {
+        var current = error ?: return null
+        while ((current is java.util.concurrent.CompletionException ||
+                current is java.util.concurrent.ExecutionException) && current.cause != null) {
+            current = current.cause!!
+        }
+        return current
+    }
+
+    private fun isApplicationFrame(frame: StackTraceElement): Boolean = IGNORED_FRAME_PREFIXES.none {
+        frame.className.startsWith(it)
+    }
+
+    private fun normalize(value: String): String = value
+        .replace(UUID_PATTERN, "<uuid>")
+        .replace(LONG_NUMBER_PATTERN, "<number>")
+        .replace(WHITESPACE_PATTERN, " ")
+        .trim()
+
     private fun isSecretKey(key: String): Boolean =
         key.matches(Regex("(?i).*(?:password|passwd|pwd|secret|token|api[-_ ]?key|authorization|cookie|private[-_ ]?key|credential).*"))
 
@@ -252,12 +343,21 @@ class DiagnosticsRegistry(eventLimit: Int = DEFAULT_EVENT_LIMIT) : DiagnosticsSe
     private class PluginState {
         val contributors = ConcurrentHashMap<String, RegisteredContributor>()
         val statuses     = ConcurrentHashMap<String, Map<String, Any?>>()
-        val events       = ArrayDeque<Map<String, Any?>>()
+        val events       = ArrayDeque<LinkedHashMap<String, Any?>>()
     }
     private data class RegisteredContributor(val contributor: DiagnosticsContributor, val dataDirectory: Path?)
 
     private companion object {
         const val DEFAULT_EVENT_LIMIT = 100
         const val MAX_EXCEPTION_CHARS = 1_048_576
+        const val MAX_EVENT_TIMELINE = 100_000
+        val UUID_PATTERN = Regex("(?i)\\b[0-9a-f]{8}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{12}\\b")
+        val LONG_NUMBER_PATTERN = Regex("\\b\\d{4,}\\b")
+        val WHITESPACE_PATTERN = Regex("\\s+")
+        val IGNORED_FRAME_PREFIXES = listOf(
+            "java.", "javax.", "kotlin.", "kotlinx.", "sun.", "jdk.",
+            "org.bukkit.", "net.minecraft.", "io.papermc.", "com.destroystokyo.paper.",
+            "ru.privatenull.pnlibrary.",
+        )
     }
 }
