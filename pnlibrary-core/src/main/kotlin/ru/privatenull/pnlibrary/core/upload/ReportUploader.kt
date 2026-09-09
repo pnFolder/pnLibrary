@@ -1,6 +1,8 @@
 package ru.privatenull.pnlibrary.core.upload
 
 import java.io.IOException
+import java.nio.file.Files
+import java.nio.file.Path
 
 /** Abstraction over a remote report backend (mclo.gs, encrypted storage, …). */
 interface ReportUploader {
@@ -15,6 +17,11 @@ interface ReportUploader {
      */
     @Throws(IOException::class)
     fun upload(payload: String): UploadReceipt
+
+    /** Uploads an actual binary report file when the backend supports file storage. */
+    @Throws(IOException::class)
+    fun uploadFile(file: Path, contentType: String = "application/octet-stream"): UploadReceipt =
+        upload(Files.readString(file))
 
     /**
      * Deletes a previously uploaded report using the token stored in [receipt].

@@ -109,8 +109,11 @@ class ReportGenerator(
                 val uploadPayload = encryptedPayload ?: throw IllegalStateException(
                     "Binary plaintext archives are local-only; enable encrypted upload"
                 )
-                val multipartUploader = MultipartUploader(uploader, encryptionCodec, uploadLedger, config.deleteAfterDays)
-                uploadReceipt = multipartUploader.upload(uploadPayload)
+                uploadReceipt = if (uploader.backendId == "catbox") {
+                    uploader.uploadFile(targetFile, "application/vnd.pnlibrary.diagnostics")
+                } else {
+                    MultipartUploader(uploader, encryptionCodec, uploadLedger, config.deleteAfterDays).upload(uploadPayload)
+                }
                 uploadLedger?.record(uploadReceipt, config.deleteAfterDays)
             } catch (error: Exception) {
                 uploadError = error.message ?: error.javaClass.simpleName

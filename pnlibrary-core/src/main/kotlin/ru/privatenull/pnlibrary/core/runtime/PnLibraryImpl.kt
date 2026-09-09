@@ -22,6 +22,7 @@ import ru.privatenull.pnlibrary.core.services.ServiceManagerImpl
 import ru.privatenull.pnlibrary.core.tasks.TaskServiceImpl
 import ru.privatenull.pnlibrary.core.updates.UpdateServiceImpl
 import ru.privatenull.pnlibrary.core.upload.EncryptedReportUploader
+import ru.privatenull.pnlibrary.core.upload.CatboxUploader
 import ru.privatenull.pnlibrary.core.upload.MclogsUploader
 import ru.privatenull.pnlibrary.core.upload.ReportUploader
 import ru.privatenull.pnlibrary.core.upload.UploadLedger
@@ -176,6 +177,7 @@ class PnLibraryImpl(
     private fun initUploader(): ReportUploader? {
         if (!config.upload) return null
         return when (config.uploadMode) {
+            "encrypted-catbox" -> CatboxUploader()
             "mclogs", "encrypted-mclogs" -> MclogsUploader()
             "encrypted" -> EncryptedReportUploader(
                 endpoint = URI.create(config.uploadEndpoint),

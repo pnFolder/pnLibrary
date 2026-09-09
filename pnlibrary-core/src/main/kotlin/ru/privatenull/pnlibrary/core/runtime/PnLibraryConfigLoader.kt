@@ -100,7 +100,7 @@ object PnLibraryConfigLoader {
     private val DEFAULT_CONFIG = """
         # Diagnostics are encrypted before upload. Set upload to false for local-only reports.
         upload: true
-        upload-mode: encrypted-mclogs
+        upload-mode: encrypted-catbox
         allow-plaintext: false
         upload-endpoint: https://api.mclo.gs/1/log
         upload-public-base: https://mclo.gs/

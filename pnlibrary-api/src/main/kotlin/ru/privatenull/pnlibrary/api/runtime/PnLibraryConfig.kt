@@ -5,7 +5,7 @@ package ru.privatenull.pnlibrary.api.runtime
  */
 data class PnLibraryConfig @JvmOverloads constructor(
     val upload: Boolean = true,
-    val uploadMode: String = "encrypted-mclogs",
+    val uploadMode: String = "encrypted-catbox",
     val uploadEndpoint: String = "https://api.mclo.gs/1/log",
     val uploadPublicBase: String = "https://mclo.gs/",
     val uploadPublicKey: String = "",
@@ -23,8 +23,8 @@ data class PnLibraryConfig @JvmOverloads constructor(
     val redactValuePatterns: List<String> = emptyList(),
 ) {
     init {
-        require(uploadMode in setOf("encrypted-mclogs", "encrypted", "mclogs", "disabled")) {
-            "uploadMode must be encrypted-mclogs, encrypted, mclogs, or disabled"
+        require(uploadMode in setOf("encrypted-catbox", "encrypted-mclogs", "encrypted", "mclogs", "disabled")) {
+            "uploadMode must be encrypted-catbox, encrypted-mclogs, encrypted, mclogs, or disabled"
         }
         require(uploadMode != "mclogs" || allowPlaintext) {
             "allowPlaintext must be true when uploadMode is mclogs"
