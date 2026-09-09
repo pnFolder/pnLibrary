@@ -6,6 +6,8 @@ import ru.privatenull.pnlibrary.api.diagnostics.DiagnosticRegistration
 import ru.privatenull.pnlibrary.api.diagnostics.DiagnosticsContributor
 import ru.privatenull.pnlibrary.api.diagnostics.DiagnosticsService
 import java.time.Instant
+import java.io.PrintWriter
+import java.io.StringWriter
 import java.util.ArrayDeque
 import java.util.Locale
 import java.util.concurrent.ConcurrentHashMap
@@ -229,15 +231,12 @@ class DiagnosticsRegistry(eventLimit: Int = DEFAULT_EVENT_LIMIT) : DiagnosticsSe
     }
 
     private fun formatException(error: Throwable): String {
-        val sb = StringBuilder()
-        var ex: Throwable? = error
-        var depth = 0
-        while (ex != null && depth++ < 6) {
-            sb.append(ex.javaClass.name).append(": ").append(ex.message).append('\n')
-            ex.stackTrace.take(32).forEach { sb.append("  at ").append(it).append('\n') }
-            ex = ex.cause
-        }
-        return bounded(sb.toString(), 16_384)
+        val writer = StringWriter()
+        error.printStackTrace(PrintWriter(writer))
+        val complete = redactor.redact(writer.toString())
+        if (complete.length <= MAX_EXCEPTION_CHARS) return complete
+        return complete.take(MAX_EXCEPTION_CHARS) +
+            "\n[TRUNCATED: throwable exceeded the hard $MAX_EXCEPTION_CHARS-character safety limit]"
     }
 
     private fun isSecretKey(key: String): Boolean =
@@ -259,5 +258,6 @@ class DiagnosticsRegistry(eventLimit: Int = DEFAULT_EVENT_LIMIT) : DiagnosticsSe
 
     private companion object {
         const val DEFAULT_EVENT_LIMIT = 100
+        const val MAX_EXCEPTION_CHARS = 1_048_576
     }
 }

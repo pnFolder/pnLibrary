@@ -67,16 +67,14 @@ class PnLibraryImpl(
     private val updateService = UpdateServiceImpl(platform)
     override val updates: ru.privatenull.pnlibrary.api.updates.UpdateService get() = updateService
     private val taskService = TaskServiceImpl(platform) { taskOwner, message, error ->
-        diagnosticLogs.record(platform, taskOwner, ru.privatenull.pnlibrary.api.logging.LogLevel.ERROR, message, error)
-        platform.log(taskOwner, ru.privatenull.pnlibrary.api.logging.LogLevel.ERROR, message, error)
+        recordAndLog(taskOwner, message, error)
     }
     override val tasks: ru.privatenull.pnlibrary.api.tasks.TaskService get() = taskService
     private val serviceManager = ServiceManagerImpl()
     override val services: ru.privatenull.pnlibrary.api.services.ServiceManager get() = serviceManager
     private val eventService = EventServiceImpl(taskService) { pluginId, message, error ->
         val identifiedMessage = "[$pluginId] $message"
-        diagnosticLogs.record(platform, owner, ru.privatenull.pnlibrary.api.logging.LogLevel.ERROR, identifiedMessage, error)
-        platform.log(owner, ru.privatenull.pnlibrary.api.logging.LogLevel.ERROR, identifiedMessage, error)
+        recordAndLog(owner, identifiedMessage, error)
     }
     override val events: ru.privatenull.pnlibrary.api.events.EventService get() = eventService
     override val plugins: ru.privatenull.pnlibrary.api.plugin.PluginRegistry = PluginRegistryImpl(
@@ -127,6 +125,15 @@ class PnLibraryImpl(
             reportGenerator.generateAndSave(request)
         } finally {
             reportInProgress.set(false)
+        }
+    }
+
+    private fun recordAndLog(logOwner: Any, message: String, error: Throwable) {
+        val level = ru.privatenull.pnlibrary.api.logging.LogLevel.ERROR
+        val capture = diagnosticLogs.record(platform, logOwner, level, message, error)
+        when {
+            capture == null || capture.emitOriginal -> platform.log(logOwner, level, message, error)
+            capture.summary != null -> platform.log(logOwner, level, capture.summary, null)
         }
     }
 

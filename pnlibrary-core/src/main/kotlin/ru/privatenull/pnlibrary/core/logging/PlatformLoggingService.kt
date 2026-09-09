@@ -17,8 +17,7 @@ internal class PlatformLoggingService(
     override fun logger(owner: Any, name: String): PnLogger = object : PnLogger {
         private fun write(level: LogLevel, message: String, error: Throwable? = null) {
             val formatted = "[$name] $message"
-            diagnosticLogs?.record(platform, owner, level, formatted, error)
-            platform.log(owner, level, formatted, error)
+            writeCaptured(owner, level, formatted, error)
         }
         override fun info(message: String) = write(LogLevel.INFO, message)
         override fun success(message: String) = write(LogLevel.SUCCESS, message)
@@ -173,8 +172,7 @@ internal class PlatformLoggingService(
                 }
                 row.error?.let {
                     val message = "$title — ${row.label}"
-                    diagnosticLogs?.record(platform, owner, LogLevel.ERROR, message, it)
-                    platform.log(owner, LogLevel.ERROR, message, it)
+                    writeCaptured(owner, LogLevel.ERROR, message, it)
                 }
             }
             platform.console(owner, "")
@@ -211,6 +209,14 @@ internal class PlatformLoggingService(
             rows.any { it.status == "FAIL" } -> "x.x"
             rows.any { it.status == "WARN" } -> "o.o"
             else -> "^.^"
+        }
+    }
+
+    private fun writeCaptured(owner: Any, level: LogLevel, message: String, error: Throwable?) {
+        val capture = diagnosticLogs?.record(platform, owner, level, message, error)
+        when {
+            capture == null || capture.emitOriginal -> platform.log(owner, level, message, error)
+            capture.summary != null -> platform.log(owner, level, capture.summary, null)
         }
     }
 
