@@ -24,6 +24,37 @@ class ConfigReader(
     private val redactor = DiagnosticRedactor()
 
     data class RedactedFile(val path: String, val content: String, val error: String? = null)
+    data class ExactFile(val path: String, val content: ByteArray? = null, val error: String? = null)
+
+    /** Reads the original bytes after the same path, symlink, type and size checks. */
+    fun readExactFile(
+        configSpec: DiagnosticConfiguration,
+        rootDirectory: Path = dataFolder,
+    ): ExactFile {
+        val relative = configSpec.path
+        val root = rootDirectory.toAbsolutePath().normalize()
+        val target = root.resolve(relative).normalize()
+        if (!target.startsWith(root)) return ExactFile(relative, error = "[SECURITY: path traversal blocked]")
+        if (Files.isSymbolicLink(target)) return ExactFile(relative, error = "[SECURITY: symlink escape blocked]")
+        if (!Files.exists(target) || !Files.isRegularFile(target)) {
+            return ExactFile(relative, error = "[file not found or not a regular file]")
+        }
+        val realRoot = runCatching { root.toRealPath() }.getOrNull()
+            ?: return ExactFile(relative, error = "[SECURITY: configuration root cannot be resolved]")
+        val realTarget = runCatching { target.toRealPath() }.getOrNull()
+            ?: return ExactFile(relative, error = "[SECURITY: configuration path cannot be resolved]")
+        if (!realTarget.startsWith(realRoot)) return ExactFile(relative, error = "[SECURITY: symlink escape blocked]")
+        if (isForbiddenExtension(relative)) return ExactFile(relative, error = "[SECURITY: binary or database file extension blocked]")
+        val size = Files.size(realTarget)
+        if (size > MAX_FILE_SIZE_BYTES) {
+            return ExactFile(relative, error = "[file exceeds size limit of 1 MiB ($size bytes)]")
+        }
+        return try {
+            ExactFile(relative, content = Files.readAllBytes(realTarget))
+        } catch (error: Exception) {
+            ExactFile(relative, error = "[read failed: ${error.javaClass.simpleName}]")
+        }
+    }
 
     /** Reads, validates and redacts a configuration while preserving its original file format. */
     fun readRedactedFile(

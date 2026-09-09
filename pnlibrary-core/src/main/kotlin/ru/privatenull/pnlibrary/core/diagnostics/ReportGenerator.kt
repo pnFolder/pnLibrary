@@ -66,18 +66,21 @@ class ReportGenerator(
         if (request.configs && config.configs) {
             val declaredConfigs = diagnosticsRegistry.configurations(request.target)
             for (registered in declaredConfigs) {
-                val collected = configReader.readRedactedFile(
-                    registered.configuration,
-                    registered.dataDirectory ?: dataFolder,
-                )
-                val path = safeConfigurationPath(collected.path)
-                if (collected.error == null) {
-                    archive.text("plugins/${safePath(registered.plugin)}/configuration/$path", collected.content)
+                val root = registered.dataDirectory ?: dataFolder
+                val pluginPath = "plugins/${safePath(registered.plugin)}/configuration/"
+                if (encryptionMode) {
+                    val collected = configReader.readExactFile(registered.configuration, root)
+                    val path = safeConfigurationPath(collected.path)
+                    if (collected.error == null) {
+                        archive.bytes(pluginPath + path, requireNotNull(collected.content))
+                    } else {
+                        archive.text(pluginPath + "$path.error.txt", collected.error + "\n")
+                    }
                 } else {
-                    archive.text(
-                        "plugins/${safePath(registered.plugin)}/configuration/$path.error.txt",
-                        collected.error + "\n",
-                    )
+                    val collected = configReader.readRedactedFile(registered.configuration, root)
+                    val path = safeConfigurationPath(collected.path)
+                    if (collected.error == null) archive.text(pluginPath + path, collected.content)
+                    else archive.text(pluginPath + "$path.error.txt", collected.error + "\n")
                 }
             }
         }
