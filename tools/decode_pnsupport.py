@@ -3,6 +3,7 @@
 
 import argparse
 import gzip
+import json
 import pathlib
 import struct
 import zipfile
@@ -71,7 +72,12 @@ def decrypt_history(output: pathlib.Path, private_key) -> None:
         payload, payload_format = decrypt(history.read_bytes(), private_key)
         if payload_format != "incident-history":
             raise ValueError(f"Unexpected history payload: {history}")
-        history.with_suffix(".json").write_bytes(payload)
+        document = json.loads(payload.decode("utf-8"))
+        history.with_suffix(".json").write_text(
+            json.dumps(document, ensure_ascii=False, indent=2) + "\n",
+            encoding="utf-8",
+        )
+        history.unlink()
 
 
 def main() -> None:
@@ -89,7 +95,8 @@ def main() -> None:
         print(output.resolve())
     else:
         target = output.with_suffix(".json")
-        target.write_bytes(payload)
+        document = json.loads(payload.decode("utf-8"))
+        target.write_text(json.dumps(document, ensure_ascii=False, indent=2) + "\n", encoding="utf-8")
         print(target.resolve())
 
 

@@ -281,7 +281,7 @@ class DiagnosticsRegistry(eventLimit: Int = DEFAULT_EVENT_LIMIT) : DiagnosticsSe
     private fun formatException(error: Throwable): String {
         val writer = StringWriter()
         error.printStackTrace(PrintWriter(writer))
-        val complete = redactor.redact(writer.toString())
+        val complete = redactor.redactStackTrace(writer.toString())
         if (complete.length <= MAX_EXCEPTION_CHARS) return complete
         return complete.take(MAX_EXCEPTION_CHARS) +
             "\n[TRUNCATED: throwable exceeded the hard $MAX_EXCEPTION_CHARS-character safety limit]"

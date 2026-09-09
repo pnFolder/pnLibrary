@@ -15,6 +15,16 @@ import java.util.regex.Pattern
 internal class DiagnosticRedactor {
 
     fun redact(input: String?): String {
+        return redactCommon(input, redactPaths = true)
+    }
+
+    /** Redacts sensitive values without mistaking Java stack-frame JAR notation for a local path. */
+    fun redactStackTrace(input: String): String = input.lineSequence().joinToString("\n") { line ->
+        val trimmed = line.trimStart()
+        redactCommon(line, redactPaths = !trimmed.startsWith("at ") && !trimmed.matches(MORE_FRAMES))
+    }
+
+    private fun redactCommon(input: String?, redactPaths: Boolean): String {
         var v = CONTROL.matcher(input ?: "").replaceAll("")
         v = SECRET_LINE.matcher(v).replaceAll("[REDACTED: credential line]")
         v = URL.matcher(v).replaceAll("[REDACTED: URL]")
@@ -22,7 +32,7 @@ internal class DiagnosticRedactor {
         v = UUID_PAT.matcher(v).replaceAll("[REDACTED: UUID]")
         v = IPV4.matcher(v).replaceAll("[REDACTED: address]")
         v = IPV6.matcher(v).replaceAll("[REDACTED: address]")
-        return PATH.matcher(v).replaceAll("[REDACTED: path]")
+        return if (redactPaths) PATH.matcher(v).replaceAll("[REDACTED: path]") else v
     }
 
     companion object {
@@ -49,6 +59,7 @@ internal class DiagnosticRedactor {
         private val PATH: Pattern = Pattern.compile(
             "(?i)(?:[a-z]:[\\\\/]|(?<![\\w:])/)(?:[^\\s<>]+)"
         )
+        private val MORE_FRAMES = Regex("\\.\\.\\. \\d+ more")
         private val CONTROL: Pattern = Pattern.compile(
             "\\u001B\\[[0-?]*[ -/]*[@-~]|§[0-9a-fk-orx]|[\\p{Cc}&&[^\\n\\t]]",
             Pattern.CASE_INSENSITIVE

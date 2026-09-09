@@ -183,7 +183,7 @@ internal class DiagnosticLogBuffer(private val capacity: Int = 2_000) {
     private fun fullStackTrace(error: Throwable): String {
         val writer = StringWriter()
         error.printStackTrace(PrintWriter(writer))
-        val redacted = redactor.redact(writer.toString())
+        val redacted = redactor.redactStackTrace(writer.toString())
         if (redacted.length <= MAX_ERROR_CHARS) return redacted
         return redacted.take(MAX_ERROR_CHARS) +
             "\n[TRUNCATED: throwable exceeded the hard ${MAX_ERROR_CHARS}-character safety limit]"
