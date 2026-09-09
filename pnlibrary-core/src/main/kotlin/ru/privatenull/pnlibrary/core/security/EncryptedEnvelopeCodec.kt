@@ -2,6 +2,7 @@ package ru.privatenull.pnlibrary.core.security
 
 import com.google.gson.Gson
 import java.io.ByteArrayOutputStream
+import java.io.DataOutputStream
 import java.io.IOException
 import java.nio.charset.StandardCharsets
 import java.security.KeyFactory
@@ -74,38 +75,20 @@ class EncryptedEnvelopeCodec(publicKeyPem: String, keyId: String) {
     @Throws(IOException::class)
     fun encrypt(payload: ByteArray, payloadFormat: String): String {
         try {
-            val compressed = gzip(payload)
-
-            // AES-256 content key + 96-bit GCM nonce
-            val contentKey: SecretKey = KeyGenerator.getInstance("AES").also { it.init(256, RANDOM) }.generateKey()
-            val nonce = ByteArray(12).also { RANDOM.nextBytes(it) }
-            val created = Instant.now().toString()
-            val aad = aad(keyId, created)
-
-            // AES-GCM encrypt
-            val aesCipher = Cipher.getInstance("AES/GCM/NoPadding")
-            aesCipher.init(Cipher.ENCRYPT_MODE, contentKey, GCMParameterSpec(128, nonce))
-            aesCipher.updateAAD(aad)
-            val ciphertext = aesCipher.doFinal(compressed)
-
-            // Wrap the AES key with RSA-OAEP-SHA256
-            val oaepSpec = OAEPParameterSpec("SHA-256", "MGF1", MGF1ParameterSpec.SHA256, PSource.PSpecified.DEFAULT)
-            val rsaCipher = Cipher.getInstance("RSA/ECB/OAEPPadding")
-            rsaCipher.init(Cipher.ENCRYPT_MODE, publicKey, oaepSpec)
-            val wrappedKey = rsaCipher.doFinal(contentKey.encoded)
+            val encrypted = encryptPayload(payload)
 
             val envelope = LinkedHashMap<String, Any>()
             envelope["format"]           = FORMAT
             envelope["version"]          = VERSION
             envelope["keyId"]            = keyId
-            envelope["createdUtc"]       = created
+            envelope["createdUtc"]       = encrypted.createdUtc
             envelope["keyAlgorithm"]     = "RSA-OAEP-256"
             envelope["contentAlgorithm"] = "A256GCM"
             envelope["compression"]      = "gzip"
             envelope["payloadFormat"]    = payloadFormat
-            envelope["wrappedKey"]       = base64(wrappedKey)
-            envelope["nonce"]            = base64(nonce)
-            envelope["ciphertext"]       = base64(ciphertext)
+            envelope["wrappedKey"]       = base64(encrypted.wrappedKey)
+            envelope["nonce"]            = base64(encrypted.nonce)
+            envelope["ciphertext"]       = base64(encrypted.ciphertext)
             return JSON.toJson(envelope)
         } catch (e: IOException) {
             throw e
@@ -114,11 +97,69 @@ class EncryptedEnvelopeCodec(publicKeyPem: String, keyId: String) {
         }
     }
 
+    /** Produces the opaque PN Support Archive binary container used for reports and history files. */
+    @Throws(IOException::class)
+    fun encryptBinary(payload: ByteArray, payloadFormat: String): ByteArray {
+        try {
+            val encrypted = encryptPayload(payload)
+            val key = keyId.toByteArray(StandardCharsets.UTF_8)
+            val created = encrypted.createdUtc.toByteArray(StandardCharsets.UTF_8)
+            val format = payloadFormat.toByteArray(StandardCharsets.UTF_8)
+            require(key.size <= 65_535 && created.size <= 65_535 && format.size <= 255)
+            val output = ByteArrayOutputStream()
+            DataOutputStream(output).use { data ->
+                data.write(BINARY_MAGIC)
+                data.writeShort(BINARY_VERSION)
+                data.writeByte(format.size)
+                data.writeShort(key.size)
+                data.writeShort(created.size)
+                data.writeShort(encrypted.nonce.size)
+                data.writeInt(encrypted.wrappedKey.size)
+                data.writeInt(encrypted.ciphertext.size)
+                data.write(format)
+                data.write(key)
+                data.write(created)
+                data.write(encrypted.nonce)
+                data.write(encrypted.wrappedKey)
+                data.write(encrypted.ciphertext)
+            }
+            return output.toByteArray()
+        } catch (e: IOException) {
+            throw e
+        } catch (e: Exception) {
+            throw IOException("Unable to encrypt PN Support Archive", e)
+        }
+    }
+
+    private fun encryptPayload(payload: ByteArray): EncryptedPayload {
+        val compressed = gzip(payload)
+        val contentKey: SecretKey = KeyGenerator.getInstance("AES").also { it.init(256, RANDOM) }.generateKey()
+        val nonce = ByteArray(12).also { RANDOM.nextBytes(it) }
+        val created = Instant.now().toString()
+        val aesCipher = Cipher.getInstance("AES/GCM/NoPadding")
+        aesCipher.init(Cipher.ENCRYPT_MODE, contentKey, GCMParameterSpec(128, nonce))
+        aesCipher.updateAAD(aad(keyId, created))
+        val ciphertext = aesCipher.doFinal(compressed)
+        val oaepSpec = OAEPParameterSpec("SHA-256", "MGF1", MGF1ParameterSpec.SHA256, PSource.PSpecified.DEFAULT)
+        val rsaCipher = Cipher.getInstance("RSA/ECB/OAEPPadding")
+        rsaCipher.init(Cipher.ENCRYPT_MODE, publicKey, oaepSpec)
+        return EncryptedPayload(created, nonce, rsaCipher.doFinal(contentKey.encoded), ciphertext)
+    }
+
+    private data class EncryptedPayload(
+        val createdUtc: String,
+        val nonce: ByteArray,
+        val wrappedKey: ByteArray,
+        val ciphertext: ByteArray,
+    )
+
     // ── Companion ─────────────────────────────────────────────────────────────
 
     companion object {
         const val FORMAT  = "pnlibrary-diagnostics"
         const val VERSION = 1
+        const val BINARY_VERSION = 1
+        val BINARY_MAGIC: ByteArray = "PNSUPPORT\r\n".toByteArray(StandardCharsets.US_ASCII)
 
         private val JSON   = Gson()
         private val RANDOM = SecureRandom()

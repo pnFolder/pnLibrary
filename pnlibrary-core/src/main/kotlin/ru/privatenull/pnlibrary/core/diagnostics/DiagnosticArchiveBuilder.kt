@@ -8,7 +8,7 @@ import java.security.MessageDigest
 import java.util.zip.ZipEntry
 import java.util.zip.ZipOutputStream
 
-/** Builds the stable, human-readable file layout inside a `.pndebug` payload. */
+/** Builds the stable file layout encrypted inside a `.pnsupport` container. */
 internal class DiagnosticArchiveBuilder {
     private val gson: Gson = GsonBuilder().setPrettyPrinting().disableHtmlEscaping().create()
     private val entries = linkedMapOf<String, ByteArray>()

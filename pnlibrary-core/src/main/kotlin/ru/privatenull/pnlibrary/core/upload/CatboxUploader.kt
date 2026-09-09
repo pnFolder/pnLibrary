@@ -10,17 +10,17 @@ import java.nio.file.Path
 import java.time.Instant
 import java.util.UUID
 
-/** Uploads the encrypted `.pndebug` file through Catbox's official multipart API. */
+/** Uploads the encrypted `.pnsupport` file through Catbox's official multipart API. */
 class CatboxUploader(
     private val endpoint: URI = URI.create("https://catbox.moe/user/api.php"),
 ) : ReportUploader {
     override val backendId: String = "catbox"
 
     override fun upload(payload: String): UploadReceipt {
-        val temporary = Files.createTempFile("pnlibrary-report-", ".pndebug")
+        val temporary = Files.createTempFile("pnlibrary-report-", ".pnsupport")
         return try {
             Files.writeString(temporary, payload, StandardCharsets.UTF_8)
-            uploadFile(temporary, "application/vnd.pnlibrary.diagnostics")
+            uploadFile(temporary, "application/vnd.pnfolder.support")
         } finally {
             Files.deleteIfExists(temporary)
         }

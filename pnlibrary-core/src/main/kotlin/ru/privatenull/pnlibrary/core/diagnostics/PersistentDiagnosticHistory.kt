@@ -27,11 +27,11 @@ internal class PersistentDiagnosticHistory(
             "updatedUtc" to Instant.now().toString(),
             "incidents" to incidents,
         ))
-        val encrypted = encryption.encrypt(document.toByteArray(StandardCharsets.UTF_8), "incident-history")
+        val encrypted = encryption.encryptBinary(document.toByteArray(StandardCharsets.UTF_8), "incident-history")
         val target = directory.resolve(session)
         val temporary = Files.createTempFile(directory, session, ".tmp")
         try {
-            Files.writeString(temporary, encrypted, StandardCharsets.UTF_8)
+            Files.write(temporary, encrypted)
             try {
                 Files.move(temporary, target, StandardCopyOption.REPLACE_EXISTING, StandardCopyOption.ATOMIC_MOVE)
             } catch (_: java.nio.file.AtomicMoveNotSupportedException) {

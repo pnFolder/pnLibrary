@@ -4,7 +4,6 @@ import ru.privatenull.pnlibrary.api.diagnostics.DebugRequest
 import ru.privatenull.pnlibrary.api.diagnostics.DiagnosticReport
 import ru.privatenull.pnlibrary.api.runtime.PnLibraryConfig
 import ru.privatenull.pnlibrary.core.security.EncryptedEnvelopeCodec
-import ru.privatenull.pnlibrary.core.upload.MultipartUploader
 import ru.privatenull.pnlibrary.core.upload.ReportUploader
 import ru.privatenull.pnlibrary.core.upload.UploadLedger
 import ru.privatenull.pnlibrary.core.upload.UploadReceipt
@@ -89,7 +88,7 @@ class ReportGenerator(
 
         val encryptedPayload = if (encryptionMode) {
             val codec = encryptionCodec ?: throw IllegalStateException("Encryption is enabled but codec is null")
-            codec.encrypt(archiveBytes, "zip")
+            codec.encryptBinary(archiveBytes, "zip")
         } else {
             if (!config.allowPlaintext && "mclogs" == config.uploadMode) {
                 throw IllegalStateException("Plaintext reports are disallowed in current config")
@@ -100,10 +99,10 @@ class ReportGenerator(
         // Save local file
         val reportsDir = dataFolder.resolve("reports")
         Files.createDirectories(reportsDir)
-        val fileExtension = if (encryptionMode) ".pndebug" else ".zip"
+        val fileExtension = if (encryptionMode) ".pnsupport" else ".zip"
         val timestamp = System.currentTimeMillis()
         val targetFile = Files.createTempFile(reportsDir, "report-$timestamp-", fileExtension)
-        Files.write(targetFile, encryptedPayload?.toByteArray(Charsets.UTF_8) ?: archiveBytes)
+        Files.write(targetFile, encryptedPayload ?: archiveBytes)
 
         // Cleanup old local reports
         cleanupOldReports(reportsDir, config.keepReports)
@@ -113,14 +112,10 @@ class ReportGenerator(
         var uploadError: String? = null
         if (!request.local && config.upload && uploader != null) {
             try {
-                val uploadPayload = encryptedPayload ?: throw IllegalStateException(
+                encryptedPayload ?: throw IllegalStateException(
                     "Binary plaintext archives are local-only; enable encrypted upload"
                 )
-                uploadReceipt = if (uploader.backendId == "catbox") {
-                    uploader.uploadFile(targetFile, "application/vnd.pnlibrary.diagnostics")
-                } else {
-                    MultipartUploader(uploader, encryptionCodec, uploadLedger, config.deleteAfterDays).upload(uploadPayload)
-                }
+                uploadReceipt = uploader.uploadFile(targetFile, "application/vnd.pnfolder.support")
                 uploadLedger?.record(uploadReceipt, config.deleteAfterDays)
             } catch (error: Exception) {
                 uploadError = error.message ?: error.javaClass.simpleName

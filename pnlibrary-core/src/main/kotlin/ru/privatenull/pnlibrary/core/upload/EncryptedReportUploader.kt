@@ -8,6 +8,8 @@ import java.io.InputStream
 import java.net.HttpURLConnection
 import java.net.URI
 import java.nio.charset.StandardCharsets
+import java.nio.file.Files
+import java.nio.file.Path
 
 /**
  * Uploads an encrypted envelope directly to a custom HTTPS storage endpoint.
@@ -30,9 +32,15 @@ class EncryptedReportUploader @JvmOverloads constructor(
 
     @Throws(IOException::class)
     override fun upload(payload: String): UploadReceipt {
-        val body = payload.toByteArray(StandardCharsets.UTF_8)
+        return uploadBytes(payload.toByteArray(StandardCharsets.UTF_8), "application/json; charset=UTF-8")
+    }
+
+    override fun uploadFile(file: Path, contentType: String): UploadReceipt =
+        uploadBytes(Files.readAllBytes(file), contentType)
+
+    private fun uploadBytes(body: ByteArray, contentType: String): UploadReceipt {
         val connection = open(endpoint, "POST")
-        connection.setRequestProperty("Content-Type", "application/vnd.pnlibrary.encrypted+json; charset=UTF-8")
+        connection.setRequestProperty("Content-Type", contentType)
         connection.doOutput = true
         connection.setFixedLengthStreamingMode(body.size)
         try {
