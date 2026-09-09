@@ -23,6 +23,21 @@ class ConfigReader(
 
     private val redactor = DiagnosticRedactor()
 
+    data class RedactedFile(val path: String, val content: String, val error: String? = null)
+
+    /** Reads, validates and redacts a configuration while preserving its original file format. */
+    fun readRedactedFile(
+        configSpec: DiagnosticConfiguration,
+        rootDirectory: Path = dataFolder,
+    ): RedactedFile {
+        val result = readAndRedact(configSpec, rootDirectory)
+        val error = result["error"]?.toString()
+        if (error != null) return RedactedFile(configSpec.path, "", error)
+        @Suppress("UNCHECKED_CAST")
+        val data = result["data"] as? Map<String, Any?> ?: emptyMap()
+        return RedactedFile(configSpec.path, render(configSpec.path, data))
+    }
+
     fun readAndRedact(
         configSpec: DiagnosticConfiguration,
         rootDirectory: Path = dataFolder,
@@ -255,12 +270,16 @@ class ConfigReader(
                             valueRegexes = valueRegexes,
                             depth = depth + 1
                         )
-                    } else {
-                        redactStringValue(item?.toString() ?: "", valueRegexes)
+                    } else when (item) {
+                        null, is Number, is Boolean -> item
+                        else -> redactStringValue(item.toString(), valueRegexes)
                     }
                 }
             } else {
-                result[key] = redactStringValue(value?.toString() ?: "", valueRegexes)
+                result[key] = when (value) {
+                    null, is Number, is Boolean -> value
+                    else -> redactStringValue(value.toString(), valueRegexes)
+                }
             }
         }
         return result
@@ -307,6 +326,33 @@ class ConfigReader(
             }
         }
         return result
+    }
+
+    private fun render(path: String, data: Map<String, Any?>): String {
+        val lower = path.lowercase()
+        return when {
+            lower.endsWith(".yml") || lower.endsWith(".yaml") -> Yaml().dump(data)
+            lower.endsWith(".json") -> Gson().newBuilder().setPrettyPrinting().disableHtmlEscaping().create().toJson(data) + "\n"
+            lower.endsWith(".properties") -> data.entries.joinToString("\n", postfix = "\n") { (key, value) ->
+                "$key=${scalar(value)}"
+            }
+            lower.endsWith(".toml") -> data.entries.joinToString("\n", postfix = "\n") { (key, value) ->
+                "$key = ${tomlValue(value)}"
+            }
+            lower.endsWith(".conf") -> data.entries.joinToString("\n", postfix = "\n") { (key, value) ->
+                "$key = ${tomlValue(value)}"
+            }
+            else -> data["raw"]?.toString().orEmpty()
+        }
+    }
+
+    private fun scalar(value: Any?): String = value?.toString()
+        ?.replace("\\", "\\\\")?.replace("\n", "\\n") ?: ""
+
+    private fun tomlValue(value: Any?): String = when (value) {
+        null -> "\"\""
+        is Number, is Boolean -> value.toString()
+        else -> "\"${value.toString().replace("\\", "\\\\").replace("\"", "\\\"").replace("\n", "\\n")}\""
     }
 
     companion object {

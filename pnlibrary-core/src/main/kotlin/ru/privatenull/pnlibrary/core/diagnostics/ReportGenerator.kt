@@ -67,12 +67,19 @@ class ReportGenerator(
         if (request.configs && config.configs) {
             val declaredConfigs = diagnosticsRegistry.configurations(request.target)
             for (registered in declaredConfigs) {
-                val collected = configReader.readAndRedact(
+                val collected = configReader.readRedactedFile(
                     registered.configuration,
                     registered.dataDirectory ?: dataFolder,
                 )
-                val name = safePath(registered.configuration.path).replace('/', '_')
-                archive.json("plugins/${safePath(registered.plugin)}/configuration/$name.json", collected)
+                val path = safeConfigurationPath(collected.path)
+                if (collected.error == null) {
+                    archive.text("plugins/${safePath(registered.plugin)}/configuration/$path", collected.content)
+                } else {
+                    archive.text(
+                        "plugins/${safePath(registered.plugin)}/configuration/$path.error.txt",
+                        collected.error + "\n",
+                    )
+                }
             }
         }
         val archiveBytes = archive.build()
@@ -130,6 +137,12 @@ class ReportGenerator(
 
     private fun safePath(value: String): String = value.lowercase()
         .replace(Regex("[^a-z0-9._-]+"), "-").trim('-').ifBlank { "unknown" }.take(96)
+
+    private fun safeConfigurationPath(value: String): String = value.replace('\\', '/')
+        .split('/').filter { it.isNotBlank() && it != "." && it != ".." }
+        .joinToString("/") { component ->
+            component.replace(Regex("[^A-Za-z0-9._-]+"), "_").take(128).ifBlank { "config" }
+        }.ifBlank { "config.txt" }
 
     private fun cleanupOldReports(dir: Path, keepCount: Int) {
         try {
