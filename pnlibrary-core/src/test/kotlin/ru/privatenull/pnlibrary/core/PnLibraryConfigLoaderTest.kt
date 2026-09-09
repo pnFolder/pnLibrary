@@ -16,7 +16,7 @@ class PnLibraryConfigLoaderTest {
     fun `creates defaults and loads user values`() {
         val defaults = PnLibraryConfigLoader.load(temporary)
         assertTrue(Files.isRegularFile(temporary.resolve("config.yml")))
-        assertEquals("encrypted-mclogs", defaults.uploadMode)
+        assertEquals("encrypted", defaults.uploadMode)
 
         Files.writeString(temporary.resolve("config.yml"), """
             upload: false

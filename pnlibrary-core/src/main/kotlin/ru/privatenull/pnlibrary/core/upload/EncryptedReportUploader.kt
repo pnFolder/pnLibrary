@@ -18,7 +18,7 @@ class EncryptedReportUploader @JvmOverloads constructor(
     private val endpoint: URI,
     private val publicBase: URI,
     requireHttps: Boolean = true,
-) : ReportUploader {
+) : UploadProvider {
 
     init {
         if (requireHttps && (!"https".equals(endpoint.scheme, ignoreCase = true) || !"https".equals(publicBase.scheme, ignoreCase = true))) {

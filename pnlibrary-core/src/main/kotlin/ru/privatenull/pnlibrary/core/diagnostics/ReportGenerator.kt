@@ -4,7 +4,7 @@ import ru.privatenull.pnlibrary.api.diagnostics.DebugRequest
 import ru.privatenull.pnlibrary.api.diagnostics.DiagnosticReport
 import ru.privatenull.pnlibrary.api.runtime.PnLibraryConfig
 import ru.privatenull.pnlibrary.core.security.EncryptedEnvelopeCodec
-import ru.privatenull.pnlibrary.core.upload.ReportUploader
+import ru.privatenull.pnlibrary.core.upload.UploadProvider
 import ru.privatenull.pnlibrary.core.upload.UploadLedger
 import ru.privatenull.pnlibrary.core.upload.UploadReceipt
 import ru.privatenull.pnlibrary.spi.platform.PlatformAdapter
@@ -21,7 +21,7 @@ class ReportGenerator(
     private val diagnosticsRegistry: DiagnosticsRegistry,
     private val platformAdapter: PlatformAdapter,
     private val encryptionCodec: EncryptedEnvelopeCodec?,
-    private val uploader: ReportUploader?,
+    private val uploader: UploadProvider?,
     private val uploadLedger: UploadLedger?,
     private val diagnosticLogs: () -> List<Map<String, Any?>> = { emptyList() },
     private val diagnosticHistory: () -> List<Pair<String, ByteArray>> = { emptyList() },
@@ -31,7 +31,7 @@ class ReportGenerator(
     private val configReader = ConfigReader(dataFolder, config)
 
     fun generateAndSave(request: DebugRequest): DiagnosticReport {
-        val encryptionMode = config.uploadMode.startsWith("encrypted")
+        val encryptionMode = config.uploadMode == "encrypted"
         val includeNetworkAddresses = encryptionMode
 
         val generated = Instant.now().toString()
@@ -93,9 +93,6 @@ class ReportGenerator(
             val codec = encryptionCodec ?: throw IllegalStateException("Encryption is enabled but codec is null")
             codec.encryptBinary(archiveBytes, "zip")
         } else {
-            if (!config.allowPlaintext && "mclogs" == config.uploadMode) {
-                throw IllegalStateException("Plaintext reports are disallowed in current config")
-            }
             null
         }
 

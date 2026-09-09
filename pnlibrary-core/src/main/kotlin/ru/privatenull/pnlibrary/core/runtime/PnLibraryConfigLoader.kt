@@ -34,7 +34,11 @@ object PnLibraryConfigLoader {
         val defaults = PnLibraryConfig()
         return PnLibraryConfig(
             upload = values.boolean("upload", defaults.upload),
-            uploadMode = values.string("upload-mode", defaults.uploadMode),
+            uploadMode = when (val mode = values.string("upload-mode", defaults.uploadMode)) {
+                "encrypted-catbox" -> "encrypted"
+                else -> mode
+            },
+            uploadProviders = values.strings("upload-providers").ifEmpty { defaults.uploadProviders },
             uploadEndpoint = values.string("upload-endpoint", defaults.uploadEndpoint),
             uploadPublicBase = values.string("upload-public-base", defaults.uploadPublicBase),
             uploadPublicKey = values.string("upload-public-key", defaults.uploadPublicKey),
@@ -92,7 +96,7 @@ object PnLibraryConfigLoader {
 
     private const val MAX_CONFIG_BYTES = 256L * 1024L
     private val KNOWN_KEYS = setOf(
-        "upload", "upload-mode", "upload-endpoint", "upload-public-base", "upload-public-key",
+        "upload", "upload-mode", "upload-providers", "upload-endpoint", "upload-public-base", "upload-public-key",
         "upload-key-id", "allow-plaintext", "configs", "logs", "log-records", "cooldown-seconds",
         "keep-reports", "max-report-bytes", "delete-after-days", "excluded-paths",
         "secret-key-patterns", "redact-value-patterns",
@@ -100,7 +104,8 @@ object PnLibraryConfigLoader {
     private val DEFAULT_CONFIG = """
         # Diagnostics are encrypted before upload. Set upload to false for local-only reports.
         upload: true
-        upload-mode: encrypted-catbox
+        upload-mode: encrypted
+        upload-providers: [catbox, fileio]
         allow-plaintext: false
         upload-endpoint: https://api.mclo.gs/1/log
         upload-public-base: https://mclo.gs/

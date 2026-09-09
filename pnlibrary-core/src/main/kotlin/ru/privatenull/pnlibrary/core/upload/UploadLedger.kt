@@ -43,13 +43,13 @@ class UploadLedger(private val file: Path) {
 
     @Synchronized
     @Throws(IOException::class)
-    fun cleanup(uploader: ReportUploader): Int {
+    fun cleanup(uploader: UploadProvider): Int {
         val entries   = readSafe()
         val remaining = mutableListOf<LedgerEntry>()
         var deleted   = 0
         val now       = Instant.now().epochSecond
         for (entry in entries) {
-            if (entry.deleteAt > now || uploader.backendId != entry.backend) {
+            if (entry.deleteAt > now) {
                 remaining.add(entry)
                 continue
             }

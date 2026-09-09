@@ -23,8 +23,9 @@ import ru.privatenull.pnlibrary.core.tasks.TaskServiceImpl
 import ru.privatenull.pnlibrary.core.updates.UpdateServiceImpl
 import ru.privatenull.pnlibrary.core.upload.EncryptedReportUploader
 import ru.privatenull.pnlibrary.core.upload.CatboxUploader
-import ru.privatenull.pnlibrary.core.upload.MclogsUploader
-import ru.privatenull.pnlibrary.core.upload.ReportUploader
+import ru.privatenull.pnlibrary.core.upload.FileIoUploader
+import ru.privatenull.pnlibrary.core.upload.UploadProvider
+import ru.privatenull.pnlibrary.core.upload.UploadProviderChain
 import ru.privatenull.pnlibrary.core.upload.UploadLedger
 import java.io.ByteArrayOutputStream
 import java.io.IOException
@@ -96,7 +97,7 @@ class PnLibraryImpl(
         updates = updateService,
     )
 
-    val uploader: ReportUploader? = initUploader()
+    val uploader: UploadProvider? = initUploader()
     val reportGenerator: ReportGenerator = ReportGenerator(
         dataFolder = dataFolder,
         config = config,
@@ -174,17 +175,18 @@ class PnLibraryImpl(
         }
     }
 
-    private fun initUploader(): ReportUploader? {
+    private fun initUploader(): UploadProvider? {
         if (!config.upload) return null
-        return when (config.uploadMode) {
-            "encrypted-catbox" -> CatboxUploader()
-            "mclogs", "encrypted-mclogs" -> MclogsUploader()
-            "encrypted" -> EncryptedReportUploader(
-                endpoint = URI.create(config.uploadEndpoint),
-                publicBase = URI.create(config.uploadPublicBase)
+        if (config.uploadMode == "disabled") return null
+        val providers = config.uploadProviders.map { id -> when (id) {
+            "catbox" -> CatboxUploader()
+            "fileio" -> FileIoUploader()
+            "custom" -> EncryptedReportUploader(
+                endpoint = URI.create(config.uploadEndpoint), publicBase = URI.create(config.uploadPublicBase)
             )
-            else -> null
-        }
+            else -> error("Unsupported upload provider: $id")
+        } }
+        return UploadProviderChain(providers)
     }
 
     private fun resolvePublicKey(cfg: PnLibraryConfig): String {

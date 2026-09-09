@@ -4,8 +4,8 @@ import java.io.IOException
 import java.nio.file.Files
 import java.nio.file.Path
 
-/** Abstraction over a remote report backend (mclo.gs, encrypted storage, …). */
-interface ReportUploader {
+/** One interchangeable destination capable of receiving a PN Support Archive. */
+interface UploadProvider {
 
     /** Stable identifier for the backend, used in the upload ledger. */
     val backendId: String
