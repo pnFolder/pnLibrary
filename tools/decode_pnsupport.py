@@ -16,6 +16,7 @@ from cryptography.hazmat.primitives.ciphers.aead import AESGCM
 
 MAGIC = b"PNSUPPORT\r\n"
 HEADER = ">HBHHHII"
+MULTILINE_FIELDS = {"fullError", "exception", "collectionError"}
 
 
 def decrypt(document: bytes, private_key) -> tuple[bytes, str]:
@@ -72,12 +73,35 @@ def decrypt_history(output: pathlib.Path, private_key) -> None:
         payload, payload_format = decrypt(history.read_bytes(), private_key)
         if payload_format != "incident-history":
             raise ValueError(f"Unexpected history payload: {history}")
-        document = json.loads(payload.decode("utf-8"))
-        history.with_suffix(".json").write_text(
-            json.dumps(document, ensure_ascii=False, indent=2) + "\n",
-            encoding="utf-8",
-        )
+        document = make_readable(json.loads(payload.decode("utf-8")))
+        write_pretty_json(history.with_suffix(".json"), document)
         history.unlink()
+
+
+def make_readable(value, field: str | None = None):
+    if isinstance(value, dict):
+        return {
+            key: make_readable(item, key)
+            for key, item in value.items()
+            if key != "consoleBlock"
+        }
+    if isinstance(value, list):
+        return [make_readable(item) for item in value]
+    if isinstance(value, str) and field in MULTILINE_FIELDS:
+        return value.splitlines()
+    return value
+
+
+def write_pretty_json(target: pathlib.Path, document) -> None:
+    target.write_text(json.dumps(document, ensure_ascii=False, indent=2) + "\n", encoding="utf-8")
+
+
+def format_report_json(output: pathlib.Path) -> None:
+    for target in output.rglob("*.json"):
+        if "configuration" in target.parts:
+            continue
+        document = json.loads(target.read_text(encoding="utf-8"))
+        write_pretty_json(target, make_readable(document))
 
 
 def main() -> None:
@@ -92,11 +116,12 @@ def main() -> None:
     if payload_format == "zip":
         safe_extract(payload, output)
         decrypt_history(output, private_key)
+        format_report_json(output)
         print(output.resolve())
     else:
         target = output.with_suffix(".json")
-        document = json.loads(payload.decode("utf-8"))
-        target.write_text(json.dumps(document, ensure_ascii=False, indent=2) + "\n", encoding="utf-8")
+        document = make_readable(json.loads(payload.decode("utf-8")))
+        write_pretty_json(target, document)
         print(target.resolve())
 
 
