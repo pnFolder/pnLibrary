@@ -88,7 +88,7 @@ def make_readable(value, field: str | None = None):
     if isinstance(value, list):
         return [make_readable(item) for item in value]
     if isinstance(value, str) and field in MULTILINE_FIELDS:
-        return value.splitlines()
+        return [line.lstrip("\t") for line in value.splitlines()]
     return value
 
 
