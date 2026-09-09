@@ -10,6 +10,7 @@ import ru.privatenull.pnlibrary.api.runtime.PnLibraryConfig
 import ru.privatenull.pnlibrary.api.runtime.PnLibraryProvider
 import ru.privatenull.pnlibrary.api.version.SemanticVersion
 import ru.privatenull.pnlibrary.core.diagnostics.DiagnosticsRegistry
+import ru.privatenull.pnlibrary.core.diagnostics.PersistentDiagnosticHistory
 import ru.privatenull.pnlibrary.core.diagnostics.ReportGenerator
 import ru.privatenull.pnlibrary.core.events.EventServiceImpl
 import ru.privatenull.pnlibrary.core.logging.DiagnosticLogBuffer
@@ -61,6 +62,12 @@ class PnLibraryImpl(
     private val reportInProgress = AtomicBoolean(false)
     override val isClosed: Boolean get() = closedFlag.get()
     private val metricsRegistry = MetricsRegistry(platform.metricsFactory)
+    val dataFolder: Path = platform.dataFolder ?: extractDataFolder(owner)
+    val uploadLedger: UploadLedger = UploadLedger(dataFolder.resolve("upload-ledger.json"))
+    val encryptionCodec: EncryptedEnvelopeCodec? = initEncryptionCodec()
+    private val diagnosticHistory = PersistentDiagnosticHistory(
+        dataFolder.resolve("diagnostics").resolve("history"), encryptionCodec
+    )
     private val diagnosticLogs = DiagnosticLogBuffer(config.logRecords.coerceIn(10, 2_000))
     override val metrics: MetricsService get() = metricsRegistry
     override val logging: LoggingService = PlatformLoggingService(platform, diagnosticLogs)
@@ -88,9 +95,6 @@ class PnLibraryImpl(
         updates = updateService,
     )
 
-    val dataFolder: Path = platform.dataFolder ?: extractDataFolder(owner)
-    val uploadLedger: UploadLedger = UploadLedger(dataFolder.resolve("upload-ledger.json"))
-    val encryptionCodec: EncryptedEnvelopeCodec? = initEncryptionCodec()
     val uploader: ReportUploader? = initUploader()
     val reportGenerator: ReportGenerator = ReportGenerator(
         dataFolder = dataFolder,
@@ -101,6 +105,7 @@ class PnLibraryImpl(
         uploader = uploader,
         uploadLedger = uploadLedger,
         diagnosticLogs = diagnosticLogs::snapshot,
+        diagnosticHistory = diagnosticHistory::files,
     )
 
     private val workerExecutor: ScheduledExecutorService = Executors.newSingleThreadScheduledExecutor { r ->
@@ -108,6 +113,10 @@ class PnLibraryImpl(
     }
 
     fun init() {
+        diagnosticLogs.onChange(diagnosticHistory::save)
+        platform.observeNativeLogs { nativeOwner, level, message, error ->
+            diagnosticLogs.record(platform, nativeOwner, level, message, error)
+        }
         val up = uploader
         if (up != null) {
             workerExecutor.scheduleWithFixedDelay({
@@ -146,6 +155,7 @@ class PnLibraryImpl(
             runCatching { eventService.close() }
             runCatching { serviceManager.close() }
             runCatching { taskService.close() }
+            runCatching { platform.observeNativeLogs(null) }
             diagnostics.clear()
             PnLibraryProvider.clear(this)
             runCatching { platform.close() }

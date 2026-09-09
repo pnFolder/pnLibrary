@@ -1,7 +1,5 @@
 package ru.privatenull.pnlibrary.core.diagnostics
 
-import com.google.gson.Gson
-import com.google.gson.GsonBuilder
 import ru.privatenull.pnlibrary.api.diagnostics.DebugRequest
 import ru.privatenull.pnlibrary.api.diagnostics.DiagnosticReport
 import ru.privatenull.pnlibrary.api.runtime.PnLibraryConfig
@@ -11,7 +9,6 @@ import ru.privatenull.pnlibrary.core.upload.ReportUploader
 import ru.privatenull.pnlibrary.core.upload.UploadLedger
 import ru.privatenull.pnlibrary.core.upload.UploadReceipt
 import ru.privatenull.pnlibrary.spi.platform.PlatformAdapter
-import java.nio.charset.StandardCharsets
 import java.nio.file.Files
 import java.nio.file.Path
 import java.time.Instant
@@ -28,71 +25,78 @@ class ReportGenerator(
     private val uploader: ReportUploader?,
     private val uploadLedger: UploadLedger?,
     private val diagnosticLogs: () -> List<Map<String, Any?>> = { emptyList() },
+    private val diagnosticHistory: () -> List<Pair<String, ByteArray>> = { emptyList() },
 ) {
 
     private val systemCollector = SystemCollector()
     private val configReader = ConfigReader(dataFolder, config)
-    private val gson: Gson = GsonBuilder().setPrettyPrinting().disableHtmlEscaping().create()
 
     fun generateAndSave(request: DebugRequest): DiagnosticReport {
         val encryptionMode = config.uploadMode.startsWith("encrypted")
         val includeNetworkAddresses = encryptionMode
 
-        val reportData = linkedMapOf<String, Any?>()
-        reportData["schemaVersion"] = 2
-        reportData["producer"] = "pnLibrary"
-        reportData["generatedUtc"] = Instant.now().toString()
-        reportData["target"] = request.target
-        reportData["platform"] = platformAdapter.id
-        reportData["platformImplementation"] = platformAdapter.implementationName
+        val generated = Instant.now().toString()
+        val archive = DiagnosticArchiveBuilder()
+        val pluginDiagnostics = diagnosticsRegistry.snapshot(request.target)
+        archive.json("manifest.json", linkedMapOf(
+            "schemaVersion" to 3,
+            "producer" to "pnLibrary",
+            "generatedUtc" to generated,
+            "target" to request.target,
+            "platform" to platformAdapter.id,
+            "platformImplementation" to platformAdapter.implementationName,
+            "encrypted" to encryptionMode,
+        ))
+        archive.json("system.json", systemCollector.collect(includeNetworkAddresses = includeNetworkAddresses))
+        archive.text("threads.txt", systemCollector.threadDump())
+        archive.json("platform.json", platformAdapter.diagnosticDetails(includeSensitive = encryptionMode))
 
-        // Platform & System info
-        reportData["platformDetails"] = platformAdapter.details()
-        reportData["system"] = systemCollector.collect(includeNetworkAddresses = includeNetworkAddresses)
-
-        // Plugin diagnostic containers & status entries
-        reportData["pluginDiagnostics"] = diagnosticsRegistry.snapshot(request.target)
+        pluginDiagnostics.forEach { (plugin, snapshot) ->
+            archive.json("plugins/${safePath(plugin)}/diagnostics.json", snapshot)
+        }
 
         if (request.logs && config.logs) {
-            reportData["logs"] = diagnosticLogs().takeLast(config.logRecords.coerceIn(1, 2_000))
+            diagnosticLogs().takeLast(config.logRecords.coerceIn(1, 2_000))
+                .groupBy { safePath(it["plugin"]?.toString() ?: "runtime") }
+                .forEach { (plugin, logs) -> archive.json("plugins/$plugin/logs/incidents.json", logs) }
+            diagnosticHistory().forEach { (name, content) ->
+                archive.bytes("history/${safePath(name)}.encrypted", content)
+            }
         }
 
-        // Config files
         if (request.configs && config.configs) {
-            val configsList = mutableListOf<Map<String, Any?>>()
             val declaredConfigs = diagnosticsRegistry.configurations(request.target)
             for (registered in declaredConfigs) {
-                val collected = linkedMapOf<String, Any?>("plugin" to registered.plugin)
-                collected.putAll(configReader.readAndRedact(
+                val collected = configReader.readAndRedact(
                     registered.configuration,
                     registered.dataDirectory ?: dataFolder,
-                ))
-                configsList.add(collected)
+                )
+                val name = safePath(registered.configuration.path).replace('/', '_')
+                archive.json("plugins/${safePath(registered.plugin)}/configuration/$name.json", collected)
             }
-            reportData["configurations"] = configsList
+        }
+        val archiveBytes = archive.build()
+        require(archiveBytes.size <= config.maxReportBytes) {
+            "Diagnostic archive exceeds configured limit (${archiveBytes.size} > ${config.maxReportBytes} bytes)"
         }
 
-        // Encode JSON with truncation guard
-        val textReport = encodeWithTruncation(reportData, config.maxReportBytes)
-
-        // Encrypt if encryption mode is active
-        val finalPayload = if (encryptionMode) {
+        val encryptedPayload = if (encryptionMode) {
             val codec = encryptionCodec ?: throw IllegalStateException("Encryption is enabled but codec is null")
-            codec.encrypt(textReport)
+            codec.encrypt(archiveBytes, "zip")
         } else {
             if (!config.allowPlaintext && "mclogs" == config.uploadMode) {
                 throw IllegalStateException("Plaintext reports are disallowed in current config")
             }
-            textReport
+            null
         }
 
         // Save local file
         val reportsDir = dataFolder.resolve("reports")
         Files.createDirectories(reportsDir)
-        val fileExtension = if (encryptionMode) ".pndebug" else ".txt"
+        val fileExtension = if (encryptionMode) ".pndebug" else ".zip"
         val timestamp = System.currentTimeMillis()
         val targetFile = Files.createTempFile(reportsDir, "report-$timestamp-", fileExtension)
-        Files.write(targetFile, finalPayload.toByteArray(StandardCharsets.UTF_8))
+        Files.write(targetFile, encryptedPayload?.toByteArray(Charsets.UTF_8) ?: archiveBytes)
 
         // Cleanup old local reports
         cleanupOldReports(reportsDir, config.keepReports)
@@ -102,8 +106,11 @@ class ReportGenerator(
         var uploadError: String? = null
         if (!request.local && config.upload && uploader != null) {
             try {
+                val uploadPayload = encryptedPayload ?: throw IllegalStateException(
+                    "Binary plaintext archives are local-only; enable encrypted upload"
+                )
                 val multipartUploader = MultipartUploader(uploader, encryptionCodec, uploadLedger, config.deleteAfterDays)
-                uploadReceipt = multipartUploader.upload(finalPayload)
+                uploadReceipt = multipartUploader.upload(uploadPayload)
                 uploadLedger?.record(uploadReceipt, config.deleteAfterDays)
             } catch (error: Exception) {
                 uploadError = error.message ?: error.javaClass.simpleName
@@ -118,33 +125,8 @@ class ReportGenerator(
         )
     }
 
-    private fun encodeWithTruncation(report: Map<String, Any?>, maxBytes: Int): String {
-        var json = gson.toJson(report)
-        if (json.toByteArray(StandardCharsets.UTF_8).size <= maxBytes) return json
-
-        val reduced = LinkedHashMap(report)
-        reduced["truncated"] = "Report exceeded byte limit; configurations omitted."
-        reduced.remove("configurations")
-        json = gson.toJson(reduced)
-        if (json.toByteArray(StandardCharsets.UTF_8).size <= maxBytes) return json
-
-        reduced["truncated"] = "Report exceeded byte limit; plugin diagnostics omitted."
-        reduced.remove("pluginDiagnostics")
-        json = gson.toJson(reduced)
-        if (json.toByteArray(StandardCharsets.UTF_8).size <= maxBytes) return json
-
-        val minimal = linkedMapOf<String, Any?>()
-        minimal["schemaVersion"] = report["schemaVersion"]
-        minimal["producer"] = report["producer"]
-        minimal.put("generatedUtc", report["generatedUtc"])
-        minimal["target"] = report["target"]
-        minimal["system"] = report["system"]
-        minimal["truncated"] = "Report exceeded configured byte limit."
-        json = gson.toJson(minimal)
-        if (json.toByteArray(StandardCharsets.UTF_8).size <= maxBytes) return json
-        minimal.remove("system")
-        return gson.toJson(minimal)
-    }
+    private fun safePath(value: String): String = value.lowercase()
+        .replace(Regex("[^a-z0-9._-]+"), "-").trim('-').ifBlank { "unknown" }.take(96)
 
     private fun cleanupOldReports(dir: Path, keepCount: Int) {
         try {

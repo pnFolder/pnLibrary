@@ -35,6 +35,10 @@ interface PlatformAdapter : AutoCloseable {
     fun console(owner: Any, message: String) = log(owner, LogLevel.INFO, message)
     fun ownerDetails(owner: Any): Map<String, String> = emptyMap()
     fun details(): Map<String, Any?>
+    /** Rich report-only snapshot. Sensitive values must only be returned when explicitly allowed. */
+    fun diagnosticDetails(includeSensitive: Boolean): Map<String, Any?> = details()
+    /** Installs a passive bridge for warnings/errors emitted directly by the native platform. */
+    fun observeNativeLogs(observer: ((Any, LogLevel, String, Throwable?) -> Unit)?) = Unit
     fun executeGlobal(task: Runnable)
     fun executeReply(recipient: Any, task: Runnable)
     override fun close()

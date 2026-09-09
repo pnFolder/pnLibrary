@@ -67,8 +67,14 @@ class EncryptedEnvelopeCodec(publicKeyPem: String, keyId: String) {
      */
     @Throws(IOException::class)
     fun encrypt(report: String): String {
+        return encrypt(report.toByteArray(StandardCharsets.UTF_8), "json")
+    }
+
+    /** Encrypts arbitrary diagnostic bytes, including a ZIP archive. */
+    @Throws(IOException::class)
+    fun encrypt(payload: ByteArray, payloadFormat: String): String {
         try {
-            val compressed = gzip(report.toByteArray(StandardCharsets.UTF_8))
+            val compressed = gzip(payload)
 
             // AES-256 content key + 96-bit GCM nonce
             val contentKey: SecretKey = KeyGenerator.getInstance("AES").also { it.init(256, RANDOM) }.generateKey()
@@ -96,6 +102,7 @@ class EncryptedEnvelopeCodec(publicKeyPem: String, keyId: String) {
             envelope["keyAlgorithm"]     = "RSA-OAEP-256"
             envelope["contentAlgorithm"] = "A256GCM"
             envelope["compression"]      = "gzip"
+            envelope["payloadFormat"]    = payloadFormat
             envelope["wrappedKey"]       = base64(wrappedKey)
             envelope["nonce"]            = base64(nonce)
             envelope["ciphertext"]       = base64(ciphertext)

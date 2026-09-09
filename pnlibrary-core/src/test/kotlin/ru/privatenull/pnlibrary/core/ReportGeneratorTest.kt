@@ -1,7 +1,5 @@
 package ru.privatenull.pnlibrary.core
 
-import com.google.gson.JsonParser
-import org.junit.jupiter.api.Assertions.assertEquals
 import org.junit.jupiter.api.Assertions.assertTrue
 import org.junit.jupiter.api.Test
 import org.junit.jupiter.api.io.TempDir
@@ -14,6 +12,7 @@ import ru.privatenull.pnlibrary.core.diagnostics.DiagnosticsRegistry
 import ru.privatenull.pnlibrary.core.diagnostics.ReportGenerator
 import java.nio.file.Files
 import java.nio.file.Path
+import java.util.zip.ZipFile
 
 class ReportGeneratorTest {
     @TempDir lateinit var temporary: Path
@@ -39,11 +38,13 @@ class ReportGeneratorTest {
         )
 
         val result = generator.generateAndSave(DebugRequest("all", configs = true, logs = true, local = true))
-        val report = JsonParser.parseString(Files.readString(result.localFile)).asJsonObject
-
-        assertEquals(2, report.getAsJsonArray("configurations").size())
-        assertEquals(1, report.getAsJsonArray("logs").size())
-        assertTrue(report.getAsJsonArray("configurations").all { it.asJsonObject.has("plugin") })
+        ZipFile(result.localFile.toFile()).use { zip ->
+            val names = zip.entries().asSequence().map { it.name }.toSet()
+            assertTrue("pn-diagnostic/plugins/pnmarket/configuration/config.yml.json" in names)
+            assertTrue("pn-diagnostic/plugins/pnclans/configuration/config.yml.json" in names)
+            assertTrue("pn-diagnostic/plugins/runtime/logs/incidents.json" in names)
+            assertTrue("pn-diagnostic/checksums.json" in names)
+        }
     }
 
     private class TestPlatform : PlatformAdapter {

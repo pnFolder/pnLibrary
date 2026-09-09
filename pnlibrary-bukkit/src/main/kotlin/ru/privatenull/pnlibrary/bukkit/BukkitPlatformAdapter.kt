@@ -38,6 +38,8 @@ import java.util.Locale
 import java.util.concurrent.ConcurrentHashMap
 import java.util.concurrent.atomic.AtomicBoolean
 import java.util.logging.Level
+import java.util.logging.Handler
+import java.util.logging.LogRecord
 
 /**
  * Platform adapter for Bukkit, Spigot, Paper (1.12.2 to modern 1.21+), Leaf, and Purpur.
@@ -51,6 +53,20 @@ class BukkitPlatformAdapter @JvmOverloads constructor(
     private val restartConfirmations = ConcurrentHashMap<String, Long>()
     private var library: PnLibrary? = null
     private var diagnosticCommands: DiagnosticCommandExecutor? = null
+    private var nativeLogObserver: ((Any, LogLevel, String, Throwable?) -> Unit)? = null
+    private val ownLogCall = ThreadLocal.withInitial { false }
+    private val nativeLogHandler = object : Handler() {
+        override fun publish(record: LogRecord?) {
+            if (record == null || ownLogCall.get() || record.level.intValue() < Level.WARNING.intValue()) return
+            val level = if (record.level.intValue() >= Level.SEVERE.intValue()) LogLevel.ERROR else LogLevel.WARNING
+            val source = Bukkit.getPluginManager().plugins.firstOrNull {
+                record.loggerName?.contains(it.name, ignoreCase = true) == true
+            } ?: plugin
+            nativeLogObserver?.invoke(source, level, record.message ?: "Native platform error", record.thrown)
+        }
+        override fun flush() = Unit
+        override fun close() = Unit
+    }
 
     override val type = PlatformType.BUKKIT
     override val implementationName: String get() = Bukkit.getName().ifBlank { type.displayName }
@@ -72,7 +88,18 @@ class BukkitPlatformAdapter @JvmOverloads constructor(
             LogLevel.ERROR -> Level.SEVERE
             else -> Level.INFO
         }
-        if (error == null) target.log(nativeLevel, message) else target.log(nativeLevel, message, error)
+        ownLogCall.set(true)
+        try {
+            if (error == null) target.log(nativeLevel, message) else target.log(nativeLevel, message, error)
+        } finally {
+            ownLogCall.set(false)
+        }
+    }
+
+    override fun observeNativeLogs(observer: ((Any, LogLevel, String, Throwable?) -> Unit)?) {
+        if (nativeLogObserver == null && observer != null) Bukkit.getLogger().addHandler(nativeLogHandler)
+        if (nativeLogObserver != null && observer == null) Bukkit.getLogger().removeHandler(nativeLogHandler)
+        nativeLogObserver = observer
     }
 
     override fun console(owner: Any, message: String) {
@@ -97,6 +124,10 @@ class BukkitPlatformAdapter @JvmOverloads constructor(
     }
 
     override fun details(): Map<String, Any?> {
+        return diagnosticDetails(false)
+    }
+
+    override fun diagnosticDetails(includeSensitive: Boolean): Map<String, Any?> {
         val server = Bukkit.getServer()
         val data = linkedMapOf<String, Any?>()
 
@@ -118,10 +149,25 @@ class BukkitPlatformAdapter @JvmOverloads constructor(
             )
         }
 
-        // Worlds & Players counts ONLY (NO names, NO seeds, NO UUIDs/IPs!)
-        data["worldCount"] = server.worlds.size
+        data["worlds"] = server.worlds.map { world -> linkedMapOf(
+            "name" to world.name,
+            "environment" to world.environment.name,
+            "difficulty" to world.difficulty.name,
+            "players" to world.players.size,
+            "loadedChunks" to world.loadedChunks.size,
+            "entities" to world.entities.size,
+            "time" to world.time,
+        ) }
         data["onlinePlayersCount"] = server.onlinePlayers.size
         data["maxPlayers"] = server.maxPlayers
+        data["onlinePlayers"] = if (includeSensitive) server.onlinePlayers.map { player ->
+            linkedMapOf(
+                "name" to player.name,
+                "uuid" to player.uniqueId.toString(),
+                "world" to player.world.name,
+                "ping" to runCatching { player.javaClass.getMethod("getPing").invoke(player) }.getOrNull(),
+            )
+        } else "[REDACTED: available in encrypted report only]"
 
         // Plugins
         val pluginsData = mutableListOf<Map<String, Any?>>()
@@ -203,6 +249,7 @@ class BukkitPlatformAdapter @JvmOverloads constructor(
     override fun close() {
         if (closedFlag.compareAndSet(false, true)) {
             HandlerList.unregisterAll(this)
+            observeNativeLogs(null)
             diagnosticCommands = null
             library = null
         }

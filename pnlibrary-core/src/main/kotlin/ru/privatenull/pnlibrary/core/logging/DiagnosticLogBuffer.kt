@@ -39,6 +39,11 @@ internal class DiagnosticLogBuffer(private val capacity: Int = 2_000) {
     private val incidents = LinkedHashMap<String, Incident>()
     private val redactor = DiagnosticRedactor()
     private var timelineEntryCount = 0
+    @Volatile private var changeListener: ((List<Map<String, Any?>>) -> Unit)? = null
+
+    fun onChange(listener: (List<Map<String, Any?>>) -> Unit) {
+        changeListener = listener
+    }
 
     /**
      * Records one occurrence. The first occurrence keeps the complete throwable; repeats only add their exact time.
@@ -83,12 +88,14 @@ internal class DiagnosticLogBuffer(private val capacity: Int = 2_000) {
                     timelineEntryCount -= it.occurrences.size
                 }
             }
+            notifyChanged()
             return CaptureResult(emitOriginal = true)
         }
 
         existing.count++
         existing.lastSeenUtc = now
         addOccurrence(existing, now)
+        notifyChanged()
 
         val milestone = existing.count == 10L || existing.count == 100L || existing.count % 1_000L == 0L
         val intervalElapsed = nowMs - existing.lastSummaryAtMs >= SUMMARY_INTERVAL_MS
@@ -123,6 +130,10 @@ internal class DiagnosticLogBuffer(private val capacity: Int = 2_000) {
             "fullError" to incident.fullError,
             "consoleBlock" to incident.consoleBlock,
         )
+    }
+
+    private fun notifyChanged() {
+        changeListener?.let { listener -> runCatching { listener(snapshot()) } }
     }
 
     private fun fingerprint(plugin: String, level: LogLevel, message: String, error: Throwable?): String {

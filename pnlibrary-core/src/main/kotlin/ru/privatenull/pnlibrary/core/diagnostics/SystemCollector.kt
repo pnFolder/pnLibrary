@@ -99,6 +99,20 @@ class SystemCollector {
         return data
     }
 
+    /** Complete JVM thread dump kept as a separate text entry in the archive. */
+    fun threadDump(): String {
+        val bean = ManagementFactory.getThreadMXBean()
+        return buildString {
+            bean.dumpAllThreads(true, true).forEach { info ->
+                append('"').append(info.threadName).append("\" id=").append(info.threadId)
+                    .append(" state=").append(info.threadState).append('\n')
+                info.lockName?.let { append("  waiting on ").append(it).append('\n') }
+                info.stackTrace.forEach { append("    at ").append(it).append('\n') }
+                append('\n')
+            }
+        }
+    }
+
     private fun extractPid(runtimeName: String): String {
         val idx = runtimeName.indexOf('@')
         return if (idx > 0) runtimeName.substring(0, idx) else runtimeName
