@@ -15,6 +15,8 @@ data class PnLibraryConfig @JvmOverloads constructor(
     val configs: Boolean = true,
     val logs: Boolean = true,
     val logRecords: Int = 200,
+    val historyRetentionDays: Int = 30,
+    val historyMaxBytes: Int = 32 * 1024 * 1024,
     val cooldownSeconds: Int = 10,
     val keepReports: Int = 10,
     val maxReportBytes: Int = 8 * 1024 * 1024,
@@ -31,6 +33,8 @@ data class PnLibraryConfig @JvmOverloads constructor(
             "uploadProviders may contain catbox, fileio, and custom"
         }
         require(logRecords in 1..2_000) { "logRecords must be between 1 and 2000" }
+        require(historyRetentionDays in 1..365) { "historyRetentionDays must be between 1 and 365" }
+        require(historyMaxBytes in 1024 * 1024..256 * 1024 * 1024) { "historyMaxBytes must be between 1 and 256 MiB" }
         require(cooldownSeconds in 0..3_600) { "cooldownSeconds must be between 0 and 3600" }
         require(keepReports in 1..1_000) { "keepReports must be between 1 and 1000" }
         require(maxReportBytes in 65_536..64 * 1024 * 1024) { "maxReportBytes must be between 64 KiB and 64 MiB" }

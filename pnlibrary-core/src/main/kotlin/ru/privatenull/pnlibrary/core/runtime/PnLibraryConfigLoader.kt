@@ -47,6 +47,8 @@ object PnLibraryConfigLoader {
             configs = values.boolean("configs", defaults.configs),
             logs = values.boolean("logs", defaults.logs),
             logRecords = values.int("log-records", defaults.logRecords),
+            historyRetentionDays = values.int("history-retention-days", defaults.historyRetentionDays),
+            historyMaxBytes = values.int("history-max-bytes", defaults.historyMaxBytes),
             cooldownSeconds = values.int("cooldown-seconds", defaults.cooldownSeconds),
             keepReports = values.int("keep-reports", defaults.keepReports),
             maxReportBytes = values.int("max-report-bytes", defaults.maxReportBytes),
@@ -97,7 +99,8 @@ object PnLibraryConfigLoader {
     private const val MAX_CONFIG_BYTES = 256L * 1024L
     private val KNOWN_KEYS = setOf(
         "upload", "upload-mode", "upload-providers", "upload-endpoint", "upload-public-base", "upload-public-key",
-        "upload-key-id", "allow-plaintext", "configs", "logs", "log-records", "cooldown-seconds",
+        "upload-key-id", "allow-plaintext", "configs", "logs", "log-records", "history-retention-days",
+        "history-max-bytes", "cooldown-seconds",
         "keep-reports", "max-report-bytes", "delete-after-days", "excluded-paths",
         "secret-key-patterns", "redact-value-patterns",
     )
@@ -115,6 +118,8 @@ object PnLibraryConfigLoader {
         configs: true
         logs: true
         log-records: 200
+        history-retention-days: 30
+        history-max-bytes: 33554432
         cooldown-seconds: 10
         keep-reports: 10
         max-report-bytes: 8388608

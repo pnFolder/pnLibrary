@@ -26,6 +26,11 @@ class DiagnosticsRegistry(eventLimit: Int = DEFAULT_EVENT_LIMIT) : DiagnosticsSe
     private val plugins = ConcurrentHashMap<String, PluginState>()
     private val limit   = eventLimit.coerceIn(10, 500)
     private val redactor = DiagnosticRedactor()
+    @Volatile private var eventChangeListener: (() -> Unit)? = null
+
+    fun onEventsChanged(listener: (() -> Unit)?) {
+        eventChangeListener = listener
+    }
 
     override val apiVersion: Int get() = DiagnosticsService.API_VERSION
 
@@ -82,6 +87,7 @@ class DiagnosticsRegistry(eventLimit: Int = DEFAULT_EVENT_LIMIT) : DiagnosticsSe
     /** Clears process state when the installed runtime is shut down or reloaded. */
     fun clear() {
         plugins.clear()
+        eventChangeListener = null
     }
 
     // ── Event recording ──────────────────────────────────────────────────────
@@ -112,6 +118,7 @@ class DiagnosticsRegistry(eventLimit: Int = DEFAULT_EVENT_LIMIT) : DiagnosticsSe
                     existing["omittedOccurrences"] =
                         ((existing["omittedOccurrences"] as? Number)?.toLong() ?: 0L) + 1
                 }
+                eventChangeListener?.let { runCatching(it) }
                 return
             }
 
@@ -133,6 +140,7 @@ class DiagnosticsRegistry(eventLimit: Int = DEFAULT_EVENT_LIMIT) : DiagnosticsSe
             if (error != null) event["exception"] = formatException(error)
             st.events.addLast(event)
             while (st.events.size > limit) st.events.removeFirst()
+            eventChangeListener?.let { runCatching(it) }
         }
     }
 
@@ -167,6 +175,15 @@ class DiagnosticsRegistry(eventLimit: Int = DEFAULT_EVENT_LIMIT) : DiagnosticsSe
             )
         }
         return result
+    }
+
+    /** Persistent-history view without invoking plugin contributors. */
+    fun eventSnapshot(): Map<String, Any?> = linkedMapOf<String, Any?>().also { result ->
+        plugins.keys.sorted().forEach { name ->
+            val state = plugins[name] ?: return@forEach
+            val events = synchronized(state.events) { ArrayList(state.events) }
+            if (events.isNotEmpty()) result[name] = events
+        }
     }
 
     /** Returns merged [DiagnosticConfiguration] objects for a given plugin. */

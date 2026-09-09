@@ -68,7 +68,10 @@ class PnLibraryImpl(
     val uploadLedger: UploadLedger = UploadLedger(dataFolder.resolve("upload-ledger.json"))
     val encryptionCodec: EncryptedEnvelopeCodec? = initEncryptionCodec()
     private val diagnosticHistory = PersistentDiagnosticHistory(
-        dataFolder.resolve("diagnostics").resolve("history"), encryptionCodec
+        dataFolder.resolve("diagnostics").resolve("history"),
+        encryptionCodec,
+        config.historyRetentionDays,
+        config.historyMaxBytes.toLong(),
     )
     private val diagnosticLogs = DiagnosticLogBuffer(config.logRecords.coerceIn(10, 2_000))
     override val metrics: MetricsService get() = metricsRegistry
@@ -115,7 +118,8 @@ class PnLibraryImpl(
     }
 
     fun init() {
-        diagnosticLogs.onChange(diagnosticHistory::save)
+        diagnosticLogs.onChange { persistDiagnosticHistory() }
+        diagnostics.onEventsChanged(::persistDiagnosticHistory)
         platform.observeNativeLogs { nativeOwner, level, message, error ->
             diagnosticLogs.record(platform, nativeOwner, level, message, error)
         }
@@ -127,6 +131,10 @@ class PnLibraryImpl(
                 }
             }, 0, 24, TimeUnit.HOURS)
         }
+    }
+
+    private fun persistDiagnosticHistory() {
+        diagnosticHistory.save(diagnosticLogs.snapshot(), diagnostics.eventSnapshot())
     }
 
     override fun createDiagnosticReport(request: DebugRequest): DiagnosticReport {
@@ -158,6 +166,7 @@ class PnLibraryImpl(
             runCatching { serviceManager.close() }
             runCatching { taskService.close() }
             runCatching { platform.observeNativeLogs(null) }
+            diagnostics.onEventsChanged(null)
             diagnostics.clear()
             PnLibraryProvider.clear(this)
             runCatching { platform.close() }

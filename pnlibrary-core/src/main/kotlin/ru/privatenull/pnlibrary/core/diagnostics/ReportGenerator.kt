@@ -59,7 +59,7 @@ class ReportGenerator(
                 .groupBy { safePath(it["plugin"]?.toString() ?: "runtime") }
                 .forEach { (plugin, logs) -> archive.json("plugins/$plugin/logs/incidents.json", logs) }
             diagnosticHistory().forEach { (name, content) ->
-                archive.bytes("history/${safePath(name)}.encrypted", content)
+                archive.bytes("history/${safePath(name)}", content)
             }
         }
 

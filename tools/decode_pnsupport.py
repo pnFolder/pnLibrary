@@ -66,6 +66,14 @@ def safe_extract(data: bytes, output: pathlib.Path) -> None:
         archive.extractall(root)
 
 
+def decrypt_history(output: pathlib.Path, private_key) -> None:
+    for history in output.rglob("*.pndlog"):
+        payload, payload_format = decrypt(history.read_bytes(), private_key)
+        if payload_format != "incident-history":
+            raise ValueError(f"Unexpected history payload: {history}")
+        history.with_suffix(".json").write_bytes(payload)
+
+
 def main() -> None:
     parser = argparse.ArgumentParser(description="Open a pnFolder .pnsupport archive")
     parser.add_argument("report", type=pathlib.Path)
@@ -77,6 +85,7 @@ def main() -> None:
     output = args.output or args.report.with_suffix("")
     if payload_format == "zip":
         safe_extract(payload, output)
+        decrypt_history(output, private_key)
         print(output.resolve())
     else:
         target = output.with_suffix(".json")

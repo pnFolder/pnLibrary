@@ -9,6 +9,8 @@
 | `upload` | `true` | Загружать отчёт, если не передан `--local` |
 | `upload-mode` | `encrypted` | `encrypted` или `disabled` |
 | `upload-providers` | `[catbox, fileio]` | Порядок резервных хранилищ: `catbox`, `fileio`, `custom` |
+| `history-retention-days` | `30` | Сколько дней хранить зашифрованную историю ошибок |
+| `history-max-bytes` | `33554432` | Общий предел истории на диске (32 МиБ) |
 | `allow-plaintext` | `false` | Обязательное явное согласие для режима `mclogs` |
 | `configs` | `true` | Разрешить сбор объявленных конфигураций |
 | `logs` | `true` | Разрешить сбор журнала pnLibrary |
