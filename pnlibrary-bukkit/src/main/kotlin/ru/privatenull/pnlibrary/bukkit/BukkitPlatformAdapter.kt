@@ -36,6 +36,8 @@ import java.lang.reflect.Constructor
 import java.time.Instant
 import java.util.Locale
 import java.util.concurrent.ConcurrentHashMap
+import java.util.concurrent.CompletableFuture
+import java.util.concurrent.TimeUnit
 import java.util.concurrent.atomic.AtomicBoolean
 import java.util.logging.Level
 import java.util.logging.Handler
@@ -128,6 +130,20 @@ class BukkitPlatformAdapter @JvmOverloads constructor(
     }
 
     override fun diagnosticDetails(includeSensitive: Boolean): Map<String, Any?> {
+        if (!ServerCapabilities.isFolia && Bukkit.isPrimaryThread()) {
+            return collectDiagnosticDetails(includeSensitive)
+        }
+        val snapshot = CompletableFuture<Map<String, Any?>>()
+        executeGlobal(Runnable {
+            runCatching { collectDiagnosticDetails(includeSensitive) }
+                .onSuccess(snapshot::complete)
+                .onFailure(snapshot::completeExceptionally)
+        })
+        return snapshot.get(15, TimeUnit.SECONDS)
+    }
+
+    /** Must run on Bukkit's main thread, or Folia's global scheduler. */
+    private fun collectDiagnosticDetails(includeSensitive: Boolean): Map<String, Any?> {
         val server = Bukkit.getServer()
         val data = linkedMapOf<String, Any?>()
 
@@ -149,24 +165,33 @@ class BukkitPlatformAdapter @JvmOverloads constructor(
             )
         }
 
-        data["worlds"] = server.worlds.map { world -> linkedMapOf(
-            "name" to world.name,
-            "environment" to world.environment.name,
-            "difficulty" to world.difficulty.name,
-            "players" to world.players.size,
-            "loadedChunks" to world.loadedChunks.size,
-            "entities" to world.entities.size,
-            "time" to world.time,
-        ) }
+        data["worlds"] = server.worlds.map { world ->
+            linkedMapOf<String, Any?>(
+                "name" to world.name,
+                "environment" to world.environment.name,
+                "difficulty" to world.difficulty.name,
+            ).also { details ->
+                if (!ServerCapabilities.isFolia) {
+                    details["players"] = world.players.size
+                    details["loadedChunks"] = world.loadedChunks.size
+                    details["entities"] = world.entities.size
+                    details["time"] = world.time
+                } else {
+                    details["regionData"] = "[UNAVAILABLE: requires a region thread on Folia]"
+                }
+            }
+        }
         data["onlinePlayersCount"] = server.onlinePlayers.size
         data["maxPlayers"] = server.maxPlayers
-        data["onlinePlayers"] = if (includeSensitive) server.onlinePlayers.map { player ->
+        data["onlinePlayers"] = if (includeSensitive && !ServerCapabilities.isFolia) server.onlinePlayers.map { player ->
             linkedMapOf(
                 "name" to player.name,
                 "uuid" to player.uniqueId.toString(),
                 "world" to player.world.name,
                 "ping" to runCatching { player.javaClass.getMethod("getPing").invoke(player) }.getOrNull(),
             )
+        } else if (ServerCapabilities.isFolia) {
+            "[UNAVAILABLE: player details require entity schedulers on Folia]"
         } else "[REDACTED: available in encrypted report only]"
 
         // Plugins
