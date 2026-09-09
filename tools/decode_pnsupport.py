@@ -80,11 +80,22 @@ def decrypt_history(output: pathlib.Path, private_key) -> None:
 
 def make_readable(value, field: str | None = None):
     if isinstance(value, dict):
-        return {
+        readable = {
             key: make_readable(item, key)
             for key, item in value.items()
             if key != "consoleBlock"
         }
+        full_error = value.get("fullError")
+        if isinstance(full_error, str):
+            occurrences = value.get("occurrences")
+            first_seen = occurrences.get("firstSeenUtc") if isinstance(occurrences, dict) else None
+            timestamp = first_seen or value.get("firstSeenUtc", value.get("timeUtc", "unknown-time"))
+            level = value.get("level", "ERROR")
+            plugin = value.get("plugin", "unknown")
+            message = value.get("message", "Unhandled error")
+            header = f"[{timestamp} {level}] [{plugin}] {message}"
+            readable["fullError"] = [header, *[line.lstrip("\t") for line in full_error.splitlines()]]
+        return readable
     if isinstance(value, list):
         return [make_readable(item) for item in value]
     if isinstance(value, str) and field in MULTILINE_FIELDS:
