@@ -35,6 +35,7 @@ import java.io.File
 import java.lang.reflect.Constructor
 import java.time.Instant
 import java.util.Locale
+import java.util.UUID
 import java.util.concurrent.ConcurrentHashMap
 import java.util.concurrent.CompletableFuture
 import java.util.concurrent.TimeUnit
@@ -322,9 +323,11 @@ class BukkitPlatformAdapter @JvmOverloads constructor(
         if (command.name.equals("pn", true)) {
             if (!sender.hasPermission("pnlibrary.admin")) return emptyList()
             val values = when (args.size) {
-                1 -> listOf("status", "updates", "check", "update", "restart", "debug", "support")
+                1 -> listOf("status", "updates", "check", "update", "restart", "debug", "support",
+                    "error", "error-repeat", "error-chain")
                 2 -> if (args[0].equals("status", true) || args[0].equals("update", true))
                     library?.updates?.registrations()?.map { it.snapshot.product } ?: emptyList()
+                else if (args[0].equals("error-repeat", true)) listOf("10", "100", "1000")
                 else emptyList()
                 else -> emptyList()
             }
@@ -423,9 +426,41 @@ class BukkitPlatformAdapter @JvmOverloads constructor(
             "restart" -> handleRestart(sender, args.drop(1))
             "support" -> sender.sendMessage("§eПоддержка pnFolder: §f${PnLibraryBrand.SUPPORT_URL}")
             "debug" -> sender.sendMessage("§eИспользуйте /$commandAlias [all|plugin] [--full|--config|--logs]")
-            else -> sender.sendMessage("§e/pn [status [плагин]|updates|check|update <плагин>|restart|debug|support]")
+            "error" -> emitUniqueTestError(sender, runtime)
+            "error-repeat" -> emitRepeatedTestError(sender, runtime, args.getOrNull(1))
+            "error-chain" -> emitChainedTestError(sender, runtime)
+            else -> sender.sendMessage("§e/pn [status|updates|check|update|restart|debug|support|error|error-repeat|error-chain]")
         }
         return true
+    }
+
+    private fun emitUniqueTestError(sender: CommandSender, runtime: PnLibrary) {
+        val id = UUID.randomUUID().toString().substring(0, 8)
+        runtime.logging.logger(plugin, "diagnostic-test").error(
+            "Unique diagnostic test error [$id]",
+            IllegalStateException("Generated unique failure [$id]"),
+        )
+        sender.sendMessage("§aСоздана уникальная тестовая ошибка: §f$id")
+    }
+
+    private fun emitRepeatedTestError(sender: CommandSender, runtime: PnLibrary, rawCount: String?) {
+        val count = rawCount?.toIntOrNull()?.coerceIn(1, 1_000) ?: 10
+        val logger = runtime.logging.logger(plugin, "diagnostic-test")
+        repeat(count) {
+            logger.error("Repeated diagnostic test error", repeatedTestException())
+        }
+        sender.sendMessage("§aОдинаковая тестовая ошибка вызвана §f$count §aраз.")
+    }
+
+    private fun repeatedTestException(): Throwable =
+        IllegalStateException("Generated repeated failure")
+
+    private fun emitChainedTestError(sender: CommandSender, runtime: PnLibrary) {
+        val root = IllegalArgumentException("Invalid test database response")
+        val database = java.sql.SQLException("Test query execution failed", root)
+        val completion = java.util.concurrent.CompletionException("Test asynchronous operation failed", database)
+        runtime.logging.logger(plugin, "diagnostic-test").error("Chained diagnostic test error", completion)
+        sender.sendMessage("§aСоздана тестовая ошибка с полной цепочкой причин.")
     }
 
     @Suppress("DEPRECATION")
