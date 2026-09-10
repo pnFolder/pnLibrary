@@ -18,6 +18,7 @@ import ru.privatenull.pnlibrary.api.tasks.TaskScope
 import java.time.Duration
 import java.util.IdentityHashMap
 import java.util.UUID
+import java.util.concurrent.atomic.AtomicBoolean
 
 /** Runtime implementation of the public Bukkit menu contract. */
 internal class MenuServiceImpl(
@@ -26,10 +27,12 @@ internal class MenuServiceImpl(
 ) : MenuService, Listener, AutoCloseable {
     private val sessions = hashMapOf<java.util.UUID, Session>()
     private val owners = IdentityHashMap<Plugin, MutableSet<Session>>()
+    private val closed = AtomicBoolean(false)
 
     init { host.server.pluginManager.registerEvents(this, host) }
 
     override fun open(owner: Plugin, player: Player, menu: Menu): MenuSession {
+        check(!closed.get()) { "Menu service is closed" }
         check(owner.isEnabled) { "Plugin ${owner.name} is disabled" }
         sessions.remove(player.uniqueId)?.finish(false)
         val holder = MenuInventoryHolder(UUID.randomUUID())
@@ -46,11 +49,13 @@ internal class MenuServiceImpl(
     }
 
     override fun session(player: Player): MenuSession? = sessions[player.uniqueId]
-    override fun close(owner: Plugin) = owners.remove(owner)?.toList()?.forEach { it.close() } ?: Unit
+    override fun close(owner: Plugin) =
+        owners[owner]?.toList()?.forEach { it.terminate(closeView = true, notifyOwner = false) } ?: Unit
 
     /** Closes every active menu and unregisters this shared listener. */
     override fun close() {
-        owners.keys.toList().forEach(::close)
+        if (!closed.compareAndSet(false, true)) return
+        sessions.values.toList().forEach { it.terminate(closeView = true, notifyOwner = false) }
         tasks.close()
         org.bukkit.event.HandlerList.unregisterAll(this)
     }
@@ -60,6 +65,11 @@ internal class MenuServiceImpl(
         val player = event.whoClicked as? Player ?: return
         val session = sessions[player.uniqueId] ?: return
         if (!owns(event.view.topInventory, session)) return
+        if (!session.owner.isEnabled || closed.get()) {
+            event.isCancelled = true
+            session.terminate(closeView = true, notifyOwner = false)
+            return
+        }
         val top = event.rawSlot in 0 until session.inventory.size
         if (!top) {
             if (session.menu.cancelPlayerInventory) event.isCancelled = true
@@ -118,13 +128,24 @@ internal class MenuServiceImpl(
         override fun get(slot: Int): ItemStack? = inventory.getItem(slot)
         override fun refresh() { if (!finished) menu.renderer?.render(this) }
         override fun refreshAfter(delay: Duration) { tasks.laterEntity(player, delay, Runnable { refresh() }) }
-        override fun close() { if (!finished) player.closeInventory() }
+        override fun close() {
+            if (finished) return
+            if (owns(player.openInventory.topInventory, this)) player.closeInventory()
+            else finish(true)
+        }
+
+        fun terminate(closeView: Boolean, notifyOwner: Boolean) {
+            if (finished) return
+            finish(notifyOwner)
+            if (closeView && owns(player.openInventory.topInventory, this)) player.closeInventory()
+        }
+
         fun finish(callback: Boolean) {
             if (finished) return
             finished = true
             sessions.remove(player.uniqueId, this)
             owners[owner]?.let { it.remove(this); if (it.isEmpty()) owners.remove(owner) }
-            if (callback) menu.closeHandler?.handle(MenuClose(this))
+            if (callback && owner.isEnabled && !closed.get()) menu.closeHandler?.handle(MenuClose(this))
         }
     }
 
