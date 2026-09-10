@@ -68,6 +68,10 @@ class CodeFirstYaml<T> @JvmOverloads constructor(
         val originalPaths = YamlDefaultsMerger.paths(original).toSet()
         val missing = (defaultPaths - originalPaths).sorted()
         val unknown = (originalPaths - defaultPaths).sorted()
+        val requiredMissing = ((codec as? ConfigSchema)?.requiredPaths.orEmpty() - originalPaths).sorted()
+        check(requiredMissing.isEmpty()) {
+            "Required configuration values are missing from ${file.name}: ${requiredMissing.joinToString()}"
+        }
         check(options.missingValues != MissingValuePolicy.FAIL || missing.isEmpty()) {
             "Missing configuration values in ${file.name}: ${missing.joinToString()}"
         }

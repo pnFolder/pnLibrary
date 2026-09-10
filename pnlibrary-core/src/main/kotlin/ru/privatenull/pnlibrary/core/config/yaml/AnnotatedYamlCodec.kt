@@ -15,7 +15,9 @@ internal class AnnotatedYamlCodec<T : Any>(
     private val type: Class<T>,
     private val defaults: Supplier<T>,
     private val serializers: Map<Class<*>, ConfigSerializer<*>>,
-) : ConfigCodec<T> {
+) : ConfigCodec<T>, ConfigSchema {
+    private val annotationSerializers = mutableMapOf<Class<out ConfigSerializer<*>>, ConfigSerializer<*>>()
+    override val requiredPaths: Set<String> = required(type)
     private val yaml = Yaml(DumperOptions().apply {
         defaultFlowStyle = DumperOptions.FlowStyle.BLOCK
         isPrettyFlow = true
@@ -33,6 +35,10 @@ internal class AnnotatedYamlCodec<T : Any>(
 
     override fun decode(yaml: String): T {
         val loaded = this.yaml.load<Any?>(yaml) ?: linkedMapOf<String, Any?>()
+        serializer(type)?.let {
+            @Suppress("UNCHECKED_CAST")
+            return it.deserialize(loaded) as T
+        }
         require(loaded is Map<*, *>) { "Root value of ${type.name} must be a YAML object" }
         return defaults.get().also { populate(it, type, loaded) }
     }
@@ -44,7 +50,7 @@ internal class AnnotatedYamlCodec<T : Any>(
     }
 
     private fun toYamlValue(value: Any?): Any? {
-        if (value != null) serializer(value.javaClass)?.let { return it.serializeUntyped(value) }
+        if (value != null) serializer(value.javaClass)?.let { return toYamlValue(it.serializeUntyped(value)) }
         return when (value) {
         null, is String, is Number, is Boolean -> value
         is Enum<*> -> value.name
@@ -52,7 +58,12 @@ internal class AnnotatedYamlCodec<T : Any>(
         is Array<*> -> value.map(::toYamlValue)
         is Map<*, *> -> linkedMapOf<Any?, Any?>().also { out -> value.forEach { (k, v) -> out[k] = toYamlValue(v) } }
         else -> linkedMapOf<String, Any?>().also { out ->
-            fields(value.javaClass).forEach { field -> out[key(field)] = toYamlValue(read(field, value)) }
+            fields(value.javaClass).forEach { field ->
+                val fieldValue = read(field, value)
+                val serializer = serializer(field)
+                out[key(field)] = if (fieldValue != null && serializer != null)
+                    toYamlValue(serializer.serializeUntyped(fieldValue)) else toYamlValue(fieldValue)
+            }
         }
         }
     }
@@ -62,7 +73,7 @@ internal class AnnotatedYamlCodec<T : Any>(
         fields(targetType).forEach { field ->
             if (!byKey.containsKey(key(field))) return@forEach
             val raw = byKey[key(field)]
-            val converted = convert(raw, field.genericType, read(field, target))
+            val converted = serializer(field)?.deserialize(raw) ?: convert(raw, field.genericType, read(field, target))
             field.set(target, converted)
         }
     }
@@ -115,8 +126,7 @@ internal class AnnotatedYamlCodec<T : Any>(
         key(field) to Meta(
             field.getAnnotation(ConfigComment::class.java)?.value?.toList().orEmpty(),
             field.isAnnotationPresent(ConfigNewLine::class.java),
-            if (isScalar(field.type) || Collection::class.java.isAssignableFrom(field.type) || Map::class.java.isAssignableFrom(field.type))
-                emptyMap() else schema(field.type),
+            if (isStructured(field)) schema(field.type) else emptyMap(),
         )
     }
 
@@ -154,7 +164,7 @@ internal class AnnotatedYamlCodec<T : Any>(
                 if (current !is String || !Regex(pattern.value).matches(current))
                     problems += ConfigProblem(path, "must match ${pattern.value}")
             }
-            if (current != null && !isScalar(field.type) && current !is Collection<*> && current !is Map<*, *>)
+            if (current != null && isStructured(field))
                 validateObject(current, field.type, path, problems)
         }
     }
@@ -177,7 +187,36 @@ internal class AnnotatedYamlCodec<T : Any>(
     }
     @Suppress("UNCHECKED_CAST")
     private fun serializer(type: Class<*>): ConfigSerializer<Any>? =
-        (serializers[type] ?: serializers.entries.firstOrNull { it.key.isAssignableFrom(type) }?.value) as? ConfigSerializer<Any>
+        (annotatedSerializer(type) ?: serializers[type] ?: serializers.entries.firstOrNull { it.key.isAssignableFrom(type) }?.value) as? ConfigSerializer<Any>
+
+    @Suppress("UNCHECKED_CAST")
+    private fun serializer(field: Field): ConfigSerializer<Any>? =
+        field.getAnnotation(ConfigSerializeWith::class.java)?.value?.java?.let(::serializerInstance) as? ConfigSerializer<Any>
+
+    private fun annotatedSerializer(type: Class<*>): ConfigSerializer<*>? =
+        type.getAnnotation(ConfigSerializeWith::class.java)?.value?.java?.let(::serializerInstance)
+
+    private fun serializerInstance(type: Class<out ConfigSerializer<*>>): ConfigSerializer<*> =
+        synchronized(annotationSerializers) {
+            annotationSerializers.getOrPut(type) {
+                type.getDeclaredConstructor().also { it.isAccessible = true }.newInstance()
+            }
+        }
+
+    private fun required(target: Class<*>, prefix: String = ""): Set<String> {
+        if (serializer(target) != null) return emptySet()
+        return buildSet {
+        fields(target).forEach { field ->
+            val path = if (prefix.isEmpty()) key(field) else "$prefix.${key(field)}"
+            if (field.isAnnotationPresent(ConfigRequired::class.java)) add(path)
+            if (isStructured(field))
+                addAll(required(field.type, path))
+        }
+        }
+    }
+    private fun isStructured(field: Field): Boolean =
+        serializer(field) == null && serializer(field.type) == null && !isScalar(field.type) &&
+            !Collection::class.java.isAssignableFrom(field.type) && !Map::class.java.isAssignableFrom(field.type) && !field.type.isArray
 
     private fun ConfigSerializer<Any>.serializeUntyped(value: Any): Any? = serialize(value)
     private data class Meta(val comments: List<String>, val newLine: Boolean, val children: Map<String, Meta>)

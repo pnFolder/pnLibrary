@@ -85,6 +85,35 @@ context.getConfigs().serializer(WorldPoint.class, new ConfigSerializer<WorldPoin
 });
 ```
 
+Если сериализатор относится только к одному полю или самому классу, его можно
+прикрепить прямо к модели:
+
+```java
+public final class MainConfig {
+    @ConfigRequired
+    public String serverName = "auth-1";
+
+    @ConfigSerializeWith(WorldPointSerializer.class)
+    public WorldPoint spawn = new WorldPoint("world", 0, 64, 0);
+}
+
+public final class WorldPointSerializer implements ConfigSerializer<WorldPoint> {
+    public Object serialize(WorldPoint value) {
+        return value.world() + ";" + value.x() + ";" + value.y() + ";" + value.z();
+    }
+
+    public WorldPoint deserialize(Object value) {
+        return WorldPoint.parse(value.toString());
+    }
+}
+```
+
+`@ConfigSerializeWith` работает на поле и на классе; сериализатор должен иметь
+конструктор без аргументов. Приоритет: аннотация поля, аннотация класса, затем
+сериализатор из `ConfigScope.serializer(...)`, затем встроенное преобразование.
+`@ConfigRequired` останавливает загрузку, если ключ отсутствует физически —
+default не маскирует ошибку и файл не переписывается.
+
 При закрытии `PluginContext` все его конфигурации автоматически выгружаются из
 памяти. Файлы не удаляются.
 
