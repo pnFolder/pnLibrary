@@ -1,8 +1,54 @@
 # Code-first конфигурации pnLibrary
 
-`CodeFirstYaml<T>` хранит структуру конфигурации в типизированном классе. При
-запуске библиотека сериализует экземпляр с настройками по умолчанию, сравнивает
-его с существующим YAML и добавляет отсутствующие поля на любой глубине.
+Плагину больше не требуется наследоваться от сериализатора или писать собственный
+codec. `PluginContext.configs` создаёт типизированные YAML из обычных Java/Kotlin
+классов. `CodeFirstYaml<T>` остаётся низкоуровневым расширением для нестандартных
+форматов.
+
+```java
+@ConfigComment("Main tiAuth configuration.")
+public final class MainConfig {
+    @ConfigComment("Available values: LEGACY, MINIMESSAGE")
+    public Serializer serializer = Serializer.LEGACY;
+
+    @ConfigNewLine
+    public Servers servers = new Servers();
+
+    public static final class Servers {
+        @ConfigComment("Enable the virtual authorization server.")
+        public boolean useVirtualServer = false;
+
+        @ConfigRange(min = 1, max = 65535)
+        public int virtualServerPort = 65535;
+    }
+}
+
+ManagedConfig<MainConfig> main = context.getConfigs().yaml(
+    "config.yml", MainConfig.class, MainConfig::new
+);
+MainConfig settings = main.loadValue();
+```
+
+Kotlin:
+
+```kotlin
+class MainConfig {
+    @ConfigComment("Available values: LEGACY, MINIMESSAGE")
+    var serializer = Serializer.LEGACY
+
+    @ConfigNewLine
+    var servers = Servers()
+}
+
+val main = context.configs.yaml("config.yml", ::MainConfig)
+val settings = main.loadValue()
+```
+
+Аннотации: `@ConfigComment`, `@ConfigKey`, `@ConfigIgnore`, `@ConfigNewLine`,
+`@ConfigOrder`, `@ConfigRange`, `@ConfigNotBlank`, `@ConfigPattern`.
+
+При закрытии `PluginContext` все его конфигурации автоматически выгружаются из
+памяти. Файлы не удаляются.
 
 Система сохраняет:
 

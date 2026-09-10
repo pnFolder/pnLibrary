@@ -10,6 +10,7 @@ import ru.privatenull.pnlibrary.api.runtime.PnLibraryConfig
 import ru.privatenull.pnlibrary.api.runtime.PnLibraryProvider
 import ru.privatenull.pnlibrary.api.version.SemanticVersion
 import ru.privatenull.pnlibrary.core.diagnostics.DiagnosticsRegistry
+import ru.privatenull.pnlibrary.core.config.ConfigurationServiceImpl
 import ru.privatenull.pnlibrary.core.diagnostics.PersistentDiagnosticHistory
 import ru.privatenull.pnlibrary.core.diagnostics.ReportGenerator
 import ru.privatenull.pnlibrary.core.events.EventServiceImpl
@@ -76,6 +77,8 @@ class PnLibraryImpl(
     private val diagnosticLogs = DiagnosticLogBuffer(config.logRecords.coerceIn(10, 2_000))
     override val metrics: MetricsService get() = metricsRegistry
     override val logging: LoggingService = PlatformLoggingService(platform, diagnosticLogs)
+    private val configurationService = ConfigurationServiceImpl(platform)
+    override val configurations: ru.privatenull.pnlibrary.api.config.ConfigurationService get() = configurationService
     private val updateService = UpdateServiceImpl(platform)
     override val updates: ru.privatenull.pnlibrary.api.updates.UpdateService get() = updateService
     private val taskService = TaskServiceImpl(platform) { taskOwner, message, error ->
@@ -95,6 +98,7 @@ class PnLibraryImpl(
         tasks = taskService,
         services = serviceManager,
         logging = logging,
+        configurations = configurationService,
         metrics = metricsRegistry,
         diagnostics = diagnostics,
         updates = updateService,
@@ -160,6 +164,7 @@ class PnLibraryImpl(
         if (closedFlag.compareAndSet(false, true)) {
             workerExecutor.shutdownNow()
             runCatching { plugins.close() }
+            runCatching { configurationService.close() }
             runCatching { metricsRegistry.close() }
             runCatching { updateService.close() }
             runCatching { eventService.close() }

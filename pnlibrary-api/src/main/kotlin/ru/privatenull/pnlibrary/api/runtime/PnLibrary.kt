@@ -1,6 +1,7 @@
 package ru.privatenull.pnlibrary.api.runtime
 
 import ru.privatenull.pnlibrary.api.diagnostics.DiagnosticsService
+import ru.privatenull.pnlibrary.api.config.ConfigurationService
 import ru.privatenull.pnlibrary.api.diagnostics.DebugRequest
 import ru.privatenull.pnlibrary.api.diagnostics.DiagnosticReport
 import ru.privatenull.pnlibrary.api.events.EventService
@@ -40,6 +41,9 @@ interface PnLibrary : Closeable {
 
     /** Native logging and formatted lifecycle summaries. */
     val logging: LoggingService
+
+    /** Typed YAML configuration factory for Java and Kotlin plugins. */
+    val configurations: ConfigurationService
 
     /** Update checks and staged downloads for registered plugins. */
     val updates: UpdateService

@@ -1,6 +1,7 @@
 package ru.privatenull.pnlibrary.api.plugin
 
 import ru.privatenull.pnlibrary.api.diagnostics.DiagnosticRegistration
+import ru.privatenull.pnlibrary.api.config.ConfigScope
 import ru.privatenull.pnlibrary.api.events.EventScope
 import ru.privatenull.pnlibrary.api.logging.PnLogger
 import ru.privatenull.pnlibrary.api.services.ServiceManager
@@ -17,6 +18,7 @@ interface PluginContext : AutoCloseable {
     val tasks: TaskScope
     val services: ServiceManager
     val logger: PnLogger
+    val configs: ConfigScope
     val metrics: MetricsController
     val diagnostics: DiagnosticRegistration?
     val updates: UpdateRegistration?

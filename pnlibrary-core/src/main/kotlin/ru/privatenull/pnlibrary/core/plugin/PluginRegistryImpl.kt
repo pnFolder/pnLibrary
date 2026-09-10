@@ -3,6 +3,7 @@ package ru.privatenull.pnlibrary.core.plugin
 import ru.privatenull.pnlibrary.api.diagnostics.DiagnosticContainer
 import ru.privatenull.pnlibrary.api.diagnostics.DiagnosticRegistration
 import ru.privatenull.pnlibrary.api.diagnostics.DiagnosticsService
+import ru.privatenull.pnlibrary.api.config.ConfigScope
 import ru.privatenull.pnlibrary.api.events.EventScope
 import ru.privatenull.pnlibrary.api.events.EventService
 import ru.privatenull.pnlibrary.api.events.Listener
@@ -27,6 +28,7 @@ import ru.privatenull.pnlibrary.api.updates.PluginUpdateRequest
 import ru.privatenull.pnlibrary.api.updates.UpdateRegistration
 import ru.privatenull.pnlibrary.api.updates.UpdateService
 import ru.privatenull.pnlibrary.core.services.ServiceManagerImpl
+import ru.privatenull.pnlibrary.core.config.ConfigurationServiceImpl
 import java.nio.file.Path
 import java.util.IdentityHashMap
 import java.util.concurrent.atomic.AtomicBoolean
@@ -41,6 +43,7 @@ internal class PluginRegistryImpl(
     private val metrics: MetricsService,
     private val diagnostics: DiagnosticsService,
     private val updates: UpdateService,
+    private val configurations: ConfigurationServiceImpl = ConfigurationServiceImpl(platform),
 ) : PluginRegistry {
 
     private val contexts = linkedMapOf<PluginId, Context>()
@@ -100,12 +103,14 @@ internal class PluginRegistryImpl(
         val metadata = metadata(owner, id, definition)
         var taskScope: TaskScope? = null
         var eventScope: EventScope? = null
+        var configScope: ConfigScope? = null
         var metricsController: MetricsControllerImpl? = null
         var diagnosticRegistration: DiagnosticRegistration? = null
         var updateRegistration: UpdateRegistration? = null
         try {
             taskScope = tasks.scope(owner)
             eventScope = events.scope(id)
+            configScope = configurations.scope(owner)
             definition.listeners.forEach { eventScope.register(it) }
             metricsController = MetricsControllerImpl(
                 owner,
@@ -130,6 +135,7 @@ internal class PluginRegistryImpl(
                 eventScope,
                 services.ownedBy(id),
                 logging.logger(owner, id.value),
+                configScope,
                 metricsController,
                 diagnosticRegistration,
                 updateRegistration,
@@ -140,6 +146,7 @@ internal class PluginRegistryImpl(
             runCatching { diagnosticRegistration?.close() }
             runCatching { metricsController?.close() }
             runCatching { eventScope?.close() }
+            runCatching { configScope?.close() }
             runCatching { services.unregisterAll(id) }
             runCatching { taskScope?.close() }
             throw error
@@ -174,6 +181,7 @@ internal class PluginRegistryImpl(
         override val events: EventScope,
         override val services: ServiceManagerImpl.OwnedServices,
         override val logger: PnLogger,
+        override val configs: ConfigScope,
         override val metrics: MetricsController,
         override val diagnostics: DiagnosticRegistration?,
         override val updates: UpdateRegistration?,
@@ -220,6 +228,7 @@ internal class PluginRegistryImpl(
             runCatching { metrics.close() }
             runCatching { events.close() }
             runCatching { services.close() }
+            runCatching { configs.close() }
             runCatching { tasks.close() }
         }
 
