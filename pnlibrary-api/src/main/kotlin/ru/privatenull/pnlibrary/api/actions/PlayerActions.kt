@@ -12,9 +12,9 @@ import java.util.function.Consumer
 enum class PlayerActionType { MESSAGE, TITLE, ACTION_BAR, KICK, TELEPORT, SOUND, PLAYER_COMMAND }
 
 /** One configuration-friendly action. Only the handler belongs in its constructor. */
-class PlayerAction(
+class PlayerAction private constructor(
     /** Handler key: a built-in name such as `message`, or a custom namespaced key. */
-    var type: String = "message",
+    val type: String,
 ) {
     var text: String? = null
     var title: String? = null
@@ -54,7 +54,22 @@ class PlayerAction(
     fun payload(value: Any?) = apply { payload = value }
 
     companion object {
-        @JvmStatic fun of(type: String) = PlayerAction(type)
+        /** Creates an action that will be handled by [type]. */
+        @JvmStatic fun of(type: String): PlayerAction {
+            val normalized = type.trim().lowercase()
+            require(normalized.matches(Regex("[a-z0-9_.:-]+(?:::[a-z0-9_.:-]+)?"))) {
+                "Invalid action handler: $type"
+            }
+            return PlayerAction(normalized)
+        }
+
+        @JvmStatic fun message(text: String) = of("message").text(text)
+        @JvmStatic fun actionBar(text: String) = of("action_bar").text(text)
+        @JvmStatic fun sound(key: String) = of("sound").sound(key)
+        @JvmStatic fun delay(duration: Duration, vararg actions: PlayerAction) = of("delay").apply {
+            this.duration = duration
+            this.actions += actions
+        }
     }
 }
 

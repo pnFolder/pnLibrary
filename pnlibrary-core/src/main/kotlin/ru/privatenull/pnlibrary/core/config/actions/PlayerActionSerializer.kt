@@ -55,7 +55,7 @@ internal class PlayerActionSerializer : ConfigSerializer<PlayerAction> {
             body = entry.value
         }
         require(type.isNotEmpty()) { "Action handler at ${context.path} must not be blank" }
-        val action = PlayerAction(type)
+        val action = PlayerAction.of(type)
         if (body !is Map<*, *>) {
             when (type.lowercase()) {
                 "message", "action_bar", "kick" -> action.text = body?.toString().orEmpty()

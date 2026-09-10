@@ -385,7 +385,7 @@ internal class PluginRegistryImpl(
             }
         }
 
-        private fun copyAction(source: PlayerAction) = PlayerAction(source.type).also { target ->
+        private fun copyAction(source: PlayerAction) = PlayerAction.of(source.type).also { target ->
             target.text = source.text
             target.title = source.title
             target.subtitle = source.subtitle
