@@ -25,6 +25,7 @@ dependencies {
     implementation(libs.kotlin.stdlib)
     implementation(project(":pnlibrary-bstats-base"))
     implementation(libs.adventure.legacy)
+    implementation(libs.adventure.platform.bukkit)
 
     // 1.8.8 API covers the minimal surface we use; Paper 1.16.5 for compilation is fine
     compileOnly(libs.spigot.api.v18)

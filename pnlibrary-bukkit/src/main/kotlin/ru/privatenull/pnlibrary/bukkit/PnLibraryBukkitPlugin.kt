@@ -10,6 +10,7 @@ import ru.privatenull.pnlibrary.core.runtime.PnLibraryRuntimeHost
 class PnLibraryBukkitPlugin : JavaPlugin() {
     private var runtimeHost: PnLibraryRuntimeHost? = null
     private var menuService: MenuServiceImpl? = null
+    private var audienceService: BukkitAudienceService? = null
 
     override fun onEnable() {
         val adapter = BukkitPlatformAdapter(this)
@@ -30,6 +31,8 @@ class PnLibraryBukkitPlugin : JavaPlugin() {
     override fun onDisable() {
         menuService?.close()
         menuService = null
+        audienceService?.close()
+        audienceService = null
         runtimeHost?.close()
         runtimeHost = null
     }
@@ -38,6 +41,9 @@ class PnLibraryBukkitPlugin : JavaPlugin() {
         val menuService = MenuServiceImpl(this, host.library.tasks.scope(this))
         host.registerService(ServerInfo::class.java, adapter.serverInfo)
         host.registerService(MenuService::class.java, menuService)
+        val audienceService = BukkitAudienceService(this)
+        host.registerService(BukkitAudienceService::class.java, audienceService)
+        this.audienceService = audienceService
         this.menuService = menuService
     }
 }

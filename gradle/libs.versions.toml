@@ -9,6 +9,7 @@ spigot18      = "1.8.8-R0.1-SNAPSHOT"
 bungeecord    = "1.21-R0.4"
 velocity      = "3.3.0-SNAPSHOT"
 adventure     = "4.17.0"
+adventure-platform = "4.4.1"
 placeholderapi = "2.12.3"
 
 [libraries]
@@ -27,6 +28,7 @@ adventure-minimessage = { module = "net.kyori:adventure-text-minimessage",      
 adventure-legacy    = { module = "net.kyori:adventure-text-serializer-legacy",        version.ref = "adventure" }
 adventure-gson      = { module = "net.kyori:adventure-text-serializer-gson",          version.ref = "adventure" }
 adventure-plain     = { module = "net.kyori:adventure-text-serializer-plain",         version.ref = "adventure" }
+adventure-platform-bukkit = { module = "net.kyori:adventure-platform-bukkit",         version.ref = "adventure-platform" }
 placeholderapi      = { module = "me.clip:placeholderapi",                            version.ref = "placeholderapi" }
 
 [plugins]
