@@ -40,6 +40,7 @@ import ru.privatenull.pnlibrary.api.actions.PlayerActionHandler
 import ru.privatenull.pnlibrary.api.actions.PlayerActionRegistration
 import ru.privatenull.pnlibrary.api.actions.PlayerActionResult
 import ru.privatenull.pnlibrary.api.actions.ActionSequenceResult
+import ru.privatenull.pnlibrary.api.actions.PlayerActionAccess
 import java.util.UUID
 import ru.privatenull.pnlibrary.api.actions.PlayerAction
 import ru.privatenull.pnlibrary.api.actions.PlayerActionSequence
@@ -70,6 +71,14 @@ internal class PluginRegistryImpl(
     private val closed = AtomicBoolean(false)
     private val placeholderHub = PlaceholderHub(platform)
     private val sharedComponentCache = ComponentCache()
+    private val registeredActions = ConcurrentHashMap<String, ActionEntry>()
+
+    private data class ActionEntry(
+        val owner: PluginId,
+        val handler: String,
+        val access: PlayerActionAccess,
+        val executor: PlayerActionHandler,
+    )
 
     override fun register(owner: Any, configure: Consumer<PluginBuilder>): PluginContext {
         val details = platform.ownerDetails(owner)
@@ -218,11 +227,10 @@ internal class PluginRegistryImpl(
         private val listenerCount: Int,
     ) : PluginContext {
         private val contextClosed = AtomicBoolean(false)
-        private val actionHandlers = ConcurrentHashMap<String, PlayerActionHandler>()
         private val builtInActions = ru.privatenull.pnlibrary.api.actions.PlayerActionType.values()
             .map { it.name.lowercase() }.toSet()
         init {
-            builtInActions.forEach { key -> actionHandlers[key] = PlayerActionHandler { actionContext ->
+            builtInActions.forEach { key -> registeredActions[actionId(id, key)] = ActionEntry(id, key, PlayerActionAccess.ownerOnly(), PlayerActionHandler { actionContext ->
                 val completion = CompletableFuture<PlayerActionResult>()
                 platform.executeGlobal(Runnable {
                     runCatching {
@@ -233,7 +241,7 @@ internal class PluginRegistryImpl(
                         .onFailure(completion::completeExceptionally)
                 })
                 completion
-            } }
+            }) }
         }
         override val isClosed: Boolean get() = contextClosed.get()
 
@@ -285,14 +293,23 @@ internal class PluginRegistryImpl(
             }
 
             override fun register(handler: String, actionHandler: PlayerActionHandler): PlayerActionRegistration {
+                return register(handler, PlayerActionAccess.ownerOnly(), actionHandler)
+            }
+
+            override fun register(handler: String, access: PlayerActionAccess, actionHandler: PlayerActionHandler): PlayerActionRegistration {
                 val key = normalizeHandler(handler)
+                require("::" !in key) { "Registered handler key must not contain the owner separator '::'" }
                 require(key !in builtInActions) { "Built-in action handler '$key' cannot be replaced" }
-                require(actionHandlers.putIfAbsent(key, actionHandler) == null) { "Action handler '$key' is already registered" }
+                val entry = ActionEntry(id, key, access, actionHandler)
+                val registrationId = actionId(id, key)
+                require(registeredActions.putIfAbsent(registrationId, entry) == null) { "Action handler '$key' is already registered by $id" }
                 return object : PlayerActionRegistration {
                     private val active = AtomicBoolean(true)
+                    override val owner = id
                     override val handler = key
+                    override val access: PlayerActionAccess = entry.access
                     override val isActive: Boolean get() = active.get()
-                    override fun close() { if (active.compareAndSet(true, false)) actionHandlers.remove(key, actionHandler) }
+                    override fun close() { if (active.compareAndSet(true, false)) registeredActions.remove(registrationId, entry) }
                 }
             }
         }
@@ -314,7 +331,7 @@ internal class PluginRegistryImpl(
             runCatching { configs.close() }
             runCatching { placeholders.close() }
             runCatching { cooldowns.close() }
-            actionHandlers.clear()
+            registeredActions.entries.removeIf { it.value.owner == id }
             runCatching { tasks.close() }
         }
 
@@ -377,18 +394,27 @@ internal class PluginRegistryImpl(
         )
 
         private fun executeOne(playerId: UUID, action: PlayerAction): java.util.concurrent.CompletionStage<PlayerActionResult> {
-            val key = normalizeHandler(action.type)
+            val reference = normalizeHandler(action.type)
+            val split = reference.indexOf("::")
+            val actionOwner = if (split > 0) PluginId.of(reference.substring(0, split)) else id
+            val key = if (split > 0) reference.substring(split + 2) else reference
             val rendered = platformAction(action)
-            val handler = actionHandlers[key] ?: error("Unknown player action handler '$key' for plugin $id")
-            return handler.execute(PlayerActionContext(
-                id, playerId, key, action, rendered.text, rendered.title, rendered.subtitle,
+            val registration = registeredActions[actionId(actionOwner, key)]
+                ?: error("Unknown player action handler '$reference' for plugin $id")
+            require(registration.access.allows(registration.owner, id)) {
+                "Plugin $id cannot execute action ${registration.owner}::$key"
+            }
+            return registration.executor.execute(PlayerActionContext(
+                registration.owner, playerId, key, action, rendered.text, rendered.title, rendered.subtitle,
                 action.arguments.toMap(), action.payload,
             ))
         }
 
         private fun normalizeHandler(value: String): String = value.trim().lowercase().also {
-            require(it.matches(Regex("[a-z0-9_.:-]+"))) { "Invalid action handler: $value" }
+            require(it.matches(Regex("[a-z0-9_.:-]+(?:::[a-z0-9_.:-]+)?"))) { "Invalid action handler: $value" }
         }
+
+        private fun actionId(owner: PluginId, handler: String) = "${owner.value}::$handler"
     }
 
     private class Builder : PluginBuilder {

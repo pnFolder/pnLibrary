@@ -5,6 +5,7 @@ import java.util.concurrent.CompletableFuture
 import java.util.concurrent.CompletionStage
 import net.kyori.adventure.text.Component
 import ru.privatenull.pnlibrary.api.plugin.PluginId
+import java.util.function.Consumer
 
 /** Supported platform-independent actions loaded directly from YAML. */
 enum class PlayerActionType { MESSAGE, TITLE, ACTION_BAR, KICK, TELEPORT, SOUND, PLAYER_COMMAND }
@@ -46,6 +47,43 @@ interface PlayerActionService {
     fun execute(playerId: UUID, sequence: PlayerActionSequence, placeholders: Map<String, Any?>)
     fun executeAsync(playerId: UUID, sequence: PlayerActionSequence, placeholders: Map<String, Any?> = emptyMap()): CompletionStage<ActionSequenceResult>
     fun register(handler: String, actionHandler: PlayerActionHandler): PlayerActionRegistration
+    fun register(handler: String, access: PlayerActionAccess, actionHandler: PlayerActionHandler): PlayerActionRegistration
+    fun register(handler: String, access: Consumer<PlayerActionAccess.Builder>, actionHandler: PlayerActionHandler): PlayerActionRegistration =
+        register(handler, PlayerActionAccess.builder().also(access::accept).build(), actionHandler)
+}
+
+/** Controls which registered pnLibrary plugins may execute one handler. */
+class PlayerActionAccess private constructor(
+    val allLibraryPlugins: Boolean,
+    val allowedPlugins: Set<PluginId>,
+    val allowedPatterns: Set<String>,
+    val deniedPlugins: Set<PluginId>,
+) {
+    fun allows(owner: PluginId, consumer: PluginId): Boolean {
+        if (consumer in deniedPlugins) return false
+        if (owner == consumer) return true
+        if (allLibraryPlugins || consumer in allowedPlugins) return true
+        return allowedPatterns.any { pattern ->
+            Regex("^" + pattern.split('*').joinToString(".*", transform = Regex::escape) + "$", RegexOption.IGNORE_CASE)
+                .matches(consumer.value)
+        }
+    }
+    companion object {
+        @JvmStatic fun ownerOnly() = Builder().build()
+        @JvmStatic fun shared() = Builder().allowAllLibraryPlugins().build()
+        @JvmStatic fun builder() = Builder()
+    }
+    class Builder {
+        private var all = false
+        private val allowed = linkedSetOf<PluginId>()
+        private val patterns = linkedSetOf<String>()
+        private val denied = linkedSetOf<PluginId>()
+        fun allowAllLibraryPlugins() = apply { all = true }
+        fun allow(vararg ids: String) = apply { ids.map(PluginId::of).forEach(allowed::add) }
+        fun allowMatching(vararg patterns: String) = apply { this.patterns += patterns }
+        fun deny(vararg ids: String) = apply { ids.map(PluginId::of).forEach(denied::add) }
+        fun build() = PlayerActionAccess(all, allowed.toSet(), patterns.toSet(), denied.toSet())
+    }
 }
 
 data class PlayerActionContext(
@@ -88,6 +126,8 @@ fun interface PlayerActionHandler {
 }
 
 interface PlayerActionRegistration : AutoCloseable {
+    val owner: PluginId
     val handler: String
+    val access: PlayerActionAccess
     val isActive: Boolean
 }

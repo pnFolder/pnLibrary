@@ -105,6 +105,10 @@ Player actions автоматически разрешают placeholders и у�
 ```java
 PlayerActionRegistration deposit = context.getActions().register(
     "economy:deposit",
+    PlayerActionAccess.builder()
+        .allow("pnshop", "pnmenus")
+        .allowMatching("pneconomy-addon-*")
+        .build(),
     PlayerActionHandler.immediate(action -> {
         UUID playerId = action.getPlayerId();
         int amount = action.requireInt("amount");
@@ -116,6 +120,14 @@ PlayerActionRegistration deposit = context.getActions().register(
     })
 );
 ```
+
+Владелец определяется автоматически из `PluginContext`; передать чужой ID при
+регистрации нельзя. Одинаковые локальные ключи разных плагинов не конфликтуют.
+Владелец вызывает `economy:deposit`, разрешённый внешний плагин —
+`pneconomy::economy:deposit`. `PlayerActionAccess.ownerOnly()` закрывает handler,
+`PlayerActionAccess.shared()` открывает всем участникам pnLibrary, builder задаёт
+несколько ID, wildcard allow и deny. `PlayerActionRegistration` сообщает owner,
+handler, policy и автоматически закрывается вместе с контекстом.
 
 ```yaml
 rewardActions:
