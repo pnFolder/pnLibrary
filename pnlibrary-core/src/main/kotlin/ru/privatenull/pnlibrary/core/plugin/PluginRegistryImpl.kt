@@ -45,6 +45,8 @@ import java.util.UUID
 import ru.privatenull.pnlibrary.api.actions.PlayerAction
 import ru.privatenull.pnlibrary.api.actions.PlayerActionSequence
 import ru.privatenull.pnlibrary.api.actions.PlayerActionService
+import ru.privatenull.pnlibrary.api.actions.PlayerActionFlow
+import ru.privatenull.pnlibrary.api.actions.DelayedPlayerActionFlow
 import ru.privatenull.pnlibrary.api.placeholders.PlaceholderService
 import ru.privatenull.pnlibrary.api.text.ComponentService
 import ru.privatenull.pnlibrary.core.placeholders.PlaceholderHub
@@ -281,15 +283,7 @@ internal class PluginRegistryImpl(
 
             override fun executeAsync(playerId: UUID, sequence: PlayerActionSequence, placeholders: Map<String, Any?>): java.util.concurrent.CompletionStage<ActionSequenceResult> {
                 check(!isClosed) { "Plugin context $id is closed" }
-                var chain: java.util.concurrent.CompletionStage<List<PlayerActionResult>> = CompletableFuture.completedFuture(emptyList())
-                sequence.actions.map { resolve(it, placeholders) }.forEach { action ->
-                    chain = chain.thenCompose { results ->
-                        renderAsync(action, playerId, placeholders).thenCompose { rendered ->
-                            executeOne(playerId, rendered).thenApply { results + it }
-                        }
-                    }
-                }
-                return chain.thenApply(::ActionSequenceResult)
+                return executeSequence(playerId, sequence, placeholders, emptyList())
             }
 
             override fun register(handler: String, actionHandler: PlayerActionHandler): PlayerActionRegistration {
@@ -393,7 +387,29 @@ internal class PluginRegistryImpl(
             subtitle = action.subtitle?.let(components::deserialize),
         )
 
-        private fun executeOne(playerId: UUID, action: PlayerAction): java.util.concurrent.CompletionStage<PlayerActionResult> {
+        private fun executeSequence(
+            playerId: UUID,
+            sequence: PlayerActionSequence,
+            placeholders: Map<String, Any?>,
+            stack: List<String>,
+        ): java.util.concurrent.CompletionStage<ActionSequenceResult> {
+            var chain: java.util.concurrent.CompletionStage<List<PlayerActionResult>> = CompletableFuture.completedFuture(emptyList())
+            sequence.actions.map { resolve(it, placeholders) }.forEach { action ->
+                chain = chain.thenCompose { results ->
+                    renderAsync(action, playerId, placeholders).thenCompose { rendered ->
+                        executeOne(playerId, rendered, placeholders, stack).thenApply { results + it }
+                    }
+                }
+            }
+            return chain.thenApply(::ActionSequenceResult)
+        }
+
+        private fun executeOne(
+            playerId: UUID,
+            action: PlayerAction,
+            values: Map<String, Any?>,
+            stack: List<String>,
+        ): java.util.concurrent.CompletionStage<PlayerActionResult> {
             val reference = normalizeHandler(action.type)
             val split = reference.indexOf("::")
             val actionOwner = if (split > 0) PluginId.of(reference.substring(0, split)) else id
@@ -404,9 +420,54 @@ internal class PluginRegistryImpl(
             require(registration.access.allows(registration.owner, id)) {
                 "Plugin $id cannot execute action ${registration.owner}::$key"
             }
+            val qualified = actionId(registration.owner, key)
+            require(qualified !in stack) { "Recursive player action call: ${(stack + qualified).joinToString(" -> ")}" }
+            require(stack.size < 32) { "Player action nesting exceeds 32 calls" }
+            val nextStack = stack + qualified
+            val flow = object : PlayerActionFlow {
+                override fun execute(action: PlayerAction) =
+                    executeSequence(playerId, PlayerActionSequence(mutableListOf(action)), values, nextStack)
+                        .thenApply { it.actions.single() }
+
+                override fun execute(sequence: PlayerActionSequence) =
+                    executeSequence(playerId, sequence, values, nextStack)
+
+                override fun after(delay: java.time.Duration): DelayedPlayerActionFlow {
+                    require(!delay.isNegative) { "Action delay must not be negative" }
+                    return object : DelayedPlayerActionFlow {
+                        override fun execute(action: PlayerAction) = deferred(delay) {
+                            executeSequence(playerId, PlayerActionSequence(mutableListOf(action)), values, nextStack)
+                                .thenApply { it.actions.single() }
+                        }
+                        override fun execute(sequence: PlayerActionSequence) = deferred(delay) {
+                            executeSequence(playerId, sequence, values, nextStack)
+                        }
+                    }
+                }
+
+                private fun <T> deferred(
+                    delay: java.time.Duration,
+                    operation: () -> java.util.concurrent.CompletionStage<T>,
+                ): java.util.concurrent.CompletionStage<T> {
+                    val result = CompletableFuture<T>()
+                    tasks.later(delay, Runnable {
+                        if (isClosed) {
+                            result.completeExceptionally(IllegalStateException("Plugin context $id is closed"))
+                        } else {
+                            runCatching(operation).fold(
+                                { stage -> stage.whenComplete { value, error ->
+                                    if (error == null) result.complete(value) else result.completeExceptionally(error)
+                                } },
+                                result::completeExceptionally,
+                            )
+                        }
+                    })
+                    return result
+                }
+            }
             return registration.executor.execute(PlayerActionContext(
                 registration.owner, playerId, key, action, rendered.text, rendered.title, rendered.subtitle,
-                action.arguments.toMap(), action.payload,
+                action.arguments.toMap(), action.payload, flow,
             ))
         }
 

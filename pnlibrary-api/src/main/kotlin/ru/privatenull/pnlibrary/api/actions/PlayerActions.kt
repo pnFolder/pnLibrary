@@ -1,6 +1,7 @@
 package ru.privatenull.pnlibrary.api.actions
 
 import java.util.UUID
+import java.time.Duration
 import java.util.concurrent.CompletableFuture
 import java.util.concurrent.CompletionStage
 import net.kyori.adventure.text.Component
@@ -34,12 +35,35 @@ class PlayerAction @JvmOverloads constructor(
     var arguments: MutableMap<String, Any?> = linkedMapOf(),
     /** Optional object passed to a handler by code; it is not required to come from YAML. */
     @field:ru.privatenull.pnlibrary.api.config.ConfigIgnore var payload: Any? = null,
-)
+) {
+    fun text(value: String?) = apply { text = value }
+    fun title(value: String?, subtitle: String? = null) = apply {
+        title = value
+        this.subtitle = subtitle
+    }
+    fun sound(value: String?, volume: Float = 1f, pitch: Float = 1f) = apply {
+        sound = value
+        this.volume = volume
+        soundPitch = pitch
+    }
+    fun argument(name: String, value: Any?) = apply { arguments[name] = value }
+    fun payload(value: Any?) = apply { payload = value }
+
+    companion object {
+        @JvmStatic fun of(type: String) = PlayerAction(type)
+    }
+}
 
 /** Ordered action scenario represented in YAML as an object containing `actions`. */
 class PlayerActionSequence @JvmOverloads constructor(
     var actions: MutableList<PlayerAction> = mutableListOf(),
-)
+) {
+    fun add(action: PlayerAction) = apply { actions += action }
+
+    companion object {
+        @JvmStatic fun of(vararg actions: PlayerAction) = PlayerActionSequence(actions.toMutableList())
+    }
+}
 
 /** Executes configured actions for a player identified without native platform classes. */
 interface PlayerActionService {
@@ -96,6 +120,8 @@ data class PlayerActionContext(
     val subtitle: Component?,
     val arguments: Map<String, Any?>,
     val payload: Any?,
+    /** Executes child actions for the same player and with the same placeholder values. */
+    val flow: PlayerActionFlow,
 ) {
     fun require(name: String): Any = arguments[name] ?: error("Action $handler requires argument '$name'")
     fun requireString(name: String): String = require(name).toString()
@@ -103,6 +129,19 @@ data class PlayerActionContext(
         ?: require(name).toString().toIntOrNull() ?: error("Action argument '$name' must be an integer")
     fun requireDouble(name: String): Double = (require(name) as? Number)?.toDouble()
         ?: require(name).toString().toDoubleOrNull() ?: error("Action argument '$name' must be a number")
+}
+
+/** Allows one action handler to compose other actions without blocking a server thread. */
+interface PlayerActionFlow {
+    fun execute(action: PlayerAction): CompletionStage<PlayerActionResult>
+    fun execute(sequence: PlayerActionSequence): CompletionStage<ActionSequenceResult>
+    fun after(delay: Duration): DelayedPlayerActionFlow
+}
+
+/** A deferred action flow scheduled through the owning plugin context. */
+interface DelayedPlayerActionFlow {
+    fun execute(action: PlayerAction): CompletionStage<PlayerActionResult>
+    fun execute(sequence: PlayerActionSequence): CompletionStage<ActionSequenceResult>
 }
 
 data class PlayerActionResult(val successful: Boolean, val message: String? = null) {

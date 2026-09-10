@@ -161,3 +161,34 @@ if (!result.getAllowed()) {
 
 Cooldown использует монотонное время, изолирован контекстом плагина и полностью
 очищается при его выключении.
+
+## Вложенные действия и задержка
+
+Обработчик может запустить другое действие для того же игрока. `after` использует
+планировщик плагина и не блокирует серверный поток:
+
+```java
+context.getActions().register("welcome", action ->
+    action.getFlow()
+        .after(Duration.ofSeconds(2))
+        .execute(PlayerAction.of("message")
+            .text("<green>Добро пожаловать, {player_name}!"))
+);
+```
+
+Несколько действий запускаются последовательно:
+
+```java
+context.getActions().register("reward", action ->
+    action.getFlow().execute(PlayerActionSequence.of(
+        PlayerAction.of("economy:deposit").argument("amount", 500),
+        PlayerAction.of("sound").sound("ENTITY_PLAYER_LEVELUP"),
+        PlayerAction.of("message").text("<green>Награда выдана")
+    )).thenApply(result -> result.getSuccessful()
+        ? PlayerActionResult.success()
+        : PlayerActionResult.skipped("Child action failed"))
+);
+```
+
+Дочерний вызов сохраняет UUID игрока, плейсхолдеры и права исходного плагина.
+Циклы вроде `a -> b -> a` и вложенность глубже 32 вызовов отклоняются с понятной ошибкой.
