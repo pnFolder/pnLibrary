@@ -77,7 +77,7 @@ internal class AnnotatedYamlCodec<T : Any>(
             val path = if (prefix.isEmpty()) key(field) else "$prefix.${key(field)}"
             val current = read(field, target)
             val converted = try {
-                val resolved = enumAlias(field, raw)
+                val resolved = enumAlias(field.type, raw, path)
                 serializer(field)?.deserialize(resolved) ?: convert(resolved, field.genericType, current, path)
             } catch (error: Throwable) {
                 if (field.isAnnotationPresent(ConfigFallbackToDefault::class.java)) {
@@ -85,7 +85,7 @@ internal class AnnotatedYamlCodec<T : Any>(
                     current
                 } else {
                     val detail = if (field.type.isEnum) {
-                        val allowed = field.type.enumConstants.joinToString { (it as Enum<*>).name }
+                        val allowed = enumDescription(field.type)
                         " Allowed values: $allowed. Default: ${current ?: "null"}."
                     } else ""
                     throw IllegalArgumentException("Invalid configuration value at $path: ${raw ?: "null"}.$detail", error)
@@ -144,7 +144,7 @@ internal class AnnotatedYamlCodec<T : Any>(
         val fieldValue = instance?.let { read(field, it) }
         val explicit = field.getAnnotation(ConfigComment::class.java)?.value?.toList().orEmpty()
         val enumHelp = if (field.type.isEnum) listOf(
-            "Allowed values: ${field.type.enumConstants.joinToString { (it as Enum<*>).name }}. Default: ${fieldValue ?: "null"}."
+            "Allowed values: ${enumDescription(field.type)}. Default: ${fieldValue ?: "null"}."
         ) else emptyList()
         key(field) to Meta(
             explicit + enumHelp,
@@ -275,14 +275,20 @@ internal class AnnotatedYamlCodec<T : Any>(
         serializer(field) == null && serializer(field.type) == null && !isScalar(field.type) &&
             !Collection::class.java.isAssignableFrom(field.type) && !Map::class.java.isAssignableFrom(field.type) && !field.type.isArray
 
-    private fun enumAlias(field: Field, value: Any?): Any? {
-        if (!field.type.isEnum || value !is String) return value
-        val aliases = field.getAnnotation(ConfigAliases::class.java)?.value.orEmpty().mapNotNull { entry ->
-            val separator = entry.indexOf('=')
-            if (separator <= 0 || separator == entry.lastIndex) null
-            else entry.substring(0, separator).trim().lowercase() to entry.substring(separator + 1).trim()
-        }.toMap()
-        return aliases[value.lowercase()] ?: value
+    private fun enumAlias(type: Class<*>, value: Any?, path: String): Any? {
+        if (!type.isEnum || value !is String) return value
+        val matches = type.enumConstants.map { it as Enum<*> }.filter { constant ->
+            type.getField(constant.name).getAnnotation(ConfigAlias::class.java)
+                ?.value.orEmpty().any { it.equals(value, ignoreCase = true) }
+        }
+        require(matches.size <= 1) { "Enum alias '$value' is ambiguous at $path in ${type.name}" }
+        return matches.singleOrNull()?.name ?: value
+    }
+
+    private fun enumDescription(type: Class<*>): String = type.enumConstants.joinToString { raw ->
+        val constant = raw as Enum<*>
+        val aliases = type.getField(constant.name).getAnnotation(ConfigAlias::class.java)?.value.orEmpty()
+        if (aliases.isEmpty()) constant.name else "${constant.name} (aliases: ${aliases.joinToString()})"
     }
 
     private fun ConfigSerializer<Any>.serializeUntyped(value: Any): Any? = serialize(value)

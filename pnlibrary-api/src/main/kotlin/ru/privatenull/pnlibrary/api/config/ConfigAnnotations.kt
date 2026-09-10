@@ -57,7 +57,7 @@ annotation class ConfigRequired
 @Retention(AnnotationRetention.RUNTIME)
 annotation class ConfigFallbackToDefault
 
-/** Enum aliases written as `alias=ENUM_CONSTANT`, useful after renaming constants. */
+/** Previous YAML names accepted for the annotated enum constant. */
 @Target(AnnotationTarget.FIELD)
 @Retention(AnnotationRetention.RUNTIME)
-annotation class ConfigAliases(vararg val value: String)
+annotation class ConfigAlias(vararg val value: String)
