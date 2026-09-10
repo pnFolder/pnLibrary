@@ -6,6 +6,11 @@ import ru.privatenull.pnlibrary.api.config.ConfigProblem
 import ru.privatenull.pnlibrary.api.config.ConfigValidationException
 import ru.privatenull.pnlibrary.api.config.ConfigValueValidator
 import ru.privatenull.pnlibrary.api.config.ManagedConfig
+import ru.privatenull.pnlibrary.api.config.ConfigOptions
+import ru.privatenull.pnlibrary.api.config.MissingFilePolicy
+import ru.privatenull.pnlibrary.api.config.MissingValuePolicy
+import ru.privatenull.pnlibrary.api.config.UnknownValuePolicy
+import ru.privatenull.pnlibrary.api.config.CommentPolicy
 import java.io.File
 import java.nio.file.Files
 import java.nio.file.StandardCopyOption
@@ -31,6 +36,7 @@ class CodeFirstYaml<T> @JvmOverloads constructor(
     private val codec: ConfigCodec<T>,
     private val logger: Logger,
     private val validator: ConfigValueValidator<T> = ConfigValueValidator { emptyList() },
+    private val options: ConfigOptions = ConfigOptions.DEFAULT,
 ) : ManagedConfig<T> {
     @Volatile private var loadedValue: T? = null
 
@@ -50,6 +56,7 @@ class CodeFirstYaml<T> @JvmOverloads constructor(
         require(parent.isDirectory || parent.mkdirs()) { "Cannot create configuration directory $parent" }
         val defaultsYaml = normalize(codec.encode(defaults))
         if (!file.exists()) {
+            check(options.missingFile == MissingFilePolicy.CREATE) { "Configuration ${file.name} does not exist" }
             writeAtomic(defaultsYaml)
             val value = decodeAndValidate(defaultsYaml)
             loadedValue = value
@@ -57,18 +64,47 @@ class CodeFirstYaml<T> @JvmOverloads constructor(
         }
 
         val original = normalize(file.readText())
-        val merged = YamlDefaultsMerger.merge(original, defaultsYaml)
-        val value = decodeAndValidate(merged.content)
-        if (!merged.changed) {
+        val defaultPaths = YamlDefaultsMerger.paths(defaultsYaml).toSet()
+        val originalPaths = YamlDefaultsMerger.paths(original).toSet()
+        val missing = (defaultPaths - originalPaths).sorted()
+        val unknown = (originalPaths - defaultPaths).sorted()
+        check(options.missingValues != MissingValuePolicy.FAIL || missing.isEmpty()) {
+            "Missing configuration values in ${file.name}: ${missing.joinToString()}"
+        }
+        check(options.unknownValues != UnknownValuePolicy.FAIL || unknown.isEmpty()) {
+            "Unknown configuration values in ${file.name}: ${unknown.joinToString()}"
+        }
+
+        val syncResult = if (options.unknownValues == UnknownValuePolicy.REMOVE) {
+            YamlDefaultsMerger.Result(normalize(codec.encode(decodeAndValidate(original))), emptyList(), emptyList())
+        } else {
+            YamlDefaultsMerger.merge(
+                original,
+                defaultsYaml,
+                addMissingValues = options.missingValues == MissingValuePolicy.ADD,
+                addComments = options.comments == CommentPolicy.ADD_MISSING,
+            )
+        }
+        val synchronized = syncResult.content
+        val value = decodeAndValidate(synchronized)
+        if (synchronized == original) {
             loadedValue = value
             return ConfigLoadResult(value, emptyList(), null)
         }
 
-        val backup = backup(original)
-        writeAtomic(merged.content)
-        logger.info("Добавлены новые параметры в ${file.name}: ${merged.addedPaths.joinToString()}")
+        val backup = if (options.backups) backup(original) else null
+        writeAtomic(synchronized)
+        if (missing.isNotEmpty()) logger.info("Добавлены новые параметры в ${file.name}: ${missing.joinToString()}")
+        if (unknown.isNotEmpty() && options.unknownValues == UnknownValuePolicy.REMOVE)
+            logger.info("Удалены неизвестные параметры из ${file.name}: ${unknown.joinToString()}")
         loadedValue = value
-        return ConfigLoadResult(value, merged.addedPaths, backup)
+        return ConfigLoadResult(
+            value,
+            if (options.missingValues == MissingValuePolicy.ADD) missing else emptyList(),
+            backup,
+            if (options.unknownValues == UnknownValuePolicy.REMOVE) unknown else emptyList(),
+            syncResult.addedComments,
+        )
     }
 
     /** Reloads the file and replaces the value only after full validation. */

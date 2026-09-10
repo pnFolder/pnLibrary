@@ -2,25 +2,42 @@ package ru.privatenull.pnlibrary.core.config.yaml
 
 /** Recursively merges YAML defaults while preserving comments for [CodeFirstYaml]. */
 internal object YamlDefaultsMerger {
-    data class Result(val content: String, val addedPaths: List<String>) {
-        val changed: Boolean get() = addedPaths.isNotEmpty()
+    data class Result(val content: String, val addedPaths: List<String>, val addedComments: List<String>) {
+        val changed: Boolean get() = addedPaths.isNotEmpty() || addedComments.isNotEmpty()
     }
 
-    fun merge(existing: String, defaults: String): Result {
+    fun merge(existing: String, defaults: String, addMissingValues: Boolean = true, addComments: Boolean = false): Result {
         val target = existing.lines().dropLastWhile(String::isEmpty).toMutableList()
         val source = defaults.lines().dropLastWhile(String::isEmpty)
         val added = mutableListOf<String>()
-        collect(source, 0, source.size, 0, emptyList()).forEach { candidate ->
-            if (find(target, candidate.path) != null) return@forEach
-            val parent = candidate.path.dropLast(1)
-            val insertion = if (parent.isEmpty()) target.size else find(target, parent)?.end ?: return@forEach
-            val block = source.subList(candidate.start, candidate.end)
-            if (insertion == target.size && target.lastOrNull()?.isNotBlank() == true) target.add("")
-            val index = if (insertion == target.size - 1 && target.lastOrNull()?.isEmpty() == true) target.size else insertion
-            target.addAll(index, block)
-            added += candidate.path.joinToString(".")
+        val comments = mutableListOf<String>()
+        val candidates = collect(source, 0, source.size, 0, emptyList())
+        if (addMissingValues) {
+            candidates.forEach { candidate ->
+                if (find(target, candidate.path) != null) return@forEach
+                val parent = candidate.path.dropLast(1)
+                val insertion = if (parent.isEmpty()) target.size else find(target, parent)?.end ?: return@forEach
+                val block = source.subList(candidate.start, candidate.end)
+                if (insertion == target.size && target.lastOrNull()?.isNotBlank() == true) target.add("")
+                val index = if (insertion == target.size - 1 && target.lastOrNull()?.isEmpty() == true) target.size else insertion
+                target.addAll(index, block)
+                added += candidate.path.joinToString(".")
+            }
         }
-        return Result(target.joinToString("\n").trimEnd() + "\n", added)
+        if (addComments) {
+            candidates.forEach { candidate ->
+                if (candidate.path.joinToString(".") in added) return@forEach
+                val sourceComments = source.subList(candidate.start, candidate.keyLine).filter { it.trimStart().startsWith('#') }
+                if (sourceComments.isEmpty()) return@forEach
+                val existing = find(target, candidate.path) ?: return@forEach
+                val alreadyCommented = target.subList(existing.start, existing.keyLine).any { it.trimStart().startsWith('#') }
+                if (!alreadyCommented) {
+                    target.addAll(existing.keyLine, sourceComments)
+                    comments += candidate.path.joinToString(".")
+                }
+            }
+        }
+        return Result(target.joinToString("\n").trimEnd() + "\n", added, comments)
     }
 
     fun paths(yaml: String): List<String> = collect(yaml.lines(), 0, yaml.lines().size, 0, emptyList())

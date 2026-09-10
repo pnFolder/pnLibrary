@@ -47,6 +47,44 @@ val settings = main.loadValue()
 Аннотации: `@ConfigComment`, `@ConfigKey`, `@ConfigIgnore`, `@ConfigNewLine`,
 `@ConfigOrder`, `@ConfigRange`, `@ConfigNotBlank`, `@ConfigPattern`.
 
+Поведение синхронизации задаётся явно:
+
+```java
+ConfigOptions options = ConfigOptions.builder()
+    .missingFile(MissingFilePolicy.CREATE)
+    .missingValues(MissingValuePolicy.ADD)
+    .unknownValues(UnknownValuePolicy.PRESERVE)
+    .comments(CommentPolicy.ADD_MISSING)
+    .backups(true)
+    .build();
+
+ManagedConfig<MainConfig> main = context.getConfigs().yaml(
+    "config.yml", MainConfig.class, MainConfig::new, options
+);
+```
+
+- `MissingFilePolicy`: создать отсутствующий файл или завершить загрузку ошибкой;
+- `MissingValuePolicy`: добавить новые параметры, использовать default только в памяти или считать отсутствие ошибкой;
+- `UnknownValuePolicy`: сохранить лишние параметры, удалить их или считать ошибкой;
+- `CommentPolicy`: сохранить файл как есть либо добавить отсутствующие комментарии;
+- `backups`: создавать ли резервную копию перед автоматическим изменением.
+
+Встроены сериализаторы для enum, массивов, списков, sets, maps, вложенных классов,
+`UUID`, `Duration`, `Instant`, Java date/time, `URI`, `URL`, `Path`, `Locale`,
+`Pattern`, `BigDecimal` и `BigInteger`. Собственный тип подключается один раз:
+
+```java
+context.getConfigs().serializer(WorldPoint.class, new ConfigSerializer<WorldPoint>() {
+    public Object serialize(WorldPoint point) {
+        return point.world() + ";" + point.x() + ";" + point.y() + ";" + point.z();
+    }
+
+    public WorldPoint deserialize(Object raw) {
+        return WorldPoint.parse(raw.toString());
+    }
+});
+```
+
 При закрытии `PluginContext` все его конфигурации автоматически выгружаются из
 памяти. Файлы не удаляются.
 

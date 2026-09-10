@@ -10,6 +10,19 @@ import java.nio.file.Paths
 import java.util.concurrent.atomic.AtomicBoolean
 import java.util.function.Supplier
 import java.util.logging.Logger
+import java.net.URI
+import java.net.URL
+import java.time.Duration
+import java.time.Instant
+import java.time.LocalDate
+import java.time.LocalDateTime
+import java.time.OffsetDateTime
+import java.time.ZonedDateTime
+import java.util.Locale
+import java.util.UUID
+import java.util.regex.Pattern
+import java.math.BigDecimal
+import java.math.BigInteger
 
 internal class ConfigurationServiceImpl(private val platform: PlatformAdapter) : ConfigurationService, AutoCloseable {
     private val scopes = java.util.IdentityHashMap<Any, Scope>()
@@ -47,25 +60,42 @@ internal class ConfigurationServiceImpl(private val platform: PlatformAdapter) :
         private val logger: Logger,
     ) : ConfigScope {
         private val handles = linkedSetOf<ManagedConfig<*>>()
+        private val serializers = builtInSerializers()
         private val scopeClosed = AtomicBoolean(false)
         override val size: Int get() = synchronized(handles) { handles.size }
 
-        override fun <T : Any> yaml(path: String, type: Class<T>, defaults: Supplier<T>): ManagedConfig<T> {
+        override fun <T : Any> yaml(path: String, type: Class<T>, defaults: Supplier<T>): ManagedConfig<T> =
+            yaml(path, type, defaults, ConfigOptions.DEFAULT)
+
+        override fun <T : Any> yaml(
+            path: String,
+            type: Class<T>,
+            defaults: Supplier<T>,
+            options: ConfigOptions,
+        ): ManagedConfig<T> {
             check(!scopeClosed.get()) { "Configuration scope is closed" }
             val relative = Paths.get(path).normalize()
             require(!relative.isAbsolute && !relative.startsWith("..")) { "Configuration path must stay inside the plugin directory" }
             require(path.endsWith(".yml", true) || path.endsWith(".yaml", true)) { "Configuration file must use .yml or .yaml" }
             val target = directory.resolve(relative).normalize()
             require(target.startsWith(directory)) { "Configuration path escapes the plugin directory" }
-            val codec = AnnotatedYamlCodec(type)
             val defaultValue = defaults.get() ?: error("Configuration defaults cannot be null")
-            val handle = CodeFirstYaml(target.toFile(), defaultValue, codec, logger, ConfigValueValidator(codec::validate))
+            val codec = AnnotatedYamlCodec(type, defaults, synchronized(serializers) { serializers.toMap() })
+            val handle = CodeFirstYaml(
+                target.toFile(), defaultValue, codec, logger,
+                ConfigValueValidator(codec::validate), options,
+            )
             val owned = OwnedConfig(target, handle)
             synchronized(handles) {
                 check(handles.none { (it as? OwnedConfig<*>)?.file == target }) { "Configuration $path is already registered" }
                 handles += owned
             }
             return owned
+        }
+
+        override fun <T : Any> serializer(type: Class<T>, serializer: ConfigSerializer<T>): ConfigScope = apply {
+            check(!scopeClosed.get()) { "Configuration scope is closed" }
+            synchronized(serializers) { serializers[type] = serializer }
         }
 
         override fun loadAll() = snapshot().forEach { it.load() }
@@ -77,6 +107,32 @@ internal class ConfigurationServiceImpl(private val platform: PlatformAdapter) :
             synchronized(scopes) { scopes.remove(owner, this) }
         }
         private fun snapshot() = synchronized(handles) { handles.toList() }
+
+        private fun builtInSerializers(): LinkedHashMap<Class<*>, ConfigSerializer<*>> = linkedMapOf(
+            UUID::class.java to stringSerializer(UUID::fromString),
+            Duration::class.java to stringSerializer(Duration::parse),
+            Instant::class.java to stringSerializer(Instant::parse),
+            LocalDate::class.java to stringSerializer(LocalDate::parse),
+            LocalDateTime::class.java to stringSerializer(LocalDateTime::parse),
+            OffsetDateTime::class.java to stringSerializer(OffsetDateTime::parse),
+            ZonedDateTime::class.java to stringSerializer(ZonedDateTime::parse),
+            URI::class.java to stringSerializer(::URI),
+            URL::class.java to stringSerializer { URI.create(it).toURL() },
+            Path::class.java to stringSerializer { Paths.get(it) },
+            Locale::class.java to object : ConfigSerializer<Locale> {
+                override fun serialize(value: Locale): Any = value.toLanguageTag()
+                override fun deserialize(value: Any?): Locale = Locale.forLanguageTag(value?.toString().orEmpty())
+            },
+            Pattern::class.java to stringSerializer(Pattern::compile),
+            BigDecimal::class.java to stringSerializer(::BigDecimal),
+            BigInteger::class.java to stringSerializer(::BigInteger),
+        )
+
+        private fun <T : Any> stringSerializer(parser: (String) -> T): ConfigSerializer<T> =
+            object : ConfigSerializer<T> {
+                override fun serialize(value: T): Any = value.toString()
+                override fun deserialize(value: Any?): T = parser(value?.toString() ?: error("Value cannot be null"))
+            }
     }
 
     private class OwnedConfig<T>(val file: Path, private val delegate: ManagedConfig<T>) : ManagedConfig<T> by delegate

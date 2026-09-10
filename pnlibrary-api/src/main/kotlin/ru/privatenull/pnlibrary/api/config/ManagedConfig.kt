@@ -63,6 +63,8 @@ data class ConfigLoadResult<T>(
     val value: T,
     val addedPaths: List<String>,
     val backup: File?,
+    val removedPaths: List<String> = emptyList(),
+    val addedComments: List<String> = emptyList(),
 )
 
 /** Semantic validation failure for a typed configuration. */
