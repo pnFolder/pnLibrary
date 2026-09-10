@@ -29,6 +29,7 @@ tasks.withType<JavaCompile>().configureEach { options.release = 8 }
 dependencies {
     // Pure stdlib — no server-platform compile deps
     api(libs.kotlin.stdlib)
+    api(libs.adventure.api)
     testImplementation(libs.junit.jupiter)
     testRuntimeOnly(libs.junit.launcher)
 }

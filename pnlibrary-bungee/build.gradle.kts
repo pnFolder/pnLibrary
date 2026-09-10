@@ -22,6 +22,7 @@ dependencies {
     implementation(project(":pnlibrary-core"))
     implementation(libs.kotlin.stdlib)
     implementation(project(":pnlibrary-bstats-base"))
+    implementation(libs.adventure.legacy)
     compileOnly(libs.bungeecord.api)
 
     testImplementation(libs.junit.jupiter)

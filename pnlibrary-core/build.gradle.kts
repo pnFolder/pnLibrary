@@ -21,6 +21,10 @@ dependencies {
     implementation(libs.kotlin.stdlib)
     implementation(libs.gson)
     implementation(libs.snakeyaml)
+    implementation(libs.adventure.minimessage)
+    implementation(libs.adventure.legacy)
+    implementation(libs.adventure.gson)
+    implementation(libs.adventure.plain)
     implementation(project(":pnlibrary-bstats-base"))
 
     testImplementation(libs.junit.jupiter)

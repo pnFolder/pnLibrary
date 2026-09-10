@@ -7,7 +7,6 @@ import ru.privatenull.pnlibrary.spi.metrics.NoopMetricsFactory
 import ru.privatenull.pnlibrary.spi.metrics.PlatformMetricsFactory
 import java.nio.file.Path
 import java.util.UUID
-import ru.privatenull.pnlibrary.api.actions.PlayerAction
 
 /**
  * Runtime-only boundary between the shared engine and a native platform.
@@ -44,7 +43,7 @@ interface PlatformAdapter : AutoCloseable {
     fun executeGlobal(task: Runnable)
     fun executeReply(recipient: Any, task: Runnable)
     /** Executes one already-resolved action on the platform's safe player thread. */
-    fun executePlayerAction(owner: Any, playerId: UUID, action: PlayerAction) {
+    fun executePlayerAction(owner: Any, playerId: UUID, action: PlatformPlayerAction) {
         throw UnsupportedOperationException("Player actions are unavailable on $implementationName")
     }
     override fun close()

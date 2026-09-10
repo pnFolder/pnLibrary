@@ -16,6 +16,7 @@ subprojects {
         maven("https://repo.papermc.io/repository/maven-public/")  { name = "papermc" }
         maven("https://hub.spigotmc.org/nexus/content/repositories/snapshots/") { name = "spigot" }
         maven("https://repo.md-5.net/content/repositories/snapshots/")          { name = "bungeecord" }
+        maven("https://repo.extendedclip.com/releases/")                        { name = "placeholderapi" }
     }
 
     tasks.withType<JavaCompile>().configureEach {

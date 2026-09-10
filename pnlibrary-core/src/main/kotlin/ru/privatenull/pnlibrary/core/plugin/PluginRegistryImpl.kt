@@ -33,10 +33,19 @@ import java.nio.file.Path
 import java.util.IdentityHashMap
 import java.util.concurrent.atomic.AtomicBoolean
 import java.util.function.Consumer
+import java.util.concurrent.CompletableFuture
 import java.util.UUID
 import ru.privatenull.pnlibrary.api.actions.PlayerAction
 import ru.privatenull.pnlibrary.api.actions.PlayerActionSequence
 import ru.privatenull.pnlibrary.api.actions.PlayerActionService
+import ru.privatenull.pnlibrary.api.placeholders.PlaceholderService
+import ru.privatenull.pnlibrary.api.text.ComponentService
+import ru.privatenull.pnlibrary.core.placeholders.PlaceholderHub
+import ru.privatenull.pnlibrary.core.text.ComponentCache
+import ru.privatenull.pnlibrary.core.text.ComponentServiceImpl
+import ru.privatenull.pnlibrary.spi.platform.PlatformPlayerAction
+import ru.privatenull.pnlibrary.api.cooldowns.CooldownService
+import ru.privatenull.pnlibrary.core.cooldowns.CooldownServiceImpl
 
 internal class PluginRegistryImpl(
     private val platform: PlatformAdapter,
@@ -53,6 +62,8 @@ internal class PluginRegistryImpl(
     private val contexts = linkedMapOf<PluginId, Context>()
     private val owners = IdentityHashMap<Any, Context>()
     private val closed = AtomicBoolean(false)
+    private val placeholderHub = PlaceholderHub(platform)
+    private val sharedComponentCache = ComponentCache()
 
     override fun register(owner: Any, configure: Consumer<PluginBuilder>): PluginContext {
         val details = platform.ownerDetails(owner)
@@ -111,10 +122,12 @@ internal class PluginRegistryImpl(
         var metricsController: MetricsControllerImpl? = null
         var diagnosticRegistration: DiagnosticRegistration? = null
         var updateRegistration: UpdateRegistration? = null
+        var placeholderScope: PlaceholderService? = null
         try {
             taskScope = tasks.scope(owner)
             eventScope = events.scope(id)
             configScope = configurations.scope(owner)
+            placeholderScope = placeholderHub.scope(id)
             definition.listeners.forEach { eventScope.register(it) }
             metricsController = MetricsControllerImpl(
                 owner,
@@ -140,6 +153,9 @@ internal class PluginRegistryImpl(
                 services.ownedBy(id),
                 logging.logger(owner, id.value),
                 configScope,
+                placeholderScope,
+                ComponentServiceImpl(placeholderScope, sharedComponentCache),
+                CooldownServiceImpl(),
                 metricsController,
                 diagnosticRegistration,
                 updateRegistration,
@@ -151,6 +167,7 @@ internal class PluginRegistryImpl(
             runCatching { metricsController?.close() }
             runCatching { eventScope?.close() }
             runCatching { configScope?.close() }
+            runCatching { placeholderScope?.close() }
             runCatching { services.unregisterAll(id) }
             runCatching { taskScope?.close() }
             throw error
@@ -186,6 +203,9 @@ internal class PluginRegistryImpl(
         override val services: ServiceManagerImpl.OwnedServices,
         override val logger: PnLogger,
         override val configs: ConfigScope,
+        override val placeholders: PlaceholderService,
+        override val components: ComponentService,
+        override val cooldowns: CooldownService,
         override val metrics: MetricsController,
         override val diagnostics: DiagnosticRegistration?,
         override val updates: UpdateRegistration?,
@@ -223,9 +243,14 @@ internal class PluginRegistryImpl(
             override fun execute(playerId: UUID, sequence: PlayerActionSequence, placeholders: Map<String, Any?>) {
                 check(!isClosed) { "Plugin context $id is closed" }
                 val snapshot = sequence.actions.map { resolve(it, placeholders) }
-                platform.executeGlobal(Runnable {
-                    if (!isClosed) snapshot.forEach { platform.executePlayerAction(owner, playerId, it) }
-                })
+                val rendered = snapshot.map { renderAsync(it, playerId, placeholders).toCompletableFuture() }
+                CompletableFuture.allOf(*rendered.toTypedArray()).whenComplete { _, error ->
+                    if (error != null) logger.error("Could not render player action sequence", error)
+                    else platform.executeGlobal(Runnable {
+                        if (!isClosed) rendered.map(CompletableFuture<PlayerAction>::join)
+                            .forEach { platform.executePlayerAction(owner, playerId, platformAction(it)) }
+                    })
+                }
             }
         }
 
@@ -244,6 +269,8 @@ internal class PluginRegistryImpl(
             runCatching { events.close() }
             runCatching { services.close() }
             runCatching { configs.close() }
+            runCatching { placeholders.close() }
+            runCatching { cooldowns.close() }
             runCatching { tasks.close() }
         }
 
@@ -276,6 +303,31 @@ internal class PluginRegistryImpl(
                 action.command.resolved(),
             )
         }
+
+        private fun renderAsync(action: PlayerAction, playerId: UUID, values: Map<String, Any?>): java.util.concurrent.CompletionStage<PlayerAction> {
+            fun rendered(value: String?) = value?.let { placeholders.render(it, playerId, values) }
+                ?: CompletableFuture.completedFuture(null)
+            val text = rendered(action.text).toCompletableFuture()
+            val title = rendered(action.title).toCompletableFuture()
+            val subtitle = rendered(action.subtitle).toCompletableFuture()
+            val world = rendered(action.world).toCompletableFuture()
+            val sound = rendered(action.sound).toCompletableFuture()
+            val command = rendered(action.command).toCompletableFuture()
+            return CompletableFuture.allOf(text, title, subtitle, world, sound, command).thenApply {
+                PlayerAction(
+                action.type, text.join(), title.join(), subtitle.join(), action.fadeIn,
+                action.stay, action.fadeOut, world.join(), action.x, action.y, action.z, action.yaw,
+                action.pitch, sound.join(), action.volume, action.soundPitch, command.join(),
+                )
+            }
+        }
+
+        private fun platformAction(action: PlayerAction) = PlatformPlayerAction(
+            source = action,
+            text = action.text?.let(components::deserialize),
+            title = action.title?.let(components::deserialize),
+            subtitle = action.subtitle?.let(components::deserialize),
+        )
     }
 
     private class Builder : PluginBuilder {

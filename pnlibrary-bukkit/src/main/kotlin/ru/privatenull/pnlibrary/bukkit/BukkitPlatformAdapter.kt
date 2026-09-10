@@ -35,6 +35,8 @@ import ru.privatenull.pnlibrary.core.diagnostics.DiagnosticCommandEvent
 import ru.privatenull.pnlibrary.core.diagnostics.DiagnosticCommandExecutor
 import ru.privatenull.pnlibrary.spi.metrics.PlatformMetricsFactory
 import ru.privatenull.pnlibrary.spi.platform.PlatformAdapter
+import ru.privatenull.pnlibrary.spi.platform.PlatformPlayerAction
+import net.kyori.adventure.text.serializer.legacy.LegacyComponentSerializer
 import java.io.File
 import java.lang.reflect.Constructor
 import java.time.Instant
@@ -276,25 +278,27 @@ class BukkitPlatformAdapter @JvmOverloads constructor(
         executeGlobal(task)
     }
 
-    override fun executePlayerAction(owner: Any, playerId: UUID, action: PlayerAction) {
+    override fun executePlayerAction(owner: Any, playerId: UUID, action: PlatformPlayerAction) {
         val player = Bukkit.getPlayer(playerId) ?: return
+        val source = action.source
+        fun legacy(component: net.kyori.adventure.text.Component?) = component?.let(ADVENTURE_LEGACY::serialize)
         executeReply(player, Runnable {
-            when (action.type) {
-                PlayerActionType.MESSAGE -> player.sendMessage(requireText(action.text, action.type))
-                PlayerActionType.TITLE -> sendConfiguredTitle(player, action)
-                PlayerActionType.ACTION_BAR -> sendActionBar(player, requireText(action.text, action.type))
-                PlayerActionType.KICK -> player.kickPlayer(requireText(action.text, action.type))
+            when (source.type) {
+                PlayerActionType.MESSAGE -> player.sendMessage(requireText(legacy(action.text), source.type))
+                PlayerActionType.TITLE -> sendConfiguredTitle(player, source, legacy(action.title), legacy(action.subtitle))
+                PlayerActionType.ACTION_BAR -> sendActionBar(player, requireText(legacy(action.text), source.type))
+                PlayerActionType.KICK -> player.kickPlayer(requireText(legacy(action.text), source.type))
                 PlayerActionType.TELEPORT -> {
-                    val world = Bukkit.getWorld(requireText(action.world, action.type))
-                        ?: error("Unknown teleport world: ${action.world}")
-                    player.teleport(Location(world, action.x, action.y, action.z, action.yaw, action.pitch))
+                    val world = Bukkit.getWorld(requireText(source.world, source.type))
+                        ?: error("Unknown teleport world: ${source.world}")
+                    player.teleport(Location(world, source.x, source.y, source.z, source.yaw, source.pitch))
                 }
                 PlayerActionType.SOUND -> player.playSound(
-                    player.location, requireText(action.sound, action.type),
-                    action.volume.coerceAtLeast(0f), action.soundPitch.coerceAtLeast(0f),
+                    player.location, requireText(source.sound, source.type),
+                    source.volume.coerceAtLeast(0f), source.soundPitch.coerceAtLeast(0f),
                 )
                 PlayerActionType.PLAYER_COMMAND -> player.performCommand(
-                    requireText(action.command, action.type).removePrefix("/"),
+                    requireText(source.command, source.type).removePrefix("/"),
                 )
             }
         })
@@ -303,14 +307,14 @@ class BukkitPlatformAdapter @JvmOverloads constructor(
     private fun requireText(value: String?, type: PlayerActionType): String =
         value?.takeIf(String::isNotBlank) ?: error("Action $type requires a non-blank value")
 
-    private fun sendConfiguredTitle(player: Player, action: PlayerAction) {
-        val title = requireText(action.title, action.type)
+    private fun sendConfiguredTitle(player: Player, action: PlayerAction, renderedTitle: String?, renderedSubtitle: String?) {
+        val title = requireText(renderedTitle, action.type)
         runCatching {
             player.javaClass.getMethod(
                 "sendTitle", String::class.java, String::class.java,
                 Int::class.javaPrimitiveType, Int::class.javaPrimitiveType, Int::class.javaPrimitiveType,
-            ).invoke(player, title, action.subtitle.orEmpty(), action.fadeIn, action.stay, action.fadeOut)
-        }.getOrElse { player.sendTitle(title, action.subtitle.orEmpty()) }
+            ).invoke(player, title, renderedSubtitle.orEmpty(), action.fadeIn, action.stay, action.fadeOut)
+        }.getOrElse { player.sendTitle(title, renderedSubtitle.orEmpty()) }
     }
 
     private fun sendActionBar(player: Player, text: String) {
@@ -320,6 +324,10 @@ class BukkitPlatformAdapter @JvmOverloads constructor(
         }
         if (method == null) player.sendMessage(text)
         else method.invoke(player.spigot(), ChatMessageType.ACTION_BAR, components)
+    }
+
+    private companion object {
+        val ADVENTURE_LEGACY = LegacyComponentSerializer.legacySection()
     }
 
     override fun close() {

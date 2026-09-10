@@ -15,6 +15,8 @@ import ru.privatenull.pnlibrary.core.diagnostics.DiagnosticCommandEvent
 import ru.privatenull.pnlibrary.core.diagnostics.DiagnosticCommandExecutor
 import ru.privatenull.pnlibrary.spi.metrics.PlatformMetricsFactory
 import ru.privatenull.pnlibrary.spi.platform.PlatformAdapter
+import ru.privatenull.pnlibrary.spi.platform.PlatformPlayerAction
+import net.kyori.adventure.text.serializer.legacy.LegacyComponentSerializer
 import java.util.concurrent.atomic.AtomicBoolean
 import java.util.UUID
 import java.util.logging.Level
@@ -33,26 +35,30 @@ class BungeePlatformAdapter(
     override val metricsFactory: PlatformMetricsFactory = BungeeMetricsFactory()
     override val dataFolder = plugin.dataFolder.toPath()
 
-    override fun executePlayerAction(owner: Any, playerId: UUID, action: PlayerAction) {
+    override fun executePlayerAction(owner: Any, playerId: UUID, action: PlatformPlayerAction) {
         val player = plugin.proxy.getPlayer(playerId) ?: return
-        when (action.type) {
-            PlayerActionType.MESSAGE -> player.sendMessage(*TextComponent.fromLegacyText(required(action.text, action.type)))
+        val source = action.source
+        fun legacy(component: net.kyori.adventure.text.Component?) = component?.let(ADVENTURE_LEGACY::serialize)
+        when (source.type) {
+            PlayerActionType.MESSAGE -> player.sendMessage(*TextComponent.fromLegacyText(required(legacy(action.text), source.type)))
             PlayerActionType.ACTION_BAR -> player.sendMessage(
-                ChatMessageType.ACTION_BAR, *TextComponent.fromLegacyText(required(action.text, action.type)),
+                ChatMessageType.ACTION_BAR, *TextComponent.fromLegacyText(required(legacy(action.text), source.type)),
             )
             PlayerActionType.TITLE -> plugin.proxy.createTitle()
-                .title(TextComponent(required(action.title, action.type)))
-                .subTitle(TextComponent(action.subtitle.orEmpty()))
-                .fadeIn(action.fadeIn).stay(action.stay).fadeOut(action.fadeOut).send(player)
-            PlayerActionType.KICK -> player.disconnect(TextComponent(required(action.text, action.type)))
-            PlayerActionType.PLAYER_COMMAND -> player.chat(required(action.command, action.type).removePrefix("/"))
+                .title(TextComponent(required(legacy(action.title), source.type)))
+                .subTitle(TextComponent(legacy(action.subtitle).orEmpty()))
+                .fadeIn(source.fadeIn).stay(source.stay).fadeOut(source.fadeOut).send(player)
+            PlayerActionType.KICK -> player.disconnect(TextComponent(required(legacy(action.text), source.type)))
+            PlayerActionType.PLAYER_COMMAND -> player.chat(required(source.command, source.type).removePrefix("/"))
             PlayerActionType.TELEPORT, PlayerActionType.SOUND ->
-                log(owner, LogLevel.WARNING, "Action ${action.type} is not supported by BungeeCord")
+                log(owner, LogLevel.WARNING, "Action ${source.type} is not supported by BungeeCord")
         }
     }
 
     private fun required(value: String?, type: PlayerActionType): String =
         value?.takeIf(String::isNotBlank) ?: error("Action $type requires a non-blank value")
+
+    private companion object { val ADVENTURE_LEGACY = LegacyComponentSerializer.legacySection() }
 
     override fun log(owner: Any, level: LogLevel, message: String, error: Throwable?) {
         val nativeLevel = when (level) {
