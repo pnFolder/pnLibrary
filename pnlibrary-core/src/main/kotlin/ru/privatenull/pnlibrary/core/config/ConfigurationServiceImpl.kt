@@ -25,6 +25,8 @@ import java.math.BigDecimal
 import java.math.BigInteger
 import ru.privatenull.pnlibrary.api.actions.PlayerAction
 import ru.privatenull.pnlibrary.core.config.actions.PlayerActionSerializer
+import ru.privatenull.pnlibrary.api.actions.Action
+import ru.privatenull.pnlibrary.core.config.actions.ActionSerializer
 
 internal class ConfigurationServiceImpl(private val platform: PlatformAdapter) : ConfigurationService, AutoCloseable {
     private val scopes = java.util.IdentityHashMap<Any, Scope>()
@@ -111,6 +113,7 @@ internal class ConfigurationServiceImpl(private val platform: PlatformAdapter) :
         private fun snapshot() = synchronized(handles) { handles.toList() }
 
         private fun builtInSerializers(): LinkedHashMap<Class<*>, ConfigSerializer<*>> = linkedMapOf(
+            Action::class.java to ActionSerializer(),
             PlayerAction::class.java to PlayerActionSerializer(),
             UUID::class.java to stringSerializer(UUID::fromString),
             Duration::class.java to stringSerializer(Duration::parse),
