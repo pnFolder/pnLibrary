@@ -34,6 +34,12 @@ import java.util.IdentityHashMap
 import java.util.concurrent.atomic.AtomicBoolean
 import java.util.function.Consumer
 import java.util.concurrent.CompletableFuture
+import java.util.concurrent.ConcurrentHashMap
+import ru.privatenull.pnlibrary.api.actions.PlayerActionContext
+import ru.privatenull.pnlibrary.api.actions.PlayerActionHandler
+import ru.privatenull.pnlibrary.api.actions.PlayerActionRegistration
+import ru.privatenull.pnlibrary.api.actions.PlayerActionResult
+import ru.privatenull.pnlibrary.api.actions.ActionSequenceResult
 import java.util.UUID
 import ru.privatenull.pnlibrary.api.actions.PlayerAction
 import ru.privatenull.pnlibrary.api.actions.PlayerActionSequence
@@ -212,6 +218,23 @@ internal class PluginRegistryImpl(
         private val listenerCount: Int,
     ) : PluginContext {
         private val contextClosed = AtomicBoolean(false)
+        private val actionHandlers = ConcurrentHashMap<String, PlayerActionHandler>()
+        private val builtInActions = ru.privatenull.pnlibrary.api.actions.PlayerActionType.values()
+            .map { it.name.lowercase() }.toSet()
+        init {
+            builtInActions.forEach { key -> actionHandlers[key] = PlayerActionHandler { actionContext ->
+                val completion = CompletableFuture<PlayerActionResult>()
+                platform.executeGlobal(Runnable {
+                    runCatching {
+                        platform.executePlayerAction(owner, actionContext.playerId, PlatformPlayerAction(
+                            actionContext.action, actionContext.message, actionContext.title, actionContext.subtitle,
+                        ))
+                    }.onSuccess { completion.complete(PlayerActionResult.success()) }
+                        .onFailure(completion::completeExceptionally)
+                })
+                completion
+            } }
+        }
         override val isClosed: Boolean get() = contextClosed.get()
 
         override val lifecycle: PluginLifecycle = object : PluginLifecycle {
@@ -238,18 +261,38 @@ internal class PluginRegistryImpl(
             }
         }
         override val actions: PlayerActionService = object : PlayerActionService {
-            override fun execute(playerId: UUID, sequence: PlayerActionSequence) = execute(playerId, sequence, emptyMap())
+            override fun execute(playerId: UUID, sequence: PlayerActionSequence) {
+                execute(playerId, sequence, emptyMap())
+            }
 
             override fun execute(playerId: UUID, sequence: PlayerActionSequence, placeholders: Map<String, Any?>) {
+                executeAsync(playerId, sequence, placeholders).whenComplete { _, error ->
+                    if (error != null) logger.error("Could not execute player action sequence", error)
+                }
+            }
+
+            override fun executeAsync(playerId: UUID, sequence: PlayerActionSequence, placeholders: Map<String, Any?>): java.util.concurrent.CompletionStage<ActionSequenceResult> {
                 check(!isClosed) { "Plugin context $id is closed" }
-                val snapshot = sequence.actions.map { resolve(it, placeholders) }
-                val rendered = snapshot.map { renderAsync(it, playerId, placeholders).toCompletableFuture() }
-                CompletableFuture.allOf(*rendered.toTypedArray()).whenComplete { _, error ->
-                    if (error != null) logger.error("Could not render player action sequence", error)
-                    else platform.executeGlobal(Runnable {
-                        if (!isClosed) rendered.map(CompletableFuture<PlayerAction>::join)
-                            .forEach { platform.executePlayerAction(owner, playerId, platformAction(it)) }
-                    })
+                var chain: java.util.concurrent.CompletionStage<List<PlayerActionResult>> = CompletableFuture.completedFuture(emptyList())
+                sequence.actions.map { resolve(it, placeholders) }.forEach { action ->
+                    chain = chain.thenCompose { results ->
+                        renderAsync(action, playerId, placeholders).thenCompose { rendered ->
+                            executeOne(playerId, rendered).thenApply { results + it }
+                        }
+                    }
+                }
+                return chain.thenApply(::ActionSequenceResult)
+            }
+
+            override fun register(handler: String, actionHandler: PlayerActionHandler): PlayerActionRegistration {
+                val key = normalizeHandler(handler)
+                require(key !in builtInActions) { "Built-in action handler '$key' cannot be replaced" }
+                require(actionHandlers.putIfAbsent(key, actionHandler) == null) { "Action handler '$key' is already registered" }
+                return object : PlayerActionRegistration {
+                    private val active = AtomicBoolean(true)
+                    override val handler = key
+                    override val isActive: Boolean get() = active.get()
+                    override fun close() { if (active.compareAndSet(true, false)) actionHandlers.remove(key, actionHandler) }
                 }
             }
         }
@@ -271,6 +314,7 @@ internal class PluginRegistryImpl(
             runCatching { configs.close() }
             runCatching { placeholders.close() }
             runCatching { cooldowns.close() }
+            actionHandlers.clear()
             runCatching { tasks.close() }
         }
 
@@ -300,7 +344,7 @@ internal class PluginRegistryImpl(
                 action.type, action.text.resolved(), action.title.resolved(), action.subtitle.resolved(),
                 action.fadeIn, action.stay, action.fadeOut, action.world.resolved(), action.x, action.y, action.z,
                 action.yaw, action.pitch, action.sound.resolved(), action.volume, action.soundPitch,
-                action.command.resolved(),
+                action.command.resolved(), action.arguments, action.payload,
             )
         }
 
@@ -318,6 +362,9 @@ internal class PluginRegistryImpl(
                 action.type, text.join(), title.join(), subtitle.join(), action.fadeIn,
                 action.stay, action.fadeOut, world.join(), action.x, action.y, action.z, action.yaw,
                 action.pitch, sound.join(), action.volume, action.soundPitch, command.join(),
+                action.arguments.mapValuesTo(linkedMapOf()) { (_, value) ->
+                    if (value is String) placeholders.render(value, playerId, values).toCompletableFuture().join() else value
+                }, action.payload,
                 )
             }
         }
@@ -328,6 +375,20 @@ internal class PluginRegistryImpl(
             title = action.title?.let(components::deserialize),
             subtitle = action.subtitle?.let(components::deserialize),
         )
+
+        private fun executeOne(playerId: UUID, action: PlayerAction): java.util.concurrent.CompletionStage<PlayerActionResult> {
+            val key = normalizeHandler(action.type)
+            val rendered = platformAction(action)
+            val handler = actionHandlers[key] ?: error("Unknown player action handler '$key' for plugin $id")
+            return handler.execute(PlayerActionContext(
+                id, playerId, key, action, rendered.text, rendered.title, rendered.subtitle,
+                action.arguments.toMap(), action.payload,
+            ))
+        }
+
+        private fun normalizeHandler(value: String): String = value.trim().lowercase().also {
+            require(it.matches(Regex("[a-z0-9_.:-]+"))) { "Invalid action handler: $value" }
+        }
     }
 
     private class Builder : PluginBuilder {

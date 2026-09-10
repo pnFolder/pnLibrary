@@ -283,22 +283,23 @@ class BukkitPlatformAdapter @JvmOverloads constructor(
         val source = action.source
         fun legacy(component: net.kyori.adventure.text.Component?) = component?.let(ADVENTURE_LEGACY::serialize)
         executeReply(player, Runnable {
-            when (source.type) {
-                PlayerActionType.MESSAGE -> player.sendMessage(requireText(legacy(action.text), source.type))
+            val type = PlayerActionType.valueOf(source.type.uppercase())
+            when (type) {
+                PlayerActionType.MESSAGE -> player.sendMessage(requireText(legacy(action.text), type))
                 PlayerActionType.TITLE -> sendConfiguredTitle(player, source, legacy(action.title), legacy(action.subtitle))
-                PlayerActionType.ACTION_BAR -> sendActionBar(player, requireText(legacy(action.text), source.type))
-                PlayerActionType.KICK -> player.kickPlayer(requireText(legacy(action.text), source.type))
+                PlayerActionType.ACTION_BAR -> sendActionBar(player, requireText(legacy(action.text), type))
+                PlayerActionType.KICK -> player.kickPlayer(requireText(legacy(action.text), type))
                 PlayerActionType.TELEPORT -> {
-                    val world = Bukkit.getWorld(requireText(source.world, source.type))
+                    val world = Bukkit.getWorld(requireText(source.world, type))
                         ?: error("Unknown teleport world: ${source.world}")
                     player.teleport(Location(world, source.x, source.y, source.z, source.yaw, source.pitch))
                 }
                 PlayerActionType.SOUND -> player.playSound(
-                    player.location, requireText(source.sound, source.type),
+                    player.location, requireText(source.sound, type),
                     source.volume.coerceAtLeast(0f), source.soundPitch.coerceAtLeast(0f),
                 )
                 PlayerActionType.PLAYER_COMMAND -> player.performCommand(
-                    requireText(source.command, source.type).removePrefix("/"),
+                    requireText(source.command, type).removePrefix("/"),
                 )
             }
         })
@@ -308,7 +309,7 @@ class BukkitPlatformAdapter @JvmOverloads constructor(
         value?.takeIf(String::isNotBlank) ?: error("Action $type requires a non-blank value")
 
     private fun sendConfiguredTitle(player: Player, action: PlayerAction, renderedTitle: String?, renderedSubtitle: String?) {
-        val title = requireText(renderedTitle, action.type)
+        val title = requireText(renderedTitle, PlayerActionType.TITLE)
         runCatching {
             player.javaClass.getMethod(
                 "sendTitle", String::class.java, String::class.java,

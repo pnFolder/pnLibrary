@@ -99,6 +99,38 @@ context.getPlaceholders()
 Player actions автоматически разрешают placeholders и условия перед передачей
 готовых компонентов платформе:
 
+Действия расширяются обработчиками, а не `switch` внутри пользовательского
+плагина:
+
+```java
+PlayerActionRegistration deposit = context.getActions().register(
+    "economy:deposit",
+    PlayerActionHandler.immediate(action -> {
+        UUID playerId = action.getPlayerId();
+        int amount = action.requireInt("amount");
+        Component message = action.getMessage();
+        Object payload = action.getPayload();
+
+        economy.deposit(playerId, amount);
+        return PlayerActionResult.success();
+    })
+);
+```
+
+```yaml
+rewardActions:
+  actions:
+    - type: economy:deposit
+      text: '<green>Получено: {reward}'
+      arguments:
+        amount: '{reward}'
+```
+
+`message`, `title`, `action_bar`, `kick`, `teleport`, `sound` и
+`player_command` зарегистрированы тем же механизмом как встроенные handlers.
+Контекст обработчика содержит владельца, UUID игрока, ключ, исходное действие,
+готовые Adventure-компоненты, произвольные аргументы и runtime payload.
+
 ```java
 context.getActions().execute(playerId, config.joinActions, Map.of("reward", 500));
 ```

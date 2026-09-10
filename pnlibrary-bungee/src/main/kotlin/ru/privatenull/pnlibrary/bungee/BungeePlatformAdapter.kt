@@ -39,19 +39,20 @@ class BungeePlatformAdapter(
         val player = plugin.proxy.getPlayer(playerId) ?: return
         val source = action.source
         fun legacy(component: net.kyori.adventure.text.Component?) = component?.let(ADVENTURE_LEGACY::serialize)
-        when (source.type) {
-            PlayerActionType.MESSAGE -> player.sendMessage(*TextComponent.fromLegacyText(required(legacy(action.text), source.type)))
+        val type = PlayerActionType.valueOf(source.type.uppercase())
+        when (type) {
+            PlayerActionType.MESSAGE -> player.sendMessage(*TextComponent.fromLegacyText(required(legacy(action.text), type)))
             PlayerActionType.ACTION_BAR -> player.sendMessage(
-                ChatMessageType.ACTION_BAR, *TextComponent.fromLegacyText(required(legacy(action.text), source.type)),
+                ChatMessageType.ACTION_BAR, *TextComponent.fromLegacyText(required(legacy(action.text), type)),
             )
             PlayerActionType.TITLE -> plugin.proxy.createTitle()
-                .title(TextComponent(required(legacy(action.title), source.type)))
+                .title(TextComponent(required(legacy(action.title), type)))
                 .subTitle(TextComponent(legacy(action.subtitle).orEmpty()))
                 .fadeIn(source.fadeIn).stay(source.stay).fadeOut(source.fadeOut).send(player)
-            PlayerActionType.KICK -> player.disconnect(TextComponent(required(legacy(action.text), source.type)))
-            PlayerActionType.PLAYER_COMMAND -> player.chat(required(source.command, source.type).removePrefix("/"))
+            PlayerActionType.KICK -> player.disconnect(TextComponent(required(legacy(action.text), type)))
+            PlayerActionType.PLAYER_COMMAND -> player.chat(required(source.command, type).removePrefix("/"))
             PlayerActionType.TELEPORT, PlayerActionType.SOUND ->
-                log(owner, LogLevel.WARNING, "Action ${source.type} is not supported by BungeeCord")
+                log(owner, LogLevel.WARNING, "Action $type is not supported by BungeeCord")
         }
     }
 
