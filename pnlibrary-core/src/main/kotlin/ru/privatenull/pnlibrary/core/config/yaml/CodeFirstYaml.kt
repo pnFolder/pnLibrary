@@ -39,6 +39,7 @@ class CodeFirstYaml<T> @JvmOverloads constructor(
     private val options: ConfigOptions = ConfigOptions.DEFAULT,
 ) : ManagedConfig<T> {
     @Volatile private var loadedValue: T? = null
+    private val migrationEngine = YamlMigrationEngine()
 
     /** `true` after a successful [load] or [reload] and before [unload]. */
     override val isLoaded: Boolean get() = loadedValue != null
@@ -54,7 +55,10 @@ class CodeFirstYaml<T> @JvmOverloads constructor(
     override fun load(): ConfigLoadResult<T> {
         val parent = file.absoluteFile.parentFile
         require(parent.isDirectory || parent.mkdirs()) { "Cannot create configuration directory $parent" }
-        val defaultsYaml = normalize(codec.encode(defaults))
+        val rawDefaultsYaml = normalize(codec.encode(defaults))
+        val defaultsYaml = options.migrations?.let {
+            normalize(migrationEngine.stampDefaults(rawDefaultsYaml, it))
+        } ?: rawDefaultsYaml
         if (!file.exists()) {
             check(options.missingFile == MissingFilePolicy.CREATE) { "Configuration ${file.name} does not exist" }
             writeAtomic(defaultsYaml)
@@ -64,11 +68,13 @@ class CodeFirstYaml<T> @JvmOverloads constructor(
         }
 
         val original = normalize(file.readText())
+        val migration = options.migrations?.let { migrationEngine.migrate(original, it) }
+        val working = migration?.content?.let(::normalize) ?: original
         val defaultPaths = YamlDefaultsMerger.paths(defaultsYaml).toSet()
-        val originalPaths = YamlDefaultsMerger.paths(original).toSet()
-        val missing = (defaultPaths - originalPaths).sorted()
-        val unknown = (originalPaths - defaultPaths).sorted()
-        val requiredMissing = ((codec as? ConfigSchema)?.requiredPaths.orEmpty() - originalPaths).sorted()
+        val workingPaths = YamlDefaultsMerger.paths(working).toSet()
+        val missing = (defaultPaths - workingPaths).sorted()
+        val unknown = (workingPaths - defaultPaths).sorted()
+        val requiredMissing = ((codec as? ConfigSchema)?.requiredPaths.orEmpty() - workingPaths).sorted()
         check(requiredMissing.isEmpty()) {
             "Required configuration values are missing from ${file.name}: ${requiredMissing.joinToString()}"
         }
@@ -80,10 +86,12 @@ class CodeFirstYaml<T> @JvmOverloads constructor(
         }
 
         val syncResult = if (options.unknownValues == UnknownValuePolicy.REMOVE) {
-            YamlDefaultsMerger.Result(normalize(codec.encode(decodeAndValidate(original))), emptyList(), emptyList())
+            var canonical = normalize(codec.encode(decodeAndValidate(working)))
+            options.migrations?.let { canonical = normalize(migrationEngine.stampDefaults(canonical, it)) }
+            YamlDefaultsMerger.Result(canonical, emptyList(), emptyList())
         } else {
             YamlDefaultsMerger.merge(
-                original,
+                working,
                 defaultsYaml,
                 addMissingValues = options.missingValues == MissingValuePolicy.ADD,
                 addComments = options.comments == CommentPolicy.ADD_MISSING,
@@ -93,7 +101,7 @@ class CodeFirstYaml<T> @JvmOverloads constructor(
         val value = decodeAndValidate(synchronized)
         if (synchronized == original) {
             loadedValue = value
-            return ConfigLoadResult(value, emptyList(), null)
+            return ConfigLoadResult(value, emptyList(), null, appliedMigrations = migration?.applied.orEmpty())
         }
 
         val backup = if (options.backups) backup(original) else null
@@ -101,6 +109,8 @@ class CodeFirstYaml<T> @JvmOverloads constructor(
         if (missing.isNotEmpty()) logger.info("Добавлены новые параметры в ${file.name}: ${missing.joinToString()}")
         if (unknown.isNotEmpty() && options.unknownValues == UnknownValuePolicy.REMOVE)
             logger.info("Удалены неизвестные параметры из ${file.name}: ${unknown.joinToString()}")
+        if (!migration?.applied.isNullOrEmpty())
+            logger.info("Применены миграции ${file.name}: ${migration!!.applied.joinToString()}")
         loadedValue = value
         return ConfigLoadResult(
             value,
@@ -108,6 +118,7 @@ class CodeFirstYaml<T> @JvmOverloads constructor(
             backup,
             if (options.unknownValues == UnknownValuePolicy.REMOVE) unknown else emptyList(),
             syncResult.addedComments,
+            migration?.applied.orEmpty(),
         )
     }
 
@@ -122,7 +133,8 @@ class CodeFirstYaml<T> @JvmOverloads constructor(
     /** Atomically saves [value] after decoding and semantic validation. */
     @Synchronized
     override fun save(value: T) {
-        val encoded = normalize(codec.encode(value))
+        val raw = normalize(codec.encode(value))
+        val encoded = options.migrations?.let { normalize(migrationEngine.stampDefaults(raw, it)) } ?: raw
         decodeAndValidate(encoded)
         writeAtomic(encoded)
         loadedValue = value

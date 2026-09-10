@@ -51,3 +51,13 @@ annotation class ConfigSerializeWith(val value: KClass<out ConfigSerializer<*>>)
 @Target(AnnotationTarget.FIELD)
 @Retention(AnnotationRetention.RUNTIME)
 annotation class ConfigRequired
+
+/** Uses the code-defined field value when YAML contains an invalid value and emits a warning. */
+@Target(AnnotationTarget.FIELD)
+@Retention(AnnotationRetention.RUNTIME)
+annotation class ConfigFallbackToDefault
+
+/** Enum aliases written as `alias=ENUM_CONSTANT`, useful after renaming constants. */
+@Target(AnnotationTarget.FIELD)
+@Retention(AnnotationRetention.RUNTIME)
+annotation class ConfigAliases(vararg val value: String)

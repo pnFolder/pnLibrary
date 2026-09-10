@@ -313,3 +313,62 @@ Settings settings = result.getValue();
 5. Ошибка содержит имя файла и путь неправильного значения.
 6. Списки сохраняются как единое пользовательское значение; библиотека не
    добавляет элементы внутрь пользовательских последовательностей.
+
+## Вложенные классы
+
+Обычные mutable Java/Kotlin-классы обходятся рекурсивно. Помечать каждый класс
+аннотацией не нужно:
+
+```java
+public final class Settings {
+    public Database database = new Database();
+    public List<WorldSettings> worlds = new ArrayList<>();
+}
+```
+
+Поля, вложенные объекты, массивы, коллекции и map сериализуются автоматически.
+`@ConfigSerializeWith` нужен только нестандартному типу, у которого должно быть
+особое YAML-представление.
+
+## Enum: подсказки, старые имена и fallback
+
+Для enum библиотека сама добавляет комментарий с допустимыми значениями и
+default. Без fallback неправильное значение останавливает загрузку с сообщением
+вида `serializer: invalid value MINI; allowed: LEGACY, MINIMESSAGE; default: LEGACY`.
+
+```java
+@ConfigAliases({"MINI=MINIMESSAGE", "OLD=LEGACY"})
+@ConfigFallbackToDefault
+public Serializer serializer = Serializer.LEGACY;
+```
+
+`ConfigAliases` принимает старые названия без поломки существующих файлов.
+`ConfigFallbackToDefault` необязателен: с ним неправильное значение заменяется
+значением поля из нового экземпляра настроек, а в консоль выводится warning с
+полным путём. Для важных параметров лучше оставить строгий режим.
+
+## Миграции версий
+
+```java
+ConfigMigrationPlan migrations = ConfigMigrationPlan.builder("1.4")
+    .assumeVersionWhenMissing("1.0")
+    .migrate("1.0", "1.1", document ->
+        document.rename("database.address", "host"))
+    .migrate("1.1", "1.4", document -> {
+        document.move("database.host", "storage.mysql.host");
+        document.set("storage.poolSize", 10);
+        document.remove("legacyOption");
+    })
+    .build();
+
+ConfigOptions options = ConfigOptions.builder()
+    .migrations(migrations)
+    .build();
+```
+
+В YAML хранится `_config-version: '1.4'`. Если пользователь обновился сразу с
+1.0 на 1.4, библиотека найдёт и выполнит всю цепочку `1.0 -> 1.1 -> 1.4`.
+Миграции выполняются в памяти до десериализации и проверки. При отсутствии пути
+или ошибке исходный файл не меняется. После успешной проверки создаётся один
+backup и результат записывается атомарно. Выполненная цепочка доступна через
+`ConfigLoadResult.appliedMigrations`.

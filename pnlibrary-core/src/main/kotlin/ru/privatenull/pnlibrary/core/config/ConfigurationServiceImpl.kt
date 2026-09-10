@@ -80,7 +80,7 @@ internal class ConfigurationServiceImpl(private val platform: PlatformAdapter) :
             val target = directory.resolve(relative).normalize()
             require(target.startsWith(directory)) { "Configuration path escapes the plugin directory" }
             val defaultValue = defaults.get() ?: error("Configuration defaults cannot be null")
-            val codec = AnnotatedYamlCodec(type, defaults, synchronized(serializers) { serializers.toMap() })
+            val codec = AnnotatedYamlCodec(type, defaults, synchronized(serializers) { serializers.toMap() }, logger::warning)
             val handle = CodeFirstYaml(
                 target.toFile(), defaultValue, codec, logger,
                 ConfigValueValidator(codec::validate), options,

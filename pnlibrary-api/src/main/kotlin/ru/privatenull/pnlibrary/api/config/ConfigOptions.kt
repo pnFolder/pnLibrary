@@ -19,6 +19,7 @@ data class ConfigOptions @JvmOverloads constructor(
     val unknownValues: UnknownValuePolicy = UnknownValuePolicy.PRESERVE,
     val comments: CommentPolicy = CommentPolicy.ADD_MISSING,
     val backups: Boolean = true,
+    val migrations: ConfigMigrationPlan? = null,
 ) {
     companion object {
         @JvmField val DEFAULT = ConfigOptions()
@@ -31,11 +32,13 @@ data class ConfigOptions @JvmOverloads constructor(
         private var unknownValues = UnknownValuePolicy.PRESERVE
         private var comments = CommentPolicy.ADD_MISSING
         private var backups = true
+        private var migrations: ConfigMigrationPlan? = null
         fun missingFile(value: MissingFilePolicy) = apply { missingFile = value }
         fun missingValues(value: MissingValuePolicy) = apply { missingValues = value }
         fun unknownValues(value: UnknownValuePolicy) = apply { unknownValues = value }
         fun comments(value: CommentPolicy) = apply { comments = value }
         fun backups(value: Boolean) = apply { backups = value }
-        fun build() = ConfigOptions(missingFile, missingValues, unknownValues, comments, backups)
+        fun migrations(value: ConfigMigrationPlan) = apply { migrations = value }
+        fun build() = ConfigOptions(missingFile, missingValues, unknownValues, comments, backups, migrations)
     }
 }

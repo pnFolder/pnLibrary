@@ -15,6 +15,7 @@ internal class AnnotatedYamlCodec<T : Any>(
     private val type: Class<T>,
     private val defaults: Supplier<T>,
     private val serializers: Map<Class<*>, ConfigSerializer<*>>,
+    private val warning: (String) -> Unit,
 ) : ConfigCodec<T>, ConfigSchema {
     private val annotationSerializers = mutableMapOf<Class<out ConfigSerializer<*>>, ConfigSerializer<*>>()
     override val requiredPaths: Set<String> = required(type)
@@ -28,7 +29,7 @@ internal class AnnotatedYamlCodec<T : Any>(
 
     override fun encode(value: T): String {
         val raw = yaml.dump(toYamlValue(value))
-        val body = decorate(raw, schema(type))
+        val body = decorate(raw, schema(type, value))
         val header = type.getAnnotation(ConfigComment::class.java)?.value.orEmpty()
         return if (header.isEmpty()) body else header.joinToString("\n") { "# $it" } + "\n" + body
     }
@@ -40,7 +41,7 @@ internal class AnnotatedYamlCodec<T : Any>(
             return it.deserialize(loaded) as T
         }
         require(loaded is Map<*, *>) { "Root value of ${type.name} must be a YAML object" }
-        return defaults.get().also { populate(it, type, loaded) }
+        return defaults.get().also { populate(it, type, loaded, "") }
     }
 
     fun validate(value: T): List<ConfigProblem> {
@@ -68,17 +69,33 @@ internal class AnnotatedYamlCodec<T : Any>(
         }
     }
 
-    private fun populate(target: Any, targetType: Class<*>, values: Map<*, *>) {
+    private fun populate(target: Any, targetType: Class<*>, values: Map<*, *>, prefix: String) {
         val byKey = values.entries.associate { it.key.toString() to it.value }
         fields(targetType).forEach { field ->
             if (!byKey.containsKey(key(field))) return@forEach
             val raw = byKey[key(field)]
-            val converted = serializer(field)?.deserialize(raw) ?: convert(raw, field.genericType, read(field, target))
+            val path = if (prefix.isEmpty()) key(field) else "$prefix.${key(field)}"
+            val current = read(field, target)
+            val converted = try {
+                val resolved = enumAlias(field, raw)
+                serializer(field)?.deserialize(resolved) ?: convert(resolved, field.genericType, current, path)
+            } catch (error: Throwable) {
+                if (field.isAnnotationPresent(ConfigFallbackToDefault::class.java)) {
+                    warning("Invalid value at $path (${raw ?: "null"}); using default ${current ?: "null"}")
+                    current
+                } else {
+                    val detail = if (field.type.isEnum) {
+                        val allowed = field.type.enumConstants.joinToString { (it as Enum<*>).name }
+                        " Allowed values: $allowed. Default: ${current ?: "null"}."
+                    } else ""
+                    throw IllegalArgumentException("Invalid configuration value at $path: ${raw ?: "null"}.$detail", error)
+                }
+            }
             field.set(target, converted)
         }
     }
 
-    private fun convert(value: Any?, targetType: Type, current: Any? = null): Any? {
+    private fun convert(value: Any?, targetType: Type, current: Any? = null, path: String = ""): Any? {
         val rawType = rawClass(targetType)
         serializer(rawType)?.let { return it.deserialize(value) }
         if (value == null) return null
@@ -95,12 +112,12 @@ internal class AnnotatedYamlCodec<T : Any>(
         if (rawType.isArray && value is List<*>) {
             val component = rawType.componentType
             return ReflectArray.newInstance(component, value.size).also { array ->
-                value.forEachIndexed { index, item -> ReflectArray.set(array, index, convert(item, component)) }
+                value.forEachIndexed { index, item -> ReflectArray.set(array, index, convert(item, component, path = "$path[$index]")) }
             }
         }
         if (Collection::class.java.isAssignableFrom(rawType) && value is List<*>) {
             val elementType = (targetType as? ParameterizedType)?.actualTypeArguments?.getOrNull(0) ?: Any::class.java
-            val converted = value.map { convert(it, elementType) }
+            val converted = value.mapIndexed { index, item -> convert(item, elementType, path = "$path[$index]") }
             return when {
                 Set::class.java.isAssignableFrom(rawType) -> LinkedHashSet(converted)
                 else -> ArrayList(converted)
@@ -111,22 +128,27 @@ internal class AnnotatedYamlCodec<T : Any>(
             val keyType = arguments?.getOrNull(0) ?: String::class.java
             val valueType = arguments?.getOrNull(1) ?: Any::class.java
             return linkedMapOf<Any?, Any?>().also { out ->
-                value.forEach { (key, item) -> out[convert(key, keyType)] = convert(item, valueType) }
+                value.forEach { (key, item) -> out[convert(key, keyType)] = convert(item, valueType, path = "$path.$key") }
             }
         }
         if (value is Map<*, *>) {
             val nested = current ?: rawType.getDeclaredConstructor().also { it.isAccessible = true }.newInstance()
-            populate(nested, rawType, value)
+            populate(nested, rawType, value, path)
             return nested
         }
         return value
     }
 
-    private fun schema(target: Class<*>): Map<String, Meta> = fields(target).associate { field ->
+    private fun schema(target: Class<*>, instance: Any?): Map<String, Meta> = fields(target).associate { field ->
+        val fieldValue = instance?.let { read(field, it) }
+        val explicit = field.getAnnotation(ConfigComment::class.java)?.value?.toList().orEmpty()
+        val enumHelp = if (field.type.isEnum) listOf(
+            "Allowed values: ${field.type.enumConstants.joinToString { (it as Enum<*>).name }}. Default: ${fieldValue ?: "null"}."
+        ) else emptyList()
         key(field) to Meta(
-            field.getAnnotation(ConfigComment::class.java)?.value?.toList().orEmpty(),
+            explicit + enumHelp,
             field.isAnnotationPresent(ConfigNewLine::class.java),
-            if (isStructured(field)) schema(field.type) else emptyMap(),
+            if (isStructured(field)) schema(field.type, fieldValue) else emptyMap(),
         )
     }
 
@@ -217,6 +239,16 @@ internal class AnnotatedYamlCodec<T : Any>(
     private fun isStructured(field: Field): Boolean =
         serializer(field) == null && serializer(field.type) == null && !isScalar(field.type) &&
             !Collection::class.java.isAssignableFrom(field.type) && !Map::class.java.isAssignableFrom(field.type) && !field.type.isArray
+
+    private fun enumAlias(field: Field, value: Any?): Any? {
+        if (!field.type.isEnum || value !is String) return value
+        val aliases = field.getAnnotation(ConfigAliases::class.java)?.value.orEmpty().mapNotNull { entry ->
+            val separator = entry.indexOf('=')
+            if (separator <= 0 || separator == entry.lastIndex) null
+            else entry.substring(0, separator).trim().lowercase() to entry.substring(separator + 1).trim()
+        }.toMap()
+        return aliases[value.lowercase()] ?: value
+    }
 
     private fun ConfigSerializer<Any>.serializeUntyped(value: Any): Any? = serialize(value)
     private data class Meta(val comments: List<String>, val newLine: Boolean, val children: Map<String, Meta>)
