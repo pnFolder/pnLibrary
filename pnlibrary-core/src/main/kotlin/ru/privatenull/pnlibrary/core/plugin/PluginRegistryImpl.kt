@@ -351,12 +351,14 @@ internal class PluginRegistryImpl(
             fun String?.resolved(): String? = this?.let { source ->
                 values.entries.fold(source) { text, (key, value) -> text.replace("{$key}", value?.toString().orEmpty()) }
             }
-            return PlayerAction(
-                action.type, action.text.resolved(), action.title.resolved(), action.subtitle.resolved(),
-                action.fadeIn, action.stay, action.fadeOut, action.world.resolved(), action.x, action.y, action.z,
-                action.yaw, action.pitch, action.sound.resolved(), action.volume, action.soundPitch,
-                action.command.resolved(), action.arguments, action.payload, action.duration, action.actions,
-            )
+            return copyAction(action).apply {
+                text = action.text.resolved()
+                title = action.title.resolved()
+                subtitle = action.subtitle.resolved()
+                world = action.world.resolved()
+                sound = action.sound.resolved()
+                command = action.command.resolved()
+            }
         }
 
         private fun renderAsync(action: PlayerAction, playerId: UUID, values: Map<String, Any?>): java.util.concurrent.CompletionStage<PlayerAction> {
@@ -369,15 +371,41 @@ internal class PluginRegistryImpl(
             val sound = rendered(action.sound).toCompletableFuture()
             val command = rendered(action.command).toCompletableFuture()
             return CompletableFuture.allOf(text, title, subtitle, world, sound, command).thenApply {
-                PlayerAction(
-                action.type, text.join(), title.join(), subtitle.join(), action.fadeIn,
-                action.stay, action.fadeOut, world.join(), action.x, action.y, action.z, action.yaw,
-                action.pitch, sound.join(), action.volume, action.soundPitch, command.join(),
-                action.arguments.mapValuesTo(linkedMapOf()) { (_, value) ->
+                copyAction(action).apply {
+                    this.text = text.join()
+                    this.title = title.join()
+                    this.subtitle = subtitle.join()
+                    this.world = world.join()
+                    this.sound = sound.join()
+                    this.command = command.join()
+                    arguments = action.arguments.mapValuesTo(linkedMapOf()) { (_, value) ->
                     if (value is String) placeholders.render(value, playerId, values).toCompletableFuture().join() else value
-                }, action.payload, action.duration, action.actions,
-                )
+                    }
+                }
             }
+        }
+
+        private fun copyAction(source: PlayerAction) = PlayerAction(source.type).also { target ->
+            target.text = source.text
+            target.title = source.title
+            target.subtitle = source.subtitle
+            target.fadeIn = source.fadeIn
+            target.stay = source.stay
+            target.fadeOut = source.fadeOut
+            target.world = source.world
+            target.x = source.x
+            target.y = source.y
+            target.z = source.z
+            target.yaw = source.yaw
+            target.pitch = source.pitch
+            target.sound = source.sound
+            target.volume = source.volume
+            target.soundPitch = source.soundPitch
+            target.command = source.command
+            target.arguments = LinkedHashMap(source.arguments)
+            target.payload = source.payload
+            target.duration = source.duration
+            target.actions = source.actions.toMutableList()
         }
 
         private fun platformAction(action: PlayerAction) = PlatformPlayerAction(

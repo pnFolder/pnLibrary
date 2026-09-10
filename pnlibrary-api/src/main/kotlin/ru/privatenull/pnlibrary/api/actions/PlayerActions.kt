@@ -11,35 +11,35 @@ import java.util.function.Consumer
 /** Supported platform-independent actions loaded directly from YAML. */
 enum class PlayerActionType { MESSAGE, TITLE, ACTION_BAR, KICK, TELEPORT, SOUND, PLAYER_COMMAND }
 
-/** One configuration-friendly action. Only fields relevant to [type] are used. */
-class PlayerAction @JvmOverloads constructor(
+/** One configuration-friendly action. Only the handler belongs in its constructor. */
+class PlayerAction(
     /** Handler key: a built-in name such as `message`, or a custom namespaced key. */
     var type: String = "message",
-    var text: String? = null,
-    var title: String? = null,
-    var subtitle: String? = null,
-    var fadeIn: Int = 10,
-    var stay: Int = 70,
-    var fadeOut: Int = 20,
-    var world: String? = null,
-    var x: Double = 0.0,
-    var y: Double = 0.0,
-    var z: Double = 0.0,
-    var yaw: Float = 0f,
-    var pitch: Float = 0f,
-    var sound: String? = null,
-    var volume: Float = 1f,
-    var soundPitch: Float = 1f,
-    var command: String? = null,
-    /** Arbitrary configuration values consumed by custom handlers. */
-    var arguments: MutableMap<String, Any?> = linkedMapOf(),
-    /** Optional object passed to a handler by code; it is not required to come from YAML. */
-    @field:ru.privatenull.pnlibrary.api.config.ConfigIgnore var payload: Any? = null,
-    /** Delay used by the built-in `delay` container action. */
-    var duration: Duration = Duration.ZERO,
-    /** Child actions used by container actions such as `delay`. */
-    var actions: MutableList<PlayerAction> = mutableListOf(),
 ) {
+    var text: String? = null
+    var title: String? = null
+    var subtitle: String? = null
+    var fadeIn: Int = 10
+    var stay: Int = 70
+    var fadeOut: Int = 20
+    var world: String? = null
+    var x: Double = 0.0
+    var y: Double = 0.0
+    var z: Double = 0.0
+    var yaw: Float = 0f
+    var pitch: Float = 0f
+    var sound: String? = null
+    var volume: Float = 1f
+    var soundPitch: Float = 1f
+    var command: String? = null
+    /** Arbitrary configuration values consumed by custom handlers. */
+    var arguments: MutableMap<String, Any?> = linkedMapOf()
+    /** Optional runtime object; never persisted to YAML. */
+    @field:ru.privatenull.pnlibrary.api.config.ConfigIgnore var payload: Any? = null
+    /** Delay used by the built-in `delay` container action. */
+    var duration: Duration = Duration.ZERO
+    /** Child actions used by container actions such as `delay`. */
+    var actions: MutableList<PlayerAction> = mutableListOf()
     fun text(value: String?) = apply { text = value }
     fun title(value: String?, subtitle: String? = null) = apply {
         title = value
