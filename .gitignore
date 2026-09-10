@@ -6,4 +6,6 @@ bin/
 *.iml
 out/
 *.log
+__pycache__/
+*.py[cod]
 /pnlibrary-core/plugins/
