@@ -57,7 +57,7 @@ internal class AnnotatedYamlCodec<T : Any>(
         is Enum<*> -> value.name
         is Iterable<*> -> value.map(::toYamlValue)
         is Array<*> -> value.map(::toYamlValue)
-        is Map<*, *> -> linkedMapOf<Any?, Any?>().also { out -> value.forEach { (k, v) -> out[k] = toYamlValue(v) } }
+        is Map<*, *> -> linkedMapOf<Any?, Any?>().also { out -> value.forEach { (k, v) -> out[toYamlValue(k)] = toYamlValue(v) } }
         else -> linkedMapOf<String, Any?>().also { out ->
             fields(value.javaClass).forEach { field ->
                 val fieldValue = read(field, value)
@@ -118,21 +118,22 @@ internal class AnnotatedYamlCodec<T : Any>(
         if (Collection::class.java.isAssignableFrom(rawType) && value is List<*>) {
             val elementType = (targetType as? ParameterizedType)?.actualTypeArguments?.getOrNull(0) ?: Any::class.java
             val converted = value.mapIndexed { index, item -> convert(item, elementType, path = "$path[$index]") }
-            return when {
-                Set::class.java.isAssignableFrom(rawType) -> LinkedHashSet(converted)
-                else -> ArrayList(converted)
-            }
+            return newCollection(rawType, converted, path)
         }
         if (Map::class.java.isAssignableFrom(rawType) && value is Map<*, *>) {
             val arguments = (targetType as? ParameterizedType)?.actualTypeArguments
             val keyType = arguments?.getOrNull(0) ?: String::class.java
             val valueType = arguments?.getOrNull(1) ?: Any::class.java
-            return linkedMapOf<Any?, Any?>().also { out ->
+            val converted = linkedMapOf<Any?, Any?>().also { out ->
                 value.forEach { (key, item) -> out[convert(key, keyType)] = convert(item, valueType, path = "$path.$key") }
             }
+            return newMap(rawType, converted, path)
         }
         if (value is Map<*, *>) {
-            val nested = current ?: rawType.getDeclaredConstructor().also { it.isAccessible = true }.newInstance()
+            require(!rawType.isInterface && !Modifier.isAbstract(rawType.modifiers)) {
+                "Type ${rawType.name} at $path is abstract; register a ConfigSerializer"
+            }
+            val nested = current ?: instantiate(rawType, path)
             populate(nested, rawType, value, path)
             return nested
         }
@@ -206,6 +207,40 @@ internal class AnnotatedYamlCodec<T : Any>(
         is Class<*> -> type
         is ParameterizedType -> type.rawType as Class<*>
         else -> Any::class.java
+    }
+
+    @Suppress("UNCHECKED_CAST")
+    private fun newCollection(type: Class<*>, values: Collection<Any?>, path: String): Collection<Any?> {
+        if (type.isInterface || Modifier.isAbstract(type.modifiers)) return when {
+            java.util.SortedSet::class.java.isAssignableFrom(type) -> java.util.TreeSet(values)
+            Set::class.java.isAssignableFrom(type) -> LinkedHashSet(values)
+            java.util.Queue::class.java.isAssignableFrom(type) -> java.util.LinkedList(values)
+            else -> ArrayList(values)
+        }
+        val collection = instantiate(type, path) as? MutableCollection<Any?>
+            ?: throw IllegalArgumentException("Type ${type.name} at $path is not a mutable collection")
+        collection.addAll(values)
+        return collection
+    }
+
+    @Suppress("UNCHECKED_CAST")
+    private fun newMap(type: Class<*>, values: Map<Any?, Any?>, path: String): Map<Any?, Any?> {
+        if (type.isInterface || Modifier.isAbstract(type.modifiers)) return if (
+            java.util.SortedMap::class.java.isAssignableFrom(type)
+        ) java.util.TreeMap(values) else LinkedHashMap(values)
+        val map = instantiate(type, path) as? MutableMap<Any?, Any?>
+            ?: throw IllegalArgumentException("Type ${type.name} at $path is not a mutable map")
+        map.putAll(values)
+        return map
+    }
+
+    private fun instantiate(type: Class<*>, path: String): Any = try {
+        type.getDeclaredConstructor().also { it.isAccessible = true }.newInstance()
+    } catch (error: Throwable) {
+        throw IllegalArgumentException(
+            "Type ${type.name} at $path needs a no-argument constructor or a ConfigSerializer",
+            error,
+        )
     }
     @Suppress("UNCHECKED_CAST")
     private fun serializer(type: Class<*>): ConfigSerializer<Any>? =
