@@ -1,4 +1,10 @@
 @echo off
 setlocal
-powershell -NoProfile -ExecutionPolicy Bypass -File "%~dp0tools\release\release.ps1" -Action github -Message "%~1"
+if "%~1"=="" goto usage
+if "%~2"=="" goto usage
+call "%~dp0tools\release\dispatch-github.bat" full "%~1" "%~2" false
 exit /b %errorlevel%
+
+:usage
+echo Usage: publish-github.bat VERSION "RELEASE NOTES"
+exit /b 2

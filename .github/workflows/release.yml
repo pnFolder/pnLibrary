@@ -1,0 +1,120 @@
+name: release
+
+on:
+  workflow_dispatch:
+    inputs:
+      mode:
+        description: Full release or publish the existing version only
+        required: true
+        type: choice
+        options: [full, central]
+        default: full
+      version:
+        description: Semantic version, for example 2.0.0-beta.7
+        required: true
+        type: string
+      release_notes:
+        description: Short release description
+        required: true
+        type: string
+      publish_central:
+        description: Publish API artifacts to Maven Central
+        required: true
+        type: boolean
+        default: true
+
+permissions:
+  contents: write
+
+concurrency:
+  group: release
+  cancel-in-progress: false
+
+jobs:
+  release:
+    runs-on: windows-latest
+    timeout-minutes: 30
+    env:
+      ORG_GRADLE_PROJECT_mavenCentralUsername: ${{ secrets.MAVEN_CENTRAL_USERNAME }}
+      ORG_GRADLE_PROJECT_mavenCentralPassword: ${{ secrets.MAVEN_CENTRAL_PASSWORD }}
+      ORG_GRADLE_PROJECT_signingInMemoryKey: ${{ secrets.MAVEN_SIGNING_KEY }}
+      ORG_GRADLE_PROJECT_signingInMemoryKeyPassword: ${{ secrets.MAVEN_SIGNING_PASSWORD }}
+    steps:
+      - uses: actions/checkout@v4
+        with:
+          fetch-depth: 0
+          token: ${{ secrets.GITHUB_TOKEN }}
+
+      - uses: actions/setup-java@v4
+        with:
+          distribution: temurin
+          java-version: '21'
+          cache: gradle
+
+      - uses: gradle/actions/setup-gradle@v4
+
+      - name: Validate requested version
+        shell: pwsh
+        run: |
+          if ('${{ inputs.version }}' -notmatch '^(0|[1-9]\d*)\.(0|[1-9]\d*)\.(0|[1-9]\d*)(?:-[0-9A-Za-z.-]+)?(?:\+[0-9A-Za-z.-]+)?$') {
+            throw 'Invalid semantic version: ${{ inputs.version }}'
+          }
+          if ('${{ inputs.mode }}' -eq 'central') {
+            $current = (Select-String gradle.properties '^version=(.+)$').Matches[0].Groups[1].Value
+            if ($current -ne '${{ inputs.version }}') {
+              throw "Requested ${{ inputs.version }}, but the repository contains $current"
+            }
+          }
+
+      - name: Verify Maven Central support
+        if: inputs.publish_central
+        shell: pwsh
+        run: |
+          $tasks = .\gradlew.bat tasks --all --console=plain | Out-String
+          if ($tasks -notmatch 'publishAndReleaseToMavenCentral') {
+            throw 'Maven Central publishing is not configured in Gradle'
+          }
+          @('MAVEN_CENTRAL_USERNAME', 'MAVEN_CENTRAL_PASSWORD', 'MAVEN_SIGNING_KEY', 'MAVEN_SIGNING_PASSWORD') | ForEach-Object {
+            $secret = (Get-Item "env:$_" -ErrorAction SilentlyContinue).Value
+            if ([string]::IsNullOrWhiteSpace($secret)) { throw "Missing GitHub Actions secret: $_" }
+          }
+
+      - name: Set project version
+        if: inputs.mode == 'full'
+        shell: pwsh
+        run: tools/release/release.ps1 -Action version -Version '${{ inputs.version }}'
+
+      - name: Build and verify
+        run: .\gradlew.bat clean test :pnlibrary-distribution:build --console=plain
+
+      - name: Commit version and create tag
+        if: inputs.mode == 'full'
+        shell: pwsh
+        run: |
+          git config user.name 'pnFolder Release Bot'
+          git config user.email 'actions@users.noreply.github.com'
+          git add gradle.properties README.md INTEGRATION.md HELP-README.md CHANGELOG.md docs
+          git commit -m 'release: ${{ inputs.version }}'
+          git tag -a 'v${{ inputs.version }}' -m 'pnLibrary ${{ inputs.version }}'
+          git push origin HEAD
+          git push origin 'v${{ inputs.version }}'
+
+      - name: Create GitHub Release
+        if: inputs.mode == 'full'
+        shell: pwsh
+        env:
+          GH_TOKEN: ${{ secrets.GITHUB_TOKEN }}
+        run: |
+          $artifacts = Get-ChildItem 'pnlibrary-distribution/build/libs' -Filter '*.jar' | ForEach-Object FullName
+          if (-not $artifacts) { throw 'No release JARs were built' }
+          $arguments = @('release', 'create', 'v${{ inputs.version }}') + $artifacts + @(
+            '--title', 'pnLibrary ${{ inputs.version }}',
+            '--notes', '${{ inputs.release_notes }}'
+          )
+          if ('${{ inputs.version }}'.Contains('-')) { $arguments += '--prerelease' }
+          & gh @arguments
+          if ($LASTEXITCODE -ne 0) { throw 'GitHub Release creation failed' }
+
+      - name: Publish API artifacts to Maven Central
+        if: inputs.publish_central
+        run: .\gradlew.bat publishAndReleaseToMavenCentral --no-configuration-cache --console=plain
