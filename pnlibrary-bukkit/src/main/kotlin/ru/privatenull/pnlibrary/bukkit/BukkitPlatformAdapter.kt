@@ -1,11 +1,13 @@
 package ru.privatenull.pnlibrary.bukkit
 
 import net.md_5.bungee.api.ChatColor
+import net.md_5.bungee.api.ChatMessageType
 import net.md_5.bungee.api.chat.ClickEvent
 import net.md_5.bungee.api.chat.ComponentBuilder
 import net.md_5.bungee.api.chat.HoverEvent
 import net.md_5.bungee.api.chat.TextComponent
 import org.bukkit.Bukkit
+import org.bukkit.Location
 import org.bukkit.command.Command
 import org.bukkit.command.CommandExecutor
 import org.bukkit.command.CommandMap
@@ -21,6 +23,8 @@ import org.bukkit.event.server.PluginDisableEvent
 import org.bukkit.plugin.Plugin
 import org.bukkit.plugin.java.JavaPlugin
 import ru.privatenull.pnlibrary.api.logging.LogLevel
+import ru.privatenull.pnlibrary.api.actions.PlayerAction
+import ru.privatenull.pnlibrary.api.actions.PlayerActionType
 import ru.privatenull.pnlibrary.api.platform.PlatformType
 import ru.privatenull.pnlibrary.bukkit.server.ServerInfo
 import ru.privatenull.pnlibrary.api.runtime.PnLibrary
@@ -270,6 +274,52 @@ class BukkitPlatformAdapter @JvmOverloads constructor(
             }
         }
         executeGlobal(task)
+    }
+
+    override fun executePlayerAction(owner: Any, playerId: UUID, action: PlayerAction) {
+        val player = Bukkit.getPlayer(playerId) ?: return
+        executeReply(player, Runnable {
+            when (action.type) {
+                PlayerActionType.MESSAGE -> player.sendMessage(requireText(action.text, action.type))
+                PlayerActionType.TITLE -> sendConfiguredTitle(player, action)
+                PlayerActionType.ACTION_BAR -> sendActionBar(player, requireText(action.text, action.type))
+                PlayerActionType.KICK -> player.kickPlayer(requireText(action.text, action.type))
+                PlayerActionType.TELEPORT -> {
+                    val world = Bukkit.getWorld(requireText(action.world, action.type))
+                        ?: error("Unknown teleport world: ${action.world}")
+                    player.teleport(Location(world, action.x, action.y, action.z, action.yaw, action.pitch))
+                }
+                PlayerActionType.SOUND -> player.playSound(
+                    player.location, requireText(action.sound, action.type),
+                    action.volume.coerceAtLeast(0f), action.soundPitch.coerceAtLeast(0f),
+                )
+                PlayerActionType.PLAYER_COMMAND -> player.performCommand(
+                    requireText(action.command, action.type).removePrefix("/"),
+                )
+            }
+        })
+    }
+
+    private fun requireText(value: String?, type: PlayerActionType): String =
+        value?.takeIf(String::isNotBlank) ?: error("Action $type requires a non-blank value")
+
+    private fun sendConfiguredTitle(player: Player, action: PlayerAction) {
+        val title = requireText(action.title, action.type)
+        runCatching {
+            player.javaClass.getMethod(
+                "sendTitle", String::class.java, String::class.java,
+                Int::class.javaPrimitiveType, Int::class.javaPrimitiveType, Int::class.javaPrimitiveType,
+            ).invoke(player, title, action.subtitle.orEmpty(), action.fadeIn, action.stay, action.fadeOut)
+        }.getOrElse { player.sendTitle(title, action.subtitle.orEmpty()) }
+    }
+
+    private fun sendActionBar(player: Player, text: String) {
+        val components = TextComponent.fromLegacyText(text)
+        val method = player.spigot().javaClass.methods.firstOrNull {
+            it.name == "sendMessage" && it.parameterTypes.firstOrNull() == ChatMessageType::class.java
+        }
+        if (method == null) player.sendMessage(text)
+        else method.invoke(player.spigot(), ChatMessageType.ACTION_BAR, components)
     }
 
     override fun close() {

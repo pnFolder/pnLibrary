@@ -374,6 +374,43 @@ ConfigOptions options = ConfigOptions.builder()
 глобальное правило только для его полей. `@ConfigKey("точное-имя")` на конкретном
 поле всегда имеет самый высокий приоритет.
 
+## Сценарии действий из конфигурации
+
+```java
+public PlayerActionSequence joinActions = new PlayerActionSequence();
+```
+
+```yaml
+joinActions:
+  actions:
+    - type: MESSAGE
+      text: '&aДобро пожаловать, {player}!'
+    - type: TITLE
+      title: '&6Авторизация'
+      subtitle: '&fВведите пароль'
+      fadeIn: 10
+      stay: 70
+      fadeOut: 20
+    - type: ACTION_BAR
+      text: '&eОсталось: {time}'
+    - type: SOUND
+      sound: ENTITY_PLAYER_LEVELUP
+      volume: 1.0
+      soundPitch: 1.0
+```
+
+```java
+context.getActions().execute(player.getUniqueId(), config.joinActions, Map.of(
+    "player", player.getName(),
+    "time", 30
+));
+```
+
+Доступны `MESSAGE`, `TITLE`, `ACTION_BAR`, `KICK`, `TELEPORT`, `SOUND` и
+`PLAYER_COMMAND`. Сценарий выполняется по порядку и привязан к lifecycle плагина:
+после закрытия `PluginContext` новые действия не исполняются. Bukkit поддерживает
+весь набор; прокси выполняет только операции, имеющие смысл на прокси.
+
 ## Миграции версий
 
 ```java

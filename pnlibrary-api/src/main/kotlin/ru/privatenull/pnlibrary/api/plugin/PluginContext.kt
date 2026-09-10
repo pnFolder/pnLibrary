@@ -7,6 +7,7 @@ import ru.privatenull.pnlibrary.api.logging.PnLogger
 import ru.privatenull.pnlibrary.api.services.ServiceManager
 import ru.privatenull.pnlibrary.api.tasks.TaskScope
 import ru.privatenull.pnlibrary.api.updates.UpdateRegistration
+import ru.privatenull.pnlibrary.api.actions.PlayerActionService
 
 /** All pnLibrary capabilities and registrations belonging to one [id]. */
 interface PluginContext : AutoCloseable {
@@ -19,6 +20,7 @@ interface PluginContext : AutoCloseable {
     val services: ServiceManager
     val logger: PnLogger
     val configs: ConfigScope
+    val actions: PlayerActionService
     val metrics: MetricsController
     val diagnostics: DiagnosticRegistration?
     val updates: UpdateRegistration?

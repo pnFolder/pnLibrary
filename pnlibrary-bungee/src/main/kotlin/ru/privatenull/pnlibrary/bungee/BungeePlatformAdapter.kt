@@ -1,11 +1,14 @@
 package ru.privatenull.pnlibrary.bungee
 
 import net.md_5.bungee.api.ChatColor
+import net.md_5.bungee.api.ChatMessageType
 import net.md_5.bungee.api.CommandSender
 import net.md_5.bungee.api.chat.TextComponent
 import net.md_5.bungee.api.plugin.Command
 import net.md_5.bungee.api.plugin.Plugin
 import ru.privatenull.pnlibrary.api.logging.LogLevel
+import ru.privatenull.pnlibrary.api.actions.PlayerAction
+import ru.privatenull.pnlibrary.api.actions.PlayerActionType
 import ru.privatenull.pnlibrary.api.platform.PlatformType
 import ru.privatenull.pnlibrary.api.runtime.PnLibrary
 import ru.privatenull.pnlibrary.core.diagnostics.DiagnosticCommandEvent
@@ -13,6 +16,7 @@ import ru.privatenull.pnlibrary.core.diagnostics.DiagnosticCommandExecutor
 import ru.privatenull.pnlibrary.spi.metrics.PlatformMetricsFactory
 import ru.privatenull.pnlibrary.spi.platform.PlatformAdapter
 import java.util.concurrent.atomic.AtomicBoolean
+import java.util.UUID
 import java.util.logging.Level
 
 /**
@@ -28,6 +32,27 @@ class BungeePlatformAdapter(
     override val implementationName: String get() = plugin.proxy.name.ifBlank { type.displayName }
     override val metricsFactory: PlatformMetricsFactory = BungeeMetricsFactory()
     override val dataFolder = plugin.dataFolder.toPath()
+
+    override fun executePlayerAction(owner: Any, playerId: UUID, action: PlayerAction) {
+        val player = plugin.proxy.getPlayer(playerId) ?: return
+        when (action.type) {
+            PlayerActionType.MESSAGE -> player.sendMessage(*TextComponent.fromLegacyText(required(action.text, action.type)))
+            PlayerActionType.ACTION_BAR -> player.sendMessage(
+                ChatMessageType.ACTION_BAR, *TextComponent.fromLegacyText(required(action.text, action.type)),
+            )
+            PlayerActionType.TITLE -> plugin.proxy.createTitle()
+                .title(TextComponent(required(action.title, action.type)))
+                .subTitle(TextComponent(action.subtitle.orEmpty()))
+                .fadeIn(action.fadeIn).stay(action.stay).fadeOut(action.fadeOut).send(player)
+            PlayerActionType.KICK -> player.disconnect(TextComponent(required(action.text, action.type)))
+            PlayerActionType.PLAYER_COMMAND -> player.chat(required(action.command, action.type).removePrefix("/"))
+            PlayerActionType.TELEPORT, PlayerActionType.SOUND ->
+                log(owner, LogLevel.WARNING, "Action ${action.type} is not supported by BungeeCord")
+        }
+    }
+
+    private fun required(value: String?, type: PlayerActionType): String =
+        value?.takeIf(String::isNotBlank) ?: error("Action $type requires a non-blank value")
 
     override fun log(owner: Any, level: LogLevel, message: String, error: Throwable?) {
         val nativeLevel = when (level) {

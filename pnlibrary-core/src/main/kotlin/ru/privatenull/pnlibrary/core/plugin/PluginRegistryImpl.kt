@@ -33,6 +33,10 @@ import java.nio.file.Path
 import java.util.IdentityHashMap
 import java.util.concurrent.atomic.AtomicBoolean
 import java.util.function.Consumer
+import java.util.UUID
+import ru.privatenull.pnlibrary.api.actions.PlayerAction
+import ru.privatenull.pnlibrary.api.actions.PlayerActionSequence
+import ru.privatenull.pnlibrary.api.actions.PlayerActionService
 
 internal class PluginRegistryImpl(
     private val platform: PlatformAdapter,
@@ -213,6 +217,17 @@ internal class PluginRegistryImpl(
                 return logging.box(owner, title.trim())
             }
         }
+        override val actions: PlayerActionService = object : PlayerActionService {
+            override fun execute(playerId: UUID, sequence: PlayerActionSequence) = execute(playerId, sequence, emptyMap())
+
+            override fun execute(playerId: UUID, sequence: PlayerActionSequence, placeholders: Map<String, Any?>) {
+                check(!isClosed) { "Plugin context $id is closed" }
+                val snapshot = sequence.actions.map { resolve(it, placeholders) }
+                platform.executeGlobal(Runnable {
+                    if (!isClosed) snapshot.forEach { platform.executePlayerAction(owner, playerId, it) }
+                })
+            }
+        }
 
         override fun close() {
             synchronized(contexts) {
@@ -249,6 +264,18 @@ internal class PluginRegistryImpl(
 
         private fun MessageBox.status(label: String, detail: String?): MessageBox =
             if (detail == null) skip(label, "not configured") else ok(label, detail)
+
+        private fun resolve(action: PlayerAction, values: Map<String, Any?>): PlayerAction {
+            fun String?.resolved(): String? = this?.let { source ->
+                values.entries.fold(source) { text, (key, value) -> text.replace("{$key}", value?.toString().orEmpty()) }
+            }
+            return PlayerAction(
+                action.type, action.text.resolved(), action.title.resolved(), action.subtitle.resolved(),
+                action.fadeIn, action.stay, action.fadeOut, action.world.resolved(), action.x, action.y, action.z,
+                action.yaw, action.pitch, action.sound.resolved(), action.volume, action.soundPitch,
+                action.command.resolved(),
+            )
+        }
     }
 
     private class Builder : PluginBuilder {
