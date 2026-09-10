@@ -80,7 +80,7 @@ internal class ConfigurationServiceImpl(private val platform: PlatformAdapter) :
             val target = directory.resolve(relative).normalize()
             require(target.startsWith(directory)) { "Configuration path escapes the plugin directory" }
             val defaultValue = defaults.get() ?: error("Configuration defaults cannot be null")
-            val codec = AnnotatedYamlCodec(type, defaults, synchronized(serializers) { serializers.toMap() }, logger::warning)
+            val codec = AnnotatedYamlCodec(type, defaults, synchronized(serializers) { serializers.toMap() }, options, logger::warning)
             val handle = CodeFirstYaml(
                 target.toFile(), defaultValue, codec, logger,
                 ConfigValueValidator(codec::validate), options,
@@ -120,8 +120,8 @@ internal class ConfigurationServiceImpl(private val platform: PlatformAdapter) :
             URL::class.java to stringSerializer { URI.create(it).toURL() },
             Path::class.java to stringSerializer { Paths.get(it) },
             Locale::class.java to object : ConfigSerializer<Locale> {
-                override fun serialize(value: Locale): Any = value.toLanguageTag()
-                override fun deserialize(value: Any?): Locale = Locale.forLanguageTag(value?.toString().orEmpty())
+                override fun serialize(value: Locale, context: ConfigSerializationContext): Any = value.toLanguageTag()
+                override fun deserialize(value: Any?, context: ConfigSerializationContext): Locale = Locale.forLanguageTag(value?.toString().orEmpty())
             },
             Pattern::class.java to stringSerializer(Pattern::compile),
             BigDecimal::class.java to stringSerializer(::BigDecimal),
@@ -130,8 +130,8 @@ internal class ConfigurationServiceImpl(private val platform: PlatformAdapter) :
 
         private fun <T : Any> stringSerializer(parser: (String) -> T): ConfigSerializer<T> =
             object : ConfigSerializer<T> {
-                override fun serialize(value: T): Any = value.toString()
-                override fun deserialize(value: Any?): T = parser(value?.toString() ?: error("Value cannot be null"))
+                override fun serialize(value: T, context: ConfigSerializationContext): Any = value.toString()
+                override fun deserialize(value: Any?, context: ConfigSerializationContext): T = parser(value?.toString() ?: error("Value cannot be null"))
             }
     }
 

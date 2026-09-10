@@ -15,6 +15,7 @@ internal class AnnotatedYamlCodec<T : Any>(
     private val type: Class<T>,
     private val defaults: Supplier<T>,
     private val serializers: Map<Class<*>, ConfigSerializer<*>>,
+    private val options: ConfigOptions,
     private val warning: (String) -> Unit,
 ) : ConfigCodec<T>, ConfigSchema {
     private val annotationSerializers = mutableMapOf<Class<out ConfigSerializer<*>>, ConfigSerializer<*>>()
@@ -28,7 +29,7 @@ internal class AnnotatedYamlCodec<T : Any>(
     })
 
     override fun encode(value: T): String {
-        val raw = yaml.dump(toYamlValue(value))
+        val raw = yaml.dump(toYamlValue(value, type, "", emptyList(), value))
         val body = decorate(raw, schema(type, value))
         val header = type.getAnnotation(ConfigComment::class.java)?.value.orEmpty()
         return if (header.isEmpty()) body else header.joinToString("\n") { "# $it" } + "\n" + body
@@ -38,7 +39,7 @@ internal class AnnotatedYamlCodec<T : Any>(
         val loaded = this.yaml.load<Any?>(yaml) ?: linkedMapOf<String, Any?>()
         serializer(type)?.let {
             @Suppress("UNCHECKED_CAST")
-            return it.deserialize(loaded) as T
+            return it.deserialize(loaded, context(type, "", emptyList(), defaults.get())) as T
         }
         require(loaded is Map<*, *>) { "Root value of ${type.name} must be a YAML object" }
         return defaults.get().also { populate(it, type, loaded, "") }
@@ -50,20 +51,30 @@ internal class AnnotatedYamlCodec<T : Any>(
         return problems
     }
 
-    private fun toYamlValue(value: Any?): Any? {
-        if (value != null) serializer(value.javaClass)?.let { return toYamlValue(it.serializeUntyped(value)) }
+    private fun toYamlValue(
+        value: Any?, declaredType: Type = value?.javaClass ?: Any::class.java, path: String = "",
+        annotations: List<Annotation> = emptyList(), defaultValue: Any? = value,
+    ): Any? {
+        if (value != null) serializer(value.javaClass)?.let {
+            return toYamlValue(it.serializeUntyped(value, context(declaredType, path, annotations, defaultValue)))
+        }
         return when (value) {
         null, is String, is Number, is Boolean -> value
         is Enum<*> -> value.name
-        is Iterable<*> -> value.map(::toYamlValue)
-        is Array<*> -> value.map(::toYamlValue)
-        is Map<*, *> -> linkedMapOf<Any?, Any?>().also { out -> value.forEach { (k, v) -> out[toYamlValue(k)] = toYamlValue(v) } }
+        is Iterable<*> -> value.mapIndexed { index, item -> toYamlValue(item, path = "$path[$index]") }
+        is Array<*> -> value.mapIndexed { index, item -> toYamlValue(item, path = "$path[$index]") }
+        is Map<*, *> -> linkedMapOf<Any?, Any?>().also { out -> value.forEach { (k, v) ->
+            out[toYamlValue(k)] = toYamlValue(v, path = "$path.$k")
+        } }
         else -> linkedMapOf<String, Any?>().also { out ->
             fields(value.javaClass).forEach { field ->
                 val fieldValue = read(field, value)
                 val serializer = serializer(field)
+                val fieldPath = if (path.isEmpty()) key(field) else "$path.${key(field)}"
+                val fieldContext = context(field.genericType, fieldPath, field.annotations.toList(), fieldValue)
                 out[key(field)] = if (fieldValue != null && serializer != null)
-                    toYamlValue(serializer.serializeUntyped(fieldValue)) else toYamlValue(fieldValue)
+                    toYamlValue(serializer.serializeUntyped(fieldValue, fieldContext))
+                else toYamlValue(fieldValue, field.genericType, fieldPath, field.annotations.toList(), fieldValue)
             }
         }
         }
@@ -78,9 +89,10 @@ internal class AnnotatedYamlCodec<T : Any>(
             val current = read(field, target)
             val converted = try {
                 val resolved = enumAlias(field.type, raw, path)
-                serializer(field)?.deserialize(resolved) ?: convert(resolved, field.genericType, current, path)
+                serializer(field)?.deserialize(resolved, context(field.genericType, path, field.annotations.toList(), current))
+                    ?: convert(resolved, field.genericType, current, path)
             } catch (error: Throwable) {
-                if (field.isAnnotationPresent(ConfigFallbackToDefault::class.java)) {
+                if (field.isAnnotationPresent(ConfigDefaultOnInvalid::class.java)) {
                     warning("Invalid value at $path (${raw ?: "null"}); using default ${current ?: "null"}")
                     current
                 } else {
@@ -97,7 +109,7 @@ internal class AnnotatedYamlCodec<T : Any>(
 
     private fun convert(value: Any?, targetType: Type, current: Any? = null, path: String = ""): Any? {
         val rawType = rawClass(targetType)
-        serializer(rawType)?.let { return it.deserialize(value) }
+        serializer(rawType)?.let { return it.deserialize(value, context(targetType, path, emptyList(), current)) }
         if (value == null) return null
         if (rawType == String::class.java) return value.toString()
         if (rawType == java.lang.Boolean.TYPE || rawType == java.lang.Boolean::class.java) return value as Boolean
@@ -200,7 +212,24 @@ internal class AnnotatedYamlCodec<T : Any>(
             .onEach { it.isAccessible = true }
     }
 
-    private fun key(field: Field) = field.getAnnotation(ConfigKey::class.java)?.value?.takeIf(String::isNotBlank) ?: field.name
+    private fun key(field: Field): String = field.getAnnotation(ConfigKey::class.java)?.value?.takeIf(String::isNotBlank)
+        ?: name(field.name, field.declaringClass.getAnnotation(ConfigNaming::class.java)?.value ?: options.naming)
+    private fun name(value: String, strategy: ConfigNamingStrategy): String {
+        if (strategy == ConfigNamingStrategy.AS_DECLARED) return value
+        val words = value.replace(Regex("([a-z0-9])([A-Z])"), "\$1 \$2")
+            .replace(Regex("([A-Z]+)([A-Z][a-z])"), "\$1 \$2")
+            .split(Regex("[_\\-\\s]+"))
+            .filter(String::isNotBlank)
+        return when (strategy) {
+            ConfigNamingStrategy.AS_DECLARED -> value
+            ConfigNamingStrategy.CAMEL_CASE -> words.first().lowercase() + words.drop(1).joinToString("") {
+                it.lowercase().replaceFirstChar(Char::uppercase)
+            }
+            ConfigNamingStrategy.SNAKE_CASE -> words.joinToString("_") { it.lowercase() }
+            ConfigNamingStrategy.KEBAB_CASE -> words.joinToString("-") { it.lowercase() }
+            ConfigNamingStrategy.UPPER_SNAKE_CASE -> words.joinToString("_") { it.uppercase() }
+        }
+    }
     private fun read(field: Field, owner: Any): Any? = field.get(owner)
     private fun isScalar(type: Class<*>) = type.isPrimitive || type.isEnum || type == String::class.java || Number::class.java.isAssignableFrom(type) || type == java.lang.Boolean::class.java
     private fun rawClass(type: Type): Class<*> = when (type) {
@@ -291,6 +320,11 @@ internal class AnnotatedYamlCodec<T : Any>(
         if (aliases.isEmpty()) constant.name else "${constant.name} (aliases: ${aliases.joinToString()})"
     }
 
-    private fun ConfigSerializer<Any>.serializeUntyped(value: Any): Any? = serialize(value)
+    private fun context(
+        declaredType: Type, path: String, annotations: List<Annotation>, defaultValue: Any?,
+    ) = ConfigSerializationContext(path, declaredType, rawClass(declaredType), annotations, defaultValue)
+
+    private fun ConfigSerializer<Any>.serializeUntyped(value: Any, context: ConfigSerializationContext): Any? =
+        serialize(value, context)
     private data class Meta(val comments: List<String>, val newLine: Boolean, val children: Map<String, Meta>)
 }

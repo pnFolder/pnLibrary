@@ -55,7 +55,12 @@ annotation class ConfigRequired
 /** Uses the code-defined field value when YAML contains an invalid value and emits a warning. */
 @Target(AnnotationTarget.FIELD)
 @Retention(AnnotationRetention.RUNTIME)
-annotation class ConfigFallbackToDefault
+annotation class ConfigDefaultOnInvalid
+
+/** Overrides the YAML naming strategy for fields declared by this configuration class. */
+@Target(AnnotationTarget.CLASS)
+@Retention(AnnotationRetention.RUNTIME)
+annotation class ConfigNaming(val value: ConfigNamingStrategy)
 
 /** Previous YAML names accepted for the annotated enum constant. */
 @Target(AnnotationTarget.FIELD)

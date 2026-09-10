@@ -75,11 +75,11 @@ ManagedConfig<MainConfig> main = context.getConfigs().yaml(
 
 ```java
 context.getConfigs().serializer(WorldPoint.class, new ConfigSerializer<WorldPoint>() {
-    public Object serialize(WorldPoint point) {
+    public Object serialize(WorldPoint point, ConfigSerializationContext context) {
         return point.world() + ";" + point.x() + ";" + point.y() + ";" + point.z();
     }
 
-    public WorldPoint deserialize(Object raw) {
+    public WorldPoint deserialize(Object raw, ConfigSerializationContext context) {
         return WorldPoint.parse(raw.toString());
     }
 });
@@ -98,11 +98,11 @@ public final class MainConfig {
 }
 
 public final class WorldPointSerializer implements ConfigSerializer<WorldPoint> {
-    public Object serialize(WorldPoint value) {
+    public Object serialize(WorldPoint value, ConfigSerializationContext context) {
         return value.world() + ";" + value.x() + ";" + value.y() + ";" + value.z();
     }
 
-    public WorldPoint deserialize(Object value) {
+    public WorldPoint deserialize(Object value, ConfigSerializationContext context) {
         return WorldPoint.parse(value.toString());
     }
 }
@@ -111,6 +111,9 @@ public final class WorldPointSerializer implements ConfigSerializer<WorldPoint> 
 `@ConfigSerializeWith` работает на поле и на классе; сериализатор должен иметь
 конструктор без аргументов. Приоритет: аннотация поля, аннотация класса, затем
 сериализатор из `ConfigScope.serializer(...)`, затем встроенное преобразование.
+Контекст содержит полный YAML-путь, raw и generic тип, аннотации поля и
+code-defined default. Один сериализатор поэтому может безопасно менять поведение
+в зависимости от места использования.
 `@ConfigRequired` останавливает загрузку, если ключ отсутствует физически —
 default не маскирует ошибку и файл не переписывается.
 
@@ -345,15 +348,31 @@ public enum Serializer {
     MINIMESSAGE
 }
 
-@ConfigFallbackToDefault
+@ConfigDefaultOnInvalid
 public Serializer serializer = Serializer.LEGACY;
 ```
 
 `ConfigAlias` находится на самой enum-константе: соответствие проверяется
 компилятором и действует во всех местах, где используется этот enum.
-`ConfigFallbackToDefault` необязателен: с ним неправильное значение заменяется
+`ConfigDefaultOnInvalid` необязателен: с ним неправильное значение заменяется
 значением поля из нового экземпляра настроек, а в консоль выводится warning с
 полным путём. Для важных параметров лучше оставить строгий режим.
+
+## Имена YAML-параметров
+
+```java
+ConfigOptions options = ConfigOptions.builder()
+    .naming(ConfigNamingStrategy.KEBAB_CASE)
+    .build();
+```
+
+Доступны `AS_DECLARED`, `CAMEL_CASE`, `SNAKE_CASE`, `KEBAB_CASE` и
+`UPPER_SNAKE_CASE`. Например, поле `databasePoolSize` станет
+`database-pool-size`, а `DATABASE_POOL_SIZE` при `CAMEL_CASE` станет
+`databasePoolSize`. Правило применяется рекурсивно ко всем вложенным классам.
+`@ConfigNaming(ConfigNamingStrategy.SNAKE_CASE)` на вложенном классе переопределяет
+глобальное правило только для его полей. `@ConfigKey("точное-имя")` на конкретном
+поле всегда имеет самый высокий приоритет.
 
 ## Миграции версий
 

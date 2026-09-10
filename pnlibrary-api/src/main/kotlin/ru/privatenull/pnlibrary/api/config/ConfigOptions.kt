@@ -12,6 +12,9 @@ enum class UnknownValuePolicy { PRESERVE, REMOVE, FAIL }
 /** What to do when an existing field has no code-defined comment. */
 enum class CommentPolicy { PRESERVE, ADD_MISSING }
 
+/** Converts Java/Kotlin field names into YAML keys. [ConfigKey] always wins. */
+enum class ConfigNamingStrategy { AS_DECLARED, CAMEL_CASE, SNAKE_CASE, KEBAB_CASE, UPPER_SNAKE_CASE }
+
 /** Immutable synchronization behavior for one YAML file. */
 data class ConfigOptions @JvmOverloads constructor(
     val missingFile: MissingFilePolicy = MissingFilePolicy.CREATE,
@@ -20,6 +23,7 @@ data class ConfigOptions @JvmOverloads constructor(
     val comments: CommentPolicy = CommentPolicy.ADD_MISSING,
     val backups: Boolean = true,
     val migrations: ConfigMigrationPlan? = null,
+    val naming: ConfigNamingStrategy = ConfigNamingStrategy.AS_DECLARED,
 ) {
     companion object {
         @JvmField val DEFAULT = ConfigOptions()
@@ -33,12 +37,14 @@ data class ConfigOptions @JvmOverloads constructor(
         private var comments = CommentPolicy.ADD_MISSING
         private var backups = true
         private var migrations: ConfigMigrationPlan? = null
+        private var naming = ConfigNamingStrategy.AS_DECLARED
         fun missingFile(value: MissingFilePolicy) = apply { missingFile = value }
         fun missingValues(value: MissingValuePolicy) = apply { missingValues = value }
         fun unknownValues(value: UnknownValuePolicy) = apply { unknownValues = value }
         fun comments(value: CommentPolicy) = apply { comments = value }
         fun backups(value: Boolean) = apply { backups = value }
         fun migrations(value: ConfigMigrationPlan) = apply { migrations = value }
-        fun build() = ConfigOptions(missingFile, missingValues, unknownValues, comments, backups, migrations)
+        fun naming(value: ConfigNamingStrategy) = apply { naming = value }
+        fun build() = ConfigOptions(missingFile, missingValues, unknownValues, comments, backups, migrations, naming)
     }
 }
