@@ -35,6 +35,10 @@ class PlayerAction @JvmOverloads constructor(
     var arguments: MutableMap<String, Any?> = linkedMapOf(),
     /** Optional object passed to a handler by code; it is not required to come from YAML. */
     @field:ru.privatenull.pnlibrary.api.config.ConfigIgnore var payload: Any? = null,
+    /** Delay used by the built-in `delay` container action. */
+    var duration: Duration = Duration.ZERO,
+    /** Child actions used by container actions such as `delay`. */
+    var actions: MutableList<PlayerAction> = mutableListOf(),
 ) {
     fun text(value: String?) = apply { text = value }
     fun title(value: String?, subtitle: String? = null) = apply {
@@ -70,6 +74,11 @@ interface PlayerActionService {
     fun execute(playerId: UUID, sequence: PlayerActionSequence)
     fun execute(playerId: UUID, sequence: PlayerActionSequence, placeholders: Map<String, Any?>)
     fun executeAsync(playerId: UUID, sequence: PlayerActionSequence, placeholders: Map<String, Any?> = emptyMap()): CompletionStage<ActionSequenceResult>
+    fun execute(playerId: UUID, actions: List<PlayerAction>) = execute(playerId, PlayerActionSequence(actions.toMutableList()))
+    fun execute(playerId: UUID, actions: List<PlayerAction>, placeholders: Map<String, Any?>) =
+        execute(playerId, PlayerActionSequence(actions.toMutableList()), placeholders)
+    fun executeAsync(playerId: UUID, actions: List<PlayerAction>, placeholders: Map<String, Any?> = emptyMap()): CompletionStage<ActionSequenceResult> =
+        executeAsync(playerId, PlayerActionSequence(actions.toMutableList()), placeholders)
     fun register(handler: String, actionHandler: PlayerActionHandler): PlayerActionRegistration
     fun register(handler: String, access: PlayerActionAccess, actionHandler: PlayerActionHandler): PlayerActionRegistration
     fun register(handler: String, access: Consumer<PlayerActionAccess.Builder>, actionHandler: PlayerActionHandler): PlayerActionRegistration =
@@ -135,6 +144,8 @@ data class PlayerActionContext(
 interface PlayerActionFlow {
     fun execute(action: PlayerAction): CompletionStage<PlayerActionResult>
     fun execute(sequence: PlayerActionSequence): CompletionStage<ActionSequenceResult>
+    fun execute(actions: List<PlayerAction>): CompletionStage<ActionSequenceResult> =
+        execute(PlayerActionSequence(actions.toMutableList()))
     fun after(delay: Duration): DelayedPlayerActionFlow
 }
 
@@ -142,6 +153,8 @@ interface PlayerActionFlow {
 interface DelayedPlayerActionFlow {
     fun execute(action: PlayerAction): CompletionStage<PlayerActionResult>
     fun execute(sequence: PlayerActionSequence): CompletionStage<ActionSequenceResult>
+    fun execute(actions: List<PlayerAction>): CompletionStage<ActionSequenceResult> =
+        execute(PlayerActionSequence(actions.toMutableList()))
 }
 
 data class PlayerActionResult(val successful: Boolean, val message: String? = null) {

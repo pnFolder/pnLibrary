@@ -192,3 +192,49 @@ context.getActions().register("reward", action ->
 
 Дочерний вызов сохраняет UUID игрока, плейсхолдеры и права исходного плагина.
 Циклы вроде `a -> b -> a` и вложенность глубже 32 вызовов отклоняются с понятной ошибкой.
+
+### Формат действий в YAML
+
+Конфигурационный класс может содержать непосредственно список:
+
+```java
+public List<PlayerAction> joinActions = new ArrayList<>();
+```
+
+Специализированный сериализатор `PlayerActionSerializer` читает короткий формат:
+
+```yaml
+join-actions:
+  - message: '<green>Добро пожаловать, {player_name}!'
+
+  - title:
+      title: '<gold>pnServer'
+      subtitle: '<gray>Приятной игры'
+      fade-in: 10
+      stay: 60
+      fade-out: 20
+
+  - sound:
+      key: ENTITY_PLAYER_LEVELUP
+      volume: 1.0
+      pitch: 1.0
+
+  - delay:
+      duration: 2s
+      actions:
+        - message: '<yellow>Это сообщение отправлено позже'
+        - economy:deposit:
+            amount: 500
+```
+
+Имя верхнего ключа является именем обработчика. Неизвестные параметры автоматически
+попадают в `action.arguments`, поэтому пользовательские действия не требуют отдельного
+сериализатора. Вложенные `actions` разбираются тем же сериализатором рекурсивно.
+
+```java
+context.getActions().execute(
+    player.getUniqueId(),
+    config.joinActions,
+    Map.of("player_name", player.getName())
+);
+```

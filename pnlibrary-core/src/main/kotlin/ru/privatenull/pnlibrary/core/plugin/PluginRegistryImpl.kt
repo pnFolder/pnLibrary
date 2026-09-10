@@ -355,7 +355,7 @@ internal class PluginRegistryImpl(
                 action.type, action.text.resolved(), action.title.resolved(), action.subtitle.resolved(),
                 action.fadeIn, action.stay, action.fadeOut, action.world.resolved(), action.x, action.y, action.z,
                 action.yaw, action.pitch, action.sound.resolved(), action.volume, action.soundPitch,
-                action.command.resolved(), action.arguments, action.payload,
+                action.command.resolved(), action.arguments, action.payload, action.duration, action.actions,
             )
         }
 
@@ -375,7 +375,7 @@ internal class PluginRegistryImpl(
                 action.pitch, sound.join(), action.volume, action.soundPitch, command.join(),
                 action.arguments.mapValuesTo(linkedMapOf()) { (_, value) ->
                     if (value is String) placeholders.render(value, playerId, values).toCompletableFuture().join() else value
-                }, action.payload,
+                }, action.payload, action.duration, action.actions,
                 )
             }
         }
@@ -411,6 +411,25 @@ internal class PluginRegistryImpl(
             stack: List<String>,
         ): java.util.concurrent.CompletionStage<PlayerActionResult> {
             val reference = normalizeHandler(action.type)
+            if (reference == "delay") {
+                require(!action.duration.isNegative) { "Action delay must not be negative" }
+                require(action.actions.isNotEmpty()) { "Delay action requires at least one child action" }
+                require(stack.size < 32) { "Player action nesting exceeds 32 calls" }
+                val result = CompletableFuture<PlayerActionResult>()
+                tasks.later(action.duration, Runnable {
+                    if (isClosed) {
+                        result.completeExceptionally(IllegalStateException("Plugin context $id is closed"))
+                    } else {
+                        executeSequence(playerId, PlayerActionSequence(action.actions), values, stack + "delay[${stack.size}]")
+                            .whenComplete { sequence, error ->
+                                if (error != null) result.completeExceptionally(error)
+                                else if (sequence.successful) result.complete(PlayerActionResult.success())
+                                else result.complete(PlayerActionResult.skipped("A delayed child action failed"))
+                            }
+                    }
+                })
+                return result
+            }
             val split = reference.indexOf("::")
             val actionOwner = if (split > 0) PluginId.of(reference.substring(0, split)) else id
             val key = if (split > 0) reference.substring(split + 2) else reference
