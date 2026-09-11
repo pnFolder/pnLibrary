@@ -15,6 +15,8 @@ fun interface Action {
         val serializerType: ComponentSerializerType =
             ComponentSerializerType.ADAPTIVE,
         initialObjects: Map<Class<*>, Any> = emptyMap(),
+        /** Target used by broadcast actions; defaults to the current player. */
+        val audience: LibraryAudience = player,
     ) {
         private val objects = HashMap(initialObjects)
 
@@ -56,11 +58,24 @@ fun interface Action {
         }
     }
 
-    interface LibraryPlayer {
+    interface LibraryAudience {
+        fun sendMessage(text: Component)
+        fun actionBar(text: Component)
+
+        companion object {
+            /** Creates one audience without exposing its player collection to actions. */
+            @JvmStatic fun of(players: Iterable<LibraryPlayer>): LibraryAudience {
+                val snapshot = players.toList()
+                return object : LibraryAudience {
+                    override fun sendMessage(text: Component) = snapshot.forEach { it.sendMessage(text) }
+                    override fun actionBar(text: Component) = snapshot.forEach { it.actionBar(text) }
+                }
+            }
+        }
+    }
+
+    interface LibraryPlayer : LibraryAudience {
         val uniqueId: UUID
         val name: String
-        fun sendMessage(text: Component)
-
-        fun actionBar(text: Component)
     }
 }

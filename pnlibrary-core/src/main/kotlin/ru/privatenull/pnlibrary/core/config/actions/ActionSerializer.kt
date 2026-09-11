@@ -3,6 +3,7 @@ package ru.privatenull.pnlibrary.core.config.actions
 import ru.privatenull.pnlibrary.api.actions.Action
 import ru.privatenull.pnlibrary.api.actions.impl.MessagesImpl
 import ru.privatenull.pnlibrary.api.actions.impl.ActionBarImpl
+import ru.privatenull.pnlibrary.api.actions.impl.BroadcastActionBarImpl
 import ru.privatenull.pnlibrary.api.config.ConfigSerializationContext
 import ru.privatenull.pnlibrary.api.config.ConfigSerializer
 import ru.privatenull.pnlibrary.api.text.ComponentSerializerType
@@ -12,6 +13,7 @@ internal class ActionSerializer : ConfigSerializer<Action> {
     override fun serialize(value: Action, context: ConfigSerializationContext): Any = when (value) {
         is MessagesImpl -> mapOf("message" to messageBody(value))
         is ActionBarImpl -> mapOf("action-bar" to textBody(value.text, value.serializerType))
+        is BroadcastActionBarImpl -> mapOf("broadcast-action-bar" to textBody(value.text, value.serializerType))
         else -> error("No configuration serializer is registered for action ${value.javaClass.name}")
     }
 
@@ -23,6 +25,7 @@ internal class ActionSerializer : ConfigSerializer<Action> {
         return when (val name = rawName?.toString()?.trim()?.lowercase()) {
             "message", "messages" -> readMessage(body, context)
             "action-bar", "actionbar" -> readActionBar(body, context)
+            "broadcast-action-bar", "broadcast-actionbar" -> readBroadcastActionBar(body, context)
             else -> error("Unknown action '$name' at ${context.path}")
         }
     }
@@ -33,6 +36,14 @@ internal class ActionSerializer : ConfigSerializer<Action> {
         val text = body.value("text")?.toString()
             ?: error("Action-bar action at ${context.path} requires 'text'")
         return ActionBarImpl(text, serializerType(body, context))
+    }
+
+    private fun readBroadcastActionBar(body: Any?, context: ConfigSerializationContext): BroadcastActionBarImpl {
+        if (body is String) return BroadcastActionBarImpl(body)
+        require(body is Map<*, *>) { "Broadcast action-bar at ${context.path} must be text or an object" }
+        val text = body.value("text")?.toString()
+            ?: error("Broadcast action-bar at ${context.path} requires 'text'")
+        return BroadcastActionBarImpl(text, serializerType(body, context))
     }
 
     private fun readMessage(body: Any?, context: ConfigSerializationContext): MessagesImpl {

@@ -32,6 +32,11 @@ class BukkitAudienceService(plugin: Plugin) : AutoCloseable {
         return player(player)
     }
 
+    /** Dynamic Bukkit audience snapshot suitable for one broadcast action execution. */
+    fun onlinePlayers(): Action.LibraryAudience = Action.LibraryAudience.of(
+        pluginServer.onlinePlayers.map(::player)
+    )
+
     private val pluginServer = plugin.server
 
     internal fun sendMessage(player: Player, message: Component) {
