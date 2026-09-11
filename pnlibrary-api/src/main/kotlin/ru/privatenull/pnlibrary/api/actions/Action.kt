@@ -35,6 +35,11 @@ fun interface Action {
         fun componentList(lines: Iterable<String>, type: ComponentSerializerType? = null): List<Component> =
             components.deserializeAll(lines, type ?: serializerType)
 
+        fun target(target: Target): LibraryAudience = when (target) {
+            Target.PLAYER -> player
+            Target.ALL -> audience
+        }
+
         fun <T : Any> put(type: Class<T>, value: T): Context = apply {
             objects[type] = value
         }
@@ -73,6 +78,8 @@ fun interface Action {
             }
         }
     }
+
+    enum class Target { PLAYER, ALL }
 
     interface LibraryPlayer : LibraryAudience {
         val uniqueId: UUID

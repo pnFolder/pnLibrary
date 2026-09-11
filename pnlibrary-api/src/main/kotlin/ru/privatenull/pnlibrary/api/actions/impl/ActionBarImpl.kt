@@ -7,9 +7,10 @@ class ActionBarImpl(
     var text: String = "",
     /** `null` means: inherit the serializer selected by the execution context. */
     var serializerType: ComponentSerializerType? = null,
+    var target: Action.Target = Action.Target.PLAYER,
 ) : Action {
 
     override fun execute(context: Action.Context) {
-        context.player.actionBar(context.component(text, serializerType))
+        context.target(target).actionBar(context.component(text, serializerType))
     }
 }
