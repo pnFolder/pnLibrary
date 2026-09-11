@@ -21,6 +21,18 @@ fun interface Action {
         fun component(text: String, type: ComponentSerializerType? = null): Component =
             components.deserialize(text, type ?: serializerType)
 
+        /** Joins source lines with real newline components. */
+        fun component(lines: Iterable<String>, type: ComponentSerializerType? = null): Component =
+            components.deserializeLines(lines, type ?: serializerType)
+
+        /** Vararg convenience for a multiline component. */
+        fun component(vararg lines: String): Component =
+            components.deserializeLines(lines.asList(), serializerType)
+
+        /** Preserves every source line as a separate component. */
+        fun componentList(lines: Iterable<String>, type: ComponentSerializerType? = null): List<Component> =
+            components.deserializeAll(lines, type ?: serializerType)
+
         fun <T : Any> put(type: Class<T>, value: T): Context = apply {
             objects[type] = value
         }
