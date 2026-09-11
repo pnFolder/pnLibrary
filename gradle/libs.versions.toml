@@ -1,6 +1,7 @@
 [versions]
 kotlin        = "2.1.21"
 shadow        = "9.6.1"
+mavenPublish  = "0.35.0"
 gson          = "2.11.0"
 snakeyaml     = "2.3"
 junit         = "5.11.4"
@@ -32,5 +33,6 @@ adventure-platform-bukkit = { module = "net.kyori:adventure-platform-bukkit",   
 placeholderapi      = { module = "me.clip:placeholderapi",                            version.ref = "placeholderapi" }
 
 [plugins]
-kotlin-jvm  = { id = "org.jetbrains.kotlin.jvm", version.ref = "kotlin" }
-shadow      = { id = "com.gradleup.shadow",        version.ref = "shadow" }
+kotlin-jvm    = { id = "org.jetbrains.kotlin.jvm",             version.ref = "kotlin" }
+shadow        = { id = "com.gradleup.shadow",                  version.ref = "shadow" }
+maven-publish = { id = "com.vanniktech.maven.publish",         version.ref = "mavenPublish" }

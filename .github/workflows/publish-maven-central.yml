@@ -1,0 +1,63 @@
+name: Publish pnLibrary modules to Maven Central
+
+on:
+  workflow_dispatch:
+  release:
+    types: [published]
+  push:
+    branches: [main]
+
+permissions:
+  contents: read
+
+jobs:
+  publish:
+    if: github.event_name != 'push' || github.event.head_commit.message == 'Trigger Maven Central publish'
+    runs-on: ubuntu-latest
+    strategy:
+      fail-fast: false
+      matrix:
+        module: ${{ fromJson(github.event_name == 'push' && '["pnlibrary-bstats-base","pnlibrary-core","pnlibrary-bukkit"]' || '["pnlibrary-api","pnlibrary-bstats-base","pnlibrary-core","pnlibrary-bukkit"]') }}
+
+    steps:
+      - name: Checkout
+        uses: actions/checkout@v4
+
+      - name: Set up JDK 26
+        uses: actions/setup-java@v4
+        with:
+          distribution: temurin
+          java-version: '26'
+          cache: gradle
+
+      - name: Make Gradle wrapper executable
+        run: chmod +x gradlew
+
+      - name: Validate publishing configuration
+        shell: bash
+        env:
+          MAVEN_CENTRAL_USERNAME: ${{ secrets.MAVEN_CENTRAL_USERNAME }}
+          MAVEN_CENTRAL_PASSWORD: ${{ secrets.MAVEN_CENTRAL_PASSWORD }}
+          SIGNING_KEY: ${{ secrets.SIGNING_KEY }}
+          SIGNING_PASSWORD: ${{ secrets.SIGNING_PASSWORD }}
+          POM_LICENSE_NAME: ${{ vars.MAVEN_LICENSE_NAME }}
+          POM_LICENSE_URL: ${{ vars.MAVEN_LICENSE_URL }}
+        run: |
+          test -n "$MAVEN_CENTRAL_USERNAME" || { echo "Missing secret: MAVEN_CENTRAL_USERNAME"; exit 1; }
+          test -n "$MAVEN_CENTRAL_PASSWORD" || { echo "Missing secret: MAVEN_CENTRAL_PASSWORD"; exit 1; }
+          test -n "$SIGNING_KEY" || { echo "Missing secret: SIGNING_KEY"; exit 1; }
+          test -n "$POM_LICENSE_NAME" || { echo "Missing repository variable: MAVEN_LICENSE_NAME"; exit 1; }
+          test -n "$POM_LICENSE_URL" || { echo "Missing repository variable: MAVEN_LICENSE_URL"; exit 1; }
+
+      - name: Publish ${{ matrix.module }} to Maven Central
+        env:
+          ORG_GRADLE_PROJECT_mavenCentralUsername: ${{ secrets.MAVEN_CENTRAL_USERNAME }}
+          ORG_GRADLE_PROJECT_mavenCentralPassword: ${{ secrets.MAVEN_CENTRAL_PASSWORD }}
+          ORG_GRADLE_PROJECT_signingInMemoryKey: ${{ secrets.SIGNING_KEY }}
+          ORG_GRADLE_PROJECT_signingInMemoryKeyPassword: ${{ secrets.SIGNING_PASSWORD }}
+          ORG_GRADLE_PROJECT_POM_LICENSE_NAME: ${{ vars.MAVEN_LICENSE_NAME }}
+          ORG_GRADLE_PROJECT_POM_LICENSE_URL: ${{ vars.MAVEN_LICENSE_URL }}
+          ORG_GRADLE_PROJECT_POM_LICENSE_DIST: repo
+        run: ./gradlew --no-daemon :${{ matrix.module }}:publishAndReleaseToMavenCentral
+
+# platform modules publish trigger

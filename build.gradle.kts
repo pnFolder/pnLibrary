@@ -8,7 +8,7 @@ plugins {
 
 // ── Convention for every subproject ─────────────────────────────────────────
 subprojects {
-    group   = "ru.privatenull"
+    group   = "io.github.pnfolder"
     version = rootProject.version
 
     repositories {
