@@ -49,9 +49,10 @@ dependencies {
 tasks.register<ShadowJar>("shadowBukkit") {
     group = "distribution"
     description = "Fat JAR for Bukkit/Spigot/Paper/Folia with relocated Kotlin runtime"
-    archiveBaseName = "pnLibrary-bukkit"
+    archiveBaseName = "pnLibrary"
     configurations = listOf(bukkitRuntime)
     applyCommonConfig()
+    archiveClassifier = "bukkit-java8"
     filesMatching("plugin.yml") { expand("version" to pnVer) }
 }
 
@@ -64,9 +65,10 @@ dependencies {
 tasks.register<ShadowJar>("shadowBungee") {
     group = "distribution"
     description = "Fat JAR for BungeeCord / Waterfall with relocated Kotlin runtime"
-    archiveBaseName = "pnLibrary-bungee"
+    archiveBaseName = "pnLibrary"
     configurations = listOf(bungeeRuntime)
     applyCommonConfig()
+    archiveClassifier = "bungeecord-java8"
     filesMatching("bungee.yml") { expand("version" to pnVer) }
 }
 
@@ -79,9 +81,10 @@ dependencies {
 tasks.register<ShadowJar>("shadowVelocity") {
     group = "distribution"
     description = "Fat JAR for Velocity 3.x with relocated Kotlin runtime"
-    archiveBaseName = "pnLibrary-velocity"
+    archiveBaseName = "pnLibrary"
     configurations = listOf(velocityRuntime)
     applyCommonConfig()
+    archiveClassifier = "velocity-java17"
     filesMatching("velocity-plugin.json") { expand("version" to pnVer) }
 }
 

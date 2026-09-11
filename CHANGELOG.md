@@ -1,41 +1,17 @@
 # Changelog
 
-## Unreleased
+## 2.1.0-beta.1
 
-- Added immutable typed actions with generic polymorphic YAML configuration.
-- Added annotation-declared type discriminators, canonical names, aliases, and numeric priorities.
-- Added plugin-owned local, selected-plugin, wildcard, and global type publication.
-- Added explicit `owner::type` references for shared configuration types.
-- Removed the hand-written typed `ActionSerializer`; the common YAML codec now handles implementations recursively.
-- Added live registration lookup and automatic cleanup when the owning configuration scope closes.
-- Documented the typed action architecture and the remaining legacy execution migration boundary.
-
-## 2.0.0-beta.6
-
-- Added the global `PluginId` / `PluginRegistry` / `PluginContext` integration model and runtime metrics control.
-- Added automatic native metadata, explicit buffered plugin lifecycle reports, and inline updater configuration.
-- Added context-bound neutral MBox messages for arbitrary plugin operations.
-- Added a synchronous, plugin-ID-scoped, platform-independent event bus with extensible numeric priorities and annotated listeners.
-- Added self-dispatching events with names and Bukkit-like caller-owned async metadata.
-- Reduced platform identity to the three supported `PlatformType` API families; fork names are runtime metadata.
-- Added a high-level `PnLibraryRuntimeHost` shared by all native entry points.
-- Removed platform adapter casts to the internal `PnLibraryImpl` implementation.
-- Centralized `/pndebug` parsing, cooldown, execution, and reply dispatch.
-- Added consistent pnLibrary startup and shutdown message boxes.
-- Standardized Kotlin API and architecture documentation in English.
-- Replaced wildcard imports and clarified ownership between API, core, and adapters.
-
-## 2.0.0-beta.5
-
-- Реализован сбор ограниченного и отредактированного журнала для `--logs`.
-- `/pndebug all --config` теперь включает конфигурации всех плагинов и их владельцев.
-- Закрыт выход из разрешённой папки через симлинк промежуточного каталога.
-- Добавлен проверяемый `plugins/pnLibrary/config.yml` для настроек runtime.
-- Сетевой сбой загрузки больше не уничтожает готовый локальный отчёт.
-- Updater получил управляемый lifecycle и единое корректное сравнение SemVer.
-- Folia использует одну reflection-based реализацию и объявлена в `plugin.yml`.
-- Исправлена отмена отложенного callback в `asyncThen`.
-- Code-first YAML создаёт отдельные резервные копии и хранит пять последних.
-- Удалены неиспользуемые дубли API, пустой database router и старый слой логирования.
-- Версия проекта перенесена в `gradle.properties`; сборка больше не привязана к JDK 26.
-- Добавлены CI и дополнительные regression-тесты.
+- Added one `PluginContext` for plugin-owned configuration, tasks, events, services, metrics, updates, logging, diagnostics, placeholders, components, and cooldowns.
+- Added a platform-independent event bus with annotated listeners, cancellation, execution modes, and numeric priorities.
+- Added annotation-driven code-first YAML, migrations, validation, nested collections, enum aliases, and custom serializers.
+- Added immutable typed actions with polymorphic YAML, aliases, priorities, access policies, and `owner::type` namespaces.
+- Added Adventure component formatting, multiline conversion, placeholder pipelines, conditions, and bounded caches.
+- Added encrypted PN Support Archives, persistent diagnostic history, repeated-error aggregation, exact configuration capture, Catbox upload, and local fallback.
+- Added buffered lifecycle and general-purpose message boxes.
+- Added a typed service registry, managed bStats sessions, updater lifecycle, and Bukkit server-version API.
+- Fixed Bukkit main-thread violations during diagnostic collection.
+- Fixed lost headers, stack frames, indentation, and readability in decoded diagnostic errors.
+- Fixed safe menu termination when either the owner or pnLibrary is disabled.
+- Separated public API, Bukkit API, runtime SPI, core, and platform implementations.
+- Removed obsolete platform API duplicates, the previous integration layer, old logging implementations, mclogs upload, and unused database routing.

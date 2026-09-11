@@ -105,7 +105,9 @@ jobs:
         env:
           GH_TOKEN: ${{ secrets.GITHUB_TOKEN }}
         run: |
-          $artifacts = Get-ChildItem 'pnlibrary-distribution/build/libs' -Filter '*.jar' | ForEach-Object FullName
+          $artifacts = Get-ChildItem 'pnlibrary-distribution/build/libs' -Filter '*.jar' |
+            Where-Object { $_.Name -match '^pnLibrary-[0-9].*-(bukkit-java8|bungeecord-java8|velocity-java17)\.jar$' } |
+            ForEach-Object FullName
           if (-not $artifacts) { throw 'No release JARs were built' }
           $arguments = @('release', 'create', 'v${{ inputs.version }}') + $artifacts + @(
             '--title', 'pnLibrary ${{ inputs.version }}',
