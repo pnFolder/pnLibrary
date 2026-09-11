@@ -1,7 +1,6 @@
 package ru.privatenull.pnlibrary.api.text
 
 import net.kyori.adventure.text.Component
-import ru.privatenull.pnlibrary.api.placeholders.PlaceholderRequest
 
 enum class ComponentSerializerType {
     ADAPTIVE, MINI_MESSAGE, LEGACY_AMPERSAND, LEGACY_SECTION, ADVENTURE_JSON, PLAIN_TEXT
@@ -10,7 +9,13 @@ enum class ComponentSerializerType {
 interface ComponentSerializer {
     val type: ComponentSerializerType
     fun deserialize(input: String): Component
+    /** Deserializes every input independently and preserves list boundaries. */
+    fun deserializeAll(inputs: Iterable<String>): List<Component> = inputs.map(::deserialize)
+    /** Deserializes lines and joins them with real newline components, without a trailing newline. */
+    fun deserializeLines(lines: Iterable<String>): Component = joinComponentLines(deserializeAll(lines))
+    fun deserializeLines(vararg lines: String): Component = deserializeLines(lines.asList())
     fun serialize(component: Component): String
+    fun serializeAll(components: Iterable<Component>): List<String> = components.map(::serialize)
 }
 
 enum class ComponentCacheScope { NONE, PLUGIN, GLOBAL }
@@ -38,9 +43,27 @@ interface ComponentService {
     fun serializer(type: ComponentSerializerType): ComponentSerializer
     fun deserialize(input: String): Component
     fun deserialize(input: String, type: ComponentSerializerType): Component
+    /** Returns one component per source string. */
+    fun deserializeAll(inputs: Iterable<String>): List<Component>
+    fun deserializeAll(inputs: Iterable<String>, type: ComponentSerializerType): List<Component>
+    /** Returns one multiline component with `Component.newline()` between source strings. */
+    fun deserializeLines(lines: Iterable<String>): Component
+    fun deserializeLines(lines: Iterable<String>, type: ComponentSerializerType): Component
+    fun deserializeLines(vararg lines: String): Component = deserializeLines(lines.asList())
     fun serialize(component: Component): String
+    fun serializeAll(components: Iterable<Component>): List<String> = components.map(::serialize)
     fun template(input: String): ComponentTemplate
     fun configureCache(policy: ComponentCachePolicy)
     fun clearCache()
     fun cacheStatistics(): ComponentCacheStatistics
+}
+
+private fun joinComponentLines(lines: Iterable<Component>): Component {
+    val iterator = lines.iterator()
+    if (!iterator.hasNext()) return Component.empty()
+    var result = iterator.next()
+    while (iterator.hasNext()) {
+        result = result.append(Component.newline()).append(iterator.next())
+    }
+    return result
 }

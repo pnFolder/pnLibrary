@@ -32,6 +32,22 @@ internal class ComponentServiceImpl(
             cache?.put(key, it, cachePolicy)
         }
     }
+    override fun deserializeAll(inputs: Iterable<String>): List<Component> =
+        deserializeAll(inputs, defaultSerializerType)
+
+    override fun deserializeAll(inputs: Iterable<String>, type: ComponentSerializerType): List<Component> =
+        inputs.map { deserialize(it, type) }
+
+    override fun deserializeLines(lines: Iterable<String>): Component =
+        deserializeLines(lines, defaultSerializerType)
+
+    override fun deserializeLines(lines: Iterable<String>, type: ComponentSerializerType): Component {
+        val iterator = deserializeAll(lines, type).iterator()
+        if (!iterator.hasNext()) return Component.empty()
+        var result = iterator.next()
+        while (iterator.hasNext()) result = result.append(Component.newline()).append(iterator.next())
+        return result
+    }
     override fun serialize(component: Component): String = serializer(defaultSerializerType).serialize(component)
     override fun template(input: String): ComponentTemplate = Template(input)
     override fun configureCache(policy: ComponentCachePolicy) {

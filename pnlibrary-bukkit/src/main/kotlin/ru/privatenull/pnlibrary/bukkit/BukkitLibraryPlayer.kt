@@ -13,7 +13,11 @@ class BukkitLibraryPlayer internal constructor(
     override val uniqueId: UUID get() = player.uniqueId
     override val name: String get() = player.name
 
-    override fun sendMessage(message: Component) {
-        audiences.sendMessage(player, message)
+    override fun sendMessage(text: Component) {
+        audiences.sendMessage(player, text)
+    }
+
+    override fun actionBar(text: Component) {
+        audiences.sendActionBar(player, text)
     }
 }

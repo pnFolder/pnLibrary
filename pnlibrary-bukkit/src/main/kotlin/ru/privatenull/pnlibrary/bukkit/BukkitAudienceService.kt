@@ -35,10 +35,19 @@ class BukkitAudienceService(plugin: Plugin) : AutoCloseable {
     private val pluginServer = plugin.server
 
     internal fun sendMessage(player: Player, message: Component) {
+        send(player, message, false)
+    }
+
+    internal fun sendActionBar(player: Player, message: Component) {
+        send(player, message, true)
+    }
+
+    private fun send(player: Player, message: Component, actionBar: Boolean) {
         val provider = audiences
         if (provider != null && !fallbackOnly.get()) {
             try {
-                provider.player(player.uniqueId).sendMessage(message)
+                if (actionBar) provider.player(player.uniqueId).sendActionBar(message)
+                else provider.player(player.uniqueId).sendMessage(message)
                 return
             } catch (error: Throwable) {
                 rethrowFatal(error)
@@ -48,7 +57,20 @@ class BukkitAudienceService(plugin: Plugin) : AutoCloseable {
                 }
             }
         }
-        player.sendMessage(LEGACY.serialize(message))
+        val legacy = LEGACY.serialize(message)
+        if (actionBar) sendLegacyActionBar(player, legacy) else player.sendMessage(legacy)
+    }
+
+    private fun sendLegacyActionBar(player: Player, message: String) {
+        runCatching {
+            val chatType = Class.forName("net.md_5.bungee.api.ChatMessageType").getField("ACTION_BAR").get(null)
+            val componentType = Class.forName("net.md_5.bungee.api.chat.BaseComponent")
+            val textComponent = Class.forName("net.md_5.bungee.api.chat.TextComponent")
+            val components = textComponent.getMethod("fromLegacyText", String::class.java).invoke(null, message)
+            player.javaClass.getMethod("spigot").invoke(player).javaClass
+                .getMethod("sendMessage", chatType.javaClass, java.lang.reflect.Array.newInstance(componentType, 0).javaClass)
+                .invoke(player.spigot(), chatType, components)
+        }.onFailure { player.sendMessage(message) }
     }
 
     override fun close() {

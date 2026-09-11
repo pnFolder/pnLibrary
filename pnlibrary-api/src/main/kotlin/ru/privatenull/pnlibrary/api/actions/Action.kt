@@ -47,6 +47,8 @@ fun interface Action {
     interface LibraryPlayer {
         val uniqueId: UUID
         val name: String
-        fun sendMessage(message: Component)
+        fun sendMessage(text: Component)
+
+        fun actionBar(text: Component)
     }
 }
