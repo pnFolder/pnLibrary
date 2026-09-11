@@ -73,7 +73,7 @@ annotation class ConfigAlias(vararg val value: String)
 annotation class ConfigPolymorphic(val discriminator: String = "type")
 
 /** Declares every implementation accepted by a polymorphic configuration type. */
-@Target(AnnotationTarget.CLASS)
+@Target(AnnotationTarget.CLASS, AnnotationTarget.FIELD)
 @Retention(AnnotationRetention.RUNTIME)
 annotation class ConfigTypes(vararg val value: ConfigType)
 
@@ -81,15 +81,6 @@ annotation class ConfigTypes(vararg val value: ConfigType)
 @Retention(AnnotationRetention.RUNTIME)
 annotation class ConfigType(
     val type: KClass<*>,
-    val name: String,
-    val aliases: Array<String> = [],
-    val priority: Int = 0,
-)
-
-/** Adds an external implementation without changing the original base interface. */
-@Target(AnnotationTarget.CLASS)
-@Retention(AnnotationRetention.RUNTIME)
-annotation class ConfigTypeExtension(
     val name: String,
     val aliases: Array<String> = [],
     val priority: Int = 0,

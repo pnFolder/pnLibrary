@@ -18,7 +18,6 @@ internal class AnnotatedYamlCodec<T : Any>(
     private val options: ConfigOptions,
     private val warning: (String) -> Unit,
 ) : ConfigCodec<T>, ConfigSchema {
-    private val discoveredTypes = discoverTypes(defaults.get())
     private val annotationSerializers = mutableMapOf<Class<out ConfigSerializer<*>>, ConfigSerializer<*>>()
     override val requiredPaths: Set<String> = required(type)
     private val yaml = Yaml(DumperOptions().apply {
@@ -59,10 +58,10 @@ internal class AnnotatedYamlCodec<T : Any>(
         if (value != null) serializer(value.javaClass)?.let {
             return toYamlValue(it.serializeUntyped(value, context(declaredType, path, annotations, defaultValue)))
         }
-        if (value != null && isPolymorphic(declaredType)) {
+        if (value != null && isPolymorphic(declaredType, annotations)) {
             val base = rawClass(declaredType)
             val polymorphic = base.getAnnotation(ConfigPolymorphic::class.java)
-            val selected = configTypes(base).filter { it.type == value.javaClass }.maxByOrNull(TypeDescriptor::priority)
+            val selected = configTypes(base, annotations).filter { it.type == value.javaClass }.maxByOrNull(TypeDescriptor::priority)
                 ?: error("Configuration implementation ${value.javaClass.name} is not declared by ${base.name}")
             return linkedMapOf<String, Any?>(polymorphic.discriminator to selected.name).apply {
                 putAll(objectYaml(value, path))
@@ -73,7 +72,7 @@ internal class AnnotatedYamlCodec<T : Any>(
         is Enum<*> -> value.name
         is Iterable<*> -> {
             val elementType = (declaredType as? ParameterizedType)?.actualTypeArguments?.getOrNull(0) ?: Any::class.java
-            value.mapIndexed { index, item -> toYamlValue(item, elementType, "$path[$index]") }
+            value.mapIndexed { index, item -> toYamlValue(item, elementType, "$path[$index]", annotations) }
         }
         is Array<*> -> value.mapIndexed { index, item -> toYamlValue(item, path = "$path[$index]") }
         is Map<*, *> -> linkedMapOf<Any?, Any?>().also { out -> value.forEach { (k, v) ->
@@ -105,7 +104,7 @@ internal class AnnotatedYamlCodec<T : Any>(
             val converted = try {
                 val resolved = enumAlias(field.type, raw, path)
                 serializer(field)?.deserialize(resolved, context(field.genericType, path, field.annotations.toList(), current))
-                    ?: convert(resolved, field.genericType, current, path)
+                    ?: convert(resolved, field.genericType, current, path, field.annotations.toList())
             } catch (error: Throwable) {
                 if (field.isAnnotationPresent(ConfigDefaultOnInvalid::class.java)) {
                     warning("Invalid value at $path (${raw ?: "null"}); using default ${current ?: "null"}")
@@ -122,11 +121,14 @@ internal class AnnotatedYamlCodec<T : Any>(
         }
     }
 
-    private fun convert(value: Any?, targetType: Type, current: Any? = null, path: String = ""): Any? {
+    private fun convert(
+        value: Any?, targetType: Type, current: Any? = null, path: String = "",
+        annotations: List<Annotation> = emptyList(),
+    ): Any? {
         val rawType = rawClass(targetType)
         serializer(rawType)?.let { return it.deserialize(value, context(targetType, path, emptyList(), current)) }
         if (value == null) return null
-        if (isPolymorphic(targetType)) return polymorphic(value, rawType, path)
+        if (isPolymorphic(targetType, annotations)) return polymorphic(value, rawType, path, annotations)
         if (rawType == String::class.java) return value.toString()
         if (rawType == java.lang.Boolean.TYPE || rawType == java.lang.Boolean::class.java) return value as Boolean
         if (rawType == java.lang.Byte.TYPE || rawType == java.lang.Byte::class.java) return (value as Number).toByte()
@@ -145,7 +147,9 @@ internal class AnnotatedYamlCodec<T : Any>(
         }
         if (Collection::class.java.isAssignableFrom(rawType) && value is List<*>) {
             val elementType = (targetType as? ParameterizedType)?.actualTypeArguments?.getOrNull(0) ?: Any::class.java
-            val converted = value.mapIndexed { index, item -> convert(item, elementType, path = "$path[$index]") }
+            val converted = value.mapIndexed { index, item ->
+                convert(item, elementType, path = "$path[$index]", annotations = annotations)
+            }
             return newCollection(rawType, converted, path)
         }
         if (Map::class.java.isAssignableFrom(rawType) && value is Map<*, *>) {
@@ -168,7 +172,7 @@ internal class AnnotatedYamlCodec<T : Any>(
         return value
     }
 
-    private fun polymorphic(value: Any, baseType: Class<*>, path: String): Any {
+    private fun polymorphic(value: Any, baseType: Class<*>, path: String, annotations: List<Annotation>): Any {
         require(value is Map<*, *> && value.size == 1) {
             "Polymorphic value at $path must contain exactly one type"
         }
@@ -176,9 +180,10 @@ internal class AnnotatedYamlCodec<T : Any>(
         val entry = value.entries.firstOrNull { it.key?.toString()?.equals(discriminator, true) == true }
             ?: error("Missing '$discriminator' for ${baseType.simpleName} at $path")
         val name = entry.value?.toString()?.trim().orEmpty()
-        val matches = configTypes(baseType).filter { it.matches(name) }
+        val available = configTypes(baseType, annotations)
+        val matches = available.filter { it.matches(name) }
         val selected = matches.maxByOrNull(TypeDescriptor::priority)
-            ?: error("Unknown ${baseType.simpleName} type '$name' at $path; allowed: ${configTypes(baseType).joinToString { it.name }}")
+            ?: error("Unknown ${baseType.simpleName} type '$name' at $path; allowed: ${available.joinToString { it.name }}")
         require(matches.count { it.priority == selected.priority } == 1) {
             "Ambiguous ${baseType.simpleName} type '$name' at $path; assign different priorities"
         }
@@ -189,19 +194,18 @@ internal class AnnotatedYamlCodec<T : Any>(
         return instantiate(implementation, path).also { populate(it, implementation, body, path) }
     }
 
-    private fun isPolymorphic(type: Type): Boolean {
+    private fun isPolymorphic(type: Type, annotations: List<Annotation>): Boolean {
         val raw = rawClass(type)
-        return raw != Any::class.java && raw.isAnnotationPresent(ConfigPolymorphic::class.java)
+        return raw != Any::class.java && raw.isAnnotationPresent(ConfigPolymorphic::class.java) &&
+            (raw.isAnnotationPresent(ConfigTypes::class.java) || annotations.any { it is ConfigTypes })
     }
 
-    private fun configTypes(baseType: Class<*>): List<TypeDescriptor> {
+    private fun configTypes(baseType: Class<*>, annotations: List<Annotation>): List<TypeDescriptor> {
         val declared = baseType.getAnnotation(ConfigTypes::class.java)?.value?.map {
             TypeDescriptor(it.type.java, it.name, it.aliases.toSet(), it.priority)
         }.orEmpty()
-        val extensions = discoveredTypes.filter(baseType::isAssignableFrom).mapNotNull { implementation ->
-            implementation.getAnnotation(ConfigTypeExtension::class.java)?.let {
-                TypeDescriptor(implementation, it.name, it.aliases.toSet(), it.priority)
-            }
+        val extensions = annotations.filterIsInstance<ConfigTypes>().flatMap { annotation ->
+            annotation.value.map { TypeDescriptor(it.type.java, it.name, it.aliases.toSet(), it.priority) }
         }
         val types = declared + extensions
         require(types.isNotEmpty()) { "Polymorphic configuration type ${baseType.name} requires @ConfigTypes" }
@@ -209,24 +213,6 @@ internal class AnnotatedYamlCodec<T : Any>(
             "Every @ConfigTypes entry on ${baseType.name} must implement that type"
         }
         return types
-    }
-
-    private fun discoverTypes(root: Any): Set<Class<*>> {
-        val result = linkedSetOf<Class<*>>()
-        val visited = java.util.Collections.newSetFromMap(java.util.IdentityHashMap<Any, Boolean>())
-        fun visit(value: Any?) {
-            if (value == null || isScalar(value.javaClass) || !visited.add(value)) return
-            if (value.javaClass.isAnnotationPresent(ConfigTypeExtension::class.java)) result += value.javaClass
-            if (serializer(value.javaClass) != null) return
-            when (value) {
-                is Iterable<*> -> value.forEach(::visit)
-                is Map<*, *> -> value.forEach { (key, item) -> visit(key); visit(item) }
-                is Array<*> -> value.forEach(::visit)
-                else -> fields(value.javaClass).forEach { visit(read(it, value)) }
-            }
-        }
-        visit(root)
-        return result
     }
 
     private data class TypeDescriptor(
