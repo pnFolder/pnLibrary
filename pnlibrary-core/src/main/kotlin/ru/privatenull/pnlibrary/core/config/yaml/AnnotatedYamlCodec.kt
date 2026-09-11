@@ -10,11 +10,17 @@ import java.lang.reflect.Type
 import java.lang.reflect.Array as ReflectArray
 import java.util.function.Supplier
 
+internal data class RuntimeConfigType(
+    val baseType: Class<*>, val implementation: Class<*>, val name: String,
+    val aliases: Set<String>, val priority: Int,
+)
+
 /** Reflection codec for ordinary mutable Java classes and Kotlin classes with backing fields. */
 internal class AnnotatedYamlCodec<T : Any>(
     private val type: Class<T>,
     private val defaults: Supplier<T>,
     private val serializers: Map<Class<*>, ConfigSerializer<*>>,
+    private val runtimeTypes: List<RuntimeConfigType>,
     private val options: ConfigOptions,
     private val warning: (String) -> Unit,
 ) : ConfigCodec<T>, ConfigSchema {
@@ -206,6 +212,8 @@ internal class AnnotatedYamlCodec<T : Any>(
         }.orEmpty()
         val extensions = annotations.filterIsInstance<ConfigTypes>().flatMap { annotation ->
             annotation.value.map { TypeDescriptor(it.type.java, it.name, it.aliases.toSet(), it.priority) }
+        } + runtimeTypes.filter { it.baseType == baseType }.map {
+            TypeDescriptor(it.implementation, it.name, it.aliases, it.priority)
         }
         val types = declared + extensions
         require(types.isNotEmpty()) { "Polymorphic configuration type ${baseType.name} requires @ConfigTypes" }

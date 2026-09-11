@@ -12,6 +12,12 @@ interface ConfigScope : AutoCloseable {
     fun <T : Any> yaml(path: String, type: Class<T>, defaults: Supplier<T>): ManagedConfig<T>
     fun <T : Any> yaml(path: String, type: Class<T>, defaults: Supplier<T>, options: ConfigOptions): ManagedConfig<T>
     fun <T : Any> serializer(type: Class<T>, serializer: ConfigSerializer<T>): ConfigScope
+    fun <T : Any> type(
+        baseType: Class<T>, implementation: Class<out T>, name: String,
+        aliases: Set<String>, priority: Int, access: ConfigTypeAccess,
+    ): ConfigTypeRegistration
+    fun <T : Any> type(baseType: Class<T>, implementation: Class<out T>, name: String): ConfigTypeRegistration =
+        type(baseType, implementation, name, emptySet(), 0, ConfigTypeAccess.ownerOnly())
     fun loadAll()
     fun reloadAll()
     fun saveAll()

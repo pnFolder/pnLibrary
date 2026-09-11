@@ -3,6 +3,7 @@ package ru.privatenull.pnlibrary.core.config
 import ru.privatenull.pnlibrary.api.config.*
 import ru.privatenull.pnlibrary.core.config.yaml.AnnotatedYamlCodec
 import ru.privatenull.pnlibrary.core.config.yaml.CodeFirstYaml
+import ru.privatenull.pnlibrary.core.config.yaml.RuntimeConfigType
 import ru.privatenull.pnlibrary.spi.platform.PlatformAdapter
 import java.io.File
 import java.nio.file.Path
@@ -23,11 +24,13 @@ import java.util.UUID
 import java.util.regex.Pattern
 import java.math.BigDecimal
 import java.math.BigInteger
+import ru.privatenull.pnlibrary.api.plugin.PluginId
 import ru.privatenull.pnlibrary.api.actions.PlayerAction
 import ru.privatenull.pnlibrary.core.config.actions.PlayerActionSerializer
 
 internal class ConfigurationServiceImpl(private val platform: PlatformAdapter) : ConfigurationService, AutoCloseable {
     private val scopes = java.util.IdentityHashMap<Any, Scope>()
+    private val runtimeTypes = linkedSetOf<TypeRegistration>()
     private val closed = AtomicBoolean(false)
 
     override fun scope(owner: Any): ConfigScope = synchronized(scopes) {
@@ -61,6 +64,7 @@ internal class ConfigurationServiceImpl(private val platform: PlatformAdapter) :
         private val directory: Path,
         private val logger: Logger,
     ) : ConfigScope {
+        private val pluginId = PluginId.of(platform.ownerDetails(owner)["id"] ?: owner.javaClass.simpleName)
         private val handles = linkedSetOf<ManagedConfig<*>>()
         private val serializers = builtInSerializers()
         private val scopeClosed = AtomicBoolean(false)
@@ -84,6 +88,7 @@ internal class ConfigurationServiceImpl(private val platform: PlatformAdapter) :
             val defaultValue = defaults.get() ?: error("Configuration defaults cannot be null")
             val codec = AnnotatedYamlCodec(
                 type, defaults, synchronized(serializers) { serializers.toMap() },
+                visibleTypes(pluginId),
                 options, logger::warning,
             )
             val handle = CodeFirstYaml(
@@ -103,12 +108,34 @@ internal class ConfigurationServiceImpl(private val platform: PlatformAdapter) :
             synchronized(serializers) { serializers[type] = serializer }
         }
 
+        override fun <T : Any> type(
+            baseType: Class<T>, implementation: Class<out T>, name: String,
+            aliases: Set<String>, priority: Int, access: ConfigTypeAccess,
+        ): ConfigTypeRegistration {
+            check(!scopeClosed.get()) { "Configuration scope is closed" }
+            require(name.isNotBlank()) { "Configuration type name must not be blank" }
+            require(baseType.isAssignableFrom(implementation)) {
+                "${implementation.name} does not implement ${baseType.name}"
+            }
+            val registration = TypeRegistration(
+                pluginId, baseType, implementation, name.trim(),
+                aliases.map(String::trim).filter(String::isNotEmpty).toSet(), priority, access,
+            )
+            synchronized(runtimeTypes) { runtimeTypes += registration }
+            return registration
+        }
+
         override fun loadAll() = snapshot().forEach { it.load() }
         override fun reloadAll() = snapshot().forEach { it.reload() }
         override fun saveAll() = snapshot().filter { it.isLoaded }.forEach { it.save() }
         override fun close() {
             if (!scopeClosed.compareAndSet(false, true)) return
             synchronized(handles) { handles.toList().also { handles.clear() } }.forEach { it.close() }
+            synchronized(runtimeTypes) {
+                val owned = runtimeTypes.filter { it.owner == pluginId }
+                owned.forEach { it.deactivate() }
+                runtimeTypes.removeAll(owned.toSet())
+            }
             synchronized(scopes) { scopes.remove(owner, this) }
         }
         private fun snapshot() = synchronized(handles) { handles.toList() }
@@ -139,6 +166,30 @@ internal class ConfigurationServiceImpl(private val platform: PlatformAdapter) :
                 override fun serialize(value: T, context: ConfigSerializationContext): Any = value.toString()
                 override fun deserialize(value: Any?, context: ConfigSerializationContext): T = parser(value?.toString() ?: error("Value cannot be null"))
             }
+    }
+
+    private fun visibleTypes(consumer: PluginId): List<RuntimeConfigType> = synchronized(runtimeTypes) {
+        runtimeTypes.filter { it.isActive && it.access.allows(it.owner, consumer) }.map {
+            RuntimeConfigType(it.baseType, it.implementation, it.name, it.aliases, it.priority)
+        }
+    }
+
+    private inner class TypeRegistration(
+        override val owner: PluginId,
+        override val baseType: Class<*>,
+        override val implementation: Class<*>,
+        override val name: String,
+        val aliases: Set<String>,
+        val priority: Int,
+        val access: ConfigTypeAccess,
+    ) : ConfigTypeRegistration {
+        @Volatile private var active = true
+        override val isActive: Boolean get() = active
+        override fun close() {
+            deactivate()
+            synchronized(runtimeTypes) { runtimeTypes.remove(this) }
+        }
+        fun deactivate() { active = false }
     }
 
     private class OwnedConfig<T>(val file: Path, private val delegate: ManagedConfig<T>) : ManagedConfig<T> by delegate
