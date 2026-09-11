@@ -1,6 +1,7 @@
 package ru.privatenull.pnlibrary.api.config
 
 import java.util.function.Supplier
+import java.util.function.Consumer
 
 /** Creates plugin-owned typed configuration scopes. */
 interface ConfigurationService {
@@ -18,6 +19,13 @@ interface ConfigScope : AutoCloseable {
     ): ConfigTypeRegistration
     fun <T : Any> type(baseType: Class<T>, implementation: Class<out T>, name: String): ConfigTypeRegistration =
         type(baseType, implementation, name, emptySet(), 0, ConfigTypeAccess.ownerOnly())
+    fun <T : Any> type(
+        baseType: Class<T>, implementation: Class<out T>, name: String,
+        aliases: Set<String>, priority: Int, access: Consumer<ConfigTypeAccess.Builder>,
+    ): ConfigTypeRegistration = type(
+        baseType, implementation, name, aliases, priority,
+        ConfigTypeAccess.builder().also(access::accept).build(),
+    )
     fun loadAll()
     fun reloadAll()
     fun saveAll()
