@@ -1,11 +1,11 @@
 package ru.privatenull.pnlibrary.core.config.actions
 
 import ru.privatenull.pnlibrary.api.actions.Action
-import ru.privatenull.pnlibrary.api.actions.impl.MessagesImpl
-import ru.privatenull.pnlibrary.api.actions.impl.ActionBarImpl
-import ru.privatenull.pnlibrary.api.actions.impl.SoundImpl
-import ru.privatenull.pnlibrary.api.actions.impl.ConsoleLogImpl
-import ru.privatenull.pnlibrary.api.actions.impl.DelayImpl
+import ru.privatenull.pnlibrary.api.actions.MessageAction
+import ru.privatenull.pnlibrary.api.actions.ActionBarAction
+import ru.privatenull.pnlibrary.api.actions.SoundAction
+import ru.privatenull.pnlibrary.api.actions.ConsoleLogAction
+import ru.privatenull.pnlibrary.api.actions.DelayAction
 import ru.privatenull.pnlibrary.api.logging.LogLevel
 import net.kyori.adventure.sound.Sound
 import java.time.Duration
@@ -16,14 +16,14 @@ import ru.privatenull.pnlibrary.api.text.ComponentSerializerType
 /** Converts the readable `- message: ...` YAML form into a concrete action class. */
 internal class ActionSerializer : ConfigSerializer<Action> {
     override fun serialize(value: Action, context: ConfigSerializationContext): Any = when (value) {
-        is MessagesImpl -> mapOf("message" to messageBody(value))
-        is ActionBarImpl -> mapOf("action-bar" to textBody(value.text, value.serializerType, value.target))
-        is SoundImpl -> mapOf("sound" to linkedMapOf(
+        is MessageAction -> mapOf("message" to messageBody(value))
+        is ActionBarAction -> mapOf("action-bar" to textBody(value.text, value.serializerType, value.target))
+        is SoundAction -> mapOf("sound" to linkedMapOf(
             "key" to value.key, "source" to value.source.name, "volume" to value.volume,
             "pitch" to value.pitch, "target" to value.target.name,
         ))
-        is ConsoleLogImpl -> mapOf("console" to linkedMapOf("text" to value.text, "level" to value.level.name))
-        is DelayImpl -> mapOf("delay" to linkedMapOf(
+        is ConsoleLogAction -> mapOf("console" to linkedMapOf("text" to value.text, "level" to value.level.name))
+        is DelayAction -> mapOf("delay" to linkedMapOf(
             "duration" to formatDuration(value.duration),
             "actions" to value.actions.map { serialize(it, context) },
         ))
@@ -46,10 +46,10 @@ internal class ActionSerializer : ConfigSerializer<Action> {
         }
     }
 
-    private fun readSound(body: Any?, context: ConfigSerializationContext): SoundImpl {
-        if (body is String) return SoundImpl(key = body)
+    private fun readSound(body: Any?, context: ConfigSerializationContext): SoundAction {
+        if (body is String) return SoundAction(key = body)
         require(body is Map<*, *>) { "Sound action at ${context.path} must be a key or an object" }
-        return SoundImpl(
+        return SoundAction(
             key = body.value("key")?.toString() ?: error("Sound action at ${context.path} requires 'key'"),
             source = enumValue(body.value("source"), Sound.Source.MASTER, context),
             volume = body.value("volume")?.toString()?.toFloatOrNull() ?: 1f,
@@ -58,24 +58,24 @@ internal class ActionSerializer : ConfigSerializer<Action> {
         )
     }
 
-    private fun readConsole(body: Any?, context: ConfigSerializationContext): ConsoleLogImpl {
-        if (body is String) return ConsoleLogImpl(body)
+    private fun readConsole(body: Any?, context: ConfigSerializationContext): ConsoleLogAction {
+        if (body is String) return ConsoleLogAction(body)
         require(body is Map<*, *>) { "Console action at ${context.path} must be text or an object" }
-        return ConsoleLogImpl(
+        return ConsoleLogAction(
             text = body.value("text")?.toString() ?: error("Console action at ${context.path} requires 'text'"),
             level = enumValue(body.value("level"), LogLevel.INFO, context),
         )
     }
 
-    private fun readDelay(body: Any?, context: ConfigSerializationContext): DelayImpl {
+    private fun readDelay(body: Any?, context: ConfigSerializationContext): DelayAction {
         require(body is Map<*, *>) { "Delay action at ${context.path} must be an object" }
         val rawActions = body.value("actions")
         require(rawActions is List<*>) { "Delay action at ${context.path} requires an 'actions' list" }
-        return DelayImpl(
+        return DelayAction(
             duration = parseDuration(body.value("duration")?.toString() ?: "0s", context.path),
             actions = rawActions.mapIndexed { index, action ->
                 deserialize(action, context.copy(path = "${context.path}.actions[$index]"))
-            }.toMutableList(),
+            },
         )
     }
 
@@ -83,8 +83,8 @@ internal class ActionSerializer : ConfigSerializer<Action> {
         body: Any?,
         context: ConfigSerializationContext,
         defaultTarget: Action.Target = Action.Target.PLAYER,
-    ): ActionBarImpl {
-        if (body is String) return ActionBarImpl(body, target = defaultTarget)
+    ): ActionBarAction {
+        if (body is String) return ActionBarAction(body, target = defaultTarget)
         require(body is Map<*, *>) { "Action-bar action at ${context.path} must be text or an object" }
         val text = body.value("text")?.toString()
             ?: error("Action-bar action at ${context.path} requires 'text'")
@@ -92,19 +92,19 @@ internal class ActionSerializer : ConfigSerializer<Action> {
             Action.Target.entries.firstOrNull { it.name.equals(raw, true) }
                 ?: error("Unknown action target '$raw' at ${context.path}; allowed: PLAYER, ALL")
         } ?: defaultTarget
-        return ActionBarImpl(text, serializerType(body, context), target)
+        return ActionBarAction(text, serializerType(body, context), target)
     }
 
-    private fun readMessage(body: Any?, context: ConfigSerializationContext): MessagesImpl {
-        if (body is String) return MessagesImpl(mutableListOf(body))
-        if (body is List<*>) return MessagesImpl(body.map(Any?::toString).toMutableList())
+    private fun readMessage(body: Any?, context: ConfigSerializationContext): MessageAction {
+        if (body is String) return MessageAction(listOf(body))
+        if (body is List<*>) return MessageAction(body.map(Any?::toString))
         require(body is Map<*, *>) { "Message action at ${context.path} must be text, a list, or an object" }
         val messagesValue = body.value("messages") ?: body.value("message") ?: body.value("text") ?: emptyList<String>()
         val messages = when (messagesValue) {
-            is List<*> -> messagesValue.map(Any?::toString).toMutableList()
-            else -> mutableListOf(messagesValue.toString())
+            is List<*> -> messagesValue.map(Any?::toString)
+            else -> listOf(messagesValue.toString())
         }
-        return MessagesImpl(
+        return MessageAction(
             messages,
             serializerType(body, context),
             enumValue(body.value("target"), Action.Target.PLAYER, context),
@@ -119,7 +119,7 @@ internal class ActionSerializer : ConfigSerializer<Action> {
         }
     }
 
-    private fun messageBody(action: MessagesImpl): Any {
+    private fun messageBody(action: MessageAction): Any {
         if (action.serializerType == null && action.target == Action.Target.PLAYER)
             return if (action.messages.size == 1) action.messages.single() else action.messages
         return linkedMapOf<String, Any>("messages" to action.messages).apply {

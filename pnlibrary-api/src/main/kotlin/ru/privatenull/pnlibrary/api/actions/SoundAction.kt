@@ -1,15 +1,15 @@
-package ru.privatenull.pnlibrary.api.actions.impl
+package ru.privatenull.pnlibrary.api.actions
 
 import net.kyori.adventure.key.Key
 import net.kyori.adventure.sound.Sound
-import ru.privatenull.pnlibrary.api.actions.Action
 
-class SoundImpl(
-    var key: String = "minecraft:entity.experience_orb.pickup",
-    var source: Sound.Source = Sound.Source.MASTER,
-    var volume: Float = 1f,
-    var pitch: Float = 1f,
-    var target: Action.Target = Action.Target.PLAYER,
+/** Plays a namespaced Minecraft sound for the selected audience. */
+data class SoundAction(
+    val key: String = "minecraft:entity.experience_orb.pickup",
+    val source: Sound.Source = Sound.Source.MASTER,
+    val volume: Float = 1f,
+    val pitch: Float = 1f,
+    val target: Action.Target = Action.Target.PLAYER,
 ) : Action {
     override fun execute(context: Action.Context) {
         val sound = Sound.sound(Key.key(key), source, volume, pitch)

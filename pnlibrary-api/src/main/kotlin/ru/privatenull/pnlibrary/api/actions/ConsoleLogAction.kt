@@ -1,11 +1,11 @@
-package ru.privatenull.pnlibrary.api.actions.impl
+package ru.privatenull.pnlibrary.api.actions
 
-import ru.privatenull.pnlibrary.api.actions.Action
 import ru.privatenull.pnlibrary.api.logging.LogLevel
 
-class ConsoleLogImpl(
-    var text: String = "",
-    var level: LogLevel = LogLevel.INFO,
+/** Writes a line through the owning plugin logger. */
+data class ConsoleLogAction(
+    val text: String = "",
+    val level: LogLevel = LogLevel.INFO,
 ) : Action {
     override fun execute(context: Action.Context) = when (level) {
         LogLevel.INFO -> context.logger.info(text)
