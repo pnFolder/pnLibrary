@@ -4,6 +4,7 @@ import ru.privatenull.pnlibrary.api.text.ComponentSerializerType
 import ru.privatenull.pnlibrary.api.text.ComponentService
 import net.kyori.adventure.text.Component
 import java.util.UUID
+import java.util.function.Supplier
 
 fun interface Action {
 
@@ -11,12 +12,12 @@ fun interface Action {
 
     class Context(
         val player: LibraryPlayer,
+        /** Actual audience of all online players; it must never silently fall back to [player]. */
+        val allPlayers: LibraryAudience,
         val components: ComponentService,
         val serializerType: ComponentSerializerType =
             ComponentSerializerType.ADAPTIVE,
         initialObjects: Map<Class<*>, Any> = emptyMap(),
-        /** Target used by broadcast actions; defaults to the current player. */
-        val audience: LibraryAudience = player,
     ) {
         private val objects = HashMap(initialObjects)
 
@@ -37,7 +38,7 @@ fun interface Action {
 
         fun target(target: Target): LibraryAudience = when (target) {
             Target.PLAYER -> player
-            Target.ALL -> audience
+            Target.ALL -> allPlayers
         }
 
         fun <T : Any> put(type: Class<T>, value: T): Context = apply {
@@ -76,6 +77,13 @@ fun interface Action {
                     override fun actionBar(text: Component) = snapshot.forEach { it.actionBar(text) }
                 }
             }
+
+            /** Resolves online players for every send, suitable for delayed broadcast actions. */
+            @JvmStatic fun dynamic(players: Supplier<out Iterable<LibraryPlayer>>): LibraryAudience =
+                object : LibraryAudience {
+                    override fun sendMessage(text: Component) = players.get().forEach { it.sendMessage(text) }
+                    override fun actionBar(text: Component) = players.get().forEach { it.actionBar(text) }
+                }
         }
     }
 
