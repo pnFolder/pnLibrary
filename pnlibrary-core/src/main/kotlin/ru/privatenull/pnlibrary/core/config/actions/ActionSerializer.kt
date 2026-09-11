@@ -3,6 +3,12 @@ package ru.privatenull.pnlibrary.core.config.actions
 import ru.privatenull.pnlibrary.api.actions.Action
 import ru.privatenull.pnlibrary.api.actions.impl.MessagesImpl
 import ru.privatenull.pnlibrary.api.actions.impl.ActionBarImpl
+import ru.privatenull.pnlibrary.api.actions.impl.SoundImpl
+import ru.privatenull.pnlibrary.api.actions.impl.ConsoleLogImpl
+import ru.privatenull.pnlibrary.api.actions.impl.DelayImpl
+import ru.privatenull.pnlibrary.api.logging.LogLevel
+import net.kyori.adventure.sound.Sound
+import java.time.Duration
 import ru.privatenull.pnlibrary.api.config.ConfigSerializationContext
 import ru.privatenull.pnlibrary.api.config.ConfigSerializer
 import ru.privatenull.pnlibrary.api.text.ComponentSerializerType
@@ -12,6 +18,15 @@ internal class ActionSerializer : ConfigSerializer<Action> {
     override fun serialize(value: Action, context: ConfigSerializationContext): Any = when (value) {
         is MessagesImpl -> mapOf("message" to messageBody(value))
         is ActionBarImpl -> mapOf("action-bar" to textBody(value.text, value.serializerType, value.target))
+        is SoundImpl -> mapOf("sound" to linkedMapOf(
+            "key" to value.key, "source" to value.source.name, "volume" to value.volume,
+            "pitch" to value.pitch, "target" to value.target.name,
+        ))
+        is ConsoleLogImpl -> mapOf("console" to linkedMapOf("text" to value.text, "level" to value.level.name))
+        is DelayImpl -> mapOf("delay" to linkedMapOf(
+            "duration" to formatDuration(value.duration),
+            "actions" to value.actions.map { serialize(it, context) },
+        ))
         else -> error("No configuration serializer is registered for action ${value.javaClass.name}")
     }
 
@@ -24,8 +39,44 @@ internal class ActionSerializer : ConfigSerializer<Action> {
             "message", "messages" -> readMessage(body, context)
             "action-bar", "actionbar" -> readActionBar(body, context)
             "broadcast-action-bar", "broadcast-actionbar" -> readActionBar(body, context, Action.Target.ALL)
+            "sound" -> readSound(body, context)
+            "console", "log" -> readConsole(body, context)
+            "delay", "later" -> readDelay(body, context)
             else -> error("Unknown action '$name' at ${context.path}")
         }
+    }
+
+    private fun readSound(body: Any?, context: ConfigSerializationContext): SoundImpl {
+        if (body is String) return SoundImpl(key = body)
+        require(body is Map<*, *>) { "Sound action at ${context.path} must be a key or an object" }
+        return SoundImpl(
+            key = body.value("key")?.toString() ?: error("Sound action at ${context.path} requires 'key'"),
+            source = enumValue(body.value("source"), Sound.Source.MASTER, context),
+            volume = body.value("volume")?.toString()?.toFloatOrNull() ?: 1f,
+            pitch = body.value("pitch")?.toString()?.toFloatOrNull() ?: 1f,
+            target = enumValue(body.value("target"), Action.Target.PLAYER, context),
+        )
+    }
+
+    private fun readConsole(body: Any?, context: ConfigSerializationContext): ConsoleLogImpl {
+        if (body is String) return ConsoleLogImpl(body)
+        require(body is Map<*, *>) { "Console action at ${context.path} must be text or an object" }
+        return ConsoleLogImpl(
+            text = body.value("text")?.toString() ?: error("Console action at ${context.path} requires 'text'"),
+            level = enumValue(body.value("level"), LogLevel.INFO, context),
+        )
+    }
+
+    private fun readDelay(body: Any?, context: ConfigSerializationContext): DelayImpl {
+        require(body is Map<*, *>) { "Delay action at ${context.path} must be an object" }
+        val rawActions = body.value("actions")
+        require(rawActions is List<*>) { "Delay action at ${context.path} requires an 'actions' list" }
+        return DelayImpl(
+            duration = parseDuration(body.value("duration")?.toString() ?: "0s", context.path),
+            actions = rawActions.mapIndexed { index, action ->
+                deserialize(action, context.copy(path = "${context.path}.actions[$index]"))
+            }.toMutableList(),
+        )
     }
 
     private fun readActionBar(
@@ -53,7 +104,11 @@ internal class ActionSerializer : ConfigSerializer<Action> {
             is List<*> -> messagesValue.map(Any?::toString).toMutableList()
             else -> mutableListOf(messagesValue.toString())
         }
-        return MessagesImpl(messages, serializerType(body, context))
+        return MessagesImpl(
+            messages,
+            serializerType(body, context),
+            enumValue(body.value("target"), Action.Target.PLAYER, context),
+        )
     }
 
     private fun serializerType(body: Map<*, *>, context: ConfigSerializationContext): ComponentSerializerType? {
@@ -65,11 +120,12 @@ internal class ActionSerializer : ConfigSerializer<Action> {
     }
 
     private fun messageBody(action: MessagesImpl): Any {
-        if (action.serializerType == null) return if (action.messages.size == 1) action.messages.single() else action.messages
-        return linkedMapOf(
-            "messages" to action.messages,
-            "serializer-type" to action.serializerType!!.name,
-        )
+        if (action.serializerType == null && action.target == Action.Target.PLAYER)
+            return if (action.messages.size == 1) action.messages.single() else action.messages
+        return linkedMapOf<String, Any>("messages" to action.messages).apply {
+            action.serializerType?.let { put("serializer-type", it.name) }
+            if (action.target != Action.Target.PLAYER) put("target", action.target.name)
+        }
     }
 
     private fun textBody(
@@ -84,4 +140,30 @@ internal class ActionSerializer : ConfigSerializer<Action> {
     private fun Map<*, *>.value(name: String): Any? = entries
         .firstOrNull { it.key?.toString()?.equals(name, true) == true }
         ?.value
+
+    private inline fun <reified E : Enum<E>> enumValue(value: Any?, default: E, context: ConfigSerializationContext): E {
+        if (value == null) return default
+        return enumValues<E>().firstOrNull { it.name.equals(value.toString(), true) }
+            ?: error("Unknown ${E::class.java.simpleName} '${value}' at ${context.path}")
+    }
+
+    private fun parseDuration(value: String, path: String): Duration {
+        val match = Regex("^([0-9]+)(ms|s|m|h)$", RegexOption.IGNORE_CASE).matchEntire(value.trim())
+            ?: return runCatching { Duration.parse(value.uppercase()) }
+                .getOrElse { error("Invalid duration '$value' at $path") }
+        val amount = match.groupValues[1].toLong()
+        return when (match.groupValues[2].lowercase()) {
+            "ms" -> Duration.ofMillis(amount)
+            "s" -> Duration.ofSeconds(amount)
+            "m" -> Duration.ofMinutes(amount)
+            else -> Duration.ofHours(amount)
+        }
+    }
+
+    private fun formatDuration(value: Duration): String = when {
+        value.toMillis() % 3_600_000 == 0L -> "${value.toHours()}h"
+        value.toMillis() % 60_000 == 0L -> "${value.toMinutes()}m"
+        value.toMillis() % 1_000 == 0L -> "${value.seconds}s"
+        else -> "${value.toMillis()}ms"
+    }
 }

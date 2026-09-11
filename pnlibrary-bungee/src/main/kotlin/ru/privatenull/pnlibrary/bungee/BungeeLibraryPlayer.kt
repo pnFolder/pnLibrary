@@ -1,6 +1,7 @@
 package ru.privatenull.pnlibrary.bungee
 
 import net.kyori.adventure.text.Component
+import net.kyori.adventure.sound.Sound
 import net.kyori.adventure.text.serializer.legacy.LegacyComponentSerializer
 import net.md_5.bungee.api.chat.TextComponent
 import net.md_5.bungee.api.ChatMessageType
@@ -20,6 +21,8 @@ class BungeeLibraryPlayer private constructor(private val player: ProxiedPlayer)
     override fun actionBar(text: Component) {
         player.sendMessage(ChatMessageType.ACTION_BAR, *TextComponent.fromLegacyText(LEGACY.serialize(text)))
     }
+
+    override fun playSound(sound: Sound): Boolean = false
 
     companion object {
         private val LEGACY = LegacyComponentSerializer.legacySection()

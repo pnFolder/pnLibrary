@@ -5,6 +5,10 @@ import ru.privatenull.pnlibrary.api.text.ComponentService
 import net.kyori.adventure.text.Component
 import java.util.UUID
 import java.util.function.Supplier
+import java.time.Duration
+import net.kyori.adventure.sound.Sound
+import ru.privatenull.pnlibrary.api.logging.PnLogger
+import ru.privatenull.pnlibrary.api.tasks.TaskScope
 
 fun interface Action {
 
@@ -15,6 +19,8 @@ fun interface Action {
         /** Actual audience of all online players; it must never silently fall back to [player]. */
         val allPlayers: LibraryAudience,
         val components: ComponentService,
+        val logger: PnLogger,
+        val tasks: TaskScope,
         val serializerType: ComponentSerializerType =
             ComponentSerializerType.ADAPTIVE,
         initialObjects: Map<Class<*>, Any> = emptyMap(),
@@ -40,6 +46,13 @@ fun interface Action {
             Target.PLAYER -> player
             Target.ALL -> allPlayers
         }
+
+        fun execute(actions: Iterable<Action>) {
+            actions.forEach { it.execute(this) }
+        }
+
+        fun later(delay: Duration, actions: Iterable<Action>) =
+            tasks.later(delay, Runnable { execute(actions) })
 
         fun <T : Any> put(type: Class<T>, value: T): Context = apply {
             objects[type] = value
@@ -67,6 +80,8 @@ fun interface Action {
     interface LibraryAudience {
         fun sendMessage(text: Component)
         fun actionBar(text: Component)
+        /** Returns false when this platform cannot produce client-side sounds. */
+        fun playSound(sound: Sound): Boolean
 
         companion object {
             /** Creates one audience without exposing its player collection to actions. */
@@ -75,6 +90,7 @@ fun interface Action {
                 return object : LibraryAudience {
                     override fun sendMessage(text: Component) = snapshot.forEach { it.sendMessage(text) }
                     override fun actionBar(text: Component) = snapshot.forEach { it.actionBar(text) }
+                    override fun playSound(sound: Sound): Boolean = snapshot.map { it.playSound(sound) }.all { it }
                 }
             }
 
@@ -83,6 +99,7 @@ fun interface Action {
                 object : LibraryAudience {
                     override fun sendMessage(text: Component) = players.get().forEach { it.sendMessage(text) }
                     override fun actionBar(text: Component) = players.get().forEach { it.actionBar(text) }
+                    override fun playSound(sound: Sound): Boolean = players.get().map { it.playSound(sound) }.all { it }
                 }
         }
     }

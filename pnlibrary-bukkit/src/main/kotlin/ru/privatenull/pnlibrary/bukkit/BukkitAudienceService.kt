@@ -3,6 +3,7 @@ package ru.privatenull.pnlibrary.bukkit
 import net.kyori.adventure.platform.bukkit.BukkitAudiences
 import net.kyori.adventure.text.Component
 import net.kyori.adventure.text.serializer.legacy.LegacyComponentSerializer
+import net.kyori.adventure.sound.Sound
 import org.bukkit.entity.Player
 import org.bukkit.plugin.Plugin
 import ru.privatenull.pnlibrary.api.actions.Action
@@ -76,6 +77,21 @@ class BukkitAudienceService(plugin: Plugin) : AutoCloseable {
                 .getMethod("sendMessage", chatType.javaClass, java.lang.reflect.Array.newInstance(componentType, 0).javaClass)
                 .invoke(player.spigot(), chatType, components)
         }.onFailure { player.sendMessage(message) }
+    }
+
+    internal fun playSound(player: Player, sound: Sound): Boolean {
+        val provider = audiences
+        if (provider != null && !fallbackOnly.get()) {
+            try {
+                provider.player(player.uniqueId).playSound(sound)
+                return true
+            } catch (error: Throwable) {
+                rethrowFatal(error)
+            }
+        }
+        return runCatching {
+            player.playSound(player.location, sound.name().asString(), sound.volume(), sound.pitch())
+        }.isSuccess
     }
 
     override fun close() {

@@ -1,6 +1,7 @@
 package ru.privatenull.pnlibrary.bukkit
 
 import net.kyori.adventure.text.Component
+import net.kyori.adventure.sound.Sound
 import org.bukkit.entity.Player
 import ru.privatenull.pnlibrary.api.actions.Action
 import java.util.UUID
@@ -20,4 +21,6 @@ class BukkitLibraryPlayer internal constructor(
     override fun actionBar(text: Component) {
         audiences.sendActionBar(player, text)
     }
+
+    override fun playSound(sound: Sound): Boolean = audiences.playSound(player, sound)
 }
