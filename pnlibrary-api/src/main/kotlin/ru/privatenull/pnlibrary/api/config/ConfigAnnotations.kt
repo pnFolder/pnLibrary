@@ -66,3 +66,8 @@ annotation class ConfigNaming(val value: ConfigNamingStrategy)
 @Target(AnnotationTarget.FIELD)
 @Retention(AnnotationRetention.RUNTIME)
 annotation class ConfigAlias(vararg val value: String)
+
+/** Identifies one concrete implementation stored through an interface or abstract type. */
+@Target(AnnotationTarget.CLASS)
+@Retention(AnnotationRetention.RUNTIME)
+annotation class ConfigType(val value: String)

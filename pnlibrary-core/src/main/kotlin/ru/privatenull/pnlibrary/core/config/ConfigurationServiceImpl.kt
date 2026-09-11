@@ -25,8 +25,11 @@ import java.math.BigDecimal
 import java.math.BigInteger
 import ru.privatenull.pnlibrary.api.actions.PlayerAction
 import ru.privatenull.pnlibrary.core.config.actions.PlayerActionSerializer
-import ru.privatenull.pnlibrary.api.actions.Action
-import ru.privatenull.pnlibrary.core.config.actions.ActionSerializer
+import ru.privatenull.pnlibrary.api.actions.ActionBarAction
+import ru.privatenull.pnlibrary.api.actions.ConsoleLogAction
+import ru.privatenull.pnlibrary.api.actions.DelayAction
+import ru.privatenull.pnlibrary.api.actions.MessageAction
+import ru.privatenull.pnlibrary.api.actions.SoundAction
 
 internal class ConfigurationServiceImpl(private val platform: PlatformAdapter) : ConfigurationService, AutoCloseable {
     private val scopes = java.util.IdentityHashMap<Any, Scope>()
@@ -65,6 +68,10 @@ internal class ConfigurationServiceImpl(private val platform: PlatformAdapter) :
     ) : ConfigScope {
         private val handles = linkedSetOf<ManagedConfig<*>>()
         private val serializers = builtInSerializers()
+        private val types = linkedSetOf<Class<*>>(
+            MessageAction::class.java, ActionBarAction::class.java, SoundAction::class.java,
+            ConsoleLogAction::class.java, DelayAction::class.java,
+        )
         private val scopeClosed = AtomicBoolean(false)
         override val size: Int get() = synchronized(handles) { handles.size }
 
@@ -84,7 +91,10 @@ internal class ConfigurationServiceImpl(private val platform: PlatformAdapter) :
             val target = directory.resolve(relative).normalize()
             require(target.startsWith(directory)) { "Configuration path escapes the plugin directory" }
             val defaultValue = defaults.get() ?: error("Configuration defaults cannot be null")
-            val codec = AnnotatedYamlCodec(type, defaults, synchronized(serializers) { serializers.toMap() }, options, logger::warning)
+            val codec = AnnotatedYamlCodec(
+                type, defaults, synchronized(serializers) { serializers.toMap() },
+                synchronized(types) { types.toSet() }, options, logger::warning,
+            )
             val handle = CodeFirstYaml(
                 target.toFile(), defaultValue, codec, logger,
                 ConfigValueValidator(codec::validate), options,
@@ -102,6 +112,16 @@ internal class ConfigurationServiceImpl(private val platform: PlatformAdapter) :
             synchronized(serializers) { serializers[type] = serializer }
         }
 
+        override fun type(implementation: Class<*>): ConfigScope = apply {
+            check(!scopeClosed.get()) { "Configuration scope is closed" }
+            val annotation = implementation.getAnnotation(ConfigType::class.java)
+                ?: error("Configuration type ${implementation.name} requires @ConfigType")
+            require(annotation.value.isNotBlank()) { "@ConfigType value on ${implementation.name} must not be blank" }
+            synchronized(types) {
+                types += implementation
+            }
+        }
+
         override fun loadAll() = snapshot().forEach { it.load() }
         override fun reloadAll() = snapshot().forEach { it.reload() }
         override fun saveAll() = snapshot().filter { it.isLoaded }.forEach { it.save() }
@@ -113,7 +133,6 @@ internal class ConfigurationServiceImpl(private val platform: PlatformAdapter) :
         private fun snapshot() = synchronized(handles) { handles.toList() }
 
         private fun builtInSerializers(): LinkedHashMap<Class<*>, ConfigSerializer<*>> = linkedMapOf(
-            Action::class.java to ActionSerializer(),
             PlayerAction::class.java to PlayerActionSerializer(),
             UUID::class.java to stringSerializer(UUID::fromString),
             Duration::class.java to stringSerializer(Duration::parse),

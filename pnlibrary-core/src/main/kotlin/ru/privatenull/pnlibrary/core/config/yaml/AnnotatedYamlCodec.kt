@@ -15,6 +15,7 @@ internal class AnnotatedYamlCodec<T : Any>(
     private val type: Class<T>,
     private val defaults: Supplier<T>,
     private val serializers: Map<Class<*>, ConfigSerializer<*>>,
+    private val configurationTypes: Set<Class<*>>,
     private val options: ConfigOptions,
     private val warning: (String) -> Unit,
 ) : ConfigCodec<T>, ConfigSchema {
@@ -58,25 +59,35 @@ internal class AnnotatedYamlCodec<T : Any>(
         if (value != null) serializer(value.javaClass)?.let {
             return toYamlValue(it.serializeUntyped(value, context(declaredType, path, annotations, defaultValue)))
         }
+        if (value != null && isPolymorphic(declaredType)) {
+            val annotation = value.javaClass.getAnnotation(ConfigType::class.java)
+                ?: error("Configuration implementation ${value.javaClass.name} requires @ConfigType")
+            return linkedMapOf(annotation.value to objectYaml(value, path))
+        }
         return when (value) {
         null, is String, is Number, is Boolean -> value
         is Enum<*> -> value.name
-        is Iterable<*> -> value.mapIndexed { index, item -> toYamlValue(item, path = "$path[$index]") }
+        is Iterable<*> -> {
+            val elementType = (declaredType as? ParameterizedType)?.actualTypeArguments?.getOrNull(0) ?: Any::class.java
+            value.mapIndexed { index, item -> toYamlValue(item, elementType, "$path[$index]") }
+        }
         is Array<*> -> value.mapIndexed { index, item -> toYamlValue(item, path = "$path[$index]") }
         is Map<*, *> -> linkedMapOf<Any?, Any?>().also { out -> value.forEach { (k, v) ->
             out[toYamlValue(k)] = toYamlValue(v, path = "$path.$k")
         } }
-        else -> linkedMapOf<String, Any?>().also { out ->
-            fields(value.javaClass).forEach { field ->
-                val fieldValue = read(field, value)
-                val serializer = serializer(field)
-                val fieldPath = if (path.isEmpty()) key(field) else "$path.${key(field)}"
-                val fieldContext = context(field.genericType, fieldPath, field.annotations.toList(), fieldValue)
-                out[key(field)] = if (fieldValue != null && serializer != null)
-                    toYamlValue(serializer.serializeUntyped(fieldValue, fieldContext))
-                else toYamlValue(fieldValue, field.genericType, fieldPath, field.annotations.toList(), fieldValue)
-            }
+        else -> objectYaml(value, path)
         }
+    }
+
+    private fun objectYaml(value: Any, path: String): Map<String, Any?> = linkedMapOf<String, Any?>().also { out ->
+        fields(value.javaClass).forEach { field ->
+            val fieldValue = read(field, value)
+            val serializer = serializer(field)
+            val fieldPath = if (path.isEmpty()) key(field) else "$path.${key(field)}"
+            val fieldContext = context(field.genericType, fieldPath, field.annotations.toList(), fieldValue)
+            out[key(field)] = if (fieldValue != null && serializer != null)
+                toYamlValue(serializer.serializeUntyped(fieldValue, fieldContext))
+            else toYamlValue(fieldValue, field.genericType, fieldPath, field.annotations.toList(), fieldValue)
         }
     }
 
@@ -111,6 +122,7 @@ internal class AnnotatedYamlCodec<T : Any>(
         val rawType = rawClass(targetType)
         serializer(rawType)?.let { return it.deserialize(value, context(targetType, path, emptyList(), current)) }
         if (value == null) return null
+        if (isPolymorphic(targetType)) return polymorphic(value, rawType, path)
         if (rawType == String::class.java) return value.toString()
         if (rawType == java.lang.Boolean.TYPE || rawType == java.lang.Boolean::class.java) return value as Boolean
         if (rawType == java.lang.Byte.TYPE || rawType == java.lang.Byte::class.java) return (value as Number).toByte()
@@ -150,6 +162,29 @@ internal class AnnotatedYamlCodec<T : Any>(
             return nested
         }
         return value
+    }
+
+    private fun polymorphic(value: Any, baseType: Class<*>, path: String): Any {
+        require(value is Map<*, *> && value.size == 1) {
+            "Polymorphic value at $path must contain exactly one type"
+        }
+        val entry = value.entries.single()
+        val name = entry.key?.toString()?.trim().orEmpty()
+        val matches = configurationTypes.filter {
+            baseType.isAssignableFrom(it) &&
+                it.getAnnotation(ConfigType::class.java)?.value?.equals(name, true) == true
+        }
+        require(matches.size <= 1) { "Ambiguous ${baseType.simpleName} type '$name' at $path" }
+        val implementation = matches.singleOrNull()
+            ?: error("Unknown ${baseType.simpleName} type '$name' at $path")
+        require(entry.value is Map<*, *>) { "Configuration type '$name' at $path must contain an object" }
+        return instantiate(implementation, path).also { populate(it, implementation, entry.value as Map<*, *>, path) }
+    }
+
+    private fun isPolymorphic(type: Type): Boolean {
+        val raw = rawClass(type)
+        return raw != Any::class.java && (raw.isInterface || Modifier.isAbstract(raw.modifiers)) &&
+            configurationTypes.any(raw::isAssignableFrom)
     }
 
     private fun schema(target: Class<*>, instance: Any?): Map<String, Meta> = fields(target).associate { field ->
