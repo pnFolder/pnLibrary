@@ -71,7 +71,7 @@ internal class AnnotatedYamlCodec<T : Any>(
             val selected = select(configTypes(base, annotations), value.javaClass)
                 ?: error("Configuration implementation ${value.javaClass.name} is not declared by ${base.name}")
             val storedName = if (selected.owner == null || selected.owner == consumer) selected.name
-                else "${selected.owner}:${selected.name}"
+                else "${selected.owner}::${selected.name}"
             return linkedMapOf<String, Any?>(polymorphic.discriminator to storedName).apply {
                 putAll(objectYaml(value, path))
             }
@@ -234,10 +234,10 @@ internal class AnnotatedYamlCodec<T : Any>(
         val priority: Int,
     ) {
         fun matches(value: String): Boolean {
-            val separator = value.indexOf(':')
+            val separator = value.indexOf("::")
             if (separator >= 0) {
                 if (owner == null || !owner.equals(value.substring(0, separator), true)) return false
-                return matchesName(value.substring(separator + 1))
+                return matchesName(value.substring(separator + 2))
             }
             return matchesName(value)
         }
