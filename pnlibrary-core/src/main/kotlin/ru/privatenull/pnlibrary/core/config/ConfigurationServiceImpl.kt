@@ -89,6 +89,7 @@ internal class ConfigurationServiceImpl(private val platform: PlatformAdapter) :
             val codec = AnnotatedYamlCodec(
                 type, defaults, synchronized(serializers) { serializers.toMap() },
                 visibleTypes(pluginId),
+                pluginId.value,
                 options, logger::warning,
             )
             val handle = CodeFirstYaml(
@@ -170,7 +171,7 @@ internal class ConfigurationServiceImpl(private val platform: PlatformAdapter) :
 
     private fun visibleTypes(consumer: PluginId): List<RuntimeConfigType> = synchronized(runtimeTypes) {
         runtimeTypes.filter { it.isActive && it.access.allows(it.owner, consumer) }.map {
-            RuntimeConfigType(it.baseType, it.implementation, it.name, it.aliases, it.priority)
+            RuntimeConfigType(it.owner.value, it.baseType, it.implementation, it.name, it.aliases, it.priority)
         }
     }
 

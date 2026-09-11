@@ -11,7 +11,7 @@ import java.lang.reflect.Array as ReflectArray
 import java.util.function.Supplier
 
 internal data class RuntimeConfigType(
-    val baseType: Class<*>, val implementation: Class<*>, val name: String,
+    val owner: String, val baseType: Class<*>, val implementation: Class<*>, val name: String,
     val aliases: Set<String>, val priority: Int,
 )
 
@@ -21,6 +21,7 @@ internal class AnnotatedYamlCodec<T : Any>(
     private val defaults: Supplier<T>,
     private val serializers: Map<Class<*>, ConfigSerializer<*>>,
     private val runtimeTypes: List<RuntimeConfigType>,
+    private val consumer: String,
     private val options: ConfigOptions,
     private val warning: (String) -> Unit,
 ) : ConfigCodec<T>, ConfigSchema {
@@ -67,9 +68,11 @@ internal class AnnotatedYamlCodec<T : Any>(
         if (value != null && isPolymorphic(declaredType, annotations)) {
             val base = rawClass(declaredType)
             val polymorphic = base.getAnnotation(ConfigPolymorphic::class.java)
-            val selected = configTypes(base, annotations).filter { it.type == value.javaClass }.maxByOrNull(TypeDescriptor::priority)
+            val selected = select(configTypes(base, annotations), value.javaClass)
                 ?: error("Configuration implementation ${value.javaClass.name} is not declared by ${base.name}")
-            return linkedMapOf<String, Any?>(polymorphic.discriminator to selected.name).apply {
+            val storedName = if (selected.owner == null || selected.owner == consumer) selected.name
+                else "${selected.owner}:${selected.name}"
+            return linkedMapOf<String, Any?>(polymorphic.discriminator to storedName).apply {
                 putAll(objectYaml(value, path))
             }
         }
@@ -188,9 +191,9 @@ internal class AnnotatedYamlCodec<T : Any>(
         val name = entry.value?.toString()?.trim().orEmpty()
         val available = configTypes(baseType, annotations)
         val matches = available.filter { it.matches(name) }
-        val selected = matches.maxByOrNull(TypeDescriptor::priority)
+        val selected = matches.maxWithOrNull(compareBy<TypeDescriptor> { it.owner == consumer }.thenBy { it.priority })
             ?: error("Unknown ${baseType.simpleName} type '$name' at $path; allowed: ${available.joinToString { it.name }}")
-        require(matches.count { it.priority == selected.priority } == 1) {
+        require(matches.count { it.priority == selected.priority && (it.owner == consumer) == (selected.owner == consumer) } == 1) {
             "Ambiguous ${baseType.simpleName} type '$name' at $path; assign different priorities"
         }
         val implementation = selected.type
@@ -208,12 +211,12 @@ internal class AnnotatedYamlCodec<T : Any>(
 
     private fun configTypes(baseType: Class<*>, annotations: List<Annotation>): List<TypeDescriptor> {
         val declared = baseType.getAnnotation(ConfigTypes::class.java)?.value?.map {
-            TypeDescriptor(it.type.java, it.name, it.aliases.toSet(), it.priority)
+            TypeDescriptor(null, it.type.java, it.name, it.aliases.toSet(), it.priority)
         }.orEmpty()
         val extensions = annotations.filterIsInstance<ConfigTypes>().flatMap { annotation ->
-            annotation.value.map { TypeDescriptor(it.type.java, it.name, it.aliases.toSet(), it.priority) }
+            annotation.value.map { TypeDescriptor(null, it.type.java, it.name, it.aliases.toSet(), it.priority) }
         } + runtimeTypes.filter { it.baseType == baseType }.map {
-            TypeDescriptor(it.implementation, it.name, it.aliases, it.priority)
+            TypeDescriptor(it.owner, it.implementation, it.name, it.aliases, it.priority)
         }
         val types = declared + extensions
         require(types.isNotEmpty()) { "Polymorphic configuration type ${baseType.name} requires @ConfigTypes" }
@@ -224,13 +227,28 @@ internal class AnnotatedYamlCodec<T : Any>(
     }
 
     private data class TypeDescriptor(
+        val owner: String?,
         val type: Class<*>,
         val name: String,
         val aliases: Set<String>,
         val priority: Int,
     ) {
-        fun matches(value: String): Boolean = name.equals(value, true) || aliases.any { it.equals(value, true) }
+        fun matches(value: String): Boolean {
+            val separator = value.indexOf(':')
+            if (separator >= 0) {
+                if (owner == null || !owner.equals(value.substring(0, separator), true)) return false
+                return matchesName(value.substring(separator + 1))
+            }
+            return matchesName(value)
+        }
+
+        private fun matchesName(value: String): Boolean =
+            name.equals(value, true) || aliases.any { it.equals(value, true) }
     }
+
+    private fun select(types: List<TypeDescriptor>, implementation: Class<*>): TypeDescriptor? =
+        types.filter { it.type == implementation }
+            .maxWithOrNull(compareBy<TypeDescriptor> { it.owner == consumer }.thenBy { it.priority })
 
     private fun schema(target: Class<*>, instance: Any?): Map<String, Meta> = fields(target).associate { field ->
         val fieldValue = instance?.let { read(field, it) }
