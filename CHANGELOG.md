@@ -1,5 +1,15 @@
 # Changelog
 
+## Unreleased
+
+- Added immutable typed actions with generic polymorphic YAML configuration.
+- Added annotation-declared type discriminators, canonical names, aliases, and numeric priorities.
+- Added plugin-owned local, selected-plugin, wildcard, and global type publication.
+- Added explicit `owner::type` references for shared configuration types.
+- Removed the hand-written typed `ActionSerializer`; the common YAML codec now handles implementations recursively.
+- Added live registration lookup and automatic cleanup when the owning configuration scope closes.
+- Documented the typed action architecture and the remaining legacy execution migration boundary.
+
 ## 2.0.0-beta.6
 
 - Added the global `PluginId` / `PluginRegistry` / `PluginContext` integration model and runtime metrics control.

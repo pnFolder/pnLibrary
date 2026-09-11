@@ -41,6 +41,10 @@
 
 Краткая карта кода для разработчика: [HELP-README.md](HELP-README.md).
 
+Typed configuration actions, plugin visibility, namespaces and lifecycle:
+[docs/ACTIONS.md](docs/ACTIONS.md). Release preparation rules:
+[RELEASE-CHECKLIST.md](RELEASE-CHECKLIST.md).
+
 Проект собирается на JDK 17 или новее. Bukkit, включая Folia-ветку планировщика,
 и BungeeCord получают байткод Java 8; Velocity — Java 17. Жёсткой привязки к
 конкретной установленной JDK нет.

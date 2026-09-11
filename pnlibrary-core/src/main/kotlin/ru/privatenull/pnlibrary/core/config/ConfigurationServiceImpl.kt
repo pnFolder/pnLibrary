@@ -88,7 +88,7 @@ internal class ConfigurationServiceImpl(private val platform: PlatformAdapter) :
             val defaultValue = defaults.get() ?: error("Configuration defaults cannot be null")
             val codec = AnnotatedYamlCodec(
                 type, defaults, synchronized(serializers) { serializers.toMap() },
-                visibleTypes(pluginId),
+                { visibleTypes(pluginId) },
                 pluginId.value,
                 options, logger::warning,
             )
@@ -114,16 +114,30 @@ internal class ConfigurationServiceImpl(private val platform: PlatformAdapter) :
             aliases: Set<String>, priority: Int, access: ConfigTypeAccess,
         ): ConfigTypeRegistration {
             check(!scopeClosed.get()) { "Configuration scope is closed" }
-            require(name.isNotBlank()) { "Configuration type name must not be blank" }
+            val normalizedName = normalizeTypeName(name)
+            val normalizedAliases = aliases.map(::normalizeTypeName).toSet()
+            require(normalizedName !in normalizedAliases) { "Configuration type aliases must not repeat '$normalizedName'" }
             require(baseType.isAssignableFrom(implementation)) {
                 "${implementation.name} does not implement ${baseType.name}"
             }
             val registration = TypeRegistration(
-                pluginId, baseType, implementation, name.trim(),
-                aliases.map(String::trim).filter(String::isNotEmpty).toSet(), priority, access,
+                pluginId, baseType, implementation, normalizedName,
+                normalizedAliases, priority, access,
             )
-            synchronized(runtimeTypes) { runtimeTypes += registration }
+            synchronized(runtimeTypes) {
+                require(runtimeTypes.none {
+                    it.isActive && it.owner == pluginId && it.baseType == baseType &&
+                        (it.name == normalizedName || normalizedName in it.aliases || it.name in normalizedAliases)
+                }) { "Plugin $pluginId already published configuration type '$normalizedName' for ${baseType.name}" }
+                runtimeTypes += registration
+            }
             return registration
+        }
+
+        private fun normalizeTypeName(value: String): String = value.trim().lowercase(Locale.ROOT).also {
+            require(it.matches(Regex("[a-z0-9][a-z0-9_.-]{0,63}"))) {
+                "Configuration type name '$value' must contain only letters, digits, dots, underscores, or hyphens"
+            }
         }
 
         override fun loadAll() = snapshot().forEach { it.load() }

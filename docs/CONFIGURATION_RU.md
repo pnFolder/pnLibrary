@@ -376,6 +376,9 @@ ConfigOptions options = ConfigOptions.builder()
 
 ## Сценарии действий из конфигурации
 
+> The example below uses the compatibility `PlayerAction` API. For the new
+> immutable and polymorphic configuration model, see [ACTIONS.md](ACTIONS.md).
+
 ```java
 public PlayerActionSequence joinActions = new PlayerActionSequence();
 ```

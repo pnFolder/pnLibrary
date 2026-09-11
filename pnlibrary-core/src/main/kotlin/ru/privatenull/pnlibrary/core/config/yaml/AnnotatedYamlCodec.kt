@@ -20,7 +20,7 @@ internal class AnnotatedYamlCodec<T : Any>(
     private val type: Class<T>,
     private val defaults: Supplier<T>,
     private val serializers: Map<Class<*>, ConfigSerializer<*>>,
-    private val runtimeTypes: List<RuntimeConfigType>,
+    private val runtimeTypes: () -> List<RuntimeConfigType>,
     private val consumer: String,
     private val options: ConfigOptions,
     private val warning: (String) -> Unit,
@@ -182,15 +182,13 @@ internal class AnnotatedYamlCodec<T : Any>(
     }
 
     private fun polymorphic(value: Any, baseType: Class<*>, path: String, annotations: List<Annotation>): Any {
-        require(value is Map<*, *> && value.size == 1) {
-            "Polymorphic value at $path must contain exactly one type"
-        }
+        require(value is Map<*, *>) { "Polymorphic value at $path must be a YAML object" }
         val discriminator = baseType.getAnnotation(ConfigPolymorphic::class.java).discriminator
         val entry = value.entries.firstOrNull { it.key?.toString()?.equals(discriminator, true) == true }
             ?: error("Missing '$discriminator' for ${baseType.simpleName} at $path")
         val name = entry.value?.toString()?.trim().orEmpty()
         val available = configTypes(baseType, annotations)
-        val matches = available.filter { it.matches(name) }
+        val matches = available.filter { it.matches(name, consumer) }
         val selected = matches.maxWithOrNull(compareBy<TypeDescriptor> { it.owner == consumer }.thenBy { it.priority })
             ?: error("Unknown ${baseType.simpleName} type '$name' at $path; allowed: ${available.joinToString { it.name }}")
         require(matches.count { it.priority == selected.priority && (it.owner == consumer) == (selected.owner == consumer) } == 1) {
@@ -215,7 +213,7 @@ internal class AnnotatedYamlCodec<T : Any>(
         }.orEmpty()
         val extensions = annotations.filterIsInstance<ConfigTypes>().flatMap { annotation ->
             annotation.value.map { TypeDescriptor(null, it.type.java, it.name, it.aliases.toSet(), it.priority) }
-        } + runtimeTypes.filter { it.baseType == baseType }.map {
+        } + runtimeTypes().filter { it.baseType == baseType }.map {
             TypeDescriptor(it.owner, it.implementation, it.name, it.aliases, it.priority)
         }
         val types = declared + extensions
@@ -233,12 +231,13 @@ internal class AnnotatedYamlCodec<T : Any>(
         val aliases: Set<String>,
         val priority: Int,
     ) {
-        fun matches(value: String): Boolean {
+        fun matches(value: String, consumer: String): Boolean {
             val separator = value.indexOf("::")
             if (separator >= 0) {
                 if (owner == null || !owner.equals(value.substring(0, separator), true)) return false
                 return matchesName(value.substring(separator + 2))
             }
+            if (owner != null && owner != consumer) return false
             return matchesName(value)
         }
 

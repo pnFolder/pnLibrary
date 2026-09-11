@@ -294,6 +294,13 @@ There are two separate systems:
 
 `ConfigGroup` manages several `ManagedConfig` handles together.
 
+Polymorphic configuration values use `@ConfigPolymorphic` and `@ConfigTypes`.
+The generic YAML codec reads the discriminator and ordinary class fields; there
+is no action-specific serializer. Plugin-owned types can be published locally,
+to selected plugin IDs or glob patterns, or globally. Foreign types use the
+unambiguous `owner::type` form. See [docs/ACTIONS.md](docs/ACTIONS.md) for the
+complete model, lifecycle, and failure rules.
+
 ### Bukkit inventory GUI
 
 `pnlibrary-bukkit-api/inventory` contains `Menu`, builders, `MenuService`, and

@@ -96,6 +96,11 @@ context.getPlaceholders()
 
 ## Действия и cooldown
 
+> This section documents the compatibility `PlayerAction` engine. New typed
+> configuration models are documented in [ACTIONS.md](ACTIONS.md). The two APIs
+> remain separate until the typed execution facade replaces the compatibility
+> engine on every platform.
+
 Player actions автоматически разрешают placeholders и условия перед передачей
 готовых компонентов платформе:
 
