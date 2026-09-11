@@ -68,7 +68,7 @@ internal class ConfigurationServiceImpl(private val platform: PlatformAdapter) :
     ) : ConfigScope {
         private val handles = linkedSetOf<ManagedConfig<*>>()
         private val serializers = builtInSerializers()
-        private val types = linkedSetOf<Class<*>>(
+        private val builtInTypes = setOf<Class<*>>(
             MessageAction::class.java, ActionBarAction::class.java, SoundAction::class.java,
             ConsoleLogAction::class.java, DelayAction::class.java,
         )
@@ -93,7 +93,7 @@ internal class ConfigurationServiceImpl(private val platform: PlatformAdapter) :
             val defaultValue = defaults.get() ?: error("Configuration defaults cannot be null")
             val codec = AnnotatedYamlCodec(
                 type, defaults, synchronized(serializers) { serializers.toMap() },
-                synchronized(types) { types.toSet() }, options, logger::warning,
+                builtInTypes, options, logger::warning,
             )
             val handle = CodeFirstYaml(
                 target.toFile(), defaultValue, codec, logger,
@@ -110,16 +110,6 @@ internal class ConfigurationServiceImpl(private val platform: PlatformAdapter) :
         override fun <T : Any> serializer(type: Class<T>, serializer: ConfigSerializer<T>): ConfigScope = apply {
             check(!scopeClosed.get()) { "Configuration scope is closed" }
             synchronized(serializers) { serializers[type] = serializer }
-        }
-
-        override fun type(implementation: Class<*>): ConfigScope = apply {
-            check(!scopeClosed.get()) { "Configuration scope is closed" }
-            val annotation = implementation.getAnnotation(ConfigType::class.java)
-                ?: error("Configuration type ${implementation.name} requires @ConfigType")
-            require(annotation.value.isNotBlank()) { "@ConfigType value on ${implementation.name} must not be blank" }
-            synchronized(types) {
-                types += implementation
-            }
         }
 
         override fun loadAll() = snapshot().forEach { it.load() }

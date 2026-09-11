@@ -12,7 +12,6 @@ interface ConfigScope : AutoCloseable {
     fun <T : Any> yaml(path: String, type: Class<T>, defaults: Supplier<T>): ManagedConfig<T>
     fun <T : Any> yaml(path: String, type: Class<T>, defaults: Supplier<T>, options: ConfigOptions): ManagedConfig<T>
     fun <T : Any> serializer(type: Class<T>, serializer: ConfigSerializer<T>): ConfigScope
-    fun type(implementation: Class<*>): ConfigScope
     fun loadAll()
     fun reloadAll()
     fun saveAll()
@@ -32,5 +31,3 @@ inline fun <reified T : Any> ConfigScope.yaml(
 
 inline fun <reified T : Any> ConfigScope.serializer(serializer: ConfigSerializer<T>): ConfigScope =
     serializer(T::class.java, serializer)
-
-inline fun <reified T : Any> ConfigScope.type(): ConfigScope = type(T::class.java)

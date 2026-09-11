@@ -15,10 +15,11 @@ internal class AnnotatedYamlCodec<T : Any>(
     private val type: Class<T>,
     private val defaults: Supplier<T>,
     private val serializers: Map<Class<*>, ConfigSerializer<*>>,
-    private val configurationTypes: Set<Class<*>>,
+    knownConfigurationTypes: Set<Class<*>>,
     private val options: ConfigOptions,
     private val warning: (String) -> Unit,
 ) : ConfigCodec<T>, ConfigSchema {
+    private val configurationTypes = knownConfigurationTypes + discoverTypes(defaults.get())
     private val annotationSerializers = mutableMapOf<Class<out ConfigSerializer<*>>, ConfigSerializer<*>>()
     override val requiredPaths: Set<String> = required(type)
     private val yaml = Yaml(DumperOptions().apply {
@@ -185,6 +186,29 @@ internal class AnnotatedYamlCodec<T : Any>(
         val raw = rawClass(type)
         return raw != Any::class.java && (raw.isInterface || Modifier.isAbstract(raw.modifiers)) &&
             configurationTypes.any(raw::isAssignableFrom)
+    }
+
+    private fun discoverTypes(root: Any): Set<Class<*>> {
+        val result = linkedSetOf<Class<*>>()
+        val visited = java.util.Collections.newSetFromMap(java.util.IdentityHashMap<Any, Boolean>())
+
+        fun visit(value: Any?) {
+            if (value == null || isScalar(value.javaClass) || !visited.add(value)) return
+            value.javaClass.getAnnotation(ConfigType::class.java)?.let {
+                require(it.value.isNotBlank()) { "@ConfigType value on ${value.javaClass.name} must not be blank" }
+                result += value.javaClass
+            }
+            if (serializer(value.javaClass) != null) return
+            when (value) {
+                is Iterable<*> -> value.forEach(::visit)
+                is Map<*, *> -> value.forEach { (key, item) -> visit(key); visit(item) }
+                is Array<*> -> value.forEach(::visit)
+                else -> fields(value.javaClass).forEach { visit(read(it, value)) }
+            }
+        }
+
+        visit(root)
+        return result
     }
 
     private fun schema(target: Class<*>, instance: Any?): Map<String, Meta> = fields(target).associate { field ->
