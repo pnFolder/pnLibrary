@@ -15,11 +15,10 @@ internal class AnnotatedYamlCodec<T : Any>(
     private val type: Class<T>,
     private val defaults: Supplier<T>,
     private val serializers: Map<Class<*>, ConfigSerializer<*>>,
-    knownConfigurationTypes: Set<Class<*>>,
     private val options: ConfigOptions,
     private val warning: (String) -> Unit,
 ) : ConfigCodec<T>, ConfigSchema {
-    private val configurationTypes = knownConfigurationTypes + discoverTypes(defaults.get())
+    private val discoveredTypes = discoverTypes(defaults.get())
     private val annotationSerializers = mutableMapOf<Class<out ConfigSerializer<*>>, ConfigSerializer<*>>()
     override val requiredPaths: Set<String> = required(type)
     private val yaml = Yaml(DumperOptions().apply {
@@ -61,9 +60,13 @@ internal class AnnotatedYamlCodec<T : Any>(
             return toYamlValue(it.serializeUntyped(value, context(declaredType, path, annotations, defaultValue)))
         }
         if (value != null && isPolymorphic(declaredType)) {
-            val annotation = value.javaClass.getAnnotation(ConfigType::class.java)
-                ?: error("Configuration implementation ${value.javaClass.name} requires @ConfigType")
-            return linkedMapOf(annotation.value to objectYaml(value, path))
+            val base = rawClass(declaredType)
+            val polymorphic = base.getAnnotation(ConfigPolymorphic::class.java)
+            val selected = configTypes(base).filter { it.type == value.javaClass }.maxByOrNull(TypeDescriptor::priority)
+                ?: error("Configuration implementation ${value.javaClass.name} is not declared by ${base.name}")
+            return linkedMapOf<String, Any?>(polymorphic.discriminator to selected.name).apply {
+                putAll(objectYaml(value, path))
+            }
         }
         return when (value) {
         null, is String, is Number, is Boolean -> value
@@ -169,35 +172,51 @@ internal class AnnotatedYamlCodec<T : Any>(
         require(value is Map<*, *> && value.size == 1) {
             "Polymorphic value at $path must contain exactly one type"
         }
-        val entry = value.entries.single()
-        val name = entry.key?.toString()?.trim().orEmpty()
-        val matches = configurationTypes.filter {
-            baseType.isAssignableFrom(it) &&
-                it.getAnnotation(ConfigType::class.java)?.value?.equals(name, true) == true
+        val discriminator = baseType.getAnnotation(ConfigPolymorphic::class.java).discriminator
+        val entry = value.entries.firstOrNull { it.key?.toString()?.equals(discriminator, true) == true }
+            ?: error("Missing '$discriminator' for ${baseType.simpleName} at $path")
+        val name = entry.value?.toString()?.trim().orEmpty()
+        val matches = configTypes(baseType).filter { it.matches(name) }
+        val selected = matches.maxByOrNull(TypeDescriptor::priority)
+            ?: error("Unknown ${baseType.simpleName} type '$name' at $path; allowed: ${configTypes(baseType).joinToString { it.name }}")
+        require(matches.count { it.priority == selected.priority } == 1) {
+            "Ambiguous ${baseType.simpleName} type '$name' at $path; assign different priorities"
         }
-        require(matches.size <= 1) { "Ambiguous ${baseType.simpleName} type '$name' at $path" }
-        val implementation = matches.singleOrNull()
-            ?: error("Unknown ${baseType.simpleName} type '$name' at $path")
-        require(entry.value is Map<*, *>) { "Configuration type '$name' at $path must contain an object" }
-        return instantiate(implementation, path).also { populate(it, implementation, entry.value as Map<*, *>, path) }
+        val implementation = selected.type
+        val body = linkedMapOf<Any?, Any?>().also { result ->
+            value.forEach { (key, item) -> if (key != entry.key) result[key] = item }
+        }
+        return instantiate(implementation, path).also { populate(it, implementation, body, path) }
     }
 
     private fun isPolymorphic(type: Type): Boolean {
         val raw = rawClass(type)
-        return raw != Any::class.java && (raw.isInterface || Modifier.isAbstract(raw.modifiers)) &&
-            configurationTypes.any(raw::isAssignableFrom)
+        return raw != Any::class.java && raw.isAnnotationPresent(ConfigPolymorphic::class.java)
+    }
+
+    private fun configTypes(baseType: Class<*>): List<TypeDescriptor> {
+        val declared = baseType.getAnnotation(ConfigTypes::class.java)?.value?.map {
+            TypeDescriptor(it.type.java, it.name, it.aliases.toSet(), it.priority)
+        }.orEmpty()
+        val extensions = discoveredTypes.filter(baseType::isAssignableFrom).mapNotNull { implementation ->
+            implementation.getAnnotation(ConfigTypeExtension::class.java)?.let {
+                TypeDescriptor(implementation, it.name, it.aliases.toSet(), it.priority)
+            }
+        }
+        val types = declared + extensions
+        require(types.isNotEmpty()) { "Polymorphic configuration type ${baseType.name} requires @ConfigTypes" }
+        require(types.all { baseType.isAssignableFrom(it.type) }) {
+            "Every @ConfigTypes entry on ${baseType.name} must implement that type"
+        }
+        return types
     }
 
     private fun discoverTypes(root: Any): Set<Class<*>> {
         val result = linkedSetOf<Class<*>>()
         val visited = java.util.Collections.newSetFromMap(java.util.IdentityHashMap<Any, Boolean>())
-
         fun visit(value: Any?) {
             if (value == null || isScalar(value.javaClass) || !visited.add(value)) return
-            value.javaClass.getAnnotation(ConfigType::class.java)?.let {
-                require(it.value.isNotBlank()) { "@ConfigType value on ${value.javaClass.name} must not be blank" }
-                result += value.javaClass
-            }
+            if (value.javaClass.isAnnotationPresent(ConfigTypeExtension::class.java)) result += value.javaClass
             if (serializer(value.javaClass) != null) return
             when (value) {
                 is Iterable<*> -> value.forEach(::visit)
@@ -206,9 +225,17 @@ internal class AnnotatedYamlCodec<T : Any>(
                 else -> fields(value.javaClass).forEach { visit(read(it, value)) }
             }
         }
-
         visit(root)
         return result
+    }
+
+    private data class TypeDescriptor(
+        val type: Class<*>,
+        val name: String,
+        val aliases: Set<String>,
+        val priority: Int,
+    ) {
+        fun matches(value: String): Boolean = name.equals(value, true) || aliases.any { it.equals(value, true) }
     }
 
     private fun schema(target: Class<*>, instance: Any?): Map<String, Meta> = fields(target).associate { field ->

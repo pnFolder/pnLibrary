@@ -67,7 +67,30 @@ annotation class ConfigNaming(val value: ConfigNamingStrategy)
 @Retention(AnnotationRetention.RUNTIME)
 annotation class ConfigAlias(vararg val value: String)
 
-/** Identifies one concrete implementation stored through an interface or abstract type. */
+/** Marks an interface or abstract class as a polymorphic configuration value. */
 @Target(AnnotationTarget.CLASS)
 @Retention(AnnotationRetention.RUNTIME)
-annotation class ConfigType(val value: String)
+annotation class ConfigPolymorphic(val discriminator: String = "type")
+
+/** Declares every implementation accepted by a polymorphic configuration type. */
+@Target(AnnotationTarget.CLASS)
+@Retention(AnnotationRetention.RUNTIME)
+annotation class ConfigTypes(vararg val value: ConfigType)
+
+/** Associates one implementation with its configuration identifier. */
+@Retention(AnnotationRetention.RUNTIME)
+annotation class ConfigType(
+    val type: KClass<*>,
+    val name: String,
+    val aliases: Array<String> = [],
+    val priority: Int = 0,
+)
+
+/** Adds an external implementation without changing the original base interface. */
+@Target(AnnotationTarget.CLASS)
+@Retention(AnnotationRetention.RUNTIME)
+annotation class ConfigTypeExtension(
+    val name: String,
+    val aliases: Array<String> = [],
+    val priority: Int = 0,
+)

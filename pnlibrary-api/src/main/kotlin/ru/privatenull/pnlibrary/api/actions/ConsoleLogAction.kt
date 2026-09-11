@@ -1,10 +1,8 @@
 package ru.privatenull.pnlibrary.api.actions
 
 import ru.privatenull.pnlibrary.api.logging.LogLevel
-import ru.privatenull.pnlibrary.api.config.ConfigType
 
 /** Writes a line through the owning plugin logger. */
-@ConfigType("console")
 data class ConsoleLogAction(
     val text: String = "",
     val level: LogLevel = LogLevel.INFO,

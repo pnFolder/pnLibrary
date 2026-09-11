@@ -1,10 +1,8 @@
 package ru.privatenull.pnlibrary.api.actions
 
 import ru.privatenull.pnlibrary.api.text.ComponentSerializerType
-import ru.privatenull.pnlibrary.api.config.ConfigType
 
 /** Displays an action-bar message to the selected audience. */
-@ConfigType("action-bar")
 data class ActionBarAction(
     val text: String = "",
     /** `null` inherits the serializer selected by the execution context. */

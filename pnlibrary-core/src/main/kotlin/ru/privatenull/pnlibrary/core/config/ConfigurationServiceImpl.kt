@@ -25,11 +25,6 @@ import java.math.BigDecimal
 import java.math.BigInteger
 import ru.privatenull.pnlibrary.api.actions.PlayerAction
 import ru.privatenull.pnlibrary.core.config.actions.PlayerActionSerializer
-import ru.privatenull.pnlibrary.api.actions.ActionBarAction
-import ru.privatenull.pnlibrary.api.actions.ConsoleLogAction
-import ru.privatenull.pnlibrary.api.actions.DelayAction
-import ru.privatenull.pnlibrary.api.actions.MessageAction
-import ru.privatenull.pnlibrary.api.actions.SoundAction
 
 internal class ConfigurationServiceImpl(private val platform: PlatformAdapter) : ConfigurationService, AutoCloseable {
     private val scopes = java.util.IdentityHashMap<Any, Scope>()
@@ -68,10 +63,6 @@ internal class ConfigurationServiceImpl(private val platform: PlatformAdapter) :
     ) : ConfigScope {
         private val handles = linkedSetOf<ManagedConfig<*>>()
         private val serializers = builtInSerializers()
-        private val builtInTypes = setOf<Class<*>>(
-            MessageAction::class.java, ActionBarAction::class.java, SoundAction::class.java,
-            ConsoleLogAction::class.java, DelayAction::class.java,
-        )
         private val scopeClosed = AtomicBoolean(false)
         override val size: Int get() = synchronized(handles) { handles.size }
 
@@ -93,7 +84,7 @@ internal class ConfigurationServiceImpl(private val platform: PlatformAdapter) :
             val defaultValue = defaults.get() ?: error("Configuration defaults cannot be null")
             val codec = AnnotatedYamlCodec(
                 type, defaults, synchronized(serializers) { serializers.toMap() },
-                builtInTypes, options, logger::warning,
+                options, logger::warning,
             )
             val handle = CodeFirstYaml(
                 target.toFile(), defaultValue, codec, logger,

@@ -9,7 +9,18 @@ import java.time.Duration
 import net.kyori.adventure.sound.Sound
 import ru.privatenull.pnlibrary.api.logging.PnLogger
 import ru.privatenull.pnlibrary.api.tasks.TaskScope
+import ru.privatenull.pnlibrary.api.config.ConfigPolymorphic
+import ru.privatenull.pnlibrary.api.config.ConfigType
+import ru.privatenull.pnlibrary.api.config.ConfigTypes
 
+@ConfigPolymorphic(discriminator = "type")
+@ConfigTypes(
+    ConfigType(MessageAction::class, "message", aliases = ["messages", "msg"]),
+    ConfigType(ActionBarAction::class, "action-bar", aliases = ["actionbar"]),
+    ConfigType(SoundAction::class, "sound"),
+    ConfigType(ConsoleLogAction::class, "console", aliases = ["log"]),
+    ConfigType(DelayAction::class, "delay", aliases = ["later"]),
+)
 fun interface Action {
 
     fun execute(context: Context)
