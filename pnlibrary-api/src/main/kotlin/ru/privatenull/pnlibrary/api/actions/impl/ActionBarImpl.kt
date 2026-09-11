@@ -1,5 +1,6 @@
-package ru.privatenull.pnlibrary.api.actions
+package ru.privatenull.pnlibrary.api.actions.impl
 
+import ru.privatenull.pnlibrary.api.actions.Action
 import ru.privatenull.pnlibrary.api.text.ComponentSerializerType
 
 class MessagesAction(
