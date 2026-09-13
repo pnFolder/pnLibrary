@@ -525,6 +525,186 @@ if (server.isMinecraftAtLeast(MinecraftVersion.V1_20_5)) enableDataComponents()
 Полное подключение Kaml, валидация, сохранение и Java-пример описаны в
 [docs/CONFIGURATION_RU.md](docs/CONFIGURATION_RU.md).
 
+## Валюты
+
+Currency API не зависит от Bukkit, Vault или PlayerPoints. Каждая валюта имеет
+уникальный ключ `<владелец>:<название>`, например `pnclans:coins`. Поэтому
+валюты разных плагинов не конфликтуют.
+
+Есть два способа регистрации:
+
+- `managed` — pnLibrary хранит баланс и полную историю транзакций;
+- `register` — pnLibrary предоставляет единый API поверх уже существующего
+  хранилища другого плагина.
+
+### Собственная валюта с хранением и историей
+
+```kotlin
+val storage = context.currencyStorages.file(
+    plugin.dataFolder.toPath().resolve("currencies.json"),
+    100_000
+)
+
+val coins = context.currencies.managed("coins") { currency ->
+    currency.descriptor {
+        it.displayName("Coins")
+        it.symbol(" ⛃")
+        it.wholeNumbers()
+    }
+
+    currency.ownedStorage(storage)
+    currency.service("pnclans.economy")
+
+    currency.access {
+        it.owner()
+        it.allow("pnshop", "pncases")
+    }
+
+    currency.placeholders {
+        it.access(PlaceholderAccess.shared())
+        it.placeholderApi("pnclans")
+    }
+
+    currency.commands {
+        it.permissionPrefix("pnclans.coins")
+        it.confirmation(CurrencyConfirmationMode.CONSOLE)
+        it.confirmationTimeoutSeconds(60)
+    }
+}
+```
+
+`ownedStorage` означает, что регистрация владеет хранилищем и закроет его сама.
+Если одно JDBC-хранилище используется несколькими валютами, применяется
+`storage(sharedStorage)`, а владелец закрывает его самостоятельно.
+
+### Изменение баланса с аудитом
+
+Для наград, покупок и административных изменений используйте `CurrencyLedger`.
+Обычные `deposit` и `withdraw` подходят для простых операций, но не позволяют
+передать полноценный контекст причины.
+
+```kotlin
+val ledger = coins.extension(CurrencyLedger::class.java)
+    ?: error("Currency does not provide a transaction ledger")
+
+ledger.transact(
+    CurrencyTransactionRequest(
+        type = CurrencyTransactionType.CREDIT,
+        amount = BigDecimal("500"),
+        target = CurrencyAccount(player.uniqueId),
+        actor = CurrencyActor.service("clan-battle-reward"),
+        service = "pnclans.battles",
+        reason = "Reward for winning clan battle",
+        metadata = mapOf(
+            "battleId" to battle.id.toString(),
+            "clanId" to clan.id.toString()
+        ),
+        idempotencyKey = "battle:${battle.id}:winner:${player.uniqueId}"
+    )
+)
+```
+
+Поля транзакции имеют разные задачи:
+
+| Поле | Что означает |
+|---|---|
+| `actor` | Кто инициировал операцию: игрок, сервис или система |
+| `service` | Конкретный модуль, выполнивший операцию |
+| `reason` | Человекочитаемая причина |
+| `metadata` | Идентификаторы заказа, боя, клана и другие данные |
+| `idempotencyKey` | Уникальный ключ, запрещающий повторную выдачу |
+
+Для автоматической награды не нужно придумывать UUID администратора:
+`CurrencyActor.service("daily-reward")` честно указывает системного инициатора.
+Для действий игрока используется `CurrencyActor.player(player.uniqueId)`, для
+внутренних операций runtime — `CurrencyActor.system("server")`.
+
+### Адаптер существующей валюты
+
+Если баланс уже хранит ваш сервис, второй слой хранения не нужен:
+
+```kotlin
+val tokens = context.currencies.register("tokens") { currency ->
+    currency.descriptor {
+        it.displayName("Clan tokens")
+        it.symbol(" ✦")
+        it.wholeNumbers()
+    }
+
+    currency.operations {
+        it.balance { account -> tokenStore.balance(account.playerId) }
+        it.deposit { account, amount -> tokenStore.deposit(account.playerId, amount.toLong()) }
+        it.withdraw { account, amount -> tokenStore.withdraw(account.playerId, amount.toLong()) }
+        it.transfer { from, to, amount ->
+            tokenStore.transfer(from.playerId, to.playerId, amount.toLong())
+        }
+    }
+}
+```
+
+В этом режиме pnLibrary маршрутизирует вызовы, проверяет суммы и управляет
+lifecycle регистрации. Историю транзакций ведёт `tokenStore`. Если история
+должна принадлежать pnLibrary, используйте `managed`.
+
+### Получение валюты
+
+Владелец может использовать короткое имя, остальные плагины — полный ключ:
+
+```kotlin
+val ownCoins = context.currencies.require("coins")
+val clanCoins = context.currencies.require("pnclans:coins")
+
+clanCoins.balance(player.uniqueId).thenAccept { balance ->
+    logger.info("Balance: ${clanCoins.format(balance)}")
+}
+```
+
+### Команды и защита
+
+pnLibrary использует одну стабильную команду вместо динамической регистрации
+отдельной команды для каждой валюты:
+
+```text
+/pncurrency list
+/pncurrency pnclans:coins balance Steve
+/pncurrency pnclans:coins add Steve 500
+/pncurrency pnclans:coins take Steve 100
+/pncurrency pnclans:coins set Steve 1000
+/pncurrency pnclans:coins reset Steve
+/pncurrency pnclans:coins pay Alex 50
+/pncurrency pnclans:coins history Steve
+```
+
+`add`, `take`, `set` и `reset` по умолчанию создают временную операцию. Изменение
+баланса произойдёт только после выполнения настоящей серверной консолью:
+
+```text
+/pncurrency confirm K7WR9C4N2Q
+```
+
+Консоль также может отменить запрос через `/pncurrency cancel <код>`. Код
+случайный, одноразовый, действует стандартно 60 секунд и хранится только в
+памяти. `pay` выполняется сразу, поскольку игрок подтверждает собственный
+перевод самой командой.
+
+### Vault и PlayerPoints
+
+На Bukkit pnLibrary автоматически импортирует найденные провайдеры:
+
+```kotlin
+val vaultMoney = context.currencies.get("vault:money")
+val points = context.currencies.get("playerpoints:points")
+```
+
+Это направление **Vault/PlayerPoints → pnLibrary**. Публикация собственной
+валюты как главного провайдера Vault пока не входит в публичный API. Классический
+Vault предоставляет серверу только одну основную экономику и не умеет адресовать
+несколько валют по ключам. Поэтому pnLibrary не делает скрытую регистрацию и не
+заменяет чужой Economy-провайдер без явного API управления конфликтами.
+
+Подробные контракты хранилищ, миграция File/JDBC, capabilities и фильтрация
+истории описаны в [docs/CURRENCIES.md](docs/CURRENCIES.md).
+
 ## Обновления
 
 При первом запуске создаётся `plugins/pnLibrary/updates.yml`:
