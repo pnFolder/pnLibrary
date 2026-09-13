@@ -5,6 +5,8 @@ import java.math.BigDecimal
 import java.time.Instant
 import java.util.UUID
 import java.util.concurrent.CompletionStage
+import java.nio.file.Path
+import javax.sql.DataSource
 
 enum class CurrencyTransactionType { CREDIT, DEBIT, TRANSFER, SET_BALANCE, RESET }
 enum class CurrencyActorType { PLAYER, PLUGIN, SERVICE, SERVER, SYSTEM }
@@ -62,6 +64,7 @@ data class CurrencyTransaction(
     val targetBalanceAfter: BigDecimal? = null,
     val createdAt: Instant,
     val failure: String? = null,
+    val idempotencyKey: String? = null,
 )
 
 data class CurrencyHistoryQuery(
@@ -97,4 +100,12 @@ interface CurrencyStorage : AutoCloseable {
 interface CurrencyLedger {
     fun transact(request: CurrencyTransactionRequest): CompletionStage<CurrencyTransaction>
     fun history(query: CurrencyHistoryQuery): CompletionStage<CurrencyHistoryPage>
+}
+
+/** Creates supported persistent storage implementations without exposing core classes. */
+interface CurrencyStorageFactory {
+    fun file(path: Path): CurrencyStorage
+    fun file(path: Path, maximumTransactions: Int): CurrencyStorage
+    fun jdbc(dataSource: DataSource): CurrencyStorage
+    fun jdbc(dataSource: DataSource, tablePrefix: String): CurrencyStorage
 }

@@ -50,6 +50,8 @@ import ru.privatenull.pnlibrary.api.text.ComponentSerializerType
 import ru.privatenull.pnlibrary.core.cooldowns.CooldownServiceImpl
 import ru.privatenull.pnlibrary.api.currency.CurrencyService
 import ru.privatenull.pnlibrary.core.currency.CurrencyHub
+import ru.privatenull.pnlibrary.api.currency.CurrencyStorageFactory
+import ru.privatenull.pnlibrary.core.currency.CurrencyStorageFactoryImpl
 
 internal class PluginRegistryImpl(
     private val platform: PlatformAdapter,
@@ -62,6 +64,7 @@ internal class PluginRegistryImpl(
     private val updates: UpdateService,
     private val placeholderHub: PlaceholderHub,
     private val currencyHub: CurrencyHub,
+    private val currencyStorageFactory: CurrencyStorageFactory = CurrencyStorageFactoryImpl(),
     private val configurations: ConfigurationServiceImpl = ConfigurationServiceImpl(platform),
 ) : PluginRegistry {
 
@@ -163,6 +166,7 @@ internal class PluginRegistryImpl(
                 ComponentServiceImpl(placeholderScope, sharedComponentCache),
                 CooldownServiceImpl(),
                 currencyScope,
+                currencyStorageFactory,
                 metricsController,
                 diagnosticRegistration,
                 updateRegistration,
@@ -216,6 +220,7 @@ internal class PluginRegistryImpl(
         override val components: ComponentService,
         override val cooldowns: CooldownService,
         override val currencies: CurrencyService,
+        override val currencyStorages: CurrencyStorageFactory,
         override val metrics: MetricsController,
         override val diagnostics: DiagnosticRegistration?,
         override val updates: UpdateRegistration?,

@@ -113,6 +113,32 @@ A managed currency delegates persistence and atomicity to `CurrencyStorage`.
 The same storage transaction changes balances and appends the ledger record;
 implementations must never perform those as two independent writes.
 
+pnLibrary includes two ready implementations:
+
+```kotlin
+val fileStorage = context.currencyStorages.file(
+    plugin.dataFolder.toPath().resolve("currencies.json"),
+    100_000, // retained transactions
+)
+
+val jdbcStorage = context.currencyStorages.jdbc(
+    dataSource,
+    "pnclans_currency",
+)
+```
+
+The file implementation keeps balances, the complete ledger, and idempotency
+keys in one human-readable JSON document. Writes use a temporary file followed
+by an atomic replacement; an unsuccessful write rolls the in-memory mutation
+back as well.
+
+The JDBC implementation creates `<prefix>_accounts` and
+`<prefix>_transactions`. Every mutation runs with a database transaction and
+serializable isolation, locks involved accounts where the database supports
+`FOR UPDATE`, changes balances, inserts the ledger row, and then commits. Any
+error causes a rollback. It works through a supplied `DataSource`, so connection
+pool and database selection remain under the consumer plugin's control.
+
 ```kotlin
 val coins = context.currencies.managed("coins") { currency ->
     currency.descriptor { it.displayName("Coins").symbol(" ⛃") }

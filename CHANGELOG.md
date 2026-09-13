@@ -9,6 +9,7 @@
 - Added extensible per-plugin options with PlaceholderAPI control, automatic Bukkit detection, restart recovery, and explicit publication states.
 - Added a plugin-owned Currency API with single-call DSL and provider-class registration, inferred capability interfaces, aliases, access policies, precision validation, typed extensions, and automatic Vault/PlayerPoints bridges.
 - Added managed currencies with atomic storage contracts, auditable transaction history, idempotency metadata, automatic balance placeholders, and Bukkit currency administration/payment commands.
+- Added ready file and JDBC currency storage implementations with atomic file replacement, SQL commit/rollback, account locking, persistent balances, transaction history, and idempotency keys.
 
 ## 2.1.0-beta.1
 

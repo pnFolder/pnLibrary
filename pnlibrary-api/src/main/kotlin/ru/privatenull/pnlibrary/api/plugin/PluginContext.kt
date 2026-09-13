@@ -12,6 +12,7 @@ import ru.privatenull.pnlibrary.api.placeholders.PlaceholderService
 import ru.privatenull.pnlibrary.api.text.ComponentService
 import ru.privatenull.pnlibrary.api.cooldowns.CooldownService
 import ru.privatenull.pnlibrary.api.currency.CurrencyService
+import ru.privatenull.pnlibrary.api.currency.CurrencyStorageFactory
 
 /** All pnLibrary capabilities and registrations belonging to one [id]. */
 interface PluginContext : AutoCloseable {
@@ -29,6 +30,7 @@ interface PluginContext : AutoCloseable {
     val components: ComponentService
     val cooldowns: CooldownService
     val currencies: CurrencyService
+    val currencyStorages: CurrencyStorageFactory
     val metrics: MetricsController
     val diagnostics: DiagnosticRegistration?
     val updates: UpdateRegistration?
