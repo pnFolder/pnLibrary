@@ -19,6 +19,7 @@ import ru.privatenull.pnlibrary.core.logging.PlatformLoggingService
 import ru.privatenull.pnlibrary.core.metrics.MetricsRegistry
 import ru.privatenull.pnlibrary.core.plugin.PluginRegistryImpl
 import ru.privatenull.pnlibrary.core.placeholders.PlaceholderHub
+import ru.privatenull.pnlibrary.core.currency.CurrencyHub
 import ru.privatenull.pnlibrary.core.security.EncryptedEnvelopeCodec
 import ru.privatenull.pnlibrary.core.services.ServiceManagerImpl
 import ru.privatenull.pnlibrary.core.tasks.TaskServiceImpl
@@ -94,6 +95,8 @@ class PnLibraryImpl(
     }
     override val events: ru.privatenull.pnlibrary.api.events.EventService get() = eventService
     private val placeholderHub = PlaceholderHub(platform)
+    private val currencyHub = CurrencyHub()
+    override val currencyProviders: ru.privatenull.pnlibrary.api.currency.CurrencyProviderRegistry get() = currencyHub
     override val placeholderAdapters: ru.privatenull.pnlibrary.api.placeholders.PlaceholderAdapterRegistry get() = placeholderHub
     override val plugins: ru.privatenull.pnlibrary.api.plugin.PluginRegistry = PluginRegistryImpl(
         platform = platform,
@@ -106,6 +109,7 @@ class PnLibraryImpl(
         diagnostics = diagnostics,
         updates = updateService,
         placeholderHub = placeholderHub,
+        currencyHub = currencyHub,
     )
 
     val uploader: UploadProvider? = initUploader()
@@ -168,6 +172,7 @@ class PnLibraryImpl(
         if (closedFlag.compareAndSet(false, true)) {
             workerExecutor.shutdownNow()
             runCatching { plugins.close() }
+            runCatching { currencyHub.close() }
             runCatching { configurationService.close() }
             runCatching { metricsRegistry.close() }
             runCatching { updateService.close() }

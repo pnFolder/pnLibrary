@@ -48,6 +48,8 @@ import ru.privatenull.pnlibrary.api.actions.LibraryAudience
 import ru.privatenull.pnlibrary.api.actions.LibraryPlayer
 import ru.privatenull.pnlibrary.api.text.ComponentSerializerType
 import ru.privatenull.pnlibrary.core.cooldowns.CooldownServiceImpl
+import ru.privatenull.pnlibrary.api.currency.CurrencyService
+import ru.privatenull.pnlibrary.core.currency.CurrencyHub
 
 internal class PluginRegistryImpl(
     private val platform: PlatformAdapter,
@@ -59,6 +61,7 @@ internal class PluginRegistryImpl(
     private val diagnostics: DiagnosticsService,
     private val updates: UpdateService,
     private val placeholderHub: PlaceholderHub,
+    private val currencyHub: CurrencyHub,
     private val configurations: ConfigurationServiceImpl = ConfigurationServiceImpl(platform),
 ) : PluginRegistry {
 
@@ -124,11 +127,13 @@ internal class PluginRegistryImpl(
         var diagnosticRegistration: DiagnosticRegistration? = null
         var updateRegistration: UpdateRegistration? = null
         var placeholderScope: PlaceholderService? = null
+        var currencyScope: CurrencyService? = null
         try {
             taskScope = tasks.scope(owner)
             eventScope = events.scope(id)
             configScope = configurations.scope(owner)
             placeholderScope = placeholderHub.scope(id, definition.placeholderApiEnabled)
+            currencyScope = currencyHub.scope(id)
             definition.listeners.forEach { eventScope.register(it) }
             metricsController = MetricsControllerImpl(
                 owner,
@@ -157,6 +162,7 @@ internal class PluginRegistryImpl(
                 placeholderScope,
                 ComponentServiceImpl(placeholderScope, sharedComponentCache),
                 CooldownServiceImpl(),
+                currencyScope,
                 metricsController,
                 diagnosticRegistration,
                 updateRegistration,
@@ -170,6 +176,7 @@ internal class PluginRegistryImpl(
             runCatching { eventScope?.close() }
             runCatching { configScope?.close() }
             runCatching { placeholderScope?.close() }
+            runCatching { currencyScope?.close() }
             runCatching { services.unregisterAll(id) }
             runCatching { taskScope?.close() }
             throw error
@@ -208,6 +215,7 @@ internal class PluginRegistryImpl(
         override val placeholders: PlaceholderService,
         override val components: ComponentService,
         override val cooldowns: CooldownService,
+        override val currencies: CurrencyService,
         override val metrics: MetricsController,
         override val diagnostics: DiagnosticRegistration?,
         override val updates: UpdateRegistration?,
@@ -267,6 +275,7 @@ internal class PluginRegistryImpl(
             runCatching { configs.close() }
             runCatching { placeholders.close() }
             runCatching { cooldowns.close() }
+            runCatching { currencies.close() }
             runCatching { tasks.close() }
         }
 

@@ -1,5 +1,7 @@
 # pnLibrary architecture
 
+Currency providers and custom economies are documented in [Currency API](docs/CURRENCIES.md).
+
 ## The 30-second model
 
 pnLibrary is one shared runtime plugin installed in each server or proxy process.

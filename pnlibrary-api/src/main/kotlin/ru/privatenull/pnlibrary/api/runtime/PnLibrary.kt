@@ -13,6 +13,7 @@ import ru.privatenull.pnlibrary.api.services.ServiceManager
 import ru.privatenull.pnlibrary.api.updates.UpdateService
 import java.io.Closeable
 import ru.privatenull.pnlibrary.api.placeholders.PlaceholderAdapterRegistry
+import ru.privatenull.pnlibrary.api.currency.CurrencyProviderRegistry
 
 /**
  * Main pnLibrary facade shared by all plugins in one server process.
@@ -63,6 +64,9 @@ interface PnLibrary : Closeable {
 
     /** Runtime-detected bridges such as PlaceholderAPI. Consumer plugins normally do not register these manually. */
     val placeholderAdapters: PlaceholderAdapterRegistry
+
+    /** Platform-provided currencies such as Vault and PlayerPoints. */
+    val currencyProviders: CurrencyProviderRegistry
 
     /** Builds a diagnostic report from an already validated request. */
     fun createDiagnosticReport(request: DebugRequest): DiagnosticReport
