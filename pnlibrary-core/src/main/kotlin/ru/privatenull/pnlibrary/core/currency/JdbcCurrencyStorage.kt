@@ -112,6 +112,64 @@ internal class JdbcCurrencyStorage(
         }
     }
 
+    override fun export(currency: CurrencyKey): CompletionStage<CurrencyStorageSnapshot> = async {
+        connection { connection ->
+            connection.autoCommit = false
+            connection.transactionIsolation = Connection.TRANSACTION_REPEATABLE_READ
+            try {
+                val balances = linkedMapOf<UUID, BigDecimal>()
+                connection.prepareStatement("SELECT account_id, balance FROM $accountsTable WHERE currency_id = ?").use { statement ->
+                    statement.setString(1, currency.toString())
+                    statement.executeQuery().use { results -> while (results.next()) balances[UUID.fromString(results.getString(1))] = results.getBigDecimal(2) }
+                }
+                val transactions = mutableListOf<CurrencyTransaction>()
+                connection.prepareStatement("SELECT * FROM $transactionsTable WHERE currency_id = ? ORDER BY created_at ASC").use { statement ->
+                    statement.setString(1, currency.toString())
+                    statement.executeQuery().use { results -> while (results.next()) transactions += decode(results) }
+                }
+                connection.commit()
+                CurrencyStorageSnapshot(currency = currency, createdAt = Instant.now(), balances = balances, transactions = transactions)
+            } catch (error: Throwable) {
+                runCatching { connection.rollback() }
+                throw error
+            }
+        }
+    }
+
+    override fun importSnapshot(snapshot: CurrencyStorageSnapshot, mode: CurrencyImportMode): CompletionStage<CurrencyImportResult> = async {
+        require(snapshot.transactions.all { it.currency == snapshot.currency }) { "Snapshot contains transactions from another currency" }
+        ensureSchema()
+        dataSource.connection.use { connection ->
+            connection.autoCommit = false
+            connection.transactionIsolation = Connection.TRANSACTION_SERIALIZABLE
+            try {
+                if (mode == CurrencyImportMode.REPLACE) {
+                    connection.prepareStatement("DELETE FROM $transactionsTable WHERE currency_id = ?").use { it.setString(1, snapshot.currency.toString()); it.executeUpdate() }
+                    connection.prepareStatement("DELETE FROM $accountsTable WHERE currency_id = ?").use { it.setString(1, snapshot.currency.toString()); it.executeUpdate() }
+                }
+                var importedAccounts = 0
+                var skippedAccounts = 0
+                snapshot.balances.forEach { (accountId, balance) ->
+                    val account = CurrencyAccount(accountId)
+                    val exists = accountExists(connection, snapshot.currency, account)
+                    if (exists && mode == CurrencyImportMode.MERGE_KEEP_TARGET) skippedAccounts++
+                    else { writeBalance(connection, snapshot.currency, account, balance); importedAccounts++ }
+                }
+                var importedTransactions = 0
+                var skippedTransactions = 0
+                snapshot.transactions.forEach { transaction ->
+                    if (transactionExists(connection, transaction)) skippedTransactions++
+                    else { insertTransaction(connection, transaction); importedTransactions++ }
+                }
+                connection.commit()
+                CurrencyImportResult(snapshot.currency, mode, importedAccounts, skippedAccounts, importedTransactions, skippedTransactions)
+            } catch (error: Throwable) {
+                runCatching { connection.rollback() }
+                throw error
+            }
+        }
+    }
+
     override fun close() { if (closed.compareAndSet(false, true)) executor.shutdown() }
 
     private fun ensureSchema() {
@@ -153,6 +211,26 @@ internal class JdbcCurrencyStorage(
             connection.prepareStatement("UPDATE $accountsTable SET balance = ? WHERE currency_id = ? AND account_id = ?").use { statement ->
                 statement.setBigDecimal(1, balance); statement.setString(2, currency.toString()); statement.setString(3, account.playerId.toString()); statement.executeUpdate()
             }
+        }
+    }
+
+    private fun accountExists(connection: Connection, currency: CurrencyKey, account: CurrencyAccount): Boolean {
+        connection.prepareStatement("SELECT 1 FROM $accountsTable WHERE currency_id = ? AND account_id = ?").use { statement ->
+            statement.setString(1, currency.toString()); statement.setString(2, account.playerId.toString())
+            statement.executeQuery().use { return it.next() }
+        }
+    }
+
+    private fun transactionExists(connection: Connection, transaction: CurrencyTransaction): Boolean {
+        val sql = if (transaction.idempotencyKey == null) {
+            "SELECT 1 FROM $transactionsTable WHERE transaction_id = ?"
+        } else {
+            "SELECT 1 FROM $transactionsTable WHERE transaction_id = ? OR (currency_id = ? AND idempotency_key = ?)"
+        }
+        connection.prepareStatement(sql).use { statement ->
+            statement.setString(1, transaction.id.toString())
+            transaction.idempotencyKey?.let { statement.setString(2, transaction.currency.toString()); statement.setString(3, it) }
+            statement.executeQuery().use { return it.next() }
         }
     }
 

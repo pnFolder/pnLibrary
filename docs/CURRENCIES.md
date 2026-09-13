@@ -139,6 +139,35 @@ serializable isolation, locks involved accounts where the database supports
 error causes a rollback. It works through a supplied `DataSource`, so connection
 pool and database selection remain under the consumer plugin's control.
 
+### Moving data between storages
+
+File, SQLite, MySQL, MariaDB, and PostgreSQL storage can be migrated through the
+same API. Currency IDs may remain unchanged or be remapped during import.
+
+```kotlin
+context.currencyStorages.migrate(
+    source = fileStorage,
+    sourceCurrency = CurrencyKey(PluginId.of("pnclans"), "coins"),
+    target = jdbcStorage,
+    targetCurrency = CurrencyKey(PluginId.of("pnclans"), "coins"),
+    mode = CurrencyImportMode.MERGE_KEEP_TARGET,
+).thenAccept { report ->
+    logger.info("Imported ${report.import.importedAccounts} accounts")
+}
+```
+
+Import modes:
+
+- `REPLACE` removes the target currency before restoring the snapshot;
+- `MERGE_KEEP_TARGET` preserves existing balances and imports missing data;
+- `MERGE_OVERWRITE` overwrites balances from the snapshot but keeps unrelated
+  target transactions.
+
+Snapshots preserve transaction UUIDs, timestamps, actors, source/target
+accounts, before/after balances, metadata, failure details, and idempotency
+keys. Existing transaction UUIDs and idempotency keys are skipped during merge,
+so retrying an interrupted migration does not duplicate history.
+
 ```kotlin
 val coins = context.currencies.managed("coins") { currency ->
     currency.descriptor { it.displayName("Coins").symbol(" ⛃") }

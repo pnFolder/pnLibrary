@@ -94,7 +94,47 @@ interface CurrencyStorage : AutoCloseable {
     fun balance(currency: CurrencyKey, account: CurrencyAccount): CompletionStage<BigDecimal>
     fun transact(currency: CurrencyKey, descriptor: CurrencyDescriptor, request: CurrencyTransactionRequest): CompletionStage<CurrencyTransaction>
     fun history(currency: CurrencyKey, query: CurrencyHistoryQuery): CompletionStage<CurrencyHistoryPage>
+    /** Produces a consistent export of one currency. */
+    fun export(currency: CurrencyKey): CompletionStage<CurrencyStorageSnapshot>
+    /** Atomically imports balances and ledger rows according to [mode]. */
+    fun importSnapshot(snapshot: CurrencyStorageSnapshot, mode: CurrencyImportMode): CompletionStage<CurrencyImportResult>
 }
+
+data class CurrencyStorageSnapshot(
+    val formatVersion: Int = 1,
+    val currency: CurrencyKey,
+    val createdAt: Instant,
+    val balances: Map<UUID, BigDecimal>,
+    val transactions: List<CurrencyTransaction>,
+) {
+    init { require(formatVersion == 1) { "Unsupported currency snapshot version: $formatVersion" } }
+}
+
+enum class CurrencyImportMode {
+    /** Deletes the target currency first, then restores the snapshot. */
+    REPLACE,
+    /** Keeps existing target balances and imports only missing accounts and transactions. */
+    MERGE_KEEP_TARGET,
+    /** Overwrites balances from the snapshot and merges missing transactions. */
+    MERGE_OVERWRITE,
+}
+
+data class CurrencyImportResult(
+    val currency: CurrencyKey,
+    val mode: CurrencyImportMode,
+    val importedAccounts: Int,
+    val skippedAccounts: Int,
+    val importedTransactions: Int,
+    val skippedTransactions: Int,
+)
+
+data class CurrencyMigrationResult(
+    val sourceCurrency: CurrencyKey,
+    val targetCurrency: CurrencyKey,
+    val import: CurrencyImportResult,
+    val startedAt: Instant,
+    val completedAt: Instant,
+)
 
 /** Advanced managed-currency API available through `currency.extension(CurrencyLedger::class.java)`. */
 interface CurrencyLedger {
@@ -108,4 +148,11 @@ interface CurrencyStorageFactory {
     fun file(path: Path, maximumTransactions: Int): CurrencyStorage
     fun jdbc(dataSource: DataSource): CurrencyStorage
     fun jdbc(dataSource: DataSource, tablePrefix: String): CurrencyStorage
+    fun migrate(
+        source: CurrencyStorage,
+        sourceCurrency: CurrencyKey,
+        target: CurrencyStorage,
+        targetCurrency: CurrencyKey,
+        mode: CurrencyImportMode,
+    ): CompletionStage<CurrencyMigrationResult>
 }

@@ -84,6 +84,64 @@ internal class FileCurrencyStorage(
         CurrencyHistoryPage(filtered.drop(query.offset).take(query.limit), query.offset, filtered.size > query.offset + query.limit)
     }
 
+    override fun export(currency: CurrencyKey): CompletionStage<CurrencyStorageSnapshot> = async {
+        synchronized(lock) {
+            val prefix = "$currency|"
+            val exportedBalances = balances.entries.filter { it.key.startsWith(prefix) }.associate {
+                UUID.fromString(it.key.removePrefix(prefix)) to it.value
+            }
+            CurrencyStorageSnapshot(
+                currency = currency,
+                createdAt = Instant.now(),
+                balances = exportedBalances,
+                transactions = transactions.filter { it.currency == currency },
+            )
+        }
+    }
+
+    override fun importSnapshot(snapshot: CurrencyStorageSnapshot, mode: CurrencyImportMode): CompletionStage<CurrencyImportResult> = async {
+        synchronized(lock) {
+            require(snapshot.transactions.all { it.currency == snapshot.currency }) { "Snapshot contains transactions from another currency" }
+            val balancesBackup = LinkedHashMap(balances)
+            val transactionsBackup = transactions.toList()
+            val idempotencyBackup = HashMap(idempotency)
+            try {
+                if (mode == CurrencyImportMode.REPLACE) removeCurrency(snapshot.currency)
+                var importedAccounts = 0
+                var skippedAccounts = 0
+                var importedTransactions = 0
+                var skippedTransactions = 0
+                snapshot.balances.forEach { (accountId, balance) ->
+                    val key = accountKey(snapshot.currency, CurrencyAccount(accountId))
+                    if (mode == CurrencyImportMode.MERGE_KEEP_TARGET && balances.containsKey(key)) skippedAccounts++
+                    else { balances[key] = balance; importedAccounts++ }
+                }
+                val ids = transactions.mapTo(hashSetOf()) { it.id }
+                snapshot.transactions.forEach { transaction ->
+                    val duplicateKey = transaction.idempotencyKey?.let { idempotencyKey(snapshot.currency, it) }
+                    if (transaction.id in ids || duplicateKey != null && duplicateKey in idempotency) {
+                        skippedTransactions++
+                    } else {
+                        transactions += transaction
+                        ids += transaction.id
+                        duplicateKey?.let { idempotency[it] = transaction }
+                        importedTransactions++
+                    }
+                }
+                while (transactions.size > maximumTransactions) transactions.removeAt(0).also { removed ->
+                    removed.idempotencyKey?.let { idempotency.remove(idempotencyKey(removed.currency, it), removed) }
+                }
+                save()
+                CurrencyImportResult(snapshot.currency, mode, importedAccounts, skippedAccounts, importedTransactions, skippedTransactions)
+            } catch (error: Throwable) {
+                balances.clear(); balances.putAll(balancesBackup)
+                transactions.clear(); transactions.addAll(transactionsBackup)
+                idempotency.clear(); idempotency.putAll(idempotencyBackup)
+                throw error
+            }
+        }
+    }
+
     override fun close() {
         if (closed.compareAndSet(false, true)) executor.shutdown()
     }
@@ -183,6 +241,12 @@ internal class FileCurrencyStorage(
 
     private fun accountKey(currency: CurrencyKey, account: CurrencyAccount) = "$currency|${account.playerId}"
     private fun idempotencyKey(currency: CurrencyKey, key: String) = "$currency|$key"
+    private fun removeCurrency(currency: CurrencyKey) {
+        val prefix = "$currency|"
+        balances.keys.removeIf { it.startsWith(prefix) }
+        transactions.removeIf { it.currency == currency }
+        idempotency.keys.removeIf { it.startsWith(prefix) }
+    }
     private fun <T> async(operation: () -> T): CompletionStage<T> {
         check(!closed.get()) { "Currency storage is closed" }
         return CompletableFuture.supplyAsync(operation, executor)
