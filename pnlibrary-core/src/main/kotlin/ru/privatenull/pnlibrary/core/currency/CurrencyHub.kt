@@ -3,6 +3,7 @@ package ru.privatenull.pnlibrary.core.currency
 import ru.privatenull.pnlibrary.api.currency.*
 import ru.privatenull.pnlibrary.api.plugin.PluginId
 import java.math.BigDecimal
+import java.util.UUID
 import java.util.concurrent.CompletableFuture
 import java.util.concurrent.CompletionStage
 import java.util.concurrent.ConcurrentHashMap
@@ -10,136 +11,186 @@ import java.util.concurrent.atomic.AtomicBoolean
 import java.util.function.BiFunction
 import java.util.function.Consumer
 import java.util.function.Function
-import java.util.UUID
 
 internal class CurrencyHub : CurrencyProviderRegistry, AutoCloseable {
-    private val registrations = ConcurrentHashMap<CurrencyKey, Registration>()
+    private val entries = ConcurrentHashMap<CurrencyKey, Entry>()
+    private val aliases = ConcurrentHashMap<Pair<PluginId, String>, CurrencyKey>()
     private val closed = AtomicBoolean(false)
 
     fun scope(owner: PluginId): CurrencyService = Scope(owner)
 
     override fun register(owner: PluginId, name: String, provider: CurrencyProvider, access: CurrencyAccess): CurrencyRegistration =
-        install(owner, name, provider, access)
-
-    private fun install(owner: PluginId, name: String, provider: CurrencyProvider, access: CurrencyAccess): CurrencyRegistration {
-        check(!closed.get()) { "Currency registry is closed" }
-        val key = CurrencyKey(owner, name.lowercase())
-        val registration = Registration(key, provider, access)
-        require(registrations.putIfAbsent(key, registration) == null) { "Currency $key is already registered" }
-        return registration
-    }
+        install(owner, name, provider, access, emptySet())
 
     override fun close() {
         if (!closed.compareAndSet(false, true)) return
-        registrations.values.toList().forEach(Registration::close)
-        registrations.clear()
+        entries.values.toList().forEach(Entry::close)
+        entries.clear()
+        aliases.clear()
+    }
+
+    private fun install(owner: PluginId, name: String, provider: CurrencyProvider, access: CurrencyAccess, requestedAliases: Set<String>): CurrencyRegistration {
+        check(!closed.get()) { "Currency registry is closed" }
+        val key = CurrencyKey(owner, normalizeName(name))
+        val normalizedAliases = requestedAliases.map(::normalizeName).toSet()
+        val entry = Entry(key, provider, access, normalizedAliases)
+        synchronized(entries) {
+            require(!entries.containsKey(key)) { "Currency $key is already registered" }
+            normalizedAliases.forEach { alias ->
+                require(!aliases.containsKey(owner to alias) && !entries.containsKey(CurrencyKey(owner, alias))) { "Currency alias $owner:$alias is already registered" }
+            }
+            entries[key] = entry
+            normalizedAliases.forEach { aliases[owner to it] = key }
+        }
+        return entry
     }
 
     private inner class Scope(private val owner: PluginId) : CurrencyService {
         private val owned = ConcurrentHashMap.newKeySet<CurrencyKey>()
         private val scopeClosed = AtomicBoolean(false)
 
-        override fun currency(name: String): CurrencyBuilder = Builder(owner, name) { provider, access ->
-            register(name, provider, access)
+        override fun register(name: String, configure: Consumer<CurrencyDefinitionBuilder>): CurrencyRegistration {
+            checkOpen()
+            val builder = DefinitionBuilder(name)
+            configure.accept(builder)
+            return own(install(owner, name, builder.provider(), builder.access, builder.aliases))
         }
 
-        override fun register(name: String, provider: CurrencyProvider, access: CurrencyAccess): CurrencyRegistration {
-            check(!scopeClosed.get()) { "Currencies for $owner are closed" }
-            val registration = install(owner, name, provider, access)
-            owned += registration.key
-            return registration
+        override fun register(name: String, provider: CurrencyProvider, configure: Consumer<CurrencyRegistrationOptions>): CurrencyRegistration {
+            checkOpen()
+            val options = Options()
+            configure.accept(options)
+            return own(install(owner, name, provider, options.access, options.aliases))
         }
 
-        override fun get(reference: String): CurrencyRegistration? {
-            val key = parseReference(owner, reference)
-            return registrations[key]?.takeIf { it.isEnabled && it.access.allows(it.key.owner, owner) }
+        override fun get(reference: String): Currency? {
+            val requested = parseReference(owner, reference)
+            val key = aliases[requested.owner to requested.name] ?: requested
+            return entries[key]?.takeIf { it.state == CurrencyRegistrationState.ACTIVE && it.access.allows(it.key.owner, owner) }
         }
 
-        override fun all(): List<CurrencyRegistration> = registrations.values
-            .filter { it.isEnabled && it.access.allows(it.key.owner, owner) }
+        override fun all(): List<Currency> = entries.values
+            .filter { it.state == CurrencyRegistrationState.ACTIVE && it.access.allows(it.key.owner, owner) }
             .sortedBy { it.key.toString() }
 
         override fun unregister(name: String) {
-            registrations[CurrencyKey(owner, name.lowercase())]?.close()
+            val requested = CurrencyKey(owner, normalizeName(name))
+            entries[aliases[owner to requested.name] ?: requested]?.takeIf { it.key.owner == owner }?.close()
         }
 
         override fun close() {
             if (!scopeClosed.compareAndSet(false, true)) return
-            owned.toList().forEach { registrations[it]?.close() }
+            owned.toList().forEach { entries[it]?.close() }
             owned.clear()
         }
+
+        private fun own(registration: CurrencyRegistration) = registration.also { owned += it.key }
+        private fun checkOpen() = check(!scopeClosed.get()) { "Currencies for $owner are closed" }
     }
 
-    private inner class Registration(
+    private inner class Entry(
         override val key: CurrencyKey,
-        override val provider: CurrencyProvider,
+        private val provider: CurrencyProvider,
         val access: CurrencyAccess,
+        private val registeredAliases: Set<String>,
     ) : CurrencyRegistration {
         private val enabled = AtomicBoolean(true)
-        private val registrationClosed = AtomicBoolean(false)
-        override val isEnabled: Boolean get() = enabled.get() && !registrationClosed.get()
-        override fun balance(playerId: UUID): CompletionStage<BigDecimal> =
-            if (!isEnabled) failedCurrency("Currency $key is disabled")
-            else safely { provider.balance(CurrencyAccount(playerId)) }
-                .thenApply { provider.definition.normalize(it) }
+        private val entryClosed = AtomicBoolean(false)
+        override val descriptor get() = provider.descriptor
+        override val state get() = when {
+            entryClosed.get() -> CurrencyRegistrationState.CLOSED
+            enabled.get() -> CurrencyRegistrationState.ACTIVE
+            else -> CurrencyRegistrationState.DISABLED
+        }
+        override val capabilities = if (provider is CapabilitySource) provider.declaredCapabilities else buildSet {
+            add(CurrencyCapability.BALANCE)
+            if (provider is CurrencyDeposits) add(CurrencyCapability.DEPOSIT)
+            if (provider is CurrencyWithdrawals) add(CurrencyCapability.WITHDRAW)
+            if (provider is CurrencyBalanceMutation) add(CurrencyCapability.SET_BALANCE)
+            if (provider is CurrencyReset) add(CurrencyCapability.RESET)
+            if (provider is CurrencyTransfers) add(CurrencyCapability.TRANSFER)
+            if (provider is CurrencyFormatting) add(CurrencyCapability.FORMATTING)
+        }
+
+        override fun balance(playerId: UUID): CompletionStage<BigDecimal> = availableValue {
+            provider.balance(CurrencyAccount(playerId)).thenApply(descriptor::normalize)
+        }
         override fun has(playerId: UUID, amount: BigDecimal): CompletionStage<Boolean> {
-            if (!valid(amount, allowZero = true)) return CompletableFuture.completedFuture(false)
-            return balance(playerId).thenApply { it >= provider.definition.normalize(amount) }
+            if (!valid(amount, true)) return CompletableFuture.completedFuture(false)
+            return balance(playerId).thenApply { it >= descriptor.normalize(amount) }
         }
-        override fun deposit(playerId: UUID, amount: BigDecimal) =
-            mutate(CurrencyCapability.DEPOSIT, CurrencyAccount(playerId), amount, provider::deposit)
-        override fun withdraw(playerId: UUID, amount: BigDecimal) =
-            mutate(CurrencyCapability.WITHDRAW, CurrencyAccount(playerId), amount, provider::withdraw)
-        override fun setBalance(playerId: UUID, amount: BigDecimal) =
-            mutate(CurrencyCapability.SET_BALANCE, CurrencyAccount(playerId), amount, provider::setBalance, allowZero = true)
-        override fun reset(playerId: UUID): CompletionStage<CurrencyResult> {
-            if (!isEnabled) return CompletableFuture.completedFuture(CurrencyResult.unavailable("Currency $key is disabled"))
-            if (!supports(CurrencyCapability.RESET)) return unsupported(CurrencyCapability.RESET)
-            return safelyResult { provider.reset(CurrencyAccount(playerId)) }
+        override fun deposit(playerId: UUID, amount: BigDecimal) = amountOperation(CurrencyCapability.DEPOSIT, amount) {
+            (provider as CurrencyDeposits).deposit(CurrencyAccount(playerId), it)
         }
-        override fun transfer(from: UUID, to: UUID, amount: BigDecimal): CompletionStage<CurrencyResult> {
-            if (!isEnabled) return CompletableFuture.completedFuture(CurrencyResult.unavailable("Currency $key is disabled"))
-            if (!supports(CurrencyCapability.TRANSFER)) return unsupported(CurrencyCapability.TRANSFER)
-            if (!valid(amount)) return invalidAmount()
-            return safelyResult { provider.transfer(CurrencyAccount(from), CurrencyAccount(to), definition.normalize(amount)) }
+        override fun withdraw(playerId: UUID, amount: BigDecimal) = amountOperation(CurrencyCapability.WITHDRAW, amount) {
+            (provider as CurrencyWithdrawals).withdraw(CurrencyAccount(playerId), it)
         }
-        override fun enable() { check(!registrationClosed.get()) { "Currency $key is closed" }; enabled.set(true) }
+        override fun setBalance(playerId: UUID, amount: BigDecimal) = amountOperation(CurrencyCapability.SET_BALANCE, amount, true) {
+            (provider as CurrencyBalanceMutation).setBalance(CurrencyAccount(playerId), it)
+        }
+        override fun reset(playerId: UUID) = resultOperation(CurrencyCapability.RESET) {
+            (provider as CurrencyReset).reset(CurrencyAccount(playerId))
+        }
+        override fun transfer(from: UUID, to: UUID, amount: BigDecimal) = amountOperation(CurrencyCapability.TRANSFER, amount) {
+            (provider as CurrencyTransfers).transfer(CurrencyAccount(from), CurrencyAccount(to), it)
+        }
+        override fun format(amount: BigDecimal) = if (provider is CurrencyFormatting) provider.format(descriptor.normalize(amount)) else descriptor.normalize(amount).toPlainString() + descriptor.symbol
+        override fun <T : Any> extension(type: Class<T>): T? = provider.extension(type)
+        override fun enable() { check(!entryClosed.get()) { "Currency $key is closed" }; enabled.set(true) }
         override fun disable() { enabled.set(false) }
         override fun close() {
-            if (registrationClosed.compareAndSet(false, true)) {
-                enabled.set(false)
-                registrations.remove(key, this)
-                if (provider is AutoCloseable) runCatching(provider::close)
+            if (!entryClosed.compareAndSet(false, true)) return
+            enabled.set(false)
+            synchronized(entries) {
+                entries.remove(key, this)
+                registeredAliases.forEach { aliases.remove(key.owner to it, key) }
             }
+            if (provider is AutoCloseable) runCatching(provider::close)
         }
 
-        private fun mutate(
-            capability: CurrencyCapability,
-            account: CurrencyAccount,
-            amount: BigDecimal,
-            operation: (CurrencyAccount, BigDecimal) -> CompletionStage<CurrencyResult>,
-            allowZero: Boolean = false,
-        ): CompletionStage<CurrencyResult> {
-            if (!isEnabled) return CompletableFuture.completedFuture(CurrencyResult.unavailable("Currency $key is disabled"))
+        private fun amountOperation(capability: CurrencyCapability, amount: BigDecimal, allowZero: Boolean = false, operation: (BigDecimal) -> CompletionStage<CurrencyResult>): CompletionStage<CurrencyResult> {
+            if (state != CurrencyRegistrationState.ACTIVE) return unavailable()
             if (!supports(capability)) return unsupported(capability)
             if (!valid(amount, allowZero)) return invalidAmount()
-            return safelyResult { operation(account, definition.normalize(amount)) }
+            return safeResult { operation(descriptor.normalize(amount)) }
         }
-
-        private fun valid(amount: BigDecimal, allowZero: Boolean = false): Boolean =
-            definition.accepts(amount) && if (allowZero) amount.signum() >= 0 else amount.signum() > 0
+        private fun resultOperation(capability: CurrencyCapability, operation: () -> CompletionStage<CurrencyResult>): CompletionStage<CurrencyResult> {
+            if (state != CurrencyRegistrationState.ACTIVE) return unavailable()
+            if (!supports(capability)) return unsupported(capability)
+            return safeResult(operation)
+        }
+        private fun valid(amount: BigDecimal, allowZero: Boolean = false) = descriptor.accepts(amount) && if (allowZero) amount.signum() >= 0 else amount.signum() > 0
+        private fun unavailable() = CompletableFuture.completedFuture(CurrencyResult.unavailable("Currency $key is not active"))
+        private fun unsupported(capability: CurrencyCapability) = CompletableFuture.completedFuture(CurrencyResult.unsupported("Currency $key does not support $capability"))
+        private fun invalidAmount() = CompletableFuture.completedFuture(CurrencyResult.rejected(CurrencyRejectReason.INVALID_AMOUNT, "Amount must be positive and use at most ${descriptor.fractionDigits} fraction digits"))
+        private fun <T> availableValue(operation: () -> CompletionStage<T>): CompletionStage<T> {
+            if (state != CurrencyRegistrationState.ACTIVE) return failed("Currency $key is not active")
+            return try { operation() } catch (error: Throwable) { failed("Currency $key failed", error) }
+        }
+        private fun safeResult(operation: () -> CompletionStage<CurrencyResult>): CompletionStage<CurrencyResult> = try {
+            operation().exceptionally(CurrencyResult::failed)
+        } catch (error: Throwable) {
+            CompletableFuture.completedFuture(CurrencyResult.failed(error))
+        }
     }
 
-    private inner class Builder(
-        private val owner: PluginId,
-        name: String,
-        private val install: (CurrencyProvider, CurrencyAccess) -> CurrencyRegistration,
-    ) : CurrencyBuilder {
-        private val name = name.lowercase()
-        private var displayName = name
-        private var symbol = ""
-        private var fractionDigits = 2
-        private var access = CurrencyAccess.ownerOnly()
+    private open inner class Options : CurrencyRegistrationOptions {
+        var access: CurrencyAccess = CurrencyAccess.ownerOnly()
+        val aliases = linkedSetOf<String>()
+        override fun access(access: CurrencyAccess) = apply { this.access = access }
+        override fun access(configure: Consumer<CurrencyAccess.Builder>) = apply { access = CurrencyAccess.builder().also(configure::accept).build() }
+        override fun aliases(vararg aliases: String) = apply { this.aliases += aliases }
+    }
+
+    private inner class DefinitionBuilder(private val name: String) : Options(), CurrencyDefinitionBuilder {
+        private val descriptor = CurrencyDescriptor.Builder(name)
+        private val operations = Operations()
+        override fun descriptor(configure: Consumer<CurrencyDescriptor.Builder>) = apply { configure.accept(descriptor) }
+        override fun operations(configure: Consumer<CurrencyOperations>) = apply { configure.accept(operations) }
+        fun provider() = operations.provider(descriptor.build(), name)
+    }
+
+    private class Operations : CurrencyOperations {
         private var balance: ((CurrencyAccount) -> CompletionStage<BigDecimal>)? = null
         private var deposit: ((CurrencyAccount, BigDecimal) -> CompletionStage<CurrencyResult>)? = null
         private var withdraw: ((CurrencyAccount, BigDecimal) -> CompletionStage<CurrencyResult>)? = null
@@ -149,108 +200,71 @@ internal class CurrencyHub : CurrencyProviderRegistry, AutoCloseable {
         private var formatter: ((BigDecimal) -> String)? = null
         private val extensions = linkedMapOf<Class<*>, Any>()
 
-        override fun displayName(value: String) = apply { displayName = value }
-        override fun symbol(value: String) = apply { symbol = value }
-        override fun fractionDigits(value: Int) = apply { fractionDigits = value }
-        override fun access(value: CurrencyAccess) = apply { access = value }
-        override fun access(configure: Consumer<CurrencyAccess.Builder>) = apply {
-            access = CurrencyAccess.builder().also(configure::accept).build()
-        }
-        override fun balance(operation: Function<CurrencyAccount, BigDecimal>) = apply {
-            balance = { CompletableFuture.completedFuture(operation.apply(it)) }
-        }
+        override fun balance(operation: Function<CurrencyAccount, BigDecimal>) = apply { balance = { completed { operation.apply(it) } } }
         override fun balanceAsync(operation: Function<CurrencyAccount, CompletionStage<BigDecimal>>) = apply { balance = operation::apply }
-        override fun deposit(operation: BiFunction<CurrencyAccount, BigDecimal, CurrencyResult>) = apply {
-            deposit = { account, amount -> CompletableFuture.completedFuture(operation.apply(account, amount)) }
-        }
+        override fun deposit(operation: BiFunction<CurrencyAccount, BigDecimal, CurrencyResult>) = apply { deposit = { account, amount -> completed { operation.apply(account, amount) } } }
         override fun depositAsync(operation: BiFunction<CurrencyAccount, BigDecimal, CompletionStage<CurrencyResult>>) = apply { deposit = operation::apply }
-        override fun withdraw(operation: BiFunction<CurrencyAccount, BigDecimal, CurrencyResult>) = apply {
-            withdraw = { account, amount -> CompletableFuture.completedFuture(operation.apply(account, amount)) }
-        }
+        override fun withdraw(operation: BiFunction<CurrencyAccount, BigDecimal, CurrencyResult>) = apply { withdraw = { account, amount -> completed { operation.apply(account, amount) } } }
         override fun withdrawAsync(operation: BiFunction<CurrencyAccount, BigDecimal, CompletionStage<CurrencyResult>>) = apply { withdraw = operation::apply }
-        override fun setBalance(operation: BiFunction<CurrencyAccount, BigDecimal, CurrencyResult>) = apply {
-            setBalance = { account, amount -> CompletableFuture.completedFuture(operation.apply(account, amount)) }
-        }
-        override fun reset(operation: Function<CurrencyAccount, CurrencyResult>) = apply {
-            reset = { CompletableFuture.completedFuture(operation.apply(it)) }
-        }
-        override fun transfer(operation: TransferOperation) = apply {
-            transfer = { from, to, amount -> CompletableFuture.completedFuture(operation.apply(from, to, amount)) }
-        }
-        override fun formatter(operation: Function<BigDecimal, String>) = apply { formatter = operation::apply }
-        override fun extension(type: Class<*>, value: Any) = apply {
-            require(type.isInstance(value)) { "${value.javaClass.name} does not implement ${type.name}" }
-            extensions[type] = value
-        }
+        override fun setBalance(operation: BiFunction<CurrencyAccount, BigDecimal, CurrencyResult>) = apply { setBalance = { account, amount -> completed { operation.apply(account, amount) } } }
+        override fun reset(operation: Function<CurrencyAccount, CurrencyResult>) = apply { reset = { completed { operation.apply(it) } } }
+        override fun transfer(operation: CurrencyTransferOperation) = apply { transfer = { from, to, amount -> completed { operation.apply(from, to, amount) } } }
+        override fun format(operation: Function<BigDecimal, String>) = apply { formatter = operation::apply }
+        override fun extension(type: Class<*>, value: Any) = apply { require(type.isInstance(value)); extensions[type] = value }
 
-        override fun register(): CurrencyRegistration {
-            val definition = CurrencyDefinition(displayName, symbol, fractionDigits)
-            val balanceOperation = balance ?: error("Currency $owner:$name has no balance operation")
-            val capabilities = buildSet {
-                add(CurrencyCapability.BALANCE)
-                if (fractionDigits > 0) add(CurrencyCapability.FRACTIONAL_AMOUNTS)
-                if (deposit != null) add(CurrencyCapability.DEPOSIT)
-                if (withdraw != null) add(CurrencyCapability.WITHDRAW)
-                if (setBalance != null) add(CurrencyCapability.SET_BALANCE)
-                if (reset != null) add(CurrencyCapability.RESET)
-                if (transfer != null) add(CurrencyCapability.TRANSFER)
-                if (formatter != null) add(CurrencyCapability.FORMATTING)
-            }
-            val provider = object : CurrencyProvider {
-                override val definition = definition
-                override val capabilities = capabilities
-                override fun balance(account: CurrencyAccount) = balanceOperation(account)
-                override fun deposit(account: CurrencyAccount, amount: BigDecimal) = executeAmount(definition, CurrencyCapability.DEPOSIT, account, amount, deposit)
-                override fun withdraw(account: CurrencyAccount, amount: BigDecimal) = executeAmount(definition, CurrencyCapability.WITHDRAW, account, amount, withdraw)
-                override fun setBalance(account: CurrencyAccount, amount: BigDecimal) = executeAmount(definition, CurrencyCapability.SET_BALANCE, account, amount, setBalance)
-                override fun reset(account: CurrencyAccount) = reset?.invoke(account) ?: unsupported(CurrencyCapability.RESET)
-                override fun transfer(from: CurrencyAccount, to: CurrencyAccount, amount: BigDecimal): CompletionStage<CurrencyResult> {
-                    if (!definition.accepts(amount) || amount.signum() <= 0) return invalidAmount()
-                    return transfer?.invoke(from, to, definition.normalize(amount)) ?: unsupported(CurrencyCapability.TRANSFER)
-                }
-                override fun format(amount: BigDecimal) = formatter?.invoke(definition.normalize(amount)) ?: super.format(amount)
-                override fun <T : Any> extension(type: Class<T>): T? = extensions[type]?.let(type::cast)
-            }
-            return install(provider, access)
+        fun provider(descriptor: CurrencyDescriptor, name: String): CurrencyProvider {
+            val balances = balance ?: error("Currency $name requires a balance operation")
+            return ConfiguredProvider(descriptor, balances, deposit, withdraw, setBalance, reset, transfer, formatter, extensions.toMap())
         }
     }
 
-    private fun executeAmount(
-        definition: CurrencyDefinition,
-        capability: CurrencyCapability,
-        account: CurrencyAccount,
-        amount: BigDecimal,
-        operation: ((CurrencyAccount, BigDecimal) -> CompletionStage<CurrencyResult>)?,
-    ): CompletionStage<CurrencyResult> {
-        if (!definition.accepts(amount) || amount.signum() <= 0) return invalidAmount()
-        return operation?.invoke(account, definition.normalize(amount)) ?: unsupported(capability)
+    private interface CapabilitySource { val declaredCapabilities: Set<CurrencyCapability> }
+
+    private class ConfiguredProvider(
+        override val descriptor: CurrencyDescriptor,
+        private val balances: (CurrencyAccount) -> CompletionStage<BigDecimal>,
+        private val deposits: ((CurrencyAccount, BigDecimal) -> CompletionStage<CurrencyResult>)?,
+        private val withdrawals: ((CurrencyAccount, BigDecimal) -> CompletionStage<CurrencyResult>)?,
+        private val mutation: ((CurrencyAccount, BigDecimal) -> CompletionStage<CurrencyResult>)?,
+        private val resets: ((CurrencyAccount) -> CompletionStage<CurrencyResult>)?,
+        private val transfers: ((CurrencyAccount, CurrencyAccount, BigDecimal) -> CompletionStage<CurrencyResult>)?,
+        private val formatting: ((BigDecimal) -> String)?,
+        private val extensions: Map<Class<*>, Any>,
+    ) : CurrencyProvider, CurrencyDeposits, CurrencyWithdrawals, CurrencyBalanceMutation, CurrencyReset, CurrencyTransfers, CurrencyFormatting, CapabilitySource {
+        override val declaredCapabilities = buildSet {
+            add(CurrencyCapability.BALANCE)
+            if (deposits != null) add(CurrencyCapability.DEPOSIT)
+            if (withdrawals != null) add(CurrencyCapability.WITHDRAW)
+            if (mutation != null) add(CurrencyCapability.SET_BALANCE)
+            if (resets != null) add(CurrencyCapability.RESET)
+            if (transfers != null) add(CurrencyCapability.TRANSFER)
+            if (formatting != null) add(CurrencyCapability.FORMATTING)
+        }
+        override fun balance(account: CurrencyAccount) = balances(account)
+        override fun deposit(account: CurrencyAccount, amount: BigDecimal) = deposits?.invoke(account, amount) ?: unsupported()
+        override fun withdraw(account: CurrencyAccount, amount: BigDecimal) = withdrawals?.invoke(account, amount) ?: unsupported()
+        override fun setBalance(account: CurrencyAccount, amount: BigDecimal) = mutation?.invoke(account, amount) ?: unsupported()
+        override fun reset(account: CurrencyAccount) = resets?.invoke(account) ?: unsupported()
+        override fun transfer(from: CurrencyAccount, to: CurrencyAccount, amount: BigDecimal) = transfers?.invoke(from, to, amount) ?: unsupported()
+        override fun format(amount: BigDecimal) = formatting?.invoke(amount) ?: descriptor.normalize(amount).toPlainString() + descriptor.symbol
+        override fun <T : Any> extension(type: Class<T>): T? = extensions[type]?.let(type::cast)
+        private fun unsupported() = CompletableFuture.completedFuture(CurrencyResult.unsupported("Operation is not configured"))
     }
-
-    private fun invalidAmount() = CompletableFuture.completedFuture(
-        CurrencyResult.rejected(CurrencyRejectReason.INVALID_AMOUNT, "Amount must be positive and use the configured precision")
-    )
-    private fun unsupported(capability: CurrencyCapability) =
-        CompletableFuture.completedFuture(CurrencyResult.unsupported("Currency does not support $capability"))
-
-    private fun <T> safely(operation: () -> CompletionStage<T>): CompletionStage<T> = try {
-        operation()
-    } catch (error: Throwable) {
-        failedCurrency(error.message ?: error.javaClass.simpleName, error)
-    }
-
-    private fun safelyResult(operation: () -> CompletionStage<CurrencyResult>): CompletionStage<CurrencyResult> = try {
-        operation().exceptionally(CurrencyResult::failed)
-    } catch (error: Throwable) {
-        CompletableFuture.completedFuture(CurrencyResult.failed(error))
-    }
-
-    private fun <T> failedCurrency(message: String, cause: Throwable? = null): CompletionStage<T> =
-        CompletableFuture<T>().also { it.completeExceptionally(IllegalStateException(message, cause)) }
 
     private fun parseReference(consumer: PluginId, reference: String): CurrencyKey {
         val separator = reference.indexOf(':')
-        return if (separator < 0) CurrencyKey(consumer, reference.lowercase()) else CurrencyKey(
-            PluginId.of(reference.substring(0, separator)), reference.substring(separator + 1).lowercase()
-        )
+        return if (separator < 0) CurrencyKey(consumer, normalizeName(reference)) else CurrencyKey(PluginId.of(reference.substring(0, separator)), normalizeName(reference.substring(separator + 1)))
+    }
+    private fun normalizeName(value: String) = value.trim().lowercase().also { require(it.matches(Regex("[a-z0-9_.-]+"))) { "Invalid currency name: $value" } }
+
+    companion object {
+        private fun <T> completed(operation: () -> T): CompletionStage<T> = try {
+            CompletableFuture.completedFuture(operation())
+        } catch (error: Throwable) {
+            failed("Currency operation failed", error)
+        }
+        private fun <T> failed(message: String, cause: Throwable? = null): CompletionStage<T> = CompletableFuture<T>().also {
+            it.completeExceptionally(IllegalStateException(message, cause))
+        }
     }
 }

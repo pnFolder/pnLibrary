@@ -23,27 +23,24 @@ internal object BukkitCurrencyAdapters {
     }.getOrNull()
 }
 
-private class ReflectiveVaultCurrency(private val economy: Any) : CurrencyProvider {
+private class ReflectiveVaultCurrency(private val economy: Any) :
+    CurrencyProvider, CurrencyDeposits, CurrencyWithdrawals, CurrencyFormatting {
     private val methods = economy.javaClass.methods.toList()
     private val digits = invoke("fractionalDigits")?.toString()?.toIntOrNull()?.coerceIn(0, 18) ?: 2
-    override val definition = CurrencyDefinition(
+    override val descriptor = CurrencyDescriptor(
         displayName = invoke("currencyNamePlural")?.toString()?.ifBlank { "Money" } ?: "Money",
+        symbol = "",
         fractionDigits = digits,
+        roundingMode = java.math.RoundingMode.DOWN,
     )
-    override val capabilities = setOf(
-        CurrencyCapability.BALANCE, CurrencyCapability.DEPOSIT, CurrencyCapability.WITHDRAW,
-        CurrencyCapability.OFFLINE_ACCOUNTS, CurrencyCapability.FORMATTING,
-    ) + if (digits > 0) setOf(CurrencyCapability.FRACTIONAL_AMOUNTS) else emptySet()
 
     override fun balance(account: CurrencyAccount) = completed {
         decimal(invokePlayer("getBalance", account, null))
     }
     override fun deposit(account: CurrencyAccount, amount: BigDecimal) = transaction("depositPlayer", account, amount)
     override fun withdraw(account: CurrencyAccount, amount: BigDecimal) = transaction("withdrawPlayer", account, amount)
-    override fun setBalance(account: CurrencyAccount, amount: BigDecimal) = unsupported("Vault does not expose atomic setBalance")
-    override fun reset(account: CurrencyAccount) = unsupported("Vault does not expose reset")
-    override fun transfer(from: CurrencyAccount, to: CurrencyAccount, amount: BigDecimal) = unsupported("Vault does not expose atomic transfer")
-    override fun format(amount: BigDecimal): String = invoke("format", amount.toDouble())?.toString() ?: super.format(amount)
+    override fun format(amount: BigDecimal): String =
+        invoke("format", amount.toDouble())?.toString() ?: descriptor.normalize(amount).toPlainString()
 
     private fun transaction(name: String, account: CurrencyAccount, amount: BigDecimal) = completed {
         val response = invokePlayer(name, account, amount) ?: return@completed CurrencyResult.unavailable("Vault returned no response")
@@ -69,13 +66,10 @@ private class ReflectiveVaultCurrency(private val economy: Any) : CurrencyProvid
     }?.invoke(economy, *arguments)
 }
 
-private class ReflectivePlayerPointsCurrency(private val api: Any) : CurrencyProvider {
+private class ReflectivePlayerPointsCurrency(private val api: Any) :
+    CurrencyProvider, CurrencyDeposits, CurrencyWithdrawals, CurrencyBalanceMutation, CurrencyReset {
     private val methods = api.javaClass.methods.toList()
-    override val definition = CurrencyDefinition("Points", fractionDigits = 0)
-    override val capabilities = setOf(
-        CurrencyCapability.BALANCE, CurrencyCapability.DEPOSIT, CurrencyCapability.WITHDRAW,
-        CurrencyCapability.SET_BALANCE, CurrencyCapability.RESET, CurrencyCapability.OFFLINE_ACCOUNTS,
-    )
+    override val descriptor = CurrencyDescriptor("Points", "", 0, java.math.RoundingMode.DOWN)
 
     override fun balance(account: CurrencyAccount) = completed {
         decimal(call(listOf("lookUp", "getPoints"), account.playerId))
@@ -86,7 +80,6 @@ private class ReflectivePlayerPointsCurrency(private val api: Any) : CurrencyPro
     override fun reset(account: CurrencyAccount) = completed {
         result(call(listOf("reset"), account.playerId), "PlayerPoints rejected reset")
     }
-    override fun transfer(from: CurrencyAccount, to: CurrencyAccount, amount: BigDecimal) = unsupported("PlayerPoints does not expose atomic transfer")
 
     private fun mutation(names: List<String>, account: CurrencyAccount, amount: BigDecimal) = completed {
         result(call(names, account.playerId, amount.intValueExact()), "PlayerPoints rejected ${names.first()}")
@@ -114,6 +107,3 @@ private fun <T> completed(operation: () -> T): CompletionStage<T> = try {
 } catch (error: Throwable) {
     CompletableFuture<T>().also { it.completeExceptionally(error.cause ?: error) }
 }
-
-private fun unsupported(message: String): CompletionStage<CurrencyResult> =
-    CompletableFuture.completedFuture(CurrencyResult.unsupported(message))

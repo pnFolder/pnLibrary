@@ -7,7 +7,7 @@
 - Removed the handwritten player-action serializer and runtime SPI action DTO.
 - Added short configuration durations such as `500ms`, `10s`, and `5m`.
 - Added extensible per-plugin options with PlaceholderAPI control, automatic Bukkit detection, restart recovery, and explicit publication states.
-- Added a plugin-owned Currency API with builder and provider registration, access policies, precision validation, capabilities, extensions, and automatic Vault/PlayerPoints bridges.
+- Added a plugin-owned Currency API with single-call DSL and provider-class registration, inferred capability interfaces, aliases, access policies, precision validation, typed extensions, and automatic Vault/PlayerPoints bridges.
 
 ## 2.1.0-beta.1
 
