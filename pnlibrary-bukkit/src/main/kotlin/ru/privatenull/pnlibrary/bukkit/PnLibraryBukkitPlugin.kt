@@ -71,8 +71,7 @@ class PnLibraryBukkitPlugin : JavaPlugin(), Listener {
 
     private fun connectPlaceholderApi() {
         val host = runtimeHost ?: return
-        if (placeholderApiBridge != null || !host.library.configuration.placeholderApiIntegration ||
-            !server.pluginManager.isPluginEnabled("PlaceholderAPI")) return
+        if (placeholderApiBridge != null || !server.pluginManager.isPluginEnabled("PlaceholderAPI")) return
         placeholderApiBridge = host.library.placeholderAdapters.register(PlaceholderApiAdapter(this))
         logger.info("PlaceholderAPI integration connected")
     }

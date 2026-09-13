@@ -32,7 +32,8 @@ internal class PlaceholderHub(private val platform: PlatformAdapter) : Placehold
         system("runtime.java", String::class.java) { System.getProperty("java.version", "unknown") }
     }
 
-    fun scope(owner: PluginId): PlaceholderService = Scope(owner)
+    fun scope(owner: PluginId, placeholderApiEnabled: Boolean = true): PlaceholderService =
+        Scope(owner, placeholderApiEnabled)
 
     override fun register(adapter: PlaceholderAdapter): AutoCloseable {
         val key = adapter.id.lowercase()
@@ -54,7 +55,10 @@ internal class PlaceholderHub(private val platform: PlatformAdapter) : Placehold
         entries[id(owner, key)] = Entry(owner, typedKey, { CompletableFuture.completedFuture(value()) }, PlaceholderAccess.shared(), PlaceholderCachePolicy.none(), null)
     }
 
-    private inner class Scope(private val owner: PluginId) : PlaceholderService {
+    private inner class Scope(
+        private val owner: PluginId,
+        private val placeholderApiEnabled: Boolean,
+    ) : PlaceholderService {
         private val owned = ConcurrentHashMap.newKeySet<String>()
         private val adapterHandles = ConcurrentHashMap.newKeySet<AutoCloseable>()
         private val closed = AtomicBoolean(false)
@@ -65,7 +69,7 @@ internal class PlaceholderHub(private val platform: PlatformAdapter) : Placehold
             override fun all() = this@PlaceholderHub.all()
         }
 
-        override fun <T : Any> placeholder(key: PlaceholderKey<T>): PlaceholderBuilder<T> = Builder(owner, key) { entry ->
+        override fun <T : Any> placeholder(key: PlaceholderKey<T>): PlaceholderBuilder<T> = Builder(owner, key, placeholderApiEnabled) { entry ->
             check(!closed.get()) { "Placeholder scope $owner is closed" }
             val full = id(owner, key.value)
             require(entries.putIfAbsent(full, entry) == null) { "Placeholder $full is already registered" }
@@ -102,7 +106,10 @@ internal class PlaceholderHub(private val platform: PlatformAdapter) : Placehold
     }
 
     private inner class Builder<T : Any>(
-        private val owner: PluginId, private val key: PlaceholderKey<T>, private val install: (Entry<T>) -> Unit,
+        private val owner: PluginId,
+        private val key: PlaceholderKey<T>,
+        private val placeholderApiEnabled: Boolean,
+        private val install: (Entry<T>) -> Unit,
     ) : PlaceholderBuilder<T> {
         private var resolver: ((PlaceholderRequest) -> CompletionStage<T?>)? = null
         private var access = PlaceholderAccess.ownerOnly()
@@ -123,7 +130,9 @@ internal class PlaceholderHub(private val platform: PlatformAdapter) : Placehold
         override fun register(): PlaceholderRegistration<T> {
             val entry = Entry(owner, key, resolver ?: error("Placeholder ${key.value} has no resolver"), access, cache, fallback)
             install(entry)
-            publications.forEach(entry::publish)
+            publications
+                .filter { it.adapterId.lowercase() != "placeholderapi" || placeholderApiEnabled }
+                .forEach(entry::publish)
             return entry
         }
     }

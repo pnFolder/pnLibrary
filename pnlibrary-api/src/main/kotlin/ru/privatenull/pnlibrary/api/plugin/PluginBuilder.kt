@@ -22,6 +22,12 @@ interface PluginBuilder {
     fun diagnostics(dataDirectory: Path, container: DiagnosticContainer): PluginBuilder
     fun updates(request: PluginUpdateRequest): PluginBuilder
 
+    /** Enables publishing this plugin's placeholders to PlaceholderAPI. */
+    fun placeholderApi(): PluginBuilder = placeholderApi(true)
+
+    /** Enables or disables publishing this plugin's placeholders to PlaceholderAPI. */
+    fun placeholderApi(enabled: Boolean): PluginBuilder
+
     /** Builds the update request inline instead of requiring a temporary variable. */
     fun updates(configure: Consumer<PluginUpdateRequest.Builder>): PluginBuilder {
         val builder = PluginUpdateRequest.builder()

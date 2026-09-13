@@ -87,12 +87,21 @@ PlaceholderRegistration<String> clanName = context.getPlaceholders()
     .register();
 ```
 
+Интеграция настраивается в коде при регистрации плагина, рядом с метриками,
+диагностикой и обновлениями:
+
+```java
+PluginContext context = library.getPlugins().register(plugin, setup -> {
+    setup.placeholderApi();       // включено; это значение и так используется по умолчанию
+    // setup.placeholderApi(false); // полностью запретить публикацию этого плагина
+});
+```
+
 В pnLibrary это `{pnclans:clan.name}`, во внешнем API —
 `%pnclans_clan_name%`. Bukkit-runtime сам обнаруживает PlaceholderAPI. Если он
 не установлен, внутренняя регистрация продолжает работать, а
 `clanName.getPublications().get(0).getState()` возвращает `UNAVAILABLE`.
-Автоподключение управляется параметром `placeholder-api-integration` в
-`plugins/pnLibrary/config.yml`.
+Отдельного параметра в `plugins/pnLibrary/config.yml` нет.
 
 Если PlaceholderAPI перезагрузили отдельно, pnLibrary отключает старый bridge,
 переводит внешние публикации в `UNAVAILABLE`, а после повторного включения

@@ -127,7 +127,7 @@ internal class PluginRegistryImpl(
             taskScope = tasks.scope(owner)
             eventScope = events.scope(id)
             configScope = configurations.scope(owner)
-            placeholderScope = placeholderHub.scope(id)
+            placeholderScope = placeholderHub.scope(id, definition.placeholderApiEnabled)
             definition.listeners.forEach { eventScope.register(it) }
             metricsController = MetricsControllerImpl(
                 owner,
@@ -159,6 +159,7 @@ internal class PluginRegistryImpl(
                 metricsController,
                 diagnosticRegistration,
                 updateRegistration,
+                definition.placeholderApiEnabled,
                 definition.listeners.size,
             )
         } catch (error: Throwable) {
@@ -209,6 +210,7 @@ internal class PluginRegistryImpl(
         override val metrics: MetricsController,
         override val diagnostics: DiagnosticRegistration?,
         override val updates: UpdateRegistration?,
+        private val placeholderApiEnabled: Boolean,
         private val listenerCount: Int,
     ) : PluginContext {
         private val contextClosed = AtomicBoolean(false)
@@ -223,6 +225,7 @@ internal class PluginRegistryImpl(
                     .status("Metrics", metricsStatus())
                     .status("Updates", updatesStatus())
                     .status("Diagnostics", if (diagnostics == null) null else "enabled")
+                    .status("PlaceholderAPI", placeholderApiStatus())
                     .status("Events", if (listenerCount == 0) null else "$listenerCount listener(s)")
             override fun disabled(): MessageBox =
                 logging.shutdownBox(owner, metadata.name, metadata.version)
@@ -281,6 +284,12 @@ internal class PluginRegistryImpl(
             "${it.snapshot.channel.name} · ${it.repository} · Java ${it.snapshot.requiredJava}+"
         }
 
+        private fun placeholderApiStatus(): String = if (!placeholderApiEnabled) {
+            "disabled"
+        } else {
+            placeholderHub.get("placeholderapi")?.state?.name?.lowercase() ?: "unavailable"
+        }
+
         private fun MessageBox.status(label: String, detail: String?): MessageBox =
             if (detail == null) skip(label, "not configured") else ok(label, detail)
 
@@ -296,6 +305,7 @@ internal class PluginRegistryImpl(
         var diagnosticsDirectory: Path? = null
         var diagnosticContainer: DiagnosticContainer? = null
         var updateRequest: PluginUpdateRequest? = null
+        var placeholderApiEnabled: Boolean = true
         val listeners = mutableListOf<Listener>()
 
         override fun metadata(configure: Consumer<PluginMetadataBuilder>): PluginBuilder = apply {
@@ -320,6 +330,10 @@ internal class PluginRegistryImpl(
 
         override fun updates(request: PluginUpdateRequest): PluginBuilder = apply {
             updateRequest = request
+        }
+
+        override fun placeholderApi(enabled: Boolean): PluginBuilder = apply {
+            placeholderApiEnabled = enabled
         }
 
         override fun listener(listener: Listener): PluginBuilder = apply {
