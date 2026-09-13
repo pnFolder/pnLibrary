@@ -57,13 +57,13 @@ internal class PluginRegistryImpl(
     private val metrics: MetricsService,
     private val diagnostics: DiagnosticsService,
     private val updates: UpdateService,
+    private val placeholderHub: PlaceholderHub,
     private val configurations: ConfigurationServiceImpl = ConfigurationServiceImpl(platform),
 ) : PluginRegistry {
 
     private val contexts = linkedMapOf<PluginId, Context>()
     private val owners = IdentityHashMap<Any, Context>()
     private val closed = AtomicBoolean(false)
-    private val placeholderHub = PlaceholderHub(platform)
     private val sharedComponentCache = ComponentCache()
     override fun register(owner: Any, configure: Consumer<PluginBuilder>): PluginContext {
         val details = platform.ownerDetails(owner)

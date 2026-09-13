@@ -120,11 +120,15 @@ internal class PlaceholderHub(private val platform: PlatformAdapter) : Placehold
             val entry = Entry(owner, key, resolver ?: error("Placeholder ${key.value} has no resolver"), access, cache, fallback)
             install(entry)
             publications.forEach { publication ->
-                val adapter = get(publication.adapterId) ?: return@forEach
-                @Suppress("UNCHECKED_CAST")
-                entry.external += adapter.publish(owner, key.value, PlaceholderResolver { request ->
-                    entry.resolve(request).toCompletableFuture().join() as Any?
-                } as PlaceholderResolver<Any>, publication)
+                val adapter = get(publication.adapterId)
+                if (adapter == null) {
+                    entry.publications += UnavailablePublication
+                } else {
+                    @Suppress("UNCHECKED_CAST")
+                    entry.publications += adapter.publish(owner, key.value, PlaceholderResolver { request ->
+                        entry.resolve(request).toCompletableFuture().join() as Any?
+                    } as PlaceholderResolver<Any>, publication)
+                }
             }
             return entry
         }
@@ -137,7 +141,7 @@ internal class PlaceholderHub(private val platform: PlatformAdapter) : Placehold
     ) : PlaceholderRegistration<T> {
         private val enabled = AtomicBoolean(true)
         private val cache = synchronizedMap<String, CacheValue<T>>()
-        val external = mutableListOf<ExternalPlaceholderRegistration>()
+        override val publications = mutableListOf<ExternalPlaceholderRegistration>()
         override val isEnabled: Boolean get() = enabled.get()
         override fun enable() { enabled.set(true) }
         override fun disable() { enabled.set(false) }
@@ -164,7 +168,12 @@ internal class PlaceholderHub(private val platform: PlatformAdapter) : Placehold
             PlaceholderCacheScope.PLAYER -> request.playerId?.toString() ?: "no-player"
             PlaceholderCacheScope.ARGUMENTS -> request.parameters.toSortedMap().toString() + request.values.toSortedMap().toString()
         }
-        override fun close() { disable(); invalidateCache(); external.forEach { runCatching(it::close) }; external.clear() }
+        override fun close() { disable(); invalidateCache(); publications.forEach { runCatching(it::close) }; publications.clear() }
+    }
+
+    private object UnavailablePublication : ExternalPlaceholderRegistration {
+        override val state = PlaceholderAdapterState.UNAVAILABLE
+        override fun close() = Unit
     }
 
     private fun resolveFor(consumer: PluginId, expression: String, playerId: UUID?, values: Map<String, Any?>): CompletionStage<Any?> {

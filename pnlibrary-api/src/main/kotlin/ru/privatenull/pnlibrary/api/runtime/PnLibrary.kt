@@ -12,6 +12,7 @@ import ru.privatenull.pnlibrary.api.tasks.TaskService
 import ru.privatenull.pnlibrary.api.services.ServiceManager
 import ru.privatenull.pnlibrary.api.updates.UpdateService
 import java.io.Closeable
+import ru.privatenull.pnlibrary.api.placeholders.PlaceholderAdapterRegistry
 
 /**
  * Main pnLibrary facade shared by all plugins in one server process.
@@ -59,6 +60,9 @@ interface PnLibrary : Closeable {
 
     /** Global registry and high-level entry point for consumer plugins. */
     val plugins: PluginRegistry
+
+    /** Runtime-detected bridges such as PlaceholderAPI. Consumer plugins normally do not register these manually. */
+    val placeholderAdapters: PlaceholderAdapterRegistry
 
     /** Builds a diagnostic report from an already validated request. */
     fun createDiagnosticReport(request: DebugRequest): DiagnosticReport

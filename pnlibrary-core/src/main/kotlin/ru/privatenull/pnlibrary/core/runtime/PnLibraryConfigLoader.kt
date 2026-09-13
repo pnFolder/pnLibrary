@@ -56,6 +56,7 @@ object PnLibraryConfigLoader {
             excludedPaths = values.strings("excluded-paths"),
             secretKeyPatterns = values.strings("secret-key-patterns"),
             redactValuePatterns = values.strings("redact-value-patterns"),
+            placeholderApiIntegration = values.boolean("placeholder-api-integration", defaults.placeholderApiIntegration),
         )
     }
 
@@ -102,7 +103,7 @@ object PnLibraryConfigLoader {
         "upload-key-id", "allow-plaintext", "configs", "logs", "log-records", "history-retention-days",
         "history-max-bytes", "cooldown-seconds",
         "keep-reports", "max-report-bytes", "delete-after-days", "excluded-paths",
-        "secret-key-patterns", "redact-value-patterns",
+        "secret-key-patterns", "redact-value-patterns", "placeholder-api-integration",
     )
     private val DEFAULT_CONFIG = """
         # Diagnostics are encrypted before upload. Set upload to false for local-only reports.
@@ -110,6 +111,8 @@ object PnLibraryConfigLoader {
         upload-mode: encrypted
         upload-providers: [catbox, fileio]
         allow-plaintext: false
+        # Bukkit only: automatically connect PlaceholderAPI when it is installed.
+        placeholder-api-integration: true
         upload-endpoint: https://api.mclo.gs/1/log
         upload-public-base: https://mclo.gs/
         upload-public-key: ''

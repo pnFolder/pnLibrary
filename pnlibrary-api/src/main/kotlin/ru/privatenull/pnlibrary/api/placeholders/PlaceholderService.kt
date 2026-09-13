@@ -9,6 +9,8 @@ interface PlaceholderRegistration<T : Any> : AutoCloseable {
     val owner: PluginId
     val key: PlaceholderKey<T>
     val isEnabled: Boolean
+    /** External publications requested for this placeholder, including unavailable adapters. */
+    val publications: List<ExternalPlaceholderRegistration>
     fun enable()
     fun disable()
     fun invalidateCache()
@@ -22,6 +24,12 @@ interface PlaceholderBuilder<T : Any> {
     fun cache(policy: PlaceholderCachePolicy): PlaceholderBuilder<T>
     fun fallback(value: T): PlaceholderBuilder<T>
     fun publish(publication: PlaceholderPublication): PlaceholderBuilder<T>
+    fun publishToPlaceholderApi(): PlaceholderBuilder<T> =
+        publish(PlaceholderPublication("placeholderapi"))
+    fun publishToPlaceholderApi(namespace: String): PlaceholderBuilder<T> =
+        publish(PlaceholderPublication("placeholderapi", namespace))
+    fun publishToPlaceholderApi(namespace: String, name: String): PlaceholderBuilder<T> =
+        publish(PlaceholderPublication("placeholderapi", namespace, name))
     fun register(): PlaceholderRegistration<T>
 }
 

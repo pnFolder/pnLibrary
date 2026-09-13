@@ -79,20 +79,20 @@ formatter регистрируется типизированно через `Pl
 ## PlaceholderAPI
 
 ```java
-context.getPlaceholders().adapters().register(new PlaceholderApiAdapter(plugin));
-
-context.getPlaceholders()
+PlaceholderRegistration<String> clanName = context.getPlaceholders()
     .placeholder("clan.name", String.class)
     .resolve(request -> clanService.name(request.requirePlayerId()))
     .access(PlaceholderAccess.shared())
-    .publish(new PlaceholderPublication("placeholderapi", "pnclans", "clan_name"))
+    .publishToPlaceholderApi("pnclans", "clan_name")
     .register();
 ```
 
 В pnLibrary это `{pnclans:clan.name}`, во внешнем API —
-`%pnclans_clan_name%`. Отсутствующий PlaceholderAPI не ломает внутреннюю
-регистрацию. Для другой системы реализуется `PlaceholderAdapter` и добавляется в
-тот же registry.
+`%pnclans_clan_name%`. Bukkit-runtime сам обнаруживает PlaceholderAPI. Если он
+не установлен, внутренняя регистрация продолжает работать, а
+`clanName.getPublications().get(0).getState()` возвращает `UNAVAILABLE`.
+Автоподключение управляется параметром `placeholder-api-integration` в
+`plugins/pnLibrary/config.yml`.
 
 ## Действия и cooldown
 

@@ -18,6 +18,7 @@ import ru.privatenull.pnlibrary.core.logging.DiagnosticLogBuffer
 import ru.privatenull.pnlibrary.core.logging.PlatformLoggingService
 import ru.privatenull.pnlibrary.core.metrics.MetricsRegistry
 import ru.privatenull.pnlibrary.core.plugin.PluginRegistryImpl
+import ru.privatenull.pnlibrary.core.placeholders.PlaceholderHub
 import ru.privatenull.pnlibrary.core.security.EncryptedEnvelopeCodec
 import ru.privatenull.pnlibrary.core.services.ServiceManagerImpl
 import ru.privatenull.pnlibrary.core.tasks.TaskServiceImpl
@@ -92,6 +93,8 @@ class PnLibraryImpl(
         recordAndLog(owner, identifiedMessage, error)
     }
     override val events: ru.privatenull.pnlibrary.api.events.EventService get() = eventService
+    private val placeholderHub = PlaceholderHub(platform)
+    override val placeholderAdapters: ru.privatenull.pnlibrary.api.placeholders.PlaceholderAdapterRegistry get() = placeholderHub
     override val plugins: ru.privatenull.pnlibrary.api.plugin.PluginRegistry = PluginRegistryImpl(
         platform = platform,
         events = eventService,
@@ -102,6 +105,7 @@ class PnLibraryImpl(
         metrics = metricsRegistry,
         diagnostics = diagnostics,
         updates = updateService,
+        placeholderHub = placeholderHub,
     )
 
     val uploader: UploadProvider? = initUploader()

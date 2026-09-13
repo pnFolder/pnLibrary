@@ -24,6 +24,8 @@ data class PnLibraryConfig @JvmOverloads constructor(
     val excludedPaths: List<String> = emptyList(),
     val secretKeyPatterns: List<String> = emptyList(),
     val redactValuePatterns: List<String> = emptyList(),
+    /** Automatically installs the Bukkit PlaceholderAPI bridge when the plugin is present. */
+    val placeholderApiIntegration: Boolean = true,
 ) {
     init {
         require(uploadMode in setOf("encrypted", "disabled")) {

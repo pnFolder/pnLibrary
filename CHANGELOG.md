@@ -6,6 +6,7 @@
 - Added reusable conditional branches, delayed conditions, permission/flag/chance checks, Bukkit effects, and particles.
 - Removed the handwritten player-action serializer and runtime SPI action DTO.
 - Added short configuration durations such as `500ms`, `10s`, and `5m`.
+- Added automatic Bukkit PlaceholderAPI detection and explicit external publication states.
 
 ## 2.1.0-beta.1
 

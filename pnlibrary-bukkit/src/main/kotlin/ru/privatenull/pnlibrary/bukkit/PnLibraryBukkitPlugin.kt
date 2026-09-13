@@ -5,12 +5,14 @@ import ru.privatenull.pnlibrary.bukkit.inventory.MenuService
 import ru.privatenull.pnlibrary.bukkit.inventory.MenuServiceImpl
 import ru.privatenull.pnlibrary.bukkit.server.ServerInfo
 import ru.privatenull.pnlibrary.core.runtime.PnLibraryRuntimeHost
+import ru.privatenull.pnlibrary.bukkit.placeholders.PlaceholderApiAdapter
 
 /** Bukkit entry point that owns the pnLibrary runtime and Bukkit-only services. */
 class PnLibraryBukkitPlugin : JavaPlugin() {
     private var runtimeHost: PnLibraryRuntimeHost? = null
     private var menuService: MenuServiceImpl? = null
     private var audienceService: BukkitAudienceService? = null
+    private var placeholderApiBridge: AutoCloseable? = null
 
     override fun onEnable() {
         val adapter = BukkitPlatformAdapter(this)
@@ -23,6 +25,8 @@ class PnLibraryBukkitPlugin : JavaPlugin() {
             installBukkitServices(host, adapter)
             runtimeHost = host
         } catch (error: Throwable) {
+            placeholderApiBridge?.close()
+            placeholderApiBridge = null
             host.close()
             throw error
         }
@@ -33,6 +37,8 @@ class PnLibraryBukkitPlugin : JavaPlugin() {
         menuService = null
         audienceService?.close()
         audienceService = null
+        placeholderApiBridge?.close()
+        placeholderApiBridge = null
         runtimeHost?.close()
         runtimeHost = null
     }
@@ -43,6 +49,10 @@ class PnLibraryBukkitPlugin : JavaPlugin() {
         host.registerService(MenuService::class.java, menuService)
         val audienceService = BukkitAudienceService(this)
         host.registerService(BukkitAudienceService::class.java, audienceService)
+        if (host.library.configuration.placeholderApiIntegration &&
+            server.pluginManager.isPluginEnabled("PlaceholderAPI")) {
+            placeholderApiBridge = host.library.placeholderAdapters.register(PlaceholderApiAdapter(this))
+        }
         this.audienceService = audienceService
         this.menuService = menuService
     }
