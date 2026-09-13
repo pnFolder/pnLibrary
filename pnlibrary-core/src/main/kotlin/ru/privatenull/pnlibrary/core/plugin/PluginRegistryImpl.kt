@@ -21,6 +21,7 @@ import ru.privatenull.pnlibrary.api.plugin.PluginLifecycle
 import ru.privatenull.pnlibrary.api.plugin.PluginMetadata
 import ru.privatenull.pnlibrary.api.plugin.PluginMetadataBuilder
 import ru.privatenull.pnlibrary.api.plugin.PluginMessages
+import ru.privatenull.pnlibrary.api.plugin.PluginOptions
 import ru.privatenull.pnlibrary.api.plugin.PluginRegistry
 import ru.privatenull.pnlibrary.api.tasks.TaskScope
 import ru.privatenull.pnlibrary.api.tasks.TaskService
@@ -312,6 +313,10 @@ internal class PluginRegistryImpl(
             configure.accept(MetadataBuilder(this))
         }
 
+        override fun options(configure: Consumer<PluginOptions>): PluginBuilder = apply {
+            configure.accept(OptionsBuilder(this))
+        }
+
         override fun metrics(
             projectId: Int,
             enabled: Boolean,
@@ -332,12 +337,14 @@ internal class PluginRegistryImpl(
             updateRequest = request
         }
 
-        override fun placeholderApi(enabled: Boolean): PluginBuilder = apply {
-            placeholderApiEnabled = enabled
-        }
-
         override fun listener(listener: Listener): PluginBuilder = apply {
             listeners += listener
+        }
+    }
+
+    private class OptionsBuilder(private val target: Builder) : PluginOptions {
+        override fun placeholderApi(enabled: Boolean): PluginOptions = apply {
+            target.placeholderApiEnabled = enabled
         }
     }
 

@@ -12,6 +12,9 @@ interface PluginBuilder {
     /** Overrides native metadata only when a plugin needs custom display values. */
     fun metadata(configure: Consumer<PluginMetadataBuilder>): PluginBuilder
 
+    /** Changes optional integration switches. Unspecified options keep safe defaults. */
+    fun options(configure: Consumer<PluginOptions>): PluginBuilder
+
     fun metrics(projectId: Int): PluginBuilder = metrics(projectId, true, Consumer { })
     fun metrics(projectId: Int, enabled: Boolean): PluginBuilder =
         metrics(projectId, enabled, Consumer { })
@@ -21,12 +24,6 @@ interface PluginBuilder {
 
     fun diagnostics(dataDirectory: Path, container: DiagnosticContainer): PluginBuilder
     fun updates(request: PluginUpdateRequest): PluginBuilder
-
-    /** Enables publishing this plugin's placeholders to PlaceholderAPI. */
-    fun placeholderApi(): PluginBuilder = placeholderApi(true)
-
-    /** Enables or disables publishing this plugin's placeholders to PlaceholderAPI. */
-    fun placeholderApi(enabled: Boolean): PluginBuilder
 
     /** Builds the update request inline instead of requiring a temporary variable. */
     fun updates(configure: Consumer<PluginUpdateRequest.Builder>): PluginBuilder {

@@ -92,10 +92,15 @@ PlaceholderRegistration<String> clanName = context.getPlaceholders()
 
 ```java
 PluginContext context = library.getPlugins().register(plugin, setup -> {
-    setup.placeholderApi();       // включено; это значение и так используется по умолчанию
-    // setup.placeholderApi(false); // полностью запретить публикацию этого плагина
+    setup.options(options -> {
+        options.placeholderApi(true); // true используется и без явного указания
+    });
 });
 ```
+
+Чтобы запретить внешнюю публикацию только этому плагину, укажите
+`options.placeholderApi(false)`. Остальные настройки регистрации остаются на
+верхнем уровне `setup`, а простые переключатели будут добавляться в `PluginOptions`.
 
 В pnLibrary это `{pnclans:clan.name}`, во внешнем API —
 `%pnclans_clan_name%`. Bukkit-runtime сам обнаруживает PlaceholderAPI. Если он
