@@ -11,7 +11,6 @@ import ru.privatenull.pnlibrary.api.config.ConfigTypes
 fun interface ActionCondition {
     fun matches(context: ActionContext): Boolean
 }
-
 enum class Comparison {
     EQUALS, NOT_EQUALS, CONTAINS, GREATER_THAN, GREATER_OR_EQUAL, LESS_THAN, LESS_OR_EQUAL,
     PRESENT, ABSENT,
@@ -48,7 +47,6 @@ data class ValueCondition(
         }
     }
 }
-
 
 
 
