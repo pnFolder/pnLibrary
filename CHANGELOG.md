@@ -2,6 +2,8 @@
 
 ## Unreleased
 
+## 2.1.0
+
 - Replaced the duplicated `PlayerAction` engine with one polymorphic `Action` model.
 - Added reusable conditional branches, delayed conditions, permission/flag/chance checks, Bukkit effects, and particles.
 - Removed the handwritten player-action serializer and runtime SPI action DTO.

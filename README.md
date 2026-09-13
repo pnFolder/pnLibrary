@@ -59,11 +59,11 @@ gradlew.bat clean test :pnlibrary-distribution:build
 
 Готовые файлы находятся в `pnlibrary-distribution/build/libs`:
 
-- `pnLibrary-2.1.0-beta.1-bukkit-java8.jar`;
-- `pnLibrary-2.1.0-beta.1-bungeecord-java8.jar`;
-- `pnLibrary-2.1.0-beta.1-velocity-java17.jar`;
-- `pnLibrary-api-2.1.0-beta.1.jar` и sources для разработчиков;
-- `pnLibrary-bukkit-api-2.1.0-beta.1.jar` и sources для Bukkit-разработчиков.
+- `pnLibrary-2.1.0-bukkit-java8.jar`;
+- `pnLibrary-2.1.0-bungeecord-java8.jar`;
+- `pnLibrary-2.1.0-velocity-java17.jar`;
+- `pnLibrary-api-2.1.0.jar` и sources для разработчиков;
+- `pnLibrary-bukkit-api-2.1.0.jar` и sources для Bukkit-разработчиков.
 
 Положите один подходящий JAR в папку `plugins` и полностью перезапустите сервер.
 
@@ -89,14 +89,14 @@ repositories {
 }
 
 dependencies {
-    compileOnly("ru.privatenull:pnlibrary-api:2.1.0-beta.1")
+    compileOnly("ru.privatenull:pnlibrary-api:2.1.0")
 }
 ```
 
 Для Bukkit-меню подключается отдельный публичный артефакт:
 
 ```kotlin
-compileOnly("ru.privatenull:pnlibrary-bukkit-api:2.1.0-beta.1")
+compileOnly("ru.privatenull:pnlibrary-bukkit-api:2.1.0")
 ```
 
 Для Bukkit достаточно объявить `pnlibrary-bukkit-api`: общий API подтянется как
