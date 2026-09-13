@@ -37,8 +37,12 @@ internal class PlaceholderHub(private val platform: PlatformAdapter) : Placehold
     override fun register(adapter: PlaceholderAdapter): AutoCloseable {
         val key = adapter.id.lowercase()
         require(adapters.putIfAbsent(key, adapter) == null) { "Placeholder adapter ${adapter.id} is already registered" }
+        entries.values.forEach { it.attach(adapter) }
         return AutoCloseable {
-            if (adapters.remove(key, adapter) && adapter is AutoCloseable) runCatching(adapter::close)
+            if (adapters.remove(key, adapter)) {
+                entries.values.forEach { it.detach(key) }
+                if (adapter is AutoCloseable) runCatching(adapter::close)
+            }
         }
     }
     override fun get(id: String): PlaceholderAdapter? = adapters[id.lowercase()]
@@ -119,17 +123,7 @@ internal class PlaceholderHub(private val platform: PlatformAdapter) : Placehold
         override fun register(): PlaceholderRegistration<T> {
             val entry = Entry(owner, key, resolver ?: error("Placeholder ${key.value} has no resolver"), access, cache, fallback)
             install(entry)
-            publications.forEach { publication ->
-                val adapter = get(publication.adapterId)
-                if (adapter == null) {
-                    entry.publications += UnavailablePublication
-                } else {
-                    @Suppress("UNCHECKED_CAST")
-                    entry.publications += adapter.publish(owner, key.value, PlaceholderResolver { request ->
-                        entry.resolve(request).toCompletableFuture().join() as Any?
-                    } as PlaceholderResolver<Any>, publication)
-                }
-            }
+            publications.forEach(entry::publish)
             return entry
         }
     }
@@ -141,7 +135,10 @@ internal class PlaceholderHub(private val platform: PlatformAdapter) : Placehold
     ) : PlaceholderRegistration<T> {
         private val enabled = AtomicBoolean(true)
         private val cache = synchronizedMap<String, CacheValue<T>>()
-        override val publications = mutableListOf<ExternalPlaceholderRegistration>()
+        private val publicationBindings = java.util.Collections.synchronizedList(mutableListOf<PublicationBinding>())
+        override val publications: List<ExternalPlaceholderRegistration> get() = synchronized(publicationBindings) {
+            publicationBindings.toList()
+        }
         override val isEnabled: Boolean get() = enabled.get()
         override fun enable() { enabled.set(true) }
         override fun disable() { enabled.set(false) }
@@ -168,12 +165,67 @@ internal class PlaceholderHub(private val platform: PlatformAdapter) : Placehold
             PlaceholderCacheScope.PLAYER -> request.playerId?.toString() ?: "no-player"
             PlaceholderCacheScope.ARGUMENTS -> request.parameters.toSortedMap().toString() + request.values.toSortedMap().toString()
         }
-        override fun close() { disable(); invalidateCache(); publications.forEach { runCatching(it::close) }; publications.clear() }
+        fun publish(publication: PlaceholderPublication) {
+            val binding = PublicationBinding(publication, owner, key.value) { request ->
+                @Suppress("UNCHECKED_CAST")
+                resolve(request).toCompletableFuture().join() as Any?
+            }
+            publicationBindings += binding
+            get(publication.adapterId)?.let(binding::attach)
+        }
+        fun attach(adapter: PlaceholderAdapter) = publicationBindings.toList()
+            .filter { it.adapterId == adapter.id.lowercase() }
+            .forEach { it.attach(adapter) }
+        fun detach(adapterId: String) = publicationBindings.toList()
+            .filter { it.adapterId == adapterId.lowercase() }
+            .forEach(PublicationBinding::detach)
+        override fun close() {
+            disable()
+            invalidateCache()
+            publicationBindings.toList().forEach { runCatching(it::close) }
+            publicationBindings.clear()
+        }
     }
 
-    private object UnavailablePublication : ExternalPlaceholderRegistration {
-        override val state = PlaceholderAdapterState.UNAVAILABLE
-        override fun close() = Unit
+    private class PublicationBinding(
+        private val publication: PlaceholderPublication,
+        private val owner: PluginId,
+        private val key: String,
+        private val resolver: PlaceholderResolver<Any>,
+    ) : ExternalPlaceholderRegistration {
+        val adapterId: String = publication.adapterId.lowercase()
+        private val closed = AtomicBoolean(false)
+        @Volatile private var delegate: ExternalPlaceholderRegistration? = null
+        @Volatile private var failed = false
+
+        override val state: PlaceholderAdapterState get() = when {
+            closed.get() -> PlaceholderAdapterState.CLOSED
+            failed -> PlaceholderAdapterState.FAILED
+            delegate == null -> PlaceholderAdapterState.UNAVAILABLE
+            else -> delegate!!.state
+        }
+
+        @Synchronized
+        fun attach(adapter: PlaceholderAdapter) {
+            if (closed.get() || adapter.id.lowercase() != adapterId) return
+            delegate?.let { runCatching(it::close) }
+            delegate = null
+            failed = false
+            runCatching { adapter.publish(owner, key, resolver, publication) }
+                .onSuccess { delegate = it }
+                .onFailure { failed = true }
+        }
+
+        @Synchronized
+        fun detach() {
+            delegate?.let { runCatching(it::close) }
+            delegate = null
+            failed = false
+        }
+
+        override fun close() {
+            if (closed.compareAndSet(false, true)) detach()
+        }
     }
 
     private fun resolveFor(consumer: PluginId, expression: String, playerId: UUID?, values: Map<String, Any?>): CompletionStage<Any?> {

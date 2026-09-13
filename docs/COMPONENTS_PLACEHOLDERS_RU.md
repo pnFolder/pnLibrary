@@ -94,6 +94,11 @@ PlaceholderRegistration<String> clanName = context.getPlaceholders()
 Автоподключение управляется параметром `placeholder-api-integration` в
 `plugins/pnLibrary/config.yml`.
 
+Если PlaceholderAPI перезагрузили отдельно, pnLibrary отключает старый bridge,
+переводит внешние публикации в `UNAVAILABLE`, а после повторного включения
+PlaceholderAPI автоматически публикует их заново. Перезапуск pnLibrary и
+плагинов-владельцев плейсхолдеров не требуется.
+
 ## Действия и cooldown
 
 Единая модель действий описана в [ACTIONS.md](ACTIONS.md). Старые `PlayerAction`, `PlayerActionService` и ручной сериализатор удалены.
