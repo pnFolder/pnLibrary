@@ -28,7 +28,6 @@ ManagedConfig<MainConfig> main = context.getConfigs().yaml(
 );
 MainConfig settings = main.loadValue();
 ```
-
 Kotlin:
 
 ```kotlin
@@ -376,43 +375,7 @@ ConfigOptions options = ConfigOptions.builder()
 
 ## Сценарии действий из конфигурации
 
-> The example below uses the compatibility `PlayerAction` API. For the new
-> immutable and polymorphic configuration model, see [ACTIONS.md](ACTIONS.md).
-
-```java
-public PlayerActionSequence joinActions = new PlayerActionSequence();
-```
-
-```yaml
-joinActions:
-  actions:
-    - type: MESSAGE
-      text: '&aДобро пожаловать, {player}!'
-    - type: TITLE
-      title: '&6Авторизация'
-      subtitle: '&fВведите пароль'
-      fadeIn: 10
-      stay: 70
-      fadeOut: 20
-    - type: ACTION_BAR
-      text: '&eОсталось: {time}'
-    - type: SOUND
-      sound: ENTITY_PLAYER_LEVELUP
-      volume: 1.0
-      soundPitch: 1.0
-```
-
-```java
-context.getActions().execute(player.getUniqueId(), config.joinActions, Map.of(
-    "player", player.getName(),
-    "time", 30
-));
-```
-
-Доступны `MESSAGE`, `TITLE`, `ACTION_BAR`, `KICK`, `TELEPORT`, `SOUND` и
-`PLAYER_COMMAND`. Сценарий выполняется по порядку и привязан к lifecycle плагина:
-после закрытия `PluginContext` новые действия не исполняются. Bukkit поддерживает
-весь набор; прокси выполняет только операции, имеющие смысл на прокси.
+Используйте поле `List<Action>`. Конкретный класс выбирается по `type` стандартным полиморфным механизмом конфигурации; отдельный сериализатор действий не нужен. Полный пример находится в [ACTIONS.md](ACTIONS.md).
 
 ## Миграции версий
 

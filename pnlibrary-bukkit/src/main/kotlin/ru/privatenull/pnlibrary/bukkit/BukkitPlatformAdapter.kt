@@ -23,8 +23,6 @@ import org.bukkit.event.server.PluginDisableEvent
 import org.bukkit.plugin.Plugin
 import org.bukkit.plugin.java.JavaPlugin
 import ru.privatenull.pnlibrary.api.logging.LogLevel
-import ru.privatenull.pnlibrary.api.actions.PlayerAction
-import ru.privatenull.pnlibrary.api.actions.PlayerActionType
 import ru.privatenull.pnlibrary.api.platform.PlatformType
 import ru.privatenull.pnlibrary.bukkit.server.ServerInfo
 import ru.privatenull.pnlibrary.api.runtime.PnLibrary
@@ -35,7 +33,6 @@ import ru.privatenull.pnlibrary.core.diagnostics.DiagnosticCommandEvent
 import ru.privatenull.pnlibrary.core.diagnostics.DiagnosticCommandExecutor
 import ru.privatenull.pnlibrary.spi.metrics.PlatformMetricsFactory
 import ru.privatenull.pnlibrary.spi.platform.PlatformAdapter
-import ru.privatenull.pnlibrary.spi.platform.PlatformPlayerAction
 import net.kyori.adventure.text.serializer.legacy.LegacyComponentSerializer
 import java.io.File
 import java.lang.reflect.Constructor
@@ -276,55 +273,6 @@ class BukkitPlatformAdapter @JvmOverloads constructor(
             }
         }
         executeGlobal(task)
-    }
-
-    override fun executePlayerAction(owner: Any, playerId: UUID, action: PlatformPlayerAction) {
-        val player = Bukkit.getPlayer(playerId) ?: return
-        val source = action.source
-        fun legacy(component: net.kyori.adventure.text.Component?) = component?.let(ADVENTURE_LEGACY::serialize)
-        executeReply(player, Runnable {
-            val type = PlayerActionType.valueOf(source.type.uppercase())
-            when (type) {
-                PlayerActionType.MESSAGE -> player.sendMessage(requireText(legacy(action.text), type))
-                PlayerActionType.TITLE -> sendConfiguredTitle(player, source, legacy(action.title), legacy(action.subtitle))
-                PlayerActionType.ACTION_BAR -> sendActionBar(player, requireText(legacy(action.text), type))
-                PlayerActionType.KICK -> player.kickPlayer(requireText(legacy(action.text), type))
-                PlayerActionType.TELEPORT -> {
-                    val world = Bukkit.getWorld(requireText(source.world, type))
-                        ?: error("Unknown teleport world: ${source.world}")
-                    player.teleport(Location(world, source.x, source.y, source.z, source.yaw, source.pitch))
-                }
-                PlayerActionType.SOUND -> player.playSound(
-                    player.location, requireText(source.sound, type),
-                    source.volume.coerceAtLeast(0f), source.soundPitch.coerceAtLeast(0f),
-                )
-                PlayerActionType.PLAYER_COMMAND -> player.performCommand(
-                    requireText(source.command, type).removePrefix("/"),
-                )
-            }
-        })
-    }
-
-    private fun requireText(value: String?, type: PlayerActionType): String =
-        value?.takeIf(String::isNotBlank) ?: error("Action $type requires a non-blank value")
-
-    private fun sendConfiguredTitle(player: Player, action: PlayerAction, renderedTitle: String?, renderedSubtitle: String?) {
-        val title = requireText(renderedTitle, PlayerActionType.TITLE)
-        runCatching {
-            player.javaClass.getMethod(
-                "sendTitle", String::class.java, String::class.java,
-                Int::class.javaPrimitiveType, Int::class.javaPrimitiveType, Int::class.javaPrimitiveType,
-            ).invoke(player, title, renderedSubtitle.orEmpty(), action.fadeIn, action.stay, action.fadeOut)
-        }.getOrElse { player.sendTitle(title, renderedSubtitle.orEmpty()) }
-    }
-
-    private fun sendActionBar(player: Player, text: String) {
-        val components = TextComponent.fromLegacyText(text)
-        val method = player.spigot().javaClass.methods.firstOrNull {
-            it.name == "sendMessage" && it.parameterTypes.firstOrNull() == ChatMessageType::class.java
-        }
-        if (method == null) player.sendMessage(text)
-        else method.invoke(player.spigot(), ChatMessageType.ACTION_BAR, components)
     }
 
     private companion object {

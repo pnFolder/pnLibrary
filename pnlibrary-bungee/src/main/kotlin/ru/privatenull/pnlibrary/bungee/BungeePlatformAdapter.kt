@@ -7,15 +7,12 @@ import net.md_5.bungee.api.chat.TextComponent
 import net.md_5.bungee.api.plugin.Command
 import net.md_5.bungee.api.plugin.Plugin
 import ru.privatenull.pnlibrary.api.logging.LogLevel
-import ru.privatenull.pnlibrary.api.actions.PlayerAction
-import ru.privatenull.pnlibrary.api.actions.PlayerActionType
 import ru.privatenull.pnlibrary.api.platform.PlatformType
 import ru.privatenull.pnlibrary.api.runtime.PnLibrary
 import ru.privatenull.pnlibrary.core.diagnostics.DiagnosticCommandEvent
 import ru.privatenull.pnlibrary.core.diagnostics.DiagnosticCommandExecutor
 import ru.privatenull.pnlibrary.spi.metrics.PlatformMetricsFactory
 import ru.privatenull.pnlibrary.spi.platform.PlatformAdapter
-import ru.privatenull.pnlibrary.spi.platform.PlatformPlayerAction
 import net.kyori.adventure.text.serializer.legacy.LegacyComponentSerializer
 import java.util.concurrent.atomic.AtomicBoolean
 import java.util.UUID
@@ -34,30 +31,6 @@ class BungeePlatformAdapter(
     override val implementationName: String get() = plugin.proxy.name.ifBlank { type.displayName }
     override val metricsFactory: PlatformMetricsFactory = BungeeMetricsFactory()
     override val dataFolder = plugin.dataFolder.toPath()
-
-    override fun executePlayerAction(owner: Any, playerId: UUID, action: PlatformPlayerAction) {
-        val player = plugin.proxy.getPlayer(playerId) ?: return
-        val source = action.source
-        fun legacy(component: net.kyori.adventure.text.Component?) = component?.let(ADVENTURE_LEGACY::serialize)
-        val type = PlayerActionType.valueOf(source.type.uppercase())
-        when (type) {
-            PlayerActionType.MESSAGE -> player.sendMessage(*TextComponent.fromLegacyText(required(legacy(action.text), type)))
-            PlayerActionType.ACTION_BAR -> player.sendMessage(
-                ChatMessageType.ACTION_BAR, *TextComponent.fromLegacyText(required(legacy(action.text), type)),
-            )
-            PlayerActionType.TITLE -> plugin.proxy.createTitle()
-                .title(TextComponent(required(legacy(action.title), type)))
-                .subTitle(TextComponent(legacy(action.subtitle).orEmpty()))
-                .fadeIn(source.fadeIn).stay(source.stay).fadeOut(source.fadeOut).send(player)
-            PlayerActionType.KICK -> player.disconnect(TextComponent(required(legacy(action.text), type)))
-            PlayerActionType.PLAYER_COMMAND -> player.chat(required(source.command, type).removePrefix("/"))
-            PlayerActionType.TELEPORT, PlayerActionType.SOUND ->
-                log(owner, LogLevel.WARNING, "Action $type is not supported by BungeeCord")
-        }
-    }
-
-    private fun required(value: String?, type: PlayerActionType): String =
-        value?.takeIf(String::isNotBlank) ?: error("Action $type requires a non-blank value")
 
     private companion object { val ADVENTURE_LEGACY = LegacyComponentSerializer.legacySection() }
 

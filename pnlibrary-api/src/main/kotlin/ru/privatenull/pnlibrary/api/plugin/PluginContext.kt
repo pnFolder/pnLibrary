@@ -7,7 +7,7 @@ import ru.privatenull.pnlibrary.api.logging.PnLogger
 import ru.privatenull.pnlibrary.api.services.ServiceManager
 import ru.privatenull.pnlibrary.api.tasks.TaskScope
 import ru.privatenull.pnlibrary.api.updates.UpdateRegistration
-import ru.privatenull.pnlibrary.api.actions.PlayerActionService
+import ru.privatenull.pnlibrary.api.actions.ActionService
 import ru.privatenull.pnlibrary.api.placeholders.PlaceholderService
 import ru.privatenull.pnlibrary.api.text.ComponentService
 import ru.privatenull.pnlibrary.api.cooldowns.CooldownService
@@ -23,7 +23,7 @@ interface PluginContext : AutoCloseable {
     val services: ServiceManager
     val logger: PnLogger
     val configs: ConfigScope
-    val actions: PlayerActionService
+    val actions: ActionService
     val placeholders: PlaceholderService
     val components: ComponentService
     val cooldowns: CooldownService

@@ -11,13 +11,12 @@
 - Distribution JARs contain the correct descriptors and version.
 - API and Bukkit API source JARs are produced.
 
-## Action-system blocker
+## Action system
 
-Do not mark the typed action system stable while `PluginContext.actions` still
-exposes the older `PlayerActionService`. The typed `Action` model currently has
-configuration support, but its cross-platform execution facade is not yet the
-single public entry point. Finish that migration or explicitly label the typed
-API experimental for the next beta.
+- `PluginContext.actions` exposes only `ActionService`.
+- No release may restore `PlayerAction`, a handwritten action serializer, or a
+  second action registry.
+- Built-in and custom actions must use the same polymorphic configuration path.
 
 ## Maven Central blocker
 

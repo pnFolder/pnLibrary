@@ -7,10 +7,12 @@ import net.md_5.bungee.api.chat.TextComponent
 import net.md_5.bungee.api.ChatMessageType
 import net.md_5.bungee.api.connection.ProxiedPlayer
 import ru.privatenull.pnlibrary.api.actions.Action
+import ru.privatenull.pnlibrary.api.actions.PlayerEffect
+import ru.privatenull.pnlibrary.api.actions.PlayerParticle
 import java.util.UUID
 
 /** Adventure-to-Bungee bridge isolated from the platform-independent API. */
-class BungeeLibraryPlayer private constructor(private val player: ProxiedPlayer) : Action.LibraryPlayer {
+class BungeeLibraryPlayer private constructor(private val player: ProxiedPlayer) : ru.privatenull.pnlibrary.api.actions.LibraryPlayer {
     override val uniqueId: UUID get() = player.uniqueId
     override val name: String get() = player.name
 
@@ -23,9 +25,11 @@ class BungeeLibraryPlayer private constructor(private val player: ProxiedPlayer)
     }
 
     override fun playSound(sound: Sound): Boolean = false
+    override fun applyEffect(effect: PlayerEffect): Boolean = false
+    override fun spawnParticle(particle: PlayerParticle): Boolean = false
 
     companion object {
         private val LEGACY = LegacyComponentSerializer.legacySection()
-        @JvmStatic fun of(player: ProxiedPlayer): Action.LibraryPlayer = BungeeLibraryPlayer(player)
+        @JvmStatic fun of(player: ProxiedPlayer): ru.privatenull.pnlibrary.api.actions.LibraryPlayer = BungeeLibraryPlayer(player)
     }
 }

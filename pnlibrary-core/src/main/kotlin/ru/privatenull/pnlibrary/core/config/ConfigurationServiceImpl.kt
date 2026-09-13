@@ -25,8 +25,6 @@ import java.util.regex.Pattern
 import java.math.BigDecimal
 import java.math.BigInteger
 import ru.privatenull.pnlibrary.api.plugin.PluginId
-import ru.privatenull.pnlibrary.api.actions.PlayerAction
-import ru.privatenull.pnlibrary.core.config.actions.PlayerActionSerializer
 
 internal class ConfigurationServiceImpl(private val platform: PlatformAdapter) : ConfigurationService, AutoCloseable {
     private val scopes = java.util.IdentityHashMap<Any, Scope>()
@@ -156,9 +154,8 @@ internal class ConfigurationServiceImpl(private val platform: PlatformAdapter) :
         private fun snapshot() = synchronized(handles) { handles.toList() }
 
         private fun builtInSerializers(): LinkedHashMap<Class<*>, ConfigSerializer<*>> = linkedMapOf(
-            PlayerAction::class.java to PlayerActionSerializer(),
             UUID::class.java to stringSerializer(UUID::fromString),
-            Duration::class.java to stringSerializer(Duration::parse),
+            Duration::class.java to stringSerializer(::parseDuration),
             Instant::class.java to stringSerializer(Instant::parse),
             LocalDate::class.java to stringSerializer(LocalDate::parse),
             LocalDateTime::class.java to stringSerializer(LocalDateTime::parse),
@@ -175,6 +172,20 @@ internal class ConfigurationServiceImpl(private val platform: PlatformAdapter) :
             BigDecimal::class.java to stringSerializer(::BigDecimal),
             BigInteger::class.java to stringSerializer(::BigInteger),
         )
+
+        private fun parseDuration(value: String): Duration {
+            val source = value.trim()
+            val match = Regex("^([0-9]+)(ms|s|m|h|d)$", RegexOption.IGNORE_CASE).matchEntire(source)
+                ?: return Duration.parse(source.uppercase())
+            val amount = match.groupValues[1].toLong()
+            return when (match.groupValues[2].lowercase()) {
+                "ms" -> Duration.ofMillis(amount)
+                "s" -> Duration.ofSeconds(amount)
+                "m" -> Duration.ofMinutes(amount)
+                "h" -> Duration.ofHours(amount)
+                else -> Duration.ofDays(amount)
+            }
+        }
 
         private fun <T : Any> stringSerializer(parser: (String) -> T): ConfigSerializer<T> =
             object : ConfigSerializer<T> {

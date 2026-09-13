@@ -7,9 +7,9 @@ data class MessageAction(
     val messages: List<String> = emptyList(),
     /** `null` inherits the serializer selected by the execution context. */
     val serializerType: ComponentSerializerType? = null,
-    val target: Action.Target = Action.Target.PLAYER,
+    val target: ActionTarget = ActionTarget.PLAYER,
 ) : Action {
-    override fun execute(context: Action.Context) {
+    override fun execute(context: ActionContext) {
         context.target(target).sendMessage(context.component(messages, serializerType))
     }
 }

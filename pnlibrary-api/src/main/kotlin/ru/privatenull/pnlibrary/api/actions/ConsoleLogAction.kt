@@ -7,7 +7,7 @@ data class ConsoleLogAction(
     val text: String = "",
     val level: LogLevel = LogLevel.INFO,
 ) : Action {
-    override fun execute(context: Action.Context) = when (level) {
+    override fun execute(context: ActionContext) = when (level) {
         LogLevel.INFO -> context.logger.info(text)
         LogLevel.SUCCESS -> context.logger.success(text)
         LogLevel.WARNING -> context.logger.warning(text)

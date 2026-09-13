@@ -25,16 +25,16 @@ class BukkitAudienceService(plugin: Plugin) : AutoCloseable {
     /** Current transport can degrade at runtime without disabling the plugin. */
     val nativeTransportAvailable: Boolean get() = !fallbackOnly.get()
 
-    fun player(player: Player): Action.LibraryPlayer =
+    fun player(player: Player): ru.privatenull.pnlibrary.api.actions.LibraryPlayer =
         BukkitLibraryPlayer(player, this)
 
-    fun player(playerId: UUID): Action.LibraryPlayer? {
+    fun player(playerId: UUID): ru.privatenull.pnlibrary.api.actions.LibraryPlayer? {
         val player = pluginServer.getPlayer(playerId) ?: return null
         return player(player)
     }
 
     /** Resolves the current online-player collection whenever an action sends. */
-    fun onlinePlayers(): Action.LibraryAudience = Action.LibraryAudience.dynamic {
+    fun onlinePlayers(): ru.privatenull.pnlibrary.api.actions.LibraryAudience = ru.privatenull.pnlibrary.api.actions.LibraryAudience.dynamic {
         pluginServer.onlinePlayers.map(::player)
     }
 

@@ -1,5 +1,12 @@
 # Changelog
 
+## Unreleased
+
+- Replaced the duplicated `PlayerAction` engine with one polymorphic `Action` model.
+- Added conditional delayed action branches, Bukkit effects, and particles.
+- Removed the handwritten player-action serializer and runtime SPI action DTO.
+- Added short configuration durations such as `500ms`, `10s`, and `5m`.
+
 ## 2.1.0-beta.1
 
 - Added one `PluginContext` for plugin-owned configuration, tasks, events, services, metrics, updates, logging, diagnostics, placeholders, components, and cooldowns.
