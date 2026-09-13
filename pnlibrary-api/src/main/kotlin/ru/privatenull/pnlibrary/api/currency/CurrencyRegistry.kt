@@ -90,14 +90,25 @@ interface CurrencyPlaceholderOptions {
 }
 
 data class CurrencyCommandSettings(
-    val enabled: Boolean,
-    val permissionPrefix: String?,
-    val prefix: String,
-    val success: String,
-    val failure: String,
-    val balance: String,
-    val historyEmpty: String,
-)
+    val enabled: Boolean = true,
+    val permissionPrefix: String? = null,
+    val prefix: String = "§8[§6{currency}§8] ",
+    val success: String = "§aOperation completed: {amount}",
+    val failure: String = "§c{error}",
+    val balance: String = "§fBalance: §a{balance}",
+    val historyEmpty: String = "§7No transactions found.",
+    val confirmationMode: CurrencyConfirmationMode = CurrencyConfirmationMode.CONSOLE,
+    val confirmationTimeoutSeconds: Int = 60,
+) {
+    init {
+        require(confirmationTimeoutSeconds in 10..600) {
+            "Currency confirmation timeout must be between 10 and 600 seconds"
+        }
+    }
+}
+
+/** Determines whether destructive administrative commands require a second approval step. */
+enum class CurrencyConfirmationMode { NONE, CONSOLE }
 
 interface CurrencyCommandOptions {
     fun enabled(value: Boolean): CurrencyCommandOptions
@@ -107,6 +118,8 @@ interface CurrencyCommandOptions {
     fun failure(value: String): CurrencyCommandOptions
     fun balance(value: String): CurrencyCommandOptions
     fun historyEmpty(value: String): CurrencyCommandOptions
+    fun confirmation(mode: CurrencyConfirmationMode): CurrencyCommandOptions
+    fun confirmationTimeoutSeconds(value: Int): CurrencyCommandOptions
 }
 
 interface CurrencyService : AutoCloseable {

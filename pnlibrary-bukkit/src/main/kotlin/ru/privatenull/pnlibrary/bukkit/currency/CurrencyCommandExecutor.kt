@@ -5,6 +5,7 @@ import org.bukkit.ChatColor
 import org.bukkit.command.Command
 import org.bukkit.command.CommandExecutor
 import org.bukkit.command.CommandSender
+import org.bukkit.command.ConsoleCommandSender
 import org.bukkit.command.TabCompleter
 import org.bukkit.entity.Player
 import org.bukkit.plugin.Plugin
@@ -14,14 +15,21 @@ import java.time.ZoneId
 import java.time.format.DateTimeFormatter
 import java.util.UUID
 import java.util.concurrent.CompletionStage
+import java.util.concurrent.ConcurrentHashMap
+import java.security.SecureRandom
 
 internal class CurrencyCommandExecutor(
     private val plugin: Plugin,
     private val currencies: CurrencyProviderRegistry,
 ) : CommandExecutor, TabCompleter {
+    private val pending = ConcurrentHashMap<String, PendingOperation>()
+    private val random = SecureRandom()
 
     override fun onCommand(sender: CommandSender, command: Command, label: String, args: Array<out String>): Boolean {
+        discardExpired()
         if (args.isEmpty() || args[0].equals("help", true)) return help(sender)
+        if (args[0].equals("confirm", true)) return confirm(sender, args.getOrNull(1))
+        if (args[0].equals("cancel", true)) return cancel(sender, args.getOrNull(1))
         if (args[0].equals("list", true)) {
             if (!allowed(sender, "pnlibrary.currency.list")) return true
             val values = currencies.all().joinToString(", ") { it.key.toString() }
@@ -64,8 +72,8 @@ internal class CurrencyCommandExecutor(
         val amount = args[1].toBigDecimalOrNull() ?: return error(sender, "Invalid amount: ${args[1]}")
         val ledger = currency.extension(CurrencyLedger::class.java)
         val type = when (operation) { "add" -> CurrencyTransactionType.CREDIT; "take" -> CurrencyTransactionType.DEBIT; else -> CurrencyTransactionType.SET_BALANCE }
-        val stage = if (ledger == null) call(target, amount) else ledger.transact(
-            CurrencyTransactionRequest(
+        val execute = {
+            if (ledger == null) call(target, amount) else ledger.transact(CurrencyTransactionRequest(
                 type = type,
                 amount = amount,
                 source = if (type == CurrencyTransactionType.DEBIT) CurrencyAccount(target) else null,
@@ -73,21 +81,27 @@ internal class CurrencyCommandExecutor(
                 actor = actor(sender),
                 service = "pnlibrary.command",
                 reason = "Command /pncurrency $operation",
-            )
-        ).thenApply(::transactionResult)
-        complete(sender, stage) { result -> showResult(sender, currency, result, amount) }
-        return true
+                metadata = mapOf("requestedBy" to sender.name, "approval" to "console"),
+            )).thenApply(::transactionResult)
+        }
+        return queueOrRun(sender, currency, "$operation ${args[0]} ${amount.toPlainString()}", execute) { result ->
+            showResult(sender, currency, result, amount)
+        }
     }
 
     private fun reset(sender: CommandSender, currency: Currency, args: List<String>): Boolean {
         val target = args.firstOrNull()?.let(::playerId) ?: return error(sender, "Specify a player.")
         val ledger = currency.extension(CurrencyLedger::class.java)
-        val stage = ledger?.transact(CurrencyTransactionRequest(
-            CurrencyTransactionType.RESET, BigDecimal.ZERO, target = CurrencyAccount(target),
-            actor = actor(sender), service = "pnlibrary.command", reason = "Command /pncurrency reset",
-        ))?.thenApply(::transactionResult) ?: currency.reset(target)
-        complete(sender, stage) { result -> showResult(sender, currency, result, BigDecimal.ZERO) }
-        return true
+        val execute = {
+            ledger?.transact(CurrencyTransactionRequest(
+                CurrencyTransactionType.RESET, BigDecimal.ZERO, target = CurrencyAccount(target),
+                actor = actor(sender), service = "pnlibrary.command", reason = "Command /pncurrency reset",
+                metadata = mapOf("requestedBy" to sender.name, "approval" to "console"),
+            ))?.thenApply(::transactionResult) ?: currency.reset(target)
+        }
+        return queueOrRun(sender, currency, "reset ${args[0]}", execute) { result ->
+            showResult(sender, currency, result, BigDecimal.ZERO)
+        }
     }
 
     private fun pay(sender: CommandSender, currency: Currency, args: List<String>): Boolean {
@@ -144,6 +158,59 @@ internal class CurrencyCommandExecutor(
         }) }
     }
 
+    private fun queueOrRun(
+        sender: CommandSender,
+        currency: Currency,
+        description: String,
+        execute: () -> CompletionStage<CurrencyResult>,
+        completed: (CurrencyResult) -> Unit,
+    ): Boolean {
+        val settings = settings(currency)
+        if (settings.confirmationMode == CurrencyConfirmationMode.NONE) {
+            complete(sender, execute(), completed)
+            return true
+        }
+        if (pending.size >= 1_000) return error(sender, "Too many currency operations are awaiting confirmation.")
+        val token = token()
+        val expiresAt = System.currentTimeMillis() + settings.confirmationTimeoutSeconds * 1_000L
+        pending[token] = PendingOperation(token, expiresAt, currency.key.toString(), description, sender.name, execute, completed)
+        val console = Bukkit.getConsoleSender()
+        console.sendMessage("§8[§6Currency confirmation§8] §e$token §f· ${currency.key} · $description · requested by ${sender.name}")
+        console.sendMessage("§8[§6Currency confirmation§8] §fRun §e/pncurrency confirm $token §fwithin ${settings.confirmationTimeoutSeconds}s")
+        info(sender, "Operation awaits console confirmation. Code: $token")
+        return true
+    }
+
+    private fun confirm(sender: CommandSender, token: String?): Boolean {
+        if (sender !is ConsoleCommandSender) return error(sender, "Only the server console can confirm currency operations.")
+        if (token == null) return error(sender, "Usage: /pncurrency confirm <code>")
+        val operation = pending.remove(token.uppercase()) ?: return error(sender, "Confirmation code is invalid or expired.")
+        if (operation.expiresAt < System.currentTimeMillis()) return error(sender, "Confirmation code has expired.")
+        info(sender, "Confirmed ${operation.currency} · ${operation.description} · requested by ${operation.requestedBy}")
+        complete(sender, operation.execute(), operation.completed)
+        return true
+    }
+
+    private fun cancel(sender: CommandSender, token: String?): Boolean {
+        if (sender !is ConsoleCommandSender) return error(sender, "Only the server console can cancel currency operations.")
+        if (token == null || pending.remove(token.uppercase()) == null) return error(sender, "Confirmation code is invalid or expired.")
+        info(sender, "Pending currency operation cancelled: ${token.uppercase()}")
+        return true
+    }
+
+    private fun discardExpired() {
+        val now = System.currentTimeMillis()
+        pending.entries.removeIf { it.value.expiresAt < now }
+    }
+
+    private fun token(): String {
+        repeat(32) {
+            val value = buildString(10) { repeat(10) { append(TOKEN_ALPHABET[random.nextInt(TOKEN_ALPHABET.length)]) } }
+            if (!pending.containsKey(value)) return value
+        }
+        error("Unable to allocate a currency confirmation code")
+    }
+
     private fun usage(sender: CommandSender, currency: Currency): Boolean {
         info(sender, "/pncurrency ${currency.key} <balance|add|take|set|reset|pay|history>")
         return true
@@ -151,6 +218,7 @@ internal class CurrencyCommandExecutor(
     private fun help(sender: CommandSender): Boolean {
         info(sender, "/pncurrency list")
         info(sender, "/pncurrency <namespace:name> <operation> ...")
+        info(sender, "Console: /pncurrency <confirm|cancel> <code>")
         return true
     }
     private fun allowed(sender: CommandSender, permission: String): Boolean {
@@ -173,7 +241,7 @@ internal class CurrencyCommandExecutor(
     private fun error(sender: CommandSender, message: String): Boolean { sender.sendMessage("§8[§6Currency§8] §c$message"); return true }
 
     override fun onTabComplete(sender: CommandSender, command: Command, alias: String, args: Array<out String>): List<String> = when (args.size) {
-        1 -> (listOf("list") + currencies.all().map { it.key.toString() }).matching(args[0])
+        1 -> (listOf("list", "confirm", "cancel") + currencies.all().map { it.key.toString() }).matching(args[0])
         2 -> listOf("balance", "add", "take", "set", "reset", "pay", "history").matching(args[1])
         3 -> Bukkit.getOnlinePlayers().map(Player::getName).matching(args[2])
         else -> emptyList()
@@ -183,9 +251,17 @@ internal class CurrencyCommandExecutor(
 
     companion object {
         private val TIME = DateTimeFormatter.ofPattern("yyyy-MM-dd HH:mm:ss").withZone(ZoneId.systemDefault())
-        private val DEFAULT_MESSAGES = CurrencyCommandSettings(
-            true, null, "§8[§6{currency}§8] ", "§aOperation completed: {amount}",
-            "§c{error}", "§fBalance: §a{balance}", "§7No transactions found.",
-        )
+        private val DEFAULT_MESSAGES = CurrencyCommandSettings()
+        private const val TOKEN_ALPHABET = "ABCDEFGHJKLMNPQRSTUVWXYZ23456789"
     }
+
+    private data class PendingOperation(
+        val token: String,
+        val expiresAt: Long,
+        val currency: String,
+        val description: String,
+        val requestedBy: String,
+        val execute: () -> CompletionStage<CurrencyResult>,
+        val completed: (CurrencyResult) -> Unit,
+    )
 }

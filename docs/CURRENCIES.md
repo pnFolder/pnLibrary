@@ -180,6 +180,8 @@ val coins = context.currencies.managed("coins") { currency ->
     }
     currency.commands { commands ->
         commands.permissionPrefix("pnclans.coins")
+        commands.confirmation(CurrencyConfirmationMode.CONSOLE)
+        commands.confirmationTimeoutSeconds(60)
         commands.prefix("&8[&6{currency}&8] ")
         commands.balance("&fBalance: &a{balance}")
         commands.success("&aCompleted: {amount}")
@@ -245,6 +247,8 @@ consumer plugin:
 /pncurrency <namespace:name> reset <player>
 /pncurrency <namespace:name> pay <player> <amount>
 /pncurrency <namespace:name> history [player]
+/pncurrency confirm <code> # server console only
+/pncurrency cancel <code>  # server console only
 ```
 
 Each operation has an independent permission:
@@ -264,3 +268,20 @@ Commands execute storage stages without blocking the Minecraft thread and move
 the final sender message back to the server thread. Managed command mutations
 record the actual player/server actor and `pnlibrary.command` service in the
 ledger. `pay` records the paying player as both source and actor.
+
+Administrative `add`, `take`, `set`, and `reset` operations use console
+confirmation by default. The command first creates an expiring request and
+prints a cryptographically random one-time code. Only the real server console
+can execute `/pncurrency confirm <code>` or `/pncurrency cancel <code>`; an OP,
+command block, RCON wrapper represented as another sender type, or leaked code
+is not enough. The balance is not changed before confirmation. Pending requests
+are held only in memory and disappear safely when pnLibrary stops.
+
+```text
+Admin:   /pncurrency pnclans:coins add Steve 1000
+Console: /pncurrency confirm K7WR9C4N2Q
+```
+
+Use `CurrencyConfirmationMode.NONE` only for a trusted environment where the
+permission check alone is intentional. Player-to-player `pay` remains immediate
+because the player is already authorizing their own transfer.

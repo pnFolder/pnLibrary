@@ -18,7 +18,7 @@ commands:
     permission: pnlibrary.debug
   pncurrency:
     description: Manages currencies registered in pnLibrary
-    usage: /pncurrency <list|currency> [balance|add|take|set|reset|pay|history]
+    usage: /pncurrency <list|currency|confirm|cancel> [balance|add|take|set|reset|pay|history|code]
     aliases: [pncurrencies]
 permissions:
   pnlibrary.admin:

@@ -286,6 +286,8 @@ internal class CurrencyHub : CurrencyProviderRegistry, AutoCloseable {
         private var failure = "§c{error}"
         private var balance = "§fBalance: §a{balance}"
         private var historyEmpty = "§7No transactions found."
+        private var confirmationMode = CurrencyConfirmationMode.CONSOLE
+        private var confirmationTimeoutSeconds = 60
         override fun enabled(value: Boolean) = apply { enabled = value }
         override fun permissionPrefix(value: String) = apply { permissionPrefix = value.trim().ifEmpty { null } }
         override fun prefix(value: String) = apply { prefix = value }
@@ -293,7 +295,15 @@ internal class CurrencyHub : CurrencyProviderRegistry, AutoCloseable {
         override fun failure(value: String) = apply { failure = value }
         override fun balance(value: String) = apply { balance = value }
         override fun historyEmpty(value: String) = apply { historyEmpty = value }
-        fun build() = CurrencyCommandSettings(enabled, permissionPrefix, prefix, success, failure, balance, historyEmpty)
+        override fun confirmation(mode: CurrencyConfirmationMode) = apply { confirmationMode = mode }
+        override fun confirmationTimeoutSeconds(value: Int) = apply {
+            require(value in 10..600) { "Currency confirmation timeout must be between 10 and 600 seconds" }
+            confirmationTimeoutSeconds = value
+        }
+        fun build() = CurrencyCommandSettings(
+            enabled, permissionPrefix, prefix, success, failure, balance, historyEmpty,
+            confirmationMode, confirmationTimeoutSeconds,
+        )
     }
 
     private class Operations : CurrencyOperations {
