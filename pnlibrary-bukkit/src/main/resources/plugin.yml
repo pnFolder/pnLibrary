@@ -16,6 +16,10 @@ commands:
     usage: /pndebug [all|plugin] [--full|--config|--logs] [--local]
     aliases: [pnlib]
     permission: pnlibrary.debug
+  pncurrency:
+    description: Manages currencies registered in pnLibrary
+    usage: /pncurrency <list|currency> [balance|add|take|set|reset|pay|history]
+    aliases: [pncurrencies]
 permissions:
   pnlibrary.admin:
     description: Управление pnLibrary и обновлениями pnFolder

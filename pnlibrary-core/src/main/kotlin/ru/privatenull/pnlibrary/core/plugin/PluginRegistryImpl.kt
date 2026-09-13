@@ -133,7 +133,7 @@ internal class PluginRegistryImpl(
             eventScope = events.scope(id)
             configScope = configurations.scope(owner)
             placeholderScope = placeholderHub.scope(id, definition.placeholderApiEnabled)
-            currencyScope = currencyHub.scope(id)
+            currencyScope = currencyHub.scope(id, placeholderScope)
             definition.listeners.forEach { eventScope.register(it) }
             metricsController = MetricsControllerImpl(
                 owner,

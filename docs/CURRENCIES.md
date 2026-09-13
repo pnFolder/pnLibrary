@@ -106,3 +106,106 @@ used. Synchronous provider exceptions and failed asynchronous stages are
 converted into controlled failures. Closing `PluginContext` removes every
 currency owned by that plugin and closes providers that implement
 `AutoCloseable`.
+
+## Managed currencies and transaction history
+
+A managed currency delegates persistence and atomicity to `CurrencyStorage`.
+The same storage transaction changes balances and appends the ledger record;
+implementations must never perform those as two independent writes.
+
+```kotlin
+val coins = context.currencies.managed("coins") { currency ->
+    currency.descriptor { it.displayName("Coins").symbol(" ⛃") }
+    currency.storage(myJdbcCurrencyStorage) // borrowed; use ownedStorage(...) for exclusive storage
+    currency.service("pnclans.rewards")
+    currency.access(CurrencyAccess.shared())
+    currency.placeholders { placeholders ->
+        placeholders.access(PlaceholderAccess.shared())
+        placeholders.placeholderApi("pnclans")
+    }
+    currency.commands { commands ->
+        commands.permissionPrefix("pnclans.coins")
+        commands.prefix("&8[&6{currency}&8] ")
+        commands.balance("&fBalance: &a{balance}")
+        commands.success("&aCompleted: {amount}")
+        commands.failure("&c{error}")
+        commands.historyEmpty("&7No transactions found.")
+    }
+}
+```
+
+Managed currencies automatically expose these internal placeholders:
+
+```text
+{currency.coins.balance}
+{currency.coins.formatted}
+{currency.coins.symbol}
+```
+
+With the PlaceholderAPI namespace above they are also published as:
+
+```text
+%pnclans_coins_balance%
+%pnclans_coins_formatted%
+%pnclans_coins_symbol%
+```
+
+Use the ledger extension when the caller must identify who initiated a change
+and why:
+
+```kotlin
+val ledger = coins.extension(CurrencyLedger::class.java)!!
+ledger.transact(
+    CurrencyTransactionRequest(
+        type = CurrencyTransactionType.CREDIT,
+        amount = BigDecimal("250"),
+        target = CurrencyAccount(player.uniqueId),
+        actor = CurrencyActor.service("daily-quest"),
+        service = "pnclans.quests",
+        reason = "Completed quest: miner-5",
+        metadata = mapOf("quest" to "miner-5", "season" to "12"),
+        idempotencyKey = "quest:miner-5:${player.uniqueId}:12",
+    )
+)
+```
+
+Every ledger row records its transaction ID, currency, operation, source,
+target, actor, service, reason, metadata, before/after balances, timestamp,
+status, and failure message. `CurrencyHistoryQuery` filters by account, actor,
+service, operation type, time range, offset, and limit. Idempotency keys allow a
+storage implementation to prevent duplicated rewards after retries or server
+restarts.
+
+## Bukkit commands
+
+pnLibrary registers one stable command instead of injecting a command into every
+consumer plugin:
+
+```text
+/pncurrency list
+/pncurrency <namespace:name> balance [player]
+/pncurrency <namespace:name> add <player> <amount>
+/pncurrency <namespace:name> take <player> <amount>
+/pncurrency <namespace:name> set <player> <amount>
+/pncurrency <namespace:name> reset <player>
+/pncurrency <namespace:name> pay <player> <amount>
+/pncurrency <namespace:name> history [player]
+```
+
+Each operation has an independent permission:
+
+```text
+pnlibrary.currency.list
+pnlibrary.currency.<owner>.<name>.balance
+pnlibrary.currency.<owner>.<name>.add
+pnlibrary.currency.<owner>.<name>.take
+pnlibrary.currency.<owner>.<name>.set
+pnlibrary.currency.<owner>.<name>.reset
+pnlibrary.currency.<owner>.<name>.pay
+pnlibrary.currency.<owner>.<name>.history
+```
+
+Commands execute storage stages without blocking the Minecraft thread and move
+the final sender message back to the server thread. Managed command mutations
+record the actual player/server actor and `pnlibrary.command` service in the
+ledger. `pay` records the paying player as both source and actor.

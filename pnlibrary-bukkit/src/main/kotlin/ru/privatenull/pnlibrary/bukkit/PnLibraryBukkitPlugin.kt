@@ -13,6 +13,7 @@ import ru.privatenull.pnlibrary.bukkit.server.ServerInfo
 import ru.privatenull.pnlibrary.core.runtime.PnLibraryRuntimeHost
 import ru.privatenull.pnlibrary.bukkit.placeholders.PlaceholderApiAdapter
 import ru.privatenull.pnlibrary.bukkit.currency.BukkitCurrencyAdapters
+import ru.privatenull.pnlibrary.bukkit.currency.CurrencyCommandExecutor
 import ru.privatenull.pnlibrary.api.plugin.PluginId
 import ru.privatenull.pnlibrary.api.currency.CurrencyRegistration
 
@@ -35,6 +36,11 @@ class PnLibraryBukkitPlugin : JavaPlugin(), Listener {
             installBukkitServices(host, adapter)
             runtimeHost = host
             server.pluginManager.registerEvents(this, this)
+            getCommand("pncurrency")?.let { command ->
+                val executor = CurrencyCommandExecutor(this, host.library.currencyProviders)
+                command.setExecutor(executor)
+                command.tabCompleter = executor
+            }
             connectPlaceholderApi()
             connectCurrencyAdapters()
         } catch (error: Throwable) {

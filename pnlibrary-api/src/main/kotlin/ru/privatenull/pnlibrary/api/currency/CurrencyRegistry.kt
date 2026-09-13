@@ -1,6 +1,7 @@
 package ru.privatenull.pnlibrary.api.currency
 
 import ru.privatenull.pnlibrary.api.plugin.PluginId
+import ru.privatenull.pnlibrary.api.placeholders.PlaceholderAccess
 import java.math.BigDecimal
 import java.util.UUID
 import java.util.concurrent.CompletionStage
@@ -70,9 +71,50 @@ interface CurrencyDefinitionBuilder : CurrencyRegistrationOptions {
     fun operations(configure: Consumer<CurrencyOperations>): CurrencyDefinitionBuilder
 }
 
+interface ManagedCurrencyBuilder : CurrencyRegistrationOptions {
+    fun descriptor(configure: Consumer<CurrencyDescriptor.Builder>): ManagedCurrencyBuilder
+    /** Uses shared storage without taking ownership of its lifecycle. */
+    fun storage(storage: CurrencyStorage): ManagedCurrencyBuilder
+    /** Uses storage owned and closed by this currency registration. */
+    fun ownedStorage(storage: CurrencyStorage): ManagedCurrencyBuilder
+    fun service(name: String): ManagedCurrencyBuilder
+    fun placeholders(configure: Consumer<CurrencyPlaceholderOptions>): ManagedCurrencyBuilder
+    fun commands(configure: Consumer<CurrencyCommandOptions>): ManagedCurrencyBuilder
+}
+
+interface CurrencyPlaceholderOptions {
+    fun enabled(value: Boolean): CurrencyPlaceholderOptions
+    fun access(access: PlaceholderAccess): CurrencyPlaceholderOptions
+    fun placeholderApi(enabled: Boolean): CurrencyPlaceholderOptions
+    fun placeholderApi(namespace: String): CurrencyPlaceholderOptions
+}
+
+data class CurrencyCommandSettings(
+    val enabled: Boolean,
+    val permissionPrefix: String?,
+    val prefix: String,
+    val success: String,
+    val failure: String,
+    val balance: String,
+    val historyEmpty: String,
+)
+
+interface CurrencyCommandOptions {
+    fun enabled(value: Boolean): CurrencyCommandOptions
+    fun permissionPrefix(value: String): CurrencyCommandOptions
+    fun prefix(value: String): CurrencyCommandOptions
+    fun success(value: String): CurrencyCommandOptions
+    fun failure(value: String): CurrencyCommandOptions
+    fun balance(value: String): CurrencyCommandOptions
+    fun historyEmpty(value: String): CurrencyCommandOptions
+}
+
 interface CurrencyService : AutoCloseable {
     /** Defines and registers a lightweight currency in one call. */
     fun register(name: String, configure: Consumer<CurrencyDefinitionBuilder>): CurrencyRegistration
+
+    /** Registers a storage-backed currency with atomic transactions and queryable history. */
+    fun managed(name: String, configure: Consumer<ManagedCurrencyBuilder>): CurrencyRegistration
 
     /** Registers a reusable provider class. */
     fun register(name: String, provider: CurrencyProvider): CurrencyRegistration = register(name, provider, Consumer { })
@@ -89,4 +131,6 @@ interface CurrencyService : AutoCloseable {
 interface CurrencyProviderRegistry {
     fun register(owner: PluginId, name: String, provider: CurrencyProvider): CurrencyRegistration = register(owner, name, provider, CurrencyAccess.shared())
     fun register(owner: PluginId, name: String, provider: CurrencyProvider, access: CurrencyAccess): CurrencyRegistration
+    fun get(reference: String): Currency?
+    fun all(): List<Currency>
 }
