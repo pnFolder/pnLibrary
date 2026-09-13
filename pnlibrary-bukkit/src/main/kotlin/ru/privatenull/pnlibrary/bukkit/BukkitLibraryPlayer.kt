@@ -17,6 +17,7 @@ class BukkitLibraryPlayer internal constructor(
 ) : ru.privatenull.pnlibrary.api.actions.LibraryPlayer {
     override val uniqueId: UUID get() = player.uniqueId
     override val name: String get() = player.name
+    override fun hasPermission(permission: String): Boolean = player.hasPermission(permission)
 
     override fun sendMessage(text: Component) {
         audiences.sendMessage(player, text)

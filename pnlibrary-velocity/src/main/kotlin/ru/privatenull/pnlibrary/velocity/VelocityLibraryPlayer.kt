@@ -12,6 +12,7 @@ import java.util.UUID
 class VelocityLibraryPlayer private constructor(private val player: Player) : ru.privatenull.pnlibrary.api.actions.LibraryPlayer {
     override val uniqueId: UUID get() = player.uniqueId
     override val name: String get() = player.username
+    override fun hasPermission(permission: String): Boolean = player.hasPermission(permission)
     override fun sendMessage(text: Component) = player.sendMessage(text)
     override fun actionBar(text: Component) = player.sendActionBar(text)
     override fun playSound(sound: Sound): Boolean {

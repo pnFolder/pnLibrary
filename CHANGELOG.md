@@ -3,7 +3,7 @@
 ## Unreleased
 
 - Replaced the duplicated `PlayerAction` engine with one polymorphic `Action` model.
-- Added conditional delayed action branches, Bukkit effects, and particles.
+- Added reusable conditional branches, delayed conditions, permission/flag/chance checks, Bukkit effects, and particles.
 - Removed the handwritten player-action serializer and runtime SPI action DTO.
 - Added short configuration durations such as `500ms`, `10s`, and `5m`.
 

@@ -12,6 +12,7 @@ There is no universal object containing unrelated fields and no handwritten acti
 - `particle` — displays a Bukkit particle;
 - `console` — writes through the plugin logger;
 - `delay` — executes nested actions later and may select a conditional branch.
+- `when` — checks conditions immediately and executes `actions` or `otherwise`.
 
 Unsupported client-side actions return `false` from the platform bridge and produce a warning instead of disabling the plugin.
 
@@ -19,6 +20,16 @@ Unsupported client-side actions return `false` from the platform bridge and prod
 
 ```yaml
 join-actions:
+  - type: when
+    conditions:
+      - type: enabled
+        key: welcome-enabled
+      - type: permission
+        permission: pnclans.welcome
+    actions:
+      - type: message
+        messages: ["<green>Welcome, {player}!"]
+
   - type: message
     messages:
       - "<green>Welcome, {player}!"
@@ -51,6 +62,8 @@ join-actions:
 ```
 
 `delay` does not block a server thread. Conditions are checked after the delay. Its scheduled task belongs to the plugin `TaskScope`, so disabling the plugin cancels it automatically.
+
+Use `when` when no delay is required. Conditions support runtime values, boolean feature flags, permissions, probability, and nested `all`, `any`, and `not` groups. Multiple conditions use `mode: all` by default; use `mode: any` when one successful condition is enough.
 
 Durations accept both ISO-8601 (`PT10S`) and short values: `500ms`, `10s`, `5m`, `2h`, `1d`.
 

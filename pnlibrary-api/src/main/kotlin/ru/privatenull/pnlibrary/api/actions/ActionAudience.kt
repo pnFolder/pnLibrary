@@ -22,6 +22,7 @@ interface LibraryAudience {
 interface LibraryPlayer : LibraryAudience {
     val uniqueId: UUID
     val name: String
+    fun hasPermission(permission: String): Boolean
     fun applyEffect(effect: PlayerEffect): Boolean
     fun spawnParticle(particle: PlayerParticle): Boolean
 }
