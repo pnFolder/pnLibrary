@@ -1,17 +1,16 @@
 package ru.privatenull.pnlibrary.api.actions
 
 import ru.privatenull.pnlibrary.api.config.ConfigPolymorphic
+import ru.privatenull.pnlibrary.api.config.ConfigKey
 import ru.privatenull.pnlibrary.api.config.ConfigType
 import ru.privatenull.pnlibrary.api.config.ConfigTypes
 
 @ConfigPolymorphic(discriminator = "type")
 @ConfigTypes(
-    ConfigType(ValueCondition::class, "value"),
-    ConfigType(EnabledCondition::class, "enabled", aliases = ["flag"]),
+    ConfigType(ValueCondition::class, "compare", aliases = ["value"]),
+    ConfigType(EnabledCondition::class, "flag", aliases = ["enabled"]),
     ConfigType(PermissionCondition::class, "permission", aliases = ["perm"]),
     ConfigType(ChanceCondition::class, "chance"),
-    ConfigType(AllCondition::class, "all"),
-    ConfigType(AnyCondition::class, "any"),
     ConfigType(NotCondition::class, "not"),
 )
 /**
@@ -27,26 +26,28 @@ fun interface ActionCondition {
 }
 
 /**
- * Interprets a named context value as a boolean and compares it with [expected].
+ * Interprets a named context value as a boolean and compares it with [enabled].
  *
  * Boolean values are used directly, numeric zero is false, and strings are true when
  * equal to `true`, `yes`, `on`, `1`, or `enabled` ignoring case. Missing and all other
  * values are false.
  *
- * @property key key read from [ActionContext.values]
- * @property expected boolean state required for a match
+ * @property flag key read from [ActionContext.values]
+ * @property enabled boolean state required for a match
  */
 data class EnabledCondition(
-    val key: String = "",
-    val expected: Boolean = true,
+    @field:ConfigKey("name")
+    val flag: String = "",
+    @field:ConfigKey("equals")
+    val enabled: Boolean = true,
 ) : ActionCondition {
     override fun matches(context: ActionContext): Boolean {
-        val enabled = when (val value = context.value(key)) {
+        val actual = when (val value = context.value(flag)) {
             is Boolean -> value
             is Number -> value.toInt() != 0
             else -> value?.toString()?.trim()?.lowercase() in setOf("true", "yes", "on", "1", "enabled")
         }
-        return enabled == expected
+        return actual == enabled
     }
 }
 
@@ -58,6 +59,7 @@ data class EnabledCondition(
  * @property permission platform permission node required from the invoking player
  */
 data class PermissionCondition(
+    @field:ConfigKey("node")
     val permission: String = "",
 ) : ActionCondition {
     override fun matches(context: ActionContext): Boolean =
@@ -79,30 +81,15 @@ data class ChanceCondition(
 }
 
 /**
- * Matches when every nested condition matches; an empty list matches.
+ * Negates [check]; a missing check is treated as false and therefore matches.
  *
- * @property conditions predicates evaluated in list order until one fails
+ * @property check predicate to negate, or `null` for an always-matching condition
  */
-data class AllCondition(val conditions: List<ActionCondition> = emptyList()) : ActionCondition {
-    override fun matches(context: ActionContext): Boolean = conditions.all { it.matches(context) }
-}
-
-/**
- * Matches when at least one nested condition matches; an empty list does not match.
- *
- * @property conditions predicates evaluated in list order until one succeeds
- */
-data class AnyCondition(val conditions: List<ActionCondition> = emptyList()) : ActionCondition {
-    override fun matches(context: ActionContext): Boolean = conditions.any { it.matches(context) }
-}
-
-/**
- * Negates [condition]; a missing condition is treated as false and therefore matches.
- *
- * @property condition predicate to negate, or `null` for an always-matching condition
- */
-data class NotCondition(val condition: ActionCondition? = null) : ActionCondition {
-    override fun matches(context: ActionContext): Boolean = !(condition?.matches(context) ?: false)
+data class NotCondition(
+    @field:ConfigKey("check")
+    val check: ActionCondition? = null,
+) : ActionCondition {
+    override fun matches(context: ActionContext): Boolean = !(check?.matches(context) ?: false)
 }
 
 /** Comparison operation used by [ValueCondition]. */
@@ -121,9 +108,9 @@ enum class Comparison {
     LESS_THAN,
     /** Numeric less-than-or-equal comparison. */
     LESS_OR_EQUAL,
-    /** Whether a nonblank value exists; does not use [ValueCondition.expected]. */
+    /** Whether a nonblank value exists; does not use [ValueCondition.value]. */
     PRESENT,
-    /** Whether the value is missing or blank; does not use [ValueCondition.expected]. */
+    /** Whether the value is missing or blank; does not use [ValueCondition.value]. */
     ABSENT,
 }
 
@@ -131,33 +118,34 @@ enum class Comparison {
  * Compares one named runtime value with an expected string representation.
  *
  * Equality and containment operate on strings. Ordering comparisons require both the
- * actual and expected values to parse as [Double] and return false otherwise. [Comparison.PRESENT]
+ * actual and configured values to parse as [Double] and return false otherwise. [Comparison.PRESENT]
  * requires a nonblank value; [Comparison.ABSENT] accepts either a missing or blank value.
  *
- * @property key key read from [ActionContext.values]
- * @property comparison operation applied to the context value
- * @property expected right-hand operand, ignored for presence checks
+ * @property source key read from [ActionContext.values]
+ * @property operator operation applied to the context value
+ * @property value right-hand operand, ignored for presence checks
  * @property ignoreCase whether textual comparisons use case-insensitive matching
  */
 data class ValueCondition(
-    val key: String = "",
-    val comparison: Comparison = Comparison.EQUALS,
-    val expected: String = "",
+    val source: String = "",
+    @field:ConfigKey("operator")
+    val operator: Comparison = Comparison.EQUALS,
+    val value: String = "",
     val ignoreCase: Boolean = true,
 ) : ActionCondition {
     override fun matches(context: ActionContext): Boolean {
-        val raw = context.value(key)
-        if (comparison == Comparison.PRESENT) return raw != null && raw.toString().isNotBlank()
-        if (comparison == Comparison.ABSENT) return raw == null || raw.toString().isBlank()
+        val raw = context.value(source)
+        if (operator == Comparison.PRESENT) return raw != null && raw.toString().isNotBlank()
+        if (operator == Comparison.ABSENT) return raw == null || raw.toString().isBlank()
         val actual = raw?.toString() ?: return false
         val left = if (ignoreCase) actual.lowercase() else actual
-        val right = if (ignoreCase) expected.lowercase() else expected
+        val right = if (ignoreCase) value.lowercase() else value
         fun numeric(predicate: (Double, Double) -> Boolean): Boolean {
             val a = actual.toDoubleOrNull() ?: return false
-            val b = expected.toDoubleOrNull() ?: return false
+            val b = value.toDoubleOrNull() ?: return false
             return predicate(a, b)
         }
-        return when (comparison) {
+        return when (operator) {
             Comparison.EQUALS -> left == right
             Comparison.NOT_EQUALS -> left != right
             Comparison.CONTAINS -> right in left

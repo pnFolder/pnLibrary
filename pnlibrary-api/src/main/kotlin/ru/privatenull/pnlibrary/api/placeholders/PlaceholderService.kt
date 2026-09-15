@@ -34,6 +34,10 @@ interface PlaceholderBuilder<T : Any> {
     fun resolve(resolver: PlaceholderResolver<T>): PlaceholderBuilder<T>
     /** Selects an asynchronous resolver, replacing any previously configured resolver. */
     fun resolveAsync(resolver: AsyncPlaceholderResolver<T>): PlaceholderBuilder<T>
+    /** Adds an owner-defined update operation, making this placeholder writable. */
+    fun update(updater: PlaceholderUpdater<T>): PlaceholderBuilder<T>
+    /** Sets the access policy used only for update operations. */
+    fun updateAccess(access: PlaceholderAccess): PlaceholderBuilder<T>
     /** Sets the complete consumer access policy. */
     fun access(access: PlaceholderAccess): PlaceholderBuilder<T>
     /** Builds and sets a consumer access policy with the Java-friendly callback. */
@@ -69,6 +73,17 @@ fun interface PlaceholderFormatter<T : Any> {
 }
 
 /**
+ * Applies a textual assignment to a typed placeholder-owned value.
+ *
+ * The owner validates and converts the supplied value, persists it in its own storage, and
+ * returns the resulting typed value. Throwing rejects the update.
+ */
+fun interface PlaceholderUpdater<T : Any> {
+    /** Updates the backing value and returns its new typed representation. */
+    fun update(request: PlaceholderRequest, value: String): T?
+}
+
+/**
  * Plugin-scoped registry and resolution facade for typed placeholders.
  *
  * Implementations own all builders, formatters, and adapters registered through this
@@ -83,6 +98,8 @@ interface PlaceholderService : AutoCloseable {
     fun <T : Any> formatter(name: String, type: Class<T>, formatter: PlaceholderFormatter<T>)
     /** Resolves one expression asynchronously, or completes with `null` when unknown. */
     fun resolve(expression: String, playerId: UUID? = null, values: Map<String, Any?> = emptyMap()): CompletionStage<Any?>
+    /** Updates a writable placeholder visible to this plugin. */
+    fun update(expression: String, value: String, playerId: UUID? = null, values: Map<String, Any?> = emptyMap()): CompletionStage<Any?>
     /** Resolves every placeholder embedded in [template] and returns the rendered text. */
     fun render(template: String, playerId: UUID? = null, values: Map<String, Any?> = emptyMap()): CompletionStage<String>
     /** Returns whether [expression] identifies a visible registered placeholder. */

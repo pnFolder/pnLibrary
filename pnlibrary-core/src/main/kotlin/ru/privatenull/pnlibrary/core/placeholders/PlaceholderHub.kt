@@ -17,7 +17,10 @@ import ru.privatenull.pnlibrary.spi.platform.PlatformAdapter
  * bindings. Plugin-facing mutation is isolated through [Scope], allowing all
  * resources owned by one plugin to be released together.
  */
-internal class PlaceholderHub(private val platform: PlatformAdapter) : PlaceholderAdapterRegistry {
+internal class PlaceholderHub(
+    private val platform: PlatformAdapter,
+    private val valueStore: GlobalPlaceholderValueStore = GlobalPlaceholderValueStore(),
+) : PlaceholderAdapterRegistry {
     private val entries = ConcurrentHashMap<String, Entry<*>>()
     private val adapters = ConcurrentHashMap<String, PlaceholderAdapter>()
     private val formatters = ConcurrentHashMap<String, FormatterEntry<*>>()
@@ -37,6 +40,20 @@ internal class PlaceholderHub(private val platform: PlatformAdapter) : Placehold
         system("server.implementation", String::class.java) { platform.implementationName }
         system("server.proxy", Boolean::class.javaObjectType) { platform.isProxy }
         system("runtime.java", String::class.java) { System.getProperty("java.version", "unknown") }
+        val commands = DefaultValueCommandResolver(valueStore)
+        val commandKey = PlaceholderKey.of("defaultvalue", String::class.java)
+        val commandEntry = Entry(
+            system,
+            commandKey,
+            { request -> CompletableFuture.completedFuture(commands.resolve(request.parameters["value"].orEmpty(), request.playerId)) },
+            null,
+            PlaceholderAccess.shared(),
+            PlaceholderAccess.ownerOnly(),
+            PlaceholderCachePolicy.none(),
+            null,
+        )
+        entries[id(system, commandKey.value)] = commandEntry
+        commandEntry.publish(PlaceholderPublication("placeholderapi", "pnlibrary", "defaultvalue"))
     }
 
     fun scope(owner: PluginId, placeholderApiEnabled: Boolean = true): PlaceholderService =
@@ -59,7 +76,7 @@ internal class PlaceholderHub(private val platform: PlatformAdapter) : Placehold
     private fun <T : Any> system(key: String, type: Class<T>, value: () -> T) {
         val owner = PluginId.of("pnlibrary")
         val typedKey = PlaceholderKey.of(key, type)
-        entries[id(owner, key)] = Entry(owner, typedKey, { CompletableFuture.completedFuture(value()) }, PlaceholderAccess.shared(), PlaceholderCachePolicy.none(), null)
+        entries[id(owner, key)] = Entry(owner, typedKey, { CompletableFuture.completedFuture(value()) }, null, PlaceholderAccess.shared(), PlaceholderAccess.ownerOnly(), PlaceholderCachePolicy.none(), null)
     }
 
     private inner class Scope(
@@ -91,6 +108,9 @@ internal class PlaceholderHub(private val platform: PlatformAdapter) : Placehold
         override fun resolve(expression: String, playerId: UUID?, values: Map<String, Any?>): CompletionStage<Any?> =
             resolveFor(owner, expression, playerId, values)
 
+        override fun update(expression: String, value: String, playerId: UUID?, values: Map<String, Any?>): CompletionStage<Any?> =
+            updateFor(owner, expression, value, playerId, values)
+
         override fun render(template: String, playerId: UUID?, values: Map<String, Any?>): CompletionStage<String> =
             renderFor(owner, template, playerId, values)
 
@@ -119,7 +139,9 @@ internal class PlaceholderHub(private val platform: PlatformAdapter) : Placehold
         private val install: (Entry<T>) -> Unit,
     ) : PlaceholderBuilder<T> {
         private var resolver: ((PlaceholderRequest) -> CompletionStage<T?>)? = null
+        private var updater: PlaceholderUpdater<T>? = null
         private var access = PlaceholderAccess.ownerOnly()
+        private var updateAccess = PlaceholderAccess.ownerOnly()
         private var cache = PlaceholderCachePolicy.none()
         private var fallback: T? = null
         private val publications = mutableListOf<PlaceholderPublication>()
@@ -127,6 +149,8 @@ internal class PlaceholderHub(private val platform: PlatformAdapter) : Placehold
             this.resolver = { CompletableFuture.completedFuture(resolver.resolve(it)) }
         }
         override fun resolveAsync(resolver: AsyncPlaceholderResolver<T>) = apply { this.resolver = resolver::resolve }
+        override fun update(updater: PlaceholderUpdater<T>) = apply { this.updater = updater }
+        override fun updateAccess(access: PlaceholderAccess) = apply { this.updateAccess = access }
         override fun access(access: PlaceholderAccess) = apply { this.access = access }
         override fun access(configure: Consumer<PlaceholderAccess.Builder>) = apply {
             this.access = PlaceholderAccess.builder().also(configure::accept).build()
@@ -135,7 +159,7 @@ internal class PlaceholderHub(private val platform: PlatformAdapter) : Placehold
         override fun fallback(value: T) = apply { fallback = value }
         override fun publish(publication: PlaceholderPublication) = apply { publications += publication }
         override fun register(): PlaceholderRegistration<T> {
-            val entry = Entry(owner, key, resolver ?: error("Placeholder ${key.value} has no resolver"), access, cache, fallback)
+            val entry = Entry(owner, key, resolver ?: error("Placeholder ${key.value} has no resolver"), updater, access, updateAccess, cache, fallback)
             install(entry)
             publications
                 .filter { it.adapterId.lowercase() != "placeholderapi" || placeholderApiEnabled }
@@ -147,7 +171,9 @@ internal class PlaceholderHub(private val platform: PlatformAdapter) : Placehold
     private inner class Entry<T : Any>(
         override val owner: PluginId, override val key: PlaceholderKey<T>,
         private val resolver: (PlaceholderRequest) -> CompletionStage<T?>,
-        val access: PlaceholderAccess, private val policy: PlaceholderCachePolicy, private val fallback: T?,
+        private val updater: PlaceholderUpdater<T>?,
+        val access: PlaceholderAccess, private val updateAccess: PlaceholderAccess,
+        private val policy: PlaceholderCachePolicy, private val fallback: T?,
     ) : PlaceholderRegistration<T> {
         private val enabled = AtomicBoolean(true)
         private val cache = synchronizedMap<String, CacheValue<T>>()
@@ -180,6 +206,13 @@ internal class PlaceholderHub(private val platform: PlatformAdapter) : Placehold
             PlaceholderCacheScope.PLUGIN -> request.consumer.value
             PlaceholderCacheScope.PLAYER -> request.playerId?.toString() ?: "no-player"
             PlaceholderCacheScope.ARGUMENTS -> request.parameters.toSortedMap().toString() + request.values.toSortedMap().toString()
+        }
+        fun update(consumer: PluginId, request: PlaceholderRequest, value: String): T? {
+            check(updateAccess.allows(owner, consumer)) { "Plugin $consumer cannot update ${owner.value}:${key.value}" }
+            val operation = updater ?: error("Placeholder ${owner.value}:${key.value} is read-only")
+            val updated = operation.update(request, value)
+            invalidateCache()
+            return updated
         }
         fun publish(publication: PlaceholderPublication) {
             val binding = PublicationBinding(publication, owner, key.value) { request ->
@@ -258,6 +291,26 @@ internal class PlaceholderHub(private val platform: PlatformAdapter) : Placehold
         val request = PlaceholderRequest(entry.owner, consumer, playerId, params, values)
         @Suppress("UNCHECKED_CAST")
         return (entry as Entry<Any>).resolve(request).thenApply { format(consumer, it, pieces.drop(1), playerId, values, request) }
+    }
+
+    private fun updateFor(
+        consumer: PluginId,
+        expression: String,
+        value: String,
+        playerId: UUID?,
+        values: Map<String, Any?>,
+    ): CompletionStage<Any?> {
+        val reference = expression.substringBefore('|').trim()
+        val (entry, parameters) = find(consumer, reference)
+        if (entry == null) return failed(IllegalArgumentException("Unknown placeholder: $reference"))
+        val request = PlaceholderRequest(entry.owner, consumer, playerId, parameters, values)
+        return runCatching {
+            @Suppress("UNCHECKED_CAST")
+            (entry as Entry<Any>).update(consumer, request, value)
+        }.fold(
+            onSuccess = { CompletableFuture.completedFuture(it) },
+            onFailure = { failed(it) },
+        )
     }
 
     private fun renderFor(consumer: PluginId, template: String, playerId: UUID?, values: Map<String, Any?>): CompletionStage<String> {

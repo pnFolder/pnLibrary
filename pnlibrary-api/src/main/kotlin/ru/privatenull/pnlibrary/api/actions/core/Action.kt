@@ -11,9 +11,16 @@ import ru.privatenull.pnlibrary.api.config.ConfigTypes
     ConfigType(SoundAction::class, "sound"),
     ConfigType(ConsoleLogAction::class, "console", aliases = ["log"]),
     ConfigType(DelayAction::class, "delay", aliases = ["later"]),
-    ConfigType(ConditionalAction::class, "when", aliases = ["condition", "if"]),
+    ConfigType(ConditionalAction::class, "if", aliases = ["when", "condition"]),
     ConfigType(EffectAction::class, "effect", aliases = ["potion-effect"]),
     ConfigType(ParticleAction::class, "particle", aliases = ["particles"]),
+    ConfigType(SequenceAction::class, "sequence", aliases = ["run", "group"]),
+    ConfigType(SetValueAction::class, "set-value", aliases = ["set"]),
+    ConfigType(CopyValueAction::class, "copy-value", aliases = ["copy"]),
+    ConfigType(RemoveValueAction::class, "remove-value", aliases = ["unset"]),
+    ConfigType(SwitchAction::class, "switch", aliases = ["match"]),
+    ConfigType(NoOpAction::class, "noop", aliases = ["ignore", "silent"]),
+    ConfigType(UpdatePlaceholderAction::class, "update-placeholder", aliases = ["write-placeholder"]),
 )
 /**
  * One executable operation in a configured action graph.

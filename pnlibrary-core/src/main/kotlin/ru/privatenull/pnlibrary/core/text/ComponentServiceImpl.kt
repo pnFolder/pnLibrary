@@ -49,7 +49,8 @@ internal class ComponentServiceImpl(
         return result
     }
     override fun serialize(component: Component): String = serializer(defaultSerializerType).serialize(component)
-    override fun template(input: String): ComponentTemplate = Template(input)
+    override fun template(input: String): ComponentTemplate = Template(input, defaultSerializerType)
+    override fun template(input: String, type: ComponentSerializerType): ComponentTemplate = Template(input, type)
     override fun configureCache(policy: ComponentCachePolicy) {
         require(policy.maximumEntries > 0) { "maximumEntries must be positive" }
         require(policy.expireAfterAccessMillis > 0) { "expireAfterAccessMillis must be positive" }
@@ -60,12 +61,15 @@ internal class ComponentServiceImpl(
     override fun cacheStatistics(): ComponentCacheStatistics =
         (if (cachePolicy.scope == ComponentCacheScope.GLOBAL) sharedCache else pluginCache).statistics()
 
-    private inner class Template(private val source: String) : ComponentTemplate {
+    private inner class Template(
+        private val source: String,
+        private val serializerType: ComponentSerializerType,
+    ) : ComponentTemplate {
         private val values = linkedMapOf<String, Any?>()
         private var playerId: UUID? = null
         override fun value(name: String, value: Any?) = apply { values[name] = value }
         override fun player(playerId: UUID) = apply { this.playerId = playerId }
-        override fun render(): Component = serializer(defaultSerializerType)
+        override fun render(): Component = serializer(serializerType)
             .deserialize(placeholders.render(source, playerId, values).toCompletableFuture().join())
     }
 

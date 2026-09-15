@@ -19,6 +19,7 @@ import ru.privatenull.pnlibrary.core.logging.PlatformLoggingService
 import ru.privatenull.pnlibrary.core.metrics.MetricsRegistry
 import ru.privatenull.pnlibrary.core.plugin.PluginRegistryImpl
 import ru.privatenull.pnlibrary.core.placeholders.PlaceholderHub
+import ru.privatenull.pnlibrary.core.placeholders.GlobalPlaceholderValueStore
 import ru.privatenull.pnlibrary.core.currency.CurrencyHub
 import ru.privatenull.pnlibrary.core.security.EncryptedEnvelopeCodec
 import ru.privatenull.pnlibrary.core.services.ServiceManagerImpl
@@ -94,10 +95,12 @@ internal class PnLibraryImpl(
         recordAndLog(owner, identifiedMessage, error)
     }
     override val events: ru.privatenull.pnlibrary.api.events.EventService get() = eventService
-    private val placeholderHub = PlaceholderHub(platform)
+    private val placeholderValueStore = GlobalPlaceholderValueStore()
+    private val placeholderHub = PlaceholderHub(platform, placeholderValueStore)
     private val currencyHub = CurrencyHub()
     override val currencyProviders: ru.privatenull.pnlibrary.api.currency.CurrencyProviderRegistry get() = currencyHub
     override val placeholderAdapters: ru.privatenull.pnlibrary.api.placeholders.PlaceholderAdapterRegistry get() = placeholderHub
+    override val placeholderValues: ru.privatenull.pnlibrary.api.placeholders.PlaceholderValueStore get() = placeholderValueStore
     override val plugins: ru.privatenull.pnlibrary.api.plugin.PluginRegistry = PluginRegistryImpl(
         platform = platform,
         events = eventService,

@@ -9,6 +9,7 @@ import ru.privatenull.pnlibrary.api.events.EventService
 import ru.privatenull.pnlibrary.api.logging.LoggingService
 import ru.privatenull.pnlibrary.api.metrics.MetricsService
 import ru.privatenull.pnlibrary.api.placeholders.PlaceholderAdapterRegistry
+import ru.privatenull.pnlibrary.api.placeholders.PlaceholderValueStore
 import ru.privatenull.pnlibrary.api.plugin.PluginRegistry
 import ru.privatenull.pnlibrary.api.services.ServiceManager
 import ru.privatenull.pnlibrary.api.tasks.TaskService
@@ -68,6 +69,9 @@ interface PnLibrary : Closeable {
      * Consumer plugins normally use their plugin context instead of registering adapters here.
      */
     val placeholderAdapters: PlaceholderAdapterRegistry
+
+    /** Global registered value store available through pnLibrary placeholders. */
+    val placeholderValues: PlaceholderValueStore
 
     /** Registry of platform-provided currencies such as Vault and PlayerPoints. */
     val currencyProviders: CurrencyProviderRegistry

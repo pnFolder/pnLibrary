@@ -270,7 +270,7 @@ internal class PluginRegistryImpl(
                 allPlayers: LibraryAudience,
                 values: Map<String, Any?>,
                 serializerType: ComponentSerializerType,
-            ) = ActionContext(player, allPlayers, components, logger, tasks, serializerType, values)
+            ) = ActionContext(player, allPlayers, components, logger, tasks, serializerType, values, placeholders = placeholders)
         }
 
         override fun close() {
