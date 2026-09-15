@@ -1,11 +1,13 @@
 # Publishing pnLibrary API to Maven Central
 
-Only `pnlibrary-api` is published as a developer dependency. Platform runtime JARs (Bukkit/Bungee/Velocity) remain GitHub Release assets.
+`pnlibrary-api` and `pnlibrary-bukkit-api` are published as developer dependencies.
+Platform runtime JARs (Bukkit/Bungee/Velocity) remain GitHub Release assets.
 
 Published coordinates:
 
 ```text
 io.github.pnfolder:pnlibrary-api:<version>
+io.github.pnfolder:pnlibrary-bukkit-api:<version>
 ```
 
 ## One-time Maven Central setup
@@ -70,10 +72,11 @@ The workflow `.github/workflows/publish-maven-central.yml` runs:
 - manually via Actions -> `Publish pnLibrary API to Maven Central` -> Run workflow;
 - automatically whenever a GitHub Release is published.
 
-It runs:
+It runs the publication task once for each public module:
 
 ```bash
 ./gradlew --no-daemon :pnlibrary-api:publishAndReleaseToMavenCentral
+./gradlew --no-daemon :pnlibrary-bukkit-api:publishAndReleaseToMavenCentral
 ```
 
 The workflow uploads, validates, and releases the deployment through the Central Portal.
@@ -104,7 +107,7 @@ $env:ORG_GRADLE_PROJECT_signingInMemoryKeyPassword="..."
 $env:ORG_GRADLE_PROJECT_POM_LICENSE_NAME="..."
 $env:ORG_GRADLE_PROJECT_POM_LICENSE_URL="..."
 $env:ORG_GRADLE_PROJECT_POM_LICENSE_DIST="repo"
-.\gradlew.bat :pnlibrary-api:publishAndReleaseToMavenCentral
+.\gradlew.bat :pnlibrary-api:publishAndReleaseToMavenCentral :pnlibrary-bukkit-api:publishAndReleaseToMavenCentral
 ```
 
 ## Consuming pnLibrary API
@@ -117,7 +120,8 @@ repositories {
 }
 
 dependencies {
-    compileOnly("io.github.pnfolder:pnlibrary-api:2.2.0-beta.1")
+    compileOnly("io.github.pnfolder:pnlibrary-api:2.2.0-beta.2")
+    compileOnly("io.github.pnfolder:pnlibrary-bukkit-api:2.2.0-beta.2")
 }
 ```
 

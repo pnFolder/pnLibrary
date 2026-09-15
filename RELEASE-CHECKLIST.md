@@ -20,9 +20,10 @@
 
 ## Maven Central
 
-The public `pnlibrary-api` module defines `publishAndReleaseToMavenCentral` through
-the Vanniktech publishing plugin. A release requires the Central credentials,
-signing key, and license variables documented in `PUBLISHING.md`.
+The public `pnlibrary-api` and `pnlibrary-bukkit-api` modules define
+`publishAndReleaseToMavenCentral` through the Vanniktech publishing plugin. A
+release requires the Central credentials, signing key, and license variables
+documented in `PUBLISHING.md`.
 
 ## Release workflow
 

@@ -6,7 +6,7 @@ metadata библиотека получает из нативного опис�
 
 ```kotlin
 dependencies {
-    compileOnly("io.github.pnfolder:pnlibrary-api:2.2.0-beta.1")
+    compileOnly("io.github.pnfolder:pnlibrary-api:2.2.0-beta.2")
 }
 ```
 

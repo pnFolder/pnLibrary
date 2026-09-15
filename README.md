@@ -45,6 +45,9 @@ Typed configuration actions, plugin visibility, namespaces and lifecycle:
 [docs/ACTIONS.md](docs/ACTIONS.md). Release preparation rules:
 [RELEASE-CHECKLIST.md](RELEASE-CHECKLIST.md).
 
+Bukkit item configuration, textured heads, lossless serialization, and lightweight
+visual entities: [docs/BUKKIT_ITEMS_RU.md](docs/BUKKIT_ITEMS_RU.md).
+
 Проект собирается на JDK 17 или новее. Bukkit, включая Folia-ветку планировщика,
 и BungeeCord получают байткод Java 8; Velocity — Java 17. Жёсткой привязки к
 конкретной установленной JDK нет.
@@ -59,11 +62,11 @@ gradlew.bat clean test :pnlibrary-distribution:build
 
 Готовые файлы находятся в `pnlibrary-distribution/build/libs`:
 
-- `pnLibrary-2.2.0-beta.1-bukkit-java8.jar`;
-- `pnLibrary-2.2.0-beta.1-bungeecord-java8.jar`;
-- `pnLibrary-2.2.0-beta.1-velocity-java17.jar`;
-- `pnLibrary-api-2.2.0-beta.1.jar` и sources для разработчиков;
-- `pnLibrary-bukkit-api-2.2.0-beta.1.jar` и sources для Bukkit-разработчиков.
+- `pnLibrary-2.2.0-beta.2-bukkit-java8.jar`;
+- `pnLibrary-2.2.0-beta.2-bungeecord-java8.jar`;
+- `pnLibrary-2.2.0-beta.2-velocity-java17.jar`;
+- `pnLibrary-api-2.2.0-beta.2.jar` и sources для разработчиков;
+- `pnLibrary-bukkit-api-2.2.0-beta.2.jar` и sources для Bukkit-разработчиков.
 
 Положите один подходящий JAR в папку `plugins` и полностью перезапустите сервер.
 
@@ -83,18 +86,14 @@ repositories {
 }
 
 dependencies {
-    compileOnly("io.github.pnfolder:pnlibrary-api:2.2.0-beta.1")
+    compileOnly("io.github.pnfolder:pnlibrary-api:2.2.0-beta.2")
 }
 ```
 
-Для разработки с Bukkit API артефакт пока публикуется в локальный Maven-кэш:
-
-```text
-gradlew.bat :pnlibrary-bukkit-api:publishToMavenLocal
-```
+Для Bukkit-инструментов подключается отдельный публичный артефакт:
 
 ```kotlin
-compileOnly("io.github.pnfolder:pnlibrary-bukkit-api:2.2.0-beta.1")
+compileOnly("io.github.pnfolder:pnlibrary-bukkit-api:2.2.0-beta.2")
 ```
 
 Для Bukkit достаточно объявить `pnlibrary-bukkit-api`: общий API подтянется как

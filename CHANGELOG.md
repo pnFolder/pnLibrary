@@ -2,6 +2,12 @@
 
 ## Unreleased
 
+## 2.2.0-beta.2
+
+- Restored Java 8 compatible `VisualEntity`, `ItemFactory`, `HeadUtil`, and
+  `ItemStackCodec` Bukkit utilities.
+- Added Maven Central publication for the public `pnlibrary-bukkit-api` artifact.
+
 ## 2.2.0-beta.1
 
 - Reorganized the public action API into focused `core`, `conditions`, and `standard` source directories while preserving its package namespace.

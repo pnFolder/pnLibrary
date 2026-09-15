@@ -17,7 +17,7 @@ jobs:
     strategy:
       fail-fast: false
       matrix:
-        module: ${{ fromJson(github.event_name == 'push' && '["pnlibrary-bstats-base","pnlibrary-core","pnlibrary-bukkit"]' || '["pnlibrary-api","pnlibrary-bstats-base","pnlibrary-core","pnlibrary-bukkit"]') }}
+        module: ${{ fromJson(github.event_name == 'push' && '["pnlibrary-bstats-base","pnlibrary-core","pnlibrary-bukkit"]' || '["pnlibrary-api","pnlibrary-bukkit-api","pnlibrary-bstats-base","pnlibrary-core","pnlibrary-bukkit"]') }}
 
     steps:
       - name: Checkout
