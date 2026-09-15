@@ -58,8 +58,8 @@ val coreVersion = server.version
 ```kotlin
 repositories { mavenLocal() }
 dependencies {
-    compileOnly("ru.privatenull:pnlibrary-api:2.1.0")
-    compileOnly("ru.privatenull:pnlibrary-bukkit-api:2.1.0") // меню и версии Bukkit
+    compileOnly("io.github.pnfolder:pnlibrary-api:2.2.0-beta.1")
+    compileOnly("io.github.pnfolder:pnlibrary-bukkit-api:2.2.0-beta.1") // после publishToMavenLocal
 }
 ```
 

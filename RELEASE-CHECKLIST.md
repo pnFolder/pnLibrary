@@ -18,13 +18,11 @@
   second action registry.
 - Built-in and custom actions must use the same polymorphic configuration path.
 
-## Maven Central blocker
+## Maven Central
 
-The release workflow checks for `publishAndReleaseToMavenCentral`, but the
-project does not currently define that Gradle task. Keep `publish_central`
-disabled until the publishing plugin, verified Maven Central namespace, POM
-metadata, signing key, and credentials are configured. GitHub release artifacts
-can still be produced independently.
+The public `pnlibrary-api` module defines `publishAndReleaseToMavenCentral` through
+the Vanniktech publishing plugin. A release requires the Central credentials,
+signing key, and license variables documented in `PUBLISHING.md`.
 
 ## Release workflow
 

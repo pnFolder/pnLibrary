@@ -2,6 +2,16 @@
 
 ## Unreleased
 
+## 2.2.0-beta.1
+
+- Reorganized the public action API into focused `core`, `conditions`, and `standard` source directories while preserving its package namespace.
+- Reworked configured flows around explicit `sequence.steps`, `if.all`/`if.any`, `then`/`else`, `switch.on`, and `delay.then` fields.
+- Added sequence, switch, no-op, local value, and writable-placeholder actions.
+- Added action-local placeholders with shared formatting operations such as `default`, `upper`, and `boolean`.
+- Added a process-wide player/global placeholder value store and a bracket-delimited PlaceholderAPI command surface.
+- Added owner-controlled placeholder updates and explicit update access policies.
+- Expanded action and serializer documentation with complete configuration examples.
+
 ## 2.1.0
 
 - Replaced the duplicated `PlayerAction` engine with one polymorphic `Action` model.

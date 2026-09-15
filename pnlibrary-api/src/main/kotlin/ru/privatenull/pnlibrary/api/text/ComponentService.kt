@@ -1,6 +1,7 @@
 package ru.privatenull.pnlibrary.api.text
 
 import net.kyori.adventure.text.Component
+import java.util.UUID
 
 /**
  * Text syntax used to convert between strings and Adventure components.
@@ -168,7 +169,7 @@ interface ComponentTemplate {
     fun value(name: String, value: Any?): ComponentTemplate
 
     /** Selects the player used by player-aware placeholder resolution. */
-    fun player(playerId: java.util.UUID): ComponentTemplate
+    fun player(playerId: UUID): ComponentTemplate
 
     /** Resolves configured values and placeholders into the final component. */
     fun render(): Component

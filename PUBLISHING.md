@@ -117,7 +117,7 @@ repositories {
 }
 
 dependencies {
-    compileOnly("io.github.pnfolder:pnlibrary-api:2.0.0-beta.4")
+    compileOnly("io.github.pnfolder:pnlibrary-api:2.2.0-beta.1")
 }
 ```
 
