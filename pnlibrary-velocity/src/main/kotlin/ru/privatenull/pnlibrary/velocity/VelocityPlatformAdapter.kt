@@ -17,10 +17,15 @@ import java.nio.file.Path
 import java.util.concurrent.atomic.AtomicBoolean
 
 /**
- * Platform adapter targeting Velocity 3.x proxy servers.
+ * Runtime adapter for Velocity 3.x proxy servers.
+ *
+ * Velocity has no player-region scheduler, so global and recipient dispatch both use its plugin
+ * scheduler. [bind] owns the `/pndebug` command registration and [close] removes it.
  */
-class VelocityPlatformAdapter(
+internal class VelocityPlatformAdapter(
+    /** Native plugin instance used to own commands, tasks, and metrics. */
     val plugin: Any,
+    /** Velocity proxy used for metadata, commands, audiences, and scheduling. */
     val server: ProxyServer,
     override val metricsFactory: PlatformMetricsFactory,
     override val dataFolder: Path,
@@ -28,6 +33,7 @@ class VelocityPlatformAdapter(
 ) : PlatformAdapter {
 
     private val closedFlag = AtomicBoolean(false)
+    private val bound = AtomicBoolean(false)
     override val type = PlatformType.VELOCITY
     override val implementationName: String get() = server.version.name.ifBlank { type.displayName }
 
@@ -56,23 +62,30 @@ class VelocityPlatformAdapter(
     }
 
     override fun bind(library: PnLibrary) {
+        check(!closedFlag.get()) { "Velocity platform adapter is closed" }
+        check(bound.compareAndSet(false, true)) { "Velocity platform adapter is already bound" }
         val diagnosticCommands = DiagnosticCommandExecutor(library)
         val meta = server.commandManager.metaBuilder("pndebug").aliases("pnlib").plugin(plugin).build()
-        server.commandManager.register(meta, object : SimpleCommand {
-            override fun execute(invocation: SimpleCommand.Invocation) {
-                val sender = invocation.source()
-                if (!sender.hasPermission("pnlibrary.debug") && sender !is ConsoleCommandSource) {
-                    sender.sendMessage(Component.text("Недостаточно прав."))
-                    return
+        try {
+            server.commandManager.register(meta, object : SimpleCommand {
+                override fun execute(invocation: SimpleCommand.Invocation) {
+                    val sender = invocation.source()
+                    if (!sender.hasPermission("pnlibrary.debug") && sender !is ConsoleCommandSource) {
+                        sender.sendMessage(Component.text("Недостаточно прав."))
+                        return
+                    }
+                    diagnosticCommands.execute(
+                        invocation.arguments(),
+                        prefixed = false,
+                        requesterId = sender.toString(),
+                        recipient = sender,
+                    ) { event -> sender.sendMessage(Component.text(message(event))) }
                 }
-                diagnosticCommands.execute(
-                    invocation.arguments(),
-                    prefixed = false,
-                    requesterId = sender.toString(),
-                    recipient = sender,
-                ) { event -> sender.sendMessage(Component.text(message(event))) }
-            }
-        })
+            })
+        } catch (error: Throwable) {
+            bound.set(false)
+            throw error
+        }
     }
 
     override fun details(): Map<String, Any?> {
@@ -86,17 +99,15 @@ class VelocityPlatformAdapter(
         data["registeredServersCount"] = server.allServers.size
         data["registeredServerNames"] = server.allServers.map { it.serverInfo.name }
 
-        val pluginList = mutableListOf<Map<String, Any?>>()
-        for (pContainer in server.pluginManager.plugins) {
-            val pDesc = pContainer.description
-            pluginList.add(linkedMapOf(
-                "id" to pDesc.id,
-                "name" to pDesc.name.orElse(pDesc.id),
-                "version" to pDesc.version.orElse("unknown"),
-                "authors" to pDesc.authors,
-            ))
+        data["plugins"] = server.pluginManager.plugins.map { container ->
+            val description = container.description
+            linkedMapOf(
+                "id" to description.id,
+                "name" to description.name.orElse(description.id),
+                "version" to description.version.orElse("unknown"),
+                "authors" to description.authors,
+            )
         }
-        data["plugins"] = pluginList
         return data
     }
 
@@ -114,8 +125,10 @@ class VelocityPlatformAdapter(
     }
 
     override fun close() {
-        closedFlag.set(true)
-        server.commandManager.unregister("pndebug")
+        if (!closedFlag.compareAndSet(false, true)) return
+        if (bound.compareAndSet(true, false)) {
+            server.commandManager.unregister("pndebug")
+        }
     }
 
     private fun message(event: DiagnosticCommandEvent): String = when (event) {

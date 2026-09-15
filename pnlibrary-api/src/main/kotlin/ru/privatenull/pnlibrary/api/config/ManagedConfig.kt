@@ -55,10 +55,30 @@ class ConfigValidatorBuilder<T> {
     private data class Rule<T>(val path: String, val message: String, val condition: ConfigCondition<T>)
 }
 
-/** One configuration problem associated with a full YAML [path]. */
-data class ConfigProblem(val path: String, val message: String)
+/**
+ * One semantic configuration problem.
+ *
+ * @property path full dot-separated YAML path, such as `database.pool-size`
+ * @property message human-readable explanation without the path prefix
+ */
+data class ConfigProblem(
+    val path: String,
+    val message: String,
+)
 
-/** Result of loading and synchronizing one code-first file. */
+/**
+ * Result of loading and synchronizing one code-first configuration file.
+ *
+ * All path collections use full dot-separated YAML paths and are empty when that synchronization
+ * phase made no changes.
+ *
+ * @property value validated typed value now held by the managed configuration
+ * @property addedPaths missing default values inserted into the document
+ * @property backup backup of the original file, or `null` when no backup was needed or enabled
+ * @property removedPaths unknown YAML values removed according to [UnknownValuePolicy.REMOVE]
+ * @property addedComments code-defined comments inserted into the document
+ * @property appliedMigrations ordered migration labels applied before decoding
+ */
 data class ConfigLoadResult<T>(
     val value: T,
     val addedPaths: List<String>,
@@ -68,14 +88,23 @@ data class ConfigLoadResult<T>(
     val appliedMigrations: List<String> = emptyList(),
 )
 
-/** Semantic validation failure for a typed configuration. */
-class ConfigValidationException(val problems: List<ConfigProblem>) : IllegalArgumentException(
+/**
+ * Aggregated semantic validation failure for a typed configuration.
+ *
+ * @property problems immutable-style list of every problem reported by the validator
+ */
+class ConfigValidationException(
+    val problems: List<ConfigProblem>,
+) : IllegalArgumentException(
     problems.joinToString(prefix = "Invalid configuration: ", separator = "; ") { "${it.path}: ${it.message}" }
 )
 
 /**
- * High-level lifecycle of one typed configuration.
- * `unload()` only clears the in-memory value and never deletes the YAML file.
+ * High-level lifecycle of one typed configuration file.
+ *
+ * A handle starts unloaded. [load] or [reload] parses, synchronizes, and validates the complete
+ * document before replacing the in-memory value. Failed reloads leave the last valid value intact.
+ * [unload] only clears memory and never deletes or rewrites the YAML file.
  */
 interface ManagedConfig<T> : AutoCloseable {
     /** Whether a configuration value is currently loaded in memory. */
@@ -84,10 +113,17 @@ interface ManagedConfig<T> : AutoCloseable {
     /** Kotlin property alias for [get]. */
     val value: T get() = get()
 
-    /** Returns the loaded value or fails when [load] has not completed. */
+    /**
+     * Returns the loaded value.
+     *
+     * @throws IllegalStateException before a successful [load] or after [unload]
+     */
     fun get(): T
 
-    /** Loads the file, synchronizes defaults, and stores the value in memory. */
+    /**
+     * Loads the file, applies migrations and synchronization policies, validates it, and stores
+     * the value in memory. A missing file is handled according to [ConfigOptions.missingFile].
+     */
     fun load(): ConfigLoadResult<T>
 
     /** Reloads the file while preserving the previous valid value on failure. */
@@ -99,19 +135,28 @@ interface ManagedConfig<T> : AutoCloseable {
     /** Reloads the file and returns only its typed value. */
     fun reloadValue(): T = reload().value
 
-    /** Saves the current in-memory value. */
+    /** Saves the current in-memory value after validation. */
     fun save()
 
-    /** Validates and saves [value], then makes it the current in-memory value. */
+    /**
+     * Validates and saves [value], then makes it current.
+     *
+     * The in-memory value is changed only after validation and persistence succeed.
+     */
     fun save(value: T)
 
-    /** Atomically updates, validates, and persists the current value. */
+    /**
+     * Applies [updater] to the current value, validates and persists the result, then returns it.
+     *
+     * Implementations serialize concurrent calls. If the updater, validation, or write fails, the
+     * previously loaded value remains current.
+     */
     fun update(updater: UnaryOperator<T>): T
 
     /** Validates the current value without writing the file. */
     fun validate(): List<ConfigProblem>
 
-    /** Resets the file and current value to code-defined defaults. */
+    /** Replaces the file and current value with a freshly obtained code-defined default value. */
     fun resetToDefaults(): T
 
     /** Clears the in-memory value while preserving the file on disk. */

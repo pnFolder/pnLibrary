@@ -1,9 +1,43 @@
 package ru.privatenull.pnlibrary.api.updates
 
-enum class UpdateChannel { STABLE, BETA, ALPHA }
-enum class UpdateState { CHECKING, CURRENT, AVAILABLE, DOWNLOADED, FAILED }
+/** Release maturity accepted by an updater. Each channel includes more stable releases. */
+enum class UpdateChannel {
+    /** Stable releases only; prereleases, alpha, beta, and release candidates are excluded. */
+    STABLE,
+    /** Stable and beta releases; alpha releases remain excluded. */
+    BETA,
+    /** Every release, including experimental alpha versions. */
+    ALPHA,
+}
 
-/** Immutable current state of one registered product updater. */
+/** Current observable phase of an update registration. */
+enum class UpdateState {
+    /** A remote release check is currently running. */
+    CHECKING,
+    /** No newer compatible release was found. */
+    CURRENT,
+    /** A newer compatible release exists but has not been downloaded. */
+    AVAILABLE,
+    /** A verified update artifact was placed in the platform update directory. */
+    DOWNLOADED,
+    /** The latest check or download failed; details are available in the snapshot message. */
+    FAILED,
+}
+
+/**
+ * Immutable point-in-time state of one registered product updater.
+ *
+ * @property product display name resolved from native plugin metadata
+ * @property currentVersion version currently running
+ * @property latestVersion newest compatible release version, when known
+ * @property channel configured release maturity
+ * @property state current updater phase
+ * @property currentJava Java feature version running the server
+ * @property requiredJava minimum Java version of the selected artifact
+ * @property automaticDownload whether checks may download a verified artifact automatically
+ * @property releaseUrl public release page, when one is known
+ * @property message failure or status detail intended for diagnostics, when present
+ */
 class UpdateSnapshot(
     val product: String,
     val currentVersion: String,
@@ -17,28 +51,57 @@ class UpdateSnapshot(
     val message: String?,
 )
 
-/** Selects a release asset compatible with the running Java version. */
+/**
+ * Release-asset name pattern bounded to a range of Java feature versions.
+ *
+ * @property pattern regular expression matched against complete release asset names
+ * @property minimumJava lowest supported Java feature version, inclusive
+ * @property maximumJava highest supported Java feature version, inclusive, or `null`
+ */
 class PluginUpdateArtifact(
     val pattern: String,
     val minimumJava: Int,
     val maximumJava: Int?,
 ) {
+    /** Returns whether [javaFeature] is inside this artifact's inclusive Java range. */
     fun supports(javaFeature: Int): Boolean =
         javaFeature >= minimumJava && (maximumJava == null || javaFeature <= maximumJava)
 }
 
-/** Validated GitHub release and artifact-selection policy for one plugin. */
+/**
+ * Validated GitHub release and artifact-selection policy for one plugin.
+ *
+ * Use [builder] to configure the repository, channel, and at least one artifact. When
+ * ranges overlap, [artifactFor] chooses the compatible artifact with the highest
+ * [PluginUpdateArtifact.minimumJava], allowing newer runtimes to receive newer builds.
+ *
+ * ```kotlin
+ * val request = PluginUpdateRequest.builder()
+ *     .repository("example", "ExamplePlugin")
+ *     .channel(UpdateChannel.STABLE)
+ *     .artifact("(?i)^example-java8-.*\\.jar$", 8, 16)
+ *     .artifact("(?i)^example-java17-.*\\.jar$", 17)
+ *     .build()
+ * ```
+ */
 class PluginUpdateRequest private constructor(builder: Builder) {
+    /** GitHub repository owner. */
     val repositoryOwner: String = builder.repositoryOwner
+    /** GitHub repository name. */
     val repositoryName: String = builder.repositoryName
+    /** Highest prerelease maturity accepted by the updater. */
     val channel: UpdateChannel = builder.channel
+    /** Whether a newly discovered compatible artifact should be downloaded. */
     val automaticDownload: Boolean = builder.automaticDownload
+    /** Immutable artifact-selection rules in declaration order. */
     val artifacts: List<PluginUpdateArtifact> = builder.artifacts.toList()
 
+    /** Returns the most specific artifact compatible with [javaFeature], or `null`. */
     fun artifactFor(javaFeature: Int): PluginUpdateArtifact? = artifacts
         .filter { it.supports(javaFeature) }
         .maxByOrNull { it.minimumJava }
 
+    /** Mutable Java-friendly builder for [PluginUpdateRequest]. */
     class Builder internal constructor() {
         internal var repositoryOwner = ""
         internal var repositoryName = ""
@@ -46,13 +109,21 @@ class PluginUpdateRequest private constructor(builder: Builder) {
         internal var automaticDownload = true
         internal val artifacts = mutableListOf<PluginUpdateArtifact>()
 
+        /** Sets and validates the GitHub repository coordinates. */
         fun repository(owner: String, name: String) = apply {
-            require(owner.matches(Regex("[A-Za-z0-9_.-]+")) && name.matches(Regex("[A-Za-z0-9_.-]+")))
-            repositoryOwner = owner; repositoryName = name
+            require(owner.matches(REPOSITORY_PART) && name.matches(REPOSITORY_PART)) {
+                "Invalid GitHub repository: $owner/$name"
+            }
+            repositoryOwner = owner
+            repositoryName = name
         }
+        /** Sets the accepted release [value]. */
         fun channel(value: UpdateChannel) = apply { channel = value }
+        /** Enables or disables automatic verified downloads. */
         fun automaticDownload(enabled: Boolean) = apply { automaticDownload = enabled }
+        /** Adds an artifact pattern compatible with Java 8 and newer. */
         fun artifactPattern(regex: String) = artifact(regex, 8)
+        /** Adds and validates one Java-bounded release artifact rule. */
         @JvmOverloads
         fun artifact(regex: String, minimumJava: Int, maximumJava: Int? = null) = apply {
             Regex(regex)
@@ -60,6 +131,7 @@ class PluginUpdateRequest private constructor(builder: Builder) {
             require(maximumJava == null || maximumJava >= minimumJava) { "maximumJava must be >= minimumJava" }
             artifacts += PluginUpdateArtifact(regex, minimumJava, maximumJava)
         }
+        /** Validates the complete policy and creates its immutable request. */
         fun build(): PluginUpdateRequest {
             require(repositoryOwner.isNotBlank() && repositoryName.isNotBlank()) { "repository is required" }
             require(artifacts.isNotEmpty()) { "at least one artifact is required" }
@@ -67,21 +139,36 @@ class PluginUpdateRequest private constructor(builder: Builder) {
         }
     }
 
-    companion object { @JvmStatic fun builder(): Builder = Builder() }
+    /** Java-friendly entry point for constructing validated update requests. */
+    companion object {
+        private val REPOSITORY_PART = Regex("[A-Za-z0-9_.-]+")
+
+        /** Creates an empty update-request builder. */
+        @JvmStatic
+        fun builder(): Builder = Builder()
+    }
 }
 
 /** Lifecycle and manual controls for one updater registration. */
 interface UpdateRegistration : AutoCloseable {
+    /** Repository coordinate in `owner/name` form. */
     val repository: String
+    /** Latest immutable state observed by this registration. */
     val snapshot: UpdateSnapshot
+    /** Starts a background check without forcing a download. */
     fun checkNow()
+    /** Starts a background check with downloading enabled for this invocation. */
     fun downloadNow()
+    /** Stops periodic and manual work and removes this registration. */
     override fun close()
 }
 
 /** Registers and queries plugin update monitors owned by this runtime. */
 interface UpdateService {
+    /** Registers and immediately starts monitoring the plugin represented by [owner]. */
     fun register(owner: Any, request: PluginUpdateRequest): UpdateRegistration
+    /** Returns a stable snapshot of current registrations. */
     fun registrations(): List<UpdateRegistration>
+    /** Finds a registration by product or repository name, ignoring case. */
     fun find(product: String): UpdateRegistration?
 }

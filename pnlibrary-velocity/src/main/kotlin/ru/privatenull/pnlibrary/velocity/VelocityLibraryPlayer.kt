@@ -1,15 +1,22 @@
 package ru.privatenull.pnlibrary.velocity
 
-import com.velocitypowered.api.proxy.Player
-import net.kyori.adventure.text.Component
 import net.kyori.adventure.sound.Sound
-import ru.privatenull.pnlibrary.api.actions.Action
+import net.kyori.adventure.text.Component
+import com.velocitypowered.api.proxy.Player
+import ru.privatenull.pnlibrary.api.actions.LibraryPlayer
 import ru.privatenull.pnlibrary.api.actions.PlayerEffect
 import ru.privatenull.pnlibrary.api.actions.PlayerParticle
 import java.util.UUID
 
-/** Native Adventure player bridge for Velocity. */
-class VelocityLibraryPlayer private constructor(private val player: Player) : ru.privatenull.pnlibrary.api.actions.LibraryPlayer {
+/**
+ * [LibraryPlayer] bridge backed by a Velocity [Player].
+ *
+ * Velocity accepts Adventure components and sounds directly. Potion effects and particles are
+ * server-side operations unavailable to the proxy and therefore return `false`.
+ */
+internal class VelocityLibraryPlayer private constructor(
+    private val player: Player,
+) : LibraryPlayer {
     override val uniqueId: UUID get() = player.uniqueId
     override val name: String get() = player.username
     override fun hasPermission(permission: String): Boolean = player.hasPermission(permission)
@@ -23,6 +30,8 @@ class VelocityLibraryPlayer private constructor(private val player: Player) : ru
     override fun spawnParticle(particle: PlayerParticle): Boolean = false
 
     companion object {
-        @JvmStatic fun of(player: Player): ru.privatenull.pnlibrary.api.actions.LibraryPlayer = VelocityLibraryPlayer(player)
+        /** Wraps [player] in the platform-neutral player contract. */
+        @JvmStatic
+        fun of(player: Player): LibraryPlayer = VelocityLibraryPlayer(player)
     }
 }

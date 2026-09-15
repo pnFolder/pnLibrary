@@ -50,37 +50,53 @@ class DiagnosticContainer private constructor(builder: Builder) : DiagnosticsCon
     override fun configurations(): Collection<DiagnosticConfiguration> =
         _configurations
 
-    // ── Builder ───────────────────────────────────────────────────────────────
-
+    /** Fluent builder for one immutable [DiagnosticContainer]. */
     class Builder internal constructor(internal val id: String) {
         internal var snapshotProvider: Supplier<Map<String, Any?>>? = null
         internal val fixed: MutableMap<String, Any?> = linkedMapOf()
         internal val configurations: MutableList<DiagnosticConfiguration> = mutableListOf()
 
-        /** Supplies a dynamic snapshot. Called each time a report is collected. */
+        /**
+         * Replaces fixed [value] entries with a dynamic snapshot provider.
+         *
+         * The provider is called once for every report collection and should return
+         * promptly. Exceptions are handled by the diagnostics service and recorded as
+         * contributor failures.
+         */
         fun snapshot(provider: Supplier<Map<String, Any?>>): Builder = apply {
             snapshotProvider = provider
         }
 
-        /** Adds a fixed static key-value pair to the snapshot. */
+        /** Adds or replaces a fixed snapshot entry named [name]. */
         fun value(name: String, v: Any?): Builder = apply { fixed[name] = v }
 
-        /** Adds a configuration file with optional redaction rules. */
+        /** Adds a configuration file and its redaction policy. */
         fun configuration(config: DiagnosticConfiguration): Builder = apply {
             configurations.add(config)
         }
 
-        /** Convenience: add a configuration file by path. */
+        /** Adds a configuration file at [path] with the default redaction policy. */
         fun configuration(path: String): Builder = apply {
             configurations.add(DiagnosticConfiguration.file(path).build())
         }
 
+        /**
+         * Validates the contributor identifier and creates an immutable container.
+         *
+         * @throws IllegalArgumentException if the identifier is empty, longer than
+         * 96 characters, or contains unsupported characters
+         */
         fun build(): DiagnosticContainer = DiagnosticContainer(this)
     }
 
-    // ── Companion ─────────────────────────────────────────────────────────────
-
+    /** Entry point for declaring a validated plugin diagnostics container. */
     companion object {
+        /**
+         * Starts a diagnostics declaration identified by [id].
+         *
+         * Identifiers may contain ASCII letters, digits, dots, underscores, and
+         * hyphens. Validation occurs in [Builder.build].
+         */
         @JvmStatic fun builder(id: String): Builder = Builder(id)
     }
 }

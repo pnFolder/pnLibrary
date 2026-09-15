@@ -3,9 +3,16 @@ package ru.privatenull.pnlibrary.api.plugin
 import ru.privatenull.pnlibrary.api.metrics.PluginMetrics
 import java.util.function.Consumer
 
-/** Runtime control over one plugin's metrics session. */
+/**
+ * Runtime control over one plugin's optional metrics session.
+ *
+ * A configured project ID is retained while metrics are disabled, allowing [enable] to restart the
+ * same session. Closing the controller disables the session permanently with its plugin context.
+ */
 interface MetricsController : AutoCloseable {
+    /** Whether a metrics session is currently active. */
     val isEnabled: Boolean
+    /** Configured bStats project ID, or `null` when metrics were not configured. */
     val projectId: Int?
 
     /** Enables metrics using the configured [projectId]. */
@@ -23,5 +30,6 @@ interface MetricsController : AutoCloseable {
     /** Applies [configure] now and again whenever the session is restarted. */
     fun configure(configure: Consumer<PluginMetrics>)
 
+    /** Disables the active session and releases this controller. */
     override fun close()
 }

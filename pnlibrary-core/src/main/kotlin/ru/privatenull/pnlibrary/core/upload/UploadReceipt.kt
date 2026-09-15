@@ -23,5 +23,6 @@ data class UploadReceipt(
     /** Returns `true` when a deletion token is available. */
     fun canDelete(): Boolean = deleteToken.isNotBlank()
 
+    /** Returns the public report link for concise logging and command output. */
     override fun toString(): String = link.toString()
 }

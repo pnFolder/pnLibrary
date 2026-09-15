@@ -7,10 +7,21 @@ import java.nio.file.Files
 import java.nio.file.Path
 import java.time.Instant
 
-/** Uploads the encrypted `.pnsupport` file through Catbox's official multipart API. */
+/**
+ * Uploads an encrypted `.pnsupport` file through Catbox's multipart API.
+ *
+ * @param endpoint HTTPS API endpoint; configurable primarily for integration tests
+ * @throws IllegalArgumentException if [endpoint] is not HTTPS
+ */
 class CatboxUploader(
     private val endpoint: URI = URI.create("https://catbox.moe/user/api.php"),
 ) : UploadProvider {
+    init {
+        require(endpoint.scheme.equals("https", ignoreCase = true)) {
+            "Catbox endpoint must use HTTPS"
+        }
+    }
+
     override val backendId: String = "catbox"
 
     override fun upload(payload: String): UploadReceipt {
@@ -31,7 +42,11 @@ class CatboxUploader(
         val link = MultipartFileClient.post(
             endpoint, mapOf("reqtype" to "fileupload"), "fileToUpload", file, contentType,
         )
-        val uri = runCatching { URI.create(link) }.getOrElse { throw IOException("Invalid Catbox response", it) }
+        val uri = try {
+            URI.create(link)
+        } catch (exception: IllegalArgumentException) {
+            throw IOException("Invalid Catbox response", exception)
+        }
         if (uri.scheme != "https" || uri.host != "files.catbox.moe" || uri.path.isNullOrBlank()) {
             throw IOException("Catbox rejected the report: ${link.take(256)}")
         }

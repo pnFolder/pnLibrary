@@ -22,7 +22,9 @@ import ru.privatenull.pnlibrary.api.plugin.PluginId
 import ru.privatenull.pnlibrary.api.tasks.TaskScope
 import ru.privatenull.pnlibrary.api.tasks.TaskService
 import ru.privatenull.pnlibrary.api.updates.UpdateService
+import ru.privatenull.pnlibrary.core.currency.CurrencyHub
 import ru.privatenull.pnlibrary.core.events.EventServiceImpl
+import ru.privatenull.pnlibrary.core.placeholders.PlaceholderHub
 import ru.privatenull.pnlibrary.core.testing.TestTaskService
 import ru.privatenull.pnlibrary.core.services.ServiceManagerImpl
 import java.lang.reflect.Proxy
@@ -36,16 +38,7 @@ class PluginRegistryImplTest {
         val tasks = RecordingTaskService(taskScope)
         val events = EventServiceImpl(TestTaskService()) { _, _, _ -> }
         val metrics = RecordingMetricsService()
-        val registry = PluginRegistryImpl(
-            platform(),
-            events,
-            tasks,
-            ServiceManagerImpl(),
-            loggingService(),
-            metrics,
-            emptyProxy(DiagnosticsService::class.java),
-            emptyProxy(UpdateService::class.java),
-        )
+        val registry = registry(events = events, tasks = tasks, metrics = metrics)
         val listener = RecordingListener()
 
         val context = registry.register(owner, PluginId.of("pnClans")) {
@@ -73,16 +66,7 @@ class PluginRegistryImplTest {
         val owner = Any()
         val taskScope = RecordingTaskScope(owner)
         val tasks = RecordingTaskService(taskScope)
-        val registry = PluginRegistryImpl(
-            platform(),
-            EventServiceImpl(TestTaskService()) { _, _, _ -> },
-            tasks,
-            ServiceManagerImpl(),
-            loggingService(),
-            RecordingMetricsService(),
-            emptyProxy(DiagnosticsService::class.java),
-            emptyProxy(UpdateService::class.java),
-        )
+        val registry = registry(tasks = tasks)
         registry.register(owner, PluginId.of("example")) { }
 
         assertThrows(IllegalArgumentException::class.java) {
@@ -95,16 +79,7 @@ class PluginRegistryImplTest {
     fun `one platform owner cannot be registered under two IDs`() {
         val owner = Any()
         val taskScope = RecordingTaskScope(owner)
-        val registry = PluginRegistryImpl(
-            platform(),
-            EventServiceImpl(TestTaskService()) { _, _, _ -> },
-            RecordingTaskService(taskScope),
-            ServiceManagerImpl(),
-            loggingService(),
-            RecordingMetricsService(),
-            emptyProxy(DiagnosticsService::class.java),
-            emptyProxy(UpdateService::class.java),
-        )
+        val registry = registry(tasks = RecordingTaskService(taskScope))
         registry.register(owner, "first") { }
 
         assertThrows(IllegalArgumentException::class.java) {
@@ -117,16 +92,7 @@ class PluginRegistryImplTest {
     fun `platform owner cleanup removes its global context`() {
         val owner = Any()
         val taskScope = RecordingTaskScope(owner)
-        val registry = PluginRegistryImpl(
-            platform(),
-            EventServiceImpl(TestTaskService()) { _, _, _ -> },
-            RecordingTaskService(taskScope),
-            ServiceManagerImpl(),
-            loggingService(),
-            RecordingMetricsService(),
-            emptyProxy(DiagnosticsService::class.java),
-            emptyProxy(UpdateService::class.java),
-        )
+        val registry = registry(tasks = RecordingTaskService(taskScope))
         val context = registry.register(owner, "example") { }
 
         registry.unregisterOwner(owner)
@@ -141,16 +107,7 @@ class PluginRegistryImplTest {
         val owner = Any()
         val taskScope = RecordingTaskScope(owner)
         val logging = RecordingLoggingService()
-        val registry = PluginRegistryImpl(
-            platform(),
-            EventServiceImpl(TestTaskService()) { _, _, _ -> },
-            RecordingTaskService(taskScope),
-            ServiceManagerImpl(),
-            logging,
-            RecordingMetricsService(),
-            emptyProxy(DiagnosticsService::class.java),
-            emptyProxy(UpdateService::class.java),
-        )
+        val registry = registry(tasks = RecordingTaskService(taskScope), logging = logging)
 
         val context = registry.register(owner) { plugin ->
             plugin.metadata { metadata ->
@@ -250,6 +207,26 @@ class PluginRegistryImplTest {
     }
 
     private companion object {
+        fun registry(
+            platform: PlatformAdapter = platform(),
+            events: EventServiceImpl = EventServiceImpl(TestTaskService()) { _, _, _ -> },
+            tasks: TaskService = RecordingTaskService(RecordingTaskScope(Any())),
+            logging: LoggingService = loggingService(),
+            metrics: MetricsService = RecordingMetricsService(),
+        ): PluginRegistryImpl =
+            PluginRegistryImpl(
+                platform = platform,
+                events = events,
+                tasks = tasks,
+                services = ServiceManagerImpl(),
+                logging = logging,
+                metrics = metrics,
+                diagnostics = emptyProxy(DiagnosticsService::class.java),
+                updates = emptyProxy(UpdateService::class.java),
+                placeholderHub = PlaceholderHub(platform),
+                currencyHub = CurrencyHub(),
+            )
+
         fun platform(): PlatformAdapter = proxy(PlatformAdapter::class.java) { methodName ->
             when (methodName) {
                 "getType" -> PlatformType.BUKKIT

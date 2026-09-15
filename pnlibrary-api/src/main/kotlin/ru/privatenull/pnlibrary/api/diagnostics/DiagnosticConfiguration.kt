@@ -19,12 +19,11 @@ class DiagnosticConfiguration private constructor(builder: Builder) {
     /** Regex patterns — matching fragments inside string values are replaced. */
     val valuePatterns: List<String> = immutable(builder.valuePatterns, 32, 256)
 
-    // ── Builder ───────────────────────────────────────────────────────────────
-
+    /** Fluent builder for one configuration-file collection policy. */
     class Builder internal constructor(internal val path: String) {
-        internal val excludedPaths:    MutableList<String> = mutableListOf()
+        internal val excludedPaths: MutableList<String> = mutableListOf()
         internal val secretKeyPatterns: MutableList<String> = mutableListOf()
-        internal val valuePatterns:    MutableList<String> = mutableListOf()
+        internal val valuePatterns: MutableList<String> = mutableListOf()
 
         /** Omits this exact dotted path and all of its children from the report. */
         fun exclude(dottedPath: String): Builder = apply { excludedPaths.add(dottedPath) }
@@ -35,11 +34,11 @@ class DiagnosticConfiguration private constructor(builder: Builder) {
         /** Replaces regex-matched fragments in string values with `[REDACTED BY PLUGIN]`. */
         fun redactValueRegex(expression: String): Builder = apply { valuePatterns.add(expression) }
 
+        /** Validates the path and rules and creates an immutable configuration. */
         fun build(): DiagnosticConfiguration = DiagnosticConfiguration(this)
     }
 
-    // ── Companion ─────────────────────────────────────────────────────────────
-
+    /** Entry points and validation rules for diagnostic file declarations. */
     companion object {
         /** Entry point for the fluent builder. */
         @JvmStatic
@@ -48,8 +47,9 @@ class DiagnosticConfiguration private constructor(builder: Builder) {
         private val VALID_PATH = Regex("[A-Za-z0-9_./-]+\\.(?:yml|yaml|json|properties|toml|conf)")
 
         private fun validatePath(value: String?): String {
-            if (value == null || value.startsWith("/") || value.contains("..") || !VALID_PATH.matches(value))
+            if (value == null || value.startsWith("/") || value.contains("..") || !VALID_PATH.matches(value)) {
                 throw IllegalArgumentException("Invalid diagnostic configuration path: $value")
+            }
             return value
         }
 

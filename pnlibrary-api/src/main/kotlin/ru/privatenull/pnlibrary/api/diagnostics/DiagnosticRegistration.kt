@@ -6,5 +6,6 @@ package ru.privatenull.pnlibrary.api.diagnostics
  * your plugin's `onDisable` to avoid stale contributors on hot-reload.
  */
 fun interface DiagnosticRegistration : AutoCloseable {
+    /** Removes the registered contributor; repeated calls are safe. */
     override fun close()
 }

@@ -1,18 +1,26 @@
 package ru.privatenull.pnlibrary.core.config
 
-import ru.privatenull.pnlibrary.api.config.*
+import ru.privatenull.pnlibrary.api.config.ConfigOptions
+import ru.privatenull.pnlibrary.api.config.ConfigScope
+import ru.privatenull.pnlibrary.api.config.ConfigSerializationContext
+import ru.privatenull.pnlibrary.api.config.ConfigSerializer
+import ru.privatenull.pnlibrary.api.config.ConfigTypeAccess
+import ru.privatenull.pnlibrary.api.config.ConfigTypeRegistration
+import ru.privatenull.pnlibrary.api.config.ConfigValueValidator
+import ru.privatenull.pnlibrary.api.config.ConfigurationService
+import ru.privatenull.pnlibrary.api.config.ManagedConfig
+import ru.privatenull.pnlibrary.api.plugin.PluginId
 import ru.privatenull.pnlibrary.core.config.yaml.AnnotatedYamlCodec
 import ru.privatenull.pnlibrary.core.config.yaml.CodeFirstYaml
 import ru.privatenull.pnlibrary.core.config.yaml.RuntimeConfigType
 import ru.privatenull.pnlibrary.spi.platform.PlatformAdapter
 import java.io.File
-import java.nio.file.Path
-import java.nio.file.Paths
-import java.util.concurrent.atomic.AtomicBoolean
-import java.util.function.Supplier
-import java.util.logging.Logger
+import java.math.BigDecimal
+import java.math.BigInteger
 import java.net.URI
 import java.net.URL
+import java.nio.file.Path
+import java.nio.file.Paths
 import java.time.Duration
 import java.time.Instant
 import java.time.LocalDate
@@ -21,22 +29,32 @@ import java.time.OffsetDateTime
 import java.time.ZonedDateTime
 import java.util.Locale
 import java.util.UUID
+import java.util.concurrent.atomic.AtomicBoolean
+import java.util.function.Supplier
+import java.util.logging.Logger
 import java.util.regex.Pattern
-import java.math.BigDecimal
-import java.math.BigInteger
-import ru.privatenull.pnlibrary.api.plugin.PluginId
 
-internal class ConfigurationServiceImpl(private val platform: PlatformAdapter) : ConfigurationService, AutoCloseable {
+internal class ConfigurationServiceImpl(
+    private val platform: PlatformAdapter,
+) : ConfigurationService, AutoCloseable {
     private val scopes = java.util.IdentityHashMap<Any, Scope>()
     private val runtimeTypes = linkedSetOf<TypeRegistration>()
     private val closed = AtomicBoolean(false)
 
     override fun scope(owner: Any): ConfigScope = synchronized(scopes) {
         check(!closed.get()) { "Configuration service is closed" }
-        scopes.getOrPut(owner) { Scope(owner, ownerDirectory(owner).toAbsolutePath().normalize(), ownerLogger(owner)) }
+        scopes.getOrPut(owner) {
+            Scope(
+                owner = owner,
+                directory = ownerDirectory(owner).toAbsolutePath().normalize(),
+                logger = ownerLogger(owner),
+            )
+        }
     }
 
-    fun close(owner: Any) = synchronized(scopes) { scopes.remove(owner) }?.close() ?: Unit
+    fun close(owner: Any) {
+        synchronized(scopes) { scopes.remove(owner) }?.close()
+    }
 
     override fun close() {
         if (!closed.compareAndSet(false, true)) return
@@ -79,24 +97,37 @@ internal class ConfigurationServiceImpl(private val platform: PlatformAdapter) :
         ): ManagedConfig<T> {
             check(!scopeClosed.get()) { "Configuration scope is closed" }
             val relative = Paths.get(path).normalize()
-            require(!relative.isAbsolute && !relative.startsWith("..")) { "Configuration path must stay inside the plugin directory" }
-            require(path.endsWith(".yml", true) || path.endsWith(".yaml", true)) { "Configuration file must use .yml or .yaml" }
+            require(!relative.isAbsolute && !relative.startsWith("..")) {
+                "Configuration path must stay inside the plugin directory"
+            }
+            require(path.endsWith(".yml", true) || path.endsWith(".yaml", true)) {
+                "Configuration file must use .yml or .yaml"
+            }
             val target = directory.resolve(relative).normalize()
             require(target.startsWith(directory)) { "Configuration path escapes the plugin directory" }
             val defaultValue = defaults.get() ?: error("Configuration defaults cannot be null")
             val codec = AnnotatedYamlCodec(
-                type, defaults, synchronized(serializers) { serializers.toMap() },
-                { visibleTypes(pluginId) },
-                pluginId.value,
-                options, logger::warning,
+                type = type,
+                defaults = defaults,
+                serializers = synchronized(serializers) { serializers.toMap() },
+                runtimeTypes = { visibleTypes(pluginId) },
+                consumer = pluginId.value,
+                options = options,
+                warning = { message -> logger.warning(message) },
             )
             val handle = CodeFirstYaml(
-                target.toFile(), defaultValue, codec, logger,
-                ConfigValueValidator(codec::validate), options,
+                file = target.toFile(),
+                defaults = defaultValue,
+                codec = codec,
+                logger = logger,
+                validator = ConfigValueValidator(codec::validate),
+                options = options,
             )
             val owned = OwnedConfig(target, handle)
             synchronized(handles) {
-                check(handles.none { (it as? OwnedConfig<*>)?.file == target }) { "Configuration $path is already registered" }
+                check(handles.none { (it as? OwnedConfig<*>)?.file == target }) {
+                    "Configuration $path is already registered"
+                }
                 handles += owned
             }
             return owned

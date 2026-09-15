@@ -10,12 +10,17 @@ import java.util.Locale
  * digit, and may not exceed 64 characters.
  */
 class PluginId private constructor(
+    /** Normalized lowercase identifier used as the registry key. */
     val value: String,
 ) {
+    /** Compares normalized identifier values. */
     override fun equals(other: Any?): Boolean = other is PluginId && value == other.value
+    /** Returns the normalized identifier's hash code. */
     override fun hashCode(): Int = value.hashCode()
+    /** Returns [value] for logs, diagnostics, and canonical references. */
     override fun toString(): String = value
 
+    /** Validation and normalization entry point for plugin identifiers. */
     companion object {
         private val FORMAT = Regex("[a-z0-9][a-z0-9_.-]{0,63}")
 

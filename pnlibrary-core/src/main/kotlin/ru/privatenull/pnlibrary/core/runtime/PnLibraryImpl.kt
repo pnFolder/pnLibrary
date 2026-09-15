@@ -49,7 +49,7 @@ import java.util.concurrent.atomic.AtomicBoolean
  * metrics, updates, and tasks. Platform modules depend on [PnLibrary] and must
  * not cast the facade to this implementation.
  */
-class PnLibraryImpl(
+internal class PnLibraryImpl(
     override val owner: Any,
     private val platform: PlatformAdapter,
     override val diagnostics: DiagnosticsRegistry,

@@ -1,10 +1,10 @@
 package ru.privatenull.pnlibrary.core.tasks
 
 import ru.privatenull.pnlibrary.api.logging.LogLevel
-import ru.privatenull.pnlibrary.spi.platform.PlatformAdapter
 import ru.privatenull.pnlibrary.api.tasks.TaskHandle
 import ru.privatenull.pnlibrary.api.tasks.TaskScope
 import ru.privatenull.pnlibrary.api.tasks.TaskService
+import ru.privatenull.pnlibrary.spi.platform.PlatformAdapter
 import java.time.Duration
 import java.util.Collections
 import java.util.IdentityHashMap
@@ -96,7 +96,11 @@ internal class TaskServiceImpl(
             val future = executor.schedule({
                 if (!handle.isCancelled && !scopeClosed.get()) {
                     dispatch(dispatch, recipient, Runnable {
-                        try { guarded(handle, task).run() } finally { handles.remove(handle) }
+                        try {
+                            guarded(handle, task).run()
+                        } finally {
+                            handles.remove(handle)
+                        }
                     })
                 } else {
                     handles.remove(handle)
@@ -106,13 +110,21 @@ internal class TaskServiceImpl(
             return handle
         }
 
-        private fun repeating(dispatch: Dispatch, recipient: Any?, delay: Duration, interval: Duration, task: Runnable): Handle {
+        private fun repeating(
+            dispatch: Dispatch,
+            recipient: Any?,
+            delay: Duration,
+            interval: Duration,
+            task: Runnable,
+        ): Handle {
             ensureOpen()
             require(!interval.isZero && !interval.isNegative) { "interval must be positive" }
             val handle = Handle()
             handles += handle
             val future = executor.scheduleAtFixedRate({
-                if (!handle.isCancelled && !scopeClosed.get()) dispatch(dispatch, recipient, guarded(handle, task))
+                if (!handle.isCancelled && !scopeClosed.get()) {
+                    dispatch(dispatch, recipient, guarded(handle, task))
+                }
             }, millis(delay), millis(interval), TimeUnit.MILLISECONDS)
             handle.attach(future)
             return handle
@@ -125,12 +137,19 @@ internal class TaskServiceImpl(
             }
         }
 
-        private fun ensureOpen() = check(!scopeClosed.get() && !closed.get()) { "TaskScope is closed" }
+        private fun ensureOpen() = check(!scopeClosed.get() && !closed.get()) {
+            "TaskScope is closed"
+        }
+
         override fun cancelAll() {
             if (!scopeClosed.compareAndSet(false, true)) return
             handles.forEach { it.cancel() }
             handles.clear()
-            synchronized(scopes) { if (scopes[owner] === this) scopes.remove(owner) }
+            synchronized(scopes) {
+                if (scopes[owner] === this) {
+                    scopes.remove(owner)
+                }
+            }
         }
     }
 
@@ -145,16 +164,22 @@ internal class TaskServiceImpl(
         return duration.toMillis()
     }
 
-    private enum class Dispatch { GLOBAL, ENTITY, ASYNC }
+    private enum class Dispatch {
+        GLOBAL,
+        ENTITY,
+        ASYNC,
+    }
 
     private class Handle : TaskHandle {
         private val cancelled = AtomicBoolean(false)
         @Volatile private var future: Future<*>? = null
         override val isCancelled: Boolean get() = cancelled.get()
+
         fun attach(value: Future<*>) {
             future = value
             if (cancelled.get()) value.cancel(false)
         }
+
         override fun cancel() {
             if (cancelled.compareAndSet(false, true)) future?.cancel(false)
         }

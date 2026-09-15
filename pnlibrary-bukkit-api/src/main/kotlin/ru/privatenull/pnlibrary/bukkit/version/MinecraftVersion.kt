@@ -1,6 +1,5 @@
 package ru.privatenull.pnlibrary.bukkit.version
 
-
 /**
  * Known Minecraft game version exposed by the Bukkit-specific API.
  *
@@ -78,7 +77,8 @@ enum class MinecraftVersion(val text: String, val major: Int, val minor: Int, va
      * Checks whether both versions belong to the same release line, ignoring
      * patch. For example, `1.20.4` and `1.20.6` share the `1.20` line.
      */
-    fun isSameReleaseLine(other: MinecraftVersion): Boolean = known && other.known && major == other.major && minor == other.minor
+    fun isSameReleaseLine(other: MinecraftVersion): Boolean =
+        known && other.known && major == other.major && minor == other.minor
 
     /**
      * Checks the inclusive range from [minimum] to [maximum].
@@ -106,14 +106,20 @@ enum class MinecraftVersion(val text: String, val major: Int, val minor: Int, va
     /**
      * Creates an inclusive range for `V1_8_8..V1_12_2` in Kotlin.
      */
-    operator fun rangeTo(maximum: MinecraftVersion): MinecraftVersionRange = MinecraftVersionRange.between(this, maximum)
+    operator fun rangeTo(maximum: MinecraftVersion): MinecraftVersionRange =
+        MinecraftVersionRange.between(this, maximum)
 
     /** `false` only for [UNKNOWN]. */
     val known: Boolean get() = this != UNKNOWN
     private val coordinates: Long get() = major * 1_000_000L + minor * 1_000L + patch
 
+    /** Parsing and lookup operations for supported Minecraft releases. */
     companion object {
-        private val byCoordinates = values().filter { it.known }.associateBy { Triple(it.major, it.minor, it.patch) }
+        private val VERSION_PATTERN = Regex("(?<!\\d)(\\d+)\\.(\\d+)(?:\\.(\\d+))?")
+        private val byCoordinates = entries
+            .filter { it.known }
+            .associateBy { Triple(it.major, it.minor, it.patch) }
+
         /**
          * Finds the first `number.number[.number]` version in [value].
          *
@@ -121,14 +127,21 @@ enum class MinecraftVersion(val text: String, val major: Int, val minor: Int, va
          * `git-Paper-123 (MC: 1.21.11)`, and `26.2-112-c9e894d`. Returns
          * [UNKNOWN] for empty, malformed, or not-yet-listed releases.
          */
-        @JvmStatic fun parse(value: String?): MinecraftVersion {
-            val match = Regex("(?<!\\d)(\\d+)\\.(\\d+)(?:\\.(\\d+))?").find(value.orEmpty()) ?: return UNKNOWN
-            val coordinates = Triple(match.groupValues[1].toIntOrNull() ?: return UNKNOWN,
-                match.groupValues[2].toIntOrNull() ?: return UNKNOWN,
-                match.groupValues.getOrNull(3)?.takeIf { it.isNotEmpty() }?.toIntOrNull() ?: 0)
+        @JvmStatic
+        fun parse(value: String?): MinecraftVersion {
+            val match = VERSION_PATTERN.find(value.orEmpty()) ?: return UNKNOWN
+            val coordinates = Triple(
+                first = match.groupValues[1].toIntOrNull() ?: return UNKNOWN,
+                second = match.groupValues[2].toIntOrNull() ?: return UNKNOWN,
+                third = match.groupValues.getOrNull(3)
+                    ?.takeIf { it.isNotEmpty() }
+                    ?.toIntOrNull()
+                    ?: 0,
+            )
             return byCoordinates[coordinates] ?: UNKNOWN
         }
-/**
+
+        /**
          * Creates an inclusive range from [minimum] to [maximum].
          * ```java
          * MinecraftVersionRange legacy = MinecraftVersion.range(
@@ -137,13 +150,18 @@ enum class MinecraftVersion(val text: String, val major: Int, val minor: Int, va
          * );
          * ```
          */
-        @JvmStatic fun range(minimum: MinecraftVersion, maximum: MinecraftVersion): MinecraftVersionRange =
+        @JvmStatic
+        fun range(minimum: MinecraftVersion, maximum: MinecraftVersion): MinecraftVersionRange =
             MinecraftVersionRange.between(minimum, maximum)
 
         /** Creates `[minimum, +∞)`. */
-        @JvmStatic fun atLeast(minimum: MinecraftVersion): MinecraftVersionRange = MinecraftVersionRange.atLeast(minimum)
+        @JvmStatic
+        fun atLeast(minimum: MinecraftVersion): MinecraftVersionRange =
+            MinecraftVersionRange.atLeast(minimum)
 
         /** Creates `(-∞, maximum]`. */
-        @JvmStatic fun atMost(maximum: MinecraftVersion): MinecraftVersionRange = MinecraftVersionRange.atMost(maximum)
+        @JvmStatic
+        fun atMost(maximum: MinecraftVersion): MinecraftVersionRange =
+            MinecraftVersionRange.atMost(maximum)
     }
 }

@@ -1,30 +1,42 @@
 package ru.privatenull.pnlibrary.core.diagnostics
 
-import com.google.gson.Gson
-import com.google.gson.JsonParser
-import org.yaml.snakeyaml.LoaderOptions
-import org.yaml.snakeyaml.Yaml
-import org.yaml.snakeyaml.constructor.SafeConstructor
 import ru.privatenull.pnlibrary.api.diagnostics.DiagnosticConfiguration
 import ru.privatenull.pnlibrary.api.runtime.PnLibraryConfig
-import java.io.File
-import java.nio.file.Files
 import java.nio.file.Path
-import java.util.Properties
 import java.util.regex.Pattern
 
 /**
- * Secure, multi-format configuration reader with layered secret redaction.
+ * Orchestrates secure configuration collection and layered secret redaction.
+ *
+ * File confinement is delegated to [SecureConfigurationFileReader] and document
+ * syntax to [ConfigurationDocumentCodec]. This class applies the global and
+ * contributor-specific exclusion policies to the resulting neutral data tree.
+ *
+ * @param dataFolder default trusted root for relative configuration paths
+ * @param globalConfig process-wide limits and redaction expressions
  */
-class ConfigReader(
+internal class ConfigReader(
     private val dataFolder: Path,
     private val globalConfig: PnLibraryConfig = PnLibraryConfig(),
 ) {
 
     private val redactor = DiagnosticRedactor()
+    private val secureFileReader = SecureConfigurationFileReader(MAX_FILE_SIZE_BYTES)
+    private val documentCodec = ConfigurationDocumentCodec(redactor)
 
-    data class RedactedFile(val path: String, val content: String, val error: String? = null)
-    data class ExactFile(val path: String, val content: ByteArray? = null, val error: String? = null)
+    /** Text configuration prepared for a plaintext local report. */
+    data class RedactedFile(
+        val path: String,
+        val content: String,
+        val error: String? = null,
+    )
+
+    /** Original configuration bytes permitted only inside an encrypted report. */
+    data class ExactFile(
+        val path: String,
+        val content: ByteArray? = null,
+        val error: String? = null,
+    )
 
     /** Reads the original bytes after the same path, symlink, type and size checks. */
     fun readExactFile(
@@ -32,28 +44,8 @@ class ConfigReader(
         rootDirectory: Path = dataFolder,
     ): ExactFile {
         val relative = configSpec.path
-        val root = rootDirectory.toAbsolutePath().normalize()
-        val target = root.resolve(relative).normalize()
-        if (!target.startsWith(root)) return ExactFile(relative, error = "[SECURITY: path traversal blocked]")
-        if (Files.isSymbolicLink(target)) return ExactFile(relative, error = "[SECURITY: symlink escape blocked]")
-        if (!Files.exists(target) || !Files.isRegularFile(target)) {
-            return ExactFile(relative, error = "[file not found or not a regular file]")
-        }
-        val realRoot = runCatching { root.toRealPath() }.getOrNull()
-            ?: return ExactFile(relative, error = "[SECURITY: configuration root cannot be resolved]")
-        val realTarget = runCatching { target.toRealPath() }.getOrNull()
-            ?: return ExactFile(relative, error = "[SECURITY: configuration path cannot be resolved]")
-        if (!realTarget.startsWith(realRoot)) return ExactFile(relative, error = "[SECURITY: symlink escape blocked]")
-        if (isForbiddenExtension(relative)) return ExactFile(relative, error = "[SECURITY: binary or database file extension blocked]")
-        val size = Files.size(realTarget)
-        if (size > MAX_FILE_SIZE_BYTES) {
-            return ExactFile(relative, error = "[file exceeds size limit of 1 MiB ($size bytes)]")
-        }
-        return try {
-            ExactFile(relative, content = Files.readAllBytes(realTarget))
-        } catch (error: Exception) {
-            ExactFile(relative, error = "[read failed: ${error.javaClass.simpleName}]")
-        }
+        val result = secureFileReader.read(rootDirectory, relative)
+        return ExactFile(relative, content = result.content, error = result.error)
     }
 
     /** Reads, validates and redacts a configuration while preserving its original file format. */
@@ -66,9 +58,15 @@ class ConfigReader(
         if (error != null) return RedactedFile(configSpec.path, "", error)
         @Suppress("UNCHECKED_CAST")
         val data = result["data"] as? Map<String, Any?> ?: emptyMap()
-        return RedactedFile(configSpec.path, render(configSpec.path, data))
+        return RedactedFile(configSpec.path, documentCodec.render(configSpec.path, data))
     }
 
+    /**
+     * Returns the redacted neutral tree used by report serialization.
+     *
+     * The result always contains `path`. On failure it additionally contains
+     * `error`; on success it contains `data`.
+     */
     fun readAndRedact(
         configSpec: DiagnosticConfiguration,
         rootDirectory: Path = dataFolder,
@@ -77,51 +75,14 @@ class ConfigReader(
         val result = linkedMapOf<String, Any?>()
         result["path"] = relPath
 
-        val normalizedRoot = rootDirectory.toAbsolutePath().normalize()
-        val targetPath = normalizedRoot.resolve(relPath).normalize()
-
-        // ── Security Checks ──────────────────────────────────────────────────
-        if (!targetPath.startsWith(normalizedRoot)) {
-            result["error"] = "[SECURITY: path traversal blocked]"
-            return result
-        }
-        if (Files.isSymbolicLink(targetPath)) {
-            result["error"] = "[SECURITY: symlink escape blocked]"
-            return result
-        }
-        if (!Files.exists(targetPath) || !Files.isRegularFile(targetPath)) {
-            result["error"] = "[file not found or not a regular file]"
-            return result
-        }
-        val realRoot = try {
-            normalizedRoot.toRealPath()
-        } catch (_: Exception) {
-            result["error"] = "[SECURITY: configuration root cannot be resolved]"
-            return result
-        }
-        val realTarget = try {
-            targetPath.toRealPath()
-        } catch (_: Exception) {
-            result["error"] = "[SECURITY: configuration path cannot be resolved]"
-            return result
-        }
-        if (!realTarget.startsWith(realRoot)) {
-            result["error"] = "[SECURITY: symlink escape blocked]"
-            return result
-        }
-        if (isForbiddenExtension(relPath)) {
-            result["error"] = "[SECURITY: binary or database file extension blocked]"
-            return result
-        }
-        val size = Files.size(targetPath)
-        if (size > MAX_FILE_SIZE_BYTES) {
-            result["error"] = "[file exceeds size limit of 1 MiB ($size bytes)]"
+        val read = secureFileReader.read(rootDirectory, relPath)
+        if (read.error != null) {
+            result["error"] = read.error
             return result
         }
 
-        // ── Parsing ──────────────────────────────────────────────────────────
         val rawMap = try {
-            parseFile(targetPath.toFile(), relPath)
+            documentCodec.parse(relPath, requireNotNull(read.content))
         } catch (e: Exception) {
             result["error"] = "Parsing failed: ${e.javaClass.simpleName} - ${e.message}"
             return result
@@ -147,104 +108,6 @@ class ConfigReader(
 
         result["data"] = redactedData
         return result
-    }
-
-    private fun parseFile(file: File, relPath: String): Map<String, Any?> {
-        val lower = relPath.lowercase()
-        val text = file.readText(Charsets.UTF_8)
-
-        return when {
-            lower.endsWith(".yml") || lower.endsWith(".yaml") -> parseYaml(text)
-            lower.endsWith(".json") -> parseJson(text)
-            lower.endsWith(".properties") -> parseProperties(text)
-            lower.endsWith(".toml") -> parseToml(text)
-            lower.endsWith(".conf") -> parseConf(text)
-            else -> mapOf("raw" to redactor.redact(text.take(4096)))
-        }
-    }
-
-    private fun parseYaml(text: String): Map<String, Any?> {
-        val options = LoaderOptions().apply {
-            maxAliasesForCollections = 50
-            isAllowDuplicateKeys = false
-        }
-        val yaml = Yaml(SafeConstructor(options))
-        val loaded = yaml.load<Any>(text)
-        return objectToMap(loaded)
-    }
-
-    private fun parseJson(text: String): Map<String, Any?> {
-        val element = JsonParser.parseString(text)
-        return objectToMap(Gson().fromJson(element, Any::class.java))
-    }
-
-    private fun parseProperties(text: String): Map<String, Any?> {
-        val props = Properties()
-        props.load(text.reader())
-        val map = linkedMapOf<String, Any?>()
-        for (name in props.stringPropertyNames()) {
-            map[name] = props.getProperty(name)
-        }
-        return map
-    }
-
-    private fun parseToml(text: String): Map<String, Any?> {
-        val result = linkedMapOf<String, Any?>()
-        var currentSection = ""
-        for (line in text.lines()) {
-            val trimmed = line.trim()
-            if (trimmed.isEmpty() || trimmed.startsWith("#") || trimmed.startsWith(";")) continue
-            if (trimmed.startsWith("[") && trimmed.endsWith("]")) {
-                currentSection = trimmed.substring(1, trimmed.length - 1).trim()
-                continue
-            }
-            val eqIdx = trimmed.indexOf('=')
-            if (eqIdx > 0) {
-                val key = trimmed.substring(0, eqIdx).trim()
-                val value = trimmed.substring(eqIdx + 1).trim().removeSurrounding("\"").removeSurrounding("'")
-                val fullKey = if (currentSection.isEmpty()) key else "$currentSection.$key"
-                result[fullKey] = value
-            }
-        }
-        return result
-    }
-
-    private fun parseConf(text: String): Map<String, Any?> {
-        // HOCON / key-value parse fallback
-        val result = linkedMapOf<String, Any?>()
-        for (line in text.lines()) {
-            val trimmed = line.trim()
-            if (trimmed.isEmpty() || trimmed.startsWith("#") || trimmed.startsWith("//")) continue
-            val sepIdx = if (trimmed.indexOf('=') != -1) trimmed.indexOf('=') else trimmed.indexOf(':')
-            if (sepIdx > 0) {
-                val key = trimmed.substring(0, sepIdx).trim()
-                val value = trimmed.substring(sepIdx + 1).trim().removeSurrounding("\"").removeSurrounding("'")
-                result[key] = value
-            }
-        }
-        return result
-    }
-
-    @Suppress("UNCHECKED_CAST")
-    private fun objectToMap(obj: Any?): Map<String, Any?> {
-        if (obj == null) return emptyMap()
-        if (obj is Map<*, *>) {
-            val res = linkedMapOf<String, Any?>()
-            for ((k, v) in obj) {
-                if (k != null) {
-                    res[k.toString()] = transformValue(v)
-                }
-            }
-            return res
-        }
-        return mapOf("value" to transformValue(obj))
-    }
-
-    private fun transformValue(v: Any?): Any? {
-        if (v == null || v is Number || v is Boolean) return v
-        if (v is Map<*, *>) return objectToMap(v)
-        if (v is List<*>) return v.map { transformValue(it) }
-        return v.toString()
     }
 
     private fun redactTree(
@@ -342,11 +205,6 @@ class ConfigReader(
         return false
     }
 
-    private fun isForbiddenExtension(path: String): Boolean {
-        val lower = path.lowercase()
-        return FORBIDDEN_EXTENSIONS.any { lower.endsWith(it) }
-    }
-
     private fun compileRegexes(patterns: List<String>): List<Pattern> {
         val result = mutableListOf<Pattern>()
         for (pat in patterns) {
@@ -359,33 +217,6 @@ class ConfigReader(
         return result
     }
 
-    private fun render(path: String, data: Map<String, Any?>): String {
-        val lower = path.lowercase()
-        return when {
-            lower.endsWith(".yml") || lower.endsWith(".yaml") -> Yaml().dump(data)
-            lower.endsWith(".json") -> Gson().newBuilder().setPrettyPrinting().disableHtmlEscaping().create().toJson(data) + "\n"
-            lower.endsWith(".properties") -> data.entries.joinToString("\n", postfix = "\n") { (key, value) ->
-                "$key=${scalar(value)}"
-            }
-            lower.endsWith(".toml") -> data.entries.joinToString("\n", postfix = "\n") { (key, value) ->
-                "$key = ${tomlValue(value)}"
-            }
-            lower.endsWith(".conf") -> data.entries.joinToString("\n", postfix = "\n") { (key, value) ->
-                "$key = ${tomlValue(value)}"
-            }
-            else -> data["raw"]?.toString().orEmpty()
-        }
-    }
-
-    private fun scalar(value: Any?): String = value?.toString()
-        ?.replace("\\", "\\\\")?.replace("\n", "\\n") ?: ""
-
-    private fun tomlValue(value: Any?): String = when (value) {
-        null -> "\"\""
-        is Number, is Boolean -> value.toString()
-        else -> "\"${value.toString().replace("\\", "\\\\").replace("\"", "\\\"").replace("\n", "\\n")}\""
-    }
-
     companion object {
         const val MAX_FILE_SIZE_BYTES = 1_048_576L // 1 MiB
         const val MAX_DEPTH = 10
@@ -396,9 +227,5 @@ class ConfigReader(
             "(?i).*(?:password|passwd|pwd|secret|token|api[-_ ]?key|authorization|cookie|private[-_ ]?key|credential|webhook|mysql|auth|jdbc).*"
         )
 
-        private val FORBIDDEN_EXTENSIONS = setOf(
-            ".db", ".sqlite", ".sqlite3", ".db-shm", ".db-wal", ".bin", ".dat",
-            ".class", ".jar", ".zip", ".tar", ".gz", ".png", ".jpg", ".jpeg", ".ico"
-        )
     }
 }

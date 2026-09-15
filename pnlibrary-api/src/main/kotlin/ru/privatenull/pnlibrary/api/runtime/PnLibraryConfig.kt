@@ -1,7 +1,53 @@
 package ru.privatenull.pnlibrary.api.runtime
 
+import java.util.regex.Pattern
+import java.util.regex.PatternSyntaxException
+
 /**
- * Settings controlling diagnostic report collection, security redaction, and uploading.
+ * Immutable runtime policy for diagnostic collection, retention, and upload.
+ *
+ * Paths in [excludedPaths] use dotted configuration notation, for example
+ * `database.password`. Regular expressions are compiled when this object is
+ * created, so an invalid redaction policy fails during startup rather than while
+ * a support report is being generated.
+ *
+ * ```kotlin
+ * val config = PnLibraryConfig(
+ *     upload = false,
+ *     logs = true,
+ *     logRecords = 500,
+ *     excludedPaths = listOf("database.password"),
+ *     secretKeyPatterns = listOf("(?i).*(token|secret|password).*"),
+ * )
+ * ```
+ *
+ * @property upload whether completed reports may be sent to an upload provider
+ * @property uploadMode upload transport policy: `encrypted` or `disabled`
+ * @property uploadProviders providers attempted in order; supported values are
+ * `catbox`, `fileio`, and `custom`
+ * @property uploadEndpoint endpoint used by the custom upload provider
+ * @property uploadPublicBase public URL prefix used to construct custom upload links
+ * @property uploadPublicKey Base64-encoded public key used for encrypted reports
+ * @property uploadKeyId operator-defined identifier written into encrypted envelopes
+ * @property allowPlaintext whether an explicitly configured provider may receive an
+ * unencrypted report
+ * @property configs whether registered configuration files are collected by default
+ * @property logs whether buffered warning and error records are collected by default
+ * @property logRecords maximum number of recent log records included in one report
+ * @property historyRetentionDays maximum age of persisted diagnostic history entries
+ * @property historyMaxBytes total byte budget for persisted diagnostic history
+ * @property cooldownSeconds minimum delay between diagnostic commands from one caller
+ * @property keepReports maximum number of locally retained report archives
+ * @property maxReportBytes maximum uncompressed report size in bytes
+ * @property deleteAfterDays age at which local reports are deleted; `0` disables
+ * age-based deletion
+ * @property excludedPaths dotted configuration paths omitted from every report
+ * @property secretKeyPatterns regular expressions matched against configuration keys
+ * whose values must be redacted
+ * @property redactValuePatterns regular expressions whose matches are redacted inside
+ * scalar configuration values
+ * @throws IllegalArgumentException if a numeric limit, provider, mode, path, or regular
+ * expression is invalid
  */
 data class PnLibraryConfig @JvmOverloads constructor(
     val upload: Boolean = true,
@@ -46,8 +92,10 @@ data class PnLibraryConfig @JvmOverloads constructor(
         excludedPaths.forEach { require(it.isNotBlank() && it.length <= 256) { "invalid excluded path: $it" } }
         (secretKeyPatterns + redactValuePatterns).forEach { expression ->
             require(expression.isNotBlank() && expression.length <= 256) { "invalid diagnostic regex" }
-            require(runCatching { java.util.regex.Pattern.compile(expression) }.isSuccess) {
-                "invalid diagnostic regex: $expression"
+            try {
+                Pattern.compile(expression)
+            } catch (exception: PatternSyntaxException) {
+                throw IllegalArgumentException("invalid diagnostic regex: $expression", exception)
             }
         }
     }

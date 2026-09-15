@@ -1,11 +1,12 @@
 package ru.privatenull.pnlibrary.core.metrics
 
 import ru.privatenull.pnlibrary.api.metrics.MetricsService
-import ru.privatenull.pnlibrary.spi.metrics.PlatformMetricsFactory
 import ru.privatenull.pnlibrary.api.metrics.PluginMetrics
+import ru.privatenull.pnlibrary.spi.metrics.PlatformMetricsFactory
 import java.util.Collections
 import java.util.IdentityHashMap
 
+/** Owns every platform metrics session and provides idempotent managed close handles. */
 internal class MetricsRegistry(private val factory: PlatformMetricsFactory) : MetricsService, AutoCloseable {
     private val sessions = Collections.newSetFromMap(IdentityHashMap<PluginMetrics, Boolean>())
 
@@ -25,6 +26,7 @@ internal class MetricsRegistry(private val factory: PlatformMetricsFactory) : Me
     }
 }
 
+/** Removes a delegate from its registry exactly once, even when delegate close fails. */
 private class ManagedMetrics(
     private val delegate: PluginMetrics,
     private val onClose: (PluginMetrics) -> Unit,

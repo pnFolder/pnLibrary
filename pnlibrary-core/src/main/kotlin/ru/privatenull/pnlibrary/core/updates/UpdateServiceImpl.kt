@@ -11,9 +11,10 @@ import ru.privatenull.pnlibrary.api.updates.UpdateState
 import java.nio.file.Files
 import java.nio.file.Paths
 import java.util.concurrent.CopyOnWriteArrayList
-import java.util.concurrent.atomic.AtomicReference
 import java.util.concurrent.atomic.AtomicBoolean
+import java.util.concurrent.atomic.AtomicReference
 
+/** Coordinates plugin-owned update registrations and their background workers. */
 internal class UpdateServiceImpl(private val platform: PlatformAdapter) : UpdateService, AutoCloseable {
     private val entries = CopyOnWriteArrayList<Registration>()
 
@@ -52,10 +53,20 @@ internal class UpdateServiceImpl(private val platform: PlatformAdapter) : Update
         private val jar: java.nio.file.Path,
         private val updateDir: java.nio.file.Path,
     ) : UpdateRegistration {
-        private val state = AtomicReference(UpdateSnapshot(
-            product, version, null, request.channel, UpdateState.CHECKING,
-            Runtime.version().feature(), artifact.minimumJava, request.automaticDownload, null, null,
-        ))
+        private val state = AtomicReference(
+            UpdateSnapshot(
+                product = product,
+                currentVersion = version,
+                latestVersion = null,
+                channel = request.channel,
+                state = UpdateState.CHECKING,
+                currentJava = Runtime.version().feature(),
+                requiredJava = artifact.minimumJava,
+                automaticDownload = request.automaticDownload,
+                releaseUrl = null,
+                message = null,
+            ),
+        )
         private var thread: Thread? = null
         private val closed = AtomicBoolean(false)
         private val actionThreads = java.util.concurrent.CopyOnWriteArraySet<Thread>()
@@ -82,17 +93,39 @@ internal class UpdateServiceImpl(private val platform: PlatformAdapter) : Update
                         request.channel.name.lowercase(), artifact.pattern, jar, updateDir,
                         download, artifact.minimumJava, ::updateState,
                     )
-                }.onFailure {
-                    if (!closed.get()) state.set(UpdateSnapshot(product, version, snapshot.latestVersion, request.channel,
-                        UpdateState.FAILED, Runtime.version().feature(), artifact.minimumJava,
-                        request.automaticDownload, snapshot.releaseUrl, it.message))
-                    if (!closed.get()) platform.log(owner, LogLevel.WARNING, "[$product] Не удалось выполнить обновление: ${it.message}")
+                }.onFailure { failure ->
+                    recordFailure(failure)
                 }.also {
                     actionThreads.remove(Thread.currentThread())
                 }
             }, "pnLibrary-update-action-${request.repositoryName}").apply { isDaemon = true }
             actionThreads += action
             action.start()
+        }
+
+        private fun recordFailure(failure: Throwable) {
+            if (closed.get()) return
+
+            val previous = snapshot
+            state.set(
+                UpdateSnapshot(
+                    product = product,
+                    currentVersion = version,
+                    latestVersion = previous.latestVersion,
+                    channel = request.channel,
+                    state = UpdateState.FAILED,
+                    currentJava = Runtime.version().feature(),
+                    requiredJava = artifact.minimumJava,
+                    automaticDownload = request.automaticDownload,
+                    releaseUrl = previous.releaseUrl,
+                    message = failure.message,
+                ),
+            )
+            platform.log(
+                owner,
+                LogLevel.WARNING,
+                "[$product] Не удалось выполнить обновление: ${failure.message}",
+            )
         }
 
         private fun updateState(value: UpdateSnapshot) {

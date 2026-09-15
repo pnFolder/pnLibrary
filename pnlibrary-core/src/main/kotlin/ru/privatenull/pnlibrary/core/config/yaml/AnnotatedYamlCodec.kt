@@ -10,12 +10,45 @@ import java.lang.reflect.Type
 import java.lang.reflect.Array as ReflectArray
 import java.util.function.Supplier
 
+/**
+ * Runtime extension of a polymorphic configuration type registry.
+ *
+ * @property owner plugin namespace that registered the implementation
+ * @property baseType annotated polymorphic contract
+ * @property implementation concrete no-argument implementation
+ * @property name canonical discriminator value
+ * @property aliases additional accepted discriminator values
+ * @property priority tie-breaker when compatible declarations overlap
+ */
 internal data class RuntimeConfigType(
-    val owner: String, val baseType: Class<*>, val implementation: Class<*>, val name: String,
-    val aliases: Set<String>, val priority: Int,
+    val owner: String,
+    val baseType: Class<*>,
+    val implementation: Class<*>,
+    val name: String,
+    val aliases: Set<String>,
+    val priority: Int,
 )
 
-/** Reflection codec for ordinary mutable Java classes and Kotlin classes with backing fields. */
+/**
+ * Reflection-based YAML codec for mutable Java/Kotlin configuration objects.
+ *
+ * Decoding starts from a fresh [defaults] instance, preserving field defaults for
+ * absent YAML keys. Fields may use custom serializers, validation annotations,
+ * naming policies, generated comments, and polymorphic implementations. Static,
+ * transient, synthetic, and [ConfigIgnore] fields are excluded.
+ *
+ * Configuration classes must expose mutable backing fields. Nested concrete
+ * objects and annotation serializers require a no-argument constructor unless a
+ * registered [ConfigSerializer] handles the type.
+ *
+ * @param type root configuration class
+ * @param defaults factory for a pristine root object on every decode
+ * @param serializers serializers keyed by supported Java type
+ * @param runtimeTypes current external polymorphic type registrations
+ * @param consumer plugin namespace resolving unqualified external types
+ * @param options naming and document-generation policy
+ * @param warning receiver for values replaced via [ConfigDefaultOnInvalid]
+ */
 internal class AnnotatedYamlCodec<T : Any>(
     private val type: Class<T>,
     private val defaults: Supplier<T>,
@@ -26,6 +59,8 @@ internal class AnnotatedYamlCodec<T : Any>(
     private val warning: (String) -> Unit,
 ) : ConfigCodec<T>, ConfigSchema {
     private val annotationSerializers = mutableMapOf<Class<out ConfigSerializer<*>>, ConfigSerializer<*>>()
+    private val introspector = ConfigObjectIntrospector(options.naming)
+    private val polymorphicResolver = ConfigPolymorphicResolver(runtimeTypes, consumer, introspector)
     override val requiredPaths: Set<String> = required(type)
     private val yaml = Yaml(DumperOptions().apply {
         defaultFlowStyle = DumperOptions.FlowStyle.BLOCK
@@ -35,13 +70,20 @@ internal class AnnotatedYamlCodec<T : Any>(
         width = 120
     })
 
+    /** Serializes [value] and decorates generated YAML with schema comments. */
     override fun encode(value: T): String {
         val raw = yaml.dump(toYamlValue(value, type, "", emptyList(), value))
-        val body = decorate(raw, schema(type, value))
+        val body = YamlSchemaDecorator.decorate(raw, schema(type, value))
         val header = type.getAnnotation(ConfigComment::class.java)?.value.orEmpty()
         return if (header.isEmpty()) body else header.joinToString("\n") { "# $it" } + "\n" + body
     }
 
+    /**
+     * Decodes [yaml] into a fresh defaults instance.
+     *
+     * @throws IllegalArgumentException for incompatible values, missing or ambiguous
+     * polymorphic types, and classes that cannot be instantiated
+     */
     override fun decode(yaml: String): T {
         val loaded = this.yaml.load<Any?>(yaml) ?: linkedMapOf<String, Any?>()
         serializer(type)?.let {
@@ -52,6 +94,7 @@ internal class AnnotatedYamlCodec<T : Any>(
         return defaults.get().also { populate(it, type, loaded, "") }
     }
 
+    /** Evaluates declarative validation annotations without mutating [value]. */
     fun validate(value: T): List<ConfigProblem> {
         val problems = mutableListOf<ConfigProblem>()
         validateObject(value, type, "", problems)
@@ -65,13 +108,11 @@ internal class AnnotatedYamlCodec<T : Any>(
         if (value != null) serializer(value.javaClass)?.let {
             return toYamlValue(it.serializeUntyped(value, context(declaredType, path, annotations, defaultValue)))
         }
-        if (value != null && isPolymorphic(declaredType, annotations)) {
-            val base = rawClass(declaredType)
+        if (value != null && polymorphicResolver.supports(declaredType, annotations)) {
+            val base = introspector.rawClass(declaredType)
             val polymorphic = base.getAnnotation(ConfigPolymorphic::class.java)
-            val selected = select(configTypes(base, annotations), value.javaClass)
-                ?: error("Configuration implementation ${value.javaClass.name} is not declared by ${base.name}")
-            val storedName = if (selected.owner == null || selected.owner == consumer) selected.name
-                else "${selected.owner}::${selected.name}"
+            val selected = polymorphicResolver.encodingType(base, annotations, value.javaClass)
+            val storedName = selected.serializedName(consumer)
             return linkedMapOf<String, Any?>(polymorphic.discriminator to storedName).apply {
                 putAll(objectYaml(value, path))
             }
@@ -92,12 +133,13 @@ internal class AnnotatedYamlCodec<T : Any>(
     }
 
     private fun objectYaml(value: Any, path: String): Map<String, Any?> = linkedMapOf<String, Any?>().also { out ->
-        fields(value.javaClass).forEach { field ->
-            val fieldValue = read(field, value)
+        introspector.fields(value.javaClass).forEach { field ->
+            val fieldValue = introspector.read(field, value)
             val serializer = serializer(field)
-            val fieldPath = if (path.isEmpty()) key(field) else "$path.${key(field)}"
+            val fieldKey = introspector.key(field)
+            val fieldPath = if (path.isEmpty()) fieldKey else "$path.$fieldKey"
             val fieldContext = context(field.genericType, fieldPath, field.annotations.toList(), fieldValue)
-            out[key(field)] = if (fieldValue != null && serializer != null)
+            out[fieldKey] = if (fieldValue != null && serializer != null)
                 toYamlValue(serializer.serializeUntyped(fieldValue, fieldContext))
             else toYamlValue(fieldValue, field.genericType, fieldPath, field.annotations.toList(), fieldValue)
         }
@@ -105,16 +147,17 @@ internal class AnnotatedYamlCodec<T : Any>(
 
     private fun populate(target: Any, targetType: Class<*>, values: Map<*, *>, prefix: String) {
         val byKey = values.entries.associate { it.key.toString() to it.value }
-        fields(targetType).forEach { field ->
-            if (!byKey.containsKey(key(field))) return@forEach
-            val raw = byKey[key(field)]
-            val path = if (prefix.isEmpty()) key(field) else "$prefix.${key(field)}"
-            val current = read(field, target)
+        introspector.fields(targetType).forEach { field ->
+            val fieldKey = introspector.key(field)
+            if (!byKey.containsKey(fieldKey)) return@forEach
+            val raw = byKey[fieldKey]
+            val path = if (prefix.isEmpty()) fieldKey else "$prefix.$fieldKey"
+            val current = introspector.read(field, target)
             val converted = try {
                 val resolved = enumAlias(field.type, raw, path)
                 serializer(field)?.deserialize(resolved, context(field.genericType, path, field.annotations.toList(), current))
                     ?: convert(resolved, field.genericType, current, path, field.annotations.toList())
-            } catch (error: Throwable) {
+            } catch (error: Exception) {
                 if (field.isAnnotationPresent(ConfigDefaultOnInvalid::class.java)) {
                     warning("Invalid value at $path (${raw ?: "null"}); using default ${current ?: "null"}")
                     current
@@ -134,10 +177,12 @@ internal class AnnotatedYamlCodec<T : Any>(
         value: Any?, targetType: Type, current: Any? = null, path: String = "",
         annotations: List<Annotation> = emptyList(),
     ): Any? {
-        val rawType = rawClass(targetType)
+        val rawType = introspector.rawClass(targetType)
         serializer(rawType)?.let { return it.deserialize(value, context(targetType, path, emptyList(), current)) }
         if (value == null) return null
-        if (isPolymorphic(targetType, annotations)) return polymorphic(value, rawType, path, annotations)
+        if (polymorphicResolver.supports(targetType, annotations)) {
+            return polymorphic(value, rawType, path, annotations)
+        }
         if (rawType == String::class.java) return value.toString()
         if (rawType == java.lang.Boolean.TYPE || rawType == java.lang.Boolean::class.java) return value as Boolean
         if (rawType == java.lang.Byte.TYPE || rawType == java.lang.Byte::class.java) return (value as Number).toByte()
@@ -159,7 +204,7 @@ internal class AnnotatedYamlCodec<T : Any>(
             val converted = value.mapIndexed { index, item ->
                 convert(item, elementType, path = "$path[$index]", annotations = annotations)
             }
-            return newCollection(rawType, converted, path)
+            return introspector.collection(rawType, converted, path)
         }
         if (Map::class.java.isAssignableFrom(rawType) && value is Map<*, *>) {
             val arguments = (targetType as? ParameterizedType)?.actualTypeArguments
@@ -168,13 +213,13 @@ internal class AnnotatedYamlCodec<T : Any>(
             val converted = linkedMapOf<Any?, Any?>().also { out ->
                 value.forEach { (key, item) -> out[convert(key, keyType)] = convert(item, valueType, path = "$path.$key") }
             }
-            return newMap(rawType, converted, path)
+            return introspector.map(rawType, converted, path)
         }
         if (value is Map<*, *>) {
             require(!rawType.isInterface && !Modifier.isAbstract(rawType.modifiers)) {
                 "Type ${rawType.name} at $path is abstract; register a ConfigSerializer"
             }
-            val nested = current ?: instantiate(rawType, path)
+            val nested = current ?: introspector.instantiate(rawType, path)
             populate(nested, rawType, value, path)
             return nested
         }
@@ -187,104 +232,33 @@ internal class AnnotatedYamlCodec<T : Any>(
         val entry = value.entries.firstOrNull { it.key?.toString()?.equals(discriminator, true) == true }
             ?: error("Missing '$discriminator' for ${baseType.simpleName} at $path")
         val name = entry.value?.toString()?.trim().orEmpty()
-        val available = configTypes(baseType, annotations)
-        val matches = available.filter { it.matches(name, consumer) }
-        val selected = matches.maxWithOrNull(compareBy<TypeDescriptor> { it.owner == consumer }.thenBy { it.priority })
-            ?: error("Unknown ${baseType.simpleName} type '$name' at $path; allowed: ${available.joinToString { it.name }}")
-        require(matches.count { it.priority == selected.priority && (it.owner == consumer) == (selected.owner == consumer) } == 1) {
-            "Ambiguous ${baseType.simpleName} type '$name' at $path; assign different priorities"
-        }
-        val implementation = selected.type
+        val implementation = polymorphicResolver.decodingType(baseType, annotations, name, path)
         val body = linkedMapOf<Any?, Any?>().also { result ->
             value.forEach { (key, item) -> if (key != entry.key) result[key] = item }
         }
-        return instantiate(implementation, path).also { populate(it, implementation, body, path) }
+        return introspector.instantiate(implementation, path).also { populate(it, implementation, body, path) }
     }
 
-    private fun isPolymorphic(type: Type, annotations: List<Annotation>): Boolean {
-        val raw = rawClass(type)
-        return raw != Any::class.java && raw.isAnnotationPresent(ConfigPolymorphic::class.java) &&
-            (raw.isAnnotationPresent(ConfigTypes::class.java) || annotations.any { it is ConfigTypes })
-    }
-
-    private fun configTypes(baseType: Class<*>, annotations: List<Annotation>): List<TypeDescriptor> {
-        val declared = baseType.getAnnotation(ConfigTypes::class.java)?.value?.map {
-            TypeDescriptor(null, it.type.java, it.name, it.aliases.toSet(), it.priority)
-        }.orEmpty()
-        val extensions = annotations.filterIsInstance<ConfigTypes>().flatMap { annotation ->
-            annotation.value.map { TypeDescriptor(null, it.type.java, it.name, it.aliases.toSet(), it.priority) }
-        } + runtimeTypes().filter { it.baseType == baseType }.map {
-            TypeDescriptor(it.owner, it.implementation, it.name, it.aliases, it.priority)
-        }
-        val types = declared + extensions
-        require(types.isNotEmpty()) { "Polymorphic configuration type ${baseType.name} requires @ConfigTypes" }
-        require(types.all { baseType.isAssignableFrom(it.type) }) {
-            "Every @ConfigTypes entry on ${baseType.name} must implement that type"
-        }
-        return types
-    }
-
-    private data class TypeDescriptor(
-        val owner: String?,
-        val type: Class<*>,
-        val name: String,
-        val aliases: Set<String>,
-        val priority: Int,
-    ) {
-        fun matches(value: String, consumer: String): Boolean {
-            val separator = value.indexOf("::")
-            if (separator >= 0) {
-                if (owner == null || !owner.equals(value.substring(0, separator), true)) return false
-                return matchesName(value.substring(separator + 2))
-            }
-            if (owner != null && owner != consumer) return false
-            return matchesName(value)
-        }
-
-        private fun matchesName(value: String): Boolean =
-            name.equals(value, true) || aliases.any { it.equals(value, true) }
-    }
-
-    private fun select(types: List<TypeDescriptor>, implementation: Class<*>): TypeDescriptor? =
-        types.filter { it.type == implementation }
-            .maxWithOrNull(compareBy<TypeDescriptor> { it.owner == consumer }.thenBy { it.priority })
-
-    private fun schema(target: Class<*>, instance: Any?): Map<String, Meta> = fields(target).associate { field ->
-        val fieldValue = instance?.let { read(field, it) }
+    private fun schema(target: Class<*>, instance: Any?): Map<String, YamlFieldMetadata> = introspector.fields(target).associate { field ->
+        val fieldValue = instance?.let { introspector.read(field, it) }
+        val fieldKey = introspector.key(field)
         val explicit = field.getAnnotation(ConfigComment::class.java)?.value?.toList().orEmpty()
         val enumHelp = if (field.type.isEnum) listOf(
             "Allowed values: ${enumDescription(field.type)}. Default: ${fieldValue ?: "null"}."
         ) else emptyList()
-        key(field) to Meta(
+        fieldKey to YamlFieldMetadata(
             explicit + enumHelp,
             field.isAnnotationPresent(ConfigNewLine::class.java),
             if (isStructured(field)) schema(field.type, fieldValue) else emptyMap(),
         )
     }
 
-    private fun decorate(source: String, root: Map<String, Meta>): String {
-        val result = mutableListOf<String>()
-        val schemas = mutableMapOf(0 to root)
-        source.lineSequence().forEach { line ->
-            val indent = line.takeWhile { it == ' ' }.length
-            schemas.keys.filter { it > indent }.toList().forEach(schemas::remove)
-            val key = line.trimStart().substringBefore(':').trim('"', '\'')
-            val meta = schemas[indent]?.get(key)
-            if (meta != null) {
-                if (meta.newLine && result.lastOrNull()?.isNotBlank() == true) result += ""
-                meta.comments.forEach { result += " ".repeat(indent) + "# " + it }
-                if (meta.children.isNotEmpty()) schemas[indent + 2] = meta.children else schemas.remove(indent + 2)
-            }
-            result += line
-        }
-        return result.joinToString("\n").trimEnd() + "\n"
-    }
-
     private fun validateObject(value: Any?, target: Class<*>, prefix: String, problems: MutableList<ConfigProblem>) {
         if (value == null) return
-        fields(target).forEach { field ->
-            val current = read(field, value)
-            val path = if (prefix.isEmpty()) key(field) else "$prefix.${key(field)}"
+        introspector.fields(target).forEach { field ->
+            val current = introspector.read(field, value)
+            val fieldKey = introspector.key(field)
+            val path = if (prefix.isEmpty()) fieldKey else "$prefix.$fieldKey"
             field.getAnnotation(ConfigRange::class.java)?.let { range ->
                 val number = current as? Number
                 if (number == null || number.toDouble() !in range.min..range.max)
@@ -301,73 +275,6 @@ internal class AnnotatedYamlCodec<T : Any>(
         }
     }
 
-    private fun fields(target: Class<*>): List<Field> {
-        val hierarchy = generateSequence(target) { it.superclass }.takeWhile { it != Any::class.java }.toList().asReversed()
-        return hierarchy.flatMap { it.declaredFields.asList() }
-            .filterNot { it.isSynthetic || Modifier.isStatic(it.modifiers) || Modifier.isTransient(it.modifiers) || it.isAnnotationPresent(ConfigIgnore::class.java) }
-            .sortedWith(compareBy<Field> { it.getAnnotation(ConfigOrder::class.java)?.value ?: 0 })
-            .onEach { it.isAccessible = true }
-    }
-
-    private fun key(field: Field): String = field.getAnnotation(ConfigKey::class.java)?.value?.takeIf(String::isNotBlank)
-        ?: name(field.name, field.declaringClass.getAnnotation(ConfigNaming::class.java)?.value ?: options.naming)
-    private fun name(value: String, strategy: ConfigNamingStrategy): String {
-        if (strategy == ConfigNamingStrategy.AS_DECLARED) return value
-        val words = value.replace(Regex("([a-z0-9])([A-Z])"), "\$1 \$2")
-            .replace(Regex("([A-Z]+)([A-Z][a-z])"), "\$1 \$2")
-            .split(Regex("[_\\-\\s]+"))
-            .filter(String::isNotBlank)
-        return when (strategy) {
-            ConfigNamingStrategy.AS_DECLARED -> value
-            ConfigNamingStrategy.CAMEL_CASE -> words.first().lowercase() + words.drop(1).joinToString("") {
-                it.lowercase().replaceFirstChar(Char::uppercase)
-            }
-            ConfigNamingStrategy.SNAKE_CASE -> words.joinToString("_") { it.lowercase() }
-            ConfigNamingStrategy.KEBAB_CASE -> words.joinToString("-") { it.lowercase() }
-            ConfigNamingStrategy.UPPER_SNAKE_CASE -> words.joinToString("_") { it.uppercase() }
-        }
-    }
-    private fun read(field: Field, owner: Any): Any? = field.get(owner)
-    private fun isScalar(type: Class<*>) = type.isPrimitive || type.isEnum || type == String::class.java || Number::class.java.isAssignableFrom(type) || type == java.lang.Boolean::class.java
-    private fun rawClass(type: Type): Class<*> = when (type) {
-        is Class<*> -> type
-        is ParameterizedType -> type.rawType as Class<*>
-        else -> Any::class.java
-    }
-
-    @Suppress("UNCHECKED_CAST")
-    private fun newCollection(type: Class<*>, values: Collection<Any?>, path: String): Collection<Any?> {
-        if (type.isInterface || Modifier.isAbstract(type.modifiers)) return when {
-            java.util.SortedSet::class.java.isAssignableFrom(type) -> java.util.TreeSet(values)
-            Set::class.java.isAssignableFrom(type) -> LinkedHashSet(values)
-            java.util.Queue::class.java.isAssignableFrom(type) -> java.util.LinkedList(values)
-            else -> ArrayList(values)
-        }
-        val collection = instantiate(type, path) as? MutableCollection<Any?>
-            ?: throw IllegalArgumentException("Type ${type.name} at $path is not a mutable collection")
-        collection.addAll(values)
-        return collection
-    }
-
-    @Suppress("UNCHECKED_CAST")
-    private fun newMap(type: Class<*>, values: Map<Any?, Any?>, path: String): Map<Any?, Any?> {
-        if (type.isInterface || Modifier.isAbstract(type.modifiers)) return if (
-            java.util.SortedMap::class.java.isAssignableFrom(type)
-        ) java.util.TreeMap(values) else LinkedHashMap(values)
-        val map = instantiate(type, path) as? MutableMap<Any?, Any?>
-            ?: throw IllegalArgumentException("Type ${type.name} at $path is not a mutable map")
-        map.putAll(values)
-        return map
-    }
-
-    private fun instantiate(type: Class<*>, path: String): Any = try {
-        type.getDeclaredConstructor().also { it.isAccessible = true }.newInstance()
-    } catch (error: Throwable) {
-        throw IllegalArgumentException(
-            "Type ${type.name} at $path needs a no-argument constructor or a ConfigSerializer",
-            error,
-        )
-    }
     @Suppress("UNCHECKED_CAST")
     private fun serializer(type: Class<*>): ConfigSerializer<Any>? =
         (annotatedSerializer(type) ?: serializers[type] ?: serializers.entries.firstOrNull { it.key.isAssignableFrom(type) }?.value) as? ConfigSerializer<Any>
@@ -389,8 +296,9 @@ internal class AnnotatedYamlCodec<T : Any>(
     private fun required(target: Class<*>, prefix: String = ""): Set<String> {
         if (serializer(target) != null) return emptySet()
         return buildSet {
-        fields(target).forEach { field ->
-            val path = if (prefix.isEmpty()) key(field) else "$prefix.${key(field)}"
+        introspector.fields(target).forEach { field ->
+            val fieldKey = introspector.key(field)
+            val path = if (prefix.isEmpty()) fieldKey else "$prefix.$fieldKey"
             if (field.isAnnotationPresent(ConfigRequired::class.java)) add(path)
             if (isStructured(field))
                 addAll(required(field.type, path))
@@ -398,7 +306,7 @@ internal class AnnotatedYamlCodec<T : Any>(
         }
     }
     private fun isStructured(field: Field): Boolean =
-        serializer(field) == null && serializer(field.type) == null && !isScalar(field.type) &&
+        serializer(field) == null && serializer(field.type) == null && !introspector.isScalar(field.type) &&
             !Collection::class.java.isAssignableFrom(field.type) && !Map::class.java.isAssignableFrom(field.type) && !field.type.isArray
 
     private fun enumAlias(type: Class<*>, value: Any?, path: String): Any? {
@@ -419,9 +327,8 @@ internal class AnnotatedYamlCodec<T : Any>(
 
     private fun context(
         declaredType: Type, path: String, annotations: List<Annotation>, defaultValue: Any?,
-    ) = ConfigSerializationContext(path, declaredType, rawClass(declaredType), annotations, defaultValue)
+    ) = ConfigSerializationContext(path, declaredType, introspector.rawClass(declaredType), annotations, defaultValue)
 
     private fun ConfigSerializer<Any>.serializeUntyped(value: Any, context: ConfigSerializationContext): Any? =
         serialize(value, context)
-    private data class Meta(val comments: List<String>, val newLine: Boolean, val children: Map<String, Meta>)
 }

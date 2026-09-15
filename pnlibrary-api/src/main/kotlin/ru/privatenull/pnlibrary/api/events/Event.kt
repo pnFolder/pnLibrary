@@ -11,6 +11,7 @@ import java.util.concurrent.CompletableFuture
  * background executor.
  */
 abstract class Event @JvmOverloads constructor(
+    /** Scheduler context used for every handler in this event's dispatch. */
     val mode: EventMode = EventMode.SYNC,
 ) {
     /** Compatibility-friendly view of [mode]. */

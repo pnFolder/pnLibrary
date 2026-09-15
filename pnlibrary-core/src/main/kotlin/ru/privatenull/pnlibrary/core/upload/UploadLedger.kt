@@ -1,121 +1,96 @@
 package ru.privatenull.pnlibrary.core.upload
 
-import com.google.gson.Gson
-import com.google.gson.reflect.TypeToken
 import java.io.IOException
 import java.net.URI
-import java.nio.charset.StandardCharsets
-import java.nio.file.Files
-import java.nio.file.LinkOption
 import java.nio.file.Path
-import java.nio.file.StandardCopyOption
-import java.nio.file.StandardOpenOption
-import java.nio.file.attribute.PosixFilePermission
-import java.time.Instant
-import java.util.EnumSet
+import java.time.Clock
 
 /**
- * Local deletion-token ledger persisted as JSON.
+ * Schedules and executes deletion of remotely uploaded diagnostic reports.
  *
- * Deletion tokens are **never** included in user-visible report links.
- * The ledger file is owner-read-write only on POSIX systems.
+ * Receipts without deletion tokens and policies with `deleteAfterDays <= 0` are
+ * intentionally ignored. Network failures retain the entry for a later cleanup
+ * attempt. JSON and filesystem concerns are delegated to [UploadLedgerPersistence].
  *
- * The ledger tolerates individual corrupted entries by logging and skipping
- * them — a partially damaged ledger does not prevent further recording.
+ * @param file local JSON ledger path; deletion tokens never enter report archives
+ * @param clock time source used for deterministic scheduling and cleanup
  */
-class UploadLedger(private val file: Path) {
+class UploadLedger @JvmOverloads constructor(
+    file: Path,
+    private val clock: Clock = Clock.systemUTC(),
+) {
+    private val persistence = UploadLedgerPersistence(file, clock)
 
+    /**
+     * Records a future deletion for [receipt].
+     *
+     * If the backend did not provide a creation timestamp, the current [clock]
+     * instant becomes the scheduling baseline.
+     *
+     * @param deleteAfterDays whole days to retain the remote report
+     * @throws IOException if ledger persistence fails
+     */
     @Synchronized
     @Throws(IOException::class)
     fun record(receipt: UploadReceipt, deleteAfterDays: Int) {
         if (!receipt.canDelete() || deleteAfterDays <= 0) return
-        val entries = readSafe()
-        val deleteAt = receipt.createdEpochSeconds + deleteAfterDays * 86_400L
-        entries.add(LedgerEntry(
-            backend  = receipt.backend,
-            link     = receipt.link.toString(),
-            id       = receipt.id,
-            token    = receipt.deleteToken,
-            deleteAt = deleteAt,
-        ))
-        write(entries)
+        val entries = persistence.read()
+        val createdAt = receipt.createdEpochSeconds.takeIf { it > 0 }
+            ?: clock.instant().epochSecond
+        val entry = UploadLedgerEntry(
+            backend = receipt.backend,
+            link = receipt.link.toString(),
+            id = receipt.id,
+            token = receipt.deleteToken,
+            deleteAt = createdAt + deleteAfterDays * SECONDS_PER_DAY,
+        )
+        entries.removeAll { it.backend == entry.backend && it.id == entry.id }
+        entries += entry
+        persistence.write(entries)
     }
 
+    /**
+     * Attempts every due remote deletion and persists unfinished entries.
+     *
+     * Entries scheduled in the future and entries whose provider rejects or fails
+     * deletion remain in the ledger.
+     *
+     * @return number of entries successfully removed remotely
+     * @throws IOException if reading or rewriting the ledger fails
+     */
     @Synchronized
     @Throws(IOException::class)
     fun cleanup(uploader: UploadProvider): Int {
-        val entries   = readSafe()
-        val remaining = mutableListOf<LedgerEntry>()
-        var deleted   = 0
-        val now       = Instant.now().epochSecond
-        for (entry in entries) {
+        val remaining = mutableListOf<UploadLedgerEntry>()
+        var deleted = 0
+        val now = clock.instant().epochSecond
+        persistence.read().forEach { entry ->
             if (entry.deleteAt > now) {
-                remaining.add(entry)
-                continue
+                remaining += entry
+                return@forEach
             }
-            try {
-                val receipt = UploadReceipt(URI.create(entry.link), entry.id, entry.token, 0L, 0L, entry.backend)
-                if (uploader.delete(receipt)) deleted++ else remaining.add(entry)
-            } catch (_: Exception) {
-                remaining.add(entry)
-            }
+            if (tryDelete(uploader, entry)) deleted++ else remaining += entry
         }
-        write(remaining)
+        persistence.write(remaining)
         return deleted
     }
 
-    // ── I/O ──────────────────────────────────────────────────────────────────
-
-    private fun readSafe(): MutableList<LedgerEntry> {
-        if (!Files.exists(file)) return mutableListOf()
-        if (Files.isSymbolicLink(file))          throw IOException("unsafe upload ledger: symlink")
-        if (Files.size(file) > 1_048_576)        throw IOException("unsafe upload ledger: oversized")
-        return try {
-            val text = file.toFile().readText(Charsets.UTF_8)
-            JSON.fromJson<List<LedgerEntry>?>(text, ENTRY_LIST_TYPE)?.toMutableList()
-                ?: mutableListOf()
-        } catch (e: RuntimeException) {
-            // Corrupt ledger: treat as empty rather than failing completely
-            mutableListOf()
-        }
-    }
-
-    private fun write(entries: List<LedgerEntry>) {
-        Files.createDirectories(file.parent)
-        val tmp = file.resolveSibling("${file.fileName}.tmp")
-        Files.write(
-            tmp,
-            JSON.toJson(entries).toByteArray(StandardCharsets.UTF_8),
-            StandardOpenOption.CREATE,
-            StandardOpenOption.TRUNCATE_EXISTING,
+    private fun tryDelete(uploader: UploadProvider, entry: UploadLedgerEntry): Boolean = try {
+        uploader.delete(
+            UploadReceipt(
+                link = URI.create(entry.link),
+                id = entry.id,
+                deleteToken = entry.token,
+                createdEpochSeconds = 0,
+                expiresEpochSeconds = 0,
+                backend = entry.backend,
+            ),
         )
-        try {
-            Files.move(tmp, file, StandardCopyOption.REPLACE_EXISTING, StandardCopyOption.ATOMIC_MOVE)
-        } catch (_: java.nio.file.AtomicMoveNotSupportedException) {
-            Files.move(tmp, file, StandardCopyOption.REPLACE_EXISTING)
-        }
-        try {
-            Files.setPosixFilePermissions(
-                file,
-                EnumSet.of(PosixFilePermission.OWNER_READ, PosixFilePermission.OWNER_WRITE),
-            )
-        } catch (_: UnsupportedOperationException) {
-            // Not a POSIX filesystem (e.g. Windows) — skip silently
-        } catch (_: IOException) { }
+    } catch (_: Exception) {
+        false
     }
 
-    // ── Data model ───────────────────────────────────────────────────────────
-
-    private data class LedgerEntry(
-        val backend: String  = "",
-        val link:    String  = "",
-        val id:      String  = "",
-        val token:   String  = "",
-        val deleteAt: Long   = 0L,
-    )
-
-    companion object {
-        private val JSON = Gson()
-        private val ENTRY_LIST_TYPE = object : TypeToken<List<LedgerEntry>>() {}.type
+    private companion object {
+        const val SECONDS_PER_DAY = 86_400L
     }
 }

@@ -10,6 +10,12 @@ object ColorUtil {
     private val HEX_PATTERN = Pattern.compile("&#([A-Fa-f0-9]{6})")
     private val LEGACY_HEX_PATTERN = Pattern.compile("&x&([A-Fa-f0-9])&([A-Fa-f0-9])&([A-Fa-f0-9])&([A-Fa-f0-9])&([A-Fa-f0-9])&([A-Fa-f0-9])")
 
+    /**
+     * Converts ampersand legacy and hex sequences to Minecraft section-sign formatting.
+     *
+     * Both `&#12ABEF` and `&x&1&2&A&B&E&F` become the expanded section-sign hex form.
+     * A null or empty value produces an empty string.
+     */
     @JvmStatic
     fun colorize(input: String?): String {
         if (input.isNullOrEmpty()) return ""
@@ -45,6 +51,7 @@ object ColorUtil {
         return text.replace('&', '§')
     }
 
+    /** Removes legacy and expanded-hex section-sign control sequences from [input]. */
     @JvmStatic
     fun stripColor(input: String?): String {
         if (input.isNullOrEmpty()) return ""

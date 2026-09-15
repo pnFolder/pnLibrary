@@ -1,16 +1,24 @@
 package ru.privatenull.pnlibrary.bukkit
 
 import net.kyori.adventure.platform.bukkit.BukkitAudiences
+import net.kyori.adventure.sound.Sound
 import net.kyori.adventure.text.Component
 import net.kyori.adventure.text.serializer.legacy.LegacyComponentSerializer
-import net.kyori.adventure.sound.Sound
 import org.bukkit.entity.Player
 import org.bukkit.plugin.Plugin
-import ru.privatenull.pnlibrary.api.actions.Action
+import ru.privatenull.pnlibrary.api.actions.LibraryAudience
+import ru.privatenull.pnlibrary.api.actions.LibraryPlayer
 import java.util.UUID
 import java.util.concurrent.atomic.AtomicBoolean
 
-/** Lifecycle-owned Adventure bridge that selects the correct Bukkit/Paper facet at runtime. */
+/**
+ * Lifecycle-owned Adventure transport for Bukkit players.
+ *
+ * The service prefers `adventure-platform-bukkit` and falls back to legacy Bukkit/Bungee message
+ * methods when Adventure initialization or delivery fails. Runtime degradation is sticky: after a
+ * native transport failure, later messages use the fallback to avoid repeatedly failing calls.
+ * Close this service with the owning plugin to release Adventure platform resources.
+ */
 class BukkitAudienceService(plugin: Plugin) : AutoCloseable {
     private val logger = plugin.logger
     private val audiences = try {
@@ -22,19 +30,26 @@ class BukkitAudienceService(plugin: Plugin) : AutoCloseable {
     }
     private val fallbackOnly = AtomicBoolean(audiences == null)
 
-    /** Current transport can degrade at runtime without disabling the plugin. */
+    /** Whether the native Adventure transport is still available for new deliveries. */
     val nativeTransportAvailable: Boolean get() = !fallbackOnly.get()
 
-    fun player(player: Player): ru.privatenull.pnlibrary.api.actions.LibraryPlayer =
+    /** Creates a platform-neutral view of the currently supplied Bukkit [player]. */
+    fun player(player: Player): LibraryPlayer =
         BukkitLibraryPlayer(player, this)
 
-    fun player(playerId: UUID): ru.privatenull.pnlibrary.api.actions.LibraryPlayer? {
+    /** Returns a wrapper for the online player with [playerId], or `null` when not online. */
+    fun player(playerId: UUID): LibraryPlayer? {
         val player = pluginServer.getPlayer(playerId) ?: return null
         return player(player)
     }
 
-    /** Resolves the current online-player collection whenever an action sends. */
-    fun onlinePlayers(): ru.privatenull.pnlibrary.api.actions.LibraryAudience = ru.privatenull.pnlibrary.api.actions.LibraryAudience.dynamic {
+    /**
+     * Creates a dynamic audience containing all players online at delivery time.
+     *
+     * The returned object does not retain a snapshot. Every message, action bar, or sound operation
+     * asks the server for its current online-player collection.
+     */
+    fun onlinePlayers(): LibraryAudience = LibraryAudience.dynamic {
         pluginServer.onlinePlayers.map(::player)
     }
 
@@ -94,6 +109,7 @@ class BukkitAudienceService(plugin: Plugin) : AutoCloseable {
         }.isSuccess
     }
 
+    /** Releases the underlying Adventure audience provider when one was created. */
     override fun close() {
         runCatching { audiences?.close() }
     }
@@ -102,7 +118,7 @@ class BukkitAudienceService(plugin: Plugin) : AutoCloseable {
         val LEGACY: LegacyComponentSerializer = LegacyComponentSerializer.legacySection()
 
         fun rethrowFatal(error: Throwable) {
-            if (error is VirtualMachineError || error is ThreadDeath) throw error
+            if (error is Error) throw error
         }
     }
 }

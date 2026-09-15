@@ -16,8 +16,13 @@ enum class PlatformType(
     val displayName: String,
     val isProxy: Boolean,
 ) {
+    /** Bukkit-compatible server family, including Paper, Spigot, and Folia-compatible runtimes. */
     BUKKIT("bukkit", "Bukkit", false),
+
+    /** BungeeCord-compatible proxy family, including compatible forks such as Waterfall. */
     BUNGEECORD("bungeecord", "BungeeCord", true),
+
+    /** Velocity proxy family using its native scheduler, commands, and plugin container model. */
     VELOCITY("velocity", "Velocity", true),
     ;
 

@@ -7,5 +7,6 @@ package ru.privatenull.pnlibrary.api.events
  * skip cancelled events through its `ignoreCancelled` option.
  */
 interface Cancellable {
+    /** Mutable cancellation state observed between sequential event handlers. */
     var isCancelled: Boolean
 }

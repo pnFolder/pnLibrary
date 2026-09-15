@@ -1,19 +1,19 @@
 package ru.privatenull.pnlibrary.api.runtime
 
-import ru.privatenull.pnlibrary.api.diagnostics.DiagnosticsService
 import ru.privatenull.pnlibrary.api.config.ConfigurationService
+import ru.privatenull.pnlibrary.api.currency.CurrencyProviderRegistry
 import ru.privatenull.pnlibrary.api.diagnostics.DebugRequest
 import ru.privatenull.pnlibrary.api.diagnostics.DiagnosticReport
+import ru.privatenull.pnlibrary.api.diagnostics.DiagnosticsService
 import ru.privatenull.pnlibrary.api.events.EventService
 import ru.privatenull.pnlibrary.api.logging.LoggingService
 import ru.privatenull.pnlibrary.api.metrics.MetricsService
+import ru.privatenull.pnlibrary.api.placeholders.PlaceholderAdapterRegistry
 import ru.privatenull.pnlibrary.api.plugin.PluginRegistry
-import ru.privatenull.pnlibrary.api.tasks.TaskService
 import ru.privatenull.pnlibrary.api.services.ServiceManager
+import ru.privatenull.pnlibrary.api.tasks.TaskService
 import ru.privatenull.pnlibrary.api.updates.UpdateService
 import java.io.Closeable
-import ru.privatenull.pnlibrary.api.placeholders.PlaceholderAdapterRegistry
-import ru.privatenull.pnlibrary.api.currency.CurrencyProviderRegistry
 
 /**
  * Main pnLibrary facade shared by all plugins in one server process.
@@ -62,18 +62,26 @@ interface PnLibrary : Closeable {
     /** Global registry and high-level entry point for consumer plugins. */
     val plugins: PluginRegistry
 
-    /** Runtime-detected bridges such as PlaceholderAPI. Consumer plugins normally do not register these manually. */
+    /**
+     * Runtime-detected placeholder bridges such as PlaceholderAPI.
+     *
+     * Consumer plugins normally use their plugin context instead of registering adapters here.
+     */
     val placeholderAdapters: PlaceholderAdapterRegistry
 
-    /** Platform-provided currencies such as Vault and PlayerPoints. */
+    /** Registry of platform-provided currencies such as Vault and PlayerPoints. */
     val currencyProviders: CurrencyProviderRegistry
 
     /** Builds a diagnostic report from an already validated request. */
     fun createDiagnosticReport(request: DebugRequest): DiagnosticReport
 
-    /** Whether the runtime has released its resources. */
+    /** Whether [close] has begun and the runtime no longer accepts normal work. */
     val isClosed: Boolean
 
-    /** Stops every service and removes this runtime from [PnLibraryProvider]. */
+    /**
+     * Stops owned plugins and services, releases resources, and clears [PnLibraryProvider].
+     *
+     * Closing the runtime more than once has no additional effect.
+     */
     override fun close()
 }

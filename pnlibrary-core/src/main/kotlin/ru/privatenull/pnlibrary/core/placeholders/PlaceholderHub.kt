@@ -10,6 +10,13 @@ import java.util.concurrent.atomic.AtomicBoolean
 import java.util.function.Consumer
 import ru.privatenull.pnlibrary.spi.platform.PlatformAdapter
 
+/**
+ * Concurrent placeholder registry shared by every plugin scope.
+ *
+ * The hub owns registered values, formatter definitions, and external adapter
+ * bindings. Plugin-facing mutation is isolated through [Scope], allowing all
+ * resources owned by one plugin to be released together.
+ */
 internal class PlaceholderHub(private val platform: PlatformAdapter) : PlaceholderAdapterRegistry {
     private val entries = ConcurrentHashMap<String, Entry<*>>()
     private val adapters = ConcurrentHashMap<String, PlaceholderAdapter>()
@@ -24,8 +31,8 @@ internal class PlaceholderHub(private val platform: PlatformAdapter) : Placehold
         builtin("lower") { value, _ -> value.toString().lowercase() }
         builtin("default") { value, _ -> value.toString() }
         builtin("boolean") { value, args -> if (value == true) args.getOrElse(0) { "true" } else args.getOrElse(1) { "false" } }
-        builtin("plural") { value, args -> plural((value as Number).toLong(), args) }
-        builtin("duration") { value, _ -> duration(value) }
+        builtin("plural", PlaceholderBuiltInFormatters::plural)
+        builtin("duration") { value, _ -> PlaceholderBuiltInFormatters.duration(value) }
         system("server.platform", String::class.java) { platform.type.displayName }
         system("server.implementation", String::class.java) { platform.implementationName }
         system("server.proxy", Boolean::class.javaObjectType) { platform.isProxy }
@@ -282,28 +289,8 @@ internal class PlaceholderHub(private val platform: PlatformAdapter) : Placehold
         entries[id(namespace, key)]?.let { return it to emptyMap() }
         if (separator < 0) entries[id(PluginId.of("pnlibrary"), key)]?.let { return it to emptyMap() }
         return entries.values.asSequence().filter { it.owner == namespace }.mapNotNull { entry ->
-            match(entry.key.value, key)?.let { entry to it }
+            PlaceholderPatternMatcher.match(entry.key.value, key)?.let { entry to it }
         }.maxByOrNull { it.first.key.value.length } ?: (null to emptyMap())
-    }
-
-    private fun match(pattern: String, value: String): Map<String, String>? {
-        val names = Regex("\\{([a-zA-Z0-9_-]+)}").findAll(pattern).map { it.groupValues[1] }.toList()
-        if (names.isEmpty()) return null
-        val token = Regex("\\{([a-zA-Z0-9_-]+)}")
-        var cursor = 0
-        val expression = buildString {
-            append('^')
-            token.findAll(pattern).forEach { found ->
-                append(Regex.escape(pattern.substring(cursor, found.range.first)))
-                append("([^.]+)")
-                cursor = found.range.last + 1
-            }
-            append(Regex.escape(pattern.substring(cursor)))
-            append('$')
-        }
-        val regex = Regex(expression)
-        val match = regex.matchEntire(value) ?: return null
-        return names.mapIndexed { index, name -> name to match.groupValues[index + 1] }.toMap()
     }
 
     private fun format(consumer: PluginId, value: Any?, pipeline: List<String>, playerId: UUID?, values: Map<String, Any?>, existing: PlaceholderRequest? = null): Any? {
@@ -334,19 +321,4 @@ internal class PlaceholderHub(private val platform: PlatformAdapter) : Placehold
 
     private fun <T> failed(error: Throwable): CompletionStage<T> = CompletableFuture<T>().also { it.completeExceptionally(error) }
 
-    private fun plural(number: Long, values: List<String>): String {
-        if (values.size < 3) return values.firstOrNull().orEmpty()
-        val mod100 = number % 100
-        val index = if (mod100 in 11..14) 2 else when (number % 10) { 1L -> 0; 2L, 3L, 4L -> 1; else -> 2 }
-        return values[index]
-    }
-
-    private fun duration(value: Any): String {
-        var seconds = when (value) { is java.time.Duration -> value.seconds; is Number -> value.toLong(); else -> return value.toString() }
-        val days = seconds / 86400; seconds %= 86400
-        val hours = seconds / 3600; seconds %= 3600
-        val minutes = seconds / 60; seconds %= 60
-        return listOf(days to "d", hours to "h", minutes to "m", seconds to "s")
-            .filter { it.first > 0 }.joinToString(" ") { "${it.first}${it.second}" }.ifEmpty { "0s" }
-    }
 }

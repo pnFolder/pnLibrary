@@ -12,22 +12,39 @@ import java.nio.file.StandardCopyOption
 import java.util.logging.Logger
 
 /**
- * Safely saves a Bukkit [FileConfiguration] using a temp file and atomic move.
+ * Persists Bukkit YAML using validate-before-replace semantics.
+ *
+ * The configuration is written to a sibling temporary file, optionally transformed, and parsed
+ * back through [YamlConfiguration] before it can replace the target. An atomic move is preferred;
+ * filesystems without atomic-move support fall back to a replacing move. The temporary file is
+ * removed on every exit path.
  */
-object AtomicYamlStore {
+internal object AtomicYamlStore {
 
     fun interface FilePostProcessor {
+        /**
+         * Mutates or validates the temporary file before read-back validation.
+         *
+         * Throwing [IOException] aborts the save and preserves the existing target.
+         */
         @Throws(IOException::class)
         fun apply(file: Path)
     }
 
+    /**
+     * Safely persists [yaml] to [target].
+     *
+     * @param logger receives a concise warning for expected I/O or YAML validation failures
+     * @param postProcessor optional operation applied only to the temporary file
+     * @return `true` after replacement succeeds, or `false` for expected I/O/validation failures
+     */
     @JvmStatic
     @JvmOverloads
     fun save(
         yaml: FileConfiguration,
         target: File,
         logger: Logger,
-        postProcessor: FilePostProcessor = FilePostProcessor { }
+        postProcessor: FilePostProcessor = FilePostProcessor { },
     ): Boolean {
         var temporary: Path? = null
         try {

@@ -5,7 +5,13 @@ import org.yaml.snakeyaml.Yaml
 import ru.privatenull.pnlibrary.api.config.ConfigDocument
 import ru.privatenull.pnlibrary.api.config.ConfigMigrationPlan
 
-/** Applies a complete migration chain in memory before the managed file is touched. */
+/**
+ * Applies a complete YAML migration chain before the managed file is modified.
+ *
+ * Every step operates on one in-memory [ConfigDocument]. The version field is
+ * advanced only after its step succeeds, and serialization occurs only after the
+ * complete route has finished.
+ */
 internal class YamlMigrationEngine {
     private val yaml = Yaml(DumperOptions().apply {
         defaultFlowStyle = DumperOptions.FlowStyle.BLOCK
@@ -14,8 +20,25 @@ internal class YamlMigrationEngine {
         width = 120
     })
 
-    data class Result(val content: String, val applied: List<String>)
+    /**
+     * Successful migration output.
+     *
+     * @property content normalized migrated YAML
+     * @property applied ordered human-readable `from -> to` step descriptions
+     */
+    data class Result(
+        val content: String,
+        val applied: List<String>,
+    )
 
+    /**
+     * Migrates [content] to [ConfigMigrationPlan.currentVersion].
+     *
+     * @throws IllegalStateException when the source version is unavailable or a
+     * migration step fails
+     * @throws IllegalArgumentException when the YAML root is not an object or no
+     * valid migration route exists
+     */
     fun migrate(content: String, plan: ConfigMigrationPlan): Result {
         val loaded = yaml.load<Any?>(content)
         require(loaded is Map<*, *>) { "Configuration root must be a YAML object" }
@@ -31,7 +54,7 @@ internal class YamlMigrationEngine {
             try {
                 step.migration.migrate(document)
                 document.set(plan.versionKey, step.to)
-            } catch (error: Throwable) {
+            } catch (error: Exception) {
                 throw IllegalStateException("Configuration migration ${step.from} -> ${step.to} failed", error)
             }
         }
@@ -42,6 +65,7 @@ internal class YamlMigrationEngine {
         )
     }
 
+    /** Prepends the current schema version to generated default [content]. */
     fun stampDefaults(content: String, plan: ConfigMigrationPlan): String =
         "${plan.versionKey}: '${plan.currentVersion}'\n" + content
 }

@@ -12,6 +12,8 @@ import java.util.concurrent.CompletableFuture
 interface EventScope : AutoCloseable {
     /** Plugin identity that owns every subscription in this scope. */
     val pluginId: PluginId
+
+    /** Whether this scope has removed its listeners and stopped accepting registrations. */
     val isClosed: Boolean
 
     /**
@@ -47,6 +49,6 @@ interface EventScope : AutoCloseable {
     /** Schedules [event] in its declared execution mode. */
     fun publish(event: Event): CompletableFuture<EventDispatchResult>
 
-    /** Removes every listener registered through this scope. */
+    /** Removes every listener registered through this scope. Closing is idempotent. */
     override fun close()
 }

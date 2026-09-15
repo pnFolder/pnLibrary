@@ -4,6 +4,11 @@ import org.jetbrains.kotlin.gradle.tasks.KotlinCompile
 plugins {
     alias(libs.plugins.kotlin.jvm) apply false
     alias(libs.plugins.shadow)     apply false
+    alias(libs.plugins.dokka)
+}
+
+repositories {
+    mavenCentral()
 }
 
 // ── Convention for every subproject ─────────────────────────────────────────
@@ -26,6 +31,22 @@ subprojects {
 
     // Wire up Kotlin source sets for all subprojects that apply kotlin("jvm")
     pluginManager.withPlugin("org.jetbrains.kotlin.jvm") {
+        pluginManager.apply("org.jetbrains.dokka")
+
+        extensions.configure<org.jetbrains.dokka.gradle.DokkaExtension> {
+            dokkaSourceSets.configureEach {
+                reportUndocumented.set(true)
+                perPackageOption {
+                    matchingRegex.set("org\\.bstats(?:\\..*)?")
+                    suppress.set(true)
+                }
+            }
+            dokkaPublications.configureEach {
+                failOnWarning.set(true)
+                suppressObviousFunctions.set(true)
+            }
+        }
+
         tasks.withType<KotlinCompile>().configureEach {
             compilerOptions {
                 jvmTarget.set(JvmTarget.JVM_1_8)
@@ -39,4 +60,14 @@ subprojects {
             useJUnitPlatform()
         }
     }
+}
+
+dependencies {
+    dokka(project(":pnlibrary-api"))
+    dokka(project(":pnlibrary-runtime-spi"))
+    dokka(project(":pnlibrary-core"))
+    dokka(project(":pnlibrary-bukkit-api"))
+    dokka(project(":pnlibrary-bukkit"))
+    dokka(project(":pnlibrary-bungee"))
+    dokka(project(":pnlibrary-velocity"))
 }

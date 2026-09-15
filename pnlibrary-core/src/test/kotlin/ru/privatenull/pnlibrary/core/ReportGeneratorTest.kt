@@ -40,8 +40,8 @@ class ReportGeneratorTest {
         val result = generator.generateAndSave(DebugRequest("all", configs = true, logs = true, local = true))
         ZipFile(result.localFile.toFile()).use { zip ->
             val names = zip.entries().asSequence().map { it.name }.toSet()
-            assertTrue("pn-diagnostic/plugins/pnmarket/configuration/config.yml.json" in names)
-            assertTrue("pn-diagnostic/plugins/pnclans/configuration/config.yml.json" in names)
+            assertTrue("pn-diagnostic/plugins/pnmarket/configuration/config.yml" in names)
+            assertTrue("pn-diagnostic/plugins/pnclans/configuration/config.yml" in names)
             assertTrue("pn-diagnostic/plugins/runtime/logs/incidents.json" in names)
             assertTrue("pn-diagnostic/checksums.json" in names)
         }

@@ -115,6 +115,7 @@ class EncryptedReportUploader @JvmOverloads constructor(
         return out.toByteArray()
     }
 
+    /** Shared JSON codec for validated storage receipts. */
     companion object {
         private val JSON = Gson()
     }

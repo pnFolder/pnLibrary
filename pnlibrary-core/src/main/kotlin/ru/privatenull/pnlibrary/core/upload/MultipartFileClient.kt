@@ -9,8 +9,20 @@ import java.nio.file.Files
 import java.nio.file.Path
 import java.util.UUID
 
-/** Shared bounded multipart transport used by file-hosting providers. */
+/**
+ * Shared bounded multipart transport used by file-hosting providers.
+ *
+ * The transport accepts HTTPS endpoints only, rejects control characters in MIME
+ * header values, streams file bytes without loading them into memory, bounds the
+ * response to 16 KiB, and always disconnects the underlying connection.
+ */
 internal object MultipartFileClient {
+    /**
+     * Sends one file and a set of UTF-8 text fields as `multipart/form-data`.
+     *
+     * @throws IllegalArgumentException for an insecure endpoint or unsafe header value
+     * @throws IOException for file, network, HTTP, or response-size failures
+     */
     fun post(
         endpoint: URI,
         fields: Map<String, String>,
@@ -18,6 +30,12 @@ internal object MultipartFileClient {
         file: Path,
         contentType: String,
     ): String {
+        require(endpoint.scheme.equals("https", ignoreCase = true)) {
+            "Multipart endpoint must use HTTPS"
+        }
+        require(FIELD_NAME.matches(fileField)) { "Invalid multipart file field name" }
+        require(isSafeHeaderValue(contentType)) { "Invalid multipart content type" }
+        require(fields.keys.all(FIELD_NAME::matches)) { "Invalid multipart field name" }
         val boundary = "----pnLibrary-${UUID.randomUUID()}"
         val prefix = ByteArrayOutputStream()
         fields.forEach { (name, value) ->
@@ -58,4 +76,9 @@ internal object MultipartFileClient {
             connection.disconnect()
         }
     }
+
+    private fun isSafeHeaderValue(value: String): Boolean =
+        value.isNotBlank() && value.none { it == '\r' || it == '\n' || it.code < 0x20 }
+
+    private val FIELD_NAME = Regex("[A-Za-z0-9_-]{1,64}")
 }

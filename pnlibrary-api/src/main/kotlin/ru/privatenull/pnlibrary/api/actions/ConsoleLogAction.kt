@@ -2,7 +2,15 @@ package ru.privatenull.pnlibrary.api.actions
 
 import ru.privatenull.pnlibrary.api.logging.LogLevel
 
-/** Writes a line through the owning plugin logger. */
+/**
+ * Writes plain text through the logger associated with the action invocation.
+ *
+ * The text is not parsed as an Adventure component and no placeholder substitution is
+ * performed by this action.
+ *
+ * @property text message passed to the logger
+ * @property level logging method selected for the message
+ */
 data class ConsoleLogAction(
     val text: String = "",
     val level: LogLevel = LogLevel.INFO,

@@ -12,6 +12,13 @@ import org.slf4j.Logger
 import ru.privatenull.pnlibrary.core.runtime.PnLibraryRuntimeHost
 import java.nio.file.Path
 
+/**
+ * Velocity lifecycle entry point for pnLibrary.
+ *
+ * Velocity injects the proxy, logger, metrics factory, and plugin data directory. The initialize
+ * event creates one [PnLibraryRuntimeHost]; the matching shutdown event closes all shared and
+ * platform resources owned by that host.
+ */
 @Plugin(id = "pnlibrary", name = "pnLibrary", authors = ["pnFolder"])
 class PnLibraryVelocityPlugin @Inject constructor(
     private val server: ProxyServer,
@@ -21,6 +28,11 @@ class PnLibraryVelocityPlugin @Inject constructor(
 ) {
     private var runtimeHost: PnLibraryRuntimeHost? = null
 
+    /**
+     * Starts the shared runtime when Velocity announces proxy initialization.
+     *
+     * @param event lifecycle signal supplied by Velocity; its payload is not required
+     */
     @Subscribe
     fun onInitialize(event: ProxyInitializeEvent) {
         val adapter = VelocityPlatformAdapter(this, server, VelocityMetricsFactory(metricsFactory), dataDirectory, logger)
@@ -31,6 +43,11 @@ class PnLibraryVelocityPlugin @Inject constructor(
         )
     }
 
+    /**
+     * Closes the runtime before the proxy completes shutdown.
+     *
+     * @param event lifecycle signal supplied by Velocity; its payload is not required
+     */
     @Subscribe
     fun onShutdown(event: ProxyShutdownEvent) {
         runtimeHost?.close()

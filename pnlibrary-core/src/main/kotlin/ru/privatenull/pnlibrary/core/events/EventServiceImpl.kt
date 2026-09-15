@@ -3,7 +3,6 @@ package ru.privatenull.pnlibrary.core.events
 import ru.privatenull.pnlibrary.api.events.Cancellable
 import ru.privatenull.pnlibrary.api.events.Event
 import ru.privatenull.pnlibrary.api.events.EventDispatchResult
-import ru.privatenull.pnlibrary.api.events.EventHandler
 import ru.privatenull.pnlibrary.api.events.EventMode
 import ru.privatenull.pnlibrary.api.events.EventListenerRegistration
 import ru.privatenull.pnlibrary.api.events.EventScope
@@ -12,9 +11,6 @@ import ru.privatenull.pnlibrary.api.events.EventSubscription
 import ru.privatenull.pnlibrary.api.events.Listener
 import ru.privatenull.pnlibrary.api.plugin.PluginId
 import ru.privatenull.pnlibrary.api.tasks.TaskService
-import java.lang.reflect.InvocationTargetException
-import java.lang.reflect.Method
-import java.lang.reflect.Modifier
 import java.util.concurrent.CopyOnWriteArrayList
 import java.util.concurrent.CompletableFuture
 import java.util.concurrent.ConcurrentHashMap
@@ -127,7 +123,7 @@ internal class EventServiceImpl(
 
         override fun register(listener: Listener): EventListenerRegistration {
             check(!closed.get() && !scopeClosed.get()) { "EventScope is closed" }
-            val handlers = discoverHandlers(listener)
+            val handlers = EventHandlerInspector.inspect(listener)
             require(handlers.isNotEmpty()) {
                 "${listener.javaClass.name} does not declare any @EventHandler methods"
             }
@@ -183,14 +179,17 @@ internal class EventServiceImpl(
             ownedSubscriptions.remove(subscription)
         }
 
-        private fun subscribeHandler(listener: Listener, handler: HandlerMethod): EventSubscription {
+        private fun subscribeHandler(
+            listener: Listener,
+            handler: EventHandlerInspector.Handler,
+        ): EventSubscription {
             @Suppress("UNCHECKED_CAST")
             val eventType = handler.eventType as Class<Event>
             return subscribe(
                 eventType,
                 handler.annotation.priority,
                 handler.annotation.ignoreCancelled,
-                Consumer { event -> invokeHandler(handler.method, listener, event) },
+                Consumer { event -> handler.invoke(listener, event) },
             )
         }
     }
@@ -232,62 +231,4 @@ internal class EventServiceImpl(
         }
     }
 
-    private data class HandlerMethod(
-        val method: Method,
-        val annotation: EventHandler,
-        val eventType: Class<out Event>,
-    )
-
-    private fun discoverHandlers(listener: Listener): List<HandlerMethod> {
-        val methods = linkedMapOf<String, Method>()
-        var type: Class<*>? = listener.javaClass
-        while (type != null && type != Any::class.java) {
-            type.declaredMethods
-                .asSequence()
-                .filterNot { it.isBridge || it.isSynthetic }
-                .forEach { method -> methods.putIfAbsent(methodKey(method), method) }
-            type = type.superclass
-        }
-
-        return methods.values.mapNotNull { method ->
-            val annotation = method.getAnnotation(EventHandler::class.java) ?: return@mapNotNull null
-            require(!Modifier.isStatic(method.modifiers)) {
-                "@EventHandler method must not be static: ${methodDescription(method)}"
-            }
-            require(!Modifier.isAbstract(method.modifiers)) {
-                "@EventHandler method must not be abstract: ${methodDescription(method)}"
-            }
-            require(method.parameterCount == 1) {
-                "@EventHandler method must have exactly one parameter: ${methodDescription(method)}"
-            }
-            require(Event::class.java.isAssignableFrom(method.parameterTypes[0])) {
-                "@EventHandler parameter must implement Event: ${methodDescription(method)}"
-            }
-            require(method.returnType == Void.TYPE) {
-                "@EventHandler method must return Unit or void: ${methodDescription(method)}"
-            }
-            method.isAccessible = true
-            HandlerMethod(method, annotation, method.parameterTypes[0].asSubclass(Event::class.java))
-        }.sortedWith(
-            compareBy<HandlerMethod> { it.annotation.priority }
-                .thenBy { it.method.name }
-                .thenBy { it.eventType.name },
-        )
-    }
-
-    private fun methodKey(method: Method): String {
-        val visibilityOwner = if (Modifier.isPrivate(method.modifiers)) method.declaringClass.name else ""
-        return "$visibilityOwner#${method.name}(${method.parameterTypes.joinToString(",") { it.name }})"
-    }
-
-    private fun methodDescription(method: Method): String =
-        "${method.declaringClass.name}#${method.name}"
-
-    private fun invokeHandler(method: Method, listener: Listener, event: Event) {
-        try {
-            method.invoke(listener, event)
-        } catch (error: InvocationTargetException) {
-            throw error.targetException
-        }
-    }
 }

@@ -10,7 +10,7 @@ import java.util.concurrent.ConcurrentHashMap
 import java.util.concurrent.atomic.AtomicBoolean
 
 /** Optional bridge that publishes pnLibrary placeholders to PlaceholderAPI. */
-class PlaceholderApiAdapter(private val plugin: Plugin) : PlaceholderAdapter, AutoCloseable {
+internal class PlaceholderApiAdapter(private val plugin: Plugin) : PlaceholderAdapter, AutoCloseable {
     private val groups = ConcurrentHashMap<String, Expansion>()
     private val closed = AtomicBoolean(false)
     override val id = "placeholderapi"

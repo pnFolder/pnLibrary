@@ -53,6 +53,13 @@ import ru.privatenull.pnlibrary.core.currency.CurrencyHub
 import ru.privatenull.pnlibrary.api.currency.CurrencyStorageFactory
 import ru.privatenull.pnlibrary.core.currency.CurrencyStorageFactoryImpl
 
+/**
+ * Owns plugin-scoped library services and coordinates their lifecycle.
+ *
+ * Registration behaves transactionally: a context becomes visible only after
+ * all requested services have been created. If any step fails, previously
+ * created resources are closed in reverse dependency order.
+ */
 internal class PluginRegistryImpl(
     private val platform: PlatformAdapter,
     private val events: EventService,
@@ -174,15 +181,18 @@ internal class PluginRegistryImpl(
                 definition.listeners.size,
             )
         } catch (error: Throwable) {
-            runCatching { updateRegistration?.close() }
-            runCatching { diagnosticRegistration?.close() }
-            runCatching { metricsController?.close() }
-            runCatching { eventScope?.close() }
-            runCatching { configScope?.close() }
-            runCatching { placeholderScope?.close() }
-            runCatching { currencyScope?.close() }
-            runCatching { services.unregisterAll(id) }
-            runCatching { taskScope?.close() }
+            ResourceCleanup.suppressInto(
+                error,
+                { updateRegistration?.close() },
+                { diagnosticRegistration?.close() },
+                { metricsController?.close() },
+                { currencyScope?.close() },
+                { placeholderScope?.close() },
+                { configScope?.close() },
+                { eventScope?.close() },
+                { services.unregisterAll(id) },
+                { taskScope?.close() },
+            )
             throw error
         }
     }
@@ -271,17 +281,19 @@ internal class PluginRegistryImpl(
 
         fun closeInternal() {
             if (!contextClosed.compareAndSet(false, true)) return
-            runCatching { updates?.close() }
-            runCatching { diagnostics?.close() }
-            runCatching { this@PluginRegistryImpl.diagnostics.clearPlugin(id.value) }
-            runCatching { metrics.close() }
-            runCatching { events.close() }
-            runCatching { services.close() }
-            runCatching { configs.close() }
-            runCatching { placeholders.close() }
-            runCatching { cooldowns.close() }
-            runCatching { currencies.close() }
-            runCatching { tasks.close() }
+            ResourceCleanup.closeAll(
+                { updates?.close() },
+                { diagnostics?.close() },
+                { this@PluginRegistryImpl.diagnostics.clearPlugin(id.value) },
+                { metrics.close() },
+                { currencies.close() },
+                { cooldowns.close() },
+                { placeholders.close() },
+                { configs.close() },
+                { services.close() },
+                { events.close() },
+                { tasks.close() },
+            )
         }
 
         private fun platformSummary(): String =

@@ -1,7 +1,6 @@
 package ru.privatenull.pnlibrary.bungee
 
 import net.md_5.bungee.api.ChatColor
-import net.md_5.bungee.api.ChatMessageType
 import net.md_5.bungee.api.CommandSender
 import net.md_5.bungee.api.chat.TextComponent
 import net.md_5.bungee.api.plugin.Command
@@ -13,26 +12,27 @@ import ru.privatenull.pnlibrary.core.diagnostics.DiagnosticCommandEvent
 import ru.privatenull.pnlibrary.core.diagnostics.DiagnosticCommandExecutor
 import ru.privatenull.pnlibrary.spi.metrics.PlatformMetricsFactory
 import ru.privatenull.pnlibrary.spi.platform.PlatformAdapter
-import net.kyori.adventure.text.serializer.legacy.LegacyComponentSerializer
 import java.util.concurrent.atomic.AtomicBoolean
-import java.util.UUID
 import java.util.logging.Level
 
 /**
- * Platform adapter targeting BungeeCord / Waterfall proxy servers.
+ * Runtime adapter for BungeeCord-compatible proxy servers.
+ *
+ * BungeeCord has no player-region scheduler, so global and recipient dispatch both use its async
+ * plugin scheduler. [bind] owns the `/pndebug` command registration and [close] removes it.
  */
-class BungeePlatformAdapter(
+internal class BungeePlatformAdapter(
+    /** Native plugin instance that owns scheduler, logger, command, and metrics resources. */
     val plugin: Plugin,
 ) : PlatformAdapter {
 
     private val closedFlag = AtomicBoolean(false)
+    private val bound = AtomicBoolean(false)
 
     override val type = PlatformType.BUNGEECORD
     override val implementationName: String get() = plugin.proxy.name.ifBlank { type.displayName }
     override val metricsFactory: PlatformMetricsFactory = BungeeMetricsFactory()
     override val dataFolder = plugin.dataFolder.toPath()
-
-    private companion object { val ADVENTURE_LEGACY = LegacyComponentSerializer.legacySection() }
 
     override fun log(owner: Any, level: LogLevel, message: String, error: Throwable?) {
         val nativeLevel = when (level) {
@@ -70,8 +70,16 @@ class BungeePlatformAdapter(
     }
 
     override fun bind(library: PnLibrary) {
+        check(!closedFlag.get()) { "Bungee platform adapter is closed" }
+        check(bound.compareAndSet(false, true)) { "Bungee platform adapter is already bound" }
         diagnosticCommands = DiagnosticCommandExecutor(library)
-        plugin.proxy.pluginManager.registerCommand(plugin, debugCommand)
+        try {
+            plugin.proxy.pluginManager.registerCommand(plugin, debugCommand)
+        } catch (error: Throwable) {
+            diagnosticCommands = null
+            bound.set(false)
+            throw error
+        }
     }
 
     override fun details(): Map<String, Any?> {
@@ -84,17 +92,15 @@ class BungeePlatformAdapter(
         data["registeredServersCount"] = proxy.servers.size
         data["registeredServerNames"] = proxy.servers.keys.toList()
 
-        val pluginList = mutableListOf<Map<String, Any?>>()
-        for (pl in proxy.pluginManager.plugins) {
-            val pDesc = pl.description
-            pluginList.add(linkedMapOf(
-                "name" to pDesc.name,
-                "version" to pDesc.version,
-                "mainClass" to pDesc.main,
-                "author" to pDesc.author,
-            ))
+        data["plugins"] = proxy.pluginManager.plugins.map { installedPlugin ->
+            val description = installedPlugin.description
+            linkedMapOf(
+                "name" to description.name,
+                "version" to description.version,
+                "mainClass" to description.main,
+                "author" to description.author,
+            )
         }
-        data["plugins"] = pluginList
         return data
     }
 
@@ -108,8 +114,10 @@ class BungeePlatformAdapter(
     }
 
     override fun close() {
-        closedFlag.set(true)
-        plugin.proxy.pluginManager.unregisterCommand(debugCommand)
+        if (!closedFlag.compareAndSet(false, true)) return
+        if (bound.compareAndSet(true, false)) {
+            plugin.proxy.pluginManager.unregisterCommand(debugCommand)
+        }
         diagnosticCommands = null
     }
 

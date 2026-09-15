@@ -1,9 +1,9 @@
 package ru.privatenull.pnlibrary.core.runtime
 
-import ru.privatenull.pnlibrary.spi.platform.PlatformAdapter
-import ru.privatenull.pnlibrary.api.runtime.PnLibrary
 import ru.privatenull.pnlibrary.api.platform.PlatformType
+import ru.privatenull.pnlibrary.api.runtime.PnLibrary
 import ru.privatenull.pnlibrary.core.updates.MandatoryUpdateService
+import ru.privatenull.pnlibrary.spi.platform.PlatformAdapter
 import java.nio.file.Path
 import java.nio.file.Paths
 import java.util.concurrent.atomic.AtomicBoolean
@@ -25,7 +25,13 @@ class PnLibraryRuntimeHost private constructor(
 
     private val closed = AtomicBoolean(false)
 
-    /** Registers a platform service owned and cleaned up by the pnLibrary runtime. */
+    /**
+     * Registers a platform-specific service in the runtime registry.
+     *
+     * The registration is removed when [library] closes. The registry does not call
+     * `AutoCloseable.close()` on [service], so the platform entry point must separately close a
+     * service that owns native resources.
+     */
     fun <T : Any> registerService(
         type: Class<T>,
         service: T,
@@ -46,13 +52,18 @@ class PnLibraryRuntimeHost private constructor(
         library.close()
     }
 
+    /** Complete runtime bootstrap entry point used by platform plugins. */
     companion object {
         /**
          * Starts a complete pnLibrary runtime for one platform.
          *
-         * @param owner native pnLibrary plugin instance;
-         * @param platform adapter for the current server or proxy;
-         * @param updateDirectory native directory for staged updates.
+         * Initialization loads runtime configuration, bootstraps and binds the shared runtime,
+         * starts mandatory update monitoring, and finally emits the startup summary. Any failure
+         * after runtime creation closes that runtime before propagating the original error.
+         *
+         * @param owner native pnLibrary plugin instance
+         * @param platform adapter for the current server or proxy
+         * @param updateDirectory native directory for staged updates
          */
         @JvmStatic
         fun start(
@@ -102,7 +113,7 @@ class PnLibraryRuntimeHost private constructor(
 
 private fun PlatformAdapter.summaryName(): String =
     if (implementationName.equals(type.displayName, ignoreCase = true)) type.displayName
-    else "${type.displayName} · $implementationName"
+    else "${type.displayName} / $implementationName"
 
 private fun PlatformType.distributionArtifact(): String = when (this) {
     PlatformType.BUKKIT -> "bukkit"

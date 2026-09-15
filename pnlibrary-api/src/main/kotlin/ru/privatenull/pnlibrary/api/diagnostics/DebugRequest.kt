@@ -14,6 +14,7 @@ data class DebugRequest(
     val logs: Boolean,
     val local: Boolean,
 ) {
+    /** Parser for validated command-line diagnostic requests. */
     companion object {
         private val VALID_TARGET = Regex("[A-Za-z0-9_.-]{1,80}")
 

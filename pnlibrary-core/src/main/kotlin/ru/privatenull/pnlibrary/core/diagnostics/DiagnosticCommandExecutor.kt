@@ -3,6 +3,7 @@ package ru.privatenull.pnlibrary.core.diagnostics
 import ru.privatenull.pnlibrary.api.diagnostics.DebugRequest
 import ru.privatenull.pnlibrary.api.diagnostics.DiagnosticReport
 import ru.privatenull.pnlibrary.api.runtime.PnLibrary
+import java.time.Clock
 import java.util.concurrent.ConcurrentHashMap
 
 /**
@@ -11,8 +12,14 @@ import java.util.concurrent.ConcurrentHashMap
  * Platform adapters remain responsible for permissions, native command
  * registration, and message rendering. Parsing, cooldown, background report
  * creation, and safe reply dispatch are implemented once here.
+ *
+ * @param library runtime facade used for report generation and task dispatch
+ * @param clock monotonic-enough wall clock used by the user-facing cooldown
  */
-class DiagnosticCommandExecutor(private val library: PnLibrary) {
+class DiagnosticCommandExecutor @JvmOverloads constructor(
+    private val library: PnLibrary,
+    private val clock: Clock = Clock.systemUTC(),
+) {
     private val lastRequestTimes = ConcurrentHashMap<String, Long>()
 
     /**
@@ -28,11 +35,12 @@ class DiagnosticCommandExecutor(private val library: PnLibrary) {
         recipient: Any,
         publish: (DiagnosticCommandEvent) -> Unit,
     ) {
-        val request = runCatching { DebugRequest.parse(arguments, prefixed) }
-            .getOrElse {
-                publish(DiagnosticCommandEvent.InvalidUsage)
-                return
-            }
+        val request = try {
+            DebugRequest.parse(arguments, prefixed)
+        } catch (_: IllegalArgumentException) {
+            publish(DiagnosticCommandEvent.InvalidUsage)
+            return
+        }
 
         val remaining = remainingCooldown(requesterId)
         if (remaining > 0) {
@@ -40,14 +48,15 @@ class DiagnosticCommandExecutor(private val library: PnLibrary) {
             return
         }
 
-        lastRequestTimes[requesterId] = System.currentTimeMillis()
+        lastRequestTimes[requesterId] = clock.millis()
         publish(DiagnosticCommandEvent.Started(request.target))
         val tasks = library.tasks.scope(library.owner)
         tasks.async(Runnable {
-            val event = runCatching { library.createDiagnosticReport(request) }.fold(
-                onSuccess = { DiagnosticCommandEvent.Completed(it) },
-                onFailure = { DiagnosticCommandEvent.Failed(it.message ?: it.javaClass.simpleName) },
-            )
+            val event = try {
+                DiagnosticCommandEvent.Completed(library.createDiagnosticReport(request))
+            } catch (exception: Exception) {
+                DiagnosticCommandEvent.Failed(exception.message ?: exception.javaClass.simpleName)
+            }
             tasks.entity(recipient, Runnable { publish(event) })
         })
     }
@@ -55,7 +64,7 @@ class DiagnosticCommandExecutor(private val library: PnLibrary) {
     private fun remainingCooldown(requesterId: String): Long {
         val cooldownMillis = library.configuration.cooldownSeconds * 1_000L
         if (cooldownMillis == 0L) return 0
-        val elapsed = System.currentTimeMillis() - (lastRequestTimes[requesterId] ?: return 0)
+        val elapsed = clock.millis() - (lastRequestTimes[requesterId] ?: return 0)
         return if (elapsed >= cooldownMillis) 0 else (cooldownMillis - elapsed + 999L) / 1_000L
     }
 }
@@ -65,15 +74,31 @@ sealed class DiagnosticCommandEvent {
     /** Command arguments could not be parsed. */
     data object InvalidUsage : DiagnosticCommandEvent()
 
-    /** The requester must wait [seconds] before another report. */
+    /**
+     * The requester must wait before another report.
+     *
+     * @property seconds whole seconds remaining in the cooldown
+     */
     data class CoolingDown(val seconds: Long) : DiagnosticCommandEvent()
 
-    /** Report collection has started for [target]. */
+    /**
+     * Report collection has started.
+     *
+     * @property target normalized plugin target or `all`
+     */
     data class Started(val target: String) : DiagnosticCommandEvent()
 
-    /** Report collection completed successfully. */
+    /**
+     * Report collection completed successfully.
+     *
+     * @property report generated local or uploaded diagnostic report
+     */
     data class Completed(val report: DiagnosticReport) : DiagnosticCommandEvent()
 
-    /** Report collection failed with a safe display [message]. */
+    /**
+     * Report collection failed.
+     *
+     * @property message sanitized detail safe to display to the command sender
+     */
     data class Failed(val message: String) : DiagnosticCommandEvent()
 }

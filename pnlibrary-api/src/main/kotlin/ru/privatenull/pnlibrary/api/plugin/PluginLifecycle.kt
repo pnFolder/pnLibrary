@@ -7,6 +7,7 @@ import ru.privatenull.pnlibrary.api.logging.MessageBox
  * Rows are collected in memory and printed together only when `MessageBox.show()` is called.
  */
 interface PluginLifecycle {
+    /** Metadata rendered into lifecycle summaries. */
     val metadata: PluginMetadata
 
     /** Creates an enabled message with name and version filled from [metadata]. */

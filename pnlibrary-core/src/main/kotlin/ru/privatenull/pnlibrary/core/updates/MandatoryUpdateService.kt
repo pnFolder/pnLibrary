@@ -21,7 +21,7 @@ import java.util.jar.JarFile
 import java.security.MessageDigest
 
 /** Mandatory pnLibrary updater. Only the release channel is configurable. */
-object MandatoryUpdateService {
+internal object MandatoryUpdateService {
     private const val MAX_BYTES = 512L * 1024L * 1024L
     private const val CHECK_INTERVAL_MS = 30L * 60L * 1000L
     private const val NOTIFICATION_INTERVAL_MS = 6L * 60L * 60L * 1000L

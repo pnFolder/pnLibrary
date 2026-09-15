@@ -4,9 +4,10 @@ import ru.privatenull.pnlibrary.api.logging.LogLevel
 import ru.privatenull.pnlibrary.api.logging.LoggingService
 import ru.privatenull.pnlibrary.api.logging.MessageBox
 import ru.privatenull.pnlibrary.api.logging.PnLogger
-import ru.privatenull.pnlibrary.spi.platform.PlatformAdapter
 import ru.privatenull.pnlibrary.api.runtime.PnLibraryBrand
+import ru.privatenull.pnlibrary.spi.platform.PlatformAdapter
 
+/** Adapts library logging, diagnostics capture, and lifecycle summaries to one platform. */
 internal class PlatformLoggingService(
     private val platform: PlatformAdapter,
     private val diagnosticLogs: DiagnosticLogBuffer? = null,
@@ -165,7 +166,12 @@ internal class PlatformLoggingService(
             rows.forEach { row ->
                 val color = statusColor(row.status)
                 val label = row.label.padEnd(longestLabel)
-                val symbol = when (row.status) { "OK" -> "◆"; "WARN" -> "▲"; "FAIL" -> "✕"; else -> "◇" }
+                val symbol = when (row.status) {
+                    "OK" -> "◆"
+                    "WARN" -> "▲"
+                    "FAIL" -> "✕"
+                    else -> "◇"
+                }
                 platform.console(owner, "$dark          $symbol $white$label  $color§l[ ${row.status} ]")
                 if (row.detail.isNotBlank()) {
                     platform.console(owner, "$dark            └ $gray${row.detail}")

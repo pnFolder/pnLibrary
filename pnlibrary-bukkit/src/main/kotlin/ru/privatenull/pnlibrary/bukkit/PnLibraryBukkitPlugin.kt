@@ -1,23 +1,30 @@
 package ru.privatenull.pnlibrary.bukkit
 
 import org.bukkit.event.EventHandler
+import org.bukkit.event.HandlerList
 import org.bukkit.event.Listener
 import org.bukkit.event.server.PluginDisableEvent
 import org.bukkit.event.server.PluginEnableEvent
 import org.bukkit.event.server.ServiceRegisterEvent
 import org.bukkit.event.server.ServiceUnregisterEvent
 import org.bukkit.plugin.java.JavaPlugin
-import ru.privatenull.pnlibrary.bukkit.inventory.MenuService
-import ru.privatenull.pnlibrary.bukkit.inventory.MenuServiceImpl
-import ru.privatenull.pnlibrary.bukkit.server.ServerInfo
-import ru.privatenull.pnlibrary.core.runtime.PnLibraryRuntimeHost
-import ru.privatenull.pnlibrary.bukkit.placeholders.PlaceholderApiAdapter
+import ru.privatenull.pnlibrary.api.currency.CurrencyRegistration
+import ru.privatenull.pnlibrary.api.plugin.PluginId
 import ru.privatenull.pnlibrary.bukkit.currency.BukkitCurrencyAdapters
 import ru.privatenull.pnlibrary.bukkit.currency.CurrencyCommandExecutor
-import ru.privatenull.pnlibrary.api.plugin.PluginId
-import ru.privatenull.pnlibrary.api.currency.CurrencyRegistration
+import ru.privatenull.pnlibrary.bukkit.inventory.MenuService
+import ru.privatenull.pnlibrary.bukkit.inventory.MenuServiceImpl
+import ru.privatenull.pnlibrary.bukkit.placeholders.PlaceholderApiAdapter
+import ru.privatenull.pnlibrary.bukkit.server.ServerInfo
+import ru.privatenull.pnlibrary.core.runtime.PnLibraryRuntimeHost
 
-/** Bukkit entry point that owns the pnLibrary runtime and Bukkit-only services. */
+/**
+ * Bukkit plugin entry point and lifecycle owner for the shared runtime and Bukkit-only services.
+ *
+ * Startup is transactional: if a native service or optional integration fails, every resource
+ * created earlier in the attempt is closed before the exception returns to Bukkit. Runtime plugin
+ * enable/disable events reconnect PlaceholderAPI, Vault, and PlayerPoints without a server restart.
+ */
 class PnLibraryBukkitPlugin : JavaPlugin(), Listener {
     private var runtimeHost: PnLibraryRuntimeHost? = null
     private var menuService: MenuServiceImpl? = null
@@ -25,6 +32,12 @@ class PnLibraryBukkitPlugin : JavaPlugin(), Listener {
     private var placeholderApiBridge: AutoCloseable? = null
     private val currencyBridges = linkedMapOf<String, CurrencyRegistration>()
 
+    /**
+     * Starts the shared runtime and installs Bukkit services and optional integrations.
+     *
+     * Any failure rolls back resources created earlier in this enable attempt before
+     * propagating the original exception to Bukkit.
+     */
     override fun onEnable() {
         val adapter = BukkitPlatformAdapter(this)
         val host = PnLibraryRuntimeHost.start(
@@ -33,8 +46,8 @@ class PnLibraryBukkitPlugin : JavaPlugin(), Listener {
             server.updateFolderFile.toPath(),
         )
         try {
-            installBukkitServices(host, adapter)
             runtimeHost = host
+            installBukkitServices(host, adapter)
             server.pluginManager.registerEvents(this, this)
             getCommand("pncurrency")?.let { command ->
                 val executor = CurrencyCommandExecutor(this, host.library.currencyProviders)
@@ -44,26 +57,14 @@ class PnLibraryBukkitPlugin : JavaPlugin(), Listener {
             connectPlaceholderApi()
             connectCurrencyAdapters()
         } catch (error: Throwable) {
-            placeholderApiBridge?.close()
-            placeholderApiBridge = null
-            currencyBridges.values.forEach { runCatching(it::close) }
-            currencyBridges.clear()
-            host.close()
+            closePlatformResources()
             throw error
         }
     }
 
+    /** Disconnects native integrations and closes every service owned by this plugin. */
     override fun onDisable() {
-        menuService?.close()
-        menuService = null
-        audienceService?.close()
-        audienceService = null
-        placeholderApiBridge?.close()
-        placeholderApiBridge = null
-        currencyBridges.values.forEach { runCatching(it::close) }
-        currencyBridges.clear()
-        runtimeHost?.close()
-        runtimeHost = null
+        closePlatformResources()
     }
 
     private fun installBukkitServices(host: PnLibraryRuntimeHost, adapter: BukkitPlatformAdapter) {
@@ -76,22 +77,26 @@ class PnLibraryBukkitPlugin : JavaPlugin(), Listener {
         this.menuService = menuService
     }
 
+    /** Re-evaluates optional plugin integrations after any Bukkit plugin is enabled. */
     @EventHandler
     fun onPluginEnable(event: PluginEnableEvent) {
         if (event.plugin.name.equals("PlaceholderAPI", ignoreCase = true)) connectPlaceholderApi()
         connectCurrencyAdapters()
     }
 
+    /** Connects Vault currency support when its economy service becomes available. */
     @EventHandler
     fun onServiceRegister(event: ServiceRegisterEvent) {
         if (event.provider.service.name == "net.milkbowl.vault.economy.Economy") connectCurrencyAdapters()
     }
 
+    /** Removes Vault currency support before its economy provider becomes stale. */
     @EventHandler
     fun onServiceUnregister(event: ServiceUnregisterEvent) {
         if (event.provider.service.name == "net.milkbowl.vault.economy.Economy") disconnectCurrency("vault")
     }
 
+    /** Disconnects integrations owned by an optional plugin before it unloads. */
     @EventHandler
     fun onPluginDisable(event: PluginDisableEvent) {
         if (event.plugin.name.equals("PlaceholderAPI", ignoreCase = true)) disconnectPlaceholderApi()
@@ -131,5 +136,29 @@ class PnLibraryBukkitPlugin : JavaPlugin(), Listener {
     private fun disconnectCurrency(id: String) {
         currencyBridges.remove(id)?.close()
         logger.info("${if (id == "vault") "Vault" else "PlayerPoints"} currency disconnected")
+    }
+
+    private fun closePlatformResources() {
+        HandlerList.unregisterAll(this as Listener)
+        getCommand("pncurrency")?.let { command ->
+            command.setExecutor(null)
+            command.tabCompleter = null
+        }
+
+        runCatching { placeholderApiBridge?.close() }
+        placeholderApiBridge = null
+
+        currencyBridges.values.forEach { registration ->
+            runCatching(registration::close)
+        }
+        currencyBridges.clear()
+
+        runCatching { menuService?.close() }
+        menuService = null
+        runCatching { audienceService?.close() }
+        audienceService = null
+
+        runCatching { runtimeHost?.close() }
+        runtimeHost = null
     }
 }

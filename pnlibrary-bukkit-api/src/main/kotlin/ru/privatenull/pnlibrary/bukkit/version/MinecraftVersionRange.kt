@@ -50,8 +50,10 @@ data class MinecraftVersionRange(
      */
     operator fun contains(version: MinecraftVersion): Boolean {
         if (!version.known) return false
-        val afterMinimum = minimum == null || if (includeMinimum) version.isAtLeast(minimum) else version.isNewerThan(minimum)
-        val beforeMaximum = maximum == null || if (includeMaximum) version.isAtMost(maximum) else version.isOlderThan(maximum)
+        val afterMinimum = minimum == null ||
+            if (includeMinimum) version.isAtLeast(minimum) else version.isNewerThan(minimum)
+        val beforeMaximum = maximum == null ||
+            if (includeMaximum) version.isAtMost(maximum) else version.isOlderThan(maximum)
         return afterMinimum && beforeMaximum
     }
     /** Returns `true` when [version] does not belong to this range. */
@@ -94,6 +96,7 @@ data class MinecraftVersionRange(
         else -> "${if (includeMinimum) "[" else "("}${minimum.text}, ${maximum.text}${if (includeMaximum) "]" else ")"}"
     }
 
+    /** Java-friendly factories for common version-range shapes. */
     companion object {
         /**
          * Inclusive range `[minimum, maximum]`.
@@ -153,11 +156,19 @@ data class MinecraftVersionRange(
         @JvmStatic fun allKnown() = MinecraftVersionRange(null, null, false, false)
 
         private fun newer(a: MinecraftVersion?, b: MinecraftVersion?): MinecraftVersion? = when {
-            a == null -> b; b == null -> a; a.isAtLeast(b) -> a; else -> b
+            a == null -> b
+            b == null -> a
+            a.isAtLeast(b) -> a
+            else -> b
         }
+
         private fun older(a: MinecraftVersion?, b: MinecraftVersion?): MinecraftVersion? = when {
-            a == null -> b; b == null -> a; a.isAtMost(b) -> a; else -> b
+            a == null -> b
+            b == null -> a
+            a.isAtMost(b) -> a
+            else -> b
         }
+
         private fun boundIncluded(value: MinecraftVersion?, minimum: Boolean, range: MinecraftVersionRange): Boolean {
             if (value == null) return true
             return if (minimum) {

@@ -1,6 +1,7 @@
 [versions]
 kotlin        = "2.1.21"
 shadow        = "9.6.1"
+dokka         = "2.2.0"
 mavenPublish  = "0.35.0"
 gson          = "2.11.0"
 snakeyaml     = "2.3"
@@ -35,4 +36,5 @@ placeholderapi      = { module = "me.clip:placeholderapi",                      
 [plugins]
 kotlin-jvm    = { id = "org.jetbrains.kotlin.jvm",             version.ref = "kotlin" }
 shadow        = { id = "com.gradleup.shadow",                  version.ref = "shadow" }
+dokka         = { id = "org.jetbrains.dokka",                  version.ref = "dokka" }
 maven-publish = { id = "com.vanniktech.maven.publish",         version.ref = "mavenPublish" }

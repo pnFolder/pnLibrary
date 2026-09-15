@@ -10,7 +10,7 @@ import java.nio.file.Path
 import java.nio.file.StandardCopyOption
 
 /** Loads the installed runtime configuration from `plugins/pnLibrary/config.yml`. */
-object PnLibraryConfigLoader {
+internal object PnLibraryConfigLoader {
     @JvmStatic
     fun load(dataFolder: Path): PnLibraryConfig {
         Files.createDirectories(dataFolder)

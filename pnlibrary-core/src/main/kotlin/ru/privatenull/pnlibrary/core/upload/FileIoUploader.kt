@@ -7,8 +7,23 @@ import java.nio.file.Files
 import java.nio.file.Path
 import java.time.Instant
 
-/** Temporary fallback: file.io deletes the archive after its first download. */
+/**
+ * Uploads an encrypted report to file.io as a single-download fallback.
+ *
+ * The provider requests a seven-day expiry and deletion after the first download.
+ * It intentionally does not implement remote deletion because file.io supplies no
+ * deletion token through this API.
+ *
+ * @param endpoint HTTPS file.io endpoint
+ * @throws IllegalArgumentException if [endpoint] is not HTTPS
+ */
 class FileIoUploader(private val endpoint: URI = URI.create("https://file.io")) : UploadProvider {
+    init {
+        require(endpoint.scheme.equals("https", ignoreCase = true)) {
+            "file.io endpoint must use HTTPS"
+        }
+    }
+
     override val backendId = "fileio"
 
     override fun upload(payload: String): UploadReceipt = throw IOException("file.io requires a binary file")
@@ -19,8 +34,11 @@ class FileIoUploader(private val endpoint: URI = URI.create("https://file.io")) 
             endpoint, mapOf("expires" to "7d", "maxDownloads" to "1", "autoDelete" to "true"),
             "file", file, contentType,
         )
-        val json = runCatching { JsonParser.parseString(response).asJsonObject }
-            .getOrElse { throw IOException("Invalid file.io response", it) }
+        val json = try {
+            JsonParser.parseString(response).asJsonObject
+        } catch (exception: RuntimeException) {
+            throw IOException("Invalid file.io response", exception)
+        }
         if (!json.get("success")?.asBoolean.orFalse()) throw IOException("file.io rejected the report")
         val link = URI.create(json.get("link")?.asString ?: throw IOException("file.io response has no link"))
         if (link.scheme != "https" || link.host != "file.io") throw IOException("Invalid file.io link")

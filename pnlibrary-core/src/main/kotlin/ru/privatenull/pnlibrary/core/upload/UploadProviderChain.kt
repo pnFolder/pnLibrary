@@ -3,7 +3,17 @@ package ru.privatenull.pnlibrary.core.upload
 import java.io.IOException
 import java.nio.file.Path
 
-/** Tries independent providers in configured order and survives blocked hosts. */
+/**
+ * Tries independent upload providers in deterministic configuration order.
+ *
+ * A provider failure does not prevent later providers from running. If every
+ * provider fails, the thrown [IOException] contains a bounded summary identifying
+ * each failed backend. Deletion is routed directly to the backend recorded in the
+ * receipt and is never attempted against unrelated providers.
+ *
+ * @param providers non-empty ordered fallback list
+ * @throws IllegalArgumentException if [providers] is empty
+ */
 class UploadProviderChain(private val providers: List<UploadProvider>) : UploadProvider {
     init { require(providers.isNotEmpty()) { "At least one upload provider is required" } }
     override val backendId = "provider-chain"

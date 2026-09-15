@@ -8,12 +8,22 @@ import java.net.NetworkInterface
 import java.time.Instant
 
 /**
- * Cross-platform JVM, OS, system resource, and environment collector.
+ * Collects a bounded cross-platform snapshot of JVM and host state.
+ *
+ * Environment variable values are never read. Network addresses are omitted
+ * unless [collect] is explicitly called for an encrypted report. JVM arguments
+ * pass through credential and free-text redaction before entering the snapshot.
  */
 class SystemCollector {
 
     private val redactor = DiagnosticRedactor()
 
+    /**
+     * Captures JVM, operating-system, memory, thread, class-loading, and storage data.
+     *
+     * @param includeNetworkAddresses whether active non-loopback interface addresses
+     * may be included; callers should enable this only inside encrypted reports
+     */
     fun collect(includeNetworkAddresses: Boolean = false): Map<String, Any?> {
         val runtimeMx = ManagementFactory.getRuntimeMXBean()
         val osMx = ManagementFactory.getOperatingSystemMXBean()
@@ -118,16 +128,19 @@ class SystemCollector {
         return if (idx > 0) runtimeName.substring(0, idx) else runtimeName
     }
 
-    private fun sanitizeJvmArgs(args: List<String>): List<String> {
-        return args.map { arg ->
-            if (arg.contains("password") || arg.contains("secret") || arg.contains("key") || arg.contains("token")) {
-                val idx = arg.indexOf('=')
-                if (idx > 0) arg.substring(0, idx + 1) + "[REDACTED]" else "[REDACTED]"
+    private fun sanitizeJvmArgs(args: List<String>): List<String> =
+        args.take(MAX_JVM_ARGUMENTS).map { argument ->
+            if (SECRET_JVM_ARGUMENT.containsMatchIn(argument)) {
+                val separator = argument.indexOf('=')
+                if (separator > 0) {
+                    argument.substring(0, separator + 1) + "[REDACTED]"
+                } else {
+                    "[REDACTED]"
+                }
             } else {
-                redactor.redact(arg)
+                redactor.redact(argument).take(MAX_JVM_ARGUMENT_LENGTH)
             }
         }
-    }
 
     private fun collectMemoryPools(): List<Map<String, Any?>> {
         val pools = ManagementFactory.getMemoryPoolMXBeans()
@@ -170,12 +183,12 @@ class SystemCollector {
         val result = mutableListOf<Map<String, Any?>>()
         try {
             val interfaces = NetworkInterface.getNetworkInterfaces() ?: return emptyList()
-            while (interfaces.hasMoreElements()) {
+            while (interfaces.hasMoreElements() && result.size < MAX_NETWORK_INTERFACES) {
                 val nif = interfaces.nextElement()
                 if (nif.isLoopback || !nif.isUp) continue
                 val addrs = mutableListOf<String>()
                 val enumAddresses = nif.inetAddresses
-                while (enumAddresses.hasMoreElements()) {
+                while (enumAddresses.hasMoreElements() && addrs.size < MAX_ADDRESSES_PER_INTERFACE) {
                     val addr = enumAddresses.nextElement()
                     addrs.add(addr.hostAddress)
                 }
@@ -187,5 +200,15 @@ class SystemCollector {
             }
         } catch (_: Exception) { }
         return result
+    }
+
+    private companion object {
+        const val MAX_JVM_ARGUMENTS = 128
+        const val MAX_JVM_ARGUMENT_LENGTH = 1_024
+        const val MAX_NETWORK_INTERFACES = 64
+        const val MAX_ADDRESSES_PER_INTERFACE = 32
+        val SECRET_JVM_ARGUMENT = Regex(
+            "(?i)(?:^|[._-])(?:password|passwd|pwd|secret|token|api[-_]?key|authorization|credential)(?:[._=-]|$)",
+        )
     }
 }

@@ -50,7 +50,7 @@ import java.security.spec.MGF1ParameterSpec
  * @param publicKeyPem  PEM-encoded RSA public key (BEGIN PUBLIC KEY … END PUBLIC KEY).
  * @param keyId         Identifier sent to the bot so it knows which private key to use.
  */
-class EncryptedEnvelopeCodec(publicKeyPem: String, keyId: String) {
+internal class EncryptedEnvelopeCodec(publicKeyPem: String, keyId: String) {
 
     private val publicKey: PublicKey = parsePublicKey(publicKeyPem)
     private val keyId: String = require(keyId.trim(), "key id", 96)

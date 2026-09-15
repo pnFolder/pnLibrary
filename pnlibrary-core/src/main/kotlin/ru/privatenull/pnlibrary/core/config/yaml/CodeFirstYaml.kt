@@ -165,7 +165,7 @@ class CodeFirstYaml<T> @JvmOverloads constructor(
     private fun decodeAndValidate(content: String): T {
         val value = try {
             codec.decode(content)
-        } catch (error: Throwable) {
+        } catch (error: Exception) {
             logger.log(Level.SEVERE, "Не удалось прочитать ${file.name}: ${error.message}", error)
             throw error
         }
@@ -180,7 +180,13 @@ class CodeFirstYaml<T> @JvmOverloads constructor(
         val backups = file.absoluteFile.parentFile.listFiles { candidate ->
             candidate.name.startsWith("${file.name}.before-sync-") && candidate.name.endsWith(".bak")
         }?.sortedByDescending(File::lastModified).orEmpty()
-        backups.drop(MAX_BACKUPS).forEach { runCatching { it.delete() } }
+        backups.drop(MAX_BACKUPS).forEach { backup ->
+            try {
+                backup.delete()
+            } catch (_: SecurityException) {
+                // Backup retention is best-effort and must not fail a successful load.
+            }
+        }
         return target
     }
 

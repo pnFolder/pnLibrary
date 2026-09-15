@@ -8,14 +8,32 @@ import ru.privatenull.pnlibrary.core.upload.UploadProvider
 import ru.privatenull.pnlibrary.core.upload.UploadLedger
 import ru.privatenull.pnlibrary.core.upload.UploadReceipt
 import ru.privatenull.pnlibrary.spi.platform.PlatformAdapter
-import java.nio.file.Files
 import java.nio.file.Path
 import java.time.Instant
 
 /**
- * Main orchestrator for collecting, redacting, formatting, saving, and uploading diagnostic reports.
+ * Coordinates collection, archive creation, encryption, local storage, and upload.
+ *
+ * Plaintext archives are always local-only. When `uploadMode` is `encrypted`, raw
+ * registered configuration files and sensitive platform details may be included
+ * because [EncryptedEnvelopeCodec] protects the complete ZIP before persistence
+ * and upload. In plaintext mode, configurations pass through [ConfigReader].
+ *
+ * Report assembly is fail-fast for local collection and encryption errors. Upload
+ * failures are instead returned in [DiagnosticReport.uploadError], preserving the
+ * successfully written local report for manual support workflows.
+ *
+ * @param dataFolder runtime data root and parent of the `reports` directory
+ * @param config immutable diagnostic and upload policy
+ * @param diagnosticsRegistry source of plugin snapshots and configuration declarations
+ * @param platformAdapter source of platform-specific diagnostic values
+ * @param encryptionCodec envelope codec required in encrypted mode
+ * @param uploader optional remote destination or ordered provider chain
+ * @param uploadLedger optional persistence for remote deletion receipts
+ * @param diagnosticLogs supplies recent bounded diagnostic incidents
+ * @param diagnosticHistory supplies previously persisted incident snapshots
  */
-class ReportGenerator(
+internal class ReportGenerator(
     private val dataFolder: Path,
     private val config: PnLibraryConfig,
     private val diagnosticsRegistry: DiagnosticsRegistry,
@@ -29,13 +47,22 @@ class ReportGenerator(
 
     private val systemCollector = SystemCollector()
     private val configReader = ConfigReader(dataFolder, config)
+    private val reportStore = DiagnosticReportStore(dataFolder.resolve("reports"))
 
+    /**
+     * Generates one report according to [request], stores it locally, and optionally
+     * uploads the encrypted artifact.
+     *
+     * @throws IllegalStateException when encrypted mode lacks an encryption codec
+     * @throws IllegalArgumentException when the assembled archive exceeds the configured limit
+     * @throws java.io.IOException when local collection or persistence fails
+     */
     fun generateAndSave(request: DebugRequest): DiagnosticReport {
         val encryptionMode = config.uploadMode == "encrypted"
         val includeNetworkAddresses = encryptionMode
 
         val generated = Instant.now().toString()
-        val archive = DiagnosticArchiveBuilder()
+        val archive = DiagnosticArchiveBuilder(config.maxReportBytes.toLong())
         val pluginDiagnostics = diagnosticsRegistry.snapshot(request.target)
         archive.json("manifest.json", linkedMapOf(
             "schemaVersion" to 3,
@@ -96,16 +123,11 @@ class ReportGenerator(
             null
         }
 
-        // Save local file
-        val reportsDir = dataFolder.resolve("reports")
-        Files.createDirectories(reportsDir)
-        val fileExtension = if (encryptionMode) ".pnsupport" else ".zip"
-        val timestamp = System.currentTimeMillis()
-        val targetFile = Files.createTempFile(reportsDir, "report-$timestamp-", fileExtension)
-        Files.write(targetFile, encryptedPayload ?: archiveBytes)
-
-        // Cleanup old local reports
-        cleanupOldReports(reportsDir, config.keepReports)
+        val targetFile = reportStore.save(
+            payload = encryptedPayload ?: archiveBytes,
+            encrypted = encryptionMode,
+            keepCount = config.keepReports,
+        )
 
         // Upload if enabled and not local-only
         var uploadReceipt: UploadReceipt? = null
@@ -138,21 +160,5 @@ class ReportGenerator(
         .joinToString("/") { component ->
             component.replace(Regex("[^A-Za-z0-9._-]+"), "_").take(128).ifBlank { "config" }
         }.ifBlank { "config.txt" }
-
-    private fun cleanupOldReports(dir: Path, keepCount: Int) {
-        try {
-            val files = Files.list(dir).use { stream ->
-                stream.filter { Files.isRegularFile(it) }
-                    .sorted { p1, p2 -> Files.getLastModifiedTime(p2).compareTo(Files.getLastModifiedTime(p1)) }
-                    .toList()
-            }
-
-            if (files.size > keepCount) {
-                for (i in keepCount until files.size) {
-                    runCatching { Files.deleteIfExists(files[i]) }
-                }
-            }
-        } catch (_: Exception) { }
-    }
 
 }

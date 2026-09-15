@@ -6,20 +6,41 @@ import java.nio.charset.StandardCharsets
 import java.nio.file.Files
 import java.nio.file.Path
 import java.nio.file.StandardCopyOption
-import java.time.Instant
+import java.time.Clock
 import java.time.format.DateTimeFormatter
+import java.util.UUID
 
-/** Encrypted rolling incident history. No password or private key is stored on the server. */
+/**
+ * Persists a bounded, encrypted rolling history of diagnostic incidents.
+ *
+ * No private key or plaintext history is stored on disk. Each runtime instance owns
+ * a unique session file, rewritten atomically as incidents change. Rotation applies
+ * age, file-count, and aggregate-byte limits.
+ *
+ * @param directory dedicated history directory
+ * @param codec public-key envelope codec; `null` disables persistence
+ * @param retentionDays maximum file age in whole days
+ * @param maxBytes aggregate encrypted history budget
+ * @param clock time source used for timestamps and retention
+ */
 internal class PersistentDiagnosticHistory(
     private val directory: Path,
     private val codec: EncryptedEnvelopeCodec?,
     private val retentionDays: Int,
     private val maxBytes: Long,
+    private val clock: Clock = Clock.systemUTC(),
 ) {
     private val gson = Gson()
-    private val sessionStartedUtc = Instant.now().toString()
-    private val session = "session-${DateTimeFormatter.ofPattern("yyyyMMdd-HHmmss").withZone(java.time.ZoneOffset.UTC).format(Instant.now())}.pndlog"
+    private val sessionStarted = clock.instant()
+    private val sessionStartedUtc = sessionStarted.toString()
+    private val session = "session-${SESSION_TIME_FORMAT.format(sessionStarted)}-${UUID.randomUUID()}.pndlog"
 
+    init {
+        require(retentionDays > 0) { "retentionDays must be positive" }
+        require(maxBytes > 0) { "maxBytes must be positive" }
+    }
+
+    /** Encrypts and atomically replaces the current runtime session snapshot. */
     @Synchronized
     fun save(logIncidents: List<Map<String, Any?>>, diagnosticEvents: Map<String, Any?>) {
         val encryption = codec ?: return
@@ -28,7 +49,7 @@ internal class PersistentDiagnosticHistory(
             "format" to "pnlibrary-incident-history",
             "version" to 1,
             "sessionStartedUtc" to sessionStartedUtc,
-            "updatedUtc" to Instant.now().toString(),
+            "updatedUtc" to clock.instant().toString(),
             "logIncidents" to logIncidents,
             "pluginEvents" to diagnosticEvents,
         ))
@@ -48,12 +69,27 @@ internal class PersistentDiagnosticHistory(
         rotate()
     }
 
+    /**
+     * Returns retained encrypted files without exceeding [maxBytes].
+     *
+     * Files changed externally to exceed the per-directory budget are skipped
+     * before allocation.
+     */
     fun files(): List<Pair<String, ByteArray>> {
         if (!Files.isDirectory(directory)) return emptyList()
-        return Files.list(directory).use { stream ->
+        val candidates = Files.list(directory).use { stream ->
             stream.filter { Files.isRegularFile(it) && it.fileName.toString().endsWith(".pndlog") }
-                .sorted().map { it.fileName.toString() to Files.readAllBytes(it) }.toList()
+                .sorted().toList()
         }
+        val result = mutableListOf<Pair<String, ByteArray>>()
+        var remainingBytes = maxBytes
+        candidates.forEach { file ->
+            val size = fileSize(file) ?: return@forEach
+            if (size <= 0 || size > remainingBytes) return@forEach
+            result += file.fileName.toString() to Files.readAllBytes(file)
+            remainingBytes -= size
+        }
+        return result
     }
 
     private fun rotate() {
@@ -61,9 +97,9 @@ internal class PersistentDiagnosticHistory(
             stream.filter { Files.isRegularFile(it) && it.fileName.toString().endsWith(".pndlog") }
                 .sorted { a, b -> Files.getLastModifiedTime(b).compareTo(Files.getLastModifiedTime(a)) }.toList()
         }
-        val oldestAllowed = System.currentTimeMillis() - retentionDays * 86_400_000L
+        val oldestAllowed = clock.millis() - retentionDays * MILLIS_PER_DAY
         val retained = newestFirst.filterIndexed { index, file ->
-            val expired = runCatching { Files.getLastModifiedTime(file).toMillis() < oldestAllowed }.getOrDefault(false)
+            val expired = lastModifiedMillis(file)?.let { it < oldestAllowed } ?: false
             if (expired || index >= MAX_FILES) {
                 Files.deleteIfExists(file)
                 false
@@ -72,16 +108,31 @@ internal class PersistentDiagnosticHistory(
             }
         }
 
-        var total = retained.sumOf { runCatching { Files.size(it) }.getOrDefault(0L) }
+        var total = retained.sumOf { fileSize(it) ?: 0L }
         retained.asReversed().forEach { file ->
             if (total > maxBytes) {
-                total -= runCatching { Files.size(file) }.getOrDefault(0L)
+                total -= fileSize(file) ?: 0L
                 Files.deleteIfExists(file)
             }
         }
     }
 
+    private fun fileSize(file: Path): Long? = try {
+        Files.size(file)
+    } catch (_: Exception) {
+        null
+    }
+
+    private fun lastModifiedMillis(file: Path): Long? = try {
+        Files.getLastModifiedTime(file).toMillis()
+    } catch (_: Exception) {
+        null
+    }
+
     private companion object {
         const val MAX_FILES = 256
+        const val MILLIS_PER_DAY = 86_400_000L
+        val SESSION_TIME_FORMAT = DateTimeFormatter.ofPattern("yyyyMMdd-HHmmss")
+            .withZone(java.time.ZoneOffset.UTC)
     }
 }

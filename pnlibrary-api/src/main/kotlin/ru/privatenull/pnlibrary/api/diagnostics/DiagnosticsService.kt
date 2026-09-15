@@ -32,6 +32,13 @@ interface DiagnosticsService {
      * @return A [DiagnosticRegistration] that removes the contributor when closed.
      */
     fun register(plugin: String, contributor: DiagnosticsContributor): DiagnosticRegistration
+
+    /**
+     * Registers [contributor] and associates it with [dataDirectory] when supported.
+     *
+     * The default implementation preserves compatibility with service implementations predating
+     * per-plugin directories and delegates to [register] without using [dataDirectory].
+     */
     fun register(plugin: String, dataDirectory: Path, contributor: DiagnosticsContributor): DiagnosticRegistration =
         register(plugin, contributor)
 
@@ -79,7 +86,9 @@ interface DiagnosticsService {
         fields: Map<String, Any?> = emptyMap(),
     )
 
+    /** Version metadata for compatibility checks between diagnostics integrations. */
     companion object {
+        /** Current public diagnostics contract version. */
         const val API_VERSION: Int = 2
     }
 }
