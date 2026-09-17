@@ -8,10 +8,27 @@ enum class UpdateChannel {
     BETA,
     /** Every release, including experimental alpha versions. */
     ALPHA,
+    /** Every published build, including development releases. */
+    DEV;
+
+    /** Returns whether this maximum-risk channel permits [candidate]. */
+    fun accepts(candidate: UpdateChannel): Boolean = candidate.ordinal <= ordinal
 }
 
 /** Current observable phase of an update registration. */
 enum class UpdateState {
+    /** The installed component is the newest allowed compatible version. */
+    UP_TO_DATE,
+    /** A newer allowed compatible component version exists. */
+    UPDATE_AVAILABLE,
+    /** A verified update transaction is staged for restart. */
+    UPDATE_STAGED,
+    /** Updates for this component are temporarily frozen. */
+    FROZEN,
+    /** A release exists but cannot run with the selected API or dependencies. */
+    INCOMPATIBLE,
+    /** A related component prevents a valid atomic update plan. */
+    BLOCKED,
     /** A remote release check is currently running. */
     CHECKING,
     /** No newer compatible release was found. */
