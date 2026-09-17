@@ -20,6 +20,7 @@ import ru.privatenull.pnlibrary.core.metrics.MetricsRegistry
 import ru.privatenull.pnlibrary.core.plugin.PluginRegistryImpl
 import ru.privatenull.pnlibrary.core.placeholders.PlaceholderHub
 import ru.privatenull.pnlibrary.core.placeholders.GlobalPlaceholderValueStore
+import ru.privatenull.pnlibrary.core.platform.PlatformProviderImpl
 import ru.privatenull.pnlibrary.core.currency.CurrencyHub
 import ru.privatenull.pnlibrary.core.security.EncryptedEnvelopeCodec
 import ru.privatenull.pnlibrary.core.services.ServiceManagerImpl
@@ -98,6 +99,8 @@ internal class PnLibraryImpl(
     private val placeholderValueStore = GlobalPlaceholderValueStore()
     private val placeholderHub = PlaceholderHub(platform, placeholderValueStore)
     private val currencyHub = CurrencyHub()
+    private val platformProvider = PlatformProviderImpl()
+    override val platforms: ru.privatenull.pnlibrary.api.platform.PlatformProvider get() = platformProvider
     override val currencyProviders: ru.privatenull.pnlibrary.api.currency.CurrencyProviderRegistry get() = currencyHub
     override val placeholderAdapters: ru.privatenull.pnlibrary.api.placeholders.PlaceholderAdapterRegistry get() = placeholderHub
     override val placeholderValues: ru.privatenull.pnlibrary.api.placeholders.PlaceholderValueStore get() = placeholderValueStore
@@ -175,6 +178,7 @@ internal class PnLibraryImpl(
         if (closedFlag.compareAndSet(false, true)) {
             workerExecutor.shutdownNow()
             runCatching { plugins.close() }
+            runCatching { platformProvider.close() }
             runCatching { currencyHub.close() }
             runCatching { configurationService.close() }
             runCatching { metricsRegistry.close() }
@@ -190,6 +194,9 @@ internal class PnLibraryImpl(
             onClose()
         }
     }
+
+    internal fun <T : Any> registerPlatform(type: Class<T>, implementation: T): AutoCloseable =
+        platformProvider.register(type, implementation)
 
     private fun initEncryptionCodec(): EncryptedEnvelopeCodec? {
         if (!config.uploadMode.startsWith("encrypted")) return null

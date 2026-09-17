@@ -11,6 +11,7 @@ import ru.privatenull.pnlibrary.api.metrics.MetricsService
 import ru.privatenull.pnlibrary.api.placeholders.PlaceholderAdapterRegistry
 import ru.privatenull.pnlibrary.api.placeholders.PlaceholderValueStore
 import ru.privatenull.pnlibrary.api.plugin.PluginRegistry
+import ru.privatenull.pnlibrary.api.platform.PlatformProvider
 import ru.privatenull.pnlibrary.api.services.ServiceManager
 import ru.privatenull.pnlibrary.api.tasks.TaskService
 import ru.privatenull.pnlibrary.api.updates.UpdateService
@@ -62,6 +63,9 @@ interface PnLibrary : Closeable {
 
     /** Global registry and high-level entry point for consumer plugins. */
     val plugins: PluginRegistry
+
+    /** Type-safe native API for the active Bukkit, Bungee, or Velocity runtime. */
+    val platforms: PlatformProvider
 
     /**
      * Runtime-detected placeholder bridges such as PlaceholderAPI.
