@@ -13,14 +13,33 @@ jobs:
     timeout-minutes: 20
     steps:
       - uses: actions/checkout@v4
+        with:
+          fetch-depth: 0
       - uses: actions/setup-java@v4
         with:
           distribution: temurin
           java-version: '21'
           cache: gradle
       - uses: gradle/actions/setup-gradle@v4
+      - name: Enforce pnLibrary API generation policy
+        shell: pwsh
+        env:
+          PR_BASE_SHA: ${{ github.event.pull_request.base.sha }}
+          PUSH_BASE_SHA: ${{ github.event.before }}
+        run: |
+          $base = if ($env:PR_BASE_SHA) { $env:PR_BASE_SHA } else { $env:PUSH_BASE_SHA }
+          if (-not $base -or $base -match '^0+$') {
+            Write-Host 'No comparable base commit; accepting the initial API baseline.'
+            exit 0
+          }
+          git cat-file -e "${base}:pnlibrary-api/api/pnlibrary-api.api" 2>$null
+          if ($LASTEXITCODE -ne 0) {
+            Write-Host 'The base commit predates API guardrails; accepting the initial API baseline.'
+            exit 0
+          }
+          tools/api/check-api-generation.ps1 -BaseRef $base
       - name: Test and build distributions
-        run: ./gradlew clean test :pnlibrary-distribution:build --warning-mode all
+        run: ./gradlew clean test apiCheck :pnlibrary-distribution:build --warning-mode all
       - uses: actions/upload-artifact@v4
         with:
           name: pnLibrary-distributions
