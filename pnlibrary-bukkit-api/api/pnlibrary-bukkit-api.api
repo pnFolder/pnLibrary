@@ -1,3 +1,9 @@
+public abstract interface class ru/privatenull/pnlibrary/bukkit/api/BukkitPlatform {
+	public abstract fun getMenus ()Lru/privatenull/pnlibrary/bukkit/inventory/MenuService;
+	public abstract fun getServer ()Lorg/bukkit/Server;
+	public abstract fun getServerInfo ()Lru/privatenull/pnlibrary/bukkit/server/ServerInfo;
+}
+
 public final class ru/privatenull/pnlibrary/bukkit/inventory/Menu {
 	public fun <init> (Ljava/lang/String;ILru/privatenull/pnlibrary/bukkit/inventory/MenuType;Ljava/util/Map;Lru/privatenull/pnlibrary/bukkit/inventory/MenuRenderer;Lru/privatenull/pnlibrary/bukkit/inventory/MenuOpenHandler;Lru/privatenull/pnlibrary/bukkit/inventory/MenuCloseHandler;Lru/privatenull/pnlibrary/bukkit/inventory/MenuClickHandler;Z)V
 	public final fun component1 ()Ljava/lang/String;

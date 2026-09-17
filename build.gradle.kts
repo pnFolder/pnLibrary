@@ -82,6 +82,8 @@ dependencies {
     dokka(project(":pnlibrary-runtime-spi"))
     dokka(project(":pnlibrary-core"))
     dokka(project(":pnlibrary-bukkit-api"))
+    dokka(project(":pnlibrary-bungee-api"))
+    dokka(project(":pnlibrary-velocity-api"))
     dokka(project(":pnlibrary-bukkit"))
     dokka(project(":pnlibrary-bungee"))
     dokka(project(":pnlibrary-velocity"))

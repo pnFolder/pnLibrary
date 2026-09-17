@@ -1,0 +1,4 @@
+public abstract interface class ru/privatenull/pnlibrary/bungee/api/BungeePlatform {
+	public abstract fun getProxy ()Lnet/md_5/bungee/api/ProxyServer;
+}
+
