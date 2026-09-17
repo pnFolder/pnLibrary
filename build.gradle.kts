@@ -5,6 +5,21 @@ plugins {
     alias(libs.plugins.kotlin.jvm) apply false
     alias(libs.plugins.shadow)     apply false
     alias(libs.plugins.dokka)
+    id("org.jetbrains.kotlinx.binary-compatibility-validator") version "0.18.2"
+}
+
+apiValidation {
+    ignoredProjects.addAll(
+        listOf(
+            "pnlibrary-bstats-base",
+            "pnlibrary-bukkit",
+            "pnlibrary-bungee",
+            "pnlibrary-core",
+            "pnlibrary-distribution",
+            "pnlibrary-runtime-spi",
+            "pnlibrary-velocity",
+        ),
+    )
 }
 
 repositories {
