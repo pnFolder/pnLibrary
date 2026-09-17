@@ -78,6 +78,15 @@ class ActionContext(
     /** Returns the named condition value, or `null` when it is absent or explicitly null. */
     fun value(name: String): Any? = runtimeValues[name]
 
+    /** Resolves a local `[name|formatters]` or regular placeholder expression. */
+    fun resolve(reference: String): Any? {
+        val expression = reference.trim().let {
+            if (it.startsWith('[') && it.endsWith(']')) it.substring(1, it.length - 1) else it
+        }
+        runtimeValues[expression.substringBefore('|').trim()]?.let { return it }
+        return placeholders?.resolve(expression, player.uniqueId, runtimeValues)?.toCompletableFuture()?.join()
+    }
+
     /** Returns a snapshot of values currently available to conditions and actions. */
     fun values(): Map<String, Any?> = runtimeValues.toMap()
 

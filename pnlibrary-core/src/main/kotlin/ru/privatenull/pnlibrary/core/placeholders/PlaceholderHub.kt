@@ -315,6 +315,18 @@ internal class PlaceholderHub(
 
     private fun renderFor(consumer: PluginId, template: String, playerId: UUID?, values: Map<String, Any?>): CompletionStage<String> {
         var output = renderConditions(consumer, template, playerId, values)
+        val localExpressions = Regex("\\[[^\\[\\]]+]").findAll(output)
+            .map { it.value }
+            .filter { LocalPlaceholderExpression.parse(it) != null }
+            .distinct()
+            .toList()
+        localExpressions.forEach { token ->
+            val expression = LocalPlaceholderExpression.parse(token) ?: return@forEach
+            val resolved = resolveFor(consumer, expression.reference, playerId, values)
+                .toCompletableFuture().join()
+            val formatted = format(consumer, resolved, expression.formatters, playerId, values)
+            output = output.replace(token, formatted?.toString() ?: token)
+        }
         val expressions = Regex("\\{([^{}]+)}").findAll(output).map { it.groupValues[1] }.distinct().toList()
         var stage: CompletionStage<String> = CompletableFuture.completedFuture(output)
         expressions.forEach { expression -> stage = stage.thenCompose { current ->

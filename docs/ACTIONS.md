@@ -253,19 +253,19 @@ When an unknown value should be ignored silently, make that behavior explicit wi
 `noop` produces no message, log record, sound, effect, or error. Its aliases are
 `ignore` and `silent`.
 
-Every local context value is also available as a placeholder in component text:
-`[[player]]`, `[[player-level]]`, `[[reward-id]]`. The double square brackets are
-intentional: they distinguish action-local values from registered library
-placeholders such as `{clan.name}` and `{pnclans:clan.name}`. Values are rendered at
-execution time, so a value changed by `set-value` is visible to all following messages.
+Every local context value is also available in component text as `[name]`, for
+example `[player]`, `[player-level]`, and `[reward-id]`. Single square brackets
+identify action-local values, while registered library placeholders keep the
+`{clan.name}` and `{pnclans:clan.name}` syntax. Both forms use the same resolver
+and formatter pipeline, so a value changed by `set-value` is visible to following messages.
 
 Local values support the same basic inline formatting vocabulary without becoming
 library registrations:
 
 ```text
-[[player-level|default:0]]
-[[player-name|upper]]
-[[has-premium|boolean:VIP:Обычный игрок]]
+[player-level|default:0]
+[player-name|upper]
+[has-premium|boolean:VIP:Обычный игрок]
 ```
 
 ### Updating library-owned values

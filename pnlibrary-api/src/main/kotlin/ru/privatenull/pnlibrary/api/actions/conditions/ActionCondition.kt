@@ -134,7 +134,7 @@ data class ValueCondition(
     val ignoreCase: Boolean = true,
 ) : ActionCondition {
     override fun matches(context: ActionContext): Boolean {
-        val raw = context.value(source)
+        val raw = context.resolve(source)
         if (operator == Comparison.PRESENT) return raw != null && raw.toString().isNotBlank()
         if (operator == Comparison.ABSENT) return raw == null || raw.toString().isBlank()
         val actual = raw?.toString() ?: return false
@@ -142,7 +142,7 @@ data class ValueCondition(
         val right = if (ignoreCase) value.lowercase() else value
         fun numeric(predicate: (Double, Double) -> Boolean): Boolean {
             val a = actual.toDoubleOrNull() ?: return false
-            val b = value.toDoubleOrNull() ?: return false
+            val b = context.resolve(value)?.toString()?.toDoubleOrNull() ?: value.toDoubleOrNull() ?: return false
             return predicate(a, b)
         }
         return when (operator) {
