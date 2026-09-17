@@ -2850,8 +2850,11 @@ public final class ru/privatenull/pnlibrary/api/updates/PluginUpdateRequest {
 	public final fun getArtifacts ()Ljava/util/List;
 	public final fun getAutomaticDownload ()Z
 	public final fun getChannel ()Lru/privatenull/pnlibrary/api/updates/UpdateChannel;
+	public final fun getComponent ()Lru/privatenull/pnlibrary/api/updates/ComponentId;
+	public final fun getDependencies ()Ljava/util/List;
 	public final fun getRepositoryName ()Ljava/lang/String;
 	public final fun getRepositoryOwner ()Ljava/lang/String;
+	public final fun getSupportedApi ()Lru/privatenull/pnlibrary/api/version/ApiVersionRange;
 }
 
 public final class ru/privatenull/pnlibrary/api/updates/PluginUpdateRequest$Builder {
@@ -2862,7 +2865,14 @@ public final class ru/privatenull/pnlibrary/api/updates/PluginUpdateRequest$Buil
 	public final fun automaticDownload (Z)Lru/privatenull/pnlibrary/api/updates/PluginUpdateRequest$Builder;
 	public final fun build ()Lru/privatenull/pnlibrary/api/updates/PluginUpdateRequest;
 	public final fun channel (Lru/privatenull/pnlibrary/api/updates/UpdateChannel;)Lru/privatenull/pnlibrary/api/updates/PluginUpdateRequest$Builder;
+	public final fun component (Ljava/lang/String;)Lru/privatenull/pnlibrary/api/updates/PluginUpdateRequest$Builder;
+	public final fun dependsOn (Ljava/lang/String;Ljava/lang/String;)Lru/privatenull/pnlibrary/api/updates/PluginUpdateRequest$Builder;
+	public final fun exactArtifact (Ljava/lang/String;)Lru/privatenull/pnlibrary/api/updates/PluginUpdateRequest$Builder;
+	public final fun exactArtifact (Ljava/lang/String;I)Lru/privatenull/pnlibrary/api/updates/PluginUpdateRequest$Builder;
+	public final fun exactArtifact (Ljava/lang/String;ILjava/lang/Integer;)Lru/privatenull/pnlibrary/api/updates/PluginUpdateRequest$Builder;
+	public static synthetic fun exactArtifact$default (Lru/privatenull/pnlibrary/api/updates/PluginUpdateRequest$Builder;Ljava/lang/String;ILjava/lang/Integer;ILjava/lang/Object;)Lru/privatenull/pnlibrary/api/updates/PluginUpdateRequest$Builder;
 	public final fun repository (Ljava/lang/String;Ljava/lang/String;)Lru/privatenull/pnlibrary/api/updates/PluginUpdateRequest$Builder;
+	public final fun supportedApi (II)Lru/privatenull/pnlibrary/api/updates/PluginUpdateRequest$Builder;
 }
 
 public final class ru/privatenull/pnlibrary/api/updates/PluginUpdateRequest$Companion {

@@ -1,5 +1,9 @@
 package ru.privatenull.pnlibrary.api.updates
 
+import ru.privatenull.pnlibrary.api.version.ApiVersionRange
+import ru.privatenull.pnlibrary.api.version.PnLibraryApi
+import ru.privatenull.pnlibrary.api.version.SemanticVersion
+
 /** Release maturity accepted by an updater. Each channel includes more stable releases. */
 enum class UpdateChannel {
     /** Stable releases only; prereleases, alpha, beta, and release candidates are excluded. */
@@ -112,6 +116,12 @@ class PluginUpdateRequest private constructor(builder: Builder) {
     val automaticDownload: Boolean = builder.automaticDownload
     /** Immutable artifact-selection rules in declaration order. */
     val artifacts: List<PluginUpdateArtifact> = builder.artifacts.toList()
+    /** Stable component identity used by the API-aware resolver. */
+    val component: ComponentId = builder.component ?: ComponentId.of(repositoryName)
+    /** Inclusive pnLibrary API generations supported by this component. */
+    val supportedApi: ApiVersionRange = builder.supportedApi
+    /** Immutable minimum-version requirements on other managed components. */
+    val dependencies: List<ComponentDependency> = builder.dependencies.toList()
 
     /** Returns the most specific artifact compatible with [javaFeature], or `null`. */
     fun artifactFor(javaFeature: Int): PluginUpdateArtifact? = artifacts
@@ -125,6 +135,9 @@ class PluginUpdateRequest private constructor(builder: Builder) {
         internal var channel = UpdateChannel.STABLE
         internal var automaticDownload = true
         internal val artifacts = mutableListOf<PluginUpdateArtifact>()
+        internal var component: ComponentId? = null
+        internal var supportedApi = ApiVersionRange(PnLibraryApi.VERSION, PnLibraryApi.VERSION)
+        internal val dependencies = mutableListOf<ComponentDependency>()
 
         /** Sets and validates the GitHub repository coordinates. */
         fun repository(owner: String, name: String) = apply {
@@ -138,6 +151,29 @@ class PluginUpdateRequest private constructor(builder: Builder) {
         fun channel(value: UpdateChannel) = apply { channel = value }
         /** Enables or disables automatic verified downloads. */
         fun automaticDownload(enabled: Boolean) = apply { automaticDownload = enabled }
+        /** Sets the stable resolver component identity. */
+        fun component(value: String) = apply { component = ComponentId.of(value) }
+        /** Sets the inclusive pnLibrary API-generation range supported by the plugin. */
+        fun supportedApi(minimum: Int, maximum: Int) = apply {
+            supportedApi = ApiVersionRange(minimum, maximum)
+        }
+        /** Adds an exact release asset name without exposing regular-expression escaping. */
+        @JvmOverloads
+        fun exactArtifact(name: String, minimumJava: Int = 8, maximumJava: Int? = null) = apply {
+            require(name.isNotBlank()) { "artifact name must not be blank" }
+            artifact("^${Regex.escape(name)}$", minimumJava, maximumJava)
+        }
+        /** Declares a minimum semantic version required from another managed component. */
+        fun dependsOn(component: String, minimumVersion: String) = apply {
+            val dependency = ComponentDependency(
+                ComponentId.of(component),
+                SemanticVersion.parse(minimumVersion),
+            )
+            require(dependencies.none { it.component == dependency.component }) {
+                "duplicate component dependency: ${dependency.component}"
+            }
+            dependencies += dependency
+        }
         /** Adds an artifact pattern compatible with Java 8 and newer. */
         fun artifactPattern(regex: String) = artifact(regex, 8)
         /** Adds and validates one Java-bounded release artifact rule. */
