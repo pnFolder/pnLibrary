@@ -105,8 +105,11 @@ jobs:
         env:
           GH_TOKEN: ${{ secrets.GITHUB_TOKEN }}
         run: |
-          $artifacts = Get-ChildItem 'pnlibrary-distribution/build/libs' -Filter '*.jar' |
-            Where-Object { $_.Name -match '^pnLibrary-[0-9].*-(bukkit-java8|bungeecord-java8|velocity-java17)\.jar$' } |
+          $artifacts = Get-ChildItem 'pnlibrary-distribution/build/libs' -File |
+            Where-Object {
+              $_.Name -eq 'checksums.sha256' -or
+              $_.Name -match '^pnLibrary-[0-9].*-(bukkit-java8|bungeecord-java8|velocity-java17)\.jar(?:\.meta\.json|\.sha256)?$'
+            } |
             ForEach-Object FullName
           if (-not $artifacts) { throw 'No release JARs were built' }
           $arguments = @('release', 'create', 'v${{ inputs.version }}') + $artifacts + @(
