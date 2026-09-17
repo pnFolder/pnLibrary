@@ -368,6 +368,12 @@ internal class BukkitCommandController(
 
     private fun sendUpdateLine(sender: CommandSender, snapshot: UpdateSnapshot) {
         val state = when (snapshot.state) {
+            UpdateState.UP_TO_DATE -> "§aактуальная версия"
+            UpdateState.UPDATE_AVAILABLE -> "§eдоступна ${snapshot.latestVersion}"
+            UpdateState.UPDATE_STAGED -> "§a${snapshot.latestVersion} подготовлена; нужен перезапуск"
+            UpdateState.FROZEN -> "§eобновления временно заморожены"
+            UpdateState.INCOMPATIBLE -> "§cнесовместимое обновление"
+            UpdateState.BLOCKED -> "§cобновление заблокировано зависимостью"
             UpdateState.CHECKING -> "§eпроверяется"
             UpdateState.CURRENT -> "§aактуальная версия"
             UpdateState.AVAILABLE -> "§eдоступна ${snapshot.latestVersion}"
@@ -387,7 +393,10 @@ internal class BukkitCommandController(
         runtime.tasks.scope(plugin).laterEntity(player, java.time.Duration.ofSeconds(5), Runnable {
             val active = library ?: return@Runnable
             val actionable = active.updates.registrations().map { it.snapshot }
-                .filter { it.state == UpdateState.AVAILABLE || it.state == UpdateState.DOWNLOADED }
+                .filter {
+                    it.state == UpdateState.AVAILABLE || it.state == UpdateState.DOWNLOADED ||
+                        it.state == UpdateState.UPDATE_AVAILABLE || it.state == UpdateState.UPDATE_STAGED
+                }
             if (actionable.isEmpty() || !player.isOnline) return@Runnable
             player.sendMessage("")
             player.sendMessage("§e§l pnFolder §8• §fдоступно обновлений: §e${actionable.size}")

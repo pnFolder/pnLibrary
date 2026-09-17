@@ -16,6 +16,7 @@ apiValidation {
             "pnlibrary-bungee",
             "pnlibrary-core",
             "pnlibrary-distribution",
+            "pnlibrary-feature-update",
             "pnlibrary-runtime-spi",
             "pnlibrary-velocity",
         ),
