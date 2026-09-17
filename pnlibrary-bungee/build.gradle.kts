@@ -20,6 +20,7 @@ dependencies {
     implementation(project(":pnlibrary-api"))
     implementation(project(":pnlibrary-runtime-spi"))
     implementation(project(":pnlibrary-core"))
+    implementation(project(":pnlibrary-bungee-api"))
     implementation(libs.kotlin.stdlib)
     implementation(project(":pnlibrary-bstats-base"))
     implementation(libs.adventure.legacy)

@@ -9,6 +9,7 @@ import com.velocitypowered.api.plugin.annotation.DataDirectory
 import com.velocitypowered.api.proxy.ProxyServer
 import org.bstats.velocity.Metrics
 import org.slf4j.Logger
+import ru.privatenull.pnlibrary.velocity.api.VelocityPlatform
 import ru.privatenull.pnlibrary.core.runtime.PnLibraryRuntimeHost
 import java.nio.file.Path
 
@@ -40,7 +41,9 @@ class PnLibraryVelocityPlugin @Inject constructor(
             this,
             adapter,
             dataDirectory.parent.resolve("update"),
-        )
+        ).also { host ->
+            host.registerPlatform(VelocityPlatform::class.java, VelocityPlatformImpl(server))
+        }
     }
 
     /**

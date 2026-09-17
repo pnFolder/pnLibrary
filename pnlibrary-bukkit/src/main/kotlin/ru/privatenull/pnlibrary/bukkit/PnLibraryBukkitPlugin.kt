@@ -11,6 +11,7 @@ import org.bukkit.plugin.java.JavaPlugin
 import ru.privatenull.pnlibrary.api.currency.CurrencyRegistration
 import ru.privatenull.pnlibrary.api.plugin.PluginId
 import ru.privatenull.pnlibrary.bukkit.currency.BukkitCurrencyAdapters
+import ru.privatenull.pnlibrary.bukkit.api.BukkitPlatform
 import ru.privatenull.pnlibrary.bukkit.currency.CurrencyCommandExecutor
 import ru.privatenull.pnlibrary.bukkit.inventory.MenuService
 import ru.privatenull.pnlibrary.bukkit.inventory.MenuServiceImpl
@@ -71,6 +72,10 @@ class PnLibraryBukkitPlugin : JavaPlugin(), Listener {
         val menuService = MenuServiceImpl(this, host.library.tasks.scope(this))
         host.registerService(ServerInfo::class.java, adapter.serverInfo)
         host.registerService(MenuService::class.java, menuService)
+        host.registerPlatform(
+            BukkitPlatform::class.java,
+            BukkitPlatformImpl(server, adapter.serverInfo, menuService),
+        )
         val audienceService = BukkitAudienceService(this)
         host.registerService(BukkitAudienceService::class.java, audienceService)
         this.audienceService = audienceService

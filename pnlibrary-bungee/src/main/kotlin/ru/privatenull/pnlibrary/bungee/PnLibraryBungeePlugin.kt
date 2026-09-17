@@ -1,6 +1,7 @@
 package ru.privatenull.pnlibrary.bungee
 
 import net.md_5.bungee.api.plugin.Plugin
+import ru.privatenull.pnlibrary.bungee.api.BungeePlatform
 import ru.privatenull.pnlibrary.core.runtime.PnLibraryRuntimeHost
 
 /**
@@ -20,7 +21,9 @@ class PnLibraryBungeePlugin : Plugin() {
             this,
             adapter,
             dataFolder.toPath().parent.resolve("update"),
-        )
+        ).also { host ->
+            host.registerPlatform(BungeePlatform::class.java, BungeePlatformImpl(proxy))
+        }
     }
 
     /** Closes the runtime and releases its scheduler, registrations, and integrations. */
