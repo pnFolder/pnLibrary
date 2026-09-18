@@ -19,12 +19,12 @@ kotlin {
 tasks.withType<JavaCompile>().configureEach { options.release = 8 }
 
 dependencies {
-    implementation(project(":pnlibrary-api"))
-    implementation(project(":pnlibrary-runtime-spi"))
-    implementation(project(":pnlibrary-core"))
-    implementation(project(":pnlibrary-bukkit-api"))
+    implementation(project(":modules:api"))
+    implementation(project(":modules:runtime-spi"))
+    implementation(project(":modules:core"))
+    implementation(project(":platforms:bukkit:api"))
     implementation(libs.kotlin.stdlib)
-    implementation(project(":pnlibrary-bstats-base"))
+    implementation(project(":modules:internal:bstats"))
     implementation(libs.adventure.legacy)
     implementation(libs.adventure.platform.bukkit)
 

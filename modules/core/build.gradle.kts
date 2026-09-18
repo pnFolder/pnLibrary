@@ -17,8 +17,8 @@ kotlin {
 tasks.withType<JavaCompile>().configureEach { options.release = 8 }
 
 dependencies {
-    implementation(project(":pnlibrary-api"))
-    implementation(project(":pnlibrary-runtime-spi"))
+    implementation(project(":modules:api"))
+    implementation(project(":modules:runtime-spi"))
     implementation(libs.kotlin.stdlib)
     implementation(libs.gson)
     implementation(libs.snakeyaml)
@@ -26,7 +26,7 @@ dependencies {
     implementation(libs.adventure.legacy)
     implementation(libs.adventure.gson)
     implementation(libs.adventure.plain)
-    implementation(project(":pnlibrary-bstats-base"))
+    implementation(project(":modules:internal:bstats"))
 
     testImplementation(libs.junit.jupiter)
     testImplementation(libs.mockito.kotlin)

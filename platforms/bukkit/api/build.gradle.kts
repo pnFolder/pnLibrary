@@ -55,7 +55,7 @@ kotlin {
 tasks.withType<JavaCompile>().configureEach { options.release = 8 }
 
 dependencies {
-    api(project(":pnlibrary-api"))
+    api(project(":modules:api"))
     api(libs.kotlin.stdlib)
     compileOnly(libs.spigot.api.v18)
 

@@ -16,7 +16,7 @@ kotlin {
 tasks.withType<JavaCompile>().configureEach { options.release = 8 }
 
 dependencies {
-    api(project(":pnlibrary-api"))
+    api(project(":modules:api"))
     implementation(libs.kotlin.stdlib)
 }
 

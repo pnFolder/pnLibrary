@@ -2,8 +2,10 @@
 import com.github.jengelman.gradle.plugins.shadow.tasks.ShadowJar
 import java.security.MessageDigest
 
-evaluationDependsOn(":pnlibrary-bungee-api")
-evaluationDependsOn(":pnlibrary-velocity-api")
+evaluationDependsOn(":modules:api")
+evaluationDependsOn(":platforms:bukkit:api")
+evaluationDependsOn(":platforms:bungee:api")
+evaluationDependsOn(":platforms:velocity:api")
 
 plugins {
     alias(libs.plugins.shadow)
@@ -46,8 +48,8 @@ fun ShadowJar.applyCommonConfig() {
 // ── Bukkit / Spigot / Paper / Leaf / Purpur / Folia (universal) ──────────────
 val bukkitRuntime: Configuration by configurations.creating
 dependencies {
-    bukkitRuntime(project(":pnlibrary-bukkit"))
-    bukkitRuntime(project(":pnlibrary-feature-update"))
+    bukkitRuntime(project(":platforms:bukkit:runtime"))
+    bukkitRuntime(project(":modules:features:update"))
     // Folia scheduler layer is included at runtime; consumers decide whether to activate it
 }
 
@@ -64,8 +66,8 @@ tasks.register<ShadowJar>("shadowBukkit") {
 // ── BungeeCord / Waterfall ────────────────────────────────────────────────────
 val bungeeRuntime: Configuration by configurations.creating
 dependencies {
-    bungeeRuntime(project(":pnlibrary-bungee"))
-    bungeeRuntime(project(":pnlibrary-feature-update"))
+    bungeeRuntime(project(":platforms:bungee:runtime"))
+    bungeeRuntime(project(":modules:features:update"))
 }
 
 tasks.register<ShadowJar>("shadowBungee") {
@@ -81,8 +83,8 @@ tasks.register<ShadowJar>("shadowBungee") {
 // ── Velocity ─────────────────────────────────────────────────────────────────
 val velocityRuntime: Configuration by configurations.creating
 dependencies {
-    velocityRuntime(project(":pnlibrary-velocity"))
-    velocityRuntime(project(":pnlibrary-feature-update"))
+    velocityRuntime(project(":platforms:velocity:runtime"))
+    velocityRuntime(project(":modules:features:update"))
 }
 
 tasks.register<ShadowJar>("shadowVelocity") {
@@ -99,14 +101,14 @@ tasks.named("build") {
     dependsOn("shadowBukkit", "shadowBungee", "shadowVelocity", "copyDeveloperArtifacts")
 }
 
-val apiJar = project(":pnlibrary-api").tasks.named<Jar>("jar")
-val apiSources = project(":pnlibrary-api").tasks.named<Jar>("sourcesJar")
-val bukkitApiJar = project(":pnlibrary-bukkit-api").tasks.named<Jar>("jar")
-val bukkitApiSources = project(":pnlibrary-bukkit-api").tasks.named<Jar>("sourcesJar")
-val bungeeApiJar = project(":pnlibrary-bungee-api").tasks.named<Jar>("jar")
-val bungeeApiSources = project(":pnlibrary-bungee-api").tasks.named<Jar>("sourcesJar")
-val velocityApiJar = project(":pnlibrary-velocity-api").tasks.named<Jar>("jar")
-val velocityApiSources = project(":pnlibrary-velocity-api").tasks.named<Jar>("sourcesJar")
+val apiJar = project(":modules:api").tasks.named<Jar>("jar")
+val apiSources = project(":modules:api").tasks.named<Jar>("sourcesJar")
+val bukkitApiJar = project(":platforms:bukkit:api").tasks.named<Jar>("jar")
+val bukkitApiSources = project(":platforms:bukkit:api").tasks.named<Jar>("sourcesJar")
+val bungeeApiJar = project(":platforms:bungee:api").tasks.named<Jar>("jar")
+val bungeeApiSources = project(":platforms:bungee:api").tasks.named<Jar>("sourcesJar")
+val velocityApiJar = project(":platforms:velocity:api").tasks.named<Jar>("jar")
+val velocityApiSources = project(":platforms:velocity:api").tasks.named<Jar>("sourcesJar")
 tasks.register<Copy>("copyDeveloperArtifacts") {
     group = "distribution"
     description = "Copies the public API binary and sources next to platform distributions"
@@ -133,7 +135,7 @@ val releasePlatforms = listOf(
     ReleasePlatform("velocity-java17", "shadowVelocity"),
 )
 val apiVersionSource = rootProject.file(
-    "pnlibrary-api/src/main/kotlin/ru/privatenull/pnlibrary/api/version/PnLibraryApi.kt",
+    "modules/api/src/main/kotlin/ru/privatenull/pnlibrary/api/version/PnLibraryApi.kt",
 ).readText()
 val pnApiVersion = Regex("const\\s+val\\s+VERSION\\s*:\\s*Int\\s*=\\s*(\\d+)")
     .find(apiVersionSource)?.groupValues?.get(1)?.toInt()

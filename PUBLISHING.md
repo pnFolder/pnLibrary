@@ -75,8 +75,8 @@ The workflow `.github/workflows/publish-maven-central.yml` runs:
 It runs the publication task once for each public module:
 
 ```bash
-./gradlew --no-daemon :pnlibrary-api:publishAndReleaseToMavenCentral
-./gradlew --no-daemon :pnlibrary-bukkit-api:publishAndReleaseToMavenCentral
+./gradlew --no-daemon :modules:api:publishAndReleaseToMavenCentral
+./gradlew --no-daemon :platforms:bukkit:api:publishAndReleaseToMavenCentral
 ```
 
 The workflow uploads, validates, and releases the deployment through the Central Portal.
@@ -107,7 +107,7 @@ $env:ORG_GRADLE_PROJECT_signingInMemoryKeyPassword="..."
 $env:ORG_GRADLE_PROJECT_POM_LICENSE_NAME="..."
 $env:ORG_GRADLE_PROJECT_POM_LICENSE_URL="..."
 $env:ORG_GRADLE_PROJECT_POM_LICENSE_DIST="repo"
-.\gradlew.bat :pnlibrary-api:publishAndReleaseToMavenCentral :pnlibrary-bukkit-api:publishAndReleaseToMavenCentral
+.\gradlew.bat :modules:api:publishAndReleaseToMavenCentral :platforms:bukkit:api:publishAndReleaseToMavenCentral
 ```
 
 ## Consuming pnLibrary API

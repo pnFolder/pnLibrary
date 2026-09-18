@@ -85,7 +85,7 @@ jobs:
         run: tools/release/release.ps1 -Action version -Version '${{ inputs.version }}'
 
       - name: Build and verify
-        run: .\gradlew.bat clean test :pnlibrary-distribution:build --console=plain
+        run: .\gradlew.bat clean test :distribution:build --console=plain
 
       - name: Commit version and create tag
         if: inputs.mode == 'full'
@@ -105,7 +105,7 @@ jobs:
         env:
           GH_TOKEN: ${{ secrets.GITHUB_TOKEN }}
         run: |
-          $artifacts = Get-ChildItem 'pnlibrary-distribution/build/libs' -File |
+          $artifacts = Get-ChildItem 'distribution/build/libs' -File |
             Where-Object {
               $_.Name -eq 'checksums.sha256' -or
               $_.Name -match '^pnLibrary-[0-9].*-(bukkit-java8|bungeecord-java8|velocity-java17)\.jar(?:\.meta\.json|\.sha256)?$'

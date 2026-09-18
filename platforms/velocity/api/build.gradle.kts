@@ -19,7 +19,7 @@ tasks.withType<KotlinCompile>().configureEach {
 tasks.withType<JavaCompile>().configureEach { options.release = 17 }
 
 dependencies {
-    api(project(":pnlibrary-api"))
+    api(project(":modules:api"))
     api(libs.kotlin.stdlib)
     compileOnly(libs.velocity.api)
 }

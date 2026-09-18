@@ -12,12 +12,12 @@ API and obtain the running `PnLibrary` instance.
 consumer plugins
       │
       ▼
-pnlibrary-api          public contracts
+modules/api            public contracts
       │
       ▼
-pnlibrary-runtime-spi  private platform boundary
+modules/runtime-spi    private platform boundary
       │
-pnlibrary-core         platform-independent behavior
+modules/core           platform-independent behavior
   ┌───┼────┐
   ▼   ▼    ▼
 Bukkit Bungee Velocity
@@ -34,15 +34,14 @@ Remember this rule:
 
 | Module | Responsibility |
 |---|---|
-| `pnlibrary-api` | Public runtime, services, diagnostics, tasks, logging, metrics, updates, and configuration contracts |
-| `pnlibrary-bukkit-api` | Public Bukkit-only server environment, Minecraft version, menu contracts, and builders |
-| `pnlibrary-runtime-spi` | Private bridges used only by core and platform runtimes |
-| `pnlibrary-core` | Common runtime implementations with no Bukkit, Bungee, or Velocity imports |
-| `pnlibrary-bukkit` | Private Bukkit/Paper/Purpur/Leaf/Folia adapter, commands, menu implementation, and bStats |
-| `pnlibrary-bungee` | BungeeCord/Waterfall adapter, commands, scheduler, and bStats |
-| `pnlibrary-velocity` | Velocity adapter, commands, scheduler, SLF4J, and bStats |
-| `pnlibrary-bstats-base` | Shared official bStats classes |
-| `pnlibrary-distribution` | Relocated fat JARs for each platform |
+| `modules/api` | Public runtime, services, diagnostics, tasks, logging, metrics, updates, and configuration contracts |
+| `platforms/bukkit/api` | Public Bukkit-only server environment, Minecraft version, menu contracts, and builders |
+| `modules/runtime-spi` | Private bridges used only by core and platform runtimes |
+| `modules/core` | Common runtime implementations with no Bukkit, Bungee, or Velocity imports |
+| `platforms/*/runtime` | Private native platform adapters and entry points |
+| `modules/features/update` | pnUpdate resolution, freezes and durable transactions |
+| `modules/internal/bstats` | Shared official bStats classes |
+| `distribution` | Relocated fat JARs for each platform |
 
 Dependencies point in one direction:
 
@@ -75,7 +74,7 @@ uses its schedulers through reflection.
 
 ## Runtime composition
 
-[`PnLibrary`](pnlibrary-api/src/main/kotlin/ru/privatenull/pnlibrary/api/runtime/PnLibrary.kt)
+[`PnLibrary`](modules/api/src/main/kotlin/ru/privatenull/pnlibrary/api/runtime/PnLibrary.kt)
 is the public facade:
 
 ```text
@@ -93,11 +92,11 @@ PnLibrary
 Consumers call `PnLibraryProvider.get()` on every platform. Platform-native
 service registries are not used.
 
-[`PnLibraryImpl`](pnlibrary-core/src/main/kotlin/ru/privatenull/pnlibrary/core/runtime/PnLibraryImpl.kt)
+[`PnLibraryImpl`](modules/core/src/main/kotlin/ru/privatenull/pnlibrary/core/runtime/PnLibraryImpl.kt)
 is the composition root: it constructs and connects all service implementations.
 Start here when you need to know where a service comes from.
 
-[`PlatformAdapter`](pnlibrary-runtime-spi/src/main/kotlin/ru/privatenull/pnlibrary/spi/platform/PlatformAdapter.kt)
+[`PlatformAdapter`](modules/runtime-spi/src/main/kotlin/ru/privatenull/pnlibrary/spi/platform/PlatformAdapter.kt)
 handles native logging, metadata, scheduler dispatch, diagnostics, bStats, and
 binding platform commands/listeners. It is SPI, not consumer API. `PlatformType` describes one of the three
 API families (`BUKKIT`, `BUNGEECORD`, or `VELOCITY`). A concrete implementation
@@ -355,9 +354,9 @@ handle and must close it.
 
 | Change | Start here |
 |---|---|
-| Public cross-platform contract | `pnlibrary-api` |
+| Public cross-platform contract | `modules/api` |
 | Public Bukkit contract | `pnlibrary-bukkit-api` |
-| Platform implementation boundary | `pnlibrary-runtime-spi` |
+| Platform implementation boundary | `modules/runtime-spi` |
 | Service composition | `PnLibraryImpl` |
 | Typed service contracts/registry | `ServiceManager`, `PluginContext.services`, then `ServiceManagerImpl` |
 | Startup/shutdown | `PnLibraryRuntimeHost`, then native entry points |
@@ -375,7 +374,7 @@ handle and must close it.
 | Consumer code-first config | `ManagedConfig`, `CodeFirstYaml`, `YamlDefaultsMerger` |
 | Bukkit GUI contract | `platforms/bukkit/api/inventory` |
 | Bukkit GUI execution | `platforms/bukkit/runtime/inventory` |
-| Final JAR contents | `pnlibrary-distribution/build.gradle.kts` |
+| Final JAR contents | `distribution/build.gradle.kts` |
 
 ## Fast reading order
 
@@ -383,7 +382,7 @@ Read these files, in order:
 
 1. `PnLibrary.kt`
 2. `PlatformType.kt`; for Bukkit code, `PnBukkit.kt` and `ServerInfo.kt`
-3. `PlatformAdapter.kt` in `pnlibrary-runtime-spi`
+3. `PlatformAdapter.kt` in `modules/runtime-spi`
 4. `PnLibraryBootstrap.kt`
 5. `PnLibraryImpl.kt`
 6. One native entry point and its adapter
@@ -403,9 +402,9 @@ Bukkit and Bungee target Java 8 bytecode; Velocity targets Java 17. Build the
 project on JDK 17 or newer.
 
 ```text
-gradlew.bat clean test :pnlibrary-distribution:build
+gradlew.bat clean test :distribution:build
 ```
 
-Artifacts are written to `pnlibrary-distribution/build/libs`. Always build the
+Artifacts are written to `distribution/build/libs`. Always build the
 distribution before publishing: module tests do not verify relocation, packaged
 resources, or final platform JAR compatibility.

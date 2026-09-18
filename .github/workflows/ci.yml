@@ -32,16 +32,19 @@ jobs:
             Write-Host 'No comparable base commit; accepting the initial API baseline.'
             exit 0
           }
-          git cat-file -e "${base}:pnlibrary-api/api/pnlibrary-api.api" 2>$null
+          git cat-file -e "${base}:modules/api/api/api.api" 2>$null
+          if ($LASTEXITCODE -ne 0) {
+            git cat-file -e "${base}:pnlibrary-api/api/pnlibrary-api.api" 2>$null
+          }
           if ($LASTEXITCODE -ne 0) {
             Write-Host 'The base commit predates API guardrails; accepting the initial API baseline.'
             exit 0
           }
           tools/api/check-api-generation.ps1 -BaseRef $base
       - name: Test and build distributions
-        run: ./gradlew clean test apiCheck :pnlibrary-distribution:build --warning-mode all
+        run: ./gradlew clean test apiCheck :distribution:build --warning-mode all
       - uses: actions/upload-artifact@v4
         with:
           name: pnLibrary-distributions
-          path: pnlibrary-distribution/build/libs/*.jar
+          path: distribution/build/libs/*.jar
           if-no-files-found: error

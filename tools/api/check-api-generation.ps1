@@ -1,9 +1,9 @@
 param(
     [string]$BaseRef,
     [string]$BaseApiPath,
-    [string]$CurrentApiPath = 'pnlibrary-api/api/pnlibrary-api.api',
+    [string]$CurrentApiPath = 'modules/api/api/api.api',
     [string]$BaseVersionPath,
-    [string]$CurrentVersionPath = 'pnlibrary-api/src/main/kotlin/ru/privatenull/pnlibrary/api/version/PnLibraryApi.kt'
+    [string]$CurrentVersionPath = 'modules/api/src/main/kotlin/ru/privatenull/pnlibrary/api/version/PnLibraryApi.kt'
 )
 
 $ErrorActionPreference = 'Stop'
@@ -13,6 +13,13 @@ function Read-GitFile {
     $value = & git show "${Ref}:$Path" 2>$null
     if ($LASTEXITCODE -ne 0) { throw "Cannot read $Path from git ref $Ref" }
     return ($value -join "`n")
+}
+
+function Read-GitFileWithFallback {
+    param([string]$Ref, [string]$CurrentPath, [string]$LegacyPath)
+    $value = & git show "${Ref}:$CurrentPath" 2>$null
+    if ($LASTEXITCODE -eq 0) { return ($value -join "`n") }
+    return Read-GitFile $Ref $LegacyPath
 }
 
 function Read-InputText {
@@ -47,12 +54,14 @@ function Get-ApiDeclarations {
 }
 
 $baseApi = if ($BaseRef) {
-    Read-InputText 'pnlibrary-api/api/pnlibrary-api.api' $BaseRef
+    Read-GitFileWithFallback $BaseRef 'modules/api/api/api.api' 'pnlibrary-api/api/pnlibrary-api.api'
 } else {
     Read-InputText $BaseApiPath $null
 }
 $baseVersionSource = if ($BaseRef) {
-    Read-InputText 'pnlibrary-api/src/main/kotlin/ru/privatenull/pnlibrary/api/version/PnLibraryApi.kt' $BaseRef
+    Read-GitFileWithFallback $BaseRef `
+        'modules/api/src/main/kotlin/ru/privatenull/pnlibrary/api/version/PnLibraryApi.kt' `
+        'pnlibrary-api/src/main/kotlin/ru/privatenull/pnlibrary/api/version/PnLibraryApi.kt'
 } else {
     Read-InputText $BaseVersionPath $null
 }

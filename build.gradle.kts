@@ -11,14 +11,12 @@ plugins {
 apiValidation {
     ignoredProjects.addAll(
         listOf(
-            "pnlibrary-bstats-base",
-            "pnlibrary-bukkit",
-            "pnlibrary-bungee",
-            "pnlibrary-core",
-            "pnlibrary-distribution",
-            "pnlibrary-feature-update",
-            "pnlibrary-runtime-spi",
-            "pnlibrary-velocity",
+            "bstats",
+            "core",
+            "distribution",
+            "runtime",
+            "runtime-spi",
+            "update",
         ),
     )
 }
@@ -29,7 +27,8 @@ repositories {
 
 // ── Convention for every subproject ─────────────────────────────────────────
 subprojects {
-    group   = "io.github.pnfolder"
+    val moduleNamespace = path.substringBeforeLast(':').trim(':').replace(':', '.')
+    group = "io.github.pnfolder" + moduleNamespace.takeIf(String::isNotEmpty)?.let { ".$it" }.orEmpty()
     version = rootProject.version
 
     repositories {
@@ -79,14 +78,14 @@ subprojects {
 }
 
 dependencies {
-    dokka(project(":pnlibrary-api"))
-    dokka(project(":pnlibrary-runtime-spi"))
-    dokka(project(":pnlibrary-core"))
-    dokka(project(":pnlibrary-feature-update"))
-    dokka(project(":pnlibrary-bukkit-api"))
-    dokka(project(":pnlibrary-bungee-api"))
-    dokka(project(":pnlibrary-velocity-api"))
-    dokka(project(":pnlibrary-bukkit"))
-    dokka(project(":pnlibrary-bungee"))
-    dokka(project(":pnlibrary-velocity"))
+    dokka(project(":modules:api"))
+    dokka(project(":modules:runtime-spi"))
+    dokka(project(":modules:core"))
+    dokka(project(":modules:features:update"))
+    dokka(project(":platforms:bukkit:api"))
+    dokka(project(":platforms:bungee:api"))
+    dokka(project(":platforms:velocity:api"))
+    dokka(project(":platforms:bukkit:runtime"))
+    dokka(project(":platforms:bungee:runtime"))
+    dokka(project(":platforms:velocity:runtime"))
 }

@@ -64,7 +64,7 @@ CI, release workflows, scripts, Dokka aggregation and module-to-module dependenc
 
 ## API compatibility policy paths
 
-The checked-in global ABI baseline moves to `modules/api/api/pnlibrary-api.api`. The API generation source moves to `modules/api/src/main/kotlin/ru/privatenull/pnlibrary/api/version/PnLibraryApi.kt`. The policy script defaults and CI `git cat-file` lookup must use these paths for both the working tree and historical base revisions after this structural commit.
+The checked-in global ABI baseline moves to `modules/api/api/api.api`. Each platform API uses the same local `api/api.api` convention. The API generation source moves to `modules/api/src/main/kotlin/ru/privatenull/pnlibrary/api/version/PnLibraryApi.kt`. The policy script defaults and CI `git cat-file` lookup use the new paths while retaining a read-only fallback for base revisions created before the structural move.
 
 ## Working-tree preservation
 

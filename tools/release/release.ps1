@@ -66,8 +66,8 @@ function Set-ProjectVersion {
 }
 
 function Build-Library {
-    Invoke-Checked '.\gradlew.bat' @('clean', 'test', ':pnlibrary-distribution:build', '--console=plain')
-    Write-Host "Artifacts: $ProjectRoot\pnlibrary-distribution\build\libs"
+    Invoke-Checked '.\gradlew.bat' @('clean', 'test', ':distribution:build', '--console=plain')
+    Write-Host "Artifacts: $ProjectRoot\distribution\build\libs"
 }
 
 function Publish-GitHub {

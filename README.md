@@ -29,15 +29,16 @@
 
 | Модуль | Назначение | JVM target |
 |---|---|---:|
-| `pnlibrary-api` | Публичные интерфейсы: runtime, сервисы, события, задачи и остальные общие возможности | 8 |
-| `pnlibrary-bukkit-api` | Публичные Bukkit-контракты: окружение сервера и меню | 8 |
-| `pnlibrary-runtime-spi` | Внутренняя граница между core и платформами | 8 |
-| `pnlibrary-core` | Закрытое исполнение общих сервисов | 8 |
-| `pnlibrary-bstats-base` | Неизменённые общие классы официального bStats | 8 |
-| `pnlibrary-bukkit` | Bukkit, Spigot, Paper, Purpur, Leaf и Folia | 8 |
-| `pnlibrary-bungee` | BungeeCord и совместимые прокси | 8 |
-| `pnlibrary-velocity` | Velocity | 17 |
-| `pnlibrary-distribution` | Сборка готовых платформенных JAR | — |
+| `modules/api` | Публичные интерфейсы: runtime, сервисы, события, задачи и остальные общие возможности | 8 |
+| `platforms/bukkit/api` | Публичные Bukkit-контракты: окружение сервера и меню | 8 |
+| `modules/runtime-spi` | Внутренняя граница между core и платформами | 8 |
+| `modules/core` | Закрытое исполнение общих сервисов | 8 |
+| `modules/features/update` | Resolver и транзакции pnUpdate | 8 |
+| `modules/internal/bstats` | Неизменённые общие классы официального bStats | 8 |
+| `platforms/bukkit/runtime` | Bukkit, Spigot, Paper, Purpur, Leaf и Folia | 8 |
+| `platforms/bungee/runtime` | BungeeCord и совместимые прокси | 8 |
+| `platforms/velocity/runtime` | Velocity | 17 |
+| `distribution` | Сборка готовых платформенных JAR | — |
 
 Краткая карта кода для разработчика: [HELP-README.md](HELP-README.md).
 
@@ -57,10 +58,10 @@ visual entities: [docs/BUKKIT_ITEMS_RU.md](docs/BUKKIT_ITEMS_RU.md).
 Сборка:
 
 ```text
-gradlew.bat clean test :pnlibrary-distribution:build
+gradlew.bat clean test :distribution:build
 ```
 
-Готовые файлы находятся в `pnlibrary-distribution/build/libs`:
+Готовые файлы находятся в `distribution/build/libs`:
 
 - `pnLibrary-2.2.0-beta.2-bukkit-java8.jar`;
 - `pnLibrary-2.2.0-beta.2-bungeecord-java8.jar`;

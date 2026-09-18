@@ -11,7 +11,7 @@ kotlin { compilerOptions { jvmTarget = JvmTarget.JVM_1_8 } }
 tasks.withType<JavaCompile>().configureEach { options.release = 8 }
 
 dependencies {
-    implementation(project(":pnlibrary-api"))
+    implementation(project(":modules:api"))
     implementation(libs.kotlin.stdlib)
     implementation(libs.gson)
     testImplementation(libs.junit.jupiter)
