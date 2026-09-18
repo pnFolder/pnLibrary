@@ -305,8 +305,8 @@ complete model, lifecycle, and failure rules.
 
 ### Bukkit inventory GUI
 
-`pnlibrary-bukkit-api/inventory` contains `Menu`, builders, `MenuService`, and
-`PnMenus`. `pnlibrary-bukkit/inventory` contains the private shared listener and
+`platforms/bukkit/api/inventory` contains `Menu`, builders, `MenuService`, and
+`PnMenus`. `platforms/bukkit/runtime/inventory` contains the private shared listener and
 service implementation. Sessions use a private `InventoryHolder` UUID instead
 of the title. Owner menus close on plugin shutdown; Folia refreshes use the
 player's entity scheduler.
@@ -373,8 +373,8 @@ handle and must close it.
 | Updater | `UpdateServiceImpl`, `MandatoryUpdateService` |
 | pnLibrary config | `PnLibraryConfig`, `PnLibraryConfigLoader` |
 | Consumer code-first config | `ManagedConfig`, `CodeFirstYaml`, `YamlDefaultsMerger` |
-| Bukkit GUI contract | `pnlibrary-bukkit-api/inventory` |
-| Bukkit GUI execution | `pnlibrary-bukkit/inventory` |
+| Bukkit GUI contract | `platforms/bukkit/api/inventory` |
+| Bukkit GUI execution | `platforms/bukkit/runtime/inventory` |
 | Final JAR contents | `pnlibrary-distribution/build.gradle.kts` |
 
 ## Fast reading order
