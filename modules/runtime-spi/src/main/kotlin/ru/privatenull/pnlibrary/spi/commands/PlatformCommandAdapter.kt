@@ -32,7 +32,5 @@ object UnsupportedPlatformCommandAdapter : PlatformCommandAdapter {
         owner: Any,
         command: CommandDefinition,
         dispatcher: PlatformCommandDispatcher,
-    ): PlatformCommandRegistration = throw UnsupportedOperationException(
-        "Command registration is not available on this platform adapter",
-    )
+    ): PlatformCommandRegistration = PlatformCommandRegistration { }
 }

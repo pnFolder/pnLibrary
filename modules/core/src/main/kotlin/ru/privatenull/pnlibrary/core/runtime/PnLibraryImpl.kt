@@ -10,6 +10,7 @@ import ru.privatenull.pnlibrary.api.runtime.PnLibraryConfig
 import ru.privatenull.pnlibrary.api.runtime.PnLibraryProvider
 import ru.privatenull.pnlibrary.api.version.SemanticVersion
 import ru.privatenull.pnlibrary.core.diagnostics.DiagnosticsRegistry
+import ru.privatenull.pnlibrary.core.diagnostics.diagnosticCommand
 import ru.privatenull.pnlibrary.core.config.ConfigurationServiceImpl
 import ru.privatenull.pnlibrary.core.commands.CommandServiceImpl
 import ru.privatenull.pnlibrary.core.diagnostics.PersistentDiagnosticHistory
@@ -140,6 +141,7 @@ internal class PnLibraryImpl(
     }
 
     fun init() {
+        commands.register(owner, diagnosticCommand(this))
         diagnosticLogs.onChange { persistDiagnosticHistory() }
         diagnostics.onEventsChanged(::persistDiagnosticHistory)
         platform.observeNativeLogs { nativeOwner, level, message, error ->
