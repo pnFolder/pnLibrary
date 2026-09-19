@@ -7,6 +7,8 @@ import ru.privatenull.pnlibrary.spi.metrics.NoopMetricsFactory
 import ru.privatenull.pnlibrary.spi.metrics.PlatformMetricsFactory
 import ru.privatenull.pnlibrary.spi.commands.PlatformCommandAdapter
 import ru.privatenull.pnlibrary.spi.commands.UnsupportedPlatformCommandAdapter
+import ru.privatenull.pnlibrary.spi.audiences.PlatformAudienceAdapter
+import ru.privatenull.pnlibrary.spi.audiences.UnsupportedPlatformAudienceAdapter
 import java.nio.file.Path
 
 /**
@@ -43,6 +45,9 @@ interface PlatformAdapter : AutoCloseable {
 
     /** Native command bridge used by the shared command service. */
     val commandAdapter: PlatformCommandAdapter get() = UnsupportedPlatformCommandAdapter
+
+    /** Native audience resolution and delivery bridge. */
+    val audienceAdapter: PlatformAudienceAdapter get() = UnsupportedPlatformAudienceAdapter
 
     /**
      * Binds the fully initialized [library] to commands, listeners, and other native entry points.

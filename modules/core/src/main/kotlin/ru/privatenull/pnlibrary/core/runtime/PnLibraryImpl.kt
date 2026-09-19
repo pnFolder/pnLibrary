@@ -13,6 +13,7 @@ import ru.privatenull.pnlibrary.core.diagnostics.DiagnosticsRegistry
 import ru.privatenull.pnlibrary.core.diagnostics.diagnosticCommand
 import ru.privatenull.pnlibrary.core.config.ConfigurationServiceImpl
 import ru.privatenull.pnlibrary.core.commands.CommandServiceImpl
+import ru.privatenull.pnlibrary.core.audiences.AudienceServiceImpl
 import ru.privatenull.pnlibrary.core.diagnostics.PersistentDiagnosticHistory
 import ru.privatenull.pnlibrary.core.diagnostics.ReportGenerator
 import ru.privatenull.pnlibrary.core.events.EventServiceImpl
@@ -93,6 +94,8 @@ internal class PnLibraryImpl(
     override val tasks: ru.privatenull.pnlibrary.api.tasks.TaskService get() = taskService
     private val commandService = CommandServiceImpl(platform)
     override val commands: ru.privatenull.pnlibrary.api.commands.CommandService get() = commandService
+    private val audienceService = AudienceServiceImpl(platform.audienceAdapter)
+    override val audiences: ru.privatenull.pnlibrary.api.audiences.AudienceService get() = audienceService
     private val serviceManager = ServiceManagerImpl()
     override val services: ru.privatenull.pnlibrary.api.services.ServiceManager get() = serviceManager
     private val eventService = EventServiceImpl(taskService) { pluginId, message, error ->
@@ -185,6 +188,7 @@ internal class PnLibraryImpl(
             workerExecutor.shutdownNow()
             runCatching { plugins.close() }
             runCatching { commandService.close() }
+            runCatching { audienceService.close() }
             runCatching { platformProvider.close() }
             runCatching { currencyHub.close() }
             runCatching { configurationService.close() }
