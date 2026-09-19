@@ -5,6 +5,9 @@ import org.junit.jupiter.api.Assertions.assertTrue
 import org.junit.jupiter.api.Test
 import org.junit.jupiter.api.io.TempDir
 import ru.privatenull.pnlibrary.spi.platform.PlatformAdapter
+import ru.privatenull.pnlibrary.spi.tasks.PlatformTaskAdapter
+import ru.privatenull.pnlibrary.spi.tasks.PlatformTaskHandle
+import ru.privatenull.pnlibrary.spi.tasks.PlatformTaskRequest
 import ru.privatenull.pnlibrary.api.platform.PlatformType
 import ru.privatenull.pnlibrary.api.runtime.PnLibraryConfig
 import ru.privatenull.pnlibrary.core.diagnostics.DiagnosticCommandEvent
@@ -52,6 +55,12 @@ class DiagnosticCommandExecutorTest {
     private class TestPlatform(override val dataFolder: Path) : PlatformAdapter {
         override val type = PlatformType.BUKKIT
         override val id = "test"
+        override val taskAdapter = object : PlatformTaskAdapter {
+            override fun schedule(request: PlatformTaskRequest): PlatformTaskHandle {
+                request.callback.run()
+                return PlatformTaskHandle { false }
+            }
+        }
         override fun ownerDetails(owner: Any) = mapOf("name" to "pnLibrary", "version" to "2.0.0")
         override fun details(): Map<String, Any?> = emptyMap()
         override fun executeGlobal(task: Runnable) = task.run()
