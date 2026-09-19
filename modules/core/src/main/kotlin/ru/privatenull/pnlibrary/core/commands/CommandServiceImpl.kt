@@ -60,7 +60,7 @@ internal class CommandServiceImpl(
 
     override fun unregisterOwner(owner: Any) {
         val owned = synchronized(lock) { byOwner[owner]?.toList().orEmpty() }
-        owned.asReversed().forEach(Registration::close)
+        closeRegistrations(owned.asReversed())
     }
 
     override fun execute(
@@ -109,8 +109,10 @@ internal class CommandServiceImpl(
     override fun close() {
         if (!closed.compareAndSet(false, true)) return
         val current = synchronized(lock) { registrations.toList() }
-        current.asReversed().forEach(Registration::close)
-        platform.commandAdapter.close()
+        closeRegistrations(current.asReversed())
+        runCatching { platform.commandAdapter.close() }.onFailure { error ->
+            platform.log(platform, LogLevel.ERROR, "Command adapter cleanup failed", error)
+        }
     }
 
     private fun activeRegistration(command: CommandDefinition): Registration? =
@@ -129,6 +131,14 @@ internal class CommandServiceImpl(
 
     private fun suggestionFailed(owner: Any, error: Throwable) {
         platform.log(owner, LogLevel.ERROR, "Command suggestions failed", error)
+    }
+
+    private fun closeRegistrations(current: Iterable<Registration>) {
+        current.forEach { registration ->
+            runCatching(registration::close).onFailure { error ->
+                platform.log(registration.owner, LogLevel.ERROR, "Command cleanup failed", error)
+            }
+        }
     }
 
     private fun unwrap(error: Throwable): Throwable = error.cause ?: error

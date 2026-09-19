@@ -137,6 +137,22 @@ class CommandServiceImplTest {
         }
     }
 
+    @Test
+    fun `one native close failure does not leak remaining registrations`() {
+        val native = RecordingCommands().apply { failingCloseName = "second" }
+        val platform = TestPlatform(native)
+        val service = CommandServiceImpl(platform)
+        service.register(Any(), command("first") {})
+        service.register(Any(), command("second") {})
+        service.register(Any(), command("third") {})
+
+        service.close()
+
+        assertEquals(setOf("first", "second", "third"), native.unregisteredNames)
+        assertEquals(1, native.closeCalls)
+        assertTrue(platform.errors.any { it.message == "close failed" })
+    }
+
     private fun context(sender: TestSender) = CommandContext(sender, emptyList(), "hello", "")
 
     private class TestSender(
@@ -158,6 +174,8 @@ class CommandServiceImplTest {
         var unregisterCalls = 0
         var closeCalls = 0
         var failNextRegistration = false
+        var failingCloseName: String? = null
+        val unregisteredNames = linkedSetOf<String>()
 
         override fun register(
             owner: Any,
@@ -171,7 +189,11 @@ class CommandServiceImplTest {
             }
             this.command = command
             this.dispatcher = dispatcher
-            return PlatformCommandRegistration { unregisterCalls++ }
+            return PlatformCommandRegistration {
+                unregisterCalls++
+                unregisteredNames += command.name
+                if (command.name == failingCloseName) throw IllegalStateException("close failed")
+            }
         }
 
         override fun close() { closeCalls++ }
