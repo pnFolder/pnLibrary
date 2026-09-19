@@ -40,13 +40,15 @@ class PnLibraryBukkitPlugin : JavaPlugin(), Listener {
      * propagating the original exception to Bukkit.
      */
     override fun onEnable() {
-        val adapter = BukkitPlatformAdapter(this)
-        val host = PnLibraryRuntimeHost.start(
-            this,
-            adapter,
-            server.updateFolderFile.toPath(),
-        )
+        val audienceService = BukkitAudienceService(this)
+        this.audienceService = audienceService
+        val adapter = BukkitPlatformAdapter(this, audienceService)
         try {
+            val host = PnLibraryRuntimeHost.start(
+                this,
+                adapter,
+                server.updateFolderFile.toPath(),
+            )
             runtimeHost = host
             installBukkitServices(host, adapter)
             server.pluginManager.registerEvents(this, this)
@@ -76,9 +78,7 @@ class PnLibraryBukkitPlugin : JavaPlugin(), Listener {
             BukkitPlatform::class.java,
             BukkitPlatformImpl(server, adapter.serverInfo, menuService),
         )
-        val audienceService = BukkitAudienceService(this)
-        host.registerService(BukkitAudienceService::class.java, audienceService)
-        this.audienceService = audienceService
+        host.registerService(BukkitAudienceService::class.java, requireNotNull(audienceService))
         this.menuService = menuService
     }
 

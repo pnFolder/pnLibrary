@@ -10,6 +10,11 @@ import ru.privatenull.pnlibrary.api.runtime.PnLibrary
 import ru.privatenull.pnlibrary.bukkit.compat.ServerCapabilities
 import ru.privatenull.pnlibrary.spi.metrics.PlatformMetricsFactory
 import ru.privatenull.pnlibrary.spi.platform.PlatformAdapter
+import ru.privatenull.pnlibrary.spi.commands.PlatformCommandAdapter
+import ru.privatenull.pnlibrary.api.commands.CommandRegistration
+import ru.privatenull.pnlibrary.bukkit.commands.BukkitCommandAdapter
+import ru.privatenull.pnlibrary.bukkit.commands.BukkitCommandSender
+import ru.privatenull.pnlibrary.bukkit.commands.BukkitControlCommand
 import java.util.concurrent.CompletableFuture
 import java.util.concurrent.TimeUnit
 import java.util.concurrent.atomic.AtomicBoolean
@@ -28,16 +33,17 @@ import java.util.logging.LogRecord
  * @property plugin native plugin that owns scheduler and listener registrations
  * @property commandAlias primary diagnostics command used when no plugin.yml command is declared
  */
-internal class BukkitPlatformAdapter @JvmOverloads constructor(
+internal class BukkitPlatformAdapter constructor(
     val plugin: Plugin,
-    val commandAlias: String = "pndebug",
+    audienceService: BukkitAudienceService,
 ) : PlatformAdapter {
 
     private val closedFlag = AtomicBoolean(false)
     private val bound = AtomicBoolean(false)
     @Volatile
     private var nativeLogObserver: ((Any, LogLevel, String, Throwable?) -> Unit)? = null
-    private var commandController: BukkitCommandController? = null
+    private var lifecycleListener: BukkitLifecycleListener? = null
+    private var controlRegistration: CommandRegistration? = null
     private val ownLogCall = ThreadLocal.withInitial { false }
     private val diagnosticsCollector = BukkitDiagnosticsCollector()
     private val nativeLogHandler = object : Handler() {
@@ -64,6 +70,7 @@ internal class BukkitPlatformAdapter @JvmOverloads constructor(
         )
     }
     override val metricsFactory: PlatformMetricsFactory = BukkitMetricsFactory()
+    override val commandAdapter: PlatformCommandAdapter = BukkitCommandAdapter(plugin, audienceService)
     override val dataFolder = plugin.dataFolder.toPath()
 
     override fun log(owner: Any, level: LogLevel, message: String, error: Throwable?) {
@@ -110,8 +117,16 @@ internal class BukkitPlatformAdapter @JvmOverloads constructor(
         check(!closedFlag.get()) { "Bukkit platform adapter is closed" }
         check(bound.compareAndSet(false, true)) { "Bukkit platform adapter is already bound" }
         try {
-            commandController = BukkitCommandController(plugin, commandAlias, library).start()
+            lifecycleListener = BukkitLifecycleListener(plugin, library).start()
+            controlRegistration = library.commands.register(
+                plugin,
+                BukkitControlCommand(plugin, library).definition(),
+            )
         } catch (error: Throwable) {
+            controlRegistration?.close()
+            controlRegistration = null
+            lifecycleListener?.close()
+            lifecycleListener = null
             bound.set(false)
             throw error
         }
@@ -154,10 +169,11 @@ internal class BukkitPlatformAdapter @JvmOverloads constructor(
 
     override fun executeReply(recipient: Any, task: Runnable) {
         if (closedFlag.get()) return
-        if (recipient is Player && ServerCapabilities.isFolia) {
+        val nativeRecipient = (recipient as? BukkitCommandSender)?.native ?: recipient
+        if (nativeRecipient is Player && ServerCapabilities.isFolia) {
             try {
-                val getScheduler = recipient.javaClass.getMethod("getScheduler")
-                val taskScheduler = getScheduler.invoke(recipient)
+                val getScheduler = nativeRecipient.javaClass.getMethod("getScheduler")
+                val taskScheduler = getScheduler.invoke(nativeRecipient)
                 val runMethod = taskScheduler.javaClass.getMethod(
                     "run",
                     Plugin::class.java,
@@ -177,8 +193,10 @@ internal class BukkitPlatformAdapter @JvmOverloads constructor(
 
     override fun close() {
         if (closedFlag.compareAndSet(false, true)) {
-            commandController?.close()
-            commandController = null
+            controlRegistration?.close()
+            controlRegistration = null
+            lifecycleListener?.close()
+            lifecycleListener = null
             observeNativeLogs(null)
             bound.set(false)
         }
