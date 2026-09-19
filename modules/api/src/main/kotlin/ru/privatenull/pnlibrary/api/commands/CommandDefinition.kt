@@ -44,6 +44,7 @@ class CommandBuilder internal constructor(name: String) {
     private var permission: String? = null
     private var consoleBypassesPermission: Boolean = false
     private var execution = CommandHandler { completedExecution() }
+    private var executable = false
     private var suggestions = SuggestionHandler { completedSuggestions(emptyList()) }
     private var availability = CommandAvailability { true }
     private val children = mutableListOf<CommandNodeBuilder>()
@@ -67,6 +68,7 @@ class CommandBuilder internal constructor(name: String) {
     }
 
     fun executes(handler: Consumer<CommandContext>): CommandBuilder = apply {
+        executable = true
         execution = CommandHandler { context ->
             handler.accept(context)
             completedExecution()
@@ -74,6 +76,7 @@ class CommandBuilder internal constructor(name: String) {
     }
 
     fun executesAsync(handler: CommandHandler): CommandBuilder = apply {
+        executable = true
         execution = handler
     }
 
@@ -104,7 +107,7 @@ class CommandBuilder internal constructor(name: String) {
             permission?.let(::permission)
             consoleBypassesPermission(consoleBypassesPermission)
             availableIf(availability)
-            executesAsync(execution)
+            if (executable) executesAsync(execution)
             suggestsAsync(suggestions)
             children.forEach { child -> addBuiltChild(child) }
         }

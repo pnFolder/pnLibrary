@@ -10,6 +10,7 @@ import ru.privatenull.pnlibrary.api.commands.CommandContext
 import ru.privatenull.pnlibrary.api.commands.CommandDefinition
 import ru.privatenull.pnlibrary.api.commands.CommandSender
 import ru.privatenull.pnlibrary.api.commands.command
+import ru.privatenull.pnlibrary.api.commands.ArgumentType
 import ru.privatenull.pnlibrary.api.logging.LogLevel
 import ru.privatenull.pnlibrary.api.platform.PlatformType
 import ru.privatenull.pnlibrary.spi.commands.PlatformCommandAdapter
@@ -19,6 +20,37 @@ import ru.privatenull.pnlibrary.spi.platform.PlatformAdapter
 import java.util.concurrent.CompletableFuture
 
 class CommandServiceImplTest {
+    @Test
+    fun `service dispatches a tree leaf and sanitizes predicate failures`() {
+        val native = RecordingCommands()
+        val platform = TestPlatform(native)
+        val service = CommandServiceImpl(platform)
+        var selected: String? = null
+        service.register(Any(), command("group") {
+            argument("group", ArgumentType.string()) {
+                literal("show") { executes { selected = it.get("group") } }
+                literal("broken") {
+                    availableIf { error("private predicate") }
+                    executes { }
+                }
+            }
+        })
+        val sender = TestSender()
+
+        native.dispatcher.execute(
+            native.command,
+            CommandContext(sender, listOf("builders", "show"), "group", "show"),
+        ).toCompletableFuture().join()
+        native.dispatcher.execute(
+            native.command,
+            CommandContext(sender, listOf("builders", "broken"), "group", "broken"),
+        ).toCompletableFuture().join()
+
+        assertEquals("builders", selected)
+        assertEquals(listOf(Component.text("Command execution failed.")), sender.messages)
+        assertTrue(platform.errors.any { it.message == "private predicate" })
+    }
+
     @Test
     fun `authorized execution and suggestions reach the portable definition`() {
         val native = RecordingCommands()

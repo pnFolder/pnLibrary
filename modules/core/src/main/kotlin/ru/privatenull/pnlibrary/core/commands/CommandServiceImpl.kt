@@ -27,6 +27,7 @@ internal class CommandServiceImpl(
     private val registrations = LinkedHashSet<Registration>()
     private val byDefinition = IdentityHashMap<CommandDefinition, Registration>()
     private val byOwner = IdentityHashMap<Any, MutableSet<Registration>>()
+    private val router = CommandTreeRouter()
 
     override fun register(owner: Any, command: CommandDefinition): CommandRegistration {
         val names = linkedSetOf(command.name).apply { addAll(command.aliases) }
@@ -68,12 +69,25 @@ internal class CommandServiceImpl(
         context: CommandContext,
     ): CompletionStage<Void> {
         val registration = activeRegistration(command) ?: return completedExecution()
-        if (!isAllowed(command, context)) {
-            context.sender.send(Component.text("You do not have permission."))
+        val route = try {
+            router.route(command, context)
+        } catch (error: Throwable) {
+            executionFailed(registration.owner, context, error)
             return completedExecution()
         }
+        val executable = when (route) {
+            is CommandRoute.Executable -> route
+            is CommandRoute.Invalid -> {
+                context.sender.send(Component.text("Usage: ${route.usage}"))
+                return completedExecution()
+            }
+            CommandRoute.Denied -> {
+                context.sender.send(Component.text("You do not have permission."))
+                return completedExecution()
+            }
+        }
         val stage = try {
-            command.execution.execute(context)
+            executable.node.execution.execute(executable.context)
         } catch (error: Throwable) {
             executionFailed(registration.owner, context, error)
             return completedExecution()
@@ -89,9 +103,8 @@ internal class CommandServiceImpl(
         context: CommandContext,
     ): CompletionStage<List<String>> {
         val registration = activeRegistration(command) ?: return completedSuggestions(emptyList())
-        if (!isAllowed(command, context)) return completedSuggestions(emptyList())
         val stage = try {
-            command.suggestions.suggest(context)
+            router.suggest(command, context)
         } catch (error: Throwable) {
             suggestionFailed(registration.owner, error)
             return completedSuggestions(emptyList())
@@ -117,12 +130,6 @@ internal class CommandServiceImpl(
 
     private fun activeRegistration(command: CommandDefinition): Registration? =
         synchronized(lock) { byDefinition[command]?.takeUnless { it.isClosed } }
-
-    private fun isAllowed(command: CommandDefinition, context: CommandContext): Boolean {
-        val permission = command.permission ?: return true
-        return (context.sender.isConsole && command.consoleBypassesPermission) ||
-            context.sender.hasPermission(permission)
-    }
 
     private fun executionFailed(owner: Any, context: CommandContext, error: Throwable) {
         platform.log(owner, LogLevel.ERROR, "Command execution failed", error)
