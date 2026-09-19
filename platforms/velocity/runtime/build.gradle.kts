@@ -35,6 +35,7 @@ dependencies {
 
     testImplementation(libs.junit.jupiter)
     testImplementation(libs.mockito.kotlin)
+    testImplementation(libs.velocity.api)
     testRuntimeOnly(libs.junit.launcher)
 }
 

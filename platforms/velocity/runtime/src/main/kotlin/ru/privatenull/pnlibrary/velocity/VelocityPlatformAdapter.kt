@@ -1,16 +1,13 @@
 package ru.privatenull.pnlibrary.velocity
 
-import com.velocitypowered.api.command.SimpleCommand
-import com.velocitypowered.api.proxy.ConsoleCommandSource
 import com.velocitypowered.api.proxy.ProxyServer
-import net.kyori.adventure.text.Component
 import net.kyori.adventure.text.serializer.legacy.LegacyComponentSerializer
 import org.slf4j.Logger
 import ru.privatenull.pnlibrary.api.logging.LogLevel
 import ru.privatenull.pnlibrary.api.platform.PlatformType
 import ru.privatenull.pnlibrary.api.runtime.PnLibrary
-import ru.privatenull.pnlibrary.core.diagnostics.DiagnosticCommandEvent
-import ru.privatenull.pnlibrary.core.diagnostics.DiagnosticCommandExecutor
+import ru.privatenull.pnlibrary.velocity.commands.VelocityCommandAdapter
+import ru.privatenull.pnlibrary.spi.commands.PlatformCommandAdapter
 import ru.privatenull.pnlibrary.spi.metrics.PlatformMetricsFactory
 import ru.privatenull.pnlibrary.spi.platform.PlatformAdapter
 import java.nio.file.Path
@@ -36,6 +33,7 @@ internal class VelocityPlatformAdapter(
     private val bound = AtomicBoolean(false)
     override val type = PlatformType.VELOCITY
     override val implementationName: String get() = server.version.name.ifBlank { type.displayName }
+    override val commandAdapter: PlatformCommandAdapter = VelocityCommandAdapter(plugin, server)
 
     override fun log(owner: Any, level: LogLevel, message: String, error: Throwable?) {
         when (level) {
@@ -64,28 +62,6 @@ internal class VelocityPlatformAdapter(
     override fun bind(library: PnLibrary) {
         check(!closedFlag.get()) { "Velocity platform adapter is closed" }
         check(bound.compareAndSet(false, true)) { "Velocity platform adapter is already bound" }
-        val diagnosticCommands = DiagnosticCommandExecutor(library)
-        val meta = server.commandManager.metaBuilder("pndebug").aliases("pnlib").plugin(plugin).build()
-        try {
-            server.commandManager.register(meta, object : SimpleCommand {
-                override fun execute(invocation: SimpleCommand.Invocation) {
-                    val sender = invocation.source()
-                    if (!sender.hasPermission("pnlibrary.debug") && sender !is ConsoleCommandSource) {
-                        sender.sendMessage(Component.text("Недостаточно прав."))
-                        return
-                    }
-                    diagnosticCommands.execute(
-                        invocation.arguments(),
-                        prefixed = false,
-                        requesterId = sender.toString(),
-                        recipient = sender,
-                    ) { event -> sender.sendMessage(Component.text(message(event))) }
-                }
-            })
-        } catch (error: Throwable) {
-            bound.set(false)
-            throw error
-        }
     }
 
     override fun details(): Map<String, Any?> {
@@ -126,23 +102,6 @@ internal class VelocityPlatformAdapter(
 
     override fun close() {
         if (!closedFlag.compareAndSet(false, true)) return
-        if (bound.compareAndSet(true, false)) {
-            server.commandManager.unregister("pndebug")
-        }
-    }
-
-    private fun message(event: DiagnosticCommandEvent): String = when (event) {
-        DiagnosticCommandEvent.InvalidUsage ->
-            "/pndebug [all|plugin] [--full|--config|--logs] [--local]"
-        is DiagnosticCommandEvent.CoolingDown ->
-            "Wait ${event.seconds}s before creating another report."
-        is DiagnosticCommandEvent.Started ->
-            "Collecting diagnostic report for ${event.target}..."
-        is DiagnosticCommandEvent.Completed -> {
-            val report = event.report
-            val output = report.uploadedUrl ?: report.localFile.toString()
-            "Report ready: $output" + (report.uploadError?.let { " (upload failed: $it)" } ?: "")
-        }
-        is DiagnosticCommandEvent.Failed -> "Report failed: ${event.message}"
+        bound.set(false)
     }
 }
