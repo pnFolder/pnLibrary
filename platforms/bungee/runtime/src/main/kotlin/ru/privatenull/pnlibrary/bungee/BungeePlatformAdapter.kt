@@ -10,6 +10,8 @@ import ru.privatenull.pnlibrary.spi.commands.PlatformCommandAdapter
 import ru.privatenull.pnlibrary.spi.audiences.PlatformAudienceAdapter
 import ru.privatenull.pnlibrary.spi.metrics.PlatformMetricsFactory
 import ru.privatenull.pnlibrary.spi.platform.PlatformAdapter
+import ru.privatenull.pnlibrary.bungee.tasks.BungeeTaskAdapter
+import ru.privatenull.pnlibrary.spi.tasks.PlatformTaskAdapter
 import java.util.concurrent.atomic.AtomicBoolean
 import java.util.logging.Level
 
@@ -32,6 +34,7 @@ internal class BungeePlatformAdapter(
     override val metricsFactory: PlatformMetricsFactory = BungeeMetricsFactory()
     override val commandAdapter: PlatformCommandAdapter = BungeeCommandAdapter(plugin)
     override val audienceAdapter: PlatformAudienceAdapter = BungeeAudienceAdapter(plugin)
+    override val taskAdapter: PlatformTaskAdapter = BungeeTaskAdapter(plugin)
     override val dataFolder = plugin.dataFolder.toPath()
 
     override fun log(owner: Any, level: LogLevel, message: String, error: Throwable?) {

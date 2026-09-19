@@ -11,6 +11,8 @@ import ru.privatenull.pnlibrary.spi.commands.PlatformCommandAdapter
 import ru.privatenull.pnlibrary.spi.audiences.PlatformAudienceAdapter
 import ru.privatenull.pnlibrary.spi.metrics.PlatformMetricsFactory
 import ru.privatenull.pnlibrary.spi.platform.PlatformAdapter
+import ru.privatenull.pnlibrary.velocity.tasks.VelocityTaskAdapter
+import ru.privatenull.pnlibrary.spi.tasks.PlatformTaskAdapter
 import java.nio.file.Path
 import java.util.concurrent.atomic.AtomicBoolean
 
@@ -36,6 +38,7 @@ internal class VelocityPlatformAdapter(
     override val implementationName: String get() = server.version.name.ifBlank { type.displayName }
     override val commandAdapter: PlatformCommandAdapter = VelocityCommandAdapter(plugin, server)
     override val audienceAdapter: PlatformAudienceAdapter = VelocityAudienceAdapter(server)
+    override val taskAdapter: PlatformTaskAdapter = VelocityTaskAdapter(plugin, server)
 
     override fun log(owner: Any, level: LogLevel, message: String, error: Throwable?) {
         when (level) {
