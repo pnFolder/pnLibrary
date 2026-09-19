@@ -1,3 +1,5 @@
+@file:Suppress("OVERRIDE_DEPRECATION", "DEPRECATION")
+
 package ru.privatenull.pnlibrary.core.tasks
 
 import ru.privatenull.pnlibrary.api.logging.LogLevel

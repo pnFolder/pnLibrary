@@ -60,27 +60,35 @@ interface TaskScope : AutoCloseable {
     fun cancel(id: TaskId): Boolean = find(id)?.cancelIfActive() ?: false
 
     /** Schedules [task] in the platform's global execution context. */
+    @Deprecated("Use schedule(TaskSpec)")
     fun global(task: Runnable): TaskHandle
 
     /** Runs [task] on pnLibrary's background executor. */
+    @Deprecated("Use schedule(TaskSpec)")
     fun async(task: Runnable): TaskHandle
 
     /** Schedules [task] in the platform execution context associated with [recipient]. */
+    @Deprecated("Use schedule(TaskSpec)")
     fun entity(recipient: Any, task: Runnable): TaskHandle
 
     /** Schedules [task] in the global context after [delay]. */
+    @Deprecated("Use schedule(TaskSpec)")
     fun later(delay: Duration, task: Runnable): TaskHandle
 
     /** Schedules [task] in [recipient]'s execution context after [delay]. */
+    @Deprecated("Use schedule(TaskSpec)")
     fun laterEntity(recipient: Any, delay: Duration, task: Runnable): TaskHandle
 
     /** Repeats [task] in the global context, first after [delay], then every [interval]. */
+    @Deprecated("Use schedule(TaskSpec)")
     fun repeat(delay: Duration, interval: Duration, task: Runnable): TaskHandle
 
     /** Repeats [task] in [recipient]'s execution context using the supplied timing. */
+    @Deprecated("Use schedule(TaskSpec)")
     fun repeatEntity(recipient: Any, delay: Duration, interval: Duration, task: Runnable): TaskHandle
 
     /** Repeats [task] on pnLibrary's background executor using the supplied timing. */
+    @Deprecated("Use schedule(TaskSpec)")
     fun repeatAsync(delay: Duration, interval: Duration, task: Runnable): TaskHandle
 
     /**
@@ -89,6 +97,7 @@ interface TaskScope : AutoCloseable {
      * Exactly one of [success] or [failure] is invoked unless the returned handle or this scope is
      * cancelled first. Exceptions thrown by either continuation are reported by the task logger.
      */
+    @Deprecated("Use schedule(TaskSpec)")
     fun <T> asyncThen(
         work: Supplier<T>,
         success: Consumer<T>,

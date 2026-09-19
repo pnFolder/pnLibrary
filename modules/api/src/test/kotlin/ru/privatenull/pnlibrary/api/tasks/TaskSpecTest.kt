@@ -6,6 +6,7 @@ import org.junit.jupiter.api.Assertions.assertNotNull
 import org.junit.jupiter.api.Assertions.assertThrows
 import org.junit.jupiter.api.Test
 import java.time.Duration
+import ru.privatenull.pnlibrary.api.runtime.PnLibraryConfig
 
 class TaskSpecTest {
     @Test
@@ -33,6 +34,7 @@ class TaskSpecTest {
         }
         assertThrows(IllegalStateException::class.java) { TaskSpec.builder().build() }
         assertThrows(IllegalArgumentException::class.java) { TaskServiceSettings(-1) }
+        assertThrows(IllegalArgumentException::class.java) { PnLibraryConfig(taskHistoryCapacity = -1) }
     }
 
     @Test

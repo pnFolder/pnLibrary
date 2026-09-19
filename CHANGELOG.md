@@ -2,6 +2,11 @@
 
 ## Unreleased
 
+- Replaced the shared four-thread task timer with native Bukkit/Paper/Folia, BungeeCord, and Velocity scheduler adapters.
+- Added `TaskSpec` builders for Kotlin and Java, owner-scoped/global queries, conditions, self-cancellation, statuses, tags, duplicate display names, and optional unique keys.
+
+## Unreleased
+
 ## 2.2.0-beta.2
 
 - Restored Java 8 compatible `VisualEntity`, `ItemFactory`, `HeadUtil`, and

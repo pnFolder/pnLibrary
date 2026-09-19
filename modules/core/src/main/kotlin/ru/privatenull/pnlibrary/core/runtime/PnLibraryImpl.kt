@@ -28,6 +28,7 @@ import ru.privatenull.pnlibrary.core.currency.CurrencyHub
 import ru.privatenull.pnlibrary.core.security.EncryptedEnvelopeCodec
 import ru.privatenull.pnlibrary.core.services.ServiceManagerImpl
 import ru.privatenull.pnlibrary.core.tasks.TaskServiceImpl
+import ru.privatenull.pnlibrary.api.tasks.TaskServiceSettings
 import ru.privatenull.pnlibrary.core.updates.UpdateServiceImpl
 import ru.privatenull.pnlibrary.core.upload.EncryptedReportUploader
 import ru.privatenull.pnlibrary.core.upload.CatboxUploader
@@ -88,7 +89,7 @@ internal class PnLibraryImpl(
     override val configurations: ru.privatenull.pnlibrary.api.config.ConfigurationService get() = configurationService
     private val updateService = UpdateServiceImpl(platform)
     override val updates: ru.privatenull.pnlibrary.api.updates.UpdateService get() = updateService
-    private val taskService = TaskServiceImpl(platform) { taskOwner, message, error ->
+    private val taskService = TaskServiceImpl(platform.taskAdapter, TaskServiceSettings(config.taskHistoryCapacity)) { taskOwner, message, error ->
         recordAndLog(taskOwner, message, error)
     }
     override val tasks: ru.privatenull.pnlibrary.api.tasks.TaskService get() = taskService

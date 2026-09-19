@@ -67,6 +67,7 @@ data class PnLibraryConfig @JvmOverloads constructor(
     val keepReports: Int = 10,
     val maxReportBytes: Int = 8 * 1024 * 1024,
     val deleteAfterDays: Int = 90,
+    val taskHistoryCapacity: Int = 256,
     val excludedPaths: List<String> = emptyList(),
     val secretKeyPatterns: List<String> = emptyList(),
     val redactValuePatterns: List<String> = emptyList(),
@@ -85,6 +86,7 @@ data class PnLibraryConfig @JvmOverloads constructor(
         require(keepReports in 1..1_000) { "keepReports must be between 1 and 1000" }
         require(maxReportBytes in 65_536..64 * 1024 * 1024) { "maxReportBytes must be between 64 KiB and 64 MiB" }
         require(deleteAfterDays in 0..3_650) { "deleteAfterDays must be between 0 and 3650" }
+        require(taskHistoryCapacity in 0..10_000) { "taskHistoryCapacity must be between 0 and 10000" }
         require(excludedPaths.size <= 128 && secretKeyPatterns.size <= 64 && redactValuePatterns.size <= 64) {
             "too many diagnostic redaction rules"
         }

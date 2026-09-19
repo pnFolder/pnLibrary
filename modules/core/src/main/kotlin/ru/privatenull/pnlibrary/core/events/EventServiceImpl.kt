@@ -1,3 +1,5 @@
+@file:Suppress("DEPRECATION")
+
 package ru.privatenull.pnlibrary.core.events
 
 import ru.privatenull.pnlibrary.api.events.Cancellable

@@ -1,3 +1,5 @@
+@file:Suppress("DEPRECATION")
+
 package ru.privatenull.pnlibrary.api.actions
 
 import ru.privatenull.pnlibrary.api.config.ConfigKey

@@ -1,3 +1,5 @@
+@file:Suppress("OVERRIDE_DEPRECATION", "DEPRECATION")
+
 package ru.privatenull.pnlibrary.core.testing
 
 import ru.privatenull.pnlibrary.api.tasks.TaskHandle

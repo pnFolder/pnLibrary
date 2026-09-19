@@ -155,8 +155,11 @@ size, and concurrent report generation are bounded.
 
 ### Tasks
 
-`TaskServiceImpl` returns one `TaskScope` per owner identity. Closing the scope
-cancels all of its task handles.
+`TaskServiceImpl` returns one `TaskScope` per owner identity. `schedule(TaskSpec)`
+registers delays and repetitions directly with the native platform scheduler;
+closing the scope cancels all of its native-backed task handles. See
+[`docs/TASKS.md`](docs/TASKS.md) for Kotlin and Java examples, conditions,
+queries, names, keys, and self-cancellation.
 
 | Method | Execution context |
 |---|---|

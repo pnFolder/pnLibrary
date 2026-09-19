@@ -1,3 +1,5 @@
+@file:Suppress("DEPRECATION")
+
 package ru.privatenull.pnlibrary.core.diagnostics
 
 import ru.privatenull.pnlibrary.api.diagnostics.DebugRequest

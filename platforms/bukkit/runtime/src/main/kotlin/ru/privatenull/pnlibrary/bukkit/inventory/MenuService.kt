@@ -1,3 +1,5 @@
+@file:Suppress("DEPRECATION")
+
 package ru.privatenull.pnlibrary.bukkit.inventory
 
 import org.bukkit.Bukkit
