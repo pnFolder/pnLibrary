@@ -1,11 +1,13 @@
 package ru.privatenull.pnlibrary.bungee.commands
 
 import net.kyori.adventure.text.Component
+import net.kyori.adventure.sound.Sound
 import net.md_5.bungee.api.CommandSender
 import org.junit.jupiter.api.Assertions.assertEquals
 import org.junit.jupiter.api.Assertions.assertTrue
 import org.junit.jupiter.api.Test
 import ru.privatenull.pnlibrary.api.commands.CommandContext
+import ru.privatenull.pnlibrary.api.audiences.AudienceSender
 import ru.privatenull.pnlibrary.api.commands.CommandDefinition
 import ru.privatenull.pnlibrary.api.commands.command
 import ru.privatenull.pnlibrary.spi.commands.PlatformCommandDispatcher
@@ -18,12 +20,12 @@ class BungeeCommandAdapterTest {
     fun `native callbacks translate sender execution and suggestions`() {
         val registrar = RecordingRegistrar()
         val messages = mutableListOf<Component>()
+        val actionBars = mutableListOf<Component>()
         val nativeSender = sender("ProxyConsole", setOf("example.use"))
         val adapter = BungeeCommandAdapter(
             plugin = Any(),
             registrar = registrar,
-            isConsole = { it === nativeSender },
-            sendMessage = { _, component -> messages += component },
+            audience = { audience(it, it === nativeSender, messages, actionBars) },
         )
         val dispatcher = RecordingDispatcher()
         adapter.register(Any(), command("hello") { aliases("hi") }, dispatcher)
@@ -31,6 +33,7 @@ class BungeeCommandAdapterTest {
         registrar.execute(nativeSender, arrayOf("one"))
         val suggestions = registrar.suggest(nativeSender, arrayOf("w"))
         dispatcher.execution.sender.send(Component.text("done"))
+        dispatcher.execution.sender.actionBar(Component.text("status"))
 
         assertEquals("hello", dispatcher.execution.invokedAlias)
         assertEquals(listOf("one"), dispatcher.execution.arguments)
@@ -39,6 +42,7 @@ class BungeeCommandAdapterTest {
         assertTrue(dispatcher.execution.sender.isConsole)
         assertTrue(dispatcher.execution.sender.hasPermission("example.use"))
         assertEquals(listOf(Component.text("done")), messages)
+        assertEquals(listOf(Component.text("status")), actionBars)
     }
 
     @Test
@@ -47,8 +51,7 @@ class BungeeCommandAdapterTest {
         val adapter = BungeeCommandAdapter(
             plugin = Any(),
             registrar = registrar,
-            isConsole = { false },
-            sendMessage = { _, _ -> },
+            audience = { audience(it, false, mutableListOf(), mutableListOf()) },
         )
         val first = adapter.register(Any(), command("first") {}, RecordingDispatcher())
         adapter.register(Any(), command("second") {}, RecordingDispatcher())
@@ -92,6 +95,21 @@ class BungeeCommandAdapterTest {
                 else -> defaultValue(method.returnType)
             }
         }
+
+    private fun audience(
+        sender: CommandSender,
+        console: Boolean,
+        messages: MutableList<Component>,
+        actionBars: MutableList<Component>,
+    ) = object : AudienceSender {
+        override val id get() = sender.name
+        override val name get() = sender.name
+        override val isConsole = console
+        override fun hasPermission(permission: String) = sender.hasPermission(permission)
+        override fun sendMessage(text: Component) { messages += text }
+        override fun actionBar(text: Component) { actionBars += text }
+        override fun playSound(sound: Sound) = false
+    }
 
     private fun <T> proxy(
         type: Class<T>,

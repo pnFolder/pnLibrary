@@ -1,20 +1,20 @@
 package ru.privatenull.pnlibrary.bukkit.commands
 
 import net.kyori.adventure.text.Component
-import net.kyori.adventure.text.serializer.legacy.LegacyComponentSerializer
+import net.kyori.adventure.sound.Sound
 import org.bukkit.Bukkit
 import org.bukkit.command.CommandExecutor
 import org.bukkit.command.CommandMap
 import org.bukkit.command.CommandSender as NativeCommandSender
-import org.bukkit.command.ConsoleCommandSender
 import org.bukkit.command.PluginCommand
 import org.bukkit.command.TabCompleter
-import org.bukkit.entity.Player
 import org.bukkit.plugin.Plugin
 import org.bukkit.plugin.java.JavaPlugin
 import ru.privatenull.pnlibrary.api.commands.CommandContext
 import ru.privatenull.pnlibrary.api.commands.CommandDefinition
 import ru.privatenull.pnlibrary.api.commands.CommandSender
+import ru.privatenull.pnlibrary.api.audiences.AudienceSender
+import ru.privatenull.pnlibrary.bukkit.BukkitAudienceAdapter
 import ru.privatenull.pnlibrary.bukkit.BukkitAudienceService
 import ru.privatenull.pnlibrary.spi.commands.PlatformCommandAdapter
 import ru.privatenull.pnlibrary.spi.commands.PlatformCommandDispatcher
@@ -28,15 +28,12 @@ import java.util.concurrent.atomic.AtomicBoolean
 internal class BukkitCommandAdapter internal constructor(
     private val plugin: Plugin,
     private val registrar: BukkitNativeCommandRegistrar,
-    private val sendMessage: (NativeCommandSender, Component) -> Unit,
+    private val audience: (NativeCommandSender) -> AudienceSender,
 ) : PlatformCommandAdapter {
     constructor(plugin: Plugin, audiences: BukkitAudienceService) : this(
         plugin,
         DefaultBukkitNativeCommandRegistrar(plugin),
-        { sender, message ->
-            if (sender is Player) audiences.sendMessage(sender, message)
-            else sender.sendMessage(LEGACY.serialize(message))
-        },
+        { sender -> requireNotNull(BukkitAudienceAdapter(audiences).sender(sender)) },
     )
 
     private val closed = AtomicBoolean(false)
@@ -74,7 +71,7 @@ internal class BukkitCommandAdapter internal constructor(
         label: String,
         arguments: Array<String>,
     ) = CommandContext(
-        sender = BukkitCommandSender(sender, sendMessage),
+        sender = BukkitCommandSender(sender, audience(sender)),
         arguments = arguments.toList(),
         invokedAlias = label,
         currentInput = arguments.lastOrNull().orEmpty(),
@@ -91,21 +88,17 @@ internal class BukkitCommandAdapter internal constructor(
         }
     }
 
-    private companion object {
-        val LEGACY: LegacyComponentSerializer = LegacyComponentSerializer.legacySection()
-    }
 }
 
 /** Internal wrapper; native access never crosses the public command API. */
 internal class BukkitCommandSender(
     internal val native: NativeCommandSender,
-    private val sendMessage: (NativeCommandSender, Component) -> Unit,
-) : CommandSender {
-    override val id: String = (native as? Player)?.uniqueId?.toString() ?: native.name
-    override val name: String get() = native.name
-    override val isConsole: Boolean get() = native is ConsoleCommandSender
-    override fun hasPermission(permission: String): Boolean = native.hasPermission(permission)
-    override fun send(message: Component) = sendMessage(native, message)
+    private val audience: AudienceSender,
+) : CommandSender, AudienceSender by audience {
+    override fun send(message: Component) = audience.sendMessage(message)
+    override fun sendMessage(text: Component) = audience.sendMessage(text)
+    override fun actionBar(text: Component) = audience.actionBar(text)
+    override fun playSound(sound: Sound): Boolean = audience.playSound(sound)
 }
 
 internal interface BukkitNativeCommandRegistrar {

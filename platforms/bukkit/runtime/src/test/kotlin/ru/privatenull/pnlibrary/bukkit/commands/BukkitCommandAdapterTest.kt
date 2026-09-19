@@ -1,11 +1,14 @@
 package ru.privatenull.pnlibrary.bukkit.commands
 
 import net.kyori.adventure.text.Component
+import net.kyori.adventure.sound.Sound
+import net.kyori.adventure.key.Key
 import org.bukkit.command.CommandSender
 import org.bukkit.plugin.Plugin
 import org.junit.jupiter.api.Assertions.assertEquals
 import org.junit.jupiter.api.Test
 import ru.privatenull.pnlibrary.api.commands.CommandContext
+import ru.privatenull.pnlibrary.api.audiences.AudienceSender
 import ru.privatenull.pnlibrary.api.commands.CommandDefinition
 import ru.privatenull.pnlibrary.api.commands.command
 import ru.privatenull.pnlibrary.spi.commands.PlatformCommandDispatcher
@@ -18,10 +21,11 @@ class BukkitCommandAdapterTest {
     fun `native callbacks forward execution alias arguments and suggestions`() {
         val registrar = RecordingRegistrar()
         val sent = mutableListOf<Component>()
+        val actionBars = mutableListOf<Component>()
         val adapter = BukkitCommandAdapter(
             plugin = proxy(Plugin::class.java) { defaultValue(it.returnType) },
             registrar = registrar,
-            sendMessage = { _, component -> sent += component },
+            audience = { audience(it, sent, actionBars) },
         )
         val definition = command("hello") { aliases("hi") }
         val dispatcher = RecordingDispatcher()
@@ -31,12 +35,15 @@ class BukkitCommandAdapterTest {
         registrar.execute(sender, "HI", arrayOf("one", "two"))
         val suggestions = registrar.suggest(sender, "hello", arrayOf("wo"))
         dispatcher.lastContext.sender.send(Component.text("done"))
+        dispatcher.lastContext.sender.actionBar(Component.text("status"))
 
         assertEquals("HI", dispatcher.executionContext.invokedAlias)
         assertEquals(listOf("one", "two"), dispatcher.executionContext.arguments)
         assertEquals("wo", dispatcher.lastContext.currentInput)
         assertEquals(listOf("world"), suggestions)
         assertEquals(listOf(Component.text("done")), sent)
+        assertEquals(listOf(Component.text("status")), actionBars)
+        assertEquals(true, dispatcher.lastContext.sender.playSound(Sound.sound(Key.key("minecraft:block.note_block.bell"), Sound.Source.MASTER, 1f, 1f)))
         assertEquals("Alice", dispatcher.executionContext.sender.name)
         assertEquals(true, dispatcher.executionContext.sender.hasPermission("example.use"))
     }
@@ -47,7 +54,7 @@ class BukkitCommandAdapterTest {
         val adapter = BukkitCommandAdapter(
             plugin = proxy(Plugin::class.java) { defaultValue(it.returnType) },
             registrar = registrar,
-            sendMessage = { _, _ -> },
+            audience = { audience(it, mutableListOf(), mutableListOf()) },
         )
         val first = adapter.register(Any(), command("first") {}, RecordingDispatcher())
         adapter.register(Any(), command("second") {}, RecordingDispatcher())
@@ -93,6 +100,20 @@ class BukkitCommandAdapterTest {
                 else -> defaultValue(method.returnType)
             }
         }
+
+    private fun audience(
+        sender: CommandSender,
+        messages: MutableList<Component>,
+        actionBars: MutableList<Component>,
+    ) = object : AudienceSender {
+        override val id get() = sender.name
+        override val name get() = sender.name
+        override val isConsole = false
+        override fun hasPermission(permission: String) = sender.hasPermission(permission)
+        override fun sendMessage(text: Component) { messages += text }
+        override fun actionBar(text: Component) { actionBars += text }
+        override fun playSound(sound: Sound) = true
+    }
 
     private fun <T> proxy(type: Class<T>, handler: (MethodCall) -> Any?): T = type.cast(
         Proxy.newProxyInstance(type.classLoader, arrayOf(type)) { _, method, args ->

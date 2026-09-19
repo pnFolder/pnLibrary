@@ -2,12 +2,14 @@ package ru.privatenull.pnlibrary.velocity.commands
 
 import com.velocitypowered.api.command.CommandSource
 import net.kyori.adventure.text.Component
+import net.kyori.adventure.sound.Sound
 import org.junit.jupiter.api.Assertions.assertEquals
 import org.junit.jupiter.api.Assertions.assertFalse
 import org.junit.jupiter.api.Assertions.assertSame
 import org.junit.jupiter.api.Assertions.assertTrue
 import org.junit.jupiter.api.Test
 import ru.privatenull.pnlibrary.api.commands.CommandContext
+import ru.privatenull.pnlibrary.api.audiences.AudienceSender
 import ru.privatenull.pnlibrary.api.commands.CommandDefinition
 import ru.privatenull.pnlibrary.api.commands.command
 import ru.privatenull.pnlibrary.spi.commands.PlatformCommandDispatcher
@@ -21,11 +23,12 @@ class VelocityCommandAdapterTest {
     fun `execution and asynchronous suggestions are transported without blocking`() {
         val registrar = RecordingRegistrar()
         val sent = mutableListOf<Component>()
+        val actionBars = mutableListOf<Component>()
         val source = source("VelocityConsole", setOf("example.use"), sent)
         val adapter = VelocityCommandAdapter(
             plugin = Any(),
             registrar = registrar,
-            isConsole = { it === source },
+            audience = { audience(it, it === source, sent, actionBars) },
         )
         val pending = CompletableFuture<List<String>>()
         val dispatcher = RecordingDispatcher(pending)
@@ -42,13 +45,15 @@ class VelocityCommandAdapterTest {
         assertTrue(dispatcher.execution.sender.isConsole)
         assertTrue(dispatcher.execution.sender.hasPermission("example.use"))
         dispatcher.execution.sender.send(Component.text("done"))
+        dispatcher.execution.sender.actionBar(Component.text("status"))
         assertEquals(listOf(Component.text("done")), sent)
+        assertEquals(listOf(Component.text("status")), actionBars)
     }
 
     @Test
     fun `adapter closes every native registration exactly once`() {
         val registrar = RecordingRegistrar()
-        val adapter = VelocityCommandAdapter(Any(), registrar) { false }
+        val adapter = VelocityCommandAdapter(Any(), registrar) { audience(it, false, mutableListOf(), mutableListOf()) }
         val first = adapter.register(Any(), command("first") {}, RecordingDispatcher())
         adapter.register(Any(), command("second") {}, RecordingDispatcher())
 
@@ -109,4 +114,19 @@ class VelocityCommandAdapterTest {
             }
         },
     )
+
+    private fun audience(
+        source: CommandSource,
+        console: Boolean,
+        messages: MutableList<Component>,
+        actionBars: MutableList<Component>,
+    ) = object : AudienceSender {
+        override val id = source.toString()
+        override val name = source.toString()
+        override val isConsole = console
+        override fun hasPermission(permission: String) = source.hasPermission(permission)
+        override fun sendMessage(text: Component) { messages += text }
+        override fun actionBar(text: Component) { actionBars += text }
+        override fun playSound(sound: Sound) = true
+    }
 }

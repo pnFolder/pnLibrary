@@ -1,16 +1,16 @@
 package ru.privatenull.pnlibrary.bungee.commands
 
 import net.kyori.adventure.text.Component
-import net.kyori.adventure.text.serializer.legacy.LegacyComponentSerializer
+import net.kyori.adventure.sound.Sound
 import net.md_5.bungee.api.CommandSender as NativeCommandSender
-import net.md_5.bungee.api.chat.TextComponent
-import net.md_5.bungee.api.connection.ProxiedPlayer
 import net.md_5.bungee.api.plugin.Command
 import net.md_5.bungee.api.plugin.Plugin
 import net.md_5.bungee.api.plugin.TabExecutor
 import ru.privatenull.pnlibrary.api.commands.CommandContext
 import ru.privatenull.pnlibrary.api.commands.CommandDefinition
 import ru.privatenull.pnlibrary.api.commands.CommandSender
+import ru.privatenull.pnlibrary.api.audiences.AudienceSender
+import ru.privatenull.pnlibrary.bungee.BungeeAudienceAdapter
 import ru.privatenull.pnlibrary.spi.commands.PlatformCommandAdapter
 import ru.privatenull.pnlibrary.spi.commands.PlatformCommandDispatcher
 import ru.privatenull.pnlibrary.spi.commands.PlatformCommandRegistration
@@ -22,17 +22,12 @@ import java.util.concurrent.atomic.AtomicBoolean
 internal class BungeeCommandAdapter internal constructor(
     private val plugin: Any,
     private val registrar: BungeeNativeCommandRegistrar,
-    private val isConsole: (NativeCommandSender) -> Boolean,
-    private val sendMessage: (NativeCommandSender, Component) -> Unit,
+    private val audience: (NativeCommandSender) -> AudienceSender,
 ) : PlatformCommandAdapter {
     constructor(plugin: Plugin) : this(
         plugin,
         DefaultBungeeNativeCommandRegistrar(plugin),
-        { sender -> sender === plugin.proxy.console },
-        { sender, message ->
-            @Suppress("DEPRECATION")
-            sender.sendMessage(*TextComponent.fromLegacyText(LEGACY.serialize(message)))
-        },
+        { sender -> requireNotNull(BungeeAudienceAdapter(plugin).sender(sender)) },
     )
 
     private val closed = AtomicBoolean(false)
@@ -70,7 +65,7 @@ internal class BungeeCommandAdapter internal constructor(
         alias: String,
         arguments: Array<String>,
     ) = CommandContext(
-        sender = BungeeCommandSender(sender, isConsole, sendMessage),
+        sender = BungeeCommandSender(audience(sender)),
         arguments = arguments.toList(),
         invokedAlias = alias,
         currentInput = arguments.lastOrNull().orEmpty(),
@@ -87,21 +82,15 @@ internal class BungeeCommandAdapter internal constructor(
         }
     }
 
-    private companion object {
-        val LEGACY: LegacyComponentSerializer = LegacyComponentSerializer.legacySection()
-    }
 }
 
 private class BungeeCommandSender(
-    private val native: NativeCommandSender,
-    private val consoleCheck: (NativeCommandSender) -> Boolean,
-    private val sendMessage: (NativeCommandSender, Component) -> Unit,
-) : CommandSender {
-    override val id: String = (native as? ProxiedPlayer)?.uniqueId?.toString() ?: native.name
-    override val name: String get() = native.name
-    override val isConsole: Boolean get() = consoleCheck(native)
-    override fun hasPermission(permission: String): Boolean = native.hasPermission(permission)
-    override fun send(message: Component) = sendMessage(native, message)
+    private val audience: AudienceSender,
+) : CommandSender, AudienceSender by audience {
+    override fun send(message: Component) = audience.sendMessage(message)
+    override fun sendMessage(text: Component) = audience.sendMessage(text)
+    override fun actionBar(text: Component) = audience.actionBar(text)
+    override fun playSound(sound: Sound): Boolean = audience.playSound(sound)
 }
 
 internal interface BungeeNativeCommandRegistrar {

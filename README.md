@@ -49,6 +49,9 @@ Typed configuration actions, plugin visibility, namespaces and lifecycle:
 Единый конструктор команд для Bukkit, BungeeCord и Velocity:
 [docs/COMMANDS.md](docs/COMMANDS.md).
 
+Единые получатели сообщений, permissions и составные аудитории:
+[docs/AUDIENCES.md](docs/AUDIENCES.md).
+
 Bukkit item configuration, textured heads, lossless serialization, and lightweight
 visual entities: [docs/BUKKIT_ITEMS_RU.md](docs/BUKKIT_ITEMS_RU.md).
 

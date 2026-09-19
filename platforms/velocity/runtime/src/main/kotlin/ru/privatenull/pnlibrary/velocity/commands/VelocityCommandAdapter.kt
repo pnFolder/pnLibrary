@@ -2,13 +2,14 @@ package ru.privatenull.pnlibrary.velocity.commands
 
 import com.velocitypowered.api.command.CommandSource
 import com.velocitypowered.api.command.SimpleCommand
-import com.velocitypowered.api.proxy.ConsoleCommandSource
-import com.velocitypowered.api.proxy.Player
 import com.velocitypowered.api.proxy.ProxyServer
 import net.kyori.adventure.text.Component
+import net.kyori.adventure.sound.Sound
 import ru.privatenull.pnlibrary.api.commands.CommandContext
 import ru.privatenull.pnlibrary.api.commands.CommandDefinition
 import ru.privatenull.pnlibrary.api.commands.CommandSender
+import ru.privatenull.pnlibrary.api.audiences.AudienceSender
+import ru.privatenull.pnlibrary.velocity.VelocityAudienceAdapter
 import ru.privatenull.pnlibrary.spi.commands.PlatformCommandAdapter
 import ru.privatenull.pnlibrary.spi.commands.PlatformCommandDispatcher
 import ru.privatenull.pnlibrary.spi.commands.PlatformCommandRegistration
@@ -20,12 +21,12 @@ import java.util.concurrent.atomic.AtomicBoolean
 internal class VelocityCommandAdapter internal constructor(
     private val plugin: Any,
     private val registrar: VelocityNativeCommandRegistrar,
-    private val isConsole: (CommandSource) -> Boolean,
+    private val audience: (CommandSource) -> AudienceSender,
 ) : PlatformCommandAdapter {
     constructor(plugin: Any, server: ProxyServer) : this(
         plugin,
         DefaultVelocityNativeCommandRegistrar(plugin, server),
-        { source -> source is ConsoleCommandSource },
+        { source -> requireNotNull(VelocityAudienceAdapter(server).sender(source)) },
     )
 
     private val closed = AtomicBoolean(false)
@@ -60,7 +61,7 @@ internal class VelocityCommandAdapter internal constructor(
         alias: String,
         arguments: Array<String>,
     ) = CommandContext(
-        sender = VelocityCommandSender(source, isConsole),
+        sender = VelocityCommandSender(audience(source)),
         arguments = arguments.toList(),
         invokedAlias = alias,
         currentInput = arguments.lastOrNull().orEmpty(),
@@ -79,14 +80,12 @@ internal class VelocityCommandAdapter internal constructor(
 }
 
 private class VelocityCommandSender(
-    private val source: CommandSource,
-    private val consoleCheck: (CommandSource) -> Boolean,
-) : CommandSender {
-    override val id: String = (source as? Player)?.uniqueId?.toString() ?: source.toString()
-    override val name: String = (source as? Player)?.username ?: source.toString()
-    override val isConsole: Boolean get() = consoleCheck(source)
-    override fun hasPermission(permission: String): Boolean = source.hasPermission(permission)
-    override fun send(message: Component) = source.sendMessage(message)
+    private val audience: AudienceSender,
+) : CommandSender, AudienceSender by audience {
+    override fun send(message: Component) = audience.sendMessage(message)
+    override fun sendMessage(text: Component) = audience.sendMessage(text)
+    override fun actionBar(text: Component) = audience.actionBar(text)
+    override fun playSound(sound: Sound): Boolean = audience.playSound(sound)
 }
 
 internal interface VelocityNativeCommandRegistrar {
