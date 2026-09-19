@@ -804,6 +804,7 @@ public abstract interface class ru/privatenull/pnlibrary/api/commands/CommandAva
 
 public final class ru/privatenull/pnlibrary/api/commands/CommandBuilder {
 	public final fun aliases ([Ljava/lang/String;)Lru/privatenull/pnlibrary/api/commands/CommandBuilder;
+	public final fun argument (Ljava/lang/String;Lru/privatenull/pnlibrary/api/commands/ArgumentType;Ljava/util/function/Consumer;)Lru/privatenull/pnlibrary/api/commands/CommandBuilder;
 	public final fun argument (Ljava/lang/String;Lru/privatenull/pnlibrary/api/commands/ArgumentType;Lkotlin/jvm/functions/Function1;)Lru/privatenull/pnlibrary/api/commands/CommandBuilder;
 	public final fun availableIf (Lru/privatenull/pnlibrary/api/commands/CommandAvailability;)Lru/privatenull/pnlibrary/api/commands/CommandBuilder;
 	public final fun build ()Lru/privatenull/pnlibrary/api/commands/CommandDefinition;
@@ -811,6 +812,7 @@ public final class ru/privatenull/pnlibrary/api/commands/CommandBuilder {
 	public static synthetic fun consoleBypassesPermission$default (Lru/privatenull/pnlibrary/api/commands/CommandBuilder;ZILjava/lang/Object;)Lru/privatenull/pnlibrary/api/commands/CommandBuilder;
 	public final fun executes (Ljava/util/function/Consumer;)Lru/privatenull/pnlibrary/api/commands/CommandBuilder;
 	public final fun executesAsync (Lru/privatenull/pnlibrary/api/commands/CommandHandler;)Lru/privatenull/pnlibrary/api/commands/CommandBuilder;
+	public final fun literal (Ljava/lang/String;Ljava/util/function/Consumer;)Lru/privatenull/pnlibrary/api/commands/CommandBuilder;
 	public final fun literal (Ljava/lang/String;Lkotlin/jvm/functions/Function1;)Lru/privatenull/pnlibrary/api/commands/CommandBuilder;
 	public final fun permission (Ljava/lang/String;)Lru/privatenull/pnlibrary/api/commands/CommandBuilder;
 	public final fun suggests (Ljava/util/function/Function;)Lru/privatenull/pnlibrary/api/commands/CommandBuilder;
@@ -879,12 +881,14 @@ public final class ru/privatenull/pnlibrary/api/commands/CommandNode {
 }
 
 public final class ru/privatenull/pnlibrary/api/commands/CommandNodeBuilder {
+	public final fun argument (Ljava/lang/String;Lru/privatenull/pnlibrary/api/commands/ArgumentType;Ljava/util/function/Consumer;)Lru/privatenull/pnlibrary/api/commands/CommandNodeBuilder;
 	public final fun argument (Ljava/lang/String;Lru/privatenull/pnlibrary/api/commands/ArgumentType;Lkotlin/jvm/functions/Function1;)Lru/privatenull/pnlibrary/api/commands/CommandNodeBuilder;
 	public final fun availableIf (Lru/privatenull/pnlibrary/api/commands/CommandAvailability;)Lru/privatenull/pnlibrary/api/commands/CommandNodeBuilder;
 	public final fun consoleBypassesPermission (Z)Lru/privatenull/pnlibrary/api/commands/CommandNodeBuilder;
 	public static synthetic fun consoleBypassesPermission$default (Lru/privatenull/pnlibrary/api/commands/CommandNodeBuilder;ZILjava/lang/Object;)Lru/privatenull/pnlibrary/api/commands/CommandNodeBuilder;
 	public final fun executes (Ljava/util/function/Consumer;)Lru/privatenull/pnlibrary/api/commands/CommandNodeBuilder;
 	public final fun executesAsync (Lru/privatenull/pnlibrary/api/commands/CommandHandler;)Lru/privatenull/pnlibrary/api/commands/CommandNodeBuilder;
+	public final fun literal (Ljava/lang/String;Ljava/util/function/Consumer;)Lru/privatenull/pnlibrary/api/commands/CommandNodeBuilder;
 	public final fun literal (Ljava/lang/String;Lkotlin/jvm/functions/Function1;)Lru/privatenull/pnlibrary/api/commands/CommandNodeBuilder;
 	public final fun permission (Ljava/lang/String;)Lru/privatenull/pnlibrary/api/commands/CommandNodeBuilder;
 	public final fun suggests (Ljava/util/function/Function;)Lru/privatenull/pnlibrary/api/commands/CommandNodeBuilder;

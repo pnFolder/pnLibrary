@@ -27,6 +27,48 @@ val registration = library.commands.register(plugin, command("hello") {
 })
 ```
 
+Commands may contain literals and typed arguments at any depth. Suggestions on a later argument
+receive every value parsed earlier in the selected route:
+
+```kotlin
+library.commands.register(plugin, command("group") {
+    argument("group", ArgumentType.string()) {
+        suggests { groups.visibleTo(it.sender.id) }
+
+        literal("member") {
+            argument("player", ArgumentType.string()) {
+                suggests { context -> groups.members(context.get("group")) }
+
+                literal("role") {
+                    argument("role", ArgumentType.string()) {
+                        permission("groups.role.set")
+                        availableIf { context ->
+                            groups.canManage(context.sender.id, context.get("group"))
+                        }
+                        executes { context ->
+                            groups.setRole(
+                                context.get("group"),
+                                context.get("player"),
+                                context.get("role"),
+                            )
+                        }
+                    }
+                }
+            }
+        }
+    }
+})
+```
+
+The tree has no depth limit. Exact literals take precedence over argument nodes. Built-in argument
+types cover strings, integers, longs, decimals, booleans, and enums; custom `ArgumentType<T>`
+implementations may parse other single-token values.
+
+`permission` and `availableIf` may be placed on any node and are inherited through the selected
+path. When either check returns false, that node and its descendants are absent from completion and
+help and cannot be invoked by typing them manually. `availableIf` receives values parsed before its
+node and can enforce ownership, feature flags, server state, or any other synchronous yes/no rule.
+
 `executes` and `suggests` are intended for immediate work. Use `executesAsync` or
 `suggestsAsync` when the handler already returns a `CompletionStage`:
 
@@ -77,4 +119,6 @@ registration. pnLibrary never silently replaces another command.
 
 The bundled `/pndebug` command uses this API on all supported platforms. Bukkit's `/pn` command is
 also a `CommandDefinition`; only its genuinely Bukkit-specific restart and rich-message operations
-remain in the Bukkit runtime.
+remain in the Bukkit runtime. `/pncurrency` is also a tree command. None of these commands are
+declared in Bukkit `plugin.yml`, BungeeCord `bungee.yml`, or Velocity metadata; each native adapter
+registers and removes its root commands dynamically.

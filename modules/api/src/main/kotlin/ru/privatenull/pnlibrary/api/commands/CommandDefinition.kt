@@ -94,12 +94,24 @@ class CommandBuilder internal constructor(name: String) {
         children += CommandNodeBuilder(CommandNodeKind.LITERAL, name.trim().lowercase()).apply(configure)
     }
 
+    fun literal(name: String, configure: Consumer<CommandNodeBuilder>): CommandBuilder = apply {
+        children += CommandNodeBuilder(CommandNodeKind.LITERAL, name).also(configure::accept)
+    }
+
     fun <T : Any> argument(
         name: String,
         type: ArgumentType<T>,
         configure: CommandNodeBuilder.() -> Unit,
     ): CommandBuilder = apply {
         children += CommandNodeBuilder(CommandNodeKind.ARGUMENT, name.trim(), type).apply(configure)
+    }
+
+    fun <T : Any> argument(
+        name: String,
+        type: ArgumentType<T>,
+        configure: Consumer<CommandNodeBuilder>,
+    ): CommandBuilder = apply {
+        children += CommandNodeBuilder(CommandNodeKind.ARGUMENT, name, type).also(configure::accept)
     }
 
     fun build(): CommandDefinition {

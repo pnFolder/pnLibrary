@@ -6,6 +6,7 @@ import org.junit.jupiter.api.Assertions.assertThrows
 import org.junit.jupiter.api.Assertions.assertTrue
 import org.junit.jupiter.api.Test
 import java.math.BigDecimal
+import java.util.function.Consumer
 
 class CommandTreeBuilderTest {
     @Test
@@ -80,6 +81,17 @@ class CommandTreeBuilderTest {
             @Suppress("UNCHECKED_CAST")
             (definition.root.children as MutableList<CommandNode>).clear()
         }
+    }
+
+    @Test
+    fun `java consumers can configure literal and argument children`() {
+        val definition = CommandDefinition.builder("java-tree")
+            .literal("show", Consumer { literal ->
+                literal.argument("page", ArgumentType.integer(), Consumer { it.executes(Consumer { }) })
+            })
+            .build()
+
+        assertEquals("page", definition.root.children.single().children.single().name)
     }
 
     private object TestSender : CommandSender {
