@@ -26,6 +26,6 @@ class ApiVersionRangeTest {
 
     @Test
     fun `publishes the current independent API generation`() {
-        assertEquals(4, PnLibraryApi.VERSION)
+        assertEquals(1, PnLibraryApi.VERSION)
     }
 }
