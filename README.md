@@ -46,6 +46,9 @@ Typed configuration actions, plugin visibility, namespaces and lifecycle:
 [docs/ACTIONS.md](docs/ACTIONS.md). Release preparation rules:
 [RELEASE-CHECKLIST.md](RELEASE-CHECKLIST.md).
 
+Единый конструктор команд для Bukkit, BungeeCord и Velocity:
+[docs/COMMANDS.md](docs/COMMANDS.md).
+
 Bukkit item configuration, textured heads, lossless serialization, and lightweight
 visual entities: [docs/BUKKIT_ITEMS_RU.md](docs/BUKKIT_ITEMS_RU.md).
 

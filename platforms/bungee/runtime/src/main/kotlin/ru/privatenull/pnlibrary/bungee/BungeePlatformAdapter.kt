@@ -16,7 +16,7 @@ import java.util.logging.Level
  * Runtime adapter for BungeeCord-compatible proxy servers.
  *
  * BungeeCord has no player-region scheduler, so global and recipient dispatch both use its async
- * plugin scheduler. [bind] owns the `/pndebug` command registration and [close] removes it.
+ * plugin scheduler. Portable commands are registered by [commandAdapter].
  */
 internal class BungeePlatformAdapter(
     /** Native plugin instance that owns scheduler, logger, command, and metrics resources. */

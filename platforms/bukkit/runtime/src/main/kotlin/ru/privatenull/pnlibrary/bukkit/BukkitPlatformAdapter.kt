@@ -25,13 +25,12 @@ import java.util.logging.LogRecord
 /**
  * Runtime adapter for Bukkit-compatible Minecraft servers.
  *
- * The adapter supports legacy Bukkit as well as Paper and Folia scheduler models. It owns native
- * diagnostic/admin command delegates, event listeners, and the optional native-log observer;
+ * The adapter supports legacy Bukkit as well as Paper and Folia scheduler models. It owns the
+ * native command transport, lifecycle listeners, and the optional native-log observer;
  * [close] removes all of them idempotently. Consumer plugins should use the public pnLibrary API
  * instead of constructing this runtime component.
  *
  * @property plugin native plugin that owns scheduler and listener registrations
- * @property commandAlias primary diagnostics command used when no plugin.yml command is declared
  */
 internal class BukkitPlatformAdapter constructor(
     val plugin: Plugin,

@@ -17,7 +17,7 @@ import java.util.concurrent.atomic.AtomicBoolean
  * Runtime adapter for Velocity 3.x proxy servers.
  *
  * Velocity has no player-region scheduler, so global and recipient dispatch both use its plugin
- * scheduler. [bind] owns the `/pndebug` command registration and [close] removes it.
+ * scheduler. Portable commands are registered by [commandAdapter].
  */
 internal class VelocityPlatformAdapter(
     /** Native plugin instance used to own commands, tasks, and metrics. */
