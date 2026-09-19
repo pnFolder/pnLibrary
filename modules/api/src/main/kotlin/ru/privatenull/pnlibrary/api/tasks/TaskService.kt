@@ -11,11 +11,21 @@ import java.util.function.Supplier
  * interrupt an invocation that is already running. Closing the handle is equivalent to [cancel].
  */
 interface TaskHandle : AutoCloseable {
+    val id: TaskId get() = TaskId("legacy-${System.identityHashCode(this)}")
+    val status: TaskStatus get() = if (isCancelled) TaskStatus.CANCELLED else TaskStatus.SCHEDULED
     /** Whether this handle has been cancelled. */
     val isCancelled: Boolean
 
     /** Cancels future execution of the associated action. */
     fun cancel()
+
+    fun cancelIfActive(): Boolean {
+        if (isCancelled) return false
+        cancel()
+        return true
+    }
+
+    fun snapshot(): TaskSnapshot = throw UnsupportedOperationException("Task snapshots are not supported by this handle")
 
     /** Cancels future execution of the associated action. */
     override fun close() = cancel()
@@ -40,6 +50,14 @@ interface TaskHandle : AutoCloseable {
 interface TaskScope : AutoCloseable {
     /** Object whose lifecycle owns every task in this scope. */
     val owner: Any
+
+    fun schedule(spec: TaskSpec): TaskHandle =
+        throw UnsupportedOperationException("Unified task scheduling is not supported by this scope")
+
+    fun find(id: TaskId): TaskHandle? = null
+    fun findByKey(key: String): TaskHandle? = null
+    fun query(query: TaskQuery = TaskQuery.all()): List<TaskSnapshot> = emptyList()
+    fun cancel(id: TaskId): Boolean = find(id)?.cancelIfActive() ?: false
 
     /** Schedules [task] in the platform's global execution context. */
     fun global(task: Runnable): TaskHandle
@@ -94,6 +112,11 @@ interface TaskScope : AutoCloseable {
 interface TaskService : AutoCloseable {
     /** Returns the active scope associated with [owner], creating it when necessary. */
     fun scope(owner: Any): TaskScope
+
+    fun find(id: TaskId): TaskHandle? = null
+    fun query(query: TaskQuery = TaskQuery.all()): List<TaskSnapshot> = emptyList()
+    fun query(owner: Any, query: TaskQuery = TaskQuery.all()): List<TaskSnapshot> = emptyList()
+    fun cancel(id: TaskId): Boolean = find(id)?.cancelIfActive() ?: false
 
     /** Closes and removes [owner]'s scope when one exists. */
     fun close(owner: Any)

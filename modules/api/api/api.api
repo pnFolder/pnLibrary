@@ -2741,31 +2741,259 @@ public abstract interface class ru/privatenull/pnlibrary/api/services/ServiceMan
 	public abstract fun unregister (Ljava/lang/Class;)V
 }
 
+public abstract interface class ru/privatenull/pnlibrary/api/tasks/TaskAction {
+	public abstract fun run (Lru/privatenull/pnlibrary/api/tasks/TaskContext;)V
+}
+
+public final class ru/privatenull/pnlibrary/api/tasks/TaskConflictPolicy : java/lang/Enum {
+	public static final field KEEP_EXISTING Lru/privatenull/pnlibrary/api/tasks/TaskConflictPolicy;
+	public static final field REJECT Lru/privatenull/pnlibrary/api/tasks/TaskConflictPolicy;
+	public static final field REPLACE Lru/privatenull/pnlibrary/api/tasks/TaskConflictPolicy;
+	public static fun getEntries ()Lkotlin/enums/EnumEntries;
+	public static fun valueOf (Ljava/lang/String;)Lru/privatenull/pnlibrary/api/tasks/TaskConflictPolicy;
+	public static fun values ()[Lru/privatenull/pnlibrary/api/tasks/TaskConflictPolicy;
+}
+
+public abstract interface class ru/privatenull/pnlibrary/api/tasks/TaskContext {
+	public abstract fun cancel ()V
+	public abstract fun getId ()Lru/privatenull/pnlibrary/api/tasks/TaskId;
+	public abstract fun getName ()Ljava/lang/String;
+	public abstract fun getRunNumber ()J
+	public abstract fun getScheduledAt ()Ljava/time/Instant;
+	public abstract fun getStartedAt ()Ljava/time/Instant;
+}
+
+public final class ru/privatenull/pnlibrary/api/tasks/TaskExecution {
+	public static final field Companion Lru/privatenull/pnlibrary/api/tasks/TaskExecution$Companion;
+	public synthetic fun <init> (Lru/privatenull/pnlibrary/api/tasks/TaskExecution$Kind;Ljava/lang/Object;Lkotlin/jvm/internal/DefaultConstructorMarker;)V
+	public static final fun async ()Lru/privatenull/pnlibrary/api/tasks/TaskExecution;
+	public static final fun entity (Ljava/lang/Object;)Lru/privatenull/pnlibrary/api/tasks/TaskExecution;
+	public final fun getKind ()Lru/privatenull/pnlibrary/api/tasks/TaskExecution$Kind;
+	public final fun getTarget ()Ljava/lang/Object;
+	public static final fun global ()Lru/privatenull/pnlibrary/api/tasks/TaskExecution;
+}
+
+public final class ru/privatenull/pnlibrary/api/tasks/TaskExecution$Companion {
+	public final fun async ()Lru/privatenull/pnlibrary/api/tasks/TaskExecution;
+	public final fun entity (Ljava/lang/Object;)Lru/privatenull/pnlibrary/api/tasks/TaskExecution;
+	public final fun global ()Lru/privatenull/pnlibrary/api/tasks/TaskExecution;
+}
+
+public final class ru/privatenull/pnlibrary/api/tasks/TaskExecution$Kind : java/lang/Enum {
+	public static final field ASYNC Lru/privatenull/pnlibrary/api/tasks/TaskExecution$Kind;
+	public static final field ENTITY Lru/privatenull/pnlibrary/api/tasks/TaskExecution$Kind;
+	public static final field GLOBAL Lru/privatenull/pnlibrary/api/tasks/TaskExecution$Kind;
+	public static fun getEntries ()Lkotlin/enums/EnumEntries;
+	public static fun valueOf (Ljava/lang/String;)Lru/privatenull/pnlibrary/api/tasks/TaskExecution$Kind;
+	public static fun values ()[Lru/privatenull/pnlibrary/api/tasks/TaskExecution$Kind;
+}
+
 public abstract interface class ru/privatenull/pnlibrary/api/tasks/TaskHandle : java/lang/AutoCloseable {
 	public abstract fun cancel ()V
+	public fun cancelIfActive ()Z
 	public fun close ()V
+	public fun getId ()Lru/privatenull/pnlibrary/api/tasks/TaskId;
+	public fun getStatus ()Lru/privatenull/pnlibrary/api/tasks/TaskStatus;
 	public abstract fun isCancelled ()Z
+	public fun snapshot ()Lru/privatenull/pnlibrary/api/tasks/TaskSnapshot;
+}
+
+public final class ru/privatenull/pnlibrary/api/tasks/TaskId {
+	public static final field Companion Lru/privatenull/pnlibrary/api/tasks/TaskId$Companion;
+	public fun <init> (Ljava/lang/String;)V
+	public final fun component1 ()Ljava/lang/String;
+	public final fun copy (Ljava/lang/String;)Lru/privatenull/pnlibrary/api/tasks/TaskId;
+	public static synthetic fun copy$default (Lru/privatenull/pnlibrary/api/tasks/TaskId;Ljava/lang/String;ILjava/lang/Object;)Lru/privatenull/pnlibrary/api/tasks/TaskId;
+	public fun equals (Ljava/lang/Object;)Z
+	public final fun getValue ()Ljava/lang/String;
+	public fun hashCode ()I
+	public static final fun random ()Lru/privatenull/pnlibrary/api/tasks/TaskId;
+	public fun toString ()Ljava/lang/String;
+}
+
+public final class ru/privatenull/pnlibrary/api/tasks/TaskId$Companion {
+	public final fun random ()Lru/privatenull/pnlibrary/api/tasks/TaskId;
+}
+
+public final class ru/privatenull/pnlibrary/api/tasks/TaskQuery {
+	public static final field Companion Lru/privatenull/pnlibrary/api/tasks/TaskQuery$Companion;
+	public synthetic fun <init> (Lru/privatenull/pnlibrary/api/tasks/TaskId;Ljava/lang/String;Ljava/lang/String;Ljava/util/Set;Ljava/util/Set;Ljava/util/Set;Lkotlin/jvm/internal/DefaultConstructorMarker;)V
+	public static final fun all ()Lru/privatenull/pnlibrary/api/tasks/TaskQuery;
+	public static final fun builder ()Lru/privatenull/pnlibrary/api/tasks/TaskQuery$Builder;
+	public final fun getExecutionKinds ()Ljava/util/Set;
+	public final fun getId ()Lru/privatenull/pnlibrary/api/tasks/TaskId;
+	public final fun getKey ()Ljava/lang/String;
+	public final fun getNameContains ()Ljava/lang/String;
+	public final fun getStatuses ()Ljava/util/Set;
+	public final fun getTags ()Ljava/util/Set;
+}
+
+public final class ru/privatenull/pnlibrary/api/tasks/TaskQuery$Builder {
+	public final fun build ()Lru/privatenull/pnlibrary/api/tasks/TaskQuery;
+	public final fun execution ([Lru/privatenull/pnlibrary/api/tasks/TaskExecution$Kind;)Lru/privatenull/pnlibrary/api/tasks/TaskQuery$Builder;
+	public final fun id (Lru/privatenull/pnlibrary/api/tasks/TaskId;)Lru/privatenull/pnlibrary/api/tasks/TaskQuery$Builder;
+	public final fun key (Ljava/lang/String;)Lru/privatenull/pnlibrary/api/tasks/TaskQuery$Builder;
+	public final fun nameContains (Ljava/lang/String;)Lru/privatenull/pnlibrary/api/tasks/TaskQuery$Builder;
+	public final fun status ([Lru/privatenull/pnlibrary/api/tasks/TaskStatus;)Lru/privatenull/pnlibrary/api/tasks/TaskQuery$Builder;
+	public final fun tag (Ljava/lang/String;)Lru/privatenull/pnlibrary/api/tasks/TaskQuery$Builder;
+}
+
+public final class ru/privatenull/pnlibrary/api/tasks/TaskQuery$Companion {
+	public final fun all ()Lru/privatenull/pnlibrary/api/tasks/TaskQuery;
+	public final fun builder ()Lru/privatenull/pnlibrary/api/tasks/TaskQuery$Builder;
 }
 
 public abstract interface class ru/privatenull/pnlibrary/api/tasks/TaskScope : java/lang/AutoCloseable {
 	public abstract fun async (Ljava/lang/Runnable;)Lru/privatenull/pnlibrary/api/tasks/TaskHandle;
 	public abstract fun asyncThen (Ljava/util/function/Supplier;Ljava/util/function/Consumer;Ljava/util/function/Consumer;)Lru/privatenull/pnlibrary/api/tasks/TaskHandle;
+	public fun cancel (Lru/privatenull/pnlibrary/api/tasks/TaskId;)Z
 	public abstract fun cancelAll ()V
 	public fun close ()V
 	public abstract fun entity (Ljava/lang/Object;Ljava/lang/Runnable;)Lru/privatenull/pnlibrary/api/tasks/TaskHandle;
+	public fun find (Lru/privatenull/pnlibrary/api/tasks/TaskId;)Lru/privatenull/pnlibrary/api/tasks/TaskHandle;
+	public fun findByKey (Ljava/lang/String;)Lru/privatenull/pnlibrary/api/tasks/TaskHandle;
 	public abstract fun getOwner ()Ljava/lang/Object;
 	public abstract fun global (Ljava/lang/Runnable;)Lru/privatenull/pnlibrary/api/tasks/TaskHandle;
 	public abstract fun later (Ljava/time/Duration;Ljava/lang/Runnable;)Lru/privatenull/pnlibrary/api/tasks/TaskHandle;
 	public abstract fun laterEntity (Ljava/lang/Object;Ljava/time/Duration;Ljava/lang/Runnable;)Lru/privatenull/pnlibrary/api/tasks/TaskHandle;
+	public fun query (Lru/privatenull/pnlibrary/api/tasks/TaskQuery;)Ljava/util/List;
+	public static synthetic fun query$default (Lru/privatenull/pnlibrary/api/tasks/TaskScope;Lru/privatenull/pnlibrary/api/tasks/TaskQuery;ILjava/lang/Object;)Ljava/util/List;
 	public abstract fun repeat (Ljava/time/Duration;Ljava/time/Duration;Ljava/lang/Runnable;)Lru/privatenull/pnlibrary/api/tasks/TaskHandle;
 	public abstract fun repeatAsync (Ljava/time/Duration;Ljava/time/Duration;Ljava/lang/Runnable;)Lru/privatenull/pnlibrary/api/tasks/TaskHandle;
 	public abstract fun repeatEntity (Ljava/lang/Object;Ljava/time/Duration;Ljava/time/Duration;Ljava/lang/Runnable;)Lru/privatenull/pnlibrary/api/tasks/TaskHandle;
+	public fun schedule (Lru/privatenull/pnlibrary/api/tasks/TaskSpec;)Lru/privatenull/pnlibrary/api/tasks/TaskHandle;
 }
 
 public abstract interface class ru/privatenull/pnlibrary/api/tasks/TaskService : java/lang/AutoCloseable {
+	public fun cancel (Lru/privatenull/pnlibrary/api/tasks/TaskId;)Z
 	public abstract fun close ()V
 	public abstract fun close (Ljava/lang/Object;)V
+	public fun find (Lru/privatenull/pnlibrary/api/tasks/TaskId;)Lru/privatenull/pnlibrary/api/tasks/TaskHandle;
+	public fun query (Ljava/lang/Object;Lru/privatenull/pnlibrary/api/tasks/TaskQuery;)Ljava/util/List;
+	public fun query (Lru/privatenull/pnlibrary/api/tasks/TaskQuery;)Ljava/util/List;
+	public static synthetic fun query$default (Lru/privatenull/pnlibrary/api/tasks/TaskService;Ljava/lang/Object;Lru/privatenull/pnlibrary/api/tasks/TaskQuery;ILjava/lang/Object;)Ljava/util/List;
+	public static synthetic fun query$default (Lru/privatenull/pnlibrary/api/tasks/TaskService;Lru/privatenull/pnlibrary/api/tasks/TaskQuery;ILjava/lang/Object;)Ljava/util/List;
 	public abstract fun scope (Ljava/lang/Object;)Lru/privatenull/pnlibrary/api/tasks/TaskScope;
+}
+
+public final class ru/privatenull/pnlibrary/api/tasks/TaskServiceSettings {
+	public fun <init> ()V
+	public fun <init> (I)V
+	public synthetic fun <init> (IILkotlin/jvm/internal/DefaultConstructorMarker;)V
+	public final fun component1 ()I
+	public final fun copy (I)Lru/privatenull/pnlibrary/api/tasks/TaskServiceSettings;
+	public static synthetic fun copy$default (Lru/privatenull/pnlibrary/api/tasks/TaskServiceSettings;IILjava/lang/Object;)Lru/privatenull/pnlibrary/api/tasks/TaskServiceSettings;
+	public fun equals (Ljava/lang/Object;)Z
+	public final fun getHistoryCapacity ()I
+	public fun hashCode ()I
+	public fun toString ()Ljava/lang/String;
+}
+
+public final class ru/privatenull/pnlibrary/api/tasks/TaskSnapshot {
+	public fun <init> (Lru/privatenull/pnlibrary/api/tasks/TaskId;Ljava/lang/String;Ljava/lang/String;Ljava/lang/String;Lru/privatenull/pnlibrary/api/tasks/TaskExecution$Kind;Lru/privatenull/pnlibrary/api/tasks/TaskStatus;Ljava/util/Set;Ljava/time/Instant;Ljava/time/Instant;JJLjava/time/Instant;Ljava/time/Instant;Ljava/lang/String;)V
+	public final fun component1 ()Lru/privatenull/pnlibrary/api/tasks/TaskId;
+	public final fun component10 ()J
+	public final fun component11 ()J
+	public final fun component12 ()Ljava/time/Instant;
+	public final fun component13 ()Ljava/time/Instant;
+	public final fun component14 ()Ljava/lang/String;
+	public final fun component2 ()Ljava/lang/String;
+	public final fun component3 ()Ljava/lang/String;
+	public final fun component4 ()Ljava/lang/String;
+	public final fun component5 ()Lru/privatenull/pnlibrary/api/tasks/TaskExecution$Kind;
+	public final fun component6 ()Lru/privatenull/pnlibrary/api/tasks/TaskStatus;
+	public final fun component7 ()Ljava/util/Set;
+	public final fun component8 ()Ljava/time/Instant;
+	public final fun component9 ()Ljava/time/Instant;
+	public final fun copy (Lru/privatenull/pnlibrary/api/tasks/TaskId;Ljava/lang/String;Ljava/lang/String;Ljava/lang/String;Lru/privatenull/pnlibrary/api/tasks/TaskExecution$Kind;Lru/privatenull/pnlibrary/api/tasks/TaskStatus;Ljava/util/Set;Ljava/time/Instant;Ljava/time/Instant;JJLjava/time/Instant;Ljava/time/Instant;Ljava/lang/String;)Lru/privatenull/pnlibrary/api/tasks/TaskSnapshot;
+	public static synthetic fun copy$default (Lru/privatenull/pnlibrary/api/tasks/TaskSnapshot;Lru/privatenull/pnlibrary/api/tasks/TaskId;Ljava/lang/String;Ljava/lang/String;Ljava/lang/String;Lru/privatenull/pnlibrary/api/tasks/TaskExecution$Kind;Lru/privatenull/pnlibrary/api/tasks/TaskStatus;Ljava/util/Set;Ljava/time/Instant;Ljava/time/Instant;JJLjava/time/Instant;Ljava/time/Instant;Ljava/lang/String;ILjava/lang/Object;)Lru/privatenull/pnlibrary/api/tasks/TaskSnapshot;
+	public fun equals (Ljava/lang/Object;)Z
+	public final fun getCreatedAt ()Ljava/time/Instant;
+	public final fun getExecutionKind ()Lru/privatenull/pnlibrary/api/tasks/TaskExecution$Kind;
+	public final fun getId ()Lru/privatenull/pnlibrary/api/tasks/TaskId;
+	public final fun getKey ()Ljava/lang/String;
+	public final fun getLastCompletedAt ()Ljava/time/Instant;
+	public final fun getLastFailure ()Ljava/lang/String;
+	public final fun getLastStartedAt ()Ljava/time/Instant;
+	public final fun getName ()Ljava/lang/String;
+	public final fun getNextRunAt ()Ljava/time/Instant;
+	public final fun getOwnerName ()Ljava/lang/String;
+	public final fun getRunCount ()J
+	public final fun getSkippedCount ()J
+	public final fun getStatus ()Lru/privatenull/pnlibrary/api/tasks/TaskStatus;
+	public final fun getTags ()Ljava/util/Set;
+	public fun hashCode ()I
+	public fun toString ()Ljava/lang/String;
+}
+
+public final class ru/privatenull/pnlibrary/api/tasks/TaskSpec {
+	public static final field Companion Lru/privatenull/pnlibrary/api/tasks/TaskSpec$Companion;
+	public synthetic fun <init> (Ljava/lang/String;Ljava/lang/String;Lru/privatenull/pnlibrary/api/tasks/TaskConflictPolicy;Lru/privatenull/pnlibrary/api/tasks/TaskExecution;Ljava/time/Duration;Ljava/time/Duration;Ljava/util/List;Ljava/util/List;Ljava/util/Set;Lru/privatenull/pnlibrary/api/tasks/TaskAction;Lkotlin/jvm/internal/DefaultConstructorMarker;)V
+	public static final fun builder ()Lru/privatenull/pnlibrary/api/tasks/TaskSpec$Builder;
+	public final fun getAction ()Lru/privatenull/pnlibrary/api/tasks/TaskAction;
+	public final fun getCancellationConditions ()Ljava/util/List;
+	public final fun getConditions ()Ljava/util/List;
+	public final fun getConflictPolicy ()Lru/privatenull/pnlibrary/api/tasks/TaskConflictPolicy;
+	public final fun getDelay ()Ljava/time/Duration;
+	public final fun getExecution ()Lru/privatenull/pnlibrary/api/tasks/TaskExecution;
+	public final fun getInterval ()Ljava/time/Duration;
+	public final fun getKey ()Ljava/lang/String;
+	public final fun getName ()Ljava/lang/String;
+	public final fun getTags ()Ljava/util/Set;
+}
+
+public final class ru/privatenull/pnlibrary/api/tasks/TaskSpec$Builder {
+	public final fun action (Lru/privatenull/pnlibrary/api/tasks/TaskAction;)Lru/privatenull/pnlibrary/api/tasks/TaskSpec$Builder;
+	public final fun build ()Lru/privatenull/pnlibrary/api/tasks/TaskSpec;
+	public final fun cancelWhen (Ljava/util/function/BooleanSupplier;)Lru/privatenull/pnlibrary/api/tasks/TaskSpec$Builder;
+	public final fun condition (Ljava/util/function/BooleanSupplier;)Lru/privatenull/pnlibrary/api/tasks/TaskSpec$Builder;
+	public final fun conflictPolicy (Lru/privatenull/pnlibrary/api/tasks/TaskConflictPolicy;)Lru/privatenull/pnlibrary/api/tasks/TaskSpec$Builder;
+	public final fun delay (Ljava/time/Duration;)Lru/privatenull/pnlibrary/api/tasks/TaskSpec$Builder;
+	public final fun execution (Lru/privatenull/pnlibrary/api/tasks/TaskExecution;)Lru/privatenull/pnlibrary/api/tasks/TaskSpec$Builder;
+	public final fun interval (Ljava/time/Duration;)Lru/privatenull/pnlibrary/api/tasks/TaskSpec$Builder;
+	public final fun key (Ljava/lang/String;)Lru/privatenull/pnlibrary/api/tasks/TaskSpec$Builder;
+	public final fun name (Ljava/lang/String;)Lru/privatenull/pnlibrary/api/tasks/TaskSpec$Builder;
+	public final fun tag (Ljava/lang/String;)Lru/privatenull/pnlibrary/api/tasks/TaskSpec$Builder;
+	public final fun tags (Ljava/util/Collection;)Lru/privatenull/pnlibrary/api/tasks/TaskSpec$Builder;
+}
+
+public final class ru/privatenull/pnlibrary/api/tasks/TaskSpec$Companion {
+	public final fun builder ()Lru/privatenull/pnlibrary/api/tasks/TaskSpec$Builder;
+}
+
+public final class ru/privatenull/pnlibrary/api/tasks/TaskSpecBuilder {
+	public final fun cancelWhen (Lkotlin/jvm/functions/Function0;)V
+	public final fun condition (Lkotlin/jvm/functions/Function0;)V
+	public final fun getConflictPolicy ()Lru/privatenull/pnlibrary/api/tasks/TaskConflictPolicy;
+	public final fun getDelay ()Ljava/time/Duration;
+	public final fun getExecution ()Lru/privatenull/pnlibrary/api/tasks/TaskExecution;
+	public final fun getInterval ()Ljava/time/Duration;
+	public final fun getKey ()Ljava/lang/String;
+	public final fun getName ()Ljava/lang/String;
+	public final fun getTags ()Ljava/util/Set;
+	public final fun run (Lru/privatenull/pnlibrary/api/tasks/TaskAction;)V
+	public final fun setConflictPolicy (Lru/privatenull/pnlibrary/api/tasks/TaskConflictPolicy;)V
+	public final fun setDelay (Ljava/time/Duration;)V
+	public final fun setExecution (Lru/privatenull/pnlibrary/api/tasks/TaskExecution;)V
+	public final fun setInterval (Ljava/time/Duration;)V
+	public final fun setKey (Ljava/lang/String;)V
+	public final fun setName (Ljava/lang/String;)V
+	public final fun setTags (Ljava/util/Set;)V
+}
+
+public final class ru/privatenull/pnlibrary/api/tasks/TaskSpecKt {
+	public static final fun schedule (Lru/privatenull/pnlibrary/api/tasks/TaskScope;Lkotlin/jvm/functions/Function1;)Lru/privatenull/pnlibrary/api/tasks/TaskHandle;
+}
+
+public final class ru/privatenull/pnlibrary/api/tasks/TaskStatus : java/lang/Enum {
+	public static final field CANCELLED Lru/privatenull/pnlibrary/api/tasks/TaskStatus;
+	public static final field COMPLETED Lru/privatenull/pnlibrary/api/tasks/TaskStatus;
+	public static final field FAILED Lru/privatenull/pnlibrary/api/tasks/TaskStatus;
+	public static final field RUNNING Lru/privatenull/pnlibrary/api/tasks/TaskStatus;
+	public static final field SCHEDULED Lru/privatenull/pnlibrary/api/tasks/TaskStatus;
+	public static fun getEntries ()Lkotlin/enums/EnumEntries;
+	public static fun valueOf (Ljava/lang/String;)Lru/privatenull/pnlibrary/api/tasks/TaskStatus;
+	public static fun values ()[Lru/privatenull/pnlibrary/api/tasks/TaskStatus;
 }
 
 public final class ru/privatenull/pnlibrary/api/text/ComponentCachePolicy {
