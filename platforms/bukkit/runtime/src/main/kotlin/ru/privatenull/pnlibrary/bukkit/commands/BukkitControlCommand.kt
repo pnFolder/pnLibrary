@@ -10,6 +10,8 @@ import org.bukkit.command.CommandSender
 import org.bukkit.entity.Player
 import org.bukkit.plugin.Plugin
 import ru.privatenull.pnlibrary.api.commands.CommandDefinition
+import ru.privatenull.pnlibrary.api.commands.CommandContext
+import ru.privatenull.pnlibrary.api.commands.ArgumentType
 import ru.privatenull.pnlibrary.api.commands.command
 import ru.privatenull.pnlibrary.api.runtime.PnLibrary
 import ru.privatenull.pnlibrary.api.runtime.PnLibraryBrand
@@ -28,30 +30,43 @@ internal class BukkitControlCommand(
 
     fun definition(): CommandDefinition = command("pn") {
         permission("pnlibrary.admin")
-        suggests { context -> controlCompletions(context.arguments) }
-        executes { context ->
-            val sender = (context.sender as? BukkitCommandSender)?.native
-            if (sender == null) {
-                context.sender.send(net.kyori.adventure.text.Component.text("Unsupported Bukkit sender."))
-            } else {
-                execute(sender, context.arguments)
+        executes(::executeNative)
+        literal("status") {
+            executes(::executeNative)
+            argument("plugin", ArgumentType.string()) {
+                suggests { library.updates.registrations().map { it.snapshot.product } }
+                executes(::executeNative)
             }
         }
+        literal("updates") { executes(::executeNative) }
+        literal("check") { executes(::executeNative) }
+        literal("update") {
+            argument("plugin", ArgumentType.string()) {
+                suggests { library.updates.registrations().map { it.snapshot.product } }
+                executes(::executeNative)
+            }
+        }
+        literal("restart") {
+            executes(::executeNative)
+            literal("confirm") { executes(::executeNative) }
+        }
+        literal("debug") { executes(::executeNative) }
+        literal("support") { executes(::executeNative) }
+        literal("error") { executes(::executeNative) }
+        literal("error-repeat") {
+            executes(::executeNative)
+            argument("count", ArgumentType.integer()) {
+                suggests { REPEAT_COUNTS }
+                executes(::executeNative)
+            }
+        }
+        literal("error-chain") { executes(::executeNative) }
     }
 
-    private fun controlCompletions(arguments: List<String>): List<String> {
-        val values = when (arguments.size) {
-            0, 1 -> CONTROL_ACTIONS
-            2 -> when {
-                arguments[0].equals("status", true) || arguments[0].equals("update", true) ->
-                    library.updates.registrations().map { it.snapshot.product }
-                arguments[0].equals("error-repeat", true) -> REPEAT_COUNTS
-                else -> emptyList()
-            }
-            else -> emptyList()
-        }
-        val prefix = arguments.lastOrNull()?.lowercase(Locale.ROOT).orEmpty()
-        return values.filter { it.lowercase(Locale.ROOT).startsWith(prefix) }
+    private fun executeNative(context: CommandContext) {
+        val sender = (context.sender as? BukkitCommandSender)?.native
+        if (sender == null) context.sender.send(net.kyori.adventure.text.Component.text("Unsupported Bukkit sender."))
+        else execute(sender, context.arguments)
     }
 
     private fun execute(sender: CommandSender, arguments: List<String>) {

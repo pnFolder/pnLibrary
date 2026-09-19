@@ -4,8 +4,8 @@ import net.kyori.adventure.text.Component
 import org.bukkit.plugin.Plugin
 import org.junit.jupiter.api.Assertions.assertEquals
 import org.junit.jupiter.api.Test
-import ru.privatenull.pnlibrary.api.commands.CommandContext
 import ru.privatenull.pnlibrary.api.commands.CommandSender
+import ru.privatenull.pnlibrary.api.commands.CommandNodeKind
 import ru.privatenull.pnlibrary.api.runtime.PnLibrary
 import java.lang.reflect.Proxy
 
@@ -17,13 +17,17 @@ class BukkitControlCommandTest {
             library = proxy(PnLibrary::class.java),
         ).definition()
 
-        val suggestions = definition.suggestions.suggest(
-            CommandContext(TestSender(), listOf("u"), "pn", "u"),
-        ).toCompletableFuture().join()
-
         assertEquals("pn", definition.name)
         assertEquals("pnlibrary.admin", definition.permission)
-        assertEquals(listOf("updates", "update"), suggestions)
+        assertEquals(
+            listOf("status", "updates", "check", "update", "restart", "debug", "support", "error", "error-repeat", "error-chain"),
+            definition.root.children.map { it.name },
+        )
+        val update = definition.root.children.single { it.name == "update" }
+        assertEquals(CommandNodeKind.ARGUMENT, update.children.single().kind)
+        assertEquals("plugin", update.children.single().name)
+        val restart = definition.root.children.single { it.name == "restart" }
+        assertEquals("confirm", restart.children.single().name)
     }
 
     private class TestSender : CommandSender {
