@@ -18,6 +18,8 @@ tasks.withType<JavaCompile>().configureEach { options.release = 8 }
 dependencies {
     api(project(":modules:api"))
     implementation(libs.kotlin.stdlib)
+    testImplementation(libs.junit.jupiter)
+    testRuntimeOnly(libs.junit.launcher)
 }
 
 java {

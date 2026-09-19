@@ -9,6 +9,8 @@ import ru.privatenull.pnlibrary.spi.commands.PlatformCommandAdapter
 import ru.privatenull.pnlibrary.spi.commands.UnsupportedPlatformCommandAdapter
 import ru.privatenull.pnlibrary.spi.audiences.PlatformAudienceAdapter
 import ru.privatenull.pnlibrary.spi.audiences.UnsupportedPlatformAudienceAdapter
+import ru.privatenull.pnlibrary.spi.tasks.PlatformTaskAdapter
+import ru.privatenull.pnlibrary.spi.tasks.UnsupportedPlatformTaskAdapter
 import java.nio.file.Path
 
 /**
@@ -48,6 +50,9 @@ interface PlatformAdapter : AutoCloseable {
 
     /** Native audience resolution and delivery bridge. */
     val audienceAdapter: PlatformAudienceAdapter get() = UnsupportedPlatformAudienceAdapter
+
+    /** Native delayed and repeating task bridge. */
+    val taskAdapter: PlatformTaskAdapter get() = UnsupportedPlatformTaskAdapter
 
     /**
      * Binds the fully initialized [library] to commands, listeners, and other native entry points.
