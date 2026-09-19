@@ -11,6 +11,7 @@ import ru.privatenull.pnlibrary.bukkit.compat.ServerCapabilities
 import ru.privatenull.pnlibrary.spi.metrics.PlatformMetricsFactory
 import ru.privatenull.pnlibrary.spi.platform.PlatformAdapter
 import ru.privatenull.pnlibrary.spi.commands.PlatformCommandAdapter
+import ru.privatenull.pnlibrary.spi.audiences.PlatformAudienceAdapter
 import ru.privatenull.pnlibrary.api.commands.CommandRegistration
 import ru.privatenull.pnlibrary.bukkit.commands.BukkitCommandAdapter
 import ru.privatenull.pnlibrary.bukkit.commands.BukkitCommandSender
@@ -69,6 +70,7 @@ internal class BukkitPlatformAdapter constructor(
         )
     }
     override val metricsFactory: PlatformMetricsFactory = BukkitMetricsFactory()
+    override val audienceAdapter: PlatformAudienceAdapter = BukkitAudienceAdapter(audienceService)
     override val commandAdapter: PlatformCommandAdapter = BukkitCommandAdapter(plugin, audienceService)
     override val dataFolder = plugin.dataFolder.toPath()
 

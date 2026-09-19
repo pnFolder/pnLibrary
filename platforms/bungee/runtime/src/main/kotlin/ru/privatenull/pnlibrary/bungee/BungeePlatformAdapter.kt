@@ -7,6 +7,7 @@ import ru.privatenull.pnlibrary.api.platform.PlatformType
 import ru.privatenull.pnlibrary.api.runtime.PnLibrary
 import ru.privatenull.pnlibrary.bungee.commands.BungeeCommandAdapter
 import ru.privatenull.pnlibrary.spi.commands.PlatformCommandAdapter
+import ru.privatenull.pnlibrary.spi.audiences.PlatformAudienceAdapter
 import ru.privatenull.pnlibrary.spi.metrics.PlatformMetricsFactory
 import ru.privatenull.pnlibrary.spi.platform.PlatformAdapter
 import java.util.concurrent.atomic.AtomicBoolean
@@ -30,6 +31,7 @@ internal class BungeePlatformAdapter(
     override val implementationName: String get() = plugin.proxy.name.ifBlank { type.displayName }
     override val metricsFactory: PlatformMetricsFactory = BungeeMetricsFactory()
     override val commandAdapter: PlatformCommandAdapter = BungeeCommandAdapter(plugin)
+    override val audienceAdapter: PlatformAudienceAdapter = BungeeAudienceAdapter(plugin)
     override val dataFolder = plugin.dataFolder.toPath()
 
     override fun log(owner: Any, level: LogLevel, message: String, error: Throwable?) {

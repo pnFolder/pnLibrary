@@ -8,6 +8,7 @@ import ru.privatenull.pnlibrary.api.platform.PlatformType
 import ru.privatenull.pnlibrary.api.runtime.PnLibrary
 import ru.privatenull.pnlibrary.velocity.commands.VelocityCommandAdapter
 import ru.privatenull.pnlibrary.spi.commands.PlatformCommandAdapter
+import ru.privatenull.pnlibrary.spi.audiences.PlatformAudienceAdapter
 import ru.privatenull.pnlibrary.spi.metrics.PlatformMetricsFactory
 import ru.privatenull.pnlibrary.spi.platform.PlatformAdapter
 import java.nio.file.Path
@@ -34,6 +35,7 @@ internal class VelocityPlatformAdapter(
     override val type = PlatformType.VELOCITY
     override val implementationName: String get() = server.version.name.ifBlank { type.displayName }
     override val commandAdapter: PlatformCommandAdapter = VelocityCommandAdapter(plugin, server)
+    override val audienceAdapter: PlatformAudienceAdapter = VelocityAudienceAdapter(server)
 
     override fun log(owner: Any, level: LogLevel, message: String, error: Throwable?) {
         when (level) {
