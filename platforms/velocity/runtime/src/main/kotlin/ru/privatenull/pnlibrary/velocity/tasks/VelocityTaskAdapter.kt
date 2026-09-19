@@ -4,6 +4,7 @@ import com.velocitypowered.api.proxy.ProxyServer
 import ru.privatenull.pnlibrary.spi.tasks.*
 import java.util.concurrent.ConcurrentHashMap
 import java.util.concurrent.atomic.AtomicBoolean
+import java.util.concurrent.atomic.AtomicReference
 
 internal class VelocityTaskAdapter internal constructor(
     private val nativeSchedule: (PlatformTaskRequest) -> PlatformTaskHandle,
@@ -20,7 +21,16 @@ internal class VelocityTaskAdapter internal constructor(
     private val handles = ConcurrentHashMap.newKeySet<TrackedHandle>()
     override fun schedule(request: PlatformTaskRequest): PlatformTaskHandle {
         check(!closed.get()) { "Velocity task adapter is closed" }
-        return TrackedHandle(nativeSchedule(request)).also { handles += it }
+        val reference = AtomicReference<TrackedHandle?>()
+        val completed = AtomicBoolean(false)
+        val forwarded = request.copy(callback = Runnable {
+            try { request.callback.run() } finally {
+                if (request.interval == null) { completed.set(true); reference.get()?.release() }
+            }
+        })
+        return TrackedHandle(nativeSchedule(forwarded)).also {
+            reference.set(it); handles += it; if (completed.get()) it.release()
+        }
     }
     override fun close() {
         if (!closed.compareAndSet(false, true)) return
@@ -32,5 +42,6 @@ internal class VelocityTaskAdapter internal constructor(
             if (!cancelled.compareAndSet(false, true)) return false
             delegate.cancel(); handles.remove(this); return true
         }
+        fun release() { handles.remove(this) }
     }
 }

@@ -12,11 +12,17 @@ import java.time.Duration
 import java.util.concurrent.ConcurrentHashMap
 import java.util.concurrent.TimeUnit
 import java.util.concurrent.atomic.AtomicBoolean
+import java.util.concurrent.atomic.AtomicReference
 import java.util.function.Consumer
 import kotlin.math.ceil
 
 internal fun durationToTicks(value: Duration): Long =
     if (value.isZero) 0 else ceil(value.toNanos() / 50_000_000.0).toLong().coerceAtLeast(1)
+
+internal fun withCompletionRelease(request: PlatformTaskRequest, release: () -> Unit): PlatformTaskRequest =
+    request.copy(callback = Runnable {
+        try { request.callback.run() } finally { if (request.interval == null) release() }
+    })
 
 internal class BukkitTaskAdapter(private val plugin: Plugin) : PlatformTaskAdapter {
     private val closed = AtomicBoolean(false)
@@ -24,8 +30,15 @@ internal class BukkitTaskAdapter(private val plugin: Plugin) : PlatformTaskAdapt
 
     override fun schedule(request: PlatformTaskRequest): PlatformTaskHandle {
         check(!closed.get()) { "Bukkit task adapter is closed" }
-        val native = if (ServerCapabilities.isFolia) scheduleFolia(request) else scheduleBukkit(request)
-        return NativeHandle(native).also { handles += it }
+        val reference = AtomicReference<NativeHandle?>()
+        val completed = AtomicBoolean(false)
+        val forwarded = withCompletionRelease(request) {
+            completed.set(true); reference.get()?.release()
+        }
+        val native = if (ServerCapabilities.isFolia) scheduleFolia(forwarded) else scheduleBukkit(forwarded)
+        return NativeHandle(native).also {
+            reference.set(it); handles += it; if (completed.get()) it.release()
+        }
     }
 
     private fun scheduleBukkit(request: PlatformTaskRequest): Any {
@@ -95,5 +108,6 @@ internal class BukkitTaskAdapter(private val plugin: Plugin) : PlatformTaskAdapt
             handles.remove(this)
             return true
         }
+        fun release() { handles.remove(this) }
     }
 }

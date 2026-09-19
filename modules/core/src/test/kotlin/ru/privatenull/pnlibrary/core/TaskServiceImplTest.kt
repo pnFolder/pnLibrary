@@ -36,6 +36,7 @@ class TaskServiceImplTest {
         val repeating = scope.schedule(TaskSpec.builder().interval(Duration.ofSeconds(1))
             .condition { false }.action { fail("must not run") }.build())
         val once = scope.schedule(TaskSpec.builder().condition { false }.action { fail("must not run") }.build())
+        assertNotNull(repeating.snapshot().nextRunAt)
         adapter.fire(0); adapter.fire(1)
         assertEquals(TaskStatus.SCHEDULED, repeating.status)
         assertEquals(1, repeating.snapshot().skippedCount)

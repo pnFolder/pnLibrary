@@ -133,6 +133,7 @@ internal class TaskServiceImpl(
         private val cancelled = AtomicBoolean(false)
         private val native = AtomicReference<PlatformTaskHandle?>()
         private val created = Instant.now()
+        @Volatile private var nextRun: Instant? = created.plus(spec.delay)
         @Volatile private var started: Instant? = null
         @Volatile private var completed: Instant? = null
         @Volatile private var failure: String? = null
@@ -144,10 +145,11 @@ internal class TaskServiceImpl(
             if (cancelled.get()) return
             if (!running.compareAndSet(false, true)) { skipped.incrementAndGet(); return }
             try {
+                nextRun = null
                 if (spec.cancellationConditions.any { it.asBoolean }) { cancel(); return }
                 if (spec.conditions.any { !it.asBoolean }) {
                     skipped.incrementAndGet()
-                    if (spec.interval == null) complete()
+                    if (spec.interval == null) complete() else nextRun = Instant.now().plus(spec.interval)
                     return
                 }
                 state.set(TaskStatus.RUNNING); started = Instant.now()
@@ -160,7 +162,9 @@ internal class TaskServiceImpl(
                     override val startedAt = started!!
                     override fun cancel() = this@ManagedTask.cancel()
                 })
-                if (!cancelled.get()) if (spec.interval == null) complete() else state.set(TaskStatus.SCHEDULED)
+                if (!cancelled.get()) if (spec.interval == null) complete() else {
+                    state.set(TaskStatus.SCHEDULED); nextRun = Instant.now().plus(spec.interval)
+                }
             } catch (error: Throwable) {
                 failure = "${error.javaClass.simpleName}: ${error.message.orEmpty()}"
                 state.set(TaskStatus.FAILED); native.get()?.cancel()
@@ -175,7 +179,7 @@ internal class TaskServiceImpl(
             state.set(TaskStatus.CANCELLED); completed = Instant.now(); native.get()?.cancel(); terminal(); return true
         }
         override fun snapshot() = TaskSnapshot(id, spec.name, spec.key, ownerName(owner), spec.execution.kind,
-            status, spec.tags, created, null, runs.get(), skipped.get(), started, completed, failure)
+            status, spec.tags, created, nextRun, runs.get(), skipped.get(), started, completed, failure)
         private fun terminal() = synchronized(lock) {
             if (active.remove(id) == null) return@synchronized
             if (settings.historyCapacity > 0) {
