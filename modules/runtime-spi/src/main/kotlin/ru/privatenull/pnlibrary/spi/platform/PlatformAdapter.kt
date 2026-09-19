@@ -5,6 +5,8 @@ import ru.privatenull.pnlibrary.api.platform.PlatformType
 import ru.privatenull.pnlibrary.api.runtime.PnLibrary
 import ru.privatenull.pnlibrary.spi.metrics.NoopMetricsFactory
 import ru.privatenull.pnlibrary.spi.metrics.PlatformMetricsFactory
+import ru.privatenull.pnlibrary.spi.commands.PlatformCommandAdapter
+import ru.privatenull.pnlibrary.spi.commands.UnsupportedPlatformCommandAdapter
 import java.nio.file.Path
 
 /**
@@ -38,6 +40,9 @@ interface PlatformAdapter : AutoCloseable {
 
     /** Factory for native metrics sessions; defaults to a no-op implementation. */
     val metricsFactory: PlatformMetricsFactory get() = NoopMetricsFactory
+
+    /** Native command bridge used by the shared command service. */
+    val commandAdapter: PlatformCommandAdapter get() = UnsupportedPlatformCommandAdapter
 
     /**
      * Binds the fully initialized [library] to commands, listeners, and other native entry points.

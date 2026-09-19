@@ -11,6 +11,7 @@ import ru.privatenull.pnlibrary.api.runtime.PnLibraryProvider
 import ru.privatenull.pnlibrary.api.version.SemanticVersion
 import ru.privatenull.pnlibrary.core.diagnostics.DiagnosticsRegistry
 import ru.privatenull.pnlibrary.core.config.ConfigurationServiceImpl
+import ru.privatenull.pnlibrary.core.commands.CommandServiceImpl
 import ru.privatenull.pnlibrary.core.diagnostics.PersistentDiagnosticHistory
 import ru.privatenull.pnlibrary.core.diagnostics.ReportGenerator
 import ru.privatenull.pnlibrary.core.events.EventServiceImpl
@@ -89,6 +90,8 @@ internal class PnLibraryImpl(
         recordAndLog(taskOwner, message, error)
     }
     override val tasks: ru.privatenull.pnlibrary.api.tasks.TaskService get() = taskService
+    private val commandService = CommandServiceImpl(platform)
+    override val commands: ru.privatenull.pnlibrary.api.commands.CommandService get() = commandService
     private val serviceManager = ServiceManagerImpl()
     override val services: ru.privatenull.pnlibrary.api.services.ServiceManager get() = serviceManager
     private val eventService = EventServiceImpl(taskService) { pluginId, message, error ->
@@ -116,6 +119,7 @@ internal class PnLibraryImpl(
         updates = updateService,
         placeholderHub = placeholderHub,
         currencyHub = currencyHub,
+        commands = commandService,
     )
 
     val uploader: UploadProvider? = initUploader()
@@ -178,6 +182,7 @@ internal class PnLibraryImpl(
         if (closedFlag.compareAndSet(false, true)) {
             workerExecutor.shutdownNow()
             runCatching { plugins.close() }
+            runCatching { commandService.close() }
             runCatching { platformProvider.close() }
             runCatching { currencyHub.close() }
             runCatching { configurationService.close() }

@@ -8,6 +8,9 @@ import org.junit.jupiter.api.Assertions.assertThrows
 import org.junit.jupiter.api.Assertions.assertTrue
 import org.junit.jupiter.api.Test
 import ru.privatenull.pnlibrary.api.diagnostics.DiagnosticsService
+import ru.privatenull.pnlibrary.api.commands.CommandDefinition
+import ru.privatenull.pnlibrary.api.commands.CommandRegistration
+import ru.privatenull.pnlibrary.api.commands.CommandService
 import ru.privatenull.pnlibrary.api.events.Event
 import ru.privatenull.pnlibrary.api.events.EventHandler
 import ru.privatenull.pnlibrary.api.events.Listener
@@ -31,6 +34,18 @@ import java.lang.reflect.Proxy
 import java.util.function.Supplier
 
 class PluginRegistryImplTest {
+    @Test
+    fun `closing plugin context unregisters commands owned by its native plugin`() {
+        val owner = Any()
+        val commands = RecordingCommandService()
+        val registry = registry(commands = commands)
+        val context = registry.register(owner, "example") { }
+
+        context.close()
+
+        assertEquals(listOf(owner), commands.unregisteredOwners)
+    }
+
     @Test
     fun `context is globally addressable by normalized plugin ID`() {
         val owner = Any()
@@ -213,6 +228,7 @@ class PluginRegistryImplTest {
             tasks: TaskService = RecordingTaskService(RecordingTaskScope(Any())),
             logging: LoggingService = loggingService(),
             metrics: MetricsService = RecordingMetricsService(),
+            commands: CommandService? = null,
         ): PluginRegistryImpl =
             PluginRegistryImpl(
                 platform = platform,
@@ -225,6 +241,7 @@ class PluginRegistryImplTest {
                 updates = emptyProxy(UpdateService::class.java),
                 placeholderHub = PlaceholderHub(platform),
                 currencyHub = CurrencyHub(),
+                commands = commands,
             )
 
         fun platform(): PlatformAdapter = proxy(PlatformAdapter::class.java) { methodName ->
@@ -275,5 +292,14 @@ class PluginRegistryImplTest {
         override fun skip(label: String, detail: String) = this
         override fun fail(label: String, detail: String, error: Throwable?) = this
         override fun show() = Unit
+    }
+
+    private class RecordingCommandService : CommandService {
+        val unregisteredOwners = mutableListOf<Any>()
+        override fun register(owner: Any, command: CommandDefinition): CommandRegistration =
+            throw UnsupportedOperationException()
+        override fun unregisterOwner(owner: Any) {
+            unregisteredOwners += owner
+        }
     }
 }

@@ -51,6 +51,7 @@ import ru.privatenull.pnlibrary.core.cooldowns.CooldownServiceImpl
 import ru.privatenull.pnlibrary.api.currency.CurrencyService
 import ru.privatenull.pnlibrary.core.currency.CurrencyHub
 import ru.privatenull.pnlibrary.api.currency.CurrencyStorageFactory
+import ru.privatenull.pnlibrary.api.commands.CommandService
 import ru.privatenull.pnlibrary.core.currency.CurrencyStorageFactoryImpl
 
 /**
@@ -73,6 +74,7 @@ internal class PluginRegistryImpl(
     private val currencyHub: CurrencyHub,
     private val currencyStorageFactory: CurrencyStorageFactory = CurrencyStorageFactoryImpl(),
     private val configurations: ConfigurationServiceImpl = ConfigurationServiceImpl(platform),
+    private val commands: CommandService? = null,
 ) : PluginRegistry {
 
     private val contexts = linkedMapOf<PluginId, Context>()
@@ -282,6 +284,7 @@ internal class PluginRegistryImpl(
         fun closeInternal() {
             if (!contextClosed.compareAndSet(false, true)) return
             ResourceCleanup.closeAll(
+                { commands?.unregisterOwner(owner) },
                 { updates?.close() },
                 { diagnostics?.close() },
                 { this@PluginRegistryImpl.diagnostics.clearPlugin(id.value) },
