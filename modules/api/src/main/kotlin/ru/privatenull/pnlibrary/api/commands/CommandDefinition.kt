@@ -26,6 +26,7 @@ class CommandDefinition internal constructor(
     val consoleBypassesPermission: Boolean,
     val execution: CommandHandler,
     val suggestions: SuggestionHandler,
+    val root: CommandNode,
 ) {
     val aliases: Set<String> = Collections.unmodifiableSet(LinkedHashSet(aliases))
 
@@ -44,6 +45,8 @@ class CommandBuilder internal constructor(name: String) {
     private var consoleBypassesPermission: Boolean = false
     private var execution = CommandHandler { completedExecution() }
     private var suggestions = SuggestionHandler { completedSuggestions(emptyList()) }
+    private var availability = CommandAvailability { true }
+    private val children = mutableListOf<CommandNodeBuilder>()
 
     fun aliases(vararg values: String): CommandBuilder = apply {
         values.forEach { value ->
@@ -82,14 +85,40 @@ class CommandBuilder internal constructor(name: String) {
         suggestions = handler
     }
 
-    fun build(): CommandDefinition = CommandDefinition(
-        name = name,
-        aliases = aliases,
-        permission = permission,
-        consoleBypassesPermission = consoleBypassesPermission,
-        execution = execution,
-        suggestions = suggestions,
-    )
+    fun availableIf(rule: CommandAvailability): CommandBuilder = apply { availability = rule }
+
+    fun literal(name: String, configure: CommandNodeBuilder.() -> Unit): CommandBuilder = apply {
+        children += CommandNodeBuilder(CommandNodeKind.LITERAL, name.trim().lowercase()).apply(configure)
+    }
+
+    fun <T : Any> argument(
+        name: String,
+        type: ArgumentType<T>,
+        configure: CommandNodeBuilder.() -> Unit,
+    ): CommandBuilder = apply {
+        children += CommandNodeBuilder(CommandNodeKind.ARGUMENT, name.trim(), type).apply(configure)
+    }
+
+    fun build(): CommandDefinition {
+        val rootBuilder = CommandNodeBuilder(CommandNodeKind.ROOT, name).apply {
+            permission?.let(::permission)
+            consoleBypassesPermission(consoleBypassesPermission)
+            availableIf(availability)
+            executesAsync(execution)
+            suggestsAsync(suggestions)
+            children.forEach { child -> addBuiltChild(child) }
+        }
+        val root = rootBuilder.build()
+        return CommandDefinition(
+            name = name,
+            aliases = aliases,
+            permission = permission,
+            consoleBypassesPermission = consoleBypassesPermission,
+            execution = execution,
+            suggestions = suggestions,
+            root = root,
+        )
+    }
 }
 
 /** Builds one immutable portable command. */
