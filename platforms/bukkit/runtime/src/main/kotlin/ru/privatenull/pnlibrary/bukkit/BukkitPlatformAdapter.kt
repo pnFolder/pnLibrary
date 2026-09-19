@@ -16,6 +16,8 @@ import ru.privatenull.pnlibrary.api.commands.CommandRegistration
 import ru.privatenull.pnlibrary.bukkit.commands.BukkitCommandAdapter
 import ru.privatenull.pnlibrary.bukkit.commands.BukkitCommandSender
 import ru.privatenull.pnlibrary.bukkit.commands.BukkitControlCommand
+import ru.privatenull.pnlibrary.bukkit.tasks.BukkitTaskAdapter
+import ru.privatenull.pnlibrary.spi.tasks.PlatformTaskAdapter
 import java.util.concurrent.CompletableFuture
 import java.util.concurrent.TimeUnit
 import java.util.concurrent.atomic.AtomicBoolean
@@ -72,6 +74,7 @@ internal class BukkitPlatformAdapter constructor(
     override val metricsFactory: PlatformMetricsFactory = BukkitMetricsFactory()
     override val audienceAdapter: PlatformAudienceAdapter = BukkitAudienceAdapter(audienceService)
     override val commandAdapter: PlatformCommandAdapter = BukkitCommandAdapter(plugin, audienceService)
+    override val taskAdapter: PlatformTaskAdapter = BukkitTaskAdapter(plugin)
     override val dataFolder = plugin.dataFolder.toPath()
 
     override fun log(owner: Any, level: LogLevel, message: String, error: Throwable?) {
