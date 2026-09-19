@@ -2,6 +2,7 @@ package ru.privatenull.pnlibrary.api.runtime
 
 import ru.privatenull.pnlibrary.api.config.ConfigurationService
 import ru.privatenull.pnlibrary.api.commands.CommandService
+import ru.privatenull.pnlibrary.api.audiences.AudienceService
 import ru.privatenull.pnlibrary.api.currency.CurrencyProviderRegistry
 import ru.privatenull.pnlibrary.api.diagnostics.DebugRequest
 import ru.privatenull.pnlibrary.api.diagnostics.DiagnosticReport
@@ -59,6 +60,10 @@ interface PnLibrary : Closeable {
     /** Cross-platform commands registered and removed with their owner lifecycle. */
     val commands: CommandService
         get() = throw UnsupportedOperationException("Commands are not available in this runtime")
+
+    /** Cross-platform player, console, native-sender, and composite audiences. */
+    val audiences: AudienceService
+        get() = throw UnsupportedOperationException("Audiences are not available in this runtime")
 
     /** Typed process-wide services with plugin-owned registrations. */
     val services: ServiceManager

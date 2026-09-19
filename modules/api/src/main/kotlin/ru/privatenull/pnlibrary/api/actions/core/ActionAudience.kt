@@ -4,6 +4,7 @@ import net.kyori.adventure.sound.Sound
 import net.kyori.adventure.text.Component
 import java.util.UUID
 import java.util.function.Supplier
+import ru.privatenull.pnlibrary.api.audiences.AudienceSender
 
 /**
  * A target that can receive player-facing action output.
@@ -72,19 +73,23 @@ interface LibraryAudience {
  * player classes, keeping the public API free from Bukkit/Bungee/Velocity
  * compile-time dependencies.
  */
-interface LibraryPlayer : LibraryAudience {
+interface LibraryPlayer : AudienceSender {
     /** Stable player UUID supplied by the server platform. */
     val uniqueId: UUID
 
+    override val id: String get() = uniqueId.toString()
+    override val isConsole: Boolean get() = false
+    override val isPlayer: Boolean get() = true
+
     /** Current visible player name. */
-    val name: String
+    override val name: String
 
     /**
      * Checks whether the player has a platform permission.
      *
      * @param permission permission node, for example `example.feature.use`
      */
-    fun hasPermission(permission: String): Boolean
+    override fun hasPermission(permission: String): Boolean
 
     /**
      * Applies a temporary status effect to the player.

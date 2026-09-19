@@ -220,11 +220,14 @@ public final class ru/privatenull/pnlibrary/api/actions/LibraryAudience$Companio
 	public final fun dynamic (Ljava/util/function/Supplier;)Lru/privatenull/pnlibrary/api/actions/LibraryAudience;
 }
 
-public abstract interface class ru/privatenull/pnlibrary/api/actions/LibraryPlayer : ru/privatenull/pnlibrary/api/actions/LibraryAudience {
+public abstract interface class ru/privatenull/pnlibrary/api/actions/LibraryPlayer : ru/privatenull/pnlibrary/api/audiences/AudienceSender {
 	public abstract fun applyEffect (Lru/privatenull/pnlibrary/api/actions/PlayerEffect;)Z
+	public fun getId ()Ljava/lang/String;
 	public abstract fun getName ()Ljava/lang/String;
 	public abstract fun getUniqueId ()Ljava/util/UUID;
 	public abstract fun hasPermission (Ljava/lang/String;)Z
+	public fun isConsole ()Z
+	public fun isPlayer ()Z
 	public abstract fun spawnParticle (Lru/privatenull/pnlibrary/api/actions/PlayerParticle;)Z
 }
 
@@ -778,6 +781,23 @@ public final class ru/privatenull/pnlibrary/api/actions/standard/check/Expansion
 	public fun toString ()Ljava/lang/String;
 }
 
+public abstract interface class ru/privatenull/pnlibrary/api/audiences/AudienceSender : ru/privatenull/pnlibrary/api/actions/LibraryAudience {
+	public abstract fun getId ()Ljava/lang/String;
+	public abstract fun getName ()Ljava/lang/String;
+	public abstract fun hasPermission (Ljava/lang/String;)Z
+	public abstract fun isConsole ()Z
+	public fun isPlayer ()Z
+}
+
+public abstract interface class ru/privatenull/pnlibrary/api/audiences/AudienceService {
+	public abstract fun all ()Lru/privatenull/pnlibrary/api/actions/LibraryAudience;
+	public abstract fun combine (Ljava/lang/Iterable;)Lru/privatenull/pnlibrary/api/actions/LibraryAudience;
+	public abstract fun console ()Lru/privatenull/pnlibrary/api/audiences/AudienceSender;
+	public abstract fun onlinePlayers ()Ljava/util/List;
+	public abstract fun player (Ljava/util/UUID;)Lru/privatenull/pnlibrary/api/actions/LibraryPlayer;
+	public abstract fun sender (Ljava/lang/Object;)Lru/privatenull/pnlibrary/api/audiences/AudienceSender;
+}
+
 public abstract interface class ru/privatenull/pnlibrary/api/commands/ArgumentType {
 	public static final field Companion Lru/privatenull/pnlibrary/api/commands/ArgumentType$Companion;
 	public static fun boolean ()Lru/privatenull/pnlibrary/api/commands/ArgumentType;
@@ -910,12 +930,15 @@ public abstract interface class ru/privatenull/pnlibrary/api/commands/CommandReg
 	public abstract fun isClosed ()Z
 }
 
-public abstract interface class ru/privatenull/pnlibrary/api/commands/CommandSender {
+public abstract interface class ru/privatenull/pnlibrary/api/commands/CommandSender : ru/privatenull/pnlibrary/api/audiences/AudienceSender {
+	public fun actionBar (Lnet/kyori/adventure/text/Component;)V
 	public abstract fun getId ()Ljava/lang/String;
 	public abstract fun getName ()Ljava/lang/String;
 	public abstract fun hasPermission (Ljava/lang/String;)Z
 	public abstract fun isConsole ()Z
+	public fun playSound (Lnet/kyori/adventure/sound/Sound;)Z
 	public abstract fun send (Lnet/kyori/adventure/text/Component;)V
+	public fun sendMessage (Lnet/kyori/adventure/text/Component;)V
 }
 
 public abstract interface class ru/privatenull/pnlibrary/api/commands/CommandService {
@@ -2603,6 +2626,7 @@ public abstract interface class ru/privatenull/pnlibrary/api/plugin/PluginRegist
 public abstract interface class ru/privatenull/pnlibrary/api/runtime/PnLibrary : java/io/Closeable {
 	public abstract fun close ()V
 	public abstract fun createDiagnosticReport (Lru/privatenull/pnlibrary/api/diagnostics/DebugRequest;)Lru/privatenull/pnlibrary/api/diagnostics/DiagnosticReport;
+	public fun getAudiences ()Lru/privatenull/pnlibrary/api/audiences/AudienceService;
 	public fun getCommands ()Lru/privatenull/pnlibrary/api/commands/CommandService;
 	public abstract fun getConfiguration ()Lru/privatenull/pnlibrary/api/runtime/PnLibraryConfig;
 	public abstract fun getConfigurations ()Lru/privatenull/pnlibrary/api/config/ConfigurationService;

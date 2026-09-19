@@ -1,21 +1,28 @@
 package ru.privatenull.pnlibrary.api.commands
 
 import net.kyori.adventure.text.Component
+import ru.privatenull.pnlibrary.api.audiences.AudienceSender
 
 /** Platform-neutral command sender exposed to command handlers. */
-interface CommandSender {
+interface CommandSender : AudienceSender {
     /** Stable identity used for cooldowns and audit records. */
-    val id: String
+    override val id: String
 
     /** Human-readable sender name. */
-    val name: String
+    override val name: String
 
     /** Whether this sender represents the server console. */
-    val isConsole: Boolean
+    override val isConsole: Boolean
 
     /** Returns whether this sender has [permission]. */
-    fun hasPermission(permission: String): Boolean
+    override fun hasPermission(permission: String): Boolean
 
     /** Sends one Adventure component to this sender. */
     fun send(message: Component)
+
+    override fun sendMessage(text: Component) = send(text)
+
+    override fun actionBar(text: Component) = send(text)
+
+    override fun playSound(sound: net.kyori.adventure.sound.Sound): Boolean = false
 }
