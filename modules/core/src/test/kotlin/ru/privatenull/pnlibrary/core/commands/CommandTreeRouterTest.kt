@@ -55,6 +55,8 @@ class CommandTreeRouterTest {
 
         assertEquals(listOf("public"), deniedSuggestions)
         assertEquals(listOf("public", "secret"), allowedSuggestions)
+        val deniedUsage = router.route(definition, context(listOf("builders"))) as CommandRoute.Invalid
+        assertEquals("/group <group> public", deniedUsage.usage)
         assertTrue(router.route(definition, context(listOf("builders", "secret", "delete"))) is CommandRoute.Denied)
         assertFalse(router.suggest(definition, context(listOf("other", "secret", ""), setOf("groups.secret")))
             .toCompletableFuture().join().contains("delete"))

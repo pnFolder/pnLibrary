@@ -29,10 +29,10 @@ internal class CommandTreeRouter {
                 it.kind == CommandNodeKind.LITERAL && it.name.equals(token, ignoreCase = true)
             }
             val child = literal ?: node.children.firstOrNull { it.kind == CommandNodeKind.ARGUMENT }
-                ?: return CommandRoute.Invalid(usage(path, node))
+                ?: return CommandRoute.Invalid(usage(path, node, routed))
             if (!allowed(child, routed)) return CommandRoute.Denied
             if (child.kind == CommandNodeKind.ARGUMENT) {
-                val parsed = parse(child, token) ?: return CommandRoute.Invalid(usage(path, node))
+                val parsed = parse(child, token) ?: return CommandRoute.Invalid(usage(path, node, routed))
                 values[child.name] = parsed
                 path += "<${child.name}>"
             } else {
@@ -43,7 +43,7 @@ internal class CommandTreeRouter {
         }
 
         return if (node.isExecutable) CommandRoute.Executable(node, routed)
-        else CommandRoute.Invalid(usage(path, node))
+        else CommandRoute.Invalid(usage(path, node, routed))
     }
 
     fun suggest(command: CommandDefinition, context: CommandContext): CompletionStage<List<String>> {
@@ -100,11 +100,12 @@ internal class CommandTreeRouter {
     private fun parse(node: CommandNode, token: String): Any? =
         (node.argumentType as? ru.privatenull.pnlibrary.api.commands.ArgumentType<Any>)?.parse(token)
 
-    private fun usage(path: List<String>, node: CommandNode): String {
+    private fun usage(path: List<String>, node: CommandNode, context: CommandContext): String {
+        val accessible = node.children.filter { allowed(it, context) }
         val suffix = when {
-            node.children.isEmpty() -> ""
-            node.children.size == 1 -> " " + display(node.children.single())
-            else -> " {" + node.children.joinToString("|") { display(it) } + "}"
+            accessible.isEmpty() -> ""
+            accessible.size == 1 -> " " + display(accessible.single())
+            else -> " {" + accessible.joinToString("|") { display(it) } + "}"
         }
         return "/${path.joinToString(" ")}$suffix"
     }
