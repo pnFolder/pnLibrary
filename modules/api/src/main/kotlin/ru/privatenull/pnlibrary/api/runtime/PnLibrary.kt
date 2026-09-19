@@ -1,6 +1,7 @@
 package ru.privatenull.pnlibrary.api.runtime
 
 import ru.privatenull.pnlibrary.api.config.ConfigurationService
+import ru.privatenull.pnlibrary.api.commands.CommandService
 import ru.privatenull.pnlibrary.api.currency.CurrencyProviderRegistry
 import ru.privatenull.pnlibrary.api.diagnostics.DebugRequest
 import ru.privatenull.pnlibrary.api.diagnostics.DiagnosticReport
@@ -54,6 +55,10 @@ interface PnLibrary : Closeable {
 
     /** Cross-platform tasks grouped by their owner lifecycle. */
     val tasks: TaskService
+
+    /** Cross-platform commands registered and removed with their owner lifecycle. */
+    val commands: CommandService
+        get() = throw UnsupportedOperationException("Commands are not available in this runtime")
 
     /** Typed process-wide services with plugin-owned registrations. */
     val services: ServiceManager
