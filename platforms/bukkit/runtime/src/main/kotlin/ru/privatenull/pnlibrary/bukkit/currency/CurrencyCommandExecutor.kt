@@ -2,14 +2,16 @@ package ru.privatenull.pnlibrary.bukkit.currency
 
 import org.bukkit.Bukkit
 import org.bukkit.ChatColor
-import org.bukkit.command.Command
-import org.bukkit.command.CommandExecutor
 import org.bukkit.command.CommandSender
 import org.bukkit.command.ConsoleCommandSender
-import org.bukkit.command.TabCompleter
 import org.bukkit.entity.Player
 import org.bukkit.plugin.Plugin
 import ru.privatenull.pnlibrary.api.currency.*
+import ru.privatenull.pnlibrary.api.commands.ArgumentType
+import ru.privatenull.pnlibrary.api.commands.CommandContext
+import ru.privatenull.pnlibrary.api.commands.CommandDefinition
+import ru.privatenull.pnlibrary.api.commands.command
+import ru.privatenull.pnlibrary.bukkit.commands.BukkitCommandSender
 import java.math.BigDecimal
 import java.time.ZoneId
 import java.time.format.DateTimeFormatter
@@ -21,11 +23,99 @@ import java.security.SecureRandom
 internal class CurrencyCommandExecutor(
     private val plugin: Plugin,
     private val currencies: CurrencyProviderRegistry,
-) : CommandExecutor, TabCompleter {
+) {
     private val pending = ConcurrentHashMap<String, PendingOperation>()
     private val random = SecureRandom()
 
-    override fun onCommand(sender: CommandSender, command: Command, label: String, args: Array<out String>): Boolean {
+    fun definition(): CommandDefinition = command("pncurrency") {
+        aliases("pncurrencies")
+        executes(::executePortable)
+        literal("list") {
+            permission("pnlibrary.currency.list")
+            executes(::executePortable)
+        }
+        literal("confirm") {
+            availableIf { it.sender.isConsole }
+            argument("code", ArgumentType.string()) { executes(::executePortable) }
+        }
+        literal("cancel") {
+            availableIf { it.sender.isConsole }
+            argument("code", ArgumentType.string()) { executes(::executePortable) }
+        }
+        argument("currency", ArgumentType.string()) {
+            suggests { currencies.all().map { it.key.toString() } }
+            literal("balance") {
+                availableIf { operationAllowed(it, "balance") }
+                executes(::executePortable)
+                argument("player", ArgumentType.string()) {
+                    suggests { onlinePlayers() }
+                    executes(::executePortable)
+                }
+            }
+            literal("add") {
+                availableIf { operationAllowed(it, "add") }
+                argument("player", ArgumentType.string()) {
+                    suggests { onlinePlayers() }
+                    argument("amount", ArgumentType.decimal()) { executes(::executePortable) }
+                }
+            }
+            literal("take") {
+                availableIf { operationAllowed(it, "take") }
+                argument("player", ArgumentType.string()) {
+                    suggests { onlinePlayers() }
+                    argument("amount", ArgumentType.decimal()) { executes(::executePortable) }
+                }
+            }
+            literal("set") {
+                availableIf { operationAllowed(it, "set") }
+                argument("player", ArgumentType.string()) {
+                    suggests { onlinePlayers() }
+                    argument("amount", ArgumentType.decimal()) { executes(::executePortable) }
+                }
+            }
+            literal("reset") {
+                availableIf { operationAllowed(it, "reset") }
+                argument("player", ArgumentType.string()) {
+                    suggests { onlinePlayers() }
+                    executes(::executePortable)
+                }
+            }
+            literal("pay") {
+                availableIf { operationAllowed(it, "pay") }
+                argument("player", ArgumentType.string()) {
+                    suggests { onlinePlayers() }
+                    argument("amount", ArgumentType.decimal()) { executes(::executePortable) }
+                }
+            }
+            literal("history") {
+                availableIf { operationAllowed(it, "history") }
+                executes(::executePortable)
+                argument("player", ArgumentType.string()) {
+                    suggests { onlinePlayers() }
+                    executes(::executePortable)
+                }
+            }
+        }
+    }
+
+    private fun executePortable(context: CommandContext) {
+        val sender = (context.sender as? BukkitCommandSender)?.native
+        if (sender == null) context.sender.send(net.kyori.adventure.text.Component.text("Unsupported Bukkit sender."))
+        else execute(sender, context.arguments)
+    }
+
+    private fun operationAllowed(context: CommandContext, operation: String): Boolean {
+        val currency = context.parsedValues["currency"] as? String ?: return false
+        val resolved = currencies.get(currency) ?: return false
+        val settings = settings(resolved)
+        if (!settings.enabled) return false
+        val permission = "${settings.permissionPrefix ?: "pnlibrary.currency.${permissionPart(resolved.key.toString())}"}.$operation"
+        return context.sender.hasPermission(permission)
+    }
+
+    private fun onlinePlayers(): List<String> = Bukkit.getOnlinePlayers().map(Player::getName)
+
+    private fun execute(sender: CommandSender, args: List<String>): Boolean {
         discardExpired()
         if (args.isEmpty() || args[0].equals("help", true)) return help(sender)
         if (args[0].equals("confirm", true)) return confirm(sender, args.getOrNull(1))
@@ -239,15 +329,6 @@ internal class CurrencyCommandExecutor(
     private fun info(sender: CommandSender, message: String) { sender.sendMessage("§8[§6Currency§8] §f$message") }
     private fun success(sender: CommandSender, message: String) { sender.sendMessage("§8[§6Currency§8] §a$message") }
     private fun error(sender: CommandSender, message: String): Boolean { sender.sendMessage("§8[§6Currency§8] §c$message"); return true }
-
-    override fun onTabComplete(sender: CommandSender, command: Command, alias: String, args: Array<out String>): List<String> = when (args.size) {
-        1 -> (listOf("list", "confirm", "cancel") + currencies.all().map { it.key.toString() }).matching(args[0])
-        2 -> listOf("balance", "add", "take", "set", "reset", "pay", "history").matching(args[1])
-        3 -> Bukkit.getOnlinePlayers().map(Player::getName).matching(args[2])
-        else -> emptyList()
-    }
-
-    private fun List<String>.matching(input: String) = filter { it.startsWith(input, true) }.sorted()
 
     companion object {
         private val TIME = DateTimeFormatter.ofPattern("yyyy-MM-dd HH:mm:ss").withZone(ZoneId.systemDefault())

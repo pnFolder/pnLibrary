@@ -52,11 +52,8 @@ class PnLibraryBukkitPlugin : JavaPlugin(), Listener {
             runtimeHost = host
             installBukkitServices(host, adapter)
             server.pluginManager.registerEvents(this, this)
-            getCommand("pncurrency")?.let { command ->
-                val executor = CurrencyCommandExecutor(this, host.library.currencyProviders)
-                command.setExecutor(executor)
-                command.tabCompleter = executor
-            }
+            val currencyCommand = CurrencyCommandExecutor(this, host.library.currencyProviders)
+            host.library.commands.register(this, currencyCommand.definition())
             connectPlaceholderApi()
             connectCurrencyAdapters()
         } catch (error: Throwable) {
@@ -145,11 +142,6 @@ class PnLibraryBukkitPlugin : JavaPlugin(), Listener {
 
     private fun closePlatformResources() {
         HandlerList.unregisterAll(this as Listener)
-        getCommand("pncurrency")?.let { command ->
-            command.setExecutor(null)
-            command.tabCompleter = null
-        }
-
         runCatching { placeholderApiBridge?.close() }
         placeholderApiBridge = null
 
