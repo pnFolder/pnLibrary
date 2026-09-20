@@ -19,6 +19,7 @@ tasks.withType<JavaCompile>().configureEach { options.release = 8 }
 dependencies {
     implementation(project(":modules:api"))
     implementation(project(":modules:runtime-spi"))
+    implementation(project(":modules:features:update"))
     implementation(libs.kotlin.stdlib)
     implementation(libs.gson)
     implementation(libs.snakeyaml)

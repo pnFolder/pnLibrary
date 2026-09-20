@@ -2,10 +2,9 @@ package ru.privatenull.pnlibrary.core.runtime
 
 import ru.privatenull.pnlibrary.api.platform.PlatformType
 import ru.privatenull.pnlibrary.api.runtime.PnLibrary
-import ru.privatenull.pnlibrary.core.updates.MandatoryUpdateService
+import ru.privatenull.pnlibrary.api.updates.PluginUpdateRequest
 import ru.privatenull.pnlibrary.spi.platform.PlatformAdapter
 import java.nio.file.Path
-import java.nio.file.Paths
 import java.util.concurrent.atomic.AtomicBoolean
 
 /**
@@ -89,14 +88,15 @@ class PnLibraryRuntimeHost private constructor(
                     ?.takeIf { it.isNotBlank() }
                     ?: error("The platform did not expose the pnLibrary version")
                 val artifactId = platform.type.distributionArtifact()
-                val currentJar = Paths.get(owner.javaClass.protectionDomain.codeSource.location.toURI())
-                val monitor = MandatoryUpdateService.start(
+                val monitor = library.updates.register(
                     owner,
-                    platform,
-                    currentVersion,
-                    artifactId,
-                    currentJar,
-                    updateDirectory,
+                    PluginUpdateRequest.builder()
+                        .repository("pnFolder", "pnLibrary")
+                        .component("pnlibrary")
+                        .supportedApi(1, 1)
+                        .automaticDownload(false)
+                        .artifact("(?i)^pnLibrary-$artifactId-.*\\.jar$", 8)
+                        .build(),
                 )
                 PnLibraryRuntimeHost(library, monitor, platform.summaryName()).also {
                     runCatching {

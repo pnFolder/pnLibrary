@@ -1,10 +1,6 @@
 package ru.privatenull.pnlibrary.core.updates
 
-import ru.privatenull.pnlibrary.core.logging.PlatformLoggingService
-
-
 import com.google.gson.JsonParser
-import ru.privatenull.pnlibrary.api.logging.LogLevel
 import ru.privatenull.pnlibrary.spi.platform.PlatformAdapter
 import ru.privatenull.pnlibrary.api.updates.UpdateChannel
 import ru.privatenull.pnlibrary.api.platform.PlatformType
@@ -20,34 +16,9 @@ import java.util.Locale
 import java.util.jar.JarFile
 import java.security.MessageDigest
 
-/** Mandatory pnLibrary updater. Only the release channel is configurable. */
+/** Low-level compatibility adapter used only by the single update orchestrator. */
 internal object MandatoryUpdateService {
     private const val MAX_BYTES = 512L * 1024L * 1024L
-    private const val CHECK_INTERVAL_MS = 30L * 60L * 1000L
-    private const val NOTIFICATION_INTERVAL_MS = 6L * 60L * 60L * 1000L
-    private val lastAnnouncements = java.util.concurrent.ConcurrentHashMap<String, Long>()
-
-    @JvmStatic
-    fun start(owner: Any, platform: PlatformAdapter, currentVersion: String, artifact: String, currentJar: Path, updateDir: Path): AutoCloseable {
-        val settings = loadSettings(platform.dataFolder ?: currentJar.parent.resolve("pnLibrary"))
-        val thread = startProduct(owner, platform, currentVersion, "pnFolder", "pnLibrary", settings.channel,
-            "(?i)^pnLibrary-$artifact-.*\\.jar$", currentJar, updateDir, settings.automaticDownload, 8) { }
-        return AutoCloseable { thread.interrupt() }
-    }
-
-    internal fun startProduct(owner: Any, platform: PlatformAdapter, currentVersion: String,
-        repositoryOwner: String, repositoryName: String, channel: String, assetPattern: String,
-        currentJar: Path, updateDir: Path, automaticDownload: Boolean, minimumJava: Int,
-        observer: (UpdateSnapshot) -> Unit): Thread = Thread({ while (true) {
-            runCatching { check(owner, platform, currentVersion, repositoryOwner, repositoryName, channel, assetPattern, currentJar, updateDir, automaticDownload, minimumJava, observer) }
-                .onFailure {
-                    observer(snapshot(repositoryName, currentVersion, null, channel, UpdateState.FAILED,
-                        minimumJava, automaticDownload, null, it.message))
-                    platform.log(owner, LogLevel.WARNING, "[pnLibrary] Не удалось проверить обновления: ${it.message}")
-                }
-            try { Thread.sleep(CHECK_INTERVAL_MS) } catch (_: InterruptedException) { return@Thread }
-        } },
-            "pnLibrary-updater-$repositoryName").apply { isDaemon = true; start() }
 
     private fun check(owner: Any, platform: PlatformAdapter, currentVersion: String,
         repositoryOwner: String, repositoryName: String, channel: String, assetPattern: String,
@@ -79,12 +50,6 @@ internal object MandatoryUpdateService {
         if (!automaticDownload) {
             observer(snapshot(repositoryName, currentVersion, latest, channel, UpdateState.AVAILABLE,
                 minimumJava, false, candidate["html_url"].asString, null))
-            if (shouldAnnounce("$repositoryOwner/$repositoryName:$latest:available")) {
-                PlatformLoggingService(platform).showUpdateAvailableNotice(
-                    owner, repositoryName, currentVersion, latest, channel, minimumJava,
-                    Runtime.version().feature(), candidate["html_url"].asString,
-                )
-            }
             return
         }
         val asset = candidate["assets"].asJsonArray.map { it.asJsonObject }.firstOrNull {
@@ -114,26 +79,7 @@ internal object MandatoryUpdateService {
             Files.move(temp, target, StandardCopyOption.REPLACE_EXISTING)
             observer(snapshot(repositoryName, currentVersion, latest, channel, UpdateState.DOWNLOADED,
                 minimumJava, automaticDownload, candidate["html_url"].asString, null))
-            if (shouldAnnounce("$repositoryOwner/$repositoryName:$latest:downloaded")) {
-                PlatformLoggingService(platform).showUpdateNotice(
-                    owner, repositoryName, currentVersion, latest, channel,
-                    minimumJava, Runtime.version().feature(),
-                    candidate["html_url"].asString,
-                )
-            }
         } finally { Files.deleteIfExists(temp) }
-    }
-
-    private fun shouldAnnounce(key: String): Boolean {
-        val now = System.currentTimeMillis()
-        var announce = false
-        lastAnnouncements.compute(key) { _, previous ->
-            if (previous == null || now - previous >= NOTIFICATION_INTERVAL_MS) {
-                announce = true
-                now
-            } else previous
-        }
-        return announce
     }
 
     internal fun checkOnce(owner: Any, platform: PlatformAdapter, currentVersion: String,
@@ -150,27 +96,6 @@ internal object MandatoryUpdateService {
         Runtime.version().feature(), minimumJava, automatic, url, message,
     )
 
-    private data class UpdateSettings(val channel: String, val automaticDownload: Boolean)
-
-    private fun loadSettings(folder: Path): UpdateSettings {
-        Files.createDirectories(folder)
-        val file = folder.resolve("updates.yml")
-        if (!Files.exists(file)) Files.write(file, listOf(
-            "# Канал обязательных автоматических обновлений pnLibrary.",
-            "# stable — только стабильные релизы (рекомендуется).",
-            "# beta   — стабильные и beta-релизы.",
-            "# alpha  — все релизы, включая экспериментальные alpha.",
-            "# Автоматическую загрузку можно отключить; проверка и уведомления останутся активными.",
-            "channel: stable",
-            "auto-download: true",
-        ), StandardCharsets.UTF_8)
-        val lines = Files.readAllLines(file, StandardCharsets.UTF_8)
-        val value = lines.firstOrNull { it.trim().startsWith("channel:") }
-            ?.substringAfter(':')?.trim()?.lowercase(Locale.ROOT)
-        val auto = lines.firstOrNull { it.trim().startsWith("auto-download:") }
-            ?.substringAfter(':')?.trim()?.equals("true", true) ?: true
-        return UpdateSettings(value?.takeIf { it in setOf("stable", "beta", "alpha") } ?: "stable", auto)
-    }
 
     private fun allowed(tag: String, prerelease: Boolean, channel: String): Boolean {
         val lower = tag.lowercase(Locale.ROOT)

@@ -9,3 +9,4 @@ out/
 __pycache__/
 *.py[cod]
 /pnlibrary-core/plugins/
+/modules/core/plugins/

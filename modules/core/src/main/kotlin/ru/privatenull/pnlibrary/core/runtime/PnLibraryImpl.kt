@@ -87,7 +87,7 @@ internal class PnLibraryImpl(
     override val logging: LoggingService = PlatformLoggingService(platform, diagnosticLogs)
     private val configurationService = ConfigurationServiceImpl(platform)
     override val configurations: ru.privatenull.pnlibrary.api.config.ConfigurationService get() = configurationService
-    private val updateService = UpdateServiceImpl(platform)
+    private val updateService = UpdateServiceImpl(platform, dataFolder)
     override val updates: ru.privatenull.pnlibrary.api.updates.UpdateService get() = updateService
     private val taskService = TaskServiceImpl(platform.taskAdapter, TaskServiceSettings(config.taskHistoryCapacity)) { taskOwner, message, error ->
         recordAndLog(taskOwner, message, error)

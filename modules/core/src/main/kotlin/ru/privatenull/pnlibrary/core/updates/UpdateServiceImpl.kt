@@ -1,22 +1,36 @@
 package ru.privatenull.pnlibrary.core.updates
 
 import ru.privatenull.pnlibrary.api.logging.LogLevel
+import ru.privatenull.pnlibrary.api.updates.*
+import ru.privatenull.pnlibrary.api.version.PnLibraryApi
+import ru.privatenull.pnlibrary.api.version.SemanticVersion
 import ru.privatenull.pnlibrary.spi.platform.PlatformAdapter
-import ru.privatenull.pnlibrary.api.updates.PluginUpdateArtifact
-import ru.privatenull.pnlibrary.api.updates.PluginUpdateRequest
-import ru.privatenull.pnlibrary.api.updates.UpdateRegistration
-import ru.privatenull.pnlibrary.api.updates.UpdateService
-import ru.privatenull.pnlibrary.api.updates.UpdateSnapshot
-import ru.privatenull.pnlibrary.api.updates.UpdateState
+import ru.privatenull.pnlibrary.update.ResolutionResult
 import java.nio.file.Files
+import java.nio.file.Path
 import java.nio.file.Paths
+import java.util.Optional
+import java.util.UUID
+import java.util.concurrent.CompletionStage
 import java.util.concurrent.CopyOnWriteArrayList
+import java.util.concurrent.Executors
 import java.util.concurrent.atomic.AtomicBoolean
 import java.util.concurrent.atomic.AtomicReference
 
-/** Coordinates plugin-owned update registrations and their background workers. */
-internal class UpdateServiceImpl(private val platform: PlatformAdapter) : UpdateService, AutoCloseable {
+/** Single lifecycle owner for legacy registrations and graph update operations. */
+internal class UpdateServiceImpl(private val platform: PlatformAdapter, dataFolder: Path) : UpdateService, AutoCloseable {
     private val entries = CopyOnWriteArrayList<Registration>()
+    private val configuration = UpdateConfiguration.load(dataFolder.resolve("updates.yml")) {
+        platform.log(platform, LogLevel.WARNING, "[pnLibrary] $it")
+    }
+    private val executor = Executors.newSingleThreadScheduledExecutor { action ->
+        Thread(action, "pnLibrary-update-orchestrator").apply { isDaemon = true }
+    }
+    private val orchestrator = UpdateOrchestrator(
+        configuration,
+        UpdateStateStore(dataFolder.resolve("updates"), warning = { platform.log(platform, LogLevel.WARNING, "[pnLibrary] $it") }),
+        executor, ::resolveGraph, ::stageGraph, ::announce,
+    ).also(UpdateOrchestrator::start)
 
     override fun register(owner: Any, request: PluginUpdateRequest): UpdateRegistration {
         val info = platform.ownerDetails(owner)
@@ -24,120 +38,99 @@ internal class UpdateServiceImpl(private val platform: PlatformAdapter) : Update
         val version = info["version"] ?: error("Не удалось определить версию подключённого плагина")
         val jar = Paths.get(owner.javaClass.protectionDomain.codeSource.location.toURI()).toAbsolutePath().normalize()
         require(Files.isRegularFile(jar)) { "Плагин должен быть запущен из JAR" }
-        val javaFeature = Runtime.version().feature()
-        val artifact = request.artifactFor(javaFeature)
-            ?: error("Для Java $javaFeature не зарегистрирован совместимый артефакт ${request.repositoryName}")
-        val entry = Registration(owner, product, version, request, artifact, jar, jar.parent.resolve("update"))
-        entries += entry
-        entry.start()
-        return entry
+        val artifact = request.artifactFor(Runtime.version().feature())
+            ?: error("Для Java ${Runtime.version().feature()} не зарегистрирован совместимый артефакт ${request.repositoryName}")
+        return Registration(owner, product, version, request, artifact, jar, jar.parent.resolve("update")).also {
+            entries += it
+            orchestrator.checkNow()
+        }
     }
 
     override fun registrations(): List<UpdateRegistration> = entries.toList()
-
     override fun find(product: String): UpdateRegistration? = entries.firstOrNull {
         it.product.equals(product, true) || it.request.repositoryName.equals(product, true)
     }
+    override fun checkNow(): CompletionStage<UpdatePlanSnapshot> = orchestrator.checkNow()
+    override fun currentPlan(): Optional<UpdatePlanSnapshot> = orchestrator.currentPlan()
+    override fun stage(planId: UUID): CompletionStage<UpdatePlanSnapshot> = orchestrator.stage(planId)
+    override fun history(): List<UpdatePlanSnapshot> = orchestrator.history()
 
     override fun close() {
-        entries.toList().forEach { it.close() }
+        orchestrator.close()
+        entries.forEach(Registration::markClosed)
         entries.clear()
     }
 
+    private fun resolveGraph(): ResolutionResult {
+        entries.forEach { it.refresh(false) }
+        val releases = entries.map { entry ->
+            val latest = entry.snapshot.latestVersion?.let(SemanticVersion::tryParse) ?: SemanticVersion.parse(entry.version)
+            ComponentRelease(
+                entry.request.component, latest, entry.request.channel, entry.request.supportedApi,
+                PnLibraryApi.VERSION.takeIf { entry.request.component.value == "pnlibrary" },
+                entry.request.dependencies, entry.repository,
+            )
+        }
+        val changes = entries.mapNotNull { entry ->
+            val from = SemanticVersion.parse(entry.version)
+            val to = entry.snapshot.latestVersion?.let(SemanticVersion::tryParse) ?: return@mapNotNull null
+            ComponentChange(entry.request.component, from, to).takeIf { to > from }
+        }
+        val blockers = entries.filterNot { it.request.supportedApi.supports(PnLibraryApi.VERSION) }.map {
+            BlockedReason.ApiMismatch(it.request.component, it.request.supportedApi, PnLibraryApi.VERSION, it.repository)
+        }
+        val plan = UpdatePlan(PnLibraryApi.VERSION, changes, releases)
+        return if (blockers.isEmpty()) ResolutionResult.Ready(plan) else ResolutionResult.Blocked(blockers, null)
+    }
+
+    private fun stageGraph(snapshot: UpdatePlanSnapshot) {
+        val changed = snapshot.plan?.changes?.map(ComponentChange::component)?.toSet().orEmpty()
+        entries.filter { it.request.component in changed }.forEach { it.refresh(true) }
+        val failed = entries.filter { it.request.component in changed && it.snapshot.state == UpdateState.FAILED }
+        check(failed.isEmpty()) { "Failed to stage: ${failed.joinToString { it.product }}" }
+    }
+
+    private fun announce(snapshot: UpdatePlanSnapshot) {
+        val message = when (snapshot.state) {
+            UpdateState.UPDATE_AVAILABLE -> "Доступен совместимый план обновления (${snapshot.plan?.changes?.size ?: 0} компонентов)"
+            UpdateState.UPDATE_STAGED -> "План обновления проверен и подготовлен к перезапуску"
+            UpdateState.BLOCKED -> "Обновление заблокировано: ${snapshot.blockers.size} несовместимых требований"
+            UpdateState.FAILED -> "Проверка обновлений завершилась ошибкой: ${snapshot.message}"
+            else -> "Все зарегистрированные компоненты актуальны"
+        }
+        platform.log(platform, LogLevel.INFO, "[pnLibrary] $message")
+    }
+
     private inner class Registration(
-        private val owner: Any,
-        val product: String,
-        private val version: String,
-        val request: PluginUpdateRequest,
-        private val artifact: PluginUpdateArtifact,
-        private val jar: java.nio.file.Path,
-        private val updateDir: java.nio.file.Path,
+        private val owner: Any, val product: String, val version: String, val request: PluginUpdateRequest,
+        private val artifact: PluginUpdateArtifact, private val jar: Path, private val updateDir: Path,
     ) : UpdateRegistration {
-        private val state = AtomicReference(
-            UpdateSnapshot(
-                product = product,
-                currentVersion = version,
-                latestVersion = null,
-                channel = request.channel,
-                state = UpdateState.CHECKING,
-                currentJava = Runtime.version().feature(),
-                requiredJava = artifact.minimumJava,
-                automaticDownload = request.automaticDownload,
-                releaseUrl = null,
-                message = null,
-            ),
-        )
-        private var thread: Thread? = null
         private val closed = AtomicBoolean(false)
-        private val actionThreads = java.util.concurrent.CopyOnWriteArraySet<Thread>()
+        private val state = AtomicReference(UpdateSnapshot(
+            product, version, null, request.channel, UpdateState.CHECKING, Runtime.version().feature(),
+            artifact.minimumJava, request.automaticDownload, null, null,
+        ))
         override val repository = "${request.repositoryOwner}/${request.repositoryName}"
-        override val snapshot: UpdateSnapshot get() = state.get()
-
-        fun start() {
-            thread = MandatoryUpdateService.startProduct(
-                owner, platform, version, request.repositoryOwner, request.repositoryName,
-                request.channel.name.lowercase(), artifact.pattern, jar, updateDir,
-                request.automaticDownload, artifact.minimumJava, ::updateState,
-            )
-        }
-
-        override fun checkNow() = runOnce(download = false)
-        override fun downloadNow() = runOnce(download = true)
-
-        private fun runOnce(download: Boolean) {
-            check(!closed.get()) { "Update registration is closed" }
-            val action = Thread({
-                runCatching {
-                    MandatoryUpdateService.checkOnce(
-                        owner, platform, version, request.repositoryOwner, request.repositoryName,
-                        request.channel.name.lowercase(), artifact.pattern, jar, updateDir,
-                        download, artifact.minimumJava, ::updateState,
-                    )
-                }.onFailure { failure ->
-                    recordFailure(failure)
-                }.also {
-                    actionThreads.remove(Thread.currentThread())
-                }
-            }, "pnLibrary-update-action-${request.repositoryName}").apply { isDaemon = true }
-            actionThreads += action
-            action.start()
-        }
-
-        private fun recordFailure(failure: Throwable) {
+        override val snapshot get() = state.get()
+        override fun checkNow() { check(!closed.get()); orchestrator.checkNow() }
+        override fun downloadNow() { check(!closed.get()); orchestrator.checkNow().thenCompose { orchestrator.stage(it.id) } }
+        fun refresh(download: Boolean) {
             if (closed.get()) return
-
-            val previous = snapshot
-            state.set(
-                UpdateSnapshot(
-                    product = product,
-                    currentVersion = version,
-                    latestVersion = previous.latestVersion,
-                    channel = request.channel,
-                    state = UpdateState.FAILED,
-                    currentJava = Runtime.version().feature(),
-                    requiredJava = artifact.minimumJava,
-                    automaticDownload = request.automaticDownload,
-                    releaseUrl = previous.releaseUrl,
-                    message = failure.message,
-                ),
-            )
-            platform.log(
-                owner,
-                LogLevel.WARNING,
-                "[$product] Не удалось выполнить обновление: ${failure.message}",
-            )
+            runCatching {
+                MandatoryUpdateService.checkOnce(
+                    owner, platform, version, request.repositoryOwner, request.repositoryName,
+                    request.channel.name.lowercase(), artifact.pattern, jar, updateDir, download, artifact.minimumJava,
+                ) { if (!closed.get()) state.set(it) }
+            }.onFailure { failure ->
+                val previous = snapshot
+                state.set(UpdateSnapshot(
+                    product, version, previous.latestVersion, request.channel, UpdateState.FAILED,
+                    Runtime.version().feature(), artifact.minimumJava, request.automaticDownload,
+                    previous.releaseUrl, failure.message,
+                ))
+            }
         }
-
-        private fun updateState(value: UpdateSnapshot) {
-            if (!closed.get()) state.set(value)
-        }
-
-        override fun close() {
-            if (!closed.compareAndSet(false, true)) return
-            thread?.interrupt()
-            actionThreads.forEach { it.interrupt() }
-            actionThreads.clear()
-            entries.remove(this)
-        }
+        override fun close() { if (closed.compareAndSet(false, true)) entries.remove(this) }
+        fun markClosed() { closed.set(true) }
     }
 }
