@@ -36,10 +36,16 @@ internal class UpdateServiceImpl(private val platform: PlatformAdapter, private 
     private val transaction = UpdateTransaction(
         dataFolder.resolve("updates/transactions"), ArtifactVerifier(MAX_ARTIFACT_BYTES), dataFolder.parent,
     )
+    private val freezes = FreezeStore(dataFolder.resolve("updates/freezes.json")).also { store ->
+        configuration.components.forEach { (id, policy) ->
+            policy.pause?.let { if (store.remaining(ComponentId.of(id)) == null) store.freeze(ComponentId.of(id), it) }
+        }
+    }
     private val orchestrator = UpdateOrchestrator(
         configuration, UpdateStateStore(dataFolder.resolve("updates"), warning = {
             platform.log(platform, LogLevel.WARNING, "[pnLibrary] $it")
         }), executor, ::resolveGraph, ::stageGraph, ::announce,
+        automaticAllowed = ::automaticAllowed,
     ).also {
         it.start()
         runCatching { transaction.recoverAll() }.onFailure { error ->
@@ -78,19 +84,32 @@ internal class UpdateServiceImpl(private val platform: PlatformAdapter, private 
             entry.request.component, SemanticVersion.parse(entry.version), entry.request.supportedApi,
             PnLibraryApi.VERSION.takeIf { entry.request.component.value == "pnlibrary" },
         ) }
+        val channels = entries.associate { entry -> entry.request.component to
+            (configuration.components[entry.request.component.value]?.channel ?: entry.request.channel) }
         val releases = entries.flatMap { entry ->
-            catalogue.releases(ReleaseSource(entry.request.repositoryOwner, entry.request.repositoryName), entry.request.channel).join()
+            catalogue.releases(ReleaseSource(entry.request.repositoryOwner, entry.request.repositoryName),
+                channels.getValue(entry.request.component)).join()
         }
         entries.forEach { entry ->
             val latest = releases.filter { it.component == entry.request.component }.maxByOrNull(ComponentRelease::version)
             entry.observe(latest)
         }
         return UpdateResolver(ComponentId.of("pnlibrary")).resolve(
-            installed, releases, defaultChannel = UpdateChannel.STABLE, platform = platform.type,
+            installed, releases, channels = channels, defaultChannel = UpdateChannel.STABLE,
+            frozen = freezes.active().keys, platform = platform.type,
             javaFeature = Runtime.version().feature(), policy = ResolverPolicy(
                 configuration.downloads.allowManagedPlugins && configuration.installation.allowNewPlugins,
                 runCatching { platform.installedPlugins() }.getOrNull().orEmpty().keys),
         )
+    }
+
+    private fun automaticAllowed(snapshot: UpdatePlanSnapshot): Boolean {
+        val changed = snapshot.plan?.changes?.map(ComponentChange::component).orEmpty()
+        return changed.all { component ->
+            configuration.components[component.value]?.automatic
+                ?: entries.firstOrNull { it.request.component == component }?.request?.automaticDownload
+                ?: false
+        }
     }
 
     private fun stageGraph(snapshot: UpdatePlanSnapshot) {

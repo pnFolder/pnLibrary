@@ -21,6 +21,7 @@ internal class UpdateOrchestrator(
     private val stageAction: (UpdatePlanSnapshot) -> Unit,
     private val announcement: (UpdatePlanSnapshot) -> Unit,
     private val clock: Clock = Clock.systemUTC(),
+    private val automaticAllowed: (UpdatePlanSnapshot) -> Boolean = { true },
 ) : AutoCloseable {
     private val lock = Any()
     private val closed = AtomicBoolean(false)
@@ -43,7 +44,6 @@ internal class UpdateOrchestrator(
 
     fun checkNow(): CompletionStage<UpdatePlanSnapshot> = synchronized(lock) {
         check(!closed.get()) { "update orchestrator is closed" }
-        check(configuration.enabled) { "updates are disabled" }
         inFlight?.let { return@synchronized it }
         val promise = CompletableFuture<UpdatePlanSnapshot>()
         inFlight = promise
@@ -51,7 +51,8 @@ internal class UpdateOrchestrator(
             try {
                 val snapshot = snapshot(resolver())
                 publish(snapshot)
-                if (configuration.effectiveAutomaticDownloads && snapshot.state == UpdateState.UPDATE_AVAILABLE) {
+                if (configuration.effectiveAutomaticDownloads && snapshot.state == UpdateState.UPDATE_AVAILABLE &&
+                    automaticAllowed(snapshot)) {
                     stageInternal(snapshot)
                     promise.complete(requireNotNull(current))
                 } else promise.complete(snapshot)
@@ -68,7 +69,7 @@ internal class UpdateOrchestrator(
 
     /** Queues a fresh graph check after any currently running check has released the coalescing slot. */
     fun registrationsChanged() {
-        if (closed.get() || !configuration.enabled) return
+        if (closed.get() || !configuration.effectiveChecksEnabled) return
         executor.execute { if (!closed.get()) checkNow() }
     }
 

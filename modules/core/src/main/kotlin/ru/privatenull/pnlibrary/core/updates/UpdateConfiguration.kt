@@ -9,6 +9,7 @@ import java.nio.file.Files
 import java.nio.file.Path
 import java.nio.file.StandardCopyOption
 import java.time.Duration
+import ru.privatenull.pnlibrary.api.updates.UpdateChannel
 
 internal data class UpdateConfiguration(
     val enabled: Boolean = true,
@@ -17,8 +18,14 @@ internal data class UpdateConfiguration(
     val downloads: Downloads = Downloads(),
     val installation: Installation = Installation(),
     val safety: Safety = Safety(),
+    val components: Map<String, ComponentPolicy> = emptyMap(),
     val legacyChannel: String = "stable",
 ) {
+    data class ComponentPolicy(
+        val channel: UpdateChannel? = null,
+        val automatic: Boolean? = null,
+        val pause: Duration? = null,
+    )
     data class Checks(val enabled: Boolean = true, val interval: Duration = Duration.ofMinutes(30))
     data class Notifications(
         val console: Boolean = true,
@@ -44,9 +51,10 @@ internal data class UpdateConfiguration(
         val requireSecondConfirmationAboveLimit: Boolean = true,
     )
 
-    val effectiveChecksEnabled get() = enabled && checks.enabled
-    val effectiveConsoleNotifications get() = enabled && notifications.console
-    val effectiveAdministratorNotifications get() = enabled && notifications.administrators
+    // Legacy `enabled: false` is a safe/manual mode, never a blindfold: checks and warnings remain active.
+    val effectiveChecksEnabled get() = checks.enabled
+    val effectiveConsoleNotifications get() = notifications.console
+    val effectiveAdministratorNotifications get() = notifications.administrators
     val effectiveAutomaticDownloads get() = enabled && downloads.automatic
     val effectiveRestart get() = enabled && installation.restartAfterConfirmation
 
@@ -81,6 +89,7 @@ internal data class UpdateConfiguration(
             val downloads = root.map("downloads")
             val installation = root.map("installation")
             val safety = root.map("safety")
+            val componentValues = root.map("components")
             fun bool(map: Map<String, Any?>?, key: String, default: Boolean): Boolean {
                 val value = map?.get(key) ?: return default
                 return if (value is Boolean) value else { bad(); default }
@@ -121,6 +130,19 @@ internal data class UpdateConfiguration(
                     text(installation, "restart-command", defaults.installation.restartCommand),
                 ),
                 safety = Safety(maximumOnline, bool(safety, "require-second-confirmation-above-limit", true)),
+                components = componentValues.orEmpty().mapNotNull { (rawId, rawPolicy) ->
+                    val id = rawId.trim().lowercase()
+                    val policy = (rawPolicy as? Map<*, *>)?.entries?.associate { it.key.toString() to it.value }
+                    if (!id.matches(Regex("[a-z0-9][a-z0-9_.-]*")) || policy == null) { bad(); return@mapNotNull null }
+                    val channel = (policy["channel"] as? String)?.let {
+                        runCatching { UpdateChannel.valueOf(it.trim().uppercase()) }.getOrElse { bad(); null }
+                    }
+                    val automatic = policy["automatic"]?.let { if (it is Boolean) it else { bad(); null } }
+                    val pause = (policy["pause"] as? String)?.let {
+                        runCatching { ru.privatenull.pnlibrary.update.FreezeDuration.parse(it) }.getOrElse { bad(); null }
+                    }
+                    id to ComponentPolicy(channel, automatic, pause)
+                }.toMap(),
             )
             if (malformed) warning("Invalid update configuration values were replaced with conservative defaults")
             return result
@@ -179,5 +201,6 @@ ${downloads.allowedHosts.joinToString("\n") { "      - $it" }}
   safety:
     maximum-online-for-one-click: ${safety.maximumOnlineForOneClick}
     require-second-confirmation-above-limit: ${safety.requireSecondConfirmationAboveLimit}
+  components: {}
 """
 }

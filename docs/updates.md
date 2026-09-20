@@ -50,6 +50,21 @@ download, new-plugin installation, or restart forbidden there. Defaults check ev
 repeat identical console notices after six hours, require SHA-256, disable automatic download,
 disable external URLs, disable new plugin installation, and disable automatic restart.
 
+Per-component policy overrides developer defaults without disabling visibility:
+
+```yaml
+updates:
+  components:
+    pncases:
+      channel: beta
+      automatic: false
+      pause: 7d
+```
+
+Pause values use `m`, `h`, or `d` (from one minute through 30 days). The absolute expiry is persisted,
+so a server restart does not restart the countdown. Legacy `enabled: false` is treated as safe/manual
+mode: checks and warnings remain active while automatic downloads and restart stay disabled.
+
 Bukkit operators (or explicitly permitted administrators) receive an in-game notice. Buttons carry
 only a short-lived 256-bit nonce bound to player, plan, revision, and action. BungeeCord and Velocity
 expose console-only `pnupdate plan`, `pnupdate check`, and `pnupdate stage` commands.

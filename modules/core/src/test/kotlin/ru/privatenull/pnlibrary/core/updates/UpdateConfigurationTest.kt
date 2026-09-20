@@ -6,9 +6,30 @@ import org.junit.jupiter.api.io.TempDir
 import java.nio.file.Files
 import java.nio.file.Path
 import java.time.Duration
+import ru.privatenull.pnlibrary.api.updates.UpdateChannel
 
 class UpdateConfigurationTest {
     @TempDir lateinit var directory: Path
+
+    @Test
+    fun `reads per-component channel automatic policy and relative pause`() {
+        val file = directory.resolve("updates.yml")
+        Files.writeString(file, """
+            updates:
+              components:
+                pncases:
+                  channel: beta
+                  automatic: false
+                  pause: 7d
+        """.trimIndent())
+
+        val configuration = UpdateConfiguration.load(file)
+        val policy = configuration.components.getValue("pncases")
+
+        assertEquals(UpdateChannel.BETA, policy.channel)
+        assertEquals(false, policy.automatic)
+        assertEquals(Duration.ofDays(7), policy.pause)
+    }
 
     @Test
     fun `creates conservative complete defaults`() {
@@ -64,7 +85,7 @@ class UpdateConfigurationTest {
     }
 
     @Test
-    fun `master disable overrides every subsystem`() {
+    fun `legacy master disable keeps checks and warnings but blocks mutations`() {
         val file = directory.resolve("updates.yml")
         Files.writeString(file, """
             updates:
@@ -77,9 +98,9 @@ class UpdateConfigurationTest {
 
         val configuration = UpdateConfiguration.load(file) { }
 
-        assertFalse(configuration.effectiveChecksEnabled)
-        assertFalse(configuration.effectiveConsoleNotifications)
-        assertFalse(configuration.effectiveAdministratorNotifications)
+        assertTrue(configuration.effectiveChecksEnabled)
+        assertTrue(configuration.effectiveConsoleNotifications)
+        assertTrue(configuration.effectiveAdministratorNotifications)
         assertFalse(configuration.effectiveAutomaticDownloads)
         assertFalse(configuration.effectiveRestart)
     }
