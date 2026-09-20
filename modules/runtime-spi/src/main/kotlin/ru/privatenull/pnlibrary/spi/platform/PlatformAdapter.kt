@@ -81,6 +81,9 @@ interface PlatformAdapter : AutoCloseable {
      */
     fun ownerDetails(owner: Any): Map<String, String> = emptyMap()
 
+    /** Installed native plugin names mapped to versions for dependency validation. */
+    fun installedPlugins(): Map<String, String> = emptyMap()
+
     /** Returns a non-sensitive structured platform snapshot for ordinary diagnostics. */
     fun details(): Map<String, Any?>
 

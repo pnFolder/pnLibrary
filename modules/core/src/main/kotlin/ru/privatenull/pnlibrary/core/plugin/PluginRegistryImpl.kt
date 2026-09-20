@@ -28,6 +28,12 @@ import ru.privatenull.pnlibrary.api.tasks.TaskService
 import ru.privatenull.pnlibrary.api.updates.PluginUpdateRequest
 import ru.privatenull.pnlibrary.api.updates.UpdateRegistration
 import ru.privatenull.pnlibrary.api.updates.UpdateService
+import ru.privatenull.pnlibrary.api.updates.ComponentDescriptor
+import ru.privatenull.pnlibrary.api.version.SemanticVersion
+import ru.privatenull.pnlibrary.update.EmbeddedDescriptorReader
+import java.nio.file.Files
+import java.nio.file.Paths
+import java.util.jar.JarFile
 import ru.privatenull.pnlibrary.core.services.ServiceManagerImpl
 import ru.privatenull.pnlibrary.core.config.ConfigurationServiceImpl
 import java.nio.file.Path
@@ -75,10 +81,14 @@ internal class PluginRegistryImpl(
     private val currencyStorageFactory: CurrencyStorageFactory = CurrencyStorageFactoryImpl(),
     private val configurations: ConfigurationServiceImpl = ConfigurationServiceImpl(platform),
     private val commands: CommandService? = null,
+    libraryVersion: String? = null,
 ) : PluginRegistry {
 
     private val contexts = linkedMapOf<PluginId, Context>()
     private val owners = IdentityHashMap<Any, Context>()
+    private val componentDescriptors = linkedMapOf<String, ComponentDescriptor>().apply {
+        libraryVersion?.let(SemanticVersion::tryParse)?.let { put("pnlibrary", ComponentDescriptor.library(it.toString())) }
+    }
     private val closed = AtomicBoolean(false)
     private val sharedComponentCache = ComponentCache()
     override fun register(owner: Any, configure: Consumer<PluginBuilder>): PluginContext {
@@ -94,9 +104,12 @@ internal class PluginRegistryImpl(
             require(id !in contexts) { "Plugin $id is already registered" }
             require(!owners.containsKey(owner)) { "This platform plugin is already registered as ${owners[owner]?.id}" }
             val definition = Builder().also { configure.accept(it) }
+            val descriptor = componentDescriptor(owner, id, definition)
+            validateDependencies(descriptor)
             createContext(owner, id, definition).also {
                 contexts[id] = it
                 owners[owner] = it
+                if (descriptor != null) componentDescriptors[descriptor.id.value] = descriptor
             }
         }
 
@@ -125,6 +138,7 @@ internal class PluginRegistryImpl(
             contexts.values.toList().also {
                 contexts.clear()
                 owners.clear()
+                componentDescriptors.clear()
             }
         }
         current.forEach { it.closeInternal() }
@@ -217,6 +231,54 @@ internal class PluginRegistryImpl(
         context.closeInternal()
         contexts.remove(context.id, context)
         owners.remove(context.owner)
+        componentDescriptors.entries.removeIf { it.value.id.value == context.id.value }
+    }
+
+    private fun componentDescriptor(owner: Any, id: PluginId, definition: Builder): ComponentDescriptor? {
+        val embedded = embeddedDescriptor(owner)
+        val explicit = definition.componentDescriptor
+        if (embedded != null && explicit != null) {
+            require(embedded.id == explicit.id && embedded.version == explicit.version &&
+                embedded.supportedApi == explicit.supportedApi) {
+                "Explicit component descriptor conflicts with embedded metadata for $id"
+            }
+        }
+        return (explicit ?: embedded)?.also {
+            require(it.id.value == id.value) { "Component ID ${it.id} does not match plugin ID $id" }
+        }
+    }
+
+    private fun embeddedDescriptor(owner: Any): ComponentDescriptor? {
+        val location = runCatching {
+            Paths.get(owner.javaClass.protectionDomain.codeSource.location.toURI()).toAbsolutePath().normalize()
+        }.getOrNull() ?: return null
+        if (!Files.isRegularFile(location)) return null
+        val present = runCatching { JarFile(location.toFile()).use { it.getJarEntry(EmbeddedDescriptorReader.ENTRY) != null } }
+            .getOrElse { throw IllegalArgumentException("Cannot inspect component metadata", it) }
+        return if (present) EmbeddedDescriptorReader().read(location) else null
+    }
+
+    private fun validateDependencies(descriptor: ComponentDescriptor?) {
+        if (descriptor == null) return
+        val problems = descriptor.managedDependencies.mapNotNull { dependency ->
+            val installed = componentDescriptors[dependency.component.value]
+            when {
+                installed == null -> "${dependency.component} >= ${dependency.minimumVersion} is missing (${dependency.repositoryOwner}/${dependency.repositoryName})"
+                installed.version < dependency.minimumVersion -> "${dependency.component} ${installed.version} is installed, ${dependency.minimumVersion} is required"
+                else -> null
+            }
+        }.toMutableList()
+        val nativePlugins = runCatching { platform.installedPlugins() }.getOrNull().orEmpty()
+            .entries.associate { it.key.lowercase() to it.value }
+        descriptor.externalDependencies.forEach { dependency ->
+            val installed = nativePlugins[dependency.plugin.lowercase()]
+            when {
+                installed == null -> problems += "${dependency.plugin} >= ${dependency.minimumVersion} is missing (${dependency.downloadPage ?: "no download page"})"
+                SemanticVersion.tryParse(installed)?.let { it >= dependency.minimumVersion } != true ->
+                    problems += "${dependency.plugin} $installed is installed, ${dependency.minimumVersion} is required"
+            }
+        }
+        require(problems.isEmpty()) { "Unsatisfied pnLibrary component dependencies: ${problems.joinToString("; ")}" }
     }
 
     private inner class Context(
@@ -335,8 +397,14 @@ internal class PluginRegistryImpl(
         var diagnosticsDirectory: Path? = null
         var diagnosticContainer: DiagnosticContainer? = null
         var updateRequest: PluginUpdateRequest? = null
+        var componentDescriptor: ComponentDescriptor? = null
         var placeholderApiEnabled: Boolean = true
         val listeners = mutableListOf<Listener>()
+
+        override fun component(descriptor: ComponentDescriptor): PluginBuilder = apply {
+            require(componentDescriptor == null) { "component descriptor is already configured" }
+            componentDescriptor = descriptor
+        }
 
         override fun metadata(configure: Consumer<PluginMetadataBuilder>): PluginBuilder = apply {
             configure.accept(MetadataBuilder(this))

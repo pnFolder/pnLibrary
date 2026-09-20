@@ -118,6 +118,7 @@ internal class PnLibraryImpl(
         tasks = taskService,
         services = serviceManager,
         logging = logging,
+        libraryVersion = version,
         configurations = configurationService,
         metrics = metricsRegistry,
         diagnostics = diagnostics,

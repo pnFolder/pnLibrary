@@ -4,6 +4,7 @@ import ru.privatenull.pnlibrary.api.diagnostics.DiagnosticContainer
 import ru.privatenull.pnlibrary.api.events.Listener
 import ru.privatenull.pnlibrary.api.metrics.PluginMetrics
 import ru.privatenull.pnlibrary.api.updates.PluginUpdateRequest
+import ru.privatenull.pnlibrary.api.updates.ComponentDescriptor
 import java.nio.file.Path
 import java.util.function.Consumer
 
@@ -14,6 +15,9 @@ import java.util.function.Consumer
  * callback returns and rolls back partial resources if any integration fails to initialize.
  */
 interface PluginBuilder {
+    /** Declares the component identity, API range, and dependencies used by the graph updater. */
+    fun component(descriptor: ComponentDescriptor): PluginBuilder
+
     /** Overrides native metadata only when a plugin needs custom display values. */
     fun metadata(configure: Consumer<PluginMetadataBuilder>): PluginBuilder
 

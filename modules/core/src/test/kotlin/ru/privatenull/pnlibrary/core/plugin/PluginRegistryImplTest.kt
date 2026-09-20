@@ -25,6 +25,8 @@ import ru.privatenull.pnlibrary.api.plugin.PluginId
 import ru.privatenull.pnlibrary.api.tasks.TaskScope
 import ru.privatenull.pnlibrary.api.tasks.TaskService
 import ru.privatenull.pnlibrary.api.updates.UpdateService
+import ru.privatenull.pnlibrary.api.updates.ComponentDescriptor
+import ru.privatenull.pnlibrary.api.updates.ExternalDependency
 import ru.privatenull.pnlibrary.core.currency.CurrencyHub
 import ru.privatenull.pnlibrary.core.events.EventServiceImpl
 import ru.privatenull.pnlibrary.core.placeholders.PlaceholderHub
@@ -34,6 +36,56 @@ import java.lang.reflect.Proxy
 import java.util.function.Supplier
 
 class PluginRegistryImplTest {
+    @Test
+    fun `dependency gate runs before plugin scopes become visible`() {
+        val owner = Any()
+        val taskScope = RecordingTaskScope(owner)
+        val registry = registry(tasks = RecordingTaskService(taskScope), libraryVersion = "1.0.0")
+        val descriptor = ComponentDescriptor.builder("example", "1.0.0")
+            .pnLibraryApi(1, 1)
+            .managedDependency("economy", "2.0.0", "pnFolder", "Economy")
+            .build()
+
+        val error = assertThrows(IllegalArgumentException::class.java) {
+            registry.register(owner, "example") { it.component(descriptor) }
+        }
+
+        assertTrue(error.message!!.contains("economy >= 2.0.0"))
+        assertFalse(taskScope.closed)
+        assertNull(registry.get("example"))
+    }
+
+    @Test
+    fun `registered compatible component satisfies a later dependency`() {
+        val registry = registry(libraryVersion = "1.0.0")
+        registry.register(Any(), "economy") {
+            it.component(ComponentDescriptor.builder("economy", "2.1.0").pnLibraryApi(1, 1).build())
+        }
+
+        val dependent = registry.register(Any(), "example") {
+            it.component(ComponentDescriptor.builder("example", "1.0.0").pnLibraryApi(1, 1)
+                .managedDependency("economy", "2.0.0", "pnFolder", "Economy").build())
+        }
+
+        assertEquals("example", dependent.id.value)
+        registry.close()
+    }
+
+    @Test
+    fun `external dependency diagnostic includes its download page`() {
+        val dependency = ExternalDependency.builder("Vault", "1.7.3")
+            .downloadPage("https://github.com/MilkBowl/Vault/releases").build()
+        val descriptor = ComponentDescriptor.builder("example", "1.0.0").pnLibraryApi(1, 1)
+            .externalDependency(dependency).build()
+
+        val error = assertThrows(IllegalArgumentException::class.java) {
+            registry().register(Any(), "example") { it.component(descriptor) }
+        }
+
+        assertTrue(error.message!!.contains("Vault >= 1.7.3"))
+        assertTrue(error.message!!.contains("https://github.com/MilkBowl/Vault/releases"))
+    }
+
     @Test
     fun `closing plugin context unregisters commands owned by its native plugin`() {
         val owner = Any()
@@ -229,6 +281,7 @@ class PluginRegistryImplTest {
             logging: LoggingService = loggingService(),
             metrics: MetricsService = RecordingMetricsService(),
             commands: CommandService? = null,
+            libraryVersion: String? = null,
         ): PluginRegistryImpl =
             PluginRegistryImpl(
                 platform = platform,
@@ -242,6 +295,7 @@ class PluginRegistryImplTest {
                 placeholderHub = PlaceholderHub(platform),
                 currencyHub = CurrencyHub(),
                 commands = commands,
+                libraryVersion = libraryVersion,
             )
 
         fun platform(): PlatformAdapter = proxy(PlatformAdapter::class.java) { methodName ->
