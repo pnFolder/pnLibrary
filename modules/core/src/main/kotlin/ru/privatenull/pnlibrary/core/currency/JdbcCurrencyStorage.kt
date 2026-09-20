@@ -28,6 +28,7 @@ import java.util.UUID
 import java.util.concurrent.CompletableFuture
 import java.util.concurrent.CompletionStage
 import java.util.concurrent.Executors
+import java.util.concurrent.RejectedExecutionException
 import java.util.concurrent.atomic.AtomicBoolean
 import javax.sql.DataSource
 
@@ -350,7 +351,11 @@ internal class JdbcCurrencyStorage(
     }
     private fun <T> async(operation: () -> T): CompletionStage<T> {
         check(!closed.get()) { "Currency storage is closed" }
-        return CompletableFuture.supplyAsync(operation, executor)
+        return try {
+            CompletableFuture.supplyAsync(operation, executor)
+        } catch (error: RejectedExecutionException) {
+            CompletableFuture<T>().also { it.completeExceptionally(error) }
+        }
     }
 
     private data class SqlStatement(
