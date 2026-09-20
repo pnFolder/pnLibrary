@@ -11,6 +11,9 @@ plugins, and restart are conservative by default. See [docs/updates.md](docs/upd
 Полная Java/Kotlin-инструкция для обновлений и независимых прямых загрузок приведена в
 [документации pnUpdate](docs/updates.md).
 
+Единый стиль архитектуры, порядок разработки, правила API и Definition of Done описаны в
+[стандарте разработки](docs/DEVELOPMENT_RU.md).
+
 `pnLibrary` — единый runtime и API для плагинов pnFolder. Владелец сервера устанавливает один JAR для своей платформы, а pnMarket, pnClans и другие плагины подключаются к общему экземпляру библиотеки.
 
 В pnLibrary находятся:
