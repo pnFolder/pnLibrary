@@ -37,5 +37,8 @@ class MinecraftVersionTest {
         val supported = MinecraftVersion.supported()
         assertEquals(MinecraftVersion.V26_2, supported.first())
         assertFalse(MinecraftVersion.UNKNOWN in supported)
+        assertThrows(UnsupportedOperationException::class.java) {
+            (supported as MutableList).add(MinecraftVersion.V1_8)
+        }
     }
 }

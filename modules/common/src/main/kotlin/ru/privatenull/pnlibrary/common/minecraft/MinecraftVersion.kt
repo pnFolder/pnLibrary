@@ -1,5 +1,7 @@
 package ru.privatenull.pnlibrary.common.minecraft
 
+import java.util.Collections
+
 /**
  * Known Minecraft game version exposed by the Bukkit-specific API.
  *
@@ -119,9 +121,9 @@ enum class MinecraftVersion(val text: String, val major: Int, val minor: Int, va
         private val byCoordinates = entries
             .filter { it.known }
             .associateBy { Triple(it.major, it.minor, it.patch) }
-        private val knownNewestFirst = entries
+        private val knownNewestFirst = Collections.unmodifiableList(entries
             .filter { it.known }
-            .sortedByDescending { it.coordinates }
+            .sortedByDescending { it.coordinates })
 
         /** Every version represented by this pnLibrary release, newest first. */
         @JvmStatic

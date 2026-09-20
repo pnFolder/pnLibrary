@@ -42,6 +42,16 @@ class LocalizationServiceTest {
         }
     }
 
+    @Test fun `completed in flight entry does not suppress explicit refresh`() {
+        val fixture = Fixture()
+        service(fixture).use { service ->
+            val request = TranslationRequest.builder().version(MinecraftVersion.V1_21_4).locale("ru_ru").build()
+            service.load(request).toCompletableFuture().join()
+            service.refresh(request).toCompletableFuture().join()
+            assertEquals(2, fixture.assetDownloads)
+        }
+    }
+
     @Test fun `discovers supported release versions and locales`() {
         val fixture = Fixture()
         service(fixture).use { service ->

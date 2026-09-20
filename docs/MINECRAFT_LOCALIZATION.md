@@ -8,9 +8,13 @@
 
 ```kotlin
 dependencies {
-    compileOnly("io.github.pnfolder:pnlibrary-minecraft-localization:2.2.0-beta.2")
+    implementation("io.github.pnfolder:pnlibrary-minecraft-localization:2.2.0-beta.2")
 }
 ```
+
+Это отдельная библиотека, а не серверный plugin-JAR: использующий её плагин включает
+модуль и его Gson-зависимость в собственную сборку. Основной runtime pnLibrary не
+загружает модуль автоматически.
 
 ## Создание и список версий
 

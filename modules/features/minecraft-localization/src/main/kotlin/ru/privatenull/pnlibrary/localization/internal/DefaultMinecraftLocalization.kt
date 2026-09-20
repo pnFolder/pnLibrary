@@ -69,12 +69,21 @@ internal class DefaultMinecraftLocalization internal constructor(
         if (!refresh) synchronized(memory) { memory[key] }?.let {
             return CompletableFuture.completedFuture(it.withSource(TranslationSource.MEMORY))
         }
-        return inFlight.computeIfAbsent(key) {
-            async {
+        inFlight[key]?.let { return it }
+        val promise = CompletableFuture<LoadedLocale>()
+        val existing = inFlight.putIfAbsent(key, promise)
+        if (existing != null) return existing
+        executor.execute {
+            try {
                 permits.acquire()
-                try { loadLocaleNow(key, refresh) } finally { permits.release() }
-            }.whenComplete { _, _ -> inFlight.remove(key) }
+                try { promise.complete(loadLocaleNow(key, refresh)) } finally { permits.release() }
+            } catch (error: Throwable) {
+                promise.completeExceptionally(error)
+            } finally {
+                inFlight.remove(key, promise)
+            }
         }
+        return promise
     }
 
     private fun loadLocaleNow(key: CacheKey, refresh: Boolean): LoadedLocale {

@@ -2,6 +2,7 @@ package ru.privatenull.pnlibrary.localization
 
 import ru.privatenull.pnlibrary.common.minecraft.MinecraftVersion
 import java.util.Locale
+import java.util.Collections
 
 /** Immutable request for exact Minecraft version/locale translation tables. */
 class TranslationRequest internal constructor(
@@ -24,7 +25,7 @@ class TranslationRequest internal constructor(
             val selectedVersion = requireNotNull(version) { "Minecraft version is required" }
             require(selectedVersion.known) { "UNKNOWN Minecraft version is not supported" }
             require(locales.isNotEmpty()) { "At least one locale is required" }
-            return TranslationRequest(selectedVersion, locales.toSet(), fallbackLocale)
+            return TranslationRequest(selectedVersion, Collections.unmodifiableSet(LinkedHashSet(locales)), fallbackLocale)
         }
     }
 

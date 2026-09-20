@@ -1,6 +1,7 @@
 package ru.privatenull.pnlibrary.localization.internal
 
 import org.bukkit.Material
+import org.bukkit.enchantments.Enchantment
 import org.junit.jupiter.api.Assertions.*
 import org.junit.jupiter.api.Test
 
@@ -19,5 +20,11 @@ class TranslationIndexTest {
     @Test fun `exact lookup preserves collisions`() {
         val index = TranslationIndexImpl.keys(mapOf("first" to "Одинаково", "second" to "Одинаково"))
         assertEquals(setOf("first", "second"), index.findExact("одинаково").map { it.key }.toSet())
+    }
+
+    @Suppress("DEPRECATION")
+    @Test fun `modern enchantment keys map to legacy Bukkit names`() {
+        val index = TranslationIndexImpl.enchantments(mapOf("enchantment.minecraft.sharpness" to "Острота"))
+        assertEquals(Enchantment.DAMAGE_ALL, index.findExact("Острота").single().value)
     }
 }
