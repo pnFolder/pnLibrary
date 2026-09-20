@@ -11,7 +11,9 @@ import java.time.Duration
 data class CatalogueCacheHit(val bytes: ByteArray, val fresh: Boolean)
 
 class ReleaseCatalogueStore(private val root: Path) {
-    fun read(uri: URI, ttl: Duration): CatalogueCacheHit? {
+    private val lock = Any()
+
+    fun read(uri: URI, ttl: Duration): CatalogueCacheHit? = synchronized(lock) {
         val data = dataPath(uri)
         val digest = digestPath(uri)
         if (!Files.isRegularFile(data) || !Files.isRegularFile(digest)) return null
@@ -31,14 +33,14 @@ class ReleaseCatalogueStore(private val root: Path) {
         }
     }
 
-    fun write(uri: URI, bytes: ByteArray) {
+    fun write(uri: URI, bytes: ByteArray) = synchronized(lock) {
         val data = dataPath(uri)
         Files.createDirectories(data.parent)
         atomicWrite(data, bytes)
         atomicWrite(digestPath(uri), sha256(bytes).toByteArray(StandardCharsets.US_ASCII))
     }
 
-    fun quarantine(uri: URI) {
+    fun quarantine(uri: URI) = synchronized(lock) {
         val suffix = ".corrupt-${System.currentTimeMillis()}"
         listOf(dataPath(uri), digestPath(uri)).forEach { path ->
             if (Files.exists(path)) runCatching {
@@ -49,7 +51,7 @@ class ReleaseCatalogueStore(private val root: Path) {
 
     internal fun dataPath(uri: URI): Path = root.resolve(key(uri) + ".data")
     private fun digestPath(uri: URI): Path = root.resolve(key(uri) + ".sha256")
-    internal fun rewriteDigest(uri: URI) {
+    internal fun rewriteDigest(uri: URI) = synchronized(lock) {
         val bytes = Files.readAllBytes(dataPath(uri))
         atomicWrite(digestPath(uri), sha256(bytes).toByteArray(StandardCharsets.US_ASCII))
     }

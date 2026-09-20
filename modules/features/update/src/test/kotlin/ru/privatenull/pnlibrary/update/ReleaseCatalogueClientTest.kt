@@ -93,6 +93,31 @@ class ReleaseCatalogueClientTest {
         } finally { executor.shutdownNow() }
     }
 
+    @Test fun `does not coalesce fallback catalogues for different platforms`() {
+        val releases = URI.create("https://api.github.com/repos/pnFolder/Cases/releases?per_page=30")
+        val transport = object : TrustedHttpClient(Duration.ZERO, Duration.ZERO, emptySet()) {
+            override fun get(uri: URI, maximumBytes: Int): ByteArray = when (uri) {
+                releases -> """[{"tag_name":"v2.5.6","draft":false,"prerelease":false,"assets":[
+                    {"name":"pnCases-Bukkit-2.5.6.jar","size":123,"digest":"sha256:${"a".repeat(64)}","browser_download_url":"https://github.com/pnFolder/Cases/b.jar"},
+                    {"name":"pnCases-Velocity-2.5.6.jar","size":123,"digest":"sha256:${"b".repeat(64)}","browser_download_url":"https://github.com/pnFolder/Cases/v.jar"}]}]""".toByteArray()
+                else -> error("Unexpected URI: $uri")
+            }
+        }
+        val executor = Executors.newFixedThreadPool(2)
+        try {
+            val client = ReleaseCatalogueClient(transport, ReleaseCatalogueStore(directory), executor, Duration.ZERO)
+            val bukkit = PluginUpdateRequest.builder().repository("pnFolder", "Cases")
+                .artifact("(?i)^pnCases-Bukkit-.*\\.jar$", PlatformType.BUKKIT, 17).build()
+            val velocity = PluginUpdateRequest.builder().repository("pnFolder", "Cases")
+                .artifact("(?i)^pnCases-Velocity-.*\\.jar$", PlatformType.VELOCITY, 17).build()
+
+            val first = client.releases(ReleaseSource("pnFolder", "Cases"), UpdateChannel.STABLE, bukkit, PlatformType.BUKKIT)
+            val second = client.releases(ReleaseSource("pnFolder", "Cases"), UpdateChannel.STABLE, velocity, PlatformType.VELOCITY)
+            assertEquals("pnCases-Bukkit-2.5.6.jar", first.join().single().artifacts.single().file)
+            assertEquals("pnCases-Velocity-2.5.6.jar", second.join().single().artifacts.single().file)
+        } finally { executor.shutdownNow() }
+    }
+
     private class FixtureTransport : TrustedHttpClient(Duration.ZERO, Duration.ZERO, emptySet()) {
         val releasesUri = URI.create("https://api.github.com/repos/pnFolder/Economy/releases?per_page=30")
         val manifestUri = URI.create("https://github.com/pnFolder/Economy/releases/download/v3.4.0/pn-update.json")

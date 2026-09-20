@@ -40,7 +40,7 @@ class ReleaseCatalogueClient(
         fallback: PluginUpdateRequest?,
         platform: PlatformType?,
     ): CompletableFuture<List<ComponentRelease>> {
-        val key = "${source.owner}/${source.repository}:${channel.name}"
+        val key = requestKey(source, channel, fallback, platform)
         inFlight[key]?.let { return it }
         val promise = CompletableFuture<List<ComponentRelease>>()
         val existing = inFlight.putIfAbsent(key, promise)
@@ -51,6 +51,25 @@ class ReleaseCatalogueClient(
             finally { inFlight.remove(key, promise) }
         }
         return promise
+    }
+
+    private fun requestKey(
+        source: ReleaseSource,
+        channel: UpdateChannel,
+        request: PluginUpdateRequest?,
+        platform: PlatformType?,
+    ): String {
+        if (request == null) return "${source.owner}/${source.repository}:${channel.name}"
+        val artifacts = request.artifacts.joinToString(",") {
+            "${it.pattern}:${it.platform?.name}:${it.minimumJava}:${it.maximumJava}"
+        }
+        val dependencies = request.dependencies.joinToString(",") { "${it.component}:${it.minimumVersion}" }
+        return buildString {
+            append(source.owner).append('/').append(source.repository).append(':').append(channel.name)
+            append('|').append(platform?.name)
+            append('|').append(request.component.value).append('|').append(request.supportedApi)
+            append('|').append(artifacts).append('|').append(dependencies)
+        }
     }
 
     private fun load(
