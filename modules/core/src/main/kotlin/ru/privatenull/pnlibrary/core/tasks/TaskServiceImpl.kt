@@ -140,7 +140,10 @@ internal class TaskServiceImpl(
         override val status get() = state.get()
         override val isCancelled get() = cancelled.get()
 
-        fun attach(handle: PlatformTaskHandle) { native.set(handle); if (cancelled.get()) handle.cancel() }
+        fun attach(handle: PlatformTaskHandle) {
+            native.set(handle)
+            if (cancelled.get() || status == TaskStatus.COMPLETED || status == TaskStatus.FAILED) handle.cancel()
+        }
         fun invoke() {
             if (cancelled.get()) return
             if (!running.compareAndSet(false, true)) { skipped.incrementAndGet(); return }

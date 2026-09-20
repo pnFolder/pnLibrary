@@ -60,6 +60,13 @@ class TaskServiceImplTest {
         assertTrue(adapter.handles.single().cancelled.get())
     }
 
+    @Test fun `completed synchronous task cancels native handle after attachment`() {
+        val adapter = RecordingAdapter(fireDuringSchedule = true)
+        val handle = TaskServiceImpl(adapter).scope(Any()).schedule(TaskSpec.builder().action { }.build())
+        assertEquals(TaskStatus.COMPLETED, handle.status)
+        assertTrue(adapter.handles.single().cancelled.get())
+    }
+
     private fun spec(name: String) = TaskSpec.builder().name(name).action { }.build()
     private class RecordingAdapter(private val fireDuringSchedule: Boolean = false) : PlatformTaskAdapter {
         val requests = mutableListOf<PlatformTaskRequest>(); val handles = mutableListOf<NativeHandle>()
