@@ -1,6 +1,5 @@
 package ru.privatenull.pnlibrary.update
 
-import com.google.gson.JsonParser
 import ru.privatenull.pnlibrary.api.updates.ComponentId
 import ru.privatenull.pnlibrary.api.version.ApiVersionRange
 import ru.privatenull.pnlibrary.api.version.SemanticVersion
@@ -8,7 +7,6 @@ import java.nio.file.Files
 import java.nio.file.Path
 import java.nio.file.Paths
 import java.security.MessageDigest
-import java.util.jar.JarFile
 
 data class ArtifactSpecification(
     val component: ComponentId,
@@ -27,7 +25,10 @@ data class ArtifactSpecification(
 
 class ArtifactVerificationException(message: String) : IllegalArgumentException(message)
 
-class ArtifactVerifier(private val maximumBytes: Long) {
+class ArtifactVerifier(
+    private val maximumBytes: Long,
+    private val descriptorReader: EmbeddedDescriptorReader = EmbeddedDescriptorReader(),
+) {
     init { require(maximumBytes > 0) { "maximumBytes must be positive" } }
 
     fun verify(path: Path, expected: ArtifactSpecification) {
@@ -38,23 +39,16 @@ class ArtifactVerifier(private val maximumBytes: Long) {
         if (size != expected.size) fail("artifact size does not match metadata")
         if (!sha256(path).equals(expected.sha256, ignoreCase = true)) fail("artifact SHA-256 does not match metadata")
 
-        val metadata = try {
-            JarFile(path.toFile()).use { jar ->
-                val entry = jar.getJarEntry("META-INF/pnlibrary/plugin.json")
-                    ?: fail("artifact does not contain pnLibrary metadata")
-                jar.getInputStream(entry).reader(Charsets.UTF_8).use { JsonParser.parseReader(it).asJsonObject }
-            }
+        val descriptor = try {
+            descriptorReader.read(path)
         } catch (error: ArtifactVerificationException) {
             throw error
         } catch (error: Exception) {
             throw ArtifactVerificationException("artifact metadata cannot be read: ${error.message}")
         }
-        if (metadata["schemaVersion"]?.asInt != 1) fail("unsupported artifact metadata schema")
-        if (metadata["id"]?.asString != expected.component.value) fail("artifact component identity does not match")
-        if (metadata["version"]?.asString != expected.version.toString()) fail("artifact version does not match")
-        if (metadata["artifact"]?.asString != expected.fileName) fail("embedded artifact name does not match")
-        val api = metadata.getAsJsonObject("api") ?: fail("artifact API range is missing")
-        if (api["min"]?.asInt != expected.supportedApi.minimum || api["max"]?.asInt != expected.supportedApi.maximum) {
+        if (descriptor.id != expected.component) fail("artifact component identity does not match")
+        if (descriptor.version != expected.version) fail("artifact version does not match")
+        if (descriptor.supportedApi != expected.supportedApi) {
             fail("artifact API range does not match")
         }
     }

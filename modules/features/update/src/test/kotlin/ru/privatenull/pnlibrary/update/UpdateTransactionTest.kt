@@ -67,6 +67,30 @@ class UpdateTransactionTest {
     }
 
     @Test
+    fun `commits three verified components as one transaction`() {
+        val targets = directory.resolve("plugins").also(Files::createDirectories)
+        val artifacts = listOf("library", "market", "auth").mapIndexed { index, id ->
+            val source = artifact("$id-new.jar", id, "2.0.0", 2, byteArrayOf(index.toByte()))
+            TransactionArtifact(specification(source, id, "2.0.0", 2), source, targets.resolve("$id.jar"))
+        }
+        val result = UpdateTransaction(directory.resolve("transactions"), ArtifactVerifier(1024 * 1024)).apply(artifacts) { true }
+        assertEquals(TransactionState.COMMITTED, result.state)
+        artifacts.forEach { assertArrayEquals(Files.readAllBytes(it.source), Files.readAllBytes(it.target)) }
+    }
+
+    @Test
+    fun `rejects publication target outside allowed root`() {
+        val source = artifact("market-new.jar", "market", "2.0.0", 1, byteArrayOf(1))
+        val transaction = UpdateTransaction(directory.resolve("transactions"), ArtifactVerifier(1024 * 1024))
+        assertThrows(IllegalArgumentException::class.java) {
+            transaction.apply(listOf(TransactionArtifact(
+                specification(source, "market", "2.0.0", 1), source,
+                directory.parent.resolve("escaped-market.jar"),
+            ))) { true }
+        }
+    }
+
+    @Test
     fun `failed health check restores the complete previous set`() {
         val targets = directory.resolve("plugins").also(Files::createDirectories)
         val marketTarget = targets.resolve("market.jar").also { Files.write(it, byteArrayOf(9)) }
@@ -104,11 +128,13 @@ class UpdateTransactionTest {
             ),
         )
 
-        val result = UpdateTransaction(transactionRoot, ArtifactVerifier(1024)).recover(journalPath)
+        val transaction = UpdateTransaction(transactionRoot, ArtifactVerifier(1024))
+        val result = transaction.recover(journalPath)
 
         assertEquals(TransactionState.ROLLED_BACK, result.state)
         assertArrayEquals(byteArrayOf(1), Files.readAllBytes(target))
         assertEquals(TransactionState.ROLLED_BACK, TransactionJournal.load(journalPath).state)
+        assertEquals(TransactionState.ROLLED_BACK, transaction.recoverAll().single().state)
     }
 
     private fun specification(path: Path, id: String, version: String, api: Int) = ArtifactSpecification(
@@ -123,8 +149,11 @@ class UpdateTransactionTest {
     private fun artifact(name: String, id: String, version: String, api: Int, payload: ByteArray): Path {
         val path = directory.resolve(name)
         JarOutputStream(Files.newOutputStream(path)).use { output ->
-            output.putNextEntry(JarEntry("META-INF/pnlibrary/plugin.json"))
-            output.write("""{"schemaVersion":1,"id":"$id","version":"$version","api":{"min":$api,"max":$api},"artifact":"$name"}""".toByteArray())
+            output.putNextEntry(JarEntry(EmbeddedDescriptorReader.ENTRY))
+            output.write(ComponentDescriptorCodec().encodeInstalled(
+                ru.privatenull.pnlibrary.api.updates.ComponentDescriptor.builder(id, version)
+                    .pnLibraryApi(api, api).build(),
+            ))
             output.closeEntry()
             output.putNextEntry(JarEntry("payload.bin"))
             output.write(payload)
