@@ -1,5 +1,13 @@
 # pnLibrary
 
+## Smart component updates
+
+pnLibrary can resolve the library and dependent plugins as one API-compatible update plan, verify
+SHA-256 and embedded metadata, and stage the plan transactionally. Plugin authors declare an explicit
+`ComponentDescriptor` or generate it with the `ru.privatenull.pnlibrary.component` Gradle plugin.
+Server owners retain the final policy in `updates.yml`; automatic downloads, external hosts, new
+plugins, and restart are conservative by default. See [docs/updates.md](docs/updates.md).
+
 `pnLibrary` — единый runtime и API для плагинов pnFolder. Владелец сервера устанавливает один JAR для своей платформы, а pnMarket, pnClans и другие плагины подключаются к общему экземпляру библиотеки.
 
 В pnLibrary находятся:
