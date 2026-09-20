@@ -70,8 +70,10 @@ internal class ServiceManagerImpl : ServiceManager, AutoCloseable {
         private val ownerClosed = AtomicBoolean(false)
 
         override fun <T : Any> register(type: Class<T>, service: T, priority: Int) {
-            check(!ownerClosed.get()) { "Services for plugin $owner are closed" }
-            add(owner, type, service, priority)
+            synchronized(lock) {
+                check(!ownerClosed.get()) { "Services for plugin $owner are closed" }
+                add(owner, type, service, priority)
+            }
         }
 
         override fun <T : Any> unregister(type: Class<T>) =
