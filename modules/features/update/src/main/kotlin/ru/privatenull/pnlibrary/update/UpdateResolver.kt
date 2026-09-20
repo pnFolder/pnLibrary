@@ -1,6 +1,12 @@
 package ru.privatenull.pnlibrary.update
 
 import ru.privatenull.pnlibrary.api.updates.*
+import ru.privatenull.pnlibrary.api.platform.PlatformType
+
+data class ResolverPolicy(
+    val allowManagedInstalls: Boolean = false,
+    val installedExternalPlugins: Set<String> = emptySet(),
+)
 
 /** Result of resolving all managed components as one compatible ecosystem. */
 sealed class ResolutionResult {
@@ -20,6 +26,9 @@ class UpdateResolver(private val libraryComponent: ComponentId) {
         channels: Map<ComponentId, UpdateChannel> = emptyMap(),
         defaultChannel: UpdateChannel = UpdateChannel.STABLE,
         frozen: Set<ComponentId> = emptySet(),
+        platform: PlatformType? = null,
+        javaFeature: Int = Int.MAX_VALUE,
+        policy: ResolverPolicy = ResolverPolicy(),
     ): ResolutionResult {
         require(installed.isNotEmpty()) { "at least one installed component is required" }
         require(installed.map(InstalledComponent::component).distinct().size == installed.size) {
@@ -33,7 +42,9 @@ class UpdateResolver(private val libraryComponent: ComponentId) {
 
         val allowedReleases = releases.filter { release ->
             channels.getOrDefault(release.component, defaultChannel).accepts(release.channel)
-        }
+        }.filter { release -> release.artifacts.isEmpty() || release.artifacts.any { artifact ->
+            (platform == null || artifact.platform == platform) && artifact.supports(javaFeature)
+        } }
         val currentLibraryRelease = currentLibrary.asRelease()
         val libraryDomain = if (libraryComponent in frozen) {
             listOf(currentLibraryRelease)
@@ -51,8 +62,10 @@ class UpdateResolver(private val libraryComponent: ComponentId) {
                 allowedReleases,
                 libraryRelease,
                 frozen,
+                policy,
             )
             if (attempt.plan != null) {
+                if (attempt.reasons.isNotEmpty()) return ResolutionResult.Blocked(attempt.reasons, attempt.plan)
                 if (index == 0 && primaryFailure == null) return ResolutionResult.Ready(attempt.plan)
                 return ResolutionResult.Blocked(primaryFailure.orEmpty(), attempt.plan)
             }
@@ -73,6 +86,7 @@ class UpdateResolver(private val libraryComponent: ComponentId) {
         releases: List<ComponentRelease>,
         libraryRelease: ComponentRelease,
         frozen: Set<ComponentId>,
+        policy: ResolverPolicy,
     ): Attempt {
         val targetApi = requireNotNull(libraryRelease.providesApi)
         val domains = linkedMapOf<ComponentId, List<ComponentRelease>>()
@@ -84,6 +98,7 @@ class UpdateResolver(private val libraryComponent: ComponentId) {
             val compatibleUpdates = releases
                 .filter { it.component == current.component && it.version >= current.version }
                 .filter { it.supportedApi.supports(targetApi) }
+                .filter { externalDependenciesAvailable(it, policy) }
             val domain = if (current.component in frozen) {
                 if (current.supportedApi.supports(targetApi)) listOf(currentRelease) else emptyList()
             } else {
@@ -101,18 +116,58 @@ class UpdateResolver(private val libraryComponent: ComponentId) {
         }
         if (reasons.isNotEmpty()) return Attempt(null, reasons)
 
+        if (policy.allowManagedInstalls) {
+            var added: Boolean
+            do {
+                added = false
+                val missing = domains.values.flatten().flatMap(ComponentRelease::dependencies)
+                    .map(ComponentDependency::component).filterNot(domains::containsKey).distinct().sorted()
+                missing.forEach { dependency ->
+                    val candidates = releases.filter {
+                        it.component == dependency && it.supportedApi.supports(targetApi) && externalDependenciesAvailable(it, policy)
+                    }
+                        .distinctBy { it.version.toString() }.sortedByDescending(ComponentRelease::version)
+                    if (candidates.isNotEmpty()) {
+                        domains[dependency] = candidates
+                        added = true
+                    }
+                }
+            } while (added)
+        }
+
         val ids = domains.keys.filter { it != libraryComponent }.sorted()
         val selected = linkedMapOf(libraryComponent to libraryRelease)
         val solution = search(ids, 0, domains, selected)
             ?: return Attempt(null, dependencyReasons(domains))
         val installedById = installed.associateBy(InstalledComponent::component)
-        val ordered = solution.values.sortedBy(ComponentRelease::component)
+        val retained = retainRequired(solution, installedById.keys)
+        val ordered = retained.values.sortedBy(ComponentRelease::component)
         val changes = ordered.mapNotNull { target ->
-            val current = installedById[target.component] ?: return@mapNotNull null
-            if (current.version == target.version) null
-            else ComponentChange(target.component, current.version, target.version)
+            val current = installedById[target.component]
+            if (current?.version == target.version) null
+            else ComponentChange(target.component, current?.version, target.version)
         }
-        return Attempt(UpdatePlan(targetApi, changes, ordered), emptyList())
+        val unavailableRequestedDependencies = if (policy.allowManagedInstalls) emptyList() else
+            releases.filter { candidate ->
+                val current = installedById[candidate.component]
+                current != null && candidate.version > current.version && candidate.supportedApi.supports(targetApi)
+            }.flatMap { candidate ->
+                candidate.dependencies.mapNotNull { dependency ->
+                    if (domains.containsKey(dependency.component)) null
+                    else BlockedReason.MissingDependency(candidate.component, dependency.component, dependency.minimumVersion)
+                }
+            }.distinct()
+        val installedExternal = policy.installedExternalPlugins.map { it.lowercase() }.toSet()
+        val externalReasons = releases.filter { candidate ->
+            val current = installedById[candidate.component]
+            current != null && candidate.version > current.version && candidate.supportedApi.supports(targetApi)
+        }.flatMap { release -> release.externalDependencies.mapNotNull { dependency ->
+            if (dependency.plugin.lowercase() in installedExternal) null
+            else BlockedReason.MissingExternalDependency(
+                release.component, dependency.plugin, dependency.minimumVersion, dependency.downloadPage?.toString(),
+            )
+        } }.distinct()
+        return Attempt(UpdatePlan(targetApi, changes, ordered), (unavailableRequestedDependencies + externalReasons).distinct())
     }
 
     private fun search(
@@ -138,6 +193,26 @@ class UpdateResolver(private val libraryComponent: ComponentId) {
                 target != null && target.version >= dependency.minimumVersion
             }
         }
+
+    private fun retainRequired(
+        selected: LinkedHashMap<ComponentId, ComponentRelease>,
+        installed: Set<ComponentId>,
+    ): LinkedHashMap<ComponentId, ComponentRelease> {
+        val required = installed.toMutableSet()
+        var changed: Boolean
+        do {
+            changed = false
+            required.toList().forEach { id -> selected[id]?.dependencies?.forEach { dependency ->
+                if (required.add(dependency.component)) changed = true
+            } }
+        } while (changed)
+        return LinkedHashMap(selected.filterKeys(required::contains))
+    }
+
+    private fun externalDependenciesAvailable(release: ComponentRelease, policy: ResolverPolicy): Boolean {
+        val installed = policy.installedExternalPlugins.map { it.lowercase() }.toSet()
+        return release.externalDependencies.all { it.plugin.lowercase() in installed }
+    }
 
     private fun dependencyReasons(domains: Map<ComponentId, List<ComponentRelease>>): List<BlockedReason> {
         val available = domains.mapValues { (_, candidates) -> candidates.maxOf(ComponentRelease::version) }

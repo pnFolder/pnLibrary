@@ -3156,6 +3156,23 @@ public final class ru/privatenull/pnlibrary/api/updates/BlockedReason$MissingDep
 	public fun toString ()Ljava/lang/String;
 }
 
+public final class ru/privatenull/pnlibrary/api/updates/BlockedReason$MissingExternalDependency : ru/privatenull/pnlibrary/api/updates/BlockedReason {
+	public fun <init> (Lru/privatenull/pnlibrary/api/updates/ComponentId;Ljava/lang/String;Lru/privatenull/pnlibrary/api/version/SemanticVersion;Ljava/lang/String;)V
+	public final fun component1 ()Lru/privatenull/pnlibrary/api/updates/ComponentId;
+	public final fun component2 ()Ljava/lang/String;
+	public final fun component3 ()Lru/privatenull/pnlibrary/api/version/SemanticVersion;
+	public final fun component4 ()Ljava/lang/String;
+	public final fun copy (Lru/privatenull/pnlibrary/api/updates/ComponentId;Ljava/lang/String;Lru/privatenull/pnlibrary/api/version/SemanticVersion;Ljava/lang/String;)Lru/privatenull/pnlibrary/api/updates/BlockedReason$MissingExternalDependency;
+	public static synthetic fun copy$default (Lru/privatenull/pnlibrary/api/updates/BlockedReason$MissingExternalDependency;Lru/privatenull/pnlibrary/api/updates/ComponentId;Ljava/lang/String;Lru/privatenull/pnlibrary/api/version/SemanticVersion;Ljava/lang/String;ILjava/lang/Object;)Lru/privatenull/pnlibrary/api/updates/BlockedReason$MissingExternalDependency;
+	public fun equals (Ljava/lang/Object;)Z
+	public final fun getComponent ()Lru/privatenull/pnlibrary/api/updates/ComponentId;
+	public final fun getDownloadPage ()Ljava/lang/String;
+	public final fun getMinimumVersion ()Lru/privatenull/pnlibrary/api/version/SemanticVersion;
+	public final fun getPlugin ()Ljava/lang/String;
+	public fun hashCode ()I
+	public fun toString ()Ljava/lang/String;
+}
+
 public final class ru/privatenull/pnlibrary/api/updates/BlockedReason$NoCompatibleRelease : ru/privatenull/pnlibrary/api/updates/BlockedReason {
 	public fun <init> (Lru/privatenull/pnlibrary/api/updates/ComponentId;I)V
 	public final fun component1 ()Lru/privatenull/pnlibrary/api/updates/ComponentId;

@@ -6,6 +6,7 @@ import org.junit.jupiter.api.Test
 import ru.privatenull.pnlibrary.api.updates.*
 import ru.privatenull.pnlibrary.api.version.ApiVersionRange
 import ru.privatenull.pnlibrary.api.version.SemanticVersion
+import ru.privatenull.pnlibrary.api.platform.PlatformType
 
 class UpdateResolverTest {
     private val library = ComponentId.of("pnlibrary")
@@ -22,7 +23,9 @@ class UpdateResolverTest {
         provides: Int? = null,
         channel: UpdateChannel = UpdateChannel.STABLE,
         dependencies: List<ComponentDependency> = emptyList(),
-    ) = ComponentRelease(id, version(version), channel, api, provides, dependencies)
+        external: List<ExternalDependency> = emptyList(),
+        artifacts: List<ArtifactDescriptor> = emptyList(),
+    ) = ComponentRelease(id, version(version), channel, api, provides, dependencies, artifacts = artifacts, externalDependencies = external)
 
     @Test
     fun `selects newest release compatible with installed API instead of latest`() {
@@ -111,5 +114,63 @@ class UpdateResolverTest {
 
         assertTrue(result.reasons.any { it is BlockedReason.Frozen && it.component == market })
         assertEquals(4, result.fallbackPlan!!.targetApi)
+    }
+
+    @Test
+    fun `blocks the entire API migration when one installed plugin has no compatible release`() {
+        val result = UpdateResolver(library).resolve(
+            installed = listOf(
+                installed(library, "1.0.0", range(1), 1),
+                installed(market, "1.0.0", range(1)),
+                installed(economy, "1.0.0", range(1)),
+            ),
+            releases = listOf(
+                release(library, "2.0.0", range(2), 2),
+                release(market, "2.0.0", range(2)),
+            ),
+        ) as ResolutionResult.Blocked
+
+        assertTrue(result.reasons.any { it is BlockedReason.NoCompatibleRelease && it.component == economy })
+        assertTrue(result.fallbackPlan == null || result.fallbackPlan.changes.none { it.component == library })
+    }
+
+    @Test
+    fun `introduces a missing managed dependency only when policy permits`() {
+        val dependency = ComponentDependency(economy, version("2.0.0"))
+        val releases = listOf(
+            release(market, "2.0.0", range(1), dependencies = listOf(dependency)),
+            release(economy, "2.1.0", range(1)),
+        )
+        val installed = listOf(installed(library, "1.0.0", range(1), 1), installed(market, "1.0.0", range(1)))
+
+        val blocked = UpdateResolver(library).resolve(installed, releases) as ResolutionResult.Blocked
+        assertTrue(blocked.reasons.any { it is BlockedReason.MissingDependency && it.dependency == economy })
+
+        val ready = UpdateResolver(library).resolve(
+            installed, releases, policy = ResolverPolicy(allowManagedInstalls = true),
+            platform = PlatformType.BUKKIT, javaFeature = 17,
+        ) as ResolutionResult.Ready
+        assertEquals(version("2.1.0"), ready.plan.selected.single { it.component == economy }.version)
+    }
+
+    @Test
+    fun `reports manual external dependency and filters incompatible platform artifact`() {
+        val vault = ExternalDependency.builder("Vault", "1.7.3")
+            .downloadPage("https://github.com/MilkBowl/Vault/releases").build()
+        val velocityOnly = ArtifactDescriptor(
+            "market.jar", PlatformType.VELOCITY, 17, null, 10, "00".repeat(32), null,
+        )
+        val result = UpdateResolver(library).resolve(
+            installed = listOf(installed(library, "1.0.0", range(1), 1), installed(market, "1.0.0", range(1))),
+            releases = listOf(
+                release(market, "3.0.0", range(1), artifacts = listOf(velocityOnly)),
+                release(market, "2.0.0", range(1), external = listOf(vault)),
+            ),
+            platform = PlatformType.BUKKIT,
+            javaFeature = 17,
+        ) as ResolutionResult.Blocked
+
+        assertTrue(result.reasons.any { it is BlockedReason.MissingExternalDependency && it.plugin == "Vault" })
+        assertEquals(version("1.0.0"), result.fallbackPlan!!.selected.single { it.component == market }.version)
     }
 }

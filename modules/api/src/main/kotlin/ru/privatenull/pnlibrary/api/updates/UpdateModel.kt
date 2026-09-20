@@ -68,7 +68,7 @@ data class ComponentRelease(
 /** One version transition selected by the resolver. */
 data class ComponentChange(
     val component: ComponentId,
-    val from: SemanticVersion,
+    val from: SemanticVersion?,
     val to: SemanticVersion,
 )
 
@@ -96,6 +96,13 @@ sealed class BlockedReason {
         val component: ComponentId,
         val dependency: ComponentId,
         val minimumVersion: SemanticVersion,
+    ) : BlockedReason()
+
+    data class MissingExternalDependency(
+        val component: ComponentId,
+        val plugin: String,
+        val minimumVersion: SemanticVersion,
+        val downloadPage: String?,
     ) : BlockedReason()
 
     data class Frozen(val component: ComponentId) : BlockedReason()
