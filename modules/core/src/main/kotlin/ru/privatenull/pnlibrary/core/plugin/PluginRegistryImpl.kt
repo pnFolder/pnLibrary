@@ -105,6 +105,7 @@ internal class PluginRegistryImpl(
             require(!owners.containsKey(owner)) { "This platform plugin is already registered as ${owners[owner]?.id}" }
             val definition = Builder().also { configure.accept(it) }
             val descriptor = componentDescriptor(owner, id, definition)
+            definition.bindUpdatesTo(descriptor)
             validateDependencies(descriptor)
             createContext(owner, id, definition).also {
                 contexts[id] = it
@@ -436,6 +437,26 @@ internal class PluginRegistryImpl(
 
         override fun listener(listener: Listener): PluginBuilder = apply {
             listeners += listener
+        }
+
+        fun bindUpdatesTo(descriptor: ComponentDescriptor?) {
+            val source = updateRequest ?: return
+            if (descriptor == null) return
+            updateRequest = PluginUpdateRequest.builder()
+                .repository(source.repositoryOwner, source.repositoryName)
+                .channel(source.channel)
+                .automaticDownload(source.automaticDownload)
+                .component(descriptor.id.value)
+                .supportedApi(descriptor.supportedApi.minimum, descriptor.supportedApi.maximum)
+                .also { target ->
+                    descriptor.managedDependencies.forEach {
+                        target.dependsOn(it.component.value, it.minimumVersion.toString())
+                    }
+                    source.artifacts.forEach {
+                        target.artifact(it.pattern, it.minimumJava, it.maximumJava)
+                    }
+                }
+                .build()
         }
     }
 

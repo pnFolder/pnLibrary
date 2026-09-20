@@ -25,6 +25,8 @@ import ru.privatenull.pnlibrary.api.plugin.PluginId
 import ru.privatenull.pnlibrary.api.tasks.TaskScope
 import ru.privatenull.pnlibrary.api.tasks.TaskService
 import ru.privatenull.pnlibrary.api.updates.UpdateService
+import ru.privatenull.pnlibrary.api.updates.PluginUpdateRequest
+import ru.privatenull.pnlibrary.api.updates.UpdateRegistration
 import ru.privatenull.pnlibrary.api.updates.ComponentDescriptor
 import ru.privatenull.pnlibrary.api.updates.ExternalDependency
 import ru.privatenull.pnlibrary.core.currency.CurrencyHub
@@ -36,6 +38,29 @@ import java.lang.reflect.Proxy
 import java.util.function.Supplier
 
 class PluginRegistryImplTest {
+    @Test
+    fun `updates registration inherits component metadata`() {
+        val updates = RecordingUpdateService()
+        val descriptor = ComponentDescriptor.builder("example", "1.0.0")
+            .pnLibraryApi(1, 2)
+            .managedDependency("pnlibrary", "1.5.0", "pnFolder", "pnLibrary")
+            .build()
+        val request = PluginUpdateRequest.builder()
+            .repository("pnFolder", "Example")
+            .artifact("(?i)^Example-.*\\.jar$", 17)
+            .build()
+
+        registry(updates = updates, libraryVersion = "1.5.0").register(Any(), "example") {
+            it.component(descriptor).updates(request)
+        }
+
+        assertEquals("example", updates.request!!.component.value)
+        assertEquals(1, updates.request!!.supportedApi.minimum)
+        assertEquals(2, updates.request!!.supportedApi.maximum)
+        assertEquals("pnlibrary", updates.request!!.dependencies.single().component.value)
+        assertEquals("1.5.0", updates.request!!.dependencies.single().minimumVersion.toString())
+    }
+
     @Test
     fun `dependency gate runs before plugin scopes become visible`() {
         val owner = Any()
@@ -282,6 +307,7 @@ class PluginRegistryImplTest {
             metrics: MetricsService = RecordingMetricsService(),
             commands: CommandService? = null,
             libraryVersion: String? = null,
+            updates: UpdateService = emptyProxy(UpdateService::class.java),
         ): PluginRegistryImpl =
             PluginRegistryImpl(
                 platform = platform,
@@ -291,12 +317,22 @@ class PluginRegistryImplTest {
                 logging = logging,
                 metrics = metrics,
                 diagnostics = emptyProxy(DiagnosticsService::class.java),
-                updates = emptyProxy(UpdateService::class.java),
+                updates = updates,
                 placeholderHub = PlaceholderHub(platform),
                 currencyHub = CurrencyHub(),
                 commands = commands,
                 libraryVersion = libraryVersion,
             )
+
+        private class RecordingUpdateService : UpdateService {
+            var request: PluginUpdateRequest? = null
+            override fun register(owner: Any, request: PluginUpdateRequest): UpdateRegistration {
+                this.request = request
+                return emptyProxy(UpdateRegistration::class.java)
+            }
+            override fun registrations(): List<UpdateRegistration> = emptyList()
+            override fun find(product: String): UpdateRegistration? = null
+        }
 
         fun platform(): PlatformAdapter = proxy(PlatformAdapter::class.java) { methodName ->
             when (methodName) {
