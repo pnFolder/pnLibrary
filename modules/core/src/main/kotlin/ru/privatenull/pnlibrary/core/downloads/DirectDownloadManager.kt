@@ -58,6 +58,7 @@ internal class DirectDownloadManager(
         }
         if (prepared.isEmpty()) return
         try {
+            check(!closed.get()) { "система загрузок закрыта" }
             publishAtomically(prepared)
         } catch (error: Throwable) {
             prepared.forEach { Files.deleteIfExists(it.staging) }
