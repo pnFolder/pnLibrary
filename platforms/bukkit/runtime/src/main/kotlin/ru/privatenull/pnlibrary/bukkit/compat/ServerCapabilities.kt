@@ -1,7 +1,7 @@
 package ru.privatenull.pnlibrary.bukkit.compat
 
 import org.bukkit.Bukkit
-import ru.privatenull.pnlibrary.bukkit.version.MinecraftVersion
+import ru.privatenull.pnlibrary.common.minecraft.MinecraftVersion
 
 /**
  * Cached runtime capability and Minecraft-version detection for Bukkit implementations.

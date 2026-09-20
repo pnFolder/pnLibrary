@@ -10,7 +10,7 @@
 | `api.logging`, `api.metrics`, `api.tasks`, `api.updates`, `api.services` | Контракты соответствующих сервисов |
 | `api.platform` | Публичный тип семейства платформы без исполнительного адаптера |
 | `api.version` | Семантические версии плагинов и диапазоны |
-| `pnlibrary-bukkit-api` / `bukkit.version` | MinecraftVersion, сравнение и диапазоны только для игровых серверов |
+| `pnlibrary-common` / `common.minecraft` | MinecraftVersion, сравнение и диапазоны без зависимости от серверной платформы |
 | `api.config` | ManagedConfig, ConfigGroup, кодек и валидация |
 | `pnlibrary-core` / `core.config.yaml` | CodeFirstYaml и слияние новых ключей YAML |
 | `pnlibrary-runtime-spi` / `spi.platform` | Закрытая граница core и платформенных runtime |
@@ -22,7 +22,7 @@
 ## Версии игрового Bukkit-сервера
 
 ```kotlin
-import ru.privatenull.pnlibrary.bukkit.version.MinecraftVersion
+import ru.privatenull.pnlibrary.common.minecraft.MinecraftVersion
 
 val version = MinecraftVersion.parse("1.21.11")
 val supported = MinecraftVersion.V1_12_2..MinecraftVersion.V26_2
@@ -32,7 +32,7 @@ if (version in supported) {
 ```
 
 ```java
-import ru.privatenull.pnlibrary.bukkit.version.MinecraftVersion;
+import ru.privatenull.pnlibrary.common.minecraft.MinecraftVersion;
 
 MinecraftVersion version = MinecraftVersion.parse("1.21.11");
 boolean supported = version.isBetween(MinecraftVersion.V1_12_2, MinecraftVersion.V26_2);

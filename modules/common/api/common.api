@@ -1,0 +1,160 @@
+public final class ru/privatenull/pnlibrary/common/minecraft/MinecraftVersion : java/lang/Enum {
+	public static final field Companion Lru/privatenull/pnlibrary/common/minecraft/MinecraftVersion$Companion;
+	public static final field UNKNOWN Lru/privatenull/pnlibrary/common/minecraft/MinecraftVersion;
+	public static final field V1_10 Lru/privatenull/pnlibrary/common/minecraft/MinecraftVersion;
+	public static final field V1_10_1 Lru/privatenull/pnlibrary/common/minecraft/MinecraftVersion;
+	public static final field V1_10_2 Lru/privatenull/pnlibrary/common/minecraft/MinecraftVersion;
+	public static final field V1_11 Lru/privatenull/pnlibrary/common/minecraft/MinecraftVersion;
+	public static final field V1_11_1 Lru/privatenull/pnlibrary/common/minecraft/MinecraftVersion;
+	public static final field V1_11_2 Lru/privatenull/pnlibrary/common/minecraft/MinecraftVersion;
+	public static final field V1_12 Lru/privatenull/pnlibrary/common/minecraft/MinecraftVersion;
+	public static final field V1_12_1 Lru/privatenull/pnlibrary/common/minecraft/MinecraftVersion;
+	public static final field V1_12_2 Lru/privatenull/pnlibrary/common/minecraft/MinecraftVersion;
+	public static final field V1_13 Lru/privatenull/pnlibrary/common/minecraft/MinecraftVersion;
+	public static final field V1_13_1 Lru/privatenull/pnlibrary/common/minecraft/MinecraftVersion;
+	public static final field V1_13_2 Lru/privatenull/pnlibrary/common/minecraft/MinecraftVersion;
+	public static final field V1_14 Lru/privatenull/pnlibrary/common/minecraft/MinecraftVersion;
+	public static final field V1_14_1 Lru/privatenull/pnlibrary/common/minecraft/MinecraftVersion;
+	public static final field V1_14_2 Lru/privatenull/pnlibrary/common/minecraft/MinecraftVersion;
+	public static final field V1_14_3 Lru/privatenull/pnlibrary/common/minecraft/MinecraftVersion;
+	public static final field V1_14_4 Lru/privatenull/pnlibrary/common/minecraft/MinecraftVersion;
+	public static final field V1_15 Lru/privatenull/pnlibrary/common/minecraft/MinecraftVersion;
+	public static final field V1_15_1 Lru/privatenull/pnlibrary/common/minecraft/MinecraftVersion;
+	public static final field V1_15_2 Lru/privatenull/pnlibrary/common/minecraft/MinecraftVersion;
+	public static final field V1_16 Lru/privatenull/pnlibrary/common/minecraft/MinecraftVersion;
+	public static final field V1_16_1 Lru/privatenull/pnlibrary/common/minecraft/MinecraftVersion;
+	public static final field V1_16_2 Lru/privatenull/pnlibrary/common/minecraft/MinecraftVersion;
+	public static final field V1_16_3 Lru/privatenull/pnlibrary/common/minecraft/MinecraftVersion;
+	public static final field V1_16_4 Lru/privatenull/pnlibrary/common/minecraft/MinecraftVersion;
+	public static final field V1_16_5 Lru/privatenull/pnlibrary/common/minecraft/MinecraftVersion;
+	public static final field V1_17 Lru/privatenull/pnlibrary/common/minecraft/MinecraftVersion;
+	public static final field V1_17_1 Lru/privatenull/pnlibrary/common/minecraft/MinecraftVersion;
+	public static final field V1_18 Lru/privatenull/pnlibrary/common/minecraft/MinecraftVersion;
+	public static final field V1_18_1 Lru/privatenull/pnlibrary/common/minecraft/MinecraftVersion;
+	public static final field V1_18_2 Lru/privatenull/pnlibrary/common/minecraft/MinecraftVersion;
+	public static final field V1_19 Lru/privatenull/pnlibrary/common/minecraft/MinecraftVersion;
+	public static final field V1_19_1 Lru/privatenull/pnlibrary/common/minecraft/MinecraftVersion;
+	public static final field V1_19_2 Lru/privatenull/pnlibrary/common/minecraft/MinecraftVersion;
+	public static final field V1_19_3 Lru/privatenull/pnlibrary/common/minecraft/MinecraftVersion;
+	public static final field V1_19_4 Lru/privatenull/pnlibrary/common/minecraft/MinecraftVersion;
+	public static final field V1_20 Lru/privatenull/pnlibrary/common/minecraft/MinecraftVersion;
+	public static final field V1_20_1 Lru/privatenull/pnlibrary/common/minecraft/MinecraftVersion;
+	public static final field V1_20_2 Lru/privatenull/pnlibrary/common/minecraft/MinecraftVersion;
+	public static final field V1_20_3 Lru/privatenull/pnlibrary/common/minecraft/MinecraftVersion;
+	public static final field V1_20_4 Lru/privatenull/pnlibrary/common/minecraft/MinecraftVersion;
+	public static final field V1_20_5 Lru/privatenull/pnlibrary/common/minecraft/MinecraftVersion;
+	public static final field V1_20_6 Lru/privatenull/pnlibrary/common/minecraft/MinecraftVersion;
+	public static final field V1_21 Lru/privatenull/pnlibrary/common/minecraft/MinecraftVersion;
+	public static final field V1_21_1 Lru/privatenull/pnlibrary/common/minecraft/MinecraftVersion;
+	public static final field V1_21_10 Lru/privatenull/pnlibrary/common/minecraft/MinecraftVersion;
+	public static final field V1_21_11 Lru/privatenull/pnlibrary/common/minecraft/MinecraftVersion;
+	public static final field V1_21_2 Lru/privatenull/pnlibrary/common/minecraft/MinecraftVersion;
+	public static final field V1_21_3 Lru/privatenull/pnlibrary/common/minecraft/MinecraftVersion;
+	public static final field V1_21_4 Lru/privatenull/pnlibrary/common/minecraft/MinecraftVersion;
+	public static final field V1_21_5 Lru/privatenull/pnlibrary/common/minecraft/MinecraftVersion;
+	public static final field V1_21_6 Lru/privatenull/pnlibrary/common/minecraft/MinecraftVersion;
+	public static final field V1_21_7 Lru/privatenull/pnlibrary/common/minecraft/MinecraftVersion;
+	public static final field V1_21_8 Lru/privatenull/pnlibrary/common/minecraft/MinecraftVersion;
+	public static final field V1_21_9 Lru/privatenull/pnlibrary/common/minecraft/MinecraftVersion;
+	public static final field V1_8 Lru/privatenull/pnlibrary/common/minecraft/MinecraftVersion;
+	public static final field V1_8_1 Lru/privatenull/pnlibrary/common/minecraft/MinecraftVersion;
+	public static final field V1_8_2 Lru/privatenull/pnlibrary/common/minecraft/MinecraftVersion;
+	public static final field V1_8_3 Lru/privatenull/pnlibrary/common/minecraft/MinecraftVersion;
+	public static final field V1_8_4 Lru/privatenull/pnlibrary/common/minecraft/MinecraftVersion;
+	public static final field V1_8_5 Lru/privatenull/pnlibrary/common/minecraft/MinecraftVersion;
+	public static final field V1_8_6 Lru/privatenull/pnlibrary/common/minecraft/MinecraftVersion;
+	public static final field V1_8_7 Lru/privatenull/pnlibrary/common/minecraft/MinecraftVersion;
+	public static final field V1_8_8 Lru/privatenull/pnlibrary/common/minecraft/MinecraftVersion;
+	public static final field V1_8_9 Lru/privatenull/pnlibrary/common/minecraft/MinecraftVersion;
+	public static final field V1_9 Lru/privatenull/pnlibrary/common/minecraft/MinecraftVersion;
+	public static final field V1_9_1 Lru/privatenull/pnlibrary/common/minecraft/MinecraftVersion;
+	public static final field V1_9_2 Lru/privatenull/pnlibrary/common/minecraft/MinecraftVersion;
+	public static final field V1_9_3 Lru/privatenull/pnlibrary/common/minecraft/MinecraftVersion;
+	public static final field V1_9_4 Lru/privatenull/pnlibrary/common/minecraft/MinecraftVersion;
+	public static final field V26_1 Lru/privatenull/pnlibrary/common/minecraft/MinecraftVersion;
+	public static final field V26_2 Lru/privatenull/pnlibrary/common/minecraft/MinecraftVersion;
+	public static final fun atLeast (Lru/privatenull/pnlibrary/common/minecraft/MinecraftVersion;)Lru/privatenull/pnlibrary/common/minecraft/MinecraftVersionRange;
+	public static final fun atMost (Lru/privatenull/pnlibrary/common/minecraft/MinecraftVersion;)Lru/privatenull/pnlibrary/common/minecraft/MinecraftVersionRange;
+	public static fun getEntries ()Lkotlin/enums/EnumEntries;
+	public final fun getKnown ()Z
+	public final fun getMajor ()I
+	public final fun getMinor ()I
+	public final fun getPatch ()I
+	public final fun getText ()Ljava/lang/String;
+	public final fun inRange (Lru/privatenull/pnlibrary/common/minecraft/MinecraftVersionRange;)Z
+	public final fun isAtLeast (Lru/privatenull/pnlibrary/common/minecraft/MinecraftVersion;)Z
+	public final fun isAtMost (Lru/privatenull/pnlibrary/common/minecraft/MinecraftVersion;)Z
+	public final fun isBetween (Lru/privatenull/pnlibrary/common/minecraft/MinecraftVersion;Lru/privatenull/pnlibrary/common/minecraft/MinecraftVersion;)Z
+	public final fun isNewerThan (Lru/privatenull/pnlibrary/common/minecraft/MinecraftVersion;)Z
+	public final fun isOlderThan (Lru/privatenull/pnlibrary/common/minecraft/MinecraftVersion;)Z
+	public final fun isSameOrNewerThan (Lru/privatenull/pnlibrary/common/minecraft/MinecraftVersion;)Z
+	public final fun isSameOrOlderThan (Lru/privatenull/pnlibrary/common/minecraft/MinecraftVersion;)Z
+	public final fun isSameReleaseLine (Lru/privatenull/pnlibrary/common/minecraft/MinecraftVersion;)Z
+	public static final fun parse (Ljava/lang/String;)Lru/privatenull/pnlibrary/common/minecraft/MinecraftVersion;
+	public static final fun range (Lru/privatenull/pnlibrary/common/minecraft/MinecraftVersion;Lru/privatenull/pnlibrary/common/minecraft/MinecraftVersion;)Lru/privatenull/pnlibrary/common/minecraft/MinecraftVersionRange;
+	public final fun rangeTo (Lru/privatenull/pnlibrary/common/minecraft/MinecraftVersion;)Lru/privatenull/pnlibrary/common/minecraft/MinecraftVersionRange;
+	public static final fun supported ()Ljava/util/List;
+	public static fun valueOf (Ljava/lang/String;)Lru/privatenull/pnlibrary/common/minecraft/MinecraftVersion;
+	public static fun values ()[Lru/privatenull/pnlibrary/common/minecraft/MinecraftVersion;
+}
+
+public final class ru/privatenull/pnlibrary/common/minecraft/MinecraftVersion$Companion {
+	public final fun atLeast (Lru/privatenull/pnlibrary/common/minecraft/MinecraftVersion;)Lru/privatenull/pnlibrary/common/minecraft/MinecraftVersionRange;
+	public final fun atMost (Lru/privatenull/pnlibrary/common/minecraft/MinecraftVersion;)Lru/privatenull/pnlibrary/common/minecraft/MinecraftVersionRange;
+	public final fun parse (Ljava/lang/String;)Lru/privatenull/pnlibrary/common/minecraft/MinecraftVersion;
+	public final fun range (Lru/privatenull/pnlibrary/common/minecraft/MinecraftVersion;Lru/privatenull/pnlibrary/common/minecraft/MinecraftVersion;)Lru/privatenull/pnlibrary/common/minecraft/MinecraftVersionRange;
+	public final fun supported ()Ljava/util/List;
+}
+
+public final class ru/privatenull/pnlibrary/common/minecraft/MinecraftVersionRange {
+	public static final field Companion Lru/privatenull/pnlibrary/common/minecraft/MinecraftVersionRange$Companion;
+	public fun <init> (Lru/privatenull/pnlibrary/common/minecraft/MinecraftVersion;Lru/privatenull/pnlibrary/common/minecraft/MinecraftVersion;ZZ)V
+	public static final fun allKnown ()Lru/privatenull/pnlibrary/common/minecraft/MinecraftVersionRange;
+	public static final fun atLeast (Lru/privatenull/pnlibrary/common/minecraft/MinecraftVersion;)Lru/privatenull/pnlibrary/common/minecraft/MinecraftVersionRange;
+	public static final fun atMost (Lru/privatenull/pnlibrary/common/minecraft/MinecraftVersion;)Lru/privatenull/pnlibrary/common/minecraft/MinecraftVersionRange;
+	public static final fun between (Lru/privatenull/pnlibrary/common/minecraft/MinecraftVersion;Lru/privatenull/pnlibrary/common/minecraft/MinecraftVersion;)Lru/privatenull/pnlibrary/common/minecraft/MinecraftVersionRange;
+	public static final fun betweenExclusive (Lru/privatenull/pnlibrary/common/minecraft/MinecraftVersion;Lru/privatenull/pnlibrary/common/minecraft/MinecraftVersion;)Lru/privatenull/pnlibrary/common/minecraft/MinecraftVersionRange;
+	public final fun component1 ()Lru/privatenull/pnlibrary/common/minecraft/MinecraftVersion;
+	public final fun component2 ()Lru/privatenull/pnlibrary/common/minecraft/MinecraftVersion;
+	public final fun component3 ()Z
+	public final fun component4 ()Z
+	public final fun contains (Lru/privatenull/pnlibrary/common/minecraft/MinecraftVersion;)Z
+	public final fun copy (Lru/privatenull/pnlibrary/common/minecraft/MinecraftVersion;Lru/privatenull/pnlibrary/common/minecraft/MinecraftVersion;ZZ)Lru/privatenull/pnlibrary/common/minecraft/MinecraftVersionRange;
+	public static synthetic fun copy$default (Lru/privatenull/pnlibrary/common/minecraft/MinecraftVersionRange;Lru/privatenull/pnlibrary/common/minecraft/MinecraftVersion;Lru/privatenull/pnlibrary/common/minecraft/MinecraftVersion;ZZILjava/lang/Object;)Lru/privatenull/pnlibrary/common/minecraft/MinecraftVersionRange;
+	public fun equals (Ljava/lang/Object;)Z
+	public static final fun exact (Lru/privatenull/pnlibrary/common/minecraft/MinecraftVersion;)Lru/privatenull/pnlibrary/common/minecraft/MinecraftVersionRange;
+	public final fun excludes (Lru/privatenull/pnlibrary/common/minecraft/MinecraftVersion;)Z
+	public static final fun from (Lru/privatenull/pnlibrary/common/minecraft/MinecraftVersion;)Lru/privatenull/pnlibrary/common/minecraft/MinecraftVersionRange;
+	public static final fun from (Lru/privatenull/pnlibrary/common/minecraft/MinecraftVersion;Z)Lru/privatenull/pnlibrary/common/minecraft/MinecraftVersionRange;
+	public final fun getIncludeMaximum ()Z
+	public final fun getIncludeMinimum ()Z
+	public final fun getMaximum ()Lru/privatenull/pnlibrary/common/minecraft/MinecraftVersion;
+	public final fun getMinimum ()Lru/privatenull/pnlibrary/common/minecraft/MinecraftVersion;
+	public fun hashCode ()I
+	public final fun intersection (Lru/privatenull/pnlibrary/common/minecraft/MinecraftVersionRange;)Lru/privatenull/pnlibrary/common/minecraft/MinecraftVersionRange;
+	public final fun isExact ()Z
+	public static final fun newerThan (Lru/privatenull/pnlibrary/common/minecraft/MinecraftVersion;)Lru/privatenull/pnlibrary/common/minecraft/MinecraftVersionRange;
+	public static final fun olderThan (Lru/privatenull/pnlibrary/common/minecraft/MinecraftVersion;)Lru/privatenull/pnlibrary/common/minecraft/MinecraftVersionRange;
+	public final fun overlaps (Lru/privatenull/pnlibrary/common/minecraft/MinecraftVersionRange;)Z
+	public fun toString ()Ljava/lang/String;
+	public static final fun until (Lru/privatenull/pnlibrary/common/minecraft/MinecraftVersion;)Lru/privatenull/pnlibrary/common/minecraft/MinecraftVersionRange;
+	public static final fun until (Lru/privatenull/pnlibrary/common/minecraft/MinecraftVersion;Z)Lru/privatenull/pnlibrary/common/minecraft/MinecraftVersionRange;
+}
+
+public final class ru/privatenull/pnlibrary/common/minecraft/MinecraftVersionRange$Companion {
+	public final fun allKnown ()Lru/privatenull/pnlibrary/common/minecraft/MinecraftVersionRange;
+	public final fun atLeast (Lru/privatenull/pnlibrary/common/minecraft/MinecraftVersion;)Lru/privatenull/pnlibrary/common/minecraft/MinecraftVersionRange;
+	public final fun atMost (Lru/privatenull/pnlibrary/common/minecraft/MinecraftVersion;)Lru/privatenull/pnlibrary/common/minecraft/MinecraftVersionRange;
+	public final fun between (Lru/privatenull/pnlibrary/common/minecraft/MinecraftVersion;Lru/privatenull/pnlibrary/common/minecraft/MinecraftVersion;)Lru/privatenull/pnlibrary/common/minecraft/MinecraftVersionRange;
+	public final fun betweenExclusive (Lru/privatenull/pnlibrary/common/minecraft/MinecraftVersion;Lru/privatenull/pnlibrary/common/minecraft/MinecraftVersion;)Lru/privatenull/pnlibrary/common/minecraft/MinecraftVersionRange;
+	public final fun exact (Lru/privatenull/pnlibrary/common/minecraft/MinecraftVersion;)Lru/privatenull/pnlibrary/common/minecraft/MinecraftVersionRange;
+	public final fun from (Lru/privatenull/pnlibrary/common/minecraft/MinecraftVersion;)Lru/privatenull/pnlibrary/common/minecraft/MinecraftVersionRange;
+	public final fun from (Lru/privatenull/pnlibrary/common/minecraft/MinecraftVersion;Z)Lru/privatenull/pnlibrary/common/minecraft/MinecraftVersionRange;
+	public static synthetic fun from$default (Lru/privatenull/pnlibrary/common/minecraft/MinecraftVersionRange$Companion;Lru/privatenull/pnlibrary/common/minecraft/MinecraftVersion;ZILjava/lang/Object;)Lru/privatenull/pnlibrary/common/minecraft/MinecraftVersionRange;
+	public final fun newerThan (Lru/privatenull/pnlibrary/common/minecraft/MinecraftVersion;)Lru/privatenull/pnlibrary/common/minecraft/MinecraftVersionRange;
+	public final fun olderThan (Lru/privatenull/pnlibrary/common/minecraft/MinecraftVersion;)Lru/privatenull/pnlibrary/common/minecraft/MinecraftVersionRange;
+	public final fun until (Lru/privatenull/pnlibrary/common/minecraft/MinecraftVersion;)Lru/privatenull/pnlibrary/common/minecraft/MinecraftVersionRange;
+	public final fun until (Lru/privatenull/pnlibrary/common/minecraft/MinecraftVersion;Z)Lru/privatenull/pnlibrary/common/minecraft/MinecraftVersionRange;
+	public static synthetic fun until$default (Lru/privatenull/pnlibrary/common/minecraft/MinecraftVersionRange$Companion;Lru/privatenull/pnlibrary/common/minecraft/MinecraftVersion;ZILjava/lang/Object;)Lru/privatenull/pnlibrary/common/minecraft/MinecraftVersionRange;
+}
+

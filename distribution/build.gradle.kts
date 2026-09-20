@@ -3,6 +3,7 @@ import com.github.jengelman.gradle.plugins.shadow.tasks.ShadowJar
 import java.security.MessageDigest
 
 evaluationDependsOn(":modules:api")
+evaluationDependsOn(":modules:common")
 evaluationDependsOn(":platforms:bukkit:api")
 evaluationDependsOn(":platforms:bungee:api")
 evaluationDependsOn(":platforms:velocity:api")
@@ -101,6 +102,8 @@ tasks.named("build") {
     dependsOn("shadowBukkit", "shadowBungee", "shadowVelocity", "copyDeveloperArtifacts")
 }
 
+val commonJar = project(":modules:common").tasks.named<Jar>("jar")
+val commonSources = project(":modules:common").tasks.named<Jar>("sourcesJar")
 val apiJar = project(":modules:api").tasks.named<Jar>("jar")
 val apiSources = project(":modules:api").tasks.named<Jar>("sourcesJar")
 val bukkitApiJar = project(":platforms:bukkit:api").tasks.named<Jar>("jar")
@@ -112,7 +115,9 @@ val velocityApiSources = project(":platforms:velocity:api").tasks.named<Jar>("so
 tasks.register<Copy>("copyDeveloperArtifacts") {
     group = "distribution"
     description = "Copies the public API binary and sources next to platform distributions"
-    dependsOn(apiJar, apiSources, bukkitApiJar, bukkitApiSources, bungeeApiJar, bungeeApiSources, velocityApiJar, velocityApiSources)
+    dependsOn(commonJar, commonSources, apiJar, apiSources, bukkitApiJar, bukkitApiSources, bungeeApiJar, bungeeApiSources, velocityApiJar, velocityApiSources)
+    from(commonJar.flatMap { it.archiveFile })
+    from(commonSources.flatMap { it.archiveFile })
     from(apiJar.flatMap { it.archiveFile })
     from(apiSources.flatMap { it.archiveFile })
     from(bukkitApiJar.flatMap { it.archiveFile })

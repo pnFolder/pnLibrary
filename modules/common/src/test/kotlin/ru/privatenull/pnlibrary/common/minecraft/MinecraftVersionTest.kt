@@ -1,4 +1,4 @@
-package ru.privatenull.pnlibrary.bukkit.version
+package ru.privatenull.pnlibrary.common.minecraft
 
 import org.junit.jupiter.api.Assertions.*
 import org.junit.jupiter.api.Test
@@ -31,5 +31,11 @@ class MinecraftVersionTest {
         val second = MinecraftVersionRange.between(MinecraftVersion.V1_12_2, MinecraftVersion.V1_20_6)
         assertEquals(MinecraftVersionRange.between(MinecraftVersion.V1_12_2, MinecraftVersion.V1_16_5), first.intersection(second))
         assertFalse(first.overlaps(MinecraftVersionRange.atLeast(MinecraftVersion.V1_17)))
+    }
+
+    @Test fun `lists supported versions newest first without unknown`() {
+        val supported = MinecraftVersion.supported()
+        assertEquals(MinecraftVersion.V26_2, supported.first())
+        assertFalse(MinecraftVersion.UNKNOWN in supported)
     }
 }

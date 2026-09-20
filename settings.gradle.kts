@@ -1,6 +1,7 @@
 rootProject.name = "pnLibrary"
 
 include(
+    ":modules:common",
     ":modules:api",
     ":modules:core",
     ":modules:runtime-spi",

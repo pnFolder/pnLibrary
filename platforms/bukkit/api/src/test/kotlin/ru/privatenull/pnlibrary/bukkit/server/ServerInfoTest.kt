@@ -4,8 +4,8 @@ import org.junit.jupiter.api.Assertions.assertEquals
 import org.junit.jupiter.api.Assertions.assertFalse
 import org.junit.jupiter.api.Assertions.assertTrue
 import org.junit.jupiter.api.Test
-import ru.privatenull.pnlibrary.bukkit.version.MinecraftVersion
-import ru.privatenull.pnlibrary.bukkit.version.MinecraftVersionRange
+import ru.privatenull.pnlibrary.common.minecraft.MinecraftVersion
+import ru.privatenull.pnlibrary.common.minecraft.MinecraftVersionRange
 
 class ServerInfoTest {
     private val server = ServerInfo(

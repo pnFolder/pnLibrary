@@ -1,7 +1,7 @@
 package ru.privatenull.pnlibrary.bukkit.server
 
-import ru.privatenull.pnlibrary.bukkit.version.MinecraftVersion
-import ru.privatenull.pnlibrary.bukkit.version.MinecraftVersionRange
+import ru.privatenull.pnlibrary.common.minecraft.MinecraftVersion
+import ru.privatenull.pnlibrary.common.minecraft.MinecraftVersionRange
 
 /**
  * Read-only information about a Minecraft game server.

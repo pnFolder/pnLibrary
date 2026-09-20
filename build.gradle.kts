@@ -78,6 +78,7 @@ subprojects {
 }
 
 dependencies {
+    dokka(project(":modules:common"))
     dokka(project(":modules:api"))
     dokka(project(":modules:runtime-spi"))
     dokka(project(":modules:core"))
