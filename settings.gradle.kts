@@ -6,6 +6,7 @@ include(
     ":modules:core",
     ":modules:runtime-spi",
     ":modules:features:update",
+    ":modules:features:minecraft-localization",
     ":modules:internal:bstats",
     ":platforms:bukkit:api",
     ":platforms:bukkit:runtime",

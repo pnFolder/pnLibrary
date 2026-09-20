@@ -1,0 +1,141 @@
+public abstract interface class ru/privatenull/pnlibrary/localization/LocaleTranslations {
+	public abstract fun enchantments ()Lru/privatenull/pnlibrary/localization/TranslationIndex;
+	public abstract fun getLocale ()Ljava/lang/String;
+	public abstract fun getMetadata ()Lru/privatenull/pnlibrary/localization/TranslationMetadata;
+	public abstract fun keys ()Lru/privatenull/pnlibrary/localization/TranslationIndex;
+	public abstract fun materials ()Lru/privatenull/pnlibrary/localization/TranslationIndex;
+	public abstract fun translate (Ljava/lang/String;)Ljava/util/Optional;
+	public fun translateOrKey (Ljava/lang/String;)Ljava/lang/String;
+	public abstract fun translations ()Ljava/util/Map;
+}
+
+public abstract interface class ru/privatenull/pnlibrary/localization/MinecraftLocalization : java/lang/AutoCloseable {
+	public static final field Companion Lru/privatenull/pnlibrary/localization/MinecraftLocalization$Companion;
+	public abstract fun availableLocales (Lru/privatenull/pnlibrary/common/minecraft/MinecraftVersion;)Ljava/util/concurrent/CompletionStage;
+	public abstract fun availableVersions ()Ljava/util/concurrent/CompletionStage;
+	public static fun builder ()Lru/privatenull/pnlibrary/localization/MinecraftLocalization$Builder;
+	public abstract fun close ()V
+	public abstract fun load (Lru/privatenull/pnlibrary/localization/TranslationRequest;)Ljava/util/concurrent/CompletionStage;
+	public fun locale (Lru/privatenull/pnlibrary/common/minecraft/MinecraftVersion;Ljava/lang/String;)Ljava/util/concurrent/CompletionStage;
+	public abstract fun refresh (Lru/privatenull/pnlibrary/localization/TranslationRequest;)Ljava/util/concurrent/CompletionStage;
+}
+
+public final class ru/privatenull/pnlibrary/localization/MinecraftLocalization$Builder {
+	public final fun build ()Lru/privatenull/pnlibrary/localization/MinecraftLocalization;
+	public final fun cacheDirectory (Ljava/nio/file/Path;)Lru/privatenull/pnlibrary/localization/MinecraftLocalization$Builder;
+	public final fun connectTimeout (Ljava/time/Duration;)Lru/privatenull/pnlibrary/localization/MinecraftLocalization$Builder;
+	public final fun downloadConcurrency (I)Lru/privatenull/pnlibrary/localization/MinecraftLocalization$Builder;
+	public final fun executor (Ljava/util/concurrent/ExecutorService;)Lru/privatenull/pnlibrary/localization/MinecraftLocalization$Builder;
+	public final fun manifestTtl (Ljava/time/Duration;)Lru/privatenull/pnlibrary/localization/MinecraftLocalization$Builder;
+	public final fun memoryEntries (I)Lru/privatenull/pnlibrary/localization/MinecraftLocalization$Builder;
+	public final fun readTimeout (Ljava/time/Duration;)Lru/privatenull/pnlibrary/localization/MinecraftLocalization$Builder;
+}
+
+public final class ru/privatenull/pnlibrary/localization/MinecraftLocalization$Companion {
+	public final fun builder ()Lru/privatenull/pnlibrary/localization/MinecraftLocalization$Builder;
+}
+
+public final class ru/privatenull/pnlibrary/localization/MinecraftLocalizationDslKt {
+	public static final fun load (Lru/privatenull/pnlibrary/localization/MinecraftLocalization;Lkotlin/jvm/functions/Function1;)Ljava/util/concurrent/CompletionStage;
+}
+
+public abstract interface class ru/privatenull/pnlibrary/localization/TranslationBundle {
+	public abstract fun getLocales ()Ljava/util/Set;
+	public abstract fun getVersion ()Lru/privatenull/pnlibrary/common/minecraft/MinecraftVersion;
+	public abstract fun locale (Ljava/lang/String;)Lru/privatenull/pnlibrary/localization/LocaleTranslations;
+}
+
+public final class ru/privatenull/pnlibrary/localization/TranslationException : java/lang/RuntimeException {
+	public fun <init> (Lru/privatenull/pnlibrary/localization/TranslationException$Reason;Ljava/lang/String;Ljava/lang/Throwable;)V
+	public synthetic fun <init> (Lru/privatenull/pnlibrary/localization/TranslationException$Reason;Ljava/lang/String;Ljava/lang/Throwable;ILkotlin/jvm/internal/DefaultConstructorMarker;)V
+	public final fun getReason ()Lru/privatenull/pnlibrary/localization/TranslationException$Reason;
+}
+
+public final class ru/privatenull/pnlibrary/localization/TranslationException$Reason : java/lang/Enum {
+	public static final field CLOSED Lru/privatenull/pnlibrary/localization/TranslationException$Reason;
+	public static final field INTEGRITY Lru/privatenull/pnlibrary/localization/TranslationException$Reason;
+	public static final field INVALID_LOCALE Lru/privatenull/pnlibrary/localization/TranslationException$Reason;
+	public static final field MALFORMED_DATA Lru/privatenull/pnlibrary/localization/TranslationException$Reason;
+	public static final field OFFLINE Lru/privatenull/pnlibrary/localization/TranslationException$Reason;
+	public static final field REMOTE Lru/privatenull/pnlibrary/localization/TranslationException$Reason;
+	public static final field UNAVAILABLE_LOCALE Lru/privatenull/pnlibrary/localization/TranslationException$Reason;
+	public static final field UNSUPPORTED_VERSION Lru/privatenull/pnlibrary/localization/TranslationException$Reason;
+	public static fun getEntries ()Lkotlin/enums/EnumEntries;
+	public static fun valueOf (Ljava/lang/String;)Lru/privatenull/pnlibrary/localization/TranslationException$Reason;
+	public static fun values ()[Lru/privatenull/pnlibrary/localization/TranslationException$Reason;
+}
+
+public abstract interface class ru/privatenull/pnlibrary/localization/TranslationIndex {
+	public abstract fun findExact (Ljava/lang/String;)Ljava/util/List;
+	public abstract fun search (Ljava/lang/String;)Ljava/util/List;
+}
+
+public final class ru/privatenull/pnlibrary/localization/TranslationMatch {
+	public fun <init> (Ljava/lang/String;Ljava/lang/String;Ljava/lang/Object;)V
+	public final fun component1 ()Ljava/lang/String;
+	public final fun component2 ()Ljava/lang/String;
+	public final fun component3 ()Ljava/lang/Object;
+	public final fun copy (Ljava/lang/String;Ljava/lang/String;Ljava/lang/Object;)Lru/privatenull/pnlibrary/localization/TranslationMatch;
+	public static synthetic fun copy$default (Lru/privatenull/pnlibrary/localization/TranslationMatch;Ljava/lang/String;Ljava/lang/String;Ljava/lang/Object;ILjava/lang/Object;)Lru/privatenull/pnlibrary/localization/TranslationMatch;
+	public fun equals (Ljava/lang/Object;)Z
+	public final fun getKey ()Ljava/lang/String;
+	public final fun getTranslation ()Ljava/lang/String;
+	public final fun getValue ()Ljava/lang/Object;
+	public fun hashCode ()I
+	public fun toString ()Ljava/lang/String;
+}
+
+public final class ru/privatenull/pnlibrary/localization/TranslationMetadata {
+	public fun <init> (Lru/privatenull/pnlibrary/localization/TranslationSource;Ljava/lang/String;Z)V
+	public final fun component1 ()Lru/privatenull/pnlibrary/localization/TranslationSource;
+	public final fun component2 ()Ljava/lang/String;
+	public final fun component3 ()Z
+	public final fun copy (Lru/privatenull/pnlibrary/localization/TranslationSource;Ljava/lang/String;Z)Lru/privatenull/pnlibrary/localization/TranslationMetadata;
+	public static synthetic fun copy$default (Lru/privatenull/pnlibrary/localization/TranslationMetadata;Lru/privatenull/pnlibrary/localization/TranslationSource;Ljava/lang/String;ZILjava/lang/Object;)Lru/privatenull/pnlibrary/localization/TranslationMetadata;
+	public fun equals (Ljava/lang/Object;)Z
+	public final fun getSha1 ()Ljava/lang/String;
+	public final fun getSource ()Lru/privatenull/pnlibrary/localization/TranslationSource;
+	public final fun getStale ()Z
+	public fun hashCode ()I
+	public fun toString ()Ljava/lang/String;
+}
+
+public final class ru/privatenull/pnlibrary/localization/TranslationRequest {
+	public static final field Companion Lru/privatenull/pnlibrary/localization/TranslationRequest$Companion;
+	public static final fun builder ()Lru/privatenull/pnlibrary/localization/TranslationRequest$Builder;
+	public final fun getFallbackLocale ()Ljava/lang/String;
+	public final fun getLocales ()Ljava/util/Set;
+	public final fun getVersion ()Lru/privatenull/pnlibrary/common/minecraft/MinecraftVersion;
+}
+
+public final class ru/privatenull/pnlibrary/localization/TranslationRequest$Builder {
+	public final fun build ()Lru/privatenull/pnlibrary/localization/TranslationRequest;
+	public final fun fallback (Ljava/lang/String;)Lru/privatenull/pnlibrary/localization/TranslationRequest$Builder;
+	public final fun locale (Ljava/lang/String;)Lru/privatenull/pnlibrary/localization/TranslationRequest$Builder;
+	public final fun locales (Ljava/util/Collection;)Lru/privatenull/pnlibrary/localization/TranslationRequest$Builder;
+	public final fun locales ([Ljava/lang/String;)Lru/privatenull/pnlibrary/localization/TranslationRequest$Builder;
+	public final fun version (Lru/privatenull/pnlibrary/common/minecraft/MinecraftVersion;)Lru/privatenull/pnlibrary/localization/TranslationRequest$Builder;
+}
+
+public final class ru/privatenull/pnlibrary/localization/TranslationRequest$Companion {
+	public final fun builder ()Lru/privatenull/pnlibrary/localization/TranslationRequest$Builder;
+}
+
+public final class ru/privatenull/pnlibrary/localization/TranslationRequestDsl {
+	public field version Lru/privatenull/pnlibrary/common/minecraft/MinecraftVersion;
+	public final fun fallback (Ljava/lang/String;)V
+	public final fun getVersion ()Lru/privatenull/pnlibrary/common/minecraft/MinecraftVersion;
+	public final fun locales ([Ljava/lang/String;)V
+	public final fun setVersion (Lru/privatenull/pnlibrary/common/minecraft/MinecraftVersion;)V
+}
+
+public final class ru/privatenull/pnlibrary/localization/TranslationSource : java/lang/Enum {
+	public static final field DISK Lru/privatenull/pnlibrary/localization/TranslationSource;
+	public static final field MEMORY Lru/privatenull/pnlibrary/localization/TranslationSource;
+	public static final field NETWORK Lru/privatenull/pnlibrary/localization/TranslationSource;
+	public static final field STALE_DISK Lru/privatenull/pnlibrary/localization/TranslationSource;
+	public static fun getEntries ()Lkotlin/enums/EnumEntries;
+	public static fun valueOf (Ljava/lang/String;)Lru/privatenull/pnlibrary/localization/TranslationSource;
+	public static fun values ()[Lru/privatenull/pnlibrary/localization/TranslationSource;
+}
+

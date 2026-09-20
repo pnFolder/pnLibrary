@@ -83,6 +83,7 @@ dependencies {
     dokka(project(":modules:runtime-spi"))
     dokka(project(":modules:core"))
     dokka(project(":modules:features:update"))
+    dokka(project(":modules:features:minecraft-localization"))
     dokka(project(":platforms:bukkit:api"))
     dokka(project(":platforms:bungee:api"))
     dokka(project(":platforms:velocity:api"))

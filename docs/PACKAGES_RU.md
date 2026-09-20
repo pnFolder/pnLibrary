@@ -11,6 +11,7 @@
 | `api.platform` | Публичный тип семейства платформы без исполнительного адаптера |
 | `api.version` | Семантические версии плагинов и диапазоны |
 | `pnlibrary-common` / `common.minecraft` | MinecraftVersion, сравнение и диапазоны без зависимости от серверной платформы |
+| `pnlibrary-minecraft-localization` / `localization` | Официальные языковые таблицы Minecraft, кэш и обратный поиск |
 | `api.config` | ManagedConfig, ConfigGroup, кодек и валидация |
 | `pnlibrary-core` / `core.config.yaml` | CodeFirstYaml и слияние новых ключей YAML |
 | `pnlibrary-runtime-spi` / `spi.platform` | Закрытая граница core и платформенных runtime |

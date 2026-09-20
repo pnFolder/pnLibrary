@@ -30,10 +30,12 @@
 | Модуль | Назначение | JVM target |
 |---|---|---:|
 | `modules/api` | Публичные интерфейсы: runtime, сервисы, события, задачи и остальные общие возможности | 8 |
+| `modules/common` | Общие модели Minecraft без зависимости от серверной платформы | 8 |
 | `platforms/bukkit/api` | Публичные Bukkit-контракты: окружение сервера и меню | 8 |
 | `modules/runtime-spi` | Внутренняя граница между core и платформами | 8 |
 | `modules/core` | Закрытое исполнение общих сервисов | 8 |
 | `modules/features/update` | Resolver и транзакции pnUpdate | 8 |
+| `modules/features/minecraft-localization` | Ленивые официальные переводы Minecraft и обратный поиск | 8 |
 | `modules/internal/bstats` | Неизменённые общие классы официального bStats | 8 |
 | `platforms/bukkit/runtime` | Bukkit, Spigot, Paper, Purpur, Leaf и Folia | 8 |
 | `platforms/bungee/runtime` | BungeeCord и совместимые прокси | 8 |
@@ -55,6 +57,9 @@ Typed configuration actions, plugin visibility, namespaces and lifecycle:
 Bukkit item configuration, textured heads, lossless serialization, and lightweight
 visual entities: [docs/BUKKIT_ITEMS_RU.md](docs/BUKKIT_ITEMS_RU.md).
 
+Загрузка официальных переводов Minecraft по требованию и поиск объектов по названию:
+[docs/MINECRAFT_LOCALIZATION.md](docs/MINECRAFT_LOCALIZATION.md).
+
 Проект собирается на JDK 17 или новее. Bukkit, включая Folia-ветку планировщика,
 и BungeeCord получают байткод Java 8; Velocity — Java 17. Жёсткой привязки к
 конкретной установленной JDK нет.
@@ -74,6 +79,7 @@ gradlew.bat clean test :distribution:build
 - `pnLibrary-2.2.0-beta.2-velocity-java17.jar`;
 - `pnLibrary-api-2.2.0-beta.2.jar` и sources для разработчиков;
 - `pnLibrary-bukkit-api-2.2.0-beta.2.jar` и sources для Bukkit-разработчиков.
+- `pnLibrary-common-2.2.0-beta.2.jar` и optional `pnLibrary-minecraft-localization-2.2.0-beta.2.jar`.
 
 Положите один подходящий JAR в папку `plugins` и полностью перезапустите сервер.
 
