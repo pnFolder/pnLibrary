@@ -121,17 +121,12 @@ internal class PluginRegistryImpl(
     override fun get(id: PluginId): PluginContext? = synchronized(contexts) { contexts[id] }
 
     override fun unregister(id: PluginId) {
-        synchronized(contexts) {
-            val context = contexts[id] ?: return
-            unregisterLocked(context)
-        }
+        detach(id)?.closeInternal()
     }
 
     override fun unregisterOwner(owner: Any) {
-        synchronized(contexts) {
-            val context = owners[owner] ?: return
-            unregisterLocked(context)
-        }
+        val context = synchronized(contexts) { owners[owner] }
+        context?.let { detach(it.id)?.closeInternal() }
     }
 
     override fun registrations(): List<PluginContext> =
@@ -239,11 +234,11 @@ internal class PluginRegistryImpl(
         )
     }
 
-    private fun unregisterLocked(context: Context) {
-        context.closeInternal()
-        contexts.remove(context.id, context)
+    private fun detach(id: PluginId): Context? = synchronized(contexts) {
+        val context = contexts.remove(id) ?: return@synchronized null
         owners.remove(context.owner)
         componentDescriptors.entries.removeIf { it.value.id.value == context.id.value }
+        context
     }
 
     private fun componentDescriptor(owner: Any, id: PluginId, definition: Builder): ComponentDescriptor? {
@@ -374,9 +369,7 @@ internal class PluginRegistryImpl(
         }
 
         override fun close() {
-            synchronized(contexts) {
-                unregisterLocked(this)
-            }
+            detach(id)?.closeInternal()
         }
 
         fun closeInternal() {
