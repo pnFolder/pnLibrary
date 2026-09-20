@@ -14,6 +14,9 @@ import ru.privatenull.pnlibrary.api.runtime.*
 import ru.privatenull.pnlibrary.api.tasks.*
 import ru.privatenull.pnlibrary.api.updates.*
 import java.util.function.Supplier
+import java.util.concurrent.Executors
+import java.util.concurrent.TimeUnit
+import java.util.concurrent.atomic.AtomicInteger
 
 class MetricsRegistryTest {
     @Test
@@ -32,6 +35,26 @@ class MetricsRegistryTest {
         registry.close()
 
         assertEquals(2, closed)
+    }
+
+    @Test
+    fun `managed metrics closes delegate only once under concurrent close`() {
+        val closed = AtomicInteger()
+        val registry = MetricsRegistry(object : PlatformMetricsFactory {
+            override fun open(owner: Any, projectId: Int): PluginMetrics =
+                FakeMetrics(projectId) { closed.incrementAndGet() }
+        })
+        val metrics = registry.open(Any(), 123)
+        val executor = Executors.newFixedThreadPool(8)
+        try {
+            repeat(64) { executor.submit { metrics.close() } }
+        } finally {
+            executor.shutdown()
+            check(executor.awaitTermination(5, TimeUnit.SECONDS))
+        }
+
+        registry.close()
+        assertEquals(1, closed.get())
     }
 
     private class FakeMetrics(override val projectId: Int, val shutdown: () -> Unit) : PluginMetrics {

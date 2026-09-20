@@ -5,6 +5,7 @@ import ru.privatenull.pnlibrary.api.metrics.PluginMetrics
 import ru.privatenull.pnlibrary.spi.metrics.PlatformMetricsFactory
 import java.util.Collections
 import java.util.IdentityHashMap
+import java.util.concurrent.atomic.AtomicBoolean
 
 /** Owns every platform metrics session and provides idempotent managed close handles. */
 internal class MetricsRegistry(private val factory: PlatformMetricsFactory) : MetricsService, AutoCloseable {
@@ -31,10 +32,10 @@ private class ManagedMetrics(
     private val delegate: PluginMetrics,
     private val onClose: (PluginMetrics) -> Unit,
 ) : PluginMetrics by delegate {
-    private var closed = false
+    private val closed = AtomicBoolean(false)
+
     override fun close() {
-        if (closed) return
-        closed = true
+        if (!closed.compareAndSet(false, true)) return
         try {
             delegate.close()
         } finally {
