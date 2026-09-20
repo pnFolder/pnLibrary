@@ -125,6 +125,7 @@ internal class ConfigurationServiceImpl(
             )
             val owned = OwnedConfig(target, handle)
             synchronized(handles) {
+                check(!scopeClosed.get()) { "Configuration scope is closed" }
                 check(handles.none { (it as? OwnedConfig<*>)?.file == target }) {
                     "Configuration $path is already registered"
                 }
@@ -154,6 +155,7 @@ internal class ConfigurationServiceImpl(
                 normalizedAliases, priority, access,
             )
             synchronized(runtimeTypes) {
+                check(!scopeClosed.get()) { "Configuration scope is closed" }
                 require(runtimeTypes.none {
                     it.isActive && it.owner == pluginId && it.baseType == baseType &&
                         (it.name == normalizedName || normalizedName in it.aliases || it.name in normalizedAliases)
