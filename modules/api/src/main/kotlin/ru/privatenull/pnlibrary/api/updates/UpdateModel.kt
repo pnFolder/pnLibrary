@@ -54,6 +54,8 @@ data class ComponentRelease(
     val providesApi: Int? = null,
     val dependencies: List<ComponentDependency> = emptyList(),
     val repository: String? = null,
+    val artifacts: List<ArtifactDescriptor> = emptyList(),
+    val externalDependencies: List<ExternalDependency> = emptyList(),
 ) {
     init {
         require(providesApi == null || providesApi > 0) { "provided API generation must be positive" }

@@ -3238,8 +3238,8 @@ public final class ru/privatenull/pnlibrary/api/updates/ComponentId$Companion {
 }
 
 public final class ru/privatenull/pnlibrary/api/updates/ComponentRelease {
-	public fun <init> (Lru/privatenull/pnlibrary/api/updates/ComponentId;Lru/privatenull/pnlibrary/api/version/SemanticVersion;Lru/privatenull/pnlibrary/api/updates/UpdateChannel;Lru/privatenull/pnlibrary/api/version/ApiVersionRange;Ljava/lang/Integer;Ljava/util/List;Ljava/lang/String;)V
-	public synthetic fun <init> (Lru/privatenull/pnlibrary/api/updates/ComponentId;Lru/privatenull/pnlibrary/api/version/SemanticVersion;Lru/privatenull/pnlibrary/api/updates/UpdateChannel;Lru/privatenull/pnlibrary/api/version/ApiVersionRange;Ljava/lang/Integer;Ljava/util/List;Ljava/lang/String;ILkotlin/jvm/internal/DefaultConstructorMarker;)V
+	public fun <init> (Lru/privatenull/pnlibrary/api/updates/ComponentId;Lru/privatenull/pnlibrary/api/version/SemanticVersion;Lru/privatenull/pnlibrary/api/updates/UpdateChannel;Lru/privatenull/pnlibrary/api/version/ApiVersionRange;Ljava/lang/Integer;Ljava/util/List;Ljava/lang/String;Ljava/util/List;Ljava/util/List;)V
+	public synthetic fun <init> (Lru/privatenull/pnlibrary/api/updates/ComponentId;Lru/privatenull/pnlibrary/api/version/SemanticVersion;Lru/privatenull/pnlibrary/api/updates/UpdateChannel;Lru/privatenull/pnlibrary/api/version/ApiVersionRange;Ljava/lang/Integer;Ljava/util/List;Ljava/lang/String;Ljava/util/List;Ljava/util/List;ILkotlin/jvm/internal/DefaultConstructorMarker;)V
 	public final fun component1 ()Lru/privatenull/pnlibrary/api/updates/ComponentId;
 	public final fun component2 ()Lru/privatenull/pnlibrary/api/version/SemanticVersion;
 	public final fun component3 ()Lru/privatenull/pnlibrary/api/updates/UpdateChannel;
@@ -3247,12 +3247,16 @@ public final class ru/privatenull/pnlibrary/api/updates/ComponentRelease {
 	public final fun component5 ()Ljava/lang/Integer;
 	public final fun component6 ()Ljava/util/List;
 	public final fun component7 ()Ljava/lang/String;
-	public final fun copy (Lru/privatenull/pnlibrary/api/updates/ComponentId;Lru/privatenull/pnlibrary/api/version/SemanticVersion;Lru/privatenull/pnlibrary/api/updates/UpdateChannel;Lru/privatenull/pnlibrary/api/version/ApiVersionRange;Ljava/lang/Integer;Ljava/util/List;Ljava/lang/String;)Lru/privatenull/pnlibrary/api/updates/ComponentRelease;
-	public static synthetic fun copy$default (Lru/privatenull/pnlibrary/api/updates/ComponentRelease;Lru/privatenull/pnlibrary/api/updates/ComponentId;Lru/privatenull/pnlibrary/api/version/SemanticVersion;Lru/privatenull/pnlibrary/api/updates/UpdateChannel;Lru/privatenull/pnlibrary/api/version/ApiVersionRange;Ljava/lang/Integer;Ljava/util/List;Ljava/lang/String;ILjava/lang/Object;)Lru/privatenull/pnlibrary/api/updates/ComponentRelease;
+	public final fun component8 ()Ljava/util/List;
+	public final fun component9 ()Ljava/util/List;
+	public final fun copy (Lru/privatenull/pnlibrary/api/updates/ComponentId;Lru/privatenull/pnlibrary/api/version/SemanticVersion;Lru/privatenull/pnlibrary/api/updates/UpdateChannel;Lru/privatenull/pnlibrary/api/version/ApiVersionRange;Ljava/lang/Integer;Ljava/util/List;Ljava/lang/String;Ljava/util/List;Ljava/util/List;)Lru/privatenull/pnlibrary/api/updates/ComponentRelease;
+	public static synthetic fun copy$default (Lru/privatenull/pnlibrary/api/updates/ComponentRelease;Lru/privatenull/pnlibrary/api/updates/ComponentId;Lru/privatenull/pnlibrary/api/version/SemanticVersion;Lru/privatenull/pnlibrary/api/updates/UpdateChannel;Lru/privatenull/pnlibrary/api/version/ApiVersionRange;Ljava/lang/Integer;Ljava/util/List;Ljava/lang/String;Ljava/util/List;Ljava/util/List;ILjava/lang/Object;)Lru/privatenull/pnlibrary/api/updates/ComponentRelease;
 	public fun equals (Ljava/lang/Object;)Z
+	public final fun getArtifacts ()Ljava/util/List;
 	public final fun getChannel ()Lru/privatenull/pnlibrary/api/updates/UpdateChannel;
 	public final fun getComponent ()Lru/privatenull/pnlibrary/api/updates/ComponentId;
 	public final fun getDependencies ()Ljava/util/List;
+	public final fun getExternalDependencies ()Ljava/util/List;
 	public final fun getProvidesApi ()Ljava/lang/Integer;
 	public final fun getRepository ()Ljava/lang/String;
 	public final fun getSupportedApi ()Lru/privatenull/pnlibrary/api/version/ApiVersionRange;
