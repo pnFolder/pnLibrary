@@ -88,7 +88,7 @@ internal class DefaultMinecraftLocalization internal constructor(
 
     private fun loadLocaleNow(key: CacheKey, refresh: Boolean): LoadedLocale {
         val path = store.translation(key.version.text, key.locale)
-        if (!refresh) store.read(path)?.let { bytes ->
+        if (!refresh) store.read(path, MAX_LANGUAGE_BYTES)?.let { bytes ->
             try {
                 return cache(key, bytes, TranslationMetadata(TranslationSource.DISK, store.sha1(bytes), false))
             } catch (_: TranslationException) {
@@ -102,7 +102,7 @@ internal class DefaultMinecraftLocalization internal constructor(
             store.write(path, resolved.bytes)
             loaded
         } catch (error: TranslationException) {
-            if (refresh) store.read(path)?.let { bytes ->
+            if (refresh) store.read(path, MAX_LANGUAGE_BYTES)?.let { bytes ->
                 return cache(key, bytes, TranslationMetadata(TranslationSource.STALE_DISK, store.sha1(bytes), true))
             }
             throw error
@@ -118,7 +118,7 @@ internal class DefaultMinecraftLocalization internal constructor(
     @Synchronized
     private fun manifest(allowStale: Boolean): ByteArray? {
         val path = store.manifest()
-        val cached = store.read(path)
+        val cached = store.read(path, MAX_MANIFEST_BYTES)
         val fresh = cached != null && Duration.ofMillis(System.currentTimeMillis() - Files.getLastModifiedTime(path).toMillis()) <= manifestTtl
         if (fresh) return cached
         return try {
@@ -155,6 +155,11 @@ internal class DefaultMinecraftLocalization internal constructor(
     private fun offline() = TranslationException(TranslationException.Reason.OFFLINE, "No cached Minecraft manifest is available")
     private fun <T> failed(error: Throwable): CompletableFuture<T> = CompletableFuture<T>().also { it.completeExceptionally(error) }
     private data class CacheKey(val version: MinecraftVersion, val locale: String)
+
+    private companion object {
+        const val MAX_LANGUAGE_BYTES = 16 * 1024 * 1024
+        const val MAX_MANIFEST_BYTES = 4 * 1024 * 1024
+    }
 }
 
 internal class LoadedLocale private constructor(

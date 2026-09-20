@@ -111,7 +111,7 @@ internal class MojangAssetResolver(
             }
             return parsed
         }
-        store.read(path)?.let { bytes ->
+        store.read(path, limit)?.let { bytes ->
             try {
                 return decode(bytes)
             } catch (_: TranslationException) {
