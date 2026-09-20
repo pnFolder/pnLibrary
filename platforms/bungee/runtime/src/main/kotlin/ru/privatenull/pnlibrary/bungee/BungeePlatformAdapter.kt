@@ -14,6 +14,8 @@ import ru.privatenull.pnlibrary.bungee.tasks.BungeeTaskAdapter
 import ru.privatenull.pnlibrary.spi.tasks.PlatformTaskAdapter
 import java.util.concurrent.atomic.AtomicBoolean
 import java.util.logging.Level
+import ru.privatenull.pnlibrary.api.commands.CommandRegistration
+import ru.privatenull.pnlibrary.core.updates.ProxyUpdateCommand
 
 /**
  * Runtime adapter for BungeeCord-compatible proxy servers.
@@ -28,6 +30,7 @@ internal class BungeePlatformAdapter(
 
     private val closedFlag = AtomicBoolean(false)
     private val bound = AtomicBoolean(false)
+    private var updateCommand: CommandRegistration? = null
 
     override val type = PlatformType.BUNGEECORD
     override val implementationName: String get() = plugin.proxy.name.ifBlank { type.displayName }
@@ -61,9 +64,14 @@ internal class BungeePlatformAdapter(
             "authors" to (target.description.author ?: "pnFolder"),
         )
     }
+    override fun installedPlugins(): Map<String, String> = plugin.proxy.pluginManager.plugins.associate {
+        it.description.name to it.description.version
+    }
+
     override fun bind(library: PnLibrary) {
         check(!closedFlag.get()) { "Bungee platform adapter is closed" }
         check(bound.compareAndSet(false, true)) { "Bungee platform adapter is already bound" }
+        updateCommand = library.commands.register(plugin, ProxyUpdateCommand(library).definition())
     }
 
     override fun details(): Map<String, Any?> {
@@ -99,6 +107,8 @@ internal class BungeePlatformAdapter(
 
     override fun close() {
         if (!closedFlag.compareAndSet(false, true)) return
+        updateCommand?.close()
+        updateCommand = null
         bound.set(false)
     }
 }

@@ -15,6 +15,8 @@ import ru.privatenull.pnlibrary.velocity.tasks.VelocityTaskAdapter
 import ru.privatenull.pnlibrary.spi.tasks.PlatformTaskAdapter
 import java.nio.file.Path
 import java.util.concurrent.atomic.AtomicBoolean
+import ru.privatenull.pnlibrary.api.commands.CommandRegistration
+import ru.privatenull.pnlibrary.core.updates.ProxyUpdateCommand
 
 /**
  * Runtime adapter for Velocity 3.x proxy servers.
@@ -34,6 +36,7 @@ internal class VelocityPlatformAdapter(
 
     private val closedFlag = AtomicBoolean(false)
     private val bound = AtomicBoolean(false)
+    private var updateCommand: CommandRegistration? = null
     override val type = PlatformType.VELOCITY
     override val implementationName: String get() = server.version.name.ifBlank { type.displayName }
     override val commandAdapter: PlatformCommandAdapter = VelocityCommandAdapter(plugin, server)
@@ -66,9 +69,14 @@ internal class VelocityPlatformAdapter(
         )
     }
 
+    override fun installedPlugins(): Map<String, String> = server.pluginManager.plugins.associate {
+        it.description.id to it.description.version.orElse("unknown")
+    }
+
     override fun bind(library: PnLibrary) {
         check(!closedFlag.get()) { "Velocity platform adapter is closed" }
         check(bound.compareAndSet(false, true)) { "Velocity platform adapter is already bound" }
+        updateCommand = library.commands.register(plugin, ProxyUpdateCommand(library).definition())
     }
 
     override fun details(): Map<String, Any?> {
@@ -109,6 +117,8 @@ internal class VelocityPlatformAdapter(
 
     override fun close() {
         if (!closedFlag.compareAndSet(false, true)) return
+        updateCommand?.close()
+        updateCommand = null
         bound.set(false)
     }
 }
