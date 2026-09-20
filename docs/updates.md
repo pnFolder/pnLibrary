@@ -1,10 +1,13 @@
-# pnUpdate: component updates
+# pnUpdate: система обновлений компонентов
 
 pnLibrary resolves the library and every registered plugin as one compatibility graph. It does not
 download a release until the complete target graph supports one pnLibrary API generation. The API
 generation remains `1`; semantic plugin versions are independent from it.
 
-## Plugin metadata
+## Подключение через Gradle
+
+Для Gradle применяется плагин `ru.privatenull.pnlibrary.component`. Блок `pnComponent` пишется в
+`build.gradle.kts`, а не в Java-коде и не в `pom.xml`:
 
 Apply `ru.privatenull.pnlibrary.component` and configure one source of truth:
 
@@ -20,13 +23,35 @@ pnComponent {
 }
 ```
 
-`generatePnComponentMetadata` creates deterministic UTF-8 files:
+Задача `generatePnComponentMetadata` создаёт воспроизводимые UTF-8-файлы:
 
-- `META-INF/pnlibrary/component.json` is embedded through `processResources`;
-- `pn-update.json` is published with a GitHub release;
-- `checksums.sha256` contains the exact declared artifacts.
+- `META-INF/pnlibrary/component.json` автоматически попадает внутрь JAR;
+- `pn-update.json` прикладывается к GitHub Release;
+- `checksums.sha256` содержит контрольные суммы опубликованных файлов.
 
-At runtime a plugin may provide the same model explicitly:
+## Подключение через Maven
+
+`pnComponent { ... }` в Maven не работает. Отдельный Maven-плагин генерации метаданных пока не
+выпущен. До его появления Maven-проект регистрирует описание компонента через Java API:
+
+```java
+pnContext = pnLibrary.getPlugins().register(this, builder -> builder
+    .component(ComponentDescriptor.builder("pncases", getDescription().getVersion())
+        .pnLibraryApi(1, 1)
+        .managedDependency("pnlibrary", "1.0.0", "pnFolder", "pnLibrary")
+        .build())
+    .updates("pnFolder", "pnCases", updater -> updater
+        .channel(UpdateChannel.STABLE)
+        .automaticDownload(true)
+        .artifact("(?i)^pnCases-.*\\.jar$", 17))
+);
+```
+
+Это полноценный runtime-вариант, но он не создаёт `pn-update.json` автоматически. Его необходимо
+прикладывать к релизу отдельно. Не добавляйте в `pom.xml` несуществующий
+`pnlibrary-component-maven-plugin`: такой артефакт сейчас не опубликован.
+
+Gradle-проект также может передать ту же модель явно:
 
 ```kotlin
 library.plugins.register(this, "pnmarket") { plugin ->

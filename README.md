@@ -8,6 +8,10 @@ SHA-256 and embedded metadata, and stage the plan transactionally. Plugin author
 Server owners retain the final policy in `updates.yml`; automatic downloads, external hosts, new
 plugins, and restart are conservative by default. See [docs/updates.md](docs/updates.md).
 
+Инструкции для Gradle и текущий способ подключения Maven-проектов приведены отдельно в
+[документации pnUpdate](docs/updates.md). Блок `pnComponent { ... }` относится только к Gradle;
+готовый Maven-плагин генерации метаданных пока не опубликован.
+
 `pnLibrary` — единый runtime и API для плагинов pnFolder. Владелец сервера устанавливает один JAR для своей платформы, а pnMarket, pnClans и другие плагины подключаются к общему экземпляру библиотеки.
 
 В pnLibrary находятся:
