@@ -4,69 +4,75 @@ pnLibrary resolves the library and every registered plugin as one compatibility 
 download a release until the complete target graph supports one pnLibrary API generation. The API
 generation remains `1`; semantic plugin versions are independent from it.
 
-## Подключение через Gradle
+## Единая регистрация обновлений
 
-Для Gradle применяется плагин `ru.privatenull.pnlibrary.component`. Блок `pnComponent` пишется в
-`build.gradle.kts`, а не в Java-коде и не в `pom.xml`:
-
-Apply `ru.privatenull.pnlibrary.component` and configure one source of truth:
-
-```kotlin
-pnComponent {
-    id.set("pnmarket")
-    componentVersion.set(project.version.toString())
-    apiMinimum.set(1)
-    apiMaximum.set(1)
-    channel.set("stable")
-    managedDependency("pnlibrary", "1.0.0", "pnFolder", "pnLibrary")
-    artifact("pnMarket-bukkit.jar", "bukkit", 17, null, 12_345, "<64 hex sha256>")
-}
-```
-
-Задача `generatePnComponentMetadata` создаёт воспроизводимые UTF-8-файлы:
-
-- `META-INF/pnlibrary/component.json` автоматически попадает внутрь JAR;
-- `pn-update.json` прикладывается к GitHub Release;
-- `checksums.sha256` содержит контрольные суммы опубликованных файлов.
-
-## Подключение через Maven
-
-`pnComponent { ... }` в Maven не работает. Отдельный Maven-плагин генерации метаданных пока не
-выпущен. До его появления Maven-проект регистрирует описание компонента через Java API:
+Настройка одинакова для Gradle и Maven и находится в обычном Java/Kotlin-коде плагина:
 
 ```java
 pnContext = pnLibrary.getPlugins().register(this, builder -> builder
-    .component(ComponentDescriptor.builder("pncases", getDescription().getVersion())
-        .pnLibraryApi(1, 1)
-        .managedDependency("pnlibrary", "1.0.0", "pnFolder", "pnLibrary")
-        .build())
     .updates("pnFolder", "pnCases", updater -> updater
+        .apiVersions(1, 2)
         .channel(UpdateChannel.STABLE)
         .automaticDownload(true)
-        .artifact("(?i)^pnCases-.*\\.jar$", 17))
+        .artifact("(?i)^pnCases-Bukkit-.*\\.jar$", PlatformType.BUKKIT, 17)
+        .managedDependency("pneconomy", "2.0.0", "pnFolder", "pnEconomy")
+        .pluginDependency("Vault", "1.7.3", "https://github.com/MilkBowl/Vault/releases"))
 );
 ```
 
-Это полноценный runtime-вариант, но он не создаёт `pn-update.json` автоматически. Его необходимо
-прикладывать к релизу отдельно. Не добавляйте в `pom.xml` несуществующий
-`pnlibrary-component-maven-plugin`: такой артефакт сейчас не опубликован.
+`apiVersions(minimum, maximum)` задаёт включительный диапазон API. Для одной версии используйте
+`apiVersion(1)`. ID и версия компонента берутся из нативного описания плагина. Отдельный
+`pnComponent { ... }` для обычного использования не нужен.
 
-Gradle-проект также может передать ту же модель явно:
+Если в GitHub Release нет `pn-update.json`, pnLibrary использует версию тега, размер и опубликованный
+GitHub `sha256` digest подходящего asset. Asset без проверяемого digest автоматически не принимается.
 
-```kotlin
-library.plugins.register(this, "pnmarket") { plugin ->
-    plugin.component(
-        ComponentDescriptor.builder("pnmarket", version)
-            .pnLibraryApi(1, 1)
-            .managedDependency("pnlibrary", "1.0.0", "pnFolder", "pnLibrary")
-            .build()
-    )
-}
+## Прямые загрузки
+
+```java
+.downloads(getDataFolder().toPath(), downloads -> downloads
+    .component("pnEconomy", component -> component
+        .version("2.0.0").apiVersions(1, 2)
+        .platform(PlatformType.BUKKIT).java(17)
+        .url("https://example.org/pnEconomy.jar")
+        .automaticDownload(true))
+    .plugin("Vault", plugin -> plugin
+        .minimumVersion("1.7.3")
+        .url("https://example.org/Vault.jar"))
+    .file("cases-data", file -> file
+        .url("https://example.org/cases.bin")
+        .destination(DownloadDestination.DATA_FOLDER, "resources/cases.bin")))
 ```
 
-Embedded metadata wins over native fallback. An explicit descriptor must agree with embedded ID,
-version, and API range. Required dependencies are checked before commands, events, tasks, services,
-or placeholders become visible.
+`.downloads(...)` не является updater: он отдельно доставляет компонент pnLibrary, обычный серверный
+плагин или файл. Пакет сначала целиком скачивается и проверяется, затем публикуется атомарно.
+Компонент проверяется по ID, версии и API; пути не могут выйти из разрешённой корневой папки.
+
+Прямые загрузки имеют отдельную политику `plugins/pnLibrary/downloads.yml` и по умолчанию не
+выполняются автоматически:
+
+```yaml
+downloads:
+  enabled: true
+  automatic: false
+  allowed-hosts:
+    - github.com
+    - objects.githubusercontent.com
+  destinations:
+    plugins: true
+    data-folder: true
+    cache: true
+```
+
+Для включения необходимо явно установить `automatic: true`. Значение в коде не может обойти
+запрет администратора. Для URL принимается только HTTPS и только домен из `allowed-hosts`.
+Без `.automaticDownload(true)` декларация остаётся доступной для ручного запуска:
+
+```java
+pnContext.getDownloads().downloadNow();
+```
+
+Текущее состояние каждого элемента возвращается через `pnContext.getDownloads().snapshots()`.
 
 ## Server policy
 

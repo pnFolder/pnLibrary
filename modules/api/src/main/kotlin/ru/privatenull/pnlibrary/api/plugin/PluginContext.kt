@@ -13,6 +13,7 @@ import ru.privatenull.pnlibrary.api.services.ServiceManager
 import ru.privatenull.pnlibrary.api.tasks.TaskScope
 import ru.privatenull.pnlibrary.api.text.ComponentService
 import ru.privatenull.pnlibrary.api.updates.UpdateRegistration
+import ru.privatenull.pnlibrary.api.downloads.DownloadRegistration
 
 /**
  * Lifecycle owner for every pnLibrary capability registered by one plugin.
@@ -59,6 +60,8 @@ interface PluginContext : AutoCloseable {
     val diagnostics: DiagnosticRegistration?
     /** Update registration created by the builder, or `null` when not configured. */
     val updates: UpdateRegistration?
+    /** Direct component/plugin/file delivery registered by the builder, or `null`. */
+    val downloads: DownloadRegistration?
     /** Whether this context has completed or begun its idempotent teardown. */
     val isClosed: Boolean
 

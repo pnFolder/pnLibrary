@@ -88,6 +88,14 @@ internal class PnLibraryImpl(
     private val configurationService = ConfigurationServiceImpl(platform)
     override val configurations: ru.privatenull.pnlibrary.api.config.ConfigurationService get() = configurationService
     private val updateService = UpdateServiceImpl(platform, dataFolder)
+    private val directDownloadConfiguration = ru.privatenull.pnlibrary.core.downloads.DownloadConfiguration.load(
+        dataFolder.resolve("downloads.yml"),
+    )
+    private val directDownloadManager = ru.privatenull.pnlibrary.core.downloads.DirectDownloadManager(
+        platform,
+        dataFolder,
+        directDownloadConfiguration,
+    )
     override val updates: ru.privatenull.pnlibrary.api.updates.UpdateService get() = updateService
     private val taskService = TaskServiceImpl(platform.taskAdapter, TaskServiceSettings(config.taskHistoryCapacity)) { taskOwner, message, error ->
         recordAndLog(taskOwner, message, error)
@@ -126,6 +134,7 @@ internal class PnLibraryImpl(
         placeholderHub = placeholderHub,
         currencyHub = currencyHub,
         commands = commandService,
+        directDownloads = directDownloadManager,
     )
 
     val uploader: UploadProvider? = initUploader()

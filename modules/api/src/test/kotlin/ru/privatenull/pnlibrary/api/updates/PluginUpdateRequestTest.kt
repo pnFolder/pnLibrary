@@ -7,8 +7,27 @@ import org.junit.jupiter.api.Test
 import ru.privatenull.pnlibrary.api.version.ApiVersionRange
 import ru.privatenull.pnlibrary.api.version.PnLibraryApi
 import ru.privatenull.pnlibrary.api.version.SemanticVersion
+import ru.privatenull.pnlibrary.api.platform.PlatformType
 
 class PluginUpdateRequestTest {
+    @Test
+    fun `single updates declaration describes API platform and dependencies`() {
+        val vault = ExternalDependency.builder("Vault", "1.7.3")
+            .downloadPage("https://github.com/MilkBowl/Vault/releases").build()
+        val request = PluginUpdateRequest.builder()
+            .repository("pnFolder", "pnCases")
+            .apiVersions(1, 2)
+            .managedDependency("pneconomy", "2.0.0", "pnFolder", "pnEconomy")
+            .pluginDependency(vault)
+            .artifact("(?i)^pnCases-Bukkit-.*\\.jar$", PlatformType.BUKKIT, 17)
+            .build()
+
+        assertEquals(ApiVersionRange(1, 2), request.supportedApi)
+        assertEquals("pneconomy", request.managedDependencies.single().component.value)
+        assertEquals("Vault", request.externalDependencies.single().plugin)
+        assertEquals(PlatformType.BUKKIT, request.artifacts.single().platform)
+    }
+
     @Test
     fun `legacy declarations receive resolver compatible defaults`() {
         val request = PluginUpdateRequest.builder()

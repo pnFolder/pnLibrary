@@ -60,7 +60,7 @@ internal class UpdateServiceImpl(private val platform: PlatformAdapter, private 
         require(SemanticVersion.tryParse(version) != null) { "Версия $product должна быть семантической: $version" }
         val jar = Paths.get(owner.javaClass.protectionDomain.codeSource.location.toURI()).toAbsolutePath().normalize()
         require(Files.isRegularFile(jar)) { "Плагин должен быть запущен из JAR" }
-        val artifact = request.artifactFor(Runtime.version().feature())
+        val artifact = request.artifactFor(Runtime.version().feature(), platform.type)
             ?: error("Для Java ${Runtime.version().feature()} не зарегистрирован совместимый артефакт ${request.repositoryName}")
         return Registration(owner, product, version, request, artifact, jar, jar.parent.resolve("update")).also {
             entries += it
@@ -88,7 +88,7 @@ internal class UpdateServiceImpl(private val platform: PlatformAdapter, private 
             (configuration.components[entry.request.component.value]?.channel ?: entry.request.channel) }
         val releases = entries.flatMap { entry ->
             catalogue.releases(ReleaseSource(entry.request.repositoryOwner, entry.request.repositoryName),
-                channels.getValue(entry.request.component)).join()
+                channels.getValue(entry.request.component), entry.request, platform.type).join()
         }
         entries.forEach { entry ->
             val latest = releases.filter { it.component == entry.request.component }.maxByOrNull(ComponentRelease::version)

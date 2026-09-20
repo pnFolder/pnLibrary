@@ -3,6 +3,7 @@ package ru.privatenull.pnlibrary.api.updates
 import ru.privatenull.pnlibrary.api.version.ApiVersionRange
 import ru.privatenull.pnlibrary.api.version.PnLibraryApi
 import ru.privatenull.pnlibrary.api.version.SemanticVersion
+import ru.privatenull.pnlibrary.api.platform.PlatformType
 import java.util.Optional
 import java.util.UUID
 import java.util.concurrent.CompletableFuture
@@ -89,6 +90,7 @@ class PluginUpdateArtifact(
     val pattern: String,
     val minimumJava: Int,
     val maximumJava: Int?,
+    val platform: PlatformType? = null,
 ) {
     /** Returns whether [javaFeature] is inside this artifact's inclusive Java range. */
     fun supports(javaFeature: Int): Boolean =
@@ -128,10 +130,19 @@ class PluginUpdateRequest private constructor(builder: Builder) {
     val supportedApi: ApiVersionRange = builder.supportedApi
     /** Immutable minimum-version requirements on other managed components. */
     val dependencies: List<ComponentDependency> = builder.dependencies.toList()
+    /** Managed dependencies including their release catalogue coordinates. */
+    val managedDependencies: List<ManagedDependency> = builder.managedDependencies.toList()
+    /** Ordinary native plugins required by this component. */
+    val externalDependencies: List<ExternalDependency> = builder.externalDependencies.toList()
 
     /** Returns the most specific artifact compatible with [javaFeature], or `null`. */
     fun artifactFor(javaFeature: Int): PluginUpdateArtifact? = artifacts
         .filter { it.supports(javaFeature) }
+        .maxByOrNull { it.minimumJava }
+
+    /** Returns the most specific artifact compatible with both runtime and platform. */
+    fun artifactFor(javaFeature: Int, platform: PlatformType): PluginUpdateArtifact? = artifacts
+        .filter { it.supports(javaFeature) && (it.platform == null || it.platform == platform) }
         .maxByOrNull { it.minimumJava }
 
     /** Mutable Java-friendly builder for [PluginUpdateRequest]. */
@@ -144,6 +155,8 @@ class PluginUpdateRequest private constructor(builder: Builder) {
         internal var component: ComponentId? = null
         internal var supportedApi = ApiVersionRange(PnLibraryApi.VERSION, PnLibraryApi.VERSION)
         internal val dependencies = mutableListOf<ComponentDependency>()
+        internal val managedDependencies = mutableListOf<ManagedDependency>()
+        internal val externalDependencies = mutableListOf<ExternalDependency>()
 
         /** Sets and validates the GitHub repository coordinates. */
         fun repository(owner: String, name: String) = apply {
@@ -163,6 +176,10 @@ class PluginUpdateRequest private constructor(builder: Builder) {
         fun supportedApi(minimum: Int, maximum: Int) = apply {
             supportedApi = ApiVersionRange(minimum, maximum)
         }
+        /** Declares one supported API generation. */
+        fun apiVersion(version: Int) = supportedApi(version, version)
+        /** Declares the inclusive range of supported pnLibrary API generations. */
+        fun apiVersions(minimum: Int, maximum: Int) = supportedApi(minimum, maximum)
         /** Adds an exact release asset name without exposing regular-expression escaping. */
         @JvmOverloads
         fun exactArtifact(name: String, minimumJava: Int = 8, maximumJava: Int? = null) = apply {
@@ -180,6 +197,32 @@ class PluginUpdateRequest private constructor(builder: Builder) {
             }
             dependencies += dependency
         }
+        /** Declares another pnLibrary-managed component and its release repository. */
+        fun managedDependency(
+            component: String,
+            minimumVersion: String,
+            repositoryOwner: String,
+            repositoryName: String,
+        ) = apply {
+            val dependency = ManagedDependency(
+                ComponentId.of(component), SemanticVersion.parse(minimumVersion), repositoryOwner, repositoryName,
+            )
+            require(managedDependencies.none { it.component == dependency.component }) {
+                "duplicate managed dependency: ${dependency.component}"
+            }
+            managedDependencies += dependency
+            dependsOn(component, minimumVersion)
+        }
+        /** Declares an ordinary native server plugin dependency. */
+        fun pluginDependency(dependency: ExternalDependency) = apply {
+            require(externalDependencies.none { it.plugin.equals(dependency.plugin, true) }) {
+                "duplicate plugin dependency: ${dependency.plugin}"
+            }
+            externalDependencies += dependency
+        }
+        /** Declares a manual-download native plugin dependency. */
+        fun pluginDependency(plugin: String, minimumVersion: String, downloadPage: String) =
+            pluginDependency(ExternalDependency.builder(plugin, minimumVersion).downloadPage(downloadPage).build())
         /** Adds an artifact pattern compatible with Java 8 and newer. */
         fun artifactPattern(regex: String) = artifact(regex, 8)
         /** Adds and validates one Java-bounded release artifact rule. */
@@ -189,6 +232,14 @@ class PluginUpdateRequest private constructor(builder: Builder) {
             require(minimumJava >= 8) { "minimumJava must be at least 8" }
             require(maximumJava == null || maximumJava >= minimumJava) { "maximumJava must be >= minimumJava" }
             artifacts += PluginUpdateArtifact(regex, minimumJava, maximumJava)
+        }
+        /** Adds a release artifact restricted to one server platform. */
+        @JvmOverloads
+        fun artifact(regex: String, platform: PlatformType, minimumJava: Int, maximumJava: Int? = null) = apply {
+            Regex(regex)
+            require(minimumJava >= 8) { "minimumJava must be at least 8" }
+            require(maximumJava == null || maximumJava >= minimumJava) { "maximumJava must be >= minimumJava" }
+            artifacts += PluginUpdateArtifact(regex, minimumJava, maximumJava, platform)
         }
         /** Validates the complete policy and creates its immutable request. */
         fun build(): PluginUpdateRequest {

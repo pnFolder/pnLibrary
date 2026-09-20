@@ -4,6 +4,8 @@ import org.junit.jupiter.api.Assertions.*
 import org.junit.jupiter.api.Test
 import org.junit.jupiter.api.io.TempDir
 import ru.privatenull.pnlibrary.api.updates.UpdateChannel
+import ru.privatenull.pnlibrary.api.updates.PluginUpdateRequest
+import ru.privatenull.pnlibrary.api.platform.PlatformType
 import java.net.URI
 import java.nio.file.Files
 import java.nio.file.Path
@@ -65,6 +67,30 @@ class ReleaseCatalogueClientTest {
             client.readBounded(ByteArrayInputStream(byteArrayOf(1, 2, 3, 4)), 3)
         }
         assertArrayEquals(byteArrayOf(1, 2, 3), client.readBounded(ByteArrayInputStream(byteArrayOf(1, 2, 3)), 3))
+    }
+
+    @Test fun `uses GitHub asset digest when release manifest is absent`() {
+        val digest = "a".repeat(64)
+        val releases = URI.create("https://api.github.com/repos/pnFolder/Cases/releases?per_page=30")
+        val transport = object : TrustedHttpClient(Duration.ZERO, Duration.ZERO, emptySet()) {
+            override fun get(uri: URI, maximumBytes: Int): ByteArray {
+                assertEquals(releases, uri)
+                return """[{"tag_name":"v2.5.6","draft":false,"prerelease":false,"assets":[{
+                    "name":"pnCases-Bukkit-2.5.6.jar","size":123,"digest":"sha256:$digest",
+                    "browser_download_url":"https://github.com/pnFolder/Cases/releases/download/v2.5.6/pnCases-Bukkit-2.5.6.jar"}]}]""".toByteArray()
+            }
+        }
+        val executor = Executors.newSingleThreadExecutor()
+        try {
+            val request = PluginUpdateRequest.builder().repository("pnFolder", "Cases").apiVersions(1, 2)
+                .artifact("(?i)^pnCases-Bukkit-.*\\.jar$", PlatformType.BUKKIT, 17).build()
+            val result = ReleaseCatalogueClient(transport, ReleaseCatalogueStore(directory), executor, Duration.ZERO)
+                .releases(ReleaseSource("pnFolder", "Cases"), UpdateChannel.STABLE, request, PlatformType.BUKKIT)
+                .join().single()
+
+            assertEquals("2.5.6", result.version.toString())
+            assertEquals(digest, result.artifacts.single().sha256)
+        } finally { executor.shutdownNow() }
     }
 
     private class FixtureTransport : TrustedHttpClient(Duration.ZERO, Duration.ZERO, emptySet()) {

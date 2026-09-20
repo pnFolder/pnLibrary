@@ -7,6 +7,7 @@ import ru.privatenull.pnlibrary.api.updates.PluginUpdateRequest
 import ru.privatenull.pnlibrary.api.updates.ComponentDescriptor
 import java.nio.file.Path
 import java.util.function.Consumer
+import ru.privatenull.pnlibrary.api.downloads.PluginDownloads
 
 /**
  * Declarative setup evaluated by [PluginRegistry.register] before capabilities become visible.
@@ -67,6 +68,23 @@ interface PluginBuilder {
         val builder = PluginUpdateRequest.builder().repository(repositoryOwner, repositoryName)
         configure.accept(builder)
         return updates(builder.build())
+    }
+
+    /** Registers direct component, native-plugin, and ordinary-file deliveries separately from updates. */
+    fun downloads(request: PluginDownloads): PluginBuilder
+
+    /** Builds direct-download declarations inline. */
+    fun downloads(configure: Consumer<PluginDownloads.Builder>): PluginBuilder {
+        val builder = PluginDownloads.builder()
+        configure.accept(builder)
+        return downloads(builder.build())
+    }
+
+    /** Builds direct-download declarations rooted at this plugin's data directory. */
+    fun downloads(dataDirectory: Path, configure: Consumer<PluginDownloads.Builder>): PluginBuilder {
+        val builder = PluginDownloads.builder().dataDirectory(dataDirectory)
+        configure.accept(builder)
+        return downloads(builder.build())
     }
 
     /**

@@ -27,6 +27,7 @@ import ru.privatenull.pnlibrary.api.tasks.TaskService
 import ru.privatenull.pnlibrary.api.updates.UpdateService
 import ru.privatenull.pnlibrary.api.updates.PluginUpdateRequest
 import ru.privatenull.pnlibrary.api.updates.UpdateRegistration
+import ru.privatenull.pnlibrary.api.downloads.PluginDownloads
 import ru.privatenull.pnlibrary.api.updates.ComponentDescriptor
 import ru.privatenull.pnlibrary.api.updates.ExternalDependency
 import ru.privatenull.pnlibrary.core.currency.CurrencyHub
@@ -38,6 +39,34 @@ import java.lang.reflect.Proxy
 import java.util.function.Supplier
 
 class PluginRegistryImplTest {
+    @Test
+    fun `updates declaration infers component without separate descriptor`() {
+        val request = PluginUpdateRequest.builder().repository("pnFolder", "Example")
+            .apiVersions(1, 2)
+            .managedDependency("economy", "2.0.0", "pnFolder", "Economy")
+            .artifact("Example.jar", PlatformType.BUKKIT, 17).build()
+
+        val error = assertThrows(IllegalArgumentException::class.java) {
+            registry().register(Any(), "example") { it.updates(request) }
+        }
+
+        assertTrue(error.message!!.contains("economy >= 2.0.0"))
+    }
+
+    @Test
+    fun `declared component delivery satisfies missing managed dependency gate`() {
+        val request = PluginUpdateRequest.builder().repository("pnFolder", "Example")
+            .apiVersion(1).managedDependency("economy", "2.0.0", "pnFolder", "Economy")
+            .artifact("Example.jar", 17).build()
+        val downloads = PluginDownloads.builder().component("economy") {
+            it.version("2.0.0").apiVersion(1).url("https://example.org/Economy.jar")
+        }.build()
+
+        val context = registry().register(Any(), "example") { it.updates(request).downloads(downloads) }
+
+        assertEquals("example", context.id.value)
+    }
+
     @Test
     fun `updates registration inherits component metadata`() {
         val updates = RecordingUpdateService()

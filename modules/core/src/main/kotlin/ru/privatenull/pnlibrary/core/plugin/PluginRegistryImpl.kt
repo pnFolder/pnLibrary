@@ -58,7 +58,10 @@ import ru.privatenull.pnlibrary.api.currency.CurrencyService
 import ru.privatenull.pnlibrary.core.currency.CurrencyHub
 import ru.privatenull.pnlibrary.api.currency.CurrencyStorageFactory
 import ru.privatenull.pnlibrary.api.commands.CommandService
+import ru.privatenull.pnlibrary.api.downloads.PluginDownloads
+import ru.privatenull.pnlibrary.api.downloads.DownloadRegistration
 import ru.privatenull.pnlibrary.core.currency.CurrencyStorageFactoryImpl
+import ru.privatenull.pnlibrary.core.downloads.DirectDownloadManager
 
 /**
  * Owns plugin-scoped library services and coordinates their lifecycle.
@@ -81,6 +84,7 @@ internal class PluginRegistryImpl(
     private val currencyStorageFactory: CurrencyStorageFactory = CurrencyStorageFactoryImpl(),
     private val configurations: ConfigurationServiceImpl = ConfigurationServiceImpl(platform),
     private val commands: CommandService? = null,
+    private val directDownloads: DirectDownloadManager? = null,
     libraryVersion: String? = null,
 ) : PluginRegistry {
 
@@ -106,7 +110,7 @@ internal class PluginRegistryImpl(
             val definition = Builder().also { configure.accept(it) }
             val descriptor = componentDescriptor(owner, id, definition)
             definition.bindUpdatesTo(descriptor)
-            validateDependencies(descriptor)
+            validateDependencies(descriptor, definition.downloadsRequest)
             createContext(owner, id, definition).also {
                 contexts[id] = it
                 owners[owner] = it
@@ -143,6 +147,7 @@ internal class PluginRegistryImpl(
             }
         }
         current.forEach { it.closeInternal() }
+        directDownloads?.close()
     }
 
     private fun createContext(owner: Any, id: PluginId, definition: Builder): Context {
@@ -153,6 +158,7 @@ internal class PluginRegistryImpl(
         var metricsController: MetricsControllerImpl? = null
         var diagnosticRegistration: DiagnosticRegistration? = null
         var updateRegistration: UpdateRegistration? = null
+        var downloadRegistration: DownloadRegistration? = null
         var placeholderScope: PlaceholderService? = null
         var currencyScope: CurrencyService? = null
         try {
@@ -177,6 +183,9 @@ internal class PluginRegistryImpl(
                 )
             }
             definition.updateRequest?.let { updateRegistration = updates.register(owner, it) }
+            definition.downloadsRequest?.let { request ->
+                downloadRegistration = directDownloads?.register(owner, request)
+            }
             return Context(
                 owner,
                 id,
@@ -194,6 +203,7 @@ internal class PluginRegistryImpl(
                 metricsController,
                 diagnosticRegistration,
                 updateRegistration,
+                downloadRegistration,
                 definition.placeholderApiEnabled,
                 definition.listeners.size,
             )
@@ -201,6 +211,7 @@ internal class PluginRegistryImpl(
             ResourceCleanup.suppressInto(
                 error,
                 { updateRegistration?.close() },
+                { downloadRegistration?.close() },
                 { diagnosticRegistration?.close() },
                 { metricsController?.close() },
                 { currencyScope?.close() },
@@ -244,7 +255,20 @@ internal class PluginRegistryImpl(
                 "Explicit component descriptor conflicts with embedded metadata for $id"
             }
         }
-        return (explicit ?: embedded)?.also {
+        val inferred = definition.updateRequest?.let { request ->
+            val version = platform.ownerDetails(owner)["version"] ?: definition.metadataVersion
+                ?: error("Cannot infer component version for $id")
+            ComponentDescriptor.builder(id.value, version)
+                .pnLibraryApi(request.supportedApi.minimum, request.supportedApi.maximum)
+                .also { target ->
+                    request.managedDependencies.forEach { dependency -> target.managedDependency(
+                        dependency.component.value, dependency.minimumVersion.toString(),
+                        dependency.repositoryOwner, dependency.repositoryName,
+                    ) }
+                    request.externalDependencies.forEach(target::externalDependency)
+                }.build()
+        }
+        return (explicit ?: embedded ?: inferred)?.also {
             require(it.id.value == id.value) { "Component ID ${it.id} does not match plugin ID $id" }
         }
     }
@@ -259,11 +283,18 @@ internal class PluginRegistryImpl(
         return if (present) EmbeddedDescriptorReader().read(location) else null
     }
 
-    private fun validateDependencies(descriptor: ComponentDescriptor?) {
+    private fun validateDependencies(descriptor: ComponentDescriptor?, downloads: PluginDownloads?) {
         if (descriptor == null) return
+        val downloadableComponents = downloads?.declarations.orEmpty()
+            .filterIsInstance<ru.privatenull.pnlibrary.api.downloads.DownloadDeclaration.Component>()
+            .associateBy { it.component }
+        val downloadablePlugins = downloads?.declarations.orEmpty()
+            .filterIsInstance<ru.privatenull.pnlibrary.api.downloads.DownloadDeclaration.Plugin>()
+            .associateBy { it.plugin.lowercase() }
         val problems = descriptor.managedDependencies.mapNotNull { dependency ->
             val installed = componentDescriptors[dependency.component.value]
             when {
+                installed == null && downloadableComponents[dependency.component]?.let { it.version >= dependency.minimumVersion } == true -> null
                 installed == null -> "${dependency.component} >= ${dependency.minimumVersion} is missing (${dependency.repositoryOwner}/${dependency.repositoryName})"
                 installed.version < dependency.minimumVersion -> "${dependency.component} ${installed.version} is installed, ${dependency.minimumVersion} is required"
                 else -> null
@@ -274,6 +305,9 @@ internal class PluginRegistryImpl(
         descriptor.externalDependencies.forEach { dependency ->
             val installed = nativePlugins[dependency.plugin.lowercase()]
             when {
+                installed == null && downloadablePlugins[dependency.plugin.lowercase()]?.let {
+                    it.minimumVersion >= dependency.minimumVersion
+                } == true -> null
                 installed == null -> problems += "${dependency.plugin} >= ${dependency.minimumVersion} is missing (${dependency.downloadPage ?: "no download page"})"
                 SemanticVersion.tryParse(installed)?.let { it >= dependency.minimumVersion } != true ->
                     problems += "${dependency.plugin} $installed is installed, ${dependency.minimumVersion} is required"
@@ -299,6 +333,7 @@ internal class PluginRegistryImpl(
         override val metrics: MetricsController,
         override val diagnostics: DiagnosticRegistration?,
         override val updates: UpdateRegistration?,
+        override val downloads: DownloadRegistration?,
         private val placeholderApiEnabled: Boolean,
         private val listenerCount: Int,
     ) : PluginContext {
@@ -349,6 +384,7 @@ internal class PluginRegistryImpl(
             ResourceCleanup.closeAll(
                 { commands?.unregisterOwner(owner) },
                 { updates?.close() },
+                { downloads?.close() },
                 { diagnostics?.close() },
                 { this@PluginRegistryImpl.diagnostics.clearPlugin(id.value) },
                 { metrics.close() },
@@ -399,6 +435,7 @@ internal class PluginRegistryImpl(
         var diagnosticContainer: DiagnosticContainer? = null
         var updateRequest: PluginUpdateRequest? = null
         var componentDescriptor: ComponentDescriptor? = null
+        var downloadsRequest: PluginDownloads? = null
         var placeholderApiEnabled: Boolean = true
         val listeners = mutableListOf<Listener>()
 
@@ -435,6 +472,11 @@ internal class PluginRegistryImpl(
             updateRequest = request
         }
 
+        override fun downloads(request: PluginDownloads): PluginBuilder = apply {
+            require(downloadsRequest == null) { "downloads are already configured" }
+            downloadsRequest = request
+        }
+
         override fun listener(listener: Listener): PluginBuilder = apply {
             listeners += listener
         }
@@ -450,10 +492,14 @@ internal class PluginRegistryImpl(
                 .supportedApi(descriptor.supportedApi.minimum, descriptor.supportedApi.maximum)
                 .also { target ->
                     descriptor.managedDependencies.forEach {
-                        target.dependsOn(it.component.value, it.minimumVersion.toString())
+                        target.managedDependency(it.component.value, it.minimumVersion.toString(),
+                            it.repositoryOwner, it.repositoryName)
                     }
+                    descriptor.externalDependencies.forEach(target::pluginDependency)
                     source.artifacts.forEach {
-                        target.artifact(it.pattern, it.minimumJava, it.maximumJava)
+                        val artifactPlatform = it.platform
+                        if (artifactPlatform == null) target.artifact(it.pattern, it.minimumJava, it.maximumJava)
+                        else target.artifact(it.pattern, artifactPlatform, it.minimumJava, it.maximumJava)
                     }
                 }
                 .build()

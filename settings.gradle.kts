@@ -15,5 +15,4 @@ include(
     ":platforms:velocity:api",
     ":platforms:velocity:runtime",
     ":distribution",
-    ":tools:component-metadata",
 )
