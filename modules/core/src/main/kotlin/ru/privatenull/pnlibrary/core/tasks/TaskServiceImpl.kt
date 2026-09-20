@@ -74,16 +74,21 @@ internal class TaskServiceImpl(
                 }
                 val managed = ManagedTask(owner, spec)
                 active[managed.id] = managed
-                try {
-                    val native = adapter.schedule(PlatformTaskRequest(
+                val native = try {
+                    adapter.schedule(PlatformTaskRequest(
                         spec.execution.kind, spec.execution.target, spec.delay, spec.interval, Runnable(managed::invoke),
                     ))
-                    managed.attach(native)
-                    return managed
                 } catch (error: Throwable) {
                     active.remove(managed.id)
                     throw error
                 }
+                if (scopeClosed.get() || closed.get()) {
+                    active.remove(managed.id)
+                    native.cancel()
+                    error("TaskScope is closed")
+                }
+                managed.attach(native)
+                return managed
             }
         }
 

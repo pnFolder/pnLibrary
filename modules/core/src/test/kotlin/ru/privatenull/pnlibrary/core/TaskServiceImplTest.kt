@@ -67,6 +67,14 @@ class TaskServiceImplTest {
         assertTrue(adapter.handles.single().cancelled.get())
     }
 
+    @Test fun `closed scope rejects new tasks`() {
+        val scope = TaskServiceImpl(RecordingAdapter()).scope(Any())
+        scope.close()
+        assertThrows(IllegalStateException::class.java) {
+            scope.schedule(TaskSpec.builder().action { }.build())
+        }
+    }
+
     private fun spec(name: String) = TaskSpec.builder().name(name).action { }.build()
     private class RecordingAdapter(private val fireDuringSchedule: Boolean = false) : PlatformTaskAdapter {
         val requests = mutableListOf<PlatformTaskRequest>(); val handles = mutableListOf<NativeHandle>()
@@ -81,4 +89,5 @@ class TaskServiceImplTest {
         val cancelled = AtomicBoolean()
         override fun cancel(): Boolean = cancelled.compareAndSet(false, true)
     }
+
 }
