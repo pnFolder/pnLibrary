@@ -2,19 +2,21 @@
 
 ## Goal
 
-Add an optional `minecraft-localization` feature module that obtains the official Minecraft Java Edition translation table for an explicitly requested game version and locale. It must download nothing during pnLibrary startup, reuse the existing `MinecraftVersion` type, cache verified files, and support both forward translation and reverse lookup of Minecraft objects by localized name.
+Add a cross-platform `common` module and an optional `minecraft-localization` feature module. The feature obtains the official Minecraft Java Edition translation table for an explicitly requested game version and locale. It must download nothing during pnLibrary startup, reuse the existing `MinecraftVersion` type from `common`, cache verified files, and support both forward translation and reverse lookup of Minecraft objects by localized name.
 
 This is a developer-facing Minecraft catalogue. It is not the message-localization system for pnLibrary or third-party plugins.
 
 ## Module boundary
 
-The implementation lives in `modules/features/minecraft-localization` and is published as a separate optional artifact. It depends on the existing Bukkit API module for `MinecraftVersion`, `Material`, and `Enchantment`, but it is not added to pnLibrary's mandatory runtime dependency graph. A server or plugin pays its dependency, memory, disk, and network cost only when it includes and invokes this feature.
+Cross-platform Minecraft value types live in `modules/common`, published as `pnlibrary-common`. The localization implementation lives in `modules/features/minecraft-localization` and is published as the separate optional artifact `pnlibrary-minecraft-localization`. The feature depends on `common`; its typed `Material` and `Enchantment` lookup facade uses the Bukkit API as a compile-time/public integration dependency. It is not added to pnLibrary's mandatory runtime dependency graph. A server or plugin pays its localization memory, disk, and network cost only when it includes and invokes this feature.
 
 The current proposed `MinecraftLocale` enum and `FlatJsonTranslations` parser are not retained. Locale identifiers are normalized strings because Mojang can add languages independently of pnLibrary releases. Gson, already used by the project, parses manifests, asset indexes, and language files.
 
 ## Existing version model
 
-`ru.privatenull.pnlibrary.bukkit.version.MinecraftVersion` remains the only public game-version type. The localization module does not introduce another version value class.
+The existing `MinecraftVersion` and `MinecraftVersionRange` implementations move from the Bukkit API module into `modules/common` and the common package `ru.privatenull.pnlibrary.common.minecraft`. They remain the only public game-version types. The localization module does not introduce another version value class.
+
+All pnLibrary source imports move to the common package. Keeping a Java-compatible class at the former Bukkit-qualified name would require a second runtime type, contradicting the single-model requirement, so this pre-release cleanup intentionally removes the former package location. The checked API baselines are regenerated for the move while `PnLibraryApi.VERSION` remains `1` as explicitly required for this project.
 
 The enum gains a Java-friendly `supported()` function returning every known version except `UNKNOWN`, ordered newest first. Existing parsing and comparison semantics remain unchanged.
 
@@ -182,7 +184,7 @@ The module guide shows:
 - fallback behavior;
 - cache location, offline behavior, and shutdown.
 
-The new module is additive. Existing pnLibrary modules do not gain a mandatory dependency. `MinecraftVersion` receives only an additive static-style method, preserving API generation `1`.
+The localization feature is optional. The Bukkit API gains a lightweight dependency on `pnlibrary-common`, and all platforms may reuse that artifact without depending on Bukkit. `MinecraftVersion` receives the additive static-style `supported()` method. The intentional pre-release package move and regenerated baselines retain API generation `1`.
 
 ## Verification
 
@@ -197,6 +199,6 @@ Tests are added after the primary implementation, as explicitly requested, and a
 - exact, prefix, substring, collision, Unicode, and `ё`/`е` reverse lookup;
 - Bukkit material/enchantment mapping across known and unavailable keys;
 - close and executor ownership behavior;
-- API baseline and full distribution build.
+- common, Bukkit, and localization API baselines plus the full distribution build.
 
 No test contacts Mojang or any other public network service.
