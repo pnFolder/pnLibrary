@@ -22,6 +22,7 @@ import java.util.concurrent.atomic.AtomicReference
 
 /** One catalogue → resolver → verifier → transaction pipeline for every component. */
 internal class UpdateServiceImpl(private val platform: PlatformAdapter, private val dataFolder: Path) : UpdateService, AutoCloseable {
+    private val closed = AtomicBoolean(false)
     private val entries = CopyOnWriteArrayList<Registration>()
     private val configuration = UpdateConfiguration.load(dataFolder.resolve("updates.yml")) {
         platform.log(platform, LogLevel.WARNING, "[pnLibrary] $it")
@@ -54,6 +55,7 @@ internal class UpdateServiceImpl(private val platform: PlatformAdapter, private 
     }
 
     override fun register(owner: Any, request: PluginUpdateRequest): UpdateRegistration {
+        check(!closed.get()) { "update service is closed" }
         val info = platform.ownerDetails(owner)
         val product = info["name"] ?: request.repositoryName
         val version = info["version"] ?: error("Не удалось определить версию подключённого плагина")
@@ -76,7 +78,10 @@ internal class UpdateServiceImpl(private val platform: PlatformAdapter, private 
     override fun currentPlan(): Optional<UpdatePlanSnapshot> = orchestrator.currentPlan()
     override fun stage(planId: UUID): CompletionStage<UpdatePlanSnapshot> = orchestrator.stage(planId)
     override fun history(): List<UpdatePlanSnapshot> = orchestrator.history()
-    override fun close() { orchestrator.close(); entries.forEach(Registration::markClosed); entries.clear() }
+    override fun close() {
+        if (!closed.compareAndSet(false, true)) return
+        orchestrator.close(); entries.forEach(Registration::markClosed); entries.clear()
+    }
 
     private fun resolveGraph(): ResolutionResult {
         if (entries.isEmpty()) return ResolutionResult.Ready(UpdatePlan(PnLibraryApi.VERSION, emptyList(), emptyList()))

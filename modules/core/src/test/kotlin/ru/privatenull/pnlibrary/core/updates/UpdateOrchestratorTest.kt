@@ -75,6 +75,22 @@ class UpdateOrchestratorTest {
         } finally { orchestrator.close() }
     }
 
+    @Test
+    fun `executor rejection completes check and stage futures instead of leaking`() {
+        val executor = Executors.newSingleThreadScheduledExecutor()
+        val orchestrator = UpdateOrchestrator(
+            UpdateConfiguration(), UpdateStateStore(directory), executor,
+            resolver = { ResolutionResult.Ready(plan("2.0.0")) },
+            stageAction = {}, announcement = {},
+        )
+        executor.shutdownNow()
+        assertThrows(Exception::class.java) { orchestrator.checkNow().toCompletableFuture().get() }
+        assertThrows(Exception::class.java) {
+            orchestrator.stage(java.util.UUID.randomUUID()).toCompletableFuture().get()
+        }
+        orchestrator.close()
+    }
+
     private fun plan(version: String): UpdatePlan {
         val id = ComponentId.of("pnlibrary")
         val semantic = SemanticVersion.parse(version)

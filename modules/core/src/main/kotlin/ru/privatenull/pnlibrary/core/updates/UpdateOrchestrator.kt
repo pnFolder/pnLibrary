@@ -47,20 +47,25 @@ internal class UpdateOrchestrator(
         inFlight?.let { return@synchronized it }
         val promise = CompletableFuture<UpdatePlanSnapshot>()
         inFlight = promise
-        executor.execute {
-            try {
-                val snapshot = snapshot(resolver())
-                publish(snapshot)
-                if (configuration.effectiveAutomaticDownloads && snapshot.state == UpdateState.UPDATE_AVAILABLE &&
-                    automaticAllowed(snapshot)) {
-                    stageInternal(snapshot)
-                    promise.complete(requireNotNull(current))
-                } else promise.complete(snapshot)
-            } catch (error: Throwable) {
-                promise.completeExceptionally(error)
-            } finally {
-                synchronized(lock) { if (inFlight === promise) inFlight = null }
+        try {
+            executor.execute {
+                try {
+                    val snapshot = snapshot(resolver())
+                    publish(snapshot)
+                    if (configuration.effectiveAutomaticDownloads && snapshot.state == UpdateState.UPDATE_AVAILABLE &&
+                        automaticAllowed(snapshot)) {
+                        stageInternal(snapshot)
+                        promise.complete(requireNotNull(current))
+                    } else promise.complete(snapshot)
+                } catch (error: Throwable) {
+                    promise.completeExceptionally(error)
+                } finally {
+                    synchronized(lock) { if (inFlight === promise) inFlight = null }
+                }
             }
+        } catch (error: Throwable) {
+            inFlight = null
+            promise.completeExceptionally(error)
         }
         promise
     }
@@ -75,14 +80,18 @@ internal class UpdateOrchestrator(
 
     fun stage(planId: UUID): CompletionStage<UpdatePlanSnapshot> {
         val promise = CompletableFuture<UpdatePlanSnapshot>()
-        executor.execute {
-            try {
-                val selected = synchronized(lock) { current }
-                require(selected != null && selected.id == planId) { "stale or unknown update plan: $planId" }
-                require(selected.state == UpdateState.UPDATE_AVAILABLE) { "update plan is not available for staging" }
-                stageInternal(selected)
-                promise.complete(requireNotNull(current))
-            } catch (error: Throwable) { promise.completeExceptionally(error) }
+        try {
+            executor.execute {
+                try {
+                    val selected = synchronized(lock) { current }
+                    require(selected != null && selected.id == planId) { "stale or unknown update plan: $planId" }
+                    require(selected.state == UpdateState.UPDATE_AVAILABLE) { "update plan is not available for staging" }
+                    stageInternal(selected)
+                    promise.complete(requireNotNull(current))
+                } catch (error: Throwable) { promise.completeExceptionally(error) }
+            }
+        } catch (error: Throwable) {
+            promise.completeExceptionally(error)
         }
         return promise
     }
