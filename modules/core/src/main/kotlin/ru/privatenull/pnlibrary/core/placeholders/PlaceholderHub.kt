@@ -86,23 +86,31 @@ internal class PlaceholderHub(
         private val owned = ConcurrentHashMap.newKeySet<String>()
         private val adapterHandles = ConcurrentHashMap.newKeySet<AutoCloseable>()
         private val closed = AtomicBoolean(false)
+        private val mutationLock = Any()
         private val ownedAdapters = object : PlaceholderAdapterRegistry {
-            override fun register(adapter: PlaceholderAdapter): AutoCloseable =
+            override fun register(adapter: PlaceholderAdapter): AutoCloseable = synchronized(mutationLock) {
+                check(!closed.get()) { "Placeholder scope $owner is closed" }
                 this@PlaceholderHub.register(adapter).also(adapterHandles::add)
+            }
             override fun get(id: String) = this@PlaceholderHub.get(id)
             override fun all() = this@PlaceholderHub.all()
         }
 
         override fun <T : Any> placeholder(key: PlaceholderKey<T>): PlaceholderBuilder<T> = Builder(owner, key, placeholderApiEnabled) { entry ->
-            check(!closed.get()) { "Placeholder scope $owner is closed" }
-            val full = id(owner, key.value)
-            require(entries.putIfAbsent(full, entry) == null) { "Placeholder $full is already registered" }
-            owned += full
+            synchronized(mutationLock) {
+                check(!closed.get()) { "Placeholder scope $owner is closed" }
+                val full = id(owner, key.value)
+                require(entries.putIfAbsent(full, entry) == null) { "Placeholder $full is already registered" }
+                owned += full
+            }
         }
 
         override fun <T : Any> formatter(name: String, type: Class<T>, formatter: PlaceholderFormatter<T>) {
             require(name.matches(Regex("[a-z0-9_-]+"))) { "Invalid formatter name: $name" }
-            formatters[formatterId(owner, name)] = FormatterEntry(owner, name, type, formatter)
+            synchronized(mutationLock) {
+                check(!closed.get()) { "Placeholder scope $owner is closed" }
+                formatters[formatterId(owner, name)] = FormatterEntry(owner, name, type, formatter)
+            }
         }
 
         override fun resolve(expression: String, playerId: UUID?, values: Map<String, Any?>): CompletionStage<Any?> =
@@ -125,10 +133,13 @@ internal class PlaceholderHub(
         override fun adapters(): PlaceholderAdapterRegistry = ownedAdapters
         override fun close() {
             if (!closed.compareAndSet(false, true)) return
-            owned.forEach { entries.remove(it)?.close() }
-            formatters.entries.removeIf { it.value.owner == owner }
-            adapterHandles.forEach { runCatching(it::close) }
-            adapterHandles.clear()
+            val handles = synchronized(mutationLock) {
+                owned.forEach { entries.remove(it)?.close() }
+                owned.clear()
+                formatters.entries.removeIf { it.value.owner == owner }
+                adapterHandles.toList().also { adapterHandles.clear() }
+            }
+            handles.forEach { runCatching(it::close) }
         }
     }
 
