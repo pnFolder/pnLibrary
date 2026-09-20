@@ -7,7 +7,8 @@ import java.util.function.Consumer
  *
  * Both the normalized [PluginId] and native owner identity must be unique while a context is live.
  * Registration is atomic: configured listeners and optional integrations either become available
- * together or are rolled back together.
+ * together or are rolled back together. Update-aware registrations may also provide an explicit
+ * component descriptor; pnLibrary validates it before exposing managed capabilities.
  *
  * ```kotlin
  * val context = library.plugins.register(plugin) { builder ->

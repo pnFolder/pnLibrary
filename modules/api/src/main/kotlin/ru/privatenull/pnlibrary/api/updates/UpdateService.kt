@@ -3,6 +3,10 @@ package ru.privatenull.pnlibrary.api.updates
 import ru.privatenull.pnlibrary.api.version.ApiVersionRange
 import ru.privatenull.pnlibrary.api.version.PnLibraryApi
 import ru.privatenull.pnlibrary.api.version.SemanticVersion
+import java.util.Optional
+import java.util.UUID
+import java.util.concurrent.CompletableFuture
+import java.util.concurrent.CompletionStage
 
 /** Release maturity accepted by an updater. Each channel includes more stable releases. */
 enum class UpdateChannel {
@@ -35,6 +39,8 @@ enum class UpdateState {
     BLOCKED,
     /** A remote release check is currently running. */
     CHECKING,
+    /** A complete plan is currently being downloaded and verified. */
+    DOWNLOADING,
     /** No newer compatible release was found. */
     CURRENT,
     /** A newer compatible release exists but has not been downloaded. */
@@ -224,4 +230,20 @@ interface UpdateService {
     fun registrations(): List<UpdateRegistration>
     /** Finds a registration by product or repository name, ignoring case. */
     fun find(product: String): UpdateRegistration?
+
+    /** Refreshes every registered catalogue and resolves one complete compatibility plan. */
+    fun checkNow(): CompletionStage<UpdatePlanSnapshot> = unsupported("graph update checks")
+    /** Returns the latest immutable graph plan, when one has been resolved. */
+    fun currentPlan(): Optional<UpdatePlanSnapshot> = Optional.empty()
+    /** Downloads and verifies every artifact in the selected plan. */
+    fun stage(planId: UUID): CompletionStage<UpdatePlanSnapshot> = unsupported("graph update staging")
+    /** Confirms a token-bound sensitive action for the selected plan. */
+    fun confirm(planId: UUID, token: String): CompletionStage<UpdatePlanSnapshot> = unsupported("graph update confirmation")
+    /** Returns bounded newest-first graph-plan history. */
+    fun history(): List<UpdatePlanSnapshot> = emptyList()
+
+    private fun unsupported(operation: String): CompletionStage<UpdatePlanSnapshot> =
+        CompletableFuture<UpdatePlanSnapshot>().also {
+            it.completeExceptionally(UnsupportedOperationException("Update service does not support $operation"))
+        }
 }
