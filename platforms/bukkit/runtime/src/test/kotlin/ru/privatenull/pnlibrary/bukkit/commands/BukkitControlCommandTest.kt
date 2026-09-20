@@ -20,14 +20,14 @@ class BukkitControlCommandTest {
         assertEquals("pn", definition.name)
         assertEquals("pnlibrary.admin", definition.permission)
         assertEquals(
-            listOf("status", "updates", "check", "update", "restart", "debug", "support", "error", "error-repeat", "error-chain"),
+            listOf("status", "updates", "check", "update", "update-confirm", "restart", "debug", "support", "error", "error-repeat", "error-chain"),
             definition.root.children.map { it.name },
         )
         val update = definition.root.children.single { it.name == "update" }
         assertEquals(CommandNodeKind.ARGUMENT, update.children.single().kind)
         assertEquals("plugin", update.children.single().name)
         val restart = definition.root.children.single { it.name == "restart" }
-        assertEquals("confirm", restart.children.single().name)
+        assertEquals("token", restart.children.single().name)
     }
 
     private class TestSender : CommandSender {

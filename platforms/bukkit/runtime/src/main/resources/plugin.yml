@@ -13,3 +13,18 @@ permissions:
   pnlibrary.debug:
     description: Allows creating encrypted pnLibrary diagnostic reports
     default: op
+  pnlibrary.updates.notify:
+    description: Получать уведомления об обновлениях при входе
+    default: op
+  pnlibrary.updates.view:
+    description: Просматривать совместимый план обновлений
+    default: op
+  pnlibrary.updates.download:
+    description: Загружать и проверять совместимый план обновлений
+    default: op
+  pnlibrary.updates.install:
+    description: Разрешать установку новых управляемых компонентов
+    default: op
+  pnlibrary.updates.restart:
+    description: Подтверждать перезапуск после staging
+    default: op

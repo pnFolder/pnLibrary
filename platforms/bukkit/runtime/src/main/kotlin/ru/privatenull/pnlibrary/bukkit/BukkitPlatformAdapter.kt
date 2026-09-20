@@ -117,6 +117,10 @@ internal class BukkitPlatformAdapter constructor(
         )
     }
 
+    override fun installedPlugins(): Map<String, String> = Bukkit.getPluginManager().plugins.associate {
+        it.name to it.description.version
+    }
+
     override fun bind(library: PnLibrary) {
         check(!closedFlag.get()) { "Bukkit platform adapter is closed" }
         check(bound.compareAndSet(false, true)) { "Bukkit platform adapter is already bound" }

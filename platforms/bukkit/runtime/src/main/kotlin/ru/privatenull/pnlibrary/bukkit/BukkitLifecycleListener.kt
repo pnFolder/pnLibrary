@@ -33,9 +33,9 @@ internal class BukkitLifecycleListener(
     @Suppress("DEPRECATION")
     fun onAdministratorJoin(event: PlayerJoinEvent) {
         val player = event.player
-        if (!player.hasPermission("pnlibrary.admin")) return
+        if (!player.isOp && !player.hasPermission("pnlibrary.updates.notify")) return
         val runtime = library ?: return
-        runtime.tasks.scope(plugin).laterEntity(player, Duration.ofSeconds(5), Runnable {
+        runtime.tasks.scope(plugin).laterEntity(player, Duration.ofMillis(50), Runnable {
             val active = library ?: return@Runnable
             val actionable = active.updates.registrations().map { it.snapshot }.filter {
                 it.state == UpdateState.AVAILABLE || it.state == UpdateState.DOWNLOADED ||
@@ -94,6 +94,7 @@ internal class BukkitLifecycleListener(
             UpdateState.INCOMPATIBLE -> "§cнесовместимое обновление"
             UpdateState.BLOCKED -> "§cобновление заблокировано зависимостью"
             UpdateState.CHECKING -> "§eпроверяется"
+            UpdateState.DOWNLOADING -> "§eскачивается и проверяется"
             UpdateState.FAILED -> "§cошибка: ${snapshot.message ?: "неизвестная причина"}"
         }
         val auto = if (snapshot.automaticDownload) "автозагрузка включена" else "автозагрузка отключена"

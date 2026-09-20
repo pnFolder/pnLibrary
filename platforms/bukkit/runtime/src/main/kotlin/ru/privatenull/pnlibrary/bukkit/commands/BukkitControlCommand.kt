@@ -20,13 +20,16 @@ import ru.privatenull.pnlibrary.api.updates.UpdateState
 import java.util.Locale
 import java.util.UUID
 import java.util.concurrent.ConcurrentHashMap
+import java.time.Duration
+import ru.privatenull.pnlibrary.bukkit.updates.UpdateAction
+import ru.privatenull.pnlibrary.bukkit.updates.UpdateConfirmationTokens
 
 /** Bukkit-only `/pn` behavior expressed through the shared command builder. */
 internal class BukkitControlCommand(
     private val plugin: Plugin,
     private val library: PnLibrary,
 ) {
-    private val restartConfirmations = ConcurrentHashMap<String, Long>()
+    private val tokens = UpdateConfirmationTokens()
 
     fun definition(): CommandDefinition = command("pn") {
         permission("pnlibrary.admin")
@@ -46,9 +49,12 @@ internal class BukkitControlCommand(
                 executes(::executeNative)
             }
         }
+        literal("update-confirm") {
+            argument("token", ArgumentType.string()) { executes(::executeNative) }
+        }
         literal("restart") {
             executes(::executeNative)
-            literal("confirm") { executes(::executeNative) }
+            argument("token", ArgumentType.string()) { executes(::executeNative) }
         }
         literal("debug") { executes(::executeNative) }
         literal("support") { executes(::executeNative) }
@@ -79,6 +85,7 @@ internal class BukkitControlCommand(
             "status" -> sendStatus(sender, arguments.getOrNull(1))
             "updates" -> sendUpdates(sender)
             "update" -> update(sender, arguments.getOrNull(1))
+            "update-confirm" -> confirmUpdate(sender, arguments.getOrNull(1))
             "check" -> {
                 library.updates.registrations().forEach { it.checkNow() }
                 sender.sendMessage("§eПовторная проверка обновлений запущена.")
@@ -108,6 +115,10 @@ internal class BukkitControlCommand(
     }
 
     private fun update(sender: CommandSender, name: String?) {
+        if (!sender.hasPermission("pnlibrary.updates.download")) {
+            sender.sendMessage("§cНедостаточно прав для загрузки обновлений.")
+            return
+        }
         if (name == null) {
             sender.sendMessage("§eИспользование: /pn update <плагин>")
             return
@@ -118,6 +129,24 @@ internal class BukkitControlCommand(
         } else {
             registration.downloadNow()
             sender.sendMessage("§eЗапущена проверка и ручная загрузка обновления ${registration.snapshot.product}.")
+        }
+    }
+
+    private fun confirmUpdate(sender: CommandSender, token: String?) {
+        if (sender !is Player || token == null || !sender.hasPermission("pnlibrary.updates.download")) {
+            sender.sendMessage("§cНедоступное подтверждение обновления.")
+            return
+        }
+        val plan = library.updates.currentPlan().orElse(null)
+        if (plan == null || !tokens.consume(token, sender.uniqueId, plan.id, plan.revision, UpdateAction.DOWNLOAD)) {
+            sender.sendMessage("§cПодтверждение устарело или уже использовано.")
+            return
+        }
+        library.updates.stage(plan.id).whenComplete { staged, error ->
+            plugin.server.scheduler.runTask(plugin, Runnable {
+                if (error == null) sender.sendMessage("§aПлан обновления проверен и подготовлен: ${staged.id}")
+                else sender.sendMessage("§cНе удалось подготовить обновление: ${error.message}")
+            })
         }
     }
 
@@ -149,42 +178,56 @@ internal class BukkitControlCommand(
 
     @Suppress("DEPRECATION")
     private fun handleRestart(sender: CommandSender, arguments: List<String>) {
-        if (library.updates.registrations().none { it.snapshot.state == UpdateState.DOWNLOADED }) {
+        if (!sender.hasPermission("pnlibrary.updates.restart")) {
+            sender.sendMessage("§cНедостаточно прав для перезапуска.")
+            return
+        }
+        val plan = library.updates.currentPlan().orElse(null)
+        if (plan == null || plan.state != UpdateState.UPDATE_STAGED) {
             sender.sendMessage("§eНет подготовленных обновлений, требующих перезапуска.")
             return
         }
-        val key = sender.name.lowercase(Locale.ROOT)
-        if (arguments.firstOrNull().equals("confirm", true)) {
-            val expires = restartConfirmations.remove(key) ?: 0L
-            if (expires < System.currentTimeMillis()) {
+        val supplied = arguments.firstOrNull()
+        if (supplied != null && sender is Player) {
+            if (!tokens.consume(supplied, sender.uniqueId, plan.id, plan.revision, UpdateAction.RESTART)) {
                 sender.sendMessage("§cПодтверждение истекло. Выполните /pn restart ещё раз.")
+                return
+            }
+            if (library.updates.currentPlan().orElse(null)?.let { it.id != plan.id || it.revision != plan.revision } != false) {
+                sender.sendMessage("§cПлан обновления изменился; подтвердите заново.")
                 return
             }
             Bukkit.broadcastMessage("§e[pnFolder] §fСервер перезапускается для применения обновлений.")
             Bukkit.getScheduler().runTaskLater(plugin, Runnable { Bukkit.spigot().restart() }, 40L)
             return
         }
-        restartConfirmations[key] = System.currentTimeMillis() + 30_000L
+        if (sender !is Player) {
+            sender.sendMessage("§eКонсольный перезапуск должен выполняться настроенной серверной командой.")
+            return
+        }
+        val token = tokens.issue(sender.uniqueId, plan.id, plan.revision, UpdateAction.RESTART, Duration.ofSeconds(30))
         sender.sendMessage("")
         sender.sendMessage("§c§l Подтверждение перезапуска")
         sender.sendMessage(" §7Сейчас на сервере игроков: §f${Bukkit.getOnlinePlayers().size}")
         sender.sendMessage(" §7Подготовленные обновления применятся после полного перезапуска.")
-        if (sender is Player) {
-            val confirm = TextComponent("[ Подтвердить перезапуск ]").apply {
+        val confirm = TextComponent("[ Подтвердить перезапуск ]").apply {
                 color = ChatColor.RED
                 isBold = true
-                clickEvent = ClickEvent(ClickEvent.Action.RUN_COMMAND, "/pn restart confirm")
+                clickEvent = ClickEvent(ClickEvent.Action.RUN_COMMAND, "/pn restart $token")
                 hoverEvent = HoverEvent(
                     HoverEvent.Action.SHOW_TEXT,
                     ComponentBuilder("Подтверждение действует 30 секунд").color(ChatColor.GRAY).create(),
                 )
             }
-            sender.spigot().sendMessage(confirm)
-        } else sender.sendMessage(" §c/pn restart confirm §7— подтверждение действует 30 секунд")
+        sender.spigot().sendMessage(confirm)
         sender.sendMessage("")
     }
 
     private fun sendUpdates(sender: CommandSender) {
+        if (!sender.hasPermission("pnlibrary.updates.view")) {
+            sender.sendMessage("§cНедостаточно прав для просмотра обновлений.")
+            return
+        }
         sender.sendMessage("")
         sender.sendMessage("§e «Обновления pnFolder»")
         val entries = library.updates.registrations()
@@ -195,9 +238,28 @@ internal class BukkitControlCommand(
                 sendDownloadButton(sender, it.snapshot.product)
             }
         }
+        if (sender is Player && sender.hasPermission("pnlibrary.updates.download")) {
+            library.updates.currentPlan().orElse(null)?.takeIf { it.state == UpdateState.UPDATE_AVAILABLE }?.let { plan ->
+                sendPlanDownloadButton(sender, tokens.issue(
+                    sender.uniqueId, plan.id, plan.revision, UpdateAction.DOWNLOAD, Duration.ofMinutes(2),
+                ))
+            }
+        }
         if (sender is Player) sendActionButtons(sender)
         sender.sendMessage(" §7Ручная загрузка: §f/pn update <плагин>")
         sender.sendMessage("")
+    }
+
+    @Suppress("DEPRECATION")
+    private fun sendPlanDownloadButton(player: Player, token: String) {
+        val button = TextComponent("[ Скачать совместимый план ]").apply {
+            color = ChatColor.YELLOW
+            isBold = true
+            clickEvent = ClickEvent(ClickEvent.Action.RUN_COMMAND, "/pn update-confirm $token")
+            hoverEvent = HoverEvent(HoverEvent.Action.SHOW_TEXT,
+                ComponentBuilder("Скачать и проверить весь план").color(ChatColor.GRAY).create())
+        }
+        player.spigot().sendMessage(button)
     }
 
     @Suppress("DEPRECATION")
@@ -251,6 +313,7 @@ internal class BukkitControlCommand(
             UpdateState.INCOMPATIBLE -> "§cнесовместимое обновление"
             UpdateState.BLOCKED -> "§cобновление заблокировано зависимостью"
             UpdateState.CHECKING -> "§eпроверяется"
+            UpdateState.DOWNLOADING -> "§eскачивается и проверяется"
             UpdateState.FAILED -> "§cошибка: ${snapshot.message ?: "неизвестная причина"}"
         }
         val auto = if (snapshot.automaticDownload) "автозагрузка включена" else "автозагрузка отключена"
