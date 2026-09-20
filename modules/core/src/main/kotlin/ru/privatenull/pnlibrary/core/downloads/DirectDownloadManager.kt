@@ -48,6 +48,7 @@ internal class DirectDownloadManager(
     }
 
     internal fun installBatch(request: PluginDownloads, declarations: List<DownloadDeclaration>) {
+        check(!closed.get()) { "система загрузок закрыта" }
         val prepared = mutableListOf<Prepared>()
         try {
             declarations.filterNot(::alreadyInstalled).forEach { prepared += prepare(request, it) }
@@ -56,7 +57,12 @@ internal class DirectDownloadManager(
             throw error
         }
         if (prepared.isEmpty()) return
-        publishAtomically(prepared)
+        try {
+            publishAtomically(prepared)
+        } catch (error: Throwable) {
+            prepared.forEach { Files.deleteIfExists(it.staging) }
+            throw error
+        }
     }
 
     private fun prepare(request: PluginDownloads, declaration: DownloadDeclaration): Prepared {
@@ -183,6 +189,7 @@ internal class DirectDownloadManager(
 
     private inner class Registration(private val owner: Any, private val request: PluginDownloads) : DownloadRegistration {
         private val registrationClosed = AtomicBoolean(false)
+        private val activeDownload = AtomicReference<CompletableFuture<List<DownloadSnapshot>>?>()
         private val state = AtomicReference(request.declarations.map { declaration ->
             DownloadSnapshot(declaration.key, if (alreadyInstalled(declaration)) DownloadState.CURRENT else DownloadState.DECLARED)
         })
@@ -204,13 +211,21 @@ internal class DirectDownloadManager(
                 promise.complete(snapshots()); return promise
             }
             if (declarations.isEmpty()) { promise.complete(snapshots()); return promise }
+            activeDownload.get()?.let { return it }
+            if (!activeDownload.compareAndSet(null, promise)) return activeDownload.get() ?: promise
             state.set(request.declarations.map {
                 DownloadSnapshot(it.key, if (it in declarations) DownloadState.DOWNLOADING else DownloadState.CURRENT)
             })
-            executor.execute {
+            try {
+                executor.execute {
+                if (registrationClosed.get() || closed.get()) {
+                    promise.complete(snapshots())
+                    activeDownload.compareAndSet(promise, null)
+                    return@execute
+                }
                 runCatching { installBatch(request, declarations) }
                     .onSuccess {
-                        state.set(request.declarations.map {
+                        if (!registrationClosed.get() && !closed.get()) state.set(request.declarations.map {
                             DownloadSnapshot(it.key, when {
                                 it in declarations -> DownloadState.STAGED
                                 alreadyInstalled(it) -> DownloadState.CURRENT
@@ -220,11 +235,18 @@ internal class DirectDownloadManager(
                         promise.complete(snapshots())
                     }
                     .onFailure { error ->
-                        state.set(request.declarations.map { DownloadSnapshot(it.key, DownloadState.FAILED, error.message) })
-                        val level = if (declarations.any { it.required }) LogLevel.ERROR else LogLevel.WARNING
-                        platform.log(owner, level, "[pnLibrary] Пакет загрузок не подготовлен: ${error.message}", error)
+                        if (!registrationClosed.get() && !closed.get()) {
+                            state.set(request.declarations.map { DownloadSnapshot(it.key, DownloadState.FAILED, error.message) })
+                            val level = if (declarations.any { it.required }) LogLevel.ERROR else LogLevel.WARNING
+                            platform.log(owner, level, "[pnLibrary] Пакет загрузок не подготовлен: ${error.message}", error)
+                        }
                         promise.complete(snapshots())
                     }
+                    .also { activeDownload.compareAndSet(promise, null) }
+                }
+            } catch (error: Throwable) {
+                activeDownload.compareAndSet(promise, null)
+                promise.completeExceptionally(error)
             }
             return promise
         }
@@ -232,6 +254,7 @@ internal class DirectDownloadManager(
         override fun close() {
             if (registrationClosed.compareAndSet(false, true)) {
                 state.set(request.declarations.map { DownloadSnapshot(it.key, DownloadState.CLOSED) })
+                activeDownload.getAndSet(null)?.completeExceptionally(IllegalStateException("регистрация загрузок закрыта"))
             }
         }
     }
