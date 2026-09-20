@@ -41,11 +41,13 @@ internal class VelocityPlatformAdapter(
     override val taskAdapter: PlatformTaskAdapter = VelocityTaskAdapter(plugin, server)
 
     override fun log(owner: Any, level: LogLevel, message: String, error: Throwable?) {
-        when (level) {
-            LogLevel.WARNING -> if (error == null) logger.warn(message) else logger.warn(message, error)
-            LogLevel.ERROR -> if (error == null) logger.error(message) else logger.error(message, error)
-            else -> if (error == null) logger.info(message) else logger.info(message, error)
+        val log: (String, Throwable?) -> Unit = when (level) {
+            LogLevel.WARNING -> logger::warn
+            LogLevel.ERROR -> logger::error
+            else -> logger::info
         }
+
+        log(message, error)
     }
 
     override fun console(owner: Any, message: String) {

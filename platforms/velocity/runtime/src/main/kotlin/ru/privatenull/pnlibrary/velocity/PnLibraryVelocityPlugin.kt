@@ -20,7 +20,11 @@ import java.nio.file.Path
  * event creates one [PnLibraryRuntimeHost]; the matching shutdown event closes all shared and
  * platform resources owned by that host.
  */
-@Plugin(id = "pnlibrary", name = "pnLibrary", authors = ["pnFolder"])
+@Plugin(
+    id = "pnlibrary",
+    name = "pnLibrary",
+    authors = ["pnFolder"]
+)
 class PnLibraryVelocityPlugin @Inject constructor(
     private val server: ProxyServer,
     private val logger: Logger,

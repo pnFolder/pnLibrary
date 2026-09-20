@@ -105,20 +105,19 @@ private class DefaultVelocityNativeCommandRegistrar(
         execute: (CommandSource, Array<String>) -> Unit,
         suggest: (CommandSource, Array<String>) -> CompletionStage<List<String>>,
     ): PlatformCommandRegistration {
-        val executeHandler = execute
-        val suggestionHandler = suggest
         val metadata = server.commandManager.metaBuilder(command.name)
             .aliases(*command.aliases.toTypedArray())
             .plugin(plugin)
             .build()
+
         server.commandManager.register(metadata, object : SimpleCommand {
-            override fun execute(invocation: SimpleCommand.Invocation) {
-                executeHandler(invocation.source(), invocation.arguments())
-            }
+            override fun execute(
+                invocation: SimpleCommand.Invocation
+            ) = execute(invocation.source(), invocation.arguments())
 
             override fun suggestAsync(
-                invocation: SimpleCommand.Invocation,
-            ) = suggestionHandler(invocation.source(), invocation.arguments()).toCompletableFuture()
+                invocation: SimpleCommand.Invocation
+            ) = suggest(invocation.source(), invocation.arguments()).toCompletableFuture()
         })
         return PlatformCommandRegistration { server.commandManager.unregister(command.name) }
     }
