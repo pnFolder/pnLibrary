@@ -6,9 +6,10 @@ import ru.privatenull.pnlibrary.common.minecraft.MinecraftVersion
 import ru.privatenull.pnlibrary.localization.TranslationException
 import java.net.URI
 import java.nio.charset.StandardCharsets
-import java.io.ByteArrayInputStream
 import java.io.ByteArrayOutputStream
-import java.util.zip.ZipInputStream
+import java.util.concurrent.ConcurrentHashMap
+import java.nio.file.Files
+import java.util.zip.ZipFile
 
 internal data class AssetReference(val hash: String, val size: Int)
 internal data class ResolvedLanguage(val bytes: ByteArray, val hash: String)
@@ -18,6 +19,7 @@ internal class MojangAssetResolver(
     private val http: LocalizationHttpClient,
     private val store: VerifiedFileStore,
 ) {
+    private val versionAssets = ConcurrentHashMap<MinecraftVersion, VersionAssets>()
     fun manifestBytes(): ByteArray = http.get(MANIFEST, MANIFEST_LIMIT)
 
     fun versions(manifest: ByteArray): List<MinecraftVersion> {
@@ -51,17 +53,29 @@ internal class MojangAssetResolver(
         return ResolvedLanguage(bytes, reference.hash)
     }
 
-    private fun versionAssets(version: MinecraftVersion, manifest: ByteArray): VersionAssets {
-        val versionUrl = parse(manifest, "version manifest").getAsJsonArray("versions").orEmpty()
+    private fun versionAssets(version: MinecraftVersion, manifest: ByteArray): VersionAssets =
+        versionAssets.computeIfAbsent(version) { resolveVersionAssets(it, manifest) }
+
+    private fun resolveVersionAssets(version: MinecraftVersion, manifest: ByteArray): VersionAssets {
+        val versionEntry = parse(manifest, "version manifest").getAsJsonArray("versions").orEmpty()
             .map { it.asJsonObject }
             .firstOrNull { it.string("id") == version.text }
-            ?.string("url") ?: throw TranslationException(
+            ?: throw TranslationException(
                 TranslationException.Reason.UNSUPPORTED_VERSION, "Minecraft ${version.text} is absent from the Mojang manifest",
             )
-        val versionJson = parse(http.get(URI.create(versionUrl), VERSION_LIMIT), "version metadata")
-        val indexUrl = versionJson.getAsJsonObject("assetIndex")?.string("url")
-            ?: throw malformed("Version metadata has no asset index")
-        val index = parse(http.get(URI.create(indexUrl), INDEX_LIMIT), "asset index")
+        val versionUrl = versionEntry.string("url") ?: throw malformed("Version manifest entry has no URL")
+        val versionJson = cachedJson(
+            store.versionMetadata(version.text), URI.create(versionUrl), VERSION_LIMIT, "version metadata",
+            expectedHash = versionEntry.string("sha1"), validator = ::validateVersionMetadata,
+        )
+        val indexDescriptor = versionJson.getAsJsonObject("assetIndex")
+        val indexUrl = indexDescriptor.string("url") ?: throw malformed("Version metadata has no asset index URL")
+        val index = cachedJson(
+            store.assetIndex(version.text), URI.create(indexUrl), INDEX_LIMIT, "asset index",
+            expectedHash = indexDescriptor.string("sha1"),
+            expectedSize = indexDescriptor.get("size")?.takeUnless { it.isJsonNull }?.asLong,
+            validator = ::validateAssetIndex,
+        )
         val objects = index.getAsJsonObject("objects")?.entrySet()?.associate { (key, raw) ->
             val value = raw.asJsonObject
             key to AssetReference(
@@ -72,25 +86,89 @@ internal class MojangAssetResolver(
         return VersionAssets(versionJson, objects)
     }
 
+    private fun cachedJson(
+        path: java.nio.file.Path,
+        uri: URI,
+        limit: Int,
+        name: String,
+        expectedHash: String? = null,
+        expectedSize: Long? = null,
+        validator: (JsonObject) -> Unit,
+    ): JsonObject {
+        fun decode(bytes: ByteArray): JsonObject {
+            if ((expectedSize != null && bytes.size.toLong() != expectedSize) ||
+                (expectedHash != null && store.sha1(bytes) != expectedHash)
+            ) throw TranslationException(
+                TranslationException.Reason.INTEGRITY, "Checksum or size mismatch for Minecraft $name",
+            )
+            val parsed = parse(bytes, name)
+            try {
+                validator(parsed)
+            } catch (error: TranslationException) {
+                throw error
+            } catch (error: RuntimeException) {
+                throw TranslationException(TranslationException.Reason.MALFORMED_DATA, "Malformed Minecraft $name", error)
+            }
+            return parsed
+        }
+        store.read(path)?.let { bytes ->
+            try {
+                return decode(bytes)
+            } catch (_: TranslationException) {
+                store.quarantine(path)
+            }
+        }
+        val bytes = http.get(uri, limit)
+        val parsed = decode(bytes)
+        store.write(path, bytes)
+        return parsed
+    }
+
+    private fun validateVersionMetadata(metadata: JsonObject) {
+        val index = metadata.getAsJsonObject("assetIndex") ?: throw malformed("Version metadata has no asset index")
+        if (index.string("url").isNullOrBlank()) throw malformed("Version metadata has no asset index URL")
+    }
+
+    private fun validateAssetIndex(index: JsonObject) {
+        val objects = index.getAsJsonObject("objects") ?: throw malformed("Asset index has no objects")
+        objects.entrySet().forEach { (key, raw) ->
+            if (!raw.isJsonObject) throw malformed("Asset $key is not an object")
+            val value = raw.asJsonObject
+            if (value.string("hash").isNullOrBlank()) throw malformed("Asset $key has no hash")
+            if (!value.has("size") || value.get("size").isJsonNull || value.get("size").asLong < 0) {
+                throw malformed("Asset $key has no valid size")
+            }
+        }
+    }
+
     private fun languageFromClient(version: MinecraftVersion, locale: String, metadata: JsonObject): ResolvedLanguage {
         val client = metadata.getAsJsonObject("downloads")?.getAsJsonObject("client")
             ?: throw unavailable(version, locale)
         val url = client.string("url") ?: throw unavailable(version, locale)
         val hash = client.string("sha1") ?: throw malformed("Client artifact has no SHA-1")
         val size = client.get("size")?.asInt ?: throw malformed("Client artifact has no size")
-        val jar = http.get(URI.create(url), CLIENT_LIMIT)
-        if (jar.size != size || store.sha1(jar) != hash) throw TranslationException(
-            TranslationException.Reason.INTEGRITY, "Checksum or size mismatch for Minecraft $version client artifact",
-        )
-        val names = setOf("assets/minecraft/lang/$locale.json", "assets/minecraft/lang/$locale.lang")
-        ZipInputStream(ByteArrayInputStream(jar)).use { zip ->
-            while (true) {
-                val entry = zip.nextEntry ?: break
-                if (!entry.isDirectory && entry.name in names) {
-                    val output = ByteArrayOutputStream()
+        val temporary = try {
+            store.temporary(".jar")
+        } catch (error: Exception) {
+            throw TranslationException(TranslationException.Reason.OFFLINE, "Unable to create temporary Minecraft archive", error)
+        }
+        try {
+            val downloaded = http.download(URI.create(url), CLIENT_LIMIT, temporary)
+            if (downloaded != size.toLong() || store.sha1(temporary) != hash) throw TranslationException(
+                TranslationException.Reason.INTEGRITY, "Checksum or size mismatch for Minecraft $version client artifact",
+            )
+            val names = listOf("assets/minecraft/lang/$locale.json", "assets/minecraft/lang/$locale.lang")
+            ZipFile(temporary.toFile()).use { zip ->
+                val entry = names.asSequence().mapNotNull(zip::getEntry).firstOrNull()
+                    ?: throw unavailable(version, locale)
+                if (entry.isDirectory || entry.size > LANGUAGE_LIMIT) throw TranslationException(
+                    TranslationException.Reason.INTEGRITY, "Minecraft language entry exceeds $LANGUAGE_LIMIT bytes",
+                )
+                zip.getInputStream(entry).use { input ->
+                    val output = ByteArrayOutputStream(minOf(entry.size.coerceAtLeast(0L).toInt(), 8192))
                     val buffer = ByteArray(8192)
                     while (true) {
-                        val read = zip.read(buffer)
+                        val read = input.read(buffer)
                         if (read < 0) break
                         if (output.size() + read > LANGUAGE_LIMIT) throw TranslationException(
                             TranslationException.Reason.INTEGRITY, "Minecraft language entry exceeds $LANGUAGE_LIMIT bytes",
@@ -101,8 +179,21 @@ internal class MojangAssetResolver(
                     return ResolvedLanguage(bytes, store.sha1(bytes))
                 }
             }
+        } catch (error: TranslationException) {
+            throw error
+        } catch (error: Exception) {
+            throw TranslationException(
+                TranslationException.Reason.MALFORMED_DATA,
+                "Unable to read Minecraft $version client archive",
+                error,
+            )
+        } finally {
+            try {
+                Files.deleteIfExists(temporary)
+            } catch (_: Exception) {
+                temporary.toFile().deleteOnExit()
+            }
         }
-        throw unavailable(version, locale)
     }
 
     private fun unavailable(version: MinecraftVersion, locale: String) = TranslationException(

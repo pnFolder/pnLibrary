@@ -10,10 +10,11 @@ import java.util.Collections
 
 internal class TranslationIndexImpl<T>(matches: List<TranslationMatch<T>>) : TranslationIndex<T> {
     private val entries = matches.map { Indexed(it, normalize(it.translation)) }
+    private val exact = entries.groupBy({ it.normalized }, { it.match })
+        .mapValues { (_, matches) -> Collections.unmodifiableList(matches) }
 
     override fun findExact(text: String): List<TranslationMatch<T>> {
-        val query = normalize(text)
-        return Collections.unmodifiableList(entries.filter { it.normalized == query }.map { it.match })
+        return exact[normalize(text)] ?: emptyList()
     }
 
     override fun search(text: String): List<TranslationMatch<T>> {
@@ -30,7 +31,7 @@ internal class TranslationIndexImpl<T>(matches: List<TranslationMatch<T>>) : Tra
 
     companion object {
         fun normalize(value: String): String = Normalizer.normalize(value, Normalizer.Form.NFKC)
-            .trim().lowercase(Locale.ROOT).replace('ё', 'е').replace(Regex("\\s+"), " ")
+            .trim().lowercase(Locale.ROOT).replace('ё', 'е').replace(WHITESPACE, " ")
 
         fun keys(values: Map<String, String>) = TranslationIndexImpl(
             values.map { (key, value) -> TranslationMatch(key, value, key) },
@@ -79,5 +80,6 @@ internal class TranslationIndexImpl<T>(matches: List<TranslationMatch<T>>) : Tra
             "POWER" to "ARROW_DAMAGE", "PUNCH" to "ARROW_KNOCKBACK",
             "FLAME" to "ARROW_FIRE", "INFINITY" to "ARROW_INFINITE",
         )
+        private val WHITESPACE = Regex("\\s+")
     }
 }

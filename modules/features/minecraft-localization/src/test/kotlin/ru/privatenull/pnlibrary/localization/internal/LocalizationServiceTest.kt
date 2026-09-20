@@ -14,6 +14,9 @@ import java.security.MessageDigest
 import java.time.Duration
 import java.util.concurrent.ConcurrentHashMap
 import java.util.concurrent.CompletionException
+import java.io.ByteArrayOutputStream
+import java.util.zip.ZipEntry
+import java.util.zip.ZipOutputStream
 
 class LocalizationServiceTest {
     @TempDir lateinit var directory: Path
@@ -26,8 +29,23 @@ class LocalizationServiceTest {
             val second = service.load(request).toCompletableFuture().join().locale("ru_ru")
             assertEquals("Алмазный меч", first.translate("item.minecraft.diamond_sword").orElseThrow())
             assertEquals(TranslationSource.MEMORY, second.metadata.source)
+            assertSame(first.keys(), second.keys())
+            assertSame(first.materials(), second.materials())
+            assertSame(first.enchantments(), second.enchantments())
             assertEquals(0, fixture.calls.keys.count { "en_us" in it.toString() })
             assertEquals(1, fixture.assetDownloads)
+        }
+    }
+
+    @Test fun `reuses version metadata and asset index across operations`() {
+        val fixture = Fixture()
+        service(fixture).use { service ->
+            val request = TranslationRequest.builder().version(MinecraftVersion.V1_21_4).locale("ru_ru").build()
+            assertEquals(listOf("en_us", "ru_ru"), service.availableLocales(MinecraftVersion.V1_21_4).toCompletableFuture().join())
+            service.load(request).toCompletableFuture().join()
+            service.refresh(request).toCompletableFuture().join()
+            assertEquals(1, fixture.calls[fixture.versionUri])
+            assertEquals(1, fixture.calls[fixture.indexUri])
         }
     }
 
@@ -70,6 +88,37 @@ class LocalizationServiceTest {
         }
     }
 
+    @Test fun `reopens version asset catalog from disk without network`() {
+        service(Fixture()).use { service ->
+            assertEquals(listOf("en_us", "ru_ru"), service.availableLocales(MinecraftVersion.V1_21_4).toCompletableFuture().join())
+        }
+        service(FailingClient()).use { service ->
+            assertEquals(listOf("en_us", "ru_ru"), service.availableLocales(MinecraftVersion.V1_21_4).toCompletableFuture().join())
+        }
+    }
+
+    @Test fun `quarantines structurally corrupt version catalog and downloads a clean copy`() {
+        val path = directory.resolve("minecraft/versions/1.21.4.json")
+        Files.createDirectories(path.parent)
+        Files.write(path, "{}".toByteArray())
+        service(Fixture()).use { service ->
+            assertEquals(listOf("en_us", "ru_ru"), service.availableLocales(MinecraftVersion.V1_21_4).toCompletableFuture().join())
+        }
+        assertTrue(Files.list(path.parent).use { files -> files.anyMatch { ".corrupt-" in it.fileName.toString() } })
+    }
+
+    @Test fun `extracts embedded locale through streamed client archive and removes temporary file`() {
+        val fixture = ClientArchiveFixture()
+        service(fixture).use { service ->
+            val request = TranslationRequest.builder().version(MinecraftVersion.V1_21_4).locale("en_us").build()
+            val locale = service.load(request).toCompletableFuture().join().locale("en_us")
+            assertEquals("Diamond Sword", locale.translate("item.minecraft.diamond_sword").orElseThrow())
+        }
+        assertTrue(fixture.streamed)
+        val temporary = directory.resolve("minecraft/temporary")
+        assertTrue(!Files.exists(temporary) || Files.list(temporary).use { files -> !files.findAny().isPresent })
+    }
+
     @Test fun `quarantines corrupt disk locale instead of serving it`() {
         val path = directory.resolve("minecraft/translations/1.21.4/ru_ru.json")
         Files.createDirectories(path.parent)
@@ -97,8 +146,8 @@ class LocalizationServiceTest {
         @Volatile var assetDownloads = 0
         private val language = "{\"item.minecraft.diamond_sword\":\"Алмазный меч\"}".toByteArray(StandardCharsets.UTF_8)
         private val hash = MessageDigest.getInstance("SHA-1").digest(language).joinToString("") { "%02x".format(it) }
-        private val versionUri = URI.create("https://piston-meta.mojang.com/v1/1.21.4.json")
-        private val indexUri = URI.create("https://piston-meta.mojang.com/v1/1.21.4-assets.json")
+        val versionUri = URI.create("https://piston-meta.mojang.com/v1/1.21.4.json")
+        val indexUri = URI.create("https://piston-meta.mojang.com/v1/1.21.4-assets.json")
         private val assetUri = URI.create("https://resources.download.minecraft.net/${hash.take(2)}/$hash")
 
         override fun get(uri: URI, maximumBytes: Int): ByteArray {
@@ -123,5 +172,37 @@ class LocalizationServiceTest {
 
     private class FailingClient : LocalizationHttpClient(Duration.ZERO, Duration.ZERO) {
         override fun get(uri: URI, maximumBytes: Int): ByteArray = throw java.io.IOException("offline")
+    }
+
+    private class ClientArchiveFixture : LocalizationHttpClient(Duration.ZERO, Duration.ZERO) {
+        private val versionUri = URI.create("https://piston-meta.mojang.com/v1/client-version.json")
+        private val indexUri = URI.create("https://piston-meta.mojang.com/v1/client-assets.json")
+        private val clientUri = URI.create("https://piston-data.mojang.com/v1/client.jar")
+        private val language = "{\"item.minecraft.diamond_sword\":\"Diamond Sword\"}".toByteArray()
+        private val archive = ByteArrayOutputStream().also { output ->
+            ZipOutputStream(output).use { zip ->
+                zip.putNextEntry(ZipEntry("assets/minecraft/lang/en_us.json"))
+                zip.write(language)
+                zip.closeEntry()
+            }
+        }.toByteArray()
+        private val archiveHash = MessageDigest.getInstance("SHA-1").digest(archive).joinToString("") { "%02x".format(it) }
+        @Volatile var streamed = false
+
+        override fun get(uri: URI, maximumBytes: Int): ByteArray = when (uri) {
+            MojangAssetResolver.MANIFEST -> """{"versions":[{"id":"1.21.4","type":"release","url":"$versionUri"}]}""".toByteArray()
+            versionUri -> """{"assetIndex":{"url":"$indexUri"},"downloads":{"client":{"url":"$clientUri","sha1":"$archiveHash","size":${archive.size}}}}""".toByteArray()
+            indexUri -> """{"objects":{}}""".toByteArray()
+            clientUri -> error("Client archive must not be materialized through get()")
+            else -> error("Unexpected URI $uri")
+        }
+
+        override fun download(uri: URI, maximumBytes: Int, destination: Path): Long {
+            check(uri == clientUri)
+            check(archive.size <= maximumBytes)
+            streamed = true
+            Files.write(destination, archive)
+            return archive.size.toLong()
+        }
     }
 }

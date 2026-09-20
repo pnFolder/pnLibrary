@@ -115,6 +115,7 @@ internal class DefaultMinecraftLocalization internal constructor(
         return loaded
     }
 
+    @Synchronized
     private fun manifest(allowStale: Boolean): ByteArray? {
         val path = store.manifest()
         val cached = store.read(path)
@@ -156,21 +157,26 @@ internal class DefaultMinecraftLocalization internal constructor(
     private data class CacheKey(val version: MinecraftVersion, val locale: String)
 }
 
-internal class LoadedLocale(
+internal class LoadedLocale private constructor(
     override val locale: String,
-    values: Map<String, String>,
+    private val data: LocaleData,
     override val metadata: TranslationMetadata,
 ) : LocaleTranslations {
-    private val values = Collections.unmodifiableMap(LinkedHashMap(values))
-    private val keys = TranslationIndexImpl.keys(values)
-    private val materials = TranslationIndexImpl.materials(values)
-    private val enchantments = TranslationIndexImpl.enchantments(values)
-    override fun translate(key: String): Optional<String> = Optional.ofNullable(values[key])
-    override fun translations(): Map<String, String> = values
-    override fun keys(): TranslationIndex<String> = keys
-    override fun materials(): TranslationIndex<Material> = materials
-    override fun enchantments(): TranslationIndex<Enchantment> = enchantments
-    fun withSource(source: TranslationSource) = LoadedLocale(locale, values, metadata.copy(source = source))
+    constructor(locale: String, values: Map<String, String>, metadata: TranslationMetadata) :
+        this(locale, LocaleData(values), metadata)
+    override fun translate(key: String): Optional<String> = Optional.ofNullable(data.values[key])
+    override fun translations(): Map<String, String> = data.values
+    override fun keys(): TranslationIndex<String> = data.keys
+    override fun materials(): TranslationIndex<Material> = data.materials
+    override fun enchantments(): TranslationIndex<Enchantment> = data.enchantments
+    fun withSource(source: TranslationSource) = LoadedLocale(locale, data, metadata.copy(source = source))
+
+    private class LocaleData(values: Map<String, String>) {
+        val values = Collections.unmodifiableMap(LinkedHashMap(values))
+        val keys by lazy { TranslationIndexImpl.keys(this.values) }
+        val materials by lazy { TranslationIndexImpl.materials(this.values) }
+        val enchantments by lazy { TranslationIndexImpl.enchantments(this.values) }
+    }
 }
 
 private class DefaultTranslationBundle(
