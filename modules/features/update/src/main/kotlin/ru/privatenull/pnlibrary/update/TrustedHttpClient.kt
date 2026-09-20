@@ -6,7 +6,7 @@ import java.net.URI
 import java.time.Duration
 import java.io.InputStream
 
-internal open class TrustedHttpClient(
+open class TrustedHttpClient(
     private val connectTimeout: Duration,
     private val readTimeout: Duration,
     additionalHosts: Set<String>,

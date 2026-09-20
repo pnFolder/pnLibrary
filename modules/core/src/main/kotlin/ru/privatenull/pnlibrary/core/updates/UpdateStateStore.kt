@@ -2,6 +2,8 @@ package ru.privatenull.pnlibrary.core.updates
 
 import com.google.gson.JsonObject
 import com.google.gson.JsonParser
+import com.google.gson.Gson
+import ru.privatenull.pnlibrary.api.updates.UpdatePlan
 import ru.privatenull.pnlibrary.api.updates.UpdatePlanSnapshot
 import ru.privatenull.pnlibrary.api.updates.UpdateState
 import java.nio.channels.FileChannel
@@ -20,6 +22,7 @@ internal class UpdateStateStore(
     private val maximumBytes: Long = 10L * 1024L * 1024L,
     private val warning: (String) -> Unit = {},
 ) {
+    private val gson = Gson()
     private val stateFile = root.resolve("state.json")
     private val historyDirectory = root.resolve("history")
 
@@ -48,7 +51,7 @@ internal class UpdateStateStore(
                 UUID.fromString(root.get("id").asString),
                 root.get("revision").asLong,
                 UpdateState.valueOf(root.get("state").asString),
-                null,
+                root.get("plan")?.takeUnless { it.isJsonNull }?.let { gson.fromJson(it, UpdatePlan::class.java) },
                 emptyList(),
                 root.get("message")?.takeUnless { it.isJsonNull }?.asString,
             )
@@ -68,7 +71,7 @@ internal class UpdateStateStore(
         addProperty("revision", snapshot.revision)
         addProperty("state", snapshot.state.name)
         if (snapshot.message == null) add("message", null) else addProperty("message", snapshot.message)
-        addProperty("hasPlan", snapshot.plan != null)
+        add("plan", gson.toJsonTree(snapshot.plan))
         addProperty("blockerCount", snapshot.blockers.size)
     }.toString().toByteArray(StandardCharsets.UTF_8)
 

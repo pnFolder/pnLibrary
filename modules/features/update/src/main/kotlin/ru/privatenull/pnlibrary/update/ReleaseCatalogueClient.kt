@@ -9,14 +9,14 @@ import java.util.concurrent.CompletableFuture
 import java.util.concurrent.ConcurrentHashMap
 import java.util.concurrent.Executor
 
-internal data class ReleaseSource(val owner: String, val repository: String) {
+data class ReleaseSource(val owner: String, val repository: String) {
     init {
         require(PART.matches(owner) && PART.matches(repository)) { "invalid release source: $owner/$repository" }
     }
     companion object { private val PART = Regex("[A-Za-z0-9_.-]+") }
 }
 
-internal class ReleaseCatalogueClient(
+class ReleaseCatalogueClient(
     private val http: TrustedHttpClient,
     private val store: ReleaseCatalogueStore,
     private val executor: Executor,
@@ -55,7 +55,21 @@ internal class ReleaseCatalogueClient(
             val url = asset.get("browser_download_url")?.asString ?: return@mapNotNull null
             val uri = URI.create(url)
             val bytes = validatedBytes(uri, MANIFEST_LIMIT) { codec.decodeRelease(it) }
-            codec.decodeRelease(bytes).takeIf { channel.accepts(it.channel) }
+            val decoded = codec.decodeRelease(bytes)
+            ComponentRelease(
+                decoded.component, decoded.version, decoded.channel, decoded.supportedApi, decoded.providesApi,
+                decoded.dependencies, decoded.repository,
+                decoded.artifacts.map { artifact ->
+                    val download = release.getAsJsonArray("assets")?.firstOrNull { item ->
+                        item.asJsonObject.get("name")?.asString == artifact.file
+                    }?.asJsonObject?.get("browser_download_url")?.asString?.let(URI::create)
+                    ru.privatenull.pnlibrary.api.updates.ArtifactDescriptor(
+                        artifact.file, artifact.platform, artifact.minimumJava, artifact.maximumJava,
+                        artifact.size, artifact.sha256, download,
+                    )
+                },
+                decoded.externalDependencies,
+            ).takeIf { channel.accepts(it.channel) }
         }.distinctBy { it.component to it.version }.sortedByDescending { it.version }
     }
 

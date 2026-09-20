@@ -8,9 +8,9 @@ import java.nio.file.StandardCopyOption
 import java.security.MessageDigest
 import java.time.Duration
 
-internal data class CatalogueCacheHit(val bytes: ByteArray, val fresh: Boolean)
+data class CatalogueCacheHit(val bytes: ByteArray, val fresh: Boolean)
 
-internal class ReleaseCatalogueStore(private val root: Path) {
+class ReleaseCatalogueStore(private val root: Path) {
     fun read(uri: URI, ttl: Duration): CatalogueCacheHit? {
         val data = dataPath(uri)
         val digest = digestPath(uri)

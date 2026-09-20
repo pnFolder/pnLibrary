@@ -5,20 +5,23 @@ import ru.privatenull.pnlibrary.api.updates.*
 import ru.privatenull.pnlibrary.api.version.PnLibraryApi
 import ru.privatenull.pnlibrary.api.version.SemanticVersion
 import ru.privatenull.pnlibrary.spi.platform.PlatformAdapter
-import ru.privatenull.pnlibrary.update.ResolutionResult
+import ru.privatenull.pnlibrary.update.*
+import java.io.ByteArrayInputStream
 import java.nio.file.Files
 import java.nio.file.Path
 import java.nio.file.Paths
+import java.time.Duration
 import java.util.Optional
 import java.util.UUID
 import java.util.concurrent.CompletionStage
 import java.util.concurrent.CopyOnWriteArrayList
 import java.util.concurrent.Executors
+import java.util.concurrent.Executor
 import java.util.concurrent.atomic.AtomicBoolean
 import java.util.concurrent.atomic.AtomicReference
 
-/** Single lifecycle owner for legacy registrations and graph update operations. */
-internal class UpdateServiceImpl(private val platform: PlatformAdapter, dataFolder: Path) : UpdateService, AutoCloseable {
+/** One catalogue → resolver → verifier → transaction pipeline for every component. */
+internal class UpdateServiceImpl(private val platform: PlatformAdapter, private val dataFolder: Path) : UpdateService, AutoCloseable {
     private val entries = CopyOnWriteArrayList<Registration>()
     private val configuration = UpdateConfiguration.load(dataFolder.resolve("updates.yml")) {
         platform.log(platform, LogLevel.WARNING, "[pnLibrary] $it")
@@ -26,23 +29,36 @@ internal class UpdateServiceImpl(private val platform: PlatformAdapter, dataFold
     private val executor = Executors.newSingleThreadScheduledExecutor { action ->
         Thread(action, "pnLibrary-update-orchestrator").apply { isDaemon = true }
     }
+    private val http = TrustedHttpClient(Duration.ofSeconds(8), Duration.ofSeconds(20), configuration.downloads.allowedHosts)
+    private val catalogue = ReleaseCatalogueClient(
+        http, ReleaseCatalogueStore(dataFolder.resolve("updates/catalog")), Executor { it.run() }, Duration.ofMinutes(30),
+    )
+    private val transaction = UpdateTransaction(
+        dataFolder.resolve("updates/transactions"), ArtifactVerifier(MAX_ARTIFACT_BYTES), dataFolder.parent,
+    )
     private val orchestrator = UpdateOrchestrator(
-        configuration,
-        UpdateStateStore(dataFolder.resolve("updates"), warning = { platform.log(platform, LogLevel.WARNING, "[pnLibrary] $it") }),
-        executor, ::resolveGraph, ::stageGraph, ::announce,
-    ).also(UpdateOrchestrator::start)
+        configuration, UpdateStateStore(dataFolder.resolve("updates"), warning = {
+            platform.log(platform, LogLevel.WARNING, "[pnLibrary] $it")
+        }), executor, ::resolveGraph, ::stageGraph, ::announce,
+    ).also {
+        it.start()
+        runCatching { transaction.recoverAll() }.onFailure { error ->
+            platform.log(platform, LogLevel.WARNING, "[pnLibrary] Update recovery failed", error)
+        }
+    }
 
     override fun register(owner: Any, request: PluginUpdateRequest): UpdateRegistration {
         val info = platform.ownerDetails(owner)
         val product = info["name"] ?: request.repositoryName
         val version = info["version"] ?: error("Не удалось определить версию подключённого плагина")
+        require(SemanticVersion.tryParse(version) != null) { "Версия $product должна быть семантической: $version" }
         val jar = Paths.get(owner.javaClass.protectionDomain.codeSource.location.toURI()).toAbsolutePath().normalize()
         require(Files.isRegularFile(jar)) { "Плагин должен быть запущен из JAR" }
         val artifact = request.artifactFor(Runtime.version().feature())
             ?: error("Для Java ${Runtime.version().feature()} не зарегистрирован совместимый артефакт ${request.repositoryName}")
         return Registration(owner, product, version, request, artifact, jar, jar.parent.resolve("update")).also {
             entries += it
-            orchestrator.checkNow()
+            orchestrator.registrationsChanged()
         }
     }
 
@@ -54,47 +70,59 @@ internal class UpdateServiceImpl(private val platform: PlatformAdapter, dataFold
     override fun currentPlan(): Optional<UpdatePlanSnapshot> = orchestrator.currentPlan()
     override fun stage(planId: UUID): CompletionStage<UpdatePlanSnapshot> = orchestrator.stage(planId)
     override fun history(): List<UpdatePlanSnapshot> = orchestrator.history()
-
-    override fun close() {
-        orchestrator.close()
-        entries.forEach(Registration::markClosed)
-        entries.clear()
-    }
+    override fun close() { orchestrator.close(); entries.forEach(Registration::markClosed); entries.clear() }
 
     private fun resolveGraph(): ResolutionResult {
-        entries.forEach { it.refresh(false) }
-        val releases = entries.map { entry ->
-            val latest = entry.snapshot.latestVersion?.let(SemanticVersion::tryParse) ?: SemanticVersion.parse(entry.version)
-            ComponentRelease(
-                entry.request.component, latest, entry.request.channel, entry.request.supportedApi,
-                PnLibraryApi.VERSION.takeIf { entry.request.component.value == "pnlibrary" },
-                entry.request.dependencies, entry.repository,
-            )
+        if (entries.isEmpty()) return ResolutionResult.Ready(UpdatePlan(PnLibraryApi.VERSION, emptyList(), emptyList()))
+        val installed = entries.map { entry -> InstalledComponent(
+            entry.request.component, SemanticVersion.parse(entry.version), entry.request.supportedApi,
+            PnLibraryApi.VERSION.takeIf { entry.request.component.value == "pnlibrary" },
+        ) }
+        val releases = entries.flatMap { entry ->
+            catalogue.releases(ReleaseSource(entry.request.repositoryOwner, entry.request.repositoryName), entry.request.channel).join()
         }
-        val changes = entries.mapNotNull { entry ->
-            val from = SemanticVersion.parse(entry.version)
-            val to = entry.snapshot.latestVersion?.let(SemanticVersion::tryParse) ?: return@mapNotNull null
-            ComponentChange(entry.request.component, from, to).takeIf { to > from }
+        entries.forEach { entry ->
+            val latest = releases.filter { it.component == entry.request.component }.maxByOrNull(ComponentRelease::version)
+            entry.observe(latest)
         }
-        val blockers = entries.filterNot { it.request.supportedApi.supports(PnLibraryApi.VERSION) }.map {
-            BlockedReason.ApiMismatch(it.request.component, it.request.supportedApi, PnLibraryApi.VERSION, it.repository)
-        }
-        val plan = UpdatePlan(PnLibraryApi.VERSION, changes, releases)
-        return if (blockers.isEmpty()) ResolutionResult.Ready(plan) else ResolutionResult.Blocked(blockers, null)
+        return UpdateResolver(ComponentId.of("pnlibrary")).resolve(
+            installed, releases, defaultChannel = UpdateChannel.STABLE, platform = platform.type,
+            javaFeature = Runtime.version().feature(), policy = ResolverPolicy(
+                configuration.downloads.allowManagedPlugins && configuration.installation.allowNewPlugins,
+                runCatching { platform.installedPlugins() }.getOrNull().orEmpty().keys),
+        )
     }
 
     private fun stageGraph(snapshot: UpdatePlanSnapshot) {
-        val changed = snapshot.plan?.changes?.map(ComponentChange::component)?.toSet().orEmpty()
-        entries.filter { it.request.component in changed }.forEach { it.refresh(true) }
-        val failed = entries.filter { it.request.component in changed && it.snapshot.state == UpdateState.FAILED }
-        check(failed.isEmpty()) { "Failed to stage: ${failed.joinToString { it.product }}" }
+        val plan = requireNotNull(snapshot.plan) { "update plan has no installable target" }
+        val staging = dataFolder.resolve("updates/staging/${snapshot.id}")
+        val byComponent = entries.associateBy { it.request.component }
+        val artifacts = plan.changes.map { change ->
+            val release = plan.selected.single { it.component == change.component }
+            val descriptor = release.artifacts.firstOrNull {
+                it.platform == platform.type && it.supports(Runtime.version().feature())
+            } ?: error("No ${platform.type.id} artifact for ${change.component} ${change.to}")
+            val uri = requireNotNull(descriptor.downloadUri) { "Release artifact has no verified download URL: ${descriptor.file}" }
+            require(descriptor.size <= MAX_ARTIFACT_BYTES) { "Artifact exceeds the configured size limit: ${descriptor.file}" }
+            val bytes = http.get(uri, descriptor.size.toInt())
+            val source = staging.resolve(change.component.value).resolve(descriptor.file)
+            ArtifactDownloader(MAX_ARTIFACT_BYTES).download({ ByteArrayInputStream(bytes) }, source)
+            val specification = ArtifactSpecification(
+                change.component, change.to, release.supportedApi, descriptor.file, descriptor.size, descriptor.sha256,
+            )
+            val existing = byComponent[change.component]
+            val target = existing?.updateDir?.resolve(existing.jar.fileName)
+                ?: dataFolder.parent.resolve("update").resolve(descriptor.file)
+            TransactionArtifact(specification, source, target)
+        }
+        transaction.apply(artifacts) { true }
     }
 
     private fun announce(snapshot: UpdatePlanSnapshot) {
         val message = when (snapshot.state) {
             UpdateState.UPDATE_AVAILABLE -> "Доступен совместимый план обновления (${snapshot.plan?.changes?.size ?: 0} компонентов)"
             UpdateState.UPDATE_STAGED -> "План обновления проверен и подготовлен к перезапуску"
-            UpdateState.BLOCKED -> "Обновление заблокировано: ${snapshot.blockers.size} несовместимых требований"
+            UpdateState.BLOCKED -> "Обновление заблокировано: ${snapshot.blockers.joinToString()}"
             UpdateState.FAILED -> "Проверка обновлений завершилась ошибкой: ${snapshot.message}"
             else -> "Все зарегистрированные компоненты актуальны"
         }
@@ -103,7 +131,7 @@ internal class UpdateServiceImpl(private val platform: PlatformAdapter, dataFold
 
     private inner class Registration(
         private val owner: Any, val product: String, val version: String, val request: PluginUpdateRequest,
-        private val artifact: PluginUpdateArtifact, private val jar: Path, private val updateDir: Path,
+        private val artifact: PluginUpdateArtifact, val jar: Path, val updateDir: Path,
     ) : UpdateRegistration {
         private val closed = AtomicBoolean(false)
         private val state = AtomicReference(UpdateSnapshot(
@@ -114,23 +142,25 @@ internal class UpdateServiceImpl(private val platform: PlatformAdapter, dataFold
         override val snapshot get() = state.get()
         override fun checkNow() { check(!closed.get()); orchestrator.checkNow() }
         override fun downloadNow() { check(!closed.get()); orchestrator.checkNow().thenCompose { orchestrator.stage(it.id) } }
-        fun refresh(download: Boolean) {
+        fun observe(release: ComponentRelease?) {
             if (closed.get()) return
-            runCatching {
-                MandatoryUpdateService.checkOnce(
-                    owner, platform, version, request.repositoryOwner, request.repositoryName,
-                    request.channel.name.lowercase(), artifact.pattern, jar, updateDir, download, artifact.minimumJava,
-                ) { if (!closed.get()) state.set(it) }
-            }.onFailure { failure ->
-                val previous = snapshot
-                state.set(UpdateSnapshot(
-                    product, version, previous.latestVersion, request.channel, UpdateState.FAILED,
-                    Runtime.version().feature(), artifact.minimumJava, request.automaticDownload,
-                    previous.releaseUrl, failure.message,
-                ))
+            val latest = release?.version
+            val current = SemanticVersion.parse(version)
+            state.set(UpdateSnapshot(
+                product, version, latest?.toString(), request.channel,
+                if (latest != null && latest > current) UpdateState.AVAILABLE else UpdateState.CURRENT,
+                Runtime.version().feature(), artifact.minimumJava, request.automaticDownload,
+                "https://github.com/$repository/releases", null,
+            ))
+        }
+        override fun close() {
+            if (closed.compareAndSet(false, true)) {
+                entries.remove(this)
+                orchestrator.registrationsChanged()
             }
         }
-        override fun close() { if (closed.compareAndSet(false, true)) entries.remove(this) }
         fun markClosed() { closed.set(true) }
     }
+
+    private companion object { const val MAX_ARTIFACT_BYTES = 512L * 1024L * 1024L }
 }

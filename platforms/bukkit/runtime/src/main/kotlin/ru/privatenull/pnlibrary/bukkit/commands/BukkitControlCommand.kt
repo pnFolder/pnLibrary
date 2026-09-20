@@ -234,9 +234,6 @@ internal class BukkitControlCommand(
         if (entries.isEmpty()) sender.sendMessage(" §7Нет зарегистрированных плагинов.")
         entries.forEach {
             sendUpdateLine(sender, it.snapshot)
-            if (sender is Player && it.snapshot.state == UpdateState.AVAILABLE) {
-                sendDownloadButton(sender, it.snapshot.product)
-            }
         }
         if (sender is Player && sender.hasPermission("pnlibrary.updates.download")) {
             library.updates.currentPlan().orElse(null)?.takeIf { it.state == UpdateState.UPDATE_AVAILABLE }?.let { plan ->
@@ -287,20 +284,6 @@ internal class BukkitControlCommand(
             "Открыть Discord pnFolder",
         )
         player.spigot().sendMessage(check, TextComponent("  "), support)
-    }
-
-    @Suppress("DEPRECATION")
-    private fun sendDownloadButton(player: Player, product: String) {
-        val button = TextComponent("   [ Скачать $product сейчас ]").apply {
-            color = ChatColor.YELLOW
-            isBold = true
-            clickEvent = ClickEvent(ClickEvent.Action.RUN_COMMAND, "/pn update $product")
-            hoverEvent = HoverEvent(
-                HoverEvent.Action.SHOW_TEXT,
-                ComponentBuilder("Скачать, проверить и подготовить обновление").color(ChatColor.GRAY).create(),
-            )
-        }
-        player.spigot().sendMessage(button)
     }
 
     private fun sendUpdateLine(sender: CommandSender, snapshot: UpdateSnapshot) {

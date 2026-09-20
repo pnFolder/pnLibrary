@@ -66,6 +66,12 @@ internal class UpdateOrchestrator(
 
     fun currentPlan(): Optional<UpdatePlanSnapshot> = Optional.ofNullable(synchronized(lock) { current })
 
+    /** Queues a fresh graph check after any currently running check has released the coalescing slot. */
+    fun registrationsChanged() {
+        if (closed.get() || !configuration.enabled) return
+        executor.execute { if (!closed.get()) checkNow() }
+    }
+
     fun stage(planId: UUID): CompletionStage<UpdatePlanSnapshot> {
         val promise = CompletableFuture<UpdatePlanSnapshot>()
         executor.execute {

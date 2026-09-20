@@ -46,7 +46,9 @@ class ComponentDescriptorCodec {
             SemanticVersion.parse(requireString(root, "version")),
             channel(requireString(root, "channel")),
             ApiVersionRange(requireInt(api, "minimum"), requireInt(api, "maximum")),
+            providesApi = optionalInt(root, "providesApi"),
             dependencies = dependencies,
+            repository = optionalString(root, "repository"),
             artifacts = artifacts,
         )
     }
@@ -107,6 +109,11 @@ class ComponentDescriptorCodec {
         try { value.get(name)?.asInt ?: fail(name, "expected integer") } catch (error: Exception) { fail(name, "expected integer", error) }
     private fun optionalInt(value: JsonObject, name: String): Int? =
         value.get(name)?.takeUnless { it.isJsonNull }?.let { try { it.asInt } catch (error: Exception) { fail(name, "expected integer", error) } }
+    private fun optionalString(value: JsonObject, name: String): String? =
+        value.get(name)?.takeUnless { it.isJsonNull }?.let {
+            if (!it.isJsonPrimitive || !it.asJsonPrimitive.isString || it.asString.isBlank()) fail(name, "expected non-blank string")
+            it.asString
+        }
     private fun requireLong(value: JsonObject, name: String): Long =
         try { value.get(name)?.asLong ?: fail(name, "expected integer") } catch (error: Exception) { fail(name, "expected integer", error) }
     private fun requireObject(value: JsonObject, name: String): JsonObject =

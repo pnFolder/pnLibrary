@@ -45,6 +45,7 @@ class PnComponentPlugin : Plugin<Project> {
                 val release = JsonObject().apply {
                     addProperty("schema", 1); addProperty("component", id); addProperty("version", version)
                     addProperty("channel", extension.channel.get().lowercase()); add("pnLibraryApi", api(extension))
+                    if (id == "pnlibrary") addProperty("providesApi", extension.apiMaximum.get())
                     add("dependencies", JsonArray().apply { dependencies.sortedBy { it[0] }.forEach { value -> add(JsonObject().apply {
                         addProperty("component", value[0]); addProperty("minimumVersion", value[1])
                     }) } })
