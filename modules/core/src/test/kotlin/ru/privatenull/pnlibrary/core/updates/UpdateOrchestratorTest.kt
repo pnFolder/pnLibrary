@@ -88,6 +88,7 @@ class UpdateOrchestratorTest {
         assertThrows(Exception::class.java) {
             orchestrator.stage(java.util.UUID.randomUUID()).toCompletableFuture().get()
         }
+        assertDoesNotThrow { orchestrator.registrationsChanged() }
         orchestrator.close()
     }
 

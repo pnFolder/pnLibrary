@@ -9,6 +9,7 @@ import java.util.Optional
 import java.util.UUID
 import java.util.concurrent.CompletableFuture
 import java.util.concurrent.CompletionStage
+import java.util.concurrent.RejectedExecutionException
 import java.util.concurrent.ScheduledExecutorService
 import java.util.concurrent.TimeUnit
 import java.util.concurrent.atomic.AtomicBoolean
@@ -75,7 +76,12 @@ internal class UpdateOrchestrator(
     /** Queues a fresh graph check after any currently running check has released the coalescing slot. */
     fun registrationsChanged() {
         if (closed.get() || !configuration.effectiveChecksEnabled) return
-        executor.execute { if (!closed.get()) checkNow() }
+        try {
+            executor.execute { if (!closed.get()) checkNow() }
+        } catch (_: RejectedExecutionException) {
+            // A concurrent executor shutdown is a normal lifecycle race. The owner
+            // will close the orchestrator and no follow-up check is required.
+        }
     }
 
     fun stage(planId: UUID): CompletionStage<UpdatePlanSnapshot> {
