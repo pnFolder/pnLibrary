@@ -47,7 +47,11 @@ internal class DirectDownloadManager(
         installBatch(request, listOf(declaration))
     }
 
-    internal fun installBatch(request: PluginDownloads, declarations: List<DownloadDeclaration>) {
+    internal fun installBatch(
+        request: PluginDownloads,
+        declarations: List<DownloadDeclaration>,
+        beforePublish: () -> Unit = {},
+    ) {
         check(!closed.get()) { "система загрузок закрыта" }
         val prepared = mutableListOf<Prepared>()
         try {
@@ -58,6 +62,7 @@ internal class DirectDownloadManager(
         }
         if (prepared.isEmpty()) return
         try {
+            beforePublish()
             check(!closed.get()) { "система загрузок закрыта" }
             publishAtomically(prepared)
         } catch (error: Throwable) {
@@ -224,7 +229,11 @@ internal class DirectDownloadManager(
                     activeDownload.compareAndSet(promise, null)
                     return@execute
                 }
-                runCatching { installBatch(request, declarations) }
+                runCatching {
+                    installBatch(request, declarations) {
+                        check(!registrationClosed.get()) { "регистрация загрузок закрыта" }
+                    }
+                }
                     .onSuccess {
                         if (!registrationClosed.get() && !closed.get()) state.set(request.declarations.map {
                             DownloadSnapshot(it.key, when {

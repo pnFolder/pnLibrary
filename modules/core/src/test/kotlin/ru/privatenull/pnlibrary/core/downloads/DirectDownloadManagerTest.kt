@@ -24,6 +24,8 @@ import java.nio.file.Path
 import java.time.Duration
 import java.util.jar.JarEntry
 import java.util.jar.JarOutputStream
+import java.util.concurrent.CountDownLatch
+import java.util.concurrent.TimeUnit
 
 class DirectDownloadManagerTest {
     @TempDir lateinit var directory: Path
@@ -89,12 +91,48 @@ class DirectDownloadManagerTest {
         assertFalse(Files.exists(directory.resolve("plugin-data/data.bin")))
     }
 
+    @Test
+    fun `closing registration before publication does not publish prepared files`() {
+        val entered = CountDownLatch(1)
+        val release = CountDownLatch(1)
+        val payload = "late-download".toByteArray()
+        val request = PluginDownloads.builder().dataDirectory(directory.resolve("plugin-data"))
+            .file("data") { it.url("https://example.org/data.bin")
+                .destination(DownloadDestination.DATA_FOLDER, "data.bin") }.build()
+        blockingManager(payload, entered, release).use { manager ->
+            val registration = manager.register(Any(), request)
+            val future = registration.downloadNow().toCompletableFuture()
+            assertTrue(entered.await(5, TimeUnit.SECONDS))
+            registration.close()
+            release.countDown()
+
+            assertTrue(future.isCompletedExceptionally)
+            assertFalse(Files.exists(directory.resolve("plugin-data/data.bin")))
+        }
+    }
+
     private fun manager(bytes: ByteArray, automatic: Boolean = true): DirectDownloadManager {
+        return manager(bytes, automatic, null, null)
+    }
+
+    private fun blockingManager(bytes: ByteArray, entered: CountDownLatch, release: CountDownLatch): DirectDownloadManager =
+        manager(bytes, true, entered, release)
+
+    private fun manager(
+        bytes: ByteArray,
+        automatic: Boolean,
+        entered: CountDownLatch?,
+        release: CountDownLatch?,
+    ): DirectDownloadManager {
         val platform = Proxy.newProxyInstance(javaClass.classLoader, arrayOf(PlatformAdapter::class.java)) { _, method, _ ->
             when (method.name) { "getType" -> PlatformType.BUKKIT; "installedPlugins", "details" -> emptyMap<String, String>(); else -> null }
         } as PlatformAdapter
         val http = object : TrustedHttpClient(Duration.ofSeconds(1), Duration.ofSeconds(1), setOf("example.org")) {
-            override fun get(uri: URI, maximumBytes: Int): ByteArray = bytes.also { require(it.size <= maximumBytes) }
+            override fun get(uri: URI, maximumBytes: Int): ByteArray {
+                entered?.countDown()
+                release?.await(5, TimeUnit.SECONDS)
+                return bytes.also { require(it.size <= maximumBytes) }
+            }
         }
         return DirectDownloadManager(platform, directory.resolve("plugins/pnLibrary"), DownloadConfiguration(
             automatic = automatic, allowedHosts = setOf("example.org"),
