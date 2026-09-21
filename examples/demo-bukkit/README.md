@@ -44,8 +44,15 @@ Action API, Minecraft localization (ленивая загрузка `ru_ru`/`en_
 | `DemoDiagnostics.kt` | динамический diagnostics snapshot и конфигурационный файл |
 | `DemoLocalization.kt` | ленивый version-aware cache локализаций Minecraft |
 | `DemoState.kt` | потокобезопасное состояние, используемое несколькими модулями |
+| `DemoActionShowcase.kt` | все стандартные `Action`, все `ActionCondition`, `Expansion`-модели и enum-ветки |
 
 `modules:api`, `modules:common` и `modules:features:minecraft-localization` используются напрямую.
 `modules:core`, `runtime-spi` и platform runtime — внутренние реализации pnLibrary: их нельзя
 подключать к прикладному плагину вместо обычного runtime, поэтому они демонстрируются самим
 runtime и не дублируются в example-плагине.
+
+При `/pndemo status` showcase выполняет полный граф действий: message, action-bar, sound,
+particle, effect, console log, no-op, sequence, delay, switch, conditional и операции со
+значениями. Отдельно создаются `UpdatePlaceholderAction`, все условия доступа/вероятности/
+сравнения и полный набор `Expansion` expression/operator/value моделей. Это сделано намеренно:
+demo является API-каталогом, а не только красивым примером одного сценария.

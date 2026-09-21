@@ -40,6 +40,7 @@ object DemoCommands {
                 DemoEvent().callEvent()
                 if (sender is Player) {
                     PnLibraryProviderFacade.sendAction(plugin, sender)
+                    DemoActionShowcase.run(plugin, sender, mapOf("sender" to sender.name))
                 }
                 sender.sendMessage("§8[§bpnDemo§8] §7API §f1 §7· context §f${context.id} §7· online §f${Bukkit.getOnlinePlayers().size}")
                 sender.sendMessage("§7Используются: lifecycle, metrics, diagnostics, tasks, currency, placeholders, localization")
