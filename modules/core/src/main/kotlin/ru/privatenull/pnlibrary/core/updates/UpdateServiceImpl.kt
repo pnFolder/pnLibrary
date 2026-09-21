@@ -24,6 +24,7 @@ import java.util.concurrent.atomic.AtomicReference
 internal class UpdateServiceImpl(private val platform: PlatformAdapter, private val dataFolder: Path) : UpdateService, AutoCloseable {
     private val closed = AtomicBoolean(false)
     private val entries = CopyOnWriteArrayList<Registration>()
+    private val entriesLock = Any()
     private val configuration = UpdateConfiguration.load(dataFolder.resolve("updates.yml")) {
         platform.log(platform, LogLevel.WARNING, "[pnLibrary] $it")
     }
@@ -64,10 +65,13 @@ internal class UpdateServiceImpl(private val platform: PlatformAdapter, private 
         require(Files.isRegularFile(jar)) { "Плагин должен быть запущен из JAR" }
         val artifact = request.artifactFor(Runtime.version().feature(), platform.type)
             ?: error("Для Java ${Runtime.version().feature()} не зарегистрирован совместимый артефакт ${request.repositoryName}")
-        return Registration(owner, product, version, request, artifact, jar, jar.parent.resolve("update")).also {
-            entries += it
-            orchestrator.registrationsChanged()
+        val registration = Registration(owner, product, version, request, artifact, jar, jar.parent.resolve("update"))
+        synchronized(entriesLock) {
+            check(!closed.get()) { "update service is closed" }
+            entries += registration
         }
+        orchestrator.registrationsChanged()
+        return registration
     }
 
     override fun registrations(): List<UpdateRegistration> = entries.toList()
@@ -80,7 +84,11 @@ internal class UpdateServiceImpl(private val platform: PlatformAdapter, private 
     override fun history(): List<UpdatePlanSnapshot> = orchestrator.history()
     override fun close() {
         if (!closed.compareAndSet(false, true)) return
-        orchestrator.close(); entries.forEach(Registration::markClosed); entries.clear()
+        synchronized(entriesLock) {
+            entries.forEach(Registration::markClosed)
+            entries.clear()
+        }
+        orchestrator.close()
     }
 
     private fun resolveGraph(): ResolutionResult {
