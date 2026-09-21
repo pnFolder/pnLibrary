@@ -7,6 +7,7 @@ import ru.privatenull.pnlibrary.api.platform.PlatformType
 import java.net.URI
 import java.util.Collections
 import java.util.UUID
+import ru.privatenull.pnlibrary.api.plugin.PluginDependency
 
 /** Stable normalized identity of a pnLibrary-managed component. */
 class ComponentId private constructor(val value: String) : Comparable<ComponentId> {
@@ -115,7 +116,11 @@ class ManagedDependency(
     val minimumVersion: SemanticVersion,
     val repositoryOwner: String,
     val repositoryName: String,
-) {
+) : PluginDependency {
+    constructor(component: String, minimumVersion: String, repositoryOwner: String, repositoryName: String) : this(
+        ComponentId.of(component), SemanticVersion.parse(minimumVersion), repositoryOwner, repositoryName,
+    )
+    override val managed: ManagedDependency get() = this
     init {
         require(REPOSITORY_PART.matches(repositoryOwner)) { "invalid repository owner: $repositoryOwner" }
         require(REPOSITORY_PART.matches(repositoryName)) { "invalid repository name: $repositoryName" }
@@ -144,7 +149,8 @@ class ExternalArtifact(
 }
 
 /** Required third-party plugin which may be manual-only or have an exact verified artifact. */
-class ExternalDependency private constructor(builder: Builder) {
+class ExternalDependency private constructor(builder: Builder) : PluginDependency {
+    override val external: ExternalDependency get() = this
     val plugin: String = builder.plugin
     val minimumVersion: SemanticVersion = builder.minimumVersion
     val downloadPage: URI? = builder.downloadPage

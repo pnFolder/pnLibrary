@@ -15,6 +15,7 @@ import ru.privatenull.pnlibrary.api.metrics.PluginMetrics
 import ru.privatenull.pnlibrary.spi.platform.PlatformAdapter
 import ru.privatenull.pnlibrary.api.plugin.MetricsController
 import ru.privatenull.pnlibrary.api.plugin.PluginBuilder
+import ru.privatenull.pnlibrary.api.plugin.PluginDependency
 import ru.privatenull.pnlibrary.api.plugin.PluginContext
 import ru.privatenull.pnlibrary.api.plugin.PluginId
 import ru.privatenull.pnlibrary.api.plugin.PluginLifecycle
@@ -263,7 +264,25 @@ internal class PluginRegistryImpl(
                     request.externalDependencies.forEach(target::externalDependency)
                 }.build()
         }
-        return (explicit ?: embedded ?: inferred)?.also {
+        return (explicit ?: embedded ?: inferred)?.let { descriptor ->
+            if (definition.dependencies.isEmpty()) descriptor else ComponentDescriptor.builder(
+                descriptor.id.value, descriptor.version.toString(),
+            ).pnLibraryApi(descriptor.supportedApi.minimum, descriptor.supportedApi.maximum)
+                .also { target ->
+                    descriptor.managedDependencies.forEach { dependency -> target.managedDependency(
+                        dependency.component.value, dependency.minimumVersion.toString(),
+                        dependency.repositoryOwner, dependency.repositoryName,
+                    ) }
+                    descriptor.externalDependencies.forEach(target::externalDependency)
+                    definition.dependencies.forEach { dependency ->
+                        dependency.managed?.let { managed -> target.managedDependency(
+                            managed.component.value, managed.minimumVersion.toString(),
+                            managed.repositoryOwner, managed.repositoryName,
+                        ) }
+                        dependency.external?.let(target::externalDependency)
+                    }
+                }.build()
+        }?.also {
             require(it.id.value == id.value) { "Component ID ${it.id} does not match plugin ID $id" }
         }
     }
@@ -428,6 +447,7 @@ internal class PluginRegistryImpl(
         var diagnosticContainer: DiagnosticContainer? = null
         var updateRequest: PluginUpdateRequest? = null
         var componentDescriptor: ComponentDescriptor? = null
+        val dependencies = mutableListOf<PluginDependency>()
         var downloadsRequest: PluginDownloads? = null
         var placeholderApiEnabled: Boolean = true
         val listeners = mutableListOf<Listener>()
@@ -435,6 +455,17 @@ internal class PluginRegistryImpl(
         override fun component(descriptor: ComponentDescriptor): PluginBuilder = apply {
             require(componentDescriptor == null) { "component descriptor is already configured" }
             componentDescriptor = descriptor
+        }
+
+        override fun depends(dependency: PluginDependency): PluginBuilder = apply {
+            require(dependency.managed != null || dependency.external != null) {
+                "plugin dependency must provide a managed or external dependency"
+            }
+            require(dependencies.none { existing ->
+                (existing.managed?.component == dependency.managed?.component && dependency.managed != null) ||
+                    (existing.external?.plugin?.equals(dependency.external?.plugin, true) == true && dependency.external != null)
+            }) { "duplicate plugin dependency" }
+            dependencies += dependency
         }
 
         override fun metadata(configure: Consumer<PluginMetadataBuilder>): PluginBuilder = apply {

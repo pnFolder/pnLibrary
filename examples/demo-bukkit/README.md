@@ -52,6 +52,20 @@ Action API, Minecraft localization (ленивая загрузка `ru_ru`/`en_
 подключать к прикладному плагину вместо обычного runtime, поэтому они демонстрируются самим
 runtime и не дублируются в example-плагине.
 
+Для зависимостей используется единый DSL:
+
+```kotlin
+builder.depends(
+    Dependencies.managed("pnlibrary", "1.0.0", "pnFolder", "pnLibrary"),
+    Dependencies.plugin("Vault", "1.7.3", "https://example.org/vault"),
+)
+```
+
+`managed` участвует в графе pnLibrary-компонентов, а `plugin` описывает сторонний серверный
+плагин. Для стороннего плагина можно передать вместо страницы проверенный HTTPS-артефакт с
+размером и SHA-256. Старые `managedDependency`/`externalDependency` остаются доступными внутри
+низкоуровневых descriptor/update builders.
+
 При `/pndemo status` showcase выполняет полный граф действий: message, action-bar, sound,
 particle, effect, console log, no-op, sequence, delay, switch, conditional и операции со
 значениями. Отдельно создаются `UpdatePlaceholderAction`, все условия доступа/вероятности/
