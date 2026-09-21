@@ -22,6 +22,7 @@ import ru.privatenull.pnlibrary.api.metrics.PluginMetrics
 import ru.privatenull.pnlibrary.spi.platform.PlatformAdapter
 import ru.privatenull.pnlibrary.api.platform.PlatformType
 import ru.privatenull.pnlibrary.api.plugin.PluginId
+import ru.privatenull.pnlibrary.api.plugin.Dependencies
 import ru.privatenull.pnlibrary.api.tasks.TaskScope
 import ru.privatenull.pnlibrary.api.tasks.TaskService
 import ru.privatenull.pnlibrary.api.updates.UpdateService
@@ -39,6 +40,26 @@ import java.lang.reflect.Proxy
 import java.util.function.Supplier
 
 class PluginRegistryImplTest {
+    @Test
+    fun `depends creates an implicit component descriptor when no update declaration exists`() {
+        val error = assertThrows(IllegalArgumentException::class.java) {
+            registry(libraryVersion = "1.0.0").register(Any(), "example") {
+                it.depends(Dependencies.managed("missing-component", "9.0.0", "pnFolder", "Missing"))
+            }
+        }
+        assertTrue(error.message!!.contains("missing-component >= 9.0.0"))
+    }
+
+    @Test
+    fun `optional unified dependency does not block registration`() {
+        val context = registry(libraryVersion = "1.0.0").register(Any(), "example") {
+            it.depends(Dependencies.managed("missing-component", "9.0.0", "pnFolder", "Missing", required = false))
+                .component(ComponentDescriptor.builder("example", "1.0.0").pnLibraryApi(1, 1).build())
+        }
+        assertEquals("example", context.id.value)
+        context.close()
+    }
+
     @Test
     fun `updates declaration infers component without separate descriptor`() {
         val request = PluginUpdateRequest.builder().repository("pnFolder", "Example")

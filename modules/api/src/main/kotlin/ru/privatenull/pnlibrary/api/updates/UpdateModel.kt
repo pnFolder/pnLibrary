@@ -116,9 +116,13 @@ class ManagedDependency(
     val minimumVersion: SemanticVersion,
     val repositoryOwner: String,
     val repositoryName: String,
+    override val required: Boolean = true,
+    override val automaticDownload: Boolean = false,
 ) : PluginDependency {
-    constructor(component: String, minimumVersion: String, repositoryOwner: String, repositoryName: String) : this(
+    constructor(component: String, minimumVersion: String, repositoryOwner: String, repositoryName: String,
+                required: Boolean = true, automaticDownload: Boolean = false) : this(
         ComponentId.of(component), SemanticVersion.parse(minimumVersion), repositoryOwner, repositoryName,
+        required, automaticDownload,
     )
     override val managed: ManagedDependency get() = this
     init {
@@ -155,6 +159,8 @@ class ExternalDependency private constructor(builder: Builder) : PluginDependenc
     val minimumVersion: SemanticVersion = builder.minimumVersion
     val downloadPage: URI? = builder.downloadPage
     val artifact: ExternalArtifact? = builder.artifact
+    override val required: Boolean = builder.required
+    override val automaticDownload: Boolean = builder.automaticDownload
 
     class Builder internal constructor(
         internal val plugin: String,
@@ -162,6 +168,8 @@ class ExternalDependency private constructor(builder: Builder) : PluginDependenc
     ) {
         internal var downloadPage: URI? = null
         internal var artifact: ExternalArtifact? = null
+        internal var required = true
+        internal var automaticDownload = false
 
         fun downloadPage(url: String) = apply {
             val parsed = URI.create(url)
@@ -172,6 +180,8 @@ class ExternalDependency private constructor(builder: Builder) : PluginDependenc
         fun artifact(url: String, size: Long, sha256: String) = apply {
             artifact = ExternalArtifact(URI.create(url), size, sha256)
         }
+        fun required(value: Boolean) = apply { required = value }
+        fun automaticDownload(value: Boolean) = apply { automaticDownload = value }
 
         fun build(): ExternalDependency {
             require(downloadPage != null || artifact != null) { "external dependency requires a download page or artifact" }
@@ -236,14 +246,18 @@ class ComponentDescriptor private constructor(builder: Builder) {
             supportedApi = ApiVersionRange(minimum, maximum)
         }
 
+        @JvmOverloads
         fun managedDependency(
             component: String,
             minimumVersion: String,
             repositoryOwner: String,
             repositoryName: String,
+            required: Boolean = true,
+            automaticDownload: Boolean = false,
         ) = apply {
             val dependency = ManagedDependency(
                 ComponentId.of(component), SemanticVersion.parse(minimumVersion), repositoryOwner, repositoryName,
+                required, automaticDownload,
             )
             require(managedDependencies.none { it.component == dependency.component }) {
                 "duplicate component dependency: ${dependency.component}"

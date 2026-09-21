@@ -2659,6 +2659,22 @@ public final class ru/privatenull/pnlibrary/api/platform/PlatformType : java/lan
 	public static fun values ()[Lru/privatenull/pnlibrary/api/platform/PlatformType;
 }
 
+public final class ru/privatenull/pnlibrary/api/plugin/Dependencies {
+	public static final field INSTANCE Lru/privatenull/pnlibrary/api/plugin/Dependencies;
+	public static final fun managed (Ljava/lang/String;Ljava/lang/String;Ljava/lang/String;Ljava/lang/String;)Lru/privatenull/pnlibrary/api/plugin/PluginDependency;
+	public static final fun managed (Ljava/lang/String;Ljava/lang/String;Ljava/lang/String;Ljava/lang/String;Z)Lru/privatenull/pnlibrary/api/plugin/PluginDependency;
+	public static final fun managed (Ljava/lang/String;Ljava/lang/String;Ljava/lang/String;Ljava/lang/String;ZZ)Lru/privatenull/pnlibrary/api/plugin/PluginDependency;
+	public static synthetic fun managed$default (Ljava/lang/String;Ljava/lang/String;Ljava/lang/String;Ljava/lang/String;ZZILjava/lang/Object;)Lru/privatenull/pnlibrary/api/plugin/PluginDependency;
+	public static final fun plugin (Ljava/lang/String;Ljava/lang/String;Ljava/lang/String;)Lru/privatenull/pnlibrary/api/plugin/PluginDependency;
+	public static final fun plugin (Ljava/lang/String;Ljava/lang/String;Ljava/lang/String;JLjava/lang/String;)Lru/privatenull/pnlibrary/api/plugin/PluginDependency;
+	public static final fun plugin (Ljava/lang/String;Ljava/lang/String;Ljava/lang/String;JLjava/lang/String;Z)Lru/privatenull/pnlibrary/api/plugin/PluginDependency;
+	public static final fun plugin (Ljava/lang/String;Ljava/lang/String;Ljava/lang/String;JLjava/lang/String;ZZ)Lru/privatenull/pnlibrary/api/plugin/PluginDependency;
+	public static final fun plugin (Ljava/lang/String;Ljava/lang/String;Ljava/lang/String;Z)Lru/privatenull/pnlibrary/api/plugin/PluginDependency;
+	public static final fun plugin (Ljava/lang/String;Ljava/lang/String;Ljava/lang/String;ZZ)Lru/privatenull/pnlibrary/api/plugin/PluginDependency;
+	public static synthetic fun plugin$default (Ljava/lang/String;Ljava/lang/String;Ljava/lang/String;JLjava/lang/String;ZZILjava/lang/Object;)Lru/privatenull/pnlibrary/api/plugin/PluginDependency;
+	public static synthetic fun plugin$default (Ljava/lang/String;Ljava/lang/String;Ljava/lang/String;ZZILjava/lang/Object;)Lru/privatenull/pnlibrary/api/plugin/PluginDependency;
+}
+
 public abstract interface class ru/privatenull/pnlibrary/api/plugin/MetricsController : java/lang/AutoCloseable {
 	public abstract fun changeProjectId (I)V
 	public abstract fun close ()V
@@ -2672,6 +2688,8 @@ public abstract interface class ru/privatenull/pnlibrary/api/plugin/MetricsContr
 
 public abstract interface class ru/privatenull/pnlibrary/api/plugin/PluginBuilder {
 	public abstract fun component (Lru/privatenull/pnlibrary/api/updates/ComponentDescriptor;)Lru/privatenull/pnlibrary/api/plugin/PluginBuilder;
+	public abstract fun depends (Lru/privatenull/pnlibrary/api/plugin/PluginDependency;)Lru/privatenull/pnlibrary/api/plugin/PluginBuilder;
+	public fun depends ([Lru/privatenull/pnlibrary/api/plugin/PluginDependency;)Lru/privatenull/pnlibrary/api/plugin/PluginBuilder;
 	public abstract fun diagnostics (Ljava/nio/file/Path;Lru/privatenull/pnlibrary/api/diagnostics/DiagnosticContainer;)Lru/privatenull/pnlibrary/api/plugin/PluginBuilder;
 	public fun downloads (Ljava/nio/file/Path;Ljava/util/function/Consumer;)Lru/privatenull/pnlibrary/api/plugin/PluginBuilder;
 	public fun downloads (Ljava/util/function/Consumer;)Lru/privatenull/pnlibrary/api/plugin/PluginBuilder;
@@ -2710,6 +2728,13 @@ public abstract interface class ru/privatenull/pnlibrary/api/plugin/PluginContex
 	public abstract fun getTasks ()Lru/privatenull/pnlibrary/api/tasks/TaskScope;
 	public abstract fun getUpdates ()Lru/privatenull/pnlibrary/api/updates/UpdateRegistration;
 	public abstract fun isClosed ()Z
+}
+
+public abstract interface class ru/privatenull/pnlibrary/api/plugin/PluginDependency {
+	public fun getAutomaticDownload ()Z
+	public fun getExternal ()Lru/privatenull/pnlibrary/api/updates/ExternalDependency;
+	public fun getManaged ()Lru/privatenull/pnlibrary/api/updates/ManagedDependency;
+	public fun getRequired ()Z
 }
 
 public final class ru/privatenull/pnlibrary/api/plugin/PluginId {
@@ -3380,6 +3405,9 @@ public final class ru/privatenull/pnlibrary/api/updates/ComponentDescriptor$Buil
 	public final fun build ()Lru/privatenull/pnlibrary/api/updates/ComponentDescriptor;
 	public final fun externalDependency (Lru/privatenull/pnlibrary/api/updates/ExternalDependency;)Lru/privatenull/pnlibrary/api/updates/ComponentDescriptor$Builder;
 	public final fun managedDependency (Ljava/lang/String;Ljava/lang/String;Ljava/lang/String;Ljava/lang/String;)Lru/privatenull/pnlibrary/api/updates/ComponentDescriptor$Builder;
+	public final fun managedDependency (Ljava/lang/String;Ljava/lang/String;Ljava/lang/String;Ljava/lang/String;Z)Lru/privatenull/pnlibrary/api/updates/ComponentDescriptor$Builder;
+	public final fun managedDependency (Ljava/lang/String;Ljava/lang/String;Ljava/lang/String;Ljava/lang/String;ZZ)Lru/privatenull/pnlibrary/api/updates/ComponentDescriptor$Builder;
+	public static synthetic fun managedDependency$default (Lru/privatenull/pnlibrary/api/updates/ComponentDescriptor$Builder;Ljava/lang/String;Ljava/lang/String;Ljava/lang/String;Ljava/lang/String;ZZILjava/lang/Object;)Lru/privatenull/pnlibrary/api/updates/ComponentDescriptor$Builder;
 	public final fun pnLibraryApi (II)Lru/privatenull/pnlibrary/api/updates/ComponentDescriptor$Builder;
 }
 
@@ -3443,20 +3471,25 @@ public final class ru/privatenull/pnlibrary/api/updates/ExternalArtifact {
 public final class ru/privatenull/pnlibrary/api/updates/ExternalArtifact$Companion {
 }
 
-public final class ru/privatenull/pnlibrary/api/updates/ExternalDependency {
+public final class ru/privatenull/pnlibrary/api/updates/ExternalDependency : ru/privatenull/pnlibrary/api/plugin/PluginDependency {
 	public static final field Companion Lru/privatenull/pnlibrary/api/updates/ExternalDependency$Companion;
 	public synthetic fun <init> (Lru/privatenull/pnlibrary/api/updates/ExternalDependency$Builder;Lkotlin/jvm/internal/DefaultConstructorMarker;)V
 	public static final fun builder (Ljava/lang/String;Ljava/lang/String;)Lru/privatenull/pnlibrary/api/updates/ExternalDependency$Builder;
 	public final fun getArtifact ()Lru/privatenull/pnlibrary/api/updates/ExternalArtifact;
+	public fun getAutomaticDownload ()Z
 	public final fun getDownloadPage ()Ljava/net/URI;
+	public fun getExternal ()Lru/privatenull/pnlibrary/api/updates/ExternalDependency;
 	public final fun getMinimumVersion ()Lru/privatenull/pnlibrary/api/version/SemanticVersion;
 	public final fun getPlugin ()Ljava/lang/String;
+	public fun getRequired ()Z
 }
 
 public final class ru/privatenull/pnlibrary/api/updates/ExternalDependency$Builder {
 	public final fun artifact (Ljava/lang/String;JLjava/lang/String;)Lru/privatenull/pnlibrary/api/updates/ExternalDependency$Builder;
+	public final fun automaticDownload (Z)Lru/privatenull/pnlibrary/api/updates/ExternalDependency$Builder;
 	public final fun build ()Lru/privatenull/pnlibrary/api/updates/ExternalDependency;
 	public final fun downloadPage (Ljava/lang/String;)Lru/privatenull/pnlibrary/api/updates/ExternalDependency$Builder;
+	public final fun required (Z)Lru/privatenull/pnlibrary/api/updates/ExternalDependency$Builder;
 }
 
 public final class ru/privatenull/pnlibrary/api/updates/ExternalDependency$Companion {
@@ -3481,13 +3514,19 @@ public final class ru/privatenull/pnlibrary/api/updates/InstalledComponent {
 	public fun toString ()Ljava/lang/String;
 }
 
-public final class ru/privatenull/pnlibrary/api/updates/ManagedDependency {
+public final class ru/privatenull/pnlibrary/api/updates/ManagedDependency : ru/privatenull/pnlibrary/api/plugin/PluginDependency {
 	public static final field Companion Lru/privatenull/pnlibrary/api/updates/ManagedDependency$Companion;
-	public fun <init> (Lru/privatenull/pnlibrary/api/updates/ComponentId;Lru/privatenull/pnlibrary/api/version/SemanticVersion;Ljava/lang/String;Ljava/lang/String;)V
+	public fun <init> (Ljava/lang/String;Ljava/lang/String;Ljava/lang/String;Ljava/lang/String;ZZ)V
+	public synthetic fun <init> (Ljava/lang/String;Ljava/lang/String;Ljava/lang/String;Ljava/lang/String;ZZILkotlin/jvm/internal/DefaultConstructorMarker;)V
+	public fun <init> (Lru/privatenull/pnlibrary/api/updates/ComponentId;Lru/privatenull/pnlibrary/api/version/SemanticVersion;Ljava/lang/String;Ljava/lang/String;ZZ)V
+	public synthetic fun <init> (Lru/privatenull/pnlibrary/api/updates/ComponentId;Lru/privatenull/pnlibrary/api/version/SemanticVersion;Ljava/lang/String;Ljava/lang/String;ZZILkotlin/jvm/internal/DefaultConstructorMarker;)V
+	public fun getAutomaticDownload ()Z
 	public final fun getComponent ()Lru/privatenull/pnlibrary/api/updates/ComponentId;
+	public fun getManaged ()Lru/privatenull/pnlibrary/api/updates/ManagedDependency;
 	public final fun getMinimumVersion ()Lru/privatenull/pnlibrary/api/version/SemanticVersion;
 	public final fun getRepositoryName ()Ljava/lang/String;
 	public final fun getRepositoryOwner ()Ljava/lang/String;
+	public fun getRequired ()Z
 }
 
 public final class ru/privatenull/pnlibrary/api/updates/ManagedDependency$Companion {

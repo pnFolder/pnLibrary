@@ -66,6 +66,23 @@ builder.depends(
 размером и SHA-256. Старые `managedDependency`/`externalDependency` остаются доступными внутри
 низкоуровневых descriptor/update builders.
 
+Политика задаётся прямо на зависимости:
+
+```kotlin
+Dependencies.plugin(
+    "OptionalPlugin", "1.0.0", "https://example.org/plugin.jar",
+    size = 1234,
+    sha256 = "<64 hex chars>",
+    required = false,
+    automaticDownload = true,
+)
+```
+
+`required = false` не блокирует запуск, если плагин отсутствует. `automaticDownload = true`
+только разрешает автоматическую загрузку; фактическое решение всё равно принимает глобальная
+политика pnLibrary в `downloads.yml`: `enabled`, `automatic`, список разрешённых hosts и
+разрешённые назначения. Значение `true` в коде не может обойти запрет администратора.
+
 Listener не входит в декларативный `PluginBuilder`: после получения контекста он регистрируется
 через `context.events.register(...)` или типобезопасный `context.events.subscribe(...)`. Поэтому
 runtime-подписки находятся рядом с lifecycle-кодом и автоматически удаляются при `context.close()`.

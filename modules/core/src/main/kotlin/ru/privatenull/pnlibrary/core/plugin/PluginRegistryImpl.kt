@@ -15,7 +15,6 @@ import ru.privatenull.pnlibrary.api.metrics.PluginMetrics
 import ru.privatenull.pnlibrary.spi.platform.PlatformAdapter
 import ru.privatenull.pnlibrary.api.plugin.MetricsController
 import ru.privatenull.pnlibrary.api.plugin.PluginBuilder
-import ru.privatenull.pnlibrary.api.plugin.PluginDependency
 import ru.privatenull.pnlibrary.api.plugin.PluginContext
 import ru.privatenull.pnlibrary.api.plugin.PluginId
 import ru.privatenull.pnlibrary.api.plugin.PluginLifecycle
@@ -24,6 +23,7 @@ import ru.privatenull.pnlibrary.api.plugin.PluginMetadataBuilder
 import ru.privatenull.pnlibrary.api.plugin.PluginMessages
 import ru.privatenull.pnlibrary.api.plugin.PluginOptions
 import ru.privatenull.pnlibrary.api.plugin.PluginRegistry
+import ru.privatenull.pnlibrary.api.plugin.PluginDependency
 import ru.privatenull.pnlibrary.api.tasks.TaskScope
 import ru.privatenull.pnlibrary.api.tasks.TaskService
 import ru.privatenull.pnlibrary.api.updates.PluginUpdateRequest
@@ -31,6 +31,7 @@ import ru.privatenull.pnlibrary.api.updates.UpdateRegistration
 import ru.privatenull.pnlibrary.api.updates.UpdateService
 import ru.privatenull.pnlibrary.api.updates.ComponentDescriptor
 import ru.privatenull.pnlibrary.api.version.SemanticVersion
+import ru.privatenull.pnlibrary.api.version.PnLibraryApi
 import ru.privatenull.pnlibrary.update.EmbeddedDescriptorReader
 import java.nio.file.Files
 import java.nio.file.Paths
@@ -109,6 +110,7 @@ internal class PluginRegistryImpl(
             require(id !in contexts) { "Plugin $id is already registered" }
             require(!owners.containsKey(owner)) { "This platform plugin is already registered as ${owners[owner]?.id}" }
             val definition = Builder().also { configure.accept(it) }
+            definition.materializeDependencyDownloads()
             val descriptor = componentDescriptor(owner, id, definition)
             definition.bindUpdatesTo(descriptor)
             validateDependencies(descriptor, definition.downloadsRequest)
@@ -264,7 +266,14 @@ internal class PluginRegistryImpl(
                     request.externalDependencies.forEach(target::externalDependency)
                 }.build()
         }
-        return (explicit ?: embedded ?: inferred)?.let { descriptor ->
+        val implicit = if (explicit == null && embedded == null && inferred == null && definition.dependencies.isNotEmpty()) {
+            val version = platform.ownerDetails(owner)["version"] ?: definition.metadataVersion
+                ?: error("Cannot infer component version for $id")
+            ComponentDescriptor.builder(id.value, version)
+                .pnLibraryApi(PnLibraryApi.VERSION, PnLibraryApi.VERSION)
+                .build()
+        } else null
+        return (explicit ?: embedded ?: inferred ?: implicit)?.let { descriptor ->
             if (definition.dependencies.isEmpty()) descriptor else ComponentDescriptor.builder(
                 descriptor.id.value, descriptor.version.toString(),
             ).pnLibraryApi(descriptor.supportedApi.minimum, descriptor.supportedApi.maximum)
@@ -272,12 +281,14 @@ internal class PluginRegistryImpl(
                     descriptor.managedDependencies.forEach { dependency -> target.managedDependency(
                         dependency.component.value, dependency.minimumVersion.toString(),
                         dependency.repositoryOwner, dependency.repositoryName,
+                        dependency.required, dependency.automaticDownload,
                     ) }
                     descriptor.externalDependencies.forEach(target::externalDependency)
                     definition.dependencies.forEach { dependency ->
                         dependency.managed?.let { managed -> target.managedDependency(
                             managed.component.value, managed.minimumVersion.toString(),
                             managed.repositoryOwner, managed.repositoryName,
+                            managed.required, managed.automaticDownload,
                         ) }
                         dependency.external?.let(target::externalDependency)
                     }
@@ -305,7 +316,7 @@ internal class PluginRegistryImpl(
         val downloadablePlugins = downloads?.declarations.orEmpty()
             .filterIsInstance<ru.privatenull.pnlibrary.api.downloads.DownloadDeclaration.Plugin>()
             .associateBy { it.plugin.lowercase() }
-        val problems = descriptor.managedDependencies.mapNotNull { dependency ->
+        val problems = descriptor.managedDependencies.filter { it.required }.mapNotNull { dependency ->
             val installed = componentDescriptors[dependency.component.value]
             when {
                 installed == null && downloadableComponents[dependency.component]?.let { it.version >= dependency.minimumVersion } == true -> null
@@ -316,7 +327,7 @@ internal class PluginRegistryImpl(
         }.toMutableList()
         val nativePlugins = runCatching { platform.installedPlugins() }.getOrNull().orEmpty()
             .entries.associate { it.key.lowercase() to it.value }
-        descriptor.externalDependencies.forEach { dependency ->
+        descriptor.externalDependencies.filter { it.required }.forEach { dependency ->
             val installed = nativePlugins[dependency.plugin.lowercase()]
             when {
                 installed == null && downloadablePlugins[dependency.plugin.lowercase()]?.let {
@@ -466,6 +477,28 @@ internal class PluginRegistryImpl(
                     (existing.external?.plugin?.equals(dependency.external?.plugin, true) == true && dependency.external != null)
             }) { "duplicate plugin dependency" }
             dependencies += dependency
+        }
+
+        fun materializeDependencyDownloads() {
+            if (downloadsRequest != null) return
+            val automatic = dependencies.mapNotNull { dependency ->
+                val external = dependency.external ?: return@mapNotNull null
+                val artifact = external.artifact ?: return@mapNotNull null
+                if (!dependency.automaticDownload) return@mapNotNull null
+                external to artifact
+            }
+            if (automatic.isEmpty()) return
+            val builder = PluginDownloads.builder()
+            automatic.forEach { (external, artifact) ->
+                builder.plugin(external.plugin) { declaration ->
+                    declaration.minimumVersion(external.minimumVersion.toString())
+                        .url(artifact.uri.toString())
+                        .required(external.required)
+                        .automaticDownload(true)
+                        .integrity(artifact.size, artifact.sha256)
+                }
+            }
+            downloadsRequest = builder.build()
         }
 
         override fun metadata(configure: Consumer<PluginMetadataBuilder>): PluginBuilder = apply {
