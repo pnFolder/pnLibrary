@@ -66,6 +66,10 @@ builder.depends(
 размером и SHA-256. Старые `managedDependency`/`externalDependency` остаются доступными внутри
 низкоуровневых descriptor/update builders.
 
+Listener не входит в декларативный `PluginBuilder`: после получения контекста он регистрируется
+через `context.events.register(...)` или типобезопасный `context.events.subscribe(...)`. Поэтому
+runtime-подписки находятся рядом с lifecycle-кодом и автоматически удаляются при `context.close()`.
+
 При `/pndemo status` showcase выполняет полный граф действий: message, action-bar, sound,
 particle, effect, console log, no-op, sequence, delay, switch, conditional и операции со
 значениями. Отдельно создаются `UpdatePlaceholderAction`, все условия доступа/вероятности/

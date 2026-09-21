@@ -37,9 +37,9 @@ class DemoPlugin : JavaPlugin() {
             builder.diagnostics(dataFolder.toPath(), DiagnosticContainer.builder("pndemo")
                 .snapshot(DemoDiagnostics.snapshot(state, library))
                 .configuration("config.yml").build())
-            builder.listener(DemoLibraryEvents(this))
             DemoDeclarations.configure(builder, dataFolder.toPath())
         }
+        context.events.register(DemoLibraryEvents(this))
         context.services.register(DemoPlugin::class.java, this)
         currency = DemoCurrency.register(context, state)
         DemoConfig.register(context).load()

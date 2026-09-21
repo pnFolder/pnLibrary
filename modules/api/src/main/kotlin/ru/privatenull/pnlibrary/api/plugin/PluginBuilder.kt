@@ -97,8 +97,14 @@ interface PluginBuilder {
     }
 
     /**
-     * Adds an annotated event [listener] to be registered in the context's [PluginContext.events]
-     * scope. Invalid handler methods make the complete plugin registration fail atomically.
+     * Legacy listener declaration kept for API 1 binary/source compatibility.
+     *
+     * New code should register runtime listeners after registration through
+     * `context.events.register(listener)` or `context.events.subscribe(...)`.
      */
+    @Deprecated(
+        "Register listeners through PluginContext.events after the context has been created",
+        ReplaceWith("context.events.register(listener)"),
+    )
     fun listener(listener: Listener): PluginBuilder
 }
