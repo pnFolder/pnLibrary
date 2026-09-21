@@ -17,6 +17,9 @@
 - `/pndemo balance` — читает баланс игрока через Currency API;
 - `/pndemo give <amount>` — демонстрирует мутацию валюты и cooldown;
 - `/pndemo reload` — перезагружает конфигурацию demo.
+- `/pndemo-lib status` (`/pndemoapi status`) — та же проверка через portable Command API pnLibrary;
+- `/pndemo-lib give <amount>` — аргумент с типизированным parsing и асинхронным ответом.
 
 При включении плагин регистрирует lifecycle summary, bStats-метрики, diagnostics snapshot,
 typed placeholder `pndemo_coins`, повторяющуюся задачу, listener и lightweight currency.
+Команда `pndemo-lib` регистрируется самой библиотекой и не требует ручной записи в `plugin.yml`.

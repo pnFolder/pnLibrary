@@ -1,7 +1,7 @@
 package ru.privatenull.pnlibrary.demo
 
 import org.bukkit.Bukkit
-import org.bukkit.ChatColor
+import net.kyori.adventure.text.Component
 import org.bukkit.command.Command
 import org.bukkit.command.CommandExecutor
 import org.bukkit.command.CommandSender
@@ -15,6 +15,9 @@ import ru.privatenull.pnlibrary.api.currency.Currency
 import ru.privatenull.pnlibrary.api.currency.CurrencyAccount
 import ru.privatenull.pnlibrary.api.currency.CurrencyRejectReason
 import ru.privatenull.pnlibrary.api.currency.CurrencyResult
+import ru.privatenull.pnlibrary.api.commands.ArgumentType
+import ru.privatenull.pnlibrary.api.commands.CommandRegistration
+import ru.privatenull.pnlibrary.api.commands.command
 import ru.privatenull.pnlibrary.api.diagnostics.DiagnosticContainer
 import ru.privatenull.pnlibrary.api.events.Event
 import ru.privatenull.pnlibrary.api.events.EventHandler as PnEventHandler
@@ -41,6 +44,7 @@ class DemoPlugin : JavaPlugin(), CommandExecutor, TabCompleter, Listener {
     private val balances = ConcurrentHashMap<UUID, BigDecimal>()
     private val joins = AtomicLong()
     private var pulse: AutoCloseable? = null
+    private var libraryCommand: CommandRegistration? = null
 
     override fun onEnable() {
         saveDefaultConfig()
@@ -89,6 +93,31 @@ class DemoPlugin : JavaPlugin(), CommandExecutor, TabCompleter, Listener {
             .publishToPlaceholderApi("pndemo", "coins")
             .register()
 
+        libraryCommand = library.commands.register(this, command("pndemo-lib") {
+            aliases("pndemoapi")
+            permission("pndemo.use")
+            literal("status") {
+                executes { invocation ->
+                    invocation.sender.send(Component.text("pnLibrary command API: ${context.id}, runtime ${library.version}"))
+                }
+            }
+            literal("give") {
+                argument("amount", ArgumentType.decimal()) {
+                    executes { invocation ->
+                        val playerId = runCatching { UUID.fromString(invocation.sender.id) }.getOrNull()
+                        if (playerId == null) {
+                            invocation.sender.send(Component.text("This demo action requires a player sender."))
+                        } else {
+                            val amount: BigDecimal = invocation.get("amount")
+                            currency.deposit(playerId, amount).thenAccept { result: CurrencyResult ->
+                                invocation.sender.send(Component.text("${result.status}: ${currency.format(result.currentBalance ?: BigDecimal.ZERO)}"))
+                            }
+                        }
+                    }
+                }
+            }
+        })
+
         pulse = context.tasks.schedule(TaskSpec.builder()
             .name("demo-pulse").key("demo-pulse").interval(java.time.Duration.ofSeconds(30))
             .action { context.logger.info("pulse: online=${Bukkit.getOnlinePlayers().size}, joins=${joins.get()}") }
@@ -101,6 +130,7 @@ class DemoPlugin : JavaPlugin(), CommandExecutor, TabCompleter, Listener {
     }
 
     override fun onDisable() {
+        libraryCommand?.close()
         pulse?.close()
         if (::context.isInitialized) context.close()
     }
