@@ -92,7 +92,7 @@ class DirectDownloadManagerTest {
     }
 
     @Test
-    fun `closing registration before publication does not publish prepared files`() {
+    fun `closing manager before publication does not publish prepared files`() {
         val entered = CountDownLatch(1)
         val release = CountDownLatch(1)
         val payload = "late-download".toByteArray()
@@ -103,7 +103,7 @@ class DirectDownloadManagerTest {
             val registration = manager.register(Any(), request)
             val future = registration.downloadNow().toCompletableFuture()
             assertTrue(entered.await(5, TimeUnit.SECONDS))
-            registration.close()
+            manager.close()
             release.countDown()
 
             assertTrue(future.isCompletedExceptionally)

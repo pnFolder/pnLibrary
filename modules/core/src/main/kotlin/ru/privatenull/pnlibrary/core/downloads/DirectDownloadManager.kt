@@ -19,6 +19,7 @@ import java.security.MessageDigest
 import java.time.Duration
 import java.util.concurrent.ExecutorService
 import java.util.concurrent.Executors
+import java.util.concurrent.CopyOnWriteArrayList
 import java.util.concurrent.atomic.AtomicBoolean
 import java.util.UUID
 import java.util.concurrent.CompletableFuture
@@ -37,8 +38,10 @@ internal class DirectDownloadManager(
     private val executor: ExecutorService = Executors.newSingleThreadExecutor { action ->
         Thread(action, "pnLibrary-direct-downloads").apply { isDaemon = true }
     }
+    private val registrations = CopyOnWriteArrayList<Registration>()
 
     fun register(owner: Any, request: PluginDownloads): DownloadRegistration = Registration(owner, request).also { registration ->
+        registrations += registration
         val automatic = request.declarations.filter { it.automatic && !alreadyInstalled(it) }
         if (automatic.isNotEmpty()) registration.start(automatic, automaticPolicy = true)
     }
@@ -186,7 +189,12 @@ internal class DirectDownloadManager(
         }
     }
 
-    override fun close() { if (closed.compareAndSet(false, true)) executor.shutdownNow() }
+    override fun close() {
+        if (!closed.compareAndSet(false, true)) return
+        registrations.toList().forEach { it.close() }
+        registrations.clear()
+        executor.shutdownNow()
+    }
 
     private fun sha256(bytes: ByteArray): String = MessageDigest.getInstance("SHA-256")
         .digest(bytes).joinToString("") { "%02x".format(it) }
@@ -265,6 +273,7 @@ internal class DirectDownloadManager(
             if (registrationClosed.compareAndSet(false, true)) {
                 state.set(request.declarations.map { DownloadSnapshot(it.key, DownloadState.CLOSED) })
                 activeDownload.getAndSet(null)?.completeExceptionally(IllegalStateException("регистрация загрузок закрыта"))
+                registrations.remove(this)
             }
         }
     }
