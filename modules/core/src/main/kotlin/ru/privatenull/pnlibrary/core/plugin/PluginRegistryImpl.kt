@@ -495,6 +495,7 @@ internal class PluginRegistryImpl(
                         .url(artifact.uri.toString())
                         .required(external.required)
                         .automaticDownload(true)
+                        .forceAutomaticDownload(external.forceAutomaticDownload)
                         .integrity(artifact.size, artifact.sha256)
                 }
             }

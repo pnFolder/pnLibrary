@@ -69,9 +69,10 @@ sealed class DownloadDeclaration(
     val source: DirectDownloadSource,
     val required: Boolean,
     val automatic: Boolean,
+    val forceAutomaticDownload: Boolean,
 ) {
     class Component internal constructor(builder: ComponentBuilder) : DownloadDeclaration(
-        ComponentId.of(builder.id).value, builder.source.build(), builder.required, builder.automatic,
+        ComponentId.of(builder.id).value, builder.source.build(), builder.required, builder.automatic, builder.forceAutomatic,
     ) {
         val component: ComponentId = ComponentId.of(builder.id)
         val version: SemanticVersion = SemanticVersion.parse(builder.version)
@@ -79,14 +80,14 @@ sealed class DownloadDeclaration(
     }
 
     class Plugin internal constructor(builder: PluginBuilder) : DownloadDeclaration(
-        builder.name.trim(), builder.source.build(), builder.required, builder.automatic,
+        builder.name.trim(), builder.source.build(), builder.required, builder.automatic, builder.forceAutomatic,
     ) {
         val plugin: String = builder.name.trim()
         val minimumVersion: SemanticVersion = SemanticVersion.parse(builder.minimumVersion)
     }
 
     class File internal constructor(builder: FileBuilder) : DownloadDeclaration(
-        builder.id.trim(), builder.source.build(), builder.required, builder.automatic,
+        builder.id.trim(), builder.source.build(), builder.required, builder.automatic, builder.forceAutomatic,
     ) {
         val destination: DownloadDestination = builder.destination
         val relativePath: String = safeRelativePath(builder.relativePath)
@@ -96,8 +97,10 @@ sealed class DownloadDeclaration(
         internal val source = DirectDownloadSource.builder()
         internal var required = true
         internal var automatic = false
+        internal var forceAutomatic = false
         @Suppress("UNCHECKED_CAST") fun required(value: Boolean) = apply { required = value } as T
         @Suppress("UNCHECKED_CAST") fun automaticDownload(value: Boolean) = apply { automatic = value } as T
+        @Suppress("UNCHECKED_CAST") fun forceAutomaticDownload(value: Boolean) = apply { forceAutomatic = value } as T
         @Suppress("UNCHECKED_CAST") fun url(value: String) = apply { source.url(value) } as T
         @Suppress("UNCHECKED_CAST") fun platform(value: PlatformType) = apply { source.platform(value) } as T
         @Suppress("UNCHECKED_CAST") @JvmOverloads fun java(minimum: Int, maximum: Int? = null) =

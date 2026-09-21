@@ -218,17 +218,27 @@ internal class DirectDownloadManager(
             if (registrationClosed.get() || closed.get()) {
                 promise.completeExceptionally(IllegalStateException("регистрация загрузок закрыта")); return promise
             }
-            if (!configuration.enabled || (automaticPolicy && !configuration.automatic)) {
-                val reason = if (!configuration.enabled) "система загрузок отключена" else "автозагрузка запрещена в downloads.yml"
+            val effectiveDeclarations = if (automaticPolicy && !configuration.automatic) {
+                declarations.filter(DownloadDeclaration::forceAutomaticDownload)
+            } else declarations
+            if (!configuration.enabled) {
+                val reason = "система загрузок отключена"
                 state.set(request.declarations.map { DownloadSnapshot(it.key, DownloadState.BLOCKED, reason) })
                 platform.log(owner, LogLevel.WARNING, "[pnLibrary] $reason")
                 promise.complete(snapshots()); return promise
             }
-            if (declarations.isEmpty()) { promise.complete(snapshots()); return promise }
+            if (effectiveDeclarations.isEmpty()) {
+                if (automaticPolicy && declarations.isNotEmpty()) {
+                    val reason = "автозагрузка запрещена в downloads.yml"
+                    state.set(request.declarations.map { DownloadSnapshot(it.key, DownloadState.BLOCKED, reason) })
+                    platform.log(owner, LogLevel.WARNING, "[pnLibrary] $reason")
+                }
+                promise.complete(snapshots()); return promise
+            }
             activeDownload.get()?.let { return it }
             if (!activeDownload.compareAndSet(null, promise)) return activeDownload.get() ?: promise
             state.set(request.declarations.map {
-                DownloadSnapshot(it.key, if (it in declarations) DownloadState.DOWNLOADING else DownloadState.CURRENT)
+                DownloadSnapshot(it.key, if (it in effectiveDeclarations) DownloadState.DOWNLOADING else DownloadState.CURRENT)
             })
             try {
                 executor.execute {
@@ -238,14 +248,14 @@ internal class DirectDownloadManager(
                     return@execute
                 }
                 runCatching {
-                    installBatch(request, declarations) {
+                    installBatch(request, effectiveDeclarations) {
                         check(!registrationClosed.get()) { "регистрация загрузок закрыта" }
                     }
                 }
                     .onSuccess {
                         if (!registrationClosed.get() && !closed.get()) state.set(request.declarations.map {
                             DownloadSnapshot(it.key, when {
-                                it in declarations -> DownloadState.STAGED
+                                it in effectiveDeclarations -> DownloadState.STAGED
                                 alreadyInstalled(it) -> DownloadState.CURRENT
                                 else -> DownloadState.DECLARED
                             })
@@ -255,7 +265,7 @@ internal class DirectDownloadManager(
                     .onFailure { error ->
                         if (!registrationClosed.get() && !closed.get()) {
                             state.set(request.declarations.map { DownloadSnapshot(it.key, DownloadState.FAILED, error.message) })
-                            val level = if (declarations.any { it.required }) LogLevel.ERROR else LogLevel.WARNING
+                            val level = if (effectiveDeclarations.any { it.required }) LogLevel.ERROR else LogLevel.WARNING
                             platform.log(owner, level, "[pnLibrary] Пакет загрузок не подготовлен: ${error.message}", error)
                         }
                         promise.complete(snapshots())

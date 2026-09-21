@@ -118,11 +118,12 @@ class ManagedDependency(
     val repositoryName: String,
     override val required: Boolean = true,
     override val automaticDownload: Boolean = false,
+    override val forceAutomaticDownload: Boolean = false,
 ) : PluginDependency {
     constructor(component: String, minimumVersion: String, repositoryOwner: String, repositoryName: String,
-                required: Boolean = true, automaticDownload: Boolean = false) : this(
+                required: Boolean = true, automaticDownload: Boolean = false, forceAutomaticDownload: Boolean = false) : this(
         ComponentId.of(component), SemanticVersion.parse(minimumVersion), repositoryOwner, repositoryName,
-        required, automaticDownload,
+        required, automaticDownload, forceAutomaticDownload,
     )
     override val managed: ManagedDependency get() = this
     init {
@@ -161,6 +162,7 @@ class ExternalDependency private constructor(builder: Builder) : PluginDependenc
     val artifact: ExternalArtifact? = builder.artifact
     override val required: Boolean = builder.required
     override val automaticDownload: Boolean = builder.automaticDownload
+    override val forceAutomaticDownload: Boolean = builder.forceAutomaticDownload
 
     class Builder internal constructor(
         internal val plugin: String,
@@ -170,6 +172,7 @@ class ExternalDependency private constructor(builder: Builder) : PluginDependenc
         internal var artifact: ExternalArtifact? = null
         internal var required = true
         internal var automaticDownload = false
+        internal var forceAutomaticDownload = false
 
         fun downloadPage(url: String) = apply {
             val parsed = URI.create(url)
@@ -182,6 +185,7 @@ class ExternalDependency private constructor(builder: Builder) : PluginDependenc
         }
         fun required(value: Boolean) = apply { required = value }
         fun automaticDownload(value: Boolean) = apply { automaticDownload = value }
+        fun forceAutomaticDownload(value: Boolean) = apply { forceAutomaticDownload = value }
 
         fun build(): ExternalDependency {
             require(downloadPage != null || artifact != null) { "external dependency requires a download page or artifact" }

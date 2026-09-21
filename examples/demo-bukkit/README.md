@@ -75,13 +75,16 @@ Dependencies.plugin(
     sha256 = "<64 hex chars>",
     required = false,
     automaticDownload = true,
+    forceAutomaticDownload = true,
 )
 ```
 
 `required = false` не блокирует запуск, если плагин отсутствует. `automaticDownload = true`
 только разрешает автоматическую загрузку; фактическое решение всё равно принимает глобальная
 политика pnLibrary в `downloads.yml`: `enabled`, `automatic`, список разрешённых hosts и
-разрешённые назначения. Значение `true` в коде не может обойти запрет администратора.
+разрешённые назначения. Если нужен сознательный override именно `automatic: false`, указывается
+`forceAutomaticDownload = true`. Он не отключает `enabled`, HTTPS/allowlist, проверку размера,
+SHA-256 или ограничения назначения.
 
 Listener не входит в декларативный `PluginBuilder`: после получения контекста он регистрируется
 через `context.events.register(...)` или типобезопасный `context.events.subscribe(...)`. Поэтому
