@@ -23,7 +23,8 @@ java {
     targetCompatibility = JavaVersion.VERSION_1_8
 }
 
+val resourceVersion = project.version.toString()
 tasks.named<ProcessResources>("processResources") {
-    inputs.property("version", project.version)
-    filesMatching("plugin.yml") { expand(mapOf("version" to project.version)) }
+    inputs.property("version", resourceVersion)
+    filesMatching("plugin.yml") { expand(mapOf("version" to resourceVersion)) }
 }
