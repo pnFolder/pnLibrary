@@ -14,6 +14,7 @@ tasks.withType<JavaCompile>().configureEach { options.release = 8 }
 dependencies {
     compileOnly(project(":modules:api"))
     compileOnly(project(":platforms:bukkit:api"))
+    compileOnly(project(":modules:features:minecraft-localization"))
     compileOnly(libs.spigot.api.v18)
     compileOnly(libs.kotlin.stdlib)
 }

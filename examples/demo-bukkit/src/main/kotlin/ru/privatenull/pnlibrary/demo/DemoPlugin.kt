@@ -18,6 +18,8 @@ import ru.privatenull.pnlibrary.api.currency.CurrencyResult
 import ru.privatenull.pnlibrary.api.commands.ArgumentType
 import ru.privatenull.pnlibrary.api.commands.CommandRegistration
 import ru.privatenull.pnlibrary.api.commands.command
+import ru.privatenull.pnlibrary.api.actions.MessageAction
+import ru.privatenull.pnlibrary.api.actions.ActionTarget
 import ru.privatenull.pnlibrary.api.diagnostics.DiagnosticContainer
 import ru.privatenull.pnlibrary.api.events.Event
 import ru.privatenull.pnlibrary.api.events.EventHandler as PnEventHandler
@@ -26,6 +28,10 @@ import ru.privatenull.pnlibrary.api.placeholders.PlaceholderCachePolicy
 import ru.privatenull.pnlibrary.api.placeholders.PlaceholderCacheScope
 import ru.privatenull.pnlibrary.api.runtime.PnLibraryProvider
 import ru.privatenull.pnlibrary.api.tasks.TaskSpec
+import ru.privatenull.pnlibrary.localization.MinecraftLocalization
+import ru.privatenull.pnlibrary.common.minecraft.MinecraftVersion
+import ru.privatenull.pnlibrary.localization.TranslationRequest
+import ru.privatenull.pnlibrary.api.downloads.DownloadDestination
 import java.math.BigDecimal
 import java.math.RoundingMode
 import java.time.Duration
@@ -38,13 +44,14 @@ import java.util.function.Supplier
  * A deliberately small, production-shaped plugin that exercises pnLibrary end to end.
  * It is packaged separately so it can be dropped into a test server without changing the runtime.
  */
-class DemoPlugin : JavaPlugin(), CommandExecutor, TabCompleter, Listener {
+class DemoPlugin : JavaPlugin(), CommandExecutor, TabCompleter, Listener, PnListener {
     private lateinit var context: ru.privatenull.pnlibrary.api.plugin.PluginContext
     private lateinit var currency: Currency
     private val balances = ConcurrentHashMap<UUID, BigDecimal>()
     private val joins = AtomicLong()
     private var pulse: AutoCloseable? = null
     private var libraryCommand: CommandRegistration? = null
+    private var localization: MinecraftLocalization? = null
 
     override fun onEnable() {
         saveDefaultConfig()
@@ -67,8 +74,20 @@ class DemoPlugin : JavaPlugin(), CommandExecutor, TabCompleter, Listener {
                 })
                 .configuration("config.yml")
                 .build())
-            builder.listener(PnDemoEventListener(this))
+            builder.listener(this)
+            builder.updates("pnFolder", "pnLibrary") { updates ->
+                updates.component("pndemo").supportedApi(1, 1).automaticDownload(false)
+                    .artifact("(?i)^pnLibrary-demo-bukkit-.*\\.jar$", minimumJava = 8)
+            }
+            builder.downloads(dataFolder.toPath()) { downloads ->
+                downloads.file("demo-documentation") { file ->
+                    file.url("https://example.org/pnLibrary-demo.txt")
+                        .destination(DownloadDestination.CACHE, "demo-documentation.txt")
+                        .required(false).automaticDownload(false)
+                }
+            }
         }
+        context.services.register(DemoPlugin::class.java, this)
 
         currency = context.currencies.register("coins") { definition ->
             definition.descriptor { it.displayName("Demo Coins").symbol("◈").fractionDigits(2).roundingMode(RoundingMode.DOWN) }
@@ -92,6 +111,22 @@ class DemoPlugin : JavaPlugin(), CommandExecutor, TabCompleter, Listener {
             .cache(PlaceholderCachePolicy(PlaceholderCacheScope.PLAYER, 2_000, 1_000))
             .publishToPlaceholderApi("pndemo", "coins")
             .register()
+
+        context.configs.loadAll()
+        localization = MinecraftLocalization.builder()
+            .cacheDirectory(dataFolder.toPath().resolve("minecraft-translations"))
+            .memoryEntries(4)
+            .downloadConcurrency(1)
+            .build()
+        val gameVersion = MinecraftVersion.parse(server.version)
+        if (gameVersion.known) {
+            localization!!.load(TranslationRequest.builder().version(gameVersion).locale("ru_ru").locale("en_us").fallback("en_us").build())
+                .thenAccept { bundle ->
+                    val russian = bundle.locale("ru_ru")
+                    logger.info("Loaded Minecraft translations: ${russian.metadata.source}, materials=${russian.materials().search("камень").size}")
+                }
+                .exceptionally { error -> logger.warning("Minecraft translations unavailable: ${error.message}"); null }
+        }
 
         libraryCommand = library.commands.register(this, command("pndemo-lib") {
             aliases("pndemoapi")
@@ -132,6 +167,7 @@ class DemoPlugin : JavaPlugin(), CommandExecutor, TabCompleter, Listener {
     override fun onDisable() {
         libraryCommand?.close()
         pulse?.close()
+        localization?.close()
         if (::context.isInitialized) context.close()
     }
 
@@ -141,8 +177,18 @@ class DemoPlugin : JavaPlugin(), CommandExecutor, TabCompleter, Listener {
     override fun onCommand(sender: CommandSender, command: Command, label: String, args: Array<out String>): Boolean {
         if (args.isEmpty() || args[0].equals("status", true)) {
             DemoEvent().callEvent()
+            if (sender is Player) {
+                PnLibraryProvider.get().audiences.player(sender.uniqueId)?.let { player ->
+                    context.actions.execute(
+                        player,
+                        PnLibraryProvider.get().audiences.all(),
+                        listOf(MessageAction(listOf("<aqua>pnDemo <white>uses the unified Action API"), target = ActionTarget.PLAYER)),
+                    )
+                }
+            }
             sender.sendMessage("§8[§bpnDemo§8] §7API §f1 §7· context §f${context.id} §7· online §f${Bukkit.getOnlinePlayers().size}")
             sender.sendMessage("§7Используются: lifecycle, metrics, diagnostics, tasks, currency, placeholders")
+            sender.sendMessage(context.components.serialize(context.components.deserialize("<aqua>components + services + commands are active")))
             return true
         }
         if (sender !is Player) { sender.sendMessage("Only players can use this demo action."); return true }
@@ -175,10 +221,8 @@ class DemoPlugin : JavaPlugin(), CommandExecutor, TabCompleter, Listener {
         return CurrencyResult.success(old, balances[id])
     }
 
-    private class PnDemoEventListener(private val plugin: DemoPlugin) : PnListener {
-        @PnEventHandler
-        fun onDemo(event: DemoEvent) { plugin.logger.info("received ${event.eventName}") }
-    }
+    @PnEventHandler
+    fun onDemo(event: DemoEvent) { logger.info("received ${event.eventName}") }
 
-    private class DemoEvent : Event()
+    class DemoEvent : Event()
 }

@@ -8,7 +8,7 @@
 
 1. Соберите `:examples:demo-bukkit:build`.
 2. Положите `examples/demo-bukkit/build/libs/pnLibrary-demo-bukkit-*.jar` в `plugins/` рядом
-   с соответствующим `pnLibrary-*-bukkit-java8.jar`.
+   с соответствующим `pnLibrary-*-bukkit-java8.jar` и модулем `pnLibrary-minecraft-localization-*.jar`.
 3. Запустите Paper/Spigot и выполните `/pndemo status`.
 
 Команды:
@@ -23,3 +23,6 @@
 При включении плагин регистрирует lifecycle summary, bStats-метрики, diagnostics snapshot,
 typed placeholder `pndemo_coins`, повторяющуюся задачу, listener и lightweight currency.
 Команда `pndemo-lib` регистрируется самой библиотекой и не требует ручной записи в `plugin.yml`.
+Также демонстрация использует конфигурационный scope, typed services, component serialization,
+Action API, Minecraft localization (ленивая загрузка `ru_ru`/`en_us`), update declaration и
+отдельное direct-download declaration без автоматической загрузки.
