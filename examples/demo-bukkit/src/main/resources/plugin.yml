@@ -1,0 +1,17 @@
+name: pnLibraryDemo
+version: '${version}'
+main: ru.privatenull.pnlibrary.demo.DemoPlugin
+api-version: '1.13'
+author: pnFolder
+description: Visual production-style integration demo for pnLibrary
+depend: [pnLibrary]
+commands:
+  pndemo:
+    description: Opens the pnLibrary integration demo
+    usage: /pndemo [status|balance|give|reload]
+    permission: pndemo.use
+permissions:
+  pndemo.use:
+    default: true
+  pndemo.admin:
+    default: op

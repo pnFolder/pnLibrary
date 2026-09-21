@@ -14,6 +14,11 @@ plugins, and restart are conservative by default. See [docs/updates.md](docs/upd
 Единый стиль архитектуры, порядок разработки, правила API и Definition of Done описаны в
 [стандарте разработки](docs/DEVELOPMENT_RU.md).
 
+Для визуальной проверки интеграции есть отдельный production-style плагин
+[pnLibrary Demo Bukkit](examples/demo-bukkit/README.md). Он подключается к установленному runtime
+как обычный Bukkit-плагин и показывает работу контекста, metrics, diagnostics, tasks, currency,
+placeholders, событий и cooldowns.
+
 `pnLibrary` — единый runtime и API для плагинов pnFolder. Владелец сервера устанавливает один JAR для своей платформы, а pnMarket, pnClans и другие плагины подключаются к общему экземпляру библиотеки.
 
 В pnLibrary находятся:

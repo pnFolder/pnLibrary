@@ -14,6 +14,7 @@ apiValidation {
             "bstats",
             "core",
             "distribution",
+            "demo-bukkit",
             "runtime",
             "runtime-spi",
             "update",

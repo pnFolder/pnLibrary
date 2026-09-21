@@ -15,4 +15,5 @@ include(
     ":platforms:velocity:api",
     ":platforms:velocity:runtime",
     ":distribution",
+    ":examples:demo-bukkit",
 )
