@@ -26,3 +26,26 @@ typed placeholder `pndemo_coins`, повторяющуюся задачу, liste
 Также демонстрация использует конфигурационный scope, typed services, component serialization,
 Action API, Minecraft localization (ленивая загрузка `ru_ru`/`en_us`), update declaration и
 отдельное direct-download declaration без автоматической загрузки.
+
+## Карта исходников
+
+Демонстрация намеренно разделена по ответственностям, чтобы её можно было использовать как
+шаблон реального плагина:
+
+| Файл | Что показывает |
+|---|---|
+| `DemoPlugin.kt` | жизненный цикл, регистрацию `PluginContext`, graceful shutdown |
+| `DemoDeclarations.kt` | API-совместимые обновления и независимые direct downloads |
+| `DemoConfig.kt` | типизированный YAML scope, аннотации и синхронизацию defaults |
+| `DemoCurrency.kt` | descriptor, balance/deposit/withdraw/set/reset/format операции |
+| `DemoPlaceholders.kt` | кэширование, fallback и публикацию в PlaceholderAPI |
+| `DemoCommands.kt` | native Bukkit-команда и portable command builder с typed argument |
+| `DemoLibraryEvents.kt` / `DemoBukkitEvents.kt` | библиотечные события и platform listener |
+| `DemoDiagnostics.kt` | динамический diagnostics snapshot и конфигурационный файл |
+| `DemoLocalization.kt` | ленивый version-aware cache локализаций Minecraft |
+| `DemoState.kt` | потокобезопасное состояние, используемое несколькими модулями |
+
+`modules:api`, `modules:common` и `modules:features:minecraft-localization` используются напрямую.
+`modules:core`, `runtime-spi` и platform runtime — внутренние реализации pnLibrary: их нельзя
+подключать к прикладному плагину вместо обычного runtime, поэтому они демонстрируются самим
+runtime и не дублируются в example-плагине.
