@@ -45,8 +45,9 @@ Action API, Minecraft localization (ленивая загрузка `ru_ru`/`en_
 | `DemoLocalization.kt` | ленивый version-aware cache локализаций Minecraft |
 | `DemoState.kt` | потокобезопасное состояние, используемое несколькими модулями |
 | `DemoActionShowcase.kt` | все стандартные `Action`, все `ActionCondition`, `Expansion`-модели и enum-ветки |
+| `DemoUpdateFeature.kt` | optional update feature: freeze store, manifest codec и bounded artifact downloader |
 
-`modules:api`, `modules:common` и `modules:features:minecraft-localization` используются напрямую.
+`modules:api`, `modules:common`, `modules:features:update` и `modules:features:minecraft-localization` используются напрямую.
 `modules:core`, `runtime-spi` и platform runtime — внутренние реализации pnLibrary: их нельзя
 подключать к прикладному плагину вместо обычного runtime, поэтому они демонстрируются самим
 runtime и не дублируются в example-плагине.

@@ -45,6 +45,7 @@ class DemoPlugin : JavaPlugin() {
         DemoConfig.register(context).load()
         DemoPlaceholders.register(context, currency, state)
         localization = DemoLocalization.start(this)
+        DemoUpdateFeature.smoke(this)
         command = DemoCommands.registerPortable(this, library, context, currency)
         pulse = context.tasks.schedule(TaskSpec.builder().name("demo-pulse").key("demo-pulse")
             .interval(java.time.Duration.ofSeconds(30))
