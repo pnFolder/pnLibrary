@@ -5,7 +5,7 @@ import org.junit.jupiter.api.Assertions.assertEquals
 import org.junit.jupiter.api.Assertions.assertThrows
 import org.junit.jupiter.api.Test
 import org.junit.jupiter.api.io.TempDir
-import ru.privatenull.pnlibrary.api.updates.ComponentId
+import ru.privatenull.pnlibrary.api.updates.ProductId
 import ru.privatenull.pnlibrary.api.version.ApiVersionRange
 import ru.privatenull.pnlibrary.api.version.SemanticVersion
 import java.nio.file.Files
@@ -28,7 +28,7 @@ class UpdateTransactionTest {
             ArtifactVerifier(1024 * 1024).verify(jar, valid.copy(sha256 = "00".repeat(32)))
         }
         assertThrows(ArtifactVerificationException::class.java) {
-            ArtifactVerifier(1024 * 1024).verify(jar, valid.copy(component = ComponentId.of("auth")))
+            ArtifactVerifier(1024 * 1024).verify(jar, valid.copy(product = ProductId.of("auth")))
         }
     }
 
@@ -138,7 +138,7 @@ class UpdateTransactionTest {
     }
 
     private fun specification(path: Path, id: String, version: String, api: Int) = ArtifactSpecification(
-        component = ComponentId.of(id),
+        product = ProductId.of(id),
         version = SemanticVersion.parse(version),
         supportedApi = ApiVersionRange(api, api),
         fileName = path.fileName.toString(),
@@ -150,8 +150,8 @@ class UpdateTransactionTest {
         val path = directory.resolve(name)
         JarOutputStream(Files.newOutputStream(path)).use { output ->
             output.putNextEntry(JarEntry(EmbeddedDescriptorReader.ENTRY))
-            output.write(ComponentDescriptorCodec().encodeInstalled(
-                ru.privatenull.pnlibrary.api.updates.ComponentDescriptor.builder(id, version)
+            output.write(ProductDescriptorCodec().encodeInstalled(
+                ru.privatenull.pnlibrary.api.updates.ProductDescriptor.builder(id, version)
                     .pnLibraryApi(api, api).build(),
             ))
             output.closeEntry()

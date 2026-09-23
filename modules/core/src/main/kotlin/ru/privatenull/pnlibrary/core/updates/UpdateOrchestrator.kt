@@ -144,8 +144,8 @@ internal class UpdateOrchestrator(
     private fun fingerprint(state: UpdateState, plan: ru.privatenull.pnlibrary.api.updates.UpdatePlan?, blockers: List<*>): String =
         buildString {
             append(state.name).append('|').append(plan?.targetApi).append('|')
-            plan?.changes?.sortedBy { it.component.value }?.forEach {
-                append(it.component.value).append(':').append(it.from).append('>').append(it.to).append(';')
+            plan?.changes?.sortedBy { it.product.value }?.forEach {
+                append(it.product.value).append(':').append(it.from).append('>').append(it.to).append(';')
             }
             blockers.forEach { append(it.toString()).append(';') }
         }

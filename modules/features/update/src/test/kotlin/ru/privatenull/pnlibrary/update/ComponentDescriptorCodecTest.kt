@@ -4,8 +4,8 @@ import org.junit.jupiter.api.Assertions.*
 import org.junit.jupiter.api.Test
 import ru.privatenull.pnlibrary.api.platform.PlatformType
 
-class ComponentDescriptorCodecTest {
-    private val codec = ComponentDescriptorCodec()
+class ProductDescriptorCodecTest {
+    private val codec = ProductDescriptorCodec()
 
     @Test fun `decodes complete release with two Java artifacts`() {
         val release = codec.decodeRelease("""{
@@ -17,9 +17,9 @@ class ComponentDescriptorCodecTest {
             {"platform":"bukkit","java":{"minimum":17},"file":"economy-java17.jar","size":20,"sha256":"${"02".repeat(32)}"}
           ]
         }""".toByteArray())
-        assertEquals("economy", release.component.value)
+        assertEquals("economy", release.product.value)
         assertEquals(2, release.supportedApi.minimum)
-        assertEquals("permissions", release.dependencies.single().component.value)
+        assertEquals("permissions", release.dependencies.single().product.value)
         assertEquals(listOf(8, 17), release.artifacts.map { it.minimumJava })
         assertEquals(PlatformType.BUKKIT, release.artifacts.last().platform)
     }

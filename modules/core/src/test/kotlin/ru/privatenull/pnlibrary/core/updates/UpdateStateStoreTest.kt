@@ -45,16 +45,16 @@ class UpdateStateStoreTest {
 
     @Test
     fun `restores the complete selected plan after restart`() {
-        val component = ComponentId.of("pnlibrary")
+        val component = ProductId.of("pnlibrary")
         val version = SemanticVersion.parse("2.0.0")
-        val plan = UpdatePlan(1, listOf(ComponentChange(component, SemanticVersion.parse("1.0.0"), version)),
-            listOf(ComponentRelease(component, version, UpdateChannel.STABLE, ApiVersionRange(1, 1), providesApi = 1)))
+        val plan = UpdatePlan(1, listOf(ProductChange(component, SemanticVersion.parse("1.0.0"), version)),
+            listOf(ProductRelease(component, version, UpdateChannel.STABLE, ApiVersionRange(1, 1), providesApi = 1)))
         val snapshot = UpdatePlanSnapshot(UUID.randomUUID(), 9, UpdateState.UPDATE_AVAILABLE, plan, emptyList(), null)
 
         UpdateStateStore(directory).save(snapshot)
         val restored = UpdateStateStore(directory).current()
 
-        assertEquals("pnlibrary", restored?.plan?.changes?.single()?.component?.value)
+        assertEquals("pnlibrary", restored?.plan?.changes?.single()?.product?.value)
         assertEquals("2.0.0", restored?.plan?.selected?.single()?.version.toString())
     }
 }

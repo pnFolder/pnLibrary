@@ -93,10 +93,10 @@ class UpdateOrchestratorTest {
     }
 
     private fun plan(version: String): UpdatePlan {
-        val id = ComponentId.of("pnlibrary")
+        val id = ProductId.of("pnlibrary")
         val semantic = SemanticVersion.parse(version)
-        return UpdatePlan(1, listOf(ComponentChange(id, SemanticVersion.parse("1.0.0"), semantic)), listOf(
-            ComponentRelease(id, semantic, UpdateChannel.STABLE, ApiVersionRange(1, 1), providesApi = 1),
+        return UpdatePlan(1, listOf(ProductChange(id, SemanticVersion.parse("1.0.0"), semantic)), listOf(
+            ProductRelease(id, semantic, UpdateChannel.STABLE, ApiVersionRange(1, 1), providesApi = 1),
         ))
     }
 

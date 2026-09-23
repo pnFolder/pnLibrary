@@ -124,16 +124,14 @@ class PluginUpdateRequest private constructor(builder: Builder) {
     val automaticDownload: Boolean = builder.automaticDownload
     /** Immutable artifact-selection rules in declaration order. */
     val artifacts: List<PluginUpdateArtifact> = builder.artifacts.toList()
-    /** Stable component identity used by the API-aware resolver. */
-    val component: ComponentId = builder.component ?: ComponentId.of(repositoryName)
-    /** Inclusive pnLibrary API generations supported by this component. */
+    /** Inclusive pnLibrary API generations supported by this product. */
     val supportedApi: ApiVersionRange = builder.supportedApi
     /** Immutable minimum-version requirements on other managed components. */
-    val dependencies: List<ComponentDependency> = builder.dependencies.toList()
+    val dependencies: List<ProductDependency> = builder.dependencies.toList()
     /** Managed dependencies including their release catalogue coordinates. */
-    val managedDependencies: List<ManagedDependency> = builder.managedDependencies.toList()
+    val managedProductDependencies: List<ManagedProductDependency> = builder.managedProductDependencies.toList()
     /** Ordinary native plugins required by this component. */
-    val externalDependencies: List<ExternalDependency> = builder.externalDependencies.toList()
+    val externalPluginDependencies: List<ExternalPluginDependency> = builder.externalPluginDependencies.toList()
 
     /** Returns the most specific artifact compatible with [javaFeature], or `null`. */
     fun artifactFor(javaFeature: Int): PluginUpdateArtifact? = artifacts
@@ -152,11 +150,10 @@ class PluginUpdateRequest private constructor(builder: Builder) {
         internal var channel = UpdateChannel.STABLE
         internal var automaticDownload = true
         internal val artifacts = mutableListOf<PluginUpdateArtifact>()
-        internal var component: ComponentId? = null
         internal var supportedApi = ApiVersionRange(PnLibraryApi.VERSION, PnLibraryApi.VERSION)
-        internal val dependencies = mutableListOf<ComponentDependency>()
-        internal val managedDependencies = mutableListOf<ManagedDependency>()
-        internal val externalDependencies = mutableListOf<ExternalDependency>()
+        internal val dependencies = mutableListOf<ProductDependency>()
+        internal val managedProductDependencies = mutableListOf<ManagedProductDependency>()
+        internal val externalPluginDependencies = mutableListOf<ExternalPluginDependency>()
 
         /** Sets and validates the GitHub repository coordinates. */
         fun repository(owner: String, name: String) = apply {
@@ -170,8 +167,6 @@ class PluginUpdateRequest private constructor(builder: Builder) {
         fun channel(value: UpdateChannel) = apply { channel = value }
         /** Enables or disables automatic verified downloads. */
         fun automaticDownload(enabled: Boolean) = apply { automaticDownload = enabled }
-        /** Sets the stable resolver component identity. */
-        fun component(value: String) = apply { component = ComponentId.of(value) }
         /** Sets the inclusive pnLibrary API-generation range supported by the plugin. */
         fun supportedApi(minimum: Int, maximum: Int) = apply {
             supportedApi = ApiVersionRange(minimum, maximum)
@@ -188,12 +183,12 @@ class PluginUpdateRequest private constructor(builder: Builder) {
         }
         /** Declares a minimum semantic version required from another managed component. */
         fun dependsOn(component: String, minimumVersion: String) = apply {
-            val dependency = ComponentDependency(
-                ComponentId.of(component),
+            val dependency = ProductDependency(
+                ProductId.of(component),
                 SemanticVersion.parse(minimumVersion),
             )
-            require(dependencies.none { it.component == dependency.component }) {
-                "duplicate component dependency: ${dependency.component}"
+            require(dependencies.none { it.product == dependency.product }) {
+                "duplicate component dependency: ${dependency.product}"
             }
             dependencies += dependency
         }
@@ -204,25 +199,25 @@ class PluginUpdateRequest private constructor(builder: Builder) {
             repositoryOwner: String,
             repositoryName: String,
         ) = apply {
-            val dependency = ManagedDependency(
-                ComponentId.of(component), SemanticVersion.parse(minimumVersion), repositoryOwner, repositoryName,
+            val dependency = ManagedProductDependency(
+                ProductId.of(component), SemanticVersion.parse(minimumVersion), repositoryOwner, repositoryName,
             )
-            require(managedDependencies.none { it.component == dependency.component }) {
-                "duplicate managed dependency: ${dependency.component}"
+            require(managedProductDependencies.none { it.product == dependency.product }) {
+                "duplicate managed dependency: ${dependency.product}"
             }
-            managedDependencies += dependency
+            managedProductDependencies += dependency
             dependsOn(component, minimumVersion)
         }
         /** Declares an ordinary native server plugin dependency. */
-        fun pluginDependency(dependency: ExternalDependency) = apply {
-            require(externalDependencies.none { it.plugin.equals(dependency.plugin, true) }) {
+        fun pluginDependency(dependency: ExternalPluginDependency) = apply {
+            require(externalPluginDependencies.none { it.plugin.equals(dependency.plugin, true) }) {
                 "duplicate plugin dependency: ${dependency.plugin}"
             }
-            externalDependencies += dependency
+            externalPluginDependencies += dependency
         }
         /** Declares a manual-download native plugin dependency. */
         fun pluginDependency(plugin: String, minimumVersion: String, downloadPage: String) =
-            pluginDependency(ExternalDependency.builder(plugin, minimumVersion).downloadPage(downloadPage).build())
+            pluginDependency(ExternalPluginDependency.builder(plugin, minimumVersion).downloadPage(downloadPage).build())
         /** Adds an artifact pattern compatible with Java 8 and newer. */
         fun artifactPattern(regex: String) = artifact(regex, 8)
         /** Adds and validates one Java-bounded release artifact rule. */
@@ -275,8 +270,8 @@ interface UpdateRegistration : AutoCloseable {
 
 /** Registers and queries plugin update monitors owned by this runtime. */
 interface UpdateService {
-    /** Registers and immediately starts monitoring the plugin represented by [owner]. */
-    fun register(owner: Any, request: PluginUpdateRequest): UpdateRegistration
+    /** Registers and immediately starts monitoring [product] represented by [owner]. */
+    fun register(owner: Any, product: ProductDescriptor, request: PluginUpdateRequest): UpdateRegistration
     /** Returns a stable snapshot of current registrations. */
     fun registrations(): List<UpdateRegistration>
     /** Finds a registration by product or repository name, ignoring case. */

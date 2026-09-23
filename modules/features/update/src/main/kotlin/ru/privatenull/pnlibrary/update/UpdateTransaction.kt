@@ -72,7 +72,7 @@ class UpdateTransaction(
 
     fun apply(artifacts: List<TransactionArtifact>, healthCheck: () -> Boolean): TransactionResult {
         require(artifacts.isNotEmpty()) { "transaction must contain at least one artifact" }
-        require(artifacts.map { it.specification.component }.distinct().size == artifacts.size) {
+        require(artifacts.map { it.specification.product }.distinct().size == artifacts.size) {
             "transaction contains duplicate components"
         }
         require(artifacts.map { it.target.toAbsolutePath().normalize() }.distinct().size == artifacts.size) {
@@ -93,7 +93,7 @@ class UpdateTransaction(
         Files.createDirectories(backups)
         val records = artifacts.mapIndexed { index, artifact ->
             JournalArtifact(
-                artifact.specification.component.value,
+                artifact.specification.product.value,
                 artifact.target.toAbsolutePath().normalize().toString(),
                 staging.resolve("$index-${artifact.target.fileName}").toString(),
                 backups.resolve("$index-${artifact.target.fileName}").toString(),

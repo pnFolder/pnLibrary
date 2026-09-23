@@ -30,8 +30,8 @@ import ru.privatenull.pnlibrary.api.updates.UpdateService
 import ru.privatenull.pnlibrary.api.updates.PluginUpdateRequest
 import ru.privatenull.pnlibrary.api.updates.UpdateRegistration
 import ru.privatenull.pnlibrary.api.downloads.PluginDownloads
-import ru.privatenull.pnlibrary.api.updates.ComponentDescriptor
-import ru.privatenull.pnlibrary.api.updates.ExternalDependency
+import ru.privatenull.pnlibrary.api.updates.ProductDescriptor
+import ru.privatenull.pnlibrary.api.updates.ExternalPluginDependency
 import ru.privatenull.pnlibrary.core.currency.CurrencyHub
 import ru.privatenull.pnlibrary.core.events.EventServiceImpl
 import ru.privatenull.pnlibrary.core.placeholders.PlaceholderHub
@@ -58,7 +58,7 @@ class PluginRegistryImplTest {
     fun `optional unified dependency does not block registration`() {
         val context = registry(libraryVersion = "1.0.0").registerModule(Any(), "example") {
             it.depends(Dependencies.managed("missing-component", "9.0.0", "pnFolder", "Missing", required = false))
-                .component(ComponentDescriptor.builder("example", "1.0.0").pnLibraryApi(1, 1).build())
+                .component(ProductDescriptor.builder("example", "1.0.0").pnLibraryApi(1, 1).build())
         }
         assertEquals("example", context.id.value)
         context.close()
@@ -95,7 +95,7 @@ class PluginRegistryImplTest {
     @Test
     fun `updates registration inherits component metadata`() {
         val updates = RecordingUpdateService()
-        val descriptor = ComponentDescriptor.builder("example", "1.0.0")
+        val descriptor = ProductDescriptor.builder("example", "1.0.0")
             .pnLibraryApi(1, 2)
             .managedDependency("pnlibrary", "1.5.0", "pnFolder", "pnLibrary")
             .build()
@@ -108,10 +108,10 @@ class PluginRegistryImplTest {
             it.component(descriptor).updates(request)
         }
 
-        assertEquals("example", updates.request!!.component.value)
+        assertEquals("example", updates.product!!.id.value)
         assertEquals(1, updates.request!!.supportedApi.minimum)
         assertEquals(2, updates.request!!.supportedApi.maximum)
-        assertEquals("pnlibrary", updates.request!!.dependencies.single().component.value)
+        assertEquals("pnlibrary", updates.request!!.dependencies.single().product.value)
         assertEquals("1.5.0", updates.request!!.dependencies.single().minimumVersion.toString())
     }
 
@@ -120,7 +120,7 @@ class PluginRegistryImplTest {
         val owner = Any()
         val taskScope = RecordingTaskScope(owner)
         val registry = registry(tasks = RecordingTaskService(taskScope), libraryVersion = "1.0.0")
-        val descriptor = ComponentDescriptor.builder("example", "1.0.0")
+        val descriptor = ProductDescriptor.builder("example", "1.0.0")
             .pnLibraryApi(1, 1)
             .managedDependency("economy", "2.0.0", "pnFolder", "Economy")
             .build()
@@ -138,11 +138,11 @@ class PluginRegistryImplTest {
     fun `registered compatible component satisfies a later dependency`() {
         val registry = registry(libraryVersion = "1.0.0")
         registry.registerModule(Any(), "economy") {
-            it.component(ComponentDescriptor.builder("economy", "2.1.0").pnLibraryApi(1, 1).build())
+            it.component(ProductDescriptor.builder("economy", "2.1.0").pnLibraryApi(1, 1).build())
         }
 
         val dependent = registry.registerModule(Any(), "example") {
-            it.component(ComponentDescriptor.builder("example", "1.0.0").pnLibraryApi(1, 1)
+            it.component(ProductDescriptor.builder("example", "1.0.0").pnLibraryApi(1, 1)
                 .managedDependency("economy", "2.0.0", "pnFolder", "Economy").build())
         }
 
@@ -152,9 +152,9 @@ class PluginRegistryImplTest {
 
     @Test
     fun `external dependency diagnostic includes its download page`() {
-        val dependency = ExternalDependency.builder("Vault", "1.7.3")
+        val dependency = ExternalPluginDependency.builder("Vault", "1.7.3")
             .downloadPage("https://github.com/MilkBowl/Vault/releases").build()
-        val descriptor = ComponentDescriptor.builder("example", "1.0.0").pnLibraryApi(1, 1)
+        val descriptor = ProductDescriptor.builder("example", "1.0.0").pnLibraryApi(1, 1)
             .externalDependency(dependency).build()
 
         val error = assertThrows(IllegalArgumentException::class.java) {
@@ -267,7 +267,7 @@ class PluginRegistryImplTest {
     @Test
     fun `component identity remains unique across different plugin contexts`() {
         val registry = registry()
-        val descriptor = ComponentDescriptor.builder("shared-component", "1.0.0")
+        val descriptor = ProductDescriptor.builder("shared-component", "1.0.0")
             .pnLibraryApi(1, 1).build()
         registry.register(Any()).registerModule("shared-component") { it.component(descriptor) }
 
@@ -523,7 +523,13 @@ class PluginRegistryImplTest {
 
         private class RecordingUpdateService : UpdateService {
             var request: PluginUpdateRequest? = null
-            override fun register(owner: Any, request: PluginUpdateRequest): UpdateRegistration {
+            var product: ProductDescriptor? = null
+            override fun register(
+                owner: Any,
+                product: ProductDescriptor,
+                request: PluginUpdateRequest,
+            ): UpdateRegistration {
+                this.product = product
                 this.request = request
                 return emptyProxy(UpdateRegistration::class.java)
             }

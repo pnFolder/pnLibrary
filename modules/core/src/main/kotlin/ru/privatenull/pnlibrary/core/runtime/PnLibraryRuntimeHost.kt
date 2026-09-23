@@ -90,9 +90,9 @@ class PnLibraryRuntimeHost private constructor(
                 val artifactId = platform.type.distributionArtifact()
                 val monitor = library.updates.register(
                     owner,
+                    ru.privatenull.pnlibrary.api.updates.ProductDescriptor.library(currentVersion),
                     PluginUpdateRequest.builder()
                         .repository("pnFolder", "pnLibrary")
-                        .component("pnlibrary")
                         .supportedApi(1, 1)
                         .automaticDownload(false)
                         .artifact("(?i)^pnLibrary-$artifactId-.*\\.jar$", 8)

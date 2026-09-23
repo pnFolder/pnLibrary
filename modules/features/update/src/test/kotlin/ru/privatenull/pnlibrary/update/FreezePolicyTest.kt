@@ -3,7 +3,7 @@ package ru.privatenull.pnlibrary.update
 import org.junit.jupiter.api.Assertions.*
 import org.junit.jupiter.api.Test
 import org.junit.jupiter.api.io.TempDir
-import ru.privatenull.pnlibrary.api.updates.ComponentId
+import ru.privatenull.pnlibrary.api.updates.ProductId
 import java.nio.file.Path
 import java.time.Clock
 import java.time.Duration
@@ -27,7 +27,7 @@ class FreezePolicyTest {
     fun `persists absolute expiry and does not restart duration`() {
         val clock = MutableClock(Instant.parse("2026-09-17T10:00:00Z"))
         val file = directory.resolve("freezes.json")
-        val market = ComponentId.of("pnmarket")
+        val market = ProductId.of("pnmarket")
         FreezeStore(file, clock).freeze(market, Duration.ofHours(2))
 
         clock.advance(Duration.ofMinutes(30))
@@ -39,8 +39,8 @@ class FreezePolicyTest {
     fun `expiry removes only the elapsed component`() {
         val clock = MutableClock(Instant.parse("2026-09-17T10:00:00Z"))
         val store = FreezeStore(directory.resolve("freezes.json"), clock)
-        val market = ComponentId.of("pnmarket")
-        val auth = ComponentId.of("pnauth")
+        val market = ProductId.of("pnmarket")
+        val auth = ProductId.of("pnauth")
         store.freeze(market, Duration.ofMinutes(1))
         store.freeze(auth, Duration.ofHours(1))
 

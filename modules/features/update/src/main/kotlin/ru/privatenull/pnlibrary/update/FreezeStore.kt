@@ -2,7 +2,7 @@ package ru.privatenull.pnlibrary.update
 
 import com.google.gson.Gson
 import com.google.gson.reflect.TypeToken
-import ru.privatenull.pnlibrary.api.updates.ComponentId
+import ru.privatenull.pnlibrary.api.updates.ProductId
 import java.nio.charset.StandardCharsets
 import java.nio.file.AtomicMoveNotSupportedException
 import java.nio.file.Files
@@ -20,7 +20,7 @@ class FreezeStore(
     private val expiries = load()
 
     @Synchronized
-    fun freeze(component: ComponentId, duration: Duration): Instant {
+    fun freeze(component: ProductId, duration: Duration): Instant {
         FreezeDuration.validate(duration)
         val expiry = clock.instant().plus(duration)
         expiries[component] = expiry
@@ -29,24 +29,24 @@ class FreezeStore(
     }
 
     @Synchronized
-    fun clear(component: ComponentId): Boolean {
+    fun clear(component: ProductId): Boolean {
         val removed = expiries.remove(component) != null
         if (removed) persist()
         return removed
     }
 
     @Synchronized
-    fun remaining(component: ComponentId): Duration? {
+    fun remaining(component: ProductId): Duration? {
         removeExpired()
         val expiry = expiries[component] ?: return null
         return Duration.between(clock.instant(), expiry)
     }
 
     @Synchronized
-    fun isFrozen(component: ComponentId): Boolean = remaining(component) != null
+    fun isFrozen(component: ProductId): Boolean = remaining(component) != null
 
     @Synchronized
-    fun active(): Map<ComponentId, Instant> {
+    fun active(): Map<ProductId, Instant> {
         removeExpired()
         return expiries.toMap()
     }
@@ -57,14 +57,14 @@ class FreezeStore(
         if (changed) persist()
     }
 
-    private fun load(): MutableMap<ComponentId, Instant> {
+    private fun load(): MutableMap<ProductId, Instant> {
         if (!Files.exists(path)) return linkedMapOf()
         val type = object : TypeToken<Map<String, Long>>() {}.type
         val stored: Map<String, Long> = Files.newBufferedReader(path, StandardCharsets.UTF_8).use {
             gson.fromJson(it, type) ?: emptyMap()
         }
         return stored.entries.associateTo(linkedMapOf()) {
-            ComponentId.of(it.key) to Instant.ofEpochMilli(it.value)
+            ProductId.of(it.key) to Instant.ofEpochMilli(it.value)
         }
     }
 

@@ -40,7 +40,7 @@ internal class UpdateServiceImpl(private val platform: PlatformAdapter, private 
     )
     private val freezes = FreezeStore(dataFolder.resolve("updates/freezes.json")).also { store ->
         configuration.components.forEach { (id, policy) ->
-            policy.pause?.let { if (store.remaining(ComponentId.of(id)) == null) store.freeze(ComponentId.of(id), it) }
+            policy.pause?.let { if (store.remaining(ProductId.of(id)) == null) store.freeze(ProductId.of(id), it) }
         }
     }
     private val orchestrator = UpdateOrchestrator(
@@ -55,17 +55,22 @@ internal class UpdateServiceImpl(private val platform: PlatformAdapter, private 
         }
     }
 
-    override fun register(owner: Any, request: PluginUpdateRequest): UpdateRegistration {
+    override fun register(owner: Any, product: ProductDescriptor, request: PluginUpdateRequest): UpdateRegistration {
         check(!closed.get()) { "update service is closed" }
         val info = platform.ownerDetails(owner)
-        val product = info["name"] ?: request.repositoryName
+        val nativeProductName = info["name"] ?: request.repositoryName
         val version = info["version"] ?: error("Не удалось определить версию подключённого плагина")
-        require(SemanticVersion.tryParse(version) != null) { "Версия $product должна быть семантической: $version" }
+        require(SemanticVersion.tryParse(version) != null) {
+            "Version of $nativeProductName must be semantic: $version"
+        }
         val jar = Paths.get(owner.javaClass.protectionDomain.codeSource.location.toURI()).toAbsolutePath().normalize()
         require(Files.isRegularFile(jar)) { "Плагин должен быть запущен из JAR" }
         val artifact = request.artifactFor(Runtime.version().feature(), platform.type)
             ?: error("Для Java ${Runtime.version().feature()} не зарегистрирован совместимый артефакт ${request.repositoryName}")
-        val registration = Registration(owner, product, version, request, artifact, jar, jar.parent.resolve("update"))
+        require(product.version == SemanticVersion.parse(version)) {
+            "Product version ${product.version} does not match native plugin version $version"
+        }
+        val registration = Registration(owner, product, request, artifact, jar, jar.parent.resolve("update"))
         synchronized(entriesLock) {
             check(!closed.get()) { "update service is closed" }
             entries += registration
@@ -93,21 +98,21 @@ internal class UpdateServiceImpl(private val platform: PlatformAdapter, private 
 
     private fun resolveGraph(): ResolutionResult {
         if (entries.isEmpty()) return ResolutionResult.Ready(UpdatePlan(PnLibraryApi.VERSION, emptyList(), emptyList()))
-        val installed = entries.map { entry -> InstalledComponent(
-            entry.request.component, SemanticVersion.parse(entry.version), entry.request.supportedApi,
-            PnLibraryApi.VERSION.takeIf { entry.request.component.value == "pnlibrary" },
+        val installed = entries.map { entry -> InstalledProduct(
+            entry.descriptor.id, entry.descriptor.version, entry.descriptor.supportedApi,
+            PnLibraryApi.VERSION.takeIf { entry.descriptor.id.value == "pnlibrary" },
         ) }
-        val channels = entries.associate { entry -> entry.request.component to
-            (configuration.components[entry.request.component.value]?.channel ?: entry.request.channel) }
+        val channels = entries.associate { entry -> entry.descriptor.id to
+            (configuration.components[entry.descriptor.id.value]?.channel ?: entry.request.channel) }
         val releases = entries.flatMap { entry ->
             catalogue.releases(ReleaseSource(entry.request.repositoryOwner, entry.request.repositoryName),
-                channels.getValue(entry.request.component), entry.request, platform.type).join()
+                channels.getValue(entry.descriptor.id), entry.descriptor.id, entry.request, platform.type).join()
         }
         entries.forEach { entry ->
-            val latest = releases.filter { it.component == entry.request.component }.maxByOrNull(ComponentRelease::version)
+            val latest = releases.filter { it.product == entry.descriptor.id }.maxByOrNull(ProductRelease::version)
             entry.observe(latest)
         }
-        return UpdateResolver(ComponentId.of("pnlibrary")).resolve(
+        return UpdateResolver(ProductId.of("pnlibrary")).resolve(
             installed, releases, channels = channels, defaultChannel = UpdateChannel.STABLE,
             frozen = freezes.active().keys, platform = platform.type,
             javaFeature = Runtime.version().feature(), policy = ResolverPolicy(
@@ -117,10 +122,10 @@ internal class UpdateServiceImpl(private val platform: PlatformAdapter, private 
     }
 
     private fun automaticAllowed(snapshot: UpdatePlanSnapshot): Boolean {
-        val changed = snapshot.plan?.changes?.map(ComponentChange::component).orEmpty()
+        val changed = snapshot.plan?.changes?.map(ProductChange::product).orEmpty()
         return changed.all { component ->
             configuration.components[component.value]?.automatic
-                ?: entries.firstOrNull { it.request.component == component }?.request?.automaticDownload
+                ?: entries.firstOrNull { it.descriptor.id == component }?.request?.automaticDownload
                 ?: false
         }
     }
@@ -128,21 +133,21 @@ internal class UpdateServiceImpl(private val platform: PlatformAdapter, private 
     private fun stageGraph(snapshot: UpdatePlanSnapshot) {
         val plan = requireNotNull(snapshot.plan) { "update plan has no installable target" }
         val staging = dataFolder.resolve("updates/staging/${snapshot.id}")
-        val byComponent = entries.associateBy { it.request.component }
+        val byComponent = entries.associateBy { it.descriptor.id }
         val artifacts = plan.changes.map { change ->
-            val release = plan.selected.single { it.component == change.component }
+            val release = plan.selected.single { it.product == change.product }
             val descriptor = release.artifacts.firstOrNull {
                 it.platform == platform.type && it.supports(Runtime.version().feature())
-            } ?: error("No ${platform.type.id} artifact for ${change.component} ${change.to}")
+            } ?: error("No ${platform.type.id} artifact for ${change.product} ${change.to}")
             val uri = requireNotNull(descriptor.downloadUri) { "Release artifact has no verified download URL: ${descriptor.file}" }
             require(descriptor.size <= MAX_ARTIFACT_BYTES) { "Artifact exceeds the configured size limit: ${descriptor.file}" }
             val bytes = http.get(uri, descriptor.size.toInt())
-            val source = staging.resolve(change.component.value).resolve(descriptor.file)
+            val source = staging.resolve(change.product.value).resolve(descriptor.file)
             ArtifactDownloader(MAX_ARTIFACT_BYTES).download({ ByteArrayInputStream(bytes) }, source)
             val specification = ArtifactSpecification(
-                change.component, change.to, release.supportedApi, descriptor.file, descriptor.size, descriptor.sha256,
+                change.product, change.to, release.supportedApi, descriptor.file, descriptor.size, descriptor.sha256,
             )
-            val existing = byComponent[change.component]
+            val existing = byComponent[change.product]
             val target = existing?.updateDir?.resolve(existing.jar.fileName)
                 ?: dataFolder.parent.resolve("update").resolve(descriptor.file)
             TransactionArtifact(specification, source, target)
@@ -162,9 +167,11 @@ internal class UpdateServiceImpl(private val platform: PlatformAdapter, private 
     }
 
     private inner class Registration(
-        private val owner: Any, val product: String, val version: String, val request: PluginUpdateRequest,
+        private val owner: Any, val descriptor: ProductDescriptor, val request: PluginUpdateRequest,
         private val artifact: PluginUpdateArtifact, val jar: Path, val updateDir: Path,
     ) : UpdateRegistration {
+        val product: String = descriptor.id.value
+        val version: String = descriptor.version.toString()
         private val closed = AtomicBoolean(false)
         private val state = AtomicReference(UpdateSnapshot(
             product, version, null, request.channel, UpdateState.CHECKING, Runtime.version().feature(),
@@ -174,7 +181,7 @@ internal class UpdateServiceImpl(private val platform: PlatformAdapter, private 
         override val snapshot get() = state.get()
         override fun checkNow() { check(!closed.get()); orchestrator.checkNow() }
         override fun downloadNow() { check(!closed.get()); orchestrator.checkNow().thenCompose { orchestrator.stage(it.id) } }
-        fun observe(release: ComponentRelease?) {
+        fun observe(release: ProductRelease?) {
             if (closed.get()) return
             val latest = release?.version
             val current = SemanticVersion.parse(version)

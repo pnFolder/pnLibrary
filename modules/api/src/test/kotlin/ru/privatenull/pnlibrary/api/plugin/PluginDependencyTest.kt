@@ -10,7 +10,7 @@ class PluginDependencyTest {
     fun `unified factories expose managed and external variants`() {
         val managed = Dependencies.managed("pnEconomy", "2.0.0", "pnFolder", "pnEconomy")
         assertNotNull(managed.managed)
-        assertEquals("pneconomy", managed.managed!!.component.value)
+        assertEquals("pneconomy", managed.managed!!.product.value)
 
         val external = Dependencies.plugin("Vault", "1.7.3", "https://example.org/vault")
         assertNotNull(external.external)

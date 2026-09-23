@@ -1,8 +1,8 @@
 package ru.privatenull.pnlibrary.demo
 
-import ru.privatenull.pnlibrary.api.updates.ComponentDescriptor
+import ru.privatenull.pnlibrary.api.updates.ProductDescriptor
 import ru.privatenull.pnlibrary.update.ArtifactDownloader
-import ru.privatenull.pnlibrary.update.ComponentDescriptorCodec
+import ru.privatenull.pnlibrary.update.ProductDescriptorCodec
 import ru.privatenull.pnlibrary.update.FreezeDuration
 import ru.privatenull.pnlibrary.update.FreezeStore
 import java.io.ByteArrayInputStream
@@ -13,13 +13,13 @@ import java.time.Duration
 object DemoUpdateFeature {
     fun smoke(plugin: DemoPlugin) {
         val freeze = FreezeStore(plugin.dataFolder.toPath().resolve("demo-freezes.json"))
-        val id = ru.privatenull.pnlibrary.api.updates.ComponentId.of("pndemo")
+        val id = ru.privatenull.pnlibrary.api.updates.ProductId.of("pndemo")
         freeze.freeze(id, FreezeDuration.parse("1h"))
         freeze.remaining(id); freeze.isFrozen(id); freeze.active(); freeze.clear(id)
 
-        val descriptor = ComponentDescriptor.builder("pndemo", plugin.description.version)
+        val descriptor = ProductDescriptor.builder("pndemo", plugin.description.version)
             .pnLibraryApi(1, 1).build()
-        val codec = ComponentDescriptorCodec()
+        val codec = ProductDescriptorCodec()
         val encoded = codec.encodeInstalled(descriptor)
         codec.decodeInstalled(encoded)
 

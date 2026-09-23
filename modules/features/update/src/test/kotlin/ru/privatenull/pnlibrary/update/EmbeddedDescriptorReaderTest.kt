@@ -3,7 +3,7 @@ package ru.privatenull.pnlibrary.update
 import org.junit.jupiter.api.Assertions.*
 import org.junit.jupiter.api.Test
 import org.junit.jupiter.api.io.TempDir
-import ru.privatenull.pnlibrary.api.updates.ComponentDescriptor
+import ru.privatenull.pnlibrary.api.updates.ProductDescriptor
 import java.nio.file.Path
 import java.util.jar.JarEntry
 import java.util.jar.JarOutputStream
@@ -13,8 +13,8 @@ class EmbeddedDescriptorReaderTest {
     @TempDir lateinit var directory: Path
 
     @Test fun `reads the generated installed descriptor from jar`() {
-        val bytes = ComponentDescriptorCodec().encodeInstalled(
-            ComponentDescriptor.builder("economy", "3.4.0").pnLibraryApi(1, 2)
+        val bytes = ProductDescriptorCodec().encodeInstalled(
+            ProductDescriptor.builder("economy", "3.4.0").pnLibraryApi(1, 2)
                 .managedDependency("permissions", "2.1.0", "pnFolder", "Permissions").build(),
         )
         val jar = directory.resolve("economy.jar")
@@ -25,7 +25,7 @@ class EmbeddedDescriptorReaderTest {
         }
         val descriptor = EmbeddedDescriptorReader().read(jar)
         assertEquals("economy", descriptor.id.value)
-        assertEquals("permissions", descriptor.managedDependencies.single().component.value)
+        assertEquals("permissions", descriptor.managedProductDependencies.single().product.value)
     }
 
     @Test fun `rejects duplicate embedded descriptors`() {

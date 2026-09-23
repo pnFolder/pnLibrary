@@ -5,6 +5,7 @@ import org.junit.jupiter.api.Test
 import org.junit.jupiter.api.io.TempDir
 import ru.privatenull.pnlibrary.api.updates.UpdateChannel
 import ru.privatenull.pnlibrary.api.updates.PluginUpdateRequest
+import ru.privatenull.pnlibrary.api.updates.ProductId
 import ru.privatenull.pnlibrary.api.platform.PlatformType
 import java.net.URI
 import java.nio.file.Files
@@ -85,7 +86,8 @@ class ReleaseCatalogueClientTest {
             val request = PluginUpdateRequest.builder().repository("pnFolder", "Cases").apiVersions(1, 2)
                 .artifact("(?i)^pnCases-Bukkit-.*\\.jar$", PlatformType.BUKKIT, 17).build()
             val result = ReleaseCatalogueClient(transport, ReleaseCatalogueStore(directory), executor, Duration.ZERO)
-                .releases(ReleaseSource("pnFolder", "Cases"), UpdateChannel.STABLE, request, PlatformType.BUKKIT)
+                .releases(ReleaseSource("pnFolder", "Cases"), UpdateChannel.STABLE,
+                    ProductId.of("cases"), request, PlatformType.BUKKIT)
                 .join().single()
 
             assertEquals("2.5.6", result.version.toString())
@@ -111,8 +113,10 @@ class ReleaseCatalogueClientTest {
             val velocity = PluginUpdateRequest.builder().repository("pnFolder", "Cases")
                 .artifact("(?i)^pnCases-Velocity-.*\\.jar$", PlatformType.VELOCITY, 17).build()
 
-            val first = client.releases(ReleaseSource("pnFolder", "Cases"), UpdateChannel.STABLE, bukkit, PlatformType.BUKKIT)
-            val second = client.releases(ReleaseSource("pnFolder", "Cases"), UpdateChannel.STABLE, velocity, PlatformType.VELOCITY)
+            val first = client.releases(ReleaseSource("pnFolder", "Cases"), UpdateChannel.STABLE,
+                ProductId.of("cases"), bukkit, PlatformType.BUKKIT)
+            val second = client.releases(ReleaseSource("pnFolder", "Cases"), UpdateChannel.STABLE,
+                ProductId.of("cases"), velocity, PlatformType.VELOCITY)
             assertEquals("pnCases-Bukkit-2.5.6.jar", first.join().single().artifacts.single().file)
             assertEquals("pnCases-Velocity-2.5.6.jar", second.join().single().artifacts.single().file)
         } finally { executor.shutdownNow() }

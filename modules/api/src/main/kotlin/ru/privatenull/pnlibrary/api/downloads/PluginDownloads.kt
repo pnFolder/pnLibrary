@@ -1,7 +1,7 @@
 package ru.privatenull.pnlibrary.api.downloads
 
 import ru.privatenull.pnlibrary.api.platform.PlatformType
-import ru.privatenull.pnlibrary.api.updates.ComponentId
+import ru.privatenull.pnlibrary.api.updates.ProductId
 import ru.privatenull.pnlibrary.api.version.ApiVersionRange
 import ru.privatenull.pnlibrary.api.version.SemanticVersion
 import java.net.URI
@@ -72,9 +72,9 @@ sealed class DownloadDeclaration(
     val forceAutomaticDownload: Boolean,
 ) {
     class Component internal constructor(builder: ComponentBuilder) : DownloadDeclaration(
-        ComponentId.of(builder.id).value, builder.source.build(), builder.required, builder.automatic, builder.forceAutomatic,
+        ProductId.of(builder.id).value, builder.source.build(), builder.required, builder.automatic, builder.forceAutomatic,
     ) {
-        val component: ComponentId = ComponentId.of(builder.id)
+        val component: ProductId = ProductId.of(builder.id)
         val version: SemanticVersion = SemanticVersion.parse(builder.version)
         val supportedApi: ApiVersionRange = builder.supportedApi ?: error("component API range is required")
     }

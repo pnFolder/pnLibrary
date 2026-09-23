@@ -1,6 +1,6 @@
 package ru.privatenull.pnlibrary.update
 
-import ru.privatenull.pnlibrary.api.updates.ComponentId
+import ru.privatenull.pnlibrary.api.updates.ProductId
 import ru.privatenull.pnlibrary.api.version.ApiVersionRange
 import ru.privatenull.pnlibrary.api.version.SemanticVersion
 import java.nio.file.Files
@@ -9,7 +9,7 @@ import java.nio.file.Paths
 import java.security.MessageDigest
 
 data class ArtifactSpecification(
-    val component: ComponentId,
+    val product: ProductId,
     val version: SemanticVersion,
     val supportedApi: ApiVersionRange,
     val fileName: String,
@@ -46,7 +46,7 @@ class ArtifactVerifier(
         } catch (error: Exception) {
             throw ArtifactVerificationException("artifact metadata cannot be read: ${error.message}")
         }
-        if (descriptor.id != expected.component) fail("artifact component identity does not match")
+        if (descriptor.id != expected.product) fail("artifact component identity does not match")
         if (descriptor.version != expected.version) fail("artifact version does not match")
         if (descriptor.supportedApi != expected.supportedApi) {
             fail("artifact API range does not match")

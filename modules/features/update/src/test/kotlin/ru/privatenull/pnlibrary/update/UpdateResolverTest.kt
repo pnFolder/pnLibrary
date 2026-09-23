@@ -9,23 +9,23 @@ import ru.privatenull.pnlibrary.api.version.SemanticVersion
 import ru.privatenull.pnlibrary.api.platform.PlatformType
 
 class UpdateResolverTest {
-    private val library = ComponentId.of("pnlibrary")
-    private val market = ComponentId.of("pnmarket")
-    private val economy = ComponentId.of("pneconomy")
+    private val library = ProductId.of("pnlibrary")
+    private val market = ProductId.of("pnmarket")
+    private val economy = ProductId.of("pneconomy")
     private fun version(value: String) = SemanticVersion.parse(value)
     private fun range(min: Int, max: Int = min) = ApiVersionRange(min, max)
-    private fun installed(id: ComponentId, version: String, api: ApiVersionRange, provides: Int? = null) =
-        InstalledComponent(id, version(version), api, provides)
+    private fun installed(id: ProductId, version: String, api: ApiVersionRange, provides: Int? = null) =
+        InstalledProduct(id, version(version), api, provides)
     private fun release(
-        id: ComponentId,
+        id: ProductId,
         version: String,
         api: ApiVersionRange,
         provides: Int? = null,
         channel: UpdateChannel = UpdateChannel.STABLE,
-        dependencies: List<ComponentDependency> = emptyList(),
-        external: List<ExternalDependency> = emptyList(),
+        dependencies: List<ProductDependency> = emptyList(),
+        external: List<ExternalPluginDependency> = emptyList(),
         artifacts: List<ArtifactDescriptor> = emptyList(),
-    ) = ComponentRelease(id, version(version), channel, api, provides, dependencies, artifacts = artifacts, externalDependencies = external)
+    ) = ProductRelease(id, version(version), channel, api, provides, dependencies, artifacts = artifacts, externalPluginDependencies = external)
 
     @Test
     fun `selects newest release compatible with installed API instead of latest`() {
@@ -40,7 +40,7 @@ class UpdateResolverTest {
             ),
         ) as ResolutionResult.Ready
 
-        assertEquals(version("3.9.7"), result.plan.selected.single { it.component == market }.version)
+        assertEquals(version("3.9.7"), result.plan.selected.single { it.product == market }.version)
     }
 
     @Test
@@ -58,8 +58,8 @@ class UpdateResolverTest {
         ) as ResolutionResult.Ready
 
         assertEquals(5, result.plan.targetApi)
-        assertEquals(setOf(library, economy), result.plan.changes.map { it.component }.toSet())
-        assertEquals(version("3.0.0"), result.plan.selected.single { it.component == market }.version)
+        assertEquals(setOf(library, economy), result.plan.changes.map { it.product }.toSet())
+        assertEquals(version("3.0.0"), result.plan.selected.single { it.product == market }.version)
     }
 
     @Test
@@ -75,13 +75,13 @@ class UpdateResolverTest {
             ),
         ) as ResolutionResult.Blocked
 
-        assertTrue(result.reasons.any { it is BlockedReason.NoCompatibleRelease && it.component == market })
-        assertEquals(version("2.9.4"), result.fallbackPlan!!.selected.single { it.component == library }.version)
+        assertTrue(result.reasons.any { it is BlockedReason.NoCompatibleRelease && it.product == market })
+        assertEquals(version("2.9.4"), result.fallbackPlan!!.selected.single { it.product == library }.version)
     }
 
     @Test
     fun `satisfies dependency closure and component channel overrides`() {
-        val dependency = ComponentDependency(economy, version("3.0.0"))
+        val dependency = ProductDependency(economy, version("3.0.0"))
         val result = UpdateResolver(library).resolve(
             installed = listOf(
                 installed(library, "2.9.0", range(4), 4),
@@ -95,7 +95,7 @@ class UpdateResolverTest {
             channels = mapOf(economy to UpdateChannel.BETA),
         ) as ResolutionResult.Ready
 
-        assertEquals(setOf(market, economy), result.plan.changes.map { it.component }.toSet())
+        assertEquals(setOf(market, economy), result.plan.changes.map { it.product }.toSet())
     }
 
     @Test
@@ -112,7 +112,7 @@ class UpdateResolverTest {
             frozen = setOf(market),
         ) as ResolutionResult.Blocked
 
-        assertTrue(result.reasons.any { it is BlockedReason.Frozen && it.component == market })
+        assertTrue(result.reasons.any { it is BlockedReason.Frozen && it.product == market })
         assertEquals(4, result.fallbackPlan!!.targetApi)
     }
 
@@ -130,13 +130,13 @@ class UpdateResolverTest {
             ),
         ) as ResolutionResult.Blocked
 
-        assertTrue(result.reasons.any { it is BlockedReason.NoCompatibleRelease && it.component == economy })
-        assertTrue(result.fallbackPlan == null || result.fallbackPlan.changes.none { it.component == library })
+        assertTrue(result.reasons.any { it is BlockedReason.NoCompatibleRelease && it.product == economy })
+        assertTrue(result.fallbackPlan == null || result.fallbackPlan.changes.none { it.product == library })
     }
 
     @Test
     fun `introduces a missing managed dependency only when policy permits`() {
-        val dependency = ComponentDependency(economy, version("2.0.0"))
+        val dependency = ProductDependency(economy, version("2.0.0"))
         val releases = listOf(
             release(market, "2.0.0", range(1), dependencies = listOf(dependency)),
             release(economy, "2.1.0", range(1)),
@@ -150,12 +150,12 @@ class UpdateResolverTest {
             installed, releases, policy = ResolverPolicy(allowManagedInstalls = true),
             platform = PlatformType.BUKKIT, javaFeature = 17,
         ) as ResolutionResult.Ready
-        assertEquals(version("2.1.0"), ready.plan.selected.single { it.component == economy }.version)
+        assertEquals(version("2.1.0"), ready.plan.selected.single { it.product == economy }.version)
     }
 
     @Test
     fun `reports manual external dependency and filters incompatible platform artifact`() {
-        val vault = ExternalDependency.builder("Vault", "1.7.3")
+        val vault = ExternalPluginDependency.builder("Vault", "1.7.3")
             .downloadPage("https://github.com/MilkBowl/Vault/releases").build()
         val velocityOnly = ArtifactDescriptor(
             "market.jar", PlatformType.VELOCITY, 17, null, 10, "00".repeat(32), null,
@@ -170,7 +170,7 @@ class UpdateResolverTest {
             javaFeature = 17,
         ) as ResolutionResult.Blocked
 
-        assertTrue(result.reasons.any { it is BlockedReason.MissingExternalDependency && it.plugin == "Vault" })
-        assertEquals(version("1.0.0"), result.fallbackPlan!!.selected.single { it.component == market }.version)
+        assertTrue(result.reasons.any { it is BlockedReason.MissingExternalPluginDependency && it.plugin == "Vault" })
+        assertEquals(version("1.0.0"), result.fallbackPlan!!.selected.single { it.product == market }.version)
     }
 }

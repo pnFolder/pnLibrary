@@ -21,18 +21,18 @@ class UpdateModelTest {
 
     @Test
     fun `component identifiers are normalized and validated`() {
-        assertEquals("pnmarket", ComponentId.of("PnMarket").value)
-        assertThrows(IllegalArgumentException::class.java) { ComponentId.of("bad id") }
+        assertEquals("pnmarket", ProductId.of("PnMarket").value)
+        assertThrows(IllegalArgumentException::class.java) { ProductId.of("bad id") }
     }
 
     @Test
     fun `release validates API and dependency metadata`() {
-        val dependency = ComponentDependency(
-            ComponentId.of("pneconomy"),
+        val dependency = ProductDependency(
+            ProductId.of("pneconomy"),
             SemanticVersion.parse("3.0.0"),
         )
-        val release = ComponentRelease(
-            component = ComponentId.of("pnmarket"),
+        val release = ProductRelease(
+            product = ProductId.of("pnmarket"),
             version = SemanticVersion.parse("4.0.0"),
             channel = UpdateChannel.STABLE,
             supportedApi = ApiVersionRange(5, 5),
@@ -40,30 +40,30 @@ class UpdateModelTest {
         )
 
         assertEquals(5, release.supportedApi.minimum)
-        assertEquals("pneconomy", release.dependencies.single().component.value)
+        assertEquals("pneconomy", release.dependencies.single().product.value)
     }
 
     @Test
     fun `component descriptor validates API range and preserves dependency order immutably`() {
         assertThrows(IllegalArgumentException::class.java) {
-            ComponentDescriptor.builder("economy", "3.4.0").pnLibraryApi(2, 1)
+            ProductDescriptor.builder("economy", "3.4.0").pnLibraryApi(2, 1)
         }
-        val descriptor = ComponentDescriptor.builder("economy", "3.4.0")
+        val descriptor = ProductDescriptor.builder("economy", "3.4.0")
             .pnLibraryApi(1, 2)
             .managedDependency("permissions", "2.1.0", "pnFolder", "Permissions")
             .build()
         assertEquals("economy", descriptor.id.value)
-        assertEquals("permissions", descriptor.managedDependencies.single().component.value)
+        assertEquals("permissions", descriptor.managedProductDependencies.single().product.value)
         assertThrows(UnsupportedOperationException::class.java) {
             @Suppress("UNCHECKED_CAST")
-            (descriptor.managedDependencies as MutableList<ManagedDependency>).clear()
+            (descriptor.managedProductDependencies as MutableList<ManagedProductDependency>).clear()
         }
     }
 
     @Test
     fun `component descriptor rejects duplicate dependencies`() {
         assertThrows(IllegalArgumentException::class.java) {
-            ComponentDescriptor.builder("economy", "3.4.0")
+            ProductDescriptor.builder("economy", "3.4.0")
                 .managedDependency("permissions", "2.1.0", "pnFolder", "Permissions")
                 .managedDependency("permissions", "2.2.0", "pnFolder", "Permissions")
         }
@@ -82,11 +82,11 @@ class UpdateModelTest {
     @Test
     fun `automatic external dependency requires secure complete artifact`() {
         assertThrows(IllegalArgumentException::class.java) {
-            ExternalDependency.builder("Vault", "1.7.3")
+            ExternalPluginDependency.builder("Vault", "1.7.3")
                 .artifact("http://example.test/vault.jar", 10, "00".repeat(32))
                 .build()
         }
-        val manual = ExternalDependency.builder("Vault", "1.7.3")
+        val manual = ExternalPluginDependency.builder("Vault", "1.7.3")
             .downloadPage("https://github.com/MilkBowl/Vault/releases")
             .build()
         assertEquals("Vault", manual.plugin)

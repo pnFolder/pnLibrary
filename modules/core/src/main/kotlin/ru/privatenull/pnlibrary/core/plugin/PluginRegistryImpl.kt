@@ -32,7 +32,7 @@ import ru.privatenull.pnlibrary.core.tasks.TaskServiceImpl
 import ru.privatenull.pnlibrary.api.updates.PluginUpdateRequest
 import ru.privatenull.pnlibrary.api.updates.UpdateRegistration
 import ru.privatenull.pnlibrary.api.updates.UpdateService
-import ru.privatenull.pnlibrary.api.updates.ComponentDescriptor
+import ru.privatenull.pnlibrary.api.updates.ProductDescriptor
 import ru.privatenull.pnlibrary.api.version.SemanticVersion
 import ru.privatenull.pnlibrary.api.version.PnLibraryApi
 import ru.privatenull.pnlibrary.update.EmbeddedDescriptorReader
@@ -96,8 +96,8 @@ internal class PluginRegistryImpl(
 ) : PluginRegistry {
 
     private val plugins = IdentityHashMap<Any, Plugin>()
-    private val componentDescriptors = linkedMapOf<String, ComponentDescriptor>().apply {
-        libraryVersion?.let(SemanticVersion::tryParse)?.let { put("pnlibrary", ComponentDescriptor.library(it.toString())) }
+    private val productDescriptors = linkedMapOf<String, ProductDescriptor>().apply {
+        libraryVersion?.let(SemanticVersion::tryParse)?.let { put("pnlibrary", ProductDescriptor.library(it.toString())) }
     }
     private val closed = AtomicBoolean(false)
     private val sharedComponentCache = ComponentCache()
@@ -127,7 +127,7 @@ internal class PluginRegistryImpl(
         val current = synchronized(plugins) {
             plugins.values.toList().also {
                 plugins.clear()
-                componentDescriptors.clear()
+                productDescriptors.clear()
             }
         }
         current.forEach { it.closeInternal() }
@@ -139,7 +139,7 @@ internal class PluginRegistryImpl(
         id: ModuleId,
         serviceKey: PluginId,
         definition: Builder,
-        componentId: String?,
+        productDescriptor: ProductDescriptor?,
     ): Context {
         val owner = parent.owner
         val metadata = metadata(owner, id, definition)
@@ -173,7 +173,9 @@ internal class PluginRegistryImpl(
                     container,
                 )
             }
-            definition.updateRequest?.let { updateRegistration = updates.register(owner, it) }
+            definition.updateRequest?.let { request ->
+                updateRegistration = updates.register(owner, requireNotNull(productDescriptor), request)
+            }
             definition.downloadsRequest?.let { request ->
                 downloadRegistration = directDownloads?.register(owner, request)
             }
@@ -198,7 +200,7 @@ internal class PluginRegistryImpl(
                 downloadRegistration,
                 definition.placeholderApiEnabled,
                 definition.listeners.size,
-                componentId,
+                productDescriptor?.id?.value,
             )
         } catch (error: Throwable) {
             ResourceCleanup.suppressInto(
@@ -244,9 +246,9 @@ internal class PluginRegistryImpl(
         )
     }
 
-    private fun componentDescriptor(owner: Any, id: ModuleId, definition: Builder): ComponentDescriptor? {
+    private fun productDescriptor(owner: Any, id: ModuleId, definition: Builder): ProductDescriptor? {
         val embedded = embeddedDescriptor(owner)
-        val explicit = definition.componentDescriptor
+        val explicit = definition.productDescriptor
         if (embedded != null && explicit != null) {
             require(embedded.id == explicit.id && embedded.version == explicit.version &&
                 embedded.supportedApi == explicit.supportedApi) {
@@ -256,37 +258,37 @@ internal class PluginRegistryImpl(
         val inferred = definition.updateRequest?.let { request ->
             val version = platform.ownerDetails(owner)["version"] ?: definition.metadataVersion
                 ?: error("Cannot infer component version for $id")
-            ComponentDescriptor.builder(id.value, version)
+            ProductDescriptor.builder(id.value, version)
                 .pnLibraryApi(request.supportedApi.minimum, request.supportedApi.maximum)
                 .also { target ->
-                    request.managedDependencies.forEach { dependency -> target.managedDependency(
-                        dependency.component.value, dependency.minimumVersion.toString(),
+                    request.managedProductDependencies.forEach { dependency -> target.managedDependency(
+                        dependency.product.value, dependency.minimumVersion.toString(),
                         dependency.repositoryOwner, dependency.repositoryName,
                     ) }
-                    request.externalDependencies.forEach(target::externalDependency)
+                    request.externalPluginDependencies.forEach(target::externalDependency)
                 }.build()
         }
         val implicit = if (explicit == null && embedded == null && inferred == null && definition.dependencies.isNotEmpty()) {
             val version = platform.ownerDetails(owner)["version"] ?: definition.metadataVersion
                 ?: error("Cannot infer component version for $id")
-            ComponentDescriptor.builder(id.value, version)
+            ProductDescriptor.builder(id.value, version)
                 .pnLibraryApi(PnLibraryApi.VERSION, PnLibraryApi.VERSION)
                 .build()
         } else null
         return (explicit ?: embedded ?: inferred ?: implicit)?.let { descriptor ->
-            if (definition.dependencies.isEmpty()) descriptor else ComponentDescriptor.builder(
+            if (definition.dependencies.isEmpty()) descriptor else ProductDescriptor.builder(
                 descriptor.id.value, descriptor.version.toString(),
             ).pnLibraryApi(descriptor.supportedApi.minimum, descriptor.supportedApi.maximum)
                 .also { target ->
-                    descriptor.managedDependencies.forEach { dependency -> target.managedDependency(
-                        dependency.component.value, dependency.minimumVersion.toString(),
+                    descriptor.managedProductDependencies.forEach { dependency -> target.managedDependency(
+                        dependency.product.value, dependency.minimumVersion.toString(),
                         dependency.repositoryOwner, dependency.repositoryName,
                         dependency.required, dependency.automaticDownload,
                     ) }
-                    descriptor.externalDependencies.forEach(target::externalDependency)
+                    descriptor.externalPluginDependencies.forEach(target::externalDependency)
                     definition.dependencies.forEach { dependency ->
                         dependency.managed?.let { managed -> target.managedDependency(
-                            managed.component.value, managed.minimumVersion.toString(),
+                            managed.product.value, managed.minimumVersion.toString(),
                             managed.repositoryOwner, managed.repositoryName,
                             managed.required, managed.automaticDownload,
                         ) }
@@ -298,7 +300,7 @@ internal class PluginRegistryImpl(
         }
     }
 
-    private fun embeddedDescriptor(owner: Any): ComponentDescriptor? {
+    private fun embeddedDescriptor(owner: Any): ProductDescriptor? {
         val location = runCatching {
             Paths.get(owner.javaClass.protectionDomain.codeSource.location.toURI()).toAbsolutePath().normalize()
         }.getOrNull() ?: return null
@@ -308,7 +310,7 @@ internal class PluginRegistryImpl(
         return if (present) EmbeddedDescriptorReader().read(location) else null
     }
 
-    private fun validateDependencies(descriptor: ComponentDescriptor?, downloads: PluginDownloads?) {
+    private fun validateDependencies(descriptor: ProductDescriptor?, downloads: PluginDownloads?) {
         if (descriptor == null) return
         val downloadableComponents = downloads?.declarations.orEmpty()
             .filterIsInstance<ru.privatenull.pnlibrary.api.downloads.DownloadDeclaration.Component>()
@@ -316,18 +318,18 @@ internal class PluginRegistryImpl(
         val downloadablePlugins = downloads?.declarations.orEmpty()
             .filterIsInstance<ru.privatenull.pnlibrary.api.downloads.DownloadDeclaration.Plugin>()
             .associateBy { it.plugin.lowercase() }
-        val problems = descriptor.managedDependencies.filter { it.required }.mapNotNull { dependency ->
-            val installed = componentDescriptors[dependency.component.value]
+        val problems = descriptor.managedProductDependencies.filter { it.required }.mapNotNull { dependency ->
+            val installed = productDescriptors[dependency.product.value]
             when {
-                installed == null && downloadableComponents[dependency.component]?.let { it.version >= dependency.minimumVersion } == true -> null
-                installed == null -> "${dependency.component} >= ${dependency.minimumVersion} is missing (${dependency.repositoryOwner}/${dependency.repositoryName})"
-                installed.version < dependency.minimumVersion -> "${dependency.component} ${installed.version} is installed, ${dependency.minimumVersion} is required"
+                installed == null && downloadableComponents[dependency.product]?.let { it.version >= dependency.minimumVersion } == true -> null
+                installed == null -> "${dependency.product} >= ${dependency.minimumVersion} is missing (${dependency.repositoryOwner}/${dependency.repositoryName})"
+                installed.version < dependency.minimumVersion -> "${dependency.product} ${installed.version} is installed, ${dependency.minimumVersion} is required"
                 else -> null
             }
         }.toMutableList()
         val nativePlugins = runCatching { platform.installedPlugins() }.getOrNull().orEmpty()
             .entries.associate { it.key.lowercase() to it.value }
-        descriptor.externalDependencies.filter { it.required }.forEach { dependency ->
+        descriptor.externalPluginDependencies.filter { it.required }.forEach { dependency ->
             val installed = nativePlugins[dependency.plugin.lowercase()]
             when {
                 installed == null && downloadablePlugins[dependency.plugin.lowercase()]?.let {
@@ -356,15 +358,15 @@ internal class PluginRegistryImpl(
                 require(id !in moduleContexts) { "Module $id is already registered for this plugin" }
                 val definition = Builder().also { configure.accept(it) }
                 definition.materializeDependencyDownloads()
-                val descriptor = componentDescriptor(owner, id, definition)
-                require(descriptor == null || descriptor.id.value !in componentDescriptors) {
+                val descriptor = productDescriptor(owner, id, definition)
+                require(descriptor == null || descriptor.id.value !in productDescriptors) {
                     "Component ${descriptor?.id} is already registered"
                 }
                 definition.bindUpdatesTo(descriptor)
                 validateDependencies(descriptor, definition.downloadsRequest)
-                createContext(this, id, serviceKey(nativeId, id), definition, descriptor?.id?.value).also {
+                createContext(this, id, serviceKey(nativeId, id), definition, descriptor).also {
                     moduleContexts[id] = it
-                    if (descriptor != null) componentDescriptors[descriptor.id.value] = descriptor
+                    if (descriptor != null) productDescriptors[descriptor.id.value] = descriptor
                 }
             } }
 
@@ -417,7 +419,7 @@ internal class PluginRegistryImpl(
         override val downloads: DownloadRegistration?,
         private val placeholderApiEnabled: Boolean,
         private val listenerCount: Int,
-        private val componentId: String?,
+        private val productId: String?,
     ) : ModuleContext {
         private val owner: Any get() = parent.owner
         private val contextClosed = AtomicBoolean(false)
@@ -462,7 +464,7 @@ internal class PluginRegistryImpl(
 
         fun closeInternal() {
             if (!contextClosed.compareAndSet(false, true)) return
-            componentId?.let { value -> synchronized(plugins) { componentDescriptors.remove(value) } }
+            productId?.let { value -> synchronized(plugins) { productDescriptors.remove(value) } }
             ResourceCleanup.closeAll(
                 { updates?.close() },
                 { downloads?.close() },
@@ -515,15 +517,15 @@ internal class PluginRegistryImpl(
         var diagnosticsDirectory: Path? = null
         var diagnosticContainer: DiagnosticContainer? = null
         var updateRequest: PluginUpdateRequest? = null
-        var componentDescriptor: ComponentDescriptor? = null
+        var productDescriptor: ProductDescriptor? = null
         val dependencies = mutableListOf<PluginDependency>()
         var downloadsRequest: PluginDownloads? = null
         var placeholderApiEnabled: Boolean = true
         val listeners = mutableListOf<Listener>()
 
-        override fun component(descriptor: ComponentDescriptor): PluginBuilder = apply {
-            require(componentDescriptor == null) { "component descriptor is already configured" }
-            componentDescriptor = descriptor
+        override fun component(descriptor: ProductDescriptor): PluginBuilder = apply {
+            require(productDescriptor == null) { "component descriptor is already configured" }
+            productDescriptor = descriptor
         }
 
         override fun depends(dependency: PluginDependency): PluginBuilder = apply {
@@ -531,7 +533,7 @@ internal class PluginRegistryImpl(
                 "plugin dependency must provide a managed or external dependency"
             }
             require(dependencies.none { existing ->
-                (existing.managed?.component == dependency.managed?.component && dependency.managed != null) ||
+                (existing.managed?.product == dependency.managed?.product && dependency.managed != null) ||
                     (existing.external?.plugin?.equals(dependency.external?.plugin, true) == true && dependency.external != null)
             }) { "duplicate plugin dependency" }
             dependencies += dependency
@@ -598,21 +600,20 @@ internal class PluginRegistryImpl(
             listeners += listener
         }
 
-        fun bindUpdatesTo(descriptor: ComponentDescriptor?) {
+        fun bindUpdatesTo(descriptor: ProductDescriptor?) {
             val source = updateRequest ?: return
             if (descriptor == null) return
             updateRequest = PluginUpdateRequest.builder()
                 .repository(source.repositoryOwner, source.repositoryName)
                 .channel(source.channel)
                 .automaticDownload(source.automaticDownload)
-                .component(descriptor.id.value)
                 .supportedApi(descriptor.supportedApi.minimum, descriptor.supportedApi.maximum)
                 .also { target ->
-                    descriptor.managedDependencies.forEach {
-                        target.managedDependency(it.component.value, it.minimumVersion.toString(),
+                    descriptor.managedProductDependencies.forEach {
+                        target.managedDependency(it.product.value, it.minimumVersion.toString(),
                             it.repositoryOwner, it.repositoryName)
                     }
-                    descriptor.externalDependencies.forEach(target::pluginDependency)
+                    descriptor.externalPluginDependencies.forEach(target::pluginDependency)
                     source.artifacts.forEach {
                         val artifactPlatform = it.platform
                         if (artifactPlatform == null) target.artifact(it.pattern, it.minimumJava, it.maximumJava)

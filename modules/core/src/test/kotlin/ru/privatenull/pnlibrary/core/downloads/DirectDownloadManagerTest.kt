@@ -12,10 +12,10 @@ import ru.privatenull.pnlibrary.api.downloads.DownloadState
 import ru.privatenull.pnlibrary.api.downloads.PluginDownloads
 import ru.privatenull.pnlibrary.api.platform.PlatformType
 import ru.privatenull.pnlibrary.spi.platform.PlatformAdapter
-import ru.privatenull.pnlibrary.update.ComponentDescriptorCodec
+import ru.privatenull.pnlibrary.update.ProductDescriptorCodec
 import ru.privatenull.pnlibrary.update.EmbeddedDescriptorReader
 import ru.privatenull.pnlibrary.update.TrustedHttpClient
-import ru.privatenull.pnlibrary.api.updates.ComponentDescriptor
+import ru.privatenull.pnlibrary.api.updates.ProductDescriptor
 import java.io.ByteArrayOutputStream
 import java.lang.reflect.Proxy
 import java.net.URI
@@ -58,10 +58,10 @@ class DirectDownloadManagerTest {
 
     @Test
     fun `verifies embedded identity version and API before staging component`() {
-        val descriptor = ComponentDescriptor.builder("pneconomy", "2.0.0").pnLibraryApi(1, 2).build()
+        val descriptor = ProductDescriptor.builder("pneconomy", "2.0.0").pnLibraryApi(1, 2).build()
         val jar = ByteArrayOutputStream().also { output -> JarOutputStream(output).use { archive ->
             archive.putNextEntry(JarEntry(EmbeddedDescriptorReader.ENTRY))
-            archive.write(ComponentDescriptorCodec().encodeInstalled(descriptor)); archive.closeEntry()
+            archive.write(ProductDescriptorCodec().encodeInstalled(descriptor)); archive.closeEntry()
         } }.toByteArray()
         val request = PluginDownloads.builder().component("pneconomy") {
             it.version("2.0.0").apiVersions(1, 2).platform(PlatformType.BUKKIT)

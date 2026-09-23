@@ -15,19 +15,19 @@ class ManifestException(
     cause: Throwable? = null,
 ) : IllegalArgumentException("Invalid component manifest field '$field': $message", cause)
 
-class ComponentDescriptorCodec {
-    fun decodeRelease(bytes: ByteArray): ComponentRelease = guarded("root") {
+class ProductDescriptorCodec {
+    fun decodeRelease(bytes: ByteArray): ProductRelease = guarded("root") {
         val root = parse(bytes)
         requireInt(root, "schema").also { if (it != SCHEMA) fail("schema", "unsupported schema $it") }
         val api = requireObject(root, "pnLibraryApi")
         val dependencies = requireArray(root, "dependencies").mapIndexed { index, raw -> guarded("dependencies[$index]") {
             val value = raw.asJsonObject
-            ComponentDependency(
-                ComponentId.of(requireString(value, "component")),
+            ProductDependency(
+                ProductId.of(requireString(value, "component")),
                 SemanticVersion.parse(requireString(value, "minimumVersion")),
             )
         } }
-        if (dependencies.map { it.component }.distinct().size != dependencies.size) fail("dependencies", "duplicate component")
+        if (dependencies.map { it.product }.distinct().size != dependencies.size) fail("dependencies", "duplicate component")
         val artifacts = requireArray(root, "artifacts").mapIndexed { index, raw -> guarded("artifacts[$index]") {
             val value = raw.asJsonObject
             val java = requireObject(value, "java")
@@ -41,8 +41,8 @@ class ComponentDescriptorCodec {
                 null,
             )
         } }
-        ComponentRelease(
-            ComponentId.of(requireString(root, "component")),
+        ProductRelease(
+            ProductId.of(requireString(root, "component")),
             SemanticVersion.parse(requireString(root, "version")),
             channel(requireString(root, "channel")),
             ApiVersionRange(requireInt(api, "minimum"), requireInt(api, "maximum")),
@@ -53,7 +53,7 @@ class ComponentDescriptorCodec {
         )
     }
 
-    fun encodeInstalled(descriptor: ComponentDescriptor): ByteArray {
+    fun encodeInstalled(descriptor: ProductDescriptor): ByteArray {
         val root = JsonObject()
         root.addProperty("schema", SCHEMA)
         root.addProperty("component", descriptor.id.value)
@@ -62,9 +62,9 @@ class ComponentDescriptorCodec {
             addProperty("minimum", descriptor.supportedApi.minimum)
             addProperty("maximum", descriptor.supportedApi.maximum)
         })
-        root.add("managedDependencies", JsonArray().apply {
-            descriptor.managedDependencies.forEach { dependency -> add(JsonObject().apply {
-                addProperty("component", dependency.component.value)
+        root.add("managedProductDependencies", JsonArray().apply {
+            descriptor.managedProductDependencies.forEach { dependency -> add(JsonObject().apply {
+                addProperty("component", dependency.product.value)
                 addProperty("minimumVersion", dependency.minimumVersion.toString())
                 addProperty("repositoryOwner", dependency.repositoryOwner)
                 addProperty("repositoryName", dependency.repositoryName)
@@ -73,13 +73,13 @@ class ComponentDescriptorCodec {
         return root.toString().toByteArray(StandardCharsets.UTF_8)
     }
 
-    fun decodeInstalled(bytes: ByteArray): ComponentDescriptor = guarded("root") {
+    fun decodeInstalled(bytes: ByteArray): ProductDescriptor = guarded("root") {
         val root = parse(bytes)
         requireInt(root, "schema").also { if (it != SCHEMA) fail("schema", "unsupported schema $it") }
         val api = requireObject(root, "pnLibraryApi")
-        val builder = ComponentDescriptor.builder(requireString(root, "component"), requireString(root, "version"))
+        val builder = ProductDescriptor.builder(requireString(root, "component"), requireString(root, "version"))
             .pnLibraryApi(requireInt(api, "minimum"), requireInt(api, "maximum"))
-        requireArray(root, "managedDependencies").forEachIndexed { index, raw -> guarded("managedDependencies[$index]") {
+        requireArray(root, "managedProductDependencies").forEachIndexed { index, raw -> guarded("managedProductDependencies[$index]") {
             val value = raw.asJsonObject
             builder.managedDependency(
                 requireString(value, "component"), requireString(value, "minimumVersion"),

@@ -1,7 +1,8 @@
 package ru.privatenull.pnlibrary.update
 
 import com.google.gson.JsonParser
-import ru.privatenull.pnlibrary.api.updates.ComponentRelease
+import ru.privatenull.pnlibrary.api.updates.ProductRelease
+import ru.privatenull.pnlibrary.api.updates.ProductId
 import ru.privatenull.pnlibrary.api.updates.UpdateChannel
 import ru.privatenull.pnlibrary.api.updates.PluginUpdateRequest
 import ru.privatenull.pnlibrary.api.updates.ArtifactDescriptor
@@ -26,27 +27,28 @@ class ReleaseCatalogueClient(
     private val store: ReleaseCatalogueStore,
     private val executor: Executor,
     private val ttl: Duration,
-    private val codec: ComponentDescriptorCodec = ComponentDescriptorCodec(),
+    private val codec: ProductDescriptorCodec = ProductDescriptorCodec(),
 ) {
-    private val inFlight = ConcurrentHashMap<String, CompletableFuture<List<ComponentRelease>>>()
+    private val inFlight = ConcurrentHashMap<String, CompletableFuture<List<ProductRelease>>>()
 
-    fun releases(source: ReleaseSource, channel: UpdateChannel): CompletableFuture<List<ComponentRelease>> {
-        return releases(source, channel, null, null)
+    fun releases(source: ReleaseSource, channel: UpdateChannel): CompletableFuture<List<ProductRelease>> {
+        return releases(source, channel, null, null, null)
     }
 
     fun releases(
         source: ReleaseSource,
         channel: UpdateChannel,
+        product: ProductId?,
         fallback: PluginUpdateRequest?,
         platform: PlatformType?,
-    ): CompletableFuture<List<ComponentRelease>> {
-        val key = requestKey(source, channel, fallback, platform)
+    ): CompletableFuture<List<ProductRelease>> {
+        val key = requestKey(source, channel, product, fallback, platform)
         inFlight[key]?.let { return it }
-        val promise = CompletableFuture<List<ComponentRelease>>()
+        val promise = CompletableFuture<List<ProductRelease>>()
         val existing = inFlight.putIfAbsent(key, promise)
         if (existing != null) return existing
         executor.execute {
-            try { promise.complete(load(source, channel, fallback, platform)) }
+            try { promise.complete(load(source, channel, product, fallback, platform)) }
             catch (error: Throwable) { promise.completeExceptionally(error) }
             finally { inFlight.remove(key, promise) }
         }
@@ -56,6 +58,7 @@ class ReleaseCatalogueClient(
     private fun requestKey(
         source: ReleaseSource,
         channel: UpdateChannel,
+        product: ProductId?,
         request: PluginUpdateRequest?,
         platform: PlatformType?,
     ): String {
@@ -63,11 +66,11 @@ class ReleaseCatalogueClient(
         val artifacts = request.artifacts.joinToString(",") {
             "${it.pattern}:${it.platform?.name}:${it.minimumJava}:${it.maximumJava}"
         }
-        val dependencies = request.dependencies.joinToString(",") { "${it.component}:${it.minimumVersion}" }
+        val dependencies = request.dependencies.joinToString(",") { "${it.product}:${it.minimumVersion}" }
         return buildString {
             append(source.owner).append('/').append(source.repository).append(':').append(channel.name)
             append('|').append(platform?.name)
-            append('|').append(request.component.value).append('|').append(request.supportedApi)
+            append('|').append(product?.value).append('|').append(request.supportedApi)
             append('|').append(artifacts).append('|').append(dependencies)
         }
     }
@@ -75,9 +78,10 @@ class ReleaseCatalogueClient(
     private fun load(
         source: ReleaseSource,
         channel: UpdateChannel,
+        product: ProductId?,
         fallback: PluginUpdateRequest?,
         platform: PlatformType?,
-    ): List<ComponentRelease> {
+    ): List<ProductRelease> {
         val releasesUri = URI.create("https://api.github.com/repos/${source.owner}/${source.repository}/releases?per_page=30")
         val releasesBytes = validatedBytes(releasesUri, RELEASES_LIMIT) { bytes ->
             val root = JsonParser.parseString(String(bytes, Charsets.UTF_8))
@@ -90,13 +94,13 @@ class ReleaseCatalogueClient(
             val asset = release.getAsJsonArray("assets")?.firstOrNull { item ->
                 item.asJsonObject.get("name")?.asString == MANIFEST_NAME
             }?.asJsonObject
-            if (asset == null) return@mapNotNull fallbackRelease(release, channel, fallback, platform, source)
+            if (asset == null) return@mapNotNull fallbackRelease(release, channel, product, fallback, platform, source)
             val url = asset.get("browser_download_url")?.asString ?: return@mapNotNull null
             val uri = URI.create(url)
             val bytes = validatedBytes(uri, MANIFEST_LIMIT) { codec.decodeRelease(it) }
             val decoded = codec.decodeRelease(bytes)
-            ComponentRelease(
-                decoded.component, decoded.version, decoded.channel, decoded.supportedApi, decoded.providesApi,
+            ProductRelease(
+                decoded.product, decoded.version, decoded.channel, decoded.supportedApi, decoded.providesApi,
                 decoded.dependencies, decoded.repository,
                 decoded.artifacts.map { artifact ->
                     val download = release.getAsJsonArray("assets")?.firstOrNull { item ->
@@ -107,19 +111,21 @@ class ReleaseCatalogueClient(
                         artifact.size, artifact.sha256, download,
                     )
                 },
-                decoded.externalDependencies,
+                decoded.externalPluginDependencies,
             ).takeIf { channel.accepts(it.channel) }
-        }.distinctBy { it.component to it.version }.sortedByDescending { it.version }
+        }.distinctBy { it.product to it.version }.sortedByDescending { it.version }
     }
 
     private fun fallbackRelease(
         release: com.google.gson.JsonObject,
         acceptedChannel: UpdateChannel,
+        product: ProductId?,
         request: PluginUpdateRequest?,
         platform: PlatformType?,
         source: ReleaseSource,
-    ): ComponentRelease? {
+    ): ProductRelease? {
         request ?: return null
+        product ?: return null
         val tag = release.get("tag_name")?.asString?.trim()?.removePrefix("v") ?: return null
         val version = SemanticVersion.tryParse(tag) ?: return null
         val prerelease = release.get("prerelease")?.asBoolean == true
@@ -145,10 +151,10 @@ class ReleaseCatalogueClient(
                 rule.minimumJava, rule.maximumJava, size, digest, uri)
         }
         if (artifacts.isEmpty()) return null
-        return ComponentRelease(
-            request.component, version, releaseChannel, request.supportedApi,
-            PnLibraryApi.VERSION.takeIf { request.component.value == "pnlibrary" },
-            request.dependencies, "${source.owner}/${source.repository}", artifacts, request.externalDependencies,
+        return ProductRelease(
+            product, version, releaseChannel, request.supportedApi,
+            PnLibraryApi.VERSION.takeIf { product.value == "pnlibrary" },
+            request.dependencies, "${source.owner}/${source.repository}", artifacts, request.externalPluginDependencies,
         )
     }
 
@@ -178,6 +184,6 @@ class ReleaseCatalogueClient(
     companion object {
         private const val MANIFEST_NAME = "pn-update.json"
         private const val RELEASES_LIMIT = 2 * 1024 * 1024
-        private const val MANIFEST_LIMIT = ComponentDescriptorCodec.MAX_MANIFEST_BYTES
+        private const val MANIFEST_LIMIT = ProductDescriptorCodec.MAX_MANIFEST_BYTES
     }
 }

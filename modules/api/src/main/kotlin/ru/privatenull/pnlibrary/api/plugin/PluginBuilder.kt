@@ -4,7 +4,7 @@ import ru.privatenull.pnlibrary.api.diagnostics.DiagnosticContainer
 import ru.privatenull.pnlibrary.api.events.Listener
 import ru.privatenull.pnlibrary.api.metrics.PluginMetrics
 import ru.privatenull.pnlibrary.api.updates.PluginUpdateRequest
-import ru.privatenull.pnlibrary.api.updates.ComponentDescriptor
+import ru.privatenull.pnlibrary.api.updates.ProductDescriptor
 import java.nio.file.Path
 import java.util.function.Consumer
 import ru.privatenull.pnlibrary.api.downloads.PluginDownloads
@@ -26,7 +26,7 @@ interface PluginBuilder {
     }
 
     /** Declares the component identity, API range, and dependencies used by the graph updater. */
-    fun component(descriptor: ComponentDescriptor): PluginBuilder
+    fun component(descriptor: ProductDescriptor): PluginBuilder
 
     /** Overrides native metadata only when a plugin needs custom display values. */
     fun metadata(configure: Consumer<PluginMetadataBuilder>): PluginBuilder
@@ -67,6 +67,16 @@ interface PluginBuilder {
         configure.accept(builder)
         return updates(builder.build())
     }
+
+    /** Adds dependencies through the unified product/native-plugin DSL. */
+    fun dependencies(configure: Consumer<DependencyBuilder>): PluginBuilder {
+        val builder = DependencyBuilder()
+        configure.accept(builder)
+        return depends(*builder.build().toTypedArray())
+    }
+
+    /** Adds one dependency group; singular convenience alias for [dependencies]. */
+    fun dependency(configure: Consumer<DependencyBuilder>): PluginBuilder = dependencies(configure)
 
     /** Inline GitHub updater configuration with the repository already filled in. */
     fun updates(
