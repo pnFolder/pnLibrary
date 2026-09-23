@@ -7,7 +7,7 @@ import ru.privatenull.pnlibrary.api.currency.Currency
 import ru.privatenull.pnlibrary.api.diagnostics.DiagnosticContainer
 import ru.privatenull.pnlibrary.api.plugin.DownloadPolicy
 import ru.privatenull.pnlibrary.api.plugin.ModuleContext
-import ru.privatenull.pnlibrary.api.plugin.PluginContext
+import ru.privatenull.pnlibrary.api.plugin.PluginRegistration
 import ru.privatenull.pnlibrary.api.runtime.PnLibraryProvider
 import ru.privatenull.pnlibrary.api.tasks.TaskSpec
 import ru.privatenull.pnlibrary.api.updates.ProductDescriptor
@@ -23,7 +23,7 @@ class DemoPlugin : JavaPlugin() {
     var localization: MinecraftLocalization? = null; private set
     private var command: CommandRegistration? = null
     private var pulse: AutoCloseable? = null
-    private var pluginContext: PluginContext? = null
+    private var pluginRegistration: PluginRegistration? = null
 
     override fun onEnable() {
         saveDefaultConfig()
@@ -36,8 +36,8 @@ class DemoPlugin : JavaPlugin() {
         state = DemoState(AtomicLong())
 
 
-        pluginContext = library.plugins.register(this)
-        context = pluginContext!!.registerModule("pndemo") { builder ->
+        pluginRegistration = library.plugins.register(this)
+        context = pluginRegistration!!.registerModule("pndemo") { builder ->
             builder.product(
                 ProductDescriptor.builder("pndemo", description.version)
                     .pnLibraryApi(1, 1)
@@ -93,7 +93,7 @@ class DemoPlugin : JavaPlugin() {
 
     override fun onDisable() {
         command?.close(); pulse?.close(); localization?.close()
-        pluginContext?.close()
-        pluginContext = null
+        pluginRegistration?.close()
+        pluginRegistration = null
     }
 }

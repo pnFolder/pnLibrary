@@ -2,8 +2,8 @@ package ru.privatenull.pnlibrary.api.plugin
 
 import java.util.function.Consumer
 
-/** Owns all logical pnLibrary modules exposed by one native platform plugin. */
-interface PluginContext : AutoCloseable {
+/** Registration of one native platform plugin and all logical modules it owns. */
+interface PluginRegistration : AutoCloseable {
     val owner: Any
     val isClosed: Boolean
 

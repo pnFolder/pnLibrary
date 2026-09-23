@@ -8,7 +8,7 @@ import org.junit.jupiter.api.Test
 import ru.privatenull.pnlibrary.api.commands.CommandContext
 import ru.privatenull.pnlibrary.api.commands.CommandSender
 import ru.privatenull.pnlibrary.api.platform.PlatformType
-import ru.privatenull.pnlibrary.api.plugin.PluginContext
+import ru.privatenull.pnlibrary.api.plugin.PluginRegistration
 import ru.privatenull.pnlibrary.api.plugin.ModuleContext
 import ru.privatenull.pnlibrary.api.plugin.ModuleId
 import ru.privatenull.pnlibrary.api.plugin.PluginMetadata
@@ -87,7 +87,7 @@ class DiagnosticCommandTest {
             }
         }
         val contexts = modules.map { module ->
-            proxy(PluginContext::class.java) { method ->
+            proxy(PluginRegistration::class.java) { method ->
                 if (method.name == "modules") listOf(module) else defaultValue(method.returnType)
             }
         }

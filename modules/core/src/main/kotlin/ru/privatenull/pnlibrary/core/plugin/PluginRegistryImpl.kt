@@ -15,7 +15,7 @@ import ru.privatenull.pnlibrary.api.metrics.PluginMetrics
 import ru.privatenull.pnlibrary.spi.platform.PlatformAdapter
 import ru.privatenull.pnlibrary.api.plugin.MetricsController
 import ru.privatenull.pnlibrary.api.plugin.PluginBuilder
-import ru.privatenull.pnlibrary.api.plugin.PluginContext
+import ru.privatenull.pnlibrary.api.plugin.PluginRegistration
 import ru.privatenull.pnlibrary.api.plugin.PluginId
 import ru.privatenull.pnlibrary.api.plugin.ModuleContext
 import ru.privatenull.pnlibrary.api.plugin.ModuleId
@@ -101,7 +101,7 @@ internal class PluginRegistryImpl(
     }
     private val closed = AtomicBoolean(false)
     private val sharedComponentCache = ComponentCache()
-    override fun register(owner: Any): PluginContext = synchronized(plugins) {
+    override fun register(owner: Any): PluginRegistration = synchronized(plugins) {
         check(!closed.get()) { "PluginRegistry is closed" }
         require(platform.acceptsOwner(owner)) {
             "Object ${owner.javaClass.name} is not a supported owner for ${platform.type.id}"
@@ -113,13 +113,13 @@ internal class PluginRegistryImpl(
         Plugin(owner, PluginId.of(nativeId)).also { plugins[owner] = it }
     }
 
-    override fun get(owner: Any): PluginContext? = synchronized(plugins) { plugins[owner] }
+    override fun get(owner: Any): PluginRegistration? = synchronized(plugins) { plugins[owner] }
 
     override fun unregister(owner: Any) {
         detachPlugin(owner)?.closeInternal()
     }
 
-    override fun registrations(): List<PluginContext> =
+    override fun registrations(): List<PluginRegistration> =
         synchronized(plugins) { plugins.values.toList() }
 
     override fun close() {
@@ -319,7 +319,7 @@ internal class PluginRegistryImpl(
     private inner class Plugin(
         override val owner: Any,
         private val nativeId: PluginId,
-    ) : PluginContext {
+    ) : PluginRegistration {
         private val moduleContexts = linkedMapOf<ModuleId, Context>()
         private val pluginClosed = AtomicBoolean(false)
         override val isClosed: Boolean get() = pluginClosed.get()

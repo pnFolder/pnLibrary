@@ -9,7 +9,7 @@ import java.io.ByteArrayInputStream
 import java.nio.file.Files
 import java.time.Duration
 
-/** Direct showcase of the optional update feature module (kept separate from PluginContext). */
+/** Direct showcase of the optional update feature module (kept separate from PluginRegistration). */
 object DemoUpdateFeature {
     fun smoke(plugin: DemoPlugin) {
         val freeze = FreezeStore(plugin.dataFolder.toPath().resolve("demo-freezes.json"))
