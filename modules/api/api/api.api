@@ -2703,6 +2703,7 @@ public abstract interface class ru/privatenull/pnlibrary/api/plugin/ModuleContex
 	public abstract fun getDownloads ()Lru/privatenull/pnlibrary/api/downloads/DownloadRegistration;
 	public abstract fun getEvents ()Lru/privatenull/pnlibrary/api/events/EventScope;
 	public abstract fun getId ()Lru/privatenull/pnlibrary/api/plugin/ModuleId;
+	public abstract fun getKey ()Lru/privatenull/pnlibrary/api/plugin/PluginId;
 	public abstract fun getLifecycle ()Lru/privatenull/pnlibrary/api/plugin/PluginLifecycle;
 	public abstract fun getLogger ()Lru/privatenull/pnlibrary/api/logging/PnLogger;
 	public abstract fun getMessages ()Lru/privatenull/pnlibrary/api/plugin/PluginMessages;

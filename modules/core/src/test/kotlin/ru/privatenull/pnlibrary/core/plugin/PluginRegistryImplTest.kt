@@ -36,6 +36,8 @@ import ru.privatenull.pnlibrary.core.currency.CurrencyHub
 import ru.privatenull.pnlibrary.core.events.EventServiceImpl
 import ru.privatenull.pnlibrary.core.placeholders.PlaceholderHub
 import ru.privatenull.pnlibrary.core.testing.TestTaskService
+import ru.privatenull.pnlibrary.core.tasks.TaskServiceImpl
+import ru.privatenull.pnlibrary.spi.tasks.PlatformTaskAdapter
 import ru.privatenull.pnlibrary.core.services.ServiceManagerImpl
 import java.lang.reflect.Proxy
 import java.util.function.Supplier
@@ -263,6 +265,18 @@ class PluginRegistryImplTest {
     }
 
     @Test
+    fun `component identity remains unique across different plugin contexts`() {
+        val registry = registry()
+        val descriptor = ComponentDescriptor.builder("shared-component", "1.0.0")
+            .pnLibraryApi(1, 1).build()
+        registry.register(Any()).registerModule("shared-component") { it.component(descriptor) }
+
+        assertThrows(IllegalArgumentException::class.java) {
+            registry.register(Any()).registerModule("shared-component") { it.component(descriptor) }
+        }
+    }
+
+    @Test
     fun `maximum length owner and module IDs produce a valid service namespace`() {
         val owner = Any()
         val longId = "a".repeat(64)
@@ -307,6 +321,16 @@ class PluginRegistryImplTest {
         assertNotSame(first.configs, second.configs)
         first.close()
         assertEquals(0, second.configs.size)
+    }
+
+    @Test
+    fun `sibling modules receive isolated task scopes`() {
+        val tasks = TaskServiceImpl(emptyProxy(PlatformTaskAdapter::class.java))
+        val plugin = registry(tasks = tasks).register(Any())
+        val first = plugin.registerModule("first") { }
+        val second = plugin.registerModule("second") { }
+
+        assertNotSame(first.tasks, second.tasks)
     }
 
     @Test

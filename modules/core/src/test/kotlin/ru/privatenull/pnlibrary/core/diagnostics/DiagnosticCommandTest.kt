@@ -13,6 +13,7 @@ import ru.privatenull.pnlibrary.api.plugin.ModuleContext
 import ru.privatenull.pnlibrary.api.plugin.ModuleId
 import ru.privatenull.pnlibrary.api.plugin.PluginMetadata
 import ru.privatenull.pnlibrary.api.plugin.PluginRegistry
+import ru.privatenull.pnlibrary.api.plugin.PluginId
 import ru.privatenull.pnlibrary.api.runtime.PnLibrary
 import java.lang.reflect.Proxy
 
@@ -23,14 +24,14 @@ class DiagnosticCommandTest {
         val definition = diagnosticCommand(library)
 
         val suggestions = definition.suggestions.suggest(
-            CommandContext(TestSender(), emptyList(), "pndebug", "pn"),
+            CommandContext(TestSender(), emptyList(), "pndebug", "example"),
         ).toCompletableFuture().join()
 
         assertEquals("pndebug", definition.name)
         assertEquals(setOf("pnlib"), definition.aliases)
         assertEquals("pnlibrary.debug", definition.permission)
         assertTrue(definition.consoleBypassesPermission)
-        assertEquals(listOf("pnclans"), suggestions)
+        assertEquals(listOf("example.pnclans"), suggestions)
     }
 
     @Test
@@ -78,7 +79,11 @@ class DiagnosticCommandTest {
     private fun libraryWithPlugins(metadata: List<PluginMetadata>): PnLibrary {
         val modules = metadata.map { value ->
             proxy(ModuleContext::class.java) { method ->
-                if (method.name == "getMetadata") value else defaultValue(method.returnType)
+                when (method.name) {
+                    "getMetadata" -> value
+                    "getKey" -> PluginId.of("example.${value.id.value}")
+                    else -> defaultValue(method.returnType)
+                }
             }
         }
         val contexts = modules.map { module ->

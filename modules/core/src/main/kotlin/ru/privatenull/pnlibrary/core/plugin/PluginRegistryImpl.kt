@@ -28,6 +28,7 @@ import ru.privatenull.pnlibrary.api.plugin.PluginRegistry
 import ru.privatenull.pnlibrary.api.plugin.PluginDependency
 import ru.privatenull.pnlibrary.api.tasks.TaskScope
 import ru.privatenull.pnlibrary.api.tasks.TaskService
+import ru.privatenull.pnlibrary.core.tasks.TaskServiceImpl
 import ru.privatenull.pnlibrary.api.updates.PluginUpdateRequest
 import ru.privatenull.pnlibrary.api.updates.UpdateRegistration
 import ru.privatenull.pnlibrary.api.updates.UpdateService
@@ -152,7 +153,7 @@ internal class PluginRegistryImpl(
         var placeholderScope: PlaceholderService? = null
         var currencyScope: CurrencyService? = null
         try {
-            taskScope = tasks.scope(owner)
+            taskScope = if (tasks is TaskServiceImpl) tasks.scope(owner, serviceKey) else tasks.scope(owner)
             eventScope = events.scope(serviceKey)
             configScope = configurations.scope(owner, serviceKey)
             placeholderScope = placeholderHub.scope(serviceKey, definition.placeholderApiEnabled)
@@ -349,20 +350,23 @@ internal class PluginRegistryImpl(
         override val isClosed: Boolean get() = pluginClosed.get()
 
         override fun registerModule(id: ModuleId, configure: Consumer<PluginBuilder>): ModuleContext =
-            synchronized(moduleContexts) {
+            synchronized(plugins) { synchronized(moduleContexts) {
                 check(!pluginClosed.get()) { "Plugin context is closed" }
                 check(!closed.get()) { "PluginRegistry is closed" }
                 require(id !in moduleContexts) { "Module $id is already registered for this plugin" }
                 val definition = Builder().also { configure.accept(it) }
                 definition.materializeDependencyDownloads()
                 val descriptor = componentDescriptor(owner, id, definition)
+                require(descriptor == null || descriptor.id.value !in componentDescriptors) {
+                    "Component ${descriptor?.id} is already registered"
+                }
                 definition.bindUpdatesTo(descriptor)
                 validateDependencies(descriptor, definition.downloadsRequest)
                 createContext(this, id, serviceKey(nativeId, id), definition, descriptor?.id?.value).also {
                     moduleContexts[id] = it
                     if (descriptor != null) componentDescriptors[descriptor.id.value] = descriptor
                 }
-            }
+            } }
 
         override fun getModule(id: ModuleId): ModuleContext? =
             synchronized(moduleContexts) { moduleContexts[id] }
@@ -395,7 +399,7 @@ internal class PluginRegistryImpl(
     private inner class Context(
         private val parent: Plugin,
         override val id: ModuleId,
-        private val serviceKey: PluginId,
+        override val key: PluginId,
         override val metadata: PluginMetadata,
         override val tasks: TaskScope,
         override val events: EventScope,
@@ -458,12 +462,12 @@ internal class PluginRegistryImpl(
 
         fun closeInternal() {
             if (!contextClosed.compareAndSet(false, true)) return
-            componentId?.let { componentDescriptors.remove(it) }
+            componentId?.let { value -> synchronized(plugins) { componentDescriptors.remove(value) } }
             ResourceCleanup.closeAll(
                 { updates?.close() },
                 { downloads?.close() },
                 { diagnostics?.close() },
-                { this@PluginRegistryImpl.diagnostics.clearPlugin(serviceKey.value) },
+                { this@PluginRegistryImpl.diagnostics.clearPlugin(key.value) },
                 { metrics.close() },
                 { currencies.close() },
                 { cooldowns.close() },

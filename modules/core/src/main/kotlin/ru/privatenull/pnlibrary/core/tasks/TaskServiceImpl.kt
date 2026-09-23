@@ -3,6 +3,7 @@
 package ru.privatenull.pnlibrary.core.tasks
 
 import ru.privatenull.pnlibrary.api.logging.LogLevel
+import ru.privatenull.pnlibrary.api.plugin.PluginId
 import ru.privatenull.pnlibrary.api.tasks.*
 import ru.privatenull.pnlibrary.spi.platform.PlatformAdapter
 import ru.privatenull.pnlibrary.spi.tasks.*
@@ -25,14 +26,20 @@ internal class TaskServiceImpl(
     }) : this(platform.taskAdapter, TaskServiceSettings(), errorLogger)
 
     private val lock = Any()
-    private val scopes = Collections.synchronizedMap(IdentityHashMap<Any, Scope>())
+    private val scopes = Collections.synchronizedMap(IdentityHashMap<Any, MutableMap<PluginId, Scope>>())
     private val active = LinkedHashMap<TaskId, ManagedTask>()
     private val history = LinkedHashMap<TaskId, Archived>()
     private val closed = AtomicBoolean(false)
 
     override fun scope(owner: Any): TaskScope {
+        return scope(owner, PluginId.of(owner.javaClass.simpleName.ifBlank { "owner" }))
+    }
+
+    internal fun scope(owner: Any, scopeId: PluginId): TaskScope {
         check(!closed.get()) { "TaskService is closed" }
-        return synchronized(scopes) { scopes.getOrPut(owner) { Scope(owner) } }
+        return synchronized(scopes) {
+            scopes.getOrPut(owner) { linkedMapOf() }.getOrPut(scopeId) { Scope(owner, scopeId) }
+        }
     }
 
     override fun find(id: TaskId): TaskHandle? = synchronized(lock) { active[id] }
@@ -40,10 +47,14 @@ internal class TaskServiceImpl(
         (active.values.map { it.snapshot() } + history.values.map { it.snapshot }).filter { matches(it, query) }
     }
     override fun query(owner: Any, query: TaskQuery): List<TaskSnapshot> = snapshots(owner, query)
-    override fun close(owner: Any) { synchronized(scopes) { scopes.remove(owner) }?.cancelAll() }
+    override fun close(owner: Any) {
+        synchronized(scopes) { scopes.remove(owner)?.values?.toList().orEmpty() }.forEach { it.cancelAll() }
+    }
     override fun close() {
         if (!closed.compareAndSet(false, true)) return
-        synchronized(scopes) { scopes.values.toList().also { scopes.clear() } }.forEach { it.cancelAll() }
+        synchronized(scopes) {
+            scopes.values.flatMap { it.values }.also { scopes.clear() }
+        }.forEach { it.cancelAll() }
         adapter.close()
     }
 
@@ -60,19 +71,22 @@ internal class TaskServiceImpl(
             (query.executionKinds.isEmpty() || value.executionKind in query.executionKinds) &&
             (query.tags.isEmpty() || value.tags.containsAll(query.tags))
 
-    private inner class Scope(override val owner: Any) : TaskScope {
+    private inner class Scope(override val owner: Any, private val scopeId: PluginId) : TaskScope {
+        private val scopeToken = Any()
         private val scopeClosed = AtomicBoolean(false)
 
         override fun schedule(spec: TaskSpec): TaskHandle {
             check(!scopeClosed.get() && !closed.get()) { "TaskScope is closed" }
             synchronized(lock) {
-                val existing = spec.key?.let { key -> active.values.firstOrNull { it.owner === owner && it.spec.key == key } }
+                val existing = spec.key?.let { key ->
+                    active.values.firstOrNull { it.scopeToken === scopeToken && it.spec.key == key }
+                }
                 if (existing != null) when (spec.conflictPolicy) {
                     TaskConflictPolicy.REJECT -> error("Task key '${spec.key}' is already active for this owner")
                     TaskConflictPolicy.KEEP_EXISTING -> return existing
                     TaskConflictPolicy.REPLACE -> existing.cancel()
                 }
-                val managed = ManagedTask(owner, spec)
+                val managed = ManagedTask(owner, scopeToken, spec)
                 active[managed.id] = managed
                 val native = try {
                     adapter.schedule(PlatformTaskRequest(
@@ -92,11 +106,16 @@ internal class TaskServiceImpl(
             }
         }
 
-        override fun find(id: TaskId): TaskHandle? = synchronized(lock) { active[id]?.takeIf { it.owner === owner } }
-        override fun findByKey(key: String): TaskHandle? = synchronized(lock) {
-            active.values.firstOrNull { it.owner === owner && it.spec.key == key }
+        override fun find(id: TaskId): TaskHandle? = synchronized(lock) {
+            active[id]?.takeIf { it.scopeToken === scopeToken }
         }
-        override fun query(query: TaskQuery): List<TaskSnapshot> = snapshots(owner, query)
+        override fun findByKey(key: String): TaskHandle? = synchronized(lock) {
+            active.values.firstOrNull { it.scopeToken === scopeToken && it.spec.key == key }
+        }
+        override fun query(query: TaskQuery): List<TaskSnapshot> = synchronized(lock) {
+            (active.values.filter { it.scopeToken === scopeToken }.map { it.snapshot() } +
+                history.values.filter { it.scopeToken === scopeToken }.map { it.snapshot }).filter { matches(it, query) }
+        }
 
         override fun global(task: Runnable) = schedule(simple(TaskExecution.global(), action = task))
         override fun async(task: Runnable) = schedule(simple(TaskExecution.async(), action = task))
@@ -120,8 +139,13 @@ internal class TaskServiceImpl(
 
         override fun cancelAll() {
             if (!scopeClosed.compareAndSet(false, true)) return
-            synchronized(lock) { active.values.filter { it.owner === owner }.toList() }.forEach { it.cancel() }
-            synchronized(scopes) { if (scopes[owner] === this) scopes.remove(owner) }
+            synchronized(lock) { active.values.filter { it.scopeToken === scopeToken }.toList() }.forEach { it.cancel() }
+            synchronized(scopes) {
+                scopes[owner]?.let { owned ->
+                    owned.remove(scopeId, this)
+                    if (owned.isEmpty()) scopes.remove(owner)
+                }
+            }
         }
     }
 
@@ -129,7 +153,7 @@ internal class TaskServiceImpl(
         interval: Duration? = null, action: Runnable): TaskSpec =
         TaskSpec.builder().execution(execution).delay(delay).interval(interval).action { action.run() }.build()
 
-    private inner class ManagedTask(val owner: Any, val spec: TaskSpec) : TaskHandle {
+    private inner class ManagedTask(val owner: Any, val scopeToken: Any, val spec: TaskSpec) : TaskHandle {
         override val id = TaskId.random()
         private val state = AtomicReference(TaskStatus.SCHEDULED)
         private val running = AtomicBoolean(false)
@@ -191,12 +215,12 @@ internal class TaskServiceImpl(
         private fun terminal() = synchronized(lock) {
             if (active.remove(id) == null) return@synchronized
             if (settings.historyCapacity > 0) {
-                history[id] = Archived(owner, snapshot())
+                history[id] = Archived(owner, scopeToken, snapshot())
                 while (history.size > settings.historyCapacity) history.remove(history.keys.first())
             }
         }
     }
 
     private fun ownerName(owner: Any) = owner.javaClass.simpleName.ifBlank { owner.toString() }
-    private data class Archived(val owner: Any, val snapshot: TaskSnapshot)
+    private data class Archived(val owner: Any, val scopeToken: Any, val snapshot: TaskSnapshot)
 }

@@ -31,7 +31,7 @@ private fun diagnosticSuggestions(library: PnLibrary, context: CommandContext): 
     return buildList {
         add("all")
         library.plugins.registrations().flatMapTo(this) { plugin ->
-            plugin.modules().map { it.metadata.id.value }
+            plugin.modules().map { it.key.value }
         }
         add("--full")
         add("--config")

@@ -18,6 +18,8 @@ import ru.privatenull.pnlibrary.api.updates.UpdateRegistration
 
 /** Owns the isolated pnLibrary capabilities of one logical plugin module. */
 interface ModuleContext : AutoCloseable {
+    /** Registry-wide stable identity used by shared services and diagnostics. */
+    val key: PluginId
     val id: ModuleId
     val metadata: PluginMetadata
     val lifecycle: PluginLifecycle
