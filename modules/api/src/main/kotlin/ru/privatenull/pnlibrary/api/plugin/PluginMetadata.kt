@@ -15,7 +15,7 @@ import ru.privatenull.pnlibrary.api.platform.PlatformType
  * @property javaFeature JVM feature release, for example `21`
  */
 class PluginMetadata(
-    val id: PluginId,
+    val id: ModuleId,
     val name: String,
     val version: String,
     val authors: String,
