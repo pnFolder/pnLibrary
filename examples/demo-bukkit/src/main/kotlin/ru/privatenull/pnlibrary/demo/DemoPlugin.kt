@@ -5,6 +5,7 @@ import org.bukkit.plugin.java.JavaPlugin
 import ru.privatenull.pnlibrary.api.commands.CommandRegistration
 import ru.privatenull.pnlibrary.api.currency.Currency
 import ru.privatenull.pnlibrary.api.diagnostics.DiagnosticContainer
+import ru.privatenull.pnlibrary.api.plugin.ModuleContext
 import ru.privatenull.pnlibrary.api.plugin.PluginContext
 import ru.privatenull.pnlibrary.api.runtime.PnLibraryProvider
 import ru.privatenull.pnlibrary.api.tasks.TaskSpec
@@ -13,12 +14,13 @@ import java.util.concurrent.atomic.AtomicLong
 
 /** Runnable pnLibrary showcase. Lifecycle wiring stays here; capabilities live in separate files. */
 class DemoPlugin : JavaPlugin() {
-    lateinit var context: PluginContext; private set
+    lateinit var context: ModuleContext; private set
     lateinit var state: DemoState; private set
     lateinit var currency: Currency; private set
     var localization: MinecraftLocalization? = null; private set
     private var command: CommandRegistration? = null
     private var pulse: AutoCloseable? = null
+    private var pluginContext: PluginContext? = null
 
     override fun onEnable() {
         saveDefaultConfig()
@@ -29,7 +31,10 @@ class DemoPlugin : JavaPlugin() {
             return
         }
         state = DemoState(AtomicLong())
-        context = library.plugins.register(this) { builder ->
+
+
+        pluginContext = library.plugins.register(this)
+        context = pluginContext!!.registerModule("pndemo") { builder ->
             builder.metrics(32592, true) { metrics ->
                 metrics.simplePie("server_platform") { server.name }
                 metrics.singleLineChart("demo_joins") { state.joins.get().toInt() }
@@ -63,6 +68,7 @@ class DemoPlugin : JavaPlugin() {
 
     override fun onDisable() {
         command?.close(); pulse?.close(); localization?.close()
-        if (::context.isInitialized) context.close()
+        pluginContext?.close()
+        pluginContext = null
     }
 }

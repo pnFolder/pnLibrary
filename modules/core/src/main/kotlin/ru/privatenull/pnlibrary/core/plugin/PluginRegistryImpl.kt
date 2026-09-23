@@ -589,7 +589,7 @@ internal class PluginRegistryImpl(
             downloadsRequest = request
         }
 
-        @Deprecated("Register listeners through PluginContext.events after the context has been created")
+        @Deprecated("Register listeners through ModuleContext.events after the context has been created")
         override fun listener(listener: Listener): PluginBuilder = apply {
             listeners += listener
         }

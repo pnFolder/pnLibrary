@@ -12,7 +12,7 @@ data class DemoSettings(
 )
 
 object DemoConfig {
-    fun register(context: ru.privatenull.pnlibrary.api.plugin.PluginContext): ManagedConfig<DemoSettings> {
+    fun register(context: ru.privatenull.pnlibrary.api.plugin.ModuleContext): ManagedConfig<DemoSettings> {
         val scope: ConfigScope = context.configs
         val config = scope.yaml("demo-settings.yml", DemoSettings::class.java, Supplier { DemoSettings() })
         return config

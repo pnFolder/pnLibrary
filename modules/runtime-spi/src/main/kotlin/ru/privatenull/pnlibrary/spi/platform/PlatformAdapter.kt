@@ -81,6 +81,12 @@ interface PlatformAdapter : AutoCloseable {
      */
     fun ownerDetails(owner: Any): Map<String, String> = emptyMap()
 
+    /**
+     * Returns whether [owner] is a native plugin instance understood by this adapter.
+     * Adapters should override this when owner recognition requires more than metadata lookup.
+     */
+    fun acceptsOwner(owner: Any): Boolean = ownerDetails(owner).isNotEmpty()
+
     /** Installed native plugin names mapped to versions for dependency validation. */
     fun installedPlugins(): Map<String, String> = emptyMap()
 

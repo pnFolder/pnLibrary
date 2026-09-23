@@ -5,7 +5,7 @@ package ru.privatenull.pnlibrary.api.services
  *
  * Providers are selected by descending priority. When priorities are equal, the provider
  * registered first is selected first. A plugin normally obtains an owner-bound manager from its
- * [ru.privatenull.pnlibrary.api.plugin.PluginContext]; those registrations are removed together
+ * [ru.privatenull.pnlibrary.api.plugin.ModuleContext]; those registrations are removed together
  * when the context closes.
  *
  * Example:

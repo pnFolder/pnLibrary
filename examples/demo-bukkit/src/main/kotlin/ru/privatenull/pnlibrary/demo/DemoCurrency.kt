@@ -3,12 +3,12 @@ package ru.privatenull.pnlibrary.demo
 import ru.privatenull.pnlibrary.api.currency.Currency
 import ru.privatenull.pnlibrary.api.currency.CurrencyRejectReason
 import ru.privatenull.pnlibrary.api.currency.CurrencyResult
-import ru.privatenull.pnlibrary.api.plugin.PluginContext
+import ru.privatenull.pnlibrary.api.plugin.ModuleContext
 import java.math.BigDecimal
 import java.math.RoundingMode
 
 object DemoCurrency {
-    fun register(context: PluginContext, state: DemoState): Currency = context.currencies.register("coins") { definition ->
+    fun register(context: ModuleContext, state: DemoState): Currency = context.currencies.register("coins") { definition ->
         definition.descriptor { it.displayName("Demo Coins").symbol("◈").fractionDigits(2).roundingMode(RoundingMode.DOWN) }
         definition.operations { operations ->
             operations.balance { account -> state.balances[account.playerId] ?: zero() }

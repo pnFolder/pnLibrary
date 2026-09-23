@@ -64,7 +64,7 @@ internal class BukkitLifecycleListener(
 
     @EventHandler
     fun onPluginDisable(event: PluginDisableEvent) {
-        library?.plugins?.unregisterOwner(event.plugin)
+        library?.plugins?.unregister(event.plugin)
         library?.tasks?.close(event.plugin)
     }
 

@@ -54,7 +54,7 @@ interface PluginBuilder {
     /**
      * Registers a diagnostics contributor rooted at [dataDirectory].
      *
-     * The resulting handle is exposed as [PluginContext.diagnostics] and closed with the context.
+     * The resulting handle is exposed as [ModuleContext.diagnostics] and closed with the context.
      */
     fun diagnostics(dataDirectory: Path, container: DiagnosticContainer): PluginBuilder
 
@@ -103,7 +103,7 @@ interface PluginBuilder {
      * `context.events.register(listener)` or `context.events.subscribe(...)`.
      */
     @Deprecated(
-        "Register listeners through PluginContext.events after the context has been created",
+        "Register listeners through ModuleContext.events after the context has been created",
         ReplaceWith("context.events.register(listener)"),
     )
     fun listener(listener: Listener): PluginBuilder

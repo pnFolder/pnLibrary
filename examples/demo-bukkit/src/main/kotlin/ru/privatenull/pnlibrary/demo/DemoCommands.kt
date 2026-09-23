@@ -13,14 +13,14 @@ import ru.privatenull.pnlibrary.api.commands.ArgumentType
 import ru.privatenull.pnlibrary.api.commands.CommandRegistration
 import ru.privatenull.pnlibrary.api.commands.command
 import ru.privatenull.pnlibrary.api.currency.Currency
-import ru.privatenull.pnlibrary.api.plugin.PluginContext
+import ru.privatenull.pnlibrary.api.plugin.ModuleContext
 import ru.privatenull.pnlibrary.api.runtime.PnLibrary
 import java.math.BigDecimal
 import java.time.Duration
 import java.util.UUID
 
 object DemoCommands {
-    fun registerPortable(plugin: DemoPlugin, library: PnLibrary, context: PluginContext, currency: Currency): CommandRegistration =
+    fun registerPortable(plugin: DemoPlugin, library: PnLibrary, context: ModuleContext, currency: Currency): CommandRegistration =
         library.commands.register(plugin, command("pndemo-lib") {
             aliases("pndemoapi"); permission("pndemo.use")
             literal("status") { executes { it.sender.send(Component.text("pnLibrary command API: ${context.id}, runtime ${library.version}")) } }
@@ -33,7 +33,7 @@ object DemoCommands {
             } } }
         })
 
-    class Native(private val plugin: DemoPlugin, private val context: PluginContext, private val currency: Currency,
+    class Native(private val plugin: DemoPlugin, private val context: ModuleContext, private val currency: Currency,
                  private val state: DemoState) : CommandExecutor, TabCompleter {
         override fun onCommand(sender: CommandSender, command: Command, label: String, args: Array<out String>): Boolean {
             if (args.isEmpty() || args[0].equals("status", true)) {
