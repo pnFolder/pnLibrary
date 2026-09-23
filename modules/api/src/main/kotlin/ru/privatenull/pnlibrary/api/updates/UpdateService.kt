@@ -4,6 +4,7 @@ import ru.privatenull.pnlibrary.api.version.ApiVersionRange
 import ru.privatenull.pnlibrary.api.version.PnLibraryApi
 import ru.privatenull.pnlibrary.api.version.SemanticVersion
 import ru.privatenull.pnlibrary.api.platform.PlatformType
+import ru.privatenull.pnlibrary.api.plugin.PluginDependency
 import java.util.Optional
 import java.util.UUID
 import java.util.concurrent.CompletableFuture
@@ -126,12 +127,6 @@ class PluginUpdateRequest private constructor(builder: Builder) {
     val artifacts: List<PluginUpdateArtifact> = builder.artifacts.toList()
     /** Inclusive pnLibrary API generations supported by this product. */
     val supportedApi: ApiVersionRange = builder.supportedApi
-    /** Immutable minimum-version requirements on other managed components. */
-    val dependencies: List<ProductDependency> = builder.dependencies.toList()
-    /** Managed dependencies including their release catalogue coordinates. */
-    val managedProductDependencies: List<ManagedProductDependency> = builder.managedProductDependencies.toList()
-    /** Ordinary native plugins required by this component. */
-    val externalPluginDependencies: List<ExternalPluginDependency> = builder.externalPluginDependencies.toList()
 
     /** Returns the most specific artifact compatible with [javaFeature], or `null`. */
     fun artifactFor(javaFeature: Int): PluginUpdateArtifact? = artifacts
@@ -151,9 +146,6 @@ class PluginUpdateRequest private constructor(builder: Builder) {
         internal var automaticDownload = true
         internal val artifacts = mutableListOf<PluginUpdateArtifact>()
         internal var supportedApi = ApiVersionRange(PnLibraryApi.VERSION, PnLibraryApi.VERSION)
-        internal val dependencies = mutableListOf<ProductDependency>()
-        internal val managedProductDependencies = mutableListOf<ManagedProductDependency>()
-        internal val externalPluginDependencies = mutableListOf<ExternalPluginDependency>()
 
         /** Sets and validates the GitHub repository coordinates. */
         fun repository(owner: String, name: String) = apply {
@@ -181,43 +173,6 @@ class PluginUpdateRequest private constructor(builder: Builder) {
             require(name.isNotBlank()) { "artifact name must not be blank" }
             artifact("^${Regex.escape(name)}$", minimumJava, maximumJava)
         }
-        /** Declares a minimum semantic version required from another managed component. */
-        fun dependsOn(component: String, minimumVersion: String) = apply {
-            val dependency = ProductDependency(
-                ProductId.of(component),
-                SemanticVersion.parse(minimumVersion),
-            )
-            require(dependencies.none { it.product == dependency.product }) {
-                "duplicate component dependency: ${dependency.product}"
-            }
-            dependencies += dependency
-        }
-        /** Declares another pnLibrary-managed component and its release repository. */
-        fun managedDependency(
-            component: String,
-            minimumVersion: String,
-            repositoryOwner: String,
-            repositoryName: String,
-        ) = apply {
-            val dependency = ManagedProductDependency(
-                ProductId.of(component), SemanticVersion.parse(minimumVersion), repositoryOwner, repositoryName,
-            )
-            require(managedProductDependencies.none { it.product == dependency.product }) {
-                "duplicate managed dependency: ${dependency.product}"
-            }
-            managedProductDependencies += dependency
-            dependsOn(component, minimumVersion)
-        }
-        /** Declares an ordinary native server plugin dependency. */
-        fun pluginDependency(dependency: ExternalPluginDependency) = apply {
-            require(externalPluginDependencies.none { it.plugin.equals(dependency.plugin, true) }) {
-                "duplicate plugin dependency: ${dependency.plugin}"
-            }
-            externalPluginDependencies += dependency
-        }
-        /** Declares a manual-download native plugin dependency. */
-        fun pluginDependency(plugin: String, minimumVersion: String, downloadPage: String) =
-            pluginDependency(ExternalPluginDependency.builder(plugin, minimumVersion).downloadPage(downloadPage).build())
         /** Adds an artifact pattern compatible with Java 8 and newer. */
         fun artifactPattern(regex: String) = artifact(regex, 8)
         /** Adds and validates one Java-bounded release artifact rule. */
@@ -271,7 +226,12 @@ interface UpdateRegistration : AutoCloseable {
 /** Registers and queries plugin update monitors owned by this runtime. */
 interface UpdateService {
     /** Registers and immediately starts monitoring [product] represented by [owner]. */
-    fun register(owner: Any, product: ProductDescriptor, request: PluginUpdateRequest): UpdateRegistration
+    fun register(
+        owner: Any,
+        product: ProductDescriptor,
+        request: PluginUpdateRequest,
+        dependencies: List<PluginDependency> = emptyList(),
+    ): UpdateRegistration
     /** Returns a stable snapshot of current registrations. */
     fun registrations(): List<UpdateRegistration>
     /** Finds a registration by product or repository name, ignoring case. */

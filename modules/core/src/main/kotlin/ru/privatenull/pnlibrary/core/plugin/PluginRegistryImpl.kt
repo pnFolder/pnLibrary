@@ -174,7 +174,7 @@ internal class PluginRegistryImpl(
                 )
             }
             definition.updateRequest?.let { request ->
-                updateRegistration = updates.register(owner, requireNotNull(productDescriptor), request)
+                updateRegistration = updates.register(owner, requireNotNull(productDescriptor), request, definition.dependencies)
             }
             definition.downloadsRequest?.let { request ->
                 downloadRegistration = directDownloads?.register(owner, request)
@@ -582,11 +582,6 @@ internal class PluginRegistryImpl(
                 .automaticDownload(source.automaticDownload)
                 .supportedApi(descriptor.supportedApi.minimum, descriptor.supportedApi.maximum)
                 .also { target ->
-                    dependencies.mapNotNull { it.managed }.forEach {
-                        target.managedDependency(it.product.value, it.minimumVersion.toString(),
-                            it.repositoryOwner, it.repositoryName)
-                    }
-                    dependencies.mapNotNull { it.external }.forEach(target::pluginDependency)
                     source.artifacts.forEach {
                         val artifactPlatform = it.platform
                         if (artifactPlatform == null) target.artifact(it.pattern, it.minimumJava, it.maximumJava)

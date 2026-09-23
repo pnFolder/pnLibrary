@@ -83,13 +83,17 @@ class PluginRegistryImplTest {
     @Test
     fun `declared component delivery satisfies missing managed dependency gate`() {
         val request = PluginUpdateRequest.builder().repository("pnFolder", "Example")
-            .apiVersion(1).managedDependency("economy", "2.0.0", "pnFolder", "Economy")
+            .apiVersion(1)
             .artifact("Example.jar", 17).build()
         val downloads = PluginDownloads.builder().component("economy") {
             it.version("2.0.0").apiVersion(1).url("https://example.org/Economy.jar")
         }.build()
 
-        val context = registry().registerModule(Any(), "example") { it.updates(request).downloads(downloads) }
+        val context = registry().registerModule(Any(), "example") {
+            it.updates(request)
+                .depends(Dependencies.managed("economy", "2.0.0", "pnFolder", "Economy"))
+                .downloads(downloads)
+        }
 
         assertEquals("example", context.id.value)
     }
@@ -114,8 +118,8 @@ class PluginRegistryImplTest {
         assertEquals("example", updates.product!!.id.value)
         assertEquals(1, updates.request!!.supportedApi.minimum)
         assertEquals(2, updates.request!!.supportedApi.maximum)
-        assertEquals("pnlibrary", updates.request!!.dependencies.single().product.value)
-        assertEquals("1.5.0", updates.request!!.dependencies.single().minimumVersion.toString())
+        assertEquals("pnlibrary", updates.dependencies.single().managed!!.product.value)
+        assertEquals("1.5.0", updates.dependencies.single().versions.minimum.toString())
     }
 
     @Test
@@ -528,13 +532,16 @@ class PluginRegistryImplTest {
         private class RecordingUpdateService : UpdateService {
             var request: PluginUpdateRequest? = null
             var product: ProductDescriptor? = null
+            var dependencies: List<ru.privatenull.pnlibrary.api.plugin.PluginDependency> = emptyList()
             override fun register(
                 owner: Any,
                 product: ProductDescriptor,
                 request: PluginUpdateRequest,
+                dependencies: List<ru.privatenull.pnlibrary.api.plugin.PluginDependency>,
             ): UpdateRegistration {
                 this.product = product
                 this.request = request
+                this.dependencies = dependencies
                 return emptyProxy(UpdateRegistration::class.java)
             }
             override fun registrations(): List<UpdateRegistration> = emptyList()

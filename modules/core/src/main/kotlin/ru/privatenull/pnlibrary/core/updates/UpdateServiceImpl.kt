@@ -1,6 +1,7 @@
 package ru.privatenull.pnlibrary.core.updates
 
 import ru.privatenull.pnlibrary.api.logging.LogLevel
+import ru.privatenull.pnlibrary.api.plugin.PluginDependency
 import ru.privatenull.pnlibrary.api.updates.*
 import ru.privatenull.pnlibrary.api.version.PnLibraryApi
 import ru.privatenull.pnlibrary.api.version.SemanticVersion
@@ -55,7 +56,12 @@ internal class UpdateServiceImpl(private val platform: PlatformAdapter, private 
         }
     }
 
-    override fun register(owner: Any, product: ProductDescriptor, request: PluginUpdateRequest): UpdateRegistration {
+    override fun register(
+        owner: Any,
+        product: ProductDescriptor,
+        request: PluginUpdateRequest,
+        dependencies: List<PluginDependency>,
+    ): UpdateRegistration {
         check(!closed.get()) { "update service is closed" }
         val info = platform.ownerDetails(owner)
         val nativeProductName = info["name"] ?: request.repositoryName
@@ -70,7 +76,7 @@ internal class UpdateServiceImpl(private val platform: PlatformAdapter, private 
         require(product.version == SemanticVersion.parse(version)) {
             "Product version ${product.version} does not match native plugin version $version"
         }
-        val registration = Registration(owner, product, request, artifact, jar, jar.parent.resolve("update"))
+        val registration = Registration(owner, product, request, dependencies.toList(), artifact, jar, jar.parent.resolve("update"))
         synchronized(entriesLock) {
             check(!closed.get()) { "update service is closed" }
             entries += registration
@@ -106,7 +112,7 @@ internal class UpdateServiceImpl(private val platform: PlatformAdapter, private 
             (configuration.components[entry.descriptor.id.value]?.channel ?: entry.request.channel) }
         val releases = entries.flatMap { entry ->
             catalogue.releases(ReleaseSource(entry.request.repositoryOwner, entry.request.repositoryName),
-                channels.getValue(entry.descriptor.id), entry.descriptor.id, entry.request, platform.type).join()
+                channels.getValue(entry.descriptor.id), entry.descriptor.id, entry.request, entry.dependencies, platform.type).join()
         }
         entries.forEach { entry ->
             val latest = releases.filter { it.product == entry.descriptor.id }.maxByOrNull(ProductRelease::version)
@@ -168,6 +174,7 @@ internal class UpdateServiceImpl(private val platform: PlatformAdapter, private 
 
     private inner class Registration(
         private val owner: Any, val descriptor: ProductDescriptor, val request: PluginUpdateRequest,
+        val dependencies: List<PluginDependency>,
         private val artifact: PluginUpdateArtifact, val jar: Path, val updateDir: Path,
     ) : UpdateRegistration {
         val product: String = descriptor.id.value

@@ -3,10 +3,12 @@ package ru.privatenull.pnlibrary.update
 import com.google.gson.JsonParser
 import ru.privatenull.pnlibrary.api.updates.ProductRelease
 import ru.privatenull.pnlibrary.api.updates.ProductId
+import ru.privatenull.pnlibrary.api.updates.ProductDependency
 import ru.privatenull.pnlibrary.api.updates.UpdateChannel
 import ru.privatenull.pnlibrary.api.updates.PluginUpdateRequest
 import ru.privatenull.pnlibrary.api.updates.ArtifactDescriptor
 import ru.privatenull.pnlibrary.api.platform.PlatformType
+import ru.privatenull.pnlibrary.api.plugin.PluginDependency
 import ru.privatenull.pnlibrary.api.version.SemanticVersion
 import ru.privatenull.pnlibrary.api.version.PnLibraryApi
 import java.net.URI
@@ -32,7 +34,7 @@ class ReleaseCatalogueClient(
     private val inFlight = ConcurrentHashMap<String, CompletableFuture<List<ProductRelease>>>()
 
     fun releases(source: ReleaseSource, channel: UpdateChannel): CompletableFuture<List<ProductRelease>> {
-        return releases(source, channel, null, null, null)
+        return releases(source, channel, null, null, emptyList(), null)
     }
 
     fun releases(
@@ -41,14 +43,24 @@ class ReleaseCatalogueClient(
         product: ProductId?,
         fallback: PluginUpdateRequest?,
         platform: PlatformType?,
+    ): CompletableFuture<List<ProductRelease>> =
+        releases(source, channel, product, fallback, emptyList(), platform)
+
+    fun releases(
+        source: ReleaseSource,
+        channel: UpdateChannel,
+        product: ProductId?,
+        fallback: PluginUpdateRequest?,
+        dependencies: List<PluginDependency>,
+        platform: PlatformType?,
     ): CompletableFuture<List<ProductRelease>> {
-        val key = requestKey(source, channel, product, fallback, platform)
+        val key = requestKey(source, channel, product, fallback, dependencies, platform)
         inFlight[key]?.let { return it }
         val promise = CompletableFuture<List<ProductRelease>>()
         val existing = inFlight.putIfAbsent(key, promise)
         if (existing != null) return existing
         executor.execute {
-            try { promise.complete(load(source, channel, product, fallback, platform)) }
+            try { promise.complete(load(source, channel, product, fallback, dependencies, platform)) }
             catch (error: Throwable) { promise.completeExceptionally(error) }
             finally { inFlight.remove(key, promise) }
         }
@@ -60,18 +72,23 @@ class ReleaseCatalogueClient(
         channel: UpdateChannel,
         product: ProductId?,
         request: PluginUpdateRequest?,
+        dependencies: List<PluginDependency>,
         platform: PlatformType?,
     ): String {
         if (request == null) return "${source.owner}/${source.repository}:${channel.name}"
         val artifacts = request.artifacts.joinToString(",") {
             "${it.pattern}:${it.platform?.name}:${it.minimumJava}:${it.maximumJava}"
         }
-        val dependencies = request.dependencies.joinToString(",") { "${it.product}:${it.minimumVersion}" }
+        val dependencyKey = dependencies.joinToString(",") {
+            it.managed?.let { dependency -> "product:${dependency.product}:${dependency.minimumVersion}" }
+                ?: it.external?.let { dependency -> "plugin:${dependency.plugin}:${dependency.minimumVersion}" }
+                ?: "unknown"
+        }
         return buildString {
             append(source.owner).append('/').append(source.repository).append(':').append(channel.name)
             append('|').append(platform?.name)
             append('|').append(product?.value).append('|').append(request.supportedApi)
-            append('|').append(artifacts).append('|').append(dependencies)
+            append('|').append(artifacts).append('|').append(dependencyKey)
         }
     }
 
@@ -80,6 +97,7 @@ class ReleaseCatalogueClient(
         channel: UpdateChannel,
         product: ProductId?,
         fallback: PluginUpdateRequest?,
+        dependencies: List<PluginDependency>,
         platform: PlatformType?,
     ): List<ProductRelease> {
         val releasesUri = URI.create("https://api.github.com/repos/${source.owner}/${source.repository}/releases?per_page=30")
@@ -94,7 +112,7 @@ class ReleaseCatalogueClient(
             val asset = release.getAsJsonArray("assets")?.firstOrNull { item ->
                 item.asJsonObject.get("name")?.asString == MANIFEST_NAME
             }?.asJsonObject
-            if (asset == null) return@mapNotNull fallbackRelease(release, channel, product, fallback, platform, source)
+            if (asset == null) return@mapNotNull fallbackRelease(release, channel, product, fallback, dependencies, platform, source)
             val url = asset.get("browser_download_url")?.asString ?: return@mapNotNull null
             val uri = URI.create(url)
             val bytes = validatedBytes(uri, MANIFEST_LIMIT) { codec.decodeRelease(it) }
@@ -121,6 +139,7 @@ class ReleaseCatalogueClient(
         acceptedChannel: UpdateChannel,
         product: ProductId?,
         request: PluginUpdateRequest?,
+        dependencies: List<PluginDependency>,
         platform: PlatformType?,
         source: ReleaseSource,
     ): ProductRelease? {
@@ -154,7 +173,9 @@ class ReleaseCatalogueClient(
         return ProductRelease(
             product, version, releaseChannel, request.supportedApi,
             PnLibraryApi.VERSION.takeIf { product.value == "pnlibrary" },
-            request.dependencies, "${source.owner}/${source.repository}", artifacts, request.externalPluginDependencies,
+            dependencies.mapNotNull { it.managed }.map { ProductDependency(it.product, it.minimumVersion) },
+            "${source.owner}/${source.repository}", artifacts,
+            dependencies.mapNotNull { it.external },
         )
     }
 
