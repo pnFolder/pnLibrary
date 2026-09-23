@@ -17,6 +17,8 @@ import ru.privatenull.pnlibrary.api.plugin.MetricsController
 import ru.privatenull.pnlibrary.api.plugin.PluginBuilder
 import ru.privatenull.pnlibrary.api.plugin.PluginContext
 import ru.privatenull.pnlibrary.api.plugin.PluginId
+import ru.privatenull.pnlibrary.api.plugin.ModuleContext
+import ru.privatenull.pnlibrary.api.plugin.ModuleId
 import ru.privatenull.pnlibrary.api.plugin.PluginLifecycle
 import ru.privatenull.pnlibrary.api.plugin.PluginMetadata
 import ru.privatenull.pnlibrary.api.plugin.PluginMetadataBuilder
@@ -44,6 +46,8 @@ import java.util.concurrent.atomic.AtomicBoolean
 import java.util.function.Consumer
 import java.util.concurrent.CompletableFuture
 import java.util.concurrent.ConcurrentHashMap
+import java.nio.charset.StandardCharsets
+import java.security.MessageDigest
 import ru.privatenull.pnlibrary.api.placeholders.PlaceholderService
 import ru.privatenull.pnlibrary.api.text.ComponentService
 import ru.privatenull.pnlibrary.core.placeholders.PlaceholderHub
@@ -90,57 +94,38 @@ internal class PluginRegistryImpl(
     libraryVersion: String? = null,
 ) : PluginRegistry {
 
-    private val contexts = linkedMapOf<PluginId, Context>()
-    private val owners = IdentityHashMap<Any, Context>()
+    private val plugins = IdentityHashMap<Any, Plugin>()
     private val componentDescriptors = linkedMapOf<String, ComponentDescriptor>().apply {
         libraryVersion?.let(SemanticVersion::tryParse)?.let { put("pnlibrary", ComponentDescriptor.library(it.toString())) }
     }
     private val closed = AtomicBoolean(false)
     private val sharedComponentCache = ComponentCache()
-    override fun register(owner: Any, configure: Consumer<PluginBuilder>): PluginContext {
+    override fun register(owner: Any): PluginContext = synchronized(plugins) {
+        check(!closed.get()) { "PluginRegistry is closed" }
+        require(platform.acceptsOwner(owner)) {
+            "Object ${owner.javaClass.name} is not a supported owner for ${platform.type.id}"
+        }
+        require(!plugins.containsKey(owner)) { "This platform plugin is already registered" }
         val details = platform.ownerDetails(owner)
         val nativeId = details["id"] ?: details["name"]
             ?: error("The platform did not expose a plugin ID for ${owner.javaClass.name}")
-        return register(owner, PluginId.of(nativeId), configure)
+        Plugin(owner, PluginId.of(nativeId)).also { plugins[owner] = it }
     }
 
-    override fun register(owner: Any, id: PluginId, configure: Consumer<PluginBuilder>): PluginContext =
-        synchronized(contexts) {
-            check(!closed.get()) { "PluginRegistry is closed" }
-            require(id !in contexts) { "Plugin $id is already registered" }
-            require(!owners.containsKey(owner)) { "This platform plugin is already registered as ${owners[owner]?.id}" }
-            val definition = Builder().also { configure.accept(it) }
-            definition.materializeDependencyDownloads()
-            val descriptor = componentDescriptor(owner, id, definition)
-            definition.bindUpdatesTo(descriptor)
-            validateDependencies(descriptor, definition.downloadsRequest)
-            createContext(owner, id, definition).also {
-                contexts[id] = it
-                owners[owner] = it
-                if (descriptor != null) componentDescriptors[descriptor.id.value] = descriptor
-            }
-        }
+    override fun get(owner: Any): PluginContext? = synchronized(plugins) { plugins[owner] }
 
-    override fun get(id: PluginId): PluginContext? = synchronized(contexts) { contexts[id] }
-
-    override fun unregister(id: PluginId) {
-        detach(id)?.closeInternal()
-    }
-
-    override fun unregisterOwner(owner: Any) {
-        val context = synchronized(contexts) { owners[owner] }
-        context?.let { detach(it.id)?.closeInternal() }
+    override fun unregister(owner: Any) {
+        detachPlugin(owner)?.closeInternal()
     }
 
     override fun registrations(): List<PluginContext> =
-        synchronized(contexts) { contexts.values.toList() }
+        synchronized(plugins) { plugins.values.toList() }
 
     override fun close() {
         if (!closed.compareAndSet(false, true)) return
-        val current = synchronized(contexts) {
-            contexts.values.toList().also {
-                contexts.clear()
-                owners.clear()
+        val current = synchronized(plugins) {
+            plugins.values.toList().also {
+                plugins.clear()
                 componentDescriptors.clear()
             }
         }
@@ -148,7 +133,14 @@ internal class PluginRegistryImpl(
         directDownloads?.close()
     }
 
-    private fun createContext(owner: Any, id: PluginId, definition: Builder): Context {
+    private fun createContext(
+        parent: Plugin,
+        id: ModuleId,
+        serviceKey: PluginId,
+        definition: Builder,
+        componentId: String?,
+    ): Context {
+        val owner = parent.owner
         val metadata = metadata(owner, id, definition)
         var taskScope: TaskScope? = null
         var eventScope: EventScope? = null
@@ -161,10 +153,10 @@ internal class PluginRegistryImpl(
         var currencyScope: CurrencyService? = null
         try {
             taskScope = tasks.scope(owner)
-            eventScope = events.scope(id)
-            configScope = configurations.scope(owner)
-            placeholderScope = placeholderHub.scope(id, definition.placeholderApiEnabled)
-            currencyScope = currencyHub.scope(id, placeholderScope)
+            eventScope = events.scope(serviceKey)
+            configScope = configurations.scope(owner, serviceKey)
+            placeholderScope = placeholderHub.scope(serviceKey, definition.placeholderApiEnabled)
+            currencyScope = currencyHub.scope(serviceKey, placeholderScope)
             definition.listeners.forEach { eventScope.register(it) }
             metricsController = MetricsControllerImpl(
                 owner,
@@ -175,7 +167,7 @@ internal class PluginRegistryImpl(
             )
             definition.diagnosticContainer?.let { container ->
                 diagnosticRegistration = diagnostics.register(
-                    id.value,
+                    serviceKey.value,
                     requireNotNull(definition.diagnosticsDirectory),
                     container,
                 )
@@ -185,12 +177,13 @@ internal class PluginRegistryImpl(
                 downloadRegistration = directDownloads?.register(owner, request)
             }
             return Context(
-                owner,
+                parent,
                 id,
+                serviceKey,
                 metadata,
                 taskScope,
                 eventScope,
-                services.ownedBy(id),
+                services.ownedBy(serviceKey),
                 logging.logger(owner, id.value),
                 configScope,
                 placeholderScope,
@@ -204,6 +197,7 @@ internal class PluginRegistryImpl(
                 downloadRegistration,
                 definition.placeholderApiEnabled,
                 definition.listeners.size,
+                componentId,
             )
         } catch (error: Throwable) {
             ResourceCleanup.suppressInto(
@@ -216,14 +210,14 @@ internal class PluginRegistryImpl(
                 { placeholderScope?.close() },
                 { configScope?.close() },
                 { eventScope?.close() },
-                { services.unregisterAll(id) },
+                { services.unregisterAll(serviceKey) },
                 { taskScope?.close() },
             )
             throw error
         }
     }
 
-    private fun metadata(owner: Any, id: PluginId, definition: Builder): PluginMetadata {
+    private fun metadata(owner: Any, id: ModuleId, definition: Builder): PluginMetadata {
         val details = platform.ownerDetails(owner)
         return PluginMetadata(
             id = id,
@@ -237,14 +231,19 @@ internal class PluginRegistryImpl(
         )
     }
 
-    private fun detach(id: PluginId): Context? = synchronized(contexts) {
-        val context = contexts.remove(id) ?: return@synchronized null
-        owners.remove(context.owner)
-        componentDescriptors.entries.removeIf { it.value.id.value == context.id.value }
-        context
+    private fun detachPlugin(owner: Any): Plugin? = synchronized(plugins) { plugins.remove(owner) }
+
+    private fun serviceKey(nativeId: PluginId, moduleId: ModuleId): PluginId {
+        val canonical = "${nativeId.value}\u0000${moduleId.value}"
+        val hash = MessageDigest.getInstance("SHA-256")
+            .digest(canonical.toByteArray(StandardCharsets.UTF_8))
+            .joinToString("") { "%02x".format(it) }
+        return PluginId.of(
+            "m-${nativeId.value.take(18)}-${moduleId.value.take(18)}-${hash.take(16)}",
+        )
     }
 
-    private fun componentDescriptor(owner: Any, id: PluginId, definition: Builder): ComponentDescriptor? {
+    private fun componentDescriptor(owner: Any, id: ModuleId, definition: Builder): ComponentDescriptor? {
         val embedded = embeddedDescriptor(owner)
         val explicit = definition.componentDescriptor
         if (embedded != null && explicit != null) {
@@ -341,9 +340,62 @@ internal class PluginRegistryImpl(
         require(problems.isEmpty()) { "Unsatisfied pnLibrary component dependencies: ${problems.joinToString("; ")}" }
     }
 
+    private inner class Plugin(
+        override val owner: Any,
+        private val nativeId: PluginId,
+    ) : PluginContext {
+        private val moduleContexts = linkedMapOf<ModuleId, Context>()
+        private val pluginClosed = AtomicBoolean(false)
+        override val isClosed: Boolean get() = pluginClosed.get()
+
+        override fun registerModule(id: ModuleId, configure: Consumer<PluginBuilder>): ModuleContext =
+            synchronized(moduleContexts) {
+                check(!pluginClosed.get()) { "Plugin context is closed" }
+                check(!closed.get()) { "PluginRegistry is closed" }
+                require(id !in moduleContexts) { "Module $id is already registered for this plugin" }
+                val definition = Builder().also { configure.accept(it) }
+                definition.materializeDependencyDownloads()
+                val descriptor = componentDescriptor(owner, id, definition)
+                definition.bindUpdatesTo(descriptor)
+                validateDependencies(descriptor, definition.downloadsRequest)
+                createContext(this, id, serviceKey(nativeId, id), definition, descriptor?.id?.value).also {
+                    moduleContexts[id] = it
+                    if (descriptor != null) componentDescriptors[descriptor.id.value] = descriptor
+                }
+            }
+
+        override fun getModule(id: ModuleId): ModuleContext? =
+            synchronized(moduleContexts) { moduleContexts[id] }
+
+        override fun unregisterModule(id: ModuleId) {
+            detach(id)?.closeInternal()
+        }
+
+        override fun modules(): List<ModuleContext> =
+            synchronized(moduleContexts) { moduleContexts.values.toList() }
+
+        override fun close() {
+            detachPlugin(owner)?.closeInternal()
+        }
+
+        fun detach(id: ModuleId): Context? = synchronized(moduleContexts) { moduleContexts.remove(id) }
+
+        fun closeInternal() {
+            if (!pluginClosed.compareAndSet(false, true)) return
+            val current = synchronized(moduleContexts) {
+                moduleContexts.values.toList().also { moduleContexts.clear() }
+            }
+            ResourceCleanup.closeAll(
+                *current.map { module -> ({ module.closeInternal() }) }.toTypedArray(),
+                { commands?.unregisterOwner(owner) },
+            )
+        }
+    }
+
     private inner class Context(
-        val owner: Any,
-        override val id: PluginId,
+        private val parent: Plugin,
+        override val id: ModuleId,
+        private val serviceKey: PluginId,
         override val metadata: PluginMetadata,
         override val tasks: TaskScope,
         override val events: EventScope,
@@ -361,7 +413,9 @@ internal class PluginRegistryImpl(
         override val downloads: DownloadRegistration?,
         private val placeholderApiEnabled: Boolean,
         private val listenerCount: Int,
-    ) : PluginContext {
+        private val componentId: String?,
+    ) : ModuleContext {
+        private val owner: Any get() = parent.owner
         private val contextClosed = AtomicBoolean(false)
         override val isClosed: Boolean get() = contextClosed.get()
 
@@ -399,17 +453,17 @@ internal class PluginRegistryImpl(
         }
 
         override fun close() {
-            detach(id)?.closeInternal()
+            parent.detach(id)?.closeInternal()
         }
 
         fun closeInternal() {
             if (!contextClosed.compareAndSet(false, true)) return
+            componentId?.let { componentDescriptors.remove(it) }
             ResourceCleanup.closeAll(
-                { commands?.unregisterOwner(owner) },
                 { updates?.close() },
                 { downloads?.close() },
                 { diagnostics?.close() },
-                { this@PluginRegistryImpl.diagnostics.clearPlugin(id.value) },
+                { this@PluginRegistryImpl.diagnostics.clearPlugin(serviceKey.value) },
                 { metrics.close() },
                 { currencies.close() },
                 { cooldowns.close() },

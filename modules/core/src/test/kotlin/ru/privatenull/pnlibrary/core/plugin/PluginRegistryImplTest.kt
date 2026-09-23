@@ -3,6 +3,7 @@ package ru.privatenull.pnlibrary.core.plugin
 import org.junit.jupiter.api.Assertions.assertEquals
 import org.junit.jupiter.api.Assertions.assertFalse
 import org.junit.jupiter.api.Assertions.assertNull
+import org.junit.jupiter.api.Assertions.assertNotSame
 import org.junit.jupiter.api.Assertions.assertSame
 import org.junit.jupiter.api.Assertions.assertThrows
 import org.junit.jupiter.api.Assertions.assertTrue
@@ -21,7 +22,7 @@ import ru.privatenull.pnlibrary.api.metrics.MetricsService
 import ru.privatenull.pnlibrary.api.metrics.PluginMetrics
 import ru.privatenull.pnlibrary.spi.platform.PlatformAdapter
 import ru.privatenull.pnlibrary.api.platform.PlatformType
-import ru.privatenull.pnlibrary.api.plugin.PluginId
+import ru.privatenull.pnlibrary.api.plugin.PluginBuilder
 import ru.privatenull.pnlibrary.api.plugin.Dependencies
 import ru.privatenull.pnlibrary.api.tasks.TaskScope
 import ru.privatenull.pnlibrary.api.tasks.TaskService
@@ -38,12 +39,13 @@ import ru.privatenull.pnlibrary.core.testing.TestTaskService
 import ru.privatenull.pnlibrary.core.services.ServiceManagerImpl
 import java.lang.reflect.Proxy
 import java.util.function.Supplier
+import java.util.function.Consumer
 
 class PluginRegistryImplTest {
     @Test
     fun `depends creates an implicit component descriptor when no update declaration exists`() {
         val error = assertThrows(IllegalArgumentException::class.java) {
-            registry(libraryVersion = "1.0.0").register(Any(), "example") {
+            registry(libraryVersion = "1.0.0").registerModule(Any(), "example") {
                 it.depends(Dependencies.managed("missing-component", "9.0.0", "pnFolder", "Missing"))
             }
         }
@@ -52,7 +54,7 @@ class PluginRegistryImplTest {
 
     @Test
     fun `optional unified dependency does not block registration`() {
-        val context = registry(libraryVersion = "1.0.0").register(Any(), "example") {
+        val context = registry(libraryVersion = "1.0.0").registerModule(Any(), "example") {
             it.depends(Dependencies.managed("missing-component", "9.0.0", "pnFolder", "Missing", required = false))
                 .component(ComponentDescriptor.builder("example", "1.0.0").pnLibraryApi(1, 1).build())
         }
@@ -68,7 +70,7 @@ class PluginRegistryImplTest {
             .artifact("Example.jar", PlatformType.BUKKIT, 17).build()
 
         val error = assertThrows(IllegalArgumentException::class.java) {
-            registry().register(Any(), "example") { it.updates(request) }
+            registry().registerModule(Any(), "example") { it.updates(request) }
         }
 
         assertTrue(error.message!!.contains("economy >= 2.0.0"))
@@ -83,7 +85,7 @@ class PluginRegistryImplTest {
             it.version("2.0.0").apiVersion(1).url("https://example.org/Economy.jar")
         }.build()
 
-        val context = registry().register(Any(), "example") { it.updates(request).downloads(downloads) }
+        val context = registry().registerModule(Any(), "example") { it.updates(request).downloads(downloads) }
 
         assertEquals("example", context.id.value)
     }
@@ -100,7 +102,7 @@ class PluginRegistryImplTest {
             .artifact("(?i)^Example-.*\\.jar$", 17)
             .build()
 
-        registry(updates = updates, libraryVersion = "1.5.0").register(Any(), "example") {
+        registry(updates = updates, libraryVersion = "1.5.0").registerModule(Any(), "example") {
             it.component(descriptor).updates(request)
         }
 
@@ -122,22 +124,22 @@ class PluginRegistryImplTest {
             .build()
 
         val error = assertThrows(IllegalArgumentException::class.java) {
-            registry.register(owner, "example") { it.component(descriptor) }
+            registry.registerModule(owner, "example") { it.component(descriptor) }
         }
 
         assertTrue(error.message!!.contains("economy >= 2.0.0"))
         assertFalse(taskScope.closed)
-        assertNull(registry.get("example"))
+        assertTrue(registry.registrations().single().modules().isEmpty())
     }
 
     @Test
     fun `registered compatible component satisfies a later dependency`() {
         val registry = registry(libraryVersion = "1.0.0")
-        registry.register(Any(), "economy") {
+        registry.registerModule(Any(), "economy") {
             it.component(ComponentDescriptor.builder("economy", "2.1.0").pnLibraryApi(1, 1).build())
         }
 
-        val dependent = registry.register(Any(), "example") {
+        val dependent = registry.registerModule(Any(), "example") {
             it.component(ComponentDescriptor.builder("example", "1.0.0").pnLibraryApi(1, 1)
                 .managedDependency("economy", "2.0.0", "pnFolder", "Economy").build())
         }
@@ -154,7 +156,7 @@ class PluginRegistryImplTest {
             .externalDependency(dependency).build()
 
         val error = assertThrows(IllegalArgumentException::class.java) {
-            registry().register(Any(), "example") { it.component(descriptor) }
+            registry().registerModule(Any(), "example") { it.component(descriptor) }
         }
 
         assertTrue(error.message!!.contains("Vault >= 1.7.3"))
@@ -162,13 +164,14 @@ class PluginRegistryImplTest {
     }
 
     @Test
-    fun `closing plugin context unregisters commands owned by its native plugin`() {
+    fun `closing physical plugin context unregisters commands owned by its native plugin`() {
         val owner = Any()
         val commands = RecordingCommandService()
         val registry = registry(commands = commands)
-        val context = registry.register(owner, "example") { }
+        val plugin = registry.register(owner)
+        val context = plugin.registerModule("example") { }
 
-        context.close()
+        plugin.close()
 
         assertEquals(listOf(owner), commands.unregisteredOwners)
     }
@@ -183,11 +186,12 @@ class PluginRegistryImplTest {
         val registry = registry(events = events, tasks = tasks, metrics = metrics)
         val listener = RecordingListener()
 
-        val context = registry.register(owner, PluginId.of("pnClans")) {
+        val plugin = registry.register(owner)
+        val context = plugin.registerModule("pnClans") {
             it.listener(listener).metrics(42, false)
         }
 
-        assertSame(context, registry.get("PNCLANS"))
+        assertSame(context, plugin.getModule("PNCLANS"))
         assertEquals("pnclans", context.id.value)
         assertFalse(context.metrics.isEnabled)
         context.metrics.enable()
@@ -197,37 +201,149 @@ class PluginRegistryImplTest {
 
         context.close()
 
-        assertNull(registry.get("pnclans"))
+        assertNull(plugin.getModule("pnclans"))
         assertTrue(context.isClosed)
         assertEquals(0, events.publish(TestEvent()).join().delivered)
         assertTrue(taskScope.closed)
     }
 
     @Test
-    fun `duplicate plugin ID is rejected`() {
+    fun `duplicate module ID is rejected within one plugin`() {
         val owner = Any()
         val taskScope = RecordingTaskScope(owner)
         val tasks = RecordingTaskService(taskScope)
         val registry = registry(tasks = tasks)
-        registry.register(owner, PluginId.of("example")) { }
+        val plugin = registry.register(owner)
+        plugin.registerModule("example") { }
 
         assertThrows(IllegalArgumentException::class.java) {
-            registry.register(owner, PluginId.of("EXAMPLE")) { }
+            plugin.registerModule("EXAMPLE") { }
         }
         registry.close()
     }
 
     @Test
-    fun `one platform owner cannot be registered under two IDs`() {
+    fun `one platform owner can be registered under multiple module IDs`() {
         val owner = Any()
-        val taskScope = RecordingTaskScope(owner)
-        val registry = registry(tasks = RecordingTaskService(taskScope))
-        registry.register(owner, "first") { }
+        val registry = registry(tasks = RecordingTaskService(RecordingTaskScope(owner)))
+        val plugin = registry.register(owner)
+        val first = plugin.registerModule("first") { }
+        val second = plugin.registerModule("second") { }
+
+        assertEquals("first", first.id.value)
+        assertEquals("second", second.id.value)
+        assertEquals(1, registry.registrations().size)
+        assertEquals(2, plugin.modules().size)
+        registry.close()
+    }
+
+    @Test
+    fun `same physical owner cannot be registered twice`() {
+        val owner = Any()
+        val registry = registry()
+        registry.register(owner)
 
         assertThrows(IllegalArgumentException::class.java) {
-            registry.register(owner, "second") { }
+            registry.register(owner)
         }
-        registry.close()
+    }
+
+    @Test
+    fun `different owners may use the same local module ID`() {
+        val firstOwner = Any()
+        val secondOwner = Any()
+        val registry = registry()
+
+        val first = registry.register(firstOwner).registerModule("core") { }
+        val second = registry.register(secondOwner).registerModule("core") { }
+
+        assertEquals("core", first.id.value)
+        assertEquals("core", second.id.value)
+        assertEquals(2, registry.registrations().size)
+    }
+
+    @Test
+    fun `maximum length owner and module IDs produce a valid service namespace`() {
+        val owner = Any()
+        val longId = "a".repeat(64)
+        val platform = proxy(PlatformAdapter::class.java) { methodName ->
+            when (methodName) {
+                "getType" -> PlatformType.BUKKIT
+                "getImplementationName" -> "Paper"
+                "acceptsOwner" -> true
+                "ownerDetails" -> mapOf("id" to longId, "name" to longId, "version" to "1.0.0")
+                "installedPlugins" -> emptyMap<String, String>()
+                else -> null
+            }
+        }
+        val registry = registry(platform = platform)
+
+        val module = registry.register(owner).registerModule("b".repeat(64)) { }
+
+        assertEquals("b".repeat(64), module.id.value)
+    }
+
+    @Test
+    fun `closing one module keeps its sibling live`() {
+        val registry = registry()
+        val plugin = registry.register(Any())
+        val first = plugin.registerModule("first") { }
+        val second = plugin.registerModule("second") { }
+
+        first.close()
+
+        assertTrue(first.isClosed)
+        assertFalse(second.isClosed)
+        assertNull(plugin.getModule("first"))
+        assertSame(second, plugin.getModule("second"))
+    }
+
+    @Test
+    fun `sibling modules receive isolated configuration scopes`() {
+        val plugin = registry().register(Any())
+        val first = plugin.registerModule("first") { }
+        val second = plugin.registerModule("second") { }
+
+        assertNotSame(first.configs, second.configs)
+        first.close()
+        assertEquals(0, second.configs.size)
+    }
+
+    @Test
+    fun `plugin context registers and closes multiple logical modules`() {
+        val owner = Any()
+        val registry = registry()
+        val modules = registry.register(owner)
+
+        val core = modules.registerModule("example-core") { }
+        val economy = modules.registerModule("example-economy") { }
+
+        assertEquals(setOf("example-core", "example-economy"), modules.modules().map { it.id.value }.toSet())
+        modules.close()
+        assertTrue(core.isClosed)
+        assertTrue(economy.isClosed)
+        assertTrue(registry.registrations().isEmpty())
+    }
+
+    @Test
+    fun `unsupported owner is rejected before module context is created`() {
+        val owner = Any()
+        val platform = proxy(PlatformAdapter::class.java) { methodName ->
+            when (methodName) {
+                "getType" -> PlatformType.BUKKIT
+                "getImplementationName" -> "Paper"
+                "acceptsOwner" -> false
+                else -> null
+            }
+        }
+
+        val registry = registry(platform = platform)
+        val error = assertThrows(IllegalArgumentException::class.java) {
+            registry.register(owner)
+        }
+
+        assertTrue(error.message!!.contains("not a supported owner"))
+        assertTrue(registry.registrations().isEmpty())
     }
 
     @Test
@@ -235,12 +351,13 @@ class PluginRegistryImplTest {
         val owner = Any()
         val taskScope = RecordingTaskScope(owner)
         val registry = registry(tasks = RecordingTaskService(taskScope))
-        val context = registry.register(owner, "example") { }
+        val plugin = registry.register(owner)
+        val context = plugin.registerModule("example") { }
 
-        registry.unregisterOwner(owner)
+        registry.unregister(owner)
 
         assertTrue(context.isClosed)
-        assertNull(registry.get("example"))
+        assertNull(registry.get(owner))
         assertTrue(taskScope.closed)
     }
 
@@ -251,7 +368,7 @@ class PluginRegistryImplTest {
         val logging = RecordingLoggingService()
         val registry = registry(tasks = RecordingTaskService(taskScope), logging = logging)
 
-        val context = registry.register(owner) { plugin ->
+        val context = registry.register(owner).registerModule("example") { plugin ->
             plugin.metadata { metadata ->
                 metadata.name("Custom Example").version("2.0.0").authors("Library Team")
             }
@@ -349,6 +466,12 @@ class PluginRegistryImplTest {
     }
 
     private companion object {
+        fun PluginRegistryImpl.registerModule(
+            owner: Any,
+            id: String,
+            configure: Consumer<PluginBuilder>,
+        ) = (get(owner) ?: register(owner)).registerModule(id, configure)
+
         fun registry(
             platform: PlatformAdapter = platform(),
             events: EventServiceImpl = EventServiceImpl(TestTaskService()) { _, _, _ -> },
@@ -388,6 +511,7 @@ class PluginRegistryImplTest {
             when (methodName) {
                 "getType" -> PlatformType.BUKKIT
                 "getImplementationName" -> "Paper"
+                "acceptsOwner" -> true
                 "ownerDetails" -> mapOf(
                     "id" to "example",
                     "name" to "Example",

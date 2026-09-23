@@ -9,7 +9,8 @@ import ru.privatenull.pnlibrary.api.commands.CommandContext
 import ru.privatenull.pnlibrary.api.commands.CommandSender
 import ru.privatenull.pnlibrary.api.platform.PlatformType
 import ru.privatenull.pnlibrary.api.plugin.PluginContext
-import ru.privatenull.pnlibrary.api.plugin.PluginId
+import ru.privatenull.pnlibrary.api.plugin.ModuleContext
+import ru.privatenull.pnlibrary.api.plugin.ModuleId
 import ru.privatenull.pnlibrary.api.plugin.PluginMetadata
 import ru.privatenull.pnlibrary.api.plugin.PluginRegistry
 import ru.privatenull.pnlibrary.api.runtime.PnLibrary
@@ -64,7 +65,7 @@ class DiagnosticCommandTest {
     }
 
     private fun metadata(name: String) = PluginMetadata(
-        id = PluginId.of(name),
+        id = ModuleId.of(name),
         name = name,
         version = "1.0.0",
         authors = "pnFolder",
@@ -75,9 +76,14 @@ class DiagnosticCommandTest {
     )
 
     private fun libraryWithPlugins(metadata: List<PluginMetadata>): PnLibrary {
-        val contexts = metadata.map { value ->
-            proxy(PluginContext::class.java) { method ->
+        val modules = metadata.map { value ->
+            proxy(ModuleContext::class.java) { method ->
                 if (method.name == "getMetadata") value else defaultValue(method.returnType)
+            }
+        }
+        val contexts = modules.map { module ->
+            proxy(PluginContext::class.java) { method ->
+                if (method.name == "modules") listOf(module) else defaultValue(method.returnType)
             }
         }
         val plugins = proxy(PluginRegistry::class.java) { method ->

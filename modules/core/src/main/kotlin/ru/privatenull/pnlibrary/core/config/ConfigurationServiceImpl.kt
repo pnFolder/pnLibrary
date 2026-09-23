@@ -37,15 +37,21 @@ import java.util.regex.Pattern
 internal class ConfigurationServiceImpl(
     private val platform: PlatformAdapter,
 ) : ConfigurationService, AutoCloseable {
-    private val scopes = java.util.IdentityHashMap<Any, Scope>()
+    private val scopes = java.util.IdentityHashMap<Any, MutableMap<PluginId, Scope>>()
     private val runtimeTypes = linkedSetOf<TypeRegistration>()
     private val closed = AtomicBoolean(false)
 
-    override fun scope(owner: Any): ConfigScope = synchronized(scopes) {
+    override fun scope(owner: Any): ConfigScope {
+        val pluginId = PluginId.of(platform.ownerDetails(owner)["id"] ?: owner.javaClass.simpleName)
+        return scope(owner, pluginId)
+    }
+
+    internal fun scope(owner: Any, pluginId: PluginId): ConfigScope = synchronized(scopes) {
         check(!closed.get()) { "Configuration service is closed" }
-        scopes.getOrPut(owner) {
+        scopes.getOrPut(owner) { linkedMapOf() }.getOrPut(pluginId) {
             Scope(
                 owner = owner,
+                pluginId = pluginId,
                 directory = ownerDirectory(owner).toAbsolutePath().normalize(),
                 logger = ownerLogger(owner),
             )
@@ -53,12 +59,14 @@ internal class ConfigurationServiceImpl(
     }
 
     fun close(owner: Any) {
-        synchronized(scopes) { scopes.remove(owner) }?.close()
+        synchronized(scopes) { scopes.remove(owner)?.values?.toList().orEmpty() }.forEach { it.close() }
     }
 
     override fun close() {
         if (!closed.compareAndSet(false, true)) return
-        synchronized(scopes) { scopes.values.toList().also { scopes.clear() } }.forEach { it.close() }
+        synchronized(scopes) {
+            scopes.values.flatMap { it.values }.also { scopes.clear() }
+        }.forEach { it.close() }
     }
 
     private fun ownerDirectory(owner: Any): Path = try {
@@ -77,10 +85,10 @@ internal class ConfigurationServiceImpl(
 
     private inner class Scope(
         private val owner: Any,
+        private val pluginId: PluginId,
         private val directory: Path,
         private val logger: Logger,
     ) : ConfigScope {
-        private val pluginId = PluginId.of(platform.ownerDetails(owner)["id"] ?: owner.javaClass.simpleName)
         private val handles = linkedSetOf<ManagedConfig<*>>()
         private val serializers = builtInSerializers()
         private val scopeClosed = AtomicBoolean(false)
@@ -182,7 +190,12 @@ internal class ConfigurationServiceImpl(
                 owned.forEach { it.deactivate() }
                 runtimeTypes.removeAll(owned.toSet())
             }
-            synchronized(scopes) { scopes.remove(owner, this) }
+            synchronized(scopes) {
+                scopes[owner]?.let { owned ->
+                    owned.remove(pluginId, this)
+                    if (owned.isEmpty()) scopes.remove(owner)
+                }
+            }
         }
         private fun snapshot() = synchronized(handles) { handles.toList() }
 
