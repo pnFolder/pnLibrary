@@ -5,10 +5,13 @@ import org.bukkit.plugin.java.JavaPlugin
 import ru.privatenull.pnlibrary.api.commands.CommandRegistration
 import ru.privatenull.pnlibrary.api.currency.Currency
 import ru.privatenull.pnlibrary.api.diagnostics.DiagnosticContainer
+import ru.privatenull.pnlibrary.api.plugin.DownloadPolicy
 import ru.privatenull.pnlibrary.api.plugin.ModuleContext
 import ru.privatenull.pnlibrary.api.plugin.PluginContext
 import ru.privatenull.pnlibrary.api.runtime.PnLibraryProvider
 import ru.privatenull.pnlibrary.api.tasks.TaskSpec
+import ru.privatenull.pnlibrary.api.updates.ProductDescriptor
+import ru.privatenull.pnlibrary.api.updates.UpdateChannel
 import ru.privatenull.pnlibrary.localization.MinecraftLocalization
 import java.util.concurrent.atomic.AtomicLong
 
@@ -35,9 +38,31 @@ class DemoPlugin : JavaPlugin() {
 
         pluginContext = library.plugins.register(this)
         context = pluginContext!!.registerModule("pndemo") { builder ->
+            builder.product(
+                ProductDescriptor.builder("pndemo", description.version)
+                    .pnLibraryApi(1, 1)
+                    .build()
+            )
             builder.metrics(32592, true) { metrics ->
-                metrics.simplePie("server_platform") { server.name }
-                metrics.singleLineChart("demo_joins") { state.joins.get().toInt() }
+                metrics.simplePie("server_platform") {
+                    server.name
+                }
+                metrics.singleLineChart("demo_joins") {
+                    state.joins.get().toInt()
+                }
+            }
+            builder.updates("pnFolder", "pnLibrary") { updates ->
+                updates.channel(UpdateChannel.DEV)
+                    .automaticDownload(true)
+                    .artifact("(?i)^pnLibrary-demo-bukkit-.*\\.jar$", minimumJava = 8)
+            }
+            builder.dependency { dependencies ->
+                dependencies.product("pnlibrary") { dependency ->
+                    dependency.minimumVersion("1.0.0")
+                        .github("pnFolder", "pnLibrary")
+                        .required(true)
+                        .downloadPolicy(DownloadPolicy.AUTOMATIC)
+                }
             }
             builder.diagnostics(dataFolder.toPath(), DiagnosticContainer.builder("pndemo")
                 .snapshot(DemoDiagnostics.snapshot(state, library))

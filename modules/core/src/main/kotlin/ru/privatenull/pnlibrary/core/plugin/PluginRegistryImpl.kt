@@ -523,7 +523,7 @@ internal class PluginRegistryImpl(
         var placeholderApiEnabled: Boolean = true
         val listeners = mutableListOf<Listener>()
 
-        override fun component(descriptor: ProductDescriptor): PluginBuilder = apply {
+    override fun product(descriptor: ProductDescriptor): PluginBuilder = apply {
             require(productDescriptor == null) { "component descriptor is already configured" }
             productDescriptor = descriptor
         }

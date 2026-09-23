@@ -2,16 +2,10 @@ package ru.privatenull.pnlibrary.demo
 
 import ru.privatenull.pnlibrary.api.downloads.DownloadDestination
 import ru.privatenull.pnlibrary.api.plugin.PluginBuilder
-import ru.privatenull.pnlibrary.api.plugin.Dependencies
 import java.nio.file.Path
 
 object DemoDeclarations {
     fun configure(builder: PluginBuilder, dataDirectory: Path) {
-        builder.depends(Dependencies.managed("pnlibrary", "1.0.0", "pnFolder", "pnLibrary"))
-        builder.updates("pnFolder", "pnLibrary") { updates ->
-            updates.component("pndemo").supportedApi(1, 1).automaticDownload(false)
-                .artifact("(?i)^pnLibrary-demo-bukkit-.*\\.jar$", minimumJava = 8)
-        }
         builder.downloads(dataDirectory) { downloads ->
             downloads.file("demo-documentation") { file ->
                 file.url("https://example.org/pnLibrary-demo.txt")

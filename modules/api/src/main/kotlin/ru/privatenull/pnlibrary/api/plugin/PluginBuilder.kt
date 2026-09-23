@@ -26,7 +26,7 @@ interface PluginBuilder {
     }
 
     /** Declares the component identity, API range, and dependencies used by the graph updater. */
-    fun component(descriptor: ProductDescriptor): PluginBuilder
+    fun product(descriptor: ProductDescriptor): PluginBuilder
 
     /** Overrides native metadata only when a plugin needs custom display values. */
     fun metadata(configure: Consumer<PluginMetadataBuilder>): PluginBuilder

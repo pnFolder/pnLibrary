@@ -58,7 +58,7 @@ class PluginRegistryImplTest {
     fun `optional unified dependency does not block registration`() {
         val context = registry(libraryVersion = "1.0.0").registerModule(Any(), "example") {
             it.depends(Dependencies.managed("missing-component", "9.0.0", "pnFolder", "Missing", required = false))
-                .component(ProductDescriptor.builder("example", "1.0.0").pnLibraryApi(1, 1).build())
+            .product(ProductDescriptor.builder("example", "1.0.0").pnLibraryApi(1, 1).build())
         }
         assertEquals("example", context.id.value)
         context.close()
@@ -105,7 +105,7 @@ class PluginRegistryImplTest {
             .build()
 
         registry(updates = updates, libraryVersion = "1.5.0").registerModule(Any(), "example") {
-            it.component(descriptor).updates(request)
+            it.product(descriptor).updates(request)
         }
 
         assertEquals("example", updates.product!!.id.value)
@@ -126,7 +126,7 @@ class PluginRegistryImplTest {
             .build()
 
         val error = assertThrows(IllegalArgumentException::class.java) {
-            registry.registerModule(owner, "example") { it.component(descriptor) }
+        registry.registerModule(owner, "example") { it.product(descriptor) }
         }
 
         assertTrue(error.message!!.contains("economy >= 2.0.0"))
@@ -138,11 +138,11 @@ class PluginRegistryImplTest {
     fun `registered compatible component satisfies a later dependency`() {
         val registry = registry(libraryVersion = "1.0.0")
         registry.registerModule(Any(), "economy") {
-            it.component(ProductDescriptor.builder("economy", "2.1.0").pnLibraryApi(1, 1).build())
+            it.product(ProductDescriptor.builder("economy", "2.1.0").pnLibraryApi(1, 1).build())
         }
 
         val dependent = registry.registerModule(Any(), "example") {
-            it.component(ProductDescriptor.builder("example", "1.0.0").pnLibraryApi(1, 1)
+            it.product(ProductDescriptor.builder("example", "1.0.0").pnLibraryApi(1, 1)
                 .managedDependency("economy", "2.0.0", "pnFolder", "Economy").build())
         }
 
@@ -158,7 +158,7 @@ class PluginRegistryImplTest {
             .externalDependency(dependency).build()
 
         val error = assertThrows(IllegalArgumentException::class.java) {
-            registry().registerModule(Any(), "example") { it.component(descriptor) }
+        registry().registerModule(Any(), "example") { it.product(descriptor) }
         }
 
         assertTrue(error.message!!.contains("Vault >= 1.7.3"))
@@ -269,10 +269,10 @@ class PluginRegistryImplTest {
         val registry = registry()
         val descriptor = ProductDescriptor.builder("shared-component", "1.0.0")
             .pnLibraryApi(1, 1).build()
-        registry.register(Any()).registerModule("shared-component") { it.component(descriptor) }
+        registry.register(Any()).registerModule("shared-component") { it.product(descriptor) }
 
         assertThrows(IllegalArgumentException::class.java) {
-            registry.register(Any()).registerModule("shared-component") { it.component(descriptor) }
+        registry.register(Any()).registerModule("shared-component") { it.product(descriptor) }
         }
     }
 
