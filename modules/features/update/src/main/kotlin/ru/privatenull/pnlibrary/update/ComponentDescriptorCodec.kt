@@ -62,14 +62,6 @@ class ProductDescriptorCodec {
             addProperty("minimum", descriptor.supportedApi.minimum)
             addProperty("maximum", descriptor.supportedApi.maximum)
         })
-        root.add("managedProductDependencies", JsonArray().apply {
-            descriptor.managedProductDependencies.forEach { dependency -> add(JsonObject().apply {
-                addProperty("component", dependency.product.value)
-                addProperty("minimumVersion", dependency.minimumVersion.toString())
-                addProperty("repositoryOwner", dependency.repositoryOwner)
-                addProperty("repositoryName", dependency.repositoryName)
-            }) }
-        })
         return root.toString().toByteArray(StandardCharsets.UTF_8)
     }
 
@@ -77,16 +69,9 @@ class ProductDescriptorCodec {
         val root = parse(bytes)
         requireInt(root, "schema").also { if (it != SCHEMA) fail("schema", "unsupported schema $it") }
         val api = requireObject(root, "pnLibraryApi")
-        val builder = ProductDescriptor.builder(requireString(root, "component"), requireString(root, "version"))
+        ProductDescriptor.builder(requireString(root, "component"), requireString(root, "version"))
             .pnLibraryApi(requireInt(api, "minimum"), requireInt(api, "maximum"))
-        requireArray(root, "managedProductDependencies").forEachIndexed { index, raw -> guarded("managedProductDependencies[$index]") {
-            val value = raw.asJsonObject
-            builder.managedDependency(
-                requireString(value, "component"), requireString(value, "minimumVersion"),
-                requireString(value, "repositoryOwner"), requireString(value, "repositoryName"),
-            )
-        } }
-        builder.build()
+            .build()
     }
 
     private fun parse(bytes: ByteArray): JsonObject {

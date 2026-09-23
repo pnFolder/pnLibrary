@@ -260,13 +260,7 @@ internal class PluginRegistryImpl(
                 ?: error("Cannot infer component version for $id")
             ProductDescriptor.builder(id.value, version)
                 .pnLibraryApi(request.supportedApi.minimum, request.supportedApi.maximum)
-                .also { target ->
-                    request.managedProductDependencies.forEach { dependency -> target.managedDependency(
-                        dependency.product.value, dependency.minimumVersion.toString(),
-                        dependency.repositoryOwner, dependency.repositoryName,
-                    ) }
-                    request.externalPluginDependencies.forEach(target::externalDependency)
-                }.build()
+                .build()
         }
         val implicit = if (explicit == null && embedded == null && inferred == null && definition.dependencies.isNotEmpty()) {
             val version = platform.ownerDetails(owner)["version"] ?: definition.metadataVersion
@@ -275,27 +269,7 @@ internal class PluginRegistryImpl(
                 .pnLibraryApi(PnLibraryApi.VERSION, PnLibraryApi.VERSION)
                 .build()
         } else null
-        return (explicit ?: embedded ?: inferred ?: implicit)?.let { descriptor ->
-            if (definition.dependencies.isEmpty()) descriptor else ProductDescriptor.builder(
-                descriptor.id.value, descriptor.version.toString(),
-            ).pnLibraryApi(descriptor.supportedApi.minimum, descriptor.supportedApi.maximum)
-                .also { target ->
-                    descriptor.managedProductDependencies.forEach { dependency -> target.managedDependency(
-                        dependency.product.value, dependency.minimumVersion.toString(),
-                        dependency.repositoryOwner, dependency.repositoryName,
-                        dependency.required, dependency.automaticDownload,
-                    ) }
-                    descriptor.externalPluginDependencies.forEach(target::externalDependency)
-                    definition.dependencies.forEach { dependency ->
-                        dependency.managed?.let { managed -> target.managedDependency(
-                            managed.product.value, managed.minimumVersion.toString(),
-                            managed.repositoryOwner, managed.repositoryName,
-                            managed.required, managed.automaticDownload,
-                        ) }
-                        dependency.external?.let(target::externalDependency)
-                    }
-                }.build()
-        }?.also {
+        return (explicit ?: embedded ?: inferred ?: implicit)?.also {
             require(it.id.value == id.value) { "Component ID ${it.id} does not match plugin ID $id" }
         }
     }
@@ -310,15 +284,14 @@ internal class PluginRegistryImpl(
         return if (present) EmbeddedDescriptorReader().read(location) else null
     }
 
-    private fun validateDependencies(descriptor: ProductDescriptor?, downloads: PluginDownloads?) {
-        if (descriptor == null) return
+    private fun validateDependencies(dependencies: List<PluginDependency>, downloads: PluginDownloads?) {
         val downloadableComponents = downloads?.declarations.orEmpty()
             .filterIsInstance<ru.privatenull.pnlibrary.api.downloads.DownloadDeclaration.Component>()
             .associateBy { it.component }
         val downloadablePlugins = downloads?.declarations.orEmpty()
             .filterIsInstance<ru.privatenull.pnlibrary.api.downloads.DownloadDeclaration.Plugin>()
             .associateBy { it.plugin.lowercase() }
-        val problems = descriptor.managedProductDependencies.filter { it.required }.mapNotNull { dependency ->
+        val problems = dependencies.mapNotNull { it.managed }.filter { it.required }.mapNotNull { dependency ->
             val installed = productDescriptors[dependency.product.value]
             when {
                 installed == null && downloadableComponents[dependency.product]?.let { it.version >= dependency.minimumVersion } == true -> null
@@ -329,7 +302,7 @@ internal class PluginRegistryImpl(
         }.toMutableList()
         val nativePlugins = runCatching { platform.installedPlugins() }.getOrNull().orEmpty()
             .entries.associate { it.key.lowercase() to it.value }
-        descriptor.externalPluginDependencies.filter { it.required }.forEach { dependency ->
+        dependencies.mapNotNull { it.external }.filter { it.required }.forEach { dependency ->
             val installed = nativePlugins[dependency.plugin.lowercase()]
             when {
                 installed == null && downloadablePlugins[dependency.plugin.lowercase()]?.let {
@@ -363,7 +336,7 @@ internal class PluginRegistryImpl(
                     "Component ${descriptor?.id} is already registered"
                 }
                 definition.bindUpdatesTo(descriptor)
-                validateDependencies(descriptor, definition.downloadsRequest)
+            validateDependencies(definition.dependencies, definition.downloadsRequest)
                 createContext(this, id, serviceKey(nativeId, id), definition, descriptor).also {
                     moduleContexts[id] = it
                     if (descriptor != null) productDescriptors[descriptor.id.value] = descriptor
@@ -609,11 +582,11 @@ internal class PluginRegistryImpl(
                 .automaticDownload(source.automaticDownload)
                 .supportedApi(descriptor.supportedApi.minimum, descriptor.supportedApi.maximum)
                 .also { target ->
-                    descriptor.managedProductDependencies.forEach {
+                    dependencies.mapNotNull { it.managed }.forEach {
                         target.managedDependency(it.product.value, it.minimumVersion.toString(),
                             it.repositoryOwner, it.repositoryName)
                     }
-                    descriptor.externalPluginDependencies.forEach(target::pluginDependency)
+                    dependencies.mapNotNull { it.external }.forEach(target::pluginDependency)
                     source.artifacts.forEach {
                         val artifactPlatform = it.platform
                         if (artifactPlatform == null) target.artifact(it.pattern, it.minimumJava, it.maximumJava)

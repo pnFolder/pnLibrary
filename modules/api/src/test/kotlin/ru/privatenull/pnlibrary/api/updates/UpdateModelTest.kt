@@ -44,29 +44,15 @@ class UpdateModelTest {
     }
 
     @Test
-    fun `component descriptor validates API range and preserves dependency order immutably`() {
+    fun `product descriptor validates and preserves product metadata`() {
         assertThrows(IllegalArgumentException::class.java) {
             ProductDescriptor.builder("economy", "3.4.0").pnLibraryApi(2, 1)
         }
         val descriptor = ProductDescriptor.builder("economy", "3.4.0")
             .pnLibraryApi(1, 2)
-            .managedDependency("permissions", "2.1.0", "pnFolder", "Permissions")
             .build()
         assertEquals("economy", descriptor.id.value)
-        assertEquals("permissions", descriptor.managedProductDependencies.single().product.value)
-        assertThrows(UnsupportedOperationException::class.java) {
-            @Suppress("UNCHECKED_CAST")
-            (descriptor.managedProductDependencies as MutableList<ManagedProductDependency>).clear()
-        }
-    }
-
-    @Test
-    fun `component descriptor rejects duplicate dependencies`() {
-        assertThrows(IllegalArgumentException::class.java) {
-            ProductDescriptor.builder("economy", "3.4.0")
-                .managedDependency("permissions", "2.1.0", "pnFolder", "Permissions")
-                .managedDependency("permissions", "2.2.0", "pnFolder", "Permissions")
-        }
+        assertEquals("3.4.0", descriptor.version.toString())
     }
 
     @Test

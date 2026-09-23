@@ -68,11 +68,13 @@ class PluginRegistryImplTest {
     fun `updates declaration infers component without separate descriptor`() {
         val request = PluginUpdateRequest.builder().repository("pnFolder", "Example")
             .apiVersions(1, 2)
-            .managedDependency("economy", "2.0.0", "pnFolder", "Economy")
             .artifact("Example.jar", PlatformType.BUKKIT, 17).build()
 
         val error = assertThrows(IllegalArgumentException::class.java) {
-            registry().registerModule(Any(), "example") { it.updates(request) }
+            registry().registerModule(Any(), "example") {
+                it.updates(request)
+                    .depends(Dependencies.managed("economy", "2.0.0", "pnFolder", "Economy"))
+            }
         }
 
         assertTrue(error.message!!.contains("economy >= 2.0.0"))
@@ -97,7 +99,6 @@ class PluginRegistryImplTest {
         val updates = RecordingUpdateService()
         val descriptor = ProductDescriptor.builder("example", "1.0.0")
             .pnLibraryApi(1, 2)
-            .managedDependency("pnlibrary", "1.5.0", "pnFolder", "pnLibrary")
             .build()
         val request = PluginUpdateRequest.builder()
             .repository("pnFolder", "Example")
@@ -105,7 +106,9 @@ class PluginRegistryImplTest {
             .build()
 
         registry(updates = updates, libraryVersion = "1.5.0").registerModule(Any(), "example") {
-            it.product(descriptor).updates(request)
+            it.product(descriptor)
+                .depends(Dependencies.managed("pnlibrary", "1.5.0", "pnFolder", "pnLibrary"))
+                .updates(request)
         }
 
         assertEquals("example", updates.product!!.id.value)
@@ -122,11 +125,13 @@ class PluginRegistryImplTest {
         val registry = registry(tasks = RecordingTaskService(taskScope), libraryVersion = "1.0.0")
         val descriptor = ProductDescriptor.builder("example", "1.0.0")
             .pnLibraryApi(1, 1)
-            .managedDependency("economy", "2.0.0", "pnFolder", "Economy")
             .build()
 
         val error = assertThrows(IllegalArgumentException::class.java) {
-        registry.registerModule(owner, "example") { it.product(descriptor) }
+            registry.registerModule(owner, "example") {
+                it.product(descriptor)
+                    .depends(Dependencies.managed("economy", "2.0.0", "pnFolder", "Economy"))
+            }
         }
 
         assertTrue(error.message!!.contains("economy >= 2.0.0"))
@@ -142,8 +147,8 @@ class PluginRegistryImplTest {
         }
 
         val dependent = registry.registerModule(Any(), "example") {
-            it.product(ProductDescriptor.builder("example", "1.0.0").pnLibraryApi(1, 1)
-                .managedDependency("economy", "2.0.0", "pnFolder", "Economy").build())
+            it.product(ProductDescriptor.builder("example", "1.0.0").pnLibraryApi(1, 1).build())
+                .depends(Dependencies.managed("economy", "2.0.0", "pnFolder", "Economy"))
         }
 
         assertEquals("example", dependent.id.value)
@@ -154,11 +159,10 @@ class PluginRegistryImplTest {
     fun `external dependency diagnostic includes its download page`() {
         val dependency = ExternalPluginDependency.builder("Vault", "1.7.3")
             .downloadPage("https://github.com/MilkBowl/Vault/releases").build()
-        val descriptor = ProductDescriptor.builder("example", "1.0.0").pnLibraryApi(1, 1)
-            .externalDependency(dependency).build()
+        val descriptor = ProductDescriptor.builder("example", "1.0.0").pnLibraryApi(1, 1).build()
 
         val error = assertThrows(IllegalArgumentException::class.java) {
-        registry().registerModule(Any(), "example") { it.product(descriptor) }
+            registry().registerModule(Any(), "example") { it.product(descriptor).depends(dependency) }
         }
 
         assertTrue(error.message!!.contains("Vault >= 1.7.3"))

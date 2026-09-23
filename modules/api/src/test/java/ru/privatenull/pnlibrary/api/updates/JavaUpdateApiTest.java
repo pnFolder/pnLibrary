@@ -9,11 +9,9 @@ class JavaUpdateApiTest {
     void buildsProductDescriptorFromJava() {
         ProductDescriptor descriptor = ProductDescriptor.builder("economy", "3.4.0")
             .pnLibraryApi(1, 2)
-            .managedDependency("permissions", "2.1.0", "pnFolder", "Permissions")
             .build();
 
         assertEquals("economy", descriptor.getId().getValue());
         assertEquals("3.4.0", descriptor.getVersion().toString());
-        assertEquals(1, descriptor.getManagedProductDependencies().size());
     }
 }

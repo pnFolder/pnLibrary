@@ -258,45 +258,14 @@ class ProductDescriptor private constructor(builder: Builder) {
     val version: SemanticVersion = builder.version
     val supportedApi: ApiVersionRange = builder.supportedApi
         ?: throw IllegalArgumentException("pnLibrary API range is required")
-    val managedProductDependencies: List<ManagedProductDependency> = Collections.unmodifiableList(builder.managedProductDependencies.toList())
-    val externalPluginDependencies: List<ExternalPluginDependency> = Collections.unmodifiableList(builder.externalPluginDependencies.toList())
 
     class Builder internal constructor(
         internal val id: ProductId,
         internal val version: SemanticVersion,
     ) {
         internal var supportedApi: ApiVersionRange? = null
-        internal val managedProductDependencies = mutableListOf<ManagedProductDependency>()
-        internal val externalPluginDependencies = mutableListOf<ExternalPluginDependency>()
-
         fun pnLibraryApi(minimum: Int, maximum: Int) = apply {
             supportedApi = ApiVersionRange(minimum, maximum)
-        }
-
-        @JvmOverloads
-        fun managedDependency(
-            component: String,
-            minimumVersion: String,
-            repositoryOwner: String,
-            repositoryName: String,
-            required: Boolean = true,
-            automaticDownload: Boolean = false,
-        ) = apply {
-            val dependency = ManagedProductDependency(
-                ProductId.of(component), SemanticVersion.parse(minimumVersion), repositoryOwner, repositoryName,
-                required, if (automaticDownload) DownloadPolicy.AUTOMATIC else DownloadPolicy.MANUAL,
-            )
-            require(managedProductDependencies.none { it.product == dependency.product }) {
-                "duplicate component dependency: ${dependency.product}"
-            }
-            managedProductDependencies += dependency
-        }
-
-        fun externalDependency(dependency: ExternalPluginDependency) = apply {
-            require(externalPluginDependencies.none { it.plugin.equals(dependency.plugin, true) }) {
-                "duplicate external dependency: ${dependency.plugin}"
-            }
-            externalPluginDependencies += dependency
         }
 
         fun build(): ProductDescriptor = ProductDescriptor(this)

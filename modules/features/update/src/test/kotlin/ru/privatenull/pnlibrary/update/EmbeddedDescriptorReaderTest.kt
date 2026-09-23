@@ -14,8 +14,7 @@ class EmbeddedDescriptorReaderTest {
 
     @Test fun `reads the generated installed descriptor from jar`() {
         val bytes = ProductDescriptorCodec().encodeInstalled(
-            ProductDescriptor.builder("economy", "3.4.0").pnLibraryApi(1, 2)
-                .managedDependency("permissions", "2.1.0", "pnFolder", "Permissions").build(),
+            ProductDescriptor.builder("economy", "3.4.0").pnLibraryApi(1, 2).build(),
         )
         val jar = directory.resolve("economy.jar")
         JarOutputStream(Files.newOutputStream(jar)).use { output ->
@@ -25,7 +24,7 @@ class EmbeddedDescriptorReaderTest {
         }
         val descriptor = EmbeddedDescriptorReader().read(jar)
         assertEquals("economy", descriptor.id.value)
-        assertEquals("permissions", descriptor.managedProductDependencies.single().product.value)
+        assertEquals("3.4.0", descriptor.version.toString())
     }
 
     @Test fun `rejects duplicate embedded descriptors`() {
