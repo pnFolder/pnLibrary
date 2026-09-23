@@ -8,6 +8,8 @@ include(
     ":modules:features:update",
     ":modules:features:minecraft-localization",
     ":modules:internal:bstats",
+    ":modules:bootstrap:bukkit",
+    ":modules:design:console",
     ":platforms:bukkit:api",
     ":platforms:bukkit:runtime",
     ":platforms:bungee:api",
