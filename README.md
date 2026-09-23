@@ -195,16 +195,18 @@ val optionalEconomy = pn.services.get<EconomyService>()
 
 ## Глобальная регистрация плагина
 
-Плагин один раз регистрируется в pnLibrary. Адаптер сам получает его стабильный
-ID, имя, версию и авторов из Bukkit, BungeeCord или Velocity. Все подключённые
-возможности доступны из одного `PluginContext`:
+Физический плагин один раз регистрируется в pnLibrary и получает `PluginContext`.
+Внутри него явно регистрируются изолированные логические модули; каждый
+`ModuleContext` содержит собственные tasks, events, services, configs и интеграции:
 
 ```kotlin
-private lateinit var context: PluginContext
+private lateinit var pluginContext: PluginContext
+private lateinit var context: ModuleContext
 
 override fun onEnable() {
     val pn = PnLibraryProvider.get()
-    context = pn.plugins.register(this) {
+    pluginContext = pn.plugins.register(this)
+    context = pluginContext.registerModule("market") {
         it.metrics(projectId = 12345, enabled = true) { metrics ->
             metrics.simplePie("storage_type") { database.type }
         }
@@ -226,17 +228,17 @@ override fun onEnable() {
 
 override fun onDisable() {
     val savedLots = auction.saveAll()
-    context.close()
+    pluginContext.close()
     context.lifecycle.disabled()
         .ok("Storage", "saved lots: $savedLots")
         .show()
 }
 ```
 
-Контекст можно получить из любого места по идентификатору:
+Контекст физического плагина можно получить по native owner, а модуль — по локальному ID:
 
 ```kotlin
-val context = pn.plugins.require("pnmarket")
+val context = pn.plugins.require(this).requireModule("market")
 context.logger.success("Market loaded")
 context.events.publish(MarketReloadEvent())
 context.tasks.async(Runnable { repository.cleanup() })
@@ -253,11 +255,12 @@ context.updates?.snapshot
 diagnostics и listeners; плагин дописывает только свои строки и сам выбирает
 правильный момент показа.
 
-Явный ID остаётся override для нестандартных случаев:
+Один физический плагин может содержать несколько изолированных модулей:
 
 ```kotlin
-pn.plugins.register(this, "custom-id") { plugin ->
-    plugin.metadata { metadata ->
+val plugin = pn.plugins.require(this)
+plugin.registerModule("custom-id") { module ->
+    module.metadata { metadata ->
         metadata.name("pnMarket")
             .version("1.5.0")
             .authors("pnFolder")

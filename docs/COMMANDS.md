@@ -109,8 +109,8 @@ checks, and Adventure `Component` replies. Native Bukkit, BungeeCord, and Veloci
 are deliberately absent from the public contract.
 
 The returned `CommandRegistration` may be closed manually and repeated `close()` calls are safe.
-pnLibrary also associates every registration with its `owner`: closing the owner's registered
-`PluginContext`, calling `unregisterOwner`, or shutting down pnLibrary removes all corresponding
+pnLibrary also associates every registration with its native `owner`: closing the owner's
+`PluginContext`, calling `plugins.unregister(owner)`, or shutting down pnLibrary removes all corresponding
 native commands automatically.
 
 Primary names and aliases are normalized to lowercase. Blank names, whitespace inside names, an

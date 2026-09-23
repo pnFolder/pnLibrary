@@ -2691,6 +2691,44 @@ public abstract interface class ru/privatenull/pnlibrary/api/plugin/MetricsContr
 	public abstract fun isEnabled ()Z
 }
 
+public abstract interface class ru/privatenull/pnlibrary/api/plugin/ModuleContext : java/lang/AutoCloseable {
+	public abstract fun close ()V
+	public abstract fun getActions ()Lru/privatenull/pnlibrary/api/actions/ActionService;
+	public abstract fun getComponents ()Lru/privatenull/pnlibrary/api/text/ComponentService;
+	public abstract fun getConfigs ()Lru/privatenull/pnlibrary/api/config/ConfigScope;
+	public abstract fun getCooldowns ()Lru/privatenull/pnlibrary/api/cooldowns/CooldownService;
+	public abstract fun getCurrencies ()Lru/privatenull/pnlibrary/api/currency/CurrencyService;
+	public abstract fun getCurrencyStorages ()Lru/privatenull/pnlibrary/api/currency/CurrencyStorageFactory;
+	public abstract fun getDiagnostics ()Lru/privatenull/pnlibrary/api/diagnostics/DiagnosticRegistration;
+	public abstract fun getDownloads ()Lru/privatenull/pnlibrary/api/downloads/DownloadRegistration;
+	public abstract fun getEvents ()Lru/privatenull/pnlibrary/api/events/EventScope;
+	public abstract fun getId ()Lru/privatenull/pnlibrary/api/plugin/ModuleId;
+	public abstract fun getLifecycle ()Lru/privatenull/pnlibrary/api/plugin/PluginLifecycle;
+	public abstract fun getLogger ()Lru/privatenull/pnlibrary/api/logging/PnLogger;
+	public abstract fun getMessages ()Lru/privatenull/pnlibrary/api/plugin/PluginMessages;
+	public abstract fun getMetadata ()Lru/privatenull/pnlibrary/api/plugin/PluginMetadata;
+	public abstract fun getMetrics ()Lru/privatenull/pnlibrary/api/plugin/MetricsController;
+	public abstract fun getPlaceholders ()Lru/privatenull/pnlibrary/api/placeholders/PlaceholderService;
+	public abstract fun getServices ()Lru/privatenull/pnlibrary/api/services/ServiceManager;
+	public abstract fun getTasks ()Lru/privatenull/pnlibrary/api/tasks/TaskScope;
+	public abstract fun getUpdates ()Lru/privatenull/pnlibrary/api/updates/UpdateRegistration;
+	public abstract fun isClosed ()Z
+}
+
+public final class ru/privatenull/pnlibrary/api/plugin/ModuleId {
+	public static final field Companion Lru/privatenull/pnlibrary/api/plugin/ModuleId$Companion;
+	public synthetic fun <init> (Ljava/lang/String;Lkotlin/jvm/internal/DefaultConstructorMarker;)V
+	public fun equals (Ljava/lang/Object;)Z
+	public final fun getValue ()Ljava/lang/String;
+	public fun hashCode ()I
+	public static final fun of (Ljava/lang/String;)Lru/privatenull/pnlibrary/api/plugin/ModuleId;
+	public fun toString ()Ljava/lang/String;
+}
+
+public final class ru/privatenull/pnlibrary/api/plugin/ModuleId$Companion {
+	public final fun of (Ljava/lang/String;)Lru/privatenull/pnlibrary/api/plugin/ModuleId;
+}
+
 public abstract interface class ru/privatenull/pnlibrary/api/plugin/PluginBuilder {
 	public abstract fun component (Lru/privatenull/pnlibrary/api/updates/ComponentDescriptor;)Lru/privatenull/pnlibrary/api/plugin/PluginBuilder;
 	public abstract fun depends (Lru/privatenull/pnlibrary/api/plugin/PluginDependency;)Lru/privatenull/pnlibrary/api/plugin/PluginBuilder;
@@ -2713,26 +2751,19 @@ public abstract interface class ru/privatenull/pnlibrary/api/plugin/PluginBuilde
 
 public abstract interface class ru/privatenull/pnlibrary/api/plugin/PluginContext : java/lang/AutoCloseable {
 	public abstract fun close ()V
-	public abstract fun getActions ()Lru/privatenull/pnlibrary/api/actions/ActionService;
-	public abstract fun getComponents ()Lru/privatenull/pnlibrary/api/text/ComponentService;
-	public abstract fun getConfigs ()Lru/privatenull/pnlibrary/api/config/ConfigScope;
-	public abstract fun getCooldowns ()Lru/privatenull/pnlibrary/api/cooldowns/CooldownService;
-	public abstract fun getCurrencies ()Lru/privatenull/pnlibrary/api/currency/CurrencyService;
-	public abstract fun getCurrencyStorages ()Lru/privatenull/pnlibrary/api/currency/CurrencyStorageFactory;
-	public abstract fun getDiagnostics ()Lru/privatenull/pnlibrary/api/diagnostics/DiagnosticRegistration;
-	public abstract fun getDownloads ()Lru/privatenull/pnlibrary/api/downloads/DownloadRegistration;
-	public abstract fun getEvents ()Lru/privatenull/pnlibrary/api/events/EventScope;
-	public abstract fun getId ()Lru/privatenull/pnlibrary/api/plugin/PluginId;
-	public abstract fun getLifecycle ()Lru/privatenull/pnlibrary/api/plugin/PluginLifecycle;
-	public abstract fun getLogger ()Lru/privatenull/pnlibrary/api/logging/PnLogger;
-	public abstract fun getMessages ()Lru/privatenull/pnlibrary/api/plugin/PluginMessages;
-	public abstract fun getMetadata ()Lru/privatenull/pnlibrary/api/plugin/PluginMetadata;
-	public abstract fun getMetrics ()Lru/privatenull/pnlibrary/api/plugin/MetricsController;
-	public abstract fun getPlaceholders ()Lru/privatenull/pnlibrary/api/placeholders/PlaceholderService;
-	public abstract fun getServices ()Lru/privatenull/pnlibrary/api/services/ServiceManager;
-	public abstract fun getTasks ()Lru/privatenull/pnlibrary/api/tasks/TaskScope;
-	public abstract fun getUpdates ()Lru/privatenull/pnlibrary/api/updates/UpdateRegistration;
+	public fun getModule (Ljava/lang/String;)Lru/privatenull/pnlibrary/api/plugin/ModuleContext;
+	public abstract fun getModule (Lru/privatenull/pnlibrary/api/plugin/ModuleId;)Lru/privatenull/pnlibrary/api/plugin/ModuleContext;
+	public abstract fun getOwner ()Ljava/lang/Object;
 	public abstract fun isClosed ()Z
+	public abstract fun modules ()Ljava/util/List;
+	public fun registerModule (Ljava/lang/String;Ljava/util/function/Consumer;)Lru/privatenull/pnlibrary/api/plugin/ModuleContext;
+	public abstract fun registerModule (Lru/privatenull/pnlibrary/api/plugin/ModuleId;Ljava/util/function/Consumer;)Lru/privatenull/pnlibrary/api/plugin/ModuleContext;
+	public static synthetic fun registerModule$default (Lru/privatenull/pnlibrary/api/plugin/PluginContext;Ljava/lang/String;Ljava/util/function/Consumer;ILjava/lang/Object;)Lru/privatenull/pnlibrary/api/plugin/ModuleContext;
+	public static synthetic fun registerModule$default (Lru/privatenull/pnlibrary/api/plugin/PluginContext;Lru/privatenull/pnlibrary/api/plugin/ModuleId;Ljava/util/function/Consumer;ILjava/lang/Object;)Lru/privatenull/pnlibrary/api/plugin/ModuleContext;
+	public fun requireModule (Ljava/lang/String;)Lru/privatenull/pnlibrary/api/plugin/ModuleContext;
+	public fun requireModule (Lru/privatenull/pnlibrary/api/plugin/ModuleId;)Lru/privatenull/pnlibrary/api/plugin/ModuleContext;
+	public fun unregisterModule (Ljava/lang/String;)V
+	public abstract fun unregisterModule (Lru/privatenull/pnlibrary/api/plugin/ModuleId;)V
 }
 
 public abstract interface class ru/privatenull/pnlibrary/api/plugin/PluginDependency {
@@ -2768,9 +2799,9 @@ public abstract interface class ru/privatenull/pnlibrary/api/plugin/PluginMessag
 }
 
 public final class ru/privatenull/pnlibrary/api/plugin/PluginMetadata {
-	public fun <init> (Lru/privatenull/pnlibrary/api/plugin/PluginId;Ljava/lang/String;Ljava/lang/String;Ljava/lang/String;Lru/privatenull/pnlibrary/api/platform/PlatformType;Ljava/lang/String;Ljava/lang/String;I)V
+	public fun <init> (Lru/privatenull/pnlibrary/api/plugin/ModuleId;Ljava/lang/String;Ljava/lang/String;Ljava/lang/String;Lru/privatenull/pnlibrary/api/platform/PlatformType;Ljava/lang/String;Ljava/lang/String;I)V
 	public final fun getAuthors ()Ljava/lang/String;
-	public final fun getId ()Lru/privatenull/pnlibrary/api/plugin/PluginId;
+	public final fun getId ()Lru/privatenull/pnlibrary/api/plugin/ModuleId;
 	public final fun getJavaFeature ()I
 	public final fun getJavaVersion ()Ljava/lang/String;
 	public final fun getName ()Ljava/lang/String;
@@ -2791,17 +2822,11 @@ public abstract interface class ru/privatenull/pnlibrary/api/plugin/PluginOption
 
 public abstract interface class ru/privatenull/pnlibrary/api/plugin/PluginRegistry : java/lang/AutoCloseable {
 	public abstract fun close ()V
-	public fun get (Ljava/lang/String;)Lru/privatenull/pnlibrary/api/plugin/PluginContext;
-	public abstract fun get (Lru/privatenull/pnlibrary/api/plugin/PluginId;)Lru/privatenull/pnlibrary/api/plugin/PluginContext;
-	public fun register (Ljava/lang/Object;Ljava/lang/String;Ljava/util/function/Consumer;)Lru/privatenull/pnlibrary/api/plugin/PluginContext;
-	public abstract fun register (Ljava/lang/Object;Ljava/util/function/Consumer;)Lru/privatenull/pnlibrary/api/plugin/PluginContext;
-	public abstract fun register (Ljava/lang/Object;Lru/privatenull/pnlibrary/api/plugin/PluginId;Ljava/util/function/Consumer;)Lru/privatenull/pnlibrary/api/plugin/PluginContext;
+	public abstract fun get (Ljava/lang/Object;)Lru/privatenull/pnlibrary/api/plugin/PluginContext;
+	public abstract fun register (Ljava/lang/Object;)Lru/privatenull/pnlibrary/api/plugin/PluginContext;
 	public abstract fun registrations ()Ljava/util/List;
-	public fun require (Ljava/lang/String;)Lru/privatenull/pnlibrary/api/plugin/PluginContext;
-	public fun require (Lru/privatenull/pnlibrary/api/plugin/PluginId;)Lru/privatenull/pnlibrary/api/plugin/PluginContext;
-	public fun unregister (Ljava/lang/String;)V
-	public abstract fun unregister (Lru/privatenull/pnlibrary/api/plugin/PluginId;)V
-	public abstract fun unregisterOwner (Ljava/lang/Object;)V
+	public fun require (Ljava/lang/Object;)Lru/privatenull/pnlibrary/api/plugin/PluginContext;
+	public abstract fun unregister (Ljava/lang/Object;)V
 }
 
 public abstract interface class ru/privatenull/pnlibrary/api/runtime/PnLibrary : java/io/Closeable {
