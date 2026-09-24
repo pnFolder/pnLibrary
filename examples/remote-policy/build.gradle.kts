@@ -12,7 +12,7 @@ java {
 tasks.withType<JavaCompile>().configureEach { options.release = 8 }
 
 dependencies {
-    // The policy is compiled only against the stable remote-check contract.
-    compileOnly(project(":modules:remote-check:bukkit"))
+    // The policy is compiled against the contract shipped by the Bukkit runtime.
+    compileOnly(project(":platforms:bukkit:runtime"))
     compileOnly(libs.spigot.api.v18)
 }
