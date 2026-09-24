@@ -21,6 +21,12 @@ public final class BukkitServerInfo {
     public BukkitPlatform platform() { return platform; }
     /** Original name returned by Bukkit, useful for an unrecognised fork. */
     public String platformName() { return platformName; }
+    /** Case-insensitive check that also works for platforms unknown to the library. */
+    public boolean isPlatform(String expectedName) {
+        return expectedName != null && platformName.equalsIgnoreCase(expectedName.trim());
+    }
+    /** Whether this is a platform which was not recognised by the current library release. */
+    public boolean isUnknownPlatform() { return platform == BukkitPlatform.UNKNOWN; }
     /** Full server version string returned by Bukkit. */
     public String version() { return version; }
     public MinecraftVersionInfo minecraftVersionInfo() { return minecraftVersion; }
