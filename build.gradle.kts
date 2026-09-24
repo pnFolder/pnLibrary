@@ -87,6 +87,7 @@ dependencies {
     dokka(project(":modules:features:minecraft-localization"))
     dokka(project(":modules:bootstrap:bukkit"))
     dokka(project(":modules:design:console"))
+    dokka(project(":modules:compatibility:bukkit"))
     dokka(project(":platforms:bukkit:api"))
     dokka(project(":platforms:bungee:api"))
     dokka(project(":platforms:velocity:api"))
