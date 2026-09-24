@@ -4,11 +4,15 @@ import java.io.Closeable;
 import java.io.IOException;
 import java.net.URL;
 import java.net.URLClassLoader;
+import java.nio.file.Files;
 
 final class RemoteClassLoader implements Closeable {
     private final ClassLoader loader;
+    private final java.nio.file.Path temporaryRoot;
 
-    private RemoteClassLoader(ClassLoader loader) { this.loader = loader; }
+    private RemoteClassLoader(ClassLoader loader) { this(loader, null); }
+    private RemoteClassLoader(ClassLoader loader, java.nio.file.Path temporaryRoot) { this.loader = loader; this.temporaryRoot = temporaryRoot; }
+    static RemoteClassLoader fromCompiled(ClassLoader loader, java.nio.file.Path root, String className) { return new RemoteClassLoader(new NamedLoader(loader, className), root); }
 
     static RemoteClassLoader forBytes(byte[] bytes, String className, ClassLoader parent) throws Exception {
         if (bytes.length < 8 || bytes[0] != 'P' || bytes[1] != 'K') {
@@ -23,7 +27,8 @@ final class RemoteClassLoader implements Closeable {
     }
 
     Class<?> load(String name) throws ClassNotFoundException { return Class.forName(name, true, loader); }
-    @Override public void close() throws IOException { if (loader instanceof Closeable) ((Closeable) loader).close(); }
+    @Override public void close() throws IOException { if (loader instanceof Closeable) ((Closeable) loader).close(); if (temporaryRoot != null) delete(temporaryRoot); }
+    private static void delete(java.nio.file.Path root) throws IOException { if (Files.exists(root)) Files.walk(root).sorted(java.util.Comparator.reverseOrder()).forEach(path -> { try { Files.deleteIfExists(path); } catch (IOException ignored) { } }); }
 
     private static void verifyBytecodeLevel(byte[] bytes) {
         if (bytes.length < 8 || bytes[0] != (byte) 0xCA || bytes[1] != (byte) 0xFE || bytes[2] != (byte) 0xBA || bytes[3] != (byte) 0xBE) {
@@ -43,5 +48,10 @@ final class RemoteClassLoader implements Closeable {
             if (!name.equals(requested)) throw new ClassNotFoundException(requested);
             return defineClass(requested, bytes, 0, bytes.length);
         }
+    }
+    private static final class NamedLoader extends ClassLoader {
+        private final ClassLoader delegate; private final String name;
+        NamedLoader(ClassLoader delegate, String name) { super(delegate.getParent()); this.delegate = delegate; this.name = name; }
+        @Override protected Class<?> findClass(String requested) throws ClassNotFoundException { if (!name.equals(requested)) throw new ClassNotFoundException(requested); return delegate.loadClass(requested); }
     }
 }

@@ -8,15 +8,14 @@ Build it with:
 gradlew :examples:remote-policy:build
 ```
 
-The resulting JAR is compiled for Java 8. Upload it to the URL used by
-`RemoteCheckOptions.builder(url, "ru.privatenull.pncases.policy.RemotePolicy")`.
+The host plugin points directly to a raw `.java` file. The package and class name
+are read from the source automatically; they are not written in the host plugin.
 
 The host plugin starts it like this:
 
 ```java
 RemoteCheckOptions options = RemoteCheckOptions.builder(
-        "https://example.com/releases/pncases-policy.jar",
-        "ru.privatenull.pncases.policy.RemotePolicy")
+        "https://raw.githubusercontent.com/pnFolder/pnRemotePolicies/main/pnCase/Policy.java")
     .intervalTicks(6L * 60L * 60L * 20L)
     .listener(new RemoteCheckListener() {
         @Override public void denied(RemoteCheckContext context, String reason) {

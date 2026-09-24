@@ -15,13 +15,14 @@ public final class RemoteCheckOptions {
 
     private RemoteCheckOptions(Builder builder) {
         if (builder.url == null || !builder.url.startsWith("https://")) throw new IllegalArgumentException("HTTPS URL is required");
-        if (builder.className == null || builder.className.trim().isEmpty()) throw new IllegalArgumentException("className is required");
         if (builder.maxBytes < 1) throw new IllegalArgumentException("maxBytes must be positive");
         url = builder.url; className = builder.className; maxBytes = builder.maxBytes;
         intervalTicks = builder.intervalTicks; listener = builder.listener;
         values = Collections.unmodifiableMap(new HashMap<String, String>(builder.values));
     }
     public static Builder builder(String url, String className) { return new Builder(url, className); }
+    /** Builds a policy source request; package and class name are read from the .java file. */
+    public static Builder builder(String url) { return new Builder(url, null); }
     public static Builder github(String owner, String repository, String file, String className) {
         if (!part(owner) || !part(repository) || file == null || !file.matches("[A-Za-z0-9._-]+")) {
             throw new IllegalArgumentException("invalid GitHub release coordinates");

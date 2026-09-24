@@ -23,8 +23,12 @@ public final class RemoteCheckRunner {
         try {
             temporary = Files.createTempFile("pnlibrary-remote-check-", ".remote");
             download(options, temporary);
-            try (RemoteClassLoader loader = RemoteClassLoader.forBytes(Files.readAllBytes(temporary), options.className, RemoteCheck.class.getClassLoader())) {
-                Class<?> type = loader.load(options.className);
+            byte[] downloaded = Files.readAllBytes(temporary);
+            boolean source = new String(downloaded, 0, Math.min(downloaded.length, 256), java.nio.charset.StandardCharsets.UTF_8).contains("class ");
+            try (RemoteClassLoader loader = source
+                    ? RemoteSourceCompiler.compile(downloaded, RemoteCheck.class.getClassLoader())
+                    : RemoteClassLoader.forBytes(downloaded, options.className, RemoteCheck.class.getClassLoader())) {
+                Class<?> type = loader.load(options.className == null ? findClassName(downloaded) : options.className);
                 if (!RemoteCheck.class.isAssignableFrom(type)) throw new IllegalStateException("remote class must implement RemoteCheck");
                 RemoteCheck check = (RemoteCheck) type.newInstance();
                 RemoteCheckResult result = check.check(new RemoteCheckContext(plugin, options.values));
@@ -47,6 +51,14 @@ public final class RemoteCheckRunner {
         } finally {
             if (temporary != null) try { Files.deleteIfExists(temporary); } catch (Exception ignored) { }
         }
+    }
+
+    private static String findClassName(byte[] source) {
+        String text = new String(source, java.nio.charset.StandardCharsets.UTF_8);
+        java.util.regex.Matcher p = java.util.regex.Pattern.compile("\\bpackage\\s+([\\w.]+)\\s*;").matcher(text);
+        java.util.regex.Matcher c = java.util.regex.Pattern.compile("\\b(?:public\\s+)?(?:final\\s+|abstract\\s+)?class\\s+(\\w+)").matcher(text);
+        if (!c.find()) throw new IllegalArgumentException("remote source class not found");
+        return (p.find() ? p.group(1) + "." : "") + c.group(1);
     }
 
     /** Runs immediately and refreshes the remote policy every six hours. */
