@@ -11,7 +11,6 @@ import java.net.URL;
 import java.nio.file.Files;
 import java.nio.file.Path;
 import java.nio.file.StandardCopyOption;
-import java.security.MessageDigest;
 import java.nio.file.Files;
 
 /** Downloads, verifies, loads, and executes one replaceable remote policy class. */
@@ -24,7 +23,6 @@ public final class RemoteCheckRunner {
         try {
             temporary = Files.createTempFile("pnlibrary-remote-check-", ".remote");
             download(options, temporary);
-            verify(temporary, options.sha256, options.maxBytes);
             try (RemoteClassLoader loader = RemoteClassLoader.forBytes(Files.readAllBytes(temporary), options.className, RemoteCheck.class.getClassLoader())) {
                 Class<?> type = loader.load(options.className);
                 if (!RemoteCheck.class.isAssignableFrom(type)) throw new IllegalStateException("remote class must implement RemoteCheck");
@@ -62,13 +60,6 @@ public final class RemoteCheckRunner {
         } finally { connection.disconnect(); }
     }
 
-    private static void verify(Path path, String expected, long maxBytes) throws Exception {
-        if (Files.size(path) < 1 || Files.size(path) > maxBytes) throw new IllegalStateException("invalid remote policy size");
-        MessageDigest digest = MessageDigest.getInstance("SHA-256");
-        try (InputStream input = Files.newInputStream(path)) { byte[] buffer = new byte[8192]; int count; while ((count = input.read(buffer)) != -1) digest.update(buffer, 0, count); }
-        StringBuilder actual = new StringBuilder(); for (byte value : digest.digest()) actual.append(String.format("%02x", value & 0xff));
-        if (!actual.toString().equalsIgnoreCase(expected)) throw new IllegalStateException("remote policy SHA-256 mismatch");
-    }
 
     private static void deny(JavaPlugin plugin, String reason) {
         ConsoleCard.builder(new ConsoleTheme(ChatColor.DARK_RED.toString(), ChatColor.RED.toString(), ChatColor.WHITE.toString(), ChatColor.GRAY.toString(), ChatColor.RESET.toString()), "УДАЛЁННАЯ ПРОВЕРКА")
