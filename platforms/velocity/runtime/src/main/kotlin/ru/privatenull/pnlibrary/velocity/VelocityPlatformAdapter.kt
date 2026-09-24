@@ -5,6 +5,8 @@ import net.kyori.adventure.text.serializer.legacy.LegacyComponentSerializer
 import org.slf4j.Logger
 import ru.privatenull.pnlibrary.api.logging.LogLevel
 import ru.privatenull.pnlibrary.api.platform.PlatformType
+import ru.privatenull.pnlibrary.api.plugin.PluginMetadata
+import ru.privatenull.pnlibrary.api.remote.RemotePolicyContext
 import ru.privatenull.pnlibrary.api.runtime.PnLibrary
 import ru.privatenull.pnlibrary.velocity.commands.VelocityCommandAdapter
 import ru.privatenull.pnlibrary.spi.commands.PlatformCommandAdapter
@@ -68,6 +70,9 @@ internal class VelocityPlatformAdapter(
             "authors" to description.authors.joinToString(", ").ifBlank { "pnFolder" },
         )
     }
+
+    override fun remotePolicyContext(owner: Any, metadata: PluginMetadata, values: Map<String, String>): RemotePolicyContext =
+        VelocityRemotePolicyContextFactory.create(owner, server, values)
 
     override fun installedPlugins(): Map<String, String> = server.pluginManager.plugins.associate {
         it.description.id to it.description.version.orElse("unknown")

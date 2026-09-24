@@ -6,6 +6,7 @@ import ru.privatenull.pnlibrary.api.commands.CommandRegistration
 import ru.privatenull.pnlibrary.api.currency.Currency
 import ru.privatenull.pnlibrary.api.diagnostics.DiagnosticContainer
 import ru.privatenull.pnlibrary.api.plugin.DownloadPolicy
+import ru.privatenull.pnlibrary.api.plugin.DenyAction
 import ru.privatenull.pnlibrary.api.plugin.ModuleContext
 import ru.privatenull.pnlibrary.api.plugin.PluginRegistration
 import ru.privatenull.pnlibrary.api.runtime.PnLibraryProvider
@@ -14,6 +15,7 @@ import ru.privatenull.pnlibrary.api.updates.ProductDescriptor
 import ru.privatenull.pnlibrary.api.updates.UpdateChannel
 import ru.privatenull.pnlibrary.localization.MinecraftLocalization
 import java.util.concurrent.atomic.AtomicLong
+import java.time.Duration
 
 /** Runnable pnLibrary showcase. Lifecycle wiring stays here; capabilities live in separate files. */
 class DemoPlugin : JavaPlugin() {
@@ -43,6 +45,14 @@ class DemoPlugin : JavaPlugin() {
                     .pnLibraryApi(1, 1)
                     .build()
             )
+            config.getString("remote-policy.source")?.takeIf(String::isNotBlank)?.let { source ->
+                builder.remotePolicy { policy ->
+                    policy.source(source)
+                    policy.checkEvery(Duration.ofHours(6))
+                    policy.onDeny(DenyAction.DISABLE_MODULE)
+                    policy.value("demo", "pndemo")
+                }
+            }
             builder.metrics(32592, true) { metrics ->
                 metrics.simplePie("server_platform") {
                     server.name

@@ -4,6 +4,8 @@ import net.md_5.bungee.api.chat.TextComponent
 import net.md_5.bungee.api.plugin.Plugin
 import ru.privatenull.pnlibrary.api.logging.LogLevel
 import ru.privatenull.pnlibrary.api.platform.PlatformType
+import ru.privatenull.pnlibrary.api.plugin.PluginMetadata
+import ru.privatenull.pnlibrary.api.remote.RemotePolicyContext
 import ru.privatenull.pnlibrary.api.runtime.PnLibrary
 import ru.privatenull.pnlibrary.bungee.commands.BungeeCommandAdapter
 import ru.privatenull.pnlibrary.spi.commands.PlatformCommandAdapter
@@ -64,6 +66,8 @@ internal class BungeePlatformAdapter(
             "authors" to (target.description.author ?: "pnFolder"),
         )
     }
+    override fun remotePolicyContext(owner: Any, metadata: PluginMetadata, values: Map<String, String>): RemotePolicyContext =
+        BungeeRemotePolicyContextFactory.create(owner as Plugin, values)
     override fun installedPlugins(): Map<String, String> = plugin.proxy.pluginManager.plugins.associate {
         it.description.name to it.description.version
     }

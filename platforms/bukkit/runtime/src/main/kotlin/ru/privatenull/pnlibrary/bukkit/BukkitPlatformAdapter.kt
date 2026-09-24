@@ -5,6 +5,9 @@ import org.bukkit.entity.Player
 import org.bukkit.plugin.Plugin
 import ru.privatenull.pnlibrary.api.logging.LogLevel
 import ru.privatenull.pnlibrary.api.platform.PlatformType
+import ru.privatenull.pnlibrary.api.plugin.PluginMetadata
+import ru.privatenull.pnlibrary.api.remote.RemotePolicyContext
+import ru.privatenull.pnlibrary.bukkit.remote.BukkitRemotePolicyContextFactory
 import ru.privatenull.pnlibrary.bukkit.server.ServerInfo
 import ru.privatenull.pnlibrary.api.runtime.PnLibrary
 import ru.privatenull.pnlibrary.bukkit.compat.ServerCapabilities
@@ -115,6 +118,14 @@ internal class BukkitPlatformAdapter constructor(
             "version" to target.description.version,
             "authors" to target.description.authors.joinToString(", ").ifBlank { "pnFolder" },
         )
+    }
+
+    override fun remotePolicyContext(owner: Any, metadata: PluginMetadata, values: Map<String, String>): RemotePolicyContext =
+        BukkitRemotePolicyContextFactory.create(owner as Plugin, values)
+
+    override fun disableOwner(owner: Any): Boolean {
+        Bukkit.getPluginManager().disablePlugin(owner as Plugin)
+        return true
     }
 
     override fun installedPlugins(): Map<String, String> = Bukkit.getPluginManager().plugins.associate {

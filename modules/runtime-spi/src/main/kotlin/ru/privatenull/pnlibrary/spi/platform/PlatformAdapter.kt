@@ -2,6 +2,8 @@ package ru.privatenull.pnlibrary.spi.platform
 
 import ru.privatenull.pnlibrary.api.logging.LogLevel
 import ru.privatenull.pnlibrary.api.platform.PlatformType
+import ru.privatenull.pnlibrary.api.plugin.PluginMetadata
+import ru.privatenull.pnlibrary.api.remote.RemotePolicyContext
 import ru.privatenull.pnlibrary.api.runtime.PnLibrary
 import ru.privatenull.pnlibrary.spi.metrics.NoopMetricsFactory
 import ru.privatenull.pnlibrary.spi.metrics.PlatformMetricsFactory
@@ -80,6 +82,13 @@ interface PlatformAdapter : AutoCloseable {
      * an empty map instead of failing.
      */
     fun ownerDetails(owner: Any): Map<String, String> = emptyMap()
+
+    /** Creates the shared remote-policy view with native handles for this platform. */
+    fun remotePolicyContext(owner: Any, metadata: PluginMetadata, values: Map<String, String>): RemotePolicyContext =
+        throw UnsupportedOperationException("Remote policy is unavailable on ${type.id}")
+
+    /** Disables the native plugin when supported; returns false on platforms without runtime unload. */
+    fun disableOwner(owner: Any): Boolean = false
 
     /**
      * Returns whether [owner] is a native plugin instance understood by this adapter.

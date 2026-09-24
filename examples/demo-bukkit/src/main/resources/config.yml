@@ -2,3 +2,7 @@ messages:
   prefix: '&8[&bpnDemo&8] &7'
 demo:
   starting-balance: 100.00
+remote-policy:
+  # Direct HTTPS URL to a raw .java file implementing the shared RemotePolicy API.
+  # Leave empty to keep this optional demo feature disabled.
+  source: ''

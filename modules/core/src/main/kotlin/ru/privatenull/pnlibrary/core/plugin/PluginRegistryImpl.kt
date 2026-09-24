@@ -27,6 +27,10 @@ import ru.privatenull.pnlibrary.api.plugin.PluginOptions
 import ru.privatenull.pnlibrary.api.plugin.PluginRegistry
 import ru.privatenull.pnlibrary.api.plugin.PluginDependency
 import ru.privatenull.pnlibrary.api.tasks.TaskScope
+import ru.privatenull.pnlibrary.api.tasks.TaskExecution
+import ru.privatenull.pnlibrary.api.tasks.TaskSpec
+import ru.privatenull.pnlibrary.api.plugin.DenyAction
+import ru.privatenull.pnlibrary.core.remote.RemotePolicyEngine
 import ru.privatenull.pnlibrary.api.tasks.TaskService
 import ru.privatenull.pnlibrary.core.tasks.TaskServiceImpl
 import ru.privatenull.pnlibrary.api.updates.PluginUpdateRequest
@@ -337,9 +341,16 @@ internal class PluginRegistryImpl(
                 }
                 definition.bindUpdatesTo(descriptor)
             validateDependencies(definition.dependencies, definition.downloadsRequest)
-                createContext(this, id, serviceKey(nativeId, id), definition, descriptor).also {
-                    moduleContexts[id] = it
+                createContext(this, id, serviceKey(nativeId, id), definition, descriptor).also { context ->
+                    moduleContexts[id] = context
                     if (descriptor != null) productDescriptors[descriptor.id.value] = descriptor
+                    try {
+                        definition.remotePolicy?.let(context::startRemotePolicy)
+                    } catch (error: Throwable) {
+                        moduleContexts.remove(id)
+                        context.closeInternal()
+                        throw error
+                    }
                 }
             } }
 
@@ -397,6 +408,38 @@ internal class PluginRegistryImpl(
         private val owner: Any get() = parent.owner
         private val contextClosed = AtomicBoolean(false)
         override val isClosed: Boolean get() = contextClosed.get()
+
+        fun startRemotePolicy(policy: ru.privatenull.pnlibrary.api.plugin.RemotePolicy) {
+            val remoteContext = platform.remotePolicyContext(owner, metadata, policy.values)
+            tasks.schedule(TaskSpec.builder()
+                .name("remote policy: ${id.value}")
+                .execution(TaskExecution.async())
+                .interval(policy.checkEvery)
+                .action {
+                    if (isClosed) return@action
+                    try {
+                        val decision = RemotePolicyEngine.check(policy.source, remoteContext)
+                        if (!decision.allowed) {
+                            platform.executeGlobal(Runnable {
+                                if (isClosed) return@Runnable
+                                logger.warning("Remote policy denied ${metadata.name}: ${decision.message}")
+                                if (policy.onDeny == DenyAction.DISABLE_MODULE) {
+                                    close()
+                                } else {
+                                    if (!platform.disableOwner(owner)) parent.close()
+                                }
+                            })
+                        }
+                    } catch (error: Throwable) {
+                        platform.executeGlobal(Runnable {
+                            if (isClosed) return@Runnable
+                            logger.error("Remote policy failed for ${metadata.name}", error)
+                            if (policy.onDeny == DenyAction.DISABLE_MODULE) close()
+                            else if (!platform.disableOwner(owner)) parent.close()
+                        })
+                    }
+                }.build())
+        }
 
         override val lifecycle: PluginLifecycle = object : PluginLifecycle {
             override val metadata: PluginMetadata get() = this@Context.metadata

@@ -195,34 +195,22 @@ val optionalEconomy = pn.services.get<EconomyService>()
 
 ## Глобальная регистрация плагина
 
-### Удалённая политика плагина (Bukkit)
+### Удалённая политика модуля (Bukkit, Velocity, Bungee)
 
-Удалённая политика подключается к тому же зарегистрированному плагину. Класс,
-который лежит по URL, должен реализовать `RemoteCheck`. Пользовательский плагин
-не собирает отдельный runner вручную — он задаёт источник и крючки жизненного цикла:
+Удалённая политика задаётся при регистрации модуля. pnLibrary сама запускает
+проверку в своей системе задач и отменяет её при закрытии модуля. Исходный `.java`
+по URL должен реализовывать `RemotePolicy`:
 
-```java
-PluginContext plugin = PnLibraryProvider.get().plugins().register(this);
-
-RemoteCheckOptions policy = RemoteCheckOptions.builder(
-        "https://github.com/pnFolder/pnRemotePolicies/releases/latest/download/PnCasePolicy.jar",
-        "ru.pnfolder.policies.PnCasePolicy")
-    .intervalTicks(6L * 60L * 60L * 20L) // один раз в 6 часов
-    .value("product", "pnCase")
-    .listener(new RemoteCheckListener() {
-        @Override public void allowed(RemotePolicyContext context) {
-            getLogger().info("Удалённая политика разрешила запуск");
-        }
-        @Override public void denied(RemotePolicyContext context, String reason) {
-            getLogger().warning("Запуск запрещён: " + reason);
-        }
-        @Override public void failed(Throwable error) {
-            getLogger().warning("Политику не удалось загрузить: " + error.getMessage());
-        }
-    })
-    .build();
-
-RemoteCheckRunner.schedule(this, policy);
+```kotlin
+val plugin = library.plugins.register(this)
+val module = plugin.registerModule("pncase") { builder ->
+    builder.remotePolicy { policy ->
+        policy.source("https://raw.githubusercontent.com/pnFolder/pnRemotePolicies/main/pnCase/Policy.java")
+        policy.checkEvery(Duration.ofHours(6))
+        policy.onDeny(DenyAction.DISABLE_MODULE)
+        policy.value("product", "pnCase")
+    }
+}
 ```
 
 Сам удалённый класс использует только кроссплатформенный API pnLibrary:
@@ -254,8 +242,11 @@ ProxyServer velocityProxy = context.nativeHandle(ProxyServer.class);
 На другой платформе такой запрос вернёт `null`; `requireNative(...)` выбрасывает
 понятную ошибку, если объект обязателен.
 
-При `deny(...)` проверяемый плагин автоматически отключается. При исключении,
-ошибке загрузки или несовместимом классе выполняется безопасный отказ.
+При `deny(...)` действие определяется `onDeny`: модуль закрывается либо,
+на Bukkit, отключается весь плагин. На Velocity/Bungee `DISABLE_PLUGIN`
+закрывает регистрацию плагина и все его модули, поскольку эти прокси не имеют
+надёжной операции выгрузки плагина во время работы. Ошибка загрузки или выполнения
+обрабатывается тем же действием. Для компиляции удалённого `.java` требуется JDK.
 
 Физический плагин один раз регистрируется в pnLibrary и получает `PluginContext`.
 Внутри него явно регистрируются изолированные логические модули; каждый
