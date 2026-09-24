@@ -1,0 +1,28 @@
+package ru.privatenull.pnlibrary.remote.bukkit;
+
+import ru.privatenull.pnlibrary.common.minecraft.MinecraftVersion;
+import ru.privatenull.pnlibrary.common.minecraft.MinecraftVersionInfo;
+
+/** Immutable snapshot of the server implementation and Minecraft release. */
+public final class BukkitServerInfo {
+    private final BukkitPlatform platform;
+    private final String platformName;
+    private final String version;
+    private final MinecraftVersionInfo minecraftVersion;
+
+    BukkitServerInfo(BukkitPlatform platform, String platformName, String version,
+                     MinecraftVersionInfo minecraftVersion) {
+        this.platform = platform;
+        this.platformName = platformName;
+        this.version = version;
+        this.minecraftVersion = minecraftVersion;
+    }
+
+    public BukkitPlatform platform() { return platform; }
+    /** Original name returned by Bukkit, useful for an unrecognised fork. */
+    public String platformName() { return platformName; }
+    /** Full server version string returned by Bukkit. */
+    public String version() { return version; }
+    public MinecraftVersionInfo minecraftVersionInfo() { return minecraftVersion; }
+    public MinecraftVersion minecraftVersion() { return minecraftVersion.getParsed(); }
+}
