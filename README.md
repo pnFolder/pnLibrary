@@ -195,6 +195,58 @@ val optionalEconomy = pn.services.get<EconomyService>()
 
 ## Глобальная регистрация плагина
 
+### Удалённая политика плагина (Bukkit)
+
+Удалённая политика подключается к тому же зарегистрированному плагину. Класс,
+который лежит по URL, должен реализовать `RemoteCheck`. Пользовательский плагин
+не собирает отдельный runner вручную — он задаёт источник и крючки жизненного цикла:
+
+```java
+PluginContext plugin = PnLibraryProvider.get().plugins().register(this);
+
+RemoteCheckOptions policy = RemoteCheckOptions.builder(
+        "https://github.com/pnFolder/pnRemotePolicies/releases/latest/download/PnCasePolicy.jar",
+        "ru.pnfolder.policies.PnCasePolicy")
+    .intervalTicks(6L * 60L * 60L * 20L) // один раз в 6 часов
+    .value("product", "pnCase")
+    .listener(new RemoteCheckListener() {
+        @Override public void allowed(RemoteCheckContext context) {
+            getLogger().info("Удалённая политика разрешила запуск");
+        }
+        @Override public void denied(RemoteCheckContext context, String reason) {
+            getLogger().warning("Запуск запрещён: " + reason);
+        }
+        @Override public void failed(Throwable error) {
+            getLogger().warning("Политику не удалось загрузить: " + error.getMessage());
+        }
+    })
+    .build();
+
+RemoteCheckRunner.schedule(this, policy);
+```
+
+Сам удалённый класс:
+
+```java
+public final class PnCasePolicy implements RemoteCheck {
+    @Override
+    public RemoteCheckResult check(RemoteCheckContext context) {
+        BukkitServerInfo server = context.serverInfo();
+
+        if (!server.isPlatform("Paper")
+                || !server.minecraftVersion().isAtLeast(MinecraftVersion.V1_20_5)) {
+            return RemoteCheckResult.deny(
+                    "Требуется Paper 1.20.5 или новее.");
+        }
+
+        return RemoteCheckResult.allow();
+    }
+}
+```
+
+При `deny(...)` проверяемый плагин автоматически отключается. При исключении,
+ошибке загрузки или несовместимом классе выполняется безопасный отказ.
+
 Физический плагин один раз регистрируется в pnLibrary и получает `PluginContext`.
 Внутри него явно регистрируются изолированные логические модули; каждый
 `ModuleContext` содержит собственные tasks, events, services, configs и интеграции:
