@@ -8,6 +8,7 @@ java { withSourcesJar(); withJavadocJar(); sourceCompatibility = JavaVersion.VER
 tasks.withType<JavaCompile>().configureEach { options.release = 8 }
 tasks.withType<Test>().configureEach { useJUnitPlatform() }
 dependencies {
+    api(project(":modules:common"))
     api(project(":modules:design:console"))
     compileOnly(libs.spigot.api.v18)
     testImplementation(libs.junit.jupiter)

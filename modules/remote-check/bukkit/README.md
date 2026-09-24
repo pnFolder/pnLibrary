@@ -25,6 +25,9 @@ The remote class implements the stable interface:
 ```java
 public final class CurrentPolicy implements RemoteCheck {
     public RemoteCheckResult check(RemoteCheckContext context) {
+        if (context.minecraftVersion().isAtLeast(MinecraftVersion.V1_20_5)) {
+            // modern server logic
+        }
         if (context.pluginVersion().startsWith("1.")) {
             return RemoteCheckResult.deny("эта версия плагина больше не поддерживается");
         }
