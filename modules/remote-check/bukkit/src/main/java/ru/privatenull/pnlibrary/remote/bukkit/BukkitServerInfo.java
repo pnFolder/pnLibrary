@@ -21,9 +21,13 @@ public final class BukkitServerInfo {
     public BukkitPlatform platform() { return platform; }
     /** Original name returned by Bukkit, useful for an unrecognised fork. */
     public String platformName() { return platformName; }
+    /** Stable, lower-case identifier suitable for configuration and comparisons. */
+    public String platformKey() {
+        return normalize(platformName);
+    }
     /** Case-insensitive check that also works for platforms unknown to the library. */
     public boolean isPlatform(String expectedName) {
-        return expectedName != null && platformName.equalsIgnoreCase(expectedName.trim());
+        return expectedName != null && platformKey().equals(normalize(expectedName));
     }
     /** Whether this is a platform which was not recognised by the current library release. */
     public boolean isUnknownPlatform() { return platform == BukkitPlatform.UNKNOWN; }
@@ -31,4 +35,14 @@ public final class BukkitServerInfo {
     public String version() { return version; }
     public MinecraftVersionInfo minecraftVersionInfo() { return minecraftVersion; }
     public MinecraftVersion minecraftVersion() { return minecraftVersion.getParsed(); }
+
+    private static String normalize(String value) {
+        if (value == null) return "";
+        StringBuilder result = new StringBuilder(value.length());
+        for (int i = 0; i < value.length(); i++) {
+            char c = Character.toLowerCase(value.charAt(i));
+            if (Character.isLetterOrDigit(c)) result.append(c);
+        }
+        return result.toString();
+    }
 }
