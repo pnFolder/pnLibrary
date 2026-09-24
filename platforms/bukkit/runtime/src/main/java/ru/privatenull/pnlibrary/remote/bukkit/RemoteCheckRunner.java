@@ -28,14 +28,19 @@ public final class RemoteCheckRunner {
                 if (!RemoteCheck.class.isAssignableFrom(type)) throw new IllegalStateException("remote class must implement RemoteCheck");
                 RemoteCheck check = (RemoteCheck) type.newInstance();
                 RemoteCheckResult result = check.check(new RemoteCheckContext(plugin, options.values));
+                RemoteCheckContext context = new RemoteCheckContext(plugin, options.values);
                 if (result == null || !result.allowed()) {
-                    deny(plugin, result == null ? "удалённая проверка не вернула разрешение" : result.message());
+                    String reason = result == null ? "удалённая проверка не вернула разрешение" : result.message();
+                    options.listener.denied(context, reason);
+                    deny(plugin, reason);
                     plugin.getServer().getPluginManager().disablePlugin(plugin);
                     return false;
                 }
+                options.listener.allowed(context);
                 return true;
             }
         } catch (Throwable error) {
+            options.listener.failed(error);
             deny(plugin, error.getMessage() == null ? error.getClass().getSimpleName() : error.getMessage());
             plugin.getServer().getPluginManager().disablePlugin(plugin);
             return false;
@@ -47,7 +52,7 @@ public final class RemoteCheckRunner {
     /** Runs immediately and refreshes the remote policy every six hours. */
     public static void schedule(JavaPlugin plugin, RemoteCheckOptions options) {
         plugin.getServer().getScheduler().runTaskTimer(plugin,
-                () -> run(plugin, options), 0L, SIX_HOURS_TICKS);
+                () -> run(plugin, options), 0L, options.intervalTicks);
     }
 
     private static void download(RemoteCheckOptions options, Path target) throws Exception {
