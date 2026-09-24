@@ -481,6 +481,7 @@ internal class PluginRegistryImpl(
     }
 
     private class Builder : PluginBuilder {
+        var remotePolicy: ru.privatenull.pnlibrary.api.plugin.RemotePolicy? = null
         var metadataName: String? = null
         var metadataVersion: String? = null
         var metadataAuthors: String? = null
@@ -566,6 +567,12 @@ internal class PluginRegistryImpl(
         override fun downloads(request: PluginDownloads): PluginBuilder = apply {
             require(downloadsRequest == null) { "downloads are already configured" }
             downloadsRequest = request
+        }
+
+        override fun remotePolicy(configure: Consumer<ru.privatenull.pnlibrary.api.plugin.RemotePolicyBuilder>): PluginBuilder = apply {
+            val builder = ru.privatenull.pnlibrary.api.plugin.RemotePolicyBuilder()
+            configure.accept(builder)
+            remotePolicy = builder.build()
         }
 
         @Deprecated("Register listeners through ModuleContext.events after the context has been created")
