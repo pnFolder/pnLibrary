@@ -138,16 +138,30 @@ enum class MinecraftVersion(val text: String, val major: Int, val minor: Int, va
          */
         @JvmStatic
         fun parse(value: String?): MinecraftVersion {
-            val match = VERSION_PATTERN.find(value.orEmpty()) ?: return UNKNOWN
+            return parseInfo(value).parsed
+        }
+
+        /** Parses [value] without discarding an unknown/future numeric release. */
+        @JvmStatic
+        fun parseInfo(value: String?): MinecraftVersionInfo {
+            val raw = value.orEmpty()
+            val match = VERSION_PATTERN.find(value.orEmpty())
+                ?: return MinecraftVersionInfo(raw, UNKNOWN, null, null, null)
+            val major = match.groupValues[1].toIntOrNull()
+            val minor = match.groupValues[2].toIntOrNull()
+            val patch = match.groupValues.getOrNull(3)
+                ?.takeIf { it.isNotEmpty() }
+                ?.toIntOrNull()
+                ?: 0
+            if (major == null || minor == null) {
+                return MinecraftVersionInfo(raw, UNKNOWN, null, null, null)
+            }
             val coordinates = Triple(
-                first = match.groupValues[1].toIntOrNull() ?: return UNKNOWN,
-                second = match.groupValues[2].toIntOrNull() ?: return UNKNOWN,
-                third = match.groupValues.getOrNull(3)
-                    ?.takeIf { it.isNotEmpty() }
-                    ?.toIntOrNull()
-                    ?: 0,
+                first = major,
+                second = minor,
+                third = patch,
             )
-            return byCoordinates[coordinates] ?: UNKNOWN
+            return MinecraftVersionInfo(raw, byCoordinates[coordinates] ?: UNKNOWN, major, minor, patch)
         }
 
         /**

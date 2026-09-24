@@ -33,6 +33,16 @@ class MinecraftVersionTest {
         assertFalse(first.overlaps(MinecraftVersionRange.atLeast(MinecraftVersion.V1_17)))
     }
 
+    @Test fun `retains unknown numeric versions`() {
+        val info = MinecraftVersion.parseInfo("27.4-99-custom")
+        assertEquals(MinecraftVersion.UNKNOWN, info.parsed)
+        assertEquals("27.4-99-custom", info.raw)
+        assertEquals(27, info.major)
+        assertEquals(4, info.minor)
+        assertEquals(0, info.patch)
+        assertTrue(info.numeric)
+    }
+
     @Test fun `lists supported versions newest first without unknown`() {
         val supported = MinecraftVersion.supported()
         assertEquals(MinecraftVersion.V26_2, supported.first())
