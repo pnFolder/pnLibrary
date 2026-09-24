@@ -1,6 +1,6 @@
 # Remote Check for Bukkit
 
-This module is for a replaceable policy class stored as a verified GitHub JAR. The consuming plugin keeps only the URL, SHA-256, and class name. On each server start and then every six hours the JAR is downloaded, verified, loaded with `URLClassLoader`, and executed.
+This module is for a replaceable policy class stored as a verified remote `.class` file. The consuming plugin keeps only the URL, SHA-256, and class name. On each server start and then every six hours the file is downloaded, checked for Java bytecode compatibility, loaded, and executed. A JAR is also accepted for policies with helper classes.
 
 ```java
 RemoteCheckRunner.schedule(this,

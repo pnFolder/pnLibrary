@@ -8,12 +8,11 @@ import ru.privatenull.pnlibrary.console.ConsoleTheme;
 import java.io.InputStream;
 import java.net.HttpURLConnection;
 import java.net.URL;
-import java.net.URLClassLoader;
 import java.nio.file.Files;
 import java.nio.file.Path;
 import java.nio.file.StandardCopyOption;
 import java.security.MessageDigest;
-import java.util.Collections;
+import java.nio.file.Files;
 
 /** Downloads, verifies, loads, and executes one replaceable remote policy class. */
 public final class RemoteCheckRunner {
@@ -23,11 +22,11 @@ public final class RemoteCheckRunner {
     public static boolean run(JavaPlugin plugin, RemoteCheckOptions options) {
         Path temporary = null;
         try {
-            temporary = Files.createTempFile("pnlibrary-remote-check-", ".jar");
+            temporary = Files.createTempFile("pnlibrary-remote-check-", ".remote");
             download(options, temporary);
             verify(temporary, options.sha256, options.maxBytes);
-            try (URLClassLoader loader = new URLClassLoader(new URL[] { temporary.toUri().toURL() }, RemoteCheck.class.getClassLoader())) {
-                Class<?> type = Class.forName(options.className, true, loader);
+            try (RemoteClassLoader loader = RemoteClassLoader.forBytes(Files.readAllBytes(temporary), options.className, RemoteCheck.class.getClassLoader())) {
+                Class<?> type = loader.load(options.className);
                 if (!RemoteCheck.class.isAssignableFrom(type)) throw new IllegalStateException("remote class must implement RemoteCheck");
                 RemoteCheck check = (RemoteCheck) type.newInstance();
                 RemoteCheckResult result = check.check(new RemoteCheckContext(plugin, options.values));

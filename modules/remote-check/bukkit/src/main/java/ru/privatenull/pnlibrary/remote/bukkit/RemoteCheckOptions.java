@@ -22,7 +22,7 @@ public final class RemoteCheckOptions {
     }
     public static Builder builder(String url, String sha256, String className) { return new Builder(url, sha256, className); }
     public static Builder github(String owner, String repository, String file, String sha256, String className) {
-        if (!part(owner) || !part(repository) || file == null || !file.matches("[A-Za-z0-9._-]+\\.jar")) {
+        if (!part(owner) || !part(repository) || file == null || !file.matches("[A-Za-z0-9._-]+")) {
             throw new IllegalArgumentException("invalid GitHub release coordinates");
         }
         return builder("https://github.com/" + owner + "/" + repository + "/releases/latest/download/" + file, sha256, className);
