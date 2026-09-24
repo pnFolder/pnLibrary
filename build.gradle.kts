@@ -15,6 +15,7 @@ apiValidation {
             "core",
             "distribution",
             "demo-bukkit",
+            "remote-policy",
             "runtime",
             "runtime-spi",
             "update",

@@ -19,4 +19,5 @@ include(
     ":platforms:velocity:runtime",
     ":distribution",
     ":examples:demo-bukkit",
+    ":examples:remote-policy",
 )
