@@ -1,29 +1,25 @@
 package ru.privatenull.pncases.policy;
 
-import org.bukkit.plugin.java.JavaPlugin;
-import ru.privatenull.pnlibrary.remote.bukkit.RemoteCheck;
-import ru.privatenull.pnlibrary.remote.bukkit.RemoteCheckContext;
-import ru.privatenull.pnlibrary.remote.bukkit.RemoteCheckResult;
+import ru.privatenull.pnlibrary.api.remote.RemotePolicyContext;
+import ru.privatenull.pnlibrary.api.remote.RemotePolicyResult;
 
 /** Example policy compiled as Java 8 and uploaded separately from pnCases. */
-public final class RemotePolicy implements RemoteCheck {
+public final class RemotePolicy implements ru.privatenull.pnlibrary.api.remote.RemotePolicy {
     private static final String MINIMUM_PLUGIN_VERSION = "2.4.0";
 
     @Override
-    public RemoteCheckResult check(RemoteCheckContext context) {
-        JavaPlugin plugin = context.plugin();
-        String installed = context.pluginVersion();
+    public RemotePolicyResult check(RemotePolicyContext context) {
+        String installed = context.getProduct().getVersion();
 
         if (!atLeast(installed, MINIMUM_PLUGIN_VERSION)) {
-            return RemoteCheckResult.deny(
+            return RemotePolicyResult.deny(
                 "Установлена версия " + installed
                     + ", требуется " + MINIMUM_PLUGIN_VERSION
                     + ". Скачайте новую версию плагина."
             );
         }
 
-        plugin.getLogger().info("Удалённая проверка пройдена для версии " + installed);
-        return RemoteCheckResult.allow();
+        return RemotePolicyResult.allow();
     }
 
     private static boolean atLeast(String actual, String minimum) {

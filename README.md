@@ -210,10 +210,10 @@ RemoteCheckOptions policy = RemoteCheckOptions.builder(
     .intervalTicks(6L * 60L * 60L * 20L) // один раз в 6 часов
     .value("product", "pnCase")
     .listener(new RemoteCheckListener() {
-        @Override public void allowed(RemoteCheckContext context) {
+        @Override public void allowed(RemotePolicyContext context) {
             getLogger().info("Удалённая политика разрешила запуск");
         }
-        @Override public void denied(RemoteCheckContext context, String reason) {
+        @Override public void denied(RemotePolicyContext context, String reason) {
             getLogger().warning("Запуск запрещён: " + reason);
         }
         @Override public void failed(Throwable error) {
@@ -225,24 +225,34 @@ RemoteCheckOptions policy = RemoteCheckOptions.builder(
 RemoteCheckRunner.schedule(this, policy);
 ```
 
-Сам удалённый класс:
+Сам удалённый класс использует только кроссплатформенный API pnLibrary:
 
 ```java
-public final class PnCasePolicy implements RemoteCheck {
+public final class PnCasePolicy implements RemotePolicy {
     @Override
-    public RemoteCheckResult check(RemoteCheckContext context) {
-        BukkitServerInfo server = context.serverInfo();
+    public RemotePolicyResult check(RemotePolicyContext context) {
 
-        if (!server.isPlatform("Paper")
-                || !server.minecraftVersion().isAtLeast(MinecraftVersion.V1_20_5)) {
-            return RemoteCheckResult.deny(
+        if (!context.getPlatform().isNamed("Paper")
+                || !context.getServer().getMinecraftVersion().isAtLeast(MinecraftVersion.V1_20_5)) {
+            return RemotePolicyResult.deny(
                     "Требуется Paper 1.20.5 или новее.");
         }
 
-        return RemoteCheckResult.allow();
+        return RemotePolicyResult.allow();
     }
 }
 ```
+
+Один и тот же контекст используется на Bukkit, Velocity и Bungee. Если общей
+модели недостаточно, политика может запросить нативный объект текущей платформы:
+
+```java
+JavaPlugin bukkitPlugin = context.nativeHandle(JavaPlugin.class);
+ProxyServer velocityProxy = context.nativeHandle(ProxyServer.class);
+```
+
+На другой платформе такой запрос вернёт `null`; `requireNative(...)` выбрасывает
+понятную ошибку, если объект обязателен.
 
 При `deny(...)` проверяемый плагин автоматически отключается. При исключении,
 ошибке загрузки или несовместимом классе выполняется безопасный отказ.

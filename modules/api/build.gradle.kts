@@ -18,6 +18,7 @@ kotlin {
 tasks.withType<JavaCompile>().configureEach { options.release = 8 }
 
 dependencies {
+    api(project(":modules:common"))
     // Pure stdlib — no server-platform compile deps
     api(libs.kotlin.stdlib)
     api(libs.adventure.api)

@@ -1,6 +1,7 @@
 package ru.privatenull.pnlibrary.remote.bukkit
 
 import org.bukkit.plugin.java.JavaPlugin
+import ru.privatenull.pnlibrary.api.remote.RemotePolicy
 import java.io.File
 import java.nio.charset.StandardCharsets
 import java.nio.file.Files
@@ -23,7 +24,7 @@ internal object RemoteSourceCompiler {
             Files.write(file, source)
             val compiler = ToolProvider.getSystemJavaCompiler()
                 ?: throw IllegalStateException("JavaCompiler is unavailable; run the server with a JDK")
-            val classpath = listOf(System.getProperty("java.class.path", ""), location(RemoteCheck::class.java), location(JavaPlugin::class.java))
+            val classpath = listOf(System.getProperty("java.class.path", ""), location(RemotePolicy::class.java), location(JavaPlugin::class.java))
                 .filter { it.isNotBlank() }.joinToString(File.pathSeparator)
             val result = compiler.run(null, null, null, "-source", "8", "-target", "8", "-classpath", classpath,
                 "-d", root.toString(), file.toString())

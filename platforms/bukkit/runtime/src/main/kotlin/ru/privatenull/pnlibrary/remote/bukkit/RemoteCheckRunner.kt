@@ -2,6 +2,7 @@ package ru.privatenull.pnlibrary.remote.bukkit
 
 import org.bukkit.ChatColor
 import org.bukkit.plugin.java.JavaPlugin
+import ru.privatenull.pnlibrary.api.remote.RemotePolicy
 import ru.privatenull.pnlibrary.console.ConsoleCard
 import ru.privatenull.pnlibrary.console.ConsoleTheme
 import java.net.HttpURLConnection
@@ -13,15 +14,15 @@ object RemoteCheckRunner {
         try {
             val downloaded = download(options)
             val loader = if (options.url.substringBefore('?').endsWith(".java", ignoreCase = true)) {
-                RemoteSourceCompiler.compile(downloaded, RemoteCheck::class.java.classLoader)
+                RemoteSourceCompiler.compile(downloaded, RemotePolicy::class.java.classLoader)
             } else {
-                RemoteClassLoader.forBytes(downloaded, options.className, RemoteCheck::class.java.classLoader)
+                RemoteClassLoader.forBytes(downloaded, options.className, RemotePolicy::class.java.classLoader)
             }
             loader.use {
                 val type = it.load()
-                require(RemoteCheck::class.java.isAssignableFrom(type)) { "remote class must implement RemoteCheck" }
-                val check = type.getDeclaredConstructor().newInstance() as RemoteCheck
-                val context = RemoteCheckContext(plugin, options.values)
+                require(RemotePolicy::class.java.isAssignableFrom(type)) { "remote class must implement RemotePolicy" }
+                val check = type.getDeclaredConstructor().newInstance() as RemotePolicy
+                val context = BukkitRemotePolicyContextFactory.create(plugin, options.values)
                 val result = check.check(context)
                 if (!result.allowed) {
                     options.listener.denied(context, result.message)

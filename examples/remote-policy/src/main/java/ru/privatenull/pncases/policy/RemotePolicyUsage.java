@@ -15,7 +15,7 @@ public final class RemotePolicyUsage {
             .value("product", plugin.getName())
             .intervalTicks(6L * 60L * 60L * 20L)
             .listener(new RemoteCheckListener() {
-                @Override public void denied(ru.privatenull.pnlibrary.remote.bukkit.RemoteCheckContext context, String reason) {
+                @Override public void denied(ru.privatenull.pnlibrary.api.remote.RemotePolicyContext context, String reason) {
                     plugin.getLogger().warning("Remote policy denied startup: " + reason);
                 }
                 @Override public void failed(Throwable error) {
