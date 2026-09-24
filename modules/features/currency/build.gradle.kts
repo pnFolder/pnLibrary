@@ -1,4 +1,3 @@
-// pnlibrary-core — no server-platform classes, JVM 8 bytecode
 import org.jetbrains.kotlin.gradle.dsl.JvmTarget
 
 plugins {
@@ -6,29 +5,19 @@ plugins {
     `java-library`
     alias(libs.plugins.maven.publish)
 }
-base { archivesName = "pnLibrary-core" }
+
+base { archivesName = "pnLibrary-currency" }
 
 kotlin {
-    compilerOptions {
-        jvmTarget = JvmTarget.JVM_1_8
-    }
+    compilerOptions { jvmTarget = JvmTarget.JVM_1_8 }
 }
 
 tasks.withType<JavaCompile>().configureEach { options.release = 8 }
 
 dependencies {
     implementation(project(":modules:api"))
-    implementation(project(":modules:runtime-spi"))
-    implementation(project(":modules:features:update"))
-    implementation(project(":modules:features:currency"))
     implementation(libs.kotlin.stdlib)
     implementation(libs.gson)
-    implementation(libs.snakeyaml)
-    implementation(libs.adventure.minimessage)
-    implementation(libs.adventure.legacy)
-    implementation(libs.adventure.gson)
-    implementation(libs.adventure.plain)
-    implementation(project(":modules:internal:bstats"))
 
     testImplementation(libs.junit.jupiter)
     testImplementation(libs.mockito.kotlin)
@@ -43,19 +32,12 @@ java {
 mavenPublishing {
     publishToMavenCentral()
     signAllPublications()
-
-    coordinates(
-        groupId = "io.github.pnfolder",
-        artifactId = "pnlibrary-core",
-        version = project.version.toString()
-    )
-
+    coordinates("io.github.pnfolder", "pnlibrary-currency", project.version.toString())
     pom {
-        name.set("pnLibrary Core")
-        description.set("Core implementation shared by pnLibrary platform modules.")
+        name.set("pnLibrary Currency")
+        description.set("Platform-neutral currency registry, managed providers and storage implementations for pnLibrary.")
         inceptionYear.set("2026")
         url.set("https://github.com/pnFolder/pnLibrary")
-
         licenses {
             license {
                 name.set(providers.gradleProperty("POM_LICENSE_NAME"))
@@ -63,15 +45,7 @@ mavenPublishing {
                 distribution.set(providers.gradleProperty("POM_LICENSE_DIST").orElse("repo"))
             }
         }
-
-        developers {
-            developer {
-                id.set("pnFolder")
-                name.set("pnFolder")
-                url.set("https://github.com/pnFolder")
-            }
-        }
-
+        developers { developer { id.set("pnFolder"); name.set("pnFolder"); url.set("https://github.com/pnFolder") } }
         scm {
             url.set("https://github.com/pnFolder/pnLibrary")
             connection.set("scm:git:git://github.com/pnFolder/pnLibrary.git")

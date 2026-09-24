@@ -32,7 +32,7 @@ import ru.privatenull.pnlibrary.api.updates.UpdateRegistration
 import ru.privatenull.pnlibrary.api.downloads.PluginDownloads
 import ru.privatenull.pnlibrary.api.updates.ProductDescriptor
 import ru.privatenull.pnlibrary.api.updates.ExternalPluginDependency
-import ru.privatenull.pnlibrary.core.currency.CurrencyHub
+import ru.privatenull.pnlibrary.currency.CurrencyFeature
 import ru.privatenull.pnlibrary.core.events.EventServiceImpl
 import ru.privatenull.pnlibrary.core.placeholders.PlaceholderHub
 import ru.privatenull.pnlibrary.core.testing.TestTaskService
@@ -524,7 +524,7 @@ class PluginRegistryImplTest {
                 diagnostics = emptyProxy(DiagnosticsService::class.java),
                 updates = updates,
                 placeholderHub = PlaceholderHub(platform),
-                currencyHub = CurrencyHub(),
+                currencyFeature = CurrencyFeature(),
                 commands = commands,
                 libraryVersion = libraryVersion,
             )

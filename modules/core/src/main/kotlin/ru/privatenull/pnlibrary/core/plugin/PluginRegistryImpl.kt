@@ -66,12 +66,11 @@ import ru.privatenull.pnlibrary.api.actions.LibraryPlayer
 import ru.privatenull.pnlibrary.api.text.ComponentSerializerType
 import ru.privatenull.pnlibrary.core.cooldowns.CooldownServiceImpl
 import ru.privatenull.pnlibrary.api.currency.CurrencyService
-import ru.privatenull.pnlibrary.core.currency.CurrencyHub
 import ru.privatenull.pnlibrary.api.currency.CurrencyStorageFactory
 import ru.privatenull.pnlibrary.api.commands.CommandService
 import ru.privatenull.pnlibrary.api.downloads.PluginDownloads
 import ru.privatenull.pnlibrary.api.downloads.DownloadRegistration
-import ru.privatenull.pnlibrary.core.currency.CurrencyStorageFactoryImpl
+import ru.privatenull.pnlibrary.currency.CurrencyFeature
 import ru.privatenull.pnlibrary.core.downloads.DirectDownloadManager
 
 /**
@@ -91,8 +90,7 @@ internal class PluginRegistryImpl(
     private val diagnostics: DiagnosticsService,
     private val updates: UpdateService,
     private val placeholderHub: PlaceholderHub,
-    private val currencyHub: CurrencyHub,
-    private val currencyStorageFactory: CurrencyStorageFactory = CurrencyStorageFactoryImpl(),
+    private val currencyFeature: CurrencyFeature,
     private val configurations: ConfigurationServiceImpl = ConfigurationServiceImpl(platform),
     private val commands: CommandService? = null,
     private val directDownloads: DirectDownloadManager? = null,
@@ -161,7 +159,7 @@ internal class PluginRegistryImpl(
             eventScope = events.scope(serviceKey)
             configScope = configurations.scope(owner, serviceKey)
             placeholderScope = placeholderHub.scope(serviceKey, definition.placeholderApiEnabled)
-            currencyScope = currencyHub.scope(serviceKey, placeholderScope)
+            currencyScope = currencyFeature.scope(serviceKey, placeholderScope)
             definition.listeners.forEach { eventScope.register(it) }
             metricsController = MetricsControllerImpl(
                 owner,
@@ -197,7 +195,7 @@ internal class PluginRegistryImpl(
                 ComponentServiceImpl(placeholderScope, sharedComponentCache),
                 CooldownServiceImpl(),
                 currencyScope,
-                currencyStorageFactory,
+                currencyFeature.storages,
                 metricsController,
                 diagnosticRegistration,
                 updateRegistration,

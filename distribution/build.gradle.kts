@@ -1,6 +1,7 @@
 // pnlibrary-distribution — produces fat JARs for each platform with relocated Kotlin runtime
 import com.github.jengelman.gradle.plugins.shadow.tasks.ShadowJar
 import java.security.MessageDigest
+import java.util.jar.JarFile
 
 evaluationDependsOn(":modules:api")
 evaluationDependsOn(":modules:common")
@@ -165,19 +166,30 @@ fun releaseMetadata(platform: String, artifact: String): String = """
     }
 """.trimIndent() + "\n"
 
+fun installedComponentMetadata(): String = """
+    {
+      "schema": 1,
+      "component": "pnlibrary",
+      "version": "$pnVer",
+      "pnLibraryApi": {
+        "minimum": $pnApiVersion,
+        "maximum": $pnApiVersion
+      }
+    }
+""".trimIndent() + "\n"
+
 val releaseSidecarTasks = releasePlatforms.map { platform ->
     val suffix = platform.id.split('-').joinToString("") { part ->
         part.replaceFirstChar(Char::uppercaseChar)
     }
     val generatedDirectory = layout.buildDirectory.dir("generated/pnlibraryMetadata/${platform.id}")
     val generateEmbedded = tasks.register("generate${suffix}Metadata") {
-        val outputFile = generatedDirectory.map { it.file("META-INF/pnlibrary/plugin.json") }
+        val outputFile = generatedDirectory.map { it.file("META-INF/pnlibrary/component.json") }
         outputs.file(outputFile)
         doLast {
-            val artifact = "pnLibrary-$pnVer-${platform.id}.jar"
             outputFile.get().asFile.apply {
                 parentFile.mkdirs()
-                writeText(releaseMetadata(platform.id, artifact), Charsets.UTF_8)
+                writeText(installedComponentMetadata(), Charsets.UTF_8)
             }
         }
     }
@@ -235,6 +247,17 @@ tasks.register("verifyReleaseMetadata") {
                 .joinToString("") { "%02x".format(it) }
             require(checksum.readText().trim() == "$hash  ${jar.name}") {
                 "Incorrect SHA-256 sidecar for ${jar.name}"
+            }
+            JarFile(jar).use { archive ->
+                val embedded = archive.getJarEntry("META-INF/pnlibrary/component.json")
+                    ?: error("Missing embedded component metadata in ${jar.name}")
+                val json = archive.getInputStream(embedded).bufferedReader(Charsets.UTF_8).use { it.readText() }
+                require(json.contains("\"component\": \"pnlibrary\"")) {
+                    "Incorrect embedded component identity in ${jar.name}"
+                }
+                require(json.contains("\"version\": \"$pnVer\"")) {
+                    "Incorrect embedded component version in ${jar.name}"
+                }
             }
         }
         val aggregate = layout.buildDirectory.file("libs/checksums.sha256").get().asFile

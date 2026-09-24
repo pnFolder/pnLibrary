@@ -21,8 +21,60 @@ pnContext = pnLibrary.getPlugins().register(this, builder -> builder
 ```
 
 `apiVersions(minimum, maximum)` задаёт включительный диапазон API. Для одной версии используйте
-`apiVersion(1)`. ID и версия компонента берутся из нативного описания плагина. Отдельный
-`pnComponent { ... }` для обычного использования не нужен.
+`apiVersion(1)`. ID и версия запущенного компонента берутся из нативного описания плагина.
+
+## Метаданные внутри JAR
+
+Для безопасной проверки скачанного, но ещё не загруженного JAR система читает только пассивный
+ресурс `META-INF/pnlibrary/component.json`. Классы из скачанного JAR не загружаются. Файл не нужно
+писать вручную: его создаёт build-плагин.
+
+Gradle Kotlin DSL:
+
+```kotlin
+plugins {
+    id("ru.privatenull.pnlibrary.component-metadata") version "2.2.0-beta.2"
+}
+
+pnComponentMetadata {
+    id.set("pncases") // необязательно, по умолчанию нормализованное имя Gradle-проекта
+    apiVersions(1, 2)
+}
+```
+
+Gradle Groovy DSL:
+
+```groovy
+plugins {
+    id 'ru.privatenull.pnlibrary.component-metadata' version '2.2.0-beta.2'
+}
+
+pnComponentMetadata {
+    id = 'pncases'
+    apiVersions(1, 2)
+}
+```
+
+Maven:
+
+```xml
+<plugin>
+  <groupId>io.github.pnfolder</groupId>
+  <artifactId>pnlibrary-component-metadata-maven</artifactId>
+  <version>2.2.0-beta.2</version>
+  <executions>
+    <execution><goals><goal>generate</goal></goals></execution>
+  </executions>
+  <configuration>
+    <componentId>pncases</componentId>
+    <apiMinimum>1</apiMinimum>
+    <apiMaximum>2</apiMaximum>
+  </configuration>
+</plugin>
+```
+
+Версия автоматически берётся из `project.version`. В Gradle ID по умолчанию берётся из имени
+проекта, в Maven — из `artifactId`. Явно задавайте ID только если он отличается от них.
 
 Если в GitHub Release нет `pn-update.json`, pnLibrary использует версию тега, размер и опубликованный
 GitHub `sha256` digest подходящего asset. Asset без проверяемого digest автоматически не принимается.

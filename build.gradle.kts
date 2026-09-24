@@ -19,6 +19,9 @@ apiValidation {
             "runtime",
             "runtime-spi",
             "update",
+            "currency",
+            "gradle",
+            "maven",
         ),
     )
 }
@@ -85,6 +88,7 @@ dependencies {
     dokka(project(":modules:runtime-spi"))
     dokka(project(":modules:core"))
     dokka(project(":modules:features:update"))
+    dokka(project(":modules:features:currency"))
     dokka(project(":modules:features:minecraft-localization"))
     dokka(project(":modules:bootstrap:bukkit"))
     dokka(project(":modules:design:console"))

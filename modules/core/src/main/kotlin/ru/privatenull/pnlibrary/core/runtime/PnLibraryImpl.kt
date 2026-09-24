@@ -24,7 +24,7 @@ import ru.privatenull.pnlibrary.core.plugin.PluginRegistryImpl
 import ru.privatenull.pnlibrary.core.placeholders.PlaceholderHub
 import ru.privatenull.pnlibrary.core.placeholders.GlobalPlaceholderValueStore
 import ru.privatenull.pnlibrary.core.platform.PlatformProviderImpl
-import ru.privatenull.pnlibrary.core.currency.CurrencyHub
+import ru.privatenull.pnlibrary.currency.CurrencyFeature
 import ru.privatenull.pnlibrary.core.security.EncryptedEnvelopeCodec
 import ru.privatenull.pnlibrary.core.services.ServiceManagerImpl
 import ru.privatenull.pnlibrary.core.tasks.TaskServiceImpl
@@ -114,10 +114,10 @@ internal class PnLibraryImpl(
     override val events: ru.privatenull.pnlibrary.api.events.EventService get() = eventService
     private val placeholderValueStore = GlobalPlaceholderValueStore()
     private val placeholderHub = PlaceholderHub(platform, placeholderValueStore)
-    private val currencyHub = CurrencyHub()
+    private val currencyFeature = CurrencyFeature()
     private val platformProvider = PlatformProviderImpl()
     override val platforms: ru.privatenull.pnlibrary.api.platform.PlatformProvider get() = platformProvider
-    override val currencyProviders: ru.privatenull.pnlibrary.api.currency.CurrencyProviderRegistry get() = currencyHub
+    override val currencyProviders: ru.privatenull.pnlibrary.api.currency.CurrencyProviderRegistry get() = currencyFeature.providers
     override val placeholderAdapters: ru.privatenull.pnlibrary.api.placeholders.PlaceholderAdapterRegistry get() = placeholderHub
     override val placeholderValues: ru.privatenull.pnlibrary.api.placeholders.PlaceholderValueStore get() = placeholderValueStore
     override val plugins: ru.privatenull.pnlibrary.api.plugin.PluginRegistry = PluginRegistryImpl(
@@ -132,7 +132,7 @@ internal class PnLibraryImpl(
         diagnostics = diagnostics,
         updates = updateService,
         placeholderHub = placeholderHub,
-        currencyHub = currencyHub,
+        currencyFeature = currencyFeature,
         commands = commandService,
         directDownloads = directDownloadManager,
     )
@@ -201,7 +201,7 @@ internal class PnLibraryImpl(
             runCatching { commandService.close() }
             runCatching { audienceService.close() }
             runCatching { platformProvider.close() }
-            runCatching { currencyHub.close() }
+            runCatching { currencyFeature.close() }
             runCatching { configurationService.close() }
             runCatching { metricsRegistry.close() }
             runCatching { updateService.close() }

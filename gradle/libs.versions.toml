@@ -13,6 +13,8 @@ velocity      = "3.3.0-SNAPSHOT"
 adventure     = "4.17.0"
 adventure-platform = "4.4.1"
 placeholderapi = "2.12.3"
+maven         = "3.9.9"
+mavenPluginAnnotations = "3.15.1"
 
 [libraries]
 kotlin-stdlib       = { module = "org.jetbrains.kotlin:kotlin-stdlib",               version.ref = "kotlin" }
@@ -32,6 +34,9 @@ adventure-gson      = { module = "net.kyori:adventure-text-serializer-gson",    
 adventure-plain     = { module = "net.kyori:adventure-text-serializer-plain",         version.ref = "adventure" }
 adventure-platform-bukkit = { module = "net.kyori:adventure-platform-bukkit",         version.ref = "adventure-platform" }
 placeholderapi      = { module = "me.clip:placeholderapi",                            version.ref = "placeholderapi" }
+maven-plugin-api    = { module = "org.apache.maven:maven-plugin-api",                  version.ref = "maven" }
+maven-core          = { module = "org.apache.maven:maven-core",                        version.ref = "maven" }
+maven-plugin-annotations = { module = "org.apache.maven.plugin-tools:maven-plugin-annotations", version.ref = "mavenPluginAnnotations" }
 
 [plugins]
 kotlin-jvm    = { id = "org.jetbrains.kotlin.jvm",             version.ref = "kotlin" }

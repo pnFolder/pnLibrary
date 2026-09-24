@@ -6,6 +6,7 @@ include(
     ":modules:core",
     ":modules:runtime-spi",
     ":modules:features:update",
+    ":modules:features:currency",
     ":modules:features:minecraft-localization",
     ":modules:internal:bstats",
     ":modules:bootstrap:bukkit",
@@ -19,4 +20,7 @@ include(
     ":distribution",
     ":examples:demo-bukkit",
     ":examples:remote-policy",
+    ":tools:component-metadata:core",
+    ":tools:component-metadata:gradle",
+    ":tools:component-metadata:maven",
 )
