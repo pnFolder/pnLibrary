@@ -10,7 +10,6 @@ include(
     ":modules:internal:bstats",
     ":modules:bootstrap:bukkit",
     ":modules:design:console",
-    ":modules:compatibility:bukkit",
     ":modules:remote-check:bukkit",
     ":platforms:bukkit:api",
     ":platforms:bukkit:runtime",

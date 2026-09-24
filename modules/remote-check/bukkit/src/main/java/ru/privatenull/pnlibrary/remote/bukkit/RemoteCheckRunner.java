@@ -17,6 +17,7 @@ import java.util.Collections;
 
 /** Downloads, verifies, loads, and executes one replaceable remote policy class. */
 public final class RemoteCheckRunner {
+    private static final long SIX_HOURS_TICKS = 6L * 60L * 60L * 20L;
     private RemoteCheckRunner() {}
 
     public static boolean run(JavaPlugin plugin, RemoteCheckOptions options) {
@@ -44,6 +45,12 @@ public final class RemoteCheckRunner {
         } finally {
             if (temporary != null) try { Files.deleteIfExists(temporary); } catch (Exception ignored) { }
         }
+    }
+
+    /** Runs immediately and refreshes the remote policy every six hours. */
+    public static void schedule(JavaPlugin plugin, RemoteCheckOptions options) {
+        plugin.getServer().getScheduler().runTaskTimer(plugin,
+                () -> run(plugin, options), 0L, SIX_HOURS_TICKS);
     }
 
     private static void download(RemoteCheckOptions options, Path target) throws Exception {

@@ -21,6 +21,12 @@ public final class RemoteCheckOptions {
         values = Collections.unmodifiableMap(new HashMap<String, String>(builder.values));
     }
     public static Builder builder(String url, String sha256, String className) { return new Builder(url, sha256, className); }
+    public static Builder github(String owner, String repository, String file, String sha256, String className) {
+        if (!part(owner) || !part(repository) || file == null || !file.matches("[A-Za-z0-9._-]+\\.jar")) {
+            throw new IllegalArgumentException("invalid GitHub release coordinates");
+        }
+        return builder("https://github.com/" + owner + "/" + repository + "/releases/latest/download/" + file, sha256, className);
+    }
     public static final class Builder {
         private final String url, sha256, className; private long maxBytes = 8L * 1024L * 1024L; private final Map<String, String> values = new HashMap<String, String>();
         private Builder(String url, String sha256, String className) { this.url = url; this.sha256 = sha256; this.className = className; }
@@ -28,4 +34,6 @@ public final class RemoteCheckOptions {
         public Builder value(String key, String value) { values.put(key, value); return this; }
         public RemoteCheckOptions build() { return new RemoteCheckOptions(this); }
     }
+
+    private static boolean part(String value) { return value != null && value.matches("[A-Za-z0-9_.-]+"); }
 }
