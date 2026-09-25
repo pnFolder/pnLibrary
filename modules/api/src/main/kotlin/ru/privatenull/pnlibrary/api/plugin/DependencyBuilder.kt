@@ -33,6 +33,12 @@ class DependencyBuilder {
         dependencies += dependency
     }
 
+    fun plugin(name: String, minimumVersion: String, configure: Consumer<ExternalBuilder>) =
+        plugin(name) { builder ->
+            builder.minimumVersion(minimumVersion)
+            configure.accept(builder)
+        }
+
     fun build(): List<PluginDependency> = Collections.unmodifiableList(ArrayList(dependencies))
 
     class ProductBuilder internal constructor(private val id: ProductId) {
@@ -88,8 +94,16 @@ class DependencyBuilder {
         fun artifact(url: String, size: Long, sha256: String) = apply {
             artifact = ExternalArtifact(URI.create(url), size, sha256)
         }
+        fun url(value: String) = apply { artifact = ExternalArtifact(URI.create(value), null, null) }
         fun required(value: Boolean) = apply { required = value }
         fun downloadPolicy(value: DownloadPolicy) = apply { policy = value }
+        fun automaticDownload(value: Boolean) = apply {
+            policy = if (value) DownloadPolicy.AUTOMATIC else DownloadPolicy.MANUAL
+        }
+        fun forceAutomaticDownload(value: Boolean) = apply {
+            if (value) policy = DownloadPolicy.FORCED
+            else if (policy == DownloadPolicy.FORCED) policy = DownloadPolicy.MANUAL
+        }
 
         internal fun build(): ExternalPluginDependency {
             val minimumVersion = requireNotNull(minimum) { "minimum plugin version is required" }
@@ -103,7 +117,10 @@ class DependencyBuilder {
                     maximumInclusive?.let { target.maximumVersion(it.toString()) }
                     maximumExclusive?.let { target.maximumVersionExclusive(it.toString()) }
                     page?.let { target.downloadPage(it.toString()) }
-                    artifact?.let { target.artifact(it.uri.toString(), it.size, it.sha256) }
+                    artifact?.let {
+                        if (it.size != null && it.sha256 != null) target.artifact(it.uri.toString(), it.size, it.sha256)
+                        else target.url(it.uri.toString())
+                    }
                 }
                 .required(required)
                 .downloadPolicy(policy)

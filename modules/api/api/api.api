@@ -1515,66 +1515,9 @@ public final class ru/privatenull/pnlibrary/api/downloads/DirectDownloadSource$C
 	public final fun builder ()Lru/privatenull/pnlibrary/api/downloads/DirectDownloadSource$Builder;
 }
 
-public abstract class ru/privatenull/pnlibrary/api/downloads/DownloadDeclaration {
-	public static final field Companion Lru/privatenull/pnlibrary/api/downloads/DownloadDeclaration$Companion;
-	public synthetic fun <init> (Ljava/lang/String;Lru/privatenull/pnlibrary/api/downloads/DirectDownloadSource;ZZZLkotlin/jvm/internal/DefaultConstructorMarker;)V
-	public final fun getAutomatic ()Z
-	public final fun getForceAutomaticDownload ()Z
-	public final fun getKey ()Ljava/lang/String;
-	public final fun getRequired ()Z
-	public final fun getSource ()Lru/privatenull/pnlibrary/api/downloads/DirectDownloadSource;
-}
-
-public abstract class ru/privatenull/pnlibrary/api/downloads/DownloadDeclaration$BaseBuilder {
-	public fun <init> ()V
-	public final fun automaticDownload (Z)Lru/privatenull/pnlibrary/api/downloads/DownloadDeclaration$BaseBuilder;
-	public final fun forceAutomaticDownload (Z)Lru/privatenull/pnlibrary/api/downloads/DownloadDeclaration$BaseBuilder;
-	public final fun integrity (JLjava/lang/String;)Lru/privatenull/pnlibrary/api/downloads/DownloadDeclaration$BaseBuilder;
-	public final fun java (I)Lru/privatenull/pnlibrary/api/downloads/DownloadDeclaration$BaseBuilder;
-	public final fun java (ILjava/lang/Integer;)Lru/privatenull/pnlibrary/api/downloads/DownloadDeclaration$BaseBuilder;
-	public static synthetic fun java$default (Lru/privatenull/pnlibrary/api/downloads/DownloadDeclaration$BaseBuilder;ILjava/lang/Integer;ILjava/lang/Object;)Lru/privatenull/pnlibrary/api/downloads/DownloadDeclaration$BaseBuilder;
-	public final fun platform (Lru/privatenull/pnlibrary/api/platform/PlatformType;)Lru/privatenull/pnlibrary/api/downloads/DownloadDeclaration$BaseBuilder;
-	public final fun required (Z)Lru/privatenull/pnlibrary/api/downloads/DownloadDeclaration$BaseBuilder;
-	public final fun url (Ljava/lang/String;)Lru/privatenull/pnlibrary/api/downloads/DownloadDeclaration$BaseBuilder;
-}
-
-public final class ru/privatenull/pnlibrary/api/downloads/DownloadDeclaration$Companion {
-}
-
-public final class ru/privatenull/pnlibrary/api/downloads/DownloadDeclaration$Component : ru/privatenull/pnlibrary/api/downloads/DownloadDeclaration {
-	public final fun getComponent ()Lru/privatenull/pnlibrary/api/updates/ProductId;
-	public final fun getSupportedApi ()Lru/privatenull/pnlibrary/api/version/ApiVersionRange;
-	public final fun getVersion ()Lru/privatenull/pnlibrary/api/version/SemanticVersion;
-}
-
-public final class ru/privatenull/pnlibrary/api/downloads/DownloadDeclaration$ComponentBuilder : ru/privatenull/pnlibrary/api/downloads/DownloadDeclaration$BaseBuilder {
-	public final fun apiVersion (I)Lru/privatenull/pnlibrary/api/downloads/DownloadDeclaration$ComponentBuilder;
-	public final fun apiVersions (II)Lru/privatenull/pnlibrary/api/downloads/DownloadDeclaration$ComponentBuilder;
-	public final fun version (Ljava/lang/String;)Lru/privatenull/pnlibrary/api/downloads/DownloadDeclaration$ComponentBuilder;
-}
-
-public final class ru/privatenull/pnlibrary/api/downloads/DownloadDeclaration$File : ru/privatenull/pnlibrary/api/downloads/DownloadDeclaration {
-	public final fun getDestination ()Lru/privatenull/pnlibrary/api/downloads/DownloadDestination;
-	public final fun getRelativePath ()Ljava/lang/String;
-}
-
-public final class ru/privatenull/pnlibrary/api/downloads/DownloadDeclaration$FileBuilder : ru/privatenull/pnlibrary/api/downloads/DownloadDeclaration$BaseBuilder {
-	public final fun destination (Lru/privatenull/pnlibrary/api/downloads/DownloadDestination;Ljava/lang/String;)Lru/privatenull/pnlibrary/api/downloads/DownloadDeclaration$FileBuilder;
-}
-
-public final class ru/privatenull/pnlibrary/api/downloads/DownloadDeclaration$Plugin : ru/privatenull/pnlibrary/api/downloads/DownloadDeclaration {
-	public final fun getMinimumVersion ()Lru/privatenull/pnlibrary/api/version/SemanticVersion;
-	public final fun getPlugin ()Ljava/lang/String;
-}
-
-public final class ru/privatenull/pnlibrary/api/downloads/DownloadDeclaration$PluginBuilder : ru/privatenull/pnlibrary/api/downloads/DownloadDeclaration$BaseBuilder {
-	public final fun minimumVersion (Ljava/lang/String;)Lru/privatenull/pnlibrary/api/downloads/DownloadDeclaration$PluginBuilder;
-}
-
 public final class ru/privatenull/pnlibrary/api/downloads/DownloadDestination : java/lang/Enum {
 	public static final field CACHE Lru/privatenull/pnlibrary/api/downloads/DownloadDestination;
 	public static final field DATA_FOLDER Lru/privatenull/pnlibrary/api/downloads/DownloadDestination;
-	public static final field PLUGINS Lru/privatenull/pnlibrary/api/downloads/DownloadDestination;
 	public static fun getEntries ()Lkotlin/enums/EnumEntries;
 	public static fun valueOf (Ljava/lang/String;)Lru/privatenull/pnlibrary/api/downloads/DownloadDestination;
 	public static fun values ()[Lru/privatenull/pnlibrary/api/downloads/DownloadDestination;
@@ -1616,24 +1559,49 @@ public final class ru/privatenull/pnlibrary/api/downloads/DownloadState : java/l
 	public static fun values ()[Lru/privatenull/pnlibrary/api/downloads/DownloadState;
 }
 
-public final class ru/privatenull/pnlibrary/api/downloads/PluginDownloads {
-	public static final field Companion Lru/privatenull/pnlibrary/api/downloads/PluginDownloads$Companion;
-	public synthetic fun <init> (Lru/privatenull/pnlibrary/api/downloads/PluginDownloads$Builder;Lkotlin/jvm/internal/DefaultConstructorMarker;)V
-	public static final fun builder ()Lru/privatenull/pnlibrary/api/downloads/PluginDownloads$Builder;
+public final class ru/privatenull/pnlibrary/api/downloads/FileDownload {
+	public static final field Companion Lru/privatenull/pnlibrary/api/downloads/FileDownload$Companion;
+	public final fun getAutomatic ()Z
+	public final fun getDestination ()Lru/privatenull/pnlibrary/api/downloads/DownloadDestination;
+	public final fun getForceAutomaticDownload ()Z
+	public final fun getKey ()Ljava/lang/String;
+	public final fun getRelativePath ()Ljava/lang/String;
+	public final fun getRequired ()Z
+	public final fun getSource ()Lru/privatenull/pnlibrary/api/downloads/DirectDownloadSource;
+}
+
+public final class ru/privatenull/pnlibrary/api/downloads/FileDownload$Builder {
+	public final fun automaticDownload (Z)Lru/privatenull/pnlibrary/api/downloads/FileDownload$Builder;
+	public final fun destination (Lru/privatenull/pnlibrary/api/downloads/DownloadDestination;Ljava/lang/String;)Lru/privatenull/pnlibrary/api/downloads/FileDownload$Builder;
+	public final fun forceAutomaticDownload (Z)Lru/privatenull/pnlibrary/api/downloads/FileDownload$Builder;
+	public final fun integrity (JLjava/lang/String;)Lru/privatenull/pnlibrary/api/downloads/FileDownload$Builder;
+	public final fun java (I)Lru/privatenull/pnlibrary/api/downloads/FileDownload$Builder;
+	public final fun java (ILjava/lang/Integer;)Lru/privatenull/pnlibrary/api/downloads/FileDownload$Builder;
+	public static synthetic fun java$default (Lru/privatenull/pnlibrary/api/downloads/FileDownload$Builder;ILjava/lang/Integer;ILjava/lang/Object;)Lru/privatenull/pnlibrary/api/downloads/FileDownload$Builder;
+	public final fun platform (Lru/privatenull/pnlibrary/api/platform/PlatformType;)Lru/privatenull/pnlibrary/api/downloads/FileDownload$Builder;
+	public final fun required (Z)Lru/privatenull/pnlibrary/api/downloads/FileDownload$Builder;
+	public final fun url (Ljava/lang/String;)Lru/privatenull/pnlibrary/api/downloads/FileDownload$Builder;
+}
+
+public final class ru/privatenull/pnlibrary/api/downloads/FileDownload$Companion {
+}
+
+public final class ru/privatenull/pnlibrary/api/downloads/FileDownloads {
+	public static final field Companion Lru/privatenull/pnlibrary/api/downloads/FileDownloads$Companion;
+	public synthetic fun <init> (Lru/privatenull/pnlibrary/api/downloads/FileDownloads$Builder;Lkotlin/jvm/internal/DefaultConstructorMarker;)V
+	public static final fun builder ()Lru/privatenull/pnlibrary/api/downloads/FileDownloads$Builder;
 	public final fun getDataDirectory ()Ljava/nio/file/Path;
-	public final fun getDeclarations ()Ljava/util/List;
+	public final fun getFiles ()Ljava/util/List;
 }
 
-public final class ru/privatenull/pnlibrary/api/downloads/PluginDownloads$Builder {
-	public final fun build ()Lru/privatenull/pnlibrary/api/downloads/PluginDownloads;
-	public final fun component (Ljava/lang/String;Ljava/util/function/Consumer;)Lru/privatenull/pnlibrary/api/downloads/PluginDownloads$Builder;
-	public final fun dataDirectory (Ljava/nio/file/Path;)Lru/privatenull/pnlibrary/api/downloads/PluginDownloads$Builder;
-	public final fun file (Ljava/lang/String;Ljava/util/function/Consumer;)Lru/privatenull/pnlibrary/api/downloads/PluginDownloads$Builder;
-	public final fun plugin (Ljava/lang/String;Ljava/util/function/Consumer;)Lru/privatenull/pnlibrary/api/downloads/PluginDownloads$Builder;
+public final class ru/privatenull/pnlibrary/api/downloads/FileDownloads$Builder {
+	public final fun build ()Lru/privatenull/pnlibrary/api/downloads/FileDownloads;
+	public final fun dataDirectory (Ljava/nio/file/Path;)Lru/privatenull/pnlibrary/api/downloads/FileDownloads$Builder;
+	public final fun file (Ljava/lang/String;Ljava/util/function/Consumer;)Lru/privatenull/pnlibrary/api/downloads/FileDownloads$Builder;
 }
 
-public final class ru/privatenull/pnlibrary/api/downloads/PluginDownloads$Companion {
-	public final fun builder ()Lru/privatenull/pnlibrary/api/downloads/PluginDownloads$Builder;
+public final class ru/privatenull/pnlibrary/api/downloads/FileDownloads$Companion {
+	public final fun builder ()Lru/privatenull/pnlibrary/api/downloads/FileDownloads$Builder;
 }
 
 public abstract interface class ru/privatenull/pnlibrary/api/events/Cancellable {
@@ -2099,18 +2067,22 @@ public final class ru/privatenull/pnlibrary/api/plugin/Dependencies {
 public final class ru/privatenull/pnlibrary/api/plugin/DependencyBuilder {
 	public fun <init> ()V
 	public final fun build ()Ljava/util/List;
+	public final fun plugin (Ljava/lang/String;Ljava/lang/String;Ljava/util/function/Consumer;)Lru/privatenull/pnlibrary/api/plugin/DependencyBuilder;
 	public final fun plugin (Ljava/lang/String;Ljava/util/function/Consumer;)Lru/privatenull/pnlibrary/api/plugin/DependencyBuilder;
 	public final fun product (Ljava/lang/String;Ljava/util/function/Consumer;)Lru/privatenull/pnlibrary/api/plugin/DependencyBuilder;
 }
 
 public final class ru/privatenull/pnlibrary/api/plugin/DependencyBuilder$ExternalBuilder {
 	public final fun artifact (Ljava/lang/String;JLjava/lang/String;)Lru/privatenull/pnlibrary/api/plugin/DependencyBuilder$ExternalBuilder;
+	public final fun automaticDownload (Z)Lru/privatenull/pnlibrary/api/plugin/DependencyBuilder$ExternalBuilder;
 	public final fun downloadPage (Ljava/lang/String;)Lru/privatenull/pnlibrary/api/plugin/DependencyBuilder$ExternalBuilder;
 	public final fun downloadPolicy (Lru/privatenull/pnlibrary/api/plugin/DownloadPolicy;)Lru/privatenull/pnlibrary/api/plugin/DependencyBuilder$ExternalBuilder;
+	public final fun forceAutomaticDownload (Z)Lru/privatenull/pnlibrary/api/plugin/DependencyBuilder$ExternalBuilder;
 	public final fun maximumVersion (Ljava/lang/String;)Lru/privatenull/pnlibrary/api/plugin/DependencyBuilder$ExternalBuilder;
 	public final fun maximumVersionExclusive (Ljava/lang/String;)Lru/privatenull/pnlibrary/api/plugin/DependencyBuilder$ExternalBuilder;
 	public final fun minimumVersion (Ljava/lang/String;)Lru/privatenull/pnlibrary/api/plugin/DependencyBuilder$ExternalBuilder;
 	public final fun required (Z)Lru/privatenull/pnlibrary/api/plugin/DependencyBuilder$ExternalBuilder;
+	public final fun url (Ljava/lang/String;)Lru/privatenull/pnlibrary/api/plugin/DependencyBuilder$ExternalBuilder;
 }
 
 public final class ru/privatenull/pnlibrary/api/plugin/DependencyBuilder$ProductBuilder {
@@ -2188,7 +2160,7 @@ public abstract interface class ru/privatenull/pnlibrary/api/plugin/PluginBuilde
 	public abstract fun diagnostics (Ljava/nio/file/Path;Lru/privatenull/pnlibrary/api/diagnostics/DiagnosticContainer;)Lru/privatenull/pnlibrary/api/plugin/PluginBuilder;
 	public fun downloads (Ljava/nio/file/Path;Ljava/util/function/Consumer;)Lru/privatenull/pnlibrary/api/plugin/PluginBuilder;
 	public fun downloads (Ljava/util/function/Consumer;)Lru/privatenull/pnlibrary/api/plugin/PluginBuilder;
-	public abstract fun downloads (Lru/privatenull/pnlibrary/api/downloads/PluginDownloads;)Lru/privatenull/pnlibrary/api/plugin/PluginBuilder;
+	public abstract fun downloads (Lru/privatenull/pnlibrary/api/downloads/FileDownloads;)Lru/privatenull/pnlibrary/api/plugin/PluginBuilder;
 	public abstract fun listener (Lru/privatenull/pnlibrary/api/events/Listener;)Lru/privatenull/pnlibrary/api/plugin/PluginBuilder;
 	public abstract fun metadata (Ljava/util/function/Consumer;)Lru/privatenull/pnlibrary/api/plugin/PluginBuilder;
 	public fun metrics (I)Lru/privatenull/pnlibrary/api/plugin/PluginBuilder;
@@ -3022,9 +2994,9 @@ public final class ru/privatenull/pnlibrary/api/updates/BlockedReason$NoCompatib
 
 public final class ru/privatenull/pnlibrary/api/updates/ExternalArtifact {
 	public static final field Companion Lru/privatenull/pnlibrary/api/updates/ExternalArtifact$Companion;
-	public fun <init> (Ljava/net/URI;JLjava/lang/String;)V
+	public fun <init> (Ljava/net/URI;Ljava/lang/Long;Ljava/lang/String;)V
 	public final fun getSha256 ()Ljava/lang/String;
-	public final fun getSize ()J
+	public final fun getSize ()Ljava/lang/Long;
 	public final fun getUri ()Ljava/net/URI;
 }
 
@@ -3055,6 +3027,7 @@ public final class ru/privatenull/pnlibrary/api/updates/ExternalPluginDependency
 	public final fun maximumVersion (Ljava/lang/String;)Lru/privatenull/pnlibrary/api/updates/ExternalPluginDependency$Builder;
 	public final fun maximumVersionExclusive (Ljava/lang/String;)Lru/privatenull/pnlibrary/api/updates/ExternalPluginDependency$Builder;
 	public final fun required (Z)Lru/privatenull/pnlibrary/api/updates/ExternalPluginDependency$Builder;
+	public final fun url (Ljava/lang/String;)Lru/privatenull/pnlibrary/api/updates/ExternalPluginDependency$Builder;
 }
 
 public final class ru/privatenull/pnlibrary/api/updates/ExternalPluginDependency$Companion {

@@ -148,13 +148,13 @@ class ManagedProductDependency(
 /** Exact external artifact allowed only under server-side trust policy. */
 class ExternalArtifact(
     val uri: URI,
-    val size: Long,
-    val sha256: String,
+    val size: Long?,
+    val sha256: String?,
 ) {
     init {
         require(uri.scheme.equals("https", true) && !uri.host.isNullOrBlank()) { "external artifact must use HTTPS" }
-        require(size > 0) { "external artifact size must be positive" }
-        require(SHA_256.matches(sha256)) { "external artifact SHA-256 is invalid" }
+        require(size == null || size > 0) { "external artifact size must be positive" }
+        require(sha256 == null || SHA_256.matches(sha256)) { "external artifact SHA-256 is invalid" }
     }
 
     companion object {
@@ -193,6 +193,7 @@ class ExternalPluginDependency private constructor(builder: Builder) : PluginDep
         fun artifact(url: String, size: Long, sha256: String) = apply {
             artifact = ExternalArtifact(URI.create(url), size, sha256)
         }
+        fun url(value: String) = apply { artifact = ExternalArtifact(URI.create(value), null, null) }
         fun required(value: Boolean) = apply { required = value }
         fun maximumVersion(value: String) = apply { maximumInclusive = SemanticVersion.parse(value) }
         fun maximumVersionExclusive(value: String) = apply { maximumExclusive = SemanticVersion.parse(value) }

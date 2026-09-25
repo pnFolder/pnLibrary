@@ -8,7 +8,7 @@ import ru.privatenull.pnlibrary.api.config.ConfigOptions
 import ru.privatenull.pnlibrary.api.config.ConfigTypeAccess
 import ru.privatenull.pnlibrary.api.diagnostics.DiagnosticConfiguration
 import ru.privatenull.pnlibrary.api.diagnostics.DiagnosticContainer
-import ru.privatenull.pnlibrary.api.downloads.PluginDownloads
+import ru.privatenull.pnlibrary.api.downloads.FileDownloads
 import ru.privatenull.pnlibrary.api.plugin.RemotePolicy
 import ru.privatenull.pnlibrary.api.remote.RemotePolicyContext
 import ru.privatenull.pnlibrary.api.tasks.TaskQuery
@@ -28,7 +28,7 @@ class BuilderArchitectureTest {
             Triple(ConfigTypeAccess::class.java, emptyArray(), "config access"),
             Triple(DiagnosticConfiguration::class.java, arrayOf(String::class.java), "diagnostic configuration"),
             Triple(DiagnosticContainer::class.java, arrayOf(String::class.java), "diagnostic container"),
-            Triple(PluginDownloads::class.java, emptyArray(), "downloads"),
+            Triple(FileDownloads::class.java, emptyArray(), "file downloads"),
             Triple(RemotePolicy::class.java, emptyArray(), "remote policy"),
             Triple(RemotePolicyContext::class.java, emptyArray(), "remote policy context"),
             Triple(TaskQuery::class.java, emptyArray(), "task query"),

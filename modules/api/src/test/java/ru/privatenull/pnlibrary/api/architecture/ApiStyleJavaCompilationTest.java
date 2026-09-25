@@ -1,7 +1,7 @@
 package ru.privatenull.pnlibrary.api.architecture;
 
 import org.junit.jupiter.api.Test;
-import ru.privatenull.pnlibrary.api.downloads.PluginDownloads;
+import ru.privatenull.pnlibrary.api.downloads.FileDownloads;
 import ru.privatenull.pnlibrary.api.commands.CommandDefinition;
 import ru.privatenull.pnlibrary.api.placeholders.PlaceholderAccess;
 import ru.privatenull.pnlibrary.api.placeholders.PlaceholderRegistration;
@@ -41,7 +41,7 @@ class ApiStyleJavaCompilationTest {
             .exactArtifact("pnLibrary.jar", 8, null)
             .build();
 
-        PluginDownloads downloads = PluginDownloads.builder()
+        FileDownloads downloads = FileDownloads.builder()
             .dataDirectory(Paths.get("plugins", "Example"))
             .file("rules", file -> file
                 .url("https://example.invalid/rules.json")
@@ -61,7 +61,7 @@ class ApiStyleJavaCompilationTest {
 
         assertEquals("cleanup", task.getName());
         assertEquals("pnFolder", updates.getRepositoryOwner());
-        assertTrue(downloads.getDeclarations().size() == 1);
+        assertTrue(downloads.getFiles().size() == 1);
         assertEquals("reload", command.getRoot().getChildren().get(0).getName());
         assertEquals("test", policy.getValues().get("environment"));
     }

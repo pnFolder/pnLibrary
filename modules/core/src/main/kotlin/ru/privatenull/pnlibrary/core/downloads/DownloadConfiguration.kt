@@ -13,7 +13,7 @@ internal data class DownloadConfiguration(
     val automatic: Boolean = false,
     val allowedHosts: Set<String> = setOf("github.com", "objects.githubusercontent.com"),
     val destinations: Set<DownloadDestination> = setOf(
-        DownloadDestination.PLUGINS, DownloadDestination.DATA_FOLDER, DownloadDestination.CACHE,
+        DownloadDestination.DATA_FOLDER, DownloadDestination.CACHE,
     ),
 ) {
     companion object {
@@ -45,7 +45,6 @@ internal data class DownloadConfiguration(
     - github.com
     - objects.githubusercontent.com
   destinations:
-    plugins: true
     data-folder: true
     cache: true
 """

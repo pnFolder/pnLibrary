@@ -69,7 +69,7 @@ import ru.privatenull.pnlibrary.core.cooldowns.CooldownServiceImpl
 import ru.privatenull.pnlibrary.api.currency.CurrencyService
 import ru.privatenull.pnlibrary.api.currency.CurrencyStorageFactory
 import ru.privatenull.pnlibrary.api.commands.CommandService
-import ru.privatenull.pnlibrary.api.downloads.PluginDownloads
+import ru.privatenull.pnlibrary.api.downloads.FileDownloads
 import ru.privatenull.pnlibrary.api.downloads.DownloadRegistration
 import ru.privatenull.pnlibrary.currency.CurrencyFeature
 import ru.privatenull.pnlibrary.core.downloads.DirectDownloadManager
@@ -186,9 +186,9 @@ internal class PluginRegistryImpl(
             definition.updateRequest?.let { request ->
                 updateRegistration = updates.register(owner, requireNotNull(productDescriptor), request, definition.dependencies)
             }
-            definition.downloadsRequest?.let { request ->
-                downloadRegistration = directDownloads?.register(owner, request)
-            }
+            val dependencyDownloads = directDownloads?.registerDependencies(owner, definition.dependencies)
+            val fileDownloads = definition.downloadsRequest?.let { request -> directDownloads?.register(owner, request) }
+            downloadRegistration = combineDownloads(dependencyDownloads, fileDownloads)
             return Context(
                 parent,
                 id,
@@ -296,17 +296,10 @@ internal class PluginRegistryImpl(
         return if (present) EmbeddedDescriptorReader().read(location) else null
     }
 
-    private fun validateDependencies(dependencies: List<PluginDependency>, downloads: PluginDownloads?) {
-        val downloadableComponents = downloads?.declarations.orEmpty()
-            .filterIsInstance<ru.privatenull.pnlibrary.api.downloads.DownloadDeclaration.Component>()
-            .associateBy { it.component }
-        val downloadablePlugins = downloads?.declarations.orEmpty()
-            .filterIsInstance<ru.privatenull.pnlibrary.api.downloads.DownloadDeclaration.Plugin>()
-            .associateBy { it.plugin.lowercase() }
+    private fun validateDependencies(dependencies: List<PluginDependency>) {
         val problems = dependencies.mapNotNull { it.managed }.filter { it.required }.mapNotNull { dependency ->
             val installed = productDescriptors[dependency.product.value]
             when {
-                installed == null && downloadableComponents[dependency.product]?.let { it.version >= dependency.minimumVersion } == true -> null
                 installed == null -> "${dependency.product} >= ${dependency.minimumVersion} is missing (${dependency.repositoryOwner}/${dependency.repositoryName})"
                 installed.version < dependency.minimumVersion -> "${dependency.product} ${installed.version} is installed, ${dependency.minimumVersion} is required"
                 else -> null
@@ -316,16 +309,30 @@ internal class PluginRegistryImpl(
             .entries.associate { it.key.lowercase() to it.value }
         dependencies.mapNotNull { it.external }.filter { it.required }.forEach { dependency ->
             val installed = nativePlugins[dependency.plugin.lowercase()]
+            val canStage = directDownloads != null && dependency.automaticDownload && dependency.artifact != null
             when {
-                installed == null && downloadablePlugins[dependency.plugin.lowercase()]?.let {
-                    it.minimumVersion >= dependency.minimumVersion
-                } == true -> null
+                installed == null && canStage -> null
                 installed == null -> problems += "${dependency.plugin} >= ${dependency.minimumVersion} is missing (${dependency.downloadPage ?: "no download page"})"
+                SemanticVersion.tryParse(installed)?.let(dependency.versions::accepts) != true && canStage -> null
                 SemanticVersion.tryParse(installed)?.let { it >= dependency.minimumVersion } != true ->
                     problems += "${dependency.plugin} $installed is installed, ${dependency.minimumVersion} is required"
             }
         }
         require(problems.isEmpty()) { "Unsatisfied pnLibrary component dependencies: ${problems.joinToString("; ")}" }
+    }
+
+    private fun combineDownloads(
+        first: DownloadRegistration?,
+        second: DownloadRegistration?,
+    ): DownloadRegistration? = when {
+        first == null -> second
+        second == null -> first
+        else -> object : DownloadRegistration {
+            override val isClosed: Boolean get() = first.isClosed && second.isClosed
+            override fun snapshots() = first.snapshots() + second.snapshots()
+            override fun downloadNow() = first.downloadNow().thenCombine(second.downloadNow()) { left, right -> left + right }
+            override fun close() { first.close(); second.close() }
+        }
     }
 
     private inner class Plugin(
@@ -343,13 +350,12 @@ internal class PluginRegistryImpl(
                 check(!closed.get()) { "PluginRegistry is closed" }
                 require(id !in moduleContexts) { "Module $id is already registered for this plugin" }
                 val definition = Builder().also { configure.accept(it) }
-                definition.materializeDependencyDownloads()
                 val descriptor = productDescriptor(owner, id, definition)
                 require(descriptor == null || descriptor.id.value !in productDescriptors) {
                     "Component ${descriptor?.id} is already registered"
                 }
                 definition.bindUpdatesTo(descriptor)
-            validateDependencies(definition.dependencies, definition.downloadsRequest)
+                validateDependencies(definition.dependencies)
                 createContext(this, id, serviceKey(registrationId, nativeId, id), definition, descriptor).also { context ->
                     moduleContexts[id] = context
                     if (descriptor != null) productDescriptors[descriptor.id.value] = descriptor
@@ -547,7 +553,7 @@ internal class PluginRegistryImpl(
         var updateRequest: PluginUpdateRequest? = null
         var productDescriptor: ProductDescriptor? = null
         val dependencies = mutableListOf<PluginDependency>()
-        var downloadsRequest: PluginDownloads? = null
+        var downloadsRequest: FileDownloads? = null
         var placeholderApiEnabled: Boolean = true
         val listeners = mutableListOf<Listener>()
 
@@ -565,29 +571,6 @@ internal class PluginRegistryImpl(
                     (existing.external?.plugin?.equals(dependency.external?.plugin, true) == true && dependency.external != null)
             }) { "duplicate plugin dependency" }
             dependencies += dependency
-        }
-
-        fun materializeDependencyDownloads() {
-            if (downloadsRequest != null) return
-            val automatic = dependencies.mapNotNull { dependency ->
-                val external = dependency.external ?: return@mapNotNull null
-                val artifact = external.artifact ?: return@mapNotNull null
-                if (!dependency.automaticDownload) return@mapNotNull null
-                external to artifact
-            }
-            if (automatic.isEmpty()) return
-            val builder = PluginDownloads.builder()
-            automatic.forEach { (external, artifact) ->
-                builder.plugin(external.plugin) { declaration ->
-                    declaration.minimumVersion(external.minimumVersion.toString())
-                        .url(artifact.uri.toString())
-                        .required(external.required)
-                        .automaticDownload(true)
-                        .forceAutomaticDownload(external.forceAutomaticDownload)
-                        .integrity(artifact.size, artifact.sha256)
-                }
-            }
-            downloadsRequest = builder.build()
         }
 
         override fun metadata(configure: Consumer<PluginMetadataBuilder>): PluginBuilder = apply {
@@ -618,7 +601,7 @@ internal class PluginRegistryImpl(
             updateRequest = request
         }
 
-        override fun downloads(request: PluginDownloads): PluginBuilder = apply {
+        override fun downloads(request: FileDownloads): PluginBuilder = apply {
             require(downloadsRequest == null) { "downloads are already configured" }
             downloadsRequest = request
         }

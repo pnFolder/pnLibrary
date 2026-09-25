@@ -9,23 +9,21 @@ import org.junit.jupiter.api.Test
 import org.junit.jupiter.api.io.TempDir
 import ru.privatenull.pnlibrary.api.downloads.DownloadDestination
 import ru.privatenull.pnlibrary.api.downloads.DownloadState
-import ru.privatenull.pnlibrary.api.downloads.PluginDownloads
+import ru.privatenull.pnlibrary.api.downloads.FileDownloads
 import ru.privatenull.pnlibrary.api.platform.PlatformType
+import ru.privatenull.pnlibrary.api.updates.ExternalPluginDependency
 import ru.privatenull.pnlibrary.spi.platform.PlatformAdapter
-import ru.privatenull.pnlibrary.update.ProductDescriptorCodec
-import ru.privatenull.pnlibrary.update.EmbeddedDescriptorReader
 import ru.privatenull.pnlibrary.update.TrustedHttpClient
-import ru.privatenull.pnlibrary.api.updates.ProductDescriptor
 import java.io.ByteArrayOutputStream
 import java.lang.reflect.Proxy
 import java.net.URI
 import java.nio.file.Files
 import java.nio.file.Path
 import java.time.Duration
-import java.util.jar.JarEntry
-import java.util.jar.JarOutputStream
 import java.util.concurrent.CountDownLatch
 import java.util.concurrent.TimeUnit
+import java.util.jar.JarEntry
+import java.util.jar.JarOutputStream
 
 class DirectDownloadManagerTest {
     @TempDir lateinit var directory: Path
@@ -33,10 +31,10 @@ class DirectDownloadManagerTest {
     @Test
     fun `installs ordinary file only inside declared data directory`() {
         val payload = "safe-data".toByteArray()
-        val request = PluginDownloads.builder().dataDirectory(directory.resolve("plugin-data"))
+        val request = FileDownloads.builder().dataDirectory(directory.resolve("plugin-data"))
             .file("data") { it.url("https://example.org/data.bin")
                 .destination(DownloadDestination.DATA_FOLDER, "models/data.bin") }.build()
-        manager(payload).use { it.install(request, request.declarations.single()) }
+        manager(payload).use { it.install(request, request.files.single()) }
 
         assertArrayEquals(payload, Files.readAllBytes(directory.resolve("plugin-data/models/data.bin")))
     }
@@ -44,7 +42,7 @@ class DirectDownloadManagerTest {
     @Test
     fun `manual download works when automatic policy is disabled`() {
         val payload = "manual".toByteArray()
-        val request = PluginDownloads.builder().dataDirectory(directory.resolve("manual-data"))
+        val request = FileDownloads.builder().dataDirectory(directory.resolve("manual-data"))
             .file("manual") { it.url("https://example.org/manual.bin")
                 .destination(DownloadDestination.DATA_FOLDER, "manual.bin") }.build()
         val manager = manager(payload, automatic = false)
@@ -63,34 +61,77 @@ class DirectDownloadManagerTest {
     }
 
     @Test
-    fun `verifies embedded identity version and API before staging component`() {
-        val descriptor = ProductDescriptor.builder("pneconomy", "2.0.0").pnLibraryApi(1, 2).build()
-        val jar = ByteArrayOutputStream().also { output -> JarOutputStream(output).use { archive ->
-            archive.putNextEntry(JarEntry(EmbeddedDescriptorReader.ENTRY))
-            archive.write(ProductDescriptorCodec().encodeInstalled(descriptor)); archive.closeEntry()
-        } }.toByteArray()
-        val request = PluginDownloads.builder().component("pneconomy") {
-            it.version("2.0.0").apiVersions(1, 2).platform(PlatformType.BUKKIT)
-                .url("https://example.org/pnEconomy.jar")
-        }.build()
+    fun `automatic external dependency is staged in server update directory`() {
+        val payload = pluginJar("Vault", "1.7.3")
+        val dependency = ExternalPluginDependency.builder("Vault", "1.7.3")
+            .url("https://example.org/download")
+            .automaticDownload(true)
+            .build()
 
-        manager(jar).use { it.install(request, request.declarations.single()) }
+        manager(payload).use { manager ->
+            val registration = requireNotNull(manager.registerDependencies(Any(), listOf(dependency)))
+            registration.downloadNow().toCompletableFuture().join()
+            assertArrayEquals(payload, Files.readAllBytes(directory.resolve("plugins/update/Vault.jar")))
+        }
+    }
 
-        assertTrue(Files.isRegularFile(directory.resolve("plugins/update/pnEconomy.jar")))
+    @Test
+    fun `dependency validation uses the descriptor of the active platform`() {
+        val dependency = ExternalPluginDependency.builder("Vault", "1.7.3")
+            .url("https://example.org/Vault.jar")
+            .automaticDownload(true)
+            .build()
+        val payload = pluginJar(mapOf(
+            "plugin.yml" to "name: Vault\nversion: 1.7.3\nmain: example.Main\n",
+            "bungee.yml" to "name: DifferentPlugin\nversion: 1.7.3\nmain: example.Main\n",
+        ))
+
+        manager(payload, platformType = PlatformType.BUNGEECORD).use { manager ->
+            val registration = requireNotNull(manager.registerDependencies(Any(), listOf(dependency)))
+            assertEquals(DownloadState.FAILED, registration.downloadNow().toCompletableFuture().join().single().state)
+        }
+    }
+
+    @Test
+    fun `dependency download rejects a jar whose declared plugin identity does not match`() {
+        val dependency = ExternalPluginDependency.builder("Vault", "1.7.3")
+            .url("https://example.org/Vault.jar")
+            .automaticDownload(true)
+            .build()
+
+        manager(pluginJar("NotVault", "1.7.3")).use { manager ->
+            val registration = requireNotNull(manager.registerDependencies(Any(), listOf(dependency)))
+            val snapshots = registration.downloadNow().toCompletableFuture().join()
+            assertEquals(DownloadState.FAILED, snapshots.single().state)
+            assertFalse(Files.exists(directory.resolve("plugins/update/Vault.jar")))
+        }
+    }
+
+    @Test
+    fun `dependency at minimum version is not downloaded again`() {
+        val dependency = ExternalPluginDependency.builder("Vault", "1.7.3")
+            .url("https://example.org/Vault.jar")
+            .automaticDownload(true)
+            .build()
+
+        manager(pluginJar("Vault", "1.7.3"), installed = mapOf("Vault" to "1.7.3")).use { manager ->
+            assertTrue(manager.registerDependencies(Any(), listOf(dependency)) == null)
+        }
     }
 
     @Test
     fun `does not publish first item when a later item fails verification`() {
-        val request = PluginDownloads.builder().dataDirectory(directory.resolve("plugin-data"))
+        val request = FileDownloads.builder().dataDirectory(directory.resolve("plugin-data"))
             .file("data") { it.url("https://example.org/data.bin")
                 .destination(DownloadDestination.DATA_FOLDER, "data.bin") }
-            .component("broken") { it.version("1.0.0").apiVersion(1)
-                .url("https://example.org/broken.jar") }
+            .file("broken") { it.url("https://example.org/broken.bin")
+                .integrity(1, "0".repeat(64))
+                .destination(DownloadDestination.DATA_FOLDER, "broken.bin") }
             .build()
 
         manager("not-a-jar".toByteArray()).use { manager ->
             assertThrows(IllegalArgumentException::class.java) {
-                manager.installBatch(request, request.declarations)
+                manager.installBatch(request, request.files)
             }
         }
 
@@ -102,7 +143,7 @@ class DirectDownloadManagerTest {
         val entered = CountDownLatch(1)
         val release = CountDownLatch(1)
         val payload = "late-download".toByteArray()
-        val request = PluginDownloads.builder().dataDirectory(directory.resolve("plugin-data"))
+        val request = FileDownloads.builder().dataDirectory(directory.resolve("plugin-data"))
             .file("data") { it.url("https://example.org/data.bin")
                 .destination(DownloadDestination.DATA_FOLDER, "data.bin") }.build()
         blockingManager(payload, entered, release).use { manager ->
@@ -117,21 +158,28 @@ class DirectDownloadManagerTest {
         }
     }
 
-    private fun manager(bytes: ByteArray, automatic: Boolean = true): DirectDownloadManager {
-        return manager(bytes, automatic, null, null)
+    private fun manager(
+        bytes: ByteArray,
+        automatic: Boolean = true,
+        installed: Map<String, String> = emptyMap(),
+        platformType: PlatformType = PlatformType.BUKKIT,
+    ): DirectDownloadManager {
+        return manager(bytes, automatic, null, null, installed, platformType)
     }
 
     private fun blockingManager(bytes: ByteArray, entered: CountDownLatch, release: CountDownLatch): DirectDownloadManager =
-        manager(bytes, true, entered, release)
+        manager(bytes, true, entered, release, emptyMap(), PlatformType.BUKKIT)
 
     private fun manager(
         bytes: ByteArray,
         automatic: Boolean,
         entered: CountDownLatch?,
         release: CountDownLatch?,
+        installed: Map<String, String>,
+        platformType: PlatformType,
     ): DirectDownloadManager {
         val platform = Proxy.newProxyInstance(javaClass.classLoader, arrayOf(PlatformAdapter::class.java)) { _, method, _ ->
-            when (method.name) { "getType" -> PlatformType.BUKKIT; "installedPlugins", "details" -> emptyMap<String, String>(); else -> null }
+            when (method.name) { "getType" -> platformType; "installedPlugins" -> installed; "details" -> emptyMap<String, String>(); else -> null }
         } as PlatformAdapter
         val http = object : TrustedHttpClient(Duration.ofSeconds(1), Duration.ofSeconds(1), setOf("example.org")) {
             override fun get(uri: URI, maximumBytes: Int): ByteArray {
@@ -143,5 +191,23 @@ class DirectDownloadManagerTest {
         return DirectDownloadManager(platform, directory.resolve("plugins/pnLibrary"), DownloadConfiguration(
             automatic = automatic, allowedHosts = setOf("example.org"),
         ), http)
+    }
+
+    private fun pluginJar(name: String, version: String): ByteArray = ByteArrayOutputStream().also { output ->
+        pluginJar(mapOf("plugin.yml" to "name: $name\nversion: $version\nmain: example.Main\n"), output)
+    }.toByteArray()
+
+    private fun pluginJar(entries: Map<String, String>): ByteArray = ByteArrayOutputStream().also { output ->
+        pluginJar(entries, output)
+    }.toByteArray()
+
+    private fun pluginJar(entries: Map<String, String>, output: ByteArrayOutputStream) {
+        JarOutputStream(output).use { archive ->
+            entries.forEach { (name, contents) ->
+                archive.putNextEntry(JarEntry(name))
+                archive.write(contents.toByteArray())
+                archive.closeEntry()
+            }
+        }
     }
 }

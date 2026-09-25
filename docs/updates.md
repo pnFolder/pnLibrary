@@ -83,22 +83,29 @@ GitHub `sha256` digest подходящего asset. Asset без проверя
 
 ```java
 .downloads(getDataFolder().toPath(), downloads -> downloads
-    .component("pnEconomy", component -> component
-        .version("2.0.0").apiVersions(1, 2)
-        .platform(PlatformType.BUKKIT).java(17)
-        .url("https://example.org/pnEconomy.jar")
-        .automaticDownload(true))
-    .plugin("Vault", plugin -> plugin
-        .minimumVersion("1.7.3")
-        .url("https://example.org/Vault.jar"))
     .file("cases-data", file -> file
         .url("https://example.org/cases.bin")
         .destination(DownloadDestination.DATA_FOLDER, "resources/cases.bin")))
 ```
 
-`.downloads(...)` не является updater: он отдельно доставляет компонент pnLibrary, обычный серверный
-плагин или файл. Пакет сначала целиком скачивается и проверяется, затем публикуется атомарно.
-Компонент проверяется по ID, версии и API; пути не могут выйти из разрешённой корневой папки.
+`.downloads(...)` доставляет только вспомогательные файлы в каталог данных модуля или кэш pnLibrary.
+Пути не могут выйти из разрешённой корневой папки. Другие плагины объявляются через `.depends(...)`,
+а обновление самого зарегистрированного продукта — через `.updates(...)`.
+
+Внешний плагин с прямой ссылкой объявляется без ручного размера и SHA-256:
+
+```java
+.dependencies(dependencies -> dependencies
+    .plugin("Vault", "1.7.3", dependency -> dependency
+        .url("https://example.org/Vault.jar")
+        .automaticDownload(true)))
+```
+
+pnLibrary сначала сравнивает установленную версию с заданным диапазоном. Актуальный плагин не
+скачивается повторно. Для отсутствующего или устаревшего плагина скачанный JAR проверяется по
+`plugin.yml`, `bungee.yml` или `velocity-plugin.json`: имя и версия внутри файла должны совпасть с
+объявленной зависимостью. Проверенный JAR помещается в серверный каталог `plugins/update` и
+применяется после перезапуска. Работающий плагин на горячую не удаляется.
 
 Прямые загрузки имеют отдельную политику `plugins/pnLibrary/downloads.yml` и по умолчанию не
 выполняются автоматически:
@@ -111,7 +118,6 @@ downloads:
     - github.com
     - objects.githubusercontent.com
   destinations:
-    plugins: true
     data-folder: true
     cache: true
 ```

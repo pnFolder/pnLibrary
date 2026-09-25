@@ -7,7 +7,7 @@ import ru.privatenull.pnlibrary.api.updates.PluginUpdateRequest
 import ru.privatenull.pnlibrary.api.updates.ProductDescriptor
 import java.nio.file.Path
 import java.util.function.Consumer
-import ru.privatenull.pnlibrary.api.downloads.PluginDownloads
+import ru.privatenull.pnlibrary.api.downloads.FileDownloads
 
 /**
  * Declarative setup evaluated by [PluginRegistry.register] before capabilities become visible.
@@ -89,8 +89,8 @@ interface PluginBuilder {
         return updates(builder.build())
     }
 
-    /** Registers direct component, native-plugin, and ordinary-file deliveries separately from updates. */
-    fun downloads(request: PluginDownloads): PluginBuilder
+    /** Registers auxiliary file deliveries. Plugins belong in [depends], this product's release in [updates]. */
+    fun downloads(request: FileDownloads): PluginBuilder
 
     /** Attaches one validated reusable remote policy declaration. */
     fun remotePolicy(policy: RemotePolicy): PluginBuilder
@@ -105,15 +105,15 @@ interface PluginBuilder {
     }
 
     /** Builds direct-download declarations inline. */
-    fun downloads(configure: Consumer<PluginDownloads.Builder>): PluginBuilder {
-        val builder = PluginDownloads.builder()
+    fun downloads(configure: Consumer<FileDownloads.Builder>): PluginBuilder {
+        val builder = FileDownloads.builder()
         configure.accept(builder)
         return downloads(builder.build())
     }
 
     /** Builds direct-download declarations rooted at this plugin's data directory. */
-    fun downloads(dataDirectory: Path, configure: Consumer<PluginDownloads.Builder>): PluginBuilder {
-        val builder = PluginDownloads.builder().dataDirectory(dataDirectory)
+    fun downloads(dataDirectory: Path, configure: Consumer<FileDownloads.Builder>): PluginBuilder {
+        val builder = FileDownloads.builder().dataDirectory(dataDirectory)
         configure.accept(builder)
         return downloads(builder.build())
     }

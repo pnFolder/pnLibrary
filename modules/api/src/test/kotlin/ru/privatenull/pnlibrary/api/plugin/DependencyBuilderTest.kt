@@ -10,6 +10,21 @@ import ru.privatenull.pnlibrary.api.version.SemanticVersion
 
 class DependencyBuilderTest {
     @Test
+    fun `external plugin accepts a direct URL without manual integrity metadata`() {
+        val dependency = DependencyBuilder().apply {
+            plugin("Vault", "1.7.3") {
+                it.url("https://example.org/Vault.jar")
+                    .automaticDownload(true)
+            }
+        }.build().single() as ExternalPluginDependency
+
+        assertTrue(dependency.minimumVersion == SemanticVersion.parse("1.7.3"))
+        assertTrue(dependency.artifact?.size == null)
+        assertTrue(dependency.artifact?.sha256 == null)
+        assertTrue(dependency.downloadPolicy == DownloadPolicy.AUTOMATIC)
+    }
+
+    @Test
     fun `managed product accepts versions inside its declared range`() {
         val builder = DependencyBuilder()
         builder.product("pneconomy") {

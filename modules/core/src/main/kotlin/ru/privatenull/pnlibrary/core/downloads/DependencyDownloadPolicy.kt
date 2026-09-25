@@ -37,7 +37,7 @@ internal class DependencyDownloadPolicy {
                 return DownloadDecision.Blocked("external artifact host is not allow-listed")
             }
             if (configuration.installation.requireSha256 &&
-                !artifact.sha256.matches(Regex("[0-9a-fA-F]{64}"))) {
+                artifact.sha256?.matches(Regex("[0-9a-fA-F]{64}")) != true) {
                 return DownloadDecision.Blocked("external artifact requires SHA-256")
             }
         }

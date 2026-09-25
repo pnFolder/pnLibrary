@@ -31,7 +31,8 @@ import ru.privatenull.pnlibrary.api.tasks.TaskService
 import ru.privatenull.pnlibrary.api.updates.UpdateService
 import ru.privatenull.pnlibrary.api.updates.PluginUpdateRequest
 import ru.privatenull.pnlibrary.api.updates.UpdateRegistration
-import ru.privatenull.pnlibrary.api.downloads.PluginDownloads
+import ru.privatenull.pnlibrary.api.downloads.DownloadDestination
+import ru.privatenull.pnlibrary.api.downloads.FileDownloads
 import ru.privatenull.pnlibrary.api.updates.ProductDescriptor
 import ru.privatenull.pnlibrary.api.updates.ExternalPluginDependency
 import ru.privatenull.pnlibrary.currency.CurrencyFeature
@@ -83,21 +84,23 @@ class PluginRegistryImplTest {
     }
 
     @Test
-    fun `declared component delivery satisfies missing managed dependency gate`() {
+    fun `ordinary file delivery does not satisfy missing managed dependency gate`() {
         val request = PluginUpdateRequest.builder().repository("pnFolder", "Example")
             .apiVersion(1)
             .artifact("Example.jar", 17).build()
-        val downloads = PluginDownloads.builder().component("economy") {
-            it.version("2.0.0").apiVersion(1).url("https://example.org/Economy.jar")
-        }.build()
+        val downloads = FileDownloads.builder().dataDirectory(java.nio.file.Paths.get("plugins/example"))
+            .file("economy-data") {
+                it.url("https://example.org/data.bin")
+                    .destination(DownloadDestination.DATA_FOLDER, "data.bin")
+            }.build()
 
-        val context = registry().registerModule(Any(), "example") {
-            it.updates(request)
-                .depends(Dependencies.managed("economy", "2.0.0", "pnFolder", "Economy"))
-                .downloads(downloads)
+        assertThrows(IllegalArgumentException::class.java) {
+            registry().registerModule(Any(), "example") {
+                it.updates(request)
+                    .depends(Dependencies.managed("economy", "2.0.0", "pnFolder", "Economy"))
+                    .downloads(downloads)
+            }
         }
-
-        assertEquals("example", context.id.value)
     }
 
     @Test
