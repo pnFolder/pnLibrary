@@ -825,7 +825,7 @@ public abstract interface class ru/privatenull/pnlibrary/api/commands/CommandAva
 public final class ru/privatenull/pnlibrary/api/commands/CommandBuilder {
 	public final fun aliases ([Ljava/lang/String;)Lru/privatenull/pnlibrary/api/commands/CommandBuilder;
 	public final fun argument (Ljava/lang/String;Lru/privatenull/pnlibrary/api/commands/ArgumentType;Ljava/util/function/Consumer;)Lru/privatenull/pnlibrary/api/commands/CommandBuilder;
-	public final fun argument (Ljava/lang/String;Lru/privatenull/pnlibrary/api/commands/ArgumentType;Lkotlin/jvm/functions/Function1;)Lru/privatenull/pnlibrary/api/commands/CommandBuilder;
+	public final synthetic fun argument (Ljava/lang/String;Lru/privatenull/pnlibrary/api/commands/ArgumentType;Lkotlin/jvm/functions/Function1;)Lru/privatenull/pnlibrary/api/commands/CommandBuilder;
 	public final fun availableIf (Lru/privatenull/pnlibrary/api/commands/CommandAvailability;)Lru/privatenull/pnlibrary/api/commands/CommandBuilder;
 	public final fun build ()Lru/privatenull/pnlibrary/api/commands/CommandDefinition;
 	public final fun consoleBypassesPermission (Z)Lru/privatenull/pnlibrary/api/commands/CommandBuilder;
@@ -833,7 +833,7 @@ public final class ru/privatenull/pnlibrary/api/commands/CommandBuilder {
 	public final fun executes (Ljava/util/function/Consumer;)Lru/privatenull/pnlibrary/api/commands/CommandBuilder;
 	public final fun executesAsync (Lru/privatenull/pnlibrary/api/commands/CommandHandler;)Lru/privatenull/pnlibrary/api/commands/CommandBuilder;
 	public final fun literal (Ljava/lang/String;Ljava/util/function/Consumer;)Lru/privatenull/pnlibrary/api/commands/CommandBuilder;
-	public final fun literal (Ljava/lang/String;Lkotlin/jvm/functions/Function1;)Lru/privatenull/pnlibrary/api/commands/CommandBuilder;
+	public final synthetic fun literal (Ljava/lang/String;Lkotlin/jvm/functions/Function1;)Lru/privatenull/pnlibrary/api/commands/CommandBuilder;
 	public final fun permission (Ljava/lang/String;)Lru/privatenull/pnlibrary/api/commands/CommandBuilder;
 	public final fun suggests (Ljava/util/function/Function;)Lru/privatenull/pnlibrary/api/commands/CommandBuilder;
 	public final fun suggestsAsync (Lru/privatenull/pnlibrary/api/commands/SuggestionHandler;)Lru/privatenull/pnlibrary/api/commands/CommandBuilder;
@@ -878,7 +878,7 @@ public final class ru/privatenull/pnlibrary/api/commands/CommandDefinition$Compa
 }
 
 public final class ru/privatenull/pnlibrary/api/commands/CommandDefinitionKt {
-	public static final fun command (Ljava/lang/String;Lkotlin/jvm/functions/Function1;)Lru/privatenull/pnlibrary/api/commands/CommandDefinition;
+	public static final synthetic fun command (Ljava/lang/String;Lkotlin/jvm/functions/Function1;)Lru/privatenull/pnlibrary/api/commands/CommandDefinition;
 	public static final fun completedExecution ()Ljava/util/concurrent/CompletionStage;
 	public static final fun completedSuggestions (Ljava/util/List;)Ljava/util/concurrent/CompletionStage;
 }
@@ -902,14 +902,14 @@ public final class ru/privatenull/pnlibrary/api/commands/CommandNode {
 
 public final class ru/privatenull/pnlibrary/api/commands/CommandNodeBuilder {
 	public final fun argument (Ljava/lang/String;Lru/privatenull/pnlibrary/api/commands/ArgumentType;Ljava/util/function/Consumer;)Lru/privatenull/pnlibrary/api/commands/CommandNodeBuilder;
-	public final fun argument (Ljava/lang/String;Lru/privatenull/pnlibrary/api/commands/ArgumentType;Lkotlin/jvm/functions/Function1;)Lru/privatenull/pnlibrary/api/commands/CommandNodeBuilder;
+	public final synthetic fun argument (Ljava/lang/String;Lru/privatenull/pnlibrary/api/commands/ArgumentType;Lkotlin/jvm/functions/Function1;)Lru/privatenull/pnlibrary/api/commands/CommandNodeBuilder;
 	public final fun availableIf (Lru/privatenull/pnlibrary/api/commands/CommandAvailability;)Lru/privatenull/pnlibrary/api/commands/CommandNodeBuilder;
 	public final fun consoleBypassesPermission (Z)Lru/privatenull/pnlibrary/api/commands/CommandNodeBuilder;
 	public static synthetic fun consoleBypassesPermission$default (Lru/privatenull/pnlibrary/api/commands/CommandNodeBuilder;ZILjava/lang/Object;)Lru/privatenull/pnlibrary/api/commands/CommandNodeBuilder;
 	public final fun executes (Ljava/util/function/Consumer;)Lru/privatenull/pnlibrary/api/commands/CommandNodeBuilder;
 	public final fun executesAsync (Lru/privatenull/pnlibrary/api/commands/CommandHandler;)Lru/privatenull/pnlibrary/api/commands/CommandNodeBuilder;
 	public final fun literal (Ljava/lang/String;Ljava/util/function/Consumer;)Lru/privatenull/pnlibrary/api/commands/CommandNodeBuilder;
-	public final fun literal (Ljava/lang/String;Lkotlin/jvm/functions/Function1;)Lru/privatenull/pnlibrary/api/commands/CommandNodeBuilder;
+	public final synthetic fun literal (Ljava/lang/String;Lkotlin/jvm/functions/Function1;)Lru/privatenull/pnlibrary/api/commands/CommandNodeBuilder;
 	public final fun permission (Ljava/lang/String;)Lru/privatenull/pnlibrary/api/commands/CommandNodeBuilder;
 	public final fun suggests (Ljava/util/function/Function;)Lru/privatenull/pnlibrary/api/commands/CommandNodeBuilder;
 	public final fun suggestsAsync (Lru/privatenull/pnlibrary/api/commands/SuggestionHandler;)Lru/privatenull/pnlibrary/api/commands/CommandNodeBuilder;
@@ -993,7 +993,9 @@ public final class ru/privatenull/pnlibrary/api/config/ConfigDocument {
 public final class ru/privatenull/pnlibrary/api/config/ConfigGroup : java/lang/AutoCloseable {
 	public fun <init> ()V
 	public final fun add (Lru/privatenull/pnlibrary/api/config/ManagedConfig;)Lru/privatenull/pnlibrary/api/config/ConfigGroup;
+	public final fun all ()Ljava/util/List;
 	public fun close ()V
+	public final fun isClosed ()Z
 	public final fun loadAll ()V
 	public final fun reloadAll ()V
 	public final fun saveAll ()V
@@ -1359,608 +1361,6 @@ public abstract interface class ru/privatenull/pnlibrary/api/cooldowns/CooldownS
 	public abstract fun set (Ljava/util/UUID;Ljava/lang/String;Ljava/time/Duration;)V
 }
 
-public abstract interface class ru/privatenull/pnlibrary/api/currency/Currency {
-	public abstract fun balance (Ljava/util/UUID;)Ljava/util/concurrent/CompletionStage;
-	public fun deposit (Ljava/util/UUID;J)Ljava/util/concurrent/CompletionStage;
-	public abstract fun deposit (Ljava/util/UUID;Ljava/math/BigDecimal;)Ljava/util/concurrent/CompletionStage;
-	public abstract fun extension (Ljava/lang/Class;)Ljava/lang/Object;
-	public abstract fun format (Ljava/math/BigDecimal;)Ljava/lang/String;
-	public abstract fun getCapabilities ()Ljava/util/Set;
-	public abstract fun getDescriptor ()Lru/privatenull/pnlibrary/api/currency/CurrencyDescriptor;
-	public abstract fun getKey ()Lru/privatenull/pnlibrary/api/currency/CurrencyKey;
-	public abstract fun has (Ljava/util/UUID;Ljava/math/BigDecimal;)Ljava/util/concurrent/CompletionStage;
-	public abstract fun reset (Ljava/util/UUID;)Ljava/util/concurrent/CompletionStage;
-	public fun setBalance (Ljava/util/UUID;J)Ljava/util/concurrent/CompletionStage;
-	public abstract fun setBalance (Ljava/util/UUID;Ljava/math/BigDecimal;)Ljava/util/concurrent/CompletionStage;
-	public fun supports (Lru/privatenull/pnlibrary/api/currency/CurrencyCapability;)Z
-	public fun transfer (Ljava/util/UUID;Ljava/util/UUID;J)Ljava/util/concurrent/CompletionStage;
-	public abstract fun transfer (Ljava/util/UUID;Ljava/util/UUID;Ljava/math/BigDecimal;)Ljava/util/concurrent/CompletionStage;
-	public fun withdraw (Ljava/util/UUID;J)Ljava/util/concurrent/CompletionStage;
-	public abstract fun withdraw (Ljava/util/UUID;Ljava/math/BigDecimal;)Ljava/util/concurrent/CompletionStage;
-}
-
-public final class ru/privatenull/pnlibrary/api/currency/CurrencyAccess {
-	public static final field Companion Lru/privatenull/pnlibrary/api/currency/CurrencyAccess$Companion;
-	public synthetic fun <init> (ZZLjava/util/Set;Ljava/util/Set;Ljava/util/Set;Lkotlin/jvm/internal/DefaultConstructorMarker;)V
-	public final fun allows (Lru/privatenull/pnlibrary/api/plugin/PluginId;Lru/privatenull/pnlibrary/api/plugin/PluginId;)Z
-	public static final fun builder ()Lru/privatenull/pnlibrary/api/currency/CurrencyAccess$Builder;
-	public static final fun ownerOnly ()Lru/privatenull/pnlibrary/api/currency/CurrencyAccess;
-	public static final fun shared ()Lru/privatenull/pnlibrary/api/currency/CurrencyAccess;
-}
-
-public final class ru/privatenull/pnlibrary/api/currency/CurrencyAccess$Builder {
-	public fun <init> ()V
-	public final fun allow ([Ljava/lang/String;)Lru/privatenull/pnlibrary/api/currency/CurrencyAccess$Builder;
-	public final fun allowAll ()Lru/privatenull/pnlibrary/api/currency/CurrencyAccess$Builder;
-	public final fun allowMatching ([Ljava/lang/String;)Lru/privatenull/pnlibrary/api/currency/CurrencyAccess$Builder;
-	public final fun build ()Lru/privatenull/pnlibrary/api/currency/CurrencyAccess;
-	public final fun deny ([Ljava/lang/String;)Lru/privatenull/pnlibrary/api/currency/CurrencyAccess$Builder;
-	public final fun owner ()Lru/privatenull/pnlibrary/api/currency/CurrencyAccess$Builder;
-}
-
-public final class ru/privatenull/pnlibrary/api/currency/CurrencyAccess$Companion {
-	public final fun builder ()Lru/privatenull/pnlibrary/api/currency/CurrencyAccess$Builder;
-	public final fun ownerOnly ()Lru/privatenull/pnlibrary/api/currency/CurrencyAccess;
-	public final fun shared ()Lru/privatenull/pnlibrary/api/currency/CurrencyAccess;
-}
-
-public final class ru/privatenull/pnlibrary/api/currency/CurrencyAccount {
-	public fun <init> (Ljava/util/UUID;)V
-	public final fun component1 ()Ljava/util/UUID;
-	public final fun copy (Ljava/util/UUID;)Lru/privatenull/pnlibrary/api/currency/CurrencyAccount;
-	public static synthetic fun copy$default (Lru/privatenull/pnlibrary/api/currency/CurrencyAccount;Ljava/util/UUID;ILjava/lang/Object;)Lru/privatenull/pnlibrary/api/currency/CurrencyAccount;
-	public fun equals (Ljava/lang/Object;)Z
-	public final fun getPlayerId ()Ljava/util/UUID;
-	public fun hashCode ()I
-	public fun toString ()Ljava/lang/String;
-}
-
-public final class ru/privatenull/pnlibrary/api/currency/CurrencyActor {
-	public static final field Companion Lru/privatenull/pnlibrary/api/currency/CurrencyActor$Companion;
-	public fun <init> (Lru/privatenull/pnlibrary/api/currency/CurrencyActorType;Ljava/lang/String;)V
-	public final fun component1 ()Lru/privatenull/pnlibrary/api/currency/CurrencyActorType;
-	public final fun component2 ()Ljava/lang/String;
-	public final fun copy (Lru/privatenull/pnlibrary/api/currency/CurrencyActorType;Ljava/lang/String;)Lru/privatenull/pnlibrary/api/currency/CurrencyActor;
-	public static synthetic fun copy$default (Lru/privatenull/pnlibrary/api/currency/CurrencyActor;Lru/privatenull/pnlibrary/api/currency/CurrencyActorType;Ljava/lang/String;ILjava/lang/Object;)Lru/privatenull/pnlibrary/api/currency/CurrencyActor;
-	public fun equals (Ljava/lang/Object;)Z
-	public final fun getId ()Ljava/lang/String;
-	public final fun getType ()Lru/privatenull/pnlibrary/api/currency/CurrencyActorType;
-	public fun hashCode ()I
-	public static final fun player (Ljava/util/UUID;)Lru/privatenull/pnlibrary/api/currency/CurrencyActor;
-	public static final fun plugin (Lru/privatenull/pnlibrary/api/plugin/PluginId;)Lru/privatenull/pnlibrary/api/currency/CurrencyActor;
-	public static final fun server ()Lru/privatenull/pnlibrary/api/currency/CurrencyActor;
-	public static final fun service (Ljava/lang/String;)Lru/privatenull/pnlibrary/api/currency/CurrencyActor;
-	public static final fun system (Ljava/lang/String;)Lru/privatenull/pnlibrary/api/currency/CurrencyActor;
-	public fun toString ()Ljava/lang/String;
-}
-
-public final class ru/privatenull/pnlibrary/api/currency/CurrencyActor$Companion {
-	public final fun player (Ljava/util/UUID;)Lru/privatenull/pnlibrary/api/currency/CurrencyActor;
-	public final fun plugin (Lru/privatenull/pnlibrary/api/plugin/PluginId;)Lru/privatenull/pnlibrary/api/currency/CurrencyActor;
-	public final fun server ()Lru/privatenull/pnlibrary/api/currency/CurrencyActor;
-	public final fun service (Ljava/lang/String;)Lru/privatenull/pnlibrary/api/currency/CurrencyActor;
-	public final fun system (Ljava/lang/String;)Lru/privatenull/pnlibrary/api/currency/CurrencyActor;
-}
-
-public final class ru/privatenull/pnlibrary/api/currency/CurrencyActorType : java/lang/Enum {
-	public static final field PLAYER Lru/privatenull/pnlibrary/api/currency/CurrencyActorType;
-	public static final field PLUGIN Lru/privatenull/pnlibrary/api/currency/CurrencyActorType;
-	public static final field SERVER Lru/privatenull/pnlibrary/api/currency/CurrencyActorType;
-	public static final field SERVICE Lru/privatenull/pnlibrary/api/currency/CurrencyActorType;
-	public static final field SYSTEM Lru/privatenull/pnlibrary/api/currency/CurrencyActorType;
-	public static fun getEntries ()Lkotlin/enums/EnumEntries;
-	public static fun valueOf (Ljava/lang/String;)Lru/privatenull/pnlibrary/api/currency/CurrencyActorType;
-	public static fun values ()[Lru/privatenull/pnlibrary/api/currency/CurrencyActorType;
-}
-
-public abstract interface class ru/privatenull/pnlibrary/api/currency/CurrencyBalanceMutation {
-	public abstract fun setBalance (Lru/privatenull/pnlibrary/api/currency/CurrencyAccount;Ljava/math/BigDecimal;)Ljava/util/concurrent/CompletionStage;
-}
-
-public final class ru/privatenull/pnlibrary/api/currency/CurrencyCapability : java/lang/Enum {
-	public static final field BALANCE Lru/privatenull/pnlibrary/api/currency/CurrencyCapability;
-	public static final field DEPOSIT Lru/privatenull/pnlibrary/api/currency/CurrencyCapability;
-	public static final field FORMATTING Lru/privatenull/pnlibrary/api/currency/CurrencyCapability;
-	public static final field RESET Lru/privatenull/pnlibrary/api/currency/CurrencyCapability;
-	public static final field SET_BALANCE Lru/privatenull/pnlibrary/api/currency/CurrencyCapability;
-	public static final field TRANSFER Lru/privatenull/pnlibrary/api/currency/CurrencyCapability;
-	public static final field WITHDRAW Lru/privatenull/pnlibrary/api/currency/CurrencyCapability;
-	public static fun getEntries ()Lkotlin/enums/EnumEntries;
-	public static fun valueOf (Ljava/lang/String;)Lru/privatenull/pnlibrary/api/currency/CurrencyCapability;
-	public static fun values ()[Lru/privatenull/pnlibrary/api/currency/CurrencyCapability;
-}
-
-public abstract interface class ru/privatenull/pnlibrary/api/currency/CurrencyCommandOptions {
-	public abstract fun balance (Ljava/lang/String;)Lru/privatenull/pnlibrary/api/currency/CurrencyCommandOptions;
-	public abstract fun confirmation (Lru/privatenull/pnlibrary/api/currency/CurrencyConfirmationMode;)Lru/privatenull/pnlibrary/api/currency/CurrencyCommandOptions;
-	public abstract fun confirmationTimeoutSeconds (I)Lru/privatenull/pnlibrary/api/currency/CurrencyCommandOptions;
-	public abstract fun enabled (Z)Lru/privatenull/pnlibrary/api/currency/CurrencyCommandOptions;
-	public abstract fun failure (Ljava/lang/String;)Lru/privatenull/pnlibrary/api/currency/CurrencyCommandOptions;
-	public abstract fun historyEmpty (Ljava/lang/String;)Lru/privatenull/pnlibrary/api/currency/CurrencyCommandOptions;
-	public abstract fun permissionPrefix (Ljava/lang/String;)Lru/privatenull/pnlibrary/api/currency/CurrencyCommandOptions;
-	public abstract fun prefix (Ljava/lang/String;)Lru/privatenull/pnlibrary/api/currency/CurrencyCommandOptions;
-	public abstract fun success (Ljava/lang/String;)Lru/privatenull/pnlibrary/api/currency/CurrencyCommandOptions;
-}
-
-public final class ru/privatenull/pnlibrary/api/currency/CurrencyCommandSettings {
-	public fun <init> ()V
-	public fun <init> (ZLjava/lang/String;Ljava/lang/String;Ljava/lang/String;Ljava/lang/String;Ljava/lang/String;Ljava/lang/String;Lru/privatenull/pnlibrary/api/currency/CurrencyConfirmationMode;I)V
-	public synthetic fun <init> (ZLjava/lang/String;Ljava/lang/String;Ljava/lang/String;Ljava/lang/String;Ljava/lang/String;Ljava/lang/String;Lru/privatenull/pnlibrary/api/currency/CurrencyConfirmationMode;IILkotlin/jvm/internal/DefaultConstructorMarker;)V
-	public final fun component1 ()Z
-	public final fun component2 ()Ljava/lang/String;
-	public final fun component3 ()Ljava/lang/String;
-	public final fun component4 ()Ljava/lang/String;
-	public final fun component5 ()Ljava/lang/String;
-	public final fun component6 ()Ljava/lang/String;
-	public final fun component7 ()Ljava/lang/String;
-	public final fun component8 ()Lru/privatenull/pnlibrary/api/currency/CurrencyConfirmationMode;
-	public final fun component9 ()I
-	public final fun copy (ZLjava/lang/String;Ljava/lang/String;Ljava/lang/String;Ljava/lang/String;Ljava/lang/String;Ljava/lang/String;Lru/privatenull/pnlibrary/api/currency/CurrencyConfirmationMode;I)Lru/privatenull/pnlibrary/api/currency/CurrencyCommandSettings;
-	public static synthetic fun copy$default (Lru/privatenull/pnlibrary/api/currency/CurrencyCommandSettings;ZLjava/lang/String;Ljava/lang/String;Ljava/lang/String;Ljava/lang/String;Ljava/lang/String;Ljava/lang/String;Lru/privatenull/pnlibrary/api/currency/CurrencyConfirmationMode;IILjava/lang/Object;)Lru/privatenull/pnlibrary/api/currency/CurrencyCommandSettings;
-	public fun equals (Ljava/lang/Object;)Z
-	public final fun getBalance ()Ljava/lang/String;
-	public final fun getConfirmationMode ()Lru/privatenull/pnlibrary/api/currency/CurrencyConfirmationMode;
-	public final fun getConfirmationTimeoutSeconds ()I
-	public final fun getEnabled ()Z
-	public final fun getFailure ()Ljava/lang/String;
-	public final fun getHistoryEmpty ()Ljava/lang/String;
-	public final fun getPermissionPrefix ()Ljava/lang/String;
-	public final fun getPrefix ()Ljava/lang/String;
-	public final fun getSuccess ()Ljava/lang/String;
-	public fun hashCode ()I
-	public fun toString ()Ljava/lang/String;
-}
-
-public final class ru/privatenull/pnlibrary/api/currency/CurrencyConfirmationMode : java/lang/Enum {
-	public static final field CONSOLE Lru/privatenull/pnlibrary/api/currency/CurrencyConfirmationMode;
-	public static final field NONE Lru/privatenull/pnlibrary/api/currency/CurrencyConfirmationMode;
-	public static fun getEntries ()Lkotlin/enums/EnumEntries;
-	public static fun valueOf (Ljava/lang/String;)Lru/privatenull/pnlibrary/api/currency/CurrencyConfirmationMode;
-	public static fun values ()[Lru/privatenull/pnlibrary/api/currency/CurrencyConfirmationMode;
-}
-
-public abstract interface class ru/privatenull/pnlibrary/api/currency/CurrencyDefinitionBuilder : ru/privatenull/pnlibrary/api/currency/CurrencyRegistrationOptions {
-	public abstract fun descriptor (Ljava/util/function/Consumer;)Lru/privatenull/pnlibrary/api/currency/CurrencyDefinitionBuilder;
-	public abstract fun operations (Ljava/util/function/Consumer;)Lru/privatenull/pnlibrary/api/currency/CurrencyDefinitionBuilder;
-}
-
-public abstract interface class ru/privatenull/pnlibrary/api/currency/CurrencyDeposits {
-	public abstract fun deposit (Lru/privatenull/pnlibrary/api/currency/CurrencyAccount;Ljava/math/BigDecimal;)Ljava/util/concurrent/CompletionStage;
-}
-
-public final class ru/privatenull/pnlibrary/api/currency/CurrencyDescriptor {
-	public fun <init> (Ljava/lang/String;Ljava/lang/String;ILjava/math/RoundingMode;)V
-	public final fun accepts (Ljava/math/BigDecimal;)Z
-	public final fun component1 ()Ljava/lang/String;
-	public final fun component2 ()Ljava/lang/String;
-	public final fun component3 ()I
-	public final fun component4 ()Ljava/math/RoundingMode;
-	public final fun copy (Ljava/lang/String;Ljava/lang/String;ILjava/math/RoundingMode;)Lru/privatenull/pnlibrary/api/currency/CurrencyDescriptor;
-	public static synthetic fun copy$default (Lru/privatenull/pnlibrary/api/currency/CurrencyDescriptor;Ljava/lang/String;Ljava/lang/String;ILjava/math/RoundingMode;ILjava/lang/Object;)Lru/privatenull/pnlibrary/api/currency/CurrencyDescriptor;
-	public fun equals (Ljava/lang/Object;)Z
-	public final fun getDisplayName ()Ljava/lang/String;
-	public final fun getFractionDigits ()I
-	public final fun getRoundingMode ()Ljava/math/RoundingMode;
-	public final fun getSymbol ()Ljava/lang/String;
-	public fun hashCode ()I
-	public final fun normalize (Ljava/math/BigDecimal;)Ljava/math/BigDecimal;
-	public fun toString ()Ljava/lang/String;
-}
-
-public final class ru/privatenull/pnlibrary/api/currency/CurrencyDescriptor$Builder {
-	public fun <init> (Ljava/lang/String;)V
-	public final fun build ()Lru/privatenull/pnlibrary/api/currency/CurrencyDescriptor;
-	public final fun displayName (Ljava/lang/String;)Lru/privatenull/pnlibrary/api/currency/CurrencyDescriptor$Builder;
-	public final fun fractionDigits (I)Lru/privatenull/pnlibrary/api/currency/CurrencyDescriptor$Builder;
-	public final fun getDisplayName ()Ljava/lang/String;
-	public final fun getFractionDigits ()I
-	public final fun getRoundingMode ()Ljava/math/RoundingMode;
-	public final fun getSymbol ()Ljava/lang/String;
-	public final fun roundingMode (Ljava/math/RoundingMode;)Lru/privatenull/pnlibrary/api/currency/CurrencyDescriptor$Builder;
-	public final fun setDisplayName (Ljava/lang/String;)V
-	public final fun setFractionDigits (I)V
-	public final fun setRoundingMode (Ljava/math/RoundingMode;)V
-	public final fun setSymbol (Ljava/lang/String;)V
-	public final fun symbol (Ljava/lang/String;)Lru/privatenull/pnlibrary/api/currency/CurrencyDescriptor$Builder;
-	public final fun wholeNumbers ()Lru/privatenull/pnlibrary/api/currency/CurrencyDescriptor$Builder;
-}
-
-public abstract interface class ru/privatenull/pnlibrary/api/currency/CurrencyFormatting {
-	public abstract fun format (Ljava/math/BigDecimal;)Ljava/lang/String;
-}
-
-public final class ru/privatenull/pnlibrary/api/currency/CurrencyHistoryPage {
-	public fun <init> (Ljava/util/List;IZ)V
-	public final fun component1 ()Ljava/util/List;
-	public final fun component2 ()I
-	public final fun component3 ()Z
-	public final fun copy (Ljava/util/List;IZ)Lru/privatenull/pnlibrary/api/currency/CurrencyHistoryPage;
-	public static synthetic fun copy$default (Lru/privatenull/pnlibrary/api/currency/CurrencyHistoryPage;Ljava/util/List;IZILjava/lang/Object;)Lru/privatenull/pnlibrary/api/currency/CurrencyHistoryPage;
-	public fun equals (Ljava/lang/Object;)Z
-	public final fun getHasMore ()Z
-	public final fun getItems ()Ljava/util/List;
-	public final fun getOffset ()I
-	public fun hashCode ()I
-	public fun toString ()Ljava/lang/String;
-}
-
-public final class ru/privatenull/pnlibrary/api/currency/CurrencyHistoryQuery {
-	public fun <init> ()V
-	public fun <init> (Ljava/util/UUID;Lru/privatenull/pnlibrary/api/currency/CurrencyActor;Ljava/lang/String;Ljava/util/Set;Ljava/time/Instant;Ljava/time/Instant;II)V
-	public synthetic fun <init> (Ljava/util/UUID;Lru/privatenull/pnlibrary/api/currency/CurrencyActor;Ljava/lang/String;Ljava/util/Set;Ljava/time/Instant;Ljava/time/Instant;IIILkotlin/jvm/internal/DefaultConstructorMarker;)V
-	public final fun component1 ()Ljava/util/UUID;
-	public final fun component2 ()Lru/privatenull/pnlibrary/api/currency/CurrencyActor;
-	public final fun component3 ()Ljava/lang/String;
-	public final fun component4 ()Ljava/util/Set;
-	public final fun component5 ()Ljava/time/Instant;
-	public final fun component6 ()Ljava/time/Instant;
-	public final fun component7 ()I
-	public final fun component8 ()I
-	public final fun copy (Ljava/util/UUID;Lru/privatenull/pnlibrary/api/currency/CurrencyActor;Ljava/lang/String;Ljava/util/Set;Ljava/time/Instant;Ljava/time/Instant;II)Lru/privatenull/pnlibrary/api/currency/CurrencyHistoryQuery;
-	public static synthetic fun copy$default (Lru/privatenull/pnlibrary/api/currency/CurrencyHistoryQuery;Ljava/util/UUID;Lru/privatenull/pnlibrary/api/currency/CurrencyActor;Ljava/lang/String;Ljava/util/Set;Ljava/time/Instant;Ljava/time/Instant;IIILjava/lang/Object;)Lru/privatenull/pnlibrary/api/currency/CurrencyHistoryQuery;
-	public fun equals (Ljava/lang/Object;)Z
-	public final fun getAccount ()Ljava/util/UUID;
-	public final fun getActor ()Lru/privatenull/pnlibrary/api/currency/CurrencyActor;
-	public final fun getFrom ()Ljava/time/Instant;
-	public final fun getLimit ()I
-	public final fun getOffset ()I
-	public final fun getService ()Ljava/lang/String;
-	public final fun getTypes ()Ljava/util/Set;
-	public final fun getUntil ()Ljava/time/Instant;
-	public fun hashCode ()I
-	public fun toString ()Ljava/lang/String;
-}
-
-public final class ru/privatenull/pnlibrary/api/currency/CurrencyImportMode : java/lang/Enum {
-	public static final field MERGE_KEEP_TARGET Lru/privatenull/pnlibrary/api/currency/CurrencyImportMode;
-	public static final field MERGE_OVERWRITE Lru/privatenull/pnlibrary/api/currency/CurrencyImportMode;
-	public static final field REPLACE Lru/privatenull/pnlibrary/api/currency/CurrencyImportMode;
-	public static fun getEntries ()Lkotlin/enums/EnumEntries;
-	public static fun valueOf (Ljava/lang/String;)Lru/privatenull/pnlibrary/api/currency/CurrencyImportMode;
-	public static fun values ()[Lru/privatenull/pnlibrary/api/currency/CurrencyImportMode;
-}
-
-public final class ru/privatenull/pnlibrary/api/currency/CurrencyImportResult {
-	public fun <init> (Lru/privatenull/pnlibrary/api/currency/CurrencyKey;Lru/privatenull/pnlibrary/api/currency/CurrencyImportMode;IIII)V
-	public final fun component1 ()Lru/privatenull/pnlibrary/api/currency/CurrencyKey;
-	public final fun component2 ()Lru/privatenull/pnlibrary/api/currency/CurrencyImportMode;
-	public final fun component3 ()I
-	public final fun component4 ()I
-	public final fun component5 ()I
-	public final fun component6 ()I
-	public final fun copy (Lru/privatenull/pnlibrary/api/currency/CurrencyKey;Lru/privatenull/pnlibrary/api/currency/CurrencyImportMode;IIII)Lru/privatenull/pnlibrary/api/currency/CurrencyImportResult;
-	public static synthetic fun copy$default (Lru/privatenull/pnlibrary/api/currency/CurrencyImportResult;Lru/privatenull/pnlibrary/api/currency/CurrencyKey;Lru/privatenull/pnlibrary/api/currency/CurrencyImportMode;IIIIILjava/lang/Object;)Lru/privatenull/pnlibrary/api/currency/CurrencyImportResult;
-	public fun equals (Ljava/lang/Object;)Z
-	public final fun getCurrency ()Lru/privatenull/pnlibrary/api/currency/CurrencyKey;
-	public final fun getImportedAccounts ()I
-	public final fun getImportedTransactions ()I
-	public final fun getMode ()Lru/privatenull/pnlibrary/api/currency/CurrencyImportMode;
-	public final fun getSkippedAccounts ()I
-	public final fun getSkippedTransactions ()I
-	public fun hashCode ()I
-	public fun toString ()Ljava/lang/String;
-}
-
-public final class ru/privatenull/pnlibrary/api/currency/CurrencyKey {
-	public fun <init> (Lru/privatenull/pnlibrary/api/plugin/PluginId;Ljava/lang/String;)V
-	public final fun component1 ()Lru/privatenull/pnlibrary/api/plugin/PluginId;
-	public final fun component2 ()Ljava/lang/String;
-	public final fun copy (Lru/privatenull/pnlibrary/api/plugin/PluginId;Ljava/lang/String;)Lru/privatenull/pnlibrary/api/currency/CurrencyKey;
-	public static synthetic fun copy$default (Lru/privatenull/pnlibrary/api/currency/CurrencyKey;Lru/privatenull/pnlibrary/api/plugin/PluginId;Ljava/lang/String;ILjava/lang/Object;)Lru/privatenull/pnlibrary/api/currency/CurrencyKey;
-	public fun equals (Ljava/lang/Object;)Z
-	public final fun getName ()Ljava/lang/String;
-	public final fun getOwner ()Lru/privatenull/pnlibrary/api/plugin/PluginId;
-	public fun hashCode ()I
-	public fun toString ()Ljava/lang/String;
-}
-
-public abstract interface class ru/privatenull/pnlibrary/api/currency/CurrencyLedger {
-	public abstract fun history (Lru/privatenull/pnlibrary/api/currency/CurrencyHistoryQuery;)Ljava/util/concurrent/CompletionStage;
-	public abstract fun transact (Lru/privatenull/pnlibrary/api/currency/CurrencyTransactionRequest;)Ljava/util/concurrent/CompletionStage;
-}
-
-public final class ru/privatenull/pnlibrary/api/currency/CurrencyMigrationResult {
-	public fun <init> (Lru/privatenull/pnlibrary/api/currency/CurrencyKey;Lru/privatenull/pnlibrary/api/currency/CurrencyKey;Lru/privatenull/pnlibrary/api/currency/CurrencyImportResult;Ljava/time/Instant;Ljava/time/Instant;)V
-	public final fun component1 ()Lru/privatenull/pnlibrary/api/currency/CurrencyKey;
-	public final fun component2 ()Lru/privatenull/pnlibrary/api/currency/CurrencyKey;
-	public final fun component3 ()Lru/privatenull/pnlibrary/api/currency/CurrencyImportResult;
-	public final fun component4 ()Ljava/time/Instant;
-	public final fun component5 ()Ljava/time/Instant;
-	public final fun copy (Lru/privatenull/pnlibrary/api/currency/CurrencyKey;Lru/privatenull/pnlibrary/api/currency/CurrencyKey;Lru/privatenull/pnlibrary/api/currency/CurrencyImportResult;Ljava/time/Instant;Ljava/time/Instant;)Lru/privatenull/pnlibrary/api/currency/CurrencyMigrationResult;
-	public static synthetic fun copy$default (Lru/privatenull/pnlibrary/api/currency/CurrencyMigrationResult;Lru/privatenull/pnlibrary/api/currency/CurrencyKey;Lru/privatenull/pnlibrary/api/currency/CurrencyKey;Lru/privatenull/pnlibrary/api/currency/CurrencyImportResult;Ljava/time/Instant;Ljava/time/Instant;ILjava/lang/Object;)Lru/privatenull/pnlibrary/api/currency/CurrencyMigrationResult;
-	public fun equals (Ljava/lang/Object;)Z
-	public final fun getCompletedAt ()Ljava/time/Instant;
-	public final fun getImport ()Lru/privatenull/pnlibrary/api/currency/CurrencyImportResult;
-	public final fun getSourceCurrency ()Lru/privatenull/pnlibrary/api/currency/CurrencyKey;
-	public final fun getStartedAt ()Ljava/time/Instant;
-	public final fun getTargetCurrency ()Lru/privatenull/pnlibrary/api/currency/CurrencyKey;
-	public fun hashCode ()I
-	public fun toString ()Ljava/lang/String;
-}
-
-public abstract interface class ru/privatenull/pnlibrary/api/currency/CurrencyOperations {
-	public abstract fun balance (Ljava/util/function/Function;)Lru/privatenull/pnlibrary/api/currency/CurrencyOperations;
-	public abstract fun balanceAsync (Ljava/util/function/Function;)Lru/privatenull/pnlibrary/api/currency/CurrencyOperations;
-	public abstract fun deposit (Ljava/util/function/BiFunction;)Lru/privatenull/pnlibrary/api/currency/CurrencyOperations;
-	public abstract fun depositAsync (Ljava/util/function/BiFunction;)Lru/privatenull/pnlibrary/api/currency/CurrencyOperations;
-	public abstract fun extension (Ljava/lang/Class;Ljava/lang/Object;)Lru/privatenull/pnlibrary/api/currency/CurrencyOperations;
-	public abstract fun format (Ljava/util/function/Function;)Lru/privatenull/pnlibrary/api/currency/CurrencyOperations;
-	public abstract fun reset (Ljava/util/function/Function;)Lru/privatenull/pnlibrary/api/currency/CurrencyOperations;
-	public abstract fun setBalance (Ljava/util/function/BiFunction;)Lru/privatenull/pnlibrary/api/currency/CurrencyOperations;
-	public abstract fun transfer (Lru/privatenull/pnlibrary/api/currency/CurrencyTransferOperation;)Lru/privatenull/pnlibrary/api/currency/CurrencyOperations;
-	public abstract fun withdraw (Ljava/util/function/BiFunction;)Lru/privatenull/pnlibrary/api/currency/CurrencyOperations;
-	public abstract fun withdrawAsync (Ljava/util/function/BiFunction;)Lru/privatenull/pnlibrary/api/currency/CurrencyOperations;
-}
-
-public abstract interface class ru/privatenull/pnlibrary/api/currency/CurrencyPlaceholderOptions {
-	public abstract fun access (Lru/privatenull/pnlibrary/api/placeholders/PlaceholderAccess;)Lru/privatenull/pnlibrary/api/currency/CurrencyPlaceholderOptions;
-	public abstract fun enabled (Z)Lru/privatenull/pnlibrary/api/currency/CurrencyPlaceholderOptions;
-	public abstract fun placeholderApi (Ljava/lang/String;)Lru/privatenull/pnlibrary/api/currency/CurrencyPlaceholderOptions;
-	public abstract fun placeholderApi (Z)Lru/privatenull/pnlibrary/api/currency/CurrencyPlaceholderOptions;
-}
-
-public abstract interface class ru/privatenull/pnlibrary/api/currency/CurrencyProvider {
-	public abstract fun balance (Lru/privatenull/pnlibrary/api/currency/CurrencyAccount;)Ljava/util/concurrent/CompletionStage;
-	public fun extension (Ljava/lang/Class;)Ljava/lang/Object;
-	public abstract fun getDescriptor ()Lru/privatenull/pnlibrary/api/currency/CurrencyDescriptor;
-}
-
-public abstract interface class ru/privatenull/pnlibrary/api/currency/CurrencyProviderRegistry {
-	public abstract fun all ()Ljava/util/List;
-	public abstract fun get (Ljava/lang/String;)Lru/privatenull/pnlibrary/api/currency/Currency;
-	public fun register (Lru/privatenull/pnlibrary/api/plugin/PluginId;Ljava/lang/String;Lru/privatenull/pnlibrary/api/currency/CurrencyProvider;)Lru/privatenull/pnlibrary/api/currency/CurrencyRegistration;
-	public abstract fun register (Lru/privatenull/pnlibrary/api/plugin/PluginId;Ljava/lang/String;Lru/privatenull/pnlibrary/api/currency/CurrencyProvider;Lru/privatenull/pnlibrary/api/currency/CurrencyAccess;)Lru/privatenull/pnlibrary/api/currency/CurrencyRegistration;
-}
-
-public abstract interface class ru/privatenull/pnlibrary/api/currency/CurrencyRegistration : java/lang/AutoCloseable, ru/privatenull/pnlibrary/api/currency/Currency {
-	public abstract fun disable ()V
-	public abstract fun enable ()V
-	public abstract fun getState ()Lru/privatenull/pnlibrary/api/currency/CurrencyRegistrationState;
-}
-
-public abstract interface class ru/privatenull/pnlibrary/api/currency/CurrencyRegistrationOptions {
-	public abstract fun access (Ljava/util/function/Consumer;)Lru/privatenull/pnlibrary/api/currency/CurrencyRegistrationOptions;
-	public abstract fun access (Lru/privatenull/pnlibrary/api/currency/CurrencyAccess;)Lru/privatenull/pnlibrary/api/currency/CurrencyRegistrationOptions;
-	public abstract fun aliases ([Ljava/lang/String;)Lru/privatenull/pnlibrary/api/currency/CurrencyRegistrationOptions;
-}
-
-public final class ru/privatenull/pnlibrary/api/currency/CurrencyRegistrationState : java/lang/Enum {
-	public static final field ACTIVE Lru/privatenull/pnlibrary/api/currency/CurrencyRegistrationState;
-	public static final field CLOSED Lru/privatenull/pnlibrary/api/currency/CurrencyRegistrationState;
-	public static final field DISABLED Lru/privatenull/pnlibrary/api/currency/CurrencyRegistrationState;
-	public static fun getEntries ()Lkotlin/enums/EnumEntries;
-	public static fun valueOf (Ljava/lang/String;)Lru/privatenull/pnlibrary/api/currency/CurrencyRegistrationState;
-	public static fun values ()[Lru/privatenull/pnlibrary/api/currency/CurrencyRegistrationState;
-}
-
-public final class ru/privatenull/pnlibrary/api/currency/CurrencyRejectReason : java/lang/Enum {
-	public static final field ACCOUNT_NOT_FOUND Lru/privatenull/pnlibrary/api/currency/CurrencyRejectReason;
-	public static final field INSUFFICIENT_FUNDS Lru/privatenull/pnlibrary/api/currency/CurrencyRejectReason;
-	public static final field INVALID_AMOUNT Lru/privatenull/pnlibrary/api/currency/CurrencyRejectReason;
-	public static final field LIMIT_EXCEEDED Lru/privatenull/pnlibrary/api/currency/CurrencyRejectReason;
-	public static final field PROVIDER_REJECTED Lru/privatenull/pnlibrary/api/currency/CurrencyRejectReason;
-	public static fun getEntries ()Lkotlin/enums/EnumEntries;
-	public static fun valueOf (Ljava/lang/String;)Lru/privatenull/pnlibrary/api/currency/CurrencyRejectReason;
-	public static fun values ()[Lru/privatenull/pnlibrary/api/currency/CurrencyRejectReason;
-}
-
-public abstract interface class ru/privatenull/pnlibrary/api/currency/CurrencyReset {
-	public abstract fun reset (Lru/privatenull/pnlibrary/api/currency/CurrencyAccount;)Ljava/util/concurrent/CompletionStage;
-}
-
-public final class ru/privatenull/pnlibrary/api/currency/CurrencyResult {
-	public static final field Companion Lru/privatenull/pnlibrary/api/currency/CurrencyResult$Companion;
-	public fun <init> (Lru/privatenull/pnlibrary/api/currency/CurrencyResultStatus;Ljava/math/BigDecimal;Ljava/math/BigDecimal;Lru/privatenull/pnlibrary/api/currency/CurrencyRejectReason;Ljava/lang/String;Ljava/lang/Throwable;)V
-	public synthetic fun <init> (Lru/privatenull/pnlibrary/api/currency/CurrencyResultStatus;Ljava/math/BigDecimal;Ljava/math/BigDecimal;Lru/privatenull/pnlibrary/api/currency/CurrencyRejectReason;Ljava/lang/String;Ljava/lang/Throwable;ILkotlin/jvm/internal/DefaultConstructorMarker;)V
-	public final fun component1 ()Lru/privatenull/pnlibrary/api/currency/CurrencyResultStatus;
-	public final fun component2 ()Ljava/math/BigDecimal;
-	public final fun component3 ()Ljava/math/BigDecimal;
-	public final fun component4 ()Lru/privatenull/pnlibrary/api/currency/CurrencyRejectReason;
-	public final fun component5 ()Ljava/lang/String;
-	public final fun component6 ()Ljava/lang/Throwable;
-	public final fun copy (Lru/privatenull/pnlibrary/api/currency/CurrencyResultStatus;Ljava/math/BigDecimal;Ljava/math/BigDecimal;Lru/privatenull/pnlibrary/api/currency/CurrencyRejectReason;Ljava/lang/String;Ljava/lang/Throwable;)Lru/privatenull/pnlibrary/api/currency/CurrencyResult;
-	public static synthetic fun copy$default (Lru/privatenull/pnlibrary/api/currency/CurrencyResult;Lru/privatenull/pnlibrary/api/currency/CurrencyResultStatus;Ljava/math/BigDecimal;Ljava/math/BigDecimal;Lru/privatenull/pnlibrary/api/currency/CurrencyRejectReason;Ljava/lang/String;Ljava/lang/Throwable;ILjava/lang/Object;)Lru/privatenull/pnlibrary/api/currency/CurrencyResult;
-	public fun equals (Ljava/lang/Object;)Z
-	public static final fun failed (Ljava/lang/Throwable;)Lru/privatenull/pnlibrary/api/currency/CurrencyResult;
-	public final fun getCurrentBalance ()Ljava/math/BigDecimal;
-	public final fun getError ()Ljava/lang/Throwable;
-	public final fun getMessage ()Ljava/lang/String;
-	public final fun getPreviousBalance ()Ljava/math/BigDecimal;
-	public final fun getReason ()Lru/privatenull/pnlibrary/api/currency/CurrencyRejectReason;
-	public final fun getStatus ()Lru/privatenull/pnlibrary/api/currency/CurrencyResultStatus;
-	public fun hashCode ()I
-	public final fun isSuccess ()Z
-	public static final fun rejected (Lru/privatenull/pnlibrary/api/currency/CurrencyRejectReason;Ljava/lang/String;)Lru/privatenull/pnlibrary/api/currency/CurrencyResult;
-	public static final fun success (Ljava/math/BigDecimal;Ljava/math/BigDecimal;)Lru/privatenull/pnlibrary/api/currency/CurrencyResult;
-	public fun toString ()Ljava/lang/String;
-	public static final fun unavailable (Ljava/lang/String;)Lru/privatenull/pnlibrary/api/currency/CurrencyResult;
-	public static final fun unsupported (Ljava/lang/String;)Lru/privatenull/pnlibrary/api/currency/CurrencyResult;
-}
-
-public final class ru/privatenull/pnlibrary/api/currency/CurrencyResult$Companion {
-	public final fun failed (Ljava/lang/Throwable;)Lru/privatenull/pnlibrary/api/currency/CurrencyResult;
-	public final fun rejected (Lru/privatenull/pnlibrary/api/currency/CurrencyRejectReason;Ljava/lang/String;)Lru/privatenull/pnlibrary/api/currency/CurrencyResult;
-	public static synthetic fun rejected$default (Lru/privatenull/pnlibrary/api/currency/CurrencyResult$Companion;Lru/privatenull/pnlibrary/api/currency/CurrencyRejectReason;Ljava/lang/String;ILjava/lang/Object;)Lru/privatenull/pnlibrary/api/currency/CurrencyResult;
-	public final fun success (Ljava/math/BigDecimal;Ljava/math/BigDecimal;)Lru/privatenull/pnlibrary/api/currency/CurrencyResult;
-	public static synthetic fun success$default (Lru/privatenull/pnlibrary/api/currency/CurrencyResult$Companion;Ljava/math/BigDecimal;Ljava/math/BigDecimal;ILjava/lang/Object;)Lru/privatenull/pnlibrary/api/currency/CurrencyResult;
-	public final fun unavailable (Ljava/lang/String;)Lru/privatenull/pnlibrary/api/currency/CurrencyResult;
-	public final fun unsupported (Ljava/lang/String;)Lru/privatenull/pnlibrary/api/currency/CurrencyResult;
-}
-
-public final class ru/privatenull/pnlibrary/api/currency/CurrencyResultStatus : java/lang/Enum {
-	public static final field FAILED Lru/privatenull/pnlibrary/api/currency/CurrencyResultStatus;
-	public static final field REJECTED Lru/privatenull/pnlibrary/api/currency/CurrencyResultStatus;
-	public static final field SUCCESS Lru/privatenull/pnlibrary/api/currency/CurrencyResultStatus;
-	public static final field UNAVAILABLE Lru/privatenull/pnlibrary/api/currency/CurrencyResultStatus;
-	public static final field UNSUPPORTED Lru/privatenull/pnlibrary/api/currency/CurrencyResultStatus;
-	public static fun getEntries ()Lkotlin/enums/EnumEntries;
-	public static fun valueOf (Ljava/lang/String;)Lru/privatenull/pnlibrary/api/currency/CurrencyResultStatus;
-	public static fun values ()[Lru/privatenull/pnlibrary/api/currency/CurrencyResultStatus;
-}
-
-public abstract interface class ru/privatenull/pnlibrary/api/currency/CurrencyService : java/lang/AutoCloseable {
-	public abstract fun all ()Ljava/util/List;
-	public abstract fun close ()V
-	public abstract fun get (Ljava/lang/String;)Lru/privatenull/pnlibrary/api/currency/Currency;
-	public abstract fun managed (Ljava/lang/String;Ljava/util/function/Consumer;)Lru/privatenull/pnlibrary/api/currency/CurrencyRegistration;
-	public abstract fun register (Ljava/lang/String;Ljava/util/function/Consumer;)Lru/privatenull/pnlibrary/api/currency/CurrencyRegistration;
-	public fun register (Ljava/lang/String;Lru/privatenull/pnlibrary/api/currency/CurrencyProvider;)Lru/privatenull/pnlibrary/api/currency/CurrencyRegistration;
-	public abstract fun register (Ljava/lang/String;Lru/privatenull/pnlibrary/api/currency/CurrencyProvider;Ljava/util/function/Consumer;)Lru/privatenull/pnlibrary/api/currency/CurrencyRegistration;
-	public fun require (Ljava/lang/String;)Lru/privatenull/pnlibrary/api/currency/Currency;
-	public abstract fun unregister (Ljava/lang/String;)V
-}
-
-public abstract interface class ru/privatenull/pnlibrary/api/currency/CurrencyStorage : java/lang/AutoCloseable {
-	public abstract fun balance (Lru/privatenull/pnlibrary/api/currency/CurrencyKey;Lru/privatenull/pnlibrary/api/currency/CurrencyAccount;)Ljava/util/concurrent/CompletionStage;
-	public abstract fun export (Lru/privatenull/pnlibrary/api/currency/CurrencyKey;)Ljava/util/concurrent/CompletionStage;
-	public abstract fun history (Lru/privatenull/pnlibrary/api/currency/CurrencyKey;Lru/privatenull/pnlibrary/api/currency/CurrencyHistoryQuery;)Ljava/util/concurrent/CompletionStage;
-	public abstract fun importSnapshot (Lru/privatenull/pnlibrary/api/currency/CurrencyStorageSnapshot;Lru/privatenull/pnlibrary/api/currency/CurrencyImportMode;)Ljava/util/concurrent/CompletionStage;
-	public abstract fun transact (Lru/privatenull/pnlibrary/api/currency/CurrencyKey;Lru/privatenull/pnlibrary/api/currency/CurrencyDescriptor;Lru/privatenull/pnlibrary/api/currency/CurrencyTransactionRequest;)Ljava/util/concurrent/CompletionStage;
-}
-
-public abstract interface class ru/privatenull/pnlibrary/api/currency/CurrencyStorageFactory {
-	public abstract fun file (Ljava/nio/file/Path;)Lru/privatenull/pnlibrary/api/currency/CurrencyStorage;
-	public abstract fun file (Ljava/nio/file/Path;I)Lru/privatenull/pnlibrary/api/currency/CurrencyStorage;
-	public abstract fun jdbc (Ljavax/sql/DataSource;)Lru/privatenull/pnlibrary/api/currency/CurrencyStorage;
-	public abstract fun jdbc (Ljavax/sql/DataSource;Ljava/lang/String;)Lru/privatenull/pnlibrary/api/currency/CurrencyStorage;
-	public abstract fun migrate (Lru/privatenull/pnlibrary/api/currency/CurrencyStorage;Lru/privatenull/pnlibrary/api/currency/CurrencyKey;Lru/privatenull/pnlibrary/api/currency/CurrencyStorage;Lru/privatenull/pnlibrary/api/currency/CurrencyKey;Lru/privatenull/pnlibrary/api/currency/CurrencyImportMode;)Ljava/util/concurrent/CompletionStage;
-}
-
-public final class ru/privatenull/pnlibrary/api/currency/CurrencyStorageSnapshot {
-	public fun <init> (ILru/privatenull/pnlibrary/api/currency/CurrencyKey;Ljava/time/Instant;Ljava/util/Map;Ljava/util/List;)V
-	public synthetic fun <init> (ILru/privatenull/pnlibrary/api/currency/CurrencyKey;Ljava/time/Instant;Ljava/util/Map;Ljava/util/List;ILkotlin/jvm/internal/DefaultConstructorMarker;)V
-	public final fun component1 ()I
-	public final fun component2 ()Lru/privatenull/pnlibrary/api/currency/CurrencyKey;
-	public final fun component3 ()Ljava/time/Instant;
-	public final fun component4 ()Ljava/util/Map;
-	public final fun component5 ()Ljava/util/List;
-	public final fun copy (ILru/privatenull/pnlibrary/api/currency/CurrencyKey;Ljava/time/Instant;Ljava/util/Map;Ljava/util/List;)Lru/privatenull/pnlibrary/api/currency/CurrencyStorageSnapshot;
-	public static synthetic fun copy$default (Lru/privatenull/pnlibrary/api/currency/CurrencyStorageSnapshot;ILru/privatenull/pnlibrary/api/currency/CurrencyKey;Ljava/time/Instant;Ljava/util/Map;Ljava/util/List;ILjava/lang/Object;)Lru/privatenull/pnlibrary/api/currency/CurrencyStorageSnapshot;
-	public fun equals (Ljava/lang/Object;)Z
-	public final fun getBalances ()Ljava/util/Map;
-	public final fun getCreatedAt ()Ljava/time/Instant;
-	public final fun getCurrency ()Lru/privatenull/pnlibrary/api/currency/CurrencyKey;
-	public final fun getFormatVersion ()I
-	public final fun getTransactions ()Ljava/util/List;
-	public fun hashCode ()I
-	public fun toString ()Ljava/lang/String;
-}
-
-public final class ru/privatenull/pnlibrary/api/currency/CurrencyTransaction {
-	public fun <init> (Ljava/util/UUID;Lru/privatenull/pnlibrary/api/currency/CurrencyKey;Lru/privatenull/pnlibrary/api/currency/CurrencyTransactionType;Lru/privatenull/pnlibrary/api/currency/CurrencyTransactionStatus;Ljava/math/BigDecimal;Lru/privatenull/pnlibrary/api/currency/CurrencyAccount;Lru/privatenull/pnlibrary/api/currency/CurrencyAccount;Lru/privatenull/pnlibrary/api/currency/CurrencyActor;Ljava/lang/String;Ljava/lang/String;Ljava/util/Map;Ljava/math/BigDecimal;Ljava/math/BigDecimal;Ljava/math/BigDecimal;Ljava/math/BigDecimal;Ljava/time/Instant;Ljava/lang/String;Ljava/lang/String;)V
-	public synthetic fun <init> (Ljava/util/UUID;Lru/privatenull/pnlibrary/api/currency/CurrencyKey;Lru/privatenull/pnlibrary/api/currency/CurrencyTransactionType;Lru/privatenull/pnlibrary/api/currency/CurrencyTransactionStatus;Ljava/math/BigDecimal;Lru/privatenull/pnlibrary/api/currency/CurrencyAccount;Lru/privatenull/pnlibrary/api/currency/CurrencyAccount;Lru/privatenull/pnlibrary/api/currency/CurrencyActor;Ljava/lang/String;Ljava/lang/String;Ljava/util/Map;Ljava/math/BigDecimal;Ljava/math/BigDecimal;Ljava/math/BigDecimal;Ljava/math/BigDecimal;Ljava/time/Instant;Ljava/lang/String;Ljava/lang/String;ILkotlin/jvm/internal/DefaultConstructorMarker;)V
-	public final fun component1 ()Ljava/util/UUID;
-	public final fun component10 ()Ljava/lang/String;
-	public final fun component11 ()Ljava/util/Map;
-	public final fun component12 ()Ljava/math/BigDecimal;
-	public final fun component13 ()Ljava/math/BigDecimal;
-	public final fun component14 ()Ljava/math/BigDecimal;
-	public final fun component15 ()Ljava/math/BigDecimal;
-	public final fun component16 ()Ljava/time/Instant;
-	public final fun component17 ()Ljava/lang/String;
-	public final fun component18 ()Ljava/lang/String;
-	public final fun component2 ()Lru/privatenull/pnlibrary/api/currency/CurrencyKey;
-	public final fun component3 ()Lru/privatenull/pnlibrary/api/currency/CurrencyTransactionType;
-	public final fun component4 ()Lru/privatenull/pnlibrary/api/currency/CurrencyTransactionStatus;
-	public final fun component5 ()Ljava/math/BigDecimal;
-	public final fun component6 ()Lru/privatenull/pnlibrary/api/currency/CurrencyAccount;
-	public final fun component7 ()Lru/privatenull/pnlibrary/api/currency/CurrencyAccount;
-	public final fun component8 ()Lru/privatenull/pnlibrary/api/currency/CurrencyActor;
-	public final fun component9 ()Ljava/lang/String;
-	public final fun copy (Ljava/util/UUID;Lru/privatenull/pnlibrary/api/currency/CurrencyKey;Lru/privatenull/pnlibrary/api/currency/CurrencyTransactionType;Lru/privatenull/pnlibrary/api/currency/CurrencyTransactionStatus;Ljava/math/BigDecimal;Lru/privatenull/pnlibrary/api/currency/CurrencyAccount;Lru/privatenull/pnlibrary/api/currency/CurrencyAccount;Lru/privatenull/pnlibrary/api/currency/CurrencyActor;Ljava/lang/String;Ljava/lang/String;Ljava/util/Map;Ljava/math/BigDecimal;Ljava/math/BigDecimal;Ljava/math/BigDecimal;Ljava/math/BigDecimal;Ljava/time/Instant;Ljava/lang/String;Ljava/lang/String;)Lru/privatenull/pnlibrary/api/currency/CurrencyTransaction;
-	public static synthetic fun copy$default (Lru/privatenull/pnlibrary/api/currency/CurrencyTransaction;Ljava/util/UUID;Lru/privatenull/pnlibrary/api/currency/CurrencyKey;Lru/privatenull/pnlibrary/api/currency/CurrencyTransactionType;Lru/privatenull/pnlibrary/api/currency/CurrencyTransactionStatus;Ljava/math/BigDecimal;Lru/privatenull/pnlibrary/api/currency/CurrencyAccount;Lru/privatenull/pnlibrary/api/currency/CurrencyAccount;Lru/privatenull/pnlibrary/api/currency/CurrencyActor;Ljava/lang/String;Ljava/lang/String;Ljava/util/Map;Ljava/math/BigDecimal;Ljava/math/BigDecimal;Ljava/math/BigDecimal;Ljava/math/BigDecimal;Ljava/time/Instant;Ljava/lang/String;Ljava/lang/String;ILjava/lang/Object;)Lru/privatenull/pnlibrary/api/currency/CurrencyTransaction;
-	public fun equals (Ljava/lang/Object;)Z
-	public final fun getActor ()Lru/privatenull/pnlibrary/api/currency/CurrencyActor;
-	public final fun getAmount ()Ljava/math/BigDecimal;
-	public final fun getCreatedAt ()Ljava/time/Instant;
-	public final fun getCurrency ()Lru/privatenull/pnlibrary/api/currency/CurrencyKey;
-	public final fun getFailure ()Ljava/lang/String;
-	public final fun getId ()Ljava/util/UUID;
-	public final fun getIdempotencyKey ()Ljava/lang/String;
-	public final fun getMetadata ()Ljava/util/Map;
-	public final fun getReason ()Ljava/lang/String;
-	public final fun getService ()Ljava/lang/String;
-	public final fun getSource ()Lru/privatenull/pnlibrary/api/currency/CurrencyAccount;
-	public final fun getSourceBalanceAfter ()Ljava/math/BigDecimal;
-	public final fun getSourceBalanceBefore ()Ljava/math/BigDecimal;
-	public final fun getStatus ()Lru/privatenull/pnlibrary/api/currency/CurrencyTransactionStatus;
-	public final fun getTarget ()Lru/privatenull/pnlibrary/api/currency/CurrencyAccount;
-	public final fun getTargetBalanceAfter ()Ljava/math/BigDecimal;
-	public final fun getTargetBalanceBefore ()Ljava/math/BigDecimal;
-	public final fun getType ()Lru/privatenull/pnlibrary/api/currency/CurrencyTransactionType;
-	public fun hashCode ()I
-	public fun toString ()Ljava/lang/String;
-}
-
-public final class ru/privatenull/pnlibrary/api/currency/CurrencyTransactionRequest {
-	public fun <init> (Lru/privatenull/pnlibrary/api/currency/CurrencyTransactionType;Ljava/math/BigDecimal;Lru/privatenull/pnlibrary/api/currency/CurrencyAccount;Lru/privatenull/pnlibrary/api/currency/CurrencyAccount;Lru/privatenull/pnlibrary/api/currency/CurrencyActor;Ljava/lang/String;Ljava/lang/String;Ljava/util/Map;Ljava/lang/String;)V
-	public synthetic fun <init> (Lru/privatenull/pnlibrary/api/currency/CurrencyTransactionType;Ljava/math/BigDecimal;Lru/privatenull/pnlibrary/api/currency/CurrencyAccount;Lru/privatenull/pnlibrary/api/currency/CurrencyAccount;Lru/privatenull/pnlibrary/api/currency/CurrencyActor;Ljava/lang/String;Ljava/lang/String;Ljava/util/Map;Ljava/lang/String;ILkotlin/jvm/internal/DefaultConstructorMarker;)V
-	public final fun component1 ()Lru/privatenull/pnlibrary/api/currency/CurrencyTransactionType;
-	public final fun component2 ()Ljava/math/BigDecimal;
-	public final fun component3 ()Lru/privatenull/pnlibrary/api/currency/CurrencyAccount;
-	public final fun component4 ()Lru/privatenull/pnlibrary/api/currency/CurrencyAccount;
-	public final fun component5 ()Lru/privatenull/pnlibrary/api/currency/CurrencyActor;
-	public final fun component6 ()Ljava/lang/String;
-	public final fun component7 ()Ljava/lang/String;
-	public final fun component8 ()Ljava/util/Map;
-	public final fun component9 ()Ljava/lang/String;
-	public final fun copy (Lru/privatenull/pnlibrary/api/currency/CurrencyTransactionType;Ljava/math/BigDecimal;Lru/privatenull/pnlibrary/api/currency/CurrencyAccount;Lru/privatenull/pnlibrary/api/currency/CurrencyAccount;Lru/privatenull/pnlibrary/api/currency/CurrencyActor;Ljava/lang/String;Ljava/lang/String;Ljava/util/Map;Ljava/lang/String;)Lru/privatenull/pnlibrary/api/currency/CurrencyTransactionRequest;
-	public static synthetic fun copy$default (Lru/privatenull/pnlibrary/api/currency/CurrencyTransactionRequest;Lru/privatenull/pnlibrary/api/currency/CurrencyTransactionType;Ljava/math/BigDecimal;Lru/privatenull/pnlibrary/api/currency/CurrencyAccount;Lru/privatenull/pnlibrary/api/currency/CurrencyAccount;Lru/privatenull/pnlibrary/api/currency/CurrencyActor;Ljava/lang/String;Ljava/lang/String;Ljava/util/Map;Ljava/lang/String;ILjava/lang/Object;)Lru/privatenull/pnlibrary/api/currency/CurrencyTransactionRequest;
-	public fun equals (Ljava/lang/Object;)Z
-	public final fun getActor ()Lru/privatenull/pnlibrary/api/currency/CurrencyActor;
-	public final fun getAmount ()Ljava/math/BigDecimal;
-	public final fun getIdempotencyKey ()Ljava/lang/String;
-	public final fun getMetadata ()Ljava/util/Map;
-	public final fun getReason ()Ljava/lang/String;
-	public final fun getService ()Ljava/lang/String;
-	public final fun getSource ()Lru/privatenull/pnlibrary/api/currency/CurrencyAccount;
-	public final fun getTarget ()Lru/privatenull/pnlibrary/api/currency/CurrencyAccount;
-	public final fun getType ()Lru/privatenull/pnlibrary/api/currency/CurrencyTransactionType;
-	public fun hashCode ()I
-	public fun toString ()Ljava/lang/String;
-}
-
-public final class ru/privatenull/pnlibrary/api/currency/CurrencyTransactionStatus : java/lang/Enum {
-	public static final field COMMITTED Lru/privatenull/pnlibrary/api/currency/CurrencyTransactionStatus;
-	public static final field FAILED Lru/privatenull/pnlibrary/api/currency/CurrencyTransactionStatus;
-	public static final field REJECTED Lru/privatenull/pnlibrary/api/currency/CurrencyTransactionStatus;
-	public static fun getEntries ()Lkotlin/enums/EnumEntries;
-	public static fun valueOf (Ljava/lang/String;)Lru/privatenull/pnlibrary/api/currency/CurrencyTransactionStatus;
-	public static fun values ()[Lru/privatenull/pnlibrary/api/currency/CurrencyTransactionStatus;
-}
-
-public final class ru/privatenull/pnlibrary/api/currency/CurrencyTransactionType : java/lang/Enum {
-	public static final field CREDIT Lru/privatenull/pnlibrary/api/currency/CurrencyTransactionType;
-	public static final field DEBIT Lru/privatenull/pnlibrary/api/currency/CurrencyTransactionType;
-	public static final field RESET Lru/privatenull/pnlibrary/api/currency/CurrencyTransactionType;
-	public static final field SET_BALANCE Lru/privatenull/pnlibrary/api/currency/CurrencyTransactionType;
-	public static final field TRANSFER Lru/privatenull/pnlibrary/api/currency/CurrencyTransactionType;
-	public static fun getEntries ()Lkotlin/enums/EnumEntries;
-	public static fun valueOf (Ljava/lang/String;)Lru/privatenull/pnlibrary/api/currency/CurrencyTransactionType;
-	public static fun values ()[Lru/privatenull/pnlibrary/api/currency/CurrencyTransactionType;
-}
-
-public abstract interface class ru/privatenull/pnlibrary/api/currency/CurrencyTransferOperation {
-	public abstract fun apply (Lru/privatenull/pnlibrary/api/currency/CurrencyAccount;Lru/privatenull/pnlibrary/api/currency/CurrencyAccount;Ljava/math/BigDecimal;)Lru/privatenull/pnlibrary/api/currency/CurrencyResult;
-}
-
-public abstract interface class ru/privatenull/pnlibrary/api/currency/CurrencyTransfers {
-	public abstract fun transfer (Lru/privatenull/pnlibrary/api/currency/CurrencyAccount;Lru/privatenull/pnlibrary/api/currency/CurrencyAccount;Ljava/math/BigDecimal;)Ljava/util/concurrent/CompletionStage;
-}
-
-public abstract interface class ru/privatenull/pnlibrary/api/currency/CurrencyWithdrawals {
-	public abstract fun withdraw (Lru/privatenull/pnlibrary/api/currency/CurrencyAccount;Ljava/math/BigDecimal;)Ljava/util/concurrent/CompletionStage;
-}
-
-public abstract interface class ru/privatenull/pnlibrary/api/currency/ManagedCurrencyBuilder : ru/privatenull/pnlibrary/api/currency/CurrencyRegistrationOptions {
-	public abstract fun commands (Ljava/util/function/Consumer;)Lru/privatenull/pnlibrary/api/currency/ManagedCurrencyBuilder;
-	public abstract fun descriptor (Ljava/util/function/Consumer;)Lru/privatenull/pnlibrary/api/currency/ManagedCurrencyBuilder;
-	public abstract fun ownedStorage (Lru/privatenull/pnlibrary/api/currency/CurrencyStorage;)Lru/privatenull/pnlibrary/api/currency/ManagedCurrencyBuilder;
-	public abstract fun placeholders (Ljava/util/function/Consumer;)Lru/privatenull/pnlibrary/api/currency/ManagedCurrencyBuilder;
-	public abstract fun service (Ljava/lang/String;)Lru/privatenull/pnlibrary/api/currency/ManagedCurrencyBuilder;
-	public abstract fun storage (Lru/privatenull/pnlibrary/api/currency/CurrencyStorage;)Lru/privatenull/pnlibrary/api/currency/ManagedCurrencyBuilder;
-}
-
 public final class ru/privatenull/pnlibrary/api/diagnostics/DebugRequest {
 	public static final field Companion Lru/privatenull/pnlibrary/api/diagnostics/DebugRequest$Companion;
 	public fun <init> (Ljava/lang/String;ZZZ)V
@@ -1990,6 +1390,7 @@ public final class ru/privatenull/pnlibrary/api/diagnostics/DebugRequest$Compani
 public final class ru/privatenull/pnlibrary/api/diagnostics/DiagnosticConfiguration {
 	public static final field Companion Lru/privatenull/pnlibrary/api/diagnostics/DiagnosticConfiguration$Companion;
 	public synthetic fun <init> (Lru/privatenull/pnlibrary/api/diagnostics/DiagnosticConfiguration$Builder;Lkotlin/jvm/internal/DefaultConstructorMarker;)V
+	public static final fun builder (Ljava/lang/String;)Lru/privatenull/pnlibrary/api/diagnostics/DiagnosticConfiguration$Builder;
 	public static final fun file (Ljava/lang/String;)Lru/privatenull/pnlibrary/api/diagnostics/DiagnosticConfiguration$Builder;
 	public final fun getExcludedPaths ()Ljava/util/List;
 	public final fun getPath ()Ljava/lang/String;
@@ -2005,6 +1406,7 @@ public final class ru/privatenull/pnlibrary/api/diagnostics/DiagnosticConfigurat
 }
 
 public final class ru/privatenull/pnlibrary/api/diagnostics/DiagnosticConfiguration$Companion {
+	public final fun builder (Ljava/lang/String;)Lru/privatenull/pnlibrary/api/diagnostics/DiagnosticConfiguration$Builder;
 	public final fun file (Ljava/lang/String;)Lru/privatenull/pnlibrary/api/diagnostics/DiagnosticConfiguration$Builder;
 }
 
@@ -2041,6 +1443,7 @@ public final class ru/privatenull/pnlibrary/api/diagnostics/DiagnosticLevel : ja
 
 public abstract interface class ru/privatenull/pnlibrary/api/diagnostics/DiagnosticRegistration : java/lang/AutoCloseable {
 	public abstract fun close ()V
+	public fun isClosed ()Z
 }
 
 public final class ru/privatenull/pnlibrary/api/diagnostics/DiagnosticReport {
@@ -2139,7 +1542,7 @@ public final class ru/privatenull/pnlibrary/api/downloads/DownloadDeclaration$Co
 }
 
 public final class ru/privatenull/pnlibrary/api/downloads/DownloadDeclaration$Component : ru/privatenull/pnlibrary/api/downloads/DownloadDeclaration {
-	public final fun getComponent ()Lru/privatenull/pnlibrary/api/updates/ComponentId;
+	public final fun getComponent ()Lru/privatenull/pnlibrary/api/updates/ProductId;
 	public final fun getSupportedApi ()Lru/privatenull/pnlibrary/api/version/ApiVersionRange;
 	public final fun getVersion ()Lru/privatenull/pnlibrary/api/version/SemanticVersion;
 }
@@ -2180,6 +1583,7 @@ public final class ru/privatenull/pnlibrary/api/downloads/DownloadDestination : 
 public abstract interface class ru/privatenull/pnlibrary/api/downloads/DownloadRegistration : java/lang/AutoCloseable {
 	public abstract fun close ()V
 	public abstract fun downloadNow ()Ljava/util/concurrent/CompletionStage;
+	public fun isClosed ()Z
 	public abstract fun snapshots ()Ljava/util/List;
 }
 
@@ -2380,6 +1784,7 @@ public abstract interface class ru/privatenull/pnlibrary/api/placeholders/AsyncP
 
 public abstract interface class ru/privatenull/pnlibrary/api/placeholders/ExternalPlaceholderRegistration : java/lang/AutoCloseable {
 	public abstract fun getState ()Lru/privatenull/pnlibrary/api/placeholders/PlaceholderAdapterState;
+	public fun isClosed ()Z
 }
 
 public final class ru/privatenull/pnlibrary/api/placeholders/PlaceholderAccess {
@@ -2569,6 +1974,7 @@ public abstract interface class ru/privatenull/pnlibrary/api/placeholders/Placeh
 	public abstract fun getOwner ()Lru/privatenull/pnlibrary/api/plugin/PluginId;
 	public abstract fun getPublications ()Ljava/util/List;
 	public abstract fun invalidateCache ()V
+	public fun isClosed ()Z
 	public abstract fun isEnabled ()Z
 }
 
@@ -2604,6 +2010,8 @@ public abstract interface class ru/privatenull/pnlibrary/api/placeholders/Placeh
 	public fun placeholder (Ljava/lang/String;Ljava/lang/Class;)Lru/privatenull/pnlibrary/api/placeholders/PlaceholderBuilder;
 	public abstract fun placeholder (Lru/privatenull/pnlibrary/api/placeholders/PlaceholderKey;)Lru/privatenull/pnlibrary/api/placeholders/PlaceholderBuilder;
 	public abstract fun provider (Lru/privatenull/pnlibrary/api/plugin/PluginId;)Lru/privatenull/pnlibrary/api/placeholders/PlaceholderProvider;
+	public fun register (Ljava/lang/String;Ljava/lang/Class;Ljava/util/function/Consumer;)Lru/privatenull/pnlibrary/api/placeholders/PlaceholderRegistration;
+	public fun register (Lru/privatenull/pnlibrary/api/placeholders/PlaceholderKey;Ljava/util/function/Consumer;)Lru/privatenull/pnlibrary/api/placeholders/PlaceholderRegistration;
 	public abstract fun render (Ljava/lang/String;Ljava/util/UUID;Ljava/util/Map;)Ljava/util/concurrent/CompletionStage;
 	public static synthetic fun render$default (Lru/privatenull/pnlibrary/api/placeholders/PlaceholderService;Ljava/lang/String;Ljava/util/UUID;Ljava/util/Map;ILjava/lang/Object;)Ljava/util/concurrent/CompletionStage;
 	public abstract fun resolve (Ljava/lang/String;Ljava/util/UUID;Ljava/util/Map;)Ljava/util/concurrent/CompletionStage;
@@ -2661,6 +2069,14 @@ public final class ru/privatenull/pnlibrary/api/platform/PlatformType : java/lan
 	public static fun values ()[Lru/privatenull/pnlibrary/api/platform/PlatformType;
 }
 
+public final class ru/privatenull/pnlibrary/api/plugin/DenyAction : java/lang/Enum {
+	public static final field DISABLE_MODULE Lru/privatenull/pnlibrary/api/plugin/DenyAction;
+	public static final field DISABLE_PLUGIN Lru/privatenull/pnlibrary/api/plugin/DenyAction;
+	public static fun getEntries ()Lkotlin/enums/EnumEntries;
+	public static fun valueOf (Ljava/lang/String;)Lru/privatenull/pnlibrary/api/plugin/DenyAction;
+	public static fun values ()[Lru/privatenull/pnlibrary/api/plugin/DenyAction;
+}
+
 public final class ru/privatenull/pnlibrary/api/plugin/Dependencies {
 	public static final field INSTANCE Lru/privatenull/pnlibrary/api/plugin/Dependencies;
 	public static final fun managed (Ljava/lang/String;Ljava/lang/String;Ljava/lang/String;Ljava/lang/String;)Lru/privatenull/pnlibrary/api/plugin/PluginDependency;
@@ -2680,6 +2096,41 @@ public final class ru/privatenull/pnlibrary/api/plugin/Dependencies {
 	public static synthetic fun plugin$default (Ljava/lang/String;Ljava/lang/String;Ljava/lang/String;ZZZILjava/lang/Object;)Lru/privatenull/pnlibrary/api/plugin/PluginDependency;
 }
 
+public final class ru/privatenull/pnlibrary/api/plugin/DependencyBuilder {
+	public fun <init> ()V
+	public final fun build ()Ljava/util/List;
+	public final fun plugin (Ljava/lang/String;Ljava/util/function/Consumer;)Lru/privatenull/pnlibrary/api/plugin/DependencyBuilder;
+	public final fun product (Ljava/lang/String;Ljava/util/function/Consumer;)Lru/privatenull/pnlibrary/api/plugin/DependencyBuilder;
+}
+
+public final class ru/privatenull/pnlibrary/api/plugin/DependencyBuilder$ExternalBuilder {
+	public final fun artifact (Ljava/lang/String;JLjava/lang/String;)Lru/privatenull/pnlibrary/api/plugin/DependencyBuilder$ExternalBuilder;
+	public final fun downloadPage (Ljava/lang/String;)Lru/privatenull/pnlibrary/api/plugin/DependencyBuilder$ExternalBuilder;
+	public final fun downloadPolicy (Lru/privatenull/pnlibrary/api/plugin/DownloadPolicy;)Lru/privatenull/pnlibrary/api/plugin/DependencyBuilder$ExternalBuilder;
+	public final fun maximumVersion (Ljava/lang/String;)Lru/privatenull/pnlibrary/api/plugin/DependencyBuilder$ExternalBuilder;
+	public final fun maximumVersionExclusive (Ljava/lang/String;)Lru/privatenull/pnlibrary/api/plugin/DependencyBuilder$ExternalBuilder;
+	public final fun minimumVersion (Ljava/lang/String;)Lru/privatenull/pnlibrary/api/plugin/DependencyBuilder$ExternalBuilder;
+	public final fun required (Z)Lru/privatenull/pnlibrary/api/plugin/DependencyBuilder$ExternalBuilder;
+}
+
+public final class ru/privatenull/pnlibrary/api/plugin/DependencyBuilder$ProductBuilder {
+	public final fun downloadPolicy (Lru/privatenull/pnlibrary/api/plugin/DownloadPolicy;)Lru/privatenull/pnlibrary/api/plugin/DependencyBuilder$ProductBuilder;
+	public final fun github (Ljava/lang/String;Ljava/lang/String;)Lru/privatenull/pnlibrary/api/plugin/DependencyBuilder$ProductBuilder;
+	public final fun maximumVersion (Ljava/lang/String;)Lru/privatenull/pnlibrary/api/plugin/DependencyBuilder$ProductBuilder;
+	public final fun maximumVersionExclusive (Ljava/lang/String;)Lru/privatenull/pnlibrary/api/plugin/DependencyBuilder$ProductBuilder;
+	public final fun minimumVersion (Ljava/lang/String;)Lru/privatenull/pnlibrary/api/plugin/DependencyBuilder$ProductBuilder;
+	public final fun required (Z)Lru/privatenull/pnlibrary/api/plugin/DependencyBuilder$ProductBuilder;
+}
+
+public final class ru/privatenull/pnlibrary/api/plugin/DownloadPolicy : java/lang/Enum {
+	public static final field AUTOMATIC Lru/privatenull/pnlibrary/api/plugin/DownloadPolicy;
+	public static final field FORCED Lru/privatenull/pnlibrary/api/plugin/DownloadPolicy;
+	public static final field MANUAL Lru/privatenull/pnlibrary/api/plugin/DownloadPolicy;
+	public static fun getEntries ()Lkotlin/enums/EnumEntries;
+	public static fun valueOf (Ljava/lang/String;)Lru/privatenull/pnlibrary/api/plugin/DownloadPolicy;
+	public static fun values ()[Lru/privatenull/pnlibrary/api/plugin/DownloadPolicy;
+}
+
 public abstract interface class ru/privatenull/pnlibrary/api/plugin/MetricsController : java/lang/AutoCloseable {
 	public abstract fun changeProjectId (I)V
 	public abstract fun close ()V
@@ -2688,6 +2139,7 @@ public abstract interface class ru/privatenull/pnlibrary/api/plugin/MetricsContr
 	public abstract fun enable ()V
 	public abstract fun enable (I)V
 	public abstract fun getProjectId ()Ljava/lang/Integer;
+	public fun isClosed ()Z
 	public abstract fun isEnabled ()Z
 }
 
@@ -2697,8 +2149,6 @@ public abstract interface class ru/privatenull/pnlibrary/api/plugin/ModuleContex
 	public abstract fun getComponents ()Lru/privatenull/pnlibrary/api/text/ComponentService;
 	public abstract fun getConfigs ()Lru/privatenull/pnlibrary/api/config/ConfigScope;
 	public abstract fun getCooldowns ()Lru/privatenull/pnlibrary/api/cooldowns/CooldownService;
-	public abstract fun getCurrencies ()Lru/privatenull/pnlibrary/api/currency/CurrencyService;
-	public abstract fun getCurrencyStorages ()Lru/privatenull/pnlibrary/api/currency/CurrencyStorageFactory;
 	public abstract fun getDiagnostics ()Lru/privatenull/pnlibrary/api/diagnostics/DiagnosticRegistration;
 	public abstract fun getDownloads ()Lru/privatenull/pnlibrary/api/downloads/DownloadRegistration;
 	public abstract fun getEvents ()Lru/privatenull/pnlibrary/api/events/EventScope;
@@ -2731,7 +2181,8 @@ public final class ru/privatenull/pnlibrary/api/plugin/ModuleId$Companion {
 }
 
 public abstract interface class ru/privatenull/pnlibrary/api/plugin/PluginBuilder {
-	public abstract fun component (Lru/privatenull/pnlibrary/api/updates/ComponentDescriptor;)Lru/privatenull/pnlibrary/api/plugin/PluginBuilder;
+	public fun dependencies (Ljava/util/function/Consumer;)Lru/privatenull/pnlibrary/api/plugin/PluginBuilder;
+	public fun dependency (Ljava/util/function/Consumer;)Lru/privatenull/pnlibrary/api/plugin/PluginBuilder;
 	public abstract fun depends (Lru/privatenull/pnlibrary/api/plugin/PluginDependency;)Lru/privatenull/pnlibrary/api/plugin/PluginBuilder;
 	public fun depends ([Lru/privatenull/pnlibrary/api/plugin/PluginDependency;)Lru/privatenull/pnlibrary/api/plugin/PluginBuilder;
 	public abstract fun diagnostics (Ljava/nio/file/Path;Lru/privatenull/pnlibrary/api/diagnostics/DiagnosticContainer;)Lru/privatenull/pnlibrary/api/plugin/PluginBuilder;
@@ -2745,34 +2196,22 @@ public abstract interface class ru/privatenull/pnlibrary/api/plugin/PluginBuilde
 	public fun metrics (IZ)Lru/privatenull/pnlibrary/api/plugin/PluginBuilder;
 	public abstract fun metrics (IZLjava/util/function/Consumer;)Lru/privatenull/pnlibrary/api/plugin/PluginBuilder;
 	public abstract fun options (Ljava/util/function/Consumer;)Lru/privatenull/pnlibrary/api/plugin/PluginBuilder;
+	public abstract fun product (Lru/privatenull/pnlibrary/api/updates/ProductDescriptor;)Lru/privatenull/pnlibrary/api/plugin/PluginBuilder;
+	public fun remotePolicy (Ljava/util/function/Consumer;)Lru/privatenull/pnlibrary/api/plugin/PluginBuilder;
+	public abstract fun remotePolicy (Lru/privatenull/pnlibrary/api/plugin/RemotePolicy;)Lru/privatenull/pnlibrary/api/plugin/PluginBuilder;
 	public fun updates (Ljava/lang/String;Ljava/lang/String;Ljava/util/function/Consumer;)Lru/privatenull/pnlibrary/api/plugin/PluginBuilder;
 	public fun updates (Ljava/util/function/Consumer;)Lru/privatenull/pnlibrary/api/plugin/PluginBuilder;
 	public abstract fun updates (Lru/privatenull/pnlibrary/api/updates/PluginUpdateRequest;)Lru/privatenull/pnlibrary/api/plugin/PluginBuilder;
 }
 
-public abstract interface class ru/privatenull/pnlibrary/api/plugin/PluginContext : java/lang/AutoCloseable {
-	public abstract fun close ()V
-	public fun getModule (Ljava/lang/String;)Lru/privatenull/pnlibrary/api/plugin/ModuleContext;
-	public abstract fun getModule (Lru/privatenull/pnlibrary/api/plugin/ModuleId;)Lru/privatenull/pnlibrary/api/plugin/ModuleContext;
-	public abstract fun getOwner ()Ljava/lang/Object;
-	public abstract fun isClosed ()Z
-	public abstract fun modules ()Ljava/util/List;
-	public fun registerModule (Ljava/lang/String;Ljava/util/function/Consumer;)Lru/privatenull/pnlibrary/api/plugin/ModuleContext;
-	public abstract fun registerModule (Lru/privatenull/pnlibrary/api/plugin/ModuleId;Ljava/util/function/Consumer;)Lru/privatenull/pnlibrary/api/plugin/ModuleContext;
-	public static synthetic fun registerModule$default (Lru/privatenull/pnlibrary/api/plugin/PluginContext;Ljava/lang/String;Ljava/util/function/Consumer;ILjava/lang/Object;)Lru/privatenull/pnlibrary/api/plugin/ModuleContext;
-	public static synthetic fun registerModule$default (Lru/privatenull/pnlibrary/api/plugin/PluginContext;Lru/privatenull/pnlibrary/api/plugin/ModuleId;Ljava/util/function/Consumer;ILjava/lang/Object;)Lru/privatenull/pnlibrary/api/plugin/ModuleContext;
-	public fun requireModule (Ljava/lang/String;)Lru/privatenull/pnlibrary/api/plugin/ModuleContext;
-	public fun requireModule (Lru/privatenull/pnlibrary/api/plugin/ModuleId;)Lru/privatenull/pnlibrary/api/plugin/ModuleContext;
-	public fun unregisterModule (Ljava/lang/String;)V
-	public abstract fun unregisterModule (Lru/privatenull/pnlibrary/api/plugin/ModuleId;)V
-}
-
 public abstract interface class ru/privatenull/pnlibrary/api/plugin/PluginDependency {
 	public fun getAutomaticDownload ()Z
-	public fun getExternal ()Lru/privatenull/pnlibrary/api/updates/ExternalDependency;
+	public fun getDownloadPolicy ()Lru/privatenull/pnlibrary/api/plugin/DownloadPolicy;
+	public fun getExternal ()Lru/privatenull/pnlibrary/api/updates/ExternalPluginDependency;
 	public fun getForceAutomaticDownload ()Z
-	public fun getManaged ()Lru/privatenull/pnlibrary/api/updates/ManagedDependency;
+	public fun getManaged ()Lru/privatenull/pnlibrary/api/updates/ManagedProductDependency;
 	public fun getRequired ()Z
+	public abstract fun getVersions ()Lru/privatenull/pnlibrary/api/plugin/VersionConstraint;
 }
 
 public final class ru/privatenull/pnlibrary/api/plugin/PluginId {
@@ -2821,13 +2260,174 @@ public abstract interface class ru/privatenull/pnlibrary/api/plugin/PluginOption
 	public abstract fun placeholderApi (Z)Lru/privatenull/pnlibrary/api/plugin/PluginOptions;
 }
 
-public abstract interface class ru/privatenull/pnlibrary/api/plugin/PluginRegistry : java/lang/AutoCloseable {
+public abstract interface class ru/privatenull/pnlibrary/api/plugin/PluginRegistration : java/lang/AutoCloseable {
+	public fun all ()Ljava/util/List;
 	public abstract fun close ()V
-	public abstract fun get (Ljava/lang/Object;)Lru/privatenull/pnlibrary/api/plugin/PluginContext;
-	public abstract fun register (Ljava/lang/Object;)Lru/privatenull/pnlibrary/api/plugin/PluginContext;
+	public fun getModule (Ljava/lang/String;)Lru/privatenull/pnlibrary/api/plugin/ModuleContext;
+	public abstract fun getModule (Lru/privatenull/pnlibrary/api/plugin/ModuleId;)Lru/privatenull/pnlibrary/api/plugin/ModuleContext;
+	public abstract fun getOwner ()Ljava/lang/Object;
+	public abstract fun isClosed ()Z
+	public abstract fun modules ()Ljava/util/List;
+	public fun registerModule (Ljava/lang/String;Ljava/util/function/Consumer;)Lru/privatenull/pnlibrary/api/plugin/ModuleContext;
+	public abstract fun registerModule (Lru/privatenull/pnlibrary/api/plugin/ModuleId;Ljava/util/function/Consumer;)Lru/privatenull/pnlibrary/api/plugin/ModuleContext;
+	public static synthetic fun registerModule$default (Lru/privatenull/pnlibrary/api/plugin/PluginRegistration;Ljava/lang/String;Ljava/util/function/Consumer;ILjava/lang/Object;)Lru/privatenull/pnlibrary/api/plugin/ModuleContext;
+	public static synthetic fun registerModule$default (Lru/privatenull/pnlibrary/api/plugin/PluginRegistration;Lru/privatenull/pnlibrary/api/plugin/ModuleId;Ljava/util/function/Consumer;ILjava/lang/Object;)Lru/privatenull/pnlibrary/api/plugin/ModuleContext;
+	public fun requireModule (Ljava/lang/String;)Lru/privatenull/pnlibrary/api/plugin/ModuleContext;
+	public fun requireModule (Lru/privatenull/pnlibrary/api/plugin/ModuleId;)Lru/privatenull/pnlibrary/api/plugin/ModuleContext;
+	public fun unregisterModule (Ljava/lang/String;)V
+	public abstract fun unregisterModule (Lru/privatenull/pnlibrary/api/plugin/ModuleId;)V
+}
+
+public abstract interface class ru/privatenull/pnlibrary/api/plugin/PluginRegistry : java/lang/AutoCloseable {
+	public fun all ()Ljava/util/List;
+	public abstract fun close ()V
+	public abstract fun get (Ljava/lang/Object;)Lru/privatenull/pnlibrary/api/plugin/PluginRegistration;
+	public abstract fun register (Ljava/lang/Object;)Lru/privatenull/pnlibrary/api/plugin/PluginRegistration;
 	public abstract fun registrations ()Ljava/util/List;
-	public fun require (Ljava/lang/Object;)Lru/privatenull/pnlibrary/api/plugin/PluginContext;
+	public fun require (Ljava/lang/Object;)Lru/privatenull/pnlibrary/api/plugin/PluginRegistration;
 	public abstract fun unregister (Ljava/lang/Object;)V
+}
+
+public final class ru/privatenull/pnlibrary/api/plugin/RemotePolicy {
+	public static final field Companion Lru/privatenull/pnlibrary/api/plugin/RemotePolicy$Companion;
+	public fun <init> (Ljava/lang/String;Ljava/time/Duration;Lru/privatenull/pnlibrary/api/plugin/DenyAction;Ljava/util/Map;)V
+	public synthetic fun <init> (Ljava/lang/String;Ljava/time/Duration;Lru/privatenull/pnlibrary/api/plugin/DenyAction;Ljava/util/Map;ILkotlin/jvm/internal/DefaultConstructorMarker;)V
+	public static final fun builder ()Lru/privatenull/pnlibrary/api/plugin/RemotePolicy$Builder;
+	public final fun component1 ()Ljava/lang/String;
+	public final fun component2 ()Ljava/time/Duration;
+	public final fun component3 ()Lru/privatenull/pnlibrary/api/plugin/DenyAction;
+	public final fun component4 ()Ljava/util/Map;
+	public final fun copy (Ljava/lang/String;Ljava/time/Duration;Lru/privatenull/pnlibrary/api/plugin/DenyAction;Ljava/util/Map;)Lru/privatenull/pnlibrary/api/plugin/RemotePolicy;
+	public static synthetic fun copy$default (Lru/privatenull/pnlibrary/api/plugin/RemotePolicy;Ljava/lang/String;Ljava/time/Duration;Lru/privatenull/pnlibrary/api/plugin/DenyAction;Ljava/util/Map;ILjava/lang/Object;)Lru/privatenull/pnlibrary/api/plugin/RemotePolicy;
+	public fun equals (Ljava/lang/Object;)Z
+	public final fun getCheckEvery ()Ljava/time/Duration;
+	public final fun getOnDeny ()Lru/privatenull/pnlibrary/api/plugin/DenyAction;
+	public final fun getSource ()Ljava/lang/String;
+	public final fun getValues ()Ljava/util/Map;
+	public fun hashCode ()I
+	public fun toString ()Ljava/lang/String;
+}
+
+public final class ru/privatenull/pnlibrary/api/plugin/RemotePolicy$Builder {
+	public final fun build ()Lru/privatenull/pnlibrary/api/plugin/RemotePolicy;
+	public final fun checkEvery (Ljava/time/Duration;)Lru/privatenull/pnlibrary/api/plugin/RemotePolicy$Builder;
+	public final fun onDeny (Lru/privatenull/pnlibrary/api/plugin/DenyAction;)Lru/privatenull/pnlibrary/api/plugin/RemotePolicy$Builder;
+	public final fun source (Ljava/lang/String;)Lru/privatenull/pnlibrary/api/plugin/RemotePolicy$Builder;
+	public final fun value (Ljava/lang/String;Ljava/lang/String;)Lru/privatenull/pnlibrary/api/plugin/RemotePolicy$Builder;
+	public final fun values (Ljava/util/Map;)Lru/privatenull/pnlibrary/api/plugin/RemotePolicy$Builder;
+}
+
+public final class ru/privatenull/pnlibrary/api/plugin/RemotePolicy$Companion {
+	public final fun builder ()Lru/privatenull/pnlibrary/api/plugin/RemotePolicy$Builder;
+}
+
+public final class ru/privatenull/pnlibrary/api/plugin/RemotePolicyBuilder {
+	public fun <init> ()V
+	public final fun build ()Lru/privatenull/pnlibrary/api/plugin/RemotePolicy;
+	public final fun checkEvery (Ljava/time/Duration;)V
+	public final fun onDeny (Lru/privatenull/pnlibrary/api/plugin/DenyAction;)V
+	public final fun source (Ljava/lang/String;)V
+	public final fun value (Ljava/lang/String;Ljava/lang/String;)V
+}
+
+public final class ru/privatenull/pnlibrary/api/plugin/VersionConstraint {
+	public fun <init> (Lru/privatenull/pnlibrary/api/version/SemanticVersion;Lru/privatenull/pnlibrary/api/version/SemanticVersion;Lru/privatenull/pnlibrary/api/version/SemanticVersion;)V
+	public synthetic fun <init> (Lru/privatenull/pnlibrary/api/version/SemanticVersion;Lru/privatenull/pnlibrary/api/version/SemanticVersion;Lru/privatenull/pnlibrary/api/version/SemanticVersion;ILkotlin/jvm/internal/DefaultConstructorMarker;)V
+	public final fun accepts (Lru/privatenull/pnlibrary/api/version/SemanticVersion;)Z
+	public final fun getMaximumExclusive ()Lru/privatenull/pnlibrary/api/version/SemanticVersion;
+	public final fun getMaximumInclusive ()Lru/privatenull/pnlibrary/api/version/SemanticVersion;
+	public final fun getMinimum ()Lru/privatenull/pnlibrary/api/version/SemanticVersion;
+}
+
+public final class ru/privatenull/pnlibrary/api/remote/PlatformInfo {
+	public fun <init> (Lru/privatenull/pnlibrary/api/platform/PlatformType;Ljava/lang/String;Ljava/lang/String;)V
+	public final fun component1 ()Lru/privatenull/pnlibrary/api/platform/PlatformType;
+	public final fun component2 ()Ljava/lang/String;
+	public final fun component3 ()Ljava/lang/String;
+	public final fun copy (Lru/privatenull/pnlibrary/api/platform/PlatformType;Ljava/lang/String;Ljava/lang/String;)Lru/privatenull/pnlibrary/api/remote/PlatformInfo;
+	public static synthetic fun copy$default (Lru/privatenull/pnlibrary/api/remote/PlatformInfo;Lru/privatenull/pnlibrary/api/platform/PlatformType;Ljava/lang/String;Ljava/lang/String;ILjava/lang/Object;)Lru/privatenull/pnlibrary/api/remote/PlatformInfo;
+	public fun equals (Ljava/lang/Object;)Z
+	public final fun getKey ()Ljava/lang/String;
+	public final fun getName ()Ljava/lang/String;
+	public final fun getType ()Lru/privatenull/pnlibrary/api/platform/PlatformType;
+	public final fun getVersion ()Ljava/lang/String;
+	public fun hashCode ()I
+	public final fun isNamed (Ljava/lang/String;)Z
+	public fun toString ()Ljava/lang/String;
+}
+
+public final class ru/privatenull/pnlibrary/api/remote/ProductInfo {
+	public fun <init> (Ljava/lang/String;Ljava/lang/String;Ljava/lang/String;)V
+	public final fun component1 ()Ljava/lang/String;
+	public final fun component2 ()Ljava/lang/String;
+	public final fun component3 ()Ljava/lang/String;
+	public final fun copy (Ljava/lang/String;Ljava/lang/String;Ljava/lang/String;)Lru/privatenull/pnlibrary/api/remote/ProductInfo;
+	public static synthetic fun copy$default (Lru/privatenull/pnlibrary/api/remote/ProductInfo;Ljava/lang/String;Ljava/lang/String;Ljava/lang/String;ILjava/lang/Object;)Lru/privatenull/pnlibrary/api/remote/ProductInfo;
+	public fun equals (Ljava/lang/Object;)Z
+	public final fun getId ()Ljava/lang/String;
+	public final fun getName ()Ljava/lang/String;
+	public final fun getVersion ()Ljava/lang/String;
+	public fun hashCode ()I
+	public fun toString ()Ljava/lang/String;
+}
+
+public abstract interface class ru/privatenull/pnlibrary/api/remote/RemotePolicy {
+	public abstract fun check (Lru/privatenull/pnlibrary/api/remote/RemotePolicyContext;)Lru/privatenull/pnlibrary/api/remote/RemotePolicyResult;
+}
+
+public final class ru/privatenull/pnlibrary/api/remote/RemotePolicyContext {
+	public static final field Companion Lru/privatenull/pnlibrary/api/remote/RemotePolicyContext$Companion;
+	public synthetic fun <init> (Lru/privatenull/pnlibrary/api/remote/RemotePolicyContext$Builder;Lkotlin/jvm/internal/DefaultConstructorMarker;)V
+	public static final fun builder ()Lru/privatenull/pnlibrary/api/remote/RemotePolicyContext$Builder;
+	public final fun getPlatform ()Lru/privatenull/pnlibrary/api/remote/PlatformInfo;
+	public final fun getProduct ()Lru/privatenull/pnlibrary/api/remote/ProductInfo;
+	public final fun getServer ()Lru/privatenull/pnlibrary/api/remote/ServerInfo;
+	public final fun getValues ()Ljava/util/Map;
+	public final fun nativeHandle (Ljava/lang/Class;)Ljava/lang/Object;
+	public final fun requireNative (Ljava/lang/Class;)Ljava/lang/Object;
+}
+
+public final class ru/privatenull/pnlibrary/api/remote/RemotePolicyContext$Builder {
+	public fun <init> ()V
+	public final fun build ()Lru/privatenull/pnlibrary/api/remote/RemotePolicyContext;
+	public final fun nativeHandle (Ljava/lang/Object;)Lru/privatenull/pnlibrary/api/remote/RemotePolicyContext$Builder;
+	public final fun platform (Lru/privatenull/pnlibrary/api/remote/PlatformInfo;)Lru/privatenull/pnlibrary/api/remote/RemotePolicyContext$Builder;
+	public final fun product (Lru/privatenull/pnlibrary/api/remote/ProductInfo;)Lru/privatenull/pnlibrary/api/remote/RemotePolicyContext$Builder;
+	public final fun server (Lru/privatenull/pnlibrary/api/remote/ServerInfo;)Lru/privatenull/pnlibrary/api/remote/RemotePolicyContext$Builder;
+	public final fun value (Ljava/lang/String;Ljava/lang/String;)Lru/privatenull/pnlibrary/api/remote/RemotePolicyContext$Builder;
+	public final fun values (Ljava/util/Map;)Lru/privatenull/pnlibrary/api/remote/RemotePolicyContext$Builder;
+}
+
+public final class ru/privatenull/pnlibrary/api/remote/RemotePolicyContext$Companion {
+	public final fun builder ()Lru/privatenull/pnlibrary/api/remote/RemotePolicyContext$Builder;
+}
+
+public final class ru/privatenull/pnlibrary/api/remote/RemotePolicyResult {
+	public static final field Companion Lru/privatenull/pnlibrary/api/remote/RemotePolicyResult$Companion;
+	public synthetic fun <init> (ZLjava/lang/String;Lkotlin/jvm/internal/DefaultConstructorMarker;)V
+	public static final fun allow ()Lru/privatenull/pnlibrary/api/remote/RemotePolicyResult;
+	public static final fun deny (Ljava/lang/String;)Lru/privatenull/pnlibrary/api/remote/RemotePolicyResult;
+	public final fun getAllowed ()Z
+	public final fun getMessage ()Ljava/lang/String;
+}
+
+public final class ru/privatenull/pnlibrary/api/remote/RemotePolicyResult$Companion {
+	public final fun allow ()Lru/privatenull/pnlibrary/api/remote/RemotePolicyResult;
+	public final fun deny (Ljava/lang/String;)Lru/privatenull/pnlibrary/api/remote/RemotePolicyResult;
+}
+
+public final class ru/privatenull/pnlibrary/api/remote/ServerInfo {
+	public fun <init> (Ljava/lang/String;Lru/privatenull/pnlibrary/common/minecraft/MinecraftVersionInfo;)V
+	public final fun component1 ()Ljava/lang/String;
+	public final fun component2 ()Lru/privatenull/pnlibrary/common/minecraft/MinecraftVersionInfo;
+	public final fun copy (Ljava/lang/String;Lru/privatenull/pnlibrary/common/minecraft/MinecraftVersionInfo;)Lru/privatenull/pnlibrary/api/remote/ServerInfo;
+	public static synthetic fun copy$default (Lru/privatenull/pnlibrary/api/remote/ServerInfo;Ljava/lang/String;Lru/privatenull/pnlibrary/common/minecraft/MinecraftVersionInfo;ILjava/lang/Object;)Lru/privatenull/pnlibrary/api/remote/ServerInfo;
+	public fun equals (Ljava/lang/Object;)Z
+	public final fun getMinecraft ()Lru/privatenull/pnlibrary/common/minecraft/MinecraftVersionInfo;
+	public final fun getMinecraftVersion ()Lru/privatenull/pnlibrary/common/minecraft/MinecraftVersion;
+	public final fun getVersion ()Ljava/lang/String;
+	public fun hashCode ()I
+	public fun toString ()Ljava/lang/String;
 }
 
 public abstract interface class ru/privatenull/pnlibrary/api/runtime/PnLibrary : java/io/Closeable {
@@ -2837,7 +2437,6 @@ public abstract interface class ru/privatenull/pnlibrary/api/runtime/PnLibrary :
 	public fun getCommands ()Lru/privatenull/pnlibrary/api/commands/CommandService;
 	public abstract fun getConfiguration ()Lru/privatenull/pnlibrary/api/runtime/PnLibraryConfig;
 	public abstract fun getConfigurations ()Lru/privatenull/pnlibrary/api/config/ConfigurationService;
-	public abstract fun getCurrencyProviders ()Lru/privatenull/pnlibrary/api/currency/CurrencyProviderRegistry;
 	public abstract fun getDiagnostics ()Lru/privatenull/pnlibrary/api/diagnostics/DiagnosticsService;
 	public abstract fun getEvents ()Lru/privatenull/pnlibrary/api/events/EventService;
 	public abstract fun getLogging ()Lru/privatenull/pnlibrary/api/logging/LoggingService;
@@ -2943,6 +2542,7 @@ public final class ru/privatenull/pnlibrary/api/runtime/PnLibraryProvider {
 }
 
 public abstract interface class ru/privatenull/pnlibrary/api/services/ServiceManager {
+	public fun all (Ljava/lang/Class;)Ljava/util/List;
 	public abstract fun get (Ljava/lang/Class;)Ljava/lang/Object;
 	public abstract fun getAll (Ljava/lang/Class;)Ljava/util/List;
 	public abstract fun register (Ljava/lang/Class;Ljava/lang/Object;I)V
@@ -3062,6 +2662,8 @@ public abstract interface class ru/privatenull/pnlibrary/api/tasks/TaskScope : j
 	public abstract fun entity (Ljava/lang/Object;Ljava/lang/Runnable;)Lru/privatenull/pnlibrary/api/tasks/TaskHandle;
 	public fun find (Lru/privatenull/pnlibrary/api/tasks/TaskId;)Lru/privatenull/pnlibrary/api/tasks/TaskHandle;
 	public fun findByKey (Ljava/lang/String;)Lru/privatenull/pnlibrary/api/tasks/TaskHandle;
+	public fun get (Lru/privatenull/pnlibrary/api/tasks/TaskId;)Lru/privatenull/pnlibrary/api/tasks/TaskHandle;
+	public fun getByKey (Ljava/lang/String;)Lru/privatenull/pnlibrary/api/tasks/TaskHandle;
 	public abstract fun getOwner ()Ljava/lang/Object;
 	public abstract fun global (Ljava/lang/Runnable;)Lru/privatenull/pnlibrary/api/tasks/TaskHandle;
 	public abstract fun later (Ljava/time/Duration;Ljava/lang/Runnable;)Lru/privatenull/pnlibrary/api/tasks/TaskHandle;
@@ -3071,6 +2673,7 @@ public abstract interface class ru/privatenull/pnlibrary/api/tasks/TaskScope : j
 	public abstract fun repeat (Ljava/time/Duration;Ljava/time/Duration;Ljava/lang/Runnable;)Lru/privatenull/pnlibrary/api/tasks/TaskHandle;
 	public abstract fun repeatAsync (Ljava/time/Duration;Ljava/time/Duration;Ljava/lang/Runnable;)Lru/privatenull/pnlibrary/api/tasks/TaskHandle;
 	public abstract fun repeatEntity (Ljava/lang/Object;Ljava/time/Duration;Ljava/time/Duration;Ljava/lang/Runnable;)Lru/privatenull/pnlibrary/api/tasks/TaskHandle;
+	public fun require (Lru/privatenull/pnlibrary/api/tasks/TaskId;)Lru/privatenull/pnlibrary/api/tasks/TaskHandle;
 	public fun schedule (Lru/privatenull/pnlibrary/api/tasks/TaskSpec;)Lru/privatenull/pnlibrary/api/tasks/TaskHandle;
 }
 
@@ -3079,10 +2682,12 @@ public abstract interface class ru/privatenull/pnlibrary/api/tasks/TaskService :
 	public abstract fun close ()V
 	public abstract fun close (Ljava/lang/Object;)V
 	public fun find (Lru/privatenull/pnlibrary/api/tasks/TaskId;)Lru/privatenull/pnlibrary/api/tasks/TaskHandle;
+	public fun get (Lru/privatenull/pnlibrary/api/tasks/TaskId;)Lru/privatenull/pnlibrary/api/tasks/TaskHandle;
 	public fun query (Ljava/lang/Object;Lru/privatenull/pnlibrary/api/tasks/TaskQuery;)Ljava/util/List;
 	public fun query (Lru/privatenull/pnlibrary/api/tasks/TaskQuery;)Ljava/util/List;
 	public static synthetic fun query$default (Lru/privatenull/pnlibrary/api/tasks/TaskService;Ljava/lang/Object;Lru/privatenull/pnlibrary/api/tasks/TaskQuery;ILjava/lang/Object;)Ljava/util/List;
 	public static synthetic fun query$default (Lru/privatenull/pnlibrary/api/tasks/TaskService;Lru/privatenull/pnlibrary/api/tasks/TaskQuery;ILjava/lang/Object;)Ljava/util/List;
+	public fun require (Lru/privatenull/pnlibrary/api/tasks/TaskId;)Lru/privatenull/pnlibrary/api/tasks/TaskHandle;
 	public abstract fun scope (Ljava/lang/Object;)Lru/privatenull/pnlibrary/api/tasks/TaskScope;
 }
 
@@ -3192,7 +2797,7 @@ public final class ru/privatenull/pnlibrary/api/tasks/TaskSpecBuilder {
 }
 
 public final class ru/privatenull/pnlibrary/api/tasks/TaskSpecKt {
-	public static final fun schedule (Lru/privatenull/pnlibrary/api/tasks/TaskScope;Lkotlin/jvm/functions/Function1;)Lru/privatenull/pnlibrary/api/tasks/TaskHandle;
+	public static final synthetic fun schedule (Lru/privatenull/pnlibrary/api/tasks/TaskScope;Lkotlin/jvm/functions/Function1;)Lru/privatenull/pnlibrary/api/tasks/TaskHandle;
 }
 
 public final class ru/privatenull/pnlibrary/api/tasks/TaskStatus : java/lang/Enum {
@@ -3300,6 +2905,28 @@ public abstract interface class ru/privatenull/pnlibrary/api/text/ComponentTempl
 	public abstract fun value (Ljava/lang/String;Ljava/lang/Object;)Lru/privatenull/pnlibrary/api/text/ComponentTemplate;
 }
 
+public final class ru/privatenull/pnlibrary/api/updates/ArtifactCompatibility {
+	public fun <init> (Lru/privatenull/pnlibrary/api/platform/PlatformType;Lru/privatenull/pnlibrary/api/updates/VersionRangeText;Lru/privatenull/pnlibrary/api/updates/VersionRangeText;Lru/privatenull/pnlibrary/api/version/ApiVersionRange;ILjava/lang/Integer;)V
+	public synthetic fun <init> (Lru/privatenull/pnlibrary/api/platform/PlatformType;Lru/privatenull/pnlibrary/api/updates/VersionRangeText;Lru/privatenull/pnlibrary/api/updates/VersionRangeText;Lru/privatenull/pnlibrary/api/version/ApiVersionRange;ILjava/lang/Integer;ILkotlin/jvm/internal/DefaultConstructorMarker;)V
+	public final fun component1 ()Lru/privatenull/pnlibrary/api/platform/PlatformType;
+	public final fun component2 ()Lru/privatenull/pnlibrary/api/updates/VersionRangeText;
+	public final fun component3 ()Lru/privatenull/pnlibrary/api/updates/VersionRangeText;
+	public final fun component4 ()Lru/privatenull/pnlibrary/api/version/ApiVersionRange;
+	public final fun component5 ()I
+	public final fun component6 ()Ljava/lang/Integer;
+	public final fun copy (Lru/privatenull/pnlibrary/api/platform/PlatformType;Lru/privatenull/pnlibrary/api/updates/VersionRangeText;Lru/privatenull/pnlibrary/api/updates/VersionRangeText;Lru/privatenull/pnlibrary/api/version/ApiVersionRange;ILjava/lang/Integer;)Lru/privatenull/pnlibrary/api/updates/ArtifactCompatibility;
+	public static synthetic fun copy$default (Lru/privatenull/pnlibrary/api/updates/ArtifactCompatibility;Lru/privatenull/pnlibrary/api/platform/PlatformType;Lru/privatenull/pnlibrary/api/updates/VersionRangeText;Lru/privatenull/pnlibrary/api/updates/VersionRangeText;Lru/privatenull/pnlibrary/api/version/ApiVersionRange;ILjava/lang/Integer;ILjava/lang/Object;)Lru/privatenull/pnlibrary/api/updates/ArtifactCompatibility;
+	public fun equals (Ljava/lang/Object;)Z
+	public final fun getMaximumJava ()Ljava/lang/Integer;
+	public final fun getMinecraft ()Lru/privatenull/pnlibrary/api/updates/VersionRangeText;
+	public final fun getMinimumJava ()I
+	public final fun getPlatform ()Lru/privatenull/pnlibrary/api/platform/PlatformType;
+	public final fun getPlatformApi ()Lru/privatenull/pnlibrary/api/updates/VersionRangeText;
+	public final fun getPnLibraryApi ()Lru/privatenull/pnlibrary/api/version/ApiVersionRange;
+	public fun hashCode ()I
+	public fun toString ()Ljava/lang/String;
+}
+
 public final class ru/privatenull/pnlibrary/api/updates/ArtifactDescriptor {
 	public static final field Companion Lru/privatenull/pnlibrary/api/updates/ArtifactDescriptor$Companion;
 	public fun <init> (Ljava/lang/String;Lru/privatenull/pnlibrary/api/platform/PlatformType;ILjava/lang/Integer;JLjava/lang/String;Ljava/net/URI;)V
@@ -3320,16 +2947,16 @@ public abstract class ru/privatenull/pnlibrary/api/updates/BlockedReason {
 }
 
 public final class ru/privatenull/pnlibrary/api/updates/BlockedReason$ApiMismatch : ru/privatenull/pnlibrary/api/updates/BlockedReason {
-	public fun <init> (Lru/privatenull/pnlibrary/api/updates/ComponentId;Lru/privatenull/pnlibrary/api/version/ApiVersionRange;ILjava/lang/String;)V
-	public synthetic fun <init> (Lru/privatenull/pnlibrary/api/updates/ComponentId;Lru/privatenull/pnlibrary/api/version/ApiVersionRange;ILjava/lang/String;ILkotlin/jvm/internal/DefaultConstructorMarker;)V
-	public final fun component1 ()Lru/privatenull/pnlibrary/api/updates/ComponentId;
+	public fun <init> (Lru/privatenull/pnlibrary/api/updates/ProductId;Lru/privatenull/pnlibrary/api/version/ApiVersionRange;ILjava/lang/String;)V
+	public synthetic fun <init> (Lru/privatenull/pnlibrary/api/updates/ProductId;Lru/privatenull/pnlibrary/api/version/ApiVersionRange;ILjava/lang/String;ILkotlin/jvm/internal/DefaultConstructorMarker;)V
+	public final fun component1 ()Lru/privatenull/pnlibrary/api/updates/ProductId;
 	public final fun component2 ()Lru/privatenull/pnlibrary/api/version/ApiVersionRange;
 	public final fun component3 ()I
 	public final fun component4 ()Ljava/lang/String;
-	public final fun copy (Lru/privatenull/pnlibrary/api/updates/ComponentId;Lru/privatenull/pnlibrary/api/version/ApiVersionRange;ILjava/lang/String;)Lru/privatenull/pnlibrary/api/updates/BlockedReason$ApiMismatch;
-	public static synthetic fun copy$default (Lru/privatenull/pnlibrary/api/updates/BlockedReason$ApiMismatch;Lru/privatenull/pnlibrary/api/updates/ComponentId;Lru/privatenull/pnlibrary/api/version/ApiVersionRange;ILjava/lang/String;ILjava/lang/Object;)Lru/privatenull/pnlibrary/api/updates/BlockedReason$ApiMismatch;
+	public final fun copy (Lru/privatenull/pnlibrary/api/updates/ProductId;Lru/privatenull/pnlibrary/api/version/ApiVersionRange;ILjava/lang/String;)Lru/privatenull/pnlibrary/api/updates/BlockedReason$ApiMismatch;
+	public static synthetic fun copy$default (Lru/privatenull/pnlibrary/api/updates/BlockedReason$ApiMismatch;Lru/privatenull/pnlibrary/api/updates/ProductId;Lru/privatenull/pnlibrary/api/version/ApiVersionRange;ILjava/lang/String;ILjava/lang/Object;)Lru/privatenull/pnlibrary/api/updates/BlockedReason$ApiMismatch;
 	public fun equals (Ljava/lang/Object;)Z
-	public final fun getComponent ()Lru/privatenull/pnlibrary/api/updates/ComponentId;
+	public final fun getProduct ()Lru/privatenull/pnlibrary/api/updates/ProductId;
 	public final fun getRepository ()Ljava/lang/String;
 	public final fun getRequiredApi ()I
 	public final fun getSupportedApi ()Lru/privatenull/pnlibrary/api/version/ApiVersionRange;
@@ -3338,156 +2965,57 @@ public final class ru/privatenull/pnlibrary/api/updates/BlockedReason$ApiMismatc
 }
 
 public final class ru/privatenull/pnlibrary/api/updates/BlockedReason$Frozen : ru/privatenull/pnlibrary/api/updates/BlockedReason {
-	public fun <init> (Lru/privatenull/pnlibrary/api/updates/ComponentId;)V
-	public final fun component1 ()Lru/privatenull/pnlibrary/api/updates/ComponentId;
-	public final fun copy (Lru/privatenull/pnlibrary/api/updates/ComponentId;)Lru/privatenull/pnlibrary/api/updates/BlockedReason$Frozen;
-	public static synthetic fun copy$default (Lru/privatenull/pnlibrary/api/updates/BlockedReason$Frozen;Lru/privatenull/pnlibrary/api/updates/ComponentId;ILjava/lang/Object;)Lru/privatenull/pnlibrary/api/updates/BlockedReason$Frozen;
+	public fun <init> (Lru/privatenull/pnlibrary/api/updates/ProductId;)V
+	public final fun component1 ()Lru/privatenull/pnlibrary/api/updates/ProductId;
+	public final fun copy (Lru/privatenull/pnlibrary/api/updates/ProductId;)Lru/privatenull/pnlibrary/api/updates/BlockedReason$Frozen;
+	public static synthetic fun copy$default (Lru/privatenull/pnlibrary/api/updates/BlockedReason$Frozen;Lru/privatenull/pnlibrary/api/updates/ProductId;ILjava/lang/Object;)Lru/privatenull/pnlibrary/api/updates/BlockedReason$Frozen;
 	public fun equals (Ljava/lang/Object;)Z
-	public final fun getComponent ()Lru/privatenull/pnlibrary/api/updates/ComponentId;
+	public final fun getProduct ()Lru/privatenull/pnlibrary/api/updates/ProductId;
 	public fun hashCode ()I
 	public fun toString ()Ljava/lang/String;
 }
 
 public final class ru/privatenull/pnlibrary/api/updates/BlockedReason$MissingDependency : ru/privatenull/pnlibrary/api/updates/BlockedReason {
-	public fun <init> (Lru/privatenull/pnlibrary/api/updates/ComponentId;Lru/privatenull/pnlibrary/api/updates/ComponentId;Lru/privatenull/pnlibrary/api/version/SemanticVersion;)V
-	public final fun component1 ()Lru/privatenull/pnlibrary/api/updates/ComponentId;
-	public final fun component2 ()Lru/privatenull/pnlibrary/api/updates/ComponentId;
+	public fun <init> (Lru/privatenull/pnlibrary/api/updates/ProductId;Lru/privatenull/pnlibrary/api/updates/ProductId;Lru/privatenull/pnlibrary/api/version/SemanticVersion;)V
+	public final fun component1 ()Lru/privatenull/pnlibrary/api/updates/ProductId;
+	public final fun component2 ()Lru/privatenull/pnlibrary/api/updates/ProductId;
 	public final fun component3 ()Lru/privatenull/pnlibrary/api/version/SemanticVersion;
-	public final fun copy (Lru/privatenull/pnlibrary/api/updates/ComponentId;Lru/privatenull/pnlibrary/api/updates/ComponentId;Lru/privatenull/pnlibrary/api/version/SemanticVersion;)Lru/privatenull/pnlibrary/api/updates/BlockedReason$MissingDependency;
-	public static synthetic fun copy$default (Lru/privatenull/pnlibrary/api/updates/BlockedReason$MissingDependency;Lru/privatenull/pnlibrary/api/updates/ComponentId;Lru/privatenull/pnlibrary/api/updates/ComponentId;Lru/privatenull/pnlibrary/api/version/SemanticVersion;ILjava/lang/Object;)Lru/privatenull/pnlibrary/api/updates/BlockedReason$MissingDependency;
+	public final fun copy (Lru/privatenull/pnlibrary/api/updates/ProductId;Lru/privatenull/pnlibrary/api/updates/ProductId;Lru/privatenull/pnlibrary/api/version/SemanticVersion;)Lru/privatenull/pnlibrary/api/updates/BlockedReason$MissingDependency;
+	public static synthetic fun copy$default (Lru/privatenull/pnlibrary/api/updates/BlockedReason$MissingDependency;Lru/privatenull/pnlibrary/api/updates/ProductId;Lru/privatenull/pnlibrary/api/updates/ProductId;Lru/privatenull/pnlibrary/api/version/SemanticVersion;ILjava/lang/Object;)Lru/privatenull/pnlibrary/api/updates/BlockedReason$MissingDependency;
 	public fun equals (Ljava/lang/Object;)Z
-	public final fun getComponent ()Lru/privatenull/pnlibrary/api/updates/ComponentId;
-	public final fun getDependency ()Lru/privatenull/pnlibrary/api/updates/ComponentId;
+	public final fun getDependency ()Lru/privatenull/pnlibrary/api/updates/ProductId;
 	public final fun getMinimumVersion ()Lru/privatenull/pnlibrary/api/version/SemanticVersion;
+	public final fun getProduct ()Lru/privatenull/pnlibrary/api/updates/ProductId;
 	public fun hashCode ()I
 	public fun toString ()Ljava/lang/String;
 }
 
-public final class ru/privatenull/pnlibrary/api/updates/BlockedReason$MissingExternalDependency : ru/privatenull/pnlibrary/api/updates/BlockedReason {
-	public fun <init> (Lru/privatenull/pnlibrary/api/updates/ComponentId;Ljava/lang/String;Lru/privatenull/pnlibrary/api/version/SemanticVersion;Ljava/lang/String;)V
-	public final fun component1 ()Lru/privatenull/pnlibrary/api/updates/ComponentId;
+public final class ru/privatenull/pnlibrary/api/updates/BlockedReason$MissingExternalPluginDependency : ru/privatenull/pnlibrary/api/updates/BlockedReason {
+	public fun <init> (Lru/privatenull/pnlibrary/api/updates/ProductId;Ljava/lang/String;Lru/privatenull/pnlibrary/api/version/SemanticVersion;Ljava/lang/String;)V
+	public final fun component1 ()Lru/privatenull/pnlibrary/api/updates/ProductId;
 	public final fun component2 ()Ljava/lang/String;
 	public final fun component3 ()Lru/privatenull/pnlibrary/api/version/SemanticVersion;
 	public final fun component4 ()Ljava/lang/String;
-	public final fun copy (Lru/privatenull/pnlibrary/api/updates/ComponentId;Ljava/lang/String;Lru/privatenull/pnlibrary/api/version/SemanticVersion;Ljava/lang/String;)Lru/privatenull/pnlibrary/api/updates/BlockedReason$MissingExternalDependency;
-	public static synthetic fun copy$default (Lru/privatenull/pnlibrary/api/updates/BlockedReason$MissingExternalDependency;Lru/privatenull/pnlibrary/api/updates/ComponentId;Ljava/lang/String;Lru/privatenull/pnlibrary/api/version/SemanticVersion;Ljava/lang/String;ILjava/lang/Object;)Lru/privatenull/pnlibrary/api/updates/BlockedReason$MissingExternalDependency;
+	public final fun copy (Lru/privatenull/pnlibrary/api/updates/ProductId;Ljava/lang/String;Lru/privatenull/pnlibrary/api/version/SemanticVersion;Ljava/lang/String;)Lru/privatenull/pnlibrary/api/updates/BlockedReason$MissingExternalPluginDependency;
+	public static synthetic fun copy$default (Lru/privatenull/pnlibrary/api/updates/BlockedReason$MissingExternalPluginDependency;Lru/privatenull/pnlibrary/api/updates/ProductId;Ljava/lang/String;Lru/privatenull/pnlibrary/api/version/SemanticVersion;Ljava/lang/String;ILjava/lang/Object;)Lru/privatenull/pnlibrary/api/updates/BlockedReason$MissingExternalPluginDependency;
 	public fun equals (Ljava/lang/Object;)Z
-	public final fun getComponent ()Lru/privatenull/pnlibrary/api/updates/ComponentId;
 	public final fun getDownloadPage ()Ljava/lang/String;
 	public final fun getMinimumVersion ()Lru/privatenull/pnlibrary/api/version/SemanticVersion;
 	public final fun getPlugin ()Ljava/lang/String;
+	public final fun getProduct ()Lru/privatenull/pnlibrary/api/updates/ProductId;
 	public fun hashCode ()I
 	public fun toString ()Ljava/lang/String;
 }
 
 public final class ru/privatenull/pnlibrary/api/updates/BlockedReason$NoCompatibleRelease : ru/privatenull/pnlibrary/api/updates/BlockedReason {
-	public fun <init> (Lru/privatenull/pnlibrary/api/updates/ComponentId;I)V
-	public final fun component1 ()Lru/privatenull/pnlibrary/api/updates/ComponentId;
+	public fun <init> (Lru/privatenull/pnlibrary/api/updates/ProductId;I)V
+	public final fun component1 ()Lru/privatenull/pnlibrary/api/updates/ProductId;
 	public final fun component2 ()I
-	public final fun copy (Lru/privatenull/pnlibrary/api/updates/ComponentId;I)Lru/privatenull/pnlibrary/api/updates/BlockedReason$NoCompatibleRelease;
-	public static synthetic fun copy$default (Lru/privatenull/pnlibrary/api/updates/BlockedReason$NoCompatibleRelease;Lru/privatenull/pnlibrary/api/updates/ComponentId;IILjava/lang/Object;)Lru/privatenull/pnlibrary/api/updates/BlockedReason$NoCompatibleRelease;
+	public final fun copy (Lru/privatenull/pnlibrary/api/updates/ProductId;I)Lru/privatenull/pnlibrary/api/updates/BlockedReason$NoCompatibleRelease;
+	public static synthetic fun copy$default (Lru/privatenull/pnlibrary/api/updates/BlockedReason$NoCompatibleRelease;Lru/privatenull/pnlibrary/api/updates/ProductId;IILjava/lang/Object;)Lru/privatenull/pnlibrary/api/updates/BlockedReason$NoCompatibleRelease;
 	public fun equals (Ljava/lang/Object;)Z
-	public final fun getComponent ()Lru/privatenull/pnlibrary/api/updates/ComponentId;
+	public final fun getProduct ()Lru/privatenull/pnlibrary/api/updates/ProductId;
 	public final fun getRequiredApi ()I
-	public fun hashCode ()I
-	public fun toString ()Ljava/lang/String;
-}
-
-public final class ru/privatenull/pnlibrary/api/updates/ComponentChange {
-	public fun <init> (Lru/privatenull/pnlibrary/api/updates/ComponentId;Lru/privatenull/pnlibrary/api/version/SemanticVersion;Lru/privatenull/pnlibrary/api/version/SemanticVersion;)V
-	public final fun component1 ()Lru/privatenull/pnlibrary/api/updates/ComponentId;
-	public final fun component2 ()Lru/privatenull/pnlibrary/api/version/SemanticVersion;
-	public final fun component3 ()Lru/privatenull/pnlibrary/api/version/SemanticVersion;
-	public final fun copy (Lru/privatenull/pnlibrary/api/updates/ComponentId;Lru/privatenull/pnlibrary/api/version/SemanticVersion;Lru/privatenull/pnlibrary/api/version/SemanticVersion;)Lru/privatenull/pnlibrary/api/updates/ComponentChange;
-	public static synthetic fun copy$default (Lru/privatenull/pnlibrary/api/updates/ComponentChange;Lru/privatenull/pnlibrary/api/updates/ComponentId;Lru/privatenull/pnlibrary/api/version/SemanticVersion;Lru/privatenull/pnlibrary/api/version/SemanticVersion;ILjava/lang/Object;)Lru/privatenull/pnlibrary/api/updates/ComponentChange;
-	public fun equals (Ljava/lang/Object;)Z
-	public final fun getComponent ()Lru/privatenull/pnlibrary/api/updates/ComponentId;
-	public final fun getFrom ()Lru/privatenull/pnlibrary/api/version/SemanticVersion;
-	public final fun getTo ()Lru/privatenull/pnlibrary/api/version/SemanticVersion;
-	public fun hashCode ()I
-	public fun toString ()Ljava/lang/String;
-}
-
-public final class ru/privatenull/pnlibrary/api/updates/ComponentDependency {
-	public fun <init> (Lru/privatenull/pnlibrary/api/updates/ComponentId;Lru/privatenull/pnlibrary/api/version/SemanticVersion;)V
-	public final fun component1 ()Lru/privatenull/pnlibrary/api/updates/ComponentId;
-	public final fun component2 ()Lru/privatenull/pnlibrary/api/version/SemanticVersion;
-	public final fun copy (Lru/privatenull/pnlibrary/api/updates/ComponentId;Lru/privatenull/pnlibrary/api/version/SemanticVersion;)Lru/privatenull/pnlibrary/api/updates/ComponentDependency;
-	public static synthetic fun copy$default (Lru/privatenull/pnlibrary/api/updates/ComponentDependency;Lru/privatenull/pnlibrary/api/updates/ComponentId;Lru/privatenull/pnlibrary/api/version/SemanticVersion;ILjava/lang/Object;)Lru/privatenull/pnlibrary/api/updates/ComponentDependency;
-	public fun equals (Ljava/lang/Object;)Z
-	public final fun getComponent ()Lru/privatenull/pnlibrary/api/updates/ComponentId;
-	public final fun getMinimumVersion ()Lru/privatenull/pnlibrary/api/version/SemanticVersion;
-	public fun hashCode ()I
-	public fun toString ()Ljava/lang/String;
-}
-
-public final class ru/privatenull/pnlibrary/api/updates/ComponentDescriptor {
-	public static final field Companion Lru/privatenull/pnlibrary/api/updates/ComponentDescriptor$Companion;
-	public synthetic fun <init> (Lru/privatenull/pnlibrary/api/updates/ComponentDescriptor$Builder;Lkotlin/jvm/internal/DefaultConstructorMarker;)V
-	public static final fun builder (Ljava/lang/String;Ljava/lang/String;)Lru/privatenull/pnlibrary/api/updates/ComponentDescriptor$Builder;
-	public final fun getExternalDependencies ()Ljava/util/List;
-	public final fun getId ()Lru/privatenull/pnlibrary/api/updates/ComponentId;
-	public final fun getManagedDependencies ()Ljava/util/List;
-	public final fun getSupportedApi ()Lru/privatenull/pnlibrary/api/version/ApiVersionRange;
-	public final fun getVersion ()Lru/privatenull/pnlibrary/api/version/SemanticVersion;
-	public static final fun library (Ljava/lang/String;)Lru/privatenull/pnlibrary/api/updates/ComponentDescriptor;
-}
-
-public final class ru/privatenull/pnlibrary/api/updates/ComponentDescriptor$Builder {
-	public final fun build ()Lru/privatenull/pnlibrary/api/updates/ComponentDescriptor;
-	public final fun externalDependency (Lru/privatenull/pnlibrary/api/updates/ExternalDependency;)Lru/privatenull/pnlibrary/api/updates/ComponentDescriptor$Builder;
-	public final fun managedDependency (Ljava/lang/String;Ljava/lang/String;Ljava/lang/String;Ljava/lang/String;)Lru/privatenull/pnlibrary/api/updates/ComponentDescriptor$Builder;
-	public final fun managedDependency (Ljava/lang/String;Ljava/lang/String;Ljava/lang/String;Ljava/lang/String;Z)Lru/privatenull/pnlibrary/api/updates/ComponentDescriptor$Builder;
-	public final fun managedDependency (Ljava/lang/String;Ljava/lang/String;Ljava/lang/String;Ljava/lang/String;ZZ)Lru/privatenull/pnlibrary/api/updates/ComponentDescriptor$Builder;
-	public static synthetic fun managedDependency$default (Lru/privatenull/pnlibrary/api/updates/ComponentDescriptor$Builder;Ljava/lang/String;Ljava/lang/String;Ljava/lang/String;Ljava/lang/String;ZZILjava/lang/Object;)Lru/privatenull/pnlibrary/api/updates/ComponentDescriptor$Builder;
-	public final fun pnLibraryApi (II)Lru/privatenull/pnlibrary/api/updates/ComponentDescriptor$Builder;
-}
-
-public final class ru/privatenull/pnlibrary/api/updates/ComponentDescriptor$Companion {
-	public final fun builder (Ljava/lang/String;Ljava/lang/String;)Lru/privatenull/pnlibrary/api/updates/ComponentDescriptor$Builder;
-	public final fun library (Ljava/lang/String;)Lru/privatenull/pnlibrary/api/updates/ComponentDescriptor;
-}
-
-public final class ru/privatenull/pnlibrary/api/updates/ComponentId : java/lang/Comparable {
-	public static final field Companion Lru/privatenull/pnlibrary/api/updates/ComponentId$Companion;
-	public synthetic fun <init> (Ljava/lang/String;Lkotlin/jvm/internal/DefaultConstructorMarker;)V
-	public synthetic fun compareTo (Ljava/lang/Object;)I
-	public fun compareTo (Lru/privatenull/pnlibrary/api/updates/ComponentId;)I
-	public fun equals (Ljava/lang/Object;)Z
-	public final fun getValue ()Ljava/lang/String;
-	public fun hashCode ()I
-	public static final fun of (Ljava/lang/String;)Lru/privatenull/pnlibrary/api/updates/ComponentId;
-	public fun toString ()Ljava/lang/String;
-}
-
-public final class ru/privatenull/pnlibrary/api/updates/ComponentId$Companion {
-	public final fun of (Ljava/lang/String;)Lru/privatenull/pnlibrary/api/updates/ComponentId;
-}
-
-public final class ru/privatenull/pnlibrary/api/updates/ComponentRelease {
-	public fun <init> (Lru/privatenull/pnlibrary/api/updates/ComponentId;Lru/privatenull/pnlibrary/api/version/SemanticVersion;Lru/privatenull/pnlibrary/api/updates/UpdateChannel;Lru/privatenull/pnlibrary/api/version/ApiVersionRange;Ljava/lang/Integer;Ljava/util/List;Ljava/lang/String;Ljava/util/List;Ljava/util/List;)V
-	public synthetic fun <init> (Lru/privatenull/pnlibrary/api/updates/ComponentId;Lru/privatenull/pnlibrary/api/version/SemanticVersion;Lru/privatenull/pnlibrary/api/updates/UpdateChannel;Lru/privatenull/pnlibrary/api/version/ApiVersionRange;Ljava/lang/Integer;Ljava/util/List;Ljava/lang/String;Ljava/util/List;Ljava/util/List;ILkotlin/jvm/internal/DefaultConstructorMarker;)V
-	public final fun component1 ()Lru/privatenull/pnlibrary/api/updates/ComponentId;
-	public final fun component2 ()Lru/privatenull/pnlibrary/api/version/SemanticVersion;
-	public final fun component3 ()Lru/privatenull/pnlibrary/api/updates/UpdateChannel;
-	public final fun component4 ()Lru/privatenull/pnlibrary/api/version/ApiVersionRange;
-	public final fun component5 ()Ljava/lang/Integer;
-	public final fun component6 ()Ljava/util/List;
-	public final fun component7 ()Ljava/lang/String;
-	public final fun component8 ()Ljava/util/List;
-	public final fun component9 ()Ljava/util/List;
-	public final fun copy (Lru/privatenull/pnlibrary/api/updates/ComponentId;Lru/privatenull/pnlibrary/api/version/SemanticVersion;Lru/privatenull/pnlibrary/api/updates/UpdateChannel;Lru/privatenull/pnlibrary/api/version/ApiVersionRange;Ljava/lang/Integer;Ljava/util/List;Ljava/lang/String;Ljava/util/List;Ljava/util/List;)Lru/privatenull/pnlibrary/api/updates/ComponentRelease;
-	public static synthetic fun copy$default (Lru/privatenull/pnlibrary/api/updates/ComponentRelease;Lru/privatenull/pnlibrary/api/updates/ComponentId;Lru/privatenull/pnlibrary/api/version/SemanticVersion;Lru/privatenull/pnlibrary/api/updates/UpdateChannel;Lru/privatenull/pnlibrary/api/version/ApiVersionRange;Ljava/lang/Integer;Ljava/util/List;Ljava/lang/String;Ljava/util/List;Ljava/util/List;ILjava/lang/Object;)Lru/privatenull/pnlibrary/api/updates/ComponentRelease;
-	public fun equals (Ljava/lang/Object;)Z
-	public final fun getArtifacts ()Ljava/util/List;
-	public final fun getChannel ()Lru/privatenull/pnlibrary/api/updates/UpdateChannel;
-	public final fun getComponent ()Lru/privatenull/pnlibrary/api/updates/ComponentId;
-	public final fun getDependencies ()Ljava/util/List;
-	public final fun getExternalDependencies ()Ljava/util/List;
-	public final fun getProvidesApi ()Ljava/lang/Integer;
-	public final fun getRepository ()Ljava/lang/String;
-	public final fun getSupportedApi ()Lru/privatenull/pnlibrary/api/version/ApiVersionRange;
-	public final fun getVersion ()Lru/privatenull/pnlibrary/api/version/SemanticVersion;
 	public fun hashCode ()I
 	public fun toString ()Ljava/lang/String;
 }
@@ -3503,44 +3031,47 @@ public final class ru/privatenull/pnlibrary/api/updates/ExternalArtifact {
 public final class ru/privatenull/pnlibrary/api/updates/ExternalArtifact$Companion {
 }
 
-public final class ru/privatenull/pnlibrary/api/updates/ExternalDependency : ru/privatenull/pnlibrary/api/plugin/PluginDependency {
-	public static final field Companion Lru/privatenull/pnlibrary/api/updates/ExternalDependency$Companion;
-	public synthetic fun <init> (Lru/privatenull/pnlibrary/api/updates/ExternalDependency$Builder;Lkotlin/jvm/internal/DefaultConstructorMarker;)V
-	public static final fun builder (Ljava/lang/String;Ljava/lang/String;)Lru/privatenull/pnlibrary/api/updates/ExternalDependency$Builder;
+public final class ru/privatenull/pnlibrary/api/updates/ExternalPluginDependency : ru/privatenull/pnlibrary/api/plugin/PluginDependency {
+	public static final field Companion Lru/privatenull/pnlibrary/api/updates/ExternalPluginDependency$Companion;
+	public synthetic fun <init> (Lru/privatenull/pnlibrary/api/updates/ExternalPluginDependency$Builder;Lkotlin/jvm/internal/DefaultConstructorMarker;)V
+	public static final fun builder (Ljava/lang/String;Ljava/lang/String;)Lru/privatenull/pnlibrary/api/updates/ExternalPluginDependency$Builder;
 	public final fun getArtifact ()Lru/privatenull/pnlibrary/api/updates/ExternalArtifact;
-	public fun getAutomaticDownload ()Z
 	public final fun getDownloadPage ()Ljava/net/URI;
-	public fun getExternal ()Lru/privatenull/pnlibrary/api/updates/ExternalDependency;
-	public fun getForceAutomaticDownload ()Z
+	public fun getDownloadPolicy ()Lru/privatenull/pnlibrary/api/plugin/DownloadPolicy;
+	public fun getExternal ()Lru/privatenull/pnlibrary/api/updates/ExternalPluginDependency;
 	public final fun getMinimumVersion ()Lru/privatenull/pnlibrary/api/version/SemanticVersion;
 	public final fun getPlugin ()Ljava/lang/String;
 	public fun getRequired ()Z
+	public fun getVersions ()Lru/privatenull/pnlibrary/api/plugin/VersionConstraint;
 }
 
-public final class ru/privatenull/pnlibrary/api/updates/ExternalDependency$Builder {
-	public final fun artifact (Ljava/lang/String;JLjava/lang/String;)Lru/privatenull/pnlibrary/api/updates/ExternalDependency$Builder;
-	public final fun automaticDownload (Z)Lru/privatenull/pnlibrary/api/updates/ExternalDependency$Builder;
-	public final fun build ()Lru/privatenull/pnlibrary/api/updates/ExternalDependency;
-	public final fun downloadPage (Ljava/lang/String;)Lru/privatenull/pnlibrary/api/updates/ExternalDependency$Builder;
-	public final fun forceAutomaticDownload (Z)Lru/privatenull/pnlibrary/api/updates/ExternalDependency$Builder;
-	public final fun required (Z)Lru/privatenull/pnlibrary/api/updates/ExternalDependency$Builder;
+public final class ru/privatenull/pnlibrary/api/updates/ExternalPluginDependency$Builder {
+	public final fun artifact (Ljava/lang/String;JLjava/lang/String;)Lru/privatenull/pnlibrary/api/updates/ExternalPluginDependency$Builder;
+	public final fun automaticDownload (Z)Lru/privatenull/pnlibrary/api/updates/ExternalPluginDependency$Builder;
+	public final fun build ()Lru/privatenull/pnlibrary/api/updates/ExternalPluginDependency;
+	public final fun downloadPage (Ljava/lang/String;)Lru/privatenull/pnlibrary/api/updates/ExternalPluginDependency$Builder;
+	public final fun downloadPolicy (Lru/privatenull/pnlibrary/api/plugin/DownloadPolicy;)Lru/privatenull/pnlibrary/api/updates/ExternalPluginDependency$Builder;
+	public final fun forceAutomaticDownload (Z)Lru/privatenull/pnlibrary/api/updates/ExternalPluginDependency$Builder;
+	public final fun maximumVersion (Ljava/lang/String;)Lru/privatenull/pnlibrary/api/updates/ExternalPluginDependency$Builder;
+	public final fun maximumVersionExclusive (Ljava/lang/String;)Lru/privatenull/pnlibrary/api/updates/ExternalPluginDependency$Builder;
+	public final fun required (Z)Lru/privatenull/pnlibrary/api/updates/ExternalPluginDependency$Builder;
 }
 
-public final class ru/privatenull/pnlibrary/api/updates/ExternalDependency$Companion {
-	public final fun builder (Ljava/lang/String;Ljava/lang/String;)Lru/privatenull/pnlibrary/api/updates/ExternalDependency$Builder;
+public final class ru/privatenull/pnlibrary/api/updates/ExternalPluginDependency$Companion {
+	public final fun builder (Ljava/lang/String;Ljava/lang/String;)Lru/privatenull/pnlibrary/api/updates/ExternalPluginDependency$Builder;
 }
 
-public final class ru/privatenull/pnlibrary/api/updates/InstalledComponent {
-	public fun <init> (Lru/privatenull/pnlibrary/api/updates/ComponentId;Lru/privatenull/pnlibrary/api/version/SemanticVersion;Lru/privatenull/pnlibrary/api/version/ApiVersionRange;Ljava/lang/Integer;)V
-	public synthetic fun <init> (Lru/privatenull/pnlibrary/api/updates/ComponentId;Lru/privatenull/pnlibrary/api/version/SemanticVersion;Lru/privatenull/pnlibrary/api/version/ApiVersionRange;Ljava/lang/Integer;ILkotlin/jvm/internal/DefaultConstructorMarker;)V
-	public final fun component1 ()Lru/privatenull/pnlibrary/api/updates/ComponentId;
+public final class ru/privatenull/pnlibrary/api/updates/InstalledProduct {
+	public fun <init> (Lru/privatenull/pnlibrary/api/updates/ProductId;Lru/privatenull/pnlibrary/api/version/SemanticVersion;Lru/privatenull/pnlibrary/api/version/ApiVersionRange;Ljava/lang/Integer;)V
+	public synthetic fun <init> (Lru/privatenull/pnlibrary/api/updates/ProductId;Lru/privatenull/pnlibrary/api/version/SemanticVersion;Lru/privatenull/pnlibrary/api/version/ApiVersionRange;Ljava/lang/Integer;ILkotlin/jvm/internal/DefaultConstructorMarker;)V
+	public final fun component1 ()Lru/privatenull/pnlibrary/api/updates/ProductId;
 	public final fun component2 ()Lru/privatenull/pnlibrary/api/version/SemanticVersion;
 	public final fun component3 ()Lru/privatenull/pnlibrary/api/version/ApiVersionRange;
 	public final fun component4 ()Ljava/lang/Integer;
-	public final fun copy (Lru/privatenull/pnlibrary/api/updates/ComponentId;Lru/privatenull/pnlibrary/api/version/SemanticVersion;Lru/privatenull/pnlibrary/api/version/ApiVersionRange;Ljava/lang/Integer;)Lru/privatenull/pnlibrary/api/updates/InstalledComponent;
-	public static synthetic fun copy$default (Lru/privatenull/pnlibrary/api/updates/InstalledComponent;Lru/privatenull/pnlibrary/api/updates/ComponentId;Lru/privatenull/pnlibrary/api/version/SemanticVersion;Lru/privatenull/pnlibrary/api/version/ApiVersionRange;Ljava/lang/Integer;ILjava/lang/Object;)Lru/privatenull/pnlibrary/api/updates/InstalledComponent;
+	public final fun copy (Lru/privatenull/pnlibrary/api/updates/ProductId;Lru/privatenull/pnlibrary/api/version/SemanticVersion;Lru/privatenull/pnlibrary/api/version/ApiVersionRange;Ljava/lang/Integer;)Lru/privatenull/pnlibrary/api/updates/InstalledProduct;
+	public static synthetic fun copy$default (Lru/privatenull/pnlibrary/api/updates/InstalledProduct;Lru/privatenull/pnlibrary/api/updates/ProductId;Lru/privatenull/pnlibrary/api/version/SemanticVersion;Lru/privatenull/pnlibrary/api/version/ApiVersionRange;Ljava/lang/Integer;ILjava/lang/Object;)Lru/privatenull/pnlibrary/api/updates/InstalledProduct;
 	public fun equals (Ljava/lang/Object;)Z
-	public final fun getComponent ()Lru/privatenull/pnlibrary/api/updates/ComponentId;
+	public final fun getProduct ()Lru/privatenull/pnlibrary/api/updates/ProductId;
 	public final fun getProvidesApi ()Ljava/lang/Integer;
 	public final fun getSupportedApi ()Lru/privatenull/pnlibrary/api/version/ApiVersionRange;
 	public final fun getVersion ()Lru/privatenull/pnlibrary/api/version/SemanticVersion;
@@ -3548,23 +3079,25 @@ public final class ru/privatenull/pnlibrary/api/updates/InstalledComponent {
 	public fun toString ()Ljava/lang/String;
 }
 
-public final class ru/privatenull/pnlibrary/api/updates/ManagedDependency : ru/privatenull/pnlibrary/api/plugin/PluginDependency {
-	public static final field Companion Lru/privatenull/pnlibrary/api/updates/ManagedDependency$Companion;
-	public fun <init> (Ljava/lang/String;Ljava/lang/String;Ljava/lang/String;Ljava/lang/String;ZZZ)V
-	public synthetic fun <init> (Ljava/lang/String;Ljava/lang/String;Ljava/lang/String;Ljava/lang/String;ZZZILkotlin/jvm/internal/DefaultConstructorMarker;)V
-	public fun <init> (Lru/privatenull/pnlibrary/api/updates/ComponentId;Lru/privatenull/pnlibrary/api/version/SemanticVersion;Ljava/lang/String;Ljava/lang/String;ZZZ)V
-	public synthetic fun <init> (Lru/privatenull/pnlibrary/api/updates/ComponentId;Lru/privatenull/pnlibrary/api/version/SemanticVersion;Ljava/lang/String;Ljava/lang/String;ZZZILkotlin/jvm/internal/DefaultConstructorMarker;)V
-	public fun getAutomaticDownload ()Z
-	public final fun getComponent ()Lru/privatenull/pnlibrary/api/updates/ComponentId;
-	public fun getForceAutomaticDownload ()Z
-	public fun getManaged ()Lru/privatenull/pnlibrary/api/updates/ManagedDependency;
+public final class ru/privatenull/pnlibrary/api/updates/ManagedProductDependency : ru/privatenull/pnlibrary/api/plugin/PluginDependency {
+	public static final field Companion Lru/privatenull/pnlibrary/api/updates/ManagedProductDependency$Companion;
+	public fun <init> (Ljava/lang/String;Ljava/lang/String;Ljava/lang/String;Ljava/lang/String;ZLru/privatenull/pnlibrary/api/plugin/DownloadPolicy;)V
+	public synthetic fun <init> (Ljava/lang/String;Ljava/lang/String;Ljava/lang/String;Ljava/lang/String;ZLru/privatenull/pnlibrary/api/plugin/DownloadPolicy;ILkotlin/jvm/internal/DefaultConstructorMarker;)V
+	public fun <init> (Lru/privatenull/pnlibrary/api/updates/ProductId;Lru/privatenull/pnlibrary/api/plugin/VersionConstraint;Ljava/lang/String;Ljava/lang/String;ZLru/privatenull/pnlibrary/api/plugin/DownloadPolicy;)V
+	public synthetic fun <init> (Lru/privatenull/pnlibrary/api/updates/ProductId;Lru/privatenull/pnlibrary/api/plugin/VersionConstraint;Ljava/lang/String;Ljava/lang/String;ZLru/privatenull/pnlibrary/api/plugin/DownloadPolicy;ILkotlin/jvm/internal/DefaultConstructorMarker;)V
+	public fun <init> (Lru/privatenull/pnlibrary/api/updates/ProductId;Lru/privatenull/pnlibrary/api/version/SemanticVersion;Ljava/lang/String;Ljava/lang/String;ZLru/privatenull/pnlibrary/api/plugin/DownloadPolicy;)V
+	public synthetic fun <init> (Lru/privatenull/pnlibrary/api/updates/ProductId;Lru/privatenull/pnlibrary/api/version/SemanticVersion;Ljava/lang/String;Ljava/lang/String;ZLru/privatenull/pnlibrary/api/plugin/DownloadPolicy;ILkotlin/jvm/internal/DefaultConstructorMarker;)V
+	public fun getDownloadPolicy ()Lru/privatenull/pnlibrary/api/plugin/DownloadPolicy;
+	public fun getManaged ()Lru/privatenull/pnlibrary/api/updates/ManagedProductDependency;
 	public final fun getMinimumVersion ()Lru/privatenull/pnlibrary/api/version/SemanticVersion;
+	public final fun getProduct ()Lru/privatenull/pnlibrary/api/updates/ProductId;
 	public final fun getRepositoryName ()Ljava/lang/String;
 	public final fun getRepositoryOwner ()Ljava/lang/String;
 	public fun getRequired ()Z
+	public fun getVersions ()Lru/privatenull/pnlibrary/api/plugin/VersionConstraint;
 }
 
-public final class ru/privatenull/pnlibrary/api/updates/ManagedDependency$Companion {
+public final class ru/privatenull/pnlibrary/api/updates/ManagedProductDependency$Companion {
 }
 
 public final class ru/privatenull/pnlibrary/api/updates/PluginUpdateArtifact {
@@ -3586,10 +3119,6 @@ public final class ru/privatenull/pnlibrary/api/updates/PluginUpdateRequest {
 	public final fun getArtifacts ()Ljava/util/List;
 	public final fun getAutomaticDownload ()Z
 	public final fun getChannel ()Lru/privatenull/pnlibrary/api/updates/UpdateChannel;
-	public final fun getComponent ()Lru/privatenull/pnlibrary/api/updates/ComponentId;
-	public final fun getDependencies ()Ljava/util/List;
-	public final fun getExternalDependencies ()Ljava/util/List;
-	public final fun getManagedDependencies ()Ljava/util/List;
 	public final fun getRepositoryName ()Ljava/lang/String;
 	public final fun getRepositoryOwner ()Ljava/lang/String;
 	public final fun getSupportedApi ()Lru/privatenull/pnlibrary/api/version/ApiVersionRange;
@@ -3608,21 +3137,147 @@ public final class ru/privatenull/pnlibrary/api/updates/PluginUpdateRequest$Buil
 	public final fun automaticDownload (Z)Lru/privatenull/pnlibrary/api/updates/PluginUpdateRequest$Builder;
 	public final fun build ()Lru/privatenull/pnlibrary/api/updates/PluginUpdateRequest;
 	public final fun channel (Lru/privatenull/pnlibrary/api/updates/UpdateChannel;)Lru/privatenull/pnlibrary/api/updates/PluginUpdateRequest$Builder;
-	public final fun component (Ljava/lang/String;)Lru/privatenull/pnlibrary/api/updates/PluginUpdateRequest$Builder;
-	public final fun dependsOn (Ljava/lang/String;Ljava/lang/String;)Lru/privatenull/pnlibrary/api/updates/PluginUpdateRequest$Builder;
 	public final fun exactArtifact (Ljava/lang/String;)Lru/privatenull/pnlibrary/api/updates/PluginUpdateRequest$Builder;
 	public final fun exactArtifact (Ljava/lang/String;I)Lru/privatenull/pnlibrary/api/updates/PluginUpdateRequest$Builder;
 	public final fun exactArtifact (Ljava/lang/String;ILjava/lang/Integer;)Lru/privatenull/pnlibrary/api/updates/PluginUpdateRequest$Builder;
 	public static synthetic fun exactArtifact$default (Lru/privatenull/pnlibrary/api/updates/PluginUpdateRequest$Builder;Ljava/lang/String;ILjava/lang/Integer;ILjava/lang/Object;)Lru/privatenull/pnlibrary/api/updates/PluginUpdateRequest$Builder;
-	public final fun managedDependency (Ljava/lang/String;Ljava/lang/String;Ljava/lang/String;Ljava/lang/String;)Lru/privatenull/pnlibrary/api/updates/PluginUpdateRequest$Builder;
-	public final fun pluginDependency (Ljava/lang/String;Ljava/lang/String;Ljava/lang/String;)Lru/privatenull/pnlibrary/api/updates/PluginUpdateRequest$Builder;
-	public final fun pluginDependency (Lru/privatenull/pnlibrary/api/updates/ExternalDependency;)Lru/privatenull/pnlibrary/api/updates/PluginUpdateRequest$Builder;
 	public final fun repository (Ljava/lang/String;Ljava/lang/String;)Lru/privatenull/pnlibrary/api/updates/PluginUpdateRequest$Builder;
 	public final fun supportedApi (II)Lru/privatenull/pnlibrary/api/updates/PluginUpdateRequest$Builder;
 }
 
 public final class ru/privatenull/pnlibrary/api/updates/PluginUpdateRequest$Companion {
 	public final fun builder ()Lru/privatenull/pnlibrary/api/updates/PluginUpdateRequest$Builder;
+}
+
+public final class ru/privatenull/pnlibrary/api/updates/ProductArtifact {
+	public fun <init> (Ljava/lang/String;Lru/privatenull/pnlibrary/api/updates/ArtifactCompatibility;JLjava/lang/String;Ljava/net/URI;)V
+	public synthetic fun <init> (Ljava/lang/String;Lru/privatenull/pnlibrary/api/updates/ArtifactCompatibility;JLjava/lang/String;Ljava/net/URI;ILkotlin/jvm/internal/DefaultConstructorMarker;)V
+	public final fun component1 ()Ljava/lang/String;
+	public final fun component2 ()Lru/privatenull/pnlibrary/api/updates/ArtifactCompatibility;
+	public final fun component3 ()J
+	public final fun component4 ()Ljava/lang/String;
+	public final fun component5 ()Ljava/net/URI;
+	public final fun copy (Ljava/lang/String;Lru/privatenull/pnlibrary/api/updates/ArtifactCompatibility;JLjava/lang/String;Ljava/net/URI;)Lru/privatenull/pnlibrary/api/updates/ProductArtifact;
+	public static synthetic fun copy$default (Lru/privatenull/pnlibrary/api/updates/ProductArtifact;Ljava/lang/String;Lru/privatenull/pnlibrary/api/updates/ArtifactCompatibility;JLjava/lang/String;Ljava/net/URI;ILjava/lang/Object;)Lru/privatenull/pnlibrary/api/updates/ProductArtifact;
+	public fun equals (Ljava/lang/Object;)Z
+	public final fun getCompatibility ()Lru/privatenull/pnlibrary/api/updates/ArtifactCompatibility;
+	public final fun getDownloadUri ()Ljava/net/URI;
+	public final fun getFile ()Ljava/lang/String;
+	public final fun getSha256 ()Ljava/lang/String;
+	public final fun getSize ()J
+	public fun hashCode ()I
+	public fun toString ()Ljava/lang/String;
+}
+
+public final class ru/privatenull/pnlibrary/api/updates/ProductChange {
+	public fun <init> (Lru/privatenull/pnlibrary/api/updates/ProductId;Lru/privatenull/pnlibrary/api/version/SemanticVersion;Lru/privatenull/pnlibrary/api/version/SemanticVersion;)V
+	public final fun component1 ()Lru/privatenull/pnlibrary/api/updates/ProductId;
+	public final fun component2 ()Lru/privatenull/pnlibrary/api/version/SemanticVersion;
+	public final fun component3 ()Lru/privatenull/pnlibrary/api/version/SemanticVersion;
+	public final fun copy (Lru/privatenull/pnlibrary/api/updates/ProductId;Lru/privatenull/pnlibrary/api/version/SemanticVersion;Lru/privatenull/pnlibrary/api/version/SemanticVersion;)Lru/privatenull/pnlibrary/api/updates/ProductChange;
+	public static synthetic fun copy$default (Lru/privatenull/pnlibrary/api/updates/ProductChange;Lru/privatenull/pnlibrary/api/updates/ProductId;Lru/privatenull/pnlibrary/api/version/SemanticVersion;Lru/privatenull/pnlibrary/api/version/SemanticVersion;ILjava/lang/Object;)Lru/privatenull/pnlibrary/api/updates/ProductChange;
+	public fun equals (Ljava/lang/Object;)Z
+	public final fun getFrom ()Lru/privatenull/pnlibrary/api/version/SemanticVersion;
+	public final fun getProduct ()Lru/privatenull/pnlibrary/api/updates/ProductId;
+	public final fun getTo ()Lru/privatenull/pnlibrary/api/version/SemanticVersion;
+	public fun hashCode ()I
+	public fun toString ()Ljava/lang/String;
+}
+
+public final class ru/privatenull/pnlibrary/api/updates/ProductDependency {
+	public fun <init> (Lru/privatenull/pnlibrary/api/updates/ProductId;Lru/privatenull/pnlibrary/api/version/SemanticVersion;)V
+	public final fun component1 ()Lru/privatenull/pnlibrary/api/updates/ProductId;
+	public final fun component2 ()Lru/privatenull/pnlibrary/api/version/SemanticVersion;
+	public final fun copy (Lru/privatenull/pnlibrary/api/updates/ProductId;Lru/privatenull/pnlibrary/api/version/SemanticVersion;)Lru/privatenull/pnlibrary/api/updates/ProductDependency;
+	public static synthetic fun copy$default (Lru/privatenull/pnlibrary/api/updates/ProductDependency;Lru/privatenull/pnlibrary/api/updates/ProductId;Lru/privatenull/pnlibrary/api/version/SemanticVersion;ILjava/lang/Object;)Lru/privatenull/pnlibrary/api/updates/ProductDependency;
+	public fun equals (Ljava/lang/Object;)Z
+	public final fun getMinimumVersion ()Lru/privatenull/pnlibrary/api/version/SemanticVersion;
+	public final fun getProduct ()Lru/privatenull/pnlibrary/api/updates/ProductId;
+	public fun hashCode ()I
+	public fun toString ()Ljava/lang/String;
+}
+
+public final class ru/privatenull/pnlibrary/api/updates/ProductDescriptor {
+	public static final field Companion Lru/privatenull/pnlibrary/api/updates/ProductDescriptor$Companion;
+	public synthetic fun <init> (Lru/privatenull/pnlibrary/api/updates/ProductDescriptor$Builder;Lkotlin/jvm/internal/DefaultConstructorMarker;)V
+	public static final fun builder (Ljava/lang/String;Ljava/lang/String;)Lru/privatenull/pnlibrary/api/updates/ProductDescriptor$Builder;
+	public final fun getId ()Lru/privatenull/pnlibrary/api/updates/ProductId;
+	public final fun getSupportedApi ()Lru/privatenull/pnlibrary/api/version/ApiVersionRange;
+	public final fun getVersion ()Lru/privatenull/pnlibrary/api/version/SemanticVersion;
+	public static final fun library (Ljava/lang/String;)Lru/privatenull/pnlibrary/api/updates/ProductDescriptor;
+}
+
+public final class ru/privatenull/pnlibrary/api/updates/ProductDescriptor$Builder {
+	public final fun build ()Lru/privatenull/pnlibrary/api/updates/ProductDescriptor;
+	public final fun pnLibraryApi (II)Lru/privatenull/pnlibrary/api/updates/ProductDescriptor$Builder;
+}
+
+public final class ru/privatenull/pnlibrary/api/updates/ProductDescriptor$Companion {
+	public final fun builder (Ljava/lang/String;Ljava/lang/String;)Lru/privatenull/pnlibrary/api/updates/ProductDescriptor$Builder;
+	public final fun library (Ljava/lang/String;)Lru/privatenull/pnlibrary/api/updates/ProductDescriptor;
+}
+
+public final class ru/privatenull/pnlibrary/api/updates/ProductId : java/lang/Comparable {
+	public static final field Companion Lru/privatenull/pnlibrary/api/updates/ProductId$Companion;
+	public synthetic fun <init> (Ljava/lang/String;Lkotlin/jvm/internal/DefaultConstructorMarker;)V
+	public synthetic fun compareTo (Ljava/lang/Object;)I
+	public fun compareTo (Lru/privatenull/pnlibrary/api/updates/ProductId;)I
+	public fun equals (Ljava/lang/Object;)Z
+	public final fun getValue ()Ljava/lang/String;
+	public fun hashCode ()I
+	public static final fun of (Ljava/lang/String;)Lru/privatenull/pnlibrary/api/updates/ProductId;
+	public fun toString ()Ljava/lang/String;
+}
+
+public final class ru/privatenull/pnlibrary/api/updates/ProductId$Companion {
+	public final fun of (Ljava/lang/String;)Lru/privatenull/pnlibrary/api/updates/ProductId;
+}
+
+public final class ru/privatenull/pnlibrary/api/updates/ProductRelease {
+	public fun <init> (Lru/privatenull/pnlibrary/api/updates/ProductId;Lru/privatenull/pnlibrary/api/version/SemanticVersion;Lru/privatenull/pnlibrary/api/updates/UpdateChannel;Lru/privatenull/pnlibrary/api/version/ApiVersionRange;Ljava/lang/Integer;Ljava/util/List;Ljava/lang/String;Ljava/util/List;Ljava/util/List;)V
+	public synthetic fun <init> (Lru/privatenull/pnlibrary/api/updates/ProductId;Lru/privatenull/pnlibrary/api/version/SemanticVersion;Lru/privatenull/pnlibrary/api/updates/UpdateChannel;Lru/privatenull/pnlibrary/api/version/ApiVersionRange;Ljava/lang/Integer;Ljava/util/List;Ljava/lang/String;Ljava/util/List;Ljava/util/List;ILkotlin/jvm/internal/DefaultConstructorMarker;)V
+	public final fun component1 ()Lru/privatenull/pnlibrary/api/updates/ProductId;
+	public final fun component2 ()Lru/privatenull/pnlibrary/api/version/SemanticVersion;
+	public final fun component3 ()Lru/privatenull/pnlibrary/api/updates/UpdateChannel;
+	public final fun component4 ()Lru/privatenull/pnlibrary/api/version/ApiVersionRange;
+	public final fun component5 ()Ljava/lang/Integer;
+	public final fun component6 ()Ljava/util/List;
+	public final fun component7 ()Ljava/lang/String;
+	public final fun component8 ()Ljava/util/List;
+	public final fun component9 ()Ljava/util/List;
+	public final fun copy (Lru/privatenull/pnlibrary/api/updates/ProductId;Lru/privatenull/pnlibrary/api/version/SemanticVersion;Lru/privatenull/pnlibrary/api/updates/UpdateChannel;Lru/privatenull/pnlibrary/api/version/ApiVersionRange;Ljava/lang/Integer;Ljava/util/List;Ljava/lang/String;Ljava/util/List;Ljava/util/List;)Lru/privatenull/pnlibrary/api/updates/ProductRelease;
+	public static synthetic fun copy$default (Lru/privatenull/pnlibrary/api/updates/ProductRelease;Lru/privatenull/pnlibrary/api/updates/ProductId;Lru/privatenull/pnlibrary/api/version/SemanticVersion;Lru/privatenull/pnlibrary/api/updates/UpdateChannel;Lru/privatenull/pnlibrary/api/version/ApiVersionRange;Ljava/lang/Integer;Ljava/util/List;Ljava/lang/String;Ljava/util/List;Ljava/util/List;ILjava/lang/Object;)Lru/privatenull/pnlibrary/api/updates/ProductRelease;
+	public fun equals (Ljava/lang/Object;)Z
+	public final fun getArtifacts ()Ljava/util/List;
+	public final fun getChannel ()Lru/privatenull/pnlibrary/api/updates/UpdateChannel;
+	public final fun getDependencies ()Ljava/util/List;
+	public final fun getExternalPluginDependencies ()Ljava/util/List;
+	public final fun getProduct ()Lru/privatenull/pnlibrary/api/updates/ProductId;
+	public final fun getProvidesApi ()Ljava/lang/Integer;
+	public final fun getRepository ()Ljava/lang/String;
+	public final fun getSupportedApi ()Lru/privatenull/pnlibrary/api/version/ApiVersionRange;
+	public final fun getVersion ()Lru/privatenull/pnlibrary/api/version/SemanticVersion;
+	public fun hashCode ()I
+	public fun toString ()Ljava/lang/String;
+}
+
+public final class ru/privatenull/pnlibrary/api/updates/ProductReleaseManifest {
+	public fun <init> (Lru/privatenull/pnlibrary/api/updates/ProductId;Ljava/lang/String;Lru/privatenull/pnlibrary/api/version/SemanticVersion;Lru/privatenull/pnlibrary/api/updates/UpdateChannel;Ljava/util/List;)V
+	public final fun component1 ()Lru/privatenull/pnlibrary/api/updates/ProductId;
+	public final fun component2 ()Ljava/lang/String;
+	public final fun component3 ()Lru/privatenull/pnlibrary/api/version/SemanticVersion;
+	public final fun component4 ()Lru/privatenull/pnlibrary/api/updates/UpdateChannel;
+	public final fun component5 ()Ljava/util/List;
+	public final fun copy (Lru/privatenull/pnlibrary/api/updates/ProductId;Ljava/lang/String;Lru/privatenull/pnlibrary/api/version/SemanticVersion;Lru/privatenull/pnlibrary/api/updates/UpdateChannel;Ljava/util/List;)Lru/privatenull/pnlibrary/api/updates/ProductReleaseManifest;
+	public static synthetic fun copy$default (Lru/privatenull/pnlibrary/api/updates/ProductReleaseManifest;Lru/privatenull/pnlibrary/api/updates/ProductId;Ljava/lang/String;Lru/privatenull/pnlibrary/api/version/SemanticVersion;Lru/privatenull/pnlibrary/api/updates/UpdateChannel;Ljava/util/List;ILjava/lang/Object;)Lru/privatenull/pnlibrary/api/updates/ProductReleaseManifest;
+	public fun equals (Ljava/lang/Object;)Z
+	public final fun getArtifacts ()Ljava/util/List;
+	public final fun getChannel ()Lru/privatenull/pnlibrary/api/updates/UpdateChannel;
+	public final fun getDisplayName ()Ljava/lang/String;
+	public final fun getProductId ()Lru/privatenull/pnlibrary/api/updates/ProductId;
+	public final fun getVersion ()Lru/privatenull/pnlibrary/api/version/SemanticVersion;
+	public fun hashCode ()I
+	public fun toString ()Ljava/lang/String;
 }
 
 public final class ru/privatenull/pnlibrary/api/updates/UpdateChannel : java/lang/Enum {
@@ -3667,16 +3322,21 @@ public abstract interface class ru/privatenull/pnlibrary/api/updates/UpdateRegis
 	public abstract fun downloadNow ()V
 	public abstract fun getRepository ()Ljava/lang/String;
 	public abstract fun getSnapshot ()Lru/privatenull/pnlibrary/api/updates/UpdateSnapshot;
+	public fun isClosed ()Z
 }
 
 public abstract interface class ru/privatenull/pnlibrary/api/updates/UpdateService {
+	public fun all ()Ljava/util/List;
 	public fun checkNow ()Ljava/util/concurrent/CompletionStage;
 	public fun confirm (Ljava/util/UUID;Ljava/lang/String;)Ljava/util/concurrent/CompletionStage;
 	public fun currentPlan ()Ljava/util/Optional;
 	public abstract fun find (Ljava/lang/String;)Lru/privatenull/pnlibrary/api/updates/UpdateRegistration;
+	public fun get (Ljava/lang/String;)Lru/privatenull/pnlibrary/api/updates/UpdateRegistration;
 	public fun history ()Ljava/util/List;
-	public abstract fun register (Ljava/lang/Object;Lru/privatenull/pnlibrary/api/updates/PluginUpdateRequest;)Lru/privatenull/pnlibrary/api/updates/UpdateRegistration;
+	public abstract fun register (Ljava/lang/Object;Lru/privatenull/pnlibrary/api/updates/ProductDescriptor;Lru/privatenull/pnlibrary/api/updates/PluginUpdateRequest;Ljava/util/List;)Lru/privatenull/pnlibrary/api/updates/UpdateRegistration;
+	public static synthetic fun register$default (Lru/privatenull/pnlibrary/api/updates/UpdateService;Ljava/lang/Object;Lru/privatenull/pnlibrary/api/updates/ProductDescriptor;Lru/privatenull/pnlibrary/api/updates/PluginUpdateRequest;Ljava/util/List;ILjava/lang/Object;)Lru/privatenull/pnlibrary/api/updates/UpdateRegistration;
 	public abstract fun registrations ()Ljava/util/List;
+	public fun require (Ljava/lang/String;)Lru/privatenull/pnlibrary/api/updates/UpdateRegistration;
 	public fun stage (Ljava/util/UUID;)Ljava/util/concurrent/CompletionStage;
 }
 
@@ -3710,6 +3370,20 @@ public final class ru/privatenull/pnlibrary/api/updates/UpdateState : java/lang/
 	public static fun getEntries ()Lkotlin/enums/EnumEntries;
 	public static fun valueOf (Ljava/lang/String;)Lru/privatenull/pnlibrary/api/updates/UpdateState;
 	public static fun values ()[Lru/privatenull/pnlibrary/api/updates/UpdateState;
+}
+
+public final class ru/privatenull/pnlibrary/api/updates/VersionRangeText {
+	public fun <init> (Ljava/lang/String;Ljava/lang/String;)V
+	public synthetic fun <init> (Ljava/lang/String;Ljava/lang/String;ILkotlin/jvm/internal/DefaultConstructorMarker;)V
+	public final fun component1 ()Ljava/lang/String;
+	public final fun component2 ()Ljava/lang/String;
+	public final fun copy (Ljava/lang/String;Ljava/lang/String;)Lru/privatenull/pnlibrary/api/updates/VersionRangeText;
+	public static synthetic fun copy$default (Lru/privatenull/pnlibrary/api/updates/VersionRangeText;Ljava/lang/String;Ljava/lang/String;ILjava/lang/Object;)Lru/privatenull/pnlibrary/api/updates/VersionRangeText;
+	public fun equals (Ljava/lang/Object;)Z
+	public final fun getMaximum ()Ljava/lang/String;
+	public final fun getMinimum ()Ljava/lang/String;
+	public fun hashCode ()I
+	public fun toString ()Ljava/lang/String;
 }
 
 public final class ru/privatenull/pnlibrary/api/version/ApiVersionRange {

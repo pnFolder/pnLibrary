@@ -1,5 +1,7 @@
 package ru.privatenull.pnlibrary.api.diagnostics
 
+import java.util.Collections
+import java.util.LinkedHashMap
 import java.util.function.Supplier
 
 /**
@@ -15,7 +17,7 @@ import java.util.function.Supplier
  *             "cacheSize"  to cache.size,
  *         )
  *     })
- *     .configuration(DiagnosticConfiguration.file("config.yml")
+ *     .configuration(DiagnosticConfiguration.builder("config.yml")
  *         .exclude("storage.internalPool")
  *         .secretKeyRegex("(?i).*(password|token).*")
  *         .build())
@@ -37,15 +39,15 @@ class DiagnosticContainer private constructor(builder: Builder) : DiagnosticsCon
         builder.snapshotProvider ?: Supplier { fixedData }
 
     private val _configurations: List<DiagnosticConfiguration> =
-        builder.configurations.toList()
+        Collections.unmodifiableList(ArrayList(builder.configurations))
 
     override val id: String get() = _id
 
     override fun collect(): Map<String, Any?> =
-        snapshotProvider.get()
+        Collections.unmodifiableMap(LinkedHashMap(snapshotProvider.get()))
 
     override fun configurationFiles(): Collection<String> =
-        _configurations.map { it.path }
+        Collections.unmodifiableList(_configurations.map { it.path })
 
     override fun configurations(): Collection<DiagnosticConfiguration> =
         _configurations
@@ -77,7 +79,7 @@ class DiagnosticContainer private constructor(builder: Builder) : DiagnosticsCon
 
         /** Adds a configuration file at [path] with the default redaction policy. */
         fun configuration(path: String): Builder = apply {
-            configurations.add(DiagnosticConfiguration.file(path).build())
+            configurations.add(DiagnosticConfiguration.builder(path).build())
         }
 
         /**

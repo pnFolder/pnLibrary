@@ -5,8 +5,20 @@ import org.junit.jupiter.api.Assertions.assertEquals
 import org.junit.jupiter.api.Assertions.assertThrows
 import org.junit.jupiter.api.Assertions.assertTrue
 import org.junit.jupiter.api.Test
+import java.util.Locale
 
 class CommandBuilderTest {
+    @Test
+    fun `command normalization is independent of system locale`() {
+        val previous = Locale.getDefault()
+        try {
+            Locale.setDefault(Locale.forLanguageTag("tr-TR"))
+            assertEquals("info", command("INFO") {}.name)
+        } finally {
+            Locale.setDefault(previous)
+        }
+    }
+
     @Test
     fun `builder normalizes command metadata and invokes synchronous handlers`() {
         var executedWith: List<String>? = null

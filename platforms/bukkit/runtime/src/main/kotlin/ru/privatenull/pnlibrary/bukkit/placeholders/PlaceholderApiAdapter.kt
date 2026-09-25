@@ -37,8 +37,8 @@ internal class PlaceholderApiAdapter(private val plugin: Plugin) : PlaceholderAd
     ): ExternalPlaceholderRegistration {
         check(state != PlaceholderAdapterState.CLOSED) { "PlaceholderAPI adapter is closed" }
         check(plugin.server.pluginManager.isPluginEnabled("PlaceholderAPI")) { "PlaceholderAPI is not installed" }
-        val namespace = (publication.namespace ?: owner.value).lowercase()
-        val externalName = (publication.name ?: key.replace('.', '_')).lowercase()
+        val namespace = (publication.namespace ?: owner.value).lowercase(java.util.Locale.ROOT)
+        val externalName = (publication.name ?: key.replace('.', '_')).lowercase(java.util.Locale.ROOT)
         val expansion = groups.computeIfAbsent(namespace) { Expansion(it) }.also { if (!it.isRegistered) check(it.register()) }
         require(expansion.handlers.putIfAbsent(externalName, Handler(owner, resolver)) == null) {
             "Placeholder %${namespace}_${externalName}% is already published"

@@ -18,6 +18,10 @@ import java.nio.file.Path
  * DiagnosticRegistration reg = svc.register("pnMarket",
  *     DiagnosticContainer.builder("auction").snapshot(() -> Map.of(...)).build());
  * ```
+ *
+ * Registration, status updates, clearing, and event recording are safe from arbitrary threads.
+ * Contributor callbacks may be collected concurrently and therefore must be thread-safe and
+ * reasonably fast; slow file/network work does not belong in a diagnostic contributor.
  */
 interface DiagnosticsService {
 

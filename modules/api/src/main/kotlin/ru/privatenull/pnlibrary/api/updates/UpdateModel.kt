@@ -7,6 +7,7 @@ import ru.privatenull.pnlibrary.api.platform.PlatformType
 import java.net.URI
 import java.util.Collections
 import java.util.UUID
+import java.util.Locale
 import ru.privatenull.pnlibrary.api.plugin.PluginDependency
 import ru.privatenull.pnlibrary.api.plugin.DownloadPolicy
 import ru.privatenull.pnlibrary.api.plugin.VersionConstraint
@@ -23,7 +24,7 @@ class ProductId private constructor(val value: String) : Comparable<ProductId> {
 
         @JvmStatic
         fun of(value: String): ProductId {
-            val normalized = value.trim().lowercase()
+            val normalized = value.trim().lowercase(Locale.ROOT)
             require(VALID.matches(normalized)) { "Invalid product ID: $value" }
             return ProductId(normalized)
         }

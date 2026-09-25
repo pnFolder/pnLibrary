@@ -1,6 +1,7 @@
 package ru.privatenull.pnlibrary.api.config
 
 import java.util.ArrayDeque
+import java.util.Collections
 import java.util.function.UnaryOperator
 
 /** One transformation applied to an untyped configuration document during a version upgrade. */
@@ -96,10 +97,14 @@ class ConfigDocument(source: Map<String, Any?>) {
         else -> value
     }
     private fun immutableMap(value: Map<String, Any?>): Map<String, Any?> =
-        linkedMapOf<String, Any?>().also { out -> value.forEach { (k, v) -> out[k] = immutableValue(v) } }
+        Collections.unmodifiableMap(
+            linkedMapOf<String, Any?>().also { out -> value.forEach { (k, v) -> out[k] = immutableValue(v) } },
+        )
     private fun immutableValue(value: Any?): Any? = when (value) {
-        is Map<*, *> -> value.entries.associateTo(linkedMapOf()) { it.key.toString() to immutableValue(it.value) }
-        is List<*> -> value.map(::immutableValue)
+        is Map<*, *> -> Collections.unmodifiableMap(
+            value.entries.associateTo(linkedMapOf()) { it.key.toString() to immutableValue(it.value) },
+        )
+        is List<*> -> Collections.unmodifiableList(value.map(::immutableValue))
         else -> value
     }
 }
@@ -187,7 +192,12 @@ class ConfigMigrationPlan private constructor(
         /** Validates versions and reachability of the assumed version and creates the plan. */
         fun build(): ConfigMigrationPlan {
             val target = checked(currentVersion)
-            val plan = ConfigMigrationPlan(target, assumedVersion, versionKey, steps.toList())
+            val plan = ConfigMigrationPlan(
+                target,
+                assumedVersion,
+                versionKey,
+                Collections.unmodifiableList(ArrayList(steps)),
+            )
             assumedVersion?.let(plan::path)
             return plan
         }

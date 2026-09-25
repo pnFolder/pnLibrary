@@ -1,6 +1,7 @@
 package ru.privatenull.pnlibrary.api.tasks
 
 import java.time.Instant
+import java.util.Collections
 
 class TaskQuery private constructor(
     val id: TaskId?, val key: String?, val nameContains: String?,
@@ -19,7 +20,21 @@ class TaskQuery private constructor(
         fun status(vararg value: TaskStatus) = apply { statuses += value }
         fun execution(vararg value: TaskExecution.Kind) = apply { executionKinds += value }
         fun tag(value: String) = apply { tags += value }
-        fun build() = TaskQuery(id, key, nameContains, statuses.toSet(), executionKinds.toSet(), tags.toSet())
+        fun build(): TaskQuery {
+            val normalizedKey = key?.trim()
+            val normalizedName = nameContains?.trim()
+            require(normalizedKey == null || normalizedKey.isNotEmpty()) { "Task query key must not be blank" }
+            require(normalizedName == null || normalizedName.isNotEmpty()) { "Task query name must not be blank" }
+            require(tags.none(String::isBlank)) { "Task query tags must not be blank" }
+            return TaskQuery(
+                id,
+                normalizedKey,
+                normalizedName,
+                Collections.unmodifiableSet(LinkedHashSet(statuses)),
+                Collections.unmodifiableSet(LinkedHashSet(executionKinds)),
+                Collections.unmodifiableSet(LinkedHashSet(tags)),
+            )
+        }
     }
     companion object {
         @JvmStatic fun builder() = Builder()

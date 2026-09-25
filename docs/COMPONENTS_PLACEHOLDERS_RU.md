@@ -30,11 +30,10 @@ context.getComponents().configureCache(new ComponentCachePolicy(
 PlaceholderKey<String> clanName = PlaceholderKey.of("clan.name", String.class);
 
 context.getPlaceholders()
-    .placeholder(clanName)
-    .resolve(request -> clanService.name(request.requirePlayerId()))
-    .access(PlaceholderAccess.ownerOnly())
-    .fallback("Без клана")
-    .register();
+    .register(clanName, placeholder -> placeholder
+        .resolve(request -> clanService.name(request.requirePlayerId()))
+        .access(PlaceholderAccess.ownerOnly())
+        .fallback("Без клана"));
 ```
 
 ## Общий и ограниченный доступ
@@ -57,10 +56,9 @@ PlaceholderAccess access = PlaceholderAccess.builder()
 
 ```java
 context.getPlaceholders()
-    .placeholder("clan.member.{name}.rank", String.class)
-    .resolve(request -> clanService.rank(request.parameter("name")))
-    .access(PlaceholderAccess.shared())
-    .register();
+    .register("clan.member.{name}.rank", String.class, placeholder -> placeholder
+        .resolve(request -> clanService.rank(request.parameter("name")))
+        .access(PlaceholderAccess.shared()));
 ```
 
 ```text
@@ -80,11 +78,10 @@ formatter регистрируется типизированно через `Pl
 
 ```java
 PlaceholderRegistration<String> clanName = context.getPlaceholders()
-    .placeholder("clan.name", String.class)
-    .resolve(request -> clanService.name(request.requirePlayerId()))
-    .access(PlaceholderAccess.shared())
-    .publishToPlaceholderApi("pnclans", "clan_name")
-    .register();
+    .register("clan.name", String.class, placeholder -> placeholder
+        .resolve(request -> clanService.name(request.requirePlayerId()))
+        .access(PlaceholderAccess.shared())
+        .publishToPlaceholderApi("pnclans", "clan_name"));
 ```
 
 Интеграция настраивается в коде при регистрации плагина, рядом с метриками,

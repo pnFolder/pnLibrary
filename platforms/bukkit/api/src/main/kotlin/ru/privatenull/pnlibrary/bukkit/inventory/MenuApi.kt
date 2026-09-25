@@ -6,6 +6,7 @@ import org.bukkit.event.inventory.InventoryAction
 import org.bukkit.inventory.Inventory
 import org.bukkit.inventory.ItemStack
 import java.time.Duration
+import java.util.Collections
 
 /** Handles one click inside a menu's top inventory. */
 fun interface MenuClickHandler {
@@ -167,6 +168,7 @@ class MenuBuilder internal constructor(private val title: String, private val ty
     /** Controls whether clicks in the player's lower inventory are cancelled. */
     fun cancelPlayerInventory(value: Boolean) = apply { cancelPlayerInventory = value }
     /** Defines one validated slot, cloning [item] to isolate the menu definition. */
+    @JvmOverloads
     fun slot(index: Int, item: ItemStack?, editable: Boolean = false, click: MenuClickHandler? = null) = apply {
         require(index in 0 until effectiveSize()) { "Slot $index is outside inventory" }
         items[index] = MenuItem(item?.clone(), click, editable)
@@ -180,6 +182,7 @@ class MenuBuilder internal constructor(private val title: String, private val ty
     /** Sets the handler invoked after any slot-specific handler. */
     fun onClick(handler: MenuClickHandler) = apply { clickHandler = handler }
     /** Fills undefined slots in `[from, until)` with clones of [item]. */
+    @JvmOverloads
     fun fill(item: ItemStack, from: Int = 0, until: Int = effectiveSize()) = apply {
         require(from >= 0 && until <= effectiveSize() && from <= until) {
             "Menu fill range [$from, $until) is outside inventory"
@@ -208,7 +211,7 @@ class MenuBuilder internal constructor(private val title: String, private val ty
         title = title,
         rows = rows,
         type = type,
-        items = items.toMap(),
+        items = Collections.unmodifiableMap(LinkedHashMap(items)),
         renderer = renderer,
         openHandler = openHandler,
         closeHandler = closeHandler,

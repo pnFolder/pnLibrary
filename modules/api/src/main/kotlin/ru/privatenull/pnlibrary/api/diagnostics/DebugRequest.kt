@@ -40,7 +40,7 @@ data class DebugRequest(
             for (i in offset until args.size) {
                 val v = args[i]
                 if (v.startsWith("--")) {
-                    val f = v.lowercase()
+                    val f = v.lowercase(java.util.Locale.ROOT)
                     require(f in knownFlags && flags.add(f)) { "usage" }
                 } else {
                     require(!targetChosen && VALID_TARGET.matches(v)) { "usage" }

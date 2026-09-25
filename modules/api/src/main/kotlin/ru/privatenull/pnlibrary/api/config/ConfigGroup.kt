@@ -1,5 +1,8 @@
 package ru.privatenull.pnlibrary.api.config
 
+import java.util.Collections
+import java.util.concurrent.atomic.AtomicBoolean
+
 /**
  * Lifecycle group for multiple configuration files owned by one plugin.
  *
@@ -13,9 +16,19 @@ package ru.privatenull.pnlibrary.api.config
  */
 class ConfigGroup : AutoCloseable {
     private val configs = linkedSetOf<ManagedConfig<*>>()
+    private val closed = AtomicBoolean(false)
+
+    /** Whether this lifecycle group has already been closed. */
+    val isClosed: Boolean get() = closed.get()
 
     /** Adds [config] and returns this group for fluent calls. */
-    fun add(config: ManagedConfig<*>) = apply { configs += config }
+    fun add(config: ManagedConfig<*>) = apply {
+        check(!closed.get()) { "Configuration group is closed" }
+        configs += config
+    }
+
+    /** Returns an immutable snapshot in registration order. */
+    fun all(): List<ManagedConfig<*>> = Collections.unmodifiableList(ArrayList(configs))
 
     /** Loads all files in registration order. */
     fun loadAll() { configs.forEach { it.load() } }
@@ -33,5 +46,7 @@ class ConfigGroup : AutoCloseable {
     fun size(): Int = configs.size
 
     /** Unloads the entire group. */
-    override fun close() = unloadAll()
+    override fun close() {
+        if (closed.compareAndSet(false, true)) unloadAll()
+    }
 }

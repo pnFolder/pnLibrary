@@ -34,7 +34,7 @@ class ConfigReaderTest {
             """.trimIndent()
         )
 
-        val spec = DiagnosticConfiguration.file("config.yml")
+        val spec = DiagnosticConfiguration.builder("config.yml")
             .exclude("storage.internalPool")
             .secretKeyRegex("(?i).*password.*")
             .redactValueRegex("license-[A-Za-z0-9]+")
@@ -57,7 +57,7 @@ class ConfigReaderTest {
 
     @Test
     fun `blocks path traversal`() {
-        val spec = DiagnosticConfiguration.file("config.yml").build()
+        val spec = DiagnosticConfiguration.builder("config.yml").build()
         val reader = ConfigReader(dataFolder)
 
         // Try reading outside directory
@@ -74,7 +74,7 @@ class ConfigReaderTest {
             val linked = runCatching { Files.createSymbolicLink(link, outside); true }.getOrDefault(false)
             assumeTrue(linked, "symbolic links are unavailable on this test host")
 
-            val spec = DiagnosticConfiguration.file("linked/config.yml").build()
+            val spec = DiagnosticConfiguration.builder("linked/config.yml").build()
             val result = ConfigReader(dataFolder).readAndRedact(spec)
 
             assertEquals("[SECURITY: symlink escape blocked]", result["error"])

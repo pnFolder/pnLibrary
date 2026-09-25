@@ -4,8 +4,6 @@ import java.util.Locale
 import ru.privatenull.pnlibrary.api.actions.ActionService
 import ru.privatenull.pnlibrary.api.config.ConfigScope
 import ru.privatenull.pnlibrary.api.cooldowns.CooldownService
-import ru.privatenull.pnlibrary.api.currency.CurrencyService
-import ru.privatenull.pnlibrary.api.currency.CurrencyStorageFactory
 import ru.privatenull.pnlibrary.api.diagnostics.DiagnosticRegistration
 import ru.privatenull.pnlibrary.api.downloads.DownloadRegistration
 import ru.privatenull.pnlibrary.api.events.EventScope
@@ -33,8 +31,6 @@ interface ModuleContext : AutoCloseable {
     val placeholders: PlaceholderService
     val components: ComponentService
     val cooldowns: CooldownService
-    val currencies: CurrencyService
-    val currencyStorages: CurrencyStorageFactory
     val metrics: MetricsController
     val diagnostics: DiagnosticRegistration?
     val updates: UpdateRegistration?

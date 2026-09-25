@@ -30,8 +30,8 @@ private fun diagnosticSuggestions(library: PnLibrary, context: CommandContext): 
     val prefix = context.currentInput.lowercase(Locale.ROOT)
     return buildList {
         add("all")
-        library.plugins.registrations().flatMapTo(this) { plugin ->
-            plugin.modules().map { it.key.value }
+        library.plugins.all().flatMapTo(this) { plugin ->
+            plugin.all().map { it.key.value }
         }
         add("--full")
         add("--config")

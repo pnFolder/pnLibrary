@@ -54,10 +54,17 @@ interface TaskScope : AutoCloseable {
     fun schedule(spec: TaskSpec): TaskHandle =
         throw UnsupportedOperationException("Unified task scheduling is not supported by this scope")
 
+    @Suppress("DEPRECATION")
+    fun get(id: TaskId): TaskHandle? = find(id)
+    fun require(id: TaskId): TaskHandle = get(id) ?: error("Task $id is unavailable in this scope")
+    @Suppress("DEPRECATION")
+    fun getByKey(key: String): TaskHandle? = findByKey(key)
+    @Deprecated("Use get(id)", ReplaceWith("get(id)"))
     fun find(id: TaskId): TaskHandle? = null
+    @Deprecated("Use getByKey(key)", ReplaceWith("getByKey(key)"))
     fun findByKey(key: String): TaskHandle? = null
     fun query(query: TaskQuery = TaskQuery.all()): List<TaskSnapshot> = emptyList()
-    fun cancel(id: TaskId): Boolean = find(id)?.cancelIfActive() ?: false
+    fun cancel(id: TaskId): Boolean = get(id)?.cancelIfActive() ?: false
 
     /** Schedules [task] in the platform's global execution context. */
     @Deprecated("Use schedule(TaskSpec)")
@@ -117,15 +124,22 @@ interface TaskScope : AutoCloseable {
  * Repeated calls to [scope] with the same owner object return the same scope. Owner identity is
  * used instead of [Any.equals], so distinct but equal objects receive distinct scopes. Platform
  * adapters decide the exact global and entity execution model, including Folia region dispatch.
+ * Scope creation, lookup, queries, cancellation, and shutdown are safe from arbitrary threads.
+ * Query results are detached immutable snapshots; task actions run in the execution context
+ * selected by [TaskSpec.execution], not necessarily on the calling thread.
  */
 interface TaskService : AutoCloseable {
     /** Returns the active scope associated with [owner], creating it when necessary. */
     fun scope(owner: Any): TaskScope
 
+    @Suppress("DEPRECATION")
+    fun get(id: TaskId): TaskHandle? = find(id)
+    fun require(id: TaskId): TaskHandle = get(id) ?: error("Task $id is unavailable")
+    @Deprecated("Use get(id)", ReplaceWith("get(id)"))
     fun find(id: TaskId): TaskHandle? = null
     fun query(query: TaskQuery = TaskQuery.all()): List<TaskSnapshot> = emptyList()
     fun query(owner: Any, query: TaskQuery = TaskQuery.all()): List<TaskSnapshot> = emptyList()
-    fun cancel(id: TaskId): Boolean = find(id)?.cancelIfActive() ?: false
+    fun cancel(id: TaskId): Boolean = get(id)?.cancelIfActive() ?: false
 
     /** Closes and removes [owner]'s scope when one exists. */
     fun close(owner: Any)

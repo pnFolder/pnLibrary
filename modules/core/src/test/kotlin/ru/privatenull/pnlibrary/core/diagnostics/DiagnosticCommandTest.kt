@@ -88,11 +88,11 @@ class DiagnosticCommandTest {
         }
         val contexts = modules.map { module ->
             proxy(PluginRegistration::class.java) { method ->
-                if (method.name == "modules") listOf(module) else defaultValue(method.returnType)
+                if (method.name == "all") listOf(module) else defaultValue(method.returnType)
             }
         }
         val plugins = proxy(PluginRegistry::class.java) { method ->
-            if (method.name == "registrations") contexts else defaultValue(method.returnType)
+            if (method.name == "all") contexts else defaultValue(method.returnType)
         }
         return proxy(PnLibrary::class.java) { method ->
             if (method.name == "getPlugins") plugins else defaultValue(method.returnType)

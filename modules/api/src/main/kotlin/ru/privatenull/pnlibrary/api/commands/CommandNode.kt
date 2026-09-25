@@ -72,21 +72,20 @@ class CommandNodeBuilder internal constructor(
 
     fun suggestsAsync(handler: SuggestionHandler): CommandNodeBuilder = apply { suggestions = handler }
 
-    fun literal(name: String, configure: CommandNodeBuilder.() -> Unit): CommandNodeBuilder = apply {
-        children += CommandNodeBuilder(CommandNodeKind.LITERAL, name).apply(configure)
-    }
+    @JvmSynthetic
+    fun literal(name: String, configure: CommandNodeBuilder.() -> Unit): CommandNodeBuilder =
+        literal(name, Consumer { builder -> builder.configure() })
 
     fun literal(name: String, configure: Consumer<CommandNodeBuilder>): CommandNodeBuilder = apply {
         children += CommandNodeBuilder(CommandNodeKind.LITERAL, name).also(configure::accept)
     }
 
+    @JvmSynthetic
     fun <T : Any> argument(
         name: String,
         type: ArgumentType<T>,
         configure: CommandNodeBuilder.() -> Unit,
-    ): CommandNodeBuilder = apply {
-        children += CommandNodeBuilder(CommandNodeKind.ARGUMENT, name, type).apply(configure)
-    }
+    ): CommandNodeBuilder = argument(name, type, Consumer { builder -> builder.configure() })
 
     fun <T : Any> argument(
         name: String,
@@ -120,7 +119,7 @@ class CommandNodeBuilder internal constructor(
 private val NODE_NAME = Regex("[a-z0-9][a-z0-9:_-]*")
 private val ARGUMENT_NAME = Regex("[A-Za-z][A-Za-z0-9_-]*")
 
-private fun normalizeNodeName(value: String): String = value.trim().lowercase().also {
+private fun normalizeNodeName(value: String): String = value.trim().lowercase(java.util.Locale.ROOT).also {
     require(NODE_NAME.matches(it)) { "Command literal must match ${NODE_NAME.pattern}" }
 }
 

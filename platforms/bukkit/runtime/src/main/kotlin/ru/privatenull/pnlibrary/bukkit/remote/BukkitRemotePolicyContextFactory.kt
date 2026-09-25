@@ -12,7 +12,7 @@ object BukkitRemotePolicyContextFactory {
     @JvmStatic fun create(plugin: Plugin, values: Map<String, String> = emptyMap()): RemotePolicyContext {
         val version = plugin.server.version
         return RemotePolicyContext.builder()
-            .product(ProductInfo(plugin.name.lowercase(), plugin.name, plugin.description.version))
+            .product(ProductInfo(plugin.name.lowercase(java.util.Locale.ROOT), plugin.name, plugin.description.version))
             .platform(PlatformInfo(PlatformType.BUKKIT, plugin.server.name, version))
             .server(ServerInfo(version, MinecraftVersion.parseInfo(version)))
             .values(values).nativeHandle(plugin).nativeHandle(plugin.server).nativeHandle(plugin.server.pluginManager)

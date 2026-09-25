@@ -75,6 +75,22 @@ class TaskServiceImplTest {
         }
     }
 
+    @Test fun `canonical task lookup works for service and owner scope`() {
+        val service = TaskServiceImpl(RecordingAdapter())
+        val scope = service.scope(Any())
+        val handle = scope.schedule(TaskSpec.builder().key("cleanup").action { }.build())
+
+        assertSame(handle, service.get(handle.id))
+        assertSame(handle, service.require(handle.id))
+        assertSame(handle, scope.get(handle.id))
+        assertSame(handle, scope.getByKey("cleanup"))
+        assertThrows(IllegalStateException::class.java) { service.require(TaskId.random()) }
+        assertThrows(UnsupportedOperationException::class.java) {
+            @Suppress("UNCHECKED_CAST")
+            (scope.query() as MutableList<TaskSnapshot>).clear()
+        }
+    }
+
     private fun spec(name: String) = TaskSpec.builder().name(name).action { }.build()
     private class RecordingAdapter(private val fireDuringSchedule: Boolean = false) : PlatformTaskAdapter {
         val requests = mutableListOf<PlatformTaskRequest>(); val handles = mutableListOf<NativeHandle>()

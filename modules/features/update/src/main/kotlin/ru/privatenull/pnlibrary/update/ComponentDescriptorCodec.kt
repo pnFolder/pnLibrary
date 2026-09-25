@@ -105,8 +105,8 @@ class ProductDescriptorCodec {
         value.get(name)?.takeIf { it.isJsonObject }?.asJsonObject ?: fail(name, "expected object")
     private fun requireArray(value: JsonObject, name: String): JsonArray =
         value.get(name)?.takeIf { it.isJsonArray }?.asJsonArray ?: fail(name, "expected array")
-    private fun platform(value: String): PlatformType = guarded("platform") { PlatformType.valueOf(value.uppercase()) }
-    private fun channel(value: String): UpdateChannel = guarded("channel") { UpdateChannel.valueOf(value.uppercase()) }
+    private fun platform(value: String): PlatformType = guarded("platform") { PlatformType.valueOf(value.uppercase(java.util.Locale.ROOT)) }
+    private fun channel(value: String): UpdateChannel = guarded("channel") { UpdateChannel.valueOf(value.uppercase(java.util.Locale.ROOT)) }
     private inline fun <T> guarded(field: String, action: () -> T): T = try { action() }
         catch (error: ManifestException) { throw error }
         catch (error: Exception) { throw ManifestException(field, error.message ?: "invalid value", error) }

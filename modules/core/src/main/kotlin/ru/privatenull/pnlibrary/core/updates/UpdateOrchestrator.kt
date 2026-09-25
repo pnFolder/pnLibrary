@@ -102,7 +102,9 @@ internal class UpdateOrchestrator(
         return promise
     }
 
-    fun history(): List<UpdatePlanSnapshot> = synchronized(lock) { sessionHistory.toList() }
+    fun history(): List<UpdatePlanSnapshot> = synchronized(lock) {
+        java.util.Collections.unmodifiableList(ArrayList(sessionHistory))
+    }
 
     private fun snapshot(result: ResolutionResult): UpdatePlanSnapshot {
         val plan = when (result) { is ResolutionResult.Ready -> result.plan; is ResolutionResult.Blocked -> result.fallbackPlan }

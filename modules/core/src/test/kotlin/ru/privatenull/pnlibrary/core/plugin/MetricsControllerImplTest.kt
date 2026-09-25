@@ -48,6 +48,7 @@ class MetricsControllerImplTest {
         val controller = MetricsControllerImpl(Any(), RecordingMetricsService(), 10, false, emptyList())
         controller.close()
 
+        assertTrue(controller.isClosed)
         assertThrows(IllegalStateException::class.java) { controller.enable() }
         assertThrows(IllegalStateException::class.java) { controller.changeProjectId(20) }
     }

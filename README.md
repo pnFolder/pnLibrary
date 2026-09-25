@@ -1,5 +1,9 @@
 # pnLibrary
 
+Architecture references: [API design rules](docs/architecture/API-DESIGN-RULES.md),
+[feature boundaries](docs/architecture/FEATURE-BOUNDARIES.md), and the
+[deprecated API migration guide](docs/architecture/API-MIGRATION.md).
+
 ## Smart component updates
 
 pnLibrary can resolve the library and dependent plugins as one API-compatible update plan, verify
@@ -831,7 +835,7 @@ diagnostics = pn.diagnostics.register(
                 "databaseConnected" to database.isConnected
             )
         })
-        .configuration(DiagnosticConfiguration.file("config.yml")
+        .configuration(DiagnosticConfiguration.builder("config.yml")
             .exclude("storage.internalPool")
             .secretKeyRegex("(?i).*(password|token|secret|webhook).*")
             .redactValueRegex("license-[A-Za-z0-9-]+")

@@ -16,8 +16,16 @@ enum class DownloadState { DECLARED, CURRENT, DOWNLOADING, STAGED, BLOCKED, FAIL
 data class DownloadSnapshot(val key: String, val state: DownloadState, val message: String? = null)
 
 interface DownloadRegistration : AutoCloseable {
+    /** Whether this registration has stopped accepting download requests. */
+    val isClosed: Boolean get() = false
+    /** Returns a detached immutable state snapshot and never waits for network work. */
     fun snapshots(): List<DownloadSnapshot>
+    /**
+     * Coalesces concurrent invocations onto the active batch. The returned stage completes after
+     * every selected artifact has either been staged or the batch has failed.
+     */
     fun downloadNow(): CompletionStage<List<DownloadSnapshot>>
+    /** Cancels ownership of future work. Closing repeatedly is safe. */
     override fun close()
 }
 
@@ -56,7 +64,7 @@ class DirectDownloadSource private constructor(builder: Builder) {
         fun integrity(size: Long, sha256: String) = apply {
             require(size > 0) { "download size must be positive" }
             require(sha256.matches(Regex("[0-9a-fA-F]{64}"))) { "SHA-256 must contain 64 hexadecimal characters" }
-            this.size = size; this.sha256 = sha256.lowercase()
+            this.size = size; this.sha256 = sha256.lowercase(java.util.Locale.ROOT)
         }
         fun build() = DirectDownloadSource(this)
     }

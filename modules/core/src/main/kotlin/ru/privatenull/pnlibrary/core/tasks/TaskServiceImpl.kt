@@ -44,7 +44,8 @@ internal class TaskServiceImpl(
 
     override fun find(id: TaskId): TaskHandle? = synchronized(lock) { active[id] }
     override fun query(query: TaskQuery): List<TaskSnapshot> = synchronized(lock) {
-        (active.values.map { it.snapshot() } + history.values.map { it.snapshot }).filter { matches(it, query) }
+        immutableSnapshots((active.values.map { it.snapshot() } + history.values.map { it.snapshot })
+            .filter { matches(it, query) })
     }
     override fun query(owner: Any, query: TaskQuery): List<TaskSnapshot> = snapshots(owner, query)
     override fun close(owner: Any) {
@@ -59,8 +60,8 @@ internal class TaskServiceImpl(
     }
 
     private fun snapshots(owner: Any, query: TaskQuery) = synchronized(lock) {
-        (active.values.filter { it.owner === owner }.map { it.snapshot() } +
-            history.values.filter { it.owner === owner }.map { it.snapshot }).filter { matches(it, query) }
+        immutableSnapshots((active.values.filter { it.owner === owner }.map { it.snapshot() } +
+            history.values.filter { it.owner === owner }.map { it.snapshot }).filter { matches(it, query) })
     }
 
     private fun matches(value: TaskSnapshot, query: TaskQuery): Boolean =
@@ -113,8 +114,8 @@ internal class TaskServiceImpl(
             active.values.firstOrNull { it.scopeToken === scopeToken && it.spec.key == key }
         }
         override fun query(query: TaskQuery): List<TaskSnapshot> = synchronized(lock) {
-            (active.values.filter { it.scopeToken === scopeToken }.map { it.snapshot() } +
-                history.values.filter { it.scopeToken === scopeToken }.map { it.snapshot }).filter { matches(it, query) }
+            immutableSnapshots((active.values.filter { it.scopeToken === scopeToken }.map { it.snapshot() } +
+                history.values.filter { it.scopeToken === scopeToken }.map { it.snapshot }).filter { matches(it, query) })
         }
 
         override fun global(task: Runnable) = schedule(simple(TaskExecution.global(), action = task))
@@ -222,5 +223,7 @@ internal class TaskServiceImpl(
     }
 
     private fun ownerName(owner: Any) = owner.javaClass.simpleName.ifBlank { owner.toString() }
+    private fun immutableSnapshots(values: Collection<TaskSnapshot>): List<TaskSnapshot> =
+        Collections.unmodifiableList(ArrayList(values))
     private data class Archived(val owner: Any, val scopeToken: Any, val snapshot: TaskSnapshot)
 }

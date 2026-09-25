@@ -8,11 +8,14 @@ package ru.privatenull.pnlibrary.api.services
  * [ru.privatenull.pnlibrary.api.plugin.ModuleContext]; those registrations are removed together
  * when the context closes.
  *
+ * Implementations are safe for concurrent registration, lookup, removal, and owner shutdown.
+ * Lookups observe a complete registry state and [all] returns a detached immutable snapshot.
+ *
  * Example:
  * ```kotlin
  * context.services.register(ChatFormatter::class.java, formatter, priority = 100)
  * val active = context.services.require(ChatFormatter::class.java)
- * val alternatives = context.services.getAll(ChatFormatter::class.java)
+ * val alternatives = context.services.all(ChatFormatter::class.java)
  * ```
  */
 interface ServiceManager {
@@ -44,6 +47,11 @@ interface ServiceManager {
     fun <T : Any> require(type: Class<T>): T = get(type)
         ?: error("Service ${type.name} is not available")
 
-    /** Returns all active providers of [type], ordered by priority and registration time. */
+    /** Returns an immutable snapshot of active providers ordered by priority and registration time. */
+    @Suppress("DEPRECATION")
+    fun <T : Any> all(type: Class<T>): List<T> = java.util.Collections.unmodifiableList(ArrayList(getAll(type)))
+
+    /** Compatibility alias for [all]. */
+    @Deprecated("Use all(type)", ReplaceWith("all(type)"))
     fun <T : Any> getAll(type: Class<T>): List<T>
 }

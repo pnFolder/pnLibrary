@@ -2,6 +2,7 @@ package ru.privatenull.pnlibrary.api.placeholders
 
 import ru.privatenull.pnlibrary.api.plugin.PluginId
 import java.time.Duration
+import java.util.Collections
 import java.util.UUID
 import java.util.concurrent.CompletionStage
 
@@ -128,7 +129,13 @@ class PlaceholderAccess private constructor(
         /** Explicitly denies plugin IDs, overriding every allow rule. */
         fun deny(vararg ids: String) = apply { ids.map(PluginId::of).forEach(deny::add) }
         /** Creates an immutable access policy from the configured rules. */
-        fun build() = PlaceholderAccess(owner, all, allow.toSet(), patterns.toSet(), deny.toSet())
+        fun build() = PlaceholderAccess(
+            owner,
+            all,
+            Collections.unmodifiableSet(LinkedHashSet(allow)),
+            Collections.unmodifiableSet(LinkedHashSet(patterns)),
+            Collections.unmodifiableSet(LinkedHashSet(deny)),
+        )
     }
 }
 
@@ -213,6 +220,8 @@ data class PlaceholderAdapterCapabilities(
 interface ExternalPlaceholderRegistration : AutoCloseable {
     /** Current publication state, including unavailable and failed attempts. */
     val state: PlaceholderAdapterState
+    /** Whether this publication has been permanently closed. */
+    val isClosed: Boolean get() = state == PlaceholderAdapterState.CLOSED
 }
 
 /**

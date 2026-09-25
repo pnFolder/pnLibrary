@@ -1,5 +1,6 @@
 package ru.privatenull.pnlibrary.api.plugin
 
+import java.util.Collections
 import java.util.function.Consumer
 
 /** Registration of one native platform plugin and all logical modules it owns. */
@@ -24,6 +25,11 @@ interface PluginRegistration : AutoCloseable {
     fun requireModule(id: String): ModuleContext = requireModule(ModuleId.of(id))
     fun unregisterModule(id: ModuleId)
     fun unregisterModule(id: String) = unregisterModule(ModuleId.of(id))
+    /** Returns an immutable snapshot of logical modules owned by this plugin. */
+    @Suppress("DEPRECATION")
+    fun all(): List<ModuleContext> = Collections.unmodifiableList(ArrayList(modules()))
+    /** Compatibility alias for [all]. */
+    @Deprecated("Use all()", ReplaceWith("all()"))
     fun modules(): List<ModuleContext>
     override fun close()
 }

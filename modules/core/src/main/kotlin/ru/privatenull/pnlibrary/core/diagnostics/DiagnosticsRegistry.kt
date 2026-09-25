@@ -60,11 +60,11 @@ internal class DiagnosticsRegistry(eventLimit: Int = DEFAULT_EVENT_LIMIT) : Diag
         }
         val registered = RegisteredContributor(contributor, dataDirectory)
         state.contributors[id] = registered
-        var closed = false
-        return DiagnosticRegistration {
-            synchronized(this) {
-                if (!closed) {
-                    closed = true
+        return object : DiagnosticRegistration {
+            private val closed = java.util.concurrent.atomic.AtomicBoolean(false)
+            override val isClosed: Boolean get() = closed.get()
+            override fun close() {
+                if (closed.compareAndSet(false, true)) {
                     state.contributors.remove(id, registered)
                 }
             }
@@ -215,7 +215,7 @@ internal class DiagnosticsRegistry(eventLimit: Int = DEFAULT_EVENT_LIMIT) : Diag
                 }
                 contrib.configurationFiles().forEach { path ->
                     if (files.size < 64 && !files.containsKey(path)) {
-                        runCatching { files[path] = RegisteredConfiguration(plugin, registered.dataDirectory, DiagnosticConfiguration.file(path).build()) }
+                        runCatching { files[path] = RegisteredConfiguration(plugin, registered.dataDirectory, DiagnosticConfiguration.builder(path).build()) }
                     }
                 }
             } catch (_: Exception) {

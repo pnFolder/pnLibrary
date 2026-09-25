@@ -3,6 +3,7 @@ package ru.privatenull.pnlibrary.demo
 import ru.privatenull.pnlibrary.api.currency.Currency
 import ru.privatenull.pnlibrary.api.currency.CurrencyRejectReason
 import ru.privatenull.pnlibrary.api.currency.CurrencyResult
+import ru.privatenull.pnlibrary.api.currency.currencies
 import ru.privatenull.pnlibrary.api.plugin.ModuleContext
 import java.math.BigDecimal
 import java.math.RoundingMode

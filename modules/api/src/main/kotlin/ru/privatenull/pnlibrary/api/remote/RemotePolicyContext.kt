@@ -4,6 +4,7 @@ import ru.privatenull.pnlibrary.common.minecraft.MinecraftVersion
 import ru.privatenull.pnlibrary.common.minecraft.MinecraftVersionInfo
 import ru.privatenull.pnlibrary.api.platform.PlatformType
 import java.util.Collections
+import java.util.Locale
 
 data class ProductInfo(val id: String, val name: String, val version: String)
 
@@ -12,8 +13,9 @@ data class PlatformInfo(
     val name: String,
     val version: String,
 ) {
-    val key: String = name.filter(Char::isLetterOrDigit).lowercase()
-    fun isNamed(value: String): Boolean = key == value.filter(Char::isLetterOrDigit).lowercase()
+    val key: String = name.filter(Char::isLetterOrDigit).lowercase(Locale.ROOT)
+    fun isNamed(value: String): Boolean =
+        key == value.filter(Char::isLetterOrDigit).lowercase(Locale.ROOT)
 }
 
 data class ServerInfo(
@@ -29,7 +31,7 @@ class RemotePolicyContext private constructor(builder: Builder) {
     val platform: PlatformInfo = requireNotNull(builder.platform)
     val server: ServerInfo = requireNotNull(builder.server)
     val values: Map<String, String> = Collections.unmodifiableMap(HashMap(builder.values))
-    private val nativeHandles: List<Any> = builder.nativeHandles.toList()
+    private val nativeHandles: List<Any> = Collections.unmodifiableList(ArrayList(builder.nativeHandles))
 
     fun <T : Any> nativeHandle(type: Class<T>): T? =
         nativeHandles.firstOrNull(type::isInstance)?.let(type::cast)
@@ -46,8 +48,17 @@ class RemotePolicyContext private constructor(builder: Builder) {
         fun product(value: ProductInfo) = apply { product = value }
         fun platform(value: PlatformInfo) = apply { platform = value }
         fun server(value: ServerInfo) = apply { server = value }
-        fun value(key: String, value: String) = apply { values[key] = value }
-        fun values(value: Map<String, String>) = apply { values.putAll(value) }
+        fun value(key: String, value: String) = apply {
+            val normalized = key.trim()
+            require(normalized.isNotEmpty()) { "remote policy context value key must not be blank" }
+            values[normalized] = value
+        }
+        fun values(value: Map<String, String>) = apply {
+            val normalized = value.mapKeys { (key, _) ->
+                key.trim().also { require(it.isNotEmpty()) { "remote policy context value key must not be blank" } }
+            }
+            values.putAll(normalized)
+        }
         fun nativeHandle(value: Any) = apply { nativeHandles += value }
         fun build() = RemotePolicyContext(this)
     }

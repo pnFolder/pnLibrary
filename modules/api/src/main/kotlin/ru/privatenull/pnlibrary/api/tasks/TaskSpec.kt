@@ -2,6 +2,7 @@ package ru.privatenull.pnlibrary.api.tasks
 
 import java.time.Duration
 import java.time.Instant
+import java.util.Collections
 import java.util.function.BooleanSupplier
 
 fun interface TaskAction { fun run(context: TaskContext) }
@@ -39,6 +40,14 @@ class TaskSpec private constructor(
         private val tags = linkedSetOf<String>()
         private var action: TaskAction? = null
 
+        internal val configuredName: String? get() = name
+        internal val configuredKey: String? get() = key
+        internal val configuredConflictPolicy: TaskConflictPolicy get() = conflictPolicy
+        internal val configuredExecution: TaskExecution get() = execution
+        internal val configuredDelay: Duration get() = delay
+        internal val configuredInterval: Duration? get() = interval
+        internal val configuredTags: Set<String> get() = tags.toSet()
+
         fun name(value: String?) = apply { name = value }
         fun key(value: String?) = apply { key = value }
         fun conflictPolicy(value: TaskConflictPolicy) = apply { conflictPolicy = value }
@@ -57,7 +66,9 @@ class TaskSpec private constructor(
             key?.let { require(it.isNotBlank()) { "Task key must not be blank" } }
             require(tags.none { it.isBlank() }) { "Task tags must not be blank" }
             return TaskSpec(name, key, conflictPolicy, execution, delay, interval,
-                conditions.toList(), cancellationConditions.toList(), tags.toSet(),
+                Collections.unmodifiableList(ArrayList(conditions)),
+                Collections.unmodifiableList(ArrayList(cancellationConditions)),
+                Collections.unmodifiableSet(LinkedHashSet(tags)),
                 checkNotNull(action) { "Task action is required" })
         }
     }
@@ -67,27 +78,33 @@ class TaskSpec private constructor(
 
 class TaskSpecBuilder internal constructor() {
     private val delegate = TaskSpec.builder()
-    var name: String? = null
-    var key: String? = null
-    var conflictPolicy: TaskConflictPolicy = TaskConflictPolicy.REJECT
-    var execution: TaskExecution = TaskExecution.global()
-    var delay: Duration = Duration.ZERO
-    var interval: Duration? = null
-    var tags: Set<String> = emptySet()
-    private val conditions = mutableListOf<BooleanSupplier>()
-    private val cancellationConditions = mutableListOf<BooleanSupplier>()
-    private var action: TaskAction? = null
-    fun condition(test: () -> Boolean) { conditions += BooleanSupplier(test) }
-    fun cancelWhen(test: () -> Boolean) { cancellationConditions += BooleanSupplier(test) }
-    fun run(action: TaskAction) { this.action = action }
-    internal fun build(): TaskSpec {
-        delegate.name(name).key(key).conflictPolicy(conflictPolicy).execution(execution)
-            .delay(delay).interval(interval).tags(tags)
-        conditions.forEach(delegate::condition)
-        cancellationConditions.forEach(delegate::cancelWhen)
-        return delegate.action(checkNotNull(action) { "Task action is required" }).build()
-    }
+    var name: String?
+        get() = delegate.configuredName
+        set(value) { delegate.name(value) }
+    var key: String?
+        get() = delegate.configuredKey
+        set(value) { delegate.key(value) }
+    var conflictPolicy: TaskConflictPolicy
+        get() = delegate.configuredConflictPolicy
+        set(value) { delegate.conflictPolicy(value) }
+    var execution: TaskExecution
+        get() = delegate.configuredExecution
+        set(value) { delegate.execution(value) }
+    var delay: Duration
+        get() = delegate.configuredDelay
+        set(value) { delegate.delay(value) }
+    var interval: Duration?
+        get() = delegate.configuredInterval
+        set(value) { delegate.interval(value) }
+    var tags: Set<String>
+        get() = delegate.configuredTags
+        set(value) { delegate.tags(value) }
+    fun condition(test: () -> Boolean) { delegate.condition(BooleanSupplier(test)) }
+    fun cancelWhen(test: () -> Boolean) { delegate.cancelWhen(BooleanSupplier(test)) }
+    fun run(action: TaskAction) { delegate.action(action) }
+    internal fun build(): TaskSpec = delegate.build()
 }
 
+@JvmSynthetic
 fun TaskScope.schedule(configure: TaskSpecBuilder.() -> Unit): TaskHandle =
     schedule(TaskSpecBuilder().apply(configure).build())

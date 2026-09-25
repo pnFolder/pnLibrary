@@ -92,8 +92,17 @@ interface PluginBuilder {
     /** Registers direct component, native-plugin, and ordinary-file deliveries separately from updates. */
     fun downloads(request: PluginDownloads): PluginBuilder
 
-    /** Configures an optional remote Java policy for this plugin or module. */
-    fun remotePolicy(configure: Consumer<RemotePolicyBuilder>): PluginBuilder
+    /** Attaches one validated reusable remote policy declaration. */
+    fun remotePolicy(policy: RemotePolicy): PluginBuilder
+
+    /** Compatibility callback for the original non-fluent policy builder. */
+    @Suppress("DEPRECATION")
+    @Deprecated("Build a RemotePolicy with RemotePolicy.builder() and pass it directly")
+    fun remotePolicy(configure: Consumer<RemotePolicyBuilder>): PluginBuilder {
+        val builder = RemotePolicyBuilder()
+        configure.accept(builder)
+        return remotePolicy(builder.build())
+    }
 
     /** Builds direct-download declarations inline. */
     fun downloads(configure: Consumer<PluginDownloads.Builder>): PluginBuilder {

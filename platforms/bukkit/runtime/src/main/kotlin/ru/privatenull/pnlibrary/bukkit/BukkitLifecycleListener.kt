@@ -37,7 +37,7 @@ internal class BukkitLifecycleListener(
         val runtime = library ?: return
         runtime.tasks.scope(plugin).laterEntity(player, Duration.ofMillis(50), Runnable {
             val active = library ?: return@Runnable
-            val actionable = active.updates.registrations().map { it.snapshot }.filter {
+            val actionable = active.updates.all().map { it.snapshot }.filter {
                 it.state == UpdateState.AVAILABLE || it.state == UpdateState.DOWNLOADED ||
                     it.state == UpdateState.UPDATE_AVAILABLE || it.state == UpdateState.UPDATE_STAGED
             }

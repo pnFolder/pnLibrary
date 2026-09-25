@@ -60,7 +60,7 @@ data class ProductReleaseManifest(
     init {
         require(displayName.isNotBlank()) { "display name must not be blank" }
         require(artifacts.isNotEmpty()) { "release manifest must contain at least one artifact" }
-        require(artifacts.map { it.file.lowercase() }.distinct().size == artifacts.size) {
+        require(artifacts.map { it.file.lowercase(java.util.Locale.ROOT) }.distinct().size == artifacts.size) {
             "release manifest contains duplicate artifact filenames"
         }
     }

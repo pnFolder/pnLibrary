@@ -20,7 +20,7 @@ dependencies {
     implementation(project(":modules:api"))
     implementation(project(":modules:runtime-spi"))
     implementation(project(":modules:features:update"))
-    implementation(project(":modules:features:currency"))
+    implementation(project(":modules:features:currency-runtime"))
     implementation(libs.kotlin.stdlib)
     implementation(libs.gson)
     implementation(libs.snakeyaml)

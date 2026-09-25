@@ -9,6 +9,7 @@ import org.bukkit.event.server.ServiceRegisterEvent
 import org.bukkit.event.server.ServiceUnregisterEvent
 import org.bukkit.plugin.java.JavaPlugin
 import ru.privatenull.pnlibrary.api.currency.CurrencyRegistration
+import ru.privatenull.pnlibrary.api.currency.currencyProviders
 import ru.privatenull.pnlibrary.api.plugin.PluginId
 import ru.privatenull.pnlibrary.bukkit.currency.BukkitCurrencyAdapters
 import ru.privatenull.pnlibrary.bukkit.api.BukkitPlatform

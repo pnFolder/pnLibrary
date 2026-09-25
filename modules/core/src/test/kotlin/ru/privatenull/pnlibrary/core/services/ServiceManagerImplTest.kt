@@ -31,7 +31,7 @@ class ServiceManagerImplTest {
             )
 
             assertEquals("preferred", services.require(GreetingService::class.java).value)
-            assertEquals(listOf("preferred", "fallback"), services.getAll(GreetingService::class.java).map { it.value })
+            assertEquals(listOf("preferred", "fallback"), services.all(GreetingService::class.java).map { it.value })
 
             services.unregister(preferredOwner, GreetingService::class.java)
             assertEquals("fallback", services.require(GreetingService::class.java).value)

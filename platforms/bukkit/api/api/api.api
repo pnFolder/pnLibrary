@@ -39,6 +39,8 @@ public final class ru/privatenull/pnlibrary/bukkit/inventory/MenuBuilder {
 	public final fun cancelPlayerInventory (Z)Lru/privatenull/pnlibrary/bukkit/inventory/MenuBuilder;
 	public final fun editable (I)Lru/privatenull/pnlibrary/bukkit/inventory/MenuBuilder;
 	public final fun editable (ILorg/bukkit/inventory/ItemStack;)Lru/privatenull/pnlibrary/bukkit/inventory/MenuBuilder;
+	public final fun fill (Lorg/bukkit/inventory/ItemStack;)Lru/privatenull/pnlibrary/bukkit/inventory/MenuBuilder;
+	public final fun fill (Lorg/bukkit/inventory/ItemStack;I)Lru/privatenull/pnlibrary/bukkit/inventory/MenuBuilder;
 	public final fun fill (Lorg/bukkit/inventory/ItemStack;II)Lru/privatenull/pnlibrary/bukkit/inventory/MenuBuilder;
 	public static synthetic fun fill$default (Lru/privatenull/pnlibrary/bukkit/inventory/MenuBuilder;Lorg/bukkit/inventory/ItemStack;IIILjava/lang/Object;)Lru/privatenull/pnlibrary/bukkit/inventory/MenuBuilder;
 	public final fun onClick (Lru/privatenull/pnlibrary/bukkit/inventory/MenuClickHandler;)Lru/privatenull/pnlibrary/bukkit/inventory/MenuBuilder;
@@ -46,6 +48,8 @@ public final class ru/privatenull/pnlibrary/bukkit/inventory/MenuBuilder {
 	public final fun onOpen (Lru/privatenull/pnlibrary/bukkit/inventory/MenuOpenHandler;)Lru/privatenull/pnlibrary/bukkit/inventory/MenuBuilder;
 	public final fun render (Lru/privatenull/pnlibrary/bukkit/inventory/MenuRenderer;)Lru/privatenull/pnlibrary/bukkit/inventory/MenuBuilder;
 	public final fun rows (I)Lru/privatenull/pnlibrary/bukkit/inventory/MenuBuilder;
+	public final fun slot (ILorg/bukkit/inventory/ItemStack;)Lru/privatenull/pnlibrary/bukkit/inventory/MenuBuilder;
+	public final fun slot (ILorg/bukkit/inventory/ItemStack;Z)Lru/privatenull/pnlibrary/bukkit/inventory/MenuBuilder;
 	public final fun slot (ILorg/bukkit/inventory/ItemStack;ZLru/privatenull/pnlibrary/bukkit/inventory/MenuClickHandler;)Lru/privatenull/pnlibrary/bukkit/inventory/MenuBuilder;
 	public static synthetic fun slot$default (Lru/privatenull/pnlibrary/bukkit/inventory/MenuBuilder;ILorg/bukkit/inventory/ItemStack;ZLru/privatenull/pnlibrary/bukkit/inventory/MenuClickHandler;ILjava/lang/Object;)Lru/privatenull/pnlibrary/bukkit/inventory/MenuBuilder;
 }

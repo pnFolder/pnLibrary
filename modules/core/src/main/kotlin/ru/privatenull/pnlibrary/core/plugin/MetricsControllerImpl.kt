@@ -26,6 +26,7 @@ internal class MetricsControllerImpl(
     }
 
     override val isEnabled: Boolean get() = session != null
+    override val isClosed: Boolean get() = closed.get()
     override val projectId: Int? get() = currentProjectId
 
     override fun enable() = synchronized(lock) {

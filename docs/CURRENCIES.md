@@ -4,6 +4,34 @@ The Currency API is a platform-independent registry for Vault, PlayerPoints,
 and plugin-defined currencies. API code never imports Bukkit, Vault, or
 PlayerPoints. Platform bridges live in `pnlibrary-bukkit`.
 
+Currency is an optional feature and is deliberately absent from `pnlibrary-api`.
+Add its contract only to plugins that use currencies:
+
+```kotlin
+dependencies {
+    compileOnly("io.github.pnfolder:pnlibrary-api:<version>")
+    compileOnly("io.github.pnfolder:pnlibrary-currency-api:<version>")
+}
+```
+
+Kotlin consumers import the extension they need:
+
+```kotlin
+import ru.privatenull.pnlibrary.api.currency.currencies
+
+val money = context.currencies.get("vault:money")
+```
+
+Java consumers use the facade, without Kotlin extension syntax:
+
+```java
+CurrencyService currencies = CurrencyApi.from(context);
+CurrencyProvider money = currencies.get("vault:money");
+```
+
+The server runtime publishes the feature into the ordinary `ServiceManager`.
+Consequently `ModuleContext` stays small, while optional APIs remain type-safe.
+
 ## Built-in Bukkit bridges
 
 When available, Bukkit automatically publishes:

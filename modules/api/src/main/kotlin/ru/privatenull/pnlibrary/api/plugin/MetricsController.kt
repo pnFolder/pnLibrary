@@ -10,6 +10,8 @@ import java.util.function.Consumer
  * same session. Closing the controller disables the session permanently with its plugin context.
  */
 interface MetricsController : AutoCloseable {
+    /** Whether this controller has been permanently released with its module context. */
+    val isClosed: Boolean get() = false
     /** Whether a metrics session is currently active. */
     val isEnabled: Boolean
     /** Configured bStats project ID, or `null` when metrics were not configured. */

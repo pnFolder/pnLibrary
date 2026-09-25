@@ -117,9 +117,14 @@ internal class PnLibraryImpl(
     private val currencyFeature = CurrencyFeature()
     private val platformProvider = PlatformProviderImpl()
     override val platforms: ru.privatenull.pnlibrary.api.platform.PlatformProvider get() = platformProvider
-    override val currencyProviders: ru.privatenull.pnlibrary.api.currency.CurrencyProviderRegistry get() = currencyFeature.providers
     override val placeholderAdapters: ru.privatenull.pnlibrary.api.placeholders.PlaceholderAdapterRegistry get() = placeholderHub
     override val placeholderValues: ru.privatenull.pnlibrary.api.placeholders.PlaceholderValueStore get() = placeholderValueStore
+    init {
+        serviceManager.register(
+            ru.privatenull.pnlibrary.api.currency.CurrencyProviderRegistry::class.java,
+            currencyFeature.providers,
+        )
+    }
     override val plugins: ru.privatenull.pnlibrary.api.plugin.PluginRegistry = PluginRegistryImpl(
         platform = platform,
         events = eventService,

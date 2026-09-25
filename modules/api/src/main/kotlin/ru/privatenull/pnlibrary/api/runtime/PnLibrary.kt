@@ -3,7 +3,6 @@ package ru.privatenull.pnlibrary.api.runtime
 import ru.privatenull.pnlibrary.api.config.ConfigurationService
 import ru.privatenull.pnlibrary.api.commands.CommandService
 import ru.privatenull.pnlibrary.api.audiences.AudienceService
-import ru.privatenull.pnlibrary.api.currency.CurrencyProviderRegistry
 import ru.privatenull.pnlibrary.api.diagnostics.DebugRequest
 import ru.privatenull.pnlibrary.api.diagnostics.DiagnosticReport
 import ru.privatenull.pnlibrary.api.diagnostics.DiagnosticsService
@@ -86,9 +85,6 @@ interface PnLibrary : Closeable {
 
     /** Global registered value store available through pnLibrary placeholders. */
     val placeholderValues: PlaceholderValueStore
-
-    /** Registry of platform-provided currencies such as Vault and PlayerPoints. */
-    val currencyProviders: CurrencyProviderRegistry
 
     /** Builds a diagnostic report from an already validated request. */
     fun createDiagnosticReport(request: DebugRequest): DiagnosticReport

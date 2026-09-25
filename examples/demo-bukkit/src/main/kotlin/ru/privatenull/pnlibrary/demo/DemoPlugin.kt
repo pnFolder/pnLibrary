@@ -9,6 +9,7 @@ import ru.privatenull.pnlibrary.api.plugin.DownloadPolicy
 import ru.privatenull.pnlibrary.api.plugin.DenyAction
 import ru.privatenull.pnlibrary.api.plugin.ModuleContext
 import ru.privatenull.pnlibrary.api.plugin.PluginRegistration
+import ru.privatenull.pnlibrary.api.plugin.RemotePolicy
 import ru.privatenull.pnlibrary.api.runtime.PnLibraryProvider
 import ru.privatenull.pnlibrary.api.tasks.TaskSpec
 import ru.privatenull.pnlibrary.api.updates.ProductDescriptor
@@ -46,12 +47,12 @@ class DemoPlugin : JavaPlugin() {
                     .build()
             )
             config.getString("remote-policy.source")?.takeIf(String::isNotBlank)?.let { source ->
-                builder.remotePolicy { policy ->
-                    policy.source(source)
-                    policy.checkEvery(Duration.ofHours(6))
-                    policy.onDeny(DenyAction.DISABLE_MODULE)
-                    policy.value("demo", "pndemo")
-                }
+                builder.remotePolicy(RemotePolicy.builder()
+                    .source(source)
+                    .checkEvery(Duration.ofHours(6))
+                    .onDeny(DenyAction.DISABLE_MODULE)
+                    .value("demo", "pndemo")
+                    .build())
             }
             builder.metrics(32592, true) { metrics ->
                 metrics.simplePie("server_platform") {

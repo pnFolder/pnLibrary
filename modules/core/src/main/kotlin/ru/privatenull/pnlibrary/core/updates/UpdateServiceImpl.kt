@@ -85,10 +85,15 @@ internal class UpdateServiceImpl(private val platform: PlatformAdapter, private 
         return registration
     }
 
-    override fun registrations(): List<UpdateRegistration> = entries.toList()
-    override fun find(product: String): UpdateRegistration? = entries.firstOrNull {
+    override fun all(): List<UpdateRegistration> =
+        java.util.Collections.unmodifiableList(ArrayList(entries))
+    override fun get(product: String): UpdateRegistration? = entries.firstOrNull {
         it.product.equals(product, true) || it.request.repositoryName.equals(product, true)
     }
+    @Deprecated("Use all()", ReplaceWith("all()"))
+    override fun registrations(): List<UpdateRegistration> = all()
+    @Deprecated("Use get(product)", ReplaceWith("get(product)"))
+    override fun find(product: String): UpdateRegistration? = get(product)
     override fun checkNow(): CompletionStage<UpdatePlanSnapshot> = orchestrator.checkNow()
     override fun currentPlan(): Optional<UpdatePlanSnapshot> = orchestrator.currentPlan()
     override fun stage(planId: UUID): CompletionStage<UpdatePlanSnapshot> = orchestrator.stage(planId)
@@ -185,6 +190,7 @@ internal class UpdateServiceImpl(private val platform: PlatformAdapter, private 
             artifact.minimumJava, request.automaticDownload, null, null,
         ))
         override val repository = "${request.repositoryOwner}/${request.repositoryName}"
+        override val isClosed: Boolean get() = closed.get()
         override val snapshot get() = state.get()
         override fun checkNow() { check(!closed.get()); orchestrator.checkNow() }
         override fun downloadNow() { check(!closed.get()); orchestrator.checkNow().thenCompose { orchestrator.stage(it.id) } }

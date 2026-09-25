@@ -6,6 +6,7 @@ import ru.privatenull.pnlibrary.api.updates.ManagedProductDependency
 import ru.privatenull.pnlibrary.api.updates.ProductId
 import ru.privatenull.pnlibrary.api.version.SemanticVersion
 import java.net.URI
+import java.util.Collections
 import java.util.function.Consumer
 
 /** Mutable Java-friendly collector for all dependencies of one module. */
@@ -32,7 +33,7 @@ class DependencyBuilder {
         dependencies += dependency
     }
 
-    fun build(): List<PluginDependency> = dependencies.toList()
+    fun build(): List<PluginDependency> = Collections.unmodifiableList(ArrayList(dependencies))
 
     class ProductBuilder internal constructor(private val id: ProductId) {
         private var minimum: SemanticVersion? = null

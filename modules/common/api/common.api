@@ -91,6 +91,7 @@ public final class ru/privatenull/pnlibrary/common/minecraft/MinecraftVersion : 
 	public final fun isSameOrOlderThan (Lru/privatenull/pnlibrary/common/minecraft/MinecraftVersion;)Z
 	public final fun isSameReleaseLine (Lru/privatenull/pnlibrary/common/minecraft/MinecraftVersion;)Z
 	public static final fun parse (Ljava/lang/String;)Lru/privatenull/pnlibrary/common/minecraft/MinecraftVersion;
+	public static final fun parseInfo (Ljava/lang/String;)Lru/privatenull/pnlibrary/common/minecraft/MinecraftVersionInfo;
 	public static final fun range (Lru/privatenull/pnlibrary/common/minecraft/MinecraftVersion;Lru/privatenull/pnlibrary/common/minecraft/MinecraftVersion;)Lru/privatenull/pnlibrary/common/minecraft/MinecraftVersionRange;
 	public final fun rangeTo (Lru/privatenull/pnlibrary/common/minecraft/MinecraftVersion;)Lru/privatenull/pnlibrary/common/minecraft/MinecraftVersionRange;
 	public static final fun supported ()Ljava/util/List;
@@ -102,8 +103,31 @@ public final class ru/privatenull/pnlibrary/common/minecraft/MinecraftVersion$Co
 	public final fun atLeast (Lru/privatenull/pnlibrary/common/minecraft/MinecraftVersion;)Lru/privatenull/pnlibrary/common/minecraft/MinecraftVersionRange;
 	public final fun atMost (Lru/privatenull/pnlibrary/common/minecraft/MinecraftVersion;)Lru/privatenull/pnlibrary/common/minecraft/MinecraftVersionRange;
 	public final fun parse (Ljava/lang/String;)Lru/privatenull/pnlibrary/common/minecraft/MinecraftVersion;
+	public final fun parseInfo (Ljava/lang/String;)Lru/privatenull/pnlibrary/common/minecraft/MinecraftVersionInfo;
 	public final fun range (Lru/privatenull/pnlibrary/common/minecraft/MinecraftVersion;Lru/privatenull/pnlibrary/common/minecraft/MinecraftVersion;)Lru/privatenull/pnlibrary/common/minecraft/MinecraftVersionRange;
 	public final fun supported ()Ljava/util/List;
+}
+
+public final class ru/privatenull/pnlibrary/common/minecraft/MinecraftVersionInfo {
+	public fun <init> (Ljava/lang/String;Lru/privatenull/pnlibrary/common/minecraft/MinecraftVersion;Ljava/lang/Integer;Ljava/lang/Integer;Ljava/lang/Integer;)V
+	public final fun compareNumeric (Lru/privatenull/pnlibrary/common/minecraft/MinecraftVersionInfo;)Ljava/lang/Integer;
+	public final fun component1 ()Ljava/lang/String;
+	public final fun component2 ()Lru/privatenull/pnlibrary/common/minecraft/MinecraftVersion;
+	public final fun component3 ()Ljava/lang/Integer;
+	public final fun component4 ()Ljava/lang/Integer;
+	public final fun component5 ()Ljava/lang/Integer;
+	public final fun copy (Ljava/lang/String;Lru/privatenull/pnlibrary/common/minecraft/MinecraftVersion;Ljava/lang/Integer;Ljava/lang/Integer;Ljava/lang/Integer;)Lru/privatenull/pnlibrary/common/minecraft/MinecraftVersionInfo;
+	public static synthetic fun copy$default (Lru/privatenull/pnlibrary/common/minecraft/MinecraftVersionInfo;Ljava/lang/String;Lru/privatenull/pnlibrary/common/minecraft/MinecraftVersion;Ljava/lang/Integer;Ljava/lang/Integer;Ljava/lang/Integer;ILjava/lang/Object;)Lru/privatenull/pnlibrary/common/minecraft/MinecraftVersionInfo;
+	public fun equals (Ljava/lang/Object;)Z
+	public final fun getKnown ()Z
+	public final fun getMajor ()Ljava/lang/Integer;
+	public final fun getMinor ()Ljava/lang/Integer;
+	public final fun getNumeric ()Z
+	public final fun getParsed ()Lru/privatenull/pnlibrary/common/minecraft/MinecraftVersion;
+	public final fun getPatch ()Ljava/lang/Integer;
+	public final fun getRaw ()Ljava/lang/String;
+	public fun hashCode ()I
+	public fun toString ()Ljava/lang/String;
 }
 
 public final class ru/privatenull/pnlibrary/common/minecraft/MinecraftVersionRange {

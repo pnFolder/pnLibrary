@@ -1,5 +1,6 @@
 package ru.privatenull.pnlibrary.demo
 
+import ru.privatenull.pnlibrary.api.currency.currencyProviders
 import ru.privatenull.pnlibrary.api.runtime.PnLibrary
 import java.util.function.Supplier
 

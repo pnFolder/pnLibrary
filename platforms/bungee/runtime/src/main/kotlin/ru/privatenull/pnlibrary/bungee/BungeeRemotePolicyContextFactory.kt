@@ -12,7 +12,7 @@ object BungeeRemotePolicyContextFactory {
     @JvmStatic fun create(plugin: Plugin, values: Map<String, String> = emptyMap()): RemotePolicyContext {
         val version = plugin.proxy.version
         return RemotePolicyContext.builder()
-            .product(ProductInfo(plugin.description.name.lowercase(), plugin.description.name, plugin.description.version))
+            .product(ProductInfo(plugin.description.name.lowercase(java.util.Locale.ROOT), plugin.description.name, plugin.description.version))
             .platform(PlatformInfo(PlatformType.BUNGEECORD, plugin.proxy.name, version))
             .server(ServerInfo(version, MinecraftVersion.parseInfo(null)))
             .values(values).nativeHandle(plugin).nativeHandle(plugin.proxy).nativeHandle(plugin.proxy.pluginManager)

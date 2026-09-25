@@ -52,6 +52,10 @@ class UpdateOrchestratorTest {
             assertThrows(Exception::class.java) { orchestrator.stage(old.id).toCompletableFuture().get() }
             assertEquals(UpdateState.UPDATE_STAGED, orchestrator.stage(current.id).toCompletableFuture().get().state)
             assertEquals(1, staged.size)
+            assertThrows(UnsupportedOperationException::class.java) {
+                @Suppress("UNCHECKED_CAST")
+                (orchestrator.history() as MutableList<UpdatePlanSnapshot>).clear()
+            }
         } finally { orchestrator.close() }
     }
 

@@ -13,6 +13,7 @@ tasks.withType<JavaCompile>().configureEach { options.release = 8 }
 
 dependencies {
     compileOnly(project(":modules:api"))
+    compileOnly(project(":modules:features:currency-api"))
     compileOnly(project(":platforms:bukkit:api"))
     compileOnly(project(":modules:features:minecraft-localization"))
     compileOnly(project(":modules:features:update"))

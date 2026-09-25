@@ -30,8 +30,8 @@ internal class PlaceholderHub(
         fun builtin(name: String, formatter: (Any, List<String>) -> String) {
             formatters[formatterId(system, name)] = FormatterEntry(system, name, Any::class.java, PlaceholderFormatter { value, args, _ -> formatter(value, args) })
         }
-        builtin("upper") { value, _ -> value.toString().uppercase() }
-        builtin("lower") { value, _ -> value.toString().lowercase() }
+        builtin("upper") { value, _ -> value.toString().uppercase(java.util.Locale.ROOT) }
+        builtin("lower") { value, _ -> value.toString().lowercase(java.util.Locale.ROOT) }
         builtin("default") { value, _ -> value.toString() }
         builtin("boolean") { value, args -> if (value == true) args.getOrElse(0) { "true" } else args.getOrElse(1) { "false" } }
         builtin("plural", PlaceholderBuiltInFormatters::plural)
@@ -60,7 +60,7 @@ internal class PlaceholderHub(
         Scope(owner, placeholderApiEnabled)
 
     override fun register(adapter: PlaceholderAdapter): AutoCloseable {
-        val key = adapter.id.lowercase()
+        val key = adapter.id.lowercase(java.util.Locale.ROOT)
         require(adapters.putIfAbsent(key, adapter) == null) { "Placeholder adapter ${adapter.id} is already registered" }
         entries.values.forEach { it.attach(adapter) }
         return AutoCloseable {
@@ -70,8 +70,9 @@ internal class PlaceholderHub(
             }
         }
     }
-    override fun get(id: String): PlaceholderAdapter? = adapters[id.lowercase()]
-    override fun all(): List<PlaceholderAdapter> = adapters.values.sortedBy(PlaceholderAdapter::id)
+    override fun get(id: String): PlaceholderAdapter? = adapters[id.lowercase(java.util.Locale.ROOT)]
+    override fun all(): List<PlaceholderAdapter> =
+        java.util.Collections.unmodifiableList(adapters.values.sortedBy(PlaceholderAdapter::id))
 
     private fun <T : Any> system(key: String, type: Class<T>, value: () -> T) {
         val owner = PluginId.of("pnlibrary")
@@ -96,12 +97,17 @@ internal class PlaceholderHub(
             override fun all() = this@PlaceholderHub.all()
         }
 
+        @Deprecated("Use register(key, configure); registration is the terminal service operation")
         override fun <T : Any> placeholder(key: PlaceholderKey<T>): PlaceholderBuilder<T> = Builder(owner, key, placeholderApiEnabled) { entry ->
             synchronized(mutationLock) {
                 check(!closed.get()) { "Placeholder scope $owner is closed" }
                 val full = id(owner, key.value)
                 require(entries.putIfAbsent(full, entry) == null) { "Placeholder $full is already registered" }
                 owned += full
+                entry.whenClosed {
+                    entries.remove(full, entry)
+                    owned.remove(full)
+                }
             }
         }
 
@@ -127,8 +133,10 @@ internal class PlaceholderHub(
             override val pluginId = pluginId
             override fun resolve(key: String, playerId: UUID?): CompletionStage<Any?> =
                 resolveFor(owner, "${pluginId.value}:$key", playerId, emptyMap())
-            override fun keys(): Set<String> = entries.values.filter { it.owner == pluginId && it.access.allows(pluginId, owner) }
-                .map { it.key.value }.toSet()
+            override fun keys(): Set<String> = java.util.Collections.unmodifiableSet(
+                entries.values.filter { it.owner == pluginId && it.access.allows(pluginId, owner) }
+                    .mapTo(linkedSetOf()) { it.key.value },
+            )
         }
         override fun adapters(): PlaceholderAdapterRegistry = ownedAdapters
         override fun close() {
@@ -169,11 +177,12 @@ internal class PlaceholderHub(
         override fun cache(policy: PlaceholderCachePolicy) = apply { cache = policy }
         override fun fallback(value: T) = apply { fallback = value }
         override fun publish(publication: PlaceholderPublication) = apply { publications += publication }
+        @Deprecated("Register placeholders through PlaceholderService.register(key, configure)")
         override fun register(): PlaceholderRegistration<T> {
             val entry = Entry(owner, key, resolver ?: error("Placeholder ${key.value} has no resolver"), updater, access, updateAccess, cache, fallback)
             install(entry)
             publications
-                .filter { it.adapterId.lowercase() != "placeholderapi" || placeholderApiEnabled }
+                .filter { it.adapterId.lowercase(java.util.Locale.ROOT) != "placeholderapi" || placeholderApiEnabled }
                 .forEach(entry::publish)
             return entry
         }
@@ -187,15 +196,19 @@ internal class PlaceholderHub(
         private val policy: PlaceholderCachePolicy, private val fallback: T?,
     ) : PlaceholderRegistration<T> {
         private val enabled = AtomicBoolean(true)
+        private val closed = AtomicBoolean(false)
+        @Volatile private var closeCallback: (() -> Unit)? = null
         private val cache = synchronizedMap<String, CacheValue<T>>()
         private val publicationBindings = java.util.Collections.synchronizedList(mutableListOf<PublicationBinding>())
         override val publications: List<ExternalPlaceholderRegistration> get() = synchronized(publicationBindings) {
-            publicationBindings.toList()
+            java.util.Collections.unmodifiableList(ArrayList(publicationBindings))
         }
-        override val isEnabled: Boolean get() = enabled.get()
-        override fun enable() { enabled.set(true) }
+        override val isEnabled: Boolean get() = enabled.get() && !closed.get()
+        override val isClosed: Boolean get() = closed.get()
+        override fun enable() { check(!closed.get()) { "Placeholder ${owner.value}:${key.value} is closed" }; enabled.set(true) }
         override fun disable() { enabled.set(false) }
         override fun invalidateCache() = cache.clear()
+        fun whenClosed(callback: () -> Unit) { closeCallback = callback }
         fun resolve(request: PlaceholderRequest): CompletionStage<T?> {
             if (!isEnabled) return CompletableFuture.completedFuture(fallback)
             val cacheKey = cacheKey(request)
@@ -234,16 +247,19 @@ internal class PlaceholderHub(
             get(publication.adapterId)?.let(binding::attach)
         }
         fun attach(adapter: PlaceholderAdapter) = publicationBindings.toList()
-            .filter { it.adapterId == adapter.id.lowercase() }
+            .filter { it.adapterId == adapter.id.lowercase(java.util.Locale.ROOT) }
             .forEach { it.attach(adapter) }
         fun detach(adapterId: String) = publicationBindings.toList()
-            .filter { it.adapterId == adapterId.lowercase() }
+            .filter { it.adapterId == adapterId.lowercase(java.util.Locale.ROOT) }
             .forEach(PublicationBinding::detach)
         override fun close() {
+            if (!closed.compareAndSet(false, true)) return
             disable()
             invalidateCache()
             publicationBindings.toList().forEach { runCatching(it::close) }
             publicationBindings.clear()
+            closeCallback?.invoke()
+            closeCallback = null
         }
     }
 
@@ -253,7 +269,7 @@ internal class PlaceholderHub(
         private val key: String,
         private val resolver: PlaceholderResolver<Any>,
     ) : ExternalPlaceholderRegistration {
-        val adapterId: String = publication.adapterId.lowercase()
+        val adapterId: String = publication.adapterId.lowercase(java.util.Locale.ROOT)
         private val closed = AtomicBoolean(false)
         @Volatile private var delegate: ExternalPlaceholderRegistration? = null
         @Volatile private var failed = false
@@ -267,7 +283,7 @@ internal class PlaceholderHub(
 
         @Synchronized
         fun attach(adapter: PlaceholderAdapter) {
-            if (closed.get() || adapter.id.lowercase() != adapterId) return
+            if (closed.get() || adapter.id.lowercase(java.util.Locale.ROOT) != adapterId) return
             delegate?.let { runCatching(it::close) }
             delegate = null
             failed = false
@@ -391,8 +407,8 @@ internal class PlaceholderHub(
 
     private data class FormatterEntry<T : Any>(val owner: PluginId, val name: String, val type: Class<T>, val formatter: PlaceholderFormatter<T>)
     private data class CacheValue<T>(val value: T?, val written: Long) { fun expired(policy: PlaceholderCachePolicy) = System.currentTimeMillis() - written >= policy.expireAfterWriteMillis }
-    private fun id(owner: PluginId, key: String) = "${owner.value}:${key.lowercase()}"
-    private fun formatterId(owner: PluginId, name: String) = "${owner.value}:${name.lowercase()}"
+    private fun id(owner: PluginId, key: String) = "${owner.value}:${key.lowercase(java.util.Locale.ROOT)}"
+    private fun formatterId(owner: PluginId, name: String) = "${owner.value}:${name.lowercase(java.util.Locale.ROOT)}"
     private fun <K, V> synchronizedMap(): MutableMap<K, V> = java.util.Collections.synchronizedMap(LinkedHashMap())
 
     private fun <T> failed(error: Throwable): CompletionStage<T> = CompletableFuture<T>().also { it.completeExceptionally(error) }

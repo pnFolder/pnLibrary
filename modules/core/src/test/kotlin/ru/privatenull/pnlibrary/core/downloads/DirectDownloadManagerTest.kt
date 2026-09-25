@@ -53,6 +53,12 @@ class DirectDownloadManagerTest {
             assertFalse(Files.exists(directory.resolve("manual-data/manual.bin")))
             assertEquals(DownloadState.STAGED, registration.downloadNow().toCompletableFuture().join().single().state)
             assertArrayEquals(payload, Files.readAllBytes(directory.resolve("manual-data/manual.bin")))
+            registration.close()
+            assertTrue(registration.isClosed)
+            assertThrows(UnsupportedOperationException::class.java) {
+                @Suppress("UNCHECKED_CAST")
+                (registration.snapshots() as MutableList<Any>).clear()
+            }
         }
     }
 

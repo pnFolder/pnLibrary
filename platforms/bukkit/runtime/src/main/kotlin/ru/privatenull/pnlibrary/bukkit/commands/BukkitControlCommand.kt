@@ -37,7 +37,7 @@ internal class BukkitControlCommand(
         literal("status") {
             executes(::executeNative)
             argument("plugin", ArgumentType.string()) {
-                suggests { library.updates.registrations().map { it.snapshot.product } }
+                suggests { library.updates.all().map { it.snapshot.product } }
                 executes(::executeNative)
             }
         }
@@ -45,7 +45,7 @@ internal class BukkitControlCommand(
         literal("check") { executes(::executeNative) }
         literal("update") {
             argument("plugin", ArgumentType.string()) {
-                suggests { library.updates.registrations().map { it.snapshot.product } }
+                suggests { library.updates.all().map { it.snapshot.product } }
                 executes(::executeNative)
             }
         }
@@ -87,7 +87,7 @@ internal class BukkitControlCommand(
             "update" -> update(sender, arguments.getOrNull(1))
             "update-confirm" -> confirmUpdate(sender, arguments.getOrNull(1))
             "check" -> {
-                library.updates.registrations().forEach { it.checkNow() }
+            library.updates.all().forEach { it.checkNow() }
                 sender.sendMessage("§eПовторная проверка обновлений запущена.")
             }
             "restart" -> handleRestart(sender, arguments.drop(1))
@@ -101,8 +101,8 @@ internal class BukkitControlCommand(
     }
 
     private fun sendStatus(sender: CommandSender, requested: String?) {
-        val entries = if (requested == null) library.updates.registrations()
-        else listOfNotNull(library.updates.find(requested))
+        val entries = if (requested == null) library.updates.all()
+        else listOfNotNull(library.updates.get(requested))
         sender.sendMessage("")
         sender.sendMessage("§a «Состояние pnFolder»")
         sender.sendMessage(" §7- §fЯдро: §6${Bukkit.getName()} ${Bukkit.getBukkitVersion()}")
@@ -123,7 +123,7 @@ internal class BukkitControlCommand(
             sender.sendMessage("§eИспользование: /pn update <плагин>")
             return
         }
-        val registration = library.updates.find(name)
+        val registration = library.updates.get(name)
         if (registration == null) {
             sender.sendMessage("§cПлагин $name не зарегистрирован в pnLibrary.")
         } else {
@@ -230,7 +230,7 @@ internal class BukkitControlCommand(
         }
         sender.sendMessage("")
         sender.sendMessage("§e «Обновления pnFolder»")
-        val entries = library.updates.registrations()
+        val entries = library.updates.all()
         if (entries.isEmpty()) sender.sendMessage(" §7Нет зарегистрированных плагинов.")
         entries.forEach {
             sendUpdateLine(sender, it.snapshot)

@@ -90,21 +90,20 @@ class CommandBuilder internal constructor(name: String) {
 
     fun availableIf(rule: CommandAvailability): CommandBuilder = apply { availability = rule }
 
-    fun literal(name: String, configure: CommandNodeBuilder.() -> Unit): CommandBuilder = apply {
-        children += CommandNodeBuilder(CommandNodeKind.LITERAL, name.trim().lowercase()).apply(configure)
-    }
+    @JvmSynthetic
+    fun literal(name: String, configure: CommandNodeBuilder.() -> Unit): CommandBuilder =
+        literal(name, Consumer { builder -> builder.configure() })
 
     fun literal(name: String, configure: Consumer<CommandNodeBuilder>): CommandBuilder = apply {
         children += CommandNodeBuilder(CommandNodeKind.LITERAL, name).also(configure::accept)
     }
 
+    @JvmSynthetic
     fun <T : Any> argument(
         name: String,
         type: ArgumentType<T>,
         configure: CommandNodeBuilder.() -> Unit,
-    ): CommandBuilder = apply {
-        children += CommandNodeBuilder(CommandNodeKind.ARGUMENT, name.trim(), type).apply(configure)
-    }
+    ): CommandBuilder = argument(name, type, Consumer { builder -> builder.configure() })
 
     fun <T : Any> argument(
         name: String,
@@ -137,8 +136,9 @@ class CommandBuilder internal constructor(name: String) {
 }
 
 /** Builds one immutable portable command. */
+@JvmSynthetic
 fun command(name: String, configure: CommandBuilder.() -> Unit): CommandDefinition =
-    CommandBuilder(name).apply(configure).build()
+    CommandDefinition.builder(name).apply(configure).build()
 
 /** Returns an already-completed command execution stage. */
 fun completedExecution(): CompletionStage<Void> = CompletableFuture.completedFuture(null)

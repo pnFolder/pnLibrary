@@ -1,6 +1,8 @@
 package ru.privatenull.pnlibrary.api.config
 
 import ru.privatenull.pnlibrary.api.plugin.PluginId
+import java.util.Collections
+import java.util.LinkedHashSet
 import java.util.regex.Pattern
 
 /**
@@ -20,6 +22,10 @@ class ConfigTypeAccess private constructor(
     /** Explicit denials that override owner and allow rules. */
     val deniedPlugins: Set<PluginId>,
 ) {
+    init {
+        require(allowedPatterns.none(String::isBlank)) { "Config type access patterns must not be blank" }
+    }
+
     /** Returns whether [consumer] may use a type published by [owner]. */
     fun allows(owner: PluginId, consumer: PluginId): Boolean {
         if (consumer in deniedPlugins) return false
@@ -36,6 +42,7 @@ class ConfigTypeAccess private constructor(
         fun ownerOnly() = Builder().build()
 
         /** Alias for [ownerOnly]. */
+        @Deprecated("Use ownerOnly()", ReplaceWith("ownerOnly()"))
         @JvmStatic
         fun local() = ownerOnly()
 
@@ -44,6 +51,7 @@ class ConfigTypeAccess private constructor(
         fun everyone() = Builder().allowAll().build()
 
         /** Alias for [everyone]. */
+        @Deprecated("Use everyone()", ReplaceWith("everyone()"))
         @JvmStatic
         fun global() = everyone()
 
@@ -74,12 +82,18 @@ class ConfigTypeAccess private constructor(
         fun allow(vararg pluginIds: String) = apply { pluginIds.map(PluginId::of).forEach(allowed::add) }
         /** Allows plugin identifiers matching any supplied case-insensitive glob. */
         fun allowMatching(vararg patterns: String) = apply {
-            patterns.map(String::trim).filter(String::isNotEmpty).forEach(this.patterns::add)
+            require(patterns.none(String::isBlank)) { "Config type access patterns must not be blank" }
+            patterns.map(String::trim).forEach(this.patterns::add)
         }
         /** Denies the supplied plugins, overriding all allow rules. */
         fun deny(vararg pluginIds: String) = apply { pluginIds.map(PluginId::of).forEach(denied::add) }
         /** Creates an immutable access policy. */
-        fun build() = ConfigTypeAccess(all, allowed.toSet(), patterns.toSet(), denied.toSet())
+        fun build() = ConfigTypeAccess(
+            all,
+            Collections.unmodifiableSet(LinkedHashSet(allowed)),
+            Collections.unmodifiableSet(LinkedHashSet(patterns)),
+            Collections.unmodifiableSet(LinkedHashSet(denied)),
+        )
     }
 }
 

@@ -59,7 +59,7 @@ internal class GlobalPlaceholderValueStore : PlaceholderValueStore {
     }
 
     private fun key(parameter: String): String {
-        val normalized = parameter.trim().lowercase()
+        val normalized = parameter.trim().lowercase(java.util.Locale.ROOT)
         require(normalized.matches(PARAMETER)) { "Invalid placeholder value parameter: $parameter" }
         return normalized
     }

@@ -1,9 +1,11 @@
 package ru.privatenull.pnlibrary.api.diagnostics
 
+import java.util.Collections
+
 /**
  * Per-file collection and redaction contract declared by a contributing plugin.
  *
- * Use [DiagnosticConfiguration.file] to obtain a [Builder].
+ * Use [DiagnosticConfiguration.builder] to obtain a [Builder].
  */
 class DiagnosticConfiguration private constructor(builder: Builder) {
 
@@ -40,9 +42,14 @@ class DiagnosticConfiguration private constructor(builder: Builder) {
 
     /** Entry points and validation rules for diagnostic file declarations. */
     companion object {
-        /** Entry point for the fluent builder. */
+        /** Canonical entry point for the fluent builder. */
         @JvmStatic
-        fun file(path: String): Builder = Builder(path)
+        fun builder(path: String): Builder = Builder(path)
+
+        /** Compatibility alias retained for the current major API line. */
+        @Deprecated("Use builder(path)", ReplaceWith("builder(path)"))
+        @JvmStatic
+        fun file(path: String): Builder = builder(path)
 
         private val VALID_PATH = Regex("[A-Za-z0-9_./-]+\\.(?:yml|yaml|json|properties|toml|conf)")
 
@@ -61,7 +68,7 @@ class DiagnosticConfiguration private constructor(builder: Builder) {
                 }
                 result.add(item.trim())
             }
-            return result.toList()
+            return Collections.unmodifiableList(ArrayList(result))
         }
     }
 }

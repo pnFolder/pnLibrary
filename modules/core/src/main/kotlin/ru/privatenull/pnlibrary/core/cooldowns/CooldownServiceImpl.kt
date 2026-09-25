@@ -20,7 +20,7 @@ internal class CooldownServiceImpl : CooldownService {
     override fun acquire(subject: UUID, action: String, duration: Duration): CooldownResult {
         validate(action, duration)
         checkOpen()
-        val key = Key(subject, action.lowercase())
+        val key = Key(subject, normalized(action))
         val now = System.nanoTime()
         while (true) {
             val current = deadlines[key]
@@ -68,7 +68,7 @@ internal class CooldownServiceImpl : CooldownService {
         deadlines.entries.removeIf { it.value <= now }
     }
     private fun checkOpen() = check(!closed.get()) { "Cooldown service is closed" }
-    private fun normalized(action: String) = action.trim().lowercase().also { require(it.isNotEmpty()) { "Cooldown action cannot be blank" } }
+    private fun normalized(action: String) = action.trim().lowercase(java.util.Locale.ROOT).also { require(it.isNotEmpty()) { "Cooldown action cannot be blank" } }
     private fun validate(action: String, duration: Duration) {
         normalized(action)
         require(!duration.isNegative) { "Cooldown duration cannot be negative" }

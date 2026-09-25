@@ -208,7 +208,10 @@ internal class DirectDownloadManager(
             DownloadSnapshot(declaration.key, if (alreadyInstalled(declaration)) DownloadState.CURRENT else DownloadState.DECLARED)
         })
 
-        override fun snapshots(): List<DownloadSnapshot> = state.get().toList()
+        override val isClosed: Boolean get() = registrationClosed.get()
+
+        override fun snapshots(): List<DownloadSnapshot> =
+            java.util.Collections.unmodifiableList(ArrayList(state.get()))
 
         override fun downloadNow(): CompletionStage<List<DownloadSnapshot>> =
             start(request.declarations.filterNot(::alreadyInstalled), automaticPolicy = false)

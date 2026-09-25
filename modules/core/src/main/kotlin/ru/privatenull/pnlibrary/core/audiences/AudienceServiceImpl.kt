@@ -20,7 +20,8 @@ internal class AudienceServiceImpl(
     override fun console(): AudienceSender = if (closed.get()) CLOSED_CONSOLE else adapter.console()
     override fun player(uniqueId: UUID): LibraryPlayer? = if (closed.get()) null else adapter.player(uniqueId)
     override fun sender(native: Any): AudienceSender? = if (closed.get()) null else adapter.sender(native)
-    override fun onlinePlayers(): List<LibraryPlayer> = if (closed.get()) emptyList() else adapter.onlinePlayers().toList()
+    override fun onlinePlayers(): List<LibraryPlayer> = if (closed.get()) emptyList() else
+        java.util.Collections.unmodifiableList(ArrayList(adapter.onlinePlayers()))
     override fun all(): LibraryAudience = DynamicAudience(::onlinePlayers)
     override fun combine(audiences: Iterable<LibraryAudience>): LibraryAudience = CompositeAudience(audiences)
     override fun close() { closed.set(true) }

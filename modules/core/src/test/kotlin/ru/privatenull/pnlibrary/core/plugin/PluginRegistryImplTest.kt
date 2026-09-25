@@ -1,3 +1,5 @@
+@file:Suppress("DEPRECATION", "OVERRIDE_DEPRECATION")
+
 package ru.privatenull.pnlibrary.core.plugin
 
 import org.junit.jupiter.api.Assertions.assertEquals
@@ -140,7 +142,7 @@ class PluginRegistryImplTest {
 
         assertTrue(error.message!!.contains("economy >= 2.0.0"))
         assertFalse(taskScope.closed)
-        assertTrue(registry.registrations().single().modules().isEmpty())
+        assertTrue(registry.all().single().all().isEmpty())
     }
 
     @Test
@@ -242,8 +244,8 @@ class PluginRegistryImplTest {
 
         assertEquals("first", first.id.value)
         assertEquals("second", second.id.value)
-        assertEquals(1, registry.registrations().size)
-        assertEquals(2, plugin.modules().size)
+        assertEquals(1, registry.all().size)
+        assertEquals(2, plugin.all().size)
         registry.close()
     }
 
@@ -269,7 +271,7 @@ class PluginRegistryImplTest {
 
         assertEquals("core", first.id.value)
         assertEquals("core", second.id.value)
-        assertEquals(2, registry.registrations().size)
+        assertEquals(2, registry.all().size)
     }
 
     @Test
@@ -350,11 +352,11 @@ class PluginRegistryImplTest {
         val core = modules.registerModule("example-core") { }
         val economy = modules.registerModule("example-economy") { }
 
-        assertEquals(setOf("example-core", "example-economy"), modules.modules().map { it.id.value }.toSet())
+        assertEquals(setOf("example-core", "example-economy"), modules.all().map { it.id.value }.toSet())
         modules.close()
         assertTrue(core.isClosed)
         assertTrue(economy.isClosed)
-        assertTrue(registry.registrations().isEmpty())
+        assertTrue(registry.all().isEmpty())
     }
 
     @Test
@@ -375,7 +377,7 @@ class PluginRegistryImplTest {
         }
 
         assertTrue(error.message!!.contains("not a supported owner"))
-        assertTrue(registry.registrations().isEmpty())
+        assertTrue(registry.all().isEmpty())
     }
 
     @Test

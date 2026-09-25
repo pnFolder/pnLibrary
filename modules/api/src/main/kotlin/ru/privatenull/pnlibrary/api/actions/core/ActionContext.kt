@@ -88,7 +88,8 @@ class ActionContext(
     }
 
     /** Returns a snapshot of values currently available to conditions and actions. */
-    fun values(): Map<String, Any?> = runtimeValues.toMap()
+    fun values(): Map<String, Any?> =
+        java.util.Collections.unmodifiableMap(LinkedHashMap(runtimeValues))
 
     /** Stores a configuration-facing value for later actions and conditions. */
     fun setValue(name: String, value: Any?) = apply {

@@ -7,6 +7,7 @@ import ru.privatenull.pnlibrary.api.platform.PlatformType
 import ru.privatenull.pnlibrary.api.plugin.PluginDependency
 import java.util.Optional
 import java.util.UUID
+import java.util.Collections
 import java.util.concurrent.CompletableFuture
 import java.util.concurrent.CompletionStage
 
@@ -124,7 +125,7 @@ class PluginUpdateRequest private constructor(builder: Builder) {
     /** Whether a newly discovered compatible artifact should be downloaded. */
     val automaticDownload: Boolean = builder.automaticDownload
     /** Immutable artifact-selection rules in declaration order. */
-    val artifacts: List<PluginUpdateArtifact> = builder.artifacts.toList()
+    val artifacts: List<PluginUpdateArtifact> = Collections.unmodifiableList(ArrayList(builder.artifacts))
     /** Inclusive pnLibrary API generations supported by this product. */
     val supportedApi: ApiVersionRange = builder.supportedApi
 
@@ -211,6 +212,8 @@ class PluginUpdateRequest private constructor(builder: Builder) {
 
 /** Lifecycle and manual controls for one updater registration. */
 interface UpdateRegistration : AutoCloseable {
+    /** Whether this registration has been removed and rejects new manual work. */
+    val isClosed: Boolean get() = false
     /** Repository coordinate in `owner/name` form. */
     val repository: String
     /** Latest immutable state observed by this registration. */
@@ -223,7 +226,13 @@ interface UpdateRegistration : AutoCloseable {
     override fun close()
 }
 
-/** Registers and queries plugin update monitors owned by this runtime. */
+/**
+ * Registers and queries plugin update monitors owned by this runtime.
+ *
+ * Registration and lookup are safe from arbitrary threads. Graph checks are serialized by the
+ * runtime and concurrent [checkNow] calls share the active check. Completion stages finish on the
+ * update executor; callers must dispatch platform mutations through their platform/task API.
+ */
 interface UpdateService {
     /** Registers and immediately starts monitoring [product] represented by [owner]. */
     fun register(
@@ -232,9 +241,24 @@ interface UpdateService {
         request: PluginUpdateRequest,
         dependencies: List<PluginDependency> = emptyList(),
     ): UpdateRegistration
-    /** Returns a stable snapshot of current registrations. */
-    fun registrations(): List<UpdateRegistration>
+    /** Returns an immutable snapshot of current registrations. */
+    @Suppress("DEPRECATION")
+    fun all(): List<UpdateRegistration> = Collections.unmodifiableList(ArrayList(registrations()))
+
     /** Finds a registration by product or repository name, ignoring case. */
+    @Suppress("DEPRECATION")
+    fun get(product: String): UpdateRegistration? = find(product)
+
+    /** Returns a registration or fails with the requested product in the message. */
+    fun require(product: String): UpdateRegistration =
+        get(product) ?: error("Update registration '$product' is unavailable")
+
+    /** Compatibility alias for [all]. Implementations should return a stable snapshot. */
+    @Deprecated("Use all()", ReplaceWith("all()"))
+    fun registrations(): List<UpdateRegistration>
+
+    /** Compatibility alias for [get]. */
+    @Deprecated("Use get(product)", ReplaceWith("get(product)"))
     fun find(product: String): UpdateRegistration?
 
     /** Refreshes every registered catalogue and resolves one complete compatibility plan. */
@@ -245,7 +269,7 @@ interface UpdateService {
     fun stage(planId: UUID): CompletionStage<UpdatePlanSnapshot> = unsupported("graph update staging")
     /** Confirms a token-bound sensitive action for the selected plan. */
     fun confirm(planId: UUID, token: String): CompletionStage<UpdatePlanSnapshot> = unsupported("graph update confirmation")
-    /** Returns bounded newest-first graph-plan history. */
+    /** Returns a bounded, newest-first, immutable graph-plan snapshot. */
     fun history(): List<UpdatePlanSnapshot> = emptyList()
 
     private fun unsupported(operation: String): CompletionStage<UpdatePlanSnapshot> =

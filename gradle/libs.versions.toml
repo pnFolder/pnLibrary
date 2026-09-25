@@ -1,45 +1,45 @@
 [versions]
-kotlin        = "2.1.21"
-shadow        = "9.6.1"
-dokka         = "2.2.0"
-mavenPublish  = "0.35.0"
-gson          = "2.11.0"
-snakeyaml     = "2.3"
-junit         = "5.11.4"
-mockito       = "5.20.0"
-spigot18      = "1.8.8-R0.1-SNAPSHOT"
-bungeecord    = "1.21-R0.4"
-velocity      = "3.3.0-SNAPSHOT"
-adventure     = "4.17.0"
-adventure-platform = "4.4.1"
-placeholderapi = "2.12.3"
-maven         = "3.9.9"
-mavenPluginAnnotations = "3.15.1"
+kotlin                  = "2.1.21"
+shadow                  = "9.6.1"
+dokka                   = "2.2.0"
+mavenPublish            = "0.35.0"
+gson                    = "2.11.0"
+snakeyaml               = "2.3"
+junit                   = "5.11.4"
+mockito                 = "5.20.0"
+spigot18                = "1.8.8-R0.1-SNAPSHOT"
+bungeecord              = "1.21-R0.4"
+velocity                = "3.3.0-SNAPSHOT"
+adventure               = "4.17.0"
+adventure-platform      = "4.4.1"
+placeholderapi          = "2.12.3"
+maven                   = "3.9.9"
+mavenPluginAnnotations  = "3.15.1"
 
 [libraries]
-kotlin-stdlib       = { module = "org.jetbrains.kotlin:kotlin-stdlib",               version.ref = "kotlin" }
-gson                = { module = "com.google.code.gson:gson",                         version.ref = "gson"   }
-snakeyaml           = { module = "org.yaml:snakeyaml",                               version.ref = "snakeyaml" }
-junit-jupiter       = { module = "org.junit.jupiter:junit-jupiter",                  version.ref = "junit"  }
-junit-launcher      = { module = "org.junit.platform:junit-platform-launcher",       version = "1.11.4"     }
-mockito-core        = { module = "org.mockito:mockito-core",                         version.ref = "mockito" }
-mockito-kotlin      = { module = "org.mockito.kotlin:mockito-kotlin",                version = "5.4.0"      }
-spigot-api-v18      = { module = "org.spigotmc:spigot-api",                          version.ref = "spigot18" }
-bungeecord-api      = { module = "net.md-5:bungeecord-api",                          version.ref = "bungeecord" }
-velocity-api        = { module = "com.velocitypowered:velocity-api",                 version.ref = "velocity" }
-adventure-api       = { module = "net.kyori:adventure-api",                          version.ref = "adventure" }
-adventure-minimessage = { module = "net.kyori:adventure-text-minimessage",            version.ref = "adventure" }
-adventure-legacy    = { module = "net.kyori:adventure-text-serializer-legacy",        version.ref = "adventure" }
-adventure-gson      = { module = "net.kyori:adventure-text-serializer-gson",          version.ref = "adventure" }
-adventure-plain     = { module = "net.kyori:adventure-text-serializer-plain",         version.ref = "adventure" }
-adventure-platform-bukkit = { module = "net.kyori:adventure-platform-bukkit",         version.ref = "adventure-platform" }
-placeholderapi      = { module = "me.clip:placeholderapi",                            version.ref = "placeholderapi" }
-maven-plugin-api    = { module = "org.apache.maven:maven-plugin-api",                  version.ref = "maven" }
-maven-core          = { module = "org.apache.maven:maven-core",                        version.ref = "maven" }
-maven-plugin-annotations = { module = "org.apache.maven.plugin-tools:maven-plugin-annotations", version.ref = "mavenPluginAnnotations" }
+kotlin-stdlib             = { module = "org.jetbrains.kotlin:kotlin-stdlib",                     version.ref = "kotlin"                 }
+gson                      = { module = "com.google.code.gson:gson",                              version.ref = "gson"                   }
+snakeyaml                 = { module = "org.yaml:snakeyaml",                                     version.ref = "snakeyaml"              }
+junit-jupiter             = { module = "org.junit.jupiter:junit-jupiter",                        version.ref = "junit"                  }
+junit-launcher            = { module = "org.junit.platform:junit-platform-launcher",             version = "1.11.4"                     }
+mockito-core              = { module = "org.mockito:mockito-core",                               version.ref = "mockito"                }
+mockito-kotlin            = { module = "org.mockito.kotlin:mockito-kotlin",                      version = "5.4.0"                      }
+spigot-api-v18            = { module = "org.spigotmc:spigot-api",                                version.ref = "spigot18"               }
+bungeecord-api            = { module = "net.md-5:bungeecord-api",                                version.ref = "bungeecord"             }
+velocity-api              = { module = "com.velocitypowered:velocity-api",                       version.ref = "velocity"               }
+adventure-api             = { module = "net.kyori:adventure-api",                                version.ref = "adventure"              }
+adventure-minimessage     = { module = "net.kyori:adventure-text-minimessage",                   version.ref = "adventure"              }
+adventure-legacy          = { module = "net.kyori:adventure-text-serializer-legacy",             version.ref = "adventure"              }
+adventure-gson            = { module = "net.kyori:adventure-text-serializer-gson",               version.ref = "adventure"              }
+adventure-plain           = { module = "net.kyori:adventure-text-serializer-plain",              version.ref = "adventure"              }
+adventure-platform-bukkit = { module = "net.kyori:adventure-platform-bukkit",                    version.ref = "adventure-platform"     }
+placeholderapi            = { module = "me.clip:placeholderapi",                                 version.ref = "placeholderapi"         }
+maven-plugin-api          = { module = "org.apache.maven:maven-plugin-api",                      version.ref = "maven"                  }
+maven-core                = { module = "org.apache.maven:maven-core",                            version.ref = "maven"                  }
+maven-plugin-annotations  = { module = "org.apache.maven.plugin-tools:maven-plugin-annotations", version.ref = "mavenPluginAnnotations" }
 
 [plugins]
-kotlin-jvm    = { id = "org.jetbrains.kotlin.jvm",             version.ref = "kotlin" }
-shadow        = { id = "com.gradleup.shadow",                  version.ref = "shadow" }
-dokka         = { id = "org.jetbrains.dokka",                  version.ref = "dokka" }
+kotlin-jvm    = { id = "org.jetbrains.kotlin.jvm",             version.ref = "kotlin"       }
+shadow        = { id = "com.gradleup.shadow",                  version.ref = "shadow"       }
+dokka         = { id = "org.jetbrains.dokka",                  version.ref = "dokka"        }
 maven-publish = { id = "com.vanniktech.maven.publish",         version.ref = "mavenPublish" }

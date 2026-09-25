@@ -76,11 +76,14 @@ internal class DefaultMinecraftLocalization internal constructor(
         executor.execute {
             try {
                 permits.acquire()
-                try { promise.complete(loadLocaleNow(key, refresh)) } finally { permits.release() }
-            } catch (error: Throwable) {
-                promise.completeExceptionally(error)
-            } finally {
+                val loaded = try { loadLocaleNow(key, refresh) } finally { permits.release() }
+                // Remove ownership before publishing completion. A caller unblocked by complete()
+                // must never observe this finished request as an active download.
                 inFlight.remove(key, promise)
+                promise.complete(loaded)
+            } catch (error: Throwable) {
+                inFlight.remove(key, promise)
+                promise.completeExceptionally(error)
             }
         }
         return promise

@@ -11,6 +11,8 @@ import java.util.concurrent.CompletableFuture
  * classes and listeners depend only on `pnlibrary-api`, so the same code runs on
  * Bukkit, BungeeCord, and Velocity. Every event is routed according to
  * [Event.mode], independently of the thread that publishes it.
+ * Scope mutation and shutdown are safe from arbitrary threads. [publish] returns immediately with
+ * a future that completes after every selected listener has finished in the event execution mode.
  */
 interface EventService : AutoCloseable {
     /** Returns the existing plugin scope or creates it atomically. */
