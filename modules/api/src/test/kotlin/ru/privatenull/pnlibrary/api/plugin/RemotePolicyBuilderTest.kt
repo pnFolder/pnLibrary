@@ -16,12 +16,23 @@ class RemotePolicyBuilderTest {
             .build()
 
         assertEquals("production", policy.values["environment"])
+        assertEquals(
+            "file:///C:/policies/AcceptancePolicy.java",
+            RemotePolicy.builder().source("file:///C:/policies/AcceptancePolicy.java").build().source,
+        )
+        assertEquals(
+            "file:///C:/policies/AcceptancePolicy.kt",
+            RemotePolicy.builder().source("file:///C:/policies/AcceptancePolicy.kt").build().source,
+        )
         assertThrows(UnsupportedOperationException::class.java) {
             @Suppress("UNCHECKED_CAST")
             (policy.values as MutableMap<String, String>)["changed"] = "true"
         }
         assertThrows(IllegalArgumentException::class.java) {
             RemotePolicy.builder().source("https:///missing-host.java")
+        }
+        assertThrows(IllegalArgumentException::class.java) {
+            RemotePolicy.builder().source("file:///C:/policies/policy.txt")
         }
         assertThrows(IllegalArgumentException::class.java) {
             RemotePolicy.builder().source("https://example.org/policy.java").checkEvery(Duration.ZERO)

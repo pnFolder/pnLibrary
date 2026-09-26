@@ -196,7 +196,7 @@ class PluginRegistryImplTest {
         val owner = Any()
         val taskScope = RecordingTaskScope(owner)
         val tasks = RecordingTaskService(taskScope)
-        val events = EventServiceImpl(TestTaskService()) { _, _, _ -> }
+        val events = EventServiceImpl { _, _, _ -> }
         val metrics = RecordingMetricsService()
         val registry = registry(events = events, tasks = tasks, metrics = metrics)
         val listener = RecordingListener()
@@ -212,13 +212,15 @@ class PluginRegistryImplTest {
         context.metrics.enable()
         assertTrue(context.metrics.isEnabled)
         assertEquals(42, metrics.lastProjectId)
-        assertEquals(1, events.publish(TestEvent()).join().delivered)
+        events.callEvent(TestEvent())
+        assertEquals(1, listener.calls)
 
         context.close()
 
         assertNull(plugin.getModule("pnclans"))
         assertTrue(context.isClosed)
-        assertEquals(0, events.publish(TestEvent()).join().delivered)
+        events.callEvent(TestEvent())
+        assertEquals(1, listener.calls)
         assertTrue(taskScope.closed)
     }
 
@@ -439,8 +441,13 @@ class PluginRegistryImplTest {
     }
 
     private class RecordingListener : Listener {
+        var calls = 0
+            private set
+
         @EventHandler
-        fun handle(event: TestEvent) = Unit
+        fun handle(event: TestEvent) {
+            calls++
+        }
     }
 
     private class TestEvent : Event()
@@ -511,7 +518,7 @@ class PluginRegistryImplTest {
 
         fun registry(
             platform: PlatformAdapter = platform(),
-            events: EventServiceImpl = EventServiceImpl(TestTaskService()) { _, _, _ -> },
+            events: EventServiceImpl = EventServiceImpl { _, _, _ -> },
             tasks: TaskService = RecordingTaskService(RecordingTaskScope(Any())),
             logging: LoggingService = loggingService(),
             metrics: MetricsService = RecordingMetricsService(),

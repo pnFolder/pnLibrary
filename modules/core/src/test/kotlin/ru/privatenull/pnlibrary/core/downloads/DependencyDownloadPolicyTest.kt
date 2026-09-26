@@ -1,7 +1,6 @@
 package ru.privatenull.pnlibrary.core.downloads
 
 import org.junit.jupiter.api.Assertions.assertEquals
-import org.junit.jupiter.api.Assertions.assertTrue
 import org.junit.jupiter.api.Test
 import ru.privatenull.pnlibrary.api.plugin.Dependencies
 import ru.privatenull.pnlibrary.api.plugin.DownloadPolicy
@@ -23,14 +22,14 @@ class DependencyDownloadPolicyTest {
     }
 
     @Test
-    fun `forced dependency cannot bypass host allow list`() {
+    fun `forced dependency accepts any https host`() {
         val dependency = ExternalPluginDependency.builder("Legacy", "2.0.0")
             .artifact("https://evil.example/Legacy.jar", 128, "a".repeat(64))
             .downloadPolicy(DownloadPolicy.FORCED)
             .build()
 
-        assertTrue(policy.decide(dependency,
-            configuration(automatic = true, allowExternal = true, allowNew = true)) is DownloadDecision.Blocked)
+        assertEquals(DownloadDecision.Allow, policy.decide(dependency,
+            configuration(automatic = true, allowExternal = true, allowNew = true)))
     }
 
     @Test

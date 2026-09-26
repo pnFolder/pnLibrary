@@ -22,6 +22,7 @@ dependencies {
     implementation(project(":modules:features:update"))
     implementation(project(":modules:features:currency-runtime"))
     implementation(libs.kotlin.stdlib)
+    implementation(libs.kotlin.compiler.embeddable)
     implementation(libs.gson)
     implementation(libs.snakeyaml)
     implementation(libs.adventure.minimessage)
@@ -29,6 +30,7 @@ dependencies {
     implementation(libs.adventure.gson)
     implementation(libs.adventure.plain)
     implementation(project(":modules:internal:bstats"))
+    implementation(project(":modules:design:console"))
 
     testImplementation(libs.junit.jupiter)
     testImplementation(libs.mockito.kotlin)

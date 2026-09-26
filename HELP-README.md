@@ -192,7 +192,9 @@ ClanCreatedEvent("knights").callEvent().thenAccept { allowed ->
 `Event` exposes `eventName`, `mode`, `isAsynchronous`, and one convenience method:
 `callEvent()`. `EventMode.SYNC` routes listeners through the platform's main/global
 scheduler; `EventMode.ASYNC` routes them through pnLibrary's background executor.
-The returned `CompletableFuture<Boolean>` completes after all listeners finish.
+`event.callEvent()` returns only after all listeners finish and reports whether a cancellable
+event remains allowed. `events.callEvent(event)` returns the same event instance when its
+listener-produced fields are needed.
 Compose it with `thenAccept`; do not block a platform-owned thread with `join()`.
 
 A cancellable event composes both contracts instead of using a separate event

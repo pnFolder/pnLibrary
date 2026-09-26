@@ -28,11 +28,10 @@ fun ShadowJar.applyCommonConfig() {
     archiveVersion    = pnVer
     duplicatesStrategy = DuplicatesStrategy.EXCLUDE
 
-    // Relocate Kotlin stdlib & reflect so they don't clash with other plugins
-    relocate("kotlin.",                 "ru.privatenull.pnlibrary.libs.kotlin.")
+    // Keep kotlin.* intact: the runtime .kt policy compiler resolves the stdlib from this JAR.
+    // Platform plugin classloaders isolate it from unrelated plugins.
     relocate("kotlinx.",                "ru.privatenull.pnlibrary.libs.kotlinx.")
-    relocate("org.intellij.",           "ru.privatenull.pnlibrary.libs.intellij.")
-    relocate("org.jetbrains.",          "ru.privatenull.pnlibrary.libs.jetbrains.")
+    // Keep the compiler namespace intact: its ServiceLoader descriptors use these exact names.
     relocate("com.google.gson",         "ru.privatenull.pnlibrary.libs.gson")
     relocate("org.yaml.snakeyaml",      "ru.privatenull.pnlibrary.libs.yaml")
     relocate("org.bstats",              "ru.privatenull.pnlibrary.libs.bstats")
@@ -43,9 +42,8 @@ fun ShadowJar.applyCommonConfig() {
     exclude("META-INF/*.RSA")
     exclude("META-INF/*.DSA")
     exclude("META-INF/INDEX.LIST")
-    exclude("META-INF/*.kotlin_module")
-    // Strip Kotlin source maps from the fat JAR
-    exclude("**/*.kotlin_builtins")
+    // Keep Kotlin module metadata so runtime-compiled .kt policies can resolve stdlib extensions.
+    // Kotlin built-ins are retained because the optional remote .kt policy compiler needs them.
 }
 
 // ── Bukkit / Spigot / Paper / Leaf / Purpur / Folia (universal) ──────────────

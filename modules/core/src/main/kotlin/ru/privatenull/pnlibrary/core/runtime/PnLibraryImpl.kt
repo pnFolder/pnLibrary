@@ -107,7 +107,7 @@ internal class PnLibraryImpl(
     override val audiences: ru.privatenull.pnlibrary.api.audiences.AudienceService get() = audienceService
     private val serviceManager = ServiceManagerImpl()
     override val services: ru.privatenull.pnlibrary.api.services.ServiceManager get() = serviceManager
-    private val eventService = EventServiceImpl(taskService) { pluginId, message, error ->
+    private val eventService = EventServiceImpl { pluginId, message, error ->
         val identifiedMessage = "[$pluginId] $message"
         recordAndLog(owner, identifiedMessage, error)
     }

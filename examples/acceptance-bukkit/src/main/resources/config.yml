@@ -1,0 +1,28 @@
+metrics:
+  enabled: false
+  project-id: 32592
+
+updates:
+  enabled: false
+  repository-owner: pnFolder
+  repository-name: pnLibrary
+  artifact-pattern: '(?i)^pnLibrary-acceptance-bukkit-.*\.jar$'
+
+dependency:
+  enabled: false
+  name: ExampleDependency
+  minimum-version: 1.0.0
+  url: https://example.org/ExampleDependency.jar
+  automatic-download: false
+
+downloads:
+  enabled: false
+  url: https://example.org/pnLibrary-acceptance.txt
+
+remote-policy:
+  enabled: false
+  # DISABLE_PLUGIN completely disables pnLibraryAcceptance; DISABLE_MODULE closes only its library module.
+  on-deny: DISABLE_PLUGIN
+  # HTTPS raw URL or local file URL, for example:
+  # file:///C:/servers/test/AcceptancePolicy.kt
+  source: https://example.org/AcceptancePolicy.java

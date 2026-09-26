@@ -1,203 +1,122 @@
 package ru.privatenull.pnlibrary.core.events
 
-import org.junit.jupiter.api.Assertions.assertEquals
-import org.junit.jupiter.api.Assertions.assertFalse
-import org.junit.jupiter.api.Assertions.assertSame
-import org.junit.jupiter.api.Assertions.assertThrows
-import org.junit.jupiter.api.Assertions.assertTrue
+import org.junit.jupiter.api.Assertions.*
 import org.junit.jupiter.api.Test
-import ru.privatenull.pnlibrary.api.events.Cancellable
-import ru.privatenull.pnlibrary.api.events.Event
-import ru.privatenull.pnlibrary.api.events.EventHandler
-import ru.privatenull.pnlibrary.api.events.EventMode
-import ru.privatenull.pnlibrary.api.events.EventPriority
-import ru.privatenull.pnlibrary.api.events.Listener
+import ru.privatenull.pnlibrary.api.events.*
 import ru.privatenull.pnlibrary.api.plugin.PluginId
-import ru.privatenull.pnlibrary.core.testing.TestTaskService
 import java.util.function.Consumer
 
 class EventServiceImplTest {
     @Test
-    fun `event exposes a friendly name and synchronous mode by default`() {
-        val event = TestEvent()
-
-        assertEquals("TestEvent", event.eventName)
-        assertFalse(event.isAsynchronous)
-    }
-
-    @Test
-    fun `listeners run by priority and registration order`() {
+    fun `call returns only after listeners run in priority order`() {
         val calls = mutableListOf<String>()
-        EventServiceImpl(TestTaskService()) { _, _, _ -> }.use { events ->
+        EventServiceImpl { _, _, _ -> }.use { events ->
             val scope = events.scope(PluginId.of("test"))
             scope.subscribe(TestEvent::class.java, EventPriority.HIGH, Consumer { calls += "high" })
             scope.subscribe(Event::class.java, EventPriority.LOW, Consumer { calls += "base" })
             scope.subscribe(TestEvent::class.java, EventPriority.LOW, Consumer { calls += "low" })
-
-            val result = events.publish(TestEvent()).join()
-
+            events.callEvent(TestEvent())
             assertEquals(listOf("base", "low", "high"), calls)
-            assertEquals(3, result.delivered)
-            assertEquals(0, result.failed)
         }
     }
 
     @Test
-    fun `arbitrary numeric priorities fit between presets`() {
-        val calls = mutableListOf<Int>()
-        EventServiceImpl(TestTaskService()) { _, _, _ -> }.use { events ->
+    fun `mutable cancellation state is available immediately`() {
+        EventServiceImpl { _, _, _ -> }.use { events ->
             val scope = events.scope(PluginId.of("test"))
-            scope.subscribe(TestEvent::class.java, EventPriority.HIGH, Consumer { calls += 500 })
-            scope.subscribe(TestEvent::class.java, 250, Consumer { calls += 250 })
-            scope.subscribe(TestEvent::class.java, EventPriority.NORMAL, Consumer { calls += 0 })
-
-            events.publish(TestEvent()).join()
-
-            assertEquals(listOf(0, 250, 500), calls)
+            scope.subscribe(MutableEvent::class.java, EventPriority.LOW, Consumer {
+                it.value = "handled"
+                it.isCancelled = true
+            })
+            scope.subscribe(MutableEvent::class.java, EventPriority.NORMAL, true, Consumer {
+                error("cancelled event must be skipped")
+            })
+            val event = MutableEvent()
+            val returned = scope.callEvent(event)
+            assertSame(event, returned)
+            assertEquals("handled", event.value)
+            assertTrue(event.isCancelled)
         }
     }
 
     @Test
-    fun `annotated listener registers all valid handler methods`() {
+    fun `annotated handlers register in order and close together`() {
         val calls = mutableListOf<String>()
-        EventServiceImpl(TestTaskService()) { _, _, _ -> }.use { events ->
-            val scope = events.scope(PluginId.of("test"))
-            val registration = scope.register(AnnotatedListener(calls))
-
-            val result = events.publish(TestEvent()).join()
-
-            assertEquals(2, registration.handlerCount)
+        EventServiceImpl { _, _, _ -> }.use { events ->
+            val registration = events.scope(PluginId.of("test")).register(AnnotatedListener(calls))
+            events.callEvent(TestEvent())
             assertEquals(listOf("early", "normal"), calls)
-            assertEquals(2, result.delivered)
-
+            assertEquals(2, registration.handlerCount)
             registration.close()
-            assertTrue(registration.isClosed)
-            events.publish(TestEvent()).join()
+            events.callEvent(TestEvent())
             assertEquals(2, calls.size)
         }
     }
 
     @Test
-    fun `invalid annotated signature fails during registration`() {
-        EventServiceImpl(TestTaskService()) { _, _, _ -> }.use { events ->
-            val error = assertThrows(IllegalArgumentException::class.java) {
-                events.scope(PluginId.of("test")).register(InvalidListener())
-            }
-            assertTrue(error.message.orEmpty().contains("exactly one parameter"))
-        }
-    }
-
-    @Test
-    fun `cancelled events skip only listeners that request it`() {
-        val calls = mutableListOf<String>()
-        EventServiceImpl(TestTaskService()) { _, _, _ -> }.use { events ->
-            val scope = events.scope(PluginId.of("test"))
-            scope.subscribe(CancelEvent::class.java, EventPriority.LOW, Consumer {
-                calls += "cancel"
-                it.isCancelled = true
-            })
-            scope.subscribe(CancelEvent::class.java, EventPriority.NORMAL, true, Consumer { calls += "skipped" })
-            scope.subscribe(CancelEvent::class.java, EventPriority.MONITOR, false, Consumer { calls += "monitor" })
-
-            val result = scope.publish(CancelEvent()).join()
-
-            assertEquals(listOf("cancel", "monitor"), calls)
-            assertEquals(2, result.delivered)
-            assertEquals(1, result.skipped)
-            assertTrue(result.cancelled)
-        }
-    }
-
-    @Test
-    fun `listener failure is isolated and reported`() {
+    fun `listener failure is logged and isolated`() {
         val errors = mutableListOf<Throwable>()
         var completed = false
-        EventServiceImpl(TestTaskService()) { _, _, error -> errors += error }.use { events ->
+        EventServiceImpl { _, _, error -> errors += error }.use { events ->
             val scope = events.scope(PluginId.of("test"))
             scope.subscribe(TestEvent::class.java, Consumer { error("broken") })
             scope.subscribe(TestEvent::class.java, Consumer { completed = true })
-
-            val result = events.publish(TestEvent()).join()
-
+            events.callEvent(TestEvent())
             assertTrue(completed)
-            assertEquals(1, result.delivered)
-            assertEquals(1, result.failed)
             assertEquals("broken", errors.single().message)
         }
     }
 
     @Test
-    fun `plugin scope closes all of its subscriptions`() {
-        val owner = PluginId.of("owner")
-        val otherOwner = PluginId.of("other")
-        var ownerCalls = 0
-        var otherCalls = 0
-        EventServiceImpl(TestTaskService()) { _, _, _ -> }.use { events ->
-            val scope = events.scope(owner)
-            assertSame(scope, events.scope(owner))
-            scope.subscribe(TestEvent::class.java, Consumer { ownerCalls++ })
-            events.scope(otherOwner).subscribe(TestEvent::class.java, Consumer { otherCalls++ })
+    fun `scope and service lifecycle is enforced`() {
+        val events = EventServiceImpl { _, _, _ -> }
+        val id = PluginId.of("test")
+        val scope = events.scope(id)
+        assertSame(scope, events.scope(id))
+        events.unregisterAll(id)
+        assertTrue(scope.isClosed)
+        assertThrows(IllegalStateException::class.java) {
+            scope.subscribe(TestEvent::class.java, Consumer { })
+        }
+        events.close()
+        assertThrows(IllegalStateException::class.java) { events.callEvent(TestEvent()) }
+    }
 
-            events.unregisterAll(owner)
-            events.publish(TestEvent()).join()
+    @Test
+    fun `dispatch uses calling thread`() {
+        val callingThread = Thread.currentThread()
+        var listenerThread: Thread? = null
+        EventServiceImpl { _, _, _ -> }.use { events ->
+            events.scope(PluginId.of("test")).subscribe(TestEvent::class.java, Consumer {
+                listenerThread = Thread.currentThread()
+            })
+            events.callEvent(TestEvent())
+            assertSame(callingThread, listenerThread)
+        }
+    }
 
-            assertTrue(scope.isClosed)
-            assertEquals(0, ownerCalls)
-            assertEquals(1, otherCalls)
-            assertThrows(IllegalStateException::class.java) {
-                scope.subscribe(TestEvent::class.java, Consumer { })
+    @Test
+    fun `invalid annotated signature fails during registration`() {
+        EventServiceImpl { _, _, _ -> }.use { events ->
+            assertThrows(IllegalArgumentException::class.java) {
+                events.scope(PluginId.of("test")).register(InvalidListener())
             }
         }
     }
 
-    @Test
-    fun `closed service rejects further work`() {
-        val events = EventServiceImpl(TestTaskService()) { _, _, _ -> }
-        events.close()
-
-        assertThrows(IllegalStateException::class.java) { events.scope(PluginId.of("test")) }
-        assertThrows(IllegalStateException::class.java) { events.publish(TestEvent()) }
-    }
-
-    @Test
-    fun `asynchronous mode dispatches listeners on a background thread`() {
-        val callingThread = Thread.currentThread().name
-        var listenerThread = callingThread
-        EventServiceImpl(TestTaskService()) { _, _, _ -> }.use { events ->
-            events.scope(PluginId.of("test"))
-                .subscribe(AsyncEvent::class.java, Consumer { listenerThread = Thread.currentThread().name })
-
-            val event = AsyncEvent()
-            val result = events.publish(event).join()
-
-            assertEquals(1, result.delivered)
-            assertTrue(event.isAsynchronous)
-            assertFalse(callingThread == listenerThread)
-        }
-    }
-
     private open class TestEvent : Event()
-
-    private class AsyncEvent : Event(EventMode.ASYNC)
-
-    private class CancelEvent : Event(), Cancellable {
-        override var isCancelled: Boolean = false
+    private class MutableEvent : Event(), Cancellable {
+        override var isCancelled = false
+        var value = "initial"
     }
 
     private class AnnotatedListener(private val calls: MutableList<String>) : Listener {
         @EventHandler(priority = -250)
-        private fun early(event: TestEvent) {
-            calls += "early"
-        }
-
-        @EventHandler
-        fun normal(event: TestEvent) {
-            calls += "normal"
-        }
+        private fun early(event: TestEvent) { calls += "early" }
+        @EventHandler fun normal(event: TestEvent) { calls += "normal" }
     }
 
     private class InvalidListener : Listener {
-        @EventHandler
-        fun invalid() = Unit
+        @EventHandler fun invalid() = Unit
     }
 }

@@ -1611,29 +1611,8 @@ public abstract interface class ru/privatenull/pnlibrary/api/events/Cancellable 
 
 public abstract class ru/privatenull/pnlibrary/api/events/Event {
 	public fun <init> ()V
-	public fun <init> (Lru/privatenull/pnlibrary/api/events/EventMode;)V
-	public synthetic fun <init> (Lru/privatenull/pnlibrary/api/events/EventMode;ILkotlin/jvm/internal/DefaultConstructorMarker;)V
-	public final fun callEvent ()Ljava/util/concurrent/CompletableFuture;
+	public final fun callEvent ()Z
 	public fun getEventName ()Ljava/lang/String;
-	public final fun getMode ()Lru/privatenull/pnlibrary/api/events/EventMode;
-	public final fun isAsynchronous ()Z
-}
-
-public final class ru/privatenull/pnlibrary/api/events/EventDispatchResult {
-	public fun <init> (IIIZ)V
-	public final fun component1 ()I
-	public final fun component2 ()I
-	public final fun component3 ()I
-	public final fun component4 ()Z
-	public final fun copy (IIIZ)Lru/privatenull/pnlibrary/api/events/EventDispatchResult;
-	public static synthetic fun copy$default (Lru/privatenull/pnlibrary/api/events/EventDispatchResult;IIIZILjava/lang/Object;)Lru/privatenull/pnlibrary/api/events/EventDispatchResult;
-	public fun equals (Ljava/lang/Object;)Z
-	public final fun getCancelled ()Z
-	public final fun getDelivered ()I
-	public final fun getFailed ()I
-	public final fun getSkipped ()I
-	public fun hashCode ()I
-	public fun toString ()Ljava/lang/String;
 }
 
 public abstract interface annotation class ru/privatenull/pnlibrary/api/events/EventHandler : java/lang/annotation/Annotation {
@@ -1648,14 +1627,6 @@ public abstract interface class ru/privatenull/pnlibrary/api/events/EventListene
 	public abstract fun isClosed ()Z
 }
 
-public final class ru/privatenull/pnlibrary/api/events/EventMode : java/lang/Enum {
-	public static final field ASYNC Lru/privatenull/pnlibrary/api/events/EventMode;
-	public static final field SYNC Lru/privatenull/pnlibrary/api/events/EventMode;
-	public static fun getEntries ()Lkotlin/enums/EnumEntries;
-	public static fun valueOf (Ljava/lang/String;)Lru/privatenull/pnlibrary/api/events/EventMode;
-	public static fun values ()[Lru/privatenull/pnlibrary/api/events/EventMode;
-}
-
 public final class ru/privatenull/pnlibrary/api/events/EventPriority {
 	public static final field HIGH I
 	public static final field HIGHEST I
@@ -1667,10 +1638,10 @@ public final class ru/privatenull/pnlibrary/api/events/EventPriority {
 }
 
 public abstract interface class ru/privatenull/pnlibrary/api/events/EventScope : java/lang/AutoCloseable {
+	public abstract fun callEvent (Lru/privatenull/pnlibrary/api/events/Event;)Lru/privatenull/pnlibrary/api/events/Event;
 	public abstract fun close ()V
 	public abstract fun getPluginId ()Lru/privatenull/pnlibrary/api/plugin/PluginId;
 	public abstract fun isClosed ()Z
-	public abstract fun publish (Lru/privatenull/pnlibrary/api/events/Event;)Ljava/util/concurrent/CompletableFuture;
 	public abstract fun register (Lru/privatenull/pnlibrary/api/events/Listener;)Lru/privatenull/pnlibrary/api/events/EventListenerRegistration;
 	public fun subscribe (Ljava/lang/Class;ILjava/util/function/Consumer;)Lru/privatenull/pnlibrary/api/events/EventSubscription;
 	public abstract fun subscribe (Ljava/lang/Class;IZLjava/util/function/Consumer;)Lru/privatenull/pnlibrary/api/events/EventSubscription;
@@ -1678,8 +1649,8 @@ public abstract interface class ru/privatenull/pnlibrary/api/events/EventScope :
 }
 
 public abstract interface class ru/privatenull/pnlibrary/api/events/EventService : java/lang/AutoCloseable {
+	public abstract fun callEvent (Lru/privatenull/pnlibrary/api/events/Event;)Lru/privatenull/pnlibrary/api/events/Event;
 	public abstract fun close ()V
-	public abstract fun publish (Lru/privatenull/pnlibrary/api/events/Event;)Ljava/util/concurrent/CompletableFuture;
 	public fun register (Lru/privatenull/pnlibrary/api/plugin/PluginId;Lru/privatenull/pnlibrary/api/events/Listener;)Lru/privatenull/pnlibrary/api/events/EventListenerRegistration;
 	public abstract fun scope (Lru/privatenull/pnlibrary/api/plugin/PluginId;)Lru/privatenull/pnlibrary/api/events/EventScope;
 	public fun subscribe (Lru/privatenull/pnlibrary/api/plugin/PluginId;Ljava/lang/Class;IZLjava/util/function/Consumer;)Lru/privatenull/pnlibrary/api/events/EventSubscription;
@@ -2374,18 +2345,40 @@ public final class ru/privatenull/pnlibrary/api/remote/RemotePolicyContext$Compa
 	public final fun builder ()Lru/privatenull/pnlibrary/api/remote/RemotePolicyContext$Builder;
 }
 
+public final class ru/privatenull/pnlibrary/api/remote/RemotePolicyExplanation {
+	public static final field Companion Lru/privatenull/pnlibrary/api/remote/RemotePolicyExplanation$Companion;
+	public synthetic fun <init> (Lru/privatenull/pnlibrary/api/remote/RemotePolicyExplanation$Builder;Lkotlin/jvm/internal/DefaultConstructorMarker;)V
+	public static final fun builder (Ljava/lang/String;)Lru/privatenull/pnlibrary/api/remote/RemotePolicyExplanation$Builder;
+	public final fun getChildren ()Ljava/util/List;
+	public final fun getText ()Ljava/lang/String;
+}
+
+public final class ru/privatenull/pnlibrary/api/remote/RemotePolicyExplanation$Builder {
+	public final fun branch (Ljava/lang/String;Ljava/util/function/Consumer;)Lru/privatenull/pnlibrary/api/remote/RemotePolicyExplanation$Builder;
+	public final fun build ()Lru/privatenull/pnlibrary/api/remote/RemotePolicyExplanation;
+	public final fun child (Ljava/lang/String;)Lru/privatenull/pnlibrary/api/remote/RemotePolicyExplanation$Builder;
+	public final fun child (Lru/privatenull/pnlibrary/api/remote/RemotePolicyExplanation;)Lru/privatenull/pnlibrary/api/remote/RemotePolicyExplanation$Builder;
+}
+
+public final class ru/privatenull/pnlibrary/api/remote/RemotePolicyExplanation$Companion {
+	public final fun builder (Ljava/lang/String;)Lru/privatenull/pnlibrary/api/remote/RemotePolicyExplanation$Builder;
+}
+
 public final class ru/privatenull/pnlibrary/api/remote/RemotePolicyResult {
 	public static final field Companion Lru/privatenull/pnlibrary/api/remote/RemotePolicyResult$Companion;
-	public synthetic fun <init> (ZLjava/lang/String;Lkotlin/jvm/internal/DefaultConstructorMarker;)V
+	public synthetic fun <init> (ZLru/privatenull/pnlibrary/api/remote/RemotePolicyExplanation;Lkotlin/jvm/internal/DefaultConstructorMarker;)V
 	public static final fun allow ()Lru/privatenull/pnlibrary/api/remote/RemotePolicyResult;
 	public static final fun deny (Ljava/lang/String;)Lru/privatenull/pnlibrary/api/remote/RemotePolicyResult;
+	public static final fun deny (Lru/privatenull/pnlibrary/api/remote/RemotePolicyExplanation;)Lru/privatenull/pnlibrary/api/remote/RemotePolicyResult;
 	public final fun getAllowed ()Z
+	public final fun getExplanation ()Lru/privatenull/pnlibrary/api/remote/RemotePolicyExplanation;
 	public final fun getMessage ()Ljava/lang/String;
 }
 
 public final class ru/privatenull/pnlibrary/api/remote/RemotePolicyResult$Companion {
 	public final fun allow ()Lru/privatenull/pnlibrary/api/remote/RemotePolicyResult;
 	public final fun deny (Ljava/lang/String;)Lru/privatenull/pnlibrary/api/remote/RemotePolicyResult;
+	public final fun deny (Lru/privatenull/pnlibrary/api/remote/RemotePolicyExplanation;)Lru/privatenull/pnlibrary/api/remote/RemotePolicyResult;
 }
 
 public final class ru/privatenull/pnlibrary/api/remote/ServerInfo {

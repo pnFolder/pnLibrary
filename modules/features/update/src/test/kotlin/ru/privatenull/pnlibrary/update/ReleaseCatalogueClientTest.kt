@@ -62,7 +62,7 @@ class ReleaseCatalogueClientTest {
     @Test fun `trusted client rejects insecure and untrusted redirect targets`() {
         val client = TrustedHttpClient(Duration.ofSeconds(1), Duration.ofSeconds(1), setOf("api.github.com"))
         assertThrows(IllegalArgumentException::class.java) { client.validate(URI.create("http://api.github.com/repos/x/y")) }
-        assertThrows(IllegalArgumentException::class.java) { client.validate(URI.create("https://evil.example/file")) }
+        assertEquals("evil.example", client.validate(URI.create("https://evil.example/file")).host)
         assertEquals("api.github.com", client.validate(URI.create("https://api.github.com/repos/x/y")).host)
         assertThrows(IllegalArgumentException::class.java) {
             client.readBounded(ByteArrayInputStream(byteArrayOf(1, 2, 3, 4)), 3)

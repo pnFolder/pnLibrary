@@ -2,17 +2,16 @@ package ru.privatenull.pnlibrary.api.events
 
 import ru.privatenull.pnlibrary.api.plugin.PluginId
 import java.util.function.Consumer
-import java.util.concurrent.CompletableFuture
 
 /**
  * Process-wide platform-independent event bus.
  *
  * Use [scope] once per [PluginId] and retain the returned handle. Event
  * classes and listeners depend only on `pnlibrary-api`, so the same code runs on
- * Bukkit, BungeeCord, and Velocity. Every event is routed according to
- * [Event.mode], independently of the thread that publishes it.
- * Scope mutation and shutdown are safe from arbitrary threads. [publish] returns immediately with
- * a future that completes after every selected listener has finished in the event execution mode.
+ * Bukkit, BungeeCord, and Velocity. [callEvent] invokes matching listeners immediately on the
+ * calling thread and returns only after dispatch has finished. This makes mutable and cancellable
+ * events predictable: their final state is available as soon as the method returns.
+ * Scope mutation and shutdown are safe from arbitrary threads.
  */
 interface EventService : AutoCloseable {
     /** Returns the existing plugin scope or creates it atomically. */
@@ -38,8 +37,11 @@ interface EventService : AutoCloseable {
         listener: Consumer<E>,
     ): EventSubscription = scope(pluginId).subscribe(eventType, priority, ignoreCancelled, listener)
 
-    /** Schedules [event] in its declared execution mode. */
-    fun publish(event: Event): CompletableFuture<EventDispatchResult>
+    /**
+     * Invokes every matching listener synchronously and returns the same event instance.
+     * Listener-written fields and cancellation state are final when this method returns.
+     */
+    fun <E : Event> callEvent(event: E): E
 
     /** Removes and closes the scope belonging to [pluginId]. */
     fun unregisterAll(pluginId: PluginId)

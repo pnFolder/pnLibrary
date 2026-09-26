@@ -8,11 +8,17 @@ fun interface RemotePolicy {
 
 class RemotePolicyResult private constructor(
     val allowed: Boolean,
-    val message: String,
+    val explanation: RemotePolicyExplanation,
 ) {
+    /** Short compatibility view; structured consumers should use [explanation]. */
+    val message: String get() = explanation.text
+
     companion object {
-        @JvmStatic fun allow(): RemotePolicyResult = RemotePolicyResult(true, "")
+        @JvmStatic fun allow(): RemotePolicyResult =
+            RemotePolicyResult(true, RemotePolicyExplanation.builder("Проверка пройдена").build())
         @JvmStatic fun deny(message: String): RemotePolicyResult =
-            RemotePolicyResult(false, message.trim().ifEmpty { "remote policy denied execution" })
+            deny(RemotePolicyExplanation.builder(message.trim().ifEmpty { "Запуск запрещён" }).build())
+        @JvmStatic fun deny(explanation: RemotePolicyExplanation): RemotePolicyResult =
+            RemotePolicyResult(false, explanation)
     }
 }

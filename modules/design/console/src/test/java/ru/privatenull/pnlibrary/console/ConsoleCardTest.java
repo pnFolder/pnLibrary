@@ -23,4 +23,34 @@ class ConsoleCardTest {
         assertTrue(lines.stream().anyMatch(it -> it.contains("Версия")));
         assertEquals("", lines.get(lines.size() - 1));
     }
+
+    @Test
+    void rendersNestedTreeWithContinuousBranches() {
+        List<String> lines = ConsoleCard.builder(ConsoleTheme.plain(), "POLICY")
+            .tree(ConsoleTree.builder("Версия не поддерживается")
+                .branch("Сравнение", versions -> versions
+                    .child("Установлена: 2.2.0")
+                    .child("Минимальная: 2.3.0"))
+                .branch("Что делать", action -> action
+                    .branch("После замены", restart -> restart
+                        .child("Остановить сервер")
+                        .child("Запустить сервер")))
+                .build())
+            .build().render();
+
+        assertTrue(lines.stream().anyMatch(line -> line.contains("◆ Версия не поддерживается")));
+        assertTrue(lines.stream().anyMatch(line -> line.contains("├ Сравнение")));
+        assertTrue(lines.stream().anyMatch(line -> line.contains("│ └ Минимальная: 2.3.0")));
+        assertTrue(lines.stream().anyMatch(line -> line.contains("└ Что делать")));
+        assertTrue(lines.stream().anyMatch(line -> line.contains("└ После замены")));
+    }
+
+    @Test
+    void mascotOwnsFaceParentheses() {
+        List<String> lines = ConsoleCard.builder(ConsoleTheme.plain(), "POLICY")
+            .mascot("x.x", "Plugin", "stopped")
+            .build().render();
+
+        assertTrue(lines.stream().anyMatch(line -> line.contains("( x.x )")));
+    }
 }

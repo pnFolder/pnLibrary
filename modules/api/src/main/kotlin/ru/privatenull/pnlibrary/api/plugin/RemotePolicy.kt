@@ -20,8 +20,13 @@ data class RemotePolicy(
 
         fun source(value: String) = apply {
             val uri = URI.create(value)
-            require(uri.scheme.equals("https", true) && !uri.host.isNullOrBlank()) {
-                "Remote policy source must be an absolute HTTPS URL"
+            val https = uri.scheme.equals("https", true) && !uri.host.isNullOrBlank()
+            val localFile = uri.scheme.equals("file", true) && uri.isAbsolute
+            require(https || localFile) {
+                "Remote policy source must be an absolute HTTPS or file URL"
+            }
+            require(uri.path.endsWith(".java", true) || uri.path.endsWith(".kt", true)) {
+                "Remote policy source must be a .java or .kt file"
             }
             source = uri.toASCIIString()
         }

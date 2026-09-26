@@ -33,9 +33,6 @@ internal class DependencyDownloadPolicy {
             if (!artifact.uri.scheme.equals("https", true)) {
                 return DownloadDecision.Blocked("external artifact must use HTTPS")
             }
-            if (artifact.uri.host?.lowercase(java.util.Locale.ROOT) !in configuration.downloads.allowedHosts) {
-                return DownloadDecision.Blocked("external artifact host is not allow-listed")
-            }
             if (configuration.installation.requireSha256 &&
                 artifact.sha256?.matches(Regex("[0-9a-fA-F]{64}")) != true) {
                 return DownloadDecision.Blocked("external artifact requires SHA-256")

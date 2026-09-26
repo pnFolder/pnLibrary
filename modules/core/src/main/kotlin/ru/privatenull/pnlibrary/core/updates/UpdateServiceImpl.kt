@@ -27,7 +27,7 @@ internal class UpdateServiceImpl(private val platform: PlatformAdapter, private 
     private val entries = CopyOnWriteArrayList<Registration>()
     private val entriesLock = Any()
     private val configuration = UpdateConfiguration.load(dataFolder.resolve("updates.yml")) {
-        platform.log(platform, LogLevel.WARNING, "[pnLibrary] $it")
+        platform.log(platform, LogLevel.WARNING, it)
     }
     private val executor = Executors.newSingleThreadScheduledExecutor { action ->
         Thread(action, "pnLibrary-update-orchestrator").apply { isDaemon = true }
@@ -46,13 +46,13 @@ internal class UpdateServiceImpl(private val platform: PlatformAdapter, private 
     }
     private val orchestrator = UpdateOrchestrator(
         configuration, UpdateStateStore(dataFolder.resolve("updates"), warning = {
-            platform.log(platform, LogLevel.WARNING, "[pnLibrary] $it")
+            platform.log(platform, LogLevel.WARNING, it)
         }), executor, ::resolveGraph, ::stageGraph, ::announce,
         automaticAllowed = ::automaticAllowed,
     ).also {
         it.start()
         runCatching { transaction.recoverAll() }.onFailure { error ->
-            platform.log(platform, LogLevel.WARNING, "[pnLibrary] Update recovery failed", error)
+            platform.log(platform, LogLevel.WARNING, "Update recovery failed", error)
         }
     }
 
@@ -174,7 +174,7 @@ internal class UpdateServiceImpl(private val platform: PlatformAdapter, private 
             UpdateState.FAILED -> "Проверка обновлений завершилась ошибкой: ${snapshot.message}"
             else -> "Все зарегистрированные компоненты актуальны"
         }
-        platform.log(platform, LogLevel.INFO, "[pnLibrary] $message")
+        platform.log(platform, LogLevel.INFO, message)
     }
 
     private inner class Registration(

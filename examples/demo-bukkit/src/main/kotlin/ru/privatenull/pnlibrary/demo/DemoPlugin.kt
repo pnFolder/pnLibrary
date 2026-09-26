@@ -50,7 +50,7 @@ class DemoPlugin : JavaPlugin() {
                 builder.remotePolicy(RemotePolicy.builder()
                     .source(source)
                     .checkEvery(Duration.ofHours(6))
-                    .onDeny(DenyAction.DISABLE_MODULE)
+                    .onDeny(DenyAction.DISABLE_PLUGIN)
                     .value("demo", "pndemo")
                     .build())
             }

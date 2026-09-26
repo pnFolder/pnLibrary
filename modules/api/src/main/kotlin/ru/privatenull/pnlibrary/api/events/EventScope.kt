@@ -2,7 +2,6 @@ package ru.privatenull.pnlibrary.api.events
 
 import ru.privatenull.pnlibrary.api.plugin.PluginId
 import java.util.function.Consumer
-import java.util.concurrent.CompletableFuture
 
 /**
  * Plugin-ID-bound access to the pnLibrary event bus.
@@ -46,8 +45,8 @@ interface EventScope : AutoCloseable {
         listener: Consumer<E>,
     ): EventSubscription
 
-    /** Schedules [event] in its declared execution mode. */
-    fun publish(event: Event): CompletableFuture<EventDispatchResult>
+    /** Invokes every matching listener synchronously and returns the same event instance. */
+    fun <E : Event> callEvent(event: E): E
 
     /** Removes every listener registered through this scope. Closing is idempotent. */
     override fun close()

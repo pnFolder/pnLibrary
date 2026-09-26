@@ -50,8 +50,12 @@ public final class ConsoleCard {
         }
 
         public Builder mascot(String face, String headline, String subtitle) {
+            String normalizedFace = text(face).trim();
+            if (!(normalizedFace.startsWith("(") && normalizedFace.endsWith(")"))) {
+                normalizedFace = "( " + normalizedFace + " )";
+            }
             lines.add(theme.accent + " /\\_/\\" + theme.reset);
-            lines.add(theme.accent + face + "     " + theme.text + text(headline) + theme.reset);
+            lines.add(theme.accent + normalizedFace + "     " + theme.text + text(headline) + theme.reset);
             lines.add(theme.accent + " > ^ <" + theme.reset + (subtitle == null ? "" : "      " + theme.muted + subtitle + theme.reset));
             return this;
         }
@@ -85,12 +89,29 @@ public final class ConsoleCard {
             return this;
         }
 
+        /** Adds a nested explanation tree with stable branch connectors. */
+        public Builder tree(ConsoleTree tree) {
+            if (tree == null) throw new IllegalArgumentException("tree is required");
+            appendTree(tree, "", true, true);
+            return this;
+        }
+
         public Builder status(String value) {
             lines.add(theme.accent + "          ■ " + text(value) + theme.reset);
             return this;
         }
 
         public ConsoleCard build() { return new ConsoleCard(this); }
+
+        private void appendTree(ConsoleTree node, String prefix, boolean last, boolean root) {
+            String connector = root ? "◆ " : (last ? "└ " : "├ ");
+            lines.add(theme.muted + "            " + prefix + connector + theme.text + node.text() + theme.reset);
+            List<ConsoleTree> children = node.children();
+            for (int index = 0; index < children.size(); index++) {
+                appendTree(children.get(index), prefix + (root ? "  " : (last ? "  " : "│ ")),
+                        index == children.size() - 1, false);
+            }
+        }
 
         private static String text(String value) {
             if (value == null || value.trim().isEmpty()) throw new IllegalArgumentException("text must not be blank");

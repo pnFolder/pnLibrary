@@ -31,4 +31,35 @@ class RemotePolicyEngineTest {
         assertFalse(result.allowed)
         assertEquals("update required", result.message)
     }
+
+    @Test fun `compiles a raw Kotlin policy against the shared context`() {
+        val source = """
+            package example
+            import ru.privatenull.pnlibrary.api.remote.RemotePolicy
+            import ru.privatenull.pnlibrary.api.remote.RemotePolicyContext
+            import ru.privatenull.pnlibrary.api.remote.RemotePolicyExplanation
+            import ru.privatenull.pnlibrary.api.remote.RemotePolicyResult
+            class KotlinPolicy : RemotePolicy {
+                override fun check(context: RemotePolicyContext): RemotePolicyResult {
+                    return if (context.product.version.startsWith("1."))
+                        RemotePolicyResult.deny(RemotePolicyExplanation.builder("kotlin update required")
+                            .branch("versions") { it.child(context.product.version).child("2.0.0") }
+                            .build())
+                    else RemotePolicyResult.allow()
+                }
+            }
+        """.trimIndent().toByteArray()
+        val context = RemotePolicyContext.builder()
+            .product(ProductInfo("demo", "Demo", "1.0.0"))
+            .platform(PlatformInfo(PlatformType.BUKKIT, "Paper", "1.21.4"))
+            .server(ServerInfo("1.21.4", MinecraftVersion.parseInfo("1.21.4")))
+            .build()
+
+        val result = RemotePolicyEngine.checkSource(source, context, "kt")
+
+        assertFalse(result.allowed)
+        assertEquals("kotlin update required", result.message)
+        assertEquals("versions", result.explanation.children.single().text)
+        assertEquals(listOf("1.0.0", "2.0.0"), result.explanation.children.single().children.map { it.text })
+    }
 }

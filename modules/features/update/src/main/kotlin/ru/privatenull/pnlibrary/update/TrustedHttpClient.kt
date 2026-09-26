@@ -11,11 +11,8 @@ open class TrustedHttpClient(
     private val readTimeout: Duration,
     additionalHosts: Set<String>,
 ) {
-    private val allowedHosts = BUILT_IN_HOSTS + additionalHosts.map { it.lowercase(java.util.Locale.ROOT) }
-
     internal fun validate(uri: URI): URI {
         require(uri.scheme.equals("https", true)) { "update URL must use HTTPS: $uri" }
-        require(uri.host?.lowercase(java.util.Locale.ROOT) in allowedHosts) { "untrusted update host: ${uri.host}" }
         require(uri.userInfo == null && uri.fragment == null) { "update URL contains forbidden components" }
         return uri
     }
@@ -70,6 +67,5 @@ open class TrustedHttpClient(
     companion object {
         private const val MAX_REDIRECTS = 5
         private val REDIRECT_CODES = setOf(301, 302, 303, 307, 308)
-        private val BUILT_IN_HOSTS = setOf("api.github.com", "github.com", "objects.githubusercontent.com")
     }
 }

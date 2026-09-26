@@ -297,7 +297,7 @@ override fun onDisable() {
 ```kotlin
 val context = pn.plugins.require(this).requireModule("market")
 context.logger.success("Market loaded")
-context.events.publish(MarketReloadEvent())
+context.events.callEvent(MarketReloadEvent())
 context.tasks.async(Runnable { repository.cleanup() })
 
 context.metadata.version
@@ -473,29 +473,30 @@ events.subscribe<ClanCreatedEvent>(priority = 250) { event ->
     audit.save(event)
 }
 
-ClanCreatedEvent("knights").callEvent().thenAccept { allowed ->
-    if (!allowed) logger.warn("Создание клана отменено")
-}
+val event = ClanCreatedEvent("knights")
+val allowed = event.callEvent()
+if (!allowed) return
 ```
 
-`event.callEvent()` возвращает `CompletableFuture<Boolean>`, потому что обработчики
-могут выполняться позже в другом execution context. Future содержит `false`, если
-событие реализует `Cancellable` и было отменено. Подробный `EventDispatchResult`
-доступен через `events.publish(event)`. Имя события находится в `event.eventName`
-и по умолчанию равно имени класса.
+`event.callEvent()` выполняет обработчики синхронно и возвращает `false`, если
+`Cancellable`-событие отменили, иначе `true`. После возврата метода все изменения
+того же экземпляра события уже видны вызывающему коду. Вариант
+`events.callEvent(event)` возвращает сам переданный экземпляр и удобен для событий
+с результатом. Ошибки одного listener логируются и не останавливают следующие
+listeners. Имя события находится в `event.eventName` и по умолчанию равно имени класса.
 
-Режим события задаётся явно и действительно выбирает execution context:
+Асинхронность задаётся явно через систему задач, а не скрытым режимом события:
 
 ```kotlin
-data class ClanCacheLoadedEvent(val clans: Int) : Event(EventMode.ASYNC)
+data class ClanCacheLoadedEvent(val clans: Int) : Event()
 
-ClanCacheLoadedEvent(loadedClans).callEvent()
+context.tasks.async(Runnable {
+    ClanCacheLoadedEvent(loadedClans).callEvent()
+})
 ```
 
-`EventMode.SYNC` отправляет listeners в main/global scheduler платформы,
-`EventMode.ASYNC` — в фоновый executor библиотеки. Метод вызова один для обоих
-режимов. Async-listener не должен обращаться к API, которому требуется platform
-thread. Не блокируйте серверный поток через `join()`; используйте `thenAccept`.
+Шина не переключает поток скрытно: listeners выполняются в вызывающем потоке.
+Фоновый listener не должен обращаться к API, которому требуется platform thread.
 
 Для привычного Bukkit/Bungee/Velocity-подобного стиля можно зарегистрировать
 класс с аннотированными методами:

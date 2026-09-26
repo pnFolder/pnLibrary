@@ -18,6 +18,7 @@ mavenPluginAnnotations  = "3.15.1"
 
 [libraries]
 kotlin-stdlib             = { module = "org.jetbrains.kotlin:kotlin-stdlib",                     version.ref = "kotlin"                 }
+kotlin-compiler-embeddable = { module = "org.jetbrains.kotlin:kotlin-compiler-embeddable",       version.ref = "kotlin"                 }
 gson                      = { module = "com.google.code.gson:gson",                              version.ref = "gson"                   }
 snakeyaml                 = { module = "org.yaml:snakeyaml",                                     version.ref = "snakeyaml"              }
 junit-jupiter             = { module = "org.junit.jupiter:junit-jupiter",                        version.ref = "junit"                  }

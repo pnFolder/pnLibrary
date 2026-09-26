@@ -1,0 +1,15 @@
+name: pnLibraryAcceptance
+version: '${version}'
+main: ru.privatenull.pnlibrary.acceptance.AcceptancePlugin
+api-version: '1.13'
+author: pnFolder
+description: Manual acceptance test suite for pnLibrary on Bukkit/Paper
+depend: [pnLibrary]
+commands:
+  pnaccept:
+    description: Runs pnLibrary acceptance checks
+    usage: /pnaccept [status|event|task|cooldown|metrics|update|download|diagnostics]
+    permission: pnaccept.use
+permissions:
+  pnaccept.use:
+    default: op

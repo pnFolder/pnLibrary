@@ -264,14 +264,14 @@ internal class DirectDownloadManager(
             if (!configuration.enabled) {
                 val reason = "система загрузок отключена"
                 state.set(request.files.map { DownloadSnapshot(it.key, DownloadState.BLOCKED, reason) })
-                platform.log(owner, LogLevel.WARNING, "[pnLibrary] $reason")
+                platform.log(owner, LogLevel.WARNING, reason)
                 promise.complete(snapshots()); return promise
             }
             if (effectiveDeclarations.isEmpty()) {
                 if (automaticPolicy && declarations.isNotEmpty()) {
                     val reason = "автозагрузка запрещена в downloads.yml"
                     state.set(request.files.map { DownloadSnapshot(it.key, DownloadState.BLOCKED, reason) })
-                    platform.log(owner, LogLevel.WARNING, "[pnLibrary] $reason")
+                    platform.log(owner, LogLevel.WARNING, reason)
                 }
                 promise.complete(snapshots()); return promise
             }
@@ -305,7 +305,7 @@ internal class DirectDownloadManager(
                         if (!registrationClosed.get() && !closed.get()) {
                             state.set(request.files.map { DownloadSnapshot(it.key, DownloadState.FAILED, error.message) })
                             val level = if (effectiveDeclarations.any { it.required }) LogLevel.ERROR else LogLevel.WARNING
-                            platform.log(owner, level, "[pnLibrary] Пакет загрузок не подготовлен: ${error.message}", error)
+                            platform.log(owner, level, "Пакет загрузок не подготовлен: ${error.message}", error)
                         }
                         promise.complete(snapshots())
                     }

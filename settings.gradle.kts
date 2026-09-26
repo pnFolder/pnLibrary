@@ -20,6 +20,7 @@ include(
     ":platforms:velocity:runtime",
     ":distribution",
     ":examples:demo-bukkit",
+    ":examples:acceptance-bukkit",
     ":examples:remote-policy",
     ":examples:smoke-bukkit",
     ":examples:smoke-bungee",
