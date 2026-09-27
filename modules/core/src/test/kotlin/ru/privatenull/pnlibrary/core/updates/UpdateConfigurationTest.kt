@@ -31,6 +31,26 @@ class UpdateConfigurationTest {
     }
 
     @Test
+    fun `temporary pause expires and is never permanent`() {
+        val file = directory.resolve("updates.yml")
+        Files.writeString(file, """
+            updates:
+              plugins:
+                acceptance:
+                  update: paused
+                  pause: 7d
+        """.trimIndent())
+
+        val configuration = UpdateConfiguration.load(file)
+        val pause = configuration.plugins.getValue("acceptance").pauseUntil
+
+        assertTrue(configuration.plugins.getValue("acceptance").enabled)
+        assertNotNull(pause)
+        assertTrue(pause!!.isAfter(Instant.now().plus(Duration.ofDays(6))))
+        assertTrue(pause.isBefore(Instant.now().plus(Duration.ofDays(7)).plusSeconds(1)))
+    }
+
+    @Test
     fun `reads library download policy and per-plugin update policy`() {
         val file = directory.resolve("updates.yml")
         val pauseUntil = Instant.now().plus(Duration.ofDays(3)).toString()

@@ -156,10 +156,11 @@ internal data class UpdateConfiguration(
                     val channel = (policy["channel"] as? String)?.let {
                         runCatching { UpdateChannel.valueOf(it.trim().uppercase()) }.getOrElse { bad(); null }
                     }
-                    val enabled = when (val mode = policy["mode"] ?: policy["update"]) {
+                    val mode = policy["mode"] ?: policy["update"]
+                    val enabled = when (mode) {
                         null -> policy["enabled"]?.let { if (it is Boolean) it else { bad(); true } } ?: true
                         is String -> when (mode.trim().lowercase()) {
-                            "enabled", "normal" -> true
+                            "enabled", "normal", "paused" -> true
                             "disabled" -> false
                             else -> { bad(); true }
                         }
@@ -173,6 +174,20 @@ internal data class UpdateConfiguration(
                             val remaining = Duration.between(Instant.now(), deadline)
                             !remaining.isNegative && !remaining.isZero && remaining <= Duration.ofDays(7)
                         } ?: run { bad(); null }
+                    } ?: (policy["pause"] as? String)?.let { rawPause ->
+                        val match = durationPattern.matchEntire(rawPause.trim().lowercase())
+                        val duration = match?.let {
+                            when (it.groupValues[2]) {
+                                "m" -> Duration.ofMinutes(it.groupValues[1].toLong())
+                                "h" -> Duration.ofHours(it.groupValues[1].toLong())
+                                else -> Duration.ofDays(it.groupValues[1].toLong())
+                            }
+                        }
+                        if (duration == null || duration > Duration.ofDays(7)) {
+                            bad(); null
+                        } else {
+                            Instant.now().plus(duration)
+                        }
                     }
                     val disabledModules = (policy["modules"] as? Map<*, *>)?.entries
                         ?.filter { (_, value) -> value.toString().equals("disabled", true) || value == false }
@@ -226,7 +241,7 @@ updates:
     # Значение по умолчанию для новых записей в policies.
     automatic-download: $pluginAutomaticDownload
     # Здесь перечисляются плагины. Отсутствующий плагин работает в обычном режиме.
-    # update: disabled отключает только его обновление; сам плагин не выключается.
+    # update: paused временно приостанавливает обновление; pause ограничен семью днями.
     # modules: необязательный список внутренних модулей плагина.
     plugins: {}
   notifications:
