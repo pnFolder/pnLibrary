@@ -91,7 +91,7 @@ class UpdateTransactionTest {
     }
 
     @Test
-    fun `failed health check restores the complete previous set`() {
+    fun `failed health check waits for administrator before rollback`() {
         val targets = directory.resolve("plugins").also(Files::createDirectories)
         val marketTarget = targets.resolve("market.jar").also { Files.write(it, byteArrayOf(9)) }
         val authTarget = targets.resolve("auth.jar").also { Files.write(it, byteArrayOf(8)) }
@@ -105,7 +105,13 @@ class UpdateTransactionTest {
             ),
         ) { false }
 
-        assertEquals(TransactionState.ROLLED_BACK, result.state)
+        assertEquals(TransactionState.FAILED, result.state)
+        assertArrayEquals(Files.readAllBytes(market), Files.readAllBytes(marketTarget))
+        assertArrayEquals(Files.readAllBytes(auth), Files.readAllBytes(authTarget))
+
+        val rolledBack = UpdateTransaction(directory.resolve("transactions"), ArtifactVerifier(1024 * 1024))
+            .rollback(result.journal)
+        assertEquals(TransactionState.ROLLED_BACK, rolledBack.state)
         assertArrayEquals(byteArrayOf(9), Files.readAllBytes(marketTarget))
         assertArrayEquals(byteArrayOf(8), Files.readAllBytes(authTarget))
     }

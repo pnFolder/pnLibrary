@@ -123,14 +123,14 @@ class UpdateTransaction(
             }
             transition(journalPath, journal, TransactionState.AWAITING_HEALTH)
             if (!healthCheck()) {
-                rollback(journalPath, journal)
+                transition(journalPath, journal, TransactionState.FAILED)
                 return TransactionResult(journal.state, journalPath)
             }
             transition(journalPath, journal, TransactionState.COMMITTED)
             return TransactionResult(journal.state, journalPath)
         } catch (error: Throwable) {
             if (activationStarted) {
-                runCatching { rollback(journalPath, journal) }.onFailure(error::addSuppressed)
+                runCatching { rollbackInternal(journalPath, journal) }.onFailure(error::addSuppressed)
             } else {
                 runCatching { transition(journalPath, journal, TransactionState.FAILED) }.onFailure(error::addSuppressed)
             }
@@ -147,9 +147,20 @@ class UpdateTransaction(
                 TransactionState.ROLLING_BACK,
             )
         ) {
-            rollback(journalPath, journal)
+            rollbackInternal(journalPath, journal)
         }
         return TransactionResult(journal.state, journalPath)
+    }
+
+    fun rollback(journalPath: Path): TransactionResult {
+        val normalized = journalPath.toAbsolutePath().normalize()
+        require(normalized.startsWith(root.toAbsolutePath().normalize())) { "rollback journal must stay inside transaction root" }
+        val journal = TransactionJournal.load(normalized)
+        require(journal.state == TransactionState.FAILED || journal.state == TransactionState.COMMITTED) {
+            "transaction ${journal.id} cannot be rolled back from ${journal.state}"
+        }
+        rollbackInternal(normalized, journal)
+        return TransactionResult(journal.state, normalized)
     }
 
     fun recoverAll(): List<TransactionResult> {
@@ -165,7 +176,7 @@ class UpdateTransaction(
         }
     }
 
-    private fun rollback(path: Path, journal: TransactionJournal) {
+    private fun rollbackInternal(path: Path, journal: TransactionJournal) {
         transition(path, journal, TransactionState.ROLLING_BACK)
         journal.artifacts.forEach { record ->
             val target = Paths.get(record.target)
