@@ -31,6 +31,7 @@ internal data class UpdateConfiguration(
         val enabled: Boolean = true,
         val automaticDownload: Boolean = false,
         val pauseUntil: Instant? = null,
+        val disabledModules: Set<String> = emptySet(),
     )
     data class Checks(val enabled: Boolean = true, val interval: Duration = Duration.ofHours(6))
     data class Notifications(
@@ -99,7 +100,9 @@ internal data class UpdateConfiguration(
             val pluginSection = root.map("plugins")
             val policyValues = pluginSection?.map("policies")
             val nestedPluginValues = pluginSection?.map("plugins")
-            val pluginValues = policyValues ?: nestedPluginValues ?: pluginSection ?: root.map("components")
+            val reserved = setOf("enabled", "automatic-download", "plugins", "policies")
+            val pluginValues = policyValues ?: nestedPluginValues ?: pluginSection
+                ?.takeIf { it.keys.none(reserved::contains) } ?: root.map("components")
             val nestedPluginSchema = policyValues != null || nestedPluginValues != null
             fun bool(map: Map<String, Any?>?, key: String, default: Boolean): Boolean {
                 val value = map?.get(key) ?: return default
@@ -144,7 +147,7 @@ internal data class UpdateConfiguration(
                     bool(pluginSection, "automatic-download", false)
                 } else false,
                 plugins = pluginValues.orEmpty().mapNotNull { (rawId, rawPolicy) ->
-                    if (nestedPluginSchema && rawId in setOf("enabled", "automatic-download", "plugins", "policies")) {
+                    if (nestedPluginSchema && rawId in reserved) {
                         return@mapNotNull null
                     }
                     val id = rawId.trim().lowercase()
@@ -153,7 +156,7 @@ internal data class UpdateConfiguration(
                     val channel = (policy["channel"] as? String)?.let {
                         runCatching { UpdateChannel.valueOf(it.trim().uppercase()) }.getOrElse { bad(); null }
                     }
-                    val enabled = when (val mode = policy["mode"]) {
+                    val enabled = when (val mode = policy["mode"] ?: policy["update"]) {
                         null -> policy["enabled"]?.let { if (it is Boolean) it else { bad(); true } } ?: true
                         is String -> when (mode.trim().lowercase()) {
                             "enabled", "normal" -> true
@@ -171,7 +174,11 @@ internal data class UpdateConfiguration(
                             !remaining.isNegative && !remaining.isZero && remaining <= Duration.ofDays(7)
                         } ?: run { bad(); null }
                     }
-                    id to PluginPolicy(channel, enabled, automatic, pauseUntil)
+                    val disabledModules = (policy["modules"] as? Map<*, *>)?.entries
+                        ?.filter { (_, value) -> value.toString().equals("disabled", true) || value == false }
+                        ?.map { (module, _) -> module.toString().lowercase() }
+                        ?.toSet().orEmpty()
+                    id to PluginPolicy(channel, enabled, automatic, pauseUntil, disabledModules)
                 }.toMap(),
             )
             if (malformed) warning("Invalid update configuration values were replaced with conservative defaults")
@@ -218,8 +225,10 @@ updates:
     enabled: $pluginUpdatesEnabled
     # Значение по умолчанию для новых записей в policies.
     automatic-download: $pluginAutomaticDownload
-    # Здесь перечисляются именно плагины, а не внутренние модули.
-    policies: {}
+    # Здесь перечисляются плагины. Отсутствующий плагин работает в обычном режиме.
+    # update: disabled отключает только его обновление; сам плагин не выключается.
+    # modules: необязательный список внутренних модулей плагина.
+    plugins: {}
   notifications:
     # Сообщения о найденных обновлениях в консоли и администраторам.
     console: ${notifications.console}

@@ -13,6 +13,24 @@ class UpdateConfigurationTest {
     @TempDir lateinit var directory: Path
 
     @Test
+    fun `reads flat plugin map and disabled module names`() {
+        val file = directory.resolve("updates.yml")
+        Files.writeString(file, """
+            updates:
+              plugins:
+                acceptance:
+                  update: disabled
+                  modules:
+                    diagnostics: disabled
+        """.trimIndent())
+
+        val configuration = UpdateConfiguration.load(file)
+
+        assertFalse(configuration.plugins.getValue("acceptance").enabled)
+        assertEquals(setOf("diagnostics"), configuration.plugins.getValue("acceptance").disabledModules)
+    }
+
+    @Test
     fun `reads library download policy and per-plugin update policy`() {
         val file = directory.resolve("updates.yml")
         val pauseUntil = Instant.now().plus(Duration.ofDays(3)).toString()
