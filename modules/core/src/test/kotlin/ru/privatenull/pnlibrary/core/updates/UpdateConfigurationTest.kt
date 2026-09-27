@@ -6,6 +6,7 @@ import org.junit.jupiter.api.io.TempDir
 import java.nio.file.Files
 import java.nio.file.Path
 import java.time.Duration
+import java.time.Instant
 import ru.privatenull.pnlibrary.api.updates.UpdateChannel
 
 class UpdateConfigurationTest {
@@ -14,26 +15,32 @@ class UpdateConfigurationTest {
     @Test
     fun `reads library download policy and per-plugin update policy`() {
         val file = directory.resolve("updates.yml")
+        val pauseUntil = Instant.now().plus(Duration.ofDays(3)).toString()
         Files.writeString(file, """
             updates:
               library:
                 automatic-download: false
               plugins:
-                pncases:
-                  channel: beta
-                  enabled: false
-                  automatic-download: true
-                  pause: 7d
+                enabled: true
+                automatic-download: false
+                plugins:
+                  pncases:
+                    channel: beta
+                    mode: disabled
+                    automatic-download: true
+                    pause-until: "$pauseUntil"
         """.trimIndent())
 
         val configuration = UpdateConfiguration.load(file)
         val policy = configuration.plugins.getValue("pncases")
 
         assertFalse(configuration.library.automaticDownload)
+        assertTrue(configuration.pluginUpdatesEnabled)
+        assertFalse(configuration.pluginAutomaticDownload)
         assertEquals(UpdateChannel.BETA, policy.channel)
         assertFalse(policy.enabled)
         assertTrue(policy.automaticDownload)
-        assertEquals(Duration.ofDays(7), policy.pause)
+        assertEquals(Instant.parse(pauseUntil), policy.pauseUntil)
     }
 
     @Test
@@ -57,13 +64,14 @@ class UpdateConfigurationTest {
         Files.writeString(file, """
             updates:
               plugins:
-                pncases: { pause: 8d }
+                plugins:
+                  pncases: { pause-until: "${Instant.now().plus(Duration.ofDays(8))}" }
         """.trimIndent())
         val warnings = mutableListOf<String>()
 
         val configuration = UpdateConfiguration.load(file, warnings::add)
 
-        assertNull(configuration.plugins.getValue("pncases").pause)
+        assertNull(configuration.plugins.getValue("pncases").pauseUntil)
         assertEquals(1, warnings.size)
     }
 

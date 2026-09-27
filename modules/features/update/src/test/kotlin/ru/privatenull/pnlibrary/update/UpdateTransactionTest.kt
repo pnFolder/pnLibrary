@@ -141,7 +141,7 @@ class UpdateTransactionTest {
     }
 
     @Test
-    fun `restart recovery rolls back an interrupted activation`() {
+    fun `prepared update remains pending across restart until health is confirmed`() {
         val transactionRoot = directory.resolve("transactions")
         val transactionDirectory = transactionRoot.resolve("interrupted")
         val backupDirectory = transactionDirectory.resolve("backup").also(Files::createDirectories)
@@ -154,17 +154,40 @@ class UpdateTransactionTest {
             TransactionJournal(
                 "interrupted",
                 TransactionState.AWAITING_HEALTH,
-                listOf(JournalArtifact("market", target.toString(), staged.toString(), backup.toString(), true)),
+                listOf(JournalArtifact("market", target.toString(), staged.toString(), backup.toString(), true, "2.0.0")),
             ),
         )
 
         val transaction = UpdateTransaction(transactionRoot, ArtifactVerifier(1024))
         val result = transaction.recover(journalPath)
 
-        assertEquals(TransactionState.ROLLED_BACK, result.state)
-        assertArrayEquals(byteArrayOf(1), Files.readAllBytes(target))
-        assertEquals(TransactionState.ROLLED_BACK, TransactionJournal.load(journalPath).state)
-        assertEquals(TransactionState.ROLLED_BACK, transaction.recoverAll().single().state)
+        assertEquals(TransactionState.AWAITING_HEALTH, result.state)
+        assertArrayEquals(byteArrayOf(2), Files.readAllBytes(target))
+        assertEquals(mapOf("market" to "2.0.0"), transaction.awaitingHealth().single().expectedVersions)
+        assertEquals(TransactionState.AWAITING_HEALTH, transaction.recoverAll().single().state)
+        assertEquals(TransactionState.COMMITTED, transaction.completeHealth(journalPath, true).state)
+    }
+
+    @Test
+    fun `rollback candidate skips a newer failed transaction without backups`() {
+        val target = directory.resolve("plugins/market.jar").also {
+            Files.createDirectories(it.parent)
+            Files.write(it, byteArrayOf(9))
+        }
+        val valid = artifact("valid.jar", "market", "2.0.0", 4, byteArrayOf(1))
+        val transaction = UpdateTransaction(directory.resolve("transactions"), ArtifactVerifier(1024 * 1024))
+        val committed = transaction.apply(listOf(TransactionArtifact(
+            specification(valid, "market", "2.0.0", 4), valid, target,
+        ))) { true }
+
+        val invalid = artifact("invalid.jar", "other", "3.0.0", 4, byteArrayOf(2))
+        assertThrows(ArtifactVerificationException::class.java) {
+            transaction.apply(listOf(TransactionArtifact(
+                specification(invalid, "market", "3.0.0", 4), invalid, target,
+            ))) { true }
+        }
+
+        assertEquals(committed.journal, transaction.latestRollbackCandidate())
     }
 
     private fun specification(path: Path, id: String, version: String, api: Int) = ArtifactSpecification(

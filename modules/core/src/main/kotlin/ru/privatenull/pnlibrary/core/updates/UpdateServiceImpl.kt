@@ -35,15 +35,12 @@ internal class UpdateServiceImpl(private val platform: PlatformAdapter, private 
     private val http = TrustedHttpClient(Duration.ofSeconds(8), Duration.ofSeconds(20), configuration.downloads.allowedHosts)
     private val catalogue = ReleaseCatalogueClient(
         http, ReleaseCatalogueStore(dataFolder.resolve("updates/catalog")), Executor { it.run() }, Duration.ofMinutes(30),
+        inspectArtifacts = true,
     )
     private val transaction = UpdateTransaction(
         dataFolder.resolve("updates/transactions"), ArtifactVerifier(MAX_ARTIFACT_BYTES), dataFolder.parent,
     )
-    private val freezes = FreezeStore(dataFolder.resolve("updates/freezes.json")).also { store ->
-        configuration.plugins.forEach { (id, policy) ->
-            policy.pause?.let { if (store.remaining(ProductId.of(id)) == null) store.freeze(ProductId.of(id), it) }
-        }
-    }
+    private val freezes = FreezeStore(dataFolder.resolve("updates/freezes.json"))
     private val orchestrator = UpdateOrchestrator(
         configuration, UpdateStateStore(dataFolder.resolve("updates"), warning = {
             platform.log(platform, LogLevel.WARNING, it)
@@ -51,10 +48,11 @@ internal class UpdateServiceImpl(private val platform: PlatformAdapter, private 
         automaticAllowed = ::automaticAllowed,
         remoteResolver = { resolveGraph(RefreshMode.FORCE_REMOTE) },
     ).also {
-        it.start()
         runCatching { transaction.recoverAll() }.onFailure { error ->
             platform.log(platform, LogLevel.WARNING, "Update recovery failed", error)
         }
+        it.start()
+        platform.whenServerReady(Runnable { executor.execute { reconcilePendingUpdates(it) } })
     }
 
     override fun register(
@@ -132,7 +130,13 @@ internal class UpdateServiceImpl(private val platform: PlatformAdapter, private 
         }
         return UpdateResolver(ProductId.of("pnlibrary")).resolve(
             installed, releases, channels = channels, defaultChannel = UpdateChannel.STABLE,
-            frozen = freezes.active().keys, platform = platform.type,
+            frozen = (freezes.active().keys + entries.mapNotNull { entry ->
+                val policy = configuration.plugins[entry.descriptor.id.value]
+                entry.descriptor.id.takeIf {
+                    !configuration.pluginUpdatesEnabled || policy?.enabled == false ||
+                        policy?.pauseUntil?.isAfter(java.time.Instant.now()) == true
+                }
+            }).toSet(), platform = platform.type,
             javaFeature = Runtime.version().feature(), policy = ResolverPolicy(
                 configuration.downloads.allowManagedPlugins && configuration.installation.allowNewPlugins,
                 runCatching { platform.installedPlugins() }.getOrNull().orEmpty().keys),
@@ -143,14 +147,23 @@ internal class UpdateServiceImpl(private val platform: PlatformAdapter, private 
         val changed = snapshot.plan?.changes?.map(ProductChange::product).orEmpty()
         return changed.all { component ->
             if (component.value == "pnlibrary") configuration.library.automaticDownload
-            else configuration.plugins[component.value]?.automaticDownload
-                ?: entries.firstOrNull { it.descriptor.id == component }?.request?.automaticDownload
-                ?: false
+            else {
+                val policy = configuration.plugins[component.value]
+                configuration.pluginUpdatesEnabled && policy?.enabled != false &&
+                    (policy?.automaticDownload ?: (configuration.pluginAutomaticDownload ||
+                        entries.firstOrNull { it.descriptor.id == component }?.request?.automaticDownload == true))
+            }
         }
     }
 
     private fun stageGraph(snapshot: UpdatePlanSnapshot) {
         val plan = requireNotNull(snapshot.plan) { "update plan has no installable target" }
+        plan.changes.filter { it.product.value != "pnlibrary" }.forEach { change ->
+            val policy = configuration.plugins[change.product.value]
+            require(configuration.pluginUpdatesEnabled && policy?.enabled != false) {
+                "Загрузка плагина ${change.product} отключена политикой обновлений"
+            }
+        }
         val staging = dataFolder.resolve("updates/staging/${snapshot.id}")
         val byComponent = entries.associateBy { it.descriptor.id }
         val artifacts = plan.changes.map { change ->
@@ -171,17 +184,37 @@ internal class UpdateServiceImpl(private val platform: PlatformAdapter, private 
                 ?: dataFolder.parent.resolve("update").resolve(descriptor.file)
             TransactionArtifact(specification, source, target, rollbackSource = existing?.jar ?: target)
         }
-        transaction.apply(artifacts) { true }
+        transaction.prepareForRestart(artifacts)
+    }
+
+    private fun reconcilePendingUpdates(orchestrator: UpdateOrchestrator) {
+        transaction.awaitingHealth().forEach { pending ->
+            val installed = entries.associate { it.descriptor.id.value to it.descriptor.version.toString() }
+            val missingOrWrong = pending.expectedVersions.filter { (product, version) -> installed[product] != version }
+            val healthy = missingOrWrong.isEmpty()
+            transaction.completeHealth(pending.journal, healthy)
+            if (healthy) {
+                orchestrator.healthResolved(true, "Обновлённые плагины загружены и работают.")
+            } else {
+                val details = missingOrWrong.entries.joinToString { (product, version) ->
+                    "$product: ожидалась $version, загружена ${installed[product] ?: "не загружена"}"
+                }
+                orchestrator.healthResolved(
+                    false,
+                    "После перезапуска обновление не подтвердилось ($details). Доступен ручной откат.",
+                )
+            }
+        }
     }
 
     private fun announce(snapshot: UpdatePlanSnapshot) {
         val message = when (snapshot.state) {
-            UpdateState.UPDATE_AVAILABLE -> "Доступен совместимый план обновления (${snapshot.plan?.changes?.size ?: 0} компонентов)"
+            UpdateState.UPDATE_AVAILABLE -> "Доступен совместимый план обновления (${snapshot.plan?.changes?.size ?: 0} плагинов)"
             UpdateState.UPDATE_STAGED -> "План обновления проверен и подготовлен к перезапуску"
             UpdateState.BLOCKED -> "Обновление заблокировано: ${snapshot.blockers.joinToString()}"
             UpdateState.FAILED -> "Проверка обновлений завершилась ошибкой: ${snapshot.message}"
             UpdateState.ROLLED_BACK -> "Предыдущие версии плагинов подготовлены к перезапуску"
-            else -> "Все зарегистрированные компоненты актуальны"
+            else -> snapshot.message ?: "Все зарегистрированные плагины актуальны"
         }
         platform.log(platform, LogLevel.INFO, message)
     }

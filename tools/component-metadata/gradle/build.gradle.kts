@@ -38,6 +38,14 @@ dependencies {
     testRuntimeOnly(libs.junit.launcher)
 }
 
+// This project is also loaded as an isolated pluginManagement included build.
+// In the main multi-project build, make the file dependency's producer explicit.
+if (rootProject.name == "pnLibrary") {
+    tasks.named("pluginUnderTestMetadata") {
+        dependsOn(":tools:component-metadata:core:jar")
+    }
+}
+
 mavenPublishing {
     publishToMavenCentral()
     signAllPublications()

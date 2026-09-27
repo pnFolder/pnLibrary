@@ -28,6 +28,7 @@ internal class UpdateOrchestrator(
     private val lock = Any()
     private val closed = AtomicBoolean(false)
     private var inFlight: CompletableFuture<UpdatePlanSnapshot>? = null
+    private var inFlightForced = false
     private var current: UpdatePlanSnapshot? = store.current()
     private var revision = current?.revision ?: 0
     private var announcedFingerprint: String? = null
@@ -46,27 +47,49 @@ internal class UpdateOrchestrator(
 
     fun checkNow(forceRemote: Boolean = true): CompletionStage<UpdatePlanSnapshot> = synchronized(lock) {
         check(!closed.get()) { "update orchestrator is closed" }
-        inFlight?.let { return@synchronized it }
+        inFlight?.let { active ->
+            if (!forceRemote || inFlightForced) return@synchronized active
+            return@synchronized active.handle { _, _ -> Unit }.thenCompose { checkNow(true) }
+        }
         val promise = CompletableFuture<UpdatePlanSnapshot>()
         inFlight = promise
+        inFlightForced = forceRemote
         try {
             executor.execute {
                 try {
                     val snapshot = snapshot(if (forceRemote) remoteResolver?.invoke() ?: resolver() else resolver())
                     publish(snapshot)
-                    if (configuration.effectiveAutomaticDownloads && snapshot.state == UpdateState.UPDATE_AVAILABLE &&
+                    val completed = if (configuration.effectiveAutomaticDownloads && snapshot.state == UpdateState.UPDATE_AVAILABLE &&
                         automaticAllowed(snapshot)) {
                         stageInternal(snapshot)
-                        promise.complete(requireNotNull(current))
-                    } else promise.complete(snapshot)
+                        requireNotNull(current)
+                    } else snapshot
+                    synchronized(lock) {
+                        if (inFlight === promise) {
+                            inFlight = null
+                            inFlightForced = false
+                        }
+                    }
+                    promise.complete(completed)
                 } catch (error: Throwable) {
-                    promise.completeExceptionally(error)
-                } finally {
-                    synchronized(lock) { if (inFlight === promise) inFlight = null }
+                    val previous = synchronized(lock) { current }
+                    val failed = UpdatePlanSnapshot(
+                        UUID.randomUUID(), ++revision, UpdateState.FAILED,
+                        previous?.plan, previous?.blockers.orEmpty(), rootMessage(error),
+                    )
+                    publish(failed)
+                    synchronized(lock) {
+                        if (inFlight === promise) {
+                            inFlight = null
+                            inFlightForced = false
+                        }
+                    }
+                    promise.complete(failed)
                 }
             }
         } catch (error: Throwable) {
             inFlight = null
+            inFlightForced = false
             promise.completeExceptionally(error)
         }
         promise
@@ -135,6 +158,20 @@ internal class UpdateOrchestrator(
         return promise
     }
 
+    fun healthResolved(healthy: Boolean, message: String) {
+        if (closed.get()) return
+        val previous = synchronized(lock) { current }
+        val resolved = UpdatePlanSnapshot(
+            previous?.id ?: UUID.randomUUID(),
+            ++revision,
+            if (healthy) UpdateState.UP_TO_DATE else UpdateState.FAILED,
+            previous?.plan,
+            previous?.blockers.orEmpty(),
+            message,
+        )
+        publish(resolved)
+    }
+
     private fun snapshot(result: ResolutionResult): UpdatePlanSnapshot {
         val plan = when (result) { is ResolutionResult.Ready -> result.plan; is ResolutionResult.Blocked -> result.fallbackPlan }
         val blockers = if (result is ResolutionResult.Blocked) result.reasons else emptyList()
@@ -180,6 +217,9 @@ internal class UpdateOrchestrator(
             }
             blockers.forEach { append(it.toString()).append(';') }
         }
+
+    private fun rootMessage(error: Throwable): String =
+        generateSequence(error) { it.cause }.last().message ?: error.javaClass.simpleName
 
     override fun close() {
         if (!closed.compareAndSet(false, true)) return

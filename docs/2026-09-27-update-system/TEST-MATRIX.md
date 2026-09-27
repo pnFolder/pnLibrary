@@ -15,6 +15,9 @@
 | Java, платформа и API участвуют в выборе JAR | `UpdateResolverTest`, `ReleaseCatalogueClientTest` | PASS |
 | Причина блокировки сохраняется после рестарта | `UpdateStateStoreTest` | PASS |
 | Ошибка активации не вызывает автоматический откат | `UpdateTransactionTest` | PASS |
+| Подготовленный набор остаётся ожидающим до полной готовности сервера | `UpdateTransactionTest` | PASS |
+| Неудачная транзакция без резервных копий не вытесняет рабочую точку отката | `UpdateTransactionTest` | PASS |
+| Статус «подготовлено» показывается только плагинам из текущего плана | `BukkitControlCommandTest` | PASS |
 | Ручной откат восстанавливает установленный JAR через `plugins/update` | `UpdateTransactionTest` | PASS |
 | Ошибка консольного оформления не оставляет загрузку навечно незавершённой | `DirectDownloadManagerTest` | PASS |
 | Внешняя зависимость помещается в `plugins/update` | `DirectDownloadManagerTest` | PASS |
@@ -55,15 +58,18 @@ updates:
   downloads:
     automatic: false
   plugins:
-    acceptance:
-      enabled: true
-      automatic-download: false
-      pause: 7d
+    enabled: true
+    automatic-download: false
+    plugins:
+      acceptance:
+        enabled: true
+        automatic-download: false
+        pause-until: null
 ```
 
 - pnLibrary проверяется всегда;
 - `automatic-download` разрешает только загрузку;
-- `plugins.<id>` относится к плагину, а не к внутреннему компоненту;
+- `plugins.plugins.<id>` относится к плагину, а не к внутреннему компоненту;
 - интервал проверки отсутствует в YAML и остаётся частью кода библиотеки;
 - максимальная пауза — семь дней.
 
@@ -73,7 +79,7 @@ updates:
 2. Выполнить `/pn update-status acceptance` — получить конкретное состояние и причину.
 3. Выполнить `/pn update acceptance` — команда обязана сделать свежий запрос GitHub.
 4. При найденном плане убедиться, что JAR появился в `plugins/update`.
-5. Полностью перезапустить сервер и проверить `/pn update-status acceptance`.
+5. Полностью перезапустить сервер. Только после события полной готовности сервера система проверит фактически загруженные версии и подтвердит успех либо сохранит ошибку с доступным ручным откатом.
 6. Для проверки отката выполнить `/pn update-rollback`, подтвердить кнопку и снова полностью перезапустить сервер.
 7. Для blocker-сценария опубликовать библиотеку с новым API без совместимого acceptance: статус должен назвать `acceptance` и требуемый API, а загрузка плана не должна начаться.
 

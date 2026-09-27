@@ -31,6 +31,12 @@ data class JournalArtifact(
     val staged: String,
     val backup: String,
     val targetExisted: Boolean,
+    val expectedVersion: String? = null,
+)
+
+data class PendingTransaction(
+    val journal: Path,
+    val expectedVersions: Map<String, String>,
 )
 
 data class TransactionJournal(
@@ -72,6 +78,11 @@ class UpdateTransaction(
     private val publicationRoot = publicationRoot.toAbsolutePath().normalize()
 
     fun apply(artifacts: List<TransactionArtifact>, healthCheck: () -> Boolean): TransactionResult {
+        val prepared = prepareForRestart(artifacts)
+        return completeHealth(prepared.journal, healthCheck())
+    }
+
+    fun prepareForRestart(artifacts: List<TransactionArtifact>): TransactionResult {
         require(artifacts.isNotEmpty()) { "transaction must contain at least one artifact" }
         require(artifacts.map { it.specification.product }.distinct().size == artifacts.size) {
             "transaction contains duplicate components"
@@ -99,6 +110,7 @@ class UpdateTransaction(
                 staging.resolve("$index-${artifact.target.fileName}").toString(),
                 backups.resolve("$index-${artifact.target.fileName}").toString(),
                 Files.exists(artifact.rollbackSource),
+                artifact.specification.version.toString(),
             )
         }
         val journalPath = directory.resolve("journal.json")
@@ -127,11 +139,6 @@ class UpdateTransaction(
                 Files.copy(Paths.get(record.staged), target, StandardCopyOption.REPLACE_EXISTING)
             }
             transition(journalPath, journal, TransactionState.AWAITING_HEALTH)
-            if (!healthCheck()) {
-                transition(journalPath, journal, TransactionState.FAILED)
-                return TransactionResult(journal.state, journalPath)
-            }
-            transition(journalPath, journal, TransactionState.COMMITTED)
             return TransactionResult(journal.state, journalPath)
         } catch (error: Throwable) {
             if (activationStarted) {
@@ -143,12 +150,31 @@ class UpdateTransaction(
         }
     }
 
+    fun completeHealth(journalPath: Path, healthy: Boolean): TransactionResult {
+        val normalized = journalPath.toAbsolutePath().normalize()
+        require(normalized.startsWith(root.toAbsolutePath().normalize())) { "health journal must stay inside transaction root" }
+        val journal = TransactionJournal.load(normalized)
+        require(journal.state == TransactionState.AWAITING_HEALTH) {
+            "transaction ${journal.id} is not awaiting a health check"
+        }
+        transition(normalized, journal, if (healthy) TransactionState.COMMITTED else TransactionState.FAILED)
+        return TransactionResult(journal.state, normalized)
+    }
+
+    fun awaitingHealth(): List<PendingTransaction> = journals()
+        .mapNotNull { path ->
+            val journal = runCatching { TransactionJournal.load(path) }.getOrNull() ?: return@mapNotNull null
+            if (journal.state != TransactionState.AWAITING_HEALTH) return@mapNotNull null
+            PendingTransaction(path, journal.artifacts.mapNotNull { artifact ->
+                artifact.expectedVersion?.let { artifact.component to it }
+            }.toMap())
+        }
+
     fun recover(journalPath: Path): TransactionResult {
         val journal = TransactionJournal.load(journalPath)
         if (journal.state in setOf(
                 TransactionState.PUBLISHING,
                 TransactionState.ACTIVATING,
-                TransactionState.AWAITING_HEALTH,
                 TransactionState.ROLLING_BACK,
             )
         ) {
@@ -164,6 +190,7 @@ class UpdateTransaction(
         require(journal.state == TransactionState.FAILED || journal.state == TransactionState.COMMITTED) {
             "transaction ${journal.id} cannot be rolled back from ${journal.state}"
         }
+        require(hasRollbackData(journal)) { "transaction ${journal.id} has no complete rollback data" }
         rollbackInternal(normalized, journal)
         return TransactionResult(journal.state, normalized)
     }
@@ -176,8 +203,9 @@ class UpdateTransaction(
                 .map { it.resolve("journal.json") }
                 .filter(Files::isRegularFile)
                 .filter { path ->
-                    runCatching { TransactionJournal.load(path).state }
-                        .getOrNull() in setOf(TransactionState.FAILED, TransactionState.COMMITTED)
+                    runCatching { TransactionJournal.load(path) }.getOrNull()?.let { journal ->
+                        journal.state in setOf(TransactionState.FAILED, TransactionState.COMMITTED) && hasRollbackData(journal)
+                    } == true
                 }
                 .max(Comparator.comparingLong { Files.getLastModifiedTime(it).toMillis() })
                 .orElse(null)
@@ -208,6 +236,20 @@ class UpdateTransaction(
             }
         }
         transition(path, journal, TransactionState.ROLLED_BACK)
+    }
+
+    private fun hasRollbackData(journal: TransactionJournal): Boolean = journal.artifacts.all { record ->
+        !record.targetExisted || Files.isRegularFile(Paths.get(record.backup))
+    }
+
+    private fun journals(): List<Path> {
+        if (!Files.isDirectory(root)) return emptyList()
+        return Files.list(root).use { directories ->
+            directories.filter(Files::isDirectory)
+                .map { it.resolve("journal.json") }
+                .filter(Files::isRegularFile)
+                .toList()
+        }
     }
 
     private fun transition(path: Path, journal: TransactionJournal, state: TransactionState) {

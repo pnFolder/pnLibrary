@@ -9,6 +9,7 @@ import java.nio.file.Files
 import java.nio.file.Path
 import java.nio.file.StandardCopyOption
 import java.time.Duration
+import java.time.Instant
 import ru.privatenull.pnlibrary.api.updates.UpdateChannel
 
 internal data class UpdateConfiguration(
@@ -19,6 +20,8 @@ internal data class UpdateConfiguration(
     val installation: Installation = Installation(),
     val safety: Safety = Safety(),
     val library: LibraryPolicy = LibraryPolicy(),
+    val pluginUpdatesEnabled: Boolean = true,
+    val pluginAutomaticDownload: Boolean = false,
     val plugins: Map<String, PluginPolicy> = emptyMap(),
     val legacyChannel: String = "stable",
 ) {
@@ -27,7 +30,7 @@ internal data class UpdateConfiguration(
         val channel: UpdateChannel? = null,
         val enabled: Boolean = true,
         val automaticDownload: Boolean = false,
-        val pause: Duration? = null,
+        val pauseUntil: Instant? = null,
     )
     data class Checks(val enabled: Boolean = true, val interval: Duration = Duration.ofHours(6))
     data class Notifications(
@@ -58,7 +61,10 @@ internal data class UpdateConfiguration(
     val effectiveChecksEnabled get() = true
     val effectiveConsoleNotifications get() = notifications.console
     val effectiveAdministratorNotifications get() = notifications.administrators
-    val effectiveAutomaticDownloads get() = enabled && downloads.automatic
+    val effectiveAutomaticDownloads get() = enabled && (
+        downloads.automatic || library.automaticDownload || pluginAutomaticDownload ||
+            plugins.values.any { it.automaticDownload }
+    )
     val effectiveRestart get() = enabled && installation.restartAfterConfirmation
 
     companion object {
@@ -92,7 +98,10 @@ internal data class UpdateConfiguration(
             val installation = root.map("installation")
             val safety = root.map("safety")
             val library = root.map("library")
-            val pluginValues = root.map("plugins") ?: root.map("components")
+            val pluginSection = root.map("plugins")
+            val nestedPluginValues = pluginSection?.map("plugins")
+            val pluginValues = nestedPluginValues ?: pluginSection ?: root.map("components")
+            val nestedPluginSchema = nestedPluginValues != null
             fun bool(map: Map<String, Any?>?, key: String, default: Boolean): Boolean {
                 val value = map?.get(key) ?: return default
                 return if (value is Boolean) value else { bad(); default }
@@ -134,23 +143,39 @@ internal data class UpdateConfiguration(
                 ),
                 safety = Safety(maximumOnline, bool(safety, "require-second-confirmation-above-limit", true)),
                 library = LibraryPolicy(bool(library, "automatic-download", false)),
+                pluginUpdatesEnabled = if (nestedPluginSchema) bool(pluginSection, "enabled", true) else true,
+                pluginAutomaticDownload = if (nestedPluginSchema) {
+                    bool(pluginSection, "automatic-download", false)
+                } else false,
                 plugins = pluginValues.orEmpty().mapNotNull { (rawId, rawPolicy) ->
+                    if (nestedPluginSchema && rawId in setOf("enabled", "automatic-download", "plugins")) {
+                        return@mapNotNull null
+                    }
                     val id = rawId.trim().lowercase()
                     val policy = (rawPolicy as? Map<*, *>)?.entries?.associate { it.key.toString() to it.value }
                     if (!id.matches(Regex("[a-z0-9][a-z0-9_.-]*")) || policy == null) { bad(); return@mapNotNull null }
                     val channel = (policy["channel"] as? String)?.let {
                         runCatching { UpdateChannel.valueOf(it.trim().uppercase()) }.getOrElse { bad(); null }
                     }
-                    val enabled = policy["enabled"]?.let { if (it is Boolean) it else { bad(); true } } ?: true
+                    val enabled = when (val mode = policy["mode"]) {
+                        null -> policy["enabled"]?.let { if (it is Boolean) it else { bad(); true } } ?: true
+                        is String -> when (mode.trim().lowercase()) {
+                            "enabled", "normal" -> true
+                            "disabled" -> false
+                            else -> { bad(); true }
+                        }
+                        else -> { bad(); true }
+                    }
                     val automatic = (policy["automatic-download"] ?: policy["automatic"])?.let {
                         if (it is Boolean) it else { bad(); false }
                     } ?: false
-                    val pause = (policy["pause"] as? String)?.let {
-                        runCatching { ru.privatenull.pnlibrary.update.FreezeDuration.parse(it) }
-                            .getOrNull()?.takeIf { value -> value <= Duration.ofDays(7) }
-                            ?: run { bad(); null }
+                    val pauseUntil = (policy["pause-until"] as? String)?.let {
+                        runCatching { Instant.parse(it) }.getOrNull()?.takeIf { deadline ->
+                            val remaining = Duration.between(Instant.now(), deadline)
+                            !remaining.isNegative && !remaining.isZero && remaining <= Duration.ofDays(7)
+                        } ?: run { bad(); null }
                     }
-                    id to PluginPolicy(channel, enabled, automatic, pause)
+                    id to PluginPolicy(channel, enabled, automatic, pauseUntil)
                 }.toMap(),
             )
             if (malformed) warning("Invalid update configuration values were replaced with conservative defaults")
@@ -189,6 +214,10 @@ internal data class UpdateConfiguration(
   enabled: $enabled
   library:
     automatic-download: ${library.automaticDownload}
+  plugins:
+    enabled: $pluginUpdatesEnabled
+    automatic-download: $pluginAutomaticDownload
+    plugins: {}
   notifications:
     console: ${notifications.console}
     administrators: ${notifications.administrators}
@@ -209,6 +238,5 @@ ${downloads.allowedHosts.joinToString("\n") { "      - $it" }}
   safety:
     maximum-online-for-one-click: ${safety.maximumOnlineForOneClick}
     require-second-confirmation-above-limit: ${safety.requireSecondConfirmationAboveLimit}
-  plugins: {}
 """
 }

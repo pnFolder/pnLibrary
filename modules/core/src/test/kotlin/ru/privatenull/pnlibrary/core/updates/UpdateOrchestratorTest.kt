@@ -119,6 +119,58 @@ class UpdateOrchestratorTest {
         }
     }
 
+    @Test
+    fun `forced manual check waits for cached check then resolves remotely`() {
+        val cachedEntered = CountDownLatch(1)
+        val cachedRelease = CountDownLatch(1)
+        val remoteCalls = AtomicInteger()
+        val executor = Executors.newSingleThreadScheduledExecutor()
+        val orchestrator = UpdateOrchestrator(
+            UpdateConfiguration(), UpdateStateStore(directory), executor,
+            resolver = {
+                cachedEntered.countDown()
+                cachedRelease.await(2, TimeUnit.SECONDS)
+                ResolutionResult.Ready(plan("2.0.0"))
+            },
+            remoteResolver = {
+                remoteCalls.incrementAndGet()
+                ResolutionResult.Ready(plan("3.0.0"))
+            },
+            stageAction = {}, announcement = {},
+        )
+        try {
+            val cached = orchestrator.checkNow(false)
+            assertTrue(cachedEntered.await(1, TimeUnit.SECONDS))
+            val forced = orchestrator.checkNow(true)
+            cachedRelease.countDown()
+
+            assertEquals("2.0.0", cached.toCompletableFuture().get(2, TimeUnit.SECONDS).plan?.changes?.single()?.to.toString())
+            assertEquals("3.0.0", forced.toCompletableFuture().get(2, TimeUnit.SECONDS).plan?.changes?.single()?.to.toString())
+            assertEquals(1, remoteCalls.get())
+        } finally {
+            orchestrator.close()
+        }
+    }
+
+    @Test
+    fun `failed remote check publishes durable failed snapshot with cause`() {
+        val executor = Executors.newSingleThreadScheduledExecutor()
+        val orchestrator = UpdateOrchestrator(
+            UpdateConfiguration(), UpdateStateStore(directory), executor,
+            resolver = { error("GitHub вернул HTTP 404") },
+            stageAction = {}, announcement = {},
+        )
+        try {
+            val failed = orchestrator.checkNow().toCompletableFuture().get(2, TimeUnit.SECONDS)
+
+            assertEquals(UpdateState.FAILED, failed.state)
+            assertEquals("GitHub вернул HTTP 404", failed.message)
+            assertEquals(UpdateState.FAILED, UpdateStateStore(directory).current()?.state)
+        } finally {
+            orchestrator.close()
+        }
+    }
+
     private fun plan(version: String): UpdatePlan {
         val id = ProductId.of("pnlibrary")
         val semantic = SemanticVersion.parse(version)

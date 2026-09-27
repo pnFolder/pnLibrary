@@ -9,9 +9,12 @@ import ru.privatenull.pnlibrary.api.commands.CommandNodeKind
 import ru.privatenull.pnlibrary.api.runtime.PnLibrary
 import ru.privatenull.pnlibrary.api.updates.BlockedReason
 import ru.privatenull.pnlibrary.api.updates.ProductId
+import ru.privatenull.pnlibrary.api.updates.ProductChange
+import ru.privatenull.pnlibrary.api.updates.UpdatePlan
 import ru.privatenull.pnlibrary.api.updates.UpdatePlanSnapshot
 import ru.privatenull.pnlibrary.api.updates.UpdateState
 import ru.privatenull.pnlibrary.api.version.SemanticVersion
+import ru.privatenull.pnlibrary.api.version.PnLibraryApi
 import java.lang.reflect.Proxy
 import java.util.UUID
 
@@ -62,7 +65,15 @@ class BukkitControlCommandTest {
         )
         assertEquals(
             listOf("§eДля плагина acceptance доступно обновление: 2.2.0 → 2.5.0."),
-            BukkitUpdateMessages.status(snapshot(UpdateState.UPDATE_AVAILABLE, latest = "2.5.0")),
+            BukkitUpdateMessages.status(snapshot(UpdateState.UPDATE_AVAILABLE, latest = "2.5.0", changed = true)),
+        )
+        assertEquals(
+            listOf("§aПлагин acceptance уже использует актуальную версию."),
+            BukkitUpdateMessages.status(snapshot(UpdateState.UPDATE_STAGED, latest = "2.5.0")),
+        )
+        assertEquals(
+            listOf("§aОбновление плагина acceptance проверено и подготовлено. Полностью перезапустите сервер."),
+            BukkitUpdateMessages.status(snapshot(UpdateState.UPDATE_STAGED, latest = "2.5.0", changed = true)),
         )
     }
 
@@ -71,7 +82,12 @@ class BukkitControlCommandTest {
         latest: String? = null,
         blockers: List<BlockedReason> = emptyList(),
         message: String? = null,
-    ) = UpdatePlanSnapshot(UUID.randomUUID(), 1, state, null, blockers, message) to
+        changed: Boolean = false,
+    ) = UpdatePlanSnapshot(UUID.randomUUID(), 1, state, if (changed) UpdatePlan(
+        PnLibraryApi.VERSION,
+        listOf(ProductChange(ProductId.of("acceptance"), SemanticVersion.parse("2.2.0"), SemanticVersion.parse(latest ?: "2.5.0"))),
+        emptyList(),
+    ) else null, blockers, message) to
         ru.privatenull.pnlibrary.api.updates.UpdateSnapshot(
             "acceptance", "2.2.0", latest, ru.privatenull.pnlibrary.api.updates.UpdateChannel.STABLE,
             state, 17, 8, false, null, message,

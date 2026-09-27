@@ -16,15 +16,15 @@ internal object BukkitUpdateMessages {
             "плагин ${plugin.product}"
         }
         val subjectGenitive = if (isLibrary) "библиотеки pnLibrary" else "плагина ${plugin.product}"
+        val change = plan.plan?.changes?.firstOrNull { it.product.value.equals(plugin.product, true) }
         val state = when {
             plugin.state == UpdateState.FROZEN -> UpdateState.FROZEN
             plan.state == UpdateState.BLOCKED -> UpdateState.BLOCKED
             plan.state == UpdateState.FAILED -> UpdateState.FAILED
             plan.state == UpdateState.ROLLED_BACK -> UpdateState.ROLLED_BACK
-            plugin.state in setOf(UpdateState.AVAILABLE, UpdateState.UPDATE_AVAILABLE) ||
-                plan.state == UpdateState.UPDATE_AVAILABLE -> UpdateState.UPDATE_AVAILABLE
-            plugin.state in setOf(UpdateState.DOWNLOADED, UpdateState.UPDATE_STAGED) ||
-                plan.state == UpdateState.UPDATE_STAGED -> UpdateState.UPDATE_STAGED
+            change != null && plan.state == UpdateState.UPDATE_STAGED -> UpdateState.UPDATE_STAGED
+            change != null && (plugin.state in setOf(UpdateState.AVAILABLE, UpdateState.UPDATE_AVAILABLE) ||
+                plan.state == UpdateState.UPDATE_AVAILABLE) -> UpdateState.UPDATE_AVAILABLE
             else -> UpdateState.UP_TO_DATE
         }
         return when (state) {
@@ -37,7 +37,7 @@ internal object BukkitUpdateMessages {
                 "§cНе удалось проверить обновление $subjectGenitive: ${sentence(plan.message ?: plugin.message ?: "неизвестная ошибка")}",
             )
             UpdateState.UPDATE_AVAILABLE -> listOf(
-                "§eДля $subjectGenitive доступно обновление: ${plugin.currentVersion} → ${plugin.latestVersion ?: targetVersion(plan, plugin)}.",
+                "§eДля $subjectGenitive доступно обновление: ${plugin.currentVersion} → ${plugin.latestVersion ?: change?.to ?: "неизвестно"}.",
             )
             UpdateState.UPDATE_STAGED -> listOf(
                 "§aОбновление $subjectGenitive проверено и подготовлено. Полностью перезапустите сервер.",
@@ -48,9 +48,6 @@ internal object BukkitUpdateMessages {
             else -> listOf("§a${subject.replaceFirstChar { it.uppercase() }} уже использует актуальную версию.")
         }
     }
-
-    private fun targetVersion(plan: UpdatePlanSnapshot, plugin: UpdateSnapshot): String =
-        plan.plan?.changes?.firstOrNull { it.product.value.equals(plugin.product, true) }?.to?.toString() ?: "неизвестно"
 
     private fun blocker(reason: BlockedReason): String = when (reason) {
         is BlockedReason.ApiMismatch ->
