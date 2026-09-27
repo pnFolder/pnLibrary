@@ -40,7 +40,7 @@ internal class UpdateServiceImpl(private val platform: PlatformAdapter, private 
         dataFolder.resolve("updates/transactions"), ArtifactVerifier(MAX_ARTIFACT_BYTES), dataFolder.parent,
     )
     private val freezes = FreezeStore(dataFolder.resolve("updates/freezes.json")).also { store ->
-        configuration.components.forEach { (id, policy) ->
+        configuration.plugins.forEach { (id, policy) ->
             policy.pause?.let { if (store.remaining(ProductId.of(id)) == null) store.freeze(ProductId.of(id), it) }
         }
     }
@@ -114,7 +114,7 @@ internal class UpdateServiceImpl(private val platform: PlatformAdapter, private 
             PnLibraryApi.VERSION.takeIf { entry.descriptor.id.value == "pnlibrary" },
         ) }
         val channels = entries.associate { entry -> entry.descriptor.id to
-            (configuration.components[entry.descriptor.id.value]?.channel ?: entry.request.channel) }
+            (configuration.plugins[entry.descriptor.id.value]?.channel ?: entry.request.channel) }
         val releases = entries.flatMap { entry ->
             catalogue.releases(ReleaseSource(entry.request.repositoryOwner, entry.request.repositoryName),
                 channels.getValue(entry.descriptor.id), entry.descriptor.id, entry.request, entry.dependencies, platform.type).join()
@@ -135,7 +135,8 @@ internal class UpdateServiceImpl(private val platform: PlatformAdapter, private 
     private fun automaticAllowed(snapshot: UpdatePlanSnapshot): Boolean {
         val changed = snapshot.plan?.changes?.map(ProductChange::product).orEmpty()
         return changed.all { component ->
-            configuration.components[component.value]?.automatic
+            if (component.value == "pnlibrary") configuration.library.automaticDownload
+            else configuration.plugins[component.value]?.automaticDownload
                 ?: entries.firstOrNull { it.descriptor.id == component }?.request?.automaticDownload
                 ?: false
         }

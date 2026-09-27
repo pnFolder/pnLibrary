@@ -18,12 +18,15 @@ internal data class UpdateConfiguration(
     val downloads: Downloads = Downloads(),
     val installation: Installation = Installation(),
     val safety: Safety = Safety(),
-    val components: Map<String, ComponentPolicy> = emptyMap(),
+    val library: LibraryPolicy = LibraryPolicy(),
+    val plugins: Map<String, PluginPolicy> = emptyMap(),
     val legacyChannel: String = "stable",
 ) {
-    data class ComponentPolicy(
+    data class LibraryPolicy(val automaticDownload: Boolean = false)
+    data class PluginPolicy(
         val channel: UpdateChannel? = null,
-        val automatic: Boolean? = null,
+        val enabled: Boolean = true,
+        val automaticDownload: Boolean = false,
         val pause: Duration? = null,
     )
     data class Checks(val enabled: Boolean = true, val interval: Duration = Duration.ofHours(6))
@@ -52,7 +55,7 @@ internal data class UpdateConfiguration(
     )
 
     // Legacy `enabled: false` is a safe/manual mode, never a blindfold: checks and warnings remain active.
-    val effectiveChecksEnabled get() = checks.enabled
+    val effectiveChecksEnabled get() = true
     val effectiveConsoleNotifications get() = notifications.console
     val effectiveAdministratorNotifications get() = notifications.administrators
     val effectiveAutomaticDownloads get() = enabled && downloads.automatic
@@ -84,12 +87,12 @@ internal data class UpdateConfiguration(
             fun bad() { malformed = true }
             val root = parsed.map("updates") ?: run { bad(); emptyMap() }
             val defaults = UpdateConfiguration()
-            val checks = root.map("checks")
             val notifications = root.map("notifications")
             val downloads = root.map("downloads")
             val installation = root.map("installation")
             val safety = root.map("safety")
-            val componentValues = root.map("components")
+            val library = root.map("library")
+            val pluginValues = root.map("plugins") ?: root.map("components")
             fun bool(map: Map<String, Any?>?, key: String, default: Boolean): Boolean {
                 val value = map?.get(key) ?: return default
                 return if (value is Boolean) value else { bad(); default }
@@ -113,7 +116,7 @@ internal data class UpdateConfiguration(
             }
             val result = UpdateConfiguration(
                 enabled = bool(root, "enabled", defaults.enabled),
-                checks = Checks(bool(checks, "enabled", true), duration(checks, "interval", defaults.checks.interval)),
+                checks = defaults.checks,
                 notifications = Notifications(
                     bool(notifications, "console", true), bool(notifications, "administrators", true),
                     duration(notifications, "repeat-interval", defaults.notifications.repeatInterval),
@@ -130,18 +133,24 @@ internal data class UpdateConfiguration(
                     text(installation, "restart-command", defaults.installation.restartCommand),
                 ),
                 safety = Safety(maximumOnline, bool(safety, "require-second-confirmation-above-limit", true)),
-                components = componentValues.orEmpty().mapNotNull { (rawId, rawPolicy) ->
+                library = LibraryPolicy(bool(library, "automatic-download", false)),
+                plugins = pluginValues.orEmpty().mapNotNull { (rawId, rawPolicy) ->
                     val id = rawId.trim().lowercase()
                     val policy = (rawPolicy as? Map<*, *>)?.entries?.associate { it.key.toString() to it.value }
                     if (!id.matches(Regex("[a-z0-9][a-z0-9_.-]*")) || policy == null) { bad(); return@mapNotNull null }
                     val channel = (policy["channel"] as? String)?.let {
                         runCatching { UpdateChannel.valueOf(it.trim().uppercase()) }.getOrElse { bad(); null }
                     }
-                    val automatic = policy["automatic"]?.let { if (it is Boolean) it else { bad(); null } }
+                    val enabled = policy["enabled"]?.let { if (it is Boolean) it else { bad(); true } } ?: true
+                    val automatic = (policy["automatic-download"] ?: policy["automatic"])?.let {
+                        if (it is Boolean) it else { bad(); false }
+                    } ?: false
                     val pause = (policy["pause"] as? String)?.let {
-                        runCatching { ru.privatenull.pnlibrary.update.FreezeDuration.parse(it) }.getOrElse { bad(); null }
+                        runCatching { ru.privatenull.pnlibrary.update.FreezeDuration.parse(it) }
+                            .getOrNull()?.takeIf { value -> value <= Duration.ofDays(7) }
+                            ?: run { bad(); null }
                     }
-                    id to ComponentPolicy(channel, automatic, pause)
+                    id to PluginPolicy(channel, enabled, automatic, pause)
                 }.toMap(),
             )
             if (malformed) warning("Invalid update configuration values were replaced with conservative defaults")
@@ -178,9 +187,8 @@ internal data class UpdateConfiguration(
 
     private fun toYaml(): String = """updates:
   enabled: $enabled
-  checks:
-    enabled: ${checks.enabled}
-    interval: ${checks.interval.toMinutes()}m
+  library:
+    automatic-download: ${library.automaticDownload}
   notifications:
     console: ${notifications.console}
     administrators: ${notifications.administrators}
@@ -201,6 +209,6 @@ ${downloads.allowedHosts.joinToString("\n") { "      - $it" }}
   safety:
     maximum-online-for-one-click: ${safety.maximumOnlineForOneClick}
     require-second-confirmation-above-limit: ${safety.requireSecondConfirmationAboveLimit}
-  components: {}
+  plugins: {}
 """
 }

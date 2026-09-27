@@ -12,23 +12,59 @@ class UpdateConfigurationTest {
     @TempDir lateinit var directory: Path
 
     @Test
-    fun `reads per-component channel automatic policy and relative pause`() {
+    fun `reads library download policy and per-plugin update policy`() {
         val file = directory.resolve("updates.yml")
         Files.writeString(file, """
             updates:
-              components:
+              library:
+                automatic-download: false
+              plugins:
                 pncases:
                   channel: beta
-                  automatic: false
+                  enabled: false
+                  automatic-download: true
                   pause: 7d
         """.trimIndent())
 
         val configuration = UpdateConfiguration.load(file)
-        val policy = configuration.components.getValue("pncases")
+        val policy = configuration.plugins.getValue("pncases")
 
+        assertFalse(configuration.library.automaticDownload)
         assertEquals(UpdateChannel.BETA, policy.channel)
-        assertEquals(false, policy.automatic)
+        assertFalse(policy.enabled)
+        assertTrue(policy.automaticDownload)
         assertEquals(Duration.ofDays(7), policy.pause)
+    }
+
+    @Test
+    fun `user check interval is ignored because developer owns scheduling`() {
+        val file = directory.resolve("updates.yml")
+        Files.writeString(file, """
+            updates:
+              checks: { enabled: false, interval: 30d }
+              library: { automatic-download: false }
+        """.trimIndent())
+
+        val configuration = UpdateConfiguration.load(file)
+
+        assertTrue(configuration.effectiveChecksEnabled)
+        assertEquals(Duration.ofHours(6), configuration.checks.interval)
+    }
+
+    @Test
+    fun `plugin pause longer than seven days is rejected conservatively`() {
+        val file = directory.resolve("updates.yml")
+        Files.writeString(file, """
+            updates:
+              plugins:
+                pncases: { pause: 8d }
+        """.trimIndent())
+        val warnings = mutableListOf<String>()
+
+        val configuration = UpdateConfiguration.load(file, warnings::add)
+
+        assertNull(configuration.plugins.getValue("pncases").pause)
+        assertEquals(1, warnings.size)
     }
 
     @Test
@@ -38,7 +74,7 @@ class UpdateConfigurationTest {
 
         assertTrue(configuration.enabled)
         assertTrue(configuration.checks.enabled)
-        assertEquals(Duration.ofMinutes(30), configuration.checks.interval)
+        assertEquals(Duration.ofHours(6), configuration.checks.interval)
         assertEquals(Duration.ofHours(6), configuration.notifications.repeatInterval)
         assertFalse(configuration.downloads.automatic)
         assertFalse(configuration.downloads.allowExternalUrls)
@@ -76,7 +112,7 @@ class UpdateConfigurationTest {
         val configuration = UpdateConfiguration.load(file, warnings::add)
 
         assertTrue(configuration.enabled)
-        assertEquals(Duration.ofMinutes(30), configuration.checks.interval)
+        assertEquals(Duration.ofHours(6), configuration.checks.interval)
         assertFalse(configuration.downloads.automatic)
         assertFalse(configuration.downloads.allowExternalUrls)
         assertFalse(configuration.installation.allowNewPlugins)
