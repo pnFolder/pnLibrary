@@ -170,6 +170,8 @@ class ExternalPluginDependency private constructor(builder: Builder) : PluginDep
     override val versions: VersionConstraint = builder.versions()
     val downloadPage: URI? = builder.downloadPage
     val artifact: ExternalArtifact? = builder.artifact
+    val verifyPluginId: Boolean = builder.verifyPluginId
+    val verifyVersion: Boolean = builder.verifyVersion
     override val required: Boolean = builder.required
     override val downloadPolicy: DownloadPolicy = builder.downloadPolicy
 
@@ -183,6 +185,8 @@ class ExternalPluginDependency private constructor(builder: Builder) : PluginDep
         internal var maximumInclusive: SemanticVersion? = null
         internal var maximumExclusive: SemanticVersion? = null
         internal var downloadPolicy = DownloadPolicy.MANUAL
+        internal var verifyPluginId = true
+        internal var verifyVersion = true
 
         fun downloadPage(url: String) = apply {
             val parsed = URI.create(url)
@@ -201,6 +205,9 @@ class ExternalPluginDependency private constructor(builder: Builder) : PluginDep
         fun automaticDownload(value: Boolean) = apply {
             downloadPolicy = if (value) DownloadPolicy.AUTOMATIC else DownloadPolicy.MANUAL
         }
+        fun verifyPluginId(value: Boolean) = apply { verifyPluginId = value }
+        fun verifyVersion(value: Boolean) = apply { verifyVersion = value }
+
         fun forceAutomaticDownload(value: Boolean) = apply {
             if (value) downloadPolicy = DownloadPolicy.FORCED
             else if (downloadPolicy == DownloadPolicy.FORCED) downloadPolicy = DownloadPolicy.MANUAL

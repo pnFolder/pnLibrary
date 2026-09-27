@@ -78,6 +78,8 @@ class DependencyBuilder {
         private var artifact: ExternalArtifact? = null
         private var required = true
         private var policy = DownloadPolicy.MANUAL
+        private var verifyPluginId = true
+        private var verifyVersion = true
 
         init { require(name.isNotBlank()) { "external plugin name must not be blank" } }
 
@@ -96,6 +98,8 @@ class DependencyBuilder {
         }
         fun url(value: String) = apply { artifact = ExternalArtifact(URI.create(value), null, null) }
         fun required(value: Boolean) = apply { required = value }
+        fun verifyPluginId(value: Boolean) = apply { verifyPluginId = value }
+        fun verifyVersion(value: Boolean) = apply { verifyVersion = value }
         fun downloadPolicy(value: DownloadPolicy) = apply { policy = value }
         fun automaticDownload(value: Boolean) = apply {
             policy = if (value) DownloadPolicy.AUTOMATIC else DownloadPolicy.MANUAL
@@ -123,6 +127,8 @@ class DependencyBuilder {
                     }
                 }
                 .required(required)
+                .verifyPluginId(verifyPluginId)
+                .verifyVersion(verifyVersion)
                 .downloadPolicy(policy)
                 .build()
         }

@@ -186,6 +186,10 @@ internal class BukkitPlatformAdapter constructor(
         }
     }
 
+    override fun whenServerReady(task: Runnable) {
+        lifecycleListener?.whenServerReady(task) ?: executeGlobal(task)
+    }
+
     override fun executeReply(recipient: Any, task: Runnable) {
         if (closedFlag.get()) return
         val nativeRecipient = (recipient as? BukkitCommandSender)?.native ?: recipient

@@ -63,7 +63,8 @@ public final class AcceptancePlugin extends JavaPlugin implements CommandExecuto
             if (getConfig().getBoolean("updates.enabled", false)) {
                 builder.updates(getConfig().getString("updates.repository-owner"),
                     getConfig().getString("updates.repository-name"), update -> update
-                        .channel(UpdateChannel.DEV).automaticDownload(false)
+                        .channel(parseUpdateChannel(getConfig().getString("updates.channel", "STABLE")))
+                        .automaticDownload(false)
                         .artifact(getConfig().getString("updates.artifact-pattern"), 8));
             }
             if (getConfig().getBoolean("dependency.enabled", false)) {
@@ -104,6 +105,14 @@ public final class AcceptancePlugin extends JavaPlugin implements CommandExecuto
             .ok("Module", context.getId().getValue())
             .ok("Command", "/pnaccept status")
             .show();
+    }
+
+    private static UpdateChannel parseUpdateChannel(String value) {
+        try {
+            return UpdateChannel.valueOf(value.trim().toUpperCase(java.util.Locale.ROOT));
+        } catch (IllegalArgumentException error) {
+            return UpdateChannel.STABLE;
+        }
     }
 
     @Override

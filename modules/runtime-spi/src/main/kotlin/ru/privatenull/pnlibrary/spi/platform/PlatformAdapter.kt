@@ -120,6 +120,9 @@ interface PlatformAdapter : AutoCloseable {
      */
     fun executeGlobal(task: Runnable)
 
+    /** Runs after the platform reports that the server finished loading. */
+    fun whenServerReady(task: Runnable) = executeGlobal(task)
+
     /**
      * Dispatches [task] in the execution context safe for [recipient].
      *

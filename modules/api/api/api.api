@@ -2054,6 +2054,8 @@ public final class ru/privatenull/pnlibrary/api/plugin/DependencyBuilder$Externa
 	public final fun minimumVersion (Ljava/lang/String;)Lru/privatenull/pnlibrary/api/plugin/DependencyBuilder$ExternalBuilder;
 	public final fun required (Z)Lru/privatenull/pnlibrary/api/plugin/DependencyBuilder$ExternalBuilder;
 	public final fun url (Ljava/lang/String;)Lru/privatenull/pnlibrary/api/plugin/DependencyBuilder$ExternalBuilder;
+	public final fun verifyPluginId (Z)Lru/privatenull/pnlibrary/api/plugin/DependencyBuilder$ExternalBuilder;
+	public final fun verifyVersion (Z)Lru/privatenull/pnlibrary/api/plugin/DependencyBuilder$ExternalBuilder;
 }
 
 public final class ru/privatenull/pnlibrary/api/plugin/DependencyBuilder$ProductBuilder {
@@ -3007,6 +3009,8 @@ public final class ru/privatenull/pnlibrary/api/updates/ExternalPluginDependency
 	public final fun getMinimumVersion ()Lru/privatenull/pnlibrary/api/version/SemanticVersion;
 	public final fun getPlugin ()Ljava/lang/String;
 	public fun getRequired ()Z
+	public final fun getVerifyPluginId ()Z
+	public final fun getVerifyVersion ()Z
 	public fun getVersions ()Lru/privatenull/pnlibrary/api/plugin/VersionConstraint;
 }
 
@@ -3021,6 +3025,8 @@ public final class ru/privatenull/pnlibrary/api/updates/ExternalPluginDependency
 	public final fun maximumVersionExclusive (Ljava/lang/String;)Lru/privatenull/pnlibrary/api/updates/ExternalPluginDependency$Builder;
 	public final fun required (Z)Lru/privatenull/pnlibrary/api/updates/ExternalPluginDependency$Builder;
 	public final fun url (Ljava/lang/String;)Lru/privatenull/pnlibrary/api/updates/ExternalPluginDependency$Builder;
+	public final fun verifyPluginId (Z)Lru/privatenull/pnlibrary/api/updates/ExternalPluginDependency$Builder;
+	public final fun verifyVersion (Z)Lru/privatenull/pnlibrary/api/updates/ExternalPluginDependency$Builder;
 }
 
 public final class ru/privatenull/pnlibrary/api/updates/ExternalPluginDependency$Companion {

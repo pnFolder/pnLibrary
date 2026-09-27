@@ -4,6 +4,7 @@ metrics:
 
 updates:
   enabled: false
+  channel: STABLE
   repository-owner: pnFolder
   repository-name: pnLibrary
   artifact-pattern: '(?i)^pnLibrary-acceptance-bukkit-.*\.jar$'

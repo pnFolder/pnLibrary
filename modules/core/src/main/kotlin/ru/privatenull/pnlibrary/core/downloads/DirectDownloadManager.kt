@@ -11,8 +11,12 @@ import ru.privatenull.pnlibrary.api.plugin.PluginDependency
 import ru.privatenull.pnlibrary.api.version.SemanticVersion
 import ru.privatenull.pnlibrary.spi.platform.PlatformAdapter
 import ru.privatenull.pnlibrary.update.TrustedHttpClient
+import ru.privatenull.pnlibrary.console.ConsoleCard
+import ru.privatenull.pnlibrary.console.ConsoleTheme
+import ru.privatenull.pnlibrary.console.ConsoleTree
 import java.nio.file.Files
 import java.nio.file.Path
+import java.nio.file.Paths
 import java.nio.file.StandardCopyOption
 import java.security.MessageDigest
 import java.time.Duration
@@ -57,6 +61,9 @@ internal class DirectDownloadManager(
 
     fun registerDependencies(owner: Any, dependencies: List<PluginDependency>): DownloadRegistration? {
         val installed = runCatching { platform.installedPlugins() }.getOrNull().orEmpty()
+        platform.whenServerReady(Runnable {
+            confirmDownloadedDependencies(owner, runCatching { platform.installedPlugins() }.getOrNull().orEmpty())
+        })
         val downloadable = dependencies.mapNotNull { dependency ->
             val external = dependency.external ?: return@mapNotNull null
             val artifact = external.artifact ?: return@mapNotNull null
@@ -68,8 +75,8 @@ internal class DirectDownloadManager(
             Triple(dependency, external, artifact)
         }
         if (downloadable.isEmpty()) return null
-        val updateDirectory = requireNotNull(libraryData.parent) { "не найдена папка плагинов" }.resolve("update")
-        val request = FileDownloads.builder().dataDirectory(updateDirectory).also { builder ->
+        val pluginDirectory = requireNotNull(libraryData.parent) { "не найдена папка плагинов" }
+        val request = FileDownloads.builder().dataDirectory(pluginDirectory).also { builder ->
             downloadable.forEach { (dependency, external, artifact) ->
                 val safePluginName = external.plugin.replace(Regex("[^A-Za-z0-9._-]+"), "-")
                     .trim('-', '.')
@@ -163,9 +170,12 @@ internal class DirectDownloadManager(
                 ?: throw IllegalArgumentException("descriptor плагина не содержит version")
             names to version
         }
-        require(metadata.first.any { it.equals(expected.plugin, true) }) {
-            "скачанный JAR объявляет ${metadata.first.joinToString("/")}, ожидался ${expected.plugin}"
+        if (expected.verifyPluginId) {
+            require(metadata.first.any { it.equals(expected.plugin, true) }) {
+                "скачанный JAR объявляет ${metadata.first.joinToString("/")}, ожидался ${expected.plugin}"
+            }
         }
+        if (!expected.verifyVersion) return
         val version = SemanticVersion.tryParse(metadata.second)
             ?: throw IllegalArgumentException("версия скачанного ${expected.plugin} не распознана: ${metadata.second}")
         require(expected.versions.accepts(version)) {
@@ -299,13 +309,17 @@ internal class DirectDownloadManager(
                                 else -> DownloadState.DECLARED
                             })
                         })
+                        if (effectiveDeclarations.any { it.key.startsWith("dependency:") }) {
+                            persistDownloadedDependencies(effectiveDeclarations)
+                            showDependencySuccess(owner, effectiveDeclarations)
+                        }
                         promise.complete(snapshots())
                     }
                     .onFailure { error ->
                         if (!registrationClosed.get() && !closed.get()) {
                             state.set(request.files.map { DownloadSnapshot(it.key, DownloadState.FAILED, error.message) })
                             val level = if (effectiveDeclarations.any { it.required }) LogLevel.ERROR else LogLevel.WARNING
-                            platform.log(owner, level, "Пакет загрузок не подготовлен: ${error.message}", error)
+                            showFailure(owner, error, level)
                         }
                         promise.complete(snapshots())
                     }
@@ -318,6 +332,92 @@ internal class DirectDownloadManager(
             return promise
         }
 
+        private fun showFailure(
+            owner: Any,
+            error: Throwable,
+            level: LogLevel,
+        ) {
+            val details = userMessage(error)
+            val ownerName = platform.ownerDetails(owner)["name"] ?: "pnLibrary"
+            val theme = ConsoleTheme("§6", "§c", "§f", "§8", "§r")
+            ConsoleCard.builder(theme, "ЗАВИСИМОСТЬ НЕ ПОДГОТОВЛЕНА")
+                .mascot("x.x", ownerName, details.headline)
+                .blank()
+                .tree(ConsoleTree.builder("Причина")
+                    .child(details.reason)
+                    .build())
+                .blank()
+                .tree(ConsoleTree.builder("Что может сделать пользователь")
+                    .child(details.userAction)
+                    .build())
+                .blank()
+                .tree(ConsoleTree.builder("Что сообщить разработчику")
+                    .child(details.developerAction)
+                    .build())
+                .blank()
+                .status("Файл не установлен")
+                .build().send { line -> platform.console(owner, line) }
+
+            if (error !is IllegalArgumentException && error !is java.io.IOException) {
+                platform.log(owner, level, "Пакет загрузок не подготовлен: ${details.reason}", error)
+            }
+        }
+
+    private fun showDependencySuccess(owner: Any, declarations: List<FileDownload>) {
+            val ownerName = platform.ownerDetails(owner)["name"] ?: "pnLibrary"
+            val theme = ConsoleTheme("§6", "§a", "§f", "§8", "§r")
+            val files = declarations.map { Paths.get(it.relativePath).fileName.toString() }
+            val tree = ConsoleTree.builder("Скачанные зависимости")
+                .apply { files.forEach { child(it) } }
+                .build()
+            ConsoleCard.builder(theme, "ЗАВИСИМОСТИ ПОДГОТОВЛЕНЫ")
+                .mascot("^.^", ownerName, "файлы готовы к запуску")
+                .blank()
+                .tree(tree)
+                .blank()
+                .tree(ConsoleTree.builder("Что дальше")
+                    .child("Перезапусти сервер")
+                    .child("Плагины загрузятся при следующем запуске")
+                    .build())
+                .blank()
+                .status("Загрузка завершена")
+                .build().send { line -> platform.console(owner, line) }
+        }
+
+        private fun userMessage(error: Throwable): FailureDetails {
+            val raw = error.message?.trim().orEmpty()
+            val pluginMismatch = Regex("скачанный JAR объявляет (.+), ожидался (.+)").matchEntire(raw)
+            if (pluginMismatch != null) {
+                val actual = pluginMismatch.groupValues[1]
+                val expected = pluginMismatch.groupValues[2]
+                return FailureDetails(
+                    "плагин не прошёл проверку",
+                    "В скачанном файле указано имя $actual, а ожидалось $expected",
+                    "Скачай плагин $expected самостоятельно и перезапусти сервер",
+                    "Проверь идентификатор зависимости $expected и ссылку на JAR. Сообщи разработчику, что ссылка скачивает $actual",
+                )
+            }
+            val versionMismatch = Regex("версия скачанного (.+) ([^ ]+) не соответствует требованию (.+)").matchEntire(raw)
+            if (versionMismatch != null) {
+                val plugin = versionMismatch.groupValues[1]
+                val actual = versionMismatch.groupValues[2]
+                val required = versionMismatch.groupValues[3]
+                return FailureDetails(
+                    "версия плагина не подходит",
+                    "Установлена версия $actual, а требуется $required или выше",
+                    "Скачай $plugin версии $required или выше и перезапусти сервер",
+                    "Проверь минимальную версию $required и ссылку на релиз. Сообщи разработчику, что ссылка отдаёт версию $actual",
+                )
+            }
+            val reason = raw.ifBlank { "Не удалось подготовить файл зависимости" }
+            return FailureDetails(
+                "не удалось подготовить файл",
+                reason,
+                "Скачай зависимость вручную и перезапусти сервер",
+                "Передай разработчику полный текст причины: $reason",
+            )
+        }
+
         override fun close() {
             if (registrationClosed.compareAndSet(false, true)) {
                 state.set(request.files.map { DownloadSnapshot(it.key, DownloadState.CLOSED) })
@@ -326,6 +426,56 @@ internal class DirectDownloadManager(
             }
         }
     }
+
+    private fun persistDownloadedDependencies(declarations: List<FileDownload>) {
+        val marker = dependencyMarker
+        val existing = if (Files.exists(marker)) Files.readAllLines(marker).toMutableSet() else linkedSetOf()
+        declarations.mapNotNull { it.key.takeIf { key -> key.startsWith("dependency:") }?.removePrefix("dependency:") }
+            .forEach(existing::add)
+        Files.createDirectories(marker.parent)
+        Files.write(marker, existing.sorted())
+    }
+
+    private fun confirmDownloadedDependencies(owner: Any, installed: Map<String, String>) {
+        val marker = dependencyMarker
+        if (!Files.exists(marker)) return
+        val confirmed = Files.readAllLines(marker)
+            .map(String::trim)
+            .filter { it.isNotEmpty() }
+            .filter { expected -> installed.keys.any { it.equals(expected, true) } }
+        if (confirmed.isEmpty()) return
+
+        val theme = ConsoleTheme("§6", "§a", "§f", "§8", "§r")
+        val tree = ConsoleTree.builder("Подключённые зависимости")
+            .apply {
+                confirmed.forEach { expected ->
+                    val actual = installed.entries.first { it.key.equals(expected, true) }
+                    child("${actual.key} ${actual.value}")
+                }
+            }
+            .build()
+        val ownerName = platform.ownerDetails(owner)["name"] ?: "pnLibrary"
+        ConsoleCard.builder(theme, "ЗАВИСИМОСТИ ПОДКЛЮЧЕНЫ")
+            .mascot("^.^", ownerName, "сервер успешно перезапущен")
+            .blank()
+            .tree(tree)
+            .blank()
+            .status("Зависимости загружены и работают")
+            .build().send { line -> platform.console(owner, line) }
+
+        val remaining = Files.readAllLines(marker).filterNot { line -> confirmed.any { it.equals(line.trim(), true) } }
+        if (remaining.isEmpty()) Files.deleteIfExists(marker) else Files.write(marker, remaining)
+    }
+
+    private val dependencyMarker: Path
+        get() = libraryData.resolve("downloads/dependencies.state")
+
+    private data class FailureDetails(
+        val headline: String,
+        val reason: String,
+        val userAction: String,
+        val developerAction: String,
+    )
 
     private companion object { const val MAX_BYTES = 512L * 1024L * 1024L }
 }

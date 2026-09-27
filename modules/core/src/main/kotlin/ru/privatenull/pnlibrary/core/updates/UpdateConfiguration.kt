@@ -26,7 +26,7 @@ internal data class UpdateConfiguration(
         val automatic: Boolean? = null,
         val pause: Duration? = null,
     )
-    data class Checks(val enabled: Boolean = true, val interval: Duration = Duration.ofMinutes(30))
+    data class Checks(val enabled: Boolean = true, val interval: Duration = Duration.ofHours(6))
     data class Notifications(
         val console: Boolean = true,
         val administrators: Boolean = true,

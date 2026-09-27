@@ -6,11 +6,14 @@ import net.md_5.bungee.api.chat.ComponentBuilder
 import net.md_5.bungee.api.chat.HoverEvent
 import net.md_5.bungee.api.chat.TextComponent
 import org.bukkit.event.EventHandler
+import org.bukkit.event.Event
+import org.bukkit.event.EventPriority
 import org.bukkit.event.HandlerList
 import org.bukkit.event.Listener
 import org.bukkit.event.player.PlayerJoinEvent
 import org.bukkit.event.server.PluginDisableEvent
 import org.bukkit.plugin.Plugin
+import org.bukkit.plugin.EventExecutor
 import ru.privatenull.pnlibrary.api.runtime.PnLibrary
 import ru.privatenull.pnlibrary.api.runtime.PnLibraryBrand
 import ru.privatenull.pnlibrary.api.updates.UpdateSnapshot
@@ -24,9 +27,27 @@ internal class BukkitLifecycleListener(
     @Volatile private var library: PnLibrary?,
 ) : Listener, AutoCloseable {
     private val closed = AtomicBoolean(false)
+    private val readyCallbacks = java.util.concurrent.CopyOnWriteArrayList<Runnable>()
+    private val serverReady = AtomicBoolean(false)
+
+    fun whenServerReady(task: Runnable) {
+        if (serverReady.get()) task.run() else readyCallbacks += task
+    }
 
     fun start(): BukkitLifecycleListener = apply {
         plugin.server.pluginManager.registerEvents(this, plugin)
+        // ServerLoadEvent exists on modern Bukkit/Paper, but this module also
+        // targets old 1.8 APIs. Register it reflectively when available.
+        runCatching {
+            val eventType = Class.forName("org.bukkit.event.server.ServerLoadEvent").asSubclass(Event::class.java)
+            plugin.server.pluginManager.registerEvent(
+                eventType,
+                this,
+                EventPriority.MONITOR,
+                EventExecutor { _, _ -> markServerReady() },
+                plugin,
+            )
+        }
     }
 
     @EventHandler
@@ -68,9 +89,16 @@ internal class BukkitLifecycleListener(
         library?.tasks?.close(event.plugin)
     }
 
+    private fun markServerReady() {
+        if (!serverReady.compareAndSet(false, true)) return
+        readyCallbacks.toList().forEach { runCatching(it::run) }
+        readyCallbacks.clear()
+    }
+
     override fun close() {
         if (!closed.compareAndSet(false, true)) return
         HandlerList.unregisterAll(this)
+        readyCallbacks.clear()
         library = null
     }
 

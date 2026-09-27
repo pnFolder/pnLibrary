@@ -127,8 +127,28 @@ internal class BukkitControlCommand(
         if (registration == null) {
             sender.sendMessage("§cПлагин $name не зарегистрирован в pnLibrary.")
         } else {
-            registration.downloadNow()
-            sender.sendMessage("§eЗапущена проверка и ручная загрузка обновления ${registration.snapshot.product}.")
+            sender.sendMessage("§eПроверяю GitHub и ищу совместимое обновление ${registration.snapshot.product}…")
+            library.updates.checkNow().whenComplete { snapshot, error ->
+                plugin.server.scheduler.runTask(plugin, Runnable {
+                    if (error != null) {
+                        sender.sendMessage("§cПроверка обновления не удалась: §f${error.message ?: error.javaClass.simpleName}")
+                        return@Runnable
+                    }
+                    val planSnapshot = library.updates.currentPlan().orElse(null)
+                    val plan = planSnapshot?.plan
+                    val change = plan?.changes?.firstOrNull { it.product.value.equals(registration.snapshot.product, true) }
+                    if (snapshot.state == UpdateState.UPDATE_AVAILABLE && planSnapshot != null && change != null) {
+                        library.updates.stage(planSnapshot.id).whenComplete { _, stageError ->
+                            plugin.server.scheduler.runTask(plugin, Runnable {
+                                if (stageError == null) sender.sendMessage("§aОбновление ${change.product} ${change.from} → ${change.to} подготовлено. Перезапустите сервер.")
+                                else sender.sendMessage("§cНе удалось скачать обновление: §f${stageError.message ?: stageError.javaClass.simpleName}")
+                            })
+                        }
+                    } else {
+                        sender.sendMessage("§aДля ${registration.snapshot.product} совместимых обновлений не найдено.")
+                    }
+                })
+            }
         }
     }
 
