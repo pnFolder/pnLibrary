@@ -19,12 +19,18 @@ data class ComponentMetadata(
     val version: String,
     val apiMinimum: Int,
     val apiMaximum: Int,
+    val channel: String = "stable",
+    val javaMinimum: Int = 8,
+    val javaMaximum: Int? = null,
 ) {
     init {
         require(COMPONENT_ID.matches(id)) { "component id must match ${COMPONENT_ID.pattern}: $id" }
         require(version.isNotBlank()) { "component version must not be blank" }
         require(apiMinimum > 0) { "minimum pnLibrary API must be positive" }
         require(apiMaximum >= apiMinimum) { "maximum pnLibrary API must be >= minimum" }
+        require(channel in setOf("stable", "beta", "alpha", "dev")) { "unsupported update channel: $channel" }
+        require(javaMinimum >= 8) { "minimum Java must be at least 8" }
+        require(javaMaximum == null || javaMaximum >= javaMinimum) { "maximum Java must be >= minimum Java" }
     }
 }
 
@@ -38,12 +44,17 @@ object ComponentMetadataWriter {
     fun encode(metadata: ComponentMetadata): ByteArray = buildString {
         append("{\n")
         append("  \"schema\": 1,\n")
-        append("  \"component\": \"").append(escape(metadata.id)).append("\",\n")
+        append("  \"product\": \"").append(escape(metadata.id)).append("\",\n")
         append("  \"version\": \"").append(escape(metadata.version)).append("\",\n")
+        append("  \"channel\": \"").append(escape(metadata.channel)).append("\",\n")
         append("  \"pnLibraryApi\": {\n")
         append("    \"minimum\": ").append(metadata.apiMinimum).append(",\n")
         append("    \"maximum\": ").append(metadata.apiMaximum).append('\n')
-        append("  }\n")
+        append("  },\n")
+        append("  \"java\": {\n")
+        append("    \"minimum\": ").append(metadata.javaMinimum)
+        metadata.javaMaximum?.let { append(",\n    \"maximum\": ").append(it) }
+        append("\n  }\n")
         append("}\n")
     }.toByteArray(StandardCharsets.UTF_8)
 

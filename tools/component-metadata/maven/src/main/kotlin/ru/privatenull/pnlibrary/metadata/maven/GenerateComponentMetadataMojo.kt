@@ -33,6 +33,15 @@ class GenerateComponentMetadataMojo : AbstractMojo() {
     @Parameter(property = "pnComponent.apiMaximum")
     var apiMaximum: Int? = null
 
+    @Parameter(property = "pnComponent.channel", defaultValue = "stable")
+    var channel: String = "stable"
+
+    @Parameter(property = "pnComponent.javaMinimum", defaultValue = "8")
+    var javaMinimum: Int = 8
+
+    @Parameter(property = "pnComponent.javaMaximum")
+    var javaMaximum: Int? = null
+
     /** Compiled resource directory that receives the descriptor. */
     @Parameter(defaultValue = "${'$'}{project.build.outputDirectory}", required = true)
     lateinit var outputDirectory: File
@@ -44,7 +53,7 @@ class GenerateComponentMetadataMojo : AbstractMojo() {
                 ?: normalizeId(project.artifactId)
             val version = componentVersion?.trim().takeUnless { it.isNullOrEmpty() }
                 ?: project.version
-            val metadata = ComponentMetadata(id, version, apiMinimum, apiMaximum ?: apiMinimum)
+            val metadata = ComponentMetadata(id, version, apiMinimum, apiMaximum ?: apiMinimum, channel, javaMinimum, javaMaximum)
             val output = ComponentMetadataWriter.write(outputDirectory.toPath(), metadata)
             log.info("Generated ${output.toAbsolutePath()}")
         } catch (error: Exception) {

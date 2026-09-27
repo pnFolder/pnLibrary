@@ -22,8 +22,10 @@ class GenerateComponentMetadataMojoTest {
         }
         mojo.execute()
         val json = temporary.resolve("META-INF/pnlibrary/component.json").toFile().readText()
-        assertTrue(json.contains("\"component\": \"pncases\""))
+        assertTrue(json.contains("\"product\": \"pncases\""))
         assertTrue(json.contains("\"version\": \"2.4.0\""))
+        assertTrue(json.contains("\"channel\": \"stable\""))
+        assertTrue(json.contains("\"minimum\": 8"))
         assertTrue(json.contains("\"maximum\": 2"))
     }
 }

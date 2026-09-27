@@ -61,7 +61,8 @@ class PnComponentMetadataPluginTest {
             val entry = archive.getJarEntry("META-INF/pnlibrary/component.json")
             assertTrue(entry != null)
             val json = archive.getInputStream(entry).bufferedReader().readText()
-            assertTrue(json.contains("\"component\": \"$id\""))
+            assertTrue(json.contains("\"product\": \"$id\""))
+            assertTrue(json.contains("\"channel\": \"stable\""))
             assertTrue(json.contains("\"maximum\": $maximumApi"))
         }
     }

@@ -14,6 +14,9 @@ abstract class PnComponentMetadataExtension @Inject constructor(objects: ObjectF
     val apiMinimum: Property<Int> = objects.property(Int::class.java).convention(1)
     /** Newest supported pnLibrary API generation. */
     val apiMaximum: Property<Int> = objects.property(Int::class.java).convention(apiMinimum)
+    val channel: Property<String> = objects.property(String::class.java).convention("stable")
+    val javaMinimum: Property<Int> = objects.property(Int::class.java).convention(8)
+    val javaMaximum: Property<Int> = objects.property(Int::class.java)
 
     /** Declares one supported pnLibrary API generation. */
     fun apiVersion(value: Int) {

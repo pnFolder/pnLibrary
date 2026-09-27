@@ -3,6 +3,7 @@ package ru.privatenull.pnlibrary.update
 import org.junit.jupiter.api.Assertions.*
 import org.junit.jupiter.api.Test
 import ru.privatenull.pnlibrary.api.platform.PlatformType
+import ru.privatenull.pnlibrary.api.updates.UpdateChannel
 
 class ProductDescriptorCodecTest {
     private val codec = ProductDescriptorCodec()
@@ -41,5 +42,18 @@ class ProductDescriptorCodecTest {
         assertEquals("dependencies", assertThrows(ManifestException::class.java) {
             codec.decodeRelease(json.toByteArray())
         }.field)
+    }
+
+    @Test fun `decodes embedded product metadata with channel and unbounded java`() {
+        val descriptor = codec.decodeInstalled("""
+            {"schema":1,"product":"pnlibrary","version":"2.3.0-beta.2","channel":"beta",
+             "pnLibraryApi":{"minimum":1,"maximum":1},"java":{"minimum":8,"maximum":null}}
+        """.trimIndent().toByteArray())
+
+        assertEquals("pnlibrary", descriptor.id.value)
+        assertEquals("2.3.0-beta.2", descriptor.version.toString())
+        assertEquals(UpdateChannel.BETA, descriptor.channel)
+        assertEquals(8, descriptor.minimumJava)
+        assertNull(descriptor.maximumJava)
     }
 }

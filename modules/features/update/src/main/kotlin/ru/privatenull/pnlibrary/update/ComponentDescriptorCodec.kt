@@ -57,10 +57,16 @@ class ProductDescriptorCodec {
         val root = JsonObject()
         root.addProperty("schema", SCHEMA)
         root.addProperty("component", descriptor.id.value)
+        root.addProperty("product", descriptor.id.value)
         root.addProperty("version", descriptor.version.toString())
+        root.addProperty("channel", descriptor.channel.name.lowercase())
         root.add("pnLibraryApi", JsonObject().apply {
             addProperty("minimum", descriptor.supportedApi.minimum)
             addProperty("maximum", descriptor.supportedApi.maximum)
+        })
+        root.add("java", JsonObject().apply {
+            addProperty("minimum", descriptor.minimumJava)
+            descriptor.maximumJava?.let { addProperty("maximum", it) }
         })
         return root.toString().toByteArray(StandardCharsets.UTF_8)
     }
@@ -69,8 +75,18 @@ class ProductDescriptorCodec {
         val root = parse(bytes)
         requireInt(root, "schema").also { if (it != SCHEMA) fail("schema", "unsupported schema $it") }
         val api = requireObject(root, "pnLibraryApi")
-        ProductDescriptor.builder(requireString(root, "component"), requireString(root, "version"))
+        ProductDescriptor.builder(
+            optionalString(root, "product") ?: requireString(root, "component"),
+            requireString(root, "version"),
+        )
             .pnLibraryApi(requireInt(api, "minimum"), requireInt(api, "maximum"))
+            .channel(root.get("channel")?.let { channel(it.asString) } ?: UpdateChannel.STABLE)
+            .apply {
+                root.get("java")?.let { value ->
+                    val javaRange = value.asJsonObject
+                    this.java(requireInt(javaRange, "minimum"), optionalInt(javaRange, "maximum"))
+                }
+            }
             .build()
     }
 

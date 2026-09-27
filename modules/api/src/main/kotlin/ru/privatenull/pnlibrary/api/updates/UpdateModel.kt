@@ -267,14 +267,27 @@ class ProductDescriptor private constructor(builder: Builder) {
     val version: SemanticVersion = builder.version
     val supportedApi: ApiVersionRange = builder.supportedApi
         ?: throw IllegalArgumentException("pnLibrary API range is required")
+    val channel: UpdateChannel = builder.channel
+    val minimumJava: Int = builder.minimumJava
+    val maximumJava: Int? = builder.maximumJava
 
     class Builder internal constructor(
         internal val id: ProductId,
         internal val version: SemanticVersion,
     ) {
         internal var supportedApi: ApiVersionRange? = null
+        internal var channel: UpdateChannel = UpdateChannel.STABLE
+        internal var minimumJava: Int = 8
+        internal var maximumJava: Int? = null
         fun pnLibraryApi(minimum: Int, maximum: Int) = apply {
             supportedApi = ApiVersionRange(minimum, maximum)
+        }
+        fun channel(value: UpdateChannel) = apply { channel = value }
+        fun java(minimum: Int, maximum: Int? = null) = apply {
+            require(minimum >= 8) { "minimum Java must be at least 8" }
+            require(maximum == null || maximum >= minimum) { "maximum Java must be >= minimum Java" }
+            minimumJava = minimum
+            maximumJava = maximum
         }
 
         fun build(): ProductDescriptor = ProductDescriptor(this)

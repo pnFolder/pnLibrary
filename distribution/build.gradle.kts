@@ -167,11 +167,15 @@ fun releaseMetadata(platform: String, artifact: String): String = """
 fun installedComponentMetadata(): String = """
     {
       "schema": 1,
-      "component": "pnlibrary",
+      "product": "pnlibrary",
       "version": "$pnVer",
+      "channel": "${if (pnVer.contains("-dev")) "dev" else if (pnVer.contains("-alpha")) "alpha" else if (pnVer.contains("-beta")) "beta" else "stable"}",
       "pnLibraryApi": {
         "minimum": $pnApiVersion,
         "maximum": $pnApiVersion
+      },
+      "java": {
+        "minimum": 8
       }
     }
 """.trimIndent() + "\n"
@@ -250,7 +254,7 @@ tasks.register("verifyReleaseMetadata") {
                 val embedded = archive.getJarEntry("META-INF/pnlibrary/component.json")
                     ?: error("Missing embedded component metadata in ${jar.name}")
                 val json = archive.getInputStream(embedded).bufferedReader(Charsets.UTF_8).use { it.readText() }
-                require(json.contains("\"component\": \"pnlibrary\"")) {
+                require(json.contains("\"product\": \"pnlibrary\"")) {
                     "Incorrect embedded component identity in ${jar.name}"
                 }
                 require(json.contains("\"version\": \"$pnVer\"")) {

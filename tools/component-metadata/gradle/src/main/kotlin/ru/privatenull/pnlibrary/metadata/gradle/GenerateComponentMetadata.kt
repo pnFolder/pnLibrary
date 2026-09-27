@@ -6,6 +6,7 @@ import org.gradle.api.provider.Property
 import org.gradle.api.tasks.CacheableTask
 import org.gradle.api.tasks.Input
 import org.gradle.api.tasks.OutputDirectory
+import org.gradle.api.tasks.Optional
 import org.gradle.api.tasks.TaskAction
 import ru.privatenull.pnlibrary.metadata.ComponentMetadata
 import ru.privatenull.pnlibrary.metadata.ComponentMetadataWriter
@@ -21,6 +22,9 @@ abstract class GenerateComponentMetadata : DefaultTask() {
     @get:Input abstract val apiMinimum: Property<Int>
     /** Newest supported pnLibrary API generation. */
     @get:Input abstract val apiMaximum: Property<Int>
+    @get:Input abstract val channel: Property<String>
+    @get:Input abstract val javaMinimum: Property<Int>
+    @get:Input @get:Optional abstract val javaMaximum: Property<Int>
     /** Resource root that receives `META-INF/pnlibrary/component.json`. */
     @get:OutputDirectory abstract val outputDirectory: DirectoryProperty
 
@@ -29,7 +33,7 @@ abstract class GenerateComponentMetadata : DefaultTask() {
     fun generate() {
         ComponentMetadataWriter.write(
             outputDirectory.get().asFile.toPath(),
-            ComponentMetadata(componentId.get(), componentVersion.get(), apiMinimum.get(), apiMaximum.get()),
+            ComponentMetadata(componentId.get(), componentVersion.get(), apiMinimum.get(), apiMaximum.get(), channel.get(), javaMinimum.get(), javaMaximum.orNull),
         )
     }
 }

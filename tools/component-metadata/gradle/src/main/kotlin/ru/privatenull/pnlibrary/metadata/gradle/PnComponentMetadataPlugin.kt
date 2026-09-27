@@ -23,6 +23,9 @@ class PnComponentMetadataPlugin : Plugin<Project> {
             generate.componentVersion.set(extension.version)
             generate.apiMinimum.set(extension.apiMinimum)
             generate.apiMaximum.set(extension.apiMaximum)
+            generate.channel.set(extension.channel)
+            generate.javaMinimum.set(extension.javaMinimum)
+            generate.javaMaximum.set(extension.javaMaximum)
             generate.outputDirectory.set(generated)
         }
 

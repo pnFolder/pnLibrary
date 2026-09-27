@@ -16,11 +16,15 @@ class ComponentMetadataWriterTest {
         assertEquals(
             """{
   "schema": 1,
-  "component": "pncases",
+  "product": "pncases",
   "version": "2.4.0",
+  "channel": "stable",
   "pnLibraryApi": {
     "minimum": 1,
     "maximum": 2
+  },
+  "java": {
+    "minimum": 8
   }
 }
 """,
