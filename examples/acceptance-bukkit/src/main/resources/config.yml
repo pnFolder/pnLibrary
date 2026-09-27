@@ -7,7 +7,7 @@ updates:
   channel: STABLE
   repository-owner: pnFolder
   repository-name: pnLibrary
-  artifact-pattern: '(?i)^pnLibrary-acceptance-bukkit-.*\.jar$'
+  artifact-pattern: '(?i)^pnLibrary-acceptance-.*-bukkit-java8\.jar$'
 
 dependency:
   enabled: false

@@ -2,7 +2,7 @@ plugins {
     java
 }
 
-base { archivesName = "pnLibrary-acceptance-bukkit" }
+base { archivesName = "pnLibrary-acceptance" }
 
 java {
     sourceCompatibility = JavaVersion.VERSION_1_8
@@ -12,6 +12,10 @@ java {
 tasks.withType<JavaCompile>().configureEach {
     options.release = 8
     options.encoding = "UTF-8"
+}
+
+tasks.named<Jar>("jar") {
+    archiveClassifier = "bukkit-java8"
 }
 
 dependencies {
