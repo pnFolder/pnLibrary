@@ -52,6 +52,17 @@ internal class BukkitControlCommand(
         literal("update-confirm") {
             argument("token", ArgumentType.string()) { executes(::executeNative) }
         }
+        literal("update-status") {
+            executes(::executeNative)
+            argument("plugin", ArgumentType.string()) {
+                suggests { library.updates.all().map { it.snapshot.product } }
+                executes(::executeNative)
+            }
+        }
+        literal("update-rollback") {
+            executes(::executeNative)
+            argument("token", ArgumentType.string()) { executes(::executeNative) }
+        }
         literal("restart") {
             executes(::executeNative)
             argument("token", ArgumentType.string()) { executes(::executeNative) }
@@ -86,6 +97,8 @@ internal class BukkitControlCommand(
             "updates" -> sendUpdates(sender)
             "update" -> update(sender, arguments.getOrNull(1))
             "update-confirm" -> confirmUpdate(sender, arguments.getOrNull(1))
+            "update-status" -> sendUpdateStatus(sender, arguments.getOrNull(1))
+            "update-rollback" -> rollbackUpdate(sender, arguments.getOrNull(1))
             "check" -> {
             library.updates.all().forEach { it.checkNow() }
                 sender.sendMessage("§eПовторная проверка обновлений запущена.")
@@ -96,7 +109,7 @@ internal class BukkitControlCommand(
             "error" -> emitUniqueTestError(sender)
             "error-repeat" -> emitRepeatedTestError(sender, arguments.getOrNull(1))
             "error-chain" -> emitChainedTestError(sender)
-            else -> sender.sendMessage("§e/pn [status|updates|check|update|restart|debug|support|error|error-repeat|error-chain]")
+            else -> sender.sendMessage("§e/pn [status|updates|check|update|update-status|update-rollback|restart|debug|support|error|error-repeat|error-chain]")
         }
     }
 
@@ -145,10 +158,65 @@ internal class BukkitControlCommand(
                             })
                         }
                     } else {
-                        sender.sendMessage("§aДля ${registration.snapshot.product} совместимых обновлений не найдено.")
+                        val effective = planSnapshot ?: snapshot
+                        BukkitUpdateMessages.status(effective to registration.snapshot).forEach(sender::sendMessage)
                     }
                 })
             }
+        }
+    }
+
+    private fun sendUpdateStatus(sender: CommandSender, requested: String?) {
+        val plan = library.updates.currentPlan().orElse(null)
+        if (plan == null) {
+            sender.sendMessage("§eПроверка обновлений ещё не завершалась.")
+            return
+        }
+        val registrations = if (requested == null) library.updates.all() else listOfNotNull(library.updates.get(requested))
+        if (registrations.isEmpty()) {
+            sender.sendMessage("§cПлагин ${requested ?: "с указанным именем"} не зарегистрирован в pnLibrary.")
+            return
+        }
+        registrations.forEach { registration ->
+            BukkitUpdateMessages.status(plan to registration.snapshot).forEach(sender::sendMessage)
+        }
+    }
+
+    @Suppress("DEPRECATION")
+    private fun rollbackUpdate(sender: CommandSender, token: String?) {
+        if (!sender.hasPermission("pnlibrary.updates.rollback")) {
+            sender.sendMessage("§cНедостаточно прав для отката обновлений.")
+            return
+        }
+        val plan = library.updates.currentPlan().orElse(null)
+        if (plan == null) {
+            sender.sendMessage("§eНет плана обновления, который можно откатить.")
+            return
+        }
+        if (sender is Player && token == null) {
+            val issued = tokens.issue(sender.uniqueId, plan.id, plan.revision, UpdateAction.ROLLBACK, Duration.ofSeconds(30))
+            val confirm = TextComponent("[ Подтвердить откат ]").apply {
+                color = ChatColor.RED
+                isBold = true
+                clickEvent = ClickEvent(ClickEvent.Action.RUN_COMMAND, "/pn update-rollback $issued")
+                hoverEvent = HoverEvent(
+                    HoverEvent.Action.SHOW_TEXT,
+                    ComponentBuilder("Предыдущие JAR будут подготовлены к перезапуску").color(ChatColor.GRAY).create(),
+                )
+            }
+            sender.sendMessage("§eОткат заменит весь связанный план обновления, а не один плагин.")
+            sender.spigot().sendMessage(confirm)
+            return
+        }
+        if (sender is Player && !tokens.consume(token.orEmpty(), sender.uniqueId, plan.id, plan.revision, UpdateAction.ROLLBACK)) {
+            sender.sendMessage("§cПодтверждение отката истекло или уже использовано.")
+            return
+        }
+        library.updates.rollback().whenComplete { _, error ->
+            plugin.server.scheduler.runTask(plugin, Runnable {
+                if (error == null) sender.sendMessage("§aПредыдущие версии плагинов подготовлены. Полностью перезапустите сервер.")
+                else sender.sendMessage("§cНе удалось подготовить откат: §f${error.message ?: error.javaClass.simpleName}")
+            })
         }
     }
 
@@ -318,6 +386,7 @@ internal class BukkitControlCommand(
             UpdateState.CHECKING -> "§eпроверяется"
             UpdateState.DOWNLOADING -> "§eскачивается и проверяется"
             UpdateState.FAILED -> "§cошибка: ${snapshot.message ?: "неизвестная причина"}"
+            UpdateState.ROLLED_BACK -> "§aпредыдущая версия подготовлена; нужен перезапуск"
         }
         val auto = if (snapshot.automaticDownload) "автозагрузка включена" else "автозагрузка отключена"
         sender.sendMessage(
@@ -328,7 +397,7 @@ internal class BukkitControlCommand(
 
     private companion object {
         val CONTROL_ACTIONS = listOf(
-            "status", "updates", "check", "update", "restart", "debug", "support",
+            "status", "updates", "check", "update", "update-status", "update-rollback", "restart", "debug", "support",
             "error", "error-repeat", "error-chain",
         )
         val REPEAT_COUNTS = listOf("10", "100", "1000")

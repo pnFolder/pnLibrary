@@ -57,4 +57,17 @@ class UpdateStateStoreTest {
         assertEquals("pnlibrary", restored?.plan?.changes?.single()?.product?.value)
         assertEquals("2.0.0", restored?.plan?.selected?.single()?.version.toString())
     }
+
+    @Test
+    fun `restores structured blocker reasons after restart`() {
+        val blocker = BlockedReason.NoCompatibleRelease(ProductId.of("acceptance"), 2)
+        val snapshot = UpdatePlanSnapshot(
+            UUID.randomUUID(), 10, UpdateState.BLOCKED, null, listOf(blocker), null,
+        )
+
+        UpdateStateStore(directory).save(snapshot)
+        val restored = UpdateStateStore(directory).current()
+
+        assertEquals(listOf(blocker), restored?.blockers)
+    }
 }

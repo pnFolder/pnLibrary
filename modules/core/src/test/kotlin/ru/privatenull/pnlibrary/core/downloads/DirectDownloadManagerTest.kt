@@ -70,7 +70,7 @@ class DirectDownloadManagerTest {
 
         manager(payload).use { manager ->
             val registration = requireNotNull(manager.registerDependencies(Any(), listOf(dependency)))
-            registration.downloadNow().toCompletableFuture().join()
+            registration.downloadNow().toCompletableFuture().get(5, TimeUnit.SECONDS)
             assertArrayEquals(payload, Files.readAllBytes(directory.resolve("plugins/update/Vault.jar")))
         }
     }
@@ -88,7 +88,10 @@ class DirectDownloadManagerTest {
 
         manager(payload, platformType = PlatformType.BUNGEECORD).use { manager ->
             val registration = requireNotNull(manager.registerDependencies(Any(), listOf(dependency)))
-            assertEquals(DownloadState.FAILED, registration.downloadNow().toCompletableFuture().join().single().state)
+            assertEquals(
+                DownloadState.FAILED,
+                registration.downloadNow().toCompletableFuture().get(5, TimeUnit.SECONDS).single().state,
+            )
         }
     }
 

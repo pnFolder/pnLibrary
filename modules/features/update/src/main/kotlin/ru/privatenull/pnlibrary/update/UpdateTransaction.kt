@@ -20,6 +20,7 @@ data class TransactionArtifact(
     val specification: ArtifactSpecification,
     val source: Path,
     val target: Path,
+    val rollbackSource: Path = target,
 )
 
 data class TransactionResult(val state: TransactionState, val journal: Path)
@@ -97,7 +98,7 @@ class UpdateTransaction(
                 artifact.target.toAbsolutePath().normalize().toString(),
                 staging.resolve("$index-${artifact.target.fileName}").toString(),
                 backups.resolve("$index-${artifact.target.fileName}").toString(),
-                Files.exists(artifact.target),
+                Files.exists(artifact.rollbackSource),
             )
         }
         val journalPath = directory.resolve("journal.json")
@@ -112,7 +113,11 @@ class UpdateTransaction(
             }
             transition(journalPath, journal, TransactionState.STAGED)
             artifacts.zip(records).forEach { (artifact, record) ->
-                if (record.targetExisted) Files.copy(artifact.target, Paths.get(record.backup), StandardCopyOption.REPLACE_EXISTING)
+                if (record.targetExisted) Files.copy(
+                    artifact.rollbackSource,
+                    Paths.get(record.backup),
+                    StandardCopyOption.REPLACE_EXISTING,
+                )
             }
             transition(journalPath, journal, TransactionState.PUBLISHING)
             activationStarted = true
@@ -161,6 +166,22 @@ class UpdateTransaction(
         }
         rollbackInternal(normalized, journal)
         return TransactionResult(journal.state, normalized)
+    }
+
+    /** Returns the newest completed transaction that still has rollback data. */
+    fun latestRollbackCandidate(): Path? {
+        if (!Files.isDirectory(root)) return null
+        return Files.list(root).use { directories ->
+            directories.filter(Files::isDirectory)
+                .map { it.resolve("journal.json") }
+                .filter(Files::isRegularFile)
+                .filter { path ->
+                    runCatching { TransactionJournal.load(path).state }
+                        .getOrNull() in setOf(TransactionState.FAILED, TransactionState.COMMITTED)
+                }
+                .max(Comparator.comparingLong { Files.getLastModifiedTime(it).toMillis() })
+                .orElse(null)
+        }
     }
 
     fun recoverAll(): List<TransactionResult> {

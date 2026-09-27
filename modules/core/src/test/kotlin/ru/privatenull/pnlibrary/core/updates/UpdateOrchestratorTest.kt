@@ -96,6 +96,29 @@ class UpdateOrchestratorTest {
         orchestrator.close()
     }
 
+    @Test
+    fun `manual rollback runs action and publishes rolled back state`() {
+        val executor = Executors.newSingleThreadScheduledExecutor()
+        var rollbackRuns = 0
+        val orchestrator = UpdateOrchestrator(
+            UpdateConfiguration(), UpdateStateStore(directory), executor,
+            resolver = { ResolutionResult.Ready(plan("2.0.0")) },
+            stageAction = {}, announcement = {},
+        )
+        try {
+            val available = orchestrator.checkNow().toCompletableFuture().get()
+
+            val restored = orchestrator.rollback { rollbackRuns++ }.toCompletableFuture().get()
+
+            assertEquals(1, rollbackRuns)
+            assertEquals(UpdateState.ROLLED_BACK, restored.state)
+            assertEquals(available.id, restored.id)
+            assertEquals(UpdateState.ROLLED_BACK, orchestrator.currentPlan().orElseThrow().state)
+        } finally {
+            orchestrator.close()
+        }
+    }
+
     private fun plan(version: String): UpdatePlan {
         val id = ProductId.of("pnlibrary")
         val semantic = SemanticVersion.parse(version)

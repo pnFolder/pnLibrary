@@ -1,11 +1,16 @@
 package ru.privatenull.pnlibrary.core.updates
 
 import com.google.gson.JsonObject
+import com.google.gson.JsonArray
 import com.google.gson.JsonParser
 import com.google.gson.Gson
 import ru.privatenull.pnlibrary.api.updates.UpdatePlan
 import ru.privatenull.pnlibrary.api.updates.UpdatePlanSnapshot
 import ru.privatenull.pnlibrary.api.updates.UpdateState
+import ru.privatenull.pnlibrary.api.updates.BlockedReason
+import ru.privatenull.pnlibrary.api.updates.ProductId
+import ru.privatenull.pnlibrary.api.version.ApiVersionRange
+import ru.privatenull.pnlibrary.api.version.SemanticVersion
 import java.nio.channels.FileChannel
 import java.nio.charset.StandardCharsets
 import java.nio.file.AtomicMoveNotSupportedException
@@ -52,7 +57,7 @@ internal class UpdateStateStore(
                 root.get("revision").asLong,
                 UpdateState.valueOf(root.get("state").asString),
                 root.get("plan")?.takeUnless { it.isJsonNull }?.let { gson.fromJson(it, UpdatePlan::class.java) },
-                emptyList(),
+                decodeBlockers(root),
                 root.get("message")?.takeUnless { it.isJsonNull }?.asString,
             )
         } catch (error: Exception) {
@@ -72,8 +77,71 @@ internal class UpdateStateStore(
         addProperty("state", snapshot.state.name)
         if (snapshot.message == null) add("message", null) else addProperty("message", snapshot.message)
         add("plan", gson.toJsonTree(snapshot.plan))
-        addProperty("blockerCount", snapshot.blockers.size)
+        add("blockers", JsonArray().apply { snapshot.blockers.forEach { add(encodeBlocker(it)) } })
     }.toString().toByteArray(StandardCharsets.UTF_8)
+
+    private fun encodeBlocker(reason: BlockedReason): JsonObject = JsonObject().apply {
+        when (reason) {
+            is BlockedReason.ApiMismatch -> {
+                addProperty("type", "api-mismatch")
+                addProperty("plugin", reason.product.value)
+                addProperty("minimumApi", reason.supportedApi.minimum)
+                addProperty("maximumApi", reason.supportedApi.maximum)
+                addProperty("requiredApi", reason.requiredApi)
+                reason.repository?.let { addProperty("repository", it) }
+            }
+            is BlockedReason.MissingDependency -> {
+                addProperty("type", "missing-dependency")
+                addProperty("plugin", reason.product.value)
+                addProperty("dependency", reason.dependency.value)
+                addProperty("minimumVersion", reason.minimumVersion.toString())
+            }
+            is BlockedReason.MissingExternalPluginDependency -> {
+                addProperty("type", "missing-external-plugin")
+                addProperty("plugin", reason.product.value)
+                addProperty("dependency", reason.plugin)
+                addProperty("minimumVersion", reason.minimumVersion.toString())
+                reason.downloadPage?.let { addProperty("downloadPage", it) }
+            }
+            is BlockedReason.Frozen -> {
+                addProperty("type", "frozen")
+                addProperty("plugin", reason.product.value)
+            }
+            is BlockedReason.NoCompatibleRelease -> {
+                addProperty("type", "no-compatible-release")
+                addProperty("plugin", reason.product.value)
+                addProperty("requiredApi", reason.requiredApi)
+            }
+        }
+    }
+
+    private fun decodeBlockers(root: JsonObject): List<BlockedReason> =
+        root.getAsJsonArray("blockers")?.map { element ->
+            val item = element.asJsonObject
+            val product = ProductId.of(item.get("plugin").asString)
+            when (item.get("type").asString) {
+                "api-mismatch" -> BlockedReason.ApiMismatch(
+                    product,
+                    ApiVersionRange(item.get("minimumApi").asInt, item.get("maximumApi").asInt),
+                    item.get("requiredApi").asInt,
+                    item.get("repository")?.asString,
+                )
+                "missing-dependency" -> BlockedReason.MissingDependency(
+                    product,
+                    ProductId.of(item.get("dependency").asString),
+                    SemanticVersion.parse(item.get("minimumVersion").asString),
+                )
+                "missing-external-plugin" -> BlockedReason.MissingExternalPluginDependency(
+                    product,
+                    item.get("dependency").asString,
+                    SemanticVersion.parse(item.get("minimumVersion").asString),
+                    item.get("downloadPage")?.asString,
+                )
+                "frozen" -> BlockedReason.Frozen(product)
+                "no-compatible-release" -> BlockedReason.NoCompatibleRelease(product, item.get("requiredApi").asInt)
+                else -> error("unknown update blocker type: ${item.get("type").asString}")
+            }
+        }.orEmpty()
 
     private fun prune() {
         val files = historyFiles().toMutableList()

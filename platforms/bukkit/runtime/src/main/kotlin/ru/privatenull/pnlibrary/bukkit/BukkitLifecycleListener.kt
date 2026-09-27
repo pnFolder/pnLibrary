@@ -124,6 +124,7 @@ internal class BukkitLifecycleListener(
             UpdateState.CHECKING -> "§eпроверяется"
             UpdateState.DOWNLOADING -> "§eскачивается и проверяется"
             UpdateState.FAILED -> "§cошибка: ${snapshot.message ?: "неизвестная причина"}"
+            UpdateState.ROLLED_BACK -> "§aпредыдущая версия подготовлена; нужен перезапуск"
         }
         val auto = if (snapshot.automaticDownload) "автозагрузка включена" else "автозагрузка отключена"
         send(" §7- §f${snapshot.product}: §6${snapshot.currentVersion} §7• $state §7• Java ${snapshot.currentJava}/${snapshot.requiredJava}+ • $auto")

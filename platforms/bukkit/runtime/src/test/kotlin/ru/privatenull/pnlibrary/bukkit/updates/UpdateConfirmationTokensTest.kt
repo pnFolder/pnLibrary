@@ -19,6 +19,7 @@ class UpdateConfirmationTokensTest {
         assertFalse(tokens.consume(token, UUID.randomUUID(), plan, 7, UpdateAction.DOWNLOAD))
         assertFalse(tokens.consume(token, player, plan, 8, UpdateAction.DOWNLOAD))
         assertFalse(tokens.consume(token, player, plan, 7, UpdateAction.RESTART))
+        assertFalse(tokens.consume(token, player, plan, 7, UpdateAction.ROLLBACK))
         assertTrue(tokens.consume(token, player, plan, 7, UpdateAction.DOWNLOAD))
         assertFalse(tokens.consume(token, player, plan, 7, UpdateAction.DOWNLOAD))
 

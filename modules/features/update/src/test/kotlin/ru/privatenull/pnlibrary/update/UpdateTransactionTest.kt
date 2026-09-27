@@ -117,6 +117,30 @@ class UpdateTransactionTest {
     }
 
     @Test
+    fun `rollback restores installed jar into platform update directory`() {
+        val installed = directory.resolve("plugins/market.jar").also {
+            Files.createDirectories(it.parent)
+            Files.write(it, byteArrayOf(9, 8, 7))
+        }
+        val updateTarget = directory.resolve("plugins/update/market.jar")
+        val replacement = artifact("market-new.jar", "market", "2.0.0", 4, byteArrayOf(1))
+        val transaction = UpdateTransaction(directory.resolve("transactions"), ArtifactVerifier(1024 * 1024))
+
+        val applied = transaction.apply(listOf(TransactionArtifact(
+            specification(replacement, "market", "2.0.0", 4),
+            replacement,
+            updateTarget,
+            rollbackSource = installed,
+        ))) { true }
+        Files.delete(updateTarget)
+
+        val rolledBack = transaction.rollback(applied.journal)
+
+        assertEquals(TransactionState.ROLLED_BACK, rolledBack.state)
+        assertArrayEquals(byteArrayOf(9, 8, 7), Files.readAllBytes(updateTarget))
+    }
+
+    @Test
     fun `restart recovery rolls back an interrupted activation`() {
         val transactionRoot = directory.resolve("transactions")
         val transactionDirectory = transactionRoot.resolve("interrupted")

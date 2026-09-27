@@ -107,6 +107,34 @@ internal class UpdateOrchestrator(
         java.util.Collections.unmodifiableList(ArrayList(sessionHistory))
     }
 
+    fun rollback(action: () -> Unit): CompletionStage<UpdatePlanSnapshot> {
+        val promise = CompletableFuture<UpdatePlanSnapshot>()
+        try {
+            executor.execute {
+                try {
+                    val selected = synchronized(lock) { current }
+                        ?: error("no update plan is available for rollback")
+                    action()
+                    val restored = UpdatePlanSnapshot(
+                        selected.id,
+                        selected.revision,
+                        UpdateState.ROLLED_BACK,
+                        selected.plan,
+                        selected.blockers,
+                        "Предыдущие версии JAR подготовлены к следующему перезапуску.",
+                    )
+                    publish(restored)
+                    promise.complete(restored)
+                } catch (error: Throwable) {
+                    promise.completeExceptionally(error)
+                }
+            }
+        } catch (error: Throwable) {
+            promise.completeExceptionally(error)
+        }
+        return promise
+    }
+
     private fun snapshot(result: ResolutionResult): UpdatePlanSnapshot {
         val plan = when (result) { is ResolutionResult.Ready -> result.plan; is ResolutionResult.Blocked -> result.fallbackPlan }
         val blockers = if (result is ResolutionResult.Blocked) result.reasons else emptyList()

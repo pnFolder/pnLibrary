@@ -76,7 +76,7 @@ internal class DirectDownloadManager(
         }
         if (downloadable.isEmpty()) return null
         val pluginDirectory = requireNotNull(libraryData.parent) { "не найдена папка плагинов" }
-        val request = FileDownloads.builder().dataDirectory(pluginDirectory).also { builder ->
+        val request = FileDownloads.builder().dataDirectory(pluginDirectory.resolve("update")).also { builder ->
             downloadable.forEach { (dependency, external, artifact) ->
                 val safePluginName = external.plugin.replace(Regex("[^A-Za-z0-9._-]+"), "-")
                     .trim('-', '.')
@@ -301,6 +301,9 @@ internal class DirectDownloadManager(
                     installBatch(request, effectiveDeclarations, {
                         check(!registrationClosed.get()) { "регистрация загрузок закрыта" }
                     }, verifier)
+                    if (effectiveDeclarations.any { it.key.startsWith("dependency:") }) {
+                        persistDownloadedDependencies(effectiveDeclarations)
+                    }
                 }
                     .onSuccess {
                         if (!registrationClosed.get() && !closed.get()) state.set(request.files.map {
@@ -309,19 +312,19 @@ internal class DirectDownloadManager(
                                 else -> DownloadState.DECLARED
                             })
                         })
-                        if (effectiveDeclarations.any { it.key.startsWith("dependency:") }) {
-                            persistDownloadedDependencies(effectiveDeclarations)
-                            showDependencySuccess(owner, effectiveDeclarations)
-                        }
                         promise.complete(snapshots())
+                        if (effectiveDeclarations.any { it.key.startsWith("dependency:") }) {
+                            runCatching { showDependencySuccess(owner, effectiveDeclarations) }
+                        }
                     }
                     .onFailure { error ->
                         if (!registrationClosed.get() && !closed.get()) {
                             state.set(request.files.map { DownloadSnapshot(it.key, DownloadState.FAILED, error.message) })
                             val level = if (effectiveDeclarations.any { it.required }) LogLevel.ERROR else LogLevel.WARNING
-                            showFailure(owner, error, level)
+                            promise.complete(snapshots())
+                            runCatching { showFailure(owner, error, level) }
                         }
-                        promise.complete(snapshots())
+                        if (!promise.isDone) promise.complete(snapshots())
                     }
                     .also { activeDownload.compareAndSet(promise, null) }
                 }

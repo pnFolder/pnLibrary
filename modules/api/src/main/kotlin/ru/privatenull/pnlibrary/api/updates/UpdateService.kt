@@ -52,6 +52,8 @@ enum class UpdateState {
     DOWNLOADED,
     /** The latest check or download failed; details are available in the snapshot message. */
     FAILED,
+    /** The administrator restored the previous compatible plugin set. */
+    ROLLED_BACK,
 }
 
 /**
@@ -271,6 +273,8 @@ interface UpdateService {
     fun confirm(planId: UUID, token: String): CompletionStage<UpdatePlanSnapshot> = unsupported("graph update confirmation")
     /** Returns a bounded, newest-first, immutable graph-plan snapshot. */
     fun history(): List<UpdatePlanSnapshot> = emptyList()
+    /** Restores the previous JAR set from the newest rollback-capable transaction. */
+    fun rollback(): CompletionStage<UpdatePlanSnapshot> = unsupported("manual update rollback")
 
     private fun unsupported(operation: String): CompletionStage<UpdatePlanSnapshot> =
         CompletableFuture<UpdatePlanSnapshot>().also {

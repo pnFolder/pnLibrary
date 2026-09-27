@@ -7,7 +7,7 @@ import java.util.Base64
 import java.util.UUID
 import java.util.concurrent.ConcurrentHashMap
 
-internal enum class UpdateAction { DOWNLOAD, RESTART }
+internal enum class UpdateAction { DOWNLOAD, RESTART, ROLLBACK }
 
 internal class UpdateConfirmationTokens(
     private val random: SecureRandom = SecureRandom(),

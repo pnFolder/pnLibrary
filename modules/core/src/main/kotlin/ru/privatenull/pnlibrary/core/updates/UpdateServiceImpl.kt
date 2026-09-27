@@ -99,6 +99,11 @@ internal class UpdateServiceImpl(private val platform: PlatformAdapter, private 
     override fun currentPlan(): Optional<UpdatePlanSnapshot> = orchestrator.currentPlan()
     override fun stage(planId: UUID): CompletionStage<UpdatePlanSnapshot> = orchestrator.stage(planId)
     override fun history(): List<UpdatePlanSnapshot> = orchestrator.history()
+    override fun rollback(): CompletionStage<UpdatePlanSnapshot> = orchestrator.rollback {
+        val candidate = transaction.latestRollbackCandidate()
+            ?: error("Нет сохранённого набора JAR для отката")
+        transaction.rollback(candidate)
+    }
     override fun close() {
         if (!closed.compareAndSet(false, true)) return
         synchronized(entriesLock) {
@@ -164,7 +169,7 @@ internal class UpdateServiceImpl(private val platform: PlatformAdapter, private 
             val existing = byComponent[change.product]
             val target = existing?.updateDir?.resolve(existing.jar.fileName)
                 ?: dataFolder.parent.resolve("update").resolve(descriptor.file)
-            TransactionArtifact(specification, source, target)
+            TransactionArtifact(specification, source, target, rollbackSource = existing?.jar ?: target)
         }
         transaction.apply(artifacts) { true }
     }
@@ -175,6 +180,7 @@ internal class UpdateServiceImpl(private val platform: PlatformAdapter, private 
             UpdateState.UPDATE_STAGED -> "План обновления проверен и подготовлен к перезапуску"
             UpdateState.BLOCKED -> "Обновление заблокировано: ${snapshot.blockers.joinToString()}"
             UpdateState.FAILED -> "Проверка обновлений завершилась ошибкой: ${snapshot.message}"
+            UpdateState.ROLLED_BACK -> "Предыдущие версии плагинов подготовлены к перезапуску"
             else -> "Все зарегистрированные компоненты актуальны"
         }
         platform.log(platform, LogLevel.INFO, message)
