@@ -29,7 +29,6 @@ class ReleaseCatalogueClient(
     private val store: ReleaseCatalogueStore,
     private val executor: Executor,
     private val ttl: Duration,
-    private val codec: ProductDescriptorCodec = ProductDescriptorCodec(),
 ) {
     private val inFlight = ConcurrentHashMap<String, CompletableFuture<List<ProductRelease>>>()
 
@@ -109,29 +108,34 @@ class ReleaseCatalogueClient(
         return releases.take(30).mapNotNull { raw ->
             val release = raw.asJsonObject
             if (release.get("draft")?.asBoolean != false) return@mapNotNull null
-            val asset = release.getAsJsonArray("assets")?.firstOrNull { item ->
-                item.asJsonObject.get("name")?.asString == MANIFEST_NAME
-            }?.asJsonObject
-            if (asset == null) return@mapNotNull fallbackRelease(release, channel, product, fallback, dependencies, platform, source)
-            val url = asset.get("browser_download_url")?.asString ?: return@mapNotNull null
-            val uri = URI.create(url)
-            val bytes = validatedBytes(uri, MANIFEST_LIMIT) { codec.decodeRelease(it) }
-            val decoded = codec.decodeRelease(bytes)
-            ProductRelease(
-                decoded.product, decoded.version, decoded.channel, decoded.supportedApi, decoded.providesApi,
-                decoded.dependencies, decoded.repository,
-                decoded.artifacts.map { artifact ->
-                    val download = release.getAsJsonArray("assets")?.firstOrNull { item ->
-                        item.asJsonObject.get("name")?.asString == artifact.file
-                    }?.asJsonObject?.get("browser_download_url")?.asString?.let(URI::create)
-                    ru.privatenull.pnlibrary.api.updates.ArtifactDescriptor(
-                        artifact.file, artifact.platform, artifact.minimumJava, artifact.maximumJava,
-                        artifact.size, artifact.sha256, download,
-                    )
-                },
-                decoded.externalPluginDependencies,
-            ).takeIf { channel.accepts(it.channel) }
+            // Release assets are discovered directly from GitHub. The old
+            // pn-update.json sidecar is intentionally no longer part of the
+            // update protocol.
+            fallbackRelease(release, channel, product, fallback, dependencies, platform, source)
         }.distinctBy { it.product to it.version }.sortedByDescending { it.version }
+    }
+
+    private fun validatedBytes(uri: URI, limit: Int, validator: (ByteArray) -> Unit): ByteArray {
+        val cached = store.read(uri, ttl)
+        if (cached != null) {
+            try {
+                validator(cached.bytes)
+                if (cached.fresh) return cached.bytes
+            } catch (_: Exception) {
+                store.quarantine(uri)
+            }
+        }
+        return try {
+            val bytes = http.get(uri, limit)
+            validator(bytes)
+            store.write(uri, bytes)
+            bytes
+        } catch (error: Exception) {
+            if (cached != null) {
+                validator(cached.bytes)
+                cached.bytes
+            } else throw error
+        }
     }
 
     private fun fallbackRelease(
@@ -179,32 +183,7 @@ class ReleaseCatalogueClient(
         )
     }
 
-    private fun validatedBytes(uri: URI, limit: Int, validator: (ByteArray) -> Unit): ByteArray {
-        val cached = store.read(uri, ttl)
-        if (cached != null) {
-            try {
-                validator(cached.bytes)
-                if (cached.fresh) return cached.bytes
-            } catch (_: Exception) {
-                store.quarantine(uri)
-            }
-        }
-        return try {
-            val bytes = http.get(uri, limit)
-            validator(bytes)
-            store.write(uri, bytes)
-            bytes
-        } catch (error: Exception) {
-            if (cached != null) {
-                validator(cached.bytes)
-                cached.bytes
-            } else throw error
-        }
-    }
-
     companion object {
-        private const val MANIFEST_NAME = "pn-update.json"
         private const val RELEASES_LIMIT = 2 * 1024 * 1024
-        private const val MANIFEST_LIMIT = ProductDescriptorCodec.MAX_MANIFEST_BYTES
     }
 }

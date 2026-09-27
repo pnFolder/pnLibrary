@@ -18,47 +18,6 @@ import java.io.ByteArrayInputStream
 class ReleaseCatalogueClientTest {
     @TempDir lateinit var directory: Path
 
-    @Test fun `coalesces concurrent catalogue loads and reuses verified disk cache offline`() {
-        val transport = FixtureTransport()
-        val source = ReleaseSource("pnFolder", "Economy")
-        val executor = Executors.newFixedThreadPool(2)
-        try {
-            val client = ReleaseCatalogueClient(transport, ReleaseCatalogueStore(directory), executor, Duration.ofHours(1))
-            val first = client.releases(source, UpdateChannel.STABLE)
-            val second = client.releases(source, UpdateChannel.STABLE)
-            assertEquals("3.4.0", first.toCompletableFuture().join().single().version.toString())
-            assertEquals(first.toCompletableFuture().join(), second.toCompletableFuture().join())
-            assertEquals(1, transport.calls[transport.releasesUri])
-            assertEquals(1, transport.calls[transport.manifestUri])
-
-            val offline = ReleaseCatalogueClient(FailingTransport(), ReleaseCatalogueStore(directory), executor, Duration.ofHours(1))
-            assertEquals("3.4.0", offline.releases(source, UpdateChannel.STABLE).toCompletableFuture().join().single().version.toString())
-        } finally {
-            executor.shutdownNow()
-        }
-    }
-
-    @Test fun `quarantines structurally corrupt cached manifest and refetches it`() {
-        val transport = FixtureTransport()
-        val store = ReleaseCatalogueStore(directory)
-        val executor = Executors.newSingleThreadExecutor()
-        try {
-            ReleaseCatalogueClient(transport, store, executor, Duration.ofHours(1))
-                .releases(ReleaseSource("pnFolder", "Economy"), UpdateChannel.STABLE).toCompletableFuture().join()
-            Files.write(store.dataPath(transport.manifestUri), "{}".toByteArray())
-            store.rewriteDigest(transport.manifestUri)
-            val refreshed = ReleaseCatalogueClient(transport, store, executor, Duration.ofHours(1))
-                .releases(ReleaseSource("pnFolder", "Economy"), UpdateChannel.STABLE).toCompletableFuture().join()
-            assertEquals("3.4.0", refreshed.single().version.toString())
-            assertEquals(2, transport.calls[transport.manifestUri])
-            assertTrue(Files.list(store.dataPath(transport.manifestUri).parent).use { files ->
-                files.anyMatch { ".corrupt-" in it.fileName.toString() }
-            })
-        } finally {
-            executor.shutdownNow()
-        }
-    }
-
     @Test fun `trusted client rejects insecure and untrusted redirect targets`() {
         val client = TrustedHttpClient(Duration.ofSeconds(1), Duration.ofSeconds(1), setOf("api.github.com"))
         assertThrows(IllegalArgumentException::class.java) { client.validate(URI.create("http://api.github.com/repos/x/y")) }
