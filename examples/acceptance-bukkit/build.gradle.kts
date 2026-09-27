@@ -26,7 +26,7 @@ dependencies {
     compileOnly(libs.spigot.api.v18)
 }
 
-val resourceVersion = project.version.toString()
+val resourceVersion = rootProject.version.toString()
 tasks.named<ProcessResources>("processResources") {
     inputs.property("version", resourceVersion)
     filesMatching("plugin.yml") { expand(mapOf("version" to resourceVersion)) }

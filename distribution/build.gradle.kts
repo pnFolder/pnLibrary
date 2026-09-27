@@ -19,7 +19,10 @@ sourceSets.main.configure { java.setSrcDirs(emptyList<File>()) }
 tasks.named<Jar>("jar") { enabled = false }
 tasks.named<ShadowJar>("shadowJar") { enabled = false }
 
-val pnVer = project.version.toString()
+// Always derive the embedded descriptor from the root release version.  Using
+// the distribution project's cached value can leave a new filename carrying
+// an older component.json after a version bump.
+val pnVer = rootProject.version.toString()
 
 // ── Relocation config shared by all shadow tasks ─────────────────────────────
 fun ShadowJar.applyCommonConfig() {
@@ -171,6 +174,8 @@ val releaseArtifactTasks = releasePlatforms.map { platform ->
     }
     val generatedDirectory = layout.buildDirectory.dir("generated/pnlibraryMetadata/${platform.id}")
     val generateEmbedded = tasks.register("generate${suffix}Metadata") {
+        inputs.property("releaseVersion", pnVer)
+        inputs.property("apiVersion", pnApiVersion)
         val outputFile = generatedDirectory.map { it.file("META-INF/pnlibrary/component.json") }
         outputs.file(outputFile)
         doLast {
