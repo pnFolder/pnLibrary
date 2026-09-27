@@ -95,7 +95,7 @@ class PnLibraryRuntimeHost private constructor(
                         .repository("pnFolder", "pnLibrary")
                         .supportedApi(1, 1)
                         .automaticDownload(false)
-                        .artifact("(?i)^pnLibrary-$artifactId-.*\\.jar$", 8)
+                        .artifact("(?i)^pnLibrary-[0-9].*-$artifactId-java[0-9]+\\.jar$", 8)
                         .build(),
                 )
                 PnLibraryRuntimeHost(library, monitor, platform.summaryName()).also {
