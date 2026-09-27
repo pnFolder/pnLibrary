@@ -4,6 +4,15 @@ plugins {
     alias(libs.plugins.maven.publish)
 }
 
+tasks.withType<org.jetbrains.kotlin.gradle.tasks.KotlinCompile>().configureEach {
+    kotlinOptions.jvmTarget = "1.8"
+}
+subprojects {
+    tasks.withType<org.jetbrains.kotlin.gradle.tasks.KotlinCompile>().configureEach {
+        kotlinOptions.jvmTarget = "1.8"
+    }
+}
+
 base { archivesName = "pnlibrary-component-metadata-gradle" }
 
 java {
@@ -23,7 +32,7 @@ gradlePlugin {
 }
 
 dependencies {
-    implementation(project(":tools:component-metadata:core"))
+    implementation(fileTree("../core/build/libs") { include("*.jar") })
     testImplementation(gradleTestKit())
     testImplementation(libs.junit.jupiter)
     testRuntimeOnly(libs.junit.launcher)

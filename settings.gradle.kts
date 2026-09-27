@@ -1,3 +1,7 @@
+pluginManagement {
+    includeBuild("tools/component-metadata/gradle")
+}
+
 rootProject.name = "pnLibrary"
 
 include(

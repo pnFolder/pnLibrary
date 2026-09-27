@@ -1,5 +1,6 @@
 plugins {
     java
+    id("ru.privatenull.pnlibrary.component-metadata")
 }
 
 base { archivesName = "pnLibrary-acceptance" }
@@ -29,8 +30,16 @@ val resourceVersion = project.version.toString()
 tasks.named<ProcessResources>("processResources") {
     inputs.property("version", resourceVersion)
     filesMatching("plugin.yml") { expand(mapOf("version" to resourceVersion)) }
-    filesMatching("META-INF/pnlibrary/component.json") { expand(mapOf("version" to resourceVersion)) }
 }
+
+pnComponentMetadata {
+    id.set("acceptance")
+    version.set(resourceVersion)
+    apiVersions(1, 1)
+    channel.set("beta")
+    javaMinimum.set(8)
+}
+
 
 
 tasks.register<Copy>("assembleAcceptanceKit") {
