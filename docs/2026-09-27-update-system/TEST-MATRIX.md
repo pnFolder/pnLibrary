@@ -60,7 +60,7 @@ updates:
   plugins:
     enabled: true
     automatic-download: false
-    plugins:
+    policies:
       acceptance:
         enabled: true
         automatic-download: false
@@ -69,7 +69,8 @@ updates:
 
 - pnLibrary проверяется всегда;
 - `automatic-download` разрешает только загрузку;
-- `plugins.plugins.<id>` относится к плагину, а не к внутреннему компоненту;
+- `plugins.policies.<id>` относится к плагину, а не к внутреннему компоненту;
+- ограничения по хостам загрузки отсутствуют: любой адрес проходит сетевой клиент;
 - интервал проверки отсутствует в YAML и остаётся частью кода библиотеки;
 - максимальная пауза — семь дней.
 

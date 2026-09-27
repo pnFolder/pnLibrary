@@ -44,7 +44,6 @@ class DependencyDownloadPolicyTest {
             downloads = UpdateConfiguration.Downloads(
                 automatic = automatic,
                 allowExternalUrls = allowExternal,
-                allowedHosts = setOf("github.com"),
             ),
             installation = UpdateConfiguration.Installation(allowNewPlugins = allowNew),
         )

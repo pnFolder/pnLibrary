@@ -11,7 +11,6 @@ import java.nio.file.Path
 internal data class DownloadConfiguration(
     val enabled: Boolean = true,
     val automatic: Boolean = false,
-    val allowedHosts: Set<String> = setOf("github.com", "objects.githubusercontent.com"),
     val destinations: Set<DownloadDestination> = setOf(
         DownloadDestination.DATA_FOLDER, DownloadDestination.CACHE,
     ),
@@ -27,23 +26,18 @@ internal data class DownloadConfiguration(
             }.getOrNull() ?: return DownloadConfiguration()
             val defaults = DownloadConfiguration()
             fun flag(name: String, fallback: Boolean) = root[name] as? Boolean ?: fallback
-            val hosts = (root["allowed-hosts"] as? List<*>)?.filterIsInstance<String>()
-                ?.map(String::lowercase)?.filter { it.matches(Regex("[A-Za-z0-9.-]+")) }?.toSet()
-                ?.takeIf(Set<String>::isNotEmpty) ?: defaults.allowedHosts
             val destinationMap = root["destinations"] as? Map<*, *>
             val destinations = DownloadDestination.entries.filterTo(linkedSetOf()) { destination ->
                 val key = destination.name.lowercase().replace('_', '-')
                 destinationMap?.get(key) as? Boolean ?: true
             }
-            return DownloadConfiguration(flag("enabled", true), flag("automatic", false), hosts, destinations)
+            return DownloadConfiguration(flag("enabled", true), flag("automatic", false), destinations = destinations)
         }
 
         private const val DEFAULT = """downloads:
   enabled: true
   automatic: false
-  allowed-hosts:
-    - github.com
-    - objects.githubusercontent.com
+  # Любые адреса разрешены. Ограничения по хостам отсутствуют.
   destinations:
     data-folder: true
     cache: true

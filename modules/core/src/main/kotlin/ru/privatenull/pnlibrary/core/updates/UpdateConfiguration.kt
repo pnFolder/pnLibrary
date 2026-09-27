@@ -44,7 +44,6 @@ internal data class UpdateConfiguration(
         val automatic: Boolean = false,
         val allowManagedPlugins: Boolean = true,
         val allowExternalUrls: Boolean = false,
-        val allowedHosts: Set<String> = setOf("github.com", "objects.githubusercontent.com"),
     )
     data class Installation(
         val allowNewPlugins: Boolean = false,
@@ -69,7 +68,6 @@ internal data class UpdateConfiguration(
 
     companion object {
         private val durationPattern = Regex("([1-9][0-9]*)([mhd])")
-        private val hostPattern = Regex("[A-Za-z0-9](?:[A-Za-z0-9.-]*[A-Za-z0-9])?")
 
         fun load(file: Path, warning: (String) -> Unit = {}): UpdateConfiguration {
             Files.createDirectories(file.toAbsolutePath().parent)
@@ -99,9 +97,10 @@ internal data class UpdateConfiguration(
             val safety = root.map("safety")
             val library = root.map("library")
             val pluginSection = root.map("plugins")
+            val policyValues = pluginSection?.map("policies")
             val nestedPluginValues = pluginSection?.map("plugins")
-            val pluginValues = nestedPluginValues ?: pluginSection ?: root.map("components")
-            val nestedPluginSchema = nestedPluginValues != null
+            val pluginValues = policyValues ?: nestedPluginValues ?: pluginSection ?: root.map("components")
+            val nestedPluginSchema = policyValues != null || nestedPluginValues != null
             fun bool(map: Map<String, Any?>?, key: String, default: Boolean): Boolean {
                 val value = map?.get(key) ?: return default
                 return if (value is Boolean) value else { bad(); default }
@@ -116,9 +115,6 @@ internal data class UpdateConfiguration(
                 val amount = match.groupValues[1].toLong()
                 return when (match.groupValues[2]) { "m" -> Duration.ofMinutes(amount); "h" -> Duration.ofHours(amount); else -> Duration.ofDays(amount) }
             }
-            val hosts = (downloads?.get("allowed-hosts") as? List<*>)?.mapNotNull { it as? String }
-                ?.map { it.lowercase() }?.takeIf { it.isNotEmpty() && it.all(hostPattern::matches) }?.toSet()
-                ?: defaults.downloads.allowedHosts.also { if (downloads?.containsKey("allowed-hosts") == true) bad() }
             val maximumOnline = (safety?.get("maximum-online-for-one-click") as? Number)?.toInt()
                 ?.takeIf { it >= 0 } ?: defaults.safety.maximumOnlineForOneClick.also {
                 if (safety?.containsKey("maximum-online-for-one-click") == true) bad()
@@ -134,7 +130,7 @@ internal data class UpdateConfiguration(
                 ),
                 downloads = Downloads(
                     bool(downloads, "automatic", false), bool(downloads, "allow-managed-plugins", true),
-                    bool(downloads, "allow-external-urls", false), hosts,
+                    bool(downloads, "allow-external-urls", false),
                 ),
                 installation = Installation(
                     bool(installation, "allow-new-plugins", false), bool(installation, "require-sha256", true),
@@ -148,7 +144,7 @@ internal data class UpdateConfiguration(
                     bool(pluginSection, "automatic-download", false)
                 } else false,
                 plugins = pluginValues.orEmpty().mapNotNull { (rawId, rawPolicy) ->
-                    if (nestedPluginSchema && rawId in setOf("enabled", "automatic-download", "plugins")) {
+                    if (nestedPluginSchema && rawId in setOf("enabled", "automatic-download", "plugins", "policies")) {
                         return@mapNotNull null
                     }
                     val id = rawId.trim().lowercase()
@@ -210,26 +206,34 @@ internal data class UpdateConfiguration(
         private val DEFAULT_YAML = UpdateConfiguration().toYaml()
     }
 
-    private fun toYaml(): String = """updates:
+    private fun toYaml(): String = """# pnLibrary update policy
+# Проверки всегда выполняются. Флаг enabled управляет только автоматическими действиями.
+updates:
   enabled: $enabled
   library:
+    # Разрешить автоматическую загрузку новой версии самой pnLibrary.
     automatic-download: ${library.automaticDownload}
   plugins:
+    # Глобальное разрешение автоматических обновлений плагинов.
     enabled: $pluginUpdatesEnabled
+    # Значение по умолчанию для новых записей в policies.
     automatic-download: $pluginAutomaticDownload
-    plugins: {}
+    # Здесь перечисляются именно плагины, а не внутренние модули.
+    policies: {}
   notifications:
+    # Сообщения о найденных обновлениях в консоли и администраторам.
     console: ${notifications.console}
     administrators: ${notifications.administrators}
+    # Интервал повторения сообщения; интервал самой проверки задаётся библиотекой.
     repeat-interval: ${notifications.repeatInterval.toHours()}h
     permission: ${notifications.permission}
     operators: ${notifications.operators}
   downloads:
+    # Автоматические загрузки файлов, объявленных через API.
     automatic: ${downloads.automatic}
     allow-managed-plugins: ${downloads.allowManagedPlugins}
     allow-external-urls: ${downloads.allowExternalUrls}
-    allowed-hosts:
-${downloads.allowedHosts.joinToString("\n") { "      - $it" }}
+    # Любые адреса разрешены; список ограничений по хостам отсутствует.
   installation:
     allow-new-plugins: ${installation.allowNewPlugins}
     require-sha256: ${installation.requireSha256}

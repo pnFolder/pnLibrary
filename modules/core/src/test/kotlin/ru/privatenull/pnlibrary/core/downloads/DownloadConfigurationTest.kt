@@ -21,13 +21,12 @@ class DownloadConfigurationTest {
     }
 
     @Test
-    fun `reads host and destination policy`() {
+    fun `reads destination policy without host allowlists`() {
         val path = directory.resolve("downloads.yml")
         Files.writeString(path, """
             downloads:
               enabled: true
               automatic: true
-              allowed-hosts: [cdn.example.org]
               destinations:
                 plugins: false
                 data-folder: true
@@ -37,7 +36,6 @@ class DownloadConfigurationTest {
         val configuration = DownloadConfiguration.load(path)
 
         assertTrue(configuration.automatic)
-        assertEquals(setOf("cdn.example.org"), configuration.allowedHosts)
         assertEquals(setOf(DownloadDestination.DATA_FOLDER), configuration.destinations)
     }
 }

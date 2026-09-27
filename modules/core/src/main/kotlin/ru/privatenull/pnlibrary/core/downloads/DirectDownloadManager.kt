@@ -38,7 +38,7 @@ internal class DirectDownloadManager(
     private val libraryData: Path,
     private val configuration: DownloadConfiguration,
     private val http: TrustedHttpClient = TrustedHttpClient(
-        Duration.ofSeconds(8), Duration.ofSeconds(30), configuration.allowedHosts,
+        Duration.ofSeconds(8), Duration.ofSeconds(30),
     ),
 ) : AutoCloseable {
     private val closed = AtomicBoolean(false)

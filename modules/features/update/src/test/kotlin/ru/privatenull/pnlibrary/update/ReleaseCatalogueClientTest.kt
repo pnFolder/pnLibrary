@@ -168,6 +168,8 @@ class ReleaseCatalogueClientTest {
         }
 
         assertTrue(failure("").contains("не содержит JAR"))
+        assertTrue(failure("""{"name":"pnCases-2.5.0-sources.jar","size":1,"digest":"sha256:${"a".repeat(64)}","browser_download_url":"https://example.org/sources.jar"}""", minimumJava = 8)
+            .contains("не содержит JAR"))
         assertTrue(failure("""{"name":"other.jar","size":1,"digest":"sha256:${"a".repeat(64)}","browser_download_url":"https://example.org/other.jar"}""")
             .contains("artifact-pattern"))
         assertTrue(failure("""{"name":"expected.jar","size":1,"digest":"sha256:${"a".repeat(64)}","browser_download_url":"https://example.org/expected.jar"}""", 999)

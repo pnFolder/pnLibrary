@@ -32,7 +32,7 @@ internal class UpdateServiceImpl(private val platform: PlatformAdapter, private 
     private val executor = Executors.newSingleThreadScheduledExecutor { action ->
         Thread(action, "pnLibrary-update-orchestrator").apply { isDaemon = true }
     }
-    private val http = TrustedHttpClient(Duration.ofSeconds(8), Duration.ofSeconds(20), configuration.downloads.allowedHosts)
+    private val http = TrustedHttpClient(Duration.ofSeconds(8), Duration.ofSeconds(20))
     private val catalogue = ReleaseCatalogueClient(
         http, ReleaseCatalogueStore(dataFolder.resolve("updates/catalog")), Executor { it.run() }, Duration.ofMinutes(30),
         inspectArtifacts = true,

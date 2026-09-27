@@ -192,7 +192,7 @@ class DirectDownloadManagerTest {
             }
         }
         return DirectDownloadManager(platform, directory.resolve("plugins/pnLibrary"), DownloadConfiguration(
-            automatic = automatic, allowedHosts = setOf("example.org"),
+            automatic = automatic,
         ), http)
     }
 

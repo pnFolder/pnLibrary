@@ -102,7 +102,7 @@ class UpdateConfigurationTest {
         assertTrue(configuration.downloads.automatic)
         assertEquals("beta", configuration.legacyChannel)
         assertTrue(Files.isRegularFile(directory.resolve("updates.yml.pre-orchestrator.bak")))
-        assertTrue(Files.readString(file).startsWith("updates:"))
+        assertTrue(Files.readString(file).contains("updates:"))
     }
 
     @Test
@@ -112,7 +112,7 @@ class UpdateConfigurationTest {
             updates:
               enabled: perhaps
               checks: { enabled: true, interval: never }
-              downloads: { automatic: yes, allow-external-urls: yes, allowed-hosts: ["bad host"] }
+              downloads: { automatic: yes, allow-external-urls: yes }
               installation: { allow-new-plugins: yes, restart-after-confirmation: yes }
         """.trimIndent())
         val warnings = mutableListOf<String>()

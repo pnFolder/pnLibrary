@@ -9,7 +9,7 @@ import java.io.InputStream
 open class TrustedHttpClient(
     private val connectTimeout: Duration,
     private val readTimeout: Duration,
-    additionalHosts: Set<String>,
+    @Suppress("UNUSED_PARAMETER") additionalHosts: Set<String> = emptySet(),
 ) {
     internal fun validate(uri: URI): URI {
         require(uri.scheme.equals("https", true)) { "update URL must use HTTPS: $uri" }

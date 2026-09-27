@@ -179,11 +179,13 @@ class ReleaseCatalogueClient(
         if (!acceptedChannel.accepts(releaseChannel)) return null
         val assets = release.getAsJsonArray("assets")
             ?: throw ReleaseSelectionException("Релиз $version не содержит JAR-файлов")
-        val jarNames = assets.mapNotNull { it.asJsonObject.get("name")?.asString }.filter { it.endsWith(".jar", true) }
+        val jarNames = assets.mapNotNull { it.asJsonObject.get("name")?.asString }
+            .filter { isDistributionArtifact(it) }
         if (jarNames.isEmpty()) throw ReleaseSelectionException("Релиз $version не содержит JAR-файлов")
         var artifacts = assets.mapNotNull { raw ->
             val value = raw.asJsonObject
             val name = value.get("name")?.asString ?: return@mapNotNull null
+            if (!isDistributionArtifact(name)) return@mapNotNull null
             val rule = request.artifacts.firstOrNull { artifact ->
                 Regex(artifact.pattern).matches(name) && (artifact.platform == null || platform == null || artifact.platform == platform)
             } ?: return@mapNotNull null
@@ -269,6 +271,11 @@ class ReleaseCatalogueClient(
         }
         return descriptor
     }
+
+    private fun isDistributionArtifact(name: String): Boolean =
+        name.endsWith(".jar", true) &&
+            !name.endsWith("-sources.jar", true) &&
+            !name.endsWith("-javadoc.jar", true)
 
     companion object {
         private const val RELEASES_LIMIT = 2 * 1024 * 1024
