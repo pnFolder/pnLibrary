@@ -1,6 +1,5 @@
 // pnlibrary-distribution — produces fat JARs for each platform with relocated Kotlin runtime
 import com.github.jengelman.gradle.plugins.shadow.tasks.ShadowJar
-import java.security.MessageDigest
 import java.util.jar.JarFile
 
 evaluationDependsOn(":modules:api")
@@ -150,20 +149,6 @@ val pnApiVersion = Regex("const\\s+val\\s+VERSION\\s*:\\s*Int\\s*=\\s*(\\d+)")
     .find(apiVersionSource)?.groupValues?.get(1)?.toInt()
     ?: error("PnLibraryApi.VERSION was not found")
 
-fun releaseMetadata(platform: String, artifact: String): String = """
-    {
-      "schemaVersion": 1,
-      "id": "pnlibrary",
-      "version": "$pnVer",
-      "api": {
-        "min": $pnApiVersion,
-        "max": $pnApiVersion
-      },
-      "platform": "$platform",
-      "artifact": "$artifact"
-    }
-""".trimIndent() + "\n"
-
 fun installedComponentMetadata(): String = """
     {
       "schema": 1,
@@ -180,7 +165,7 @@ fun installedComponentMetadata(): String = """
     }
 """.trimIndent() + "\n"
 
-val releaseSidecarTasks = releasePlatforms.map { platform ->
+val releaseArtifactTasks = releasePlatforms.map { platform ->
     val suffix = platform.id.split('-').joinToString("") { part ->
         part.replaceFirstChar(Char::uppercaseChar)
     }
@@ -199,76 +184,38 @@ val releaseSidecarTasks = releasePlatforms.map { platform ->
         dependsOn(generateEmbedded)
         from(generatedDirectory)
     }
-    tasks.register("generate${suffix}ReleaseSidecars") {
-        dependsOn(shadow, "copyDeveloperArtifacts")
-        val jarFile = shadow.flatMap { it.archiveFile }
-        val metadataFile = jarFile.map { it.asFile.resolveSibling("${it.asFile.name}.meta.json") }
-        val checksumFile = jarFile.map { it.asFile.resolveSibling("${it.asFile.name}.sha256") }
-        inputs.file(jarFile)
-        outputs.files(metadataFile, checksumFile)
-        doLast {
-            val jar = jarFile.get().asFile
-            metadataFile.get().writeText(releaseMetadata(platform.id, jar.name), Charsets.UTF_8)
-            val hash = MessageDigest.getInstance("SHA-256")
-                .digest(jar.readBytes())
-                .joinToString("") { "%02x".format(it) }
-            checksumFile.get().writeText("$hash  ${jar.name}\n", Charsets.UTF_8)
-        }
-    }
+    platform.shadowTask
 }
 
-val generateAggregateChecksums = tasks.register("generateAggregateChecksums") {
-    dependsOn(releaseSidecarTasks)
-    val outputFile = layout.buildDirectory.file("libs/checksums.sha256")
-    outputs.file(outputFile)
-    doLast {
-        val lines = releasePlatforms.map { platform ->
-            val jarName = "pnLibrary-$pnVer-${platform.id}.jar"
-            layout.buildDirectory.file("libs/$jarName.sha256").get().asFile.readText().trim()
-        }
-        outputFile.get().asFile.writeText(lines.joinToString("\n", postfix = "\n"), Charsets.UTF_8)
-    }
-}
-
-tasks.register("verifyReleaseMetadata") {
+val verifyEmbeddedMetadata = tasks.register("verifyEmbeddedMetadata") {
     group = "verification"
-    description = "Verifies release metadata and SHA-256 sidecars for every platform JAR"
-    dependsOn(generateAggregateChecksums)
+    description = "Verifies embedded component metadata in every platform JAR"
+    dependsOn(releaseArtifactTasks)
     doLast {
         releasePlatforms.forEach { platform ->
             val jar = layout.buildDirectory.file("libs/pnLibrary-$pnVer-${platform.id}.jar").get().asFile
-            val metadata = File(jar.parentFile, "${jar.name}.meta.json")
-            val checksum = File(jar.parentFile, "${jar.name}.sha256")
-            require(metadata.isFile) { "Missing release metadata: ${metadata.name}" }
-            require(checksum.isFile) { "Missing release checksum: ${checksum.name}" }
-            require(metadata.readText().contains("\"platform\": \"${platform.id}\"")) {
-                "Incorrect platform metadata for ${jar.name}"
-            }
-            val hash = MessageDigest.getInstance("SHA-256")
-                .digest(jar.readBytes())
-                .joinToString("") { "%02x".format(it) }
-            require(checksum.readText().trim() == "$hash  ${jar.name}") {
-                "Incorrect SHA-256 sidecar for ${jar.name}"
-            }
+            require(jar.isFile) { "Missing platform JAR: ${jar.name}" }
             JarFile(jar).use { archive ->
                 val embedded = archive.getJarEntry("META-INF/pnlibrary/component.json")
                     ?: error("Missing embedded component metadata in ${jar.name}")
                 val json = archive.getInputStream(embedded).bufferedReader(Charsets.UTF_8).use { it.readText() }
                 require(json.contains("\"product\": \"pnlibrary\"")) {
-                    "Incorrect embedded component identity in ${jar.name}"
+                    "Incorrect embedded product identity in ${jar.name}"
                 }
                 require(json.contains("\"version\": \"$pnVer\"")) {
                     "Incorrect embedded component version in ${jar.name}"
                 }
+                require(json.contains("\"channel\":")) {
+                    "Missing embedded release channel in ${jar.name}"
+                }
+                require(json.contains("\"java\":")) {
+                    "Missing embedded Java compatibility in ${jar.name}"
+                }
             }
-        }
-        val aggregate = layout.buildDirectory.file("libs/checksums.sha256").get().asFile
-        require(aggregate.isFile && aggregate.readLines().size == releasePlatforms.size) {
-            "Aggregate checksums.sha256 must contain every platform artifact"
         }
     }
 }
 
 tasks.named("build") {
-    dependsOn("verifyReleaseMetadata")
+    dependsOn(verifyEmbeddedMetadata)
 }
