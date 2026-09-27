@@ -3,7 +3,9 @@ metrics:
   project-id: 32592
 
 updates:
-  enabled: false
+  # Enables the acceptance plugin's GitHub registration. pnLibrary still decides
+  # whether a compatible graph may be downloaded from its own updates.yml policy.
+  enabled: true
   channel: STABLE
   repository-owner: pnFolder
   repository-name: pnLibrary

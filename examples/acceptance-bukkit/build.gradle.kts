@@ -42,7 +42,7 @@ pnComponentMetadata {
 
 
 
-tasks.register<Copy>("assembleAcceptanceKit") {
+tasks.register<Sync>("assembleAcceptanceKit") {
     group = "distribution"
     description = "Builds and collects the Bukkit runtime and acceptance plugin JARs"
     dependsOn(":distribution:shadowBukkit", ":distribution:copyDeveloperArtifacts", "jar")
