@@ -54,6 +54,36 @@ class ReleaseCatalogueClientTest {
         } finally { executor.shutdownNow() }
     }
 
+    @Test fun `forced refresh bypasses fresh disk cache`() {
+        val releases = URI.create("https://api.github.com/repos/pnFolder/Cases/releases?per_page=30")
+        var calls = 0
+        val transport = object : TrustedHttpClient(Duration.ZERO, Duration.ZERO, emptySet()) {
+            override fun get(uri: URI, maximumBytes: Int): ByteArray {
+                assertEquals(releases, uri)
+                calls++
+                val version = if (calls == 1) "2.4.0" else "2.5.0"
+                return """[{"tag_name":"v$version","draft":false,"prerelease":false,"assets":[{
+                    "name":"pnCases-$version-bukkit-java8.jar","size":123,"digest":"sha256:${"a".repeat(64)}",
+                    "browser_download_url":"https://github.com/pnFolder/Cases/$version.jar"}]}]""".toByteArray()
+            }
+        }
+        val executor = Executors.newSingleThreadExecutor()
+        try {
+            val client = ReleaseCatalogueClient(transport, ReleaseCatalogueStore(directory), executor, Duration.ofHours(1))
+            val request = PluginUpdateRequest.builder().repository("pnFolder", "Cases")
+                .artifact("(?i)^pnCases-.*-bukkit-java8\\.jar$", PlatformType.BUKKIT, 8).build()
+            fun load(refresh: RefreshMode) = client.releases(
+                ReleaseSource("pnFolder", "Cases"), UpdateChannel.STABLE, ProductId.of("cases"), request,
+                emptyList(), PlatformType.BUKKIT, refresh,
+            ).join().single().version.toString()
+
+            assertEquals("2.4.0", load(RefreshMode.CACHED))
+            assertEquals("2.4.0", load(RefreshMode.CACHED))
+            assertEquals("2.5.0", load(RefreshMode.FORCE_REMOTE))
+            assertEquals(2, calls)
+        } finally { executor.shutdownNow() }
+    }
+
     @Test fun `does not coalesce fallback catalogues for different platforms`() {
         val releases = URI.create("https://api.github.com/repos/pnFolder/Cases/releases?per_page=30")
         val transport = object : TrustedHttpClient(Duration.ZERO, Duration.ZERO, emptySet()) {

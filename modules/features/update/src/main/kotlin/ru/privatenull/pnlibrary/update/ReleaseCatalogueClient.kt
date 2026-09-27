@@ -24,6 +24,8 @@ data class ReleaseSource(val owner: String, val repository: String) {
     companion object { private val PART = Regex("[A-Za-z0-9_.-]+") }
 }
 
+enum class RefreshMode { CACHED, FORCE_REMOTE }
+
 class ReleaseCatalogueClient(
     private val http: TrustedHttpClient,
     private val store: ReleaseCatalogueStore,
@@ -33,7 +35,7 @@ class ReleaseCatalogueClient(
     private val inFlight = ConcurrentHashMap<String, CompletableFuture<List<ProductRelease>>>()
 
     fun releases(source: ReleaseSource, channel: UpdateChannel): CompletableFuture<List<ProductRelease>> {
-        return releases(source, channel, null, null, emptyList(), null)
+        return releases(source, channel, null, null, emptyList(), null, RefreshMode.CACHED)
     }
 
     fun releases(
@@ -43,7 +45,7 @@ class ReleaseCatalogueClient(
         fallback: PluginUpdateRequest?,
         platform: PlatformType?,
     ): CompletableFuture<List<ProductRelease>> =
-        releases(source, channel, product, fallback, emptyList(), platform)
+        releases(source, channel, product, fallback, emptyList(), platform, RefreshMode.CACHED)
 
     fun releases(
         source: ReleaseSource,
@@ -52,14 +54,15 @@ class ReleaseCatalogueClient(
         fallback: PluginUpdateRequest?,
         dependencies: List<PluginDependency>,
         platform: PlatformType?,
+        refresh: RefreshMode = RefreshMode.CACHED,
     ): CompletableFuture<List<ProductRelease>> {
-        val key = requestKey(source, channel, product, fallback, dependencies, platform)
+        val key = requestKey(source, channel, product, fallback, dependencies, platform) + ":${refresh.name}"
         inFlight[key]?.let { return it }
         val promise = CompletableFuture<List<ProductRelease>>()
         val existing = inFlight.putIfAbsent(key, promise)
         if (existing != null) return existing
         executor.execute {
-            try { promise.complete(load(source, channel, product, fallback, dependencies, platform)) }
+            try { promise.complete(load(source, channel, product, fallback, dependencies, platform, refresh)) }
             catch (error: Throwable) { promise.completeExceptionally(error) }
             finally { inFlight.remove(key, promise) }
         }
@@ -98,9 +101,10 @@ class ReleaseCatalogueClient(
         fallback: PluginUpdateRequest?,
         dependencies: List<PluginDependency>,
         platform: PlatformType?,
+        refresh: RefreshMode,
     ): List<ProductRelease> {
         val releasesUri = URI.create("https://api.github.com/repos/${source.owner}/${source.repository}/releases?per_page=30")
-        val releasesBytes = validatedBytes(releasesUri, RELEASES_LIMIT) { bytes ->
+        val releasesBytes = validatedBytes(releasesUri, RELEASES_LIMIT, refresh) { bytes ->
             val root = JsonParser.parseString(String(bytes, Charsets.UTF_8))
             require(root.isJsonArray) { "GitHub releases response is not an array" }
         }
@@ -115,8 +119,8 @@ class ReleaseCatalogueClient(
         }.distinctBy { it.product to it.version }.sortedByDescending { it.version }
     }
 
-    private fun validatedBytes(uri: URI, limit: Int, validator: (ByteArray) -> Unit): ByteArray {
-        val cached = store.read(uri, ttl)
+    private fun validatedBytes(uri: URI, limit: Int, refresh: RefreshMode, validator: (ByteArray) -> Unit): ByteArray {
+        val cached = store.read(uri, ttl).takeIf { refresh == RefreshMode.CACHED }
         if (cached != null) {
             try {
                 validator(cached.bytes)

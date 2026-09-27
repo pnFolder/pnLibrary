@@ -23,6 +23,7 @@ internal class UpdateOrchestrator(
     private val announcement: (UpdatePlanSnapshot) -> Unit,
     private val clock: Clock = Clock.systemUTC(),
     private val automaticAllowed: (UpdatePlanSnapshot) -> Boolean = { true },
+    private val remoteResolver: (() -> ResolutionResult)? = null,
 ) : AutoCloseable {
     private val lock = Any()
     private val closed = AtomicBoolean(false)
@@ -36,14 +37,14 @@ internal class UpdateOrchestrator(
     fun start() {
         if (!configuration.effectiveChecksEnabled || closed.get()) return
         executor.scheduleWithFixedDelay(
-            { checkNow().exceptionally { null } },
+            { checkNow(false).exceptionally { null } },
             0,
             configuration.checks.interval.toMillis(),
             TimeUnit.MILLISECONDS,
         )
     }
 
-    fun checkNow(): CompletionStage<UpdatePlanSnapshot> = synchronized(lock) {
+    fun checkNow(forceRemote: Boolean = true): CompletionStage<UpdatePlanSnapshot> = synchronized(lock) {
         check(!closed.get()) { "update orchestrator is closed" }
         inFlight?.let { return@synchronized it }
         val promise = CompletableFuture<UpdatePlanSnapshot>()
@@ -51,7 +52,7 @@ internal class UpdateOrchestrator(
         try {
             executor.execute {
                 try {
-                    val snapshot = snapshot(resolver())
+                    val snapshot = snapshot(if (forceRemote) remoteResolver?.invoke() ?: resolver() else resolver())
                     publish(snapshot)
                     if (configuration.effectiveAutomaticDownloads && snapshot.state == UpdateState.UPDATE_AVAILABLE &&
                         automaticAllowed(snapshot)) {
@@ -77,7 +78,7 @@ internal class UpdateOrchestrator(
     fun registrationsChanged() {
         if (closed.get() || !configuration.effectiveChecksEnabled) return
         try {
-            executor.execute { if (!closed.get()) checkNow() }
+            executor.execute { if (!closed.get()) checkNow(false) }
         } catch (_: RejectedExecutionException) {
             // A concurrent executor shutdown is a normal lifecycle race. The owner
             // will close the orchestrator and no follow-up check is required.

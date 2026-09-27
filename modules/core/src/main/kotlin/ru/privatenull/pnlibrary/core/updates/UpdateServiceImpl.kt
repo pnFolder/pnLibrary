@@ -49,6 +49,7 @@ internal class UpdateServiceImpl(private val platform: PlatformAdapter, private 
             platform.log(platform, LogLevel.WARNING, it)
         }), executor, ::resolveGraph, ::stageGraph, ::announce,
         automaticAllowed = ::automaticAllowed,
+        remoteResolver = { resolveGraph(RefreshMode.FORCE_REMOTE) },
     ).also {
         it.start()
         runCatching { transaction.recoverAll() }.onFailure { error ->
@@ -107,7 +108,7 @@ internal class UpdateServiceImpl(private val platform: PlatformAdapter, private 
         orchestrator.close()
     }
 
-    private fun resolveGraph(): ResolutionResult {
+    private fun resolveGraph(refreshMode: RefreshMode = RefreshMode.CACHED): ResolutionResult {
         if (entries.isEmpty()) return ResolutionResult.Ready(UpdatePlan(PnLibraryApi.VERSION, emptyList(), emptyList()))
         val installed = entries.map { entry -> InstalledProduct(
             entry.descriptor.id, entry.descriptor.version, entry.descriptor.supportedApi,
@@ -117,7 +118,8 @@ internal class UpdateServiceImpl(private val platform: PlatformAdapter, private 
             (configuration.plugins[entry.descriptor.id.value]?.channel ?: entry.request.channel) }
         val releases = entries.flatMap { entry ->
             catalogue.releases(ReleaseSource(entry.request.repositoryOwner, entry.request.repositoryName),
-                channels.getValue(entry.descriptor.id), entry.descriptor.id, entry.request, entry.dependencies, platform.type).join()
+                channels.getValue(entry.descriptor.id), entry.descriptor.id, entry.request, entry.dependencies, platform.type,
+                refreshMode).join()
         }
         entries.forEach { entry ->
             val latest = releases.filter { it.product == entry.descriptor.id }.maxByOrNull(ProductRelease::version)
