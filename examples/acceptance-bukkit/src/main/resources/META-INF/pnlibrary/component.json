@@ -1,0 +1,13 @@
+{
+  "schema": 1,
+  "product": "acceptance",
+  "version": "${version}",
+  "channel": "beta",
+  "pnLibraryApi": {
+    "minimum": 1,
+    "maximum": 1
+  },
+  "java": {
+    "minimum": 8
+  }
+}

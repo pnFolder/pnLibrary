@@ -29,7 +29,9 @@ val resourceVersion = project.version.toString()
 tasks.named<ProcessResources>("processResources") {
     inputs.property("version", resourceVersion)
     filesMatching("plugin.yml") { expand(mapOf("version" to resourceVersion)) }
+    filesMatching("META-INF/pnlibrary/component.json") { expand(mapOf("version" to resourceVersion)) }
 }
+
 
 tasks.register<Copy>("assembleAcceptanceKit") {
     group = "distribution"
