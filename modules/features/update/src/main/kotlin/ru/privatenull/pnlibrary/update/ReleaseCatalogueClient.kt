@@ -67,7 +67,7 @@ class ReleaseCatalogueClient(
         val existing = inFlight.putIfAbsent(key, promise)
         if (existing != null) return existing
         executor.execute {
-            try { promise.complete(load(source, channel, product, fallback, dependencies, platform, refresh)) }
+            try { promise.complete(loadFromGitHub(source, channel, product, fallback, dependencies, platform, refresh)) }
             catch (error: Throwable) { promise.completeExceptionally(error) }
             finally { inFlight.remove(key, promise) }
         }
@@ -99,7 +99,7 @@ class ReleaseCatalogueClient(
         }
     }
 
-    private fun load(
+    private fun loadFromGitHub(
         source: ReleaseSource,
         channel: UpdateChannel,
         product: ProductId?,
@@ -108,15 +108,8 @@ class ReleaseCatalogueClient(
         platform: PlatformType?,
         refresh: RefreshMode,
     ): List<ProductRelease> {
-        val releasesUri = URI.create("https://api.github.com/repos/${source.owner}/${source.repository}/releases?per_page=30")
-        val releasesBytes = validatedBytes(releasesUri, RELEASES_LIMIT, refresh) { bytes ->
-            val root = JsonParser.parseString(String(bytes, Charsets.UTF_8))
-            require(root.isJsonArray) { "GitHub releases response is not an array" }
-        }
-        val releases = JsonParser.parseString(String(releasesBytes, Charsets.UTF_8)).asJsonArray
-        if (releases.isEmpty) throw ReleaseSelectionException("В GitHub-репозитории нет опубликованных релизов")
-        val failures = mutableListOf<ReleaseSelectionException>()
-        val selected = releases.take(30).mapNotNull { raw ->
+        val failures = mutableListOf<Exception>()
+        val selected = releasePages(source, refresh).flatMap { it.asSequence() }.mapNotNull { raw ->
             val release = raw.asJsonObject
             if (release.get("draft")?.asBoolean != false) return@mapNotNull null
             // Release assets are discovered directly from GitHub. The old
@@ -124,16 +117,33 @@ class ReleaseCatalogueClient(
             // update protocol.
             try {
                 fallbackRelease(release, channel, product, fallback, dependencies, platform, source)
-            } catch (error: ReleaseSelectionException) {
+            } catch (error: IllegalArgumentException) {
                 failures += error
                 null
             }
-        }.distinctBy { it.product to it.version }.sortedByDescending { it.version }
+        }.distinctBy { it.product to it.version }.sortedByDescending { it.version }.toList()
         if (selected.isEmpty() && failures.isNotEmpty()) throw failures.first()
         return selected
     }
 
-    private fun validatedBytes(uri: URI, limit: Int, refresh: RefreshMode, validator: (ByteArray) -> Unit): ByteArray {
+    /** Walk every page: publication order does not prove semantic-version order. */
+    private fun releasePages(source: ReleaseSource, refresh: RefreshMode) = sequence {
+        var page = 1
+        do {
+            val suffix = if (page == 1) "" else "&page=$page"
+            val uri = URI.create("https://api.github.com/repos/${source.owner}/${source.repository}/releases?per_page=30$suffix")
+            val bytes = fetchGitHubBytes(uri, RELEASES_LIMIT, refresh) {
+                require(JsonParser.parseString(String(it, Charsets.UTF_8)).isJsonArray) {
+                    "GitHub releases response is not an array"
+                }
+            }
+            val releases = JsonParser.parseString(String(bytes, Charsets.UTF_8)).asJsonArray
+            yield(releases)
+            page++
+        } while (releases.size() == 30)
+    }
+
+    private fun fetchGitHubBytes(uri: URI, limit: Int, refresh: RefreshMode, validator: (ByteArray) -> Unit): ByteArray {
         val cached = store.read(uri, ttl).takeIf { refresh == RefreshMode.CACHED }
         if (cached != null) {
             try {
@@ -169,19 +179,23 @@ class ReleaseCatalogueClient(
         product ?: return null
         val tag = release.get("tag_name")?.asString?.trim()?.removePrefix("v") ?: return null
         val version = SemanticVersion.tryParse(tag) ?: return null
-        val prerelease = release.get("prerelease")?.asBoolean == true
+//        val prerelease = release.get("prerelease")?.asBoolean == true
+
         val releaseChannel = when {
-            !prerelease -> UpdateChannel.STABLE
-            tag.contains("dev", true) || tag.contains("snapshot", true) -> UpdateChannel.DEV
-            tag.contains("alpha", true) -> UpdateChannel.ALPHA
-            else -> UpdateChannel.BETA
+            tag.contains("dev", ignoreCase = true) ||
+                    tag.contains("snapshot", ignoreCase = true) -> UpdateChannel.DEV
+            tag.contains("alpha", ignoreCase = true) -> UpdateChannel.ALPHA
+            tag.contains("beta", ignoreCase = true) -> UpdateChannel.BETA
+            else -> UpdateChannel.STABLE
         }
         if (!acceptedChannel.accepts(releaseChannel)) return null
         val assets = release.getAsJsonArray("assets")
             ?: throw ReleaseSelectionException("Релиз $version не содержит JAR-файлов")
+
         val jarNames = assets.mapNotNull { it.asJsonObject.get("name")?.asString }
             .filter { isDistributionArtifact(it) }
         if (jarNames.isEmpty()) throw ReleaseSelectionException("Релиз $version не содержит JAR-файлов")
+
         var artifacts = assets.mapNotNull { raw ->
             val value = raw.asJsonObject
             val name = value.get("name")?.asString ?: return@mapNotNull null
@@ -196,14 +210,26 @@ class ReleaseCatalogueClient(
             ArtifactDescriptor(name, rule.platform ?: platform ?: return@mapNotNull null,
                 rule.minimumJava, rule.maximumJava, size, digest, uri)
         }
+
         if (artifacts.isEmpty()) throw ReleaseSelectionException(
             "В релизе $version нет JAR, подходящего под artifact-pattern; найдены: ${jarNames.joinToString()}",
         )
-        var supportedApi = request.supportedApi
+        var supportedApi = request.supportedApi //TODO()
         var providesApi = PnLibraryApi.VERSION.takeIf { product.value == "pnlibrary" }
         var descriptorChannel = releaseChannel
         if (inspectArtifacts) {
-            val inspected = artifacts.map { artifact -> artifact to inspectArtifact(artifact, product, version) }
+            // A release may contain a stale or manually replaced asset. Ignore that
+            // asset and continue with valid artifacts instead of aborting the whole
+            // update scan with a raw descriptor mismatch.
+            val inspected = artifacts.mapNotNull { artifact ->
+                runCatching { artifact to inspectArtifact(artifact, product, version) }
+                    .getOrNull()
+            }
+            if (inspected.isEmpty()) {
+                throw ReleaseSelectionException(
+                    "В релизе $version нет корректного JAR с метаданными продукта $product",
+                )
+            }
             val descriptors = inspected.map { it.second }
             require(descriptors.map { it.supportedApi }.distinct().size == 1) {
                 "release $version contains inconsistent pnLibrary API metadata"
@@ -237,11 +263,23 @@ class ReleaseCatalogueClient(
         expectedVersion: SemanticVersion,
     ): ru.privatenull.pnlibrary.api.updates.ProductDescriptor {
         val uri = requireNotNull(artifact.downloadUri) { "release artifact has no download URL: ${artifact.file}" }
-        require(artifact.size <= Int.MAX_VALUE) { "release artifact is too large to inspect: ${artifact.file}" }
-        val bytes = http.get(uri, artifact.size.toInt())
-        require(bytes.size.toLong() == artifact.size) { "release artifact size does not match GitHub metadata: ${artifact.file}" }
+        // Content digest invalidates metadata even when a release asset is replaced at the same URL.
+        val metadataKey = URI.create("${uri}#descriptor-${artifact.sha256}")
+        val codec = ProductDescriptorCodec()
+        store.read(metadataKey, Duration.ofDays(36500))?.let { cached ->
+            val descriptor = runCatching { codec.decodeInstalled(cached.bytes) }.getOrNull()
+            if (descriptor != null) {
+                validateIdentity(descriptor, artifact, expectedProduct, expectedVersion)
+                return descriptor
+            }
+            store.quarantine(metadataKey)
+        }
+        val expectedSize = requireNotNull(artifact.size) { "release artifact size metadata is missing: ${artifact.file}" }
+        require(expectedSize <= Int.MAX_VALUE) { "release artifact is too large to inspect: ${artifact.file}" }
+        val bytes = http.get(uri, expectedSize.toInt())
+        require(bytes.size.toLong() == expectedSize) { "release artifact size does not match GitHub metadata: ${artifact.file}" }
         val digest = MessageDigest.getInstance("SHA-256").digest(bytes).joinToString("") { "%02x".format(it) }
-        require(digest.equals(artifact.sha256, true)) { "release artifact SHA-256 does not match GitHub metadata: ${artifact.file}" }
+        require(digest.equals(requireNotNull(artifact.sha256), true)) { "release artifact SHA-256 does not match GitHub metadata: ${artifact.file}" }
         var descriptorBytes: ByteArray? = null
         var matches = 0
         JarInputStream(ByteArrayInputStream(bytes)).use { jar ->
@@ -265,11 +303,21 @@ class ReleaseCatalogueClient(
         }
         require(matches == 1) { "${artifact.file} must contain exactly one ${EmbeddedDescriptorReader.ENTRY}" }
         val descriptor = ProductDescriptorCodec().decodeInstalled(requireNotNull(descriptorBytes))
+        validateIdentity(descriptor, artifact, expectedProduct, expectedVersion)
+        store.write(metadataKey, requireNotNull(descriptorBytes))
+        return descriptor
+    }
+
+    private fun validateIdentity(
+        descriptor: ru.privatenull.pnlibrary.api.updates.ProductDescriptor,
+        artifact: ArtifactDescriptor,
+        expectedProduct: ProductId,
+        expectedVersion: SemanticVersion,
+    ) {
         require(descriptor.id == expectedProduct) { "artifact ${artifact.file} declares ${descriptor.id}, expected $expectedProduct" }
         require(descriptor.version == expectedVersion) {
             "artifact ${artifact.file} declares version ${descriptor.version}, expected $expectedVersion"
         }
-        return descriptor
     }
 
     private fun isDistributionArtifact(name: String): Boolean =

@@ -7,19 +7,20 @@ import java.nio.file.Files
 import java.nio.file.Path
 import java.nio.file.Paths
 import java.security.MessageDigest
+import java.util.jar.JarFile
 
 data class ArtifactSpecification(
     val product: ProductId,
     val version: SemanticVersion,
     val supportedApi: ApiVersionRange,
     val fileName: String,
-    val size: Long,
-    val sha256: String,
+    val size: Long? = null,
+    val sha256: String? = null,
 ) {
     init {
         require(fileName.isNotBlank() && Paths.get(fileName).fileName.toString() == fileName) { "fileName must be a plain file name" }
-        require(size > 0) { "artifact size must be positive" }
-        require(sha256.matches(Regex("[0-9a-fA-F]{64}"))) { "SHA-256 must contain 64 hexadecimal characters" }
+        require(size == null || size > 0) { "artifact size must be positive" }
+        require(sha256 == null || sha256.matches(Regex("[0-9a-fA-F]{64}"))) { "SHA-256 must contain 64 hexadecimal characters" }
     }
 }
 
@@ -36,20 +37,18 @@ class ArtifactVerifier(
         if (path.fileName.toString() != expected.fileName) fail("artifact file name does not match metadata")
         val size = Files.size(path)
         if (size > maximumBytes) fail("artifact exceeds the configured size limit")
-        if (size != expected.size) fail("artifact size does not match metadata")
-        if (!sha256(path).equals(expected.sha256, ignoreCase = true)) fail("artifact SHA-256 does not match metadata")
+        expected.size?.let { if (size != it) fail("artifact size does not match metadata") }
+        expected.sha256?.let { if (!sha256(path).equals(it, ignoreCase = true)) fail("artifact SHA-256 does not match metadata") }
 
-        val descriptor = try {
-            descriptorReader.read(path)
-        } catch (error: ArtifactVerificationException) {
-            throw error
-        } catch (error: Exception) {
-            throw ArtifactVerificationException("artifact metadata cannot be read: ${error.message}")
-        }
-        if (descriptor.id != expected.product) fail("artifact component identity does not match")
-        if (descriptor.version != expected.version) fail("artifact version does not match")
-        if (descriptor.supportedApi != expected.supportedApi) {
-            fail("artifact API range does not match")
+        // Release metadata is authoritative. If a legacy descriptor is present,
+        // validate it as an additional guard; its absence is supported.
+        val hasDescriptor = JarFile(path.toFile()).use { it.getJarEntry(EmbeddedDescriptorReader.ENTRY) != null }
+        if (hasDescriptor) {
+            val descriptor = try { descriptorReader.read(path) }
+            catch (error: Exception) { throw ArtifactVerificationException("artifact metadata cannot be read: ${error.message}") }
+            if (descriptor.id != expected.product) fail("artifact component identity does not match")
+            if (descriptor.version != expected.version) fail("artifact version does not match")
+            if (descriptor.supportedApi != expected.supportedApi) fail("artifact API range does not match")
         }
     }
 

@@ -11,6 +11,7 @@ import java.io.ByteArrayInputStream
 import java.nio.file.Files
 import java.nio.file.Path
 import java.nio.file.Paths
+import java.net.URI
 import java.time.Duration
 import java.util.Optional
 import java.util.UUID
@@ -20,6 +21,7 @@ import java.util.concurrent.Executors
 import java.util.concurrent.Executor
 import java.util.concurrent.atomic.AtomicBoolean
 import java.util.concurrent.atomic.AtomicReference
+import java.security.MessageDigest
 
 /** One catalogue → resolver → verifier → transaction pipeline for every component. */
 internal class UpdateServiceImpl(private val platform: PlatformAdapter, private val dataFolder: Path) : UpdateService, AutoCloseable {
@@ -33,9 +35,8 @@ internal class UpdateServiceImpl(private val platform: PlatformAdapter, private 
         Thread(action, "pnLibrary-update-orchestrator").apply { isDaemon = true }
     }
     private val http = TrustedHttpClient(Duration.ofSeconds(8), Duration.ofSeconds(20))
-    private val catalogue = ReleaseCatalogueClient(
+    private val releaseCatalog = ReleaseCatalogClient(
         http, ReleaseCatalogueStore(dataFolder.resolve("updates/catalog")), Executor { it.run() }, Duration.ofMinutes(30),
-        inspectArtifacts = true,
     )
     private val transaction = UpdateTransaction(
         dataFolder.resolve("updates/transactions"), ArtifactVerifier(MAX_ARTIFACT_BYTES), dataFolder.parent,
@@ -112,36 +113,87 @@ internal class UpdateServiceImpl(private val platform: PlatformAdapter, private 
     }
 
     private fun resolveGraph(refreshMode: RefreshMode = RefreshMode.CACHED): ResolutionResult {
-        if (entries.isEmpty()) return ResolutionResult.Ready(UpdatePlan(PnLibraryApi.VERSION, emptyList(), emptyList()))
-        val installed = entries.map { entry -> InstalledProduct(
+        val registrations = entries.toList()
+        if (registrations.isEmpty()) return emptyUpdatePlan()
+
+        val installed = installedProducts(registrations)
+        val channels = updateChannels(registrations)
+        val releases = requestReleaseCatalogs(registrations, channels, refreshMode)
+        observeLatestVersions(registrations, releases)
+
+        return UpdateResolver(ProductId.of("pnlibrary")).resolve(
+            installed = installed,
+            releases = releases,
+            channels = channels,
+            defaultChannel = UpdateChannel.STABLE,
+            frozen = frozenProducts(registrations),
+            platform = platform.type,
+            javaFeature = Runtime.version().feature(),
+            policy = resolverPolicy(),
+        )
+    }
+
+    private fun emptyUpdatePlan(): ResolutionResult =
+        ResolutionResult.Ready(UpdatePlan(PnLibraryApi.VERSION, emptyList(), emptyList()))
+
+    private fun installedProducts(registrations: List<Registration>): List<InstalledProduct> =
+        registrations.map { entry -> InstalledProduct(
             entry.descriptor.id, entry.descriptor.version, entry.descriptor.supportedApi,
             PnLibraryApi.VERSION.takeIf { entry.descriptor.id.value == "pnlibrary" },
         ) }
-        val channels = entries.associate { entry -> entry.descriptor.id to
+
+    private fun updateChannels(registrations: List<Registration>): Map<ProductId, UpdateChannel> =
+        registrations.associate { entry -> entry.descriptor.id to
             (configuration.plugins[entry.descriptor.id.value]?.channel ?: entry.request.channel) }
-        val releases = entries.flatMap { entry ->
-            catalogue.releases(ReleaseSource(entry.request.repositoryOwner, entry.request.repositoryName),
-                channels.getValue(entry.descriptor.id), entry.descriptor.id, entry.request, entry.dependencies, platform.type,
-                refreshMode).join()
+
+    private fun requestReleaseCatalogs(
+        registrations: List<Registration>,
+        channels: Map<ProductId, UpdateChannel>,
+        refreshMode: RefreshMode,
+    ): List<ProductRelease> = registrations.flatMap { entry ->
+            val source = URI.create("https://raw.githubusercontent.com/${entry.request.repositoryOwner}/${entry.request.repositoryName}/main/.pnlibrary/releases.json")
+            val catalog = releaseCatalog.load(source, refreshMode).join()
+            require(catalog.product.equals(entry.descriptor.id.value, ignoreCase = true)) {
+                "Release catalog product ${catalog.product} does not match ${entry.descriptor.id}"
+            }
+            catalog.releases
+                .asSequence()
+                .filter { channels.getValue(entry.descriptor.id).accepts(it.channel) }
+                .map { release ->
+                    ProductRelease(
+                        entry.descriptor.id, release.version, release.channel, release.api,
+                        providesApi = release.api.maximum.takeIf { entry.descriptor.id.value == "pnlibrary" },
+                        repository = "${entry.request.repositoryOwner}/${entry.request.repositoryName}",
+                        artifacts = release.artifacts.map { artifact ->
+                            ArtifactDescriptor(
+                                artifact.file, artifact.platform, artifact.javaMinimum, artifact.javaMaximum,
+                                size = null, sha256 = null, downloadUri = artifact.url,
+                            )
+                        },
+                    )
+                }.toList()
         }
-        entries.forEach { entry ->
+
+    private fun observeLatestVersions(registrations: List<Registration>, releases: List<ProductRelease>) {
+        registrations.forEach { entry ->
             val latest = releases.filter { it.product == entry.descriptor.id }.maxByOrNull(ProductRelease::version)
             entry.observe(latest)
         }
-        return UpdateResolver(ProductId.of("pnlibrary")).resolve(
-            installed, releases, channels = channels, defaultChannel = UpdateChannel.STABLE,
-            frozen = (freezes.active().keys + entries.mapNotNull { entry ->
+    }
+
+    private fun frozenProducts(registrations: List<Registration>): Set<ProductId> =
+        (freezes.active().keys + registrations.mapNotNull { entry ->
                 val policy = configuration.plugins[entry.descriptor.id.value]
                 entry.descriptor.id.takeIf {
                     !configuration.pluginUpdatesEnabled || policy?.enabled == false ||
                         policy?.pauseUntil?.isAfter(java.time.Instant.now()) == true
                 }
-            }).toSet(), platform = platform.type,
-            javaFeature = Runtime.version().feature(), policy = ResolverPolicy(
-                configuration.downloads.allowManagedPlugins && configuration.installation.allowNewPlugins,
-                runCatching { platform.installedPlugins() }.getOrNull().orEmpty().keys),
+            }).toSet()
+
+    private fun resolverPolicy(): ResolverPolicy = ResolverPolicy(
+        configuration.downloads.allowManagedPlugins && configuration.installation.allowNewPlugins,
+        runCatching { platform.installedPlugins() }.getOrNull().orEmpty().keys,
         )
-    }
 
     private fun automaticAllowed(snapshot: UpdatePlanSnapshot): Boolean {
         val changed = snapshot.plan?.changes?.map(ProductChange::product).orEmpty()
@@ -172,12 +224,12 @@ internal class UpdateServiceImpl(private val platform: PlatformAdapter, private 
                 it.platform == platform.type && it.supports(Runtime.version().feature())
             } ?: error("No ${platform.type.id} artifact for ${change.product} ${change.to}")
             val uri = requireNotNull(descriptor.downloadUri) { "Release artifact has no verified download URL: ${descriptor.file}" }
-            require(descriptor.size <= MAX_ARTIFACT_BYTES) { "Artifact exceeds the configured size limit: ${descriptor.file}" }
-            val bytes = http.get(uri, descriptor.size.toInt())
+            val bytes = http.get(uri, MAX_ARTIFACT_BYTES.toInt())
             val source = staging.resolve(change.product.value).resolve(descriptor.file)
             ArtifactDownloader(MAX_ARTIFACT_BYTES).download({ ByteArrayInputStream(bytes) }, source)
             val specification = ArtifactSpecification(
-                change.product, change.to, release.supportedApi, descriptor.file, descriptor.size, descriptor.sha256,
+                change.product, change.to, release.supportedApi, descriptor.file,
+                bytes.size.toLong(), sha256(bytes),
             )
             val existing = byComponent[change.product]
             val target = existing?.updateDir?.resolve(existing.jar.fileName)
@@ -218,6 +270,9 @@ internal class UpdateServiceImpl(private val platform: PlatformAdapter, private 
         }
         platform.log(platform, LogLevel.INFO, message)
     }
+
+    private fun sha256(bytes: ByteArray): String = MessageDigest.getInstance("SHA-256")
+        .digest(bytes).joinToString("") { "%02x".format(it) }
 
     private inner class Registration(
         private val owner: Any, val descriptor: ProductDescriptor, val request: PluginUpdateRequest,

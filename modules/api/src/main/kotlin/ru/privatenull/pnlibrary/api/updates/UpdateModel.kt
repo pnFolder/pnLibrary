@@ -239,16 +239,17 @@ class ArtifactDescriptor(
     val platform: PlatformType,
     val minimumJava: Int,
     val maximumJava: Int?,
-    val size: Long,
-    val sha256: String,
+    /** Optional publisher metadata. The updater computes these values after download. */
+    val size: Long? = null,
+    val sha256: String? = null,
     val downloadUri: URI?,
 ) {
     init {
         require(SAFE_FILE.matches(file) && file.endsWith(".jar", true)) { "unsafe artifact filename: $file" }
         require(minimumJava >= 8) { "minimum Java must be at least 8" }
         require(maximumJava == null || maximumJava >= minimumJava) { "maximum Java must be >= minimum Java" }
-        require(size > 0) { "artifact size must be positive" }
-        require(SHA_256.matches(sha256)) { "artifact SHA-256 is invalid" }
+        require(size == null || size > 0) { "artifact size must be positive" }
+        require(sha256 == null || SHA_256.matches(sha256)) { "artifact SHA-256 is invalid" }
         require(downloadUri == null || downloadUri.scheme.equals("https", true)) { "artifact URL must use HTTPS" }
     }
 
@@ -262,19 +263,33 @@ class ArtifactDescriptor(
 }
 
 /** Installed component metadata shared by embedded descriptors and explicit registration. */
-class ProductDescriptor private constructor(builder: Builder) {
-    val id: ProductId = builder.id
+class ProductDescriptor private constructor(
+    builder: Builder,
+    private val boundId: ProductId? = null,
+) {
+    val id: ProductId get() = requireNotNull(boundId) {
+        "Product descriptor must be bound by registerModule before its id is read"
+    }
+    val isBound: Boolean get() = boundId != null
     val version: SemanticVersion = builder.version
+        ?: throw IllegalArgumentException("product version is required")
     val supportedApi: ApiVersionRange = builder.supportedApi
         ?: throw IllegalArgumentException("pnLibrary API range is required")
     val channel: UpdateChannel = builder.channel
     val minimumJava: Int = builder.minimumJava
     val maximumJava: Int? = builder.maximumJava
 
-    class Builder internal constructor(
-        internal val id: ProductId,
-        internal val version: SemanticVersion,
-    ) {
+    fun bindTo(id: String): ProductDescriptor = ProductDescriptor(
+        Builder()
+            .version(version.toString())
+            .pnLibraryApi(supportedApi.minimum, supportedApi.maximum)
+            .channel(channel)
+            .java(minimumJava, maximumJava),
+        ProductId.of(id),
+    )
+
+    class Builder internal constructor() {
+        internal var version: SemanticVersion? = null
         internal var supportedApi: ApiVersionRange? = null
         internal var channel: UpdateChannel = UpdateChannel.STABLE
         internal var minimumJava: Int = 8
@@ -282,6 +297,7 @@ class ProductDescriptor private constructor(builder: Builder) {
         fun pnLibraryApi(minimum: Int, maximum: Int) = apply {
             supportedApi = ApiVersionRange(minimum, maximum)
         }
+        fun version(value: String) = apply { version = SemanticVersion.parse(value) }
         fun channel(value: UpdateChannel) = apply { channel = value }
         fun java(minimum: Int, maximum: Int? = null) = apply {
             require(minimum >= 8) { "minimum Java must be at least 8" }
@@ -294,12 +310,15 @@ class ProductDescriptor private constructor(builder: Builder) {
     }
 
     companion object {
-        @JvmStatic fun builder(id: String, version: String): Builder =
-            Builder(ProductId.of(id), SemanticVersion.parse(version))
+        @JvmStatic fun builder(): Builder =
+            Builder()
 
         /** Descriptor for pnLibrary itself when no generated descriptor is available. */
-        @JvmStatic fun library(version: String): ProductDescriptor = builder("pnlibrary", version)
-            .pnLibraryApi(PnLibraryApi.VERSION, PnLibraryApi.VERSION).build()
+        @JvmStatic fun library(version: String): ProductDescriptor = builder()
+            .version(version)
+            .pnLibraryApi(PnLibraryApi.VERSION, PnLibraryApi.VERSION)
+            .build()
+            .bindTo("pnlibrary")
     }
 }
 

@@ -64,8 +64,8 @@ class ProductReleaseCodec(private val maximumBytes: Int = 256 * 1024) {
                             addProperty("minimum", artifact.compatibility.minimumJava)
                             artifact.compatibility.maximumJava?.let { addProperty("maximum", it) }
                         })
-                        addProperty("size", artifact.size)
-                        addProperty("sha256", artifact.sha256.lowercase())
+                        artifact.size?.let { addProperty("size", it) }
+                        artifact.sha256?.let { addProperty("sha256", it.lowercase()) }
                         artifact.downloadUri?.let { addProperty("downloadUrl", it.toString()) }
                     })
                 }
