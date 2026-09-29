@@ -1,0 +1,62 @@
+{
+  "schema": 1,
+  "product": "demo",
+  "releases": [
+    {
+      "version": "2.6.0-dev.80",
+      "channel": "dev",
+      "description": "Development build",
+      "publishedAt": "2026-09-29T12:00:00Z",
+      "api": { "minimum": 1, "maximum": 2 },
+      "artifacts": [{
+        "file": "demo-2.6.0-dev.80-bukkit-java8.jar",
+        "platform": "BUKKIT",
+        "minecraft": { "minimum": "1.20" },
+        "java": { "minimum": 8 },
+        "url": "https://example.org/demo-dev.jar"
+      }]
+    },
+    {
+      "version": "2.6.0-beta.40",
+      "channel": "beta",
+      "description": "Beta build",
+      "publishedAt": "2026-09-28T12:00:00Z",
+      "api": { "minimum": 1, "maximum": 2 },
+      "artifacts": [{
+        "file": "demo-2.6.0-beta.40-bukkit-java8.jar",
+        "platform": "BUKKIT",
+        "minecraft": { "minimum": "1.20" },
+        "java": { "minimum": 8 },
+        "url": "https://example.org/demo-beta.jar"
+      }]
+    },
+    {
+      "version": "2.5.1",
+      "channel": "stable",
+      "description": "Stable build",
+      "publishedAt": "2026-09-20T12:00:00Z",
+      "api": { "minimum": 1, "maximum": 1 },
+      "artifacts": [{
+        "file": "demo-2.5.1-bukkit-java8.jar",
+        "platform": "BUKKIT",
+        "minecraft": { "minimum": "1.20", "maximum": "1.21.11" },
+        "java": { "minimum": 8, "maximum": 21 },
+        "url": "https://example.org/demo-stable.jar"
+      }]
+    },
+    {
+      "version": "2.4.0",
+      "channel": "stable",
+      "description": "Older stable build",
+      "publishedAt": "2026-08-20T12:00:00Z",
+      "api": { "minimum": 1, "maximum": 1 },
+      "artifacts": [{
+        "file": "demo-2.4.0-bukkit-java8.jar",
+        "platform": "BUKKIT",
+        "minecraft": { "minimum": "1.20", "maximum": "1.21.11" },
+        "java": { "minimum": 8, "maximum": 21 },
+        "url": "https://example.org/demo-old.jar"
+      }]
+    }
+  ]
+}
