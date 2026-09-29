@@ -3,16 +3,41 @@
   "product": "pnlibrary",
   "releases": [
     {
-      "version": "2.2.0-beta.6",
+      "version": "2.2.0-beta.7",
       "channel": "beta",
       "description": "Catalog-based updater build",
-      "publishedAt": "2026-09-29T00:00:00Z",
-      "api": { "minimum": 1, "maximum": 1 },
+      "publishedAt": "2026-09-29T00:10:00Z",
+      "api": {
+        "minimum": 1,
+        "maximum": 1
+      },
       "artifacts": [
         {
           "file": "pnLibrary-2.2.0-beta.6-bukkit-java8.jar",
           "platform": "BUKKIT",
-          "java": { "minimum": 8 },
+          "java": {
+            "minimum": 8
+          },
+          "url": "https://github.com/pnFolder/pnLibrary/releases/download/v2.2.0-beta.6/pnLibrary-2.2.0-beta.6-bukkit-java8.jar"
+        }
+      ]
+    },
+    {
+      "version": "2.2.0-beta.6",
+      "channel": "beta",
+      "description": "Catalog-based updater build",
+      "publishedAt": "2026-09-29T00:00:00Z",
+      "api": {
+        "minimum": 1,
+        "maximum": 1
+      },
+      "artifacts": [
+        {
+          "file": "pnLibrary-2.2.0-beta.6-bukkit-java8.jar",
+          "platform": "BUKKIT",
+          "java": {
+            "minimum": 8
+          },
           "url": "https://github.com/pnFolder/pnLibrary/releases/download/v2.2.0-beta.6/pnLibrary-2.2.0-beta.6-bukkit-java8.jar"
         }
       ]
