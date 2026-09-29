@@ -11,6 +11,11 @@ import ru.privatenull.pnlibrary.api.version.SemanticVersion
 import java.net.URI
 import java.time.Instant
 
+enum class RefreshMode { CACHED, FORCE_REMOTE }
+
+class ManifestException(val field: String, message: String, cause: Throwable? = null) :
+    IllegalArgumentException("Invalid release catalog field '$field': $message", cause)
+
 data class ReleaseCatalog(val product: String, val releases: List<CatalogRelease>)
 
 data class CatalogRelease(

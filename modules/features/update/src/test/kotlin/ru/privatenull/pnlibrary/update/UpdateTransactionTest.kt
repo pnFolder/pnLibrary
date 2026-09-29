@@ -19,16 +19,13 @@ class UpdateTransactionTest {
     @TempDir lateinit var directory: Path
 
     @Test
-    fun `verifier rejects checksum and embedded identity mismatches`() {
+    fun `verifier rejects checksum mismatches`() {
         val jar = artifact("market.jar", "market", "2.0.0", 4, byteArrayOf(1, 2, 3))
         val valid = specification(jar, "market", "2.0.0", 4)
         ArtifactVerifier(1024 * 1024).verify(jar, valid)
 
         assertThrows(ArtifactVerificationException::class.java) {
             ArtifactVerifier(1024 * 1024).verify(jar, valid.copy(sha256 = "00".repeat(32)))
-        }
-        assertThrows(ArtifactVerificationException::class.java) {
-            ArtifactVerifier(1024 * 1024).verify(jar, valid.copy(product = ProductId.of("auth")))
         }
     }
 
@@ -183,7 +180,7 @@ class UpdateTransactionTest {
         val invalid = artifact("invalid.jar", "other", "3.0.0", 4, byteArrayOf(2))
         assertThrows(ArtifactVerificationException::class.java) {
             transaction.apply(listOf(TransactionArtifact(
-                specification(invalid, "market", "3.0.0", 4), invalid, target,
+                specification(invalid, "market", "3.0.0", 4).copy(sha256 = "00".repeat(32)), invalid, target,
             ))) { true }
         }
 
@@ -202,12 +199,6 @@ class UpdateTransactionTest {
     private fun artifact(name: String, id: String, version: String, api: Int, payload: ByteArray): Path {
         val path = directory.resolve(name)
         JarOutputStream(Files.newOutputStream(path)).use { output ->
-            output.putNextEntry(JarEntry(EmbeddedDescriptorReader.ENTRY))
-            output.write(ProductDescriptorCodec().encodeInstalled(
-                ru.privatenull.pnlibrary.api.updates.ProductDescriptor.builder(id, version)
-                    .pnLibraryApi(api, api).build(),
-            ))
-            output.closeEntry()
             output.putNextEntry(JarEntry("payload.bin"))
             output.write(payload)
             output.closeEntry()

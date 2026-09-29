@@ -39,10 +39,6 @@ import ru.privatenull.pnlibrary.api.updates.UpdateService
 import ru.privatenull.pnlibrary.api.updates.ProductDescriptor
 import ru.privatenull.pnlibrary.api.version.SemanticVersion
 import ru.privatenull.pnlibrary.api.version.PnLibraryApi
-import ru.privatenull.pnlibrary.update.EmbeddedDescriptorReader
-import java.nio.file.Files
-import java.nio.file.Paths
-import java.util.jar.JarFile
 import ru.privatenull.pnlibrary.core.services.ServiceManagerImpl
 import ru.privatenull.pnlibrary.core.config.ConfigurationServiceImpl
 import java.nio.file.Path
@@ -263,41 +259,30 @@ internal class PluginRegistryImpl(
     }
 
     private fun productDescriptor(owner: Any, id: ModuleId, definition: Builder): ProductDescriptor? {
-        val embedded = embeddedDescriptor(owner)
-        val explicit = definition.productDescriptor
-        if (embedded != null && explicit != null) {
-            require(embedded.id == explicit.id && embedded.version == explicit.version &&
-                embedded.supportedApi == explicit.supportedApi) {
-                "Explicit component descriptor conflicts with embedded metadata for $id"
-            }
+        // The public builder intentionally does not require a product id. Bind the
+        // descriptor to the module before any comparison or validation reads id.
+        val explicit = definition.productDescriptor?.let { descriptor ->
+            if (!descriptor.isBound) descriptor.bindTo(id.value) else descriptor
         }
         val inferred = definition.updateRequest?.let { request ->
             val version = platform.ownerDetails(owner)["version"] ?: definition.metadataVersion
                 ?: error("Cannot infer component version for $id")
-            ProductDescriptor.builder(id.value, version)
+            ProductDescriptor.builder().version(version)
                 .pnLibraryApi(request.supportedApi.minimum, request.supportedApi.maximum)
                 .build()
         }
-        val implicit = if (explicit == null && embedded == null && inferred == null && definition.dependencies.isNotEmpty()) {
+        val implicit = if (explicit == null && inferred == null && definition.dependencies.isNotEmpty()) {
             val version = platform.ownerDetails(owner)["version"] ?: definition.metadataVersion
                 ?: error("Cannot infer component version for $id")
-            ProductDescriptor.builder(id.value, version)
+            ProductDescriptor.builder().version(version)
                 .pnLibraryApi(PnLibraryApi.VERSION, PnLibraryApi.VERSION)
                 .build()
         } else null
-        return (explicit ?: embedded ?: inferred ?: implicit)?.also {
+        return (explicit ?: inferred ?: implicit)?.let { descriptor ->
+            if (!descriptor.isBound) descriptor.bindTo(id.value) else descriptor
+        }?.also {
             require(it.id.value == id.value) { "Component ID ${it.id} does not match plugin ID $id" }
         }
-    }
-
-    private fun embeddedDescriptor(owner: Any): ProductDescriptor? {
-        val location = runCatching {
-            Paths.get(owner.javaClass.protectionDomain.codeSource.location.toURI()).toAbsolutePath().normalize()
-        }.getOrNull() ?: return null
-        if (!Files.isRegularFile(location)) return null
-        val present = runCatching { JarFile(location.toFile()).use { it.getJarEntry(EmbeddedDescriptorReader.ENTRY) != null } }
-            .getOrElse { throw IllegalArgumentException("Cannot inspect component metadata", it) }
-        return if (present) EmbeddedDescriptorReader().read(location) else null
     }
 
     private fun validateDependencies(dependencies: List<PluginDependency>) {

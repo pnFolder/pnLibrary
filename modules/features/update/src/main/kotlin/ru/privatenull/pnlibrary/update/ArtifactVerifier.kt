@@ -7,7 +7,6 @@ import java.nio.file.Files
 import java.nio.file.Path
 import java.nio.file.Paths
 import java.security.MessageDigest
-import java.util.jar.JarFile
 
 data class ArtifactSpecification(
     val product: ProductId,
@@ -28,7 +27,6 @@ class ArtifactVerificationException(message: String) : IllegalArgumentException(
 
 class ArtifactVerifier(
     private val maximumBytes: Long,
-    private val descriptorReader: EmbeddedDescriptorReader = EmbeddedDescriptorReader(),
 ) {
     init { require(maximumBytes > 0) { "maximumBytes must be positive" } }
 
@@ -40,16 +38,7 @@ class ArtifactVerifier(
         expected.size?.let { if (size != it) fail("artifact size does not match metadata") }
         expected.sha256?.let { if (!sha256(path).equals(it, ignoreCase = true)) fail("artifact SHA-256 does not match metadata") }
 
-        // Release metadata is authoritative. If a legacy descriptor is present,
-        // validate it as an additional guard; its absence is supported.
-        val hasDescriptor = JarFile(path.toFile()).use { it.getJarEntry(EmbeddedDescriptorReader.ENTRY) != null }
-        if (hasDescriptor) {
-            val descriptor = try { descriptorReader.read(path) }
-            catch (error: Exception) { throw ArtifactVerificationException("artifact metadata cannot be read: ${error.message}") }
-            if (descriptor.id != expected.product) fail("artifact component identity does not match")
-            if (descriptor.version != expected.version) fail("artifact version does not match")
-            if (descriptor.supportedApi != expected.supportedApi) fail("artifact API range does not match")
-        }
+        // The release catalog is the single source of product identity/version/API.
     }
 
     private fun sha256(path: Path): String {
