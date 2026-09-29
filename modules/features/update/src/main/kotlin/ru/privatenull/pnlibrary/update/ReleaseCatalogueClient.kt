@@ -30,6 +30,13 @@ data class ReleaseSource(val owner: String, val repository: String) {
 
 enum class RefreshMode { CACHED, FORCE_REMOTE }
 
+/**
+ * Legacy GitHub Releases adapter kept only for binary/source compatibility with
+ * old tests and integrations. Runtime update orchestration no longer calls it;
+ * [ReleaseCatalogClient] and `.pnlibrary/releases.json` are the only production
+ * update source.
+ */
+@Deprecated("Use ReleaseCatalogClient and .pnlibrary/releases.json")
 class ReleaseCatalogueClient(
     private val http: TrustedHttpClient,
     private val store: ReleaseCatalogueStore,
