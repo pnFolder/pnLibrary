@@ -3,7 +3,7 @@
   "product": "pnlibrary",
   "releases": [
     {
-      "version": "2.2.0-beta.7",
+      "version": "2.2.0-stable.7",
       "channel": "stable",
       "description": "Catalog-based updater build",
       "publishedAt": "2026-09-29T00:10:00Z",
