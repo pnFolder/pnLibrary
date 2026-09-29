@@ -151,7 +151,7 @@ internal class UpdateServiceImpl(private val platform: PlatformAdapter, private 
         channels: Map<ProductId, UpdateChannel>,
         refreshMode: RefreshMode,
     ): List<ProductRelease> = registrations.flatMap { entry ->
-            val source = URI.create("https://raw.githubusercontent.com/${entry.request.repositoryOwner}/${entry.request.repositoryName}/main/.pnlibrary/releases.json")
+            val source = URI.create("https://github.com/${entry.request.repositoryOwner}/${entry.request.repositoryName}/raw/refs/heads/main/.pnlibrary/releases.json")
             val catalog = releaseCatalog.load(source, refreshMode).join()
             require(catalog.product.equals(entry.descriptor.id.value, ignoreCase = true)) {
                 "Release catalog product ${catalog.product} does not match ${entry.descriptor.id}"
