@@ -4,7 +4,7 @@
   "releases": [
     {
       "version": "2.2.0-beta.7",
-      "channel": "beta",
+      "channel": "stable",
       "description": "Catalog-based updater build",
       "publishedAt": "2026-09-29T00:10:00Z",
       "api": {
