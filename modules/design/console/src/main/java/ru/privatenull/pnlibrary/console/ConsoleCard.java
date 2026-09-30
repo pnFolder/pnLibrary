@@ -63,19 +63,19 @@ public final class ConsoleCard {
         public Builder blank() { lines.add(""); return this; }
 
         public Builder detail(String label, Object value) {
-            lines.add(theme.muted + "            ├ " + theme.text + pad(label, 13)
+            lines.add(theme.muted + "            ├ " + theme.text + label + "  │  "
                     + theme.accent + String.valueOf(value) + theme.reset);
             return this;
         }
 
         public Builder lastDetail(String label, Object value) {
-            lines.add(theme.muted + "            └ " + theme.text + pad(label, 13)
+            lines.add(theme.muted + "            └ " + theme.text + label + "  │  "
                     + theme.accent + String.valueOf(value) + theme.reset);
             return this;
         }
 
         public Builder section(String title) {
-            lines.add(theme.muted + "            ◆ " + theme.text + text(title) + theme.reset);
+            lines.add(theme.muted + "            ┌ " + theme.text + text(title) + theme.reset);
             return this;
         }
 
@@ -104,7 +104,7 @@ public final class ConsoleCard {
         public ConsoleCard build() { return new ConsoleCard(this); }
 
         private void appendTree(ConsoleTree node, String prefix, boolean last, boolean root) {
-            String connector = root ? "◆ " : (last ? "└ " : "├ ");
+            String connector = root ? "┌ " : (last ? "└ " : "├ ");
             lines.add(theme.muted + "            " + prefix + connector + theme.text + node.text() + theme.reset);
             List<ConsoleTree> children = node.children();
             for (int index = 0; index < children.size(); index++) {

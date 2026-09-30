@@ -17,8 +17,8 @@ object DemoUpdateFeature {
         freeze.freeze(id, FreezeDuration.parse("1h"))
         freeze.remaining(id); freeze.isFrozen(id); freeze.active(); freeze.clear(id)
 
-        val descriptor = ProductDescriptor.builder("pndemo", plugin.description.version)
-            .pnLibraryApi(1, 1).build()
+        val descriptor = ProductDescriptor.builder().version(plugin.description.version)
+            .pnLibraryApi(1, 1).build().bindTo("pndemo")
         val codec = ProductDescriptorCodec()
         val encoded = codec.encodeInstalled(descriptor)
         codec.decodeInstalled(encoded)

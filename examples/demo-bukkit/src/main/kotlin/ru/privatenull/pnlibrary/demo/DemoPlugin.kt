@@ -42,7 +42,7 @@ class DemoPlugin : JavaPlugin() {
         pluginRegistration = library.plugins.register(this)
         context = pluginRegistration!!.registerModule("pndemo") { builder ->
             builder.product(
-                ProductDescriptor.builder("pndemo", description.version)
+                ProductDescriptor.builder().version(description.version)
                     .pnLibraryApi(1, 1)
                     .build()
             )

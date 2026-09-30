@@ -7,6 +7,7 @@ import net.md_5.bungee.api.chat.HoverEvent
 import net.md_5.bungee.api.chat.TextComponent
 import org.bukkit.Bukkit
 import org.bukkit.command.CommandSender
+import org.bukkit.command.ConsoleCommandSender
 import org.bukkit.entity.Player
 import org.bukkit.plugin.Plugin
 import ru.privatenull.pnlibrary.api.commands.CommandDefinition
@@ -17,12 +18,17 @@ import ru.privatenull.pnlibrary.api.runtime.PnLibrary
 import ru.privatenull.pnlibrary.api.runtime.PnLibraryBrand
 import ru.privatenull.pnlibrary.api.updates.UpdateSnapshot
 import ru.privatenull.pnlibrary.api.updates.UpdateState
+import ru.privatenull.pnlibrary.api.updates.ProductChange
+import ru.privatenull.pnlibrary.api.updates.UpdatePlanSnapshot
+import ru.privatenull.pnlibrary.api.updates.UpdateRegistration
 import java.util.Locale
 import java.util.UUID
 import java.util.concurrent.ConcurrentHashMap
 import java.time.Duration
 import ru.privatenull.pnlibrary.bukkit.updates.UpdateAction
 import ru.privatenull.pnlibrary.bukkit.updates.UpdateConfirmationTokens
+import ru.privatenull.pnlibrary.console.ConsoleCard
+import ru.privatenull.pnlibrary.console.ConsoleTheme
 
 /** Bukkit-only `/pn` behavior expressed through the shared command builder. */
 internal class BukkitControlCommand(
@@ -116,15 +122,92 @@ internal class BukkitControlCommand(
     private fun sendStatus(sender: CommandSender, requested: String?) {
         val entries = if (requested == null) library.updates.all()
         else listOfNotNull(library.updates.get(requested))
+        if (sender is ConsoleCommandSender && requested == null) {
+            renderConsoleStatus(sender, entries)
+            return
+        }
         sender.sendMessage("")
         sender.sendMessage("§a «Состояние pnFolder»")
         sender.sendMessage(" §7- §fЯдро: §6${Bukkit.getName()} ${Bukkit.getBukkitVersion()}")
-        sender.sendMessage(" §7- §fJava: §6${Runtime.version().feature()} §7(${System.getProperty("java.version")})")
+        sender.sendMessage(" §7- §fJava: §6${javaRuntimeLabel()}")
         sender.sendMessage(" §7- §fpnLibrary: §6${library.version}")
-        if (entries.isEmpty()) sender.sendMessage(" §7- §fПлагины: §7нет зарегистрированных обновлений")
-        entries.forEach { sendUpdateLine(sender, it.snapshot) }
+        entries.firstOrNull()?.snapshot?.let { snapshot ->
+            sender.sendMessage(" §7- §fКанал: §e${channelName(snapshot)}")
+            snapshot.supportedApi?.let { api -> sender.sendMessage(" §7- §fAPI: §6${api.minimum}–${api.maximum}") }
+        }
+        if (entries.isEmpty()) {
+            sender.sendMessage(" §7- §fПлагины: §7нет зарегистрированных обновлений")
+        } else {
+            sender.sendMessage(" §7- §fОбновления:")
+            entries.forEach { sendUpdateLine(sender, it.snapshot) }
+        }
         sender.sendMessage(" §7- §fПоддержка: §e${PnLibraryBrand.SUPPORT_URL}")
         sender.sendMessage("")
+    }
+
+    private fun renderConsoleStatus(sender: CommandSender, entries: List<UpdateRegistration>) {
+        val theme = ConsoleTheme("§6", "§e", "§f", "§8", "§r")
+        val card = ConsoleCard.builder(theme, "СОСТОЯНИЕ PNFOLDER")
+            .mascot("^.^", "pnLibrary", "библиотека платформы")
+            .blank()
+            .detail("Продукт", "pnLibrary")
+            .detail("Назначение", "общая библиотека pnFolder")
+            .detail("Платформа", "Bukkit / Paper")
+            .detail("Ядро", Bukkit.getBukkitVersion())
+            .detail("Java", javaRuntimeLabel())
+            .lastDetail("Поддержка", PnLibraryBrand.SUPPORT_URL)
+            .blank()
+            .section("ОБНОВЛЕНИЯ")
+        if (entries.isEmpty()) {
+            card.lastItem("зарегистрированных обновлений нет")
+        } else {
+            val first = entries.first().snapshot
+            card.detail("Выбранный канал", channelName(first))
+                .detail("Доступные каналы", "Stable · Beta · Alpha · Dev")
+                .lastDetail("Установленная версия", first.currentVersion)
+                .blank()
+                .section("ПОСЛЕДНИЕ ВЕРСИИ")
+            entries.forEachIndexed { index, registration ->
+                val snapshot = registration.snapshot
+                val latest = snapshot.latestVersion ?: snapshot.currentVersion
+                val label = "${productLabel(snapshot.product)}  $latest"
+                if (index == entries.lastIndex) card.lastItem(label) else card.item(label)
+            }
+            val available = entries.map { it.snapshot }.filter {
+                it.state == UpdateState.UPDATE_AVAILABLE || it.state == UpdateState.AVAILABLE
+            }
+            if (available.isNotEmpty()) {
+                card.blank().section("ДОСТУПНО ОБНОВЛЕНИЕ")
+                available.forEachIndexed { index, snapshot ->
+                    card.item("${snapshot.currentVersion}")
+                    val target = "  новая совместимая версия  ${snapshot.latestVersion ?: "не указана"}"
+                    if (index == available.lastIndex) card.lastItem(target) else card.item(target)
+                }
+                val selected = available.first()
+                card.blank()
+                    .detail("Канал", channelName(selected))
+                    .detail("Источник", if (selected.releaseUrl.isNullOrBlank()) "не указан" else "GitHub Releases")
+                    .detail("Платформа", "Bukkit / Paper")
+                    .detail("Совместимость API", selected.supportedApi?.let { "${it.minimum}–${it.maximum}" } ?: "не указана")
+                    .detail("Java", "${selected.requiredJava}+")
+                    .detail("Почему выбрана", "версия новее и совместима")
+                    .lastDetail("Установка", if (selected.automaticDownload) "автоматическая" else "вручную, через /pn update")
+            } else {
+                card.blank().lastItem("Новых совместимых обновлений не найдено")
+            }
+        }
+        card.blank()
+            .section("ПРОВЕРКА")
+            .lastItem("Проверка обновлений завершена")
+            .blank()
+            .status(if (entries.any { it.snapshot.state == UpdateState.UPDATE_AVAILABLE || it.snapshot.state == UpdateState.AVAILABLE }) {
+                val channel = entries.firstOrNull { it.snapshot.state == UpdateState.UPDATE_AVAILABLE || it.snapshot.state == UpdateState.AVAILABLE }
+                    ?.snapshot?.let(::channelName)
+                if (channel == null) "Доступно обновление" else "Доступно обновление · $channel"
+            } else {
+                "Все зарегистрированные компоненты актуальны"
+            })
+            .build().render().forEach(sender::sendMessage)
     }
 
     private fun update(sender: CommandSender, name: String?) {
@@ -139,31 +222,56 @@ internal class BukkitControlCommand(
         val registration = library.updates.get(name)
         if (registration == null) {
             sender.sendMessage("§cПлагин $name не зарегистрирован в pnLibrary.")
-        } else {
-            sender.sendMessage("§eПроверяю GitHub и ищу совместимое обновление ${registration.snapshot.product}…")
-            library.updates.checkNow().whenComplete { snapshot, error ->
-                plugin.server.scheduler.runTask(plugin, Runnable {
-                    if (error != null) {
-                        sender.sendMessage("§cПроверка обновления не удалась: §f${error.message ?: error.javaClass.simpleName}")
-                        return@Runnable
-                    }
-                    val planSnapshot = library.updates.currentPlan().orElse(null)
-                    val plan = planSnapshot?.plan
-                    val change = plan?.changes?.firstOrNull { it.product.value.equals(registration.snapshot.product, true) }
-                    if (snapshot.state == UpdateState.UPDATE_AVAILABLE && planSnapshot != null && change != null) {
-                        library.updates.stage(planSnapshot.id).whenComplete { _, stageError ->
-                            plugin.server.scheduler.runTask(plugin, Runnable {
-                                if (stageError == null) sender.sendMessage("§aОбновление ${change.product} ${change.from} → ${change.to} подготовлено. Перезапустите сервер.")
-                                else sender.sendMessage("§cНе удалось скачать обновление: §f${stageError.message ?: stageError.javaClass.simpleName}")
-                            })
-                        }
-                    } else {
-                        val effective = planSnapshot ?: snapshot
-                        BukkitUpdateMessages.status(effective to registration.snapshot).forEach(sender::sendMessage)
-                    }
-                })
+            return
+        }
+        checkAndInstallUpdate(sender, registration)
+    }
+
+    private fun checkAndInstallUpdate(sender: CommandSender, registration: UpdateRegistration) {
+        val product = registration.snapshot.product
+        sender.sendMessage("§eПроверяю GitHub и ищу совместимое обновление $product…")
+        library.updates.checkNow().whenComplete { result, error ->
+            runOnServerThread {
+                if (error != null) showUpdateError(sender, "Проверка обновления не удалась", error)
+                else handleUpdateCheck(sender, registration, result)
             }
         }
+    }
+
+    private fun handleUpdateCheck(
+        sender: CommandSender,
+        registration: UpdateRegistration,
+        result: UpdatePlanSnapshot,
+    ) {
+        val change = result.plan?.changes?.firstOrNull {
+            it.product.value.equals(registration.snapshot.product, ignoreCase = true)
+        }
+        if (result.state != UpdateState.UPDATE_AVAILABLE || change == null) {
+            BukkitUpdateMessages.status(result to registration.snapshot).forEach(sender::sendMessage)
+            return
+        }
+        stageUpdate(sender, result, change)
+    }
+
+    private fun stageUpdate(sender: CommandSender, plan: UpdatePlanSnapshot, change: ProductChange) {
+        sender.sendMessage("§eСовместимое обновление ${change.product} ${change.from} → ${change.to} найдено. Скачиваю и проверяю…")
+        library.updates.stage(plan.id).whenComplete { _, error ->
+            runOnServerThread {
+                if (error != null) showUpdateError(sender, "Не удалось подготовить обновление", error)
+                else sender.sendMessage(
+                    "§aОбновление ${change.product} ${change.from} → ${change.to} подготовлено. Перезапустите сервер.",
+                )
+            }
+        }
+    }
+
+    private fun showUpdateError(sender: CommandSender, title: String, error: Throwable) {
+        val cause = generateSequence(error) { it.cause }.last()
+        sender.sendMessage("§c$title: §f${cause.message ?: cause.javaClass.simpleName}")
+    }
+
+    private fun runOnServerThread(action: () -> Unit) {
+        plugin.server.scheduler.runTask(plugin, Runnable(action))
     }
 
     private fun sendUpdateStatus(sender: CommandSender, requested: String?) {
@@ -375,25 +483,47 @@ internal class BukkitControlCommand(
     }
 
     private fun sendUpdateLine(sender: CommandSender, snapshot: UpdateSnapshot) {
-        val state = when (snapshot.state) {
-            UpdateState.UP_TO_DATE, UpdateState.CURRENT -> "§aактуальная версия"
-            UpdateState.UPDATE_AVAILABLE, UpdateState.AVAILABLE -> "§eдоступна ${snapshot.latestVersion}"
+        val product = if (snapshot.product.equals("pnlibrary", true)) "Библиотека" else "Плагин ${snapshot.product}"
+        when (snapshot.state) {
+            UpdateState.UPDATE_AVAILABLE, UpdateState.AVAILABLE -> {
+                sender.sendMessage(" §7- §f$product: §6${snapshot.currentVersion} §7→ §a${snapshot.latestVersion ?: "новая версия"}")
+                sender.sendMessage(" §7   §fКанал: §e${channelName(snapshot)}")
+                snapshot.supportedApi?.let { sender.sendMessage(" §7   §fAPI: §6${it.minimum}–${it.maximum}") }
+            }
             UpdateState.UPDATE_STAGED, UpdateState.DOWNLOADED ->
-                "§a${snapshot.latestVersion} загружена; нужен перезапуск"
-            UpdateState.FROZEN -> "§eобновления временно заморожены"
-            UpdateState.INCOMPATIBLE -> "§cнесовместимое обновление"
-            UpdateState.BLOCKED -> "§cобновление заблокировано зависимостью"
-            UpdateState.CHECKING -> "§eпроверяется"
-            UpdateState.DOWNLOADING -> "§eскачивается и проверяется"
-            UpdateState.FAILED -> "§cошибка: ${snapshot.message ?: "неизвестная причина"}"
-            UpdateState.ROLLED_BACK -> "§aпредыдущая версия подготовлена; нужен перезапуск"
+                sender.sendMessage(" §7- §f$product: §a${snapshot.latestVersion ?: snapshot.currentVersion} загружена; нужен перезапуск")
+            UpdateState.FAILED ->
+                sender.sendMessage(" §7- §f$product: §cпроверка не выполнена")
+            UpdateState.BLOCKED, UpdateState.INCOMPATIBLE ->
+                sender.sendMessage(" §7- §f$product: §cобновление недоступно")
+            UpdateState.FROZEN ->
+                sender.sendMessage(" §7- §f$product: §eобновления временно приостановлены")
+            else ->
+                sender.sendMessage(" §7- §f$product: §aактуальная версия ${snapshot.currentVersion}")
         }
-        val auto = if (snapshot.automaticDownload) "автозагрузка включена" else "автозагрузка отключена"
-        sender.sendMessage(
-            " §7- §f${snapshot.product}: §6${snapshot.currentVersion} §7• $state " +
-                "§7• Java ${snapshot.currentJava}/${snapshot.requiredJava}+ • $auto",
-        )
     }
+
+    private fun javaRuntimeLabel(): String {
+        val version = System.getProperty("java.version")?.trim().orEmpty()
+        val vm = System.getProperty("java.vm.name")?.trim().orEmpty()
+        val runtime = when {
+            vm.startsWith("OpenJDK", true) -> "OpenJDK"
+            vm.isNotBlank() -> vm.substringBefore(" 64-Bit").trim()
+            else -> System.getProperty("java.vm.vendor")?.trim().orEmpty()
+        }
+        return listOf(runtime, version).filter(String::isNotBlank).joinToString(" ")
+            .ifBlank { Runtime.version().toString() }
+    }
+
+    private fun channelName(snapshot: UpdateSnapshot): String = when (snapshot.channel.name) {
+        "STABLE" -> "стабильный канал"
+        "BETA" -> "тестовый канал Beta"
+        "ALPHA" -> "экспериментальный канал Alpha"
+        else -> "разрабатываемый канал Dev"
+    }
+
+    private fun productLabel(product: String): String =
+        if (product.equals("pnlibrary", true)) "pnLibrary" else product
 
     private companion object {
         val CONTROL_ACTIONS = listOf(

@@ -114,7 +114,8 @@ Conceptually:
 
 ```kotlin
 module.product(
-    ProductDescriptor.builder("pnauth", "2.4.0")
+    ProductDescriptor.builder()
+        .version("2.4.0")
         .pnLibraryApi(1, 2)
         .build()
 )

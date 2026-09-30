@@ -44,7 +44,7 @@
 - Test: existing update/core/feature tests renamed mechanically to product vocabulary
 
 **Interfaces:**
-- Produces: `ProductId.of(String)`, `ProductDescriptor.builder(String, String)`, `ProductDependency`, `InstalledProduct`, `ProductRelease`, `ProductChange`.
+- Produces: `ProductId.of(String)`, `ProductDescriptor.builder().version(String)`, `ProductDependency`, `InstalledProduct`, `ProductRelease`, `ProductChange`.
 - Removes: `PluginUpdateRequest.component`, `PluginUpdateRequest.Builder.component(String)`.
 - Consumes: existing `SemanticVersion`, `ApiVersionRange`, `PlatformType`, and update state contracts.
 

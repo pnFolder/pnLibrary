@@ -64,11 +64,12 @@ internal class BukkitLifecycleListener(
             }
             if (actionable.isEmpty() || !player.isOnline) return@Runnable
             player.sendMessage("")
-            player.sendMessage("§e§l pnFolder §8• §fдоступно обновлений: §e${actionable.size}")
+            player.sendMessage("§a «Состояние pnFolder»")
+            player.sendMessage(" §7- §fОбновления: §eдоступны новые версии")
             actionable.forEach { sendUpdateLine(player::sendMessage, it) }
-            player.sendMessage("§7 Управление: §f/pn updates §8• §fПоддержка: §e${PnLibraryBrand.SUPPORT_URL}")
+            player.sendMessage(" §7- §fПодробнее: §f/pn update-status")
             val check = button(
-                "[ Проверить ]", ChatColor.GREEN,
+                "[ Проверить обновления ]", ChatColor.GREEN,
                 ClickEvent(ClickEvent.Action.RUN_COMMAND, "/pn check"),
                 "Повторно проверить все обновления",
             )
@@ -79,7 +80,7 @@ internal class BukkitLifecycleListener(
             )
             player.spigot().sendMessage(check, TextComponent("  "), support)
             player.sendMessage("")
-            player.sendTitle("§eОбновления pnFolder", "§fДоступно: §e${actionable.size} §8• §7/pn updates")
+            player.sendTitle("§eОбновления pnFolder", "§fДоступно: §e${actionable.size}")
         })
     }
 
@@ -114,19 +115,29 @@ internal class BukkitLifecycleListener(
         }
 
     private fun sendUpdateLine(send: (String) -> Unit, snapshot: UpdateSnapshot) {
-        val state = when (snapshot.state) {
-            UpdateState.UP_TO_DATE, UpdateState.CURRENT -> "§aактуальная версия"
-            UpdateState.UPDATE_AVAILABLE, UpdateState.AVAILABLE -> "§eдоступна ${snapshot.latestVersion}"
-            UpdateState.UPDATE_STAGED, UpdateState.DOWNLOADED -> "§a${snapshot.latestVersion} загружена; нужен перезапуск"
-            UpdateState.FROZEN -> "§eобновления временно заморожены"
-            UpdateState.INCOMPATIBLE -> "§cнесовместимое обновление"
-            UpdateState.BLOCKED -> "§cобновление заблокировано зависимостью"
-            UpdateState.CHECKING -> "§eпроверяется"
-            UpdateState.DOWNLOADING -> "§eскачивается и проверяется"
-            UpdateState.FAILED -> "§cошибка: ${snapshot.message ?: "неизвестная причина"}"
-            UpdateState.ROLLED_BACK -> "§aпредыдущая версия подготовлена; нужен перезапуск"
+        val product = if (snapshot.product.equals("pnlibrary", true)) "Библиотека" else "Плагин ${snapshot.product}"
+        when (snapshot.state) {
+            UpdateState.UPDATE_AVAILABLE, UpdateState.AVAILABLE -> {
+                send(" §7 - §f$product: §6${snapshot.currentVersion} §7→ §a${snapshot.latestVersion ?: "новая версия"}")
+                send(" §7   §fКанал: §e${channelName(snapshot.channel)}")
+            }
+            UpdateState.UPDATE_STAGED, UpdateState.DOWNLOADED ->
+                send(" §7 - §f$product: §a${snapshot.latestVersion ?: snapshot.currentVersion} загружена; нужен перезапуск")
+            UpdateState.FAILED ->
+                send(" §7 - §f$product: §cпроверка не выполнена")
+            UpdateState.BLOCKED, UpdateState.INCOMPATIBLE ->
+                send(" §7 - §f$product: §cобновление недоступно")
+            UpdateState.FROZEN ->
+                send(" §7 - §f$product: §eобновления временно приостановлены")
+            else ->
+                send(" §7 - §f$product: §aактуальная версия ${snapshot.currentVersion}")
         }
-        val auto = if (snapshot.automaticDownload) "автозагрузка включена" else "автозагрузка отключена"
-        send(" §7- §f${snapshot.product}: §6${snapshot.currentVersion} §7• $state §7• Java ${snapshot.currentJava}/${snapshot.requiredJava}+ • $auto")
+    }
+
+    private fun channelName(channel: ru.privatenull.pnlibrary.api.updates.UpdateChannel): String = when (channel) {
+        ru.privatenull.pnlibrary.api.updates.UpdateChannel.STABLE -> "Стабильные версии (Stable)"
+        ru.privatenull.pnlibrary.api.updates.UpdateChannel.BETA -> "Тестовые версии (Beta)"
+        ru.privatenull.pnlibrary.api.updates.UpdateChannel.ALPHA -> "Экспериментальные версии (Alpha)"
+        ru.privatenull.pnlibrary.api.updates.UpdateChannel.DEV -> "Разрабатываемые версии (Dev)"
     }
 }

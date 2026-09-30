@@ -260,15 +260,8 @@ internal class UpdateServiceImpl(private val platform: PlatformAdapter, private 
     }
 
     private fun announce(snapshot: UpdatePlanSnapshot) {
-        val message = when (snapshot.state) {
-            UpdateState.UPDATE_AVAILABLE -> "Доступен совместимый план обновления (${snapshot.plan?.changes?.size ?: 0} плагинов)"
-            UpdateState.UPDATE_STAGED -> "План обновления проверен и подготовлен к перезапуску"
-            UpdateState.BLOCKED -> "Обновление заблокировано: ${snapshot.blockers.joinToString()}"
-            UpdateState.FAILED -> "Проверка обновлений завершилась ошибкой: ${snapshot.message}"
-            UpdateState.ROLLED_BACK -> "Предыдущие версии плагинов подготовлены к перезапуску"
-            else -> snapshot.message ?: "Все зарегистрированные плагины актуальны"
-        }
-        platform.log(platform, LogLevel.INFO, message)
+        UpdateAnnouncementRenderer.render(snapshot)
+            .forEach { platform.console(platform, it) }
     }
 
     private fun sha256(bytes: ByteArray): String = MessageDigest.getInstance("SHA-256")
@@ -284,7 +277,7 @@ internal class UpdateServiceImpl(private val platform: PlatformAdapter, private 
         private val closed = AtomicBoolean(false)
         private val state = AtomicReference(UpdateSnapshot(
             product, version, null, request.channel, UpdateState.CHECKING, Runtime.version().feature(),
-            artifact.minimumJava, request.automaticDownload, null, null,
+            artifact.minimumJava, request.automaticDownload, null, null, request.supportedApi,
         ))
         override val repository = "${request.repositoryOwner}/${request.repositoryName}"
         override val isClosed: Boolean get() = closed.get()
@@ -299,7 +292,7 @@ internal class UpdateServiceImpl(private val platform: PlatformAdapter, private 
                 product, version, latest?.toString(), request.channel,
                 if (latest != null && latest > current) UpdateState.AVAILABLE else UpdateState.CURRENT,
                 Runtime.version().feature(), artifact.minimumJava, request.automaticDownload,
-                "https://github.com/$repository/releases", null,
+                "https://github.com/$repository/releases", null, request.supportedApi,
             ))
         }
         override fun close() {

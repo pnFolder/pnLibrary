@@ -38,7 +38,7 @@ class ConsoleCardTest {
                 .build())
             .build().render();
 
-        assertTrue(lines.stream().anyMatch(line -> line.contains("◆ Версия не поддерживается")));
+        assertTrue(lines.stream().anyMatch(line -> line.contains("┌ Версия не поддерживается")));
         assertTrue(lines.stream().anyMatch(line -> line.contains("├ Сравнение")));
         assertTrue(lines.stream().anyMatch(line -> line.contains("│ └ Минимальная: 2.3.0")));
         assertTrue(lines.stream().anyMatch(line -> line.contains("└ Что делать")));
@@ -52,5 +52,16 @@ class ConsoleCardTest {
             .build().render();
 
         assertTrue(lines.stream().anyMatch(line -> line.contains("( x.x )")));
+    }
+
+    @Test
+    void longDetailLabelsStaySeparatedFromTheirValues() {
+        List<String> lines = ConsoleCard.builder(ConsoleTheme.plain(), "STATUS")
+            .detail("Выбранный канал", "стабильный канал")
+            .lastDetail("Установленная версия", "2.2.0")
+            .build().render();
+
+        assertTrue(lines.stream().anyMatch(line -> line.contains("Выбранный канал  │  стабильный канал")));
+        assertTrue(lines.stream().anyMatch(line -> line.contains("Установленная версия  │  2.2.0")));
     }
 }

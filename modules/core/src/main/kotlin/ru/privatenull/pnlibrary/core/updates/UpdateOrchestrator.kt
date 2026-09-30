@@ -55,44 +55,50 @@ internal class UpdateOrchestrator(
         inFlight = promise
         inFlightForced = forceRemote
         try {
-            executor.execute {
-                try {
-                    val snapshot = snapshot(if (forceRemote) remoteResolver?.invoke() ?: resolver() else resolver())
-                    publish(snapshot)
-                    val completed = if (configuration.effectiveAutomaticDownloads && snapshot.state == UpdateState.UPDATE_AVAILABLE &&
-                        automaticAllowed(snapshot)) {
-                        stageInternal(snapshot)
-                        requireNotNull(current)
-                    } else snapshot
-                    synchronized(lock) {
-                        if (inFlight === promise) {
-                            inFlight = null
-                            inFlightForced = false
-                        }
-                    }
-                    promise.complete(completed)
-                } catch (error: Throwable) {
-                    val previous = synchronized(lock) { current }
-                    val failed = UpdatePlanSnapshot(
-                        UUID.randomUUID(), ++revision, UpdateState.FAILED,
-                        previous?.plan, previous?.blockers.orEmpty(), rootMessage(error),
-                    )
-                    publish(failed)
-                    synchronized(lock) {
-                        if (inFlight === promise) {
-                            inFlight = null
-                            inFlightForced = false
-                        }
-                    }
-                    promise.complete(failed)
-                }
-            }
+            executor.execute { performCheck(promise, forceRemote) }
         } catch (error: Throwable) {
-            inFlight = null
-            inFlightForced = false
+            releaseInFlight(promise)
             promise.completeExceptionally(error)
         }
         promise
+    }
+
+    private fun performCheck(promise: CompletableFuture<UpdatePlanSnapshot>, forceRemote: Boolean) {
+        val completed = runCatching {
+            val checked = snapshot(resolve(forceRemote))
+            publish(checked)
+            automaticallyStageIfAllowed(checked)
+        }.getOrElse { error ->
+            failedSnapshot(error).also(::publish)
+        }
+        releaseInFlight(promise)
+        promise.complete(completed)
+    }
+
+    private fun resolve(forceRemote: Boolean): ResolutionResult =
+        if (forceRemote) remoteResolver?.invoke() ?: resolver() else resolver()
+
+    private fun automaticallyStageIfAllowed(snapshot: UpdatePlanSnapshot): UpdatePlanSnapshot {
+        val shouldStage = configuration.effectiveAutomaticDownloads &&
+            snapshot.state == UpdateState.UPDATE_AVAILABLE && automaticAllowed(snapshot)
+        if (!shouldStage) return snapshot
+        stageInternal(snapshot)
+        return requireNotNull(current)
+    }
+
+    private fun failedSnapshot(error: Throwable): UpdatePlanSnapshot {
+        val previous = synchronized(lock) { current }
+        return UpdatePlanSnapshot(
+            UUID.randomUUID(), ++revision, UpdateState.FAILED,
+            previous?.plan, previous?.blockers.orEmpty(), rootMessage(error),
+        )
+    }
+
+    private fun releaseInFlight(promise: CompletableFuture<UpdatePlanSnapshot>) = synchronized(lock) {
+        if (inFlight === promise) {
+            inFlight = null
+            inFlightForced = false
+        }
     }
 
     fun currentPlan(): Optional<UpdatePlanSnapshot> = Optional.ofNullable(synchronized(lock) { current })

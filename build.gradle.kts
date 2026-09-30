@@ -1,5 +1,6 @@
 import org.jetbrains.kotlin.gradle.dsl.JvmTarget
 import org.jetbrains.kotlin.gradle.tasks.KotlinCompile
+import org.gradle.api.tasks.Copy
 
 plugins {
     alias(libs.plugins.kotlin.jvm) apply false
@@ -102,4 +103,18 @@ dependencies {
     dokka(project(":platforms:bukkit:runtime"))
     dokka(project(":platforms:bungee:runtime"))
     dokka(project(":platforms:velocity:runtime"))
+}
+
+// Builds the local acceptance kit and copies only the current-version JARs to
+// the Paper test server. Existing unrelated plugin files are left untouched.
+tasks.register<Copy>("installAcceptanceToPaper") {
+    group = "distribution"
+    description = "Builds pnLibrary and acceptance, then installs them into the local Paper plugins directory"
+    dependsOn(":examples:acceptance-bukkit:assembleAcceptanceKit")
+    val releaseVersion = version.toString()
+    from(layout.buildDirectory.dir("acceptance-bukkit")) {
+        include("pnLibrary-${releaseVersion}-bukkit-java8.jar")
+        include("pnLibrary-acceptance-${releaseVersion}-bukkit-java8.jar")
+    }
+    into(file("C:/Users/lpvan/Downloads/Server/Paper-Standalone/plugins"))
 }

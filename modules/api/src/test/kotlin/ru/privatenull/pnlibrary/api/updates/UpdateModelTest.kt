@@ -46,11 +46,12 @@ class UpdateModelTest {
     @Test
     fun `product descriptor validates and preserves product metadata`() {
         assertThrows(IllegalArgumentException::class.java) {
-            ProductDescriptor.builder("economy", "3.4.0").pnLibraryApi(2, 1)
+            ProductDescriptor.builder().version("3.4.0").pnLibraryApi(2, 1)
         }
-        val descriptor = ProductDescriptor.builder("economy", "3.4.0")
+        val descriptor = ProductDescriptor.builder().version("3.4.0")
             .pnLibraryApi(1, 2)
             .build()
+            .bindTo("economy")
         assertEquals("economy", descriptor.id.value)
         assertEquals("3.4.0", descriptor.version.toString())
     }

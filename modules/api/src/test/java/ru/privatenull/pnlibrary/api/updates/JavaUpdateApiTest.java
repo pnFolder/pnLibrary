@@ -7,9 +7,10 @@ import static org.junit.jupiter.api.Assertions.assertEquals;
 class JavaUpdateApiTest {
     @Test
     void buildsProductDescriptorFromJava() {
-        ProductDescriptor descriptor = ProductDescriptor.builder("economy", "3.4.0")
+        ProductDescriptor descriptor = ProductDescriptor.builder().version("3.4.0")
             .pnLibraryApi(1, 2)
-            .build();
+            .build()
+            .bindTo("economy");
 
         assertEquals("economy", descriptor.getId().getValue());
         assertEquals("3.4.0", descriptor.getVersion().toString());

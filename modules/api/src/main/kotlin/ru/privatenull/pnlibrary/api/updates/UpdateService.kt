@@ -81,6 +81,8 @@ class UpdateSnapshot(
     val automaticDownload: Boolean,
     val releaseUrl: String?,
     val message: String?,
+    /** pnLibrary API generations supported by this registration, when declared. */
+    val supportedApi: ApiVersionRange? = null,
 )
 
 /**

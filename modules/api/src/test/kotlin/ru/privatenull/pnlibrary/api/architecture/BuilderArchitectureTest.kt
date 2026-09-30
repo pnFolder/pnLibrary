@@ -35,7 +35,7 @@ class BuilderArchitectureTest {
             Triple(TaskSpec::class.java, emptyArray(), "task spec"),
             Triple(PluginUpdateRequest::class.java, emptyArray(), "update request"),
             Triple(ExternalPluginDependency::class.java, arrayOf(String::class.java, String::class.java), "external dependency"),
-            Triple(ProductDescriptor::class.java, arrayOf(String::class.java, String::class.java), "product descriptor"),
+            Triple(ProductDescriptor::class.java, emptyArray(), "product descriptor"),
         )
 
         entryPoints.forEach { (type, parameters, label) ->
