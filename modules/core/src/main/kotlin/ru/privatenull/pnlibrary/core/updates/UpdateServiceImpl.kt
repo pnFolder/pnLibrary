@@ -17,6 +17,7 @@ import java.time.Duration
 import java.util.Optional
 import java.util.UUID
 import java.util.concurrent.CompletionStage
+import java.util.concurrent.CompletableFuture
 import java.util.concurrent.CopyOnWriteArrayList
 import java.util.concurrent.Executors
 import java.util.concurrent.Executor
@@ -36,12 +37,15 @@ internal class UpdateServiceImpl(private val platform: PlatformAdapter, private 
     private val executor = Executors.newSingleThreadScheduledExecutor { action ->
         Thread(action, "pnLibrary-update-orchestrator").apply { isDaemon = true }
     }
+    private val catalogExecutor = Executors.newFixedThreadPool(4) { action ->
+        Thread(action, "pnLibrary-catalog-fetch").apply { isDaemon = true }
+    }
     // Keep a manual `/pn update` responsive even when GitHub is unreachable.
     // The check can cover several registered products, so long per-request
     // timeouts otherwise add up and look like a frozen command.
     private val http = TrustedHttpClient(Duration.ofSeconds(2), Duration.ofSeconds(3))
     private val releaseCatalog = ReleaseCatalogClient(
-        http, ReleaseCatalogueStore(dataFolder.resolve("updates/catalog")), Executor { it.run() }, Duration.ofMinutes(30),
+        http, ReleaseCatalogueStore(dataFolder.resolve("updates/catalog")), catalogExecutor, Duration.ofMinutes(30),
     )
     private val transaction = UpdateTransaction(
         dataFolder.resolve("updates/transactions"), ArtifactVerifier(MAX_ARTIFACT_BYTES), dataFolder.parent,
@@ -115,6 +119,7 @@ internal class UpdateServiceImpl(private val platform: PlatformAdapter, private 
             entries.clear()
         }
         orchestrator.close()
+        catalogExecutor.shutdownNow()
     }
 
     private fun resolveGraph(refreshMode: RefreshMode = RefreshMode.CACHED): ResolutionResult {
@@ -158,17 +163,21 @@ internal class UpdateServiceImpl(private val platform: PlatformAdapter, private 
         registrations: List<Registration>,
         channels: Map<ProductId, UpdateChannel>,
         refreshMode: RefreshMode,
-    ): List<ProductRelease> = registrations.flatMap { entry ->
+    ): List<ProductRelease> = registrations.map { entry ->
+        entry to CompletableFuture.supplyAsync({
             // Use the raw endpoint directly. The github.com/raw URL adds several
             // redirects; when a server is slow those redirects multiply the HTTP
             // read timeout and make `/pn update` appear frozen for minutes.
             val source = URI.create("https://raw.githubusercontent.com/${entry.request.repositoryOwner}/${entry.request.repositoryName}/refs/heads/main/.pnlibrary/releases.json")
-            val catalog = loadCatalogWithFallback(
+            loadCatalogWithFallback(
                 source,
                 URI.create("https://api.github.com/repos/${entry.request.repositoryOwner}/${entry.request.repositoryName}/contents/.pnlibrary/releases.json?ref=main"),
                 URI.create("https://cdn.jsdelivr.net/gh/${entry.request.repositoryOwner}/${entry.request.repositoryName}@main/.pnlibrary/releases.json"),
                 refreshMode,
             )
+        }, catalogExecutor)
+    }.flatMap { (entry, catalogFuture) ->
+            val catalog = catalogFuture.join()
             require(catalog.product.equals(entry.descriptor.id.value, ignoreCase = true)) {
                 "Release catalog product ${catalog.product} does not match ${entry.descriptor.id}"
             }
