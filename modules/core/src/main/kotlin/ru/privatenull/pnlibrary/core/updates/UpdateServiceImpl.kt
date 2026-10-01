@@ -40,6 +40,9 @@ internal class UpdateServiceImpl(private val platform: PlatformAdapter, private 
     private val catalogExecutor = Executors.newFixedThreadPool(4) { action ->
         Thread(action, "pnLibrary-catalog-fetch").apply { isDaemon = true }
     }
+    private val catalogRequestExecutor = Executors.newFixedThreadPool(4) { action ->
+        Thread(action, "pnLibrary-catalog-request").apply { isDaemon = true }
+    }
     // Keep a manual `/pn update` responsive even when GitHub is unreachable.
     // The check can cover several registered products, so long per-request
     // timeouts otherwise add up and look like a frozen command.
@@ -120,6 +123,7 @@ internal class UpdateServiceImpl(private val platform: PlatformAdapter, private 
         }
         orchestrator.close()
         catalogExecutor.shutdownNow()
+        catalogRequestExecutor.shutdownNow()
     }
 
     private fun resolveGraph(refreshMode: RefreshMode = RefreshMode.CACHED): ResolutionResult {
@@ -175,7 +179,7 @@ internal class UpdateServiceImpl(private val platform: PlatformAdapter, private 
                 URI.create("https://cdn.jsdelivr.net/gh/${entry.request.repositoryOwner}/${entry.request.repositoryName}@main/.pnlibrary/releases.json"),
                 refreshMode,
             )
-        }, catalogExecutor)
+        }, catalogRequestExecutor)
     }.flatMap { (entry, catalogFuture) ->
             val catalog = catalogFuture.join()
             require(catalog.product.equals(entry.descriptor.id.value, ignoreCase = true)) {
