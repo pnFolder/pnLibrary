@@ -37,7 +37,7 @@ internal class UpdateServiceImpl(private val platform: PlatformAdapter, private 
     // Keep a manual `/pn update` responsive even when GitHub is unreachable.
     // The check can cover several registered products, so long per-request
     // timeouts otherwise add up and look like a frozen command.
-    private val http = TrustedHttpClient(Duration.ofSeconds(5), Duration.ofSeconds(8))
+    private val http = TrustedHttpClient(Duration.ofSeconds(2), Duration.ofSeconds(3))
     private val releaseCatalog = ReleaseCatalogClient(
         http, ReleaseCatalogueStore(dataFolder.resolve("updates/catalog")), Executor { it.run() }, Duration.ofMinutes(30),
     )
