@@ -143,8 +143,11 @@ internal class UpdateServiceImpl(private val platform: PlatformAdapter, private 
         ) }
 
     private fun updateChannels(registrations: List<Registration>): Map<ProductId, UpdateChannel> =
-        registrations.associate { entry -> entry.descriptor.id to
-            (configuration.plugins[entry.descriptor.id.value]?.channel ?: entry.request.channel) }
+        registrations.associate { entry -> entry.descriptor.id to configuredChannel(entry) }
+
+    private fun configuredChannel(entry: Registration): UpdateChannel =
+        if (entry.descriptor.id.value == "pnlibrary") configuration.library.channel
+        else configuration.plugins[entry.descriptor.id.value]?.channel ?: entry.request.channel
 
     private fun requestReleaseCatalogs(
         registrations: List<Registration>,
@@ -176,7 +179,7 @@ internal class UpdateServiceImpl(private val platform: PlatformAdapter, private 
 
     private fun observeLatestVersions(registrations: List<Registration>, releases: List<ProductRelease>) {
         registrations.forEach { entry ->
-            entry.observe(releases.filter { it.product == entry.descriptor.id })
+            entry.observe(releases.filter { it.product == entry.descriptor.id }, configuredChannel(entry))
         }
     }
 
@@ -275,7 +278,9 @@ internal class UpdateServiceImpl(private val platform: PlatformAdapter, private 
         val version: String = descriptor.version.toString()
         private val closed = AtomicBoolean(false)
         private val state = AtomicReference(UpdateSnapshot(
-            product, version, null, request.channel, UpdateState.CHECKING, Runtime.version().feature(),
+            product, version, null,
+            if (descriptor.id.value == "pnlibrary") configuration.library.channel else request.channel,
+            UpdateState.CHECKING, Runtime.version().feature(),
             artifact.minimumJava, request.automaticDownload, null, null, request.supportedApi,
         ))
         override val repository = "${request.repositoryOwner}/${request.repositoryName}"
@@ -283,14 +288,14 @@ internal class UpdateServiceImpl(private val platform: PlatformAdapter, private 
         override val snapshot get() = state.get()
         override fun checkNow() { check(!closed.get()); orchestrator.checkNow() }
         override fun downloadNow() { check(!closed.get()); orchestrator.checkNow().thenCompose { orchestrator.stage(it.id) } }
-        fun observe(releases: List<ProductRelease>) {
+        fun observe(releases: List<ProductRelease>, selectedChannel: UpdateChannel) {
             if (closed.get()) return
             val productReleases = releases.filter { it.product == descriptor.id }
             val allowed = productReleases.filter { request.channel.accepts(it.channel) }
             val latest = allowed.maxByOrNull(ProductRelease::version)
             val current = SemanticVersion.parse(version)
             state.set(UpdateSnapshot(
-                product, version, latest?.version?.toString(), request.channel,
+                product, version, latest?.version?.toString(), selectedChannel,
                 if (latest != null && latest.version > current) UpdateState.AVAILABLE else UpdateState.CURRENT,
                 Runtime.version().feature(), artifact.minimumJava, request.automaticDownload,
                 "https://github.com/$repository/releases", null, request.supportedApi,

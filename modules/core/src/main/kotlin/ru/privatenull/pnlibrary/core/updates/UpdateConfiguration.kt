@@ -25,7 +25,10 @@ internal data class UpdateConfiguration(
     val plugins: Map<String, PluginPolicy> = emptyMap(),
     val legacyChannel: String = "stable",
 ) {
-    data class LibraryPolicy(val automaticDownload: Boolean = false)
+    data class LibraryPolicy(
+        val channel: UpdateChannel = UpdateChannel.STABLE,
+        val automaticDownload: Boolean = false,
+    )
     data class PluginPolicy(
         val channel: UpdateChannel? = null,
         val enabled: Boolean = true,
@@ -97,6 +100,17 @@ internal data class UpdateConfiguration(
             val installation = root.map("installation")
             val safety = root.map("safety")
             val library = root.map("library")
+            // Older installations have a valid updates.yml but no dedicated library
+            // section.  Keep their settings intact and materialize the new selector
+            // so administrators can actually see and edit the channel choice.
+            if (library == null && parsed.containsKey("updates")) {
+                val marker = "  library:\n"
+                if (!source.contains(marker)) {
+                    val block = "\n  library:\n    # Канал релизов для самой pnLibrary: stable, beta, alpha или dev.\n    channel: stable\n    # Разрешить автоматическую загрузку новой версии самой pnLibrary.\n    automatic-download: false\n"
+                    val insertion = source.trimEnd() + block
+                    runCatching { writeAtomic(file, insertion + "\n") }
+                }
+            }
             val pluginSection = root.map("plugins")
             val policyValues = pluginSection?.map("policies")
             val nestedPluginValues = pluginSection?.map("plugins")
@@ -141,7 +155,12 @@ internal data class UpdateConfiguration(
                     text(installation, "restart-command", defaults.installation.restartCommand),
                 ),
                 safety = Safety(maximumOnline, bool(safety, "require-second-confirmation-above-limit", true)),
-                library = LibraryPolicy(bool(library, "automatic-download", false)),
+                library = LibraryPolicy(
+                    channel = (library?.get("channel") as? String)?.let {
+                        runCatching { UpdateChannel.valueOf(it.trim().uppercase()) }.getOrElse { bad(); defaults.library.channel }
+                    } ?: defaults.library.channel,
+                    automaticDownload = bool(library, "automatic-download", false),
+                ),
                 pluginUpdatesEnabled = if (nestedPluginSchema) bool(pluginSection, "enabled", true) else true,
                 pluginAutomaticDownload = if (nestedPluginSchema) {
                     bool(pluginSection, "automatic-download", false)
@@ -233,6 +252,8 @@ internal data class UpdateConfiguration(
 updates:
   enabled: $enabled
   library:
+    # Канал релизов для самой pnLibrary: stable, beta, alpha или dev.
+    channel: ${library.channel.name.lowercase()}
     # Разрешить автоматическую загрузку новой версии самой pnLibrary.
     automatic-download: ${library.automaticDownload}
   plugins:
