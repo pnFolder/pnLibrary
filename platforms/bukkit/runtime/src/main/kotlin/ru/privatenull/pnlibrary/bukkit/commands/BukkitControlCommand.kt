@@ -21,6 +21,8 @@ import ru.privatenull.pnlibrary.api.updates.UpdateState
 import ru.privatenull.pnlibrary.api.updates.ProductChange
 import ru.privatenull.pnlibrary.api.updates.UpdatePlanSnapshot
 import ru.privatenull.pnlibrary.api.updates.UpdateRegistration
+import ru.privatenull.pnlibrary.api.updates.ReleaseSummary
+import ru.privatenull.pnlibrary.api.updates.UpdateChannel
 import java.util.Locale
 import java.util.UUID
 import java.util.concurrent.ConcurrentHashMap
@@ -168,10 +170,8 @@ internal class BukkitControlCommand(
                 .blank()
                 .section("ПОСЛЕДНИЕ ВЕРСИИ")
             entries.forEachIndexed { index, registration ->
-                val snapshot = registration.snapshot
-                val latest = snapshot.latestVersion ?: snapshot.currentVersion
-                val label = "${productLabel(snapshot.product)}  $latest"
-                if (index == entries.lastIndex) card.lastItem(label) else card.item(label)
+                renderReleaseHistory(card, registration.snapshot)
+                if (index != entries.lastIndex) card.blank()
             }
             val available = entries.map { it.snapshot }.filter {
                 it.state == UpdateState.UPDATE_AVAILABLE || it.state == UpdateState.AVAILABLE
@@ -206,6 +206,48 @@ internal class BukkitControlCommand(
                 "Все зарегистрированные компоненты актуальны"
             })
             .build().render().forEach(sender::sendMessage)
+    }
+
+    private fun renderReleaseHistory(card: ConsoleCard.Builder, snapshot: UpdateSnapshot) {
+        val releases = snapshot.availableReleases
+            .groupBy(ReleaseSummary::channel)
+            .mapValues { (_, values) -> values.maxByOrNull { it.version } }
+        val channels = listOf(UpdateChannel.STABLE, UpdateChannel.BETA, UpdateChannel.ALPHA, UpdateChannel.DEV)
+            .mapNotNull { channel -> releases[channel]?.let { channel to it } }
+        if (channels.isEmpty()) {
+            card.firstDetail("Продукт", productLabel(snapshot.product))
+                .lastDetail("Версия", snapshot.latestVersion ?: snapshot.currentVersion)
+            return
+        }
+        card.firstDetail("Продукт", productLabel(snapshot.product))
+        channels.forEachIndexed { index, (channel, release) ->
+            val label = channelLabel(channel)
+            val value = "${channelColor(channel)}${release.version}${release.publishedAt?.let { " · ${publishedAge(it)}" } ?: ""}§r"
+            if (index == channels.lastIndex) card.lastDetail(label, value) else card.detail(label, value)
+        }
+    }
+
+    private fun publishedAge(instant: java.time.Instant): String {
+        val elapsed = Duration.between(instant, java.time.Instant.now()).coerceAtLeast(Duration.ZERO)
+        return when {
+            elapsed.toMinutes() < 60 -> "опубликована ${elapsed.toMinutes()} мин. назад"
+            elapsed.toHours() < 24 -> "опубликована ${elapsed.toHours()} ч. назад"
+            else -> "опубликована ${elapsed.toDays()} дн. назад"
+        }
+    }
+
+    private fun channelLabel(channel: UpdateChannel): String = when (channel) {
+        UpdateChannel.STABLE -> "Стабильный канал"
+        UpdateChannel.BETA -> "Тестовый канал Beta"
+        UpdateChannel.ALPHA -> "Экспериментальный канал Alpha"
+        UpdateChannel.DEV -> "Разрабатываемый канал Dev"
+    }
+
+    private fun channelColor(channel: UpdateChannel): String = when (channel) {
+        UpdateChannel.STABLE -> "§a"
+        UpdateChannel.BETA -> "§e"
+        UpdateChannel.ALPHA -> "§6"
+        UpdateChannel.DEV -> "§c"
     }
 
     private fun update(sender: CommandSender, name: String?) {

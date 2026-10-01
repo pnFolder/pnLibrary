@@ -10,6 +10,7 @@ import java.util.UUID
 import java.util.Collections
 import java.util.concurrent.CompletableFuture
 import java.util.concurrent.CompletionStage
+import java.time.Instant
 
 /** Release maturity accepted by an updater. Each channel includes more stable releases. */
 enum class UpdateChannel {
@@ -83,6 +84,15 @@ class UpdateSnapshot(
     val message: String?,
     /** pnLibrary API generations supported by this registration, when declared. */
     val supportedApi: ApiVersionRange? = null,
+    /** All known catalog releases, including channels not selected for installation. */
+    val availableReleases: List<ReleaseSummary> = emptyList(),
+)
+
+/** Minimal release history entry used by status views. */
+data class ReleaseSummary(
+    val version: String,
+    val channel: UpdateChannel,
+    val publishedAt: Instant? = null,
 )
 
 /**

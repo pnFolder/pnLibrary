@@ -158,7 +158,6 @@ internal class UpdateServiceImpl(private val platform: PlatformAdapter, private 
             }
             catalog.releases
                 .asSequence()
-                .filter { channels.getValue(entry.descriptor.id).accepts(it.channel) }
                 .map { release ->
                     ProductRelease(
                         entry.descriptor.id, release.version, release.channel, release.api,
@@ -170,14 +169,14 @@ internal class UpdateServiceImpl(private val platform: PlatformAdapter, private 
                                 size = null, sha256 = null, downloadUri = artifact.url,
                             )
                         },
+                        publishedAt = release.publishedAt,
                     )
                 }.toList()
         }
 
     private fun observeLatestVersions(registrations: List<Registration>, releases: List<ProductRelease>) {
         registrations.forEach { entry ->
-            val latest = releases.filter { it.product == entry.descriptor.id }.maxByOrNull(ProductRelease::version)
-            entry.observe(latest)
+            entry.observe(releases.filter { it.product == entry.descriptor.id })
         }
     }
 
@@ -284,15 +283,20 @@ internal class UpdateServiceImpl(private val platform: PlatformAdapter, private 
         override val snapshot get() = state.get()
         override fun checkNow() { check(!closed.get()); orchestrator.checkNow() }
         override fun downloadNow() { check(!closed.get()); orchestrator.checkNow().thenCompose { orchestrator.stage(it.id) } }
-        fun observe(release: ProductRelease?) {
+        fun observe(releases: List<ProductRelease>) {
             if (closed.get()) return
-            val latest = release?.version
+            val productReleases = releases.filter { it.product == descriptor.id }
+            val allowed = productReleases.filter { request.channel.accepts(it.channel) }
+            val latest = allowed.maxByOrNull(ProductRelease::version)
             val current = SemanticVersion.parse(version)
             state.set(UpdateSnapshot(
-                product, version, latest?.toString(), request.channel,
-                if (latest != null && latest > current) UpdateState.AVAILABLE else UpdateState.CURRENT,
+                product, version, latest?.version?.toString(), request.channel,
+                if (latest != null && latest.version > current) UpdateState.AVAILABLE else UpdateState.CURRENT,
                 Runtime.version().feature(), artifact.minimumJava, request.automaticDownload,
                 "https://github.com/$repository/releases", null, request.supportedApi,
+                productReleases.sortedByDescending(ProductRelease::version).map {
+                    ReleaseSummary(it.version.toString(), it.channel, it.publishedAt)
+                },
             ))
         }
         override fun close() {

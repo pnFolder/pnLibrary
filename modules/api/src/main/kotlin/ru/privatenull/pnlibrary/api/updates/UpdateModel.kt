@@ -5,6 +5,7 @@ import ru.privatenull.pnlibrary.api.version.PnLibraryApi
 import ru.privatenull.pnlibrary.api.version.SemanticVersion
 import ru.privatenull.pnlibrary.api.platform.PlatformType
 import java.net.URI
+import java.time.Instant
 import java.util.Collections
 import java.util.UUID
 import java.util.Locale
@@ -60,6 +61,7 @@ data class ProductRelease(
     val repository: String? = null,
     val artifacts: List<ArtifactDescriptor> = emptyList(),
     val externalPluginDependencies: List<ExternalPluginDependency> = emptyList(),
+    val publishedAt: Instant? = null,
 ) {
     init {
         require(providesApi == null || providesApi > 0) { "provided API generation must be positive" }
