@@ -63,19 +63,19 @@ public final class ConsoleCard {
         public Builder blank() { lines.add(""); return this; }
 
         public Builder firstDetail(String label, Object value) {
-            lines.add(theme.muted + "            ┌ " + theme.text + pad(label, 22)
+            lines.add(theme.muted + "            ┌ " + theme.text + pad(label, 30)
                     + theme.accent + String.valueOf(value) + theme.reset);
             return this;
         }
 
         public Builder detail(String label, Object value) {
-            lines.add(theme.muted + "            ├ " + theme.text + pad(label, 22)
+            lines.add(theme.muted + "            ├ " + theme.text + pad(label, 30)
                     + theme.accent + String.valueOf(value) + theme.reset);
             return this;
         }
 
         public Builder lastDetail(String label, Object value) {
-            lines.add(theme.muted + "            └ " + theme.text + pad(label, 22)
+            lines.add(theme.muted + "            └ " + theme.text + pad(label, 30)
                     + theme.accent + String.valueOf(value) + theme.reset);
             return this;
         }

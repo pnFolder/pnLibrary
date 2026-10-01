@@ -324,7 +324,11 @@ internal class BukkitControlCommand(
 
     private fun showUpdateError(sender: CommandSender, title: String, error: Throwable) {
         val cause = generateSequence(error) { it.cause }.last()
-        sender.sendMessage("§c$title: §f${cause.message ?: cause.javaClass.simpleName}")
+        val rawMessage = cause.message ?: cause.javaClass.simpleName
+        val message = if (rawMessage.contains("HTTP 404", ignoreCase = true)) {
+            "файл обновления не найден на GitHub (HTTP 404); проверьте ссылку в каталоге релизов"
+        } else rawMessage
+        sender.sendMessage("§c$title: §f$message")
     }
 
     private fun runOnServerThread(action: () -> Unit) {
