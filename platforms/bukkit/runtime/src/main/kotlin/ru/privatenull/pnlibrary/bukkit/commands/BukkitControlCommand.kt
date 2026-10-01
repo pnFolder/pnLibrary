@@ -280,8 +280,13 @@ internal class BukkitControlCommand(
             }, 100L)
         }
         scheduleProgress()
+        plugin.server.scheduler.runTaskLater(plugin, Runnable {
+            if (finished.compareAndSet(false, true)) {
+                sender.sendMessage("§cПроверка обновления прервана по тайм-ауту: GitHub не ответил за 60 секунд.")
+            }
+        }, 1200L)
         library.updates.checkNow().whenComplete { result, error ->
-            finished.set(true)
+            if (!finished.compareAndSet(false, true)) return@whenComplete
             runOnServerThread {
                 if (error != null) showUpdateError(sender, "Проверка обновления не удалась", error)
                 else handleUpdateCheck(sender, registration, result)
