@@ -61,7 +61,7 @@ class ConsoleCardTest {
             .lastDetail("Установленная версия", "2.2.0")
             .build().render();
 
-        assertTrue(lines.stream().anyMatch(line -> line.contains("Выбранный канал  │  стабильный канал")));
-        assertTrue(lines.stream().anyMatch(line -> line.contains("Установленная версия  │  2.2.0")));
+        assertTrue(lines.stream().anyMatch(line -> line.contains("Выбранный канал  стабильный канал")));
+        assertTrue(lines.stream().anyMatch(line -> line.contains("Установленная версия  2.2.0")));
     }
 }
