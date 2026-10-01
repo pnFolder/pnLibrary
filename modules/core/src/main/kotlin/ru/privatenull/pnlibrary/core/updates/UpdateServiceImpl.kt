@@ -22,6 +22,7 @@ import java.util.concurrent.CopyOnWriteArrayList
 import java.util.concurrent.Executors
 import java.util.concurrent.Executor
 import java.util.concurrent.atomic.AtomicBoolean
+import java.util.concurrent.atomic.AtomicInteger
 import java.util.concurrent.atomic.AtomicReference
 import java.security.MessageDigest
 import java.util.Base64
@@ -204,30 +205,41 @@ internal class UpdateServiceImpl(private val platform: PlatformAdapter, private 
         }
 
     private fun loadCatalogWithFallback(source: URI, apiSource: URI, cdnSource: URI, refreshMode: RefreshMode): ReleaseCatalog {
-        return try {
-            releaseCatalog.load(source, refreshMode).join()
-        } catch (primary: Throwable) {
-            try {
-                val response = http.get(apiSource, ReleaseCatalogCodec.MAX_BYTES * 2)
-                val content = JsonParser.parseString(response.toString(Charsets.UTF_8)).asJsonObject
-                    .get("content")?.asString
-                    ?: error("GitHub API response does not contain file content")
-                val bytes = Base64.getMimeDecoder().decode(content)
-                ReleaseCatalogCodec().decode(bytes)
-            } catch (fallback: Throwable) {
-                try {
-                    releaseCatalog.load(cdnSource, RefreshMode.FORCE_REMOTE).join()
-                } catch (cdn: Throwable) {
-                    throw IllegalStateException(
-                        "Release catalog unavailable via GitHub raw, Contents API and jsDelivr: " +
-                            "${primary.message ?: primary.javaClass.simpleName}; " +
-                            "${fallback.message ?: fallback.javaClass.simpleName}; " +
-                            "${cdn.message ?: cdn.javaClass.simpleName}",
-                        cdn,
-                    )
+        // Do not wait for an unreachable host before trying the alternatives. A
+        // server may have access to jsDelivr or the GitHub API while raw.github-
+        // usercontent.com is blocked by its DNS/proxy. Running all three probes
+        // concurrently keeps the command bounded by one request timeout.
+        val result = CompletableFuture<ReleaseCatalog>()
+        val failures = java.util.Collections.synchronizedList(mutableListOf<String>())
+        val remaining = AtomicInteger(3)
+
+        fun submit(label: String, task: () -> ReleaseCatalog) {
+            CompletableFuture.supplyAsync(task, catalogRequestExecutor).whenComplete { catalog, error ->
+                if (error == null) {
+                    result.complete(catalog)
+                } else {
+                    failures += "$label: ${error.cause?.message ?: error.message ?: error.javaClass.simpleName}"
+                    if (remaining.decrementAndGet() == 0) {
+                        result.completeExceptionally(IllegalStateException(
+                            "Release catalog unavailable via GitHub raw, Contents API and jsDelivr: ${failures.joinToString("; ")}",
+                            error.cause ?: error,
+                        ))
+                    }
                 }
             }
         }
+
+        submit("raw") { releaseCatalog.load(source, refreshMode).join() }
+        submit("api") {
+            val response = http.get(apiSource, ReleaseCatalogCodec.MAX_BYTES * 2)
+            val content = JsonParser.parseString(response.toString(Charsets.UTF_8)).asJsonObject
+                .get("content")?.asString
+                ?: error("GitHub API response does not contain file content")
+            ReleaseCatalogCodec().decode(Base64.getMimeDecoder().decode(content))
+        }
+        submit("jsDelivr") { releaseCatalog.load(cdnSource, RefreshMode.FORCE_REMOTE).join() }
+
+        return result.join()
     }
 
     private fun observeLatestVersions(registrations: List<Registration>, releases: List<ProductRelease>) {
