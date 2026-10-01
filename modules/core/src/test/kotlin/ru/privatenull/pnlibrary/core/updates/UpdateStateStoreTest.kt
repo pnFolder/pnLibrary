@@ -10,6 +10,7 @@ import ru.privatenull.pnlibrary.api.version.ApiVersionRange
 import ru.privatenull.pnlibrary.api.version.SemanticVersion
 import java.nio.file.Files
 import java.nio.file.Path
+import java.time.Instant
 import java.util.UUID
 
 class UpdateStateStoreTest {
@@ -48,7 +49,8 @@ class UpdateStateStoreTest {
         val component = ProductId.of("pnlibrary")
         val version = SemanticVersion.parse("2.0.0")
         val plan = UpdatePlan(1, listOf(ProductChange(component, SemanticVersion.parse("1.0.0"), version)),
-            listOf(ProductRelease(component, version, UpdateChannel.STABLE, ApiVersionRange(1, 1), providesApi = 1)))
+            listOf(ProductRelease(component, version, UpdateChannel.STABLE, ApiVersionRange(1, 1), providesApi = 1,
+                publishedAt = Instant.parse("2026-09-29T12:00:00Z"))))
         val snapshot = UpdatePlanSnapshot(UUID.randomUUID(), 9, UpdateState.UPDATE_AVAILABLE, plan, emptyList(), null)
 
         UpdateStateStore(directory).save(snapshot)
@@ -56,6 +58,7 @@ class UpdateStateStoreTest {
 
         assertEquals("pnlibrary", restored?.plan?.changes?.single()?.product?.value)
         assertEquals("2.0.0", restored?.plan?.selected?.single()?.version.toString())
+        assertEquals(Instant.parse("2026-09-29T12:00:00Z"), restored?.plan?.selected?.single()?.publishedAt)
     }
 
     @Test

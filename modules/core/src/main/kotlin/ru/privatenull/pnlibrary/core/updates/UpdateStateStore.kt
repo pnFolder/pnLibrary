@@ -4,6 +4,10 @@ import com.google.gson.JsonObject
 import com.google.gson.JsonArray
 import com.google.gson.JsonParser
 import com.google.gson.Gson
+import com.google.gson.GsonBuilder
+import com.google.gson.JsonDeserializer
+import com.google.gson.JsonPrimitive
+import com.google.gson.JsonSerializer
 import ru.privatenull.pnlibrary.api.updates.UpdatePlan
 import ru.privatenull.pnlibrary.api.updates.UpdatePlanSnapshot
 import ru.privatenull.pnlibrary.api.updates.UpdateState
@@ -27,7 +31,20 @@ internal class UpdateStateStore(
     private val maximumBytes: Long = 10L * 1024L * 1024L,
     private val warning: (String) -> Unit = {},
 ) {
-    private val gson = Gson()
+    /**
+     * Update plans contain java.time.Instant values (release publication time).
+     * Gson's reflective adapter cannot access Instant's private fields across Java module
+     * boundaries (Java 17+), so persist it as the same ISO-8601 string used by the
+     * release catalog instead of relying on reflection.
+     */
+    private val gson: Gson = GsonBuilder()
+        .registerTypeAdapter(Instant::class.java, JsonSerializer<Instant> { value, _, _ ->
+            JsonPrimitive(value.toString())
+        })
+        .registerTypeAdapter(Instant::class.java, JsonDeserializer<Instant> { json, _, _ ->
+            Instant.parse(json.asString)
+        })
+        .create()
     private val stateFile = root.resolve("state.json")
     private val historyDirectory = root.resolve("history")
 
