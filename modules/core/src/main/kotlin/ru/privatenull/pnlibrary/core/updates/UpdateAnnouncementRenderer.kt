@@ -31,7 +31,7 @@ internal object UpdateAnnouncementRenderer {
                 val platform = artifact?.platform?.displayName ?: "не указана"
                 val java = artifact?.let { "${it.minimumJava}+" } ?: "не указана"
                 val file = artifact?.file ?: "файл не указан"
-                card.detail("Плагин", change.product.value)
+                card.firstDetail("Плагин", change.product.value)
                     .detail("Версия", "${change.from ?: "не установлена"} → ${change.to}")
                     .detail("Канал", channel)
                     .detail("Источник", if (release?.repository.isNullOrBlank()) "не указан" else "GitHub Releases")

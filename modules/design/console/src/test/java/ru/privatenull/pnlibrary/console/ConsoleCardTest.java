@@ -57,7 +57,7 @@ class ConsoleCardTest {
     @Test
     void longDetailLabelsStaySeparatedFromTheirValues() {
         List<String> lines = ConsoleCard.builder(ConsoleTheme.plain(), "STATUS")
-            .detail("Выбранный канал", "стабильный канал")
+            .firstDetail("Выбранный канал", "стабильный канал")
             .lastDetail("Установленная версия", "2.2.0")
             .build().render();
 

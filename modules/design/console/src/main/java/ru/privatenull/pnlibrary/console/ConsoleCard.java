@@ -62,6 +62,12 @@ public final class ConsoleCard {
 
         public Builder blank() { lines.add(""); return this; }
 
+        public Builder firstDetail(String label, Object value) {
+            lines.add(theme.muted + "            ┌ " + theme.text + label + "  "
+                    + theme.accent + String.valueOf(value) + theme.reset);
+            return this;
+        }
+
         public Builder detail(String label, Object value) {
             lines.add(theme.muted + "            ├ " + theme.text + label + "  "
                     + theme.accent + String.valueOf(value) + theme.reset);

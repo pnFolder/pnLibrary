@@ -150,7 +150,7 @@ internal class BukkitControlCommand(
         val card = ConsoleCard.builder(theme, "СОСТОЯНИЕ PNFOLDER")
             .mascot("^.^", "pnLibrary", "библиотека платформы")
             .blank()
-            .detail("Продукт", "pnLibrary")
+            .firstDetail("Продукт", "pnLibrary")
             .detail("Назначение", "общая библиотека pnFolder")
             .detail("Платформа", "Bukkit / Paper")
             .detail("Ядро", Bukkit.getBukkitVersion())
@@ -162,7 +162,7 @@ internal class BukkitControlCommand(
             card.lastItem("зарегистрированных обновлений нет")
         } else {
             val first = entries.first().snapshot
-            card.detail("Выбранный канал", channelName(first))
+            card.firstDetail("Выбранный канал", channelName(first))
                 .detail("Доступные каналы", "Stable · Beta · Alpha · Dev")
                 .lastDetail("Установленная версия", first.currentVersion)
                 .blank()
@@ -178,14 +178,12 @@ internal class BukkitControlCommand(
             }
             if (available.isNotEmpty()) {
                 card.blank().section("ДОСТУПНО ОБНОВЛЕНИЕ")
-                available.forEachIndexed { index, snapshot ->
-                    card.item("${snapshot.currentVersion}")
-                    val target = "  новая совместимая версия  ${snapshot.latestVersion ?: "не указана"}"
-                    if (index == available.lastIndex) card.lastItem(target) else card.item(target)
-                }
                 val selected = available.first()
-                card.blank()
-                    .detail("Канал", channelName(selected))
+                card.firstDetail("Установлена", selected.currentVersion)
+                    .lastDetail("Новая версия", selected.latestVersion ?: "не указана")
+                    .blank()
+                    .section("СВЕДЕНИЯ ОБ ОБНОВЛЕНИИ")
+                    .firstDetail("Канал", channelName(selected))
                     .detail("Источник", if (selected.releaseUrl.isNullOrBlank()) "не указан" else "GitHub Releases")
                     .detail("Платформа", "Bukkit / Paper")
                     .detail("Совместимость API", selected.supportedApi?.let { "${it.minimum}–${it.maximum}" } ?: "не указана")
