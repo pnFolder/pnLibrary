@@ -11,6 +11,15 @@ open class TrustedHttpClient(
     private val readTimeout: Duration,
     @Suppress("UNUSED_PARAMETER") additionalHosts: Set<String> = emptySet(),
 ) {
+    init {
+        // Some Paper hosts advertise IPv6 DNS records but do not route IPv6.
+        // Java then waits for the socket timeout before trying another address,
+        // making every update source look unavailable. Prefer the working IPv4
+        // path for this small outbound updater client.
+        System.setProperty("java.net.preferIPv4Stack", "true")
+        System.setProperty("java.net.preferIPv4Addresses", "true")
+    }
+
     internal fun validate(uri: URI): URI {
         require(uri.scheme.equals("https", true)) { "update URL must use HTTPS: $uri" }
         require(uri.userInfo == null && uri.fragment == null) { "update URL contains forbidden components" }
