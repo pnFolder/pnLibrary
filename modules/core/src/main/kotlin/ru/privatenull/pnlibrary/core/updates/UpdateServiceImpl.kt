@@ -1,5 +1,6 @@
 package ru.privatenull.pnlibrary.core.updates
 
+import com.google.gson.JsonParser
 import ru.privatenull.pnlibrary.api.logging.LogLevel
 import ru.privatenull.pnlibrary.api.plugin.PluginDependency
 import ru.privatenull.pnlibrary.api.updates.*
@@ -22,6 +23,7 @@ import java.util.concurrent.Executor
 import java.util.concurrent.atomic.AtomicBoolean
 import java.util.concurrent.atomic.AtomicReference
 import java.security.MessageDigest
+import java.util.Base64
 
 /** One catalogue → resolver → verifier → transaction pipeline for every component. */
 internal class UpdateServiceImpl(private val platform: PlatformAdapter, private val dataFolder: Path) : UpdateService, AutoCloseable {
@@ -161,7 +163,11 @@ internal class UpdateServiceImpl(private val platform: PlatformAdapter, private 
             // redirects; when a server is slow those redirects multiply the HTTP
             // read timeout and make `/pn update` appear frozen for minutes.
             val source = URI.create("https://raw.githubusercontent.com/${entry.request.repositoryOwner}/${entry.request.repositoryName}/refs/heads/main/.pnlibrary/releases.json")
-            val catalog = releaseCatalog.load(source, refreshMode).join()
+            val catalog = loadCatalogWithFallback(
+                source,
+                URI.create("https://api.github.com/repos/${entry.request.repositoryOwner}/${entry.request.repositoryName}/contents/.pnlibrary/releases.json?ref=main"),
+                refreshMode,
+            )
             require(catalog.product.equals(entry.descriptor.id.value, ignoreCase = true)) {
                 "Release catalog product ${catalog.product} does not match ${entry.descriptor.id}"
             }
@@ -182,6 +188,28 @@ internal class UpdateServiceImpl(private val platform: PlatformAdapter, private 
                     )
                 }.toList()
         }
+
+    private fun loadCatalogWithFallback(source: URI, apiSource: URI, refreshMode: RefreshMode): ReleaseCatalog {
+        return try {
+            releaseCatalog.load(source, refreshMode).join()
+        } catch (primary: Throwable) {
+            try {
+                val response = http.get(apiSource, ReleaseCatalogCodec.MAX_BYTES * 2)
+                val content = JsonParser.parseString(response.toString(Charsets.UTF_8)).asJsonObject
+                    .get("content")?.asString
+                    ?: error("GitHub API response does not contain file content")
+                val bytes = Base64.getMimeDecoder().decode(content)
+                ReleaseCatalogCodec().decode(bytes)
+            } catch (fallback: Throwable) {
+                throw IllegalStateException(
+                    "GitHub catalog unavailable via raw endpoint and Contents API: " +
+                        "${primary.message ?: primary.javaClass.simpleName}; " +
+                        "${fallback.message ?: fallback.javaClass.simpleName}",
+                    fallback,
+                )
+            }
+        }
+    }
 
     private fun observeLatestVersions(registrations: List<Registration>, releases: List<ProductRelease>) {
         registrations.forEach { entry ->
