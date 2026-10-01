@@ -282,10 +282,10 @@ internal class BukkitControlCommand(
         scheduleProgress()
         plugin.server.scheduler.runTaskLater(plugin, Runnable {
             if (finished.compareAndSet(false, true)) {
-                sender.sendMessage("§cПроверка обновления прервана: GitHub не ответил за 15 секунд.")
+                sender.sendMessage("§cПроверка обновления прервана: источники не ответили за 30 секунд.")
                 sender.sendMessage("§7Проверьте соединение сервера с raw.githubusercontent.com и повторите команду.")
             }
-        }, 300L)
+        }, 600L)
         library.updates.checkNow().whenComplete { result, error ->
             if (!finished.compareAndSet(false, true)) return@whenComplete
             runOnServerThread {
