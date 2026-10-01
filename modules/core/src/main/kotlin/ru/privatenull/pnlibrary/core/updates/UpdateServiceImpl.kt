@@ -34,7 +34,10 @@ internal class UpdateServiceImpl(private val platform: PlatformAdapter, private 
     private val executor = Executors.newSingleThreadScheduledExecutor { action ->
         Thread(action, "pnLibrary-update-orchestrator").apply { isDaemon = true }
     }
-    private val http = TrustedHttpClient(Duration.ofSeconds(8), Duration.ofSeconds(20))
+    // Keep a manual `/pn update` responsive even when GitHub is unreachable.
+    // The check can cover several registered products, so long per-request
+    // timeouts otherwise add up and look like a frozen command.
+    private val http = TrustedHttpClient(Duration.ofSeconds(5), Duration.ofSeconds(8))
     private val releaseCatalog = ReleaseCatalogClient(
         http, ReleaseCatalogueStore(dataFolder.resolve("updates/catalog")), Executor { it.run() }, Duration.ofMinutes(30),
     )
