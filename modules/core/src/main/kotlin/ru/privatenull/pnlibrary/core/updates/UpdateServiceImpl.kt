@@ -154,7 +154,10 @@ internal class UpdateServiceImpl(private val platform: PlatformAdapter, private 
         channels: Map<ProductId, UpdateChannel>,
         refreshMode: RefreshMode,
     ): List<ProductRelease> = registrations.flatMap { entry ->
-            val source = URI.create("https://github.com/${entry.request.repositoryOwner}/${entry.request.repositoryName}/raw/refs/heads/main/.pnlibrary/releases.json")
+            // Use the raw endpoint directly. The github.com/raw URL adds several
+            // redirects; when a server is slow those redirects multiply the HTTP
+            // read timeout and make `/pn update` appear frozen for minutes.
+            val source = URI.create("https://raw.githubusercontent.com/${entry.request.repositoryOwner}/${entry.request.repositoryName}/refs/heads/main/.pnlibrary/releases.json")
             val catalog = releaseCatalog.load(source, refreshMode).join()
             require(catalog.product.equals(entry.descriptor.id.value, ignoreCase = true)) {
                 "Release catalog product ${catalog.product} does not match ${entry.descriptor.id}"
