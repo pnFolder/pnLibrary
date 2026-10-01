@@ -223,8 +223,15 @@ internal class BukkitControlCommand(
         card.firstDetail("Продукт", productLabel(snapshot.product))
         channels.forEachIndexed { index, (channel, release) ->
             val label = channelLabel(channel)
-            val value = "${channelColor(channel)}${release.version}${release.publishedAt?.let { " · ${publishedAge(it)}" } ?: ""}§r"
-            if (index == channels.lastIndex) card.lastDetail(label, value) else card.detail(label, value)
+            card.section(label)
+                .detail("Версия", "${channelColor(channel)}${release.version}§r")
+            val publishedAt = release.publishedAt
+            if (publishedAt != null) {
+                card.lastDetail("Опубликована", publishedAge(publishedAt))
+            } else {
+                card.lastDetail("Опубликована", "дата неизвестна")
+            }
+            if (index != channels.lastIndex) card.blank()
         }
     }
 
