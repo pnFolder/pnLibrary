@@ -26,6 +26,7 @@ import ru.privatenull.pnlibrary.api.updates.UpdateChannel
 import java.util.Locale
 import java.util.UUID
 import java.util.concurrent.ConcurrentHashMap
+import java.util.concurrent.atomic.AtomicBoolean
 import java.time.Duration
 import ru.privatenull.pnlibrary.bukkit.updates.UpdateAction
 import ru.privatenull.pnlibrary.bukkit.updates.UpdateConfirmationTokens
@@ -270,7 +271,17 @@ internal class BukkitControlCommand(
     private fun checkAndInstallUpdate(sender: CommandSender, registration: UpdateRegistration) {
         val product = registration.snapshot.product
         sender.sendMessage("§eПроверяю GitHub и ищу совместимое обновление $product…")
+        val finished = AtomicBoolean(false)
+        fun scheduleProgress() {
+            plugin.server.scheduler.runTaskLater(plugin, Runnable {
+                if (finished.get()) return@Runnable
+                sender.sendMessage("§7Проверка ещё выполняется: жду ответ GitHub…")
+                scheduleProgress()
+            }, 100L)
+        }
+        scheduleProgress()
         library.updates.checkNow().whenComplete { result, error ->
+            finished.set(true)
             runOnServerThread {
                 if (error != null) showUpdateError(sender, "Проверка обновления не удалась", error)
                 else handleUpdateCheck(sender, registration, result)
