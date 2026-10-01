@@ -166,6 +166,7 @@ internal class UpdateServiceImpl(private val platform: PlatformAdapter, private 
             val catalog = loadCatalogWithFallback(
                 source,
                 URI.create("https://api.github.com/repos/${entry.request.repositoryOwner}/${entry.request.repositoryName}/contents/.pnlibrary/releases.json?ref=main"),
+                URI.create("https://cdn.jsdelivr.net/gh/${entry.request.repositoryOwner}/${entry.request.repositoryName}@main/.pnlibrary/releases.json"),
                 refreshMode,
             )
             require(catalog.product.equals(entry.descriptor.id.value, ignoreCase = true)) {
@@ -189,7 +190,7 @@ internal class UpdateServiceImpl(private val platform: PlatformAdapter, private 
                 }.toList()
         }
 
-    private fun loadCatalogWithFallback(source: URI, apiSource: URI, refreshMode: RefreshMode): ReleaseCatalog {
+    private fun loadCatalogWithFallback(source: URI, apiSource: URI, cdnSource: URI, refreshMode: RefreshMode): ReleaseCatalog {
         return try {
             releaseCatalog.load(source, refreshMode).join()
         } catch (primary: Throwable) {
@@ -201,12 +202,17 @@ internal class UpdateServiceImpl(private val platform: PlatformAdapter, private 
                 val bytes = Base64.getMimeDecoder().decode(content)
                 ReleaseCatalogCodec().decode(bytes)
             } catch (fallback: Throwable) {
-                throw IllegalStateException(
-                    "GitHub catalog unavailable via raw endpoint and Contents API: " +
-                        "${primary.message ?: primary.javaClass.simpleName}; " +
-                        "${fallback.message ?: fallback.javaClass.simpleName}",
-                    fallback,
-                )
+                try {
+                    releaseCatalog.load(cdnSource, RefreshMode.FORCE_REMOTE).join()
+                } catch (cdn: Throwable) {
+                    throw IllegalStateException(
+                        "Release catalog unavailable via GitHub raw, Contents API and jsDelivr: " +
+                            "${primary.message ?: primary.javaClass.simpleName}; " +
+                            "${fallback.message ?: fallback.javaClass.simpleName}; " +
+                            "${cdn.message ?: cdn.javaClass.simpleName}",
+                        cdn,
+                    )
+                }
             }
         }
     }
