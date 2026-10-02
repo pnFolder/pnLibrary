@@ -170,7 +170,7 @@ internal class BukkitControlCommand(
         } else {
             val first = entries.first().snapshot
             card.firstDetail("Выбранный канал", channelName(first))
-                .detail("Доступные каналы", "Stable · Beta · Alpha · Dev")
+                .detail("Доступные каналы", "Stable · RC · Beta · Alpha · Dev")
                 .lastDetail("Установленная версия", first.currentVersion)
                 .blank()
                 .divider("ПОСЛЕДНИЕ ВЕРСИИ")
@@ -241,7 +241,7 @@ internal class BukkitControlCommand(
         val releases = history
             .groupBy(ReleaseSummary::channel)
             .mapValues { (_, values) -> values.maxByOrNull { it.version } }
-        val channels = listOf(UpdateChannel.STABLE, UpdateChannel.BETA, UpdateChannel.ALPHA, UpdateChannel.DEV)
+        val channels = listOf(UpdateChannel.STABLE, UpdateChannel.RC, UpdateChannel.BETA, UpdateChannel.ALPHA, UpdateChannel.DEV)
             .mapNotNull { channel -> releases[channel]?.let { channel to it } }
         if (channels.isEmpty()) {
             card.firstDetail("Продукт", productLabel(snapshot.product))
@@ -279,6 +279,7 @@ internal class BukkitControlCommand(
 
     private fun channelLabel(channel: UpdateChannel): String = when (channel) {
         UpdateChannel.STABLE -> "Стабильный канал"
+        UpdateChannel.RC -> "Канал RC"
         UpdateChannel.BETA -> "Тестовый канал Beta"
         UpdateChannel.ALPHA -> "Экспериментальный канал Alpha"
         UpdateChannel.DEV -> "Разрабатываемый канал Dev"
@@ -286,6 +287,7 @@ internal class BukkitControlCommand(
 
     private fun channelColor(channel: UpdateChannel): String = when (channel) {
         UpdateChannel.STABLE -> "§a"
+        UpdateChannel.RC -> "§b"
         UpdateChannel.BETA -> "§e"
         UpdateChannel.ALPHA -> "§6"
         UpdateChannel.DEV -> "§c"

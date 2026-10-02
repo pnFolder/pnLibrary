@@ -136,6 +136,7 @@ internal class BukkitLifecycleListener(
 
     private fun channelName(channel: ru.privatenull.pnlibrary.api.updates.UpdateChannel): String = when (channel) {
         ru.privatenull.pnlibrary.api.updates.UpdateChannel.STABLE -> "Стабильные версии (Stable)"
+        ru.privatenull.pnlibrary.api.updates.UpdateChannel.RC -> "Кандидаты в стабильные (RC)"
         ru.privatenull.pnlibrary.api.updates.UpdateChannel.BETA -> "Тестовые версии (Beta)"
         ru.privatenull.pnlibrary.api.updates.UpdateChannel.ALPHA -> "Экспериментальные версии (Alpha)"
         ru.privatenull.pnlibrary.api.updates.UpdateChannel.DEV -> "Разрабатываемые версии (Dev)"

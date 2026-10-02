@@ -83,7 +83,7 @@ internal data class UpdateConfiguration(
             val parsed = parse(source)
             if (!parsed.containsKey("updates") && (parsed.containsKey("channel") || parsed.containsKey("auto-download"))) {
                 val channel = (parsed["channel"] as? String)?.lowercase()
-                    ?.takeIf { it in setOf("stable", "beta", "alpha", "dev") } ?: "stable"
+                    ?.takeIf { it in setOf("stable", "rc", "beta", "alpha", "dev") } ?: "stable"
                 val automatic = parsed["auto-download"] == true
                 val backup = file.resolveSibling("${file.fileName}.pre-orchestrator.bak")
                 if (!Files.exists(backup)) Files.copy(file, backup)
@@ -106,7 +106,7 @@ internal data class UpdateConfiguration(
             if (library == null && parsed.containsKey("updates")) {
                 val marker = "  library:\n"
                 if (!source.contains(marker)) {
-                    val block = "\n  library:\n    # Канал релизов для самой pnLibrary: stable, beta, alpha или dev.\n    channel: stable\n    # Разрешить автоматическую загрузку новой версии самой pnLibrary.\n    automatic-download: false\n"
+                    val block = "\n  library:\n    # Канал релизов для самой pnLibrary: stable, rc, beta, alpha или dev.\n    channel: stable\n    # Разрешить автоматическую загрузку новой версии самой pnLibrary.\n    automatic-download: false\n"
                     val insertion = source.trimEnd() + block
                     runCatching { writeAtomic(file, insertion + "\n") }
                 }
@@ -252,7 +252,7 @@ internal data class UpdateConfiguration(
 updates:
   enabled: $enabled
   library:
-    # Канал релизов для самой pnLibrary: stable, beta, alpha или dev.
+    # Канал релизов для самой pnLibrary: stable, rc, beta, alpha или dev.
     channel: ${library.channel.name.lowercase()}
     # Разрешить автоматическую загрузку новой версии самой pnLibrary.
     automatic-download: ${library.automaticDownload}

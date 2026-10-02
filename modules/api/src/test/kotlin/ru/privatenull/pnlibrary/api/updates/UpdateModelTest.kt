@@ -14,6 +14,9 @@ class UpdateModelTest {
     fun `channels express the maximum accepted risk`() {
         assertTrue(UpdateChannel.STABLE.accepts(UpdateChannel.STABLE))
         assertFalse(UpdateChannel.STABLE.accepts(UpdateChannel.BETA))
+        assertTrue(UpdateChannel.RC.accepts(UpdateChannel.RC))
+        assertTrue(UpdateChannel.RC.accepts(UpdateChannel.STABLE))
+        assertFalse(UpdateChannel.RC.accepts(UpdateChannel.BETA))
         assertTrue(UpdateChannel.BETA.accepts(UpdateChannel.STABLE))
         assertTrue(UpdateChannel.ALPHA.accepts(UpdateChannel.BETA))
         assertTrue(UpdateChannel.DEV.accepts(UpdateChannel.DEV))

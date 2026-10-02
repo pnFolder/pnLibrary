@@ -61,6 +61,7 @@ internal object UpdateAnnouncementRenderer {
 
     private fun channelName(channel: ru.privatenull.pnlibrary.api.updates.UpdateChannel): String = when (channel) {
         ru.privatenull.pnlibrary.api.updates.UpdateChannel.STABLE -> "стабильный канал"
+        ru.privatenull.pnlibrary.api.updates.UpdateChannel.RC -> "канал RC"
         ru.privatenull.pnlibrary.api.updates.UpdateChannel.BETA -> "тестовый канал Beta"
         ru.privatenull.pnlibrary.api.updates.UpdateChannel.ALPHA -> "экспериментальный канал Alpha"
         ru.privatenull.pnlibrary.api.updates.UpdateChannel.DEV -> "разрабатываемый канал Dev"

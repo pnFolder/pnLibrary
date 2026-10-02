@@ -55,6 +55,7 @@ internal class PlatformLoggingService(
         val channelName = channel.uppercase()
         val channelDescription = when (channel.lowercase()) {
             "stable" -> "стабильный канал"
+            "rc" -> "канал RC"
             "beta" -> "бета-канал"
             "alpha" -> "альфа-канал"
             else -> "выбранный канал"
