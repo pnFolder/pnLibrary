@@ -28,6 +28,8 @@ import java.util.UUID
 import java.util.concurrent.ConcurrentHashMap
 import java.util.concurrent.atomic.AtomicBoolean
 import java.time.Duration
+import java.time.ZoneOffset
+import java.time.format.DateTimeFormatter
 import ru.privatenull.pnlibrary.bukkit.updates.UpdateAction
 import ru.privatenull.pnlibrary.bukkit.updates.UpdateConfirmationTokens
 import ru.privatenull.pnlibrary.console.ConsoleCard
@@ -197,7 +199,8 @@ internal class BukkitControlCommand(
         }
         card.blank()
             .divider("ПРОВЕРКА")
-            .lastItem("Проверка обновлений завершена")
+            .firstDetail("Последняя проверка", utcNow())
+            .lastDetail("Следующая проверка", "по расписанию библиотеки")
             .blank()
             .status(if (entries.any { it.snapshot.state == UpdateState.UPDATE_AVAILABLE || it.snapshot.state == UpdateState.AVAILABLE }) {
                 val channel = entries.firstOrNull { it.snapshot.state == UpdateState.UPDATE_AVAILABLE || it.snapshot.state == UpdateState.AVAILABLE }
@@ -227,7 +230,7 @@ internal class BukkitControlCommand(
                 .detail("Версия", "${channelColor(channel)}${release.version}§r")
             val publishedAt = release.publishedAt
             if (publishedAt != null) {
-                card.lastDetail("Опубликована", publishedAge(publishedAt))
+            card.lastDetail("Опубликована", publishedAtLabel(publishedAt))
             } else {
                 card.lastDetail("Опубликована", "дата неизвестна")
             }
@@ -243,6 +246,11 @@ internal class BukkitControlCommand(
             else -> "опубликована ${elapsed.toDays()} дн. назад"
         }
     }
+
+    private fun publishedAtLabel(instant: java.time.Instant): String =
+        "${publishedAge(instant)} · ${UTC_DATE_TIME.format(instant)}"
+
+    private fun utcNow(): String = UTC_DATE_TIME.format(java.time.Instant.now())
 
     private fun channelLabel(channel: UpdateChannel): String = when (channel) {
         UpdateChannel.STABLE -> "Стабильный канал"
@@ -594,6 +602,9 @@ internal class BukkitControlCommand(
         if (product.equals("pnlibrary", true)) "pnLibrary" else product
 
     private companion object {
+        val UTC_DATE_TIME: DateTimeFormatter = DateTimeFormatter
+            .ofPattern("dd.MM.yyyy HH:mm 'UTC'")
+            .withZone(ZoneOffset.UTC)
         val CONTROL_ACTIONS = listOf(
             "status", "updates", "check", "update", "update-status", "update-rollback", "restart", "debug", "support",
             "error", "error-repeat", "error-chain",

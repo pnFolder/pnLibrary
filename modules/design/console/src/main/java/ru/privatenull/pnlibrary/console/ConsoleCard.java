@@ -134,7 +134,7 @@ public final class ConsoleCard {
             String checked = text(value);
             StringBuilder result = new StringBuilder(checked);
             while (result.length() < width) result.append(' ');
-            if (result.length() >= width) result.append(' ');
+            if (result.length() >= width) result.append("  ");
             return result.toString();
         }
     }
