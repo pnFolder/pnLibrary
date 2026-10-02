@@ -23,6 +23,7 @@ import ru.privatenull.pnlibrary.api.updates.UpdatePlanSnapshot
 import ru.privatenull.pnlibrary.api.updates.UpdateRegistration
 import ru.privatenull.pnlibrary.api.updates.ReleaseSummary
 import ru.privatenull.pnlibrary.api.updates.UpdateChannel
+import ru.privatenull.pnlibrary.api.version.SemanticVersion
 import java.util.Locale
 import java.util.UUID
 import java.util.concurrent.ConcurrentHashMap
@@ -213,7 +214,24 @@ internal class BukkitControlCommand(
     }
 
     private fun renderReleaseHistory(card: ConsoleCard.Builder, snapshot: UpdateSnapshot) {
-        val releases = snapshot.availableReleases
+        // The selected plan is authoritative. A cached catalog can briefly lag
+        // behind the plan that was just resolved, so merge the selected version
+        // into the history before rendering it. This prevents showing rc.1 above
+        // while simultaneously offering stable 2.2.0 below.
+        val history = snapshot.availableReleases.toMutableList()
+        snapshot.latestVersion?.let { latest ->
+            val latestVersion = runCatching { SemanticVersion.parse(latest) }.getOrNull()
+            if (latestVersion != null) {
+                val current = history.filter { it.channel == snapshot.channel }.maxByOrNull {
+                    runCatching { SemanticVersion.parse(it.version) }.getOrDefault(SemanticVersion.parse("0.0.0"))
+                }
+                if (current == null || latestVersion > SemanticVersion.parse(current.version)) {
+                    history.removeAll { it.channel == snapshot.channel }
+                    history += ReleaseSummary(latest, snapshot.channel, null)
+                }
+            }
+        }
+        val releases = history
             .groupBy(ReleaseSummary::channel)
             .mapValues { (_, values) -> values.maxByOrNull { it.version } }
         val channels = listOf(UpdateChannel.STABLE, UpdateChannel.BETA, UpdateChannel.ALPHA, UpdateChannel.DEV)
