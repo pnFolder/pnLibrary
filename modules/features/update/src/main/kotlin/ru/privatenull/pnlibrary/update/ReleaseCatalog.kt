@@ -59,9 +59,11 @@ class ReleaseCatalogCodec(private val maximumBytes: Int = MAX_BYTES) {
             decodeArtifact(raw.asJsonObject, "$field.artifacts[$index]")
         }
         require(artifacts.isNotEmpty()) { "$field.artifacts must not be empty" }
+        val version = SemanticVersion.parse(value.requiredString("version"))
+        val declaredChannel = channel(value.requiredString("channel"))
         CatalogRelease(
-            SemanticVersion.parse(value.requiredString("version")),
-            channel(value.requiredString("channel")),
+            version,
+            effectiveChannel(version, declaredChannel),
             value.requiredString("description"),
             Instant.parse(value.requiredString("publishedAt")),
             value.requiredObject("api").apiRange(),
@@ -69,6 +71,18 @@ class ReleaseCatalogCodec(private val maximumBytes: Int = MAX_BYTES) {
         )
     } catch (error: ManifestException) { throw error }
       catch (error: Exception) { throw ManifestException(field, error.message ?: "invalid release", error) }
+
+    /** Keeps display and selection consistent when an old catalog mislabeled a prerelease. */
+    private fun effectiveChannel(version: SemanticVersion, declared: UpdateChannel): UpdateChannel {
+        val marker = version.prerelease.firstOrNull()?.lowercase() ?: return declared
+        return when {
+            marker == "rc" || marker.startsWith("rc-") -> UpdateChannel.RC
+            marker == "beta" || marker.startsWith("beta-") -> UpdateChannel.BETA
+            marker == "alpha" || marker.startsWith("alpha-") -> UpdateChannel.ALPHA
+            marker == "dev" || marker == "snapshot" || marker.startsWith("dev-") -> UpdateChannel.DEV
+            else -> declared
+        }
+    }
 
     private fun decodeArtifact(value: JsonObject, field: String): CatalogArtifact {
         val file = value.requiredString("file")

@@ -620,6 +620,7 @@ internal class BukkitControlCommand(
 
     private fun channelName(snapshot: UpdateSnapshot): String = when (snapshot.channel.name) {
         "STABLE" -> "§aстабильный канал§r"
+        "RC" -> "§bканал RC§r"
         "BETA" -> "§eтестовый канал Beta§r"
         "ALPHA" -> "§6экспериментальный канал Alpha§r"
         else -> "§cразрабатываемый канал Dev§r"

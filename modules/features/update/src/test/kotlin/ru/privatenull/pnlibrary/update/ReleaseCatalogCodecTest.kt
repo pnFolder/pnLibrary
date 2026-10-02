@@ -42,4 +42,17 @@ class ReleaseCatalogCodecTest {
             """.toByteArray())
         }
     }
+
+    @Test
+    fun `normalizes rc suffix when an older catalog calls it stable`() {
+        val release = codec.decode("""
+            {"schema":1,"product":"demo","releases":[{"version":"2.2.0-rc.1",
+            "channel":"stable","description":"Candidate release","publishedAt":"2026-09-29T12:00:00Z",
+            "api":{"minimum":1,"maximum":1},"artifacts":[{
+            "file":"demo.jar","platform":"BUKKIT","java":{"minimum":8},
+            "url":"https://example.org/demo.jar"}]}]}
+        """.toByteArray()).releases.single()
+
+        assertEquals(UpdateChannel.RC, release.channel)
+    }
 }
