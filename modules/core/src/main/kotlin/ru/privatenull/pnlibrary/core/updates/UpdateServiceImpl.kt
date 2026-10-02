@@ -327,7 +327,7 @@ internal class UpdateServiceImpl(private val platform: PlatformAdapter, private 
     }
 
     private fun announce(snapshot: UpdatePlanSnapshot) {
-        UpdateAnnouncementRenderer.render(snapshot)
+        UpdateAnnouncementRenderer.render(snapshot, entries.map { it.snapshot })
             .forEach { platform.console(platform, it) }
     }
 

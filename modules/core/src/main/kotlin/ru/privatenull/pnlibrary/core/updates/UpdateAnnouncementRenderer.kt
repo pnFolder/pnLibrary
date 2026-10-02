@@ -2,12 +2,14 @@ package ru.privatenull.pnlibrary.core.updates
 
 import ru.privatenull.pnlibrary.api.updates.UpdatePlanSnapshot
 import ru.privatenull.pnlibrary.api.updates.UpdateState
+import ru.privatenull.pnlibrary.api.updates.UpdateSnapshot
+import ru.privatenull.pnlibrary.api.updates.ReleaseSummary
 import ru.privatenull.pnlibrary.console.ConsoleCard
 import ru.privatenull.pnlibrary.console.ConsoleTheme
 
 /** Renders automatic update notifications with the same card used by console status. */
 internal object UpdateAnnouncementRenderer {
-    fun render(snapshot: UpdatePlanSnapshot): List<String> {
+    fun render(snapshot: UpdatePlanSnapshot, registrations: List<UpdateSnapshot> = emptyList()): List<String> {
         val (subtitle, result) = when (snapshot.state) {
             UpdateState.UPDATE_AVAILABLE -> "найдены совместимые обновления" to "Доступно обновление"
             UpdateState.UPDATE_STAGED -> "обновление подготовлено" to "Перезапустите сервер"
@@ -41,6 +43,20 @@ internal object UpdateAnnouncementRenderer {
                     .detail("Почему выбрана", "версия новее и совместима")
                     .lastDetail("Файл", file)
                 if (index != changes.lastIndex) card.blank()
+            }
+            val histories = registrations.filter { it.availableReleases.isNotEmpty() }
+            if (histories.isNotEmpty()) {
+                card.blank().section("ПОСЛЕДНИЕ ВЕРСИИ")
+                histories.forEachIndexed { index, registration ->
+                    val latestByChannel = registration.availableReleases
+                        .groupBy(ReleaseSummary::channel)
+                        .mapValues { (_, releases) -> releases.maxByOrNull { it.version } }
+                    latestByChannel.values.filterNotNull().forEach { release ->
+                        card.firstDetail(channelName(release.channel), release.version)
+                            .lastDetail("Опубликована", release.publishedAt?.toString() ?: "дата неизвестна")
+                    }
+                    if (index != histories.lastIndex) card.blank()
+                }
             }
         } else if (snapshot.blockers.isNotEmpty()) {
             card.section("ПРИЧИНА")
