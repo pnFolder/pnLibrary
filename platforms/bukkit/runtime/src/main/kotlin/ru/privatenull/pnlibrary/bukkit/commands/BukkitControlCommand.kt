@@ -175,8 +175,11 @@ internal class BukkitControlCommand(
                 .blank()
                 .divider("ПОСЛЕДНИЕ ВЕРСИИ")
                 .blank()
+            val selectedByProduct = entries
+                .map { it.snapshot }
+                .associateBy { it.product.lowercase(Locale.ROOT) }
             entries.forEachIndexed { index, registration ->
-                renderReleaseHistory(card, registration.snapshot)
+                renderReleaseHistory(card, registration.snapshot, selectedByProduct[registration.snapshot.product.lowercase(Locale.ROOT)]?.latestVersion)
                 if (index != entries.lastIndex) card.blank()
             }
             val available = entries.map { it.snapshot }.filter {
@@ -217,13 +220,13 @@ internal class BukkitControlCommand(
             .build().render().forEach(sender::sendMessage)
     }
 
-    private fun renderReleaseHistory(card: ConsoleCard.Builder, snapshot: UpdateSnapshot) {
+    private fun renderReleaseHistory(card: ConsoleCard.Builder, snapshot: UpdateSnapshot, selectedVersion: String?) {
         // The selected plan is authoritative. A cached catalog can briefly lag
         // behind the plan that was just resolved, so merge the selected version
         // into the history before rendering it. This prevents showing rc.1 above
         // while simultaneously offering stable 2.2.0 below.
         val history = snapshot.availableReleases.toMutableList()
-        snapshot.latestVersion?.let { latest ->
+        (selectedVersion ?: snapshot.latestVersion)?.let { latest ->
             val latestVersion = runCatching { SemanticVersion.parse(latest) }.getOrNull()
             if (latestVersion != null) {
                 val current = history.filter { it.channel == snapshot.channel }.maxByOrNull {
