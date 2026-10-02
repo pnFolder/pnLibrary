@@ -94,7 +94,7 @@
     },
     {
       "version": "2.2.0-rc.1",
-      "channel": "stable",
+      "channel": "rc",
       "description": "Предрелизная проверка стабильной ветки",
       "publishedAt": "2026-09-29T12:00:00Z",
       "api": { "minimum": 1, "maximum": 1 },
