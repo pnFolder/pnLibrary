@@ -44,7 +44,7 @@ class ReleaseCatalogCodecTest {
     }
 
     @Test
-    fun `normalizes rc suffix when an older catalog calls it stable`() {
+    fun `uses explicitly declared channel instead of version suffix`() {
         val release = codec.decode("""
             {"schema":1,"product":"demo","releases":[{"version":"2.2.0-rc.1",
             "channel":"stable","description":"Candidate release","publishedAt":"2026-09-29T12:00:00Z",
@@ -53,6 +53,6 @@ class ReleaseCatalogCodecTest {
             "url":"https://example.org/demo.jar"}]}]}
         """.toByteArray()).releases.single()
 
-        assertEquals(UpdateChannel.RC, release.channel)
+        assertEquals(UpdateChannel.STABLE, release.channel)
     }
 }
