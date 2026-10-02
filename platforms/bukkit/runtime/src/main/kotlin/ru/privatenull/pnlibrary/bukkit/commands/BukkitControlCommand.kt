@@ -164,6 +164,7 @@ internal class BukkitControlCommand(
             .lastDetail("Поддержка", PnLibraryBrand.SUPPORT_URL)
             .blank()
             .divider("ОБНОВЛЕНИЯ")
+            .blank()
         if (entries.isEmpty()) {
             card.lastItem("зарегистрированных обновлений нет")
         } else {
@@ -173,6 +174,7 @@ internal class BukkitControlCommand(
                 .lastDetail("Установленная версия", first.currentVersion)
                 .blank()
                 .divider("ПОСЛЕДНИЕ ВЕРСИИ")
+                .blank()
             entries.forEachIndexed { index, registration ->
                 renderReleaseHistory(card, registration.snapshot)
                 if (index != entries.lastIndex) card.blank()
@@ -187,6 +189,7 @@ internal class BukkitControlCommand(
                     .lastDetail("Новая версия", selected.latestVersion ?: "не указана")
                     .blank()
                     .divider("СВЕДЕНИЯ ОБ ОБНОВЛЕНИИ")
+                    .blank()
                     .firstDetail("Канал", channelName(selected))
                     .detail("Источник", if (selected.releaseUrl.isNullOrBlank()) "не указан" else "GitHub Releases")
                     .detail("Платформа", "Bukkit / Paper")
@@ -200,6 +203,7 @@ internal class BukkitControlCommand(
         }
         card.blank()
             .divider("ПРОВЕРКА")
+            .blank()
             .firstDetail("Последняя проверка", utcNow())
             .lastDetail("Следующая проверка", "по расписанию библиотеки")
             .blank()
