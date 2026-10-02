@@ -178,7 +178,7 @@ internal class BukkitControlCommand(
                 it.state == UpdateState.UPDATE_AVAILABLE || it.state == UpdateState.AVAILABLE
             }
             if (available.isNotEmpty()) {
-                card.blank().section("ДОСТУПНО ОБНОВЛЕНИЕ")
+                card.blank().section("ДОСТУПНО ОБНОВЛЕНИЕ").blank()
                 val selected = available.first()
                 card.firstDetail("Установлена", selected.currentVersion)
                     .lastDetail("Новая версия", selected.latestVersion ?: "не указана")
@@ -220,7 +220,7 @@ internal class BukkitControlCommand(
                 .lastDetail("Версия", snapshot.latestVersion ?: snapshot.currentVersion)
             return
         }
-        card.firstDetail("Продукт", productLabel(snapshot.product))
+        card.firstDetail("Продукт", productLabel(snapshot.product)).blank()
         channels.forEachIndexed { index, (channel, release) ->
             val label = channelLabel(channel)
             card.section(label)
