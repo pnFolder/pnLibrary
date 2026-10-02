@@ -160,7 +160,7 @@ internal class BukkitControlCommand(
             .detail("Java", javaRuntimeLabel())
             .lastDetail("Поддержка", PnLibraryBrand.SUPPORT_URL)
             .blank()
-            .section("ОБНОВЛЕНИЯ")
+            .divider("ОБНОВЛЕНИЯ")
         if (entries.isEmpty()) {
             card.lastItem("зарегистрированных обновлений нет")
         } else {
@@ -169,7 +169,7 @@ internal class BukkitControlCommand(
                 .detail("Доступные каналы", "Stable · Beta · Alpha · Dev")
                 .lastDetail("Установленная версия", first.currentVersion)
                 .blank()
-                .section("ПОСЛЕДНИЕ ВЕРСИИ")
+                .divider("ПОСЛЕДНИЕ ВЕРСИИ")
             entries.forEachIndexed { index, registration ->
                 renderReleaseHistory(card, registration.snapshot)
                 if (index != entries.lastIndex) card.blank()
@@ -178,12 +178,12 @@ internal class BukkitControlCommand(
                 it.state == UpdateState.UPDATE_AVAILABLE || it.state == UpdateState.AVAILABLE
             }
             if (available.isNotEmpty()) {
-                card.blank().section("ДОСТУПНО ОБНОВЛЕНИЕ").blank()
+                card.blank().divider("ДОСТУПНО ОБНОВЛЕНИЕ").blank()
                 val selected = available.first()
                 card.firstDetail("Установлена", selected.currentVersion)
                     .lastDetail("Новая версия", selected.latestVersion ?: "не указана")
                     .blank()
-                    .section("СВЕДЕНИЯ ОБ ОБНОВЛЕНИИ")
+                    .divider("СВЕДЕНИЯ ОБ ОБНОВЛЕНИИ")
                     .firstDetail("Канал", channelName(selected))
                     .detail("Источник", if (selected.releaseUrl.isNullOrBlank()) "не указан" else "GitHub Releases")
                     .detail("Платформа", "Bukkit / Paper")
@@ -196,7 +196,7 @@ internal class BukkitControlCommand(
             }
         }
         card.blank()
-            .section("ПРОВЕРКА")
+            .divider("ПРОВЕРКА")
             .lastItem("Проверка обновлений завершена")
             .blank()
             .status(if (entries.any { it.snapshot.state == UpdateState.UPDATE_AVAILABLE || it.snapshot.state == UpdateState.AVAILABLE }) {
@@ -220,7 +220,7 @@ internal class BukkitControlCommand(
                 .lastDetail("Версия", snapshot.latestVersion ?: snapshot.currentVersion)
             return
         }
-        card.firstDetail("Продукт", productLabel(snapshot.product)).blank()
+        card.blank()
         channels.forEachIndexed { index, (channel, release) ->
             val label = channelLabel(channel)
             card.section(label)

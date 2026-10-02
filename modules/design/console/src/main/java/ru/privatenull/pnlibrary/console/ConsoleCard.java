@@ -63,25 +63,31 @@ public final class ConsoleCard {
         public Builder blank() { lines.add(""); return this; }
 
         public Builder firstDetail(String label, Object value) {
-            lines.add(theme.muted + "            ┌ " + theme.text + pad(label, 22)
+            lines.add(theme.muted + "            ┌ " + theme.text + pad(label, 14)
                     + theme.accent + String.valueOf(value) + theme.reset);
             return this;
         }
 
         public Builder detail(String label, Object value) {
-            lines.add(theme.muted + "            ├ " + theme.text + pad(label, 22)
+            lines.add(theme.muted + "            ├ " + theme.text + pad(label, 14)
                     + theme.accent + String.valueOf(value) + theme.reset);
             return this;
         }
 
         public Builder lastDetail(String label, Object value) {
-            lines.add(theme.muted + "            └ " + theme.text + pad(label, 22)
+            lines.add(theme.muted + "            └ " + theme.text + pad(label, 14)
                     + theme.accent + String.valueOf(value) + theme.reset);
             return this;
         }
 
         public Builder section(String title) {
             lines.add(theme.muted + "            ┌ " + theme.text + text(title) + theme.reset);
+            return this;
+        }
+
+        public Builder divider(String title) {
+            lines.add(theme.muted + "            ───────── " + theme.text + text(title)
+                    + theme.muted + " ─────────" + theme.reset);
             return this;
         }
 
@@ -128,6 +134,7 @@ public final class ConsoleCard {
             String checked = text(value);
             StringBuilder result = new StringBuilder(checked);
             while (result.length() < width) result.append(' ');
+            if (result.length() >= width) result.append(' ');
             return result.toString();
         }
     }
