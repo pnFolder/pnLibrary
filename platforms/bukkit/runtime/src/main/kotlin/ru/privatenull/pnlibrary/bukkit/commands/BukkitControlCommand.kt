@@ -610,10 +610,10 @@ internal class BukkitControlCommand(
     }
 
     private fun channelName(snapshot: UpdateSnapshot): String = when (snapshot.channel.name) {
-        "STABLE" -> "стабильный канал"
-        "BETA" -> "тестовый канал Beta"
-        "ALPHA" -> "экспериментальный канал Alpha"
-        else -> "разрабатываемый канал Dev"
+        "STABLE" -> "§aстабильный канал§r"
+        "BETA" -> "§eтестовый канал Beta§r"
+        "ALPHA" -> "§6экспериментальный канал Alpha§r"
+        else -> "§cразрабатываемый канал Dev§r"
     }
 
     private fun productLabel(product: String): String =
