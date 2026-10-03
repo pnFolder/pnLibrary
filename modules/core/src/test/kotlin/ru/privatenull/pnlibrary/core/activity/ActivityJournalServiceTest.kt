@@ -5,6 +5,8 @@ import org.junit.jupiter.api.Assertions.assertTrue
 import org.junit.jupiter.api.Test
 import org.junit.jupiter.api.assertThrows
 import ru.privatenull.pnlibrary.api.activity.ActivityEvent
+import ru.privatenull.pnlibrary.api.activity.ActivityBundle
+import ru.privatenull.pnlibrary.api.activity.ActivityFile
 import ru.privatenull.pnlibrary.api.activity.ActivityQuery
 import ru.privatenull.pnlibrary.api.activity.ActivitySeverity
 import java.nio.file.Files
@@ -66,6 +68,28 @@ class ActivityJournalServiceTest {
             assertEquals(1, journal.recent().size)
             assertTrue(journal.exportAttachmentManifest().toString(StandardCharsets.UTF_8).contains(event.eventId))
             assertEquals(1, journal.exportAttachments().size)
+        }
+    }
+
+    @Test
+    fun `bundle keeps a verifiable list of related files`() {
+        val root = Files.createTempDirectory("activity-bundle")
+        val log = root.resolve("server.log").also { Files.writeString(it, "log") }
+        val config = root.resolve("config.yml").also { Files.writeString(it, "debug: true") }
+        ActivityJournalService(root).use { journal ->
+            val bundle = ActivityBundle(
+                type = "DIAGNOSTIC_REPORT",
+                files = listOf(
+                    ActivityFile(log, contentType = "text/plain"),
+                    ActivityFile(config, contentType = "text/yaml"),
+                ),
+            )
+            val event = journal.record(bundle)
+            val manifest = journal.exportAttachmentManifest().toString(StandardCharsets.UTF_8)
+            assertTrue(manifest.contains(event.eventId))
+            assertTrue(manifest.contains("server.log"))
+            assertTrue(manifest.contains("config.yml"))
+            assertEquals(2, journal.exportAttachments().size)
         }
     }
 

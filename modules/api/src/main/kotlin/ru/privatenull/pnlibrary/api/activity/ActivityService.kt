@@ -2,6 +2,7 @@ package ru.privatenull.pnlibrary.api.activity
 
 import java.util.UUID
 import java.nio.file.Path
+import java.nio.file.Files
 
 enum class ActivitySeverity { TRACE, INFO, NOTICE, WARNING, ERROR, CRITICAL }
 
@@ -40,6 +41,26 @@ data class ActivityAttachment(
     val sha256: String,
 )
 
+/** A file selected for one activity record before it is persisted. */
+data class ActivityFile(
+    val path: Path,
+    val name: String = path.fileName.toString(),
+    val contentType: String = "application/octet-stream",
+)
+
+/** One inspectable activity snapshot submitted as a single unit. */
+data class ActivityBundle(
+    val type: String,
+    val category: ActivityCategory = ActivityCategory.SYSTEM,
+    val severity: ActivitySeverity = ActivitySeverity.INFO,
+    val sessionId: String? = null,
+    val correlationId: String? = null,
+    val source: String? = null,
+    val pluginId: String? = null,
+    val metadata: Map<String, String> = emptyMap(),
+    val files: List<ActivityFile> = emptyList(),
+)
+
 interface ActivityService : AutoCloseable {
     fun record(event: ActivityEvent): ActivityEvent
 
@@ -57,6 +78,22 @@ interface ActivityService : AutoCloseable {
         pluginId = pluginId, metadata = metadata))
 
     fun recent(query: ActivityQuery = ActivityQuery()): List<ActivityEvent>
+    fun record(bundle: ActivityBundle): ActivityEvent {
+        val event = record(
+            type = bundle.type,
+            category = bundle.category,
+            severity = bundle.severity,
+            sessionId = bundle.sessionId,
+            correlationId = bundle.correlationId,
+            source = bundle.source,
+            pluginId = bundle.pluginId,
+            metadata = bundle.metadata,
+        )
+        bundle.files.forEach { file ->
+            attach(event.eventId, file.name, file.contentType, Files.readAllBytes(file.path))
+        }
+        return event
+    }
     fun attach(eventId: String, name: String, contentType: String, bytes: ByteArray): ActivityAttachment
     fun attachFile(eventId: String, path: Path, contentType: String = "application/octet-stream"): ActivityAttachment
 
