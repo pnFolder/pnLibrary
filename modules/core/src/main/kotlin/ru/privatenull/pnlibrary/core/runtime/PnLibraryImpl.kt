@@ -16,6 +16,7 @@ import ru.privatenull.pnlibrary.core.commands.CommandServiceImpl
 import ru.privatenull.pnlibrary.core.audiences.AudienceServiceImpl
 import ru.privatenull.pnlibrary.core.diagnostics.PersistentDiagnosticHistory
 import ru.privatenull.pnlibrary.core.diagnostics.ReportGenerator
+import ru.privatenull.pnlibrary.core.diagnostics.UnifiedObservabilityService
 import ru.privatenull.pnlibrary.core.events.EventServiceImpl
 import ru.privatenull.pnlibrary.core.logging.DiagnosticLogBuffer
 import ru.privatenull.pnlibrary.core.logging.PlatformLoggingService
@@ -79,6 +80,7 @@ internal class PnLibraryImpl(
     private val metricsRegistry = MetricsRegistry(platform.metricsFactory)
     val dataFolder: Path = platform.dataFolder ?: extractDataFolder(owner)
     override val activity: ActivityService = ActivityJournalService(dataFolder)
+    override val observability = UnifiedObservabilityService(diagnostics, activity)
     val uploadLedger: UploadLedger = UploadLedger(dataFolder.resolve("upload-ledger.json"))
     val encryptionCodec: EncryptedEnvelopeCodec? = initEncryptionCodec()
     private val diagnosticHistory = PersistentDiagnosticHistory(

@@ -7,6 +7,7 @@ import ru.privatenull.pnlibrary.api.activity.ActivityService
 import ru.privatenull.pnlibrary.api.diagnostics.DebugRequest
 import ru.privatenull.pnlibrary.api.diagnostics.DiagnosticReport
 import ru.privatenull.pnlibrary.api.diagnostics.DiagnosticsService
+import ru.privatenull.pnlibrary.api.diagnostics.ObservabilityService
 import ru.privatenull.pnlibrary.api.events.EventService
 import ru.privatenull.pnlibrary.api.logging.LoggingService
 import ru.privatenull.pnlibrary.api.metrics.MetricsService
@@ -41,6 +42,10 @@ interface PnLibrary : Closeable {
 
     /** Registry for diagnostic data contributed by consumer plugins. */
     val diagnostics: DiagnosticsService
+
+    /** Unified diagnostics and activity entry point for support data. */
+    val observability: ObservabilityService
+        get() = throw UnsupportedOperationException("Observability service is not available in this runtime")
 
     /** Local bounded activity journal used by diagnostics and support reports. */
     val activity: ActivityService
