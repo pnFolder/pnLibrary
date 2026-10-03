@@ -85,7 +85,7 @@ class ActivityJournalService(dataFolder: Path, private val clock: () -> Long = S
     override fun exportAttachments(): Map<String, ByteArray> = synchronized(lock) {
         if (!Files.isDirectory(attachments)) emptyMap()
         else Files.list(attachments).use { stream ->
-            stream.filter(Files::isRegularFile).associate { it.fileName.toString() to Files.readAllBytes(it) }
+            stream.filter(Files::isRegularFile).toList().associate { path -> path.fileName.toString() to Files.readAllBytes(path) }
         }
     }
 
