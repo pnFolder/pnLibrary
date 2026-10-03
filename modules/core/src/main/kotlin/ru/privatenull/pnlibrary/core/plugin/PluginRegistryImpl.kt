@@ -1,17 +1,14 @@
 package ru.privatenull.pnlibrary.core.plugin
 
-import ru.privatenull.pnlibrary.api.diagnostics.DiagnosticContainer
 import ru.privatenull.pnlibrary.api.diagnostics.DiagnosticRegistration
 import ru.privatenull.pnlibrary.api.diagnostics.DiagnosticsService
 import ru.privatenull.pnlibrary.api.config.ConfigScope
 import ru.privatenull.pnlibrary.api.events.EventScope
 import ru.privatenull.pnlibrary.api.events.EventService
-import ru.privatenull.pnlibrary.api.events.Listener
 import ru.privatenull.pnlibrary.api.logging.LoggingService
 import ru.privatenull.pnlibrary.api.logging.MessageBox
 import ru.privatenull.pnlibrary.api.logging.PnLogger
 import ru.privatenull.pnlibrary.api.metrics.MetricsService
-import ru.privatenull.pnlibrary.api.metrics.PluginMetrics
 import ru.privatenull.pnlibrary.spi.platform.PlatformAdapter
 import ru.privatenull.pnlibrary.api.plugin.MetricsController
 import ru.privatenull.pnlibrary.api.plugin.PluginBuilder
@@ -21,11 +18,8 @@ import ru.privatenull.pnlibrary.api.plugin.ModuleContext
 import ru.privatenull.pnlibrary.api.plugin.ModuleId
 import ru.privatenull.pnlibrary.api.plugin.PluginLifecycle
 import ru.privatenull.pnlibrary.api.plugin.PluginMetadata
-import ru.privatenull.pnlibrary.api.plugin.PluginMetadataBuilder
 import ru.privatenull.pnlibrary.api.plugin.PluginMessages
-import ru.privatenull.pnlibrary.api.plugin.PluginOptions
 import ru.privatenull.pnlibrary.api.plugin.PluginRegistry
-import ru.privatenull.pnlibrary.api.plugin.PluginDependency
 import ru.privatenull.pnlibrary.api.tasks.TaskScope
 import ru.privatenull.pnlibrary.api.tasks.TaskExecution
 import ru.privatenull.pnlibrary.api.tasks.TaskSpec
@@ -33,21 +27,16 @@ import ru.privatenull.pnlibrary.api.plugin.DenyAction
 import ru.privatenull.pnlibrary.core.remote.RemotePolicyEngine
 import ru.privatenull.pnlibrary.api.tasks.TaskService
 import ru.privatenull.pnlibrary.core.tasks.TaskServiceImpl
-import ru.privatenull.pnlibrary.api.updates.PluginUpdateRequest
 import ru.privatenull.pnlibrary.api.updates.UpdateRegistration
 import ru.privatenull.pnlibrary.api.updates.UpdateService
 import ru.privatenull.pnlibrary.api.updates.ProductDescriptor
 import ru.privatenull.pnlibrary.api.version.SemanticVersion
-import ru.privatenull.pnlibrary.api.version.PnLibraryApi
 import ru.privatenull.pnlibrary.core.services.ServiceManagerImpl
 import ru.privatenull.pnlibrary.core.config.ConfigurationServiceImpl
-import java.nio.file.Path
 import java.util.IdentityHashMap
 import java.util.concurrent.atomic.AtomicBoolean
 import java.util.concurrent.atomic.AtomicLong
 import java.util.function.Consumer
-import java.util.concurrent.CompletableFuture
-import java.util.concurrent.ConcurrentHashMap
 import java.nio.charset.StandardCharsets
 import java.security.MessageDigest
 import ru.privatenull.pnlibrary.api.placeholders.PlaceholderService
@@ -65,7 +54,6 @@ import ru.privatenull.pnlibrary.core.cooldowns.CooldownServiceImpl
 import ru.privatenull.pnlibrary.api.currency.CurrencyService
 import ru.privatenull.pnlibrary.api.currency.CurrencyStorageFactory
 import ru.privatenull.pnlibrary.api.commands.CommandService
-import ru.privatenull.pnlibrary.api.downloads.FileDownloads
 import ru.privatenull.pnlibrary.api.downloads.DownloadRegistration
 import ru.privatenull.pnlibrary.currency.CurrencyFeature
 import ru.privatenull.pnlibrary.core.downloads.DirectDownloadManager
@@ -105,6 +93,10 @@ internal class PluginRegistryImpl(
     private val closed = AtomicBoolean(false)
     private val registrationSequence = AtomicLong()
     private val sharedComponentCache = ComponentCache()
+    private val productResolver = ModuleProductResolver(platform)
+    private val dependencyValidator = ModuleDependencyValidator(platform) {
+        directDownloads != null
+    }
     override fun register(owner: Any): PluginRegistration = synchronized(plugins) {
         check(!closed.get()) { "PluginRegistry is closed" }
         require(platform.acceptsOwner(owner)) {
@@ -145,7 +137,7 @@ internal class PluginRegistryImpl(
         parent: Plugin,
         id: ModuleId,
         serviceKey: PluginId,
-        definition: Builder,
+        definition: ModuleDefinitionBuilder,
         productDescriptor: ProductDescriptor?,
     ): Context {
         val owner = parent.owner
@@ -229,7 +221,7 @@ internal class PluginRegistryImpl(
         }
     }
 
-    private fun metadata(owner: Any, id: ModuleId, definition: Builder): PluginMetadata {
+    private fun metadata(owner: Any, id: ModuleId, definition: ModuleDefinitionBuilder): PluginMetadata {
         val details = platform.ownerDetails(owner)
         return PluginMetadata(
             id = id,
@@ -256,58 +248,6 @@ internal class PluginRegistryImpl(
         return PluginId.of(
             "m-${nativeId.value.take(18)}-${moduleId.value.take(18)}-${hash.take(16)}",
         )
-    }
-
-    private fun productDescriptor(owner: Any, id: ModuleId, definition: Builder): ProductDescriptor? {
-        // The public builder intentionally does not require a product id. Bind the
-        // descriptor to the module before any comparison or validation reads id.
-        val explicit = definition.productDescriptor?.let { descriptor ->
-            if (!descriptor.isBound) descriptor.bindTo(id.value) else descriptor
-        }
-        val inferred = definition.updateRequest?.let { request ->
-            val version = platform.ownerDetails(owner)["version"] ?: definition.metadataVersion
-                ?: error("Cannot infer component version for $id")
-            ProductDescriptor.builder().version(version)
-                .pnLibraryApi(request.supportedApi.minimum, request.supportedApi.maximum)
-                .build()
-        }
-        val implicit = if (explicit == null && inferred == null && definition.dependencies.isNotEmpty()) {
-            val version = platform.ownerDetails(owner)["version"] ?: definition.metadataVersion
-                ?: error("Cannot infer component version for $id")
-            ProductDescriptor.builder().version(version)
-                .pnLibraryApi(PnLibraryApi.VERSION, PnLibraryApi.VERSION)
-                .build()
-        } else null
-        return (explicit ?: inferred ?: implicit)?.let { descriptor ->
-            if (!descriptor.isBound) descriptor.bindTo(id.value) else descriptor
-        }?.also {
-            require(it.id.value == id.value) { "Component ID ${it.id} does not match plugin ID $id" }
-        }
-    }
-
-    private fun validateDependencies(dependencies: List<PluginDependency>) {
-        val problems = dependencies.mapNotNull { it.managed }.filter { it.required }.mapNotNull { dependency ->
-            val installed = productDescriptors[dependency.product.value]
-            when {
-                installed == null -> "${dependency.product} >= ${dependency.minimumVersion} is missing (${dependency.repositoryOwner}/${dependency.repositoryName})"
-                installed.version < dependency.minimumVersion -> "${dependency.product} ${installed.version} is installed, ${dependency.minimumVersion} is required"
-                else -> null
-            }
-        }.toMutableList()
-        val nativePlugins = runCatching { platform.installedPlugins() }.getOrNull().orEmpty()
-            .entries.associate { it.key.lowercase() to it.value }
-        dependencies.mapNotNull { it.external }.filter { it.required }.forEach { dependency ->
-            val installed = nativePlugins[dependency.plugin.lowercase()]
-            val canStage = directDownloads != null && dependency.automaticDownload && dependency.artifact != null
-            when {
-                installed == null && canStage -> null
-                installed == null -> problems += "${dependency.plugin} >= ${dependency.minimumVersion} is missing (${dependency.downloadPage ?: "no download page"})"
-                SemanticVersion.tryParse(installed)?.let(dependency.versions::accepts) != true && canStage -> null
-                SemanticVersion.tryParse(installed)?.let { it >= dependency.minimumVersion } != true ->
-                    problems += "${dependency.plugin} $installed is installed, ${dependency.minimumVersion} is required"
-            }
-        }
-        require(problems.isEmpty()) { "Unsatisfied pnLibrary component dependencies: ${problems.joinToString("; ")}" }
     }
 
     private fun combineDownloads(
@@ -338,13 +278,13 @@ internal class PluginRegistryImpl(
                 check(!pluginClosed.get()) { "Plugin context is closed" }
                 check(!closed.get()) { "PluginRegistry is closed" }
                 require(id !in moduleContexts) { "Module $id is already registered for this plugin" }
-                val definition = Builder().also { configure.accept(it) }
-                val descriptor = productDescriptor(owner, id, definition)
+                val definition = ModuleDefinitionBuilder().also { configure.accept(it) }
+                val descriptor = productResolver.resolve(owner, id, definition)
                 require(descriptor == null || descriptor.id.value !in productDescriptors) {
                     "Component ${descriptor?.id} is already registered"
                 }
                 definition.bindUpdatesTo(descriptor)
-                validateDependencies(definition.dependencies)
+                dependencyValidator.validate(definition.dependencies, productDescriptors)
                 createContext(this, id, serviceKey(registrationId, nativeId, id), definition, descriptor).also { context ->
                     moduleContexts[id] = context
                     if (descriptor != null) productDescriptors[descriptor.id.value] = descriptor
@@ -574,121 +514,6 @@ internal class PluginRegistryImpl(
         private fun MessageBox.status(label: String, detail: String?): MessageBox =
             if (detail == null) skip(label, "not configured") else ok(label, detail)
 
-    }
-
-    private class Builder : PluginBuilder {
-        var remotePolicy: ru.privatenull.pnlibrary.api.plugin.RemotePolicy? = null
-        var metadataName: String? = null
-        var metadataVersion: String? = null
-        var metadataAuthors: String? = null
-        var metricsProjectId: Int? = null
-        var metricsEnabled: Boolean = false
-        val metricsConfigurers = mutableListOf<Consumer<PluginMetrics>>()
-        var diagnosticsDirectory: Path? = null
-        var diagnosticContainer: DiagnosticContainer? = null
-        var updateRequest: PluginUpdateRequest? = null
-        var productDescriptor: ProductDescriptor? = null
-        val dependencies = mutableListOf<PluginDependency>()
-        var downloadsRequest: FileDownloads? = null
-        var placeholderApiEnabled: Boolean = true
-        val listeners = mutableListOf<Listener>()
-
-    override fun product(descriptor: ProductDescriptor): PluginBuilder = apply {
-            require(productDescriptor == null) { "component descriptor is already configured" }
-            productDescriptor = descriptor
-        }
-
-        override fun depends(dependency: PluginDependency): PluginBuilder = apply {
-            require(dependency.managed != null || dependency.external != null) {
-                "plugin dependency must provide a managed or external dependency"
-            }
-            require(dependencies.none { existing ->
-                (existing.managed?.product == dependency.managed?.product && dependency.managed != null) ||
-                    (existing.external?.plugin?.equals(dependency.external?.plugin, true) == true && dependency.external != null)
-            }) { "duplicate plugin dependency" }
-            dependencies += dependency
-        }
-
-        override fun metadata(configure: Consumer<PluginMetadataBuilder>): PluginBuilder = apply {
-            configure.accept(MetadataBuilder(this))
-        }
-
-        override fun options(configure: Consumer<PluginOptions>): PluginBuilder = apply {
-            configure.accept(OptionsBuilder(this))
-        }
-
-        override fun metrics(
-            projectId: Int,
-            enabled: Boolean,
-            configure: Consumer<PluginMetrics>,
-        ): PluginBuilder = apply {
-            require(projectId > 0) { "metrics projectId must be positive" }
-            metricsProjectId = projectId
-            metricsEnabled = enabled
-            metricsConfigurers += configure
-        }
-
-        override fun diagnostics(dataDirectory: Path, container: DiagnosticContainer): PluginBuilder = apply {
-            diagnosticsDirectory = dataDirectory
-            diagnosticContainer = container
-        }
-
-        override fun updates(request: PluginUpdateRequest): PluginBuilder = apply {
-            updateRequest = request
-        }
-
-        override fun downloads(request: FileDownloads): PluginBuilder = apply {
-            require(downloadsRequest == null) { "downloads are already configured" }
-            downloadsRequest = request
-        }
-
-        override fun remotePolicy(policy: ru.privatenull.pnlibrary.api.plugin.RemotePolicy): PluginBuilder = apply {
-            remotePolicy = policy
-        }
-
-        @Deprecated("Register listeners through ModuleContext.events after the context has been created")
-        override fun listener(listener: Listener): PluginBuilder = apply {
-            listeners += listener
-        }
-
-        fun bindUpdatesTo(descriptor: ProductDescriptor?) {
-            val source = updateRequest ?: return
-            if (descriptor == null) return
-            updateRequest = PluginUpdateRequest.builder()
-                .repository(source.repositoryOwner, source.repositoryName)
-                .channel(source.channel)
-                .automaticDownload(source.automaticDownload)
-                .supportedApi(descriptor.supportedApi.minimum, descriptor.supportedApi.maximum)
-                .also { target ->
-                    source.artifacts.forEach {
-                        val artifactPlatform = it.platform
-                        if (artifactPlatform == null) target.artifact(it.pattern, it.minimumJava, it.maximumJava)
-                        else target.artifact(it.pattern, artifactPlatform, it.minimumJava, it.maximumJava)
-                    }
-                }
-                .build()
-        }
-    }
-
-    private class OptionsBuilder(private val target: Builder) : PluginOptions {
-        override fun placeholderApi(enabled: Boolean): PluginOptions = apply {
-            target.placeholderApiEnabled = enabled
-        }
-    }
-
-    private class MetadataBuilder(private val target: Builder) : PluginMetadataBuilder {
-        override fun name(value: String): PluginMetadataBuilder = apply {
-            target.metadataName = value.requireMetadata("name")
-        }
-        override fun version(value: String): PluginMetadataBuilder = apply {
-            target.metadataVersion = value.requireMetadata("version")
-        }
-        override fun authors(value: String): PluginMetadataBuilder = apply {
-            target.metadataAuthors = value.requireMetadata("authors")
-        }
-
-        private fun String.requireMetadata(field: String): String =
-            trim().also { require(it.isNotEmpty()) { "plugin metadata $field must not be blank" } }
     }
 
 }
