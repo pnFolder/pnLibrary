@@ -1,4 +1,4 @@
-package ru.privatenull.pnlibrary.core.diagnostics
+package ru.privatenull.pnlibrary.core.observability.history
 
 import org.junit.jupiter.api.Assertions.assertEquals
 import org.junit.jupiter.api.Assertions.assertFalse
@@ -11,7 +11,7 @@ import java.time.Clock
 import java.time.Instant
 import java.time.ZoneOffset
 
-class PersistentDiagnosticHistoryTest {
+class IncidentHistoryStoreTest {
     @TempDir
     lateinit var temporaryDirectory: Path
 
@@ -19,7 +19,7 @@ class PersistentDiagnosticHistoryTest {
 
     @Test
     fun `disabled encryption never persists plaintext history`() {
-        val history = PersistentDiagnosticHistory(
+        val history = IncidentHistoryStore(
             directory = temporaryDirectory,
             codec = null,
             retentionDays = 30,
@@ -37,7 +37,7 @@ class PersistentDiagnosticHistoryTest {
         Files.write(temporaryDirectory.resolve("a.pndlog"), ByteArray(3) { 1 })
         Files.write(temporaryDirectory.resolve("b.pndlog"), ByteArray(3) { 2 })
         Files.write(temporaryDirectory.resolve("ignored.txt"), ByteArray(1))
-        val history = PersistentDiagnosticHistory(
+        val history = IncidentHistoryStore(
             directory = temporaryDirectory,
             codec = null,
             retentionDays = 30,
@@ -54,10 +54,10 @@ class PersistentDiagnosticHistoryTest {
     @Test
     fun `rejects invalid retention limits`() {
         assertThrows(IllegalArgumentException::class.java) {
-            PersistentDiagnosticHistory(temporaryDirectory, null, retentionDays = 0, maxBytes = 1, clock = clock)
+            IncidentHistoryStore(temporaryDirectory, null, retentionDays = 0, maxBytes = 1, clock = clock)
         }
         assertThrows(IllegalArgumentException::class.java) {
-            PersistentDiagnosticHistory(temporaryDirectory, null, retentionDays = 1, maxBytes = 0, clock = clock)
+            IncidentHistoryStore(temporaryDirectory, null, retentionDays = 1, maxBytes = 0, clock = clock)
         }
     }
 }

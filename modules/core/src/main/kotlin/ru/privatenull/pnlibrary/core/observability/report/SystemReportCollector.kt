@@ -1,4 +1,6 @@
-package ru.privatenull.pnlibrary.core.diagnostics
+package ru.privatenull.pnlibrary.core.observability.report
+
+import ru.privatenull.pnlibrary.core.diagnostics.DiagnosticRedactor
 
 import java.io.File
 import java.lang.management.GarbageCollectorMXBean
@@ -14,7 +16,7 @@ import java.time.Instant
  * unless [collect] is explicitly called for an encrypted report. JVM arguments
  * pass through credential and free-text redaction before entering the snapshot.
  */
-class SystemCollector {
+internal class SystemReportCollector {
 
     private val redactor = DiagnosticRedactor()
 

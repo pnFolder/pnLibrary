@@ -1,4 +1,4 @@
-package ru.privatenull.pnlibrary.core.diagnostics
+package ru.privatenull.pnlibrary.core.observability.history
 
 import com.google.gson.Gson
 import ru.privatenull.pnlibrary.core.security.EncryptedEnvelopeCodec
@@ -23,7 +23,7 @@ import java.util.UUID
  * @param maxBytes aggregate encrypted history budget
  * @param clock time source used for timestamps and retention
  */
-internal class PersistentDiagnosticHistory(
+internal class IncidentHistoryStore(
     private val directory: Path,
     private val codec: EncryptedEnvelopeCodec?,
     private val retentionDays: Int,

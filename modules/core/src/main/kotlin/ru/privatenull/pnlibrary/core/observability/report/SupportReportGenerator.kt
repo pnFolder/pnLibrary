@@ -5,7 +5,6 @@ import ru.privatenull.pnlibrary.api.diagnostics.DiagnosticReport
 import ru.privatenull.pnlibrary.api.runtime.PnLibraryConfig
 import ru.privatenull.pnlibrary.core.diagnostics.ConfigReader
 import ru.privatenull.pnlibrary.core.diagnostics.DiagnosticsRegistry
-import ru.privatenull.pnlibrary.core.diagnostics.SystemCollector
 import ru.privatenull.pnlibrary.core.security.EncryptedEnvelopeCodec
 import ru.privatenull.pnlibrary.core.upload.UploadProvider
 import ru.privatenull.pnlibrary.core.upload.UploadLedger
@@ -52,7 +51,7 @@ internal class SupportReportGenerator(
     },
 ) {
 
-    private val systemCollector = SystemCollector()
+    private val systemCollector = SystemReportCollector()
     private val configReader = ConfigReader(dataFolder, config)
     private val reportStore = SupportReportStore(dataFolder.resolve("reports"))
 

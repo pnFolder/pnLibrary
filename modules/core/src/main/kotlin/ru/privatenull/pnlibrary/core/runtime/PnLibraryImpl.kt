@@ -14,7 +14,7 @@ import ru.privatenull.pnlibrary.core.diagnostics.diagnosticCommand
 import ru.privatenull.pnlibrary.core.config.ConfigurationServiceImpl
 import ru.privatenull.pnlibrary.core.commands.CommandServiceImpl
 import ru.privatenull.pnlibrary.core.audiences.AudienceServiceImpl
-import ru.privatenull.pnlibrary.core.diagnostics.PersistentDiagnosticHistory
+import ru.privatenull.pnlibrary.core.observability.history.IncidentHistoryStore
 import ru.privatenull.pnlibrary.core.observability.report.SupportReportGenerator
 import ru.privatenull.pnlibrary.core.events.EventServiceImpl
 import ru.privatenull.pnlibrary.core.logging.DiagnosticLogBuffer
@@ -105,7 +105,7 @@ internal class PnLibraryImpl(
     override val activity: ActivityService get() = observability
     val uploadLedger: UploadLedger = UploadLedger(dataFolder.resolve("upload-ledger.json"))
     val encryptionCodec: EncryptedEnvelopeCodec? = initEncryptionCodec()
-    private val diagnosticHistory = PersistentDiagnosticHistory(
+    private val diagnosticHistory = IncidentHistoryStore(
         dataFolder.resolve("diagnostics").resolve("history"),
         encryptionCodec,
         config.historyRetentionDays,
