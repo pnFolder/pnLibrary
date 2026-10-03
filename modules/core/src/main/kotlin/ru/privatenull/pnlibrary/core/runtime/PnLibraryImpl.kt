@@ -33,7 +33,7 @@ import ru.privatenull.pnlibrary.api.tasks.TaskServiceSettings
 import ru.privatenull.pnlibrary.api.activity.ActivityService
 import ru.privatenull.pnlibrary.api.activity.ActivityCategory
 import ru.privatenull.pnlibrary.api.activity.ActivitySeverity
-import ru.privatenull.pnlibrary.core.activity.ActivityJournalService
+import ru.privatenull.pnlibrary.core.observability.ObservabilityRuntime
 import ru.privatenull.pnlibrary.core.updates.UpdateServiceImpl
 import ru.privatenull.pnlibrary.core.upload.EncryptedReportUploader
 import ru.privatenull.pnlibrary.core.upload.CatboxUploader
@@ -79,8 +79,9 @@ internal class PnLibraryImpl(
     override val isClosed: Boolean get() = closedFlag.get()
     private val metricsRegistry = MetricsRegistry(platform.metricsFactory)
     val dataFolder: Path = platform.dataFolder ?: extractDataFolder(owner)
-    override val activity: ActivityService = ActivityJournalService(dataFolder)
-    override val observability = UnifiedObservabilityService(diagnostics, activity)
+    private val observabilityRuntime = ObservabilityRuntime(dataFolder)
+    override val observability = UnifiedObservabilityService(diagnostics, observabilityRuntime)
+    override val activity: ActivityService get() = observability
     val uploadLedger: UploadLedger = UploadLedger(dataFolder.resolve("upload-ledger.json"))
     val encryptionCodec: EncryptedEnvelopeCodec? = initEncryptionCodec()
     private val diagnosticHistory = PersistentDiagnosticHistory(
@@ -174,18 +175,20 @@ internal class PnLibraryImpl(
         diagnosticLogs.onChange { persistDiagnosticHistory() }
         diagnostics.onEventsChanged(::persistDiagnosticHistory)
         diagnostics.onActivityEvent { plugin, level, component, code, message, error, fields ->
-            activity.record(
-                type = "DIAGNOSTIC_${code}",
-                category = ru.privatenull.pnlibrary.api.activity.ActivityCategory.DIAGNOSTICS,
-                severity = when (level) {
-                    ru.privatenull.pnlibrary.api.diagnostics.DiagnosticLevel.INFO -> ru.privatenull.pnlibrary.api.activity.ActivitySeverity.INFO
-                    ru.privatenull.pnlibrary.api.diagnostics.DiagnosticLevel.WARNING -> ru.privatenull.pnlibrary.api.activity.ActivitySeverity.WARNING
-                    ru.privatenull.pnlibrary.api.diagnostics.DiagnosticLevel.ERROR -> ru.privatenull.pnlibrary.api.activity.ActivitySeverity.ERROR
-                },
+            val request = ru.privatenull.pnlibrary.api.observability.ObservationRequest(
+                plugin = plugin,
                 source = component,
-                pluginId = plugin,
-                metadata = fields.mapValues { (_, value) -> value?.toString() ?: "null" } + mapOf("message" to message, "hasException" to (error != null).toString())
+                message = message,
+                level = when (level) {
+                    ru.privatenull.pnlibrary.api.diagnostics.DiagnosticLevel.INFO -> ru.privatenull.pnlibrary.api.observability.ObservationLevel.INFO
+                    ru.privatenull.pnlibrary.api.diagnostics.DiagnosticLevel.WARNING -> ru.privatenull.pnlibrary.api.observability.ObservationLevel.WARNING
+                    ru.privatenull.pnlibrary.api.diagnostics.DiagnosticLevel.ERROR -> ru.privatenull.pnlibrary.api.observability.ObservationLevel.ERROR
+                },
+                data = fields.mapValues { (_, value) -> value?.toString() ?: "null" } +
+                    mapOf("code" to code, "hasException" to (error != null).toString()),
+                error = error,
             )
+            observabilityRuntime.record(request)
         }
         platform.observeNativeLogs { nativeOwner, level, message, error ->
             diagnosticLogs.record(platform, nativeOwner, level, message, error)

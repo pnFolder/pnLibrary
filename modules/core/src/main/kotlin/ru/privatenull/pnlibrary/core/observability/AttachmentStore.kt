@@ -54,6 +54,10 @@ internal class AttachmentStore(dataFolder: Path) {
     fun forObservation(observationId: String): List<StoredAttachment> =
         attachments.values.filter { attachment -> attachment.observationId == observationId }
 
+    fun all(): List<StoredAttachment> = attachments.values.toList()
+
+    fun read(attachment: StoredAttachment): ByteArray = Files.readAllBytes(attachment.storedPath)
+
     fun removeOrphans(activeObservationIds: Set<String>) {
         val orphanIds = attachments.values
             .filterNot { it.observationId in activeObservationIds }
@@ -65,6 +69,8 @@ internal class AttachmentStore(dataFolder: Path) {
         }
         if (orphanIds.isNotEmpty()) writeManifest()
     }
+
+    fun clear() = removeOrphans(emptySet())
 
     private fun loadManifest() {
         if (!Files.isRegularFile(manifest)) return

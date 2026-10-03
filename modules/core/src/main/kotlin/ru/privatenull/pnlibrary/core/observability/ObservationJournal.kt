@@ -33,6 +33,11 @@ internal class ObservationJournal(dataFolder: Path) : AutoCloseable {
 
     fun recent(): List<Observation> = synchronized(lock) { observations.toList() }
 
+    fun clear() = synchronized(lock) {
+        observations.clear()
+        Files.deleteIfExists(file)
+    }
+
     private fun load() = synchronized(lock) {
         if (!Files.isRegularFile(file)) return
         Files.readAllLines(file, StandardCharsets.UTF_8)

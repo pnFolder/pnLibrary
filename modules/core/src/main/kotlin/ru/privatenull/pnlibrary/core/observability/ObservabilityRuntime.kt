@@ -53,5 +53,17 @@ internal class ObservabilityRuntime(
     internal fun attachments(observationId: String): List<StoredAttachment> =
         attachmentStore.forObservation(observationId)
 
+    internal fun attachFile(observationId: String, path: Path): StoredAttachment =
+        attachmentStore.save(observationId, path)
+
+    internal fun allAttachments(): List<StoredAttachment> = attachmentStore.all()
+
+    internal fun attachmentBytes(attachment: StoredAttachment): ByteArray = attachmentStore.read(attachment)
+
+    internal fun clear() {
+        journal.clear()
+        attachmentStore.clear()
+    }
+
     override fun close() = journal.close()
 }
