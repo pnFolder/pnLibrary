@@ -2,7 +2,6 @@ package ru.privatenull.pnlibrary.api.activity
 
 import java.util.UUID
 import java.nio.file.Path
-import java.nio.file.Files
 
 enum class ActivitySeverity { TRACE, INFO, NOTICE, WARNING, ERROR, CRITICAL }
 
@@ -41,16 +40,13 @@ data class ActivityAttachment(
     val sha256: String,
 )
 
-/** A file selected for one activity record before it is persisted. */
-data class ActivityFile(
-    val path: Path,
-    val name: String = path.fileName.toString(),
-    val contentType: String = "application/octet-stream",
-)
+/** Files selected for one activity record before they are persisted. */
+typealias ActivityFile = Path
 
 /** One inspectable activity snapshot submitted as a single unit. */
 data class ActivityBundle(
-    val type: String,
+    val files: List<ActivityFile> = emptyList(),
+    val type: String = "DIAGNOSTIC",
     val category: ActivityCategory = ActivityCategory.SYSTEM,
     val severity: ActivitySeverity = ActivitySeverity.INFO,
     val sessionId: String? = null,
@@ -58,7 +54,6 @@ data class ActivityBundle(
     val source: String? = null,
     val pluginId: String? = null,
     val metadata: Map<String, String> = emptyMap(),
-    val files: List<ActivityFile> = emptyList(),
 )
 
 interface ActivityService : AutoCloseable {
@@ -89,19 +84,24 @@ interface ActivityService : AutoCloseable {
             pluginId = bundle.pluginId,
             metadata = bundle.metadata,
         )
-        bundle.files.forEach { file ->
-            attach(event.eventId, file.name, file.contentType, Files.readAllBytes(file.path))
-        }
+        bundle.files.forEach { file -> attachFile(event.eventId, file) }
         return event
     }
+
+    /** Records a diagnostic snapshot without requiring callers to name its type. */
+    fun diagnostic(
+        files: List<Path> = emptyList(),
+        metadata: Map<String, String> = emptyMap(),
+        pluginId: String? = null,
+        source: String? = null,
+    ): ActivityEvent = record(ActivityBundle(files = files, metadata = metadata, pluginId = pluginId, source = source))
     fun attach(eventId: String, name: String, contentType: String, bytes: ByteArray): ActivityAttachment
     fun attachFile(eventId: String, path: Path, contentType: String = "application/octet-stream"): ActivityAttachment
 
     /** Records an event and attaches [path] to it through one caller-facing operation. */
     fun recordWithFile(
-        type: String,
         path: Path,
-        contentType: String = "application/octet-stream",
+        type: String = "DIAGNOSTIC",
         category: ActivityCategory = ActivityCategory.SYSTEM,
         severity: ActivitySeverity = ActivitySeverity.INFO,
         sessionId: String? = null,
@@ -111,7 +111,7 @@ interface ActivityService : AutoCloseable {
         metadata: Map<String, String> = emptyMap(),
     ): ActivityEvent {
         val event = record(type, category, severity, sessionId, correlationId, source, pluginId, metadata)
-        attachFile(event.eventId, path, contentType)
+        attachFile(event.eventId, path)
         return event
     }
     fun exportJournal(): ByteArray

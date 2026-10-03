@@ -6,7 +6,6 @@ import org.junit.jupiter.api.Test
 import org.junit.jupiter.api.assertThrows
 import ru.privatenull.pnlibrary.api.activity.ActivityEvent
 import ru.privatenull.pnlibrary.api.activity.ActivityBundle
-import ru.privatenull.pnlibrary.api.activity.ActivityFile
 import ru.privatenull.pnlibrary.api.activity.ActivityQuery
 import ru.privatenull.pnlibrary.api.activity.ActivitySeverity
 import java.nio.file.Files
@@ -63,7 +62,6 @@ class ActivityJournalServiceTest {
             val event = journal.recordWithFile(
                 type = "REPORT_CREATED",
                 path = source,
-                contentType = "text/plain",
             )
             assertEquals(1, journal.recent().size)
             assertTrue(journal.exportAttachmentManifest().toString(StandardCharsets.UTF_8).contains(event.eventId))
@@ -78,10 +76,9 @@ class ActivityJournalServiceTest {
         val config = root.resolve("config.yml").also { Files.writeString(it, "debug: true") }
         ActivityJournalService(root).use { journal ->
             val bundle = ActivityBundle(
-                type = "DIAGNOSTIC_REPORT",
                 files = listOf(
-                    ActivityFile(log, contentType = "text/plain"),
-                    ActivityFile(config, contentType = "text/yaml"),
+                    log,
+                    config,
                 ),
             )
             val event = journal.record(bundle)

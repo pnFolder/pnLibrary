@@ -84,7 +84,10 @@ class ActivityJournalService(dataFolder: Path, private val clock: () -> Long = S
 
     override fun attachFile(eventId: String, path: Path, contentType: String): ActivityAttachment {
         require(Files.isRegularFile(path)) { "attachment path is not a regular file" }
-        return attach(eventId, path.fileName.toString(), contentType, Files.readAllBytes(path))
+        val detectedType = if (contentType == "application/octet-stream") {
+            Files.probeContentType(path) ?: extensionType(path)
+        } else contentType
+        return attach(eventId, path.fileName.toString(), detectedType, Files.readAllBytes(path))
     }
 
     override fun exportJournal(): ByteArray = synchronized(lock) {
@@ -161,6 +164,15 @@ class ActivityJournalService(dataFolder: Path, private val clock: () -> Long = S
         sessionId = event.sessionId?.take(128), correlationId = event.correlationId?.take(128),
         metadata = event.metadata.entries.take(MAX_METADATA).associate { it.key.take(64) to it.value.take(512) },
     )
+
+    private fun extensionType(path: Path): String = when (path.fileName.toString().substringAfterLast('.', "").lowercase()) {
+        "json" -> "application/json"
+        "yml", "yaml" -> "application/yaml"
+        "log", "txt" -> "text/plain"
+        "xml" -> "application/xml"
+        "zip" -> "application/zip"
+        else -> "application/octet-stream"
+    }
 
     private fun retentionMillis(severity: ru.privatenull.pnlibrary.api.activity.ActivitySeverity) = when (severity) {
         ru.privatenull.pnlibrary.api.activity.ActivitySeverity.TRACE -> Duration.ofHours(6).toMillis()
