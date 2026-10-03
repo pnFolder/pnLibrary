@@ -1,6 +1,5 @@
 package ru.privatenull.pnlibrary.core.updates
 
-import com.google.gson.JsonParser
 import ru.privatenull.pnlibrary.api.logging.LogLevel
 import ru.privatenull.pnlibrary.api.plugin.PluginDependency
 import ru.privatenull.pnlibrary.api.updates.*
@@ -12,20 +11,15 @@ import java.io.ByteArrayInputStream
 import java.nio.file.Files
 import java.nio.file.Path
 import java.nio.file.Paths
-import java.net.URI
 import java.time.Duration
 import java.util.Optional
 import java.util.UUID
 import java.util.concurrent.CompletionStage
-import java.util.concurrent.CompletableFuture
 import java.util.concurrent.CopyOnWriteArrayList
 import java.util.concurrent.Executors
-import java.util.concurrent.Executor
 import java.util.concurrent.atomic.AtomicBoolean
-import java.util.concurrent.atomic.AtomicInteger
 import java.util.concurrent.atomic.AtomicReference
 import java.security.MessageDigest
-import java.util.Base64
 
 /** One catalogue → resolver → verifier → transaction pipeline for every component. */
 internal class UpdateServiceImpl(private val platform: PlatformAdapter, private val dataFolder: Path) : UpdateService, AutoCloseable {
@@ -50,6 +44,11 @@ internal class UpdateServiceImpl(private val platform: PlatformAdapter, private 
     private val http = TrustedHttpClient(Duration.ofSeconds(2), Duration.ofSeconds(3))
     private val releaseCatalog = ReleaseCatalogClient(
         http, ReleaseCatalogueStore(dataFolder.resolve("updates/catalog")), catalogExecutor, Duration.ofMinutes(30),
+    )
+    private val catalogGateway = ReleaseCatalogGateway(
+        client = releaseCatalog,
+        http = http,
+        requestExecutor = catalogRequestExecutor,
     )
     private val transaction = UpdateTransaction(
         dataFolder.resolve("updates/transactions"), ArtifactVerifier(MAX_ARTIFACT_BYTES), dataFolder.parent,
@@ -133,7 +132,7 @@ internal class UpdateServiceImpl(private val platform: PlatformAdapter, private 
 
         val installed = installedProducts(registrations)
         val channels = updateChannels(registrations)
-        val releases = requestReleaseCatalogs(registrations, channels, refreshMode)
+        val releases = requestReleaseCatalogs(registrations, refreshMode)
         observeLatestVersions(registrations, releases)
 
         return UpdateResolver(ProductId.of("pnlibrary")).resolve(
@@ -166,81 +165,39 @@ internal class UpdateServiceImpl(private val platform: PlatformAdapter, private 
 
     private fun requestReleaseCatalogs(
         registrations: List<Registration>,
-        channels: Map<ProductId, UpdateChannel>,
         refreshMode: RefreshMode,
-    ): List<ProductRelease> = registrations.map { entry ->
-        entry to CompletableFuture.supplyAsync({
-            // Use the raw endpoint directly. The github.com/raw URL adds several
-            // redirects; when a server is slow those redirects multiply the HTTP
-            // read timeout and make `/pn update` appear frozen for minutes.
-            val source = URI.create("https://raw.githubusercontent.com/${entry.request.repositoryOwner}/${entry.request.repositoryName}/refs/heads/main/.pnlibrary/releases.json")
-            loadCatalogWithFallback(
-                source,
-                URI.create("https://api.github.com/repos/${entry.request.repositoryOwner}/${entry.request.repositoryName}/contents/.pnlibrary/releases.json?ref=main"),
-                URI.create("https://cdn.jsdelivr.net/gh/${entry.request.repositoryOwner}/${entry.request.repositoryName}@main/.pnlibrary/releases.json"),
-                refreshMode,
-            )
-        }, catalogRequestExecutor)
-    }.flatMap { (entry, catalogFuture) ->
-            val catalog = catalogFuture.join()
-            require(catalog.product.equals(entry.descriptor.id.value, ignoreCase = true)) {
-                "Release catalog product ${catalog.product} does not match ${entry.descriptor.id}"
-            }
-            catalog.releases
-                .asSequence()
-                .map { release ->
-                    ProductRelease(
-                        entry.descriptor.id, release.version, release.channel, release.api,
-                        providesApi = release.api.maximum.takeIf { entry.descriptor.id.value == "pnlibrary" },
-                        repository = "${entry.request.repositoryOwner}/${entry.request.repositoryName}",
-                        artifacts = release.artifacts.map { artifact ->
-                            ArtifactDescriptor(
-                                artifact.file, artifact.platform, artifact.javaMinimum, artifact.javaMaximum,
-                                size = null, sha256 = null, downloadUri = artifact.url,
-                            )
-                        },
-                        publishedAt = release.publishedAt,
-                    )
-                }.toList()
+    ): List<ProductRelease> = registrations.flatMap { registration ->
+        val catalog = catalogGateway.load(
+            owner = registration.request.repositoryOwner,
+            repository = registration.request.repositoryName,
+            refreshMode = refreshMode,
+        )
+        require(catalog.product.equals(registration.descriptor.id.value, ignoreCase = true)) {
+            "Release catalog product ${catalog.product} does not match ${registration.descriptor.id}"
         }
-
-    private fun loadCatalogWithFallback(source: URI, apiSource: URI, cdnSource: URI, refreshMode: RefreshMode): ReleaseCatalog {
-        // Do not wait for an unreachable host before trying the alternatives. A
-        // server may have access to jsDelivr or the GitHub API while raw.github-
-        // usercontent.com is blocked by its DNS/proxy. Running all three probes
-        // concurrently keeps the command bounded by one request timeout.
-        val result = CompletableFuture<ReleaseCatalog>()
-        val failures = java.util.Collections.synchronizedList(mutableListOf<String>())
-        val remaining = AtomicInteger(3)
-
-        fun submit(label: String, task: () -> ReleaseCatalog) {
-            CompletableFuture.supplyAsync(task, catalogRequestExecutor).whenComplete { catalog, error ->
-                if (error == null) {
-                    result.complete(catalog)
-                } else {
-                    failures += "$label: ${error.cause?.message ?: error.message ?: error.javaClass.simpleName}"
-                    if (remaining.decrementAndGet() == 0) {
-                        result.completeExceptionally(IllegalStateException(
-                            "Release catalog unavailable via GitHub raw, Contents API and jsDelivr: ${failures.joinToString("; ")}",
-                            error.cause ?: error,
-                        ))
-                    }
-                }
-            }
-        }
-
-        submit("raw") { releaseCatalog.load(source, refreshMode).join() }
-        submit("api") {
-            val response = http.get(apiSource, ReleaseCatalogCodec.MAX_BYTES * 2)
-            val content = JsonParser.parseString(response.toString(Charsets.UTF_8)).asJsonObject
-                .get("content")?.asString
-                ?: error("GitHub API response does not contain file content")
-            ReleaseCatalogCodec().decode(Base64.getMimeDecoder().decode(content))
-        }
-        submit("jsDelivr") { releaseCatalog.load(cdnSource, RefreshMode.FORCE_REMOTE).join() }
-
-        return result.join()
+        catalog.releases.map { release -> registration.toProductRelease(release) }
     }
+
+    private fun Registration.toProductRelease(release: CatalogRelease): ProductRelease = ProductRelease(
+        product = descriptor.id,
+        version = release.version,
+        channel = release.channel,
+        supportedApi = release.api,
+        providesApi = release.api.maximum.takeIf { descriptor.id.value == "pnlibrary" },
+        repository = "${request.repositoryOwner}/${request.repositoryName}",
+        artifacts = release.artifacts.map { artifact ->
+            ArtifactDescriptor(
+                file = artifact.file,
+                platform = artifact.platform,
+                minimumJava = artifact.javaMinimum,
+                maximumJava = artifact.javaMaximum,
+                size = null,
+                sha256 = null,
+                downloadUri = artifact.url,
+            )
+        },
+        publishedAt = release.publishedAt,
+    )
 
     private fun observeLatestVersions(registrations: List<Registration>, releases: List<ProductRelease>) {
         registrations.forEach { entry ->
