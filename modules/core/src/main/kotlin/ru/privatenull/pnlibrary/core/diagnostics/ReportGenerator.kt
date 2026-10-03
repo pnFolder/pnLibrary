@@ -7,6 +7,7 @@ import ru.privatenull.pnlibrary.core.security.EncryptedEnvelopeCodec
 import ru.privatenull.pnlibrary.core.upload.UploadProvider
 import ru.privatenull.pnlibrary.core.upload.UploadLedger
 import ru.privatenull.pnlibrary.core.upload.UploadReceipt
+import ru.privatenull.pnlibrary.core.observability.ObservabilityReportSnapshot
 import ru.privatenull.pnlibrary.spi.platform.PlatformAdapter
 import java.nio.file.Path
 import java.time.Instant
@@ -43,9 +44,9 @@ internal class ReportGenerator(
     private val uploadLedger: UploadLedger?,
     private val diagnosticLogs: () -> List<Map<String, Any?>> = { emptyList() },
     private val diagnosticHistory: () -> List<Pair<String, ByteArray>> = { emptyList() },
-    private val activityJournal: () -> ByteArray = { ByteArray(0) },
-    private val activityAttachments: () -> Map<String, ByteArray> = { emptyMap() },
-    private val activityAttachmentManifest: () -> ByteArray = { ByteArray(0) },
+    private val observabilitySnapshot: () -> ObservabilityReportSnapshot = {
+        ObservabilityReportSnapshot(ByteArray(0), ByteArray(0), emptyMap())
+    },
 ) {
 
     private val systemCollector = SystemCollector()
@@ -85,9 +86,10 @@ internal class ReportGenerator(
         }
 
         if (request.logs && config.logs) {
-            activityJournal().takeIf { it.isNotEmpty() }?.let { archive.bytes("activity/activity.jsonl", it) }
-            activityAttachmentManifest().takeIf { it.isNotEmpty() }?.let { archive.bytes("activity/attachments.jsonl", it) }
-            activityAttachments().forEach { (name, bytes) -> archive.bytes("activity/attachments/$name", bytes) }
+            val observability = observabilitySnapshot()
+            observability.journal.takeIf { it.isNotEmpty() }?.let { archive.bytes("observability/observations.jsonl", it) }
+            observability.attachmentManifest.takeIf { it.isNotEmpty() }?.let { archive.bytes("observability/attachments.json", it) }
+            observability.attachments.forEach { (name, bytes) -> archive.bytes("observability/attachments/$name", bytes) }
             diagnosticLogs().takeLast(config.logRecords.coerceIn(1, 2_000))
                 .groupBy { safePath(it["plugin"]?.toString() ?: "runtime") }
                 .forEach { (plugin, logs) -> archive.json("plugins/$plugin/logs/incidents.json", logs) }

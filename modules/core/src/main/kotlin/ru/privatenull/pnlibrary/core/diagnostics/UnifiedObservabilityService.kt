@@ -1,11 +1,10 @@
 package ru.privatenull.pnlibrary.core.diagnostics
 
-import com.google.gson.GsonBuilder
 import ru.privatenull.pnlibrary.api.activity.*
 import ru.privatenull.pnlibrary.api.diagnostics.*
 import ru.privatenull.pnlibrary.api.observability.*
 import ru.privatenull.pnlibrary.core.observability.ObservabilityRuntime
-import java.nio.charset.StandardCharsets
+import ru.privatenull.pnlibrary.core.observability.reportSnapshot
 import java.nio.file.Files
 import java.nio.file.Path
 
@@ -14,8 +13,6 @@ internal class UnifiedObservabilityService(
     private val registry: DiagnosticsRegistry,
     private val runtime: ObservabilityRuntime,
 ) : ru.privatenull.pnlibrary.api.diagnostics.ObservabilityService {
-    private val gson = GsonBuilder().disableHtmlEscaping().create()
-
     override val apiVersion: Int get() = registry.apiVersion
     override fun register(plugin: String, contributor: DiagnosticsContributor): DiagnosticRegistration =
         registry.register(plugin, contributor)
@@ -71,17 +68,9 @@ internal class UnifiedObservabilityService(
         return ActivityAttachment(stored.id, eventId, stored.originalName, stored.contentType, stored.size, stored.sha256)
     }
 
-    override fun exportJournal(): ByteArray = runtime.recent(ObservationQuery(limit = Int.MAX_VALUE))
-        .joinToString(separator = "\n", postfix = "\n") { gson.toJson(it) }
-        .toByteArray(StandardCharsets.UTF_8)
-
-    override fun exportAttachments(): Map<String, ByteArray> = runtime.allAttachments()
-        .associate { it.id to runtime.attachmentBytes(it) }
-
-    override fun exportAttachmentManifest(): ByteArray = gson.toJson(runtime.allAttachments().map {
-        mapOf("id" to it.id, "eventId" to it.observationId, "name" to it.originalName,
-            "contentType" to it.contentType, "size" to it.size, "sha256" to it.sha256)
-    }).toByteArray(StandardCharsets.UTF_8)
+    override fun exportJournal(): ByteArray = runtime.reportSnapshot().journal
+    override fun exportAttachments(): Map<String, ByteArray> = runtime.reportSnapshot().attachments
+    override fun exportAttachmentManifest(): ByteArray = runtime.reportSnapshot().attachmentManifest
 
     override fun clear() = runtime.clear()
     override fun close() = runtime.close()

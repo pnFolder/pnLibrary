@@ -34,6 +34,7 @@ import ru.privatenull.pnlibrary.api.activity.ActivityService
 import ru.privatenull.pnlibrary.api.activity.ActivityCategory
 import ru.privatenull.pnlibrary.api.activity.ActivitySeverity
 import ru.privatenull.pnlibrary.core.observability.ObservabilityRuntime
+import ru.privatenull.pnlibrary.core.observability.reportSnapshot
 import ru.privatenull.pnlibrary.core.updates.UpdateServiceImpl
 import ru.privatenull.pnlibrary.core.upload.EncryptedReportUploader
 import ru.privatenull.pnlibrary.core.upload.CatboxUploader
@@ -161,9 +162,7 @@ internal class PnLibraryImpl(
         uploadLedger = uploadLedger,
         diagnosticLogs = diagnosticLogs::snapshot,
         diagnosticHistory = diagnosticHistory::files,
-            activityJournal = { observability.exportJournal() },
-            activityAttachments = { observability.exportAttachments() },
-            activityAttachmentManifest = { observability.exportAttachmentManifest() },
+        observabilitySnapshot = observabilityRuntime::reportSnapshot,
     )
 
     private val workerExecutor: ScheduledExecutorService = Executors.newSingleThreadScheduledExecutor { r ->
@@ -171,6 +170,19 @@ internal class PnLibraryImpl(
     }
 
     fun init() {
+        observabilityRuntime.configureReportFactory { request ->
+            val report = reportGenerator.generateAndSave(DebugRequest(
+                target = request.target,
+                logs = request.includeLogs,
+                configs = request.includeConfigurations,
+                local = true,
+            ))
+            ru.privatenull.pnlibrary.api.observability.ObservabilityReport(
+                id = report.localFile.fileName.toString(),
+                file = report.localFile,
+                createdAt = java.nio.file.Files.getLastModifiedTime(report.localFile).toMillis(),
+            )
+        }
         commands.register(owner, diagnosticCommand(this))
         diagnosticLogs.onChange { persistDiagnosticHistory() }
         diagnostics.onEventsChanged(::persistDiagnosticHistory)

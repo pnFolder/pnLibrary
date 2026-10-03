@@ -12,12 +12,13 @@ import java.nio.file.Path
 internal class ObservabilityRuntime(
     dataFolder: Path,
     private val clock: () -> Long = System::currentTimeMillis,
-    private val reportFactory: ((ObservabilityReportRequest) -> ObservabilityReport)? = null,
+    reportFactory: ((ObservabilityReportRequest) -> ObservabilityReport)? = null,
 ) : ObservabilityService {
     private val recordLock = Any()
     private val journal = ObservationJournal(dataFolder)
     private val attachmentStore = AttachmentStore(dataFolder)
     private val statusRegistry = ComponentStatusRegistry()
+    @Volatile private var reportFactory = reportFactory
 
     override fun record(request: ObservationRequest): Observation = synchronized(recordLock) {
         val observation = Observation.from(request, clock())
@@ -46,6 +47,10 @@ internal class ObservabilityRuntime(
     override fun createReport(request: ObservabilityReportRequest): ObservabilityReport {
         val factory = reportFactory ?: error("Observability report builder is not configured")
         return factory(request)
+    }
+
+    internal fun configureReportFactory(factory: (ObservabilityReportRequest) -> ObservabilityReport) {
+        reportFactory = factory
     }
 
     internal fun statuses(): List<ComponentStatus> = statusRegistry.snapshot()
