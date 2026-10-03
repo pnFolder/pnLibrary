@@ -8,7 +8,6 @@ import java.util.concurrent.CompletableFuture
 import java.util.concurrent.CompletionStage
 import java.util.concurrent.ConcurrentHashMap
 import java.util.concurrent.atomic.AtomicBoolean
-import java.util.function.Consumer
 import ru.privatenull.pnlibrary.spi.platform.PlatformAdapter
 
 /**
@@ -144,7 +143,12 @@ internal class PlaceholderHub(
         }
 
         @Deprecated("Use register(key, configure); registration is the terminal service operation")
-        override fun <T : Any> placeholder(key: PlaceholderKey<T>): PlaceholderBuilder<T> = Builder(owner, key, placeholderApiEnabled) { entry ->
+        override fun <T : Any> placeholder(key: PlaceholderKey<T>): PlaceholderBuilder<T> = PlaceholderDefinitionBuilder(
+            owner = owner,
+            key = key,
+            placeholderApiEnabled = placeholderApiEnabled,
+            adapterLookup = this@PlaceholderHub::get,
+        ) { entry ->
             synchronized(mutationLock) {
                 check(!closed.get()) { "Placeholder scope $owner is closed" }
                 val full = id(owner, key.value)
@@ -194,53 +198,6 @@ internal class PlaceholderHub(
                 adapterHandles.toList().also { adapterHandles.clear() }
             }
             handles.forEach { runCatching(it::close) }
-        }
-    }
-
-    private inner class Builder<T : Any>(
-        private val owner: PluginId,
-        private val key: PlaceholderKey<T>,
-        private val placeholderApiEnabled: Boolean,
-        private val install: (PlaceholderEntry<T>) -> Unit,
-    ) : PlaceholderBuilder<T> {
-        private var resolver: ((PlaceholderRequest) -> CompletionStage<T?>)? = null
-        private var updater: PlaceholderUpdater<T>? = null
-        private var access = PlaceholderAccess.ownerOnly()
-        private var updateAccess = PlaceholderAccess.ownerOnly()
-        private var cache = PlaceholderCachePolicy.none()
-        private var fallback: T? = null
-        private val publications = mutableListOf<PlaceholderPublication>()
-        override fun resolve(resolver: PlaceholderResolver<T>) = apply {
-            this.resolver = { CompletableFuture.completedFuture(resolver.resolve(it)) }
-        }
-        override fun resolveAsync(resolver: AsyncPlaceholderResolver<T>) = apply { this.resolver = resolver::resolve }
-        override fun update(updater: PlaceholderUpdater<T>) = apply { this.updater = updater }
-        override fun updateAccess(access: PlaceholderAccess) = apply { this.updateAccess = access }
-        override fun access(access: PlaceholderAccess) = apply { this.access = access }
-        override fun access(configure: Consumer<PlaceholderAccess.Builder>) = apply {
-            this.access = PlaceholderAccess.builder().also(configure::accept).build()
-        }
-        override fun cache(policy: PlaceholderCachePolicy) = apply { cache = policy }
-        override fun fallback(value: T) = apply { fallback = value }
-        override fun publish(publication: PlaceholderPublication) = apply { publications += publication }
-        @Deprecated("Register placeholders through PlaceholderService.register(key, configure)")
-        override fun register(): PlaceholderRegistration<T> {
-            val entry = PlaceholderEntry(
-                owner = owner,
-                key = key,
-                resolver = resolver ?: error("Placeholder ${key.value} has no resolver"),
-                updater = updater,
-                access = access,
-                updateAccess = updateAccess,
-                cachePolicy = cache,
-                fallback = fallback,
-                adapterLookup = ::get,
-            )
-            install(entry)
-            publications
-                .filter { it.adapterId.lowercase(Locale.ROOT) != "placeholderapi" || placeholderApiEnabled }
-                .forEach(entry::publish)
-            return entry
         }
     }
 
