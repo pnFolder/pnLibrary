@@ -17,13 +17,11 @@ import ru.privatenull.pnlibrary.console.ConsoleTree
 import java.nio.file.Files
 import java.nio.file.Path
 import java.nio.file.Paths
-import java.security.MessageDigest
 import java.time.Duration
 import java.util.concurrent.ExecutorService
 import java.util.concurrent.Executors
 import java.util.concurrent.CopyOnWriteArrayList
 import java.util.concurrent.atomic.AtomicBoolean
-import java.util.UUID
 import java.util.concurrent.CompletableFuture
 import java.util.concurrent.CompletionStage
 import java.util.concurrent.atomic.AtomicReference
@@ -43,6 +41,9 @@ internal class DirectDownloadManager(
     private val registrations = CopyOnWriteArrayList<Registration>()
     private val pluginJarVerifier = PluginJarVerifier(platform.type)
     private val filePublisher = AtomicDownloadPublisher(libraryData)
+    private val artifactPreparer = DownloadArtifactPreparer(
+        platform.type, libraryData, configuration, http, MAX_BYTES,
+    )
 
     fun register(owner: Any, request: FileDownloads): DownloadRegistration = register(owner, request, null)
 
@@ -112,7 +113,7 @@ internal class DirectDownloadManager(
         check(!closed.get()) { "система загрузок закрыта" }
         val prepared = mutableListOf<PreparedDownload>()
         try {
-            declarations.forEach { prepared += prepare(request, it, verifier) }
+            declarations.forEach { prepared += artifactPreparer.prepare(request, it, verifier) }
         } catch (error: Throwable) {
             prepared.forEach { Files.deleteIfExists(it.staging) }
             throw error
@@ -128,53 +129,12 @@ internal class DirectDownloadManager(
         }
     }
 
-    private fun prepare(
-        request: FileDownloads,
-        declaration: FileDownload,
-        verifier: ((FileDownload, Path) -> Unit)?,
-    ): PreparedDownload {
-        require(declaration.source.supports(platform.type, Runtime.version().feature())) {
-            "файл не поддерживает ${platform.type.displayName} / Java ${Runtime.version().feature()}"
-        }
-        val maximum = declaration.source.size?.coerceAtMost(MAX_BYTES)?.toInt() ?: MAX_BYTES.toInt()
-        val bytes = http.get(declaration.source.uri, maximum)
-        declaration.source.size?.let { require(bytes.size.toLong() == it) { "размер файла не совпадает" } }
-        declaration.source.sha256?.let { require(sha256(bytes).equals(it, true)) { "SHA-256 файла не совпадает" } }
-
-        val target = target(request, declaration)
-        val staging = libraryData.resolve("downloads/staging").resolve("${UUID.randomUUID()}-${target.fileName}")
-        Files.createDirectories(staging.parent)
-        Files.write(staging, bytes)
-        verifier?.invoke(declaration, staging)
-        return PreparedDownload(staging, target)
-    }
-
-    private fun target(request: FileDownloads, declaration: FileDownload): Path {
-        val root = when (declaration.destination) {
-            DownloadDestination.DATA_FOLDER -> requireNotNull(request.dataDirectory) {
-                "для DATA_FOLDER передайте папку в downloads(dataDirectory, ...)"
-            }
-            DownloadDestination.CACHE -> libraryData.resolve("downloads/cache")
-        }
-        val relative = declaration.relativePath
-        val normalizedRoot = root.toAbsolutePath().normalize()
-        require(declaration.destination in configuration.destinations) {
-            "назначение ${declaration.destination} запрещено конфигурацией"
-        }
-        return normalizedRoot.resolve(relative).normalize().also {
-            require(it.startsWith(normalizedRoot)) { "путь загрузки выходит за разрешённую папку" }
-        }
-    }
-
     override fun close() {
         if (!closed.compareAndSet(false, true)) return
         registrations.toList().forEach { it.close() }
         registrations.clear()
         executor.shutdownNow()
     }
-
-    private fun sha256(bytes: ByteArray): String = MessageDigest.getInstance("SHA-256")
-        .digest(bytes).joinToString("") { "%02x".format(it) }
 
     private inner class Registration(
         private val owner: Any,
