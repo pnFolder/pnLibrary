@@ -107,9 +107,7 @@ class ActivityJournalService(dataFolder: Path, private val clock: () -> Long = S
         events.removeIf { it.severity != ru.privatenull.pnlibrary.api.activity.ActivitySeverity.CRITICAL }
         attachmentRecords.removeIf { record -> events.none { it.eventId == record.eventId } }
         rewriteAttachmentManifest()
-        Files.list(attachments).use { stream -> stream.filter(Files::isRegularFile).forEach { path ->
-            if (attachmentRecords.none { "${it.id}.bin" == path.fileName.toString() }) Files.deleteIfExists(path)
-        } }
+        cleanupAttachmentFiles()
         rewrite()
     }
 
@@ -123,6 +121,7 @@ class ActivityJournalService(dataFolder: Path, private val clock: () -> Long = S
         }
         attachmentRecords.removeIf { record -> events.none { it.eventId == record.eventId } }
         rewriteAttachmentManifest()
+        cleanupAttachmentFiles()
         rewrite()
     }
 
@@ -148,6 +147,12 @@ class ActivityJournalService(dataFolder: Path, private val clock: () -> Long = S
             StandardOpenOption.TRUNCATE_EXISTING, StandardOpenOption.WRITE).use { writer ->
             attachmentRecords.forEach { writer.appendLine(gson.toJson(it)) }
         }
+    }
+
+    private fun cleanupAttachmentFiles() {
+        Files.list(attachments).use { stream -> stream.filter(Files::isRegularFile).forEach { path ->
+            if (attachmentRecords.none { "${it.id}.bin" == path.fileName.toString() }) Files.deleteIfExists(path)
+        } }
     }
 
     private fun normalize(event: ActivityEvent): ActivityEvent = event.copy(
