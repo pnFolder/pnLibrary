@@ -3,6 +3,7 @@ package ru.privatenull.pnlibrary.api.runtime
 import ru.privatenull.pnlibrary.api.config.ConfigurationService
 import ru.privatenull.pnlibrary.api.commands.CommandService
 import ru.privatenull.pnlibrary.api.audiences.AudienceService
+import ru.privatenull.pnlibrary.api.activity.ActivityService
 import ru.privatenull.pnlibrary.api.diagnostics.DebugRequest
 import ru.privatenull.pnlibrary.api.diagnostics.DiagnosticReport
 import ru.privatenull.pnlibrary.api.diagnostics.DiagnosticsService
@@ -40,6 +41,10 @@ interface PnLibrary : Closeable {
 
     /** Registry for diagnostic data contributed by consumer plugins. */
     val diagnostics: DiagnosticsService
+
+    /** Local bounded activity journal used by diagnostics and support reports. */
+    val activity: ActivityService
+        get() = throw UnsupportedOperationException("Activity journal is not available in this runtime")
 
     /** Managed bStats sessions; every plugin supplies its own project ID. */
     val metrics: MetricsService

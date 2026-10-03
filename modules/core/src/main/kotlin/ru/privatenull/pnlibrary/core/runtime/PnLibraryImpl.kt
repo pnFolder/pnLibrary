@@ -29,6 +29,10 @@ import ru.privatenull.pnlibrary.core.security.EncryptedEnvelopeCodec
 import ru.privatenull.pnlibrary.core.services.ServiceManagerImpl
 import ru.privatenull.pnlibrary.core.tasks.TaskServiceImpl
 import ru.privatenull.pnlibrary.api.tasks.TaskServiceSettings
+import ru.privatenull.pnlibrary.api.activity.ActivityService
+import ru.privatenull.pnlibrary.api.activity.ActivityCategory
+import ru.privatenull.pnlibrary.api.activity.ActivitySeverity
+import ru.privatenull.pnlibrary.core.activity.ActivityJournalService
 import ru.privatenull.pnlibrary.core.updates.UpdateServiceImpl
 import ru.privatenull.pnlibrary.core.upload.EncryptedReportUploader
 import ru.privatenull.pnlibrary.core.upload.CatboxUploader
@@ -74,6 +78,7 @@ internal class PnLibraryImpl(
     override val isClosed: Boolean get() = closedFlag.get()
     private val metricsRegistry = MetricsRegistry(platform.metricsFactory)
     val dataFolder: Path = platform.dataFolder ?: extractDataFolder(owner)
+    override val activity: ActivityService = ActivityJournalService(dataFolder)
     val uploadLedger: UploadLedger = UploadLedger(dataFolder.resolve("upload-ledger.json"))
     val encryptionCodec: EncryptedEnvelopeCodec? = initEncryptionCodec()
     private val diagnosticHistory = PersistentDiagnosticHistory(
@@ -153,6 +158,7 @@ internal class PnLibraryImpl(
         uploadLedger = uploadLedger,
         diagnosticLogs = diagnosticLogs::snapshot,
         diagnosticHistory = diagnosticHistory::files,
+        activityJournal = { activity.exportJournal() },
     )
 
     private val workerExecutor: ScheduledExecutorService = Executors.newSingleThreadScheduledExecutor { r ->
@@ -191,6 +197,13 @@ internal class PnLibraryImpl(
     }
 
     private fun recordAndLog(logOwner: Any, message: String, error: Throwable) {
+        activity.record(
+            type = "RUNTIME_ERROR",
+            category = ActivityCategory.ERROR,
+            severity = ActivitySeverity.ERROR,
+            source = logOwner.javaClass.name,
+            metadata = mapOf("message" to message.take(512), "exception" to error.javaClass.name),
+        )
         val level = ru.privatenull.pnlibrary.api.logging.LogLevel.ERROR
         val capture = diagnosticLogs.record(platform, logOwner, level, message, error)
         when {
@@ -216,6 +229,7 @@ internal class PnLibraryImpl(
             runCatching { platform.observeNativeLogs(null) }
             diagnostics.onEventsChanged(null)
             diagnostics.clear()
+            runCatching { activity.close() }
             PnLibraryProvider.clear(this)
             runCatching { platform.close() }
             onClose()
