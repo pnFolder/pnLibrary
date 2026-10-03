@@ -7,7 +7,6 @@ import ru.privatenull.pnlibrary.api.version.PnLibraryApi
 import ru.privatenull.pnlibrary.api.version.SemanticVersion
 import ru.privatenull.pnlibrary.spi.platform.PlatformAdapter
 import ru.privatenull.pnlibrary.update.*
-import java.io.ByteArrayInputStream
 import java.nio.file.Files
 import java.nio.file.Path
 import java.nio.file.Paths
@@ -19,7 +18,6 @@ import java.util.concurrent.CopyOnWriteArrayList
 import java.util.concurrent.Executors
 import java.util.concurrent.atomic.AtomicBoolean
 import java.util.concurrent.atomic.AtomicReference
-import java.security.MessageDigest
 
 /** One catalogue → resolver → verifier → transaction pipeline for every component. */
 internal class UpdateServiceImpl(private val platform: PlatformAdapter, private val dataFolder: Path) : UpdateService, AutoCloseable {
@@ -52,6 +50,13 @@ internal class UpdateServiceImpl(private val platform: PlatformAdapter, private 
     )
     private val transaction = UpdateTransaction(
         dataFolder.resolve("updates/transactions"), ArtifactVerifier(MAX_ARTIFACT_BYTES), dataFolder.parent,
+    )
+    private val planStager = UpdatePlanStager(
+        platform = platform.type,
+        dataFolder = dataFolder,
+        http = http,
+        transaction = transaction,
+        maximumArtifactBytes = MAX_ARTIFACT_BYTES,
     )
     private val freezes = FreezeStore(dataFolder.resolve("updates/freezes.json"))
     private val orchestrator = UpdateOrchestrator(
@@ -234,33 +239,25 @@ internal class UpdateServiceImpl(private val platform: PlatformAdapter, private 
 
     private fun stageGraph(snapshot: UpdatePlanSnapshot) {
         val plan = requireNotNull(snapshot.plan) { "update plan has no installable target" }
-        plan.changes.filter { it.product.value != "pnlibrary" }.forEach { change ->
-            val policy = configuration.plugins[change.product.value]
-            require(configuration.pluginUpdatesEnabled && policy?.enabled != false) {
-                "Загрузка плагина ${change.product} отключена политикой обновлений"
-            }
-        }
-        val staging = dataFolder.resolve("updates/staging/${snapshot.id}")
-        val byComponent = entries.associateBy { it.descriptor.id }
-        val artifacts = plan.changes.map { change ->
-            val release = plan.selected.single { it.product == change.product }
-            val descriptor = release.artifacts.firstOrNull {
-                it.platform == platform.type && it.supports(Runtime.version().feature())
-            } ?: error("No ${platform.type.id} artifact for ${change.product} ${change.to}")
-            val uri = requireNotNull(descriptor.downloadUri) { "Release artifact has no verified download URL: ${descriptor.file}" }
-            val bytes = http.get(uri, MAX_ARTIFACT_BYTES.toInt())
-            val source = staging.resolve(change.product.value).resolve(descriptor.file)
-            ArtifactDownloader(MAX_ARTIFACT_BYTES).download({ ByteArrayInputStream(bytes) }, source)
-            val specification = ArtifactSpecification(
-                change.product, change.to, release.supportedApi, descriptor.file,
-                bytes.size.toLong(), sha256(bytes),
+        verifyPluginDownloadsAllowed(plan)
+        val installedTargets = entries.associate { registration ->
+            registration.descriptor.id to InstalledUpdateTarget(
+                currentJar = registration.jar,
+                updateDirectory = registration.updateDir,
             )
-            val existing = byComponent[change.product]
-            val target = existing?.updateDir?.resolve(existing.jar.fileName)
-                ?: dataFolder.parent.resolve("update").resolve(descriptor.file)
-            TransactionArtifact(specification, source, target, rollbackSource = existing?.jar ?: target)
         }
-        transaction.prepareForRestart(artifacts)
+        planStager.stage(snapshot.id, plan, installedTargets)
+    }
+
+    private fun verifyPluginDownloadsAllowed(plan: UpdatePlan) {
+        plan.changes
+            .filterNot { change -> change.product.value == "pnlibrary" }
+            .forEach { change ->
+                val policy = configuration.plugins[change.product.value]
+                require(configuration.pluginUpdatesEnabled && policy?.enabled != false) {
+                    "Загрузка плагина ${change.product} отключена политикой обновлений"
+                }
+            }
     }
 
     private fun reconcilePendingUpdates(orchestrator: UpdateOrchestrator) {
@@ -287,9 +284,6 @@ internal class UpdateServiceImpl(private val platform: PlatformAdapter, private 
         UpdateAnnouncementRenderer.render(snapshot, entries.map { it.snapshot })
             .forEach { platform.console(platform, it) }
     }
-
-    private fun sha256(bytes: ByteArray): String = MessageDigest.getInstance("SHA-256")
-        .digest(bytes).joinToString("") { "%02x".format(it) }
 
     private inner class Registration(
         private val owner: Any,
