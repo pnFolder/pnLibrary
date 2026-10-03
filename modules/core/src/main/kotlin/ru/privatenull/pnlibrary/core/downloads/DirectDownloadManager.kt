@@ -287,7 +287,7 @@ internal class DirectDownloadManager(
             error: Throwable,
             level: LogLevel,
         ) {
-            val details = userMessage(error)
+            val details = DownloadFailureInterpreter.explain(error)
             val ownerName = platform.ownerDetails(owner)["name"] ?: "pnLibrary"
             val theme = ConsoleTheme("§6", "§c", "§f", "§8", "§r")
             ConsoleCard.builder(theme, "ЗАВИСИМОСТЬ НЕ ПОДГОТОВЛЕНА")
@@ -334,40 +334,6 @@ internal class DirectDownloadManager(
                 .build().send { line -> platform.console(owner, line) }
         }
 
-        private fun userMessage(error: Throwable): FailureDetails {
-            val raw = error.message?.trim().orEmpty()
-            val pluginMismatch = Regex("скачанный JAR объявляет (.+), ожидался (.+)").matchEntire(raw)
-            if (pluginMismatch != null) {
-                val actual = pluginMismatch.groupValues[1]
-                val expected = pluginMismatch.groupValues[2]
-                return FailureDetails(
-                    "плагин не прошёл проверку",
-                    "В скачанном файле указано имя $actual, а ожидалось $expected",
-                    "Скачай плагин $expected самостоятельно и перезапусти сервер",
-                    "Проверь идентификатор зависимости $expected и ссылку на JAR. Сообщи разработчику, что ссылка скачивает $actual",
-                )
-            }
-            val versionMismatch = Regex("версия скачанного (.+) ([^ ]+) не соответствует требованию (.+)").matchEntire(raw)
-            if (versionMismatch != null) {
-                val plugin = versionMismatch.groupValues[1]
-                val actual = versionMismatch.groupValues[2]
-                val required = versionMismatch.groupValues[3]
-                return FailureDetails(
-                    "версия плагина не подходит",
-                    "Установлена версия $actual, а требуется $required или выше",
-                    "Скачай $plugin версии $required или выше и перезапусти сервер",
-                    "Проверь минимальную версию $required и ссылку на релиз. Сообщи разработчику, что ссылка отдаёт версию $actual",
-                )
-            }
-            val reason = raw.ifBlank { "Не удалось подготовить файл зависимости" }
-            return FailureDetails(
-                "не удалось подготовить файл",
-                reason,
-                "Скачай зависимость вручную и перезапусти сервер",
-                "Передай разработчику полный текст причины: $reason",
-            )
-        }
-
         override fun close() {
             if (registrationClosed.compareAndSet(false, true)) {
                 state.set(request.files.map { DownloadSnapshot(it.key, DownloadState.CLOSED) })
@@ -397,13 +363,6 @@ internal class DirectDownloadManager(
             .build().send { line -> platform.console(owner, line) }
 
     }
-
-    private data class FailureDetails(
-        val headline: String,
-        val reason: String,
-        val userAction: String,
-        val developerAction: String,
-    )
 
     private companion object { const val MAX_BYTES = 512L * 1024L * 1024L }
 }
