@@ -11,7 +11,6 @@ import java.nio.file.Files
 import java.nio.file.Path
 import java.nio.file.StandardOpenOption
 import java.time.Duration
-import java.nio.file.StandardCopyOption
 import java.security.MessageDigest
 import java.util.ArrayDeque
 import java.util.UUID
@@ -24,6 +23,8 @@ class ActivityJournalService(dataFolder: Path, private val clock: () -> Long = S
     private val directory = dataFolder.resolve("observability")
     private val file = directory.resolve("activity.jsonl")
     private val attachments = directory.resolve("attachments")
+    private val attachmentManifest = directory.resolve("attachments.jsonl")
+    private val attachmentRecords = ArrayDeque<ActivityAttachment>()
     @Volatile private var closed = false
 
     init {
@@ -66,11 +67,19 @@ class ActivityJournalService(dataFolder: Path, private val clock: () -> Long = S
         check(!closed) { "Activity journal is closed" }
         require(eventId.isNotBlank()) { "eventId must not be blank" }
         require(bytes.size <= MAX_ATTACHMENT_BYTES) { "attachment exceeds internal size limit" }
+        require(synchronized(lock) { events.any { it.eventId == eventId } }) { "eventId is not present in the activity journal" }
+        require(name.substringAfterLast('.', "").lowercase() !in BLOCKED_EXTENSIONS) { "executable attachments are not allowed" }
         val safeName = name.replace(Regex("[^A-Za-z0-9._-]"), "_").take(128).ifBlank { "attachment.bin" }
         val digest = MessageDigest.getInstance("SHA-256").digest(bytes).joinToString("") { "%02x".format(it) }
         val id = UUID.randomUUID().toString()
-        Files.write(attachments.resolve("$id.bin"), bytes)
-        return ActivityAttachment(id, eventId, safeName, contentType.take(128), bytes.size.toLong(), digest)
+        val attachment = ActivityAttachment(id, eventId, safeName, contentType.take(128), bytes.size.toLong(), digest)
+        synchronized(lock) {
+            Files.write(attachments.resolve("$id.bin"), bytes)
+            attachmentRecords.addLast(attachment)
+            Files.writeString(attachmentManifest, gson.toJson(attachment) + "\n", StandardCharsets.UTF_8,
+                StandardOpenOption.CREATE, StandardOpenOption.WRITE, StandardOpenOption.APPEND)
+        }
+        return attachment
     }
 
     override fun attachFile(eventId: String, path: Path, contentType: String): ActivityAttachment {
@@ -89,8 +98,18 @@ class ActivityJournalService(dataFolder: Path, private val clock: () -> Long = S
         }
     }
 
+    override fun exportAttachmentManifest(): ByteArray = synchronized(lock) {
+        attachmentRecords.joinToString("\n", postfix = if (attachmentRecords.isEmpty()) "" else "\n") { gson.toJson(it) }
+            .toByteArray(StandardCharsets.UTF_8)
+    }
+
     override fun clear() = synchronized(lock) {
         events.removeIf { it.severity != ru.privatenull.pnlibrary.api.activity.ActivitySeverity.CRITICAL }
+        attachmentRecords.removeIf { record -> events.none { it.eventId == record.eventId } }
+        rewriteAttachmentManifest()
+        Files.list(attachments).use { stream -> stream.filter(Files::isRegularFile).forEach { path ->
+            if (attachmentRecords.none { "${it.id}.bin" == path.fileName.toString() }) Files.deleteIfExists(path)
+        } }
         rewrite()
     }
 
@@ -102,6 +121,8 @@ class ActivityJournalService(dataFolder: Path, private val clock: () -> Long = S
             event.severity != ru.privatenull.pnlibrary.api.activity.ActivitySeverity.CRITICAL &&
                 now - event.timestamp > retentionMillis(event.severity)
         }
+        attachmentRecords.removeIf { record -> events.none { it.eventId == record.eventId } }
+        rewriteAttachmentManifest()
         rewrite()
     }
 
@@ -110,12 +131,22 @@ class ActivityJournalService(dataFolder: Path, private val clock: () -> Long = S
         Files.readAllLines(file, StandardCharsets.UTF_8).asSequence()
             .mapNotNull { runCatching { gson.fromJson(it, ActivityEvent::class.java) }.getOrNull() }
             .toList().takeLast(MAX_EVENTS).forEach(events::addLast)
+        if (Files.isRegularFile(attachmentManifest)) Files.readAllLines(attachmentManifest, StandardCharsets.UTF_8).asSequence()
+            .mapNotNull { runCatching { gson.fromJson(it, ActivityAttachment::class.java) }.getOrNull() }
+            .forEach(attachmentRecords::addLast)
     }
 
     private fun rewrite() {
         Files.newBufferedWriter(file, StandardCharsets.UTF_8, StandardOpenOption.CREATE,
             StandardOpenOption.TRUNCATE_EXISTING, StandardOpenOption.WRITE).use { writer ->
             events.forEach { writer.appendLine(gson.toJson(it)) }
+        }
+    }
+
+    private fun rewriteAttachmentManifest() {
+        Files.newBufferedWriter(attachmentManifest, StandardCharsets.UTF_8, StandardOpenOption.CREATE,
+            StandardOpenOption.TRUNCATE_EXISTING, StandardOpenOption.WRITE).use { writer ->
+            attachmentRecords.forEach { writer.appendLine(gson.toJson(it)) }
         }
     }
 
@@ -139,5 +170,6 @@ class ActivityJournalService(dataFolder: Path, private val clock: () -> Long = S
         const val MAX_EVENTS = 10_000
         const val MAX_METADATA = 32
         const val MAX_ATTACHMENT_BYTES = 16 * 1024 * 1024
+        val BLOCKED_EXTENSIONS = setOf("jar", "exe", "dll", "so", "bat", "cmd", "sh", "ps1")
     }
 }

@@ -158,8 +158,9 @@ internal class PnLibraryImpl(
         uploadLedger = uploadLedger,
         diagnosticLogs = diagnosticLogs::snapshot,
         diagnosticHistory = diagnosticHistory::files,
-        activityJournal = { activity.exportJournal() },
-        activityAttachments = { activity.exportAttachments() },
+            activityJournal = { activity.exportJournal() },
+            activityAttachments = { activity.exportAttachments() },
+            activityAttachmentManifest = { activity.exportAttachmentManifest() },
     )
 
     private val workerExecutor: ScheduledExecutorService = Executors.newSingleThreadScheduledExecutor { r ->
@@ -170,6 +171,20 @@ internal class PnLibraryImpl(
         commands.register(owner, diagnosticCommand(this))
         diagnosticLogs.onChange { persistDiagnosticHistory() }
         diagnostics.onEventsChanged(::persistDiagnosticHistory)
+        diagnostics.onActivityEvent { plugin, level, component, code, message, error, fields ->
+            activity.record(
+                type = "DIAGNOSTIC_${code}",
+                category = ru.privatenull.pnlibrary.api.activity.ActivityCategory.DIAGNOSTICS,
+                severity = when (level) {
+                    ru.privatenull.pnlibrary.api.diagnostics.DiagnosticLevel.INFO -> ru.privatenull.pnlibrary.api.activity.ActivitySeverity.INFO
+                    ru.privatenull.pnlibrary.api.diagnostics.DiagnosticLevel.WARNING -> ru.privatenull.pnlibrary.api.activity.ActivitySeverity.WARNING
+                    ru.privatenull.pnlibrary.api.diagnostics.DiagnosticLevel.ERROR -> ru.privatenull.pnlibrary.api.activity.ActivitySeverity.ERROR
+                },
+                source = component,
+                pluginId = plugin,
+                metadata = fields.mapValues { (_, value) -> value?.toString() ?: "null" } + mapOf("message" to message, "hasException" to (error != null).toString())
+            )
+        }
         platform.observeNativeLogs { nativeOwner, level, message, error ->
             diagnosticLogs.record(platform, nativeOwner, level, message, error)
         }

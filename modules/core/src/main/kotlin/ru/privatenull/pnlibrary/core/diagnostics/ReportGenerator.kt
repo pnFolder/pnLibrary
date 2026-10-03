@@ -45,6 +45,7 @@ internal class ReportGenerator(
     private val diagnosticHistory: () -> List<Pair<String, ByteArray>> = { emptyList() },
     private val activityJournal: () -> ByteArray = { ByteArray(0) },
     private val activityAttachments: () -> Map<String, ByteArray> = { emptyMap() },
+    private val activityAttachmentManifest: () -> ByteArray = { ByteArray(0) },
 ) {
 
     private val systemCollector = SystemCollector()
@@ -85,6 +86,7 @@ internal class ReportGenerator(
 
         if (request.logs && config.logs) {
             activityJournal().takeIf { it.isNotEmpty() }?.let { archive.bytes("activity/activity.jsonl", it) }
+            activityAttachmentManifest().takeIf { it.isNotEmpty() }?.let { archive.bytes("activity/attachments.jsonl", it) }
             activityAttachments().forEach { (name, bytes) -> archive.bytes("activity/attachments/$name", bytes) }
             diagnosticLogs().takeLast(config.logRecords.coerceIn(1, 2_000))
                 .groupBy { safePath(it["plugin"]?.toString() ?: "runtime") }

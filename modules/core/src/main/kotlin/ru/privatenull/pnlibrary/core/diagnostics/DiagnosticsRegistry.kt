@@ -30,6 +30,7 @@ internal class DiagnosticsRegistry(eventLimit: Int = DEFAULT_EVENT_LIMIT) : Diag
     private val limit   = eventLimit.coerceIn(10, 500)
     private val sanitizer = DiagnosticValueSanitizer()
     @Volatile private var eventChangeListener: (() -> Unit)? = null
+    @Volatile private var activityListener: ((String, DiagnosticLevel, String, String, String, Throwable?, Map<String, Any?>) -> Unit)? = null
 
     /**
      * Installs a best-effort callback invoked after an event changes.
@@ -39,6 +40,10 @@ internal class DiagnosticsRegistry(eventLimit: Int = DEFAULT_EVENT_LIMIT) : Diag
      */
     fun onEventsChanged(listener: (() -> Unit)?) {
         eventChangeListener = listener
+    }
+
+    fun onActivityEvent(listener: ((String, DiagnosticLevel, String, String, String, Throwable?, Map<String, Any?>) -> Unit)?) {
+        activityListener = listener
     }
 
     override val apiVersion: Int get() = DiagnosticsService.API_VERSION
@@ -97,6 +102,7 @@ internal class DiagnosticsRegistry(eventLimit: Int = DEFAULT_EVENT_LIMIT) : Diag
     fun clear() {
         plugins.clear()
         eventChangeListener = null
+        activityListener = null
     }
 
     // ── Event recording ──────────────────────────────────────────────────────
@@ -111,6 +117,7 @@ internal class DiagnosticsRegistry(eventLimit: Int = DEFAULT_EVENT_LIMIT) : Diag
         val safeCode = sanitizer.text(code, 96)
         val safeMessage = sanitizer.text(message, 4096)
         val safeFields = sanitizer.map(fields)
+        try { activityListener?.invoke(plugin, level, safeComponent, safeCode, safeMessage, error, safeFields) } catch (_: Exception) { }
         val incidentId = sanitizer.incidentId(plugin, level, safeComponent, safeCode, safeMessage, error)
         val st = stateOf(plugin)
         synchronized(st.events) {
