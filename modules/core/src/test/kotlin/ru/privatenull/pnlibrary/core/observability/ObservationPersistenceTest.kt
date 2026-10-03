@@ -85,4 +85,22 @@ class ObservationPersistenceTest {
 
         assertEquals(listOf(oldCritical), retained)
     }
+
+    @Test
+    fun `runtime removes expired observations during startup`() {
+        val root = Files.createTempDirectory("observation-retention")
+        val old = Observation.from(ObservationRequest(message = "expired"), timestamp = 1)
+        ObservationJournal(root).use { it.append(old) }
+
+        val runtime = ObservationRuntimeFixture.openAfterThirtyDays(root)
+
+        assertTrue(runtime.recent().isEmpty())
+    }
+
+    private object ObservationRuntimeFixture {
+        fun openAfterThirtyDays(root: java.nio.file.Path): ObservabilityRuntime = ObservabilityRuntime(
+            root,
+            clock = { 30L * 24 * 60 * 60 * 1000 },
+        )
+    }
 }

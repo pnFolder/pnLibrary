@@ -20,6 +20,11 @@ internal class ObservabilityRuntime(
     private val statusRegistry = ComponentStatusRegistry()
     @Volatile private var reportFactory = reportFactory
 
+    init {
+        val activeObservationIds = journal.applyRetention(clock())
+        attachmentStore.removeOrphans(activeObservationIds)
+    }
+
     override fun record(request: ObservationRequest): Observation = synchronized(recordLock) {
         val observation = Observation.from(request, clock())
         request.files.forEach { file -> attachmentStore.save(observation.id, file) }

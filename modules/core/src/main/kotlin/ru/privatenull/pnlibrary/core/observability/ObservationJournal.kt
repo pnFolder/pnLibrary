@@ -38,6 +38,23 @@ internal class ObservationJournal(dataFolder: Path) : AutoCloseable {
         Files.deleteIfExists(file)
     }
 
+    fun applyRetention(now: Long): Set<String> = synchronized(lock) {
+        val active = ObservationRetention.active(observations, now)
+        observations.clear()
+        observations.addAll(active)
+        rewrite()
+        active.mapTo(linkedSetOf()) { observation -> observation.id }
+    }
+
+    private fun rewrite() {
+        if (observations.isEmpty()) {
+            Files.deleteIfExists(file)
+            return
+        }
+        val content = observations.joinToString(separator = "\n", postfix = "\n") { gson.toJson(it) }
+        Files.writeString(file, content, StandardCharsets.UTF_8)
+    }
+
     private fun load() = synchronized(lock) {
         if (!Files.isRegularFile(file)) return
         Files.readAllLines(file, StandardCharsets.UTF_8)
