@@ -28,22 +28,13 @@ internal class ObservabilityRuntime(
     override fun record(request: ObservationRequest): Observation = synchronized(recordLock) {
         val observation = Observation.from(request, clock())
         request.files.forEach { file -> attachmentStore.save(observation.id, file) }
-
-        val persisted = observation.copy(files = emptyList())
-        journal.append(persisted)
-        persisted
+        journal.append(observation)
+        observation
     }
 
     override fun recent(query: ObservationQuery): List<Observation> {
-        val plugin = query.plugin
-        val minimumLevel = query.minimumLevel
-        val since = query.since
-        val until = query.until
         return journal.recent()
-            .filter { observation -> plugin == null || observation.plugin == plugin }
-            .filter { observation -> minimumLevel == null || observation.level.ordinal >= minimumLevel.ordinal }
-            .filter { observation -> since == null || observation.timestamp >= since }
-            .filter { observation -> until == null || observation.timestamp <= until }
+            .filter { observation -> query.matches(observation) }
             .takeLast(query.limit.coerceAtLeast(0))
     }
 
@@ -63,8 +54,18 @@ internal class ObservabilityRuntime(
     internal fun attachments(observationId: String): List<StoredAttachment> =
         attachmentStore.forObservation(observationId)
 
-    internal fun attachFile(observationId: String, path: Path): StoredAttachment =
+    internal fun attachFile(observationId: String, path: Path): StoredAttachment = synchronized(recordLock) {
         attachmentStore.save(observationId, path)
+    }
+
+    internal fun attachBytes(
+        observationId: String,
+        name: String,
+        contentType: String,
+        bytes: ByteArray,
+    ): StoredAttachment = synchronized(recordLock) {
+        attachmentStore.save(observationId, name, contentType, bytes)
+    }
 
     internal fun allAttachments(): List<StoredAttachment> = attachmentStore.all()
 
@@ -76,4 +77,12 @@ internal class ObservabilityRuntime(
     }
 
     override fun close() = journal.close()
+
+    private fun ObservationQuery.matches(observation: Observation): Boolean {
+        val matchesPlugin = plugin == null || observation.plugin == plugin
+        val matchesLevel = minimumLevel?.let { observation.level.ordinal >= it.ordinal } ?: true
+        val matchesStart = since?.let { observation.timestamp >= it } ?: true
+        val matchesEnd = until?.let { observation.timestamp <= it } ?: true
+        return matchesPlugin && matchesLevel && matchesStart && matchesEnd
+    }
 }

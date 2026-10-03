@@ -32,7 +32,7 @@ class ObservationPersistenceTest {
         ObservationJournal(root).use { it.append(observation) }
 
         ObservationJournal(root).use { journal ->
-            assertTrue(journal.recent().single().files.isEmpty())
+            assertEquals("failed", journal.recent().single().message)
         }
     }
 

@@ -30,7 +30,6 @@ data class Observation(
     val message: String,
     val level: ObservationLevel,
     val data: Map<String, String>,
-    val files: List<Path>,
     val errorType: String?,
     val errorMessage: String?,
 ) {
@@ -44,7 +43,6 @@ data class Observation(
             message = request.message,
             level = request.level,
             data = request.data,
-            files = request.files,
             errorType = request.error?.javaClass?.name,
             errorMessage = request.error?.message,
         )

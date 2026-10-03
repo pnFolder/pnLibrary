@@ -12,17 +12,29 @@ internal data class ObservabilityReportSnapshot(
 
 internal fun ObservabilityRuntime.reportSnapshot(): ObservabilityReportSnapshot {
     val gson = GsonBuilder().disableHtmlEscaping().create()
-    val journal = recent(ObservationQuery(limit = Int.MAX_VALUE))
+    val observations = recent(ObservationQuery(limit = Int.MAX_VALUE))
+    val journal = observations
         .joinToString(separator = "\n", postfix = "\n") { gson.toJson(it) }
         .toByteArray(StandardCharsets.UTF_8)
+
     val storedAttachments = allAttachments()
-    val manifest = gson.toJson(storedAttachments.map {
-        mapOf("id" to it.id, "eventId" to it.observationId, "name" to it.originalName,
-            "contentType" to it.contentType, "size" to it.size, "sha256" to it.sha256)
-    }).toByteArray(StandardCharsets.UTF_8)
+    val manifestEntries = storedAttachments.map { attachment -> attachment.manifestEntry() }
+    val manifest = gson.toJson(manifestEntries).toByteArray(StandardCharsets.UTF_8)
+
     return ObservabilityReportSnapshot(
         journal = journal,
         attachmentManifest = manifest,
-        attachments = storedAttachments.associate { it.id to attachmentBytes(it) },
+        attachments = storedAttachments.associate { attachment ->
+            attachment.id to attachmentBytes(attachment)
+        },
     )
 }
+
+private fun StoredAttachment.manifestEntry(): Map<String, Any> = linkedMapOf(
+    "id" to id,
+    "eventId" to observationId,
+    "name" to originalName,
+    "contentType" to contentType,
+    "size" to size,
+    "sha256" to sha256,
+)

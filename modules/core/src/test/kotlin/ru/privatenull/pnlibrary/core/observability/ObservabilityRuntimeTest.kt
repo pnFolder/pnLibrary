@@ -26,7 +26,6 @@ class ObservabilityRuntimeTest {
         }
 
         assertEquals(123L, captured.timestamp)
-        assertTrue(captured.files.isEmpty())
         assertEquals(listOf(captured), runtime.recent())
         assertEquals(1, runtime.attachments(captured.id).size)
     }

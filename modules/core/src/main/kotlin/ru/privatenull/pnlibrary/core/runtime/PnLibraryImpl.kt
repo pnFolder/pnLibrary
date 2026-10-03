@@ -16,7 +16,6 @@ import ru.privatenull.pnlibrary.core.commands.CommandServiceImpl
 import ru.privatenull.pnlibrary.core.audiences.AudienceServiceImpl
 import ru.privatenull.pnlibrary.core.diagnostics.PersistentDiagnosticHistory
 import ru.privatenull.pnlibrary.core.diagnostics.ReportGenerator
-import ru.privatenull.pnlibrary.core.diagnostics.UnifiedObservabilityService
 import ru.privatenull.pnlibrary.core.events.EventServiceImpl
 import ru.privatenull.pnlibrary.core.logging.DiagnosticLogBuffer
 import ru.privatenull.pnlibrary.core.logging.PlatformLoggingService
@@ -33,7 +32,26 @@ import ru.privatenull.pnlibrary.api.tasks.TaskServiceSettings
 import ru.privatenull.pnlibrary.api.activity.ActivityService
 import ru.privatenull.pnlibrary.api.activity.ActivityCategory
 import ru.privatenull.pnlibrary.api.activity.ActivitySeverity
+import ru.privatenull.pnlibrary.api.audiences.AudienceService
+import ru.privatenull.pnlibrary.api.commands.CommandService
+import ru.privatenull.pnlibrary.api.config.ConfigurationService
+import ru.privatenull.pnlibrary.api.currency.CurrencyProviderRegistry
+import ru.privatenull.pnlibrary.api.events.EventService
+import ru.privatenull.pnlibrary.api.logging.LogLevel
+import ru.privatenull.pnlibrary.api.observability.ObservabilityReport
+import ru.privatenull.pnlibrary.api.observability.ObservabilityReportRequest
+import ru.privatenull.pnlibrary.api.placeholders.PlaceholderAdapterRegistry
+import ru.privatenull.pnlibrary.api.placeholders.PlaceholderValueStore
+import ru.privatenull.pnlibrary.api.platform.PlatformProvider
+import ru.privatenull.pnlibrary.api.plugin.PluginRegistry
+import ru.privatenull.pnlibrary.api.services.ServiceManager
+import ru.privatenull.pnlibrary.api.tasks.TaskService
+import ru.privatenull.pnlibrary.api.updates.UpdateService
+import ru.privatenull.pnlibrary.core.downloads.DirectDownloadManager
+import ru.privatenull.pnlibrary.core.downloads.DownloadConfiguration
 import ru.privatenull.pnlibrary.core.observability.ObservabilityRuntime
+import ru.privatenull.pnlibrary.core.observability.DiagnosticObservationBridge
+import ru.privatenull.pnlibrary.core.observability.LegacyObservabilityAdapter
 import ru.privatenull.pnlibrary.core.observability.reportSnapshot
 import ru.privatenull.pnlibrary.core.updates.UpdateServiceImpl
 import ru.privatenull.pnlibrary.core.upload.EncryptedReportUploader
@@ -47,6 +65,7 @@ import java.io.IOException
 import java.io.InputStream
 import java.net.URI
 import java.nio.charset.StandardCharsets
+import java.nio.file.Files
 import java.nio.file.Path
 import java.nio.file.Paths
 import java.util.concurrent.Executors
@@ -81,7 +100,8 @@ internal class PnLibraryImpl(
     private val metricsRegistry = MetricsRegistry(platform.metricsFactory)
     val dataFolder: Path = platform.dataFolder ?: extractDataFolder(owner)
     private val observabilityRuntime = ObservabilityRuntime(dataFolder)
-    override val observability = UnifiedObservabilityService(diagnostics, observabilityRuntime)
+    private val diagnosticObservationBridge = DiagnosticObservationBridge(observabilityRuntime)
+    override val observability = LegacyObservabilityAdapter(diagnostics, observabilityRuntime)
     override val activity: ActivityService get() = observability
     val uploadLedger: UploadLedger = UploadLedger(dataFolder.resolve("upload-ledger.json"))
     val encryptionCodec: EncryptedEnvelopeCodec? = initEncryptionCodec()
@@ -95,46 +115,49 @@ internal class PnLibraryImpl(
     override val metrics: MetricsService get() = metricsRegistry
     override val logging: LoggingService = PlatformLoggingService(platform, diagnosticLogs)
     private val configurationService = ConfigurationServiceImpl(platform)
-    override val configurations: ru.privatenull.pnlibrary.api.config.ConfigurationService get() = configurationService
+    override val configurations: ConfigurationService get() = configurationService
     private val updateService = UpdateServiceImpl(platform, dataFolder)
-    private val directDownloadConfiguration = ru.privatenull.pnlibrary.core.downloads.DownloadConfiguration.load(
+    private val directDownloadConfiguration = DownloadConfiguration.load(
         dataFolder.resolve("downloads.yml"),
     )
-    private val directDownloadManager = ru.privatenull.pnlibrary.core.downloads.DirectDownloadManager(
+    private val directDownloadManager = DirectDownloadManager(
         platform,
         dataFolder,
         directDownloadConfiguration,
     )
-    override val updates: ru.privatenull.pnlibrary.api.updates.UpdateService get() = updateService
-    private val taskService = TaskServiceImpl(platform.taskAdapter, TaskServiceSettings(config.taskHistoryCapacity)) { taskOwner, message, error ->
-        recordAndLog(taskOwner, message, error)
-    }
-    override val tasks: ru.privatenull.pnlibrary.api.tasks.TaskService get() = taskService
+    override val updates: UpdateService get() = updateService
+    private val taskSettings = TaskServiceSettings(config.taskHistoryCapacity)
+    private val taskService = TaskServiceImpl(
+        adapter = platform.taskAdapter,
+        settings = taskSettings,
+        errorLogger = ::recordAndLog,
+    )
+    override val tasks: TaskService get() = taskService
     private val commandService = CommandServiceImpl(platform)
-    override val commands: ru.privatenull.pnlibrary.api.commands.CommandService get() = commandService
+    override val commands: CommandService get() = commandService
     private val audienceService = AudienceServiceImpl(platform.audienceAdapter)
-    override val audiences: ru.privatenull.pnlibrary.api.audiences.AudienceService get() = audienceService
+    override val audiences: AudienceService get() = audienceService
     private val serviceManager = ServiceManagerImpl()
-    override val services: ru.privatenull.pnlibrary.api.services.ServiceManager get() = serviceManager
+    override val services: ServiceManager get() = serviceManager
     private val eventService = EventServiceImpl { pluginId, message, error ->
         val identifiedMessage = "[$pluginId] $message"
         recordAndLog(owner, identifiedMessage, error)
     }
-    override val events: ru.privatenull.pnlibrary.api.events.EventService get() = eventService
+    override val events: EventService get() = eventService
     private val placeholderValueStore = GlobalPlaceholderValueStore()
     private val placeholderHub = PlaceholderHub(platform, placeholderValueStore)
     private val currencyFeature = CurrencyFeature()
     private val platformProvider = PlatformProviderImpl()
-    override val platforms: ru.privatenull.pnlibrary.api.platform.PlatformProvider get() = platformProvider
-    override val placeholderAdapters: ru.privatenull.pnlibrary.api.placeholders.PlaceholderAdapterRegistry get() = placeholderHub
-    override val placeholderValues: ru.privatenull.pnlibrary.api.placeholders.PlaceholderValueStore get() = placeholderValueStore
+    override val platforms: PlatformProvider get() = platformProvider
+    override val placeholderAdapters: PlaceholderAdapterRegistry get() = placeholderHub
+    override val placeholderValues: PlaceholderValueStore get() = placeholderValueStore
     init {
         serviceManager.register(
-            ru.privatenull.pnlibrary.api.currency.CurrencyProviderRegistry::class.java,
+            CurrencyProviderRegistry::class.java,
             currencyFeature.providers,
         )
     }
-    override val plugins: ru.privatenull.pnlibrary.api.plugin.PluginRegistry = PluginRegistryImpl(
+    override val plugins: PluginRegistry = PluginRegistryImpl(
         platform = platform,
         events = eventService,
         tasks = taskService,
@@ -170,38 +193,11 @@ internal class PnLibraryImpl(
     }
 
     fun init() {
-        observabilityRuntime.configureReportFactory { request ->
-            val report = reportGenerator.generateAndSave(DebugRequest(
-                target = request.target,
-                logs = request.includeLogs,
-                configs = request.includeConfigurations,
-                local = true,
-            ))
-            ru.privatenull.pnlibrary.api.observability.ObservabilityReport(
-                id = report.localFile.fileName.toString(),
-                file = report.localFile,
-                createdAt = java.nio.file.Files.getLastModifiedTime(report.localFile).toMillis(),
-            )
-        }
+        observabilityRuntime.configureReportFactory(::createObservabilityReport)
         commands.register(owner, diagnosticCommand(this))
         diagnosticLogs.onChange { persistDiagnosticHistory() }
         diagnostics.onEventsChanged(::persistDiagnosticHistory)
-        diagnostics.onActivityEvent { plugin, level, component, code, message, error, fields ->
-            val request = ru.privatenull.pnlibrary.api.observability.ObservationRequest(
-                plugin = plugin,
-                source = component,
-                message = message,
-                level = when (level) {
-                    ru.privatenull.pnlibrary.api.diagnostics.DiagnosticLevel.INFO -> ru.privatenull.pnlibrary.api.observability.ObservationLevel.INFO
-                    ru.privatenull.pnlibrary.api.diagnostics.DiagnosticLevel.WARNING -> ru.privatenull.pnlibrary.api.observability.ObservationLevel.WARNING
-                    ru.privatenull.pnlibrary.api.diagnostics.DiagnosticLevel.ERROR -> ru.privatenull.pnlibrary.api.observability.ObservationLevel.ERROR
-                },
-                data = fields.mapValues { (_, value) -> value?.toString() ?: "null" } +
-                    mapOf("code" to code, "hasException" to (error != null).toString()),
-                error = error,
-            )
-            observabilityRuntime.record(request)
-        }
+        diagnostics.onActivityEvent(diagnosticObservationBridge::record)
         platform.observeNativeLogs { nativeOwner, level, message, error ->
             diagnosticLogs.record(platform, nativeOwner, level, message, error)
         }
@@ -217,6 +213,21 @@ internal class PnLibraryImpl(
 
     private fun persistDiagnosticHistory() {
         diagnosticHistory.save(diagnosticLogs.snapshot(), diagnostics.eventSnapshot())
+    }
+
+    private fun createObservabilityReport(request: ObservabilityReportRequest): ObservabilityReport {
+        val diagnosticRequest = DebugRequest(
+            target = request.target,
+            logs = request.includeLogs,
+            configs = request.includeConfigurations,
+            local = true,
+        )
+        val report = reportGenerator.generateAndSave(diagnosticRequest)
+        return ObservabilityReport(
+            id = report.localFile.fileName.toString(),
+            file = report.localFile,
+            createdAt = Files.getLastModifiedTime(report.localFile).toMillis(),
+        )
     }
 
     override fun createDiagnosticReport(request: DebugRequest): DiagnosticReport {
@@ -237,7 +248,7 @@ internal class PnLibraryImpl(
             source = logOwner.javaClass.name,
             metadata = mapOf("message" to message.take(512), "exception" to error.javaClass.name),
         )
-        val level = ru.privatenull.pnlibrary.api.logging.LogLevel.ERROR
+        val level = LogLevel.ERROR
         val capture = diagnosticLogs.record(platform, logOwner, level, message, error)
         when {
             capture == null || capture.emitOriginal -> platform.log(logOwner, level, message, error)

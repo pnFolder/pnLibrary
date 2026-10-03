@@ -20,11 +20,10 @@ internal class ObservationJournal(dataFolder: Path) : AutoCloseable {
     }
 
     fun append(observation: Observation) = synchronized(lock) {
-        val persisted = observation.copy(files = emptyList())
-        observations.addLast(persisted)
+        observations.addLast(observation)
         Files.writeString(
             file,
-            gson.toJson(persisted) + "\n",
+            gson.toJson(observation) + "\n",
             StandardCharsets.UTF_8,
             StandardOpenOption.CREATE,
             StandardOpenOption.APPEND,

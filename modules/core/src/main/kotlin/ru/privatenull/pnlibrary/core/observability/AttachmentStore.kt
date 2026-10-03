@@ -28,11 +28,26 @@ internal class AttachmentStore(dataFolder: Path) {
         loadManifest()
     }
 
+    @Synchronized
     fun save(observationId: String, source: Path): StoredAttachment {
-        require(Files.isRegularFile(source)) { "Attachment is not a readable file: $source" }
-        require(source.extension.lowercase() !in blockedExtensions) { "Executable attachments are not allowed: $source" }
-
+        validate(source)
         val bytes = Files.readAllBytes(source)
+        return save(
+            observationId = observationId,
+            name = source.fileName.toString(),
+            contentType = contentType(source),
+            bytes = bytes,
+        )
+    }
+
+    @Synchronized
+    fun save(
+        observationId: String,
+        name: String,
+        contentType: String,
+        bytes: ByteArray,
+    ): StoredAttachment {
+        validateFileName(name)
         val id = UUID.randomUUID().toString()
         val storedPath = directory.resolve("$id.bin")
         Files.write(storedPath, bytes)
@@ -40,8 +55,8 @@ internal class AttachmentStore(dataFolder: Path) {
         return StoredAttachment(
             id = id,
             observationId = observationId,
-            originalName = source.fileName.toString(),
-            contentType = contentType(source),
+            originalName = name,
+            contentType = contentType,
             size = bytes.size.toLong(),
             sha256 = sha256(bytes),
             storedPath = storedPath,
@@ -51,13 +66,16 @@ internal class AttachmentStore(dataFolder: Path) {
         }
     }
 
+    @Synchronized
     fun forObservation(observationId: String): List<StoredAttachment> =
         attachments.values.filter { attachment -> attachment.observationId == observationId }
 
+    @Synchronized
     fun all(): List<StoredAttachment> = attachments.values.toList()
 
     fun read(attachment: StoredAttachment): ByteArray = Files.readAllBytes(attachment.storedPath)
 
+    @Synchronized
     fun removeOrphans(activeObservationIds: Set<String>) {
         val orphanIds = attachments.values
             .filterNot { it.observationId in activeObservationIds }
@@ -71,6 +89,18 @@ internal class AttachmentStore(dataFolder: Path) {
     }
 
     fun clear() = removeOrphans(emptySet())
+
+    private fun validate(source: Path) {
+        require(Files.isRegularFile(source)) {
+            "Attachment is not a readable file: $source"
+        }
+        validateFileName(source.fileName.toString())
+    }
+
+    private fun validateFileName(name: String) {
+        val extension = name.substringAfterLast('.', "").lowercase()
+        require(extension !in blockedExtensions) { "Executable attachments are not allowed: $name" }
+    }
 
     private fun loadManifest() {
         if (!Files.isRegularFile(manifest)) return
