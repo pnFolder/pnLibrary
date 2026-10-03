@@ -37,8 +37,6 @@ import java.util.IdentityHashMap
 import java.util.concurrent.atomic.AtomicBoolean
 import java.util.concurrent.atomic.AtomicLong
 import java.util.function.Consumer
-import java.nio.charset.StandardCharsets
-import java.security.MessageDigest
 import ru.privatenull.pnlibrary.api.placeholders.PlaceholderService
 import ru.privatenull.pnlibrary.api.text.ComponentService
 import ru.privatenull.pnlibrary.core.placeholders.PlaceholderHub
@@ -238,19 +236,6 @@ internal class PluginRegistryImpl(
 
     private fun detachPlugin(owner: Any): Plugin? = synchronized(plugins) { plugins.remove(owner) }
 
-    private fun serviceKey(registrationId: Long, nativeId: PluginId, moduleId: ModuleId): PluginId {
-        // Two loaded plugin instances may legitimately expose the same native and module IDs
-        // (reloads and isolated test/platform class loaders are examples). Service ownership is
-        // runtime-instance scoped, so its internal key must include the owner identity as well.
-        val canonical = "${nativeId.value}\u0000${moduleId.value}\u0000$registrationId"
-        val hash = MessageDigest.getInstance("SHA-256")
-            .digest(canonical.toByteArray(StandardCharsets.UTF_8))
-            .joinToString("") { "%02x".format(it) }
-        return PluginId.of(
-            "m-${nativeId.value.take(18)}-${moduleId.value.take(18)}-${hash.take(16)}",
-        )
-    }
-
     private inner class Plugin(
         override val owner: Any,
         private val nativeId: PluginId,
@@ -272,7 +257,8 @@ internal class PluginRegistryImpl(
                 }
                 definition.bindUpdatesTo(descriptor)
                 dependencyValidator.validate(definition.dependencies, productDescriptors)
-                createContext(this, id, serviceKey(registrationId, nativeId, id), definition, descriptor).also { context ->
+                val serviceKey = ModuleServiceKeyFactory.create(registrationId, nativeId, id)
+                createContext(this, id, serviceKey, definition, descriptor).also { context ->
                     moduleContexts[id] = context
                     if (descriptor != null) productDescriptors[descriptor.id.value] = descriptor
                     try {
