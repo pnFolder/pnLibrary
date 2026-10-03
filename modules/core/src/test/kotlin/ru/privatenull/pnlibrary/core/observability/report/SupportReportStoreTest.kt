@@ -1,4 +1,4 @@
-package ru.privatenull.pnlibrary.core.diagnostics
+package ru.privatenull.pnlibrary.core.observability.report
 
 import org.junit.jupiter.api.Assertions.assertArrayEquals
 import org.junit.jupiter.api.Assertions.assertEquals
@@ -9,13 +9,13 @@ import java.nio.file.Files
 import java.nio.file.Path
 import java.nio.file.attribute.FileTime
 
-class DiagnosticReportStoreTest {
+class SupportReportStoreTest {
     @TempDir
     lateinit var temporaryDirectory: Path
 
     @Test
     fun `stores the requested report representation`() {
-        val store = DiagnosticReportStore(temporaryDirectory)
+        val store = SupportReportStore(temporaryDirectory)
         val payload = byteArrayOf(1, 2, 3)
 
         val encrypted = store.save(payload, encrypted = true, keepCount = 2)
@@ -26,7 +26,7 @@ class DiagnosticReportStoreTest {
 
     @Test
     fun `retention removes only old reports owned by the store`() {
-        val store = DiagnosticReportStore(temporaryDirectory)
+        val store = SupportReportStore(temporaryDirectory)
         val unrelated = Files.writeString(temporaryDirectory.resolve("operator-notes.txt"), "keep")
         val first = store.save(byteArrayOf(1), encrypted = false, keepCount = 2)
         Files.setLastModifiedTime(first, FileTime.fromMillis(1))

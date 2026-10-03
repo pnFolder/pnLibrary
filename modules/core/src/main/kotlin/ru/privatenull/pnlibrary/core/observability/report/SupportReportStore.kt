@@ -1,4 +1,4 @@
-package ru.privatenull.pnlibrary.core.diagnostics
+package ru.privatenull.pnlibrary.core.observability.report
 
 import java.nio.file.AtomicMoveNotSupportedException
 import java.nio.file.Files
@@ -14,7 +14,7 @@ import java.nio.file.StandardCopyOption
  *
  * @param directory directory that owns local report artifacts
  */
-internal class DiagnosticReportStore(
+internal class SupportReportStore(
     private val directory: Path,
 ) {
     /**

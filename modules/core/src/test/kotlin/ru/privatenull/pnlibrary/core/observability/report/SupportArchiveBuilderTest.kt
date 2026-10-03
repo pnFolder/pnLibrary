@@ -1,4 +1,4 @@
-package ru.privatenull.pnlibrary.core.diagnostics
+package ru.privatenull.pnlibrary.core.observability.report
 
 import org.junit.jupiter.api.Assertions.assertArrayEquals
 import org.junit.jupiter.api.Assertions.assertThrows
@@ -7,10 +7,10 @@ import org.junit.jupiter.api.Test
 import java.io.ByteArrayInputStream
 import java.util.zip.ZipInputStream
 
-class DiagnosticArchiveBuilderTest {
+class SupportArchiveBuilderTest {
     @Test
     fun `enforces the uncompressed payload budget`() {
-        val builder = DiagnosticArchiveBuilder(maximumUncompressedBytes = 4)
+        val builder = SupportArchiveBuilder(maximumUncompressedBytes = 4)
         builder.bytes("first.txt", byteArrayOf(1, 2, 3))
 
         assertThrows(IllegalArgumentException::class.java) {
@@ -21,7 +21,7 @@ class DiagnosticArchiveBuilderTest {
     @Test
     fun `copies entry bytes and builds without mutating state`() {
         val source = byteArrayOf(1, 2, 3)
-        val builder = DiagnosticArchiveBuilder(maximumUncompressedBytes = 10)
+        val builder = SupportArchiveBuilder(maximumUncompressedBytes = 10)
         builder.bytes("value.bin", source)
         source[0] = 9
 

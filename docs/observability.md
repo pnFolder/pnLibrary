@@ -90,6 +90,7 @@ val report = library.observability.createReport(
 - `AttachmentStore` — байты и манифест вложений;
 - `ComponentStatusRegistry` — актуальные состояния;
 - `ObservabilityReportSnapshot` — источник данных для отчёта;
+- `observability.report` — сборка архива, сохранение и публикация отчёта;
 - `LegacyObservabilityAdapter` — адаптер старых API без собственного хранилища;
 - `LegacyActivityMapper` — явное преобразование старых событий;
 - `DiagnosticObservationBridge` — один диагностический инцидент превращает в одно наблюдение.

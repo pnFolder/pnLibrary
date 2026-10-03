@@ -15,7 +15,7 @@ import ru.privatenull.pnlibrary.core.config.ConfigurationServiceImpl
 import ru.privatenull.pnlibrary.core.commands.CommandServiceImpl
 import ru.privatenull.pnlibrary.core.audiences.AudienceServiceImpl
 import ru.privatenull.pnlibrary.core.diagnostics.PersistentDiagnosticHistory
-import ru.privatenull.pnlibrary.core.diagnostics.ReportGenerator
+import ru.privatenull.pnlibrary.core.observability.report.SupportReportGenerator
 import ru.privatenull.pnlibrary.core.events.EventServiceImpl
 import ru.privatenull.pnlibrary.core.logging.DiagnosticLogBuffer
 import ru.privatenull.pnlibrary.core.logging.PlatformLoggingService
@@ -175,7 +175,7 @@ internal class PnLibraryImpl(
     )
 
     val uploader: UploadProvider? = initUploader()
-    val reportGenerator: ReportGenerator = ReportGenerator(
+    val reportGenerator: SupportReportGenerator = SupportReportGenerator(
         dataFolder = dataFolder,
         config = config,
         diagnosticsRegistry = diagnostics,

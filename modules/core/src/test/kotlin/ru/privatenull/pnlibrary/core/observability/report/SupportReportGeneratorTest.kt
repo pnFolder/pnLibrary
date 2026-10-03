@@ -1,4 +1,4 @@
-package ru.privatenull.pnlibrary.core
+package ru.privatenull.pnlibrary.core.observability.report
 
 import org.junit.jupiter.api.Assertions.assertTrue
 import org.junit.jupiter.api.Test
@@ -9,12 +9,11 @@ import ru.privatenull.pnlibrary.spi.platform.PlatformAdapter
 import ru.privatenull.pnlibrary.api.platform.PlatformType
 import ru.privatenull.pnlibrary.api.runtime.PnLibraryConfig
 import ru.privatenull.pnlibrary.core.diagnostics.DiagnosticsRegistry
-import ru.privatenull.pnlibrary.core.diagnostics.ReportGenerator
 import java.nio.file.Files
 import java.nio.file.Path
 import java.util.zip.ZipFile
 
-class ReportGeneratorTest {
+class SupportReportGeneratorTest {
     @TempDir lateinit var temporary: Path
 
     @Test
@@ -26,7 +25,7 @@ class ReportGeneratorTest {
             Files.writeString(folder.resolve("config.yml"), "enabled: true\n")
             registry.register(plugin, folder, DiagnosticContainer.builder(plugin).configuration("config.yml").build())
         }
-        val generator = ReportGenerator(
+        val generator = SupportReportGenerator(
             dataFolder = temporary,
             config = PnLibraryConfig(upload = false, uploadMode = "disabled"),
             diagnosticsRegistry = registry,

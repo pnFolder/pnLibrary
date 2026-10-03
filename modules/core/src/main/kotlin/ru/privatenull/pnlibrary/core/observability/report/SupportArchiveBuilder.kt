@@ -1,4 +1,4 @@
-package ru.privatenull.pnlibrary.core.diagnostics
+package ru.privatenull.pnlibrary.core.observability.report
 
 import com.google.gson.Gson
 import com.google.gson.GsonBuilder
@@ -17,7 +17,7 @@ import java.util.zip.ZipOutputStream
  *
  * @param maximumUncompressedBytes total payload budget before ZIP compression
  */
-internal class DiagnosticArchiveBuilder(
+internal class SupportArchiveBuilder(
     private val maximumUncompressedBytes: Long = Long.MAX_VALUE,
 ) {
     private val gson: Gson = GsonBuilder().setPrettyPrinting().disableHtmlEscaping().create()
