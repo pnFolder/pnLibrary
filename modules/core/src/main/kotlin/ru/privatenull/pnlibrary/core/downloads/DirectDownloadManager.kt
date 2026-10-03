@@ -1,6 +1,5 @@
 package ru.privatenull.pnlibrary.core.downloads
 
-import ru.privatenull.pnlibrary.api.downloads.DownloadDestination
 import ru.privatenull.pnlibrary.api.downloads.FileDownload
 import ru.privatenull.pnlibrary.api.downloads.FileDownloads
 import ru.privatenull.pnlibrary.api.downloads.DownloadRegistration
@@ -8,7 +7,6 @@ import ru.privatenull.pnlibrary.api.downloads.DownloadSnapshot
 import ru.privatenull.pnlibrary.api.downloads.DownloadState
 import ru.privatenull.pnlibrary.api.logging.LogLevel
 import ru.privatenull.pnlibrary.api.plugin.PluginDependency
-import ru.privatenull.pnlibrary.api.version.SemanticVersion
 import ru.privatenull.pnlibrary.spi.platform.PlatformAdapter
 import ru.privatenull.pnlibrary.update.TrustedHttpClient
 import java.nio.file.Files
@@ -42,6 +40,9 @@ internal class DirectDownloadManager(
     )
     private val dependencyStore = DownloadedDependencyStore(libraryData)
     private val dependencyReporter = DependencyDownloadReporter(platform)
+    private val dependencyRequestFactory = DependencyDownloadRequestFactory(
+        requireNotNull(libraryData.parent) { "не найдена папка плагинов" },
+    )
 
     fun register(owner: Any, request: FileDownloads): DownloadRegistration = register(owner, request, null)
 
@@ -60,41 +61,9 @@ internal class DirectDownloadManager(
         platform.whenServerReady(Runnable {
             confirmDownloadedDependencies(owner, runCatching { platform.installedPlugins() }.getOrNull().orEmpty())
         })
-        val downloadable = dependencies.mapNotNull { dependency ->
-            val external = dependency.external ?: return@mapNotNull null
-            val artifact = external.artifact ?: return@mapNotNull null
-            if (!dependency.automaticDownload) return@mapNotNull null
-            val installedVersion = installed.entries.firstOrNull { it.key.equals(external.plugin, true) }?.value
-            if (installedVersion != null && SemanticVersion.tryParse(installedVersion)?.let(external.versions::accepts) == true) {
-                return@mapNotNull null
-            }
-            Triple(dependency, external, artifact)
-        }
-        if (downloadable.isEmpty()) return null
-        val pluginDirectory = requireNotNull(libraryData.parent) { "не найдена папка плагинов" }
-        val request = FileDownloads.builder().dataDirectory(pluginDirectory.resolve("update")).also { builder ->
-            downloadable.forEach { (dependency, external, artifact) ->
-                val safePluginName = external.plugin.replace(Regex("[^A-Za-z0-9._-]+"), "-")
-                    .trim('-', '.')
-                    .ifBlank { "plugin" }
-                val fileName = "$safePluginName.jar"
-                builder.file("dependency:${external.plugin}") { file ->
-                    file.url(artifact.uri.toString())
-                        .required(dependency.required)
-                        .automaticDownload(true)
-                        .forceAutomaticDownload(dependency.forceAutomaticDownload)
-                        .destination(DownloadDestination.DATA_FOLDER, fileName)
-                    val expectedSize = artifact.size
-                    val expectedHash = artifact.sha256
-                    if (expectedSize != null && expectedHash != null) {
-                        file.integrity(expectedSize, expectedHash)
-                    }
-                }
-            }
-        }.build()
-        val requirements = downloadable.associate { (_, external, _) -> "dependency:${external.plugin}" to external }
-        return register(owner, request) { declaration, path ->
-            requirements[declaration.key]?.let { pluginJarVerifier.verify(path, it) }
+        val download = dependencyRequestFactory.create(dependencies, installed) ?: return null
+        return register(owner, download.request) { declaration, path ->
+            download.requirements[declaration.key]?.let { pluginJarVerifier.verify(path, it) }
         }
     }
 
