@@ -17,7 +17,6 @@ import ru.privatenull.pnlibrary.console.ConsoleTree
 import java.nio.file.Files
 import java.nio.file.Path
 import java.nio.file.Paths
-import java.nio.file.StandardCopyOption
 import java.security.MessageDigest
 import java.time.Duration
 import java.util.concurrent.ExecutorService
@@ -28,10 +27,6 @@ import java.util.UUID
 import java.util.concurrent.CompletableFuture
 import java.util.concurrent.CompletionStage
 import java.util.concurrent.atomic.AtomicReference
-import java.util.jar.JarFile
-import org.yaml.snakeyaml.LoaderOptions
-import org.yaml.snakeyaml.Yaml
-import org.yaml.snakeyaml.constructor.SafeConstructor
 
 internal class DirectDownloadManager(
     private val platform: PlatformAdapter,
@@ -46,6 +41,8 @@ internal class DirectDownloadManager(
         Thread(action, "pnLibrary-direct-downloads").apply { isDaemon = true }
     }
     private val registrations = CopyOnWriteArrayList<Registration>()
+    private val pluginJarVerifier = PluginJarVerifier(platform.type)
+    private val filePublisher = AtomicDownloadPublisher(libraryData)
 
     fun register(owner: Any, request: FileDownloads): DownloadRegistration = register(owner, request, null)
 
@@ -98,7 +95,7 @@ internal class DirectDownloadManager(
         }.build()
         val requirements = downloadable.associate { (_, external, _) -> "dependency:${external.plugin}" to external }
         return register(owner, request) { declaration, path ->
-            requirements[declaration.key]?.let { verifyPluginJar(path, it) }
+            requirements[declaration.key]?.let { pluginJarVerifier.verify(path, it) }
         }
     }
 
@@ -113,7 +110,7 @@ internal class DirectDownloadManager(
         verifier: ((FileDownload, Path) -> Unit)? = null,
     ) {
         check(!closed.get()) { "система загрузок закрыта" }
-        val prepared = mutableListOf<Prepared>()
+        val prepared = mutableListOf<PreparedDownload>()
         try {
             declarations.forEach { prepared += prepare(request, it, verifier) }
         } catch (error: Throwable) {
@@ -124,7 +121,7 @@ internal class DirectDownloadManager(
         try {
             beforePublish()
             check(!closed.get()) { "система загрузок закрыта" }
-            publishAtomically(prepared)
+            filePublisher.publish(prepared)
         } catch (error: Throwable) {
             prepared.forEach { Files.deleteIfExists(it.staging) }
             throw error
@@ -135,7 +132,7 @@ internal class DirectDownloadManager(
         request: FileDownloads,
         declaration: FileDownload,
         verifier: ((FileDownload, Path) -> Unit)?,
-    ): Prepared {
+    ): PreparedDownload {
         require(declaration.source.supports(platform.type, Runtime.version().feature())) {
             "файл не поддерживает ${platform.type.displayName} / Java ${Runtime.version().feature()}"
         }
@@ -149,72 +146,7 @@ internal class DirectDownloadManager(
         Files.createDirectories(staging.parent)
         Files.write(staging, bytes)
         verifier?.invoke(declaration, staging)
-        return Prepared(staging, target)
-    }
-
-    private fun verifyPluginJar(path: Path, expected: ru.privatenull.pnlibrary.api.updates.ExternalPluginDependency) {
-        val metadata = JarFile(path.toFile()).use { jar ->
-            val descriptorName = when (platform.type) {
-                ru.privatenull.pnlibrary.api.platform.PlatformType.BUKKIT -> "plugin.yml"
-                ru.privatenull.pnlibrary.api.platform.PlatformType.BUNGEECORD -> "bungee.yml"
-                ru.privatenull.pnlibrary.api.platform.PlatformType.VELOCITY -> "velocity-plugin.json"
-            }
-            val entry = jar.getJarEntry(descriptorName)?.let { descriptorName to it }
-                ?: throw IllegalArgumentException("JAR плагина не содержит поддерживаемого descriptor")
-            @Suppress("UNCHECKED_CAST")
-            val values = jar.getInputStream(entry.second).use { input ->
-                Yaml(SafeConstructor(LoaderOptions())).load<Any?>(input) as? Map<String, Any?>
-            } ?: throw IllegalArgumentException("descriptor плагина повреждён")
-            val names = listOfNotNull(values["id"]?.toString(), values["name"]?.toString())
-            val version = values["version"]?.toString()
-                ?: throw IllegalArgumentException("descriptor плагина не содержит version")
-            names to version
-        }
-        if (expected.verifyPluginId) {
-            require(metadata.first.any { it.equals(expected.plugin, true) }) {
-                "скачанный JAR объявляет ${metadata.first.joinToString("/")}, ожидался ${expected.plugin}"
-            }
-        }
-        if (!expected.verifyVersion) return
-        val version = SemanticVersion.tryParse(metadata.second)
-            ?: throw IllegalArgumentException("версия скачанного ${expected.plugin} не распознана: ${metadata.second}")
-        require(expected.versions.accepts(version)) {
-            "версия скачанного ${expected.plugin} $version не соответствует требованию ${expected.minimumVersion}"
-        }
-    }
-
-    private fun publishAtomically(prepared: List<Prepared>) {
-        val transaction = libraryData.resolve("downloads/transactions/${UUID.randomUUID()}")
-        val backups = mutableListOf<Pair<Path, Path>>()
-        val published = mutableListOf<Path>()
-        try {
-            prepared.forEachIndexed { index, item ->
-                Files.createDirectories(item.target.parent)
-                if (Files.exists(item.target)) {
-                    val backup = transaction.resolve("$index-${item.target.fileName}")
-                    Files.createDirectories(backup.parent)
-                    Files.move(item.target, backup, StandardCopyOption.REPLACE_EXISTING)
-                    backups.add(item.target to backup)
-                }
-                move(item.staging, item.target)
-                published.add(item.target)
-            }
-        } catch (error: Throwable) {
-            published.asReversed().forEach(Files::deleteIfExists)
-            backups.asReversed().forEach { (target, backup) -> if (Files.exists(backup)) move(backup, target) }
-            throw error
-        } finally {
-            prepared.forEach { Files.deleteIfExists(it.staging) }
-            backups.forEach { (_, backup) -> Files.deleteIfExists(backup) }
-            runCatching { Files.deleteIfExists(transaction) }
-        }
-    }
-
-    private fun move(source: Path, target: Path) {
-        try { Files.move(source, target, StandardCopyOption.ATOMIC_MOVE, StandardCopyOption.REPLACE_EXISTING) }
-        catch (_: java.nio.file.AtomicMoveNotSupportedException) {
-            Files.move(source, target, StandardCopyOption.REPLACE_EXISTING)
-        }
+        return PreparedDownload(staging, target)
     }
 
     private fun target(request: FileDownloads, declaration: FileDownload): Path {
@@ -244,8 +176,6 @@ internal class DirectDownloadManager(
     private fun sha256(bytes: ByteArray): String = MessageDigest.getInstance("SHA-256")
         .digest(bytes).joinToString("") { "%02x".format(it) }
 
-    private data class Prepared(val staging: Path, val target: Path)
-
     private inner class Registration(
         private val owner: Any,
         private val request: FileDownloads,
@@ -266,67 +196,34 @@ internal class DirectDownloadManager(
         fun start(declarations: List<FileDownload>, automaticPolicy: Boolean): CompletableFuture<List<DownloadSnapshot>> {
             val promise = CompletableFuture<List<DownloadSnapshot>>()
             if (registrationClosed.get() || closed.get()) {
-                promise.completeExceptionally(IllegalStateException("регистрация загрузок закрыта")); return promise
+                promise.completeExceptionally(IllegalStateException("регистрация загрузок закрыта"))
+                return promise
             }
+
             val effectiveDeclarations = if (automaticPolicy && !configuration.automatic) {
                 declarations.filter(FileDownload::forceAutomaticDownload)
-            } else declarations
+            } else {
+                declarations
+            }
+
             if (!configuration.enabled) {
-                val reason = "система загрузок отключена"
-                state.set(request.files.map { DownloadSnapshot(it.key, DownloadState.BLOCKED, reason) })
-                platform.log(owner, LogLevel.WARNING, reason)
-                promise.complete(snapshots()); return promise
+                return block(promise, "система загрузок отключена")
             }
             if (effectiveDeclarations.isEmpty()) {
                 if (automaticPolicy && declarations.isNotEmpty()) {
-                    val reason = "автозагрузка запрещена в downloads.yml"
-                    state.set(request.files.map { DownloadSnapshot(it.key, DownloadState.BLOCKED, reason) })
-                    platform.log(owner, LogLevel.WARNING, reason)
+                    return block(promise, "автозагрузка запрещена в downloads.yml")
                 }
-                promise.complete(snapshots()); return promise
+                promise.complete(snapshots())
+                return promise
             }
+
             activeDownload.get()?.let { return it }
             if (!activeDownload.compareAndSet(null, promise)) return activeDownload.get() ?: promise
-            state.set(request.files.map {
-                DownloadSnapshot(it.key, if (it in effectiveDeclarations) DownloadState.DOWNLOADING else DownloadState.DECLARED)
-            })
+
+            updateState(effectiveDeclarations, DownloadState.DOWNLOADING)
             try {
                 executor.execute {
-                if (registrationClosed.get() || closed.get()) {
-                    promise.complete(snapshots())
-                    activeDownload.compareAndSet(promise, null)
-                    return@execute
-                }
-                runCatching {
-                    installBatch(request, effectiveDeclarations, {
-                        check(!registrationClosed.get()) { "регистрация загрузок закрыта" }
-                    }, verifier)
-                    if (effectiveDeclarations.any { it.key.startsWith("dependency:") }) {
-                        persistDownloadedDependencies(effectiveDeclarations)
-                    }
-                }
-                    .onSuccess {
-                        if (!registrationClosed.get() && !closed.get()) state.set(request.files.map {
-                            DownloadSnapshot(it.key, when {
-                                it in effectiveDeclarations -> DownloadState.STAGED
-                                else -> DownloadState.DECLARED
-                            })
-                        })
-                        promise.complete(snapshots())
-                        if (effectiveDeclarations.any { it.key.startsWith("dependency:") }) {
-                            runCatching { showDependencySuccess(owner, effectiveDeclarations) }
-                        }
-                    }
-                    .onFailure { error ->
-                        if (!registrationClosed.get() && !closed.get()) {
-                            state.set(request.files.map { DownloadSnapshot(it.key, DownloadState.FAILED, error.message) })
-                            val level = if (effectiveDeclarations.any { it.required }) LogLevel.ERROR else LogLevel.WARNING
-                            promise.complete(snapshots())
-                            runCatching { showFailure(owner, error, level) }
-                        }
-                        if (!promise.isDone) promise.complete(snapshots())
-                    }
-                    .also { activeDownload.compareAndSet(promise, null) }
+                    executeDownload(effectiveDeclarations, promise)
                 }
             } catch (error: Throwable) {
                 activeDownload.compareAndSet(promise, null)
@@ -334,6 +231,92 @@ internal class DirectDownloadManager(
             }
             return promise
         }
+
+        private fun block(
+            promise: CompletableFuture<List<DownloadSnapshot>>,
+            reason: String,
+        ): CompletableFuture<List<DownloadSnapshot>> {
+            state.set(request.files.map { DownloadSnapshot(it.key, DownloadState.BLOCKED, reason) })
+            platform.log(owner, LogLevel.WARNING, reason)
+            promise.complete(snapshots())
+            return promise
+        }
+
+        private fun executeDownload(
+            declarations: List<FileDownload>,
+            promise: CompletableFuture<List<DownloadSnapshot>>,
+        ) {
+            if (registrationClosed.get() || closed.get()) {
+                promise.complete(snapshots())
+                activeDownload.compareAndSet(promise, null)
+                return
+            }
+
+            runCatching {
+                installBatch(
+                    request = request,
+                    declarations = declarations,
+                    beforePublish = {
+                        check(!registrationClosed.get()) { "регистрация загрузок закрыта" }
+                    },
+                    verifier = verifier,
+                )
+                if (declarations.containsDependencies()) {
+                    persistDownloadedDependencies(declarations)
+                }
+            }.onSuccess {
+                completeSuccessfully(declarations, promise)
+            }.onFailure { error ->
+                completeWithFailure(declarations, promise, error)
+            }
+
+            activeDownload.compareAndSet(promise, null)
+        }
+
+        private fun completeSuccessfully(
+            declarations: List<FileDownload>,
+            promise: CompletableFuture<List<DownloadSnapshot>>,
+        ) {
+            if (!registrationClosed.get() && !closed.get()) {
+                updateState(declarations, DownloadState.STAGED)
+            }
+            promise.complete(snapshots())
+            if (declarations.containsDependencies()) {
+                runCatching { showDependencySuccess(owner, declarations) }
+            }
+        }
+
+        private fun completeWithFailure(
+            declarations: List<FileDownload>,
+            promise: CompletableFuture<List<DownloadSnapshot>>,
+            error: Throwable,
+        ) {
+            if (!registrationClosed.get() && !closed.get()) {
+                state.set(request.files.map {
+                    DownloadSnapshot(it.key, DownloadState.FAILED, error.message)
+                })
+                val level = if (declarations.any(FileDownload::required)) {
+                    LogLevel.ERROR
+                } else {
+                    LogLevel.WARNING
+                }
+                runCatching { showFailure(owner, error, level) }
+            }
+            promise.complete(snapshots())
+        }
+
+        private fun updateState(
+            activeDeclarations: List<FileDownload>,
+            activeState: DownloadState,
+        ) {
+            state.set(request.files.map { declaration ->
+                val newState = if (declaration in activeDeclarations) activeState else DownloadState.DECLARED
+                DownloadSnapshot(declaration.key, newState)
+            })
+        }
+
+        private fun List<FileDownload>.containsDependencies(): Boolean =
+            any { it.key.startsWith("dependency:") }
 
         private fun showFailure(
             owner: Any,
@@ -366,7 +349,7 @@ internal class DirectDownloadManager(
             }
         }
 
-    private fun showDependencySuccess(owner: Any, declarations: List<FileDownload>) {
+        private fun showDependencySuccess(owner: Any, declarations: List<FileDownload>) {
             val ownerName = platform.ownerDetails(owner)["name"] ?: "pnLibrary"
             val theme = ConsoleTheme("§6", "§a", "§f", "§8", "§r")
             val files = declarations.map { Paths.get(it.relativePath).fileName.toString() }
