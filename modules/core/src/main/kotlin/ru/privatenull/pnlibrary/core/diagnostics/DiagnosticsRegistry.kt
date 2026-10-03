@@ -117,47 +117,91 @@ internal class DiagnosticsRegistry(eventLimit: Int = DEFAULT_EVENT_LIMIT) : Diag
         val safeCode = sanitizer.text(code, 96)
         val safeMessage = sanitizer.text(message, 4096)
         val safeFields = sanitizer.map(fields)
-        try { activityListener?.invoke(plugin, level, safeComponent, safeCode, safeMessage, error, safeFields) } catch (_: Exception) { }
+        notifyActivityListener(plugin, level, safeComponent, safeCode, safeMessage, error, safeFields)
+
         val incidentId = sanitizer.incidentId(plugin, level, safeComponent, safeCode, safeMessage, error)
-        val st = stateOf(plugin)
-        synchronized(st.events) {
-            val existing = st.events.firstOrNull { it["incidentId"] == incidentId }
+        val pluginState = stateOf(plugin)
+        synchronized(pluginState.events) {
+            val existing = pluginState.events.firstOrNull { it["incidentId"] == incidentId }
             if (existing != null) {
-                val count = (existing["occurrenceCount"] as? Number)?.toLong() ?: 1L
-                existing["occurrenceCount"] = count + 1
-                existing["lastSeenUtc"] = now
-                @Suppress("UNCHECKED_CAST")
-                val timeline = existing["occurrenceTimeline"] as MutableList<Map<String, Any?>>
-                if (timeline.size < MAX_EVENT_TIMELINE) {
-                    timeline += occurrence(now, safeFields)
-                } else {
-                    existing["omittedOccurrences"] =
-                        ((existing["omittedOccurrences"] as? Number)?.toLong() ?: 0L) + 1
-                }
+                appendOccurrence(existing, now, safeFields)
                 notifyEventsChanged()
                 return
             }
 
-            val event = linkedMapOf<String, Any?>(
-                "incidentId" to incidentId,
-                "timeUtc" to now,
-                "firstSeenUtc" to now,
-                "lastSeenUtc" to now,
-                "occurrenceCount" to 1L,
-                "omittedOccurrences" to 0L,
-                "level" to level.name,
-                "component" to safeComponent,
-                "code" to safeCode,
-                "message" to safeMessage,
-                "fields" to safeFields,
-                "origin" to error?.let(sanitizer::exceptionOrigin),
-                "occurrenceTimeline" to mutableListOf(occurrence(now, safeFields)),
+            pluginState.events.addLast(
+                newIncident(incidentId, now, level, safeComponent, safeCode, safeMessage, safeFields, error),
             )
-            if (error != null) event["exception"] = sanitizer.exception(error)
-            st.events.addLast(event)
-            while (st.events.size > limit) st.events.removeFirst()
+            trimEvents(pluginState.events)
             notifyEventsChanged()
         }
+    }
+
+    private fun notifyActivityListener(
+        plugin: String,
+        level: DiagnosticLevel,
+        component: String,
+        code: String,
+        message: String,
+        error: Throwable?,
+        fields: Map<String, Any?>,
+    ) {
+        try {
+            activityListener?.invoke(plugin, level, component, code, message, error, fields)
+        } catch (_: Exception) {
+            // Compatibility listeners are observers and must never reject diagnostics.
+        }
+    }
+
+    private fun appendOccurrence(
+        incident: LinkedHashMap<String, Any?>,
+        timeUtc: String,
+        fields: Map<String, Any?>,
+    ) {
+        val previousCount = (incident["occurrenceCount"] as? Number)?.toLong() ?: 1L
+        incident["occurrenceCount"] = previousCount + 1
+        incident["lastSeenUtc"] = timeUtc
+
+        @Suppress("UNCHECKED_CAST")
+        val timeline = incident["occurrenceTimeline"] as MutableList<Map<String, Any?>>
+        if (timeline.size < MAX_EVENT_TIMELINE) {
+            timeline += occurrence(timeUtc, fields)
+            return
+        }
+
+        val omitted = (incident["omittedOccurrences"] as? Number)?.toLong() ?: 0L
+        incident["omittedOccurrences"] = omitted + 1
+    }
+
+    private fun newIncident(
+        incidentId: String,
+        timeUtc: String,
+        level: DiagnosticLevel,
+        component: String,
+        code: String,
+        message: String,
+        fields: Map<String, Any?>,
+        error: Throwable?,
+    ): LinkedHashMap<String, Any?> = linkedMapOf<String, Any?>(
+        "incidentId" to incidentId,
+        "timeUtc" to timeUtc,
+        "firstSeenUtc" to timeUtc,
+        "lastSeenUtc" to timeUtc,
+        "occurrenceCount" to 1L,
+        "omittedOccurrences" to 0L,
+        "level" to level.name,
+        "component" to component,
+        "code" to code,
+        "message" to message,
+        "fields" to fields,
+        "origin" to error?.let(sanitizer::exceptionOrigin),
+        "occurrenceTimeline" to mutableListOf(occurrence(timeUtc, fields)),
+    ).also { incident ->
+        if (error != null) incident["exception"] = sanitizer.exception(error)
+    }
+
+    private fun trimEvents(events: ArrayDeque<LinkedHashMap<String, Any?>>) {
+        while (events.size > limit) events.removeFirst()
     }
 
     // ── Snapshot ─────────────────────────────────────────────────────────────
