@@ -44,6 +44,7 @@ internal class DirectDownloadManager(
     private val artifactPreparer = DownloadArtifactPreparer(
         platform.type, libraryData, configuration, http, MAX_BYTES,
     )
+    private val dependencyStore = DownloadedDependencyStore(libraryData)
 
     fun register(owner: Any, request: FileDownloads): DownloadRegistration = register(owner, request, null)
 
@@ -222,7 +223,7 @@ internal class DirectDownloadManager(
                     verifier = verifier,
                 )
                 if (declarations.containsDependencies()) {
-                    persistDownloadedDependencies(declarations)
+                    dependencyStore.record(declarations.dependencyNames())
                 }
             }.onSuccess {
                 completeSuccessfully(declarations, promise)
@@ -277,6 +278,9 @@ internal class DirectDownloadManager(
 
         private fun List<FileDownload>.containsDependencies(): Boolean =
             any { it.key.startsWith("dependency:") }
+
+        private fun List<FileDownload>.dependencyNames(): List<String> =
+            mapNotNull { it.key.takeIf { key -> key.startsWith("dependency:") }?.removePrefix("dependency:") }
 
         private fun showFailure(
             owner: Any,
@@ -373,31 +377,14 @@ internal class DirectDownloadManager(
         }
     }
 
-    private fun persistDownloadedDependencies(declarations: List<FileDownload>) {
-        val marker = dependencyMarker
-        val existing = if (Files.exists(marker)) Files.readAllLines(marker).toMutableSet() else linkedSetOf()
-        declarations.mapNotNull { it.key.takeIf { key -> key.startsWith("dependency:") }?.removePrefix("dependency:") }
-            .forEach(existing::add)
-        Files.createDirectories(marker.parent)
-        Files.write(marker, existing.sorted())
-    }
-
     private fun confirmDownloadedDependencies(owner: Any, installed: Map<String, String>) {
-        val marker = dependencyMarker
-        if (!Files.exists(marker)) return
-        val confirmed = Files.readAllLines(marker)
-            .map(String::trim)
-            .filter { it.isNotEmpty() }
-            .filter { expected -> installed.keys.any { it.equals(expected, true) } }
+        val confirmed = dependencyStore.consumeInstalled(installed)
         if (confirmed.isEmpty()) return
 
         val theme = ConsoleTheme("§6", "§a", "§f", "§8", "§r")
         val tree = ConsoleTree.builder("Подключённые зависимости")
             .apply {
-                confirmed.forEach { expected ->
-                    val actual = installed.entries.first { it.key.equals(expected, true) }
-                    child("${actual.key} ${actual.value}")
-                }
+                confirmed.forEach { child("${it.name} ${it.version}") }
             }
             .build()
         val ownerName = platform.ownerDetails(owner)["name"] ?: "pnLibrary"
@@ -409,12 +396,7 @@ internal class DirectDownloadManager(
             .status("Зависимости загружены и работают")
             .build().send { line -> platform.console(owner, line) }
 
-        val remaining = Files.readAllLines(marker).filterNot { line -> confirmed.any { it.equals(line.trim(), true) } }
-        if (remaining.isEmpty()) Files.deleteIfExists(marker) else Files.write(marker, remaining)
     }
-
-    private val dependencyMarker: Path
-        get() = libraryData.resolve("downloads/dependencies.state")
 
     private data class FailureDetails(
         val headline: String,
