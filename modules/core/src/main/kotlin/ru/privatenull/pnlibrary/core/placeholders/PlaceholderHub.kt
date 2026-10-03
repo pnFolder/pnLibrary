@@ -2,6 +2,7 @@ package ru.privatenull.pnlibrary.core.placeholders
 
 import ru.privatenull.pnlibrary.api.placeholders.*
 import ru.privatenull.pnlibrary.api.plugin.PluginId
+import java.util.Locale
 import java.util.UUID
 import java.util.concurrent.CompletableFuture
 import java.util.concurrent.CompletionStage
@@ -26,33 +27,67 @@ internal class PlaceholderHub(
     private val formatters = ConcurrentHashMap<String, FormatterEntry<*>>()
 
     init {
-        val system = PluginId.of("pnlibrary")
-        fun builtin(name: String, formatter: (Any, List<String>) -> String) {
-            formatters[formatterId(system, name)] = FormatterEntry(system, name, Any::class.java, PlaceholderFormatter { value, args, _ -> formatter(value, args) })
+        registerBuiltInFormatters()
+        registerSystemPlaceholders()
+        registerDefaultValueCommand()
+    }
+
+    private fun registerBuiltInFormatters() {
+        builtInFormatter("upper") { value, _ -> value.toString().uppercase(Locale.ROOT) }
+        builtInFormatter("lower") { value, _ -> value.toString().lowercase(Locale.ROOT) }
+        builtInFormatter("default") { value, _ -> value.toString() }
+        builtInFormatter("boolean") { value, arguments ->
+            if (value == true) {
+                arguments.getOrElse(0) { "true" }
+            } else {
+                arguments.getOrElse(1) { "false" }
+            }
         }
-        builtin("upper") { value, _ -> value.toString().uppercase(java.util.Locale.ROOT) }
-        builtin("lower") { value, _ -> value.toString().lowercase(java.util.Locale.ROOT) }
-        builtin("default") { value, _ -> value.toString() }
-        builtin("boolean") { value, args -> if (value == true) args.getOrElse(0) { "true" } else args.getOrElse(1) { "false" } }
-        builtin("plural", PlaceholderBuiltInFormatters::plural)
-        builtin("duration") { value, _ -> PlaceholderBuiltInFormatters.duration(value) }
+        builtInFormatter("plural", PlaceholderBuiltInFormatters::plural)
+        builtInFormatter("duration") { value, _ -> PlaceholderBuiltInFormatters.duration(value) }
+    }
+
+    private fun builtInFormatter(
+        name: String,
+        formatter: (Any, List<String>) -> String,
+    ) {
+        val owner = PluginId.of(SYSTEM_NAMESPACE)
+        formatters[formatterId(owner, name)] = FormatterEntry(
+            owner = owner,
+            name = name,
+            type = Any::class.java,
+            formatter = PlaceholderFormatter { value, arguments, _ -> formatter(value, arguments) },
+        )
+    }
+
+    private fun registerSystemPlaceholders() {
         system("server.platform", String::class.java) { platform.type.displayName }
         system("server.implementation", String::class.java) { platform.implementationName }
         system("server.proxy", Boolean::class.javaObjectType) { platform.isProxy }
-        system("runtime.java", String::class.java) { System.getProperty("java.version", "unknown") }
+        system("runtime.java", String::class.java) {
+            System.getProperty("java.version", "unknown")
+        }
+    }
+
+    private fun registerDefaultValueCommand() {
+        val owner = PluginId.of(SYSTEM_NAMESPACE)
         val commands = DefaultValueCommandResolver(valueStore)
         val commandKey = PlaceholderKey.of("defaultvalue", String::class.java)
         val commandEntry = Entry(
-            system,
+            owner,
             commandKey,
-            { request -> CompletableFuture.completedFuture(commands.resolve(request.parameters["value"].orEmpty(), request.playerId)) },
+            { request ->
+                CompletableFuture.completedFuture(
+                    commands.resolve(request.parameters["value"].orEmpty(), request.playerId),
+                )
+            },
             null,
             PlaceholderAccess.shared(),
             PlaceholderAccess.ownerOnly(),
             PlaceholderCachePolicy.none(),
             null,
         )
-        entries[id(system, commandKey.value)] = commandEntry
+        entries[id(owner, commandKey.value)] = commandEntry
         commandEntry.publish(PlaceholderPublication("placeholderapi", "pnlibrary", "defaultvalue"))
     }
 
@@ -60,7 +95,7 @@ internal class PlaceholderHub(
         Scope(owner, placeholderApiEnabled)
 
     override fun register(adapter: PlaceholderAdapter): AutoCloseable {
-        val key = adapter.id.lowercase(java.util.Locale.ROOT)
+        val key = adapter.id.lowercase(Locale.ROOT)
         require(adapters.putIfAbsent(key, adapter) == null) { "Placeholder adapter ${adapter.id} is already registered" }
         entries.values.forEach { it.attach(adapter) }
         return AutoCloseable {
@@ -70,14 +105,23 @@ internal class PlaceholderHub(
             }
         }
     }
-    override fun get(id: String): PlaceholderAdapter? = adapters[id.lowercase(java.util.Locale.ROOT)]
+    override fun get(id: String): PlaceholderAdapter? = adapters[id.lowercase(Locale.ROOT)]
     override fun all(): List<PlaceholderAdapter> =
         java.util.Collections.unmodifiableList(adapters.values.sortedBy(PlaceholderAdapter::id))
 
     private fun <T : Any> system(key: String, type: Class<T>, value: () -> T) {
-        val owner = PluginId.of("pnlibrary")
+        val owner = PluginId.of(SYSTEM_NAMESPACE)
         val typedKey = PlaceholderKey.of(key, type)
-        entries[id(owner, key)] = Entry(owner, typedKey, { CompletableFuture.completedFuture(value()) }, null, PlaceholderAccess.shared(), PlaceholderAccess.ownerOnly(), PlaceholderCachePolicy.none(), null)
+        entries[id(owner, key)] = Entry(
+            owner = owner,
+            key = typedKey,
+            resolver = { CompletableFuture.completedFuture(value()) },
+            updater = null,
+            access = PlaceholderAccess.shared(),
+            updateAccess = PlaceholderAccess.ownerOnly(),
+            policy = PlaceholderCachePolicy.none(),
+            fallback = null,
+        )
     }
 
     private inner class Scope(
@@ -182,7 +226,7 @@ internal class PlaceholderHub(
             val entry = Entry(owner, key, resolver ?: error("Placeholder ${key.value} has no resolver"), updater, access, updateAccess, cache, fallback)
             install(entry)
             publications
-                .filter { it.adapterId.lowercase(java.util.Locale.ROOT) != "placeholderapi" || placeholderApiEnabled }
+                .filter { it.adapterId.lowercase(Locale.ROOT) != "placeholderapi" || placeholderApiEnabled }
                 .forEach(entry::publish)
             return entry
         }
@@ -247,10 +291,10 @@ internal class PlaceholderHub(
             get(publication.adapterId)?.let(binding::attach)
         }
         fun attach(adapter: PlaceholderAdapter) = publicationBindings.toList()
-            .filter { it.adapterId == adapter.id.lowercase(java.util.Locale.ROOT) }
+            .filter { it.adapterId == adapter.id.lowercase(Locale.ROOT) }
             .forEach { it.attach(adapter) }
         fun detach(adapterId: String) = publicationBindings.toList()
-            .filter { it.adapterId == adapterId.lowercase(java.util.Locale.ROOT) }
+            .filter { it.adapterId == adapterId.lowercase(Locale.ROOT) }
             .forEach(PublicationBinding::detach)
         override fun close() {
             if (!closed.compareAndSet(false, true)) return
@@ -269,7 +313,7 @@ internal class PlaceholderHub(
         private val key: String,
         private val resolver: PlaceholderResolver<Any>,
     ) : ExternalPlaceholderRegistration {
-        val adapterId: String = publication.adapterId.lowercase(java.util.Locale.ROOT)
+        val adapterId: String = publication.adapterId.lowercase(Locale.ROOT)
         private val closed = AtomicBoolean(false)
         @Volatile private var delegate: ExternalPlaceholderRegistration? = null
         @Volatile private var failed = false
@@ -283,7 +327,7 @@ internal class PlaceholderHub(
 
         @Synchronized
         fun attach(adapter: PlaceholderAdapter) {
-            if (closed.get() || adapter.id.lowercase(java.util.Locale.ROOT) != adapterId) return
+            if (closed.get() || adapter.id.lowercase(Locale.ROOT) != adapterId) return
             delegate?.let { runCatching(it::close) }
             delegate = null
             failed = false
@@ -379,7 +423,9 @@ internal class PlaceholderHub(
         val namespace = if (separator > 0) PluginId.of(reference.substring(0, separator)) else consumer
         val key = if (separator > 0) reference.substring(separator + 1) else reference
         entries[id(namespace, key)]?.let { return it to emptyMap() }
-        if (separator < 0) entries[id(PluginId.of("pnlibrary"), key)]?.let { return it to emptyMap() }
+        if (separator < 0) {
+            entries[id(PluginId.of(SYSTEM_NAMESPACE), key)]?.let { return it to emptyMap() }
+        }
         return entries.values.asSequence().filter { it.owner == namespace }.mapNotNull { entry ->
             PlaceholderPatternMatcher.match(entry.key.value, key)?.let { entry to it }
         }.maxByOrNull { it.first.key.value.length } ?: (null to emptyMap())
@@ -395,7 +441,7 @@ internal class PlaceholderHub(
                 val formatterOwner = existing?.owner ?: consumer
                 val formatter = formatters[formatterId(formatterOwner, name)]
                     ?: formatters[formatterId(consumer, name)]
-                    ?: formatters[formatterId(PluginId.of("pnlibrary"), name)]
+                    ?: formatters[formatterId(PluginId.of(SYSTEM_NAMESPACE), name)]
                 if (formatter != null && current != null && formatter.type.isInstance(current)) {
                     @Suppress("UNCHECKED_CAST")
                     current = (formatter as FormatterEntry<Any>).formatter.format(current, args, existing ?: PlaceholderRequest(consumer, consumer, playerId, emptyMap(), values))
@@ -405,12 +451,34 @@ internal class PlaceholderHub(
         return current
     }
 
-    private data class FormatterEntry<T : Any>(val owner: PluginId, val name: String, val type: Class<T>, val formatter: PlaceholderFormatter<T>)
-    private data class CacheValue<T>(val value: T?, val written: Long) { fun expired(policy: PlaceholderCachePolicy) = System.currentTimeMillis() - written >= policy.expireAfterWriteMillis }
-    private fun id(owner: PluginId, key: String) = "${owner.value}:${key.lowercase(java.util.Locale.ROOT)}"
-    private fun formatterId(owner: PluginId, name: String) = "${owner.value}:${name.lowercase(java.util.Locale.ROOT)}"
-    private fun <K, V> synchronizedMap(): MutableMap<K, V> = java.util.Collections.synchronizedMap(LinkedHashMap())
+    private data class FormatterEntry<T : Any>(
+        val owner: PluginId,
+        val name: String,
+        val type: Class<T>,
+        val formatter: PlaceholderFormatter<T>,
+    )
+
+    private data class CacheValue<T>(
+        val value: T?,
+        val written: Long,
+    ) {
+        fun expired(policy: PlaceholderCachePolicy): Boolean =
+            System.currentTimeMillis() - written >= policy.expireAfterWriteMillis
+    }
+
+    private fun id(owner: PluginId, key: String): String =
+        "${owner.value}:${key.lowercase(Locale.ROOT)}"
+
+    private fun formatterId(owner: PluginId, name: String): String =
+        "${owner.value}:${name.lowercase(Locale.ROOT)}"
+
+    private fun <K, V> synchronizedMap(): MutableMap<K, V> =
+        java.util.Collections.synchronizedMap(LinkedHashMap())
 
     private fun <T> failed(error: Throwable): CompletionStage<T> = CompletableFuture<T>().also { it.completeExceptionally(error) }
+
+    private companion object {
+        const val SYSTEM_NAMESPACE = "pnlibrary"
+    }
 
 }
