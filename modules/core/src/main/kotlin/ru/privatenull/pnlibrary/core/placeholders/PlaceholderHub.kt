@@ -176,7 +176,7 @@ internal class PlaceholderHub(
             updateFor(owner, expression, value, playerId, values)
 
         override fun render(template: String, playerId: UUID?, values: Map<String, Any?>): CompletionStage<String> =
-            renderFor(owner, template, playerId, values)
+            templateRenderer(owner).render(template, playerId, values)
 
         override fun contains(expression: String): Boolean = find(owner, expression.substringBefore('|')).first != null
         override fun provider(pluginId: PluginId): PlaceholderProvider = object : PlaceholderProvider {
@@ -237,39 +237,10 @@ internal class PlaceholderHub(
         )
     }
 
-    private fun renderFor(consumer: PluginId, template: String, playerId: UUID?, values: Map<String, Any?>): CompletionStage<String> {
-        var output = renderConditions(consumer, template, playerId, values)
-        val localExpressions = Regex("\\[[^\\[\\]]+]").findAll(output)
-            .map { it.value }
-            .filter { LocalPlaceholderExpression.parse(it) != null }
-            .distinct()
-            .toList()
-        localExpressions.forEach { token ->
-            val expression = LocalPlaceholderExpression.parse(token) ?: return@forEach
-            val resolved = resolveFor(consumer, expression.reference, playerId, values)
-                .toCompletableFuture().join()
-            val formatted = format(consumer, resolved, expression.formatters, playerId, values)
-            output = output.replace(token, formatted?.toString() ?: token)
-        }
-        val expressions = Regex("\\{([^{}]+)}").findAll(output).map { it.groupValues[1] }.distinct().toList()
-        var stage: CompletionStage<String> = CompletableFuture.completedFuture(output)
-        expressions.forEach { expression -> stage = stage.thenCompose { current ->
-            resolveFor(consumer, expression, playerId, values).thenApply { value -> current.replace("{$expression}", value?.toString() ?: "{$expression}") }
-        } }
-        return stage
-    }
-
-    private fun renderConditions(consumer: PluginId, source: String, playerId: UUID?, values: Map<String, Any?>): String {
-        val pattern = Regex("\\{\\?([^{}]+)}([\\s\\S]*?)(?:\\{:}([\\s\\S]*?))?\\{/}")
-        var result = source
-        repeat(16) {
-            val match = pattern.find(result) ?: return result
-            val value = resolveFor(consumer, match.groupValues[1], playerId, values).toCompletableFuture().join()
-            val truthy = value != null && value != false && value != 0 && value.toString().isNotBlank()
-            result = result.replaceRange(match.range, if (truthy) match.groupValues[2] else match.groupValues[3])
-        }
-        return result
-    }
+    private fun templateRenderer(consumer: PluginId) = PlaceholderTemplateRenderer(
+        resolve = { expression, playerId, values -> resolveFor(consumer, expression, playerId, values) },
+        format = { value, pipeline, playerId, values -> format(consumer, value, pipeline, playerId, values) },
+    )
 
     private fun find(consumer: PluginId, reference: String): Pair<PlaceholderEntry<*>?, Map<String, String>> {
         val separator = reference.indexOf(':')
