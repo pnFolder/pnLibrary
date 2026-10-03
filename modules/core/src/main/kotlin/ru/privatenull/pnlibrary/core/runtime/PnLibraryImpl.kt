@@ -159,6 +159,7 @@ internal class PnLibraryImpl(
         diagnosticLogs = diagnosticLogs::snapshot,
         diagnosticHistory = diagnosticHistory::files,
         activityJournal = { activity.exportJournal() },
+        activityAttachments = { activity.exportAttachments() },
     )
 
     private val workerExecutor: ScheduledExecutorService = Executors.newSingleThreadScheduledExecutor { r ->

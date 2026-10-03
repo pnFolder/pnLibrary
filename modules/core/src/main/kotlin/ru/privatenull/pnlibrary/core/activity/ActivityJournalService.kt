@@ -82,6 +82,13 @@ class ActivityJournalService(dataFolder: Path, private val clock: () -> Long = S
         events.joinToString("\n", postfix = if (events.isEmpty()) "" else "\n") { gson.toJson(it) }.toByteArray(StandardCharsets.UTF_8)
     }
 
+    override fun exportAttachments(): Map<String, ByteArray> = synchronized(lock) {
+        if (!Files.isDirectory(attachments)) emptyMap()
+        else Files.list(attachments).use { stream ->
+            stream.filter(Files::isRegularFile).associate { it.fileName.toString() to Files.readAllBytes(it) }
+        }
+    }
+
     override fun clear() = synchronized(lock) {
         events.removeIf { it.severity != ru.privatenull.pnlibrary.api.activity.ActivitySeverity.CRITICAL }
         rewrite()

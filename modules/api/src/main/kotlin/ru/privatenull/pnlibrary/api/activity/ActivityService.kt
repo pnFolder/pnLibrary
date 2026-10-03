@@ -60,6 +60,7 @@ interface ActivityService : AutoCloseable {
     fun attach(eventId: String, name: String, contentType: String, bytes: ByteArray): ActivityAttachment
     fun attachFile(eventId: String, path: Path, contentType: String = "application/octet-stream"): ActivityAttachment
     fun exportJournal(): ByteArray
+    fun exportAttachments(): Map<String, ByteArray>
     fun clear()
     override fun close()
 }
