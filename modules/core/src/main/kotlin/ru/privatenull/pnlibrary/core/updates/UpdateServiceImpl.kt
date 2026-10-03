@@ -335,48 +335,97 @@ internal class UpdateServiceImpl(private val platform: PlatformAdapter, private 
         .digest(bytes).joinToString("") { "%02x".format(it) }
 
     private inner class Registration(
-        private val owner: Any, val descriptor: ProductDescriptor, val request: PluginUpdateRequest,
+        private val owner: Any,
+        val descriptor: ProductDescriptor,
+        val request: PluginUpdateRequest,
         val dependencies: List<PluginDependency>,
-        private val artifact: PluginUpdateArtifact, val jar: Path, val updateDir: Path,
+        private val artifact: PluginUpdateArtifact,
+        val jar: Path,
+        val updateDir: Path,
     ) : UpdateRegistration {
         val product: String = descriptor.id.value
         val version: String = descriptor.version.toString()
         private val closed = AtomicBoolean(false)
-        private val state = AtomicReference(UpdateSnapshot(
-            product, version, null,
-            if (descriptor.id.value == "pnlibrary") configuration.library.channel else request.channel,
-            UpdateState.CHECKING, Runtime.version().feature(),
-            artifact.minimumJava, request.automaticDownload, null, null, request.supportedApi,
-        ))
+        private val state = AtomicReference(
+            UpdateSnapshot(
+                product = product,
+                currentVersion = version,
+                latestVersion = null,
+                channel = configuredChannel(this),
+                state = UpdateState.CHECKING,
+                currentJava = Runtime.version().feature(),
+                requiredJava = artifact.minimumJava,
+                automaticDownload = request.automaticDownload,
+                releaseUrl = null,
+                message = null,
+                supportedApi = request.supportedApi,
+            ),
+        )
         override val repository = "${request.repositoryOwner}/${request.repositoryName}"
         override val isClosed: Boolean get() = closed.get()
         override val snapshot get() = state.get()
-        override fun checkNow() { check(!closed.get()); orchestrator.checkNow() }
-        override fun downloadNow() { check(!closed.get()); orchestrator.checkNow().thenCompose { orchestrator.stage(it.id) } }
+        override fun checkNow() {
+            check(!closed.get()) { "update registration is closed" }
+            orchestrator.checkNow()
+        }
+
+        override fun downloadNow() {
+            check(!closed.get()) { "update registration is closed" }
+            orchestrator.checkNow().thenCompose { snapshot -> orchestrator.stage(snapshot.id) }
+        }
+
         fun observe(releases: List<ProductRelease>, selectedChannel: UpdateChannel) {
             if (closed.get()) return
-            val productReleases = releases.filter { it.product == descriptor.id }
-            val allowed = productReleases.filter { request.channel.accepts(it.channel) }
-            val latest = allowed.maxByOrNull(ProductRelease::version)
+            val releaseSelection = ReleaseChannelSelector.select(
+                product = descriptor.id,
+                releases = releases,
+                channel = selectedChannel,
+            )
+            val latest = releaseSelection.latestAllowed
             val current = SemanticVersion.parse(version)
-            state.set(UpdateSnapshot(
-                product, version, latest?.version?.toString(), selectedChannel,
-                if (latest != null && latest.version > current) UpdateState.AVAILABLE else UpdateState.CURRENT,
-                Runtime.version().feature(), artifact.minimumJava, request.automaticDownload,
-                "https://github.com/$repository/releases", null, request.supportedApi,
-                productReleases.sortedByDescending(ProductRelease::version).map {
-                    ReleaseSummary(it.version.toString(), it.channel, it.publishedAt)
-                },
-            ))
+            state.set(
+                UpdateSnapshot(
+                    product = product,
+                    currentVersion = version,
+                    latestVersion = latest?.version?.toString(),
+                    channel = selectedChannel,
+                    state = if (latest != null && latest.version > current) {
+                        UpdateState.AVAILABLE
+                    } else {
+                        UpdateState.CURRENT
+                    },
+                    currentJava = Runtime.version().feature(),
+                    requiredJava = artifact.minimumJava,
+                    automaticDownload = request.automaticDownload,
+                    releaseUrl = "https://github.com/$repository/releases",
+                    message = null,
+                    supportedApi = request.supportedApi,
+                    availableReleases = releaseSelection.all
+                        .sortedByDescending(ProductRelease::version)
+                        .map { release ->
+                            ReleaseSummary(
+                                release.version.toString(),
+                                release.channel,
+                                release.publishedAt,
+                            )
+                        },
+                ),
+            )
         }
+
         override fun close() {
             if (closed.compareAndSet(false, true)) {
                 entries.remove(this)
                 orchestrator.registrationsChanged()
             }
         }
-        fun markClosed() { closed.set(true) }
+
+        fun markClosed() {
+            closed.set(true)
+        }
     }
 
-    private companion object { const val MAX_ARTIFACT_BYTES = 512L * 1024L * 1024L }
+    private companion object {
+        const val MAX_ARTIFACT_BYTES = 512L * 1024L * 1024L
+    }
 }
