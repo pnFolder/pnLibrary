@@ -23,40 +23,12 @@ internal class PlaceholderHub(
 ) : PlaceholderAdapterRegistry {
     private val entries = ConcurrentHashMap<String, PlaceholderEntry<*>>()
     private val adapters = ConcurrentHashMap<String, PlaceholderAdapter>()
-    private val formatters = ConcurrentHashMap<String, FormatterEntry<*>>()
+    private val formatterRegistry = PlaceholderFormatterRegistry()
 
     init {
-        registerBuiltInFormatters()
+        formatterRegistry.registerBuiltIns()
         registerSystemPlaceholders()
         registerDefaultValueCommand()
-    }
-
-    private fun registerBuiltInFormatters() {
-        builtInFormatter("upper") { value, _ -> value.toString().uppercase(Locale.ROOT) }
-        builtInFormatter("lower") { value, _ -> value.toString().lowercase(Locale.ROOT) }
-        builtInFormatter("default") { value, _ -> value.toString() }
-        builtInFormatter("boolean") { value, arguments ->
-            if (value == true) {
-                arguments.getOrElse(0) { "true" }
-            } else {
-                arguments.getOrElse(1) { "false" }
-            }
-        }
-        builtInFormatter("plural", PlaceholderBuiltInFormatters::plural)
-        builtInFormatter("duration") { value, _ -> PlaceholderBuiltInFormatters.duration(value) }
-    }
-
-    private fun builtInFormatter(
-        name: String,
-        formatter: (Any, List<String>) -> String,
-    ) {
-        val owner = PluginId.of(SYSTEM_NAMESPACE)
-        formatters[formatterId(owner, name)] = FormatterEntry(
-            owner = owner,
-            name = name,
-            type = Any::class.java,
-            formatter = PlaceholderFormatter { value, arguments, _ -> formatter(value, arguments) },
-        )
     }
 
     private fun registerSystemPlaceholders() {
@@ -162,10 +134,9 @@ internal class PlaceholderHub(
         }
 
         override fun <T : Any> formatter(name: String, type: Class<T>, formatter: PlaceholderFormatter<T>) {
-            require(name.matches(Regex("[a-z0-9_-]+"))) { "Invalid formatter name: $name" }
             synchronized(mutationLock) {
                 check(!closed.get()) { "Placeholder scope $owner is closed" }
-                formatters[formatterId(owner, name)] = FormatterEntry(owner, name, type, formatter)
+                formatterRegistry.register(owner, name, type, formatter)
             }
         }
 
@@ -194,7 +165,7 @@ internal class PlaceholderHub(
             val handles = synchronized(mutationLock) {
                 owned.forEach { entries.remove(it)?.close() }
                 owned.clear()
-                formatters.entries.removeIf { it.value.owner == owner }
+                formatterRegistry.removeOwnedBy(owner)
                 adapterHandles.toList().also { adapterHandles.clear() }
             }
             handles.forEach { runCatching(it::close) }
@@ -256,37 +227,12 @@ internal class PlaceholderHub(
     }
 
     private fun format(consumer: PluginId, value: Any?, pipeline: List<String>, playerId: UUID?, values: Map<String, Any?>, existing: PlaceholderRequest? = null): Any? {
-        var current = value
-        pipeline.forEach { expression ->
-            val name = expression.substringBefore(':').trim()
-            val args = expression.substringAfter(':', "").split(',').filter(String::isNotBlank)
-            if (name == "default" && (current == null || current.toString().isBlank())) current = args.joinToString(",")
-            else {
-                val formatterOwner = existing?.owner ?: consumer
-                val formatter = formatters[formatterId(formatterOwner, name)]
-                    ?: formatters[formatterId(consumer, name)]
-                    ?: formatters[formatterId(PluginId.of(SYSTEM_NAMESPACE), name)]
-                if (formatter != null && current != null && formatter.type.isInstance(current)) {
-                    @Suppress("UNCHECKED_CAST")
-                    current = (formatter as FormatterEntry<Any>).formatter.format(current, args, existing ?: PlaceholderRequest(consumer, consumer, playerId, emptyMap(), values))
-                }
-            }
-        }
-        return current
+        val request = existing ?: PlaceholderRequest(consumer, consumer, playerId, emptyMap(), values)
+        return formatterRegistry.format(consumer, value, pipeline, request)
     }
-
-    private data class FormatterEntry<T : Any>(
-        val owner: PluginId,
-        val name: String,
-        val type: Class<T>,
-        val formatter: PlaceholderFormatter<T>,
-    )
 
     private fun id(owner: PluginId, key: String): String =
         "${owner.value}:${key.lowercase(Locale.ROOT)}"
-
-    private fun formatterId(owner: PluginId, name: String): String =
-        "${owner.value}:${name.lowercase(Locale.ROOT)}"
 
     private fun <T> failed(error: Throwable): CompletionStage<T> = CompletableFuture<T>().also { it.completeExceptionally(error) }
 
