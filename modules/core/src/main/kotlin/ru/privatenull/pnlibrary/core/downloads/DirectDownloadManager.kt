@@ -3,8 +3,6 @@ package ru.privatenull.pnlibrary.core.downloads
 import ru.privatenull.pnlibrary.api.downloads.FileDownload
 import ru.privatenull.pnlibrary.api.downloads.FileDownloads
 import ru.privatenull.pnlibrary.api.downloads.DownloadRegistration
-import ru.privatenull.pnlibrary.api.downloads.DownloadSnapshot
-import ru.privatenull.pnlibrary.api.downloads.DownloadState
 import ru.privatenull.pnlibrary.api.logging.LogLevel
 import ru.privatenull.pnlibrary.api.plugin.PluginDependency
 import ru.privatenull.pnlibrary.spi.platform.PlatformAdapter
@@ -12,13 +10,10 @@ import ru.privatenull.pnlibrary.update.TrustedHttpClient
 import java.nio.file.Files
 import java.nio.file.Path
 import java.time.Duration
+import java.util.concurrent.CopyOnWriteArrayList
 import java.util.concurrent.ExecutorService
 import java.util.concurrent.Executors
-import java.util.concurrent.CopyOnWriteArrayList
 import java.util.concurrent.atomic.AtomicBoolean
-import java.util.concurrent.CompletableFuture
-import java.util.concurrent.CompletionStage
-import java.util.concurrent.atomic.AtomicReference
 
 internal class DirectDownloadManager(
     private val platform: PlatformAdapter,
@@ -32,7 +27,7 @@ internal class DirectDownloadManager(
     private val executor: ExecutorService = Executors.newSingleThreadExecutor { action ->
         Thread(action, "pnLibrary-direct-downloads").apply { isDaemon = true }
     }
-    private val registrations = CopyOnWriteArrayList<Registration>()
+    private val registrations = CopyOnWriteArrayList<DownloadRegistrationImpl>()
     private val pluginJarVerifier = PluginJarVerifier(platform.type)
     private val filePublisher = AtomicDownloadPublisher(libraryData)
     private val artifactPreparer = DownloadArtifactPreparer(
@@ -50,10 +45,28 @@ internal class DirectDownloadManager(
         owner: Any,
         request: FileDownloads,
         verifier: ((FileDownload, Path) -> Unit)?,
-    ): DownloadRegistration = Registration(owner, request, verifier).also { registration ->
+    ): DownloadRegistration = DownloadRegistrationImpl(
+        request = request,
+        configuration = configuration,
+        executor = executor,
+        managerIsClosed = closed::get,
+        install = { declarations, beforePublish ->
+            installBatch(request, declarations, beforePublish, verifier)
+            val dependencyNames = declarations.dependencyNames()
+            if (dependencyNames.isNotEmpty()) dependencyStore.record(dependencyNames)
+        },
+        blocked = { reason -> platform.log(owner, LogLevel.WARNING, reason) },
+        dependenciesStaged = { declarations ->
+            runCatching { dependencyReporter.staged(owner, declarations) }
+        },
+        failed = { declarations, error ->
+            val level = if (declarations.any(FileDownload::required)) LogLevel.ERROR else LogLevel.WARNING
+            runCatching { dependencyReporter.failure(owner, error, level) }
+        },
+        remove = registrations::remove,
+    ).also { registration ->
         registrations += registration
-        val automatic = request.files.filter { it.automatic }
-        if (automatic.isNotEmpty()) registration.start(automatic, automaticPolicy = true)
+        registration.startAutomatic()
     }
 
     fun registerDependencies(owner: Any, dependencies: List<PluginDependency>): DownloadRegistration? {
@@ -103,167 +116,19 @@ internal class DirectDownloadManager(
         executor.shutdownNow()
     }
 
-    private inner class Registration(
-        private val owner: Any,
-        private val request: FileDownloads,
-        private val verifier: ((FileDownload, Path) -> Unit)?,
-    ) : DownloadRegistration {
-        private val registrationClosed = AtomicBoolean(false)
-        private val activeDownload = AtomicReference<CompletableFuture<List<DownloadSnapshot>>?>()
-        private val state = AtomicReference(request.files.map { DownloadSnapshot(it.key, DownloadState.DECLARED) })
-
-        override val isClosed: Boolean get() = registrationClosed.get()
-
-        override fun snapshots(): List<DownloadSnapshot> =
-            java.util.Collections.unmodifiableList(ArrayList(state.get()))
-
-        override fun downloadNow(): CompletionStage<List<DownloadSnapshot>> =
-            start(request.files, automaticPolicy = false)
-
-        fun start(declarations: List<FileDownload>, automaticPolicy: Boolean): CompletableFuture<List<DownloadSnapshot>> {
-            val promise = CompletableFuture<List<DownloadSnapshot>>()
-            if (registrationClosed.get() || closed.get()) {
-                promise.completeExceptionally(IllegalStateException("регистрация загрузок закрыта"))
-                return promise
-            }
-
-            val effectiveDeclarations = if (automaticPolicy && !configuration.automatic) {
-                declarations.filter(FileDownload::forceAutomaticDownload)
-            } else {
-                declarations
-            }
-
-            if (!configuration.enabled) {
-                return block(promise, "система загрузок отключена")
-            }
-            if (effectiveDeclarations.isEmpty()) {
-                if (automaticPolicy && declarations.isNotEmpty()) {
-                    return block(promise, "автозагрузка запрещена в downloads.yml")
-                }
-                promise.complete(snapshots())
-                return promise
-            }
-
-            activeDownload.get()?.let { return it }
-            if (!activeDownload.compareAndSet(null, promise)) return activeDownload.get() ?: promise
-
-            updateState(effectiveDeclarations, DownloadState.DOWNLOADING)
-            try {
-                executor.execute {
-                    executeDownload(effectiveDeclarations, promise)
-                }
-            } catch (error: Throwable) {
-                activeDownload.compareAndSet(promise, null)
-                promise.completeExceptionally(error)
-            }
-            return promise
-        }
-
-        private fun block(
-            promise: CompletableFuture<List<DownloadSnapshot>>,
-            reason: String,
-        ): CompletableFuture<List<DownloadSnapshot>> {
-            state.set(request.files.map { DownloadSnapshot(it.key, DownloadState.BLOCKED, reason) })
-            platform.log(owner, LogLevel.WARNING, reason)
-            promise.complete(snapshots())
-            return promise
-        }
-
-        private fun executeDownload(
-            declarations: List<FileDownload>,
-            promise: CompletableFuture<List<DownloadSnapshot>>,
-        ) {
-            if (registrationClosed.get() || closed.get()) {
-                promise.complete(snapshots())
-                activeDownload.compareAndSet(promise, null)
-                return
-            }
-
-            runCatching {
-                installBatch(
-                    request = request,
-                    declarations = declarations,
-                    beforePublish = {
-                        check(!registrationClosed.get()) { "регистрация загрузок закрыта" }
-                    },
-                    verifier = verifier,
-                )
-                if (declarations.containsDependencies()) {
-                    dependencyStore.record(declarations.dependencyNames())
-                }
-            }.onSuccess {
-                completeSuccessfully(declarations, promise)
-            }.onFailure { error ->
-                completeWithFailure(declarations, promise, error)
-            }
-
-            activeDownload.compareAndSet(promise, null)
-        }
-
-        private fun completeSuccessfully(
-            declarations: List<FileDownload>,
-            promise: CompletableFuture<List<DownloadSnapshot>>,
-        ) {
-            if (!registrationClosed.get() && !closed.get()) {
-                updateState(declarations, DownloadState.STAGED)
-            }
-            promise.complete(snapshots())
-            if (declarations.containsDependencies()) {
-                runCatching { dependencyReporter.staged(owner, declarations) }
-            }
-        }
-
-        private fun completeWithFailure(
-            declarations: List<FileDownload>,
-            promise: CompletableFuture<List<DownloadSnapshot>>,
-            error: Throwable,
-        ) {
-            if (!registrationClosed.get() && !closed.get()) {
-                state.set(request.files.map {
-                    DownloadSnapshot(it.key, DownloadState.FAILED, error.message)
-                })
-                val level = if (declarations.any(FileDownload::required)) {
-                    LogLevel.ERROR
-                } else {
-                    LogLevel.WARNING
-                }
-                runCatching { dependencyReporter.failure(owner, error, level) }
-            }
-            promise.complete(snapshots())
-        }
-
-        private fun updateState(
-            activeDeclarations: List<FileDownload>,
-            activeState: DownloadState,
-        ) {
-            state.set(request.files.map { declaration ->
-                val newState = if (declaration in activeDeclarations) activeState else DownloadState.DECLARED
-                DownloadSnapshot(declaration.key, newState)
-            })
-        }
-
-        private fun List<FileDownload>.containsDependencies(): Boolean =
-            any { it.key.startsWith("dependency:") }
-
-        private fun List<FileDownload>.dependencyNames(): List<String> =
-            mapNotNull { it.key.takeIf { key -> key.startsWith("dependency:") }?.removePrefix("dependency:") }
-
-        override fun close() {
-            if (registrationClosed.compareAndSet(false, true)) {
-                state.set(request.files.map { DownloadSnapshot(it.key, DownloadState.CLOSED) })
-                activeDownload.getAndSet(null)?.completeExceptionally(IllegalStateException("регистрация загрузок закрыта"))
-                registrations.remove(this)
-            }
-        }
-    }
-
     private fun confirmDownloadedDependencies(owner: Any, installed: Map<String, String>) {
         val confirmed = dependencyStore.consumeInstalled(installed)
         if (confirmed.isEmpty()) return
-
         dependencyReporter.connected(owner, confirmed)
-
     }
 
-    private companion object { const val MAX_BYTES = 512L * 1024L * 1024L }
+    private fun List<FileDownload>.dependencyNames(): List<String> =
+        mapNotNull { file ->
+            file.key.takeIf { it.startsWith(DEPENDENCY_PREFIX) }?.removePrefix(DEPENDENCY_PREFIX)
+        }
+
+    private companion object {
+        const val DEPENDENCY_PREFIX = "dependency:"
+        const val MAX_BYTES = 512L * 1024L * 1024L
+    }
 }
