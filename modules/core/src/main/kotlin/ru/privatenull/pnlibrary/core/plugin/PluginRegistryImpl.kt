@@ -57,6 +57,7 @@ import ru.privatenull.pnlibrary.api.commands.CommandService
 import ru.privatenull.pnlibrary.api.downloads.DownloadRegistration
 import ru.privatenull.pnlibrary.currency.CurrencyFeature
 import ru.privatenull.pnlibrary.core.downloads.DirectDownloadManager
+import ru.privatenull.pnlibrary.core.downloads.CompositeDownloadRegistration
 import ru.privatenull.pnlibrary.console.ConsoleCard
 import ru.privatenull.pnlibrary.console.ConsoleTheme
 import ru.privatenull.pnlibrary.console.ConsoleTree
@@ -180,7 +181,7 @@ internal class PluginRegistryImpl(
             }
             val dependencyDownloads = directDownloads?.registerDependencies(owner, definition.dependencies)
             val fileDownloads = definition.downloadsRequest?.let { request -> directDownloads?.register(owner, request) }
-            downloadRegistration = combineDownloads(dependencyDownloads, fileDownloads)
+            downloadRegistration = CompositeDownloadRegistration.combine(dependencyDownloads, fileDownloads)
             return Context(
                 parent,
                 id,
@@ -248,20 +249,6 @@ internal class PluginRegistryImpl(
         return PluginId.of(
             "m-${nativeId.value.take(18)}-${moduleId.value.take(18)}-${hash.take(16)}",
         )
-    }
-
-    private fun combineDownloads(
-        first: DownloadRegistration?,
-        second: DownloadRegistration?,
-    ): DownloadRegistration? = when {
-        first == null -> second
-        second == null -> first
-        else -> object : DownloadRegistration {
-            override val isClosed: Boolean get() = first.isClosed && second.isClosed
-            override fun snapshots() = first.snapshots() + second.snapshots()
-            override fun downloadNow() = first.downloadNow().thenCombine(second.downloadNow()) { left, right -> left + right }
-            override fun close() { first.close(); second.close() }
-        }
     }
 
     private inner class Plugin(
