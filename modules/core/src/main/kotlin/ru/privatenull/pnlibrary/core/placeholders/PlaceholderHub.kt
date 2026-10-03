@@ -22,7 +22,7 @@ internal class PlaceholderHub(
     private val platform: PlatformAdapter,
     private val valueStore: GlobalPlaceholderValueStore = GlobalPlaceholderValueStore(),
 ) : PlaceholderAdapterRegistry {
-    private val entries = ConcurrentHashMap<String, Entry<*>>()
+    private val entries = ConcurrentHashMap<String, PlaceholderEntry<*>>()
     private val adapters = ConcurrentHashMap<String, PlaceholderAdapter>()
     private val formatters = ConcurrentHashMap<String, FormatterEntry<*>>()
 
@@ -73,7 +73,7 @@ internal class PlaceholderHub(
         val owner = PluginId.of(SYSTEM_NAMESPACE)
         val commands = DefaultValueCommandResolver(valueStore)
         val commandKey = PlaceholderKey.of("defaultvalue", String::class.java)
-        val commandEntry = Entry(
+        val commandEntry = PlaceholderEntry(
             owner,
             commandKey,
             { request ->
@@ -84,8 +84,9 @@ internal class PlaceholderHub(
             null,
             PlaceholderAccess.shared(),
             PlaceholderAccess.ownerOnly(),
-            PlaceholderCachePolicy.none(),
-            null,
+            cachePolicy = PlaceholderCachePolicy.none(),
+            fallback = null,
+            adapterLookup = ::get,
         )
         entries[id(owner, commandKey.value)] = commandEntry
         commandEntry.publish(PlaceholderPublication("placeholderapi", "pnlibrary", "defaultvalue"))
@@ -112,15 +113,16 @@ internal class PlaceholderHub(
     private fun <T : Any> system(key: String, type: Class<T>, value: () -> T) {
         val owner = PluginId.of(SYSTEM_NAMESPACE)
         val typedKey = PlaceholderKey.of(key, type)
-        entries[id(owner, key)] = Entry(
+        entries[id(owner, key)] = PlaceholderEntry(
             owner = owner,
             key = typedKey,
             resolver = { CompletableFuture.completedFuture(value()) },
             updater = null,
             access = PlaceholderAccess.shared(),
             updateAccess = PlaceholderAccess.ownerOnly(),
-            policy = PlaceholderCachePolicy.none(),
+            cachePolicy = PlaceholderCachePolicy.none(),
             fallback = null,
+            adapterLookup = ::get,
         )
     }
 
@@ -199,7 +201,7 @@ internal class PlaceholderHub(
         private val owner: PluginId,
         private val key: PlaceholderKey<T>,
         private val placeholderApiEnabled: Boolean,
-        private val install: (Entry<T>) -> Unit,
+        private val install: (PlaceholderEntry<T>) -> Unit,
     ) : PlaceholderBuilder<T> {
         private var resolver: ((PlaceholderRequest) -> CompletionStage<T?>)? = null
         private var updater: PlaceholderUpdater<T>? = null
@@ -223,87 +225,22 @@ internal class PlaceholderHub(
         override fun publish(publication: PlaceholderPublication) = apply { publications += publication }
         @Deprecated("Register placeholders through PlaceholderService.register(key, configure)")
         override fun register(): PlaceholderRegistration<T> {
-            val entry = Entry(owner, key, resolver ?: error("Placeholder ${key.value} has no resolver"), updater, access, updateAccess, cache, fallback)
+            val entry = PlaceholderEntry(
+                owner = owner,
+                key = key,
+                resolver = resolver ?: error("Placeholder ${key.value} has no resolver"),
+                updater = updater,
+                access = access,
+                updateAccess = updateAccess,
+                cachePolicy = cache,
+                fallback = fallback,
+                adapterLookup = ::get,
+            )
             install(entry)
             publications
                 .filter { it.adapterId.lowercase(Locale.ROOT) != "placeholderapi" || placeholderApiEnabled }
                 .forEach(entry::publish)
             return entry
-        }
-    }
-
-    private inner class Entry<T : Any>(
-        override val owner: PluginId, override val key: PlaceholderKey<T>,
-        private val resolver: (PlaceholderRequest) -> CompletionStage<T?>,
-        private val updater: PlaceholderUpdater<T>?,
-        val access: PlaceholderAccess, private val updateAccess: PlaceholderAccess,
-        private val policy: PlaceholderCachePolicy, private val fallback: T?,
-    ) : PlaceholderRegistration<T> {
-        private val enabled = AtomicBoolean(true)
-        private val closed = AtomicBoolean(false)
-        @Volatile private var closeCallback: (() -> Unit)? = null
-        private val cache = synchronizedMap<String, CacheValue<T>>()
-        private val publicationBindings = java.util.Collections.synchronizedList(mutableListOf<PlaceholderPublicationBinding>())
-        override val publications: List<ExternalPlaceholderRegistration> get() = synchronized(publicationBindings) {
-            java.util.Collections.unmodifiableList(ArrayList(publicationBindings))
-        }
-        override val isEnabled: Boolean get() = enabled.get() && !closed.get()
-        override val isClosed: Boolean get() = closed.get()
-        override fun enable() { check(!closed.get()) { "Placeholder ${owner.value}:${key.value} is closed" }; enabled.set(true) }
-        override fun disable() { enabled.set(false) }
-        override fun invalidateCache() = cache.clear()
-        fun whenClosed(callback: () -> Unit) { closeCallback = callback }
-        fun resolve(request: PlaceholderRequest): CompletionStage<T?> {
-            if (!isEnabled) return CompletableFuture.completedFuture(fallback)
-            val cacheKey = cacheKey(request)
-            cacheKey?.let { cache[it]?.takeIf { value -> !value.expired(policy) }?.let { return CompletableFuture.completedFuture(it.value) } }
-            return resolver(request).thenApply { resolved ->
-                val value = resolved ?: fallback
-                if (cacheKey != null && (value != null || policy.cacheNullValues)) {
-                    synchronized(cache) {
-                        cache[cacheKey] = CacheValue(value, System.currentTimeMillis())
-                        while (cache.size > policy.maximumEntries) cache.remove(cache.keys.first())
-                    }
-                }
-                value
-            }
-        }
-        private fun cacheKey(request: PlaceholderRequest): String? = when (policy.scope) {
-            PlaceholderCacheScope.NONE -> null
-            PlaceholderCacheScope.GLOBAL -> "global"
-            PlaceholderCacheScope.PLUGIN -> request.consumer.value
-            PlaceholderCacheScope.PLAYER -> request.playerId?.toString() ?: "no-player"
-            PlaceholderCacheScope.ARGUMENTS -> request.parameters.toSortedMap().toString() + request.values.toSortedMap().toString()
-        }
-        fun update(consumer: PluginId, request: PlaceholderRequest, value: String): T? {
-            check(updateAccess.allows(owner, consumer)) { "Plugin $consumer cannot update ${owner.value}:${key.value}" }
-            val operation = updater ?: error("Placeholder ${owner.value}:${key.value} is read-only")
-            val updated = operation.update(request, value)
-            invalidateCache()
-            return updated
-        }
-        fun publish(publication: PlaceholderPublication) {
-            val binding = PlaceholderPublicationBinding(publication, owner, key.value) { request ->
-                @Suppress("UNCHECKED_CAST")
-                resolve(request).toCompletableFuture().join() as Any?
-            }
-            publicationBindings += binding
-            get(publication.adapterId)?.let(binding::attach)
-        }
-        fun attach(adapter: PlaceholderAdapter) = publicationBindings.toList()
-            .filter { it.adapterId == adapter.id.lowercase(Locale.ROOT) }
-            .forEach { it.attach(adapter) }
-        fun detach(adapterId: String) = publicationBindings.toList()
-            .filter { it.adapterId == adapterId.lowercase(Locale.ROOT) }
-            .forEach(PlaceholderPublicationBinding::detach)
-        override fun close() {
-            if (!closed.compareAndSet(false, true)) return
-            disable()
-            invalidateCache()
-            publicationBindings.toList().forEach { runCatching(it::close) }
-            publicationBindings.clear()
-            closeCallback?.invoke()
-            closeCallback = null
         }
     }
 
@@ -320,7 +257,7 @@ internal class PlaceholderHub(
         if (!entry.access.allows(entry.owner, consumer)) return failed(SecurityException("Plugin $consumer cannot read ${entry.owner}:${entry.key.value}"))
         val request = PlaceholderRequest(entry.owner, consumer, playerId, params, values)
         @Suppress("UNCHECKED_CAST")
-        return (entry as Entry<Any>).resolve(request).thenApply { format(consumer, it, pieces.drop(1), playerId, values, request) }
+        return (entry as PlaceholderEntry<Any>).resolve(request).thenApply { format(consumer, it, pieces.drop(1), playerId, values, request) }
     }
 
     private fun updateFor(
@@ -336,7 +273,7 @@ internal class PlaceholderHub(
         val request = PlaceholderRequest(entry.owner, consumer, playerId, parameters, values)
         return runCatching {
             @Suppress("UNCHECKED_CAST")
-            (entry as Entry<Any>).update(consumer, request, value)
+            (entry as PlaceholderEntry<Any>).update(consumer, request, value)
         }.fold(
             onSuccess = { CompletableFuture.completedFuture(it) },
             onFailure = { failed(it) },
@@ -377,7 +314,7 @@ internal class PlaceholderHub(
         return result
     }
 
-    private fun find(consumer: PluginId, reference: String): Pair<Entry<*>?, Map<String, String>> {
+    private fun find(consumer: PluginId, reference: String): Pair<PlaceholderEntry<*>?, Map<String, String>> {
         val separator = reference.indexOf(':')
         val namespace = if (separator > 0) PluginId.of(reference.substring(0, separator)) else consumer
         val key = if (separator > 0) reference.substring(separator + 1) else reference
@@ -417,22 +354,11 @@ internal class PlaceholderHub(
         val formatter: PlaceholderFormatter<T>,
     )
 
-    private data class CacheValue<T>(
-        val value: T?,
-        val written: Long,
-    ) {
-        fun expired(policy: PlaceholderCachePolicy): Boolean =
-            System.currentTimeMillis() - written >= policy.expireAfterWriteMillis
-    }
-
     private fun id(owner: PluginId, key: String): String =
         "${owner.value}:${key.lowercase(Locale.ROOT)}"
 
     private fun formatterId(owner: PluginId, name: String): String =
         "${owner.value}:${name.lowercase(Locale.ROOT)}"
-
-    private fun <K, V> synchronizedMap(): MutableMap<K, V> =
-        java.util.Collections.synchronizedMap(LinkedHashMap())
 
     private fun <T> failed(error: Throwable): CompletionStage<T> = CompletableFuture<T>().also { it.completeExceptionally(error) }
 
