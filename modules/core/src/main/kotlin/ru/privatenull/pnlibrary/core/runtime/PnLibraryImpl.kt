@@ -160,9 +160,9 @@ internal class PnLibraryImpl(
         uploadLedger = uploadLedger,
         diagnosticLogs = diagnosticLogs::snapshot,
         diagnosticHistory = diagnosticHistory::files,
-            activityJournal = { activity.exportJournal() },
-            activityAttachments = { activity.exportAttachments() },
-            activityAttachmentManifest = { activity.exportAttachmentManifest() },
+            activityJournal = { observability.exportJournal() },
+            activityAttachments = { observability.exportAttachments() },
+            activityAttachmentManifest = { observability.exportAttachmentManifest() },
     )
 
     private val workerExecutor: ScheduledExecutorService = Executors.newSingleThreadScheduledExecutor { r ->
