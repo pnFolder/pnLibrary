@@ -59,6 +59,24 @@ interface ActivityService : AutoCloseable {
     fun recent(query: ActivityQuery = ActivityQuery()): List<ActivityEvent>
     fun attach(eventId: String, name: String, contentType: String, bytes: ByteArray): ActivityAttachment
     fun attachFile(eventId: String, path: Path, contentType: String = "application/octet-stream"): ActivityAttachment
+
+    /** Records an event and attaches [path] to it through one caller-facing operation. */
+    fun recordWithFile(
+        type: String,
+        path: Path,
+        contentType: String = "application/octet-stream",
+        category: ActivityCategory = ActivityCategory.SYSTEM,
+        severity: ActivitySeverity = ActivitySeverity.INFO,
+        sessionId: String? = null,
+        correlationId: String? = null,
+        source: String? = null,
+        pluginId: String? = null,
+        metadata: Map<String, String> = emptyMap(),
+    ): ActivityEvent {
+        val event = record(type, category, severity, sessionId, correlationId, source, pluginId, metadata)
+        attachFile(event.eventId, path, contentType)
+        return event
+    }
     fun exportJournal(): ByteArray
     fun exportAttachments(): Map<String, ByteArray>
     fun exportAttachmentManifest(): ByteArray = ByteArray(0)

@@ -54,6 +54,22 @@ class ActivityJournalServiceTest {
     }
 
     @Test
+    fun `records event and attaches file in one operation`() {
+        val root = Files.createTempDirectory("activity-record-file")
+        val source = root.resolve("server.log").also { Files.writeString(it, "hello") }
+        ActivityJournalService(root).use { journal ->
+            val event = journal.recordWithFile(
+                type = "REPORT_CREATED",
+                path = source,
+                contentType = "text/plain",
+            )
+            assertEquals(1, journal.recent().size)
+            assertTrue(journal.exportAttachmentManifest().toString(StandardCharsets.UTF_8).contains(event.eventId))
+            assertEquals(1, journal.exportAttachments().size)
+        }
+    }
+
+    @Test
     fun `expired events remove their attachments without touching critical ones`() {
         val now = 2_000_000_000L
         val root = Files.createTempDirectory("activity-retention")
