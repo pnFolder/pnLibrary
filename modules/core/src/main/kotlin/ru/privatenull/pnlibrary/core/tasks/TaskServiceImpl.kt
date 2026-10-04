@@ -165,10 +165,17 @@ internal class TaskServiceImpl(
         private val cancelled = AtomicBoolean(false)
         private val native = AtomicReference<PlatformTaskHandle?>()
         private val created = Instant.now()
-        @Volatile private var nextRun: Instant? = created.plus(spec.delay)
-        @Volatile private var started: Instant? = null
-        @Volatile private var completed: Instant? = null
-        @Volatile private var failure: String? = null
+        @Volatile
+        private var nextRun: Instant? = created.plus(spec.delay)
+
+        @Volatile
+        private var started: Instant? = null
+
+        @Volatile
+        private var completed: Instant? = null
+
+        @Volatile
+        private var failure: String? = null
         override val status get() = state.get()
         override val isCancelled get() = cancelled.get()
 

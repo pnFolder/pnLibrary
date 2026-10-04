@@ -23,7 +23,8 @@ class RemotePolicyExplanation private constructor(builder: Builder) {
     }
 
     companion object {
-        @JvmStatic fun builder(text: String): Builder {
+        @JvmStatic
+        fun builder(text: String): Builder {
             val normalized = text.trim()
             require(normalized.isNotEmpty()) { "remote policy explanation must not be blank" }
             return Builder(normalized)

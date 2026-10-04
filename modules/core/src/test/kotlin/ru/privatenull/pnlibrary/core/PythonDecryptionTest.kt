@@ -1,8 +1,6 @@
 package ru.privatenull.pnlibrary.core
 
 import ru.privatenull.pnlibrary.core.security.EncryptedEnvelopeCodec
-
-
 import org.junit.jupiter.api.Assertions.assertEquals
 import org.junit.jupiter.api.Assertions.assertTrue
 import org.junit.jupiter.api.Test
@@ -56,7 +54,13 @@ class PythonDecryptionTest {
         val pythonCmd = arrayOf(
             "python",
             "-c",
-            "import sys, pathlib; sys.path.insert(0, r'${scriptFile.parentFile.absolutePath}'); import decrypt_report; decrypt_report.decrypt_file(pathlib.Path(r'${envelopeFile.absolutePath}'), pathlib.Path(r'${keyFile.absolutePath}'), pathlib.Path(r'${outputFile.absolutePath}'))"
+            "import sys, pathlib; " +
+                "sys.path.insert(0, r'${scriptFile.parentFile.absolutePath}'); " +
+                "import decrypt_report; " +
+                "decrypt_report.decrypt_file(" +
+                "pathlib.Path(r'${envelopeFile.absolutePath}'), " +
+                "pathlib.Path(r'${keyFile.absolutePath}'), " +
+                "pathlib.Path(r'${outputFile.absolutePath}'))",
         )
 
         val pb = ProcessBuilder(*pythonCmd)

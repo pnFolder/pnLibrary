@@ -26,8 +26,21 @@ internal class DiagnosticsRegistry(eventLimit: Int = DEFAULT_EVENT_LIMIT) : Diag
     private val plugins = ConcurrentHashMap<String, PluginState>()
     private val limit   = eventLimit.coerceIn(10, 500)
     private val sanitizer = DiagnosticValueSanitizer()
-    @Volatile private var eventChangeListener: (() -> Unit)? = null
-    @Volatile private var activityListener: ((String, DiagnosticLevel, String, String, String, Throwable?, Map<String, Any?>) -> Unit)? = null
+    @Volatile
+    private var eventChangeListener: (() -> Unit)? = null
+
+    @Volatile
+    private var activityListener: (
+        (
+            plugin: String,
+            level: DiagnosticLevel,
+            category: String,
+            code: String,
+            message: String,
+            error: Throwable?,
+            context: Map<String, Any?>,
+        ) -> Unit
+    )? = null
 
     /**
      * Installs a best-effort callback invoked after an event changes.

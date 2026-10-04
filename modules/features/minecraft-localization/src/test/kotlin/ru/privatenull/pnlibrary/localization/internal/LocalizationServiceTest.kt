@@ -21,7 +21,8 @@ import java.util.zip.ZipOutputStream
 class LocalizationServiceTest {
     @TempDir lateinit var directory: Path
 
-    @Test fun `loads only requested locale and reuses memory`() {
+    @Test
+    fun `loads only requested locale and reuses memory`() {
         val fixture = Fixture()
         service(fixture).use { service ->
             val request = TranslationRequest.builder().version(MinecraftVersion.V1_21_4).locale("ru_ru").build()
@@ -37,7 +38,8 @@ class LocalizationServiceTest {
         }
     }
 
-    @Test fun `reuses version metadata and asset index across operations`() {
+    @Test
+    fun `reuses version metadata and asset index across operations`() {
         val fixture = Fixture()
         service(fixture).use { service ->
             val request = TranslationRequest.builder().version(MinecraftVersion.V1_21_4).locale("ru_ru").build()
@@ -49,7 +51,8 @@ class LocalizationServiceTest {
         }
     }
 
-    @Test fun `shares concurrent same locale download`() {
+    @Test
+    fun `shares concurrent same locale download`() {
         val fixture = Fixture(delayMillis = 75)
         service(fixture).use { service ->
             val request = TranslationRequest.builder().version(MinecraftVersion.V1_21_4).locale("ru_ru").build()
@@ -60,7 +63,8 @@ class LocalizationServiceTest {
         }
     }
 
-    @Test fun `completed in flight entry does not suppress explicit refresh`() {
+    @Test
+    fun `completed in flight entry does not suppress explicit refresh`() {
         val fixture = Fixture()
         service(fixture).use { service ->
             val request = TranslationRequest.builder().version(MinecraftVersion.V1_21_4).locale("ru_ru").build()
@@ -70,7 +74,8 @@ class LocalizationServiceTest {
         }
     }
 
-    @Test fun `discovers supported release versions and locales`() {
+    @Test
+    fun `discovers supported release versions and locales`() {
         val fixture = Fixture()
         service(fixture).use { service ->
             assertEquals(listOf(MinecraftVersion.V1_21_4), service.availableVersions().toCompletableFuture().join())
@@ -78,7 +83,8 @@ class LocalizationServiceTest {
         }
     }
 
-    @Test fun `reopens a downloaded locale from disk without network`() {
+    @Test
+    fun `reopens a downloaded locale from disk without network`() {
         val request = TranslationRequest.builder().version(MinecraftVersion.V1_21_4).locale("ru_ru").build()
         service(Fixture()).use { it.load(request).toCompletableFuture().join() }
         service(FailingClient()).use { service ->
@@ -88,7 +94,8 @@ class LocalizationServiceTest {
         }
     }
 
-    @Test fun `reopens version asset catalog from disk without network`() {
+    @Test
+    fun `reopens version asset catalog from disk without network`() {
         service(Fixture()).use { service ->
             assertEquals(listOf("en_us", "ru_ru"), service.availableLocales(MinecraftVersion.V1_21_4).toCompletableFuture().join())
         }
@@ -97,7 +104,8 @@ class LocalizationServiceTest {
         }
     }
 
-    @Test fun `quarantines structurally corrupt version catalog and downloads a clean copy`() {
+    @Test
+    fun `quarantines structurally corrupt version catalog and downloads a clean copy`() {
         val path = directory.resolve("minecraft/versions/1.21.4.json")
         Files.createDirectories(path.parent)
         Files.write(path, "{}".toByteArray())
@@ -107,7 +115,8 @@ class LocalizationServiceTest {
         assertTrue(Files.list(path.parent).use { files -> files.anyMatch { ".corrupt-" in it.fileName.toString() } })
     }
 
-    @Test fun `extracts embedded locale through streamed client archive and removes temporary file`() {
+    @Test
+    fun `extracts embedded locale through streamed client archive and removes temporary file`() {
         val fixture = ClientArchiveFixture()
         service(fixture).use { service ->
             val request = TranslationRequest.builder().version(MinecraftVersion.V1_21_4).locale("en_us").build()
@@ -119,7 +128,8 @@ class LocalizationServiceTest {
         assertTrue(!Files.exists(temporary) || Files.list(temporary).use { files -> !files.findAny().isPresent })
     }
 
-    @Test fun `quarantines corrupt disk locale instead of serving it`() {
+    @Test
+    fun `quarantines corrupt disk locale instead of serving it`() {
         val path = directory.resolve("minecraft/translations/1.21.4/ru_ru.json")
         Files.createDirectories(path.parent)
         Files.write(path, "not-json".toByteArray())
@@ -130,7 +140,8 @@ class LocalizationServiceTest {
         assertTrue(Files.list(path.parent).use { files -> files.anyMatch { ".corrupt-" in it.fileName.toString() } })
     }
 
-    @Test fun `closed service rejects new operations`() {
+    @Test
+    fun `closed service rejects new operations`() {
         val service = service(Fixture())
         service.close()
         assertThrows(ru.privatenull.pnlibrary.localization.TranslationException::class.java) { service.availableVersions() }
@@ -143,7 +154,8 @@ class LocalizationServiceTest {
 
     private class Fixture(private val delayMillis: Long = 0) : LocalizationHttpClient(Duration.ZERO, Duration.ZERO) {
         val calls = ConcurrentHashMap<URI, Int>()
-        @Volatile var assetDownloads = 0
+        @Volatile
+        var assetDownloads = 0
         private val language = "{\"item.minecraft.diamond_sword\":\"Алмазный меч\"}".toByteArray(StandardCharsets.UTF_8)
         private val hash = MessageDigest.getInstance("SHA-1").digest(language).joinToString("") { "%02x".format(it) }
         val versionUri = URI.create("https://piston-meta.mojang.com/v1/1.21.4.json")
@@ -186,12 +198,19 @@ class LocalizationServiceTest {
                 zip.closeEntry()
             }
         }.toByteArray()
-        private val archiveHash = MessageDigest.getInstance("SHA-1").digest(archive).joinToString("") { "%02x".format(it) }
-        @Volatile var streamed = false
+        private val archiveHash = MessageDigest
+            .getInstance("SHA-1")
+            .digest(archive)
+            .joinToString("") { "%02x".format(it) }
+        @Volatile
+        var streamed = false
 
         override fun get(uri: URI, maximumBytes: Int): ByteArray = when (uri) {
             MojangAssetResolver.MANIFEST -> """{"versions":[{"id":"1.21.4","type":"release","url":"$versionUri"}]}""".toByteArray()
-            versionUri -> """{"assetIndex":{"url":"$indexUri"},"downloads":{"client":{"url":"$clientUri","sha1":"$archiveHash","size":${archive.size}}}}""".toByteArray()
+            versionUri -> """{
+                "assetIndex":{"url":"$indexUri"},
+                "downloads":{"client":{"url":"$clientUri","sha1":"$archiveHash","size":${archive.size}}}
+            }""".trimIndent().toByteArray()
             indexUri -> """{"objects":{}}""".toByteArray()
             clientUri -> error("Client archive must not be materialized through get()")
             else -> error("Unexpected URI $uri")

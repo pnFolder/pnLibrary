@@ -238,7 +238,8 @@ class ExternalPluginDependency private constructor(builder: Builder) : PluginDep
     }
 
     companion object {
-        @JvmStatic fun builder(plugin: String, minimumVersion: String): Builder {
+        @JvmStatic
+        fun builder(plugin: String, minimumVersion: String): Builder {
             require(plugin.isNotBlank()) { "external plugin name must not be blank" }
             return Builder(plugin.trim(), SemanticVersion.parse(minimumVersion))
         }
@@ -326,11 +327,13 @@ class ProductDescriptor private constructor(
     }
 
     companion object {
-        @JvmStatic fun builder(): Builder =
+        @JvmStatic
+        fun builder(): Builder =
             Builder()
 
         /** Descriptor for pnLibrary itself when no generated descriptor is available. */
-        @JvmStatic fun library(version: String): ProductDescriptor = builder()
+        @JvmStatic
+        fun library(version: String): ProductDescriptor = builder()
             .version(version)
             .pnLibraryApi(PnLibraryApi.VERSION, PnLibraryApi.VERSION)
             .build()

@@ -101,11 +101,14 @@ class PlaceholderAccess private constructor(
     /** Common policies and the Java-friendly custom-policy entry point. */
     companion object {
         /** Creates a policy visible only to the plugin that owns the placeholder. */
-        @JvmStatic fun ownerOnly() = Builder().owner().build()
+        @JvmStatic
+        fun ownerOnly() = Builder().owner().build()
         /** Creates a policy visible to the owner and every pnLibrary plugin. */
-        @JvmStatic fun shared() = Builder().owner().allowAllLibraryPlugins().build()
+        @JvmStatic
+        fun shared() = Builder().owner().allowAllLibraryPlugins().build()
         /** Creates an initially empty policy that denies access until rules are added. */
-        @JvmStatic fun builder() = Builder()
+        @JvmStatic
+        fun builder() = Builder()
         private fun wildcard(pattern: String, value: String) = Regex(
             "^" + pattern.split('*').joinToString(".*", transform = Regex::escape) + "$", RegexOption.IGNORE_CASE
         ).matches(value)
@@ -174,13 +177,15 @@ data class PlaceholderCachePolicy @JvmOverloads constructor(
     /** Factories for the most common cache policies. */
     companion object {
         /** Creates a policy with caching disabled. */
-        @JvmStatic fun none() = PlaceholderCachePolicy()
+        @JvmStatic
+        fun none() = PlaceholderCachePolicy()
         /**
          * Creates a per-player policy retaining at most 10,000 entries for [duration].
          *
          * @throws IllegalArgumentException when [duration] is zero or negative
          */
-        @JvmStatic fun player(duration: Duration) =
+        @JvmStatic
+        fun player(duration: Duration) =
             PlaceholderCachePolicy(PlaceholderCacheScope.PLAYER, 10_000, duration.toMillis())
     }
 }

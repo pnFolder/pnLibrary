@@ -14,11 +14,14 @@ class RemotePolicyResult private constructor(
     val message: String get() = explanation.text
 
     companion object {
-        @JvmStatic fun allow(): RemotePolicyResult =
+        @JvmStatic
+        fun allow(): RemotePolicyResult =
             RemotePolicyResult(true, RemotePolicyExplanation.builder("Проверка пройдена").build())
-        @JvmStatic fun deny(message: String): RemotePolicyResult =
+        @JvmStatic
+        fun deny(message: String): RemotePolicyResult =
             deny(RemotePolicyExplanation.builder(message.trim().ifEmpty { "Запуск запрещён" }).build())
-        @JvmStatic fun deny(explanation: RemotePolicyExplanation): RemotePolicyResult =
+        @JvmStatic
+        fun deny(explanation: RemotePolicyExplanation): RemotePolicyResult =
             RemotePolicyResult(false, explanation)
     }
 }

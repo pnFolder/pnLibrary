@@ -36,7 +36,8 @@ class CodeFirstYaml<T> @JvmOverloads constructor(
     private val validator: ConfigValueValidator<T> = ConfigValueValidator { emptyList() },
     private val options: ConfigOptions = ConfigOptions.DEFAULT,
 ) : ManagedConfig<T> {
-    @Volatile private var loadedValue: T? = null
+    @Volatile
+    private var loadedValue: T? = null
     private val migrationEngine = YamlMigrationEngine()
     private val fileStore = ConfigurationFileStore(file) { content -> codec.decode(content) }
 

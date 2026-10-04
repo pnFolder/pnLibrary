@@ -213,7 +213,6 @@ internal class BukkitPlatformAdapter constructor(
         executeGlobal(task)
     }
 
-
     override fun close() {
         if (closedFlag.compareAndSet(false, true)) {
             controlRegistration?.close()

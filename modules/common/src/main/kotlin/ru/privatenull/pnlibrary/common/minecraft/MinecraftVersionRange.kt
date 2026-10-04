@@ -107,7 +107,8 @@ data class MinecraftVersionRange(
          * );
          * ```
          */
-        @JvmStatic fun between(minimum: MinecraftVersion, maximum: MinecraftVersion) =
+        @JvmStatic
+        fun between(minimum: MinecraftVersion, maximum: MinecraftVersion) =
             MinecraftVersionRange(minimum, maximum, true, true)
 
         /**
@@ -119,7 +120,8 @@ data class MinecraftVersionRange(
          * );
          * ```
          */
-        @JvmStatic fun betweenExclusive(minimum: MinecraftVersion, maximum: MinecraftVersion) =
+        @JvmStatic
+        fun betweenExclusive(minimum: MinecraftVersion, maximum: MinecraftVersion) =
             MinecraftVersionRange(minimum, maximum, false, false)
 
         /**
@@ -130,30 +132,40 @@ data class MinecraftVersionRange(
          * MinecraftVersionRange exclusive = MinecraftVersionRange.from(MinecraftVersion.V1_20_5, false);
          * ```
          */
-        @JvmStatic @JvmOverloads fun from(minimum: MinecraftVersion, inclusive: Boolean = true) =
+        @JvmStatic
+        @JvmOverloads
+        fun from(minimum: MinecraftVersion, inclusive: Boolean = true) =
             MinecraftVersionRange(minimum, null, inclusive, false)
 
         /** Range up to [maximum] without a lower boundary. */
-        @JvmStatic @JvmOverloads fun until(maximum: MinecraftVersion, inclusive: Boolean = true) =
+        @JvmStatic
+        @JvmOverloads
+        fun until(maximum: MinecraftVersion, inclusive: Boolean = true) =
             MinecraftVersionRange(null, maximum, false, inclusive)
 
         /** Range `[minimum, +∞)`. */
-        @JvmStatic fun atLeast(minimum: MinecraftVersion) = from(minimum, true)
+        @JvmStatic
+        fun atLeast(minimum: MinecraftVersion) = from(minimum, true)
 
         /** Range `(minimum, +∞)`. */
-        @JvmStatic fun newerThan(minimum: MinecraftVersion) = from(minimum, false)
+        @JvmStatic
+        fun newerThan(minimum: MinecraftVersion) = from(minimum, false)
 
         /** Range `(-∞, maximum]`. */
-        @JvmStatic fun atMost(maximum: MinecraftVersion) = until(maximum, true)
+        @JvmStatic
+        fun atMost(maximum: MinecraftVersion) = until(maximum, true)
 
         /** Range `(-∞, maximum)`. */
-        @JvmStatic fun olderThan(maximum: MinecraftVersion) = until(maximum, false)
+        @JvmStatic
+        fun olderThan(maximum: MinecraftVersion) = until(maximum, false)
 
         /** Range containing only [version]. */
-        @JvmStatic fun exact(version: MinecraftVersion) = MinecraftVersionRange(version, version, true, true)
+        @JvmStatic
+        fun exact(version: MinecraftVersion) = MinecraftVersionRange(version, version, true, true)
 
         /** Every known version; [MinecraftVersion.UNKNOWN] is excluded. */
-        @JvmStatic fun allKnown() = MinecraftVersionRange(null, null, false, false)
+        @JvmStatic
+        fun allKnown() = MinecraftVersionRange(null, null, false, false)
 
         private fun newer(a: MinecraftVersion?, b: MinecraftVersion?): MinecraftVersion? = when {
             a == null -> b

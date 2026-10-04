@@ -11,7 +11,8 @@ import ru.privatenull.pnlibrary.api.remote.ServerInfo
 import ru.privatenull.pnlibrary.common.minecraft.MinecraftVersion
 
 class RemotePolicyEngineTest {
-    @Test fun `compiles a raw Java policy against the shared context`() {
+    @Test
+    fun `compiles a raw Java policy against the shared context`() {
         val source = """
             package example;
             import ru.privatenull.pnlibrary.api.remote.*;
@@ -32,7 +33,8 @@ class RemotePolicyEngineTest {
         assertEquals("update required", result.message)
     }
 
-    @Test fun `compiles a raw Kotlin policy against the shared context`() {
+    @Test
+    fun `compiles a raw Kotlin policy against the shared context`() {
         val source = """
             package example
             import ru.privatenull.pnlibrary.api.remote.RemotePolicy

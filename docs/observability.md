@@ -37,7 +37,35 @@ library.observability.failure(error) {
 
 ## Java
 
-Для Java-кода можно собрать `ObservationRequest` и вызвать `record(request)` напрямую. Все модели имеют обычные JVM-getter-методы.
+Для Java-кода можно собрать `ObservationRequest` и вызвать `record(request)` напрямую. Все модели
+имеют обычные JVM-getter-методы.
+
+```java
+ObservationRequest request = new ObservationRequest(
+    "acceptance",
+    "update-download",
+    "Update download failed",
+    ObservationLevel.ERROR,
+    Map.of("version", targetVersion),
+    List.of(serverLog),
+    error
+);
+
+Observation saved = library.getObservability().record(request);
+```
+
+## Как выбрать операцию
+
+| Задача | Операция |
+| --- | --- |
+| Записать обычное событие | `capture { ... }` или `record(request)` |
+| Записать исключение | `failure(error) { ... }` |
+| Обновить текущее состояние компонента | `status(ComponentStatus(...))` |
+| Прочитать историю | `recent(ObservationQuery(...))` |
+| Собрать файл для поддержки | `createReport(ObservabilityReportRequest(...))` |
+
+`status` не заменяет историю: он хранит только последнее состояние компонента. `capture` и
+`failure` создают отдельные хронологические записи.
 
 ## Состояние компонента
 
@@ -94,3 +122,14 @@ val report = library.observability.createReport(
 - `LegacyObservabilityAdapter` — адаптер старых API без собственного хранилища;
 - `LegacyActivityMapper` — явное преобразование старых событий;
 - `DiagnosticObservationBridge` — один диагностический инцидент превращает в одно наблюдение.
+
+## Контракт хранения
+
+1. Вызов API создаёт неизменяемое наблюдение с уникальным идентификатором.
+2. Файлы копируются в хранилище вложений; исходный абсолютный путь не публикуется.
+3. Запись журнала и манифест вложений становятся источником одного согласованного отчёта.
+4. Обычная история очищается по внутренней политике хранения.
+5. Критические события сохраняются независимо от обычного временного окна.
+
+Настройки срока хранения и безопасности являются частью кода библиотеки, а не пользовательской
+конфигурации сервера.

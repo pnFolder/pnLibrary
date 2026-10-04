@@ -57,7 +57,10 @@ internal class ComponentServiceImpl(
         cachePolicy = policy
         pluginCache.trim(policy.maximumEntries)
     }
-    override fun clearCache() { pluginCache.clear(); if (cachePolicy.scope == ComponentCacheScope.GLOBAL) sharedCache.clear() }
+    override fun clearCache() {
+        pluginCache.clear()
+        if (cachePolicy.scope == ComponentCacheScope.GLOBAL) sharedCache.clear()
+    }
     override fun cacheStatistics(): ComponentCacheStatistics =
         (if (cachePolicy.scope == ComponentCacheScope.GLOBAL) sharedCache else pluginCache).statistics()
 

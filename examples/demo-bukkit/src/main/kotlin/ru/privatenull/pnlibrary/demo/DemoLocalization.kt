@@ -16,7 +16,10 @@ object DemoLocalization {
             .thenAccept { bundle ->
                 val russian = bundle.locale("ru_ru")
                 plugin.logger.info("Minecraft translations: ${russian.metadata.source}; stone matches=${russian.materials().search("камень").size}")
-            }.exceptionally { error -> plugin.logger.warning("Minecraft translations unavailable: ${error.message}"); null }
+            }.exceptionally { error ->
+                plugin.logger.warning("Minecraft translations unavailable: ${error.message}")
+                null
+            }
         return service
     }
 }

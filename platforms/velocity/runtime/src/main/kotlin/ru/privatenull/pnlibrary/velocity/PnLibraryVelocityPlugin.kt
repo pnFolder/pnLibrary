@@ -29,7 +29,8 @@ class PnLibraryVelocityPlugin @Inject constructor(
     private val server: ProxyServer,
     private val logger: Logger,
     private val metricsFactory: Metrics.Factory,
-    @DataDirectory private val dataDirectory: Path,
+    @DataDirectory
+    private val dataDirectory: Path,
 ) {
     private var runtimeHost: PnLibraryRuntimeHost? = null
 

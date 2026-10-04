@@ -8,7 +8,8 @@ import java.nio.file.Paths;
 import static org.junit.jupiter.api.Assertions.assertEquals;
 
 class JavaLocalizationApiTest {
-    @Test void javaBuildersAreCallable() {
+    @Test
+    void javaBuildersAreCallable() {
         TranslationRequest request = TranslationRequest.builder()
             .version(MinecraftVersion.V1_21_4)
             .locales("ru_ru", "de_de")

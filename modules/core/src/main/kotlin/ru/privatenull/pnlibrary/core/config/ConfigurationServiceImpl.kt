@@ -203,7 +203,8 @@ internal class ConfigurationServiceImpl(
         val priority: Int,
         val access: ConfigTypeAccess,
     ) : ConfigTypeRegistration {
-        @Volatile private var active = true
+        @Volatile
+        private var active = true
         override val isActive: Boolean get() = active
         override fun close() {
             deactivate()

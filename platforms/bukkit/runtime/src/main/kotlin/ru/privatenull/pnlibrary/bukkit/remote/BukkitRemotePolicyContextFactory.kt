@@ -9,7 +9,8 @@ import ru.privatenull.pnlibrary.api.remote.ServerInfo
 import ru.privatenull.pnlibrary.common.minecraft.MinecraftVersion
 
 object BukkitRemotePolicyContextFactory {
-    @JvmStatic fun create(plugin: Plugin, values: Map<String, String> = emptyMap()): RemotePolicyContext {
+    @JvmStatic
+    fun create(plugin: Plugin, values: Map<String, String> = emptyMap()): RemotePolicyContext {
         val version = plugin.server.version
         return RemotePolicyContext.builder()
             .product(ProductInfo(plugin.name.lowercase(java.util.Locale.ROOT), plugin.name, plugin.description.version))

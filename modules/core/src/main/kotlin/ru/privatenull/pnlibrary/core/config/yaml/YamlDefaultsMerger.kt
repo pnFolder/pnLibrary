@@ -44,10 +44,15 @@ internal object YamlDefaultsMerger {
         .map { it.path.joinToString(".") }
 
     private fun find(lines: List<String>, path: List<String>): Block? {
-        var start = 0; var end = lines.size; var indent = 0; var found: Block? = null
+        var start = 0
+        var end = lines.size
+        var indent = 0
+        var found: Block? = null
         path.forEach { key ->
             found = blocks(lines, start, end, indent).firstOrNull { it.key == key } ?: return null
-            start = found!!.keyLine + 1; end = found!!.end; indent += 2
+            start = found!!.keyLine + 1
+            end = found!!.end
+            indent += 2
         }
         return found
     }

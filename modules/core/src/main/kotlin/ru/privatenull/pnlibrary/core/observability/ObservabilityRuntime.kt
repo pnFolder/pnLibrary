@@ -18,7 +18,8 @@ internal class ObservabilityRuntime(
     private val journal = ObservationJournal(dataFolder)
     private val attachmentStore = AttachmentStore(dataFolder)
     private val statusRegistry = ComponentStatusRegistry()
-    @Volatile private var reportFactory = reportFactory
+    @Volatile
+    private var reportFactory = reportFactory
 
     init {
         val activeObservationIds = journal.applyRetention(clock())

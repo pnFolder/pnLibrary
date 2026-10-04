@@ -38,7 +38,6 @@ class DemoPlugin : JavaPlugin() {
         }
         state = DemoState(AtomicLong())
 
-
         pluginRegistration = library.plugins.register(this)
         context = pluginRegistration!!.registerModule("pndemo") { builder ->
             builder.product(

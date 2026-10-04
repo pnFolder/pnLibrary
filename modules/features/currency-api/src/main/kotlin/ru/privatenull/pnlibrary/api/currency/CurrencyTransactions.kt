@@ -44,15 +44,20 @@ data class CurrencyActor(val type: CurrencyActorType, val id: String) {
     /** Factories for the supported audited principal categories. */
     companion object {
         /** Creates a player actor from its stable UUID. */
-        @JvmStatic fun player(id: UUID) = CurrencyActor(CurrencyActorType.PLAYER, id.toString())
+        @JvmStatic
+        fun player(id: UUID) = CurrencyActor(CurrencyActorType.PLAYER, id.toString())
         /** Creates an actor for a registered plugin. */
-        @JvmStatic fun plugin(id: PluginId) = CurrencyActor(CurrencyActorType.PLUGIN, id.value)
+        @JvmStatic
+        fun plugin(id: PluginId) = CurrencyActor(CurrencyActorType.PLUGIN, id.value)
         /** Creates an actor for a named application service. */
-        @JvmStatic fun service(id: String) = CurrencyActor(CurrencyActorType.SERVICE, id)
+        @JvmStatic
+        fun service(id: String) = CurrencyActor(CurrencyActorType.SERVICE, id)
         /** Creates the canonical current-server actor. */
-        @JvmStatic fun server() = CurrencyActor(CurrencyActorType.SERVER, "server")
+        @JvmStatic
+        fun server() = CurrencyActor(CurrencyActorType.SERVER, "server")
         /** Creates an internal system actor with a caller-defined identifier. */
-        @JvmStatic fun system(id: String) = CurrencyActor(CurrencyActorType.SYSTEM, id)
+        @JvmStatic
+        fun system(id: String) = CurrencyActor(CurrencyActorType.SYSTEM, id)
     }
 }
 

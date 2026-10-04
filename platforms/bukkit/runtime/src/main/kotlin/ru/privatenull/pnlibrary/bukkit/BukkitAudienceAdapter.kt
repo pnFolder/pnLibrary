@@ -33,5 +33,7 @@ internal class BukkitAudienceAdapter(
         override fun playSound(sound: Sound) = false
     }
 
-    private companion object { val LEGACY = LegacyComponentSerializer.legacySection() }
+    private companion object {
+        val LEGACY = LegacyComponentSerializer.legacySection()
+    }
 }

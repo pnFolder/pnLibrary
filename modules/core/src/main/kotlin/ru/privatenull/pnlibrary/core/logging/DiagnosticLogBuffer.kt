@@ -39,7 +39,8 @@ internal class DiagnosticLogBuffer(private val capacity: Int = 2_000) {
     private val incidents = LinkedHashMap<String, Incident>()
     private val redactor = DiagnosticRedactor()
     private var timelineEntryCount = 0
-    @Volatile private var changeListener: ((List<Map<String, Any?>>) -> Unit)? = null
+    @Volatile
+    private var changeListener: ((List<Map<String, Any?>>) -> Unit)? = null
 
     fun onChange(listener: (List<Map<String, Any?>>) -> Unit) {
         changeListener = listener

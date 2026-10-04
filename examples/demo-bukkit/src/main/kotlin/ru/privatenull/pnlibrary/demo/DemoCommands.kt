@@ -48,7 +48,10 @@ object DemoCommands {
                 sender.sendMessage(context.components.serialize(context.components.deserialize("<aqua>components + services + commands are active")))
                 return true
             }
-            if (sender !is Player) { sender.sendMessage("Only players can use this demo action."); return true }
+            if (sender !is Player) {
+                sender.sendMessage("Only players can use this demo action.")
+                return true
+            }
             when (args[0].lowercase()) {
                 "balance" -> currency.balance(sender.uniqueId).thenAccept { sender.sendMessage("§bБаланс: §f${currency.format(it)}") }
                 "give" -> {

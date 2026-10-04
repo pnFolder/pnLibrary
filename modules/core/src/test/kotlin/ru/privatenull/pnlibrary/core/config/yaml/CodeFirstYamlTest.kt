@@ -1,18 +1,16 @@
 package ru.privatenull.pnlibrary.core.config.yaml
 
-
-
-
 import org.junit.jupiter.api.Assertions.*
-import ru.privatenull.pnlibrary.api.config.*
 import org.junit.jupiter.api.Test
 import org.junit.jupiter.api.io.TempDir
+import ru.privatenull.pnlibrary.api.config.*
 import java.nio.file.Path
 import java.util.logging.Logger
 
 class CodeFirstYamlTest {
     @TempDir lateinit var directory: Path
-    @Test fun `adds nested defaults with comments and preserves administrator values`() {
+    @Test
+    fun `adds nested defaults with comments and preserves administrator values`() {
         val current = """
             # Existing comment
             database:
@@ -40,7 +38,8 @@ class CodeFirstYamlTest {
         assertTrue(result.content.contains("# Server port\n  port: 3306"))
     }
 
-    @Test fun `second synchronization is idempotent`() {
+    @Test
+    fun `second synchronization is idempotent`() {
         val current = "root:\n  existing: 5\n"
         val defaults = "root:\n  existing: 1\n  added: 2\n"
         val first = YamlDefaultsMerger.merge(current, defaults)
@@ -49,7 +48,8 @@ class CodeFirstYamlTest {
         assertEquals(first.content, second.content)
     }
 
-    @Test fun `managed lifecycle keeps last value after failed reload`() {
+    @Test
+    fun `managed lifecycle keeps last value after failed reload`() {
         data class Value(val port: Int)
         val file = directory.resolve("config.yml").toFile()
         val codec = object : ConfigCodec<Value> {

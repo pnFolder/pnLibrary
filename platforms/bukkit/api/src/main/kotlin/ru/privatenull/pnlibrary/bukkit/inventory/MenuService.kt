@@ -29,5 +29,6 @@ interface MenuService {
 /** Entry point for obtaining the installed Bukkit menu service. */
 object PnMenus {
     /** Returns the service installed by the active pnLibrary Bukkit runtime. */
-    @JvmStatic fun get(): MenuService = PnBukkit.menus()
+    @JvmStatic
+    fun get(): MenuService = PnBukkit.menus()
 }

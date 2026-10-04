@@ -31,7 +31,9 @@ internal class MenuServiceImpl(
     private val owners = IdentityHashMap<Plugin, MutableSet<Session>>()
     private val closed = AtomicBoolean(false)
 
-    init { host.server.pluginManager.registerEvents(this, host) }
+    init {
+        host.server.pluginManager.registerEvents(this, host)
+    }
 
     override fun open(owner: Plugin, player: Player, menu: Menu): MenuSession {
         check(!closed.get()) { "Menu service is closed" }
@@ -93,12 +95,20 @@ internal class MenuServiceImpl(
         if (event.rawSlots.any { it < session.inventory.size && session.menu.items[it]?.editable != true }) event.isCancelled = true
     }
 
-    @EventHandler fun close(event: InventoryCloseEvent) {
+    @EventHandler
+    fun close(event: InventoryCloseEvent) {
         val session = sessions[event.player.uniqueId] ?: return
         if (owns(event.inventory, session)) session.finish(true)
     }
-    @EventHandler fun quit(event: PlayerQuitEvent) { sessions.remove(event.player.uniqueId)?.finish(true) }
-    @EventHandler fun disable(event: PluginDisableEvent) { close(event.plugin) }
+    @EventHandler
+    fun quit(event: PlayerQuitEvent) {
+        sessions.remove(event.player.uniqueId)?.finish(true)
+    }
+
+    @EventHandler
+    fun disable(event: PluginDisableEvent) {
+        close(event.plugin)
+    }
 
     private fun owns(inventory: Inventory, session: Session): Boolean {
         val holder = inventory.holder as? MenuInventoryHolder ?: return false
@@ -116,7 +126,9 @@ internal class MenuServiceImpl(
             ?.invoke(inventory) as? String)?.takeIf { it.isNotBlank() }
             ?: inventory.getItem(2)?.itemMeta?.displayName
             ?: inventory.getItem(0)?.itemMeta?.displayName
-    } catch (_: Throwable) { null }
+    } catch (_: Throwable) {
+        null
+    }
 
     private inner class Session(
         val id: UUID,
@@ -131,8 +143,13 @@ internal class MenuServiceImpl(
             inventory.setItem(slot, item)
         }
         override fun get(slot: Int): ItemStack? = inventory.getItem(slot)
-        override fun refresh() { if (!finished) menu.renderer?.render(this) }
-        override fun refreshAfter(delay: Duration) { tasks.laterEntity(player, delay, Runnable { refresh() }) }
+        override fun refresh() {
+            if (!finished) menu.renderer?.render(this)
+        }
+
+        override fun refreshAfter(delay: Duration) {
+            tasks.laterEntity(player, delay, Runnable { refresh() })
+        }
         override fun close() {
             if (finished) return
             if (owns(player.openInventory.topInventory, this)) player.closeInventory()
@@ -149,14 +166,19 @@ internal class MenuServiceImpl(
             if (finished) return
             finished = true
             sessions.remove(player.uniqueId, this)
-            owners[owner]?.let { it.remove(this); if (it.isEmpty()) owners.remove(owner) }
+            owners[owner]?.let { sessions ->
+                sessions.remove(this)
+                if (sessions.isEmpty()) owners.remove(owner)
+            }
             if (callback && owner.isEnabled && !closed.get()) menu.closeHandler?.handle(MenuClose(this))
         }
     }
 
     private class MenuInventoryHolder(val id: UUID) : InventoryHolder {
         private lateinit var backing: Inventory
-        fun bind(inventory: Inventory) { backing = inventory }
+        fun bind(inventory: Inventory) {
+            backing = inventory
+        }
         override fun getInventory(): Inventory = backing
     }
 }

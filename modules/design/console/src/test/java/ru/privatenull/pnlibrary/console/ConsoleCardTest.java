@@ -8,7 +8,8 @@ import static org.junit.jupiter.api.Assertions.assertEquals;
 import static org.junit.jupiter.api.Assertions.assertTrue;
 
 class ConsoleCardTest {
-    @Test void rendersStableCardStructure() {
+    @Test
+    void rendersStableCardStructure() {
         List<String> lines = ConsoleCard.builder(ConsoleTheme.plain(), "READY")
                 .mascot("( ^.^ )", "pnLibrary установлена", "система подключена")
                 .blank()

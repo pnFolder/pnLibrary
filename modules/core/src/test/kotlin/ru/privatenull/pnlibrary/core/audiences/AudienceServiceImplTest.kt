@@ -65,9 +65,17 @@ class AudienceServiceImplTest {
         override val id = name
         override val isConsole get() = console
         override fun hasPermission(permission: String) = true
-        override fun sendMessage(text: Component) { calls += "$name:message"; if (failMessages) error("delivery") }
+        override fun sendMessage(text: Component) {
+            calls += "$name:message"
+            if (failMessages) error("delivery")
+        }
+
         override fun actionBar(text: Component) { calls += "$name:bar" }
-        override fun playSound(sound: Sound): Boolean { calls += "$name:sound"; return soundAccepted }
+
+        override fun playSound(sound: Sound): Boolean {
+            calls += "$name:sound"
+            return soundAccepted
+        }
     }
 
     private class Player(

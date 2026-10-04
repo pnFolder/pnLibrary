@@ -9,7 +9,8 @@ import ru.privatenull.pnlibrary.api.remote.ServerInfo
 import ru.privatenull.pnlibrary.common.minecraft.MinecraftVersion
 
 object VelocityRemotePolicyContextFactory {
-    @JvmStatic fun create(plugin: Any, server: ProxyServer, values: Map<String, String> = emptyMap()): RemotePolicyContext {
+    @JvmStatic
+    fun create(plugin: Any, server: ProxyServer, values: Map<String, String> = emptyMap()): RemotePolicyContext {
         val description = server.pluginManager.fromInstance(plugin).orElseThrow().description
         val version = server.version.version
         return RemotePolicyContext.builder()

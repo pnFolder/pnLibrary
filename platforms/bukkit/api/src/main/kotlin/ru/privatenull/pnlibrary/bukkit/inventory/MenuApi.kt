@@ -224,15 +224,21 @@ class MenuBuilder internal constructor(private val title: String, private val ty
 /** Java-friendly entry points for each supported menu shape. */
 object Menus {
     /** Creates a six-row chest builder; call [MenuBuilder.rows] to resize it. */
-    @JvmStatic fun chest(title: String) = MenuBuilder(title, MenuType.CHEST)
+    @JvmStatic
+    fun chest(title: String) = MenuBuilder(title, MenuType.CHEST)
     /** Creates an anvil builder. */
-    @JvmStatic fun anvil(title: String) = MenuBuilder(title, MenuType.ANVIL)
+    @JvmStatic
+    fun anvil(title: String) = MenuBuilder(title, MenuType.ANVIL)
     /** Creates a hopper builder. */
-    @JvmStatic fun hopper(title: String) = MenuBuilder(title, MenuType.HOPPER)
+    @JvmStatic
+    fun hopper(title: String) = MenuBuilder(title, MenuType.HOPPER)
     /** Creates a dispenser builder. */
-    @JvmStatic fun dispenser(title: String) = MenuBuilder(title, MenuType.DISPENSER)
+    @JvmStatic
+    fun dispenser(title: String) = MenuBuilder(title, MenuType.DISPENSER)
     /** Creates a dropper builder. */
-    @JvmStatic fun dropper(title: String) = MenuBuilder(title, MenuType.DROPPER)
+    @JvmStatic
+    fun dropper(title: String) = MenuBuilder(title, MenuType.DROPPER)
     /** Creates a workbench builder. */
-    @JvmStatic fun workbench(title: String) = MenuBuilder(title, MenuType.WORKBENCH)
+    @JvmStatic
+    fun workbench(title: String) = MenuBuilder(title, MenuType.WORKBENCH)
 }

@@ -17,7 +17,9 @@ data class PlatformTaskRequest(
     }
 }
 
-fun interface PlatformTaskHandle { fun cancel(): Boolean }
+fun interface PlatformTaskHandle {
+    fun cancel(): Boolean
+}
 
 interface PlatformTaskAdapter : AutoCloseable {
     fun schedule(request: PlatformTaskRequest): PlatformTaskHandle

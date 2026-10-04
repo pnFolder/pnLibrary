@@ -7,8 +7,10 @@ import ru.privatenull.pnlibrary.api.config.ManagedConfig
 import java.util.function.Supplier
 
 data class DemoSettings(
-    @ConfigRange(min = 0.0) var startingBalance: Double = 100.0,
-    @ConfigNotBlank var greeting: String = "Добро пожаловать в pnDemo!",
+    @ConfigRange(min = 0.0)
+    var startingBalance: Double = 100.0,
+    @ConfigNotBlank
+    var greeting: String = "Добро пожаловать в pnDemo!",
 )
 
 object DemoConfig {

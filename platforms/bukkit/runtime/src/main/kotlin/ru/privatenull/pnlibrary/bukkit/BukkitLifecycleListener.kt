@@ -24,7 +24,8 @@ import java.util.concurrent.atomic.AtomicBoolean
 /** Bukkit lifecycle notifications kept separate from portable command registration. */
 internal class BukkitLifecycleListener(
     private val plugin: Plugin,
-    @Volatile private var library: PnLibrary?,
+    @Volatile
+    private var library: PnLibrary?,
 ) : Listener, AutoCloseable {
     private val closed = AtomicBoolean(false)
     private val readyCallbacks = java.util.concurrent.CopyOnWriteArrayList<Runnable>()

@@ -41,8 +41,11 @@ public final class AcceptancePolicy implements RemotePolicy {
         String[] parts = normalized.split("[-+.]", 4);
         int[] result = new int[] { 0, 0, 0 };
         for (int index = 0; index < result.length && index < parts.length; index++) {
-            try { result[index] = Integer.parseInt(parts[index]); }
-            catch (NumberFormatException ignored) { result[index] = 0; }
+            try {
+                result[index] = Integer.parseInt(parts[index]);
+            } catch (NumberFormatException ignored) {
+                result[index] = 0;
+            }
         }
         return result;
     }

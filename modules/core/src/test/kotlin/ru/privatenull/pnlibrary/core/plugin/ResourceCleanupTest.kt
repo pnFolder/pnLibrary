@@ -24,9 +24,15 @@ class ResourceCleanupTest {
 
         val thrown = assertThrows(IllegalStateException::class.java) {
             ResourceCleanup.closeAll(
-                { calls += 1; throw first },
+                {
+                    calls += 1
+                    throw first
+                },
                 { calls += 2 },
-                { calls += 3; throw second },
+                {
+                    calls += 3
+                    throw second
+                },
             )
         }
 

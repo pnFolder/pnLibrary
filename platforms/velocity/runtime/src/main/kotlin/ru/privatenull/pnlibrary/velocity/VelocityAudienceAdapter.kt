@@ -28,6 +28,9 @@ internal class VelocityAudienceAdapter(private val server: ProxyServer) : Platfo
         override fun hasPermission(permission: String) = source.hasPermission(permission)
         override fun sendMessage(text: Component) = source.sendMessage(text)
         override fun actionBar(text: Component) = source.sendActionBar(text)
-        override fun playSound(sound: Sound): Boolean { source.playSound(sound); return true }
+        override fun playSound(sound: Sound): Boolean {
+            source.playSound(sound)
+            return true
+        }
     }
 }

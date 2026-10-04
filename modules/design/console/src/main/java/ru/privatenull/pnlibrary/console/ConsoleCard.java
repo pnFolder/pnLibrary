@@ -60,7 +60,10 @@ public final class ConsoleCard {
             return this;
         }
 
-        public Builder blank() { lines.add(""); return this; }
+        public Builder blank() {
+            lines.add("");
+            return this;
+        }
 
         public Builder firstDetail(String label, Object value) {
             lines.add(theme.muted + "            ┌ " + theme.text + pad(label, 22)

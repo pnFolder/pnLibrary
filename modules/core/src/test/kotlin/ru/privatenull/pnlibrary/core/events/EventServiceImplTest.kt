@@ -113,10 +113,14 @@ class EventServiceImplTest {
     private class AnnotatedListener(private val calls: MutableList<String>) : Listener {
         @EventHandler(priority = -250)
         private fun early(event: TestEvent) { calls += "early" }
-        @EventHandler fun normal(event: TestEvent) { calls += "normal" }
+        @EventHandler
+        fun normal(event: TestEvent) {
+            calls += "normal"
+        }
     }
 
     private class InvalidListener : Listener {
-        @EventHandler fun invalid() = Unit
+        @EventHandler
+        fun invalid() = Unit
     }
 }

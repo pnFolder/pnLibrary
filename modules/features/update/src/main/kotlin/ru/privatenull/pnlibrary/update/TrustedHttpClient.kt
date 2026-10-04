@@ -9,7 +9,8 @@ import java.io.InputStream
 open class TrustedHttpClient(
     private val connectTimeout: Duration,
     private val readTimeout: Duration,
-    @Suppress("UNUSED_PARAMETER") additionalHosts: Set<String> = emptySet(),
+    @Suppress("UNUSED_PARAMETER")
+    additionalHosts: Set<String> = emptySet(),
 ) {
     init {
         // Some Paper hosts advertise IPv6 DNS records but do not route IPv6.

@@ -17,8 +17,11 @@ internal class MetricsControllerImpl(
     private val lock = Any()
     private val closed = AtomicBoolean(false)
     private val configurers = initialConfigurers.toMutableList()
-    @Volatile private var currentProjectId: Int? = initialProjectId
-    @Volatile private var session: PluginMetrics? = null
+    @Volatile
+    private var currentProjectId: Int? = initialProjectId
+
+    @Volatile
+    private var session: PluginMetrics? = null
 
     init {
         initialProjectId?.let { require(it > 0) { "metrics projectId must be positive" } }

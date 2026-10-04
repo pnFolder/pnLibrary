@@ -28,11 +28,14 @@ class CurrencyAccess private constructor(
     /** Common visibility policies and the custom-policy builder entry point. */
     companion object {
         /** Creates a policy visible only to the owning plugin. */
-        @JvmStatic fun ownerOnly() = Builder().owner().build()
+        @JvmStatic
+        fun ownerOnly() = Builder().owner().build()
         /** Creates a policy visible to the owner and every pnLibrary plugin. */
-        @JvmStatic fun shared() = Builder().owner().allowAll().build()
+        @JvmStatic
+        fun shared() = Builder().owner().allowAll().build()
         /** Creates an initially empty policy builder. */
-        @JvmStatic fun builder() = Builder()
+        @JvmStatic
+        fun builder() = Builder()
         private fun wildcard(pattern: String, value: String) = Regex(
             "^" + pattern.split('*').joinToString(".*", transform = Regex::escape) + "$",
             RegexOption.IGNORE_CASE,

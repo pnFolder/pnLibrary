@@ -9,7 +9,8 @@ import ru.privatenull.pnlibrary.api.remote.ServerInfo
 import ru.privatenull.pnlibrary.common.minecraft.MinecraftVersion
 
 object BungeeRemotePolicyContextFactory {
-    @JvmStatic fun create(plugin: Plugin, values: Map<String, String> = emptyMap()): RemotePolicyContext {
+    @JvmStatic
+    fun create(plugin: Plugin, values: Map<String, String> = emptyMap()): RemotePolicyContext {
         val version = plugin.proxy.version
         return RemotePolicyContext.builder()
             .product(ProductInfo(plugin.description.name.lowercase(java.util.Locale.ROOT), plugin.description.name, plugin.description.version))

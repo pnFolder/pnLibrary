@@ -29,7 +29,21 @@ class BukkitControlCommandTest {
         assertEquals("pn", definition.name)
         assertEquals("pnlibrary.admin", definition.permission)
         assertEquals(
-            listOf("status", "updates", "check", "update", "update-confirm", "update-status", "update-rollback", "restart", "debug", "support", "error", "error-repeat", "error-chain"),
+            listOf(
+                "status",
+                "updates",
+                "check",
+                "update",
+                "update-confirm",
+                "update-status",
+                "update-rollback",
+                "restart",
+                "debug",
+                "support",
+                "error",
+                "error-repeat",
+                "error-chain",
+            ),
             definition.root.children.map { it.name },
         )
         val update = definition.root.children.single { it.name == "update" }

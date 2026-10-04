@@ -351,9 +351,18 @@ internal class CurrencyCommandExecutor(
         values.forEach { (key, value) -> body = body.replace("{$key}", value) }
         sender.sendMessage(ChatColor.translateAlternateColorCodes('&', message + body))
     }
-    private fun info(sender: CommandSender, message: String) { sender.sendMessage("§8[§6Currency§8] §f$message") }
-    private fun success(sender: CommandSender, message: String) { sender.sendMessage("§8[§6Currency§8] §a$message") }
-    private fun error(sender: CommandSender, message: String): Boolean { sender.sendMessage("§8[§6Currency§8] §c$message"); return true }
+    private fun info(sender: CommandSender, message: String) {
+        sender.sendMessage("§8[§6Currency§8] §f$message")
+    }
+
+    private fun success(sender: CommandSender, message: String) {
+        sender.sendMessage("§8[§6Currency§8] §a$message")
+    }
+
+    private fun error(sender: CommandSender, message: String): Boolean {
+        sender.sendMessage("§8[§6Currency§8] §c$message")
+        return true
+    }
 
     companion object {
         private val TIME = DateTimeFormatter.ofPattern("yyyy-MM-dd HH:mm:ss").withZone(ZoneId.systemDefault())

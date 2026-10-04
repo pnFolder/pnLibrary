@@ -30,7 +30,8 @@ class TranslationRequest internal constructor(
     }
 
     companion object {
-        @JvmStatic fun builder(): Builder = Builder()
+        @JvmStatic
+        fun builder(): Builder = Builder()
 
         internal fun normalizeLocale(value: String): String {
             val normalized = value.trim().lowercase(Locale.ROOT).replace('-', '_')

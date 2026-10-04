@@ -40,14 +40,23 @@ internal class AudienceServiceImpl(
             if (receivers.isEmpty()) return false
             var accepted = true
             receivers.forEach { receiver ->
-                try { if (!receiver.playSound(sound)) accepted = false }
-                catch (error: Throwable) { if (error is Error) throw error; accepted = false }
+                try {
+                    if (!receiver.playSound(sound)) accepted = false
+                } catch (error: Throwable) {
+                    if (error is Error) throw error
+                    accepted = false
+                }
             }
             return accepted
         }
+
         private inline fun each(operation: (LibraryAudience) -> Unit) {
             receivers.forEach { receiver ->
-                try { operation(receiver) } catch (error: Throwable) { if (error is Error) throw error }
+                try {
+                    operation(receiver)
+                } catch (error: Throwable) {
+                    if (error is Error) throw error
+                }
             }
         }
     }
