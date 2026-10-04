@@ -28,7 +28,17 @@ val pnVer = rootProject.version.toString()
 fun ShadowJar.applyCommonConfig() {
     archiveClassifier = ""
     archiveVersion    = pnVer
-    duplicatesStrategy = DuplicatesStrategy.EXCLUDE
+    // Shadow's resource transformers must see duplicate Kotlin metadata before
+    // they can merge it. EXCLUDE drops later entries too early and produces a
+    // warning for every dependency that contributes a .kotlin_module file.
+    duplicatesStrategy = DuplicatesStrategy.INCLUDE
+
+    // Built-ins are identical runtime resources rather than mergeable module
+    // descriptors. Keep one copy while allowing the Kotlin metadata transformer
+    // to process every .kotlin_module contribution.
+    filesMatching("**/*.kotlin_builtins") {
+        duplicatesStrategy = DuplicatesStrategy.EXCLUDE
+    }
 
     // Keep kotlin.* intact: the runtime .kt policy compiler resolves the stdlib from this JAR.
     // Platform plugin classloaders isolate it from unrelated plugins.
