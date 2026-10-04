@@ -87,6 +87,7 @@ internal class PluginRegistryImpl(
     private val registrationSequence = AtomicLong()
     private val sharedComponentCache = ComponentCache()
     private val productResolver = ModuleProductResolver(platform)
+    private val metadataFactory = ModuleMetadataFactory(platform)
     private val remotePolicyNotices = RemotePolicyNoticeRenderer(platform)
     private val remotePolicies = RemotePolicyMonitor(platform, remotePolicyNotices)
     private val dependencyValidator = ModuleDependencyValidator(platform) {
@@ -136,7 +137,7 @@ internal class PluginRegistryImpl(
         productDescriptor: ProductDescriptor?,
     ): Context {
         val owner = parent.owner
-        val metadata = metadata(owner, id, definition)
+        val metadata = metadataFactory.create(owner, id, definition)
         var taskScope: TaskScope? = null
         var eventScope: EventScope? = null
         var configScope: ConfigScope? = null
@@ -214,20 +215,6 @@ internal class PluginRegistryImpl(
             )
             throw error
         }
-    }
-
-    private fun metadata(owner: Any, id: ModuleId, definition: ModuleDefinitionBuilder): PluginMetadata {
-        val details = platform.ownerDetails(owner)
-        return PluginMetadata(
-            id = id,
-            name = definition.metadataName ?: details["name"]?.takeIf { it.isNotBlank() } ?: id.value,
-            version = definition.metadataVersion ?: details["version"]?.takeIf { it.isNotBlank() } ?: "unknown",
-            authors = definition.metadataAuthors ?: details["authors"]?.takeIf { it.isNotBlank() } ?: "unknown",
-            platform = platform.type,
-            platformImplementation = platform.implementationName,
-            javaVersion = System.getProperty("java.version", "unknown"),
-            javaFeature = Runtime.version().feature(),
-        )
     }
 
     private fun detachPlugin(owner: Any): Plugin? = synchronized(plugins) { plugins.remove(owner) }
