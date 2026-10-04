@@ -5,7 +5,6 @@ import ru.privatenull.pnlibrary.api.diagnostics.DiagnosticRegistration
 import ru.privatenull.pnlibrary.api.diagnostics.DiagnosticsContributor
 import ru.privatenull.pnlibrary.api.diagnostics.DiagnosticsService
 import java.nio.file.Path
-import java.time.Instant
 import java.util.concurrent.ConcurrentHashMap
 
 /**
@@ -66,16 +65,11 @@ internal class DiagnosticsRegistry(eventLimit: Int = DEFAULT_EVENT_LIMIT) : Diag
         plugin: String, component: String,
         state: String, detail: String, fields: Map<String, Any?>,
     ) {
-        stateOf(plugin).statuses[sanitizer.key(component)] = linkedMapOf(
-            "state"      to sanitizer.text(state, 64),
-            "detail"     to sanitizer.text(detail, 2048),
-            "updatedUtc" to Instant.now().toString(),
-            "fields"     to sanitizer.map(fields),
-        )
+        stateOf(plugin).statuses.update(component, state, detail, fields)
     }
 
     override fun clearStatus(plugin: String, component: String) {
-        plugins[sanitizer.key(plugin)]?.statuses?.remove(sanitizer.key(component))
+        plugins[sanitizer.key(plugin)]?.statuses?.remove(component)
     }
 
     override fun clearPlugin(plugin: String) {
@@ -140,7 +134,7 @@ internal class DiagnosticsRegistry(eventLimit: Int = DEFAULT_EVENT_LIMIT) : Diag
             if (!all && name != sanitizer.key(selectedPlugin)) return@forEach
 
             result[name] = linkedMapOf<String, Any?>(
-                "statuses"     to LinkedHashMap(st.statuses),
+                "statuses"     to st.statuses.snapshot(),
                 "events"       to st.incidents.snapshot(),
                 "contributors" to st.contributors.collect(),
             )
@@ -181,7 +175,7 @@ internal class DiagnosticsRegistry(eventLimit: Int = DEFAULT_EVENT_LIMIT) : Diag
 
     private class PluginState(eventLimit: Int, sanitizer: DiagnosticValueSanitizer) {
         val contributors = DiagnosticContributors(sanitizer)
-        val statuses     = ConcurrentHashMap<String, Map<String, Any?>>()
+        val statuses = DiagnosticStatusStore(sanitizer)
         val incidents = DiagnosticIncidentLog(eventLimit, sanitizer)
     }
 
