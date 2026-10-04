@@ -16,6 +16,7 @@ import ru.privatenull.pnlibrary.core.commands.CommandServiceImpl
 import ru.privatenull.pnlibrary.core.audiences.AudienceServiceImpl
 import ru.privatenull.pnlibrary.core.observability.history.IncidentHistoryStore
 import ru.privatenull.pnlibrary.core.observability.report.SupportReportGenerator
+import ru.privatenull.pnlibrary.core.observability.report.SupportDeliveryFactory
 import ru.privatenull.pnlibrary.core.events.EventServiceImpl
 import ru.privatenull.pnlibrary.core.logging.DiagnosticLogBuffer
 import ru.privatenull.pnlibrary.core.logging.PlatformLoggingService
@@ -54,17 +55,8 @@ import ru.privatenull.pnlibrary.core.observability.DiagnosticObservationBridge
 import ru.privatenull.pnlibrary.core.observability.UnifiedObservabilityService
 import ru.privatenull.pnlibrary.core.observability.reportSnapshot
 import ru.privatenull.pnlibrary.core.updates.UpdateServiceImpl
-import ru.privatenull.pnlibrary.core.upload.EncryptedReportUploader
-import ru.privatenull.pnlibrary.core.upload.CatboxUploader
-import ru.privatenull.pnlibrary.core.upload.FileIoUploader
 import ru.privatenull.pnlibrary.core.upload.UploadProvider
-import ru.privatenull.pnlibrary.core.upload.UploadProviderChain
 import ru.privatenull.pnlibrary.core.upload.UploadLedger
-import java.io.ByteArrayOutputStream
-import java.io.IOException
-import java.io.InputStream
-import java.net.URI
-import java.nio.charset.StandardCharsets
 import java.nio.file.Files
 import java.nio.file.Path
 import java.nio.file.Paths
@@ -103,8 +95,9 @@ internal class PnLibraryImpl(
     private val diagnosticObservationBridge = DiagnosticObservationBridge(observabilityRuntime)
     override val observability = UnifiedObservabilityService(diagnostics, observabilityRuntime)
     override val activity: ActivityService get() = observability
+    private val supportDelivery = SupportDeliveryFactory(config)
     val uploadLedger: UploadLedger = UploadLedger(dataFolder.resolve("upload-ledger.json"))
-    val encryptionCodec: EncryptedEnvelopeCodec? = initEncryptionCodec()
+    val encryptionCodec: EncryptedEnvelopeCodec? = supportDelivery.encryptionCodec()
     private val diagnosticHistory = IncidentHistoryStore(
         dataFolder.resolve("diagnostics").resolve("history"),
         encryptionCodec,
@@ -174,7 +167,7 @@ internal class PnLibraryImpl(
         directDownloads = directDownloadManager,
     )
 
-    val uploader: UploadProvider? = initUploader()
+    val uploader: UploadProvider? = supportDelivery.uploader()
     val reportGenerator: SupportReportGenerator = SupportReportGenerator(
         dataFolder = dataFolder,
         config = config,
@@ -282,45 +275,6 @@ internal class PnLibraryImpl(
 
     internal fun <T : Any> registerPlatform(type: Class<T>, implementation: T): AutoCloseable =
         platformProvider.register(type, implementation)
-
-    private fun initEncryptionCodec(): EncryptedEnvelopeCodec? {
-        if (!config.uploadMode.startsWith("encrypted")) return null
-        return try {
-            val keyPem = resolvePublicKey(config)
-            EncryptedEnvelopeCodec(keyPem, config.uploadKeyId)
-        } catch (error: Exception) {
-            throw IllegalStateException("Unable to initialize diagnostic encryption", error)
-        }
-    }
-
-    private fun initUploader(): UploadProvider? {
-        if (!config.upload) return null
-        if (config.uploadMode == "disabled") return null
-        val providers = config.uploadProviders.map { id -> when (id) {
-            "catbox" -> CatboxUploader()
-            "fileio" -> FileIoUploader()
-            "custom" -> EncryptedReportUploader(
-                endpoint = URI.create(config.uploadEndpoint), publicBase = URI.create(config.uploadPublicBase)
-            )
-            else -> error("Unsupported upload provider: $id")
-        } }
-        return UploadProviderChain(providers)
-    }
-
-    private fun resolvePublicKey(cfg: PnLibraryConfig): String {
-        if (cfg.uploadPublicKey.isNotBlank()) return cfg.uploadPublicKey
-        val stream: InputStream = PnLibraryImpl::class.java.getResourceAsStream("/diagnostic-public.pem")
-            ?: throw IllegalArgumentException("Bundled diagnostic public key missing")
-        return stream.use { input ->
-            val baos = ByteArrayOutputStream()
-            val buffer = ByteArray(2048)
-            var len: Int
-            while (input.read(buffer).also { len = it } != -1) {
-                baos.write(buffer, 0, len)
-            }
-            String(baos.toByteArray(), StandardCharsets.US_ASCII)
-        }
-    }
 
     private fun extractDataFolder(owner: Any): Path {
         return try {
