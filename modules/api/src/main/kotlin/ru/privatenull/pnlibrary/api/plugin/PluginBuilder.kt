@@ -59,6 +59,13 @@ interface PluginBuilder {
         configure: Consumer<PluginMetrics>,
     ): PluginBuilder
 
+    /** Configures bStats and/or FastStats without constructing provider configuration objects. */
+    fun metrics(configure: Consumer<MetricsBuilder>): PluginBuilder {
+        val builder = MetricsBuilder()
+        configure.accept(builder)
+        return metrics(builder.build(), true, Consumer { })
+    }
+
     /**
      * Registers a diagnostics contributor rooted at [dataDirectory].
      *
