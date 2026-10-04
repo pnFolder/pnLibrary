@@ -3,7 +3,6 @@ package ru.privatenull.pnlibrary.core.updates
 import ru.privatenull.pnlibrary.api.logging.LogLevel
 import ru.privatenull.pnlibrary.api.plugin.PluginDependency
 import ru.privatenull.pnlibrary.api.updates.*
-import ru.privatenull.pnlibrary.api.version.PnLibraryApi
 import ru.privatenull.pnlibrary.api.version.SemanticVersion
 import ru.privatenull.pnlibrary.spi.platform.PlatformAdapter
 import ru.privatenull.pnlibrary.update.*
@@ -58,6 +57,7 @@ internal class UpdateServiceImpl(private val platform: PlatformAdapter, private 
         maximumArtifactBytes = MAX_ARTIFACT_BYTES,
     )
     private val freezes = FreezeStore(dataFolder.resolve("updates/freezes.json"))
+    private val graphResolver = UpdateGraphResolver(platform, configuration, catalogGateway, freezes)
     private val orchestrator = UpdateOrchestrator(
         configuration, UpdateStateStore(dataFolder.resolve("updates"), warning = {
             platform.log(platform, LogLevel.WARNING, it)
@@ -98,7 +98,7 @@ internal class UpdateServiceImpl(private val platform: PlatformAdapter, private 
             artifact = artifact,
             jar = jar,
             updateDirectory = jar.parent.resolve("update"),
-            selectedChannel = { configuredChannel(product.id, request.channel) },
+            selectedChannel = { graphResolver.channelFor(product.id, request.channel) },
             checkForUpdates = orchestrator::checkNow,
             stagePlan = { snapshot -> orchestrator.stage(snapshot.id) },
             onClose = ::removeRegistration,
@@ -140,79 +140,8 @@ internal class UpdateServiceImpl(private val platform: PlatformAdapter, private 
         catalogRequestExecutor.shutdownNow()
     }
 
-    private fun resolveGraph(refreshMode: RefreshMode = RefreshMode.CACHED): ResolutionResult {
-        val registrations = entries.toList()
-        if (registrations.isEmpty()) return emptyUpdatePlan()
-
-        val installed = installedProducts(registrations)
-        val channels = updateChannels(registrations)
-        val releases = requestReleaseCatalogs(registrations, refreshMode)
-        observeLatestVersions(registrations, releases)
-
-        return UpdateResolver(ProductId.of("pnlibrary")).resolve(
-            installed = installed,
-            releases = releases,
-            channels = channels,
-            defaultChannel = UpdateChannel.STABLE,
-            frozen = frozenProducts(registrations),
-            platform = platform.type,
-            javaFeature = Runtime.version().feature(),
-            policy = resolverPolicy(),
-        )
-    }
-
-    private fun emptyUpdatePlan(): ResolutionResult =
-        ResolutionResult.Ready(UpdatePlan(PnLibraryApi.VERSION, emptyList(), emptyList()))
-
-    private fun installedProducts(registrations: List<RegisteredUpdate>): List<InstalledProduct> =
-        registrations.map { entry ->
-            entry.installedProduct(PnLibraryApi.VERSION.takeIf { entry.descriptor.id.value == "pnlibrary" })
-        }
-
-    private fun updateChannels(registrations: List<RegisteredUpdate>): Map<ProductId, UpdateChannel> =
-        registrations.associate { entry -> entry.descriptor.id to configuredChannel(entry) }
-
-    private fun configuredChannel(entry: RegisteredUpdate): UpdateChannel =
-        configuredChannel(entry.descriptor.id, entry.request.channel)
-
-    private fun configuredChannel(product: ProductId, fallback: UpdateChannel): UpdateChannel =
-        if (product.value == "pnlibrary") configuration.library.channel
-        else configuration.plugins[product.value]?.channel ?: fallback
-
-    private fun requestReleaseCatalogs(
-        registrations: List<RegisteredUpdate>,
-        refreshMode: RefreshMode,
-    ): List<ProductRelease> = registrations.flatMap { registration ->
-        val catalog = catalogGateway.load(
-            owner = registration.request.repositoryOwner,
-            repository = registration.request.repositoryName,
-            refreshMode = refreshMode,
-        )
-        require(catalog.product.equals(registration.descriptor.id.value, ignoreCase = true)) {
-            "Release catalog product ${catalog.product} does not match ${registration.descriptor.id}"
-        }
-        catalog.releases.map(registration::releaseFrom)
-    }
-
-    private fun observeLatestVersions(registrations: List<RegisteredUpdate>, releases: List<ProductRelease>) {
-        registrations.forEach { entry ->
-            entry.observe(releases.filter { it.product == entry.descriptor.id }, configuredChannel(entry))
-        }
-    }
-
-    private fun frozenProducts(registrations: List<RegisteredUpdate>): Set<ProductId> =
-        (freezes.active().keys + registrations.mapNotNull { entry ->
-                val policy = configuration.plugins[entry.descriptor.id.value]
-                entry.descriptor.id.takeIf {
-                    !configuration.pluginUpdatesEnabled || policy?.enabled == false ||
-                        policy?.pauseUntil?.isAfter(java.time.Instant.now()) == true
-                }
-            }).toSet()
-
-    private fun resolverPolicy(): ResolverPolicy = ResolverPolicy(
-        configuration.downloads.allowManagedPlugins && configuration.installation.allowNewPlugins,
-        runCatching { platform.installedPlugins() }.getOrNull().orEmpty().keys,
-        )
+    private fun resolveGraph(refreshMode: RefreshMode = RefreshMode.CACHED): ResolutionResult =
+        graphResolver.resolve(entries.toList(), refreshMode)
 
     private fun automaticAllowed(snapshot: UpdatePlanSnapshot): Boolean {
         val changed = snapshot.plan?.changes?.map(ProductChange::product).orEmpty()
