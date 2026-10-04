@@ -3,7 +3,6 @@ package ru.privatenull.pnlibrary.core.config.yaml
 import org.yaml.snakeyaml.DumperOptions
 import org.yaml.snakeyaml.Yaml
 import ru.privatenull.pnlibrary.api.config.*
-import java.lang.reflect.Field
 import java.lang.reflect.Modifier
 import java.lang.reflect.ParameterizedType
 import java.lang.reflect.Type
@@ -58,10 +57,11 @@ internal class AnnotatedYamlCodec<T : Any>(
     private val options: ConfigOptions,
     private val warning: (String) -> Unit,
 ) : ConfigCodec<T>, ConfigSchema {
-    private val annotationSerializers = mutableMapOf<Class<out ConfigSerializer<*>>, ConfigSerializer<*>>()
     private val introspector = ConfigObjectIntrospector(options.naming)
+    private val serializerResolver = ConfigSerializerResolver(serializers)
+    private val schemaInspector = ConfigSchemaInspector(introspector, serializerResolver)
     private val polymorphicResolver = ConfigPolymorphicResolver(runtimeTypes, consumer, introspector)
-    override val requiredPaths: Set<String> = required(type)
+    override val requiredPaths: Set<String> = schemaInspector.requiredPaths(type)
     private val yaml = Yaml(DumperOptions().apply {
         defaultFlowStyle = DumperOptions.FlowStyle.BLOCK
         isPrettyFlow = true
@@ -73,7 +73,7 @@ internal class AnnotatedYamlCodec<T : Any>(
     /** Serializes [value] and decorates generated YAML with schema comments. */
     override fun encode(value: T): String {
         val raw = yaml.dump(toYamlValue(value, type, "", emptyList(), value))
-        val body = YamlSchemaDecorator.decorate(raw, schema(type, value))
+        val body = YamlSchemaDecorator.decorate(raw, schemaInspector.metadata(type, value))
         val header = type.getAnnotation(ConfigComment::class.java)?.value.orEmpty()
         return if (header.isEmpty()) body else header.joinToString("\n") { "# $it" } + "\n" + body
     }
@@ -86,7 +86,7 @@ internal class AnnotatedYamlCodec<T : Any>(
      */
     override fun decode(yaml: String): T {
         val loaded = this.yaml.load<Any?>(yaml) ?: linkedMapOf<String, Any?>()
-        serializer(type)?.let {
+        serializerResolver.forType(type)?.let {
             @Suppress("UNCHECKED_CAST")
             return it.deserialize(loaded, context(type, "", emptyList(), defaults.get())) as T
         }
@@ -96,16 +96,14 @@ internal class AnnotatedYamlCodec<T : Any>(
 
     /** Evaluates declarative validation annotations without mutating [value]. */
     fun validate(value: T): List<ConfigProblem> {
-        val problems = mutableListOf<ConfigProblem>()
-        validateObject(value, type, "", problems)
-        return problems
+        return schemaInspector.validate(value, type)
     }
 
     private fun toYamlValue(
         value: Any?, declaredType: Type = value?.javaClass ?: Any::class.java, path: String = "",
         annotations: List<Annotation> = emptyList(), defaultValue: Any? = value,
     ): Any? {
-        if (value != null) serializer(value.javaClass)?.let {
+        if (value != null) serializerResolver.forType(value.javaClass)?.let {
             return toYamlValue(it.serializeUntyped(value, context(declaredType, path, annotations, defaultValue)))
         }
         if (value != null && polymorphicResolver.supports(declaredType, annotations)) {
@@ -135,7 +133,7 @@ internal class AnnotatedYamlCodec<T : Any>(
     private fun objectYaml(value: Any, path: String): Map<String, Any?> = linkedMapOf<String, Any?>().also { out ->
         introspector.fields(value.javaClass).forEach { field ->
             val fieldValue = introspector.read(field, value)
-            val serializer = serializer(field)
+            val serializer = serializerResolver.forField(field)
             val fieldKey = introspector.key(field)
             val fieldPath = if (path.isEmpty()) fieldKey else "$path.$fieldKey"
             val fieldContext = context(field.genericType, fieldPath, field.annotations.toList(), fieldValue)
@@ -155,7 +153,10 @@ internal class AnnotatedYamlCodec<T : Any>(
             val current = introspector.read(field, target)
             val converted = try {
                 val resolved = enumAlias(field.type, raw, path)
-                serializer(field)?.deserialize(resolved, context(field.genericType, path, field.annotations.toList(), current))
+                serializerResolver.forField(field)?.deserialize(
+                    resolved,
+                    context(field.genericType, path, field.annotations.toList(), current),
+                )
                     ?: convert(resolved, field.genericType, current, path, field.annotations.toList())
             } catch (error: Exception) {
                 if (field.isAnnotationPresent(ConfigDefaultOnInvalid::class.java)) {
@@ -163,7 +164,7 @@ internal class AnnotatedYamlCodec<T : Any>(
                     current
                 } else {
                     val detail = if (field.type.isEnum) {
-                        val allowed = enumDescription(field.type)
+                        val allowed = schemaInspector.enumDescription(field.type)
                         " Allowed values: $allowed. Default: ${current ?: "null"}."
                     } else ""
                     throw IllegalArgumentException("Invalid configuration value at $path: ${raw ?: "null"}.$detail", error)
@@ -178,7 +179,9 @@ internal class AnnotatedYamlCodec<T : Any>(
         annotations: List<Annotation> = emptyList(),
     ): Any? {
         val rawType = introspector.rawClass(targetType)
-        serializer(rawType)?.let { return it.deserialize(value, context(targetType, path, emptyList(), current)) }
+        serializerResolver.forType(rawType)?.let {
+            return it.deserialize(value, context(targetType, path, emptyList(), current))
+        }
         if (value == null) return null
         if (polymorphicResolver.supports(targetType, annotations)) {
             return polymorphic(value, rawType, path, annotations)
@@ -239,76 +242,6 @@ internal class AnnotatedYamlCodec<T : Any>(
         return introspector.instantiate(implementation, path).also { populate(it, implementation, body, path) }
     }
 
-    private fun schema(target: Class<*>, instance: Any?): Map<String, YamlFieldMetadata> = introspector.fields(target).associate { field ->
-        val fieldValue = instance?.let { introspector.read(field, it) }
-        val fieldKey = introspector.key(field)
-        val explicit = field.getAnnotation(ConfigComment::class.java)?.value?.toList().orEmpty()
-        val enumHelp = if (field.type.isEnum) listOf(
-            "Allowed values: ${enumDescription(field.type)}. Default: ${fieldValue ?: "null"}."
-        ) else emptyList()
-        fieldKey to YamlFieldMetadata(
-            explicit + enumHelp,
-            field.isAnnotationPresent(ConfigNewLine::class.java),
-            if (isStructured(field)) schema(field.type, fieldValue) else emptyMap(),
-        )
-    }
-
-    private fun validateObject(value: Any?, target: Class<*>, prefix: String, problems: MutableList<ConfigProblem>) {
-        if (value == null) return
-        introspector.fields(target).forEach { field ->
-            val current = introspector.read(field, value)
-            val fieldKey = introspector.key(field)
-            val path = if (prefix.isEmpty()) fieldKey else "$prefix.$fieldKey"
-            field.getAnnotation(ConfigRange::class.java)?.let { range ->
-                val number = current as? Number
-                if (number == null || number.toDouble() !in range.min..range.max)
-                    problems += ConfigProblem(path, "must be between ${range.min} and ${range.max}")
-            }
-            if (field.isAnnotationPresent(ConfigNotBlank::class.java) && (current !is String || current.isBlank()))
-                problems += ConfigProblem(path, "must not be blank")
-            field.getAnnotation(ConfigPattern::class.java)?.let { pattern ->
-                if (current !is String || !Regex(pattern.value).matches(current))
-                    problems += ConfigProblem(path, "must match ${pattern.value}")
-            }
-            if (current != null && isStructured(field))
-                validateObject(current, field.type, path, problems)
-        }
-    }
-
-    @Suppress("UNCHECKED_CAST")
-    private fun serializer(type: Class<*>): ConfigSerializer<Any>? =
-        (annotatedSerializer(type) ?: serializers[type] ?: serializers.entries.firstOrNull { it.key.isAssignableFrom(type) }?.value) as? ConfigSerializer<Any>
-
-    @Suppress("UNCHECKED_CAST")
-    private fun serializer(field: Field): ConfigSerializer<Any>? =
-        field.getAnnotation(ConfigSerializeWith::class.java)?.value?.java?.let(::serializerInstance) as? ConfigSerializer<Any>
-
-    private fun annotatedSerializer(type: Class<*>): ConfigSerializer<*>? =
-        type.getAnnotation(ConfigSerializeWith::class.java)?.value?.java?.let(::serializerInstance)
-
-    private fun serializerInstance(type: Class<out ConfigSerializer<*>>): ConfigSerializer<*> =
-        synchronized(annotationSerializers) {
-            annotationSerializers.getOrPut(type) {
-                type.getDeclaredConstructor().also { it.isAccessible = true }.newInstance()
-            }
-        }
-
-    private fun required(target: Class<*>, prefix: String = ""): Set<String> {
-        if (serializer(target) != null) return emptySet()
-        return buildSet {
-        introspector.fields(target).forEach { field ->
-            val fieldKey = introspector.key(field)
-            val path = if (prefix.isEmpty()) fieldKey else "$prefix.$fieldKey"
-            if (field.isAnnotationPresent(ConfigRequired::class.java)) add(path)
-            if (isStructured(field))
-                addAll(required(field.type, path))
-        }
-        }
-    }
-    private fun isStructured(field: Field): Boolean =
-        serializer(field) == null && serializer(field.type) == null && !introspector.isScalar(field.type) &&
-            !Collection::class.java.isAssignableFrom(field.type) && !Map::class.java.isAssignableFrom(field.type) && !field.type.isArray
-
     private fun enumAlias(type: Class<*>, value: Any?, path: String): Any? {
         if (!type.isEnum || value !is String) return value
         val matches = type.enumConstants.map { it as Enum<*> }.filter { constant ->
@@ -317,12 +250,6 @@ internal class AnnotatedYamlCodec<T : Any>(
         }
         require(matches.size <= 1) { "Enum alias '$value' is ambiguous at $path in ${type.name}" }
         return matches.singleOrNull()?.name ?: value
-    }
-
-    private fun enumDescription(type: Class<*>): String = type.enumConstants.joinToString { raw ->
-        val constant = raw as Enum<*>
-        val aliases = type.getField(constant.name).getAnnotation(ConfigAlias::class.java)?.value.orEmpty()
-        if (aliases.isEmpty()) constant.name else "${constant.name} (aliases: ${aliases.joinToString()})"
     }
 
     private fun context(
