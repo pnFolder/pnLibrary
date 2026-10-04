@@ -2,7 +2,6 @@ package ru.privatenull.pnlibrary.core.config
 
 import ru.privatenull.pnlibrary.api.config.ConfigOptions
 import ru.privatenull.pnlibrary.api.config.ConfigScope
-import ru.privatenull.pnlibrary.api.config.ConfigSerializationContext
 import ru.privatenull.pnlibrary.api.config.ConfigSerializer
 import ru.privatenull.pnlibrary.api.config.ConfigTypeAccess
 import ru.privatenull.pnlibrary.api.config.ConfigTypeRegistration
@@ -15,24 +14,12 @@ import ru.privatenull.pnlibrary.core.config.yaml.CodeFirstYaml
 import ru.privatenull.pnlibrary.core.config.yaml.RuntimeConfigType
 import ru.privatenull.pnlibrary.spi.platform.PlatformAdapter
 import java.io.File
-import java.math.BigDecimal
-import java.math.BigInteger
-import java.net.URI
-import java.net.URL
 import java.nio.file.Path
 import java.nio.file.Paths
-import java.time.Duration
-import java.time.Instant
-import java.time.LocalDate
-import java.time.LocalDateTime
-import java.time.OffsetDateTime
-import java.time.ZonedDateTime
 import java.util.Locale
-import java.util.UUID
 import java.util.concurrent.atomic.AtomicBoolean
 import java.util.function.Supplier
 import java.util.logging.Logger
-import java.util.regex.Pattern
 
 internal class ConfigurationServiceImpl(
     private val platform: PlatformAdapter,
@@ -90,7 +77,7 @@ internal class ConfigurationServiceImpl(
         private val logger: Logger,
     ) : ConfigScope {
         private val handles = linkedSetOf<ManagedConfig<*>>()
-        private val serializers = builtInSerializers()
+        private val serializers = BuiltInConfigSerializers.create()
         private val scopeClosed = AtomicBoolean(false)
         override val size: Int get() = synchronized(handles) { handles.size }
 
@@ -199,45 +186,6 @@ internal class ConfigurationServiceImpl(
         }
         private fun snapshot() = synchronized(handles) { handles.toList() }
 
-        private fun builtInSerializers(): LinkedHashMap<Class<*>, ConfigSerializer<*>> = linkedMapOf(
-            UUID::class.java to stringSerializer(UUID::fromString),
-            Duration::class.java to stringSerializer(::parseDuration),
-            Instant::class.java to stringSerializer(Instant::parse),
-            LocalDate::class.java to stringSerializer(LocalDate::parse),
-            LocalDateTime::class.java to stringSerializer(LocalDateTime::parse),
-            OffsetDateTime::class.java to stringSerializer(OffsetDateTime::parse),
-            ZonedDateTime::class.java to stringSerializer(ZonedDateTime::parse),
-            URI::class.java to stringSerializer(::URI),
-            URL::class.java to stringSerializer { URI.create(it).toURL() },
-            Path::class.java to stringSerializer { Paths.get(it) },
-            Locale::class.java to object : ConfigSerializer<Locale> {
-                override fun serialize(value: Locale, context: ConfigSerializationContext): Any = value.toLanguageTag()
-                override fun deserialize(value: Any?, context: ConfigSerializationContext): Locale = Locale.forLanguageTag(value?.toString().orEmpty())
-            },
-            Pattern::class.java to stringSerializer(Pattern::compile),
-            BigDecimal::class.java to stringSerializer(::BigDecimal),
-            BigInteger::class.java to stringSerializer(::BigInteger),
-        )
-
-        private fun parseDuration(value: String): Duration {
-            val source = value.trim()
-            val match = Regex("^([0-9]+)(ms|s|m|h|d)$", RegexOption.IGNORE_CASE).matchEntire(source)
-                ?: return Duration.parse(source.uppercase())
-            val amount = match.groupValues[1].toLong()
-            return when (match.groupValues[2].lowercase()) {
-                "ms" -> Duration.ofMillis(amount)
-                "s" -> Duration.ofSeconds(amount)
-                "m" -> Duration.ofMinutes(amount)
-                "h" -> Duration.ofHours(amount)
-                else -> Duration.ofDays(amount)
-            }
-        }
-
-        private fun <T : Any> stringSerializer(parser: (String) -> T): ConfigSerializer<T> =
-            object : ConfigSerializer<T> {
-                override fun serialize(value: T, context: ConfigSerializationContext): Any = value.toString()
-                override fun deserialize(value: Any?, context: ConfigSerializationContext): T = parser(value?.toString() ?: error("Value cannot be null"))
-            }
     }
 
     private fun visibleTypes(consumer: PluginId): List<RuntimeConfigType> = synchronized(runtimeTypes) {
