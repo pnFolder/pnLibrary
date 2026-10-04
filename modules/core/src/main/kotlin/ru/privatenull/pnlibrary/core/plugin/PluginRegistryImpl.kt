@@ -342,17 +342,21 @@ internal class PluginRegistryImpl(
             override fun enabled(): MessageBox =
                 logging.box(owner, metadata.name, metadata.version)
                     .ok("Identifier", id.value)
-                    .ok("Platform", platformSummary())
-                    .status("Metrics", metricsStatus())
-                    .status("Updates", updatesStatus())
+                    .ok("Platform", ModuleRuntimeSummary.platform(metadata))
+                    .status("Metrics", ModuleRuntimeSummary.metrics(metrics.projectId, metrics.isEnabled))
+                    .status("Updates", ModuleRuntimeSummary.updates(updates))
                     .status("Diagnostics", if (diagnostics == null) null else "enabled")
-                    .status("PlaceholderAPI", placeholderApiStatus())
+                    .status("PlaceholderAPI", ModuleRuntimeSummary.placeholderApi(
+                        placeholderApiEnabled,
+                        placeholderHub.get("placeholderapi")?.state?.name,
+                    ))
                     .status("Events", if (listenerCount == 0) null else "$listenerCount listener(s)")
             override fun disabled(): MessageBox =
                 logging.shutdownBox(owner, metadata.name, metadata.version)
                     .status("Resources", if (isClosed) "released" else "close pending")
                     .status("Updates", if (updates == null) null else if (isClosed) "stopped" else "registered")
-                    .status("Metrics", if (metrics.projectId == null) null else if (isClosed) "stopped" else metricsStatus())
+                    .status("Metrics", if (metrics.projectId == null) null else if (isClosed) "stopped" else
+                        ModuleRuntimeSummary.metrics(metrics.projectId, metrics.isEnabled))
                     .status("Events", if (listenerCount == 0) null else if (isClosed) "$listenerCount listener(s) removed" else "$listenerCount listener(s)")
         }
         override val messages: PluginMessages = object : PluginMessages {
@@ -391,27 +395,6 @@ internal class PluginRegistryImpl(
                 { events.close() },
                 { tasks.close() },
             )
-        }
-
-        private fun platformSummary(): String =
-            if (metadata.platformImplementation.equals(metadata.platform.displayName, ignoreCase = true)) {
-                metadata.platform.displayName
-            } else {
-                "${metadata.platform.displayName} · ${metadata.platformImplementation}"
-            }
-
-        private fun metricsStatus(): String? = metrics.projectId?.let { projectId ->
-            "${if (metrics.isEnabled) "enabled" else "disabled"} · project $projectId"
-        }
-
-        private fun updatesStatus(): String? = updates?.let {
-            "${it.snapshot.channel.name} · ${it.repository} · Java ${it.snapshot.requiredJava}+"
-        }
-
-        private fun placeholderApiStatus(): String = if (!placeholderApiEnabled) {
-            "disabled"
-        } else {
-            placeholderHub.get("placeholderapi")?.state?.name?.lowercase() ?: "unavailable"
         }
 
         private fun MessageBox.status(label: String, detail: String?): MessageBox =
