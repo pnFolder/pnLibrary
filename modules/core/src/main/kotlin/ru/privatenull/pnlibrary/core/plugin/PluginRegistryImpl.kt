@@ -21,11 +21,8 @@ import ru.privatenull.pnlibrary.api.plugin.PluginMetadata
 import ru.privatenull.pnlibrary.api.plugin.PluginMessages
 import ru.privatenull.pnlibrary.api.plugin.PluginRegistry
 import ru.privatenull.pnlibrary.api.tasks.TaskScope
-import ru.privatenull.pnlibrary.api.tasks.TaskExecution
-import ru.privatenull.pnlibrary.api.tasks.TaskSpec
-import ru.privatenull.pnlibrary.api.plugin.DenyAction
-import ru.privatenull.pnlibrary.core.remote.RemotePolicyEngine
 import ru.privatenull.pnlibrary.core.remote.RemotePolicyNoticeRenderer
+import ru.privatenull.pnlibrary.core.remote.RemotePolicyMonitor
 import ru.privatenull.pnlibrary.api.tasks.TaskService
 import ru.privatenull.pnlibrary.core.tasks.TaskServiceImpl
 import ru.privatenull.pnlibrary.api.updates.UpdateRegistration
@@ -57,7 +54,6 @@ import ru.privatenull.pnlibrary.api.downloads.DownloadRegistration
 import ru.privatenull.pnlibrary.currency.CurrencyFeature
 import ru.privatenull.pnlibrary.core.downloads.DirectDownloadManager
 import ru.privatenull.pnlibrary.core.downloads.CompositeDownloadRegistration
-import ru.privatenull.pnlibrary.api.remote.RemotePolicyExplanation
 
 /**
  * Owns plugin-scoped library services and coordinates their lifecycle.
@@ -92,6 +88,7 @@ internal class PluginRegistryImpl(
     private val sharedComponentCache = ComponentCache()
     private val productResolver = ModuleProductResolver(platform)
     private val remotePolicyNotices = RemotePolicyNoticeRenderer(platform)
+    private val remotePolicies = RemotePolicyMonitor(platform, remotePolicyNotices)
     private val dependencyValidator = ModuleDependencyValidator(platform) {
         directDownloads != null
     }
@@ -328,51 +325,16 @@ internal class PluginRegistryImpl(
         override val isClosed: Boolean get() = contextClosed.get()
 
         fun startRemotePolicy(policy: ru.privatenull.pnlibrary.api.plugin.RemotePolicy) {
-            val remoteContext = platform.remotePolicyContext(owner, metadata, policy.values)
-            tasks.schedule(TaskSpec.builder()
-                .name("remote policy: ${id.value}")
-                .execution(TaskExecution.async())
-                .interval(policy.checkEvery)
-                .action {
-                    if (isClosed) return@action
-                    try {
-                        val decision = RemotePolicyEngine.check(policy.source, remoteContext)
-                        if (!decision.allowed) {
-                            platform.executeGlobal(Runnable {
-                                if (isClosed) return@Runnable
-                                remotePolicyNotices.render(owner, metadata, policy, false, decision.explanation)
-                                if (policy.onDeny == DenyAction.DISABLE_MODULE) {
-                                    close()
-                                } else {
-                                    if (!platform.disableOwner(owner)) parent.close()
-                                }
-                            })
-                        } else {
-                            platform.executeGlobal(Runnable {
-                                if (!isClosed) remotePolicyNotices.render(owner, metadata, policy, true, decision.explanation)
-                            })
-                        }
-                    } catch (error: Throwable) {
-                        platform.executeGlobal(Runnable {
-                            if (isClosed) return@Runnable
-                            val failureText =
-                                if (error.message.orEmpty().contains("compil", ignoreCase = true)) {
-                                    "Не удалось скомпилировать удалённую policy"
-                                } else {
-                                    error.message?.lineSequence()?.firstOrNull().orEmpty()
-                                        .ifBlank { error.javaClass.simpleName }
-                                }
-                            remotePolicyNotices.render(
-                                owner, metadata, policy, false,
-                                RemotePolicyExplanation.builder("Ошибка проверки")
-                                    .child(failureText).build(),
-                            )
-                            logger.error("Remote policy failed for ${metadata.name}", error)
-                            if (policy.onDeny == DenyAction.DISABLE_MODULE) close()
-                            else if (!platform.disableOwner(owner)) parent.close()
-                        })
-                    }
-                }.build())
+            remotePolicies.start(
+                owner = owner,
+                metadata = metadata,
+                policy = policy,
+                tasks = tasks,
+                isClosed = { isClosed },
+                logger = logger,
+                closeModule = ::close,
+                closePlugin = parent::close,
+            )
         }
 
         override val lifecycle: PluginLifecycle = object : PluginLifecycle {
