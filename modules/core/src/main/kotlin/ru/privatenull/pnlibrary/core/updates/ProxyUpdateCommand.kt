@@ -9,6 +9,7 @@ import ru.privatenull.pnlibrary.api.runtime.PnLibrary
 
 /** Console-only update controls shared by both proxy platforms. */
 class ProxyUpdateCommand(private val library: PnLibrary) {
+    /** Builds the portable `pnupdate` command definition. */
     fun definition(): CommandDefinition = command("pnupdate") {
         permission("pnlibrary.updates.console")
         executes { execute(it, "plan") }

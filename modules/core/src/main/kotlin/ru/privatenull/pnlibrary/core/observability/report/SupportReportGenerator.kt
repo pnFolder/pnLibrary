@@ -18,7 +18,8 @@ import java.nio.file.Path
  * Plaintext archives are always local-only. When `uploadMode` is `encrypted`, raw
  * registered configuration files and sensitive platform details may be included
  * because [EncryptedEnvelopeCodec] protects the complete ZIP before persistence
- * and upload. In plaintext mode, configurations pass through [ConfigReader].
+ * and upload. In plaintext mode, configurations pass through the secure
+ * configuration reader before they enter the archive.
  *
  * Report assembly is fail-fast for local collection and encryption errors. Upload
  * failures are instead returned in [DiagnosticReport.uploadError], preserving the

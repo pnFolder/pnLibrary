@@ -3,6 +3,12 @@ package ru.privatenull.pnlibrary.update
 import ru.privatenull.pnlibrary.api.updates.*
 import ru.privatenull.pnlibrary.api.platform.PlatformType
 
+/**
+ * Environment capabilities applied during graph resolution.
+ *
+ * @property allowManagedInstalls whether missing managed products may be added
+ * @property installedExternalPlugins normalized names of installed third-party plugins
+ */
 data class ResolverPolicy(
     val allowManagedInstalls: Boolean = false,
     val installedExternalPlugins: Set<String> = emptySet(),
@@ -10,7 +16,18 @@ data class ResolverPolicy(
 
 /** Result of resolving all managed components as one compatible ecosystem. */
 sealed class ResolutionResult {
+    /**
+     * Complete compatible resolution.
+     *
+     * @property plan atomic compatible update plan
+     */
     data class Ready(val plan: UpdatePlan) : ResolutionResult()
+    /**
+     * Resolution that encountered blocking [reasons].
+     *
+     * @property reasons structured blockers
+     * @property fallbackPlan best compatible lower-risk plan, when one exists
+     */
     data class Blocked(
         val reasons: List<BlockedReason>,
         val fallbackPlan: UpdatePlan?,
@@ -19,6 +36,7 @@ sealed class ResolutionResult {
 
 /** Deterministic API, channel, freeze, and dependency resolver for pnUpdate. */
 class UpdateResolver(private val libraryComponent: ProductId) {
+    /** Resolves all installed products and candidate releases as one atomic ecosystem. */
     @JvmOverloads
     fun resolve(
         installed: List<InstalledProduct>,

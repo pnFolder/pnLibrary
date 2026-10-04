@@ -6,7 +6,12 @@ import ru.privatenull.pnlibrary.api.version.SemanticVersion
 import java.net.URI
 import java.nio.file.Paths
 
-/** Optional textual compatibility interval for Minecraft or a native platform API. */
+/**
+ * Optional textual compatibility interval for Minecraft or a native platform API.
+ *
+ * @property minimum oldest compatible version
+ * @property maximum newest compatible version, or `null` when unbounded
+ */
 data class VersionRangeText(val minimum: String, val maximum: String? = null) {
     init {
         require(minimum.isNotBlank()) { "minimum version must not be blank" }
@@ -14,7 +19,16 @@ data class VersionRangeText(val minimum: String, val maximum: String? = null) {
     }
 }
 
-/** Runtime constraints attached to one exact product artifact. */
+/**
+ * Runtime constraints attached to one exact product artifact.
+ *
+ * @property platform required server/proxy platform
+ * @property minecraft optional compatible Minecraft version range
+ * @property platformApi optional compatible native platform API range
+ * @property pnLibraryApi compatible pnLibrary API generations
+ * @property minimumJava oldest supported Java feature version
+ * @property maximumJava newest supported Java feature version, or `null` when unbounded
+ */
 data class ArtifactCompatibility(
     val platform: PlatformType,
     val minecraft: VersionRangeText? = null,
@@ -29,7 +43,15 @@ data class ArtifactCompatibility(
     }
 }
 
-/** Exact downloadable JAR and all facts needed to verify and select it. */
+/**
+ * Exact downloadable JAR and all facts needed to verify and select it.
+ *
+ * @property file plain JAR filename
+ * @property compatibility runtime constraints used for selection
+ * @property size expected byte length
+ * @property sha256 expected SHA-256 digest
+ * @property downloadUri optional explicit HTTPS location
+ */
 data class ProductArtifact(
     val file: String,
     val compatibility: ArtifactCompatibility,
@@ -49,7 +71,15 @@ data class ProductArtifact(
     }
 }
 
-/** Schema-1 release asset generated for one product version. */
+/**
+ * Schema-1 release asset generated for one product version.
+ *
+ * @property productId normalized product identity
+ * @property displayName human-readable product name
+ * @property version released semantic version
+ * @property channel declared release maturity
+ * @property artifacts platform-specific downloadable JARs
+ */
 data class ProductReleaseManifest(
     val productId: ProductId,
     val displayName: String,

@@ -95,5 +95,10 @@ interface MinecraftLocalization : AutoCloseable {
         )
     }
 
-    companion object { @JvmStatic fun builder(): Builder = Builder() }
+    /** Creates localization-service builders. */
+    companion object {
+        /** Returns an empty localization-service builder. */
+        @JvmStatic
+        fun builder(): Builder = Builder()
+    }
 }

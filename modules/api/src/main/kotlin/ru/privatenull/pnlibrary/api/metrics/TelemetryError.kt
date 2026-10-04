@@ -1,6 +1,15 @@
 package ru.privatenull.pnlibrary.api.metrics
 
-/** Provider-neutral, already normalized error event. */
+/**
+ * Provider-neutral, normalized error event suitable for local or remote reporting.
+ *
+ * @property type fully qualified exception type or another stable error identifier
+ * @property message human-readable error message, when one is available
+ * @property stackTrace rendered stack frames ordered from the failure site outward
+ * @property handled whether application code caught and handled the failure
+ * @property operation optional logical operation that was executing when the failure occurred
+ * @property attributes additional structured context associated with this occurrence
+ */
 data class TelemetryError(
     val type: String,
     val message: String?,
@@ -35,5 +44,6 @@ interface ErrorReporter : AutoCloseable {
     /** Installs a process/class-loader handler when the provider supports it. */
     fun installGlobalHandler() = Unit
 
+    /** Flushes pending reports where supported and releases reporter resources. */
     override fun close()
 }

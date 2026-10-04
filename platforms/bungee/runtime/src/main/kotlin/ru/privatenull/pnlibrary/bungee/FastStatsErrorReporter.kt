@@ -8,6 +8,8 @@ import ru.privatenull.pnlibrary.internal.faststats.FastStatsBridge
 /** Bridges pnLibrary's sanitized error events into FastStats without coupling the public API to its SDK. */
 class FastStatsErrorReporter : ErrorReporter {
     internal val tracker = FastStatsBridge.errorTracker()
+
+    /** Converts [error] into a handled FastStats event with sanitized attributes. */
     override fun capture(error: TelemetryError) {
         val throwable = RuntimeException("${error.type}: ${error.message}").apply {
             stackTrace = error.stackTrace.map { frame ->
@@ -21,5 +23,6 @@ class FastStatsErrorReporter : ErrorReporter {
             value?.let { tracked.attributes().put(key, it.toString()) }
         }
     }
+    /** Performs no work because the owning metrics session controls the tracker lifecycle. */
     override fun close() = Unit
 }

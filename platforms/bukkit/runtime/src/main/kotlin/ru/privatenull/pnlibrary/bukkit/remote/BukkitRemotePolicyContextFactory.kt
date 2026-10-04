@@ -8,8 +8,16 @@ import ru.privatenull.pnlibrary.api.remote.RemotePolicyContext
 import ru.privatenull.pnlibrary.api.remote.ServerInfo
 import ru.privatenull.pnlibrary.common.minecraft.MinecraftVersion
 
+/** Creates remote-policy contexts from Bukkit runtime metadata. */
 object BukkitRemotePolicyContextFactory {
+    /**
+     * Builds a context for [plugin] and appends caller-defined policy [values].
+     *
+     * @param plugin Bukkit plugin that owns the policy evaluation.
+     * @param values Additional non-sensitive values exposed to policy rules.
+     */
     @JvmStatic
+    @JvmOverloads
     fun create(plugin: Plugin, values: Map<String, String> = emptyMap()): RemotePolicyContext {
         val version = plugin.server.version
         return RemotePolicyContext.builder()

@@ -26,7 +26,13 @@ public final class VisualEntity {
         this.visualLocation = visualLocation.clone();
     }
 
-    /** Spawns an item visual whose logical location is the center of the displayed item. */
+    /**
+     * Spawns an item visual whose logical location is the center of the displayed item.
+     *
+     * @param location logical visual location
+     * @param item item to display
+     * @return spawned visual wrapper
+     */
     public static VisualEntity item(Location location, ItemStack item) {
         requireLocation(location);
         ArmorStand stand = spawn(location.clone().subtract(0.0, HEAD_OFFSET, 0.0));
@@ -34,13 +40,25 @@ public final class VisualEntity {
         return new VisualEntity(stand, Kind.ITEM, location);
     }
 
-    /** Spawns a block visual backed by an armor-stand helmet. */
+    /**
+     * Spawns a block visual backed by an armor-stand helmet.
+     *
+     * @param location logical visual location
+     * @param material block material to display
+     * @return spawned visual wrapper
+     */
     public static VisualEntity block(Location location, Material material) {
         Material selected = material == null || isAir(material) ? Material.CHEST : material;
         return item(location, new ItemStack(selected));
     }
 
-    /** Spawns a floating legacy-text label. */
+    /**
+     * Spawns a floating legacy-text label.
+     *
+     * @param location logical visual location
+     * @param text label text
+     * @return spawned visual wrapper
+     */
     public static VisualEntity text(Location location, String text) {
         requireLocation(location);
         ArmorStand stand = spawn(location.clone().subtract(0.0, TEXT_OFFSET, 0.0));
@@ -49,34 +67,41 @@ public final class VisualEntity {
         return new VisualEntity(stand, Kind.TEXT, location);
     }
 
-    /** Returns the underlying Bukkit entity for lifecycle tracking. */
+    /** Returns the underlying Bukkit entity for lifecycle tracking.
+     * @return underlying Bukkit entity */
     public Entity entity() {
         return entity;
     }
 
-    /** Returns whether the underlying entity is alive and valid. */
+    /** Returns whether the underlying entity is alive and valid.
+     * @return {@code true} while the visual may be used */
     public boolean isValid() {
         return entity.isValid() && !entity.isDead();
     }
 
-    /** Returns whether the underlying entity has died or been removed. */
+    /** Returns whether the underlying entity has died or been removed.
+     * @return {@code true} after the visual becomes unavailable */
     public boolean isDead() {
         return entity.isDead() || !entity.isValid();
     }
 
-    /** Returns the logical visual location rather than the offset armor-stand location. */
+    /** Returns the logical visual location rather than the offset armor-stand location.
+     * @return a defensive copy of the logical location */
     public Location getLocation() {
         return visualLocation.clone();
     }
 
-    /** Moves the visual while retaining the correct display offset. */
+    /** Moves the visual while retaining the correct display offset.
+     * @param location new logical visual location */
     public void teleport(Location location) {
         requireLocation(location);
         visualLocation = location.clone();
         entity.teleport(location.clone().subtract(0.0, offset(), 0.0));
     }
 
-    /** Changes the entity yaw and pitch. */
+    /** Changes the entity yaw and pitch.
+     * @param yaw new yaw in degrees
+     * @param pitch new pitch in degrees */
     public void setRotation(float yaw, float pitch) {
         Location current = entity.getLocation();
         current.setYaw(yaw);
@@ -84,23 +109,27 @@ public final class VisualEntity {
         entity.teleport(current);
     }
 
-    /** Uses the armor stand's small model for scales below {@code 0.72}. */
+    /** Uses the armor stand's small model for scales below {@code 0.72}.
+     * @param scale requested relative scale */
     public void setScale(float scale) {
         if (entity instanceof ArmorStand) ((ArmorStand) entity).setSmall(scale > 0.0f && scale < 0.72f);
     }
 
-    /** Replaces the displayed item. */
+    /** Replaces the displayed item.
+     * @param item item to display */
     public void setItem(ItemStack item) {
         if (entity instanceof ArmorStand) helmet((ArmorStand) entity, safeItem(item, Material.CHEST));
     }
 
-    /** Replaces the displayed block material. */
+    /** Replaces the displayed block material.
+     * @param material material to display */
     public void setBlock(Material material) {
         Material selected = material == null || isAir(material) ? Material.CHEST : material;
         setItem(new ItemStack(selected));
     }
 
-    /** Replaces the floating label text. */
+    /** Replaces the floating label text.
+     * @param text new label text */
     public void setText(String text) {
         if (entity instanceof ArmorStand) {
             entity.setCustomName(text == null ? "" : text);
@@ -108,7 +137,8 @@ public final class VisualEntity {
         }
     }
 
-    /** Adds a scoreboard tag when supported by the running server. */
+    /** Adds a scoreboard tag when supported by the running server.
+     * @param tag non-blank tag to add */
     public void addScoreboardTag(String tag) {
         if (tag == null || tag.trim().isEmpty()) return;
         invoke(entity, "addScoreboardTag", new Class<?>[]{String.class}, tag);

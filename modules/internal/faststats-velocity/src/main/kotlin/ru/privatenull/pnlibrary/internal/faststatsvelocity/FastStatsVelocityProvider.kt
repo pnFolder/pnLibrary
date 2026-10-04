@@ -50,14 +50,14 @@ class FastStatsVelocityProvider {
             pending += action
             return this
         }
-        private fun id(id: String) = id.trim().also { require(it.matches(Regex("[A-Za-z0-9_-]{1,64}"))) }
-        override fun simplePie(i: String, v: Supplier<String?>) = add { it.addMetric(FastStatsBridge.string(id(i), Callable { v.get() ?: "unknown" })) }
-        override fun advancedPie(i: String, v: Supplier<Map<String, Int>>) = add { it.addMetric(FastStatsBridge.numberMap(id(i), Callable { v.get() })) }
-        override fun drilldownPie(i: String, v: Supplier<Map<String, Map<String, Int>>>) = add { it.addMetric(FastStatsBridge.`object`(id(i), Callable { JsonObject().also { r -> v.get().forEach { (g, e) -> r.add(g, JsonObject().also { c -> e.forEach { (k, n) -> c.addProperty(k, n) } }) } } })) }
-        override fun singleLineChart(i: String, v: Supplier<Int>) = add { it.addMetric(FastStatsBridge.number(id(i), Callable { v.get() })) }
-        override fun multiLineChart(i: String, v: Supplier<Map<String, Int>>) = advancedPie(i, v)
-        override fun simpleBarChart(i: String, v: Supplier<Map<String, Int>>) = advancedPie(i, v)
-        override fun advancedBarChart(i: String, v: Supplier<Map<String, IntArray>>) = add { it.addMetric(FastStatsBridge.`object`(id(i), Callable { JsonObject().also { r -> v.get().forEach { (k, a) -> r.add(k, JsonArray().also { j -> a.forEach(j::add) }) } } })) }
+        private fun validId(id: String) = id.trim().also { require(it.matches(Regex("[A-Za-z0-9_-]{1,64}"))) }
+        override fun simplePie(id: String, value: Supplier<String?>) = add { it.addMetric(FastStatsBridge.string(validId(id), Callable { value.get() ?: "unknown" })) }
+        override fun advancedPie(id: String, values: Supplier<Map<String, Int>>) = add { it.addMetric(FastStatsBridge.numberMap(validId(id), Callable { values.get() })) }
+        override fun drilldownPie(id: String, values: Supplier<Map<String, Map<String, Int>>>) = add { it.addMetric(FastStatsBridge.`object`(validId(id), Callable { JsonObject().also { r -> values.get().forEach { (g, e) -> r.add(g, JsonObject().also { c -> e.forEach { (k, n) -> c.addProperty(k, n) } }) } } })) }
+        override fun singleLineChart(id: String, value: Supplier<Int>) = add { it.addMetric(FastStatsBridge.number(validId(id), Callable { value.get() })) }
+        override fun multiLineChart(id: String, values: Supplier<Map<String, Int>>) = advancedPie(id, values)
+        override fun simpleBarChart(id: String, values: Supplier<Map<String, Int>>) = advancedPie(id, values)
+        override fun advancedBarChart(id: String, values: Supplier<Map<String, IntArray>>) = add { it.addMetric(FastStatsBridge.`object`(validId(id), Callable { JsonObject().also { r -> values.get().forEach { (k, a) -> r.add(k, JsonArray().also { j -> a.forEach(j::add) }) } } })) }
         override fun start() {
             if (!started.compareAndSet(false, true) || closed.get()) return
             context = VelocityContext.Factory(container, server, logger, dataDirectory)

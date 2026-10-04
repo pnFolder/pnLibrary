@@ -10,15 +10,27 @@ import java.util.function.Function
 
 /** Asynchronous execution contract stored by an immutable command definition. */
 fun interface CommandHandler {
+    /** Executes a command invocation and completes when handling has finished. */
     fun execute(context: CommandContext): CompletionStage<Void>
 }
 
 /** Asynchronous suggestion contract stored by an immutable command definition. */
 fun interface SuggestionHandler {
+    /** Computes completion suggestions for the supplied parsing [context]. */
     fun suggest(context: CommandContext): CompletionStage<List<String>>
 }
 
-/** Immutable command metadata and behavior registered through pnLibrary. */
+/**
+ * Immutable command metadata and behavior registered through pnLibrary.
+ *
+ * @property name normalized primary command name
+ * @property permission optional root permission
+ * @property consoleBypassesPermission whether the console ignores the root permission
+ * @property execution root execution callback
+ * @property suggestions root suggestion callback
+ * @property root immutable root of the parsed command tree
+ * @property aliases normalized immutable command aliases
+ */
 class CommandDefinition internal constructor(
     val name: String,
     aliases: Set<String>,
@@ -30,6 +42,7 @@ class CommandDefinition internal constructor(
 ) {
     val aliases: Set<String> = Collections.unmodifiableSet(LinkedHashSet(aliases))
 
+    /** Creates command-definition builders. */
     companion object {
         /** Creates a builder for Java callers. */
         @JvmStatic
@@ -49,6 +62,7 @@ class CommandBuilder internal constructor(name: String) {
     private var availability = CommandAvailability { true }
     private val children = mutableListOf<CommandNodeBuilder>()
 
+    /** Adds normalized command aliases. */
     fun aliases(vararg values: String): CommandBuilder = apply {
         values.forEach { value ->
             val alias = normalizeCommandName(value, "command alias")
@@ -57,16 +71,19 @@ class CommandBuilder internal constructor(name: String) {
         }
     }
 
+    /** Requires the non-blank root permission [value]. */
     fun permission(value: String): CommandBuilder = apply {
         permission = value.trim().also {
             require(it.isNotEmpty()) { "Command permission must not be blank" }
         }
     }
 
+    /** Configures whether the console bypasses the root permission. */
     fun consoleBypassesPermission(enabled: Boolean = true): CommandBuilder = apply {
         consoleBypassesPermission = enabled
     }
 
+    /** Installs a synchronous root execution [handler]. */
     fun executes(handler: Consumer<CommandContext>): CommandBuilder = apply {
         executable = true
         execution = CommandHandler { context ->
@@ -75,29 +92,36 @@ class CommandBuilder internal constructor(name: String) {
         }
     }
 
+    /** Installs an asynchronous root execution [handler]. */
     fun executesAsync(handler: CommandHandler): CommandBuilder = apply {
         executable = true
         execution = handler
     }
 
+    /** Installs a synchronous root suggestion [handler]. */
     fun suggests(handler: Function<CommandContext, List<String>>): CommandBuilder = apply {
         suggestions = SuggestionHandler { context -> completedSuggestions(handler.apply(context)) }
     }
 
+    /** Installs an asynchronous root suggestion [handler]. */
     fun suggestsAsync(handler: SuggestionHandler): CommandBuilder = apply {
         suggestions = handler
     }
 
+    /** Restricts root availability using [rule]. */
     fun availableIf(rule: CommandAvailability): CommandBuilder = apply { availability = rule }
 
+    /** Adds a literal child configured by the Kotlin receiver [configure]. */
     @JvmSynthetic
     fun literal(name: String, configure: CommandNodeBuilder.() -> Unit): CommandBuilder =
         literal(name, Consumer { builder -> builder.configure() })
 
+    /** Adds a literal child configured by Java-friendly [configure]. */
     fun literal(name: String, configure: Consumer<CommandNodeBuilder>): CommandBuilder = apply {
         children += CommandNodeBuilder(CommandNodeKind.LITERAL, name).also(configure::accept)
     }
 
+    /** Adds a typed argument child configured by the Kotlin receiver [configure]. */
     @JvmSynthetic
     fun <T : Any> argument(
         name: String,
@@ -105,6 +129,7 @@ class CommandBuilder internal constructor(name: String) {
         configure: CommandNodeBuilder.() -> Unit,
     ): CommandBuilder = argument(name, type, Consumer { builder -> builder.configure() })
 
+    /** Adds a typed argument child configured by Java-friendly [configure]. */
     fun <T : Any> argument(
         name: String,
         type: ArgumentType<T>,
@@ -113,6 +138,7 @@ class CommandBuilder internal constructor(name: String) {
         children += CommandNodeBuilder(CommandNodeKind.ARGUMENT, name, type).also(configure::accept)
     }
 
+    /** Validates this tree and creates an immutable command definition. */
     fun build(): CommandDefinition {
         val rootBuilder = CommandNodeBuilder(CommandNodeKind.ROOT, name).apply {
             permission?.let(::permission)

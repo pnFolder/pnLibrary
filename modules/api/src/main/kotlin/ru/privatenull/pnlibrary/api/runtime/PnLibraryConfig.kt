@@ -41,6 +41,8 @@ import java.util.regex.PatternSyntaxException
  * @property maxReportBytes maximum uncompressed report size in bytes
  * @property deleteAfterDays age at which local reports are deleted; `0` disables
  * age-based deletion
+ * @property taskHistoryCapacity maximum number of completed task records retained in memory;
+ * `0` disables task history
  * @property excludedPaths dotted configuration paths omitted from every report
  * @property secretKeyPatterns regular expressions matched against configuration keys
  * whose values must be redacted

@@ -13,6 +13,7 @@ class ReleaseCatalogClient(
     private val ttl: Duration,
     private val codec: ReleaseCatalogCodec = ReleaseCatalogCodec(),
 ) {
+    /** Loads [source], optionally forcing remote refresh, and caches valid bytes. */
     fun load(source: URI, refresh: RefreshMode = RefreshMode.CACHED): CompletableFuture<ReleaseCatalog> =
         CompletableFuture.supplyAsync({
             val cached = store.read(source, ttl)

@@ -11,13 +11,36 @@ import ru.privatenull.pnlibrary.api.version.SemanticVersion
 import java.net.URI
 import java.time.Instant
 
+/** Controls whether a catalogue may use its validated local cache. */
 enum class RefreshMode { CACHED, FORCE_REMOTE }
 
-class ManifestException(val field: String, message: String, cause: Throwable? = null) :
+/** Invalid release-catalogue field with its logical [field] path. */
+class ManifestException(
+    /** Logical JSON field path that failed validation. */
+    val field: String,
+    message: String,
+    cause: Throwable? = null,
+) :
     IllegalArgumentException("Invalid release catalog field '$field': $message", cause)
 
+/**
+ * Parsed release catalogue.
+ *
+ * @property product normalized product identifier
+ * @property releases ordered published releases
+ */
 data class ReleaseCatalog(val product: String, val releases: List<CatalogRelease>)
 
+/**
+ * One catalogue release.
+ *
+ * @property version semantic release version
+ * @property channel declared release maturity
+ * @property description human-readable summary
+ * @property publishedAt UTC publication instant
+ * @property api supported pnLibrary API generations
+ * @property artifacts platform-specific downloadable artifacts
+ */
 data class CatalogRelease(
     val version: SemanticVersion,
     val channel: UpdateChannel,
@@ -27,6 +50,17 @@ data class CatalogRelease(
     val artifacts: List<CatalogArtifact>,
 )
 
+/**
+ * One platform artifact declared by a catalogue release.
+ *
+ * @property file safe JAR filename
+ * @property platform required platform family
+ * @property minecraft optional compatible Minecraft range
+ * @property platformApi optional compatible proxy API range
+ * @property javaMinimum oldest supported Java feature version
+ * @property javaMaximum newest supported Java feature version
+ * @property url HTTPS artifact location
+ */
 data class CatalogArtifact(
     val file: String,
     val platform: PlatformType,
@@ -37,7 +71,9 @@ data class CatalogArtifact(
     val url: URI,
 )
 
+/** Strict schema-1 JSON decoder for bounded release catalogues. */
 class ReleaseCatalogCodec(private val maximumBytes: Int = MAX_BYTES) {
+    /** Decodes and validates catalogue [bytes]. */
     fun decode(bytes: ByteArray): ReleaseCatalog {
         require(bytes.size <= maximumBytes) { "release catalog exceeds $maximumBytes bytes" }
         val root = try { JsonParser.parseString(bytes.toString(Charsets.UTF_8)).asJsonObject }
@@ -122,8 +158,11 @@ class ReleaseCatalogCodec(private val maximumBytes: Int = MAX_BYTES) {
         catch (error: Exception) { throw ManifestException("channel", "unknown channel", error) }
     private fun fail(field: String, message: String, cause: Throwable? = null): Nothing = throw ManifestException(field, message, cause)
 
+    /** Public schema and size limits used by clients. */
     companion object {
+        /** Supported catalogue schema generation. */
         const val SCHEMA = 1
+        /** Default maximum encoded catalogue size. */
         const val MAX_BYTES = 1024 * 1024
         private val SAFE_FILE = Regex("[A-Za-z0-9][A-Za-z0-9._-]*")
     }

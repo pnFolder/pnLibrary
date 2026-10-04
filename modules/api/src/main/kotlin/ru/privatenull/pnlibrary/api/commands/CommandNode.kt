@@ -4,6 +4,7 @@ import java.util.Collections
 import java.util.function.Consumer
 import java.util.function.Function
 
+/** Structural role of a node in a command tree. */
 enum class CommandNodeKind {
     ROOT,
     LITERAL,
@@ -12,10 +13,24 @@ enum class CommandNodeKind {
 
 /** Synchronous access rule evaluated with values parsed before this node. */
 fun interface CommandAvailability {
+    /** Returns whether this node is visible and executable for [context]. */
     fun isAvailable(context: CommandContext): Boolean
 }
 
-/** One immutable route node in a portable command tree. */
+/**
+ * One immutable route node in a portable command tree.
+ *
+ * @property kind structural role of this node
+ * @property name literal value, argument name, or root command name
+ * @property argumentType parser used by an argument node
+ * @property permission optional permission required to enter this node
+ * @property consoleBypassesPermission whether the console ignores [permission]
+ * @property availability contextual availability rule
+ * @property execution execution callback for this route
+ * @property suggestions suggestion callback for this route
+ * @property isExecutable whether this route may be executed
+ * @property children immutable child routes
+ */
 class CommandNode internal constructor(
     val kind: CommandNodeKind,
     val name: String,
@@ -50,16 +65,20 @@ class CommandNodeBuilder internal constructor(
     private var executable = false
     private val children = mutableListOf<CommandNodeBuilder>()
 
+    /** Requires the non-blank permission [value] for this node. */
     fun permission(value: String): CommandNodeBuilder = apply {
         permission = value.trim().also { require(it.isNotEmpty()) { "Command permission must not be blank" } }
     }
 
+    /** Configures whether the console bypasses this node's permission. */
     fun consoleBypassesPermission(enabled: Boolean = true): CommandNodeBuilder = apply {
         consoleBypassesPermission = enabled
     }
 
+    /** Restricts node availability using [rule]. */
     fun availableIf(rule: CommandAvailability): CommandNodeBuilder = apply { availability = rule }
 
+    /** Installs a synchronous execution [handler]. */
     fun executes(handler: Consumer<CommandContext>): CommandNodeBuilder = apply {
         executable = true
         execution = CommandHandler { context ->
@@ -68,25 +87,31 @@ class CommandNodeBuilder internal constructor(
         }
     }
 
+    /** Installs an asynchronous execution [handler]. */
     fun executesAsync(handler: CommandHandler): CommandNodeBuilder = apply {
         executable = true
         execution = handler
     }
 
+    /** Installs a synchronous suggestion [handler]. */
     fun suggests(handler: Function<CommandContext, List<String>>): CommandNodeBuilder = apply {
         suggestions = SuggestionHandler { context -> completedSuggestions(handler.apply(context)) }
     }
 
+    /** Installs an asynchronous suggestion [handler]. */
     fun suggestsAsync(handler: SuggestionHandler): CommandNodeBuilder = apply { suggestions = handler }
 
+    /** Adds a literal child configured by the Kotlin receiver [configure]. */
     @JvmSynthetic
     fun literal(name: String, configure: CommandNodeBuilder.() -> Unit): CommandNodeBuilder =
         literal(name, Consumer { builder -> builder.configure() })
 
+    /** Adds a literal child configured by Java-friendly [configure]. */
     fun literal(name: String, configure: Consumer<CommandNodeBuilder>): CommandNodeBuilder = apply {
         children += CommandNodeBuilder(CommandNodeKind.LITERAL, name).also(configure::accept)
     }
 
+    /** Adds a typed argument child configured by the Kotlin receiver [configure]. */
     @JvmSynthetic
     fun <T : Any> argument(
         name: String,
@@ -94,6 +119,7 @@ class CommandNodeBuilder internal constructor(
         configure: CommandNodeBuilder.() -> Unit,
     ): CommandNodeBuilder = argument(name, type, Consumer { builder -> builder.configure() })
 
+    /** Adds a typed argument child configured by Java-friendly [configure]. */
     fun <T : Any> argument(
         name: String,
         type: ArgumentType<T>,

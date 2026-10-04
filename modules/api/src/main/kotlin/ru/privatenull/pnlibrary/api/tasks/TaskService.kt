@@ -11,7 +11,9 @@ import java.util.function.Supplier
  * interrupt an invocation that is already running. Closing the handle is equivalent to [cancel].
  */
 interface TaskHandle : AutoCloseable {
+    /** Stable identifier of the associated task. */
     val id: TaskId get() = TaskId("legacy-${System.identityHashCode(this)}")
+    /** Current task lifecycle state. */
     val status: TaskStatus get() = if (isCancelled) TaskStatus.CANCELLED else TaskStatus.SCHEDULED
     /** Whether this handle has been cancelled. */
     val isCancelled: Boolean
@@ -19,12 +21,14 @@ interface TaskHandle : AutoCloseable {
     /** Cancels future execution of the associated action. */
     fun cancel()
 
+    /** Cancels this task when active and reports whether cancellation was requested. */
     fun cancelIfActive(): Boolean {
         if (isCancelled) return false
         cancel()
         return true
     }
 
+    /** Returns a detached current snapshot when supported by the implementation. */
     fun snapshot(): TaskSnapshot = throw UnsupportedOperationException("Task snapshots are not supported by this handle")
 
     /** Cancels future execution of the associated action. */
@@ -51,25 +55,33 @@ interface TaskScope : AutoCloseable {
     /** Object whose lifecycle owns every task in this scope. */
     val owner: Any
 
+    /** Schedules [spec] inside this owner-bound scope. */
     fun schedule(spec: TaskSpec): TaskHandle =
         throw UnsupportedOperationException("Unified task scheduling is not supported by this scope")
 
     @Suppress("DEPRECATION")
+    /** Returns the task identified by [id], or `null` when it is unavailable. */
     fun get(id: TaskId): TaskHandle? = find(id)
 
+    /** Returns the task identified by [id] or fails when unavailable. */
     fun require(id: TaskId): TaskHandle = get(id) ?: error("Task $id is unavailable in this scope")
 
     @Suppress("DEPRECATION")
+    /** Returns the live task owning [key], or `null` when absent. */
     fun getByKey(key: String): TaskHandle? = findByKey(key)
 
+    /** Legacy identifier lookup retained for source compatibility. */
     @Deprecated("Use get(id)", ReplaceWith("get(id)"))
     fun find(id: TaskId): TaskHandle? = null
 
+    /** Legacy key lookup retained for source compatibility. */
     @Deprecated("Use getByKey(key)", ReplaceWith("getByKey(key)"))
     fun findByKey(key: String): TaskHandle? = null
 
+    /** Returns detached snapshots of tasks in this scope that match [query]. */
     fun query(query: TaskQuery = TaskQuery.all()): List<TaskSnapshot> = emptyList()
 
+    /** Cancels the task identified by [id] and reports whether it was active. */
     fun cancel(id: TaskId): Boolean = get(id)?.cancelIfActive() ?: false
 
     /** Schedules [task] in the platform's global execution context. */
@@ -139,17 +151,23 @@ interface TaskService : AutoCloseable {
     fun scope(owner: Any): TaskScope
 
     @Suppress("DEPRECATION")
+    /** Returns the task identified by [id] across all active scopes. */
     fun get(id: TaskId): TaskHandle? = find(id)
 
+    /** Returns the task identified by [id] or fails when unavailable. */
     fun require(id: TaskId): TaskHandle = get(id) ?: error("Task $id is unavailable")
 
+    /** Legacy identifier lookup retained for source compatibility. */
     @Deprecated("Use get(id)", ReplaceWith("get(id)"))
     fun find(id: TaskId): TaskHandle? = null
 
+    /** Returns detached snapshots across all scopes that match [query]. */
     fun query(query: TaskQuery = TaskQuery.all()): List<TaskSnapshot> = emptyList()
 
+    /** Returns detached snapshots belonging to [owner] that match [query]. */
     fun query(owner: Any, query: TaskQuery = TaskQuery.all()): List<TaskSnapshot> = emptyList()
 
+    /** Cancels the task identified by [id] and reports whether it was active. */
     fun cancel(id: TaskId): Boolean = get(id)?.cancelIfActive() ?: false
 
     /** Closes and removes [owner]'s scope when one exists. */

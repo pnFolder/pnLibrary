@@ -781,6 +781,157 @@ public final class ru/privatenull/pnlibrary/api/actions/standard/check/Expansion
 	public fun toString ()Ljava/lang/String;
 }
 
+public final class ru/privatenull/pnlibrary/api/activity/ActivityAttachment {
+	public fun <init> (Ljava/lang/String;Ljava/lang/String;Ljava/lang/String;Ljava/lang/String;JLjava/lang/String;)V
+	public final fun component1 ()Ljava/lang/String;
+	public final fun component2 ()Ljava/lang/String;
+	public final fun component3 ()Ljava/lang/String;
+	public final fun component4 ()Ljava/lang/String;
+	public final fun component5 ()J
+	public final fun component6 ()Ljava/lang/String;
+	public final fun copy (Ljava/lang/String;Ljava/lang/String;Ljava/lang/String;Ljava/lang/String;JLjava/lang/String;)Lru/privatenull/pnlibrary/api/activity/ActivityAttachment;
+	public static synthetic fun copy$default (Lru/privatenull/pnlibrary/api/activity/ActivityAttachment;Ljava/lang/String;Ljava/lang/String;Ljava/lang/String;Ljava/lang/String;JLjava/lang/String;ILjava/lang/Object;)Lru/privatenull/pnlibrary/api/activity/ActivityAttachment;
+	public fun equals (Ljava/lang/Object;)Z
+	public final fun getContentType ()Ljava/lang/String;
+	public final fun getEventId ()Ljava/lang/String;
+	public final fun getId ()Ljava/lang/String;
+	public final fun getName ()Ljava/lang/String;
+	public final fun getSha256 ()Ljava/lang/String;
+	public final fun getSize ()J
+	public fun hashCode ()I
+	public fun toString ()Ljava/lang/String;
+}
+
+public final class ru/privatenull/pnlibrary/api/activity/ActivityBundle {
+	public fun <init> ()V
+	public fun <init> (Ljava/util/List;Ljava/lang/String;Lru/privatenull/pnlibrary/api/activity/ActivityCategory;Lru/privatenull/pnlibrary/api/activity/ActivitySeverity;Ljava/lang/String;Ljava/lang/String;Ljava/lang/String;Ljava/lang/String;Ljava/util/Map;)V
+	public synthetic fun <init> (Ljava/util/List;Ljava/lang/String;Lru/privatenull/pnlibrary/api/activity/ActivityCategory;Lru/privatenull/pnlibrary/api/activity/ActivitySeverity;Ljava/lang/String;Ljava/lang/String;Ljava/lang/String;Ljava/lang/String;Ljava/util/Map;ILkotlin/jvm/internal/DefaultConstructorMarker;)V
+	public final fun component1 ()Ljava/util/List;
+	public final fun component2 ()Ljava/lang/String;
+	public final fun component3 ()Lru/privatenull/pnlibrary/api/activity/ActivityCategory;
+	public final fun component4 ()Lru/privatenull/pnlibrary/api/activity/ActivitySeverity;
+	public final fun component5 ()Ljava/lang/String;
+	public final fun component6 ()Ljava/lang/String;
+	public final fun component7 ()Ljava/lang/String;
+	public final fun component8 ()Ljava/lang/String;
+	public final fun component9 ()Ljava/util/Map;
+	public final fun copy (Ljava/util/List;Ljava/lang/String;Lru/privatenull/pnlibrary/api/activity/ActivityCategory;Lru/privatenull/pnlibrary/api/activity/ActivitySeverity;Ljava/lang/String;Ljava/lang/String;Ljava/lang/String;Ljava/lang/String;Ljava/util/Map;)Lru/privatenull/pnlibrary/api/activity/ActivityBundle;
+	public static synthetic fun copy$default (Lru/privatenull/pnlibrary/api/activity/ActivityBundle;Ljava/util/List;Ljava/lang/String;Lru/privatenull/pnlibrary/api/activity/ActivityCategory;Lru/privatenull/pnlibrary/api/activity/ActivitySeverity;Ljava/lang/String;Ljava/lang/String;Ljava/lang/String;Ljava/lang/String;Ljava/util/Map;ILjava/lang/Object;)Lru/privatenull/pnlibrary/api/activity/ActivityBundle;
+	public fun equals (Ljava/lang/Object;)Z
+	public final fun getCategory ()Lru/privatenull/pnlibrary/api/activity/ActivityCategory;
+	public final fun getCorrelationId ()Ljava/lang/String;
+	public final fun getFiles ()Ljava/util/List;
+	public final fun getMetadata ()Ljava/util/Map;
+	public final fun getPluginId ()Ljava/lang/String;
+	public final fun getSessionId ()Ljava/lang/String;
+	public final fun getSeverity ()Lru/privatenull/pnlibrary/api/activity/ActivitySeverity;
+	public final fun getSource ()Ljava/lang/String;
+	public final fun getType ()Ljava/lang/String;
+	public fun hashCode ()I
+	public fun toString ()Ljava/lang/String;
+}
+
+public final class ru/privatenull/pnlibrary/api/activity/ActivityCategory : java/lang/Enum {
+	public static final field COMMAND Lru/privatenull/pnlibrary/api/activity/ActivityCategory;
+	public static final field DIAGNOSTICS Lru/privatenull/pnlibrary/api/activity/ActivityCategory;
+	public static final field ERROR Lru/privatenull/pnlibrary/api/activity/ActivityCategory;
+	public static final field FEATURE Lru/privatenull/pnlibrary/api/activity/ActivityCategory;
+	public static final field LIFECYCLE Lru/privatenull/pnlibrary/api/activity/ActivityCategory;
+	public static final field SECURITY Lru/privatenull/pnlibrary/api/activity/ActivityCategory;
+	public static final field SYSTEM Lru/privatenull/pnlibrary/api/activity/ActivityCategory;
+	public static final field UPDATE Lru/privatenull/pnlibrary/api/activity/ActivityCategory;
+	public static final field USER_ACTION Lru/privatenull/pnlibrary/api/activity/ActivityCategory;
+	public static fun getEntries ()Lkotlin/enums/EnumEntries;
+	public static fun valueOf (Ljava/lang/String;)Lru/privatenull/pnlibrary/api/activity/ActivityCategory;
+	public static fun values ()[Lru/privatenull/pnlibrary/api/activity/ActivityCategory;
+}
+
+public final class ru/privatenull/pnlibrary/api/activity/ActivityEvent {
+	public fun <init> (Ljava/lang/String;JLjava/lang/String;Lru/privatenull/pnlibrary/api/activity/ActivityCategory;Lru/privatenull/pnlibrary/api/activity/ActivitySeverity;Ljava/lang/String;Ljava/lang/String;Ljava/lang/String;Ljava/lang/String;Ljava/util/Map;)V
+	public synthetic fun <init> (Ljava/lang/String;JLjava/lang/String;Lru/privatenull/pnlibrary/api/activity/ActivityCategory;Lru/privatenull/pnlibrary/api/activity/ActivitySeverity;Ljava/lang/String;Ljava/lang/String;Ljava/lang/String;Ljava/lang/String;Ljava/util/Map;ILkotlin/jvm/internal/DefaultConstructorMarker;)V
+	public final fun component1 ()Ljava/lang/String;
+	public final fun component10 ()Ljava/util/Map;
+	public final fun component2 ()J
+	public final fun component3 ()Ljava/lang/String;
+	public final fun component4 ()Lru/privatenull/pnlibrary/api/activity/ActivityCategory;
+	public final fun component5 ()Lru/privatenull/pnlibrary/api/activity/ActivitySeverity;
+	public final fun component6 ()Ljava/lang/String;
+	public final fun component7 ()Ljava/lang/String;
+	public final fun component8 ()Ljava/lang/String;
+	public final fun component9 ()Ljava/lang/String;
+	public final fun copy (Ljava/lang/String;JLjava/lang/String;Lru/privatenull/pnlibrary/api/activity/ActivityCategory;Lru/privatenull/pnlibrary/api/activity/ActivitySeverity;Ljava/lang/String;Ljava/lang/String;Ljava/lang/String;Ljava/lang/String;Ljava/util/Map;)Lru/privatenull/pnlibrary/api/activity/ActivityEvent;
+	public static synthetic fun copy$default (Lru/privatenull/pnlibrary/api/activity/ActivityEvent;Ljava/lang/String;JLjava/lang/String;Lru/privatenull/pnlibrary/api/activity/ActivityCategory;Lru/privatenull/pnlibrary/api/activity/ActivitySeverity;Ljava/lang/String;Ljava/lang/String;Ljava/lang/String;Ljava/lang/String;Ljava/util/Map;ILjava/lang/Object;)Lru/privatenull/pnlibrary/api/activity/ActivityEvent;
+	public fun equals (Ljava/lang/Object;)Z
+	public final fun getCategory ()Lru/privatenull/pnlibrary/api/activity/ActivityCategory;
+	public final fun getCorrelationId ()Ljava/lang/String;
+	public final fun getEventId ()Ljava/lang/String;
+	public final fun getMetadata ()Ljava/util/Map;
+	public final fun getPluginId ()Ljava/lang/String;
+	public final fun getSessionId ()Ljava/lang/String;
+	public final fun getSeverity ()Lru/privatenull/pnlibrary/api/activity/ActivitySeverity;
+	public final fun getSource ()Ljava/lang/String;
+	public final fun getTimestamp ()J
+	public final fun getType ()Ljava/lang/String;
+	public fun hashCode ()I
+	public fun toString ()Ljava/lang/String;
+}
+
+public final class ru/privatenull/pnlibrary/api/activity/ActivityQuery {
+	public fun <init> ()V
+	public fun <init> (ILjava/lang/String;Lru/privatenull/pnlibrary/api/activity/ActivityCategory;Lru/privatenull/pnlibrary/api/activity/ActivitySeverity;Ljava/lang/Long;Ljava/lang/Long;)V
+	public synthetic fun <init> (ILjava/lang/String;Lru/privatenull/pnlibrary/api/activity/ActivityCategory;Lru/privatenull/pnlibrary/api/activity/ActivitySeverity;Ljava/lang/Long;Ljava/lang/Long;ILkotlin/jvm/internal/DefaultConstructorMarker;)V
+	public final fun component1 ()I
+	public final fun component2 ()Ljava/lang/String;
+	public final fun component3 ()Lru/privatenull/pnlibrary/api/activity/ActivityCategory;
+	public final fun component4 ()Lru/privatenull/pnlibrary/api/activity/ActivitySeverity;
+	public final fun component5 ()Ljava/lang/Long;
+	public final fun component6 ()Ljava/lang/Long;
+	public final fun copy (ILjava/lang/String;Lru/privatenull/pnlibrary/api/activity/ActivityCategory;Lru/privatenull/pnlibrary/api/activity/ActivitySeverity;Ljava/lang/Long;Ljava/lang/Long;)Lru/privatenull/pnlibrary/api/activity/ActivityQuery;
+	public static synthetic fun copy$default (Lru/privatenull/pnlibrary/api/activity/ActivityQuery;ILjava/lang/String;Lru/privatenull/pnlibrary/api/activity/ActivityCategory;Lru/privatenull/pnlibrary/api/activity/ActivitySeverity;Ljava/lang/Long;Ljava/lang/Long;ILjava/lang/Object;)Lru/privatenull/pnlibrary/api/activity/ActivityQuery;
+	public fun equals (Ljava/lang/Object;)Z
+	public final fun getCategory ()Lru/privatenull/pnlibrary/api/activity/ActivityCategory;
+	public final fun getLimit ()I
+	public final fun getMinimumSeverity ()Lru/privatenull/pnlibrary/api/activity/ActivitySeverity;
+	public final fun getPluginId ()Ljava/lang/String;
+	public final fun getSince ()Ljava/lang/Long;
+	public final fun getUntil ()Ljava/lang/Long;
+	public fun hashCode ()I
+	public fun toString ()Ljava/lang/String;
+}
+
+public abstract interface class ru/privatenull/pnlibrary/api/activity/ActivityService : java/lang/AutoCloseable {
+	public abstract fun attach (Ljava/lang/String;Ljava/lang/String;Ljava/lang/String;[B)Lru/privatenull/pnlibrary/api/activity/ActivityAttachment;
+	public abstract fun attachFile (Ljava/lang/String;Ljava/nio/file/Path;Ljava/lang/String;)Lru/privatenull/pnlibrary/api/activity/ActivityAttachment;
+	public static synthetic fun attachFile$default (Lru/privatenull/pnlibrary/api/activity/ActivityService;Ljava/lang/String;Ljava/nio/file/Path;Ljava/lang/String;ILjava/lang/Object;)Lru/privatenull/pnlibrary/api/activity/ActivityAttachment;
+	public abstract fun clear ()V
+	public abstract fun close ()V
+	public fun diagnostic (Ljava/util/List;Ljava/util/Map;Ljava/lang/String;Ljava/lang/String;)Lru/privatenull/pnlibrary/api/activity/ActivityEvent;
+	public static synthetic fun diagnostic$default (Lru/privatenull/pnlibrary/api/activity/ActivityService;Ljava/util/List;Ljava/util/Map;Ljava/lang/String;Ljava/lang/String;ILjava/lang/Object;)Lru/privatenull/pnlibrary/api/activity/ActivityEvent;
+	public fun exportAttachmentManifest ()[B
+	public abstract fun exportAttachments ()Ljava/util/Map;
+	public abstract fun exportJournal ()[B
+	public abstract fun recent (Lru/privatenull/pnlibrary/api/activity/ActivityQuery;)Ljava/util/List;
+	public static synthetic fun recent$default (Lru/privatenull/pnlibrary/api/activity/ActivityService;Lru/privatenull/pnlibrary/api/activity/ActivityQuery;ILjava/lang/Object;)Ljava/util/List;
+	public fun record (Ljava/lang/String;Lru/privatenull/pnlibrary/api/activity/ActivityCategory;Lru/privatenull/pnlibrary/api/activity/ActivitySeverity;Ljava/lang/String;Ljava/lang/String;Ljava/lang/String;Ljava/lang/String;Ljava/util/Map;)Lru/privatenull/pnlibrary/api/activity/ActivityEvent;
+	public fun record (Lru/privatenull/pnlibrary/api/activity/ActivityBundle;)Lru/privatenull/pnlibrary/api/activity/ActivityEvent;
+	public abstract fun record (Lru/privatenull/pnlibrary/api/activity/ActivityEvent;)Lru/privatenull/pnlibrary/api/activity/ActivityEvent;
+	public static synthetic fun record$default (Lru/privatenull/pnlibrary/api/activity/ActivityService;Ljava/lang/String;Lru/privatenull/pnlibrary/api/activity/ActivityCategory;Lru/privatenull/pnlibrary/api/activity/ActivitySeverity;Ljava/lang/String;Ljava/lang/String;Ljava/lang/String;Ljava/lang/String;Ljava/util/Map;ILjava/lang/Object;)Lru/privatenull/pnlibrary/api/activity/ActivityEvent;
+	public fun recordWithFile (Ljava/nio/file/Path;Ljava/lang/String;Lru/privatenull/pnlibrary/api/activity/ActivityCategory;Lru/privatenull/pnlibrary/api/activity/ActivitySeverity;Ljava/lang/String;Ljava/lang/String;Ljava/lang/String;Ljava/lang/String;Ljava/util/Map;)Lru/privatenull/pnlibrary/api/activity/ActivityEvent;
+	public static synthetic fun recordWithFile$default (Lru/privatenull/pnlibrary/api/activity/ActivityService;Ljava/nio/file/Path;Ljava/lang/String;Lru/privatenull/pnlibrary/api/activity/ActivityCategory;Lru/privatenull/pnlibrary/api/activity/ActivitySeverity;Ljava/lang/String;Ljava/lang/String;Ljava/lang/String;Ljava/lang/String;Ljava/util/Map;ILjava/lang/Object;)Lru/privatenull/pnlibrary/api/activity/ActivityEvent;
+}
+
+public final class ru/privatenull/pnlibrary/api/activity/ActivitySeverity : java/lang/Enum {
+	public static final field CRITICAL Lru/privatenull/pnlibrary/api/activity/ActivitySeverity;
+	public static final field ERROR Lru/privatenull/pnlibrary/api/activity/ActivitySeverity;
+	public static final field INFO Lru/privatenull/pnlibrary/api/activity/ActivitySeverity;
+	public static final field NOTICE Lru/privatenull/pnlibrary/api/activity/ActivitySeverity;
+	public static final field TRACE Lru/privatenull/pnlibrary/api/activity/ActivitySeverity;
+	public static final field WARNING Lru/privatenull/pnlibrary/api/activity/ActivitySeverity;
+	public static fun getEntries ()Lkotlin/enums/EnumEntries;
+	public static fun valueOf (Ljava/lang/String;)Lru/privatenull/pnlibrary/api/activity/ActivitySeverity;
+	public static fun values ()[Lru/privatenull/pnlibrary/api/activity/ActivitySeverity;
+}
+
 public abstract interface class ru/privatenull/pnlibrary/api/audiences/AudienceSender : ru/privatenull/pnlibrary/api/actions/LibraryAudience {
 	public abstract fun getId ()Ljava/lang/String;
 	public abstract fun getName ()Ljava/lang/String;
@@ -1488,6 +1639,9 @@ public final class ru/privatenull/pnlibrary/api/diagnostics/DiagnosticsService$C
 	public static final field API_VERSION I
 }
 
+public abstract interface class ru/privatenull/pnlibrary/api/diagnostics/ObservabilityService : ru/privatenull/pnlibrary/api/activity/ActivityService, ru/privatenull/pnlibrary/api/diagnostics/DiagnosticsService, ru/privatenull/pnlibrary/api/observability/ObservabilityService {
+}
+
 public final class ru/privatenull/pnlibrary/api/downloads/DirectDownloadSource {
 	public static final field Companion Lru/privatenull/pnlibrary/api/downloads/DirectDownloadSource$Companion;
 	public synthetic fun <init> (Lru/privatenull/pnlibrary/api/downloads/DirectDownloadSource$Builder;Lkotlin/jvm/internal/DefaultConstructorMarker;)V
@@ -1701,8 +1855,60 @@ public abstract interface class ru/privatenull/pnlibrary/api/logging/PnLogger {
 	public abstract fun warning (Ljava/lang/String;)V
 }
 
+public abstract interface class ru/privatenull/pnlibrary/api/metrics/ErrorReporter : java/lang/AutoCloseable {
+	public fun capture (Ljava/lang/Throwable;Ljava/lang/String;ZLjava/util/Map;)V
+	public abstract fun capture (Lru/privatenull/pnlibrary/api/metrics/TelemetryError;)V
+	public static synthetic fun capture$default (Lru/privatenull/pnlibrary/api/metrics/ErrorReporter;Ljava/lang/Throwable;Ljava/lang/String;ZLjava/util/Map;ILjava/lang/Object;)V
+	public abstract fun close ()V
+	public fun installGlobalHandler ()V
+}
+
+public abstract interface class ru/privatenull/pnlibrary/api/metrics/FastStatsFacade {
+	public abstract fun errorTracker ()Lru/privatenull/pnlibrary/api/metrics/ErrorReporter;
+	public abstract fun getMetrics ()Lru/privatenull/pnlibrary/api/metrics/PluginMetrics;
+}
+
+public final class ru/privatenull/pnlibrary/api/metrics/MetricsCapability : java/lang/Enum {
+	public static final field CHARTS Lru/privatenull/pnlibrary/api/metrics/MetricsCapability;
+	public static final field CONTEXT_ATTRIBUTES Lru/privatenull/pnlibrary/api/metrics/MetricsCapability;
+	public static final field CUSTOM_VALUES Lru/privatenull/pnlibrary/api/metrics/MetricsCapability;
+	public static final field ERROR_TRACKING Lru/privatenull/pnlibrary/api/metrics/MetricsCapability;
+	public static fun getEntries ()Lkotlin/enums/EnumEntries;
+	public static fun valueOf (Ljava/lang/String;)Lru/privatenull/pnlibrary/api/metrics/MetricsCapability;
+	public static fun values ()[Lru/privatenull/pnlibrary/api/metrics/MetricsCapability;
+}
+
+public final class ru/privatenull/pnlibrary/api/metrics/MetricsProvider : java/lang/Enum {
+	public static final field BSTATS Lru/privatenull/pnlibrary/api/metrics/MetricsProvider;
+	public static final field FASTSTATS Lru/privatenull/pnlibrary/api/metrics/MetricsProvider;
+	public static fun getEntries ()Lkotlin/enums/EnumEntries;
+	public static fun valueOf (Ljava/lang/String;)Lru/privatenull/pnlibrary/api/metrics/MetricsProvider;
+	public static fun values ()[Lru/privatenull/pnlibrary/api/metrics/MetricsProvider;
+}
+
+public final class ru/privatenull/pnlibrary/api/metrics/MetricsProviderConfiguration {
+	public fun <init> (Lru/privatenull/pnlibrary/api/metrics/MetricsProvider;ZLjava/lang/Integer;Ljava/lang/String;)V
+	public synthetic fun <init> (Lru/privatenull/pnlibrary/api/metrics/MetricsProvider;ZLjava/lang/Integer;Ljava/lang/String;ILkotlin/jvm/internal/DefaultConstructorMarker;)V
+	public final fun component1 ()Lru/privatenull/pnlibrary/api/metrics/MetricsProvider;
+	public final fun component2 ()Z
+	public final fun component3 ()Ljava/lang/Integer;
+	public final fun component4 ()Ljava/lang/String;
+	public final fun copy (Lru/privatenull/pnlibrary/api/metrics/MetricsProvider;ZLjava/lang/Integer;Ljava/lang/String;)Lru/privatenull/pnlibrary/api/metrics/MetricsProviderConfiguration;
+	public static synthetic fun copy$default (Lru/privatenull/pnlibrary/api/metrics/MetricsProviderConfiguration;Lru/privatenull/pnlibrary/api/metrics/MetricsProvider;ZLjava/lang/Integer;Ljava/lang/String;ILjava/lang/Object;)Lru/privatenull/pnlibrary/api/metrics/MetricsProviderConfiguration;
+	public fun equals (Ljava/lang/Object;)Z
+	public final fun getEnabled ()Z
+	public final fun getProjectId ()Ljava/lang/Integer;
+	public final fun getProvider ()Lru/privatenull/pnlibrary/api/metrics/MetricsProvider;
+	public final fun getToken ()Ljava/lang/String;
+	public fun hashCode ()I
+	public fun toString ()Ljava/lang/String;
+}
+
 public abstract interface class ru/privatenull/pnlibrary/api/metrics/MetricsService {
+	public fun getProviders ()Ljava/util/Set;
 	public abstract fun open (Ljava/lang/Object;I)Lru/privatenull/pnlibrary/api/metrics/PluginMetrics;
+	public fun open (Ljava/lang/Object;Ljava/util/Collection;)Lru/privatenull/pnlibrary/api/metrics/PluginMetrics;
+	public fun openErrorReporter (Ljava/lang/Object;Ljava/util/Collection;)Lru/privatenull/pnlibrary/api/metrics/ErrorReporter;
 }
 
 public abstract interface class ru/privatenull/pnlibrary/api/metrics/PluginMetrics : java/lang/AutoCloseable {
@@ -1710,11 +1916,205 @@ public abstract interface class ru/privatenull/pnlibrary/api/metrics/PluginMetri
 	public abstract fun advancedPie (Ljava/lang/String;Ljava/util/function/Supplier;)Lru/privatenull/pnlibrary/api/metrics/PluginMetrics;
 	public abstract fun close ()V
 	public abstract fun drilldownPie (Ljava/lang/String;Ljava/util/function/Supplier;)Lru/privatenull/pnlibrary/api/metrics/PluginMetrics;
+	public fun fastStatsOrNull ()Lru/privatenull/pnlibrary/api/metrics/FastStatsFacade;
+	public fun getCapabilities ()Ljava/util/Set;
+	public fun getErrorReporter ()Lru/privatenull/pnlibrary/api/metrics/ErrorReporter;
 	public abstract fun getProjectId ()I
+	public fun getProvider ()Lru/privatenull/pnlibrary/api/metrics/MetricsProvider;
+	public fun getProviders ()Ljava/util/Set;
 	public abstract fun multiLineChart (Ljava/lang/String;Ljava/util/function/Supplier;)Lru/privatenull/pnlibrary/api/metrics/PluginMetrics;
 	public abstract fun simpleBarChart (Ljava/lang/String;Ljava/util/function/Supplier;)Lru/privatenull/pnlibrary/api/metrics/PluginMetrics;
 	public abstract fun simplePie (Ljava/lang/String;Ljava/util/function/Supplier;)Lru/privatenull/pnlibrary/api/metrics/PluginMetrics;
 	public abstract fun singleLineChart (Ljava/lang/String;Ljava/util/function/Supplier;)Lru/privatenull/pnlibrary/api/metrics/PluginMetrics;
+	public fun start ()V
+}
+
+public final class ru/privatenull/pnlibrary/api/metrics/TelemetryError {
+	public fun <init> (Ljava/lang/String;Ljava/lang/String;Ljava/util/List;ZLjava/lang/String;Ljava/util/Map;)V
+	public synthetic fun <init> (Ljava/lang/String;Ljava/lang/String;Ljava/util/List;ZLjava/lang/String;Ljava/util/Map;ILkotlin/jvm/internal/DefaultConstructorMarker;)V
+	public final fun component1 ()Ljava/lang/String;
+	public final fun component2 ()Ljava/lang/String;
+	public final fun component3 ()Ljava/util/List;
+	public final fun component4 ()Z
+	public final fun component5 ()Ljava/lang/String;
+	public final fun component6 ()Ljava/util/Map;
+	public final fun copy (Ljava/lang/String;Ljava/lang/String;Ljava/util/List;ZLjava/lang/String;Ljava/util/Map;)Lru/privatenull/pnlibrary/api/metrics/TelemetryError;
+	public static synthetic fun copy$default (Lru/privatenull/pnlibrary/api/metrics/TelemetryError;Ljava/lang/String;Ljava/lang/String;Ljava/util/List;ZLjava/lang/String;Ljava/util/Map;ILjava/lang/Object;)Lru/privatenull/pnlibrary/api/metrics/TelemetryError;
+	public fun equals (Ljava/lang/Object;)Z
+	public final fun getAttributes ()Ljava/util/Map;
+	public final fun getHandled ()Z
+	public final fun getMessage ()Ljava/lang/String;
+	public final fun getOperation ()Ljava/lang/String;
+	public final fun getStackTrace ()Ljava/util/List;
+	public final fun getType ()Ljava/lang/String;
+	public fun hashCode ()I
+	public fun toString ()Ljava/lang/String;
+}
+
+public final class ru/privatenull/pnlibrary/api/observability/ComponentStatus {
+	public fun <init> (Ljava/lang/String;Ljava/lang/String;Ljava/lang/String;Ljava/lang/String;Ljava/util/Map;J)V
+	public synthetic fun <init> (Ljava/lang/String;Ljava/lang/String;Ljava/lang/String;Ljava/lang/String;Ljava/util/Map;JILkotlin/jvm/internal/DefaultConstructorMarker;)V
+	public final fun component1 ()Ljava/lang/String;
+	public final fun component2 ()Ljava/lang/String;
+	public final fun component3 ()Ljava/lang/String;
+	public final fun component4 ()Ljava/lang/String;
+	public final fun component5 ()Ljava/util/Map;
+	public final fun component6 ()J
+	public final fun copy (Ljava/lang/String;Ljava/lang/String;Ljava/lang/String;Ljava/lang/String;Ljava/util/Map;J)Lru/privatenull/pnlibrary/api/observability/ComponentStatus;
+	public static synthetic fun copy$default (Lru/privatenull/pnlibrary/api/observability/ComponentStatus;Ljava/lang/String;Ljava/lang/String;Ljava/lang/String;Ljava/lang/String;Ljava/util/Map;JILjava/lang/Object;)Lru/privatenull/pnlibrary/api/observability/ComponentStatus;
+	public fun equals (Ljava/lang/Object;)Z
+	public final fun getComponent ()Ljava/lang/String;
+	public final fun getData ()Ljava/util/Map;
+	public final fun getDetail ()Ljava/lang/String;
+	public final fun getPlugin ()Ljava/lang/String;
+	public final fun getState ()Ljava/lang/String;
+	public final fun getUpdatedAt ()J
+	public fun hashCode ()I
+	public fun toString ()Ljava/lang/String;
+}
+
+public final class ru/privatenull/pnlibrary/api/observability/ObservabilityReport {
+	public fun <init> (Ljava/lang/String;Ljava/nio/file/Path;J)V
+	public final fun component1 ()Ljava/lang/String;
+	public final fun component2 ()Ljava/nio/file/Path;
+	public final fun component3 ()J
+	public final fun copy (Ljava/lang/String;Ljava/nio/file/Path;J)Lru/privatenull/pnlibrary/api/observability/ObservabilityReport;
+	public static synthetic fun copy$default (Lru/privatenull/pnlibrary/api/observability/ObservabilityReport;Ljava/lang/String;Ljava/nio/file/Path;JILjava/lang/Object;)Lru/privatenull/pnlibrary/api/observability/ObservabilityReport;
+	public fun equals (Ljava/lang/Object;)Z
+	public final fun getCreatedAt ()J
+	public final fun getFile ()Ljava/nio/file/Path;
+	public final fun getId ()Ljava/lang/String;
+	public fun hashCode ()I
+	public fun toString ()Ljava/lang/String;
+}
+
+public final class ru/privatenull/pnlibrary/api/observability/ObservabilityReportRequest {
+	public fun <init> ()V
+	public fun <init> (Ljava/lang/String;ZZ)V
+	public synthetic fun <init> (Ljava/lang/String;ZZILkotlin/jvm/internal/DefaultConstructorMarker;)V
+	public final fun component1 ()Ljava/lang/String;
+	public final fun component2 ()Z
+	public final fun component3 ()Z
+	public final fun copy (Ljava/lang/String;ZZ)Lru/privatenull/pnlibrary/api/observability/ObservabilityReportRequest;
+	public static synthetic fun copy$default (Lru/privatenull/pnlibrary/api/observability/ObservabilityReportRequest;Ljava/lang/String;ZZILjava/lang/Object;)Lru/privatenull/pnlibrary/api/observability/ObservabilityReportRequest;
+	public fun equals (Ljava/lang/Object;)Z
+	public final fun getIncludeConfigurations ()Z
+	public final fun getIncludeLogs ()Z
+	public final fun getTarget ()Ljava/lang/String;
+	public fun hashCode ()I
+	public fun toString ()Ljava/lang/String;
+}
+
+public abstract interface class ru/privatenull/pnlibrary/api/observability/ObservabilityService : java/lang/AutoCloseable {
+	public fun capture (Lkotlin/jvm/functions/Function1;)Lru/privatenull/pnlibrary/api/observability/Observation;
+	public abstract fun createReport (Lru/privatenull/pnlibrary/api/observability/ObservabilityReportRequest;)Lru/privatenull/pnlibrary/api/observability/ObservabilityReport;
+	public static synthetic fun createReport$default (Lru/privatenull/pnlibrary/api/observability/ObservabilityService;Lru/privatenull/pnlibrary/api/observability/ObservabilityReportRequest;ILjava/lang/Object;)Lru/privatenull/pnlibrary/api/observability/ObservabilityReport;
+	public fun failure (Ljava/lang/Throwable;Lkotlin/jvm/functions/Function1;)Lru/privatenull/pnlibrary/api/observability/Observation;
+	public static synthetic fun failure$default (Lru/privatenull/pnlibrary/api/observability/ObservabilityService;Ljava/lang/Throwable;Lkotlin/jvm/functions/Function1;ILjava/lang/Object;)Lru/privatenull/pnlibrary/api/observability/Observation;
+	public abstract fun recent (Lru/privatenull/pnlibrary/api/observability/ObservationQuery;)Ljava/util/List;
+	public static synthetic fun recent$default (Lru/privatenull/pnlibrary/api/observability/ObservabilityService;Lru/privatenull/pnlibrary/api/observability/ObservationQuery;ILjava/lang/Object;)Ljava/util/List;
+	public abstract fun record (Lru/privatenull/pnlibrary/api/observability/ObservationRequest;)Lru/privatenull/pnlibrary/api/observability/Observation;
+	public abstract fun status (Lru/privatenull/pnlibrary/api/observability/ComponentStatus;)Lru/privatenull/pnlibrary/api/observability/ComponentStatus;
+}
+
+public final class ru/privatenull/pnlibrary/api/observability/Observation {
+	public static final field Companion Lru/privatenull/pnlibrary/api/observability/Observation$Companion;
+	public fun <init> (Ljava/lang/String;JLjava/lang/String;Ljava/lang/String;Ljava/lang/String;Lru/privatenull/pnlibrary/api/observability/ObservationLevel;Ljava/util/Map;Ljava/lang/String;Ljava/lang/String;)V
+	public final fun component1 ()Ljava/lang/String;
+	public final fun component2 ()J
+	public final fun component3 ()Ljava/lang/String;
+	public final fun component4 ()Ljava/lang/String;
+	public final fun component5 ()Ljava/lang/String;
+	public final fun component6 ()Lru/privatenull/pnlibrary/api/observability/ObservationLevel;
+	public final fun component7 ()Ljava/util/Map;
+	public final fun component8 ()Ljava/lang/String;
+	public final fun component9 ()Ljava/lang/String;
+	public final fun copy (Ljava/lang/String;JLjava/lang/String;Ljava/lang/String;Ljava/lang/String;Lru/privatenull/pnlibrary/api/observability/ObservationLevel;Ljava/util/Map;Ljava/lang/String;Ljava/lang/String;)Lru/privatenull/pnlibrary/api/observability/Observation;
+	public static synthetic fun copy$default (Lru/privatenull/pnlibrary/api/observability/Observation;Ljava/lang/String;JLjava/lang/String;Ljava/lang/String;Ljava/lang/String;Lru/privatenull/pnlibrary/api/observability/ObservationLevel;Ljava/util/Map;Ljava/lang/String;Ljava/lang/String;ILjava/lang/Object;)Lru/privatenull/pnlibrary/api/observability/Observation;
+	public fun equals (Ljava/lang/Object;)Z
+	public static final fun from (Lru/privatenull/pnlibrary/api/observability/ObservationRequest;J)Lru/privatenull/pnlibrary/api/observability/Observation;
+	public final fun getData ()Ljava/util/Map;
+	public final fun getErrorMessage ()Ljava/lang/String;
+	public final fun getErrorType ()Ljava/lang/String;
+	public final fun getId ()Ljava/lang/String;
+	public final fun getLevel ()Lru/privatenull/pnlibrary/api/observability/ObservationLevel;
+	public final fun getMessage ()Ljava/lang/String;
+	public final fun getPlugin ()Ljava/lang/String;
+	public final fun getSource ()Ljava/lang/String;
+	public final fun getTimestamp ()J
+	public fun hashCode ()I
+	public fun toString ()Ljava/lang/String;
+}
+
+public final class ru/privatenull/pnlibrary/api/observability/Observation$Companion {
+	public final fun from (Lru/privatenull/pnlibrary/api/observability/ObservationRequest;J)Lru/privatenull/pnlibrary/api/observability/Observation;
+	public static synthetic fun from$default (Lru/privatenull/pnlibrary/api/observability/Observation$Companion;Lru/privatenull/pnlibrary/api/observability/ObservationRequest;JILjava/lang/Object;)Lru/privatenull/pnlibrary/api/observability/Observation;
+}
+
+public final class ru/privatenull/pnlibrary/api/observability/ObservationLevel : java/lang/Enum {
+	public static final field CRITICAL Lru/privatenull/pnlibrary/api/observability/ObservationLevel;
+	public static final field ERROR Lru/privatenull/pnlibrary/api/observability/ObservationLevel;
+	public static final field INFO Lru/privatenull/pnlibrary/api/observability/ObservationLevel;
+	public static final field NOTICE Lru/privatenull/pnlibrary/api/observability/ObservationLevel;
+	public static final field TRACE Lru/privatenull/pnlibrary/api/observability/ObservationLevel;
+	public static final field WARNING Lru/privatenull/pnlibrary/api/observability/ObservationLevel;
+	public static fun getEntries ()Lkotlin/enums/EnumEntries;
+	public static fun valueOf (Ljava/lang/String;)Lru/privatenull/pnlibrary/api/observability/ObservationLevel;
+	public static fun values ()[Lru/privatenull/pnlibrary/api/observability/ObservationLevel;
+}
+
+public final class ru/privatenull/pnlibrary/api/observability/ObservationQuery {
+	public fun <init> ()V
+	public fun <init> (ILjava/lang/String;Lru/privatenull/pnlibrary/api/observability/ObservationLevel;Ljava/lang/Long;Ljava/lang/Long;)V
+	public synthetic fun <init> (ILjava/lang/String;Lru/privatenull/pnlibrary/api/observability/ObservationLevel;Ljava/lang/Long;Ljava/lang/Long;ILkotlin/jvm/internal/DefaultConstructorMarker;)V
+	public final fun component1 ()I
+	public final fun component2 ()Ljava/lang/String;
+	public final fun component3 ()Lru/privatenull/pnlibrary/api/observability/ObservationLevel;
+	public final fun component4 ()Ljava/lang/Long;
+	public final fun component5 ()Ljava/lang/Long;
+	public final fun copy (ILjava/lang/String;Lru/privatenull/pnlibrary/api/observability/ObservationLevel;Ljava/lang/Long;Ljava/lang/Long;)Lru/privatenull/pnlibrary/api/observability/ObservationQuery;
+	public static synthetic fun copy$default (Lru/privatenull/pnlibrary/api/observability/ObservationQuery;ILjava/lang/String;Lru/privatenull/pnlibrary/api/observability/ObservationLevel;Ljava/lang/Long;Ljava/lang/Long;ILjava/lang/Object;)Lru/privatenull/pnlibrary/api/observability/ObservationQuery;
+	public fun equals (Ljava/lang/Object;)Z
+	public final fun getLimit ()I
+	public final fun getMinimumLevel ()Lru/privatenull/pnlibrary/api/observability/ObservationLevel;
+	public final fun getPlugin ()Ljava/lang/String;
+	public final fun getSince ()Ljava/lang/Long;
+	public final fun getUntil ()Ljava/lang/Long;
+	public fun hashCode ()I
+	public fun toString ()Ljava/lang/String;
+}
+
+public final class ru/privatenull/pnlibrary/api/observability/ObservationRequest {
+	public fun <init> (Ljava/lang/String;Ljava/lang/String;Ljava/lang/String;Lru/privatenull/pnlibrary/api/observability/ObservationLevel;Ljava/util/Map;Ljava/util/List;Ljava/lang/Throwable;)V
+	public synthetic fun <init> (Ljava/lang/String;Ljava/lang/String;Ljava/lang/String;Lru/privatenull/pnlibrary/api/observability/ObservationLevel;Ljava/util/Map;Ljava/util/List;Ljava/lang/Throwable;ILkotlin/jvm/internal/DefaultConstructorMarker;)V
+	public final fun component1 ()Ljava/lang/String;
+	public final fun component2 ()Ljava/lang/String;
+	public final fun component3 ()Ljava/lang/String;
+	public final fun component4 ()Lru/privatenull/pnlibrary/api/observability/ObservationLevel;
+	public final fun component5 ()Ljava/util/Map;
+	public final fun component6 ()Ljava/util/List;
+	public final fun component7 ()Ljava/lang/Throwable;
+	public final fun copy (Ljava/lang/String;Ljava/lang/String;Ljava/lang/String;Lru/privatenull/pnlibrary/api/observability/ObservationLevel;Ljava/util/Map;Ljava/util/List;Ljava/lang/Throwable;)Lru/privatenull/pnlibrary/api/observability/ObservationRequest;
+	public static synthetic fun copy$default (Lru/privatenull/pnlibrary/api/observability/ObservationRequest;Ljava/lang/String;Ljava/lang/String;Ljava/lang/String;Lru/privatenull/pnlibrary/api/observability/ObservationLevel;Ljava/util/Map;Ljava/util/List;Ljava/lang/Throwable;ILjava/lang/Object;)Lru/privatenull/pnlibrary/api/observability/ObservationRequest;
+	public fun equals (Ljava/lang/Object;)Z
+	public final fun getData ()Ljava/util/Map;
+	public final fun getError ()Ljava/lang/Throwable;
+	public final fun getFiles ()Ljava/util/List;
+	public final fun getLevel ()Lru/privatenull/pnlibrary/api/observability/ObservationLevel;
+	public final fun getMessage ()Ljava/lang/String;
+	public final fun getPlugin ()Ljava/lang/String;
+	public final fun getSource ()Ljava/lang/String;
+	public fun hashCode ()I
+	public fun toString ()Ljava/lang/String;
+}
+
+public final class ru/privatenull/pnlibrary/api/observability/ObservationScope {
+	public final fun data ([Lkotlin/Pair;)Lru/privatenull/pnlibrary/api/observability/ObservationScope;
+	public final fun files ([Ljava/nio/file/Path;)Lru/privatenull/pnlibrary/api/observability/ObservationScope;
+	public final fun level (Lru/privatenull/pnlibrary/api/observability/ObservationLevel;)Lru/privatenull/pnlibrary/api/observability/ObservationScope;
+	public final fun message (Ljava/lang/String;)Lru/privatenull/pnlibrary/api/observability/ObservationScope;
+	public final fun plugin (Ljava/lang/String;)Lru/privatenull/pnlibrary/api/observability/ObservationScope;
+	public final fun source (Ljava/lang/String;)Lru/privatenull/pnlibrary/api/observability/ObservationScope;
 }
 
 public abstract interface class ru/privatenull/pnlibrary/api/placeholders/AsyncPlaceholderResolver {
@@ -2076,6 +2476,16 @@ public final class ru/privatenull/pnlibrary/api/plugin/DownloadPolicy : java/lan
 	public static fun values ()[Lru/privatenull/pnlibrary/api/plugin/DownloadPolicy;
 }
 
+public final class ru/privatenull/pnlibrary/api/plugin/MetricsBuilder {
+	public fun <init> ()V
+	public final fun bStats (I)Lru/privatenull/pnlibrary/api/plugin/MetricsBuilder;
+	public final fun build ()Ljava/util/List;
+	public final fun charts (Ljava/util/function/Consumer;)Lru/privatenull/pnlibrary/api/plugin/MetricsBuilder;
+	public final fun enabled (Z)Lru/privatenull/pnlibrary/api/plugin/MetricsBuilder;
+	public final fun fastStats (Ljava/lang/String;)Lru/privatenull/pnlibrary/api/plugin/MetricsBuilder;
+	public final fun getEnabled ()Z
+}
+
 public abstract interface class ru/privatenull/pnlibrary/api/plugin/MetricsController : java/lang/AutoCloseable {
 	public abstract fun changeProjectId (I)V
 	public abstract fun close ()V
@@ -2083,7 +2493,10 @@ public abstract interface class ru/privatenull/pnlibrary/api/plugin/MetricsContr
 	public abstract fun disable ()V
 	public abstract fun enable ()V
 	public abstract fun enable (I)V
+	public fun errorReporterOrNull ()Lru/privatenull/pnlibrary/api/metrics/ErrorReporter;
+	public fun fastStatsOrNull ()Lru/privatenull/pnlibrary/api/metrics/FastStatsFacade;
 	public abstract fun getProjectId ()Ljava/lang/Integer;
+	public fun getProviderConfigurations ()Ljava/util/List;
 	public fun isClosed ()Z
 	public abstract fun isEnabled ()Z
 }
@@ -2096,6 +2509,7 @@ public abstract interface class ru/privatenull/pnlibrary/api/plugin/ModuleContex
 	public abstract fun getCooldowns ()Lru/privatenull/pnlibrary/api/cooldowns/CooldownService;
 	public abstract fun getDiagnostics ()Lru/privatenull/pnlibrary/api/diagnostics/DiagnosticRegistration;
 	public abstract fun getDownloads ()Lru/privatenull/pnlibrary/api/downloads/DownloadRegistration;
+	public abstract fun getErrors ()Lru/privatenull/pnlibrary/api/metrics/ErrorReporter;
 	public abstract fun getEvents ()Lru/privatenull/pnlibrary/api/events/EventScope;
 	public abstract fun getId ()Lru/privatenull/pnlibrary/api/plugin/ModuleId;
 	public abstract fun getKey ()Lru/privatenull/pnlibrary/api/plugin/PluginId;
@@ -2140,6 +2554,8 @@ public abstract interface class ru/privatenull/pnlibrary/api/plugin/PluginBuilde
 	public fun metrics (ILjava/util/function/Consumer;)Lru/privatenull/pnlibrary/api/plugin/PluginBuilder;
 	public fun metrics (IZ)Lru/privatenull/pnlibrary/api/plugin/PluginBuilder;
 	public abstract fun metrics (IZLjava/util/function/Consumer;)Lru/privatenull/pnlibrary/api/plugin/PluginBuilder;
+	public abstract fun metrics (Ljava/util/Collection;ZLjava/util/function/Consumer;)Lru/privatenull/pnlibrary/api/plugin/PluginBuilder;
+	public fun metrics (Ljava/util/function/Consumer;)Lru/privatenull/pnlibrary/api/plugin/PluginBuilder;
 	public abstract fun options (Ljava/util/function/Consumer;)Lru/privatenull/pnlibrary/api/plugin/PluginBuilder;
 	public abstract fun product (Lru/privatenull/pnlibrary/api/updates/ProductDescriptor;)Lru/privatenull/pnlibrary/api/plugin/PluginBuilder;
 	public fun remotePolicy (Ljava/util/function/Consumer;)Lru/privatenull/pnlibrary/api/plugin/PluginBuilder;
@@ -2400,6 +2816,7 @@ public final class ru/privatenull/pnlibrary/api/remote/ServerInfo {
 public abstract interface class ru/privatenull/pnlibrary/api/runtime/PnLibrary : java/io/Closeable {
 	public abstract fun close ()V
 	public abstract fun createDiagnosticReport (Lru/privatenull/pnlibrary/api/diagnostics/DebugRequest;)Lru/privatenull/pnlibrary/api/diagnostics/DiagnosticReport;
+	public fun getActivity ()Lru/privatenull/pnlibrary/api/activity/ActivityService;
 	public fun getAudiences ()Lru/privatenull/pnlibrary/api/audiences/AudienceService;
 	public fun getCommands ()Lru/privatenull/pnlibrary/api/commands/CommandService;
 	public abstract fun getConfiguration ()Lru/privatenull/pnlibrary/api/runtime/PnLibraryConfig;
@@ -2408,6 +2825,7 @@ public abstract interface class ru/privatenull/pnlibrary/api/runtime/PnLibrary :
 	public abstract fun getEvents ()Lru/privatenull/pnlibrary/api/events/EventService;
 	public abstract fun getLogging ()Lru/privatenull/pnlibrary/api/logging/LoggingService;
 	public abstract fun getMetrics ()Lru/privatenull/pnlibrary/api/metrics/MetricsService;
+	public fun getObservability ()Lru/privatenull/pnlibrary/api/diagnostics/ObservabilityService;
 	public abstract fun getOwner ()Ljava/lang/Object;
 	public abstract fun getPlaceholderAdapters ()Lru/privatenull/pnlibrary/api/placeholders/PlaceholderAdapterRegistry;
 	public abstract fun getPlaceholderValues ()Lru/privatenull/pnlibrary/api/placeholders/PlaceholderValueStore;
@@ -2896,14 +3314,15 @@ public final class ru/privatenull/pnlibrary/api/updates/ArtifactCompatibility {
 
 public final class ru/privatenull/pnlibrary/api/updates/ArtifactDescriptor {
 	public static final field Companion Lru/privatenull/pnlibrary/api/updates/ArtifactDescriptor$Companion;
-	public fun <init> (Ljava/lang/String;Lru/privatenull/pnlibrary/api/platform/PlatformType;ILjava/lang/Integer;JLjava/lang/String;Ljava/net/URI;)V
+	public fun <init> (Ljava/lang/String;Lru/privatenull/pnlibrary/api/platform/PlatformType;ILjava/lang/Integer;Ljava/lang/Long;Ljava/lang/String;Ljava/net/URI;)V
+	public synthetic fun <init> (Ljava/lang/String;Lru/privatenull/pnlibrary/api/platform/PlatformType;ILjava/lang/Integer;Ljava/lang/Long;Ljava/lang/String;Ljava/net/URI;ILkotlin/jvm/internal/DefaultConstructorMarker;)V
 	public final fun getDownloadUri ()Ljava/net/URI;
 	public final fun getFile ()Ljava/lang/String;
 	public final fun getMaximumJava ()Ljava/lang/Integer;
 	public final fun getMinimumJava ()I
 	public final fun getPlatform ()Lru/privatenull/pnlibrary/api/platform/PlatformType;
 	public final fun getSha256 ()Ljava/lang/String;
-	public final fun getSize ()J
+	public final fun getSize ()Ljava/lang/Long;
 	public final fun supports (I)Z
 }
 
@@ -3186,6 +3605,7 @@ public final class ru/privatenull/pnlibrary/api/updates/ProductDescriptor {
 public final class ru/privatenull/pnlibrary/api/updates/ProductDescriptor$Builder {
 	public final fun build ()Lru/privatenull/pnlibrary/api/updates/ProductDescriptor;
 	public final fun channel (Lru/privatenull/pnlibrary/api/updates/UpdateChannel;)Lru/privatenull/pnlibrary/api/updates/ProductDescriptor$Builder;
+	public final fun java (I)Lru/privatenull/pnlibrary/api/updates/ProductDescriptor$Builder;
 	public final fun java (ILjava/lang/Integer;)Lru/privatenull/pnlibrary/api/updates/ProductDescriptor$Builder;
 	public static synthetic fun java$default (Lru/privatenull/pnlibrary/api/updates/ProductDescriptor$Builder;ILjava/lang/Integer;ILjava/lang/Object;)Lru/privatenull/pnlibrary/api/updates/ProductDescriptor$Builder;
 	public final fun pnLibraryApi (II)Lru/privatenull/pnlibrary/api/updates/ProductDescriptor$Builder;
@@ -3214,9 +3634,10 @@ public final class ru/privatenull/pnlibrary/api/updates/ProductId$Companion {
 }
 
 public final class ru/privatenull/pnlibrary/api/updates/ProductRelease {
-	public fun <init> (Lru/privatenull/pnlibrary/api/updates/ProductId;Lru/privatenull/pnlibrary/api/version/SemanticVersion;Lru/privatenull/pnlibrary/api/updates/UpdateChannel;Lru/privatenull/pnlibrary/api/version/ApiVersionRange;Ljava/lang/Integer;Ljava/util/List;Ljava/lang/String;Ljava/util/List;Ljava/util/List;)V
-	public synthetic fun <init> (Lru/privatenull/pnlibrary/api/updates/ProductId;Lru/privatenull/pnlibrary/api/version/SemanticVersion;Lru/privatenull/pnlibrary/api/updates/UpdateChannel;Lru/privatenull/pnlibrary/api/version/ApiVersionRange;Ljava/lang/Integer;Ljava/util/List;Ljava/lang/String;Ljava/util/List;Ljava/util/List;ILkotlin/jvm/internal/DefaultConstructorMarker;)V
+	public fun <init> (Lru/privatenull/pnlibrary/api/updates/ProductId;Lru/privatenull/pnlibrary/api/version/SemanticVersion;Lru/privatenull/pnlibrary/api/updates/UpdateChannel;Lru/privatenull/pnlibrary/api/version/ApiVersionRange;Ljava/lang/Integer;Ljava/util/List;Ljava/lang/String;Ljava/util/List;Ljava/util/List;Ljava/time/Instant;)V
+	public synthetic fun <init> (Lru/privatenull/pnlibrary/api/updates/ProductId;Lru/privatenull/pnlibrary/api/version/SemanticVersion;Lru/privatenull/pnlibrary/api/updates/UpdateChannel;Lru/privatenull/pnlibrary/api/version/ApiVersionRange;Ljava/lang/Integer;Ljava/util/List;Ljava/lang/String;Ljava/util/List;Ljava/util/List;Ljava/time/Instant;ILkotlin/jvm/internal/DefaultConstructorMarker;)V
 	public final fun component1 ()Lru/privatenull/pnlibrary/api/updates/ProductId;
+	public final fun component10 ()Ljava/time/Instant;
 	public final fun component2 ()Lru/privatenull/pnlibrary/api/version/SemanticVersion;
 	public final fun component3 ()Lru/privatenull/pnlibrary/api/updates/UpdateChannel;
 	public final fun component4 ()Lru/privatenull/pnlibrary/api/version/ApiVersionRange;
@@ -3225,8 +3646,8 @@ public final class ru/privatenull/pnlibrary/api/updates/ProductRelease {
 	public final fun component7 ()Ljava/lang/String;
 	public final fun component8 ()Ljava/util/List;
 	public final fun component9 ()Ljava/util/List;
-	public final fun copy (Lru/privatenull/pnlibrary/api/updates/ProductId;Lru/privatenull/pnlibrary/api/version/SemanticVersion;Lru/privatenull/pnlibrary/api/updates/UpdateChannel;Lru/privatenull/pnlibrary/api/version/ApiVersionRange;Ljava/lang/Integer;Ljava/util/List;Ljava/lang/String;Ljava/util/List;Ljava/util/List;)Lru/privatenull/pnlibrary/api/updates/ProductRelease;
-	public static synthetic fun copy$default (Lru/privatenull/pnlibrary/api/updates/ProductRelease;Lru/privatenull/pnlibrary/api/updates/ProductId;Lru/privatenull/pnlibrary/api/version/SemanticVersion;Lru/privatenull/pnlibrary/api/updates/UpdateChannel;Lru/privatenull/pnlibrary/api/version/ApiVersionRange;Ljava/lang/Integer;Ljava/util/List;Ljava/lang/String;Ljava/util/List;Ljava/util/List;ILjava/lang/Object;)Lru/privatenull/pnlibrary/api/updates/ProductRelease;
+	public final fun copy (Lru/privatenull/pnlibrary/api/updates/ProductId;Lru/privatenull/pnlibrary/api/version/SemanticVersion;Lru/privatenull/pnlibrary/api/updates/UpdateChannel;Lru/privatenull/pnlibrary/api/version/ApiVersionRange;Ljava/lang/Integer;Ljava/util/List;Ljava/lang/String;Ljava/util/List;Ljava/util/List;Ljava/time/Instant;)Lru/privatenull/pnlibrary/api/updates/ProductRelease;
+	public static synthetic fun copy$default (Lru/privatenull/pnlibrary/api/updates/ProductRelease;Lru/privatenull/pnlibrary/api/updates/ProductId;Lru/privatenull/pnlibrary/api/version/SemanticVersion;Lru/privatenull/pnlibrary/api/updates/UpdateChannel;Lru/privatenull/pnlibrary/api/version/ApiVersionRange;Ljava/lang/Integer;Ljava/util/List;Ljava/lang/String;Ljava/util/List;Ljava/util/List;Ljava/time/Instant;ILjava/lang/Object;)Lru/privatenull/pnlibrary/api/updates/ProductRelease;
 	public fun equals (Ljava/lang/Object;)Z
 	public final fun getArtifacts ()Ljava/util/List;
 	public final fun getChannel ()Lru/privatenull/pnlibrary/api/updates/UpdateChannel;
@@ -3234,6 +3655,7 @@ public final class ru/privatenull/pnlibrary/api/updates/ProductRelease {
 	public final fun getExternalPluginDependencies ()Ljava/util/List;
 	public final fun getProduct ()Lru/privatenull/pnlibrary/api/updates/ProductId;
 	public final fun getProvidesApi ()Ljava/lang/Integer;
+	public final fun getPublishedAt ()Ljava/time/Instant;
 	public final fun getRepository ()Ljava/lang/String;
 	public final fun getSupportedApi ()Lru/privatenull/pnlibrary/api/version/ApiVersionRange;
 	public final fun getVersion ()Lru/privatenull/pnlibrary/api/version/SemanticVersion;
@@ -3260,10 +3682,27 @@ public final class ru/privatenull/pnlibrary/api/updates/ProductReleaseManifest {
 	public fun toString ()Ljava/lang/String;
 }
 
+public final class ru/privatenull/pnlibrary/api/updates/ReleaseSummary {
+	public fun <init> (Ljava/lang/String;Lru/privatenull/pnlibrary/api/updates/UpdateChannel;Ljava/time/Instant;)V
+	public synthetic fun <init> (Ljava/lang/String;Lru/privatenull/pnlibrary/api/updates/UpdateChannel;Ljava/time/Instant;ILkotlin/jvm/internal/DefaultConstructorMarker;)V
+	public final fun component1 ()Ljava/lang/String;
+	public final fun component2 ()Lru/privatenull/pnlibrary/api/updates/UpdateChannel;
+	public final fun component3 ()Ljava/time/Instant;
+	public final fun copy (Ljava/lang/String;Lru/privatenull/pnlibrary/api/updates/UpdateChannel;Ljava/time/Instant;)Lru/privatenull/pnlibrary/api/updates/ReleaseSummary;
+	public static synthetic fun copy$default (Lru/privatenull/pnlibrary/api/updates/ReleaseSummary;Ljava/lang/String;Lru/privatenull/pnlibrary/api/updates/UpdateChannel;Ljava/time/Instant;ILjava/lang/Object;)Lru/privatenull/pnlibrary/api/updates/ReleaseSummary;
+	public fun equals (Ljava/lang/Object;)Z
+	public final fun getChannel ()Lru/privatenull/pnlibrary/api/updates/UpdateChannel;
+	public final fun getPublishedAt ()Ljava/time/Instant;
+	public final fun getVersion ()Ljava/lang/String;
+	public fun hashCode ()I
+	public fun toString ()Ljava/lang/String;
+}
+
 public final class ru/privatenull/pnlibrary/api/updates/UpdateChannel : java/lang/Enum {
 	public static final field ALPHA Lru/privatenull/pnlibrary/api/updates/UpdateChannel;
 	public static final field BETA Lru/privatenull/pnlibrary/api/updates/UpdateChannel;
 	public static final field DEV Lru/privatenull/pnlibrary/api/updates/UpdateChannel;
+	public static final field RC Lru/privatenull/pnlibrary/api/updates/UpdateChannel;
 	public static final field STABLE Lru/privatenull/pnlibrary/api/updates/UpdateChannel;
 	public final fun accepts (Lru/privatenull/pnlibrary/api/updates/UpdateChannel;)Z
 	public static fun getEntries ()Lkotlin/enums/EnumEntries;
@@ -3313,6 +3752,7 @@ public abstract interface class ru/privatenull/pnlibrary/api/updates/UpdateServi
 	public abstract fun find (Ljava/lang/String;)Lru/privatenull/pnlibrary/api/updates/UpdateRegistration;
 	public fun get (Ljava/lang/String;)Lru/privatenull/pnlibrary/api/updates/UpdateRegistration;
 	public fun history ()Ljava/util/List;
+	public fun register (Ljava/lang/Object;Lru/privatenull/pnlibrary/api/updates/ProductDescriptor;Lru/privatenull/pnlibrary/api/updates/PluginUpdateRequest;)Lru/privatenull/pnlibrary/api/updates/UpdateRegistration;
 	public abstract fun register (Ljava/lang/Object;Lru/privatenull/pnlibrary/api/updates/ProductDescriptor;Lru/privatenull/pnlibrary/api/updates/PluginUpdateRequest;Ljava/util/List;)Lru/privatenull/pnlibrary/api/updates/UpdateRegistration;
 	public static synthetic fun register$default (Lru/privatenull/pnlibrary/api/updates/UpdateService;Ljava/lang/Object;Lru/privatenull/pnlibrary/api/updates/ProductDescriptor;Lru/privatenull/pnlibrary/api/updates/PluginUpdateRequest;Ljava/util/List;ILjava/lang/Object;)Lru/privatenull/pnlibrary/api/updates/UpdateRegistration;
 	public abstract fun registrations ()Ljava/util/List;
@@ -3322,8 +3762,10 @@ public abstract interface class ru/privatenull/pnlibrary/api/updates/UpdateServi
 }
 
 public final class ru/privatenull/pnlibrary/api/updates/UpdateSnapshot {
-	public fun <init> (Ljava/lang/String;Ljava/lang/String;Ljava/lang/String;Lru/privatenull/pnlibrary/api/updates/UpdateChannel;Lru/privatenull/pnlibrary/api/updates/UpdateState;IIZLjava/lang/String;Ljava/lang/String;)V
+	public fun <init> (Ljava/lang/String;Ljava/lang/String;Ljava/lang/String;Lru/privatenull/pnlibrary/api/updates/UpdateChannel;Lru/privatenull/pnlibrary/api/updates/UpdateState;IIZLjava/lang/String;Ljava/lang/String;Lru/privatenull/pnlibrary/api/version/ApiVersionRange;Ljava/util/List;)V
+	public synthetic fun <init> (Ljava/lang/String;Ljava/lang/String;Ljava/lang/String;Lru/privatenull/pnlibrary/api/updates/UpdateChannel;Lru/privatenull/pnlibrary/api/updates/UpdateState;IIZLjava/lang/String;Ljava/lang/String;Lru/privatenull/pnlibrary/api/version/ApiVersionRange;Ljava/util/List;ILkotlin/jvm/internal/DefaultConstructorMarker;)V
 	public final fun getAutomaticDownload ()Z
+	public final fun getAvailableReleases ()Ljava/util/List;
 	public final fun getChannel ()Lru/privatenull/pnlibrary/api/updates/UpdateChannel;
 	public final fun getCurrentJava ()I
 	public final fun getCurrentVersion ()Ljava/lang/String;
@@ -3333,6 +3775,7 @@ public final class ru/privatenull/pnlibrary/api/updates/UpdateSnapshot {
 	public final fun getReleaseUrl ()Ljava/lang/String;
 	public final fun getRequiredJava ()I
 	public final fun getState ()Lru/privatenull/pnlibrary/api/updates/UpdateState;
+	public final fun getSupportedApi ()Lru/privatenull/pnlibrary/api/version/ApiVersionRange;
 }
 
 public final class ru/privatenull/pnlibrary/api/updates/UpdateState : java/lang/Enum {

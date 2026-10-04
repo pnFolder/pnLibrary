@@ -73,7 +73,13 @@ public final class ItemFactory {
         return item;
     }
 
-    /** Writes a readable item representation below {@code key}. */
+    /**
+     * Writes a readable item representation below {@code key}.
+     *
+     * @param parent destination configuration section
+     * @param key child key to replace
+     * @param source item to serialize
+     */
     public static void writeItem(ConfigurationSection parent, String key, ItemStack source) {
         requireWritable(parent, key, source);
         parent.set(key, null);
@@ -95,7 +101,13 @@ public final class ItemFactory {
         }
     }
 
-    /** Writes a readable representation and a lossless {@code item_data} payload. */
+    /**
+     * Writes a readable representation and a lossless {@code item_data} payload.
+     *
+     * @param parent destination configuration section
+     * @param key child key to replace
+     * @param source item to serialize
+     */
     public static void writeExactItem(ConfigurationSection parent, String key, ItemStack source) {
         requireWritable(parent, key, source);
         ItemStack item = source.clone();
@@ -105,7 +117,12 @@ public final class ItemFactory {
         if (section != null) section.set("item_data", ItemStackCodec.encode(item));
     }
 
-    /** Returns a compact map containing a readable material and lossless item payload. */
+    /**
+     * Returns a compact map containing a readable material and lossless item payload.
+     *
+     * @param source item to serialize
+     * @return immutable-empty or populated item data map
+     */
     public static Map<String, Object> toMap(ItemStack source) {
         if (!isRealItem(source)) return Collections.emptyMap();
         ItemStack item = source.clone();
@@ -116,7 +133,12 @@ public final class ItemFactory {
         return values;
     }
 
-    /** Returns whether an item is non-null, non-air, and has a positive amount. */
+    /**
+     * Returns whether an item is non-null, non-air, and has a positive amount.
+     *
+     * @param item item to inspect
+     * @return {@code true} when the item represents a usable stack
+     */
     public static boolean isRealItem(ItemStack item) {
         return item != null && !isAir(item.getType()) && item.getAmount() > 0;
     }

@@ -1,6 +1,11 @@
 package ru.privatenull.pnlibrary.api.version
 
-/** Inclusive pnLibrary API generations supported by a component release. */
+/**
+ * Inclusive pnLibrary API generations supported by a component release.
+ *
+ * @property minimum oldest supported API generation
+ * @property maximum newest supported API generation
+ */
 data class ApiVersionRange(
     val minimum: Int,
     val maximum: Int,

@@ -77,8 +77,13 @@ interface LibraryPlayer : AudienceSender {
     /** Stable player UUID supplied by the server platform. */
     val uniqueId: UUID
 
+    /** Stable textual sender identifier derived from [uniqueId]. */
     override val id: String get() = uniqueId.toString()
+
+    /** Always `false` because this audience represents a player. */
     override val isConsole: Boolean get() = false
+
+    /** Always `true` because this audience represents a player. */
     override val isPlayer: Boolean get() = true
 
     /** Current visible player name. */

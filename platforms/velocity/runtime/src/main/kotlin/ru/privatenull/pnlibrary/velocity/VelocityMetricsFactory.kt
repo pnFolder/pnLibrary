@@ -20,6 +20,7 @@ class VelocityMetricsFactory(
     private val dataDirectory: Path,
 ) : PlatformMetricsFactory {
 
+    /** Opens every enabled metrics provider configured for the Velocity plugin [owner]. */
     override fun open(owner: Any, configurations: Collection<MetricsProviderConfiguration>): PluginMetrics {
         val delegates = configurations.filter { it.enabled }.map { configuration ->
             when (configuration.provider) {

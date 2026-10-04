@@ -8,11 +8,19 @@ import java.nio.file.StandardCopyOption
 import java.security.MessageDigest
 import java.time.Duration
 
+/**
+ * Validated cached catalogue entry.
+ *
+ * @property bytes encoded catalogue bytes
+ * @property fresh whether the cache age is within the requested TTL
+ */
 data class CatalogueCacheHit(val bytes: ByteArray, val fresh: Boolean)
 
+/** Digest-protected, atomic on-disk cache for release catalogues. */
 class ReleaseCatalogueStore(private val root: Path) {
     private val lock = Any()
 
+    /** Reads and verifies the cached catalogue for [uri], when present. */
     fun read(uri: URI, ttl: Duration): CatalogueCacheHit? = synchronized(lock) {
         val data = dataPath(uri)
         val digest = digestPath(uri)
@@ -33,6 +41,7 @@ class ReleaseCatalogueStore(private val root: Path) {
         }
     }
 
+    /** Atomically writes catalogue [bytes] and their digest for [uri]. */
     fun write(uri: URI, bytes: ByteArray) = synchronized(lock) {
         val data = dataPath(uri)
         Files.createDirectories(data.parent)
@@ -40,6 +49,7 @@ class ReleaseCatalogueStore(private val root: Path) {
         atomicWrite(digestPath(uri), sha256(bytes).toByteArray(StandardCharsets.US_ASCII))
     }
 
+    /** Moves corrupt cache files for [uri] aside for later diagnosis. */
     fun quarantine(uri: URI) = synchronized(lock) {
         val suffix = ".corrupt-${System.currentTimeMillis()}"
         listOf(dataPath(uri), digestPath(uri)).forEach { path ->

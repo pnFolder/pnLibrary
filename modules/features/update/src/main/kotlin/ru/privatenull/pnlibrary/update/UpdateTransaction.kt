@@ -11,11 +11,20 @@ import java.nio.file.Paths
 import java.util.UUID
 import java.nio.file.StandardOpenOption.WRITE
 
+/** Durable lifecycle state of an update transaction. */
 enum class TransactionState {
     CREATED, DOWNLOADING, VERIFIED, STAGED, PUBLISHING, ACTIVATING, AWAITING_HEALTH,
     COMMITTED, ROLLING_BACK, ROLLED_BACK, FAILED,
 }
 
+/**
+ * One artifact participating in an atomic update transaction.
+ *
+ * @property specification trusted verification metadata
+ * @property source downloaded source file
+ * @property target final publication path
+ * @property rollbackSource current artifact preserved for rollback
+ */
 data class TransactionArtifact(
     val specification: ArtifactSpecification,
     val source: Path,
@@ -23,8 +32,24 @@ data class TransactionArtifact(
     val rollbackSource: Path = target,
 )
 
+/**
+ * Final observed transaction result.
+ *
+ * @property state resulting durable lifecycle state
+ * @property journal durable transaction journal path
+ */
 data class TransactionResult(val state: TransactionState, val journal: Path)
 
+/**
+ * Durable paths and metadata for one journaled artifact.
+ *
+ * @property component normalized product identifier
+ * @property target publication path
+ * @property staged verified staging path
+ * @property backup rollback backup path
+ * @property targetExisted whether publication replaces an existing file
+ * @property expectedVersion version expected during post-restart health verification
+ */
 data class JournalArtifact(
     val component: String,
     val target: String,
@@ -34,19 +59,31 @@ data class JournalArtifact(
     val expectedVersion: String? = null,
 )
 
+/** Transaction awaiting post-restart health confirmation. */
 data class PendingTransaction(
+    /** Durable transaction journal path. */
     val journal: Path,
+    /** Expected product versions keyed by normalized product ID. */
     val expectedVersions: Map<String, String>,
 )
 
+/**
+ * Durable transaction state used for crash recovery and rollback.
+ *
+ * @property id unique transaction identifier
+ * @property state current durable lifecycle state
+ * @property artifacts artifact records participating in this transaction
+ */
 data class TransactionJournal(
     val id: String,
     var state: TransactionState,
     val artifacts: List<JournalArtifact>,
 ) {
+    /** Loads and persists transaction journals. */
     companion object {
         private val gson = GsonBuilder().setPrettyPrinting().create()
 
+        /** Loads a transaction journal from [path]. */
         fun load(path: Path): TransactionJournal = Files.newBufferedReader(path, StandardCharsets.UTF_8).use {
             gson.fromJson(it, TransactionJournal::class.java)
         }
@@ -70,6 +107,7 @@ data class TransactionJournal(
     }
 }
 
+/** Coordinates verified staging, atomic publication, health confirmation, and rollback. */
 class UpdateTransaction(
     private val root: Path,
     private val verifier: ArtifactVerifier,
@@ -77,11 +115,13 @@ class UpdateTransaction(
 ) {
     private val publicationRoot = publicationRoot.toAbsolutePath().normalize()
 
+    /** Prepares [artifacts], evaluates [healthCheck], and completes the transaction. */
     fun apply(artifacts: List<TransactionArtifact>, healthCheck: () -> Boolean): TransactionResult {
         val prepared = prepareForRestart(artifacts)
         return completeHealth(prepared.journal, healthCheck())
     }
 
+    /** Verifies and publishes [artifacts], leaving the transaction awaiting restart health. */
     fun prepareForRestart(artifacts: List<TransactionArtifact>): TransactionResult {
         require(artifacts.isNotEmpty()) { "transaction must contain at least one artifact" }
         require(artifacts.map { it.specification.product }.distinct().size == artifacts.size) {
@@ -150,6 +190,7 @@ class UpdateTransaction(
         }
     }
 
+    /** Commits or fails the transaction at [journalPath] according to [healthy]. */
     fun completeHealth(journalPath: Path, healthy: Boolean): TransactionResult {
         val normalized = journalPath.toAbsolutePath().normalize()
         require(normalized.startsWith(root.toAbsolutePath().normalize())) { "health journal must stay inside transaction root" }
@@ -161,6 +202,7 @@ class UpdateTransaction(
         return TransactionResult(journal.state, normalized)
     }
 
+    /** Returns transactions waiting for post-restart product-version confirmation. */
     fun awaitingHealth(): List<PendingTransaction> = journals()
         .mapNotNull { path ->
             val journal = runCatching { TransactionJournal.load(path) }.getOrNull() ?: return@mapNotNull null
@@ -170,6 +212,7 @@ class UpdateTransaction(
             }.toMap())
         }
 
+    /** Recovers an interrupted transaction, rolling back unsafe publication states. */
     fun recover(journalPath: Path): TransactionResult {
         val journal = TransactionJournal.load(journalPath)
         if (journal.state in setOf(
@@ -183,6 +226,7 @@ class UpdateTransaction(
         return TransactionResult(journal.state, journalPath)
     }
 
+    /** Restores artifacts recorded by the completed or failed transaction. */
     fun rollback(journalPath: Path): TransactionResult {
         val normalized = journalPath.toAbsolutePath().normalize()
         require(normalized.startsWith(root.toAbsolutePath().normalize())) { "rollback journal must stay inside transaction root" }
@@ -212,6 +256,7 @@ class UpdateTransaction(
         }
     }
 
+    /** Recovers every journal found below the transaction root. */
     fun recoverAll(): List<TransactionResult> {
         if (!Files.isDirectory(root)) return emptyList()
         return Files.list(root).use { directories ->

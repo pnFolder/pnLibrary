@@ -19,14 +19,20 @@ class FastStatsMetricsSession(
     private val plugin: Plugin,
     private val token: String,
 ) : PluginMetrics {
+    /** Error reporter backed by the FastStats error tracker used by this session. */
     override val errorReporter = FastStatsErrorReporter()
     private val closed = AtomicBoolean(false)
     private val started = AtomicBoolean(false)
     private val pending = mutableListOf<(Metrics.Factory) -> Unit>()
     private var context: BukkitContext? = null
 
+    /** Numeric project identifiers do not apply to token-based FastStats projects. */
     override val projectId: Int = 0
+
+    /** Identifies FastStats as the backing provider. */
     override val provider: MetricsProvider = MetricsProvider.FASTSTATS
+
+    /** Features implemented by the FastStats adapter. */
     override val capabilities: Set<MetricsCapability> = setOf(
         MetricsCapability.CHARTS,
         MetricsCapability.CUSTOM_VALUES,
@@ -34,14 +40,17 @@ class FastStatsMetricsSession(
         MetricsCapability.CONTEXT_ATTRIBUTES,
     )
 
+    /** Adds a string-valued pie metric named [id]. */
     override fun simplePie(id: String, value: Supplier<String?>): PluginMetrics = add {
         it.addMetric(FastStatsBridge.string(valid(id), Callable { value.get() ?: "unknown" }))
     }
 
+    /** Adds a multi-valued pie metric named [id]. */
     override fun advancedPie(id: String, values: Supplier<Map<String, Int>>): PluginMetrics = add {
         it.addMetric(FastStatsBridge.numberMap(valid(id), Callable { values.get() }))
     }
 
+    /** Adds a two-level drill-down pie metric named [id]. */
     override fun drilldownPie(id: String, values: Supplier<Map<String, Map<String, Int>>>): PluginMetrics = add {
         it.addMetric(FastStatsBridge.`object`(valid(id), Callable {
             JsonObject().also { root ->
@@ -52,13 +61,18 @@ class FastStatsMetricsSession(
         }))
     }
 
+    /** Adds a single integer line metric named [id]. */
     override fun singleLineChart(id: String, value: Supplier<Int>): PluginMetrics = add {
         it.addMetric(FastStatsBridge.number(valid(id), Callable { value.get() }))
     }
 
+    /** Adds a multi-series line metric named [id]. */
     override fun multiLineChart(id: String, values: Supplier<Map<String, Int>>): PluginMetrics = advancedPie(id, values)
+
+    /** Adds a category-based bar metric named [id]. */
     override fun simpleBarChart(id: String, values: Supplier<Map<String, Int>>): PluginMetrics = advancedPie(id, values)
 
+    /** Adds a bar metric whose categories may contain several values. */
     override fun advancedBarChart(id: String, values: Supplier<Map<String, IntArray>>): PluginMetrics = add {
         it.addMetric(FastStatsBridge.`object`(valid(id), Callable {
             JsonObject().also { root ->
@@ -69,6 +83,7 @@ class FastStatsMetricsSession(
         }))
     }
 
+    /** Creates and marks the buffered FastStats context as ready. */
     override fun start() {
         if (!started.compareAndSet(false, true) || closed.get()) return
         context = BukkitContext.Factory(plugin, token)
@@ -81,6 +96,7 @@ class FastStatsMetricsSession(
         context?.ready()
     }
 
+    /** Shuts down the FastStats context once. */
     override fun close() {
         if (closed.compareAndSet(false, true)) context?.shutdown()
     }

@@ -6,11 +6,14 @@ import java.nio.file.Files
 import java.nio.file.Path
 import java.nio.file.StandardCopyOption
 
+/** Raised when an artifact cannot be downloaded safely. */
 class ArtifactDownloadException(message: String) : IllegalStateException(message)
 
+/** Streams artifacts into atomic temporary files under a strict byte limit. */
 class ArtifactDownloader(private val maximumBytes: Long) {
     init { require(maximumBytes > 0) { "maximumBytes must be positive" } }
 
+    /** Downloads into [destination] and returns the number of bytes written. */
     fun download(openStream: () -> InputStream, destination: Path): Long {
         val absolute = destination.toAbsolutePath().normalize()
         val parent = absolute.parent ?: throw ArtifactDownloadException("download destination must have a parent")

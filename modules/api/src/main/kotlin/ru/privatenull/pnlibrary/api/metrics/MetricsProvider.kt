@@ -14,7 +14,14 @@ enum class MetricsCapability {
     CONTEXT_ATTRIBUTES,
 }
 
-/** Provider-neutral credentials and enablement requested for one plugin module. */
+/**
+ * Provider-neutral credentials and enablement requested for one plugin module.
+ *
+ * @property provider metrics backend to open
+ * @property enabled whether this backend participates in the resulting metrics session
+ * @property projectId positive bStats project identifier, required by [MetricsProvider.BSTATS]
+ * @property token FastStats project token, required by [MetricsProvider.FASTSTATS]
+ */
 data class MetricsProviderConfiguration(
     val provider: MetricsProvider,
     val enabled: Boolean = true,

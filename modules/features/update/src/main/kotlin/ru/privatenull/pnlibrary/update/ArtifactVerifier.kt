@@ -8,6 +8,16 @@ import java.nio.file.Path
 import java.nio.file.Paths
 import java.security.MessageDigest
 
+/**
+ * Trusted catalogue facts used to verify one downloaded artifact.
+ *
+ * @property product expected product identity
+ * @property version expected product version
+ * @property supportedApi declared supported pnLibrary API range
+ * @property fileName expected plain filename
+ * @property size expected byte length, when published
+ * @property sha256 expected SHA-256 digest, when published
+ */
 data class ArtifactSpecification(
     val product: ProductId,
     val version: SemanticVersion,
@@ -23,13 +33,16 @@ data class ArtifactSpecification(
     }
 }
 
+/** Raised when a downloaded artifact contradicts its trusted specification. */
 class ArtifactVerificationException(message: String) : IllegalArgumentException(message)
 
+/** Verifies artifact paths, size limits, and optional publisher integrity metadata. */
 class ArtifactVerifier(
     private val maximumBytes: Long,
 ) {
     init { require(maximumBytes > 0) { "maximumBytes must be positive" } }
 
+    /** Verifies the file at [path] against [expected], throwing on any mismatch. */
     fun verify(path: Path, expected: ArtifactSpecification) {
         if (!Files.isRegularFile(path)) fail("artifact is not a regular file")
         if (path.fileName.toString() != expected.fileName) fail("artifact file name does not match metadata")

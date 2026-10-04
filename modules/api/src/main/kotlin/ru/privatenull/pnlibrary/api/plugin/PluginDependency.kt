@@ -11,7 +11,13 @@ enum class DownloadPolicy {
     FORCED
 }
 
-/** Inclusive lower bound plus one optional upper bound for a dependency version. */
+/**
+ * Inclusive lower bound plus one optional upper bound for a dependency version.
+ *
+ * @property minimum oldest accepted version
+ * @property maximumInclusive newest accepted version, inclusive
+ * @property maximumExclusive newest boundary, exclusive
+ */
 class VersionConstraint(
     val minimum: SemanticVersion,
     val maximumInclusive: SemanticVersion? = null,
@@ -29,6 +35,7 @@ class VersionConstraint(
         }
     }
 
+    /** Returns whether [version] lies inside this interval. */
     fun accepts(version: SemanticVersion): Boolean =
         version >= minimum &&
             (maximumInclusive == null || version <= maximumInclusive) &&
@@ -40,9 +47,13 @@ interface PluginDependency {
     /** Whether absence or an outdated version blocks plugin registration. */
     val required: Boolean get() = true
 
+    /** Accepted dependency-version interval. */
     val versions: VersionConstraint
+    /** Policy governing whether pnLibrary may download this dependency. */
     val downloadPolicy: DownloadPolicy get() = DownloadPolicy.MANUAL
+    /** Whether ordinary automatic download is permitted. */
     val automaticDownload: Boolean get() = downloadPolicy != DownloadPolicy.MANUAL
+    /** Whether automatic download is mandatory. */
     val forceAutomaticDownload: Boolean get() = downloadPolicy == DownloadPolicy.FORCED
     /** Managed pnLibrary component, when this is a library component dependency. */
     val managed: ManagedProductDependency? get() = null
@@ -53,6 +64,7 @@ interface PluginDependency {
 
 /** Short factories for the unified dependency DSL. */
 object Dependencies {
+    /** Creates a dependency on a catalog-managed pnLibrary product. */
     @JvmStatic
     @JvmOverloads
     fun managed(
@@ -72,6 +84,7 @@ object Dependencies {
         downloadPolicy(automaticDownload, forceAutomaticDownload),
     )
 
+    /** Creates a manual third-party plugin dependency with a download page. */
     @JvmStatic
     @JvmOverloads
     fun plugin(
@@ -87,6 +100,7 @@ object Dependencies {
         .downloadPolicy(downloadPolicy(automaticDownload, forceAutomaticDownload))
         .build()
 
+    /** Creates a verifiable third-party plugin dependency with an exact artifact. */
     @JvmStatic
     @JvmOverloads
     fun plugin(

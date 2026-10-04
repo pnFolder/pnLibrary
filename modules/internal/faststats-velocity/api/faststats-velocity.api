@@ -1,0 +1,12 @@
+public final class ru/privatenull/pnlibrary/internal/faststatsvelocity/FastStatsBridge {
+	public static fun errorTracker ()Ldev/faststats/ErrorTracker;
+	public static fun number (Ljava/lang/String;Ljava/util/concurrent/Callable;)Ldev/faststats/data/Metric;
+	public static fun numberMap (Ljava/lang/String;Ljava/util/concurrent/Callable;)Ldev/faststats/data/Metric;
+	public static fun object (Ljava/lang/String;Ljava/util/concurrent/Callable;)Ldev/faststats/data/Metric;
+	public static fun string (Ljava/lang/String;Ljava/util/concurrent/Callable;)Ldev/faststats/data/Metric;
+}
+
+public final class ru/privatenull/pnlibrary/internal/faststatsvelocity/FastStatsVelocityProvider {
+	public fun <init> ()V
+	public final fun open (Ljava/lang/Object;Lcom/velocitypowered/api/proxy/ProxyServer;Lorg/slf4j/Logger;Ljava/nio/file/Path;Ljava/lang/String;)Lru/privatenull/pnlibrary/api/metrics/PluginMetrics;
+}

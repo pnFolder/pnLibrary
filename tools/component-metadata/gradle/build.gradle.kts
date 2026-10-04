@@ -32,7 +32,10 @@ gradlePlugin {
 }
 
 dependencies {
-    implementation(fileTree("../core/build/libs") { include("*.jar") })
+    implementation(fileTree("../core/build/libs") {
+        include("*.jar")
+        exclude("*-sources.jar", "*-javadoc.jar")
+    })
     testImplementation(gradleTestKit())
     testImplementation(libs.junit.jupiter)
     testRuntimeOnly(libs.junit.launcher)
@@ -41,8 +44,10 @@ dependencies {
 // This project is also loaded as an isolated pluginManagement included build.
 // In the main multi-project build, make the file dependency's producer explicit.
 if (rootProject.name == "pnLibrary") {
-    tasks.named("pluginUnderTestMetadata") {
-        dependsOn(":tools:component-metadata:core:jar")
+    listOf("pluginUnderTestMetadata", "validatePlugins").forEach { taskName ->
+        tasks.named(taskName) {
+            dependsOn(":tools:component-metadata:core:jar")
+        }
     }
 }
 

@@ -31,6 +31,7 @@ data class CurrencyDescriptor(
     /** Returns whether [amount] already conforms without numerical rounding. */
     fun accepts(amount: BigDecimal): Boolean = normalize(amount).compareTo(amount) == 0
 
+    /** Creates currency descriptors. */
     companion object {
         /** Creates the canonical Java/Kotlin fluent builder. */
         @JvmStatic

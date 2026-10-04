@@ -25,10 +25,24 @@ public final class PnLibraryBootstrap {
 
     private PnLibraryBootstrap() {}
 
+    /**
+     * Ensures pnLibrary is installed using the default release repository.
+     *
+     * @param plugin plugin requesting the dependency
+     * @param minimumVersion minimum compatible pnLibrary version
+     * @return {@code true} when a compatible library is ready
+     */
     public static boolean ensureInstalled(JavaPlugin plugin, String minimumVersion) {
         return ensureInstalled(plugin, BootstrapOptions.builder(minimumVersion).build());
     }
 
+    /**
+     * Ensures pnLibrary is installed according to {@code options}.
+     *
+     * @param plugin plugin requesting the dependency
+     * @param options validated bootstrap settings
+     * @return {@code true} when a compatible library is ready
+     */
     public static boolean ensureInstalled(JavaPlugin plugin, BootstrapOptions options) {
         Plugin installed = plugin.getServer().getPluginManager().getPlugin(PLUGIN_NAME);
         if (installed != null) return ensureCompatible(plugin, options.minimumVersion());
@@ -41,6 +55,13 @@ public final class PnLibraryBootstrap {
         }
     }
 
+    /**
+     * Checks that the already loaded pnLibrary is enabled and sufficiently recent.
+     *
+     * @param plugin plugin requesting the dependency
+     * @param minimumVersion minimum compatible pnLibrary version
+     * @return {@code true} when the loaded library satisfies the requirement
+     */
     public static boolean ensureCompatible(JavaPlugin plugin, String minimumVersion) {
         Plugin library = plugin.getServer().getPluginManager().getPlugin(PLUGIN_NAME);
         if (library == null || !library.isEnabled()) {

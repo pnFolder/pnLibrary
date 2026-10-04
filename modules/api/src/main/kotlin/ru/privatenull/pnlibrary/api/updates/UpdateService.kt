@@ -90,7 +90,13 @@ class UpdateSnapshot(
     val availableReleases: List<ReleaseSummary> = emptyList(),
 )
 
-/** Minimal release history entry used by status views. */
+/**
+ * Minimal release history entry used by status views.
+ *
+ * @property version published version text
+ * @property channel declared release maturity
+ * @property publishedAt publisher-provided release time
+ */
 data class ReleaseSummary(
     val version: String,
     val channel: UpdateChannel,
@@ -103,6 +109,7 @@ data class ReleaseSummary(
  * @property pattern regular expression matched against complete release asset names
  * @property minimumJava lowest supported Java feature version, inclusive
  * @property maximumJava highest supported Java feature version, inclusive, or `null`
+ * @property platform optional server/proxy platform restriction
  */
 class PluginUpdateArtifact(
     val pattern: String,
@@ -279,6 +286,10 @@ interface UpdateService {
         request: PluginUpdateRequest,
         dependencies: List<PluginDependency> = emptyList(),
     ): UpdateRegistration
+
+    /** Java-friendly overload for registering a product without dependencies. */
+    fun register(owner: Any, product: ProductDescriptor, request: PluginUpdateRequest): UpdateRegistration =
+        register(owner, product, request, emptyList())
 
     /** Returns an immutable snapshot of current registrations. */
     @Suppress("DEPRECATION")

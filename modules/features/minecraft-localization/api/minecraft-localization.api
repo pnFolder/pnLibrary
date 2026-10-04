@@ -36,7 +36,7 @@ public final class ru/privatenull/pnlibrary/localization/MinecraftLocalization$C
 }
 
 public final class ru/privatenull/pnlibrary/localization/MinecraftLocalizationDslKt {
-	public static final fun load (Lru/privatenull/pnlibrary/localization/MinecraftLocalization;Lkotlin/jvm/functions/Function1;)Ljava/util/concurrent/CompletionStage;
+	public static final synthetic fun load (Lru/privatenull/pnlibrary/localization/MinecraftLocalization;Lkotlin/jvm/functions/Function1;)Ljava/util/concurrent/CompletionStage;
 }
 
 public abstract interface class ru/privatenull/pnlibrary/localization/TranslationBundle {

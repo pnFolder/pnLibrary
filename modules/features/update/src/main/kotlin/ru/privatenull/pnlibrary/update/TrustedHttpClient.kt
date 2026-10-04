@@ -6,6 +6,7 @@ import java.net.URI
 import java.time.Duration
 import java.io.InputStream
 
+/** Bounded HTTPS client with explicit redirect and timeout handling. */
 open class TrustedHttpClient(
     private val connectTimeout: Duration,
     private val readTimeout: Duration,
@@ -27,6 +28,7 @@ open class TrustedHttpClient(
         return uri
     }
 
+    /** Downloads at most [maximumBytes] from validated HTTPS [uri]. */
     open fun get(uri: URI, maximumBytes: Int): ByteArray {
         require(maximumBytes > 0) { "maximumBytes must be positive" }
         var current = validate(uri)
@@ -74,6 +76,7 @@ open class TrustedHttpClient(
         return output.toByteArray()
     }
 
+    /** Redirect-policy constants. */
     companion object {
         private const val MAX_REDIRECTS = 5
         private val REDIRECT_CODES = setOf(301, 302, 303, 307, 308)

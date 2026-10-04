@@ -20,9 +20,12 @@ interface CommandSender : AudienceSender {
     /** Sends one Adventure component to this sender. */
     fun send(message: Component)
 
+    /** Sends [text] as a normal chat message. */
     override fun sendMessage(text: Component) = send(text)
 
+    /** Falls back to chat output when the platform has no specialized action bar adapter. */
     override fun actionBar(text: Component) = send(text)
 
+    /** Returns `false` because generic command senders cannot play sounds. */
     override fun playSound(sound: net.kyori.adventure.sound.Sound): Boolean = false
 }
