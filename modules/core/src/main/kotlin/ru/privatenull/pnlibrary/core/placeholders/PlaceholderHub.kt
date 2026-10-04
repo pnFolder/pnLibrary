@@ -24,6 +24,7 @@ internal class PlaceholderHub(
     private val entries = ConcurrentHashMap<String, PlaceholderEntry<*>>()
     private val adapters = ConcurrentHashMap<String, PlaceholderAdapter>()
     private val formatterRegistry = PlaceholderFormatterRegistry()
+    private val entryLookup = PlaceholderEntryLookup(entries, PluginId.of(SYSTEM_NAMESPACE))
 
     init {
         formatterRegistry.registerBuiltIns()
@@ -149,7 +150,8 @@ internal class PlaceholderHub(
         override fun render(template: String, playerId: UUID?, values: Map<String, Any?>): CompletionStage<String> =
             templateRenderer(owner).render(template, playerId, values)
 
-        override fun contains(expression: String): Boolean = find(owner, expression.substringBefore('|')).first != null
+        override fun contains(expression: String): Boolean =
+            entryLookup.find(owner, expression.substringBefore('|')).entry != null
         override fun provider(pluginId: PluginId): PlaceholderProvider = object : PlaceholderProvider {
             override val pluginId = pluginId
             override fun resolve(key: String, playerId: UUID?): CompletionStage<Any?> =
@@ -176,7 +178,7 @@ internal class PlaceholderHub(
         val pieces = expression.split('|')
         val reference = pieces.first().trim()
         values[reference]?.let { return CompletableFuture.completedFuture(format(consumer, it, pieces.drop(1), playerId, values)) }
-        val (entry, params) = find(consumer, reference)
+        val (entry, params) = entryLookup.find(consumer, reference)
         if (entry == null) {
             val external = adapters.values.asSequence().filter { it.state == PlaceholderAdapterState.AVAILABLE || it.state == PlaceholderAdapterState.REGISTERED }
                 .mapNotNull { adapter -> runCatching { adapter.resolve(playerId, reference) }.getOrNull() }.firstOrNull()
@@ -196,7 +198,7 @@ internal class PlaceholderHub(
         values: Map<String, Any?>,
     ): CompletionStage<Any?> {
         val reference = expression.substringBefore('|').trim()
-        val (entry, parameters) = find(consumer, reference)
+        val (entry, parameters) = entryLookup.find(consumer, reference)
         if (entry == null) return failed(IllegalArgumentException("Unknown placeholder: $reference"))
         val request = PlaceholderRequest(entry.owner, consumer, playerId, parameters, values)
         return runCatching {
@@ -212,19 +214,6 @@ internal class PlaceholderHub(
         resolve = { expression, playerId, values -> resolveFor(consumer, expression, playerId, values) },
         format = { value, pipeline, playerId, values -> format(consumer, value, pipeline, playerId, values) },
     )
-
-    private fun find(consumer: PluginId, reference: String): Pair<PlaceholderEntry<*>?, Map<String, String>> {
-        val separator = reference.indexOf(':')
-        val namespace = if (separator > 0) PluginId.of(reference.substring(0, separator)) else consumer
-        val key = if (separator > 0) reference.substring(separator + 1) else reference
-        entries[id(namespace, key)]?.let { return it to emptyMap() }
-        if (separator < 0) {
-            entries[id(PluginId.of(SYSTEM_NAMESPACE), key)]?.let { return it to emptyMap() }
-        }
-        return entries.values.asSequence().filter { it.owner == namespace }.mapNotNull { entry ->
-            PlaceholderPatternMatcher.match(entry.key.value, key)?.let { entry to it }
-        }.maxByOrNull { it.first.key.value.length } ?: (null to emptyMap())
-    }
 
     private fun format(consumer: PluginId, value: Any?, pipeline: List<String>, playerId: UUID?, values: Map<String, Any?>, existing: PlaceholderRequest? = null): Any? {
         val request = existing ?: PlaceholderRequest(consumer, consumer, playerId, emptyMap(), values)
