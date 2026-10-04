@@ -15,6 +15,7 @@ import ru.privatenull.pnlibrary.internal.faststats.FastStatsBridge
 
 /** FastStats adapter for BungeeCord and Waterfall. */
 class FastStatsMetricsSession(private val plugin: Plugin, private val token: String) : PluginMetrics {
+    override val errorReporter = FastStatsErrorReporter()
     private val closed = AtomicBoolean(false)
     private val started = AtomicBoolean(false)
     private val pending = mutableListOf<(Metrics.Factory) -> Unit>()
@@ -40,7 +41,13 @@ class FastStatsMetricsSession(private val plugin: Plugin, private val token: Str
 
     override fun start() {
         if (!started.compareAndSet(false, true) || closed.get()) return
-        context = BungeeContext.Factory(plugin, token).metrics { factory -> pending.forEach { it(factory) }; factory.create() }.create()
+        context = BungeeContext.Factory(plugin, token)
+            .errorTrackerService(errorReporter.tracker)
+            .metrics { factory ->
+                pending.forEach { register -> register(factory) }
+                factory.create()
+            }
+            .create()
         context?.ready()
     }
     override fun close() { if (closed.compareAndSet(false, true)) context?.shutdown() }

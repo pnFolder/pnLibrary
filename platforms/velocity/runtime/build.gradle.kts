@@ -31,6 +31,8 @@ dependencies {
     implementation(project(":platforms:velocity:api"))
     implementation(libs.kotlin.stdlib)
     implementation(project(":modules:internal:bstats"))
+    // The adapter is instantiated only after the factory checks for Java 21.
+    compileOnly(files(rootProject.project(":modules:internal:faststats-velocity").tasks.named("jar")))
     compileOnly(libs.velocity.api)
 
     testImplementation(libs.junit.jupiter)

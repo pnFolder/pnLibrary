@@ -18,7 +18,8 @@ dependencies {
     implementation(project(":modules:api"))
     implementation(project(":modules:runtime-spi"))
     implementation(libs.faststats.velocity) { isTransitive = false }
-    implementation(libs.faststats.core)
+    // All platform adapters share the same Java 8-compatible SDK core.
+    implementation(libs.faststats.core.j8)
     compileOnly(libs.velocity.api)
 }
 

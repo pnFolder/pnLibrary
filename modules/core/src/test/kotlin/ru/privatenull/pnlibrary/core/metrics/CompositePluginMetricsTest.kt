@@ -11,6 +11,20 @@ import java.util.function.Supplier
 
 class CompositePluginMetricsTest {
     @Test
+    fun `composite exposes the error reporter owned by its provider`() {
+        val reporter = object : ru.privatenull.pnlibrary.api.metrics.ErrorReporter {
+            override fun capture(error: ru.privatenull.pnlibrary.api.metrics.TelemetryError) = Unit
+            override fun close() = Unit
+        }
+        val charts = RecordingMetrics(MetricsProvider.BSTATS, mutableListOf())
+        val errors = object : PluginMetrics by charts {
+            override val errorReporter = reporter
+        }
+        assertEquals(reporter, CompositePluginMetrics(listOf(charts, errors)).errorReporter)
+        assertEquals(null, CompositePluginMetrics(listOf(charts)).errorReporter)
+    }
+
+    @Test
     fun `shared charts fan out to every provider and close in reverse order`() {
         val calls = mutableListOf<String>()
         val first = RecordingMetrics(MetricsProvider.BSTATS, calls)

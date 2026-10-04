@@ -39,7 +39,19 @@ internal class MetricsControllerImpl(
     override val providerConfigurations: List<MetricsProviderConfiguration>
         get() = configuredProviders.toList()
 
-    override fun errorReporterOrNull(): ErrorReporter? = errorReporter
+    override fun errorReporterOrNull(): ErrorReporter? =
+        session?.errorReporter?.let { errorReporter ?: it }
+
+    override fun fastStatsOrNull(): ru.privatenull.pnlibrary.api.metrics.FastStatsFacade? {
+        val backend = session?.fastStatsOrNull() ?: return null
+        return object : ru.privatenull.pnlibrary.api.metrics.FastStatsFacade {
+            override val metrics: PluginMetrics = backend.metrics
+            override fun errorTracker(): ErrorReporter = errorReporter ?: backend.errorTracker()
+        }
+    }
+
+    /** Returns the reporter owned by the live provider session. */
+    internal fun sessionErrorReporter(): ErrorReporter? = session?.errorReporter
 
     override fun enable() = synchronized(lock) {
         ensureOpen()
@@ -54,6 +66,7 @@ internal class MetricsControllerImpl(
         session?.close()
         session = null
         currentProjectId = projectId
+        updateBStatsProjectId(projectId)
         session = openSession()
     }
 
@@ -71,14 +84,19 @@ internal class MetricsControllerImpl(
         session?.close()
         session = null
         currentProjectId = projectId
+        updateBStatsProjectId(projectId)
         if (restart) session = openSession()
     }
 
     override fun configure(configure: Consumer<PluginMetrics>) {
         synchronized(lock) {
             ensureOpen()
-            session?.let { configure.accept(it) }
             configurers += configure
+            if (session != null) {
+                session?.close()
+                session = null
+                session = openSession()
+            }
         }
     }
 
@@ -110,4 +128,12 @@ internal class MetricsControllerImpl(
     }
 
     private fun ensureOpen() = check(!closed.get()) { "MetricsController is closed" }
+
+    private fun updateBStatsProjectId(projectId: Int) {
+        configuredProviders.replaceAll { configuration ->
+            if (configuration.provider == ru.privatenull.pnlibrary.api.metrics.MetricsProvider.BSTATS) {
+                configuration.copy(projectId = projectId)
+            } else configuration
+        }
+    }
 }

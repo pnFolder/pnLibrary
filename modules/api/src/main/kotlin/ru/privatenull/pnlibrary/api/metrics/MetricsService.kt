@@ -38,6 +38,19 @@ interface MetricsService {
  * to repeat and prevents its registry from retaining the session.
  */
 interface PluginMetrics : AutoCloseable {
+    /** Returns FastStats capabilities only for a session providing that backend. */
+    fun fastStatsOrNull(): FastStatsFacade? {
+        if (provider != MetricsProvider.FASTSTATS) return null
+        val reporter = errorReporter ?: return null
+        val session = this
+        return object : FastStatsFacade {
+            override val metrics: PluginMetrics = session
+            override fun errorTracker(): ErrorReporter = reporter
+        }
+    }
+    /** Error reporter owned by this session; absent for chart-only providers. */
+    val errorReporter: ErrorReporter?
+        get() = null
     /** Starts provider submission after all configured charts and services are registered. */
     fun start() = Unit
 

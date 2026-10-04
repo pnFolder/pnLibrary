@@ -12,6 +12,41 @@ import java.util.function.Supplier
 
 class MetricsControllerImplTest {
     @Test
+    fun `FastStats facade follows enabled session lifecycle`() {
+        val reporter = object : ru.privatenull.pnlibrary.api.metrics.ErrorReporter {
+            override fun capture(error: ru.privatenull.pnlibrary.api.metrics.TelemetryError) = Unit
+            override fun close() = Unit
+        }
+        val service = object : MetricsService {
+            override fun open(owner: Any, projectId: Int): PluginMetrics =
+                RecordingMetrics(projectId, reporter)
+        }
+        val controller = MetricsControllerImpl(Any(), service, 10, true, emptyList())
+        assertEquals(reporter, controller.fastStatsOrNull()?.errorTracker())
+        controller.disable()
+        assertEquals(null, controller.fastStatsOrNull())
+        controller.enable()
+        assertEquals(reporter, controller.fastStatsOrNull()?.errorTracker())
+        controller.close()
+        assertEquals(null, controller.fastStatsOrNull())
+    }
+
+    @Test
+    fun `runtime chart configuration restarts session and replays all charts`() {
+        val service = RecordingMetricsService()
+        val controller = MetricsControllerImpl(Any(), service, 10, true, emptyList())
+
+        controller.configure(Consumer { it.simplePie("mode", Supplier { "test" }) })
+        controller.configure(Consumer { it.simplePie("database", Supplier { "mysql" }) })
+
+        assertTrue(service.opened.first().closed)
+        assertEquals(listOf("mode", "database"), service.opened.last().charts)
+        controller.disable()
+        assertEquals(null, controller.errorReporterOrNull())
+        controller.close()
+    }
+
+    @Test
     fun `metrics can be disabled enabled and moved to another project`() {
         val service = RecordingMetricsService()
         val controller = MetricsControllerImpl(
@@ -59,7 +94,13 @@ class MetricsControllerImplTest {
             RecordingMetrics(projectId).also { opened += it }
     }
 
-    private class RecordingMetrics(override val projectId: Int) : PluginMetrics {
+    private class RecordingMetrics(
+        override val projectId: Int,
+        override val errorReporter: ru.privatenull.pnlibrary.api.metrics.ErrorReporter? = null,
+    ) : PluginMetrics {
+        override val provider get() = if (errorReporter == null)
+            ru.privatenull.pnlibrary.api.metrics.MetricsProvider.BSTATS
+        else ru.privatenull.pnlibrary.api.metrics.MetricsProvider.FASTSTATS
         val charts = mutableListOf<String>()
         var closed = false
         override fun simplePie(id: String, value: Supplier<String?>) = apply { charts += id }

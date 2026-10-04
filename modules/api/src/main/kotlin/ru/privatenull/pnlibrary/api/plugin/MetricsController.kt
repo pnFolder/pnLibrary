@@ -12,6 +12,8 @@ import java.util.function.Consumer
  * same session. Closing the controller disables the session permanently with its plugin context.
  */
 interface MetricsController : AutoCloseable {
+    /** Returns the live FastStats backend, or null when absent or disabled. */
+    fun fastStatsOrNull(): ru.privatenull.pnlibrary.api.metrics.FastStatsFacade? = null
     /** Whether this controller has been permanently released with its module context. */
     val isClosed: Boolean get() = false
     /** Whether a metrics session is currently active. */

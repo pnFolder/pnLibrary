@@ -19,6 +19,7 @@ class FastStatsMetricsSession(
     private val plugin: Plugin,
     private val token: String,
 ) : PluginMetrics {
+    override val errorReporter = FastStatsErrorReporter()
     private val closed = AtomicBoolean(false)
     private val started = AtomicBoolean(false)
     private val pending = mutableListOf<(Metrics.Factory) -> Unit>()
@@ -71,6 +72,7 @@ class FastStatsMetricsSession(
     override fun start() {
         if (!started.compareAndSet(false, true) || closed.get()) return
         context = BukkitContext.Factory(plugin, token)
+            .errorTrackerService(errorReporter.tracker)
             .metrics { factory ->
                 pending.forEach { it(factory) }
                 factory.create()

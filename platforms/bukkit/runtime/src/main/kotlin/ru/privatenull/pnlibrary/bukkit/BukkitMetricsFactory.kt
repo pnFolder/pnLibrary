@@ -11,8 +11,6 @@ import ru.privatenull.pnlibrary.spi.metrics.PlatformMetricsFactory
 
 /** Creates independently managed bStats sessions for Bukkit [Plugin] owners. */
 class BukkitMetricsFactory : PlatformMetricsFactory {
-    override fun openErrorReporter(owner: Any, configurations: Collection<MetricsProviderConfiguration>) =
-        if (configurations.any { it.enabled && it.provider == MetricsProvider.FASTSTATS && it.token != null }) FastStatsErrorReporter() else null
     override fun open(owner: Any, configurations: Collection<MetricsProviderConfiguration>): PluginMetrics {
         require(owner is Plugin) { "Bukkit metrics owner must be a Bukkit Plugin" }
         val delegates = configurations.filter { it.enabled }.map { configuration ->

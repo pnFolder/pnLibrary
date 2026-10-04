@@ -13,18 +13,29 @@ import ru.privatenull.pnlibrary.api.metrics.MetricsCapability
 import ru.privatenull.pnlibrary.api.metrics.MetricsProvider
 import ru.privatenull.pnlibrary.api.metrics.PluginMetrics
 import ru.privatenull.pnlibrary.api.metrics.TelemetryError
-import ru.privatenull.pnlibrary.spi.metrics.VelocityMetricsProvider
 import java.nio.file.Path
 import java.util.concurrent.Callable
 import java.util.concurrent.atomic.AtomicBoolean
 import java.util.function.Supplier
 
-class FastStatsVelocityProvider : VelocityMetricsProvider {
-    override fun open(owner: Any, server: Any, logger: Any, dataDirectory: Path, token: String): PluginMetrics =
-        Session(owner, server as ProxyServer, logger as Logger, dataDirectory, token)
-    override fun openErrorReporter(): ErrorReporter = FastStatsErrorReporter()
+/** Creates a Velocity FastStats session with charts and its own error tracker. */
+class FastStatsVelocityProvider {
+    fun open(
+        owner: Any,
+        server: ProxyServer,
+        logger: Logger,
+        dataDirectory: Path,
+        token: String,
+    ): PluginMetrics = Session(owner, server, logger, dataDirectory, token)
 
-    private class Session(private val owner: Any, private val server: ProxyServer, private val logger: Logger, private val dataDirectory: Path, private val token: String) : PluginMetrics {
+    private class Session(
+        owner: Any,
+        private val server: ProxyServer,
+        private val logger: Logger,
+        private val dataDirectory: Path,
+        private val token: String,
+    ) : PluginMetrics {
+        override val errorReporter = FastStatsErrorReporter()
         private val closed = AtomicBoolean(false)
         private val started = AtomicBoolean(false)
         private val pending = mutableListOf<(Metrics.Factory) -> Unit>()
@@ -33,7 +44,12 @@ class FastStatsVelocityProvider : VelocityMetricsProvider {
         override val projectId = 0
         override val provider = MetricsProvider.FASTSTATS
         override val capabilities = setOf(MetricsCapability.CHARTS, MetricsCapability.CUSTOM_VALUES, MetricsCapability.ERROR_TRACKING, MetricsCapability.CONTEXT_ATTRIBUTES)
-        private fun add(action: (Metrics.Factory) -> Unit): PluginMetrics { check(!closed.get()); check(!started.get()); pending += action; return this }
+        private fun add(action: (Metrics.Factory) -> Unit): PluginMetrics {
+            check(!closed.get()) { "Metrics session is closed" }
+            check(!started.get()) { "Configure charts before starting the session" }
+            pending += action
+            return this
+        }
         private fun id(id: String) = id.trim().also { require(it.matches(Regex("[A-Za-z0-9_-]{1,64}"))) }
         override fun simplePie(i: String, v: Supplier<String?>) = add { it.addMetric(FastStatsBridge.string(id(i), Callable { v.get() ?: "unknown" })) }
         override fun advancedPie(i: String, v: Supplier<Map<String, Int>>) = add { it.addMetric(FastStatsBridge.numberMap(id(i), Callable { v.get() })) }
@@ -44,15 +60,38 @@ class FastStatsVelocityProvider : VelocityMetricsProvider {
         override fun advancedBarChart(i: String, v: Supplier<Map<String, IntArray>>) = add { it.addMetric(FastStatsBridge.`object`(id(i), Callable { JsonObject().also { r -> v.get().forEach { (k, a) -> r.add(k, JsonArray().also { j -> a.forEach(j::add) }) } } })) }
         override fun start() {
             if (!started.compareAndSet(false, true) || closed.get()) return
-            context = VelocityContext.Factory(container, server, logger, dataDirectory).token(token).metrics { f -> pending.forEach { it(f) }; f.create() }.create()
+            context = VelocityContext.Factory(container, server, logger, dataDirectory)
+                .token(token)
+                .errorTrackerService(errorReporter.tracker)
+                .metrics { factory ->
+                    pending.forEach { register -> register(factory) }
+                    factory.create()
+                }
+                .create()
             context?.ready()
         }
-        override fun close() { if (closed.compareAndSet(false, true)) context?.shutdown() }
+        override fun close() {
+            if (closed.compareAndSet(false, true)) context?.shutdown()
+        }
     }
 
     private class FastStatsErrorReporter : ErrorReporter {
-        private val tracker = FastStatsBridge.errorTracker()
-        override fun capture(error: TelemetryError) { val tracked: TrackedError = tracker.trackError(RuntimeException("${error.type}: ${error.message}")); tracked.handled(error.handled) }
+        val tracker = FastStatsBridge.errorTracker()
+        override fun capture(error: TelemetryError) {
+            val throwable = RuntimeException("${error.type}: ${error.message}").apply {
+                stackTrace = error.stackTrace.map { frame ->
+                    StackTraceElement("reported", frame, null, -1)
+                }.toTypedArray()
+            }
+            val tracked: TrackedError = tracker.trackError(
+                throwable,
+            )
+            tracked.handled(error.handled)
+            error.operation?.let { tracked.attributes().put("operation", it) }
+            error.attributes.forEach { (key, value) ->
+                value?.let { tracked.attributes().put(key, it.toString()) }
+            }
+        }
         override fun close() = Unit
     }
 }

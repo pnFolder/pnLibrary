@@ -11,8 +11,6 @@ import ru.privatenull.pnlibrary.spi.metrics.PlatformMetricsFactory
 
 /** Creates independently managed bStats sessions for BungeeCord [Plugin] owners. */
 class BungeeMetricsFactory : PlatformMetricsFactory {
-    override fun openErrorReporter(owner: Any, configurations: Collection<MetricsProviderConfiguration>) =
-        if (configurations.any { it.enabled && it.provider == MetricsProvider.FASTSTATS && it.token != null }) FastStatsErrorReporter() else null
     override fun open(owner: Any, configurations: Collection<MetricsProviderConfiguration>): PluginMetrics {
         require(owner is Plugin) { "Bungee metrics owner must be a Bungee Plugin" }
         val delegates = configurations.filter { it.enabled }.map { configuration ->

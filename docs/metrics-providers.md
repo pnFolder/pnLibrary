@@ -15,6 +15,22 @@ same `PluginMetrics` contract.
 
 ## One or both providers
 
+FastStats-specific access is optional and follows the session lifecycle:
+
+```kotlin
+context.metrics.fastStatsOrNull()?.errorTracker()?.capture(
+    throwable = error,
+    operation = "orders.load",
+    attributes = mapOf("storage" to "mysql", "retryable" to true),
+)
+```
+
+`fastStatsOrNull()` returns null when metrics are disabled or only bStats is enabled.
+Register shared charts with `context.metrics.configure { ... }`; this replays chart
+registration whenever the session is recreated. The facade's `metrics` property exposes
+the provider's chart interface; chart configuration must occur before the session starts.
+SDK feature flags and raw SDK objects are not exposed by this facade.
+
 The runtime can create one delegate or a `CompositePluginMetrics` session. Shared chart calls
 are fanned out to every enabled delegate. Provider-specific features are guarded by
 `MetricsCapability` and must not be silently converted into a chart when a provider cannot
@@ -22,8 +38,8 @@ represent them.
 
 ```kotlin
 builder.metrics {
-    bStats(32592)
-    fastStats(fastStatsToken)
+    it.bStats(32592)
+    it.fastStats(fastStatsToken)
 }
 
 context.metrics.configure { metrics ->
@@ -37,8 +53,8 @@ integrations, but normal plugins do not need to construct those objects.
 Every module now receives `ModuleContext.errors`. The local pipeline always sanitizes,
 deduplicates and bounds events, even when no remote provider is enabled. When FastStats is
 configured on Bukkit or BungeeCord, the sanitized event is forwarded to FastStats as well;
-bStats remains charts-only. This keeps error reporting opt-in remotely while preserving a
-local diagnostic trail for every module.
+bStats remains charts-only. The pipeline does not itself persist a local diagnostic history.
+Remote error reporting is active only while the FastStats session is active.
 
 For code that wants to submit a handled exception explicitly, use the shared reporter:
 
@@ -51,10 +67,15 @@ try {
 ```
 
 The same reporter is also available as `context.errors`; the metrics accessor is provided for
-code that keeps all telemetry operations together. Uncaught FastStats errors are collected by
-the provider's context-aware tracker automatically.
+code that keeps all telemetry operations together. Each FastStats session owns its tracker
+and attaches it to the SDK context before submission starts. Context-aware tracking applies
+to uncaught errors within the tracker's class loader; it does not guarantee interception of
+exceptions caught by Bukkit, BungeeCord, Velocity, or another plugin's class loader.
+
+Changing chart configuration restarts the session and replays all registered chart callbacks.
+Disabling metrics closes the SDK context; enabling metrics creates a new context and tracker.
 
 FastStats publishes Java 8 fallback artifacts for Bukkit and BungeeCord. Its Velocity artifact
 requires Java 21, so it is packaged in the separate `faststats-velocity` module. The main
-Velocity adapter remains Java 17-compatible and discovers that optional provider through the
-runtime SPI; bStats continues to work on Java 17 without loading the Java 21 module.
+Velocity adapter remains Java 17-compatible and creates the FastStats adapter explicitly
+after checking the Java version. bStats continues to work on Java 17.

@@ -77,7 +77,14 @@ internal class ModuleResourceFactory(
             serviceScope.register(CurrencyStorageFactory::class.java, currency.storages)
             definition.listeners.forEach(eventScope::register)
 
-            errorReporter = ErrorPipeline(metrics.openErrorReporter(owner, definition.metricsProviders))
+            // Resolve the live session on every capture, including after disable/restart.
+            errorReporter = ErrorPipeline(object : ErrorReporter {
+                override fun capture(error: ru.privatenull.pnlibrary.api.metrics.TelemetryError) {
+                    metricsController?.sessionErrorReporter()?.capture(error)
+                }
+
+                override fun close() = Unit
+            })
             metricsController = MetricsControllerImpl(
                 owner,
                 metrics,

@@ -16,6 +16,9 @@ class CompositePluginMetrics(
     private val delegates: List<PluginMetrics>,
     private val onClose: () -> Unit = {},
 ) : PluginMetrics {
+    override fun fastStatsOrNull() = delegates.firstNotNullOfOrNull { it.fastStatsOrNull() }
+    override val errorReporter
+        get() = delegates.firstNotNullOfOrNull { it.errorReporter }
     init {
         require(delegates.isNotEmpty()) { "At least one metrics delegate is required" }
     }
