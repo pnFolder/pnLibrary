@@ -44,7 +44,6 @@ bStats remains charts-only. This keeps error reporting opt-in remotely while pre
 local diagnostic trail for every module.
 
 FastStats publishes Java 8 fallback artifacts for Bukkit and BungeeCord. Its Velocity artifact
-requires Java 21, while pnLibrary's Velocity adapter remains Java 17-compatible. Therefore the
-Velocity bridge is isolated behind reflection: on Java 21+ install the FastStats Velocity SDK
-alongside the adapter; on Java 17 the provider is simply unavailable and bStats continues to
-work normally.
+requires Java 21, so it is packaged in the separate `faststats-velocity` module. The main
+Velocity adapter remains Java 17-compatible and discovers that optional provider through the
+runtime SPI; bStats continues to work on Java 17 without loading the Java 21 module.
