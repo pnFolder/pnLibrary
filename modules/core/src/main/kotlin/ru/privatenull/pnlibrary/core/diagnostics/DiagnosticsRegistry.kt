@@ -7,7 +7,6 @@ import ru.privatenull.pnlibrary.api.diagnostics.DiagnosticsContributor
 import ru.privatenull.pnlibrary.api.diagnostics.DiagnosticsService
 import java.nio.file.Path
 import java.time.Instant
-import java.util.ArrayDeque
 import java.util.concurrent.ConcurrentHashMap
 
 /**
@@ -112,29 +111,16 @@ internal class DiagnosticsRegistry(eventLimit: Int = DEFAULT_EVENT_LIMIT) : Diag
         component: String, code: String, message: String,
         error: Throwable?, fields: Map<String, Any?>,
     ) {
-        val now = Instant.now().toString()
         val safeComponent = sanitizer.text(component, 96)
         val safeCode = sanitizer.text(code, 96)
         val safeMessage = sanitizer.text(message, 4096)
         val safeFields = sanitizer.map(fields)
         notifyActivityListener(plugin, level, safeComponent, safeCode, safeMessage, error, safeFields)
 
-        val incidentId = sanitizer.incidentId(plugin, level, safeComponent, safeCode, safeMessage, error)
-        val pluginState = stateOf(plugin)
-        synchronized(pluginState.events) {
-            val existing = pluginState.events.firstOrNull { it["incidentId"] == incidentId }
-            if (existing != null) {
-                appendOccurrence(existing, now, safeFields)
-                notifyEventsChanged()
-                return
-            }
-
-            pluginState.events.addLast(
-                newIncident(incidentId, now, level, safeComponent, safeCode, safeMessage, safeFields, error),
-            )
-            trimEvents(pluginState.events)
-            notifyEventsChanged()
-        }
+        stateOf(plugin).incidents.record(
+            plugin, level, safeComponent, safeCode, safeMessage, error, safeFields,
+        )
+        notifyEventsChanged()
     }
 
     private fun notifyActivityListener(
@@ -151,57 +137,6 @@ internal class DiagnosticsRegistry(eventLimit: Int = DEFAULT_EVENT_LIMIT) : Diag
         } catch (_: Exception) {
             // Compatibility listeners are observers and must never reject diagnostics.
         }
-    }
-
-    private fun appendOccurrence(
-        incident: LinkedHashMap<String, Any?>,
-        timeUtc: String,
-        fields: Map<String, Any?>,
-    ) {
-        val previousCount = (incident["occurrenceCount"] as? Number)?.toLong() ?: 1L
-        incident["occurrenceCount"] = previousCount + 1
-        incident["lastSeenUtc"] = timeUtc
-
-        @Suppress("UNCHECKED_CAST")
-        val timeline = incident["occurrenceTimeline"] as MutableList<Map<String, Any?>>
-        if (timeline.size < MAX_EVENT_TIMELINE) {
-            timeline += occurrence(timeUtc, fields)
-            return
-        }
-
-        val omitted = (incident["omittedOccurrences"] as? Number)?.toLong() ?: 0L
-        incident["omittedOccurrences"] = omitted + 1
-    }
-
-    private fun newIncident(
-        incidentId: String,
-        timeUtc: String,
-        level: DiagnosticLevel,
-        component: String,
-        code: String,
-        message: String,
-        fields: Map<String, Any?>,
-        error: Throwable?,
-    ): LinkedHashMap<String, Any?> = linkedMapOf<String, Any?>(
-        "incidentId" to incidentId,
-        "timeUtc" to timeUtc,
-        "firstSeenUtc" to timeUtc,
-        "lastSeenUtc" to timeUtc,
-        "occurrenceCount" to 1L,
-        "omittedOccurrences" to 0L,
-        "level" to level.name,
-        "component" to component,
-        "code" to code,
-        "message" to message,
-        "fields" to fields,
-        "origin" to error?.let(sanitizer::exceptionOrigin),
-        "occurrenceTimeline" to mutableListOf(occurrence(timeUtc, fields)),
-    ).also { incident ->
-        if (error != null) incident["exception"] = sanitizer.exception(error)
-    }
-
-    private fun trimEvents(events: ArrayDeque<LinkedHashMap<String, Any?>>) {
-        while (events.size > limit) events.removeFirst()
     }
 
     // ── Snapshot ─────────────────────────────────────────────────────────────
@@ -230,7 +165,7 @@ internal class DiagnosticsRegistry(eventLimit: Int = DEFAULT_EVENT_LIMIT) : Diag
 
             result[name] = linkedMapOf<String, Any?>(
                 "statuses"     to LinkedHashMap(st.statuses),
-                "events"       to synchronized(st.events) { ArrayList(st.events) },
+                "events"       to st.incidents.snapshot(),
                 "contributors" to contributions,
             )
         }
@@ -241,7 +176,7 @@ internal class DiagnosticsRegistry(eventLimit: Int = DEFAULT_EVENT_LIMIT) : Diag
     fun eventSnapshot(): Map<String, Any?> = linkedMapOf<String, Any?>().also { result ->
         plugins.keys.sorted().forEach { name ->
             val state = plugins[name] ?: return@forEach
-            val events = synchronized(state.events) { ArrayList(state.events) }
+            val events = state.incidents.snapshot()
             if (events.isNotEmpty()) result[name] = events
         }
     }
@@ -290,7 +225,7 @@ internal class DiagnosticsRegistry(eventLimit: Int = DEFAULT_EVENT_LIMIT) : Diag
     )
 
     private fun stateOf(plugin: String) =
-        plugins.computeIfAbsent(sanitizer.key(plugin)) { PluginState() }
+        plugins.computeIfAbsent(sanitizer.key(plugin)) { PluginState(limit, sanitizer) }
 
     private fun notifyEventsChanged() {
         try {
@@ -300,21 +235,14 @@ internal class DiagnosticsRegistry(eventLimit: Int = DEFAULT_EVENT_LIMIT) : Diag
         }
     }
 
-    private fun occurrence(timeUtc: String, fields: Map<String, Any?>): Map<String, Any?> = linkedMapOf(
-        "timeUtc" to timeUtc,
-        "thread" to Thread.currentThread().name,
-        "fields" to fields,
-    )
-
-    private class PluginState {
+    private class PluginState(eventLimit: Int, sanitizer: DiagnosticValueSanitizer) {
         val contributors = ConcurrentHashMap<String, RegisteredContributor>()
         val statuses     = ConcurrentHashMap<String, Map<String, Any?>>()
-        val events       = ArrayDeque<LinkedHashMap<String, Any?>>()
+        val incidents = DiagnosticIncidentLog(eventLimit, sanitizer)
     }
     private data class RegisteredContributor(val contributor: DiagnosticsContributor, val dataDirectory: Path?)
 
     private companion object {
         const val DEFAULT_EVENT_LIMIT = 100
-        const val MAX_EVENT_TIMELINE = 100_000
     }
 }
