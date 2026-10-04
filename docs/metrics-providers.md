@@ -21,27 +21,38 @@ are fanned out to every enabled delegate. Provider-specific features are guarded
 represent them.
 
 ```kotlin
-module.metrics(
-    providers = listOf(
-        MetricsProviderConfiguration(
-            provider = MetricsProvider.BSTATS,
-            projectId = 32592,
-        ),
-        MetricsProviderConfiguration(
-            provider = MetricsProvider.FASTSTATS,
-            token = fastStatsToken,
-        ),
-    ),
-) { metrics ->
+builder.metrics {
+    bStats(32592)
+    fastStats(fastStatsToken)
+}
+
+context.metrics.configure { metrics ->
     metrics.simplePie("server_software") { serverName }
 }
 ```
+
+The collection-based `MetricsProviderConfiguration` overload remains available for advanced
+integrations, but normal plugins do not need to construct those objects.
 
 Every module now receives `ModuleContext.errors`. The local pipeline always sanitizes,
 deduplicates and bounds events, even when no remote provider is enabled. When FastStats is
 configured on Bukkit or BungeeCord, the sanitized event is forwarded to FastStats as well;
 bStats remains charts-only. This keeps error reporting opt-in remotely while preserving a
 local diagnostic trail for every module.
+
+For code that wants to submit a handled exception explicitly, use the shared reporter:
+
+```kotlin
+try {
+    repository.load()
+} catch (error: Throwable) {
+    context.metrics.errorReporterOrNull()?.capture(error)
+}
+```
+
+The same reporter is also available as `context.errors`; the metrics accessor is provided for
+code that keeps all telemetry operations together. Uncaught FastStats errors are collected by
+the provider's context-aware tracker automatically.
 
 FastStats publishes Java 8 fallback artifacts for Bukkit and BungeeCord. Its Velocity artifact
 requires Java 21, so it is packaged in the separate `faststats-velocity` module. The main
