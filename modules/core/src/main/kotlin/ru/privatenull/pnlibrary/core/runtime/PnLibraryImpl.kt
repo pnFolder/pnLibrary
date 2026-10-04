@@ -51,7 +51,7 @@ import ru.privatenull.pnlibrary.core.downloads.DirectDownloadManager
 import ru.privatenull.pnlibrary.core.downloads.DownloadConfiguration
 import ru.privatenull.pnlibrary.core.observability.ObservabilityRuntime
 import ru.privatenull.pnlibrary.core.observability.DiagnosticObservationBridge
-import ru.privatenull.pnlibrary.core.observability.LegacyObservabilityAdapter
+import ru.privatenull.pnlibrary.core.observability.UnifiedObservabilityService
 import ru.privatenull.pnlibrary.core.observability.reportSnapshot
 import ru.privatenull.pnlibrary.core.updates.UpdateServiceImpl
 import ru.privatenull.pnlibrary.core.upload.EncryptedReportUploader
@@ -101,7 +101,7 @@ internal class PnLibraryImpl(
     val dataFolder: Path = platform.dataFolder ?: extractDataFolder(owner)
     private val observabilityRuntime = ObservabilityRuntime(dataFolder)
     private val diagnosticObservationBridge = DiagnosticObservationBridge(observabilityRuntime)
-    override val observability = LegacyObservabilityAdapter(diagnostics, observabilityRuntime)
+    override val observability = UnifiedObservabilityService(diagnostics, observabilityRuntime)
     override val activity: ActivityService get() = observability
     val uploadLedger: UploadLedger = UploadLedger(dataFolder.resolve("upload-ledger.json"))
     val encryptionCodec: EncryptedEnvelopeCodec? = initEncryptionCodec()

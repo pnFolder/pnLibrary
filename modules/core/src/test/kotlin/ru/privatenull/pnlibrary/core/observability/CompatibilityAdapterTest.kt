@@ -15,7 +15,7 @@ class CompatibilityAdapterTest {
     @Test
     fun `new and activity entry points share one journal`() {
         val runtime = ObservabilityRuntime(Files.createTempDirectory("compatibility"))
-        val service = LegacyObservabilityAdapter(DiagnosticsRegistry(), runtime)
+        val service = UnifiedObservabilityService(DiagnosticsRegistry(), runtime)
 
         service.record(ObservationRequest(message = "new", level = ObservationLevel.NOTICE))
         service.record(ActivityEvent(type = "legacy", category = ActivityCategory.DIAGNOSTICS))
@@ -27,7 +27,7 @@ class CompatibilityAdapterTest {
     fun `one diagnostic call creates one observation`() {
         val runtime = ObservabilityRuntime(Files.createTempDirectory("diagnostic-compatibility"))
         val registry = DiagnosticsRegistry()
-        val service = LegacyObservabilityAdapter(registry, runtime)
+        val service = UnifiedObservabilityService(registry, runtime)
         registry.onActivityEvent { plugin, level, component, code, message, error, fields ->
             runtime.record(ObservationRequest(
                 plugin = plugin,
@@ -52,7 +52,7 @@ class CompatibilityAdapterTest {
     @Test
     fun `legacy byte attachment keeps its declared metadata without a temporary file`() {
         val runtime = ObservabilityRuntime(Files.createTempDirectory("byte-attachment"))
-        val service = LegacyObservabilityAdapter(DiagnosticsRegistry(), runtime)
+        val service = UnifiedObservabilityService(DiagnosticsRegistry(), runtime)
         val bytes = "server output".toByteArray()
 
         val attachment = service.attach("event-1", "latest.log", "text/x-log", bytes)

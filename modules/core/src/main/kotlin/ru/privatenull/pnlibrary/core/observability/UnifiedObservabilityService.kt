@@ -17,12 +17,14 @@ import ru.privatenull.pnlibrary.core.diagnostics.DiagnosticsRegistry
 import java.nio.file.Path
 
 /**
- * Keeps old diagnostics and activity calls source-compatible.
+ * One entry point for diagnostics, observations, activity history, attachments,
+ * component status, and support reports.
  *
- * This class performs translation only. [ObservabilityRuntime] owns all event
- * storage, attachment storage, filtering, retention, and report snapshots.
+ * The older diagnostics and activity interfaces remain available as compatible
+ * views of the same runtime. This facade translates those calls; storage and
+ * retention stay inside [ObservabilityRuntime].
  */
-internal class LegacyObservabilityAdapter(
+internal class UnifiedObservabilityService(
     private val diagnostics: DiagnosticsRegistry,
     private val runtime: ObservabilityRuntime,
 ) : ObservabilityService {
