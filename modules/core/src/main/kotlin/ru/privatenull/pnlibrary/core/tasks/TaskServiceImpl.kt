@@ -45,7 +45,7 @@ internal class TaskServiceImpl(
     override fun find(id: TaskId): TaskHandle? = synchronized(lock) { active[id] }
     override fun query(query: TaskQuery): List<TaskSnapshot> = synchronized(lock) {
         immutableSnapshots((active.values.map { it.snapshot() } + history.values.map { it.snapshot })
-            .filter { matches(it, query) })
+            .filter { TaskQueryMatcher.matches(it, query) })
     }
     override fun query(owner: Any, query: TaskQuery): List<TaskSnapshot> = snapshots(owner, query)
     override fun close(owner: Any) {
@@ -61,16 +61,9 @@ internal class TaskServiceImpl(
 
     private fun snapshots(owner: Any, query: TaskQuery) = synchronized(lock) {
         immutableSnapshots((active.values.filter { it.owner === owner }.map { it.snapshot() } +
-            history.values.filter { it.owner === owner }.map { it.snapshot }).filter { matches(it, query) })
+            history.values.filter { it.owner === owner }.map { it.snapshot })
+            .filter { TaskQueryMatcher.matches(it, query) })
     }
-
-    private fun matches(value: TaskSnapshot, query: TaskQuery): Boolean =
-        (query.id == null || value.id == query.id) &&
-            (query.key == null || value.key == query.key) &&
-            (query.nameContains == null || value.name?.contains(query.nameContains!!, ignoreCase = true) == true) &&
-            (query.statuses.isEmpty() || value.status in query.statuses) &&
-            (query.executionKinds.isEmpty() || value.executionKind in query.executionKinds) &&
-            (query.tags.isEmpty() || value.tags.containsAll(query.tags))
 
     private inner class Scope(override val owner: Any, private val scopeId: PluginId) : TaskScope {
         private val scopeToken = Any()
@@ -115,7 +108,8 @@ internal class TaskServiceImpl(
         }
         override fun query(query: TaskQuery): List<TaskSnapshot> = synchronized(lock) {
             immutableSnapshots((active.values.filter { it.scopeToken === scopeToken }.map { it.snapshot() } +
-                history.values.filter { it.scopeToken === scopeToken }.map { it.snapshot }).filter { matches(it, query) })
+                history.values.filter { it.scopeToken === scopeToken }.map { it.snapshot })
+                .filter { TaskQueryMatcher.matches(it, query) })
         }
 
         override fun global(task: Runnable) = schedule(simple(TaskExecution.global(), action = task))
@@ -150,9 +144,17 @@ internal class TaskServiceImpl(
         }
     }
 
-    private fun simple(execution: TaskExecution, delay: Duration = Duration.ZERO,
-        interval: Duration? = null, action: Runnable): TaskSpec =
-        TaskSpec.builder().execution(execution).delay(delay).interval(interval).action { action.run() }.build()
+    private fun simple(
+        execution: TaskExecution,
+        delay: Duration = Duration.ZERO,
+        interval: Duration? = null,
+        action: Runnable,
+    ): TaskSpec = TaskSpec.builder()
+        .execution(execution)
+        .delay(delay)
+        .interval(interval)
+        .action { action.run() }
+        .build()
 
     private inner class ManagedTask(val owner: Any, val scopeToken: Any, val spec: TaskSpec) : TaskHandle {
         override val id = TaskId.random()
@@ -172,20 +174,34 @@ internal class TaskServiceImpl(
 
         fun attach(handle: PlatformTaskHandle) {
             native.set(handle)
-            if (cancelled.get() || status == TaskStatus.COMPLETED || status == TaskStatus.FAILED) handle.cancel()
+            if (cancelled.get() || status == TaskStatus.COMPLETED || status == TaskStatus.FAILED) {
+                handle.cancel()
+            }
         }
+
         fun invoke() {
             if (cancelled.get()) return
-            if (!running.compareAndSet(false, true)) { skipped.incrementAndGet(); return }
+            if (!running.compareAndSet(false, true)) {
+                skipped.incrementAndGet()
+                return
+            }
             try {
                 nextRun = null
-                if (spec.cancellationConditions.any { it.asBoolean }) { cancel(); return }
-                if (spec.conditions.any { !it.asBoolean }) {
-                    skipped.incrementAndGet()
-                    if (spec.interval == null) complete() else nextRun = Instant.now().plus(spec.interval)
+                if (spec.cancellationConditions.any { it.asBoolean }) {
+                    cancel()
                     return
                 }
-                state.set(TaskStatus.RUNNING); started = Instant.now()
+                if (spec.conditions.any { !it.asBoolean }) {
+                    skipped.incrementAndGet()
+                    if (spec.interval == null) {
+                        complete()
+                    } else {
+                        nextRun = Instant.now().plus(spec.interval)
+                    }
+                    return
+                }
+                state.set(TaskStatus.RUNNING)
+                started = Instant.now()
                 val number = runs.incrementAndGet()
                 spec.action.run(object : TaskContext {
                     override val id = this@ManagedTask.id
@@ -195,24 +211,59 @@ internal class TaskServiceImpl(
                     override val startedAt = started!!
                     override fun cancel() = this@ManagedTask.cancel()
                 })
-                if (!cancelled.get()) if (spec.interval == null) complete() else {
-                    state.set(TaskStatus.SCHEDULED); nextRun = Instant.now().plus(spec.interval)
+                if (!cancelled.get()) {
+                    if (spec.interval == null) {
+                        complete()
+                    } else {
+                        state.set(TaskStatus.SCHEDULED)
+                        nextRun = Instant.now().plus(spec.interval)
+                    }
                 }
             } catch (error: Throwable) {
                 failure = "${error.javaClass.simpleName}: ${error.message.orEmpty()}"
-                state.set(TaskStatus.FAILED); native.get()?.cancel()
+                state.set(TaskStatus.FAILED)
+                native.get()?.cancel()
                 errorLogger(owner, "[pnLibrary/tasks] Task ${spec.name ?: id} failed", error)
                 terminal()
-            } finally { running.set(false) }
+            } finally {
+                running.set(false)
+            }
         }
-        private fun complete() { state.set(TaskStatus.COMPLETED); completed = Instant.now(); terminal() }
+
+        private fun complete() {
+            state.set(TaskStatus.COMPLETED)
+            completed = Instant.now()
+            terminal()
+        }
+
         override fun cancel() { cancelIfActive() }
+
         override fun cancelIfActive(): Boolean {
             if (!cancelled.compareAndSet(false, true)) return false
-            state.set(TaskStatus.CANCELLED); completed = Instant.now(); native.get()?.cancel(); terminal(); return true
+            state.set(TaskStatus.CANCELLED)
+            completed = Instant.now()
+            native.get()?.cancel()
+            terminal()
+            return true
         }
-        override fun snapshot() = TaskSnapshot(id, spec.name, spec.key, ownerName(owner), spec.execution.kind,
-            status, spec.tags, created, nextRun, runs.get(), skipped.get(), started, completed, failure)
+
+        override fun snapshot() = TaskSnapshot(
+            id = id,
+            name = spec.name,
+            key = spec.key,
+            ownerName = ownerName(owner),
+            executionKind = spec.execution.kind,
+            status = status,
+            tags = spec.tags,
+            createdAt = created,
+            nextRunAt = nextRun,
+            runCount = runs.get(),
+            skippedCount = skipped.get(),
+            lastStartedAt = started,
+            lastCompletedAt = completed,
+            lastFailure = failure,
+        )
+
         private fun terminal() = synchronized(lock) {
             if (active.remove(id) == null) return@synchronized
             if (settings.historyCapacity > 0) {
