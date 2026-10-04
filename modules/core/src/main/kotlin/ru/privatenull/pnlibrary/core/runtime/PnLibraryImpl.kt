@@ -14,11 +14,7 @@ import ru.privatenull.pnlibrary.core.diagnostics.diagnosticCommand
 import ru.privatenull.pnlibrary.core.config.ConfigurationServiceImpl
 import ru.privatenull.pnlibrary.core.commands.CommandServiceImpl
 import ru.privatenull.pnlibrary.core.audiences.AudienceServiceImpl
-import ru.privatenull.pnlibrary.core.observability.history.IncidentHistoryStore
-import ru.privatenull.pnlibrary.core.observability.report.SupportReportGenerator
-import ru.privatenull.pnlibrary.core.observability.report.SupportDeliveryFactory
 import ru.privatenull.pnlibrary.core.events.EventServiceImpl
-import ru.privatenull.pnlibrary.core.logging.DiagnosticLogBuffer
 import ru.privatenull.pnlibrary.core.logging.PlatformLoggingService
 import ru.privatenull.pnlibrary.core.metrics.MetricsRegistry
 import ru.privatenull.pnlibrary.core.plugin.PluginRegistryImpl
@@ -26,21 +22,15 @@ import ru.privatenull.pnlibrary.core.placeholders.PlaceholderHub
 import ru.privatenull.pnlibrary.core.placeholders.GlobalPlaceholderValueStore
 import ru.privatenull.pnlibrary.core.platform.PlatformProviderImpl
 import ru.privatenull.pnlibrary.currency.CurrencyFeature
-import ru.privatenull.pnlibrary.core.security.EncryptedEnvelopeCodec
 import ru.privatenull.pnlibrary.core.services.ServiceManagerImpl
 import ru.privatenull.pnlibrary.core.tasks.TaskServiceImpl
 import ru.privatenull.pnlibrary.api.tasks.TaskServiceSettings
 import ru.privatenull.pnlibrary.api.activity.ActivityService
-import ru.privatenull.pnlibrary.api.activity.ActivityCategory
-import ru.privatenull.pnlibrary.api.activity.ActivitySeverity
 import ru.privatenull.pnlibrary.api.audiences.AudienceService
 import ru.privatenull.pnlibrary.api.commands.CommandService
 import ru.privatenull.pnlibrary.api.config.ConfigurationService
 import ru.privatenull.pnlibrary.api.currency.CurrencyProviderRegistry
 import ru.privatenull.pnlibrary.api.events.EventService
-import ru.privatenull.pnlibrary.api.logging.LogLevel
-import ru.privatenull.pnlibrary.api.observability.ObservabilityReport
-import ru.privatenull.pnlibrary.api.observability.ObservabilityReportRequest
 import ru.privatenull.pnlibrary.api.placeholders.PlaceholderAdapterRegistry
 import ru.privatenull.pnlibrary.api.placeholders.PlaceholderValueStore
 import ru.privatenull.pnlibrary.api.platform.PlatformProvider
@@ -50,19 +40,10 @@ import ru.privatenull.pnlibrary.api.tasks.TaskService
 import ru.privatenull.pnlibrary.api.updates.UpdateService
 import ru.privatenull.pnlibrary.core.downloads.DirectDownloadManager
 import ru.privatenull.pnlibrary.core.downloads.DownloadConfiguration
-import ru.privatenull.pnlibrary.core.observability.ObservabilityRuntime
-import ru.privatenull.pnlibrary.core.observability.DiagnosticObservationBridge
-import ru.privatenull.pnlibrary.core.observability.UnifiedObservabilityService
-import ru.privatenull.pnlibrary.core.observability.reportSnapshot
+import ru.privatenull.pnlibrary.core.observability.SupportRuntime
 import ru.privatenull.pnlibrary.core.updates.UpdateServiceImpl
-import ru.privatenull.pnlibrary.core.upload.UploadProvider
-import ru.privatenull.pnlibrary.core.upload.UploadLedger
-import java.nio.file.Files
 import java.nio.file.Path
 import java.nio.file.Paths
-import java.util.concurrent.Executors
-import java.util.concurrent.ScheduledExecutorService
-import java.util.concurrent.TimeUnit
 import java.util.concurrent.atomic.AtomicBoolean
 
 /**
@@ -87,26 +68,14 @@ internal class PnLibraryImpl(
         SemanticVersion.tryParse(version)?.isAtLeast(minimumVersion) ?: false
 
     private val closedFlag = AtomicBoolean(false)
-    private val reportInProgress = AtomicBoolean(false)
     override val isClosed: Boolean get() = closedFlag.get()
     private val metricsRegistry = MetricsRegistry(platform.metricsFactory)
     val dataFolder: Path = platform.dataFolder ?: extractDataFolder(owner)
-    private val observabilityRuntime = ObservabilityRuntime(dataFolder)
-    private val diagnosticObservationBridge = DiagnosticObservationBridge(observabilityRuntime)
-    override val observability = UnifiedObservabilityService(diagnostics, observabilityRuntime)
+    private val support = SupportRuntime(owner, platform, diagnostics, config, dataFolder)
+    override val observability get() = support.service
     override val activity: ActivityService get() = observability
-    private val supportDelivery = SupportDeliveryFactory(config)
-    val uploadLedger: UploadLedger = UploadLedger(dataFolder.resolve("upload-ledger.json"))
-    val encryptionCodec: EncryptedEnvelopeCodec? = supportDelivery.encryptionCodec()
-    private val diagnosticHistory = IncidentHistoryStore(
-        dataFolder.resolve("diagnostics").resolve("history"),
-        encryptionCodec,
-        config.historyRetentionDays,
-        config.historyMaxBytes.toLong(),
-    )
-    private val diagnosticLogs = DiagnosticLogBuffer(config.logRecords.coerceIn(10, 2_000))
     override val metrics: MetricsService get() = metricsRegistry
-    override val logging: LoggingService = PlatformLoggingService(platform, diagnosticLogs)
+    override val logging: LoggingService = PlatformLoggingService(platform, support.logs)
     private val configurationService = ConfigurationServiceImpl(platform)
     override val configurations: ConfigurationService get() = configurationService
     private val updateService = UpdateServiceImpl(platform, dataFolder)
@@ -167,91 +136,22 @@ internal class PnLibraryImpl(
         directDownloads = directDownloadManager,
     )
 
-    val uploader: UploadProvider? = supportDelivery.uploader()
-    val reportGenerator: SupportReportGenerator = SupportReportGenerator(
-        dataFolder = dataFolder,
-        config = config,
-        diagnosticsRegistry = diagnostics,
-        platformAdapter = platform,
-        encryptionCodec = encryptionCodec,
-        uploader = uploader,
-        uploadLedger = uploadLedger,
-        diagnosticLogs = diagnosticLogs::snapshot,
-        diagnosticHistory = diagnosticHistory::files,
-        observabilitySnapshot = observabilityRuntime::reportSnapshot,
-    )
-
-    private val workerExecutor: ScheduledExecutorService = Executors.newSingleThreadScheduledExecutor { r ->
-        Thread(r, "pnLibrary-worker-${owner.javaClass.simpleName}").apply { isDaemon = true }
-    }
-
     fun init() {
-        observabilityRuntime.configureReportFactory(::createObservabilityReport)
+        support.initialize { isClosed }
         commands.register(owner, diagnosticCommand(this))
-        diagnosticLogs.onChange { persistDiagnosticHistory() }
-        diagnostics.onEventsChanged(::persistDiagnosticHistory)
-        diagnostics.onActivityEvent(diagnosticObservationBridge::record)
-        platform.observeNativeLogs { nativeOwner, level, message, error ->
-            diagnosticLogs.record(platform, nativeOwner, level, message, error)
-        }
-        val up = uploader
-        if (up != null) {
-            workerExecutor.scheduleWithFixedDelay({
-                if (!isClosed) {
-                    runCatching { uploadLedger.cleanup(up) }
-                }
-            }, 0, 24, TimeUnit.HOURS)
-        }
-    }
-
-    private fun persistDiagnosticHistory() {
-        diagnosticHistory.save(diagnosticLogs.snapshot(), diagnostics.eventSnapshot())
-    }
-
-    private fun createObservabilityReport(request: ObservabilityReportRequest): ObservabilityReport {
-        val diagnosticRequest = DebugRequest(
-            target = request.target,
-            logs = request.includeLogs,
-            configs = request.includeConfigurations,
-            local = true,
-        )
-        val report = reportGenerator.generateAndSave(diagnosticRequest)
-        return ObservabilityReport(
-            id = report.localFile.fileName.toString(),
-            file = report.localFile,
-            createdAt = Files.getLastModifiedTime(report.localFile).toMillis(),
-        )
     }
 
     override fun createDiagnosticReport(request: DebugRequest): DiagnosticReport {
         check(!isClosed) { "pnLibrary instance is closed" }
-        check(reportInProgress.compareAndSet(false, true)) { "A diagnostic report is already being generated" }
-        return try {
-            reportGenerator.generateAndSave(request)
-        } finally {
-            reportInProgress.set(false)
-        }
+        return support.createDiagnosticReport(request)
     }
 
     private fun recordAndLog(logOwner: Any, message: String, error: Throwable) {
-        activity.record(
-            type = "RUNTIME_ERROR",
-            category = ActivityCategory.ERROR,
-            severity = ActivitySeverity.ERROR,
-            source = logOwner.javaClass.name,
-            metadata = mapOf("message" to message.take(512), "exception" to error.javaClass.name),
-        )
-        val level = LogLevel.ERROR
-        val capture = diagnosticLogs.record(platform, logOwner, level, message, error)
-        when {
-            capture == null || capture.emitOriginal -> platform.log(logOwner, level, message, error)
-            capture.summary != null -> platform.log(logOwner, level, capture.summary, null)
-        }
+        support.recordRuntimeError(logOwner, message, error)
     }
 
     override fun close() {
         if (closedFlag.compareAndSet(false, true)) {
-            workerExecutor.shutdownNow()
             runCatching { plugins.close() }
             runCatching { commandService.close() }
             runCatching { audienceService.close() }
@@ -263,10 +163,7 @@ internal class PnLibraryImpl(
             runCatching { eventService.close() }
             runCatching { serviceManager.close() }
             runCatching { taskService.close() }
-            runCatching { platform.observeNativeLogs(null) }
-            diagnostics.onEventsChanged(null)
-            diagnostics.clear()
-            runCatching { activity.close() }
+            runCatching { support.close() }
             PnLibraryProvider.clear(this)
             runCatching { platform.close() }
             onClose()
