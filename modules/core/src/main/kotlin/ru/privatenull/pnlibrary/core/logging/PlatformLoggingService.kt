@@ -47,42 +47,17 @@ internal class PlatformLoggingService(
 
     private fun showUpdate(owner: Any, product: String, current: String, latest: String, channel: String,
         minimumJava: Int, currentJava: Int, url: String, downloaded: Boolean) {
-        val yellow = "§e"
-        val green = "§a"
-        val white = "§f"
-        val gray = "§7"
-        val dark = "§8"
-        val channelName = channel.uppercase()
-        val channelDescription = when (channel.lowercase()) {
-            "stable" -> "стабильный канал"
-            "rc" -> "канал RC"
-            "beta" -> "бета-канал"
-            "alpha" -> "альфа-канал"
-            else -> "выбранный канал"
-        }
-        platform.console(owner, "")
-        platform.console(owner, "$yellow          ━━━━━━━━━━━ §lНОВОЕ ОБНОВЛЕНИЕ$yellow ━━━━━━━━━━━")
-        platform.console(owner, "$yellow /\\_/\\")
-        platform.console(owner, "$yellow( ^o^ )     $white§l$product $dark› ${yellow}pnFolder")
-        platform.console(owner, "$yellow > ^ <      ${gray}${if (downloaded) "Новая версия загружена и проверена" else "Доступна новая версия"}")
-        platform.console(owner, "")
-        platform.console(owner, "$dark            ┌ ${gray}Установлена: $white$current")
-        platform.console(owner, "$dark            ├ ${gray}${if (downloaded) "Загружена" else "Доступна"}: $yellow§l$latest")
-        platform.console(owner, "$dark            ├ ${gray}Канал: $white[ $channelName ] $dark• $gray$channelDescription")
-        platform.console(owner, "$dark            ├ ${gray}Java: $white$currentJava $dark• ${gray}требуется $white$minimumJava+")
-        platform.console(owner, "$dark            └ ${gray}Статус: ${if (downloaded) "$green§l✓ SHA-256 и JAR подтверждены" else "$yellow§lожидает ручной загрузки"}")
-        platform.console(owner, "")
-        if (downloaded) {
-            platform.console(owner, "$green          ✓ $white§lОбновление подготовлено")
-            platform.console(owner, "$gray            Оно установится автоматически после полного перезапуска сервера.")
-        } else {
-            platform.console(owner, "$yellow          ◆ $white§lАвтоматическая загрузка отключена")
-            platform.console(owner, "$gray            Уведомления и ручное обновление продолжают работать.")
-        }
-        platform.console(owner, "$dark            $url")
-        platform.console(owner, "")
-        platform.console(owner, "$dark          ━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━")
-        platform.console(owner, "")
+        val notice = UpdateNotice(
+            product = product,
+            currentVersion = current,
+            latestVersion = latest,
+            channel = channel,
+            minimumJava = minimumJava,
+            currentJava = currentJava,
+            downloadUrl = url,
+            downloaded = downloaded,
+        )
+        UpdateNoticeRenderer.render(notice).forEach { line -> platform.console(owner, line) }
     }
 
     private inner class MBox(
