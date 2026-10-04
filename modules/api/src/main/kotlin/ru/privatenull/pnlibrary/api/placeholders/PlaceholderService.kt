@@ -12,53 +12,74 @@ import java.util.function.Consumer
  * publications. [close] is safe to call repeatedly.
  */
 interface PlaceholderRegistration<T : Any> : AutoCloseable {
+
     /** Plugin that owns the resolver and its lifecycle. */
     val owner: PluginId
+
     /** Validated key and runtime result type. */
     val key: PlaceholderKey<T>
+
     /** Whether requests are currently delegated to the resolver. */
     val isEnabled: Boolean
+
     /** Whether this registration has been permanently removed. */
     val isClosed: Boolean get() = false
+
     /** External publications, including handles waiting for unavailable adapters. */
     val publications: List<ExternalPlaceholderRegistration>
+
     /** Enables resolver invocation for subsequent requests. */
     fun enable()
+
     /** Makes subsequent requests return the fallback without invoking the resolver. */
     fun disable()
+
     /** Removes every cached result belonging to this registration. */
     fun invalidateCache()
 }
 
 /** Fluent definition of one typed placeholder before it enters the service registry. */
 interface PlaceholderBuilder<T : Any> {
+
     /** Selects a synchronous resolver, replacing any previously configured resolver. */
     fun resolve(resolver: PlaceholderResolver<T>): PlaceholderBuilder<T>
+
     /** Selects an asynchronous resolver, replacing any previously configured resolver. */
     fun resolveAsync(resolver: AsyncPlaceholderResolver<T>): PlaceholderBuilder<T>
+
     /** Adds an owner-defined update operation, making this placeholder writable. */
     fun update(updater: PlaceholderUpdater<T>): PlaceholderBuilder<T>
+
     /** Sets the access policy used only for update operations. */
     fun updateAccess(access: PlaceholderAccess): PlaceholderBuilder<T>
+
     /** Sets the complete consumer access policy. */
     fun access(access: PlaceholderAccess): PlaceholderBuilder<T>
+
     /** Builds and sets a consumer access policy with the Java-friendly callback. */
     fun access(configure: Consumer<PlaceholderAccess.Builder>): PlaceholderBuilder<T>
+
     /** Configures result caching for this placeholder. */
     fun cache(policy: PlaceholderCachePolicy): PlaceholderBuilder<T>
+
     /** Sets the value returned for null resolver results and while disabled. */
     fun fallback(value: T): PlaceholderBuilder<T>
+
     /** Requests publication through an external placeholder adapter. */
     fun publish(publication: PlaceholderPublication): PlaceholderBuilder<T>
+
     /** Publishes with the default PlaceholderAPI namespace and name. */
     fun publishToPlaceholderApi(): PlaceholderBuilder<T> =
         publish(PlaceholderPublication("placeholderapi"))
+
     /** Publishes through PlaceholderAPI under [namespace]. */
     fun publishToPlaceholderApi(namespace: String): PlaceholderBuilder<T> =
         publish(PlaceholderPublication("placeholderapi", namespace))
+
     /** Publishes through PlaceholderAPI under explicit [namespace] and [name]. */
     fun publishToPlaceholderApi(namespace: String, name: String): PlaceholderBuilder<T> =
         publish(PlaceholderPublication("placeholderapi", namespace, name))
+
     /**
      * Validates and installs the definition.
      *

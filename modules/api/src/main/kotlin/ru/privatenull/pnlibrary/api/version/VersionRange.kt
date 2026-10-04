@@ -7,12 +7,16 @@ package ru.privatenull.pnlibrary.api.version
  * Java: `VersionRange.closed("2.0.0", "3.0.0").contains(version)`.
  */
 class VersionRange private constructor(
+
     /** Lower boundary, or `null` when unbounded below. */
     val minimum: SemanticVersion?,
+
     /** Upper boundary, or `null` when unbounded above. */
     val maximum: SemanticVersion?,
+
     /** Whether [minimum] itself is included. Ignored when no minimum exists. */
     val includeMinimum: Boolean,
+
     /** Whether [maximum] itself is included. Ignored when no maximum exists. */
     val includeMaximum: Boolean,
 ) {
@@ -21,6 +25,7 @@ class VersionRange private constructor(
             "minimum version must not be newer than maximum version"
         }
     }
+
     /** Returns whether [version] belongs to this range. */
     operator fun contains(version: SemanticVersion): Boolean {
         val afterMinimum = minimum == null || if (includeMinimum) version >= minimum else version > minimum

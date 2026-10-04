@@ -32,28 +32,33 @@ class ConfigDocument(source: Map<String, Any?>) {
         val parent = parent(parts, create = true)
         parent[parts.last()] = mutableValue(value)
     }
+
     /** Removes and returns the value at [path], or `null` when the path is absent. */
     fun remove(path: String): Any? {
         val parts = parts(path)
         return parent(parts, create = false).remove(parts.last())
     }
+
     /** Moves an existing value from [from] to [to], replacing the destination when necessary. */
     fun move(from: String, to: String): ConfigDocument = apply {
         require(contains(from)) { "Migration source path does not exist: $from" }
         val value = remove(from)
         set(to, value)
     }
+
     /** Renames the final key component of [path] without moving it to another parent. */
     fun rename(path: String, newName: String): ConfigDocument = apply {
         require('.' !in newName && newName.isNotBlank()) { "New key must be one non-empty path component" }
         val parent = path.substringBeforeLast('.', "")
         move(path, if (parent.isEmpty()) newName else "$parent.$newName")
     }
+
     /** Replaces an existing value with the result returned by [transformer]. */
     fun transform(path: String, transformer: UnaryOperator<Any?>): ConfigDocument = apply {
         require(contains(path)) { "Migration path does not exist: $path" }
         set(path, transformer.apply(get(path)))
     }
+
     /** Returns an immutable deep snapshot of this document. */
     fun toMap(): Map<String, Any?> = immutableMap(root)
 
@@ -67,6 +72,7 @@ class ConfigDocument(source: Map<String, Any?>) {
         }
         return true to current
     }
+
     @Suppress("UNCHECKED_CAST")
     private fun parent(parts: List<String>, create: Boolean): MutableMap<String, Any?> {
         var current = root
@@ -82,11 +88,14 @@ class ConfigDocument(source: Map<String, Any?>) {
         }
         return current
     }
+
     private fun parts(path: String) = path.split('.').also {
         require(it.isNotEmpty() && it.none(String::isBlank)) { "Invalid configuration path: $path" }
     }
+
     private fun mutableMap(value: Map<String, Any?>): MutableMap<String, Any?> =
         linkedMapOf<String, Any?>().also { out -> value.forEach { (k, v) -> out[k] = mutableValue(v) } }
+
     private fun mutableValue(value: Any?): Any? = when (value) {
         is Map<*, *> -> linkedMapOf<String, Any?>().also { out ->
             value.forEach { (key, nestedValue) ->
@@ -96,10 +105,12 @@ class ConfigDocument(source: Map<String, Any?>) {
         is List<*> -> value.map(::mutableValue).toMutableList()
         else -> value
     }
+
     private fun immutableMap(value: Map<String, Any?>): Map<String, Any?> =
         Collections.unmodifiableMap(
             linkedMapOf<String, Any?>().also { out -> value.forEach { (k, v) -> out[k] = immutableValue(v) } },
         )
+
     private fun immutableValue(value: Any?): Any? = when (value) {
         is Map<*, *> -> Collections.unmodifiableMap(
             value.entries.associateTo(linkedMapOf()) { it.key.toString() to immutableValue(it.value) },
@@ -142,7 +153,11 @@ class ConfigMigrationPlan private constructor(
      * @property to target schema version produced by this edge
      * @property migration document transformation executed for the edge
      */
-    data class Step(val from: String, val to: String, val migration: ConfigMigration)
+    data class Step(
+        val from: String,
+        val to: String,
+        val migration: ConfigMigration
+    )
 
     /** Returns the shortest ordered migration route from [from] to [currentVersion]. */
     fun path(from: String): List<Step> {
@@ -163,6 +178,7 @@ class ConfigMigrationPlan private constructor(
 
     /** Entry point for constructing validated migration graphs. */
     companion object {
+
         /** Creates a migration-plan builder targeting [currentVersion]. */
         @JvmStatic
         fun builder(currentVersion: String) = Builder(currentVersion)
@@ -173,6 +189,7 @@ class ConfigMigrationPlan private constructor(
         private var assumedVersion: String? = null
         private var versionKey = "_config-version"
         private val steps = mutableListOf<Step>()
+
         /** Assigns [version] to existing files that do not contain the version key. */
         fun assumeVersionWhenMissing(version: String) = apply { assumedVersion = checked(version) }
 
@@ -180,6 +197,7 @@ class ConfigMigrationPlan private constructor(
         fun versionKey(path: String) = apply {
             versionKey = path.also { require(it.isNotBlank() && '.' !in it) { "Version key must be one YAML key" } }
         }
+
         /** Adds one unique directed migration step. */
         fun migrate(from: String, to: String, migration: ConfigMigration) = apply {
             val step = Step(checked(from), checked(to), migration)
@@ -189,6 +207,7 @@ class ConfigMigrationPlan private constructor(
             }
             steps += step
         }
+
         /** Validates versions and reachability of the assumed version and creates the plan. */
         fun build(): ConfigMigrationPlan {
             val target = checked(currentVersion)
@@ -201,6 +220,7 @@ class ConfigMigrationPlan private constructor(
             assumedVersion?.let(plan::path)
             return plan
         }
+
         private fun checked(value: String) = value.trim().also {
             require(it.matches(Regex("[0-9]+(?:\\.[0-9]+)*(?:-[0-9A-Za-z.-]+)?"))) {
                 "Invalid config version: $value"

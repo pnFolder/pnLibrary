@@ -15,9 +15,13 @@ import ru.privatenull.pnlibrary.api.plugin.VersionConstraint
 
 /** Stable normalized identity of a pnLibrary-managed product. */
 class ProductId private constructor(val value: String) : Comparable<ProductId> {
+
     override fun compareTo(other: ProductId): Int = value.compareTo(other.value)
+
     override fun equals(other: Any?): Boolean = other is ProductId && value == other.value
+
     override fun hashCode(): Int = value.hashCode()
+
     override fun toString(): String = value
 
     companion object {
@@ -200,14 +204,20 @@ class ExternalPluginDependency private constructor(builder: Builder) : PluginDep
             artifact = ExternalArtifact(URI.create(url), size, sha256)
         }
         fun url(value: String) = apply { artifact = ExternalArtifact(URI.create(value), null, null) }
+
         fun required(value: Boolean) = apply { required = value }
+
         fun maximumVersion(value: String) = apply { maximumInclusive = SemanticVersion.parse(value) }
+
         fun maximumVersionExclusive(value: String) = apply { maximumExclusive = SemanticVersion.parse(value) }
+
         fun downloadPolicy(value: DownloadPolicy) = apply { downloadPolicy = value }
+
         fun automaticDownload(value: Boolean) = apply {
             downloadPolicy = if (value) DownloadPolicy.AUTOMATIC else DownloadPolicy.MANUAL
         }
         fun verifyPluginId(value: Boolean) = apply { verifyPluginId = value }
+
         fun verifyVersion(value: Boolean) = apply { verifyVersion = value }
 
         fun forceAutomaticDownload(value: Boolean) = apply {
@@ -296,11 +306,15 @@ class ProductDescriptor private constructor(
         internal var channel: UpdateChannel = UpdateChannel.STABLE
         internal var minimumJava: Int = 8
         internal var maximumJava: Int? = null
+
         fun pnLibraryApi(minimum: Int, maximum: Int) = apply {
             supportedApi = ApiVersionRange(minimum, maximum)
         }
+
         fun version(value: String) = apply { version = SemanticVersion.parse(value) }
+
         fun channel(value: UpdateChannel) = apply { channel = value }
+
         fun java(minimum: Int, maximum: Int? = null) = apply {
             require(minimum >= 8) { "minimum Java must be at least 8" }
             require(maximum == null || maximum >= minimum) { "maximum Java must be >= minimum Java" }

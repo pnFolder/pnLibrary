@@ -16,9 +16,14 @@ interface AudienceSender : LibraryAudience {
 /** Resolves and combines audiences supplied by the active platform runtime. */
 interface AudienceService {
     fun console(): AudienceSender
+
     fun player(uniqueId: UUID): LibraryPlayer?
+
     fun sender(native: Any): AudienceSender?
+
     fun onlinePlayers(): List<LibraryPlayer>
+
     fun all(): LibraryAudience
+
     fun combine(audiences: Iterable<LibraryAudience>): LibraryAudience
 }

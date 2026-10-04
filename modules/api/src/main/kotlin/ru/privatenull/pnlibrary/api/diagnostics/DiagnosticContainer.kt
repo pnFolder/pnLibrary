@@ -99,6 +99,7 @@ class DiagnosticContainer private constructor(builder: Builder) : DiagnosticsCon
          * Identifiers may contain ASCII letters, digits, dots, underscores, and
          * hyphens. Validation occurs in [Builder.build].
          */
-        @JvmStatic fun builder(id: String): Builder = Builder(id)
+        @JvmStatic
+        fun builder(id: String): Builder = Builder(id)
     }
 }

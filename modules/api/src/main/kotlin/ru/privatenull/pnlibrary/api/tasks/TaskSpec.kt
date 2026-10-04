@@ -5,7 +5,9 @@ import java.time.Instant
 import java.util.Collections
 import java.util.function.BooleanSupplier
 
-fun interface TaskAction { fun run(context: TaskContext) }
+fun interface TaskAction {
+    fun run(context: TaskContext)
+}
 
 interface TaskContext {
     val id: TaskId
@@ -49,15 +51,25 @@ class TaskSpec private constructor(
         internal val configuredTags: Set<String> get() = tags.toSet()
 
         fun name(value: String?) = apply { name = value }
+
         fun key(value: String?) = apply { key = value }
+
         fun conflictPolicy(value: TaskConflictPolicy) = apply { conflictPolicy = value }
+
         fun execution(value: TaskExecution) = apply { execution = value }
+
         fun delay(value: Duration) = apply { delay = value }
+
         fun interval(value: Duration?) = apply { interval = value }
+
         fun condition(value: BooleanSupplier) = apply { conditions += value }
+
         fun cancelWhen(value: BooleanSupplier) = apply { cancellationConditions += value }
+
         fun tag(value: String) = apply { tags += value }
+
         fun tags(values: Collection<String>) = apply { tags += values }
+
         fun action(value: TaskAction) = apply { action = value }
 
         fun build(): TaskSpec {
@@ -99,9 +111,13 @@ class TaskSpecBuilder internal constructor() {
     var tags: Set<String>
         get() = delegate.configuredTags
         set(value) { delegate.tags(value) }
+
     fun condition(test: () -> Boolean) { delegate.condition(BooleanSupplier(test)) }
+
     fun cancelWhen(test: () -> Boolean) { delegate.cancelWhen(BooleanSupplier(test)) }
+
     fun run(action: TaskAction) { delegate.action(action) }
+
     internal fun build(): TaskSpec = delegate.build()
 }
 

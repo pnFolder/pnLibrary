@@ -24,6 +24,7 @@ enum class PlatformType(
 
     /** Velocity proxy family using its native scheduler, commands, and plugin container model. */
     VELOCITY("velocity", "Velocity", true),
+
     ;
 
     /** Whether this family runs a Minecraft server rather than a proxy. */

@@ -4,6 +4,7 @@ import ru.privatenull.pnlibrary.api.runtime.PnLibrary
 
 /** Type-safe access to the native platform API implemented by the active runtime. */
 interface PlatformProvider {
+
     /** Returns the registered implementation for [type], or `null` when unavailable. */
     fun <T : Any> get(type: Class<T>): T?
 

@@ -56,14 +56,20 @@ interface TaskScope : AutoCloseable {
 
     @Suppress("DEPRECATION")
     fun get(id: TaskId): TaskHandle? = find(id)
+
     fun require(id: TaskId): TaskHandle = get(id) ?: error("Task $id is unavailable in this scope")
+
     @Suppress("DEPRECATION")
     fun getByKey(key: String): TaskHandle? = findByKey(key)
+
     @Deprecated("Use get(id)", ReplaceWith("get(id)"))
     fun find(id: TaskId): TaskHandle? = null
+
     @Deprecated("Use getByKey(key)", ReplaceWith("getByKey(key)"))
     fun findByKey(key: String): TaskHandle? = null
+
     fun query(query: TaskQuery = TaskQuery.all()): List<TaskSnapshot> = emptyList()
+
     fun cancel(id: TaskId): Boolean = get(id)?.cancelIfActive() ?: false
 
     /** Schedules [task] in the platform's global execution context. */
@@ -134,11 +140,16 @@ interface TaskService : AutoCloseable {
 
     @Suppress("DEPRECATION")
     fun get(id: TaskId): TaskHandle? = find(id)
+
     fun require(id: TaskId): TaskHandle = get(id) ?: error("Task $id is unavailable")
+
     @Deprecated("Use get(id)", ReplaceWith("get(id)"))
     fun find(id: TaskId): TaskHandle? = null
+
     fun query(query: TaskQuery = TaskQuery.all()): List<TaskSnapshot> = emptyList()
+
     fun query(owner: Any, query: TaskQuery = TaskQuery.all()): List<TaskSnapshot> = emptyList()
+
     fun cancel(id: TaskId): Boolean = get(id)?.cancelIfActive() ?: false
 
     /** Closes and removes [owner]'s scope when one exists. */

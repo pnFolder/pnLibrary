@@ -4,7 +4,10 @@ import java.time.Duration
 import java.net.URI
 import java.util.Collections
 
-enum class DenyAction { DISABLE_PLUGIN, DISABLE_MODULE }
+enum class DenyAction {
+    DISABLE_PLUGIN,
+    DISABLE_MODULE
+}
 
 data class RemotePolicy(
     val source: String,
@@ -30,17 +33,21 @@ data class RemotePolicy(
             }
             source = uri.toASCIIString()
         }
+
         fun checkEvery(value: Duration) = apply {
             require(!value.isZero && !value.isNegative) { "Remote policy interval must be positive" }
             checkEvery = value
         }
+
         fun onDeny(value: DenyAction) = apply { onDeny = value }
+
         fun value(key: String, value: String) = apply {
             val normalized = key.trim()
             require(normalized.isNotEmpty()) { "Remote policy value key must not be blank" }
             values[normalized] = value
         }
         fun values(values: Map<String, String>) = apply { values.forEach(::value) }
+
         fun build(): RemotePolicy = RemotePolicy(
             requireNotNull(source) { "remote policy source is required" },
             checkEvery,
@@ -51,7 +58,8 @@ data class RemotePolicy(
 
     companion object {
         /** Creates a Java-friendly fluent remote-policy builder. */
-        @JvmStatic fun builder(): Builder = Builder()
+        @JvmStatic
+        fun builder(): Builder = Builder()
     }
 }
 
@@ -60,8 +68,12 @@ data class RemotePolicy(
 class RemotePolicyBuilder {
     private val delegate = RemotePolicy.builder()
     fun source(value: String) { delegate.source(value) }
+
     fun checkEvery(value: Duration) { delegate.checkEvery(value) }
+
     fun onDeny(value: DenyAction) { delegate.onDeny(value) }
+
     fun value(key: String, value: String) { delegate.value(key, value) }
+
     fun build(): RemotePolicy = delegate.build()
 }

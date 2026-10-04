@@ -3,10 +3,25 @@ package ru.privatenull.pnlibrary.api.activity
 import java.util.UUID
 import java.nio.file.Path
 
-enum class ActivitySeverity { TRACE, INFO, NOTICE, WARNING, ERROR, CRITICAL }
+enum class ActivitySeverity {
+    TRACE,
+    INFO,
+    NOTICE,
+    WARNING,
+    ERROR,
+    CRITICAL
+}
 
 enum class ActivityCategory {
-    LIFECYCLE, USER_ACTION, UPDATE, DIAGNOSTICS, COMMAND, FEATURE, SECURITY, ERROR, SYSTEM
+    LIFECYCLE,
+    USER_ACTION,
+    UPDATE,
+    DIAGNOSTICS,
+    COMMAND,
+    FEATURE,
+    SECURITY,
+    ERROR,
+    SYSTEM
 }
 
 data class ActivityEvent(
@@ -73,6 +88,7 @@ interface ActivityService : AutoCloseable {
         pluginId = pluginId, metadata = metadata))
 
     fun recent(query: ActivityQuery = ActivityQuery()): List<ActivityEvent>
+
     fun record(bundle: ActivityBundle): ActivityEvent {
         val event = record(
             type = bundle.type,
@@ -95,7 +111,9 @@ interface ActivityService : AutoCloseable {
         pluginId: String? = null,
         source: String? = null,
     ): ActivityEvent = record(ActivityBundle(files = files, metadata = metadata, pluginId = pluginId, source = source))
+
     fun attach(eventId: String, name: String, contentType: String, bytes: ByteArray): ActivityAttachment
+
     fun attachFile(eventId: String, path: Path, contentType: String = "application/octet-stream"): ActivityAttachment
 
     /** Records an event and attaches [path] to it through one caller-facing operation. */
@@ -115,8 +133,12 @@ interface ActivityService : AutoCloseable {
         return event
     }
     fun exportJournal(): ByteArray
+
     fun exportAttachments(): Map<String, ByteArray>
+
     fun exportAttachmentManifest(): ByteArray = ByteArray(0)
+
     fun clear()
+
     override fun close()
 }

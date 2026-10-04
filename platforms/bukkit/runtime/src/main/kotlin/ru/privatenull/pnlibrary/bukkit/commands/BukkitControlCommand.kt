@@ -1,5 +1,6 @@
 package ru.privatenull.pnlibrary.bukkit.commands
 
+import net.kyori.adventure.text.Component
 import net.md_5.bungee.api.ChatColor
 import net.md_5.bungee.api.chat.ClickEvent
 import net.md_5.bungee.api.chat.ComponentBuilder
@@ -26,7 +27,6 @@ import ru.privatenull.pnlibrary.api.updates.UpdateChannel
 import ru.privatenull.pnlibrary.api.version.SemanticVersion
 import java.util.Locale
 import java.util.UUID
-import java.util.concurrent.ConcurrentHashMap
 import java.util.concurrent.atomic.AtomicBoolean
 import java.time.Duration
 import java.time.ZoneOffset
@@ -94,7 +94,7 @@ internal class BukkitControlCommand(
 
     private fun executeNative(context: CommandContext) {
         val sender = (context.sender as? BukkitCommandSender)?.native
-        if (sender == null) context.sender.send(net.kyori.adventure.text.Component.text("Unsupported Bukkit sender."))
+        if (sender == null) context.sender.send(Component.text("Unsupported Bukkit sender."))
         else execute(sender, context.arguments)
     }
 

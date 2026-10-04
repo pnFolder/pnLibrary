@@ -20,11 +20,20 @@ fun interface ArgumentType<T : Any> {
             }
         }
 
-        @JvmStatic fun string(): ArgumentType<String> = STRING
-        @JvmStatic fun integer(): ArgumentType<Int> = INTEGER
-        @JvmStatic fun long(): ArgumentType<Long> = LONG
-        @JvmStatic fun decimal(): ArgumentType<BigDecimal> = DECIMAL
-        @JvmStatic fun boolean(): ArgumentType<Boolean> = BOOLEAN
+        @JvmStatic
+        fun string(): ArgumentType<String> = STRING
+
+        @JvmStatic
+        fun integer(): ArgumentType<Int> = INTEGER
+
+        @JvmStatic
+        fun long(): ArgumentType<Long> = LONG
+
+        @JvmStatic
+        fun decimal(): ArgumentType<BigDecimal> = DECIMAL
+
+        @JvmStatic
+        fun boolean(): ArgumentType<Boolean> = BOOLEAN
 
         @JvmStatic
         fun <E : Enum<E>> enumeration(type: Class<E>): ArgumentType<E> = ArgumentType { value ->

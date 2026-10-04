@@ -5,7 +5,11 @@ import ru.privatenull.pnlibrary.api.updates.ManagedProductDependency
 import ru.privatenull.pnlibrary.api.version.SemanticVersion
 
 /** Controls whether pnLibrary may stage a missing dependency. */
-enum class DownloadPolicy { MANUAL, AUTOMATIC, FORCED }
+enum class DownloadPolicy {
+    MANUAL,
+    AUTOMATIC,
+    FORCED
+}
 
 /** Inclusive lower bound plus one optional upper bound for a dependency version. */
 class VersionConstraint(

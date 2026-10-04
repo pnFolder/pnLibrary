@@ -4,7 +4,11 @@ import java.util.Collections
 import java.util.function.Consumer
 import java.util.function.Function
 
-enum class CommandNodeKind { ROOT, LITERAL, ARGUMENT }
+enum class CommandNodeKind {
+    ROOT,
+    LITERAL,
+    ARGUMENT
+}
 
 /** Synchronous access rule evaluated with values parsed before this node. */
 fun interface CommandAvailability {

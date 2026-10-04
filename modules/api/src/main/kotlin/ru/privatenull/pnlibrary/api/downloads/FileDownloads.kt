@@ -8,14 +8,29 @@ import java.util.Collections
 import java.util.concurrent.CompletionStage
 import java.util.function.Consumer
 
-enum class DownloadState { DECLARED, CURRENT, DOWNLOADING, STAGED, BLOCKED, FAILED, CLOSED }
+enum class DownloadState {
+    DECLARED,
+    CURRENT,
+    DOWNLOADING,
+    STAGED,
+    BLOCKED,
+    FAILED,
+    CLOSED
+}
 
-data class DownloadSnapshot(val key: String, val state: DownloadState, val message: String? = null)
+data class DownloadSnapshot(
+    val key: String,
+    val state: DownloadState,
+    val message: String? = null
+)
 
 interface DownloadRegistration : AutoCloseable {
     val isClosed: Boolean get() = false
+
     fun snapshots(): List<DownloadSnapshot>
+
     fun downloadNow(): CompletionStage<List<DownloadSnapshot>>
+
     override fun close()
 }
 
@@ -46,18 +61,23 @@ class DirectDownloadSource private constructor(builder: Builder) {
             require(parsed.scheme.equals("https", true) && !parsed.host.isNullOrBlank()) { "download URL must use HTTPS" }
             uri = parsed
         }
+
         fun platform(value: PlatformType) = apply { platform = value }
-        @JvmOverloads fun java(minimum: Int, maximum: Int? = null) = apply {
+
+        @JvmOverloads
+        fun java(minimum: Int, maximum: Int? = null) = apply {
             require(minimum >= 8 && (maximum == null || maximum >= minimum)) { "invalid Java range" }
             minimumJava = minimum
             maximumJava = maximum
         }
+
         fun integrity(size: Long, sha256: String) = apply {
             require(size > 0) { "download size must be positive" }
             require(sha256.matches(Regex("[0-9a-fA-F]{64}"))) { "SHA-256 must contain 64 hexadecimal characters" }
             this.size = size
             this.sha256 = sha256.lowercase(java.util.Locale.ROOT)
         }
+
         fun build() = DirectDownloadSource(this)
     }
 
@@ -82,16 +102,25 @@ class FileDownload internal constructor(builder: Builder) {
         internal var relativePath = ""
 
         fun required(value: Boolean) = apply { required = value }
+
         fun automaticDownload(value: Boolean) = apply { automatic = value }
+
         fun forceAutomaticDownload(value: Boolean) = apply { forceAutomatic = value }
+
         fun url(value: String) = apply { source.url(value) }
+
         fun platform(value: PlatformType) = apply { source.platform(value) }
-        @JvmOverloads fun java(minimum: Int, maximum: Int? = null) = apply { source.java(minimum, maximum) }
+
+        @JvmOverloads
+        fun java(minimum: Int, maximum: Int? = null) = apply { source.java(minimum, maximum) }
+
         fun integrity(size: Long, sha256: String) = apply { source.integrity(size, sha256) }
+
         fun destination(value: DownloadDestination, relativePath: String) = apply {
             destination = value
             this.relativePath = relativePath
         }
+
         internal fun build(): FileDownload {
             require(id.isNotBlank()) { "file download ID is required" }
             require(relativePath.isNotBlank()) { "destination path is required" }
@@ -119,6 +148,7 @@ class FileDownloads private constructor(builder: Builder) {
         internal val files = mutableListOf<FileDownload>()
 
         fun dataDirectory(value: Path) = apply { dataDirectory = value }
+
         fun file(id: String, configure: Consumer<FileDownload.Builder>) = apply {
             val builder = FileDownload.Builder(id)
             configure.accept(builder)
@@ -126,11 +156,15 @@ class FileDownloads private constructor(builder: Builder) {
             require(files.none { it.key.equals(file.key, true) }) { "duplicate file download: ${file.key}" }
             files += file
         }
+
         fun build(): FileDownloads {
             require(files.isNotEmpty()) { "at least one file download is required" }
             return FileDownloads(this)
         }
     }
 
-    companion object { @JvmStatic fun builder() = Builder() }
+    companion object {
+        @JvmStatic
+        fun builder() = Builder()
+    }
 }

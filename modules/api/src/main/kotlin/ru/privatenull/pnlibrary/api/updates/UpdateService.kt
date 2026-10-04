@@ -110,6 +110,7 @@ class PluginUpdateArtifact(
     val maximumJava: Int?,
     val platform: PlatformType? = null,
 ) {
+
     /** Returns whether [javaFeature] is inside this artifact's inclusive Java range. */
     fun supports(javaFeature: Int): Boolean =
         javaFeature >= minimumJava && (maximumJava == null || javaFeature <= maximumJava)
@@ -132,16 +133,22 @@ class PluginUpdateArtifact(
  * ```
  */
 class PluginUpdateRequest private constructor(builder: Builder) {
+
     /** GitHub repository owner. */
     val repositoryOwner: String = builder.repositoryOwner
+
     /** GitHub repository name. */
     val repositoryName: String = builder.repositoryName
+
     /** Highest prerelease maturity accepted by the updater. */
     val channel: UpdateChannel = builder.channel
+
     /** Whether a newly discovered compatible artifact should be downloaded. */
     val automaticDownload: Boolean = builder.automaticDownload
+
     /** Immutable artifact-selection rules in declaration order. */
     val artifacts: List<PluginUpdateArtifact> = Collections.unmodifiableList(ArrayList(builder.artifacts))
+
     /** Inclusive pnLibrary API generations supported by this product. */
     val supportedApi: ApiVersionRange = builder.supportedApi
 
@@ -172,26 +179,33 @@ class PluginUpdateRequest private constructor(builder: Builder) {
             repositoryOwner = owner
             repositoryName = name
         }
+
         /** Sets the accepted release [value]. */
         fun channel(value: UpdateChannel) = apply { channel = value }
+
         /** Enables or disables automatic verified downloads. */
         fun automaticDownload(enabled: Boolean) = apply { automaticDownload = enabled }
+
         /** Sets the inclusive pnLibrary API-generation range supported by the plugin. */
         fun supportedApi(minimum: Int, maximum: Int) = apply {
             supportedApi = ApiVersionRange(minimum, maximum)
         }
+
         /** Declares one supported API generation. */
         fun apiVersion(version: Int) = supportedApi(version, version)
         /** Declares the inclusive range of supported pnLibrary API generations. */
         fun apiVersions(minimum: Int, maximum: Int) = supportedApi(minimum, maximum)
+
         /** Adds an exact release asset name without exposing regular-expression escaping. */
         @JvmOverloads
         fun exactArtifact(name: String, minimumJava: Int = 8, maximumJava: Int? = null) = apply {
             require(name.isNotBlank()) { "artifact name must not be blank" }
             artifact("^${Regex.escape(name)}$", minimumJava, maximumJava)
         }
+
         /** Adds an artifact pattern compatible with Java 8 and newer. */
         fun artifactPattern(regex: String) = artifact(regex, 8)
+
         /** Adds and validates one Java-bounded release artifact rule. */
         @JvmOverloads
         fun artifact(regex: String, minimumJava: Int, maximumJava: Int? = null) = apply {
@@ -200,6 +214,7 @@ class PluginUpdateRequest private constructor(builder: Builder) {
             require(maximumJava == null || maximumJava >= minimumJava) { "maximumJava must be >= minimumJava" }
             artifacts += PluginUpdateArtifact(regex, minimumJava, maximumJava)
         }
+
         /** Adds a release artifact restricted to one server platform. */
         @JvmOverloads
         fun artifact(regex: String, platform: PlatformType, minimumJava: Int, maximumJava: Int? = null) = apply {
@@ -208,6 +223,7 @@ class PluginUpdateRequest private constructor(builder: Builder) {
             require(maximumJava == null || maximumJava >= minimumJava) { "maximumJava must be >= minimumJava" }
             artifacts += PluginUpdateArtifact(regex, minimumJava, maximumJava, platform)
         }
+
         /** Validates the complete policy and creates its immutable request. */
         fun build(): PluginUpdateRequest {
             require(repositoryOwner.isNotBlank() && repositoryName.isNotBlank()) { "repository is required" }
@@ -228,16 +244,22 @@ class PluginUpdateRequest private constructor(builder: Builder) {
 
 /** Lifecycle and manual controls for one updater registration. */
 interface UpdateRegistration : AutoCloseable {
+
     /** Whether this registration has been removed and rejects new manual work. */
     val isClosed: Boolean get() = false
+
     /** Repository coordinate in `owner/name` form. */
     val repository: String
+
     /** Latest immutable state observed by this registration. */
     val snapshot: UpdateSnapshot
+
     /** Starts a background check without forcing a download. */
     fun checkNow()
+
     /** Starts a background check with downloading enabled for this invocation. */
     fun downloadNow()
+
     /** Stops periodic and manual work and removes this registration. */
     override fun close()
 }
@@ -257,6 +279,7 @@ interface UpdateService {
         request: PluginUpdateRequest,
         dependencies: List<PluginDependency> = emptyList(),
     ): UpdateRegistration
+
     /** Returns an immutable snapshot of current registrations. */
     @Suppress("DEPRECATION")
     fun all(): List<UpdateRegistration> = Collections.unmodifiableList(ArrayList(registrations()))
@@ -279,14 +302,19 @@ interface UpdateService {
 
     /** Refreshes every registered catalogue and resolves one complete compatibility plan. */
     fun checkNow(): CompletionStage<UpdatePlanSnapshot> = unsupported("graph update checks")
+
     /** Returns the latest immutable graph plan, when one has been resolved. */
     fun currentPlan(): Optional<UpdatePlanSnapshot> = Optional.empty()
+
     /** Downloads and verifies every artifact in the selected plan. */
     fun stage(planId: UUID): CompletionStage<UpdatePlanSnapshot> = unsupported("graph update staging")
+
     /** Confirms a token-bound sensitive action for the selected plan. */
     fun confirm(planId: UUID, token: String): CompletionStage<UpdatePlanSnapshot> = unsupported("graph update confirmation")
+
     /** Returns a bounded, newest-first, immutable graph-plan snapshot. */
     fun history(): List<UpdatePlanSnapshot> = emptyList()
+
     /** Restores the previous JAR set from the newest rollback-capable transaction. */
     fun rollback(): CompletionStage<UpdatePlanSnapshot> = unsupported("manual update rollback")
 

@@ -56,7 +56,8 @@ class ConfigTypeAccess private constructor(
         fun global() = everyone()
 
         /** Creates an owner-plus-explicit-plugins access policy. */
-        @JvmStatic fun plugins(vararg pluginIds: String) =
+        @JvmStatic
+        fun plugins(vararg pluginIds: String) =
             Builder().allow(*pluginIds).build()
 
         /** Creates a mutable access-policy builder. */

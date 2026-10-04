@@ -4,8 +4,12 @@ import java.time.Instant
 import java.util.Collections
 
 class TaskQuery private constructor(
-    val id: TaskId?, val key: String?, val nameContains: String?,
-    val statuses: Set<TaskStatus>, val executionKinds: Set<TaskExecution.Kind>, val tags: Set<String>,
+    val id: TaskId?,
+    val key: String?,
+    val nameContains: String?,
+    val statuses: Set<TaskStatus>,
+    val executionKinds: Set<TaskExecution.Kind>,
+    val tags: Set<String>,
 ) {
     class Builder internal constructor() {
         private var id: TaskId? = null
@@ -14,12 +18,19 @@ class TaskQuery private constructor(
         private val statuses = linkedSetOf<TaskStatus>()
         private val executionKinds = linkedSetOf<TaskExecution.Kind>()
         private val tags = linkedSetOf<String>()
+
         fun id(value: TaskId) = apply { id = value }
+
         fun key(value: String) = apply { key = value }
+
         fun nameContains(value: String) = apply { nameContains = value }
+
         fun status(vararg value: TaskStatus) = apply { statuses += value }
+
         fun execution(vararg value: TaskExecution.Kind) = apply { executionKinds += value }
+
         fun tag(value: String) = apply { tags += value }
+
         fun build(): TaskQuery {
             val normalizedKey = key?.trim()
             val normalizedName = nameContains?.trim()
@@ -37,8 +48,11 @@ class TaskQuery private constructor(
         }
     }
     companion object {
-        @JvmStatic fun builder() = Builder()
-        @JvmStatic fun all() = Builder().build()
+        @JvmStatic
+        fun builder() = Builder()
+
+        @JvmStatic
+        fun all() = Builder().build()
     }
 }
 

@@ -52,7 +52,11 @@ class ConfigValidatorBuilder<T> {
         }
     }
 
-    private data class Rule<T>(val path: String, val message: String, val condition: ConfigCondition<T>)
+    private data class Rule<T>(
+        val path: String,
+        val message: String,
+        val condition: ConfigCondition<T>
+    )
 }
 
 /**
