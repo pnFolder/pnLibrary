@@ -114,8 +114,32 @@ tasks.register<ShadowJar>("shadowVelocity") {
     filesMatching("velocity-plugin.json") { expand("version" to pnVer) }
 }
 
+// ── Universal multi-platform artifact ───────────────────────────────────────
+// Contains all three descriptors and adapters. Each platform loader reads only
+// its own descriptor and therefore starts only the matching entrypoint.
+val universalRuntime: Configuration by configurations.creating
+dependencies {
+    universalRuntime(project(":platforms:bukkit:runtime"))
+    universalRuntime(project(":platforms:bungee:runtime"))
+    universalRuntime(project(":platforms:velocity:runtime"))
+    universalRuntime(project(":modules:features:update"))
+    universalRuntime(project(":modules:internal:faststats-velocity"))
+}
+
+tasks.register<ShadowJar>("shadowUniversal") {
+    group = "distribution"
+    description = "Universal fat JAR for Bukkit/Paper, BungeeCord and Velocity"
+    archiveBaseName = "pnLibrary"
+    configurations = listOf(universalRuntime)
+    applyCommonConfig()
+    archiveClassifier = "universal"
+    filesMatching("plugin.yml") { expand("version" to pnVer) }
+    filesMatching("bungee.yml") { expand("version" to pnVer) }
+    filesMatching("velocity-plugin.json") { expand("version" to pnVer) }
+}
+
 tasks.named("build") {
-    dependsOn("shadowBukkit", "shadowBungee", "shadowVelocity", "copyDeveloperArtifacts")
+    dependsOn("shadowBukkit", "shadowBungee", "shadowVelocity", "shadowUniversal", "copyDeveloperArtifacts")
 }
 
 val commonJar = project(":modules:common").tasks.named<Jar>("jar")
@@ -158,6 +182,7 @@ val releasePlatforms = listOf(
     ReleasePlatform("bukkit-java8", "shadowBukkit"),
     ReleasePlatform("bungeecord-java8", "shadowBungee"),
     ReleasePlatform("velocity-java17", "shadowVelocity"),
+    ReleasePlatform("universal", "shadowUniversal"),
 )
 val apiVersionSource = rootProject.file(
     "modules/api/src/main/kotlin/ru/privatenull/pnlibrary/api/version/PnLibraryApi.kt",
