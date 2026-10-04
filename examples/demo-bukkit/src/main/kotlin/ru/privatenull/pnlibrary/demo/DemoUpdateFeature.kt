@@ -1,8 +1,6 @@
 package ru.privatenull.pnlibrary.demo
 
-import ru.privatenull.pnlibrary.api.updates.ProductDescriptor
 import ru.privatenull.pnlibrary.update.ArtifactDownloader
-import ru.privatenull.pnlibrary.update.ProductDescriptorCodec
 import ru.privatenull.pnlibrary.update.FreezeDuration
 import ru.privatenull.pnlibrary.update.FreezeStore
 import java.io.ByteArrayInputStream
@@ -15,17 +13,14 @@ object DemoUpdateFeature {
         val freeze = FreezeStore(plugin.dataFolder.toPath().resolve("demo-freezes.json"))
         val id = ru.privatenull.pnlibrary.api.updates.ProductId.of("pndemo")
         freeze.freeze(id, FreezeDuration.parse("1h"))
-        freeze.remaining(id); freeze.isFrozen(id); freeze.active(); freeze.clear(id)
-
-        val descriptor = ProductDescriptor.builder().version(plugin.description.version)
-            .pnLibraryApi(1, 1).build().bindTo("pndemo")
-        val codec = ProductDescriptorCodec()
-        val encoded = codec.encodeInstalled(descriptor)
-        codec.decodeInstalled(encoded)
+        freeze.remaining(id)
+        freeze.isFrozen(id)
+        freeze.active()
+        freeze.clear(id)
 
         val output = plugin.dataFolder.toPath().resolve("update-feature-smoke.bin")
         ArtifactDownloader(1024).download({ ByteArrayInputStream(byteArrayOf(1, 2, 3)) }, output)
         Files.deleteIfExists(output)
-        plugin.logger.info("update feature smoke: freeze, codec and bounded downloader are available")
+        plugin.logger.info("update feature smoke: freeze store and bounded downloader are available")
     }
 }
