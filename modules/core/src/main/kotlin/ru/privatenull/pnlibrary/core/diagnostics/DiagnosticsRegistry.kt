@@ -1,6 +1,5 @@
 package ru.privatenull.pnlibrary.core.diagnostics
 
-import ru.privatenull.pnlibrary.api.diagnostics.DiagnosticConfiguration
 import ru.privatenull.pnlibrary.api.diagnostics.DiagnosticLevel
 import ru.privatenull.pnlibrary.api.diagnostics.DiagnosticRegistration
 import ru.privatenull.pnlibrary.api.diagnostics.DiagnosticsContributor
@@ -58,21 +57,7 @@ internal class DiagnosticsRegistry(eventLimit: Int = DEFAULT_EVENT_LIMIT) : Diag
     }
 
     private fun registerInternal(plugin: String, dataDirectory: Path?, contributor: DiagnosticsContributor): DiagnosticRegistration {
-        val state = stateOf(plugin)
-        val id = sanitizer.text(contributor.id, 96).also {
-            require(it.isNotEmpty()) { "contributor id must not be empty" }
-        }
-        val registered = RegisteredContributor(contributor, dataDirectory)
-        state.contributors[id] = registered
-        return object : DiagnosticRegistration {
-            private val closed = java.util.concurrent.atomic.AtomicBoolean(false)
-            override val isClosed: Boolean get() = closed.get()
-            override fun close() {
-                if (closed.compareAndSet(false, true)) {
-                    state.contributors.remove(id, registered)
-                }
-            }
-        }
+        return stateOf(plugin).contributors.register(contributor, dataDirectory)
     }
 
     // ── Status ───────────────────────────────────────────────────────────────
@@ -154,19 +139,10 @@ internal class DiagnosticsRegistry(eventLimit: Int = DEFAULT_EVENT_LIMIT) : Diag
             val st = plugins[name] ?: return@forEach
             if (!all && name != sanitizer.key(selectedPlugin)) return@forEach
 
-            val contributions = linkedMapOf<String, Any?>()
-            st.contributors.forEach { (cId, registered) ->
-                contributions[cId] = try {
-                    sanitizer.map(registered.contributor.collect())
-                } catch (exception: Exception) {
-                    mapOf("collectionError" to sanitizer.exception(exception))
-                }
-            }
-
             result[name] = linkedMapOf<String, Any?>(
                 "statuses"     to LinkedHashMap(st.statuses),
                 "events"       to st.incidents.snapshot(),
-                "contributors" to contributions,
+                "contributors" to st.contributors.collect(),
             )
         }
         return result
@@ -181,48 +157,16 @@ internal class DiagnosticsRegistry(eventLimit: Int = DEFAULT_EVENT_LIMIT) : Diag
         }
     }
 
-    /** Returns merged [DiagnosticConfiguration] objects for a given plugin. */
-    fun configurations(plugin: String): List<RegisteredConfiguration> {
+    /** Returns merged configuration declarations for a given plugin. */
+    fun configurations(plugin: String): List<RegisteredDiagnosticConfiguration> {
         if (plugin.equals("all", ignoreCase = true)) {
-            return plugins.keys.sorted().flatMap { pluginKey -> configurationsFor(pluginKey, plugins[pluginKey] ?: return@flatMap emptyList()) }
-        }
-        val pluginKey = sanitizer.key(plugin)
-        val st = plugins[pluginKey] ?: return emptyList()
-        return configurationsFor(pluginKey, st)
-    }
-
-    private fun configurationsFor(plugin: String, st: PluginState): List<RegisteredConfiguration> {
-        val files = linkedMapOf<String, RegisteredConfiguration>()
-        st.contributors.values.forEach { registered ->
-            try {
-                val contrib = registered.contributor
-                contrib.configurations().forEach { cfg ->
-                    if (files.size < 64) files.putIfAbsent(cfg.path, RegisteredConfiguration(plugin, registered.dataDirectory, cfg))
-                }
-                contrib.configurationFiles().forEach { path ->
-                    if (files.size < 64 && !files.containsKey(path)) {
-                        runCatching { files[path] = RegisteredConfiguration(plugin, registered.dataDirectory, DiagnosticConfiguration.builder(path).build()) }
-                    }
-                }
-            } catch (_: Exception) {
-                // A malformed contributor must not prevent other configurations.
+            return plugins.keys.sorted().flatMap { pluginKey ->
+                plugins[pluginKey]?.contributors?.configurations(pluginKey).orEmpty()
             }
         }
-        return files.values.toList()
+        val pluginKey = sanitizer.key(plugin)
+        return plugins[pluginKey]?.contributors?.configurations(pluginKey).orEmpty()
     }
-
-    /**
-     * Configuration declaration resolved against the owning plugin directory.
-     *
-     * @property plugin normalized plugin identifier used in report paths
-     * @property dataDirectory trusted plugin root, or `null` for the runtime root
-     * @property configuration collection and redaction policy supplied by the plugin
-     */
-    data class RegisteredConfiguration(
-        val plugin: String,
-        val dataDirectory: Path?,
-        val configuration: DiagnosticConfiguration,
-    )
 
     private fun stateOf(plugin: String) =
         plugins.computeIfAbsent(sanitizer.key(plugin)) { PluginState(limit, sanitizer) }
@@ -236,11 +180,10 @@ internal class DiagnosticsRegistry(eventLimit: Int = DEFAULT_EVENT_LIMIT) : Diag
     }
 
     private class PluginState(eventLimit: Int, sanitizer: DiagnosticValueSanitizer) {
-        val contributors = ConcurrentHashMap<String, RegisteredContributor>()
+        val contributors = DiagnosticContributors(sanitizer)
         val statuses     = ConcurrentHashMap<String, Map<String, Any?>>()
         val incidents = DiagnosticIncidentLog(eventLimit, sanitizer)
     }
-    private data class RegisteredContributor(val contributor: DiagnosticsContributor, val dataDirectory: Path?)
 
     private companion object {
         const val DEFAULT_EVENT_LIMIT = 100
