@@ -126,7 +126,10 @@ internal class MenuServiceImpl(
         override val inventory: Inventory,
     ) : MenuSession {
         private var finished = false
-        override fun set(slot: Int, item: ItemStack?) { require(slot in 0 until inventory.size); inventory.setItem(slot, item) }
+        override fun set(slot: Int, item: ItemStack?) {
+            require(slot in 0 until inventory.size)
+            inventory.setItem(slot, item)
+        }
         override fun get(slot: Int): ItemStack? = inventory.getItem(slot)
         override fun refresh() { if (!finished) menu.renderer?.render(this) }
         override fun refreshAfter(delay: Duration) { tasks.laterEntity(player, delay, Runnable { refresh() }) }

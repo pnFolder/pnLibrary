@@ -33,11 +33,16 @@ internal class BukkitTaskAdapter(private val plugin: Plugin) : PlatformTaskAdapt
         val reference = AtomicReference<NativeHandle?>()
         val completed = AtomicBoolean(false)
         val forwarded = withCompletionRelease(request) {
-            completed.set(true); reference.get()?.release()
+            completed.set(true)
+            reference.get()?.release()
         }
         val native = if (ServerCapabilities.isFolia) scheduleFolia(forwarded) else scheduleBukkit(forwarded)
-        return NativeHandle(native).also {
-            reference.set(it); handles += it; if (completed.get()) it.release()
+        return NativeHandle(native).also { handle ->
+            reference.set(handle)
+            handles += handle
+            if (completed.get()) {
+                handle.release()
+            }
         }
     }
 
@@ -108,6 +113,8 @@ internal class BukkitTaskAdapter(private val plugin: Plugin) : PlatformTaskAdapt
             handles.remove(this)
             return true
         }
-        fun release() { handles.remove(this) }
+        fun release() {
+            handles.remove(this)
+        }
     }
 }

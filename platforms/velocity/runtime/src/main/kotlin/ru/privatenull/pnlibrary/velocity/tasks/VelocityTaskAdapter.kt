@@ -14,7 +14,10 @@ internal class VelocityTaskAdapter internal constructor(
         if (!request.delay.isZero) builder.delay(request.delay)
         request.interval?.let(builder::repeat)
         val task = builder.schedule()
-        PlatformTaskHandle { task.cancel(); true }
+        PlatformTaskHandle {
+            task.cancel()
+            true
+        }
     })
 
     private val closed = AtomicBoolean(false)
@@ -24,24 +27,39 @@ internal class VelocityTaskAdapter internal constructor(
         val reference = AtomicReference<TrackedHandle?>()
         val completed = AtomicBoolean(false)
         val forwarded = request.copy(callback = Runnable {
-            try { request.callback.run() } finally {
-                if (request.interval == null) { completed.set(true); reference.get()?.release() }
+            try {
+                request.callback.run()
+            } finally {
+                if (request.interval == null) {
+                    completed.set(true)
+                    reference.get()?.release()
+                }
             }
         })
-        return TrackedHandle(nativeSchedule(forwarded)).also {
-            reference.set(it); handles += it; if (completed.get()) it.release()
+        return TrackedHandle(nativeSchedule(forwarded)).also { handle ->
+            reference.set(handle)
+            handles += handle
+            if (completed.get()) {
+                handle.release()
+            }
         }
     }
     override fun close() {
         if (!closed.compareAndSet(false, true)) return
-        handles.toList().forEach { it.cancel() }; handles.clear()
+        handles.toList().forEach { it.cancel() }
+        handles.clear()
     }
     private inner class TrackedHandle(private val delegate: PlatformTaskHandle) : PlatformTaskHandle {
         private val cancelled = AtomicBoolean(false)
         override fun cancel(): Boolean {
             if (!cancelled.compareAndSet(false, true)) return false
-            delegate.cancel(); handles.remove(this); return true
+            delegate.cancel()
+            handles.remove(this)
+            return true
         }
-        fun release() { handles.remove(this) }
+
+        fun release() {
+            handles.remove(this)
+        }
     }
 }

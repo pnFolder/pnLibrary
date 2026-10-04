@@ -49,7 +49,10 @@ internal class PlaceholderApiAdapter(private val plugin: Plugin) : PlaceholderAd
             override fun close() {
                 if (!active.compareAndSet(true, false)) return
                 expansion.handlers.remove(externalName)
-                if (expansion.handlers.isEmpty()) { expansion.unregister(); groups.remove(namespace, expansion) }
+                if (expansion.handlers.isEmpty()) {
+                    expansion.unregister()
+                    groups.remove(namespace, expansion)
+                }
             }
         }
     }

@@ -130,18 +130,38 @@ internal class ComponentServiceImpl(
 internal class ComponentCache {
     private data class Value(val component: Component, var accessed: Long)
     private val values = java.util.Collections.synchronizedMap(LinkedHashMap<String, Value>(16, .75f, true))
-    private val hits = AtomicLong(); private val misses = AtomicLong(); private val evictions = AtomicLong()
+    private val hits = AtomicLong()
+    private val misses = AtomicLong()
+    private val evictions = AtomicLong()
+
     fun get(key: String, policy: ComponentCachePolicy): Component? = synchronized(values) {
         val value = values[key]
         if (value == null || System.currentTimeMillis() - value.accessed >= policy.expireAfterAccessMillis) {
-            if (value != null) values.remove(key)
-            misses.incrementAndGet(); null
-        } else { value.accessed = System.currentTimeMillis(); hits.incrementAndGet(); value.component }
+            if (value != null) {
+                values.remove(key)
+            }
+            misses.incrementAndGet()
+            null
+        } else {
+            value.accessed = System.currentTimeMillis()
+            hits.incrementAndGet()
+            value.component
+        }
     }
+
     fun put(key: String, component: Component, policy: ComponentCachePolicy) = synchronized(values) {
-        values[key] = Value(component, System.currentTimeMillis()); trim(policy.maximumEntries)
+        values[key] = Value(component, System.currentTimeMillis())
+        trim(policy.maximumEntries)
     }
-    fun trim(maximum: Int) = synchronized(values) { while (values.size > maximum) { values.remove(values.keys.first()); evictions.incrementAndGet() } }
+
+    fun trim(maximum: Int) = synchronized(values) {
+        while (values.size > maximum) {
+            values.remove(values.keys.first())
+            evictions.incrementAndGet()
+        }
+    }
+
     fun clear() = values.clear()
+
     fun statistics() = ComponentCacheStatistics(hits.get(), misses.get(), evictions.get(), values.size)
 }
