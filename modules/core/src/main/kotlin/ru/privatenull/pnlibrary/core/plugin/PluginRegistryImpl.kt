@@ -6,7 +6,6 @@ import ru.privatenull.pnlibrary.api.config.ConfigScope
 import ru.privatenull.pnlibrary.api.events.EventScope
 import ru.privatenull.pnlibrary.api.events.EventService
 import ru.privatenull.pnlibrary.api.logging.LoggingService
-import ru.privatenull.pnlibrary.api.logging.MessageBox
 import ru.privatenull.pnlibrary.api.logging.PnLogger
 import ru.privatenull.pnlibrary.api.metrics.MetricsService
 import ru.privatenull.pnlibrary.spi.platform.PlatformAdapter
@@ -40,10 +39,6 @@ import ru.privatenull.pnlibrary.core.placeholders.PlaceholderHub
 import ru.privatenull.pnlibrary.core.text.ComponentCache
 import ru.privatenull.pnlibrary.api.cooldowns.CooldownService
 import ru.privatenull.pnlibrary.api.actions.ActionService
-import ru.privatenull.pnlibrary.api.actions.ActionContext
-import ru.privatenull.pnlibrary.api.actions.LibraryAudience
-import ru.privatenull.pnlibrary.api.actions.LibraryPlayer
-import ru.privatenull.pnlibrary.api.text.ComponentSerializerType
 import ru.privatenull.pnlibrary.api.commands.CommandService
 import ru.privatenull.pnlibrary.api.downloads.DownloadRegistration
 import ru.privatenull.pnlibrary.currency.CurrencyFeature
@@ -256,42 +251,19 @@ internal class PluginRegistryImpl(
             )
         }
 
-        override val lifecycle: PluginLifecycle = object : PluginLifecycle {
-            override val metadata: PluginMetadata get() = this@Context.metadata
-            override fun enabled(): MessageBox =
-                logging.box(owner, metadata.name, metadata.version)
-                    .ok("Identifier", id.value)
-                    .ok("Platform", ModuleRuntimeSummary.platform(metadata))
-                    .status("Metrics", ModuleRuntimeSummary.metrics(metrics.projectId, metrics.isEnabled))
-                    .status("Updates", ModuleRuntimeSummary.updates(updates))
-                    .status("Diagnostics", if (diagnostics == null) null else "enabled")
-                    .status("PlaceholderAPI", ModuleRuntimeSummary.placeholderApi(
-                        placeholderApiEnabled,
-                        placeholderHub.get("placeholderapi")?.state?.name,
-                    ))
-                    .status("Events", if (listenerCount == 0) null else "$listenerCount listener(s)")
-            override fun disabled(): MessageBox =
-                logging.shutdownBox(owner, metadata.name, metadata.version)
-                    .status("Resources", if (isClosed) "released" else "close pending")
-                    .status("Updates", if (updates == null) null else if (isClosed) "stopped" else "registered")
-                    .status("Metrics", if (metrics.projectId == null) null else if (isClosed) "stopped" else
-                        ModuleRuntimeSummary.metrics(metrics.projectId, metrics.isEnabled))
-                    .status("Events", if (listenerCount == 0) null else if (isClosed) "$listenerCount listener(s) removed" else "$listenerCount listener(s)")
-        }
-        override val messages: PluginMessages = object : PluginMessages {
-            override fun box(title: String): MessageBox {
-                require(title.isNotBlank()) { "message box title must not be blank" }
-                return logging.box(owner, title.trim())
-            }
-        }
-        override val actions: ActionService = object : ActionService {
-            override fun context(
-                player: LibraryPlayer,
-                allPlayers: LibraryAudience,
-                values: Map<String, Any?>,
-                serializerType: ComponentSerializerType,
-            ) = ActionContext(player, allPlayers, components, logger, tasks, serializerType, values, placeholders = placeholders)
-        }
+        override val lifecycle: PluginLifecycle = ModuleLifecycleReporter(
+            owner = owner,
+            moduleId = id,
+            metadata = metadata,
+            resources = resources,
+            logging = logging,
+            placeholders = placeholderHub,
+            placeholderApiEnabled = placeholderApiEnabled,
+            listenerCount = listenerCount,
+            isClosed = { isClosed },
+        )
+        override val messages: PluginMessages = ModuleMessages(owner, logging)
+        override val actions: ActionService = ModuleActionService(resources)
 
         override fun close() {
             parent.detach(id)?.closeInternal()
@@ -302,9 +274,6 @@ internal class PluginRegistryImpl(
             productId?.let { value -> synchronized(plugins) { productDescriptors.remove(value) } }
             resources.close(this@PluginRegistryImpl.diagnostics, key)
         }
-
-        private fun MessageBox.status(label: String, detail: String?): MessageBox =
-            if (detail == null) skip(label, "not configured") else ok(label, detail)
 
     }
 
