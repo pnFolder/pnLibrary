@@ -3,6 +3,7 @@ package ru.privatenull.pnlibrary.core.plugin
 import ru.privatenull.pnlibrary.api.metrics.MetricsService
 import ru.privatenull.pnlibrary.api.metrics.PluginMetrics
 import ru.privatenull.pnlibrary.api.metrics.MetricsProviderConfiguration
+import ru.privatenull.pnlibrary.api.metrics.ErrorReporter
 import ru.privatenull.pnlibrary.api.plugin.MetricsController
 import java.util.concurrent.atomic.AtomicBoolean
 import java.util.function.Consumer
@@ -14,6 +15,7 @@ internal class MetricsControllerImpl(
     initiallyEnabled: Boolean,
     initialConfigurers: List<Consumer<PluginMetrics>>,
     initialProviders: List<MetricsProviderConfiguration> = emptyList(),
+    private val errorReporter: ErrorReporter? = null,
 ) : MetricsController {
 
     private val lock = Any()
@@ -36,6 +38,8 @@ internal class MetricsControllerImpl(
     override val projectId: Int? get() = currentProjectId
     override val providerConfigurations: List<MetricsProviderConfiguration>
         get() = configuredProviders.toList()
+
+    override fun errorReporterOrNull(): ErrorReporter? = errorReporter
 
     override fun enable() = synchronized(lock) {
         ensureOpen()

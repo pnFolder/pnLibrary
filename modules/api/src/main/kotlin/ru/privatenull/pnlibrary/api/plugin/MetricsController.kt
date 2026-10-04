@@ -2,6 +2,7 @@ package ru.privatenull.pnlibrary.api.plugin
 
 import ru.privatenull.pnlibrary.api.metrics.PluginMetrics
 import ru.privatenull.pnlibrary.api.metrics.MetricsProviderConfiguration
+import ru.privatenull.pnlibrary.api.metrics.ErrorReporter
 import java.util.function.Consumer
 
 /**
@@ -21,6 +22,9 @@ interface MetricsController : AutoCloseable {
     /** Configured provider backends, including disabled entries retained for status reporting. */
     val providerConfigurations: List<MetricsProviderConfiguration>
         get() = emptyList()
+
+    /** Returns the configured error reporter, or null when no provider supports error tracking. */
+    fun errorReporterOrNull(): ErrorReporter? = null
 
     /** Enables metrics using the configured [projectId]. */
     fun enable()

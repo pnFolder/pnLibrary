@@ -77,6 +77,7 @@ internal class ModuleResourceFactory(
             serviceScope.register(CurrencyStorageFactory::class.java, currency.storages)
             definition.listeners.forEach(eventScope::register)
 
+            errorReporter = ErrorPipeline(metrics.openErrorReporter(owner, definition.metricsProviders))
             metricsController = MetricsControllerImpl(
                 owner,
                 metrics,
@@ -84,8 +85,8 @@ internal class ModuleResourceFactory(
                 definition.metricsEnabled,
                 definition.metricsConfigurers,
                 definition.metricsProviders,
+                errorReporter,
             )
-            errorReporter = ErrorPipeline(metrics.openErrorReporter(owner, definition.metricsProviders))
             diagnosticRegistration = definition.diagnosticContainer?.let { container ->
                 diagnostics.register(moduleKey.value, requireNotNull(definition.diagnosticsDirectory), container)
             }
