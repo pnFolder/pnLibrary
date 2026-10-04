@@ -11,26 +11,23 @@ import java.util.function.Consumer
 internal class MetricsControllerImpl(
     private val owner: Any,
     private val service: MetricsService,
-    initialProjectId: Int?,
-    initiallyEnabled: Boolean,
-    initialConfigurers: List<Consumer<PluginMetrics>>,
-    initialProviders: List<MetricsProviderConfiguration> = emptyList(),
+    definition: ModuleMetricsDefinition,
     private val errorReporter: ErrorReporter? = null,
 ) : MetricsController {
 
     private val lock = Any()
     private val closed = AtomicBoolean(false)
-    private val configurers = initialConfigurers.toMutableList()
-    private val configuredProviders = initialProviders.toMutableList()
+    private val configurers = definition.configurers.toMutableList()
+    private val configuredProviders = definition.providers.toMutableList()
     @Volatile
-    private var currentProjectId: Int? = initialProjectId
+    private var currentProjectId: Int? = definition.projectId
 
     @Volatile
     private var session: PluginMetrics? = null
 
     init {
-        initialProjectId?.let { require(it > 0) { "metrics projectId must be positive" } }
-        if (initiallyEnabled) enable()
+        currentProjectId?.let { require(it > 0) { "metrics projectId must be positive" } }
+        if (definition.enabled) enable()
     }
 
     override val isEnabled: Boolean get() = session != null

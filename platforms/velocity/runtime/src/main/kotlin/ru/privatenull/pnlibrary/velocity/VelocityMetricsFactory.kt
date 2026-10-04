@@ -5,7 +5,6 @@ import ru.privatenull.pnlibrary.api.metrics.PluginMetrics
 import ru.privatenull.pnlibrary.api.metrics.MetricsProvider
 import ru.privatenull.pnlibrary.api.metrics.MetricsProviderConfiguration
 import ru.privatenull.pnlibrary.core.metrics.CompositePluginMetrics
-import ru.privatenull.pnlibrary.api.metrics.ErrorReporter
 import com.velocitypowered.api.proxy.ProxyServer
 import org.slf4j.Logger
 import java.nio.file.Path
@@ -16,7 +15,6 @@ import ru.privatenull.pnlibrary.spi.metrics.PlatformMetricsFactory
 /** Creates bStats and FastStats sessions for Velocity using explicit platform adapters. */
 class VelocityMetricsFactory(
     private val factory: Metrics.Factory,
-    private val plugin: Any,
     private val server: ProxyServer,
     private val logger: Logger,
     private val dataDirectory: Path,

@@ -88,10 +88,7 @@ internal class ModuleResourceFactory(
             metricsController = MetricsControllerImpl(
                 owner,
                 metrics,
-                definition.metricsProjectId,
-                definition.metricsEnabled,
-                definition.metricsConfigurers,
-                definition.metricsProviders,
+                definition.metrics,
                 errorReporter,
             )
             diagnosticRegistration = definition.diagnosticContainer?.let { container ->

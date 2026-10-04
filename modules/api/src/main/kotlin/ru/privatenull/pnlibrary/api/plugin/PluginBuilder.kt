@@ -63,7 +63,7 @@ interface PluginBuilder {
     fun metrics(configure: Consumer<MetricsBuilder>): PluginBuilder {
         val builder = MetricsBuilder()
         configure.accept(builder)
-        return metrics(builder.build(), true, Consumer { })
+        return metrics(builder.build(), builder.enabled, Consumer(builder::configure))
     }
 
     /**

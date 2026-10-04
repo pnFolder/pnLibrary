@@ -10,21 +10,26 @@ The plugin interacts with `context.metrics` only:
 
 ```kotlin
 builder.metrics {
-    bStats(32592)
-    fastStats(FASTSTATS_TOKEN)
+    it.bStats(32592)
+    it.fastStats(FASTSTATS_TOKEN)
+    it.charts { metrics ->
+        metrics.simplePie("server_mode") { "survival" }
+    }
 }
 ```
 
 Shared charts are registered once and fanned out to every enabled provider:
 
 ```kotlin
-context.metrics.simplePie("server_mode") { "survival" }
+context.metrics.configure { metrics ->
+    metrics.simplePie("server_mode") { "survival" }
+}
 ```
 
 FastStats-only functionality is optional:
 
 ```kotlin
-context.metrics.fastStatsOrNull()?.errorTracker()?.track(error)
+context.metrics.fastStatsOrNull()?.errorTracker()?.capture(error)
 ```
 
 No provider-specific configuration objects are required from plugin authors. The existing advanced configuration API remains available internally for tests and integrations.

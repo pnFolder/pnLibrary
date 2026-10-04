@@ -4,6 +4,7 @@ import ru.privatenull.pnlibrary.api.diagnostics.DiagnosticContainer
 import ru.privatenull.pnlibrary.api.downloads.FileDownloads
 import ru.privatenull.pnlibrary.api.events.Listener
 import ru.privatenull.pnlibrary.api.metrics.PluginMetrics
+import ru.privatenull.pnlibrary.api.metrics.MetricsProvider
 import ru.privatenull.pnlibrary.api.metrics.MetricsProviderConfiguration
 import ru.privatenull.pnlibrary.api.plugin.PluginBuilder
 import ru.privatenull.pnlibrary.api.plugin.PluginDependency
@@ -27,10 +28,8 @@ internal class ModuleDefinitionBuilder : PluginBuilder {
     var metadataName: String? = null
     var metadataVersion: String? = null
     var metadataAuthors: String? = null
-    var metricsProjectId: Int? = null
-    var metricsProviders: List<MetricsProviderConfiguration> = emptyList()
-    var metricsEnabled: Boolean = false
-    val metricsConfigurers = mutableListOf<Consumer<PluginMetrics>>()
+    var metrics: ModuleMetricsDefinition = ModuleMetricsDefinition()
+        private set
     var diagnosticsDirectory: Path? = null
     var diagnosticContainer: DiagnosticContainer? = null
     var updateRequest: PluginUpdateRequest? = null
@@ -69,9 +68,16 @@ internal class ModuleDefinitionBuilder : PluginBuilder {
         configure: Consumer<PluginMetrics>,
     ): PluginBuilder = apply {
         require(projectId > 0) { "metrics projectId must be positive" }
-        metricsProjectId = projectId
-        metricsEnabled = enabled
-        metricsConfigurers += configure
+        metrics = ModuleMetricsDefinition(
+            providers = listOf(
+                MetricsProviderConfiguration(
+                    provider = MetricsProvider.BSTATS,
+                    projectId = projectId,
+                ),
+            ),
+            enabled = enabled,
+            configurers = metrics.configurers + configure,
+        )
     }
 
     override fun metrics(
@@ -80,13 +86,11 @@ internal class ModuleDefinitionBuilder : PluginBuilder {
         configure: Consumer<PluginMetrics>,
     ): PluginBuilder = apply {
         require(providers.isNotEmpty()) { "at least one metrics provider is required" }
-        require(providers.map { it.provider }.distinct().size == providers.size) {
-            "metrics providers must be unique"
-        }
-        metricsProviders = providers.toList()
-        metricsProjectId = providers.firstNotNullOfOrNull { it.projectId }
-        metricsEnabled = enabled
-        metricsConfigurers += configure
+        metrics = ModuleMetricsDefinition(
+            providers = providers.toList(),
+            enabled = enabled,
+            configurers = metrics.configurers + configure,
+        )
     }
 
     override fun diagnostics(dataDirectory: Path, container: DiagnosticContainer): PluginBuilder = apply {

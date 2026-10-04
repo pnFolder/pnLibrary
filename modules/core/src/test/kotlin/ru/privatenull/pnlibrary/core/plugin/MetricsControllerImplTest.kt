@@ -7,6 +7,8 @@ import org.junit.jupiter.api.Assertions.assertTrue
 import org.junit.jupiter.api.Test
 import ru.privatenull.pnlibrary.api.metrics.MetricsService
 import ru.privatenull.pnlibrary.api.metrics.PluginMetrics
+import ru.privatenull.pnlibrary.api.metrics.MetricsProvider
+import ru.privatenull.pnlibrary.api.metrics.MetricsProviderConfiguration
 import java.util.function.Consumer
 import java.util.function.Supplier
 
@@ -21,7 +23,7 @@ class MetricsControllerImplTest {
             override fun open(owner: Any, projectId: Int): PluginMetrics =
                 RecordingMetrics(projectId, reporter)
         }
-        val controller = MetricsControllerImpl(Any(), service, 10, true, emptyList())
+        val controller = MetricsControllerImpl(Any(), service, definition(), null)
         assertEquals(reporter, controller.fastStatsOrNull()?.errorTracker())
         controller.disable()
         assertEquals(null, controller.fastStatsOrNull())
@@ -34,7 +36,7 @@ class MetricsControllerImplTest {
     @Test
     fun `runtime chart configuration restarts session and replays all charts`() {
         val service = RecordingMetricsService()
-        val controller = MetricsControllerImpl(Any(), service, 10, true, emptyList())
+        val controller = MetricsControllerImpl(Any(), service, definition(), null)
 
         controller.configure(Consumer { it.simplePie("mode", Supplier { "test" }) })
         controller.configure(Consumer { it.simplePie("database", Supplier { "mysql" }) })
@@ -52,9 +54,9 @@ class MetricsControllerImplTest {
         val controller = MetricsControllerImpl(
             owner = Any(),
             service = service,
-            initialProjectId = 10,
-            initiallyEnabled = true,
-            initialConfigurers = listOf(Consumer { it.simplePie("mode", Supplier { "test" }) }),
+            definition = definition(
+                configurers = listOf(Consumer { it.simplePie("mode", Supplier { "test" }) }),
+            ),
         )
 
         assertTrue(controller.isEnabled)
@@ -80,7 +82,12 @@ class MetricsControllerImplTest {
 
     @Test
     fun `closed controller rejects mutation`() {
-        val controller = MetricsControllerImpl(Any(), RecordingMetricsService(), 10, false, emptyList())
+        val controller = MetricsControllerImpl(
+            Any(),
+            RecordingMetricsService(),
+            definition(enabled = false),
+            null,
+        )
         controller.close()
 
         assertTrue(controller.isClosed)
@@ -92,6 +99,19 @@ class MetricsControllerImplTest {
         val opened = mutableListOf<RecordingMetrics>()
         override fun open(owner: Any, projectId: Int): PluginMetrics =
             RecordingMetrics(projectId).also { opened += it }
+    }
+
+    companion object {
+        private fun definition(
+            enabled: Boolean = true,
+            configurers: List<Consumer<PluginMetrics>> = emptyList(),
+        ) = ModuleMetricsDefinition(
+            providers = listOf(
+                MetricsProviderConfiguration(MetricsProvider.BSTATS, projectId = 10),
+            ),
+            enabled = enabled,
+            configurers = configurers,
+        )
     }
 
     private class RecordingMetrics(

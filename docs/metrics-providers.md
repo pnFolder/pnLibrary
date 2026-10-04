@@ -40,12 +40,15 @@ represent them.
 builder.metrics {
     it.bStats(32592)
     it.fastStats(fastStatsToken)
-}
-
-context.metrics.configure { metrics ->
-    metrics.simplePie("server_software") { serverName }
+    it.charts { metrics ->
+        metrics.simplePie("server_software") { serverName }
+    }
 }
 ```
+
+The same block can call `it.enabled(false)` when a module should declare providers and
+charts without starting their sessions immediately. Runtime chart changes remain available
+through `context.metrics.configure { ... }`.
 
 The collection-based `MetricsProviderConfiguration` overload remains available for advanced
 integrations, but normal plugins do not need to construct those objects.
