@@ -46,16 +46,7 @@ internal class UpdateServiceImpl(private val platform: PlatformAdapter, private 
         http = http,
         requestExecutor = catalogRequestExecutor,
     )
-    private val transaction = UpdateTransaction(
-        dataFolder.resolve("updates/transactions"), ArtifactVerifier(MAX_ARTIFACT_BYTES), dataFolder.parent,
-    )
-    private val planStager = UpdatePlanStager(
-        platform = platform.type,
-        dataFolder = dataFolder,
-        http = http,
-        transaction = transaction,
-        maximumArtifactBytes = MAX_ARTIFACT_BYTES,
-    )
+    private val installer = UpdateInstaller(platform, dataFolder, configuration, http)
     private val freezes = FreezeStore(dataFolder.resolve("updates/freezes.json"))
     private val graphResolver = UpdateGraphResolver(platform, configuration, catalogGateway, freezes)
     private val orchestrator = UpdateOrchestrator(
@@ -65,11 +56,15 @@ internal class UpdateServiceImpl(private val platform: PlatformAdapter, private 
         automaticAllowed = ::automaticAllowed,
         remoteResolver = { resolveGraph(RefreshMode.FORCE_REMOTE) },
     ).also {
-        runCatching { transaction.recoverAll() }.onFailure { error ->
+        runCatching { installer.recoverInterruptedTransactions() }.onFailure { error ->
             platform.log(platform, LogLevel.WARNING, "Update recovery failed", error)
         }
         it.start()
-        platform.whenServerReady(Runnable { executor.execute { reconcilePendingUpdates(it) } })
+        platform.whenServerReady(Runnable {
+            executor.execute {
+                installer.reconcilePending(entries.toList(), it::healthResolved)
+            }
+        })
     }
 
     override fun register(
@@ -125,9 +120,7 @@ internal class UpdateServiceImpl(private val platform: PlatformAdapter, private 
     override fun stage(planId: UUID): CompletionStage<UpdatePlanSnapshot> = orchestrator.stage(planId)
     override fun history(): List<UpdatePlanSnapshot> = orchestrator.history()
     override fun rollback(): CompletionStage<UpdatePlanSnapshot> = orchestrator.rollback {
-        val candidate = transaction.latestRollbackCandidate()
-            ?: error("Нет сохранённого набора JAR для отката")
-        transaction.rollback(candidate)
+        installer.rollbackLatest()
     }
     override fun close() {
         if (!closed.compareAndSet(false, true)) return
@@ -157,46 +150,7 @@ internal class UpdateServiceImpl(private val platform: PlatformAdapter, private 
     }
 
     private fun stageGraph(snapshot: UpdatePlanSnapshot) {
-        val plan = requireNotNull(snapshot.plan) { "update plan has no installable target" }
-        verifyPluginDownloadsAllowed(plan)
-        val installedTargets = entries.associate { registration ->
-            registration.descriptor.id to InstalledUpdateTarget(
-                currentJar = registration.jar,
-                updateDirectory = registration.updateDirectory,
-            )
-        }
-        planStager.stage(snapshot.id, plan, installedTargets)
-    }
-
-    private fun verifyPluginDownloadsAllowed(plan: UpdatePlan) {
-        plan.changes
-            .filterNot { change -> change.product.value == "pnlibrary" }
-            .forEach { change ->
-                val policy = configuration.plugins[change.product.value]
-                require(configuration.pluginUpdatesEnabled && policy?.enabled != false) {
-                    "Загрузка плагина ${change.product} отключена политикой обновлений"
-                }
-            }
-    }
-
-    private fun reconcilePendingUpdates(orchestrator: UpdateOrchestrator) {
-        transaction.awaitingHealth().forEach { pending ->
-            val installed = entries.associate { it.descriptor.id.value to it.descriptor.version.toString() }
-            val missingOrWrong = pending.expectedVersions.filter { (product, version) -> installed[product] != version }
-            val healthy = missingOrWrong.isEmpty()
-            transaction.completeHealth(pending.journal, healthy)
-            if (healthy) {
-                orchestrator.healthResolved(true, "Обновлённые плагины загружены и работают.")
-            } else {
-                val details = missingOrWrong.entries.joinToString { (product, version) ->
-                    "$product: ожидалась $version, загружена ${installed[product] ?: "не загружена"}"
-                }
-                orchestrator.healthResolved(
-                    false,
-                    "После перезапуска обновление не подтвердилось ($details). Доступен ручной откат.",
-                )
-            }
-        }
+        installer.stage(snapshot, entries.toList())
     }
 
     private fun announce(snapshot: UpdatePlanSnapshot) {
@@ -207,9 +161,5 @@ internal class UpdateServiceImpl(private val platform: PlatformAdapter, private 
     private fun removeRegistration(registration: RegisteredUpdate) {
         entries.remove(registration)
         orchestrator.registrationsChanged()
-    }
-
-    private companion object {
-        const val MAX_ARTIFACT_BYTES = 512L * 1024L * 1024L
     }
 }
