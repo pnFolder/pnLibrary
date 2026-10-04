@@ -62,7 +62,10 @@ class CommandNodeBuilder internal constructor(
 
     fun executes(handler: Consumer<CommandContext>): CommandNodeBuilder = apply {
         executable = true
-        execution = CommandHandler { context -> handler.accept(context); completedExecution() }
+        execution = CommandHandler { context ->
+            handler.accept(context)
+            completedExecution()
+        }
     }
 
     fun executesAsync(handler: CommandHandler): CommandNodeBuilder = apply {

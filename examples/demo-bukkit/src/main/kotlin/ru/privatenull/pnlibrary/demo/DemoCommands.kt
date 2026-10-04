@@ -22,7 +22,8 @@ import java.util.UUID
 object DemoCommands {
     fun registerPortable(plugin: DemoPlugin, library: PnLibrary, context: ModuleContext, currency: Currency): CommandRegistration =
         library.commands.register(plugin, command("pndemo-lib") {
-            aliases("pndemoapi"); permission("pndemo.use")
+            aliases("pndemoapi")
+            permission("pndemo.use")
             literal("status") { executes { it.sender.send(Component.text("pnLibrary command API: ${context.id}, runtime ${library.version}")) } }
             literal("give") { argument("amount", ArgumentType.decimal()) { executes { invocation ->
                 val id = runCatching { UUID.fromString(invocation.sender.id) }.getOrNull()
@@ -57,7 +58,10 @@ object DemoCommands {
                         currency.deposit(sender.uniqueId, it).thenAccept { result -> sender.sendMessage("§a${result.status}: §f${currency.format(result.currentBalance ?: BigDecimal.ZERO)}") }
                     } ?: sender.sendMessage("§cИспользование: /pndemo give <amount>")
                 }
-                "reload" -> { plugin.reloadConfig(); sender.sendMessage("§aКонфигурация перезагружена.") }
+                "reload" -> {
+                    plugin.reloadConfig()
+                    sender.sendMessage("§aКонфигурация перезагружена.")
+                }
                 else -> sender.sendMessage("§7/pndemo status|balance|give <amount>|reload")
             }
             return true

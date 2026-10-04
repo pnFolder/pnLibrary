@@ -152,8 +152,12 @@ public final class AcceptancePlugin extends JavaPlugin implements CommandExecuto
                 sender.sendMessage("§aMetrics enabled: §f" + context.getMetrics().isEnabled());
                 break;
             case "update":
-                if (context.getUpdates() == null) sender.sendMessage("§eEnable updates.enabled in config.yml and restart.");
-                else { context.getUpdates().checkNow(); sender.sendMessage("§aUpdate check requested."); }
+                if (context.getUpdates() == null) {
+                    sender.sendMessage("§eEnable updates.enabled in config.yml and restart.");
+                } else {
+                    context.getUpdates().checkNow();
+                    sender.sendMessage("§aUpdate check requested.");
+                }
                 break;
             case "download":
                 if (context.getDownloads() == null) sender.sendMessage("§eEnable downloads.enabled in config.yml and restart.");

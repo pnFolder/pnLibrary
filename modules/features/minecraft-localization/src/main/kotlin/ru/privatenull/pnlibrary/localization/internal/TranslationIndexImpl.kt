@@ -30,7 +30,13 @@ internal class TranslationIndexImpl<T>(matches: List<TranslationMatch<T>>) : Tra
         }
         val result = Collections.unmodifiableList(entries.asSequence().filter { query in it.normalized }
             .sortedWith(compareBy<Indexed<T>>(
-                { when { it.normalized == query -> 0; it.normalized.startsWith(query) -> 1; else -> 2 } },
+                {
+                    when {
+                        it.normalized == query -> 0
+                        it.normalized.startsWith(query) -> 1
+                        else -> 2
+                    }
+                },
                 { it.match.key },
             )).map { it.match }.toList())
         synchronized(searchCache) {
