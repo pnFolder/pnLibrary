@@ -22,19 +22,12 @@ import ru.privatenull.pnlibrary.api.updates.UpdateState
 import ru.privatenull.pnlibrary.api.updates.ProductChange
 import ru.privatenull.pnlibrary.api.updates.UpdatePlanSnapshot
 import ru.privatenull.pnlibrary.api.updates.UpdateRegistration
-import ru.privatenull.pnlibrary.api.updates.ReleaseSummary
-import ru.privatenull.pnlibrary.api.updates.UpdateChannel
-import ru.privatenull.pnlibrary.api.version.SemanticVersion
 import java.util.Locale
 import java.util.UUID
 import java.util.concurrent.atomic.AtomicBoolean
 import java.time.Duration
-import java.time.ZoneOffset
-import java.time.format.DateTimeFormatter
 import ru.privatenull.pnlibrary.bukkit.updates.UpdateAction
 import ru.privatenull.pnlibrary.bukkit.updates.UpdateConfirmationTokens
-import ru.privatenull.pnlibrary.console.ConsoleCard
-import ru.privatenull.pnlibrary.console.ConsoleTheme
 
 /** Bukkit-only `/pn` behavior expressed through the shared command builder. */
 internal class BukkitControlCommand(
@@ -112,7 +105,7 @@ internal class BukkitControlCommand(
             "update-status" -> sendUpdateStatus(sender, arguments.getOrNull(1))
             "update-rollback" -> rollbackUpdate(sender, arguments.getOrNull(1))
             "check" -> {
-            library.updates.all().forEach { it.checkNow() }
+                library.updates.all().forEach { it.checkNow() }
                 sender.sendMessage("§eПовторная проверка обновлений запущена.")
             }
             "restart" -> handleRestart(sender, arguments.drop(1))
@@ -135,10 +128,10 @@ internal class BukkitControlCommand(
         sender.sendMessage("")
         sender.sendMessage("§a «Состояние pnFolder»")
         sender.sendMessage(" §7- §fЯдро: §6${Bukkit.getName()} ${Bukkit.getBukkitVersion()}")
-        sender.sendMessage(" §7- §fJava: §6${javaRuntimeLabel()}")
+        sender.sendMessage(" §7- §fJava: §6${BukkitStatusLabels.javaRuntime()}")
         sender.sendMessage(" §7- §fpnLibrary: §6${library.version}")
         entries.firstOrNull()?.snapshot?.let { snapshot ->
-            sender.sendMessage(" §7- §fКанал: §e${channelName(snapshot)}")
+            sender.sendMessage(" §7- §fКанал: §e${BukkitStatusLabels.channel(snapshot)}")
             snapshot.supportedApi?.let { api -> sender.sendMessage(" §7- §fAPI: §6${api.minimum}–${api.maximum}") }
         }
         if (entries.isEmpty()) {
@@ -152,145 +145,7 @@ internal class BukkitControlCommand(
     }
 
     private fun renderConsoleStatus(sender: CommandSender, entries: List<UpdateRegistration>) {
-        val theme = ConsoleTheme("§6", "§e", "§f", "§8", "§r")
-        val card = ConsoleCard.builder(theme, "СОСТОЯНИЕ PNFOLDER")
-            .mascot("^.^", "pnLibrary", "библиотека платформы")
-            .blank()
-            .firstDetail("Продукт", "pnLibrary")
-            .detail("Назначение", "общая библиотека pnFolder")
-            .detail("Платформа", "Bukkit / Paper")
-            .detail("Ядро", Bukkit.getBukkitVersion())
-            .detail("Java", javaRuntimeLabel())
-            .lastDetail("Поддержка", PnLibraryBrand.SUPPORT_URL)
-            .blank()
-            .divider("ОБНОВЛЕНИЯ")
-            .blank()
-        if (entries.isEmpty()) {
-            card.lastItem("зарегистрированных обновлений нет")
-        } else {
-            val first = entries.first().snapshot
-            card.firstDetail("Выбранный канал", channelName(first))
-                .detail("Доступные каналы", "Stable · RC · Beta · Alpha · Dev")
-                .lastDetail("Установленная версия", first.currentVersion)
-                .blank()
-                .divider("ПОСЛЕДНИЕ ВЕРСИИ")
-                .blank()
-            val selectedByProduct = entries
-                .map { it.snapshot }
-                .associateBy { it.product.lowercase(Locale.ROOT) }
-            entries.forEachIndexed { index, registration ->
-                renderReleaseHistory(card, registration.snapshot, selectedByProduct[registration.snapshot.product.lowercase(Locale.ROOT)]?.latestVersion)
-                if (index != entries.lastIndex) card.blank()
-            }
-            val available = entries.map { it.snapshot }.filter {
-                it.state == UpdateState.UPDATE_AVAILABLE || it.state == UpdateState.AVAILABLE
-            }
-            if (available.isNotEmpty()) {
-                card.blank().divider("ДОСТУПНО ОБНОВЛЕНИЕ").blank()
-                val selected = available.first()
-                card.firstDetail("Установлена", selected.currentVersion)
-                    .lastDetail("Новая версия", selected.latestVersion ?: "не указана")
-                    .blank()
-                    .divider("СВЕДЕНИЯ ОБ ОБНОВЛЕНИИ")
-                    .blank()
-                    .firstDetail("Канал", channelName(selected))
-                    .detail("Источник", if (selected.releaseUrl.isNullOrBlank()) "не указан" else "GitHub Releases")
-                    .detail("Платформа", "Bukkit / Paper")
-                    .detail("Совместимость API", selected.supportedApi?.let { "${it.minimum}–${it.maximum}" } ?: "не указана")
-                    .detail("Java", "${selected.requiredJava}+")
-                    .detail("Почему выбрана", "версия новее и совместима")
-                    .lastDetail("Установка", if (selected.automaticDownload) "автоматическая" else "вручную, через /pn update")
-            } else {
-                card.blank().lastItem("Новых совместимых обновлений не найдено")
-            }
-        }
-        card.blank()
-            .divider("ПРОВЕРКА")
-            .blank()
-            .firstDetail("Последняя проверка", utcNow())
-            .lastDetail("Следующая проверка", "по расписанию библиотеки")
-            .blank()
-            .status(if (entries.any { it.snapshot.state == UpdateState.UPDATE_AVAILABLE || it.snapshot.state == UpdateState.AVAILABLE }) {
-                val channel = entries.firstOrNull { it.snapshot.state == UpdateState.UPDATE_AVAILABLE || it.snapshot.state == UpdateState.AVAILABLE }
-                    ?.snapshot?.let(::channelName)
-                if (channel == null) "Доступно обновление" else "Доступно обновление · $channel"
-            } else {
-                "Все зарегистрированные компоненты актуальны"
-            })
-            .build().render().forEach(sender::sendMessage)
-    }
-
-    private fun renderReleaseHistory(card: ConsoleCard.Builder, snapshot: UpdateSnapshot, selectedVersion: String?) {
-        // The selected plan is authoritative. A cached catalog can briefly lag
-        // behind the plan that was just resolved, so merge the selected version
-        // into the history before rendering it. This prevents showing rc.1 above
-        // while simultaneously offering stable 2.2.0 below.
-        val history = snapshot.availableReleases.toMutableList()
-        (selectedVersion ?: snapshot.latestVersion)?.let { latest ->
-            val latestVersion = runCatching { SemanticVersion.parse(latest) }.getOrNull()
-            if (latestVersion != null) {
-                val current = history.filter { it.channel == snapshot.channel }.maxByOrNull {
-                    runCatching { SemanticVersion.parse(it.version) }.getOrDefault(SemanticVersion.parse("0.0.0"))
-                }
-                if (current == null || latestVersion > SemanticVersion.parse(current.version)) {
-                    history.removeAll { it.channel == snapshot.channel }
-                    history += ReleaseSummary(latest, snapshot.channel, null)
-                }
-            }
-        }
-        val releases = history
-            .groupBy(ReleaseSummary::channel)
-            .mapValues { (_, values) -> values.maxByOrNull { it.version } }
-        val channels = listOf(UpdateChannel.STABLE, UpdateChannel.RC, UpdateChannel.BETA, UpdateChannel.ALPHA, UpdateChannel.DEV)
-            .mapNotNull { channel -> releases[channel]?.let { channel to it } }
-        if (channels.isEmpty()) {
-            card.firstDetail("Продукт", productLabel(snapshot.product))
-                .lastDetail("Версия", snapshot.latestVersion ?: snapshot.currentVersion)
-            return
-        }
-        card.blank()
-        channels.forEachIndexed { index, (channel, release) ->
-            val label = channelLabel(channel)
-            card.section(label)
-                .detail("Версия", "${channelColor(channel)}${release.version}§r")
-            val publishedAt = release.publishedAt
-            if (publishedAt != null) {
-            card.lastDetail("Опубликована", publishedAtLabel(publishedAt))
-            } else {
-                card.lastDetail("Опубликована", "дата неизвестна")
-            }
-            if (index != channels.lastIndex) card.blank()
-        }
-    }
-
-    private fun publishedAge(instant: java.time.Instant): String {
-        val elapsed = Duration.between(instant, java.time.Instant.now()).coerceAtLeast(Duration.ZERO)
-        return when {
-            elapsed.toMinutes() < 60 -> "опубликована ${elapsed.toMinutes()} мин. назад"
-            elapsed.toHours() < 24 -> "опубликована ${elapsed.toHours()} ч. назад"
-            else -> "опубликована ${elapsed.toDays()} дн. назад"
-        }
-    }
-
-    private fun publishedAtLabel(instant: java.time.Instant): String =
-        "${publishedAge(instant)} · ${UTC_DATE_TIME.format(instant)}"
-
-    private fun utcNow(): String = UTC_DATE_TIME.format(java.time.Instant.now())
-
-    private fun channelLabel(channel: UpdateChannel): String = when (channel) {
-        UpdateChannel.STABLE -> "Стабильный канал"
-        UpdateChannel.RC -> "Канал RC"
-        UpdateChannel.BETA -> "Тестовый канал Beta"
-        UpdateChannel.ALPHA -> "Экспериментальный канал Alpha"
-        UpdateChannel.DEV -> "Разрабатываемый канал Dev"
-    }
-
-    private fun channelColor(channel: UpdateChannel): String = when (channel) {
-        UpdateChannel.STABLE -> "§a"
-        UpdateChannel.RC -> "§b"
-        UpdateChannel.BETA -> "§e"
-        UpdateChannel.ALPHA -> "§6"
-        UpdateChannel.DEV -> "§c"
+        BukkitConsoleStatusRenderer.render(entries).forEach(sender::sendMessage)
     }
 
     private fun update(sender: CommandSender, name: String?) {
@@ -590,7 +445,7 @@ internal class BukkitControlCommand(
         when (snapshot.state) {
             UpdateState.UPDATE_AVAILABLE, UpdateState.AVAILABLE -> {
                 sender.sendMessage(" §7- §f$product: §6${snapshot.currentVersion} §7→ §a${snapshot.latestVersion ?: "новая версия"}")
-                sender.sendMessage(" §7   §fКанал: §e${channelName(snapshot)}")
+                sender.sendMessage(" §7   §fКанал: §e${BukkitStatusLabels.channel(snapshot)}")
                 snapshot.supportedApi?.let { sender.sendMessage(" §7   §fAPI: §6${it.minimum}–${it.maximum}") }
             }
             UpdateState.UPDATE_STAGED, UpdateState.DOWNLOADED ->
@@ -606,33 +461,7 @@ internal class BukkitControlCommand(
         }
     }
 
-    private fun javaRuntimeLabel(): String {
-        val version = System.getProperty("java.version")?.trim().orEmpty()
-        val vm = System.getProperty("java.vm.name")?.trim().orEmpty()
-        val runtime = when {
-            vm.startsWith("OpenJDK", true) -> "OpenJDK"
-            vm.isNotBlank() -> vm.substringBefore(" 64-Bit").trim()
-            else -> System.getProperty("java.vm.vendor")?.trim().orEmpty()
-        }
-        return listOf(runtime, version).filter(String::isNotBlank).joinToString(" ")
-            .ifBlank { Runtime.version().toString() }
-    }
-
-    private fun channelName(snapshot: UpdateSnapshot): String = when (snapshot.channel.name) {
-        "STABLE" -> "§aстабильный канал§r"
-        "RC" -> "§bканал RC§r"
-        "BETA" -> "§eтестовый канал Beta§r"
-        "ALPHA" -> "§6экспериментальный канал Alpha§r"
-        else -> "§cразрабатываемый канал Dev§r"
-    }
-
-    private fun productLabel(product: String): String =
-        if (product.equals("pnlibrary", true)) "pnLibrary" else product
-
     private companion object {
-        val UTC_DATE_TIME: DateTimeFormatter = DateTimeFormatter
-            .ofPattern("dd.MM.yyyy HH:mm 'UTC'")
-            .withZone(ZoneOffset.UTC)
         val CONTROL_ACTIONS = listOf(
             "status", "updates", "check", "update", "update-status", "update-rollback", "restart", "debug", "support",
             "error", "error-repeat", "error-chain",
