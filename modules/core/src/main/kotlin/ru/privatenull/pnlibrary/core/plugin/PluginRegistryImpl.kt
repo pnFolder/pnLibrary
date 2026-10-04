@@ -25,6 +25,7 @@ import ru.privatenull.pnlibrary.api.tasks.TaskExecution
 import ru.privatenull.pnlibrary.api.tasks.TaskSpec
 import ru.privatenull.pnlibrary.api.plugin.DenyAction
 import ru.privatenull.pnlibrary.core.remote.RemotePolicyEngine
+import ru.privatenull.pnlibrary.core.remote.RemotePolicyNoticeRenderer
 import ru.privatenull.pnlibrary.api.tasks.TaskService
 import ru.privatenull.pnlibrary.core.tasks.TaskServiceImpl
 import ru.privatenull.pnlibrary.api.updates.UpdateRegistration
@@ -56,9 +57,6 @@ import ru.privatenull.pnlibrary.api.downloads.DownloadRegistration
 import ru.privatenull.pnlibrary.currency.CurrencyFeature
 import ru.privatenull.pnlibrary.core.downloads.DirectDownloadManager
 import ru.privatenull.pnlibrary.core.downloads.CompositeDownloadRegistration
-import ru.privatenull.pnlibrary.console.ConsoleCard
-import ru.privatenull.pnlibrary.console.ConsoleTheme
-import ru.privatenull.pnlibrary.console.ConsoleTree
 import ru.privatenull.pnlibrary.api.remote.RemotePolicyExplanation
 
 /**
@@ -93,6 +91,7 @@ internal class PluginRegistryImpl(
     private val registrationSequence = AtomicLong()
     private val sharedComponentCache = ComponentCache()
     private val productResolver = ModuleProductResolver(platform)
+    private val remotePolicyNotices = RemotePolicyNoticeRenderer(platform)
     private val dependencyValidator = ModuleDependencyValidator(platform) {
         directDownloads != null
     }
@@ -341,7 +340,7 @@ internal class PluginRegistryImpl(
                         if (!decision.allowed) {
                             platform.executeGlobal(Runnable {
                                 if (isClosed) return@Runnable
-                                showRemotePolicyNotice(policy, false, decision.explanation)
+                                remotePolicyNotices.render(owner, metadata, policy, false, decision.explanation)
                                 if (policy.onDeny == DenyAction.DISABLE_MODULE) {
                                     close()
                                 } else {
@@ -350,7 +349,7 @@ internal class PluginRegistryImpl(
                             })
                         } else {
                             platform.executeGlobal(Runnable {
-                                if (!isClosed) showRemotePolicyNotice(policy, true, decision.explanation)
+                                if (!isClosed) remotePolicyNotices.render(owner, metadata, policy, true, decision.explanation)
                             })
                         }
                     } catch (error: Throwable) {
@@ -363,9 +362,8 @@ internal class PluginRegistryImpl(
                                     error.message?.lineSequence()?.firstOrNull().orEmpty()
                                         .ifBlank { error.javaClass.simpleName }
                                 }
-                            showRemotePolicyNotice(
-                                policy,
-                                false,
+                            remotePolicyNotices.render(
+                                owner, metadata, policy, false,
                                 RemotePolicyExplanation.builder("Ошибка проверки")
                                     .child(failureText).build(),
                             )
@@ -375,36 +373,6 @@ internal class PluginRegistryImpl(
                         })
                     }
                 }.build())
-        }
-
-        private fun showRemotePolicyNotice(
-            policy: ru.privatenull.pnlibrary.api.plugin.RemotePolicy,
-            allowed: Boolean,
-            explanation: RemotePolicyExplanation,
-        ) {
-            val theme = ConsoleTheme("§6", if (allowed) "§a" else "§c", "§f", "§8", "§r")
-            val action = if (allowed) "Продолжить работу" else when (policy.onDeny) {
-                DenyAction.DISABLE_PLUGIN -> "Плагин безопасно отключён"
-                DenyAction.DISABLE_MODULE -> "Модуль безопасно остановлен"
-            }
-            val card = ConsoleCard.builder(theme, "ПРОВЕРКА СОВМЕСТИМОСТИ")
-                .mascot(if (allowed) "^.^" else "x.x", metadata.name,
-                    if (allowed) "версия поддерживается" else "для запуска требуется обновление")
-                .blank()
-                .detail("Установлена", metadata.version)
-                .lastDetail("Состояние", if (allowed) "совместима" else "не поддерживается")
-                .blank()
-                .section(if (allowed) "Результат" else "Почему запуск остановлен")
-                .tree(explanation.toConsoleTree())
-                .blank()
-                .status(if (allowed) "Плагин продолжает работу" else action)
-                .build().send { line -> platform.console(owner, line) }
-        }
-
-        private fun RemotePolicyExplanation.toConsoleTree(): ConsoleTree {
-            val builder = ConsoleTree.builder(text)
-            children.forEach { builder.child(it.toConsoleTree()) }
-            return builder.build()
         }
 
         override val lifecycle: PluginLifecycle = object : PluginLifecycle {
