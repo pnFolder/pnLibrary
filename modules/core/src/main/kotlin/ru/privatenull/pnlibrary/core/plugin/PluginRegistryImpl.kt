@@ -24,7 +24,6 @@ import ru.privatenull.pnlibrary.api.tasks.TaskScope
 import ru.privatenull.pnlibrary.core.remote.RemotePolicyNoticeRenderer
 import ru.privatenull.pnlibrary.core.remote.RemotePolicyMonitor
 import ru.privatenull.pnlibrary.api.tasks.TaskService
-import ru.privatenull.pnlibrary.core.tasks.TaskServiceImpl
 import ru.privatenull.pnlibrary.api.updates.UpdateRegistration
 import ru.privatenull.pnlibrary.api.updates.UpdateService
 import ru.privatenull.pnlibrary.api.updates.ProductDescriptor
@@ -39,21 +38,16 @@ import ru.privatenull.pnlibrary.api.placeholders.PlaceholderService
 import ru.privatenull.pnlibrary.api.text.ComponentService
 import ru.privatenull.pnlibrary.core.placeholders.PlaceholderHub
 import ru.privatenull.pnlibrary.core.text.ComponentCache
-import ru.privatenull.pnlibrary.core.text.ComponentServiceImpl
 import ru.privatenull.pnlibrary.api.cooldowns.CooldownService
 import ru.privatenull.pnlibrary.api.actions.ActionService
 import ru.privatenull.pnlibrary.api.actions.ActionContext
 import ru.privatenull.pnlibrary.api.actions.LibraryAudience
 import ru.privatenull.pnlibrary.api.actions.LibraryPlayer
 import ru.privatenull.pnlibrary.api.text.ComponentSerializerType
-import ru.privatenull.pnlibrary.core.cooldowns.CooldownServiceImpl
-import ru.privatenull.pnlibrary.api.currency.CurrencyService
-import ru.privatenull.pnlibrary.api.currency.CurrencyStorageFactory
 import ru.privatenull.pnlibrary.api.commands.CommandService
 import ru.privatenull.pnlibrary.api.downloads.DownloadRegistration
 import ru.privatenull.pnlibrary.currency.CurrencyFeature
 import ru.privatenull.pnlibrary.core.downloads.DirectDownloadManager
-import ru.privatenull.pnlibrary.core.downloads.CompositeDownloadRegistration
 
 /**
  * Owns plugin-scoped library services and coordinates their lifecycle.
@@ -88,6 +82,10 @@ internal class PluginRegistryImpl(
     private val sharedComponentCache = ComponentCache()
     private val productResolver = ModuleProductResolver(platform)
     private val metadataFactory = ModuleMetadataFactory(platform)
+    private val resourceFactory = ModuleResourceFactory(
+        platform, events, tasks, services, logging, metrics, diagnostics, updates,
+        placeholderHub, currencyFeature, configurations, directDownloads, sharedComponentCache,
+    )
     private val remotePolicyNotices = RemotePolicyNoticeRenderer(platform)
     private val remotePolicies = RemotePolicyMonitor(platform, remotePolicyNotices)
     private val dependencyValidator = ModuleDependencyValidator(platform) {
@@ -138,83 +136,17 @@ internal class PluginRegistryImpl(
     ): Context {
         val owner = parent.owner
         val metadata = metadataFactory.create(owner, id, definition)
-        var taskScope: TaskScope? = null
-        var eventScope: EventScope? = null
-        var configScope: ConfigScope? = null
-        var metricsController: MetricsControllerImpl? = null
-        var diagnosticRegistration: DiagnosticRegistration? = null
-        var updateRegistration: UpdateRegistration? = null
-        var downloadRegistration: DownloadRegistration? = null
-        var placeholderScope: PlaceholderService? = null
-        var currencyScope: CurrencyService? = null
-        val serviceScope = services.ownedBy(serviceKey)
-        try {
-            taskScope = if (tasks is TaskServiceImpl) tasks.scope(owner, serviceKey) else tasks.scope(owner)
-            eventScope = events.scope(serviceKey)
-            configScope = configurations.scope(owner, serviceKey)
-            placeholderScope = placeholderHub.scope(serviceKey, definition.placeholderApiEnabled)
-            currencyScope = currencyFeature.scope(serviceKey, placeholderScope)
-            serviceScope.register(CurrencyService::class.java, currencyScope)
-            serviceScope.register(CurrencyStorageFactory::class.java, currencyFeature.storages)
-            definition.listeners.forEach { eventScope.register(it) }
-            metricsController = MetricsControllerImpl(
-                owner,
-                metrics,
-                definition.metricsProjectId,
-                definition.metricsEnabled,
-                definition.metricsConfigurers,
-            )
-            definition.diagnosticContainer?.let { container ->
-                diagnosticRegistration = diagnostics.register(
-                    serviceKey.value,
-                    requireNotNull(definition.diagnosticsDirectory),
-                    container,
-                )
-            }
-            definition.updateRequest?.let { request ->
-                updateRegistration = updates.register(owner, requireNotNull(productDescriptor), request, definition.dependencies)
-            }
-            val dependencyDownloads = directDownloads?.registerDependencies(owner, definition.dependencies)
-            val fileDownloads = definition.downloadsRequest?.let { request -> directDownloads?.register(owner, request) }
-            downloadRegistration = CompositeDownloadRegistration.combine(dependencyDownloads, fileDownloads)
-            return Context(
-                parent,
-                id,
-                serviceKey,
-                metadata,
-                taskScope,
-                eventScope,
-                serviceScope,
-                logging.logger(owner, id.value),
-                configScope,
-                placeholderScope,
-                ComponentServiceImpl(placeholderScope, sharedComponentCache),
-                CooldownServiceImpl(),
-                currencyScope,
-                metricsController,
-                diagnosticRegistration,
-                updateRegistration,
-                downloadRegistration,
-                definition.placeholderApiEnabled,
-                definition.listeners.size,
-                productDescriptor?.id?.value,
-            )
-        } catch (error: Throwable) {
-            ResourceCleanup.suppressInto(
-                error,
-                { downloadRegistration?.close() },
-                { updateRegistration?.close() },
-                { diagnosticRegistration?.close() },
-                { metricsController?.close() },
-                { currencyScope?.close() },
-                { placeholderScope?.close() },
-                { configScope?.close() },
-                { eventScope?.close() },
-                { services.unregisterAll(serviceKey) },
-                { taskScope?.close() },
-            )
-            throw error
-        }
+        val resources = resourceFactory.create(owner, id, serviceKey, definition, productDescriptor)
+        return Context(
+            parent = parent,
+            id = id,
+            key = serviceKey,
+            metadata = metadata,
+            resources = resources,
+            placeholderApiEnabled = definition.placeholderApiEnabled,
+            listenerCount = definition.listeners.size,
+            productId = productDescriptor?.id?.value,
+        )
     }
 
     private fun detachPlugin(owner: Any): Plugin? = synchronized(plugins) { plugins.remove(owner) }
@@ -290,19 +222,7 @@ internal class PluginRegistryImpl(
         override val id: ModuleId,
         override val key: PluginId,
         override val metadata: PluginMetadata,
-        override val tasks: TaskScope,
-        override val events: EventScope,
-        override val services: ServiceManagerImpl.OwnedServices,
-        override val logger: PnLogger,
-        override val configs: ConfigScope,
-        override val placeholders: PlaceholderService,
-        override val components: ComponentService,
-        override val cooldowns: CooldownService,
-        private val currencyScope: CurrencyService,
-        override val metrics: MetricsController,
-        override val diagnostics: DiagnosticRegistration?,
-        override val updates: UpdateRegistration?,
-        override val downloads: DownloadRegistration?,
+        private val resources: ModuleResources,
         private val placeholderApiEnabled: Boolean,
         private val listenerCount: Int,
         private val productId: String?,
@@ -310,6 +230,18 @@ internal class PluginRegistryImpl(
         private val owner: Any get() = parent.owner
         private val contextClosed = AtomicBoolean(false)
         override val isClosed: Boolean get() = contextClosed.get()
+        override val tasks: TaskScope get() = resources.tasks
+        override val events: EventScope get() = resources.events
+        override val services: ServiceManagerImpl.OwnedServices get() = resources.services
+        override val logger: PnLogger get() = resources.logger
+        override val configs: ConfigScope get() = resources.configs
+        override val placeholders: PlaceholderService get() = resources.placeholders
+        override val components: ComponentService get() = resources.components
+        override val cooldowns: CooldownService get() = resources.cooldowns
+        override val metrics: MetricsController get() = resources.metrics
+        override val diagnostics: DiagnosticRegistration? get() = resources.diagnostics
+        override val updates: UpdateRegistration? get() = resources.updates
+        override val downloads: DownloadRegistration? get() = resources.downloads
 
         fun startRemotePolicy(policy: ru.privatenull.pnlibrary.api.plugin.RemotePolicy) {
             remotePolicies.start(
@@ -368,20 +300,7 @@ internal class PluginRegistryImpl(
         fun closeInternal() {
             if (!contextClosed.compareAndSet(false, true)) return
             productId?.let { value -> synchronized(plugins) { productDescriptors.remove(value) } }
-            ResourceCleanup.closeAll(
-                { downloads?.close() },
-                { updates?.close() },
-                { diagnostics?.close() },
-                { this@PluginRegistryImpl.diagnostics.clearPlugin(key.value) },
-                { metrics.close() },
-                { currencyScope.close() },
-                { cooldowns.close() },
-                { placeholders.close() },
-                { configs.close() },
-                { services.close() },
-                { events.close() },
-                { tasks.close() },
-            )
+            resources.close(this@PluginRegistryImpl.diagnostics, key)
         }
 
         private fun MessageBox.status(label: String, detail: String?): MessageBox =
