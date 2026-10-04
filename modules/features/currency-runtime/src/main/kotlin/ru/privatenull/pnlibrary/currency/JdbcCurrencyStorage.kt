@@ -37,19 +37,31 @@ internal class JdbcCurrencyStorage(
     private val dataSource: DataSource,
     tablePrefix: String,
 ) : CurrencyStorage {
-    private val prefix = tablePrefix.also { require(it.matches(Regex("[A-Za-z0-9_]+"))) { "Invalid currency table prefix" } }
+    private val prefix = tablePrefix.also {
+        require(it.matches(Regex("[A-Za-z0-9_]+"))) {
+            "Invalid currency table prefix"
+        }
+    }
     private val accountsTable = "${prefix}_accounts"
     private val transactionsTable = "${prefix}_transactions"
     private val initialized = AtomicBoolean(false)
     private val closed = AtomicBoolean(false)
     private val gson = Gson()
-    private val executor = Executors.newFixedThreadPool(2) { task -> Thread(task, "pnLibrary-currency-jdbc").apply { isDaemon = true } }
+    private val executor = Executors.newFixedThreadPool(2) { task ->
+        Thread(task, "pnLibrary-currency-jdbc").apply {
+            isDaemon = true
+        }
+    }
 
     override fun balance(currency: CurrencyKey, account: CurrencyAccount): CompletionStage<BigDecimal> = async {
         connection { connection -> readBalance(connection, currency, account, false) }
     }
 
-    override fun transact(currency: CurrencyKey, descriptor: CurrencyDescriptor, request: CurrencyTransactionRequest): CompletionStage<CurrencyTransaction> = async {
+    override fun transact(
+        currency: CurrencyKey,
+        descriptor: CurrencyDescriptor,
+        request: CurrencyTransactionRequest,
+    ): CompletionStage<CurrencyTransaction> = async {
         ensureSchema()
         dataSource.connection.use { connection ->
             connection.autoCommit = false
@@ -59,8 +71,12 @@ internal class JdbcCurrencyStorage(
                     connection.rollback()
                     return@use it
                 }
-                val accounts = listOfNotNull(request.source, request.target).distinctBy { it.playerId }.sortedBy { it.playerId.toString() }
-                val balances = accounts.associateWith { readBalance(connection, currency, it, true) }.toMutableMap()
+                val accounts = listOfNotNull(request.source, request.target)
+                    .distinctBy { it.playerId }
+                    .sortedBy { it.playerId.toString() }
+                val balances = accounts
+                    .associateWith { readBalance(connection, currency, it, true) }
+                    .toMutableMap()
                 val sourceBefore = request.source?.let { balances[it] ?: BigDecimal.ZERO }?.let(descriptor::normalize)
                 val targetBefore = request.target?.let { balances[it] ?: BigDecimal.ZERO }?.let(descriptor::normalize)
                 val mutation = CurrencyMutationEngine.evaluate(request, sourceBefore, targetBefore)
@@ -73,10 +89,24 @@ internal class JdbcCurrencyStorage(
                     }
                 }
                 val transaction = CurrencyTransaction(
-                    UUID.randomUUID(), currency, request.type, mutation.status, descriptor.normalize(request.amount), request.source, request.target,
-                    request.actor, request.service, request.reason, request.metadata,
-                    mutation.sourceBefore, mutation.sourceAfter, mutation.targetBefore, mutation.targetAfter,
-                    Instant.now(), mutation.failure, request.idempotencyKey,
+                    id = UUID.randomUUID(),
+                    currency = currency,
+                    type = request.type,
+                    status = mutation.status,
+                    amount = descriptor.normalize(request.amount),
+                    source = request.source,
+                    target = request.target,
+                    actor = request.actor,
+                    service = request.service,
+                    reason = request.reason,
+                    metadata = request.metadata,
+                    sourceBalanceBefore = mutation.sourceBefore,
+                    sourceBalanceAfter = mutation.sourceAfter,
+                    targetBalanceBefore = mutation.targetBefore,
+                    targetBalanceAfter = mutation.targetAfter,
+                    createdAt = Instant.now(),
+                    failure = mutation.failure,
+                    idempotencyKey = request.idempotencyKey,
                 )
                 insertTransaction(connection, transaction)
                 connection.commit()
@@ -118,17 +148,34 @@ internal class JdbcCurrencyStorage(
             connection.transactionIsolation = Connection.TRANSACTION_REPEATABLE_READ
             try {
                 val balances = linkedMapOf<UUID, BigDecimal>()
-                connection.prepareStatement("SELECT account_id, balance FROM $accountsTable WHERE currency_id = ?").use { statement ->
+                connection.prepareStatement(
+                    "SELECT account_id, balance FROM $accountsTable WHERE currency_id = ?",
+                ).use { statement ->
                     statement.setString(1, currency.toString())
-                    statement.executeQuery().use { results -> while (results.next()) balances[UUID.fromString(results.getString(1))] = results.getBigDecimal(2) }
+                    statement.executeQuery().use { results ->
+                        while (results.next()) {
+                            balances[UUID.fromString(results.getString(1))] = results.getBigDecimal(2)
+                        }
+                    }
                 }
                 val transactions = mutableListOf<CurrencyTransaction>()
-                connection.prepareStatement("SELECT * FROM $transactionsTable WHERE currency_id = ? ORDER BY created_at ASC").use { statement ->
+                connection.prepareStatement(
+                    "SELECT * FROM $transactionsTable WHERE currency_id = ? ORDER BY created_at ASC",
+                ).use { statement ->
                     statement.setString(1, currency.toString())
-                    statement.executeQuery().use { results -> while (results.next()) transactions += decode(results) }
+                    statement.executeQuery().use { results ->
+                        while (results.next()) {
+                            transactions += decode(results)
+                        }
+                    }
                 }
                 connection.commit()
-                CurrencyStorageSnapshot(currency = currency, createdAt = Instant.now(), balances = balances, transactions = transactions)
+                CurrencyStorageSnapshot(
+                    currency = currency,
+                    createdAt = Instant.now(),
+                    balances = balances,
+                    transactions = transactions,
+                )
             } catch (error: Throwable) {
                 runCatching { connection.rollback() }
                 throw error
@@ -136,8 +183,13 @@ internal class JdbcCurrencyStorage(
         }
     }
 
-    override fun importSnapshot(snapshot: CurrencyStorageSnapshot, mode: CurrencyImportMode): CompletionStage<CurrencyImportResult> = async {
-        require(snapshot.transactions.all { it.currency == snapshot.currency }) { "Snapshot contains transactions from another currency" }
+    override fun importSnapshot(
+        snapshot: CurrencyStorageSnapshot,
+        mode: CurrencyImportMode,
+    ): CompletionStage<CurrencyImportResult> = async {
+        require(snapshot.transactions.all { it.currency == snapshot.currency }) {
+            "Snapshot contains transactions from another currency"
+        }
         ensureSchema()
         dataSource.connection.use { connection ->
             connection.autoCommit = false
@@ -194,8 +246,8 @@ internal class JdbcCurrencyStorage(
             if (initialized.get()) return
             dataSource.connection.use { connection ->
                 connection.createStatement().use { statement ->
-                    statement.executeUpdate("CREATE TABLE IF NOT EXISTS $accountsTable (currency_id VARCHAR(190) NOT NULL, account_id VARCHAR(36) NOT NULL, balance DECIMAL(38,18) NOT NULL, PRIMARY KEY (currency_id, account_id))")
-                    statement.executeUpdate("CREATE TABLE IF NOT EXISTS $transactionsTable (transaction_id VARCHAR(36) PRIMARY KEY, currency_id VARCHAR(190) NOT NULL, transaction_type VARCHAR(32) NOT NULL, status VARCHAR(16) NOT NULL, amount DECIMAL(38,18) NOT NULL, source_account VARCHAR(36), target_account VARCHAR(36), actor_type VARCHAR(16) NOT NULL, actor_id VARCHAR(190) NOT NULL, service_id VARCHAR(190) NOT NULL, reason_text TEXT, metadata_text TEXT NOT NULL, source_before DECIMAL(38,18), source_after DECIMAL(38,18), target_before DECIMAL(38,18), target_after DECIMAL(38,18), created_at TIMESTAMP NOT NULL, failure_text TEXT, idempotency_key VARCHAR(190), UNIQUE (currency_id, idempotency_key))")
+                    statement.executeUpdate(createAccountsTableSql())
+                    statement.executeUpdate(createTransactionsTableSql())
                 }
             }
             initialized.set(true)
@@ -249,10 +301,17 @@ internal class JdbcCurrencyStorage(
         }
     }
 
-    private fun readBalance(connection: Connection, currency: CurrencyKey, account: CurrencyAccount, lock: Boolean): BigDecimal {
+    private fun readBalance(
+        connection: Connection,
+        currency: CurrencyKey,
+        account: CurrencyAccount,
+        lock: Boolean,
+    ): BigDecimal {
         ensureSchema()
         val supportsLock = !connection.metaData.databaseProductName.contains("SQLite", true)
-        val sql = "SELECT balance FROM $accountsTable WHERE currency_id = ? AND account_id = ?" + if (lock && supportsLock) " FOR UPDATE" else ""
+        val lockClause = if (lock && supportsLock) " FOR UPDATE" else ""
+        val sql = "SELECT balance FROM $accountsTable " +
+            "WHERE currency_id = ? AND account_id = ?$lockClause"
         connection.prepareStatement(sql).use { statement ->
             statement.setString(1, currency.toString())
             statement.setString(2, account.playerId.toString())
@@ -260,15 +319,24 @@ internal class JdbcCurrencyStorage(
         }
     }
 
-    private fun writeBalance(connection: Connection, currency: CurrencyKey, account: CurrencyAccount, balance: BigDecimal) {
-        connection.prepareStatement("UPDATE $accountsTable SET balance = ? WHERE currency_id = ? AND account_id = ?").use { statement ->
+    private fun writeBalance(
+        connection: Connection,
+        currency: CurrencyKey,
+        account: CurrencyAccount,
+        balance: BigDecimal,
+    ) {
+        connection.prepareStatement(
+            "UPDATE $accountsTable SET balance = ? WHERE currency_id = ? AND account_id = ?",
+        ).use { statement ->
             statement.setBigDecimal(1, balance)
             statement.setString(2, currency.toString())
             statement.setString(3, account.playerId.toString())
             if (statement.executeUpdate() > 0) return
         }
         try {
-            connection.prepareStatement("INSERT INTO $accountsTable (currency_id, account_id, balance) VALUES (?, ?, ?)").use { statement ->
+            connection.prepareStatement(
+                "INSERT INTO $accountsTable (currency_id, account_id, balance) VALUES (?, ?, ?)",
+            ).use { statement ->
                 statement.setString(1, currency.toString())
                 statement.setString(2, account.playerId.toString())
                 statement.setBigDecimal(3, balance)
@@ -276,7 +344,9 @@ internal class JdbcCurrencyStorage(
             }
         } catch (error: SQLException) {
             if (error.sqlState?.startsWith("23") != true) throw error
-            connection.prepareStatement("UPDATE $accountsTable SET balance = ? WHERE currency_id = ? AND account_id = ?").use { statement ->
+            connection.prepareStatement(
+                "UPDATE $accountsTable SET balance = ? WHERE currency_id = ? AND account_id = ?",
+            ).use { statement ->
                 statement.setBigDecimal(1, balance)
                 statement.setString(2, currency.toString())
                 statement.setString(3, account.playerId.toString())
@@ -286,7 +356,9 @@ internal class JdbcCurrencyStorage(
     }
 
     private fun accountExists(connection: Connection, currency: CurrencyKey, account: CurrencyAccount): Boolean {
-        connection.prepareStatement("SELECT 1 FROM $accountsTable WHERE currency_id = ? AND account_id = ?").use { statement ->
+        connection.prepareStatement(
+            "SELECT 1 FROM $accountsTable WHERE currency_id = ? AND account_id = ?",
+        ).use { statement ->
             statement.setString(1, currency.toString())
             statement.setString(2, account.playerId.toString())
             statement.executeQuery().use { return it.next() }
@@ -310,20 +382,38 @@ internal class JdbcCurrencyStorage(
     }
 
     private fun insertTransaction(connection: Connection, value: CurrencyTransaction) {
-        val sql = "INSERT INTO $transactionsTable (transaction_id,currency_id,transaction_type,status,amount,source_account,target_account,actor_type,actor_id,service_id,reason_text,metadata_text,source_before,source_after,target_before,target_after,created_at,failure_text,idempotency_key) VALUES (?,?,?,?,?,?,?,?,?,?,?,?,?,?,?,?,?,?,?)"
-        connection.prepareStatement(sql).use { s ->
-            val values = listOf(value.id.toString(), value.currency.toString(), value.type.name, value.status.name, value.amount,
-                value.source?.playerId?.toString(), value.target?.playerId?.toString(), value.actor.type.name, value.actor.id,
-                value.service, value.reason, gson.toJson(value.metadata), value.sourceBalanceBefore, value.sourceBalanceAfter,
-                value.targetBalanceBefore, value.targetBalanceAfter, Timestamp.from(value.createdAt), value.failure, value.idempotencyKey)
-            values.forEachIndexed { index, item -> s.setObject(index + 1, item) }
-            s.executeUpdate()
+        connection.prepareStatement(insertTransactionSql()).use { statement ->
+            val values = listOf(
+                value.id.toString(),
+                value.currency.toString(),
+                value.type.name,
+                value.status.name,
+                value.amount,
+                value.source?.playerId?.toString(),
+                value.target?.playerId?.toString(),
+                value.actor.type.name,
+                value.actor.id,
+                value.service,
+                value.reason,
+                gson.toJson(value.metadata),
+                value.sourceBalanceBefore,
+                value.sourceBalanceAfter,
+                value.targetBalanceBefore,
+                value.targetBalanceAfter,
+                Timestamp.from(value.createdAt),
+                value.failure,
+                value.idempotencyKey,
+            )
+            values.forEachIndexed { index, item -> statement.setObject(index + 1, item) }
+            statement.executeUpdate()
         }
     }
 
     private fun findIdempotent(connection: Connection, currency: CurrencyKey, key: String): CurrencyTransaction? {
         ensureSchema()
-        connection.prepareStatement("SELECT * FROM $transactionsTable WHERE currency_id = ? AND idempotency_key = ?").use { statement ->
+        connection.prepareStatement(
+            "SELECT * FROM $transactionsTable WHERE currency_id = ? AND idempotency_key = ?",
+        ).use { statement ->
             statement.setString(1, currency.toString())
             statement.setString(2, key)
             statement.executeQuery().use { return if (it.next()) decode(it) else null }
@@ -335,13 +425,27 @@ internal class JdbcCurrencyStorage(
         fun account(column: String) = result.getString(column)?.let(UUID::fromString)?.let(::CurrencyAccount)
         val metadataType = object : TypeToken<Map<String, String>>() {}.type
         return CurrencyTransaction(
-            UUID.fromString(result.getString("transaction_id")), CurrencyKey(PluginId.of(parts[0]), parts[1]),
-            CurrencyTransactionType.valueOf(result.getString("transaction_type")), CurrencyTransactionStatus.valueOf(result.getString("status")),
-            result.getBigDecimal("amount"), account("source_account"), account("target_account"),
-            CurrencyActor(CurrencyActorType.valueOf(result.getString("actor_type")), result.getString("actor_id")),
-            result.getString("service_id"), result.getString("reason_text"), gson.fromJson(result.getString("metadata_text"), metadataType),
-            result.getBigDecimal("source_before"), result.getBigDecimal("source_after"), result.getBigDecimal("target_before"), result.getBigDecimal("target_after"),
-            result.getTimestamp("created_at").toInstant(), result.getString("failure_text"), result.getString("idempotency_key"),
+            id = UUID.fromString(result.getString("transaction_id")),
+            currency = CurrencyKey(PluginId.of(parts[0]), parts[1]),
+            type = CurrencyTransactionType.valueOf(result.getString("transaction_type")),
+            status = CurrencyTransactionStatus.valueOf(result.getString("status")),
+            amount = result.getBigDecimal("amount"),
+            source = account("source_account"),
+            target = account("target_account"),
+            actor = CurrencyActor(
+                CurrencyActorType.valueOf(result.getString("actor_type")),
+                result.getString("actor_id"),
+            ),
+            service = result.getString("service_id"),
+            reason = result.getString("reason_text"),
+            metadata = gson.fromJson(result.getString("metadata_text"), metadataType),
+            sourceBalanceBefore = result.getBigDecimal("source_before"),
+            sourceBalanceAfter = result.getBigDecimal("source_after"),
+            targetBalanceBefore = result.getBigDecimal("target_before"),
+            targetBalanceAfter = result.getBigDecimal("target_after"),
+            createdAt = result.getTimestamp("created_at").toInstant(),
+            failure = result.getString("failure_text"),
+            idempotencyKey = result.getString("idempotency_key"),
         )
     }
 
@@ -349,6 +453,7 @@ internal class JdbcCurrencyStorage(
         ensureSchema()
         return dataSource.connection.use(operation)
     }
+
     private fun <T> async(operation: () -> T): CompletionStage<T> {
         check(!closed.get()) { "Currency storage is closed" }
         return try {
@@ -362,4 +467,47 @@ internal class JdbcCurrencyStorage(
         val sql: String,
         val parameters: List<Any>,
     )
+
+    private fun createAccountsTableSql(): String = """
+        CREATE TABLE IF NOT EXISTS $accountsTable (
+            currency_id VARCHAR(190) NOT NULL,
+            account_id VARCHAR(36) NOT NULL,
+            balance DECIMAL(38,18) NOT NULL,
+            PRIMARY KEY (currency_id, account_id)
+        )
+    """.trimIndent()
+
+    private fun createTransactionsTableSql(): String = """
+        CREATE TABLE IF NOT EXISTS $transactionsTable (
+            transaction_id VARCHAR(36) PRIMARY KEY,
+            currency_id VARCHAR(190) NOT NULL,
+            transaction_type VARCHAR(32) NOT NULL,
+            status VARCHAR(16) NOT NULL,
+            amount DECIMAL(38,18) NOT NULL,
+            source_account VARCHAR(36),
+            target_account VARCHAR(36),
+            actor_type VARCHAR(16) NOT NULL,
+            actor_id VARCHAR(190) NOT NULL,
+            service_id VARCHAR(190) NOT NULL,
+            reason_text TEXT,
+            metadata_text TEXT NOT NULL,
+            source_before DECIMAL(38,18),
+            source_after DECIMAL(38,18),
+            target_before DECIMAL(38,18),
+            target_after DECIMAL(38,18),
+            created_at TIMESTAMP NOT NULL,
+            failure_text TEXT,
+            idempotency_key VARCHAR(190),
+            UNIQUE (currency_id, idempotency_key)
+        )
+    """.trimIndent()
+
+    private fun insertTransactionSql(): String = """
+        INSERT INTO $transactionsTable (
+            transaction_id, currency_id, transaction_type, status, amount,
+            source_account, target_account, actor_type, actor_id, service_id,
+            reason_text, metadata_text, source_before, source_after,
+            target_before, target_after, created_at, failure_text, idempotency_key
+        ) VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?)
+    """.trimIndent()
 }
