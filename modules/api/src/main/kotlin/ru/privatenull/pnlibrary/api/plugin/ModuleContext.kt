@@ -8,6 +8,7 @@ import ru.privatenull.pnlibrary.api.diagnostics.DiagnosticRegistration
 import ru.privatenull.pnlibrary.api.downloads.DownloadRegistration
 import ru.privatenull.pnlibrary.api.events.EventScope
 import ru.privatenull.pnlibrary.api.logging.PnLogger
+import ru.privatenull.pnlibrary.api.metrics.ErrorReporter
 import ru.privatenull.pnlibrary.api.placeholders.PlaceholderService
 import ru.privatenull.pnlibrary.api.services.ServiceManager
 import ru.privatenull.pnlibrary.api.tasks.TaskScope
@@ -32,6 +33,8 @@ interface ModuleContext : AutoCloseable {
     val components: ComponentService
     val cooldowns: CooldownService
     val metrics: MetricsController
+    /** Normalized error capture shared by local diagnostics and remote providers. */
+    val errors: ErrorReporter
     val diagnostics: DiagnosticRegistration?
     val updates: UpdateRegistration?
     val downloads: DownloadRegistration?

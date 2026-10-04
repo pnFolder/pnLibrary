@@ -10,6 +10,7 @@ import ru.privatenull.pnlibrary.api.events.EventScope
 import ru.privatenull.pnlibrary.api.events.EventService
 import ru.privatenull.pnlibrary.api.logging.LoggingService
 import ru.privatenull.pnlibrary.api.metrics.MetricsService
+import ru.privatenull.pnlibrary.api.metrics.ErrorReporter
 import ru.privatenull.pnlibrary.api.placeholders.PlaceholderService
 import ru.privatenull.pnlibrary.api.plugin.ModuleId
 import ru.privatenull.pnlibrary.api.plugin.PluginId
@@ -20,6 +21,7 @@ import ru.privatenull.pnlibrary.api.updates.UpdateRegistration
 import ru.privatenull.pnlibrary.api.updates.UpdateService
 import ru.privatenull.pnlibrary.core.config.ConfigurationServiceImpl
 import ru.privatenull.pnlibrary.core.cooldowns.CooldownServiceImpl
+import ru.privatenull.pnlibrary.core.metrics.ErrorPipeline
 import ru.privatenull.pnlibrary.core.downloads.CompositeDownloadRegistration
 import ru.privatenull.pnlibrary.core.downloads.DirectDownloadManager
 import ru.privatenull.pnlibrary.core.placeholders.PlaceholderHub
@@ -58,6 +60,7 @@ internal class ModuleResourceFactory(
         var placeholderScope: PlaceholderService? = null
         var currencyScope: CurrencyService? = null
         var metricsController: MetricsControllerImpl? = null
+        var errorReporter: ErrorReporter? = null
         var diagnosticRegistration: DiagnosticRegistration? = null
         var updateRegistration: UpdateRegistration? = null
         var downloadRegistration: DownloadRegistration? = null
@@ -75,8 +78,14 @@ internal class ModuleResourceFactory(
             definition.listeners.forEach(eventScope::register)
 
             metricsController = MetricsControllerImpl(
-                owner, metrics, definition.metricsProjectId, definition.metricsEnabled, definition.metricsConfigurers,
+                owner,
+                metrics,
+                definition.metricsProjectId,
+                definition.metricsEnabled,
+                definition.metricsConfigurers,
+                definition.metricsProviders,
             )
+            errorReporter = ErrorPipeline(metrics.openErrorReporter(owner, definition.metricsProviders))
             diagnosticRegistration = definition.diagnosticContainer?.let { container ->
                 diagnostics.register(moduleKey.value, requireNotNull(definition.diagnosticsDirectory), container)
             }
@@ -99,6 +108,7 @@ internal class ModuleResourceFactory(
                 cooldowns = CooldownServiceImpl(),
                 currency = currencyScope,
                 metrics = metricsController,
+                errors = errorReporter,
                 diagnostics = diagnosticRegistration,
                 updates = updateRegistration,
                 downloads = downloadRegistration,
@@ -110,6 +120,7 @@ internal class ModuleResourceFactory(
                 { updateRegistration?.close() },
                 { diagnosticRegistration?.close() },
                 { metricsController?.close() },
+                { errorReporter?.close() },
                 { currencyScope?.close() },
                 { placeholderScope?.close() },
                 { configScope?.close() },

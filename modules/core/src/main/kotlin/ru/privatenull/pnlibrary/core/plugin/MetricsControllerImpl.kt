@@ -2,6 +2,7 @@ package ru.privatenull.pnlibrary.core.plugin
 
 import ru.privatenull.pnlibrary.api.metrics.MetricsService
 import ru.privatenull.pnlibrary.api.metrics.PluginMetrics
+import ru.privatenull.pnlibrary.api.metrics.MetricsProviderConfiguration
 import ru.privatenull.pnlibrary.api.plugin.MetricsController
 import java.util.concurrent.atomic.AtomicBoolean
 import java.util.function.Consumer
@@ -12,11 +13,13 @@ internal class MetricsControllerImpl(
     initialProjectId: Int?,
     initiallyEnabled: Boolean,
     initialConfigurers: List<Consumer<PluginMetrics>>,
+    initialProviders: List<MetricsProviderConfiguration> = emptyList(),
 ) : MetricsController {
 
     private val lock = Any()
     private val closed = AtomicBoolean(false)
     private val configurers = initialConfigurers.toMutableList()
+    private val configuredProviders = initialProviders.toMutableList()
     @Volatile
     private var currentProjectId: Int? = initialProjectId
 
@@ -31,13 +34,13 @@ internal class MetricsControllerImpl(
     override val isEnabled: Boolean get() = session != null
     override val isClosed: Boolean get() = closed.get()
     override val projectId: Int? get() = currentProjectId
+    override val providerConfigurations: List<MetricsProviderConfiguration>
+        get() = configuredProviders.toList()
 
     override fun enable() = synchronized(lock) {
         ensureOpen()
         if (session != null) return@synchronized
-        session = openSession(requireNotNull(currentProjectId) {
-            "Metrics projectId is not configured"
-        })
+        session = openSession()
     }
 
     override fun enable(projectId: Int) = synchronized(lock) {
@@ -47,7 +50,7 @@ internal class MetricsControllerImpl(
         session?.close()
         session = null
         currentProjectId = projectId
-        session = openSession(projectId)
+        session = openSession()
     }
 
     override fun disable() = synchronized(lock) {
@@ -64,7 +67,7 @@ internal class MetricsControllerImpl(
         session?.close()
         session = null
         currentProjectId = projectId
-        if (restart) session = openSession(projectId)
+        if (restart) session = openSession()
     }
 
     override fun configure(configure: Consumer<PluginMetrics>) {
@@ -84,10 +87,17 @@ internal class MetricsControllerImpl(
         }
     }
 
-    private fun openSession(projectId: Int): PluginMetrics {
-        val opened = service.open(owner, projectId)
+    private fun openSession(): PluginMetrics {
+        val opened = if (configuredProviders.isEmpty()) {
+            service.open(owner, requireNotNull(currentProjectId) {
+                "Metrics projectId is not configured"
+            })
+        } else {
+            service.open(owner, configuredProviders.filter { it.enabled })
+        }
         try {
             configurers.forEach { it.accept(opened) }
+            opened.start()
             return opened
         } catch (error: Throwable) {
             runCatching { opened.close() }

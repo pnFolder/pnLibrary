@@ -41,7 +41,7 @@ class PnLibraryVelocityPlugin @Inject constructor(
      */
     @Subscribe
     fun onInitialize(event: ProxyInitializeEvent) {
-        val adapter = VelocityPlatformAdapter(this, server, VelocityMetricsFactory(metricsFactory), dataDirectory, logger)
+        val adapter = VelocityPlatformAdapter(this, server, VelocityMetricsFactory(metricsFactory, this, server, logger, dataDirectory), dataDirectory, logger)
         runtimeHost = PnLibraryRuntimeHost.start(
             this,
             adapter,

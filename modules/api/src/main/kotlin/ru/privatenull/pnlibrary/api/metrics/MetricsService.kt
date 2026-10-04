@@ -4,6 +4,10 @@ import java.util.function.Supplier
 
 /** Public pnLibrary abstraction over the platform-specific bStats implementation. */
 interface MetricsService {
+    /** Providers available in the current platform runtime. */
+    val providers: Set<MetricsProvider>
+        get() = setOf(MetricsProvider.BSTATS)
+
     /**
      * Opens and owns one metrics session for a native plugin [owner].
      *
@@ -11,6 +15,18 @@ interface MetricsService {
      * @throws IllegalArgumentException when [projectId] is not positive
      */
     fun open(owner: Any, projectId: Int): PluginMetrics
+
+    /** Opens one or more configured provider sessions through a neutral request object. */
+    fun open(owner: Any, configurations: Collection<MetricsProviderConfiguration>): PluginMetrics {
+        val configuration = configurations.firstOrNull { it.enabled }
+            ?: error("At least one metrics provider must be enabled")
+        return open(owner, requireNotNull(configuration.projectId) {
+            "Legacy MetricsService requires a numeric projectId for ${configuration.provider}"
+        })
+    }
+
+    /** Opens the optional provider-backed error reporter for the same configuration. */
+    fun openErrorReporter(owner: Any, configurations: Collection<MetricsProviderConfiguration>): ErrorReporter? = null
 }
 
 /**
@@ -22,6 +38,21 @@ interface MetricsService {
  * to repeat and prevents its registry from retaining the session.
  */
 interface PluginMetrics : AutoCloseable {
+    /** Starts provider submission after all configured charts and services are registered. */
+    fun start() = Unit
+
+    /** Provider that owns this session. Composite sessions expose [MetricsProvider.BSTATS]. */
+    val provider: MetricsProvider
+        get() = MetricsProvider.BSTATS
+
+    /** Providers represented by this session; a composite may contain more than one. */
+    val providers: Set<MetricsProvider>
+        get() = setOf(provider)
+
+    /** Provider capabilities available for this session. */
+    val capabilities: Set<MetricsCapability>
+        get() = setOf(MetricsCapability.CHARTS)
+
     /** Positive bStats project identifier associated with this session. */
     val projectId: Int
     /** Registers a single categorical string value; `null` omits the current sample. */

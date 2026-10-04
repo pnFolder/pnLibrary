@@ -14,6 +14,7 @@ include(
     ":modules:features:currency-runtime",
     ":modules:features:minecraft-localization",
     ":modules:internal:bstats",
+    ":modules:internal:faststats-velocity",
     ":modules:bootstrap:bukkit",
     ":modules:design:console",
     ":platforms:bukkit:api",

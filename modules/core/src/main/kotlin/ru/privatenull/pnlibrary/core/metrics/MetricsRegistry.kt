@@ -1,6 +1,8 @@
 package ru.privatenull.pnlibrary.core.metrics
 
 import ru.privatenull.pnlibrary.api.metrics.MetricsService
+import ru.privatenull.pnlibrary.api.metrics.ErrorReporter
+import ru.privatenull.pnlibrary.api.metrics.MetricsProviderConfiguration
 import ru.privatenull.pnlibrary.api.metrics.PluginMetrics
 import ru.privatenull.pnlibrary.spi.metrics.PlatformMetricsFactory
 import java.util.Collections
@@ -9,6 +11,8 @@ import java.util.concurrent.atomic.AtomicBoolean
 
 /** Owns every platform metrics session and provides idempotent managed close handles. */
 internal class MetricsRegistry(private val factory: PlatformMetricsFactory) : MetricsService, AutoCloseable {
+    override fun openErrorReporter(owner: Any, configurations: Collection<MetricsProviderConfiguration>): ErrorReporter? =
+        factory.openErrorReporter(owner, configurations)
     private val sessions = Collections.newSetFromMap(IdentityHashMap<PluginMetrics, Boolean>())
 
     @Synchronized

@@ -3,6 +3,7 @@ package ru.privatenull.pnlibrary.api.plugin
 import ru.privatenull.pnlibrary.api.diagnostics.DiagnosticContainer
 import ru.privatenull.pnlibrary.api.events.Listener
 import ru.privatenull.pnlibrary.api.metrics.PluginMetrics
+import ru.privatenull.pnlibrary.api.metrics.MetricsProviderConfiguration
 import ru.privatenull.pnlibrary.api.updates.PluginUpdateRequest
 import ru.privatenull.pnlibrary.api.updates.ProductDescriptor
 import java.nio.file.Path
@@ -50,6 +51,13 @@ interface PluginBuilder {
      * repeated invocation and should only register charts owned by this plugin.
      */
     fun metrics(projectId: Int, enabled: Boolean, configure: Consumer<PluginMetrics>): PluginBuilder
+
+    /** Configures one or more provider-neutral metrics backends. */
+    fun metrics(
+        providers: Collection<MetricsProviderConfiguration>,
+        enabled: Boolean,
+        configure: Consumer<PluginMetrics>,
+    ): PluginBuilder
 
     /**
      * Registers a diagnostics contributor rooted at [dataDirectory].

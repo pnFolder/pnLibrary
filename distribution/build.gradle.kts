@@ -39,6 +39,9 @@ fun ShadowJar.applyCommonConfig() {
     filesMatching("**/*.kotlin_builtins") {
         duplicatesStrategy = DuplicatesStrategy.EXCLUDE
     }
+    filesMatching("META-INF/faststats.properties") {
+        duplicatesStrategy = DuplicatesStrategy.EXCLUDE
+    }
 
     // Keep kotlin.* intact: the runtime .kt policy compiler resolves the stdlib from this JAR.
     // Platform plugin classloaders isolate it from unrelated plugins.
@@ -98,6 +101,7 @@ val velocityRuntime: Configuration by configurations.creating
 dependencies {
     velocityRuntime(project(":platforms:velocity:runtime"))
     velocityRuntime(project(":modules:features:update"))
+    velocityRuntime(project(":modules:internal:faststats-velocity"))
 }
 
 tasks.register<ShadowJar>("shadowVelocity") {

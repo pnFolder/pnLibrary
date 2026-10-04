@@ -46,6 +46,7 @@ subprojects {
         maven("https://hub.spigotmc.org/nexus/content/repositories/snapshots/") { name = "spigot" }
         maven("https://repo.md-5.net/content/repositories/snapshots/")          { name = "bungeecord" }
         maven("https://repo.extendedclip.com/releases/")                        { name = "placeholderapi" }
+        maven("https://repo.faststats.dev/releases")                            { name = "faststats" }
     }
 
     tasks.withType<JavaCompile>().configureEach {

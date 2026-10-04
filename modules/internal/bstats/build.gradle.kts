@@ -15,6 +15,10 @@ tasks.withType<JavaCompile>().configureEach {
     options.encoding = "UTF-8"
 }
 
+dependencies {
+    compileOnly(libs.faststats.core.j8)
+}
+
 mavenPublishing {
     publishToMavenCentral()
     signAllPublications()

@@ -15,6 +15,7 @@ adventure-platform      = "4.4.1"
 placeholderapi          = "2.12.3"
 maven                   = "3.9.9"
 mavenPluginAnnotations  = "3.15.1"
+faststats               = "0.29.0"
 
 [libraries]
 kotlin-stdlib             = { module = "org.jetbrains.kotlin:kotlin-stdlib",                     version.ref = "kotlin"                 }
@@ -38,6 +39,11 @@ placeholderapi            = { module = "me.clip:placeholderapi",                
 maven-plugin-api          = { module = "org.apache.maven:maven-plugin-api",                      version.ref = "maven"                  }
 maven-core                = { module = "org.apache.maven:maven-core",                            version.ref = "maven"                  }
 maven-plugin-annotations  = { module = "org.apache.maven.plugin-tools:maven-plugin-annotations", version.ref = "mavenPluginAnnotations" }
+faststats-bukkit-j8       = { module = "dev.faststats.metrics.j8:bukkit", version.ref = "faststats" }
+faststats-bungeecord-j8   = { module = "dev.faststats.metrics.j8:bungeecord", version.ref = "faststats" }
+faststats-core-j8         = { module = "dev.faststats.metrics.j8:core", version.ref = "faststats" }
+faststats-core            = { module = "dev.faststats.metrics:core", version.ref = "faststats" }
+faststats-velocity        = { module = "dev.faststats.metrics:velocity", version.ref = "faststats" }
 
 [plugins]
 kotlin-jvm    = { id = "org.jetbrains.kotlin.jvm",             version.ref = "kotlin"       }

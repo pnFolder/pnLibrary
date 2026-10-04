@@ -8,6 +8,7 @@ import ru.privatenull.pnlibrary.api.diagnostics.DiagnosticsService
 import ru.privatenull.pnlibrary.api.downloads.DownloadRegistration
 import ru.privatenull.pnlibrary.api.events.EventScope
 import ru.privatenull.pnlibrary.api.logging.PnLogger
+import ru.privatenull.pnlibrary.api.metrics.ErrorReporter
 import ru.privatenull.pnlibrary.api.placeholders.PlaceholderService
 import ru.privatenull.pnlibrary.api.plugin.MetricsController
 import ru.privatenull.pnlibrary.api.plugin.PluginId
@@ -27,6 +28,7 @@ internal class ModuleResources(
     val cooldowns: CooldownService,
     val currency: CurrencyService,
     val metrics: MetricsController,
+    val errors: ErrorReporter,
     val diagnostics: DiagnosticRegistration?,
     val updates: UpdateRegistration?,
     val downloads: DownloadRegistration?,
@@ -38,6 +40,7 @@ internal class ModuleResources(
             { diagnostics?.close() },
             { diagnosticsService.clearPlugin(moduleKey.value) },
             { metrics.close() },
+            { errors.close() },
             { currency.close() },
             { cooldowns.close() },
             { placeholders.close() },

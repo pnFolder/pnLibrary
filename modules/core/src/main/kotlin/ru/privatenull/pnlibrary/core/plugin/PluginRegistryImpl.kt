@@ -234,6 +234,7 @@ internal class PluginRegistryImpl(
         override val components: ComponentService get() = resources.components
         override val cooldowns: CooldownService get() = resources.cooldowns
         override val metrics: MetricsController get() = resources.metrics
+        override val errors get() = resources.errors
         override val diagnostics: DiagnosticRegistration? get() = resources.diagnostics
         override val updates: UpdateRegistration? get() = resources.updates
         override val downloads: DownloadRegistration? get() = resources.downloads

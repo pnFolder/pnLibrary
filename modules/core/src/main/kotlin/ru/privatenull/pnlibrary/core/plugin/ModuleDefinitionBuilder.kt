@@ -4,6 +4,7 @@ import ru.privatenull.pnlibrary.api.diagnostics.DiagnosticContainer
 import ru.privatenull.pnlibrary.api.downloads.FileDownloads
 import ru.privatenull.pnlibrary.api.events.Listener
 import ru.privatenull.pnlibrary.api.metrics.PluginMetrics
+import ru.privatenull.pnlibrary.api.metrics.MetricsProviderConfiguration
 import ru.privatenull.pnlibrary.api.plugin.PluginBuilder
 import ru.privatenull.pnlibrary.api.plugin.PluginDependency
 import ru.privatenull.pnlibrary.api.plugin.PluginMetadataBuilder
@@ -27,6 +28,7 @@ internal class ModuleDefinitionBuilder : PluginBuilder {
     var metadataVersion: String? = null
     var metadataAuthors: String? = null
     var metricsProjectId: Int? = null
+    var metricsProviders: List<MetricsProviderConfiguration> = emptyList()
     var metricsEnabled: Boolean = false
     val metricsConfigurers = mutableListOf<Consumer<PluginMetrics>>()
     var diagnosticsDirectory: Path? = null
@@ -68,6 +70,21 @@ internal class ModuleDefinitionBuilder : PluginBuilder {
     ): PluginBuilder = apply {
         require(projectId > 0) { "metrics projectId must be positive" }
         metricsProjectId = projectId
+        metricsEnabled = enabled
+        metricsConfigurers += configure
+    }
+
+    override fun metrics(
+        providers: Collection<MetricsProviderConfiguration>,
+        enabled: Boolean,
+        configure: Consumer<PluginMetrics>,
+    ): PluginBuilder = apply {
+        require(providers.isNotEmpty()) { "at least one metrics provider is required" }
+        require(providers.map { it.provider }.distinct().size == providers.size) {
+            "metrics providers must be unique"
+        }
+        metricsProviders = providers.toList()
+        metricsProjectId = providers.firstNotNullOfOrNull { it.projectId }
         metricsEnabled = enabled
         metricsConfigurers += configure
     }

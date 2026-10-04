@@ -1,6 +1,7 @@
 package ru.privatenull.pnlibrary.api.plugin
 
 import ru.privatenull.pnlibrary.api.metrics.PluginMetrics
+import ru.privatenull.pnlibrary.api.metrics.MetricsProviderConfiguration
 import java.util.function.Consumer
 
 /**
@@ -16,6 +17,10 @@ interface MetricsController : AutoCloseable {
     val isEnabled: Boolean
     /** Configured bStats project ID, or `null` when metrics were not configured. */
     val projectId: Int?
+
+    /** Configured provider backends, including disabled entries retained for status reporting. */
+    val providerConfigurations: List<MetricsProviderConfiguration>
+        get() = emptyList()
 
     /** Enables metrics using the configured [projectId]. */
     fun enable()
