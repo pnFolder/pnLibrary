@@ -12,8 +12,6 @@ import ru.privatenull.pnlibrary.api.config.MissingValuePolicy
 import ru.privatenull.pnlibrary.api.config.UnknownValuePolicy
 import ru.privatenull.pnlibrary.api.config.CommentPolicy
 import java.io.File
-import java.nio.file.Files
-import java.nio.file.StandardCopyOption
 import java.util.logging.Level
 import java.util.logging.Logger
 import java.util.function.UnaryOperator
@@ -40,6 +38,7 @@ class CodeFirstYaml<T> @JvmOverloads constructor(
 ) : ManagedConfig<T> {
     @Volatile private var loadedValue: T? = null
     private val migrationEngine = YamlMigrationEngine()
+    private val fileStore = ConfigurationFileStore(file) { content -> codec.decode(content) }
 
     /** `true` after a successful [load] or [reload] and before [unload]. */
     override val isLoaded: Boolean get() = loadedValue != null
@@ -55,21 +54,21 @@ class CodeFirstYaml<T> @JvmOverloads constructor(
     override fun load(): ConfigLoadResult<T> {
         val parent = file.absoluteFile.parentFile
         require(parent.isDirectory || parent.mkdirs()) { "Cannot create configuration directory $parent" }
-        val rawDefaultsYaml = normalize(codec.encode(defaults))
+        val rawDefaultsYaml = fileStore.normalize(codec.encode(defaults))
         val defaultsYaml = options.migrations?.let {
-            normalize(migrationEngine.stampDefaults(rawDefaultsYaml, it))
+            fileStore.normalize(migrationEngine.stampDefaults(rawDefaultsYaml, it))
         } ?: rawDefaultsYaml
         if (!file.exists()) {
             check(options.missingFile == MissingFilePolicy.CREATE) { "Configuration ${file.name} does not exist" }
-            writeAtomic(defaultsYaml)
+            fileStore.write(defaultsYaml)
             val value = decodeAndValidate(defaultsYaml)
             loadedValue = value
             return ConfigLoadResult(value, YamlDefaultsMerger.paths(defaultsYaml), null)
         }
 
-        val original = normalize(file.readText())
+        val original = fileStore.normalize(file.readText())
         val migration = options.migrations?.let { migrationEngine.migrate(original, it) }
-        val working = migration?.content?.let(::normalize) ?: original
+        val working = migration?.content?.let(fileStore::normalize) ?: original
         val defaultPaths = YamlDefaultsMerger.paths(defaultsYaml).toSet()
         val workingPaths = YamlDefaultsMerger.paths(working).toSet()
         val missing = (defaultPaths - workingPaths).sorted()
@@ -86,8 +85,10 @@ class CodeFirstYaml<T> @JvmOverloads constructor(
         }
 
         val syncResult = if (options.unknownValues == UnknownValuePolicy.REMOVE) {
-            var canonical = normalize(codec.encode(decodeAndValidate(working)))
-            options.migrations?.let { canonical = normalize(migrationEngine.stampDefaults(canonical, it)) }
+            var canonical = fileStore.normalize(codec.encode(decodeAndValidate(working)))
+            options.migrations?.let {
+                canonical = fileStore.normalize(migrationEngine.stampDefaults(canonical, it))
+            }
             YamlDefaultsMerger.Result(canonical, emptyList(), emptyList())
         } else {
             YamlDefaultsMerger.merge(
@@ -104,8 +105,8 @@ class CodeFirstYaml<T> @JvmOverloads constructor(
             return ConfigLoadResult(value, emptyList(), null, appliedMigrations = migration?.applied.orEmpty())
         }
 
-        val backup = if (options.backups) backup(original) else null
-        writeAtomic(synchronized)
+        val backup = if (options.backups) fileStore.backup(original) else null
+        fileStore.write(synchronized)
         if (missing.isNotEmpty()) logger.info("Добавлены новые параметры в ${file.name}: ${missing.joinToString()}")
         if (unknown.isNotEmpty() && options.unknownValues == UnknownValuePolicy.REMOVE)
             logger.info("Удалены неизвестные параметры из ${file.name}: ${unknown.joinToString()}")
@@ -133,10 +134,12 @@ class CodeFirstYaml<T> @JvmOverloads constructor(
     /** Atomically saves [value] after decoding and semantic validation. */
     @Synchronized
     override fun save(value: T) {
-        val raw = normalize(codec.encode(value))
-        val encoded = options.migrations?.let { normalize(migrationEngine.stampDefaults(raw, it)) } ?: raw
+        val raw = fileStore.normalize(codec.encode(value))
+        val encoded = options.migrations?.let {
+            fileStore.normalize(migrationEngine.stampDefaults(raw, it))
+        } ?: raw
         decodeAndValidate(encoded)
-        writeAtomic(encoded)
+        fileStore.write(encoded)
         loadedValue = value
     }
 
@@ -174,40 +177,4 @@ class CodeFirstYaml<T> @JvmOverloads constructor(
         return value
     }
 
-    private fun backup(content: String): File {
-        val target = Files.createTempFile(file.absoluteFile.parentFile.toPath(), "${file.name}.before-sync-", ".bak").toFile()
-        target.writeText(content, Charsets.UTF_8)
-        val backups = file.absoluteFile.parentFile.listFiles { candidate ->
-            candidate.name.startsWith("${file.name}.before-sync-") && candidate.name.endsWith(".bak")
-        }?.sortedByDescending(File::lastModified).orEmpty()
-        backups.drop(MAX_BACKUPS).forEach { backup ->
-            try {
-                backup.delete()
-            } catch (_: SecurityException) {
-                // Backup retention is best-effort and must not fail a successful load.
-            }
-        }
-        return target
-    }
-
-    private fun writeAtomic(content: String) {
-        val temporary = Files.createTempFile(file.absoluteFile.parentFile.toPath(), "${file.name}.", ".tmp")
-        try {
-            Files.write(temporary, content.toByteArray(Charsets.UTF_8))
-            codec.decode(content)
-            try {
-                Files.move(temporary, file.toPath(), StandardCopyOption.ATOMIC_MOVE, StandardCopyOption.REPLACE_EXISTING)
-            } catch (_: java.nio.file.AtomicMoveNotSupportedException) {
-                Files.move(temporary, file.toPath(), StandardCopyOption.REPLACE_EXISTING)
-            }
-        } finally {
-            Files.deleteIfExists(temporary)
-        }
-    }
-
-    private fun normalize(value: String): String = value.replace("\r\n", "\n").trimEnd() + "\n"
-
-    private companion object {
-        const val MAX_BACKUPS = 5
-    }
 }
