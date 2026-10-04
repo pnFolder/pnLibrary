@@ -17,12 +17,11 @@ import java.util.concurrent.CompletionStage
 import java.util.concurrent.CopyOnWriteArrayList
 import java.util.concurrent.Executors
 import java.util.concurrent.atomic.AtomicBoolean
-import java.util.concurrent.atomic.AtomicReference
 
 /** One catalogue → resolver → verifier → transaction pipeline for every component. */
 internal class UpdateServiceImpl(private val platform: PlatformAdapter, private val dataFolder: Path) : UpdateService, AutoCloseable {
     private val closed = AtomicBoolean(false)
-    private val entries = CopyOnWriteArrayList<Registration>()
+    private val entries = CopyOnWriteArrayList<RegisteredUpdate>()
     private val entriesLock = Any()
     private val configuration = UpdateConfiguration.load(dataFolder.resolve("updates.yml")) {
         platform.log(platform, LogLevel.WARNING, it)
@@ -93,7 +92,17 @@ internal class UpdateServiceImpl(private val platform: PlatformAdapter, private 
         require(product.version == SemanticVersion.parse(version)) {
             "Product version ${product.version} does not match native plugin version $version"
         }
-        val registration = Registration(owner, product, request, dependencies.toList(), artifact, jar, jar.parent.resolve("update"))
+        val registration = RegisteredUpdate(
+            descriptor = product,
+            request = request,
+            artifact = artifact,
+            jar = jar,
+            updateDirectory = jar.parent.resolve("update"),
+            selectedChannel = { configuredChannel(product.id, request.channel) },
+            checkForUpdates = orchestrator::checkNow,
+            stagePlan = { snapshot -> orchestrator.stage(snapshot.id) },
+            onClose = ::removeRegistration,
+        )
         synchronized(entriesLock) {
             check(!closed.get()) { "update service is closed" }
             entries += registration
@@ -123,7 +132,7 @@ internal class UpdateServiceImpl(private val platform: PlatformAdapter, private 
     override fun close() {
         if (!closed.compareAndSet(false, true)) return
         synchronized(entriesLock) {
-            entries.forEach(Registration::markClosed)
+            entries.forEach(RegisteredUpdate::markClosed)
             entries.clear()
         }
         orchestrator.close()
@@ -155,21 +164,23 @@ internal class UpdateServiceImpl(private val platform: PlatformAdapter, private 
     private fun emptyUpdatePlan(): ResolutionResult =
         ResolutionResult.Ready(UpdatePlan(PnLibraryApi.VERSION, emptyList(), emptyList()))
 
-    private fun installedProducts(registrations: List<Registration>): List<InstalledProduct> =
-        registrations.map { entry -> InstalledProduct(
-            entry.descriptor.id, entry.descriptor.version, entry.descriptor.supportedApi,
-            PnLibraryApi.VERSION.takeIf { entry.descriptor.id.value == "pnlibrary" },
-        ) }
+    private fun installedProducts(registrations: List<RegisteredUpdate>): List<InstalledProduct> =
+        registrations.map { entry ->
+            entry.installedProduct(PnLibraryApi.VERSION.takeIf { entry.descriptor.id.value == "pnlibrary" })
+        }
 
-    private fun updateChannels(registrations: List<Registration>): Map<ProductId, UpdateChannel> =
+    private fun updateChannels(registrations: List<RegisteredUpdate>): Map<ProductId, UpdateChannel> =
         registrations.associate { entry -> entry.descriptor.id to configuredChannel(entry) }
 
-    private fun configuredChannel(entry: Registration): UpdateChannel =
-        if (entry.descriptor.id.value == "pnlibrary") configuration.library.channel
-        else configuration.plugins[entry.descriptor.id.value]?.channel ?: entry.request.channel
+    private fun configuredChannel(entry: RegisteredUpdate): UpdateChannel =
+        configuredChannel(entry.descriptor.id, entry.request.channel)
+
+    private fun configuredChannel(product: ProductId, fallback: UpdateChannel): UpdateChannel =
+        if (product.value == "pnlibrary") configuration.library.channel
+        else configuration.plugins[product.value]?.channel ?: fallback
 
     private fun requestReleaseCatalogs(
-        registrations: List<Registration>,
+        registrations: List<RegisteredUpdate>,
         refreshMode: RefreshMode,
     ): List<ProductRelease> = registrations.flatMap { registration ->
         val catalog = catalogGateway.load(
@@ -180,37 +191,16 @@ internal class UpdateServiceImpl(private val platform: PlatformAdapter, private 
         require(catalog.product.equals(registration.descriptor.id.value, ignoreCase = true)) {
             "Release catalog product ${catalog.product} does not match ${registration.descriptor.id}"
         }
-        catalog.releases.map { release -> registration.toProductRelease(release) }
+        catalog.releases.map(registration::releaseFrom)
     }
 
-    private fun Registration.toProductRelease(release: CatalogRelease): ProductRelease = ProductRelease(
-        product = descriptor.id,
-        version = release.version,
-        channel = release.channel,
-        supportedApi = release.api,
-        providesApi = release.api.maximum.takeIf { descriptor.id.value == "pnlibrary" },
-        repository = "${request.repositoryOwner}/${request.repositoryName}",
-        artifacts = release.artifacts.map { artifact ->
-            ArtifactDescriptor(
-                file = artifact.file,
-                platform = artifact.platform,
-                minimumJava = artifact.javaMinimum,
-                maximumJava = artifact.javaMaximum,
-                size = null,
-                sha256 = null,
-                downloadUri = artifact.url,
-            )
-        },
-        publishedAt = release.publishedAt,
-    )
-
-    private fun observeLatestVersions(registrations: List<Registration>, releases: List<ProductRelease>) {
+    private fun observeLatestVersions(registrations: List<RegisteredUpdate>, releases: List<ProductRelease>) {
         registrations.forEach { entry ->
             entry.observe(releases.filter { it.product == entry.descriptor.id }, configuredChannel(entry))
         }
     }
 
-    private fun frozenProducts(registrations: List<Registration>): Set<ProductId> =
+    private fun frozenProducts(registrations: List<RegisteredUpdate>): Set<ProductId> =
         (freezes.active().keys + registrations.mapNotNull { entry ->
                 val policy = configuration.plugins[entry.descriptor.id.value]
                 entry.descriptor.id.takeIf {
@@ -243,7 +233,7 @@ internal class UpdateServiceImpl(private val platform: PlatformAdapter, private 
         val installedTargets = entries.associate { registration ->
             registration.descriptor.id to InstalledUpdateTarget(
                 currentJar = registration.jar,
-                updateDirectory = registration.updateDir,
+                updateDirectory = registration.updateDirectory,
             )
         }
         planStager.stage(snapshot.id, plan, installedTargets)
@@ -285,95 +275,9 @@ internal class UpdateServiceImpl(private val platform: PlatformAdapter, private 
             .forEach { platform.console(platform, it) }
     }
 
-    private inner class Registration(
-        private val owner: Any,
-        val descriptor: ProductDescriptor,
-        val request: PluginUpdateRequest,
-        val dependencies: List<PluginDependency>,
-        private val artifact: PluginUpdateArtifact,
-        val jar: Path,
-        val updateDir: Path,
-    ) : UpdateRegistration {
-        val product: String = descriptor.id.value
-        val version: String = descriptor.version.toString()
-        private val closed = AtomicBoolean(false)
-        private val state = AtomicReference(
-            UpdateSnapshot(
-                product = product,
-                currentVersion = version,
-                latestVersion = null,
-                channel = configuredChannel(this),
-                state = UpdateState.CHECKING,
-                currentJava = Runtime.version().feature(),
-                requiredJava = artifact.minimumJava,
-                automaticDownload = request.automaticDownload,
-                releaseUrl = null,
-                message = null,
-                supportedApi = request.supportedApi,
-            ),
-        )
-        override val repository = "${request.repositoryOwner}/${request.repositoryName}"
-        override val isClosed: Boolean get() = closed.get()
-        override val snapshot get() = state.get()
-        override fun checkNow() {
-            check(!closed.get()) { "update registration is closed" }
-            orchestrator.checkNow()
-        }
-
-        override fun downloadNow() {
-            check(!closed.get()) { "update registration is closed" }
-            orchestrator.checkNow().thenCompose { snapshot -> orchestrator.stage(snapshot.id) }
-        }
-
-        fun observe(releases: List<ProductRelease>, selectedChannel: UpdateChannel) {
-            if (closed.get()) return
-            val releaseSelection = ReleaseChannelSelector.select(
-                product = descriptor.id,
-                releases = releases,
-                channel = selectedChannel,
-            )
-            val latest = releaseSelection.latestAllowed
-            val current = SemanticVersion.parse(version)
-            state.set(
-                UpdateSnapshot(
-                    product = product,
-                    currentVersion = version,
-                    latestVersion = latest?.version?.toString(),
-                    channel = selectedChannel,
-                    state = if (latest != null && latest.version > current) {
-                        UpdateState.AVAILABLE
-                    } else {
-                        UpdateState.CURRENT
-                    },
-                    currentJava = Runtime.version().feature(),
-                    requiredJava = artifact.minimumJava,
-                    automaticDownload = request.automaticDownload,
-                    releaseUrl = "https://github.com/$repository/releases",
-                    message = null,
-                    supportedApi = request.supportedApi,
-                    availableReleases = releaseSelection.all
-                        .sortedByDescending(ProductRelease::version)
-                        .map { release ->
-                            ReleaseSummary(
-                                release.version.toString(),
-                                release.channel,
-                                release.publishedAt,
-                            )
-                        },
-                ),
-            )
-        }
-
-        override fun close() {
-            if (closed.compareAndSet(false, true)) {
-                entries.remove(this)
-                orchestrator.registrationsChanged()
-            }
-        }
-
-        fun markClosed() {
-            closed.set(true)
-        }
+    private fun removeRegistration(registration: RegisteredUpdate) {
+        entries.remove(registration)
+        orchestrator.registrationsChanged()
     }
 
     private companion object {
