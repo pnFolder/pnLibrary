@@ -55,6 +55,34 @@ class MetricsRegistryTest {
         assertEquals(1, closed.get())
     }
 
+    @Test
+    fun `provider configuration is delegated and managed`() {
+        var received: List<MetricsProviderConfiguration> = emptyList()
+        var closed = 0
+        val registry = MetricsRegistry(object : PlatformMetricsFactory {
+            override fun open(owner: Any, projectId: Int): PluginMetrics =
+                error("legacy open must not be used")
+
+            override fun open(
+                owner: Any,
+                configurations: Collection<MetricsProviderConfiguration>,
+            ): PluginMetrics {
+                received = configurations.toList()
+                return FakeMetrics(0) { closed++ }
+            }
+        })
+        val configuration = MetricsProviderConfiguration(
+            provider = MetricsProvider.FASTSTATS,
+            token = "token",
+        )
+
+        registry.open(Any(), listOf(configuration))
+        registry.close()
+
+        assertEquals(listOf(configuration), received)
+        assertEquals(1, closed)
+    }
+
     private class FakeMetrics(override val projectId: Int, val shutdown: () -> Unit) : PluginMetrics {
         override fun simplePie(id: String, value: Supplier<String?>) = this
         override fun advancedPie(id: String, values: Supplier<Map<String, Int>>) = this

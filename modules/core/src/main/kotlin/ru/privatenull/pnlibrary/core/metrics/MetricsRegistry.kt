@@ -16,9 +16,23 @@ internal class MetricsRegistry(private val factory: PlatformMetricsFactory) : Me
     private val sessions = Collections.newSetFromMap(IdentityHashMap<PluginMetrics, Boolean>())
 
     @Synchronized
+    override fun open(
+        owner: Any,
+        configurations: Collection<MetricsProviderConfiguration>,
+    ): PluginMetrics {
+        require(configurations.any { it.enabled }) {
+            "At least one metrics provider must be enabled"
+        }
+        return manage(factory.open(owner, configurations))
+    }
+
+    @Synchronized
     override fun open(owner: Any, projectId: Int): PluginMetrics {
         require(projectId > 0) { "bStats projectId must be positive" }
-        val delegate = factory.open(owner, projectId)
+        return manage(factory.open(owner, projectId))
+    }
+
+    private fun manage(delegate: PluginMetrics): PluginMetrics {
         val managed = ManagedMetrics(delegate) { synchronized(this) { sessions.remove(it) } }
         sessions.add(managed)
         return managed

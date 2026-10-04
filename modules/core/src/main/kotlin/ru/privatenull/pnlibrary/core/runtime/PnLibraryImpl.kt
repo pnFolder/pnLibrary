@@ -4,6 +4,9 @@ import ru.privatenull.pnlibrary.api.diagnostics.DebugRequest
 import ru.privatenull.pnlibrary.api.diagnostics.DiagnosticReport
 import ru.privatenull.pnlibrary.api.logging.LoggingService
 import ru.privatenull.pnlibrary.api.metrics.MetricsService
+import ru.privatenull.pnlibrary.api.metrics.MetricsProvider
+import ru.privatenull.pnlibrary.api.metrics.MetricsProviderConfiguration
+import ru.privatenull.pnlibrary.api.metrics.PluginMetrics
 import ru.privatenull.pnlibrary.spi.platform.PlatformAdapter
 import ru.privatenull.pnlibrary.api.runtime.PnLibrary
 import ru.privatenull.pnlibrary.api.runtime.PnLibraryConfig
@@ -70,6 +73,7 @@ internal class PnLibraryImpl(
     private val closedFlag = AtomicBoolean(false)
     override val isClosed: Boolean get() = closedFlag.get()
     private val metricsRegistry = MetricsRegistry(platform.metricsFactory)
+    private var libraryMetrics: PluginMetrics? = null
     val dataFolder: Path = platform.dataFolder ?: extractDataFolder(owner)
     private val support = SupportRuntime(owner, platform, diagnostics, config, dataFolder)
     override val observability get() = support.service
@@ -138,6 +142,7 @@ internal class PnLibraryImpl(
 
     fun init() {
         support.initialize { isClosed }
+        startLibraryMetrics()
         commands.register(owner, diagnosticCommand(this))
     }
 
@@ -148,6 +153,39 @@ internal class PnLibraryImpl(
 
     private fun recordAndLog(logOwner: Any, message: String, error: Throwable) {
         support.recordRuntimeError(logOwner, message, error)
+        runCatching {
+            libraryMetrics?.errorReporter?.capture(
+                throwable = error,
+                operation = "pnlibrary.runtime",
+                attributes = mapOf("source" to logOwner.javaClass.name),
+            )
+        }
+    }
+
+    private fun startLibraryMetrics() {
+        var openedSession: PluginMetrics? = null
+        val session = runCatching {
+            metricsRegistry.open(
+                owner,
+                listOf(
+                    MetricsProviderConfiguration(
+                        provider = MetricsProvider.FASTSTATS,
+                        token = FASTSTATS_TOKEN,
+                    ),
+                ),
+            ).also { metrics ->
+                openedSession = metrics
+                metrics.simplePie("platform") { platform.type.name.lowercase() }
+                metrics.simplePie("implementation") { platform.implementationName }
+                metrics.start()
+            }
+        }.onFailure { error ->
+            runCatching { openedSession?.close() }
+            logging.logger(owner, "pnLibrary").warning(
+                "FastStats metrics could not be started: ${error.message ?: error.javaClass.simpleName}",
+            )
+        }.getOrNull()
+        libraryMetrics = session
     }
 
     override fun close() {
@@ -158,6 +196,8 @@ internal class PnLibraryImpl(
             runCatching { platformProvider.close() }
             runCatching { currencyFeature.close() }
             runCatching { configurationService.close() }
+            runCatching { libraryMetrics?.close() }
+            libraryMetrics = null
             runCatching { metricsRegistry.close() }
             runCatching { updateService.close() }
             runCatching { eventService.close() }
@@ -181,5 +221,9 @@ internal class PnLibraryImpl(
         } catch (_: Exception) {
             Paths.get("plugins", owner.javaClass.simpleName)
         }
+    }
+
+    private companion object {
+        const val FASTSTATS_TOKEN = "009192430b9bfffa176e8cc8dd67cad7"
     }
 }
