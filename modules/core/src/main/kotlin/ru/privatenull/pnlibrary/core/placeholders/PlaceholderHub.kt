@@ -180,8 +180,15 @@ internal class PlaceholderHub(
         values[reference]?.let { return CompletableFuture.completedFuture(format(consumer, it, pieces.drop(1), playerId, values)) }
         val (entry, params) = entryLookup.find(consumer, reference)
         if (entry == null) {
-            val external = adapters.values.asSequence().filter { it.state == PlaceholderAdapterState.AVAILABLE || it.state == PlaceholderAdapterState.REGISTERED }
-                .mapNotNull { adapter -> runCatching { adapter.resolve(playerId, reference) }.getOrNull() }.firstOrNull()
+            val external = adapters.values.asSequence()
+                .filter { adapter ->
+                    adapter.state == PlaceholderAdapterState.AVAILABLE ||
+                        adapter.state == PlaceholderAdapterState.REGISTERED
+                }
+                .mapNotNull { adapter ->
+                    runCatching { adapter.resolve(playerId, reference) }.getOrNull()
+                }
+                .firstOrNull()
             return CompletableFuture.completedFuture(external)
         }
         if (!entry.access.allows(entry.owner, consumer)) return failed(SecurityException("Plugin $consumer cannot read ${entry.owner}:${entry.key.value}"))
@@ -215,7 +222,14 @@ internal class PlaceholderHub(
         format = { value, pipeline, playerId, values -> format(consumer, value, pipeline, playerId, values) },
     )
 
-    private fun format(consumer: PluginId, value: Any?, pipeline: List<String>, playerId: UUID?, values: Map<String, Any?>, existing: PlaceholderRequest? = null): Any? {
+    private fun format(
+        consumer: PluginId,
+        value: Any?,
+        pipeline: List<String>,
+        playerId: UUID?,
+        values: Map<String, Any?>,
+        existing: PlaceholderRequest? = null,
+    ): Any? {
         val request = existing ?: PlaceholderRequest(consumer, consumer, playerId, emptyMap(), values)
         return formatterRegistry.format(consumer, value, pipeline, request)
     }

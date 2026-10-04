@@ -51,7 +51,9 @@ internal object BukkitUpdateMessages {
 
     private fun blocker(reason: BlockedReason): String = when (reason) {
         is BlockedReason.ApiMismatch ->
-            "плагин ${reason.product} поддерживает pnLibrary API ${reason.supportedApi.minimum}–${reason.supportedApi.maximum}, требуется API ${reason.requiredApi}."
+                "плагин ${reason.product} поддерживает pnLibrary API " +
+                    "${reason.supportedApi.minimum}–${reason.supportedApi.maximum}, " +
+                    "требуется API ${reason.requiredApi}."
         is BlockedReason.MissingDependency ->
             "для плагина ${reason.product} требуется ${reason.dependency} версии ${reason.minimumVersion} или новее."
         is BlockedReason.MissingExternalPluginDependency ->

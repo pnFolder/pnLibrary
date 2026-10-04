@@ -57,7 +57,11 @@ internal class FileCurrencyStorage(
         synchronized(lock) { balances[accountKey(currency, account)] ?: BigDecimal.ZERO }
     }
 
-    override fun transact(currency: CurrencyKey, descriptor: CurrencyDescriptor, request: CurrencyTransactionRequest): CompletionStage<CurrencyTransaction> = async {
+    override fun transact(
+        currency: CurrencyKey,
+        descriptor: CurrencyDescriptor,
+        request: CurrencyTransactionRequest,
+    ): CompletionStage<CurrencyTransaction> = async {
         synchronized(lock) {
             request.idempotencyKey?.let { idempotency[idempotencyKey(currency, it)] }?.let { return@synchronized it }
             val affectedKeys = listOfNotNull(

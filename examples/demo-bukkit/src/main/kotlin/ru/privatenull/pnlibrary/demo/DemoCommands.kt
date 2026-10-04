@@ -55,7 +55,10 @@ object DemoCommands {
                     val cooldown = context.cooldowns.acquire(sender.uniqueId, "give", Duration.ofSeconds(2))
                     if (!cooldown.allowed) sender.sendMessage("§eПодождите ${cooldown.remaining.toMillis()} мс.")
                     else args.getOrNull(1)?.toBigDecimalOrNull()?.takeIf { it > BigDecimal.ZERO }?.let {
-                        currency.deposit(sender.uniqueId, it).thenAccept { result -> sender.sendMessage("§a${result.status}: §f${currency.format(result.currentBalance ?: BigDecimal.ZERO)}") }
+                    currency.deposit(sender.uniqueId, it).thenAccept { result ->
+                        val balance = currency.format(result.currentBalance ?: BigDecimal.ZERO)
+                        sender.sendMessage("§a${result.status}: §f$balance")
+                    }
                     } ?: sender.sendMessage("§cИспользование: /pndemo give <amount>")
                 }
                 "reload" -> {

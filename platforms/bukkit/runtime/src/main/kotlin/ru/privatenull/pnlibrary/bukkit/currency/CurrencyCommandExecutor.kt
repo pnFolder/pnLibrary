@@ -152,16 +152,33 @@ internal class CurrencyCommandExecutor(
     private fun balance(sender: CommandSender, currency: Currency, args: List<String>): Boolean {
         val target = if (args.isEmpty()) (sender as? Player)?.uniqueId else playerId(args[0])
         if (target == null) return error(sender, "Specify a player.")
-        complete(sender, currency.balance(target)) { amount -> configured(sender, currency, settings(currency).balance, mapOf("balance" to currency.format(amount))) }
+        complete(sender, currency.balance(target)) { amount ->
+            configured(
+                sender,
+                currency,
+                settings(currency).balance,
+                mapOf("balance" to currency.format(amount)),
+            )
+        }
         return true
     }
 
-    private fun mutate(sender: CommandSender, currency: Currency, args: List<String>, operation: String, call: (UUID, BigDecimal) -> CompletionStage<CurrencyResult>): Boolean {
+    private fun mutate(
+        sender: CommandSender,
+        currency: Currency,
+        args: List<String>,
+        operation: String,
+        call: (UUID, BigDecimal) -> CompletionStage<CurrencyResult>,
+    ): Boolean {
         if (args.size < 2) return error(sender, "Usage: /pncurrency ${currency.key} $operation <player> <amount>")
         val target = playerId(args[0]) ?: return error(sender, "Player not found: ${args[0]}")
         val amount = args[1].toBigDecimalOrNull() ?: return error(sender, "Invalid amount: ${args[1]}")
         val ledger = currency.extension(CurrencyLedger::class.java)
-        val type = when (operation) { "add" -> CurrencyTransactionType.CREDIT; "take" -> CurrencyTransactionType.DEBIT; else -> CurrencyTransactionType.SET_BALANCE }
+        val type = when (operation) {
+            "add" -> CurrencyTransactionType.CREDIT
+            "take" -> CurrencyTransactionType.DEBIT
+            else -> CurrencyTransactionType.SET_BALANCE
+        }
         val execute = {
             if (ledger == null) call(target, amount) else ledger.transact(CurrencyTransactionRequest(
                 type = type,
@@ -218,7 +235,10 @@ internal class CurrencyCommandExecutor(
             if (page.items.isEmpty()) configured(sender, currency, settings(currency).historyEmpty)
             page.items.forEach { transaction ->
                 val time = TIME.format(transaction.createdAt)
-                info(sender, "#$time ${transaction.type} ${currency.format(transaction.amount)} · ${transaction.actor.type}:${transaction.actor.id} · ${transaction.reason ?: transaction.service}")
+                val amount = currency.format(transaction.amount)
+                val actor = "${transaction.actor.type}:${transaction.actor.id}"
+                val reason = transaction.reason ?: transaction.service
+                info(sender, "#$time ${transaction.type} $amount · $actor · $reason")
             }
         }
         return true
@@ -236,7 +256,9 @@ internal class CurrencyCommandExecutor(
             transaction.sourceBalanceAfter ?: transaction.targetBalanceAfter,
         )
         CurrencyTransactionStatus.REJECTED -> CurrencyResult.rejected(CurrencyRejectReason.PROVIDER_REJECTED, transaction.failure)
-        CurrencyTransactionStatus.FAILED -> CurrencyResult.failed(IllegalStateException(transaction.failure ?: "Currency transaction failed"))
+        CurrencyTransactionStatus.FAILED -> CurrencyResult.failed(
+            IllegalStateException(transaction.failure ?: "Currency transaction failed"),
+        )
     }
 
     private fun actor(sender: CommandSender): CurrencyActor =
@@ -266,7 +288,10 @@ internal class CurrencyCommandExecutor(
         pending[token] = PendingOperation(token, expiresAt, currency.key.toString(), description, sender.name, execute, completed)
         val console = Bukkit.getConsoleSender()
         console.sendMessage("§8[§6Currency confirmation§8] §e$token §f· ${currency.key} · $description · requested by ${sender.name}")
-        console.sendMessage("§8[§6Currency confirmation§8] §fRun §e/pncurrency confirm $token §fwithin ${settings.confirmationTimeoutSeconds}s")
+        console.sendMessage(
+            "§8[§6Currency confirmation§8] §fRun §e/pncurrency confirm $token " +
+                "§fwithin ${settings.confirmationTimeoutSeconds}s",
+        )
         info(sender, "Operation awaits console confirmation. Code: $token")
         return true
     }

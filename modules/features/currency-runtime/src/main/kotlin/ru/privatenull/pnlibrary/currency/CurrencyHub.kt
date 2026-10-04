@@ -193,7 +193,14 @@ internal class CurrencyHub : CurrencyProviderRegistry, AutoCloseable {
         override fun transfer(from: UUID, to: UUID, amount: BigDecimal) = amountOperation(CurrencyCapability.TRANSFER, amount) {
             (provider as CurrencyTransfers).transfer(CurrencyAccount(from), CurrencyAccount(to), it)
         }
-        override fun format(amount: BigDecimal) = if (provider is CurrencyFormatting) provider.format(descriptor.normalize(amount)) else descriptor.normalize(amount).toPlainString() + descriptor.symbol
+        override fun format(amount: BigDecimal): String {
+            val normalizedAmount = descriptor.normalize(amount)
+            return if (provider is CurrencyFormatting) {
+                provider.format(normalizedAmount)
+            } else {
+                normalizedAmount.toPlainString() + descriptor.symbol
+            }
+        }
         override fun <T : Any> extension(type: Class<T>): T? = provider.extension(type)
         override fun enable() {
             check(!entryClosed.get()) { "Currency $key is closed" }

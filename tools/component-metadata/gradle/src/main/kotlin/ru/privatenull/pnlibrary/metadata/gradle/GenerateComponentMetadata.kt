@@ -33,7 +33,15 @@ abstract class GenerateComponentMetadata : DefaultTask() {
     fun generate() {
         ComponentMetadataWriter.write(
             outputDirectory.get().asFile.toPath(),
-            ComponentMetadata(componentId.get(), componentVersion.get(), apiMinimum.get(), apiMaximum.get(), channel.get(), javaMinimum.get(), javaMaximum.orNull),
+        ComponentMetadata(
+            componentId.get(),
+            componentVersion.get(),
+            apiMinimum.get(),
+            apiMaximum.get(),
+            channel.get(),
+            javaMinimum.get(),
+            javaMaximum.orNull,
+        ),
         )
     }
 }

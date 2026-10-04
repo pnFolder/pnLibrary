@@ -42,7 +42,12 @@ internal object MultipartFileClient {
             prefix.write("--$boundary\r\nContent-Disposition: form-data; name=\"$name\"\r\n\r\n$value\r\n".toByteArray())
         }
         val safeName = file.fileName.toString().replace(Regex("[^A-Za-z0-9._-]"), "_")
-        prefix.write("--$boundary\r\nContent-Disposition: form-data; name=\"$fileField\"; filename=\"$safeName\"\r\nContent-Type: $contentType\r\n\r\n".toByteArray())
+            val fileHeaders = buildString {
+                append("--$boundary\r\n")
+                append("Content-Disposition: form-data; name=\"$fileField\"; filename=\"$safeName\"\r\n")
+                append("Content-Type: $contentType\r\n\r\n")
+            }
+            prefix.write(fileHeaders.toByteArray())
         val suffix = "\r\n--$boundary--\r\n".toByteArray(StandardCharsets.UTF_8)
         val connection = endpoint.toURL().openConnection() as HttpURLConnection
         connection.connectTimeout = 10_000

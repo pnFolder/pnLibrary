@@ -55,25 +55,58 @@ interface PluginDependency {
 object Dependencies {
     @JvmStatic
     @JvmOverloads
-    fun managed(component: String, minimumVersion: String, repositoryOwner: String, repositoryName: String,
-                required: Boolean = true, automaticDownload: Boolean = false,
-                forceAutomaticDownload: Boolean = false): PluginDependency =
-        ManagedProductDependency(component, minimumVersion, repositoryOwner, repositoryName, required,
-            when { forceAutomaticDownload -> DownloadPolicy.FORCED; automaticDownload -> DownloadPolicy.AUTOMATIC; else -> DownloadPolicy.MANUAL })
+    fun managed(
+        component: String,
+        minimumVersion: String,
+        repositoryOwner: String,
+        repositoryName: String,
+        required: Boolean = true,
+        automaticDownload: Boolean = false,
+        forceAutomaticDownload: Boolean = false,
+    ): PluginDependency = ManagedProductDependency(
+        component,
+        minimumVersion,
+        repositoryOwner,
+        repositoryName,
+        required,
+        downloadPolicy(automaticDownload, forceAutomaticDownload),
+    )
 
     @JvmStatic
     @JvmOverloads
-    fun plugin(plugin: String, minimumVersion: String, downloadPage: String,
-               required: Boolean = true, automaticDownload: Boolean = false,
-               forceAutomaticDownload: Boolean = false): PluginDependency =
-        ExternalPluginDependency.builder(plugin, minimumVersion).downloadPage(downloadPage)
-            .required(required).downloadPolicy(when { forceAutomaticDownload -> DownloadPolicy.FORCED; automaticDownload -> DownloadPolicy.AUTOMATIC; else -> DownloadPolicy.MANUAL }).build()
+    fun plugin(
+        plugin: String,
+        minimumVersion: String,
+        downloadPage: String,
+        required: Boolean = true,
+        automaticDownload: Boolean = false,
+        forceAutomaticDownload: Boolean = false,
+    ): PluginDependency = ExternalPluginDependency.builder(plugin, minimumVersion)
+        .downloadPage(downloadPage)
+        .required(required)
+        .downloadPolicy(downloadPolicy(automaticDownload, forceAutomaticDownload))
+        .build()
 
     @JvmStatic
     @JvmOverloads
-    fun plugin(plugin: String, minimumVersion: String, downloadUrl: String, size: Long, sha256: String,
-               required: Boolean = true, automaticDownload: Boolean = false,
-               forceAutomaticDownload: Boolean = false): PluginDependency =
-        ExternalPluginDependency.builder(plugin, minimumVersion).artifact(downloadUrl, size, sha256)
-            .required(required).downloadPolicy(when { forceAutomaticDownload -> DownloadPolicy.FORCED; automaticDownload -> DownloadPolicy.AUTOMATIC; else -> DownloadPolicy.MANUAL }).build()
+    fun plugin(
+        plugin: String,
+        minimumVersion: String,
+        downloadUrl: String,
+        size: Long,
+        sha256: String,
+        required: Boolean = true,
+        automaticDownload: Boolean = false,
+        forceAutomaticDownload: Boolean = false,
+    ): PluginDependency = ExternalPluginDependency.builder(plugin, minimumVersion)
+        .artifact(downloadUrl, size, sha256)
+        .required(required)
+        .downloadPolicy(downloadPolicy(automaticDownload, forceAutomaticDownload))
+        .build()
+
+    private fun downloadPolicy(automatic: Boolean, forced: Boolean): DownloadPolicy = when {
+        forced -> DownloadPolicy.FORCED
+        automatic -> DownloadPolicy.AUTOMATIC
+        else -> DownloadPolicy.MANUAL
+    }
 }
