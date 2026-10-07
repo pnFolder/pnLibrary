@@ -1,30 +1,36 @@
 package ru.privatenull.pnlibrary.bukkit.tasks
 
 import org.bukkit.Bukkit
-import org.bukkit.entity.Player
 import org.bukkit.plugin.Plugin
+import org.bukkit.scheduler.BukkitScheduler
 import org.bukkit.scheduler.BukkitTask
 import ru.privatenull.pnlibrary.api.tasks.TaskExecution
-import ru.privatenull.pnlibrary.bukkit.commands.BukkitCommandSender
 import ru.privatenull.pnlibrary.bukkit.compat.ServerCapabilities
-import ru.privatenull.pnlibrary.spi.tasks.*
+import ru.privatenull.pnlibrary.spi.tasks.PlatformTaskAdapter
+import ru.privatenull.pnlibrary.spi.tasks.PlatformTaskHandle
+import ru.privatenull.pnlibrary.spi.tasks.PlatformTaskRequest
 import java.time.Duration
 import java.util.concurrent.ConcurrentHashMap
-import java.util.concurrent.TimeUnit
 import java.util.concurrent.atomic.AtomicBoolean
 import java.util.concurrent.atomic.AtomicReference
-import java.util.function.Consumer
 import kotlin.math.ceil
 
+private const val NANOS_PER_TICK = 50_000_000.0
+
 internal fun durationToTicks(value: Duration): Long =
-    if (value.isZero) 0 else ceil(value.toNanos() / 50_000_000.0).toLong().coerceAtLeast(1)
+    if (value.isZero) 0 else ceil(value.toNanos() / NANOS_PER_TICK).toLong().coerceAtLeast(1)
 
 internal fun withCompletionRelease(request: PlatformTaskRequest, release: () -> Unit): PlatformTaskRequest =
     request.copy(callback = Runnable {
-        try { request.callback.run() } finally { if (request.interval == null) release() }
+        try {
+            request.callback.run()
+        } finally {
+            if (request.interval == null) release()
+        }
     })
 
 internal class BukkitTaskAdapter(private val plugin: Plugin) : PlatformTaskAdapter {
+    private val foliaScheduler by lazy { FoliaSchedulerBridge(plugin) }
     private val closed = AtomicBoolean(false)
     private val handles = ConcurrentHashMap.newKeySet<NativeHandle>()
 
@@ -36,7 +42,7 @@ internal class BukkitTaskAdapter(private val plugin: Plugin) : PlatformTaskAdapt
             completed.set(true)
             reference.get()?.release()
         }
-        val native = if (ServerCapabilities.isFolia) scheduleFolia(forwarded) else scheduleBukkit(forwarded)
+        val native = if (ServerCapabilities.isFolia) foliaScheduler.schedule(forwarded) else scheduleBukkit(forwarded)
         return NativeHandle(native).also { handle ->
             reference.set(handle)
             handles += handle
@@ -50,51 +56,35 @@ internal class BukkitTaskAdapter(private val plugin: Plugin) : PlatformTaskAdapt
         val scheduler = Bukkit.getScheduler()
         val delay = durationToTicks(request.delay)
         val period = request.interval?.let(::durationToTicks)
-        val async = request.executionKind == TaskExecution.Kind.ASYNC
-        return when {
-            period != null && async -> scheduler.runTaskTimerAsynchronously(plugin, request.callback, delay, period)
-            period != null -> scheduler.runTaskTimer(plugin, request.callback, delay, period)
-            delay > 0 && async -> scheduler.runTaskLaterAsynchronously(plugin, request.callback, delay)
-            delay > 0 -> scheduler.runTaskLater(plugin, request.callback, delay)
-            async -> scheduler.runTaskAsynchronously(plugin, request.callback)
-            else -> scheduler.runTask(plugin, request.callback)
+
+        return if (request.executionKind == TaskExecution.Kind.ASYNC) {
+            scheduleBukkitAsync(scheduler, request.callback, delay, period)
+        } else {
+            scheduleBukkitGlobal(scheduler, request.callback, delay, period)
         }
     }
 
-    private fun scheduleFolia(request: PlatformTaskRequest): Any {
-        if (request.executionKind == TaskExecution.Kind.ASYNC) {
-            val scheduler = Bukkit::class.java.getMethod("getAsyncScheduler").invoke(null)
-            val consumer = Consumer<Any> { request.callback.run() }
-            val interval = request.interval
-            return when {
-                interval != null -> invoke(scheduler, "runAtFixedRate", plugin, consumer,
-                    request.delay.toNanos(), interval.toNanos(), TimeUnit.NANOSECONDS)
-                !request.delay.isZero -> invoke(scheduler, "runDelayed", plugin, consumer,
-                    request.delay.toNanos(), TimeUnit.NANOSECONDS)
-                else -> invoke(scheduler, "runNow", plugin, consumer)
-            }
-        }
-        val target = (request.target as? BukkitCommandSender)?.native ?: request.target
-        val entity = request.executionKind == TaskExecution.Kind.ENTITY
-        require(!entity || target is Player) { "Folia entity task requires a Bukkit Player target" }
-        val scheduler = if (entity) target!!.javaClass.getMethod("getScheduler").invoke(target)
-            else Bukkit::class.java.getMethod("getGlobalRegionScheduler").invoke(null)
-        val consumer = Consumer<Any> { request.callback.run() }
-        val delay = durationToTicks(request.delay).coerceAtLeast(1)
-        val period = request.interval?.let(::durationToTicks)
-        return if (entity) when {
-            period != null -> invoke(scheduler, "runAtFixedRate", plugin, consumer, null, delay, period)
-            request.delay.isZero -> invoke(scheduler, "run", plugin, consumer, null)
-            else -> invoke(scheduler, "runDelayed", plugin, consumer, null, delay)
-        } else when {
-            period != null -> invoke(scheduler, "runAtFixedRate", plugin, consumer, delay, period)
-            request.delay.isZero -> invoke(scheduler, "run", plugin, consumer)
-            else -> invoke(scheduler, "runDelayed", plugin, consumer, delay)
-        }
+    private fun scheduleBukkitAsync(
+        scheduler: BukkitScheduler,
+        callback: Runnable,
+        delay: Long,
+        period: Long?,
+    ): Any = when {
+        period != null -> scheduler.runTaskTimerAsynchronously(plugin, callback, delay, period)
+        delay > 0 -> scheduler.runTaskLaterAsynchronously(plugin, callback, delay)
+        else -> scheduler.runTaskAsynchronously(plugin, callback)
     }
 
-    private fun invoke(receiver: Any, name: String, vararg args: Any?): Any =
-        receiver.javaClass.methods.first { it.name == name && it.parameterCount == args.size }.invoke(receiver, *args)
+    private fun scheduleBukkitGlobal(
+        scheduler: BukkitScheduler,
+        callback: Runnable,
+        delay: Long,
+        period: Long?,
+    ): Any = when {
+        period != null -> scheduler.runTaskTimer(plugin, callback, delay, period)
+        delay > 0 -> scheduler.runTaskLater(plugin, callback, delay)
+        else -> scheduler.runTask(plugin, callback)
+    }
 
     override fun close() {
         if (!closed.compareAndSet(false, true)) return
@@ -108,7 +98,7 @@ internal class BukkitTaskAdapter(private val plugin: Plugin) : PlatformTaskAdapt
             if (!cancelled.compareAndSet(false, true)) return false
             when (native) {
                 is BukkitTask -> native.cancel()
-                else -> native.javaClass.getMethod("cancel").invoke(native)
+                else -> foliaScheduler.cancel(native)
             }
             handles.remove(this)
             return true

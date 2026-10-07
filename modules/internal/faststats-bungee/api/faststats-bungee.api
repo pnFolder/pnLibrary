@@ -1,0 +1,4 @@
+public final class ru/privatenull/pnlibrary/internal/faststats/bungee/FastStatsMetricsSession : ru/privatenull/pnlibrary/internal/faststats/core/AbstractFastStatsMetricsSession {
+	public fun <init> (Lnet/md_5/bungee/api/plugin/Plugin;Ljava/lang/String;)V
+}
+

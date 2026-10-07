@@ -16,6 +16,7 @@ tasks.withType<JavaCompile>().configureEach { options.release = 21 }
 
 dependencies {
     implementation(project(":modules:api"))
+    implementation(project(":modules:internal:faststats-core"))
     implementation(project(":modules:runtime-spi"))
     implementation(libs.faststats.velocity) { isTransitive = false }
     // All platform adapters share the same Java 8-compatible SDK core.

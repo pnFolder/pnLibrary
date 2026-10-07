@@ -26,7 +26,7 @@ dependencies {
     implementation(project(":platforms:bukkit:api"))
     implementation(libs.kotlin.stdlib)
     implementation(project(":modules:internal:bstats"))
-    implementation(libs.faststats.bukkit.j8)
+    implementation(project(":modules:internal:faststats-bukkit"))
     api(project(":modules:common"))
     api(project(":modules:design:console"))
     implementation(libs.adventure.legacy)

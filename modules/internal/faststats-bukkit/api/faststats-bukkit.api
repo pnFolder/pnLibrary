@@ -1,0 +1,4 @@
+public final class ru/privatenull/pnlibrary/internal/faststats/bukkit/FastStatsMetricsSession : ru/privatenull/pnlibrary/internal/faststats/core/AbstractFastStatsMetricsSession {
+	public fun <init> (Lorg/bukkit/plugin/Plugin;Ljava/lang/String;)V
+}
+

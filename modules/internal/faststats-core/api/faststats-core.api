@@ -1,0 +1,44 @@
+public abstract class ru/privatenull/pnlibrary/internal/faststats/core/AbstractFastStatsMetricsSession : ru/privatenull/pnlibrary/api/metrics/PluginMetrics {
+	public fun <init> (Ljava/lang/String;Lru/privatenull/pnlibrary/internal/faststats/core/FastStatsContextFactory;)V
+	public fun advancedBarChart (Ljava/lang/String;Ljava/util/function/Supplier;)Lru/privatenull/pnlibrary/api/metrics/PluginMetrics;
+	public fun advancedPie (Ljava/lang/String;Ljava/util/function/Supplier;)Lru/privatenull/pnlibrary/api/metrics/PluginMetrics;
+	public fun close ()V
+	public fun drilldownPie (Ljava/lang/String;Ljava/util/function/Supplier;)Lru/privatenull/pnlibrary/api/metrics/PluginMetrics;
+	public fun getCapabilities ()Ljava/util/Set;
+	public synthetic fun getErrorReporter ()Lru/privatenull/pnlibrary/api/metrics/ErrorReporter;
+	public fun getErrorReporter ()Lru/privatenull/pnlibrary/internal/faststats/core/FastStatsErrorReporter;
+	public fun getProjectId ()I
+	public fun getProvider ()Lru/privatenull/pnlibrary/api/metrics/MetricsProvider;
+	public fun multiLineChart (Ljava/lang/String;Ljava/util/function/Supplier;)Lru/privatenull/pnlibrary/api/metrics/PluginMetrics;
+	public fun simpleBarChart (Ljava/lang/String;Ljava/util/function/Supplier;)Lru/privatenull/pnlibrary/api/metrics/PluginMetrics;
+	public fun simplePie (Ljava/lang/String;Ljava/util/function/Supplier;)Lru/privatenull/pnlibrary/api/metrics/PluginMetrics;
+	public fun singleLineChart (Ljava/lang/String;Ljava/util/function/Supplier;)Lru/privatenull/pnlibrary/api/metrics/PluginMetrics;
+	public fun start ()V
+}
+
+public abstract interface class ru/privatenull/pnlibrary/internal/faststats/core/FastStatsContext {
+	public abstract fun ready ()V
+	public abstract fun shutdown ()V
+}
+
+public abstract interface class ru/privatenull/pnlibrary/internal/faststats/core/FastStatsContextFactory {
+	public abstract fun create (Ljava/lang/String;Ldev/faststats/ErrorTracker;Lkotlin/jvm/functions/Function1;)Lru/privatenull/pnlibrary/internal/faststats/core/FastStatsContext;
+}
+
+public final class ru/privatenull/pnlibrary/internal/faststats/core/FastStatsErrorReporter : ru/privatenull/pnlibrary/api/metrics/ErrorReporter {
+	public fun <init> ()V
+	public fun capture (Lru/privatenull/pnlibrary/api/metrics/TelemetryError;)V
+	public fun close ()V
+	public final fun getTracker ()Ldev/faststats/ErrorTracker;
+}
+
+public final class ru/privatenull/pnlibrary/internal/faststats/core/FastStatsSupport {
+	public static final field INSTANCE Lru/privatenull/pnlibrary/internal/faststats/core/FastStatsSupport;
+	public final fun advancedBarChart (Ldev/faststats/Metrics$Factory;Ljava/lang/String;Ljava/util/function/Supplier;)Ldev/faststats/Metrics$Factory;
+	public final fun advancedPie (Ldev/faststats/Metrics$Factory;Ljava/lang/String;Ljava/util/function/Supplier;)Ldev/faststats/Metrics$Factory;
+	public final fun drilldownPie (Ldev/faststats/Metrics$Factory;Ljava/lang/String;Ljava/util/function/Supplier;)Ldev/faststats/Metrics$Factory;
+	public final fun simplePie (Ldev/faststats/Metrics$Factory;Ljava/lang/String;Ljava/util/function/Supplier;)Ldev/faststats/Metrics$Factory;
+	public final fun singleLineChart (Ldev/faststats/Metrics$Factory;Ljava/lang/String;Ljava/util/function/Supplier;)Ldev/faststats/Metrics$Factory;
+	public static final fun validId (Ljava/lang/String;)Ljava/lang/String;
+}
+

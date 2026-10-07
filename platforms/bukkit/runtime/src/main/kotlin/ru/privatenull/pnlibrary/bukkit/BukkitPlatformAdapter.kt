@@ -3,29 +3,29 @@ package ru.privatenull.pnlibrary.bukkit
 import org.bukkit.Bukkit
 import org.bukkit.entity.Player
 import org.bukkit.plugin.Plugin
+import ru.privatenull.pnlibrary.api.commands.CommandRegistration
 import ru.privatenull.pnlibrary.api.logging.LogLevel
 import ru.privatenull.pnlibrary.api.platform.PlatformType
 import ru.privatenull.pnlibrary.api.plugin.PluginMetadata
 import ru.privatenull.pnlibrary.api.remote.RemotePolicyContext
-import ru.privatenull.pnlibrary.bukkit.remote.BukkitRemotePolicyContextFactory
-import ru.privatenull.pnlibrary.bukkit.server.ServerInfo
 import ru.privatenull.pnlibrary.api.runtime.PnLibrary
-import ru.privatenull.pnlibrary.bukkit.compat.ServerCapabilities
-import ru.privatenull.pnlibrary.spi.metrics.PlatformMetricsFactory
-import ru.privatenull.pnlibrary.spi.platform.PlatformAdapter
-import ru.privatenull.pnlibrary.spi.commands.PlatformCommandAdapter
-import ru.privatenull.pnlibrary.spi.audiences.PlatformAudienceAdapter
-import ru.privatenull.pnlibrary.api.commands.CommandRegistration
 import ru.privatenull.pnlibrary.bukkit.commands.BukkitCommandAdapter
 import ru.privatenull.pnlibrary.bukkit.commands.BukkitCommandSender
 import ru.privatenull.pnlibrary.bukkit.commands.BukkitControlCommand
+import ru.privatenull.pnlibrary.bukkit.compat.ServerCapabilities
+import ru.privatenull.pnlibrary.bukkit.remote.BukkitRemotePolicyContextFactory
+import ru.privatenull.pnlibrary.bukkit.server.ServerInfo
 import ru.privatenull.pnlibrary.bukkit.tasks.BukkitTaskAdapter
+import ru.privatenull.pnlibrary.spi.audiences.PlatformAudienceAdapter
+import ru.privatenull.pnlibrary.spi.commands.PlatformCommandAdapter
+import ru.privatenull.pnlibrary.spi.metrics.PlatformMetricsFactory
+import ru.privatenull.pnlibrary.spi.platform.PlatformAdapter
 import ru.privatenull.pnlibrary.spi.tasks.PlatformTaskAdapter
 import java.util.concurrent.CompletableFuture
 import java.util.concurrent.TimeUnit
 import java.util.concurrent.atomic.AtomicBoolean
-import java.util.logging.Level
 import java.util.logging.Handler
+import java.util.logging.Level
 import java.util.logging.LogRecord
 
 /**
@@ -151,6 +151,16 @@ internal class BukkitPlatformAdapter constructor(
         }
     }
     override fun details(): Map<String, Any?> = diagnosticDetails(includeSensitive = false)
+
+//    var primaryThread: Thread? = null
+//
+//    fun startServer() {
+//        primaryThread = Thread.currentThread()
+//    }
+//
+//    fun isPrimaryThread(): Boolean {
+//        return Thread.currentThread() === primaryThread
+//    }
 
     override fun diagnosticDetails(includeSensitive: Boolean): Map<String, Any?> {
         if (!ServerCapabilities.isFolia && Bukkit.isPrimaryThread()) {

@@ -8,21 +8,22 @@ import ru.privatenull.pnlibrary.api.metrics.MetricsProviderConfiguration
 import ru.privatenull.pnlibrary.core.metrics.CompositePluginMetrics
 import ru.privatenull.pnlibrary.core.metrics.BStatsMetricsSession
 import ru.privatenull.pnlibrary.spi.metrics.PlatformMetricsFactory
+import ru.privatenull.pnlibrary.internal.faststats.bukkit.FastStatsMetricsSession
 
 /** Creates independently managed bStats sessions for Bukkit [Plugin] owners. */
 class BukkitMetricsFactory : PlatformMetricsFactory {
     /** Opens every enabled metrics provider configured for the Bukkit plugin [owner]. */
     override fun open(owner: Any, configurations: Collection<MetricsProviderConfiguration>): PluginMetrics {
         require(owner is Plugin) { "Bukkit metrics owner must be a Bukkit Plugin" }
-        val delegates = configurations.filter { it.enabled }.map { configuration ->
+        val delegates: List<PluginMetrics> = configurations.filter { it.enabled }.map { configuration ->
             when (configuration.provider) {
                 MetricsProvider.BSTATS -> {
                     val id = requireNotNull(configuration.projectId) { "bStats requires projectId" }
-                    open(owner, id)
+                    this.open(owner, id) as PluginMetrics
                 }
                 MetricsProvider.FASTSTATS -> {
                     val token = requireNotNull(configuration.token) { "FastStats requires token" }
-                    FastStatsMetricsSession(owner, token)
+                    FastStatsMetricsSession(owner, token) as PluginMetrics
                 }
             }
         }
