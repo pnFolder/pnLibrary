@@ -204,6 +204,11 @@ internal class VelocityPlatformAdapter(
                 "min" to playerPings.minOrNull(),
                 "max" to playerPings.maxOrNull(),
                 "average" to playerPings.average().takeIf { playerPings.isNotEmpty() },
+                "percentiles" to linkedMapOf(
+                    "p50" to percentile(playerPings, 0.50),
+                    "p95" to percentile(playerPings, 0.95),
+                    "p99" to percentile(playerPings, 0.99),
+                ),
             ),
         )
         if (includeSensitive) {
@@ -333,6 +338,13 @@ internal class VelocityPlatformAdapter(
         }
         digest.digest().joinToString("") { byte -> "%02x".format(byte) }
     }.getOrNull()
+
+    private fun percentile(values: List<Long>, percentile: Double): Long? {
+        if (values.isEmpty()) return null
+        val sorted = values.sorted()
+        val index = ((sorted.size - 1) * percentile).toInt().coerceIn(0, sorted.lastIndex)
+        return sorted[index]
+    }
 
     private fun PluginDescription.toSnapshot(): PluginSnapshot =
         PluginSnapshot(

@@ -197,6 +197,11 @@ internal class BungeePlatformAdapter(
                 "min" to playerPings.minOrNull(),
                 "max" to playerPings.maxOrNull(),
                 "average" to playerPings.average().takeIf { playerPings.isNotEmpty() },
+                "percentiles" to linkedMapOf(
+                    "p50" to percentile(playerPings, 0.50),
+                    "p95" to percentile(playerPings, 0.95),
+                    "p99" to percentile(playerPings, 0.99),
+                ),
             ),
         )
         if (includeSensitive) {
@@ -275,6 +280,13 @@ internal class BungeePlatformAdapter(
 
     private fun formatUtc(file: java.io.File): String =
         java.time.Instant.ofEpochMilli(file.lastModified()).toString()
+
+    private fun percentile(values: List<Int>, percentile: Double): Int? {
+        if (values.isEmpty()) return null
+        val sorted = values.sorted()
+        val index = ((sorted.size - 1) * percentile).toInt().coerceIn(0, sorted.lastIndex)
+        return sorted[index]
+    }
 
     private companion object {
         const val HIGH_PING_THRESHOLD = 200.0
