@@ -238,6 +238,12 @@ internal class SystemReportCollector {
                 "network" to (snapshot["networkAnalytics"] != null),
                 "javaRuntime" to (java != null),
             ),
+            "containerLimits" to linkedMapOf(
+                "memoryLimitBytes" to (snapshot["runtimeEnvironment"] as? Map<*, *>)?.get("memoryLimitBytes"),
+                "memoryCurrentBytes" to (snapshot["runtimeEnvironment"] as? Map<*, *>)?.get("memoryCurrentBytes"),
+                "cpuQuotaMicros" to (snapshot["runtimeEnvironment"] as? Map<*, *>)?.get("cpuQuotaMicros"),
+                "cpuPeriodMicros" to (snapshot["runtimeEnvironment"] as? Map<*, *>)?.get("cpuPeriodMicros"),
+            ),
             "hostDistribution" to linkedMapOf(
                 "availableProcessors" to os?.get("availableProcessors"),
                 "systemLoadAverage" to os?.get("systemLoadAverage"),
@@ -577,7 +583,17 @@ internal class SystemReportCollector {
             }
         }.getOrNull(),
         "workingDirectoryPresent" to File(System.getProperty("user.dir", ".")).isDirectory,
+        "memoryLimitBytes" to readCgroupLong("/sys/fs/cgroup/memory.max"),
+        "memoryCurrentBytes" to readCgroupLong("/sys/fs/cgroup/memory.current"),
+        "cpuQuotaMicros" to readCgroupLong("/sys/fs/cgroup/cpu.max", 0),
+        "cpuPeriodMicros" to readCgroupLong("/sys/fs/cgroup/cpu.max", 1),
     )
+
+    private fun readCgroupLong(path: String, tokenIndex: Int? = null): Long? = runCatching {
+        val value = File(path).takeIf(File::isFile)?.readText()?.trim() ?: return@runCatching null
+        val token = tokenIndex?.let { value.split(Regex("\\s+")).getOrNull(it) } ?: value
+        token.takeUnless { it == "max" }?.toLongOrNull()?.takeIf { it >= 0L }
+    }.getOrNull()
 
     private fun collectNetworkInterfaces(): List<Map<String, Any?>> {
         val result = mutableListOf<Map<String, Any?>>()
