@@ -29,6 +29,7 @@ internal class BukkitDiagnosticsCollector {
             putPerformanceDetails()
             putSchedulerDetails()
             putServiceDetails()
+            putEventListenerDetails()
             putWorldDetails(server)
             putPlayerDetails(server, includeSensitive)
             putPluginDetails(server, includeSensitive)
@@ -174,6 +175,21 @@ internal class BukkitDiagnosticsCollector {
         )
     }
 
+    private fun MutableMap<String, Any?>.putEventListenerDetails() {
+        val listeners = org.bukkit.event.HandlerList.getHandlerLists()
+            .flatMap { it.registeredListeners.toList() }
+        this["eventListeners"] = linkedMapOf(
+            "handlerListCount" to org.bukkit.event.HandlerList.getHandlerLists().size,
+            "registeredCount" to listeners.size,
+            "byPlugin" to listeners.groupingBy { it.plugin.name }.eachCount(),
+            "byPriority" to listeners.groupingBy { it.priority.name }.eachCount(),
+            "listenerTypes" to listeners.map { it.listener.javaClass.name }
+                .distinct()
+                .sorted()
+                .take(MAX_LISTENER_TYPES),
+        )
+    }
+
     private fun sha256(file: File): String? = runCatching {
         val digest = MessageDigest.getInstance("SHA-256")
         FileInputStream(file).use { input ->
@@ -271,6 +287,7 @@ internal class BukkitDiagnosticsCollector {
     private companion object {
         const val TPS_WINDOW_COUNT = 3
         const val MAX_SCHEDULER_CLASSES = 128
+        const val MAX_LISTENER_TYPES = 256
         const val FOLIA_REGION_UNAVAILABLE = "[UNAVAILABLE: requires a region thread on Folia]"
         const val FOLIA_PLAYERS_UNAVAILABLE =
             "[UNAVAILABLE: player details require entity schedulers on Folia]"
