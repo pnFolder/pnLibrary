@@ -159,6 +159,12 @@ internal class VelocityPlatformAdapter(
             "versions" to server.pluginManager.plugins.associate {
                 it.description.id to it.description.version.orElse("unknown")
             },
+            "duplicateIds" to server.pluginManager.plugins
+                .groupingBy { it.description.id.lowercase() }
+                .eachCount()
+                .filterValues { it > 1 }
+                .keys
+                .sorted(),
             "loadOrder" to server.pluginManager.plugins.map { it.description.id },
         )
         details["servers"] = server.allServers.map { connection ->

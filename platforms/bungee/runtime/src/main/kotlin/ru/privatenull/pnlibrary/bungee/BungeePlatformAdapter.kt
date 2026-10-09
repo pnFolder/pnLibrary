@@ -151,6 +151,12 @@ internal class BungeePlatformAdapter(
             "versions" to plugin.proxy.pluginManager.plugins.associate {
                 it.description.name to it.description.version
             },
+            "duplicateNames" to plugin.proxy.pluginManager.plugins
+                .groupingBy { it.description.name.lowercase() }
+                .eachCount()
+                .filterValues { it > 1 }
+                .keys
+                .sorted(),
             "byMainClass" to plugin.proxy.pluginManager.plugins
                 .groupingBy { it.description.main }
                 .eachCount(),

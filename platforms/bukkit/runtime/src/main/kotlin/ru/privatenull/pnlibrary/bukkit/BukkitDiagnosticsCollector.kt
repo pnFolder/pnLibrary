@@ -253,6 +253,12 @@ internal class BukkitDiagnosticsCollector {
             "byClassLoader" to plugins
                 .groupingBy { it.javaClass.classLoader?.javaClass?.name ?: "unknown" }
                 .eachCount(),
+            "duplicateNames" to plugins
+                .groupingBy { it.name.lowercase(Locale.ROOT) }
+                .eachCount()
+                .filterValues { it > 1 }
+                .keys
+                .sorted(),
             "loadOrder" to plugins.map { it.name },
         )
     }
