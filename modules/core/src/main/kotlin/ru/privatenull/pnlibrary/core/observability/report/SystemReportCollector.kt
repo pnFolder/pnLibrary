@@ -8,6 +8,8 @@ import java.lang.management.ManagementFactory
 import java.lang.management.MemoryPoolMXBean
 import java.net.NetworkInterface
 import java.time.Instant
+import java.time.ZoneId
+import java.util.Locale
 
 /**
  * Collects a bounded cross-platform snapshot of JVM and host state.
@@ -46,6 +48,13 @@ internal class SystemReportCollector {
             "uptimeSeconds" to runtimeMx.uptime / 1000,
             "startTimeUtc" to Instant.ofEpochMilli(runtimeMx.startTime).toString(),
             "inputArguments" to sanitizeJvmArgs(runtimeMx.inputArguments),
+            "environment" to linkedMapOf(
+                "defaultCharset" to java.nio.charset.Charset.defaultCharset().name(),
+                "fileEncoding" to System.getProperty("file.encoding", "unknown"),
+                "defaultLocale" to Locale.getDefault().toLanguageTag(),
+                "defaultZone" to ZoneId.systemDefault().id,
+                "lineSeparator" to System.lineSeparator().replace("\r", "\\r").replace("\n", "\\n"),
+            ),
         )
 
         // ── OS & Hardware ────────────────────────────────────────────────────
