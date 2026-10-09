@@ -273,8 +273,10 @@ internal class SystemReportCollector {
             "containerLimits" to linkedMapOf(
                 "memoryLimitBytes" to (snapshot["runtimeEnvironment"] as? Map<*, *>)?.get("memoryLimitBytes"),
                 "memoryCurrentBytes" to (snapshot["runtimeEnvironment"] as? Map<*, *>)?.get("memoryCurrentBytes"),
+                "memoryUsedRatio" to containerMemoryRatio(snapshot),
                 "cpuQuotaMicros" to (snapshot["runtimeEnvironment"] as? Map<*, *>)?.get("cpuQuotaMicros"),
                 "cpuPeriodMicros" to (snapshot["runtimeEnvironment"] as? Map<*, *>)?.get("cpuPeriodMicros"),
+                "cpuQuotaCores" to containerCpuQuota(snapshot),
                 "cpuUsageMicros" to (snapshot["runtimeEnvironment"] as? Map<*, *>)?.get("cpuUsageMicros"),
                 "cpuThrottledMicros" to (snapshot["runtimeEnvironment"] as? Map<*, *>)?.get("cpuThrottledMicros"),
                 "cpuThrottleEvents" to (snapshot["runtimeEnvironment"] as? Map<*, *>)?.get("cpuThrottleEvents"),
@@ -580,6 +582,20 @@ internal class SystemReportCollector {
 
     private fun memoryPoolPressureCount(snapshot: Map<String, Any?>): Int =
         memoryPoolRatios(snapshot).count { it >= MEMORY_POOL_PRESSURE_THRESHOLD }
+
+    private fun containerMemoryRatio(snapshot: Map<String, Any?>): Double? {
+        val environment = snapshot["runtimeEnvironment"] as? Map<*, *> ?: return null
+        val current = (environment["memoryCurrentBytes"] as? Number)?.toDouble() ?: return null
+        val limit = (environment["memoryLimitBytes"] as? Number)?.toDouble() ?: return null
+        return limit.takeIf { it > 0.0 }?.let { current / it }
+    }
+
+    private fun containerCpuQuota(snapshot: Map<String, Any?>): Double? {
+        val environment = snapshot["runtimeEnvironment"] as? Map<*, *> ?: return null
+        val quota = (environment["cpuQuotaMicros"] as? Number)?.toDouble() ?: return null
+        val period = (environment["cpuPeriodMicros"] as? Number)?.toDouble() ?: return null
+        return period.takeIf { it > 0.0 }?.let { quota / it }
+    }
 
     private fun dominantGcCollector(snapshot: Map<String, Any?>): Map<*, *>? =
         ((snapshot["memory"] as? Map<*, *>)?.get("garbageCollectors") as? Collection<*>)
