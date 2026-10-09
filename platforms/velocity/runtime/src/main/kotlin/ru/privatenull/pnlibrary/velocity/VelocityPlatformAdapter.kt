@@ -240,6 +240,7 @@ internal class VelocityPlatformAdapter(
                 "players" to server.playerCount,
                 "missingRequiredDependencies" to dependencyHealthCount(details),
                 "highLatencyPlayers" to playerPings.count { it >= HIGH_PING_THRESHOLD },
+                "duplicatePluginIds" to ((details["pluginSummary"] as? Map<*, *>)?.get("duplicateIds") as? Collection<*>)?.size,
             ),
         )
         details["coverage"] = linkedMapOf(
@@ -267,6 +268,10 @@ internal class VelocityPlatformAdapter(
         val signals = mutableListOf<Map<String, Any?>>()
         if (dependencyHealthCount(details) > 0) {
             signals += linkedMapOf("code" to "missingRequiredDependencies", "severity" to "critical")
+        }
+        val duplicateIds = ((details["pluginSummary"] as? Map<*, *>)?.get("duplicateIds") as? Collection<*>)
+        if (!duplicateIds.isNullOrEmpty()) {
+            signals += linkedMapOf("code" to "duplicatePluginIds", "severity" to "warning", "count" to duplicateIds.size)
         }
         val summary = details["serverSummary"] as? Map<*, *>
         if ((summary?.get("emptyServerCount") as? Number)?.toInt()?.let { it > 0 } == true) {

@@ -233,6 +233,7 @@ internal class BungeePlatformAdapter(
                 "players" to plugin.proxy.onlineCount,
                 "missingRequiredDependencies" to dependencyHealthCount(details),
                 "highLatencyPlayers" to playerPings.count { it >= HIGH_PING_THRESHOLD },
+                "duplicatePluginNames" to ((details["pluginSummary"] as? Map<*, *>)?.get("duplicateNames") as? Collection<*>)?.size,
             ),
         )
         details["coverage"] = linkedMapOf(
@@ -260,6 +261,10 @@ internal class BungeePlatformAdapter(
         val signals = mutableListOf<Map<String, Any?>>()
         if (dependencyHealthCount(details) > 0) {
             signals += linkedMapOf("code" to "missingRequiredDependencies", "severity" to "critical")
+        }
+        val duplicateNames = ((details["pluginSummary"] as? Map<*, *>)?.get("duplicateNames") as? Collection<*>)
+        if (!duplicateNames.isNullOrEmpty()) {
+            signals += linkedMapOf("code" to "duplicatePluginNames", "severity" to "warning", "count" to duplicateNames.size)
         }
         val summary = details["serverSummary"] as? Map<*, *>
         if ((summary?.get("emptyServerCount") as? Number)?.toInt()?.let { it > 0 } == true) {

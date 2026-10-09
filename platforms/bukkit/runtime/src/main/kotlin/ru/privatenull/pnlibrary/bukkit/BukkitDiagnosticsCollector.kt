@@ -114,28 +114,33 @@ internal class BukkitDiagnosticsCollector {
         val registrationConflicts = registrationConflictDetails(server)
         val dependencyGraph = dependencyGraphDetails(server)
 
-        val signals = buildList {
+        val signals = mutableListOf<Map<String, Any?>>()
+        run {
             val oneMinuteTps = (tps?.get("1m") as? String)?.toDoubleOrNull()
             if (oneMinuteTps != null && oneMinuteTps < LOW_TPS_THRESHOLD) {
-                add(linkedMapOf("code" to "lowTps", "severity" to "elevated", "value" to oneMinuteTps))
+                signals += linkedMapOf("code" to "lowTps", "severity" to "elevated", "value" to oneMinuteTps)
             }
             if ((dependencies?.get("pluginsWithMissingRequired") as? Number)?.toInt()?.let { it > 0 } == true) {
-                add(linkedMapOf("code" to "missingRequiredDependencies", "severity" to "critical"))
+                signals += linkedMapOf("code" to "missingRequiredDependencies", "severity" to "critical")
             }
             if ((commands?.get("missingDeclared") as? Collection<*>)?.isNotEmpty() == true) {
-                add(linkedMapOf("code" to "missingCommands", "severity" to "warning"))
+                signals += linkedMapOf("code" to "missingCommands", "severity" to "warning")
             }
             if ((services?.get("multipleProviders") as? Collection<*>)?.isNotEmpty() == true) {
-                add(linkedMapOf("code" to "multipleServiceProviders", "severity" to "warning"))
+                signals += linkedMapOf("code" to "multipleServiceProviders", "severity" to "warning")
             }
             if ((events?.get("registeredCount") as? Number)?.toInt() == 0 && plugins.isNotEmpty()) {
-                add(linkedMapOf("code" to "noEventListeners", "severity" to "info"))
+                signals += linkedMapOf("code" to "noEventListeners", "severity" to "info")
             }
             if ((scheduler?.get("longDelayTaskCount") as? Number)?.toInt()?.let { it > 0 } == true) {
-                add(linkedMapOf("code" to "longDelayTasks", "severity" to "info"))
+                signals += linkedMapOf("code" to "longDelayTasks", "severity" to "info")
             }
             if ((dependencyGraph["cycles"] as? Collection<*>)?.isNotEmpty() == true) {
-                add(linkedMapOf("code" to "dependencyCycles", "severity" to "critical"))
+                signals += linkedMapOf("code" to "dependencyCycles", "severity" to "critical")
+            }
+            if ((this["pluginSummary"] as? Map<*, *>)?.get("duplicateNames") is Collection<*> &&
+                ((this["pluginSummary"] as? Map<*, *>)?.get("duplicateNames") as Collection<*>).isNotEmpty()) {
+                signals += linkedMapOf("code" to "duplicatePluginNames", "severity" to "warning")
             }
         }
 
@@ -175,6 +180,7 @@ internal class BukkitDiagnosticsCollector {
                 "eventListeners" to events?.get("registeredCount"),
                 "dependencyCycles" to (dependencyGraph["cycles"] as? Collection<*>)?.size,
                 "orphanedOptionalDependencies" to (dependencyGraph["orphanedOptionalDependencies"] as? Collection<*>)?.size,
+                "duplicatePluginNames" to ((this["pluginSummary"] as? Map<*, *>)?.get("duplicateNames") as? Collection<*>)?.size,
             ),
             "registrations" to registrationConflicts,
             "dependencies" to dependencyGraph,
