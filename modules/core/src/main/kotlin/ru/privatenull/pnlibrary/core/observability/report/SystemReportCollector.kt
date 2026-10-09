@@ -347,6 +347,10 @@ internal class SystemReportCollector {
                 "waitingThreads" to threadStateCount(snapshot, "WAITING"),
                 "timedWaitingThreads" to threadStateCount(snapshot, "TIMED_WAITING"),
                 "loadAverage" to snapshot["loadAverage"],
+                "processRss" to (snapshot["processStatus"] as? Map<*, *>)?.get("VmRSS"),
+                "processPeakRss" to (snapshot["processStatus"] as? Map<*, *>)?.get("VmPeak"),
+                "voluntaryContextSwitches" to (snapshot["processStatus"] as? Map<*, *>)?.get("voluntary_ctxt_switches"),
+                "nonVoluntaryContextSwitches" to (snapshot["processStatus"] as? Map<*, *>)?.get("nonvoluntary_ctxt_switches"),
             ),
             "runtimeDistribution" to linkedMapOf(
                 "uptimeSeconds" to java?.get("uptimeSeconds"),
