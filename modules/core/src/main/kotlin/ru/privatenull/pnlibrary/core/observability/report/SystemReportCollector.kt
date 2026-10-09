@@ -251,6 +251,8 @@ internal class SystemReportCollector {
             addPressureSignal(this, "processCpu", health?.get("processCpuPressure"))
             addPressureSignal(this, "systemCpu", health?.get("systemCpuPressure"))
             addPressureSignal(this, "disk", health?.get("diskPressure"))
+            addPressureSignal(this, "physicalMemory", health?.get("physicalMemoryPressure"))
+            addPressureSignal(this, "swap", health?.get("swapPressure"))
             if ((threads?.get("deadlockedCount") as? Number)?.toInt()?.let { it > 0 } == true) {
                 add(linkedMapOf("code" to "deadlock", "severity" to "critical"))
             }
@@ -589,6 +591,16 @@ internal class SystemReportCollector {
         val heapRatio = heap.max.takeIf { it > 0L }?.let { heap.used.toDouble() / it }
         val processCpu = readDouble(operatingSystem, "getProcessCpuLoad")
         val systemCpu = readDouble(operatingSystem, "getCpuLoad")
+        val totalPhysical = readLong(operatingSystem, "getTotalMemorySize")
+        val freePhysical = readLong(operatingSystem, "getFreeMemorySize")
+        val physicalUsedRatio = if (totalPhysical != null && freePhysical != null && totalPhysical > 0L) {
+            ((totalPhysical - freePhysical).coerceAtLeast(0L)).toDouble() / totalPhysical
+        } else null
+        val totalSwap = readLong(operatingSystem, "getTotalSwapSpaceSize")
+        val freeSwap = readLong(operatingSystem, "getFreeSwapSpaceSize")
+        val swapUsedRatio = if (totalSwap != null && freeSwap != null && totalSwap > 0L) {
+            ((totalSwap - freeSwap).coerceAtLeast(0L)).toDouble() / totalSwap
+        } else null
         val disks = File.listRoots().orEmpty()
         val diskRatios = disks.mapNotNull { root ->
             root.totalSpace.takeIf { it > 0L }?.let {
@@ -599,10 +611,14 @@ internal class SystemReportCollector {
             "heapUsedRatio" to heapRatio,
             "processCpuLoad" to processCpu,
             "systemCpuLoad" to systemCpu,
+            "physicalMemoryUsedRatio" to physicalUsedRatio,
+            "swapUsedRatio" to swapUsedRatio,
             "highestDiskUsedRatio" to diskRatios.maxOrNull(),
             "heapPressure" to pressure(heapRatio),
             "processCpuPressure" to pressure(processCpu),
             "systemCpuPressure" to pressure(systemCpu),
+            "physicalMemoryPressure" to pressure(physicalUsedRatio),
+            "swapPressure" to pressure(swapUsedRatio),
             "diskPressure" to pressure(diskRatios.maxOrNull()),
         )
     }

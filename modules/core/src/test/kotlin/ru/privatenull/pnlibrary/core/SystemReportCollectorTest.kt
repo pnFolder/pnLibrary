@@ -77,6 +77,10 @@ class SystemReportCollectorTest {
         assertTrue(report["processStatus"] is Map<*, *>)
         assertTrue(report["processLimits"] is Map<*, *>)
         assertTrue(report["processScheduling"] is Map<*, *>)
+        val health = report["health"] as? Map<*, *>
+            ?: error("health section is missing")
+        assertTrue(health.containsKey("physicalMemoryPressure"))
+        assertTrue(health.containsKey("swapPressure"))
         assertTrue(report["capabilities"] is Map<*, *>)
         assertTrue((analytics["capabilities"] as? Map<*, *>)?.containsKey("threadCpuTimeSupported") == true)
         assertTrue((analytics["resources"] as? Map<*, *>)?.containsKey("maxOpenFiles") == true)
