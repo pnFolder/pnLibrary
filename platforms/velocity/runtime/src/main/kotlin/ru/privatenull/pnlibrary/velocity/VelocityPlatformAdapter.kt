@@ -213,6 +213,22 @@ internal class VelocityPlatformAdapter(
         } else {
             details["players"] = "redacted"
         }
+        details["coverage"] = linkedMapOf(
+            "sections" to listOf(
+                "platform",
+                "plugins",
+                "pluginDependencies",
+                "pluginArtifacts",
+                "pluginSummary",
+                "servers",
+                "serverSummary",
+                "playerSummary",
+                "players",
+            ),
+            "pluginCount" to server.pluginManager.plugins.size,
+            "backendCount" to server.allServers.size,
+            "onlinePlayerCount" to server.playerCount,
+        )
         return details
     }
 

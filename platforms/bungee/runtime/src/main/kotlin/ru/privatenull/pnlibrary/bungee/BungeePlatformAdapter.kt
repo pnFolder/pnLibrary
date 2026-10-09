@@ -206,6 +206,22 @@ internal class BungeePlatformAdapter(
         } else {
             details["players"] = "redacted"
         }
+        details["coverage"] = linkedMapOf(
+            "sections" to listOf(
+                "platform",
+                "plugins",
+                "pluginDependencies",
+                "pluginArtifacts",
+                "pluginSummary",
+                "servers",
+                "serverSummary",
+                "playerSummary",
+                "players",
+            ),
+            "pluginCount" to plugin.proxy.pluginManager.plugins.size,
+            "backendCount" to plugin.proxy.servers.size,
+            "onlinePlayerCount" to plugin.proxy.onlineCount,
+        )
         return details
     }
 
