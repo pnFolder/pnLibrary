@@ -65,6 +65,7 @@ internal class SystemReportCollector {
             "availableProcessors" to osMx.availableProcessors,
             "systemLoadAverage" to osMx.systemLoadAverage,
             "cpu" to collectCpuDetails(osMx),
+            "fileDescriptors" to collectFileDescriptorDetails(osMx),
         )
 
         // ── Memory ───────────────────────────────────────────────────────────
@@ -217,6 +218,13 @@ internal class SystemReportCollector {
     private fun readLong(target: Any, method: String): Long? = runCatching {
         target.javaClass.getMethod(method).invoke(target) as? Long
     }.getOrNull()?.takeIf { it >= 0L }
+
+    private fun collectFileDescriptorDetails(osMx: Any): Map<String, Long> {
+        val result = linkedMapOf<String, Long>()
+        readLong(osMx, "getOpenFileDescriptorCount")?.let { result["open"] = it }
+        readLong(osMx, "getMaxFileDescriptorCount")?.let { result["max"] = it }
+        return result
+    }
 
     private fun collectNetworkInterfaces(): List<Map<String, Any?>> {
         val result = mutableListOf<Map<String, Any?>>()
