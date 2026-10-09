@@ -251,6 +251,12 @@ internal class BungeePlatformAdapter(
                 "emptyBackends" to backendPlayerCounts.count { it.value == 0 },
                 "backendLoadMax" to backendPlayerCounts.values.maxOrNull(),
                 "backendLoadMin" to backendPlayerCounts.values.minOrNull(),
+                "backendLoadBuckets" to linkedMapOf(
+                    "empty" to backendPlayerCounts.values.count { it == 0 },
+                    "1to10" to backendPlayerCounts.values.count { it in 1..10 },
+                    "11to50" to backendPlayerCounts.values.count { it in 11..50 },
+                    "51OrMore" to backendPlayerCounts.values.count { it >= 51 },
+                ),
                 "registeredPlugins" to plugin.proxy.pluginManager.plugins.size,
             ),
             "counts" to linkedMapOf(
