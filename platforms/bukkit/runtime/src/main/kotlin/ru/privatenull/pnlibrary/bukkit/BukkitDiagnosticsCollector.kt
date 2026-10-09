@@ -67,7 +67,9 @@ internal class BukkitDiagnosticsCollector {
                 "completedUtc" to Instant.now().toString(),
                 "durationMs" to durationMs,
                 "warningCount" to collectionWarnings.values.sum(),
-                "status" to if (collectionWarnings.isEmpty()) "healthy" else "attention",
+                "signalCount" to ((this["analytics"] as? Map<*, *>)?.get("signals") as? Collection<*>)?.size,
+                "status" to ((this["analytics"] as? Map<*, *>)?.get("status") ?:
+                    if (collectionWarnings.isEmpty()) "healthy" else "attention"),
             )
             collectionHistory.addLast(sample)
             while (collectionHistory.size > 32) collectionHistory.removeFirst()
@@ -75,6 +77,7 @@ internal class BukkitDiagnosticsCollector {
                 "sampleCount" to collectionHistory.size,
                 "successfulSamples" to collectionHistory.count { it["status"] == "healthy" },
                 "attentionSamples" to collectionHistory.count { it["status"] == "attention" },
+                "byStatus" to collectionHistory.groupingBy { it["status"].toString() }.eachCount(),
                 "lastDurationMs" to durationMs,
                 "averageDurationMs" to collectionHistory.mapNotNull { (it["durationMs"] as? Number)?.toLong() }
                     .average().takeIf { collectionHistory.isNotEmpty() },

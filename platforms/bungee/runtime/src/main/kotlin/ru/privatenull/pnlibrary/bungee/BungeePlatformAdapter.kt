@@ -336,11 +336,18 @@ internal class BungeePlatformAdapter(
             this["backendCount"] = plugin.proxy.servers.size
             this["onlinePlayerCount"] = plugin.proxy.onlineCount
         }
-        val sample = linkedMapOf<String, Any?>("completedUtc" to java.time.Instant.now().toString(), "durationMs" to durationMs, "status" to "healthy")
+        val analytics = details["analytics"] as? Map<*, *>
+        val sample = linkedMapOf<String, Any?>(
+            "completedUtc" to java.time.Instant.now().toString(),
+            "durationMs" to durationMs,
+            "signalCount" to (analytics?.get("signals") as? Collection<*>)?.size,
+            "status" to (analytics?.get("status") ?: "healthy"),
+        )
         collectionHistory.addLast(sample)
         while (collectionHistory.size > 32) collectionHistory.removeFirst()
         details["collectionAnalytics"] = linkedMapOf(
             "sampleCount" to collectionHistory.size,
+            "byStatus" to collectionHistory.groupingBy { it["status"].toString() }.eachCount(),
             "lastDurationMs" to durationMs,
             "averageDurationMs" to collectionHistory.map { (it["durationMs"] as Number).toLong() }.average(),
             "maxDurationMs" to collectionHistory.maxOf { (it["durationMs"] as Number).toLong() },
