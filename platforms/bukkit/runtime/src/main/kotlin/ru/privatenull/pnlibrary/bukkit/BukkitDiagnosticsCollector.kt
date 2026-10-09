@@ -19,12 +19,14 @@ import java.util.Properties
  * diagnostic snapshot cannot safely enter every region synchronously.
  */
 internal class BukkitDiagnosticsCollector {
+    private val collectionWarnings = linkedMapOf<String, Int>()
     /**
      * Creates one immutable-style diagnostic snapshot.
      *
      * @param includeSensitive whether player names, UUIDs, and locations may be included
      */
     fun collect(includeSensitive: Boolean): Map<String, Any?> {
+        collectionWarnings.clear()
         val startedAt = Instant.now()
         val started = TimeSource.Monotonic.markNow()
         val server = Bukkit.getServer()
@@ -56,6 +58,7 @@ internal class BukkitDiagnosticsCollector {
                 "durationMs",
                 started.elapsedNow().inWholeMilliseconds,
             )
+            this["collectionWarnings"] = collectionWarnings.toSortedMap()
         }
     }
 
@@ -116,6 +119,13 @@ internal class BukkitDiagnosticsCollector {
 
         val signals = mutableListOf<Map<String, Any?>>()
         run {
+            if (collectionWarnings.isNotEmpty()) {
+                signals += linkedMapOf(
+                    "code" to "collectionWarnings",
+                    "severity" to "info",
+                    "count" to collectionWarnings.values.sum(),
+                )
+            }
             val oneMinuteTps = (tps?.get("1m") as? String)?.toDoubleOrNull()
             if (oneMinuteTps != null && oneMinuteTps < LOW_TPS_THRESHOLD) {
                 signals += linkedMapOf("code" to "lowTps", "severity" to "elevated", "value" to oneMinuteTps)
@@ -193,6 +203,7 @@ internal class BukkitDiagnosticsCollector {
                 "duplicatePluginNames" to ((this["pluginSummary"] as? Map<*, *>)?.get("duplicateNames") as? Collection<*>)?.size,
                 "commandAliasConflicts" to (registrationConflicts["commandAliasConflicts"] as? Map<*, *>)?.size,
                 "permissionConflicts" to (registrationConflicts["permissionConflicts"] as? Map<*, *>)?.size,
+                "collectionWarnings" to collectionWarnings.values.sum(),
             ),
             "registrations" to registrationConflicts,
             "dependencies" to dependencyGraph,
@@ -901,14 +912,23 @@ internal class BukkitDiagnosticsCollector {
 
     private fun <T> reflectionOrNull(operation: () -> T): T? = try {
         operation()
-    } catch (_: ReflectiveOperationException) {
+    } catch (error: ReflectiveOperationException) {
+        recordCollectionWarning(error)
         null
-    } catch (_: SecurityException) {
+    } catch (error: SecurityException) {
+        recordCollectionWarning(error)
         null
-    } catch (_: LinkageError) {
+    } catch (error: LinkageError) {
+        recordCollectionWarning(error)
         null
-    } catch (_: ClassCastException) {
+    } catch (error: ClassCastException) {
+        recordCollectionWarning(error)
         null
+    }
+
+    private fun recordCollectionWarning(error: Throwable) {
+        val key = error.javaClass.simpleName.ifBlank { "Unknown" }
+        collectionWarnings[key] = (collectionWarnings[key] ?: 0) + 1
     }
 
     private fun formatTps(value: Double): String = String.format(Locale.ROOT, "%.2f", value)
