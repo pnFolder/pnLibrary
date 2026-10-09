@@ -80,6 +80,7 @@ internal class SystemReportCollector {
         )
         data["runtimeEnvironment"] = collectRuntimeEnvironment()
         data["processIo"] = collectProcessIo()
+        data["loadAverage"] = collectLoadAverage()
 
         // ── Memory ───────────────────────────────────────────────────────────
         val heap = memoryMx.heapMemoryUsage
@@ -254,6 +255,7 @@ internal class SystemReportCollector {
                 "cpuThrottleEvents" to (snapshot["runtimeEnvironment"] as? Map<*, *>)?.get("cpuThrottleEvents"),
             ),
             "processIo" to snapshot["processIo"],
+            "loadAverage" to snapshot["loadAverage"],
             "hostDistribution" to linkedMapOf(
                 "availableProcessors" to os?.get("availableProcessors"),
                 "systemLoadAverage" to os?.get("systemLoadAverage"),
@@ -632,6 +634,20 @@ internal class SystemReportCollector {
             val value = line.substring(separator + 1).trim().split(' ').firstOrNull()?.toLongOrNull()
             value?.let { key to it }
         }.toMap()
+    }.getOrDefault(emptyMap())
+
+    private fun collectLoadAverage(): Map<String, Any?> = runCatching {
+        val values = File("/proc/loadavg").takeIf(File::isFile)?.readText()?.trim()
+            ?.split(Regex("\\s+")) ?: return@runCatching emptyMap()
+        val runnable = values.getOrNull(3)?.substringBefore('/')?.toIntOrNull()
+        val processes = values.getOrNull(3)?.substringAfter('/')?.toIntOrNull()
+        linkedMapOf(
+            "oneMinute" to values.getOrNull(0)?.toDoubleOrNull(),
+            "fiveMinutes" to values.getOrNull(1)?.toDoubleOrNull(),
+            "fifteenMinutes" to values.getOrNull(2)?.toDoubleOrNull(),
+            "runnableProcesses" to runnable,
+            "totalProcesses" to processes,
+        )
     }.getOrDefault(emptyMap())
 
     private fun readCgroupLong(path: String, tokenIndex: Int? = null): Long? = runCatching {
