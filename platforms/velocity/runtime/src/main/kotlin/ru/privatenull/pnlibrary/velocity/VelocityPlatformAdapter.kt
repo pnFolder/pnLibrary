@@ -311,6 +311,7 @@ internal class VelocityPlatformAdapter(
                 "byServer" to (details["playerSummary"] as? Map<*, *>)?.get("playersByServer"),
                 "pingBuckets" to ((details["playerSummary"] as? Map<*, *>)?.get("pingMs") as? Map<*, *>)?.get("buckets"),
             ),
+            "pluginDistribution" to pluginDistribution(details["pluginHealth"]),
         )
         details["coverage"] = linkedMapOf(
             "sections" to listOf(
@@ -322,6 +323,7 @@ internal class VelocityPlatformAdapter(
                 "pluginArtifacts",
                 "pluginSummary",
                 "pluginHealth",
+                "analytics.pluginDistribution",
                 "servers",
                 "serverSummary",
                 "playerSummary",
@@ -391,6 +393,15 @@ internal class VelocityPlatformAdapter(
         (details["dependencyHealth"] as? Collection<*>)
             ?.count { (it as? Map<*, *>)?.get("healthy") == false }
             ?: 0
+
+    private fun pluginDistribution(value: Any?): Map<String, Any?> {
+        val plugins = (value as? Collection<*>)?.filterIsInstance<Map<*, *>>().orEmpty()
+        return linkedMapOf(
+            "byStatus" to plugins.groupingBy { it["status"].toString() }.eachCount(),
+            "missingRequiredDependencies" to plugins.sumOf { (it["missingRequired"] as? Collection<*>)?.size ?: 0 },
+            "optionalDependencyTotals" to plugins.sumOf { (it["optionalDependencies"] as? Number)?.toInt() ?: 0 },
+        )
+    }
 
     override fun remotePolicyContext(
         owner: Any,

@@ -112,6 +112,7 @@ internal class BukkitDiagnosticsCollector {
                 "players",
                 "plugins",
                 "pluginSummary",
+                "analytics.pluginDistribution",
                 "dependencyHealth",
                 "dependencies",
                 "registrations",
@@ -261,6 +262,15 @@ internal class BukkitDiagnosticsCollector {
             "dependencies" to dependencyGraph,
             "pluginHealth" to pluginHealth,
             "unhealthyPlugins" to unhealthyPlugins,
+            "pluginDistribution" to linkedMapOf(
+                "byStatus" to pluginHealth.groupingBy { it["status"].toString() }.eachCount(),
+                "missingRequiredDependencies" to pluginHealth.sumOf {
+                    (it["missingRequired"] as? Collection<*>)?.size ?: 0
+                },
+                "optionalDependencyTotals" to pluginHealth.sumOf {
+                    (it["optionalDependencies"] as? Number)?.toInt() ?: 0
+                },
+            ),
             "playerDistribution" to linkedMapOf(
                 "byWorld" to this["playersByWorld"],
                 "byGameMode" to this["playersByGameMode"],
