@@ -3,6 +3,8 @@ package ru.privatenull.pnlibrary.bukkit
 import org.bukkit.Bukkit
 import ru.privatenull.pnlibrary.bukkit.compat.ServerCapabilities
 import java.io.File
+import java.io.FileInputStream
+import java.security.MessageDigest
 import java.time.Instant
 import java.util.Locale
 
@@ -104,10 +106,24 @@ internal class BukkitDiagnosticsCollector {
                 pluginJar(plugin)?.let { jar ->
                     this["jarSizeBytes"] = jar.length()
                     this["lastModifiedUtc"] = Instant.ofEpochMilli(jar.lastModified()).toString()
+                    sha256(jar)?.let { hash -> this["jarSha256"] = hash }
                 }
             }
         }
     }
+
+    private fun sha256(file: File): String? = runCatching {
+        val digest = MessageDigest.getInstance("SHA-256")
+        FileInputStream(file).use { input ->
+            val buffer = ByteArray(16 * 1024)
+            while (true) {
+                val read = input.read(buffer)
+                if (read < 0) break
+                digest.update(buffer, 0, read)
+            }
+        }
+        digest.digest().joinToString("") { byte -> "%02x".format(byte) }
+    }.getOrNull()
 
     private fun MutableMap<String, Any?>.putPlaceholderApiDetails(server: org.bukkit.Server) {
         val plugin = server.pluginManager.getPlugin("PlaceholderAPI")
