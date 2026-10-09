@@ -69,6 +69,9 @@ internal class BukkitDiagnosticsCollector {
                     this["players"] = world.players.size
                     this["loadedChunks"] = world.loadedChunks.size
                     this["entities"] = world.entities.size
+                    this["entitiesByType"] = world.entities
+                        .groupingBy { it.type.name }
+                        .eachCount()
                     this["time"] = world.time
                 }
             }
