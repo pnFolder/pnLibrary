@@ -123,6 +123,17 @@ internal class SystemReportCollector {
             "contention" to threadContention(threadMx),
             "topCpuThreads" to topCpuThreads(threadMx),
         )
+        data["capabilities"] = linkedMapOf(
+            "threadCpuTimeSupported" to threadMx.isThreadCpuTimeSupported,
+            "threadCpuTimeEnabled" to threadMx.isThreadCpuTimeEnabled,
+            "threadContentionSupported" to threadMx.isThreadContentionMonitoringSupported,
+            "threadContentionEnabled" to threadMx.isThreadContentionMonitoringEnabled,
+            "threadMonitorUsageSupported" to threadMx.isObjectMonitorUsageSupported,
+            "threadSynchronizerUsageSupported" to threadMx.isSynchronizerUsageSupported,
+            "classLoadingSupported" to true,
+            "classLoadingVerbose" to classMx.isVerbose,
+            "bootClassPathSupported" to runtimeMx.isBootClassPathSupported,
+        )
 
         // ── Classes ──────────────────────────────────────────────────────────
         data["classes"] = linkedMapOf(
@@ -303,6 +314,7 @@ internal class SystemReportCollector {
             "processNetwork" to snapshot["processNetwork"],
             "processStatus" to snapshot["processStatus"],
             "processLimits" to snapshot["processLimits"],
+            "capabilities" to snapshot["capabilities"],
             "loadAverage" to snapshot["loadAverage"],
             "environmentVariables" to snapshot["environmentVariableAnalytics"],
             "hostDistribution" to linkedMapOf(
