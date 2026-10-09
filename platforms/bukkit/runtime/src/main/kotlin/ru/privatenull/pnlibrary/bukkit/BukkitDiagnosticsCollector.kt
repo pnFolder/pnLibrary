@@ -70,6 +70,16 @@ internal class BukkitDiagnosticsCollector {
                 "keepSpawnInMemory" to world.keepSpawnInMemory,
                 "allowAnimals" to world.allowAnimals,
                 "allowMonsters" to world.allowMonsters,
+                "border" to reflectionOrNull {
+                    val border = world.worldBorder
+                    linkedMapOf(
+                        "size" to border.size,
+                        "damageAmount" to border.damageAmount,
+                        "damageBuffer" to border.damageBuffer,
+                        "warningDistance" to border.warningDistance,
+                        "warningTime" to border.warningTime,
+                    )
+                },
                 "gameRules" to world.gameRules.associateWith { rule -> world.getGameRuleValue(rule) },
             ).apply {
                 if (ServerCapabilities.isFolia) {
