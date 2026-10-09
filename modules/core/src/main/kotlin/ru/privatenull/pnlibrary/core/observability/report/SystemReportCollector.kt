@@ -158,6 +158,9 @@ internal class SystemReportCollector {
                 "loadedClassCount" to (data["classes"] as? Map<*, *>)?.get("loadedCount"),
                 "readBytes" to (data["processIo"] as? Map<*, *>)?.get("read_bytes"),
                 "writeBytes" to (data["processIo"] as? Map<*, *>)?.get("write_bytes"),
+                "tcpEstablished" to (data["processNetwork"] as? Map<*, *>)?.get("tcpEstablished"),
+                "tcpListening" to (data["processNetwork"] as? Map<*, *>)?.get("tcpListening"),
+                "udpSockets" to (data["processNetwork"] as? Map<*, *>)?.get("udpSockets"),
             ),
         )
         while (collectionHistory.size > 32) collectionHistory.removeFirst()
@@ -516,6 +519,9 @@ internal class SystemReportCollector {
             "loadedClassCountDelta" to numericDelta("loadedClassCount"),
             "readBytesDelta" to numericDelta("readBytes"),
             "writeBytesDelta" to numericDelta("writeBytes"),
+            "tcpEstablishedDelta" to numericDelta("tcpEstablished"),
+            "tcpListeningDelta" to numericDelta("tcpListening"),
+            "udpSocketsDelta" to numericDelta("udpSockets"),
             "durationMsDelta" to numericDelta("durationMs"),
         ),
     )
