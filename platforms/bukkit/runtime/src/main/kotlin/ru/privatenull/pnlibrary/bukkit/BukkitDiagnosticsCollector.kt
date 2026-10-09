@@ -120,6 +120,13 @@ internal class BukkitDiagnosticsCollector {
                 "softDepends" to description.softDepend,
                 "loadBefore" to description.loadBefore,
                 "classLoader" to plugin.javaClass.classLoader?.javaClass?.name,
+                "permissions" to linkedMapOf<String, Any?>(
+                    "count" to description.permissions.size,
+                    "byDefault" to description.permissions
+                        .groupingBy { it.default.name }
+                        .eachCount(),
+                    "names" to description.permissions.map { it.name }.sorted().take(MAX_PERMISSION_NAMES),
+                ),
             ).apply {
                 if (includeSensitive) {
                     plugin.javaClass.protectionDomain?.codeSource?.location?.toString()?.let { source ->
@@ -288,6 +295,7 @@ internal class BukkitDiagnosticsCollector {
         const val TPS_WINDOW_COUNT = 3
         const val MAX_SCHEDULER_CLASSES = 128
         const val MAX_LISTENER_TYPES = 256
+        const val MAX_PERMISSION_NAMES = 256
         const val FOLIA_REGION_UNAVAILABLE = "[UNAVAILABLE: requires a region thread on Folia]"
         const val FOLIA_PLAYERS_UNAVAILABLE =
             "[UNAVAILABLE: player details require entity schedulers on Folia]"
