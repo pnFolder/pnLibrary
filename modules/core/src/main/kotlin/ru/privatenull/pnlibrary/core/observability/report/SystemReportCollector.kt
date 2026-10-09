@@ -108,6 +108,7 @@ internal class SystemReportCollector {
             "totalStartedCount" to threadMx.totalStartedThreadCount,
             "deadlockedCount" to (deadlocked?.size ?: 0),
             "deadlockedThreadIds" to (deadlocked?.toList() ?: emptyList<Long>()),
+            "deadlockedThreads" to deadlockedThreadDetails(deadlocked),
             "stateCounts" to threadStateCounts(threadMx),
             "topCpuThreads" to topCpuThreads(threadMx),
         )
@@ -522,6 +523,10 @@ internal class SystemReportCollector {
         }
         return counts
     }
+
+    private fun deadlockedThreadDetails(
+        ids: LongArray?,
+    ): List<Map<String, Any?>> = ids?.map { id -> linkedMapOf<String, Any?>("id" to id) }.orEmpty()
 
     private fun topCpuThreads(bean: java.lang.management.ThreadMXBean): List<Map<String, Any?>> {
         if (!bean.isThreadCpuTimeSupported) return emptyList()
