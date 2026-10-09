@@ -127,6 +127,7 @@ internal class BukkitDiagnosticsCollector {
                 "allowMonsters" to world.allowMonsters,
                 "autoSave" to reflectionOrNull { world.javaClass.getMethod("isAutoSave").invoke(world) },
                 "pvp" to reflectionOrNull { world.javaClass.getMethod("isPVP").invoke(world) },
+                "datapacks" to datapackDetails(world),
                 "spawn" to if (includeSensitive) {
                     world.spawnLocation.let { location ->
                         linkedMapOf(
@@ -392,6 +393,26 @@ internal class BukkitDiagnosticsCollector {
             "intervalTicks" to intervalTicks,
         )
 
+    private fun datapackDetails(world: org.bukkit.World): Map<String, Any?> {
+        val worldFolder = reflectionOrNull {
+            world.javaClass.getMethod("getWorldFolder").invoke(world) as? File
+        }
+        val folder = worldFolder?.resolve("datapacks")?.takeIf(File::isDirectory)
+        val entries = folder?.listFiles()?.filter { it.isFile || it.isDirectory }.orEmpty()
+        return linkedMapOf(
+            "folderPresent" to (folder != null),
+            "count" to entries.size,
+            "entries" to entries.sortedBy { it.name.lowercase(Locale.ROOT) }.take(MAX_DATAPACKS).map { entry ->
+                linkedMapOf(
+                    "name" to entry.name,
+                    "type" to if (entry.isDirectory) "directory" else "file",
+                    "sizeBytes" to if (entry.isFile) entry.length() else null,
+                    "lastModifiedUtc" to Instant.ofEpochMilli(entry.lastModified()).toString(),
+                )
+            },
+        )
+    }
+
     private fun MutableMap<String, Any?>.putSchedulerDetails() {
         val scheduler = Bukkit.getScheduler()
         val pending = scheduler.pendingTasks
@@ -625,6 +646,7 @@ internal class BukkitDiagnosticsCollector {
         const val MAX_COMMAND_NAMES = 256
         const val MAX_SERVER_PROPERTIES = 256
         const val MAX_LARGEST_FILES = 16
+        const val MAX_DATAPACKS = 128
         const val FOLIA_REGION_UNAVAILABLE = "[UNAVAILABLE: requires a region thread on Folia]"
         const val FOLIA_PLAYERS_UNAVAILABLE =
             "[UNAVAILABLE: player details require entity schedulers on Folia]"
