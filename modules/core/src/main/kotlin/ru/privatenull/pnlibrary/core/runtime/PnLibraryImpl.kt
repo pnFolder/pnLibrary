@@ -213,6 +213,7 @@ internal class PnLibraryImpl(
         "metrics" to metricsRegistry.diagnosticSnapshot(),
         "diagnostics" to diagnostics.diagnosticSummary(),
         "nativeLogs" to support.logSummary(),
+        "reports" to support.reportSummary(),
         "updateGraph" to linkedMapOf<String, Any?>(
             "current" to updates.currentPlan().orElse(null)?.let(::updatePlanDetails),
             "history" to updates.history().map(::updatePlanDetails),

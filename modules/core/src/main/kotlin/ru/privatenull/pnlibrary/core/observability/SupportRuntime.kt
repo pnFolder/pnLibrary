@@ -21,6 +21,8 @@ import java.nio.file.Path
 import java.util.concurrent.Executors
 import java.util.concurrent.TimeUnit
 import java.util.concurrent.atomic.AtomicBoolean
+import java.util.concurrent.atomic.AtomicLong
+import java.time.Instant
 
 /** Owns diagnostics, observation history, support reports, and their background work. */
 internal class SupportRuntime(
@@ -62,6 +64,11 @@ internal class SupportRuntime(
         runtimeDiagnostics = runtimeDiagnostics,
     )
     private val reportInProgress = AtomicBoolean(false)
+    private val reportsCreated = AtomicLong()
+    private val reportsFailed = AtomicLong()
+    @Volatile private var lastReportUtc: String? = null
+    @Volatile private var lastReportDurationMs: Long? = null
+    @Volatile private var lastReportSizeBytes: Long? = null
     private val worker = Executors.newSingleThreadScheduledExecutor { action ->
         Thread(action, "pnLibrary-support-${owner.javaClass.simpleName}").apply { isDaemon = true }
     }
@@ -89,12 +96,32 @@ internal class SupportRuntime(
         check(reportInProgress.compareAndSet(false, true)) {
             "A diagnostic report is already being generated"
         }
+        val startedAt = System.nanoTime()
         return try {
-            reports.generateAndSave(request)
+            val report = reports.generateAndSave(request)
+            reportsCreated.incrementAndGet()
+            lastReportUtc = Instant.now().toString()
+            lastReportDurationMs = (System.nanoTime() - startedAt) / 1_000_000
+            lastReportSizeBytes = runCatching { Files.size(report.localFile) }.getOrNull()
+            report
+        } catch (error: Throwable) {
+            reportsFailed.incrementAndGet()
+            lastReportDurationMs = (System.nanoTime() - startedAt) / 1_000_000
+            throw error
         } finally {
             reportInProgress.set(false)
         }
     }
+
+    fun reportSummary(): Map<String, Any?> = linkedMapOf(
+        "inProgress" to reportInProgress.get(),
+        "created" to reportsCreated.get(),
+        "failed" to reportsFailed.get(),
+        "lastCreatedUtc" to lastReportUtc,
+        "lastDurationMs" to lastReportDurationMs,
+        "lastSizeBytes" to lastReportSizeBytes,
+        "historyFileCount" to runCatching { history.files().size }.getOrDefault(0),
+    )
 
     fun recordRuntimeError(logOwner: Any, message: String, error: Throwable) {
         service.record(
