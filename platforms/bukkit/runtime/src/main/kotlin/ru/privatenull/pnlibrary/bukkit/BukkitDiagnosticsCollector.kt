@@ -227,12 +227,23 @@ internal class BukkitDiagnosticsCollector {
                 }
                 plugin.dataFolder.takeIf(File::exists)?.let { folder ->
                     val config = File(folder, "config.yml")
+                    val files = folder.walkTopDown().filter(File::isFile).toList()
                     this["dataFolder"] = linkedMapOf(
                         "exists" to true,
-                        "fileCount" to folder.walkTopDown().count(),
-                        "totalBytes" to folder.walkTopDown()
-                            .filter(File::isFile)
-                            .sumOf(File::length),
+                        "fileCount" to files.size,
+                        "totalBytes" to files.sumOf(File::length),
+                        "fileTypes" to files
+                            .groupingBy { fileExtension(it.name) }
+                            .eachCount(),
+                        "largestFiles" to files
+                            .sortedByDescending(File::length)
+                            .take(MAX_LARGEST_FILES)
+                            .map { file ->
+                                linkedMapOf(
+                                    "name" to file.relativeTo(folder).path.replace(File.separatorChar, '/'),
+                                    "sizeBytes" to file.length(),
+                                )
+                            },
                         "configPresent" to config.isFile,
                         "configSizeBytes" to config.takeIf(File::isFile)?.length(),
                         "configLastModifiedUtc" to config.takeIf(File::isFile)?.let {
@@ -337,6 +348,9 @@ internal class BukkitDiagnosticsCollector {
         key.lowercase(Locale.ROOT).contains("password") ||
             key.lowercase(Locale.ROOT).contains("token") ||
             key.lowercase(Locale.ROOT).contains("secret")
+
+    private fun fileExtension(name: String): String =
+        name.substringAfterLast('.', "[none]").lowercase(Locale.ROOT)
 
     private fun spawnSettings(limit: Int, intervalTicks: Int): Map<String, Int> =
         linkedMapOf(
@@ -552,6 +566,7 @@ internal class BukkitDiagnosticsCollector {
         const val MAX_PERMISSION_NAMES = 256
         const val MAX_COMMAND_NAMES = 256
         const val MAX_SERVER_PROPERTIES = 256
+        const val MAX_LARGEST_FILES = 16
         const val FOLIA_REGION_UNAVAILABLE = "[UNAVAILABLE: requires a region thread on Folia]"
         const val FOLIA_PLAYERS_UNAVAILABLE =
             "[UNAVAILABLE: player details require entity schedulers on Folia]"
