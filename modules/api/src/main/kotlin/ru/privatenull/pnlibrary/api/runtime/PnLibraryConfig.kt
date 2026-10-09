@@ -31,8 +31,9 @@ import java.util.regex.PatternSyntaxException
  * @property uploadKeyId operator-defined identifier written into encrypted envelopes
  * @property allowPlaintext whether an explicitly configured provider may receive an
  * unencrypted report
- * @property privacy whether player personal data is excluded from diagnostic reports;
- * when enabled, player names, UUIDs, ping values, and current server names are not collected
+ * @property privacy whether personal data is excluded from diagnostic reports;
+ * when enabled, player identity, network addresses, ping values, and current server names
+ * are not collected
  * @property configs whether registered configuration files are collected by default
  * @property logs whether buffered warning and error records are collected by default
  * @property logRecords maximum number of recent log records included in one report

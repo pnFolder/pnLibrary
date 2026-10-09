@@ -63,7 +63,10 @@ internal class SupportReportAssembler(
                 "privacy" to config.privacy,
             ),
         )
-        archive.json("system.json", system.collect(includeNetworkAddresses = encrypted))
+        archive.json(
+            "system.json",
+            system.collect(includeNetworkAddresses = encrypted && !config.privacy),
+        )
         archive.text("threads.txt", system.threadDump())
         archive.json(
             "platform.json",
