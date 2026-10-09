@@ -85,6 +85,7 @@ internal class SystemReportCollector {
         data["runtimeEnvironment"] = collectRuntimeEnvironment()
         data["processIo"] = collectProcessIo()
         data["processNetwork"] = collectProcessNetwork()
+        data["processStatus"] = collectProcessStatus()
         data["loadAverage"] = collectLoadAverage()
 
         // ── Memory ───────────────────────────────────────────────────────────
@@ -290,6 +291,7 @@ internal class SystemReportCollector {
             "modulePathAnalytics" to (java?.get("modulePathAnalytics") ?: emptyMap<String, Any>()),
             "processIo" to snapshot["processIo"],
             "processNetwork" to snapshot["processNetwork"],
+            "processStatus" to snapshot["processStatus"],
             "loadAverage" to snapshot["loadAverage"],
             "environmentVariables" to snapshot["environmentVariableAnalytics"],
             "hostDistribution" to linkedMapOf(
@@ -834,6 +836,18 @@ internal class SystemReportCollector {
             "tcpTimeWait" to tcp.count { it == "06" },
             "udpSockets" to udp,
         )
+    }.getOrDefault(emptyMap())
+
+    private fun collectProcessStatus(): Map<String, Long> = runCatching {
+        val file = File("/proc/self/status")
+        if (!file.isFile) return@runCatching emptyMap()
+        file.readLines().mapNotNull { line ->
+            val separator = line.indexOf(':')
+            if (separator <= 0) return@mapNotNull null
+            val key = line.substring(0, separator)
+            val value = line.substring(separator + 1).trim().split(' ').firstOrNull()?.toLongOrNull()
+            value?.let { key to it }
+        }.toMap()
     }.getOrDefault(emptyMap())
 
     private fun readProcSocketStates(path: String): List<String> = runCatching {

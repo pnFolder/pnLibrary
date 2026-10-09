@@ -60,6 +60,7 @@ class SystemReportCollectorTest {
         assertTrue(report["loadAverage"] is Map<*, *>)
         assertTrue(report["processNetwork"] is Map<*, *>)
         assertTrue(report["environmentVariableAnalytics"] is Map<*, *>)
+        assertTrue(report["processStatus"] is Map<*, *>)
         val threads = report["threads"] as? Map<*, *>
             ?: error("threads section is missing")
         val os = report["os"] as? Map<*, *>
