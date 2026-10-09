@@ -383,6 +383,15 @@ internal class SystemReportCollector {
                 "freeSpaceBytes" to fileSystems?.sumOf {
                     ((it as? Map<*, *>)?.get("freeSpaceBytes") as? Number)?.toLong() ?: 0L
                 },
+                "totalSpaceBytes" to fileSystems?.sumOf {
+                    ((it as? Map<*, *>)?.get("totalSpaceBytes") as? Number)?.toLong() ?: 0L
+                },
+                "usedSpaceBytes" to fileSystems?.sumOf {
+                    val filesystem = it as? Map<*, *>
+                    val total = (filesystem?.get("totalSpaceBytes") as? Number)?.toLong() ?: 0L
+                    val free = (filesystem?.get("freeSpaceBytes") as? Number)?.toLong() ?: 0L
+                    (total - free).coerceAtLeast(0L)
+                },
                 "highestDiskUsedRatio" to (snapshot["health"] as? Map<*, *>)?.get("highestDiskUsedRatio"),
                 "maxOpenFiles" to processLimit(snapshot, "maxOpenFiles", "hard"),
                 "maxProcesses" to processLimit(snapshot, "maxProcesses", "hard"),
