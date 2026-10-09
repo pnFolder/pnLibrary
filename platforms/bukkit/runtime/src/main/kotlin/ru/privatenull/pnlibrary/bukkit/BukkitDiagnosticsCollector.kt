@@ -453,6 +453,12 @@ internal class BukkitDiagnosticsCollector {
             "minimum" to pings.minOrNull(),
             "maximum" to pings.maxOrNull(),
             "average" to pings.takeIf { it.isNotEmpty() }?.average(),
+            "buckets" to linkedMapOf(
+                "under50ms" to pings.count { it < 50.0 },
+                "50to99ms" to pings.count { it in 50.0..99.0 },
+                "100to199ms" to pings.count { it in 100.0..199.0 },
+                "200msOrMore" to pings.count { it >= 200.0 },
+            ),
             "percentiles" to linkedMapOf(
                 "p50" to percentile(pings, 0.50),
                 "p95" to percentile(pings, 0.95),

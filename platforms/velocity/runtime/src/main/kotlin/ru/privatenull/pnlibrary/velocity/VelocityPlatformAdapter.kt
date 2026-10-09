@@ -224,6 +224,12 @@ internal class VelocityPlatformAdapter(
                 "min" to playerPings.minOrNull(),
                 "max" to playerPings.maxOrNull(),
                 "average" to playerPings.average().takeIf { playerPings.isNotEmpty() },
+                "buckets" to linkedMapOf(
+                    "under50ms" to playerPings.count { it < 50 },
+                    "50to99ms" to playerPings.count { it in 50..99 },
+                    "100to199ms" to playerPings.count { it in 100..199 },
+                    "200msOrMore" to playerPings.count { it >= 200 },
+                ),
                 "percentiles" to linkedMapOf(
                     "p50" to percentile(playerPings, 0.50),
                     "p95" to percentile(playerPings, 0.95),
