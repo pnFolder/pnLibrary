@@ -214,6 +214,14 @@ internal class PnLibraryImpl(
         "diagnostics" to diagnostics.diagnosticSummary(),
         "nativeLogs" to support.logSummary(),
         "reports" to support.reportSummary(),
+        "configurationDeclarations" to diagnostics.configurations("all").map { declaration ->
+            linkedMapOf<String, Any?>(
+                "plugin" to declaration.plugin,
+                "path" to declaration.configuration.path,
+                "dataDirectory" to if (config.privacy) "[redacted]"
+                else declaration.dataDirectory?.toString(),
+            )
+        },
         "updateGraph" to linkedMapOf<String, Any?>(
             "current" to updates.currentPlan().orElse(null)?.let(::updatePlanDetails),
             "history" to updates.history().map(::updatePlanDetails),

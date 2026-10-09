@@ -180,9 +180,14 @@ internal class DiagnosticsRegistry(eventLimit: Int = DEFAULT_EVENT_LIMIT) : Diag
         "registeredPlugins" to plugins.size,
         "plugins" to plugins.keys.sorted().mapNotNull { name ->
             plugins[name]?.let { state ->
+                val statuses = state.statuses.snapshot()
                 linkedMapOf<String, Any?>(
                     "plugin" to name,
-                    "statusCount" to state.statuses.snapshot().size,
+                    "statusCount" to statuses.size,
+                    "statusStates" to statuses.values
+                        .mapNotNull { it["state"]?.toString() }
+                        .groupingBy { it }
+                        .eachCount(),
                     "contributorCount" to state.contributors.size(),
                     "incidents" to state.incidents.summary(),
                 )
