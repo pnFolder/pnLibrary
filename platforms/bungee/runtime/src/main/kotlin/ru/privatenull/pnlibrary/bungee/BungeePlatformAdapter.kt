@@ -170,6 +170,7 @@ internal class BungeePlatformAdapter(
             "optionalEdges" to optionalEdges,
             "reverseDependents" to requiredEdges.groupBy({ it["to"].toString() }, { it["from"].toString() }),
             "isolatedPlugins" to installedNames.filter { id -> requiredEdges.none { it["from"] == id || it["to"] == id } },
+            "cycles" to dependencyCycles(requiredEdges),
         )
         details["pluginArtifacts"] = plugin.proxy.pluginManager.plugins.map { installedPlugin ->
             val metadata = installedPlugin.description
@@ -295,6 +296,7 @@ internal class BungeePlatformAdapter(
                 "unhealthyPlugins" to unhealthyPlugins,
                 "requiredDependencyEdges" to requiredEdges.size,
                 "optionalDependencyEdges" to optionalEdges.size,
+                "dependencyCycles" to dependencyCycles(requiredEdges).size,
             ),
             "playerDistribution" to linkedMapOf(
                 "byServer" to (details["playerSummary"] as? Map<*, *>)?.get("playersByServer"),
@@ -408,6 +410,20 @@ internal class BungeePlatformAdapter(
         val artifacts = (value as? Collection<*>)?.filterIsInstance<Map<*, *>>().orEmpty()
         val sizes = artifacts.mapNotNull { (it["sizeBytes"] as? Number)?.toLong() }
         return linkedMapOf("pluginCount" to artifacts.size, "availableArtifacts" to sizes.size, "totalJarBytes" to sizes.sum(), "largestJarBytes" to sizes.maxOrNull())
+    }
+
+    private fun dependencyCycles(edges: List<Map<String, String>>): List<List<String>> {
+        val graph = edges.groupBy({ it["from"].orEmpty() }, { it["to"].orEmpty() })
+        val cycles = linkedSetOf<List<String>>()
+        fun visit(node: String, path: List<String>) {
+            graph[node].orEmpty().forEach { next ->
+                val index = path.indexOf(next)
+                if (index >= 0) cycles += (path.subList(index, path.size) + next)
+                else if (path.size < graph.size + 1) visit(next, path + next)
+            }
+        }
+        graph.keys.forEach { visit(it, listOf(it)) }
+        return cycles.toList()
     }
 
     private fun backendDistribution(counts: Map<String, Int>, totalPlayers: Int): Map<String, Any?> {
