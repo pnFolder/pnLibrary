@@ -8,6 +8,7 @@ import java.util.jar.JarFile
 import java.security.MessageDigest
 import java.time.Instant
 import java.util.Locale
+import java.util.Properties
 
 /**
  * Collects Bukkit-specific state for pnLibrary diagnostic reports.
@@ -27,6 +28,7 @@ internal class BukkitDiagnosticsCollector {
         return linkedMapOf<String, Any?>().apply {
             putServerDetails(server)
             putServerSettings(server)
+            putServerProperties(server)
             putPerformanceDetails()
             putSchedulerDetails()
             putCommandDetails(server)
@@ -300,6 +302,36 @@ internal class BukkitDiagnosticsCollector {
         )
     }
 
+    private fun MutableMap<String, Any?>.putServerProperties(server: org.bukkit.Server) {
+        val file = reflectionOrNull {
+            server.javaClass.getMethod("getWorldContainer").invoke(server) as? File
+        }?.let { File(it, "server.properties") }?.takeIf(File::isFile)
+        val properties = file?.let { source ->
+            runCatching {
+                Properties().apply {
+                    source.inputStream().use(::load)
+                }.entries
+                    .associate { (key, value) ->
+                        key.toString() to if (isSensitiveProperty(key.toString())) "[REDACTED]" else value.toString()
+                    }
+                    .toSortedMap()
+                    .entries
+                    .take(MAX_SERVER_PROPERTIES)
+                    .associate { it.toPair() }
+            }.getOrNull()
+        }
+        this["serverProperties"] = linkedMapOf(
+            "filePresent" to (file != null),
+            "propertyCount" to (properties?.size ?: 0),
+            "values" to (properties ?: emptyMap<String, String>()),
+        )
+    }
+
+    private fun isSensitiveProperty(key: String): Boolean =
+        key.lowercase(Locale.ROOT).contains("password") ||
+            key.lowercase(Locale.ROOT).contains("token") ||
+            key.lowercase(Locale.ROOT).contains("secret")
+
     private fun spawnSettings(limit: Int, intervalTicks: Int): Map<String, Int> =
         linkedMapOf(
             "limit" to limit,
@@ -513,6 +545,7 @@ internal class BukkitDiagnosticsCollector {
         const val MAX_LISTENER_TYPES = 256
         const val MAX_PERMISSION_NAMES = 256
         const val MAX_COMMAND_NAMES = 256
+        const val MAX_SERVER_PROPERTIES = 256
         const val FOLIA_REGION_UNAVAILABLE = "[UNAVAILABLE: requires a region thread on Folia]"
         const val FOLIA_PLAYERS_UNAVAILABLE =
             "[UNAVAILABLE: player details require entity schedulers on Folia]"
