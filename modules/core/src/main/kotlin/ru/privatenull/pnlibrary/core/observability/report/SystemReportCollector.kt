@@ -167,6 +167,8 @@ internal class SystemReportCollector {
                 "udpSockets" to (data["processNetwork"] as? Map<*, *>)?.get("udpSockets"),
                 "containerMemoryCurrent" to (data["runtimeEnvironment"] as? Map<*, *>)?.get("memoryCurrentBytes"),
                 "containerCpuThrottled" to (data["runtimeEnvironment"] as? Map<*, *>)?.get("cpuThrottledMicros"),
+                "gcCollectionCount" to gcTotal(data, "collectionCount"),
+                "gcCollectionTimeMs" to gcTotal(data, "collectionTimeMs"),
             ),
         )
         while (collectionHistory.size > 32) collectionHistory.removeFirst()
@@ -532,6 +534,8 @@ internal class SystemReportCollector {
             "udpSocketsDelta" to numericDelta("udpSockets"),
             "containerMemoryCurrentDelta" to numericDelta("containerMemoryCurrent"),
             "containerCpuThrottledDelta" to numericDelta("containerCpuThrottled"),
+            "gcCollectionCountDelta" to numericDelta("gcCollectionCount"),
+            "gcCollectionTimeMsDelta" to numericDelta("gcCollectionTimeMs"),
             "durationMsDelta" to numericDelta("durationMs"),
         ),
     )
@@ -541,6 +545,11 @@ internal class SystemReportCollector {
         if (values.size < 2) return null
         return values.last() - values.first()
     }
+
+    private fun gcTotal(snapshot: Map<String, Any?>, key: String): Long =
+        ((snapshot["memory"] as? Map<*, *>)?.get("garbageCollectors") as? Collection<*>)
+            ?.sumOf { ((it as? Map<*, *>)?.get(key) as? Number)?.toLong() ?: 0L }
+            ?: 0L
 
     private fun pressure(value: Double?): String? = value?.let {
         when {
