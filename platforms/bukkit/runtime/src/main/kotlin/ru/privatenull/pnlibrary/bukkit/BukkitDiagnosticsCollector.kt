@@ -29,7 +29,7 @@ internal class BukkitDiagnosticsCollector {
             putServerSettings(server)
             putPerformanceDetails()
             putSchedulerDetails()
-            putCommandDetails()
+            putCommandDetails(server)
             putServiceDetails()
             putEventListenerDetails()
             putWorldDetails(server)
@@ -248,11 +248,11 @@ internal class BukkitDiagnosticsCollector {
         )
     }
 
-    private fun MutableMap<String, Any?>.putCommandDetails() {
+    private fun MutableMap<String, Any?>.putCommandDetails(server: org.bukkit.Server) {
         val commands = reflectionOrNull {
-            val commandMap = Bukkit.getServer().javaClass
+            val commandMap = server.javaClass
                 .getMethod("getCommandMap")
-                .invoke(Bukkit.getServer())
+                .invoke(server)
             val knownCommands = commandMap.javaClass
                 .getMethod("getKnownCommands")
                 .invoke(commandMap) as? Map<*, *>
@@ -261,9 +261,22 @@ internal class BukkitDiagnosticsCollector {
                 ?.distinct()
                 ?.sorted()
         } ?: emptyList()
+        val declared = server.pluginManager.plugins.flatMap { plugin ->
+            plugin.description.commands.keys.map { command ->
+                plugin.name to command.lowercase(Locale.ROOT)
+            }
+        }
+        val registered = commands.toSet()
         this["commands"] = linkedMapOf(
             "registeredCount" to commands.size,
             "names" to commands.take(MAX_COMMAND_NAMES),
+            "declaredCount" to declared.size,
+            "declaredByPlugin" to declared
+                .groupBy({ it.first }, { it.second }),
+            "missingDeclared" to declared
+                .filterNot { (_, command) -> command in registered }
+                .map { (plugin, command) -> "$plugin:$command" }
+                .take(MAX_COMMAND_NAMES),
         )
     }
 
