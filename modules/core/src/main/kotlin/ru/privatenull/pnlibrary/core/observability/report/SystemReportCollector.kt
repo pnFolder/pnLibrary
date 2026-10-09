@@ -170,6 +170,7 @@ internal class SystemReportCollector {
         val threadStates = threads?.get("stateCounts") as? Map<*, *>
         val topCpuThreads = threads?.get("topCpuThreads") as? Collection<*>
         val classes = snapshot["classes"] as? Map<*, *>
+        val java = snapshot["java"] as? Map<*, *>
 
         val signals = buildList {
             addPressureSignal(this, "heap", health?.get("heapPressure"))
@@ -230,6 +231,14 @@ internal class SystemReportCollector {
                     .maxByOrNull { ((it as? Map<*, *>)?.get("totalSpaceBytes") as? Number)?.toLong() ?: 0L },
                 "networkInterfacesUp" to ((snapshot["networkAnalytics"] as? Map<*, *>)?.get("upCount")),
                 "networkAddresses" to ((snapshot["networkAnalytics"] as? Map<*, *>)?.get("totalAddressCount")),
+            ),
+            "runtimeDistribution" to linkedMapOf(
+                "uptimeSeconds" to java?.get("uptimeSeconds"),
+                "classPathEntryCount" to java?.get("classPathEntryCount"),
+                "modulePathEntryCount" to java?.get("modulePathEntryCount"),
+                "bootModuleCount" to java?.get("bootModuleCount"),
+                "systemPropertyCount" to java?.get("systemPropertyCount"),
+                "environmentVariableNameCount" to (snapshot["environmentVariableNames"] as? Collection<*>)?.size,
             ),
             "distributions" to linkedMapOf(
                 "threadStates" to threadStates.orEmpty(),
