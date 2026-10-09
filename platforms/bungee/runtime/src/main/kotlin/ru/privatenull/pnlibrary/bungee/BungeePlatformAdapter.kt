@@ -29,6 +29,7 @@ import java.security.MessageDigest
 internal class BungeePlatformAdapter(
     val plugin: Plugin,
 ) : PlatformAdapter {
+    private val collectionHistory = ArrayDeque<Map<String, Any?>>()
 
     private val closed = AtomicBoolean()
     private val bound = AtomicBoolean()
@@ -315,18 +316,30 @@ internal class BungeePlatformAdapter(
                 "playerSummary",
                 "players",
                 "analytics",
+                "collectionAnalytics",
                 "playerSummary.pingPercentiles",
             ),
             "pluginCount" to plugin.proxy.pluginManager.plugins.size,
             "backendCount" to plugin.proxy.servers.size,
             "onlinePlayerCount" to plugin.proxy.onlineCount,
         )
+        val durationMs = started.elapsedNow().inWholeMilliseconds
         (details["collection"] as? MutableMap<String, Any?>)?.apply {
-            this["durationMs"] = started.elapsedNow().inWholeMilliseconds
+            this["durationMs"] = durationMs
             this["pluginCount"] = plugin.proxy.pluginManager.plugins.size
             this["backendCount"] = plugin.proxy.servers.size
             this["onlinePlayerCount"] = plugin.proxy.onlineCount
         }
+        val sample = linkedMapOf<String, Any?>("completedUtc" to java.time.Instant.now().toString(), "durationMs" to durationMs, "status" to "healthy")
+        collectionHistory.addLast(sample)
+        while (collectionHistory.size > 32) collectionHistory.removeFirst()
+        details["collectionAnalytics"] = linkedMapOf(
+            "sampleCount" to collectionHistory.size,
+            "lastDurationMs" to durationMs,
+            "averageDurationMs" to collectionHistory.map { (it["durationMs"] as Number).toLong() }.average(),
+            "maxDurationMs" to collectionHistory.maxOf { (it["durationMs"] as Number).toLong() },
+            "recent" to collectionHistory.toList(),
+        )
         return details
     }
 

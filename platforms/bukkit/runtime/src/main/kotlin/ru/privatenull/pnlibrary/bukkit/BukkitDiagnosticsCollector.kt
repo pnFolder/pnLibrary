@@ -20,6 +20,7 @@ import java.util.Properties
  */
 internal class BukkitDiagnosticsCollector {
     private val collectionWarnings = linkedMapOf<String, Int>()
+    private val collectionHistory = ArrayDeque<Map<String, Any?>>()
     /**
      * Creates one immutable-style diagnostic snapshot.
      *
@@ -59,11 +60,27 @@ internal class BukkitDiagnosticsCollector {
             putPlaceholderApiDetails(server)
             putAnalyticsDetails(server)
             putCoverageSummary()
-            (this["collection"] as? MutableMap<String, Any?>)?.set(
-                "durationMs",
-                started.elapsedNow().inWholeMilliseconds,
-            )
+            val durationMs = started.elapsedNow().inWholeMilliseconds
+            (this["collection"] as? MutableMap<String, Any?>)?.set("durationMs", durationMs)
             this["collectionWarnings"] = collectionWarnings.toSortedMap()
+            val sample = linkedMapOf<String, Any?>(
+                "completedUtc" to Instant.now().toString(),
+                "durationMs" to durationMs,
+                "warningCount" to collectionWarnings.values.sum(),
+                "status" to if (collectionWarnings.isEmpty()) "healthy" else "attention",
+            )
+            collectionHistory.addLast(sample)
+            while (collectionHistory.size > 32) collectionHistory.removeFirst()
+            this["collectionAnalytics"] = linkedMapOf(
+                "sampleCount" to collectionHistory.size,
+                "successfulSamples" to collectionHistory.count { it["status"] == "healthy" },
+                "attentionSamples" to collectionHistory.count { it["status"] == "attention" },
+                "lastDurationMs" to durationMs,
+                "averageDurationMs" to collectionHistory.mapNotNull { (it["durationMs"] as? Number)?.toLong() }
+                    .average().takeIf { collectionHistory.isNotEmpty() },
+                "maxDurationMs" to collectionHistory.mapNotNull { (it["durationMs"] as? Number)?.toLong() }.maxOrNull(),
+                "recent" to collectionHistory.toList(),
+            )
         }
     }
 
@@ -100,6 +117,7 @@ internal class BukkitDiagnosticsCollector {
                 "registrations",
                 "placeholderApi",
                 "analytics",
+                "collectionAnalytics",
             ),
             "worldCount" to worlds.size,
             "pluginCount" to plugins.size,
