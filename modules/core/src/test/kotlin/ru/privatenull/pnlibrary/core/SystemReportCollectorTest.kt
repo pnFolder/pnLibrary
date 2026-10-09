@@ -31,6 +31,8 @@ class SystemReportCollectorTest {
         assertTrue((analytics["resources"] as? Map<*, *>)?.containsKey("voluntaryContextSwitches") == true)
         assertTrue((analytics["resources"] as? Map<*, *>)?.containsKey("blockedTimeMs") == true)
         assertTrue((analytics["resources"] as? Map<*, *>)?.containsKey("freeSpaceBytes") == true)
+        assertTrue((analytics["resources"] as? Map<*, *>)?.containsKey("processVirtualMemory") == true)
+        assertTrue((analytics["resources"] as? Map<*, *>)?.containsKey("processNativeThreadCount") == true)
         val host = analytics["hostDistribution"] as? Map<*, *>
             ?: error("hostDistribution section is missing")
         assertTrue(host.containsKey("availableProcessors"))
