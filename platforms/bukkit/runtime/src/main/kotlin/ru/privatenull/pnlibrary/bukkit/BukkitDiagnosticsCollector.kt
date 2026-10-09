@@ -171,8 +171,24 @@ internal class BukkitDiagnosticsCollector {
             "whitelistEnabled" to server.hasWhitelist(),
             "whitelistedPlayerCount" to server.whitelistedPlayers.size,
             "spawnRadius" to server.spawnRadius,
+            "spawnSettings" to linkedMapOf(
+                "animals" to spawnSettings(
+                    server.getAnimalSpawnLimit(),
+                    server.getTicksPerAnimalSpawns(),
+                ),
+                "monsters" to spawnSettings(
+                    server.getMonsterSpawnLimit(),
+                    server.getTicksPerMonsterSpawns(),
+                ),
+            ),
         )
     }
+
+    private fun spawnSettings(limit: Int, intervalTicks: Int): Map<String, Int> =
+        linkedMapOf(
+            "limit" to limit,
+            "intervalTicks" to intervalTicks,
+        )
 
     private fun MutableMap<String, Any?>.putSchedulerDetails() {
         val scheduler = Bukkit.getScheduler()
