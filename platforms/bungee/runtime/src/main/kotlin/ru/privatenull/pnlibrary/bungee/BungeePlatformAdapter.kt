@@ -223,6 +223,8 @@ internal class BungeePlatformAdapter(
                 "onlinePlayers" to plugin.proxy.onlineCount,
                 "backendServers" to plugin.proxy.servers.size,
                 "emptyBackends" to backendPlayerCounts.count { it.value == 0 },
+                "backendLoadMax" to backendPlayerCounts.values.maxOrNull(),
+                "backendLoadMin" to backendPlayerCounts.values.minOrNull(),
                 "registeredPlugins" to plugin.proxy.pluginManager.plugins.size,
             ),
             "counts" to linkedMapOf(
@@ -230,6 +232,7 @@ internal class BungeePlatformAdapter(
                 "backends" to plugin.proxy.servers.size,
                 "players" to plugin.proxy.onlineCount,
                 "missingRequiredDependencies" to dependencyHealthCount(details),
+                "highLatencyPlayers" to playerPings.count { it >= HIGH_PING_THRESHOLD },
             ),
         )
         details["coverage"] = linkedMapOf(
@@ -265,6 +268,11 @@ internal class BungeePlatformAdapter(
         val ping = ((details["playerSummary"] as? Map<*, *>)?.get("pingMs") as? Map<*, *>)?.get("average") as? Number
         if (ping != null && ping.toDouble() >= HIGH_PING_THRESHOLD) {
             signals += linkedMapOf("code" to "highPlayerLatency", "severity" to "warning", "averageMs" to ping)
+        }
+        val percentiles = ((details["playerSummary"] as? Map<*, *>)?.get("pingMs") as? Map<*, *>)?.get("percentiles") as? Map<*, *>
+        val p95 = (percentiles?.get("p95") as? Number)?.toDouble()
+        if (p95 != null && p95 >= HIGH_PING_THRESHOLD * 1.5) {
+            signals += linkedMapOf("code" to "highLatencyTail", "severity" to "elevated", "p95Ms" to p95)
         }
         return signals
     }
