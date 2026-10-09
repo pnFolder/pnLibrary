@@ -118,6 +118,7 @@ internal class SystemReportCollector {
         } else {
             data["networkInterfaces"] = "[REDACTED: available in encrypted report only]"
         }
+        data["networkSummary"] = collectNetworkSummary()
 
         return data
     }
@@ -239,6 +240,17 @@ internal class SystemReportCollector {
         } catch (_: Exception) { }
         return result
     }
+
+    private fun collectNetworkSummary(): Map<String, Int> = runCatching {
+        val interfaces = NetworkInterface.getNetworkInterfaces()?.toList().orEmpty()
+        linkedMapOf(
+            "total" to interfaces.size,
+            "up" to interfaces.count { it.isUp },
+            "loopback" to interfaces.count { it.isLoopback },
+            "nonLoopback" to interfaces.count { !it.isLoopback },
+            "addressCount" to interfaces.sumOf { nif -> nif.inetAddresses.toList().size },
+        )
+    }.getOrDefault(emptyMap())
 
     private companion object {
         const val MAX_JVM_ARGUMENTS = 128
