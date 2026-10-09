@@ -16,5 +16,11 @@ class SystemReportCollectorTest {
         assertTrue(analytics["signals"] is List<*>)
         assertTrue(analytics["counts"] is Map<*, *>)
         assertTrue(analytics.containsKey("generatedUtc"))
+
+        val runtimeDistribution = analytics["runtimeDistribution"] as? Map<*, *>
+            ?: error("runtimeDistribution section is missing")
+        assertTrue(runtimeDistribution.containsKey("uptimeSeconds"))
+        assertTrue(runtimeDistribution.containsKey("classPathEntryCount"))
+        assertTrue(runtimeDistribution.containsKey("systemPropertyCount"))
     }
 }
