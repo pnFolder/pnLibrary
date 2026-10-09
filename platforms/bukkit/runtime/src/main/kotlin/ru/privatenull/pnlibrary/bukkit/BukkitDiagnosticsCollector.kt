@@ -395,6 +395,9 @@ internal class BukkitDiagnosticsCollector {
         }
         this["serverProperties"] = linkedMapOf(
             "filePresent" to (file != null),
+            "sizeBytes" to file?.length(),
+            "lastModifiedUtc" to file?.let { Instant.ofEpochMilli(it.lastModified()).toString() },
+            "sha256" to file?.let(::sha256),
             "propertyCount" to (properties?.size ?: 0),
             "values" to (properties ?: emptyMap<String, String>()),
         )
