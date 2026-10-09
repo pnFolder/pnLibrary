@@ -63,6 +63,12 @@ internal class BukkitDiagnosticsCollector {
                 "name" to world.name,
                 "environment" to world.environment.name,
                 "difficulty" to world.difficulty.name,
+                "worldType" to world.worldType.name,
+                "hasStorm" to world.hasStorm(),
+                "isThundering" to world.isThundering,
+                "keepSpawnInMemory" to world.keepSpawnInMemory,
+                "allowAnimals" to world.allowAnimals,
+                "allowMonsters" to world.allowMonsters,
             ).apply {
                 if (ServerCapabilities.isFolia) {
                     this["regionData"] = FOLIA_REGION_UNAVAILABLE
