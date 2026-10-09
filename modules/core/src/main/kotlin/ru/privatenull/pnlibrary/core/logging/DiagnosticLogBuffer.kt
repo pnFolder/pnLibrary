@@ -133,6 +133,18 @@ internal class DiagnosticLogBuffer(private val capacity: Int = 2_000) {
         )
     }
 
+    @Synchronized
+    fun summary(): Map<String, Any?> = linkedMapOf<String, Any?>(
+        "incidentCount" to incidents.size,
+        "occurrenceCount" to incidents.values.sumOf { it.count },
+        "omittedOccurrenceCount" to incidents.values.sumOf { it.omittedOccurrences },
+        "byLevel" to incidents.values.groupingBy { it.level.name }.eachCount(),
+        "byPlugin" to incidents.values.groupingBy { it.plugin }.eachCount(),
+        "exceptionTypes" to incidents.values.mapNotNull { it.exceptionType }.groupingBy { it }.eachCount(),
+        "oldestUtc" to incidents.values.firstOrNull()?.firstSeenUtc,
+        "newestUtc" to incidents.values.maxByOrNull { it.lastSeenUtc }?.lastSeenUtc,
+    )
+
     private fun notifyChanged() {
         changeListener?.let { listener -> runCatching { listener(snapshot()) } }
     }

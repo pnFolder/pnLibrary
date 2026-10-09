@@ -36,6 +36,8 @@ internal class SupportRuntime(
     val service = UnifiedObservabilityService(diagnostics, observations)
     val logs = DiagnosticLogBuffer(config.logRecords.coerceIn(10, 2_000))
 
+    fun logSummary(): Map<String, Any?> = logs.summary()
+
     private val delivery = SupportDeliveryFactory(config)
     private val uploadLedger = UploadLedger(dataFolder.resolve("upload-ledger.json"))
     private val encryption = delivery.encryptionCodec()
