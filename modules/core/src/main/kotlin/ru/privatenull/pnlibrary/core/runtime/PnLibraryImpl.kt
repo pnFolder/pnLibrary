@@ -153,6 +153,11 @@ internal class PnLibraryImpl(
         val platformCoverage = platform.diagnosticDetails(includeSensitive = false)["coverage"]
         val taskFailures = taskSnapshots.count { it.lastFailure != null }
         val failedUpdates = updateSnapshots.count { it.snapshot.state.name.equals("FAILED", ignoreCase = true) }
+        val availableReleases = updateSnapshots.flatMap { it.snapshot.availableReleases }
+        val latestReleaseByChannel = availableReleases
+            .filter { it.publishedAt != null }
+            .groupBy { it.channel.name }
+            .mapValues { (_, releases) -> releases.maxByOrNull { it.publishedAt!! }!! }
         val diagnosticSummary = diagnostics.diagnosticSummary()
         val history = diagnostics.historyAnalytics()
         return linkedMapOf(
@@ -251,6 +256,13 @@ internal class PnLibraryImpl(
                 .flatMap { it.snapshot.availableReleases }
                 .groupingBy { it.channel.name }
                 .eachCount(),
+            "latestPublishedAtByChannel" to latestReleaseByChannel.mapValues { (_, release) -> release.publishedAt!!.toString() },
+            "releaseAgeDaysByChannel" to latestReleaseByChannel.mapValues { (_, release) ->
+                java.time.Duration.between(release.publishedAt, java.time.Instant.now()).toDays().coerceAtLeast(0)
+            },
+            "staleChannelCount" to latestReleaseByChannel.count { (_, release) ->
+                java.time.Duration.between(release.publishedAt, java.time.Instant.now()).toDays() >= 30
+            },
             "messages" to updateSnapshots
                 .mapNotNull { it.snapshot.message?.take(256) }
                 .groupingBy { it }
