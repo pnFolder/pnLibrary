@@ -63,14 +63,18 @@ internal class BukkitDiagnosticsCollector {
         this["worlds"] = server.worlds.map { world ->
             linkedMapOf<String, Any?>(
                 "name" to world.name,
+                "uid" to world.uid.toString(),
                 "environment" to world.environment.name,
                 "difficulty" to world.difficulty.name,
                 "worldType" to world.worldType.name,
+                "generator" to world.generator?.javaClass?.name,
                 "hasStorm" to world.hasStorm(),
                 "isThundering" to world.isThundering,
                 "keepSpawnInMemory" to world.keepSpawnInMemory,
                 "allowAnimals" to world.allowAnimals,
                 "allowMonsters" to world.allowMonsters,
+                "autoSave" to reflectionOrNull { world.javaClass.getMethod("isAutoSave").invoke(world) },
+                "pvp" to reflectionOrNull { world.javaClass.getMethod("isPVP").invoke(world) },
                 "border" to reflectionOrNull {
                     val border = world.worldBorder
                     linkedMapOf(
