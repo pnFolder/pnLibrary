@@ -150,6 +150,8 @@ internal class SystemReportCollector {
         val pools = memory?.get("pools") as? Collection<*>
         val fileSystems = snapshot["fileSystems"] as? Collection<*>
         val threadStates = threads?.get("stateCounts") as? Map<*, *>
+        val topCpuThreads = threads?.get("topCpuThreads") as? Collection<*>
+        val classes = snapshot["classes"] as? Map<*, *>
 
         val signals = buildList {
             addPressureSignal(this, "heap", health?.get("heapPressure"))
@@ -225,6 +227,7 @@ internal class SystemReportCollector {
                         "pressure" to pressureBucket(data["timeRatio"]),
                     )
                 },
+                "topCpuThreads" to topCpuThreads.orEmpty().take(20),
                 "memoryPools" to pools.orEmpty()
                     .mapNotNull { pool ->
                         val data = pool as? Map<*, *> ?: return@mapNotNull null
@@ -245,6 +248,8 @@ internal class SystemReportCollector {
                 "gcCollectors" to gc?.size,
                 "fileSystems" to (snapshot["fileSystems"] as? Collection<*>)?.size,
                 "threadStates" to threads?.get("stateCounts"),
+                "topCpuThreads" to topCpuThreads?.size,
+                "classLoadEvents" to classes?.get("totalLoadedCount"),
             ),
         )
     }
