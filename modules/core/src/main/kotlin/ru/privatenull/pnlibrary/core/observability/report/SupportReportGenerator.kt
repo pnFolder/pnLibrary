@@ -46,7 +46,7 @@ internal class SupportReportGenerator(
     diagnosticLogs: () -> List<Map<String, Any?>> = { emptyList() },
     diagnosticHistory: () -> List<Pair<String, ByteArray>> = { emptyList() },
     observabilitySnapshot: () -> ObservabilityReportSnapshot = {
-        ObservabilityReportSnapshot(ByteArray(0), ByteArray(0), emptyMap())
+        ObservabilityReportSnapshot(ByteArray(0), ByteArray(0), emptyMap(), emptyList())
     },
     runtimeDiagnostics: () -> Map<String, Any?> = { emptyMap() },
 ) {

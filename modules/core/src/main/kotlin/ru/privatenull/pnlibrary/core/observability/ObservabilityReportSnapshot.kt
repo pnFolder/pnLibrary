@@ -8,6 +8,7 @@ internal data class ObservabilityReportSnapshot(
     val journal: ByteArray,
     val attachmentManifest: ByteArray,
     val attachments: Map<String, ByteArray>,
+    val statuses: List<Map<String, Any?>> = emptyList(),
 )
 
 internal fun ObservabilityRuntime.reportSnapshot(): ObservabilityReportSnapshot {
@@ -26,6 +27,16 @@ internal fun ObservabilityRuntime.reportSnapshot(): ObservabilityReportSnapshot 
         attachmentManifest = manifest,
         attachments = storedAttachments.associate { attachment ->
             attachment.id to attachmentBytes(attachment)
+        },
+        statuses = statuses().map { status ->
+            linkedMapOf<String, Any?>(
+                "plugin" to status.plugin,
+                "component" to status.component,
+                "state" to status.state,
+                "detail" to status.detail,
+                "data" to status.data,
+                "updatedAt" to status.updatedAt,
+            )
         },
     )
 }
