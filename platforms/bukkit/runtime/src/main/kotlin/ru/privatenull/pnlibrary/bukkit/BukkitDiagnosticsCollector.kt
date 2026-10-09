@@ -119,6 +119,7 @@ internal class BukkitDiagnosticsCollector {
                 "analytics.pluginDistribution",
                 "analytics.artifactDistribution",
                 "analytics.schedulerDistribution",
+                "analytics.worldDistribution",
                 "dependencyHealth",
                 "dependencies",
                 "registrations",
@@ -291,6 +292,23 @@ internal class BukkitDiagnosticsCollector {
                 "repeatingTasks" to scheduler?.get("repeatingTaskCount"),
                 "longDelayTasks" to scheduler?.get("longDelayTaskCount"),
             ),
+            "worldDistribution" to worlds.mapNotNull { world ->
+                val data = world as? Map<*, *> ?: return@mapNotNull null
+                val entities = (data["entities"] as? Number)?.toLong() ?: 0L
+                val chunks = (data["loadedChunks"] as? Number)?.toLong() ?: 0L
+                linkedMapOf(
+                    "name" to data["name"],
+                    "players" to ((this["playersByWorld"] as? Map<*, *>)?.get(data["name"])),
+                    "loadedChunks" to chunks,
+                    "entities" to entities,
+                    "storageBytes" to ((storage.firstOrNull { it["world"] == data["name"] }?.get("totalBytes")) as? Number)?.toLong(),
+                    "load" to when {
+                        entities >= 2_000L || chunks >= 2_000L -> "high"
+                        entities >= 500L || chunks >= 500L -> "elevated"
+                        else -> "normal"
+                    },
+                )
+            },
             "playerDistribution" to linkedMapOf(
                 "byWorld" to this["playersByWorld"],
                 "byGameMode" to this["playersByGameMode"],
