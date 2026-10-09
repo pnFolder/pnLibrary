@@ -80,6 +80,7 @@ internal class SystemReportCollector {
         )
         data["runtimeEnvironment"] = collectRuntimeEnvironment()
         data["processIo"] = collectProcessIo()
+        data["processNetwork"] = collectProcessNetwork()
         data["loadAverage"] = collectLoadAverage()
 
         // ── Memory ───────────────────────────────────────────────────────────
@@ -257,6 +258,7 @@ internal class SystemReportCollector {
                 "cpuThrottleEvents" to (snapshot["runtimeEnvironment"] as? Map<*, *>)?.get("cpuThrottleEvents"),
             ),
             "processIo" to snapshot["processIo"],
+            "processNetwork" to snapshot["processNetwork"],
             "loadAverage" to snapshot["loadAverage"],
             "hostDistribution" to linkedMapOf(
                 "availableProcessors" to os?.get("availableProcessors"),
@@ -653,6 +655,26 @@ internal class SystemReportCollector {
             "totalProcesses" to processes,
         )
     }.getOrDefault(emptyMap())
+
+    private fun collectProcessNetwork(): Map<String, Any?> = runCatching {
+        val tcp = listOf("/proc/self/net/tcp", "/proc/self/net/tcp6")
+            .flatMap { path -> readProcSocketStates(path) }
+        val udp = listOf("/proc/self/net/udp", "/proc/self/net/udp6")
+            .sumOf { path -> readProcSocketStates(path).size }
+        linkedMapOf(
+            "tcpSockets" to tcp.size,
+            "tcpEstablished" to tcp.count { it == "01" },
+            "tcpListening" to tcp.count { it == "0A" },
+            "tcpTimeWait" to tcp.count { it == "06" },
+            "udpSockets" to udp,
+        )
+    }.getOrDefault(emptyMap())
+
+    private fun readProcSocketStates(path: String): List<String> = runCatching {
+        File(path).takeIf(File::isFile)?.readLines()?.drop(1)?.mapNotNull { line ->
+            line.trim().split(Regex("\\s+")).getOrNull(3)
+        }.orEmpty()
+    }.getOrDefault(emptyList())
 
     private fun readCgroupLong(path: String, tokenIndex: Int? = null): Long? = runCatching {
         val value = File(path).takeIf(File::isFile)?.readText()?.trim() ?: return@runCatching null

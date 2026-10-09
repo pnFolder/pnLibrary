@@ -46,6 +46,7 @@ class SystemReportCollectorTest {
         assertTrue(network.containsKey("ipv6AddressCount"))
         assertTrue(report["processIo"] is Map<*, *>)
         assertTrue(report["loadAverage"] is Map<*, *>)
+        assertTrue(report["processNetwork"] is Map<*, *>)
         val threads = report["threads"] as? Map<*, *>
             ?: error("threads section is missing")
         assertTrue(threads["deadlockedThreads"] is List<*>)
