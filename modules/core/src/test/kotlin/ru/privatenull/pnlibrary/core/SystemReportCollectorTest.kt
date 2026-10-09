@@ -67,6 +67,7 @@ class SystemReportCollectorTest {
         val java = report["java"] as? Map<*, *>
             ?: error("java section is missing")
         assertTrue((java["classpathAnalytics"] as? Map<*, *>)?.containsKey("duplicateNameCount") == true)
+        assertTrue((java["classpathAnalytics"] as? Map<*, *>)?.containsKey("duplicateNames") == true)
         assertTrue((java["modulePathAnalytics"] as? Map<*, *>)?.containsKey("entryCount") == true)
         assertTrue((java["argumentAnalytics"] as? Map<*, *>)?.containsKey("garbageCollectorOptions") == true)
         assertTrue(threads["deadlockedThreads"] is List<*>)

@@ -727,10 +727,16 @@ internal class SystemReportCollector {
             ?.filter(String::isNotBlank)
             .orEmpty()
         val names = entries.map { File(it).name }.filter(String::isNotBlank)
+        val duplicateNames = names.groupingBy { it }.eachCount()
+            .filterValues { it > 1 }
+            .keys
+            .sorted()
+            .take(64)
         return linkedMapOf(
             "entryCount" to entries.size,
             "uniqueNameCount" to names.distinct().size,
-            "duplicateNameCount" to names.groupingBy { it }.eachCount().count { it.value > 1 },
+            "duplicateNameCount" to duplicateNames.size,
+            "duplicateNames" to duplicateNames,
             "extensionCounts" to names.map { name -> name.substringAfterLast('.', "none").lowercase() }
                 .groupingBy { it }
                 .eachCount()
