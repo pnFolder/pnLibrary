@@ -102,6 +102,9 @@ internal class BukkitDiagnosticsCollector {
                 "enabled" to plugin.isEnabled,
                 "mainClass" to description.main,
                 "authors" to description.authors,
+                "depends" to description.depend,
+                "softDepends" to description.softDepend,
+                "loadBefore" to description.loadBefore,
             ).apply {
                 pluginJar(plugin)?.let { jar ->
                     this["jarSizeBytes"] = jar.length()
