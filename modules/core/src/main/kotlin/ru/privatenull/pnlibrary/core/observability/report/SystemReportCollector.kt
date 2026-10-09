@@ -87,6 +87,7 @@ internal class SystemReportCollector {
         data["processNetwork"] = collectProcessNetwork()
         data["processStatus"] = collectProcessStatus()
         data["processLimits"] = collectProcessLimits()
+        data["processScheduling"] = collectProcessScheduling()
         data["loadAverage"] = collectLoadAverage()
 
         // ── Memory ───────────────────────────────────────────────────────────
@@ -317,6 +318,7 @@ internal class SystemReportCollector {
             "processNetwork" to snapshot["processNetwork"],
             "processStatus" to snapshot["processStatus"],
             "processLimits" to snapshot["processLimits"],
+            "processScheduling" to snapshot["processScheduling"],
             "capabilities" to snapshot["capabilities"],
             "loadAverage" to snapshot["loadAverage"],
             "environmentVariables" to snapshot["environmentVariableAnalytics"],
@@ -384,6 +386,9 @@ internal class SystemReportCollector {
                 "highestDiskUsedRatio" to (snapshot["health"] as? Map<*, *>)?.get("highestDiskUsedRatio"),
                 "maxOpenFiles" to processLimit(snapshot, "maxOpenFiles", "hard"),
                 "maxProcesses" to processLimit(snapshot, "maxProcesses", "hard"),
+                "processPriority" to (snapshot["processScheduling"] as? Map<*, *>)?.get("priority"),
+                "processNice" to (snapshot["processScheduling"] as? Map<*, *>)?.get("nice"),
+                "processCpuNumber" to (snapshot["processScheduling"] as? Map<*, *>)?.get("processor"),
             ),
             "runtimeDistribution" to linkedMapOf(
                 "uptimeSeconds" to java?.get("uptimeSeconds"),
@@ -967,6 +972,21 @@ internal class SystemReportCollector {
 
     private fun processLimit(snapshot: Map<String, Any?>, name: String, bound: String): Any? =
         ((snapshot["processLimits"] as? Map<*, *>)?.get(name) as? Map<*, *>)?.get(bound)
+
+    private fun collectProcessScheduling(): Map<String, Any?> = runCatching {
+        val line = File("/proc/self/stat").takeIf(File::isFile)?.readText()?.trim()
+            ?: return@runCatching emptyMap()
+        val fields = line.substringAfterLast(") ").split(' ')
+        linkedMapOf(
+            "state" to fields.getOrNull(0),
+            "userCpuTicks" to fields.getOrNull(11)?.toLongOrNull(),
+            "systemCpuTicks" to fields.getOrNull(12)?.toLongOrNull(),
+            "priority" to fields.getOrNull(15)?.toLongOrNull(),
+            "nice" to fields.getOrNull(16)?.toLongOrNull(),
+            "threadCount" to fields.getOrNull(17)?.toLongOrNull(),
+            "processor" to fields.getOrNull(36)?.toLongOrNull(),
+        )
+    }.getOrDefault(emptyMap())
 
     private fun readProcSocketStates(path: String): List<String> = runCatching {
         File(path).takeIf(File::isFile)?.readLines()?.drop(1)?.mapNotNull { line ->

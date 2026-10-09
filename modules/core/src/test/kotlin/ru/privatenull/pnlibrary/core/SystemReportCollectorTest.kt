@@ -33,6 +33,7 @@ class SystemReportCollectorTest {
         assertTrue((analytics["resources"] as? Map<*, *>)?.containsKey("freeSpaceBytes") == true)
         assertTrue((analytics["resources"] as? Map<*, *>)?.containsKey("processVirtualMemory") == true)
         assertTrue((analytics["resources"] as? Map<*, *>)?.containsKey("processNativeThreadCount") == true)
+        assertTrue((analytics["resources"] as? Map<*, *>)?.containsKey("processPriority") == true)
         val host = analytics["hostDistribution"] as? Map<*, *>
             ?: error("hostDistribution section is missing")
         assertTrue(host.containsKey("availableProcessors"))
@@ -72,6 +73,7 @@ class SystemReportCollectorTest {
         assertTrue(report["environmentVariableAnalytics"] is Map<*, *>)
         assertTrue(report["processStatus"] is Map<*, *>)
         assertTrue(report["processLimits"] is Map<*, *>)
+        assertTrue(report["processScheduling"] is Map<*, *>)
         assertTrue(report["capabilities"] is Map<*, *>)
         assertTrue((analytics["capabilities"] as? Map<*, *>)?.containsKey("threadCpuTimeSupported") == true)
         assertTrue((analytics["resources"] as? Map<*, *>)?.containsKey("maxOpenFiles") == true)
