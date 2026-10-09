@@ -173,6 +173,20 @@ internal class BungeePlatformAdapter(
                 .eachCount(),
             "loadOrder" to plugin.proxy.pluginManager.plugins.map { it.description.name },
         )
+        details["pluginHealth"] = plugin.proxy.pluginManager.plugins.map { installedPlugin ->
+            val metadata = installedPlugin.description
+            val health = (details["dependencyHealth"] as? Collection<*>)
+                ?.filterIsInstance<Map<*, *>>()
+                ?.firstOrNull { it["plugin"] == metadata.name }
+            val missing = health?.get("missingRequired") as? Collection<*>
+            linkedMapOf<String, Any?>(
+                "id" to metadata.name,
+                "version" to metadata.version,
+                "status" to if (missing.isNullOrEmpty()) "healthy" else "missingDependencies",
+                "missingRequired" to missing.orEmpty(),
+                "optionalDependencies" to metadata.softDepends.size,
+            )
+        }
         details["servers"] = plugin.proxy.servers.map { (name, info) ->
             val address = info.address
             linkedMapOf<String, Any?>(
@@ -245,6 +259,7 @@ internal class BungeePlatformAdapter(
                 "pluginDependencies",
                 "pluginArtifacts",
                 "pluginSummary",
+                "pluginHealth",
                 "servers",
                 "serverSummary",
                 "playerSummary",

@@ -178,6 +178,20 @@ internal class VelocityPlatformAdapter(
                 .sorted(),
             "loadOrder" to server.pluginManager.plugins.map { it.description.id },
         )
+        details["pluginHealth"] = server.pluginManager.plugins.map { container ->
+            val metadata = container.description
+            val health = (details["dependencyHealth"] as? Collection<*>)
+                ?.filterIsInstance<Map<*, *>>()
+                ?.firstOrNull { it["plugin"] == metadata.id }
+            val missing = health?.get("missingRequired") as? Collection<*>
+            linkedMapOf<String, Any?>(
+                "id" to metadata.id,
+                "version" to metadata.version.orElse("unknown"),
+                "status" to if (missing.isNullOrEmpty()) "healthy" else "missingDependencies",
+                "missingRequired" to missing.orEmpty(),
+                "optionalDependencies" to metadata.dependencies.count { it.isOptional },
+            )
+        }
         details["servers"] = server.allServers.map { connection ->
             val address = connection.serverInfo.address
             linkedMapOf<String, Any?>(
@@ -252,6 +266,7 @@ internal class VelocityPlatformAdapter(
                 "pluginDependencies",
                 "pluginArtifacts",
                 "pluginSummary",
+                "pluginHealth",
                 "servers",
                 "serverSummary",
                 "playerSummary",
