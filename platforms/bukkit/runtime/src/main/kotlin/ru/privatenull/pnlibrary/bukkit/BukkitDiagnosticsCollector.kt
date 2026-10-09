@@ -127,6 +127,16 @@ internal class BukkitDiagnosticsCollector {
                         .eachCount(),
                     "names" to description.permissions.map { it.name }.sorted().take(MAX_PERMISSION_NAMES),
                 ),
+                "commands" to linkedMapOf<String, Any?>(
+                    "count" to description.commands.size,
+                    "names" to description.commands.keys.sorted().take(MAX_COMMAND_NAMES),
+                    "aliases" to description.commands.values
+                        .flatMap { it["aliases"] as? Iterable<*> ?: emptyList<Any>() }
+                        .mapNotNull { it?.toString() }
+                        .distinct()
+                        .sorted()
+                        .take(MAX_COMMAND_NAMES),
+                ),
             ).apply {
                 if (includeSensitive) {
                     plugin.javaClass.protectionDomain?.codeSource?.location?.toString()?.let { source ->
@@ -296,6 +306,7 @@ internal class BukkitDiagnosticsCollector {
         const val MAX_SCHEDULER_CLASSES = 128
         const val MAX_LISTENER_TYPES = 256
         const val MAX_PERMISSION_NAMES = 256
+        const val MAX_COMMAND_NAMES = 256
         const val FOLIA_REGION_UNAVAILABLE = "[UNAVAILABLE: requires a region thread on Folia]"
         const val FOLIA_PLAYERS_UNAVAILABLE =
             "[UNAVAILABLE: player details require entity schedulers on Folia]"
