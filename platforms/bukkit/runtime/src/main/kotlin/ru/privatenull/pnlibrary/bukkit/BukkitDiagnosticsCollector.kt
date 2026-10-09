@@ -52,11 +52,23 @@ internal class BukkitDiagnosticsCollector {
     }
 
     private fun MutableMap<String, Any?>.putPerformanceDetails() {
-        val tps = ServerCapabilities.getTPS()?.takeIf { it.size >= TPS_WINDOW_COUNT } ?: return
-        this["tps"] = linkedMapOf(
-            "1m" to formatTps(tps[0]),
-            "5m" to formatTps(tps[1]),
-            "15m" to formatTps(tps[2]),
+        ServerCapabilities.getTPS()?.takeIf { it.size >= TPS_WINDOW_COUNT }?.let { tps ->
+            this["tps"] = linkedMapOf(
+                "1m" to formatTps(tps[0]),
+                "5m" to formatTps(tps[1]),
+                "15m" to formatTps(tps[2]),
+            )
+        }
+        this["tickTiming"] = linkedMapOf(
+            "currentTick" to reflectionOrNull {
+                Bukkit.getServer().javaClass.getMethod("getCurrentTick").invoke(Bukkit.getServer())
+            },
+            "averageTickTimeNanos" to reflectionOrNull {
+                Bukkit.getServer().javaClass.getMethod("getAverageTickTime").invoke(Bukkit.getServer())
+            },
+            "currentTickTimeNanos" to reflectionOrNull {
+                Bukkit.getServer().javaClass.getMethod("getCurrentTickTime").invoke(Bukkit.getServer())
+            },
         )
     }
 
