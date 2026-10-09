@@ -175,6 +175,8 @@ internal class SystemReportCollector {
                 "containerCpuThrottled" to (data["runtimeEnvironment"] as? Map<*, *>)?.get("cpuThrottledMicros"),
                 "gcCollectionCount" to gcTotal(data, "collectionCount"),
                 "gcCollectionTimeMs" to gcTotal(data, "collectionTimeMs"),
+                "dominantGcCollector" to dominantGcCollector(data)?.get("name"),
+                "dominantGcTimeMs" to dominantGcCollector(data)?.get("collectionTimeMs"),
                 "threadCount" to (data["threads"] as? Map<*, *>)?.get("count"),
                 "daemonThreadCount" to (data["threads"] as? Map<*, *>)?.get("daemonCount"),
                 "peakThreadCount" to (data["threads"] as? Map<*, *>)?.get("peakCount"),
@@ -578,6 +580,11 @@ internal class SystemReportCollector {
 
     private fun memoryPoolPressureCount(snapshot: Map<String, Any?>): Int =
         memoryPoolRatios(snapshot).count { it >= MEMORY_POOL_PRESSURE_THRESHOLD }
+
+    private fun dominantGcCollector(snapshot: Map<String, Any?>): Map<*, *>? =
+        ((snapshot["memory"] as? Map<*, *>)?.get("garbageCollectors") as? Collection<*>)
+            ?.filterIsInstance<Map<*, *>>()
+            ?.maxByOrNull { (it["collectionTimeMs"] as? Number)?.toLong() ?: 0L }
 
     private fun pressure(value: Double?): String? = value?.let {
         when {
