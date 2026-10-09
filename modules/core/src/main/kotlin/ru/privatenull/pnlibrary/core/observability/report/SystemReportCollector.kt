@@ -148,6 +148,7 @@ internal class SystemReportCollector {
         val gc = memory?.get("garbageCollectors") as? Collection<*>
         val pools = memory?.get("pools") as? Collection<*>
         val fileSystems = snapshot["fileSystems"] as? Collection<*>
+        val threadStates = threads?.get("stateCounts") as? Map<*, *>
 
         val signals = buildList {
             addPressureSignal(this, "heap", health?.get("heapPressure"))
@@ -196,6 +197,20 @@ internal class SystemReportCollector {
                 },
                 "largestFileSystem" to fileSystems.orEmpty()
                     .maxByOrNull { ((it as? Map<*, *>)?.get("totalSpaceBytes") as? Number)?.toLong() ?: 0L },
+            ),
+            "distributions" to linkedMapOf(
+                "threadStates" to threadStates.orEmpty(),
+                "memoryPools" to pools.orEmpty()
+                    .mapNotNull { pool ->
+                        val data = pool as? Map<*, *> ?: return@mapNotNull null
+                        linkedMapOf(
+                            "name" to data["name"],
+                            "usedRatio" to data["usedRatio"],
+                            "pressure" to ((data["usedRatio"] as? Number)?.toDouble()
+                                ?.let { if (it >= MEMORY_POOL_PRESSURE_THRESHOLD) "elevated" else "normal" }),
+                        )
+                    }
+                    .sortedByDescending { (it["usedRatio"] as? Number)?.toDouble() ?: 0.0 },
             ),
             "counts" to linkedMapOf(
                 "threads" to threads?.get("count"),
