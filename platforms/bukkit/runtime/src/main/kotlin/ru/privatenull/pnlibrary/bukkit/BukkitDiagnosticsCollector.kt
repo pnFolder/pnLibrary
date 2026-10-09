@@ -453,6 +453,11 @@ internal class BukkitDiagnosticsCollector {
     private fun MutableMap<String, Any?>.putEventListenerDetails() {
         val listeners = org.bukkit.event.HandlerList.getHandlerLists()
             .flatMap { it.registeredListeners.toList() }
+        val handlers = listeners.flatMap { registered ->
+            registered.listener.javaClass.methods.mapNotNull { method ->
+                method.getAnnotation(org.bukkit.event.EventHandler::class.java)?.let { registered.plugin.name to method }
+            }
+        }
         this["eventListeners"] = linkedMapOf(
             "handlerListCount" to org.bukkit.event.HandlerList.getHandlerLists().size,
             "registeredCount" to listeners.size,
@@ -462,6 +467,11 @@ internal class BukkitDiagnosticsCollector {
                 .distinct()
                 .sorted()
                 .take(MAX_LISTENER_TYPES),
+            "handlerMethodCount" to handlers.size,
+            "handlersByPlugin" to handlers.groupingBy { it.first }.eachCount(),
+            "eventTypes" to handlers.mapNotNull { (_, method) ->
+                method.parameterTypes.firstOrNull()?.name
+            }.distinct().sorted().take(MAX_EVENT_TYPES),
         )
     }
 
@@ -563,6 +573,7 @@ internal class BukkitDiagnosticsCollector {
         const val TPS_WINDOW_COUNT = 3
         const val MAX_SCHEDULER_CLASSES = 128
         const val MAX_LISTENER_TYPES = 256
+        const val MAX_EVENT_TYPES = 256
         const val MAX_PERMISSION_NAMES = 256
         const val MAX_COMMAND_NAMES = 256
         const val MAX_SERVER_PROPERTIES = 256
