@@ -444,9 +444,15 @@ internal class BukkitDiagnosticsCollector {
         }
         this["serviceSummary"] = linkedMapOf(
             "typeCount" to services.size,
-            "registrationCount" to services.sumOf {
-                Bukkit.getServicesManager().getRegistrations(it).size
-            },
+            "registrationCount" to services.sumOf { Bukkit.getServicesManager().getRegistrations(it).size },
+            "byPriority" to services
+                .flatMap { Bukkit.getServicesManager().getRegistrations(it) }
+                .groupingBy { it.priority.name }
+                .eachCount(),
+            "multipleProviders" to services
+                .filter { Bukkit.getServicesManager().getRegistrations(it).size > 1 }
+                .map { it.name }
+                .sorted(),
         )
     }
 
