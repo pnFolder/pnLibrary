@@ -130,6 +130,7 @@ internal class SystemReportCollector {
             data["networkInterfaces"] = "[REDACTED: available in encrypted report only]"
         }
         data["networkSummary"] = collectNetworkSummary()
+        data["networkAnalytics"] = collectNetworkAnalytics()
         data["analytics"] = collectAnalytics(data)
 
         return data
@@ -197,6 +198,8 @@ internal class SystemReportCollector {
                 },
                 "largestFileSystem" to fileSystems.orEmpty()
                     .maxByOrNull { ((it as? Map<*, *>)?.get("totalSpaceBytes") as? Number)?.toLong() ?: 0L },
+                "networkInterfacesUp" to ((snapshot["networkAnalytics"] as? Map<*, *>)?.get("upCount")),
+                "networkAddresses" to ((snapshot["networkAnalytics"] as? Map<*, *>)?.get("totalAddressCount")),
             ),
             "distributions" to linkedMapOf(
                 "threadStates" to threadStates.orEmpty(),
@@ -447,6 +450,27 @@ internal class SystemReportCollector {
             "loopback" to interfaces.count { it.isLoopback },
             "nonLoopback" to interfaces.count { !it.isLoopback },
             "addressCount" to interfaces.sumOf { nif -> nif.inetAddresses.toList().size },
+        )
+    }.getOrDefault(emptyMap())
+
+    private fun collectNetworkAnalytics(): Map<String, Any?> = runCatching {
+        val interfaces = NetworkInterface.getNetworkInterfaces()?.toList().orEmpty()
+        val details = interfaces.map { nif ->
+            linkedMapOf<String, Any?>(
+                "name" to nif.name,
+                "up" to nif.isUp,
+                "loopback" to nif.isLoopback,
+                "virtual" to nif.isVirtual,
+                "mtu" to runCatching { nif.mtu }.getOrNull(),
+                "addressCount" to nif.inetAddresses.toList().size,
+            )
+        }
+        linkedMapOf(
+            "interfaces" to details,
+            "upCount" to details.count { it["up"] == true },
+            "downCount" to details.count { it["up"] == false },
+            "virtualCount" to details.count { it["virtual"] == true },
+            "totalAddressCount" to details.sumOf { (it["addressCount"] as? Number)?.toInt() ?: 0 },
         )
     }.getOrDefault(emptyMap())
 
