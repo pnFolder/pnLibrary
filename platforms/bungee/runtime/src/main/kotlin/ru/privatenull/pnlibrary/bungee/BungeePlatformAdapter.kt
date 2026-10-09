@@ -147,9 +147,11 @@ internal class BungeePlatformAdapter(
             )
         }
         details["servers"] = plugin.proxy.servers.map { (name, info) ->
+            val address = info.address
             linkedMapOf<String, Any?>(
                 "name" to name,
-                "address" to info.address.toString(),
+                "host" to if (includeSensitive) address.hostString else "[REDACTED]",
+                "port" to address.port,
                 "players" to info.players.size,
             )
         }
