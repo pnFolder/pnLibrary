@@ -171,6 +171,26 @@ internal class BukkitDiagnosticsCollector {
                 ?.get("dataFolder") as? Map<*, *>
         }
         val storage = worlds.mapNotNull { (it as? Map<*, *>)?.get("storage") as? Map<*, *> }
+        val pluginDetails = (this["plugins"] as? Collection<*>)?.filterIsInstance<Map<*, *>>().orEmpty()
+        val pluginHealth = plugins.map { plugin ->
+            val detail = pluginDetails.firstOrNull { it["name"] == plugin.name }
+            val missingRequired = plugin.description.depend.filterNot(plugins.map { it.name }::contains)
+            val dataFolder = detail?.get("dataFolder") as? Map<*, *>
+            linkedMapOf<String, Any?>(
+                "name" to plugin.name,
+                "enabled" to plugin.isEnabled,
+                "status" to when {
+                    !plugin.isEnabled -> "disabled"
+                    missingRequired.isNotEmpty() -> "missingDependencies"
+                    else -> "healthy"
+                },
+                "missingRequired" to missingRequired,
+                "commands" to ((detail?.get("commands") as? Map<*, *>)?.get("count") as? Number),
+                "permissions" to ((detail?.get("permissions") as? Map<*, *>)?.get("count") as? Number),
+                "jarSizeBytes" to detail?.get("jarSizeBytes"),
+                "dataFolderBytes" to dataFolder?.get("totalBytes"),
+            )
+        }
         this["analytics"] = linkedMapOf(
             "status" to when {
                 signals.any { it["severity"] == "critical" } -> "critical"
@@ -207,6 +227,7 @@ internal class BukkitDiagnosticsCollector {
             ),
             "registrations" to registrationConflicts,
             "dependencies" to dependencyGraph,
+            "pluginHealth" to pluginHealth,
         )
     }
 
