@@ -28,7 +28,7 @@ internal class BukkitDiagnosticsCollector {
             putPerformanceDetails()
             putWorldDetails(server)
             putPlayerDetails(server, includeSensitive)
-            putPluginDetails(server)
+            putPluginDetails(server, includeSensitive)
             putPlaceholderApiDetails(server)
         }
     }
@@ -93,7 +93,10 @@ internal class BukkitDiagnosticsCollector {
         }
     }
 
-    private fun MutableMap<String, Any?>.putPluginDetails(server: org.bukkit.Server) {
+    private fun MutableMap<String, Any?>.putPluginDetails(
+        server: org.bukkit.Server,
+        includeSensitive: Boolean,
+    ) {
         this["plugins"] = server.pluginManager.plugins.map { plugin ->
             val description = plugin.description
             linkedMapOf<String, Any?>(
@@ -105,7 +108,15 @@ internal class BukkitDiagnosticsCollector {
                 "depends" to description.depend,
                 "softDepends" to description.softDepend,
                 "loadBefore" to description.loadBefore,
+                "classLoader" to plugin.javaClass.classLoader?.javaClass?.name,
             ).apply {
+                if (includeSensitive) {
+                    plugin.javaClass.protectionDomain?.codeSource?.location?.toString()?.let { source ->
+                        this["codeSource"] = source
+                    }
+                } else {
+                    this["codeSource"] = "[REDACTED]"
+                }
                 pluginJar(plugin)?.let { jar ->
                     this["jarSizeBytes"] = jar.length()
                     this["lastModifiedUtc"] = Instant.ofEpochMilli(jar.lastModified()).toString()
