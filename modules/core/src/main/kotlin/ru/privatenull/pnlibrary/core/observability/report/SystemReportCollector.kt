@@ -169,6 +169,9 @@ internal class SystemReportCollector {
                 "containerCpuThrottled" to (data["runtimeEnvironment"] as? Map<*, *>)?.get("cpuThrottledMicros"),
                 "gcCollectionCount" to gcTotal(data, "collectionCount"),
                 "gcCollectionTimeMs" to gcTotal(data, "collectionTimeMs"),
+                "threadCount" to (data["threads"] as? Map<*, *>)?.get("count"),
+                "daemonThreadCount" to (data["threads"] as? Map<*, *>)?.get("daemonCount"),
+                "peakThreadCount" to (data["threads"] as? Map<*, *>)?.get("peakCount"),
             ),
         )
         while (collectionHistory.size > 32) collectionHistory.removeFirst()
@@ -536,6 +539,9 @@ internal class SystemReportCollector {
             "containerCpuThrottledDelta" to numericDelta("containerCpuThrottled"),
             "gcCollectionCountDelta" to numericDelta("gcCollectionCount"),
             "gcCollectionTimeMsDelta" to numericDelta("gcCollectionTimeMs"),
+            "threadCountDelta" to numericDelta("threadCount"),
+            "daemonThreadCountDelta" to numericDelta("daemonThreadCount"),
+            "peakThreadCountDelta" to numericDelta("peakThreadCount"),
             "durationMsDelta" to numericDelta("durationMs"),
         ),
     )
