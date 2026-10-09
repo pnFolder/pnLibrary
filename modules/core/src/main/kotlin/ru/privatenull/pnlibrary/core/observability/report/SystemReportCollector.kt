@@ -158,6 +158,8 @@ internal class SystemReportCollector {
                 "heapUsedRatio" to (data["health"] as? Map<*, *>)?.get("heapUsedRatio"),
                 "heapUsedBytes" to ((data["memory"] as? Map<*, *>)?.get("heap") as? Map<*, *>)?.get("usedBytes"),
                 "nonHeapUsedBytes" to ((data["memory"] as? Map<*, *>)?.get("nonHeap") as? Map<*, *>)?.get("usedBytes"),
+                "highestMemoryPoolRatio" to memoryPoolMaxRatio(data),
+                "pressuredMemoryPoolCount" to memoryPoolPressureCount(data),
                 "processCpuLoad" to (data["health"] as? Map<*, *>)?.get("processCpuLoad"),
                 "systemCpuLoad" to (data["health"] as? Map<*, *>)?.get("systemCpuLoad"),
                 "highestDiskUsedRatio" to (data["health"] as? Map<*, *>)?.get("highestDiskUsedRatio"),
@@ -530,6 +532,8 @@ internal class SystemReportCollector {
             "heapUsedRatioDelta" to numericDelta("heapUsedRatio"),
             "heapUsedBytesDelta" to numericDelta("heapUsedBytes"),
             "nonHeapUsedBytesDelta" to numericDelta("nonHeapUsedBytes"),
+            "highestMemoryPoolRatioDelta" to numericDelta("highestMemoryPoolRatio"),
+            "pressuredMemoryPoolCountDelta" to numericDelta("pressuredMemoryPoolCount"),
             "processCpuLoadDelta" to numericDelta("processCpuLoad"),
             "systemCpuLoadDelta" to numericDelta("systemCpuLoad"),
             "highestDiskUsedRatioDelta" to numericDelta("highestDiskUsedRatio"),
@@ -560,6 +564,16 @@ internal class SystemReportCollector {
         ((snapshot["memory"] as? Map<*, *>)?.get("garbageCollectors") as? Collection<*>)
             ?.sumOf { ((it as? Map<*, *>)?.get(key) as? Number)?.toLong() ?: 0L }
             ?: 0L
+
+    private fun memoryPoolRatios(snapshot: Map<String, Any?>): List<Double> =
+        ((snapshot["memory"] as? Map<*, *>)?.get("pools") as? Collection<*>)
+            ?.mapNotNull { ((it as? Map<*, *>)?.get("usedRatio") as? Number)?.toDouble() }
+            .orEmpty()
+
+    private fun memoryPoolMaxRatio(snapshot: Map<String, Any?>): Double? = memoryPoolRatios(snapshot).maxOrNull()
+
+    private fun memoryPoolPressureCount(snapshot: Map<String, Any?>): Int =
+        memoryPoolRatios(snapshot).count { it >= MEMORY_POOL_PRESSURE_THRESHOLD }
 
     private fun pressure(value: Double?): String? = value?.let {
         when {

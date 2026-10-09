@@ -45,6 +45,7 @@ class SystemReportCollectorTest {
         assertTrue((collectionHistory["trend"] as? Map<*, *>)?.containsKey("gcCollectionTimeMsDelta") == true)
         assertTrue((collectionHistory["trend"] as? Map<*, *>)?.containsKey("threadCountDelta") == true)
         assertTrue((collectionHistory["trend"] as? Map<*, *>)?.containsKey("heapUsedBytesDelta") == true)
+        assertTrue((collectionHistory["trend"] as? Map<*, *>)?.containsKey("highestMemoryPoolRatioDelta") == true)
         val network = report["networkAnalytics"] as? Map<*, *>
             ?: error("networkAnalytics section is missing")
         assertTrue(network.containsKey("ipv4AddressCount"))
