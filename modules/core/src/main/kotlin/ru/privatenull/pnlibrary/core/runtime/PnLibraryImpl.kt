@@ -147,7 +147,10 @@ internal class PnLibraryImpl(
         directDownloads = directDownloadManager,
     )
 
-    private fun runtimeDiagnostics(): Map<String, Any?> = linkedMapOf(
+    private fun runtimeDiagnostics(): Map<String, Any?> {
+        val taskSnapshots = tasks.query()
+        val updateSnapshots = updates.all()
+        return linkedMapOf(
         "library" to linkedMapOf<String, Any?>(
             "version" to version,
             "closed" to isClosed,
@@ -175,7 +178,7 @@ internal class PnLibraryImpl(
                 ),
             ),
         ),
-        "tasks" to tasks.query().map { task ->
+        "tasks" to taskSnapshots.map { task ->
             linkedMapOf<String, Any?>(
                 "id" to task.id.value,
                 "name" to task.name,
@@ -187,7 +190,15 @@ internal class PnLibraryImpl(
                 "lastFailure" to task.lastFailure,
             )
         },
-        "updates" to updates.all().map { registration ->
+        "taskSummary" to linkedMapOf<String, Any?>(
+            "count" to taskSnapshots.size,
+            "byStatus" to taskSnapshots.groupingBy { it.status.name }.eachCount(),
+            "byExecution" to taskSnapshots.groupingBy { it.executionKind.name }.eachCount(),
+            "runCount" to taskSnapshots.sumOf { it.runCount },
+            "skippedCount" to taskSnapshots.sumOf { it.skippedCount },
+            "failedCount" to taskSnapshots.count { it.lastFailure != null },
+        ),
+        "updates" to updateSnapshots.map { registration ->
             val snapshot = registration.snapshot
             linkedMapOf<String, Any?>(
                 "product" to snapshot.product,
@@ -210,6 +221,12 @@ internal class PnLibraryImpl(
                 },
             )
         },
+        "updateSummary" to linkedMapOf<String, Any?>(
+            "count" to updateSnapshots.size,
+            "byChannel" to updateSnapshots.groupingBy { it.snapshot.channel.name }.eachCount(),
+            "byState" to updateSnapshots.groupingBy { it.snapshot.state.name }.eachCount(),
+            "availableCount" to updateSnapshots.count { it.snapshot.latestVersion != null },
+        ),
         "metrics" to metricsRegistry.diagnosticSnapshot(),
         "diagnostics" to diagnostics.diagnosticSummary(),
         "nativeLogs" to support.logSummary(),
@@ -226,7 +243,8 @@ internal class PnLibraryImpl(
             "current" to updates.currentPlan().orElse(null)?.let(::updatePlanDetails),
             "history" to updates.history().map(::updatePlanDetails),
         ),
-    )
+        )
+    }
 
     private fun updatePlanDetails(snapshot: ru.privatenull.pnlibrary.api.updates.UpdatePlanSnapshot): Map<String, Any?> =
         linkedMapOf(
