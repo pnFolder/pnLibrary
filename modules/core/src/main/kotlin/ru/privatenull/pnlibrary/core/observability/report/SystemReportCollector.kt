@@ -89,7 +89,7 @@ internal class SystemReportCollector {
                 "committedBytes" to nonHeap.committed,
             ),
             "pools" to collectMemoryPools(),
-            "garbageCollectors" to collectGarbageCollectors(),
+            "garbageCollectors" to collectGarbageCollectors(runtimeMx.uptime),
         )
 
         // ── Threads ──────────────────────────────────────────────────────────
@@ -172,17 +172,23 @@ internal class SystemReportCollector {
                 "type" to pool.type.toString(),
                 "usedMb" to (usage?.used ?: 0L) / (1024 * 1024),
                 "maxMb" to (usage?.max ?: 0L) / (1024 * 1024),
+                "usedRatio" to usage?.let { current ->
+                    current.max.takeIf { it > 0L }?.let { current.used.toDouble() / it }
+                },
             )
         }
     }
 
-    private fun collectGarbageCollectors(): List<Map<String, Any?>> {
+    private fun collectGarbageCollectors(uptimeMs: Long): List<Map<String, Any?>> {
         val gcs = ManagementFactory.getGarbageCollectorMXBeans()
         return gcs.map { gc: GarbageCollectorMXBean ->
             linkedMapOf(
                 "name" to gc.name,
                 "collectionCount" to gc.collectionCount,
                 "collectionTimeMs" to gc.collectionTime,
+                "timeRatio" to gc.collectionTime.takeIf { it >= 0L }?.let { time ->
+                    time.toDouble() / uptimeMs.coerceAtLeast(1L)
+                },
             )
         }
     }
