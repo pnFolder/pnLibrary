@@ -221,6 +221,16 @@ internal class BukkitDiagnosticsCollector {
                 }
             }
         }
+        val plugins = server.pluginManager.plugins
+        this["pluginSummary"] = linkedMapOf(
+            "total" to plugins.size,
+            "enabled" to plugins.count { it.isEnabled },
+            "disabled" to plugins.count { !it.isEnabled },
+            "byClassLoader" to plugins
+                .groupingBy { it.javaClass.classLoader?.javaClass?.name ?: "unknown" }
+                .eachCount(),
+            "loadOrder" to plugins.map { it.name },
+        )
     }
 
     private fun MutableMap<String, Any?>.putServerSettings(server: org.bukkit.Server) {
