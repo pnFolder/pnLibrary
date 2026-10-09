@@ -44,4 +44,19 @@ class DiagnosticsRegistryConfigurationTest {
         assertEquals(3L, incidents["occurrenceCount"])
         assertEquals(1, (incidents["byLevel"] as Map<*, *>)["WARNING"])
     }
+
+    @Test
+    fun `history analytics exposes bounded incident timeline`() {
+        val registry = DiagnosticsRegistry()
+
+        registry.record("pnMarket", DiagnosticLevel.WARNING, "database", "TIMEOUT", "retrying")
+        registry.record("pnMarket", DiagnosticLevel.ERROR, "database", "DOWN", "unavailable")
+
+        val history = registry.historyAnalytics()
+
+        assertEquals(2, history["incidentCount"])
+        assertEquals(2L, history["occurrenceCount"])
+        assertEquals(2, (history["recent"] as List<*>).size)
+        assertEquals(1, (history["byLevel"] as Map<*, *>) ["ERROR"])
+    }
 }

@@ -175,6 +175,44 @@ internal class DiagnosticsRegistry(eventLimit: Int = DEFAULT_EVENT_LIMIT) : Diag
         return plugins[pluginKey]?.contributors?.configurations(pluginKey).orEmpty()
     }
 
+    /** Returns bounded incident history analytics without invoking contributors. */
+    fun historyAnalytics(limit: Int = DEFAULT_HISTORY_LIMIT): Map<String, Any?> {
+        val incidents = eventSnapshot().flatMap { (plugin, values) ->
+            (values as? Collection<*>)
+                .orEmpty()
+                .filterIsInstance<Map<*, *>>()
+                .map { incident -> plugin to incident }
+        }
+        val recent = incidents
+            .sortedBy { it.second["lastSeenUtc"]?.toString().orEmpty() }
+            .takeLast(limit.coerceIn(1, DEFAULT_HISTORY_LIMIT))
+            .map { (plugin, incident) ->
+                linkedMapOf<String, Any?>(
+                    "plugin" to plugin,
+                    "incidentId" to incident["incidentId"],
+                    "level" to incident["level"],
+                    "component" to incident["component"],
+                    "code" to incident["code"],
+                    "message" to incident["message"],
+                    "firstSeenUtc" to incident["firstSeenUtc"],
+                    "lastSeenUtc" to incident["lastSeenUtc"],
+                    "occurrenceCount" to incident["occurrenceCount"],
+                    "omittedOccurrences" to incident["omittedOccurrences"],
+                )
+            }
+        return linkedMapOf(
+            "incidentCount" to incidents.size,
+            "occurrenceCount" to incidents.sumOf { (it.second["occurrenceCount"] as? Number)?.toLong() ?: 1L },
+            "omittedOccurrenceCount" to incidents.sumOf {
+                (it.second["omittedOccurrences"] as? Number)?.toLong() ?: 0L
+            },
+            "byPlugin" to incidents.groupingBy { it.first }.eachCount(),
+            "byLevel" to incidents.groupingBy { it.second["level"]?.toString() ?: "UNKNOWN" }.eachCount(),
+            "byComponent" to incidents.groupingBy { it.second["component"]?.toString() ?: "unknown" }.eachCount(),
+            "recent" to recent,
+        )
+    }
+
     /** Lightweight aggregate counters used by runtime support reports. */
     fun diagnosticSummary(): Map<String, Any?> = linkedMapOf<String, Any?>(
         "registeredPlugins" to plugins.size,
@@ -214,5 +252,6 @@ internal class DiagnosticsRegistry(eventLimit: Int = DEFAULT_EVENT_LIMIT) : Diag
 
     private companion object {
         const val DEFAULT_EVENT_LIMIT = 100
+        const val DEFAULT_HISTORY_LIMIT = 64
     }
 }

@@ -231,6 +231,7 @@ internal class PnLibraryImpl(
         "metrics" to metricsRegistry.diagnosticSnapshot(),
         "platformCoverage" to platformCoverage,
         "diagnostics" to diagnostics.diagnosticSummary(),
+        "diagnosticHistory" to diagnostics.historyAnalytics(),
         "nativeLogs" to support.logSummary(),
         "reports" to support.reportSummary(),
         "observability" to support.observabilityAnalytics(),
