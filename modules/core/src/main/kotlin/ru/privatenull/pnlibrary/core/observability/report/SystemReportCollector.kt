@@ -96,6 +96,7 @@ internal class SystemReportCollector {
             "totalStartedCount" to threadMx.totalStartedThreadCount,
             "deadlockedCount" to (deadlocked?.size ?: 0),
             "deadlockedThreadIds" to (deadlocked?.toList() ?: emptyList<Long>()),
+            "stateCounts" to threadStateCounts(threadMx),
         )
 
         // ── Classes ──────────────────────────────────────────────────────────
@@ -189,6 +190,14 @@ internal class SystemReportCollector {
                 "freeSpaceMb" to (root.freeSpace / (1024 * 1024)),
             )
         }
+    }
+
+    private fun threadStateCounts(bean: java.lang.management.ThreadMXBean): Map<String, Int> {
+        val counts = linkedMapOf<String, Int>()
+        bean.getThreadInfo(bean.allThreadIds)?.forEach { info ->
+            if (info != null) counts.merge(info.threadState.name, 1, Int::plus)
+        }
+        return counts
     }
 
     private fun collectCpuDetails(osMx: java.lang.management.OperatingSystemMXBean): Map<String, Any?> {
