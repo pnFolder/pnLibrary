@@ -59,6 +59,7 @@ internal class SupportReportAssembler(
             "system" to systemDetails["analytics"],
             "platform" to platformDetails["analytics"],
             "runtime" to runtimeDetails["analytics"],
+            "metrics" to runtimeDetails["metricsAnalytics"],
             "observability" to runtimeDetails["observability"],
         )
         archive.json(
