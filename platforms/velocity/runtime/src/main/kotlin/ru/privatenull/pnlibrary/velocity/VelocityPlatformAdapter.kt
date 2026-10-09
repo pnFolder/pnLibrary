@@ -124,6 +124,11 @@ internal class VelocityPlatformAdapter(
 
     override fun diagnosticDetails(includeSensitive: Boolean): Map<String, Any?> {
         val details = snapshot().asMap().toMutableMap()
+        details["collection"] = linkedMapOf(
+            "startedUtc" to java.time.Instant.now().toString(),
+            "thread" to Thread.currentThread().name,
+            "includeSensitive" to includeSensitive,
+        )
         details["pluginDependencies"] = server.pluginManager.plugins.associate { container ->
             container.description.id to container.description.dependencies.map { dependency ->
                 linkedMapOf<String, Any?>(

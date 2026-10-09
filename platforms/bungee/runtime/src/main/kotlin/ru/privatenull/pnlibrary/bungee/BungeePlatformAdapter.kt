@@ -116,6 +116,11 @@ internal class BungeePlatformAdapter(
 
     override fun diagnosticDetails(includeSensitive: Boolean): Map<String, Any?> {
         val details = snapshot().asMap().toMutableMap()
+        details["collection"] = linkedMapOf(
+            "startedUtc" to java.time.Instant.now().toString(),
+            "thread" to Thread.currentThread().name,
+            "includeSensitive" to includeSensitive,
+        )
         details["pluginDependencies"] = plugin.proxy.pluginManager.plugins.map { installedPlugin ->
             val metadata = installedPlugin.description
             linkedMapOf<String, Any?>(
