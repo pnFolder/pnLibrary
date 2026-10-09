@@ -26,6 +26,7 @@ class SystemReportCollectorTest {
         assertTrue((analytics["coverage"] as? Map<*, *>)?.containsKey("javaRuntime") == true)
         assertTrue((analytics["resources"] as? Map<*, *>)?.containsKey("processTcpEstablished") == true)
         assertTrue((analytics["resources"] as? Map<*, *>)?.containsKey("blockedThreads") == true)
+        assertTrue((analytics["resources"] as? Map<*, *>)?.containsKey("loadAverage") == true)
         val host = analytics["hostDistribution"] as? Map<*, *>
             ?: error("hostDistribution section is missing")
         assertTrue(host.containsKey("availableProcessors"))

@@ -346,6 +346,7 @@ internal class SystemReportCollector {
                 "blockedThreads" to threadStateCount(snapshot, "BLOCKED"),
                 "waitingThreads" to threadStateCount(snapshot, "WAITING"),
                 "timedWaitingThreads" to threadStateCount(snapshot, "TIMED_WAITING"),
+                "loadAverage" to snapshot["loadAverage"],
             ),
             "runtimeDistribution" to linkedMapOf(
                 "uptimeSeconds" to java?.get("uptimeSeconds"),
