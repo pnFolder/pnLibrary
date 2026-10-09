@@ -109,6 +109,7 @@ internal class BukkitDiagnosticsCollector {
         val services = this["serviceSummary"] as? Map<*, *>
         val events = this["eventListeners"] as? Map<*, *>
         val registrationConflicts = registrationConflictDetails(server)
+        val dependencyGraph = dependencyGraphDetails(server)
 
         val signals = buildList {
             val oneMinuteTps = (tps?.get("1m") as? String)?.toDoubleOrNull()
@@ -163,7 +164,57 @@ internal class BukkitDiagnosticsCollector {
                 "eventListeners" to events?.get("registeredCount"),
             ),
             "registrations" to registrationConflicts,
+            "dependencies" to dependencyGraph,
         )
+    }
+
+    private fun dependencyGraphDetails(server: org.bukkit.Server): Map<String, Any?> {
+        val plugins = server.pluginManager.plugins
+        val names = plugins.map { it.name }.toSet()
+        val required = plugins.associate { plugin ->
+            plugin.name to plugin.description.depend.filter(names::contains).sorted()
+        }
+        val optionalAll = plugins.associate { plugin ->
+            plugin.name to plugin.description.softDepend.sorted()
+        }
+        val optional = optionalAll.mapValues { (_, dependencies) -> dependencies.filter(names::contains) }
+        val reverse = required.entries
+            .flatMap { (plugin, dependencies) -> dependencies.map { dependency -> dependency to plugin } }
+            .groupBy({ it.first }, { it.second })
+            .mapValues { (_, dependants) -> dependants.distinct().sorted() }
+            .toSortedMap()
+        return linkedMapOf(
+            "required" to required.toSortedMap(),
+            "optional" to optional.toSortedMap(),
+            "reverseRequired" to reverse,
+            "cycles" to dependencyCycles(required),
+            "orphanedOptionalDependencies" to optionalAll.flatMap { (plugin, dependencies) ->
+                dependencies.filterNot(names::contains).map { dependency -> "$plugin:$dependency" }
+            },
+        )
+    }
+
+    private fun dependencyCycles(graph: Map<String, List<String>>): List<List<String>> {
+        val cycles = linkedSetOf<List<String>>()
+        val visiting = linkedSetOf<String>()
+        val visited = linkedSetOf<String>()
+
+        fun visit(node: String, path: List<String>) {
+            if (node in visiting) {
+                val start = path.indexOf(node)
+                if (start >= 0) {
+                    cycles += (path.drop(start) + node).distinct()
+                }
+                return
+            }
+            if (!visited.add(node)) return
+            visiting += node
+            graph[node].orEmpty().forEach { dependency -> visit(dependency, path + dependency) }
+            visiting -= node
+        }
+
+        graph.keys.forEach { visit(it, listOf(it)) }
+        return cycles.take(MAX_DEPENDENCY_CYCLES)
     }
 
     private fun registrationConflictDetails(server: org.bukkit.Server): Map<String, Any?> {
@@ -796,6 +847,7 @@ internal class BukkitDiagnosticsCollector {
         const val MAX_COMMAND_NAMES = 256
         const val MAX_SERVER_PROPERTIES = 256
         const val MAX_LARGEST_FILES = 16
+        const val MAX_DEPENDENCY_CYCLES = 64
         const val MAX_DATAPACKS = 128
         const val FOLIA_REGION_UNAVAILABLE = "[UNAVAILABLE: requires a region thread on Folia]"
         const val FOLIA_PLAYERS_UNAVAILABLE =
