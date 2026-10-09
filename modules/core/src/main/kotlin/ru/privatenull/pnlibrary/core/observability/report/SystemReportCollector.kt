@@ -331,6 +331,8 @@ internal class SystemReportCollector {
                 "freePhysicalMemoryBytes" to cpu?.get("freePhysicalMemoryBytes"),
                 "totalSwapBytes" to cpu?.get("totalSwapBytes"),
                 "freeSwapBytes" to cpu?.get("freeSwapBytes"),
+                "swapUsedBytes" to swapUsedBytes(cpu),
+                "swapUsedRatio" to swapUsedRatio(cpu),
                 "fileDescriptorOpen" to fileDescriptors?.get("open"),
                 "fileDescriptorMax" to fileDescriptors?.get("max"),
                 "fileDescriptorUsedRatio" to descriptorRatio(fileDescriptors),
@@ -345,6 +347,8 @@ internal class SystemReportCollector {
                 "nonHeapCommittedBytes" to nonHeap?.get("committedBytes"),
                 "processCpuLoad" to health?.get("processCpuLoad"),
                 "systemCpuLoad" to health?.get("systemCpuLoad"),
+                "swapUsedBytes" to swapUsedBytes(cpu),
+                "swapUsedRatio" to swapUsedRatio(cpu),
                 "highestDiskUsedRatio" to health?.get("highestDiskUsedRatio"),
                 "gcTimeRatio" to gc?.mapNotNull { entry ->
                     (entry as? Map<*, *>)?.get("timeRatio") as? Number
@@ -710,6 +714,18 @@ internal class SystemReportCollector {
         val open = (descriptors?.get("open") as? Number)?.toDouble() ?: return null
         val max = (descriptors["max"] as? Number)?.toDouble() ?: return null
         return max.takeIf { it > 0.0 }?.let { open / it }
+    }
+
+    private fun swapUsedBytes(cpu: Map<*, *>?): Long? {
+        val total = (cpu?.get("totalSwapBytes") as? Number)?.toLong() ?: return null
+        val free = (cpu["freeSwapBytes"] as? Number)?.toLong() ?: return null
+        return (total - free).coerceAtLeast(0L)
+    }
+
+    private fun swapUsedRatio(cpu: Map<*, *>?): Double? {
+        val total = (cpu?.get("totalSwapBytes") as? Number)?.toDouble() ?: return null
+        val free = (cpu["freeSwapBytes"] as? Number)?.toDouble() ?: return null
+        return total.takeIf { it > 0.0 }?.let { ((it - free).coerceAtLeast(0.0)) / it }
     }
 
     private fun threadStateCounts(bean: java.lang.management.ThreadMXBean): Map<String, Int> {
