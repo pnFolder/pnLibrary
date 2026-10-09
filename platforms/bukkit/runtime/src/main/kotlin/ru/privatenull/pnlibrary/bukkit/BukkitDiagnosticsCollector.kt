@@ -30,6 +30,7 @@ internal class BukkitDiagnosticsCollector {
             putPerformanceDetails()
             putSchedulerDetails()
             putCommandDetails(server)
+            putPermissionDetails(server)
             putServiceDetails()
             putEventListenerDetails()
             putWorldDetails(server, includeSensitive)
@@ -337,6 +338,29 @@ internal class BukkitDiagnosticsCollector {
                 .filterNot { (_, command) -> command in registered }
                 .map { (plugin, command) -> "$plugin:$command" }
                 .take(MAX_COMMAND_NAMES),
+        )
+    }
+
+    private fun MutableMap<String, Any?>.putPermissionDetails(server: org.bukkit.Server) {
+        val permissions = reflectionOrNull {
+            val values = server.pluginManager.javaClass
+                .getMethod("getPermissions")
+                .invoke(server.pluginManager) as? Collection<*>
+            values.orEmpty().filterNotNull()
+        }.orEmpty()
+        this["permissions"] = linkedMapOf(
+            "registeredCount" to permissions.size,
+            "byDefault" to permissions
+                .mapNotNull { permission ->
+                    reflectionOrNull {
+                        permission.javaClass.getMethod("getDefault").invoke(permission).toString()
+                    }
+                }
+                .groupingBy { it }
+                .eachCount(),
+            "names" to permissions.mapNotNull { permission ->
+                reflectionOrNull { permission.javaClass.getMethod("getName").invoke(permission).toString() }
+            }.distinct().sorted().take(MAX_PERMISSION_NAMES),
         )
     }
 
