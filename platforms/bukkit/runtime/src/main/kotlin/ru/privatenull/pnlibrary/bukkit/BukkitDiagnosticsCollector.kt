@@ -69,6 +69,7 @@ internal class BukkitDiagnosticsCollector {
                 "keepSpawnInMemory" to world.keepSpawnInMemory,
                 "allowAnimals" to world.allowAnimals,
                 "allowMonsters" to world.allowMonsters,
+                "gameRules" to world.gameRules.associateWith { rule -> world.getGameRuleValue(rule) },
             ).apply {
                 if (ServerCapabilities.isFolia) {
                     this["regionData"] = FOLIA_REGION_UNAVAILABLE
