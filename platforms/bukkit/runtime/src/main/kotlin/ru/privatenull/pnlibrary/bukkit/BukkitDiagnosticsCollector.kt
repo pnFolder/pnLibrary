@@ -84,6 +84,9 @@ internal class BukkitDiagnosticsCollector {
     ) {
         this["onlinePlayersCount"] = server.onlinePlayers.size
         this["maxPlayers"] = server.maxPlayers
+        this["playersByWorld"] = server.onlinePlayers.groupingBy { it.world.name }.eachCount()
+        this["playersByGameMode"] = server.onlinePlayers.groupingBy { it.gameMode.name }.eachCount()
+        this["operatorCount"] = server.onlinePlayers.count { it.isOp }
         this["onlinePlayers"] = when {
             ServerCapabilities.isFolia -> FOLIA_PLAYERS_UNAVAILABLE
             !includeSensitive -> PLAYERS_REDACTED
