@@ -155,8 +155,11 @@ internal class VelocityPlatformAdapter(
             )
         }
         details["servers"] = server.allServers.map { connection ->
+            val address = connection.serverInfo.address
             linkedMapOf<String, Any?>(
                 "name" to connection.serverInfo.name,
+                "host" to if (includeSensitive) address.hostString else "[REDACTED]",
+                "port" to address.port,
                 "players" to connection.playersConnected.size,
             )
         }
