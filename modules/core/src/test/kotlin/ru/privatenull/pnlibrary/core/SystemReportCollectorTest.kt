@@ -25,5 +25,6 @@ class SystemReportCollectorTest {
         assertTrue((analytics["signalSummary"] as? Map<*, *>)?.containsKey("critical") == true)
         assertTrue((analytics["coverage"] as? Map<*, *>)?.containsKey("javaRuntime") == true)
         assertTrue((analytics["hostDistribution"] as? Map<*, *>)?.containsKey("availableProcessors") == true)
+        assertTrue((analytics["collectionHistory"] as? Map<*, *>)?.containsKey("samplesWithSignals") == true)
     }
 }

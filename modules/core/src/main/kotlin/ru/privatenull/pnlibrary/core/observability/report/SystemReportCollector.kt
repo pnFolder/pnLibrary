@@ -21,7 +21,7 @@ import java.util.Locale
 internal class SystemReportCollector {
 
     private val redactor = DiagnosticRedactor()
-    private val collectionHistory = ArrayDeque<Map<String, Any?>>()
+    private val collectionHistory = ArrayDeque<MutableMap<String, Any?>>()
 
     /**
      * Captures JVM, operating-system, memory, thread, class-loading, and storage data.
@@ -148,7 +148,12 @@ internal class SystemReportCollector {
             ),
         )
         while (collectionHistory.size > 32) collectionHistory.removeFirst()
-        data["analytics"] = collectAnalytics(data)
+        val analytics = collectAnalytics(data)
+        collectionHistory.lastOrNull()?.let { sample ->
+            sample["status"] = analytics["status"]
+            sample["signalCount"] = (analytics["signals"] as? Collection<*>)?.size ?: 0
+        }
+        data["analytics"] = analytics + ("collectionHistory" to collectionAnalytics())
 
         return data
     }
@@ -452,6 +457,19 @@ internal class SystemReportCollector {
             "diskPressure" to pressure(diskRatios.maxOrNull()),
         )
     }
+
+    private fun collectionAnalytics(): Map<String, Any?> = linkedMapOf(
+        "sampleCount" to collectionHistory.size,
+        "healthySamples" to collectionHistory.count { it["status"] == "healthy" },
+        "attentionSamples" to collectionHistory.count { it["status"] == "attention" },
+        "criticalSamples" to collectionHistory.count { it["status"] == "critical" },
+        "samplesWithSignals" to collectionHistory.count {
+            ((it["signalCount"] as? Number)?.toInt() ?: 0) > 0
+        },
+        "averageDurationMs" to collectionHistory.mapNotNull {
+            (it["durationMs"] as? Number)?.toLong()
+        }.average().takeIf { collectionHistory.isNotEmpty() },
+    )
 
     private fun pressure(value: Double?): String? = value?.let {
         when {
