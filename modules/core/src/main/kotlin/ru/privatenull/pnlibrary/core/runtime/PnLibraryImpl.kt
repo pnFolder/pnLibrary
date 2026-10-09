@@ -231,6 +231,7 @@ internal class PnLibraryImpl(
         "diagnostics" to diagnostics.diagnosticSummary(),
         "nativeLogs" to support.logSummary(),
         "reports" to support.reportSummary(),
+        "observability" to support.observabilityAnalytics(),
         "configurationDeclarations" to diagnostics.configurations("all").map { declaration ->
             linkedMapOf<String, Any?>(
                 "plugin" to declaration.plugin,

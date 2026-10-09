@@ -8,6 +8,7 @@ import ru.privatenull.pnlibrary.api.observability.ObservabilityReport
 import ru.privatenull.pnlibrary.api.observability.ObservabilityReportRequest
 import ru.privatenull.pnlibrary.api.observability.ObservabilityService
 import java.nio.file.Path
+import java.time.Instant
 
 internal class ObservabilityRuntime(
     dataFolder: Path,
@@ -69,6 +70,23 @@ internal class ObservabilityRuntime(
     }
 
     internal fun allAttachments(): List<StoredAttachment> = attachmentStore.all()
+
+    internal fun analytics(): Map<String, Any?> = synchronized(recordLock) {
+        val events = journal.recent()
+        val attachments = attachmentStore.all()
+        linkedMapOf(
+            "eventCount" to events.size,
+            "byLevel" to events.groupingBy { it.level.name }.eachCount(),
+            "byPlugin" to events.groupingBy { it.plugin ?: "[unknown]" }.eachCount(),
+            "bySource" to events.groupingBy { it.source ?: "[unknown]" }.eachCount(),
+            "errorCount" to events.count { it.errorType != null },
+            "errorTypes" to events.mapNotNull { it.errorType }.groupingBy { it }.eachCount(),
+            "attachmentCount" to attachments.size,
+            "attachmentBytes" to attachments.sumOf { it.size },
+            "oldestUtc" to events.minOfOrNull { it.timestamp }?.let(Instant::ofEpochMilli)?.toString(),
+            "newestUtc" to events.maxOfOrNull { it.timestamp }?.let(Instant::ofEpochMilli)?.toString(),
+        )
+    }
 
     internal fun attachmentBytes(attachment: StoredAttachment): ByteArray = attachmentStore.read(attachment)
 

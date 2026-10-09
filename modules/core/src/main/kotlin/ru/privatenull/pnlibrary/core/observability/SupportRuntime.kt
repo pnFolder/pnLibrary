@@ -123,6 +123,8 @@ internal class SupportRuntime(
         "historyFileCount" to runCatching { history.files().size }.getOrDefault(0),
     )
 
+    fun observabilityAnalytics(): Map<String, Any?> = observations.analytics()
+
     fun recordRuntimeError(logOwner: Any, message: String, error: Throwable) {
         service.record(
             type = "RUNTIME_ERROR",
