@@ -180,6 +180,8 @@ internal class SystemReportCollector {
                 "threadCount" to (data["threads"] as? Map<*, *>)?.get("count"),
                 "daemonThreadCount" to (data["threads"] as? Map<*, *>)?.get("daemonCount"),
                 "peakThreadCount" to (data["threads"] as? Map<*, *>)?.get("peakCount"),
+                "freePhysicalMemoryBytes" to ((data["os"] as? Map<*, *>)?.get("cpu") as? Map<*, *>)?.get("freePhysicalMemoryBytes"),
+                "freeSwapBytes" to ((data["os"] as? Map<*, *>)?.get("cpu") as? Map<*, *>)?.get("freeSwapBytes"),
             ),
         )
         while (collectionHistory.size > 32) collectionHistory.removeFirst()
@@ -563,6 +565,8 @@ internal class SystemReportCollector {
             "threadCountDelta" to numericDelta("threadCount"),
             "daemonThreadCountDelta" to numericDelta("daemonThreadCount"),
             "peakThreadCountDelta" to numericDelta("peakThreadCount"),
+            "freePhysicalMemoryBytesDelta" to numericDelta("freePhysicalMemoryBytes"),
+            "freeSwapBytesDelta" to numericDelta("freeSwapBytes"),
             "durationMsDelta" to numericDelta("durationMs"),
         ),
     )
