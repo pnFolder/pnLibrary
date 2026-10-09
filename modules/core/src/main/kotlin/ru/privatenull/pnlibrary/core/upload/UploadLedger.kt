@@ -75,6 +75,19 @@ class UploadLedger @JvmOverloads constructor(
         return deleted
     }
 
+    /** Safe operational view; deletion tokens and report links are never exposed. */
+    @Synchronized
+    fun diagnosticSnapshot(): Map<String, Any?> {
+        val entries = runCatching { persistence.read() }.getOrDefault(emptyList())
+        val now = clock.instant().epochSecond
+        return linkedMapOf(
+            "pendingCount" to entries.size,
+            "dueCount" to entries.count { it.deleteAt <= now },
+            "byBackend" to entries.groupingBy { it.backend }.eachCount(),
+            "nextDeletionEpochSeconds" to entries.minOfOrNull { it.deleteAt },
+        )
+    }
+
     private fun tryDelete(uploader: UploadProvider, entry: UploadLedgerEntry): Boolean = try {
         uploader.delete(
             UploadReceipt(

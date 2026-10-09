@@ -122,11 +122,12 @@ internal class SupportRuntime(
             "lastCreatedUtc" to lastReportUtc,
             "lastDurationMs" to lastReportDurationMs,
             "lastSizeBytes" to lastReportSizeBytes,
-            "history" to linkedMapOf<String, Any?>(
+        "history" to linkedMapOf<String, Any?>(
                 "fileCount" to historyFiles.size,
                 "totalBytes" to historyFiles.sumOf { it.second.size.toLong() },
                 "files" to historyFiles.map { it.first },
             ),
+            "uploadLedger" to uploadLedger.diagnosticSnapshot(),
         )
     }
 
