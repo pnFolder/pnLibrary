@@ -161,6 +161,8 @@ internal class SystemReportCollector {
                 "tcpEstablished" to (data["processNetwork"] as? Map<*, *>)?.get("tcpEstablished"),
                 "tcpListening" to (data["processNetwork"] as? Map<*, *>)?.get("tcpListening"),
                 "udpSockets" to (data["processNetwork"] as? Map<*, *>)?.get("udpSockets"),
+                "containerMemoryCurrent" to (data["runtimeEnvironment"] as? Map<*, *>)?.get("memoryCurrentBytes"),
+                "containerCpuThrottled" to (data["runtimeEnvironment"] as? Map<*, *>)?.get("cpuThrottledMicros"),
             ),
         )
         while (collectionHistory.size > 32) collectionHistory.removeFirst()
@@ -522,6 +524,8 @@ internal class SystemReportCollector {
             "tcpEstablishedDelta" to numericDelta("tcpEstablished"),
             "tcpListeningDelta" to numericDelta("tcpListening"),
             "udpSocketsDelta" to numericDelta("udpSockets"),
+            "containerMemoryCurrentDelta" to numericDelta("containerMemoryCurrent"),
+            "containerCpuThrottledDelta" to numericDelta("containerCpuThrottled"),
             "durationMsDelta" to numericDelta("durationMs"),
         ),
     )
