@@ -154,6 +154,13 @@ internal class VelocityPlatformAdapter(
                 },
             )
         }
+        details["pluginSummary"] = linkedMapOf(
+            "total" to server.pluginManager.plugins.size,
+            "versions" to server.pluginManager.plugins.associate {
+                it.description.id to it.description.version.orElse("unknown")
+            },
+            "loadOrder" to server.pluginManager.plugins.map { it.description.id },
+        )
         details["servers"] = server.allServers.map { connection ->
             val address = connection.serverInfo.address
             linkedMapOf<String, Any?>(

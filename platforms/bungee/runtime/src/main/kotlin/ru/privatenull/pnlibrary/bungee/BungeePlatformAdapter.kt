@@ -146,6 +146,16 @@ internal class BungeePlatformAdapter(
                 "lastModifiedUtc" to file?.takeIf { it.isFile }?.let(::formatUtc),
             )
         }
+        details["pluginSummary"] = linkedMapOf(
+            "total" to plugin.proxy.pluginManager.plugins.size,
+            "versions" to plugin.proxy.pluginManager.plugins.associate {
+                it.description.name to it.description.version
+            },
+            "byMainClass" to plugin.proxy.pluginManager.plugins
+                .groupingBy { it.description.main }
+                .eachCount(),
+            "loadOrder" to plugin.proxy.pluginManager.plugins.map { it.description.name },
+        )
         details["servers"] = plugin.proxy.servers.map { (name, info) ->
             val address = info.address
             linkedMapOf<String, Any?>(
