@@ -77,6 +77,8 @@ internal class ObservabilityRuntime(
         val statuses = statusRegistry.snapshot()
         val now = System.currentTimeMillis()
         val recentWindow = events.filter { now - it.timestamp <= ANALYTICS_WINDOW_MS }
+        val lastHour = events.filter { now - it.timestamp <= 60 * 60_000L }
+        val lastDay = events.filter { now - it.timestamp <= 24 * 60 * 60_000L }
         val recentErrors = recentWindow.count { it.errorType != null || it.level == ru.privatenull.pnlibrary.api.observability.ObservationLevel.ERROR || it.level == ru.privatenull.pnlibrary.api.observability.ObservationLevel.CRITICAL }
         val recent = events.takeLast(MAX_ANALYTICS_EVENTS).map { event ->
             linkedMapOf<String, Any?>(
@@ -122,6 +124,12 @@ internal class ObservabilityRuntime(
                 "errorRateLastWindow" to recentErrors.toDouble() / recentWindow.size.coerceAtLeast(1),
                 "activeSourcesLastWindow" to recentWindow.mapNotNull { it.source }.distinct().size,
                 "activePluginsLastWindow" to recentWindow.mapNotNull { it.plugin }.distinct().size,
+                "eventsLastHour" to lastHour.size,
+                "errorsLastHour" to lastHour.count { it.errorType != null },
+                "eventsLastDay" to lastDay.size,
+                "errorsLastDay" to lastDay.count { it.errorType != null },
+                "eventRatePerMinuteLastHour" to lastHour.size.toDouble() / 60.0,
+                "errorRatePerMinuteLastDay" to lastDay.count { it.errorType != null }.toDouble() / (24 * 60.0),
             ),
         )
     }
