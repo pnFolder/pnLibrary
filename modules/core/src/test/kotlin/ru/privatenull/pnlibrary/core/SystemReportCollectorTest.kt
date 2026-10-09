@@ -24,5 +24,6 @@ class SystemReportCollectorTest {
         assertTrue(runtimeDistribution.containsKey("systemPropertyCount"))
         assertTrue((analytics["signalSummary"] as? Map<*, *>)?.containsKey("critical") == true)
         assertTrue((analytics["coverage"] as? Map<*, *>)?.containsKey("javaRuntime") == true)
+        assertTrue((analytics["hostDistribution"] as? Map<*, *>)?.containsKey("availableProcessors") == true)
     }
 }

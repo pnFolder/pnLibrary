@@ -171,6 +171,9 @@ internal class SystemReportCollector {
         val topCpuThreads = threads?.get("topCpuThreads") as? Collection<*>
         val classes = snapshot["classes"] as? Map<*, *>
         val java = snapshot["java"] as? Map<*, *>
+        val os = snapshot["os"] as? Map<*, *>
+        val cpu = os?.get("cpu") as? Map<*, *>
+        val fileDescriptors = os?.get("fileDescriptors") as? Map<*, *>
 
         val signals = buildList {
             addPressureSignal(this, "heap", health?.get("heapPressure"))
@@ -226,6 +229,17 @@ internal class SystemReportCollector {
                 "fileSystems" to (fileSystems != null),
                 "network" to (snapshot["networkAnalytics"] != null),
                 "javaRuntime" to (java != null),
+            ),
+            "hostDistribution" to linkedMapOf(
+                "availableProcessors" to os?.get("availableProcessors"),
+                "systemLoadAverage" to os?.get("systemLoadAverage"),
+                "processCpuTimeNanos" to cpu?.get("processCpuTimeNanos"),
+                "committedVirtualMemoryBytes" to cpu?.get("committedVirtualMemoryBytes"),
+                "fileDescriptorOpen" to fileDescriptors?.get("open"),
+                "fileDescriptorMax" to fileDescriptors?.get("max"),
+                "fileDescriptorUsedRatio" to descriptorRatio(fileDescriptors),
+                "loadedClassCount" to classes?.get("loadedCount"),
+                "unloadedClassCount" to classes?.get("unloadedCount"),
             ),
             "resources" to linkedMapOf(
                 "heapUsedBytes" to heap?.get("usedBytes"),
@@ -445,6 +459,12 @@ internal class SystemReportCollector {
             it >= 0.75 -> "elevated"
             else -> "normal"
         }
+    }
+
+    private fun descriptorRatio(descriptors: Map<*, *>?): Double? {
+        val open = (descriptors?.get("open") as? Number)?.toDouble() ?: return null
+        val max = (descriptors["max"] as? Number)?.toDouble() ?: return null
+        return max.takeIf { it > 0.0 }?.let { open / it }
     }
 
     private fun threadStateCounts(bean: java.lang.management.ThreadMXBean): Map<String, Int> {
