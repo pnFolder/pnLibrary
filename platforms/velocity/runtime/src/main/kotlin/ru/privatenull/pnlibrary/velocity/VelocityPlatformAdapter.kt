@@ -311,6 +311,7 @@ internal class VelocityPlatformAdapter(
                 "byServer" to (details["playerSummary"] as? Map<*, *>)?.get("playersByServer"),
                 "pingBuckets" to ((details["playerSummary"] as? Map<*, *>)?.get("pingMs") as? Map<*, *>)?.get("buckets"),
             ),
+            "backendDistribution" to backendDistribution(backendPlayerCounts, server.playerCount),
             "pluginDistribution" to pluginDistribution(details["pluginHealth"]),
             "artifactDistribution" to artifactDistribution(details["pluginArtifacts"]),
         )
@@ -325,6 +326,7 @@ internal class VelocityPlatformAdapter(
                 "pluginSummary",
                 "pluginHealth",
                 "analytics.pluginDistribution",
+                "analytics.backendDistribution",
                 "analytics.artifactDistribution",
                 "servers",
                 "serverSummary",
@@ -409,6 +411,34 @@ internal class VelocityPlatformAdapter(
         val artifacts = (value as? Collection<*>)?.filterIsInstance<Map<*, *>>().orEmpty()
         val sizes = artifacts.mapNotNull { (it["sizeBytes"] as? Number)?.toLong() }
         return linkedMapOf("pluginCount" to artifacts.size, "availableArtifacts" to sizes.size, "totalJarBytes" to sizes.sum(), "largestJarBytes" to sizes.maxOrNull())
+    }
+
+    private fun backendDistribution(counts: Map<String, Int>, totalPlayers: Int): Map<String, Any?> {
+        val denominator = totalPlayers.coerceAtLeast(1).toDouble()
+        val nodes = counts.entries
+            .sortedByDescending { it.value }
+            .map { (name, players) ->
+                linkedMapOf<String, Any?>(
+                    "name" to name,
+                    "players" to players,
+                    "share" to players / denominator,
+                    "state" to when {
+                        players == 0 -> "empty"
+                        players >= 51 -> "highLoad"
+                        else -> "active"
+                    },
+                )
+            }
+        val assigned = counts.values.sum()
+        return linkedMapOf(
+            "nodes" to nodes,
+            "nodeCount" to nodes.size,
+            "emptyNodes" to nodes.count { it["state"] == "empty" },
+            "highLoadNodes" to nodes.count { it["state"] == "highLoad" },
+            "assignedPlayers" to assigned,
+            "unassignedPlayers" to (totalPlayers - assigned).coerceAtLeast(0),
+            "busiest" to nodes.firstOrNull(),
+        )
     }
 
     override fun remotePolicyContext(
