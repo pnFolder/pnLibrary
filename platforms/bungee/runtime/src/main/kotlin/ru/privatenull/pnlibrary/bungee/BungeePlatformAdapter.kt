@@ -20,6 +20,9 @@ import ru.privatenull.pnlibrary.spi.platform.PluginSnapshot
 import ru.privatenull.pnlibrary.spi.tasks.PlatformTaskAdapter
 import java.util.concurrent.atomic.AtomicBoolean
 import java.util.logging.Level
+import java.io.File
+import java.io.FileInputStream
+import java.security.MessageDigest
 
 /** Runtime adapter for BungeeCord-compatible proxy servers. */
 internal class BungeePlatformAdapter(
@@ -144,6 +147,7 @@ internal class BungeePlatformAdapter(
                 "path" to if (includeSensitive) file?.absolutePath else "[REDACTED]",
                 "sizeBytes" to file?.takeIf { it.isFile }?.length(),
                 "lastModifiedUtc" to file?.takeIf { it.isFile }?.let(::formatUtc),
+                "sha256" to file?.takeIf { it.isFile }?.let(::sha256),
             )
         }
         details["pluginSummary"] = linkedMapOf(
@@ -207,6 +211,19 @@ internal class BungeePlatformAdapter(
 
     private fun formatUtc(file: java.io.File): String =
         java.time.Instant.ofEpochMilli(file.lastModified()).toString()
+
+    private fun sha256(file: File): String? = runCatching {
+        val digest = MessageDigest.getInstance("SHA-256")
+        FileInputStream(file).use { input ->
+            val buffer = ByteArray(16 * 1024)
+            while (true) {
+                val read = input.read(buffer)
+                if (read < 0) break
+                digest.update(buffer, 0, read)
+            }
+        }
+        digest.digest().joinToString("") { byte -> "%02x".format(byte) }
+    }.getOrNull()
 
     override fun remotePolicyContext(
         owner: Any,
