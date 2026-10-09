@@ -150,6 +150,7 @@ internal class PnLibraryImpl(
     private fun runtimeDiagnostics(): Map<String, Any?> {
         val taskSnapshots = tasks.query()
         val updateSnapshots = updates.all()
+        val platformCoverage = platform.diagnosticDetails(includeSensitive = false)["coverage"]
         return linkedMapOf(
         "library" to linkedMapOf<String, Any?>(
             "version" to version,
@@ -228,6 +229,7 @@ internal class PnLibraryImpl(
             "availableCount" to updateSnapshots.count { it.snapshot.latestVersion != null },
         ),
         "metrics" to metricsRegistry.diagnosticSnapshot(),
+        "platformCoverage" to platformCoverage,
         "diagnostics" to diagnostics.diagnosticSummary(),
         "nativeLogs" to support.logSummary(),
         "reports" to support.reportSummary(),
