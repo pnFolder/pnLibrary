@@ -239,6 +239,18 @@ internal class PnLibraryImpl(
             "byChannel" to updateSnapshots.groupingBy { it.snapshot.channel.name }.eachCount(),
             "byState" to updateSnapshots.groupingBy { it.snapshot.state.name }.eachCount(),
             "availableCount" to updateSnapshots.count { it.snapshot.latestVersion != null },
+            "automaticDownloadCount" to updateSnapshots.count { it.snapshot.automaticDownload },
+            "javaIncompatibleCount" to updateSnapshots.count {
+                it.snapshot.state.name.contains("JAVA", ignoreCase = true) ||
+                    it.snapshot.message?.contains("java", ignoreCase = true) == true
+            },
+            "releaseCountByProduct" to updateSnapshots.associate {
+                it.snapshot.product to it.snapshot.availableReleases.size
+            },
+            "releaseCountByChannel" to updateSnapshots
+                .flatMap { it.snapshot.availableReleases }
+                .groupingBy { it.channel.name }
+                .eachCount(),
             "messages" to updateSnapshots
                 .mapNotNull { it.snapshot.message?.take(256) }
                 .groupingBy { it }
