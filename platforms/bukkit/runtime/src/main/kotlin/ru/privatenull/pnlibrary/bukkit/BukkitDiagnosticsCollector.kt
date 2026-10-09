@@ -108,6 +108,7 @@ internal class BukkitDiagnosticsCollector {
         val commands = this["commands"] as? Map<*, *>
         val services = this["serviceSummary"] as? Map<*, *>
         val events = this["eventListeners"] as? Map<*, *>
+        val registrationConflicts = registrationConflictDetails(server)
 
         val signals = buildList {
             val oneMinuteTps = (tps?.get("1m") as? String)?.toDoubleOrNull()
@@ -161,8 +162,47 @@ internal class BukkitDiagnosticsCollector {
                 "services" to services?.get("registrationCount"),
                 "eventListeners" to events?.get("registeredCount"),
             ),
+            "registrations" to registrationConflicts,
         )
     }
+
+    private fun registrationConflictDetails(server: org.bukkit.Server): Map<String, Any?> {
+        val declaredCommands: List<Pair<String, String>> = server.pluginManager.plugins.flatMap { plugin ->
+            plugin.description.commands.entries.flatMap { entry ->
+                val name = entry.key?.toString()?.trim()?.lowercase(Locale.ROOT)
+                    ?: return@flatMap emptyList()
+                val aliases: List<String> = ((entry.value["aliases"] as? Iterable<*>)
+                    ?: emptyList<Any?>())
+                    .mapNotNull { alias -> alias?.toString()?.trim()?.lowercase(Locale.ROOT) }
+                (listOf(name) + aliases).map { it to plugin.name }
+            }
+        }
+        val declaredPermissions: List<Pair<String, String>> = server.pluginManager.plugins.flatMap { plugin ->
+            plugin.description.permissions.map { permission -> permission.name.lowercase(Locale.ROOT) to plugin.name }
+        }
+        return linkedMapOf(
+            "commandAliasConflicts" to declaredCommands
+                .groupBy({ it.first }, { it.second })
+                .filterValues { it.distinct().size > 1 }
+                .mapValues { (_, owners) -> owners.distinct().sorted() }
+                .toSortedMap(),
+            "permissionConflicts" to declaredPermissions
+                .groupBy({ it.first }, { it.second })
+                .filterValues { it.distinct().size > 1 }
+                .mapValues { (_, owners) -> owners.distinct().sorted() }
+                .toSortedMap(),
+            "commandsByPlugin" to declaredCommands.groupingBy { it.second }.eachCount(),
+            "permissionsByPlugin" to declaredPermissions.groupingBy { it.second }.eachCount(),
+            "listenersByPlugin" to listenerOwners()
+                .groupingBy { it }
+                .eachCount(),
+        )
+    }
+
+    private fun listenerOwners(): List<String> =
+        org.bukkit.event.HandlerList.getHandlerLists()
+            .flatMap { it.registeredListeners.toList() }
+            .map { it.plugin.name }
 
     private fun MutableMap<String, Any?>.putServerDetails(server: org.bukkit.Server) {
         this["serverName"] = server.name
