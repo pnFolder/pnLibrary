@@ -55,6 +55,7 @@ internal class SystemReportCollector {
             "arch" to osMx.arch,
             "availableProcessors" to osMx.availableProcessors,
             "systemLoadAverage" to osMx.systemLoadAverage,
+            "cpu" to collectCpuDetails(osMx),
         )
 
         // ── Memory ───────────────────────────────────────────────────────────
@@ -180,6 +181,23 @@ internal class SystemReportCollector {
             )
         }
     }
+
+    private fun collectCpuDetails(osMx: java.lang.management.OperatingSystemMXBean): Map<String, Any?> {
+        val result = linkedMapOf<String, Any?>()
+        readDouble(osMx, "getProcessCpuLoad")?.let { result["processLoad"] = it }
+        readDouble(osMx, "getCpuLoad")?.let { result["systemLoad"] = it }
+        readLong(osMx, "getProcessCpuTime")?.let { result["processCpuTimeNanos"] = it }
+        readLong(osMx, "getCommittedVirtualMemorySize")?.let { result["committedVirtualMemoryBytes"] = it }
+        return result
+    }
+
+    private fun readDouble(target: Any, method: String): Double? = runCatching {
+        target.javaClass.getMethod(method).invoke(target) as? Double
+    }.getOrNull()?.takeIf { it >= 0.0 }
+
+    private fun readLong(target: Any, method: String): Long? = runCatching {
+        target.javaClass.getMethod(method).invoke(target) as? Long
+    }.getOrNull()?.takeIf { it >= 0L }
 
     private fun collectNetworkInterfaces(): List<Map<String, Any?>> {
         val result = mutableListOf<Map<String, Any?>>()
