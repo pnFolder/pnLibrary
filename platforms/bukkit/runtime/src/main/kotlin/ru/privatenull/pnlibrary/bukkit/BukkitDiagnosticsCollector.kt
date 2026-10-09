@@ -118,6 +118,7 @@ internal class BukkitDiagnosticsCollector {
                 "pluginSummary",
                 "analytics.pluginDistribution",
                 "analytics.artifactDistribution",
+                "analytics.schedulerDistribution",
                 "dependencyHealth",
                 "dependencies",
                 "registrations",
@@ -281,6 +282,14 @@ internal class BukkitDiagnosticsCollector {
                 "availableArtifacts" to pluginData.count { (it["jarSizeBytes"] as? Number)?.toLong()?.let { size -> size >= 0 } == true },
                 "totalJarBytes" to pluginData.sumOf { (it["jarSizeBytes"] as? Number)?.toLong() ?: 0L },
                 "largestJarBytes" to pluginData.mapNotNull { (it["jarSizeBytes"] as? Number)?.toLong() }.maxOrNull(),
+            ),
+            "schedulerDistribution" to linkedMapOf(
+                "byPlugin" to scheduler?.get("pendingByPlugin"),
+                "activeByPlugin" to scheduler?.get("activeByPlugin"),
+                "syncTasks" to scheduler?.get("pendingSyncCount"),
+                "asyncTasks" to scheduler?.get("pendingAsyncCount"),
+                "repeatingTasks" to scheduler?.get("repeatingTaskCount"),
+                "longDelayTasks" to scheduler?.get("longDelayTaskCount"),
             ),
             "playerDistribution" to linkedMapOf(
                 "byWorld" to this["playersByWorld"],
