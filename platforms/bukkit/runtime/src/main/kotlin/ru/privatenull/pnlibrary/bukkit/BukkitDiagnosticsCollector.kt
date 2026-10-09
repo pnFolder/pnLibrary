@@ -30,6 +30,7 @@ internal class BukkitDiagnosticsCollector {
             putWorldDetails(server)
             putPlayerDetails(server, includeSensitive)
             putPluginDetails(server, includeSensitive)
+            putDependencyHealth(server)
             putPlaceholderApiDetails(server)
         }
     }
@@ -168,6 +169,33 @@ internal class BukkitDiagnosticsCollector {
         } else {
             linkedMapOf("installed" to false)
         }
+    }
+
+    private fun MutableMap<String, Any?>.putDependencyHealth(server: org.bukkit.Server) {
+        val installed = server.pluginManager.plugins.map { it.name }.toSet()
+        this["dependencyHealth"] = server.pluginManager.plugins.map { plugin ->
+            val description = plugin.description
+            val missingRequired = description.depend.filterNot(installed::contains)
+            val missingOptional = description.softDepend.filterNot(installed::contains)
+            val missingLoadBefore = description.loadBefore.filterNot(installed::contains)
+            linkedMapOf<String, Any?>(
+                "plugin" to plugin.name,
+                "enabled" to plugin.isEnabled,
+                "missingRequired" to missingRequired,
+                "missingOptional" to missingOptional,
+                "missingLoadBeforeTargets" to missingLoadBefore,
+                "healthy" to missingRequired.isEmpty(),
+            )
+        }
+        this["dependencySummary"] = linkedMapOf(
+            "pluginCount" to installed.size,
+            "pluginsWithMissingRequired" to server.pluginManager.plugins.count {
+                it.description.depend.any { dependency -> dependency !in installed }
+            },
+            "pluginsWithMissingOptional" to server.pluginManager.plugins.count {
+                it.description.softDepend.any { dependency -> dependency !in installed }
+            },
+        )
     }
 
     private fun pluginJar(plugin: org.bukkit.plugin.Plugin): File? = reflectionOrNull {
