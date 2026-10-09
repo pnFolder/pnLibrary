@@ -36,6 +36,30 @@ internal class DiagnosticIncidentLog(
         ArrayList(incidents)
     }
 
+    fun summary(): Map<String, Any?> = synchronized(incidents) {
+        val byLevel = linkedMapOf<String, Int>()
+        val byComponent = linkedMapOf<String, Int>()
+        var occurrences = 0L
+        var omittedOccurrences = 0L
+        incidents.forEach { incident ->
+            val level = incident["level"]?.toString() ?: "UNKNOWN"
+            val component = incident["component"]?.toString() ?: "unknown"
+            byLevel[level] = (byLevel[level] ?: 0) + 1
+            byComponent[component] = (byComponent[component] ?: 0) + 1
+            occurrences += (incident["occurrenceCount"] as? Number)?.toLong() ?: 1L
+            omittedOccurrences += (incident["omittedOccurrences"] as? Number)?.toLong() ?: 0L
+        }
+        linkedMapOf(
+            "incidentCount" to incidents.size,
+            "occurrenceCount" to occurrences,
+            "omittedOccurrenceCount" to omittedOccurrences,
+            "byLevel" to byLevel,
+            "byComponent" to byComponent,
+            "oldestUtc" to incidents.firstOrNull()?.get("firstSeenUtc"),
+            "newestUtc" to incidents.lastOrNull()?.get("lastSeenUtc"),
+        )
+    }
+
     private fun appendOccurrence(
         incident: LinkedHashMap<String, Any?>,
         timeUtc: String,

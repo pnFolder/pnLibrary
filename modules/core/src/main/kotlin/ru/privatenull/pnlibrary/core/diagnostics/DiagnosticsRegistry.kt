@@ -175,6 +175,21 @@ internal class DiagnosticsRegistry(eventLimit: Int = DEFAULT_EVENT_LIMIT) : Diag
         return plugins[pluginKey]?.contributors?.configurations(pluginKey).orEmpty()
     }
 
+    /** Lightweight aggregate counters used by runtime support reports. */
+    fun diagnosticSummary(): Map<String, Any?> = linkedMapOf<String, Any?>(
+        "registeredPlugins" to plugins.size,
+        "plugins" to plugins.keys.sorted().mapNotNull { name ->
+            plugins[name]?.let { state ->
+                linkedMapOf<String, Any?>(
+                    "plugin" to name,
+                    "statusCount" to state.statuses.snapshot().size,
+                    "contributorCount" to state.contributors.size(),
+                    "incidents" to state.incidents.summary(),
+                )
+            }
+        },
+    )
+
     private fun stateOf(plugin: String) =
         plugins.computeIfAbsent(sanitizer.key(plugin)) { PluginState(limit, sanitizer) }
 

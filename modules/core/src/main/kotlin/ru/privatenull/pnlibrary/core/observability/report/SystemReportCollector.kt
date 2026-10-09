@@ -48,6 +48,10 @@ internal class SystemReportCollector {
             "uptimeSeconds" to runtimeMx.uptime / 1000,
             "startTimeUtc" to Instant.ofEpochMilli(runtimeMx.startTime).toString(),
             "inputArguments" to sanitizeJvmArgs(runtimeMx.inputArguments),
+            "classPathEntryCount" to pathEntryCount("java.class.path"),
+            "modulePathEntryCount" to pathEntryCount("jdk.module.path"),
+            "bootClassPathSupported" to runCatching { runtimeMx.isBootClassPathSupported }.getOrDefault(false),
+            "systemProperties" to safeSystemProperties(),
             "environment" to linkedMapOf(
                 "defaultCharset" to java.nio.charset.Charset.defaultCharset().name(),
                 "fileEncoding" to System.getProperty("file.encoding", "unknown"),
@@ -202,6 +206,15 @@ internal class SystemReportCollector {
         return counts
     }
 
+    private fun pathEntryCount(property: String): Int =
+        System.getProperty(property)?.split(File.pathSeparatorChar)?.count { it.isNotBlank() } ?: 0
+
+    private fun safeSystemProperties(): Map<String, String> = linkedMapOf<String, String>().apply {
+        SAFE_SYSTEM_PROPERTIES.forEach { key ->
+            System.getProperty(key)?.takeIf(String::isNotBlank)?.let { put(key, it.take(256)) }
+        }
+    }
+
     private fun collectCpuDetails(osMx: java.lang.management.OperatingSystemMXBean): Map<String, Any?> {
         val result = linkedMapOf<String, Any?>()
         readDouble(osMx, "getProcessCpuLoad")?.let { result["processLoad"] = it }
@@ -267,6 +280,18 @@ internal class SystemReportCollector {
         const val MAX_ADDRESSES_PER_INTERFACE = 32
         val SECRET_JVM_ARGUMENT = Regex(
             "(?i)(?:^|[._-])(?:password|passwd|pwd|secret|token|api[-_]?key|authorization|credential)(?:[._=-]|$)",
+        )
+        val SAFE_SYSTEM_PROPERTIES = listOf(
+            "java.home",
+            "java.vm.name",
+            "java.vm.version",
+            "java.runtime.name",
+            "java.runtime.version",
+            "os.name",
+            "os.version",
+            "os.arch",
+            "user.language",
+            "user.country",
         )
     }
 }

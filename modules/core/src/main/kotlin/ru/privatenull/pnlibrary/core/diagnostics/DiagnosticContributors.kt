@@ -35,6 +35,8 @@ internal class DiagnosticContributors(
         }
     }
 
+    fun size(): Int = contributors.size
+
     fun configurations(plugin: String): List<RegisteredDiagnosticConfiguration> {
         val files = linkedMapOf<String, RegisteredDiagnosticConfiguration>()
         contributors.values.forEach { registered ->

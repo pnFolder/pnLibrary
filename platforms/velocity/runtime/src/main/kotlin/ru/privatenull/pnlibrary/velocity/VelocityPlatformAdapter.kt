@@ -110,6 +110,17 @@ internal class VelocityPlatformAdapter(
                 )
             }
         }
+        details["pluginArtifacts"] = server.pluginManager.plugins.map { container ->
+            val source = container.description.source.orElse(null)?.toFile()
+            linkedMapOf<String, Any?>(
+                "id" to container.description.id,
+                "path" to if (includeSensitive) source?.absolutePath else "[REDACTED]",
+                "sizeBytes" to source?.takeIf { it.isFile }?.length(),
+                "lastModifiedUtc" to source?.takeIf { it.isFile }?.let {
+                    java.time.Instant.ofEpochMilli(it.lastModified()).toString()
+                },
+            )
+        }
         details["servers"] = server.allServers.map { connection ->
             linkedMapOf<String, Any?>(
                 "name" to connection.serverInfo.name,
