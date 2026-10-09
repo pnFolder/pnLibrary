@@ -25,6 +25,9 @@ class SystemReportCollectorTest {
         assertTrue((analytics["signalSummary"] as? Map<*, *>)?.containsKey("critical") == true)
         assertTrue((analytics["coverage"] as? Map<*, *>)?.containsKey("javaRuntime") == true)
         assertTrue((analytics["hostDistribution"] as? Map<*, *>)?.containsKey("availableProcessors") == true)
-        assertTrue((analytics["collectionHistory"] as? Map<*, *>)?.containsKey("samplesWithSignals") == true)
+        val collectionHistory = analytics["collectionHistory"] as? Map<*, *>
+            ?: error("collectionHistory section is missing")
+        assertTrue(collectionHistory.containsKey("samplesWithSignals"))
+        assertTrue((collectionHistory["trend"] as? Map<*, *>)?.containsKey("heapUsedRatioDelta") == true)
     }
 }

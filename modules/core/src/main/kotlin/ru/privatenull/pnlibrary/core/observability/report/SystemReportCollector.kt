@@ -145,6 +145,9 @@ internal class SystemReportCollector {
                 "durationMs" to durationMs,
                 "networkAddressesIncluded" to includeNetworkAddresses,
                 "status" to "healthy",
+                "heapUsedRatio" to (data["health"] as? Map<*, *>)?.get("heapUsedRatio"),
+                "processCpuLoad" to (data["health"] as? Map<*, *>)?.get("processCpuLoad"),
+                "loadedClassCount" to (data["classes"] as? Map<*, *>)?.get("loadedCount"),
             ),
         )
         while (collectionHistory.size > 32) collectionHistory.removeFirst()
@@ -469,7 +472,19 @@ internal class SystemReportCollector {
         "averageDurationMs" to collectionHistory.mapNotNull {
             (it["durationMs"] as? Number)?.toLong()
         }.average().takeIf { collectionHistory.isNotEmpty() },
+        "trend" to linkedMapOf(
+            "heapUsedRatioDelta" to numericDelta("heapUsedRatio"),
+            "processCpuLoadDelta" to numericDelta("processCpuLoad"),
+            "loadedClassCountDelta" to numericDelta("loadedClassCount"),
+            "durationMsDelta" to numericDelta("durationMs"),
+        ),
     )
+
+    private fun numericDelta(key: String): Double? {
+        val values = collectionHistory.mapNotNull { (it[key] as? Number)?.toDouble() }
+        if (values.size < 2) return null
+        return values.last() - values.first()
+    }
 
     private fun pressure(value: Double?): String? = value?.let {
         when {
