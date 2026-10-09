@@ -142,6 +142,16 @@ internal class BukkitDiagnosticsCollector {
                 ((this["pluginSummary"] as? Map<*, *>)?.get("duplicateNames") as Collection<*>).isNotEmpty()) {
                 signals += linkedMapOf("code" to "duplicatePluginNames", "severity" to "warning")
             }
+            val commandConflicts = (registrationConflicts["commandAliasConflicts"] as? Map<*, *>)?.size ?: 0
+            val permissionConflicts = (registrationConflicts["permissionConflicts"] as? Map<*, *>)?.size ?: 0
+            if (commandConflicts > 0 || permissionConflicts > 0) {
+                signals += linkedMapOf(
+                    "code" to "registrationConflicts",
+                    "severity" to "warning",
+                    "commandAliases" to commandConflicts,
+                    "permissions" to permissionConflicts,
+                )
+            }
         }
 
         val pluginData = plugins.mapNotNull { plugin ->
@@ -181,6 +191,8 @@ internal class BukkitDiagnosticsCollector {
                 "dependencyCycles" to (dependencyGraph["cycles"] as? Collection<*>)?.size,
                 "orphanedOptionalDependencies" to (dependencyGraph["orphanedOptionalDependencies"] as? Collection<*>)?.size,
                 "duplicatePluginNames" to ((this["pluginSummary"] as? Map<*, *>)?.get("duplicateNames") as? Collection<*>)?.size,
+                "commandAliasConflicts" to (registrationConflicts["commandAliasConflicts"] as? Map<*, *>)?.size,
+                "permissionConflicts" to (registrationConflicts["permissionConflicts"] as? Map<*, *>)?.size,
             ),
             "registrations" to registrationConflicts,
             "dependencies" to dependencyGraph,
