@@ -52,6 +52,9 @@ internal class SystemReportCollector {
             "modulePathEntryCount" to pathEntryCount("jdk.module.path"),
             "bootClassPathSupported" to runCatching { runtimeMx.isBootClassPathSupported }.getOrDefault(false),
             "systemProperties" to safeSystemProperties(),
+            "systemPropertyCount" to System.getProperties().size,
+            "systemPropertyNames" to System.getProperties().stringPropertyNames().sorted(),
+            "bootModuleCount" to ModuleLayer.boot().modules().size,
             "environment" to linkedMapOf(
                 "defaultCharset" to java.nio.charset.Charset.defaultCharset().name(),
                 "fileEncoding" to System.getProperty("file.encoding", "unknown"),
