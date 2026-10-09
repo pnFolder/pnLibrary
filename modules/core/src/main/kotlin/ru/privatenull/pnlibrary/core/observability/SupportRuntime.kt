@@ -113,15 +113,22 @@ internal class SupportRuntime(
         }
     }
 
-    fun reportSummary(): Map<String, Any?> = linkedMapOf(
-        "inProgress" to reportInProgress.get(),
-        "created" to reportsCreated.get(),
-        "failed" to reportsFailed.get(),
-        "lastCreatedUtc" to lastReportUtc,
-        "lastDurationMs" to lastReportDurationMs,
-        "lastSizeBytes" to lastReportSizeBytes,
-        "historyFileCount" to runCatching { history.files().size }.getOrDefault(0),
-    )
+    fun reportSummary(): Map<String, Any?> {
+        val historyFiles = runCatching { history.files() }.getOrDefault(emptyList())
+        return linkedMapOf(
+            "inProgress" to reportInProgress.get(),
+            "created" to reportsCreated.get(),
+            "failed" to reportsFailed.get(),
+            "lastCreatedUtc" to lastReportUtc,
+            "lastDurationMs" to lastReportDurationMs,
+            "lastSizeBytes" to lastReportSizeBytes,
+            "history" to linkedMapOf<String, Any?>(
+                "fileCount" to historyFiles.size,
+                "totalBytes" to historyFiles.sumOf { it.second.size.toLong() },
+                "files" to historyFiles.map { it.first },
+            ),
+        )
+    }
 
     fun observabilityAnalytics(): Map<String, Any?> = observations.analytics()
 
