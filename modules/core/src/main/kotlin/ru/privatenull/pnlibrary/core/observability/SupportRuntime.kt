@@ -122,6 +122,10 @@ internal class SupportRuntime(
             "lastCreatedUtc" to lastReportUtc,
             "lastDurationMs" to lastReportDurationMs,
             "lastSizeBytes" to lastReportSizeBytes,
+            "maxReportBytes" to config.maxReportBytes,
+            "lastSizeRatio" to lastReportSizeBytes?.let {
+                it.toDouble() / config.maxReportBytes.toDouble().coerceAtLeast(1.0)
+            },
         "history" to linkedMapOf<String, Any?>(
                 "fileCount" to historyFiles.size,
                 "totalBytes" to historyFiles.sumOf { it.second.size.toLong() },
