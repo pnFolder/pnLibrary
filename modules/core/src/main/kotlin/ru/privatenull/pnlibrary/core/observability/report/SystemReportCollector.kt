@@ -321,6 +321,11 @@ internal class SystemReportCollector {
                     .maxByOrNull { ((it as? Map<*, *>)?.get("totalSpaceBytes") as? Number)?.toLong() ?: 0L },
                 "networkInterfacesUp" to ((snapshot["networkAnalytics"] as? Map<*, *>)?.get("upCount")),
                 "networkAddresses" to ((snapshot["networkAnalytics"] as? Map<*, *>)?.get("totalAddressCount")),
+                "processReadBytes" to ((snapshot["processIo"] as? Map<*, *>)?.get("read_bytes")),
+                "processWriteBytes" to ((snapshot["processIo"] as? Map<*, *>)?.get("write_bytes")),
+                "processTcpEstablished" to ((snapshot["processNetwork"] as? Map<*, *>)?.get("tcpEstablished")),
+                "processTcpListening" to ((snapshot["processNetwork"] as? Map<*, *>)?.get("tcpListening")),
+                "processUdpSockets" to ((snapshot["processNetwork"] as? Map<*, *>)?.get("udpSockets")),
             ),
             "runtimeDistribution" to linkedMapOf(
                 "uptimeSeconds" to java?.get("uptimeSeconds"),
