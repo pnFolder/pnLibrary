@@ -26,6 +26,7 @@ internal class BukkitDiagnosticsCollector {
         val server = Bukkit.getServer()
         return linkedMapOf<String, Any?>().apply {
             putServerDetails(server)
+            putServerSettings(server)
             putPerformanceDetails()
             putSchedulerDetails()
             putServiceDetails()
@@ -160,6 +161,17 @@ internal class BukkitDiagnosticsCollector {
                 }
             }
         }
+    }
+
+    private fun MutableMap<String, Any?>.putServerSettings(server: org.bukkit.Server) {
+        this["serverSettings"] = linkedMapOf(
+            "port" to server.port,
+            "viewDistance" to server.viewDistance,
+            "onlineMode" to server.onlineMode,
+            "whitelistEnabled" to server.hasWhitelist(),
+            "whitelistedPlayerCount" to server.whitelistedPlayers.size,
+            "spawnRadius" to server.spawnRadius,
+        )
     }
 
     private fun MutableMap<String, Any?>.putSchedulerDetails() {
