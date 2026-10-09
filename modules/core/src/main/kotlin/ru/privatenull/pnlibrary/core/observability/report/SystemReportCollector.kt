@@ -151,6 +151,8 @@ internal class SystemReportCollector {
                 "status" to "healthy",
                 "heapUsedRatio" to (data["health"] as? Map<*, *>)?.get("heapUsedRatio"),
                 "processCpuLoad" to (data["health"] as? Map<*, *>)?.get("processCpuLoad"),
+                "systemCpuLoad" to (data["health"] as? Map<*, *>)?.get("systemCpuLoad"),
+                "highestDiskUsedRatio" to (data["health"] as? Map<*, *>)?.get("highestDiskUsedRatio"),
                 "loadedClassCount" to (data["classes"] as? Map<*, *>)?.get("loadedCount"),
             ),
         )
@@ -503,6 +505,8 @@ internal class SystemReportCollector {
         "trend" to linkedMapOf(
             "heapUsedRatioDelta" to numericDelta("heapUsedRatio"),
             "processCpuLoadDelta" to numericDelta("processCpuLoad"),
+            "systemCpuLoadDelta" to numericDelta("systemCpuLoad"),
+            "highestDiskUsedRatioDelta" to numericDelta("highestDiskUsedRatio"),
             "loadedClassCountDelta" to numericDelta("loadedClassCount"),
             "durationMsDelta" to numericDelta("durationMs"),
         ),
