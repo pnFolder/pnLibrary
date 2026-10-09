@@ -547,7 +547,7 @@ internal class SystemReportCollector {
     private fun topCpuThreads(bean: java.lang.management.ThreadMXBean): List<Map<String, Any?>> {
         if (!bean.isThreadCpuTimeSupported) return emptyList()
         val ids = bean.allThreadIds
-        return ids.asSequence().mapNotNull { id: Long ->
+        val samples = ids.asSequence().mapNotNull { id: Long ->
             val cpuNanos = runCatching { bean.getThreadCpuTime(id) }.getOrDefault(-1L)
             if (cpuNanos < 0L) return@mapNotNull null
             val info = bean.getThreadInfo(id) ?: return@mapNotNull null
@@ -557,9 +557,13 @@ internal class SystemReportCollector {
                 "state" to info.threadState.name,
                 "cpuTimeNanos" to cpuNanos,
             )
+        }.toList()
+        val totalCpuNanos = samples.sumOf { (it["cpuTimeNanos"] as Number).toLong() }
+        return samples.map { sample ->
+            val cpuNanos = (sample["cpuTimeNanos"] as Number).toLong()
+            sample + ("cpuShare" to cpuNanos.toDouble() / totalCpuNanos.coerceAtLeast(1L))
         }.sortedByDescending { (it["cpuTimeNanos"] as Number).toLong() }
             .take(MAX_CPU_THREADS)
-            .toList()
     }
 
     private fun pathEntryCount(property: String): Int =
