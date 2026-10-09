@@ -309,6 +309,26 @@ internal class BukkitDiagnosticsCollector {
                     },
                 )
             },
+            "worldLoadCounts" to linkedMapOf(
+                "normal" to worlds.count { world ->
+                    val data = world as? Map<*, *> ?: return@count false
+                    val entities = (data["entities"] as? Number)?.toLong() ?: 0L
+                    val chunks = (data["loadedChunks"] as? Number)?.toLong() ?: 0L
+                    entities < 500L && chunks < 500L
+                },
+                "elevated" to worlds.count { world ->
+                    val data = world as? Map<*, *> ?: return@count false
+                    val entities = (data["entities"] as? Number)?.toLong() ?: 0L
+                    val chunks = (data["loadedChunks"] as? Number)?.toLong() ?: 0L
+                    (entities in 500L..1_999L) || (chunks in 500L..1_999L)
+                },
+                "high" to worlds.count { world ->
+                    val data = world as? Map<*, *> ?: return@count false
+                    val entities = (data["entities"] as? Number)?.toLong() ?: 0L
+                    val chunks = (data["loadedChunks"] as? Number)?.toLong() ?: 0L
+                    entities >= 2_000L || chunks >= 2_000L
+                },
+            ),
             "playerDistribution" to linkedMapOf(
                 "byWorld" to this["playersByWorld"],
                 "byGameMode" to this["playersByGameMode"],
