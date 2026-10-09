@@ -406,6 +406,14 @@ internal class BukkitDiagnosticsCollector {
                     this["players"] = world.players.size
                     this["loadedChunks"] = world.loadedChunks.size
                     this["entities"] = world.entities.size
+                    this["entityDensityPerChunk"] = world.loadedChunks.size.takeIf { it > 0 }
+                        ?.let { world.entities.size.toDouble() / it }
+                    this["loadBucket"] = when {
+                        world.loadedChunks.size == 0 -> "empty"
+                        world.loadedChunks.size < 100 -> "light"
+                        world.loadedChunks.size < 500 -> "moderate"
+                        else -> "heavy"
+                    }
                     this["entitiesByType"] = world.entities
                         .groupingBy { it.type.name }
                         .eachCount()
@@ -421,6 +429,10 @@ internal class BukkitDiagnosticsCollector {
             "players" to worlds.sumOf { (it["players"] as? Number)?.toInt() ?: 0 },
             "loadedChunks" to worlds.sumOf { (it["loadedChunks"] as? Number)?.toInt() ?: 0 },
             "entities" to worlds.sumOf { (it["entities"] as? Number)?.toInt() ?: 0 },
+            "byLoadBucket" to worlds.groupingBy { it["loadBucket"]?.toString() ?: "unknown" }.eachCount(),
+            "highestEntityDensity" to worlds
+                .maxByOrNull { (it["entityDensityPerChunk"] as? Number)?.toDouble() ?: 0.0 }
+                ?.let { linkedMapOf("world" to it["name"], "entitiesPerChunk" to it["entityDensityPerChunk"]) },
             "entitiesByType" to worlds
                 .mapNotNull { it["entitiesByType"] as? Map<*, *> }
                 .flatMap { it.entries }
