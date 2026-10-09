@@ -366,6 +366,12 @@ internal class BukkitDiagnosticsCollector {
             "players" to worlds.sumOf { (it["players"] as? Number)?.toInt() ?: 0 },
             "loadedChunks" to worlds.sumOf { (it["loadedChunks"] as? Number)?.toInt() ?: 0 },
             "entities" to worlds.sumOf { (it["entities"] as? Number)?.toInt() ?: 0 },
+            "entitiesByType" to worlds
+                .mapNotNull { it["entitiesByType"] as? Map<*, *> }
+                .flatMap { it.entries }
+                .groupingBy { it.key.toString() }
+                .fold(0L) { total, entry -> total + ((entry.value as? Number)?.toLong() ?: 0L) }
+                .toSortedMap(),
         )
     }
 
@@ -507,6 +513,16 @@ internal class BukkitDiagnosticsCollector {
                 .keys
                 .sorted(),
             "loadOrder" to plugins.map { it.name },
+            "dependencyCounts" to linkedMapOf(
+                "required" to plugins.sumOf { it.description.depend.size },
+                "optional" to plugins.sumOf { it.description.softDepend.size },
+                "loadBefore" to plugins.sumOf { it.description.loadBefore.size },
+            ),
+            "commandCount" to plugins.sumOf { it.description.commands.size },
+            "permissionCount" to plugins.sumOf { it.description.permissions.size },
+            "totalJarBytes" to (this["plugins"] as? Collection<*>)
+                ?.mapNotNull { (it as? Map<*, *>)?.get("jarSizeBytes") as? Number }
+                ?.sumOf { it.toLong() },
         )
     }
 
