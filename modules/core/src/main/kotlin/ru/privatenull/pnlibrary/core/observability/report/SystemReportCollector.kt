@@ -102,6 +102,7 @@ internal class SystemReportCollector {
             "deadlockedCount" to (deadlocked?.size ?: 0),
             "deadlockedThreadIds" to (deadlocked?.toList() ?: emptyList<Long>()),
             "stateCounts" to threadStateCounts(threadMx),
+            "topCpuThreads" to topCpuThreads(threadMx),
         )
 
         // ── Classes ──────────────────────────────────────────────────────────
@@ -206,6 +207,24 @@ internal class SystemReportCollector {
         return counts
     }
 
+    private fun topCpuThreads(bean: java.lang.management.ThreadMXBean): List<Map<String, Any?>> {
+        if (!bean.isThreadCpuTimeSupported) return emptyList()
+        val ids = bean.allThreadIds
+        return ids.asSequence().mapNotNull { id: Long ->
+            val cpuNanos = runCatching { bean.getThreadCpuTime(id) }.getOrDefault(-1L)
+            if (cpuNanos < 0L) return@mapNotNull null
+            val info = bean.getThreadInfo(id) ?: return@mapNotNull null
+            linkedMapOf<String, Any?>(
+                "id" to id,
+                "name" to info.threadName.take(256),
+                "state" to info.threadState.name,
+                "cpuTimeNanos" to cpuNanos,
+            )
+        }.sortedByDescending { (it["cpuTimeNanos"] as Number).toLong() }
+            .take(MAX_CPU_THREADS)
+            .toList()
+    }
+
     private fun pathEntryCount(property: String): Int =
         System.getProperty(property)?.split(File.pathSeparatorChar)?.count { it.isNotBlank() } ?: 0
 
@@ -278,6 +297,7 @@ internal class SystemReportCollector {
         const val MAX_JVM_ARGUMENT_LENGTH = 1_024
         const val MAX_NETWORK_INTERFACES = 64
         const val MAX_ADDRESSES_PER_INTERFACE = 32
+        const val MAX_CPU_THREADS = 20
         val SECRET_JVM_ARGUMENT = Regex(
             "(?i)(?:^|[._-])(?:password|passwd|pwd|secret|token|api[-_]?key|authorization|credential)(?:[._=-]|$)",
         )
