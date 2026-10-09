@@ -52,6 +52,7 @@ internal class SupportReportAssembler(
     ) {
         val platformDetails = platform.diagnosticDetails(includeSensitive = encrypted && !config.privacy)
         val platformCoverage = platformDetails["coverage"]
+        val runtimeDetails = runtimeDiagnostics()
         archive.json(
             "manifest.json",
             linkedMapOf(
@@ -65,9 +66,13 @@ internal class SupportReportAssembler(
                 "diagnosticsMode" to "full",
                 "privacy" to config.privacy,
                 "platformCoverage" to platformCoverage,
+                "runtimeCoverage" to linkedMapOf(
+                    "sectionCount" to runtimeDetails.size,
+                    "sections" to runtimeDetails.keys.sorted(),
+                ),
             ),
         )
-        runtimeDiagnostics().takeIf { it.isNotEmpty() }?.let { archive.json("runtime.json", it) }
+        runtimeDetails.takeIf { it.isNotEmpty() }?.let { archive.json("runtime.json", it) }
         archive.json(
             "system.json",
             system.collect(includeNetworkAddresses = encrypted && !config.privacy),
