@@ -149,6 +149,18 @@ internal class VelocityPlatformAdapter(
             "totalPlayersOnBackends" to backendPlayerCounts.values.sum(),
             "playersByServer" to backendPlayerCounts,
         )
+        val playerPings = server.allPlayers.map { it.ping }.filter { it >= 0 }
+        details["playerSummary"] = linkedMapOf(
+            "onlineCount" to server.playerCount,
+            "playersByServer" to server.allPlayers
+                .groupingBy { it.currentServer.map { connection -> connection.serverInfo.name }.orElse("[unassigned]") }
+                .eachCount(),
+            "pingMs" to linkedMapOf(
+                "min" to playerPings.minOrNull(),
+                "max" to playerPings.maxOrNull(),
+                "average" to playerPings.average().takeIf { playerPings.isNotEmpty() },
+            ),
+        )
         if (includeSensitive) {
             details["players"] = server.allPlayers.map { player ->
                 linkedMapOf<String, Any?>(

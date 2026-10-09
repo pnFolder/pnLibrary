@@ -140,6 +140,18 @@ internal class BungeePlatformAdapter(
             "totalPlayersOnBackends" to backendPlayerCounts.values.sum(),
             "playersByServer" to backendPlayerCounts,
         )
+        val playerPings = plugin.proxy.players.map { it.ping }.filter { it >= 0 }
+        details["playerSummary"] = linkedMapOf(
+            "onlineCount" to plugin.proxy.onlineCount,
+            "playersByServer" to plugin.proxy.players
+                .groupingBy { it.server?.info?.name ?: "[unassigned]" }
+                .eachCount(),
+            "pingMs" to linkedMapOf(
+                "min" to playerPings.minOrNull(),
+                "max" to playerPings.maxOrNull(),
+                "average" to playerPings.average().takeIf { playerPings.isNotEmpty() },
+            ),
+        )
         if (includeSensitive) {
             details["players"] = plugin.proxy.players.map { player ->
                 linkedMapOf<String, Any?>(
