@@ -188,7 +188,9 @@ internal class SystemReportCollector {
         val analytics = collectAnalytics(data)
         collectionHistory.lastOrNull()?.let { sample ->
             sample["status"] = analytics["status"]
-            sample["signalCount"] = (analytics["signals"] as? Collection<*>)?.size ?: 0
+            val signals = analytics["signals"] as? Collection<*> ?: emptyList<Any?>()
+            sample["signalCount"] = signals.size
+            sample["signalCodes"] = signals.mapNotNull { (it as? Map<*, *>)?.get("code")?.toString() }.distinct()
         }
         data["analytics"] = analytics + ("collectionHistory" to collectionAnalytics())
 
@@ -538,6 +540,11 @@ internal class SystemReportCollector {
         "samplesWithSignals" to collectionHistory.count {
             ((it["signalCount"] as? Number)?.toInt() ?: 0) > 0
         },
+        "signalCodeFrequency" to collectionHistory
+            .flatMap { (it["signalCodes"] as? Collection<*>)?.mapNotNull(Any?::toString).orEmpty() }
+            .groupingBy { it }
+            .eachCount()
+            .toSortedMap(),
         "averageDurationMs" to collectionHistory.mapNotNull {
             (it["durationMs"] as? Number)?.toLong()
         }.average().takeIf { collectionHistory.isNotEmpty() },

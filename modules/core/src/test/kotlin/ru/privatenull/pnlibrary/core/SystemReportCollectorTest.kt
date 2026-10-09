@@ -40,6 +40,7 @@ class SystemReportCollectorTest {
         val collectionHistory = analytics["collectionHistory"] as? Map<*, *>
             ?: error("collectionHistory section is missing")
         assertTrue(collectionHistory.containsKey("samplesWithSignals"))
+        assertTrue(collectionHistory.containsKey("signalCodeFrequency"))
         assertTrue((collectionHistory["trend"] as? Map<*, *>)?.containsKey("heapUsedRatioDelta") == true)
         assertTrue((collectionHistory["trend"] as? Map<*, *>)?.containsKey("systemCpuLoadDelta") == true)
         assertTrue((collectionHistory["trend"] as? Map<*, *>)?.containsKey("readBytesDelta") == true)
