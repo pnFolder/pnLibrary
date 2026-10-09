@@ -16,6 +16,7 @@ import java.util.IdentityHashMap
 import java.util.LinkedHashSet
 import java.util.concurrent.CompletionStage
 import java.util.concurrent.atomic.AtomicBoolean
+import java.util.concurrent.atomic.AtomicLong
 
 /** Shared validation, permission, dispatch, and lifecycle engine for portable commands. */
 internal class CommandServiceImpl(
@@ -28,6 +29,10 @@ internal class CommandServiceImpl(
     private val byDefinition = IdentityHashMap<CommandDefinition, Registration>()
     private val byOwner = IdentityHashMap<Any, MutableSet<Registration>>()
     private val router = CommandTreeRouter()
+    private val executionCount = AtomicLong()
+    private val suggestionCount = AtomicLong()
+    private val executionFailureCount = AtomicLong()
+    private val suggestionFailureCount = AtomicLong()
 
     override fun register(owner: Any, command: CommandDefinition): CommandRegistration {
         val names = linkedSetOf(command.name).apply { addAll(command.aliases) }
@@ -68,6 +73,7 @@ internal class CommandServiceImpl(
         command: CommandDefinition,
         context: CommandContext,
     ): CompletionStage<Void> {
+        executionCount.incrementAndGet()
         val registration = activeRegistration(command) ?: return completedExecution()
         val route = try {
             router.route(command, context)
@@ -102,6 +108,7 @@ internal class CommandServiceImpl(
         command: CommandDefinition,
         context: CommandContext,
     ): CompletionStage<List<String>> {
+        suggestionCount.incrementAndGet()
         val registration = activeRegistration(command) ?: return completedSuggestions(emptyList())
         val stage = try {
             router.suggest(command, context)
@@ -132,13 +139,25 @@ internal class CommandServiceImpl(
         synchronized(lock) { byDefinition[command]?.takeUnless { it.isClosed } }
 
     private fun executionFailed(owner: Any, context: CommandContext, error: Throwable) {
+        executionFailureCount.incrementAndGet()
         platform.log(owner, LogLevel.ERROR, "Command execution failed", error)
         context.sender.send(Component.text("Command execution failed."))
     }
 
     private fun suggestionFailed(owner: Any, error: Throwable) {
+        suggestionFailureCount.incrementAndGet()
         platform.log(owner, LogLevel.ERROR, "Command suggestions failed", error)
     }
+
+    @Synchronized
+    fun diagnosticSnapshot(): Map<String, Any?> = linkedMapOf(
+        "registeredCount" to registrations.count { !it.isClosed },
+        "registeredNames" to registrations.filterNot { it.isClosed }.flatMap { it.command.aliases + it.command.name }.distinct().sorted(),
+        "executionCount" to executionCount.get(),
+        "suggestionCount" to suggestionCount.get(),
+        "executionFailureCount" to executionFailureCount.get(),
+        "suggestionFailureCount" to suggestionFailureCount.get(),
+    )
 
     private fun closeRegistrations(current: Iterable<Registration>) {
         current.forEach { registration ->
