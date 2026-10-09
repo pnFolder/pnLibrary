@@ -30,6 +30,8 @@ internal class BungeePlatformAdapter(
     private val bound = AtomicBoolean()
 
     private var updateCommand: CommandRegistration? = null
+    private var previousUncaughtHandler: Thread.UncaughtExceptionHandler? = null
+    private var installedUncaughtHandler: Thread.UncaughtExceptionHandler? = null
 
     override val type: PlatformType = PlatformType.BUNGEECORD
     override val dataFolder = plugin.dataFolder.toPath()
@@ -59,6 +61,24 @@ internal class BungeePlatformAdapter(
 
             plugin.logger.log(nativeLevel, message, error)
         }
+
+    @Synchronized
+    override fun observeNativeLogs(observer: ((Any, LogLevel, String, Throwable?) -> Unit)?) {
+        if (observer != null && installedUncaughtHandler == null) {
+            previousUncaughtHandler = Thread.getDefaultUncaughtExceptionHandler()
+            installedUncaughtHandler = Thread.UncaughtExceptionHandler { thread, error ->
+                observer(plugin, LogLevel.ERROR, "Uncaught exception on thread ${thread.name}", error)
+                previousUncaughtHandler?.uncaughtException(thread, error)
+            }
+            Thread.setDefaultUncaughtExceptionHandler(installedUncaughtHandler)
+        } else if (observer == null && installedUncaughtHandler != null) {
+            if (Thread.getDefaultUncaughtExceptionHandler() === installedUncaughtHandler) {
+                Thread.setDefaultUncaughtExceptionHandler(previousUncaughtHandler)
+            }
+            previousUncaughtHandler = null
+            installedUncaughtHandler = null
+        }
+    }
 
     @Suppress("DEPRECATION")
     override fun console(owner: Any, message: String) {
@@ -210,6 +230,7 @@ internal class BungeePlatformAdapter(
 
     override fun close() {
         if (!closed.compareAndSet(false, true)) return
+        observeNativeLogs(null)
 
         updateCommand?.close()
         updateCommand = null

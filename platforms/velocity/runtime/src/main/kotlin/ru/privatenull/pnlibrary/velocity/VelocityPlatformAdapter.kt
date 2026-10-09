@@ -41,6 +41,8 @@ internal class VelocityPlatformAdapter(
     private val bound = AtomicBoolean()
 
     private var updateCommand: CommandRegistration? = null
+    private var previousUncaughtHandler: Thread.UncaughtExceptionHandler? = null
+    private var installedUncaughtHandler: Thread.UncaughtExceptionHandler? = null
 
     override val type: PlatformType = PlatformType.VELOCITY
 
@@ -69,6 +71,24 @@ internal class VelocityPlatformAdapter(
         server.consoleCommandSource.sendMessage(
             LEGACY_SERIALIZER.deserialize(message),
         )
+    }
+
+    @Synchronized
+    override fun observeNativeLogs(observer: ((Any, LogLevel, String, Throwable?) -> Unit)?) {
+        if (observer != null && installedUncaughtHandler == null) {
+            previousUncaughtHandler = Thread.getDefaultUncaughtExceptionHandler()
+            installedUncaughtHandler = Thread.UncaughtExceptionHandler { thread, error ->
+                observer(plugin, LogLevel.ERROR, "Uncaught exception on thread ${thread.name}", error)
+                previousUncaughtHandler?.uncaughtException(thread, error)
+            }
+            Thread.setDefaultUncaughtExceptionHandler(installedUncaughtHandler)
+        } else if (observer == null && installedUncaughtHandler != null) {
+            if (Thread.getDefaultUncaughtExceptionHandler() === installedUncaughtHandler) {
+                Thread.setDefaultUncaughtExceptionHandler(previousUncaughtHandler)
+            }
+            previousUncaughtHandler = null
+            installedUncaughtHandler = null
+        }
     }
 
     override fun ownerMetadata(owner: Any): PluginSnapshot? {
@@ -209,6 +229,7 @@ internal class VelocityPlatformAdapter(
 
     override fun close() {
         if (!closed.compareAndSet(false, true)) return
+        observeNativeLogs(null)
 
         updateCommand?.close()
         updateCommand = null
