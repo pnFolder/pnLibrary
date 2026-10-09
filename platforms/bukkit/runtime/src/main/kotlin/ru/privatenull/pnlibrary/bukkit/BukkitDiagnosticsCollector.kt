@@ -4,6 +4,7 @@ import org.bukkit.Bukkit
 import ru.privatenull.pnlibrary.bukkit.compat.ServerCapabilities
 import java.io.File
 import java.io.FileInputStream
+import java.util.jar.JarFile
 import java.security.MessageDigest
 import java.time.Instant
 import java.util.Locale
@@ -121,6 +122,7 @@ internal class BukkitDiagnosticsCollector {
                     this["jarSizeBytes"] = jar.length()
                     this["lastModifiedUtc"] = Instant.ofEpochMilli(jar.lastModified()).toString()
                     sha256(jar)?.let { hash -> this["jarSha256"] = hash }
+                    manifestDetails(jar)?.let { manifest -> this["manifest"] = manifest }
                 }
             }
         }
@@ -138,6 +140,22 @@ internal class BukkitDiagnosticsCollector {
         }
         digest.digest().joinToString("") { byte -> "%02x".format(byte) }
     }.getOrNull()
+
+    private fun manifestDetails(file: File): Map<String, String>? = runCatching {
+        JarFile(file).use { jar ->
+            val attributes = jar.manifest?.mainAttributes ?: return@use emptyMap()
+            listOf(
+                "Implementation-Title",
+                "Implementation-Version",
+                "Implementation-Vendor",
+                "Specification-Version",
+                "Build-Jdk-Spec",
+                "Created-By",
+            ).mapNotNull { key ->
+                attributes.getValue(key)?.takeIf(String::isNotBlank)?.let { key to it.take(256) }
+            }.toMap()
+        }
+    }.getOrNull()?.takeIf { it.isNotEmpty() }
 
     private fun MutableMap<String, Any?>.putPlaceholderApiDetails(server: org.bukkit.Server) {
         val plugin = server.pluginManager.getPlugin("PlaceholderAPI")
