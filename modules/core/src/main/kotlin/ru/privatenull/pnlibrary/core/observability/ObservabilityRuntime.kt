@@ -115,6 +115,13 @@ internal class ObservabilityRuntime(
             "recent" to recent,
             "attachmentCount" to attachments.size,
             "attachmentBytes" to attachments.sumOf { it.size },
+            "attachmentsByContentType" to attachments.groupingBy { it.contentType }.eachCount(),
+            "attachmentsByObservation" to attachments.groupingBy { it.observationId }.eachCount(),
+            "attachmentSize" to linkedMapOf(
+                "minBytes" to attachments.minOfOrNull { it.size },
+                "maxBytes" to attachments.maxOfOrNull { it.size },
+                "averageBytes" to attachments.map { it.size }.average().takeIf { attachments.isNotEmpty() },
+            ),
             "oldestUtc" to events.minOfOrNull { it.timestamp }?.let(Instant::ofEpochMilli)?.toString(),
             "newestUtc" to events.maxOfOrNull { it.timestamp }?.let(Instant::ofEpochMilli)?.toString(),
             "activity" to linkedMapOf(
