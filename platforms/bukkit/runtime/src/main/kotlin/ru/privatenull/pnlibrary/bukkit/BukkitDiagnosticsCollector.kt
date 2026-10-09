@@ -234,6 +234,16 @@ internal class BukkitDiagnosticsCollector {
                     server.javaClass.getMethod("getIdleTimeout").invoke(server)
                 },
             ),
+            "resourcePack" to linkedMapOf(
+                "url" to reflectionOrNull { server.javaClass.getMethod("getResourcePack").invoke(server) },
+                "hash" to reflectionOrNull { server.javaClass.getMethod("getResourcePackHash").invoke(server) },
+                "required" to reflectionOrNull {
+                    server.javaClass.getMethod("isResourcePackRequired").invoke(server)
+                },
+                "prompt" to reflectionOrNull {
+                    server.javaClass.getMethod("getResourcePackPrompt").invoke(server)?.toString()
+                },
+            ),
             "spawnSettings" to linkedMapOf(
                 "animals" to spawnSettings(
                     server.getAnimalSpawnLimit(),
