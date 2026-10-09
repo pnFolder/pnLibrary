@@ -134,6 +134,7 @@ internal class SystemReportCollector {
 
         // ── Environment Variables (NAMES ONLY!) ──────────────────────────────
         data["environmentVariableNames"] = System.getenv().keys.sorted()
+        data["environmentVariableAnalytics"] = collectEnvironmentVariableAnalytics()
 
         // ── Network Interfaces (ONLY when encrypted!) ────────────────────────
         if (includeNetworkAddresses) {
@@ -290,6 +291,7 @@ internal class SystemReportCollector {
             "processIo" to snapshot["processIo"],
             "processNetwork" to snapshot["processNetwork"],
             "loadAverage" to snapshot["loadAverage"],
+            "environmentVariables" to snapshot["environmentVariableAnalytics"],
             "hostDistribution" to linkedMapOf(
                 "availableProcessors" to os?.get("availableProcessors"),
                 "systemLoadAverage" to os?.get("systemLoadAverage"),
@@ -804,6 +806,22 @@ internal class SystemReportCollector {
         )
     }.getOrDefault(emptyMap())
 
+    private fun collectEnvironmentVariableAnalytics(): Map<String, Any?> {
+        val names = System.getenv().keys
+        val categories = linkedMapOf(
+            "java" to names.count { it.contains("JAVA", ignoreCase = true) },
+            "path" to names.count { it == "PATH" || it.endsWith("_PATH") },
+            "proxy" to names.count { it.contains("PROXY", ignoreCase = true) },
+            "cloud" to names.count { it.contains("CLOUD", ignoreCase = true) || it.contains("KUBERNETES", ignoreCase = true) },
+            "ci" to names.count { it.contains("CI", ignoreCase = true) || it.contains("BUILD", ignoreCase = true) },
+        )
+        return linkedMapOf(
+            "totalNames" to names.size,
+            "categories" to categories,
+            "secretLikeNames" to names.count { SECRET_ENV_NAME.matches(it) },
+        )
+    }
+
     private fun collectProcessNetwork(): Map<String, Any?> = runCatching {
         val tcp = listOf("/proc/self/net/tcp", "/proc/self/net/tcp6")
             .flatMap { path -> readProcSocketStates(path) }
@@ -910,6 +928,9 @@ internal class SystemReportCollector {
         const val MEMORY_POOL_PRESSURE_THRESHOLD = 0.90
         val SECRET_JVM_ARGUMENT = Regex(
             "(?i)(?:^|[._-])(?:password|passwd|pwd|secret|token|api[-_]?key|authorization|credential)(?:[._=-]|$)",
+        )
+        val SECRET_ENV_NAME = Regex(
+            "(?i).*(password|passwd|pwd|secret|token|api[-_]?key|authorization|credential).*",
         )
         val SAFE_SYSTEM_PROPERTIES = listOf(
             "java.home",
