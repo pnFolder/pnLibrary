@@ -118,7 +118,7 @@ internal class SystemReportCollector {
             "totalStartedCount" to threadMx.totalStartedThreadCount,
             "deadlockedCount" to (deadlocked?.size ?: 0),
             "deadlockedThreadIds" to (deadlocked?.toList() ?: emptyList<Long>()),
-            "deadlockedThreads" to deadlockedThreadDetails(deadlocked),
+            "deadlockedThreads" to deadlockedThreadDetails(threadMx, deadlocked),
             "stateCounts" to threadStateCounts(threadMx),
             "contention" to threadContention(threadMx),
             "topCpuThreads" to topCpuThreads(threadMx),
@@ -707,8 +707,22 @@ internal class SystemReportCollector {
     }
 
     private fun deadlockedThreadDetails(
+        bean: java.lang.management.ThreadMXBean,
         ids: LongArray?,
-    ): List<Map<String, Any?>> = ids?.map { id -> linkedMapOf<String, Any?>("id" to id) }.orEmpty()
+    ): List<Map<String, Any?>> = ids?.let { deadlockedIds ->
+        bean.getThreadInfo(deadlockedIds)?.mapNotNull { info ->
+            info?.let {
+                linkedMapOf<String, Any?>(
+                    "id" to it.threadId,
+                    "name" to it.threadName.take(256),
+                    "state" to it.threadState.name,
+                    "lockName" to it.lockName,
+                    "lockOwnerId" to it.lockOwnerId.takeIf { ownerId -> ownerId >= 0L },
+                    "lockOwnerName" to it.lockOwnerName,
+                )
+            }
+        }.orEmpty()
+    }.orEmpty()
 
     private fun threadContention(bean: java.lang.management.ThreadMXBean): Map<String, Any?> {
         val infos = bean.getThreadInfo(bean.allThreadIds)?.filterNotNull().orEmpty()
