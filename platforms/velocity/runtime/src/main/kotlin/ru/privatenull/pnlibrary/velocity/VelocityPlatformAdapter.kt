@@ -218,6 +218,22 @@ internal class VelocityPlatformAdapter(
         } else {
             details["players"] = "redacted"
         }
+        details["analytics"] = linkedMapOf(
+            "status" to proxyAnalyticsStatus(details),
+            "signals" to proxyAnalyticsSignals(details),
+            "resources" to linkedMapOf(
+                "onlinePlayers" to server.playerCount,
+                "backendServers" to server.allServers.size,
+                "emptyBackends" to backendPlayerCounts.count { it.value == 0 },
+                "registeredPlugins" to server.pluginManager.plugins.size,
+            ),
+            "counts" to linkedMapOf(
+                "plugins" to server.pluginManager.plugins.size,
+                "backends" to server.allServers.size,
+                "players" to server.playerCount,
+                "missingRequiredDependencies" to dependencyHealthCount(details),
+            ),
+        )
         details["coverage"] = linkedMapOf(
             "sections" to listOf(
                 "platform",
@@ -236,6 +252,33 @@ internal class VelocityPlatformAdapter(
         )
         return details
     }
+
+    private fun proxyAnalyticsSignals(details: Map<String, Any?>): List<Map<String, Any?>> {
+        val signals = mutableListOf<Map<String, Any?>>()
+        if (dependencyHealthCount(details) > 0) {
+            signals += linkedMapOf("code" to "missingRequiredDependencies", "severity" to "critical")
+        }
+        val summary = details["serverSummary"] as? Map<*, *>
+        if ((summary?.get("emptyServerCount") as? Number)?.toInt()?.let { it > 0 } == true) {
+            signals += linkedMapOf("code" to "emptyBackendServers", "severity" to "info")
+        }
+        val ping = ((details["playerSummary"] as? Map<*, *>)?.get("pingMs") as? Map<*, *>)?.get("average") as? Number
+        if (ping != null && ping.toDouble() >= HIGH_PING_THRESHOLD) {
+            signals += linkedMapOf("code" to "highPlayerLatency", "severity" to "warning", "averageMs" to ping)
+        }
+        return signals
+    }
+
+    private fun proxyAnalyticsStatus(details: Map<String, Any?>): String = when {
+        proxyAnalyticsSignals(details).any { it["severity"] == "critical" } -> "critical"
+        proxyAnalyticsSignals(details).isNotEmpty() -> "attention"
+        else -> "healthy"
+    }
+
+    private fun dependencyHealthCount(details: Map<String, Any?>): Int =
+        (details["dependencyHealth"] as? Collection<*>)
+            ?.count { (it as? Map<*, *>)?.get("healthy") == false }
+            ?: 0
 
     override fun remotePolicyContext(
         owner: Any,
@@ -300,6 +343,7 @@ internal class VelocityPlatformAdapter(
         )
 
     private companion object {
+        const val HIGH_PING_THRESHOLD = 200.0
         val LEGACY_SERIALIZER: LegacyComponentSerializer =
             LegacyComponentSerializer.legacySection()
     }

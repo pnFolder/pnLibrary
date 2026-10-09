@@ -130,8 +130,79 @@ internal class SystemReportCollector {
             data["networkInterfaces"] = "[REDACTED: available in encrypted report only]"
         }
         data["networkSummary"] = collectNetworkSummary()
+        data["analytics"] = collectAnalytics(data)
 
         return data
+    }
+
+    /**
+     * Derives actionable health signals from the raw snapshot without collecting
+     * any additional sensitive data. This keeps the report useful when a reader
+     * only has the summary sections available.
+     */
+    private fun collectAnalytics(snapshot: Map<String, Any?>): Map<String, Any?> {
+        val memory = snapshot["memory"] as? Map<*, *>
+        val heap = memory?.get("heap") as? Map<*, *>
+        val health = snapshot["health"] as? Map<*, *>
+        val threads = snapshot["threads"] as? Map<*, *>
+        val gc = memory?.get("garbageCollectors") as? Collection<*>
+
+        val signals = buildList {
+            addPressureSignal(this, "heap", health?.get("heapPressure"))
+            addPressureSignal(this, "processCpu", health?.get("processCpuPressure"))
+            addPressureSignal(this, "systemCpu", health?.get("systemCpuPressure"))
+            addPressureSignal(this, "disk", health?.get("diskPressure"))
+            if ((threads?.get("deadlockedCount") as? Number)?.toInt()?.let { it > 0 } == true) {
+                add(linkedMapOf("code" to "deadlock", "severity" to "critical"))
+            }
+            val gcRatio = gc.orEmpty().mapNotNull { entry ->
+                (entry as? Map<*, *>)?.get("timeRatio") as? Number
+            }.map(Number::toDouble).maxOrNull()
+            if (gcRatio != null && gcRatio >= GC_PRESSURE_THRESHOLD) {
+                add(linkedMapOf("code" to "gcPressure", "severity" to "elevated"))
+            }
+        }
+
+        val classLoading = snapshot["classes"] as? Map<*, *>
+        return linkedMapOf(
+            "generatedUtc" to Instant.now().toString(),
+            "status" to when {
+                signals.any { it["severity"] == "critical" } -> "critical"
+                signals.isNotEmpty() -> "attention"
+                else -> "healthy"
+            },
+            "signals" to signals,
+            "resources" to linkedMapOf(
+                "heapUsedBytes" to heap?.get("usedBytes"),
+                "heapMaxBytes" to heap?.get("maxBytes"),
+                "heapUsedRatio" to health?.get("heapUsedRatio"),
+                "processCpuLoad" to health?.get("processCpuLoad"),
+                "systemCpuLoad" to health?.get("systemCpuLoad"),
+                "highestDiskUsedRatio" to health?.get("highestDiskUsedRatio"),
+                "gcTimeRatio" to gc?.mapNotNull { entry ->
+                    (entry as? Map<*, *>)?.get("timeRatio") as? Number
+                }?.map(Number::toDouble)?.maxOrNull(),
+            ),
+            "counts" to linkedMapOf(
+                "threads" to threads?.get("count"),
+                "deadlockedThreads" to threads?.get("deadlockedCount"),
+                "loadedClasses" to classLoading?.get("loadedCount"),
+                "unloadedClasses" to classLoading?.get("unloadedCount"),
+                "gcCollectors" to gc?.size,
+                "fileSystems" to (snapshot["fileSystems"] as? Collection<*>)?.size,
+            ),
+        )
+    }
+
+    private fun MutableList<Map<String, Any?>>.addPressureSignal(
+        signals: MutableList<Map<String, Any?>>,
+        code: String,
+        pressure: Any?,
+    ) {
+        when (pressure?.toString()) {
+            "critical" -> signals.add(linkedMapOf("code" to code, "severity" to "critical"))
+            "elevated" -> signals.add(linkedMapOf("code" to code, "severity" to "elevated"))
+        }
     }
 
     /** Complete JVM thread dump kept as a separate text entry in the archive. */
@@ -355,6 +426,7 @@ internal class SystemReportCollector {
         const val MAX_NETWORK_INTERFACES = 64
         const val MAX_ADDRESSES_PER_INTERFACE = 32
         const val MAX_CPU_THREADS = 20
+        const val GC_PRESSURE_THRESHOLD = 0.25
         val SECRET_JVM_ARGUMENT = Regex(
             "(?i)(?:^|[._-])(?:password|passwd|pwd|secret|token|api[-_]?key|authorization|credential)(?:[._=-]|$)",
         )

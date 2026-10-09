@@ -50,6 +50,7 @@ internal class BukkitDiagnosticsCollector {
             putPluginDetails(server, includeSensitive)
             putDependencyHealth(server)
             putPlaceholderApiDetails(server)
+            putAnalyticsDetails(server)
             putCoverageSummary()
             (this["collection"] as? MutableMap<String, Any?>)?.set(
                 "durationMs",
@@ -94,6 +95,72 @@ internal class BukkitDiagnosticsCollector {
             "serviceRegistrationCount" to services,
             "registeredCommandCount" to commands,
             "registeredPermissionCount" to permissions,
+        )
+    }
+
+    /** Adds derived Bukkit health signals and resource totals to the raw snapshot. */
+    private fun MutableMap<String, Any?>.putAnalyticsDetails(server: org.bukkit.Server) {
+        val worlds = this["worlds"] as? Collection<*> ?: emptyList<Any>()
+        val plugins = server.pluginManager.plugins
+        val scheduler = this["scheduler"] as? Map<*, *>
+        val tps = this["tps"] as? Map<*, *>
+        val dependencies = this["dependencySummary"] as? Map<*, *>
+        val commands = this["commands"] as? Map<*, *>
+        val services = this["serviceSummary"] as? Map<*, *>
+        val events = this["eventListeners"] as? Map<*, *>
+
+        val signals = buildList {
+            val oneMinuteTps = (tps?.get("1m") as? String)?.toDoubleOrNull()
+            if (oneMinuteTps != null && oneMinuteTps < LOW_TPS_THRESHOLD) {
+                add(linkedMapOf("code" to "lowTps", "severity" to "elevated", "value" to oneMinuteTps))
+            }
+            if ((dependencies?.get("pluginsWithMissingRequired") as? Number)?.toInt()?.let { it > 0 } == true) {
+                add(linkedMapOf("code" to "missingRequiredDependencies", "severity" to "critical"))
+            }
+            if ((commands?.get("missingDeclared") as? Collection<*>)?.isNotEmpty() == true) {
+                add(linkedMapOf("code" to "missingCommands", "severity" to "warning"))
+            }
+            if ((services?.get("multipleProviders") as? Collection<*>)?.isNotEmpty() == true) {
+                add(linkedMapOf("code" to "multipleServiceProviders", "severity" to "warning"))
+            }
+            if ((events?.get("registeredCount") as? Number)?.toInt() == 0 && plugins.isNotEmpty()) {
+                add(linkedMapOf("code" to "noEventListeners", "severity" to "info"))
+            }
+        }
+
+        val pluginData = plugins.mapNotNull { plugin ->
+            (this["plugins"] as? Collection<*>)
+                ?.filterIsInstance<Map<*, *>>()
+                ?.firstOrNull { it["name"] == plugin.name }
+                ?.get("dataFolder") as? Map<*, *>
+        }
+        val storage = worlds.mapNotNull { (it as? Map<*, *>)?.get("storage") as? Map<*, *> }
+        this["analytics"] = linkedMapOf(
+            "status" to when {
+                signals.any { it["severity"] == "critical" } -> "critical"
+                signals.any { it["severity"] == "elevated" || it["severity"] == "warning" } -> "attention"
+                else -> "healthy"
+            },
+            "signals" to signals,
+            "resources" to linkedMapOf(
+                "onlinePlayers" to server.onlinePlayers.size,
+                "loadedWorlds" to worlds.size,
+                "loadedChunks" to worlds.sumOf { ((it as? Map<*, *>)?.get("loadedChunks") as? Number)?.toLong() ?: 0L },
+                "entities" to worlds.sumOf { ((it as? Map<*, *>)?.get("entities") as? Number)?.toLong() ?: 0L },
+                "worldStorageBytes" to storage.sumOf { (it["totalBytes"] as? Number)?.toLong() ?: 0L },
+                "pluginDataBytes" to pluginData.sumOf { (it["totalBytes"] as? Number)?.toLong() ?: 0L },
+                "pendingTasks" to scheduler?.get("pendingCount"),
+                "activeWorkers" to scheduler?.get("activeWorkerCount"),
+            ),
+            "counts" to linkedMapOf(
+                "plugins" to plugins.size,
+                "disabledPlugins" to plugins.count { !it.isEnabled },
+                "worlds" to worlds.size,
+                "commands" to commands?.get("registeredCount"),
+                "permissions" to (this["permissions"] as? Map<*, *>)?.get("registeredCount"),
+                "services" to services?.get("registrationCount"),
+                "eventListeners" to events?.get("registeredCount"),
+            ),
         )
     }
 
@@ -681,6 +748,7 @@ internal class BukkitDiagnosticsCollector {
 
     private companion object {
         const val TPS_WINDOW_COUNT = 3
+        const val LOW_TPS_THRESHOLD = 18.0
         const val MAX_SCHEDULER_CLASSES = 128
         const val MAX_LISTENER_TYPES = 256
         const val MAX_EVENT_TYPES = 256
