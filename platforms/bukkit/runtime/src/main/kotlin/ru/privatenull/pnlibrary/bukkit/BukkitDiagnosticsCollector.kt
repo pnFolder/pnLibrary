@@ -63,7 +63,7 @@ internal class BukkitDiagnosticsCollector {
         server: org.bukkit.Server,
         includeSensitive: Boolean,
     ) {
-        this["worlds"] = server.worlds.map { world ->
+        val worlds = server.worlds.map { world ->
             linkedMapOf<String, Any?>(
                 "name" to world.name,
                 "uid" to world.uid.toString(),
@@ -116,6 +116,15 @@ internal class BukkitDiagnosticsCollector {
                 }
             }
         }
+        this["worlds"] = worlds
+        this["worldSummary"] = linkedMapOf(
+            "worldCount" to worlds.size,
+            "stormingWorldCount" to worlds.count { it["hasStorm"] == true },
+            "thunderingWorldCount" to worlds.count { it["isThundering"] == true },
+            "players" to worlds.sumOf { (it["players"] as? Number)?.toInt() ?: 0 },
+            "loadedChunks" to worlds.sumOf { (it["loadedChunks"] as? Number)?.toInt() ?: 0 },
+            "entities" to worlds.sumOf { (it["entities"] as? Number)?.toInt() ?: 0 },
+        )
     }
 
     private fun MutableMap<String, Any?>.putPlayerDetails(
