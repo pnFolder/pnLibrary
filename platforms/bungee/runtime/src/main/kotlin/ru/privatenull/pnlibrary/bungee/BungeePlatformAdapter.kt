@@ -102,6 +102,20 @@ internal class BungeePlatformAdapter(
                 "libraries" to metadata.libraries.toList().sorted(),
             )
         }
+        val installedPluginNames = plugin.proxy.pluginManager.plugins
+            .map { it.description.name }
+            .toSet()
+        details["dependencyHealth"] = plugin.proxy.pluginManager.plugins.map { installedPlugin ->
+            val metadata = installedPlugin.description
+            val missingRequired = metadata.depends.filterNot(installedPluginNames::contains)
+            val missingOptional = metadata.softDepends.filterNot(installedPluginNames::contains)
+            linkedMapOf<String, Any?>(
+                "plugin" to metadata.name,
+                "missingRequired" to missingRequired.toList().sorted(),
+                "missingOptional" to missingOptional.toList().sorted(),
+                "healthy" to missingRequired.isEmpty(),
+            )
+        }
         details["pluginArtifacts"] = plugin.proxy.pluginManager.plugins.map { installedPlugin ->
             val metadata = installedPlugin.description
             val file = metadata.file

@@ -110,6 +110,19 @@ internal class VelocityPlatformAdapter(
                 )
             }
         }
+        val installedPluginIds = server.pluginManager.plugins.map { it.description.id }.toSet()
+        details["dependencyHealth"] = server.pluginManager.plugins.map { container ->
+            val required = container.description.dependencies.filterNot { it.isOptional }
+            val optional = container.description.dependencies.filter { it.isOptional }
+            val missingRequired = required.map { it.id }.filterNot(installedPluginIds::contains)
+            val missingOptional = optional.map { it.id }.filterNot(installedPluginIds::contains)
+            linkedMapOf<String, Any?>(
+                "plugin" to container.description.id,
+                "missingRequired" to missingRequired,
+                "missingOptional" to missingOptional,
+                "healthy" to missingRequired.isEmpty(),
+            )
+        }
         details["pluginArtifacts"] = server.pluginManager.plugins.map { container ->
             val source = container.description.source.orElse(null)?.toFile()
             linkedMapOf<String, Any?>(
