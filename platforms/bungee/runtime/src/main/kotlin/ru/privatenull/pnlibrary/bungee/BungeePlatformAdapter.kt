@@ -133,6 +133,13 @@ internal class BungeePlatformAdapter(
                 "players" to info.players.size,
             )
         }
+        val backendPlayerCounts = plugin.proxy.servers.mapValues { (_, info) -> info.players.size }
+        details["serverSummary"] = linkedMapOf(
+            "serverCount" to backendPlayerCounts.size,
+            "emptyServerCount" to backendPlayerCounts.count { it.value == 0 },
+            "totalPlayersOnBackends" to backendPlayerCounts.values.sum(),
+            "playersByServer" to backendPlayerCounts,
+        )
         if (includeSensitive) {
             details["players"] = plugin.proxy.players.map { player ->
                 linkedMapOf<String, Any?>(

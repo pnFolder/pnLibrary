@@ -140,6 +140,15 @@ internal class VelocityPlatformAdapter(
                 "players" to connection.playersConnected.size,
             )
         }
+        val backendPlayerCounts = server.allServers.associate { connection ->
+            connection.serverInfo.name to connection.playersConnected.size
+        }
+        details["serverSummary"] = linkedMapOf(
+            "serverCount" to backendPlayerCounts.size,
+            "emptyServerCount" to backendPlayerCounts.count { it.value == 0 },
+            "totalPlayersOnBackends" to backendPlayerCounts.values.sum(),
+            "playersByServer" to backendPlayerCounts,
+        )
         if (includeSensitive) {
             details["players"] = server.allPlayers.map { player ->
                 linkedMapOf<String, Any?>(
