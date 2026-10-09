@@ -625,8 +625,28 @@ internal class BukkitDiagnosticsCollector {
             "pendingByPlugin" to pending.groupingBy { it.owner.name }.eachCount(),
             "activeByPlugin" to active.groupingBy { it.owner.name }.eachCount(),
             "pendingTaskTypes" to pending.map { it.javaClass.name }.distinct().sorted().take(MAX_SCHEDULER_CLASSES),
+            "pendingTasks" to pending
+                .sortedWith(compareBy({ it.owner.name.lowercase(Locale.ROOT) }, { it.taskId }))
+                .take(MAX_PENDING_TASKS)
+                .map { task ->
+                    val nextRun = taskLong(task, "getNextRun")
+                    val period = taskLong(task, "getPeriod")
+                    linkedMapOf<String, Any?>(
+                        "id" to task.taskId,
+                        "plugin" to task.owner.name,
+                        "sync" to task.isSync,
+                        "nextRunTick" to nextRun,
+                        "periodTicks" to period,
+                        "type" to task.javaClass.name,
+                    )
+                },
+            "repeatingTaskCount" to pending.count { (taskLong(it, "getPeriod") ?: 0L) > 0 },
+            "longDelayTaskCount" to pending.count { (taskLong(it, "getNextRun") ?: 0L) > LONG_DELAY_TICKS },
         )
     }
+
+    private fun taskLong(task: org.bukkit.scheduler.BukkitTask, method: String): Long? =
+        reflectionOrNull { (task.javaClass.getMethod(method).invoke(task) as? Number)?.toLong() }
 
     private fun MutableMap<String, Any?>.putCommandDetails(server: org.bukkit.Server) {
         val commands = reflectionOrNull {
@@ -841,6 +861,8 @@ internal class BukkitDiagnosticsCollector {
         const val TPS_WINDOW_COUNT = 3
         const val LOW_TPS_THRESHOLD = 18.0
         const val MAX_SCHEDULER_CLASSES = 128
+        const val MAX_PENDING_TASKS = 256
+        const val LONG_DELAY_TICKS = 20L * 60L * 5L
         const val MAX_LISTENER_TYPES = 256
         const val MAX_EVENT_TYPES = 256
         const val MAX_PERMISSION_NAMES = 256
