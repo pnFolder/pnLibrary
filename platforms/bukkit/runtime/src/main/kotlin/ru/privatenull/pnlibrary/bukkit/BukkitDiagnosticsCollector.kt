@@ -172,6 +172,7 @@ internal class BukkitDiagnosticsCollector {
         }
         val storage = worlds.mapNotNull { (it as? Map<*, *>)?.get("storage") as? Map<*, *> }
         val pluginDetails = (this["plugins"] as? Collection<*>)?.filterIsInstance<Map<*, *>>().orEmpty()
+        val pingSummary = this["pingSummary"] as? Map<*, *>
         val pluginHealth = plugins.map { plugin ->
             val detail = pluginDetails.firstOrNull { it["name"] == plugin.name }
             val missingRequired = plugin.description.depend.filterNot(plugins.map { it.name }::contains)
@@ -233,6 +234,12 @@ internal class BukkitDiagnosticsCollector {
             "dependencies" to dependencyGraph,
             "pluginHealth" to pluginHealth,
             "unhealthyPlugins" to unhealthyPlugins,
+            "playerDistribution" to linkedMapOf(
+                "byWorld" to this["playersByWorld"],
+                "byGameMode" to this["playersByGameMode"],
+                "byLocale" to this["playersByLocale"],
+                "pingBuckets" to pingSummary?.get("buckets"),
+            ),
         )
     }
 
