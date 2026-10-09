@@ -175,7 +175,6 @@ internal class BukkitDiagnosticsCollector {
         val pluginDetails = (this["plugins"] as? Collection<*>)?.filterIsInstance<Map<*, *>>().orEmpty()
         val pingSummary = this["pingSummary"] as? Map<*, *>
         val eventListeners = this["eventListeners"] as? Map<*, *>
-        val services = this["serviceSummary"] as? Map<*, *>
         val permissions = this["permissions"] as? Map<*, *>
         val pluginHealth = plugins.map { plugin ->
             val detail = pluginDetails.firstOrNull { it["name"] == plugin.name }
