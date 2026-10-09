@@ -155,6 +155,8 @@ internal class SystemReportCollector {
                 "systemCpuLoad" to (data["health"] as? Map<*, *>)?.get("systemCpuLoad"),
                 "highestDiskUsedRatio" to (data["health"] as? Map<*, *>)?.get("highestDiskUsedRatio"),
                 "loadedClassCount" to (data["classes"] as? Map<*, *>)?.get("loadedCount"),
+                "readBytes" to (data["processIo"] as? Map<*, *>)?.get("read_bytes"),
+                "writeBytes" to (data["processIo"] as? Map<*, *>)?.get("write_bytes"),
             ),
         )
         while (collectionHistory.size > 32) collectionHistory.removeFirst()
@@ -510,6 +512,8 @@ internal class SystemReportCollector {
             "systemCpuLoadDelta" to numericDelta("systemCpuLoad"),
             "highestDiskUsedRatioDelta" to numericDelta("highestDiskUsedRatio"),
             "loadedClassCountDelta" to numericDelta("loadedClassCount"),
+            "readBytesDelta" to numericDelta("readBytes"),
+            "writeBytesDelta" to numericDelta("writeBytes"),
             "durationMsDelta" to numericDelta("durationMs"),
         ),
     )
