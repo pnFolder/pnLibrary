@@ -46,6 +46,7 @@ internal class MetricsRegistry(private val factory: PlatformMetricsFactory) : Me
             "capabilities" to session.capabilities.map { it.name },
             "projectId" to session.projectId,
             "errorReporter" to (session.errorReporter != null),
+            "errorPipeline" to (session.errorReporter as? ErrorPipeline)?.diagnosticSnapshot(),
         )
     }
 

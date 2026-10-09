@@ -4,6 +4,7 @@ import ru.privatenull.pnlibrary.api.metrics.ErrorReporter
 import ru.privatenull.pnlibrary.api.metrics.TelemetryError
 import java.util.concurrent.ConcurrentHashMap
 import java.util.concurrent.atomic.AtomicBoolean
+import java.util.concurrent.atomic.AtomicLong
 
 /**
  * Local error pipeline that sanitizes and deduplicates events before forwarding them.
@@ -15,13 +16,24 @@ internal class ErrorPipeline(
 ) : ErrorReporter {
     private val closed = AtomicBoolean(false)
     private val seen = ConcurrentHashMap.newKeySet<String>()
+    private val captured = AtomicLong()
+    private val deduplicated = AtomicLong()
+    private val forwarded = AtomicLong()
+    private val forwardingFailures = AtomicLong()
 
     override fun capture(error: TelemetryError) {
         if (closed.get()) return
+        captured.incrementAndGet()
         val safe = sanitize(error)
         val fingerprint = listOf(safe.type, safe.message, safe.stackTrace.joinToString("\n"), safe.operation)
             .joinToString("|")
-        if (seen.add(fingerprint)) runCatching { delegate?.capture(safe) }
+        if (seen.add(fingerprint)) {
+            forwarded.incrementAndGet()
+            runCatching { delegate?.capture(safe) }
+                .onFailure { forwardingFailures.incrementAndGet() }
+        } else {
+            deduplicated.incrementAndGet()
+        }
     }
 
     override fun installGlobalHandler() {
@@ -31,6 +43,15 @@ internal class ErrorPipeline(
     override fun close() {
         if (closed.compareAndSet(false, true)) runCatching { delegate?.close() }
     }
+
+    fun diagnosticSnapshot(): Map<String, Any?> = linkedMapOf(
+        "captured" to captured.get(),
+        "deduplicated" to deduplicated.get(),
+        "forwarded" to forwarded.get(),
+        "forwardingFailures" to forwardingFailures.get(),
+        "uniqueFingerprints" to seen.size,
+        "closed" to closed.get(),
+    )
 
     private fun sanitize(error: TelemetryError): TelemetryError = error.copy(
         message = redact(error.message),
