@@ -113,6 +113,7 @@ internal class BukkitDiagnosticsCollector {
         val dependencies = this["dependencySummary"] as? Map<*, *>
         val commands = this["commands"] as? Map<*, *>
         val services = this["serviceSummary"] as? Map<*, *>
+        val serviceEntries = (this["services"] as? Collection<*>)?.filterIsInstance<Map<*, *>>().orEmpty()
         val events = this["eventListeners"] as? Map<*, *>
         val registrationConflicts = registrationConflictDetails(server)
         val dependencyGraph = dependencyGraphDetails(server)
@@ -174,6 +175,8 @@ internal class BukkitDiagnosticsCollector {
         val pluginDetails = (this["plugins"] as? Collection<*>)?.filterIsInstance<Map<*, *>>().orEmpty()
         val pingSummary = this["pingSummary"] as? Map<*, *>
         val eventListeners = this["eventListeners"] as? Map<*, *>
+        val services = this["serviceSummary"] as? Map<*, *>
+        val permissions = this["permissions"] as? Map<*, *>
         val pluginHealth = plugins.map { plugin ->
             val detail = pluginDetails.firstOrNull { it["name"] == plugin.name }
             val missingRequired = plugin.description.depend.filterNot(plugins.map { it.name }::contains)
@@ -246,6 +249,16 @@ internal class BukkitDiagnosticsCollector {
                 "byPriority" to eventListeners?.get("byPriority"),
                 "eventTypes" to eventListeners?.get("eventTypes"),
                 "handlerMethodCount" to eventListeners?.get("handlerMethodCount"),
+            ),
+            "registrations" to linkedMapOf(
+                "servicesByPlugin" to serviceEntries
+                    .flatMap { (it["registrations"] as? Collection<*>)?.filterIsInstance<Map<*, *>>().orEmpty() }
+                    .mapNotNull { it["plugin"]?.toString() }
+                    .groupingBy { it }
+                    .eachCount(),
+                "serviceProviderCount" to services?.get("registrationCount"),
+                "permissionsByDefault" to permissions?.get("byDefault"),
+                "permissionCount" to permissions?.get("registeredCount"),
             ),
         )
     }
