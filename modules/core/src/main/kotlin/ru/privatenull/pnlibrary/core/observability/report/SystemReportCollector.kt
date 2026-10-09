@@ -156,6 +156,8 @@ internal class SystemReportCollector {
                 "networkAddressesIncluded" to includeNetworkAddresses,
                 "status" to "healthy",
                 "heapUsedRatio" to (data["health"] as? Map<*, *>)?.get("heapUsedRatio"),
+                "heapUsedBytes" to ((data["memory"] as? Map<*, *>)?.get("heap") as? Map<*, *>)?.get("usedBytes"),
+                "nonHeapUsedBytes" to ((data["memory"] as? Map<*, *>)?.get("nonHeap") as? Map<*, *>)?.get("usedBytes"),
                 "processCpuLoad" to (data["health"] as? Map<*, *>)?.get("processCpuLoad"),
                 "systemCpuLoad" to (data["health"] as? Map<*, *>)?.get("systemCpuLoad"),
                 "highestDiskUsedRatio" to (data["health"] as? Map<*, *>)?.get("highestDiskUsedRatio"),
@@ -526,6 +528,8 @@ internal class SystemReportCollector {
         }.average().takeIf { collectionHistory.isNotEmpty() },
         "trend" to linkedMapOf(
             "heapUsedRatioDelta" to numericDelta("heapUsedRatio"),
+            "heapUsedBytesDelta" to numericDelta("heapUsedBytes"),
+            "nonHeapUsedBytesDelta" to numericDelta("nonHeapUsedBytes"),
             "processCpuLoadDelta" to numericDelta("processCpuLoad"),
             "systemCpuLoadDelta" to numericDelta("systemCpuLoad"),
             "highestDiskUsedRatioDelta" to numericDelta("highestDiskUsedRatio"),
