@@ -202,13 +202,19 @@ internal class BukkitDiagnosticsCollector {
                     manifestDetails(jar)?.let { manifest -> this["manifest"] = manifest }
                 }
                 plugin.dataFolder.takeIf(File::exists)?.let { folder ->
+                    val config = File(folder, "config.yml")
                     this["dataFolder"] = linkedMapOf(
                         "exists" to true,
                         "fileCount" to folder.walkTopDown().count(),
                         "totalBytes" to folder.walkTopDown()
                             .filter(File::isFile)
                             .sumOf(File::length),
-                        "configPresent" to File(folder, "config.yml").isFile,
+                        "configPresent" to config.isFile,
+                        "configSizeBytes" to config.takeIf(File::isFile)?.length(),
+                        "configLastModifiedUtc" to config.takeIf(File::isFile)?.let {
+                            Instant.ofEpochMilli(it.lastModified()).toString()
+                        },
+                        "configSha256" to config.takeIf(File::isFile)?.let(::sha256),
                     )
                 } ?: run {
                     this["dataFolder"] = linkedMapOf("exists" to false)
