@@ -51,6 +51,26 @@ internal class MetricsRegistry(private val factory: PlatformMetricsFactory) : Me
     }
 
     @Synchronized
+    fun diagnosticAnalytics(): Map<String, Any?> {
+        val snapshots = diagnosticSnapshot()
+        val pipelines = snapshots.mapNotNull { it["errorPipeline"] as? Map<*, *> }
+        return linkedMapOf(
+            "sessionCount" to snapshots.size,
+            "providers" to snapshots.flatMap { (it["providers"] as? Collection<*>) ?: emptyList<Any?>() }
+                .mapNotNull { it?.toString() }
+                .groupingBy { it }
+                .eachCount(),
+            "capabilities" to snapshots.flatMap { (it["capabilities"] as? Collection<*>) ?: emptyList<Any?>() }
+                .mapNotNull { it?.toString() }
+                .groupingBy { it }
+                .eachCount(),
+            "errorReporterCount" to snapshots.count { it["errorReporter"] == true },
+            "errorPipelineCount" to pipelines.size,
+            "reportedErrors" to pipelines.sumOf { (it["reportedErrors"] as? Number)?.toLong() ?: 0L },
+        )
+    }
+
+    @Synchronized
     override fun close() {
         sessions.toList().forEach { runCatching { it.close() } }
         sessions.clear()

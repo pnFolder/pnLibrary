@@ -263,6 +263,7 @@ internal class PnLibraryImpl(
             ),
         ),
         "metrics" to metricsRegistry.diagnosticSnapshot(),
+        "metricsAnalytics" to metricsRegistry.diagnosticAnalytics(),
         "platformCoverage" to platformCoverage,
         "diagnostics" to diagnostics.diagnosticSummary(),
         "diagnosticHistory" to diagnostics.historyAnalytics(),
