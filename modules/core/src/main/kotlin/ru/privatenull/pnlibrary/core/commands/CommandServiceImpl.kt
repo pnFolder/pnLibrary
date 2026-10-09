@@ -33,6 +33,8 @@ internal class CommandServiceImpl(
     private val suggestionCount = AtomicLong()
     private val executionFailureCount = AtomicLong()
     private val suggestionFailureCount = AtomicLong()
+    private val executionsByCommand = linkedMapOf<String, Long>()
+    private val failuresByCommand = linkedMapOf<String, Long>()
 
     override fun register(owner: Any, command: CommandDefinition): CommandRegistration {
         val names = linkedSetOf(command.name).apply { addAll(command.aliases) }
@@ -74,11 +76,14 @@ internal class CommandServiceImpl(
         context: CommandContext,
     ): CompletionStage<Void> {
         executionCount.incrementAndGet()
+        synchronized(lock) {
+            executionsByCommand[command.name] = (executionsByCommand[command.name] ?: 0L) + 1L
+        }
         val registration = activeRegistration(command) ?: return completedExecution()
         val route = try {
             router.route(command, context)
         } catch (error: Throwable) {
-            executionFailed(registration.owner, context, error)
+            executionFailed(registration.owner, registration.command.name, context, error)
             return completedExecution()
         }
         val executable = when (route) {
@@ -95,11 +100,11 @@ internal class CommandServiceImpl(
         val stage = try {
             executable.node.execution.execute(executable.context)
         } catch (error: Throwable) {
-            executionFailed(registration.owner, context, error)
+            executionFailed(registration.owner, registration.command.name, context, error)
             return completedExecution()
         }
         return stage.handle { _, error ->
-            if (error != null) executionFailed(registration.owner, context, unwrap(error))
+            if (error != null) executionFailed(registration.owner, registration.command.name, context, unwrap(error))
             null
         }
     }
@@ -138,8 +143,11 @@ internal class CommandServiceImpl(
     private fun activeRegistration(command: CommandDefinition): Registration? =
         synchronized(lock) { byDefinition[command]?.takeUnless { it.isClosed } }
 
-    private fun executionFailed(owner: Any, context: CommandContext, error: Throwable) {
+    private fun executionFailed(owner: Any, commandName: String, context: CommandContext, error: Throwable) {
         executionFailureCount.incrementAndGet()
+        synchronized(lock) {
+            failuresByCommand[commandName] = (failuresByCommand[commandName] ?: 0L) + 1L
+        }
         platform.log(owner, LogLevel.ERROR, "Command execution failed", error)
         context.sender.send(Component.text("Command execution failed."))
     }
@@ -157,6 +165,8 @@ internal class CommandServiceImpl(
         "suggestionCount" to suggestionCount.get(),
         "executionFailureCount" to executionFailureCount.get(),
         "suggestionFailureCount" to suggestionFailureCount.get(),
+        "executionsByCommand" to executionsByCommand.toSortedMap(),
+        "failuresByCommand" to failuresByCommand.toSortedMap(),
     )
 
     private fun closeRegistrations(current: Iterable<Registration>) {
