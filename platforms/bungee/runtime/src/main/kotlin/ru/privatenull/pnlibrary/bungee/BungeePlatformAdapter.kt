@@ -93,6 +93,25 @@ internal class BungeePlatformAdapter(
 
     override fun diagnosticDetails(includeSensitive: Boolean): Map<String, Any?> {
         val details = snapshot().asMap().toMutableMap()
+        details["pluginDependencies"] = plugin.proxy.pluginManager.plugins.map { installedPlugin ->
+            val metadata = installedPlugin.description
+            linkedMapOf<String, Any?>(
+                "id" to metadata.name,
+                "depends" to metadata.depends.toList().sorted(),
+                "softDepends" to metadata.softDepends.toList().sorted(),
+                "libraries" to metadata.libraries.toList().sorted(),
+            )
+        }
+        details["pluginArtifacts"] = plugin.proxy.pluginManager.plugins.map { installedPlugin ->
+            val metadata = installedPlugin.description
+            val file = metadata.file
+            linkedMapOf<String, Any?>(
+                "id" to metadata.name,
+                "path" to if (includeSensitive) file?.absolutePath else "[REDACTED]",
+                "sizeBytes" to file?.takeIf { it.isFile }?.length(),
+                "lastModifiedUtc" to file?.takeIf { it.isFile }?.let(::formatUtc),
+            )
+        }
         details["servers"] = plugin.proxy.servers.map { (name, info) ->
             linkedMapOf<String, Any?>(
                 "name" to name,
@@ -114,6 +133,9 @@ internal class BungeePlatformAdapter(
         }
         return details
     }
+
+    private fun formatUtc(file: java.io.File): String =
+        java.time.Instant.ofEpochMilli(file.lastModified()).toString()
 
     override fun remotePolicyContext(
         owner: Any,
