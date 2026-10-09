@@ -58,6 +58,7 @@ class SystemReportCollectorTest {
             ?: error("java section is missing")
         assertTrue((java["classpathAnalytics"] as? Map<*, *>)?.containsKey("duplicateNameCount") == true)
         assertTrue((java["modulePathAnalytics"] as? Map<*, *>)?.containsKey("entryCount") == true)
+        assertTrue((java["argumentAnalytics"] as? Map<*, *>)?.containsKey("garbageCollectorOptions") == true)
         assertTrue(threads["deadlockedThreads"] is List<*>)
         (threads["topCpuThreads"] as? List<*>)?.firstOrNull()?.let { top ->
             assertTrue((top as? Map<*, *>)?.containsKey("cpuShare") == true)

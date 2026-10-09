@@ -52,6 +52,7 @@ internal class SystemReportCollector {
             "uptimeSeconds" to runtimeMx.uptime / 1000,
             "startTimeUtc" to Instant.ofEpochMilli(runtimeMx.startTime).toString(),
             "inputArguments" to sanitizeJvmArgs(runtimeMx.inputArguments),
+            "argumentAnalytics" to collectJvmArgumentAnalytics(runtimeMx.inputArguments),
             "classPathEntryCount" to pathEntryCount("java.class.path"),
             "modulePathEntryCount" to pathEntryCount("jdk.module.path"),
             "bootClassPathSupported" to runCatching { runtimeMx.isBootClassPathSupported }.getOrDefault(false),
@@ -629,6 +630,19 @@ internal class SystemReportCollector {
 
     private fun collectClasspathAnalytics(): Map<String, Any?> {
         return collectPathAnalytics("java.class.path")
+    }
+
+    private fun collectJvmArgumentAnalytics(arguments: List<String>): Map<String, Any?> {
+        fun count(predicate: (String) -> Boolean) = arguments.count(predicate)
+        return linkedMapOf(
+            "total" to arguments.size,
+            "memoryOptions" to count { it.startsWith("-Xmx") || it.startsWith("-Xms") || it.startsWith("-XX:MaxRAM") },
+            "garbageCollectorOptions" to count { it.contains("GC", ignoreCase = true) || it.contains("UseG1", ignoreCase = true) },
+            "agentOptions" to count { it.startsWith("-javaagent:") || it.startsWith("-agentlib:") },
+            "systemProperties" to count { it.startsWith("-D") },
+            "debugOptions" to count { it.startsWith("-agentlib:jdwp") || it.contains("debug", ignoreCase = true) },
+            "previewOrModuleOptions" to count { it.contains("--enable-preview") || it.startsWith("--add-") },
+        )
     }
 
     private fun collectPathAnalytics(property: String): Map<String, Any?> {
