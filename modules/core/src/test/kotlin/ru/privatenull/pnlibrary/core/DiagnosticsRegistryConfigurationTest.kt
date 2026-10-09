@@ -4,6 +4,7 @@ import org.junit.jupiter.api.Assertions.assertEquals
 import org.junit.jupiter.api.Test
 import org.junit.jupiter.api.io.TempDir
 import ru.privatenull.pnlibrary.api.diagnostics.DiagnosticContainer
+import ru.privatenull.pnlibrary.api.diagnostics.DiagnosticLevel
 import ru.privatenull.pnlibrary.core.diagnostics.DiagnosticsRegistry
 import java.nio.file.Path
 
@@ -23,5 +24,24 @@ class DiagnosticsRegistryConfigurationTest {
         assertEquals(2, configurations.size)
         assertEquals(setOf("pnmarket", "pnclans"), configurations.map { it.plugin }.toSet())
         assertEquals(setOf(first.toAbsolutePath(), second.toAbsolutePath()), configurations.map { it.dataDirectory }.toSet())
+    }
+
+    @Test
+    fun `diagnostic summary aggregates incidents without collecting contributors`() {
+        val registry = DiagnosticsRegistry()
+
+        registry.record("pnMarket", DiagnosticLevel.WARNING, "database", "TIMEOUT", "retrying")
+        registry.record("pnMarket", DiagnosticLevel.WARNING, "database", "TIMEOUT", "retrying")
+        registry.record("pnMarket", DiagnosticLevel.ERROR, "database", "DOWN", "unavailable")
+
+        val plugin = registry.diagnosticSummary()["plugins"]
+            .let { it as List<*> }
+            .single() as Map<*, *>
+        val incidents = plugin["incidents"] as Map<*, *>
+
+        assertEquals(1, registry.diagnosticSummary()["registeredPlugins"])
+        assertEquals(2, incidents["incidentCount"])
+        assertEquals(3L, incidents["occurrenceCount"])
+        assertEquals(1, (incidents["byLevel"] as Map<*, *>)["WARNING"])
     }
 }
