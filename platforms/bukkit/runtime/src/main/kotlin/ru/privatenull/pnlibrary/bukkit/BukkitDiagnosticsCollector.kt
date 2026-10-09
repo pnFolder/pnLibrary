@@ -32,7 +32,7 @@ internal class BukkitDiagnosticsCollector {
             putCommandDetails(server)
             putServiceDetails()
             putEventListenerDetails()
-            putWorldDetails(server)
+            putWorldDetails(server, includeSensitive)
             putPlayerDetails(server, includeSensitive)
             putPluginDetails(server, includeSensitive)
             putDependencyHealth(server)
@@ -59,7 +59,10 @@ internal class BukkitDiagnosticsCollector {
         )
     }
 
-    private fun MutableMap<String, Any?>.putWorldDetails(server: org.bukkit.Server) {
+    private fun MutableMap<String, Any?>.putWorldDetails(
+        server: org.bukkit.Server,
+        includeSensitive: Boolean,
+    ) {
         this["worlds"] = server.worlds.map { world ->
             linkedMapOf<String, Any?>(
                 "name" to world.name,
@@ -75,6 +78,19 @@ internal class BukkitDiagnosticsCollector {
                 "allowMonsters" to world.allowMonsters,
                 "autoSave" to reflectionOrNull { world.javaClass.getMethod("isAutoSave").invoke(world) },
                 "pvp" to reflectionOrNull { world.javaClass.getMethod("isPVP").invoke(world) },
+                "spawn" to if (includeSensitive) {
+                    world.spawnLocation.let { location ->
+                        linkedMapOf(
+                            "x" to location.x,
+                            "y" to location.y,
+                            "z" to location.z,
+                            "yaw" to location.yaw,
+                            "pitch" to location.pitch,
+                        )
+                    }
+                } else {
+                    "[REDACTED: world spawn coordinates]"
+                },
                 "border" to reflectionOrNull {
                     val border = world.worldBorder
                     linkedMapOf(
