@@ -29,5 +29,9 @@ class SystemReportCollectorTest {
             ?: error("collectionHistory section is missing")
         assertTrue(collectionHistory.containsKey("samplesWithSignals"))
         assertTrue((collectionHistory["trend"] as? Map<*, *>)?.containsKey("heapUsedRatioDelta") == true)
+        val network = report["networkAnalytics"] as? Map<*, *>
+            ?: error("networkAnalytics section is missing")
+        assertTrue(network.containsKey("ipv4AddressCount"))
+        assertTrue(network.containsKey("ipv6AddressCount"))
     }
 }

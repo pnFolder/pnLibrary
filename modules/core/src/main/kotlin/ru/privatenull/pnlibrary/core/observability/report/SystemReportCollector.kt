@@ -608,13 +608,16 @@ internal class SystemReportCollector {
     private fun collectNetworkAnalytics(): Map<String, Any?> = runCatching {
         val interfaces = NetworkInterface.getNetworkInterfaces()?.toList().orEmpty()
         val details = interfaces.map { nif ->
+            val addresses = nif.inetAddresses.toList()
             linkedMapOf<String, Any?>(
                 "name" to nif.name,
                 "up" to nif.isUp,
                 "loopback" to nif.isLoopback,
                 "virtual" to nif.isVirtual,
                 "mtu" to runCatching { nif.mtu }.getOrNull(),
-                "addressCount" to nif.inetAddresses.toList().size,
+                "addressCount" to addresses.size,
+                "ipv4Count" to addresses.count { it.address.size == 4 },
+                "ipv6Count" to addresses.count { it.address.size == 16 },
             )
         }
         linkedMapOf(
@@ -623,6 +626,9 @@ internal class SystemReportCollector {
             "downCount" to details.count { it["up"] == false },
             "virtualCount" to details.count { it["virtual"] == true },
             "totalAddressCount" to details.sumOf { (it["addressCount"] as? Number)?.toInt() ?: 0 },
+            "ipv4AddressCount" to details.sumOf { (it["ipv4Count"] as? Number)?.toInt() ?: 0 },
+            "ipv6AddressCount" to details.sumOf { (it["ipv6Count"] as? Number)?.toInt() ?: 0 },
+            "maximumMtu" to details.mapNotNull { (it["mtu"] as? Number)?.toInt() }.maxOrNull(),
         )
     }.getOrDefault(emptyMap())
 
