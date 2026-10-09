@@ -120,6 +120,7 @@ internal class BukkitDiagnosticsCollector {
                 "analytics.artifactDistribution",
                 "analytics.schedulerDistribution",
                 "analytics.worldDistribution",
+                "analytics.runtimeDistribution",
                 "dependencyHealth",
                 "dependencies",
                 "registrations",
@@ -351,6 +352,27 @@ internal class BukkitDiagnosticsCollector {
                 "serviceProviderCount" to services?.get("registrationCount"),
                 "permissionsByDefault" to permissions?.get("byDefault"),
                 "permissionCount" to permissions?.get("registeredCount"),
+            ),
+            "runtimeDistribution" to linkedMapOf(
+                "playersPerWorld" to server.onlinePlayers.size.toDouble() / worlds.size.coerceAtLeast(1),
+                "chunksPerWorld" to worlds.sumOf {
+                    ((it as? Map<*, *>)?.get("loadedChunks") as? Number)?.toLong() ?: 0L
+                }.toDouble() / worlds.size.coerceAtLeast(1),
+                "entitiesPerWorld" to worlds.sumOf {
+                    ((it as? Map<*, *>)?.get("entities") as? Number)?.toLong() ?: 0L
+                }.toDouble() / worlds.size.coerceAtLeast(1),
+                "pluginHealthCoverage" to linkedMapOf(
+                    "observed" to pluginHealth.size,
+                    "healthy" to pluginHealth.count { it["status"] == "healthy" },
+                    "attention" to pluginHealth.count { it["status"] == "attention" },
+                    "critical" to pluginHealth.count { it["status"] == "critical" },
+                ),
+                "registrationCoverage" to linkedMapOf(
+                    "commands" to commands?.get("registeredCount"),
+                    "permissions" to permissions?.get("registeredCount"),
+                    "services" to services?.get("registrationCount"),
+                    "eventListeners" to events?.get("registeredCount"),
+                ),
             ),
         )
     }
