@@ -75,6 +75,9 @@ internal class ObservabilityRuntime(
         val events = journal.recent()
         val attachments = attachmentStore.all()
         val statuses = statusRegistry.snapshot()
+        val now = System.currentTimeMillis()
+        val recentWindow = events.filter { now - it.timestamp <= ANALYTICS_WINDOW_MS }
+        val recentErrors = recentWindow.count { it.errorType != null || it.level == ru.privatenull.pnlibrary.api.observability.ObservationLevel.ERROR || it.level == ru.privatenull.pnlibrary.api.observability.ObservationLevel.CRITICAL }
         val recent = events.takeLast(MAX_ANALYTICS_EVENTS).map { event ->
             linkedMapOf<String, Any?>(
                 "id" to event.id,
@@ -112,6 +115,14 @@ internal class ObservabilityRuntime(
             "attachmentBytes" to attachments.sumOf { it.size },
             "oldestUtc" to events.minOfOrNull { it.timestamp }?.let(Instant::ofEpochMilli)?.toString(),
             "newestUtc" to events.maxOfOrNull { it.timestamp }?.let(Instant::ofEpochMilli)?.toString(),
+            "activity" to linkedMapOf(
+                "windowMinutes" to ANALYTICS_WINDOW_MS / 60_000,
+                "eventsLastWindow" to recentWindow.size,
+                "errorsLastWindow" to recentErrors,
+                "errorRateLastWindow" to recentErrors.toDouble() / recentWindow.size.coerceAtLeast(1),
+                "activeSourcesLastWindow" to recentWindow.mapNotNull { it.source }.distinct().size,
+                "activePluginsLastWindow" to recentWindow.mapNotNull { it.plugin }.distinct().size,
+            ),
         )
     }
 
@@ -135,5 +146,6 @@ internal class ObservabilityRuntime(
     private companion object {
         const val MAX_ANALYTICS_EVENTS = 32
         const val MAX_ANALYTICS_MESSAGES = 32
+        const val ANALYTICS_WINDOW_MS = 5 * 60_000L
     }
 }
