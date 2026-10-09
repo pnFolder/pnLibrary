@@ -63,7 +63,10 @@ internal class SupportReportAssembler(
         )
         archive.json("system.json", system.collect(includeNetworkAddresses = encrypted))
         archive.text("threads.txt", system.threadDump())
-        archive.json("platform.json", platform.diagnosticDetails(includeSensitive = encrypted))
+        archive.json(
+            "platform.json",
+            platform.diagnosticDetails(includeSensitive = encrypted && !config.privacy),
+        )
     }
 
     private fun addPluginDiagnostics(archive: SupportArchiveBuilder, target: String) {

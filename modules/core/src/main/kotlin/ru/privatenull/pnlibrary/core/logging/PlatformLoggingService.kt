@@ -108,17 +108,14 @@ internal class PlatformLoggingService(
                 else -> gray
             }
             val titleParts = title.split(Regex("\\s+"), limit = 2)
-            val ownerInfo = platform.ownerDetails(owner)
-            val platformInfo = platform.details()
-            val product = explicitName ?: ownerInfo["name"] ?: titleParts.firstOrNull().orEmpty()
-            val version = explicitVersion ?: ownerInfo["version"]
-                ?: titleParts.getOrNull(1).orEmpty().ifBlank { "неизвестна" }
-            val authors = ownerInfo["authors"] ?: "pnFolder"
-            val engineName = (platformInfo["serverName"] ?: platformInfo["proxyName"]
-                ?: platformInfo["velocityName"] ?: platform.id).toString()
-            val engineVersion = (platformInfo["bukkitVersion"] ?: platformInfo["proxyVersion"]
-                ?: platformInfo["velocityVersion"] ?: "неизвестна").toString()
-            val javaVersion = System.getProperty("java.version", "неизвестна")
+            val ownerMetadata = platform.ownerMetadata(owner)
+            val environment = platform.snapshot()
+            val product = explicitName ?: ownerMetadata?.name ?: titleParts.firstOrNull().orEmpty()
+            val version = explicitVersion ?: ownerMetadata?.version ?: "неизвестна"
+            val authors = ownerMetadata?.authors?.joinToString(", ").orEmpty().ifBlank { "неизвестны" }
+            val engineName = environment.name
+            val engineVersion = environment.version
+            val javaVersion = environment.java.version
 
             platform.console(owner, "")
             platform.console(owner, "$accent          ━━━━━━━━━━━ §lPNFOLDER PLUGIN$accent ━━━━━━━━━━━")

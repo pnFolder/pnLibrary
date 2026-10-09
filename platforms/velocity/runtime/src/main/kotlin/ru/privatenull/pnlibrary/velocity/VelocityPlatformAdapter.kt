@@ -1,114 +1,151 @@
 package ru.privatenull.pnlibrary.velocity
 
+import com.velocitypowered.api.plugin.PluginDescription
 import com.velocitypowered.api.proxy.ProxyServer
 import net.kyori.adventure.text.serializer.legacy.LegacyComponentSerializer
 import org.slf4j.Logger
+import ru.privatenull.pnlibrary.api.commands.CommandRegistration
 import ru.privatenull.pnlibrary.api.logging.LogLevel
 import ru.privatenull.pnlibrary.api.platform.PlatformType
 import ru.privatenull.pnlibrary.api.plugin.PluginMetadata
 import ru.privatenull.pnlibrary.api.remote.RemotePolicyContext
 import ru.privatenull.pnlibrary.api.runtime.PnLibrary
-import ru.privatenull.pnlibrary.velocity.commands.VelocityCommandAdapter
-import ru.privatenull.pnlibrary.spi.commands.PlatformCommandAdapter
+import ru.privatenull.pnlibrary.core.updates.ProxyUpdateCommand
 import ru.privatenull.pnlibrary.spi.audiences.PlatformAudienceAdapter
+import ru.privatenull.pnlibrary.spi.commands.PlatformCommandAdapter
 import ru.privatenull.pnlibrary.spi.metrics.PlatformMetricsFactory
 import ru.privatenull.pnlibrary.spi.platform.PlatformAdapter
-import ru.privatenull.pnlibrary.velocity.tasks.VelocityTaskAdapter
+import ru.privatenull.pnlibrary.spi.platform.PlatformSnapshot
+import ru.privatenull.pnlibrary.spi.platform.PluginSnapshot
 import ru.privatenull.pnlibrary.spi.tasks.PlatformTaskAdapter
+import ru.privatenull.pnlibrary.velocity.commands.VelocityCommandAdapter
+import ru.privatenull.pnlibrary.velocity.tasks.VelocityTaskAdapter
 import java.nio.file.Path
 import java.util.concurrent.atomic.AtomicBoolean
-import ru.privatenull.pnlibrary.api.commands.CommandRegistration
-import ru.privatenull.pnlibrary.core.updates.ProxyUpdateCommand
 
 /**
- * Runtime adapter for Velocity 3.x proxy servers.
+ * Runtime adapter for Velocity proxy servers.
  *
- * Velocity has no player-region scheduler, so global and recipient dispatch both use its plugin
- * scheduler. Portable commands are registered by [commandAdapter].
+ * Velocity does not expose an entity-region scheduler. Global and recipient work therefore use
+ * the native plugin scheduler owned by [plugin].
  */
 internal class VelocityPlatformAdapter(
-    /** Native plugin instance used to own commands, tasks, and metrics. */
     val plugin: Any,
-    /** Velocity proxy used for metadata, commands, audiences, and scheduling. */
     val server: ProxyServer,
     override val metricsFactory: PlatformMetricsFactory,
     override val dataFolder: Path,
     private val logger: Logger,
 ) : PlatformAdapter {
 
-    private val closedFlag = AtomicBoolean(false)
-    private val bound = AtomicBoolean(false)
-    private var updateCommand: CommandRegistration? = null
-    override val type = PlatformType.VELOCITY
-    override val implementationName: String get() = server.version.name.ifBlank { type.displayName }
-    override val commandAdapter: PlatformCommandAdapter = VelocityCommandAdapter(plugin, server)
-    override val audienceAdapter: PlatformAudienceAdapter = VelocityAudienceAdapter(server)
-    override val taskAdapter: PlatformTaskAdapter = VelocityTaskAdapter(plugin, server)
+    private val closed = AtomicBoolean()
+    private val bound = AtomicBoolean()
 
-    override fun log(owner: Any, level: LogLevel, message: String, error: Throwable?) {
-        val log: (String, Throwable?) -> Unit = when (level) {
-            LogLevel.WARNING -> logger::warn
-            LogLevel.ERROR -> logger::error
-            else -> logger::info
+    private var updateCommand: CommandRegistration? = null
+
+    override val type: PlatformType = PlatformType.VELOCITY
+
+    override val implementationName: String
+        get() = server.version.name.ifBlank { type.displayName }
+
+    override val commandAdapter: PlatformCommandAdapter =
+        VelocityCommandAdapter(plugin, server)
+
+    override val audienceAdapter: PlatformAudienceAdapter =
+        VelocityAudienceAdapter(server)
+
+    override val taskAdapter: PlatformTaskAdapter =
+        VelocityTaskAdapter(plugin, server)
+
+    override val logHandler: (Any, LogLevel, String, Throwable?) -> Unit =
+        { _, level, message, error ->
+            when (level) {
+                LogLevel.WARNING -> logger.warn(message, error)
+                LogLevel.ERROR -> logger.error(message, error)
+                else -> logger.info(message, error)
+            }
         }
 
-        log(message, error)
-    }
-
     override fun console(owner: Any, message: String) {
-        server.consoleCommandSource.sendMessage(LEGACY_SERIALIZER.deserialize(message))
-    }
-
-    override fun ownerDetails(owner: Any): Map<String, String> {
-        val description = server.pluginManager.plugins
-            .firstOrNull { it.instance.orElse(null) === owner }
-            ?.description ?: return emptyMap()
-        return linkedMapOf(
-            "id" to description.id,
-            "name" to description.name.orElse(description.id),
-            "version" to description.version.orElse("неизвестна"),
-            "authors" to description.authors.joinToString(", ").ifBlank { "pnFolder" },
+        server.consoleCommandSource.sendMessage(
+            LEGACY_SERIALIZER.deserialize(message),
         )
     }
 
-    override fun remotePolicyContext(owner: Any, metadata: PluginMetadata, values: Map<String, String>): RemotePolicyContext =
-        VelocityRemotePolicyContextFactory.create(owner, server, values)
+    override fun ownerMetadata(owner: Any): PluginSnapshot? {
+        val description = server.pluginManager.plugins
+            .firstOrNull { it.instance.orElse(null) === owner }
+            ?.description
+            ?: return unsupportedOwner(owner)
 
-    override fun installedPlugins(): Map<String, String> = server.pluginManager.plugins.associate {
-        it.description.id to it.description.version.orElse("unknown")
+        return description.toSnapshot()
     }
 
-    override fun bind(library: PnLibrary) {
-        check(!closedFlag.get()) { "Velocity platform adapter is closed" }
-        check(bound.compareAndSet(false, true)) { "Velocity platform adapter is already bound" }
-        updateCommand = library.commands.register(plugin, ProxyUpdateCommand(library).definition())
+    override fun installedPlugins(): Map<String, String> =
+        server.pluginManager.plugins.associate { installedPlugin ->
+            installedPlugin.description.id to
+                installedPlugin.description.version.orElse("unknown")
+        }
+
+    override fun snapshot(): PlatformSnapshot {
+        val platformVersion = server.version
+
+        return PlatformSnapshot(
+            name = platformVersion.name,
+            version = platformVersion.version,
+            vendor = platformVersion.vendor,
+            onlinePlayers = server.playerCount,
+            registeredServers = server.allServers.map { it.serverInfo.name },
+            plugins = server.pluginManager.plugins.map { it.description.toSnapshot() },
+        )
     }
 
-    override fun details(): Map<String, Any?> {
-        val data = linkedMapOf<String, Any?>()
-        val version = server.version
-
-        data["velocityName"] = version.name
-        data["velocityVersion"] = version.version
-        data["velocityVendor"] = version.vendor
-        data["onlinePlayersCount"] = server.playerCount
-        data["registeredServersCount"] = server.allServers.size
-        data["registeredServerNames"] = server.allServers.map { it.serverInfo.name }
-
-        data["plugins"] = server.pluginManager.plugins.map { container ->
-            val description = container.description
-            linkedMapOf(
-                "id" to description.id,
-                "name" to description.name.orElse(description.id),
-                "version" to description.version.orElse("unknown"),
-                "authors" to description.authors,
+    override fun diagnosticDetails(includeSensitive: Boolean): Map<String, Any?> {
+        val details = snapshot().asMap().toMutableMap()
+        details["servers"] = server.allServers.map { connection ->
+            linkedMapOf<String, Any?>(
+                "name" to connection.serverInfo.name,
+                "players" to connection.playersConnected.size,
             )
         }
-        return data
+        if (includeSensitive) {
+            details["players"] = server.allPlayers.map { player ->
+                linkedMapOf<String, Any?>(
+                    "username" to player.username,
+                    "uuid" to player.uniqueId.toString(),
+                    "ping" to player.ping,
+                    "server" to player.currentServer.map { it.serverInfo.name }.orElse(null),
+                )
+            }
+        } else {
+            details["players"] = "redacted"
+        }
+        return details
+    }
+
+    override fun remotePolicyContext(
+        owner: Any,
+        metadata: PluginMetadata,
+        values: Map<String, String>,
+    ): RemotePolicyContext =
+        VelocityRemotePolicyContextFactory.create(owner, server, values)
+
+    override fun bind(library: PnLibrary) {
+        check(!closed.get()) {
+            "Velocity platform adapter is closed"
+        }
+        check(bound.compareAndSet(false, true)) {
+            "Velocity platform adapter is already bound"
+        }
+
+        updateCommand = library.commands.register(
+            plugin,
+            ProxyUpdateCommand(library).definition(),
+        )
     }
 
     override fun executeGlobal(task: Runnable) {
-        if (closedFlag.get()) return
+        if (closed.get()) return
+
         server.scheduler.buildTask(plugin, task).schedule()
     }
 
@@ -116,14 +153,25 @@ internal class VelocityPlatformAdapter(
         executeGlobal(task)
     }
 
-    private companion object {
-        val LEGACY_SERIALIZER: LegacyComponentSerializer = LegacyComponentSerializer.legacySection()
-    }
-
     override fun close() {
-        if (!closedFlag.compareAndSet(false, true)) return
+        if (!closed.compareAndSet(false, true)) return
+
         updateCommand?.close()
         updateCommand = null
+
         bound.set(false)
+    }
+
+    private fun PluginDescription.toSnapshot(): PluginSnapshot =
+        PluginSnapshot(
+            id = id,
+            name = name.orElse(id),
+            version = version.orElse("unknown"),
+            authors = authors,
+        )
+
+    private companion object {
+        val LEGACY_SERIALIZER: LegacyComponentSerializer =
+            LegacyComponentSerializer.legacySection()
     }
 }

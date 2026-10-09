@@ -44,6 +44,7 @@ internal object PnLibraryConfigLoader {
             uploadPublicKey = values.string("upload-public-key", defaults.uploadPublicKey),
             uploadKeyId = values.string("upload-key-id", defaults.uploadKeyId),
             allowPlaintext = values.boolean("allow-plaintext", defaults.allowPlaintext),
+            privacy = values.boolean("privacy", defaults.privacy),
             configs = values.boolean("configs", defaults.configs),
             logs = values.boolean("logs", defaults.logs),
             logRecords = values.int("log-records", defaults.logRecords),
@@ -99,7 +100,7 @@ internal object PnLibraryConfigLoader {
     private const val MAX_CONFIG_BYTES = 256L * 1024L
     private val KNOWN_KEYS = setOf(
         "upload", "upload-mode", "upload-providers", "upload-endpoint", "upload-public-base", "upload-public-key",
-        "upload-key-id", "allow-plaintext", "configs", "logs", "log-records", "history-retention-days",
+        "upload-key-id", "allow-plaintext", "privacy", "configs", "logs", "log-records", "history-retention-days",
         "history-max-bytes", "cooldown-seconds",
         "keep-reports", "max-report-bytes", "delete-after-days", "excluded-paths",
         "secret-key-patterns", "redact-value-patterns",
@@ -112,6 +113,9 @@ internal object PnLibraryConfigLoader {
         upload-mode: encrypted
         upload-providers: [catbox, fileio]
         allow-plaintext: false
+        # Keep player personal data out of diagnostic reports by default.
+        # Set to false only when you explicitly need player names, UUIDs, ping, and current server data.
+        privacy: true
         upload-endpoint: https://api.mclo.gs/1/log
         upload-public-base: https://mclo.gs/
         upload-public-key: ''

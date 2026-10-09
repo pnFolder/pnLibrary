@@ -26,6 +26,14 @@ import java.nio.file.Path
  * [close] must be idempotent and prevent newly submitted platform work where practical.
  */
 interface PlatformAdapter : AutoCloseable {
+    /** Native logging function used by the default [log] implementation. */
+    val logHandler: (Any, LogLevel, String, Throwable?) -> Unit
+        get() = { _, level, message, error ->
+            val line = "[pnLibrary/${level.name}] $message"
+            if (level == LogLevel.ERROR) System.err.println(line) else System.out.println(line)
+            error?.printStackTrace(System.err)
+        }
+
     /** Normalized family represented by this adapter. */
     val type: PlatformType
 
@@ -64,12 +72,7 @@ interface PlatformAdapter : AutoCloseable {
 
     /** Routes one structured log entry to the logger associated with [owner] when possible. */
     fun log(owner: Any, level: LogLevel, message: String, error: Throwable? = null) {
-        val prefix = "[pnLibrary/${level.name}] "
-        if (error == null) System.out.println(prefix + message)
-        else {
-            System.err.println(prefix + message)
-            error.printStackTrace(System.err)
-        }
+        logHandler(owner, level, message, error)
     }
 
     /** Sends a legacy-formatted informational message to the native console. */
@@ -78,10 +81,23 @@ interface PlatformAdapter : AutoCloseable {
     /**
      * Returns native metadata for [owner].
      *
-     * Recognized keys are `id`, `name`, `version`, and `authors`. Unknown owner types should return
-     * an empty map instead of failing.
+     * Unsupported owners are reported as warnings and return null without interrupting execution.
      */
-    fun ownerDetails(owner: Any): Map<String, String> = emptyMap()
+    fun ownerMetadata(owner: Any): PluginSnapshot? = null
+
+    /** Reports an unsupported owner without throwing an exception. */
+    fun unsupportedOwner(owner: Any): PluginSnapshot? {
+        log(owner, LogLevel.WARNING,
+            "Не удалось получить метаданные плагина на ${type.displayName}: " +
+                "объект ${owner.javaClass.name} не является поддерживаемым плагином. " +
+                "Операция пропущена; работа продолжается.")
+        return null
+    }
+
+    fun ownerDetails(owner: Any): Map<String, String> = ownerMetadata(owner)?.let {
+        mapOf("id" to it.id, "name" to it.name, "version" to it.version,
+            "authors" to it.authors.joinToString(", "))
+    }.orEmpty()
 
     /** Creates the shared remote-policy view with native handles for this platform. */
     fun remotePolicyContext(owner: Any, metadata: PluginMetadata, values: Map<String, String>): RemotePolicyContext =
@@ -99,8 +115,11 @@ interface PlatformAdapter : AutoCloseable {
     /** Installed native plugin names mapped to versions for dependency validation. */
     fun installedPlugins(): Map<String, String> = emptyMap()
 
-    /** Returns a non-sensitive structured platform snapshot for ordinary diagnostics. */
-    fun details(): Map<String, Any?>
+    /** Returns a typed, non-sensitive platform snapshot for ordinary diagnostics. */
+    fun snapshot(): PlatformSnapshot = PlatformSnapshot.unknown(type.displayName)
+
+    /** Serializes [snapshot] at the compatibility boundary used by diagnostic reports. */
+    fun details(): Map<String, Any?> = snapshot().asMap()
 
     /** Rich report-only snapshot. Sensitive values must only be returned when explicitly allowed. */
     fun diagnosticDetails(includeSensitive: Boolean): Map<String, Any?> = details()

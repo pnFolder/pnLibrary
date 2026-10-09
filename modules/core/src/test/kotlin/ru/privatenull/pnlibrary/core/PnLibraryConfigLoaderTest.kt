@@ -17,6 +17,7 @@ class PnLibraryConfigLoaderTest {
         val defaults = PnLibraryConfigLoader.load(temporary)
         assertTrue(Files.isRegularFile(temporary.resolve("config.yml")))
         assertEquals("encrypted", defaults.uploadMode)
+        assertEquals(true, defaults.privacy)
 
         Files.writeString(temporary.resolve("config.yml"), """
             upload: false
@@ -28,12 +29,14 @@ class PnLibraryConfigLoaderTest {
             max-report-bytes: 65536
             delete-after-days: 0
             configs: false
+            privacy: false
         """.trimIndent())
 
         val configured = PnLibraryConfigLoader.load(temporary)
         assertEquals(false, configured.upload)
         assertEquals(42, configured.logRecords)
         assertEquals(3, configured.keepReports)
+        assertEquals(false, configured.privacy)
     }
 
     @Test

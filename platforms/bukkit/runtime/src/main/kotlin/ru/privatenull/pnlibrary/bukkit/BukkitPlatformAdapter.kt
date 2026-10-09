@@ -20,6 +20,8 @@ import ru.privatenull.pnlibrary.spi.audiences.PlatformAudienceAdapter
 import ru.privatenull.pnlibrary.spi.commands.PlatformCommandAdapter
 import ru.privatenull.pnlibrary.spi.metrics.PlatformMetricsFactory
 import ru.privatenull.pnlibrary.spi.platform.PlatformAdapter
+import ru.privatenull.pnlibrary.spi.platform.PlatformSnapshot
+import ru.privatenull.pnlibrary.spi.platform.PluginSnapshot
 import ru.privatenull.pnlibrary.spi.tasks.PlatformTaskAdapter
 import java.util.concurrent.CompletableFuture
 import java.util.concurrent.TimeUnit
@@ -31,41 +33,57 @@ import java.util.logging.LogRecord
 /**
  * Runtime adapter for Bukkit-compatible Minecraft servers.
  *
- * The adapter supports legacy Bukkit as well as Paper and Folia scheduler models. It owns the
- * native command transport, lifecycle listeners, and the optional native-log observer;
- * [close] removes all of them idempotently. Consumer plugins should use the public pnLibrary API
- * instead of constructing this runtime component.
- *
- * @property plugin native plugin that owns scheduler and listener registrations
+ * The adapter supports legacy Bukkit, Paper, and Folia scheduler models. It owns the native
+ * command transport, lifecycle listener, diagnostic collector, and native-log observer.
  */
-internal class BukkitPlatformAdapter constructor(
+internal class BukkitPlatformAdapter(
     val plugin: Plugin,
     audienceService: BukkitAudienceService,
 ) : PlatformAdapter {
 
-    private val closedFlag = AtomicBoolean(false)
-    private val bound = AtomicBoolean(false)
-    @Volatile
-    private var nativeLogObserver: ((Any, LogLevel, String, Throwable?) -> Unit)? = null
-    private var lifecycleListener: BukkitLifecycleListener? = null
-    private var controlRegistration: CommandRegistration? = null
+    private val closed = AtomicBoolean()
+    private val bound = AtomicBoolean()
     private val ownLogCall = ThreadLocal.withInitial { false }
     private val diagnosticsCollector = BukkitDiagnosticsCollector()
+
+    @Volatile
+    private var nativeLogObserver: ((Any, LogLevel, String, Throwable?) -> Unit)? = null
+
+    private var lifecycleListener: BukkitLifecycleListener? = null
+    private var controlRegistration: CommandRegistration? = null
+
     private val nativeLogHandler = object : Handler() {
         override fun publish(record: LogRecord?) {
-            if (record == null || ownLogCall.get() || record.level.intValue() < Level.WARNING.intValue()) return
-            val level = if (record.level.intValue() >= Level.SEVERE.intValue()) LogLevel.ERROR else LogLevel.WARNING
-            val source = Bukkit.getPluginManager().plugins.firstOrNull {
-                record.loggerName?.contains(it.name, ignoreCase = true) == true
+            if (record == null || ownLogCall.get()) return
+            if (record.level.intValue() < Level.WARNING.intValue()) return
+
+            val level = when {
+                record.level.intValue() >= Level.SEVERE.intValue() -> LogLevel.ERROR
+                else -> LogLevel.WARNING
+            }
+            val source = Bukkit.getPluginManager().plugins.firstOrNull { installedPlugin ->
+                record.loggerName?.contains(installedPlugin.name, ignoreCase = true) == true
             } ?: plugin
-            nativeLogObserver?.invoke(source, level, record.message ?: "Native platform error", record.thrown)
+
+            nativeLogObserver?.invoke(
+                source,
+                level,
+                record.message ?: "Native platform error",
+                record.thrown,
+            )
         }
+
         override fun flush() = Unit
+
         override fun close() = Unit
     }
 
-    override val type = PlatformType.BUKKIT
-    override val implementationName: String get() = Bukkit.getName().ifBlank { type.displayName }
+    override val type: PlatformType = PlatformType.BUKKIT
+    override val dataFolder = plugin.dataFolder.toPath()
+
+    override val implementationName: String
+        get() = Bukkit.getName().ifBlank { type.displayName }
+
     val serverInfo: ServerInfo by lazy {
         ServerInfo(
             name = implementationName,
@@ -74,53 +92,65 @@ internal class BukkitPlatformAdapter constructor(
             rawMinecraftVersion = ServerCapabilities.rawMinecraftVersion,
         )
     }
-    override val metricsFactory: PlatformMetricsFactory = BukkitMetricsFactory()
-    override val audienceAdapter: PlatformAudienceAdapter = BukkitAudienceAdapter(audienceService)
-    override val commandAdapter: PlatformCommandAdapter = BukkitCommandAdapter(plugin, audienceService)
-    override val taskAdapter: PlatformTaskAdapter = BukkitTaskAdapter(plugin)
-    override val dataFolder = plugin.dataFolder.toPath()
 
-    override fun log(owner: Any, level: LogLevel, message: String, error: Throwable?) {
-        val target = (owner as? Plugin)?.logger ?: plugin.logger
-        val nativeLevel = when (level) {
-            LogLevel.WARNING -> Level.WARNING
-            LogLevel.ERROR -> Level.SEVERE
-            else -> Level.INFO
-        }
-        ownLogCall.set(true)
-        try {
-            if (error == null) target.log(nativeLevel, message) else target.log(nativeLevel, message, error)
-        } finally {
-            ownLogCall.set(false)
-        }
-    }
+    override val metricsFactory: PlatformMetricsFactory =
+        BukkitMetricsFactory()
 
-    @Synchronized
-    override fun observeNativeLogs(observer: ((Any, LogLevel, String, Throwable?) -> Unit)?) {
-        if (nativeLogObserver == null && observer != null) {
-            Bukkit.getLogger().addHandler(nativeLogHandler)
+    override val commandAdapter: PlatformCommandAdapter =
+        BukkitCommandAdapter(plugin, audienceService)
+
+    override val audienceAdapter: PlatformAudienceAdapter =
+        BukkitAudienceAdapter(audienceService)
+
+    override val taskAdapter: PlatformTaskAdapter =
+        BukkitTaskAdapter(plugin)
+
+    override val logHandler: (Any, LogLevel, String, Throwable?) -> Unit =
+        { owner, level, message, error ->
+            val logger = (owner as? Plugin)?.logger ?: plugin.logger
+            val nativeLevel = when (level) {
+                LogLevel.WARNING -> Level.WARNING
+                LogLevel.ERROR -> Level.SEVERE
+                else -> Level.INFO
+            }
+
+            ownLogCall.set(true)
+            try {
+                logger.log(nativeLevel, message, error)
+            } finally {
+                ownLogCall.set(false)
+            }
         }
-        if (nativeLogObserver != null && observer == null) {
-            Bukkit.getLogger().removeHandler(nativeLogHandler)
-        }
-        nativeLogObserver = observer
-    }
 
     override fun console(owner: Any, message: String) {
         Bukkit.getConsoleSender().sendMessage(message)
     }
 
-    override fun ownerDetails(owner: Any): Map<String, String> {
-        val target = owner as? Plugin ?: return emptyMap()
-        return linkedMapOf(
-            "id" to target.name,
-            "name" to target.name,
-            "version" to target.description.version,
-            "authors" to target.description.authors.joinToString(", ").ifBlank { "pnFolder" },
-        )
+    override fun ownerMetadata(owner: Any): PluginSnapshot? {
+        val target = owner as? Plugin
+            ?: return unsupportedOwner(owner)
+
+        return target.toSnapshot()
     }
 
-    override fun remotePolicyContext(owner: Any, metadata: PluginMetadata, values: Map<String, String>): RemotePolicyContext =
+    override fun installedPlugins(): Map<String, String> =
+        Bukkit.getPluginManager().plugins.associate { installedPlugin ->
+            installedPlugin.name to installedPlugin.description.version
+        }
+
+    override fun snapshot(): PlatformSnapshot =
+        PlatformSnapshot(
+            name = implementationName,
+            version = Bukkit.getBukkitVersion(),
+            onlinePlayers = Bukkit.getOnlinePlayers().size,
+            plugins = Bukkit.getPluginManager().plugins.map { it.toSnapshot() },
+        )
+
+    override fun remotePolicyContext(
+        owner: Any,
+        metadata: PluginMetadata,
+        values: Map<String, String>,
+    ): RemotePolicyContext =
         BukkitRemotePolicyContextFactory.create(owner as Plugin, values)
 
     override fun disableOwner(owner: Any): Boolean {
@@ -128,13 +158,28 @@ internal class BukkitPlatformAdapter constructor(
         return true
     }
 
-    override fun installedPlugins(): Map<String, String> = Bukkit.getPluginManager().plugins.associate {
-        it.name to it.description.version
+    @Synchronized
+    override fun observeNativeLogs(
+        observer: ((Any, LogLevel, String, Throwable?) -> Unit)?,
+    ) {
+        if (nativeLogObserver == null && observer != null) {
+            Bukkit.getLogger().addHandler(nativeLogHandler)
+        }
+        if (nativeLogObserver != null && observer == null) {
+            Bukkit.getLogger().removeHandler(nativeLogHandler)
+        }
+
+        nativeLogObserver = observer
     }
 
     override fun bind(library: PnLibrary) {
-        check(!closedFlag.get()) { "Bukkit platform adapter is closed" }
-        check(bound.compareAndSet(false, true)) { "Bukkit platform adapter is already bound" }
+        check(!closed.get()) {
+            "Bukkit platform adapter is closed"
+        }
+        check(bound.compareAndSet(false, true)) {
+            "Bukkit platform adapter is already bound"
+        }
+
         try {
             lifecycleListener = BukkitLifecycleListener(plugin, library).start()
             controlRegistration = library.commands.register(
@@ -142,53 +187,40 @@ internal class BukkitPlatformAdapter constructor(
                 BukkitControlCommand(plugin, library).definition(),
             )
         } catch (error: Throwable) {
-            controlRegistration?.close()
-            controlRegistration = null
-            lifecycleListener?.close()
-            lifecycleListener = null
+            releaseBindings()
             bound.set(false)
             throw error
         }
     }
-    override fun details(): Map<String, Any?> = diagnosticDetails(includeSensitive = false)
 
-//    var primaryThread: Thread? = null
-//
-//    fun startServer() {
-//        primaryThread = Thread.currentThread()
-//    }
-//
-//    fun isPrimaryThread(): Boolean {
-//        return Thread.currentThread() === primaryThread
-//    }
-
-    override fun diagnosticDetails(includeSensitive: Boolean): Map<String, Any?> {
+    override fun diagnosticDetails(
+        includeSensitive: Boolean,
+    ): Map<String, Any?> {
         if (!ServerCapabilities.isFolia && Bukkit.isPrimaryThread()) {
             return diagnosticsCollector.collect(includeSensitive)
         }
-        val snapshot = CompletableFuture<Map<String, Any?>>()
-        executeGlobal(Runnable {
-            runCatching { diagnosticsCollector.collect(includeSensitive) }
-                .onSuccess(snapshot::complete)
-                .onFailure(snapshot::completeExceptionally)
-        })
-        return snapshot.get(15, TimeUnit.SECONDS)
+
+        val result = CompletableFuture<Map<String, Any?>>()
+        executeGlobal(
+            Runnable {
+                runCatching {
+                    diagnosticsCollector.collect(includeSensitive)
+                }.onSuccess(result::complete)
+                    .onFailure(result::completeExceptionally)
+            },
+        )
+
+        return result.get(DIAGNOSTIC_TIMEOUT_SECONDS, TimeUnit.SECONDS)
     }
 
     override fun executeGlobal(task: Runnable) {
-        if (closedFlag.get()) return
+        if (closed.get()) return
+
         if (ServerCapabilities.isFolia) {
-            try {
-                val scheduler = Bukkit::class.java.getMethod("getGlobalRegionScheduler").invoke(null)
-                val run = scheduler.javaClass.getMethod(
-                    "run", Plugin::class.java, java.util.function.Consumer::class.java)
-                run.invoke(scheduler, plugin, java.util.function.Consumer<Any> { task.run() })
-                return
-            } catch (error: ReflectiveOperationException) {
-                log(plugin, LogLevel.ERROR, "Не удалось передать задачу Folia GlobalRegionScheduler", error)
-                return
-            }
+            executeFoliaGlobal(task)
+            return
         }
+
         if (Bukkit.isPrimaryThread()) {
             task.run()
         } else {
@@ -201,36 +233,99 @@ internal class BukkitPlatformAdapter constructor(
     }
 
     override fun executeReply(recipient: Any, task: Runnable) {
-        if (closedFlag.get()) return
+        if (closed.get()) return
+
         val nativeRecipient = (recipient as? BukkitCommandSender)?.native ?: recipient
         if (nativeRecipient is Player && ServerCapabilities.isFolia) {
-            try {
-                val getScheduler = nativeRecipient.javaClass.getMethod("getScheduler")
-                val taskScheduler = getScheduler.invoke(nativeRecipient)
-                val runMethod = taskScheduler.javaClass.getMethod(
-                    "run",
-                    Plugin::class.java,
-                    java.util.function.Consumer::class.java,
-                    Runnable::class.java,
-                )
-                runMethod.invoke(taskScheduler, plugin, java.util.function.Consumer<Any> { task.run() }, null)
-                return
-            } catch (error: Exception) {
-                log(plugin, LogLevel.ERROR, "Не удалось передать задачу Folia EntityScheduler", error)
-                return
-            }
+            executeFoliaEntity(nativeRecipient, task)
+            return
         }
+
         executeGlobal(task)
     }
 
     override fun close() {
-        if (closedFlag.compareAndSet(false, true)) {
-            controlRegistration?.close()
-            controlRegistration = null
-            lifecycleListener?.close()
-            lifecycleListener = null
-            observeNativeLogs(null)
-            bound.set(false)
+        if (!closed.compareAndSet(false, true)) return
+
+        releaseBindings()
+        observeNativeLogs(null)
+        bound.set(false)
+    }
+
+    private fun executeFoliaGlobal(task: Runnable) {
+        try {
+            val scheduler = Bukkit::class.java
+                .getMethod("getGlobalRegionScheduler")
+                .invoke(null)
+            val run = scheduler.javaClass.getMethod(
+                "run",
+                Plugin::class.java,
+                java.util.function.Consumer::class.java,
+            )
+
+            run.invoke(
+                scheduler,
+                plugin,
+                java.util.function.Consumer<Any> { task.run() },
+            )
+        } catch (error: ReflectiveOperationException) {
+            log(
+                plugin,
+                LogLevel.ERROR,
+                "Не удалось передать задачу Folia GlobalRegionScheduler",
+                error,
+            )
         }
+    }
+
+    private fun executeFoliaEntity(
+        player: Player,
+        task: Runnable,
+    ) {
+        try {
+            val scheduler = player.javaClass
+                .getMethod("getScheduler")
+                .invoke(player)
+            val run = scheduler.javaClass.getMethod(
+                "run",
+                Plugin::class.java,
+                java.util.function.Consumer::class.java,
+                Runnable::class.java,
+            )
+
+            run.invoke(
+                scheduler,
+                plugin,
+                java.util.function.Consumer<Any> { task.run() },
+                null,
+            )
+        } catch (error: Exception) {
+            log(
+                plugin,
+                LogLevel.ERROR,
+                "Не удалось передать задачу Folia EntityScheduler",
+                error,
+            )
+        }
+    }
+
+    private fun releaseBindings() {
+        controlRegistration?.close()
+        controlRegistration = null
+
+        lifecycleListener?.close()
+        lifecycleListener = null
+    }
+
+    private fun Plugin.toSnapshot(): PluginSnapshot =
+        PluginSnapshot(
+            id = name,
+            name = name,
+            version = description.version,
+            authors = description.authors,
+        )
+
+    private companion object {
+        const val DIAGNOSTIC_TIMEOUT_SECONDS = 15L
     }
 }
