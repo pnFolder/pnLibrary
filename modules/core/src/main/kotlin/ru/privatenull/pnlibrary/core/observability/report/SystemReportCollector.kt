@@ -86,6 +86,7 @@ internal class SystemReportCollector {
         data["processIo"] = collectProcessIo()
         data["processNetwork"] = collectProcessNetwork()
         data["processStatus"] = collectProcessStatus()
+        data["processLimits"] = collectProcessLimits()
         data["loadAverage"] = collectLoadAverage()
 
         // ── Memory ───────────────────────────────────────────────────────────
@@ -301,6 +302,7 @@ internal class SystemReportCollector {
             "processIo" to snapshot["processIo"],
             "processNetwork" to snapshot["processNetwork"],
             "processStatus" to snapshot["processStatus"],
+            "processLimits" to snapshot["processLimits"],
             "loadAverage" to snapshot["loadAverage"],
             "environmentVariables" to snapshot["environmentVariableAnalytics"],
             "hostDistribution" to linkedMapOf(
@@ -361,6 +363,8 @@ internal class SystemReportCollector {
                     ((it as? Map<*, *>)?.get("freeSpaceBytes") as? Number)?.toLong() ?: 0L
                 },
                 "highestDiskUsedRatio" to (snapshot["health"] as? Map<*, *>)?.get("highestDiskUsedRatio"),
+                "maxOpenFiles" to processLimit(snapshot, "maxOpenFiles", "hard"),
+                "maxProcesses" to processLimit(snapshot, "maxProcesses", "hard"),
             ),
             "runtimeDistribution" to linkedMapOf(
                 "uptimeSeconds" to java?.get("uptimeSeconds"),
@@ -902,6 +906,34 @@ internal class SystemReportCollector {
             value?.let { key to it }
         }.toMap()
     }.getOrDefault(emptyMap())
+
+    private fun collectProcessLimits(): Map<String, Map<String, Any?>> = runCatching {
+        val file = File("/proc/self/limits")
+        if (!file.isFile) return@runCatching emptyMap()
+        file.readLines().drop(1).mapNotNull { line ->
+            val match = Regex("^(.+?)\\s+([^\\s]+)\\s+([^\\s]+)\\s*(.*)$").matchEntire(line.trim())
+                ?: return@mapNotNull null
+            val name = when (match.groupValues[1].trim()) {
+                "Max open files" -> "maxOpenFiles"
+                "Max processes" -> "maxProcesses"
+                "Max address space" -> "maxAddressSpace"
+                "Max locked memory" -> "maxLockedMemory"
+                "Max stack size" -> "maxStackSize"
+                "Max pending signals" -> "maxPendingSignals"
+                else -> return@mapNotNull null
+            }
+            name to linkedMapOf<String, Any?>(
+                "soft" to parseLimitValue(match.groupValues[2]),
+                "hard" to parseLimitValue(match.groupValues[3]),
+                "unit" to match.groupValues[4].trim().ifBlank { null },
+            )
+        }.toMap()
+    }.getOrDefault(emptyMap())
+
+    private fun parseLimitValue(value: String): Any? = value.toLongOrNull() ?: value
+
+    private fun processLimit(snapshot: Map<String, Any?>, name: String, bound: String): Any? =
+        ((snapshot["processLimits"] as? Map<*, *>)?.get(name) as? Map<*, *>)?.get(bound)
 
     private fun readProcSocketStates(path: String): List<String> = runCatching {
         File(path).takeIf(File::isFile)?.readLines()?.drop(1)?.mapNotNull { line ->

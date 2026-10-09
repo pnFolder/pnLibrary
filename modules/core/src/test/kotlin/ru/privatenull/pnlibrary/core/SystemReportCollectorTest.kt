@@ -69,6 +69,8 @@ class SystemReportCollectorTest {
         assertTrue(report["processNetwork"] is Map<*, *>)
         assertTrue(report["environmentVariableAnalytics"] is Map<*, *>)
         assertTrue(report["processStatus"] is Map<*, *>)
+        assertTrue(report["processLimits"] is Map<*, *>)
+        assertTrue((analytics["resources"] as? Map<*, *>)?.containsKey("maxOpenFiles") == true)
         val threads = report["threads"] as? Map<*, *>
             ?: error("threads section is missing")
         val os = report["os"] as? Map<*, *>
