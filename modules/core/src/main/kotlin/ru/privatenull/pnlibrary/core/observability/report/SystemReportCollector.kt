@@ -21,6 +21,7 @@ import java.util.Locale
 internal class SystemReportCollector {
 
     private val redactor = DiagnosticRedactor()
+    private val collectionHistory = ArrayDeque<Map<String, Any?>>()
 
     /**
      * Captures JVM, operating-system, memory, thread, class-loading, and storage data.
@@ -29,6 +30,7 @@ internal class SystemReportCollector {
      * may be included; callers should enable this only inside encrypted reports
      */
     fun collect(includeNetworkAddresses: Boolean = false): Map<String, Any?> {
+        val startedNanos = System.nanoTime()
         val runtimeMx = ManagementFactory.getRuntimeMXBean()
         val osMx = ManagementFactory.getOperatingSystemMXBean()
         val memoryMx = ManagementFactory.getMemoryMXBean()
@@ -131,6 +133,21 @@ internal class SystemReportCollector {
         }
         data["networkSummary"] = collectNetworkSummary()
         data["networkAnalytics"] = collectNetworkAnalytics()
+        val durationMs = (System.nanoTime() - startedNanos) / 1_000_000
+        data["collection"] = linkedMapOf(
+            "durationMs" to durationMs,
+            "includeNetworkAddresses" to includeNetworkAddresses,
+            "thread" to Thread.currentThread().name,
+        )
+        collectionHistory.addLast(
+            linkedMapOf(
+                "completedUtc" to Instant.now().toString(),
+                "durationMs" to durationMs,
+                "networkAddressesIncluded" to includeNetworkAddresses,
+                "status" to "healthy",
+            ),
+        )
+        while (collectionHistory.size > 32) collectionHistory.removeFirst()
         data["analytics"] = collectAnalytics(data)
 
         return data
@@ -178,6 +195,14 @@ internal class SystemReportCollector {
         val classLoading = snapshot["classes"] as? Map<*, *>
         return linkedMapOf(
             "generatedUtc" to Instant.now().toString(),
+            "collection" to linkedMapOf(
+                "sampleCount" to collectionHistory.size,
+                "lastDurationMs" to collectionHistory.lastOrNull()?.get("durationMs"),
+                "averageDurationMs" to collectionHistory.mapNotNull { (it["durationMs"] as? Number)?.toLong() }
+                    .average().takeIf { collectionHistory.isNotEmpty() },
+                "maxDurationMs" to collectionHistory.mapNotNull { (it["durationMs"] as? Number)?.toLong() }.maxOrNull(),
+                "recent" to collectionHistory.toList(),
+            ),
             "status" to when {
                 signals.any { it["severity"] == "critical" } -> "critical"
                 signals.isNotEmpty() -> "attention"
