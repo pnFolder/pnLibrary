@@ -25,6 +25,7 @@ import java.io.File
 import java.io.FileInputStream
 import java.security.MessageDigest
 import java.util.concurrent.atomic.AtomicBoolean
+import kotlin.time.TimeSource
 
 /**
  * Runtime adapter for Velocity proxy servers.
@@ -123,6 +124,7 @@ internal class VelocityPlatformAdapter(
     }
 
     override fun diagnosticDetails(includeSensitive: Boolean): Map<String, Any?> {
+        val started = TimeSource.Monotonic.markNow()
         val details = snapshot().asMap().toMutableMap()
         details["collection"] = linkedMapOf(
             "startedUtc" to java.time.Instant.now().toString(),
@@ -261,6 +263,12 @@ internal class VelocityPlatformAdapter(
             "backendCount" to server.allServers.size,
             "onlinePlayerCount" to server.playerCount,
         )
+        (details["collection"] as? MutableMap<String, Any?>)?.apply {
+            this["durationMs"] = started.elapsedNow().inWholeMilliseconds
+            this["pluginCount"] = server.pluginManager.plugins.size
+            this["backendCount"] = server.allServers.size
+            this["onlinePlayerCount"] = server.playerCount
+        }
         return details
     }
 

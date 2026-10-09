@@ -20,6 +20,7 @@ import ru.privatenull.pnlibrary.spi.platform.PluginSnapshot
 import ru.privatenull.pnlibrary.spi.tasks.PlatformTaskAdapter
 import java.util.concurrent.atomic.AtomicBoolean
 import java.util.logging.Level
+import kotlin.time.TimeSource
 import java.io.File
 import java.io.FileInputStream
 import java.security.MessageDigest
@@ -115,6 +116,7 @@ internal class BungeePlatformAdapter(
     }
 
     override fun diagnosticDetails(includeSensitive: Boolean): Map<String, Any?> {
+        val started = TimeSource.Monotonic.markNow()
         val details = snapshot().asMap().toMutableMap()
         details["collection"] = linkedMapOf(
             "startedUtc" to java.time.Instant.now().toString(),
@@ -254,6 +256,12 @@ internal class BungeePlatformAdapter(
             "backendCount" to plugin.proxy.servers.size,
             "onlinePlayerCount" to plugin.proxy.onlineCount,
         )
+        (details["collection"] as? MutableMap<String, Any?>)?.apply {
+            this["durationMs"] = started.elapsedNow().inWholeMilliseconds
+            this["pluginCount"] = plugin.proxy.pluginManager.plugins.size
+            this["backendCount"] = plugin.proxy.servers.size
+            this["onlinePlayerCount"] = plugin.proxy.onlineCount
+        }
         return details
     }
 
