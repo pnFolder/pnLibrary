@@ -66,6 +66,8 @@ internal class SupportRuntime(
     private val reportInProgress = AtomicBoolean(false)
     private val reportsCreated = AtomicLong()
     private val reportsFailed = AtomicLong()
+    private val reportDurationTotalMs = AtomicLong()
+    private val reportSizeTotalBytes = AtomicLong()
     @Volatile private var lastReportUtc: String? = null
     @Volatile private var lastReportDurationMs: Long? = null
     @Volatile private var lastReportSizeBytes: Long? = null
@@ -103,6 +105,8 @@ internal class SupportRuntime(
             lastReportUtc = Instant.now().toString()
             lastReportDurationMs = (System.nanoTime() - startedAt) / 1_000_000
             lastReportSizeBytes = runCatching { Files.size(report.localFile) }.getOrNull()
+            reportDurationTotalMs.addAndGet(lastReportDurationMs ?: 0L)
+            reportSizeTotalBytes.addAndGet(lastReportSizeBytes ?: 0L)
             report
         } catch (error: Throwable) {
             reportsFailed.incrementAndGet()
@@ -119,6 +123,13 @@ internal class SupportRuntime(
             "inProgress" to reportInProgress.get(),
             "created" to reportsCreated.get(),
             "failed" to reportsFailed.get(),
+            "total" to reportsCreated.get() + reportsFailed.get(),
+            "successRate" to reportsCreated.get().toDouble() /
+                (reportsCreated.get() + reportsFailed.get()).coerceAtLeast(1).toDouble(),
+            "averageDurationMs" to reportDurationTotalMs.get().toDouble() /
+                reportsCreated.get().coerceAtLeast(1).toDouble(),
+            "averageSizeBytes" to reportSizeTotalBytes.get().toDouble() /
+                reportsCreated.get().coerceAtLeast(1).toDouble(),
             "lastCreatedUtc" to lastReportUtc,
             "lastDurationMs" to lastReportDurationMs,
             "lastSizeBytes" to lastReportSizeBytes,
