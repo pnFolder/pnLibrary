@@ -202,6 +202,14 @@ internal class PnLibraryImpl(
             "runCount" to taskSnapshots.sumOf { it.runCount },
             "skippedCount" to taskSnapshots.sumOf { it.skippedCount },
             "failedCount" to taskSnapshots.count { it.lastFailure != null },
+            "failuresByOwner" to taskSnapshots
+                .filter { it.lastFailure != null }
+                .groupingBy { it.ownerName }
+                .eachCount(),
+            "failureMessages" to taskSnapshots
+                .mapNotNull { it.lastFailure?.take(256) }
+                .groupingBy { it }
+                .eachCount(),
         ),
         "updates" to updateSnapshots.map { registration ->
             val snapshot = registration.snapshot
@@ -231,6 +239,10 @@ internal class PnLibraryImpl(
             "byChannel" to updateSnapshots.groupingBy { it.snapshot.channel.name }.eachCount(),
             "byState" to updateSnapshots.groupingBy { it.snapshot.state.name }.eachCount(),
             "availableCount" to updateSnapshots.count { it.snapshot.latestVersion != null },
+            "messages" to updateSnapshots
+                .mapNotNull { it.snapshot.message?.take(256) }
+                .groupingBy { it }
+                .eachCount(),
         ),
         "analytics" to linkedMapOf<String, Any?>(
             "status" to when {
