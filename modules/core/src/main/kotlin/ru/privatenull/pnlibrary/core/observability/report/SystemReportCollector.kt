@@ -161,6 +161,7 @@ internal class SystemReportCollector {
     private fun collectAnalytics(snapshot: Map<String, Any?>): Map<String, Any?> {
         val memory = snapshot["memory"] as? Map<*, *>
         val heap = memory?.get("heap") as? Map<*, *>
+        val nonHeap = memory?.get("nonHeap") as? Map<*, *>
         val health = snapshot["health"] as? Map<*, *>
         val threads = snapshot["threads"] as? Map<*, *>
         val gc = memory?.get("garbageCollectors") as? Collection<*>
@@ -213,6 +214,8 @@ internal class SystemReportCollector {
                 "heapUsedBytes" to heap?.get("usedBytes"),
                 "heapMaxBytes" to heap?.get("maxBytes"),
                 "heapUsedRatio" to health?.get("heapUsedRatio"),
+                "nonHeapUsedBytes" to nonHeap?.get("usedBytes"),
+                "nonHeapCommittedBytes" to nonHeap?.get("committedBytes"),
                 "processCpuLoad" to health?.get("processCpuLoad"),
                 "systemCpuLoad" to health?.get("systemCpuLoad"),
                 "highestDiskUsedRatio" to health?.get("highestDiskUsedRatio"),
@@ -233,6 +236,10 @@ internal class SystemReportCollector {
                 "cpuPressure" to linkedMapOf(
                     "process" to pressureBucket(health?.get("processCpuLoad")),
                     "system" to pressureBucket(health?.get("systemCpuLoad")),
+                ),
+                "memory" to linkedMapOf(
+                    "heap" to pressureBucket(health?.get("heapUsedRatio")),
+                    "nonHeap" to nonHeapPressure(nonHeap),
                 ),
                 "fileSystems" to fileSystems.orEmpty().mapNotNull { entry ->
                     val data = entry as? Map<*, *> ?: return@mapNotNull null
@@ -297,6 +304,12 @@ internal class SystemReportCollector {
             number <= 0.90 -> "elevated"
             else -> "critical"
         }
+    }
+
+    private fun nonHeapPressure(value: Map<*, *>?): String {
+        val used = (value?.get("usedBytes") as? Number)?.toDouble() ?: return "unknown"
+        val committed = (value?.get("committedBytes") as? Number)?.toDouble() ?: return "unknown"
+        return pressureBucket((used / committed.coerceAtLeast(1.0)).coerceIn(0.0, 1.0))
     }
 
     /** Complete JVM thread dump kept as a separate text entry in the archive. */
