@@ -148,6 +148,33 @@ internal class PnLibraryImpl(
     )
 
     private fun runtimeDiagnostics(): Map<String, Any?> = linkedMapOf(
+        "library" to linkedMapOf<String, Any?>(
+            "version" to version,
+            "closed" to isClosed,
+            "platform" to platform.id,
+            "implementation" to platform.implementationName,
+            "proxy" to platform.isProxy,
+            "server" to platform.isServer,
+            "dataFolder" to if (config.privacy) "[redacted]" else
+                dataFolder.toAbsolutePath().normalize().toString(),
+            "configuration" to linkedMapOf<String, Any?>(
+                "privacy" to config.privacy,
+                "configs" to config.configs,
+                "logs" to config.logs,
+                "upload" to config.upload,
+                "uploadMode" to config.uploadMode,
+                "historyRetentionDays" to config.historyRetentionDays,
+                "historyMaxBytes" to config.historyMaxBytes,
+                "logRecords" to config.logRecords,
+                "taskHistoryCapacity" to config.taskHistoryCapacity,
+                "keepReports" to config.keepReports,
+                "maxReportBytes" to config.maxReportBytes,
+                "excludedPathCount" to config.excludedPaths.size,
+                "redactionRuleCount" to (
+                    config.secretKeyPatterns.size + config.redactValuePatterns.size
+                ),
+            ),
+        ),
         "tasks" to tasks.query().map { task ->
             linkedMapOf<String, Any?>(
                 "id" to task.id.value,
