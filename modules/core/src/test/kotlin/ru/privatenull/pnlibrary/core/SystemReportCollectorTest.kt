@@ -32,6 +32,8 @@ class SystemReportCollectorTest {
             ?: error("containerLimits section is missing")
         assertTrue(limits.containsKey("memoryLimitBytes"))
         assertTrue(limits.containsKey("cpuQuotaMicros"))
+        assertTrue(limits.containsKey("cpuThrottledMicros"))
+        assertTrue(limits.containsKey("cpuThrottleEvents"))
         val collectionHistory = analytics["collectionHistory"] as? Map<*, *>
             ?: error("collectionHistory section is missing")
         assertTrue(collectionHistory.containsKey("samplesWithSignals"))

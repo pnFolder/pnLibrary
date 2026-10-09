@@ -243,6 +243,9 @@ internal class SystemReportCollector {
                 "memoryCurrentBytes" to (snapshot["runtimeEnvironment"] as? Map<*, *>)?.get("memoryCurrentBytes"),
                 "cpuQuotaMicros" to (snapshot["runtimeEnvironment"] as? Map<*, *>)?.get("cpuQuotaMicros"),
                 "cpuPeriodMicros" to (snapshot["runtimeEnvironment"] as? Map<*, *>)?.get("cpuPeriodMicros"),
+                "cpuUsageMicros" to (snapshot["runtimeEnvironment"] as? Map<*, *>)?.get("cpuUsageMicros"),
+                "cpuThrottledMicros" to (snapshot["runtimeEnvironment"] as? Map<*, *>)?.get("cpuThrottledMicros"),
+                "cpuThrottleEvents" to (snapshot["runtimeEnvironment"] as? Map<*, *>)?.get("cpuThrottleEvents"),
             ),
             "hostDistribution" to linkedMapOf(
                 "availableProcessors" to os?.get("availableProcessors"),
@@ -587,12 +590,24 @@ internal class SystemReportCollector {
         "memoryCurrentBytes" to readCgroupLong("/sys/fs/cgroup/memory.current"),
         "cpuQuotaMicros" to readCgroupLong("/sys/fs/cgroup/cpu.max", 0),
         "cpuPeriodMicros" to readCgroupLong("/sys/fs/cgroup/cpu.max", 1),
+        "cpuUsageMicros" to readCgroupKey("/sys/fs/cgroup/cpu.stat", "usage_usec"),
+        "cpuThrottledMicros" to readCgroupKey("/sys/fs/cgroup/cpu.stat", "throttled_usec"),
+        "cpuThrottleEvents" to readCgroupKey("/sys/fs/cgroup/cpu.stat", "nr_throttled"),
     )
 
     private fun readCgroupLong(path: String, tokenIndex: Int? = null): Long? = runCatching {
         val value = File(path).takeIf(File::isFile)?.readText()?.trim() ?: return@runCatching null
         val token = tokenIndex?.let { value.split(Regex("\\s+")).getOrNull(it) } ?: value
         token.takeUnless { it == "max" }?.toLongOrNull()?.takeIf { it >= 0L }
+    }.getOrNull()
+
+    private fun readCgroupKey(path: String, key: String): Long? = runCatching {
+        File(path).takeIf(File::isFile)?.useLines { lines ->
+            lines.firstOrNull { it.startsWith("$key ") }
+                ?.substringAfter(' ')
+                ?.trim()
+                ?.toLongOrNull()
+        }
     }.getOrNull()
 
     private fun collectNetworkInterfaces(): List<Map<String, Any?>> {
