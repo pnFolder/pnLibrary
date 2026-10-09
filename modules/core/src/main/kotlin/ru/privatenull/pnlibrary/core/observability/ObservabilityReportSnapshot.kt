@@ -9,6 +9,7 @@ internal data class ObservabilityReportSnapshot(
     val attachmentManifest: ByteArray,
     val attachments: Map<String, ByteArray>,
     val statuses: List<Map<String, Any?>> = emptyList(),
+    val analytics: Map<String, Any?> = emptyMap(),
 )
 
 internal fun ObservabilityRuntime.reportSnapshot(): ObservabilityReportSnapshot {
@@ -28,6 +29,7 @@ internal fun ObservabilityRuntime.reportSnapshot(): ObservabilityReportSnapshot 
         attachments = storedAttachments.associate { attachment ->
             attachment.id to attachmentBytes(attachment)
         },
+        analytics = analytics(),
         statuses = statuses().map { status ->
             linkedMapOf<String, Any?>(
                 "plugin" to status.plugin,

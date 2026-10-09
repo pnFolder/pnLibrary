@@ -89,6 +89,9 @@ internal class SupportReportAssembler(
 
     private fun addObservabilityData(archive: SupportArchiveBuilder) {
         val snapshot = observabilitySnapshot()
+        if (snapshot.analytics.isNotEmpty()) {
+            archive.json("observability/analytics.json", snapshot.analytics)
+        }
         if (snapshot.statuses.isNotEmpty()) {
             archive.json("observability/statuses.json", snapshot.statuses)
         }

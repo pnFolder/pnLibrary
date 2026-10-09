@@ -74,13 +74,40 @@ internal class ObservabilityRuntime(
     internal fun analytics(): Map<String, Any?> = synchronized(recordLock) {
         val events = journal.recent()
         val attachments = attachmentStore.all()
+        val statuses = statusRegistry.snapshot()
+        val recent = events.takeLast(MAX_ANALYTICS_EVENTS).map { event ->
+            linkedMapOf<String, Any?>(
+                "id" to event.id,
+                "timestampUtc" to Instant.ofEpochMilli(event.timestamp).toString(),
+                "plugin" to (event.plugin ?: "[unknown]"),
+                "source" to (event.source ?: "[unknown]"),
+                "level" to event.level.name,
+                "message" to event.message,
+                "errorType" to event.errorType,
+                "dataKeys" to event.data.keys.sorted(),
+            )
+        }
+        val statusHealth = when {
+            events.any { it.level == ru.privatenull.pnlibrary.api.observability.ObservationLevel.CRITICAL } -> "critical"
+            events.any { it.level == ru.privatenull.pnlibrary.api.observability.ObservationLevel.ERROR } ||
+                statuses.any { it.state.equals("failed", ignoreCase = true) || it.state.equals("degraded", ignoreCase = true) } -> "attention"
+            else -> "healthy"
+        }
         linkedMapOf(
+            "status" to statusHealth,
             "eventCount" to events.size,
             "byLevel" to events.groupingBy { it.level.name }.eachCount(),
-            "byPlugin" to events.groupingBy { it.plugin ?: "[unknown]" }.eachCount(),
             "bySource" to events.groupingBy { it.source ?: "[unknown]" }.eachCount(),
+            "byMessage" to events.groupingBy { it.message }.eachCount().entries
+                .sortedByDescending { it.value }
+                .take(MAX_ANALYTICS_MESSAGES)
+                .associate { it.key to it.value },
+            "byPlugin" to events.groupingBy { it.plugin ?: "[unknown]" }.eachCount(),
             "errorCount" to events.count { it.errorType != null },
             "errorTypes" to events.mapNotNull { it.errorType }.groupingBy { it }.eachCount(),
+            "statusCount" to statuses.size,
+            "statusStates" to statuses.groupingBy { it.state }.eachCount(),
+            "recent" to recent,
             "attachmentCount" to attachments.size,
             "attachmentBytes" to attachments.sumOf { it.size },
             "oldestUtc" to events.minOfOrNull { it.timestamp }?.let(Instant::ofEpochMilli)?.toString(),
@@ -103,5 +130,10 @@ internal class ObservabilityRuntime(
         val matchesStart = since?.let { observation.timestamp >= it } ?: true
         val matchesEnd = until?.let { observation.timestamp <= it } ?: true
         return matchesPlugin && matchesLevel && matchesStart && matchesEnd
+    }
+
+    private companion object {
+        const val MAX_ANALYTICS_EVENTS = 32
+        const val MAX_ANALYTICS_MESSAGES = 32
     }
 }

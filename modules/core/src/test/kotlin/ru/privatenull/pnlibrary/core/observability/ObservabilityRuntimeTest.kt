@@ -72,4 +72,31 @@ class ObservabilityRuntimeTest {
         assertEquals(100, observations.size)
         assertEquals(100, observations.map { it.id }.toSet().size)
     }
+
+    @Test
+    fun `analytics exposes severity timeline and status health`() {
+        val runtime = ObservabilityRuntime(Files.createTempDirectory("observability-analytics"))
+
+        runtime.capture { plugin("alpha"); source("startup"); message("ready") }
+        runtime.failure(IllegalStateException("broken")) { plugin("alpha"); source("database") }
+        runtime.status(ComponentStatus("alpha", "database", "degraded"))
+
+        val analytics = runtime.analytics()
+        assertEquals(2, analytics["eventCount"])
+        assertEquals(1, analytics["errorCount"])
+        assertEquals(1, analytics["statusCount"])
+        assertTrue((analytics["recent"] as List<*>).isNotEmpty())
+        assertEquals("attention", analytics["status"])
+    }
+
+    @Test
+    fun `support snapshot carries analytics alongside journal`() {
+        val runtime = ObservabilityRuntime(Files.createTempDirectory("observability-snapshot"))
+        runtime.capture { message("startup") }
+
+        val snapshot = runtime.reportSnapshot()
+
+        assertTrue(snapshot.analytics.containsKey("eventCount"))
+        assertTrue(snapshot.journal.isNotEmpty())
+    }
 }
