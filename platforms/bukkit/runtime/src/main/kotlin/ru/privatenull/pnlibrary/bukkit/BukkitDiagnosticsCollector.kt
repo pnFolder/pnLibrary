@@ -398,6 +398,13 @@ internal class BukkitDiagnosticsCollector {
             "declaredCount" to declared.size,
             "declaredByPlugin" to declared
                 .groupBy({ it.first }, { it.second }),
+            "duplicateDeclared" to declared
+                .groupingBy { it.second }
+                .eachCount()
+                .filterValues { it > 1 }
+                .keys
+                .sorted()
+                .take(MAX_COMMAND_NAMES),
             "missingDeclared" to declared
                 .filterNot { (_, command) -> command in registered }
                 .map { (plugin, command) -> "$plugin:$command" }
