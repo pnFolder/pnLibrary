@@ -7,6 +7,8 @@ import java.lang.management.GarbageCollectorMXBean
 import java.lang.management.ManagementFactory
 import java.lang.management.MemoryPoolMXBean
 import java.net.NetworkInterface
+import java.nio.file.Files
+import java.nio.file.Paths
 import java.time.Instant
 import java.time.ZoneId
 import java.util.Locale
@@ -310,6 +312,9 @@ internal class SystemReportCollector {
                         "path" to data["path"],
                         "usedRatio" to data["usedRatio"],
                         "pressure" to pressureBucket(data["usedRatio"]),
+                        "writable" to data["writable"],
+                        "readOnly" to data["readOnly"],
+                        "fileSystemType" to data["fileSystemType"],
                     )
                 },
                 "garbageCollectors" to gc.orEmpty().mapNotNull { entry ->
@@ -441,12 +446,19 @@ internal class SystemReportCollector {
     private fun collectFileSystems(): List<Map<String, Any?>> {
         val roots = File.listRoots() ?: return emptyList()
         return roots.map { root ->
+            val store = runCatching { Files.getFileStore(Paths.get(root.absolutePath)) }.getOrNull()
             linkedMapOf(
                 "path" to root.absolutePath,
                 "totalSpaceBytes" to root.totalSpace,
                 "freeSpaceBytes" to root.freeSpace,
                 "usableSpaceBytes" to root.usableSpace,
                 "freeSpaceMb" to (root.freeSpace / (1024 * 1024)),
+                "usedRatio" to root.totalSpace.takeIf { it > 0L }?.let {
+                    (it - root.freeSpace).toDouble() / it
+                },
+                "readOnly" to store?.isReadOnly,
+                "fileSystemType" to runCatching { store?.type() }.getOrNull(),
+                "writable" to runCatching { root.canWrite() }.getOrDefault(false),
             )
         }
     }

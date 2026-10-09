@@ -46,5 +46,9 @@ class SystemReportCollectorTest {
         val threads = report["threads"] as? Map<*, *>
             ?: error("threads section is missing")
         assertTrue(threads["deadlockedThreads"] is List<*>)
+        val fileSystems = report["fileSystems"] as? List<*>
+            ?: error("fileSystems section is missing")
+        assertTrue(fileSystems.firstOrNull() is Map<*, *>)
+        assertTrue((fileSystems.firstOrNull() as? Map<*, *>)?.containsKey("writable") == true)
     }
 }
