@@ -250,6 +250,8 @@ internal class VelocityPlatformAdapter(
                 "serverSummary",
                 "playerSummary",
                 "players",
+                "analytics",
+                "playerSummary.pingPercentiles",
             ),
             "pluginCount" to server.pluginManager.plugins.size,
             "backendCount" to server.allServers.size,

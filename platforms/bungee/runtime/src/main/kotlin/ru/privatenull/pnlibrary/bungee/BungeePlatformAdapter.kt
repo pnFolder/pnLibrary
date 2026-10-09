@@ -243,6 +243,8 @@ internal class BungeePlatformAdapter(
                 "serverSummary",
                 "playerSummary",
                 "players",
+                "analytics",
+                "playerSummary.pingPercentiles",
             ),
             "pluginCount" to plugin.proxy.pluginManager.plugins.size,
             "backendCount" to plugin.proxy.servers.size,
