@@ -317,6 +317,18 @@ internal class VelocityPlatformAdapter(
             "backendDistribution" to backendDistribution(backendPlayerCounts, server.playerCount),
             "pluginDistribution" to pluginDistribution(details["pluginHealth"]),
             "artifactDistribution" to artifactDistribution(details["pluginArtifacts"]),
+            "runtimeDistribution" to linkedMapOf(
+                "playersPerBackend" to server.playerCount.toDouble() /
+                    server.allServers.size.coerceAtLeast(1),
+                "backendUtilization" to backendPlayerCounts.values.count { it > 0 }
+                    .toDouble() / server.allServers.size.coerceAtLeast(1),
+                "pluginHealthCoverage" to pluginHealthCoverage(details["pluginHealth"]),
+                "dependencyGraphCoverage" to linkedMapOf(
+                    "requiredEdges" to requiredEdges.size,
+                    "optionalEdges" to optionalEdges.size,
+                    "cycles" to dependencyCycles(requiredEdges).size,
+                ),
+            ),
         )
         details["coverage"] = linkedMapOf(
             "sections" to listOf(
@@ -331,6 +343,7 @@ internal class VelocityPlatformAdapter(
                 "analytics.pluginDistribution",
                 "analytics.backendDistribution",
                 "analytics.artifactDistribution",
+                "analytics.runtimeDistribution",
                 "servers",
                 "serverSummary",
                 "playerSummary",
@@ -420,6 +433,16 @@ internal class VelocityPlatformAdapter(
             "byStatus" to plugins.groupingBy { it["status"].toString() }.eachCount(),
             "missingRequiredDependencies" to plugins.sumOf { (it["missingRequired"] as? Collection<*>)?.size ?: 0 },
             "optionalDependencyTotals" to plugins.sumOf { (it["optionalDependencies"] as? Number)?.toInt() ?: 0 },
+        )
+    }
+
+    private fun pluginHealthCoverage(value: Any?): Map<String, Any?> {
+        val plugins = (value as? Collection<*>)?.filterIsInstance<Map<*, *>>().orEmpty()
+        return linkedMapOf(
+            "observed" to plugins.size,
+            "healthy" to plugins.count { it["status"] == "healthy" },
+            "attention" to plugins.count { it["status"] == "attention" },
+            "critical" to plugins.count { it["status"] == "critical" },
         )
     }
 
