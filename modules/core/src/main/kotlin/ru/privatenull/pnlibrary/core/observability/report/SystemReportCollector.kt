@@ -74,6 +74,7 @@ internal class SystemReportCollector {
             "cpu" to collectCpuDetails(osMx),
             "fileDescriptors" to collectFileDescriptorDetails(osMx),
         )
+        data["runtimeEnvironment"] = collectRuntimeEnvironment()
 
         // ── Memory ───────────────────────────────────────────────────────────
         val heap = memoryMx.heapMemoryUsage
@@ -301,6 +302,18 @@ internal class SystemReportCollector {
         readLong(osMx, "getMaxFileDescriptorCount")?.let { result["max"] = it }
         return result
     }
+
+    private fun collectRuntimeEnvironment(): Map<String, Any?> = linkedMapOf(
+        "dockerMarker" to File("/.dockerenv").isFile,
+        "containerEnvMarker" to File("/run/.containerenv").isFile,
+        "cgroupContainerHint" to runCatching {
+            File("/proc/1/cgroup").takeIf(File::isFile)?.readText()?.let { content ->
+                listOf("docker", "containerd", "kubepods", "podman", "lxc")
+                    .firstOrNull { marker -> content.contains(marker, ignoreCase = true) }
+            }
+        }.getOrNull(),
+        "workingDirectoryPresent" to File(System.getProperty("user.dir", ".")).isDirectory,
+    )
 
     private fun collectNetworkInterfaces(): List<Map<String, Any?>> {
         val result = mutableListOf<Map<String, Any?>>()
