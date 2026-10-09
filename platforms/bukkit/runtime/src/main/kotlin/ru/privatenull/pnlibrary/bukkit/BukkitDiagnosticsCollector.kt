@@ -96,6 +96,17 @@ internal class BukkitDiagnosticsCollector {
         this["playersByWorld"] = server.onlinePlayers.groupingBy { it.world.name }.eachCount()
         this["playersByGameMode"] = server.onlinePlayers.groupingBy { it.gameMode.name }.eachCount()
         this["operatorCount"] = server.onlinePlayers.count { it.isOp }
+        val pings = server.onlinePlayers.mapNotNull { player ->
+            reflectionOrNull {
+                (player.javaClass.getMethod("getPing").invoke(player) as? Number)?.toDouble()
+            }
+        }
+        this["pingSummary"] = linkedMapOf(
+            "sampleCount" to pings.size,
+            "minimum" to pings.minOrNull(),
+            "maximum" to pings.maxOrNull(),
+            "average" to pings.takeIf { it.isNotEmpty() }?.average(),
+        )
         this["onlinePlayers"] = when {
             ServerCapabilities.isFolia -> FOLIA_PLAYERS_UNAVAILABLE
             !includeSensitive -> PLAYERS_REDACTED
@@ -159,6 +170,18 @@ internal class BukkitDiagnosticsCollector {
                     sha256(jar)?.let { hash -> this["jarSha256"] = hash }
                     manifestDetails(jar)?.let { manifest -> this["manifest"] = manifest }
                 }
+                plugin.dataFolder.takeIf(File::exists)?.let { folder ->
+                    this["dataFolder"] = linkedMapOf(
+                        "exists" to true,
+                        "fileCount" to folder.walkTopDown().count(),
+                        "totalBytes" to folder.walkTopDown()
+                            .filter(File::isFile)
+                            .sumOf(File::length),
+                        "configPresent" to File(folder, "config.yml").isFile,
+                    )
+                } ?: run {
+                    this["dataFolder"] = linkedMapOf("exists" to false)
+                }
             }
         }
     }
@@ -171,6 +194,15 @@ internal class BukkitDiagnosticsCollector {
             "whitelistEnabled" to server.hasWhitelist(),
             "whitelistedPlayerCount" to server.whitelistedPlayers.size,
             "spawnRadius" to server.spawnRadius,
+            "runtimeFlags" to linkedMapOf(
+                "allowFlight" to reflectionOrNull { server.javaClass.getMethod("getAllowFlight").invoke(server) },
+                "generateStructures" to reflectionOrNull {
+                    server.javaClass.getMethod("getGenerateStructures").invoke(server)
+                },
+                "idleTimeoutMinutes" to reflectionOrNull {
+                    server.javaClass.getMethod("getIdleTimeout").invoke(server)
+                },
+            ),
             "spawnSettings" to linkedMapOf(
                 "animals" to spawnSettings(
                     server.getAnimalSpawnLimit(),
