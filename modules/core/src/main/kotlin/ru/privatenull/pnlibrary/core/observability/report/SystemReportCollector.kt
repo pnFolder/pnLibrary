@@ -354,6 +354,13 @@ internal class SystemReportCollector {
                 "processPeakRss" to (snapshot["processStatus"] as? Map<*, *>)?.get("VmPeak"),
                 "voluntaryContextSwitches" to (snapshot["processStatus"] as? Map<*, *>)?.get("voluntary_ctxt_switches"),
                 "nonVoluntaryContextSwitches" to (snapshot["processStatus"] as? Map<*, *>)?.get("nonvoluntary_ctxt_switches"),
+                "fileSystemCount" to fileSystems?.size,
+                "writableFileSystemCount" to fileSystems?.count { (it as? Map<*, *>)?.get("writable") == true },
+                "readOnlyFileSystemCount" to fileSystems?.count { (it as? Map<*, *>)?.get("readOnly") == true },
+                "freeSpaceBytes" to fileSystems?.sumOf {
+                    ((it as? Map<*, *>)?.get("freeSpaceBytes") as? Number)?.toLong() ?: 0L
+                },
+                "highestDiskUsedRatio" to (snapshot["health"] as? Map<*, *>)?.get("highestDiskUsedRatio"),
             ),
             "runtimeDistribution" to linkedMapOf(
                 "uptimeSeconds" to java?.get("uptimeSeconds"),
