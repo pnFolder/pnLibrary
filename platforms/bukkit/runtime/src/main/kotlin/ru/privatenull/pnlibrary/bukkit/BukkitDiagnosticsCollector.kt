@@ -29,6 +29,7 @@ internal class BukkitDiagnosticsCollector {
             putServerSettings(server)
             putPerformanceDetails()
             putSchedulerDetails()
+            putCommandDetails()
             putServiceDetails()
             putEventListenerDetails()
             putWorldDetails(server)
@@ -244,6 +245,25 @@ internal class BukkitDiagnosticsCollector {
             "pendingByPlugin" to pending.groupingBy { it.owner.name }.eachCount(),
             "activeByPlugin" to active.groupingBy { it.owner.name }.eachCount(),
             "pendingTaskTypes" to pending.map { it.javaClass.name }.distinct().sorted().take(MAX_SCHEDULER_CLASSES),
+        )
+    }
+
+    private fun MutableMap<String, Any?>.putCommandDetails() {
+        val commands = reflectionOrNull {
+            val commandMap = Bukkit.getServer().javaClass
+                .getMethod("getCommandMap")
+                .invoke(Bukkit.getServer())
+            val knownCommands = commandMap.javaClass
+                .getMethod("getKnownCommands")
+                .invoke(commandMap) as? Map<*, *>
+            knownCommands?.keys
+                ?.mapNotNull { it?.toString()?.takeIf(String::isNotBlank) }
+                ?.distinct()
+                ?.sorted()
+        } ?: emptyList()
+        this["commands"] = linkedMapOf(
+            "registeredCount" to commands.size,
+            "names" to commands.take(MAX_COMMAND_NAMES),
         )
     }
 
