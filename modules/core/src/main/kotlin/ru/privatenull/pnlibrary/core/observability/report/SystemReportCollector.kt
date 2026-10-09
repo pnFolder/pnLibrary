@@ -59,6 +59,7 @@ internal class SystemReportCollector {
             "systemPropertyCount" to System.getProperties().size,
             "systemPropertyNames" to System.getProperties().stringPropertyNames().sorted(),
             "bootModuleCount" to ModuleLayer.boot().modules().size,
+            "classpathAnalytics" to collectClasspathAnalytics(),
             "environment" to linkedMapOf(
                 "defaultCharset" to java.nio.charset.Charset.defaultCharset().name(),
                 "fileEncoding" to System.getProperty("file.encoding", "unknown"),
@@ -263,6 +264,7 @@ internal class SystemReportCollector {
                 "cpuThrottledMicros" to (snapshot["runtimeEnvironment"] as? Map<*, *>)?.get("cpuThrottledMicros"),
                 "cpuThrottleEvents" to (snapshot["runtimeEnvironment"] as? Map<*, *>)?.get("cpuThrottleEvents"),
             ),
+            "classpathAnalytics" to (java?.get("classpathAnalytics") ?: emptyMap<String, Any>()),
             "processIo" to snapshot["processIo"],
             "processNetwork" to snapshot["processNetwork"],
             "loadAverage" to snapshot["loadAverage"],
@@ -622,6 +624,23 @@ internal class SystemReportCollector {
             "flagCount" to flags.distinct().size,
         )
     }.getOrDefault(emptyMap())
+
+    private fun collectClasspathAnalytics(): Map<String, Any?> {
+        val entries = System.getProperty("java.class.path")
+            ?.split(File.pathSeparatorChar)
+            ?.filter(String::isNotBlank)
+            .orEmpty()
+        val names = entries.map { File(it).name }.filter(String::isNotBlank)
+        return linkedMapOf(
+            "entryCount" to entries.size,
+            "uniqueNameCount" to names.distinct().size,
+            "duplicateNameCount" to names.groupingBy { it }.eachCount().count { it.value > 1 },
+            "extensionCounts" to names.map { name -> name.substringAfterLast('.', "none").lowercase() }
+                .groupingBy { it }
+                .eachCount()
+                .toSortedMap(),
+        )
+    }
 
     private fun readDouble(target: Any, method: String): Double? = runCatching {
         target.javaClass.getMethod(method).invoke(target) as? Double

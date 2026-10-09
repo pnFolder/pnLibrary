@@ -54,6 +54,9 @@ class SystemReportCollectorTest {
         val os = report["os"] as? Map<*, *>
             ?: error("os section is missing")
         assertTrue(os["cpuTopology"] is Map<*, *>)
+        val java = report["java"] as? Map<*, *>
+            ?: error("java section is missing")
+        assertTrue((java["classpathAnalytics"] as? Map<*, *>)?.containsKey("duplicateNameCount") == true)
         assertTrue(threads["deadlockedThreads"] is List<*>)
         (threads["topCpuThreads"] as? List<*>)?.firstOrNull()?.let { top ->
             assertTrue((top as? Map<*, *>)?.containsKey("cpuShare") == true)
