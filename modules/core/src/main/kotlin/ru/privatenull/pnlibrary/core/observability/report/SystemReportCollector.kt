@@ -179,6 +179,10 @@ internal class SystemReportCollector {
                 "processPeakRss" to (data["processStatus"] as? Map<*, *>)?.get("VmPeak"),
                 "voluntaryContextSwitches" to (data["processStatus"] as? Map<*, *>)?.get("voluntary_ctxt_switches"),
                 "nonVoluntaryContextSwitches" to (data["processStatus"] as? Map<*, *>)?.get("nonvoluntary_ctxt_switches"),
+                "runnableThreads" to threadStateCount(data, "RUNNABLE"),
+                "blockedThreads" to threadStateCount(data, "BLOCKED"),
+                "waitingThreads" to threadStateCount(data, "WAITING"),
+                "timedWaitingThreads" to threadStateCount(data, "TIMED_WAITING"),
                 "gcCollectionCount" to gcTotal(data, "collectionCount"),
                 "gcCollectionTimeMs" to gcTotal(data, "collectionTimeMs"),
                 "dominantGcCollector" to dominantGcCollector(data)?.get("name"),
@@ -579,6 +583,10 @@ internal class SystemReportCollector {
             "processPeakRssDelta" to numericDelta("processPeakRss"),
             "voluntaryContextSwitchesDelta" to numericDelta("voluntaryContextSwitches"),
             "nonVoluntaryContextSwitchesDelta" to numericDelta("nonVoluntaryContextSwitches"),
+            "runnableThreadsDelta" to numericDelta("runnableThreads"),
+            "blockedThreadsDelta" to numericDelta("blockedThreads"),
+            "waitingThreadsDelta" to numericDelta("waitingThreads"),
+            "timedWaitingThreadsDelta" to numericDelta("timedWaitingThreads"),
             "gcCollectionCountDelta" to numericDelta("gcCollectionCount"),
             "gcCollectionTimeMsDelta" to numericDelta("gcCollectionTimeMs"),
             "threadCountDelta" to numericDelta("threadCount"),
@@ -600,6 +608,10 @@ internal class SystemReportCollector {
         ((snapshot["memory"] as? Map<*, *>)?.get("garbageCollectors") as? Collection<*>)
             ?.sumOf { ((it as? Map<*, *>)?.get(key) as? Number)?.toLong() ?: 0L }
             ?: 0L
+
+    private fun threadStateCount(snapshot: Map<String, Any?>, state: String): Int =
+        (((snapshot["threads"] as? Map<*, *>)?.get("stateCounts") as? Map<*, *>)?.get(state) as? Number)
+            ?.toInt() ?: 0
 
     private fun memoryPoolRatios(snapshot: Map<String, Any?>): List<Double> =
         ((snapshot["memory"] as? Map<*, *>)?.get("pools") as? Collection<*>)

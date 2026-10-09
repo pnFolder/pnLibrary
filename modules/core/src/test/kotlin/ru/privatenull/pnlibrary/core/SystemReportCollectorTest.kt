@@ -51,6 +51,7 @@ class SystemReportCollectorTest {
         assertTrue((collectionHistory["trend"] as? Map<*, *>)?.containsKey("heapUsedBytesDelta") == true)
         assertTrue((collectionHistory["trend"] as? Map<*, *>)?.containsKey("freePhysicalMemoryBytesDelta") == true)
         assertTrue((collectionHistory["trend"] as? Map<*, *>)?.containsKey("processRssDelta") == true)
+        assertTrue((collectionHistory["trend"] as? Map<*, *>)?.containsKey("blockedThreadsDelta") == true)
         assertTrue((collectionHistory["trend"] as? Map<*, *>)?.containsKey("highestMemoryPoolRatioDelta") == true)
         assertTrue((collectionHistory["trend"] as? Map<*, *>)?.containsKey("unloadedClassCountDelta") == true)
         val network = report["networkAnalytics"] as? Map<*, *>
