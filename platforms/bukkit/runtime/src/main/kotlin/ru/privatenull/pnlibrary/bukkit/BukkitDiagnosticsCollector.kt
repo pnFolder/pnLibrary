@@ -113,6 +113,7 @@ internal class BukkitDiagnosticsCollector {
                 "plugins",
                 "pluginSummary",
                 "analytics.pluginDistribution",
+                "analytics.artifactDistribution",
                 "dependencyHealth",
                 "dependencies",
                 "registrations",
@@ -270,6 +271,12 @@ internal class BukkitDiagnosticsCollector {
                 "optionalDependencyTotals" to pluginHealth.sumOf {
                     (it["optionalDependencies"] as? Number)?.toInt() ?: 0
                 },
+            ),
+            "artifactDistribution" to linkedMapOf(
+                "pluginCount" to pluginData.size,
+                "availableArtifacts" to pluginData.count { (it["jarSizeBytes"] as? Number)?.toLong()?.let { size -> size >= 0 } == true },
+                "totalJarBytes" to pluginData.sumOf { (it["jarSizeBytes"] as? Number)?.toLong() ?: 0L },
+                "largestJarBytes" to pluginData.mapNotNull { (it["jarSizeBytes"] as? Number)?.toLong() }.maxOrNull(),
             ),
             "playerDistribution" to linkedMapOf(
                 "byWorld" to this["playersByWorld"],

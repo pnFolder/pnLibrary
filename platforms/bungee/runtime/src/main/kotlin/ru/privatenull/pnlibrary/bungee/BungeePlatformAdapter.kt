@@ -301,6 +301,7 @@ internal class BungeePlatformAdapter(
                 "pingBuckets" to ((details["playerSummary"] as? Map<*, *>)?.get("pingMs") as? Map<*, *>)?.get("buckets"),
             ),
             "pluginDistribution" to pluginDistribution(details["pluginHealth"]),
+            "artifactDistribution" to artifactDistribution(details["pluginArtifacts"]),
         )
         details["coverage"] = linkedMapOf(
             "sections" to listOf(
@@ -313,6 +314,7 @@ internal class BungeePlatformAdapter(
                 "pluginSummary",
                 "pluginHealth",
                 "analytics.pluginDistribution",
+                "analytics.artifactDistribution",
                 "servers",
                 "serverSummary",
                 "playerSummary",
@@ -390,6 +392,12 @@ internal class BungeePlatformAdapter(
             "missingRequiredDependencies" to plugins.sumOf { (it["missingRequired"] as? Collection<*>)?.size ?: 0 },
             "optionalDependencyTotals" to plugins.sumOf { (it["optionalDependencies"] as? Number)?.toInt() ?: 0 },
         )
+    }
+
+    private fun artifactDistribution(value: Any?): Map<String, Any?> {
+        val artifacts = (value as? Collection<*>)?.filterIsInstance<Map<*, *>>().orEmpty()
+        val sizes = artifacts.mapNotNull { (it["sizeBytes"] as? Number)?.toLong() }
+        return linkedMapOf("pluginCount" to artifacts.size, "availableArtifacts" to sizes.size, "totalJarBytes" to sizes.sum(), "largestJarBytes" to sizes.maxOrNull())
     }
 
     private fun formatUtc(file: java.io.File): String =
