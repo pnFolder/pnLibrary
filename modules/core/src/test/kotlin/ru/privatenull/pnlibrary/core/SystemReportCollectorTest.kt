@@ -51,6 +51,9 @@ class SystemReportCollectorTest {
         assertTrue(report["processNetwork"] is Map<*, *>)
         val threads = report["threads"] as? Map<*, *>
             ?: error("threads section is missing")
+        val os = report["os"] as? Map<*, *>
+            ?: error("os section is missing")
+        assertTrue(os["cpuTopology"] is Map<*, *>)
         assertTrue(threads["deadlockedThreads"] is List<*>)
         (threads["topCpuThreads"] as? List<*>)?.firstOrNull()?.let { top ->
             assertTrue((top as? Map<*, *>)?.containsKey("cpuShare") == true)

@@ -76,6 +76,7 @@ internal class SystemReportCollector {
             "availableProcessors" to osMx.availableProcessors,
             "systemLoadAverage" to osMx.systemLoadAverage,
             "cpu" to collectCpuDetails(osMx),
+            "cpuTopology" to collectCpuTopology(),
             "fileDescriptors" to collectFileDescriptorDetails(osMx),
         )
         data["runtimeEnvironment"] = collectRuntimeEnvironment()
@@ -605,6 +606,22 @@ internal class SystemReportCollector {
         readLong(osMx, "getFreeSwapSpaceSize")?.let { result["freeSwapBytes"] = it }
         return result
     }
+
+    private fun collectCpuTopology(): Map<String, Any?> = runCatching {
+        val lines = File("/proc/cpuinfo").takeIf(File::isFile)?.readLines().orEmpty()
+        val model = lines.firstOrNull { it.startsWith("model name") }
+            ?.substringAfter(':')?.trim()
+        val frequency = lines.firstOrNull { it.startsWith("cpu MHz") }
+            ?.substringAfter(':')?.trim()?.toDoubleOrNull()
+        val flags = lines.firstOrNull { it.startsWith("flags") || it.startsWith("Features") }
+            ?.substringAfter(':')?.trim()?.split(Regex("\\s+"))?.filter(String::isNotBlank).orEmpty()
+        linkedMapOf(
+            "model" to model,
+            "logicalProcessorCount" to lines.count { it.startsWith("processor") },
+            "reportedFrequencyMHz" to frequency,
+            "flagCount" to flags.distinct().size,
+        )
+    }.getOrDefault(emptyMap())
 
     private fun readDouble(target: Any, method: String): Double? = runCatching {
         target.javaClass.getMethod(method).invoke(target) as? Double
