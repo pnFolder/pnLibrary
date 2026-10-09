@@ -206,6 +206,9 @@ internal class SystemReportCollector {
                 "peakThreadCount" to (data["threads"] as? Map<*, *>)?.get("peakCount"),
                 "freePhysicalMemoryBytes" to ((data["os"] as? Map<*, *>)?.get("cpu") as? Map<*, *>)?.get("freePhysicalMemoryBytes"),
                 "freeSwapBytes" to ((data["os"] as? Map<*, *>)?.get("cpu") as? Map<*, *>)?.get("freeSwapBytes"),
+                "fileDescriptorOpen" to ((data["os"] as? Map<*, *>)?.get("fileDescriptors") as? Map<*, *>)?.get("open"),
+                "processUserCpuTicks" to (data["processScheduling"] as? Map<*, *>)?.get("userCpuTicks"),
+                "processSystemCpuTicks" to (data["processScheduling"] as? Map<*, *>)?.get("systemCpuTicks"),
             ),
         )
         while (collectionHistory.size > 32) collectionHistory.removeFirst()
@@ -654,6 +657,9 @@ internal class SystemReportCollector {
             "peakThreadCountDelta" to numericDelta("peakThreadCount"),
             "freePhysicalMemoryBytesDelta" to numericDelta("freePhysicalMemoryBytes"),
             "freeSwapBytesDelta" to numericDelta("freeSwapBytes"),
+            "fileDescriptorOpenDelta" to numericDelta("fileDescriptorOpen"),
+            "processUserCpuTicksDelta" to numericDelta("processUserCpuTicks"),
+            "processSystemCpuTicksDelta" to numericDelta("processSystemCpuTicks"),
             "durationMsDelta" to numericDelta("durationMs"),
         ),
     )
