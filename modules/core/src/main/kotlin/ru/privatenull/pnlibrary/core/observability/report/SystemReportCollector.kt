@@ -203,6 +203,18 @@ internal class SystemReportCollector {
             ),
             "distributions" to linkedMapOf(
                 "threadStates" to threadStates.orEmpty(),
+                "cpuPressure" to linkedMapOf(
+                    "process" to pressureBucket(health?.get("processCpuLoad")),
+                    "system" to pressureBucket(health?.get("systemCpuLoad")),
+                ),
+                "fileSystems" to fileSystems.orEmpty().mapNotNull { entry ->
+                    val data = entry as? Map<*, *> ?: return@mapNotNull null
+                    linkedMapOf(
+                        "path" to data["path"],
+                        "usedRatio" to data["usedRatio"],
+                        "pressure" to pressureBucket(data["usedRatio"]),
+                    )
+                },
                 "memoryPools" to pools.orEmpty()
                     .mapNotNull { pool ->
                         val data = pool as? Map<*, *> ?: return@mapNotNull null
@@ -235,6 +247,15 @@ internal class SystemReportCollector {
         when (pressure?.toString()) {
             "critical" -> signals.add(linkedMapOf("code" to code, "severity" to "critical"))
             "elevated" -> signals.add(linkedMapOf("code" to code, "severity" to "elevated"))
+        }
+    }
+
+    private fun pressureBucket(value: Any?): String {
+        val number = (value as? Number)?.toDouble() ?: return "unknown"
+        return when {
+            number <= 0.70 -> "normal"
+            number <= 0.90 -> "elevated"
+            else -> "critical"
         }
     }
 
