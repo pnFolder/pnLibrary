@@ -183,6 +183,7 @@ internal class PnLibraryImpl(
                 },
             )
         },
+        "metrics" to metricsRegistry.diagnosticSnapshot(),
     )
 
     fun init() {

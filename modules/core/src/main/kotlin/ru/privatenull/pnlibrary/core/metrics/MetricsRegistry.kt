@@ -39,6 +39,17 @@ internal class MetricsRegistry(private val factory: PlatformMetricsFactory) : Me
     }
 
     @Synchronized
+    fun diagnosticSnapshot(): List<Map<String, Any?>> = sessions.map { session ->
+        linkedMapOf(
+            "provider" to session.provider.name,
+            "providers" to session.providers.map { it.name },
+            "capabilities" to session.capabilities.map { it.name },
+            "projectId" to session.projectId,
+            "errorReporter" to (session.errorReporter != null),
+        )
+    }
+
+    @Synchronized
     override fun close() {
         sessions.toList().forEach { runCatching { it.close() } }
         sessions.clear()
