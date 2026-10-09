@@ -242,7 +242,11 @@ internal class SystemReportCollector {
                 "availableProcessors" to os?.get("availableProcessors"),
                 "systemLoadAverage" to os?.get("systemLoadAverage"),
                 "processCpuTimeNanos" to cpu?.get("processCpuTimeNanos"),
-                "committedVirtualMemoryBytes" to cpu?.get("committedVirtualMemoryBytes"),
+            "committedVirtualMemoryBytes" to cpu?.get("committedVirtualMemoryBytes"),
+                "totalPhysicalMemoryBytes" to cpu?.get("totalPhysicalMemoryBytes"),
+                "freePhysicalMemoryBytes" to cpu?.get("freePhysicalMemoryBytes"),
+                "totalSwapBytes" to cpu?.get("totalSwapBytes"),
+                "freeSwapBytes" to cpu?.get("freeSwapBytes"),
                 "fileDescriptorOpen" to fileDescriptors?.get("open"),
                 "fileDescriptorMax" to fileDescriptors?.get("max"),
                 "fileDescriptorUsedRatio" to descriptorRatio(fileDescriptors),
@@ -541,6 +545,10 @@ internal class SystemReportCollector {
         readDouble(osMx, "getCpuLoad")?.let { result["systemLoad"] = it }
         readLong(osMx, "getProcessCpuTime")?.let { result["processCpuTimeNanos"] = it }
         readLong(osMx, "getCommittedVirtualMemorySize")?.let { result["committedVirtualMemoryBytes"] = it }
+        readLong(osMx, "getTotalMemorySize")?.let { result["totalPhysicalMemoryBytes"] = it }
+        readLong(osMx, "getFreeMemorySize")?.let { result["freePhysicalMemoryBytes"] = it }
+        readLong(osMx, "getTotalSwapSpaceSize")?.let { result["totalSwapBytes"] = it }
+        readLong(osMx, "getFreeSwapSpaceSize")?.let { result["freeSwapBytes"] = it }
         return result
     }
 
