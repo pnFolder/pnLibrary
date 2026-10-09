@@ -268,6 +268,10 @@ internal class BungeePlatformAdapter(
                 "duplicatePluginNames" to ((details["pluginSummary"] as? Map<*, *>)?.get("duplicateNames") as? Collection<*>)?.size,
                 "unhealthyPlugins" to unhealthyPlugins,
             ),
+            "playerDistribution" to linkedMapOf(
+                "byServer" to (details["playerSummary"] as? Map<*, *>)?.get("playersByServer"),
+                "pingBuckets" to ((details["playerSummary"] as? Map<*, *>)?.get("pingMs") as? Map<*, *>)?.get("buckets"),
+            ),
         )
         details["coverage"] = linkedMapOf(
             "sections" to listOf(

@@ -275,6 +275,10 @@ internal class VelocityPlatformAdapter(
                 "duplicatePluginIds" to ((details["pluginSummary"] as? Map<*, *>)?.get("duplicateIds") as? Collection<*>)?.size,
                 "unhealthyPlugins" to unhealthyPlugins,
             ),
+            "playerDistribution" to linkedMapOf(
+                "byServer" to (details["playerSummary"] as? Map<*, *>)?.get("playersByServer"),
+                "pingBuckets" to ((details["playerSummary"] as? Map<*, *>)?.get("pingMs") as? Map<*, *>)?.get("buckets"),
+            ),
         )
         details["coverage"] = linkedMapOf(
             "sections" to listOf(
