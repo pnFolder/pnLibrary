@@ -146,6 +146,8 @@ internal class SystemReportCollector {
         val health = snapshot["health"] as? Map<*, *>
         val threads = snapshot["threads"] as? Map<*, *>
         val gc = memory?.get("garbageCollectors") as? Collection<*>
+        val pools = memory?.get("pools") as? Collection<*>
+        val fileSystems = snapshot["fileSystems"] as? Collection<*>
 
         val signals = buildList {
             addPressureSignal(this, "heap", health?.get("heapPressure"))
@@ -160,6 +162,12 @@ internal class SystemReportCollector {
             }.map(Number::toDouble).maxOrNull()
             if (gcRatio != null && gcRatio >= GC_PRESSURE_THRESHOLD) {
                 add(linkedMapOf("code" to "gcPressure", "severity" to "elevated"))
+            }
+            if (pools.orEmpty()
+                    .mapNotNull { (it as? Map<*, *>)?.get("usedRatio") as? Number }
+                    .map(Number::toDouble)
+                    .any { it >= MEMORY_POOL_PRESSURE_THRESHOLD }) {
+                add(linkedMapOf("code" to "memoryPoolPressure", "severity" to "elevated"))
             }
         }
 
@@ -182,6 +190,12 @@ internal class SystemReportCollector {
                 "gcTimeRatio" to gc?.mapNotNull { entry ->
                     (entry as? Map<*, *>)?.get("timeRatio") as? Number
                 }?.map(Number::toDouble)?.maxOrNull(),
+                "memoryPoolPressureCount" to pools?.count { pool ->
+                    ((pool as? Map<*, *>)?.get("usedRatio") as? Number)?.toDouble()
+                        ?.let { it >= MEMORY_POOL_PRESSURE_THRESHOLD } == true
+                },
+                "largestFileSystem" to fileSystems.orEmpty()
+                    .maxByOrNull { ((it as? Map<*, *>)?.get("totalSpaceBytes") as? Number)?.toLong() ?: 0L },
             ),
             "counts" to linkedMapOf(
                 "threads" to threads?.get("count"),
@@ -190,6 +204,7 @@ internal class SystemReportCollector {
                 "unloadedClasses" to classLoading?.get("unloadedCount"),
                 "gcCollectors" to gc?.size,
                 "fileSystems" to (snapshot["fileSystems"] as? Collection<*>)?.size,
+                "threadStates" to threads?.get("stateCounts"),
             ),
         )
     }
@@ -427,6 +442,7 @@ internal class SystemReportCollector {
         const val MAX_ADDRESSES_PER_INTERFACE = 32
         const val MAX_CPU_THREADS = 20
         const val GC_PRESSURE_THRESHOLD = 0.25
+        const val MEMORY_POOL_PRESSURE_THRESHOLD = 0.90
         val SECRET_JVM_ARGUMENT = Regex(
             "(?i)(?:^|[._-])(?:password|passwd|pwd|secret|token|api[-_]?key|authorization|credential)(?:[._=-]|$)",
         )
