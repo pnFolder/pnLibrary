@@ -77,6 +77,7 @@ internal class SystemReportCollector {
             "fileDescriptors" to collectFileDescriptorDetails(osMx),
         )
         data["runtimeEnvironment"] = collectRuntimeEnvironment()
+        data["processIo"] = collectProcessIo()
 
         // ── Memory ───────────────────────────────────────────────────────────
         val heap = memoryMx.heapMemoryUsage
@@ -247,6 +248,7 @@ internal class SystemReportCollector {
                 "cpuThrottledMicros" to (snapshot["runtimeEnvironment"] as? Map<*, *>)?.get("cpuThrottledMicros"),
                 "cpuThrottleEvents" to (snapshot["runtimeEnvironment"] as? Map<*, *>)?.get("cpuThrottleEvents"),
             ),
+            "processIo" to snapshot["processIo"],
             "hostDistribution" to linkedMapOf(
                 "availableProcessors" to os?.get("availableProcessors"),
                 "systemLoadAverage" to os?.get("systemLoadAverage"),
@@ -594,6 +596,18 @@ internal class SystemReportCollector {
         "cpuThrottledMicros" to readCgroupKey("/sys/fs/cgroup/cpu.stat", "throttled_usec"),
         "cpuThrottleEvents" to readCgroupKey("/sys/fs/cgroup/cpu.stat", "nr_throttled"),
     )
+
+    private fun collectProcessIo(): Map<String, Long> = runCatching {
+        val file = File("/proc/self/io")
+        if (!file.isFile) return@runCatching emptyMap()
+        file.readLines().mapNotNull { line ->
+            val separator = line.indexOf(':')
+            if (separator <= 0) return@mapNotNull null
+            val key = line.substring(0, separator).trim()
+            val value = line.substring(separator + 1).trim().split(' ').firstOrNull()?.toLongOrNull()
+            value?.let { key to it }
+        }.toMap()
+    }.getOrDefault(emptyMap())
 
     private fun readCgroupLong(path: String, tokenIndex: Int? = null): Long? = runCatching {
         val value = File(path).takeIf(File::isFile)?.readText()?.trim() ?: return@runCatching null

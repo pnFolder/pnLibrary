@@ -42,5 +42,6 @@ class SystemReportCollectorTest {
             ?: error("networkAnalytics section is missing")
         assertTrue(network.containsKey("ipv4AddressCount"))
         assertTrue(network.containsKey("ipv6AddressCount"))
+        assertTrue(report["processIo"] is Map<*, *>)
     }
 }
