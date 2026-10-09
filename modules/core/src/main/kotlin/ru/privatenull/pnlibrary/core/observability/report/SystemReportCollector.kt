@@ -211,6 +211,22 @@ internal class SystemReportCollector {
                 else -> "healthy"
             },
             "signals" to signals,
+            "signalSummary" to linkedMapOf(
+                "total" to signals.size,
+                "critical" to signals.count { it["severity"] == "critical" },
+                "elevated" to signals.count { it["severity"] == "elevated" },
+                "codes" to signals.mapNotNull { it["code"] as? String }
+                    .distinct()
+                    .sorted(),
+            ),
+            "coverage" to linkedMapOf(
+                "memory" to (memory != null),
+                "threads" to (threads != null),
+                "garbageCollectors" to (gc != null),
+                "fileSystems" to (fileSystems != null),
+                "network" to (snapshot["networkAnalytics"] != null),
+                "javaRuntime" to (java != null),
+            ),
             "resources" to linkedMapOf(
                 "heapUsedBytes" to heap?.get("usedBytes"),
                 "heapMaxBytes" to heap?.get("maxBytes"),
