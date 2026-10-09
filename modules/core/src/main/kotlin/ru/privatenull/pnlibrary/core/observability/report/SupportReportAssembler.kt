@@ -50,6 +50,8 @@ internal class SupportReportAssembler(
         request: DebugRequest,
         encrypted: Boolean,
     ) {
+        val platformDetails = platform.diagnosticDetails(includeSensitive = encrypted && !config.privacy)
+        val platformCoverage = platformDetails["coverage"]
         archive.json(
             "manifest.json",
             linkedMapOf(
@@ -62,6 +64,7 @@ internal class SupportReportAssembler(
                 "encrypted" to encrypted,
                 "diagnosticsMode" to "full",
                 "privacy" to config.privacy,
+                "platformCoverage" to platformCoverage,
             ),
         )
         runtimeDiagnostics().takeIf { it.isNotEmpty() }?.let { archive.json("runtime.json", it) }
@@ -70,10 +73,7 @@ internal class SupportReportAssembler(
             system.collect(includeNetworkAddresses = encrypted && !config.privacy),
         )
         archive.text("threads.txt", system.threadDump())
-        archive.json(
-            "platform.json",
-            platform.diagnosticDetails(includeSensitive = encrypted && !config.privacy),
-        )
+        archive.json("platform.json", platformDetails)
     }
 
     private fun addPluginDiagnostics(archive: SupportArchiveBuilder, target: String) {
