@@ -68,6 +68,7 @@ internal class SupportRuntime(
     private val reportsFailed = AtomicLong()
     private val reportDurationTotalMs = AtomicLong()
     private val reportSizeTotalBytes = AtomicLong()
+    private val reportFailuresByType = java.util.concurrent.ConcurrentHashMap<String, AtomicLong>()
     @Volatile private var lastReportUtc: String? = null
     @Volatile private var lastReportDurationMs: Long? = null
     @Volatile private var lastReportSizeBytes: Long? = null
@@ -110,6 +111,7 @@ internal class SupportRuntime(
             report
         } catch (error: Throwable) {
             reportsFailed.incrementAndGet()
+            reportFailuresByType.computeIfAbsent(error.javaClass.name) { AtomicLong() }.incrementAndGet()
             lastReportDurationMs = (System.nanoTime() - startedAt) / 1_000_000
             throw error
         } finally {
@@ -130,6 +132,10 @@ internal class SupportRuntime(
                 reportsCreated.get().coerceAtLeast(1).toDouble(),
             "averageSizeBytes" to reportSizeTotalBytes.get().toDouble() /
                 reportsCreated.get().coerceAtLeast(1).toDouble(),
+            "failuresByType" to reportFailuresByType
+                .entries
+                .sortedByDescending { it.value.get() }
+                .associate { it.key to it.value.get() },
             "lastCreatedUtc" to lastReportUtc,
             "lastDurationMs" to lastReportDurationMs,
             "lastSizeBytes" to lastReportSizeBytes,
