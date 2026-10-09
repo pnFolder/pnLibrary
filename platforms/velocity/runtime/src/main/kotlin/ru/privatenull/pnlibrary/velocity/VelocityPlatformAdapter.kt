@@ -302,6 +302,7 @@ internal class VelocityPlatformAdapter(
                 "backends" to server.allServers.size,
                 "players" to server.playerCount,
                 "missingRequiredDependencies" to dependencyHealthCount(details),
+                "missingOptionalDependencies" to dependencyMissingCount(details, "missingOptional"),
                 "highLatencyPlayers" to playerPings.count { it >= HIGH_PING_THRESHOLD },
                 "duplicatePluginIds" to ((details["pluginSummary"] as? Map<*, *>)?.get("duplicateIds") as? Collection<*>)?.size,
                 "unhealthyPlugins" to unhealthyPlugins,
@@ -406,6 +407,11 @@ internal class VelocityPlatformAdapter(
     private fun dependencyHealthCount(details: Map<String, Any?>): Int =
         (details["dependencyHealth"] as? Collection<*>)
             ?.count { (it as? Map<*, *>)?.get("healthy") == false }
+            ?: 0
+
+    private fun dependencyMissingCount(details: Map<String, Any?>, key: String): Int =
+        (details["dependencyHealth"] as? Collection<*>)
+            ?.sumOf { ((it as? Map<*, *>)?.get(key) as? Collection<*>)?.size ?: 0 }
             ?: 0
 
     private fun pluginDistribution(value: Any?): Map<String, Any?> {

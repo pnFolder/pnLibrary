@@ -291,6 +291,7 @@ internal class BungeePlatformAdapter(
                 "backends" to plugin.proxy.servers.size,
                 "players" to plugin.proxy.onlineCount,
                 "missingRequiredDependencies" to dependencyHealthCount(details),
+                "missingOptionalDependencies" to dependencyMissingCount(details, "missingOptional"),
                 "highLatencyPlayers" to playerPings.count { it >= HIGH_PING_THRESHOLD },
                 "duplicatePluginNames" to ((details["pluginSummary"] as? Map<*, *>)?.get("duplicateNames") as? Collection<*>)?.size,
                 "unhealthyPlugins" to unhealthyPlugins,
@@ -395,6 +396,11 @@ internal class BungeePlatformAdapter(
     private fun dependencyHealthCount(details: Map<String, Any?>): Int =
         (details["dependencyHealth"] as? Collection<*>)
             ?.count { (it as? Map<*, *>)?.get("healthy") == false }
+            ?: 0
+
+    private fun dependencyMissingCount(details: Map<String, Any?>, key: String): Int =
+        (details["dependencyHealth"] as? Collection<*>)
+            ?.sumOf { ((it as? Map<*, *>)?.get(key) as? Collection<*>)?.size ?: 0 }
             ?: 0
 
     private fun pluginDistribution(value: Any?): Map<String, Any?> {
