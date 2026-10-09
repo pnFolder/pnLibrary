@@ -40,7 +40,41 @@ internal class BukkitDiagnosticsCollector {
             putPluginDetails(server, includeSensitive)
             putDependencyHealth(server)
             putPlaceholderApiDetails(server)
+            putCoverageSummary()
         }
+    }
+
+    private fun MutableMap<String, Any?>.putCoverageSummary() {
+        val worlds = this["worlds"] as? Collection<*> ?: emptyList<Any>()
+        val plugins = this["plugins"] as? Collection<*> ?: emptyList<Any>()
+        val listeners = (this["eventListeners"] as? Map<*, *>)?.get("registeredCount")
+        val services = (this["serviceSummary"] as? Map<*, *>)?.get("registrationCount")
+        val commands = (this["commands"] as? Map<*, *>)?.get("registeredCount")
+        val permissions = (this["permissions"] as? Map<*, *>)?.get("registeredCount")
+        this["coverage"] = linkedMapOf(
+            "sections" to listOf(
+                "server",
+                "serverSettings",
+                "serverProperties",
+                "performance",
+                "scheduler",
+                "commands",
+                "permissions",
+                "services",
+                "eventListeners",
+                "worlds",
+                "players",
+                "plugins",
+                "dependencyHealth",
+                "placeholderApi",
+            ),
+            "worldCount" to worlds.size,
+            "pluginCount" to plugins.size,
+            "registeredListenerCount" to listeners,
+            "serviceRegistrationCount" to services,
+            "registeredCommandCount" to commands,
+            "registeredPermissionCount" to permissions,
+        )
     }
 
     private fun MutableMap<String, Any?>.putServerDetails(server: org.bukkit.Server) {
