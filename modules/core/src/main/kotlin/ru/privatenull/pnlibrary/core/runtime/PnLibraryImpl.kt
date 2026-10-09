@@ -75,7 +75,14 @@ internal class PnLibraryImpl(
     private val metricsRegistry = MetricsRegistry(platform.metricsFactory)
     private var libraryMetrics: PluginMetrics? = null
     val dataFolder: Path = platform.dataFolder ?: extractDataFolder(owner)
-    private val support = SupportRuntime(owner, platform, diagnostics, config, dataFolder)
+    private val support = SupportRuntime(
+        owner = owner,
+        platform = platform,
+        diagnostics = diagnostics,
+        config = config,
+        dataFolder = dataFolder,
+        runtimeDiagnostics = ::runtimeDiagnostics,
+    )
     override val observability get() = support.service
     override val activity: ActivityService get() = observability
     override val metrics: MetricsService get() = metricsRegistry
@@ -138,6 +145,44 @@ internal class PnLibraryImpl(
         currencyFeature = currencyFeature,
         commands = commandService,
         directDownloads = directDownloadManager,
+    )
+
+    private fun runtimeDiagnostics(): Map<String, Any?> = linkedMapOf(
+        "tasks" to tasks.query().map { task ->
+            linkedMapOf<String, Any?>(
+                "id" to task.id.value,
+                "name" to task.name,
+                "owner" to task.ownerName,
+                "execution" to task.executionKind.name,
+                "status" to task.status.name,
+                "runCount" to task.runCount,
+                "skippedCount" to task.skippedCount,
+                "lastFailure" to task.lastFailure,
+            )
+        },
+        "updates" to updates.all().map { registration ->
+            val snapshot = registration.snapshot
+            linkedMapOf<String, Any?>(
+                "product" to snapshot.product,
+                "repository" to registration.repository,
+                "currentVersion" to snapshot.currentVersion,
+                "latestVersion" to snapshot.latestVersion,
+                "channel" to snapshot.channel.name,
+                "state" to snapshot.state.name,
+                "currentJava" to snapshot.currentJava,
+                "requiredJava" to snapshot.requiredJava,
+                "automaticDownload" to snapshot.automaticDownload,
+                "releaseUrl" to snapshot.releaseUrl,
+                "message" to snapshot.message,
+                "availableReleases" to snapshot.availableReleases.map { release ->
+                    linkedMapOf<String, Any?>(
+                        "version" to release.version,
+                        "channel" to release.channel.name,
+                        "publishedAt" to release.publishedAt?.toString(),
+                    )
+                },
+            )
+        },
     )
 
     fun init() {

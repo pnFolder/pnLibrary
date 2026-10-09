@@ -48,6 +48,7 @@ internal class SupportReportGenerator(
     observabilitySnapshot: () -> ObservabilityReportSnapshot = {
         ObservabilityReportSnapshot(ByteArray(0), ByteArray(0), emptyMap())
     },
+    runtimeDiagnostics: () -> Map<String, Any?> = { emptyMap() },
 ) {
 
     private val assembler = SupportReportAssembler(
@@ -58,6 +59,7 @@ internal class SupportReportGenerator(
         diagnosticLogs = diagnosticLogs,
         diagnosticHistory = diagnosticHistory,
         observabilitySnapshot = observabilitySnapshot,
+        runtimeDiagnostics = runtimeDiagnostics,
     )
     private val reportStore = SupportReportStore(dataFolder.resolve("reports"))
 

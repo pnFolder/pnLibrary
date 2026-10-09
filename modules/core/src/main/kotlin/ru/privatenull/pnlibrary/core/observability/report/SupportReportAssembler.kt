@@ -18,6 +18,7 @@ internal class SupportReportAssembler(
     private val diagnosticLogs: () -> List<Map<String, Any?>>,
     private val diagnosticHistory: () -> List<Pair<String, ByteArray>>,
     private val observabilitySnapshot: () -> ObservabilityReportSnapshot,
+    private val runtimeDiagnostics: () -> Map<String, Any?> = { emptyMap() },
 ) {
     private val system = SystemReportCollector()
     private val configurations = ConfigReader(dataFolder, config)
@@ -63,6 +64,7 @@ internal class SupportReportAssembler(
                 "privacy" to config.privacy,
             ),
         )
+        runtimeDiagnostics().takeIf { it.isNotEmpty() }?.let { archive.json("runtime.json", it) }
         archive.json(
             "system.json",
             system.collect(includeNetworkAddresses = encrypted && !config.privacy),

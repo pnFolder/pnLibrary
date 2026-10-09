@@ -29,6 +29,7 @@ internal class SupportRuntime(
     private val diagnostics: DiagnosticsRegistry,
     private val config: PnLibraryConfig,
     dataFolder: Path,
+    private val runtimeDiagnostics: () -> Map<String, Any?> = { emptyMap() },
 ) : AutoCloseable {
     private val observations = ObservabilityRuntime(dataFolder)
     private val diagnosticBridge = DiagnosticObservationBridge(observations)
@@ -56,6 +57,7 @@ internal class SupportRuntime(
         diagnosticLogs = logs::snapshot,
         diagnosticHistory = history::files,
         observabilitySnapshot = observations::reportSnapshot,
+        runtimeDiagnostics = runtimeDiagnostics,
     )
     private val reportInProgress = AtomicBoolean(false)
     private val worker = Executors.newSingleThreadScheduledExecutor { action ->
