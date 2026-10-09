@@ -364,6 +364,10 @@ internal class BukkitDiagnosticsCollector {
         this["maxPlayers"] = server.maxPlayers
         this["playersByWorld"] = server.onlinePlayers.groupingBy { it.world.name }.eachCount()
         this["playersByGameMode"] = server.onlinePlayers.groupingBy { it.gameMode.name }.eachCount()
+        this["playersByLocale"] = server.onlinePlayers
+            .mapNotNull { player -> reflectionOrNull { player.javaClass.getMethod("getLocale").invoke(player)?.toString() } }
+            .groupingBy { it }
+            .eachCount()
         this["operatorCount"] = server.onlinePlayers.count { it.isOp }
         val pings = server.onlinePlayers.mapNotNull { player ->
             reflectionOrNull {
@@ -375,6 +379,11 @@ internal class BukkitDiagnosticsCollector {
             "minimum" to pings.minOrNull(),
             "maximum" to pings.maxOrNull(),
             "average" to pings.takeIf { it.isNotEmpty() }?.average(),
+            "percentiles" to linkedMapOf(
+                "p50" to percentile(pings, 0.50),
+                "p95" to percentile(pings, 0.95),
+                "p99" to percentile(pings, 0.99),
+            ),
         )
         this["onlinePlayers"] = when {
             ServerCapabilities.isFolia -> FOLIA_PLAYERS_UNAVAILABLE
@@ -856,6 +865,13 @@ internal class BukkitDiagnosticsCollector {
     }
 
     private fun formatTps(value: Double): String = String.format(Locale.ROOT, "%.2f", value)
+
+    private fun percentile(values: List<Double>, percentile: Double): Double? {
+        if (values.isEmpty()) return null
+        val sorted = values.sorted()
+        val index = ((sorted.size - 1) * percentile).toInt().coerceIn(0, sorted.lastIndex)
+        return sorted[index]
+    }
 
     private companion object {
         const val TPS_WINDOW_COUNT = 3
