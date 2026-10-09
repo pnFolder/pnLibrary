@@ -119,6 +119,7 @@ internal class SystemReportCollector {
             "deadlockedThreadIds" to (deadlocked?.toList() ?: emptyList<Long>()),
             "deadlockedThreads" to deadlockedThreadDetails(deadlocked),
             "stateCounts" to threadStateCounts(threadMx),
+            "contention" to threadContention(threadMx),
             "topCpuThreads" to topCpuThreads(threadMx),
         )
 
@@ -346,6 +347,8 @@ internal class SystemReportCollector {
                 "blockedThreads" to threadStateCount(snapshot, "BLOCKED"),
                 "waitingThreads" to threadStateCount(snapshot, "WAITING"),
                 "timedWaitingThreads" to threadStateCount(snapshot, "TIMED_WAITING"),
+                "blockedTimeMs" to ((snapshot["threads"] as? Map<*, *>)?.get("contention") as? Map<*, *>)?.get("blockedTimeMs"),
+                "waitedTimeMs" to ((snapshot["threads"] as? Map<*, *>)?.get("contention") as? Map<*, *>)?.get("waitedTimeMs"),
                 "loadAverage" to snapshot["loadAverage"],
                 "processRss" to (snapshot["processStatus"] as? Map<*, *>)?.get("VmRSS"),
                 "processPeakRss" to (snapshot["processStatus"] as? Map<*, *>)?.get("VmPeak"),
@@ -676,6 +679,20 @@ internal class SystemReportCollector {
     private fun deadlockedThreadDetails(
         ids: LongArray?,
     ): List<Map<String, Any?>> = ids?.map { id -> linkedMapOf<String, Any?>("id" to id) }.orEmpty()
+
+    private fun threadContention(bean: java.lang.management.ThreadMXBean): Map<String, Any?> {
+        val infos = bean.getThreadInfo(bean.allThreadIds)?.filterNotNull().orEmpty()
+        return linkedMapOf(
+            "supported" to bean.isThreadContentionMonitoringSupported,
+            "enabled" to bean.isThreadContentionMonitoringEnabled,
+            "blockedThreadCount" to infos.count { it.blockedCount > 0 },
+            "waitingThreadCount" to infos.count { it.waitedCount > 0 },
+            "blockedCount" to infos.sumOf { it.blockedCount },
+            "waitedCount" to infos.sumOf { it.waitedCount },
+            "blockedTimeMs" to infos.map { it.blockedTime }.filter { it >= 0L }.sum(),
+            "waitedTimeMs" to infos.map { it.waitedTime }.filter { it >= 0L }.sum(),
+        )
+    }
 
     private fun topCpuThreads(bean: java.lang.management.ThreadMXBean): List<Map<String, Any?>> {
         if (!bean.isThreadCpuTimeSupported) return emptyList()

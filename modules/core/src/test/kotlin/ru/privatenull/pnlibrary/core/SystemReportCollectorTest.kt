@@ -29,6 +29,7 @@ class SystemReportCollectorTest {
         assertTrue((analytics["resources"] as? Map<*, *>)?.containsKey("loadAverage") == true)
         assertTrue((analytics["resources"] as? Map<*, *>)?.containsKey("processRss") == true)
         assertTrue((analytics["resources"] as? Map<*, *>)?.containsKey("voluntaryContextSwitches") == true)
+        assertTrue((analytics["resources"] as? Map<*, *>)?.containsKey("blockedTimeMs") == true)
         val host = analytics["hostDistribution"] as? Map<*, *>
             ?: error("hostDistribution section is missing")
         assertTrue(host.containsKey("availableProcessors"))
@@ -79,6 +80,7 @@ class SystemReportCollectorTest {
         assertTrue((java["modulePathAnalytics"] as? Map<*, *>)?.containsKey("entryCount") == true)
         assertTrue((java["argumentAnalytics"] as? Map<*, *>)?.containsKey("garbageCollectorOptions") == true)
         assertTrue(threads["deadlockedThreads"] is List<*>)
+        assertTrue(threads["contention"] is Map<*, *>)
         (threads["topCpuThreads"] as? List<*>)?.firstOrNull()?.let { top ->
             assertTrue((top as? Map<*, *>)?.containsKey("cpuShare") == true)
         }
