@@ -114,6 +114,7 @@ internal class SystemReportCollector {
 
         // ── Storage / FileSystems ───────────────────────────────────────────
         data["fileSystems"] = collectFileSystems()
+        data["health"] = collectHealth(memoryMx, osMx)
 
         // ── Environment Variables (NAMES ONLY!) ──────────────────────────────
         data["environmentVariableNames"] = System.getenv().keys.sorted()
@@ -196,6 +197,40 @@ internal class SystemReportCollector {
                 "usableSpaceBytes" to root.usableSpace,
                 "freeSpaceMb" to (root.freeSpace / (1024 * 1024)),
             )
+        }
+    }
+
+    private fun collectHealth(
+        memory: java.lang.management.MemoryMXBean,
+        operatingSystem: java.lang.management.OperatingSystemMXBean,
+    ): Map<String, Any?> {
+        val heap = memory.heapMemoryUsage
+        val heapRatio = heap.max.takeIf { it > 0L }?.let { heap.used.toDouble() / it }
+        val processCpu = readDouble(operatingSystem, "getProcessCpuLoad")
+        val systemCpu = readDouble(operatingSystem, "getCpuLoad")
+        val disks = File.listRoots().orEmpty()
+        val diskRatios = disks.mapNotNull { root ->
+            root.totalSpace.takeIf { it > 0L }?.let {
+                (it - root.freeSpace).toDouble() / it
+            }
+        }
+        return linkedMapOf(
+            "heapUsedRatio" to heapRatio,
+            "processCpuLoad" to processCpu,
+            "systemCpuLoad" to systemCpu,
+            "highestDiskUsedRatio" to diskRatios.maxOrNull(),
+            "heapPressure" to pressure(heapRatio),
+            "processCpuPressure" to pressure(processCpu),
+            "systemCpuPressure" to pressure(systemCpu),
+            "diskPressure" to pressure(diskRatios.maxOrNull()),
+        )
+    }
+
+    private fun pressure(value: Double?): String? = value?.let {
+        when {
+            it >= 0.90 -> "critical"
+            it >= 0.75 -> "elevated"
+            else -> "normal"
         }
     }
 
