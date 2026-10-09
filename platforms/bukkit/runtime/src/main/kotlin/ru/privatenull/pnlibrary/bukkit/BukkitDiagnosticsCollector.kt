@@ -38,6 +38,11 @@ internal class BukkitDiagnosticsCollector {
                 "folia" to ServerCapabilities.isFolia,
                 "includeSensitive" to includeSensitive,
             )
+            this["privacy"] = linkedMapOf(
+                "sensitiveDataIncluded" to includeSensitive,
+                "redactedSections" to if (includeSensitive) emptyList<String>() else listOf("players", "locations", "worldSpawns", "pluginPaths"),
+                "playerIdentityFields" to listOf("name", "uuid", "ping", "world", "location"),
+            )
             putServerDetails(server)
             putServerSettings(server)
             putServerProperties(server)
@@ -71,6 +76,7 @@ internal class BukkitDiagnosticsCollector {
         val permissions = (this["permissions"] as? Map<*, *>)?.get("registeredCount")
         this["coverage"] = linkedMapOf(
             "sections" to listOf(
+                "privacy",
                 "server",
                 "serverSettings",
                 "serverProperties",
@@ -233,7 +239,7 @@ internal class BukkitDiagnosticsCollector {
                 "permissionConflicts" to (registrationConflicts["permissionConflicts"] as? Map<*, *>)?.size,
                 "collectionWarnings" to collectionWarnings.values.sum(),
             ),
-            "registrations" to registrationConflicts,
+            "registrationConflicts" to registrationConflicts,
             "dependencies" to dependencyGraph,
             "pluginHealth" to pluginHealth,
             "unhealthyPlugins" to unhealthyPlugins,
@@ -250,6 +256,7 @@ internal class BukkitDiagnosticsCollector {
                 "handlerMethodCount" to eventListeners?.get("handlerMethodCount"),
             ),
             "registrations" to linkedMapOf(
+                "conflicts" to registrationConflicts,
                 "servicesByPlugin" to serviceEntries
                     .flatMap { (it["registrations"] as? Collection<*>)?.filterIsInstance<Map<*, *>>().orEmpty() }
                     .mapNotNull { it["plugin"]?.toString() }

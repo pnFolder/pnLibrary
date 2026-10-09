@@ -123,6 +123,11 @@ internal class BungeePlatformAdapter(
             "thread" to Thread.currentThread().name,
             "includeSensitive" to includeSensitive,
         )
+        details["privacy"] = linkedMapOf(
+            "sensitiveDataIncluded" to includeSensitive,
+            "redactedSections" to if (includeSensitive) emptyList<String>() else listOf("players", "serverHosts", "pluginPaths"),
+            "playerIdentityFields" to listOf("username", "uuid", "ping", "server"),
+        )
         details["pluginDependencies"] = plugin.proxy.pluginManager.plugins.map { installedPlugin ->
             val metadata = installedPlugin.description
             linkedMapOf<String, Any?>(
@@ -146,6 +151,25 @@ internal class BungeePlatformAdapter(
                 "healthy" to missingRequired.isEmpty(),
             )
         }
+        val dependencyEntries = (details["pluginDependencies"] as? Collection<*>).orEmpty()
+            .filterIsInstance<Map<*, *>>()
+        val installedNames = dependencyEntries.mapNotNull { it["id"]?.toString() }.toSet()
+        val requiredEdges = dependencyEntries.flatMap { entry ->
+            (entry["depends"] as? Collection<*>)
+                .orEmpty()
+                .mapNotNull { target -> target?.toString()?.let { linkedMapOf("from" to entry["id"].toString(), "to" to it) } }
+        }
+        val optionalEdges = dependencyEntries.flatMap { entry ->
+            (entry["softDepends"] as? Collection<*>)
+                .orEmpty()
+                .mapNotNull { target -> target?.toString()?.let { linkedMapOf("from" to entry["id"].toString(), "to" to it) } }
+        }
+        details["dependencyGraph"] = linkedMapOf(
+            "requiredEdges" to requiredEdges,
+            "optionalEdges" to optionalEdges,
+            "reverseDependents" to requiredEdges.groupBy({ it["to"].toString() }, { it["from"].toString() }),
+            "isolatedPlugins" to installedNames.filter { id -> requiredEdges.none { it["from"] == id || it["to"] == id } },
+        )
         details["pluginArtifacts"] = plugin.proxy.pluginManager.plugins.map { installedPlugin ->
             val metadata = installedPlugin.description
             val file = metadata.file
@@ -258,6 +282,7 @@ internal class BungeePlatformAdapter(
                     "51OrMore" to backendPlayerCounts.values.count { it >= 51 },
                 ),
                 "registeredPlugins" to plugin.proxy.pluginManager.plugins.size,
+                "sensitiveDataIncluded" to includeSensitive,
             ),
             "counts" to linkedMapOf(
                 "plugins" to plugin.proxy.pluginManager.plugins.size,
@@ -267,6 +292,8 @@ internal class BungeePlatformAdapter(
                 "highLatencyPlayers" to playerPings.count { it >= HIGH_PING_THRESHOLD },
                 "duplicatePluginNames" to ((details["pluginSummary"] as? Map<*, *>)?.get("duplicateNames") as? Collection<*>)?.size,
                 "unhealthyPlugins" to unhealthyPlugins,
+                "requiredDependencyEdges" to requiredEdges.size,
+                "optionalDependencyEdges" to optionalEdges.size,
             ),
             "playerDistribution" to linkedMapOf(
                 "byServer" to (details["playerSummary"] as? Map<*, *>)?.get("playersByServer"),
@@ -276,8 +303,10 @@ internal class BungeePlatformAdapter(
         details["coverage"] = linkedMapOf(
             "sections" to listOf(
                 "platform",
+                "privacy",
                 "plugins",
                 "pluginDependencies",
+                "dependencyGraph",
                 "pluginArtifacts",
                 "pluginSummary",
                 "pluginHealth",

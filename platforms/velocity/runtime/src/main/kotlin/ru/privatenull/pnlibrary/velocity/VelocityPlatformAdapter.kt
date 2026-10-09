@@ -131,6 +131,11 @@ internal class VelocityPlatformAdapter(
             "thread" to Thread.currentThread().name,
             "includeSensitive" to includeSensitive,
         )
+        details["privacy"] = linkedMapOf(
+            "sensitiveDataIncluded" to includeSensitive,
+            "redactedSections" to if (includeSensitive) emptyList<String>() else listOf("players", "serverHosts", "pluginPaths"),
+            "playerIdentityFields" to listOf("username", "uuid", "ping", "server"),
+        )
         details["pluginDependencies"] = server.pluginManager.plugins.associate { container ->
             container.description.id to container.description.dependencies.map { dependency ->
                 linkedMapOf<String, Any?>(
@@ -153,6 +158,29 @@ internal class VelocityPlatformAdapter(
                 "healthy" to missingRequired.isEmpty(),
             )
         }
+        val dependencyEntries = (details["pluginDependencies"] as? Map<*, *>).orEmpty()
+        val installedIds = dependencyEntries.keys.mapNotNull { it?.toString() }.toSet()
+        val requiredEdges = dependencyEntries.flatMap { (pluginId, dependencies) ->
+            (dependencies as? Collection<*>).orEmpty()
+                .filterIsInstance<Map<*, *>>()
+                .filter { it["optional"] != true }
+                .mapNotNull { dependency ->
+                    val target = dependency["id"]?.toString() ?: return@mapNotNull null
+                    linkedMapOf("from" to pluginId.toString(), "to" to target)
+                }
+        }
+        val optionalEdges = dependencyEntries.flatMap { (pluginId, dependencies) ->
+            (dependencies as? Collection<*>).orEmpty()
+                .filterIsInstance<Map<*, *>>()
+                .filter { it["optional"] == true }
+                .mapNotNull { dependency -> dependency["id"]?.toString()?.let { linkedMapOf("from" to pluginId.toString(), "to" to it) } }
+        }
+        details["dependencyGraph"] = linkedMapOf(
+            "requiredEdges" to requiredEdges,
+            "optionalEdges" to optionalEdges,
+            "reverseDependents" to requiredEdges.groupBy({ it["to"].toString() }, { it["from"].toString() }),
+            "isolatedPlugins" to installedIds.filter { id -> requiredEdges.none { it["from"] == id || it["to"] == id } },
+        )
         details["pluginArtifacts"] = server.pluginManager.plugins.map { container ->
             val source = container.description.source.orElse(null)?.toFile()
             linkedMapOf<String, Any?>(
@@ -265,6 +293,7 @@ internal class VelocityPlatformAdapter(
                     "51OrMore" to backendPlayerCounts.values.count { it >= 51 },
                 ),
                 "registeredPlugins" to server.pluginManager.plugins.size,
+                "sensitiveDataIncluded" to includeSensitive,
             ),
             "counts" to linkedMapOf(
                 "plugins" to server.pluginManager.plugins.size,
@@ -274,6 +303,8 @@ internal class VelocityPlatformAdapter(
                 "highLatencyPlayers" to playerPings.count { it >= HIGH_PING_THRESHOLD },
                 "duplicatePluginIds" to ((details["pluginSummary"] as? Map<*, *>)?.get("duplicateIds") as? Collection<*>)?.size,
                 "unhealthyPlugins" to unhealthyPlugins,
+                "requiredDependencyEdges" to requiredEdges.size,
+                "optionalDependencyEdges" to optionalEdges.size,
             ),
             "playerDistribution" to linkedMapOf(
                 "byServer" to (details["playerSummary"] as? Map<*, *>)?.get("playersByServer"),
@@ -283,8 +314,10 @@ internal class VelocityPlatformAdapter(
         details["coverage"] = linkedMapOf(
             "sections" to listOf(
                 "platform",
+                "privacy",
                 "plugins",
                 "pluginDependencies",
+                "dependencyGraph",
                 "pluginArtifacts",
                 "pluginSummary",
                 "pluginHealth",
