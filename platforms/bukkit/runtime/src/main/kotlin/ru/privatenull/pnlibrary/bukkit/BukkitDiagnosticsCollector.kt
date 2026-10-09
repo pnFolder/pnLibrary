@@ -226,7 +226,12 @@ internal class BukkitDiagnosticsCollector {
     private fun MutableMap<String, Any?>.putServerSettings(server: org.bukkit.Server) {
         this["serverSettings"] = linkedMapOf(
             "port" to server.port,
+            "motd" to reflectionOrNull { server.javaClass.getMethod("getMotd").invoke(server) },
+            "maxPlayers" to server.maxPlayers,
             "viewDistance" to server.viewDistance,
+            "simulationDistance" to reflectionOrNull {
+                server.javaClass.getMethod("getSimulationDistance").invoke(server)
+            },
             "onlineMode" to server.onlineMode,
             "whitelistEnabled" to server.hasWhitelist(),
             "whitelistedPlayerCount" to server.whitelistedPlayers.size,
