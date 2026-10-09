@@ -131,6 +131,12 @@ internal class BukkitDiagnosticsCollector {
             if ((events?.get("registeredCount") as? Number)?.toInt() == 0 && plugins.isNotEmpty()) {
                 add(linkedMapOf("code" to "noEventListeners", "severity" to "info"))
             }
+            if ((scheduler?.get("longDelayTaskCount") as? Number)?.toInt()?.let { it > 0 } == true) {
+                add(linkedMapOf("code" to "longDelayTasks", "severity" to "info"))
+            }
+            if ((dependencyGraph["cycles"] as? Collection<*>)?.isNotEmpty() == true) {
+                add(linkedMapOf("code" to "dependencyCycles", "severity" to "critical"))
+            }
         }
 
         val pluginData = plugins.mapNotNull { plugin ->
@@ -156,6 +162,8 @@ internal class BukkitDiagnosticsCollector {
                 "pluginDataBytes" to pluginData.sumOf { (it["totalBytes"] as? Number)?.toLong() ?: 0L },
                 "pendingTasks" to scheduler?.get("pendingCount"),
                 "activeWorkers" to scheduler?.get("activeWorkerCount"),
+                "repeatingTasks" to scheduler?.get("repeatingTaskCount"),
+                "longDelayTasks" to scheduler?.get("longDelayTaskCount"),
             ),
             "counts" to linkedMapOf(
                 "plugins" to plugins.size,
@@ -165,6 +173,8 @@ internal class BukkitDiagnosticsCollector {
                 "permissions" to (this["permissions"] as? Map<*, *>)?.get("registeredCount"),
                 "services" to services?.get("registrationCount"),
                 "eventListeners" to events?.get("registeredCount"),
+                "dependencyCycles" to (dependencyGraph["cycles"] as? Collection<*>)?.size,
+                "orphanedOptionalDependencies" to (dependencyGraph["orphanedOptionalDependencies"] as? Collection<*>)?.size,
             ),
             "registrations" to registrationConflicts,
             "dependencies" to dependencyGraph,
