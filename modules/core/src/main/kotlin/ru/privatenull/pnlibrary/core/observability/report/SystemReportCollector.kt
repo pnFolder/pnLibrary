@@ -60,6 +60,7 @@ internal class SystemReportCollector {
             "systemPropertyNames" to System.getProperties().stringPropertyNames().sorted(),
             "bootModuleCount" to ModuleLayer.boot().modules().size,
             "classpathAnalytics" to collectClasspathAnalytics(),
+            "modulePathAnalytics" to collectPathAnalytics("jdk.module.path"),
             "environment" to linkedMapOf(
                 "defaultCharset" to java.nio.charset.Charset.defaultCharset().name(),
                 "fileEncoding" to System.getProperty("file.encoding", "unknown"),
@@ -265,6 +266,7 @@ internal class SystemReportCollector {
                 "cpuThrottleEvents" to (snapshot["runtimeEnvironment"] as? Map<*, *>)?.get("cpuThrottleEvents"),
             ),
             "classpathAnalytics" to (java?.get("classpathAnalytics") ?: emptyMap<String, Any>()),
+            "modulePathAnalytics" to (java?.get("modulePathAnalytics") ?: emptyMap<String, Any>()),
             "processIo" to snapshot["processIo"],
             "processNetwork" to snapshot["processNetwork"],
             "loadAverage" to snapshot["loadAverage"],
@@ -626,7 +628,11 @@ internal class SystemReportCollector {
     }.getOrDefault(emptyMap())
 
     private fun collectClasspathAnalytics(): Map<String, Any?> {
-        val entries = System.getProperty("java.class.path")
+        return collectPathAnalytics("java.class.path")
+    }
+
+    private fun collectPathAnalytics(property: String): Map<String, Any?> {
+        val entries = System.getProperty(property)
             ?.split(File.pathSeparatorChar)
             ?.filter(String::isNotBlank)
             .orEmpty()
