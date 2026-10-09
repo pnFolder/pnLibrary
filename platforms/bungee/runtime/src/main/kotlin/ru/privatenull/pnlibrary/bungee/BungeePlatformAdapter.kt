@@ -353,6 +353,7 @@ internal class BungeePlatformAdapter(
             "maxDurationMs" to collectionHistory.maxOf { (it["durationMs"] as Number).toLong() },
             "recent" to collectionHistory.toList(),
         )
+        (details["analytics"] as? MutableMap<String, Any?>)?.set("collection", details["collectionAnalytics"])
         return details
     }
 

@@ -84,6 +84,7 @@ internal class BukkitDiagnosticsCollector {
                 "maxDurationMs" to collectionHistory.mapNotNull { (it["durationMs"] as? Number)?.toLong() }.maxOrNull(),
                 "recent" to collectionHistory.toList(),
             )
+            (this["analytics"] as? MutableMap<String, Any?>)?.set("collection", this["collectionAnalytics"])
         }
     }
 
