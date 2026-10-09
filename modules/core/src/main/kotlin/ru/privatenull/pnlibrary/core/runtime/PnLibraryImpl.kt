@@ -151,6 +151,10 @@ internal class PnLibraryImpl(
         val taskSnapshots = tasks.query()
         val updateSnapshots = updates.all()
         val platformCoverage = platform.diagnosticDetails(includeSensitive = false)["coverage"]
+        val taskFailures = taskSnapshots.count { it.lastFailure != null }
+        val failedUpdates = updateSnapshots.count { it.snapshot.state.name.equals("FAILED", ignoreCase = true) }
+        val diagnosticSummary = diagnostics.diagnosticSummary()
+        val history = diagnostics.historyAnalytics()
         return linkedMapOf(
         "library" to linkedMapOf<String, Any?>(
             "version" to version,
@@ -227,6 +231,36 @@ internal class PnLibraryImpl(
             "byChannel" to updateSnapshots.groupingBy { it.snapshot.channel.name }.eachCount(),
             "byState" to updateSnapshots.groupingBy { it.snapshot.state.name }.eachCount(),
             "availableCount" to updateSnapshots.count { it.snapshot.latestVersion != null },
+        ),
+        "analytics" to linkedMapOf<String, Any?>(
+            "status" to when {
+                taskFailures > 0 || failedUpdates > 0 -> "critical"
+                (history["occurrenceCount"] as? Number)?.toInt()?.let { it > 0 } == true -> "attention"
+                else -> "healthy"
+            },
+            "signals" to buildList {
+                if (taskFailures > 0) {
+                    add(linkedMapOf("code" to "taskFailures", "severity" to "critical", "count" to taskFailures))
+                }
+                if (failedUpdates > 0) {
+                    add(linkedMapOf("code" to "updateFailures", "severity" to "critical", "count" to failedUpdates))
+                }
+                if ((history["occurrenceCount"] as? Number)?.toInt()?.let { it > 0 } == true) {
+                    add(linkedMapOf("code" to "diagnosticIncidents", "severity" to "attention", "count" to history["occurrenceCount"]))
+                }
+            },
+            "resources" to linkedMapOf(
+                "registeredTasks" to taskSnapshots.size,
+                "registeredUpdates" to updateSnapshots.size,
+                "diagnosticEntries" to (diagnosticSummary["count"] ?: diagnosticSummary["total"]),
+                "nativeLogRecords" to support.logSummary()["count"],
+            ),
+            "counts" to linkedMapOf(
+                "taskFailures" to taskFailures,
+                "updateFailures" to failedUpdates,
+                "diagnosticIncidents" to history["incidentCount"],
+                "observabilityErrors" to support.observabilityAnalytics()["errorCount"],
+            ),
         ),
         "metrics" to metricsRegistry.diagnosticSnapshot(),
         "platformCoverage" to platformCoverage,
