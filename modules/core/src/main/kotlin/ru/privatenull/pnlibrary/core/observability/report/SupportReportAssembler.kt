@@ -53,6 +53,14 @@ internal class SupportReportAssembler(
         val platformDetails = platform.diagnosticDetails(includeSensitive = encrypted && !config.privacy)
         val platformCoverage = platformDetails["coverage"]
         val runtimeDetails = runtimeDiagnostics()
+        val systemDetails = system.collect(includeNetworkAddresses = encrypted && !config.privacy)
+        val analytics = linkedMapOf<String, Any?>(
+            "generatedUtc" to Instant.now().toString(),
+            "system" to systemDetails["analytics"],
+            "platform" to platformDetails["analytics"],
+            "runtime" to runtimeDetails["analytics"],
+            "observability" to runtimeDetails["observability"],
+        )
         archive.json(
             "manifest.json",
             linkedMapOf(
@@ -70,13 +78,12 @@ internal class SupportReportAssembler(
                     "sectionCount" to runtimeDetails.size,
                     "sections" to runtimeDetails.keys.sorted(),
                 ),
+                "analyticsCoverage" to analytics.keys.filterNot { it == "generatedUtc" }.sorted(),
             ),
         )
         runtimeDetails.takeIf { it.isNotEmpty() }?.let { archive.json("runtime.json", it) }
-        archive.json(
-            "system.json",
-            system.collect(includeNetworkAddresses = encrypted && !config.privacy),
-        )
+        archive.json("analytics.json", analytics)
+        archive.json("system.json", systemDetails)
         archive.text("threads.txt", system.threadDump())
         archive.json("platform.json", platformDetails)
     }
