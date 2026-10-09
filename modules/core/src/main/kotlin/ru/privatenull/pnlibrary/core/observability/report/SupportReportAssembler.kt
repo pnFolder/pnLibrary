@@ -59,6 +59,8 @@ internal class SupportReportAssembler(
                 "platform" to platform.id,
                 "platformImplementation" to platform.implementationName,
                 "encrypted" to encrypted,
+                "diagnosticsMode" to "full",
+                "privacy" to config.privacy,
             ),
         )
         archive.json("system.json", system.collect(includeNetworkAddresses = encrypted))
