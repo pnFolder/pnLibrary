@@ -192,6 +192,10 @@ internal class VelocityPlatformAdapter(
                 "optionalDependencies" to metadata.dependencies.count { it.isOptional },
             )
         }
+        val unhealthyPlugins = (details["pluginHealth"] as? Collection<*>)
+            ?.filterIsInstance<Map<*, *>>()
+            ?.count { it["status"] != "healthy" }
+            ?: 0
         details["servers"] = server.allServers.map { connection ->
             val address = connection.serverInfo.address
             linkedMapOf<String, Any?>(
@@ -257,6 +261,7 @@ internal class VelocityPlatformAdapter(
                 "missingRequiredDependencies" to dependencyHealthCount(details),
                 "highLatencyPlayers" to playerPings.count { it >= HIGH_PING_THRESHOLD },
                 "duplicatePluginIds" to ((details["pluginSummary"] as? Map<*, *>)?.get("duplicateIds") as? Collection<*>)?.size,
+                "unhealthyPlugins" to unhealthyPlugins,
             ),
         )
         details["coverage"] = linkedMapOf(
@@ -296,6 +301,8 @@ internal class VelocityPlatformAdapter(
         if (!duplicateIds.isNullOrEmpty()) {
             signals += linkedMapOf("code" to "duplicatePluginIds", "severity" to "warning", "count" to duplicateIds.size)
         }
+        val unhealthy = (details["pluginHealth"] as? Collection<*>)?.count { (it as? Map<*, *>)?.get("status") != "healthy" } ?: 0
+        if (unhealthy > 0) signals += linkedMapOf("code" to "unhealthyPlugins", "severity" to "warning", "count" to unhealthy)
         val summary = details["serverSummary"] as? Map<*, *>
         if ((summary?.get("emptyServerCount") as? Number)?.toInt()?.let { it > 0 } == true) {
             signals += linkedMapOf("code" to "emptyBackendServers", "severity" to "info")

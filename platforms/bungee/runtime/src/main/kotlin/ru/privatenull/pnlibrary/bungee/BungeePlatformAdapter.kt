@@ -187,6 +187,10 @@ internal class BungeePlatformAdapter(
                 "optionalDependencies" to metadata.softDepends.size,
             )
         }
+        val unhealthyPlugins = (details["pluginHealth"] as? Collection<*>)
+            ?.filterIsInstance<Map<*, *>>()
+            ?.count { it["status"] != "healthy" }
+            ?: 0
         details["servers"] = plugin.proxy.servers.map { (name, info) ->
             val address = info.address
             linkedMapOf<String, Any?>(
@@ -250,6 +254,7 @@ internal class BungeePlatformAdapter(
                 "missingRequiredDependencies" to dependencyHealthCount(details),
                 "highLatencyPlayers" to playerPings.count { it >= HIGH_PING_THRESHOLD },
                 "duplicatePluginNames" to ((details["pluginSummary"] as? Map<*, *>)?.get("duplicateNames") as? Collection<*>)?.size,
+                "unhealthyPlugins" to unhealthyPlugins,
             ),
         )
         details["coverage"] = linkedMapOf(
@@ -289,6 +294,8 @@ internal class BungeePlatformAdapter(
         if (!duplicateNames.isNullOrEmpty()) {
             signals += linkedMapOf("code" to "duplicatePluginNames", "severity" to "warning", "count" to duplicateNames.size)
         }
+        val unhealthy = (details["pluginHealth"] as? Collection<*>)?.count { (it as? Map<*, *>)?.get("status") != "healthy" } ?: 0
+        if (unhealthy > 0) signals += linkedMapOf("code" to "unhealthyPlugins", "severity" to "warning", "count" to unhealthy)
         val summary = details["serverSummary"] as? Map<*, *>
         if ((summary?.get("emptyServerCount") as? Number)?.toInt()?.let { it > 0 } == true) {
             signals += linkedMapOf("code" to "emptyBackendServers", "severity" to "info")

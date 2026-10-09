@@ -191,6 +191,10 @@ internal class BukkitDiagnosticsCollector {
                 "dataFolderBytes" to dataFolder?.get("totalBytes"),
             )
         }
+        val unhealthyPlugins = pluginHealth.count { it["status"] != "healthy" }
+        if (unhealthyPlugins > 0) {
+            signals += linkedMapOf("code" to "unhealthyPlugins", "severity" to "warning", "count" to unhealthyPlugins)
+        }
         this["analytics"] = linkedMapOf(
             "status" to when {
                 signals.any { it["severity"] == "critical" } -> "critical"
@@ -228,6 +232,7 @@ internal class BukkitDiagnosticsCollector {
             "registrations" to registrationConflicts,
             "dependencies" to dependencyGraph,
             "pluginHealth" to pluginHealth,
+            "unhealthyPlugins" to unhealthyPlugins,
         )
     }
 
