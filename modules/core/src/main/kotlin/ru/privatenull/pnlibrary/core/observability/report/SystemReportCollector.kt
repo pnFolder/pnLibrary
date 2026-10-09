@@ -262,6 +262,9 @@ internal class SystemReportCollector {
                     .any { it >= MEMORY_POOL_PRESSURE_THRESHOLD }) {
                 add(linkedMapOf("code" to "memoryPoolPressure", "severity" to "elevated"))
             }
+            if (descriptorRatio(fileDescriptors)?.let { it >= 0.90 } == true) {
+                add(linkedMapOf("code" to "fileDescriptorPressure", "severity" to "elevated"))
+            }
         }
 
         val classLoading = snapshot["classes"] as? Map<*, *>
