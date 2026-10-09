@@ -128,6 +128,7 @@ internal class BukkitDiagnosticsCollector {
                 "autoSave" to reflectionOrNull { world.javaClass.getMethod("isAutoSave").invoke(world) },
                 "pvp" to reflectionOrNull { world.javaClass.getMethod("isPVP").invoke(world) },
                 "datapacks" to datapackDetails(world),
+                "storage" to worldStorageDetails(world),
                 "spawn" to if (includeSensitive) {
                     world.spawnLocation.let { location ->
                         linkedMapOf(
@@ -410,6 +411,24 @@ internal class BukkitDiagnosticsCollector {
                     "lastModifiedUtc" to Instant.ofEpochMilli(entry.lastModified()).toString(),
                 )
             },
+        )
+    }
+
+    private fun worldStorageDetails(world: org.bukkit.World): Map<String, Any?> {
+        val folder = reflectionOrNull {
+            world.javaClass.getMethod("getWorldFolder").invoke(world) as? File
+        }?.takeIf(File::isDirectory)
+        val files = folder?.walkTopDown()?.filter(File::isFile)?.toList().orEmpty()
+        val regionFiles = folder?.resolve("region")?.listFiles()
+            ?.filter { it.isFile && it.name.endsWith(".mca", ignoreCase = true) }
+            .orEmpty()
+        return linkedMapOf(
+            "folderPresent" to (folder != null),
+            "fileCount" to files.size,
+            "totalBytes" to files.sumOf(File::length),
+            "regionFileCount" to regionFiles.size,
+            "regionBytes" to regionFiles.sumOf(File::length),
+            "lastModifiedUtc" to files.maxOfOrNull(File::lastModified)?.let(Instant::ofEpochMilli)?.toString(),
         )
     }
 
