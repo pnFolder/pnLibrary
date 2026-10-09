@@ -7,6 +7,7 @@ import java.io.FileInputStream
 import java.util.jar.JarFile
 import java.security.MessageDigest
 import java.time.Instant
+import kotlin.time.TimeSource
 import java.util.Locale
 import java.util.Properties
 
@@ -24,8 +25,17 @@ internal class BukkitDiagnosticsCollector {
      * @param includeSensitive whether player names, UUIDs, and locations may be included
      */
     fun collect(includeSensitive: Boolean): Map<String, Any?> {
+        val startedAt = Instant.now()
+        val started = TimeSource.Monotonic.markNow()
         val server = Bukkit.getServer()
         return linkedMapOf<String, Any?>().apply {
+            this["collection"] = linkedMapOf(
+                "startedUtc" to startedAt.toString(),
+                "thread" to Thread.currentThread().name,
+                "primaryThread" to Bukkit.isPrimaryThread(),
+                "folia" to ServerCapabilities.isFolia,
+                "includeSensitive" to includeSensitive,
+            )
             putServerDetails(server)
             putServerSettings(server)
             putServerProperties(server)
@@ -41,6 +51,10 @@ internal class BukkitDiagnosticsCollector {
             putDependencyHealth(server)
             putPlaceholderApiDetails(server)
             putCoverageSummary()
+            (this["collection"] as? MutableMap<String, Any?>)?.set(
+                "durationMs",
+                started.elapsedNow().inWholeMilliseconds,
+            )
         }
     }
 
