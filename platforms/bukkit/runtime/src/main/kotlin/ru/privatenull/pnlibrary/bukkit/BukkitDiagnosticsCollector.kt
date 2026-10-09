@@ -28,6 +28,7 @@ internal class BukkitDiagnosticsCollector {
             putServerDetails(server)
             putPerformanceDetails()
             putSchedulerDetails()
+            putServiceDetails()
             putWorldDetails(server)
             putPlayerDetails(server, includeSensitive)
             putPluginDetails(server, includeSensitive)
@@ -142,6 +143,28 @@ internal class BukkitDiagnosticsCollector {
             "pendingByPlugin" to pending.groupingBy { it.owner.name }.eachCount(),
             "activeByPlugin" to active.groupingBy { it.owner.name }.eachCount(),
             "pendingTaskTypes" to pending.map { it.javaClass.name }.distinct().sorted().take(MAX_SCHEDULER_CLASSES),
+        )
+    }
+
+    private fun MutableMap<String, Any?>.putServiceDetails() {
+        val services = Bukkit.getServicesManager().knownServices
+        this["services"] = services.map { serviceType ->
+            linkedMapOf<String, Any?>(
+                "type" to serviceType.name,
+                "registrations" to Bukkit.getServicesManager().getRegistrations(serviceType).map { registration ->
+                    linkedMapOf(
+                        "provider" to registration.provider.javaClass.name,
+                        "plugin" to registration.plugin.name,
+                        "priority" to registration.priority.name,
+                    )
+                },
+            )
+        }
+        this["serviceSummary"] = linkedMapOf(
+            "typeCount" to services.size,
+            "registrationCount" to services.sumOf {
+                Bukkit.getServicesManager().getRegistrations(it).size
+            },
         )
     }
 
