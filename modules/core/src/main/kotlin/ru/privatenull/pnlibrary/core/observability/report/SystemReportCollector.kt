@@ -342,6 +342,10 @@ internal class SystemReportCollector {
                 "processTcpEstablished" to ((snapshot["processNetwork"] as? Map<*, *>)?.get("tcpEstablished")),
                 "processTcpListening" to ((snapshot["processNetwork"] as? Map<*, *>)?.get("tcpListening")),
                 "processUdpSockets" to ((snapshot["processNetwork"] as? Map<*, *>)?.get("udpSockets")),
+                "runnableThreads" to threadStateCount(snapshot, "RUNNABLE"),
+                "blockedThreads" to threadStateCount(snapshot, "BLOCKED"),
+                "waitingThreads" to threadStateCount(snapshot, "WAITING"),
+                "timedWaitingThreads" to threadStateCount(snapshot, "TIMED_WAITING"),
             ),
             "runtimeDistribution" to linkedMapOf(
                 "uptimeSeconds" to java?.get("uptimeSeconds"),
