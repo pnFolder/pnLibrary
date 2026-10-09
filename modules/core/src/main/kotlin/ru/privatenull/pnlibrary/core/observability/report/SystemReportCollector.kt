@@ -215,6 +215,16 @@ internal class SystemReportCollector {
                         "pressure" to pressureBucket(data["usedRatio"]),
                     )
                 },
+                "garbageCollectors" to gc.orEmpty().mapNotNull { entry ->
+                    val data = entry as? Map<*, *> ?: return@mapNotNull null
+                    linkedMapOf(
+                        "name" to data["name"],
+                        "collections" to data["collectionCount"],
+                        "collectionTimeMs" to data["collectionTimeMs"],
+                        "timeRatio" to data["timeRatio"],
+                        "pressure" to pressureBucket(data["timeRatio"]),
+                    )
+                },
                 "memoryPools" to pools.orEmpty()
                     .mapNotNull { pool ->
                         val data = pool as? Map<*, *> ?: return@mapNotNull null
