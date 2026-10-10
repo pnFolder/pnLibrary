@@ -237,6 +237,7 @@ internal class SystemReportCollector {
         data["cgroupMembership"] = collectCgroupMembershipAnalytics()
         data["processTimers"] = collectProcessTimerAnalytics()
         data["kernelRcu"] = collectKernelRcuAnalytics()
+        data["networkKernelPolicy"] = collectNetworkKernelPolicy()
         val durationMs = (System.nanoTime() - startedNanos) / 1_000_000
         data["collection"] = linkedMapOf(
             "durationMs" to durationMs,
@@ -543,6 +544,7 @@ internal class SystemReportCollector {
                 "cgroupMembership" to hasData(snapshot["cgroupMembership"]),
                 "processTimers" to hasData(snapshot["processTimers"]),
                 "kernelRcu" to hasData(snapshot["kernelRcu"]),
+                "networkKernelPolicy" to hasData(snapshot["networkKernelPolicy"]),
                 "processSchedulerDetails" to hasData(snapshot["processSchedulerDetails"]),
                 "processSignals" to hasData(snapshot["processSignals"]),
                 "processAddressSpace" to hasData(snapshot["processAddressSpace"]),
@@ -604,6 +606,7 @@ internal class SystemReportCollector {
                 "cgroupMembership" to snapshot["cgroupMembership"],
                 "processTimers" to snapshot["processTimers"],
                 "kernelRcu" to snapshot["kernelRcu"],
+                "networkKernelPolicy" to snapshot["networkKernelPolicy"],
                 "processSchedulerDetails" to snapshot["processSchedulerDetails"],
                 "processSignals" to snapshot["processSignals"],
                 "processAddressSpace" to snapshot["processAddressSpace"],
@@ -687,6 +690,7 @@ internal class SystemReportCollector {
             "cgroupMembership" to snapshot["cgroupMembership"],
             "processTimers" to snapshot["processTimers"],
             "kernelRcu" to snapshot["kernelRcu"],
+            "networkKernelPolicy" to snapshot["networkKernelPolicy"],
             "processSchedulerDetails" to snapshot["processSchedulerDetails"],
             "processSignals" to snapshot["processSignals"],
             "processAddressSpace" to snapshot["processAddressSpace"],
@@ -2881,6 +2885,28 @@ internal class SystemReportCollector {
             "nocbs" to readTextFile("$root/nocbs"),
             "rcuTaskStallTimeout" to readLongFile("/proc/sys/kernel/rcu_task_stall_timeout"),
             "traceDirectoryPresent" to File("/sys/kernel/debug/tracing/events/rcu").isDirectory,
+        )
+    }.getOrDefault(emptyMap())
+
+    /** Reports network sysctl policy without addresses, routes, or interface identities. */
+    private fun collectNetworkKernelPolicy(): Map<String, Any?> = runCatching {
+        val values = linkedMapOf(
+            "ipv4Forwarding" to readLongFile("/proc/sys/net/ipv4/ip_forward"),
+            "ipv6Forwarding" to readLongFile("/proc/sys/net/ipv6/conf/all/forwarding"),
+            "tcpSyncookies" to readLongFile("/proc/sys/net/ipv4/tcp_syncookies"),
+            "tcpFinTimeoutSeconds" to readLongFile("/proc/sys/net/ipv4/tcp_fin_timeout"),
+            "tcpKeepaliveTimeSeconds" to readLongFile("/proc/sys/net/ipv4/tcp_keepalive_time"),
+            "tcpKeepaliveProbes" to readLongFile("/proc/sys/net/ipv4/tcp_keepalive_probes"),
+            "tcpKeepaliveIntervalSeconds" to readLongFile("/proc/sys/net/ipv4/tcp_keepalive_intvl"),
+            "tcpMemoryPages" to readTextFile("/proc/sys/net/ipv4/tcp_mem"),
+            "localPortRange" to readTextFile("/proc/sys/net/ipv4/ip_local_port_range"),
+            "ipv4AcceptRedirects" to readLongFile("/proc/sys/net/ipv4/conf/all/accept_redirects"),
+            "ipv4RpFilter" to readLongFile("/proc/sys/net/ipv4/conf/all/rp_filter"),
+            "ipv6AcceptRedirects" to readLongFile("/proc/sys/net/ipv6/conf/all/accept_redirects"),
+        )
+        linkedMapOf(
+            "configured" to values.values.any { it != null },
+            "values" to values,
         )
     }.getOrDefault(emptyMap())
 
