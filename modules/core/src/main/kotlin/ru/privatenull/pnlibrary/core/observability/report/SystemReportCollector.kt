@@ -214,6 +214,7 @@ internal class SystemReportCollector {
         data["graphics"] = collectGraphicsAnalytics()
         data["hardwareBus"] = collectHardwareBusAnalytics()
         data["networkLinks"] = collectNetworkLinkAnalytics()
+        data["virtualization"] = collectVirtualizationAnalytics()
         val durationMs = (System.nanoTime() - startedNanos) / 1_000_000
         data["collection"] = linkedMapOf(
             "durationMs" to durationMs,
@@ -497,6 +498,7 @@ internal class SystemReportCollector {
                 "graphics" to hasData(snapshot["graphics"]),
                 "hardwareBus" to hasData(snapshot["hardwareBus"]),
                 "networkLinks" to hasData(snapshot["networkLinks"]),
+                "virtualization" to hasData(snapshot["virtualization"]),
                 "processSchedulerDetails" to hasData(snapshot["processSchedulerDetails"]),
                 "processSignals" to hasData(snapshot["processSignals"]),
                 "processAddressSpace" to hasData(snapshot["processAddressSpace"]),
@@ -535,6 +537,7 @@ internal class SystemReportCollector {
                 "graphics" to snapshot["graphics"],
                 "hardwareBus" to snapshot["hardwareBus"],
                 "networkLinks" to snapshot["networkLinks"],
+                "virtualization" to snapshot["virtualization"],
                 "processSchedulerDetails" to snapshot["processSchedulerDetails"],
                 "processSignals" to snapshot["processSignals"],
                 "processAddressSpace" to snapshot["processAddressSpace"],
@@ -595,6 +598,7 @@ internal class SystemReportCollector {
             "graphics" to snapshot["graphics"],
             "hardwareBus" to snapshot["hardwareBus"],
             "networkLinks" to snapshot["networkLinks"],
+            "virtualization" to snapshot["virtualization"],
             "processSchedulerDetails" to snapshot["processSchedulerDetails"],
             "processSignals" to snapshot["processSignals"],
             "processAddressSpace" to snapshot["processAddressSpace"],
@@ -2324,6 +2328,25 @@ internal class SystemReportCollector {
             "interfaceCount" to interfaces.size,
             "upCount" to interfaces.count { it["operState"] == "up" },
             "interfaces" to interfaces,
+        )
+    }.getOrDefault(emptyMap())
+
+    /** Reports hypervisor and kernel time-source capabilities without host identifiers. */
+    private fun collectVirtualizationAnalytics(): Map<String, Any?> = runCatching {
+        val cpuFlags = File("/proc/cpuinfo").takeIf(File::isFile)?.useLines { lines ->
+            lines.firstOrNull { it.startsWith("flags") || it.startsWith("Features") }
+                ?.substringAfter(':')?.trim()?.split(Regex("\\s+"))?.filter(String::isNotBlank).orEmpty()
+        }.orEmpty()
+        val clockSource = "/sys/devices/system/clocksource/clocksource0"
+        val available = readTextFile("$clockSource/available_clocksource")
+            ?.split(Regex("\\s+"))?.filter(String::isNotBlank).orEmpty()
+        linkedMapOf(
+            "hypervisorFlagPresent" to cpuFlags.contains("hypervisor"),
+            "hypervisorVendor" to readTextFile("/sys/class/dmi/id/sys_vendor"),
+            "currentClockSource" to readTextFile("$clockSource/current_clocksource"),
+            "availableClockSources" to available.take(32),
+            "tscAvailable" to (cpuFlags.contains("constant_tsc") || cpuFlags.contains("nonstop_tsc")),
+            "paravirtualizedClockFlag" to cpuFlags.any { it in setOf("kvmclock", "xenclock", "hv_time") },
         )
     }.getOrDefault(emptyMap())
 
