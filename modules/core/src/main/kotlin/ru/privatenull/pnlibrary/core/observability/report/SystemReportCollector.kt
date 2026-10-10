@@ -112,6 +112,7 @@ internal class SystemReportCollector {
         data["diskStats"] = collectDiskStats()
         data["kernelRuntime"] = collectKernelRuntime()
         data["softIrqs"] = collectSoftIrqAnalytics()
+        data["securityRuntime"] = collectSecurityRuntime()
 
         // ── Memory ───────────────────────────────────────────────────────────
         val heap = memoryMx.heapMemoryUsage
@@ -288,6 +289,7 @@ internal class SystemReportCollector {
                 "entropyAvailable" to (data["kernelRuntime"] as? Map<*, *>)?.get("entropyAvailable"),
                 "cpuIdleSeconds" to (data["kernelRuntime"] as? Map<*, *>)?.get("cpuIdleSeconds"),
                 "softIrqTotal" to (data["softIrqs"] as? Map<*, *>)?.get("total"),
+                "securityEnforcement" to (data["securityRuntime"] as? Map<*, *>)?.get("enforcement"),
                 "cpuIdleTicks" to (data["systemScheduling"] as? Map<*, *>)?.get("cpuIdleTicks"),
                 "cpuIowaitTicks" to (data["systemScheduling"] as? Map<*, *>)?.get("cpuIowaitTicks"),
                 "cpuStealTicks" to (data["systemScheduling"] as? Map<*, *>)?.get("cpuStealTicks"),
@@ -417,6 +419,7 @@ internal class SystemReportCollector {
                 "diskStats" to hasData(snapshot["diskStats"]),
                 "kernelRuntime" to hasData(snapshot["kernelRuntime"]),
                 "softIrqs" to hasData(snapshot["softIrqs"]),
+                "securityRuntime" to hasData(snapshot["securityRuntime"]),
             ),
             "unavailableSections" to listOf(
                 "processIo" to snapshot["processIo"],
@@ -431,6 +434,7 @@ internal class SystemReportCollector {
                 "diskStats" to snapshot["diskStats"],
                 "kernelRuntime" to snapshot["kernelRuntime"],
                 "softIrqs" to snapshot["softIrqs"],
+                "securityRuntime" to snapshot["securityRuntime"],
             ).filter { !hasData(it.second) }.map { it.first },
             "containerLimits" to linkedMapOf(
                 "memoryLimitBytes" to (snapshot["runtimeEnvironment"] as? Map<*, *>)?.get("memoryLimitBytes"),
@@ -461,6 +465,7 @@ internal class SystemReportCollector {
             "diskStats" to snapshot["diskStats"],
             "kernelRuntime" to snapshot["kernelRuntime"],
             "softIrqs" to snapshot["softIrqs"],
+            "securityRuntime" to snapshot["securityRuntime"],
             "hostDistribution" to linkedMapOf(
                 "availableProcessors" to os?.get("availableProcessors"),
                 "distribution" to os?.get("distribution"),
@@ -529,6 +534,7 @@ internal class SystemReportCollector {
                 "entropyAvailable" to (snapshot["kernelRuntime"] as? Map<*, *>)?.get("entropyAvailable"),
                 "cpuIdleSeconds" to (snapshot["kernelRuntime"] as? Map<*, *>)?.get("cpuIdleSeconds"),
                 "softIrqTotal" to (snapshot["softIrqs"] as? Map<*, *>)?.get("total"),
+                "securityEnforcement" to (snapshot["securityRuntime"] as? Map<*, *>)?.get("enforcement"),
                 "cpuIdleTicks" to (snapshot["systemScheduling"] as? Map<*, *>)?.get("cpuIdleTicks"),
                 "cpuIowaitTicks" to (snapshot["systemScheduling"] as? Map<*, *>)?.get("cpuIowaitTicks"),
                 "cpuStealTicks" to (snapshot["systemScheduling"] as? Map<*, *>)?.get("cpuStealTicks"),
@@ -1562,6 +1568,29 @@ internal class SystemReportCollector {
             "total" to entries.sumOf { it.second },
             "sources" to entries.sortedByDescending { it.second }.map { (name, total) ->
                 linkedMapOf("name" to name, "count" to total)
+            },
+        )
+    }.getOrDefault(emptyMap())
+
+    /** Reports host security policy state without collecting policy contents or user data. */
+    private fun collectSecurityRuntime(): Map<String, Any?> = runCatching {
+        val selinux = readTextFile("/sys/fs/selinux/enforce")?.trim()?.let { if (it == "1") "enforcing" else "permissive" }
+        val appArmor = File("/sys/kernel/security/apparmor/profiles").takeIf(File::isFile)
+            ?.readLines()?.filter { it.isNotBlank() }
+            ?.map { it.substringBefore(' ') }
+            ?.distinct()?.sorted()
+        val noNewPrivileges = File("/proc/self/status").takeIf(File::isFile)?.useLines { lines ->
+            lines.firstOrNull { it.startsWith("NoNewPrivs:") }?.substringAfter(':')?.trim()?.toIntOrNull()
+        }
+        linkedMapOf(
+            "selinux" to selinux,
+            "apparmorProfileCount" to appArmor?.size,
+            "apparmorProfiles" to appArmor?.take(16),
+            "noNewPrivileges" to noNewPrivileges,
+            "enforcement" to when {
+                selinux == "enforcing" || !appArmor.isNullOrEmpty() || noNewPrivileges == 1 -> "restricted"
+                selinux != null || appArmor != null -> "available"
+                else -> "unknown"
             },
         )
     }.getOrDefault(emptyMap())
