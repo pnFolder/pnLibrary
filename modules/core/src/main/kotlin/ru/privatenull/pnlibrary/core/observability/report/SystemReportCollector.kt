@@ -297,6 +297,8 @@ internal class SystemReportCollector {
                 "cpuIdleTicks" to (data["systemScheduling"] as? Map<*, *>)?.get("cpuIdleTicks"),
                 "cpuIowaitTicks" to (data["systemScheduling"] as? Map<*, *>)?.get("cpuIowaitTicks"),
                 "cpuStealTicks" to (data["systemScheduling"] as? Map<*, *>)?.get("cpuStealTicks"),
+                "dirtyMemoryBytes" to (data["systemMemory"] as? Map<*, *>)?.get("Dirty"),
+                "writebackMemoryBytes" to (data["systemMemory"] as? Map<*, *>)?.get("Writeback"),
                 "cpuFrequencyAverageKHz" to (data["os"] as? Map<*, *>)?.get("cpuFrequency")
                     ?.let { it as? Map<*, *> }?.get("currentAverageKHz"),
                 "cpuFrequencyMinKHz" to (data["os"] as? Map<*, *>)?.get("cpuFrequency")
@@ -544,6 +546,10 @@ internal class SystemReportCollector {
                 "entropyAvailable" to (snapshot["kernelRuntime"] as? Map<*, *>)?.get("entropyAvailable"),
                 "cpuIdleSeconds" to (snapshot["kernelRuntime"] as? Map<*, *>)?.get("cpuIdleSeconds"),
                 "softIrqTotal" to (snapshot["softIrqs"] as? Map<*, *>)?.get("total"),
+                "dirtyMemoryBytes" to (snapshot["systemMemory"] as? Map<*, *>)?.get("Dirty"),
+                "writebackMemoryBytes" to (snapshot["systemMemory"] as? Map<*, *>)?.get("Writeback"),
+                "activeFileBytes" to (snapshot["systemMemory"] as? Map<*, *>)?.get("Active_file"),
+                "inactiveFileBytes" to (snapshot["systemMemory"] as? Map<*, *>)?.get("Inactive_file"),
                 "securityEnforcement" to (snapshot["securityRuntime"] as? Map<*, *>)?.get("enforcement"),
                 "hardwareSensorCount" to (snapshot["hardwareSensors"] as? Map<*, *>)?.get("sensorCount"),
                 "tcpRetransmissions" to (snapshot["networkProtocolStats"] as? Map<*, *>)?.get("tcpRetransmissions"),
@@ -1003,6 +1009,8 @@ internal class SystemReportCollector {
             "entropyAvailableDelta" to numericDelta("entropyAvailable"),
             "cpuIdleSecondsDelta" to numericDelta("cpuIdleSeconds"),
             "softIrqTotalDelta" to numericDelta("softIrqTotal"),
+            "dirtyMemoryBytesDelta" to numericDelta("dirtyMemoryBytes"),
+            "writebackMemoryBytesDelta" to numericDelta("writebackMemoryBytes"),
             "tcpRetransmissionsDelta" to numericDelta("tcpRetransmissions"),
             "cpuIdleTicksDelta" to numericDelta("cpuIdleTicks"),
             "cpuIowaitTicksDelta" to numericDelta("cpuIowaitTicks"),
@@ -1463,6 +1471,9 @@ internal class SystemReportCollector {
             "MemTotal", "MemFree", "MemAvailable", "Buffers", "Cached", "SReclaimable",
             "Shmem", "Slab", "PageTables", "CommitLimit", "Committed_AS", "SwapTotal", "SwapFree",
             "AnonPages", "Mapped", "Unevictable", "HugePages_Total", "HugePages_Free",
+            "Dirty", "Writeback", "Active", "Inactive", "Active_anon", "Inactive_anon",
+            "Active_file", "Inactive_file", "Unevictable", "SReclaimable", "KReclaimable",
+            "VmallocTotal", "VmallocUsed", "VmallocChunk", "DirectMap4k", "DirectMap2M", "DirectMap1G",
         )
         File("/proc/meminfo").takeIf(File::isFile)?.readLines().orEmpty().mapNotNull { line ->
             val separator = line.indexOf(':')
