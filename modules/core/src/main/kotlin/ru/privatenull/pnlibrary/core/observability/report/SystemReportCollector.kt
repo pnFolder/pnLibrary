@@ -211,6 +211,7 @@ internal class SystemReportCollector {
         data["networkSocketQueues"] = collectNetworkSocketQueues()
         data["powerSupply"] = collectPowerSupplyAnalytics()
         data["firmware"] = collectFirmwareAnalytics()
+        data["graphics"] = collectGraphicsAnalytics()
         val durationMs = (System.nanoTime() - startedNanos) / 1_000_000
         data["collection"] = linkedMapOf(
             "durationMs" to durationMs,
@@ -491,6 +492,7 @@ internal class SystemReportCollector {
                 "networkSocketQueues" to hasData(snapshot["networkSocketQueues"]),
                 "powerSupply" to hasData(snapshot["powerSupply"]),
                 "firmware" to hasData(snapshot["firmware"]),
+                "graphics" to hasData(snapshot["graphics"]),
                 "processSchedulerDetails" to hasData(snapshot["processSchedulerDetails"]),
                 "processSignals" to hasData(snapshot["processSignals"]),
                 "processAddressSpace" to hasData(snapshot["processAddressSpace"]),
@@ -526,6 +528,7 @@ internal class SystemReportCollector {
                 "networkSocketQueues" to snapshot["networkSocketQueues"],
                 "powerSupply" to snapshot["powerSupply"],
                 "firmware" to snapshot["firmware"],
+                "graphics" to snapshot["graphics"],
                 "processSchedulerDetails" to snapshot["processSchedulerDetails"],
                 "processSignals" to snapshot["processSignals"],
                 "processAddressSpace" to snapshot["processAddressSpace"],
@@ -583,6 +586,7 @@ internal class SystemReportCollector {
             "networkSocketQueues" to snapshot["networkSocketQueues"],
             "powerSupply" to snapshot["powerSupply"],
             "firmware" to snapshot["firmware"],
+            "graphics" to snapshot["graphics"],
             "processSchedulerDetails" to snapshot["processSchedulerDetails"],
             "processSignals" to snapshot["processSignals"],
             "processAddressSpace" to snapshot["processAddressSpace"],
@@ -2225,6 +2229,37 @@ internal class SystemReportCollector {
         linkedMapOf(
             "configured" to fields.values.any { it != null },
             "fields" to fields,
+        )
+    }.getOrDefault(emptyMap())
+
+    /** Reports DRM graphics devices without collecting device paths or serial identifiers. */
+    private fun collectGraphicsAnalytics(): Map<String, Any?> = runCatching {
+        val devices = File("/sys/class/drm").takeIf(File::isDirectory)?.listFiles().orEmpty()
+            .filter { it.name.matches(Regex("card\\d+")) }
+            .sortedBy { it.name }.take(32).map { card ->
+                val device = File(card, "device")
+                linkedMapOf<String, Any?>(
+                    "name" to card.name,
+                    "vendorId" to readTextFile("${device.path}/vendor"),
+                    "deviceId" to readTextFile("${device.path}/device"),
+                    "driver" to device.resolve("driver").canonicalFile.name.takeIf { it.isNotBlank() },
+                    "bootVga" to readTextFile("${device.path}/boot_vga")?.toIntOrNull()?.let { it == 1 },
+                    "renderNodePresent" to File("/dev/dri/renderD128").exists(),
+                    "connectors" to File("/sys/class/drm").listFiles().orEmpty()
+                        .filter { it.name.startsWith("${card.name}-") }
+                        .mapNotNull { connector ->
+                            linkedMapOf<String, Any?>(
+                                "name" to connector.name.removePrefix("${card.name}-"),
+                                "status" to readTextFile("${connector.path}/status"),
+                                "enabled" to readTextFile("${connector.path}/enabled"),
+                            )
+                        }.take(32),
+                )
+            }
+        linkedMapOf(
+            "configured" to devices.isNotEmpty(),
+            "deviceCount" to devices.size,
+            "devices" to devices,
         )
     }.getOrDefault(emptyMap())
 
