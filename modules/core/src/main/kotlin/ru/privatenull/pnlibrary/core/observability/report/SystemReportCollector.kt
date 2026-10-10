@@ -84,6 +84,7 @@ internal class SystemReportCollector {
             "systemLoadAverage" to osMx.systemLoadAverage,
             "cpu" to collectCpuDetails(osMx),
             "cpuTopology" to collectCpuTopology(),
+            "cpuFrequency" to collectCpuFrequency(),
             "fileDescriptors" to collectFileDescriptorDetails(osMx),
         )
         data["runtimeEnvironment"] = collectRuntimeEnvironment()
@@ -425,6 +426,7 @@ internal class SystemReportCollector {
                 "availableProcessors" to os?.get("availableProcessors"),
                 "distribution" to os?.get("distribution"),
                 "kernelRelease" to os?.get("kernelRelease"),
+                "cpuFrequency" to os?.get("cpuFrequency"),
                 "systemLoadAverage" to os?.get("systemLoadAverage"),
                 "processCpuTimeNanos" to cpu?.get("processCpuTimeNanos"),
                 "hostUptimeSeconds" to (snapshot["runtimeEnvironment"] as? Map<*, *>)?.get("hostUptimeSeconds"),
@@ -1177,6 +1179,22 @@ internal class SystemReportCollector {
             "socketCount" to socketCount.size.takeIf { it > 0 },
             "reportedFrequencyMHz" to frequency,
             "flagCount" to flags.distinct().size,
+        )
+    }.getOrDefault(emptyMap())
+
+    private fun collectCpuFrequency(): Map<String, Any?> = runCatching {
+        val cpus = File("/sys/devices/system/cpu").listFiles().orEmpty()
+            .filter { it.name.matches(Regex("cpu\\d+")) }
+        val current = cpus.mapNotNull { readLongFile("${it.path}/cpufreq/scaling_cur_freq") }
+        val minimum = cpus.mapNotNull { readLongFile("${it.path}/cpufreq/scaling_min_freq") }
+        val maximum = cpus.mapNotNull { readLongFile("${it.path}/cpufreq/scaling_max_freq") }
+        linkedMapOf(
+            "sampledCpuCount" to current.size,
+            "currentMinKHz" to current.minOrNull(),
+            "currentMaxKHz" to current.maxOrNull(),
+            "currentAverageKHz" to current.average().takeIf { current.isNotEmpty() },
+            "configuredMinKHz" to minimum.minOrNull(),
+            "configuredMaxKHz" to maximum.maxOrNull(),
         )
     }.getOrDefault(emptyMap())
 
