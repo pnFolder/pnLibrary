@@ -93,6 +93,7 @@ internal class SystemReportCollector {
         data["processAffinity"] = collectProcessAffinity()
         data["processSecurity"] = collectProcessSecurity()
         data["processNamespaces"] = collectProcessNamespaces()
+        data["processOomPolicy"] = collectProcessOomPolicy()
         data["processMemoryMaps"] = collectProcessMemoryMaps()
         data["processFileDescriptors"] = collectProcessFileDescriptors()
         data["processLimits"] = collectProcessLimits()
@@ -216,6 +217,7 @@ internal class SystemReportCollector {
                 "systemContextSwitches" to (data["systemScheduling"] as? Map<*, *>)?.get("contextSwitches"),
                 "processSecurity" to data["processSecurity"],
                 "processNamespaces" to data["processNamespaces"],
+                "processOomPolicy" to data["processOomPolicy"],
                 "containerIoReadBytes" to (data["containerIo"] as? Map<*, *>)?.get("readBytes"),
                 "containerEffectiveCpuCount" to (data["runtimeEnvironment"] as? Map<*, *>)?.get("effectiveCpuCount"),
                 "cpuPressureAvg10" to ((data["pressureStall"] as? Map<*, *>)?.get("cpu") as? Map<*, *>)?.get("someAvg10"),
@@ -489,6 +491,7 @@ internal class SystemReportCollector {
                 "containerIo" to snapshot["containerIo"],
                 "processSecurity" to snapshot["processSecurity"],
                 "processNamespaces" to snapshot["processNamespaces"],
+                "processOomPolicy" to snapshot["processOomPolicy"],
                 "containerEffectiveCpuSet" to ((snapshot["runtimeEnvironment"] as? Map<*, *>)?.get("effectiveCpuSet")),
                 "containerEffectiveCpuCount" to ((snapshot["runtimeEnvironment"] as? Map<*, *>)?.get("effectiveCpuCount")),
                 "containerMemorySwapLimitBytes" to ((snapshot["runtimeEnvironment"] as? Map<*, *>)?.get("memorySwapLimitBytes")),
@@ -1429,6 +1432,12 @@ internal class SystemReportCollector {
                 namespace to target
             }.toMap()
     }.getOrDefault(emptyMap())
+
+    private fun collectProcessOomPolicy(): Map<String, Any?> = linkedMapOf(
+        "score" to readLongFile("/proc/self/oom_score"),
+        "adjustment" to readLongFile("/proc/self/oom_score_adj"),
+        "killDisabled" to (readLongFile("/sys/fs/cgroup/memory.oom.group") == 0L),
+    )
 
     private fun collectProcessMemoryMaps(): Map<String, Long> = runCatching {
         val file = File("/proc/self/smaps_rollup")

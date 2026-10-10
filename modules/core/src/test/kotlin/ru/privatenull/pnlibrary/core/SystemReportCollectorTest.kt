@@ -109,6 +109,7 @@ class SystemReportCollectorTest {
         assertTrue(report["containerIo"] is Map<*, *>)
         assertTrue(report["processSecurity"] is Map<*, *>)
         assertTrue(report["processNamespaces"] is Map<*, *>)
+        assertTrue(report["processOomPolicy"] is Map<*, *>)
         assertTrue((report["memory"] as? Map<*, *>)?.get("bufferPools") is List<*>)
         assertTrue(((report["memory"] as? Map<*, *>)?.get("pools") as? List<*>)?.firstOrNull() is Map<*, *> ||
             ((report["memory"] as? Map<*, *>)?.get("pools") as? List<*>)?.isEmpty() == true)
@@ -129,6 +130,7 @@ class SystemReportCollectorTest {
         assertTrue((analytics["resources"] as? Map<*, *>)?.containsKey("containerIo") == true)
         assertTrue((analytics["resources"] as? Map<*, *>)?.containsKey("processSecurity") == true)
         assertTrue((analytics["resources"] as? Map<*, *>)?.containsKey("processNamespaces") == true)
+        assertTrue((analytics["resources"] as? Map<*, *>)?.containsKey("processOomPolicy") == true)
         assertTrue((analytics["resources"] as? Map<*, *>)?.containsKey("containerEffectiveCpuCount") == true)
         assertTrue((analytics["resources"] as? Map<*, *>)?.containsKey("containerCpuWeight") == true)
         assertTrue((analytics["resources"] as? Map<*, *>)?.containsKey("containerPidsMaximum") == true)
