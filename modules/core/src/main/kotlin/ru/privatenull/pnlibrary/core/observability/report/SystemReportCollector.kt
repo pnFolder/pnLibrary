@@ -213,6 +213,7 @@ internal class SystemReportCollector {
         data["firmware"] = collectFirmwareAnalytics()
         data["graphics"] = collectGraphicsAnalytics()
         data["hardwareBus"] = collectHardwareBusAnalytics()
+        data["networkLinks"] = collectNetworkLinkAnalytics()
         val durationMs = (System.nanoTime() - startedNanos) / 1_000_000
         data["collection"] = linkedMapOf(
             "durationMs" to durationMs,
@@ -495,6 +496,7 @@ internal class SystemReportCollector {
                 "firmware" to hasData(snapshot["firmware"]),
                 "graphics" to hasData(snapshot["graphics"]),
                 "hardwareBus" to hasData(snapshot["hardwareBus"]),
+                "networkLinks" to hasData(snapshot["networkLinks"]),
                 "processSchedulerDetails" to hasData(snapshot["processSchedulerDetails"]),
                 "processSignals" to hasData(snapshot["processSignals"]),
                 "processAddressSpace" to hasData(snapshot["processAddressSpace"]),
@@ -532,6 +534,7 @@ internal class SystemReportCollector {
                 "firmware" to snapshot["firmware"],
                 "graphics" to snapshot["graphics"],
                 "hardwareBus" to snapshot["hardwareBus"],
+                "networkLinks" to snapshot["networkLinks"],
                 "processSchedulerDetails" to snapshot["processSchedulerDetails"],
                 "processSignals" to snapshot["processSignals"],
                 "processAddressSpace" to snapshot["processAddressSpace"],
@@ -591,6 +594,7 @@ internal class SystemReportCollector {
             "firmware" to snapshot["firmware"],
             "graphics" to snapshot["graphics"],
             "hardwareBus" to snapshot["hardwareBus"],
+            "networkLinks" to snapshot["networkLinks"],
             "processSchedulerDetails" to snapshot["processSchedulerDetails"],
             "processSignals" to snapshot["processSignals"],
             "processAddressSpace" to snapshot["processAddressSpace"],
@@ -2289,6 +2293,37 @@ internal class SystemReportCollector {
             "usbCount" to usb.size,
             "pci" to pci,
             "usb" to usb,
+        )
+    }.getOrDefault(emptyMap())
+
+    /** Reports link state and non-sensitive interface counters without addresses. */
+    private fun collectNetworkLinkAnalytics(): Map<String, Any?> = runCatching {
+        val interfaces = File("/sys/class/net").takeIf(File::isDirectory)?.listFiles().orEmpty()
+            .sortedBy { it.name }.take(128).map { networkInterface ->
+                fun stat(name: String) = readLongFile("${networkInterface.path}/statistics/$name")
+                linkedMapOf<String, Any?>(
+                    "name" to networkInterface.name,
+                    "operState" to readTextFile("${networkInterface.path}/operstate"),
+                    "carrier" to readLongFile("${networkInterface.path}/carrier")?.let { it == 1L },
+                    "mtu" to readLongFile("${networkInterface.path}/mtu"),
+                    "speedMbps" to readLongFile("${networkInterface.path}/speed"),
+                    "duplex" to readTextFile("${networkInterface.path}/duplex"),
+                    "rxBytes" to stat("rx_bytes"),
+                    "rxPackets" to stat("rx_packets"),
+                    "rxErrors" to stat("rx_errors"),
+                    "rxDrops" to stat("rx_dropped"),
+                    "txBytes" to stat("tx_bytes"),
+                    "txPackets" to stat("tx_packets"),
+                    "txErrors" to stat("tx_errors"),
+                    "txDrops" to stat("tx_dropped"),
+                    "collisions" to stat("collisions"),
+                )
+            }
+        linkedMapOf(
+            "configured" to interfaces.isNotEmpty(),
+            "interfaceCount" to interfaces.size,
+            "upCount" to interfaces.count { it["operState"] == "up" },
+            "interfaces" to interfaces,
         )
     }.getOrDefault(emptyMap())
 
