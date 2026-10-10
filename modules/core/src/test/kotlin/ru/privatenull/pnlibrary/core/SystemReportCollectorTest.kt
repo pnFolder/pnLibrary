@@ -129,6 +129,7 @@ class SystemReportCollectorTest {
         assertTrue((analytics["resources"] as? Map<*, *>)?.containsKey("jitCompilationTimeMs") == true)
         assertTrue((analytics["resources"] as? Map<*, *>)?.containsKey("threadGroupCounts") == true)
         assertTrue((analytics["resources"] as? Map<*, *>)?.containsKey("networkReceiveBytes") == true)
+        assertTrue((analytics["resources"] as? Map<*, *>)?.containsKey("networkDownInterfaceCount") == true)
         assertTrue((analytics["resources"] as? Map<*, *>)?.containsKey("mountTypeCounts") == true)
         assertTrue((analytics["resources"] as? Map<*, *>)?.containsKey("classpathMissingEntries") == true)
         assertTrue((analytics["resources"] as? Map<*, *>)?.containsKey("allowedCpuCount") == true)
