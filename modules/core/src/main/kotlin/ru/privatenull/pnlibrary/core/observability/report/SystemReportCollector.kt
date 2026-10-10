@@ -224,6 +224,7 @@ internal class SystemReportCollector {
         data["fileLocks"] = collectFileLockAnalytics()
         data["kernelDebugPolicy"] = collectKernelDebugPolicy()
         data["memoryZones"] = collectMemoryZoneAnalytics()
+        data["kernelSlab"] = collectKernelSlabAnalytics()
         val durationMs = (System.nanoTime() - startedNanos) / 1_000_000
         data["collection"] = linkedMapOf(
             "durationMs" to durationMs,
@@ -517,6 +518,7 @@ internal class SystemReportCollector {
                 "fileLocks" to hasData(snapshot["fileLocks"]),
                 "kernelDebugPolicy" to hasData(snapshot["kernelDebugPolicy"]),
                 "memoryZones" to hasData(snapshot["memoryZones"]),
+                "kernelSlab" to hasData(snapshot["kernelSlab"]),
                 "processSchedulerDetails" to hasData(snapshot["processSchedulerDetails"]),
                 "processSignals" to hasData(snapshot["processSignals"]),
                 "processAddressSpace" to hasData(snapshot["processAddressSpace"]),
@@ -565,6 +567,7 @@ internal class SystemReportCollector {
                 "fileLocks" to snapshot["fileLocks"],
                 "kernelDebugPolicy" to snapshot["kernelDebugPolicy"],
                 "memoryZones" to snapshot["memoryZones"],
+                "kernelSlab" to snapshot["kernelSlab"],
                 "processSchedulerDetails" to snapshot["processSchedulerDetails"],
                 "processSignals" to snapshot["processSignals"],
                 "processAddressSpace" to snapshot["processAddressSpace"],
@@ -635,6 +638,7 @@ internal class SystemReportCollector {
             "fileLocks" to snapshot["fileLocks"],
             "kernelDebugPolicy" to snapshot["kernelDebugPolicy"],
             "memoryZones" to snapshot["memoryZones"],
+            "kernelSlab" to snapshot["kernelSlab"],
             "processSchedulerDetails" to snapshot["processSchedulerDetails"],
             "processSignals" to snapshot["processSignals"],
             "processAddressSpace" to snapshot["processAddressSpace"],
@@ -2565,6 +2569,37 @@ internal class SystemReportCollector {
             "inactiveAnonPages" to sum("nr_inactive_anon"),
             "activeFilePages" to sum("nr_active_file"),
             "inactiveFilePages" to sum("nr_inactive_file"),
+        )
+    }.getOrDefault(emptyMap())
+
+    /** Reports aggregate slab allocator usage without retaining cache names or object identities. */
+    private fun collectKernelSlabAnalytics(): Map<String, Any?> = runCatching {
+        val rows = File("/proc/slabinfo").takeIf(File::isFile)?.readLines().orEmpty()
+            .dropWhile { !it.startsWith("slabinfo - version") }.drop(2)
+        var activeObjects = 0L
+        var totalObjects = 0L
+        var activeBytes = 0L
+        var totalBytes = 0L
+        var cacheCount = 0
+        rows.forEach { row ->
+            val fields = row.trim().split(Regex("\\s+"))
+            if (fields.size < 4) return@forEach
+            val active = fields.getOrNull(1)?.toLongOrNull() ?: return@forEach
+            val total = fields.getOrNull(2)?.toLongOrNull() ?: return@forEach
+            val objectSize = fields.getOrNull(3)?.toLongOrNull() ?: return@forEach
+            cacheCount++
+            activeObjects += active
+            totalObjects += total
+            activeBytes += active * objectSize
+            totalBytes += total * objectSize
+        }
+        linkedMapOf(
+            "configured" to (cacheCount > 0),
+            "cacheCount" to cacheCount,
+            "activeObjects" to activeObjects,
+            "totalObjects" to totalObjects,
+            "activeBytes" to activeBytes,
+            "totalBytes" to totalBytes,
         )
     }.getOrDefault(emptyMap())
 
