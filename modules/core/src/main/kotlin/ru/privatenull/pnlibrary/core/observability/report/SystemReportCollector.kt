@@ -207,6 +207,7 @@ internal class SystemReportCollector {
         data["kernelNotificationPolicy"] = collectKernelNotificationPolicy()
         data["kernelSysctl"] = collectKernelSysctl()
         data["blockDevices"] = collectBlockDeviceAnalytics()
+        data["kernelComponents"] = collectKernelComponentAnalytics()
         val durationMs = (System.nanoTime() - startedNanos) / 1_000_000
         data["collection"] = linkedMapOf(
             "durationMs" to durationMs,
@@ -483,6 +484,7 @@ internal class SystemReportCollector {
                 "kernelNotificationPolicy" to hasData(snapshot["kernelNotificationPolicy"]),
                 "kernelSysctl" to hasData(snapshot["kernelSysctl"]),
                 "blockDevices" to hasData(snapshot["blockDevices"]),
+                "kernelComponents" to hasData(snapshot["kernelComponents"]),
                 "processSchedulerDetails" to hasData(snapshot["processSchedulerDetails"]),
                 "processSignals" to hasData(snapshot["processSignals"]),
                 "processAddressSpace" to hasData(snapshot["processAddressSpace"]),
@@ -514,6 +516,7 @@ internal class SystemReportCollector {
                 "kernelNotificationPolicy" to snapshot["kernelNotificationPolicy"],
                 "kernelSysctl" to snapshot["kernelSysctl"],
                 "blockDevices" to snapshot["blockDevices"],
+                "kernelComponents" to snapshot["kernelComponents"],
                 "processSchedulerDetails" to snapshot["processSchedulerDetails"],
                 "processSignals" to snapshot["processSignals"],
                 "processAddressSpace" to snapshot["processAddressSpace"],
@@ -567,6 +570,7 @@ internal class SystemReportCollector {
             "kernelNotificationPolicy" to snapshot["kernelNotificationPolicy"],
             "kernelSysctl" to snapshot["kernelSysctl"],
             "blockDevices" to snapshot["blockDevices"],
+            "kernelComponents" to snapshot["kernelComponents"],
             "processSchedulerDetails" to snapshot["processSchedulerDetails"],
             "processSignals" to snapshot["processSignals"],
             "processAddressSpace" to snapshot["processAddressSpace"],
@@ -2122,6 +2126,23 @@ internal class SystemReportCollector {
             "deviceCount" to devices.size,
             "rotationalDeviceCount" to devices.count { it["rotational"] == true },
             "devices" to devices,
+        )
+    }.getOrDefault(emptyMap())
+
+    /** Reports available kernel modules and filesystem drivers without module parameters. */
+    private fun collectKernelComponentAnalytics(): Map<String, Any?> = runCatching {
+        val modules = File("/proc/modules").takeIf(File::isFile)?.readLines().orEmpty()
+            .mapNotNull { it.trim().split(Regex("\\s+")).firstOrNull()?.takeIf(String::isNotBlank) }
+            .distinct().sorted().take(512)
+        val fileSystems = File("/proc/filesystems").takeIf(File::isFile)?.readLines().orEmpty()
+            .mapNotNull { it.trim().split(Regex("\\s+")).lastOrNull()?.takeIf(String::isNotBlank) }
+            .distinct().sorted().take(256)
+        linkedMapOf(
+            "configured" to (modules.isNotEmpty() || fileSystems.isNotEmpty()),
+            "moduleCount" to modules.size,
+            "modules" to modules,
+            "fileSystemDriverCount" to fileSystems.size,
+            "fileSystemDrivers" to fileSystems,
         )
     }.getOrDefault(emptyMap())
 
