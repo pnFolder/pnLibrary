@@ -288,6 +288,9 @@ internal class SystemReportCollector {
                 "entropyAvailable" to (data["kernelRuntime"] as? Map<*, *>)?.get("entropyAvailable"),
                 "cpuIdleSeconds" to (data["kernelRuntime"] as? Map<*, *>)?.get("cpuIdleSeconds"),
                 "softIrqTotal" to (data["softIrqs"] as? Map<*, *>)?.get("total"),
+                "cpuIdleTicks" to (data["systemScheduling"] as? Map<*, *>)?.get("cpuIdleTicks"),
+                "cpuIowaitTicks" to (data["systemScheduling"] as? Map<*, *>)?.get("cpuIowaitTicks"),
+                "cpuStealTicks" to (data["systemScheduling"] as? Map<*, *>)?.get("cpuStealTicks"),
                 "cpuFrequencyAverageKHz" to (data["os"] as? Map<*, *>)?.get("cpuFrequency")
                     ?.let { it as? Map<*, *> }?.get("currentAverageKHz"),
                 "cpuFrequencyMinKHz" to (data["os"] as? Map<*, *>)?.get("cpuFrequency")
@@ -526,6 +529,9 @@ internal class SystemReportCollector {
                 "entropyAvailable" to (snapshot["kernelRuntime"] as? Map<*, *>)?.get("entropyAvailable"),
                 "cpuIdleSeconds" to (snapshot["kernelRuntime"] as? Map<*, *>)?.get("cpuIdleSeconds"),
                 "softIrqTotal" to (snapshot["softIrqs"] as? Map<*, *>)?.get("total"),
+                "cpuIdleTicks" to (snapshot["systemScheduling"] as? Map<*, *>)?.get("cpuIdleTicks"),
+                "cpuIowaitTicks" to (snapshot["systemScheduling"] as? Map<*, *>)?.get("cpuIowaitTicks"),
+                "cpuStealTicks" to (snapshot["systemScheduling"] as? Map<*, *>)?.get("cpuStealTicks"),
                 "largestFileSystem" to fileSystems.orEmpty()
                     .maxByOrNull { ((it as? Map<*, *>)?.get("totalSpaceBytes") as? Number)?.toLong() ?: 0L },
                 "networkInterfacesUp" to ((snapshot["networkAnalytics"] as? Map<*, *>)?.get("upCount")),
@@ -978,6 +984,9 @@ internal class SystemReportCollector {
             "entropyAvailableDelta" to numericDelta("entropyAvailable"),
             "cpuIdleSecondsDelta" to numericDelta("cpuIdleSeconds"),
             "softIrqTotalDelta" to numericDelta("softIrqTotal"),
+            "cpuIdleTicksDelta" to numericDelta("cpuIdleTicks"),
+            "cpuIowaitTicksDelta" to numericDelta("cpuIowaitTicks"),
+            "cpuStealTicksDelta" to numericDelta("cpuStealTicks"),
             "durationMsDelta" to numericDelta("durationMs"),
             "bufferPoolUsedBytesDelta" to numericDelta("bufferPoolUsedBytes"),
             "jitCompilationTimeMsDelta" to numericDelta("jitCompilationTimeMs"),
@@ -1755,13 +1764,20 @@ internal class SystemReportCollector {
         )
     }.getOrDefault(emptyMap())
 
-    private fun collectSystemScheduling(): Map<String, Long> = runCatching {
+    private fun collectSystemScheduling(): Map<String, Any?> = runCatching {
         val lines = File("/proc/stat").takeIf(File::isFile)?.readLines().orEmpty()
-        val values = linkedMapOf<String, Long>()
+        val values = linkedMapOf<String, Any?>()
+        val cpuRows = mutableListOf<Map<String, Long>>()
         lines.forEach { line ->
             val parts = line.trim().split(Regex("\\s+"))
             val key = parts.firstOrNull() ?: return@forEach
             val value = parts.getOrNull(1)?.toLongOrNull() ?: return@forEach
+            if (key == "cpu" || key.matches(Regex("cpu\\d+"))) {
+                val names = listOf("user", "nice", "system", "idle", "iowait", "irq", "softirq", "steal", "guest", "guestNice")
+                cpuRows += names.mapIndexedNotNull { index, name ->
+                    parts.getOrNull(index + 1)?.toLongOrNull()?.let { name to it }
+                }.toMap()
+            }
             when (key) {
                 "ctxt" -> values["contextSwitches"] = value
                 "intr" -> values["interrupts"] = value
@@ -1769,6 +1785,13 @@ internal class SystemReportCollector {
                 "procs_running" -> values["runnableProcesses"] = value
                 "procs_blocked" -> values["blockedProcesses"] = value
             }
+        }
+        cpuRows.firstOrNull()?.let { aggregate ->
+            values["cpuTotal"] = aggregate
+            values["cpuCoreCount"] = cpuRows.count { it !== aggregate }
+            values["cpuIdleTicks"] = aggregate["idle"]
+            values["cpuIowaitTicks"] = aggregate["iowait"]
+            values["cpuStealTicks"] = aggregate["steal"]
         }
         values
     }.getOrDefault(emptyMap())
