@@ -232,6 +232,7 @@ internal class SystemReportCollector {
         data["buddyAllocator"] = collectBuddyAllocatorAnalytics()
         data["memoryCompaction"] = collectMemoryCompactionAnalytics()
         data["kernelFaultPolicy"] = collectKernelFaultPolicy()
+        data["processFdTypes"] = collectProcessFdTypeAnalytics()
         val durationMs = (System.nanoTime() - startedNanos) / 1_000_000
         data["collection"] = linkedMapOf(
             "durationMs" to durationMs,
@@ -533,6 +534,7 @@ internal class SystemReportCollector {
                 "buddyAllocator" to hasData(snapshot["buddyAllocator"]),
                 "memoryCompaction" to hasData(snapshot["memoryCompaction"]),
                 "kernelFaultPolicy" to hasData(snapshot["kernelFaultPolicy"]),
+                "processFdTypes" to hasData(snapshot["processFdTypes"]),
                 "processSchedulerDetails" to hasData(snapshot["processSchedulerDetails"]),
                 "processSignals" to hasData(snapshot["processSignals"]),
                 "processAddressSpace" to hasData(snapshot["processAddressSpace"]),
@@ -589,6 +591,7 @@ internal class SystemReportCollector {
                 "buddyAllocator" to snapshot["buddyAllocator"],
                 "memoryCompaction" to snapshot["memoryCompaction"],
                 "kernelFaultPolicy" to snapshot["kernelFaultPolicy"],
+                "processFdTypes" to snapshot["processFdTypes"],
                 "processSchedulerDetails" to snapshot["processSchedulerDetails"],
                 "processSignals" to snapshot["processSignals"],
                 "processAddressSpace" to snapshot["processAddressSpace"],
@@ -667,6 +670,7 @@ internal class SystemReportCollector {
             "buddyAllocator" to snapshot["buddyAllocator"],
             "memoryCompaction" to snapshot["memoryCompaction"],
             "kernelFaultPolicy" to snapshot["kernelFaultPolicy"],
+            "processFdTypes" to snapshot["processFdTypes"],
             "processSchedulerDetails" to snapshot["processSchedulerDetails"],
             "processSignals" to snapshot["processSignals"],
             "processAddressSpace" to snapshot["processAddressSpace"],
@@ -2777,6 +2781,28 @@ internal class SystemReportCollector {
         linkedMapOf(
             "configured" to values.values.any { it != null },
             "values" to values,
+        )
+    }.getOrDefault(emptyMap())
+
+    /** Reports aggregate descriptor target types without exposing descriptor paths or endpoint names. */
+    private fun collectProcessFdTypeAnalytics(): Map<String, Any?> = runCatching {
+        val counts = linkedMapOf<String, Int>()
+        File("/proc/self/fd").takeIf(File::isDirectory)?.listFiles().orEmpty().forEach { descriptor ->
+            val target = runCatching { descriptor.canonicalFile.path }.getOrNull() ?: return@forEach
+            val type = when {
+                target.startsWith("socket:") -> "socket"
+                target.startsWith("pipe:") -> "pipe"
+                target.startsWith("anon_inode:") -> "anonInode"
+                target.startsWith("/dev/") -> "device"
+                target.startsWith("/") -> "file"
+                else -> "other"
+            }
+            counts[type] = (counts[type] ?: 0) + 1
+        }
+        linkedMapOf(
+            "configured" to counts.isNotEmpty(),
+            "total" to counts.values.sum(),
+            "byType" to counts.toSortedMap(),
         )
     }.getOrDefault(emptyMap())
 
