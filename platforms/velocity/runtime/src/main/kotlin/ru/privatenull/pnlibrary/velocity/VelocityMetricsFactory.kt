@@ -1,12 +1,12 @@
 package ru.privatenull.pnlibrary.velocity
 
+import com.velocitypowered.api.proxy.ProxyServer
 import org.bstats.velocity.Metrics
+import org.slf4j.Logger
 import ru.privatenull.pnlibrary.api.metrics.PluginMetrics
 import ru.privatenull.pnlibrary.api.metrics.MetricsProvider
 import ru.privatenull.pnlibrary.api.metrics.MetricsProviderConfiguration
 import ru.privatenull.pnlibrary.core.metrics.CompositePluginMetrics
-import com.velocitypowered.api.proxy.ProxyServer
-import org.slf4j.Logger
 import java.nio.file.Path
 import ru.privatenull.pnlibrary.internal.faststatsvelocity.FastStatsVelocityProvider
 import ru.privatenull.pnlibrary.core.metrics.BStatsMetricsSession
@@ -21,7 +21,10 @@ class VelocityMetricsFactory(
 ) : PlatformMetricsFactory {
 
     /** Opens every enabled metrics provider configured for the Velocity plugin [owner]. */
-    override fun open(owner: Any, configurations: Collection<MetricsProviderConfiguration>): PluginMetrics {
+    override fun open(
+        owner: Any,
+        configurations: Collection<MetricsProviderConfiguration>,
+    ): PluginMetrics {
         val delegates = configurations.filter { it.enabled }.map { configuration ->
             when (configuration.provider) {
                 MetricsProvider.BSTATS -> open(

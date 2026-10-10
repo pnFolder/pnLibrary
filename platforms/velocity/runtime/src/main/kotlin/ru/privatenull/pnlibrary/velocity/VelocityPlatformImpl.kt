@@ -1,7 +1,6 @@
 package ru.privatenull.pnlibrary.velocity
 
 import com.velocitypowered.api.proxy.ProxyServer
-import ru.privatenull.pnlibrary.api.diagnostics.DiagnosticLevel
 import ru.privatenull.pnlibrary.velocity.api.VelocityPlatform
 
 /** Native-backed Velocity platform API installed by the Velocity runtime. */

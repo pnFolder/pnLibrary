@@ -17,16 +17,11 @@ import ru.privatenull.pnlibrary.spi.metrics.PlatformMetricsFactory
 import ru.privatenull.pnlibrary.spi.platform.PlatformAdapter
 import ru.privatenull.pnlibrary.spi.platform.PlatformSnapshot
 import ru.privatenull.pnlibrary.spi.platform.PluginSnapshot
-import ru.privatenull.pnlibrary.spi.platform.DiagnosticDetailsCollector
 import ru.privatenull.pnlibrary.spi.tasks.PlatformTaskAdapter
 import ru.privatenull.pnlibrary.velocity.commands.VelocityCommandAdapter
 import ru.privatenull.pnlibrary.velocity.tasks.VelocityTaskAdapter
 import java.nio.file.Path
-import java.io.File
-import java.io.FileInputStream
-import java.security.MessageDigest
 import java.util.concurrent.atomic.AtomicBoolean
-import kotlin.time.TimeSource
 
 /**
  * Runtime adapter for Velocity proxy servers.
@@ -171,26 +166,6 @@ internal class VelocityPlatformAdapter(
         bound.set(false)
     }
 
-    private fun sha256(file: File): String? = runCatching {
-        val digest = MessageDigest.getInstance("SHA-256")
-        FileInputStream(file).use { input ->
-            val buffer = ByteArray(16 * 1024)
-            while (true) {
-                val read = input.read(buffer)
-                if (read < 0) break
-                digest.update(buffer, 0, read)
-            }
-        }
-        digest.digest().joinToString("") { byte -> "%02x".format(byte) }
-    }.getOrNull()
-
-    private fun percentile(values: List<Long>, percentile: Double): Long? {
-        if (values.isEmpty()) return null
-        val sorted = values.sorted()
-        val index = ((sorted.size - 1) * percentile).toInt().coerceIn(0, sorted.lastIndex)
-        return sorted[index]
-    }
-
     private fun PluginDescription.toSnapshot(): PluginSnapshot =
         PluginSnapshot(
             id = id,
@@ -200,7 +175,6 @@ internal class VelocityPlatformAdapter(
         )
 
     private companion object {
-        const val HIGH_PING_THRESHOLD = 200.0
         val LEGACY_SERIALIZER: LegacyComponentSerializer =
             LegacyComponentSerializer.legacySection()
     }
