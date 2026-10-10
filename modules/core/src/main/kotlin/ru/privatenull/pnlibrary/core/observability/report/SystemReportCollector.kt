@@ -206,6 +206,7 @@ internal class SystemReportCollector {
                 "kernelFileHandlesUsedRatio" to ((data["kernelLimits"] as? Map<*, *>)?.get("fileHandlesUsedRatio")),
                 "kernelPidMaximum" to ((data["kernelLimits"] as? Map<*, *>)?.get("pidMaximum")),
                 "kernelThreadsMaximum" to ((data["kernelLimits"] as? Map<*, *>)?.get("threadsMaximum")),
+                "containerEffectiveCpuCount" to (data["runtimeEnvironment"] as? Map<*, *>)?.get("effectiveCpuCount"),
                 "cpuPressureAvg10" to ((data["pressureStall"] as? Map<*, *>)?.get("cpu") as? Map<*, *>)?.get("someAvg10"),
                 "memoryPressureAvg10" to ((data["pressureStall"] as? Map<*, *>)?.get("memory") as? Map<*, *>)?.get("someAvg10"),
                 "ioPressureAvg10" to ((data["pressureStall"] as? Map<*, *>)?.get("io") as? Map<*, *>)?.get("someAvg10"),
@@ -456,6 +457,8 @@ internal class SystemReportCollector {
                 "networkTransmitDrops" to ((snapshot["networkAnalytics"] as? Map<*, *>)?.get("totalTransmitDrops")),
                 "pressureStall" to snapshot["pressureStall"],
                 "kernelLimits" to snapshot["kernelLimits"],
+                "containerEffectiveCpuSet" to ((snapshot["runtimeEnvironment"] as? Map<*, *>)?.get("effectiveCpuSet")),
+                "containerEffectiveCpuCount" to ((snapshot["runtimeEnvironment"] as? Map<*, *>)?.get("effectiveCpuCount")),
                 "processReadBytes" to ((snapshot["processIo"] as? Map<*, *>)?.get("read_bytes")),
                 "processWriteBytes" to ((snapshot["processIo"] as? Map<*, *>)?.get("write_bytes")),
                 "processTcpEstablished" to ((snapshot["processNetwork"] as? Map<*, *>)?.get("tcpEstablished")),
@@ -1176,6 +1179,8 @@ internal class SystemReportCollector {
         "cpuUsageMicros" to readCgroupKey("/sys/fs/cgroup/cpu.stat", "usage_usec"),
         "cpuThrottledMicros" to readCgroupKey("/sys/fs/cgroup/cpu.stat", "throttled_usec"),
         "cpuThrottleEvents" to readCgroupKey("/sys/fs/cgroup/cpu.stat", "nr_throttled"),
+        "effectiveCpuSet" to readCgroupText("/sys/fs/cgroup/cpuset.cpus.effective"),
+        "effectiveCpuCount" to readCgroupText("/sys/fs/cgroup/cpuset.cpus.effective")?.let(::countCpuSet),
         "memoryHighEvents" to readCgroupKey("/sys/fs/cgroup/memory.events", "high"),
         "memoryMaxEvents" to readCgroupKey("/sys/fs/cgroup/memory.events", "max"),
         "memoryOomEvents" to readCgroupKey("/sys/fs/cgroup/memory.events", "oom"),
@@ -1428,6 +1433,19 @@ internal class SystemReportCollector {
                 ?.toLongOrNull()
         }
     }.getOrNull()
+
+    private fun readCgroupText(path: String): String? = runCatching {
+        File(path).takeIf(File::isFile)?.readText()?.trim()?.takeIf(String::isNotBlank)
+    }.getOrNull()
+
+    private fun countCpuSet(value: String): Int = value.split(',').sumOf { item ->
+        val bounds = item.trim().split('-').mapNotNull(String::toIntOrNull)
+        when (bounds.size) {
+            1 -> 1
+            2 -> (bounds[1] - bounds[0] + 1).coerceAtLeast(0)
+            else -> 0
+        }
+    }
 
     private fun collectNetworkInterfaces(): List<Map<String, Any?>> {
         val result = mutableListOf<Map<String, Any?>>()

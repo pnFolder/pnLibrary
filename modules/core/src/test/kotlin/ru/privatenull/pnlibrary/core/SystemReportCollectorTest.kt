@@ -96,6 +96,7 @@ class SystemReportCollectorTest {
         assertTrue(report["processAffinity"] is Map<*, *>)
         assertTrue(report["pressureStall"] is Map<*, *>)
         assertTrue(report["kernelLimits"] is Map<*, *>)
+        assertTrue((report["runtimeEnvironment"] as? Map<*, *>)?.containsKey("effectiveCpuCount") == true)
         assertTrue((report["memory"] as? Map<*, *>)?.get("bufferPools") is List<*>)
         assertTrue(((report["memory"] as? Map<*, *>)?.get("pools") as? List<*>)?.firstOrNull() is Map<*, *> ||
             ((report["memory"] as? Map<*, *>)?.get("pools") as? List<*>)?.isEmpty() == true)
@@ -109,6 +110,7 @@ class SystemReportCollectorTest {
         assertTrue((analytics["resources"] as? Map<*, *>)?.containsKey("processFileDescriptorUsedRatio") == true)
         assertTrue((analytics["resources"] as? Map<*, *>)?.containsKey("pressureStall") == true)
         assertTrue((analytics["resources"] as? Map<*, *>)?.containsKey("kernelLimits") == true)
+        assertTrue((analytics["resources"] as? Map<*, *>)?.containsKey("containerEffectiveCpuCount") == true)
         assertTrue((analytics["resources"] as? Map<*, *>)?.containsKey("bufferPoolUsedBytes") == true)
         assertTrue((analytics["resources"] as? Map<*, *>)?.containsKey("jitCompilationTimeMs") == true)
         assertTrue((analytics["resources"] as? Map<*, *>)?.containsKey("threadGroupCounts") == true)
