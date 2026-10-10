@@ -392,7 +392,7 @@ internal class SystemReportCollector {
             val hottest = (thermal?.get("maxTemperatureMilliC") as? Number)?.toDouble()
             val critical = (thermal?.get("zones") as? Collection<*>)?.mapNotNull { zone ->
                 (zone as? Map<*, *>)?.get("criticalTripMilliC") as? Number
-            }?.maxOrNull()?.toDouble()
+            }?.map { it.toDouble() }?.maxOrNull()
             if (hottest != null && critical != null && hottest >= critical) {
                 add(linkedMapOf("code" to "thermalCritical", "severity" to "critical"))
             } else if (hottest != null && critical != null && hottest >= critical * 0.9) {
