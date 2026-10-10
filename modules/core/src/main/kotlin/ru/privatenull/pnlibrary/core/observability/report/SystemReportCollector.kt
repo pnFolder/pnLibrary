@@ -299,6 +299,8 @@ internal class SystemReportCollector {
                 "cpuStealTicks" to (data["systemScheduling"] as? Map<*, *>)?.get("cpuStealTicks"),
                 "dirtyMemoryBytes" to (data["systemMemory"] as? Map<*, *>)?.get("Dirty"),
                 "writebackMemoryBytes" to (data["systemMemory"] as? Map<*, *>)?.get("Writeback"),
+                "cgroupIoReadBytes" to (((data["runtimeEnvironment"] as? Map<*, *>)?.get("io") as? Map<*, *>)?.get("readBytes")),
+                "cgroupIoWriteBytes" to (((data["runtimeEnvironment"] as? Map<*, *>)?.get("io") as? Map<*, *>)?.get("writeBytes")),
                 "cpuFrequencyAverageKHz" to (data["os"] as? Map<*, *>)?.get("cpuFrequency")
                     ?.let { it as? Map<*, *> }?.get("currentAverageKHz"),
                 "cpuFrequencyMinKHz" to (data["os"] as? Map<*, *>)?.get("cpuFrequency")
@@ -460,6 +462,9 @@ internal class SystemReportCollector {
                 "memoryMaxEvents" to (snapshot["runtimeEnvironment"] as? Map<*, *>)?.get("memoryMaxEvents"),
                 "memoryOomEvents" to (snapshot["runtimeEnvironment"] as? Map<*, *>)?.get("memoryOomEvents"),
                 "memoryOomKillEvents" to (snapshot["runtimeEnvironment"] as? Map<*, *>)?.get("memoryOomKillEvents"),
+                "memoryLowEvents" to (snapshot["runtimeEnvironment"] as? Map<*, *>)?.get("memoryLowEvents"),
+                "memoryOomGroupEvents" to (snapshot["runtimeEnvironment"] as? Map<*, *>)?.get("memoryOomGroupEvents"),
+                "cgroupIo" to (snapshot["runtimeEnvironment"] as? Map<*, *>)?.get("io"),
             ),
             "classpathAnalytics" to (java?.get("classpathAnalytics") ?: emptyMap<String, Any>()),
             "modulePathAnalytics" to (java?.get("modulePathAnalytics") ?: emptyMap<String, Any>()),
@@ -1020,6 +1025,8 @@ internal class SystemReportCollector {
             "softIrqTotalDelta" to numericDelta("softIrqTotal"),
             "dirtyMemoryBytesDelta" to numericDelta("dirtyMemoryBytes"),
             "writebackMemoryBytesDelta" to numericDelta("writebackMemoryBytes"),
+            "cgroupIoReadBytesDelta" to numericDelta("cgroupIoReadBytes"),
+            "cgroupIoWriteBytesDelta" to numericDelta("cgroupIoWriteBytes"),
             "tcpRetransmissionsDelta" to numericDelta("tcpRetransmissions"),
             "cpuIdleTicksDelta" to numericDelta("cpuIdleTicks"),
             "cpuIowaitTicksDelta" to numericDelta("cpuIowaitTicks"),
@@ -1384,13 +1391,38 @@ internal class SystemReportCollector {
         "cpuUsageMicros" to readCgroupKey("/sys/fs/cgroup/cpu.stat", "usage_usec"),
         "cpuThrottledMicros" to readCgroupKey("/sys/fs/cgroup/cpu.stat", "throttled_usec"),
         "cpuThrottleEvents" to readCgroupKey("/sys/fs/cgroup/cpu.stat", "nr_throttled"),
+        "cpuPeriods" to readCgroupKey("/sys/fs/cgroup/cpu.stat", "nr_periods"),
+        "cpuPressure" to parsePressureFile("/sys/fs/cgroup/cpu.pressure"),
         "effectiveCpuSet" to readCgroupText("/sys/fs/cgroup/cpuset.cpus.effective"),
         "effectiveCpuCount" to readCgroupText("/sys/fs/cgroup/cpuset.cpus.effective")?.let(::countCpuSet),
         "memoryHighEvents" to readCgroupKey("/sys/fs/cgroup/memory.events", "high"),
+        "memoryLowEvents" to readCgroupKey("/sys/fs/cgroup/memory.events", "low"),
         "memoryMaxEvents" to readCgroupKey("/sys/fs/cgroup/memory.events", "max"),
         "memoryOomEvents" to readCgroupKey("/sys/fs/cgroup/memory.events", "oom"),
         "memoryOomKillEvents" to readCgroupKey("/sys/fs/cgroup/memory.events", "oom_kill"),
+        "memoryOomGroupEvents" to readCgroupKey("/sys/fs/cgroup/memory.events", "oom_group"),
+        "io" to collectCgroupIo(),
     )
+
+    private fun collectCgroupIo(): Map<String, Any?> = runCatching {
+        val rows = File("/sys/fs/cgroup/io.stat").takeIf(File::isFile)?.readLines().orEmpty()
+        val devices = rows.mapNotNull { line ->
+            val parts = line.trim().split(Regex("\\s+"))
+            val device = parts.firstOrNull() ?: return@mapNotNull null
+            val values = parts.drop(1).mapNotNull { token ->
+                val separator = token.indexOf('=')
+                if (separator <= 0) null else token.substring(0, separator) to token.substring(separator + 1).toLongOrNull()
+            }.toMap()
+            linkedMapOf<String, Any?>("device" to device, "readBytes" to values["rbytes"], "writeBytes" to values["wbytes"], "discardBytes" to values["dbytes"], "readIos" to values["rios"], "writeIos" to values["wios"])
+        }
+        linkedMapOf(
+            "deviceCount" to devices.size,
+            "readBytes" to devices.sumOf { (it["readBytes"] as? Number)?.toLong() ?: 0L },
+            "writeBytes" to devices.sumOf { (it["writeBytes"] as? Number)?.toLong() ?: 0L },
+            "discardBytes" to devices.sumOf { (it["discardBytes"] as? Number)?.toLong() ?: 0L },
+            "devices" to devices.take(32),
+        )
+    }.getOrDefault(emptyMap())
 
     private fun collectProcessIo(): Map<String, Long> = runCatching {
         val file = File("/proc/self/io")
