@@ -129,6 +129,7 @@ internal class SystemReportCollector {
             "stateCounts" to threadStateCounts(threadMx),
             "contention" to threadContention(threadMx),
             "topCpuThreads" to topCpuThreads(threadMx),
+            "analytics" to collectThreadAnalytics(threadMx),
         )
         data["capabilities"] = linkedMapOf(
             "threadCpuTimeSupported" to threadMx.isThreadCpuTimeSupported,
@@ -438,6 +439,10 @@ internal class SystemReportCollector {
                 "blockedThreads" to threadStateCount(snapshot, "BLOCKED"),
                 "waitingThreads" to threadStateCount(snapshot, "WAITING"),
                 "timedWaitingThreads" to threadStateCount(snapshot, "TIMED_WAITING"),
+                "daemonThreadCountObserved" to ((threads?.get("analytics") as? Map<*, *>)?.get("daemonCount")),
+                "nonDaemonThreadCountObserved" to ((threads?.get("analytics") as? Map<*, *>)?.get("nonDaemonCount")),
+                "threadGroupCounts" to ((threads?.get("analytics") as? Map<*, *>)?.get("threadGroupCounts")),
+                "longWaitingThreadCount" to (((threads?.get("analytics") as? Map<*, *>)?.get("longWaitingThreads") as? Collection<*>)?.size),
                 "blockedTimeMs" to ((snapshot["threads"] as? Map<*, *>)?.get("contention") as? Map<*, *>)?.get("blockedTimeMs"),
                 "waitedTimeMs" to ((snapshot["threads"] as? Map<*, *>)?.get("contention") as? Map<*, *>)?.get("waitedTimeMs"),
                 "loadAverage" to snapshot["loadAverage"],
@@ -915,6 +920,36 @@ internal class SystemReportCollector {
         )
     }
 
+    private fun collectThreadAnalytics(bean: java.lang.management.ThreadMXBean): Map<String, Any?> = runCatching {
+        val infos = bean.getThreadInfo(bean.allThreadIds)?.filterNotNull().orEmpty()
+        val liveThreads = Thread.getAllStackTraces().keys.associateBy { it.id }
+        val stateCounts = infos.groupingBy { it.threadState.name }.eachCount().toSortedMap()
+        val groupCounts = infos.groupingBy { liveThreads[it.threadId]?.threadGroup?.name ?: "unknown" }
+            .eachCount().toSortedMap()
+        val longWaiting = infos.asSequence()
+            .filter { it.threadState == Thread.State.WAITING || it.threadState == Thread.State.TIMED_WAITING }
+            .map { info ->
+                linkedMapOf<String, Any?>(
+                    "id" to info.threadId,
+                    "name" to info.threadName.take(256),
+                    "state" to info.threadState.name,
+                    "daemon" to (liveThreads[info.threadId]?.isDaemon ?: false),
+                    "waitedCount" to info.waitedCount,
+                    "waitedTimeMs" to info.waitedTime.takeIf { it >= 0L },
+                )
+            }
+            .sortedByDescending { (it["waitedTimeMs"] as? Number)?.toLong() ?: 0L }
+            .take(MAX_LONG_WAITING_THREADS)
+            .toList()
+        linkedMapOf(
+            "daemonCount" to liveThreads.values.count { it.isDaemon },
+            "nonDaemonCount" to liveThreads.values.count { !it.isDaemon },
+            "stateCounts" to stateCounts,
+            "threadGroupCounts" to groupCounts,
+            "longWaitingThreads" to longWaiting,
+        )
+    }.getOrDefault(emptyMap())
+
     private fun topCpuThreads(bean: java.lang.management.ThreadMXBean): List<Map<String, Any?>> {
         if (!bean.isThreadCpuTimeSupported) return emptyList()
         val ids = bean.allThreadIds
@@ -1320,6 +1355,7 @@ internal class SystemReportCollector {
         const val MAX_NETWORK_INTERFACES = 64
         const val MAX_ADDRESSES_PER_INTERFACE = 32
         const val MAX_CPU_THREADS = 20
+        const val MAX_LONG_WAITING_THREADS = 20
         const val GC_PRESSURE_THRESHOLD = 0.25
         const val MEMORY_POOL_PRESSURE_THRESHOLD = 0.90
         val SECRET_JVM_ARGUMENT = Regex(
