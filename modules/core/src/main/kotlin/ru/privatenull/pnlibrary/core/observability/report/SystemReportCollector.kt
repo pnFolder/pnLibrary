@@ -219,6 +219,7 @@ internal class SystemReportCollector {
         data["kernelCrypto"] = collectKernelCryptoAnalytics()
         data["powerManagement"] = collectPowerManagementAnalytics()
         data["processCapabilities"] = collectProcessCapabilityAnalytics()
+        data["initSystem"] = collectInitSystemAnalytics()
         val durationMs = (System.nanoTime() - startedNanos) / 1_000_000
         data["collection"] = linkedMapOf(
             "durationMs" to durationMs,
@@ -507,6 +508,7 @@ internal class SystemReportCollector {
                 "kernelCrypto" to hasData(snapshot["kernelCrypto"]),
                 "powerManagement" to hasData(snapshot["powerManagement"]),
                 "processCapabilities" to hasData(snapshot["processCapabilities"]),
+                "initSystem" to hasData(snapshot["initSystem"]),
                 "processSchedulerDetails" to hasData(snapshot["processSchedulerDetails"]),
                 "processSignals" to hasData(snapshot["processSignals"]),
                 "processAddressSpace" to hasData(snapshot["processAddressSpace"]),
@@ -550,6 +552,7 @@ internal class SystemReportCollector {
                 "kernelCrypto" to snapshot["kernelCrypto"],
                 "powerManagement" to snapshot["powerManagement"],
                 "processCapabilities" to snapshot["processCapabilities"],
+                "initSystem" to snapshot["initSystem"],
                 "processSchedulerDetails" to snapshot["processSchedulerDetails"],
                 "processSignals" to snapshot["processSignals"],
                 "processAddressSpace" to snapshot["processAddressSpace"],
@@ -615,6 +618,7 @@ internal class SystemReportCollector {
             "kernelCrypto" to snapshot["kernelCrypto"],
             "powerManagement" to snapshot["powerManagement"],
             "processCapabilities" to snapshot["processCapabilities"],
+            "initSystem" to snapshot["initSystem"],
             "processSchedulerDetails" to snapshot["processSchedulerDetails"],
             "processSignals" to snapshot["processSignals"],
             "processAddressSpace" to snapshot["processAddressSpace"],
@@ -2450,6 +2454,26 @@ internal class SystemReportCollector {
             "seccompMode" to fields["Seccomp"],
             "speculationStoreBypass" to fields["Speculation_Store_Bypass"],
             "speculationIndirectBranch" to fields["SpeculationIndirectBranch"],
+        )
+    }.getOrDefault(emptyMap())
+
+    /** Reports PID 1 and service-manager capabilities without enumerating service names. */
+    private fun collectInitSystemAnalytics(): Map<String, Any?> = runCatching {
+        val pidOneComm = readTextFile("/proc/1/comm")
+        val pidOneExe = File("/proc/1/exe").takeIf { it.exists() }?.canonicalFile?.name
+        val systemdVersion = if (pidOneComm == "systemd" || pidOneExe == "systemd") {
+            File("/run/systemd/system").takeIf(File::isDirectory)?.let { "systemd" }
+        } else null
+        linkedMapOf(
+            "configured" to (pidOneComm != null || pidOneExe != null),
+            "pidOneName" to pidOneComm,
+            "pidOneExecutable" to pidOneExe,
+            "serviceManager" to systemdVersion,
+            "systemdSystemScope" to File("/run/systemd/system").isDirectory,
+            "systemdUserScope" to File("/run/user").isDirectory,
+            "containerManagerMarkers" to listOf(
+                "/run/systemd/container", "/run/.containerenv", "/.dockerenv", "/run/kubernetes",
+            ).filter { File(it).exists() }.map { it.substringAfterLast('/') },
         )
     }.getOrDefault(emptyMap())
 
