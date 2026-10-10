@@ -110,6 +110,7 @@ internal class SystemReportCollector {
         data["interrupts"] = collectInterruptAnalytics()
         data["kernelVmStat"] = collectKernelVmStat()
         data["diskStats"] = collectDiskStats()
+        data["kernelRuntime"] = collectKernelRuntime()
 
         // ── Memory ───────────────────────────────────────────────────────────
         val heap = memoryMx.heapMemoryUsage
@@ -283,6 +284,8 @@ internal class SystemReportCollector {
                 "pageFaults" to (data["kernelVmStat"] as? Map<*, *>)?.get("pageFaults"),
                 "diskReadSectors" to (data["diskStats"] as? Map<*, *>)?.get("readSectors"),
                 "diskWrittenSectors" to (data["diskStats"] as? Map<*, *>)?.get("writtenSectors"),
+                "entropyAvailable" to (data["kernelRuntime"] as? Map<*, *>)?.get("entropyAvailable"),
+                "cpuIdleSeconds" to (data["kernelRuntime"] as? Map<*, *>)?.get("cpuIdleSeconds"),
                 "cpuFrequencyAverageKHz" to (data["os"] as? Map<*, *>)?.get("cpuFrequency")
                     ?.let { it as? Map<*, *> }?.get("currentAverageKHz"),
                 "cpuFrequencyMinKHz" to (data["os"] as? Map<*, *>)?.get("cpuFrequency")
@@ -407,6 +410,7 @@ internal class SystemReportCollector {
                 "interrupts" to hasData(snapshot["interrupts"]),
                 "kernelVmStat" to hasData(snapshot["kernelVmStat"]),
                 "diskStats" to hasData(snapshot["diskStats"]),
+                "kernelRuntime" to hasData(snapshot["kernelRuntime"]),
             ),
             "unavailableSections" to listOf(
                 "processIo" to snapshot["processIo"],
@@ -419,6 +423,7 @@ internal class SystemReportCollector {
                 "interrupts" to snapshot["interrupts"],
                 "kernelVmStat" to snapshot["kernelVmStat"],
                 "diskStats" to snapshot["diskStats"],
+                "kernelRuntime" to snapshot["kernelRuntime"],
             ).filter { !hasData(it.second) }.map { it.first },
             "containerLimits" to linkedMapOf(
                 "memoryLimitBytes" to (snapshot["runtimeEnvironment"] as? Map<*, *>)?.get("memoryLimitBytes"),
@@ -445,6 +450,9 @@ internal class SystemReportCollector {
             "capabilities" to snapshot["capabilities"],
             "loadAverage" to snapshot["loadAverage"],
             "environmentVariables" to snapshot["environmentVariableAnalytics"],
+            "kernelVmStat" to snapshot["kernelVmStat"],
+            "diskStats" to snapshot["diskStats"],
+            "kernelRuntime" to snapshot["kernelRuntime"],
             "hostDistribution" to linkedMapOf(
                 "availableProcessors" to os?.get("availableProcessors"),
                 "distribution" to os?.get("distribution"),
@@ -510,6 +518,8 @@ internal class SystemReportCollector {
                 "swapOuts" to (snapshot["kernelVmStat"] as? Map<*, *>)?.get("swapOuts"),
                 "diskReadSectors" to (snapshot["diskStats"] as? Map<*, *>)?.get("readSectors"),
                 "diskWrittenSectors" to (snapshot["diskStats"] as? Map<*, *>)?.get("writtenSectors"),
+                "entropyAvailable" to (snapshot["kernelRuntime"] as? Map<*, *>)?.get("entropyAvailable"),
+                "cpuIdleSeconds" to (snapshot["kernelRuntime"] as? Map<*, *>)?.get("cpuIdleSeconds"),
                 "largestFileSystem" to fileSystems.orEmpty()
                     .maxByOrNull { ((it as? Map<*, *>)?.get("totalSpaceBytes") as? Number)?.toLong() ?: 0L },
                 "networkInterfacesUp" to ((snapshot["networkAnalytics"] as? Map<*, *>)?.get("upCount")),
@@ -959,6 +969,8 @@ internal class SystemReportCollector {
             "interruptTotalDelta" to numericDelta("interruptTotal"),
             "cpuFrequencyAverageKHzDelta" to numericDelta("cpuFrequencyAverageKHz"),
             "cpuFrequencyMinKHzDelta" to numericDelta("cpuFrequencyMinKHz"),
+            "entropyAvailableDelta" to numericDelta("entropyAvailable"),
+            "cpuIdleSecondsDelta" to numericDelta("cpuIdleSeconds"),
             "durationMsDelta" to numericDelta("durationMs"),
             "bufferPoolUsedBytesDelta" to numericDelta("bufferPoolUsedBytes"),
             "jitCompilationTimeMsDelta" to numericDelta("jitCompilationTimeMs"),
@@ -1502,6 +1514,19 @@ internal class SystemReportCollector {
             "writtenSectors" to devices.sumOf { (it["writtenSectors"] as Number).toLong() },
             "ioTimeMs" to devices.sumOf { (it["ioTimeMs"] as Number).toLong() },
             "devices" to devices.sortedByDescending { (it["ioTimeMs"] as Number).toLong() }.take(8),
+        )
+    }.getOrDefault(emptyMap())
+
+    /** Reads kernel-wide runtime counters that help explain startup and scheduling stalls. */
+    private fun collectKernelRuntime(): Map<String, Any?> = runCatching {
+        val uptime = readTextFile("/proc/uptime")?.trim()?.split(Regex("\\s+"))
+        linkedMapOf(
+            "entropyAvailable" to readTextFile("/proc/sys/kernel/random/entropy_avail")?.trim()?.toLongOrNull(),
+            "cpuUptimeSeconds" to uptime?.getOrNull(0)?.toDoubleOrNull(),
+            "cpuIdleSeconds" to uptime?.getOrNull(1)?.toDoubleOrNull(),
+            "loadAverage" to readTextFile("/proc/loadavg")?.trim()?.split(Regex("\\s+"))?.take(3),
+            "processCount" to readTextFile("/proc/loadavg")?.trim()?.split(Regex("\\s+"))?.getOrNull(3)
+                ?.substringAfter('/')?.toLongOrNull(),
         )
     }.getOrDefault(emptyMap())
 
