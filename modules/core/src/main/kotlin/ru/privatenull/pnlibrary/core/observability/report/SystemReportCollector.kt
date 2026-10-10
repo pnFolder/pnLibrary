@@ -208,6 +208,7 @@ internal class SystemReportCollector {
         data["kernelSysctl"] = collectKernelSysctl()
         data["blockDevices"] = collectBlockDeviceAnalytics()
         data["kernelComponents"] = collectKernelComponentAnalytics()
+        data["networkSocketQueues"] = collectNetworkSocketQueues()
         val durationMs = (System.nanoTime() - startedNanos) / 1_000_000
         data["collection"] = linkedMapOf(
             "durationMs" to durationMs,
@@ -485,6 +486,7 @@ internal class SystemReportCollector {
                 "kernelSysctl" to hasData(snapshot["kernelSysctl"]),
                 "blockDevices" to hasData(snapshot["blockDevices"]),
                 "kernelComponents" to hasData(snapshot["kernelComponents"]),
+                "networkSocketQueues" to hasData(snapshot["networkSocketQueues"]),
                 "processSchedulerDetails" to hasData(snapshot["processSchedulerDetails"]),
                 "processSignals" to hasData(snapshot["processSignals"]),
                 "processAddressSpace" to hasData(snapshot["processAddressSpace"]),
@@ -517,6 +519,7 @@ internal class SystemReportCollector {
                 "kernelSysctl" to snapshot["kernelSysctl"],
                 "blockDevices" to snapshot["blockDevices"],
                 "kernelComponents" to snapshot["kernelComponents"],
+                "networkSocketQueues" to snapshot["networkSocketQueues"],
                 "processSchedulerDetails" to snapshot["processSchedulerDetails"],
                 "processSignals" to snapshot["processSignals"],
                 "processAddressSpace" to snapshot["processAddressSpace"],
@@ -571,6 +574,7 @@ internal class SystemReportCollector {
             "kernelSysctl" to snapshot["kernelSysctl"],
             "blockDevices" to snapshot["blockDevices"],
             "kernelComponents" to snapshot["kernelComponents"],
+            "networkSocketQueues" to snapshot["networkSocketQueues"],
             "processSchedulerDetails" to snapshot["processSchedulerDetails"],
             "processSignals" to snapshot["processSignals"],
             "processAddressSpace" to snapshot["processAddressSpace"],
@@ -2143,6 +2147,35 @@ internal class SystemReportCollector {
             "modules" to modules,
             "fileSystemDriverCount" to fileSystems.size,
             "fileSystemDrivers" to fileSystems,
+        )
+    }.getOrDefault(emptyMap())
+
+    /** Reports aggregate transmit/receive queue pressure from procfs socket tables. */
+    private fun collectNetworkSocketQueues(): Map<String, Any?> = runCatching {
+        val tables = listOf("/proc/net/tcp", "/proc/net/tcp6", "/proc/net/udp", "/proc/net/udp6")
+        var socketCount = 0
+        var txBytes = 0L
+        var rxBytes = 0L
+        var queuedSockets = 0
+        tables.forEach { path ->
+            File(path).takeIf(File::isFile)?.readLines()?.drop(1).orEmpty().forEach { line ->
+                val fields = line.trim().split(Regex("\\s+"))
+                val queue = fields.getOrNull(4)?.split(':') ?: return@forEach
+                if (queue.size != 2) return@forEach
+                val tx = queue[0].toLongOrNull(16) ?: return@forEach
+                val rx = queue[1].toLongOrNull(16) ?: return@forEach
+                socketCount++
+                txBytes += tx
+                rxBytes += rx
+                if (tx > 0 || rx > 0) queuedSockets++
+            }
+        }
+        linkedMapOf(
+            "configured" to (socketCount > 0),
+            "socketCount" to socketCount,
+            "queuedSocketCount" to queuedSockets,
+            "txQueueBytes" to txBytes,
+            "rxQueueBytes" to rxBytes,
         )
     }.getOrDefault(emptyMap())
 
