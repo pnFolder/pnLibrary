@@ -113,6 +113,7 @@ internal class SystemReportCollector {
         data["kernelRuntime"] = collectKernelRuntime()
         data["softIrqs"] = collectSoftIrqAnalytics()
         data["securityRuntime"] = collectSecurityRuntime()
+        data["hardwareSensors"] = collectHardwareSensors()
 
         // ── Memory ───────────────────────────────────────────────────────────
         val heap = memoryMx.heapMemoryUsage
@@ -290,6 +291,7 @@ internal class SystemReportCollector {
                 "cpuIdleSeconds" to (data["kernelRuntime"] as? Map<*, *>)?.get("cpuIdleSeconds"),
                 "softIrqTotal" to (data["softIrqs"] as? Map<*, *>)?.get("total"),
                 "securityEnforcement" to (data["securityRuntime"] as? Map<*, *>)?.get("enforcement"),
+                "hardwareSensorCount" to (data["hardwareSensors"] as? Map<*, *>)?.get("sensorCount"),
                 "cpuIdleTicks" to (data["systemScheduling"] as? Map<*, *>)?.get("cpuIdleTicks"),
                 "cpuIowaitTicks" to (data["systemScheduling"] as? Map<*, *>)?.get("cpuIowaitTicks"),
                 "cpuStealTicks" to (data["systemScheduling"] as? Map<*, *>)?.get("cpuStealTicks"),
@@ -420,6 +422,7 @@ internal class SystemReportCollector {
                 "kernelRuntime" to hasData(snapshot["kernelRuntime"]),
                 "softIrqs" to hasData(snapshot["softIrqs"]),
                 "securityRuntime" to hasData(snapshot["securityRuntime"]),
+                "hardwareSensors" to hasData(snapshot["hardwareSensors"]),
             ),
             "unavailableSections" to listOf(
                 "processIo" to snapshot["processIo"],
@@ -435,6 +438,7 @@ internal class SystemReportCollector {
                 "kernelRuntime" to snapshot["kernelRuntime"],
                 "softIrqs" to snapshot["softIrqs"],
                 "securityRuntime" to snapshot["securityRuntime"],
+                "hardwareSensors" to snapshot["hardwareSensors"],
             ).filter { !hasData(it.second) }.map { it.first },
             "containerLimits" to linkedMapOf(
                 "memoryLimitBytes" to (snapshot["runtimeEnvironment"] as? Map<*, *>)?.get("memoryLimitBytes"),
@@ -466,6 +470,7 @@ internal class SystemReportCollector {
             "kernelRuntime" to snapshot["kernelRuntime"],
             "softIrqs" to snapshot["softIrqs"],
             "securityRuntime" to snapshot["securityRuntime"],
+            "hardwareSensors" to snapshot["hardwareSensors"],
             "hostDistribution" to linkedMapOf(
                 "availableProcessors" to os?.get("availableProcessors"),
                 "distribution" to os?.get("distribution"),
@@ -535,6 +540,7 @@ internal class SystemReportCollector {
                 "cpuIdleSeconds" to (snapshot["kernelRuntime"] as? Map<*, *>)?.get("cpuIdleSeconds"),
                 "softIrqTotal" to (snapshot["softIrqs"] as? Map<*, *>)?.get("total"),
                 "securityEnforcement" to (snapshot["securityRuntime"] as? Map<*, *>)?.get("enforcement"),
+                "hardwareSensorCount" to (snapshot["hardwareSensors"] as? Map<*, *>)?.get("sensorCount"),
                 "cpuIdleTicks" to (snapshot["systemScheduling"] as? Map<*, *>)?.get("cpuIdleTicks"),
                 "cpuIowaitTicks" to (snapshot["systemScheduling"] as? Map<*, *>)?.get("cpuIowaitTicks"),
                 "cpuStealTicks" to (snapshot["systemScheduling"] as? Map<*, *>)?.get("cpuStealTicks"),
@@ -1592,6 +1598,35 @@ internal class SystemReportCollector {
                 selinux != null || appArmor != null -> "available"
                 else -> "unknown"
             },
+        )
+    }.getOrDefault(emptyMap())
+
+    /** Reads bounded hwmon sensor values and exposes only normalized labels and numbers. */
+    private fun collectHardwareSensors(): Map<String, Any?> = runCatching {
+        val sensors = File("/sys/class/hwmon").listFiles().orEmpty()
+            .filter(File::isDirectory)
+            .flatMap { chip ->
+                val chipName = readTextFile(File(chip, "name").path)?.trim().orEmpty().ifBlank { chip.name }
+                chip.listFiles().orEmpty().mapNotNull { file ->
+                    val match = Regex("(temp|fan|in|power)(\\d+)_(input|label)").matchEntire(file.name)
+                        ?: return@mapNotNull null
+                    if (!file.name.endsWith("_input")) return@mapNotNull null
+                    val value = readTextFile(file.path)?.trim()?.toLongOrNull() ?: return@mapNotNull null
+                    linkedMapOf<String, Any?>(
+                        "chip" to chipName.take(64),
+                        "kind" to match.groupValues[1],
+                        "index" to match.groupValues[2].toIntOrNull(),
+                        "value" to value,
+                    )
+                }
+            }.take(64)
+        linkedMapOf(
+            "sensorCount" to sensors.size,
+            "temperatureCount" to sensors.count { it["kind"] == "temp" },
+            "fanCount" to sensors.count { it["kind"] == "fan" },
+            "voltageCount" to sensors.count { it["kind"] == "in" },
+            "powerCount" to sensors.count { it["kind"] == "power" },
+            "sensors" to sensors,
         )
     }.getOrDefault(emptyMap())
 
