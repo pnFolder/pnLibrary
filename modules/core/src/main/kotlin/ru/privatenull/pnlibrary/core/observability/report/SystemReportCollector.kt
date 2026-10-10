@@ -962,10 +962,18 @@ internal class SystemReportCollector {
             ?.split(Regex("\\s+")) ?: return@runCatching emptyMap()
         val runnable = values.getOrNull(3)?.substringBefore('/')?.toIntOrNull()
         val processes = values.getOrNull(3)?.substringAfter('/')?.toIntOrNull()
+        val processors = Runtime.getRuntime().availableProcessors().coerceAtLeast(1)
+        val oneMinute = values.getOrNull(0)?.toDoubleOrNull()
+        val fiveMinutes = values.getOrNull(1)?.toDoubleOrNull()
+        val fifteenMinutes = values.getOrNull(2)?.toDoubleOrNull()
         linkedMapOf(
-            "oneMinute" to values.getOrNull(0)?.toDoubleOrNull(),
-            "fiveMinutes" to values.getOrNull(1)?.toDoubleOrNull(),
-            "fifteenMinutes" to values.getOrNull(2)?.toDoubleOrNull(),
+            "oneMinute" to oneMinute,
+            "fiveMinutes" to fiveMinutes,
+            "fifteenMinutes" to fifteenMinutes,
+            "processorCount" to processors,
+            "oneMinutePerProcessor" to oneMinute?.div(processors),
+            "fiveMinutesPerProcessor" to fiveMinutes?.div(processors),
+            "fifteenMinutesPerProcessor" to fifteenMinutes?.div(processors),
             "runnableProcesses" to runnable,
             "totalProcesses" to processes,
         )
