@@ -221,6 +221,7 @@ internal class SystemReportCollector {
         data["processCapabilities"] = collectProcessCapabilityAnalytics()
         data["initSystem"] = collectInitSystemAnalytics()
         data["kernelSandbox"] = collectKernelSandboxAnalytics()
+        data["fileLocks"] = collectFileLockAnalytics()
         val durationMs = (System.nanoTime() - startedNanos) / 1_000_000
         data["collection"] = linkedMapOf(
             "durationMs" to durationMs,
@@ -511,6 +512,7 @@ internal class SystemReportCollector {
                 "processCapabilities" to hasData(snapshot["processCapabilities"]),
                 "initSystem" to hasData(snapshot["initSystem"]),
                 "kernelSandbox" to hasData(snapshot["kernelSandbox"]),
+                "fileLocks" to hasData(snapshot["fileLocks"]),
                 "processSchedulerDetails" to hasData(snapshot["processSchedulerDetails"]),
                 "processSignals" to hasData(snapshot["processSignals"]),
                 "processAddressSpace" to hasData(snapshot["processAddressSpace"]),
@@ -556,6 +558,7 @@ internal class SystemReportCollector {
                 "processCapabilities" to snapshot["processCapabilities"],
                 "initSystem" to snapshot["initSystem"],
                 "kernelSandbox" to snapshot["kernelSandbox"],
+                "fileLocks" to snapshot["fileLocks"],
                 "processSchedulerDetails" to snapshot["processSchedulerDetails"],
                 "processSignals" to snapshot["processSignals"],
                 "processAddressSpace" to snapshot["processAddressSpace"],
@@ -623,6 +626,7 @@ internal class SystemReportCollector {
             "processCapabilities" to snapshot["processCapabilities"],
             "initSystem" to snapshot["initSystem"],
             "kernelSandbox" to snapshot["kernelSandbox"],
+            "fileLocks" to snapshot["fileLocks"],
             "processSchedulerDetails" to snapshot["processSchedulerDetails"],
             "processSignals" to snapshot["processSignals"],
             "processAddressSpace" to snapshot["processAddressSpace"],
@@ -2494,6 +2498,24 @@ internal class SystemReportCollector {
             "cgroupNamespacePresent" to File("/proc/self/ns/cgroup").exists(),
             "mountNamespacePresent" to File("/proc/self/ns/mnt").exists(),
             "userNamespacePresent" to File("/proc/self/ns/user").exists(),
+        )
+    }.getOrDefault(emptyMap())
+
+    /** Reports aggregate file-lock pressure without exposing paths, owners, or inode identifiers. */
+    private fun collectFileLockAnalytics(): Map<String, Any?> = runCatching {
+        val rows = File("/proc/locks").takeIf(File::isFile)?.readLines().orEmpty()
+        val typeCounts = rows.mapNotNull { row ->
+            val fields = row.trim().split(Regex("\\s+"))
+            fields.getOrNull(1)?.let { type -> type to fields.getOrNull(3) }
+        }.groupingBy { it.first }.eachCount().toSortedMap()
+        val modeCounts = rows.mapNotNull { row ->
+            row.trim().split(Regex("\\s+")).getOrNull(2)
+        }.groupingBy { it }.eachCount().toSortedMap()
+        linkedMapOf(
+            "configured" to rows.isNotEmpty(),
+            "total" to rows.size,
+            "byType" to typeCounts,
+            "byMode" to modeCounts,
         )
     }.getOrDefault(emptyMap())
 
