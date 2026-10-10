@@ -202,6 +202,7 @@ internal class SystemReportCollector {
         data["networkProtocolStats"] = collectNetworkProtocolStats()
         data["networkSoftnetStats"] = collectNetworkSoftnetStats()
         data["networkRoutes"] = collectNetworkRouteAnalytics()
+        data["networkResolver"] = collectNetworkResolverAnalytics()
         val durationMs = (System.nanoTime() - startedNanos) / 1_000_000
         data["collection"] = linkedMapOf(
             "durationMs" to durationMs,
@@ -312,6 +313,7 @@ internal class SystemReportCollector {
                 "tcpRetransmissions" to (data["networkProtocolStats"] as? Map<*, *>)?.get("tcpRetransmissions"),
                 "softnetDropped" to (data["networkSoftnetStats"] as? Map<*, *>)?.get("dropped"),
                 "defaultRouteCount" to (data["networkRoutes"] as? Map<*, *>)?.get("defaultRouteCount"),
+                "dnsNameserverCount" to (data["networkResolver"] as? Map<*, *>)?.get("nameserverCount"),
                 "cpuIdleTicks" to (data["systemScheduling"] as? Map<*, *>)?.get("cpuIdleTicks"),
                 "cpuIowaitTicks" to (data["systemScheduling"] as? Map<*, *>)?.get("cpuIowaitTicks"),
                 "cpuStealTicks" to (data["systemScheduling"] as? Map<*, *>)?.get("cpuStealTicks"),
@@ -471,6 +473,7 @@ internal class SystemReportCollector {
                 "networkProtocolStats" to hasData(snapshot["networkProtocolStats"]),
                 "networkSoftnetStats" to hasData(snapshot["networkSoftnetStats"]),
                 "networkRoutes" to hasData(snapshot["networkRoutes"]),
+                "networkResolver" to hasData(snapshot["networkResolver"]),
                 "processSchedulerDetails" to hasData(snapshot["processSchedulerDetails"]),
                 "processSignals" to hasData(snapshot["processSignals"]),
                 "processAddressSpace" to hasData(snapshot["processAddressSpace"]),
@@ -497,6 +500,7 @@ internal class SystemReportCollector {
                 "networkProtocolStats" to snapshot["networkProtocolStats"],
                 "networkSoftnetStats" to snapshot["networkSoftnetStats"],
                 "networkRoutes" to snapshot["networkRoutes"],
+                "networkResolver" to snapshot["networkResolver"],
                 "processSchedulerDetails" to snapshot["processSchedulerDetails"],
                 "processSignals" to snapshot["processSignals"],
                 "processAddressSpace" to snapshot["processAddressSpace"],
@@ -545,6 +549,7 @@ internal class SystemReportCollector {
             "networkProtocolStats" to snapshot["networkProtocolStats"],
             "networkSoftnetStats" to snapshot["networkSoftnetStats"],
             "networkRoutes" to snapshot["networkRoutes"],
+            "networkResolver" to snapshot["networkResolver"],
             "processSchedulerDetails" to snapshot["processSchedulerDetails"],
             "processSignals" to snapshot["processSignals"],
             "processAddressSpace" to snapshot["processAddressSpace"],
@@ -629,6 +634,7 @@ internal class SystemReportCollector {
                 "tcpRetransmissions" to (snapshot["networkProtocolStats"] as? Map<*, *>)?.get("tcpRetransmissions"),
                 "softnetDropped" to (snapshot["networkSoftnetStats"] as? Map<*, *>)?.get("dropped"),
                 "defaultRouteCount" to (snapshot["networkRoutes"] as? Map<*, *>)?.get("defaultRouteCount"),
+                "dnsNameserverCount" to (snapshot["networkResolver"] as? Map<*, *>)?.get("nameserverCount"),
                 "tcpRetransmissions" to (snapshot["networkProtocolStats"] as? Map<*, *>)?.get("tcpRetransmissions"),
                 "cpuIdleTicks" to (snapshot["systemScheduling"] as? Map<*, *>)?.get("cpuIdleTicks"),
                 "cpuIowaitTicks" to (snapshot["systemScheduling"] as? Map<*, *>)?.get("cpuIowaitTicks"),
@@ -1998,6 +2004,23 @@ internal class SystemReportCollector {
             "defaultRouteCount" to routes.count { it["isDefault"] == true && it["up"] == true },
             "upRouteCount" to routes.count { it["up"] == true },
             "gatewayRouteCount" to routes.count { it["gatewayConfigured"] == true },
+        )
+    }.getOrDefault(emptyMap())
+
+    /** Summarizes resolver configuration without exposing nameserver addresses or domain names. */
+    private fun collectNetworkResolverAnalytics(): Map<String, Any?> = runCatching {
+        val lines = File("/etc/resolv.conf").takeIf(File::isFile)?.readLines().orEmpty()
+        val nameservers = lines.count { it.trimStart().startsWith("nameserver ") }
+        val searchDomains = lines.firstOrNull { it.trimStart().startsWith("search ") }
+            ?.trim()?.split(Regex("\\s+")).orEmpty().drop(1).size
+        val options = lines.firstOrNull { it.trimStart().startsWith("options ") }
+            ?.trim()?.split(Regex("\\s+")).orEmpty().drop(1)
+        linkedMapOf(
+            "configured" to lines.isNotEmpty(),
+            "nameserverCount" to nameservers,
+            "searchDomainCount" to searchDomains,
+            "optionCount" to options.size,
+            "options" to options.take(16),
         )
     }.getOrDefault(emptyMap())
 
