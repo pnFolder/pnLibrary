@@ -872,9 +872,19 @@ internal class SystemReportCollector {
             ?.substringAfter(':')?.trim()?.toDoubleOrNull()
         val flags = lines.firstOrNull { it.startsWith("flags") || it.startsWith("Features") }
             ?.substringAfter(':')?.trim()?.split(Regex("\\s+"))?.filter(String::isNotBlank).orEmpty()
+        val physicalCores = lines.filter { it.startsWith("physical id") }
+            .mapNotNull { it.substringAfter(':').trim().toIntOrNull() }
+            .zip(lines.filter { it.startsWith("core id") }
+                .mapNotNull { it.substringAfter(':').trim().toIntOrNull() })
+            .toSet()
+        val socketCount = lines.filter { it.startsWith("physical id") }
+            .mapNotNull { it.substringAfter(':').trim().toIntOrNull() }
+            .toSet()
         linkedMapOf(
             "model" to model,
             "logicalProcessorCount" to lines.count { it.startsWith("processor") },
+            "physicalCoreCount" to physicalCores.size.takeIf { it > 0 },
+            "socketCount" to socketCount.size.takeIf { it > 0 },
             "reportedFrequencyMHz" to frequency,
             "flagCount" to flags.distinct().size,
         )

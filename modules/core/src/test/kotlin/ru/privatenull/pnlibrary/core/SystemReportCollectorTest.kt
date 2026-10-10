@@ -97,6 +97,7 @@ class SystemReportCollectorTest {
         val os = report["os"] as? Map<*, *>
             ?: error("os section is missing")
         assertTrue(os["cpuTopology"] is Map<*, *>)
+        assertTrue((os["cpuTopology"] as? Map<*, *>)?.containsKey("physicalCoreCount") == true)
         val java = report["java"] as? Map<*, *>
             ?: error("java section is missing")
         assertTrue((java["classpathAnalytics"] as? Map<*, *>)?.containsKey("duplicateNameCount") == true)
