@@ -194,6 +194,7 @@ internal class SystemReportCollector {
         data["networkSummary"] = collectNetworkSummary()
         data["networkAnalytics"] = collectNetworkAnalytics()
         data["networkProtocolStats"] = collectNetworkProtocolStats()
+        data["networkSoftnetStats"] = collectNetworkSoftnetStats()
         val durationMs = (System.nanoTime() - startedNanos) / 1_000_000
         data["collection"] = linkedMapOf(
             "durationMs" to durationMs,
@@ -302,6 +303,7 @@ internal class SystemReportCollector {
                 "vmSwappiness" to (data["kernelVmPolicy"] as? Map<*, *>)?.get("swappiness"),
                 "schedulerLatencyNs" to (data["kernelSchedulerPolicy"] as? Map<*, *>)?.get("latencyNs"),
                 "tcpRetransmissions" to (data["networkProtocolStats"] as? Map<*, *>)?.get("tcpRetransmissions"),
+                "softnetDropped" to (data["networkSoftnetStats"] as? Map<*, *>)?.get("dropped"),
                 "cpuIdleTicks" to (data["systemScheduling"] as? Map<*, *>)?.get("cpuIdleTicks"),
                 "cpuIowaitTicks" to (data["systemScheduling"] as? Map<*, *>)?.get("cpuIowaitTicks"),
                 "cpuStealTicks" to (data["systemScheduling"] as? Map<*, *>)?.get("cpuStealTicks"),
@@ -456,6 +458,7 @@ internal class SystemReportCollector {
                 "kernelVmPolicy" to hasData(snapshot["kernelVmPolicy"]),
                 "kernelSchedulerPolicy" to hasData(snapshot["kernelSchedulerPolicy"]),
                 "networkProtocolStats" to hasData(snapshot["networkProtocolStats"]),
+                "networkSoftnetStats" to hasData(snapshot["networkSoftnetStats"]),
                 "processSchedulerDetails" to hasData(snapshot["processSchedulerDetails"]),
                 "processSignals" to hasData(snapshot["processSignals"]),
             ),
@@ -478,6 +481,7 @@ internal class SystemReportCollector {
                 "kernelVmPolicy" to snapshot["kernelVmPolicy"],
                 "kernelSchedulerPolicy" to snapshot["kernelSchedulerPolicy"],
                 "networkProtocolStats" to snapshot["networkProtocolStats"],
+                "networkSoftnetStats" to snapshot["networkSoftnetStats"],
                 "processSchedulerDetails" to snapshot["processSchedulerDetails"],
                 "processSignals" to snapshot["processSignals"],
             ).filter { !hasData(it.second) }.map { it.first },
@@ -522,6 +526,7 @@ internal class SystemReportCollector {
             "kernelVmPolicy" to snapshot["kernelVmPolicy"],
             "kernelSchedulerPolicy" to snapshot["kernelSchedulerPolicy"],
             "networkProtocolStats" to snapshot["networkProtocolStats"],
+            "networkSoftnetStats" to snapshot["networkSoftnetStats"],
             "processSchedulerDetails" to snapshot["processSchedulerDetails"],
             "processSignals" to snapshot["processSignals"],
             "hostDistribution" to linkedMapOf(
@@ -602,6 +607,7 @@ internal class SystemReportCollector {
                 "vmSwappiness" to (snapshot["kernelVmPolicy"] as? Map<*, *>)?.get("swappiness"),
                 "schedulerLatencyNs" to (snapshot["kernelSchedulerPolicy"] as? Map<*, *>)?.get("latencyNs"),
                 "tcpRetransmissions" to (snapshot["networkProtocolStats"] as? Map<*, *>)?.get("tcpRetransmissions"),
+                "softnetDropped" to (snapshot["networkSoftnetStats"] as? Map<*, *>)?.get("dropped"),
                 "tcpRetransmissions" to (snapshot["networkProtocolStats"] as? Map<*, *>)?.get("tcpRetransmissions"),
                 "cpuIdleTicks" to (snapshot["systemScheduling"] as? Map<*, *>)?.get("cpuIdleTicks"),
                 "cpuIowaitTicks" to (snapshot["systemScheduling"] as? Map<*, *>)?.get("cpuIowaitTicks"),
@@ -611,6 +617,7 @@ internal class SystemReportCollector {
                 "pendingSignalCount" to (snapshot["processSignals"] as? Map<*, *>)?.get("pendingCount"),
                 "tcpListenDrops" to (((snapshot["networkProtocolStats"] as? Map<*, *>)?.get("tcpExt") as? Map<*, *>)?.get("ListenDrops")),
                 "tcpListenOverflows" to (((snapshot["networkProtocolStats"] as? Map<*, *>)?.get("tcpExt") as? Map<*, *>)?.get("ListenOverflows")),
+                "softnetDropped" to (snapshot["networkSoftnetStats"] as? Map<*, *>)?.get("dropped"),
                 "largestFileSystem" to fileSystems.orEmpty()
                     .maxByOrNull { ((it as? Map<*, *>)?.get("totalSpaceBytes") as? Number)?.toLong() ?: 0L },
                 "networkInterfacesUp" to ((snapshot["networkAnalytics"] as? Map<*, *>)?.get("upCount")),
@@ -1079,6 +1086,7 @@ internal class SystemReportCollector {
             "tcpRetransmissionsDelta" to numericDelta("tcpRetransmissions"),
             "tcpListenDropsDelta" to numericDelta("tcpListenDrops"),
             "tcpListenOverflowsDelta" to numericDelta("tcpListenOverflows"),
+            "softnetDroppedDelta" to numericDelta("softnetDropped"),
             "cpuIdleTicksDelta" to numericDelta("cpuIdleTicks"),
             "cpuIowaitTicksDelta" to numericDelta("cpuIowaitTicks"),
             "cpuStealTicksDelta" to numericDelta("cpuStealTicks"),
@@ -1884,6 +1892,25 @@ internal class SystemReportCollector {
             index += 2
         }
         result
+    }.getOrDefault(emptyMap())
+
+    /** Aggregates per-CPU Linux network backlog drops and time-squeeze events. */
+    private fun collectNetworkSoftnetStats(): Map<String, Any?> = runCatching {
+        val rows = File("/proc/net/softnet_stat").takeIf(File::isFile)?.readLines().orEmpty()
+        val parsed = rows.mapNotNull { line ->
+            val fields = line.trim().split(Regex("\\s+"))
+            if (fields.size < 3) return@mapNotNull null
+            val processed = fields[0].toLongOrNull(16) ?: return@mapNotNull null
+            val dropped = fields[1].toLongOrNull(16) ?: return@mapNotNull null
+            val squeezed = fields[2].toLongOrNull(16) ?: return@mapNotNull null
+            linkedMapOf<String, Long>("processed" to processed, "dropped" to dropped, "timeSqueeze" to squeezed)
+        }
+        linkedMapOf(
+            "cpuCount" to parsed.size,
+            "processed" to parsed.sumOf { it["processed"] ?: 0L },
+            "dropped" to parsed.sumOf { it["dropped"] ?: 0L },
+            "timeSqueeze" to parsed.sumOf { it["timeSqueeze"] ?: 0L },
+        )
     }.getOrDefault(emptyMap())
 
     private fun collectProcessNetwork(): Map<String, Any?> = runCatching {
