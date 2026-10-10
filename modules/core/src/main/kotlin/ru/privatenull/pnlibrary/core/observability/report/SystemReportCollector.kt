@@ -239,6 +239,7 @@ internal class SystemReportCollector {
         data["kernelRcu"] = collectKernelRcuAnalytics()
         data["threadCpuSummary"] = collectThreadCpuSummary(threadMx)
         data["memoryPoolPressure"] = collectMemoryPoolPressure()
+        data["processFdFlags"] = collectProcessFdFlagAnalytics()
         data["networkKernelPolicy"] = collectNetworkKernelPolicy()
         val durationMs = (System.nanoTime() - startedNanos) / 1_000_000
         data["collection"] = linkedMapOf(
@@ -548,6 +549,7 @@ internal class SystemReportCollector {
                 "kernelRcu" to hasData(snapshot["kernelRcu"]),
                 "threadCpuSummary" to hasData(snapshot["threadCpuSummary"]),
                 "memoryPoolPressure" to hasData(snapshot["memoryPoolPressure"]),
+                "processFdFlags" to hasData(snapshot["processFdFlags"]),
                 "networkKernelPolicy" to hasData(snapshot["networkKernelPolicy"]),
                 "processSchedulerDetails" to hasData(snapshot["processSchedulerDetails"]),
                 "processSignals" to hasData(snapshot["processSignals"]),
@@ -612,6 +614,7 @@ internal class SystemReportCollector {
                 "kernelRcu" to snapshot["kernelRcu"],
                 "threadCpuSummary" to snapshot["threadCpuSummary"],
                 "memoryPoolPressure" to snapshot["memoryPoolPressure"],
+                "processFdFlags" to snapshot["processFdFlags"],
                 "networkKernelPolicy" to snapshot["networkKernelPolicy"],
                 "processSchedulerDetails" to snapshot["processSchedulerDetails"],
                 "processSignals" to snapshot["processSignals"],
@@ -698,6 +701,7 @@ internal class SystemReportCollector {
             "kernelRcu" to snapshot["kernelRcu"],
             "threadCpuSummary" to snapshot["threadCpuSummary"],
             "memoryPoolPressure" to snapshot["memoryPoolPressure"],
+            "processFdFlags" to snapshot["processFdFlags"],
             "networkKernelPolicy" to snapshot["networkKernelPolicy"],
             "processSchedulerDetails" to snapshot["processSchedulerDetails"],
             "processSignals" to snapshot["processSignals"],
@@ -2890,6 +2894,24 @@ internal class SystemReportCollector {
             "configured" to pools.isNotEmpty(),
             "poolCount" to pools.size,
             "pools" to pools,
+        )
+    }.getOrDefault(emptyMap())
+
+    /** Reports aggregate open-file status flags without retaining descriptor paths or numbers. */
+    private fun collectProcessFdFlagAnalytics(): Map<String, Any?> = runCatching {
+        val flags = File("/proc/self/fdinfo").takeIf(File::isDirectory)?.listFiles().orEmpty()
+            .mapNotNull { descriptor ->
+                File(descriptor, "flags").takeIf(File::isFile)?.readText()?.trim()?.removePrefix("0")?.toLongOrNull(8)
+            }
+        fun has(mask: Long) = flags.count { it and mask != 0L }
+        linkedMapOf(
+            "configured" to flags.isNotEmpty(),
+            "descriptorCount" to flags.size,
+            "readWriteCount" to has(3L),
+            "appendCount" to has(1024L),
+            "nonBlockingCount" to has(2048L),
+            "closeOnExecCount" to has(524288L),
+            "syncCount" to has(1052672L),
         )
     }.getOrDefault(emptyMap())
 
