@@ -116,6 +116,7 @@ internal class SystemReportCollector {
         data["softIrqs"] = collectSoftIrqAnalytics()
         data["securityRuntime"] = collectSecurityRuntime()
         data["hardwareSensors"] = collectHardwareSensors()
+        data["numaMemory"] = collectNumaMemory()
 
         // ── Memory ───────────────────────────────────────────────────────────
         val heap = memoryMx.heapMemoryUsage
@@ -295,6 +296,7 @@ internal class SystemReportCollector {
                 "softIrqTotal" to (data["softIrqs"] as? Map<*, *>)?.get("total"),
                 "securityEnforcement" to (data["securityRuntime"] as? Map<*, *>)?.get("enforcement"),
                 "hardwareSensorCount" to (data["hardwareSensors"] as? Map<*, *>)?.get("sensorCount"),
+                "numaNodeCount" to (data["numaMemory"] as? Map<*, *>)?.get("nodeCount"),
                 "tcpRetransmissions" to (data["networkProtocolStats"] as? Map<*, *>)?.get("tcpRetransmissions"),
                 "cpuIdleTicks" to (data["systemScheduling"] as? Map<*, *>)?.get("cpuIdleTicks"),
                 "cpuIowaitTicks" to (data["systemScheduling"] as? Map<*, *>)?.get("cpuIowaitTicks"),
@@ -434,6 +436,7 @@ internal class SystemReportCollector {
                 "softIrqs" to hasData(snapshot["softIrqs"]),
                 "securityRuntime" to hasData(snapshot["securityRuntime"]),
                 "hardwareSensors" to hasData(snapshot["hardwareSensors"]),
+                "numaMemory" to hasData(snapshot["numaMemory"]),
                 "networkProtocolStats" to hasData(snapshot["networkProtocolStats"]),
                 "processSchedulerDetails" to hasData(snapshot["processSchedulerDetails"]),
                 "processSignals" to hasData(snapshot["processSignals"]),
@@ -453,6 +456,7 @@ internal class SystemReportCollector {
                 "softIrqs" to snapshot["softIrqs"],
                 "securityRuntime" to snapshot["securityRuntime"],
                 "hardwareSensors" to snapshot["hardwareSensors"],
+                "numaMemory" to snapshot["numaMemory"],
                 "networkProtocolStats" to snapshot["networkProtocolStats"],
                 "processSchedulerDetails" to snapshot["processSchedulerDetails"],
                 "processSignals" to snapshot["processSignals"],
@@ -493,6 +497,7 @@ internal class SystemReportCollector {
             "softIrqs" to snapshot["softIrqs"],
             "securityRuntime" to snapshot["securityRuntime"],
             "hardwareSensors" to snapshot["hardwareSensors"],
+            "numaMemory" to snapshot["numaMemory"],
             "networkProtocolStats" to snapshot["networkProtocolStats"],
             "processSchedulerDetails" to snapshot["processSchedulerDetails"],
             "processSignals" to snapshot["processSignals"],
@@ -570,6 +575,7 @@ internal class SystemReportCollector {
                 "inactiveFileBytes" to (snapshot["systemMemory"] as? Map<*, *>)?.get("Inactive_file"),
                 "securityEnforcement" to (snapshot["securityRuntime"] as? Map<*, *>)?.get("enforcement"),
                 "hardwareSensorCount" to (snapshot["hardwareSensors"] as? Map<*, *>)?.get("sensorCount"),
+                "numaNodeCount" to (snapshot["numaMemory"] as? Map<*, *>)?.get("nodeCount"),
                 "tcpRetransmissions" to (snapshot["networkProtocolStats"] as? Map<*, *>)?.get("tcpRetransmissions"),
                 "tcpRetransmissions" to (snapshot["networkProtocolStats"] as? Map<*, *>)?.get("tcpRetransmissions"),
                 "cpuIdleTicks" to (snapshot["systemScheduling"] as? Map<*, *>)?.get("cpuIdleTicks"),
@@ -1723,6 +1729,31 @@ internal class SystemReportCollector {
             "voltageCount" to sensors.count { it["kind"] == "in" },
             "powerCount" to sensors.count { it["kind"] == "power" },
             "sensors" to sensors,
+        )
+    }.getOrDefault(emptyMap())
+
+    /** Summarizes NUMA node memory without exposing topology paths or process mappings. */
+    private fun collectNumaMemory(): Map<String, Any?> = runCatching {
+        val nodes = File("/sys/devices/system/node").listFiles().orEmpty()
+            .filter { it.isDirectory && it.name.matches(Regex("node\\d+")) }
+            .mapNotNull { node ->
+                val values = File(node, "meminfo").takeIf(File::isFile)?.readLines().orEmpty()
+                    .mapNotNull { line ->
+                        val parts = line.trim().split(Regex("\\s+"))
+                        if (parts.size < 2) null else parts[0].removeSuffix(":") to parts[1].toLongOrNull()
+                    }.toMap()
+                linkedMapOf<String, Any?>(
+                    "node" to node.name.removePrefix("node").toIntOrNull(),
+                    "totalBytes" to values["MemTotal"]?.times(1024L),
+                    "freeBytes" to values["MemFree"]?.times(1024L),
+                    "usedBytes" to values["MemTotal"]?.minus(values["MemFree"] ?: 0L)?.times(1024L),
+                )
+            }
+        linkedMapOf(
+            "nodeCount" to nodes.size,
+            "totalBytes" to nodes.sumOf { (it["totalBytes"] as? Number)?.toLong() ?: 0L },
+            "freeBytes" to nodes.sumOf { (it["freeBytes"] as? Number)?.toLong() ?: 0L },
+            "nodes" to nodes,
         )
     }.getOrDefault(emptyMap())
 
