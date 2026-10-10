@@ -278,6 +278,10 @@ internal class SystemReportCollector {
                 "processSystemCpuTicks" to (data["processScheduling"] as? Map<*, *>)?.get("systemCpuTicks"),
                 "maxTemperatureMilliC" to (data["thermalZones"] as? Map<*, *>)?.get("maxTemperatureMilliC"),
                 "interruptTotal" to (data["interrupts"] as? Map<*, *>)?.get("total"),
+                "cpuFrequencyAverageKHz" to (data["os"] as? Map<*, *>)?.get("cpuFrequency")
+                    ?.let { it as? Map<*, *> }?.get("currentAverageKHz"),
+                "cpuFrequencyMinKHz" to (data["os"] as? Map<*, *>)?.get("cpuFrequency")
+                    ?.let { it as? Map<*, *> }?.get("currentMinKHz"),
             ),
         )
         while (collectionHistory.size > 32) collectionHistory.removeFirst()
@@ -939,6 +943,8 @@ internal class SystemReportCollector {
             "processSystemCpuTicksDelta" to numericDelta("processSystemCpuTicks"),
             "maxTemperatureMilliCDelta" to numericDelta("maxTemperatureMilliC"),
             "interruptTotalDelta" to numericDelta("interruptTotal"),
+            "cpuFrequencyAverageKHzDelta" to numericDelta("cpuFrequencyAverageKHz"),
+            "cpuFrequencyMinKHzDelta" to numericDelta("cpuFrequencyMinKHz"),
             "durationMsDelta" to numericDelta("durationMs"),
             "bufferPoolUsedBytesDelta" to numericDelta("bufferPoolUsedBytes"),
             "jitCompilationTimeMsDelta" to numericDelta("jitCompilationTimeMs"),
