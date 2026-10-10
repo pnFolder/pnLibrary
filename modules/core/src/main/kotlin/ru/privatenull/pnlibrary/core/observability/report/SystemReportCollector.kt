@@ -222,6 +222,7 @@ internal class SystemReportCollector {
         data["initSystem"] = collectInitSystemAnalytics()
         data["kernelSandbox"] = collectKernelSandboxAnalytics()
         data["fileLocks"] = collectFileLockAnalytics()
+        data["kernelDebugPolicy"] = collectKernelDebugPolicy()
         val durationMs = (System.nanoTime() - startedNanos) / 1_000_000
         data["collection"] = linkedMapOf(
             "durationMs" to durationMs,
@@ -513,6 +514,7 @@ internal class SystemReportCollector {
                 "initSystem" to hasData(snapshot["initSystem"]),
                 "kernelSandbox" to hasData(snapshot["kernelSandbox"]),
                 "fileLocks" to hasData(snapshot["fileLocks"]),
+                "kernelDebugPolicy" to hasData(snapshot["kernelDebugPolicy"]),
                 "processSchedulerDetails" to hasData(snapshot["processSchedulerDetails"]),
                 "processSignals" to hasData(snapshot["processSignals"]),
                 "processAddressSpace" to hasData(snapshot["processAddressSpace"]),
@@ -559,6 +561,7 @@ internal class SystemReportCollector {
                 "initSystem" to snapshot["initSystem"],
                 "kernelSandbox" to snapshot["kernelSandbox"],
                 "fileLocks" to snapshot["fileLocks"],
+                "kernelDebugPolicy" to snapshot["kernelDebugPolicy"],
                 "processSchedulerDetails" to snapshot["processSchedulerDetails"],
                 "processSignals" to snapshot["processSignals"],
                 "processAddressSpace" to snapshot["processAddressSpace"],
@@ -627,6 +630,7 @@ internal class SystemReportCollector {
             "initSystem" to snapshot["initSystem"],
             "kernelSandbox" to snapshot["kernelSandbox"],
             "fileLocks" to snapshot["fileLocks"],
+            "kernelDebugPolicy" to snapshot["kernelDebugPolicy"],
             "processSchedulerDetails" to snapshot["processSchedulerDetails"],
             "processSignals" to snapshot["processSignals"],
             "processAddressSpace" to snapshot["processAddressSpace"],
@@ -2516,6 +2520,23 @@ internal class SystemReportCollector {
             "total" to rows.size,
             "byType" to typeCounts,
             "byMode" to modeCounts,
+        )
+    }.getOrDefault(emptyMap())
+
+    /** Reports kernel observability restrictions that affect diagnostics and profilers. */
+    private fun collectKernelDebugPolicy(): Map<String, Any?> = runCatching {
+        val values = linkedMapOf(
+            "dmesgRestrict" to readLongFile("/proc/sys/kernel/dmesg_restrict"),
+            "kptrRestrict" to readLongFile("/proc/sys/kernel/kptr_restrict"),
+            "perfEventParanoid" to readLongFile("/proc/sys/kernel/perf_event_paranoid"),
+            "ptraceScope" to readLongFile("/proc/sys/kernel/yama/ptrace_scope"),
+            "printk" to readTextFile("/proc/sys/kernel/printk"),
+            "kexecLoadDisabled" to readLongFile("/proc/sys/kernel/kexec_load_disabled"),
+            "coreUsesPid" to readLongFile("/proc/sys/kernel/core_uses_pid"),
+        )
+        linkedMapOf(
+            "configured" to values.values.any { it != null },
+            "values" to values,
         )
     }.getOrDefault(emptyMap())
 
