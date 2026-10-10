@@ -218,6 +218,7 @@ internal class SystemReportCollector {
         data["bootSecurity"] = collectBootSecurityAnalytics()
         data["kernelCrypto"] = collectKernelCryptoAnalytics()
         data["powerManagement"] = collectPowerManagementAnalytics()
+        data["processCapabilities"] = collectProcessCapabilityAnalytics()
         val durationMs = (System.nanoTime() - startedNanos) / 1_000_000
         data["collection"] = linkedMapOf(
             "durationMs" to durationMs,
@@ -505,6 +506,7 @@ internal class SystemReportCollector {
                 "bootSecurity" to hasData(snapshot["bootSecurity"]),
                 "kernelCrypto" to hasData(snapshot["kernelCrypto"]),
                 "powerManagement" to hasData(snapshot["powerManagement"]),
+                "processCapabilities" to hasData(snapshot["processCapabilities"]),
                 "processSchedulerDetails" to hasData(snapshot["processSchedulerDetails"]),
                 "processSignals" to hasData(snapshot["processSignals"]),
                 "processAddressSpace" to hasData(snapshot["processAddressSpace"]),
@@ -547,6 +549,7 @@ internal class SystemReportCollector {
                 "bootSecurity" to snapshot["bootSecurity"],
                 "kernelCrypto" to snapshot["kernelCrypto"],
                 "powerManagement" to snapshot["powerManagement"],
+                "processCapabilities" to snapshot["processCapabilities"],
                 "processSchedulerDetails" to snapshot["processSchedulerDetails"],
                 "processSignals" to snapshot["processSignals"],
                 "processAddressSpace" to snapshot["processAddressSpace"],
@@ -611,6 +614,7 @@ internal class SystemReportCollector {
             "bootSecurity" to snapshot["bootSecurity"],
             "kernelCrypto" to snapshot["kernelCrypto"],
             "powerManagement" to snapshot["powerManagement"],
+            "processCapabilities" to snapshot["processCapabilities"],
             "processSchedulerDetails" to snapshot["processSchedulerDetails"],
             "processSignals" to snapshot["processSignals"],
             "processAddressSpace" to snapshot["processAddressSpace"],
@@ -2424,6 +2428,28 @@ internal class SystemReportCollector {
             "idleDriver" to readTextFile("${cpuRoot.path}/cpuidle/current_driver"),
             "idleStates" to idleStates,
             "rtcDevices" to File("/sys/class/rtc").listFiles().orEmpty().map { it.name }.sorted().take(16),
+        )
+    }.getOrDefault(emptyMap())
+
+    /** Reports process capabilities and sandbox mode without resolving capability names or identities. */
+    private fun collectProcessCapabilityAnalytics(): Map<String, Any?> = runCatching {
+        val fields = File("/proc/self/status").takeIf(File::isFile)?.readLines().orEmpty()
+            .mapNotNull { line ->
+                val separator = line.indexOf(':')
+                if (separator <= 0) null else line.substring(0, separator) to line.substring(separator + 1).trim()
+            }.toMap()
+        linkedMapOf(
+            "configured" to fields.isNotEmpty(),
+            "capInheritable" to fields["CapInh"],
+            "capPermitted" to fields["CapPrm"],
+            "capEffective" to fields["CapEff"],
+            "capBnd" to fields["CapBnd"],
+            "capAmbient" to fields["CapAmb"],
+            "noNewPrivileges" to fields["NoNewPrivs"]?.toIntOrNull()?.let { it == 1 },
+            "secureBits" to fields["Seccomp"]?.toIntOrNull(),
+            "seccompMode" to fields["Seccomp"],
+            "speculationStoreBypass" to fields["Speculation_Store_Bypass"],
+            "speculationIndirectBranch" to fields["SpeculationIndirectBranch"],
         )
     }.getOrDefault(emptyMap())
 
