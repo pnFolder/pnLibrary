@@ -237,6 +237,7 @@ internal class SystemReportCollector {
         data["cgroupMembership"] = collectCgroupMembershipAnalytics()
         data["processTimers"] = collectProcessTimerAnalytics()
         data["kernelRcu"] = collectKernelRcuAnalytics()
+        data["threadCpuSummary"] = collectThreadCpuSummary(threadMx)
         data["networkKernelPolicy"] = collectNetworkKernelPolicy()
         val durationMs = (System.nanoTime() - startedNanos) / 1_000_000
         data["collection"] = linkedMapOf(
@@ -544,6 +545,7 @@ internal class SystemReportCollector {
                 "cgroupMembership" to hasData(snapshot["cgroupMembership"]),
                 "processTimers" to hasData(snapshot["processTimers"]),
                 "kernelRcu" to hasData(snapshot["kernelRcu"]),
+                "threadCpuSummary" to hasData(snapshot["threadCpuSummary"]),
                 "networkKernelPolicy" to hasData(snapshot["networkKernelPolicy"]),
                 "processSchedulerDetails" to hasData(snapshot["processSchedulerDetails"]),
                 "processSignals" to hasData(snapshot["processSignals"]),
@@ -606,6 +608,7 @@ internal class SystemReportCollector {
                 "cgroupMembership" to snapshot["cgroupMembership"],
                 "processTimers" to snapshot["processTimers"],
                 "kernelRcu" to snapshot["kernelRcu"],
+                "threadCpuSummary" to snapshot["threadCpuSummary"],
                 "networkKernelPolicy" to snapshot["networkKernelPolicy"],
                 "processSchedulerDetails" to snapshot["processSchedulerDetails"],
                 "processSignals" to snapshot["processSignals"],
@@ -690,6 +693,7 @@ internal class SystemReportCollector {
             "cgroupMembership" to snapshot["cgroupMembership"],
             "processTimers" to snapshot["processTimers"],
             "kernelRcu" to snapshot["kernelRcu"],
+            "threadCpuSummary" to snapshot["threadCpuSummary"],
             "networkKernelPolicy" to snapshot["networkKernelPolicy"],
             "processSchedulerDetails" to snapshot["processSchedulerDetails"],
             "processSignals" to snapshot["processSignals"],
@@ -2838,6 +2842,26 @@ internal class SystemReportCollector {
             "blockedCount" to infos.count { it.threadState == Thread.State.BLOCKED },
             "waitingCount" to infos.count { it.threadState == Thread.State.WAITING || it.threadState == Thread.State.TIMED_WAITING },
             "lockOwnerCount" to infos.count { it.lockOwnerId >= 0 },
+        )
+    }.getOrDefault(emptyMap())
+
+    /** Reports aggregate thread CPU accounting without retaining thread names or IDs. */
+    private fun collectThreadCpuSummary(bean: java.lang.management.ThreadMXBean): Map<String, Any?> = runCatching {
+        val supported = bean.isThreadCpuTimeSupported
+        val enabled = supported && bean.isThreadCpuTimeEnabled
+        val ids = bean.allThreadIds
+        val cpuTimes = if (enabled) ids.map { bean.getThreadCpuTime(it) } else emptyList()
+        val userTimes = if (enabled) ids.map { bean.getThreadUserTime(it) } else emptyList()
+        val measuredCpuCount = cpuTimes.count { it >= 0L }
+        val measuredUserCount = userTimes.count { it >= 0L }
+        linkedMapOf(
+            "configured" to supported,
+            "enabled" to enabled,
+            "sampledThreadCount" to ids.size,
+            "cpuMeasuredThreadCount" to measuredCpuCount,
+            "userMeasuredThreadCount" to measuredUserCount,
+            "totalCpuTimeNanoseconds" to cpuTimes.filter { it >= 0L }.sum(),
+            "totalUserTimeNanoseconds" to userTimes.filter { it >= 0L }.sum(),
         )
     }.getOrDefault(emptyMap())
 
