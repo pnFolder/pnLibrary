@@ -1074,6 +1074,8 @@ internal class SystemReportCollector {
             .flatMap { path -> readProcSocketStates(path) }
         val udp = listOf("/proc/self/net/udp", "/proc/self/net/udp6")
             .flatMap { path -> readProcSocketStates(path) }
+        val unixSockets = File("/proc/self/net/unix").takeIf(File::isFile)
+            ?.readLines()?.drop(1)?.count() ?: 0
         linkedMapOf(
             "tcpSockets" to tcp.size,
             "tcpStateCounts" to tcp.groupingBy { it }.eachCount().toSortedMap(),
@@ -1082,6 +1084,7 @@ internal class SystemReportCollector {
             "tcpTimeWait" to tcp.count { it == "06" },
             "udpSockets" to udp.size,
             "udpStateCounts" to udp.groupingBy { it }.eachCount().toSortedMap(),
+            "unixSockets" to unixSockets,
         )
     }.getOrDefault(emptyMap())
 
