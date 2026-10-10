@@ -101,6 +101,7 @@ internal class SystemReportCollector {
         data["processNamespaces"] = collectProcessNamespaces()
         data["processOomPolicy"] = collectProcessOomPolicy()
         data["processMemoryMaps"] = collectProcessMemoryMaps()
+        data["processAddressSpace"] = collectProcessAddressSpace()
         data["processFileDescriptors"] = collectProcessFileDescriptors()
         data["processLimits"] = collectProcessLimits()
         data["kernelLimits"] = collectKernelLimits()
@@ -314,6 +315,7 @@ internal class SystemReportCollector {
                 "processSchedulerVoluntarySwitches" to (data["processSchedulerDetails"] as? Map<*, *>)?.get("voluntaryContextSwitches"),
                 "processSchedulerMigrations" to (data["processSchedulerDetails"] as? Map<*, *>)?.get("migrations"),
                 "pendingSignalCount" to (data["processSignals"] as? Map<*, *>)?.get("pendingCount"),
+                "virtualMemoryBytes" to (data["processAddressSpace"] as? Map<*, *>)?.get("virtualBytes"),
                 "tcpListenDrops" to (((data["networkProtocolStats"] as? Map<*, *>)?.get("tcpExt") as? Map<*, *>)?.get("ListenDrops")),
                 "tcpListenOverflows" to (((data["networkProtocolStats"] as? Map<*, *>)?.get("tcpExt") as? Map<*, *>)?.get("ListenOverflows")),
                 "dirtyMemoryBytes" to (data["systemMemory"] as? Map<*, *>)?.get("Dirty"),
@@ -465,6 +467,7 @@ internal class SystemReportCollector {
                 "networkSoftnetStats" to hasData(snapshot["networkSoftnetStats"]),
                 "processSchedulerDetails" to hasData(snapshot["processSchedulerDetails"]),
                 "processSignals" to hasData(snapshot["processSignals"]),
+                "processAddressSpace" to hasData(snapshot["processAddressSpace"]),
             ),
             "unavailableSections" to listOf(
                 "processIo" to snapshot["processIo"],
@@ -488,6 +491,7 @@ internal class SystemReportCollector {
                 "networkSoftnetStats" to snapshot["networkSoftnetStats"],
                 "processSchedulerDetails" to snapshot["processSchedulerDetails"],
                 "processSignals" to snapshot["processSignals"],
+                "processAddressSpace" to snapshot["processAddressSpace"],
             ).filter { !hasData(it.second) }.map { it.first },
             "containerLimits" to linkedMapOf(
                 "memoryLimitBytes" to (snapshot["runtimeEnvironment"] as? Map<*, *>)?.get("memoryLimitBytes"),
@@ -533,6 +537,7 @@ internal class SystemReportCollector {
             "networkSoftnetStats" to snapshot["networkSoftnetStats"],
             "processSchedulerDetails" to snapshot["processSchedulerDetails"],
             "processSignals" to snapshot["processSignals"],
+            "processAddressSpace" to snapshot["processAddressSpace"],
             "hostDistribution" to linkedMapOf(
                 "availableProcessors" to os?.get("availableProcessors"),
                 "distribution" to os?.get("distribution"),
@@ -619,6 +624,7 @@ internal class SystemReportCollector {
                 "processSchedulerVoluntarySwitches" to (snapshot["processSchedulerDetails"] as? Map<*, *>)?.get("voluntaryContextSwitches"),
                 "processSchedulerMigrations" to (snapshot["processSchedulerDetails"] as? Map<*, *>)?.get("migrations"),
                 "pendingSignalCount" to (snapshot["processSignals"] as? Map<*, *>)?.get("pendingCount"),
+                "virtualMemoryBytes" to (snapshot["processAddressSpace"] as? Map<*, *>)?.get("virtualBytes"),
                 "tcpListenDrops" to (((snapshot["networkProtocolStats"] as? Map<*, *>)?.get("tcpExt") as? Map<*, *>)?.get("ListenDrops")),
                 "tcpListenOverflows" to (((snapshot["networkProtocolStats"] as? Map<*, *>)?.get("tcpExt") as? Map<*, *>)?.get("ListenOverflows")),
                 "softnetDropped" to (snapshot["networkSoftnetStats"] as? Map<*, *>)?.get("dropped"),
@@ -2064,6 +2070,22 @@ internal class SystemReportCollector {
             val value = line.substring(separator + 1).trim().split(' ').firstOrNull()?.toLongOrNull()
             value?.let { key to it * 1024L }
         }.toMap()
+    }.getOrDefault(emptyMap())
+
+    /** Reads compact address-space counters from procfs; values are normalized to bytes. */
+    private fun collectProcessAddressSpace(): Map<String, Any?> = runCatching {
+        val values = File("/proc/self/statm").takeIf(File::isFile)?.readText()?.trim()
+            ?.split(Regex("\\s+"))?.mapNotNull(String::toLongOrNull).orEmpty()
+        val pageSize = 4096L
+        linkedMapOf(
+            "virtualBytes" to values.getOrNull(0)?.times(pageSize),
+            "residentBytes" to values.getOrNull(1)?.times(pageSize),
+            "sharedBytes" to values.getOrNull(2)?.times(pageSize),
+            "textBytes" to values.getOrNull(3)?.times(pageSize),
+            "libraryBytes" to values.getOrNull(4)?.times(pageSize),
+            "dataBytes" to values.getOrNull(5)?.times(pageSize),
+            "dirtyBytes" to values.getOrNull(6)?.times(pageSize),
+        )
     }.getOrDefault(emptyMap())
 
     private fun collectProcessFileDescriptors(): Map<String, Any?> = runCatching {
