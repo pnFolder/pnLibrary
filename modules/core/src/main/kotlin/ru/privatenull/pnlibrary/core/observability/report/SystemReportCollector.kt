@@ -305,7 +305,21 @@ internal class SystemReportCollector {
                 "fileSystems" to (fileSystems != null),
                 "network" to (snapshot["networkAnalytics"] != null),
                 "javaRuntime" to (java != null),
+                "processIo" to hasData(snapshot["processIo"]),
+                "processNetwork" to hasData(snapshot["processNetwork"]),
+                "processStatus" to hasData(snapshot["processStatus"]),
+                "processLimits" to hasData(snapshot["processLimits"]),
+                "processScheduling" to hasData(snapshot["processScheduling"]),
+                "loadAverage" to hasData(snapshot["loadAverage"]),
             ),
+            "unavailableSections" to listOf(
+                "processIo" to snapshot["processIo"],
+                "processNetwork" to snapshot["processNetwork"],
+                "processStatus" to snapshot["processStatus"],
+                "processLimits" to snapshot["processLimits"],
+                "processScheduling" to snapshot["processScheduling"],
+                "loadAverage" to snapshot["loadAverage"],
+            ).filter { !hasData(it.second) }.map { it.first },
             "containerLimits" to linkedMapOf(
                 "memoryLimitBytes" to (snapshot["runtimeEnvironment"] as? Map<*, *>)?.get("memoryLimitBytes"),
                 "memoryCurrentBytes" to (snapshot["runtimeEnvironment"] as? Map<*, *>)?.get("memoryCurrentBytes"),
@@ -736,6 +750,13 @@ internal class SystemReportCollector {
         val open = (descriptors?.get("open") as? Number)?.toDouble() ?: return null
         val max = (descriptors["max"] as? Number)?.toDouble() ?: return null
         return max.takeIf { it > 0.0 }?.let { open / it }
+    }
+
+    private fun hasData(value: Any?): Boolean = when (value) {
+        is Map<*, *> -> value.isNotEmpty()
+        is Collection<*> -> value.isNotEmpty()
+        null -> false
+        else -> true
     }
 
     private fun swapUsedBytes(cpu: Map<*, *>?): Long? {
