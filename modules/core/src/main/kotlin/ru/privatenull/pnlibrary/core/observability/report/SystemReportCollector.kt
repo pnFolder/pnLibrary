@@ -233,6 +233,7 @@ internal class SystemReportCollector {
         data["memoryCompaction"] = collectMemoryCompactionAnalytics()
         data["kernelFaultPolicy"] = collectKernelFaultPolicy()
         data["processFdTypes"] = collectProcessFdTypeAnalytics()
+        data["threadStates"] = collectThreadStateAnalytics(threadMx)
         val durationMs = (System.nanoTime() - startedNanos) / 1_000_000
         data["collection"] = linkedMapOf(
             "durationMs" to durationMs,
@@ -535,6 +536,7 @@ internal class SystemReportCollector {
                 "memoryCompaction" to hasData(snapshot["memoryCompaction"]),
                 "kernelFaultPolicy" to hasData(snapshot["kernelFaultPolicy"]),
                 "processFdTypes" to hasData(snapshot["processFdTypes"]),
+                "threadStates" to hasData(snapshot["threadStates"]),
                 "processSchedulerDetails" to hasData(snapshot["processSchedulerDetails"]),
                 "processSignals" to hasData(snapshot["processSignals"]),
                 "processAddressSpace" to hasData(snapshot["processAddressSpace"]),
@@ -592,6 +594,7 @@ internal class SystemReportCollector {
                 "memoryCompaction" to snapshot["memoryCompaction"],
                 "kernelFaultPolicy" to snapshot["kernelFaultPolicy"],
                 "processFdTypes" to snapshot["processFdTypes"],
+                "threadStates" to snapshot["threadStates"],
                 "processSchedulerDetails" to snapshot["processSchedulerDetails"],
                 "processSignals" to snapshot["processSignals"],
                 "processAddressSpace" to snapshot["processAddressSpace"],
@@ -671,6 +674,7 @@ internal class SystemReportCollector {
             "memoryCompaction" to snapshot["memoryCompaction"],
             "kernelFaultPolicy" to snapshot["kernelFaultPolicy"],
             "processFdTypes" to snapshot["processFdTypes"],
+            "threadStates" to snapshot["threadStates"],
             "processSchedulerDetails" to snapshot["processSchedulerDetails"],
             "processSignals" to snapshot["processSignals"],
             "processAddressSpace" to snapshot["processAddressSpace"],
@@ -2803,6 +2807,21 @@ internal class SystemReportCollector {
             "configured" to counts.isNotEmpty(),
             "total" to counts.values.sum(),
             "byType" to counts.toSortedMap(),
+        )
+    }.getOrDefault(emptyMap())
+
+    /** Reports aggregate JVM thread states without retaining names, stack traces, or lock identities. */
+    private fun collectThreadStateAnalytics(bean: java.lang.management.ThreadMXBean): Map<String, Any?> = runCatching {
+        val infos = bean.getThreadInfo(bean.allThreadIds, 0).orEmpty().filterNotNull()
+        val states = infos.groupingBy { it.threadState.name }.eachCount().toSortedMap()
+        linkedMapOf(
+            "configured" to infos.isNotEmpty(),
+            "sampledCount" to infos.size,
+            "stateCounts" to states,
+            "daemonCount" to infos.count { it.isDaemon },
+            "blockedCount" to infos.count { it.threadState == Thread.State.BLOCKED },
+            "waitingCount" to infos.count { it.threadState == Thread.State.WAITING || it.threadState == Thread.State.TIMED_WAITING },
+            "lockOwnerCount" to infos.count { it.lockOwnerId >= 0 },
         )
     }.getOrDefault(emptyMap())
 
