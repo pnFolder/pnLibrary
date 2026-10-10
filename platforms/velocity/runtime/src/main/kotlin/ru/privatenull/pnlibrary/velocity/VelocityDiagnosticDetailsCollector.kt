@@ -1,31 +1,11 @@
 package ru.privatenull.pnlibrary.velocity
 
-import com.velocitypowered.api.plugin.PluginDescription
 import com.velocitypowered.api.proxy.ProxyServer
-import net.kyori.adventure.text.serializer.legacy.LegacyComponentSerializer
-import org.slf4j.Logger
-import ru.privatenull.pnlibrary.api.commands.CommandRegistration
-import ru.privatenull.pnlibrary.api.logging.LogLevel
-import ru.privatenull.pnlibrary.api.platform.PlatformType
-import ru.privatenull.pnlibrary.api.plugin.PluginMetadata
-import ru.privatenull.pnlibrary.api.remote.RemotePolicyContext
-import ru.privatenull.pnlibrary.api.runtime.PnLibrary
-import ru.privatenull.pnlibrary.core.updates.ProxyUpdateCommand
-import ru.privatenull.pnlibrary.spi.audiences.PlatformAudienceAdapter
-import ru.privatenull.pnlibrary.spi.commands.PlatformCommandAdapter
-import ru.privatenull.pnlibrary.spi.metrics.PlatformMetricsFactory
-import ru.privatenull.pnlibrary.spi.platform.PlatformAdapter
-import ru.privatenull.pnlibrary.spi.platform.PlatformSnapshot
-import ru.privatenull.pnlibrary.spi.platform.PluginSnapshot
 import ru.privatenull.pnlibrary.spi.platform.DiagnosticDetailsCollector
-import ru.privatenull.pnlibrary.spi.tasks.PlatformTaskAdapter
-import ru.privatenull.pnlibrary.velocity.commands.VelocityCommandAdapter
-import ru.privatenull.pnlibrary.velocity.tasks.VelocityTaskAdapter
-import java.nio.file.Path
+import ru.privatenull.pnlibrary.spi.platform.PlatformSnapshot
 import java.io.File
 import java.io.FileInputStream
 import java.security.MessageDigest
-import java.util.concurrent.atomic.AtomicBoolean
 import kotlin.time.TimeSource
 
 internal class VelocityDiagnosticDetailsCollector(private val server: ProxyServer) {
