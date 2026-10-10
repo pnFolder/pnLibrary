@@ -94,6 +94,7 @@ internal class SystemReportCollector {
         data["processLimits"] = collectProcessLimits()
         data["processScheduling"] = collectProcessScheduling()
         data["loadAverage"] = collectLoadAverage()
+        data["pressureStall"] = collectPressureStall()
 
         // ── Memory ───────────────────────────────────────────────────────────
         val heap = memoryMx.heapMemoryUsage
@@ -200,6 +201,10 @@ internal class SystemReportCollector {
                 "processPssBytes" to (data["processMemoryMaps"] as? Map<*, *>)?.get("Pss"),
                 "openFileDescriptorCount" to (data["processFileDescriptors"] as? Map<*, *>)?.get("total"),
                 "allowedCpuCount" to (data["processAffinity"] as? Map<*, *>)?.get("allowedCpuCount"),
+                "cpuPressureAvg10" to ((data["pressureStall"] as? Map<*, *>)?.get("cpu") as? Map<*, *>)?.get("someAvg10"),
+                "memoryPressureAvg10" to ((data["pressureStall"] as? Map<*, *>)?.get("memory") as? Map<*, *>)?.get("someAvg10"),
+                "ioPressureAvg10" to ((data["pressureStall"] as? Map<*, *>)?.get("io") as? Map<*, *>)?.get("someAvg10"),
+                "pressureStall" to data["pressureStall"],
                 "containerMemoryCurrent" to (data["runtimeEnvironment"] as? Map<*, *>)?.get("memoryCurrentBytes"),
                 "containerCpuThrottled" to (data["runtimeEnvironment"] as? Map<*, *>)?.get("cpuThrottledMicros"),
                 "containerMemoryHighEvents" to (data["runtimeEnvironment"] as? Map<*, *>)?.get("memoryHighEvents"),
@@ -444,6 +449,7 @@ internal class SystemReportCollector {
                 "networkTransmitErrors" to ((snapshot["networkAnalytics"] as? Map<*, *>)?.get("totalTransmitErrors")),
                 "networkReceiveDrops" to ((snapshot["networkAnalytics"] as? Map<*, *>)?.get("totalReceiveDrops")),
                 "networkTransmitDrops" to ((snapshot["networkAnalytics"] as? Map<*, *>)?.get("totalTransmitDrops")),
+                "pressureStall" to snapshot["pressureStall"],
                 "processReadBytes" to ((snapshot["processIo"] as? Map<*, *>)?.get("read_bytes")),
                 "processWriteBytes" to ((snapshot["processIo"] as? Map<*, *>)?.get("write_bytes")),
                 "processTcpEstablished" to ((snapshot["processNetwork"] as? Map<*, *>)?.get("tcpEstablished")),
@@ -1207,6 +1213,26 @@ internal class SystemReportCollector {
             "runnableProcesses" to runnable,
             "totalProcesses" to processes,
         )
+    }.getOrDefault(emptyMap())
+
+    private fun collectPressureStall(): Map<String, Any?> = runCatching {
+        linkedMapOf<String, Any?>().apply {
+            listOf("cpu", "memory", "io").forEach { resource ->
+                val lines = File("/proc/pressure/$resource").takeIf(File::isFile)?.readLines().orEmpty()
+                if (lines.isEmpty()) return@forEach
+                val values = linkedMapOf<String, Any?>()
+                lines.forEach { line ->
+                    val parts = line.trim().split(Regex("\\s+"))
+                    val category = parts.firstOrNull() ?: return@forEach
+                    parts.drop(1).forEach { part ->
+                        val key = part.substringBefore('=')
+                        val value = part.substringAfter('=', "").toDoubleOrNull()
+                        if (value != null) values["${category}${key.replaceFirstChar(Char::uppercase)}"] = value
+                    }
+                }
+                put(resource, values)
+            }
+        }
     }.getOrDefault(emptyMap())
 
     private fun collectEnvironmentVariableAnalytics(): Map<String, Any?> {
