@@ -99,6 +99,7 @@ internal class SystemReportCollector {
         data["systemScheduling"] = collectSystemScheduling()
         data["loadAverage"] = collectLoadAverage()
         data["pressureStall"] = collectPressureStall()
+        data["systemMemory"] = collectSystemMemory()
 
         // ── Memory ───────────────────────────────────────────────────────────
         val heap = memoryMx.heapMemoryUsage
@@ -215,6 +216,7 @@ internal class SystemReportCollector {
                 "memoryPressureAvg10" to ((data["pressureStall"] as? Map<*, *>)?.get("memory") as? Map<*, *>)?.get("someAvg10"),
                 "ioPressureAvg10" to ((data["pressureStall"] as? Map<*, *>)?.get("io") as? Map<*, *>)?.get("someAvg10"),
                 "pressureStall" to data["pressureStall"],
+                "systemMemoryAvailableBytes" to (data["systemMemory"] as? Map<*, *>)?.get("MemAvailable"),
                 "containerMemoryCurrent" to (data["runtimeEnvironment"] as? Map<*, *>)?.get("memoryCurrentBytes"),
                 "containerCpuThrottled" to (data["runtimeEnvironment"] as? Map<*, *>)?.get("cpuThrottledMicros"),
                 "containerMemoryHighEvents" to (data["runtimeEnvironment"] as? Map<*, *>)?.get("memoryHighEvents"),
@@ -464,6 +466,7 @@ internal class SystemReportCollector {
                 "pressureStall" to snapshot["pressureStall"],
                 "kernelLimits" to snapshot["kernelLimits"],
                 "systemScheduling" to snapshot["systemScheduling"],
+                "systemMemory" to snapshot["systemMemory"],
                 "containerEffectiveCpuSet" to ((snapshot["runtimeEnvironment"] as? Map<*, *>)?.get("effectiveCpuSet")),
                 "containerEffectiveCpuCount" to ((snapshot["runtimeEnvironment"] as? Map<*, *>)?.get("effectiveCpuCount")),
                 "processReadBytes" to ((snapshot["processIo"] as? Map<*, *>)?.get("read_bytes")),
@@ -1273,6 +1276,22 @@ internal class SystemReportCollector {
                 put(resource, values)
             }
         }
+    }.getOrDefault(emptyMap())
+
+    private fun collectSystemMemory(): Map<String, Long> = runCatching {
+        val keys = setOf(
+            "MemTotal", "MemFree", "MemAvailable", "Buffers", "Cached", "SReclaimable",
+            "Shmem", "Slab", "PageTables", "CommitLimit", "Committed_AS", "SwapTotal", "SwapFree",
+            "AnonPages", "Mapped", "Unevictable", "HugePages_Total", "HugePages_Free",
+        )
+        File("/proc/meminfo").takeIf(File::isFile)?.readLines().orEmpty().mapNotNull { line ->
+            val separator = line.indexOf(':')
+            if (separator <= 0) return@mapNotNull null
+            val key = line.substring(0, separator)
+            if (key !in keys) return@mapNotNull null
+            val value = line.substring(separator + 1).trim().split(' ').firstOrNull()?.toLongOrNull()
+            value?.let { key to it * 1024L }
+        }.toMap()
     }.getOrDefault(emptyMap())
 
     private fun collectEnvironmentVariableAnalytics(): Map<String, Any?> {
