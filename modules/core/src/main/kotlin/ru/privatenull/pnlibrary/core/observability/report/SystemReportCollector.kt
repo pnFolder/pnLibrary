@@ -388,6 +388,16 @@ internal class SystemReportCollector {
             ) {
                 add(linkedMapOf("code" to "containerMemoryPressure", "severity" to "elevated"))
             }
+            val thermal = snapshot["thermalZones"] as? Map<*, *>
+            val hottest = (thermal?.get("maxTemperatureMilliC") as? Number)?.toDouble()
+            val critical = (thermal?.get("zones") as? Collection<*>)?.mapNotNull { zone ->
+                (zone as? Map<*, *>)?.get("criticalTripMilliC") as? Number
+            }?.maxOrNull()?.toDouble()
+            if (hottest != null && critical != null && hottest >= critical) {
+                add(linkedMapOf("code" to "thermalCritical", "severity" to "critical"))
+            } else if (hottest != null && critical != null && hottest >= critical * 0.9) {
+                add(linkedMapOf("code" to "thermalHigh", "severity" to "elevated"))
+            }
         }
 
         val classLoading = snapshot["classes"] as? Map<*, *>
