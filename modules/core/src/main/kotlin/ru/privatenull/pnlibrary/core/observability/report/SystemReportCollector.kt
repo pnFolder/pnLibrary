@@ -235,6 +235,7 @@ internal class SystemReportCollector {
         data["processFdTypes"] = collectProcessFdTypeAnalytics()
         data["threadStates"] = collectThreadStateAnalytics(threadMx)
         data["cgroupMembership"] = collectCgroupMembershipAnalytics()
+        data["processTimers"] = collectProcessTimerAnalytics()
         val durationMs = (System.nanoTime() - startedNanos) / 1_000_000
         data["collection"] = linkedMapOf(
             "durationMs" to durationMs,
@@ -539,6 +540,7 @@ internal class SystemReportCollector {
                 "processFdTypes" to hasData(snapshot["processFdTypes"]),
                 "threadStates" to hasData(snapshot["threadStates"]),
                 "cgroupMembership" to hasData(snapshot["cgroupMembership"]),
+                "processTimers" to hasData(snapshot["processTimers"]),
                 "processSchedulerDetails" to hasData(snapshot["processSchedulerDetails"]),
                 "processSignals" to hasData(snapshot["processSignals"]),
                 "processAddressSpace" to hasData(snapshot["processAddressSpace"]),
@@ -598,6 +600,7 @@ internal class SystemReportCollector {
                 "processFdTypes" to snapshot["processFdTypes"],
                 "threadStates" to snapshot["threadStates"],
                 "cgroupMembership" to snapshot["cgroupMembership"],
+                "processTimers" to snapshot["processTimers"],
                 "processSchedulerDetails" to snapshot["processSchedulerDetails"],
                 "processSignals" to snapshot["processSignals"],
                 "processAddressSpace" to snapshot["processAddressSpace"],
@@ -679,6 +682,7 @@ internal class SystemReportCollector {
             "processFdTypes" to snapshot["processFdTypes"],
             "threadStates" to snapshot["threadStates"],
             "cgroupMembership" to snapshot["cgroupMembership"],
+            "processTimers" to snapshot["processTimers"],
             "processSchedulerDetails" to snapshot["processSchedulerDetails"],
             "processSignals" to snapshot["processSignals"],
             "processAddressSpace" to snapshot["processAddressSpace"],
@@ -2845,6 +2849,20 @@ internal class SystemReportCollector {
             "controllerNames" to entries.flatMap { it["controllers"] as? List<*> ?: emptyList<Any?>() }
                 .filterIsInstance<String>().distinct().sorted(),
             "entries" to entries,
+        )
+    }.getOrDefault(emptyMap())
+
+    /** Reports process timer slack and aggregate timer capabilities without timer IDs. */
+    private fun collectProcessTimerAnalytics(): Map<String, Any?> = runCatching {
+        val timerEntries = File("/proc/self/timers").takeIf(File::isFile)?.readLines().orEmpty()
+        linkedMapOf(
+            "configured" to (File("/proc/self/timerslack_ns").isFile || timerEntries.isNotEmpty()),
+            "timerSlackNanoseconds" to readLongFile("/proc/self/timerslack_ns"),
+            "activePosixTimerCount" to timerEntries.count { it.trimStart().startsWith("ID:") },
+            "monotonicClockAvailable" to runCatching { System.nanoTime() >= 0L }.getOrDefault(false),
+            "timerFdPresent" to File("/proc/self/fd").listFiles().orEmpty().any { descriptor ->
+                runCatching { descriptor.canonicalPath.contains("timerfd") }.getOrDefault(false)
+            },
         )
     }.getOrDefault(emptyMap())
 
