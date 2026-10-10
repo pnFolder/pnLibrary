@@ -336,6 +336,10 @@ internal class SystemReportCollector {
                 "cpuUsageMicros" to (snapshot["runtimeEnvironment"] as? Map<*, *>)?.get("cpuUsageMicros"),
                 "cpuThrottledMicros" to (snapshot["runtimeEnvironment"] as? Map<*, *>)?.get("cpuThrottledMicros"),
                 "cpuThrottleEvents" to (snapshot["runtimeEnvironment"] as? Map<*, *>)?.get("cpuThrottleEvents"),
+                "memoryHighEvents" to (snapshot["runtimeEnvironment"] as? Map<*, *>)?.get("memoryHighEvents"),
+                "memoryMaxEvents" to (snapshot["runtimeEnvironment"] as? Map<*, *>)?.get("memoryMaxEvents"),
+                "memoryOomEvents" to (snapshot["runtimeEnvironment"] as? Map<*, *>)?.get("memoryOomEvents"),
+                "memoryOomKillEvents" to (snapshot["runtimeEnvironment"] as? Map<*, *>)?.get("memoryOomKillEvents"),
             ),
             "classpathAnalytics" to (java?.get("classpathAnalytics") ?: emptyMap<String, Any>()),
             "modulePathAnalytics" to (java?.get("modulePathAnalytics") ?: emptyMap<String, Any>()),
@@ -988,6 +992,10 @@ internal class SystemReportCollector {
         "cpuUsageMicros" to readCgroupKey("/sys/fs/cgroup/cpu.stat", "usage_usec"),
         "cpuThrottledMicros" to readCgroupKey("/sys/fs/cgroup/cpu.stat", "throttled_usec"),
         "cpuThrottleEvents" to readCgroupKey("/sys/fs/cgroup/cpu.stat", "nr_throttled"),
+        "memoryHighEvents" to readCgroupKey("/sys/fs/cgroup/memory.events", "high"),
+        "memoryMaxEvents" to readCgroupKey("/sys/fs/cgroup/memory.events", "max"),
+        "memoryOomEvents" to readCgroupKey("/sys/fs/cgroup/memory.events", "oom"),
+        "memoryOomKillEvents" to readCgroupKey("/sys/fs/cgroup/memory.events", "oom_kill"),
     )
 
     private fun collectProcessIo(): Map<String, Long> = runCatching {
