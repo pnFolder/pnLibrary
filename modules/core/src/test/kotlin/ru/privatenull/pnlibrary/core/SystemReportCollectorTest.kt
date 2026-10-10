@@ -95,6 +95,8 @@ class SystemReportCollectorTest {
         assertTrue(report["processFileDescriptors"] is Map<*, *>)
         assertTrue(report["processAffinity"] is Map<*, *>)
         assertTrue((report["memory"] as? Map<*, *>)?.get("bufferPools") is List<*>)
+        assertTrue(((report["memory"] as? Map<*, *>)?.get("pools") as? List<*>)?.firstOrNull() is Map<*, *> ||
+            ((report["memory"] as? Map<*, *>)?.get("pools") as? List<*>)?.isEmpty() == true)
         assertTrue(report["jitCompilation"] is Map<*, *>)
         assertTrue((report["java"] as? Map<*, *>)?.get("classpathAnalytics") is Map<*, *>)
         assertTrue((report["threads"] as? Map<*, *>)?.get("analytics") is Map<*, *>)
@@ -109,6 +111,7 @@ class SystemReportCollectorTest {
         assertTrue((analytics["resources"] as? Map<*, *>)?.containsKey("mountTypeCounts") == true)
         assertTrue((analytics["resources"] as? Map<*, *>)?.containsKey("classpathMissingEntries") == true)
         assertTrue((analytics["resources"] as? Map<*, *>)?.containsKey("allowedCpuCount") == true)
+        assertTrue((analytics["resources"] as? Map<*, *>)?.containsKey("memoryPoolPeakUsedBytes") == true)
         assertTrue(report["environmentVariableAnalytics"] is Map<*, *>)
         assertTrue(report["processStatus"] is Map<*, *>)
         assertTrue(report["processLimits"] is Map<*, *>)

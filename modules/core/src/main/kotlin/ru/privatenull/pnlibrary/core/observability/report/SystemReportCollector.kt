@@ -414,6 +414,12 @@ internal class SystemReportCollector {
                     ((pool as? Map<*, *>)?.get("usedRatio") as? Number)?.toDouble()
                         ?.let { it >= MEMORY_POOL_PRESSURE_THRESHOLD } == true
                 },
+                "memoryPoolPeakUsedBytes" to pools?.mapNotNull {
+                    ((it as? Map<*, *>)?.get("peakUsedBytes") as? Number)?.toLong()
+                }?.maxOrNull(),
+                "memoryPoolCollectionUsedBytes" to pools?.sumOf {
+                    ((it as? Map<*, *>)?.get("collectionUsedBytes") as? Number)?.toLong() ?: 0L
+                },
                 "bufferPoolUsedBytes" to ((memory?.get("bufferPools") as? Collection<*>)?.sumOf {
                     ((it as? Map<*, *>)?.get("usedBytes") as? Number)?.toLong() ?: 0L
                 }),
@@ -636,11 +642,17 @@ internal class SystemReportCollector {
         val pools = ManagementFactory.getMemoryPoolMXBeans()
         return pools.map { pool: MemoryPoolMXBean ->
             val usage = pool.usage
+            val peak = pool.peakUsage
+            val collection = pool.collectionUsage
             linkedMapOf(
                 "name" to pool.name,
                 "type" to pool.type.toString(),
                 "usedMb" to (usage?.used ?: 0L) / (1024 * 1024),
                 "maxMb" to (usage?.max ?: 0L) / (1024 * 1024),
+                "peakUsedBytes" to peak?.used,
+                "peakMaxBytes" to peak?.max,
+                "collectionUsedBytes" to collection?.used,
+                "collectionMaxBytes" to collection?.max,
                 "usedRatio" to usage?.let { current ->
                     current.max.takeIf { it > 0L }?.let { current.used.toDouble() / it }
                 },
