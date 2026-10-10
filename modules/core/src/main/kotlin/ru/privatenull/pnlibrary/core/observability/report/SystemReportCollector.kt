@@ -95,6 +95,7 @@ internal class SystemReportCollector {
         data["processFileDescriptors"] = collectProcessFileDescriptors()
         data["processLimits"] = collectProcessLimits()
         data["kernelLimits"] = collectKernelLimits()
+        data["containerIo"] = collectContainerIo()
         data["processScheduling"] = collectProcessScheduling()
         data["systemScheduling"] = collectSystemScheduling()
         data["loadAverage"] = collectLoadAverage()
@@ -211,6 +212,7 @@ internal class SystemReportCollector {
                 "kernelPidMaximum" to ((data["kernelLimits"] as? Map<*, *>)?.get("pidMaximum")),
                 "kernelThreadsMaximum" to ((data["kernelLimits"] as? Map<*, *>)?.get("threadsMaximum")),
                 "systemContextSwitches" to (data["systemScheduling"] as? Map<*, *>)?.get("contextSwitches"),
+                "containerIoReadBytes" to (data["containerIo"] as? Map<*, *>)?.get("readBytes"),
                 "containerEffectiveCpuCount" to (data["runtimeEnvironment"] as? Map<*, *>)?.get("effectiveCpuCount"),
                 "cpuPressureAvg10" to ((data["pressureStall"] as? Map<*, *>)?.get("cpu") as? Map<*, *>)?.get("someAvg10"),
                 "memoryPressureAvg10" to ((data["pressureStall"] as? Map<*, *>)?.get("memory") as? Map<*, *>)?.get("someAvg10"),
@@ -471,6 +473,7 @@ internal class SystemReportCollector {
                 "kernelLimits" to snapshot["kernelLimits"],
                 "systemScheduling" to snapshot["systemScheduling"],
                 "systemMemory" to snapshot["systemMemory"],
+                "containerIo" to snapshot["containerIo"],
                 "containerEffectiveCpuSet" to ((snapshot["runtimeEnvironment"] as? Map<*, *>)?.get("effectiveCpuSet")),
                 "containerEffectiveCpuCount" to ((snapshot["runtimeEnvironment"] as? Map<*, *>)?.get("effectiveCpuCount")),
                 "processReadBytes" to ((snapshot["processIo"] as? Map<*, *>)?.get("read_bytes")),
@@ -1509,6 +1512,26 @@ internal class SystemReportCollector {
     private fun readCgroupText(path: String): String? = runCatching {
         File(path).takeIf(File::isFile)?.readText()?.trim()?.takeIf(String::isNotBlank)
     }.getOrNull()
+
+    private fun collectContainerIo(): Map<String, Long> = runCatching {
+        val keys = setOf("rbytes", "wbytes", "rios", "wios", "dbytes", "dios")
+        val totals = linkedMapOf<String, Long>()
+        File("/sys/fs/cgroup/io.stat").takeIf(File::isFile)?.readLines().orEmpty().forEach { line ->
+            line.split(Regex("\\s+")).drop(1).forEach { entry ->
+                val key = entry.substringBefore('=')
+                val value = entry.substringAfter('=', "").toLongOrNull() ?: return@forEach
+                if (key in keys) totals[key] = (totals[key] ?: 0L) + value
+            }
+        }
+        linkedMapOf(
+            "readBytes" to (totals["rbytes"] ?: 0L),
+            "writeBytes" to (totals["wbytes"] ?: 0L),
+            "readOperations" to (totals["rios"] ?: 0L),
+            "writeOperations" to (totals["wios"] ?: 0L),
+            "discardBytes" to (totals["dbytes"] ?: 0L),
+            "discardOperations" to (totals["dios"] ?: 0L),
+        )
+    }.getOrDefault(emptyMap())
 
     private fun countCpuSet(value: String): Int = value.split(',').sumOf { item ->
         val bounds = item.trim().split('-').mapNotNull(String::toIntOrNull)
