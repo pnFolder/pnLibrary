@@ -1931,7 +1931,7 @@ internal class SystemReportCollector {
 
     /** Reads bounded scheduler counters for the current process from procfs. */
     private fun collectProcessSchedulerDetails(): Map<String, Any?> = runCatching {
-        val values = File("/proc/self/sched").takeIf(File::isFile)?.readLines().mapNotNull { line ->
+        val values = File("/proc/self/sched").takeIf(File::isFile)?.readLines().orEmpty().mapNotNull { line ->
             val separator = line.indexOf(':')
             if (separator <= 0) return@mapNotNull null
             val key = line.substring(0, separator).trim()
