@@ -236,6 +236,7 @@ internal class SystemReportCollector {
         data["threadStates"] = collectThreadStateAnalytics(threadMx)
         data["cgroupMembership"] = collectCgroupMembershipAnalytics()
         data["processTimers"] = collectProcessTimerAnalytics()
+        data["kernelRcu"] = collectKernelRcuAnalytics()
         val durationMs = (System.nanoTime() - startedNanos) / 1_000_000
         data["collection"] = linkedMapOf(
             "durationMs" to durationMs,
@@ -541,6 +542,7 @@ internal class SystemReportCollector {
                 "threadStates" to hasData(snapshot["threadStates"]),
                 "cgroupMembership" to hasData(snapshot["cgroupMembership"]),
                 "processTimers" to hasData(snapshot["processTimers"]),
+                "kernelRcu" to hasData(snapshot["kernelRcu"]),
                 "processSchedulerDetails" to hasData(snapshot["processSchedulerDetails"]),
                 "processSignals" to hasData(snapshot["processSignals"]),
                 "processAddressSpace" to hasData(snapshot["processAddressSpace"]),
@@ -601,6 +603,7 @@ internal class SystemReportCollector {
                 "threadStates" to snapshot["threadStates"],
                 "cgroupMembership" to snapshot["cgroupMembership"],
                 "processTimers" to snapshot["processTimers"],
+                "kernelRcu" to snapshot["kernelRcu"],
                 "processSchedulerDetails" to snapshot["processSchedulerDetails"],
                 "processSignals" to snapshot["processSignals"],
                 "processAddressSpace" to snapshot["processAddressSpace"],
@@ -683,6 +686,7 @@ internal class SystemReportCollector {
             "threadStates" to snapshot["threadStates"],
             "cgroupMembership" to snapshot["cgroupMembership"],
             "processTimers" to snapshot["processTimers"],
+            "kernelRcu" to snapshot["kernelRcu"],
             "processSchedulerDetails" to snapshot["processSchedulerDetails"],
             "processSignals" to snapshot["processSignals"],
             "processAddressSpace" to snapshot["processAddressSpace"],
@@ -2863,6 +2867,20 @@ internal class SystemReportCollector {
             "timerFdPresent" to File("/proc/self/fd").listFiles().orEmpty().any { descriptor ->
                 runCatching { descriptor.canonicalPath.contains("timerfd") }.getOrDefault(false)
             },
+        )
+    }.getOrDefault(emptyMap())
+
+    /** Reports RCU scheduling policy knobs without reading grace-period trace data. */
+    private fun collectKernelRcuAnalytics(): Map<String, Any?> = runCatching {
+        val root = "/sys/kernel/rcu"
+        linkedMapOf(
+            "configured" to File(root).isDirectory,
+            "expedited" to readTextFile("$root/rcu_expedited"),
+            "normal" to readTextFile("$root/rcu_normal"),
+            "nocbPoll" to readTextFile("$root/rcu_nocb_poll"),
+            "nocbs" to readTextFile("$root/nocbs"),
+            "rcuTaskStallTimeout" to readLongFile("/proc/sys/kernel/rcu_task_stall_timeout"),
+            "traceDirectoryPresent" to File("/sys/kernel/debug/tracing/events/rcu").isDirectory,
         )
     }.getOrDefault(emptyMap())
 
