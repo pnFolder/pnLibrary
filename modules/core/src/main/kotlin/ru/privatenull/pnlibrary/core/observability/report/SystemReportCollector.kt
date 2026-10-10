@@ -1988,8 +1988,8 @@ internal class SystemReportCollector {
             if (fields.size < 11) null else linkedMapOf<String, Any?>(
                 "interfacePresent" to fields[0].isNotBlank(),
                 "isDefault" to fields[1] == "00000000",
-                "up" to ((fields[3].toLongOrNull(16) ?: 0L) and 1L) != 0L,
-                "gatewayConfigured" to fields[2] != "00000000",
+                "up" to (((fields[3].toLongOrNull(16) ?: 0L) and 1L) != 0L),
+                "gatewayConfigured" to (fields[2] != "00000000"),
                 "metric" to fields[6].toLongOrNull(),
             )
         }
