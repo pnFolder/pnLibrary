@@ -111,6 +111,7 @@ internal class SystemReportCollector {
         data["kernelVmStat"] = collectKernelVmStat()
         data["diskStats"] = collectDiskStats()
         data["kernelRuntime"] = collectKernelRuntime()
+        data["softIrqs"] = collectSoftIrqAnalytics()
 
         // ── Memory ───────────────────────────────────────────────────────────
         val heap = memoryMx.heapMemoryUsage
@@ -286,6 +287,7 @@ internal class SystemReportCollector {
                 "diskWrittenSectors" to (data["diskStats"] as? Map<*, *>)?.get("writtenSectors"),
                 "entropyAvailable" to (data["kernelRuntime"] as? Map<*, *>)?.get("entropyAvailable"),
                 "cpuIdleSeconds" to (data["kernelRuntime"] as? Map<*, *>)?.get("cpuIdleSeconds"),
+                "softIrqTotal" to (data["softIrqs"] as? Map<*, *>)?.get("total"),
                 "cpuFrequencyAverageKHz" to (data["os"] as? Map<*, *>)?.get("cpuFrequency")
                     ?.let { it as? Map<*, *> }?.get("currentAverageKHz"),
                 "cpuFrequencyMinKHz" to (data["os"] as? Map<*, *>)?.get("cpuFrequency")
@@ -411,6 +413,7 @@ internal class SystemReportCollector {
                 "kernelVmStat" to hasData(snapshot["kernelVmStat"]),
                 "diskStats" to hasData(snapshot["diskStats"]),
                 "kernelRuntime" to hasData(snapshot["kernelRuntime"]),
+                "softIrqs" to hasData(snapshot["softIrqs"]),
             ),
             "unavailableSections" to listOf(
                 "processIo" to snapshot["processIo"],
@@ -424,6 +427,7 @@ internal class SystemReportCollector {
                 "kernelVmStat" to snapshot["kernelVmStat"],
                 "diskStats" to snapshot["diskStats"],
                 "kernelRuntime" to snapshot["kernelRuntime"],
+                "softIrqs" to snapshot["softIrqs"],
             ).filter { !hasData(it.second) }.map { it.first },
             "containerLimits" to linkedMapOf(
                 "memoryLimitBytes" to (snapshot["runtimeEnvironment"] as? Map<*, *>)?.get("memoryLimitBytes"),
@@ -453,6 +457,7 @@ internal class SystemReportCollector {
             "kernelVmStat" to snapshot["kernelVmStat"],
             "diskStats" to snapshot["diskStats"],
             "kernelRuntime" to snapshot["kernelRuntime"],
+            "softIrqs" to snapshot["softIrqs"],
             "hostDistribution" to linkedMapOf(
                 "availableProcessors" to os?.get("availableProcessors"),
                 "distribution" to os?.get("distribution"),
@@ -520,6 +525,7 @@ internal class SystemReportCollector {
                 "diskWrittenSectors" to (snapshot["diskStats"] as? Map<*, *>)?.get("writtenSectors"),
                 "entropyAvailable" to (snapshot["kernelRuntime"] as? Map<*, *>)?.get("entropyAvailable"),
                 "cpuIdleSeconds" to (snapshot["kernelRuntime"] as? Map<*, *>)?.get("cpuIdleSeconds"),
+                "softIrqTotal" to (snapshot["softIrqs"] as? Map<*, *>)?.get("total"),
                 "largestFileSystem" to fileSystems.orEmpty()
                     .maxByOrNull { ((it as? Map<*, *>)?.get("totalSpaceBytes") as? Number)?.toLong() ?: 0L },
                 "networkInterfacesUp" to ((snapshot["networkAnalytics"] as? Map<*, *>)?.get("upCount")),
@@ -971,6 +977,7 @@ internal class SystemReportCollector {
             "cpuFrequencyMinKHzDelta" to numericDelta("cpuFrequencyMinKHz"),
             "entropyAvailableDelta" to numericDelta("entropyAvailable"),
             "cpuIdleSecondsDelta" to numericDelta("cpuIdleSeconds"),
+            "softIrqTotalDelta" to numericDelta("softIrqTotal"),
             "durationMsDelta" to numericDelta("durationMs"),
             "bufferPoolUsedBytesDelta" to numericDelta("bufferPoolUsedBytes"),
             "jitCompilationTimeMsDelta" to numericDelta("jitCompilationTimeMs"),
@@ -1527,6 +1534,26 @@ internal class SystemReportCollector {
             "loadAverage" to readTextFile("/proc/loadavg")?.trim()?.split(Regex("\\s+"))?.take(3),
             "processCount" to readTextFile("/proc/loadavg")?.trim()?.split(Regex("\\s+"))?.getOrNull(3)
                 ?.substringAfter('/')?.toLongOrNull(),
+        )
+    }.getOrDefault(emptyMap())
+
+    /** Aggregates soft-interrupt work by kernel subsystem (network, timer, RCU, and scheduler). */
+    private fun collectSoftIrqAnalytics(): Map<String, Any?> = runCatching {
+        val entries = File("/proc/softirqs").takeIf(File::isFile)?.readLines().orEmpty().drop(1)
+            .mapNotNull { line ->
+                val separator = line.indexOf(':')
+                if (separator <= 0) return@mapNotNull null
+                val name = line.substring(0, separator).trim()
+                val total = line.substring(separator + 1).trim().split(Regex("\\s+"))
+                    .sumOf { it.toLongOrNull() ?: 0L }
+                name to total
+            }
+        linkedMapOf(
+            "sourceCount" to entries.size,
+            "total" to entries.sumOf { it.second },
+            "sources" to entries.sortedByDescending { it.second }.map { (name, total) ->
+                linkedMapOf("name" to name, "count" to total)
+            },
         )
     }.getOrDefault(emptyMap())
 
