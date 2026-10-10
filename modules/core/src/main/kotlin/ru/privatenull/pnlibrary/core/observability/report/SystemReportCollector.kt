@@ -402,6 +402,11 @@ internal class SystemReportCollector {
                 "processVirtualMemory" to (snapshot["processStatus"] as? Map<*, *>)?.get("VmSize"),
                 "processDataMemory" to (snapshot["processStatus"] as? Map<*, *>)?.get("VmData"),
                 "processSwap" to (snapshot["processStatus"] as? Map<*, *>)?.get("VmSwap"),
+                "processRssBytes" to processStatusBytes(snapshot, "VmRSS"),
+                "processPeakRssBytes" to processStatusBytes(snapshot, "VmPeak"),
+                "processVirtualMemoryBytes" to processStatusBytes(snapshot, "VmSize"),
+                "processDataMemoryBytes" to processStatusBytes(snapshot, "VmData"),
+                "processSwapBytes" to processStatusBytes(snapshot, "VmSwap"),
                 "processNativeThreadCount" to (snapshot["processStatus"] as? Map<*, *>)?.get("Threads"),
                 "voluntaryContextSwitches" to (snapshot["processStatus"] as? Map<*, *>)?.get("voluntary_ctxt_switches"),
                 "nonVoluntaryContextSwitches" to (snapshot["processStatus"] as? Map<*, *>)?.get("nonvoluntary_ctxt_switches"),
@@ -1074,6 +1079,9 @@ internal class SystemReportCollector {
 
     private fun processLimit(snapshot: Map<String, Any?>, name: String, bound: String): Any? =
         ((snapshot["processLimits"] as? Map<*, *>)?.get(name) as? Map<*, *>)?.get(bound)
+
+    private fun processStatusBytes(snapshot: Map<String, Any?>, key: String): Long? =
+        ((snapshot["processStatus"] as? Map<*, *>)?.get(key) as? Number)?.toLong()?.times(1024L)
 
     private fun collectProcessScheduling(): Map<String, Any?> = runCatching {
         val line = File("/proc/self/stat").takeIf(File::isFile)?.readText()?.trim()

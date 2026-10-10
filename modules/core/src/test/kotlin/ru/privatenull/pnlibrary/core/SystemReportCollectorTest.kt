@@ -34,6 +34,7 @@ class SystemReportCollectorTest {
         assertTrue((analytics["resources"] as? Map<*, *>)?.containsKey("blockedTimeMs") == true)
         assertTrue((analytics["resources"] as? Map<*, *>)?.containsKey("freeSpaceBytes") == true)
         assertTrue((analytics["resources"] as? Map<*, *>)?.containsKey("processVirtualMemory") == true)
+        assertTrue((analytics["resources"] as? Map<*, *>)?.containsKey("processRssBytes") == true)
         assertTrue((analytics["resources"] as? Map<*, *>)?.containsKey("processNativeThreadCount") == true)
         assertTrue((analytics["resources"] as? Map<*, *>)?.containsKey("processPriority") == true)
         assertTrue((analytics["resources"] as? Map<*, *>)?.containsKey("totalSpaceBytes") == true)
