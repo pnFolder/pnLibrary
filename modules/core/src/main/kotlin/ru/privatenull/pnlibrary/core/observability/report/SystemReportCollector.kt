@@ -152,6 +152,7 @@ internal class SystemReportCollector {
 
         // ── Storage / FileSystems ───────────────────────────────────────────
         data["fileSystems"] = collectFileSystems()
+        data["mounts"] = collectMountAnalytics()
         data["health"] = collectHealth(memoryMx, osMx)
 
         // ── Environment Variables (NAMES ONLY!) ──────────────────────────────
@@ -481,6 +482,9 @@ internal class SystemReportCollector {
                     .mapNotNull { (it as? Map<*, *>)?.get("fileSystemType")?.toString() }
                     .distinct()
                     .sorted(),
+                "mountCount" to ((snapshot["mounts"] as? Map<*, *>)?.get("total")),
+                "readOnlyMountCount" to ((snapshot["mounts"] as? Map<*, *>)?.get("readOnlyCount")),
+                "mountTypeCounts" to ((snapshot["mounts"] as? Map<*, *>)?.get("typeCounts")),
                 "totalSpaceBytes" to fileSystems?.sumOf {
                     ((it as? Map<*, *>)?.get("totalSpaceBytes") as? Number)?.toLong() ?: 0L
                 },
@@ -692,6 +696,32 @@ internal class SystemReportCollector {
             )
         }
     }
+
+    private fun collectMountAnalytics(): Map<String, Any?> = runCatching {
+        val mounts = File("/proc/self/mountinfo").takeIf(File::isFile)?.readLines().orEmpty()
+        val details = mounts.mapNotNull { line ->
+            val separator = line.indexOf(" - ")
+            if (separator <= 0) return@mapNotNull null
+            val left = line.substring(0, separator).split(' ')
+            val right = line.substring(separator + 3).split(' ')
+            val mountPoint = left.getOrNull(4)?.replace("\\040", " ") ?: return@mapNotNull null
+            val options = left.getOrNull(5)?.split(',').orEmpty()
+            linkedMapOf<String, Any?>(
+                "path" to mountPoint,
+                "readOnly" to options.contains("ro"),
+                "type" to right.firstOrNull(),
+                "source" to right.getOrNull(1),
+            )
+        }
+        linkedMapOf(
+            "total" to details.size,
+            "readOnlyCount" to details.count { it["readOnly"] == true },
+            "typeCounts" to details.mapNotNull { it["type"]?.toString() }
+                .groupingBy { it }.eachCount().toSortedMap(),
+            "overlayCount" to details.count { it["type"] == "overlay" },
+            "details" to details.take(MAX_MOUNT_DETAILS),
+        )
+    }.getOrDefault(emptyMap())
 
     private fun collectHealth(
         memory: java.lang.management.MemoryMXBean,
@@ -1401,6 +1431,7 @@ internal class SystemReportCollector {
         const val MAX_ADDRESSES_PER_INTERFACE = 32
         const val MAX_CPU_THREADS = 20
         const val MAX_LONG_WAITING_THREADS = 20
+        const val MAX_MOUNT_DETAILS = 128
         const val GC_PRESSURE_THRESHOLD = 0.25
         const val MEMORY_POOL_PRESSURE_THRESHOLD = 0.90
         val SECRET_JVM_ARGUMENT = Regex(
