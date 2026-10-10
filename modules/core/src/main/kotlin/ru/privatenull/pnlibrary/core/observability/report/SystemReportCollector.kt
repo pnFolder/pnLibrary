@@ -227,6 +227,7 @@ internal class SystemReportCollector {
         data["kernelSlab"] = collectKernelSlabAnalytics()
         data["kernelWorkqueues"] = collectKernelWorkqueueAnalytics()
         data["ioUringPolicy"] = collectIoUringPolicy()
+        data["cgroupTopology"] = collectCgroupTopologyAnalytics()
         val durationMs = (System.nanoTime() - startedNanos) / 1_000_000
         data["collection"] = linkedMapOf(
             "durationMs" to durationMs,
@@ -523,6 +524,7 @@ internal class SystemReportCollector {
                 "kernelSlab" to hasData(snapshot["kernelSlab"]),
                 "kernelWorkqueues" to hasData(snapshot["kernelWorkqueues"]),
                 "ioUringPolicy" to hasData(snapshot["ioUringPolicy"]),
+                "cgroupTopology" to hasData(snapshot["cgroupTopology"]),
                 "processSchedulerDetails" to hasData(snapshot["processSchedulerDetails"]),
                 "processSignals" to hasData(snapshot["processSignals"]),
                 "processAddressSpace" to hasData(snapshot["processAddressSpace"]),
@@ -574,6 +576,7 @@ internal class SystemReportCollector {
                 "kernelSlab" to snapshot["kernelSlab"],
                 "kernelWorkqueues" to snapshot["kernelWorkqueues"],
                 "ioUringPolicy" to snapshot["ioUringPolicy"],
+                "cgroupTopology" to snapshot["cgroupTopology"],
                 "processSchedulerDetails" to snapshot["processSchedulerDetails"],
                 "processSignals" to snapshot["processSignals"],
                 "processAddressSpace" to snapshot["processAddressSpace"],
@@ -647,6 +650,7 @@ internal class SystemReportCollector {
             "kernelSlab" to snapshot["kernelSlab"],
             "kernelWorkqueues" to snapshot["kernelWorkqueues"],
             "ioUringPolicy" to snapshot["ioUringPolicy"],
+            "cgroupTopology" to snapshot["cgroupTopology"],
             "processSchedulerDetails" to snapshot["processSchedulerDetails"],
             "processSignals" to snapshot["processSignals"],
             "processAddressSpace" to snapshot["processAddressSpace"],
@@ -1463,6 +1467,13 @@ internal class SystemReportCollector {
     private fun readTextFile(path: String): String? = runCatching {
         File(path).takeIf(File::isFile)?.readText()?.trim()?.takeIf(String::isNotBlank)?.take(256)
     }.getOrNull()
+
+    private fun readKeyValueFile(path: String): Map<String, String> = runCatching {
+        File(path).takeIf(File::isFile)?.readLines().orEmpty().mapNotNull { line ->
+            val separator = line.indexOf(' ')
+            if (separator <= 0) null else line.substring(0, separator) to line.substring(separator + 1).trim()
+        }.toMap()
+    }.getOrDefault(emptyMap())
 
     private fun collectCpuTopology(): Map<String, Any?> = runCatching {
         val lines = File("/proc/cpuinfo").takeIf(File::isFile)?.readLines().orEmpty()
@@ -2644,6 +2655,25 @@ internal class SystemReportCollector {
             "aioUsageRatio" to ((readLongFile("/proc/sys/fs/aio-nr") ?: 0L).toDouble() /
                 (readLongFile("/proc/sys/fs/aio-max-nr") ?: 0L).coerceAtLeast(1L)),
             "ioUringProcfsPresent" to File("/proc/sys/kernel/io_uring_disabled").isFile,
+        )
+    }.getOrDefault(emptyMap())
+
+    /** Reports cgroup v2 delegation and controller topology without child-group names. */
+    private fun collectCgroupTopologyAnalytics(): Map<String, Any?> = runCatching {
+        val root = File("/sys/fs/cgroup")
+        val controllerList = readTextFile("${root.path}/cgroup.controllers")
+            ?.split(Regex("\\s+"))?.filter(String::isNotBlank).orEmpty()
+        val subtreeList = readTextFile("${root.path}/cgroup.subtree_control")
+            ?.split(Regex("\\s+"))?.filter(String::isNotBlank).orEmpty()
+        linkedMapOf(
+            "configured" to root.isDirectory,
+            "type" to readTextFile("${root.path}/cgroup.type"),
+            "controllers" to controllerList,
+            "subtreeControllers" to subtreeList,
+            "events" to readKeyValueFile("${root.path}/cgroup.events"),
+            "freezeState" to readTextFile("${root.path}/cgroup.freeze"),
+            "pressureFiles" to listOf("cpu.pressure", "memory.pressure", "io.pressure")
+                .filter { File(root, it).isFile },
         )
     }.getOrDefault(emptyMap())
 
