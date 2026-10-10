@@ -78,6 +78,8 @@ internal class SystemReportCollector {
             "name" to osMx.name,
             "version" to osMx.version,
             "arch" to osMx.arch,
+            "distribution" to collectOsDistribution(),
+            "kernelRelease" to readTextFile("/proc/sys/kernel/osrelease"),
             "availableProcessors" to osMx.availableProcessors,
             "systemLoadAverage" to osMx.systemLoadAverage,
             "cpu" to collectCpuDetails(osMx),
@@ -394,6 +396,8 @@ internal class SystemReportCollector {
             "environmentVariables" to snapshot["environmentVariableAnalytics"],
             "hostDistribution" to linkedMapOf(
                 "availableProcessors" to os?.get("availableProcessors"),
+                "distribution" to os?.get("distribution"),
+                "kernelRelease" to os?.get("kernelRelease"),
                 "systemLoadAverage" to os?.get("systemLoadAverage"),
                 "processCpuTimeNanos" to cpu?.get("processCpuTimeNanos"),
                 "hostUptimeSeconds" to (snapshot["runtimeEnvironment"] as? Map<*, *>)?.get("hostUptimeSeconds"),
@@ -1073,6 +1077,26 @@ internal class SystemReportCollector {
         readLong(osMx, "getFreeSwapSpaceSize")?.let { result["freeSwapBytes"] = it }
         return result
     }
+
+    private fun collectOsDistribution(): Map<String, String> = runCatching {
+        val properties = File("/etc/os-release").takeIf(File::isFile)?.readLines().orEmpty()
+            .mapNotNull { line ->
+                val separator = line.indexOf('=')
+                if (separator <= 0) return@mapNotNull null
+                val key = line.substring(0, separator)
+                val value = line.substring(separator + 1).trim().trim('"')
+                key to value.take(256)
+            }.toMap()
+        linkedMapOf<String, String>().apply {
+            properties["ID"]?.let { put("id", it) }
+            properties["VERSION_ID"]?.let { put("versionId", it) }
+            properties["PRETTY_NAME"]?.let { put("name", it) }
+        }
+    }.getOrDefault(emptyMap())
+
+    private fun readTextFile(path: String): String? = runCatching {
+        File(path).takeIf(File::isFile)?.readText()?.trim()?.takeIf(String::isNotBlank)?.take(256)
+    }.getOrNull()
 
     private fun collectCpuTopology(): Map<String, Any?> = runCatching {
         val lines = File("/proc/cpuinfo").takeIf(File::isFile)?.readLines().orEmpty()
