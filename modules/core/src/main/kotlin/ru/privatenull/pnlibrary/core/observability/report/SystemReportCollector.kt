@@ -209,6 +209,8 @@ internal class SystemReportCollector {
         data["blockDevices"] = collectBlockDeviceAnalytics()
         data["kernelComponents"] = collectKernelComponentAnalytics()
         data["networkSocketQueues"] = collectNetworkSocketQueues()
+        data["powerSupply"] = collectPowerSupplyAnalytics()
+        data["firmware"] = collectFirmwareAnalytics()
         val durationMs = (System.nanoTime() - startedNanos) / 1_000_000
         data["collection"] = linkedMapOf(
             "durationMs" to durationMs,
@@ -487,6 +489,8 @@ internal class SystemReportCollector {
                 "blockDevices" to hasData(snapshot["blockDevices"]),
                 "kernelComponents" to hasData(snapshot["kernelComponents"]),
                 "networkSocketQueues" to hasData(snapshot["networkSocketQueues"]),
+                "powerSupply" to hasData(snapshot["powerSupply"]),
+                "firmware" to hasData(snapshot["firmware"]),
                 "processSchedulerDetails" to hasData(snapshot["processSchedulerDetails"]),
                 "processSignals" to hasData(snapshot["processSignals"]),
                 "processAddressSpace" to hasData(snapshot["processAddressSpace"]),
@@ -520,6 +524,8 @@ internal class SystemReportCollector {
                 "blockDevices" to snapshot["blockDevices"],
                 "kernelComponents" to snapshot["kernelComponents"],
                 "networkSocketQueues" to snapshot["networkSocketQueues"],
+                "powerSupply" to snapshot["powerSupply"],
+                "firmware" to snapshot["firmware"],
                 "processSchedulerDetails" to snapshot["processSchedulerDetails"],
                 "processSignals" to snapshot["processSignals"],
                 "processAddressSpace" to snapshot["processAddressSpace"],
@@ -575,6 +581,8 @@ internal class SystemReportCollector {
             "blockDevices" to snapshot["blockDevices"],
             "kernelComponents" to snapshot["kernelComponents"],
             "networkSocketQueues" to snapshot["networkSocketQueues"],
+            "powerSupply" to snapshot["powerSupply"],
+            "firmware" to snapshot["firmware"],
             "processSchedulerDetails" to snapshot["processSchedulerDetails"],
             "processSignals" to snapshot["processSignals"],
             "processAddressSpace" to snapshot["processAddressSpace"],
@@ -2176,6 +2184,47 @@ internal class SystemReportCollector {
             "queuedSocketCount" to queuedSockets,
             "txQueueBytes" to txBytes,
             "rxQueueBytes" to rxBytes,
+        )
+    }.getOrDefault(emptyMap())
+
+    /** Reports power-source state while excluding model and serial identifiers. */
+    private fun collectPowerSupplyAnalytics(): Map<String, Any?> = runCatching {
+        val supplies = File("/sys/class/power_supply").takeIf(File::isDirectory)?.listFiles().orEmpty()
+            .sortedBy { it.name }.take(32).map { supply ->
+                linkedMapOf<String, Any?>(
+                    "name" to supply.name,
+                    "type" to readTextFile("${supply.path}/type"),
+                    "status" to readTextFile("${supply.path}/status"),
+                    "capacityPercent" to readLongFile("${supply.path}/capacity"),
+                    "online" to readLongFile("${supply.path}/online")?.let { it == 1L },
+                    "voltageNowMicrovolts" to readLongFile("${supply.path}/voltage_now"),
+                    "currentNowMicroamps" to readLongFile("${supply.path}/current_now"),
+                    "powerNowMicrowatts" to readLongFile("${supply.path}/power_now"),
+                )
+            }
+        linkedMapOf(
+            "configured" to supplies.isNotEmpty(),
+            "supplyCount" to supplies.size,
+            "batteryCount" to supplies.count { it["type"] == "Battery" },
+            "supplies" to supplies,
+        )
+    }.getOrDefault(emptyMap())
+
+    /** Reports firmware and machine identity fields, deliberately omitting serials and UUIDs. */
+    private fun collectFirmwareAnalytics(): Map<String, Any?> = runCatching {
+        val fields = linkedMapOf(
+            "biosVendor" to "/sys/class/dmi/id/bios_vendor",
+            "biosVersion" to "/sys/class/dmi/id/bios_version",
+            "biosDate" to "/sys/class/dmi/id/bios_date",
+            "boardVendor" to "/sys/class/dmi/id/board_vendor",
+            "boardName" to "/sys/class/dmi/id/board_name",
+            "productName" to "/sys/class/dmi/id/product_name",
+            "productVersion" to "/sys/class/dmi/id/product_version",
+            "chassisType" to "/sys/class/dmi/id/chassis_type",
+        ).mapValues { (_, path) -> readTextFile(path) }
+        linkedMapOf(
+            "configured" to fields.values.any { it != null },
+            "fields" to fields,
         )
     }.getOrDefault(emptyMap())
 
