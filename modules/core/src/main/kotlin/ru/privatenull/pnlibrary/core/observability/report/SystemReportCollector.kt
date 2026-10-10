@@ -106,6 +106,8 @@ internal class SystemReportCollector {
         data["pressureStall"] = collectPressureStall()
         data["containerPressureStall"] = collectContainerPressureStall()
         data["systemMemory"] = collectSystemMemory()
+        data["thermalZones"] = collectThermalZones()
+        data["interrupts"] = collectInterruptAnalytics()
 
         // ── Memory ───────────────────────────────────────────────────────────
         val heap = memoryMx.heapMemoryUsage
@@ -228,6 +230,8 @@ internal class SystemReportCollector {
                 "pressureStall" to data["pressureStall"],
                 "systemMemoryAvailableBytes" to (data["systemMemory"] as? Map<*, *>)?.get("MemAvailable"),
                 "containerPressureStall" to data["containerPressureStall"],
+                "thermalZones" to data["thermalZones"],
+                "interrupts" to data["interrupts"],
                 "cpuPressureAvg10" to ((data["pressureStall"] as? Map<*, *>)?.get("cpu") as? Map<*, *>)?.get("someAvg10"),
                 "memoryPressureAvg10" to ((data["pressureStall"] as? Map<*, *>)?.get("memory") as? Map<*, *>)?.get("someAvg10"),
                 "ioPressureAvg10" to ((data["pressureStall"] as? Map<*, *>)?.get("io") as? Map<*, *>)?.get("someAvg10"),
@@ -272,6 +276,8 @@ internal class SystemReportCollector {
                 "fileDescriptorOpen" to ((data["os"] as? Map<*, *>)?.get("fileDescriptors") as? Map<*, *>)?.get("open"),
                 "processUserCpuTicks" to (data["processScheduling"] as? Map<*, *>)?.get("userCpuTicks"),
                 "processSystemCpuTicks" to (data["processScheduling"] as? Map<*, *>)?.get("systemCpuTicks"),
+                "maxTemperatureMilliC" to (data["thermalZones"] as? Map<*, *>)?.get("maxTemperatureMilliC"),
+                "interruptTotal" to (data["interrupts"] as? Map<*, *>)?.get("total"),
             ),
         )
         while (collectionHistory.size > 32) collectionHistory.removeFirst()
@@ -388,6 +394,8 @@ internal class SystemReportCollector {
                 "processLimits" to hasData(snapshot["processLimits"]),
                 "processScheduling" to hasData(snapshot["processScheduling"]),
                 "loadAverage" to hasData(snapshot["loadAverage"]),
+                "thermal" to hasData(snapshot["thermalZones"]),
+                "interrupts" to hasData(snapshot["interrupts"]),
             ),
             "unavailableSections" to listOf(
                 "processIo" to snapshot["processIo"],
@@ -396,6 +404,8 @@ internal class SystemReportCollector {
                 "processLimits" to snapshot["processLimits"],
                 "processScheduling" to snapshot["processScheduling"],
                 "loadAverage" to snapshot["loadAverage"],
+                "thermalZones" to snapshot["thermalZones"],
+                "interrupts" to snapshot["interrupts"],
             ).filter { !hasData(it.second) }.map { it.first },
             "containerLimits" to linkedMapOf(
                 "memoryLimitBytes" to (snapshot["runtimeEnvironment"] as? Map<*, *>)?.get("memoryLimitBytes"),
@@ -478,6 +488,10 @@ internal class SystemReportCollector {
                 "classpathExistingBytes" to ((java?.get("classpathAnalytics") as? Map<*, *>)?.get("totalExistingBytes")),
                 "modulePathMissingEntries" to ((java?.get("modulePathAnalytics") as? Map<*, *>)?.get("missingEntryCount")),
                 "allowedCpuCount" to ((snapshot["processAffinity"] as? Map<*, *>)?.get("allowedCpuCount")),
+                "maxTemperatureMilliC" to (snapshot["thermalZones"] as? Map<*, *>)?.get("maxTemperatureMilliC"),
+                "thermalZoneCount" to (snapshot["thermalZones"] as? Map<*, *>)?.get("zoneCount"),
+                "interruptTotal" to (snapshot["interrupts"] as? Map<*, *>)?.get("total"),
+                "interruptSourceCount" to (snapshot["interrupts"] as? Map<*, *>)?.get("sourceCount"),
                 "largestFileSystem" to fileSystems.orEmpty()
                     .maxByOrNull { ((it as? Map<*, *>)?.get("totalSpaceBytes") as? Number)?.toLong() ?: 0L },
                 "networkInterfacesUp" to ((snapshot["networkAnalytics"] as? Map<*, *>)?.get("upCount")),
@@ -923,6 +937,8 @@ internal class SystemReportCollector {
             "fileDescriptorOpenDelta" to numericDelta("fileDescriptorOpen"),
             "processUserCpuTicksDelta" to numericDelta("processUserCpuTicks"),
             "processSystemCpuTicksDelta" to numericDelta("processSystemCpuTicks"),
+            "maxTemperatureMilliCDelta" to numericDelta("maxTemperatureMilliC"),
+            "interruptTotalDelta" to numericDelta("interruptTotal"),
             "durationMsDelta" to numericDelta("durationMs"),
             "bufferPoolUsedBytesDelta" to numericDelta("bufferPoolUsedBytes"),
             "jitCompilationTimeMsDelta" to numericDelta("jitCompilationTimeMs"),
@@ -1388,6 +1404,45 @@ internal class SystemReportCollector {
             val value = line.substring(separator + 1).trim().split(' ').firstOrNull()?.toLongOrNull()
             value?.let { key to it * 1024L }
         }.toMap()
+    }.getOrDefault(emptyMap())
+
+    /** Reads Linux thermal-zone sensors without exposing device paths or raw files. */
+    private fun collectThermalZones(): Map<String, Any?> = runCatching {
+        val zones = File("/sys/class/thermal").listFiles()
+            ?.filter { it.isDirectory && it.name.startsWith("thermal_zone") }
+            ?.mapNotNull { zone ->
+                val temperature = readTextFile(File(zone, "temp").path)?.toLongOrNull() ?: return@mapNotNull null
+                linkedMapOf<String, Any?>(
+                    "type" to readTextFile(File(zone, "type").path),
+                    "temperatureMilliC" to temperature,
+                    "criticalTripMilliC" to readTextFile(File(zone, "trip_point_0_temp").path)?.toLongOrNull(),
+                )
+            }.orEmpty()
+        linkedMapOf(
+            "zoneCount" to zones.size,
+            "zones" to zones,
+            "maxTemperatureMilliC" to zones.mapNotNull { (it["temperatureMilliC"] as? Number)?.toLong() }.maxOrNull(),
+            "averageTemperatureMilliC" to zones.mapNotNull { (it["temperatureMilliC"] as? Number)?.toDouble() }
+                .average().takeIf { zones.isNotEmpty() },
+        )
+    }.getOrDefault(emptyMap())
+
+    /** Summarizes interrupt activity while keeping individual device names out of the report. */
+    private fun collectInterruptAnalytics(): Map<String, Any?> = runCatching {
+        val rows = File("/proc/interrupts").takeIf(File::isFile)?.readLines().orEmpty().drop(1)
+        val totals = rows.mapNotNull { row ->
+            val fields = row.trim().split(Regex("\\s+"))
+            val source = fields.firstOrNull()?.removeSuffix(":") ?: return@mapNotNull null
+            val count = fields.drop(1).takeWhile { it.all(Char::isDigit) }.sumOf { it.toLongOrNull() ?: 0L }
+            source to count
+        }
+        linkedMapOf(
+            "sourceCount" to totals.size,
+            "total" to totals.sumOf { it.second },
+            "topSources" to totals.sortedByDescending { it.second }.take(8).map { (source, count) ->
+                linkedMapOf("source" to source, "count" to count)
+            },
+        )
     }.getOrDefault(emptyMap())
 
     private fun collectEnvironmentVariableAnalytics(): Map<String, Any?> {
