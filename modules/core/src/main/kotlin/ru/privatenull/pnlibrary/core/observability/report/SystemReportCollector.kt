@@ -234,6 +234,7 @@ internal class SystemReportCollector {
         data["kernelFaultPolicy"] = collectKernelFaultPolicy()
         data["processFdTypes"] = collectProcessFdTypeAnalytics()
         data["threadStates"] = collectThreadStateAnalytics(threadMx)
+        data["cgroupMembership"] = collectCgroupMembershipAnalytics()
         val durationMs = (System.nanoTime() - startedNanos) / 1_000_000
         data["collection"] = linkedMapOf(
             "durationMs" to durationMs,
@@ -537,6 +538,7 @@ internal class SystemReportCollector {
                 "kernelFaultPolicy" to hasData(snapshot["kernelFaultPolicy"]),
                 "processFdTypes" to hasData(snapshot["processFdTypes"]),
                 "threadStates" to hasData(snapshot["threadStates"]),
+                "cgroupMembership" to hasData(snapshot["cgroupMembership"]),
                 "processSchedulerDetails" to hasData(snapshot["processSchedulerDetails"]),
                 "processSignals" to hasData(snapshot["processSignals"]),
                 "processAddressSpace" to hasData(snapshot["processAddressSpace"]),
@@ -595,6 +597,7 @@ internal class SystemReportCollector {
                 "kernelFaultPolicy" to snapshot["kernelFaultPolicy"],
                 "processFdTypes" to snapshot["processFdTypes"],
                 "threadStates" to snapshot["threadStates"],
+                "cgroupMembership" to snapshot["cgroupMembership"],
                 "processSchedulerDetails" to snapshot["processSchedulerDetails"],
                 "processSignals" to snapshot["processSignals"],
                 "processAddressSpace" to snapshot["processAddressSpace"],
@@ -675,6 +678,7 @@ internal class SystemReportCollector {
             "kernelFaultPolicy" to snapshot["kernelFaultPolicy"],
             "processFdTypes" to snapshot["processFdTypes"],
             "threadStates" to snapshot["threadStates"],
+            "cgroupMembership" to snapshot["cgroupMembership"],
             "processSchedulerDetails" to snapshot["processSchedulerDetails"],
             "processSignals" to snapshot["processSignals"],
             "processAddressSpace" to snapshot["processAddressSpace"],
@@ -2822,6 +2826,25 @@ internal class SystemReportCollector {
             "blockedCount" to infos.count { it.threadState == Thread.State.BLOCKED },
             "waitingCount" to infos.count { it.threadState == Thread.State.WAITING || it.threadState == Thread.State.TIMED_WAITING },
             "lockOwnerCount" to infos.count { it.lockOwnerId >= 0 },
+        )
+    }.getOrDefault(emptyMap())
+
+    /** Reports cgroup hierarchy/controller membership while intentionally omitting group paths. */
+    private fun collectCgroupMembershipAnalytics(): Map<String, Any?> = runCatching {
+        val entries = File("/proc/self/cgroup").takeIf(File::isFile)?.readLines().orEmpty().mapNotNull { line ->
+            val fields = line.split(':', limit = 3)
+            if (fields.size != 3) null else linkedMapOf(
+                "hierarchyId" to fields[0],
+                "controllers" to fields[1].split(',').filter(String::isNotBlank).sorted(),
+                "pathPresent" to fields[2].isNotBlank(),
+            )
+        }
+        linkedMapOf(
+            "configured" to entries.isNotEmpty(),
+            "hierarchyCount" to entries.size,
+            "controllerNames" to entries.flatMap { it["controllers"] as? List<*> ?: emptyList<Any?>() }
+                .filterIsInstance<String>().distinct().sorted(),
+            "entries" to entries,
         )
     }.getOrDefault(emptyMap())
 
