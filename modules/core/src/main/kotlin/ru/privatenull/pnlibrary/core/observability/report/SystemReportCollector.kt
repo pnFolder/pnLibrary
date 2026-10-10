@@ -108,6 +108,8 @@ internal class SystemReportCollector {
         data["systemMemory"] = collectSystemMemory()
         data["thermalZones"] = collectThermalZones()
         data["interrupts"] = collectInterruptAnalytics()
+        data["kernelVmStat"] = collectKernelVmStat()
+        data["diskStats"] = collectDiskStats()
 
         // ── Memory ───────────────────────────────────────────────────────────
         val heap = memoryMx.heapMemoryUsage
@@ -278,6 +280,9 @@ internal class SystemReportCollector {
                 "processSystemCpuTicks" to (data["processScheduling"] as? Map<*, *>)?.get("systemCpuTicks"),
                 "maxTemperatureMilliC" to (data["thermalZones"] as? Map<*, *>)?.get("maxTemperatureMilliC"),
                 "interruptTotal" to (data["interrupts"] as? Map<*, *>)?.get("total"),
+                "pageFaults" to (data["kernelVmStat"] as? Map<*, *>)?.get("pageFaults"),
+                "diskReadSectors" to (data["diskStats"] as? Map<*, *>)?.get("readSectors"),
+                "diskWrittenSectors" to (data["diskStats"] as? Map<*, *>)?.get("writtenSectors"),
                 "cpuFrequencyAverageKHz" to (data["os"] as? Map<*, *>)?.get("cpuFrequency")
                     ?.let { it as? Map<*, *> }?.get("currentAverageKHz"),
                 "cpuFrequencyMinKHz" to (data["os"] as? Map<*, *>)?.get("cpuFrequency")
@@ -400,6 +405,8 @@ internal class SystemReportCollector {
                 "loadAverage" to hasData(snapshot["loadAverage"]),
                 "thermal" to hasData(snapshot["thermalZones"]),
                 "interrupts" to hasData(snapshot["interrupts"]),
+                "kernelVmStat" to hasData(snapshot["kernelVmStat"]),
+                "diskStats" to hasData(snapshot["diskStats"]),
             ),
             "unavailableSections" to listOf(
                 "processIo" to snapshot["processIo"],
@@ -410,6 +417,8 @@ internal class SystemReportCollector {
                 "loadAverage" to snapshot["loadAverage"],
                 "thermalZones" to snapshot["thermalZones"],
                 "interrupts" to snapshot["interrupts"],
+                "kernelVmStat" to snapshot["kernelVmStat"],
+                "diskStats" to snapshot["diskStats"],
             ).filter { !hasData(it.second) }.map { it.first },
             "containerLimits" to linkedMapOf(
                 "memoryLimitBytes" to (snapshot["runtimeEnvironment"] as? Map<*, *>)?.get("memoryLimitBytes"),
@@ -496,6 +505,11 @@ internal class SystemReportCollector {
                 "thermalZoneCount" to (snapshot["thermalZones"] as? Map<*, *>)?.get("zoneCount"),
                 "interruptTotal" to (snapshot["interrupts"] as? Map<*, *>)?.get("total"),
                 "interruptSourceCount" to (snapshot["interrupts"] as? Map<*, *>)?.get("sourceCount"),
+                "pageFaults" to (snapshot["kernelVmStat"] as? Map<*, *>)?.get("pageFaults"),
+                "swapIns" to (snapshot["kernelVmStat"] as? Map<*, *>)?.get("swapIns"),
+                "swapOuts" to (snapshot["kernelVmStat"] as? Map<*, *>)?.get("swapOuts"),
+                "diskReadSectors" to (snapshot["diskStats"] as? Map<*, *>)?.get("readSectors"),
+                "diskWrittenSectors" to (snapshot["diskStats"] as? Map<*, *>)?.get("writtenSectors"),
                 "largestFileSystem" to fileSystems.orEmpty()
                     .maxByOrNull { ((it as? Map<*, *>)?.get("totalSpaceBytes") as? Number)?.toLong() ?: 0L },
                 "networkInterfacesUp" to ((snapshot["networkAnalytics"] as? Map<*, *>)?.get("upCount")),
@@ -1448,6 +1462,46 @@ internal class SystemReportCollector {
             "topSources" to totals.sortedByDescending { it.second }.take(8).map { (source, count) ->
                 linkedMapOf("source" to source, "count" to count)
             },
+        )
+    }.getOrDefault(emptyMap())
+
+    /** Collects kernel VM counters while retaining only diagnostic aggregates. */
+    private fun collectKernelVmStat(): Map<String, Any?> = runCatching {
+        val values = File("/proc/vmstat").takeIf(File::isFile)?.readLines().orEmpty()
+            .mapNotNull { line ->
+                val parts = line.trim().split(Regex("\\s+"))
+                if (parts.size != 2) null else parts[0] to parts[1].toLongOrNull()
+            }.toMap()
+        linkedMapOf(
+            "pageFaults" to values["pgfault"],
+            "majorPageFaults" to values["pgmajfault"],
+            "swapIns" to values["pswpin"],
+            "swapOuts" to values["pswpout"],
+            "oomKills" to values["oom_kill"],
+            "compactions" to values["compact_stall"],
+        )
+    }.getOrDefault(emptyMap())
+
+    /** Aggregates block-device sectors and latency from /proc/diskstats. */
+    private fun collectDiskStats(): Map<String, Any?> = runCatching {
+        val devices = File("/proc/diskstats").takeIf(File::isFile)?.readLines().orEmpty().mapNotNull { line ->
+            val fields = line.trim().split(Regex("\\s+"))
+            if (fields.size < 14) return@mapNotNull null
+            val name = fields[2]
+            if (name.matches(Regex("(loop|ram|sr)\\d+")) || name.any { it.isDigit() } && name.endsWith("p")) {
+                return@mapNotNull null
+            }
+            val readSectors = fields[5].toLongOrNull() ?: return@mapNotNull null
+            val writtenSectors = fields[9].toLongOrNull() ?: return@mapNotNull null
+            val ioTimeMs = fields[12].toLongOrNull() ?: 0L
+            linkedMapOf<String, Any?>("device" to name, "readSectors" to readSectors, "writtenSectors" to writtenSectors, "ioTimeMs" to ioTimeMs)
+        }
+        linkedMapOf(
+            "deviceCount" to devices.size,
+            "readSectors" to devices.sumOf { (it["readSectors"] as Number).toLong() },
+            "writtenSectors" to devices.sumOf { (it["writtenSectors"] as Number).toLong() },
+            "ioTimeMs" to devices.sumOf { (it["ioTimeMs"] as Number).toLong() },
+            "devices" to devices.sortedByDescending { (it["ioTimeMs"] as Number).toLong() }.take(8),
         )
     }.getOrDefault(emptyMap())
 
