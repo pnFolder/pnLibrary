@@ -481,6 +481,7 @@ internal class SystemReportCollector {
                 "memoryOomGroupEvents" to (snapshot["runtimeEnvironment"] as? Map<*, *>)?.get("memoryOomGroupEvents"),
                 "cgroupIo" to (snapshot["runtimeEnvironment"] as? Map<*, *>)?.get("io"),
                 "cgroupMemoryStat" to (snapshot["runtimeEnvironment"] as? Map<*, *>)?.get("memoryStat"),
+                "memoryEventsLocal" to (snapshot["runtimeEnvironment"] as? Map<*, *>)?.get("memoryEventsLocal"),
             ),
             "containerMemoryStat" to (snapshot["runtimeEnvironment"] as? Map<*, *>)?.get("memoryStat"),
             "classpathAnalytics" to (java?.get("classpathAnalytics") ?: emptyMap<String, Any>()),
@@ -1431,6 +1432,7 @@ internal class SystemReportCollector {
         "memoryOomEvents" to readCgroupKey("/sys/fs/cgroup/memory.events", "oom"),
         "memoryOomKillEvents" to readCgroupKey("/sys/fs/cgroup/memory.events", "oom_kill"),
         "memoryOomGroupEvents" to readCgroupKey("/sys/fs/cgroup/memory.events", "oom_group"),
+        "memoryEventsLocal" to collectCgroupMemoryEventsLocal(),
         "memoryStat" to collectCgroupMemoryStat(),
         "io" to collectCgroupIo(),
     )
@@ -1450,6 +1452,14 @@ internal class SystemReportCollector {
             "activeAnonBytes" to values["active_anon"], "inactiveAnonBytes" to values["inactive_anon"],
             "activeFileBytes" to values["active_file"], "inactiveFileBytes" to values["inactive_file"],
         )
+    }.getOrDefault(emptyMap())
+
+    private fun collectCgroupMemoryEventsLocal(): Map<String, Long?> = runCatching {
+        File("/sys/fs/cgroup/memory.events.local").takeIf(File::isFile)?.readLines().orEmpty()
+            .mapNotNull { line ->
+                val parts = line.trim().split(Regex("\\s+"))
+                if (parts.size != 2) null else parts[0] to parts[1].toLongOrNull()
+            }.toMap()
     }.getOrDefault(emptyMap())
 
     private fun collectCgroupIo(): Map<String, Any?> = runCatching {
