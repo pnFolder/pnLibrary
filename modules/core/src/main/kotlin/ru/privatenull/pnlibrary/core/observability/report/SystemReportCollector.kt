@@ -188,6 +188,7 @@ internal class SystemReportCollector {
         }
         data["networkSummary"] = collectNetworkSummary()
         data["networkAnalytics"] = collectNetworkAnalytics()
+        data["networkProtocolStats"] = collectNetworkProtocolStats()
         val durationMs = (System.nanoTime() - startedNanos) / 1_000_000
         data["collection"] = linkedMapOf(
             "durationMs" to durationMs,
@@ -292,6 +293,7 @@ internal class SystemReportCollector {
                 "softIrqTotal" to (data["softIrqs"] as? Map<*, *>)?.get("total"),
                 "securityEnforcement" to (data["securityRuntime"] as? Map<*, *>)?.get("enforcement"),
                 "hardwareSensorCount" to (data["hardwareSensors"] as? Map<*, *>)?.get("sensorCount"),
+                "tcpRetransmissions" to (data["networkProtocolStats"] as? Map<*, *>)?.get("tcpRetransmissions"),
                 "cpuIdleTicks" to (data["systemScheduling"] as? Map<*, *>)?.get("cpuIdleTicks"),
                 "cpuIowaitTicks" to (data["systemScheduling"] as? Map<*, *>)?.get("cpuIowaitTicks"),
                 "cpuStealTicks" to (data["systemScheduling"] as? Map<*, *>)?.get("cpuStealTicks"),
@@ -423,6 +425,7 @@ internal class SystemReportCollector {
                 "softIrqs" to hasData(snapshot["softIrqs"]),
                 "securityRuntime" to hasData(snapshot["securityRuntime"]),
                 "hardwareSensors" to hasData(snapshot["hardwareSensors"]),
+                "networkProtocolStats" to hasData(snapshot["networkProtocolStats"]),
             ),
             "unavailableSections" to listOf(
                 "processIo" to snapshot["processIo"],
@@ -439,6 +442,7 @@ internal class SystemReportCollector {
                 "softIrqs" to snapshot["softIrqs"],
                 "securityRuntime" to snapshot["securityRuntime"],
                 "hardwareSensors" to snapshot["hardwareSensors"],
+                "networkProtocolStats" to snapshot["networkProtocolStats"],
             ).filter { !hasData(it.second) }.map { it.first },
             "containerLimits" to linkedMapOf(
                 "memoryLimitBytes" to (snapshot["runtimeEnvironment"] as? Map<*, *>)?.get("memoryLimitBytes"),
@@ -471,6 +475,7 @@ internal class SystemReportCollector {
             "softIrqs" to snapshot["softIrqs"],
             "securityRuntime" to snapshot["securityRuntime"],
             "hardwareSensors" to snapshot["hardwareSensors"],
+            "networkProtocolStats" to snapshot["networkProtocolStats"],
             "hostDistribution" to linkedMapOf(
                 "availableProcessors" to os?.get("availableProcessors"),
                 "distribution" to os?.get("distribution"),
@@ -541,6 +546,8 @@ internal class SystemReportCollector {
                 "softIrqTotal" to (snapshot["softIrqs"] as? Map<*, *>)?.get("total"),
                 "securityEnforcement" to (snapshot["securityRuntime"] as? Map<*, *>)?.get("enforcement"),
                 "hardwareSensorCount" to (snapshot["hardwareSensors"] as? Map<*, *>)?.get("sensorCount"),
+                "tcpRetransmissions" to (snapshot["networkProtocolStats"] as? Map<*, *>)?.get("tcpRetransmissions"),
+                "tcpRetransmissions" to (snapshot["networkProtocolStats"] as? Map<*, *>)?.get("tcpRetransmissions"),
                 "cpuIdleTicks" to (snapshot["systemScheduling"] as? Map<*, *>)?.get("cpuIdleTicks"),
                 "cpuIowaitTicks" to (snapshot["systemScheduling"] as? Map<*, *>)?.get("cpuIowaitTicks"),
                 "cpuStealTicks" to (snapshot["systemScheduling"] as? Map<*, *>)?.get("cpuStealTicks"),
@@ -996,6 +1003,7 @@ internal class SystemReportCollector {
             "entropyAvailableDelta" to numericDelta("entropyAvailable"),
             "cpuIdleSecondsDelta" to numericDelta("cpuIdleSeconds"),
             "softIrqTotalDelta" to numericDelta("softIrqTotal"),
+            "tcpRetransmissionsDelta" to numericDelta("tcpRetransmissions"),
             "cpuIdleTicksDelta" to numericDelta("cpuIdleTicks"),
             "cpuIowaitTicksDelta" to numericDelta("cpuIowaitTicks"),
             "cpuStealTicksDelta" to numericDelta("cpuStealTicks"),
@@ -1645,6 +1653,37 @@ internal class SystemReportCollector {
             "secretLikeNames" to names.count { SECRET_ENV_NAME.matches(it) },
         )
     }
+
+    /** Aggregates protocol counters from procfs without exposing addresses or connection tuples. */
+    private fun collectNetworkProtocolStats(): Map<String, Any?> = runCatching {
+        val lines = File("/proc/net/snmp").takeIf(File::isFile)?.readLines().orEmpty()
+        val sections = linkedMapOf<String, Map<String, Long>>()
+        var index = 0
+        while (index + 1 < lines.size) {
+            val header = lines[index].trim().split(Regex("\\s+"))
+            val values = lines[index + 1].trim().split(Regex("\\s+"))
+            if (header.isNotEmpty() && header.first().endsWith(":" ) && header.first() == values.firstOrNull()) {
+                sections[header.first().removeSuffix(":")] = header.drop(1).zip(values.drop(1))
+                    .mapNotNull { (key, value) -> value.toLongOrNull()?.let { key to it } }.toMap()
+                index += 2
+            } else index++
+        }
+        val tcp = sections["Tcp"].orEmpty()
+        val udp = sections["Udp"].orEmpty()
+        val ip = sections["Ip"].orEmpty()
+        linkedMapOf(
+            "tcpRetransmissions" to tcp["RetransSegs"],
+            "tcpInErrors" to tcp["InErrs"],
+            "tcpOutResets" to tcp["OutRsts"],
+            "tcpActiveOpens" to tcp["ActiveOpens"],
+            "tcpPassiveOpens" to tcp["PassiveOpens"],
+            "udpInErrors" to udp["InErrors"],
+            "udpNoPorts" to udp["NoPorts"],
+            "ipInErrors" to ip["InHdrErrors"],
+            "ipInDiscards" to ip["InDiscards"],
+            "ipForwarding" to ip["Forwarding"],
+        )
+    }.getOrDefault(emptyMap())
 
     private fun collectProcessNetwork(): Map<String, Any?> = runCatching {
         val tcp = listOf("/proc/self/net/tcp", "/proc/self/net/tcp6")
