@@ -96,6 +96,7 @@ internal class SystemReportCollector {
         data["processLimits"] = collectProcessLimits()
         data["kernelLimits"] = collectKernelLimits()
         data["processScheduling"] = collectProcessScheduling()
+        data["systemScheduling"] = collectSystemScheduling()
         data["loadAverage"] = collectLoadAverage()
         data["pressureStall"] = collectPressureStall()
 
@@ -208,6 +209,7 @@ internal class SystemReportCollector {
                 "kernelFileHandlesUsedRatio" to ((data["kernelLimits"] as? Map<*, *>)?.get("fileHandlesUsedRatio")),
                 "kernelPidMaximum" to ((data["kernelLimits"] as? Map<*, *>)?.get("pidMaximum")),
                 "kernelThreadsMaximum" to ((data["kernelLimits"] as? Map<*, *>)?.get("threadsMaximum")),
+                "systemContextSwitches" to (data["systemScheduling"] as? Map<*, *>)?.get("contextSwitches"),
                 "containerEffectiveCpuCount" to (data["runtimeEnvironment"] as? Map<*, *>)?.get("effectiveCpuCount"),
                 "cpuPressureAvg10" to ((data["pressureStall"] as? Map<*, *>)?.get("cpu") as? Map<*, *>)?.get("someAvg10"),
                 "memoryPressureAvg10" to ((data["pressureStall"] as? Map<*, *>)?.get("memory") as? Map<*, *>)?.get("someAvg10"),
@@ -461,6 +463,7 @@ internal class SystemReportCollector {
                 "networkTransmitDrops" to ((snapshot["networkAnalytics"] as? Map<*, *>)?.get("totalTransmitDrops")),
                 "pressureStall" to snapshot["pressureStall"],
                 "kernelLimits" to snapshot["kernelLimits"],
+                "systemScheduling" to snapshot["systemScheduling"],
                 "containerEffectiveCpuSet" to ((snapshot["runtimeEnvironment"] as? Map<*, *>)?.get("effectiveCpuSet")),
                 "containerEffectiveCpuCount" to ((snapshot["runtimeEnvironment"] as? Map<*, *>)?.get("effectiveCpuCount")),
                 "processReadBytes" to ((snapshot["processIo"] as? Map<*, *>)?.get("read_bytes")),
@@ -1437,6 +1440,24 @@ internal class SystemReportCollector {
             "threadCount" to fields.getOrNull(17)?.toLongOrNull(),
             "processor" to fields.getOrNull(36)?.toLongOrNull(),
         )
+    }.getOrDefault(emptyMap())
+
+    private fun collectSystemScheduling(): Map<String, Long> = runCatching {
+        val lines = File("/proc/stat").takeIf(File::isFile)?.readLines().orEmpty()
+        val values = linkedMapOf<String, Long>()
+        lines.forEach { line ->
+            val parts = line.trim().split(Regex("\\s+"))
+            val key = parts.firstOrNull() ?: return@forEach
+            val value = parts.getOrNull(1)?.toLongOrNull() ?: return@forEach
+            when (key) {
+                "ctxt" -> values["contextSwitches"] = value
+                "intr" -> values["interrupts"] = value
+                "processes" -> values["forks"] = value
+                "procs_running" -> values["runnableProcesses"] = value
+                "procs_blocked" -> values["blockedProcesses"] = value
+            }
+        }
+        values
     }.getOrDefault(emptyMap())
 
     private fun readProcSocketStates(path: String): List<String> = runCatching {
