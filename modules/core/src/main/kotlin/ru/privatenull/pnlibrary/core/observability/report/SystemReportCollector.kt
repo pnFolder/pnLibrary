@@ -63,6 +63,8 @@ internal class SystemReportCollector {
             "systemPropertyCount" to System.getProperties().size,
             "systemPropertyNames" to System.getProperties().stringPropertyNames().sorted(),
             "bootModuleCount" to ModuleLayer.boot().modules().size,
+            "bootModules" to ModuleLayer.boot().modules().map { it.name }.sorted().take(512),
+            "classLoaderAnalytics" to collectClassLoaderAnalytics(),
             "classpathAnalytics" to collectClasspathAnalytics(),
             "modulePathAnalytics" to collectPathAnalytics("jdk.module.path"),
             "environment" to linkedMapOf(
@@ -1403,6 +1405,18 @@ internal class SystemReportCollector {
                 "jdk.certpath.disabledAlgorithms",
                 "jdk.jar.disabledAlgorithms",
             ).count { !Security.getProperty(it).isNullOrBlank() },
+        )
+    }.getOrDefault(emptyMap())
+
+    private fun collectClassLoaderAnalytics(): Map<String, Any?> = runCatching {
+        val classes = Thread.currentThread().contextClassLoader
+            ?.let { loader -> generateSequence(loader) { it.parent }.toList() }
+            .orEmpty()
+        linkedMapOf(
+            "contextChainLength" to classes.size,
+            "contextChain" to classes.map { it.javaClass.name }.take(32),
+            "platformLoader" to ClassLoader.getPlatformClassLoader().javaClass.name,
+            "systemLoader" to ClassLoader.getSystemClassLoader().javaClass.name,
         )
     }.getOrDefault(emptyMap())
 
