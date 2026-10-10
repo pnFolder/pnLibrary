@@ -220,6 +220,7 @@ internal class SystemReportCollector {
         data["powerManagement"] = collectPowerManagementAnalytics()
         data["processCapabilities"] = collectProcessCapabilityAnalytics()
         data["initSystem"] = collectInitSystemAnalytics()
+        data["kernelSandbox"] = collectKernelSandboxAnalytics()
         val durationMs = (System.nanoTime() - startedNanos) / 1_000_000
         data["collection"] = linkedMapOf(
             "durationMs" to durationMs,
@@ -509,6 +510,7 @@ internal class SystemReportCollector {
                 "powerManagement" to hasData(snapshot["powerManagement"]),
                 "processCapabilities" to hasData(snapshot["processCapabilities"]),
                 "initSystem" to hasData(snapshot["initSystem"]),
+                "kernelSandbox" to hasData(snapshot["kernelSandbox"]),
                 "processSchedulerDetails" to hasData(snapshot["processSchedulerDetails"]),
                 "processSignals" to hasData(snapshot["processSignals"]),
                 "processAddressSpace" to hasData(snapshot["processAddressSpace"]),
@@ -553,6 +555,7 @@ internal class SystemReportCollector {
                 "powerManagement" to snapshot["powerManagement"],
                 "processCapabilities" to snapshot["processCapabilities"],
                 "initSystem" to snapshot["initSystem"],
+                "kernelSandbox" to snapshot["kernelSandbox"],
                 "processSchedulerDetails" to snapshot["processSchedulerDetails"],
                 "processSignals" to snapshot["processSignals"],
                 "processAddressSpace" to snapshot["processAddressSpace"],
@@ -619,6 +622,7 @@ internal class SystemReportCollector {
             "powerManagement" to snapshot["powerManagement"],
             "processCapabilities" to snapshot["processCapabilities"],
             "initSystem" to snapshot["initSystem"],
+            "kernelSandbox" to snapshot["kernelSandbox"],
             "processSchedulerDetails" to snapshot["processSchedulerDetails"],
             "processSignals" to snapshot["processSignals"],
             "processAddressSpace" to snapshot["processAddressSpace"],
@@ -2474,6 +2478,22 @@ internal class SystemReportCollector {
             "containerManagerMarkers" to listOf(
                 "/run/systemd/container", "/run/.containerenv", "/.dockerenv", "/run/kubernetes",
             ).filter { File(it).exists() }.map { it.substringAfterLast('/') },
+        )
+    }.getOrDefault(emptyMap())
+
+    /** Reports BPF and user-namespace policy without enumerating programs or namespace identities. */
+    private fun collectKernelSandboxAnalytics(): Map<String, Any?> = runCatching {
+        linkedMapOf(
+            "configured" to (File("/sys/fs/bpf").exists() || File("/proc/sys/kernel").isDirectory),
+            "bpfFilesystemPresent" to File("/sys/fs/bpf").isDirectory,
+            "unprivilegedBpfDisabled" to readLongFile("/proc/sys/kernel/unprivileged_bpf_disabled"),
+            "unprivilegedUserNamespaces" to readLongFile("/proc/sys/kernel/unprivileged_userns_clone"),
+            "maxUserNamespaces" to readLongFile("/proc/sys/user/max_user_namespaces"),
+            "maxPidNamespaces" to readLongFile("/proc/sys/user/max_pid_namespaces"),
+            "maxNetworkNamespaces" to readLongFile("/proc/sys/user/max_net_namespaces"),
+            "cgroupNamespacePresent" to File("/proc/self/ns/cgroup").exists(),
+            "mountNamespacePresent" to File("/proc/self/ns/mnt").exists(),
+            "userNamespacePresent" to File("/proc/self/ns/user").exists(),
         )
     }.getOrDefault(emptyMap())
 
