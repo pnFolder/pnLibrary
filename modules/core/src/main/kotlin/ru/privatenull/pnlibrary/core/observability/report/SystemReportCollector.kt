@@ -217,6 +217,10 @@ internal class SystemReportCollector {
                 "ioPressureAvg10" to ((data["pressureStall"] as? Map<*, *>)?.get("io") as? Map<*, *>)?.get("someAvg10"),
                 "pressureStall" to data["pressureStall"],
                 "systemMemoryAvailableBytes" to (data["systemMemory"] as? Map<*, *>)?.get("MemAvailable"),
+                "bufferPoolUsedBytes" to ((data["memory"] as? Map<*, *>)?.get("bufferPools") as? Collection<*>)?.sumOf {
+                    ((it as? Map<*, *>)?.get("usedBytes") as? Number)?.toLong() ?: 0L
+                },
+                "jitCompilationTimeMs" to (data["jitCompilation"] as? Map<*, *>)?.get("totalCompilationTimeMs"),
                 "containerMemoryCurrent" to (data["runtimeEnvironment"] as? Map<*, *>)?.get("memoryCurrentBytes"),
                 "containerCpuThrottled" to (data["runtimeEnvironment"] as? Map<*, *>)?.get("cpuThrottledMicros"),
                 "containerMemoryHighEvents" to (data["runtimeEnvironment"] as? Map<*, *>)?.get("memoryHighEvents"),
@@ -885,6 +889,8 @@ internal class SystemReportCollector {
             "processUserCpuTicksDelta" to numericDelta("processUserCpuTicks"),
             "processSystemCpuTicksDelta" to numericDelta("processSystemCpuTicks"),
             "durationMsDelta" to numericDelta("durationMs"),
+            "bufferPoolUsedBytesDelta" to numericDelta("bufferPoolUsedBytes"),
+            "jitCompilationTimeMsDelta" to numericDelta("jitCompilationTimeMs"),
         ),
     )
 
