@@ -474,7 +474,9 @@ internal class SystemReportCollector {
                 "memoryLowEvents" to (snapshot["runtimeEnvironment"] as? Map<*, *>)?.get("memoryLowEvents"),
                 "memoryOomGroupEvents" to (snapshot["runtimeEnvironment"] as? Map<*, *>)?.get("memoryOomGroupEvents"),
                 "cgroupIo" to (snapshot["runtimeEnvironment"] as? Map<*, *>)?.get("io"),
+                "cgroupMemoryStat" to (snapshot["runtimeEnvironment"] as? Map<*, *>)?.get("memoryStat"),
             ),
+            "containerMemoryStat" to (snapshot["runtimeEnvironment"] as? Map<*, *>)?.get("memoryStat"),
             "classpathAnalytics" to (java?.get("classpathAnalytics") ?: emptyMap<String, Any>()),
             "modulePathAnalytics" to (java?.get("modulePathAnalytics") ?: emptyMap<String, Any>()),
             "processIo" to snapshot["processIo"],
@@ -1417,8 +1419,26 @@ internal class SystemReportCollector {
         "memoryOomEvents" to readCgroupKey("/sys/fs/cgroup/memory.events", "oom"),
         "memoryOomKillEvents" to readCgroupKey("/sys/fs/cgroup/memory.events", "oom_kill"),
         "memoryOomGroupEvents" to readCgroupKey("/sys/fs/cgroup/memory.events", "oom_group"),
+        "memoryStat" to collectCgroupMemoryStat(),
         "io" to collectCgroupIo(),
     )
+
+    private fun collectCgroupMemoryStat(): Map<String, Any?> = runCatching {
+        val keys = setOf("anon", "file", "kernel", "kernel_stack", "slab", "sock", "shmem", "file_mapped", "file_dirty", "file_writeback", "inactive_anon", "active_anon", "inactive_file", "active_file")
+        val values = File("/sys/fs/cgroup/memory.stat").takeIf(File::isFile)?.readLines().orEmpty()
+            .mapNotNull { line ->
+                val parts = line.trim().split(Regex("\\s+"))
+                if (parts.size != 2 || parts[0] !in keys) null else parts[0] to parts[1].toLongOrNull()
+            }.toMap()
+        linkedMapOf(
+            "anonBytes" to values["anon"], "fileBytes" to values["file"], "kernelBytes" to values["kernel"],
+            "kernelStackBytes" to values["kernel_stack"], "slabBytes" to values["slab"], "socketBytes" to values["sock"],
+            "shmemBytes" to values["shmem"], "mappedFileBytes" to values["file_mapped"],
+            "dirtyFileBytes" to values["file_dirty"], "writebackFileBytes" to values["file_writeback"],
+            "activeAnonBytes" to values["active_anon"], "inactiveAnonBytes" to values["inactive_anon"],
+            "activeFileBytes" to values["active_file"], "inactiveFileBytes" to values["inactive_file"],
+        )
+    }.getOrDefault(emptyMap())
 
     private fun collectCgroupIo(): Map<String, Any?> = runCatching {
         val rows = File("/sys/fs/cgroup/io.stat").takeIf(File::isFile)?.readLines().orEmpty()
