@@ -281,6 +281,14 @@ internal class SystemReportCollector {
             if (descriptorRatio(fileDescriptors)?.let { it >= 0.90 } == true) {
                 add(linkedMapOf("code" to "fileDescriptorPressure", "severity" to "elevated"))
             }
+            val runtimeEnvironment = snapshot["runtimeEnvironment"] as? Map<*, *>
+            if ((runtimeEnvironment?.get("memoryOomKillEvents") as? Number)?.toLong()?.let { it > 0L } == true) {
+                add(linkedMapOf("code" to "containerOomKill", "severity" to "critical"))
+            } else if ((runtimeEnvironment?.get("memoryHighEvents") as? Number)?.toLong()?.let { it > 0L } == true ||
+                (runtimeEnvironment?.get("memoryMaxEvents") as? Number)?.toLong()?.let { it > 0L } == true
+            ) {
+                add(linkedMapOf("code" to "containerMemoryPressure", "severity" to "elevated"))
+            }
         }
 
         val classLoading = snapshot["classes"] as? Map<*, *>
