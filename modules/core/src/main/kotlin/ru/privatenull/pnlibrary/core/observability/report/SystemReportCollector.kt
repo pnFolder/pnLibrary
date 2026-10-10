@@ -345,6 +345,7 @@ internal class SystemReportCollector {
                 "availableProcessors" to os?.get("availableProcessors"),
                 "systemLoadAverage" to os?.get("systemLoadAverage"),
                 "processCpuTimeNanos" to cpu?.get("processCpuTimeNanos"),
+                "hostUptimeSeconds" to (snapshot["runtimeEnvironment"] as? Map<*, *>)?.get("hostUptimeSeconds"),
             "committedVirtualMemoryBytes" to cpu?.get("committedVirtualMemoryBytes"),
                 "totalPhysicalMemoryBytes" to cpu?.get("totalPhysicalMemoryBytes"),
                 "freePhysicalMemoryBytes" to cpu?.get("freePhysicalMemoryBytes"),
@@ -936,6 +937,7 @@ internal class SystemReportCollector {
             }
         }.getOrNull(),
         "workingDirectoryPresent" to File(System.getProperty("user.dir", ".")).isDirectory,
+        "hostUptimeSeconds" to readHostUptimeSeconds(),
         "memoryLimitBytes" to readCgroupLong("/sys/fs/cgroup/memory.max"),
         "memoryCurrentBytes" to readCgroupLong("/sys/fs/cgroup/memory.current"),
         "cpuQuotaMicros" to readCgroupLong("/sys/fs/cgroup/cpu.max", 0),
@@ -956,6 +958,11 @@ internal class SystemReportCollector {
             value?.let { key to it }
         }.toMap()
     }.getOrDefault(emptyMap())
+
+    private fun readHostUptimeSeconds(): Double? = runCatching {
+        File("/proc/uptime").takeIf(File::isFile)?.readText()?.trim()
+            ?.substringBefore(' ')?.toDoubleOrNull()
+    }.getOrNull()
 
     private fun collectLoadAverage(): Map<String, Any?> = runCatching {
         val values = File("/proc/loadavg").takeIf(File::isFile)?.readText()?.trim()

@@ -42,6 +42,7 @@ class SystemReportCollectorTest {
             ?: error("hostDistribution section is missing")
         assertTrue(host.containsKey("availableProcessors"))
         assertTrue(host.containsKey("totalPhysicalMemoryBytes"))
+        assertTrue(host.containsKey("hostUptimeSeconds"))
         val limits = analytics["containerLimits"] as? Map<*, *>
             ?: error("containerLimits section is missing")
         assertTrue(limits.containsKey("memoryLimitBytes"))
