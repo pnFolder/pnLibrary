@@ -88,6 +88,7 @@ internal class SystemReportCollector {
         data["processIo"] = collectProcessIo()
         data["processNetwork"] = collectProcessNetwork()
         data["processStatus"] = collectProcessStatus()
+        data["processAffinity"] = collectProcessAffinity()
         data["processMemoryMaps"] = collectProcessMemoryMaps()
         data["processFileDescriptors"] = collectProcessFileDescriptors()
         data["processLimits"] = collectProcessLimits()
@@ -198,6 +199,7 @@ internal class SystemReportCollector {
                 "unixSockets" to (data["processNetwork"] as? Map<*, *>)?.get("unixSockets"),
                 "processPssBytes" to (data["processMemoryMaps"] as? Map<*, *>)?.get("Pss"),
                 "openFileDescriptorCount" to (data["processFileDescriptors"] as? Map<*, *>)?.get("total"),
+                "allowedCpuCount" to (data["processAffinity"] as? Map<*, *>)?.get("allowedCpuCount"),
                 "containerMemoryCurrent" to (data["runtimeEnvironment"] as? Map<*, *>)?.get("memoryCurrentBytes"),
                 "containerCpuThrottled" to (data["runtimeEnvironment"] as? Map<*, *>)?.get("cpuThrottledMicros"),
                 "containerMemoryHighEvents" to (data["runtimeEnvironment"] as? Map<*, *>)?.get("memoryHighEvents"),
@@ -422,6 +424,7 @@ internal class SystemReportCollector {
                 "classpathMissingEntries" to ((java?.get("classpathAnalytics") as? Map<*, *>)?.get("missingEntryCount")),
                 "classpathExistingBytes" to ((java?.get("classpathAnalytics") as? Map<*, *>)?.get("totalExistingBytes")),
                 "modulePathMissingEntries" to ((java?.get("modulePathAnalytics") as? Map<*, *>)?.get("missingEntryCount")),
+                "allowedCpuCount" to ((snapshot["processAffinity"] as? Map<*, *>)?.get("allowedCpuCount")),
                 "largestFileSystem" to fileSystems.orEmpty()
                     .maxByOrNull { ((it as? Map<*, *>)?.get("totalSpaceBytes") as? Number)?.toLong() ?: 0L },
                 "networkInterfacesUp" to ((snapshot["networkAnalytics"] as? Map<*, *>)?.get("upCount")),
@@ -1228,6 +1231,28 @@ internal class SystemReportCollector {
             val value = line.substring(separator + 1).trim().split(' ').firstOrNull()?.toLongOrNull()
             value?.let { key to it }
         }.toMap()
+    }.getOrDefault(emptyMap())
+
+    private fun collectProcessAffinity(): Map<String, Any?> = runCatching {
+        val lines = File("/proc/self/status").takeIf(File::isFile)?.readLines().orEmpty()
+        val allowedList = lines.firstOrNull { it.startsWith("Cpus_allowed_list:") }
+            ?.substringAfter(':')?.trim()
+        val mask = lines.firstOrNull { it.startsWith("Cpus_allowed:") }
+            ?.substringAfter(':')?.trim()
+        val count = allowedList?.split(',').orEmpty().sumOf { range ->
+            val bounds = range.trim().split('-').mapNotNull(String::toIntOrNull)
+            when (bounds.size) {
+                1 -> 1
+                2 -> (bounds[1] - bounds[0] + 1).coerceAtLeast(0)
+                else -> 0
+            }
+        }.takeIf { it > 0 }
+        linkedMapOf(
+            "allowedCpuList" to allowedList,
+            "allowedCpuMask" to mask,
+            "allowedCpuCount" to count,
+            "restricted" to (count != null && count < Runtime.getRuntime().availableProcessors()),
+        )
     }.getOrDefault(emptyMap())
 
     private fun collectProcessMemoryMaps(): Map<String, Long> = runCatching {
