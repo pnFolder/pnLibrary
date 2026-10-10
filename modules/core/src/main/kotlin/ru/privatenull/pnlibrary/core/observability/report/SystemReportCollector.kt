@@ -230,6 +230,7 @@ internal class SystemReportCollector {
         data["cgroupTopology"] = collectCgroupTopologyAnalytics()
         data["networkSocketPressure"] = collectNetworkSocketPressure()
         data["buddyAllocator"] = collectBuddyAllocatorAnalytics()
+        data["memoryCompaction"] = collectMemoryCompactionAnalytics()
         val durationMs = (System.nanoTime() - startedNanos) / 1_000_000
         data["collection"] = linkedMapOf(
             "durationMs" to durationMs,
@@ -529,6 +530,7 @@ internal class SystemReportCollector {
                 "cgroupTopology" to hasData(snapshot["cgroupTopology"]),
                 "networkSocketPressure" to hasData(snapshot["networkSocketPressure"]),
                 "buddyAllocator" to hasData(snapshot["buddyAllocator"]),
+                "memoryCompaction" to hasData(snapshot["memoryCompaction"]),
                 "processSchedulerDetails" to hasData(snapshot["processSchedulerDetails"]),
                 "processSignals" to hasData(snapshot["processSignals"]),
                 "processAddressSpace" to hasData(snapshot["processAddressSpace"]),
@@ -583,6 +585,7 @@ internal class SystemReportCollector {
                 "cgroupTopology" to snapshot["cgroupTopology"],
                 "networkSocketPressure" to snapshot["networkSocketPressure"],
                 "buddyAllocator" to snapshot["buddyAllocator"],
+                "memoryCompaction" to snapshot["memoryCompaction"],
                 "processSchedulerDetails" to snapshot["processSchedulerDetails"],
                 "processSignals" to snapshot["processSignals"],
                 "processAddressSpace" to snapshot["processAddressSpace"],
@@ -659,6 +662,7 @@ internal class SystemReportCollector {
             "cgroupTopology" to snapshot["cgroupTopology"],
             "networkSocketPressure" to snapshot["networkSocketPressure"],
             "buddyAllocator" to snapshot["buddyAllocator"],
+            "memoryCompaction" to snapshot["memoryCompaction"],
             "processSchedulerDetails" to snapshot["processSchedulerDetails"],
             "processSignals" to snapshot["processSignals"],
             "processAddressSpace" to snapshot["processAddressSpace"],
@@ -2728,6 +2732,28 @@ internal class SystemReportCollector {
             "nodeCount" to nodeCount,
             "zoneCount" to zoneCount,
             "freeBlocksByOrder" to orderTotals,
+        )
+    }.getOrDefault(emptyMap())
+
+    /** Reports memory compaction/reclaim policy and aggregate vmstat counters. */
+    private fun collectMemoryCompactionAnalytics(): Map<String, Any?> = runCatching {
+        val keys = setOf(
+            "pgscan_kswapd", "pgscan_direct", "pgsteal_kswapd", "pgsteal_direct",
+            "compact_migrate_scanned", "compact_free_scanned", "compact_stall", "compact_success",
+            "compact_fail", "kswapd_inodesteal", "pgactivate", "pgdeactivate",
+        )
+        val counters = File("/proc/vmstat").takeIf(File::isFile)?.readLines().orEmpty()
+            .mapNotNull { line ->
+                val fields = line.trim().split(Regex("\\s+"))
+                if (fields.size == 2 && fields[0] in keys) fields[0] to fields[1].toLongOrNull() else null
+            }.toMap()
+        linkedMapOf(
+            "configured" to counters.isNotEmpty(),
+            "compactMemoryPolicy" to readLongFile("/proc/sys/vm/compact_memory"),
+            "watermarkBoostFactor" to readLongFile("/proc/sys/vm/watermark_boost_factor"),
+            "watermarkScaleFactor" to readLongFile("/proc/sys/vm/watermark_scale_factor"),
+            "zoneReclaimMode" to readLongFile("/proc/sys/vm/zone_reclaim_mode"),
+            "counters" to counters,
         )
     }.getOrDefault(emptyMap())
 
