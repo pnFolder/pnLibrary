@@ -103,6 +103,7 @@ internal class SystemReportCollector {
         data["systemScheduling"] = collectSystemScheduling()
         data["loadAverage"] = collectLoadAverage()
         data["pressureStall"] = collectPressureStall()
+        data["containerPressureStall"] = collectContainerPressureStall()
         data["systemMemory"] = collectSystemMemory()
 
         // ── Memory ───────────────────────────────────────────────────────────
@@ -225,6 +226,7 @@ internal class SystemReportCollector {
                 "ioPressureAvg10" to ((data["pressureStall"] as? Map<*, *>)?.get("io") as? Map<*, *>)?.get("someAvg10"),
                 "pressureStall" to data["pressureStall"],
                 "systemMemoryAvailableBytes" to (data["systemMemory"] as? Map<*, *>)?.get("MemAvailable"),
+                "containerPressureStall" to data["containerPressureStall"],
                 "cpuPressureAvg10" to ((data["pressureStall"] as? Map<*, *>)?.get("cpu") as? Map<*, *>)?.get("someAvg10"),
                 "memoryPressureAvg10" to ((data["pressureStall"] as? Map<*, *>)?.get("memory") as? Map<*, *>)?.get("someAvg10"),
                 "ioPressureAvg10" to ((data["pressureStall"] as? Map<*, *>)?.get("io") as? Map<*, *>)?.get("someAvg10"),
@@ -492,6 +494,7 @@ internal class SystemReportCollector {
                 "systemScheduling" to snapshot["systemScheduling"],
                 "systemMemory" to snapshot["systemMemory"],
                 "containerIo" to snapshot["containerIo"],
+                "containerPressureStall" to snapshot["containerPressureStall"],
                 "processSecurity" to snapshot["processSecurity"],
                 "processNamespaces" to snapshot["processNamespaces"],
                 "processOomPolicy" to snapshot["processOomPolicy"],
@@ -1328,6 +1331,30 @@ internal class SystemReportCollector {
             }
         }
     }.getOrDefault(emptyMap())
+
+    private fun collectContainerPressureStall(): Map<String, Any?> = runCatching {
+        linkedMapOf<String, Any?>().apply {
+            listOf("cpu", "memory", "io").forEach { resource ->
+                parsePressureFile("/sys/fs/cgroup/$resource.pressure")?.let { put(resource, it) }
+            }
+        }
+    }.getOrDefault(emptyMap())
+
+    private fun parsePressureFile(path: String): Map<String, Double>? = runCatching {
+        val lines = File(path).takeIf(File::isFile)?.readLines().orEmpty()
+        if (lines.isEmpty()) return@runCatching null
+        linkedMapOf<String, Double>().apply {
+            lines.forEach { line ->
+                val parts = line.trim().split(Regex("\\s+"))
+                val category = parts.firstOrNull() ?: return@forEach
+                parts.drop(1).forEach { part ->
+                    val key = part.substringBefore('=')
+                    part.substringAfter('=', "").toDoubleOrNull()
+                        ?.let { put("${category}${key.replaceFirstChar(Char::uppercase)}", it) }
+                }
+            }
+        }
+    }.getOrNull()
 
     private fun collectSystemMemory(): Map<String, Long> = runCatching {
         val keys = setOf(
