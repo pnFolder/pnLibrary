@@ -92,6 +92,7 @@ internal class SystemReportCollector {
         data["processStatus"] = collectProcessStatus()
         data["processAffinity"] = collectProcessAffinity()
         data["processSecurity"] = collectProcessSecurity()
+        data["processNamespaces"] = collectProcessNamespaces()
         data["processMemoryMaps"] = collectProcessMemoryMaps()
         data["processFileDescriptors"] = collectProcessFileDescriptors()
         data["processLimits"] = collectProcessLimits()
@@ -214,6 +215,7 @@ internal class SystemReportCollector {
                 "kernelThreadsMaximum" to ((data["kernelLimits"] as? Map<*, *>)?.get("threadsMaximum")),
                 "systemContextSwitches" to (data["systemScheduling"] as? Map<*, *>)?.get("contextSwitches"),
                 "processSecurity" to data["processSecurity"],
+                "processNamespaces" to data["processNamespaces"],
                 "containerIoReadBytes" to (data["containerIo"] as? Map<*, *>)?.get("readBytes"),
                 "containerEffectiveCpuCount" to (data["runtimeEnvironment"] as? Map<*, *>)?.get("effectiveCpuCount"),
                 "cpuPressureAvg10" to ((data["pressureStall"] as? Map<*, *>)?.get("cpu") as? Map<*, *>)?.get("someAvg10"),
@@ -486,6 +488,7 @@ internal class SystemReportCollector {
                 "systemMemory" to snapshot["systemMemory"],
                 "containerIo" to snapshot["containerIo"],
                 "processSecurity" to snapshot["processSecurity"],
+                "processNamespaces" to snapshot["processNamespaces"],
                 "containerEffectiveCpuSet" to ((snapshot["runtimeEnvironment"] as? Map<*, *>)?.get("effectiveCpuSet")),
                 "containerEffectiveCpuCount" to ((snapshot["runtimeEnvironment"] as? Map<*, *>)?.get("effectiveCpuCount")),
                 "processReadBytes" to ((snapshot["processIo"] as? Map<*, *>)?.get("read_bytes")),
@@ -1404,6 +1407,15 @@ internal class SystemReportCollector {
             "seccompMode" to value("Seccomp")?.toIntOrNull(),
             "dumpable" to value("Dumpable")?.toIntOrNull(),
         )
+    }.getOrDefault(emptyMap())
+
+    private fun collectProcessNamespaces(): Map<String, String> = runCatching {
+        listOf("cgroup", "ipc", "mnt", "net", "pid", "time", "user", "uts")
+            .mapNotNull { namespace ->
+                val link = File("/proc/self/ns/$namespace").takeIf { it.exists() } ?: return@mapNotNull null
+                val target = Files.readSymbolicLink(link.toPath()).toString()
+                namespace to target
+            }.toMap()
     }.getOrDefault(emptyMap())
 
     private fun collectProcessMemoryMaps(): Map<String, Long> = runCatching {
