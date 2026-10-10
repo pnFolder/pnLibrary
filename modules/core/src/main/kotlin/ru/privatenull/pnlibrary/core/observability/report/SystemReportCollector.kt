@@ -225,6 +225,9 @@ internal class SystemReportCollector {
                 "ioPressureAvg10" to ((data["pressureStall"] as? Map<*, *>)?.get("io") as? Map<*, *>)?.get("someAvg10"),
                 "pressureStall" to data["pressureStall"],
                 "systemMemoryAvailableBytes" to (data["systemMemory"] as? Map<*, *>)?.get("MemAvailable"),
+                "cpuPressureAvg10" to ((data["pressureStall"] as? Map<*, *>)?.get("cpu") as? Map<*, *>)?.get("someAvg10"),
+                "memoryPressureAvg10" to ((data["pressureStall"] as? Map<*, *>)?.get("memory") as? Map<*, *>)?.get("someAvg10"),
+                "ioPressureAvg10" to ((data["pressureStall"] as? Map<*, *>)?.get("io") as? Map<*, *>)?.get("someAvg10"),
                 "networkReceiveBytes" to (data["networkAnalytics"] as? Map<*, *>)?.get("totalReceiveBytes"),
                 "networkTransmitBytes" to (data["networkAnalytics"] as? Map<*, *>)?.get("totalTransmitBytes"),
                 "networkReceiveErrors" to (data["networkAnalytics"] as? Map<*, *>)?.get("totalReceiveErrors"),
@@ -924,6 +927,9 @@ internal class SystemReportCollector {
             "networkTransmitErrorsDelta" to numericDelta("networkTransmitErrors"),
             "networkReceiveDropsDelta" to numericDelta("networkReceiveDrops"),
             "networkTransmitDropsDelta" to numericDelta("networkTransmitDrops"),
+            "cpuPressureAvg10Delta" to numericDelta("cpuPressureAvg10"),
+            "memoryPressureAvg10Delta" to numericDelta("memoryPressureAvg10"),
+            "ioPressureAvg10Delta" to numericDelta("ioPressureAvg10"),
         ),
     )
 

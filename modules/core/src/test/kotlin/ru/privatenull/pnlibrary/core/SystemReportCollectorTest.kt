@@ -78,6 +78,8 @@ class SystemReportCollectorTest {
         assertTrue((collectionHistory["trend"] as? Map<*, *>)?.containsKey("jitCompilationTimeMsDelta") == true)
         assertTrue((collectionHistory["trend"] as? Map<*, *>)?.containsKey("networkReceiveBytesDelta") == true)
         assertTrue((collectionHistory["trend"] as? Map<*, *>)?.containsKey("networkTransmitErrorsDelta") == true)
+        assertTrue((collectionHistory["trend"] as? Map<*, *>)?.containsKey("cpuPressureAvg10Delta") == true)
+        assertTrue((collectionHistory["trend"] as? Map<*, *>)?.containsKey("ioPressureAvg10Delta") == true)
         assertTrue((collectionHistory["trend"] as? Map<*, *>)?.containsKey("blockedTimeMsDelta") == true)
         assertTrue((collectionHistory["trend"] as? Map<*, *>)?.containsKey("unixSocketsDelta") == true)
         assertTrue((collectionHistory["trend"] as? Map<*, *>)?.containsKey("processPssBytesDelta") == true)
