@@ -238,6 +238,7 @@ internal class SystemReportCollector {
         data["processTimers"] = collectProcessTimerAnalytics()
         data["kernelRcu"] = collectKernelRcuAnalytics()
         data["threadCpuSummary"] = collectThreadCpuSummary(threadMx)
+        data["memoryPoolPressure"] = collectMemoryPoolPressure()
         data["networkKernelPolicy"] = collectNetworkKernelPolicy()
         val durationMs = (System.nanoTime() - startedNanos) / 1_000_000
         data["collection"] = linkedMapOf(
@@ -546,6 +547,7 @@ internal class SystemReportCollector {
                 "processTimers" to hasData(snapshot["processTimers"]),
                 "kernelRcu" to hasData(snapshot["kernelRcu"]),
                 "threadCpuSummary" to hasData(snapshot["threadCpuSummary"]),
+                "memoryPoolPressure" to hasData(snapshot["memoryPoolPressure"]),
                 "networkKernelPolicy" to hasData(snapshot["networkKernelPolicy"]),
                 "processSchedulerDetails" to hasData(snapshot["processSchedulerDetails"]),
                 "processSignals" to hasData(snapshot["processSignals"]),
@@ -609,6 +611,7 @@ internal class SystemReportCollector {
                 "processTimers" to snapshot["processTimers"],
                 "kernelRcu" to snapshot["kernelRcu"],
                 "threadCpuSummary" to snapshot["threadCpuSummary"],
+                "memoryPoolPressure" to snapshot["memoryPoolPressure"],
                 "networkKernelPolicy" to snapshot["networkKernelPolicy"],
                 "processSchedulerDetails" to snapshot["processSchedulerDetails"],
                 "processSignals" to snapshot["processSignals"],
@@ -694,6 +697,7 @@ internal class SystemReportCollector {
             "processTimers" to snapshot["processTimers"],
             "kernelRcu" to snapshot["kernelRcu"],
             "threadCpuSummary" to snapshot["threadCpuSummary"],
+            "memoryPoolPressure" to snapshot["memoryPoolPressure"],
             "networkKernelPolicy" to snapshot["networkKernelPolicy"],
             "processSchedulerDetails" to snapshot["processSchedulerDetails"],
             "processSignals" to snapshot["processSignals"],
@@ -2862,6 +2866,30 @@ internal class SystemReportCollector {
             "userMeasuredThreadCount" to measuredUserCount,
             "totalCpuTimeNanoseconds" to cpuTimes.filter { it >= 0L }.sum(),
             "totalUserTimeNanoseconds" to userTimes.filter { it >= 0L }.sum(),
+        )
+    }.getOrDefault(emptyMap())
+
+    /** Reports JVM memory-pool pressure and threshold state without exposing pool implementation names. */
+    private fun collectMemoryPoolPressure(): Map<String, Any?> = runCatching {
+        val pools = ManagementFactory.getMemoryPoolMXBeans().map { pool ->
+            val usage = pool.usage
+            linkedMapOf<String, Any?>(
+                "name" to pool.name.take(128),
+                "usedBytes" to usage?.used,
+                "committedBytes" to usage?.committed,
+                "maxBytes" to usage?.max,
+                "usageThresholdSupported" to pool.isUsageThresholdSupported,
+                "usageThreshold" to pool.usageThreshold.takeIf { pool.isUsageThresholdSupported },
+                "usageThresholdExceeded" to pool.usageThresholdCount.takeIf { pool.isUsageThresholdSupported },
+                "collectionThresholdSupported" to pool.isCollectionUsageThresholdSupported,
+                "collectionThreshold" to pool.collectionUsageThreshold.takeIf { pool.isCollectionUsageThresholdSupported },
+                "collectionThresholdExceeded" to pool.collectionUsageThresholdCount.takeIf { pool.isCollectionUsageThresholdSupported },
+            )
+        }
+        linkedMapOf(
+            "configured" to pools.isNotEmpty(),
+            "poolCount" to pools.size,
+            "pools" to pools,
         )
     }.getOrDefault(emptyMap())
 
