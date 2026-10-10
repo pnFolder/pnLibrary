@@ -86,6 +86,7 @@ class SystemReportCollectorTest {
         }
         assertTrue(report["processNetwork"] is Map<*, *>)
         assertTrue((report["processNetwork"] as? Map<*, *>)?.containsKey("tcpStateCounts") == true)
+        assertTrue((report["processNetwork"] as? Map<*, *>)?.containsKey("udpStateCounts") == true)
         assertTrue(report["environmentVariableAnalytics"] is Map<*, *>)
         assertTrue(report["processStatus"] is Map<*, *>)
         assertTrue(report["processLimits"] is Map<*, *>)

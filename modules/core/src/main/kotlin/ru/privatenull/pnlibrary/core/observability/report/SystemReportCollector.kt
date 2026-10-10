@@ -1073,14 +1073,15 @@ internal class SystemReportCollector {
         val tcp = listOf("/proc/self/net/tcp", "/proc/self/net/tcp6")
             .flatMap { path -> readProcSocketStates(path) }
         val udp = listOf("/proc/self/net/udp", "/proc/self/net/udp6")
-            .sumOf { path -> readProcSocketStates(path).size }
+            .flatMap { path -> readProcSocketStates(path) }
         linkedMapOf(
             "tcpSockets" to tcp.size,
             "tcpStateCounts" to tcp.groupingBy { it }.eachCount().toSortedMap(),
             "tcpEstablished" to tcp.count { it == "01" },
             "tcpListening" to tcp.count { it == "0A" },
             "tcpTimeWait" to tcp.count { it == "06" },
-            "udpSockets" to udp,
+            "udpSockets" to udp.size,
+            "udpStateCounts" to udp.groupingBy { it }.eachCount().toSortedMap(),
         )
     }.getOrDefault(emptyMap())
 
