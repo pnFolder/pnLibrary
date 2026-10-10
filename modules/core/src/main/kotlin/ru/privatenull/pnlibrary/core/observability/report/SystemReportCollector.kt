@@ -91,6 +91,7 @@ internal class SystemReportCollector {
         data["processNetwork"] = collectProcessNetwork()
         data["processStatus"] = collectProcessStatus()
         data["processAffinity"] = collectProcessAffinity()
+        data["processSecurity"] = collectProcessSecurity()
         data["processMemoryMaps"] = collectProcessMemoryMaps()
         data["processFileDescriptors"] = collectProcessFileDescriptors()
         data["processLimits"] = collectProcessLimits()
@@ -212,6 +213,7 @@ internal class SystemReportCollector {
                 "kernelPidMaximum" to ((data["kernelLimits"] as? Map<*, *>)?.get("pidMaximum")),
                 "kernelThreadsMaximum" to ((data["kernelLimits"] as? Map<*, *>)?.get("threadsMaximum")),
                 "systemContextSwitches" to (data["systemScheduling"] as? Map<*, *>)?.get("contextSwitches"),
+                "processSecurity" to data["processSecurity"],
                 "containerIoReadBytes" to (data["containerIo"] as? Map<*, *>)?.get("readBytes"),
                 "containerEffectiveCpuCount" to (data["runtimeEnvironment"] as? Map<*, *>)?.get("effectiveCpuCount"),
                 "cpuPressureAvg10" to ((data["pressureStall"] as? Map<*, *>)?.get("cpu") as? Map<*, *>)?.get("someAvg10"),
@@ -483,6 +485,7 @@ internal class SystemReportCollector {
                 "systemScheduling" to snapshot["systemScheduling"],
                 "systemMemory" to snapshot["systemMemory"],
                 "containerIo" to snapshot["containerIo"],
+                "processSecurity" to snapshot["processSecurity"],
                 "containerEffectiveCpuSet" to ((snapshot["runtimeEnvironment"] as? Map<*, *>)?.get("effectiveCpuSet")),
                 "containerEffectiveCpuCount" to ((snapshot["runtimeEnvironment"] as? Map<*, *>)?.get("effectiveCpuCount")),
                 "processReadBytes" to ((snapshot["processIo"] as? Map<*, *>)?.get("read_bytes")),
@@ -1384,6 +1387,22 @@ internal class SystemReportCollector {
             "allowedCpuMask" to mask,
             "allowedCpuCount" to count,
             "restricted" to (count != null && count < Runtime.getRuntime().availableProcessors()),
+        )
+    }.getOrDefault(emptyMap())
+
+    private fun collectProcessSecurity(): Map<String, Any?> = runCatching {
+        val lines = File("/proc/self/status").takeIf(File::isFile)?.readLines().orEmpty()
+        fun value(key: String): String? = lines.firstOrNull { it.startsWith("$key:") }
+            ?.substringAfter(':')?.trim()
+        linkedMapOf(
+            "uid" to value("Uid")?.split(Regex("\\s+"))?.firstOrNull()?.toLongOrNull(),
+            "gid" to value("Gid")?.split(Regex("\\s+"))?.firstOrNull()?.toLongOrNull(),
+            "effectiveCapabilities" to value("CapEff"),
+            "permittedCapabilities" to value("CapPrm"),
+            "boundingCapabilities" to value("CapBnd"),
+            "noNewPrivileges" to (value("NoNewPrivs") == "1"),
+            "seccompMode" to value("Seccomp")?.toIntOrNull(),
+            "dumpable" to value("Dumpable")?.toIntOrNull(),
         )
     }.getOrDefault(emptyMap())
 
