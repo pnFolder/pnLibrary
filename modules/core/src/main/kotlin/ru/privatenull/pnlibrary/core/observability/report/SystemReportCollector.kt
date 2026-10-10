@@ -117,6 +117,7 @@ internal class SystemReportCollector {
         data["securityRuntime"] = collectSecurityRuntime()
         data["hardwareSensors"] = collectHardwareSensors()
         data["numaMemory"] = collectNumaMemory()
+        data["kernelVmPolicy"] = collectKernelVmPolicy()
 
         // ── Memory ───────────────────────────────────────────────────────────
         val heap = memoryMx.heapMemoryUsage
@@ -297,6 +298,7 @@ internal class SystemReportCollector {
                 "securityEnforcement" to (data["securityRuntime"] as? Map<*, *>)?.get("enforcement"),
                 "hardwareSensorCount" to (data["hardwareSensors"] as? Map<*, *>)?.get("sensorCount"),
                 "numaNodeCount" to (data["numaMemory"] as? Map<*, *>)?.get("nodeCount"),
+                "vmSwappiness" to (data["kernelVmPolicy"] as? Map<*, *>)?.get("swappiness"),
                 "tcpRetransmissions" to (data["networkProtocolStats"] as? Map<*, *>)?.get("tcpRetransmissions"),
                 "cpuIdleTicks" to (data["systemScheduling"] as? Map<*, *>)?.get("cpuIdleTicks"),
                 "cpuIowaitTicks" to (data["systemScheduling"] as? Map<*, *>)?.get("cpuIowaitTicks"),
@@ -449,6 +451,7 @@ internal class SystemReportCollector {
                 "securityRuntime" to hasData(snapshot["securityRuntime"]),
                 "hardwareSensors" to hasData(snapshot["hardwareSensors"]),
                 "numaMemory" to hasData(snapshot["numaMemory"]),
+                "kernelVmPolicy" to hasData(snapshot["kernelVmPolicy"]),
                 "networkProtocolStats" to hasData(snapshot["networkProtocolStats"]),
                 "processSchedulerDetails" to hasData(snapshot["processSchedulerDetails"]),
                 "processSignals" to hasData(snapshot["processSignals"]),
@@ -469,6 +472,7 @@ internal class SystemReportCollector {
                 "securityRuntime" to snapshot["securityRuntime"],
                 "hardwareSensors" to snapshot["hardwareSensors"],
                 "numaMemory" to snapshot["numaMemory"],
+                "kernelVmPolicy" to snapshot["kernelVmPolicy"],
                 "networkProtocolStats" to snapshot["networkProtocolStats"],
                 "processSchedulerDetails" to snapshot["processSchedulerDetails"],
                 "processSignals" to snapshot["processSignals"],
@@ -511,6 +515,7 @@ internal class SystemReportCollector {
             "securityRuntime" to snapshot["securityRuntime"],
             "hardwareSensors" to snapshot["hardwareSensors"],
             "numaMemory" to snapshot["numaMemory"],
+            "kernelVmPolicy" to snapshot["kernelVmPolicy"],
             "networkProtocolStats" to snapshot["networkProtocolStats"],
             "processSchedulerDetails" to snapshot["processSchedulerDetails"],
             "processSignals" to snapshot["processSignals"],
@@ -589,6 +594,7 @@ internal class SystemReportCollector {
                 "securityEnforcement" to (snapshot["securityRuntime"] as? Map<*, *>)?.get("enforcement"),
                 "hardwareSensorCount" to (snapshot["hardwareSensors"] as? Map<*, *>)?.get("sensorCount"),
                 "numaNodeCount" to (snapshot["numaMemory"] as? Map<*, *>)?.get("nodeCount"),
+                "vmSwappiness" to (snapshot["kernelVmPolicy"] as? Map<*, *>)?.get("swappiness"),
                 "tcpRetransmissions" to (snapshot["networkProtocolStats"] as? Map<*, *>)?.get("tcpRetransmissions"),
                 "tcpRetransmissions" to (snapshot["networkProtocolStats"] as? Map<*, *>)?.get("tcpRetransmissions"),
                 "cpuIdleTicks" to (snapshot["systemScheduling"] as? Map<*, *>)?.get("cpuIdleTicks"),
@@ -1649,6 +1655,19 @@ internal class SystemReportCollector {
             "compactions" to values["compact_stall"],
         )
     }.getOrDefault(emptyMap())
+
+    /** Captures non-sensitive VM policy knobs that explain reclaim and swap behavior. */
+    private fun collectKernelVmPolicy(): Map<String, Any?> = linkedMapOf(
+        "swappiness" to readLongFile("/proc/sys/vm/swappiness"),
+        "dirtyRatio" to readLongFile("/proc/sys/vm/dirty_ratio"),
+        "dirtyBackgroundRatio" to readLongFile("/proc/sys/vm/dirty_background_ratio"),
+        "dirtyBytes" to readLongFile("/proc/sys/vm/dirty_bytes"),
+        "dirtyBackgroundBytes" to readLongFile("/proc/sys/vm/dirty_background_bytes"),
+        "overcommitMemory" to readLongFile("/proc/sys/vm/overcommit_memory"),
+        "overcommitRatio" to readLongFile("/proc/sys/vm/overcommit_ratio"),
+        "compactMemory" to readLongFile("/proc/sys/vm/compact_memory"),
+        "maxMapCount" to readLongFile("/proc/sys/vm/max_map_count"),
+    )
 
     /** Aggregates block-device sectors and latency from /proc/diskstats. */
     private fun collectDiskStats(): Map<String, Any?> = runCatching {
