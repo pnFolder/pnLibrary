@@ -14,6 +14,7 @@ import java.nio.file.Paths
 import java.time.Instant
 import java.time.ZoneId
 import java.util.Locale
+import java.security.Security
 
 /**
  * Collects a bounded cross-platform snapshot of JVM and host state.
@@ -71,6 +72,7 @@ internal class SystemReportCollector {
                 "defaultZone" to ZoneId.systemDefault().id,
                 "lineSeparator" to System.lineSeparator().replace("\r", "\\r").replace("\n", "\\n"),
             ),
+            "security" to collectJvmSecurity(),
         )
 
         // ── OS & Hardware ────────────────────────────────────────────────────
@@ -1383,6 +1385,26 @@ internal class SystemReportCollector {
             "previewOrModuleOptions" to count { it.contains("--enable-preview") || it.startsWith("--add-") },
         )
     }
+
+    /** Lists installed JCA providers and non-secret runtime crypto properties. */
+    private fun collectJvmSecurity(): Map<String, Any?> = runCatching {
+        linkedMapOf(
+            "providerCount" to Security.getProviders().size,
+            "providers" to Security.getProviders().map { provider ->
+                linkedMapOf<String, Any?>(
+                    "name" to provider.name,
+                    "version" to provider.version,
+                    "info" to provider.info.take(160),
+                )
+            },
+            "cryptoPolicy" to Security.getProperty("crypto.policy"),
+            "disabledAlgorithmsConfigured" to listOf(
+                "jdk.tls.disabledAlgorithms",
+                "jdk.certpath.disabledAlgorithms",
+                "jdk.jar.disabledAlgorithms",
+            ).count { !Security.getProperty(it).isNullOrBlank() },
+        )
+    }.getOrDefault(emptyMap())
 
     private fun collectPathAnalytics(property: String): Map<String, Any?> {
         val entries = System.getProperty(property)
