@@ -92,6 +92,7 @@ internal class SystemReportCollector {
         data["processMemoryMaps"] = collectProcessMemoryMaps()
         data["processFileDescriptors"] = collectProcessFileDescriptors()
         data["processLimits"] = collectProcessLimits()
+        data["kernelLimits"] = collectKernelLimits()
         data["processScheduling"] = collectProcessScheduling()
         data["loadAverage"] = collectLoadAverage()
         data["pressureStall"] = collectPressureStall()
@@ -201,6 +202,10 @@ internal class SystemReportCollector {
                 "processPssBytes" to (data["processMemoryMaps"] as? Map<*, *>)?.get("Pss"),
                 "openFileDescriptorCount" to (data["processFileDescriptors"] as? Map<*, *>)?.get("total"),
                 "allowedCpuCount" to (data["processAffinity"] as? Map<*, *>)?.get("allowedCpuCount"),
+                "kernelFileHandlesAllocated" to (data["kernelLimits"] as? Map<*, *>)?.get("fileHandlesAllocated"),
+                "kernelFileHandlesUsedRatio" to ((data["kernelLimits"] as? Map<*, *>)?.get("fileHandlesUsedRatio")),
+                "kernelPidMaximum" to ((data["kernelLimits"] as? Map<*, *>)?.get("pidMaximum")),
+                "kernelThreadsMaximum" to ((data["kernelLimits"] as? Map<*, *>)?.get("threadsMaximum")),
                 "cpuPressureAvg10" to ((data["pressureStall"] as? Map<*, *>)?.get("cpu") as? Map<*, *>)?.get("someAvg10"),
                 "memoryPressureAvg10" to ((data["pressureStall"] as? Map<*, *>)?.get("memory") as? Map<*, *>)?.get("someAvg10"),
                 "ioPressureAvg10" to ((data["pressureStall"] as? Map<*, *>)?.get("io") as? Map<*, *>)?.get("someAvg10"),
@@ -450,6 +455,7 @@ internal class SystemReportCollector {
                 "networkReceiveDrops" to ((snapshot["networkAnalytics"] as? Map<*, *>)?.get("totalReceiveDrops")),
                 "networkTransmitDrops" to ((snapshot["networkAnalytics"] as? Map<*, *>)?.get("totalTransmitDrops")),
                 "pressureStall" to snapshot["pressureStall"],
+                "kernelLimits" to snapshot["kernelLimits"],
                 "processReadBytes" to ((snapshot["processIo"] as? Map<*, *>)?.get("read_bytes")),
                 "processWriteBytes" to ((snapshot["processIo"] as? Map<*, *>)?.get("write_bytes")),
                 "processTcpEstablished" to ((snapshot["processNetwork"] as? Map<*, *>)?.get("tcpEstablished")),
@@ -1358,6 +1364,26 @@ internal class SystemReportCollector {
             )
         }.toMap()
     }.getOrDefault(emptyMap())
+
+    private fun collectKernelLimits(): Map<String, Any?> = runCatching {
+        val fileTable = File("/proc/sys/fs/file-nr").takeIf(File::isFile)?.readText()
+            ?.trim()?.split(Regex("\\s+"))?.mapNotNull(String::toLongOrNull).orEmpty()
+        linkedMapOf(
+            "fileHandlesAllocated" to fileTable.getOrNull(0),
+            "fileHandlesUnused" to fileTable.getOrNull(1),
+            "fileHandlesMaximum" to fileTable.getOrNull(2),
+            "fileHandlesUsedRatio" to fileTable.getOrNull(2)?.takeIf { it > 0L }
+                ?.let { max -> (fileTable.getOrNull(0) ?: 0L).toDouble() / max },
+            "pidMaximum" to readLongFile("/proc/sys/kernel/pid_max"),
+            "threadsMaximum" to readLongFile("/proc/sys/kernel/threads-max"),
+            "inotifyUserWatchesMaximum" to readLongFile("/proc/sys/fs/inotify/max_user_watches"),
+            "inotifyUserInstancesMaximum" to readLongFile("/proc/sys/fs/inotify/max_user_instances"),
+        )
+    }.getOrDefault(emptyMap())
+
+    private fun readLongFile(path: String): Long? = runCatching {
+        File(path).takeIf(File::isFile)?.readText()?.trim()?.toLongOrNull()
+    }.getOrNull()
 
     private fun parseLimitValue(value: String): Any? = value.toLongOrNull() ?: value
 
