@@ -422,6 +422,12 @@ internal class SystemReportCollector {
                     .maxByOrNull { ((it as? Map<*, *>)?.get("totalSpaceBytes") as? Number)?.toLong() ?: 0L },
                 "networkInterfacesUp" to ((snapshot["networkAnalytics"] as? Map<*, *>)?.get("upCount")),
                 "networkAddresses" to ((snapshot["networkAnalytics"] as? Map<*, *>)?.get("totalAddressCount")),
+                "networkReceiveBytes" to ((snapshot["networkAnalytics"] as? Map<*, *>)?.get("totalReceiveBytes")),
+                "networkTransmitBytes" to ((snapshot["networkAnalytics"] as? Map<*, *>)?.get("totalTransmitBytes")),
+                "networkReceiveErrors" to ((snapshot["networkAnalytics"] as? Map<*, *>)?.get("totalReceiveErrors")),
+                "networkTransmitErrors" to ((snapshot["networkAnalytics"] as? Map<*, *>)?.get("totalTransmitErrors")),
+                "networkReceiveDrops" to ((snapshot["networkAnalytics"] as? Map<*, *>)?.get("totalReceiveDrops")),
+                "networkTransmitDrops" to ((snapshot["networkAnalytics"] as? Map<*, *>)?.get("totalTransmitDrops")),
                 "processReadBytes" to ((snapshot["processIo"] as? Map<*, *>)?.get("read_bytes")),
                 "processWriteBytes" to ((snapshot["processIo"] as? Map<*, *>)?.get("write_bytes")),
                 "processTcpEstablished" to ((snapshot["processNetwork"] as? Map<*, *>)?.get("tcpEstablished")),
@@ -1318,10 +1324,32 @@ internal class SystemReportCollector {
         )
     }.getOrDefault(emptyMap())
 
+    private fun readNetworkInterfaceCounters(name: String): Map<String, Long> = runCatching {
+        val line = File("/proc/net/dev").takeIf(File::isFile)?.readLines()
+            ?.firstOrNull { it.substringBefore(':').trim() == name } ?: return@runCatching emptyMap()
+        val values = line.substringAfter(':').trim().split(Regex("\\s+"))
+            .mapNotNull(String::toLongOrNull)
+        if (values.size < 16) return@runCatching emptyMap()
+        linkedMapOf(
+            "receiveBytes" to values[0], "receivePackets" to values[1],
+            "receiveErrors" to values[2], "receiveDrops" to values[3],
+            "transmitBytes" to values[8], "transmitPackets" to values[9],
+            "transmitErrors" to values[10], "transmitDrops" to values[11],
+        )
+    }.getOrDefault(emptyMap())
+
+    private fun readNetworkInterfaceText(name: String, file: String): String? = runCatching {
+        File("/sys/class/net/$name/$file").takeIf(File::isFile)?.readText()?.trim()?.takeIf(String::isNotBlank)
+    }.getOrNull()
+
+    private fun readNetworkInterfaceLong(name: String, file: String): Long? =
+        readNetworkInterfaceText(name, file)?.toLongOrNull()?.takeIf { it >= 0L }
+
     private fun collectNetworkAnalytics(): Map<String, Any?> = runCatching {
         val interfaces = NetworkInterface.getNetworkInterfaces()?.toList().orEmpty()
         val details = interfaces.map { nif ->
             val addresses = nif.inetAddresses.toList()
+            val counters = readNetworkInterfaceCounters(nif.name)
             linkedMapOf<String, Any?>(
                 "name" to nif.name,
                 "up" to nif.isUp,
@@ -1330,9 +1358,19 @@ internal class SystemReportCollector {
                 "pointToPoint" to nif.isPointToPoint,
                 "supportsMulticast" to nif.supportsMulticast(),
                 "mtu" to runCatching { nif.mtu }.getOrNull(),
+                "operState" to readNetworkInterfaceText(nif.name, "operstate"),
+                "linkSpeedMbps" to readNetworkInterfaceLong(nif.name, "speed"),
                 "addressCount" to addresses.size,
                 "ipv4Count" to addresses.count { it.address.size == 4 },
                 "ipv6Count" to addresses.count { it.address.size == 16 },
+                "receiveBytes" to counters["receiveBytes"],
+                "receivePackets" to counters["receivePackets"],
+                "receiveErrors" to counters["receiveErrors"],
+                "receiveDrops" to counters["receiveDrops"],
+                "transmitBytes" to counters["transmitBytes"],
+                "transmitPackets" to counters["transmitPackets"],
+                "transmitErrors" to counters["transmitErrors"],
+                "transmitDrops" to counters["transmitDrops"],
             )
         }
         linkedMapOf(
@@ -1345,8 +1383,15 @@ internal class SystemReportCollector {
             "totalAddressCount" to details.sumOf { (it["addressCount"] as? Number)?.toInt() ?: 0 },
             "ipv4AddressCount" to details.sumOf { (it["ipv4Count"] as? Number)?.toInt() ?: 0 },
             "ipv6AddressCount" to details.sumOf { (it["ipv6Count"] as? Number)?.toInt() ?: 0 },
-            "maximumMtu" to details.mapNotNull { (it["mtu"] as? Number)?.toInt() }.maxOrNull(),
-        )
+                "maximumMtu" to details.mapNotNull { (it["mtu"] as? Number)?.toInt() }.maxOrNull(),
+                "linkStates" to details.groupingBy { it["operState"]?.toString() ?: "unknown" }.eachCount().toSortedMap(),
+                "totalReceiveBytes" to details.sumOf { (it["receiveBytes"] as? Number)?.toLong() ?: 0L },
+                "totalTransmitBytes" to details.sumOf { (it["transmitBytes"] as? Number)?.toLong() ?: 0L },
+                "totalReceiveErrors" to details.sumOf { (it["receiveErrors"] as? Number)?.toLong() ?: 0L },
+                "totalTransmitErrors" to details.sumOf { (it["transmitErrors"] as? Number)?.toLong() ?: 0L },
+                "totalReceiveDrops" to details.sumOf { (it["receiveDrops"] as? Number)?.toLong() ?: 0L },
+                "totalTransmitDrops" to details.sumOf { (it["transmitDrops"] as? Number)?.toLong() ?: 0L },
+            )
     }.getOrDefault(emptyMap())
 
     private companion object {
