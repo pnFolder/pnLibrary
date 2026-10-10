@@ -225,6 +225,7 @@ internal class SystemReportCollector {
         data["kernelDebugPolicy"] = collectKernelDebugPolicy()
         data["memoryZones"] = collectMemoryZoneAnalytics()
         data["kernelSlab"] = collectKernelSlabAnalytics()
+        data["kernelWorkqueues"] = collectKernelWorkqueueAnalytics()
         val durationMs = (System.nanoTime() - startedNanos) / 1_000_000
         data["collection"] = linkedMapOf(
             "durationMs" to durationMs,
@@ -519,6 +520,7 @@ internal class SystemReportCollector {
                 "kernelDebugPolicy" to hasData(snapshot["kernelDebugPolicy"]),
                 "memoryZones" to hasData(snapshot["memoryZones"]),
                 "kernelSlab" to hasData(snapshot["kernelSlab"]),
+                "kernelWorkqueues" to hasData(snapshot["kernelWorkqueues"]),
                 "processSchedulerDetails" to hasData(snapshot["processSchedulerDetails"]),
                 "processSignals" to hasData(snapshot["processSignals"]),
                 "processAddressSpace" to hasData(snapshot["processAddressSpace"]),
@@ -568,6 +570,7 @@ internal class SystemReportCollector {
                 "kernelDebugPolicy" to snapshot["kernelDebugPolicy"],
                 "memoryZones" to snapshot["memoryZones"],
                 "kernelSlab" to snapshot["kernelSlab"],
+                "kernelWorkqueues" to snapshot["kernelWorkqueues"],
                 "processSchedulerDetails" to snapshot["processSchedulerDetails"],
                 "processSignals" to snapshot["processSignals"],
                 "processAddressSpace" to snapshot["processAddressSpace"],
@@ -639,6 +642,7 @@ internal class SystemReportCollector {
             "kernelDebugPolicy" to snapshot["kernelDebugPolicy"],
             "memoryZones" to snapshot["memoryZones"],
             "kernelSlab" to snapshot["kernelSlab"],
+            "kernelWorkqueues" to snapshot["kernelWorkqueues"],
             "processSchedulerDetails" to snapshot["processSchedulerDetails"],
             "processSignals" to snapshot["processSignals"],
             "processAddressSpace" to snapshot["processAddressSpace"],
@@ -2600,6 +2604,28 @@ internal class SystemReportCollector {
             "totalObjects" to totalObjects,
             "activeBytes" to activeBytes,
             "totalBytes" to totalBytes,
+        )
+    }.getOrDefault(emptyMap())
+
+    /** Reports workqueue policy and aggregate queue capabilities without queue names. */
+    private fun collectKernelWorkqueueAnalytics(): Map<String, Any?> = runCatching {
+        val root = File("/sys/devices/virtual/workqueue")
+        val queues = root.takeIf(File::isDirectory)?.listFiles().orEmpty()
+            .filter { it.isDirectory && !it.name.startsWith("cpumask") }
+            .map { queue ->
+                linkedMapOf<String, Any?>(
+                    "maxActive" to readLongFile("${queue.path}/max_active"),
+                    "cpumask" to readTextFile("${queue.path}/cpumask"),
+                    "nice" to readLongFile("${queue.path}/nice"),
+                    "perCpu" to File(queue, "per_cpu").isDirectory,
+                )
+            }.take(128)
+        linkedMapOf(
+            "configured" to (root.isDirectory || queues.isNotEmpty()),
+            "queueCount" to queues.size,
+            "powerEfficient" to readTextFile("${root.path}/power_efficient")?.toIntOrNull()?.let { it == 1 },
+            "onlineCpuMask" to readTextFile("${root.path}/cpumask"),
+            "queues" to queues,
         )
     }.getOrDefault(emptyMap())
 
