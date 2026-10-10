@@ -229,6 +229,7 @@ internal class SystemReportCollector {
         data["ioUringPolicy"] = collectIoUringPolicy()
         data["cgroupTopology"] = collectCgroupTopologyAnalytics()
         data["networkSocketPressure"] = collectNetworkSocketPressure()
+        data["buddyAllocator"] = collectBuddyAllocatorAnalytics()
         val durationMs = (System.nanoTime() - startedNanos) / 1_000_000
         data["collection"] = linkedMapOf(
             "durationMs" to durationMs,
@@ -527,6 +528,7 @@ internal class SystemReportCollector {
                 "ioUringPolicy" to hasData(snapshot["ioUringPolicy"]),
                 "cgroupTopology" to hasData(snapshot["cgroupTopology"]),
                 "networkSocketPressure" to hasData(snapshot["networkSocketPressure"]),
+                "buddyAllocator" to hasData(snapshot["buddyAllocator"]),
                 "processSchedulerDetails" to hasData(snapshot["processSchedulerDetails"]),
                 "processSignals" to hasData(snapshot["processSignals"]),
                 "processAddressSpace" to hasData(snapshot["processAddressSpace"]),
@@ -580,6 +582,7 @@ internal class SystemReportCollector {
                 "ioUringPolicy" to snapshot["ioUringPolicy"],
                 "cgroupTopology" to snapshot["cgroupTopology"],
                 "networkSocketPressure" to snapshot["networkSocketPressure"],
+                "buddyAllocator" to snapshot["buddyAllocator"],
                 "processSchedulerDetails" to snapshot["processSchedulerDetails"],
                 "processSignals" to snapshot["processSignals"],
                 "processAddressSpace" to snapshot["processAddressSpace"],
@@ -655,6 +658,7 @@ internal class SystemReportCollector {
             "ioUringPolicy" to snapshot["ioUringPolicy"],
             "cgroupTopology" to snapshot["cgroupTopology"],
             "networkSocketPressure" to snapshot["networkSocketPressure"],
+            "buddyAllocator" to snapshot["buddyAllocator"],
             "processSchedulerDetails" to snapshot["processSchedulerDetails"],
             "processSignals" to snapshot["processSignals"],
             "processAddressSpace" to snapshot["processAddressSpace"],
@@ -2700,6 +2704,30 @@ internal class SystemReportCollector {
             "conntrackCurrent" to conntrackCurrent,
             "conntrackMaximum" to conntrackMaximum,
             "conntrackUsageRatio" to conntrackCurrent?.toDouble()?.div((conntrackMaximum ?: 0L).coerceAtLeast(1L)),
+        )
+    }.getOrDefault(emptyMap())
+
+    /** Reports buddy allocator free blocks by order without exposing physical addresses. */
+    private fun collectBuddyAllocatorAnalytics(): Map<String, Any?> = runCatching {
+        val rows = File("/proc/buddyinfo").takeIf(File::isFile)?.readLines().orEmpty()
+        val orderTotals = linkedMapOf<Int, Long>()
+        var nodeCount = 0
+        var zoneCount = 0
+        rows.forEach { row ->
+            val fields = row.trim().split(Regex("\\s+"))
+            val zoneIndex = fields.indexOfFirst { it == "zone" }
+            if (zoneIndex < 0 || fields.size <= zoneIndex + 1) return@forEach
+            nodeCount += if (fields.firstOrNull()?.startsWith("Node") == true) 1 else 0
+            zoneCount++
+            fields.drop(zoneIndex + 2).forEachIndexed { order, value ->
+                value.toLongOrNull()?.let { orderTotals[order] = (orderTotals[order] ?: 0L) + it }
+            }
+        }
+        linkedMapOf(
+            "configured" to rows.isNotEmpty(),
+            "nodeCount" to nodeCount,
+            "zoneCount" to zoneCount,
+            "freeBlocksByOrder" to orderTotals,
         )
     }.getOrDefault(emptyMap())
 
