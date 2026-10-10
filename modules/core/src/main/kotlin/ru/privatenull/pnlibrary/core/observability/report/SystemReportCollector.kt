@@ -219,6 +219,12 @@ internal class SystemReportCollector {
                 "ioPressureAvg10" to ((data["pressureStall"] as? Map<*, *>)?.get("io") as? Map<*, *>)?.get("someAvg10"),
                 "pressureStall" to data["pressureStall"],
                 "systemMemoryAvailableBytes" to (data["systemMemory"] as? Map<*, *>)?.get("MemAvailable"),
+                "networkReceiveBytes" to (data["networkAnalytics"] as? Map<*, *>)?.get("totalReceiveBytes"),
+                "networkTransmitBytes" to (data["networkAnalytics"] as? Map<*, *>)?.get("totalTransmitBytes"),
+                "networkReceiveErrors" to (data["networkAnalytics"] as? Map<*, *>)?.get("totalReceiveErrors"),
+                "networkTransmitErrors" to (data["networkAnalytics"] as? Map<*, *>)?.get("totalTransmitErrors"),
+                "networkReceiveDrops" to (data["networkAnalytics"] as? Map<*, *>)?.get("totalReceiveDrops"),
+                "networkTransmitDrops" to (data["networkAnalytics"] as? Map<*, *>)?.get("totalTransmitDrops"),
                 "bufferPoolUsedBytes" to ((data["memory"] as? Map<*, *>)?.get("bufferPools") as? Collection<*>)?.sumOf {
                     ((it as? Map<*, *>)?.get("usedBytes") as? Number)?.toLong() ?: 0L
                 },
@@ -894,6 +900,12 @@ internal class SystemReportCollector {
             "durationMsDelta" to numericDelta("durationMs"),
             "bufferPoolUsedBytesDelta" to numericDelta("bufferPoolUsedBytes"),
             "jitCompilationTimeMsDelta" to numericDelta("jitCompilationTimeMs"),
+            "networkReceiveBytesDelta" to numericDelta("networkReceiveBytes"),
+            "networkTransmitBytesDelta" to numericDelta("networkTransmitBytes"),
+            "networkReceiveErrorsDelta" to numericDelta("networkReceiveErrors"),
+            "networkTransmitErrorsDelta" to numericDelta("networkTransmitErrors"),
+            "networkReceiveDropsDelta" to numericDelta("networkReceiveDrops"),
+            "networkTransmitDropsDelta" to numericDelta("networkTransmitDrops"),
         ),
     )
 
