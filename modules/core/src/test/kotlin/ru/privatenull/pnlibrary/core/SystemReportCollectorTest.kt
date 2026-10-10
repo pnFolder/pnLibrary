@@ -107,6 +107,8 @@ class SystemReportCollectorTest {
         assertTrue((report["networkAnalytics"] as? Map<*, *>)?.containsKey("totalReceiveErrors") == true)
         assertTrue(report["mounts"] is Map<*, *>)
         assertTrue((analytics["resources"] as? Map<*, *>)?.containsKey("processPssBytes") == true)
+        assertTrue((analytics["resources"] as? Map<*, *>)?.containsKey("processTcpStateCounts") == true)
+        assertTrue((analytics["resources"] as? Map<*, *>)?.containsKey("processUdpStateCounts") == true)
         assertTrue((analytics["resources"] as? Map<*, *>)?.containsKey("openFileDescriptorCount") == true)
         assertTrue((analytics["resources"] as? Map<*, *>)?.containsKey("processFileDescriptorUsedRatio") == true)
         assertTrue((analytics["resources"] as? Map<*, *>)?.containsKey("pressureStall") == true)

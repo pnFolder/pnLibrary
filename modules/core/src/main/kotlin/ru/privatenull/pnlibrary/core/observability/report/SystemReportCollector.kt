@@ -469,6 +469,8 @@ internal class SystemReportCollector {
                 "processTcpListening" to ((snapshot["processNetwork"] as? Map<*, *>)?.get("tcpListening")),
                 "processUdpSockets" to ((snapshot["processNetwork"] as? Map<*, *>)?.get("udpSockets")),
                 "processUnixSockets" to ((snapshot["processNetwork"] as? Map<*, *>)?.get("unixSockets")),
+                "processTcpStateCounts" to ((snapshot["processNetwork"] as? Map<*, *>)?.get("tcpStateCounts")),
+                "processUdpStateCounts" to ((snapshot["processNetwork"] as? Map<*, *>)?.get("udpStateCounts")),
                 "processPssBytes" to ((snapshot["processMemoryMaps"] as? Map<*, *>)?.get("Pss")),
                 "processPrivateCleanBytes" to ((snapshot["processMemoryMaps"] as? Map<*, *>)?.get("Private_Clean")),
                 "processPrivateDirtyBytes" to ((snapshot["processMemoryMaps"] as? Map<*, *>)?.get("Private_Dirty")),
