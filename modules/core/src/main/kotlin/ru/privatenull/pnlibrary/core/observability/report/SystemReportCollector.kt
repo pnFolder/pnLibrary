@@ -215,6 +215,7 @@ internal class SystemReportCollector {
         data["hardwareBus"] = collectHardwareBusAnalytics()
         data["networkLinks"] = collectNetworkLinkAnalytics()
         data["virtualization"] = collectVirtualizationAnalytics()
+        data["bootSecurity"] = collectBootSecurityAnalytics()
         val durationMs = (System.nanoTime() - startedNanos) / 1_000_000
         data["collection"] = linkedMapOf(
             "durationMs" to durationMs,
@@ -499,6 +500,7 @@ internal class SystemReportCollector {
                 "hardwareBus" to hasData(snapshot["hardwareBus"]),
                 "networkLinks" to hasData(snapshot["networkLinks"]),
                 "virtualization" to hasData(snapshot["virtualization"]),
+                "bootSecurity" to hasData(snapshot["bootSecurity"]),
                 "processSchedulerDetails" to hasData(snapshot["processSchedulerDetails"]),
                 "processSignals" to hasData(snapshot["processSignals"]),
                 "processAddressSpace" to hasData(snapshot["processAddressSpace"]),
@@ -538,6 +540,7 @@ internal class SystemReportCollector {
                 "hardwareBus" to snapshot["hardwareBus"],
                 "networkLinks" to snapshot["networkLinks"],
                 "virtualization" to snapshot["virtualization"],
+                "bootSecurity" to snapshot["bootSecurity"],
                 "processSchedulerDetails" to snapshot["processSchedulerDetails"],
                 "processSignals" to snapshot["processSignals"],
                 "processAddressSpace" to snapshot["processAddressSpace"],
@@ -599,6 +602,7 @@ internal class SystemReportCollector {
             "hardwareBus" to snapshot["hardwareBus"],
             "networkLinks" to snapshot["networkLinks"],
             "virtualization" to snapshot["virtualization"],
+            "bootSecurity" to snapshot["bootSecurity"],
             "processSchedulerDetails" to snapshot["processSchedulerDetails"],
             "processSignals" to snapshot["processSignals"],
             "processAddressSpace" to snapshot["processAddressSpace"],
@@ -2347,6 +2351,28 @@ internal class SystemReportCollector {
             "availableClockSources" to available.take(32),
             "tscAvailable" to (cpuFlags.contains("constant_tsc") || cpuFlags.contains("nonstop_tsc")),
             "paravirtualizedClockFlag" to cpuFlags.any { it in setOf("kvmclock", "xenclock", "hv_time") },
+        )
+    }.getOrDefault(emptyMap())
+
+    /** Reports boot security posture and allow-listed kernel command-line flags. */
+    private fun collectBootSecurityAnalytics(): Map<String, Any?> = runCatching {
+        val allowedKeys = setOf(
+            "audit", "apparmor", "ima_appraise", "ima_tcb", "init_on_alloc", "init_on_free",
+            "iommu", "mitigations", "module.sig_enforce", "pti", "random.trust_cpu", "selinux",
+            "slab_nomerge", "spec_store_bypass_disable", "spectre_v2", "tsx_async_abort",
+        )
+        val commandLine = readTextFile("/proc/cmdline")?.split(Regex("\\s+"))?.mapNotNull { token ->
+            val key = token.substringBefore('=')
+            key.takeIf { it in allowedKeys }?.let { it to token.substringAfter('=', "enabled").take(64) }
+        }?.toMap().orEmpty()
+        linkedMapOf(
+            "configured" to (commandLine.isNotEmpty() || File("/sys/kernel/security/lockdown").isFile),
+            "kernelFlags" to commandLine,
+            "lockdown" to readTextFile("/sys/kernel/security/lockdown"),
+            "secureBoot" to readTextFile("/sys/firmware/efi/efivars/SecureBoot-8be4df61-93ca-11d2-aa0d-00e098032b8c")
+                ?.let { bytes -> bytes.endsWith("\\u0001") || bytes.endsWith("1") },
+            "selinuxEnforce" to readTextFile("/sys/fs/selinux/enforce")?.toIntOrNull()?.let { it == 1 },
+            "apparmorEnabled" to File("/sys/module/apparmor").isDirectory,
         )
     }.getOrDefault(emptyMap())
 
