@@ -38,6 +38,7 @@ class SystemReportCollectorTest {
         assertTrue((analytics["resources"] as? Map<*, *>)?.containsKey("processNativeThreadCount") == true)
         assertTrue((analytics["resources"] as? Map<*, *>)?.containsKey("processPriority") == true)
         assertTrue((analytics["resources"] as? Map<*, *>)?.containsKey("totalSpaceBytes") == true)
+        assertTrue((analytics["resources"] as? Map<*, *>)?.containsKey("fileSystemTypeCounts") == true)
         assertTrue((analytics["resources"] as? Map<*, *>)?.containsKey("swapUsedRatio") == true)
         val host = analytics["hostDistribution"] as? Map<*, *>
             ?: error("hostDistribution section is missing")

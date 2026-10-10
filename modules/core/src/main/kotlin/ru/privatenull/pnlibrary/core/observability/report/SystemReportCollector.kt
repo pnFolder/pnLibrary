@@ -416,6 +416,16 @@ internal class SystemReportCollector {
                 "freeSpaceBytes" to fileSystems?.sumOf {
                     ((it as? Map<*, *>)?.get("freeSpaceBytes") as? Number)?.toLong() ?: 0L
                 },
+                "fileSystemTypeCounts" to fileSystems.orEmpty()
+                    .mapNotNull { (it as? Map<*, *>)?.get("fileSystemType")?.toString() }
+                    .groupingBy { it }
+                    .eachCount()
+                    .toSortedMap(),
+                "readOnlyFileSystemTypes" to fileSystems.orEmpty()
+                    .filter { (it as? Map<*, *>)?.get("readOnly") == true }
+                    .mapNotNull { (it as? Map<*, *>)?.get("fileSystemType")?.toString() }
+                    .distinct()
+                    .sorted(),
                 "totalSpaceBytes" to fileSystems?.sumOf {
                     ((it as? Map<*, *>)?.get("totalSpaceBytes") as? Number)?.toLong() ?: 0L
                 },
