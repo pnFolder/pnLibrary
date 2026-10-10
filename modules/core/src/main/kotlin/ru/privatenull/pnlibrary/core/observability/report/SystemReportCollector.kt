@@ -86,6 +86,8 @@ internal class SystemReportCollector {
         data["processIo"] = collectProcessIo()
         data["processNetwork"] = collectProcessNetwork()
         data["processStatus"] = collectProcessStatus()
+        data["processMemoryMaps"] = collectProcessMemoryMaps()
+        data["processFileDescriptors"] = collectProcessFileDescriptors()
         data["processLimits"] = collectProcessLimits()
         data["processScheduling"] = collectProcessScheduling()
         data["loadAverage"] = collectLoadAverage()
@@ -187,6 +189,9 @@ internal class SystemReportCollector {
                 "tcpEstablished" to (data["processNetwork"] as? Map<*, *>)?.get("tcpEstablished"),
                 "tcpListening" to (data["processNetwork"] as? Map<*, *>)?.get("tcpListening"),
                 "udpSockets" to (data["processNetwork"] as? Map<*, *>)?.get("udpSockets"),
+                "unixSockets" to (data["processNetwork"] as? Map<*, *>)?.get("unixSockets"),
+                "processPssBytes" to (data["processMemoryMaps"] as? Map<*, *>)?.get("Pss"),
+                "openFileDescriptorCount" to (data["processFileDescriptors"] as? Map<*, *>)?.get("total"),
                 "containerMemoryCurrent" to (data["runtimeEnvironment"] as? Map<*, *>)?.get("memoryCurrentBytes"),
                 "containerCpuThrottled" to (data["runtimeEnvironment"] as? Map<*, *>)?.get("cpuThrottledMicros"),
                 "containerMemoryHighEvents" to (data["runtimeEnvironment"] as? Map<*, *>)?.get("memoryHighEvents"),
@@ -408,6 +413,14 @@ internal class SystemReportCollector {
                 "processTcpEstablished" to ((snapshot["processNetwork"] as? Map<*, *>)?.get("tcpEstablished")),
                 "processTcpListening" to ((snapshot["processNetwork"] as? Map<*, *>)?.get("tcpListening")),
                 "processUdpSockets" to ((snapshot["processNetwork"] as? Map<*, *>)?.get("udpSockets")),
+                "processUnixSockets" to ((snapshot["processNetwork"] as? Map<*, *>)?.get("unixSockets")),
+                "processPssBytes" to ((snapshot["processMemoryMaps"] as? Map<*, *>)?.get("Pss")),
+                "processPrivateCleanBytes" to ((snapshot["processMemoryMaps"] as? Map<*, *>)?.get("Private_Clean")),
+                "processPrivateDirtyBytes" to ((snapshot["processMemoryMaps"] as? Map<*, *>)?.get("Private_Dirty")),
+                "processSharedCleanBytes" to ((snapshot["processMemoryMaps"] as? Map<*, *>)?.get("Shared_Clean")),
+                "processSharedDirtyBytes" to ((snapshot["processMemoryMaps"] as? Map<*, *>)?.get("Shared_Dirty")),
+                "openFileDescriptorCount" to ((snapshot["processFileDescriptors"] as? Map<*, *>)?.get("total")),
+                "openFileDescriptorCategories" to ((snapshot["processFileDescriptors"] as? Map<*, *>)?.get("categories")),
                 "runnableThreads" to threadStateCount(snapshot, "RUNNABLE"),
                 "blockedThreads" to threadStateCount(snapshot, "BLOCKED"),
                 "waitingThreads" to threadStateCount(snapshot, "WAITING"),
@@ -715,6 +728,9 @@ internal class SystemReportCollector {
             "tcpEstablishedDelta" to numericDelta("tcpEstablished"),
             "tcpListeningDelta" to numericDelta("tcpListening"),
             "udpSocketsDelta" to numericDelta("udpSockets"),
+            "unixSocketsDelta" to numericDelta("unixSockets"),
+            "processPssBytesDelta" to numericDelta("processPssBytes"),
+            "openFileDescriptorCountDelta" to numericDelta("openFileDescriptorCount"),
             "containerMemoryCurrentDelta" to numericDelta("containerMemoryCurrent"),
             "containerCpuThrottledDelta" to numericDelta("containerCpuThrottled"),
             "containerMemoryHighEventsDelta" to numericDelta("containerMemoryHighEvents"),
@@ -1098,6 +1114,38 @@ internal class SystemReportCollector {
             val value = line.substring(separator + 1).trim().split(' ').firstOrNull()?.toLongOrNull()
             value?.let { key to it }
         }.toMap()
+    }.getOrDefault(emptyMap())
+
+    private fun collectProcessMemoryMaps(): Map<String, Long> = runCatching {
+        val file = File("/proc/self/smaps_rollup")
+        if (!file.isFile) return@runCatching emptyMap()
+        file.readLines().mapNotNull { line ->
+            val separator = line.indexOf(':')
+            if (separator <= 0) return@mapNotNull null
+            val key = line.substring(0, separator).trim()
+            val value = line.substring(separator + 1).trim().split(' ').firstOrNull()?.toLongOrNull()
+            value?.let { key to it * 1024L }
+        }.toMap()
+    }.getOrDefault(emptyMap())
+
+    private fun collectProcessFileDescriptors(): Map<String, Any?> = runCatching {
+        val directory = File("/proc/self/fd")
+        if (!directory.isDirectory) return@runCatching emptyMap()
+        val categories = directory.listFiles().orEmpty().mapNotNull { descriptor ->
+            runCatching { Files.readSymbolicLink(descriptor.toPath()).toString() }.getOrNull()
+        }.map { target ->
+            when {
+                target.startsWith("socket:") -> "socket"
+                target.startsWith("pipe:") -> "pipe"
+                target.startsWith("anon_inode:") -> "anonInode"
+                target.startsWith("/dev/") -> "device"
+                else -> "file"
+            }
+        }
+        linkedMapOf(
+            "total" to categories.size,
+            "categories" to categories.groupingBy { it }.eachCount().toSortedMap(),
+        )
     }.getOrDefault(emptyMap())
 
     private fun collectProcessLimits(): Map<String, Map<String, Any?>> = runCatching {
