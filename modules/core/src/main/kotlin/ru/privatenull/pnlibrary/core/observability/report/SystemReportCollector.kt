@@ -212,6 +212,7 @@ internal class SystemReportCollector {
         data["powerSupply"] = collectPowerSupplyAnalytics()
         data["firmware"] = collectFirmwareAnalytics()
         data["graphics"] = collectGraphicsAnalytics()
+        data["hardwareBus"] = collectHardwareBusAnalytics()
         val durationMs = (System.nanoTime() - startedNanos) / 1_000_000
         data["collection"] = linkedMapOf(
             "durationMs" to durationMs,
@@ -493,6 +494,7 @@ internal class SystemReportCollector {
                 "powerSupply" to hasData(snapshot["powerSupply"]),
                 "firmware" to hasData(snapshot["firmware"]),
                 "graphics" to hasData(snapshot["graphics"]),
+                "hardwareBus" to hasData(snapshot["hardwareBus"]),
                 "processSchedulerDetails" to hasData(snapshot["processSchedulerDetails"]),
                 "processSignals" to hasData(snapshot["processSignals"]),
                 "processAddressSpace" to hasData(snapshot["processAddressSpace"]),
@@ -529,6 +531,7 @@ internal class SystemReportCollector {
                 "powerSupply" to snapshot["powerSupply"],
                 "firmware" to snapshot["firmware"],
                 "graphics" to snapshot["graphics"],
+                "hardwareBus" to snapshot["hardwareBus"],
                 "processSchedulerDetails" to snapshot["processSchedulerDetails"],
                 "processSignals" to snapshot["processSignals"],
                 "processAddressSpace" to snapshot["processAddressSpace"],
@@ -587,6 +590,7 @@ internal class SystemReportCollector {
             "powerSupply" to snapshot["powerSupply"],
             "firmware" to snapshot["firmware"],
             "graphics" to snapshot["graphics"],
+            "hardwareBus" to snapshot["hardwareBus"],
             "processSchedulerDetails" to snapshot["processSchedulerDetails"],
             "processSignals" to snapshot["processSignals"],
             "processAddressSpace" to snapshot["processAddressSpace"],
@@ -2260,6 +2264,31 @@ internal class SystemReportCollector {
             "configured" to devices.isNotEmpty(),
             "deviceCount" to devices.size,
             "devices" to devices,
+        )
+    }.getOrDefault(emptyMap())
+
+    /** Reports PCI and USB topology without exposing device serial numbers or physical paths. */
+    private fun collectHardwareBusAnalytics(): Map<String, Any?> = runCatching {
+        fun devices(root: String, limit: Int): List<Map<String, Any?>> = File(root)
+            .takeIf(File::isDirectory)?.listFiles().orEmpty().sortedBy { it.name }.take(limit).map { device ->
+                linkedMapOf(
+                    "name" to device.name,
+                    "vendorId" to readTextFile("${device.path}/vendor"),
+                    "deviceId" to readTextFile("${device.path}/device"),
+                    "classId" to readTextFile("${device.path}/class"),
+                    "driver" to device.resolve("driver").canonicalFile.name.takeIf { it.isNotBlank() },
+                    "ueventType" to readTextFile("${device.path}/uevent")?.lineSequence()
+                        ?.firstOrNull { it.startsWith("DEVTYPE=") }?.substringAfter('='),
+                )
+            }
+        val pci = devices("/sys/bus/pci/devices", 128)
+        val usb = devices("/sys/bus/usb/devices", 128)
+        linkedMapOf(
+            "configured" to (pci.isNotEmpty() || usb.isNotEmpty()),
+            "pciCount" to pci.size,
+            "usbCount" to usb.size,
+            "pci" to pci,
+            "usb" to usb,
         )
     }.getOrDefault(emptyMap())
 
