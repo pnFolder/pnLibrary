@@ -217,6 +217,7 @@ internal class SystemReportCollector {
         data["virtualization"] = collectVirtualizationAnalytics()
         data["bootSecurity"] = collectBootSecurityAnalytics()
         data["kernelCrypto"] = collectKernelCryptoAnalytics()
+        data["powerManagement"] = collectPowerManagementAnalytics()
         val durationMs = (System.nanoTime() - startedNanos) / 1_000_000
         data["collection"] = linkedMapOf(
             "durationMs" to durationMs,
@@ -503,6 +504,7 @@ internal class SystemReportCollector {
                 "virtualization" to hasData(snapshot["virtualization"]),
                 "bootSecurity" to hasData(snapshot["bootSecurity"]),
                 "kernelCrypto" to hasData(snapshot["kernelCrypto"]),
+                "powerManagement" to hasData(snapshot["powerManagement"]),
                 "processSchedulerDetails" to hasData(snapshot["processSchedulerDetails"]),
                 "processSignals" to hasData(snapshot["processSignals"]),
                 "processAddressSpace" to hasData(snapshot["processAddressSpace"]),
@@ -544,6 +546,7 @@ internal class SystemReportCollector {
                 "virtualization" to snapshot["virtualization"],
                 "bootSecurity" to snapshot["bootSecurity"],
                 "kernelCrypto" to snapshot["kernelCrypto"],
+                "powerManagement" to snapshot["powerManagement"],
                 "processSchedulerDetails" to snapshot["processSchedulerDetails"],
                 "processSignals" to snapshot["processSignals"],
                 "processAddressSpace" to snapshot["processAddressSpace"],
@@ -607,6 +610,7 @@ internal class SystemReportCollector {
             "virtualization" to snapshot["virtualization"],
             "bootSecurity" to snapshot["bootSecurity"],
             "kernelCrypto" to snapshot["kernelCrypto"],
+            "powerManagement" to snapshot["powerManagement"],
             "processSchedulerDetails" to snapshot["processSchedulerDetails"],
             "processSignals" to snapshot["processSignals"],
             "processAddressSpace" to snapshot["processAddressSpace"],
@@ -2395,6 +2399,31 @@ internal class SystemReportCollector {
             "urandomMinReseedSeconds" to readLongFile("/proc/sys/kernel/random/urandom_min_reseed_secs"),
             "algorithmCount" to algorithms.size,
             "algorithms" to algorithms,
+        )
+    }.getOrDefault(emptyMap())
+
+    /** Reports CPU idle/governor state and RTC availability without reading wall-clock history. */
+    private fun collectPowerManagementAnalytics(): Map<String, Any?> = runCatching {
+        val cpuRoot = File("/sys/devices/system/cpu")
+        val policies = cpuRoot.listFiles().orEmpty().filter { it.name.startsWith("cpufreq/policy") }
+        val idleStates = cpuRoot.listFiles().orEmpty().filter { it.name.matches(Regex("cpu\\d+")) }
+            .flatMap { cpu -> File(cpu, "cpuidle").listFiles().orEmpty().filter { it.name.startsWith("state") } }
+            .mapNotNull { state ->
+                linkedMapOf<String, Any?>(
+                    "name" to readTextFile("${state.path}/name"),
+                    "usage" to readLongFile("${state.path}/usage"),
+                    "timeMicroseconds" to readLongFile("${state.path}/time"),
+                    "latencyMicroseconds" to readLongFile("${state.path}/latency"),
+                )
+            }.distinctBy { it["name"] to it["latencyMicroseconds"] }.take(64)
+        linkedMapOf(
+            "configured" to (policies.isNotEmpty() || idleStates.isNotEmpty()),
+            "governor" to readTextFile("${cpuRoot.path}/cpufreq/policy0/scaling_governor"),
+            "availableGovernors" to readTextFile("${cpuRoot.path}/cpufreq/policy0/scaling_available_governors")
+                ?.split(Regex("\\s+"))?.filter(String::isNotBlank).orEmpty(),
+            "idleDriver" to readTextFile("${cpuRoot.path}/cpuidle/current_driver"),
+            "idleStates" to idleStates,
+            "rtcDevices" to File("/sys/class/rtc").listFiles().orEmpty().map { it.name }.sorted().take(16),
         )
     }.getOrDefault(emptyMap())
 
