@@ -419,6 +419,9 @@ internal class SystemReportCollector {
                     ((it as? Map<*, *>)?.get("totalCapacityBytes") as? Number)?.toLong() ?: 0L
                 }),
                 "jitCompilationTimeMs" to (snapshot["jitCompilation"] as? Map<*, *>)?.get("totalCompilationTimeMs"),
+                "classpathMissingEntries" to ((java?.get("classpathAnalytics") as? Map<*, *>)?.get("missingEntryCount")),
+                "classpathExistingBytes" to ((java?.get("classpathAnalytics") as? Map<*, *>)?.get("totalExistingBytes")),
+                "modulePathMissingEntries" to ((java?.get("modulePathAnalytics") as? Map<*, *>)?.get("missingEntryCount")),
                 "largestFileSystem" to fileSystems.orEmpty()
                     .maxByOrNull { ((it as? Map<*, *>)?.get("totalSpaceBytes") as? Number)?.toLong() ?: 0L },
                 "networkInterfacesUp" to ((snapshot["networkAnalytics"] as? Map<*, *>)?.get("upCount")),
@@ -1079,6 +1082,7 @@ internal class SystemReportCollector {
             ?.filter(String::isNotBlank)
             .orEmpty()
         val names = entries.map { File(it).name }.filter(String::isNotBlank)
+        val paths = entries.map(::File)
         val duplicateNames = names.groupingBy { it }.eachCount()
             .filterValues { it > 1 }
             .keys
@@ -1089,6 +1093,11 @@ internal class SystemReportCollector {
             "uniqueNameCount" to names.distinct().size,
             "duplicateNameCount" to duplicateNames.size,
             "duplicateNames" to duplicateNames,
+            "existingEntryCount" to paths.count { it.exists() },
+            "missingEntryCount" to paths.count { !it.exists() },
+            "directoryEntryCount" to paths.count { it.isDirectory },
+            "fileEntryCount" to paths.count { it.isFile },
+            "totalExistingBytes" to paths.filter(File::isFile).sumOf { it.length() },
             "extensionCounts" to names.map { name -> name.substringAfterLast('.', "none").lowercase() }
                 .groupingBy { it }
                 .eachCount()
