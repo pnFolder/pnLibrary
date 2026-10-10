@@ -104,6 +104,7 @@ class SystemReportCollectorTest {
         assertTrue(report["mounts"] is Map<*, *>)
         assertTrue((analytics["resources"] as? Map<*, *>)?.containsKey("processPssBytes") == true)
         assertTrue((analytics["resources"] as? Map<*, *>)?.containsKey("openFileDescriptorCount") == true)
+        assertTrue((analytics["resources"] as? Map<*, *>)?.containsKey("processFileDescriptorUsedRatio") == true)
         assertTrue((analytics["resources"] as? Map<*, *>)?.containsKey("bufferPoolUsedBytes") == true)
         assertTrue((analytics["resources"] as? Map<*, *>)?.containsKey("jitCompilationTimeMs") == true)
         assertTrue((analytics["resources"] as? Map<*, *>)?.containsKey("threadGroupCounts") == true)

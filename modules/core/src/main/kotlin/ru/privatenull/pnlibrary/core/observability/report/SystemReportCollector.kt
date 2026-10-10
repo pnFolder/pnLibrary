@@ -294,6 +294,9 @@ internal class SystemReportCollector {
             if (descriptorRatio(fileDescriptors)?.let { it >= 0.90 } == true) {
                 add(linkedMapOf("code" to "fileDescriptorPressure", "severity" to "elevated"))
             }
+            if (processDescriptorRatio(snapshot)?.let { it >= 0.90 } == true) {
+                add(linkedMapOf("code" to "processFileDescriptorPressure", "severity" to "elevated"))
+            }
             val runtimeEnvironment = snapshot["runtimeEnvironment"] as? Map<*, *>
             if ((runtimeEnvironment?.get("memoryOomKillEvents") as? Number)?.toLong()?.let { it > 0L } == true) {
                 add(linkedMapOf("code" to "containerOomKill", "severity" to "critical"))
@@ -454,6 +457,7 @@ internal class SystemReportCollector {
                 "processSharedDirtyBytes" to ((snapshot["processMemoryMaps"] as? Map<*, *>)?.get("Shared_Dirty")),
                 "openFileDescriptorCount" to ((snapshot["processFileDescriptors"] as? Map<*, *>)?.get("total")),
                 "openFileDescriptorCategories" to ((snapshot["processFileDescriptors"] as? Map<*, *>)?.get("categories")),
+                "processFileDescriptorUsedRatio" to processDescriptorRatio(snapshot),
                 "runnableThreads" to threadStateCount(snapshot, "RUNNABLE"),
                 "blockedThreads" to threadStateCount(snapshot, "BLOCKED"),
                 "waitingThreads" to threadStateCount(snapshot, "WAITING"),
@@ -913,6 +917,13 @@ internal class SystemReportCollector {
         val open = (descriptors?.get("open") as? Number)?.toDouble() ?: return null
         val max = (descriptors["max"] as? Number)?.toDouble() ?: return null
         return max.takeIf { it > 0.0 }?.let { open / it }
+    }
+
+    private fun processDescriptorRatio(snapshot: Map<String, Any?>): Double? {
+        val open = ((snapshot["processFileDescriptors"] as? Map<*, *>)?.get("total") as? Number)
+            ?.toDouble() ?: return null
+        val limit = processLimit(snapshot, "maxOpenFiles", "soft") as? Number ?: return null
+        return limit.toDouble().takeIf { it > 0.0 }?.let { open / it }
     }
 
     private fun hasData(value: Any?): Boolean = when (value) {
