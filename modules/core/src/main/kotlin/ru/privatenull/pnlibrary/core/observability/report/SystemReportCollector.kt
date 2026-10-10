@@ -216,6 +216,7 @@ internal class SystemReportCollector {
         data["networkLinks"] = collectNetworkLinkAnalytics()
         data["virtualization"] = collectVirtualizationAnalytics()
         data["bootSecurity"] = collectBootSecurityAnalytics()
+        data["kernelCrypto"] = collectKernelCryptoAnalytics()
         val durationMs = (System.nanoTime() - startedNanos) / 1_000_000
         data["collection"] = linkedMapOf(
             "durationMs" to durationMs,
@@ -501,6 +502,7 @@ internal class SystemReportCollector {
                 "networkLinks" to hasData(snapshot["networkLinks"]),
                 "virtualization" to hasData(snapshot["virtualization"]),
                 "bootSecurity" to hasData(snapshot["bootSecurity"]),
+                "kernelCrypto" to hasData(snapshot["kernelCrypto"]),
                 "processSchedulerDetails" to hasData(snapshot["processSchedulerDetails"]),
                 "processSignals" to hasData(snapshot["processSignals"]),
                 "processAddressSpace" to hasData(snapshot["processAddressSpace"]),
@@ -541,6 +543,7 @@ internal class SystemReportCollector {
                 "networkLinks" to snapshot["networkLinks"],
                 "virtualization" to snapshot["virtualization"],
                 "bootSecurity" to snapshot["bootSecurity"],
+                "kernelCrypto" to snapshot["kernelCrypto"],
                 "processSchedulerDetails" to snapshot["processSchedulerDetails"],
                 "processSignals" to snapshot["processSignals"],
                 "processAddressSpace" to snapshot["processAddressSpace"],
@@ -603,6 +606,7 @@ internal class SystemReportCollector {
             "networkLinks" to snapshot["networkLinks"],
             "virtualization" to snapshot["virtualization"],
             "bootSecurity" to snapshot["bootSecurity"],
+            "kernelCrypto" to snapshot["kernelCrypto"],
             "processSchedulerDetails" to snapshot["processSchedulerDetails"],
             "processSignals" to snapshot["processSignals"],
             "processAddressSpace" to snapshot["processAddressSpace"],
@@ -2373,6 +2377,24 @@ internal class SystemReportCollector {
                 ?.let { bytes -> bytes.endsWith("\\u0001") || bytes.endsWith("1") },
             "selinuxEnforce" to readTextFile("/sys/fs/selinux/enforce")?.toIntOrNull()?.let { it == 1 },
             "apparmorEnabled" to File("/sys/module/apparmor").isDirectory,
+        )
+    }.getOrDefault(emptyMap())
+
+    /** Reports kernel entropy/random settings and crypto algorithm inventory without key material. */
+    private fun collectKernelCryptoAnalytics(): Map<String, Any?> = runCatching {
+        val algorithms = File("/proc/crypto").takeIf(File::isFile)?.readLines().orEmpty()
+            .mapNotNull { line ->
+                val key = line.substringBefore(':').trim()
+                if (key == "name" || key == "driver" || key == "type") line.substringAfter(':').trim()
+                    .takeIf(String::isNotBlank) else null
+            }.distinct().sorted().take(512)
+        linkedMapOf(
+            "configured" to (algorithms.isNotEmpty() || File("/proc/sys/kernel/random").isDirectory),
+            "entropyAvailableBits" to readLongFile("/proc/sys/kernel/random/entropy_avail"),
+            "poolSizeBits" to readLongFile("/proc/sys/kernel/random/poolsize"),
+            "urandomMinReseedSeconds" to readLongFile("/proc/sys/kernel/random/urandom_min_reseed_secs"),
+            "algorithmCount" to algorithms.size,
+            "algorithms" to algorithms,
         )
     }.getOrDefault(emptyMap())
 
