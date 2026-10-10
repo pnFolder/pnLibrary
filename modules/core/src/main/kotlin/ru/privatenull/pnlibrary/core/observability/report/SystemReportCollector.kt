@@ -860,6 +860,15 @@ internal class SystemReportCollector {
                 "readOnly" to store?.isReadOnly,
                 "fileSystemType" to runCatching { store?.type() }.getOrNull(),
                 "writable" to runCatching { root.canWrite() }.getOrDefault(false),
+                "fileStoreTotalBytes" to runCatching { store?.totalSpace }.getOrNull(),
+                "fileStoreUsableBytes" to runCatching { store?.usableSpace }.getOrNull(),
+                "fileStoreUnallocatedBytes" to runCatching { store?.unallocatedSpace }.getOrNull(),
+                "fileStoreUsedRatio" to runCatching {
+                    store?.totalSpace?.takeIf { it > 0L }?.let { total ->
+                        (total - (store.unallocatedSpace)).toDouble() / total
+                    }
+                }.getOrNull(),
+                "fileStoreReadOnly" to runCatching { store?.isReadOnly }.getOrNull(),
             )
         }
     }
