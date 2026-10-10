@@ -204,6 +204,7 @@ internal class SystemReportCollector {
         data["networkRoutes"] = collectNetworkRouteAnalytics()
         data["networkResolver"] = collectNetworkResolverAnalytics()
         data["networkNameService"] = collectNetworkNameServiceAnalytics()
+        data["kernelNotificationPolicy"] = collectKernelNotificationPolicy()
         val durationMs = (System.nanoTime() - startedNanos) / 1_000_000
         data["collection"] = linkedMapOf(
             "durationMs" to durationMs,
@@ -477,6 +478,7 @@ internal class SystemReportCollector {
                 "networkRoutes" to hasData(snapshot["networkRoutes"]),
                 "networkResolver" to hasData(snapshot["networkResolver"]),
                 "networkNameService" to hasData(snapshot["networkNameService"]),
+                "kernelNotificationPolicy" to hasData(snapshot["kernelNotificationPolicy"]),
                 "processSchedulerDetails" to hasData(snapshot["processSchedulerDetails"]),
                 "processSignals" to hasData(snapshot["processSignals"]),
                 "processAddressSpace" to hasData(snapshot["processAddressSpace"]),
@@ -505,6 +507,7 @@ internal class SystemReportCollector {
                 "networkRoutes" to snapshot["networkRoutes"],
                 "networkResolver" to snapshot["networkResolver"],
                 "networkNameService" to snapshot["networkNameService"],
+                "kernelNotificationPolicy" to snapshot["kernelNotificationPolicy"],
                 "processSchedulerDetails" to snapshot["processSchedulerDetails"],
                 "processSignals" to snapshot["processSignals"],
                 "processAddressSpace" to snapshot["processAddressSpace"],
@@ -555,6 +558,7 @@ internal class SystemReportCollector {
             "networkRoutes" to snapshot["networkRoutes"],
             "networkResolver" to snapshot["networkResolver"],
             "networkNameService" to snapshot["networkNameService"],
+            "kernelNotificationPolicy" to snapshot["kernelNotificationPolicy"],
             "processSchedulerDetails" to snapshot["processSchedulerDetails"],
             "processSignals" to snapshot["processSignals"],
             "processAddressSpace" to snapshot["processAddressSpace"],
@@ -2040,6 +2044,27 @@ internal class SystemReportCollector {
             "configured" to (line != null),
             "methodCount" to methods.size,
             "methods" to methods.take(16),
+        )
+    }.getOrDefault(emptyMap())
+
+    /** Reports kernel notification and asynchronous I/O capacity limits. */
+    private fun collectKernelNotificationPolicy(): Map<String, Any?> = runCatching {
+        val paths = linkedMapOf(
+            "inotifyMaxUserWatches" to "/proc/sys/fs/inotify/max_user_watches",
+            "inotifyMaxUserInstances" to "/proc/sys/fs/inotify/max_user_instances",
+            "inotifyMaxQueuedEvents" to "/proc/sys/fs/inotify/max_queued_events",
+            "aioMax" to "/proc/sys/fs/aio-max-nr",
+            "aioCurrent" to "/proc/sys/fs/aio-nr",
+        )
+        val values = paths.mapValues { (_, path) ->
+            File(path).takeIf(File::isFile)?.readText()?.trim()?.toLongOrNull()
+        }
+        linkedMapOf(
+            "configured" to values.values.any { it != null },
+            "limits" to values,
+            "aioUsageRatio" to ((values["aioCurrent"] as? Long)?.let { current ->
+                (values["aioMax"] as? Long)?.takeIf { it > 0 }?.let { max -> current.toDouble() / max }
+            }),
         )
     }.getOrDefault(emptyMap())
 
