@@ -201,6 +201,7 @@ internal class SystemReportCollector {
         data["networkAnalytics"] = collectNetworkAnalytics()
         data["networkProtocolStats"] = collectNetworkProtocolStats()
         data["networkSoftnetStats"] = collectNetworkSoftnetStats()
+        data["networkRoutes"] = collectNetworkRouteAnalytics()
         val durationMs = (System.nanoTime() - startedNanos) / 1_000_000
         data["collection"] = linkedMapOf(
             "durationMs" to durationMs,
@@ -310,6 +311,7 @@ internal class SystemReportCollector {
                 "schedulerLatencyNs" to (data["kernelSchedulerPolicy"] as? Map<*, *>)?.get("latencyNs"),
                 "tcpRetransmissions" to (data["networkProtocolStats"] as? Map<*, *>)?.get("tcpRetransmissions"),
                 "softnetDropped" to (data["networkSoftnetStats"] as? Map<*, *>)?.get("dropped"),
+                "defaultRouteCount" to (data["networkRoutes"] as? Map<*, *>)?.get("defaultRouteCount"),
                 "cpuIdleTicks" to (data["systemScheduling"] as? Map<*, *>)?.get("cpuIdleTicks"),
                 "cpuIowaitTicks" to (data["systemScheduling"] as? Map<*, *>)?.get("cpuIowaitTicks"),
                 "cpuStealTicks" to (data["systemScheduling"] as? Map<*, *>)?.get("cpuStealTicks"),
@@ -468,6 +470,7 @@ internal class SystemReportCollector {
                 "kernelSchedulerPolicy" to hasData(snapshot["kernelSchedulerPolicy"]),
                 "networkProtocolStats" to hasData(snapshot["networkProtocolStats"]),
                 "networkSoftnetStats" to hasData(snapshot["networkSoftnetStats"]),
+                "networkRoutes" to hasData(snapshot["networkRoutes"]),
                 "processSchedulerDetails" to hasData(snapshot["processSchedulerDetails"]),
                 "processSignals" to hasData(snapshot["processSignals"]),
                 "processAddressSpace" to hasData(snapshot["processAddressSpace"]),
@@ -493,6 +496,7 @@ internal class SystemReportCollector {
                 "kernelSchedulerPolicy" to snapshot["kernelSchedulerPolicy"],
                 "networkProtocolStats" to snapshot["networkProtocolStats"],
                 "networkSoftnetStats" to snapshot["networkSoftnetStats"],
+                "networkRoutes" to snapshot["networkRoutes"],
                 "processSchedulerDetails" to snapshot["processSchedulerDetails"],
                 "processSignals" to snapshot["processSignals"],
                 "processAddressSpace" to snapshot["processAddressSpace"],
@@ -540,6 +544,7 @@ internal class SystemReportCollector {
             "kernelSchedulerPolicy" to snapshot["kernelSchedulerPolicy"],
             "networkProtocolStats" to snapshot["networkProtocolStats"],
             "networkSoftnetStats" to snapshot["networkSoftnetStats"],
+            "networkRoutes" to snapshot["networkRoutes"],
             "processSchedulerDetails" to snapshot["processSchedulerDetails"],
             "processSignals" to snapshot["processSignals"],
             "processAddressSpace" to snapshot["processAddressSpace"],
@@ -623,6 +628,7 @@ internal class SystemReportCollector {
                 "schedulerLatencyNs" to (snapshot["kernelSchedulerPolicy"] as? Map<*, *>)?.get("latencyNs"),
                 "tcpRetransmissions" to (snapshot["networkProtocolStats"] as? Map<*, *>)?.get("tcpRetransmissions"),
                 "softnetDropped" to (snapshot["networkSoftnetStats"] as? Map<*, *>)?.get("dropped"),
+                "defaultRouteCount" to (snapshot["networkRoutes"] as? Map<*, *>)?.get("defaultRouteCount"),
                 "tcpRetransmissions" to (snapshot["networkProtocolStats"] as? Map<*, *>)?.get("tcpRetransmissions"),
                 "cpuIdleTicks" to (snapshot["systemScheduling"] as? Map<*, *>)?.get("cpuIdleTicks"),
                 "cpuIowaitTicks" to (snapshot["systemScheduling"] as? Map<*, *>)?.get("cpuIowaitTicks"),
@@ -1971,6 +1977,27 @@ internal class SystemReportCollector {
             "processed" to parsed.sumOf { it["processed"] ?: 0L },
             "dropped" to parsed.sumOf { it["dropped"] ?: 0L },
             "timeSqueeze" to parsed.sumOf { it["timeSqueeze"] ?: 0L },
+        )
+    }.getOrDefault(emptyMap())
+
+    /** Summarizes route availability without exposing destination or gateway addresses. */
+    private fun collectNetworkRouteAnalytics(): Map<String, Any?> = runCatching {
+        val rows = File("/proc/net/route").takeIf(File::isFile)?.readLines().orEmpty().drop(1)
+        val routes = rows.mapNotNull { line ->
+            val fields = line.trim().split(Regex("\\s+"))
+            if (fields.size < 11) null else linkedMapOf<String, Any?>(
+                "interfacePresent" to fields[0].isNotBlank(),
+                "isDefault" to fields[1] == "00000000",
+                "up" to ((fields[3].toLongOrNull(16) ?: 0L) and 1L) != 0L,
+                "gatewayConfigured" to fields[2] != "00000000",
+                "metric" to fields[6].toLongOrNull(),
+            )
+        }
+        linkedMapOf(
+            "routeCount" to routes.size,
+            "defaultRouteCount" to routes.count { it["isDefault"] == true && it["up"] == true },
+            "upRouteCount" to routes.count { it["up"] == true },
+            "gatewayRouteCount" to routes.count { it["gatewayConfigured"] == true },
         )
     }.getOrDefault(emptyMap())
 
