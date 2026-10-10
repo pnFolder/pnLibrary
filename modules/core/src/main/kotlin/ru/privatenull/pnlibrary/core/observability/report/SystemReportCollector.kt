@@ -203,6 +203,7 @@ internal class SystemReportCollector {
         data["networkSoftnetStats"] = collectNetworkSoftnetStats()
         data["networkRoutes"] = collectNetworkRouteAnalytics()
         data["networkResolver"] = collectNetworkResolverAnalytics()
+        data["networkNameService"] = collectNetworkNameServiceAnalytics()
         val durationMs = (System.nanoTime() - startedNanos) / 1_000_000
         data["collection"] = linkedMapOf(
             "durationMs" to durationMs,
@@ -314,6 +315,7 @@ internal class SystemReportCollector {
                 "softnetDropped" to (data["networkSoftnetStats"] as? Map<*, *>)?.get("dropped"),
                 "defaultRouteCount" to (data["networkRoutes"] as? Map<*, *>)?.get("defaultRouteCount"),
                 "dnsNameserverCount" to (data["networkResolver"] as? Map<*, *>)?.get("nameserverCount"),
+                "nameServiceMethodCount" to (data["networkNameService"] as? Map<*, *>)?.get("methodCount"),
                 "cpuIdleTicks" to (data["systemScheduling"] as? Map<*, *>)?.get("cpuIdleTicks"),
                 "cpuIowaitTicks" to (data["systemScheduling"] as? Map<*, *>)?.get("cpuIowaitTicks"),
                 "cpuStealTicks" to (data["systemScheduling"] as? Map<*, *>)?.get("cpuStealTicks"),
@@ -474,6 +476,7 @@ internal class SystemReportCollector {
                 "networkSoftnetStats" to hasData(snapshot["networkSoftnetStats"]),
                 "networkRoutes" to hasData(snapshot["networkRoutes"]),
                 "networkResolver" to hasData(snapshot["networkResolver"]),
+                "networkNameService" to hasData(snapshot["networkNameService"]),
                 "processSchedulerDetails" to hasData(snapshot["processSchedulerDetails"]),
                 "processSignals" to hasData(snapshot["processSignals"]),
                 "processAddressSpace" to hasData(snapshot["processAddressSpace"]),
@@ -501,6 +504,7 @@ internal class SystemReportCollector {
                 "networkSoftnetStats" to snapshot["networkSoftnetStats"],
                 "networkRoutes" to snapshot["networkRoutes"],
                 "networkResolver" to snapshot["networkResolver"],
+                "networkNameService" to snapshot["networkNameService"],
                 "processSchedulerDetails" to snapshot["processSchedulerDetails"],
                 "processSignals" to snapshot["processSignals"],
                 "processAddressSpace" to snapshot["processAddressSpace"],
@@ -550,6 +554,7 @@ internal class SystemReportCollector {
             "networkSoftnetStats" to snapshot["networkSoftnetStats"],
             "networkRoutes" to snapshot["networkRoutes"],
             "networkResolver" to snapshot["networkResolver"],
+            "networkNameService" to snapshot["networkNameService"],
             "processSchedulerDetails" to snapshot["processSchedulerDetails"],
             "processSignals" to snapshot["processSignals"],
             "processAddressSpace" to snapshot["processAddressSpace"],
@@ -635,6 +640,7 @@ internal class SystemReportCollector {
                 "softnetDropped" to (snapshot["networkSoftnetStats"] as? Map<*, *>)?.get("dropped"),
                 "defaultRouteCount" to (snapshot["networkRoutes"] as? Map<*, *>)?.get("defaultRouteCount"),
                 "dnsNameserverCount" to (snapshot["networkResolver"] as? Map<*, *>)?.get("nameserverCount"),
+                "nameServiceMethodCount" to (snapshot["networkNameService"] as? Map<*, *>)?.get("methodCount"),
                 "tcpRetransmissions" to (snapshot["networkProtocolStats"] as? Map<*, *>)?.get("tcpRetransmissions"),
                 "cpuIdleTicks" to (snapshot["systemScheduling"] as? Map<*, *>)?.get("cpuIdleTicks"),
                 "cpuIowaitTicks" to (snapshot["systemScheduling"] as? Map<*, *>)?.get("cpuIowaitTicks"),
@@ -2021,6 +2027,19 @@ internal class SystemReportCollector {
             "searchDomainCount" to searchDomains,
             "optionCount" to options.size,
             "options" to options.take(16),
+        )
+    }.getOrDefault(emptyMap())
+
+    /** Reports NSS lookup order while omitting configured databases and domain values. */
+    private fun collectNetworkNameServiceAnalytics(): Map<String, Any?> = runCatching {
+        val line = File("/etc/nsswitch.conf").takeIf(File::isFile)?.readLines()
+            ?.firstOrNull { it.trimStart().startsWith("hosts:") }
+        val methods = line?.substringAfter(':')?.trim()?.split(Regex("\\s+"))
+            ?.map { it.substringBefore('[') }?.filter(String::isNotBlank).orEmpty()
+        linkedMapOf(
+            "configured" to (line != null),
+            "methodCount" to methods.size,
+            "methods" to methods.take(16),
         )
     }.getOrDefault(emptyMap())
 
