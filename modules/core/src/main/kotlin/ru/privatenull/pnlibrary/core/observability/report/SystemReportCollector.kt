@@ -304,6 +304,8 @@ internal class SystemReportCollector {
                 "processSchedulerVoluntarySwitches" to (data["processSchedulerDetails"] as? Map<*, *>)?.get("voluntaryContextSwitches"),
                 "processSchedulerMigrations" to (data["processSchedulerDetails"] as? Map<*, *>)?.get("migrations"),
                 "pendingSignalCount" to (data["processSignals"] as? Map<*, *>)?.get("pendingCount"),
+                "tcpListenDrops" to (((data["networkProtocolStats"] as? Map<*, *>)?.get("tcpExt") as? Map<*, *>)?.get("ListenDrops")),
+                "tcpListenOverflows" to (((data["networkProtocolStats"] as? Map<*, *>)?.get("tcpExt") as? Map<*, *>)?.get("ListenOverflows")),
                 "dirtyMemoryBytes" to (data["systemMemory"] as? Map<*, *>)?.get("Dirty"),
                 "writebackMemoryBytes" to (data["systemMemory"] as? Map<*, *>)?.get("Writeback"),
                 "cgroupIoReadBytes" to (((data["runtimeEnvironment"] as? Map<*, *>)?.get("io") as? Map<*, *>)?.get("readBytes")),
@@ -584,6 +586,8 @@ internal class SystemReportCollector {
                 "processSchedulerVoluntarySwitches" to (snapshot["processSchedulerDetails"] as? Map<*, *>)?.get("voluntaryContextSwitches"),
                 "processSchedulerMigrations" to (snapshot["processSchedulerDetails"] as? Map<*, *>)?.get("migrations"),
                 "pendingSignalCount" to (snapshot["processSignals"] as? Map<*, *>)?.get("pendingCount"),
+                "tcpListenDrops" to (((snapshot["networkProtocolStats"] as? Map<*, *>)?.get("tcpExt") as? Map<*, *>)?.get("ListenDrops")),
+                "tcpListenOverflows" to (((snapshot["networkProtocolStats"] as? Map<*, *>)?.get("tcpExt") as? Map<*, *>)?.get("ListenOverflows")),
                 "largestFileSystem" to fileSystems.orEmpty()
                     .maxByOrNull { ((it as? Map<*, *>)?.get("totalSpaceBytes") as? Number)?.toLong() ?: 0L },
                 "networkInterfacesUp" to ((snapshot["networkAnalytics"] as? Map<*, *>)?.get("upCount")),
@@ -1050,6 +1054,8 @@ internal class SystemReportCollector {
             "cgroupIoReadBytesDelta" to numericDelta("cgroupIoReadBytes"),
             "cgroupIoWriteBytesDelta" to numericDelta("cgroupIoWriteBytes"),
             "tcpRetransmissionsDelta" to numericDelta("tcpRetransmissions"),
+            "tcpListenDropsDelta" to numericDelta("tcpListenDrops"),
+            "tcpListenOverflowsDelta" to numericDelta("tcpListenOverflows"),
             "cpuIdleTicksDelta" to numericDelta("cpuIdleTicks"),
             "cpuIowaitTicksDelta" to numericDelta("cpuIowaitTicks"),
             "cpuStealTicksDelta" to numericDelta("cpuStealTicks"),
@@ -1790,6 +1796,7 @@ internal class SystemReportCollector {
         val tcp = sections["Tcp"].orEmpty()
         val udp = sections["Udp"].orEmpty()
         val ip = sections["Ip"].orEmpty()
+        val extended = collectNetstatExtended()
         linkedMapOf(
             "tcpRetransmissions" to tcp["RetransSegs"],
             "tcpInErrors" to tcp["InErrs"],
@@ -1801,7 +1808,27 @@ internal class SystemReportCollector {
             "ipInErrors" to ip["InHdrErrors"],
             "ipInDiscards" to ip["InDiscards"],
             "ipForwarding" to ip["Forwarding"],
+            "tcpExt" to extended,
         )
+    }.getOrDefault(emptyMap())
+
+    private fun collectNetstatExtended(): Map<String, Long?> = runCatching {
+        val lines = File("/proc/net/netstat").takeIf(File::isFile)?.readLines().orEmpty()
+        val result = linkedMapOf<String, Long?>()
+        var index = 0
+        while (index + 1 < lines.size) {
+            val header = lines[index].trim().split(Regex("\\s+"))
+            val values = lines[index + 1].trim().split(Regex("\\s+"))
+            if (header.firstOrNull() == values.firstOrNull() && header.firstOrNull() == "TcpExt:") {
+                header.drop(1).zip(values.drop(1)).forEach { (key, value) ->
+                    if (key in setOf("ListenOverflows", "ListenDrops", "SyncookiesSent", "SyncookiesRecv", "TCPTimeouts", "TW", "TCPBacklogDrop")) {
+                        result[key] = value.toLongOrNull()
+                    }
+                }
+            }
+            index += 2
+        }
+        result
     }.getOrDefault(emptyMap())
 
     private fun collectProcessNetwork(): Map<String, Any?> = runCatching {
