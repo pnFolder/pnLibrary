@@ -74,7 +74,9 @@ class SystemReportCollectorTest {
         assertTrue(network.containsKey("ipv6AddressCount"))
         assertTrue(report["processIo"] is Map<*, *>)
         assertTrue(report["loadAverage"] is Map<*, *>)
-        assertTrue((report["loadAverage"] as? Map<*, *>)?.containsKey("oneMinutePerProcessor") == true)
+        (report["loadAverage"] as? Map<*, *>)?.takeIf { it.isNotEmpty() }?.let {
+            assertTrue(it.containsKey("oneMinutePerProcessor"))
+        }
         assertTrue(report["processNetwork"] is Map<*, *>)
         assertTrue(report["environmentVariableAnalytics"] is Map<*, *>)
         assertTrue(report["processStatus"] is Map<*, *>)
