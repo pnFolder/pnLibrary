@@ -101,6 +101,7 @@ internal class SystemReportCollector {
         data["kernelLimits"] = collectKernelLimits()
         data["containerIo"] = collectContainerIo()
         data["processScheduling"] = collectProcessScheduling()
+        data["processSchedulerDetails"] = collectProcessSchedulerDetails()
         data["systemScheduling"] = collectSystemScheduling()
         data["loadAverage"] = collectLoadAverage()
         data["pressureStall"] = collectPressureStall()
@@ -297,6 +298,8 @@ internal class SystemReportCollector {
                 "cpuIdleTicks" to (data["systemScheduling"] as? Map<*, *>)?.get("cpuIdleTicks"),
                 "cpuIowaitTicks" to (data["systemScheduling"] as? Map<*, *>)?.get("cpuIowaitTicks"),
                 "cpuStealTicks" to (data["systemScheduling"] as? Map<*, *>)?.get("cpuStealTicks"),
+                "processSchedulerVoluntarySwitches" to (data["processSchedulerDetails"] as? Map<*, *>)?.get("voluntaryContextSwitches"),
+                "processSchedulerMigrations" to (data["processSchedulerDetails"] as? Map<*, *>)?.get("migrations"),
                 "dirtyMemoryBytes" to (data["systemMemory"] as? Map<*, *>)?.get("Dirty"),
                 "writebackMemoryBytes" to (data["systemMemory"] as? Map<*, *>)?.get("Writeback"),
                 "cgroupIoReadBytes" to (((data["runtimeEnvironment"] as? Map<*, *>)?.get("io") as? Map<*, *>)?.get("readBytes")),
@@ -430,6 +433,7 @@ internal class SystemReportCollector {
                 "securityRuntime" to hasData(snapshot["securityRuntime"]),
                 "hardwareSensors" to hasData(snapshot["hardwareSensors"]),
                 "networkProtocolStats" to hasData(snapshot["networkProtocolStats"]),
+                "processSchedulerDetails" to hasData(snapshot["processSchedulerDetails"]),
             ),
             "unavailableSections" to listOf(
                 "processIo" to snapshot["processIo"],
@@ -447,6 +451,7 @@ internal class SystemReportCollector {
                 "securityRuntime" to snapshot["securityRuntime"],
                 "hardwareSensors" to snapshot["hardwareSensors"],
                 "networkProtocolStats" to snapshot["networkProtocolStats"],
+                "processSchedulerDetails" to snapshot["processSchedulerDetails"],
             ).filter { !hasData(it.second) }.map { it.first },
             "containerLimits" to linkedMapOf(
                 "memoryLimitBytes" to (snapshot["runtimeEnvironment"] as? Map<*, *>)?.get("memoryLimitBytes"),
@@ -483,6 +488,7 @@ internal class SystemReportCollector {
             "securityRuntime" to snapshot["securityRuntime"],
             "hardwareSensors" to snapshot["hardwareSensors"],
             "networkProtocolStats" to snapshot["networkProtocolStats"],
+            "processSchedulerDetails" to snapshot["processSchedulerDetails"],
             "hostDistribution" to linkedMapOf(
                 "availableProcessors" to os?.get("availableProcessors"),
                 "distribution" to os?.get("distribution"),
@@ -562,6 +568,8 @@ internal class SystemReportCollector {
                 "cpuIdleTicks" to (snapshot["systemScheduling"] as? Map<*, *>)?.get("cpuIdleTicks"),
                 "cpuIowaitTicks" to (snapshot["systemScheduling"] as? Map<*, *>)?.get("cpuIowaitTicks"),
                 "cpuStealTicks" to (snapshot["systemScheduling"] as? Map<*, *>)?.get("cpuStealTicks"),
+                "processSchedulerVoluntarySwitches" to (snapshot["processSchedulerDetails"] as? Map<*, *>)?.get("voluntaryContextSwitches"),
+                "processSchedulerMigrations" to (snapshot["processSchedulerDetails"] as? Map<*, *>)?.get("migrations"),
                 "largestFileSystem" to fileSystems.orEmpty()
                     .maxByOrNull { ((it as? Map<*, *>)?.get("totalSpaceBytes") as? Number)?.toLong() ?: 0L },
                 "networkInterfacesUp" to ((snapshot["networkAnalytics"] as? Map<*, *>)?.get("upCount")),
@@ -1031,6 +1039,8 @@ internal class SystemReportCollector {
             "cpuIdleTicksDelta" to numericDelta("cpuIdleTicks"),
             "cpuIowaitTicksDelta" to numericDelta("cpuIowaitTicks"),
             "cpuStealTicksDelta" to numericDelta("cpuStealTicks"),
+            "processSchedulerVoluntarySwitchesDelta" to numericDelta("processSchedulerVoluntarySwitches"),
+            "processSchedulerMigrationsDelta" to numericDelta("processSchedulerMigrations"),
             "durationMsDelta" to numericDelta("durationMs"),
             "bufferPoolUsedBytesDelta" to numericDelta("bufferPoolUsedBytes"),
             "jitCompilationTimeMsDelta" to numericDelta("jitCompilationTimeMs"),
@@ -1916,6 +1926,25 @@ internal class SystemReportCollector {
             "nice" to fields.getOrNull(16)?.toLongOrNull(),
             "threadCount" to fields.getOrNull(17)?.toLongOrNull(),
             "processor" to fields.getOrNull(36)?.toLongOrNull(),
+        )
+    }.getOrDefault(emptyMap())
+
+    /** Reads bounded scheduler counters for the current process from procfs. */
+    private fun collectProcessSchedulerDetails(): Map<String, Any?> = runCatching {
+        val values = File("/proc/self/sched").takeIf(File::isFile)?.readLines().mapNotNull { line ->
+            val separator = line.indexOf(':')
+            if (separator <= 0) return@mapNotNull null
+            val key = line.substring(0, separator).trim()
+            val value = line.substring(separator + 1).trim().split(Regex("\\s+"))
+                .firstOrNull()?.toDoubleOrNull() ?: return@mapNotNull null
+            key to value
+        }.toMap()
+        linkedMapOf(
+            "voluntaryContextSwitches" to values["nr_voluntary_switches"],
+            "involuntaryContextSwitches" to values["nr_involuntary_switches"],
+            "migrations" to values["nr_migrations"],
+            "runDelayNanoseconds" to values["se.sum_exec_runtime"],
+            "averageRunnableTime" to values["se.avg.util_sum"],
         )
     }.getOrDefault(emptyMap())
 
