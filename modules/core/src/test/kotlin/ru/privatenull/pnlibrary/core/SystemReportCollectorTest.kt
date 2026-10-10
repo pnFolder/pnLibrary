@@ -91,6 +91,7 @@ class SystemReportCollectorTest {
             ?: error("health section is missing")
         assertTrue(health.containsKey("physicalMemoryPressure"))
         assertTrue(health.containsKey("swapPressure"))
+        assertTrue(health.containsKey("fileDescriptorPressure"))
         assertTrue(report["capabilities"] is Map<*, *>)
         assertTrue((analytics["capabilities"] as? Map<*, *>)?.containsKey("threadCpuTimeSupported") == true)
         assertTrue((analytics["resources"] as? Map<*, *>)?.containsKey("maxOpenFiles") == true)

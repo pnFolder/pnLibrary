@@ -257,6 +257,7 @@ internal class SystemReportCollector {
             addPressureSignal(this, "disk", health?.get("diskPressure"))
             addPressureSignal(this, "physicalMemory", health?.get("physicalMemoryPressure"))
             addPressureSignal(this, "swap", health?.get("swapPressure"))
+            addPressureSignal(this, "fileDescriptor", health?.get("fileDescriptorPressure"))
             if ((threads?.get("deadlockedCount") as? Number)?.toInt()?.let { it > 0 } == true) {
                 add(linkedMapOf("code" to "deadlock", "severity" to "critical"))
             }
@@ -635,6 +636,11 @@ internal class SystemReportCollector {
         val swapUsedRatio = if (totalSwap != null && freeSwap != null && totalSwap > 0L) {
             ((totalSwap - freeSwap).coerceAtLeast(0L)).toDouble() / totalSwap
         } else null
+        val openDescriptors = readLong(operatingSystem, "getOpenFileDescriptorCount")
+        val maxDescriptors = readLong(operatingSystem, "getMaxFileDescriptorCount")
+        val descriptorUsedRatio = if (openDescriptors != null && maxDescriptors != null && maxDescriptors > 0L) {
+            openDescriptors.toDouble() / maxDescriptors
+        } else null
         val disks = File.listRoots().orEmpty()
         val diskRatios = disks.mapNotNull { root ->
             root.totalSpace.takeIf { it > 0L }?.let {
@@ -647,12 +653,14 @@ internal class SystemReportCollector {
             "systemCpuLoad" to systemCpu,
             "physicalMemoryUsedRatio" to physicalUsedRatio,
             "swapUsedRatio" to swapUsedRatio,
+            "fileDescriptorUsedRatio" to descriptorUsedRatio,
             "highestDiskUsedRatio" to diskRatios.maxOrNull(),
             "heapPressure" to pressure(heapRatio),
             "processCpuPressure" to pressure(processCpu),
             "systemCpuPressure" to pressure(systemCpu),
             "physicalMemoryPressure" to pressure(physicalUsedRatio),
             "swapPressure" to pressure(swapUsedRatio),
+            "fileDescriptorPressure" to pressure(descriptorUsedRatio),
             "diskPressure" to pressure(diskRatios.maxOrNull()),
         )
     }
