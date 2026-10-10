@@ -228,6 +228,7 @@ internal class SystemReportCollector {
         data["kernelWorkqueues"] = collectKernelWorkqueueAnalytics()
         data["ioUringPolicy"] = collectIoUringPolicy()
         data["cgroupTopology"] = collectCgroupTopologyAnalytics()
+        data["networkSocketPressure"] = collectNetworkSocketPressure()
         val durationMs = (System.nanoTime() - startedNanos) / 1_000_000
         data["collection"] = linkedMapOf(
             "durationMs" to durationMs,
@@ -525,6 +526,7 @@ internal class SystemReportCollector {
                 "kernelWorkqueues" to hasData(snapshot["kernelWorkqueues"]),
                 "ioUringPolicy" to hasData(snapshot["ioUringPolicy"]),
                 "cgroupTopology" to hasData(snapshot["cgroupTopology"]),
+                "networkSocketPressure" to hasData(snapshot["networkSocketPressure"]),
                 "processSchedulerDetails" to hasData(snapshot["processSchedulerDetails"]),
                 "processSignals" to hasData(snapshot["processSignals"]),
                 "processAddressSpace" to hasData(snapshot["processAddressSpace"]),
@@ -577,6 +579,7 @@ internal class SystemReportCollector {
                 "kernelWorkqueues" to snapshot["kernelWorkqueues"],
                 "ioUringPolicy" to snapshot["ioUringPolicy"],
                 "cgroupTopology" to snapshot["cgroupTopology"],
+                "networkSocketPressure" to snapshot["networkSocketPressure"],
                 "processSchedulerDetails" to snapshot["processSchedulerDetails"],
                 "processSignals" to snapshot["processSignals"],
                 "processAddressSpace" to snapshot["processAddressSpace"],
@@ -651,6 +654,7 @@ internal class SystemReportCollector {
             "kernelWorkqueues" to snapshot["kernelWorkqueues"],
             "ioUringPolicy" to snapshot["ioUringPolicy"],
             "cgroupTopology" to snapshot["cgroupTopology"],
+            "networkSocketPressure" to snapshot["networkSocketPressure"],
             "processSchedulerDetails" to snapshot["processSchedulerDetails"],
             "processSignals" to snapshot["processSignals"],
             "processAddressSpace" to snapshot["processAddressSpace"],
@@ -2674,6 +2678,28 @@ internal class SystemReportCollector {
             "freezeState" to readTextFile("${root.path}/cgroup.freeze"),
             "pressureFiles" to listOf("cpu.pressure", "memory.pressure", "io.pressure")
                 .filter { File(root, it).isFile },
+        )
+    }.getOrDefault(emptyMap())
+
+    /** Reports aggregate kernel socket/conntrack pressure without addresses or connection identities. */
+    private fun collectNetworkSocketPressure(): Map<String, Any?> = runCatching {
+        val socketStats = listOf("/proc/net/sockstat", "/proc/net/sockstat6")
+            .flatMap { path -> File(path).takeIf(File::isFile)?.readLines().orEmpty() }
+            .mapNotNull { line ->
+                val fields = line.trim().split(Regex("\\s+"))
+                val protocol = fields.firstOrNull()?.removeSuffix(":") ?: return@mapNotNull null
+                fields.drop(1).windowed(2, 2).mapNotNull { pair ->
+                    pair.getOrNull(0)?.let { key -> pair.getOrNull(1)?.toLongOrNull()?.let { "${protocol}_$key" to it } }
+                }
+            }.flatten().toMap()
+        val conntrackCurrent = readLongFile("/proc/sys/net/netfilter/nf_conntrack_count")
+        val conntrackMaximum = readLongFile("/proc/sys/net/netfilter/nf_conntrack_max")
+        linkedMapOf(
+            "configured" to (socketStats.isNotEmpty() || conntrackCurrent != null),
+            "socketStats" to socketStats,
+            "conntrackCurrent" to conntrackCurrent,
+            "conntrackMaximum" to conntrackMaximum,
+            "conntrackUsageRatio" to conntrackCurrent?.toDouble()?.div((conntrackMaximum ?: 0L).coerceAtLeast(1L)),
         )
     }.getOrDefault(emptyMap())
 
