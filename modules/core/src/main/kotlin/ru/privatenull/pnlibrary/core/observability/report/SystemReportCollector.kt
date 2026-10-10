@@ -91,6 +91,7 @@ internal class SystemReportCollector {
         data["processIo"] = collectProcessIo()
         data["processNetwork"] = collectProcessNetwork()
         data["processStatus"] = collectProcessStatus()
+        data["processSignals"] = collectProcessSignals()
         data["processAffinity"] = collectProcessAffinity()
         data["processSecurity"] = collectProcessSecurity()
         data["processNamespaces"] = collectProcessNamespaces()
@@ -300,6 +301,7 @@ internal class SystemReportCollector {
                 "cpuStealTicks" to (data["systemScheduling"] as? Map<*, *>)?.get("cpuStealTicks"),
                 "processSchedulerVoluntarySwitches" to (data["processSchedulerDetails"] as? Map<*, *>)?.get("voluntaryContextSwitches"),
                 "processSchedulerMigrations" to (data["processSchedulerDetails"] as? Map<*, *>)?.get("migrations"),
+                "pendingSignalCount" to (data["processSignals"] as? Map<*, *>)?.get("pendingCount"),
                 "dirtyMemoryBytes" to (data["systemMemory"] as? Map<*, *>)?.get("Dirty"),
                 "writebackMemoryBytes" to (data["systemMemory"] as? Map<*, *>)?.get("Writeback"),
                 "cgroupIoReadBytes" to (((data["runtimeEnvironment"] as? Map<*, *>)?.get("io") as? Map<*, *>)?.get("readBytes")),
@@ -434,6 +436,7 @@ internal class SystemReportCollector {
                 "hardwareSensors" to hasData(snapshot["hardwareSensors"]),
                 "networkProtocolStats" to hasData(snapshot["networkProtocolStats"]),
                 "processSchedulerDetails" to hasData(snapshot["processSchedulerDetails"]),
+                "processSignals" to hasData(snapshot["processSignals"]),
             ),
             "unavailableSections" to listOf(
                 "processIo" to snapshot["processIo"],
@@ -452,6 +455,7 @@ internal class SystemReportCollector {
                 "hardwareSensors" to snapshot["hardwareSensors"],
                 "networkProtocolStats" to snapshot["networkProtocolStats"],
                 "processSchedulerDetails" to snapshot["processSchedulerDetails"],
+                "processSignals" to snapshot["processSignals"],
             ).filter { !hasData(it.second) }.map { it.first },
             "containerLimits" to linkedMapOf(
                 "memoryLimitBytes" to (snapshot["runtimeEnvironment"] as? Map<*, *>)?.get("memoryLimitBytes"),
@@ -489,6 +493,7 @@ internal class SystemReportCollector {
             "hardwareSensors" to snapshot["hardwareSensors"],
             "networkProtocolStats" to snapshot["networkProtocolStats"],
             "processSchedulerDetails" to snapshot["processSchedulerDetails"],
+            "processSignals" to snapshot["processSignals"],
             "hostDistribution" to linkedMapOf(
                 "availableProcessors" to os?.get("availableProcessors"),
                 "distribution" to os?.get("distribution"),
@@ -570,6 +575,7 @@ internal class SystemReportCollector {
                 "cpuStealTicks" to (snapshot["systemScheduling"] as? Map<*, *>)?.get("cpuStealTicks"),
                 "processSchedulerVoluntarySwitches" to (snapshot["processSchedulerDetails"] as? Map<*, *>)?.get("voluntaryContextSwitches"),
                 "processSchedulerMigrations" to (snapshot["processSchedulerDetails"] as? Map<*, *>)?.get("migrations"),
+                "pendingSignalCount" to (snapshot["processSignals"] as? Map<*, *>)?.get("pendingCount"),
                 "largestFileSystem" to fileSystems.orEmpty()
                     .maxByOrNull { ((it as? Map<*, *>)?.get("totalSpaceBytes") as? Number)?.toLong() ?: 0L },
                 "networkInterfacesUp" to ((snapshot["networkAnalytics"] as? Map<*, *>)?.get("upCount")),
@@ -1776,6 +1782,25 @@ internal class SystemReportCollector {
             val value = line.substring(separator + 1).trim().split(' ').firstOrNull()?.toLongOrNull()
             value?.let { key to it }
         }.toMap()
+    }.getOrDefault(emptyMap())
+
+    /** Collects signal masks and queue pressure without resolving signal names or user identities. */
+    private fun collectProcessSignals(): Map<String, Any?> = runCatching {
+        val values = File("/proc/self/status").takeIf(File::isFile)?.readLines().orEmpty()
+            .mapNotNull { line ->
+                val separator = line.indexOf(':')
+                if (separator <= 0) null else line.substring(0, separator) to line.substring(separator + 1).trim()
+            }.toMap()
+        val queue = values["SigQ"]?.split('/')?.mapNotNull(String::toLongOrNull)
+        linkedMapOf(
+            "pendingMask" to values["ShdPnd"],
+            "blockedMask" to values["SigBlk"],
+            "ignoredMask" to values["SigIgn"],
+            "caughtMask" to values["SigCgt"],
+            "queuedSignals" to queue?.getOrNull(0),
+            "queuedSignalLimit" to queue?.getOrNull(1),
+            "pendingCount" to queue?.getOrNull(0),
+        )
     }.getOrDefault(emptyMap())
 
     private fun collectProcessAffinity(): Map<String, Any?> = runCatching {
