@@ -118,6 +118,7 @@ internal class SystemReportCollector {
         data["hardwareSensors"] = collectHardwareSensors()
         data["numaMemory"] = collectNumaMemory()
         data["kernelVmPolicy"] = collectKernelVmPolicy()
+        data["kernelSchedulerPolicy"] = collectKernelSchedulerPolicy()
 
         // ── Memory ───────────────────────────────────────────────────────────
         val heap = memoryMx.heapMemoryUsage
@@ -299,6 +300,7 @@ internal class SystemReportCollector {
                 "hardwareSensorCount" to (data["hardwareSensors"] as? Map<*, *>)?.get("sensorCount"),
                 "numaNodeCount" to (data["numaMemory"] as? Map<*, *>)?.get("nodeCount"),
                 "vmSwappiness" to (data["kernelVmPolicy"] as? Map<*, *>)?.get("swappiness"),
+                "schedulerLatencyNs" to (data["kernelSchedulerPolicy"] as? Map<*, *>)?.get("latencyNs"),
                 "tcpRetransmissions" to (data["networkProtocolStats"] as? Map<*, *>)?.get("tcpRetransmissions"),
                 "cpuIdleTicks" to (data["systemScheduling"] as? Map<*, *>)?.get("cpuIdleTicks"),
                 "cpuIowaitTicks" to (data["systemScheduling"] as? Map<*, *>)?.get("cpuIowaitTicks"),
@@ -452,6 +454,7 @@ internal class SystemReportCollector {
                 "hardwareSensors" to hasData(snapshot["hardwareSensors"]),
                 "numaMemory" to hasData(snapshot["numaMemory"]),
                 "kernelVmPolicy" to hasData(snapshot["kernelVmPolicy"]),
+                "kernelSchedulerPolicy" to hasData(snapshot["kernelSchedulerPolicy"]),
                 "networkProtocolStats" to hasData(snapshot["networkProtocolStats"]),
                 "processSchedulerDetails" to hasData(snapshot["processSchedulerDetails"]),
                 "processSignals" to hasData(snapshot["processSignals"]),
@@ -473,6 +476,7 @@ internal class SystemReportCollector {
                 "hardwareSensors" to snapshot["hardwareSensors"],
                 "numaMemory" to snapshot["numaMemory"],
                 "kernelVmPolicy" to snapshot["kernelVmPolicy"],
+                "kernelSchedulerPolicy" to snapshot["kernelSchedulerPolicy"],
                 "networkProtocolStats" to snapshot["networkProtocolStats"],
                 "processSchedulerDetails" to snapshot["processSchedulerDetails"],
                 "processSignals" to snapshot["processSignals"],
@@ -516,6 +520,7 @@ internal class SystemReportCollector {
             "hardwareSensors" to snapshot["hardwareSensors"],
             "numaMemory" to snapshot["numaMemory"],
             "kernelVmPolicy" to snapshot["kernelVmPolicy"],
+            "kernelSchedulerPolicy" to snapshot["kernelSchedulerPolicy"],
             "networkProtocolStats" to snapshot["networkProtocolStats"],
             "processSchedulerDetails" to snapshot["processSchedulerDetails"],
             "processSignals" to snapshot["processSignals"],
@@ -595,6 +600,7 @@ internal class SystemReportCollector {
                 "hardwareSensorCount" to (snapshot["hardwareSensors"] as? Map<*, *>)?.get("sensorCount"),
                 "numaNodeCount" to (snapshot["numaMemory"] as? Map<*, *>)?.get("nodeCount"),
                 "vmSwappiness" to (snapshot["kernelVmPolicy"] as? Map<*, *>)?.get("swappiness"),
+                "schedulerLatencyNs" to (snapshot["kernelSchedulerPolicy"] as? Map<*, *>)?.get("latencyNs"),
                 "tcpRetransmissions" to (snapshot["networkProtocolStats"] as? Map<*, *>)?.get("tcpRetransmissions"),
                 "tcpRetransmissions" to (snapshot["networkProtocolStats"] as? Map<*, *>)?.get("tcpRetransmissions"),
                 "cpuIdleTicks" to (snapshot["systemScheduling"] as? Map<*, *>)?.get("cpuIdleTicks"),
@@ -1667,6 +1673,16 @@ internal class SystemReportCollector {
         "overcommitRatio" to readLongFile("/proc/sys/vm/overcommit_ratio"),
         "compactMemory" to readLongFile("/proc/sys/vm/compact_memory"),
         "maxMapCount" to readLongFile("/proc/sys/vm/max_map_count"),
+    )
+
+    /** Captures scheduler policy knobs used to interpret process run-queue latency. */
+    private fun collectKernelSchedulerPolicy(): Map<String, Any?> = linkedMapOf(
+        "latencyNs" to readLongFile("/proc/sys/kernel/sched_latency_ns"),
+        "minGranularityNs" to readLongFile("/proc/sys/kernel/sched_min_granularity_ns"),
+        "wakeupGranularityNs" to readLongFile("/proc/sys/kernel/sched_wakeup_granularity_ns"),
+        "migrationCostNs" to readLongFile("/proc/sys/kernel/sched_migration_cost_ns"),
+        "autogroupEnabled" to readLongFile("/proc/sys/kernel/sched_autogroup_enabled")?.let { it == 1L },
+        "rrTimesliceMs" to readLongFile("/proc/sys/kernel/sched_rr_timeslice_ms"),
     )
 
     /** Aggregates block-device sectors and latency from /proc/diskstats. */
