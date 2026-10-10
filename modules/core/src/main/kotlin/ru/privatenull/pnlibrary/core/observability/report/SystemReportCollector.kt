@@ -6,6 +6,8 @@ import java.io.File
 import java.lang.management.GarbageCollectorMXBean
 import java.lang.management.ManagementFactory
 import java.lang.management.MemoryPoolMXBean
+import java.lang.management.BufferPoolMXBean
+import java.lang.management.CompilationMXBean
 import java.net.NetworkInterface
 import java.nio.file.Files
 import java.nio.file.Paths
@@ -110,7 +112,9 @@ internal class SystemReportCollector {
             ),
             "pools" to collectMemoryPools(),
             "garbageCollectors" to collectGarbageCollectors(runtimeMx.uptime),
+            "bufferPools" to collectBufferPools(),
         )
+        data["jitCompilation"] = collectJitCompilation()
 
         // ── Threads ──────────────────────────────────────────────────────────
         val deadlocked = threadMx.findDeadlockedThreads()
@@ -330,7 +334,9 @@ internal class SystemReportCollector {
                 "javaRuntime" to (java != null),
                 "processIo" to hasData(snapshot["processIo"]),
                 "processNetwork" to hasData(snapshot["processNetwork"]),
-                "processStatus" to hasData(snapshot["processStatus"]),
+            "processStatus" to hasData(snapshot["processStatus"]),
+                "processMemoryMaps" to hasData(snapshot["processMemoryMaps"]),
+                "processFileDescriptors" to hasData(snapshot["processFileDescriptors"]),
                 "processLimits" to hasData(snapshot["processLimits"]),
                 "processScheduling" to hasData(snapshot["processScheduling"]),
                 "loadAverage" to hasData(snapshot["loadAverage"]),
@@ -404,6 +410,13 @@ internal class SystemReportCollector {
                     ((pool as? Map<*, *>)?.get("usedRatio") as? Number)?.toDouble()
                         ?.let { it >= MEMORY_POOL_PRESSURE_THRESHOLD } == true
                 },
+                "bufferPoolUsedBytes" to ((memory?.get("bufferPools") as? Collection<*>)?.sumOf {
+                    ((it as? Map<*, *>)?.get("usedBytes") as? Number)?.toLong() ?: 0L
+                }),
+                "bufferPoolCapacityBytes" to ((memory?.get("bufferPools") as? Collection<*>)?.sumOf {
+                    ((it as? Map<*, *>)?.get("totalCapacityBytes") as? Number)?.toLong() ?: 0L
+                }),
+                "jitCompilationTimeMs" to (snapshot["jitCompilation"] as? Map<*, *>)?.get("totalCompilationTimeMs"),
                 "largestFileSystem" to fileSystems.orEmpty()
                     .maxByOrNull { ((it as? Map<*, *>)?.get("totalSpaceBytes") as? Number)?.toLong() ?: 0L },
                 "networkInterfacesUp" to ((snapshot["networkAnalytics"] as? Map<*, *>)?.get("upCount")),
@@ -613,6 +626,27 @@ internal class SystemReportCollector {
             )
         }
     }
+
+    private fun collectBufferPools(): List<Map<String, Any?>> = runCatching {
+        ManagementFactory.getPlatformMXBeans(BufferPoolMXBean::class.java).map { pool ->
+            linkedMapOf(
+                "name" to pool.name,
+                "count" to pool.count,
+                "totalCapacityBytes" to pool.totalCapacity,
+                "usedBytes" to pool.memoryUsed,
+            )
+        }
+    }.getOrDefault(emptyList())
+
+    private fun collectJitCompilation(): Map<String, Any?> = runCatching {
+        val bean: CompilationMXBean = ManagementFactory.getCompilationMXBean()
+            ?: return@runCatching emptyMap()
+        linkedMapOf(
+            "name" to bean.name,
+            "totalCompilationTimeMs" to bean.totalCompilationTime,
+            "monitoringSupported" to bean.isCompilationTimeMonitoringSupported,
+        )
+    }.getOrDefault(emptyMap())
 
     private fun collectGarbageCollectors(uptimeMs: Long): List<Map<String, Any?>> {
         val gcs = ManagementFactory.getGarbageCollectorMXBeans()
