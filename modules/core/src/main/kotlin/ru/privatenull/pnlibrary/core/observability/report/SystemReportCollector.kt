@@ -2034,6 +2034,8 @@ internal class SystemReportCollector {
             "noNewPrivileges" to (value("NoNewPrivs") == "1"),
             "seccompMode" to value("Seccomp")?.toIntOrNull(),
             "dumpable" to value("Dumpable")?.toIntOrNull(),
+            "speculationStoreBypass" to value("Speculation_Store_Bypass"),
+            "speculationIndirectBranch" to value("SpeculationIndirectBranch"),
         )
     }.getOrDefault(emptyMap())
 
