@@ -226,6 +226,7 @@ internal class SystemReportCollector {
         data["memoryZones"] = collectMemoryZoneAnalytics()
         data["kernelSlab"] = collectKernelSlabAnalytics()
         data["kernelWorkqueues"] = collectKernelWorkqueueAnalytics()
+        data["ioUringPolicy"] = collectIoUringPolicy()
         val durationMs = (System.nanoTime() - startedNanos) / 1_000_000
         data["collection"] = linkedMapOf(
             "durationMs" to durationMs,
@@ -521,6 +522,7 @@ internal class SystemReportCollector {
                 "memoryZones" to hasData(snapshot["memoryZones"]),
                 "kernelSlab" to hasData(snapshot["kernelSlab"]),
                 "kernelWorkqueues" to hasData(snapshot["kernelWorkqueues"]),
+                "ioUringPolicy" to hasData(snapshot["ioUringPolicy"]),
                 "processSchedulerDetails" to hasData(snapshot["processSchedulerDetails"]),
                 "processSignals" to hasData(snapshot["processSignals"]),
                 "processAddressSpace" to hasData(snapshot["processAddressSpace"]),
@@ -571,6 +573,7 @@ internal class SystemReportCollector {
                 "memoryZones" to snapshot["memoryZones"],
                 "kernelSlab" to snapshot["kernelSlab"],
                 "kernelWorkqueues" to snapshot["kernelWorkqueues"],
+                "ioUringPolicy" to snapshot["ioUringPolicy"],
                 "processSchedulerDetails" to snapshot["processSchedulerDetails"],
                 "processSignals" to snapshot["processSignals"],
                 "processAddressSpace" to snapshot["processAddressSpace"],
@@ -643,6 +646,7 @@ internal class SystemReportCollector {
             "memoryZones" to snapshot["memoryZones"],
             "kernelSlab" to snapshot["kernelSlab"],
             "kernelWorkqueues" to snapshot["kernelWorkqueues"],
+            "ioUringPolicy" to snapshot["ioUringPolicy"],
             "processSchedulerDetails" to snapshot["processSchedulerDetails"],
             "processSignals" to snapshot["processSignals"],
             "processAddressSpace" to snapshot["processAddressSpace"],
@@ -2626,6 +2630,20 @@ internal class SystemReportCollector {
             "powerEfficient" to readTextFile("${root.path}/power_efficient")?.toIntOrNull()?.let { it == 1 },
             "onlineCpuMask" to readTextFile("${root.path}/cpumask"),
             "queues" to queues,
+        )
+    }.getOrDefault(emptyMap())
+
+    /** Reports io_uring/AIO policy and counters without inspecting submitted requests or file paths. */
+    private fun collectIoUringPolicy(): Map<String, Any?> = runCatching {
+        linkedMapOf(
+            "configured" to File("/proc/sys/kernel").isDirectory,
+            "ioUringDisabled" to readLongFile("/proc/sys/kernel/io_uring_disabled"),
+            "ioUringGroup" to readLongFile("/proc/sys/kernel/io_uring_group"),
+            "aioMaximum" to readLongFile("/proc/sys/fs/aio-max-nr"),
+            "aioCurrent" to readLongFile("/proc/sys/fs/aio-nr"),
+            "aioUsageRatio" to ((readLongFile("/proc/sys/fs/aio-nr") ?: 0L).toDouble() /
+                (readLongFile("/proc/sys/fs/aio-max-nr") ?: 0L).coerceAtLeast(1L)),
+            "ioUringProcfsPresent" to File("/proc/sys/kernel/io_uring_disabled").isFile,
         )
     }.getOrDefault(emptyMap())
 
