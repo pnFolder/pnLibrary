@@ -961,11 +961,20 @@ internal class SystemReportCollector {
             val right = line.substring(separator + 3).split(' ')
             val mountPoint = left.getOrNull(4)?.replace("\\040", " ") ?: return@mapNotNull null
             val options = left.getOrNull(5)?.split(',').orEmpty()
+            val optional = left.drop(6).takeWhile { it != "-" }
             linkedMapOf<String, Any?>(
                 "path" to mountPoint,
                 "readOnly" to options.contains("ro"),
                 "type" to right.firstOrNull(),
                 "source" to right.getOrNull(1),
+                "shared" to optional.any { it.startsWith("shared:") },
+                "master" to optional.any { it.startsWith("master:") },
+                "propagation" to when {
+                    optional.any { it.startsWith("shared:") } -> "shared"
+                    optional.any { it.startsWith("master:") } -> "slave"
+                    else -> "private-or-unknown"
+                },
+                "optionalFieldCount" to optional.size,
             )
         }
         linkedMapOf(
