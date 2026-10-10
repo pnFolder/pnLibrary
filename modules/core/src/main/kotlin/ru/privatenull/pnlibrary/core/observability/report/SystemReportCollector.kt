@@ -1009,6 +1009,7 @@ internal class SystemReportCollector {
             .sumOf { path -> readProcSocketStates(path).size }
         linkedMapOf(
             "tcpSockets" to tcp.size,
+            "tcpStateCounts" to tcp.groupingBy { it }.eachCount().toSortedMap(),
             "tcpEstablished" to tcp.count { it == "01" },
             "tcpListening" to tcp.count { it == "0A" },
             "tcpTimeWait" to tcp.count { it == "06" },
