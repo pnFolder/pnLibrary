@@ -205,6 +205,8 @@ internal class SystemReportCollector {
         data["networkResolver"] = collectNetworkResolverAnalytics()
         data["networkNameService"] = collectNetworkNameServiceAnalytics()
         data["kernelNotificationPolicy"] = collectKernelNotificationPolicy()
+        data["kernelSysctl"] = collectKernelSysctl()
+        data["blockDevices"] = collectBlockDeviceAnalytics()
         val durationMs = (System.nanoTime() - startedNanos) / 1_000_000
         data["collection"] = linkedMapOf(
             "durationMs" to durationMs,
@@ -479,6 +481,8 @@ internal class SystemReportCollector {
                 "networkResolver" to hasData(snapshot["networkResolver"]),
                 "networkNameService" to hasData(snapshot["networkNameService"]),
                 "kernelNotificationPolicy" to hasData(snapshot["kernelNotificationPolicy"]),
+                "kernelSysctl" to hasData(snapshot["kernelSysctl"]),
+                "blockDevices" to hasData(snapshot["blockDevices"]),
                 "processSchedulerDetails" to hasData(snapshot["processSchedulerDetails"]),
                 "processSignals" to hasData(snapshot["processSignals"]),
                 "processAddressSpace" to hasData(snapshot["processAddressSpace"]),
@@ -508,6 +512,8 @@ internal class SystemReportCollector {
                 "networkResolver" to snapshot["networkResolver"],
                 "networkNameService" to snapshot["networkNameService"],
                 "kernelNotificationPolicy" to snapshot["kernelNotificationPolicy"],
+                "kernelSysctl" to snapshot["kernelSysctl"],
+                "blockDevices" to snapshot["blockDevices"],
                 "processSchedulerDetails" to snapshot["processSchedulerDetails"],
                 "processSignals" to snapshot["processSignals"],
                 "processAddressSpace" to snapshot["processAddressSpace"],
@@ -559,6 +565,8 @@ internal class SystemReportCollector {
             "networkResolver" to snapshot["networkResolver"],
             "networkNameService" to snapshot["networkNameService"],
             "kernelNotificationPolicy" to snapshot["kernelNotificationPolicy"],
+            "kernelSysctl" to snapshot["kernelSysctl"],
+            "blockDevices" to snapshot["blockDevices"],
             "processSchedulerDetails" to snapshot["processSchedulerDetails"],
             "processSignals" to snapshot["processSignals"],
             "processAddressSpace" to snapshot["processAddressSpace"],
@@ -2065,6 +2073,55 @@ internal class SystemReportCollector {
             "aioUsageRatio" to ((values["aioCurrent"] as? Long)?.let { current ->
                 (values["aioMax"] as? Long)?.takeIf { it > 0 }?.let { max -> current.toDouble() / max }
             }),
+        )
+    }.getOrDefault(emptyMap())
+
+    /** Reports non-sensitive kernel tunables that explain process and IPC behavior. */
+    private fun collectKernelSysctl(): Map<String, Any?> = runCatching {
+        val paths = linkedMapOf(
+            "pidMax" to "/proc/sys/kernel/pid_max",
+            "threadsMax" to "/proc/sys/kernel/threads-max",
+            "maxMapCount" to "/proc/sys/vm/max_map_count",
+            "overcommitMemory" to "/proc/sys/vm/overcommit_memory",
+            "overcommitRatio" to "/proc/sys/vm/overcommit_ratio",
+            "dirtyRatio" to "/proc/sys/vm/dirty_ratio",
+            "dirtyBackgroundRatio" to "/proc/sys/vm/dirty_background_ratio",
+            "fileMax" to "/proc/sys/fs/file-max",
+            "pipeMaxSize" to "/proc/sys/fs/pipe-max-size",
+            "corePatternConfigured" to "/proc/sys/kernel/core_pattern",
+        )
+        val values = paths.mapValues { (_, path) -> readTextFile(path) }
+        linkedMapOf(
+            "configured" to values.values.any { it != null },
+            "values" to values,
+        )
+    }.getOrDefault(emptyMap())
+
+    /** Reports block-device queue, discard, and rotational characteristics. */
+    private fun collectBlockDeviceAnalytics(): Map<String, Any?> = runCatching {
+        val devices = File("/sys/block").takeIf(File::isDirectory)?.listFiles().orEmpty()
+            .filter { it.isDirectory && !it.name.startsWith("loop") && !it.name.startsWith("ram") }
+            .sortedBy { it.name }
+            .take(64)
+            .map { device ->
+                val queue = File(device, "queue")
+                linkedMapOf<String, Any?>(
+                    "name" to device.name,
+                    "sizeSectors" to readLongFile("${device.path}/size"),
+                    "readOnly" to readTextFile("${device.path}/ro")?.toIntOrNull()?.let { it == 1 },
+                    "removable" to readTextFile("${device.path}/removable")?.toIntOrNull()?.let { it == 1 },
+                    "rotational" to readTextFile("${queue.path}/rotational")?.toIntOrNull()?.let { it == 1 },
+                    "logicalBlockSize" to readLongFile("${queue.path}/logical_block_size"),
+                    "physicalBlockSize" to readLongFile("${queue.path}/physical_block_size"),
+                    "maxSectorsKb" to readLongFile("${queue.path}/max_sectors_kb"),
+                    "scheduler" to readTextFile("${queue.path}/scheduler"),
+                )
+            }
+        linkedMapOf(
+            "configured" to devices.isNotEmpty(),
+            "deviceCount" to devices.size,
+            "rotationalDeviceCount" to devices.count { it["rotational"] == true },
+            "devices" to devices,
         )
     }.getOrDefault(emptyMap())
 
