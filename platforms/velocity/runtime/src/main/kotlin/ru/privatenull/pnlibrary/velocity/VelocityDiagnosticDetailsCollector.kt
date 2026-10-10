@@ -8,7 +8,10 @@ import java.io.FileInputStream
 import java.security.MessageDigest
 import kotlin.time.TimeSource
 
-internal class VelocityDiagnosticDetailsCollector(private val server: ProxyServer) {
+/** Collects Velocity-specific diagnostic sections for support reports. */
+internal class VelocityDiagnosticDetailsCollector(
+    private val server: ProxyServer,
+) {
     private val collectionHistory = ArrayDeque<Map<String, Any?>>()
 
     private fun sha256(file: File): String? = runCatching {
@@ -35,7 +38,11 @@ internal class VelocityDiagnosticDetailsCollector(private val server: ProxyServe
         const val HIGH_PING_THRESHOLD = 200.0
     }
 
-    fun collect(snapshot: PlatformSnapshot, includeSensitive: Boolean): Map<String, Any?> {
+    /** Builds a diagnostic report from [snapshot], respecting the privacy flag. */
+    fun collect(
+        snapshot: PlatformSnapshot,
+        includeSensitive: Boolean,
+    ): Map<String, Any?> {
         val collector = DiagnosticDetailsCollector { snapshot }
         return collector.collect(includeSensitive) { details ->
             collectDiagnosticDetails(includeSensitive, details)

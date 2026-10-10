@@ -44,11 +44,13 @@ class VelocityMetricsFactory(
         return BStatsMetricsSession(projectId, metrics::addCustomChart, metrics::shutdown)
     }
 
+    /** Opens a FastStats session after validating the configured project token. */
     private fun openFastStats(owner: Any, configuration: MetricsProviderConfiguration): PluginMetrics {
         val token = requireNotNull(configuration.token) { "FastStats requires a project token" }
         return fastStatsProvider().open(owner, server, logger, dataDirectory, token)
     }
 
+    /** Creates the Java-version-specific FastStats Velocity provider. */
     private fun fastStatsProvider(): FastStatsVelocityProvider {
         check(Runtime.version().feature() >= 21) {
             "FastStats on Velocity requires Java 21 or newer"

@@ -68,12 +68,14 @@ internal class VelocityPlatformAdapter(
             }
         }
 
+    /** Sends a legacy-formatted message to the Velocity console. */
     override fun console(owner: Any, message: String) {
         server.consoleCommandSource.sendMessage(
             LEGACY_SERIALIZER.deserialize(message),
         )
     }
 
+    /** Installs or removes the process-wide uncaught-exception observer. */
     @Synchronized
     override fun observeNativeLogs(observer: ((Any, LogLevel, String, Throwable?) -> Unit)?) {
         if (observer != null && installedUncaughtHandler == null) {
@@ -92,6 +94,7 @@ internal class VelocityPlatformAdapter(
         }
     }
 
+    /** Returns metadata for a native Velocity plugin owner. */
     override fun ownerMetadata(owner: Any): PluginSnapshot? {
         val description = server.pluginManager.plugins
             .firstOrNull { it.instance.orElse(null) === owner }
@@ -101,12 +104,14 @@ internal class VelocityPlatformAdapter(
         return description.toSnapshot()
     }
 
+    /** Returns installed Velocity plugin IDs and their versions. */
     override fun installedPlugins(): Map<String, String> =
         server.pluginManager.plugins.associate { installedPlugin ->
             installedPlugin.description.id to
                 installedPlugin.description.version.orElse("unknown")
         }
 
+    /** Captures a lightweight, non-sensitive snapshot of the proxy. */
     override fun snapshot(): PlatformSnapshot {
         val platformVersion = server.version
 
@@ -122,9 +127,11 @@ internal class VelocityPlatformAdapter(
 
     private val diagnosticDetailsCollector = VelocityDiagnosticDetailsCollector(server)
 
+    /** Collects the detailed platform report used by support diagnostics. */
     override fun diagnosticDetails(includeSensitive: Boolean): Map<String, Any?> =
         diagnosticDetailsCollector.collect(snapshot(), includeSensitive)
 
+    /** Builds the native context passed to a remotely loaded policy. */
     override fun remotePolicyContext(
         owner: Any,
         metadata: PluginMetadata,
@@ -132,6 +139,7 @@ internal class VelocityPlatformAdapter(
     ): RemotePolicyContext =
         VelocityRemotePolicyContextFactory.create(owner, server, values)
 
+    /** Registers pnLibrary-owned commands and marks the adapter as active. */
     override fun bind(library: PnLibrary) {
         check(!closed.get()) {
             "Velocity platform adapter is closed"
@@ -146,16 +154,19 @@ internal class VelocityPlatformAdapter(
         )
     }
 
+    /** Schedules work on Velocity's plugin scheduler. */
     override fun executeGlobal(task: Runnable) {
         if (closed.get()) return
 
         server.scheduler.buildTask(plugin, task).schedule()
     }
 
+    /** Dispatches a reply task using the proxy-wide scheduler. */
     override fun executeReply(recipient: Any, task: Runnable) {
         executeGlobal(task)
     }
 
+    /** Releases commands, observers and lifecycle state owned by the adapter. */
     override fun close() {
         if (!closed.compareAndSet(false, true)) return
         observeNativeLogs(null)
