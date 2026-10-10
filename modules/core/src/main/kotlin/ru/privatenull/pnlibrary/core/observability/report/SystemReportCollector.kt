@@ -231,6 +231,7 @@ internal class SystemReportCollector {
         data["networkSocketPressure"] = collectNetworkSocketPressure()
         data["buddyAllocator"] = collectBuddyAllocatorAnalytics()
         data["memoryCompaction"] = collectMemoryCompactionAnalytics()
+        data["kernelFaultPolicy"] = collectKernelFaultPolicy()
         val durationMs = (System.nanoTime() - startedNanos) / 1_000_000
         data["collection"] = linkedMapOf(
             "durationMs" to durationMs,
@@ -531,6 +532,7 @@ internal class SystemReportCollector {
                 "networkSocketPressure" to hasData(snapshot["networkSocketPressure"]),
                 "buddyAllocator" to hasData(snapshot["buddyAllocator"]),
                 "memoryCompaction" to hasData(snapshot["memoryCompaction"]),
+                "kernelFaultPolicy" to hasData(snapshot["kernelFaultPolicy"]),
                 "processSchedulerDetails" to hasData(snapshot["processSchedulerDetails"]),
                 "processSignals" to hasData(snapshot["processSignals"]),
                 "processAddressSpace" to hasData(snapshot["processAddressSpace"]),
@@ -586,6 +588,7 @@ internal class SystemReportCollector {
                 "networkSocketPressure" to snapshot["networkSocketPressure"],
                 "buddyAllocator" to snapshot["buddyAllocator"],
                 "memoryCompaction" to snapshot["memoryCompaction"],
+                "kernelFaultPolicy" to snapshot["kernelFaultPolicy"],
                 "processSchedulerDetails" to snapshot["processSchedulerDetails"],
                 "processSignals" to snapshot["processSignals"],
                 "processAddressSpace" to snapshot["processAddressSpace"],
@@ -663,6 +666,7 @@ internal class SystemReportCollector {
             "networkSocketPressure" to snapshot["networkSocketPressure"],
             "buddyAllocator" to snapshot["buddyAllocator"],
             "memoryCompaction" to snapshot["memoryCompaction"],
+            "kernelFaultPolicy" to snapshot["kernelFaultPolicy"],
             "processSchedulerDetails" to snapshot["processSchedulerDetails"],
             "processSignals" to snapshot["processSignals"],
             "processAddressSpace" to snapshot["processAddressSpace"],
@@ -2754,6 +2758,25 @@ internal class SystemReportCollector {
             "watermarkScaleFactor" to readLongFile("/proc/sys/vm/watermark_scale_factor"),
             "zoneReclaimMode" to readLongFile("/proc/sys/vm/zone_reclaim_mode"),
             "counters" to counters,
+        )
+    }.getOrDefault(emptyMap())
+
+    /** Reports kernel panic, watchdog, and hung-task policies without reading kernel logs. */
+    private fun collectKernelFaultPolicy(): Map<String, Any?> = runCatching {
+        val values = linkedMapOf(
+            "panicOnOops" to readLongFile("/proc/sys/kernel/panic_on_oops"),
+            "panicTimeoutSeconds" to readLongFile("/proc/sys/kernel/panic"),
+            "hungTaskTimeoutSeconds" to readLongFile("/proc/sys/kernel/hung_task_timeout_secs"),
+            "hungTaskPanic" to readLongFile("/proc/sys/kernel/hung_task_panic"),
+            "softlockupPanic" to readLongFile("/proc/sys/kernel/softlockup_panic"),
+            "nmiWatchdog" to readLongFile("/proc/sys/kernel/nmi_watchdog"),
+            "watchdogThresholdSeconds" to readLongFile("/proc/sys/kernel/watchdog_thresh"),
+            "sysrqEnabled" to readLongFile("/proc/sys/kernel/sysrq"),
+            "corePattern" to readTextFile("/proc/sys/kernel/core_pattern"),
+        )
+        linkedMapOf(
+            "configured" to values.values.any { it != null },
+            "values" to values,
         )
     }.getOrDefault(emptyMap())
 
