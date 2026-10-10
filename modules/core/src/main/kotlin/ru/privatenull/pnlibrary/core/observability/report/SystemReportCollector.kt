@@ -223,6 +223,7 @@ internal class SystemReportCollector {
         data["kernelSandbox"] = collectKernelSandboxAnalytics()
         data["fileLocks"] = collectFileLockAnalytics()
         data["kernelDebugPolicy"] = collectKernelDebugPolicy()
+        data["memoryZones"] = collectMemoryZoneAnalytics()
         val durationMs = (System.nanoTime() - startedNanos) / 1_000_000
         data["collection"] = linkedMapOf(
             "durationMs" to durationMs,
@@ -515,6 +516,7 @@ internal class SystemReportCollector {
                 "kernelSandbox" to hasData(snapshot["kernelSandbox"]),
                 "fileLocks" to hasData(snapshot["fileLocks"]),
                 "kernelDebugPolicy" to hasData(snapshot["kernelDebugPolicy"]),
+                "memoryZones" to hasData(snapshot["memoryZones"]),
                 "processSchedulerDetails" to hasData(snapshot["processSchedulerDetails"]),
                 "processSignals" to hasData(snapshot["processSignals"]),
                 "processAddressSpace" to hasData(snapshot["processAddressSpace"]),
@@ -562,6 +564,7 @@ internal class SystemReportCollector {
                 "kernelSandbox" to snapshot["kernelSandbox"],
                 "fileLocks" to snapshot["fileLocks"],
                 "kernelDebugPolicy" to snapshot["kernelDebugPolicy"],
+                "memoryZones" to snapshot["memoryZones"],
                 "processSchedulerDetails" to snapshot["processSchedulerDetails"],
                 "processSignals" to snapshot["processSignals"],
                 "processAddressSpace" to snapshot["processAddressSpace"],
@@ -631,6 +634,7 @@ internal class SystemReportCollector {
             "kernelSandbox" to snapshot["kernelSandbox"],
             "fileLocks" to snapshot["fileLocks"],
             "kernelDebugPolicy" to snapshot["kernelDebugPolicy"],
+            "memoryZones" to snapshot["memoryZones"],
             "processSchedulerDetails" to snapshot["processSchedulerDetails"],
             "processSignals" to snapshot["processSignals"],
             "processAddressSpace" to snapshot["processAddressSpace"],
@@ -2537,6 +2541,30 @@ internal class SystemReportCollector {
         linkedMapOf(
             "configured" to values.values.any { it != null },
             "values" to values,
+        )
+    }.getOrDefault(emptyMap())
+
+    /** Reports aggregate Linux memory-zone counters without exposing addresses or zone names. */
+    private fun collectMemoryZoneAnalytics(): Map<String, Any?> = runCatching {
+        val rows = File("/proc/zoneinfo").takeIf(File::isFile)?.readLines().orEmpty()
+        fun sum(key: String): Long = rows.mapNotNull { line ->
+            val trimmed = line.trim()
+            if (!trimmed.startsWith("$key ")) null else trimmed.substringAfterLast(' ').toLongOrNull()
+        }.sum()
+        val zoneCount = rows.count { it.startsWith("Node ") && it.contains(", zone ") }
+        linkedMapOf(
+            "configured" to rows.isNotEmpty(),
+            "zoneCount" to zoneCount,
+            "freePages" to sum("pages free"),
+            "managedPages" to sum("managed"),
+            "presentPages" to sum("present"),
+            "minWatermarkPages" to sum("min"),
+            "lowWatermarkPages" to sum("low"),
+            "highWatermarkPages" to sum("high"),
+            "activeAnonPages" to sum("nr_active_anon"),
+            "inactiveAnonPages" to sum("nr_inactive_anon"),
+            "activeFilePages" to sum("nr_active_file"),
+            "inactiveFilePages" to sum("nr_inactive_file"),
         )
     }.getOrDefault(emptyMap())
 
