@@ -1,10 +1,8 @@
 package ru.privatenull.pnlibrary.spi.platform
 
 import ru.privatenull.pnlibrary.api.logging.LogLevel
-import ru.privatenull.pnlibrary.api.platform.PlatformType
 import ru.privatenull.pnlibrary.api.plugin.PluginMetadata
 import ru.privatenull.pnlibrary.api.remote.RemotePolicyContext
-import ru.privatenull.pnlibrary.api.runtime.PnLibrary
 import ru.privatenull.pnlibrary.spi.metrics.NoopMetricsFactory
 import ru.privatenull.pnlibrary.spi.metrics.PlatformMetricsFactory
 import ru.privatenull.pnlibrary.spi.commands.PlatformCommandAdapter
@@ -13,7 +11,6 @@ import ru.privatenull.pnlibrary.spi.audiences.PlatformAudienceAdapter
 import ru.privatenull.pnlibrary.spi.audiences.UnsupportedPlatformAudienceAdapter
 import ru.privatenull.pnlibrary.spi.tasks.PlatformTaskAdapter
 import ru.privatenull.pnlibrary.spi.tasks.UnsupportedPlatformTaskAdapter
-import java.nio.file.Path
 
 /**
  * Runtime-only boundary between the shared engine and a native server platform.
@@ -25,7 +22,7 @@ import java.nio.file.Path
  * Unless a method says otherwise, an adapter must tolerate calls from pnLibrary worker threads.
  * [close] must be idempotent and prevent newly submitted platform work where practical.
  */
-interface PlatformAdapter : AutoCloseable {
+interface PlatformAdapter : AutoCloseable, PlatformIdentity, PlatformExecution {
     /** Native logging function used by the default [log] implementation. */
     val logHandler: (Any, LogLevel, String, Throwable?) -> Unit
         get() = { _, level, message, error ->
@@ -33,24 +30,6 @@ interface PlatformAdapter : AutoCloseable {
             if (level == LogLevel.ERROR) System.err.println(line) else System.out.println(line)
             error?.printStackTrace(System.err)
         }
-
-    /** Normalized family represented by this adapter. */
-    val type: PlatformType
-
-    /** Stable machine-readable platform identifier. */
-    val id: String get() = type.id
-
-    /** Human-readable native implementation name, such as `Paper` or `Velocity`. */
-    val implementationName: String get() = type.displayName
-
-    /** Whether this adapter represents a proxy platform. */
-    val isProxy: Boolean get() = type.isProxy
-
-    /** Whether this adapter represents a Minecraft server platform. */
-    val isServer: Boolean get() = type.isServer
-
-    /** pnLibrary's native data directory, or `null` when the platform does not expose one. */
-    val dataFolder: Path? get() = null
 
     /** Factory for native metrics sessions; defaults to a no-op implementation. */
     val metricsFactory: PlatformMetricsFactory get() = NoopMetricsFactory
@@ -63,12 +42,6 @@ interface PlatformAdapter : AutoCloseable {
 
     /** Native delayed and repeating task bridge. */
     val taskAdapter: PlatformTaskAdapter get() = UnsupportedPlatformTaskAdapter
-
-    /**
-     * Binds the fully initialized [library] to commands, listeners, and other native entry points.
-     * Called once during bootstrap after the runtime can safely service requests.
-     */
-    fun bind(library: PnLibrary) = Unit
 
     /** Routes one structured log entry to the logger associated with [owner] when possible. */
     fun log(owner: Any, level: LogLevel, message: String, error: Throwable? = null) {
@@ -130,26 +103,6 @@ interface PlatformAdapter : AutoCloseable {
      * forwarded messages back into [observer].
      */
     fun observeNativeLogs(observer: ((Any, LogLevel, String, Throwable?) -> Unit)?) = Unit
-
-    /**
-     * Dispatches [task] through the platform-safe global execution context.
-     *
-     * On Bukkit this is the primary/global scheduler; proxy platforms may use their general async
-     * scheduler because they do not expose Bukkit-style main-thread ownership.
-     */
-    fun executeGlobal(task: Runnable)
-
-    /** Runs after the platform reports that the server finished loading. */
-    fun whenServerReady(task: Runnable) = executeGlobal(task)
-
-    /**
-     * Dispatches [task] in the execution context safe for [recipient].
-     *
-     * Folia implementations should use the recipient's entity scheduler. Platforms without an
-     * entity execution model may delegate to [executeGlobal]. Unknown recipient types must fall
-     * back safely rather than being cast unconditionally.
-     */
-    fun executeReply(recipient: Any, task: Runnable)
 
     /** Removes native hooks and rejects or ignores future dispatches. */
     override fun close()
