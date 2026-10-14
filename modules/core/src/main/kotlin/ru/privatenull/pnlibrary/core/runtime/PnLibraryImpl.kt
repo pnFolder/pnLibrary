@@ -328,23 +328,11 @@ internal class PnLibraryImpl(
             )
         },
         "updateGraph" to linkedMapOf<String, Any?>(
-            "current" to updates.currentPlan().orElse(null)?.let(::updatePlanDetails),
-            "history" to updates.history().map(::updatePlanDetails),
+            "current" to updates.currentPlan().orElse(null)?.let(RuntimeUpdateDetails::of),
+            "history" to updates.history().map(RuntimeUpdateDetails::of),
         ),
         )
     }
-
-    private fun updatePlanDetails(snapshot: ru.privatenull.pnlibrary.api.updates.UpdatePlanSnapshot): Map<String, Any?> =
-        linkedMapOf(
-            "id" to snapshot.id.toString(),
-            "revision" to snapshot.revision,
-            "state" to snapshot.state.name,
-            "message" to snapshot.message,
-            "blockers" to snapshot.blockers.map { it.javaClass.simpleName },
-            "targetApi" to snapshot.plan?.targetApi,
-            "changeCount" to snapshot.plan?.changes?.size,
-            "selectedReleaseCount" to snapshot.plan?.selected?.size,
-        )
 
     fun init() {
         support.initialize { isClosed }
