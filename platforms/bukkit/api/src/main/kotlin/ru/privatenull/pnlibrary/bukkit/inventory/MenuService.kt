@@ -1,3 +1,5 @@
+@file:Suppress("DEPRECATION")
+
 package ru.privatenull.pnlibrary.bukkit.inventory
 
 import org.bukkit.entity.Player
@@ -30,6 +32,7 @@ interface MenuService {
 }
 
 /** Entry point for obtaining the installed Bukkit menu service. */
+@Suppress("DEPRECATION")
 object PnMenus {
 
     /** Returns the service installed by the active pnLibrary Bukkit runtime. */
