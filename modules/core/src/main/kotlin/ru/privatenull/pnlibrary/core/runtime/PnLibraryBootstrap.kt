@@ -60,7 +60,7 @@ internal object PnLibraryBootstrap {
             implementationName = platform.implementationName,
             isProxy = platform.isProxy,
             isServer = platform.isServer,
-            dataFolderHint = platform.dataFolder,
+            dataFolderHint = platform.storage.dataFolder,
             closePlatform = platform.close,
             diagnostics = globalRegistry,
             config = config,

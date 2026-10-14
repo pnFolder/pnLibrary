@@ -9,7 +9,7 @@ import ru.privatenull.pnlibrary.spi.platform.PlatformLogObservation
 import ru.privatenull.pnlibrary.spi.platform.PlatformOwnership
 import ru.privatenull.pnlibrary.spi.platform.PlatformAdapter
 import ru.privatenull.pnlibrary.spi.platform.PlatformServices
-import java.nio.file.Path
+import ru.privatenull.pnlibrary.spi.platform.PlatformStorage
 
 /** Prepared platform capabilities passed from the native boundary into the shared runtime. */
 internal data class PlatformRuntimeContext(
@@ -24,7 +24,7 @@ internal data class PlatformRuntimeContext(
     val implementationName: String,
     val isProxy: Boolean,
     val isServer: Boolean,
-    val dataFolder: Path?,
+    val storage: PlatformStorage,
     val bind: (PnLibrary) -> Unit,
     val close: () -> Unit,
 ) {
@@ -48,7 +48,7 @@ internal fun PlatformAdapter.toRuntimeContext(): PlatformRuntimeContext = Platfo
     implementationName = implementationName,
     isProxy = isProxy,
     isServer = isServer,
-    dataFolder = dataFolder,
+    storage = this,
     bind = this::bind,
     close = this::close,
 )
