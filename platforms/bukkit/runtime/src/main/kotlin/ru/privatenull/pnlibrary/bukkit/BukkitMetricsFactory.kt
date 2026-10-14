@@ -8,7 +8,7 @@ import ru.privatenull.pnlibrary.api.metrics.MetricsProviderConfiguration
 import ru.privatenull.pnlibrary.core.metrics.CompositePluginMetrics
 import ru.privatenull.pnlibrary.core.metrics.BStatsMetricsSession
 import ru.privatenull.pnlibrary.spi.metrics.PlatformMetricsFactory
-import ru.privatenull.pnlibrary.internal.faststats.bukkit.FastStatsMetricsSession
+import ru.privatenull.pnlibrary.bukkit.metrics.FastStatsMetricsSession
 
 /** Opens independently managed bStats and FastStats sessions for Bukkit plugins. */
 class BukkitMetricsFactory : PlatformMetricsFactory {

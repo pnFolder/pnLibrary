@@ -8,7 +8,7 @@ import ru.privatenull.pnlibrary.api.metrics.MetricsProviderConfiguration
 import ru.privatenull.pnlibrary.core.metrics.CompositePluginMetrics
 import ru.privatenull.pnlibrary.core.metrics.BStatsMetricsSession
 import ru.privatenull.pnlibrary.spi.metrics.PlatformMetricsFactory
-import ru.privatenull.pnlibrary.internal.faststats.bungee.FastStatsMetricsSession
+import ru.privatenull.pnlibrary.bungee.metrics.FastStatsMetricsSession
 
 /** Opens independently managed bStats and FastStats sessions for BungeeCord plugins. */
 class BungeeMetricsFactory : PlatformMetricsFactory {

@@ -15,8 +15,6 @@ include(
     ":modules:features:minecraft-localization",
     ":modules:internal:bstats",
     ":modules:internal:faststats-core",
-    ":modules:internal:faststats-bukkit",
-    ":modules:internal:faststats-bungee",
     ":modules:internal:faststats-velocity",
     ":modules:bootstrap:bukkit",
     ":modules:design:console",
