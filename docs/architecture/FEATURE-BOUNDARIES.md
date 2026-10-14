@@ -48,6 +48,23 @@ only as compatibility facades until the next major API line.
 5. Compatibility properties delegate to service lookup and own no second implementation state.
 6. Removing a compatibility property is reserved for a declared major release.
 
+## Module count rule
+
+The repository intentionally keeps only four kinds of Gradle modules:
+
+| Kind | Required reason | Current examples |
+|---|---|---|
+| published API | independently consumed public contracts | `api`, `common`, `currency-api`, platform APIs |
+| shared runtime | implementation reused by multiple platform runtimes | `core`, `runtime-spi`, `currency-runtime`, `update` |
+| platform runtime | native server integration or incompatible JVM/server dependency | Bukkit, Bungee, Velocity runtimes, `faststats-velocity` |
+| build/tooling | distribution, examples, or build plugins | `distribution`, examples, component metadata |
+
+Do not create a module for a package, vendor library, or a handful of classes. First place the
+code in an existing module. A new module is justified only when it introduces an independent
+published contract, a separately optional feature, a native platform boundary, or a dependency/JVM
+constraint that cannot be represented inside an existing module. Empty or unreferenced module
+metadata must be removed immediately rather than retained as a placeholder.
+
 ## Extraction order
 
 1. Updates and downloads, because their implementation is already mostly isolated.
