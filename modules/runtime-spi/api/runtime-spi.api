@@ -116,6 +116,7 @@ public final class ru/privatenull/pnlibrary/spi/platform/PlatformLifecycle {
 	public final synthetic fun bind (Lkotlin/jvm/functions/Function0;)Ljava/lang/Object;
 	public final fun checkOpen ()V
 	public final fun close ()Z
+	public final fun close (Lkotlin/jvm/functions/Function0;)Z
 	public final fun endBinding ()V
 	public final fun isClosed ()Z
 	public final fun track (Ljava/lang/AutoCloseable;)Ljava/lang/AutoCloseable;
