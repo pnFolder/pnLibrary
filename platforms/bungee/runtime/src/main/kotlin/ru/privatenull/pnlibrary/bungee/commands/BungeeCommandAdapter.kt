@@ -11,12 +11,10 @@ import ru.privatenull.pnlibrary.api.commands.CommandDefinition
 import ru.privatenull.pnlibrary.api.commands.CommandSender
 import ru.privatenull.pnlibrary.api.audiences.AudienceSender
 import ru.privatenull.pnlibrary.bungee.BungeeAudienceAdapter
-import ru.privatenull.pnlibrary.spi.commands.PlatformCommandAdapter
 import ru.privatenull.pnlibrary.spi.commands.PlatformCommandDispatcher
 import ru.privatenull.pnlibrary.spi.commands.PlatformCommandRegistration
-import java.util.LinkedHashSet
+import ru.privatenull.pnlibrary.spi.commands.TrackingPlatformCommandAdapter
 import java.util.concurrent.TimeUnit
-import java.util.concurrent.atomic.AtomicBoolean
 
 /**
  * Registers portable commands with BungeeCord and owns their native registrations.
@@ -28,7 +26,7 @@ internal class BungeeCommandAdapter internal constructor(
     private val plugin: Any,
     private val registrar: BungeeNativeCommandRegistrar,
     private val audience: (NativeCommandSender) -> AudienceSender,
-) : PlatformCommandAdapter {
+) : TrackingPlatformCommandAdapter() {
     /** Creates the native command registrar and audience bridge. */
     constructor(plugin: Plugin) : this(
         plugin,
@@ -36,16 +34,12 @@ internal class BungeeCommandAdapter internal constructor(
         { sender -> requireNotNull(BungeeAudienceAdapter(plugin).sender(sender)) },
     )
 
-    private val closed = AtomicBoolean(false)
-    private val registrations = LinkedHashSet<Registration>()
-
     /** Registers execution and tab-completion callbacks with the native command manager. */
-    override fun register(
+    override fun registerNative(
         owner: Any,
         command: CommandDefinition,
         dispatcher: PlatformCommandDispatcher,
     ): PlatformCommandRegistration {
-        check(!closed.get()) { "Bungee command adapter is closed" }
         val native = registrar.register(
             command,
             { sender, arguments ->
@@ -58,18 +52,7 @@ internal class BungeeCommandAdapter internal constructor(
                 }.getOrDefault(emptyList())
             },
         )
-        val registration = Registration(native)
-        synchronized(registrations) {
-            registrations += registration
-        }
-        return registration
-    }
-
-    /** Unregisters owned commands once. */
-    override fun close() {
-        if (!closed.compareAndSet(false, true)) return
-        val current = synchronized(registrations) { registrations.toList() }
-        current.asReversed().forEach(Registration::close)
+        return native
     }
 
     /** Converts native invocation arguments to the portable command context. */
@@ -83,18 +66,6 @@ internal class BungeeCommandAdapter internal constructor(
         invokedAlias = alias,
         currentInput = arguments.lastOrNull().orEmpty(),
     )
-
-    /** Tracks one native command registration with idempotent cleanup. */
-    private inner class Registration(
-        private val native: PlatformCommandRegistration,
-    ) : PlatformCommandRegistration {
-        private val registrationClosed = AtomicBoolean(false)
-        override fun close() {
-            if (!registrationClosed.compareAndSet(false, true)) return
-            synchronized(registrations) { registrations.remove(this) }
-            native.close()
-        }
-    }
 
 }
 

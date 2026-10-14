@@ -9,20 +9,18 @@ import ru.privatenull.pnlibrary.api.audiences.AudienceSender
 import ru.privatenull.pnlibrary.api.commands.CommandContext
 import ru.privatenull.pnlibrary.api.commands.CommandDefinition
 import ru.privatenull.pnlibrary.api.commands.CommandSender
-import ru.privatenull.pnlibrary.spi.commands.PlatformCommandAdapter
 import ru.privatenull.pnlibrary.spi.commands.PlatformCommandDispatcher
 import ru.privatenull.pnlibrary.spi.commands.PlatformCommandRegistration
+import ru.privatenull.pnlibrary.spi.commands.TrackingPlatformCommandAdapter
 import ru.privatenull.pnlibrary.velocity.VelocityAudienceAdapter
-import java.util.LinkedHashSet
 import java.util.concurrent.CompletionStage
-import java.util.concurrent.atomic.AtomicBoolean
 
 /** Bridges portable pnLibrary commands to the native Velocity command manager. */
 internal class VelocityCommandAdapter internal constructor(
     private val plugin: Any,
     private val registrar: VelocityNativeCommandRegistrar,
     private val audience: (CommandSource) -> AudienceSender,
-) : PlatformCommandAdapter {
+) : TrackingPlatformCommandAdapter() {
 
     /** Creates an adapter backed by Velocity's command manager. */
     constructor(plugin: Any, server: ProxyServer) : this(
@@ -35,17 +33,12 @@ internal class VelocityCommandAdapter internal constructor(
         },
     )
 
-    private val closed = AtomicBoolean(false)
-    private val registrations = LinkedHashSet<Registration>()
-
     /** Registers a portable command and tracks it until it is closed. */
-    override fun register(
+    override fun registerNative(
         owner: Any,
         command: CommandDefinition,
         dispatcher: PlatformCommandDispatcher,
     ): PlatformCommandRegistration {
-        check(!closed.get()) { "Velocity command adapter is closed" }
-
         val nativeRegistration = registrar.register(
             command = command,
             execute = { source, arguments ->
@@ -56,22 +49,7 @@ internal class VelocityCommandAdapter internal constructor(
             },
         )
 
-        return Registration(nativeRegistration).also { registration ->
-            synchronized(registrations) {
-                registrations += registration
-            }
-        }
-    }
-
-    /** Closes all registered commands in reverse registration order. */
-    override fun close() {
-        if (!closed.compareAndSet(false, true)) {
-            return
-        }
-
-        synchronized(registrations) {
-            registrations.toList().asReversed().forEach(Registration::close)
-        }
+        return nativeRegistration
     }
 
     /** Converts a native invocation into the portable command context. */
@@ -86,24 +64,6 @@ internal class VelocityCommandAdapter internal constructor(
         currentInput = arguments.lastOrNull().orEmpty(),
     )
 
-    /** Owns one native registration and makes closing it idempotent. */
-    private inner class Registration(
-        private val native: PlatformCommandRegistration,
-    ) : PlatformCommandRegistration {
-        private val registrationClosed = AtomicBoolean(false)
-
-        /** Unregisters this command once and removes it from adapter tracking. */
-        override fun close() {
-            if (!registrationClosed.compareAndSet(false, true)) {
-                return
-            }
-
-            synchronized(registrations) {
-                registrations.remove(this)
-            }
-            native.close()
-        }
-    }
 }
 
 /** Adapts a portable command sender to the native Velocity audience. */

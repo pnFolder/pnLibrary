@@ -27,6 +27,13 @@ public abstract interface class ru/privatenull/pnlibrary/spi/commands/PlatformCo
 	public abstract fun close ()V
 }
 
+public abstract class ru/privatenull/pnlibrary/spi/commands/TrackingPlatformCommandAdapter : ru/privatenull/pnlibrary/spi/commands/PlatformCommandAdapter {
+	public fun <init> ()V
+	public final fun close ()V
+	public final fun register (Ljava/lang/Object;Lru/privatenull/pnlibrary/api/commands/CommandDefinition;Lru/privatenull/pnlibrary/spi/commands/PlatformCommandDispatcher;)Lru/privatenull/pnlibrary/spi/commands/PlatformCommandRegistration;
+	protected abstract fun registerNative (Ljava/lang/Object;Lru/privatenull/pnlibrary/api/commands/CommandDefinition;Lru/privatenull/pnlibrary/spi/commands/PlatformCommandDispatcher;)Lru/privatenull/pnlibrary/spi/commands/PlatformCommandRegistration;
+}
+
 public final class ru/privatenull/pnlibrary/spi/commands/UnsupportedPlatformCommandAdapter : ru/privatenull/pnlibrary/spi/commands/PlatformCommandAdapter {
 	public static final field INSTANCE Lru/privatenull/pnlibrary/spi/commands/UnsupportedPlatformCommandAdapter;
 	public fun register (Ljava/lang/Object;Lru/privatenull/pnlibrary/api/commands/CommandDefinition;Lru/privatenull/pnlibrary/spi/commands/PlatformCommandDispatcher;)Lru/privatenull/pnlibrary/spi/commands/PlatformCommandRegistration;
