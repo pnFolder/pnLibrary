@@ -17,18 +17,13 @@ class PnLibraryBungeePlugin : Plugin() {
     /** Creates and starts the shared runtime after BungeeCord enables the plugin. */
     override fun onEnable() {
         val adapter = BungeePlatformAdapter(this)
-        val host = PnLibraryRuntimeHost.start(
+        runtimeHost = PnLibraryRuntimeHost.startAndRegisterPlatform(
             this,
             adapter,
             dataFolder.toPath().parent.resolve("update"),
+            BungeePlatform::class.java,
+            BungeePlatformImpl(proxy),
         )
-        try {
-            host.registerPlatform(BungeePlatform::class.java, BungeePlatformImpl(proxy))
-            runtimeHost = host
-        } catch (error: Throwable) {
-            host.close()
-            throw error
-        }
     }
 
     /** Closes the runtime and releases its scheduler, registrations, and integrations. */

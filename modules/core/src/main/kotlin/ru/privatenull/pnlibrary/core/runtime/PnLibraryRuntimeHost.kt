@@ -91,5 +91,24 @@ class PnLibraryRuntimeHost private constructor(
                 throw error
             }
         }
+
+        /** Starts the runtime and registers the native platform API transactionally. */
+        @JvmStatic
+        fun <T : Any> startAndRegisterPlatform(
+            owner: Any,
+            platform: PlatformAdapter,
+            updateDirectory: Path,
+            type: Class<T>,
+            implementation: T,
+        ): PnLibraryRuntimeHost {
+            val host = start(owner, platform, updateDirectory)
+            return try {
+                host.registerPlatform(type, implementation)
+                host
+            } catch (error: Throwable) {
+                host.close()
+                throw error
+            }
+        }
     }
 }
