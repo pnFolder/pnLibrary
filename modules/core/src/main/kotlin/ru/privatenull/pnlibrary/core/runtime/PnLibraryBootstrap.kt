@@ -58,7 +58,7 @@ internal object PnLibraryBootstrap {
             audienceAdapter = platform.audience.audienceAdapter,
             taskAdapter = platform.tasks.taskAdapter,
             dataFolderHint = platform.dataFolder,
-            closePlatform = platform.close,
+            closePlatform = platform.shutdown::close,
             diagnostics = globalRegistry,
             config = config,
             onClose = { instance = null },
@@ -68,7 +68,7 @@ internal object PnLibraryBootstrap {
         return try {
             created.init()
             PnLibraryProvider.install(created)
-            platform.bind(created)
+            platform.binding.bind(created)
             created
         } catch (error: Throwable) {
             created.close()

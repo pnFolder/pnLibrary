@@ -13,6 +13,8 @@ import ru.privatenull.pnlibrary.spi.platform.PlatformCommands
 import ru.privatenull.pnlibrary.spi.platform.PlatformAudience
 import ru.privatenull.pnlibrary.spi.platform.PlatformTasks
 import ru.privatenull.pnlibrary.spi.platform.PlatformReadiness
+import ru.privatenull.pnlibrary.spi.platform.PlatformBinding
+import ru.privatenull.pnlibrary.spi.platform.PlatformShutdown
 import java.nio.file.Path
 
 /** Prepared platform capabilities passed from the native boundary into the shared runtime. */
@@ -29,8 +31,8 @@ internal data class PlatformRuntimeContext(
     val audience: PlatformAudience,
     val tasks: PlatformTasks,
     val dataFolder: Path,
-    val bind: (PnLibrary) -> Unit,
-    val close: () -> Unit,
+    val binding: PlatformBinding,
+    val shutdown: PlatformShutdown,
 ) {
     val summaryName: String
         get() = if (identity.implementationName.equals(identity.type.displayName, ignoreCase = true)) {
@@ -53,6 +55,6 @@ internal fun PlatformAdapter.toRuntimeContext(): PlatformRuntimeContext = Platfo
     audience = this,
     tasks = this,
     dataFolder = dataFolder,
-    bind = this::bind,
-    close = this::close,
+    binding = this,
+    shutdown = this,
 )
