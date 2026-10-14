@@ -42,8 +42,16 @@ abstract class TrackingPlatformTaskAdapter : PlatformTaskAdapter {
 
     final override fun close() {
         if (!closed.compareAndSet(false, true)) return
-        handles.toList().forEach(TrackedHandle::cancel)
+        var failure: Throwable? = null
+        handles.toList().forEach { handle ->
+            try {
+                handle.cancel()
+            } catch (error: Throwable) {
+                if (failure == null) failure = error
+            }
+        }
         handles.clear()
+        failure?.let { throw it }
     }
 
     private inner class TrackedHandle(

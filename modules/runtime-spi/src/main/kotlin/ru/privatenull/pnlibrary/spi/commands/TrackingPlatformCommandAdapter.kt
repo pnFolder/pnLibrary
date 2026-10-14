@@ -28,7 +28,17 @@ abstract class TrackingPlatformCommandAdapter : PlatformCommandAdapter {
 
     final override fun close() {
         if (!closed.compareAndSet(false, true)) return
-        synchronized(registrations) { registrations.toList().asReversed().forEach(TrackedRegistration::close) }
+        val pending = synchronized(registrations) { registrations.toList().asReversed() }
+        var failure: Throwable? = null
+        pending.forEach { registration ->
+            try {
+                registration.close()
+            } catch (error: Throwable) {
+                if (failure == null) failure = error
+            }
+        }
+        synchronized(registrations) { registrations.clear() }
+        failure?.let { throw it }
     }
 
     private inner class TrackedRegistration(
