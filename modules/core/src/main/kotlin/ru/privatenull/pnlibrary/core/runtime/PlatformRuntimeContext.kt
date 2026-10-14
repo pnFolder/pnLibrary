@@ -28,19 +28,15 @@ internal data class PlatformRuntimeContext(
     val commands: PlatformCommands,
     val audience: PlatformAudience,
     val tasks: PlatformTasks,
-    val id: String,
-    val implementationName: String,
-    val isProxy: Boolean,
-    val isServer: Boolean,
     val storage: PlatformStorage,
     val bind: (PnLibrary) -> Unit,
     val close: () -> Unit,
 ) {
     val summaryName: String
-        get() = if (implementationName.equals(identity.type.displayName, ignoreCase = true)) {
+        get() = if (identity.implementationName.equals(identity.type.displayName, ignoreCase = true)) {
             identity.type.displayName
         } else {
-            "${identity.type.displayName} / $implementationName"
+            "${identity.type.displayName} / ${identity.implementationName}"
         }
 }
 
@@ -56,10 +52,6 @@ internal fun PlatformAdapter.toRuntimeContext(): PlatformRuntimeContext = Platfo
     commands = this,
     audience = this,
     tasks = this,
-    id = id,
-    implementationName = implementationName,
-    isProxy = isProxy,
-    isServer = isServer,
     storage = this,
     bind = this::bind,
     close = this::close,
