@@ -32,14 +32,4 @@ class PlatformTypeTest {
         assertEquals("velocity", PlatformType.VELOCITY.id)
     }
 
-    @Test
-    fun `platform metadata matches published descriptors and artifact names`() {
-        assertEquals("bukkit", PlatformType.BUKKIT.artifactId)
-        assertEquals("plugin.yml", PlatformType.BUKKIT.descriptorFileName)
-        assertEquals("bungee", PlatformType.BUNGEECORD.artifactId)
-        assertEquals("bungee.yml", PlatformType.BUNGEECORD.descriptorFileName)
-        assertEquals("velocity", PlatformType.VELOCITY.artifactId)
-        assertEquals("velocity-plugin.json", PlatformType.VELOCITY.descriptorFileName)
-    }
-
 }

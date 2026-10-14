@@ -38,7 +38,7 @@ internal class DirectDownloadManager(
         Thread(action, "pnLibrary-direct-downloads").apply { isDaemon = true }
     }
     private val registrations = CopyOnWriteArrayList<DownloadRegistrationImpl>()
-    private val pluginJarVerifier = PluginJarVerifier(identity.type)
+    private val pluginJarVerifier = PluginJarVerifier(identity)
     private val filePublisher = AtomicDownloadPublisher(libraryData)
     private val artifactPreparer = DownloadArtifactPreparer(
         identity.type, libraryData, configuration, http, MAX_BYTES,

@@ -8,4 +8,18 @@ interface PlatformIdentity {
     val implementationName: String get() = type.displayName
     val isProxy: Boolean get() = type.isProxy
     val isServer: Boolean get() = type.isServer
+    /** Stable suffix used by the installed distribution artifact. */
+    val artifactId: String
+        get() = when (type) {
+            PlatformType.BUKKIT -> "bukkit"
+            PlatformType.BUNGEECORD -> "bungee"
+            PlatformType.VELOCITY -> "velocity"
+        }
+    /** Native descriptor file used when validating downloaded plugin JARs. */
+    val descriptorFileName: String
+        get() = when (type) {
+            PlatformType.BUKKIT -> "plugin.yml"
+            PlatformType.BUNGEECORD -> "bungee.yml"
+            PlatformType.VELOCITY -> "velocity-plugin.json"
+        }
 }

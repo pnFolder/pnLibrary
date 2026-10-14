@@ -104,6 +104,8 @@ public abstract interface class ru/privatenull/pnlibrary/spi/platform/PlatformEx
 }
 
 public abstract interface class ru/privatenull/pnlibrary/spi/platform/PlatformIdentity {
+	public fun getArtifactId ()Ljava/lang/String;
+	public fun getDescriptorFileName ()Ljava/lang/String;
 	public fun getId ()Ljava/lang/String;
 	public fun getImplementationName ()Ljava/lang/String;
 	public abstract fun getType ()Lru/privatenull/pnlibrary/api/platform/PlatformType;

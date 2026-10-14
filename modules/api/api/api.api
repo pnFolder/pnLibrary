@@ -2429,8 +2429,6 @@ public final class ru/privatenull/pnlibrary/api/platform/PlatformType : java/lan
 	public static final field BUKKIT Lru/privatenull/pnlibrary/api/platform/PlatformType;
 	public static final field BUNGEECORD Lru/privatenull/pnlibrary/api/platform/PlatformType;
 	public static final field VELOCITY Lru/privatenull/pnlibrary/api/platform/PlatformType;
-	public final fun getArtifactId ()Ljava/lang/String;
-	public final fun getDescriptorFileName ()Ljava/lang/String;
 	public final fun getDisplayName ()Ljava/lang/String;
 	public static fun getEntries ()Lkotlin/enums/EnumEntries;
 	public final fun getId ()Ljava/lang/String;

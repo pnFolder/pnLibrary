@@ -22,7 +22,7 @@ internal object RuntimeUpdateMonitor {
         val currentVersion = ownership.ownerDetails(owner)["version"]
             ?.takeIf { it.isNotBlank() }
             ?: error("The platform did not expose the pnLibrary version")
-        val artifactId = identity.type.artifactId
+        val artifactId = identity.artifactId
         val monitor = library.updates.register(
             owner,
             ru.privatenull.pnlibrary.api.updates.ProductDescriptor.library(currentVersion),

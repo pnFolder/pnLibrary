@@ -3,7 +3,7 @@ package ru.privatenull.pnlibrary.core.downloads
 import org.yaml.snakeyaml.LoaderOptions
 import org.yaml.snakeyaml.Yaml
 import org.yaml.snakeyaml.constructor.SafeConstructor
-import ru.privatenull.pnlibrary.api.platform.PlatformType
+import ru.privatenull.pnlibrary.spi.platform.PlatformIdentity
 import ru.privatenull.pnlibrary.api.updates.ExternalPluginDependency
 import ru.privatenull.pnlibrary.api.version.SemanticVersion
 import java.nio.file.Path
@@ -11,7 +11,7 @@ import java.util.jar.JarFile
 
 /** Verifies that a downloaded plugin JAR declares the expected identity and version. */
 internal class PluginJarVerifier(
-    private val platform: PlatformType,
+    private val platform: PlatformIdentity,
 ) {
     fun verify(path: Path, expected: ExternalPluginDependency) {
         val descriptor = readDescriptor(path)
