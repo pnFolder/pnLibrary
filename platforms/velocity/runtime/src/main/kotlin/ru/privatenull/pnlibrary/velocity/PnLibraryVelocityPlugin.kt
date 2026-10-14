@@ -51,7 +51,6 @@ class PnLibraryVelocityPlugin @Inject constructor(
         runtimeHost = PnLibraryRuntimeHost.startAndRegisterPlatform(
             this,
             adapter,
-            dataDirectory.parent.resolve("update"),
             VelocityPlatform::class.java,
             VelocityPlatformImpl(server),
         )

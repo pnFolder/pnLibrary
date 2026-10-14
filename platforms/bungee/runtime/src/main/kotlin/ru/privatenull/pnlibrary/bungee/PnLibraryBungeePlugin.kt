@@ -20,7 +20,6 @@ class PnLibraryBungeePlugin : Plugin() {
         runtimeHost = PnLibraryRuntimeHost.startAndRegisterPlatform(
             this,
             adapter,
-            dataFolder.toPath().parent.resolve("update"),
             BungeePlatform::class.java,
             BungeePlatformImpl(proxy),
         )
