@@ -126,10 +126,15 @@ internal class BungeePlatformAdapter(
     override fun bind(library: PnLibrary) {
         lifecycle.beginBinding()
 
-        updateCommand = library.commands.register(
-            plugin,
-            ProxyUpdateCommand(library).definition(),
-        )
+        try {
+            updateCommand = library.commands.register(
+                plugin,
+                ProxyUpdateCommand(library).definition(),
+            )
+        } catch (error: Throwable) {
+            lifecycle.endBinding()
+            throw error
+        }
     }
 
     /** Dispatches work asynchronously; BungeeCord has no global main-thread scheduler. */
