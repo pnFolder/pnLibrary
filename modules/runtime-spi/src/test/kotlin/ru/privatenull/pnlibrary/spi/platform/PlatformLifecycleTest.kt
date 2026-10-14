@@ -18,4 +18,18 @@ class PlatformLifecycleTest {
         assertFalse(lifecycle.close())
         assertThrows<IllegalStateException> { lifecycle.checkOpen() }
     }
+
+    @Test
+    fun `failed binding rolls back bound state`() {
+        val lifecycle = PlatformLifecycle()
+
+        assertThrows<IllegalArgumentException> {
+            lifecycle.bind {
+                throw IllegalArgumentException("registration failed")
+            }
+        }
+
+        lifecycle.bind { "registered" }
+        assertThrows<IllegalStateException> { lifecycle.beginBinding() }
+    }
 }
