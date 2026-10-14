@@ -103,14 +103,14 @@ some source trees are small:
 
 | Boundary | Evidence | Decision |
 |---|---|---|
-| `features:update` | consumed directly by all three distribution variants and example/acceptance projects; has its own tests | keep separate |
+| update implementation | used only by `core`; its tests and source now live in `core` | merged into `core` |
 | `features:currency-api` / `currency-runtime` | public API is consumed independently from the runtime implementation | keep as API/runtime pair |
 | `platforms/*:api` / `platforms/*:runtime` | API is compile-only for plugin authors while runtime carries native server dependencies | keep split |
 | `design:console` | independent Java 8 `pnlibrary-console-style` artifact used by bootstrap/core/Bukkit | keep separate |
 | `internal:faststats-velocity` | JVM 21 dependency cannot be merged into the JVM 17 Velocity runtime | keep isolated |
 | `common` | independently published shared API dependency | keep separate |
 
-The audit found no safe module merge that would reduce public or platform boundaries without
-changing published coordinates, pulling native dependencies into shared runtime modules, or
-breaking the JVM compatibility matrix. The next reduction target is therefore source/package
-duplication inside existing modules, not deleting Gradle projects by count.
+The audit found one safe merge: the non-published update implementation had no independent
+consumer or compatibility boundary, so it now lives in `core`. The remaining module boundaries
+are retained because collapsing them would change published coordinates, pull native dependencies
+into shared runtime modules, or break the JVM compatibility matrix.

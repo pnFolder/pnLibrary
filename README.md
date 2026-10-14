@@ -57,7 +57,7 @@ placeholders, событий и cooldowns.
 | `platforms/bukkit/api` | Публичные Bukkit-контракты: окружение сервера и меню | 8 |
 | `modules/runtime-spi` | Внутренняя граница между core и платформами | 8 |
 | `modules/core` | Закрытое исполнение общих сервисов | 8 |
-| `modules/features/update` | Resolver и транзакции pnUpdate | 8 |
+| `modules/core` (`update` package) | Resolver и транзакции pnUpdate | 8 |
 | `modules/features/minecraft-localization` | Ленивые официальные переводы Minecraft и обратный поиск | 8 |
 | `platforms/bukkit/runtime` | Bukkit, Spigot, Paper, Purpur, Leaf и Folia | 8 |
 | `platforms/bungee/runtime` | BungeeCord и совместимые прокси | 8 |

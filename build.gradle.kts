@@ -21,7 +21,6 @@ apiValidation {
             "smoke-velocity",
             "runtime",
             "faststats-velocity",
-            "update",
             "currency-runtime",
             "gradle",
             "maven",
@@ -103,7 +102,6 @@ dependencies {
     dokka(project(":modules:api"))
     dokka(project(":modules:runtime-spi"))
     dokka(project(":modules:core"))
-    dokka(project(":modules:features:update"))
     dokka(project(":modules:features:currency-api"))
     dokka(project(":modules:features:currency-runtime"))
     dokka(project(":modules:features:minecraft-localization"))

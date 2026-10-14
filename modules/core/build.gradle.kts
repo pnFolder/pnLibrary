@@ -19,7 +19,6 @@ tasks.withType<JavaCompile>().configureEach { options.release = 8 }
 dependencies {
     implementation(project(":modules:api"))
     implementation(project(":modules:runtime-spi"))
-    implementation(project(":modules:features:update"))
     implementation(project(":modules:features:currency-runtime"))
     implementation(libs.kotlin.stdlib)
     implementation(libs.kotlin.compiler.embeddable)
