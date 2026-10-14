@@ -19,7 +19,9 @@ import ru.privatenull.pnlibrary.api.runtime.PnLibraryBrand
 import ru.privatenull.pnlibrary.api.updates.UpdateSnapshot
 import ru.privatenull.pnlibrary.api.updates.UpdateState
 import java.time.Duration
+import java.util.concurrent.CopyOnWriteArrayList
 import java.util.concurrent.atomic.AtomicBoolean
+import ru.privatenull.pnlibrary.api.updates.UpdateChannel
 
 /** Bukkit lifecycle notifications kept separate from portable command registration. */
 internal class BukkitLifecycleListener(
@@ -28,13 +30,15 @@ internal class BukkitLifecycleListener(
     private var library: PnLibrary?,
 ) : Listener, AutoCloseable {
     private val closed = AtomicBoolean(false)
-    private val readyCallbacks = java.util.concurrent.CopyOnWriteArrayList<Runnable>()
+    private val readyCallbacks = CopyOnWriteArrayList<Runnable>()
     private val serverReady = AtomicBoolean(false)
 
+    /** Runs a callback immediately when ready, otherwise queues it for server startup. */
     fun whenServerReady(task: Runnable) {
         if (serverReady.get()) task.run() else readyCallbacks += task
     }
 
+    /** Registers lifecycle events and the optional modern server-load notification. */
     fun start(): BukkitLifecycleListener = apply {
         plugin.server.pluginManager.registerEvents(this, plugin)
         // ServerLoadEvent exists on modern Bukkit/Paper, but this module also
@@ -51,6 +55,7 @@ internal class BukkitLifecycleListener(
         }
     }
 
+    /** Notifies authorized players about available or staged updates after joining. */
     @EventHandler
     @Suppress("DEPRECATION")
     fun onAdministratorJoin(event: PlayerJoinEvent) {
@@ -85,18 +90,21 @@ internal class BukkitLifecycleListener(
         })
     }
 
+    /** Releases registrations and task scopes belonging to the disabled plugin. */
     @EventHandler
     fun onPluginDisable(event: PluginDisableEvent) {
         library?.plugins?.unregister(event.plugin)
         library?.tasks?.close(event.plugin)
     }
 
+    /** Drains queued readiness callbacks once. */
     private fun markServerReady() {
         if (!serverReady.compareAndSet(false, true)) return
         readyCallbacks.toList().forEach { runCatching(it::run) }
         readyCallbacks.clear()
     }
 
+    /** Unregisters listeners and releases queued callbacks once. */
     override fun close() {
         if (!closed.compareAndSet(false, true)) return
         HandlerList.unregisterAll(this)
@@ -104,6 +112,7 @@ internal class BukkitLifecycleListener(
         library = null
     }
 
+    /** Creates a clickable chat button with an explanatory hover hint. */
     private fun button(text: String, color: ChatColor, action: ClickEvent, hint: String) =
         TextComponent(text).apply {
             this.color = color
@@ -115,6 +124,7 @@ internal class BukkitLifecycleListener(
             )
         }
 
+    /** Formats one product's update state for administrator notifications. */
     private fun sendUpdateLine(send: (String) -> Unit, snapshot: UpdateSnapshot) {
         val product = if (snapshot.product.equals("pnlibrary", true)) "Библиотека" else "Плагин ${snapshot.product}"
         when (snapshot.state) {
@@ -135,11 +145,12 @@ internal class BukkitLifecycleListener(
         }
     }
 
-    private fun channelName(channel: ru.privatenull.pnlibrary.api.updates.UpdateChannel): String = when (channel) {
-        ru.privatenull.pnlibrary.api.updates.UpdateChannel.STABLE -> "Стабильные версии (Stable)"
-        ru.privatenull.pnlibrary.api.updates.UpdateChannel.RC -> "Кандидаты в стабильные (RC)"
-        ru.privatenull.pnlibrary.api.updates.UpdateChannel.BETA -> "Тестовые версии (Beta)"
-        ru.privatenull.pnlibrary.api.updates.UpdateChannel.ALPHA -> "Экспериментальные версии (Alpha)"
-        ru.privatenull.pnlibrary.api.updates.UpdateChannel.DEV -> "Разрабатываемые версии (Dev)"
+    /** Returns the localized channel label used in administrator messages. */
+    private fun channelName(channel: UpdateChannel): String = when (channel) {
+        UpdateChannel.STABLE -> "Стабильные версии (Stable)"
+        UpdateChannel.RC -> "Кандидаты в стабильные (RC)"
+        UpdateChannel.BETA -> "Тестовые версии (Beta)"
+        UpdateChannel.ALPHA -> "Экспериментальные версии (Alpha)"
+        UpdateChannel.DEV -> "Разрабатываемые версии (Dev)"
     }
 }

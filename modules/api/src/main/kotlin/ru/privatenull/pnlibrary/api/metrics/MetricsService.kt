@@ -62,12 +62,9 @@ interface PluginMetrics : AutoCloseable {
     val providers: Set<MetricsProvider>
         get() = setOf(provider)
 
-    /** Provider capabilities available for this session. */
-    val capabilities: Set<MetricsCapability>
-        get() = setOf(MetricsCapability.CHARTS)
-
     /** Positive bStats project identifier associated with this session. */
     val projectId: Int
+
     /** Registers a single categorical string value; `null` omits the current sample. */
     fun simplePie(id: String, value: Supplier<String?>): PluginMetrics
     /** Registers category-to-count values for one pie chart. */

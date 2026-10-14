@@ -1,34 +1,25 @@
 package ru.privatenull.pnlibrary.bungee
 
-import net.md_5.bungee.api.chat.TextComponent
 import net.md_5.bungee.api.plugin.Plugin
-import ru.privatenull.pnlibrary.api.commands.CommandRegistration
-import ru.privatenull.pnlibrary.api.logging.LogLevel
-import ru.privatenull.pnlibrary.api.platform.PlatformType
-import ru.privatenull.pnlibrary.api.plugin.PluginMetadata
-import ru.privatenull.pnlibrary.api.remote.RemotePolicyContext
-import ru.privatenull.pnlibrary.api.runtime.PnLibrary
-import ru.privatenull.pnlibrary.bungee.commands.BungeeCommandAdapter
-import ru.privatenull.pnlibrary.bungee.tasks.BungeeTaskAdapter
-import ru.privatenull.pnlibrary.core.updates.ProxyUpdateCommand
-import ru.privatenull.pnlibrary.spi.audiences.PlatformAudienceAdapter
-import ru.privatenull.pnlibrary.spi.commands.PlatformCommandAdapter
-import ru.privatenull.pnlibrary.spi.metrics.PlatformMetricsFactory
-import ru.privatenull.pnlibrary.spi.platform.PlatformAdapter
 import ru.privatenull.pnlibrary.spi.platform.PlatformSnapshot
-import ru.privatenull.pnlibrary.spi.platform.PluginSnapshot
 import ru.privatenull.pnlibrary.spi.platform.DiagnosticDetailsCollector
-import ru.privatenull.pnlibrary.spi.tasks.PlatformTaskAdapter
-import java.util.concurrent.atomic.AtomicBoolean
-import java.util.logging.Level
 import kotlin.time.TimeSource
 import java.io.File
 import java.io.FileInputStream
 import java.security.MessageDigest
 
-internal class BungeeDiagnosticDetailsCollector(private val plugin: Plugin) {
+/**
+ * Collects proxy diagnostics, dependency health, artifact hashes, and aggregate player statistics.
+ *
+ * Individual player details and artifact paths are included only when explicitly permitted.
+ * Collection history is bounded and retained in memory for the lifetime of this collector.
+ */
+internal class BungeeDiagnosticDetailsCollector(
+    private val plugin: Plugin,
+) {
     private val collectionHistory = ArrayDeque<Map<String, Any?>>()
 
+    /** Enriches the shared platform snapshot with BungeeCord-specific diagnostic sections. */
     fun collect(snapshot: PlatformSnapshot, includeSensitive: Boolean): Map<String, Any?> {
         val collector = DiagnosticDetailsCollector { snapshot }
         return collector.collect(includeSensitive) { details ->
@@ -36,6 +27,7 @@ internal class BungeeDiagnosticDetailsCollector(private val plugin: Plugin) {
         }
     }
 
+    /** Builds proxy sections and records collection timing without changing the report schema. */
     private fun collectDiagnosticDetails(
         includeSensitive: Boolean,
         details: MutableMap<String, Any?>,
@@ -272,7 +264,9 @@ internal class BungeeDiagnosticDetailsCollector(private val plugin: Plugin) {
             "status" to (analytics?.get("status") ?: "healthy"),
         )
         collectionHistory.addLast(sample)
-        while (collectionHistory.size > 32) collectionHistory.removeFirst()
+        while (collectionHistory.size > HISTORY_LIMIT) {
+            collectionHistory.removeFirst()
+        }
         details["collectionAnalytics"] = linkedMapOf(
             "sampleCount" to collectionHistory.size,
             "byStatus" to collectionHistory.groupingBy { it["status"].toString() }.eachCount(),
@@ -284,6 +278,7 @@ internal class BungeeDiagnosticDetailsCollector(private val plugin: Plugin) {
         (details["analytics"] as? MutableMap<String, Any?>)?.set("collection", details["collectionAnalytics"])
     }
 
+    /** Derives diagnostic signals from dependency, backend, and latency summaries. */
     private fun proxyAnalyticsSignals(details: Map<String, Any?>): List<Map<String, Any?>> {
         val signals = mutableListOf<Map<String, Any?>>()
         if (dependencyHealthCount(details) > 0) {
@@ -311,22 +306,26 @@ internal class BungeeDiagnosticDetailsCollector(private val plugin: Plugin) {
         return signals
     }
 
+    /** Classifies the report using its strongest diagnostic signal. */
     private fun proxyAnalyticsStatus(details: Map<String, Any?>): String = when {
         proxyAnalyticsSignals(details).any { it["severity"] == "critical" } -> "critical"
         proxyAnalyticsSignals(details).isNotEmpty() -> "attention"
         else -> "healthy"
     }
 
+    /** Counts plugins with missing required dependencies. */
     private fun dependencyHealthCount(details: Map<String, Any?>): Int =
         (details["dependencyHealth"] as? Collection<*>)
             ?.count { (it as? Map<*, *>)?.get("healthy") == false }
             ?: 0
 
+    /** Counts missing dependencies in the requested health field. */
     private fun dependencyMissingCount(details: Map<String, Any?>, key: String): Int =
         (details["dependencyHealth"] as? Collection<*>)
             ?.sumOf { ((it as? Map<*, *>)?.get(key) as? Collection<*>)?.size ?: 0 }
             ?: 0
 
+    /** Summarizes dependency health across observed plugins. */
     private fun pluginDistribution(value: Any?): Map<String, Any?> {
         val plugins = (value as? Collection<*>)?.filterIsInstance<Map<*, *>>().orEmpty()
         return linkedMapOf(
@@ -336,6 +335,7 @@ internal class BungeeDiagnosticDetailsCollector(private val plugin: Plugin) {
         )
     }
 
+    /** Summarizes the plugin health states present in the report. */
     private fun pluginHealthCoverage(value: Any?): Map<String, Any?> {
         val plugins = (value as? Collection<*>)?.filterIsInstance<Map<*, *>>().orEmpty()
         return linkedMapOf(
@@ -346,12 +346,19 @@ internal class BungeeDiagnosticDetailsCollector(private val plugin: Plugin) {
         )
     }
 
+    /** Summarizes available plugin JAR sizes. */
     private fun artifactDistribution(value: Any?): Map<String, Any?> {
         val artifacts = (value as? Collection<*>)?.filterIsInstance<Map<*, *>>().orEmpty()
         val sizes = artifacts.mapNotNull { (it["sizeBytes"] as? Number)?.toLong() }
-        return linkedMapOf("pluginCount" to artifacts.size, "availableArtifacts" to sizes.size, "totalJarBytes" to sizes.sum(), "largestJarBytes" to sizes.maxOrNull())
+        return linkedMapOf(
+            "pluginCount" to artifacts.size,
+            "availableArtifacts" to sizes.size,
+            "totalJarBytes" to sizes.sum(),
+            "largestJarBytes" to sizes.maxOrNull(),
+        )
     }
 
+    /** Finds closed paths in the required-dependency graph. */
     private fun dependencyCycles(edges: List<Map<String, String>>): List<List<String>> {
         val graph = edges.groupBy({ it["from"].orEmpty() }, { it["to"].orEmpty() })
         val cycles = linkedSetOf<List<String>>()
@@ -366,6 +373,7 @@ internal class BungeeDiagnosticDetailsCollector(private val plugin: Plugin) {
         return cycles.toList()
     }
 
+    /** Summarizes backend player counts and relative load. */
     private fun backendDistribution(counts: Map<String, Int>, totalPlayers: Int): Map<String, Any?> {
         val denominator = totalPlayers.coerceAtLeast(1).toDouble()
         val nodes = counts.entries
@@ -394,9 +402,11 @@ internal class BungeeDiagnosticDetailsCollector(private val plugin: Plugin) {
         )
     }
 
+    /** Formats an artifact modification time as an ISO-8601 UTC timestamp. */
     private fun formatUtc(file: java.io.File): String =
         java.time.Instant.ofEpochMilli(file.lastModified()).toString()
 
+    /** Returns the indexed percentile of non-negative ping samples. */
     private fun percentile(values: List<Int>, percentile: Double): Int? {
         if (values.isEmpty()) return null
         val sorted = values.sorted()
@@ -405,9 +415,11 @@ internal class BungeeDiagnosticDetailsCollector(private val plugin: Plugin) {
     }
 
     private companion object {
+        const val HISTORY_LIMIT = 32
         const val HIGH_PING_THRESHOLD = 200.0
     }
 
+    /** Hashes an artifact, returning null when it cannot be read. */
     private fun sha256(file: File): String? = runCatching {
         val digest = MessageDigest.getInstance("SHA-256")
         FileInputStream(file).use { input ->
@@ -422,4 +434,3 @@ internal class BungeeDiagnosticDetailsCollector(private val plugin: Plugin) {
     }.getOrNull()
 
 }
-

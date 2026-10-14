@@ -17,20 +17,15 @@ import ru.privatenull.pnlibrary.spi.metrics.PlatformMetricsFactory
 import ru.privatenull.pnlibrary.spi.platform.PlatformAdapter
 import ru.privatenull.pnlibrary.spi.platform.PlatformSnapshot
 import ru.privatenull.pnlibrary.spi.platform.PluginSnapshot
-import ru.privatenull.pnlibrary.spi.platform.DiagnosticDetailsCollector
 import ru.privatenull.pnlibrary.spi.tasks.PlatformTaskAdapter
 import java.util.concurrent.atomic.AtomicBoolean
 import java.util.logging.Level
-import kotlin.time.TimeSource
-import java.io.File
-import java.io.FileInputStream
-import java.security.MessageDigest
 
 /** Runtime adapter for BungeeCord-compatible proxy servers. */
 internal class BungeePlatformAdapter(
     val plugin: Plugin,
 ) : PlatformAdapter {
-    private val collectionHistory = ArrayDeque<Map<String, Any?>>()
+    private val diagnosticDetailsCollector = BungeeDiagnosticDetailsCollector(plugin)
 
     private val closed = AtomicBoolean()
     private val bound = AtomicBoolean()
@@ -68,6 +63,7 @@ internal class BungeePlatformAdapter(
             plugin.logger.log(nativeLevel, message, error)
         }
 
+    /** Installs an uncaught-exception observer while preserving the previous JVM handler. */
     @Synchronized
     override fun observeNativeLogs(observer: ((Any, LogLevel, String, Throwable?) -> Unit)?) {
         if (observer != null && installedUncaughtHandler == null) {
@@ -86,6 +82,7 @@ internal class BungeePlatformAdapter(
         }
     }
 
+    /** Sends legacy-formatted text to the proxy console. */
     @Suppress("DEPRECATION")
     override fun console(owner: Any, message: String) {
         plugin.proxy.console.sendMessage(
@@ -93,6 +90,7 @@ internal class BungeePlatformAdapter(
         )
     }
 
+    /** Reads native plugin metadata, warning and returning null for unsupported owners. */
     override fun ownerMetadata(owner: Any): PluginSnapshot? {
         val target = owner as? Plugin
             ?: return unsupportedOwner(owner)
@@ -100,11 +98,13 @@ internal class BungeePlatformAdapter(
         return target.toSnapshot()
     }
 
+    /** Returns installed plugin names and versions for compatibility checks. */
     override fun installedPlugins(): Map<String, String> =
         plugin.proxy.pluginManager.plugins.associate { installedPlugin ->
             installedPlugin.description.name to installedPlugin.description.version
         }
 
+    /** Collects typed proxy metadata without exposing individual player identities. */
     override fun snapshot(): PlatformSnapshot {
         val proxy = plugin.proxy
 
@@ -117,11 +117,11 @@ internal class BungeePlatformAdapter(
         )
     }
 
-    private val diagnosticDetailsCollector = BungeeDiagnosticDetailsCollector(plugin)
-
+    /** Delegates diagnostic collection with the requested privacy policy. */
     override fun diagnosticDetails(includeSensitive: Boolean): Map<String, Any?> =
         diagnosticDetailsCollector.collect(snapshot(), includeSensitive)
 
+    /** Builds the remote-policy context for a validated native plugin owner. */
     override fun remotePolicyContext(
         owner: Any,
         metadata: PluginMetadata,
@@ -136,6 +136,7 @@ internal class BungeePlatformAdapter(
         return BungeeRemotePolicyContextFactory.create(target, values)
     }
 
+    /** Registers shared update commands exactly once for this runtime. */
     override fun bind(library: PnLibrary) {
         check(!closed.get()) {
             "Bungee platform adapter is closed"
@@ -150,16 +151,19 @@ internal class BungeePlatformAdapter(
         )
     }
 
+    /** Dispatches work asynchronously; BungeeCord has no global main-thread scheduler. */
     override fun executeGlobal(task: Runnable) {
         if (closed.get()) return
 
         plugin.proxy.scheduler.runAsync(plugin, task)
     }
 
+    /** Dispatches recipient work through the same asynchronous proxy scheduler. */
     override fun executeReply(recipient: Any, task: Runnable) {
         executeGlobal(task)
     }
 
+    /** Releases observers and command registrations once. */
     override fun close() {
         if (!closed.compareAndSet(false, true)) return
         observeNativeLogs(null)
@@ -170,6 +174,7 @@ internal class BungeePlatformAdapter(
         bound.set(false)
     }
 
+    /** Converts native plugin metadata to the shared snapshot contract. */
     private fun Plugin.toSnapshot(): PluginSnapshot {
         val metadata = description
 

@@ -7,6 +7,7 @@ import ru.privatenull.pnlibrary.api.remote.ProductInfo
 import ru.privatenull.pnlibrary.api.remote.RemotePolicyContext
 import ru.privatenull.pnlibrary.api.remote.ServerInfo
 import ru.privatenull.pnlibrary.common.minecraft.MinecraftVersion
+import java.util.Locale
 
 /** Creates remote-policy contexts from BungeeCord runtime metadata. */
 object BungeeRemotePolicyContextFactory {
@@ -19,12 +20,24 @@ object BungeeRemotePolicyContextFactory {
     @JvmStatic
     @JvmOverloads
     fun create(plugin: Plugin, values: Map<String, String> = emptyMap()): RemotePolicyContext {
-        val version = plugin.proxy.version
+        val proxy = plugin.proxy
+        val description = plugin.description
+        val version = proxy.version
+
         return RemotePolicyContext.builder()
-            .product(ProductInfo(plugin.description.name.lowercase(java.util.Locale.ROOT), plugin.description.name, plugin.description.version))
-            .platform(PlatformInfo(PlatformType.BUNGEECORD, plugin.proxy.name, version))
+            .product(
+                ProductInfo(
+                    description.name.lowercase(Locale.ROOT),
+                    description.name,
+                    description.version,
+                ),
+            )
+            .platform(PlatformInfo(PlatformType.BUNGEECORD, proxy.name, version))
             .server(ServerInfo(version, MinecraftVersion.parseInfo(null)))
-            .values(values).nativeHandle(plugin).nativeHandle(plugin.proxy).nativeHandle(plugin.proxy.pluginManager)
+            .values(values)
+            .nativeHandle(plugin)
+            .nativeHandle(proxy)
+            .nativeHandle(proxy.pluginManager)
             .build()
     }
 }

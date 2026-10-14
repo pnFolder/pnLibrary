@@ -6,11 +6,11 @@ import org.slf4j.Logger
 import ru.privatenull.pnlibrary.api.metrics.PluginMetrics
 import ru.privatenull.pnlibrary.api.metrics.MetricsProvider
 import ru.privatenull.pnlibrary.api.metrics.MetricsProviderConfiguration
-import ru.privatenull.pnlibrary.core.metrics.CompositePluginMetrics
-import java.nio.file.Path
-import ru.privatenull.pnlibrary.internal.faststatsvelocity.FastStatsVelocityProvider
 import ru.privatenull.pnlibrary.core.metrics.BStatsMetricsSession
+import ru.privatenull.pnlibrary.core.metrics.CompositePluginMetrics
+import ru.privatenull.pnlibrary.internal.faststatsvelocity.FastStatsVelocityProvider
 import ru.privatenull.pnlibrary.spi.metrics.PlatformMetricsFactory
+import java.nio.file.Path
 
 /** Creates bStats and FastStats sessions for Velocity using explicit platform adapters. */
 class VelocityMetricsFactory(
@@ -34,7 +34,9 @@ class VelocityMetricsFactory(
                 MetricsProvider.FASTSTATS -> openFastStats(owner, configuration)
             }
         }
+
         require(delegates.isNotEmpty()) { "At least one metrics provider must be enabled" }
+
         return if (delegates.size == 1) delegates.single() else CompositePluginMetrics(delegates)
     }
 
@@ -45,7 +47,10 @@ class VelocityMetricsFactory(
     }
 
     /** Opens a FastStats session after validating the configured project token. */
-    private fun openFastStats(owner: Any, configuration: MetricsProviderConfiguration): PluginMetrics {
+    private fun openFastStats(
+        owner: Any,
+        configuration: MetricsProviderConfiguration,
+    ): PluginMetrics {
         val token = requireNotNull(configuration.token) { "FastStats requires a project token" }
         return fastStatsProvider().open(owner, server, logger, dataDirectory, token)
     }

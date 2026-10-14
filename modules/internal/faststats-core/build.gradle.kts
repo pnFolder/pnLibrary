@@ -10,6 +10,7 @@ kotlin { compilerOptions { jvmTarget = JvmTarget.JVM_1_8 } }
 tasks.withType<JavaCompile>().configureEach { options.release = 8 }
 
 dependencies {
+    api(project(":modules:core"))
     implementation(project(":modules:api"))
     implementation(project(":modules:internal:bstats"))
     implementation(libs.faststats.core.j8)

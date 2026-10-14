@@ -7,7 +7,9 @@ import java.math.BigDecimal
 import java.util.concurrent.CompletableFuture
 import java.util.concurrent.CompletionStage
 
+/** Discovers optional economy plugins without linking their APIs on unsupported servers. */
 internal object BukkitCurrencyAdapters {
+    /** Loads the registered Vault economy service, or null when unavailable. */
     fun vault(plugin: Plugin): CurrencyProvider? = runCatching {
         val type = Class.forName("net.milkbowl.vault.economy.Economy")
         @Suppress("UNCHECKED_CAST")
@@ -15,6 +17,8 @@ internal object BukkitCurrencyAdapters {
         ReflectiveVaultCurrency(economy)
     }.getOrNull()
 
+
+    /** Resolves the enabled PlayerPoints plugin API, or null when unavailable. */
     fun playerPoints(plugin: Plugin): CurrencyProvider? = runCatching {
         val target = plugin.server.pluginManager.getPlugin("PlayerPoints") ?: return null
         val api = target.javaClass.methods.firstOrNull { it.name == "getAPI" && it.parameterCount == 0 }
@@ -23,6 +27,7 @@ internal object BukkitCurrencyAdapters {
     }.getOrNull()
 }
 
+/** Adapts a Vault economy provider to the portable currency contracts. */
 private class ReflectiveVaultCurrency(private val economy: Any) :
     CurrencyProvider, CurrencyDeposits, CurrencyWithdrawals, CurrencyFormatting {
     private val methods = economy.javaClass.methods.toList()
@@ -37,6 +42,7 @@ private class ReflectiveVaultCurrency(private val economy: Any) :
     override fun balance(account: CurrencyAccount) = completed {
         decimal(invokePlayer("getBalance", account, null))
     }
+
     override fun deposit(account: CurrencyAccount, amount: BigDecimal) = transaction("depositPlayer", account, amount)
     override fun withdraw(account: CurrencyAccount, amount: BigDecimal) = transaction("withdrawPlayer", account, amount)
     override fun format(amount: BigDecimal): String =
@@ -66,6 +72,7 @@ private class ReflectiveVaultCurrency(private val economy: Any) :
     }?.invoke(economy, *arguments)
 }
 
+/** Adapts supported PlayerPoints operations to the portable currency contracts. */
 private class ReflectivePlayerPointsCurrency(private val api: Any) :
     CurrencyProvider, CurrencyDeposits, CurrencyWithdrawals, CurrencyBalanceMutation, CurrencyReset {
     private val methods = api.javaClass.methods.toList()
@@ -74,6 +81,7 @@ private class ReflectivePlayerPointsCurrency(private val api: Any) :
     override fun balance(account: CurrencyAccount) = completed {
         decimal(call(listOf("lookUp", "getPoints"), account.playerId))
     }
+
     override fun deposit(account: CurrencyAccount, amount: BigDecimal) = mutation(listOf("give", "add"), account, amount)
     override fun withdraw(account: CurrencyAccount, amount: BigDecimal) = mutation(listOf("take", "remove"), account, amount)
     override fun setBalance(account: CurrencyAccount, amount: BigDecimal) = mutation(listOf("set"), account, amount)
@@ -96,12 +104,14 @@ private class ReflectivePlayerPointsCurrency(private val api: Any) :
         else CurrencyResult.rejected(CurrencyRejectReason.PROVIDER_REJECTED, failure)
 }
 
+/** Converts numeric provider responses while rejecting non-numeric balances. */
 private fun decimal(value: Any?): BigDecimal = when (value) {
     is BigDecimal -> value
     is Number -> BigDecimal(value.toString())
     else -> error("Currency provider returned a non-numeric balance: $value")
 }
 
+/** Exposes a synchronous provider operation as a completed or failed stage. */
 private fun <T> completed(operation: () -> T): CompletionStage<T> = try {
     CompletableFuture.completedFuture(operation())
 } catch (error: Throwable) {

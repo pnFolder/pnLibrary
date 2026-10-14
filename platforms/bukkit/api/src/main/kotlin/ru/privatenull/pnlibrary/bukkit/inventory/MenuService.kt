@@ -12,6 +12,7 @@ import ru.privatenull.pnlibrary.bukkit.server.PnBukkit
  * plugin is disabled.
  */
 interface MenuService {
+
     /**
      * Creates and opens a fresh session for [player].
      *
@@ -20,14 +21,17 @@ interface MenuService {
      * @throws IllegalStateException when the service or [owner] is disabled
      */
     fun open(owner: Plugin, player: Player, menu: Menu): MenuSession
+
     /** Returns the player's active pnLibrary menu session, or `null`. */
     fun session(player: Player): MenuSession?
+
     /** Closes every session owned by [owner] without invoking plugin close callbacks. */
     fun close(owner: Plugin)
 }
 
 /** Entry point for obtaining the installed Bukkit menu service. */
 object PnMenus {
+
     /** Returns the service installed by the active pnLibrary Bukkit runtime. */
     @JvmStatic
     fun get(): MenuService = PnBukkit.menus()

@@ -36,6 +36,7 @@ internal class BukkitControlCommand(
 ) {
     private val tokens = UpdateConfirmationTokens()
 
+    /** Builds the permission-aware control command tree. */
     fun definition(): CommandDefinition = command("pn") {
         permission("pnlibrary.admin")
         executes(::executeNative)
@@ -85,6 +86,8 @@ internal class BukkitControlCommand(
         literal("error-chain") { executes(::executeNative) }
     }
 
+    /** Unwraps a portable command sender before dispatching Bukkit operations. */
+    /** Dispatches control actions while rejecting requests after runtime shutdown. */
     private fun executeNative(context: CommandContext) {
         val sender = (context.sender as? BukkitCommandSender)?.native
         if (sender == null) context.sender.send(Component.text("Unsupported Bukkit sender."))
@@ -118,9 +121,13 @@ internal class BukkitControlCommand(
         }
     }
 
+    /** Chooses console or in-game status output for the requested products. */
     private fun sendStatus(sender: CommandSender, requested: String?) {
-        val entries = if (requested == null) library.updates.all()
-        else listOfNotNull(library.updates.get(requested))
+        val entries = if (requested == null) {
+            library.updates.all()
+        } else {
+            listOfNotNull(library.updates.get(requested))
+        }
         if (sender is ConsoleCommandSender && requested == null) {
             renderConsoleStatus(sender, entries)
             return
@@ -144,10 +151,12 @@ internal class BukkitControlCommand(
         sender.sendMessage("")
     }
 
+    /** Sends the detailed console card without changing in-game formatting. */
     private fun renderConsoleStatus(sender: CommandSender, entries: List<UpdateRegistration>) {
         BukkitConsoleStatusRenderer.render(entries).forEach(sender::sendMessage)
     }
 
+    /** Validates download permissions and selects the requested update registration. */
     private fun update(sender: CommandSender, name: String?) {
         if (!sender.hasPermission("pnlibrary.updates.download")) {
             sender.sendMessage("§cНедостаточно прав для загрузки обновлений.")
@@ -165,6 +174,7 @@ internal class BukkitControlCommand(
         checkAndInstallUpdate(sender, registration)
     }
 
+    /** Checks the update plan with progress messages and a bounded user-facing timeout. */
     private fun checkAndInstallUpdate(sender: CommandSender, registration: UpdateRegistration) {
         val product = registration.snapshot.product
         sender.sendMessage("§eПроверяю GitHub и ищу совместимое обновление $product…")
@@ -192,6 +202,7 @@ internal class BukkitControlCommand(
         }
     }
 
+    /** Selects the requested product change or reports its current update state. */
     private fun handleUpdateCheck(
         sender: CommandSender,
         registration: UpdateRegistration,
@@ -207,6 +218,7 @@ internal class BukkitControlCommand(
         stageUpdate(sender, result, change)
     }
 
+    /** Downloads and validates the selected compatible update plan. */
     private fun stageUpdate(sender: CommandSender, plan: UpdatePlanSnapshot, change: ProductChange) {
         sender.sendMessage("§eСовместимое обновление ${change.product} ${change.from} → ${change.to} найдено. Скачиваю и проверяю…")
         library.updates.stage(plan.id).whenComplete { _, error ->
@@ -219,6 +231,7 @@ internal class BukkitControlCommand(
         }
     }
 
+    /** Formats the root failure, including missing release artifacts. */
     private fun showUpdateError(sender: CommandSender, title: String, error: Throwable) {
         val cause = generateSequence(error) { it.cause }.last()
         val rawMessage = cause.message ?: cause.javaClass.simpleName
@@ -228,10 +241,12 @@ internal class BukkitControlCommand(
         sender.sendMessage("§c$title: §f$message")
     }
 
+    /** Schedules command feedback through the native server scheduler. */
     private fun runOnServerThread(action: () -> Unit) {
         plugin.server.scheduler.runTask(plugin, Runnable(action))
     }
 
+    /** Reports the current plan for all or one registered product. */
     private fun sendUpdateStatus(sender: CommandSender, requested: String?) {
         val plan = library.updates.currentPlan().orElse(null)
         if (plan == null) {
@@ -248,6 +263,7 @@ internal class BukkitControlCommand(
         }
     }
 
+    /** Validates permissions and confirmation before staging a rollback. */
     @Suppress("DEPRECATION")
     private fun rollbackUpdate(sender: CommandSender, token: String?) {
         if (!sender.hasPermission("pnlibrary.updates.rollback")) {
@@ -286,6 +302,7 @@ internal class BukkitControlCommand(
         }
     }
 
+    /** Consumes a player-bound confirmation before staging the update plan. */
     private fun confirmUpdate(sender: CommandSender, token: String?) {
         if (sender !is Player || token == null || !sender.hasPermission("pnlibrary.updates.download")) {
             sender.sendMessage("§cНедоступное подтверждение обновления.")
@@ -304,6 +321,7 @@ internal class BukkitControlCommand(
         }
     }
 
+    /** Emits a uniquely identifiable diagnostic test failure. */
     private fun emitUniqueTestError(sender: CommandSender) {
         val id = UUID.randomUUID().toString().substring(0, 8)
         library.logging.logger(plugin, "diagnostic-test").error(
@@ -313,6 +331,7 @@ internal class BukkitControlCommand(
         sender.sendMessage("§aСоздана уникальная тестовая ошибка: §f$id")
     }
 
+    /** Emits repeated failures to exercise diagnostic deduplication. */
     private fun emitRepeatedTestError(sender: CommandSender, rawCount: String?) {
         val count = rawCount?.toIntOrNull()?.coerceIn(1, 1_000) ?: 10
         val logger = library.logging.logger(plugin, "diagnostic-test")
@@ -320,8 +339,10 @@ internal class BukkitControlCommand(
         sender.sendMessage("§aОдинаковая тестовая ошибка вызвана §f$count §aраз.")
     }
 
+    /** Creates the stable failure used by repeated-error tests. */
     private fun repeatedTestException(): Throwable = IllegalStateException("Generated repeated failure")
 
+    /** Emits a nested failure to exercise cause-chain reporting. */
     private fun emitChainedTestError(sender: CommandSender) {
         val root = IllegalArgumentException("Invalid test database response")
         val database = java.sql.SQLException("Test query execution failed", root)
@@ -330,6 +351,7 @@ internal class BukkitControlCommand(
         sender.sendMessage("§aСоздана тестовая ошибка с полной цепочкой причин.")
     }
 
+    /** Validates the staged plan and a player confirmation before requesting restart. */
     @Suppress("DEPRECATION")
     private fun handleRestart(sender: CommandSender, arguments: List<String>) {
         if (!sender.hasPermission("pnlibrary.updates.restart")) {
@@ -377,6 +399,7 @@ internal class BukkitControlCommand(
         sender.sendMessage("")
     }
 
+    /** Lists product updates and the available administrator actions. */
     private fun sendUpdates(sender: CommandSender) {
         if (!sender.hasPermission("pnlibrary.updates.view")) {
             sender.sendMessage("§cНедостаточно прав для просмотра обновлений.")
@@ -401,6 +424,7 @@ internal class BukkitControlCommand(
         sender.sendMessage("")
     }
 
+    /** Sends a player-bound update-plan confirmation button. */
     @Suppress("DEPRECATION")
     private fun sendPlanDownloadButton(player: Player, token: String) {
         val button = TextComponent("[ Скачать совместимый план ]").apply {
@@ -413,6 +437,7 @@ internal class BukkitControlCommand(
         player.spigot().sendMessage(button)
     }
 
+    /** Sends update-check and support buttons. */
     @Suppress("DEPRECATION")
     private fun sendActionButtons(player: Player) {
         fun button(text: String, color: ChatColor, action: ClickEvent, hint: String): TextComponent =
@@ -440,6 +465,7 @@ internal class BukkitControlCommand(
         player.spigot().sendMessage(check, TextComponent("  "), support)
     }
 
+    /** Formats one product's update state in the established chat style. */
     private fun sendUpdateLine(sender: CommandSender, snapshot: UpdateSnapshot) {
         val product = if (snapshot.product.equals("pnlibrary", true)) "Библиотека" else "Плагин ${snapshot.product}"
         when (snapshot.state) {

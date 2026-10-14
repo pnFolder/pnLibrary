@@ -203,7 +203,9 @@ class PluginRegistryImplTest {
 
         val plugin = registry.register(owner)
         val context = plugin.registerModule("pnClans") {
-            it.listener(listener).metrics(42, false)
+            it.listener(listener).metrics { metrics ->
+                metrics.bStats(42).enabled(false)
+            }
         }
 
         assertSame(context, plugin.getModule("PNCLANS"))

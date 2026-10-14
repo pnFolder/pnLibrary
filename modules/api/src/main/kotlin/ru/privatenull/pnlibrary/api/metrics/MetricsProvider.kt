@@ -6,14 +6,6 @@ enum class MetricsProvider {
     FASTSTATS,
 }
 
-/** Features that a metrics provider may expose beyond the shared chart API. */
-enum class MetricsCapability {
-    CHARTS,
-    CUSTOM_VALUES,
-    ERROR_TRACKING,
-    CONTEXT_ATTRIBUTES,
-}
-
 /**
  * Provider-neutral credentials and enablement requested for one plugin module.
  *
@@ -27,4 +19,23 @@ data class MetricsProviderConfiguration(
     val enabled: Boolean = true,
     val projectId: Int? = null,
     val token: String? = null,
-)
+) {
+    /** Creates independently owned typed credentials for a provider session. */
+    fun credentials(): MetricsCredentials<*> = when (provider) {
+        MetricsProvider.BSTATS -> MetricsCredentials.BStats(
+            requireNotNull(projectId) { "bStats requires a project ID" },
+        )
+        MetricsProvider.FASTSTATS -> {
+            val characters = requireNotNull(token) { "FastStats requires a project token" }.toCharArray()
+            try {
+                MetricsCredentials.FastStats(characters)
+            } finally {
+                characters.fill('\u0000')
+            }
+        }
+    }
+
+    /** Keeps legacy configuration logs from exposing project tokens. */
+    override fun toString(): String =
+        "MetricsProviderConfiguration(provider=$provider, enabled=$enabled, projectId=$projectId, token=[REDACTED])"
+}

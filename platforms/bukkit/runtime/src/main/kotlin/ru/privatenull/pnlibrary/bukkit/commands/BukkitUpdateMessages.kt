@@ -7,6 +7,7 @@ import ru.privatenull.pnlibrary.api.updates.UpdateState
 
 /** Pure, platform-independent wording used by Bukkit update commands. */
 internal object BukkitUpdateMessages {
+    /** Formats the effective plan and product state as player-facing messages. */
     fun status(input: Pair<UpdatePlanSnapshot, UpdateSnapshot>): List<String> {
         val (plan, plugin) = input
         val isLibrary = plugin.product.equals("pnlibrary", true)
@@ -49,6 +50,7 @@ internal object BukkitUpdateMessages {
         }
     }
 
+    /** Explains the compatibility or policy reason blocking an update. */
     private fun blocker(reason: BlockedReason): String = when (reason) {
         is BlockedReason.ApiMismatch ->
                 "плагин ${reason.product} поддерживает pnLibrary API " +
@@ -63,5 +65,6 @@ internal object BukkitUpdateMessages {
             "для плагина ${reason.product} нет версии, совместимой с pnLibrary API ${reason.requiredApi}."
     }
 
+    /** Ensures diagnostic messages end with exactly one period. */
     private fun sentence(value: String): String = value.trim().removeSuffix(".") + "."
 }

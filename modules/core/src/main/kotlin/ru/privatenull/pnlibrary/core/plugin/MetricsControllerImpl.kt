@@ -3,6 +3,7 @@ package ru.privatenull.pnlibrary.core.plugin
 import ru.privatenull.pnlibrary.api.metrics.MetricsService
 import ru.privatenull.pnlibrary.api.metrics.PluginMetrics
 import ru.privatenull.pnlibrary.api.metrics.MetricsProviderConfiguration
+import ru.privatenull.pnlibrary.api.metrics.MetricsProvider
 import ru.privatenull.pnlibrary.api.metrics.ErrorReporter
 import ru.privatenull.pnlibrary.api.plugin.MetricsController
 import java.util.concurrent.atomic.AtomicBoolean
@@ -19,8 +20,8 @@ internal class MetricsControllerImpl(
     private val closed = AtomicBoolean(false)
     private val configurers = definition.configurers.toMutableList()
     private val configuredProviders = definition.providers.toMutableList()
-    @Volatile
-    private var currentProjectId: Int? = definition.projectId
+    private val currentProjectId: Int?
+        get() = configuredProviders.firstOrNull { it.provider == MetricsProvider.BSTATS }?.projectId
 
     @Volatile
     private var session: PluginMetrics? = null
@@ -32,9 +33,9 @@ internal class MetricsControllerImpl(
 
     override val isEnabled: Boolean get() = session != null
     override val isClosed: Boolean get() = closed.get()
-    override val projectId: Int? get() = currentProjectId
+    override val projectId: Int? get() = synchronized(lock) { currentProjectId }
     override val providerConfigurations: List<MetricsProviderConfiguration>
-        get() = configuredProviders.toList()
+        get() = synchronized(lock) { configuredProviders.toList() }
 
     override fun errorReporterOrNull(): ErrorReporter? =
         session?.errorReporter?.let { errorReporter ?: it }
@@ -62,7 +63,6 @@ internal class MetricsControllerImpl(
         if (session != null && currentProjectId == projectId) return@synchronized
         session?.close()
         session = null
-        currentProjectId = projectId
         updateBStatsProjectId(projectId)
         session = openSession()
     }
@@ -80,7 +80,6 @@ internal class MetricsControllerImpl(
         val restart = session != null
         session?.close()
         session = null
-        currentProjectId = projectId
         updateBStatsProjectId(projectId)
         if (restart) session = openSession()
     }
@@ -127,10 +126,11 @@ internal class MetricsControllerImpl(
     private fun ensureOpen() = check(!closed.get()) { "MetricsController is closed" }
 
     private fun updateBStatsProjectId(projectId: Int) {
-        configuredProviders.replaceAll { configuration ->
-            if (configuration.provider == ru.privatenull.pnlibrary.api.metrics.MetricsProvider.BSTATS) {
-                configuration.copy(projectId = projectId)
-            } else configuration
+        val index = configuredProviders.indexOfFirst { it.provider == MetricsProvider.BSTATS }
+        if (index < 0) {
+            configuredProviders += MetricsProviderConfiguration(MetricsProvider.BSTATS, projectId = projectId)
+        } else {
+            configuredProviders[index] = configuredProviders[index].copy(projectId = projectId, enabled = true)
         }
     }
 }

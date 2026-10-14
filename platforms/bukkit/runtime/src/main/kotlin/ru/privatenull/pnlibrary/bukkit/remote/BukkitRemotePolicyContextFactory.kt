@@ -7,6 +7,7 @@ import ru.privatenull.pnlibrary.api.remote.ProductInfo
 import ru.privatenull.pnlibrary.api.remote.RemotePolicyContext
 import ru.privatenull.pnlibrary.api.remote.ServerInfo
 import ru.privatenull.pnlibrary.common.minecraft.MinecraftVersion
+import java.util.Locale
 
 /** Creates remote-policy contexts from Bukkit runtime metadata. */
 object BukkitRemotePolicyContextFactory {
@@ -19,12 +20,23 @@ object BukkitRemotePolicyContextFactory {
     @JvmStatic
     @JvmOverloads
     fun create(plugin: Plugin, values: Map<String, String> = emptyMap()): RemotePolicyContext {
-        val version = plugin.server.version
+        val server = plugin.server
+        val version = server.version
+
         return RemotePolicyContext.builder()
-            .product(ProductInfo(plugin.name.lowercase(java.util.Locale.ROOT), plugin.name, plugin.description.version))
-            .platform(PlatformInfo(PlatformType.BUKKIT, plugin.server.name, version))
+            .product(
+                ProductInfo(
+                    plugin.name.lowercase(Locale.ROOT),
+                    plugin.name,
+                    plugin.description.version,
+                ),
+            )
+            .platform(PlatformInfo(PlatformType.BUKKIT, server.name, version))
             .server(ServerInfo(version, MinecraftVersion.parseInfo(version)))
-            .values(values).nativeHandle(plugin).nativeHandle(plugin.server).nativeHandle(plugin.server.pluginManager)
+            .values(values)
+            .nativeHandle(plugin)
+            .nativeHandle(server)
+            .nativeHandle(server.pluginManager)
             .build()
     }
 }

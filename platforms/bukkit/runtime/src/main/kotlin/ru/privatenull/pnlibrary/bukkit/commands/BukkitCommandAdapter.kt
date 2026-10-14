@@ -24,12 +24,18 @@ import java.util.LinkedHashSet
 import java.util.concurrent.TimeUnit
 import java.util.concurrent.atomic.AtomicBoolean
 
-/** Thin Bukkit transport for portable command definitions. */
+/**
+ * Registers portable commands and owns their native Bukkit registrations.
+ *
+ * Native tab completion is synchronous, so suggestion requests use a bounded one-second wait.
+ * Commands are released in reverse registration order when this adapter closes.
+ */
 internal class BukkitCommandAdapter internal constructor(
     private val plugin: Plugin,
     private val registrar: BukkitNativeCommandRegistrar,
     private val audience: (NativeCommandSender) -> AudienceSender,
 ) : PlatformCommandAdapter {
+    /** Creates the native registrar and audience bridge. */
     constructor(plugin: Plugin, audiences: BukkitAudienceService) : this(
         plugin,
         DefaultBukkitNativeCommandRegistrar(plugin),
@@ -39,6 +45,7 @@ internal class BukkitCommandAdapter internal constructor(
     private val closed = AtomicBoolean(false)
     private val registrations = LinkedHashSet<Registration>()
 
+    /** Registers portable execution and completion handlers with the native command manager. */
     override fun register(
         owner: Any,
         command: CommandDefinition,
@@ -57,31 +64,39 @@ internal class BukkitCommandAdapter internal constructor(
                 }.getOrDefault(emptyList())
             },
         )
-        return Registration(native).also { synchronized(registrations) { registrations += it } }
+        val registration = Registration(native)
+        synchronized(registrations) {
+            registrations += registration
+        }
+        return registration
     }
 
+    /** Unregisters owned commands once. */
     override fun close() {
         if (!closed.compareAndSet(false, true)) return
         val current = synchronized(registrations) { registrations.toList() }
         current.asReversed().forEach(Registration::close)
     }
 
+    /** Converts native invocation arguments to the portable command context. */
     private fun context(
         sender: NativeCommandSender,
         label: String,
         arguments: Array<String>,
-    ) = CommandContext(
+    ): CommandContext = CommandContext(
         sender = BukkitCommandSender(sender, audience(sender)),
         arguments = arguments.toList(),
         invokedAlias = label,
         currentInput = arguments.lastOrNull().orEmpty(),
     )
 
+    /** Tracks one native command registration with idempotent cleanup. */
     private inner class Registration(
         private val native: PlatformCommandRegistration,
     ) : PlatformCommandRegistration {
         private val registrationClosed = AtomicBoolean(false)
-        override fun close() {
+        /** Unregisters owned commands once. */
+    override fun close() {
             if (!registrationClosed.compareAndSet(false, true)) return
             synchronized(registrations) { registrations.remove(this) }
             native.close()
@@ -95,13 +110,19 @@ internal class BukkitCommandSender(
     internal val native: NativeCommandSender,
     private val audience: AudienceSender,
 ) : CommandSender, AudienceSender by audience {
+
     override fun send(message: Component) = audience.sendMessage(message)
+
     override fun sendMessage(text: Component) = audience.sendMessage(text)
+
     override fun actionBar(text: Component) = audience.actionBar(text)
+
     override fun playSound(sound: Sound): Boolean = audience.playSound(sound)
 }
 
+/** Native registration boundary used by the runtime and command tests. */
 internal interface BukkitNativeCommandRegistrar {
+    /** Registers execution and suggestion callbacks and returns an unregister operation. */
     fun register(
         command: CommandDefinition,
         execute: (NativeCommandSender, String, Array<String>) -> Unit,
@@ -109,9 +130,11 @@ internal interface BukkitNativeCommandRegistrar {
     ): PlatformCommandRegistration
 }
 
+/** Uses declared plugin commands where available, otherwise the legacy command map. */
 private class DefaultBukkitNativeCommandRegistrar(
     private val plugin: Plugin,
 ) : BukkitNativeCommandRegistrar {
+    /** Registers portable execution and completion handlers with the native command manager. */
     override fun register(
         command: CommandDefinition,
         execute: (NativeCommandSender, String, Array<String>) -> Unit,
@@ -144,12 +167,14 @@ private class DefaultBukkitNativeCommandRegistrar(
         return PlatformCommandRegistration { native.unregister(commandMap) }
     }
 
+    /** Resolves the legacy command map used for undeclared commands. */
     private fun commandMap(): CommandMap {
         val field = Bukkit.getServer().javaClass.getDeclaredField("commandMap")
         field.isAccessible = true
         return field.get(Bukkit.getServer()) as CommandMap
     }
 
+    /** Constructs a native plugin command through Bukkit's non-public constructor. */
     private fun pluginCommand(name: String): PluginCommand {
         val constructor: Constructor<PluginCommand> = PluginCommand::class.java.getDeclaredConstructor(
             String::class.java,

@@ -12,21 +12,35 @@ import ru.privatenull.pnlibrary.api.actions.LibraryPlayer
 import ru.privatenull.pnlibrary.spi.audiences.PlatformAudienceAdapter
 import java.util.UUID
 
+/** Converts native server recipients to portable audiences and player views. */
 internal class BukkitAudienceAdapter(
     private val audiences: BukkitAudienceService,
 ) : PlatformAudienceAdapter {
+
+    /** Returns the server console audience. */
     override fun console(): AudienceSender = wrap(Bukkit.getConsoleSender())
+
+    /** Finds an online player by UUID. */
     override fun player(uniqueId: UUID): LibraryPlayer? = Bukkit.getPlayer(uniqueId)?.let { BukkitLibraryPlayer(it, audiences) }
+
+    /** Wraps native Bukkit senders; unsupported objects return null. */
     override fun sender(native: Any): AudienceSender? = (native as? CommandSender)?.let(::wrap)
+
+    /** Returns portable views of the currently connected players. */
     override fun onlinePlayers(): List<LibraryPlayer> = Bukkit.getOnlinePlayers().map { BukkitLibraryPlayer(it, audiences) }
 
+    /** Uses the player transport where available, otherwise a legacy sender wrapper. */
     private fun wrap(sender: CommandSender): AudienceSender =
         if (sender is Player) BukkitLibraryPlayer(sender, audiences) else BukkitSenderAudience(sender)
 
-    private class BukkitSenderAudience(private val sender: CommandSender) : AudienceSender {
+    /** Uses chat for generic senders; action bars fall back to chat and sounds are unsupported. */
+    private class BukkitSenderAudience(
+        private val sender: CommandSender,
+    ) : AudienceSender {
         override val id get() = sender.name
         override val name get() = sender.name
         override val isConsole get() = sender is ConsoleCommandSender
+
         override fun hasPermission(permission: String) = sender.hasPermission(permission)
         override fun sendMessage(text: Component) = sender.sendMessage(LEGACY.serialize(text))
         override fun actionBar(text: Component) = sendMessage(text)
@@ -34,6 +48,6 @@ internal class BukkitAudienceAdapter(
     }
 
     private companion object {
-        val LEGACY = LegacyComponentSerializer.legacySection()
+        private val LEGACY = LegacyComponentSerializer.legacySection()
     }
 }

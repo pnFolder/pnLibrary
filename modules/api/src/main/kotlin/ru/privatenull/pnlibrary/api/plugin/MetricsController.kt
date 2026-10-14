@@ -28,16 +28,16 @@ interface MetricsController : AutoCloseable {
     /** Returns the configured error reporter, or null when no provider supports error tracking. */
     fun errorReporterOrNull(): ErrorReporter? = null
 
-    /** Enables metrics using the configured [projectId]. */
+    /** Starts all enabled configured providers, including FastStats-only configurations. */
     fun enable()
 
-    /** Sets [projectId] and enables metrics. */
+    /** Adds or enables bStats with [projectId], retaining other configured providers. */
     fun enable(projectId: Int)
 
     /** Closes the active metrics session without forgetting its configuration. */
     fun disable()
 
-    /** Changes the project ID and restarts the session when it is enabled. */
+    /** Updates bStats without removing FastStats; restarts the session when it is enabled. */
     fun changeProjectId(projectId: Int)
 
     /** Applies [configure] now and again whenever the session is restarted. */

@@ -23,7 +23,7 @@ import java.nio.file.Path
 @Plugin(
     id = "pnlibrary",
     name = "pnLibrary",
-    authors = ["pnFolder"]
+    authors = ["pnFolder"],
 )
 class PnLibraryVelocityPlugin @Inject constructor(
     private val server: ProxyServer,
@@ -42,11 +42,11 @@ class PnLibraryVelocityPlugin @Inject constructor(
     @Subscribe
     fun onInitialize(event: ProxyInitializeEvent) {
         val adapter = VelocityPlatformAdapter(
-            this,
-            server,
-            VelocityMetricsFactory(metricsFactory, server, logger, dataDirectory),
-            dataDirectory,
-            logger,
+            plugin = this,
+            server = server,
+            metricsFactory = VelocityMetricsFactory(metricsFactory, server, logger, dataDirectory),
+            dataFolder = dataDirectory,
+            logger = logger,
         )
         runtimeHost = PnLibraryRuntimeHost.start(
             this,

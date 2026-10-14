@@ -17,24 +17,30 @@ import java.util.UUID
  * when native Adventure integration is unavailable. Effects and particles use Bukkit APIs with
  * reflective compatibility for older server versions.
  */
-internal class BukkitLibraryPlayer constructor(
+internal class BukkitLibraryPlayer(
     private val player: Player,
     private val audiences: BukkitAudienceService,
 ) : LibraryPlayer {
     override val uniqueId: UUID get() = player.uniqueId
     override val name: String get() = player.name
+
+    /** Checks the native player permission. */
     override fun hasPermission(permission: String): Boolean = player.hasPermission(permission)
 
+    /** Delivers chat through the version-safe audience transport. */
     override fun sendMessage(text: Component) {
         audiences.sendMessage(player, text)
     }
 
+    /** Delivers an action bar through the version-safe audience transport. */
     override fun actionBar(text: Component) {
         audiences.sendActionBar(player, text)
     }
 
+    /** Plays a sound, falling back to the native Bukkit API where needed. */
     override fun playSound(sound: Sound): Boolean = audiences.playSound(player, sound)
 
+    /** Applies a potion effect using the best constructor supported by this server. */
     override fun applyEffect(effect: PlayerEffect): Boolean {
         val type = PotionEffectType.getByName(effect.key.uppercase()) ?: return false
         val ticks = (effect.duration.toMillis() / MILLIS_PER_TICK)
@@ -53,6 +59,7 @@ internal class BukkitLibraryPlayer constructor(
         return player.addPotionEffect(configured, true)
     }
 
+    /** Renders a supported particle, returning false when the server lacks the required API. */
     override fun spawnParticle(particle: PlayerParticle): Boolean {
         val type = runCatching { Class.forName("org.bukkit.Particle") }.getOrNull() ?: return false
         val constant = type.enumConstants.firstOrNull {

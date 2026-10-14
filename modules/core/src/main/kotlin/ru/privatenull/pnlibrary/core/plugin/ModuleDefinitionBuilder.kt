@@ -3,9 +3,7 @@ package ru.privatenull.pnlibrary.core.plugin
 import ru.privatenull.pnlibrary.api.diagnostics.DiagnosticContainer
 import ru.privatenull.pnlibrary.api.downloads.FileDownloads
 import ru.privatenull.pnlibrary.api.events.Listener
-import ru.privatenull.pnlibrary.api.metrics.PluginMetrics
-import ru.privatenull.pnlibrary.api.metrics.MetricsProvider
-import ru.privatenull.pnlibrary.api.metrics.MetricsProviderConfiguration
+import ru.privatenull.pnlibrary.api.plugin.MetricsBuilder
 import ru.privatenull.pnlibrary.api.plugin.PluginBuilder
 import ru.privatenull.pnlibrary.api.plugin.PluginDependency
 import ru.privatenull.pnlibrary.api.plugin.PluginMetadataBuilder
@@ -62,34 +60,14 @@ internal class ModuleDefinitionBuilder : PluginBuilder {
         configure.accept(ModuleOptions(this))
     }
 
-    override fun metrics(
-        projectId: Int,
-        enabled: Boolean,
-        configure: Consumer<PluginMetrics>,
-    ): PluginBuilder = apply {
-        require(projectId > 0) { "metrics projectId must be positive" }
+    /** Accumulates provider declarations through the shared metrics DSL. */
+    override fun metrics(configure: Consumer<MetricsBuilder>): PluginBuilder = apply {
+        val builder = MetricsBuilder()
+        configure.accept(builder)
         metrics = ModuleMetricsDefinition(
-            providers = listOf(
-                MetricsProviderConfiguration(
-                    provider = MetricsProvider.BSTATS,
-                    projectId = projectId,
-                ),
-            ),
-            enabled = enabled,
-            configurers = metrics.configurers + configure,
-        )
-    }
-
-    override fun metrics(
-        providers: Collection<MetricsProviderConfiguration>,
-        enabled: Boolean,
-        configure: Consumer<PluginMetrics>,
-    ): PluginBuilder = apply {
-        require(providers.isNotEmpty()) { "at least one metrics provider is required" }
-        metrics = ModuleMetricsDefinition(
-            providers = providers.toList(),
-            enabled = enabled,
-            configurers = metrics.configurers + configure,
+            providers = metrics.providers + builder.build(),
+            enabled = builder.enabled,
+            configurers = metrics.configurers + Consumer(builder::configure),
         )
     }
 

@@ -8,48 +8,30 @@ import org.bstats.charts.MultiLineChart
 import org.bstats.charts.SimpleBarChart
 import org.bstats.charts.SimplePie
 import org.bstats.charts.SingleLineChart
-import ru.privatenull.pnlibrary.api.metrics.PluginMetrics
-import java.util.concurrent.atomic.AtomicBoolean
-import java.util.function.Supplier
 
-/** Shared chart mapping; platform modules only construct their native Metrics object. */
+/** Translates shared lazy chart definitions into native bStats charts. */
 class BStatsMetricsSession(
-    /** Numeric bStats project receiving this session's charts. */
-    override val projectId: Int,
+    projectId: Int,
     private val addChart: (CustomChart) -> Unit,
     private val shutdown: () -> Unit,
-) : PluginMetrics {
-    private val closed = AtomicBoolean(false)
+) : AbstractMetricsSession(projectId) {
 
-    /** Validates [id] and registers the bStats equivalent of [PluginMetrics.simplePie]. */
-    override fun simplePie(id: String, value: Supplier<String?>) = add(SimplePie(valid(id)) { value.get() })
-    /** Validates [id] and registers the bStats equivalent of [PluginMetrics.advancedPie]. */
-    override fun advancedPie(id: String, values: Supplier<Map<String, Int>>) = add(AdvancedPie(valid(id)) { values.get() })
-    /** Validates [id] and registers the bStats equivalent of [PluginMetrics.drilldownPie]. */
-    override fun drilldownPie(id: String, values: Supplier<Map<String, Map<String, Int>>>) = add(DrilldownPie(valid(id)) { values.get() })
-    /** Validates [id] and registers the bStats equivalent of [PluginMetrics.singleLineChart]. */
-    override fun singleLineChart(id: String, value: Supplier<Int>) = add(SingleLineChart(valid(id)) { value.get() })
-    /** Validates [id] and registers the bStats equivalent of [PluginMetrics.multiLineChart]. */
-    override fun multiLineChart(id: String, values: Supplier<Map<String, Int>>) = add(MultiLineChart(valid(id)) { values.get() })
-    /** Validates [id] and registers the bStats equivalent of [PluginMetrics.simpleBarChart]. */
-    override fun simpleBarChart(id: String, values: Supplier<Map<String, Int>>) = add(SimpleBarChart(valid(id)) { values.get() })
-    /** Validates [id] and registers the bStats equivalent of [PluginMetrics.advancedBarChart]. */
-    override fun advancedBarChart(id: String, values: Supplier<Map<String, IntArray>>) = add(AdvancedBarChart(valid(id)) { values.get() })
-
-    private fun add(chart: CustomChart): PluginMetrics {
-        check(!closed.get()) { "Metrics session is closed" }
-        addChart(chart)
-        return this
+    /** Registers the matching native chart without evaluating its supplier. */
+    override fun register(chart: Chart) {
+        val native = when (chart) {
+            is Chart.SimplePie -> SimplePie(chart.id) { chart.value.get() }
+            is Chart.AdvancedPie -> AdvancedPie(chart.id) { chart.values.get() }
+            is Chart.DrilldownPie -> DrilldownPie(chart.id) { chart.values.get() }
+            is Chart.SingleLine -> SingleLineChart(chart.id) { chart.value.get() }
+            is Chart.MultiLine -> MultiLineChart(chart.id) { chart.values.get() }
+            is Chart.SimpleBar -> SimpleBarChart(chart.id) { chart.values.get() }
+            is Chart.AdvancedBar -> AdvancedBarChart(chart.id) { chart.values.get() }
+        }
+        addChart(native)
     }
 
-    /** Shuts down the native bStats session exactly once. */
-    override fun close() {
-        if (closed.compareAndSet(false, true)) shutdown()
-    }
-
-    private fun valid(id: String): String {
-        val normalized = id.trim()
-        require(normalized.matches(Regex("[A-Za-z0-9_-]{1,64}"))) { "Invalid bStats chart id: $id" }
-        return normalized
+    /** Stops the native bStats submission service. */
+    override fun shutdown() {
+        shutdown.invoke()
     }
 }

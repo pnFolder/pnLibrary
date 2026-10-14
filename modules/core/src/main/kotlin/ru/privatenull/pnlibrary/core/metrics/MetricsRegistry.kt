@@ -43,7 +43,6 @@ internal class MetricsRegistry(private val factory: PlatformMetricsFactory) : Me
         linkedMapOf(
             "provider" to session.provider.name,
             "providers" to session.providers.map { it.name },
-            "capabilities" to session.capabilities.map { it.name },
             "projectId" to session.projectId,
             "errorReporter" to (session.errorReporter != null),
             "errorPipeline" to (session.errorReporter as? ErrorPipeline)?.diagnosticSnapshot(),
@@ -57,10 +56,6 @@ internal class MetricsRegistry(private val factory: PlatformMetricsFactory) : Me
         return linkedMapOf(
             "sessionCount" to snapshots.size,
             "providers" to snapshots.flatMap { (it["providers"] as? Collection<*>) ?: emptyList<Any?>() }
-                .mapNotNull { it?.toString() }
-                .groupingBy { it }
-                .eachCount(),
-            "capabilities" to snapshots.flatMap { (it["capabilities"] as? Collection<*>) ?: emptyList<Any?>() }
                 .mapNotNull { it?.toString() }
                 .groupingBy { it }
                 .eachCount(),

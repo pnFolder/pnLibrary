@@ -2,8 +2,6 @@ package ru.privatenull.pnlibrary.api.plugin
 
 import ru.privatenull.pnlibrary.api.diagnostics.DiagnosticContainer
 import ru.privatenull.pnlibrary.api.events.Listener
-import ru.privatenull.pnlibrary.api.metrics.PluginMetrics
-import ru.privatenull.pnlibrary.api.metrics.MetricsProviderConfiguration
 import ru.privatenull.pnlibrary.api.updates.PluginUpdateRequest
 import ru.privatenull.pnlibrary.api.updates.ProductDescriptor
 import java.nio.file.Path
@@ -35,36 +33,13 @@ interface PluginBuilder {
     /** Changes optional integration switches. Unspecified options keep safe defaults. */
     fun options(configure: Consumer<PluginOptions>): PluginBuilder
 
-    /** Configures and enables a bStats session for [projectId]. */
-    fun metrics(projectId: Int): PluginBuilder = metrics(projectId, true, Consumer { })
-    /** Configures a bStats project and selects its initial enabled state. */
-    fun metrics(projectId: Int, enabled: Boolean): PluginBuilder =
-        metrics(projectId, enabled, Consumer { })
-    /** Configures and enables bStats with custom chart registration. */
-    fun metrics(projectId: Int, configure: Consumer<PluginMetrics>): PluginBuilder =
-        metrics(projectId, true, configure)
-
     /**
-     * Configures this plugin's metrics integration.
+     * Adds provider-neutral metrics backends without replacing earlier declarations.
      *
-     * [configure] runs whenever the metrics session is created or restarted, so it must tolerate
-     * repeated invocation and should only register charts owned by this plugin.
+     * Each provider may be declared only once. Chart callbacks accumulate and run for all
+     * enabled backends. The latest call selects the initial session enabled state.
      */
-    fun metrics(projectId: Int, enabled: Boolean, configure: Consumer<PluginMetrics>): PluginBuilder
-
-    /** Configures one or more provider-neutral metrics backends. */
-    fun metrics(
-        providers: Collection<MetricsProviderConfiguration>,
-        enabled: Boolean,
-        configure: Consumer<PluginMetrics>,
-    ): PluginBuilder
-
-    /** Configures bStats and/or FastStats without constructing provider configuration objects. */
-    fun metrics(configure: Consumer<MetricsBuilder>): PluginBuilder {
-        val builder = MetricsBuilder()
-        configure.accept(builder)
-        return metrics(builder.build(), builder.enabled, Consumer(builder::configure))
-    }
+    fun metrics(configure: Consumer<MetricsBuilder>): PluginBuilder
 
     /**
      * Registers a diagnostics contributor rooted at [dataDirectory].

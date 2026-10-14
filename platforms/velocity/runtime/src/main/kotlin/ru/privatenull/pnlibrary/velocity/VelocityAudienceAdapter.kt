@@ -41,16 +41,20 @@ internal class VelocityAudienceAdapter(
         override val isConsole: Boolean
             get() = source is ConsoleCommandSource
 
+        /** Checks permissions on the native command source. */
         override fun hasPermission(permission: String): Boolean = source.hasPermission(permission)
 
+        /** Sends an Adventure component to the native source. */
         override fun sendMessage(text: Component) {
             source.sendMessage(text)
         }
 
+        /** Dispatches an action bar using the native audience. */
         override fun actionBar(text: Component) {
             source.sendActionBar(text)
         }
 
+        /** Dispatches a sound using the native audience. */
         override fun playSound(sound: Sound): Boolean {
             source.playSound(sound)
             return true

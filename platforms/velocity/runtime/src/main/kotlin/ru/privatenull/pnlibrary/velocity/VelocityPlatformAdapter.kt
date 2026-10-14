@@ -36,8 +36,7 @@ internal class VelocityPlatformAdapter(
     override val dataFolder: Path,
     private val logger: Logger,
 ) : PlatformAdapter {
-    private val collectionHistory = ArrayDeque<Map<String, Any?>>()
-
+    private val diagnosticDetailsCollector = VelocityDiagnosticDetailsCollector(server)
     private val closed = AtomicBoolean()
     private val bound = AtomicBoolean()
 
@@ -125,8 +124,6 @@ internal class VelocityPlatformAdapter(
         )
     }
 
-    private val diagnosticDetailsCollector = VelocityDiagnosticDetailsCollector(server)
-
     /** Collects the detailed platform report used by support diagnostics. */
     override fun diagnosticDetails(includeSensitive: Boolean): Map<String, Any?> =
         diagnosticDetailsCollector.collect(snapshot(), includeSensitive)
@@ -156,7 +153,9 @@ internal class VelocityPlatformAdapter(
 
     /** Schedules work on Velocity's plugin scheduler. */
     override fun executeGlobal(task: Runnable) {
-        if (closed.get()) return
+        if (closed.get()) {
+            return
+        }
 
         server.scheduler.buildTask(plugin, task).schedule()
     }
@@ -168,7 +167,9 @@ internal class VelocityPlatformAdapter(
 
     /** Releases commands, observers and lifecycle state owned by the adapter. */
     override fun close() {
-        if (!closed.compareAndSet(false, true)) return
+        if (!closed.compareAndSet(false, true)) {
+            return
+        }
         observeNativeLogs(null)
 
         updateCommand?.close()
@@ -177,6 +178,7 @@ internal class VelocityPlatformAdapter(
         bound.set(false)
     }
 
+    /** Converts native plugin metadata to the shared immutable representation. */
     private fun PluginDescription.toSnapshot(): PluginSnapshot =
         PluginSnapshot(
             id = id,

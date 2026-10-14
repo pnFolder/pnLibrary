@@ -53,11 +53,14 @@ public final class AcceptancePlugin extends JavaPlugin implements CommandExecuto
             builder.product(ProductDescriptor.builder()
                     .version(getDescription().getVersion())
                 .pnLibraryApi(1, 1).build());
-            builder.metrics(getConfig().getInt("metrics.project-id", 32592),
-                getConfig().getBoolean("metrics.enabled", false), metrics -> {
+            builder.metrics(configuration -> {
+                configuration.bStats(getConfig().getInt("metrics.project-id", 32592));
+                configuration.enabled(getConfig().getBoolean("metrics.enabled", false));
+                configuration.charts(metrics -> {
                     metrics.simplePie("server_implementation", () -> getServer().getName());
                     metrics.singleLineChart("acceptance_events", () -> (int) events.get());
                 });
+            });
             builder.diagnostics(getDataFolder().toPath(), DiagnosticContainer.builder("acceptance")
                 .snapshot(this::diagnosticSnapshot).configuration("config.yml").build());
 

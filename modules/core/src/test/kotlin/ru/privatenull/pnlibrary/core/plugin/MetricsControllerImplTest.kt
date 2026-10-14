@@ -14,6 +14,28 @@ import java.util.function.Supplier
 
 class MetricsControllerImplTest {
     @Test
+    fun `enabling bStats adds it to a FastStats only configuration`() {
+        val requests = mutableListOf<List<MetricsProviderConfiguration>>()
+        val service = object : MetricsService {
+            override fun open(owner: Any, projectId: Int): PluginMetrics = RecordingMetrics(projectId)
+            override fun open(owner: Any, configurations: Collection<MetricsProviderConfiguration>): PluginMetrics {
+                requests += configurations.toList()
+                return RecordingMetrics(10)
+            }
+        }
+        val controller = MetricsControllerImpl(
+            Any(), service,
+            ModuleMetricsDefinition(
+                providers = listOf(MetricsProviderConfiguration(MetricsProvider.FASTSTATS, token = "test-token")),
+            ),
+        )
+        controller.enable(10)
+        assertEquals(setOf(MetricsProvider.BSTATS, MetricsProvider.FASTSTATS),
+            requests.single().map { it.provider }.toSet())
+        controller.close()
+    }
+
+    @Test
     fun `FastStats facade follows enabled session lifecycle`() {
         val reporter = object : ru.privatenull.pnlibrary.api.metrics.ErrorReporter {
             override fun capture(error: ru.privatenull.pnlibrary.api.metrics.TelemetryError) = Unit

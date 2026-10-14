@@ -42,7 +42,8 @@ class MetricsBuilder {
         return configurations.toList()
     }
 
-    internal fun configure(metrics: PluginMetrics) {
+    /** Replays registered chart callbacks when a runtime session is created or restarted. */
+    fun configure(metrics: PluginMetrics) {
         configurers.forEach { it.accept(metrics) }
     }
 

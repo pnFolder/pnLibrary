@@ -13,10 +13,10 @@ internal data class ModuleMetricsDefinition(
     init {
         require(providers.size <= 2) { "at most two metrics providers are supported" }
         require(providers.map { it.provider }.distinct().size == providers.size) {
-            "metrics providers must be unique"
+            "Each metrics provider may be configured only once; combine bStats and FastStats in one metrics block"
         }
     }
 
     val projectId: Int?
-        get() = providers.firstNotNullOfOrNull { it.projectId }
+        get() = providers.firstOrNull { it.provider == ru.privatenull.pnlibrary.api.metrics.MetricsProvider.BSTATS }?.projectId
 }

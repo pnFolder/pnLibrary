@@ -1,15 +1,31 @@
 package ru.privatenull.pnlibrary.core.metrics
 
 import org.junit.jupiter.api.Assertions.assertEquals
-import org.junit.jupiter.api.Assertions.assertTrue
+import org.junit.jupiter.api.Assertions.assertThrows
 import org.junit.jupiter.api.Test
-import ru.privatenull.pnlibrary.api.metrics.MetricsCapability
 import ru.privatenull.pnlibrary.api.metrics.MetricsProvider
 import ru.privatenull.pnlibrary.api.metrics.PluginMetrics
 import java.util.concurrent.atomic.AtomicInteger
 import java.util.function.Supplier
 
 class CompositePluginMetricsTest {
+    @Test
+    fun `close releases every backend even when one backend fails`() {
+        val calls = mutableListOf<String>()
+        val first = RecordingMetrics(MetricsProvider.BSTATS, calls)
+        val second = object : PluginMetrics by RecordingMetrics(MetricsProvider.FASTSTATS, calls) {
+            override fun close() {
+                calls += "faststats:close"
+                error("shutdown failed")
+            }
+        }
+        val composite = CompositePluginMetrics(listOf(first, second))
+        assertThrows(IllegalStateException::class.java) { composite.close() }
+        assertEquals(listOf("faststats:close", "bstats:close"), calls)
+        composite.close()
+        assertEquals(listOf("faststats:close", "bstats:close"), calls)
+    }
+
     @Test
     fun `composite exposes the error reporter owned by its provider`() {
         val reporter = object : ru.privatenull.pnlibrary.api.metrics.ErrorReporter {
@@ -36,7 +52,6 @@ class CompositePluginMetricsTest {
 
         assertEquals(setOf(MetricsProvider.BSTATS, MetricsProvider.FASTSTATS), composite.providers)
         assertEquals(listOf("bstats:chart", "faststats:chart", "faststats:close", "bstats:close"), calls)
-        assertTrue(composite.capabilities.contains(MetricsCapability.CHARTS))
     }
 
     private class RecordingMetrics(

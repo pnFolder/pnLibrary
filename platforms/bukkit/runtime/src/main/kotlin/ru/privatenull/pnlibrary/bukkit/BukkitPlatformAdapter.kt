@@ -75,7 +75,8 @@ internal class BukkitPlatformAdapter(
 
         override fun flush() = Unit
 
-        override fun close() = Unit
+        /** Releases bindings and native log observation once. */
+    override fun close() = Unit
     }
 
     override val type: PlatformType = PlatformType.BUKKIT
@@ -122,10 +123,12 @@ internal class BukkitPlatformAdapter(
             }
         }
 
+    /** Sends legacy-formatted output to the server console. */
     override fun console(owner: Any, message: String) {
         Bukkit.getConsoleSender().sendMessage(message)
     }
 
+    /** Reads native plugin metadata, warning and returning null for unsupported owners. */
     override fun ownerMetadata(owner: Any): PluginSnapshot? {
         val target = owner as? Plugin
             ?: return unsupportedOwner(owner)
@@ -133,11 +136,13 @@ internal class BukkitPlatformAdapter(
         return target.toSnapshot()
     }
 
+    /** Returns installed plugin versions for compatibility checks. */
     override fun installedPlugins(): Map<String, String> =
         Bukkit.getPluginManager().plugins.associate { installedPlugin ->
             installedPlugin.name to installedPlugin.description.version
         }
 
+    /** Collects typed platform metadata without individual player identities. */
     override fun snapshot(): PlatformSnapshot =
         PlatformSnapshot(
             name = implementationName,
@@ -146,6 +151,7 @@ internal class BukkitPlatformAdapter(
             plugins = Bukkit.getPluginManager().plugins.map { it.toSnapshot() },
         )
 
+    /** Creates a policy context for the native Bukkit plugin owner. */
     override fun remotePolicyContext(
         owner: Any,
         metadata: PluginMetadata,
@@ -153,11 +159,13 @@ internal class BukkitPlatformAdapter(
     ): RemotePolicyContext =
         BukkitRemotePolicyContextFactory.create(owner as Plugin, values)
 
+    /** Disables a native plugin through Bukkit's plugin manager. */
     override fun disableOwner(owner: Any): Boolean {
         Bukkit.getPluginManager().disablePlugin(owner as Plugin)
         return true
     }
 
+    /** Registers or removes the native warning and error observer. */
     @Synchronized
     override fun observeNativeLogs(
         observer: ((Any, LogLevel, String, Throwable?) -> Unit)?,
@@ -172,6 +180,7 @@ internal class BukkitPlatformAdapter(
         nativeLogObserver = observer
     }
 
+    /** Registers commands and lifecycle listeners, rolling back partial initialization. */
     override fun bind(library: PnLibrary) {
         check(!closed.get()) {
             "Bukkit platform adapter is closed"
@@ -193,6 +202,7 @@ internal class BukkitPlatformAdapter(
         }
     }
 
+    /** Collects details on the appropriate server scheduler with a bounded wait. */
     override fun diagnosticDetails(
         includeSensitive: Boolean,
     ): Map<String, Any?> {
@@ -213,6 +223,7 @@ internal class BukkitPlatformAdapter(
         return result.get(DIAGNOSTIC_TIMEOUT_SECONDS, TimeUnit.SECONDS)
     }
 
+    /** Runs work on the primary thread or Folia global-region scheduler. */
     override fun executeGlobal(task: Runnable) {
         if (closed.get()) return
 
@@ -228,10 +239,12 @@ internal class BukkitPlatformAdapter(
         }
     }
 
+    /** Runs work after server readiness, falling back to global dispatch. */
     override fun whenServerReady(task: Runnable) {
         lifecycleListener?.whenServerReady(task) ?: executeGlobal(task)
     }
 
+    /** Routes player replies to their Folia region, otherwise to global dispatch. */
     override fun executeReply(recipient: Any, task: Runnable) {
         if (closed.get()) return
 
@@ -252,6 +265,7 @@ internal class BukkitPlatformAdapter(
         bound.set(false)
     }
 
+    /** Dispatches global work without linking optional Folia classes. */
     private fun executeFoliaGlobal(task: Runnable) {
         try {
             val scheduler = Bukkit::class.java
@@ -278,6 +292,7 @@ internal class BukkitPlatformAdapter(
         }
     }
 
+    /** Dispatches player work to its owning Folia region. */
     private fun executeFoliaEntity(
         player: Player,
         task: Runnable,
@@ -309,6 +324,7 @@ internal class BukkitPlatformAdapter(
         }
     }
 
+    /** Releases command and lifecycle registrations. */
     private fun releaseBindings() {
         controlRegistration?.close()
         controlRegistration = null
@@ -317,6 +333,7 @@ internal class BukkitPlatformAdapter(
         lifecycleListener = null
     }
 
+    /** Converts native plugin metadata to the shared snapshot contract. */
     private fun Plugin.toSnapshot(): PluginSnapshot =
         PluginSnapshot(
             id = name,

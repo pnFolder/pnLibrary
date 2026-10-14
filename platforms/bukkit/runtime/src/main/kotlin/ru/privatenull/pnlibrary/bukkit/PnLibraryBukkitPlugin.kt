@@ -68,6 +68,7 @@ class PnLibraryBukkitPlugin : JavaPlugin(), Listener {
         closePlatformResources()
     }
 
+    /** Registers Bukkit-only services and the native platform view. */
     private fun installBukkitServices(host: PnLibraryRuntimeHost, adapter: BukkitPlatformAdapter) {
         val menuService = MenuServiceImpl(this, host.library.tasks.scope(this))
         host.registerService(ServerInfo::class.java, adapter.serverInfo)
@@ -107,6 +108,7 @@ class PnLibraryBukkitPlugin : JavaPlugin(), Listener {
         if (event.plugin.name.equals("PlayerPoints", ignoreCase = true)) disconnectCurrency("playerpoints")
     }
 
+    /** Connects PlaceholderAPI only when the optional plugin is enabled. */
     private fun connectPlaceholderApi() {
         val host = runtimeHost ?: return
         if (placeholderApiBridge != null || !server.pluginManager.isPluginEnabled("PlaceholderAPI")) return
@@ -114,12 +116,14 @@ class PnLibraryBukkitPlugin : JavaPlugin(), Listener {
         logger.info("PlaceholderAPI integration connected")
     }
 
+    /** Releases the current PlaceholderAPI registration. */
     private fun disconnectPlaceholderApi() {
         placeholderApiBridge?.close()
         placeholderApiBridge = null
         logger.info("PlaceholderAPI integration disconnected")
     }
 
+    /** Connects available Vault and PlayerPoints providers once. */
     private fun connectCurrencyAdapters() {
         val library = runtimeHost?.library ?: return
         if ("vault" !in currencyBridges && server.pluginManager.isPluginEnabled("Vault")) {
@@ -136,11 +140,13 @@ class PnLibraryBukkitPlugin : JavaPlugin(), Listener {
         }
     }
 
+    /** Releases the selected optional currency provider. */
     private fun disconnectCurrency(id: String) {
         currencyBridges.remove(id)?.close()
         logger.info("${if (id == "vault") "Vault" else "PlayerPoints"} currency disconnected")
     }
 
+    /** Releases optional integrations and native services during shutdown or startup rollback. */
     private fun closePlatformResources() {
         HandlerList.unregisterAll(this as Listener)
         runCatching { placeholderApiBridge?.close() }

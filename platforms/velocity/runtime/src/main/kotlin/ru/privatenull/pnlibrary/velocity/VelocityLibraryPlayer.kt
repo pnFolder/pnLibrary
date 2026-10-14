@@ -1,8 +1,8 @@
 package ru.privatenull.pnlibrary.velocity
 
+import com.velocitypowered.api.proxy.Player
 import net.kyori.adventure.sound.Sound
 import net.kyori.adventure.text.Component
-import com.velocitypowered.api.proxy.Player
 import ru.privatenull.pnlibrary.api.actions.LibraryPlayer
 import ru.privatenull.pnlibrary.api.actions.PlayerEffect
 import ru.privatenull.pnlibrary.api.actions.PlayerParticle
@@ -18,10 +18,12 @@ internal class VelocityLibraryPlayer private constructor(
     private val player: Player,
 ) : LibraryPlayer {
     /** Returns the player's stable UUID. */
-    override val uniqueId: UUID get() = player.uniqueId
+    override val uniqueId: UUID
+        get() = player.uniqueId
 
     /** Returns the player's current username. */
-    override val name: String get() = player.username
+    override val name: String
+        get() = player.username
 
     /** Checks a permission using Velocity's native audience. */
     override fun hasPermission(permission: String): Boolean = player.hasPermission(permission)

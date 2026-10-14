@@ -32,9 +32,8 @@ the provider's chart interface; chart configuration must occur before the sessio
 SDK feature flags and raw SDK objects are not exposed by this facade.
 
 The runtime can create one delegate or a `CompositePluginMetrics` session. Shared chart calls
-are fanned out to every enabled delegate. Provider-specific features are guarded by
-`MetricsCapability` and must not be silently converted into a chart when a provider cannot
-represent them.
+are fanned out to every enabled delegate. Access FastStats-specific features through
+`fastStatsOrNull()`; it returns null when that backend is unavailable.
 
 ```kotlin
 builder.metrics {
@@ -50,8 +49,21 @@ The same block can call `it.enabled(false)` when a module should declare provide
 charts without starting their sessions immediately. Runtime chart changes remain available
 through `context.metrics.configure { ... }`.
 
-The collection-based `MetricsProviderConfiguration` overload remains available for advanced
-integrations, but normal plugins do not need to construct those objects.
+Plugin registration exposes only `builder.metrics { ... }`. Numeric and collection-based
+registration overloads have been removed. Existing plugins using those overloads must
+migrate to the DSL and be rebuilt. Low-level runtime services still use provider
+configuration objects internally.
+
+Separate `builder.metrics(...)` calls accumulate different providers instead of replacing
+the previous setup. Declaration order does not change which backends receive shared charts.
+Declaring the same provider twice is rejected without changing the existing setup; use the
+runtime controller to change a bStats project ID. Chart callbacks accumulate across calls.
+The latest declaration's `enabled` value controls whether the combined session starts.
+
+`context.metrics.enable()` starts every enabled configured backend.
+`context.metrics.enable(projectId)` adds or enables bStats without removing FastStats.
+`changeProjectId(projectId)` updates bStats while retaining the other backend.
+`disable()` closes both backends but retains their configuration for the next enable.
 
 Every module now receives `ModuleContext.errors`. The local pipeline always sanitizes,
 deduplicates and bounds events, even when no remote provider is enabled. When FastStats is

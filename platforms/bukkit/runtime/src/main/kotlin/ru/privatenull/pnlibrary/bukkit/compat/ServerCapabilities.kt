@@ -64,7 +64,8 @@ object ServerCapabilities {
     }
 
     /** Returns whether [className] can be linked without initializing the class. */
-    fun hasClass(className: String): Boolean = try {
+    fun hasClass(className: String): Boolean =
+        try {
             Class.forName(className, false, javaClass.classLoader)
             true
         } catch (_: ClassNotFoundException) {

@@ -10,6 +10,7 @@ import ru.privatenull.pnlibrary.common.minecraft.MinecraftVersion
 
 /** Creates remote-policy contexts from Velocity runtime metadata. */
 object VelocityRemotePolicyContextFactory {
+
     /**
      * Builds a context for [plugin] on [server] and appends caller-defined policy [values].
      *
@@ -19,29 +20,43 @@ object VelocityRemotePolicyContextFactory {
      */
     @JvmStatic
     @JvmOverloads
-    fun create(plugin: Any, server: ProxyServer, values: Map<String, String> = emptyMap()): RemotePolicyContext {
-        val description = server.pluginManager.fromInstance(plugin).orElseThrow().description
-        val version = server.version.version
+    fun create(
+        plugin: Any,
+        server: ProxyServer,
+        values: Map<String, String> = emptyMap(),
+    ): RemotePolicyContext {
+        val manager = server.pluginManager
+        val descriptor = manager.fromInstance(plugin)
+            .orElseThrow()
+            .description
+
+        val proxy = server.version
+
+        val product = ProductInfo(
+            descriptor.id,
+            descriptor.name.orElse(descriptor.id),
+            descriptor.version.orElse("unknown"),
+        )
+
+        val platform = PlatformInfo(
+            PlatformType.VELOCITY,
+            proxy.name,
+            proxy.version,
+        )
+
+        val runtime = ServerInfo(
+            proxy.version,
+            MinecraftVersion.parseInfo(null),
+        )
+
         return RemotePolicyContext.builder()
-            .product(
-                ProductInfo(
-                    description.id,
-                    description.name.orElse(description.id),
-                    description.version.orElse("unknown"))
-            )
-            .platform(
-                PlatformInfo(
-                    PlatformType.VELOCITY,
-                    server.version.name,
-                    version)
-            )
-            .server(
-                ServerInfo(
-                    version,
-                    MinecraftVersion.parseInfo(null))
-            )
+            .product(product)
+            .platform(platform)
+            .server(runtime)
             .values(values)
-            .nativeHandle(plugin).nativeHandle(server).nativeHandle(server.pluginManager)
+            .nativeHandle(plugin)
+            .nativeHandle(server)
+            .nativeHandle(manager)
             .build()
     }
 }

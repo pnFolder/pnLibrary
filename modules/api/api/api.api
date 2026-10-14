@@ -1868,16 +1868,6 @@ public abstract interface class ru/privatenull/pnlibrary/api/metrics/FastStatsFa
 	public abstract fun getMetrics ()Lru/privatenull/pnlibrary/api/metrics/PluginMetrics;
 }
 
-public final class ru/privatenull/pnlibrary/api/metrics/MetricsCapability : java/lang/Enum {
-	public static final field CHARTS Lru/privatenull/pnlibrary/api/metrics/MetricsCapability;
-	public static final field CONTEXT_ATTRIBUTES Lru/privatenull/pnlibrary/api/metrics/MetricsCapability;
-	public static final field CUSTOM_VALUES Lru/privatenull/pnlibrary/api/metrics/MetricsCapability;
-	public static final field ERROR_TRACKING Lru/privatenull/pnlibrary/api/metrics/MetricsCapability;
-	public static fun getEntries ()Lkotlin/enums/EnumEntries;
-	public static fun valueOf (Ljava/lang/String;)Lru/privatenull/pnlibrary/api/metrics/MetricsCapability;
-	public static fun values ()[Lru/privatenull/pnlibrary/api/metrics/MetricsCapability;
-}
-
 public final class ru/privatenull/pnlibrary/api/metrics/MetricsProvider : java/lang/Enum {
 	public static final field BSTATS Lru/privatenull/pnlibrary/api/metrics/MetricsProvider;
 	public static final field FASTSTATS Lru/privatenull/pnlibrary/api/metrics/MetricsProvider;
@@ -1917,7 +1907,6 @@ public abstract interface class ru/privatenull/pnlibrary/api/metrics/PluginMetri
 	public abstract fun close ()V
 	public abstract fun drilldownPie (Ljava/lang/String;Ljava/util/function/Supplier;)Lru/privatenull/pnlibrary/api/metrics/PluginMetrics;
 	public fun fastStatsOrNull ()Lru/privatenull/pnlibrary/api/metrics/FastStatsFacade;
-	public fun getCapabilities ()Ljava/util/Set;
 	public fun getErrorReporter ()Lru/privatenull/pnlibrary/api/metrics/ErrorReporter;
 	public abstract fun getProjectId ()I
 	public fun getProvider ()Lru/privatenull/pnlibrary/api/metrics/MetricsProvider;
@@ -2481,6 +2470,7 @@ public final class ru/privatenull/pnlibrary/api/plugin/MetricsBuilder {
 	public final fun bStats (I)Lru/privatenull/pnlibrary/api/plugin/MetricsBuilder;
 	public final fun build ()Ljava/util/List;
 	public final fun charts (Ljava/util/function/Consumer;)Lru/privatenull/pnlibrary/api/plugin/MetricsBuilder;
+	public final fun configure (Lru/privatenull/pnlibrary/api/metrics/PluginMetrics;)V
 	public final fun enabled (Z)Lru/privatenull/pnlibrary/api/plugin/MetricsBuilder;
 	public final fun fastStats (Ljava/lang/String;)Lru/privatenull/pnlibrary/api/plugin/MetricsBuilder;
 	public final fun getEnabled ()Z
@@ -2550,12 +2540,7 @@ public abstract interface class ru/privatenull/pnlibrary/api/plugin/PluginBuilde
 	public abstract fun downloads (Lru/privatenull/pnlibrary/api/downloads/FileDownloads;)Lru/privatenull/pnlibrary/api/plugin/PluginBuilder;
 	public abstract fun listener (Lru/privatenull/pnlibrary/api/events/Listener;)Lru/privatenull/pnlibrary/api/plugin/PluginBuilder;
 	public abstract fun metadata (Ljava/util/function/Consumer;)Lru/privatenull/pnlibrary/api/plugin/PluginBuilder;
-	public fun metrics (I)Lru/privatenull/pnlibrary/api/plugin/PluginBuilder;
-	public fun metrics (ILjava/util/function/Consumer;)Lru/privatenull/pnlibrary/api/plugin/PluginBuilder;
-	public fun metrics (IZ)Lru/privatenull/pnlibrary/api/plugin/PluginBuilder;
-	public abstract fun metrics (IZLjava/util/function/Consumer;)Lru/privatenull/pnlibrary/api/plugin/PluginBuilder;
-	public abstract fun metrics (Ljava/util/Collection;ZLjava/util/function/Consumer;)Lru/privatenull/pnlibrary/api/plugin/PluginBuilder;
-	public fun metrics (Ljava/util/function/Consumer;)Lru/privatenull/pnlibrary/api/plugin/PluginBuilder;
+	public abstract fun metrics (Ljava/util/function/Consumer;)Lru/privatenull/pnlibrary/api/plugin/PluginBuilder;
 	public abstract fun options (Ljava/util/function/Consumer;)Lru/privatenull/pnlibrary/api/plugin/PluginBuilder;
 	public abstract fun product (Lru/privatenull/pnlibrary/api/updates/ProductDescriptor;)Lru/privatenull/pnlibrary/api/plugin/PluginBuilder;
 	public fun remotePolicy (Ljava/util/function/Consumer;)Lru/privatenull/pnlibrary/api/plugin/PluginBuilder;

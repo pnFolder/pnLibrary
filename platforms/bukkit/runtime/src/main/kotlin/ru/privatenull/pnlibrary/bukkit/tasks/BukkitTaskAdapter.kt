@@ -17,9 +17,11 @@ import kotlin.math.ceil
 
 private const val NANOS_PER_TICK = 50_000_000.0
 
+/** Rounds a non-zero duration up to the next server tick. */
 internal fun durationToTicks(value: Duration): Long =
     if (value.isZero) 0 else ceil(value.toNanos() / NANOS_PER_TICK).toLong().coerceAtLeast(1)
 
+/** Releases one-shot callbacks even when their execution throws. */
 internal fun withCompletionRelease(request: PlatformTaskRequest, release: () -> Unit): PlatformTaskRequest =
     request.copy(callback = Runnable {
         try {
@@ -29,11 +31,20 @@ internal fun withCompletionRelease(request: PlatformTaskRequest, release: () -> 
         }
     })
 
-internal class BukkitTaskAdapter(private val plugin: Plugin) : PlatformTaskAdapter {
+/**
+ * Owns scheduled tasks and adapts requests to Bukkit or Folia.
+ *
+ * Ordinary Bukkit executes entity and global tasks on the primary thread. Folia dispatches
+ * entity tasks to their player scheduler and global tasks to the global-region scheduler.
+ */
+internal class BukkitTaskAdapter(
+    private val plugin: Plugin,
+) : PlatformTaskAdapter {
     private val foliaScheduler by lazy { FoliaSchedulerBridge(plugin) }
     private val closed = AtomicBoolean(false)
     private val handles = ConcurrentHashMap.newKeySet<NativeHandle>()
 
+    /** Schedules a callback and tracks it until completion or cancellation. */
     override fun schedule(request: PlatformTaskRequest): PlatformTaskHandle {
         check(!closed.get()) { "Bukkit task adapter is closed" }
         val reference = AtomicReference<NativeHandle?>()
@@ -42,7 +53,11 @@ internal class BukkitTaskAdapter(private val plugin: Plugin) : PlatformTaskAdapt
             completed.set(true)
             reference.get()?.release()
         }
-        val native = if (ServerCapabilities.isFolia) foliaScheduler.schedule(forwarded) else scheduleBukkit(forwarded)
+        val native = if (ServerCapabilities.isFolia) {
+            foliaScheduler.schedule(forwarded)
+        } else {
+            scheduleBukkit(forwarded)
+        }
         return NativeHandle(native).also { handle ->
             reference.set(handle)
             handles += handle
@@ -52,6 +67,7 @@ internal class BukkitTaskAdapter(private val plugin: Plugin) : PlatformTaskAdapt
         }
     }
 
+    /** Routes ordinary Bukkit requests to asynchronous or primary-thread scheduling. */
     private fun scheduleBukkit(request: PlatformTaskRequest): Any {
         val scheduler = Bukkit.getScheduler()
         val delay = durationToTicks(request.delay)
@@ -64,6 +80,7 @@ internal class BukkitTaskAdapter(private val plugin: Plugin) : PlatformTaskAdapt
         }
     }
 
+    /** Schedules asynchronous one-shot or repeating work. */
     private fun scheduleBukkitAsync(
         scheduler: BukkitScheduler,
         callback: Runnable,
@@ -75,6 +92,7 @@ internal class BukkitTaskAdapter(private val plugin: Plugin) : PlatformTaskAdapt
         else -> scheduler.runTaskAsynchronously(plugin, callback)
     }
 
+    /** Schedules primary-thread one-shot or repeating work. */
     private fun scheduleBukkitGlobal(
         scheduler: BukkitScheduler,
         callback: Runnable,
@@ -86,14 +104,20 @@ internal class BukkitTaskAdapter(private val plugin: Plugin) : PlatformTaskAdapt
         else -> scheduler.runTask(plugin, callback)
     }
 
+    /** Cancels all native tasks still owned by this adapter. */
     override fun close() {
         if (!closed.compareAndSet(false, true)) return
         handles.toList().forEach { it.cancel() }
         handles.clear()
     }
 
-    private inner class NativeHandle(private val native: Any) : PlatformTaskHandle {
+    /** Tracks a native task and makes cancellation idempotent. */
+    private inner class NativeHandle(
+        private val native: Any,
+    ) : PlatformTaskHandle {
         private val cancelled = AtomicBoolean(false)
+
+        /** Cancels the native task at most once. */
         override fun cancel(): Boolean {
             if (!cancelled.compareAndSet(false, true)) return false
             when (native) {
@@ -103,6 +127,8 @@ internal class BukkitTaskAdapter(private val plugin: Plugin) : PlatformTaskAdapt
             handles.remove(this)
             return true
         }
+
+        /** Untracks completed work without cancelling the native handle. */
         fun release() {
             handles.remove(this)
         }

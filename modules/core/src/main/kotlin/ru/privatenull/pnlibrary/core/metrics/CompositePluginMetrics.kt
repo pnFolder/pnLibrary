@@ -1,9 +1,9 @@
 package ru.privatenull.pnlibrary.core.metrics
 
-import ru.privatenull.pnlibrary.api.metrics.MetricsCapability
 import ru.privatenull.pnlibrary.api.metrics.MetricsProvider
 import ru.privatenull.pnlibrary.api.metrics.PluginMetrics
 import java.util.function.Supplier
+import java.util.concurrent.atomic.AtomicBoolean
 
 /**
  * Fan-out session used when more than one metrics provider is enabled.
@@ -16,6 +16,8 @@ class CompositePluginMetrics(
     private val delegates: List<PluginMetrics>,
     private val onClose: () -> Unit = {},
 ) : PluginMetrics {
+    private val closed = AtomicBoolean(false)
+
     /** Returns the first FastStats capability exposed by a delegate. */
     override fun fastStatsOrNull() = delegates.firstNotNullOfOrNull { it.fastStatsOrNull() }
     /** Returns the first error reporter exposed by a delegate. */
@@ -25,9 +27,9 @@ class CompositePluginMetrics(
         require(delegates.isNotEmpty()) { "At least one metrics delegate is required" }
     }
 
-    /** Compatibility project ID exposed by the first delegate. */
+    /** Public bStats project ID, independent of backend declaration order. */
     override val projectId: Int
-        get() = delegates.first().projectId
+        get() = delegates.firstOrNull { it.provider == MetricsProvider.BSTATS }?.projectId ?: 0
 
     /** Compatibility provider exposed by the first delegate. */
     override val provider: MetricsProvider
@@ -36,11 +38,6 @@ class CompositePluginMetrics(
     /** Union of every represented metrics provider. */
     override val providers: Set<MetricsProvider> = delegates
         .flatMap { it.providers }
-        .toSet()
-
-    /** Union of every delegate capability. */
-    override val capabilities: Set<MetricsCapability> = delegates
-        .flatMap { it.capabilities }
         .toSet()
 
     /** Registers a simple pie chart with every delegate. */
@@ -75,11 +72,23 @@ class CompositePluginMetrics(
 
     /** Closes delegates in reverse order and invokes the ownership callback. */
     override fun close() {
-        try {
-            delegates.asReversed().forEach { it.close() }
-        } finally {
-            onClose()
+        if (!closed.compareAndSet(false, true)) return
+        var failure: Throwable? = null
+        for (delegate in delegates.asReversed()) {
+            try {
+                delegate.close()
+            } catch (error: Throwable) {
+                if (failure == null) failure = error
+                else if (failure !== error) failure.addSuppressed(error)
+            }
         }
+        try {
+            onClose()
+        } catch (error: Throwable) {
+            if (failure == null) failure = error
+            else if (failure !== error) failure.addSuppressed(error)
+        }
+        failure?.let { throw it }
     }
 
     /** Starts submission for every delegate. */

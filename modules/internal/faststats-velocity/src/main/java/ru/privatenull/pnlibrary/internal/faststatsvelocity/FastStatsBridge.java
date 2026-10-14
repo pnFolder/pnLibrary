@@ -1,7 +1,9 @@
 package ru.privatenull.pnlibrary.internal.faststatsvelocity;
+
 import dev.faststats.ErrorTracker;
 import dev.faststats.data.Metric;
 import java.util.concurrent.Callable;
+
 public final class FastStatsBridge {
     private FastStatsBridge() { }
     public static Metric<?> string(String id, Callable<String> value) { return Metric.string(id, value); }

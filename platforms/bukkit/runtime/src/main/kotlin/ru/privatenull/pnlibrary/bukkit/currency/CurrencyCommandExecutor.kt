@@ -20,6 +20,12 @@ import java.util.concurrent.CompletionStage
 import java.util.concurrent.ConcurrentHashMap
 import java.security.SecureRandom
 
+/**
+ * Builds and executes administrator-facing portable currency commands.
+ *
+ * Mutations honor provider capabilities and configured console-confirmation requirements.
+ * Asynchronous operation results are delivered through the server scheduler.
+ */
 internal class CurrencyCommandExecutor(
     private val plugin: Plugin,
     private val currencies: CurrencyProviderRegistry,
@@ -27,6 +33,7 @@ internal class CurrencyCommandExecutor(
     private val pending = ConcurrentHashMap<String, PendingOperation>()
     private val random = SecureRandom()
 
+    /** Builds the currency command tree with capability-aware permissions and suggestions. */
     fun definition(): CommandDefinition = command("pncurrency") {
         aliases("pncurrencies")
         executes(::executePortable)
@@ -330,27 +337,31 @@ internal class CurrencyCommandExecutor(
         info(sender, "/pncurrency ${currency.key} <balance|add|take|set|reset|pay|history>")
         return true
     }
+
     private fun help(sender: CommandSender): Boolean {
         info(sender, "/pncurrency list")
         info(sender, "/pncurrency <namespace:name> <operation> ...")
         info(sender, "Console: /pncurrency <confirm|cancel> <code>")
         return true
     }
+
     private fun allowed(sender: CommandSender, permission: String): Boolean {
         if (sender.hasPermission(permission)) return true
         error(sender, "Missing permission: $permission")
         return false
     }
+
     private fun playerId(name: String): UUID? = Bukkit.getPlayerExact(name)?.uniqueId
         ?: Bukkit.getOfflinePlayers().firstOrNull { it.name.equals(name, true) }?.uniqueId
     private fun permissionPart(value: String) = value.lowercase().replace(Regex("[^a-z0-9_.-]"), ".")
     private fun settings(currency: Currency) = currency.extension(CurrencyCommandSettings::class.java) ?: DEFAULT_MESSAGES
     private fun configured(sender: CommandSender, currency: Currency, template: String, values: Map<String, String> = emptyMap()) {
-        var message = settings(currency).prefix.replace("{currency}", currency.descriptor.displayName)
+        val message = settings(currency).prefix.replace("{currency}", currency.descriptor.displayName)
         var body = template
         values.forEach { (key, value) -> body = body.replace("{$key}", value) }
         sender.sendMessage(ChatColor.translateAlternateColorCodes('&', message + body))
     }
+
     private fun info(sender: CommandSender, message: String) {
         sender.sendMessage("§8[§6Currency§8] §f$message")
     }

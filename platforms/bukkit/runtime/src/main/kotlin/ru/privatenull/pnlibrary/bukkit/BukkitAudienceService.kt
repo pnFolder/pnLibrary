@@ -21,6 +21,7 @@ import java.util.concurrent.atomic.AtomicBoolean
  */
 class BukkitAudienceService(plugin: Plugin) : AutoCloseable {
     private val logger = plugin.logger
+    private val pluginServer = plugin.server
     private val audiences = try {
         BukkitAudiences.create(plugin)
     } catch (error: Throwable) {
@@ -53,16 +54,17 @@ class BukkitAudienceService(plugin: Plugin) : AutoCloseable {
         pluginServer.onlinePlayers.map(::player)
     }
 
-    private val pluginServer = plugin.server
-
+    /** Delivers a chat component through the available transport. */
     internal fun sendMessage(player: Player, message: Component) {
         send(player, message, false)
     }
 
+    /** Delivers an action bar, with a legacy fallback where necessary. */
     internal fun sendActionBar(player: Player, message: Component) {
         send(player, message, true)
     }
 
+    /** Tries Adventure delivery before switching to the sticky legacy fallback. */
     private fun send(player: Player, message: Component, actionBar: Boolean) {
         val provider = audiences
         if (provider != null && !fallbackOnly.get()) {
@@ -82,6 +84,7 @@ class BukkitAudienceService(plugin: Plugin) : AutoCloseable {
         if (actionBar) sendLegacyActionBar(player, legacy) else player.sendMessage(legacy)
     }
 
+    /** Uses optional Spigot action-bar APIs, falling back to ordinary chat. */
     private fun sendLegacyActionBar(player: Player, message: String) {
         runCatching {
             val chatType = Class.forName("net.md_5.bungee.api.ChatMessageType").getField("ACTION_BAR").get(null)
@@ -94,6 +97,7 @@ class BukkitAudienceService(plugin: Plugin) : AutoCloseable {
         }.onFailure { player.sendMessage(message) }
     }
 
+    /** Tries Adventure sound delivery, then the native Bukkit sound API. */
     internal fun playSound(player: Player, sound: Sound): Boolean {
         val provider = audiences
         if (provider != null && !fallbackOnly.get()) {

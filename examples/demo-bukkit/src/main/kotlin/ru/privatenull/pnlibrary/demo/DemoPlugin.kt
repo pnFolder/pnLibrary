@@ -53,12 +53,15 @@ class DemoPlugin : JavaPlugin() {
                     .value("demo", "pndemo")
                     .build())
             }
-            builder.metrics(32592, true) { metrics ->
-                metrics.simplePie("server_platform") {
-                    server.name
-                }
-                metrics.singleLineChart("demo_joins") {
-                    state.joins.get().toInt()
+            builder.metrics { configuration ->
+                configuration.bStats(32592)
+                configuration.charts { metrics ->
+                    metrics.simplePie("server_platform") {
+                        server.name
+                    }
+                    metrics.singleLineChart("demo_joins") {
+                        state.joins.get().toInt()
+                    }
                 }
             }
             builder.updates("pnFolder", "pnLibrary") { updates ->

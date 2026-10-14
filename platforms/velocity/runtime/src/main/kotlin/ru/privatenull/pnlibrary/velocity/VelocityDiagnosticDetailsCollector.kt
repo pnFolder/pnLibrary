@@ -14,6 +14,7 @@ internal class VelocityDiagnosticDetailsCollector(
 ) {
     private val collectionHistory = ArrayDeque<Map<String, Any?>>()
 
+    /** Returns the artifact checksum, or `null` when the file cannot be read. */
     private fun sha256(file: File): String? = runCatching {
         val digest = MessageDigest.getInstance("SHA-256")
         FileInputStream(file).use { input ->
@@ -27,6 +28,7 @@ internal class VelocityDiagnosticDetailsCollector(
         digest.digest().joinToString("") { byte -> "%02x".format(byte) }
     }.getOrNull()
 
+    /** Selects a percentile from the observed ping samples using a floor index. */
     private fun percentile(values: List<Long>, percentile: Double): Long? {
         if (values.isEmpty()) return null
         val sorted = values.sorted()
@@ -36,6 +38,7 @@ internal class VelocityDiagnosticDetailsCollector(
 
     private companion object {
         const val HIGH_PING_THRESHOLD = 200.0
+        const val MAX_HISTORY_SAMPLES = 32
     }
 
     /** Builds a diagnostic report from [snapshot], respecting the privacy flag. */
@@ -49,6 +52,7 @@ internal class VelocityDiagnosticDetailsCollector(
         }
     }
 
+    /** Adds native metadata, privacy-aware player details and derived health signals. */
     private fun collectDiagnosticDetails(
         includeSensitive: Boolean,
         details: MutableMap<String, Any?>,
@@ -91,7 +95,10 @@ internal class VelocityDiagnosticDetailsCollector(
             (dependencies as? Collection<*>).orEmpty()
                 .filterIsInstance<Map<*, *>>()
                 .filter { it["optional"] == true }
-                .mapNotNull { dependency -> dependency["id"]?.toString()?.let { linkedMapOf("from" to pluginId.toString(), "to" to it) } }
+                .mapNotNull { dependency ->
+                    val target = dependency["id"]?.toString() ?: return@mapNotNull null
+                    linkedMapOf("from" to pluginId.toString(), "to" to target)
+                }
         }
         details["dependencyGraph"] = linkedMapOf(
             "requiredEdges" to requiredEdges,
@@ -288,7 +295,9 @@ internal class VelocityDiagnosticDetailsCollector(
             "status" to (analytics?.get("status") ?: "healthy"),
         )
         collectionHistory.addLast(sample)
-        while (collectionHistory.size > 32) collectionHistory.removeFirst()
+        while (collectionHistory.size > MAX_HISTORY_SAMPLES) {
+            collectionHistory.removeFirst()
+        }
         details["collectionAnalytics"] = linkedMapOf(
             "sampleCount" to collectionHistory.size,
             "byStatus" to collectionHistory.groupingBy { it["status"].toString() }.eachCount(),
@@ -300,6 +309,7 @@ internal class VelocityDiagnosticDetailsCollector(
         (details["analytics"] as? MutableMap<String, Any?>)?.set("collection", details["collectionAnalytics"])
     }
 
+    /** Derives dependency, backend and latency warnings from the collected sections. */
     private fun proxyAnalyticsSignals(details: Map<String, Any?>): List<Map<String, Any?>> {
         val signals = mutableListOf<Map<String, Any?>>()
         if (dependencyHealthCount(details) > 0) {
@@ -310,7 +320,13 @@ internal class VelocityDiagnosticDetailsCollector(
             signals += linkedMapOf("code" to "duplicatePluginIds", "severity" to "warning", "count" to duplicateIds.size)
         }
         val unhealthy = (details["pluginHealth"] as? Collection<*>)?.count { (it as? Map<*, *>)?.get("status") != "healthy" } ?: 0
-        if (unhealthy > 0) signals += linkedMapOf("code" to "unhealthyPlugins", "severity" to "warning", "count" to unhealthy)
+        if (unhealthy > 0) {
+            signals += linkedMapOf(
+                "code" to "unhealthyPlugins",
+                "severity" to "warning",
+                "count" to unhealthy,
+            )
+        }
         val summary = details["serverSummary"] as? Map<*, *>
         if ((summary?.get("emptyServerCount") as? Number)?.toInt()?.let { it > 0 } == true) {
             signals += linkedMapOf("code" to "emptyBackendServers", "severity" to "info")
@@ -327,22 +343,29 @@ internal class VelocityDiagnosticDetailsCollector(
         return signals
     }
 
-    private fun proxyAnalyticsStatus(details: Map<String, Any?>): String = when {
-        proxyAnalyticsSignals(details).any { it["severity"] == "critical" } -> "critical"
-        proxyAnalyticsSignals(details).isNotEmpty() -> "attention"
-        else -> "healthy"
+    /** Summarizes health using the highest severity observed in the report. */
+    private fun proxyAnalyticsStatus(details: Map<String, Any?>): String {
+        val signals = proxyAnalyticsSignals(details)
+        return when {
+            signals.any { it["severity"] == "critical" } -> "critical"
+            signals.isNotEmpty() -> "attention"
+            else -> "healthy"
+        }
     }
 
+    /** Counts plugins with missing required dependencies. */
     private fun dependencyHealthCount(details: Map<String, Any?>): Int =
         (details["dependencyHealth"] as? Collection<*>)
             ?.count { (it as? Map<*, *>)?.get("healthy") == false }
             ?: 0
 
+    /** Counts missing dependencies in the requested dependency-health field. */
     private fun dependencyMissingCount(details: Map<String, Any?>, key: String): Int =
         (details["dependencyHealth"] as? Collection<*>)
             ?.sumOf { ((it as? Map<*, *>)?.get(key) as? Collection<*>)?.size ?: 0 }
             ?: 0
 
+    /** Aggregates plugin states and dependency totals. */
     private fun pluginDistribution(value: Any?): Map<String, Any?> {
         val plugins = (value as? Collection<*>)?.filterIsInstance<Map<*, *>>().orEmpty()
         return linkedMapOf(
@@ -352,6 +375,7 @@ internal class VelocityDiagnosticDetailsCollector(
         )
     }
 
+    /** Reports how many plugin health records belong to each reported state. */
     private fun pluginHealthCoverage(value: Any?): Map<String, Any?> {
         val plugins = (value as? Collection<*>)?.filterIsInstance<Map<*, *>>().orEmpty()
         return linkedMapOf(
@@ -362,26 +386,37 @@ internal class VelocityDiagnosticDetailsCollector(
         )
     }
 
+    /** Aggregates the sizes of readable plugin artifacts. */
     private fun artifactDistribution(value: Any?): Map<String, Any?> {
         val artifacts = (value as? Collection<*>)?.filterIsInstance<Map<*, *>>().orEmpty()
         val sizes = artifacts.mapNotNull { (it["sizeBytes"] as? Number)?.toLong() }
-        return linkedMapOf("pluginCount" to artifacts.size, "availableArtifacts" to sizes.size, "totalJarBytes" to sizes.sum(), "largestJarBytes" to sizes.maxOrNull())
+        return linkedMapOf(
+            "pluginCount" to artifacts.size,
+            "availableArtifacts" to sizes.size,
+            "totalJarBytes" to sizes.sum(),
+            "largestJarBytes" to sizes.maxOrNull(),
+        )
     }
 
+    /** Finds dependency paths that return to a node already present in the path. */
     private fun dependencyCycles(edges: List<Map<String, String>>): List<List<String>> {
         val graph = edges.groupBy({ it["from"].orEmpty() }, { it["to"].orEmpty() })
         val cycles = linkedSetOf<List<String>>()
         fun visit(node: String, path: List<String>) {
             graph[node].orEmpty().forEach { next ->
                 val index = path.indexOf(next)
-                if (index >= 0) cycles += (path.subList(index, path.size) + next)
-                else if (path.size < graph.size + 1) visit(next, path + next)
+                if (index >= 0) {
+                    cycles += (path.subList(index, path.size) + next)
+                } else if (path.size < graph.size + 1) {
+                    visit(next, path + next)
+                }
             }
         }
         graph.keys.forEach { visit(it, listOf(it)) }
         return cycles.toList()
     }
 
+    /** Summarizes backend load, player shares and unassigned connections. */
     private fun backendDistribution(counts: Map<String, Int>, totalPlayers: Int): Map<String, Any?> {
         val denominator = totalPlayers.coerceAtLeast(1).toDouble()
         val nodes = counts.entries

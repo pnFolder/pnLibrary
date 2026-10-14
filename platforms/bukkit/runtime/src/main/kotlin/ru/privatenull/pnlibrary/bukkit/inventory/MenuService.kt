@@ -6,6 +6,8 @@ import org.bukkit.Bukkit
 import org.bukkit.entity.Player
 import org.bukkit.event.EventHandler
 import org.bukkit.event.EventPriority
+import org.bukkit.event.HandlerList
+import org.bukkit.event.inventory.InventoryType
 import org.bukkit.event.Listener
 import org.bukkit.event.inventory.InventoryClickEvent
 import org.bukkit.event.inventory.InventoryCloseEvent
@@ -27,7 +29,7 @@ internal class MenuServiceImpl(
     private val host: Plugin,
     private val tasks: TaskScope,
 ) : MenuService, Listener, AutoCloseable {
-    private val sessions = hashMapOf<java.util.UUID, Session>()
+    private val sessions = hashMapOf<UUID, Session>()
     private val owners = IdentityHashMap<Plugin, MutableSet<Session>>()
     private val closed = AtomicBoolean(false)
 
@@ -35,6 +37,7 @@ internal class MenuServiceImpl(
         host.server.pluginManager.registerEvents(this, host)
     }
 
+    /** Opens an owned menu, replacing the player's previous session. */
     override fun open(owner: Plugin, player: Player, menu: Menu): MenuSession {
         check(!closed.get()) { "Menu service is closed" }
         check(owner.isEnabled) { "Plugin ${owner.name} is disabled" }
@@ -52,6 +55,7 @@ internal class MenuServiceImpl(
         return session
     }
 
+    /** Returns the player's currently tracked menu session. */
     override fun session(player: Player): MenuSession? = sessions[player.uniqueId]
     override fun close(owner: Plugin) =
         owners[owner]?.toList()?.forEach { it.terminate(closeView = true, notifyOwner = false) } ?: Unit
@@ -61,9 +65,10 @@ internal class MenuServiceImpl(
         if (!closed.compareAndSet(false, true)) return
         sessions.values.toList().forEach { it.terminate(closeView = true, notifyOwner = false) }
         tasks.close()
-        org.bukkit.event.HandlerList.unregisterAll(this)
+        HandlerList.unregisterAll(this)
     }
 
+    /** Dispatches owned menu clicks while protecting non-editable slots. */
     @EventHandler(priority = EventPriority.HIGHEST, ignoreCancelled = false)
     fun click(event: InventoryClickEvent) {
         val player = event.whoClicked as? Player ?: return
@@ -81,12 +86,26 @@ internal class MenuServiceImpl(
         }
         val definition = session.menu.items[event.rawSlot]
         event.isCancelled = definition?.editable != true
-        val click = MenuClick(session, event.rawSlot, event.currentItem,
-            event.cursor, event.click, event.action, true, if (session.menu.type == MenuType.ANVIL) renameText(session.inventory) else null)
+        val renameText = if (session.menu.type == MenuType.ANVIL) {
+            renameText(session.inventory)
+        } else {
+            null
+        }
+        val click = MenuClick(
+            session,
+            event.rawSlot,
+            event.currentItem,
+            event.cursor,
+            event.click,
+            event.action,
+            true,
+            renameText,
+        )
         definition?.handler?.handle(click)
         session.menu.clickHandler?.handle(click)
     }
 
+    /** Prevents dragging into protected menu slots. */
     @EventHandler(priority = EventPriority.HIGHEST, ignoreCancelled = false)
     fun drag(event: InventoryDragEvent) {
         val player = event.whoClicked as? Player ?: return
@@ -100,27 +119,32 @@ internal class MenuServiceImpl(
         val session = sessions[event.player.uniqueId] ?: return
         if (owns(event.inventory, session)) session.finish(true)
     }
+    /** Releases a departing player's menu session. */
     @EventHandler
     fun quit(event: PlayerQuitEvent) {
         sessions.remove(event.player.uniqueId)?.finish(true)
     }
 
+    /** Closes menus belonging to a disabled plugin. */
     @EventHandler
     fun disable(event: PluginDisableEvent) {
         close(event.plugin)
     }
 
+    /** Checks both inventory identity and its unique menu holder. */
     private fun owns(inventory: Inventory, session: Session): Boolean {
         val holder = inventory.holder as? MenuInventoryHolder ?: return false
         return inventory === session.inventory && holder.id == session.id
     }
 
+    /** Creates the native inventory matching the requested menu type. */
     private fun create(menu: Menu, holder: InventoryHolder): Inventory {
         if (menu.type == MenuType.CHEST) return Bukkit.createInventory(holder, menu.size, menu.title)
-        val type = org.bukkit.event.inventory.InventoryType.valueOf(menu.type.name)
+        val type = InventoryType.valueOf(menu.type.name)
         return Bukkit.createInventory(holder, type, menu.title)
     }
 
+    /** Reads anvil rename text through compatible APIs or item-name fallbacks. */
     private fun renameText(inventory: Inventory): String? = try {
         (inventory.javaClass.methods.firstOrNull { it.name == "getRenameText" && it.parameterTypes.isEmpty() }
             ?.invoke(inventory) as? String)?.takeIf { it.isNotBlank() }
@@ -130,6 +154,7 @@ internal class MenuServiceImpl(
         null
     }
 
+    /** Owns one player's menu inventory and its lifecycle callbacks. */
     private inner class Session(
         val id: UUID,
         val owner: Plugin,
@@ -138,30 +163,37 @@ internal class MenuServiceImpl(
         override val inventory: Inventory,
     ) : MenuSession {
         private var finished = false
+        /** Updates a validated inventory slot. */
         override fun set(slot: Int, item: ItemStack?) {
             require(slot in 0 until inventory.size)
             inventory.setItem(slot, item)
         }
+        /** Reads the item in the requested slot. */
         override fun get(slot: Int): ItemStack? = inventory.getItem(slot)
+        /** Invokes the menu renderer while the session remains active. */
         override fun refresh() {
             if (!finished) menu.renderer?.render(this)
         }
 
+        /** Schedules a refresh on the player's execution context. */
         override fun refreshAfter(delay: Duration) {
             tasks.laterEntity(player, delay, Runnable { refresh() })
         }
+
         override fun close() {
             if (finished) return
             if (owns(player.openInventory.topInventory, this)) player.closeInventory()
             else finish(true)
         }
 
+        /** Finishes the session and optionally closes its native view. */
         fun terminate(closeView: Boolean, notifyOwner: Boolean) {
             if (finished) return
             finish(notifyOwner)
             if (closeView && owns(player.openInventory.topInventory, this)) player.closeInventory()
         }
 
+        /** Removes session tracking and optionally notifies the owning plugin. */
         fun finish(callback: Boolean) {
             if (finished) return
             finished = true
@@ -174,11 +206,13 @@ internal class MenuServiceImpl(
         }
     }
 
+    /** Identifies a pnLibrary inventory without relying on its title. */
     private class MenuInventoryHolder(val id: UUID) : InventoryHolder {
         private lateinit var backing: Inventory
         fun bind(inventory: Inventory) {
             backing = inventory
         }
+
         override fun getInventory(): Inventory = backing
     }
 }

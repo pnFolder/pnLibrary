@@ -18,6 +18,7 @@ import java.util.Locale
 
 /** Builds the detailed console-only pnLibrary status card. */
 internal object BukkitConsoleStatusRenderer {
+    /** Builds the console status card from registered update snapshots. */
     fun render(entries: List<UpdateRegistration>): List<String> {
         val card = ConsoleCard.builder(THEME, "СОСТОЯНИЕ PNFOLDER")
             .mascot("^.^", "pnLibrary", "библиотека платформы")
@@ -49,6 +50,7 @@ internal object BukkitConsoleStatusRenderer {
             .render()
     }
 
+    /** Appends channel settings, release history, and the selected update. */
     private fun renderRegisteredUpdates(
         card: ConsoleCard.Builder,
         entries: List<UpdateRegistration>,
@@ -106,6 +108,7 @@ internal object BukkitConsoleStatusRenderer {
             )
     }
 
+    /** Displays the latest known release in each configured display channel. */
     private fun renderReleaseHistory(
         card: ConsoleCard.Builder,
         snapshot: UpdateSnapshot,
@@ -141,6 +144,7 @@ internal object BukkitConsoleStatusRenderer {
         }
     }
 
+    /** Ensures the selected compatible release is represented in the displayed history. */
     private fun mergeSelectedRelease(
         history: MutableList<ReleaseSummary>,
         snapshot: UpdateSnapshot,
@@ -158,18 +162,22 @@ internal object BukkitConsoleStatusRenderer {
         }
     }
 
+    /** Summarizes whether a registered product has an available update. */
     private fun status(entries: List<UpdateRegistration>): String {
         val available = entries.firstOrNull { it.snapshot.hasAvailableUpdate() }?.snapshot
             ?: return "Все зарегистрированные компоненты актуальны"
         return "Доступно обновление · ${BukkitStatusLabels.channel(available)}"
     }
 
+    /** Checks whether the snapshot represents a downloadable update. */
     private fun UpdateSnapshot.hasAvailableUpdate(): Boolean =
         state == UpdateState.UPDATE_AVAILABLE || state == UpdateState.AVAILABLE
 
+    /** Combines the publication age with an absolute UTC timestamp. */
     private fun publishedAtLabel(instant: Instant): String =
         "${publishedAge(instant)} · ${UTC_DATE_TIME.format(instant)}"
 
+    /** Formats a non-negative release age in minutes, hours, or days. */
     private fun publishedAge(instant: Instant): String {
         val elapsed = Duration.between(instant, Instant.now()).coerceAtLeast(Duration.ZERO)
         return when {
@@ -179,8 +187,10 @@ internal object BukkitConsoleStatusRenderer {
         }
     }
 
+    /** Formats the current instant in the console UTC format. */
     private fun utcNow(): String = UTC_DATE_TIME.format(Instant.now())
 
+    /** Returns the localized heading for a release channel. */
     private fun channelLabel(channel: UpdateChannel): String = when (channel) {
         UpdateChannel.STABLE -> "Стабильный канал"
         UpdateChannel.RC -> "Канал RC"
@@ -189,6 +199,7 @@ internal object BukkitConsoleStatusRenderer {
         UpdateChannel.DEV -> "Разрабатываемый канал Dev"
     }
 
+    /** Returns the console color associated with a release channel. */
     private fun channelColor(channel: UpdateChannel): String = when (channel) {
         UpdateChannel.STABLE -> "§a"
         UpdateChannel.RC -> "§b"
@@ -213,6 +224,7 @@ internal object BukkitConsoleStatusRenderer {
 
 /** Shared human-readable labels used by console and in-game status output. */
 internal object BukkitStatusLabels {
+    /** Reads the JVM implementation and version from runtime properties. */
     fun javaRuntime(): String {
         val version = System.getProperty("java.version")?.trim().orEmpty()
         val vm = System.getProperty("java.vm.name")?.trim().orEmpty()
@@ -227,6 +239,7 @@ internal object BukkitStatusLabels {
             .ifBlank { Runtime.version().toString() }
     }
 
+    /** Returns the localized, colored channel label for a snapshot. */
     fun channel(snapshot: UpdateSnapshot): String = when (snapshot.channel) {
         UpdateChannel.STABLE -> "§aстабильный канал§r"
         UpdateChannel.RC -> "§bканал RC§r"
@@ -235,6 +248,7 @@ internal object BukkitStatusLabels {
         UpdateChannel.DEV -> "§cразрабатываемый канал Dev§r"
     }
 
+    /** Returns the branded library name or the registered product name. */
     fun product(product: String): String =
         if (product.equals("pnlibrary", true)) "pnLibrary" else product
 }

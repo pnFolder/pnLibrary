@@ -10,20 +10,28 @@ import ru.privatenull.pnlibrary.core.metrics.BStatsMetricsSession
 import ru.privatenull.pnlibrary.spi.metrics.PlatformMetricsFactory
 import ru.privatenull.pnlibrary.internal.faststats.bungee.FastStatsMetricsSession
 
-/** Creates independently managed bStats sessions for BungeeCord [Plugin] owners. */
+/** Opens independently managed bStats and FastStats sessions for BungeeCord plugins. */
 class BungeeMetricsFactory : PlatformMetricsFactory {
+
     /** Opens every enabled metrics provider configured for the BungeeCord plugin [owner]. */
     override fun open(owner: Any, configurations: Collection<MetricsProviderConfiguration>): PluginMetrics {
         require(owner is Plugin) { "Bungee metrics owner must be a Bungee Plugin" }
-        val delegates: List<PluginMetrics> = configurations.filter { it.enabled }.map { configuration ->
+        val delegates = configurations.filter { it.enabled }.map<MetricsProviderConfiguration, PluginMetrics> { configuration ->
             when (configuration.provider) {
-                MetricsProvider.BSTATS -> this.open(owner, requireNotNull(configuration.projectId) { "bStats requires projectId" }) as PluginMetrics
-                MetricsProvider.FASTSTATS -> FastStatsMetricsSession(owner, requireNotNull(configuration.token) { "FastStats requires token" }) as PluginMetrics
+                MetricsProvider.BSTATS -> open(
+                    owner,
+                    requireNotNull(configuration.projectId) { "bStats requires a project ID" },
+                ) as PluginMetrics
+                MetricsProvider.FASTSTATS -> FastStatsMetricsSession(
+                    owner,
+                    requireNotNull(configuration.token) { "FastStats requires a project token" },
+                ) as PluginMetrics
             }
         }
         require(delegates.isNotEmpty()) { "At least one metrics provider must be enabled" }
         return if (delegates.size == 1) delegates.single() else CompositePluginMetrics(delegates)
     }
+
     /**
      * Opens a BungeeCord bStats session.
      *

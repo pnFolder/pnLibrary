@@ -18,12 +18,18 @@ import java.util.LinkedHashSet
 import java.util.concurrent.TimeUnit
 import java.util.concurrent.atomic.AtomicBoolean
 
-/** Thin BungeeCord transport for portable commands. */
+/**
+ * Registers portable commands with BungeeCord and owns their native registrations.
+ *
+ * Native tab completion is synchronous, so suggestions have a bounded one-second wait.
+ * Closing this adapter unregisters commands in reverse registration order.
+ */
 internal class BungeeCommandAdapter internal constructor(
     private val plugin: Any,
     private val registrar: BungeeNativeCommandRegistrar,
     private val audience: (NativeCommandSender) -> AudienceSender,
 ) : PlatformCommandAdapter {
+    /** Creates the native command registrar and audience bridge. */
     constructor(plugin: Plugin) : this(
         plugin,
         DefaultBungeeNativeCommandRegistrar(plugin),
@@ -33,6 +39,7 @@ internal class BungeeCommandAdapter internal constructor(
     private val closed = AtomicBoolean(false)
     private val registrations = LinkedHashSet<Registration>()
 
+    /** Registers execution and tab-completion callbacks with the native command manager. */
     override fun register(
         owner: Any,
         command: CommandDefinition,
@@ -51,26 +58,33 @@ internal class BungeeCommandAdapter internal constructor(
                 }.getOrDefault(emptyList())
             },
         )
-        return Registration(native).also { synchronized(registrations) { registrations += it } }
+        val registration = Registration(native)
+        synchronized(registrations) {
+            registrations += registration
+        }
+        return registration
     }
 
+    /** Unregisters owned commands once. */
     override fun close() {
         if (!closed.compareAndSet(false, true)) return
         val current = synchronized(registrations) { registrations.toList() }
         current.asReversed().forEach(Registration::close)
     }
 
+    /** Converts native invocation arguments to the portable command context. */
     private fun context(
         sender: NativeCommandSender,
         alias: String,
         arguments: Array<String>,
-    ) = CommandContext(
+    ): CommandContext = CommandContext(
         sender = BungeeCommandSender(audience(sender)),
         arguments = arguments.toList(),
         invokedAlias = alias,
         currentInput = arguments.lastOrNull().orEmpty(),
     )
 
+    /** Tracks one native command registration with idempotent cleanup. */
     private inner class Registration(
         private val native: PlatformCommandRegistration,
     ) : PlatformCommandRegistration {
@@ -84,16 +98,23 @@ internal class BungeeCommandAdapter internal constructor(
 
 }
 
+/** Delegates portable command replies to the native audience bridge. */
 private class BungeeCommandSender(
     private val audience: AudienceSender,
 ) : CommandSender, AudienceSender by audience {
+
     override fun send(message: Component) = audience.sendMessage(message)
+
     override fun sendMessage(text: Component) = audience.sendMessage(text)
+
     override fun actionBar(text: Component) = audience.actionBar(text)
+
     override fun playSound(sound: Sound): Boolean = audience.playSound(sound)
 }
 
+/** Native registration boundary used by the runtime and command tests. */
 internal interface BungeeNativeCommandRegistrar {
+    /** Registers handlers and returns an unregister operation. */
     fun register(
         command: CommandDefinition,
         execute: (NativeCommandSender, Array<String>) -> Unit,
@@ -101,6 +122,7 @@ internal interface BungeeNativeCommandRegistrar {
     ): PlatformCommandRegistration
 }
 
+/** Installs command and tab-completion handlers in the proxy plugin manager. */
 private class DefaultBungeeNativeCommandRegistrar(
     private val plugin: Plugin,
 ) : BungeeNativeCommandRegistrar {

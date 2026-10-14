@@ -21,6 +21,7 @@ import java.util.logging.Logger
  */
 internal object AtomicYamlStore {
 
+    /** Optional file transformation executed before validating and replacing the target. */
     fun interface FilePostProcessor {
         /**
          * Mutates or validates the temporary file before read-back validation.
@@ -60,7 +61,12 @@ internal object AtomicYamlStore {
             val readback = YamlConfiguration()
             readback.load(temporary.toFile())
             try {
-                Files.move(temporary, target.toPath(), StandardCopyOption.ATOMIC_MOVE, StandardCopyOption.REPLACE_EXISTING)
+                Files.move(
+                    temporary,
+                    target.toPath(),
+                    StandardCopyOption.ATOMIC_MOVE,
+                    StandardCopyOption.REPLACE_EXISTING,
+                )
             } catch (_: AtomicMoveNotSupportedException) {
                 Files.move(temporary, target.toPath(), StandardCopyOption.REPLACE_EXISTING)
             }

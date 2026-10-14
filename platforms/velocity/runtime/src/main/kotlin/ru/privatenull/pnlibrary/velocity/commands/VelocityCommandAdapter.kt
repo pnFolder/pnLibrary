@@ -92,6 +92,7 @@ internal class VelocityCommandAdapter internal constructor(
     ) : PlatformCommandRegistration {
         private val registrationClosed = AtomicBoolean(false)
 
+        /** Unregisters this command once and removes it from adapter tracking. */
         override fun close() {
             if (!registrationClosed.compareAndSet(false, true)) {
                 return
@@ -109,12 +110,16 @@ internal class VelocityCommandAdapter internal constructor(
 private class VelocityCommandSender(
     private val audience: AudienceSender,
 ) : CommandSender, AudienceSender by audience {
+    /** Sends the command response through the wrapped audience. */
     override fun send(message: Component) = audience.sendMessage(message)
 
+    /** Sends a chat message through the wrapped audience. */
     override fun sendMessage(text: Component) = audience.sendMessage(text)
 
+    /** Displays a transient action-bar message. */
     override fun actionBar(text: Component) = audience.actionBar(text)
 
+    /** Delegates sound playback and reports whether it is supported. */
     override fun playSound(sound: Sound): Boolean = audience.playSound(sound)
 }
 
@@ -134,6 +139,7 @@ private class DefaultVelocityNativeCommandRegistrar(
     private val server: ProxyServer,
 ) : VelocityNativeCommandRegistrar {
 
+    /** Registers execution and asynchronous suggestions with Velocity. */
     override fun register(
         command: CommandDefinition,
         execute: (CommandSource, Array<String>) -> Unit,
