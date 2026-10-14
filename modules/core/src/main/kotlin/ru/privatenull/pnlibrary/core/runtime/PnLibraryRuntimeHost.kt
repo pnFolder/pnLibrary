@@ -1,8 +1,6 @@
 package ru.privatenull.pnlibrary.core.runtime
 
-import ru.privatenull.pnlibrary.api.platform.PlatformType
 import ru.privatenull.pnlibrary.api.runtime.PnLibrary
-import ru.privatenull.pnlibrary.api.updates.PluginUpdateRequest
 import ru.privatenull.pnlibrary.spi.platform.PlatformAdapter
 import java.nio.file.Path
 import java.util.concurrent.atomic.AtomicBoolean
@@ -87,17 +85,7 @@ class PnLibraryRuntimeHost private constructor(
                 val currentVersion = platform.ownerDetails(owner)["version"]
                     ?.takeIf { it.isNotBlank() }
                     ?: error("The platform did not expose the pnLibrary version")
-                val artifactId = platform.type.distributionArtifact()
-                val monitor = library.updates.register(
-                    owner,
-                    ru.privatenull.pnlibrary.api.updates.ProductDescriptor.library(currentVersion),
-                    PluginUpdateRequest.builder()
-                        .repository("pnFolder", "pnLibrary")
-                        .supportedApi(1, 1)
-                        .automaticDownload(false)
-                        .artifact("(?i)^pnLibrary-[0-9].*-$artifactId-java[0-9]+\\.jar$", 8)
-                        .build(),
-                )
+                val monitor = RuntimeUpdateMonitor.register(library, owner, platform)
                 PnLibraryRuntimeHost(library, monitor, platform.summaryName()).also {
                     runCatching {
                         val box = library.logging.box(owner, "pnLibrary", currentVersion)
@@ -119,8 +107,3 @@ private fun PlatformAdapter.summaryName(): String =
     if (implementationName.equals(type.displayName, ignoreCase = true)) type.displayName
     else "${type.displayName} / $implementationName"
 
-private fun PlatformType.distributionArtifact(): String = when (this) {
-    PlatformType.BUKKIT -> "bukkit"
-    PlatformType.BUNGEECORD -> "bungee"
-    PlatformType.VELOCITY -> "velocity"
-}

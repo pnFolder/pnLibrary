@@ -1,0 +1,35 @@
+package ru.privatenull.pnlibrary.core.runtime
+
+import ru.privatenull.pnlibrary.api.runtime.PnLibrary
+import ru.privatenull.pnlibrary.api.platform.PlatformType
+import ru.privatenull.pnlibrary.api.updates.PluginUpdateRequest
+import ru.privatenull.pnlibrary.api.updates.UpdateRegistration
+import ru.privatenull.pnlibrary.spi.platform.PlatformAdapter
+
+/** Registers the pnLibrary self-update monitor for one native platform distribution. */
+internal object RuntimeUpdateMonitor {
+    fun register(
+        library: PnLibrary,
+        owner: Any,
+        platform: PlatformAdapter,
+    ): UpdateRegistration {
+        val currentVersion = platform.ownerDetails(owner)["version"]
+            ?.takeIf { it.isNotBlank() }
+            ?: error("The platform did not expose the pnLibrary version")
+        val artifactId = when (platform.type) {
+            PlatformType.BUKKIT -> "bukkit"
+            PlatformType.BUNGEECORD -> "bungee"
+            PlatformType.VELOCITY -> "velocity"
+        }
+        return library.updates.register(
+            owner,
+            ru.privatenull.pnlibrary.api.updates.ProductDescriptor.library(currentVersion),
+            PluginUpdateRequest.builder()
+                .repository("pnFolder", "pnLibrary")
+                .supportedApi(1, 1)
+                .automaticDownload(false)
+                .artifact("(?i)^pnLibrary-[0-9].*-$artifactId-java[0-9]+\\.jar$", 8)
+                .build(),
+        )
+    }
+}
