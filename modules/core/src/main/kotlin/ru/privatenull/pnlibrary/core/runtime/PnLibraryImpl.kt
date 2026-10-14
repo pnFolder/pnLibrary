@@ -195,34 +195,8 @@ internal class PnLibraryImpl(
                 ),
             ),
         ),
-        "tasks" to taskSnapshots.map { task ->
-            linkedMapOf<String, Any?>(
-                "id" to task.id.value,
-                "name" to task.name,
-                "owner" to task.ownerName,
-                "execution" to task.executionKind.name,
-                "status" to task.status.name,
-                "runCount" to task.runCount,
-                "skippedCount" to task.skippedCount,
-                "lastFailure" to task.lastFailure,
-            )
-        },
-        "taskSummary" to linkedMapOf<String, Any?>(
-            "count" to taskSnapshots.size,
-            "byStatus" to taskSnapshots.groupingBy { it.status.name }.eachCount(),
-            "byExecution" to taskSnapshots.groupingBy { it.executionKind.name }.eachCount(),
-            "runCount" to taskSnapshots.sumOf { it.runCount },
-            "skippedCount" to taskSnapshots.sumOf { it.skippedCount },
-            "failedCount" to taskSnapshots.count { it.lastFailure != null },
-            "failuresByOwner" to taskSnapshots
-                .filter { it.lastFailure != null }
-                .groupingBy { it.ownerName }
-                .eachCount(),
-            "failureMessages" to taskSnapshots
-                .mapNotNull { it.lastFailure?.take(256) }
-                .groupingBy { it }
-                .eachCount(),
-        ),
+        "tasks" to RuntimeTaskDetails.entries(taskSnapshots),
+        "taskSummary" to RuntimeTaskDetails.summary(taskSnapshots),
         "updates" to updateSnapshots.map { registration ->
             val snapshot = registration.snapshot
             linkedMapOf<String, Any?>(
