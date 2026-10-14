@@ -17,6 +17,7 @@ import ru.privatenull.pnlibrary.spi.metrics.PlatformMetricsFactory
 import ru.privatenull.pnlibrary.spi.platform.PlatformAdapter
 import ru.privatenull.pnlibrary.spi.platform.PlatformSnapshot
 import ru.privatenull.pnlibrary.spi.platform.PluginSnapshot
+import ru.privatenull.pnlibrary.spi.platform.UncaughtExceptionLogObserver
 import ru.privatenull.pnlibrary.spi.tasks.PlatformTaskAdapter
 import java.util.concurrent.atomic.AtomicBoolean
 import java.util.logging.Level
@@ -31,8 +32,7 @@ internal class BungeePlatformAdapter(
     private val bound = AtomicBoolean()
 
     private var updateCommand: CommandRegistration? = null
-    private var previousUncaughtHandler: Thread.UncaughtExceptionHandler? = null
-    private var installedUncaughtHandler: Thread.UncaughtExceptionHandler? = null
+    private val uncaughtExceptionObserver = UncaughtExceptionLogObserver(plugin)
 
     override val type: PlatformType = PlatformType.BUNGEECORD
     override val dataFolder = plugin.dataFolder.toPath()
@@ -66,20 +66,7 @@ internal class BungeePlatformAdapter(
     /** Installs an uncaught-exception observer while preserving the previous JVM handler. */
     @Synchronized
     override fun observeNativeLogs(observer: ((Any, LogLevel, String, Throwable?) -> Unit)?) {
-        if (observer != null && installedUncaughtHandler == null) {
-            previousUncaughtHandler = Thread.getDefaultUncaughtExceptionHandler()
-            installedUncaughtHandler = Thread.UncaughtExceptionHandler { thread, error ->
-                observer(plugin, LogLevel.ERROR, "Uncaught exception on thread ${thread.name}", error)
-                previousUncaughtHandler?.uncaughtException(thread, error)
-            }
-            Thread.setDefaultUncaughtExceptionHandler(installedUncaughtHandler)
-        } else if (observer == null && installedUncaughtHandler != null) {
-            if (Thread.getDefaultUncaughtExceptionHandler() === installedUncaughtHandler) {
-                Thread.setDefaultUncaughtExceptionHandler(previousUncaughtHandler)
-            }
-            previousUncaughtHandler = null
-            installedUncaughtHandler = null
-        }
+        uncaughtExceptionObserver.observe(observer)
     }
 
     /** Sends legacy-formatted text to the proxy console. */
