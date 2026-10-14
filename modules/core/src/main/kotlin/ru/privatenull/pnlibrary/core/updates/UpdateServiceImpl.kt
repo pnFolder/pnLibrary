@@ -16,7 +16,6 @@ import java.time.Duration
 import java.util.Optional
 import java.util.UUID
 import java.util.concurrent.CompletionStage
-import java.util.concurrent.CopyOnWriteArrayList
 import java.util.concurrent.Executors
 import java.util.concurrent.atomic.AtomicBoolean
 
@@ -29,8 +28,7 @@ internal class UpdateServiceImpl(
     private val dataFolder: Path,
 ) : UpdateService, AutoCloseable {
     private val closed = AtomicBoolean(false)
-    private val entries = CopyOnWriteArrayList<RegisteredUpdate>()
-    private val entriesLock = Any()
+    private val registrations = UpdateRegistrationStore()
     private val configuration = UpdateConfiguration.load(dataFolder.resolve("updates.yml")) {
         logging.log(this, LogLevel.WARNING, it)
     }
@@ -57,7 +55,7 @@ internal class UpdateServiceImpl(
         it.start()
         execution.whenServerReady(Runnable {
             executor.execute {
-                installer.reconcilePending(entries.toList(), it::healthResolved)
+                installer.reconcilePending(registrations.snapshot(), it::healthResolved)
             }
         })
     }
@@ -93,19 +91,14 @@ internal class UpdateServiceImpl(
             stagePlan = { snapshot -> orchestrator.stage(snapshot.id) },
             onClose = ::removeRegistration,
         )
-        synchronized(entriesLock) {
-            check(!closed.get()) { "update service is closed" }
-            entries += registration
-        }
+        check(!closed.get()) { "update service is closed" }
+        registrations.add(registration)
         orchestrator.registrationsChanged()
         return registration
     }
 
-    override fun all(): List<UpdateRegistration> =
-        java.util.Collections.unmodifiableList(ArrayList(entries))
-    override fun get(product: String): UpdateRegistration? = entries.firstOrNull {
-        it.product.equals(product, true) || it.request.repositoryName.equals(product, true)
-    }
+    override fun all(): List<UpdateRegistration> = registrations.publicSnapshot()
+    override fun get(product: String): UpdateRegistration? = registrations.find(product)
     @Deprecated("Use all()", ReplaceWith("all()"))
     override fun registrations(): List<UpdateRegistration> = all()
     @Deprecated("Use get(product)", ReplaceWith("get(product)"))
@@ -119,16 +112,13 @@ internal class UpdateServiceImpl(
     }
     override fun close() {
         if (!closed.compareAndSet(false, true)) return
-        synchronized(entriesLock) {
-            entries.forEach(RegisteredUpdate::markClosed)
-            entries.clear()
-        }
+        registrations.close()
         orchestrator.close()
         resources.close()
     }
 
     private fun resolveGraph(refreshMode: RefreshMode = RefreshMode.CACHED): ResolutionResult =
-        graphResolver.resolve(entries.toList(), refreshMode)
+        graphResolver.resolve(registrations.snapshot(), refreshMode)
 
     private fun automaticAllowed(snapshot: UpdatePlanSnapshot): Boolean {
         val changed = snapshot.plan?.changes?.map(ProductChange::product).orEmpty()
@@ -138,22 +128,22 @@ internal class UpdateServiceImpl(
                 val policy = configuration.plugins[component.value]
                 configuration.pluginUpdatesEnabled && policy?.enabled != false &&
                     (policy?.automaticDownload ?: (configuration.pluginAutomaticDownload ||
-                        entries.firstOrNull { it.descriptor.id == component }?.request?.automaticDownload == true))
+                        registrations.snapshot().firstOrNull { it.descriptor.id == component }?.request?.automaticDownload == true))
             }
         }
     }
 
     private fun stageGraph(snapshot: UpdatePlanSnapshot) {
-        installer.stage(snapshot, entries.toList())
+        installer.stage(snapshot, registrations.snapshot())
     }
 
     private fun announce(snapshot: UpdatePlanSnapshot) {
-        UpdateAnnouncementRenderer.render(snapshot, entries.map { it.snapshot })
+        UpdateAnnouncementRenderer.render(snapshot, registrations.snapshot().map { it.snapshot })
             .forEach { logging.console(this, it) }
     }
 
     private fun removeRegistration(registration: RegisteredUpdate) {
-        entries.remove(registration)
+        registrations.remove(registration)
         orchestrator.registrationsChanged()
     }
 }
