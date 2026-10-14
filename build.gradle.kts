@@ -22,6 +22,8 @@ apiValidation {
             "smoke-velocity",
             "runtime",
             "runtime-spi",
+            "faststats-core",
+            "faststats-velocity",
             "update",
             "currency-runtime",
             "gradle",
@@ -85,6 +87,18 @@ subprojects {
             useJUnitPlatform()
         }
     }
+}
+
+// Public API changes must be reviewed through the same verification gate as tests.
+// The runtime SPI is intentionally internal, while the API/platform artifacts keep
+// golden signatures that protect consumers from accidental binary breakage.
+tasks.named("check") {
+    dependsOn(
+        ":modules:api:apiCheck",
+        ":platforms:bukkit:api:apiCheck",
+        ":platforms:bungee:api:apiCheck",
+        ":platforms:velocity:api:apiCheck",
+    )
 }
 
 dependencies {
