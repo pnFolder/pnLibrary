@@ -48,12 +48,17 @@ class PnLibraryVelocityPlugin @Inject constructor(
             dataFolder = dataDirectory,
             logger = logger,
         )
-        runtimeHost = PnLibraryRuntimeHost.start(
+        val host = PnLibraryRuntimeHost.start(
             this,
             adapter,
             dataDirectory.parent.resolve("update"),
-        ).also { host ->
+        )
+        try {
             host.registerPlatform(VelocityPlatform::class.java, VelocityPlatformImpl(server))
+            runtimeHost = host
+        } catch (error: Throwable) {
+            host.close()
+            throw error
         }
     }
 
