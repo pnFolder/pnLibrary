@@ -140,13 +140,7 @@ internal class BungeePlatformAdapter(
 
     /** Releases observers and command registrations once. */
     override fun close() {
-        if (lifecycle.isClosed) return
-        try {
-            lifecycle.close()
-        } finally {
-            observeNativeLogs(null)
-        }
-
+        lifecycle.close { observeNativeLogs(null) }
     }
 
     /** Converts native plugin metadata to the shared snapshot contract. */

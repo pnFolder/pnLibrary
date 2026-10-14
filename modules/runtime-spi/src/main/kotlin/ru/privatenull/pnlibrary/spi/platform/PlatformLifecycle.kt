@@ -53,10 +53,22 @@ class PlatformLifecycle {
     }
 
     @Synchronized
-    fun close(): Boolean {
+    fun close(): Boolean = close {}
+
+    /** Closes tracked resources and always runs [afterClose], even when cleanup fails. */
+    @Synchronized
+    fun close(afterClose: () -> Unit): Boolean {
         if (!closed.compareAndSet(false, true)) return false
         bound.set(false)
-        closeTracked()?.let { throw it }
+        var failure = closeTracked()
+        runCatching { afterClose() }.onFailure { cleanupFailure ->
+            if (failure == null) {
+                failure = cleanupFailure
+            } else {
+                failure?.addSuppressed(cleanupFailure)
+            }
+        }
+        failure?.let { throw it }
         return true
     }
 

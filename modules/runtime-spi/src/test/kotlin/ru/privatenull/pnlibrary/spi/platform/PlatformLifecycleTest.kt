@@ -112,4 +112,21 @@ class PlatformLifecycleTest {
         assertTrue(thrown.suppressed.single() === cleanupFailure)
         lifecycle.bind { Unit }
     }
+
+    @Test
+    fun `close runs post-close cleanup when tracked resource fails`() {
+        val lifecycle = PlatformLifecycle()
+        var cleaned = false
+        val cleanupFailure = IllegalStateException("resource close failed")
+
+        lifecycle.track(AutoCloseable { throw cleanupFailure })
+
+        val thrown = assertThrows<IllegalStateException> {
+            lifecycle.close { cleaned = true }
+        }
+
+        assertTrue(thrown === cleanupFailure)
+        assertTrue(cleaned)
+        assertFalse(lifecycle.close())
+    }
 }
