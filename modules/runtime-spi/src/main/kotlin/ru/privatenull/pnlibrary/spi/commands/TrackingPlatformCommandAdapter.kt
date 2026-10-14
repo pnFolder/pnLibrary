@@ -20,8 +20,9 @@ abstract class TrackingPlatformCommandAdapter : PlatformCommandAdapter {
         dispatcher: PlatformCommandDispatcher,
     ): PlatformCommandRegistration {
         check(!closed.get()) { "Platform command adapter is closed" }
-        return TrackedRegistration(registerNative(owner, command, dispatcher)).also {
-            synchronized(registrations) { registrations += it }
+        return TrackedRegistration(registerNative(owner, command, dispatcher)).also { registration ->
+            synchronized(registrations) { registrations += registration }
+            if (closed.get()) registration.close()
         }
     }
 
