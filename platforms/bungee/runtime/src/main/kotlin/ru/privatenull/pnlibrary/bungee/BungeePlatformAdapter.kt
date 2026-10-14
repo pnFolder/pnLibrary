@@ -18,8 +18,8 @@ import ru.privatenull.pnlibrary.spi.platform.PlatformAdapter
 import ru.privatenull.pnlibrary.spi.platform.PlatformSnapshot
 import ru.privatenull.pnlibrary.spi.platform.PluginSnapshot
 import ru.privatenull.pnlibrary.spi.platform.UncaughtExceptionLogObserver
+import ru.privatenull.pnlibrary.spi.platform.PlatformLifecycle
 import ru.privatenull.pnlibrary.spi.tasks.PlatformTaskAdapter
-import java.util.concurrent.atomic.AtomicBoolean
 import java.util.logging.Level
 
 /** Runtime adapter for BungeeCord-compatible proxy servers. */
@@ -28,8 +28,7 @@ internal class BungeePlatformAdapter(
 ) : PlatformAdapter {
     private val diagnosticDetailsCollector = BungeeDiagnosticDetailsCollector(plugin)
 
-    private val closed = AtomicBoolean()
-    private val bound = AtomicBoolean()
+    private val lifecycle = PlatformLifecycle()
 
     private var updateCommand: CommandRegistration? = null
     private val uncaughtExceptionObserver = UncaughtExceptionLogObserver(plugin)
@@ -125,12 +124,7 @@ internal class BungeePlatformAdapter(
 
     /** Registers shared update commands exactly once for this runtime. */
     override fun bind(library: PnLibrary) {
-        check(!closed.get()) {
-            "Bungee platform adapter is closed"
-        }
-        check(bound.compareAndSet(false, true)) {
-            "Bungee platform adapter is already bound"
-        }
+        lifecycle.beginBinding()
 
         updateCommand = library.commands.register(
             plugin,
@@ -140,7 +134,7 @@ internal class BungeePlatformAdapter(
 
     /** Dispatches work asynchronously; BungeeCord has no global main-thread scheduler. */
     override fun executeGlobal(task: Runnable) {
-        if (closed.get()) return
+        if (lifecycle.isClosed) return
 
         plugin.proxy.scheduler.runAsync(plugin, task)
     }
@@ -152,13 +146,13 @@ internal class BungeePlatformAdapter(
 
     /** Releases observers and command registrations once. */
     override fun close() {
-        if (!closed.compareAndSet(false, true)) return
+        if (!lifecycle.close()) return
         observeNativeLogs(null)
 
         updateCommand?.close()
         updateCommand = null
 
-        bound.set(false)
+        lifecycle.endBinding()
     }
 
     /** Converts native plugin metadata to the shared snapshot contract. */

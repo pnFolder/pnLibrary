@@ -99,6 +99,15 @@ public abstract interface class ru/privatenull/pnlibrary/spi/platform/PlatformId
 	public fun isServer ()Z
 }
 
+public final class ru/privatenull/pnlibrary/spi/platform/PlatformLifecycle {
+	public fun <init> ()V
+	public final fun beginBinding ()V
+	public final fun checkOpen ()V
+	public final fun close ()Z
+	public final fun endBinding ()V
+	public final fun isClosed ()Z
+}
+
 public abstract interface class ru/privatenull/pnlibrary/spi/platform/PlatformLogging {
 	public fun console (Ljava/lang/Object;Ljava/lang/String;)V
 	public fun getLogHandler ()Lkotlin/jvm/functions/Function4;

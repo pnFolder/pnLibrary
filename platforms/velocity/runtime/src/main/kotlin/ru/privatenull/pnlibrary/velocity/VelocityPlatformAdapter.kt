@@ -18,11 +18,11 @@ import ru.privatenull.pnlibrary.spi.platform.PlatformAdapter
 import ru.privatenull.pnlibrary.spi.platform.PlatformSnapshot
 import ru.privatenull.pnlibrary.spi.platform.PluginSnapshot
 import ru.privatenull.pnlibrary.spi.platform.UncaughtExceptionLogObserver
+import ru.privatenull.pnlibrary.spi.platform.PlatformLifecycle
 import ru.privatenull.pnlibrary.spi.tasks.PlatformTaskAdapter
 import ru.privatenull.pnlibrary.velocity.commands.VelocityCommandAdapter
 import ru.privatenull.pnlibrary.velocity.tasks.VelocityTaskAdapter
 import java.nio.file.Path
-import java.util.concurrent.atomic.AtomicBoolean
 
 /**
  * Runtime adapter for Velocity proxy servers.
@@ -38,8 +38,7 @@ internal class VelocityPlatformAdapter(
     private val logger: Logger,
 ) : PlatformAdapter {
     private val diagnosticDetailsCollector = VelocityDiagnosticDetailsCollector(server)
-    private val closed = AtomicBoolean()
-    private val bound = AtomicBoolean()
+    private val lifecycle = PlatformLifecycle()
 
     private var updateCommand: CommandRegistration? = null
     private val uncaughtExceptionObserver = UncaughtExceptionLogObserver(plugin)
@@ -125,12 +124,7 @@ internal class VelocityPlatformAdapter(
 
     /** Registers pnLibrary-owned commands and marks the adapter as active. */
     override fun bind(library: PnLibrary) {
-        check(!closed.get()) {
-            "Velocity platform adapter is closed"
-        }
-        check(bound.compareAndSet(false, true)) {
-            "Velocity platform adapter is already bound"
-        }
+        lifecycle.beginBinding()
 
         updateCommand = library.commands.register(
             plugin,
@@ -140,7 +134,7 @@ internal class VelocityPlatformAdapter(
 
     /** Schedules work on Velocity's plugin scheduler. */
     override fun executeGlobal(task: Runnable) {
-        if (closed.get()) {
+        if (lifecycle.isClosed) {
             return
         }
 
@@ -154,7 +148,7 @@ internal class VelocityPlatformAdapter(
 
     /** Releases commands, observers and lifecycle state owned by the adapter. */
     override fun close() {
-        if (!closed.compareAndSet(false, true)) {
+        if (!lifecycle.close()) {
             return
         }
         observeNativeLogs(null)
@@ -162,7 +156,7 @@ internal class VelocityPlatformAdapter(
         updateCommand?.close()
         updateCommand = null
 
-        bound.set(false)
+        lifecycle.endBinding()
     }
 
     /** Converts native plugin metadata to the shared immutable representation. */
