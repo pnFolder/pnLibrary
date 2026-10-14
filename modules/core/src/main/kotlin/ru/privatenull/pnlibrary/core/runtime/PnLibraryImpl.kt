@@ -326,27 +326,33 @@ internal class PnLibraryImpl(
 
     override fun close() {
         if (closedFlag.compareAndSet(false, true)) {
-            val shutdown = RuntimeShutdown().apply {
-                add { plugins.close() }
-                add { commandService.close() }
-                add { audienceService.close() }
-                add { platformProvider.close() }
-                add { currencyFeature.close() }
-                add { configurationService.close() }
-                add { libraryMetrics?.close() }
-                add { metricsRegistry.close() }
-                add { updateService.close() }
-                add { eventService.close() }
-                add { serviceManager.close() }
-                add { taskService.close() }
-                add { support.close() }
-                add { PnLibraryProvider.clear(this@PnLibraryImpl) }
-                add { closePlatform() }
-                add { onClose() }
-            }
-            shutdown.run()
+            createShutdownPlan().run()
             libraryMetrics = null
         }
+    }
+
+    /**
+     * Keeps the runtime shutdown order in one named lifecycle boundary.
+     * The composition root only decides when to close; this method owns what
+     * must be closed and in which order.
+     */
+    private fun createShutdownPlan(): RuntimeShutdown = RuntimeShutdown().apply {
+        add { plugins.close() }
+        add { commandService.close() }
+        add { audienceService.close() }
+        add { platformProvider.close() }
+        add { currencyFeature.close() }
+        add { configurationService.close() }
+        add { libraryMetrics?.close() }
+        add { metricsRegistry.close() }
+        add { updateService.close() }
+        add { eventService.close() }
+        add { serviceManager.close() }
+        add { taskService.close() }
+        add { support.close() }
+        add { PnLibraryProvider.clear(this@PnLibraryImpl) }
+        add { closePlatform() }
+        add { onClose() }
     }
 
     internal fun <T : Any> registerPlatform(type: Class<T>, implementation: T): AutoCloseable =
