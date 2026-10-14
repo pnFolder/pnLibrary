@@ -93,7 +93,7 @@ class PnLibraryRuntimeHost private constructor(
             owner: Any,
             platform: PlatformAdapter,
         ): PnLibraryRuntimeHost {
-            val started = RuntimeBootstrapCoordinator.start(owner, platform)
+            val started = RuntimeBootstrapCoordinator.start(owner, platform.toRuntimeContext())
             return try {
                 PnLibraryRuntimeHost(started.library, started.updateMonitor, started.platformName).also {
                     runCatching {

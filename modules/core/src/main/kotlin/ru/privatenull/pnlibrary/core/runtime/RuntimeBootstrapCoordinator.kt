@@ -1,7 +1,6 @@
 package ru.privatenull.pnlibrary.core.runtime
 
 import ru.privatenull.pnlibrary.api.runtime.PnLibrary
-import ru.privatenull.pnlibrary.spi.platform.PlatformAdapter
 
 /** Coordinates native bootstrap, shared runtime startup, and platform-facing startup metadata. */
 internal object RuntimeBootstrapCoordinator {
@@ -12,8 +11,7 @@ internal object RuntimeBootstrapCoordinator {
         val platformName: String,
     )
 
-    fun start(owner: Any, platform: PlatformAdapter): Started {
-        val context = platform.toRuntimeContext()
+    fun start(owner: Any, context: PlatformRuntimeContext): Started {
         val dataFolder = requireNotNull(context.storage.dataFolder) {
             "Platform adapter must provide the pnLibrary data folder"
         }
