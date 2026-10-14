@@ -4,8 +4,6 @@ import ru.privatenull.pnlibrary.api.diagnostics.DebugRequest
 import ru.privatenull.pnlibrary.api.diagnostics.DiagnosticReport
 import ru.privatenull.pnlibrary.api.logging.LoggingService
 import ru.privatenull.pnlibrary.api.metrics.MetricsService
-import ru.privatenull.pnlibrary.api.metrics.MetricsProvider
-import ru.privatenull.pnlibrary.api.metrics.MetricsProviderConfiguration
 import ru.privatenull.pnlibrary.api.metrics.PluginMetrics
 import ru.privatenull.pnlibrary.spi.platform.PlatformAdapter
 import ru.privatenull.pnlibrary.api.runtime.PnLibrary
@@ -277,29 +275,12 @@ internal class PnLibraryImpl(
     }
 
     private fun startLibraryMetrics() {
-        var openedSession: PluginMetrics? = null
-        val session = runCatching {
-            metricsRegistry.open(
-                owner,
-                listOf(
-                    MetricsProviderConfiguration(
-                        provider = MetricsProvider.FASTSTATS,
-                        token = FASTSTATS_TOKEN,
-                    ),
-                ),
-            ).also { metrics ->
-                openedSession = metrics
-                metrics.simplePie("platform") { platform.type.name.lowercase() }
-                metrics.simplePie("implementation") { platform.implementationName }
-                metrics.start()
-            }
-        }.onFailure { error ->
-            runCatching { openedSession?.close() }
-            logging.logger(owner, "pnLibrary").warning(
-                "FastStats metrics could not be started: ${error.message ?: error.javaClass.simpleName}",
-            )
-        }.getOrNull()
-        libraryMetrics = session
+        libraryMetrics = RuntimeMetricsBootstrap(
+            registry = metricsRegistry,
+            platform = platform,
+            owner = owner,
+            warning = { message -> logging.logger(owner, "pnLibrary").warning(message) },
+        ).start()
     }
 
     override fun close() {
@@ -340,7 +321,4 @@ internal class PnLibraryImpl(
         }
     }
 
-    private companion object {
-        const val FASTSTATS_TOKEN = "009192430b9bfffa176e8cc8dd67cad7"
-    }
 }
