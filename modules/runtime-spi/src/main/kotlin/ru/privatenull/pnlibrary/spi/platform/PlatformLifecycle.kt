@@ -18,6 +18,17 @@ class PlatformLifecycle {
         check(bound.compareAndSet(false, true)) { "Platform adapter is already bound" }
     }
 
+    /** Runs one binding transaction and rolls back the bound state if registration fails. */
+    inline fun <T> bind(block: () -> T): T {
+        beginBinding()
+        return try {
+            block()
+        } catch (error: Throwable) {
+            endBinding()
+            throw error
+        }
+    }
+
     fun endBinding() {
         bound.set(false)
     }
