@@ -6,6 +6,11 @@ import ru.privatenull.pnlibrary.api.logging.LoggingService
 import ru.privatenull.pnlibrary.api.metrics.MetricsService
 import ru.privatenull.pnlibrary.api.metrics.PluginMetrics
 import ru.privatenull.pnlibrary.spi.platform.PlatformAdapter
+import ru.privatenull.pnlibrary.spi.platform.PlatformDiagnostics
+import ru.privatenull.pnlibrary.spi.platform.PlatformExecution
+import ru.privatenull.pnlibrary.spi.platform.PlatformIdentity
+import ru.privatenull.pnlibrary.spi.platform.PlatformLogging
+import ru.privatenull.pnlibrary.spi.platform.PlatformOwnership
 import ru.privatenull.pnlibrary.api.runtime.PnLibrary
 import ru.privatenull.pnlibrary.api.runtime.PnLibraryConfig
 import ru.privatenull.pnlibrary.api.runtime.PnLibraryProvider
@@ -70,14 +75,19 @@ internal class PnLibraryImpl(
 
     private val closedFlag = AtomicBoolean(false)
     override val isClosed: Boolean get() = closedFlag.get()
+    private val platformIdentity: PlatformIdentity = platform
+    private val platformOwnership: PlatformOwnership = platform
+    private val platformExecution: PlatformExecution = platform
+    private val platformLogging: PlatformLogging = platform
+    private val platformDiagnostics: PlatformDiagnostics = platform
     private val metricsRegistry = MetricsRegistry(platform.metricsFactory)
     private var libraryMetrics: PluginMetrics? = null
     val dataFolder: Path = platform.dataFolder ?: extractDataFolder(owner)
     private val support = SupportRuntime(
         owner = owner,
-        ownership = platform,
-        identity = platform,
-        platformDiagnostics = platform,
+        ownership = platformOwnership,
+        identity = platformIdentity,
+        platformDiagnostics = platformDiagnostics,
         diagnostics = diagnostics,
         config = config,
         dataFolder = dataFolder,
@@ -86,18 +96,30 @@ internal class PnLibraryImpl(
     override val observability get() = support.service
     override val activity: ActivityService get() = observability
     override val metrics: MetricsService get() = metricsRegistry
-    override val logging: LoggingService = PlatformLoggingService(platform, platform, platform, platform, support.logs)
-    private val configurationService = ConfigurationServiceImpl(platform)
+    override val logging: LoggingService = PlatformLoggingService(
+        platformLogging,
+        platformOwnership,
+        platformDiagnostics,
+        platformIdentity,
+        support.logs,
+    )
+    private val configurationService = ConfigurationServiceImpl(platformOwnership)
     override val configurations: ConfigurationService get() = configurationService
-    private val updateService = UpdateServiceImpl(platform, platform, platform, platform, dataFolder)
+    private val updateService = UpdateServiceImpl(
+        platformLogging,
+        platformOwnership,
+        platformIdentity,
+        platformExecution,
+        dataFolder,
+    )
     private val directDownloadConfiguration = DownloadConfiguration.load(
         dataFolder.resolve("downloads.yml"),
     )
     private val directDownloadManager = DirectDownloadManager(
-        platform,
-        platform,
-        platform,
-        platform,
+        platformIdentity,
+        platformOwnership,
+        platformExecution,
+        platformLogging,
         dataFolder,
         directDownloadConfiguration,
     )
@@ -121,7 +143,7 @@ internal class PnLibraryImpl(
     }
     override val events: EventService get() = eventService
     private val placeholderValueStore = GlobalPlaceholderValueStore()
-    private val placeholderHub = PlaceholderHub(platform, placeholderValueStore)
+    private val placeholderHub = PlaceholderHub(platformIdentity, placeholderValueStore)
     private val currencyFeature = CurrencyFeature()
     private val platformProvider = PlatformProviderImpl()
     override val platforms: PlatformProvider get() = platformProvider
@@ -134,9 +156,9 @@ internal class PnLibraryImpl(
         )
     }
     override val plugins: PluginRegistry = PluginRegistryImpl(
-        ownership = platform,
-        identity = platform,
-        execution = platform,
+        ownership = platformOwnership,
+        identity = platformIdentity,
+        execution = platformExecution,
         events = eventService,
         tasks = taskService,
         services = serviceManager,
