@@ -33,5 +33,6 @@ class PlatformProviderImplTest {
             provider.require(Runnable::class.java)
         }
         assert(missing.message.orEmpty().contains(Runnable::class.java.name))
+        assert(missing.message.orEmpty().contains(TestPlatform::class.java.name))
     }
 }
