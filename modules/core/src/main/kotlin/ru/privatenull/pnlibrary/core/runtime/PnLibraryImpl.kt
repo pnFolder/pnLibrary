@@ -23,8 +23,6 @@ import ru.privatenull.pnlibrary.api.version.SemanticVersion
 import ru.privatenull.pnlibrary.core.diagnostics.DiagnosticsRegistry
 import ru.privatenull.pnlibrary.core.diagnostics.diagnosticCommand
 import ru.privatenull.pnlibrary.core.config.ConfigurationServiceImpl
-import ru.privatenull.pnlibrary.core.commands.CommandServiceImpl
-import ru.privatenull.pnlibrary.core.audiences.AudienceServiceImpl
 import ru.privatenull.pnlibrary.core.events.EventServiceImpl
 import ru.privatenull.pnlibrary.core.logging.PlatformLoggingService
 import ru.privatenull.pnlibrary.core.metrics.MetricsRegistry
@@ -34,8 +32,6 @@ import ru.privatenull.pnlibrary.core.placeholders.GlobalPlaceholderValueStore
 import ru.privatenull.pnlibrary.core.platform.PlatformProviderImpl
 import ru.privatenull.pnlibrary.currency.CurrencyFeature
 import ru.privatenull.pnlibrary.core.services.ServiceManagerImpl
-import ru.privatenull.pnlibrary.core.tasks.TaskServiceImpl
-import ru.privatenull.pnlibrary.api.tasks.TaskServiceSettings
 import ru.privatenull.pnlibrary.api.activity.ActivityService
 import ru.privatenull.pnlibrary.api.audiences.AudienceService
 import ru.privatenull.pnlibrary.api.commands.CommandService
@@ -144,16 +140,19 @@ internal class PnLibraryImpl(
         directDownloadConfiguration,
     )
     override val updates: UpdateService get() = updateService
-    private val taskSettings = TaskServiceSettings(config.taskHistoryCapacity)
-    private val taskService = TaskServiceImpl(
-        adapter = taskAdapter,
-        settings = taskSettings,
+    private val platformServices = PlatformServiceSet(
+        commandAdapter = commandAdapter,
+        audienceAdapter = audienceAdapter,
+        taskAdapter = taskAdapter,
+        platformLogging = platformLogging,
+        taskHistoryCapacity = config.taskHistoryCapacity,
         errorLogger = ::recordAndLog,
     )
+    private val taskService get() = platformServices.tasks
     override val tasks: TaskService get() = taskService
-    private val commandService = CommandServiceImpl(commandAdapter, platformLogging)
+    private val commandService get() = platformServices.commands
     override val commands: CommandService get() = commandService
-    private val audienceService = AudienceServiceImpl(audienceAdapter)
+    private val audienceService get() = platformServices.audiences
     override val audiences: AudienceService get() = audienceService
     private val serviceManager = ServiceManagerImpl()
     override val services: ServiceManager get() = serviceManager
