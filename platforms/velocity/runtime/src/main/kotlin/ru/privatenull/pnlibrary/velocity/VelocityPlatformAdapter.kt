@@ -32,12 +32,12 @@ import java.nio.file.Path
  */
 internal class VelocityPlatformAdapter(
     val plugin: Any,
-    val server: ProxyServer,
+    val proxy: ProxyServer,
     override val metricsFactory: PlatformMetricsFactory,
     override val dataFolder: Path,
     private val logger: Logger,
 ) : PlatformAdapter {
-    private val diagnosticDetailsCollector = VelocityDiagnosticDetailsCollector(server)
+    private val diagnosticDetailsCollector = VelocityDiagnosticDetailsCollector(proxy)
     private val lifecycle = PlatformLifecycle()
 
     private val uncaughtExceptionObserver = UncaughtExceptionLogObserver(plugin)
@@ -45,16 +45,16 @@ internal class VelocityPlatformAdapter(
     override val type: PlatformType = PlatformType.VELOCITY
 
     override val implementationName: String
-        get() = server.version.name.ifBlank { type.displayName }
+        get() = proxy.version.name.ifBlank { type.displayName }
 
     override val commandAdapter: PlatformCommandAdapter =
-        VelocityCommandAdapter(plugin, server)
+        VelocityCommandAdapter(plugin, proxy)
 
     override val audienceAdapter: PlatformAudienceAdapter =
-        VelocityAudienceAdapter(server)
+        VelocityAudienceAdapter(proxy)
 
     override val taskAdapter: PlatformTaskAdapter =
-        VelocityTaskAdapter(plugin, server)
+        VelocityTaskAdapter(plugin, proxy)
 
     override val logHandler: (Any, LogLevel, String, Throwable?) -> Unit =
         { _, level, message, error ->
@@ -67,7 +67,7 @@ internal class VelocityPlatformAdapter(
 
     /** Sends a legacy-formatted message to the Velocity console. */
     override fun console(owner: Any, message: String) {
-        server.consoleCommandSource.sendMessage(
+        proxy.consoleCommandSource.sendMessage(
             LEGACY_SERIALIZER.deserialize(message),
         )
     }
@@ -80,7 +80,7 @@ internal class VelocityPlatformAdapter(
 
     /** Returns metadata for a native Velocity plugin owner. */
     override fun ownerMetadata(owner: Any): PluginSnapshot? {
-        val description = server.pluginManager.plugins
+        val description = proxy.pluginManager.plugins
             .firstOrNull { it.instance.orElse(null) === owner }
             ?.description
             ?: return unsupportedOwner(owner, this)
@@ -90,22 +90,22 @@ internal class VelocityPlatformAdapter(
 
     /** Returns installed Velocity plugin IDs and their versions. */
     override fun installedPlugins(): Map<String, String> =
-        server.pluginManager.plugins.associate { installedPlugin ->
+        proxy.pluginManager.plugins.associate { installedPlugin ->
             installedPlugin.description.id to
                 installedPlugin.description.version.orElse("unknown")
         }
 
     /** Captures a lightweight, non-sensitive snapshot of the proxy. */
     override fun snapshot(): PlatformSnapshot {
-        val platformVersion = server.version
+        val platformVersion = proxy.version
 
         return PlatformSnapshot(
             name = platformVersion.name,
             version = platformVersion.version,
             vendor = platformVersion.vendor,
-            onlinePlayers = server.playerCount,
-            registeredServers = server.allServers.map { it.serverInfo.name },
-            plugins = server.pluginManager.plugins.map { it.description.toSnapshot() },
+            onlinePlayers = proxy.playerCount,
+            registeredServers = proxy.allServers.map { it.serverInfo.name },
+            plugins = proxy.pluginManager.plugins.map { it.description.toSnapshot() },
         )
     }
 
@@ -119,7 +119,7 @@ internal class VelocityPlatformAdapter(
         metadata: PluginMetadata,
         values: Map<String, String>,
     ): RemotePolicyContext =
-        VelocityRemotePolicyContextFactory.create(owner, server, values)
+        VelocityRemotePolicyContextFactory.create(owner, proxy, values)
 
     /** Registers pnLibrary-owned commands and marks the adapter as active. */
     override fun bind(library: PnLibrary) {
@@ -132,7 +132,7 @@ internal class VelocityPlatformAdapter(
             return
         }
 
-        server.scheduler.buildTask(plugin, task).schedule()
+        proxy.scheduler.buildTask(plugin, task).schedule()
     }
 
     /** Dispatches a reply task using the proxy-wide scheduler. */
