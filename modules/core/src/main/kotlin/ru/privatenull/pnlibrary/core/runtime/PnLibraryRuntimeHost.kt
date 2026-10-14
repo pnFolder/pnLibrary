@@ -77,6 +77,10 @@ class PnLibraryRuntimeHost private constructor(
          * Legacy overload retained for integrations compiled against the old startup contract.
          * The update service now derives its staging directory from the installed component JAR.
          */
+        @Deprecated(
+            message = "The updateDirectory argument is ignored; use start(owner, platform)",
+            replaceWith = ReplaceWith("start(owner, platform)"),
+        )
         @JvmStatic
         @Suppress("UNUSED_PARAMETER")
         fun start(
@@ -125,6 +129,10 @@ class PnLibraryRuntimeHost private constructor(
         }
 
         /** Legacy registration overload retained for existing platform integrations. */
+        @Deprecated(
+            message = "The updateDirectory argument is ignored; use startAndRegisterPlatform(owner, platform, type, implementation)",
+            replaceWith = ReplaceWith("startAndRegisterPlatform(owner, platform, type, implementation)"),
+        )
         @JvmStatic
         @Suppress("UNUSED_PARAMETER")
         fun <T : Any> startAndRegisterPlatform(
