@@ -3,10 +3,9 @@ package ru.privatenull.pnlibrary.bukkit
 import org.bstats.bukkit.Metrics
 import org.bukkit.plugin.Plugin
 import ru.privatenull.pnlibrary.api.metrics.PluginMetrics
-import ru.privatenull.pnlibrary.api.metrics.MetricsProvider
 import ru.privatenull.pnlibrary.api.metrics.MetricsProviderConfiguration
-import ru.privatenull.pnlibrary.core.metrics.CompositePluginMetrics
 import ru.privatenull.pnlibrary.core.metrics.BStatsMetricsSession
+import ru.privatenull.pnlibrary.core.metrics.openConfiguredMetrics
 import ru.privatenull.pnlibrary.spi.metrics.PlatformMetricsFactory
 import ru.privatenull.pnlibrary.bukkit.metrics.FastStatsMetricsSession
 
@@ -16,20 +15,13 @@ class BukkitMetricsFactory : PlatformMetricsFactory {
     /** Opens every enabled metrics provider configured for the Bukkit plugin [owner]. */
     override fun open(owner: Any, configurations: Collection<MetricsProviderConfiguration>): PluginMetrics {
         require(owner is Plugin) { "Bukkit metrics owner must be a Bukkit Plugin" }
-        val delegates: List<PluginMetrics> = configurations.filter { it.enabled }.map { configuration ->
-            when (configuration.provider) {
-                MetricsProvider.BSTATS -> {
-                    val id = requireNotNull(configuration.projectId) { "bStats requires a project ID" }
-                    open(owner, id) as PluginMetrics
-                }
-                MetricsProvider.FASTSTATS -> {
-                    val token = requireNotNull(configuration.token) { "FastStats requires a project token" }
-                    FastStatsMetricsSession(owner, token) as PluginMetrics
-                }
-            }
-        }
-        require(delegates.isNotEmpty()) { "At least one metrics provider must be enabled" }
-        return if (delegates.size == 1) delegates.single() else CompositePluginMetrics(delegates)
+        return openConfiguredMetrics(
+            configurations,
+            bStats = { projectId -> open(owner, projectId) },
+            fastStats = { configuration -> FastStatsMetricsSession(owner, requireNotNull(configuration.token) {
+                "FastStats requires a project token"
+            }) },
+        )
     }
 
     /**
