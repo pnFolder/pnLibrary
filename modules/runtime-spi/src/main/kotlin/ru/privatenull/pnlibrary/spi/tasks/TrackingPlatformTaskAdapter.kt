@@ -33,7 +33,10 @@ abstract class TrackingPlatformTaskAdapter : PlatformTaskAdapter {
         return TrackedHandle(scheduleNative(forwarded)).also { handle ->
             reference.set(handle)
             handles += handle
-            if (completed.get()) handle.release()
+            when {
+                closed.get() -> handle.cancel()
+                completed.get() -> handle.release()
+            }
         }
     }
 
