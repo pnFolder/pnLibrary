@@ -75,20 +75,16 @@ public final class ru/privatenull/pnlibrary/spi/platform/JavaSnapshot$Companion 
 	public final fun current ()Lru/privatenull/pnlibrary/spi/platform/JavaSnapshot;
 }
 
-public abstract interface class ru/privatenull/pnlibrary/spi/platform/PlatformAdapter : ru/privatenull/pnlibrary/spi/platform/PlatformAudience, ru/privatenull/pnlibrary/spi/platform/PlatformBinding, ru/privatenull/pnlibrary/spi/platform/PlatformCommands, ru/privatenull/pnlibrary/spi/platform/PlatformDiagnostics, ru/privatenull/pnlibrary/spi/platform/PlatformExecution, ru/privatenull/pnlibrary/spi/platform/PlatformIdentity, ru/privatenull/pnlibrary/spi/platform/PlatformLogObservation, ru/privatenull/pnlibrary/spi/platform/PlatformLogging, ru/privatenull/pnlibrary/spi/platform/PlatformMetrics, ru/privatenull/pnlibrary/spi/platform/PlatformOwnership, ru/privatenull/pnlibrary/spi/platform/PlatformReadiness, ru/privatenull/pnlibrary/spi/platform/PlatformShutdown, ru/privatenull/pnlibrary/spi/platform/PlatformTasks {
-	public abstract fun getDataFolder ()Ljava/nio/file/Path;
-}
-
-public abstract interface class ru/privatenull/pnlibrary/spi/platform/PlatformAudience {
+public abstract interface class ru/privatenull/pnlibrary/spi/platform/PlatformAdapter : ru/privatenull/pnlibrary/spi/platform/PlatformBinding, ru/privatenull/pnlibrary/spi/platform/PlatformDiagnostics, ru/privatenull/pnlibrary/spi/platform/PlatformExecution, ru/privatenull/pnlibrary/spi/platform/PlatformIdentity, ru/privatenull/pnlibrary/spi/platform/PlatformLogObservation, ru/privatenull/pnlibrary/spi/platform/PlatformLogging, ru/privatenull/pnlibrary/spi/platform/PlatformOwnership, ru/privatenull/pnlibrary/spi/platform/PlatformReadiness, ru/privatenull/pnlibrary/spi/platform/PlatformShutdown {
 	public fun getAudienceAdapter ()Lru/privatenull/pnlibrary/spi/audiences/PlatformAudienceAdapter;
+	public fun getCommandAdapter ()Lru/privatenull/pnlibrary/spi/commands/PlatformCommandAdapter;
+	public abstract fun getDataFolder ()Ljava/nio/file/Path;
+	public fun getMetricsFactory ()Lru/privatenull/pnlibrary/spi/metrics/PlatformMetricsFactory;
+	public fun getTaskAdapter ()Lru/privatenull/pnlibrary/spi/tasks/PlatformTaskAdapter;
 }
 
 public abstract interface class ru/privatenull/pnlibrary/spi/platform/PlatformBinding {
 	public fun bind (Lru/privatenull/pnlibrary/api/runtime/PnLibrary;)V
-}
-
-public abstract interface class ru/privatenull/pnlibrary/spi/platform/PlatformCommands {
-	public fun getCommandAdapter ()Lru/privatenull/pnlibrary/spi/commands/PlatformCommandAdapter;
 }
 
 public abstract interface class ru/privatenull/pnlibrary/spi/platform/PlatformDiagnosticReport {
@@ -134,10 +130,6 @@ public abstract interface class ru/privatenull/pnlibrary/spi/platform/PlatformLo
 	public fun getLogHandler ()Lkotlin/jvm/functions/Function4;
 	public fun log (Ljava/lang/Object;Lru/privatenull/pnlibrary/api/logging/LogLevel;Ljava/lang/String;Ljava/lang/Throwable;)V
 	public static synthetic fun log$default (Lru/privatenull/pnlibrary/spi/platform/PlatformLogging;Ljava/lang/Object;Lru/privatenull/pnlibrary/api/logging/LogLevel;Ljava/lang/String;Ljava/lang/Throwable;ILjava/lang/Object;)V
-}
-
-public abstract interface class ru/privatenull/pnlibrary/spi/platform/PlatformMetrics {
-	public fun getMetricsFactory ()Lru/privatenull/pnlibrary/spi/metrics/PlatformMetricsFactory;
 }
 
 public abstract interface class ru/privatenull/pnlibrary/spi/platform/PlatformOwnerControl {
@@ -202,10 +194,6 @@ public final class ru/privatenull/pnlibrary/spi/platform/PlatformSnapshot$Compan
 
 public abstract interface class ru/privatenull/pnlibrary/spi/platform/PlatformSnapshotProvider {
 	public fun snapshot ()Lru/privatenull/pnlibrary/spi/platform/PlatformSnapshot;
-}
-
-public abstract interface class ru/privatenull/pnlibrary/spi/platform/PlatformTasks {
-	public fun getTaskAdapter ()Lru/privatenull/pnlibrary/spi/tasks/PlatformTaskAdapter;
 }
 
 public final class ru/privatenull/pnlibrary/spi/platform/PluginSnapshot {
