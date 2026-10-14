@@ -16,7 +16,6 @@ import java.time.Duration
 import java.util.Optional
 import java.util.UUID
 import java.util.concurrent.CompletionStage
-import java.util.concurrent.Executors
 import java.util.concurrent.atomic.AtomicBoolean
 
 /** One catalogue → resolver → verifier → transaction pipeline for every component. */
@@ -32,9 +31,6 @@ internal class UpdateServiceImpl(
     private val configuration = UpdateConfiguration.load(dataFolder.resolve("updates.yml")) {
         logging.log(this, LogLevel.WARNING, it)
     }
-    private val executor = Executors.newSingleThreadScheduledExecutor { action ->
-        Thread(action, "pnLibrary-update-orchestrator").apply { isDaemon = true }
-    }
     // Keep a manual `/pn update` responsive even when GitHub is unreachable.
     // The check can cover several registered products, so long per-request
     // timeouts otherwise add up and look like a frozen command.
@@ -43,23 +39,19 @@ internal class UpdateServiceImpl(
     private val installer = UpdateInstaller(identity, dataFolder, configuration, resources.http)
     private val freezes = FreezeStore(dataFolder.resolve("updates/freezes.json"))
     private val graphResolver = UpdateGraphResolver(ownership, identity, configuration, resources.catalogGateway, freezes)
-    private val orchestrator = UpdateOrchestrator(
-        configuration, UpdateStateStore(dataFolder.resolve("updates"), warning = {
-            logging.log(this, LogLevel.WARNING, it)
-        }), executor, ::resolveGraph, ::stageGraph, ::announce,
+    private val runtime = UpdateOrchestratorRuntime(
+        configuration = configuration,
+        dataFolder = dataFolder,
+        logging = logging,
+        execution = execution,
+        installer = installer,
+        registrations = registrations::snapshot,
+        resolveGraph = ::resolveGraph,
+        stageGraph = ::stageGraph,
+        announce = ::announce,
         automaticAllowed = automaticPolicy::allows,
-        remoteResolver = { resolveGraph(RefreshMode.FORCE_REMOTE) },
-    ).also {
-        runCatching { installer.recoverInterruptedTransactions() }.onFailure { error ->
-            logging.log(this, LogLevel.WARNING, "Update recovery failed", error)
-        }
-        it.start()
-        execution.whenServerReady(Runnable {
-            executor.execute {
-                installer.reconcilePending(registrations.snapshot(), it::healthResolved)
-            }
-        })
-    }
+    )
+    private val orchestrator get() = runtime.orchestrator
 
     override fun register(
         owner: Any,
@@ -114,7 +106,7 @@ internal class UpdateServiceImpl(
     override fun close() {
         if (!closed.compareAndSet(false, true)) return
         registrations.close()
-        orchestrator.close()
+        runtime.close()
         resources.close()
     }
 
