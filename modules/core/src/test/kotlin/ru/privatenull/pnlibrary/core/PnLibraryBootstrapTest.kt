@@ -73,7 +73,7 @@ class PnLibraryBootstrapTest {
             assertSame(library, PnLibraryProvider.get())
             boundLibrary = library
         }
-        override fun details(): Map<String, Any?> = mapOf("test" to true)
+        override fun diagnosticDetails(includeSensitive: Boolean): Map<String, Any?> = mapOf("test" to true)
         override fun executeGlobal(task: Runnable) { task.run() }
         override fun executeReply(recipient: Any, task: Runnable) { task.run() }
         override fun close() {}

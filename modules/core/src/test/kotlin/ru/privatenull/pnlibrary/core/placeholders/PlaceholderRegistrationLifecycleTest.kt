@@ -27,7 +27,7 @@ class PlaceholderRegistrationLifecycleTest {
 
     private object TestPlatform : PlatformAdapter {
         override val type = PlatformType.BUKKIT
-        override fun details(): Map<String, Any?> = emptyMap()
+        override fun diagnosticDetails(includeSensitive: Boolean): Map<String, Any?> = emptyMap()
         override fun executeGlobal(task: Runnable) = task.run()
         override fun executeReply(recipient: Any, task: Runnable) = task.run()
         override fun close() = Unit

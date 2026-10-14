@@ -63,7 +63,7 @@ class DiagnosticCommandExecutorTest {
             }
         }
         override fun ownerDetails(owner: Any) = mapOf("name" to "pnLibrary", "version" to "2.0.0")
-        override fun details(): Map<String, Any?> = emptyMap()
+        override fun diagnosticDetails(includeSensitive: Boolean): Map<String, Any?> = emptyMap()
         override fun executeGlobal(task: Runnable) = task.run()
         override fun executeReply(recipient: Any, task: Runnable) = task.run()
         override fun close() = Unit
