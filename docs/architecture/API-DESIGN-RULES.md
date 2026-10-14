@@ -16,8 +16,11 @@ second way to express an existing concept.
 - Platform SPI capabilities stay narrow: scheduler dispatch belongs to `PlatformExecution`, runtime
   registration belongs to `PlatformBinding`, ownership/metadata belongs to `PlatformOwnership`,
   diagnostic snapshots belong to `PlatformDiagnostics`, native log subscription belongs to
-  `PlatformLogObservation`, and optional native bridges belong to separate narrow platform
-  capabilities (`PlatformMetrics`, `PlatformCommands`, `PlatformAudience`, and `PlatformTasks`).
+  `PlatformLogObservation`, and shutdown/identity/readiness remain separate lifecycle concerns.
+  The aggregate `PlatformAdapter` exposes the concrete runtime bridges directly
+  (`PlatformMetricsFactory`, `PlatformCommandAdapter`, `PlatformAudienceAdapter`, and
+  `PlatformTaskAdapter`) with safe unsupported defaults; no proxy capability interfaces duplicate
+  those properties.
 - Implementation packages never appear in signatures of public API modules.
 
 ## 2. Construction
