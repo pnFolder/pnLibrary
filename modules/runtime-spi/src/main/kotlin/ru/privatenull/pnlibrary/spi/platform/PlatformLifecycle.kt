@@ -14,6 +14,7 @@ class PlatformLifecycle {
         check(!closed.get()) { "Platform adapter is closed" }
     }
 
+    @Synchronized
     fun beginBinding() {
         checkOpen()
         check(bound.compareAndSet(false, true)) { "Platform adapter is already bound" }
@@ -21,7 +22,8 @@ class PlatformLifecycle {
 
     /** Runs one binding transaction and rolls back the bound state if registration fails. */
     @JvmSynthetic
-    inline fun <T> bind(block: () -> T): T {
+    @Synchronized
+    fun <T> bind(block: () -> T): T {
         beginBinding()
         return try {
             block()
@@ -31,10 +33,12 @@ class PlatformLifecycle {
         }
     }
 
+    @Synchronized
     fun endBinding() {
         bound.set(false)
     }
 
+    @Synchronized
     fun close(): Boolean {
         if (!closed.compareAndSet(false, true)) return false
         bound.set(false)
