@@ -89,7 +89,7 @@ internal class PnLibraryImpl(
     override val logging: LoggingService = PlatformLoggingService(platform, platform, platform, platform, support.logs)
     private val configurationService = ConfigurationServiceImpl(platform)
     override val configurations: ConfigurationService get() = configurationService
-    private val updateService = UpdateServiceImpl(platform, dataFolder)
+    private val updateService = UpdateServiceImpl(platform, platform, platform, platform, dataFolder)
     private val directDownloadConfiguration = DownloadConfiguration.load(
         dataFolder.resolve("downloads.yml"),
     )

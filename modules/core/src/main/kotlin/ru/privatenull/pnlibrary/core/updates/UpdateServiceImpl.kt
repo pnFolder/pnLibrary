@@ -4,7 +4,10 @@ import ru.privatenull.pnlibrary.api.logging.LogLevel
 import ru.privatenull.pnlibrary.api.plugin.PluginDependency
 import ru.privatenull.pnlibrary.api.updates.*
 import ru.privatenull.pnlibrary.api.version.SemanticVersion
-import ru.privatenull.pnlibrary.spi.platform.PlatformAdapter
+import ru.privatenull.pnlibrary.spi.platform.PlatformExecution
+import ru.privatenull.pnlibrary.spi.platform.PlatformIdentity
+import ru.privatenull.pnlibrary.spi.platform.PlatformLogging
+import ru.privatenull.pnlibrary.spi.platform.PlatformOwnership
 import ru.privatenull.pnlibrary.update.*
 import java.nio.file.Files
 import java.nio.file.Path
@@ -18,12 +21,18 @@ import java.util.concurrent.Executors
 import java.util.concurrent.atomic.AtomicBoolean
 
 /** One catalogue → resolver → verifier → transaction pipeline for every component. */
-internal class UpdateServiceImpl(private val platform: PlatformAdapter, private val dataFolder: Path) : UpdateService, AutoCloseable {
+internal class UpdateServiceImpl(
+    private val logging: PlatformLogging,
+    private val ownership: PlatformOwnership,
+    private val identity: PlatformIdentity,
+    private val execution: PlatformExecution,
+    private val dataFolder: Path,
+) : UpdateService, AutoCloseable {
     private val closed = AtomicBoolean(false)
     private val entries = CopyOnWriteArrayList<RegisteredUpdate>()
     private val entriesLock = Any()
     private val configuration = UpdateConfiguration.load(dataFolder.resolve("updates.yml")) {
-        platform.log(platform, LogLevel.WARNING, it)
+        logging.log(this, LogLevel.WARNING, it)
     }
     private val executor = Executors.newSingleThreadScheduledExecutor { action ->
         Thread(action, "pnLibrary-update-orchestrator").apply { isDaemon = true }
@@ -46,21 +55,21 @@ internal class UpdateServiceImpl(private val platform: PlatformAdapter, private 
         http = http,
         requestExecutor = catalogRequestExecutor,
     )
-    private val installer = UpdateInstaller(platform, dataFolder, configuration, http)
+    private val installer = UpdateInstaller(identity, dataFolder, configuration, http)
     private val freezes = FreezeStore(dataFolder.resolve("updates/freezes.json"))
-    private val graphResolver = UpdateGraphResolver(platform, platform, configuration, catalogGateway, freezes)
+    private val graphResolver = UpdateGraphResolver(ownership, identity, configuration, catalogGateway, freezes)
     private val orchestrator = UpdateOrchestrator(
         configuration, UpdateStateStore(dataFolder.resolve("updates"), warning = {
-            platform.log(platform, LogLevel.WARNING, it)
+            logging.log(this, LogLevel.WARNING, it)
         }), executor, ::resolveGraph, ::stageGraph, ::announce,
         automaticAllowed = ::automaticAllowed,
         remoteResolver = { resolveGraph(RefreshMode.FORCE_REMOTE) },
     ).also {
         runCatching { installer.recoverInterruptedTransactions() }.onFailure { error ->
-            platform.log(platform, LogLevel.WARNING, "Update recovery failed", error)
+            logging.log(this, LogLevel.WARNING, "Update recovery failed", error)
         }
         it.start()
-        platform.whenServerReady(Runnable {
+        execution.whenServerReady(Runnable {
             executor.execute {
                 installer.reconcilePending(entries.toList(), it::healthResolved)
             }
@@ -74,7 +83,7 @@ internal class UpdateServiceImpl(private val platform: PlatformAdapter, private 
         dependencies: List<PluginDependency>,
     ): UpdateRegistration {
         check(!closed.get()) { "update service is closed" }
-        val info = platform.ownerDetails(owner)
+        val info = ownership.ownerDetails(owner)
         val nativeProductName = info["name"] ?: request.repositoryName
         val version = info["version"] ?: error("Не удалось определить версию подключённого плагина")
         require(SemanticVersion.tryParse(version) != null) {
@@ -82,7 +91,7 @@ internal class UpdateServiceImpl(private val platform: PlatformAdapter, private 
         }
         val jar = Paths.get(owner.javaClass.protectionDomain.codeSource.location.toURI()).toAbsolutePath().normalize()
         require(Files.isRegularFile(jar)) { "Плагин должен быть запущен из JAR" }
-        val artifact = request.artifactFor(Runtime.version().feature(), platform.type)
+        val artifact = request.artifactFor(Runtime.version().feature(), identity.type)
             ?: error("Для Java ${Runtime.version().feature()} не зарегистрирован совместимый артефакт ${request.repositoryName}")
         require(product.version == SemanticVersion.parse(version)) {
             "Product version ${product.version} does not match native plugin version $version"
@@ -155,7 +164,7 @@ internal class UpdateServiceImpl(private val platform: PlatformAdapter, private 
 
     private fun announce(snapshot: UpdatePlanSnapshot) {
         UpdateAnnouncementRenderer.render(snapshot, entries.map { it.snapshot })
-            .forEach { platform.console(platform, it) }
+            .forEach { logging.console(this, it) }
     }
 
     private fun removeRegistration(registration: RegisteredUpdate) {
