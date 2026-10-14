@@ -133,6 +133,13 @@ dependencies {
 compileOnly("io.github.pnfolder:pnlibrary-bukkit-api:2.2.0-beta.2")
 ```
 
+Для BungeeCord и Velocity используются соответствующие platform API:
+
+```kotlin
+compileOnly("io.github.pnfolder:pnlibrary-bungee-api:2.2.0-beta.2")
+compileOnly("io.github.pnfolder:pnlibrary-velocity-api:2.2.0-beta.2")
+```
+
 Для Bukkit достаточно объявить `pnlibrary-bukkit-api`: общий API подтянется как
 транзитивная зависимость. `pnlibrary-core`, `pnlibrary-runtime-spi` и платформенные runtime
 модули не подключаются к пользовательскому плагину. API нельзя встраивать через

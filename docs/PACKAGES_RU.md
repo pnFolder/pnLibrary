@@ -63,6 +63,9 @@ repositories { mavenLocal() }
 dependencies {
     compileOnly("io.github.pnfolder:pnlibrary-api:2.2.0-beta.2")
     compileOnly("io.github.pnfolder:pnlibrary-bukkit-api:2.2.0-beta.2")
+    // Для прокси вместо Bukkit API подключается один соответствующий артефакт:
+    // compileOnly("io.github.pnfolder:pnlibrary-bungee-api:2.2.0-beta.2")
+    // compileOnly("io.github.pnfolder:pnlibrary-velocity-api:2.2.0-beta.2")
 }
 ```
 
