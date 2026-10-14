@@ -43,14 +43,19 @@ class PnLibraryRuntimeHost private constructor(
     /** Stops the self-updater and closes the runtime. Safe to call repeatedly. */
     override fun close() {
         if (!closed.compareAndSet(false, true)) return
-        runCatching { updateMonitor.close() }
+        val failures = mutableListOf<Throwable>()
+        runCatching { updateMonitor.close() }.onFailure(failures::add)
         runCatching {
             library.logging.shutdownBox(library.owner, "pnLibrary", library.version)
                 .ok("Платформа", platformName)
                 .ok("Ресурсы", "задачи и регистрации освобождаются")
                 .show()
-        }
-        library.close()
+        }.onFailure(failures::add)
+        runCatching { library.close() }.onFailure(failures::add)
+
+        val first = failures.firstOrNull() ?: return
+        failures.drop(1).forEach(first::addSuppressed)
+        throw first
     }
 
     /** Complete runtime bootstrap entry point used by platform plugins. */
