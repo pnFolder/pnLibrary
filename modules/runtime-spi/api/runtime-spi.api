@@ -1,0 +1,207 @@
+public abstract interface class ru/privatenull/pnlibrary/spi/audiences/PlatformAudienceAdapter {
+	public abstract fun console ()Lru/privatenull/pnlibrary/api/audiences/AudienceSender;
+	public abstract fun onlinePlayers ()Ljava/util/List;
+	public abstract fun player (Ljava/util/UUID;)Lru/privatenull/pnlibrary/api/actions/LibraryPlayer;
+	public abstract fun sender (Ljava/lang/Object;)Lru/privatenull/pnlibrary/api/audiences/AudienceSender;
+}
+
+public final class ru/privatenull/pnlibrary/spi/audiences/UnsupportedPlatformAudienceAdapter : ru/privatenull/pnlibrary/spi/audiences/PlatformAudienceAdapter {
+	public static final field INSTANCE Lru/privatenull/pnlibrary/spi/audiences/UnsupportedPlatformAudienceAdapter;
+	public fun console ()Lru/privatenull/pnlibrary/api/audiences/AudienceSender;
+	public fun onlinePlayers ()Ljava/util/List;
+	public fun player (Ljava/util/UUID;)Lru/privatenull/pnlibrary/api/actions/LibraryPlayer;
+	public fun sender (Ljava/lang/Object;)Lru/privatenull/pnlibrary/api/audiences/AudienceSender;
+}
+
+public abstract interface class ru/privatenull/pnlibrary/spi/commands/PlatformCommandAdapter : java/lang/AutoCloseable {
+	public fun close ()V
+	public abstract fun register (Ljava/lang/Object;Lru/privatenull/pnlibrary/api/commands/CommandDefinition;Lru/privatenull/pnlibrary/spi/commands/PlatformCommandDispatcher;)Lru/privatenull/pnlibrary/spi/commands/PlatformCommandRegistration;
+}
+
+public abstract interface class ru/privatenull/pnlibrary/spi/commands/PlatformCommandDispatcher {
+	public abstract fun execute (Lru/privatenull/pnlibrary/api/commands/CommandDefinition;Lru/privatenull/pnlibrary/api/commands/CommandContext;)Ljava/util/concurrent/CompletionStage;
+	public abstract fun suggest (Lru/privatenull/pnlibrary/api/commands/CommandDefinition;Lru/privatenull/pnlibrary/api/commands/CommandContext;)Ljava/util/concurrent/CompletionStage;
+}
+
+public abstract interface class ru/privatenull/pnlibrary/spi/commands/PlatformCommandRegistration : java/lang/AutoCloseable {
+	public abstract fun close ()V
+}
+
+public final class ru/privatenull/pnlibrary/spi/commands/UnsupportedPlatformCommandAdapter : ru/privatenull/pnlibrary/spi/commands/PlatformCommandAdapter {
+	public static final field INSTANCE Lru/privatenull/pnlibrary/spi/commands/UnsupportedPlatformCommandAdapter;
+	public fun register (Ljava/lang/Object;Lru/privatenull/pnlibrary/api/commands/CommandDefinition;Lru/privatenull/pnlibrary/spi/commands/PlatformCommandDispatcher;)Lru/privatenull/pnlibrary/spi/commands/PlatformCommandRegistration;
+}
+
+public final class ru/privatenull/pnlibrary/spi/metrics/NoopMetricsFactory : ru/privatenull/pnlibrary/spi/metrics/PlatformMetricsFactory {
+	public static final field INSTANCE Lru/privatenull/pnlibrary/spi/metrics/NoopMetricsFactory;
+	public fun open (Ljava/lang/Object;I)Lru/privatenull/pnlibrary/api/metrics/PluginMetrics;
+}
+
+public abstract interface class ru/privatenull/pnlibrary/spi/metrics/PlatformMetricsFactory {
+	public abstract fun open (Ljava/lang/Object;I)Lru/privatenull/pnlibrary/api/metrics/PluginMetrics;
+	public fun open (Ljava/lang/Object;Ljava/util/Collection;)Lru/privatenull/pnlibrary/api/metrics/PluginMetrics;
+	public fun openErrorReporter (Ljava/lang/Object;Ljava/util/Collection;)Lru/privatenull/pnlibrary/api/metrics/ErrorReporter;
+}
+
+public final class ru/privatenull/pnlibrary/spi/platform/DiagnosticDetailsCollector {
+	public fun <init> (Lkotlin/jvm/functions/Function0;)V
+	public final fun collect (ZLkotlin/jvm/functions/Function1;)Ljava/util/Map;
+}
+
+public final class ru/privatenull/pnlibrary/spi/platform/JavaSnapshot {
+	public static final field Companion Lru/privatenull/pnlibrary/spi/platform/JavaSnapshot$Companion;
+	public fun <init> (Ljava/lang/String;Ljava/lang/String;Ljava/lang/String;)V
+	public final fun component1 ()Ljava/lang/String;
+	public final fun component2 ()Ljava/lang/String;
+	public final fun component3 ()Ljava/lang/String;
+	public final fun copy (Ljava/lang/String;Ljava/lang/String;Ljava/lang/String;)Lru/privatenull/pnlibrary/spi/platform/JavaSnapshot;
+	public static synthetic fun copy$default (Lru/privatenull/pnlibrary/spi/platform/JavaSnapshot;Ljava/lang/String;Ljava/lang/String;Ljava/lang/String;ILjava/lang/Object;)Lru/privatenull/pnlibrary/spi/platform/JavaSnapshot;
+	public fun equals (Ljava/lang/Object;)Z
+	public final fun getName ()Ljava/lang/String;
+	public final fun getVendor ()Ljava/lang/String;
+	public final fun getVersion ()Ljava/lang/String;
+	public fun hashCode ()I
+	public fun toString ()Ljava/lang/String;
+}
+
+public final class ru/privatenull/pnlibrary/spi/platform/JavaSnapshot$Companion {
+	public final fun current ()Lru/privatenull/pnlibrary/spi/platform/JavaSnapshot;
+}
+
+public abstract interface class ru/privatenull/pnlibrary/spi/platform/PlatformAdapter : java/lang/AutoCloseable, ru/privatenull/pnlibrary/spi/platform/PlatformDiagnostics, ru/privatenull/pnlibrary/spi/platform/PlatformExecution, ru/privatenull/pnlibrary/spi/platform/PlatformIdentity, ru/privatenull/pnlibrary/spi/platform/PlatformLogging, ru/privatenull/pnlibrary/spi/platform/PlatformOwnership {
+	public abstract fun close ()V
+	public fun getAudienceAdapter ()Lru/privatenull/pnlibrary/spi/audiences/PlatformAudienceAdapter;
+	public fun getCommandAdapter ()Lru/privatenull/pnlibrary/spi/commands/PlatformCommandAdapter;
+	public fun getMetricsFactory ()Lru/privatenull/pnlibrary/spi/metrics/PlatformMetricsFactory;
+	public fun getTaskAdapter ()Lru/privatenull/pnlibrary/spi/tasks/PlatformTaskAdapter;
+}
+
+public abstract interface class ru/privatenull/pnlibrary/spi/platform/PlatformDiagnostics {
+	public fun details ()Ljava/util/Map;
+	public fun diagnosticDetails (Z)Ljava/util/Map;
+	public fun observeNativeLogs (Lkotlin/jvm/functions/Function4;)V
+	public fun snapshot ()Lru/privatenull/pnlibrary/spi/platform/PlatformSnapshot;
+}
+
+public abstract interface class ru/privatenull/pnlibrary/spi/platform/PlatformExecution {
+	public fun bind (Lru/privatenull/pnlibrary/api/runtime/PnLibrary;)V
+	public abstract fun executeGlobal (Ljava/lang/Runnable;)V
+	public abstract fun executeReply (Ljava/lang/Object;Ljava/lang/Runnable;)V
+	public fun whenServerReady (Ljava/lang/Runnable;)V
+}
+
+public abstract interface class ru/privatenull/pnlibrary/spi/platform/PlatformIdentity {
+	public fun getDataFolder ()Ljava/nio/file/Path;
+	public fun getId ()Ljava/lang/String;
+	public fun getImplementationName ()Ljava/lang/String;
+	public abstract fun getType ()Lru/privatenull/pnlibrary/api/platform/PlatformType;
+	public fun isProxy ()Z
+	public fun isServer ()Z
+}
+
+public abstract interface class ru/privatenull/pnlibrary/spi/platform/PlatformLogging {
+	public fun console (Ljava/lang/Object;Ljava/lang/String;)V
+	public fun getLogHandler ()Lkotlin/jvm/functions/Function4;
+	public fun log (Ljava/lang/Object;Lru/privatenull/pnlibrary/api/logging/LogLevel;Ljava/lang/String;Ljava/lang/Throwable;)V
+	public static synthetic fun log$default (Lru/privatenull/pnlibrary/spi/platform/PlatformLogging;Ljava/lang/Object;Lru/privatenull/pnlibrary/api/logging/LogLevel;Ljava/lang/String;Ljava/lang/Throwable;ILjava/lang/Object;)V
+}
+
+public abstract interface class ru/privatenull/pnlibrary/spi/platform/PlatformOwnership : ru/privatenull/pnlibrary/spi/platform/PlatformLogging {
+	public fun acceptsOwner (Ljava/lang/Object;)Z
+	public fun disableOwner (Ljava/lang/Object;)Z
+	public fun installedPlugins ()Ljava/util/Map;
+	public fun ownerDetails (Ljava/lang/Object;)Ljava/util/Map;
+	public fun ownerMetadata (Ljava/lang/Object;)Lru/privatenull/pnlibrary/spi/platform/PluginSnapshot;
+	public fun remotePolicyContext (Ljava/lang/Object;Lru/privatenull/pnlibrary/api/plugin/PluginMetadata;Ljava/util/Map;)Lru/privatenull/pnlibrary/api/remote/RemotePolicyContext;
+	public fun unsupportedOwner (Ljava/lang/Object;)Lru/privatenull/pnlibrary/spi/platform/PluginSnapshot;
+}
+
+public final class ru/privatenull/pnlibrary/spi/platform/PlatformSnapshot {
+	public static final field Companion Lru/privatenull/pnlibrary/spi/platform/PlatformSnapshot$Companion;
+	public fun <init> (Ljava/lang/String;Ljava/lang/String;Ljava/lang/String;Ljava/lang/Integer;Ljava/util/List;Ljava/util/List;Lru/privatenull/pnlibrary/spi/platform/JavaSnapshot;)V
+	public synthetic fun <init> (Ljava/lang/String;Ljava/lang/String;Ljava/lang/String;Ljava/lang/Integer;Ljava/util/List;Ljava/util/List;Lru/privatenull/pnlibrary/spi/platform/JavaSnapshot;ILkotlin/jvm/internal/DefaultConstructorMarker;)V
+	public final fun asMap ()Ljava/util/Map;
+	public final fun component1 ()Ljava/lang/String;
+	public final fun component2 ()Ljava/lang/String;
+	public final fun component3 ()Ljava/lang/String;
+	public final fun component4 ()Ljava/lang/Integer;
+	public final fun component5 ()Ljava/util/List;
+	public final fun component6 ()Ljava/util/List;
+	public final fun component7 ()Lru/privatenull/pnlibrary/spi/platform/JavaSnapshot;
+	public final fun copy (Ljava/lang/String;Ljava/lang/String;Ljava/lang/String;Ljava/lang/Integer;Ljava/util/List;Ljava/util/List;Lru/privatenull/pnlibrary/spi/platform/JavaSnapshot;)Lru/privatenull/pnlibrary/spi/platform/PlatformSnapshot;
+	public static synthetic fun copy$default (Lru/privatenull/pnlibrary/spi/platform/PlatformSnapshot;Ljava/lang/String;Ljava/lang/String;Ljava/lang/String;Ljava/lang/Integer;Ljava/util/List;Ljava/util/List;Lru/privatenull/pnlibrary/spi/platform/JavaSnapshot;ILjava/lang/Object;)Lru/privatenull/pnlibrary/spi/platform/PlatformSnapshot;
+	public fun equals (Ljava/lang/Object;)Z
+	public final fun getJava ()Lru/privatenull/pnlibrary/spi/platform/JavaSnapshot;
+	public final fun getName ()Ljava/lang/String;
+	public final fun getOnlinePlayers ()Ljava/lang/Integer;
+	public final fun getPlugins ()Ljava/util/List;
+	public final fun getRegisteredServers ()Ljava/util/List;
+	public final fun getVendor ()Ljava/lang/String;
+	public final fun getVersion ()Ljava/lang/String;
+	public fun hashCode ()I
+	public fun toString ()Ljava/lang/String;
+}
+
+public final class ru/privatenull/pnlibrary/spi/platform/PlatformSnapshot$Companion {
+	public final fun unknown (Ljava/lang/String;)Lru/privatenull/pnlibrary/spi/platform/PlatformSnapshot;
+}
+
+public final class ru/privatenull/pnlibrary/spi/platform/PluginSnapshot {
+	public fun <init> (Ljava/lang/String;Ljava/lang/String;Ljava/lang/String;Ljava/util/List;Ljava/lang/String;)V
+	public synthetic fun <init> (Ljava/lang/String;Ljava/lang/String;Ljava/lang/String;Ljava/util/List;Ljava/lang/String;ILkotlin/jvm/internal/DefaultConstructorMarker;)V
+	public final fun asMap ()Ljava/util/Map;
+	public final fun component1 ()Ljava/lang/String;
+	public final fun component2 ()Ljava/lang/String;
+	public final fun component3 ()Ljava/lang/String;
+	public final fun component4 ()Ljava/util/List;
+	public final fun component5 ()Ljava/lang/String;
+	public final fun copy (Ljava/lang/String;Ljava/lang/String;Ljava/lang/String;Ljava/util/List;Ljava/lang/String;)Lru/privatenull/pnlibrary/spi/platform/PluginSnapshot;
+	public static synthetic fun copy$default (Lru/privatenull/pnlibrary/spi/platform/PluginSnapshot;Ljava/lang/String;Ljava/lang/String;Ljava/lang/String;Ljava/util/List;Ljava/lang/String;ILjava/lang/Object;)Lru/privatenull/pnlibrary/spi/platform/PluginSnapshot;
+	public fun equals (Ljava/lang/Object;)Z
+	public final fun getAuthors ()Ljava/util/List;
+	public final fun getId ()Ljava/lang/String;
+	public final fun getMainClass ()Ljava/lang/String;
+	public final fun getName ()Ljava/lang/String;
+	public final fun getVersion ()Ljava/lang/String;
+	public fun hashCode ()I
+	public fun toString ()Ljava/lang/String;
+}
+
+public final class ru/privatenull/pnlibrary/spi/platform/UncaughtExceptionLogObserver {
+	public fun <init> (Ljava/lang/Object;)V
+	public final fun observe (Lkotlin/jvm/functions/Function4;)V
+}
+
+public abstract interface class ru/privatenull/pnlibrary/spi/tasks/PlatformTaskAdapter : java/lang/AutoCloseable {
+	public fun close ()V
+	public abstract fun schedule (Lru/privatenull/pnlibrary/spi/tasks/PlatformTaskRequest;)Lru/privatenull/pnlibrary/spi/tasks/PlatformTaskHandle;
+}
+
+public abstract interface class ru/privatenull/pnlibrary/spi/tasks/PlatformTaskHandle {
+	public abstract fun cancel ()Z
+}
+
+public final class ru/privatenull/pnlibrary/spi/tasks/PlatformTaskRequest {
+	public fun <init> (Lru/privatenull/pnlibrary/api/tasks/TaskExecution$Kind;Ljava/lang/Object;Ljava/time/Duration;Ljava/time/Duration;Ljava/lang/Runnable;)V
+	public final fun component1 ()Lru/privatenull/pnlibrary/api/tasks/TaskExecution$Kind;
+	public final fun component2 ()Ljava/lang/Object;
+	public final fun component3 ()Ljava/time/Duration;
+	public final fun component4 ()Ljava/time/Duration;
+	public final fun component5 ()Ljava/lang/Runnable;
+	public final fun copy (Lru/privatenull/pnlibrary/api/tasks/TaskExecution$Kind;Ljava/lang/Object;Ljava/time/Duration;Ljava/time/Duration;Ljava/lang/Runnable;)Lru/privatenull/pnlibrary/spi/tasks/PlatformTaskRequest;
+	public static synthetic fun copy$default (Lru/privatenull/pnlibrary/spi/tasks/PlatformTaskRequest;Lru/privatenull/pnlibrary/api/tasks/TaskExecution$Kind;Ljava/lang/Object;Ljava/time/Duration;Ljava/time/Duration;Ljava/lang/Runnable;ILjava/lang/Object;)Lru/privatenull/pnlibrary/spi/tasks/PlatformTaskRequest;
+	public fun equals (Ljava/lang/Object;)Z
+	public final fun getCallback ()Ljava/lang/Runnable;
+	public final fun getDelay ()Ljava/time/Duration;
+	public final fun getExecutionKind ()Lru/privatenull/pnlibrary/api/tasks/TaskExecution$Kind;
+	public final fun getInterval ()Ljava/time/Duration;
+	public final fun getTarget ()Ljava/lang/Object;
+	public fun hashCode ()I
+	public fun toString ()Ljava/lang/String;
+}
+
+public final class ru/privatenull/pnlibrary/spi/tasks/UnsupportedPlatformTaskAdapter : ru/privatenull/pnlibrary/spi/tasks/PlatformTaskAdapter {
+	public static final field INSTANCE Lru/privatenull/pnlibrary/spi/tasks/UnsupportedPlatformTaskAdapter;
+	public fun schedule (Lru/privatenull/pnlibrary/spi/tasks/PlatformTaskRequest;)Lru/privatenull/pnlibrary/spi/tasks/PlatformTaskHandle;
+}
+

@@ -21,7 +21,6 @@ apiValidation {
             "smoke-bungee",
             "smoke-velocity",
             "runtime",
-            "runtime-spi",
             "faststats-core",
             "faststats-velocity",
             "update",
