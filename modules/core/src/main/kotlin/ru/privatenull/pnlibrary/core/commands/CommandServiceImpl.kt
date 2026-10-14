@@ -10,7 +10,6 @@ import ru.privatenull.pnlibrary.api.commands.completedSuggestions
 import ru.privatenull.pnlibrary.api.logging.LogLevel
 import ru.privatenull.pnlibrary.spi.commands.PlatformCommandDispatcher
 import ru.privatenull.pnlibrary.spi.commands.PlatformCommandRegistration
-import ru.privatenull.pnlibrary.spi.platform.PlatformAdapter
 import ru.privatenull.pnlibrary.spi.platform.PlatformLogging
 import java.util.Collections
 import java.util.IdentityHashMap
@@ -24,7 +23,6 @@ internal class CommandServiceImpl(
     private val commandAdapter: ru.privatenull.pnlibrary.spi.commands.PlatformCommandAdapter,
     private val logging: PlatformLogging,
 ) : CommandService, PlatformCommandDispatcher, AutoCloseable {
-    constructor(platform: PlatformAdapter) : this(platform.commandAdapter, platform)
     private val lock = Any()
     private val closed = AtomicBoolean(false)
     private val reservedNames = linkedSetOf<String>()

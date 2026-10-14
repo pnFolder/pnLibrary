@@ -191,7 +191,7 @@ class DirectDownloadManagerTest {
                 return bytes.also { require(it.size <= maximumBytes) }
             }
         }
-        return DirectDownloadManager(platform, directory.resolve("plugins/pnLibrary"), DownloadConfiguration(
+        return DirectDownloadManager(platform, platform, platform, platform, directory.resolve("plugins/pnLibrary"), DownloadConfiguration(
             automatic = automatic,
         ), http)
     }

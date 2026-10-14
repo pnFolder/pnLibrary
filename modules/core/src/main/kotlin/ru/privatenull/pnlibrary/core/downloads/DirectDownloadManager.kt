@@ -5,7 +5,6 @@ import ru.privatenull.pnlibrary.api.downloads.FileDownloads
 import ru.privatenull.pnlibrary.api.downloads.DownloadRegistration
 import ru.privatenull.pnlibrary.api.logging.LogLevel
 import ru.privatenull.pnlibrary.api.plugin.PluginDependency
-import ru.privatenull.pnlibrary.spi.platform.PlatformAdapter
 import ru.privatenull.pnlibrary.spi.platform.PlatformExecution
 import ru.privatenull.pnlibrary.spi.platform.PlatformIdentity
 import ru.privatenull.pnlibrary.spi.platform.PlatformLogging
@@ -30,12 +29,6 @@ internal class DirectDownloadManager(
         Duration.ofSeconds(8), Duration.ofSeconds(30),
     ),
 ) : AutoCloseable {
-    constructor(
-        platform: PlatformAdapter,
-        libraryData: Path,
-        configuration: DownloadConfiguration,
-        http: TrustedHttpClient = TrustedHttpClient(Duration.ofSeconds(8), Duration.ofSeconds(30)),
-    ) : this(platform, platform, platform, platform, libraryData, configuration, http)
     private val closed = AtomicBoolean(false)
     private val executor: ExecutorService = Executors.newSingleThreadExecutor { action ->
         Thread(action, "pnLibrary-direct-downloads").apply { isDaemon = true }

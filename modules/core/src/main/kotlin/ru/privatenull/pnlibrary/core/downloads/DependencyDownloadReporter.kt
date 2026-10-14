@@ -5,7 +5,6 @@ import ru.privatenull.pnlibrary.api.logging.LogLevel
 import ru.privatenull.pnlibrary.console.ConsoleCard
 import ru.privatenull.pnlibrary.console.ConsoleTheme
 import ru.privatenull.pnlibrary.console.ConsoleTree
-import ru.privatenull.pnlibrary.spi.platform.PlatformAdapter
 import ru.privatenull.pnlibrary.spi.platform.PlatformLogging
 import ru.privatenull.pnlibrary.spi.platform.PlatformOwnership
 import java.io.IOException
@@ -15,7 +14,6 @@ internal class DependencyDownloadReporter(
     private val logging: PlatformLogging,
     private val ownership: PlatformOwnership,
 ) {
-    constructor(platform: PlatformAdapter) : this(platform, platform)
     fun failure(owner: Any, error: Throwable, level: LogLevel) {
         val details = DownloadFailureInterpreter.explain(error)
         ConsoleCard.builder(errorTheme, "ЗАВИСИМОСТЬ НЕ ПОДГОТОВЛЕНА")
