@@ -299,7 +299,7 @@ internal class PnLibraryImpl(
     private fun startLibraryMetrics() {
         libraryMetrics = RuntimeMetricsBootstrap(
             registry = metricsRegistry,
-            platform = platform,
+            platform = platformIdentity,
             owner = owner,
             warning = { message -> logging.logger(owner, "pnLibrary").warning(message) },
         ).start()
