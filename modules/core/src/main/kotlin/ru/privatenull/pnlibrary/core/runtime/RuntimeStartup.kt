@@ -2,7 +2,6 @@ package ru.privatenull.pnlibrary.core.runtime
 
 import ru.privatenull.pnlibrary.api.runtime.PnLibrary
 import ru.privatenull.pnlibrary.spi.platform.PlatformAdapter
-import java.nio.file.Path
 
 /** Creates the shared runtime and attaches its mandatory self-update monitor. */
 internal object RuntimeStartup {
@@ -12,8 +11,7 @@ internal object RuntimeStartup {
         val updateMonitor: AutoCloseable,
     )
 
-    fun start(owner: Any, platform: PlatformAdapter, updateDirectory: Path): Started {
-        requireNotNull(updateDirectory) { "update directory must not be null" }
+    fun start(owner: Any, platform: PlatformAdapter): Started {
         val dataFolder = requireNotNull(platform.dataFolder) {
             "Platform adapter must provide the pnLibrary data folder"
         }

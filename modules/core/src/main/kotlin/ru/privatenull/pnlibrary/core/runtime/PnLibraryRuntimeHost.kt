@@ -64,15 +64,18 @@ class PnLibraryRuntimeHost private constructor(
          *
          * @param owner native pnLibrary plugin instance
          * @param platform adapter for the current server or proxy
-         * @param updateDirectory native directory for staged updates
+         * @param updateDirectory retained for binary/source compatibility. The update service
+         * derives its staging directory from the installed component JAR.
          */
         @JvmStatic
+        @Suppress("UNUSED_PARAMETER")
         fun start(
             owner: Any,
             platform: PlatformAdapter,
             updateDirectory: Path,
         ): PnLibraryRuntimeHost {
-            val started = RuntimeStartup.start(owner, platform, updateDirectory)
+            // Kept in the public API for compatibility with existing platform integrations.
+            val started = RuntimeStartup.start(owner, platform)
             return try {
                 PnLibraryRuntimeHost(started.library, started.updateMonitor, platform.summaryName()).also {
                     runCatching {
