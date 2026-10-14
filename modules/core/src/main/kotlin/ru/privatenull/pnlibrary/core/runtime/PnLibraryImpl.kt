@@ -396,23 +396,26 @@ internal class PnLibraryImpl(
 
     override fun close() {
         if (closedFlag.compareAndSet(false, true)) {
-            runCatching { plugins.close() }
-            runCatching { commandService.close() }
-            runCatching { audienceService.close() }
-            runCatching { platformProvider.close() }
-            runCatching { currencyFeature.close() }
-            runCatching { configurationService.close() }
-            runCatching { libraryMetrics?.close() }
+            val shutdown = RuntimeShutdown().apply {
+                add { plugins.close() }
+                add { commandService.close() }
+                add { audienceService.close() }
+                add { platformProvider.close() }
+                add { currencyFeature.close() }
+                add { configurationService.close() }
+                add { libraryMetrics?.close() }
+                add { metricsRegistry.close() }
+                add { updateService.close() }
+                add { eventService.close() }
+                add { serviceManager.close() }
+                add { taskService.close() }
+                add { support.close() }
+                add { PnLibraryProvider.clear(this@PnLibraryImpl) }
+                add { platform.close() }
+                add { onClose() }
+            }
+            shutdown.run()
             libraryMetrics = null
-            runCatching { metricsRegistry.close() }
-            runCatching { updateService.close() }
-            runCatching { eventService.close() }
-            runCatching { serviceManager.close() }
-            runCatching { taskService.close() }
-            runCatching { support.close() }
-            PnLibraryProvider.clear(this)
-            runCatching { platform.close() }
-            onClose()
         }
     }
 
