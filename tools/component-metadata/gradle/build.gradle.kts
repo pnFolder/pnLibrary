@@ -32,10 +32,16 @@ gradlePlugin {
 }
 
 dependencies {
-    implementation(fileTree("../core/build/libs") {
-        include("*.jar")
-        exclude("*-sources.jar", "*-javadoc.jar")
-    })
+    // Keep the included build reproducible from a clean checkout. The previous
+    // fileTree dependency required core to have been built manually first.
+    if (rootProject.name == "pnlibrary-component-metadata-gradle") {
+        implementation(project(":core"))
+    } else {
+        implementation(fileTree("../core/build/libs") {
+            include("*.jar")
+            exclude("*-sources.jar", "*-javadoc.jar")
+        })
+    }
     testImplementation(gradleTestKit())
     testImplementation(libs.junit.jupiter)
     testRuntimeOnly(libs.junit.launcher)
