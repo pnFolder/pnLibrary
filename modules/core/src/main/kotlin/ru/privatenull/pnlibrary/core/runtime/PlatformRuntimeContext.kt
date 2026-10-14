@@ -8,7 +8,10 @@ import ru.privatenull.pnlibrary.spi.platform.PlatformLogging
 import ru.privatenull.pnlibrary.spi.platform.PlatformLogObservation
 import ru.privatenull.pnlibrary.spi.platform.PlatformOwnership
 import ru.privatenull.pnlibrary.spi.platform.PlatformAdapter
-import ru.privatenull.pnlibrary.spi.platform.PlatformServices
+import ru.privatenull.pnlibrary.spi.platform.PlatformMetrics
+import ru.privatenull.pnlibrary.spi.platform.PlatformCommands
+import ru.privatenull.pnlibrary.spi.platform.PlatformAudience
+import ru.privatenull.pnlibrary.spi.platform.PlatformTasks
 import ru.privatenull.pnlibrary.spi.platform.PlatformStorage
 import ru.privatenull.pnlibrary.spi.platform.PlatformReadiness
 
@@ -21,7 +24,10 @@ internal data class PlatformRuntimeContext(
     val diagnostics: PlatformDiagnostics,
     val logObservation: PlatformLogObservation,
     val logging: PlatformLogging,
-    val services: PlatformServices,
+    val metrics: PlatformMetrics,
+    val commands: PlatformCommands,
+    val audience: PlatformAudience,
+    val tasks: PlatformTasks,
     val id: String,
     val implementationName: String,
     val isProxy: Boolean,
@@ -46,7 +52,10 @@ internal fun PlatformAdapter.toRuntimeContext(): PlatformRuntimeContext = Platfo
     diagnostics = this,
     logObservation = this,
     logging = this,
-    services = this,
+    metrics = this,
+    commands = this,
+    audience = this,
+    tasks = this,
     id = id,
     implementationName = implementationName,
     isProxy = isProxy,
