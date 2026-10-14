@@ -5,5 +5,5 @@ import ru.privatenull.pnlibrary.velocity.api.VelocityPlatform
 
 /** Native-backed Velocity platform API installed by the Velocity runtime. */
 internal class VelocityPlatformImpl(
-    override val server: ProxyServer,
+    override val proxy: ProxyServer,
 ) : VelocityPlatform
