@@ -127,10 +127,7 @@ internal class VelocityPlatformAdapter(
         lifecycle.beginBinding()
 
         try {
-            updateCommand = library.commands.register(
-                plugin,
-                ProxyUpdateCommand(library).definition(),
-            )
+            updateCommand = ProxyUpdateCommand(library).register(plugin)
         } catch (error: Throwable) {
             lifecycle.endBinding()
             throw error
