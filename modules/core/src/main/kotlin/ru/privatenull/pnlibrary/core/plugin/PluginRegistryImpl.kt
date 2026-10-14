@@ -11,6 +11,7 @@ import ru.privatenull.pnlibrary.api.metrics.MetricsService
 import ru.privatenull.pnlibrary.spi.platform.PlatformExecution
 import ru.privatenull.pnlibrary.spi.platform.PlatformIdentity
 import ru.privatenull.pnlibrary.spi.platform.PlatformOwnership
+import ru.privatenull.pnlibrary.spi.platform.PlatformLogging
 import ru.privatenull.pnlibrary.api.plugin.MetricsController
 import ru.privatenull.pnlibrary.api.plugin.PluginBuilder
 import ru.privatenull.pnlibrary.api.plugin.PluginRegistration
@@ -57,6 +58,7 @@ internal class PluginRegistryImpl(
     private val ownership: PlatformOwnership,
     private val identity: PlatformIdentity,
     private val execution: PlatformExecution,
+    private val platformLogging: PlatformLogging,
     private val events: EventService,
     private val tasks: TaskService,
     private val services: ServiceManagerImpl,
@@ -85,7 +87,7 @@ internal class PluginRegistryImpl(
         events, tasks, services, logging, metrics, diagnostics, updates,
         placeholderHub, currencyFeature, configurations, directDownloads, sharedComponentCache,
     )
-    private val remotePolicyNotices = RemotePolicyNoticeRenderer(ownership)
+    private val remotePolicyNotices = RemotePolicyNoticeRenderer(platformLogging)
     private val remotePolicies = RemotePolicyMonitor(ownership, execution, remotePolicyNotices)
     private val dependencyValidator = ModuleDependencyValidator(ownership) {
         directDownloads != null

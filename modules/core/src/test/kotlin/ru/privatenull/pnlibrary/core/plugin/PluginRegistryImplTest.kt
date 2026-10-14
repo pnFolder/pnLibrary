@@ -532,6 +532,7 @@ class PluginRegistryImplTest {
                 ownership = platform,
                 identity = platform,
                 execution = platform,
+                platformLogging = platform,
                 events = events,
                 tasks = tasks,
                 services = ServiceManagerImpl(),

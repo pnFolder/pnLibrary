@@ -19,6 +19,7 @@ import ru.privatenull.pnlibrary.spi.platform.PlatformDiagnostics
 import ru.privatenull.pnlibrary.spi.platform.PlatformIdentity
 import ru.privatenull.pnlibrary.spi.platform.PlatformOwnership
 import ru.privatenull.pnlibrary.spi.platform.PlatformLogObservation
+import ru.privatenull.pnlibrary.spi.platform.PlatformLogging
 import java.nio.file.Files
 import java.nio.file.Path
 import java.util.concurrent.Executors
@@ -34,6 +35,7 @@ internal class SupportRuntime(
     private val identity: PlatformIdentity,
     private val platformDiagnostics: PlatformDiagnostics,
     private val platformLogObservation: PlatformLogObservation,
+    private val platformLogging: PlatformLogging,
     private val diagnostics: DiagnosticsRegistry,
     private val config: PnLibraryConfig,
     dataFolder: Path,
@@ -175,8 +177,8 @@ internal class SupportRuntime(
 
         val capture = logs.record(ownership, logOwner, LogLevel.ERROR, message, error)
         when {
-            capture == null || capture.emitOriginal -> ownership.log(logOwner, LogLevel.ERROR, message, error)
-            capture.summary != null -> ownership.log(logOwner, LogLevel.ERROR, capture.summary, null)
+            capture == null || capture.emitOriginal -> platformLogging.log(logOwner, LogLevel.ERROR, message, error)
+            capture.summary != null -> platformLogging.log(logOwner, LogLevel.ERROR, capture.summary, null)
         }
     }
 

@@ -21,6 +21,7 @@ import ru.privatenull.pnlibrary.spi.commands.PlatformCommandAdapter
 import ru.privatenull.pnlibrary.spi.metrics.PlatformMetricsFactory
 import ru.privatenull.pnlibrary.spi.platform.PlatformAdapter
 import ru.privatenull.pnlibrary.spi.platform.PlatformLifecycle
+import ru.privatenull.pnlibrary.spi.platform.unsupportedOwner
 import ru.privatenull.pnlibrary.spi.platform.PlatformSnapshot
 import ru.privatenull.pnlibrary.spi.platform.PluginSnapshot
 import ru.privatenull.pnlibrary.spi.tasks.PlatformTaskAdapter
@@ -130,7 +131,7 @@ internal class BukkitPlatformAdapter(
     /** Reads native plugin metadata, warning and returning null for unsupported owners. */
     override fun ownerMetadata(owner: Any): PluginSnapshot? {
         val target = owner as? Plugin
-            ?: return unsupportedOwner(owner)
+            ?: return unsupportedOwner(owner, this)
 
         return target.toSnapshot()
     }

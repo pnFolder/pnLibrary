@@ -118,14 +118,17 @@ public abstract interface class ru/privatenull/pnlibrary/spi/platform/PlatformLo
 	public static synthetic fun log$default (Lru/privatenull/pnlibrary/spi/platform/PlatformLogging;Ljava/lang/Object;Lru/privatenull/pnlibrary/api/logging/LogLevel;Ljava/lang/String;Ljava/lang/Throwable;ILjava/lang/Object;)V
 }
 
-public abstract interface class ru/privatenull/pnlibrary/spi/platform/PlatformOwnership : ru/privatenull/pnlibrary/spi/platform/PlatformLogging {
+public abstract interface class ru/privatenull/pnlibrary/spi/platform/PlatformOwnership {
 	public fun acceptsOwner (Ljava/lang/Object;)Z
 	public fun disableOwner (Ljava/lang/Object;)Z
 	public fun installedPlugins ()Ljava/util/Map;
 	public fun ownerDetails (Ljava/lang/Object;)Ljava/util/Map;
 	public fun ownerMetadata (Ljava/lang/Object;)Lru/privatenull/pnlibrary/spi/platform/PluginSnapshot;
 	public fun remotePolicyContext (Ljava/lang/Object;Lru/privatenull/pnlibrary/api/plugin/PluginMetadata;Ljava/util/Map;)Lru/privatenull/pnlibrary/api/remote/RemotePolicyContext;
-	public fun unsupportedOwner (Ljava/lang/Object;)Lru/privatenull/pnlibrary/spi/platform/PluginSnapshot;
+}
+
+public final class ru/privatenull/pnlibrary/spi/platform/PlatformOwnershipKt {
+	public static final fun unsupportedOwner (Ljava/lang/Object;Lru/privatenull/pnlibrary/spi/platform/PlatformLogging;)Lru/privatenull/pnlibrary/spi/platform/PluginSnapshot;
 }
 
 public abstract interface class ru/privatenull/pnlibrary/spi/platform/PlatformServices {

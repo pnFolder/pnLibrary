@@ -19,6 +19,7 @@ import ru.privatenull.pnlibrary.spi.platform.PlatformSnapshot
 import ru.privatenull.pnlibrary.spi.platform.PluginSnapshot
 import ru.privatenull.pnlibrary.spi.platform.UncaughtExceptionLogObserver
 import ru.privatenull.pnlibrary.spi.platform.PlatformLifecycle
+import ru.privatenull.pnlibrary.spi.platform.unsupportedOwner
 import ru.privatenull.pnlibrary.spi.tasks.PlatformTaskAdapter
 import ru.privatenull.pnlibrary.velocity.commands.VelocityCommandAdapter
 import ru.privatenull.pnlibrary.velocity.tasks.VelocityTaskAdapter
@@ -84,7 +85,7 @@ internal class VelocityPlatformAdapter(
         val description = server.pluginManager.plugins
             .firstOrNull { it.instance.orElse(null) === owner }
             ?.description
-            ?: return unsupportedOwner(owner)
+            ?: return unsupportedOwner(owner, this)
 
         return description.toSnapshot()
     }
