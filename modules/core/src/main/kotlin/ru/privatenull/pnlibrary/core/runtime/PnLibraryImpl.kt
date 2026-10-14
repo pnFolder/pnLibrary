@@ -54,7 +54,6 @@ import ru.privatenull.pnlibrary.core.downloads.DownloadConfiguration
 import ru.privatenull.pnlibrary.core.observability.SupportRuntime
 import ru.privatenull.pnlibrary.core.updates.UpdateServiceImpl
 import java.nio.file.Path
-import java.nio.file.Paths
 import java.util.concurrent.atomic.AtomicBoolean
 
 /**
@@ -94,7 +93,7 @@ internal class PnLibraryImpl(
     override val isClosed: Boolean get() = closedFlag.get()
     private val metricsRegistry = MetricsRegistry(metricsFactory)
     private var libraryMetrics: PluginMetrics? = null
-    val dataFolder: Path = dataFolderHint ?: extractDataFolder(owner)
+    val dataFolder: Path = PlatformDataFolderResolver.resolve(owner, dataFolderHint)
     private val support = SupportRuntime(
         owner = owner,
         ownership = platformOwnership,
@@ -357,15 +356,5 @@ internal class PnLibraryImpl(
 
     internal fun <T : Any> registerPlatform(type: Class<T>, implementation: T): AutoCloseable =
         platformProvider.register(type, implementation)
-
-    private fun extractDataFolder(owner: Any): Path {
-        return try {
-            val method = owner.javaClass.getMethod("getDataFolder")
-            val file = method.invoke(owner) as java.io.File
-            file.toPath()
-        } catch (_: Exception) {
-            Paths.get("plugins", owner.javaClass.simpleName)
-        }
-    }
 
 }
