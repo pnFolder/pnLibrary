@@ -68,8 +68,7 @@ public final class ru/privatenull/pnlibrary/spi/platform/JavaSnapshot$Companion 
 	public final fun current ()Lru/privatenull/pnlibrary/spi/platform/JavaSnapshot;
 }
 
-public abstract interface class ru/privatenull/pnlibrary/spi/platform/PlatformAdapter : java/lang/AutoCloseable, ru/privatenull/pnlibrary/spi/platform/PlatformBinding, ru/privatenull/pnlibrary/spi/platform/PlatformDiagnostics, ru/privatenull/pnlibrary/spi/platform/PlatformExecution, ru/privatenull/pnlibrary/spi/platform/PlatformIdentity, ru/privatenull/pnlibrary/spi/platform/PlatformLogObservation, ru/privatenull/pnlibrary/spi/platform/PlatformLogging, ru/privatenull/pnlibrary/spi/platform/PlatformOwnership, ru/privatenull/pnlibrary/spi/platform/PlatformServices, ru/privatenull/pnlibrary/spi/platform/PlatformStorage {
-	public abstract fun close ()V
+public abstract interface class ru/privatenull/pnlibrary/spi/platform/PlatformAdapter : ru/privatenull/pnlibrary/spi/platform/PlatformBinding, ru/privatenull/pnlibrary/spi/platform/PlatformDiagnostics, ru/privatenull/pnlibrary/spi/platform/PlatformExecution, ru/privatenull/pnlibrary/spi/platform/PlatformIdentity, ru/privatenull/pnlibrary/spi/platform/PlatformLogObservation, ru/privatenull/pnlibrary/spi/platform/PlatformLogging, ru/privatenull/pnlibrary/spi/platform/PlatformOwnership, ru/privatenull/pnlibrary/spi/platform/PlatformServices, ru/privatenull/pnlibrary/spi/platform/PlatformShutdown, ru/privatenull/pnlibrary/spi/platform/PlatformStorage {
 }
 
 public abstract interface class ru/privatenull/pnlibrary/spi/platform/PlatformBinding {
@@ -135,6 +134,10 @@ public abstract interface class ru/privatenull/pnlibrary/spi/platform/PlatformSe
 	public fun getCommandAdapter ()Lru/privatenull/pnlibrary/spi/commands/PlatformCommandAdapter;
 	public fun getMetricsFactory ()Lru/privatenull/pnlibrary/spi/metrics/PlatformMetricsFactory;
 	public fun getTaskAdapter ()Lru/privatenull/pnlibrary/spi/tasks/PlatformTaskAdapter;
+}
+
+public abstract interface class ru/privatenull/pnlibrary/spi/platform/PlatformShutdown : java/lang/AutoCloseable {
+	public abstract fun close ()V
 }
 
 public final class ru/privatenull/pnlibrary/spi/platform/PlatformSnapshot {
