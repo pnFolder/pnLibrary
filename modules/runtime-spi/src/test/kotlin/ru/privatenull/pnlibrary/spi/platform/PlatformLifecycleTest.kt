@@ -4,6 +4,9 @@ import org.junit.jupiter.api.Assertions.assertFalse
 import org.junit.jupiter.api.Assertions.assertTrue
 import org.junit.jupiter.api.Test
 import org.junit.jupiter.api.assertThrows
+import java.util.concurrent.CountDownLatch
+import java.util.concurrent.Executors
+import java.util.concurrent.TimeUnit
 
 class PlatformLifecycleTest {
     @Test
@@ -31,5 +34,33 @@ class PlatformLifecycleTest {
 
         lifecycle.bind { "registered" }
         assertThrows<IllegalStateException> { lifecycle.beginBinding() }
+    }
+
+    @Test
+    fun `close waits for an active binding transaction`() {
+        val lifecycle = PlatformLifecycle()
+        val entered = CountDownLatch(1)
+        val release = CountDownLatch(1)
+        val executor = Executors.newFixedThreadPool(2)
+
+        try {
+            val binding = executor.submit {
+                lifecycle.bind {
+                    entered.countDown()
+                    check(release.await(2, TimeUnit.SECONDS))
+                }
+            }
+            check(entered.await(2, TimeUnit.SECONDS))
+            val closing = executor.submit<Boolean> { lifecycle.close() }
+
+            assertTrue(!closing.isDone)
+            release.countDown()
+            binding.get(2, TimeUnit.SECONDS)
+            assertTrue(closing.get(2, TimeUnit.SECONDS))
+        } finally {
+            release.countDown()
+            executor.shutdownNow()
+            lifecycle.close()
+        }
     }
 }
