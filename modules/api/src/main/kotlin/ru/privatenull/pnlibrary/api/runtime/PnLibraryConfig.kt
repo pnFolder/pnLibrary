@@ -63,7 +63,6 @@ data class PnLibraryConfig @JvmOverloads constructor(
     val uploadPublicKey: String = "",
     val uploadKeyId: String = "support-1",
     val allowPlaintext: Boolean = false,
-    val privacy: Boolean = true,
     val configs: Boolean = true,
     val logs: Boolean = true,
     val logRecords: Int = 200,
@@ -77,6 +76,7 @@ data class PnLibraryConfig @JvmOverloads constructor(
     val excludedPaths: List<String> = emptyList(),
     val secretKeyPatterns: List<String> = emptyList(),
     val redactValuePatterns: List<String> = emptyList(),
+    val privacy: Boolean = true,
 ) {
     init {
         require(uploadMode in setOf("encrypted", "disabled")) {
