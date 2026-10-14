@@ -82,7 +82,7 @@ internal class PluginRegistryImpl(
         placeholderHub, currencyFeature, configurations, directDownloads, sharedComponentCache,
     )
     private val remotePolicyNotices = RemotePolicyNoticeRenderer(platform)
-    private val remotePolicies = RemotePolicyMonitor(platform, remotePolicyNotices)
+    private val remotePolicies = RemotePolicyMonitor(platform, platform, remotePolicyNotices)
     private val dependencyValidator = ModuleDependencyValidator(platform) {
         directDownloads != null
     }
