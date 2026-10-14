@@ -106,4 +106,3 @@ class PnLibraryRuntimeHost private constructor(
 private fun PlatformAdapter.summaryName(): String =
     if (implementationName.equals(type.displayName, ignoreCase = true)) type.displayName
     else "${type.displayName} / $implementationName"
-
