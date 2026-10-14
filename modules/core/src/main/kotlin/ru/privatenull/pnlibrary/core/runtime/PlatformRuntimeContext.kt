@@ -8,10 +8,10 @@ import ru.privatenull.pnlibrary.spi.platform.PlatformLogging
 import ru.privatenull.pnlibrary.spi.platform.PlatformLogObservation
 import ru.privatenull.pnlibrary.spi.platform.PlatformOwnership
 import ru.privatenull.pnlibrary.spi.platform.PlatformAdapter
-import ru.privatenull.pnlibrary.spi.platform.PlatformMetrics
-import ru.privatenull.pnlibrary.spi.platform.PlatformCommands
-import ru.privatenull.pnlibrary.spi.platform.PlatformAudience
-import ru.privatenull.pnlibrary.spi.platform.PlatformTasks
+import ru.privatenull.pnlibrary.spi.metrics.PlatformMetricsFactory
+import ru.privatenull.pnlibrary.spi.commands.PlatformCommandAdapter
+import ru.privatenull.pnlibrary.spi.audiences.PlatformAudienceAdapter
+import ru.privatenull.pnlibrary.spi.tasks.PlatformTaskAdapter
 import ru.privatenull.pnlibrary.spi.platform.PlatformReadiness
 import ru.privatenull.pnlibrary.spi.platform.PlatformBinding
 import ru.privatenull.pnlibrary.spi.platform.PlatformShutdown
@@ -26,10 +26,10 @@ internal data class PlatformRuntimeContext(
     val diagnostics: PlatformDiagnostics,
     val logObservation: PlatformLogObservation,
     val logging: PlatformLogging,
-    val metrics: PlatformMetrics,
-    val commands: PlatformCommands,
-    val audience: PlatformAudience,
-    val tasks: PlatformTasks,
+    val metricsFactory: PlatformMetricsFactory,
+    val commandAdapter: PlatformCommandAdapter,
+    val audienceAdapter: PlatformAudienceAdapter,
+    val taskAdapter: PlatformTaskAdapter,
     val dataFolder: Path,
     val binding: PlatformBinding,
     val shutdown: PlatformShutdown,
@@ -50,10 +50,10 @@ internal fun PlatformAdapter.toRuntimeContext(): PlatformRuntimeContext = Platfo
     diagnostics = this,
     logObservation = this,
     logging = this,
-    metrics = this,
-    commands = this,
-    audience = this,
-    tasks = this,
+    metricsFactory = metricsFactory,
+    commandAdapter = commandAdapter,
+    audienceAdapter = audienceAdapter,
+    taskAdapter = taskAdapter,
     dataFolder = dataFolder,
     binding = this,
     shutdown = this,
