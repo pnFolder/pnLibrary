@@ -72,25 +72,11 @@ class PnLibraryRuntimeHost private constructor(
             platform: PlatformAdapter,
             updateDirectory: Path,
         ): PnLibraryRuntimeHost {
-            val dataFolder = requireNotNull(platform.dataFolder) {
-                "Platform adapter must provide the pnLibrary data folder"
-            }
-            val library = PnLibraryBootstrap.bootstrap(
-                owner,
-                platform,
-                PnLibraryConfigLoader.load(dataFolder),
-            )
-
+            val started = RuntimeStartup.start(owner, platform, updateDirectory)
             return try {
-                val update = RuntimeUpdateMonitor.register(
-                    library = library,
-                    owner = owner,
-                    identity = platform,
-                    ownership = platform,
-                )
-                PnLibraryRuntimeHost(library, update.monitor, platform.summaryName()).also {
+                PnLibraryRuntimeHost(started.library, started.updateMonitor, platform.summaryName()).also {
                     runCatching {
-                        val box = library.logging.box(owner, "pnLibrary", update.currentVersion)
+                        val box = started.library.logging.box(owner, "pnLibrary", started.currentVersion)
                             .ok("Runtime", "общие сервисы запущены")
                             .ok("Платформа", platform.summaryName())
                             .ok("Обновления", "проверка релизов запущена")
@@ -98,7 +84,7 @@ class PnLibraryRuntimeHost private constructor(
                     }
                 }
             } catch (error: Throwable) {
-                library.close()
+                started.library.close()
                 throw error
             }
         }
