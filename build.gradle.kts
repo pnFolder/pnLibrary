@@ -20,7 +20,6 @@ apiValidation {
             "smoke-bungee",
             "smoke-velocity",
             "runtime",
-            "faststats-core",
             "faststats-velocity",
             "update",
             "currency-runtime",
