@@ -6,13 +6,13 @@ import ru.privatenull.pnlibrary.console.ConsoleCard
 import ru.privatenull.pnlibrary.console.ConsoleTheme
 import ru.privatenull.pnlibrary.console.ConsoleTree
 import ru.privatenull.pnlibrary.spi.platform.PlatformLogging
-import ru.privatenull.pnlibrary.spi.platform.PlatformOwnership
+import ru.privatenull.pnlibrary.spi.platform.PlatformOwnerMetadata
 import java.io.IOException
 import java.nio.file.Paths
 
 internal class DependencyDownloadReporter(
     private val logging: PlatformLogging,
-    private val ownership: PlatformOwnership,
+    private val ownership: PlatformOwnerMetadata,
 ) {
     fun failure(owner: Any, error: Throwable, level: LogLevel) {
         val details = DownloadFailureInterpreter.explain(error)

@@ -8,7 +8,8 @@ import ru.privatenull.pnlibrary.spi.platform.PlatformExecution
 import ru.privatenull.pnlibrary.spi.platform.PlatformReadiness
 import ru.privatenull.pnlibrary.spi.platform.PlatformIdentity
 import ru.privatenull.pnlibrary.spi.platform.PlatformLogging
-import ru.privatenull.pnlibrary.spi.platform.PlatformOwnership
+import ru.privatenull.pnlibrary.spi.platform.PlatformOwnerMetadata
+import ru.privatenull.pnlibrary.spi.platform.PlatformPluginInventory
 import ru.privatenull.pnlibrary.update.*
 import java.nio.file.Files
 import java.nio.file.Path
@@ -22,7 +23,8 @@ import java.util.concurrent.atomic.AtomicBoolean
 /** One catalogue → resolver → verifier → transaction pipeline for every component. */
 internal class UpdateServiceImpl(
     private val logging: PlatformLogging,
-    private val ownership: PlatformOwnership,
+    private val ownership: PlatformOwnerMetadata,
+    private val inventory: PlatformPluginInventory,
     private val identity: PlatformIdentity,
     private val execution: PlatformExecution,
     private val readiness: PlatformReadiness,
@@ -40,7 +42,7 @@ internal class UpdateServiceImpl(
     private val automaticPolicy = UpdateAutomaticPolicy(configuration) { registrations.snapshot() }
     private val installer = UpdateInstaller(identity, dataFolder, configuration, resources.http)
     private val freezes = FreezeStore(dataFolder.resolve("updates/freezes.json"))
-    private val graphResolver = UpdateGraphResolver(ownership, identity, configuration, resources.catalogGateway, freezes)
+    private val graphResolver = UpdateGraphResolver(ownership, inventory, identity, configuration, resources.catalogGateway, freezes)
     private val runtime = UpdateOrchestratorRuntime(
         configuration = configuration,
         dataFolder = dataFolder,

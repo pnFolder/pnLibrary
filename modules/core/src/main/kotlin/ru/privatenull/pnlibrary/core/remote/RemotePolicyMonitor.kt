@@ -9,10 +9,10 @@ import ru.privatenull.pnlibrary.api.tasks.TaskExecution
 import ru.privatenull.pnlibrary.api.tasks.TaskScope
 import ru.privatenull.pnlibrary.api.tasks.TaskSpec
 import ru.privatenull.pnlibrary.spi.platform.PlatformExecution
-import ru.privatenull.pnlibrary.spi.platform.PlatformOwnership
+import ru.privatenull.pnlibrary.spi.platform.PlatformOwnerControl
 
 internal class RemotePolicyMonitor(
-    private val ownership: PlatformOwnership,
+    private val ownership: PlatformOwnerControl,
     private val execution: PlatformExecution,
     private val notices: RemotePolicyNoticeRenderer,
 ) {

@@ -126,6 +126,7 @@ internal class PnLibraryImpl(
     private val updateService = UpdateServiceImpl(
         platformLogging,
         platformOwnership,
+        platformOwnership,
         platformIdentity,
         platformExecution,
         platformReadiness,
@@ -136,6 +137,7 @@ internal class PnLibraryImpl(
     )
     private val directDownloadManager = DirectDownloadManager(
         platformIdentity,
+        platformOwnership,
         platformOwnership,
         platformExecution,
         platformReadiness,

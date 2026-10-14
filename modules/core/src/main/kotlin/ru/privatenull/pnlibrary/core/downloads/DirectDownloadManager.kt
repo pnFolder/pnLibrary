@@ -9,7 +9,8 @@ import ru.privatenull.pnlibrary.spi.platform.PlatformExecution
 import ru.privatenull.pnlibrary.spi.platform.PlatformReadiness
 import ru.privatenull.pnlibrary.spi.platform.PlatformIdentity
 import ru.privatenull.pnlibrary.spi.platform.PlatformLogging
-import ru.privatenull.pnlibrary.spi.platform.PlatformOwnership
+import ru.privatenull.pnlibrary.spi.platform.PlatformOwnerMetadata
+import ru.privatenull.pnlibrary.spi.platform.PlatformPluginInventory
 import ru.privatenull.pnlibrary.update.TrustedHttpClient
 import java.nio.file.Files
 import java.nio.file.Path
@@ -21,7 +22,8 @@ import java.util.concurrent.atomic.AtomicBoolean
 
 internal class DirectDownloadManager(
     private val identity: PlatformIdentity,
-    private val ownership: PlatformOwnership,
+    private val ownership: PlatformOwnerMetadata,
+    private val inventory: PlatformPluginInventory,
     private val execution: PlatformExecution,
     private val readiness: PlatformReadiness,
     private val logging: PlatformLogging,
@@ -78,9 +80,9 @@ internal class DirectDownloadManager(
     }
 
     fun registerDependencies(owner: Any, dependencies: List<PluginDependency>): DownloadRegistration? {
-        val installed = runCatching { ownership.installedPlugins() }.getOrNull().orEmpty()
+        val installed = runCatching { inventory.installedPlugins() }.getOrNull().orEmpty()
         readiness.whenServerReady(Runnable {
-            confirmDownloadedDependencies(owner, runCatching { ownership.installedPlugins() }.getOrNull().orEmpty())
+            confirmDownloadedDependencies(owner, runCatching { inventory.installedPlugins() }.getOrNull().orEmpty())
         })
         val download = dependencyRequestFactory.create(dependencies, installed) ?: return null
         return register(owner, download.request) { declaration, path ->

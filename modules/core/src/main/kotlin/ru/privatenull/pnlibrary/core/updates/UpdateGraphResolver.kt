@@ -6,7 +6,8 @@ import ru.privatenull.pnlibrary.api.updates.UpdateChannel
 import ru.privatenull.pnlibrary.api.updates.UpdatePlan
 import ru.privatenull.pnlibrary.api.version.PnLibraryApi
 import ru.privatenull.pnlibrary.spi.platform.PlatformIdentity
-import ru.privatenull.pnlibrary.spi.platform.PlatformOwnership
+import ru.privatenull.pnlibrary.spi.platform.PlatformOwnerMetadata
+import ru.privatenull.pnlibrary.spi.platform.PlatformPluginInventory
 import ru.privatenull.pnlibrary.update.RefreshMode
 import ru.privatenull.pnlibrary.update.FreezeStore
 import ru.privatenull.pnlibrary.update.ResolutionResult
@@ -16,7 +17,8 @@ import java.time.Instant
 
 /** Loads release catalogues and resolves one coherent update plan for all registered products. */
 internal class UpdateGraphResolver(
-    private val ownership: PlatformOwnership,
+    private val ownership: PlatformOwnerMetadata,
+    private val inventory: PlatformPluginInventory,
     private val identity: PlatformIdentity,
     private val configuration: UpdateConfiguration,
     private val catalogs: ReleaseCatalogGateway,
@@ -95,7 +97,7 @@ internal class UpdateGraphResolver(
     private fun resolverPolicy() = ResolverPolicy(
         allowManagedInstalls = configuration.downloads.allowManagedPlugins &&
             configuration.installation.allowNewPlugins,
-        installedExternalPlugins = runCatching { ownership.installedPlugins() }
+        installedExternalPlugins = runCatching { inventory.installedPlugins() }
             .getOrNull()
             .orEmpty()
             .keys,
