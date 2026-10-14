@@ -181,18 +181,17 @@ internal class BukkitPlatformAdapter(
 
     /** Registers commands and lifecycle listeners, rolling back partial initialization. */
     override fun bind(library: PnLibrary) {
-        lifecycle.beginBinding()
-
-        try {
-            lifecycleListener = BukkitLifecycleListener(plugin, library).start()
-            controlRegistration = library.commands.register(
-                plugin,
-                BukkitControlCommand(plugin, library).definition(),
-            )
-        } catch (error: Throwable) {
-            releaseBindings()
-            lifecycle.endBinding()
-            throw error
+        lifecycle.bind {
+            try {
+                lifecycleListener = BukkitLifecycleListener(plugin, library).start()
+                controlRegistration = library.commands.register(
+                    plugin,
+                    BukkitControlCommand(plugin, library).definition(),
+                )
+            } catch (error: Throwable) {
+                releaseBindings()
+                throw error
+            }
         }
     }
 
