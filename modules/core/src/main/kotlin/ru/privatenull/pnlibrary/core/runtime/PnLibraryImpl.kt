@@ -5,12 +5,15 @@ import ru.privatenull.pnlibrary.api.diagnostics.DiagnosticReport
 import ru.privatenull.pnlibrary.api.logging.LoggingService
 import ru.privatenull.pnlibrary.api.metrics.MetricsService
 import ru.privatenull.pnlibrary.api.metrics.PluginMetrics
-import ru.privatenull.pnlibrary.spi.platform.PlatformAdapter
 import ru.privatenull.pnlibrary.spi.platform.PlatformDiagnostics
 import ru.privatenull.pnlibrary.spi.platform.PlatformExecution
 import ru.privatenull.pnlibrary.spi.platform.PlatformIdentity
 import ru.privatenull.pnlibrary.spi.platform.PlatformLogging
 import ru.privatenull.pnlibrary.spi.platform.PlatformOwnership
+import ru.privatenull.pnlibrary.spi.metrics.PlatformMetricsFactory
+import ru.privatenull.pnlibrary.spi.commands.PlatformCommandAdapter
+import ru.privatenull.pnlibrary.spi.audiences.PlatformAudienceAdapter
+import ru.privatenull.pnlibrary.spi.tasks.PlatformTaskAdapter
 import ru.privatenull.pnlibrary.api.runtime.PnLibrary
 import ru.privatenull.pnlibrary.api.runtime.PnLibraryConfig
 import ru.privatenull.pnlibrary.api.runtime.PnLibraryProvider
@@ -61,7 +64,21 @@ import java.util.concurrent.atomic.AtomicBoolean
  */
 internal class PnLibraryImpl(
     override val owner: Any,
-    private val platform: PlatformAdapter,
+    private val platformIdentity: PlatformIdentity,
+    private val platformOwnership: PlatformOwnership,
+    private val platformExecution: PlatformExecution,
+    private val platformLogging: PlatformLogging,
+    private val platformDiagnostics: PlatformDiagnostics,
+    private val metricsFactory: PlatformMetricsFactory,
+    private val commandAdapter: PlatformCommandAdapter,
+    private val audienceAdapter: PlatformAudienceAdapter,
+    private val taskAdapter: PlatformTaskAdapter,
+    private val platformId: String,
+    private val implementationName: String,
+    private val isProxy: Boolean,
+    private val isServer: Boolean,
+    private val dataFolderHint: Path?,
+    private val closePlatform: () -> Unit,
     override val diagnostics: DiagnosticsRegistry,
     val config: PnLibraryConfig = PnLibraryConfig(),
     private val onClose: () -> Unit = {},
@@ -69,20 +86,15 @@ internal class PnLibraryImpl(
 
     override val configuration: PnLibraryConfig get() = config
 
-    override val version: String = platform.ownerDetails(owner)["version"] ?: "unknown"
+    override val version: String = platformOwnership.ownerDetails(owner)["version"] ?: "unknown"
     override fun isAtLeastVersion(minimumVersion: String): Boolean =
         SemanticVersion.tryParse(version)?.isAtLeast(minimumVersion) ?: false
 
     private val closedFlag = AtomicBoolean(false)
     override val isClosed: Boolean get() = closedFlag.get()
-    private val platformIdentity: PlatformIdentity = platform
-    private val platformOwnership: PlatformOwnership = platform
-    private val platformExecution: PlatformExecution = platform
-    private val platformLogging: PlatformLogging = platform
-    private val platformDiagnostics: PlatformDiagnostics = platform
-    private val metricsRegistry = MetricsRegistry(platform.metricsFactory)
+    private val metricsRegistry = MetricsRegistry(metricsFactory)
     private var libraryMetrics: PluginMetrics? = null
-    val dataFolder: Path = platform.dataFolder ?: extractDataFolder(owner)
+    val dataFolder: Path = dataFolderHint ?: extractDataFolder(owner)
     private val support = SupportRuntime(
         owner = owner,
         ownership = platformOwnership,
@@ -126,14 +138,14 @@ internal class PnLibraryImpl(
     override val updates: UpdateService get() = updateService
     private val taskSettings = TaskServiceSettings(config.taskHistoryCapacity)
     private val taskService = TaskServiceImpl(
-        adapter = platform.taskAdapter,
+        adapter = taskAdapter,
         settings = taskSettings,
         errorLogger = ::recordAndLog,
     )
     override val tasks: TaskService get() = taskService
-    private val commandService = CommandServiceImpl(platform.commandAdapter, platformLogging)
+    private val commandService = CommandServiceImpl(commandAdapter, platformLogging)
     override val commands: CommandService get() = commandService
-    private val audienceService = AudienceServiceImpl(platform.audienceAdapter)
+    private val audienceService = AudienceServiceImpl(audienceAdapter)
     override val audiences: AudienceService get() = audienceService
     private val serviceManager = ServiceManagerImpl()
     override val services: ServiceManager get() = serviceManager
@@ -177,7 +189,7 @@ internal class PnLibraryImpl(
     private fun runtimeDiagnostics(): Map<String, Any?> {
         val taskSnapshots = tasks.query()
         val updateSnapshots = updates.all()
-        val platformCoverage = platform.diagnosticDetails(includeSensitive = false)["coverage"]
+        val platformCoverage = platformDiagnostics.diagnosticDetails(includeSensitive = false)["coverage"]
         val taskFailures = taskSnapshots.count { it.lastFailure != null }
         val failedUpdates = updateSnapshots.count { it.snapshot.state.name.equals("FAILED", ignoreCase = true) }
         val diagnosticSummary = diagnostics.diagnosticSummary()
@@ -189,10 +201,10 @@ internal class PnLibraryImpl(
         "library" to linkedMapOf<String, Any?>(
             "version" to version,
             "closed" to isClosed,
-            "platform" to platform.id,
-            "implementation" to platform.implementationName,
-            "proxy" to platform.isProxy,
-            "server" to platform.isServer,
+            "platform" to platformId,
+            "implementation" to implementationName,
+            "proxy" to isProxy,
+            "server" to isServer,
             "dataFolder" to if (config.privacy) "[redacted]" else
                 dataFolder.toAbsolutePath().normalize().toString(),
             "configuration" to linkedMapOf<String, Any?>(
@@ -322,7 +334,7 @@ internal class PnLibraryImpl(
                 add { taskService.close() }
                 add { support.close() }
                 add { PnLibraryProvider.clear(this@PnLibraryImpl) }
-                add { platform.close() }
+                add { closePlatform() }
                 add { onClose() }
             }
             shutdown.run()
