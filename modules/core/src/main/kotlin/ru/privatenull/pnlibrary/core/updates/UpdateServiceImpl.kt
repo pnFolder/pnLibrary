@@ -39,6 +39,7 @@ internal class UpdateServiceImpl(
     // The check can cover several registered products, so long per-request
     // timeouts otherwise add up and look like a frozen command.
     private val resources = UpdateRuntimeResources(dataFolder)
+    private val automaticPolicy = UpdateAutomaticPolicy(configuration) { registrations.snapshot() }
     private val installer = UpdateInstaller(identity, dataFolder, configuration, resources.http)
     private val freezes = FreezeStore(dataFolder.resolve("updates/freezes.json"))
     private val graphResolver = UpdateGraphResolver(ownership, identity, configuration, resources.catalogGateway, freezes)
@@ -46,7 +47,7 @@ internal class UpdateServiceImpl(
         configuration, UpdateStateStore(dataFolder.resolve("updates"), warning = {
             logging.log(this, LogLevel.WARNING, it)
         }), executor, ::resolveGraph, ::stageGraph, ::announce,
-        automaticAllowed = ::automaticAllowed,
+        automaticAllowed = automaticPolicy::allows,
         remoteResolver = { resolveGraph(RefreshMode.FORCE_REMOTE) },
     ).also {
         runCatching { installer.recoverInterruptedTransactions() }.onFailure { error ->
@@ -119,19 +120,6 @@ internal class UpdateServiceImpl(
 
     private fun resolveGraph(refreshMode: RefreshMode = RefreshMode.CACHED): ResolutionResult =
         graphResolver.resolve(registrations.snapshot(), refreshMode)
-
-    private fun automaticAllowed(snapshot: UpdatePlanSnapshot): Boolean {
-        val changed = snapshot.plan?.changes?.map(ProductChange::product).orEmpty()
-        return changed.all { component ->
-            if (component.value == "pnlibrary") configuration.library.automaticDownload
-            else {
-                val policy = configuration.plugins[component.value]
-                configuration.pluginUpdatesEnabled && policy?.enabled != false &&
-                    (policy?.automaticDownload ?: (configuration.pluginAutomaticDownload ||
-                        registrations.snapshot().firstOrNull { it.descriptor.id == component }?.request?.automaticDownload == true))
-            }
-        }
-    }
 
     private fun stageGraph(snapshot: UpdatePlanSnapshot) {
         installer.stage(snapshot, registrations.snapshot())
