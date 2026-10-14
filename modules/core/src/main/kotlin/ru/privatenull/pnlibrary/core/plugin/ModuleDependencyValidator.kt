@@ -3,11 +3,11 @@ package ru.privatenull.pnlibrary.core.plugin
 import ru.privatenull.pnlibrary.api.plugin.PluginDependency
 import ru.privatenull.pnlibrary.api.updates.ProductDescriptor
 import ru.privatenull.pnlibrary.api.version.SemanticVersion
-import ru.privatenull.pnlibrary.spi.platform.PlatformAdapter
+import ru.privatenull.pnlibrary.spi.platform.PlatformOwnership
 
 /** Checks that all required managed and native plugin dependencies can be satisfied. */
 internal class ModuleDependencyValidator(
-    private val platform: PlatformAdapter,
+    private val platform: PlatformOwnership,
     private val downloadsAvailable: () -> Boolean,
 ) {
     fun validate(

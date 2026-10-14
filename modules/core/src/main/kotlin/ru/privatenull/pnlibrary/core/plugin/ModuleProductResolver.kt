@@ -3,11 +3,11 @@ package ru.privatenull.pnlibrary.core.plugin
 import ru.privatenull.pnlibrary.api.plugin.ModuleId
 import ru.privatenull.pnlibrary.api.updates.ProductDescriptor
 import ru.privatenull.pnlibrary.api.version.PnLibraryApi
-import ru.privatenull.pnlibrary.spi.platform.PlatformAdapter
+import ru.privatenull.pnlibrary.spi.platform.PlatformOwnership
 
 /** Resolves and binds the update identity represented by one registered module. */
 internal class ModuleProductResolver(
-    private val platform: PlatformAdapter,
+    private val platform: PlatformOwnership,
 ) {
     fun resolve(
         owner: Any,

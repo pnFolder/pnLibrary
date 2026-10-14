@@ -86,7 +86,7 @@ internal class PnLibraryImpl(
     override val observability get() = support.service
     override val activity: ActivityService get() = observability
     override val metrics: MetricsService get() = metricsRegistry
-    override val logging: LoggingService = PlatformLoggingService(platform, support.logs)
+    override val logging: LoggingService = PlatformLoggingService(platform, platform, platform, platform, support.logs)
     private val configurationService = ConfigurationServiceImpl(platform)
     override val configurations: ConfigurationService get() = configurationService
     private val updateService = UpdateServiceImpl(platform, dataFolder)

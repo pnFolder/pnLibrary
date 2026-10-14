@@ -2,7 +2,7 @@ package ru.privatenull.pnlibrary.core.logging
 
 import ru.privatenull.pnlibrary.api.logging.LogLevel
 import ru.privatenull.pnlibrary.core.diagnostics.DiagnosticRedactor
-import ru.privatenull.pnlibrary.spi.platform.PlatformAdapter
+import ru.privatenull.pnlibrary.spi.platform.PlatformOwnership
 import java.io.PrintWriter
 import java.io.StringWriter
 import java.nio.charset.StandardCharsets
@@ -52,7 +52,7 @@ internal class DiagnosticLogBuffer(private val capacity: Int = 2_000) {
      */
     @Synchronized
     fun record(
-        platform: PlatformAdapter,
+        platform: PlatformOwnership,
         owner: Any,
         level: LogLevel,
         message: String,

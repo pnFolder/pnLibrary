@@ -76,7 +76,7 @@ internal class PluginRegistryImpl(
     private val registrationSequence = AtomicLong()
     private val sharedComponentCache = ComponentCache()
     private val productResolver = ModuleProductResolver(platform)
-    private val metadataFactory = ModuleMetadataFactory(platform)
+    private val metadataFactory = ModuleMetadataFactory(platform, platform)
     private val resourceFactory = ModuleResourceFactory(
         platform, events, tasks, services, logging, metrics, diagnostics, updates,
         placeholderHub, currencyFeature, configurations, directDownloads, sharedComponentCache,

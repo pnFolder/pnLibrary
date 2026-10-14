@@ -65,7 +65,13 @@ class DiagnosticLogBufferTest {
     @Test
     fun `logger prints the full repeated error only once`() {
         val platform = TestPlatform()
-        val logger = PlatformLoggingService(platform, DiagnosticLogBuffer(10)).logger(this, "test")
+        val logger = PlatformLoggingService(
+            platform,
+            platform,
+            platform,
+            platform,
+            DiagnosticLogBuffer(10),
+        ).logger(this, "test")
         val error = IllegalStateException("database unavailable")
 
         logger.error("Load failed", error)
