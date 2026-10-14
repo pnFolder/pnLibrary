@@ -11,6 +11,7 @@ import ru.privatenull.pnlibrary.api.logging.LogLevel
 import ru.privatenull.pnlibrary.spi.commands.PlatformCommandDispatcher
 import ru.privatenull.pnlibrary.spi.commands.PlatformCommandRegistration
 import ru.privatenull.pnlibrary.spi.platform.PlatformAdapter
+import ru.privatenull.pnlibrary.spi.platform.PlatformLogging
 import java.util.Collections
 import java.util.IdentityHashMap
 import java.util.LinkedHashSet
@@ -20,8 +21,10 @@ import java.util.concurrent.atomic.AtomicLong
 
 /** Shared validation, permission, dispatch, and lifecycle engine for portable commands. */
 internal class CommandServiceImpl(
-    private val platform: PlatformAdapter,
+    private val commandAdapter: ru.privatenull.pnlibrary.spi.commands.PlatformCommandAdapter,
+    private val logging: PlatformLogging,
 ) : CommandService, PlatformCommandDispatcher, AutoCloseable {
+    constructor(platform: PlatformAdapter) : this(platform.commandAdapter, platform)
     private val lock = Any()
     private val closed = AtomicBoolean(false)
     private val reservedNames = linkedSetOf<String>()
@@ -46,7 +49,7 @@ internal class CommandServiceImpl(
         }
 
         val native = try {
-            platform.commandAdapter.register(owner, command, this)
+            commandAdapter.register(owner, command, this)
         } catch (error: Throwable) {
             synchronized(lock) { reservedNames.removeAll(names) }
             throw error
@@ -135,8 +138,8 @@ internal class CommandServiceImpl(
         if (!closed.compareAndSet(false, true)) return
         val current = synchronized(lock) { registrations.toList() }
         closeRegistrations(current.asReversed())
-        runCatching { platform.commandAdapter.close() }.onFailure { error ->
-            platform.log(platform, LogLevel.ERROR, "Command adapter cleanup failed", error)
+        runCatching { commandAdapter.close() }.onFailure { error ->
+            logging.log(this, LogLevel.ERROR, "Command adapter cleanup failed", error)
         }
     }
 
@@ -148,13 +151,13 @@ internal class CommandServiceImpl(
         synchronized(lock) {
             failuresByCommand[commandName] = (failuresByCommand[commandName] ?: 0L) + 1L
         }
-        platform.log(owner, LogLevel.ERROR, "Command execution failed", error)
+        logging.log(owner, LogLevel.ERROR, "Command execution failed", error)
         context.sender.send(Component.text("Command execution failed."))
     }
 
     private fun suggestionFailed(owner: Any, error: Throwable) {
         suggestionFailureCount.incrementAndGet()
-        platform.log(owner, LogLevel.ERROR, "Command suggestions failed", error)
+        logging.log(owner, LogLevel.ERROR, "Command suggestions failed", error)
     }
 
     @Synchronized
@@ -172,7 +175,7 @@ internal class CommandServiceImpl(
     private fun closeRegistrations(current: Iterable<Registration>) {
         current.forEach { registration ->
             runCatching(registration::close).onFailure { error ->
-                platform.log(registration.owner, LogLevel.ERROR, "Command cleanup failed", error)
+                logging.log(registration.owner, LogLevel.ERROR, "Command cleanup failed", error)
             }
         }
     }

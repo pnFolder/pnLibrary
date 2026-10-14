@@ -106,7 +106,7 @@ internal class PnLibraryImpl(
         errorLogger = ::recordAndLog,
     )
     override val tasks: TaskService get() = taskService
-    private val commandService = CommandServiceImpl(platform)
+    private val commandService = CommandServiceImpl(platform.commandAdapter, platform)
     override val commands: CommandService get() = commandService
     private val audienceService = AudienceServiceImpl(platform.audienceAdapter)
     override val audiences: AudienceService get() = audienceService
