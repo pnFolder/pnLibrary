@@ -160,11 +160,6 @@ internal class PnLibraryImpl(
         val platformCoverage = platform.diagnosticDetails(includeSensitive = false)["coverage"]
         val taskFailures = taskSnapshots.count { it.lastFailure != null }
         val failedUpdates = updateSnapshots.count { it.snapshot.state.name.equals("FAILED", ignoreCase = true) }
-        val availableReleases = updateSnapshots.flatMap { it.snapshot.availableReleases }
-        val latestReleaseByChannel = availableReleases
-            .filter { it.publishedAt != null }
-            .groupBy { it.channel.name }
-            .mapValues { (_, releases) -> releases.maxByOrNull { it.publishedAt!! }!! }
         val diagnosticSummary = diagnostics.diagnosticSummary()
         val history = diagnostics.historyAnalytics()
         return linkedMapOf(
@@ -220,35 +215,7 @@ internal class PnLibraryImpl(
                 },
             )
         },
-        "updateSummary" to linkedMapOf<String, Any?>(
-            "count" to updateSnapshots.size,
-            "byChannel" to updateSnapshots.groupingBy { it.snapshot.channel.name }.eachCount(),
-            "byState" to updateSnapshots.groupingBy { it.snapshot.state.name }.eachCount(),
-            "availableCount" to updateSnapshots.count { it.snapshot.latestVersion != null },
-            "automaticDownloadCount" to updateSnapshots.count { it.snapshot.automaticDownload },
-            "javaIncompatibleCount" to updateSnapshots.count {
-                it.snapshot.state.name.contains("JAVA", ignoreCase = true) ||
-                    it.snapshot.message?.contains("java", ignoreCase = true) == true
-            },
-            "releaseCountByProduct" to updateSnapshots.associate {
-                it.snapshot.product to it.snapshot.availableReleases.size
-            },
-            "releaseCountByChannel" to updateSnapshots
-                .flatMap { it.snapshot.availableReleases }
-                .groupingBy { it.channel.name }
-                .eachCount(),
-            "latestPublishedAtByChannel" to latestReleaseByChannel.mapValues { (_, release) -> release.publishedAt!!.toString() },
-            "releaseAgeDaysByChannel" to latestReleaseByChannel.mapValues { (_, release) ->
-                java.time.Duration.between(release.publishedAt, java.time.Instant.now()).toDays().coerceAtLeast(0)
-            },
-            "staleChannelCount" to latestReleaseByChannel.count { (_, release) ->
-                java.time.Duration.between(release.publishedAt, java.time.Instant.now()).toDays() >= 30
-            },
-            "messages" to updateSnapshots
-                .mapNotNull { it.snapshot.message?.take(256) }
-                .groupingBy { it }
-                .eachCount(),
-        ),
+        "updateSummary" to RuntimeUpdateSummary.of(updateSnapshots),
         "analytics" to linkedMapOf<String, Any?>(
             "status" to when {
                 taskFailures > 0 || failedUpdates > 0 -> "critical"
