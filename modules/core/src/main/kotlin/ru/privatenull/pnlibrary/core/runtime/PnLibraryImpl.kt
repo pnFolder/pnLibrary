@@ -65,23 +65,26 @@ import java.util.concurrent.atomic.AtomicBoolean
  */
 internal class PnLibraryImpl(
     override val owner: Any,
-    private val platformIdentity: PlatformIdentity,
-    private val platformOwnership: PlatformOwnership,
-    private val platformExecution: PlatformExecution,
-    private val platformReadiness: PlatformReadiness,
-    private val platformLogging: PlatformLogging,
-    private val platformDiagnostics: PlatformDiagnostics,
-    private val platformLogObservation: PlatformLogObservation,
-    private val metricsFactory: PlatformMetricsFactory,
-    private val commandAdapter: PlatformCommandAdapter,
-    private val audienceAdapter: PlatformAudienceAdapter,
-    private val taskAdapter: PlatformTaskAdapter,
-    private val dataFolderHint: Path?,
-    private val closePlatform: () -> Unit,
+    private val platform: PlatformRuntimeContext,
     override val diagnostics: DiagnosticsRegistry,
     val config: PnLibraryConfig = PnLibraryConfig(),
     private val onClose: () -> Unit = {},
 ) : PnLibrary {
+
+    // Keep the service wiring readable while the platform boundary remains one context object.
+    private val platformIdentity get() = platform.identity
+    private val platformOwnership get() = platform.ownership
+    private val platformExecution get() = platform.execution
+    private val platformReadiness get() = platform.readiness
+    private val platformLogging get() = platform.logging
+    private val platformDiagnostics get() = platform.diagnostics
+    private val platformLogObservation get() = platform.logObservation
+    private val metricsFactory get() = platform.metricsFactory
+    private val commandAdapter get() = platform.commandAdapter
+    private val audienceAdapter get() = platform.audienceAdapter
+    private val taskAdapter get() = platform.taskAdapter
+    private val dataFolderHint get() = platform.dataFolder
+    private val closePlatform get() = platform.shutdown::close
 
     override val configuration: PnLibraryConfig get() = config
 
