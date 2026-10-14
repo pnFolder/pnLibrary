@@ -1,5 +1,6 @@
 package ru.privatenull.pnlibrary.spi.platform
 
+import kotlin.jvm.JvmSynthetic
 import java.util.concurrent.atomic.AtomicBoolean
 
 /** Shared lifecycle state for a platform adapter: open, bound, and closed. */
@@ -19,6 +20,7 @@ class PlatformLifecycle {
     }
 
     /** Runs one binding transaction and rolls back the bound state if registration fails. */
+    @JvmSynthetic
     inline fun <T> bind(block: () -> T): T {
         beginBinding()
         return try {
