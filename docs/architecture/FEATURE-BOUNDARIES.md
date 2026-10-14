@@ -55,7 +55,7 @@ The repository intentionally keeps only four kinds of Gradle modules:
 | Kind | Required reason | Current examples |
 |---|---|---|
 | published API | independently consumed public contracts | `api`, `common`, `currency-api`, `console-style`, platform APIs |
-| shared runtime | implementation reused by multiple platform runtimes | `core`, `runtime-spi`, `currency-runtime`, `update` |
+| shared runtime | implementation reused by multiple platform runtimes | `core` (including update), `runtime-spi`, `currency-runtime` |
 | platform runtime | native server integration or incompatible JVM/server dependency | Bukkit, Bungee, Velocity runtimes, `faststats-velocity` |
 | build/tooling | distribution, bootstrap installers, examples, or build plugins | `distribution`, `bootstrap:bukkit`, examples, component metadata |
 
