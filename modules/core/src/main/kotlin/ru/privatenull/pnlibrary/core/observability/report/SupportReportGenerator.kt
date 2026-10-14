@@ -9,7 +9,8 @@ import ru.privatenull.pnlibrary.core.upload.UploadProvider
 import ru.privatenull.pnlibrary.core.upload.UploadLedger
 import ru.privatenull.pnlibrary.core.upload.UploadReceipt
 import ru.privatenull.pnlibrary.core.observability.ObservabilityReportSnapshot
-import ru.privatenull.pnlibrary.spi.platform.PlatformAdapter
+import ru.privatenull.pnlibrary.spi.platform.PlatformDiagnostics
+import ru.privatenull.pnlibrary.spi.platform.PlatformIdentity
 import java.nio.file.Path
 
 /**
@@ -39,7 +40,8 @@ internal class SupportReportGenerator(
     private val dataFolder: Path,
     private val config: PnLibraryConfig,
     diagnosticsRegistry: DiagnosticsRegistry,
-    platformAdapter: PlatformAdapter,
+    platformIdentity: PlatformIdentity,
+    platformDiagnostics: PlatformDiagnostics,
     private val encryptionCodec: EncryptedEnvelopeCodec?,
     private val uploader: UploadProvider?,
     private val uploadLedger: UploadLedger?,
@@ -55,7 +57,8 @@ internal class SupportReportGenerator(
         dataFolder = dataFolder,
         config = config,
         diagnostics = diagnosticsRegistry,
-        platform = platformAdapter,
+        identity = platformIdentity,
+        diagnosticsPlatform = platformDiagnostics,
         diagnosticLogs = diagnosticLogs,
         diagnosticHistory = diagnosticHistory,
         observabilitySnapshot = observabilitySnapshot,
