@@ -51,6 +51,7 @@ internal object PnLibraryBootstrap {
             platformExecution = platform.execution,
             platformLogging = platform.logging,
             platformDiagnostics = platform.diagnostics,
+            platformLogObservation = platform.logObservation,
             metricsFactory = platform.services.metricsFactory,
             commandAdapter = platform.services.commandAdapter,
             audienceAdapter = platform.services.audienceAdapter,

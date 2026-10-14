@@ -9,6 +9,7 @@ import ru.privatenull.pnlibrary.spi.platform.PlatformDiagnostics
 import ru.privatenull.pnlibrary.spi.platform.PlatformExecution
 import ru.privatenull.pnlibrary.spi.platform.PlatformIdentity
 import ru.privatenull.pnlibrary.spi.platform.PlatformLogging
+import ru.privatenull.pnlibrary.spi.platform.PlatformLogObservation
 import ru.privatenull.pnlibrary.spi.platform.PlatformOwnership
 import ru.privatenull.pnlibrary.spi.metrics.PlatformMetricsFactory
 import ru.privatenull.pnlibrary.spi.commands.PlatformCommandAdapter
@@ -69,6 +70,7 @@ internal class PnLibraryImpl(
     private val platformExecution: PlatformExecution,
     private val platformLogging: PlatformLogging,
     private val platformDiagnostics: PlatformDiagnostics,
+    private val platformLogObservation: PlatformLogObservation,
     private val metricsFactory: PlatformMetricsFactory,
     private val commandAdapter: PlatformCommandAdapter,
     private val audienceAdapter: PlatformAudienceAdapter,
@@ -100,6 +102,7 @@ internal class PnLibraryImpl(
         ownership = platformOwnership,
         identity = platformIdentity,
         platformDiagnostics = platformDiagnostics,
+        platformLogObservation = platformLogObservation,
         diagnostics = diagnostics,
         config = config,
         dataFolder = dataFolder,

@@ -12,7 +12,7 @@ package ru.privatenull.pnlibrary.spi.platform
  * [close] must be idempotent and prevent newly submitted platform work where practical.
  */
 interface PlatformAdapter : AutoCloseable, PlatformIdentity, PlatformExecution, PlatformBinding,
-    PlatformOwnership, PlatformDiagnostics, PlatformLogging, PlatformServices {
+    PlatformOwnership, PlatformDiagnostics, PlatformLogObservation, PlatformLogging, PlatformServices {
 
     /** Removes native hooks and rejects or ignores future dispatches. */
     override fun close()

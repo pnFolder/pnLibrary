@@ -18,6 +18,7 @@ import ru.privatenull.pnlibrary.core.upload.UploadLedger
 import ru.privatenull.pnlibrary.spi.platform.PlatformDiagnostics
 import ru.privatenull.pnlibrary.spi.platform.PlatformIdentity
 import ru.privatenull.pnlibrary.spi.platform.PlatformOwnership
+import ru.privatenull.pnlibrary.spi.platform.PlatformLogObservation
 import java.nio.file.Files
 import java.nio.file.Path
 import java.util.concurrent.Executors
@@ -32,6 +33,7 @@ internal class SupportRuntime(
     private val ownership: PlatformOwnership,
     private val identity: PlatformIdentity,
     private val platformDiagnostics: PlatformDiagnostics,
+    private val platformLogObservation: PlatformLogObservation,
     private val diagnostics: DiagnosticsRegistry,
     private val config: PnLibraryConfig,
     dataFolder: Path,
@@ -86,7 +88,7 @@ internal class SupportRuntime(
         logs.onChange { persistHistory() }
         diagnostics.onEventsChanged(::persistHistory)
         diagnostics.onActivityEvent(diagnosticBridge::record)
-        platformDiagnostics.observeNativeLogs { nativeOwner, level, message, error ->
+        platformLogObservation.observeNativeLogs { nativeOwner, level, message, error ->
             logs.record(ownership, nativeOwner, level, message, error)
         }
 
@@ -180,7 +182,7 @@ internal class SupportRuntime(
 
     override fun close() {
         worker.shutdownNow()
-        platformDiagnostics.observeNativeLogs(null)
+        platformLogObservation.observeNativeLogs(null)
         diagnostics.onEventsChanged(null)
         diagnostics.onActivityEvent(null)
         diagnostics.clear()

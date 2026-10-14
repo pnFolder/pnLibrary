@@ -5,6 +5,7 @@ import ru.privatenull.pnlibrary.spi.platform.PlatformDiagnostics
 import ru.privatenull.pnlibrary.spi.platform.PlatformExecution
 import ru.privatenull.pnlibrary.spi.platform.PlatformIdentity
 import ru.privatenull.pnlibrary.spi.platform.PlatformLogging
+import ru.privatenull.pnlibrary.spi.platform.PlatformLogObservation
 import ru.privatenull.pnlibrary.spi.platform.PlatformOwnership
 import ru.privatenull.pnlibrary.spi.platform.PlatformAdapter
 import ru.privatenull.pnlibrary.spi.platform.PlatformServices
@@ -16,6 +17,7 @@ internal data class PlatformRuntimeContext(
     val execution: PlatformExecution,
     val ownership: PlatformOwnership,
     val diagnostics: PlatformDiagnostics,
+    val logObservation: PlatformLogObservation,
     val logging: PlatformLogging,
     val services: PlatformServices,
     val id: String,
@@ -39,6 +41,7 @@ internal fun PlatformAdapter.toRuntimeContext(): PlatformRuntimeContext = Platfo
     execution = this,
     ownership = this,
     diagnostics = this,
+    logObservation = this,
     logging = this,
     services = this,
     id = id,
