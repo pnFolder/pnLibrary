@@ -35,5 +35,9 @@ class PlatformLifecycle {
         bound.set(false)
     }
 
-    fun close(): Boolean = closed.compareAndSet(false, true)
+    fun close(): Boolean {
+        if (!closed.compareAndSet(false, true)) return false
+        bound.set(false)
+        return true
+    }
 }

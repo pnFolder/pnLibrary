@@ -255,7 +255,6 @@ internal class BukkitPlatformAdapter(
 
         releaseBindings()
         observeNativeLogs(null)
-        lifecycle.endBinding()
     }
 
     /** Dispatches global work without linking optional Folia classes. */

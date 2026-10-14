@@ -151,7 +151,6 @@ internal class VelocityPlatformAdapter(
         updateCommand?.close()
         updateCommand = null
 
-        lifecycle.endBinding()
     }
 
     /** Converts native plugin metadata to the shared immutable representation. */

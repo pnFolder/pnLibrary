@@ -147,7 +147,6 @@ internal class BungeePlatformAdapter(
         updateCommand?.close()
         updateCommand = null
 
-        lifecycle.endBinding()
     }
 
     /** Converts native plugin metadata to the shared snapshot contract. */
