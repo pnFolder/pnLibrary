@@ -82,13 +82,10 @@ class PnLibraryRuntimeHost private constructor(
             )
 
             return try {
-                val currentVersion = platform.ownerDetails(owner)["version"]
-                    ?.takeIf { it.isNotBlank() }
-                    ?: error("The platform did not expose the pnLibrary version")
-                val monitor = RuntimeUpdateMonitor.register(library, owner, platform)
-                PnLibraryRuntimeHost(library, monitor, platform.summaryName()).also {
+                val update = RuntimeUpdateMonitor.register(library, owner, platform)
+                PnLibraryRuntimeHost(library, update.monitor, platform.summaryName()).also {
                     runCatching {
-                        val box = library.logging.box(owner, "pnLibrary", currentVersion)
+                        val box = library.logging.box(owner, "pnLibrary", update.currentVersion)
                             .ok("Runtime", "общие сервисы запущены")
                             .ok("Платформа", platform.summaryName())
                             .ok("Обновления", "проверка релизов запущена")

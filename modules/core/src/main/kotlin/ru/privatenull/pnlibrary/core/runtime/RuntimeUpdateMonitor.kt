@@ -8,11 +8,16 @@ import ru.privatenull.pnlibrary.spi.platform.PlatformAdapter
 
 /** Registers the pnLibrary self-update monitor for one native platform distribution. */
 internal object RuntimeUpdateMonitor {
+    data class Registration(
+        val currentVersion: String,
+        val monitor: UpdateRegistration,
+    )
+
     fun register(
         library: PnLibrary,
         owner: Any,
         platform: PlatformAdapter,
-    ): UpdateRegistration {
+    ): Registration {
         val currentVersion = platform.ownerDetails(owner)["version"]
             ?.takeIf { it.isNotBlank() }
             ?: error("The platform did not expose the pnLibrary version")
@@ -21,7 +26,7 @@ internal object RuntimeUpdateMonitor {
             PlatformType.BUNGEECORD -> "bungee"
             PlatformType.VELOCITY -> "velocity"
         }
-        return library.updates.register(
+        val monitor = library.updates.register(
             owner,
             ru.privatenull.pnlibrary.api.updates.ProductDescriptor.library(currentVersion),
             PluginUpdateRequest.builder()
@@ -31,5 +36,6 @@ internal object RuntimeUpdateMonitor {
                 .artifact("(?i)^pnLibrary-[0-9].*-$artifactId-java[0-9]+\\.jar$", 8)
                 .build(),
         )
+        return Registration(currentVersion, monitor)
     }
 }
