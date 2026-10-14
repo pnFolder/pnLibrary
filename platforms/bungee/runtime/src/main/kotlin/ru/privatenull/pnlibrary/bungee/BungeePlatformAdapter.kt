@@ -140,8 +140,12 @@ internal class BungeePlatformAdapter(
 
     /** Releases observers and command registrations once. */
     override fun close() {
-        if (!lifecycle.close()) return
-        observeNativeLogs(null)
+        if (lifecycle.isClosed) return
+        try {
+            lifecycle.close()
+        } finally {
+            observeNativeLogs(null)
+        }
 
     }
 

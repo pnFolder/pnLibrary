@@ -142,10 +142,12 @@ internal class VelocityPlatformAdapter(
 
     /** Releases commands, observers and lifecycle state owned by the adapter. */
     override fun close() {
-        if (!lifecycle.close()) {
-            return
+        if (lifecycle.isClosed) return
+        try {
+            lifecycle.close()
+        } finally {
+            observeNativeLogs(null)
         }
-        observeNativeLogs(null)
 
     }
 
