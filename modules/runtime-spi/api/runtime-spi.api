@@ -259,6 +259,13 @@ public final class ru/privatenull/pnlibrary/spi/tasks/PlatformTaskRequest {
 	public fun toString ()Ljava/lang/String;
 }
 
+public abstract class ru/privatenull/pnlibrary/spi/tasks/TrackingPlatformTaskAdapter : ru/privatenull/pnlibrary/spi/tasks/PlatformTaskAdapter {
+	public fun <init> ()V
+	public final fun close ()V
+	public final fun schedule (Lru/privatenull/pnlibrary/spi/tasks/PlatformTaskRequest;)Lru/privatenull/pnlibrary/spi/tasks/PlatformTaskHandle;
+	protected abstract fun scheduleNative (Lru/privatenull/pnlibrary/spi/tasks/PlatformTaskRequest;)Lru/privatenull/pnlibrary/spi/tasks/PlatformTaskHandle;
+}
+
 public final class ru/privatenull/pnlibrary/spi/tasks/UnsupportedPlatformTaskAdapter : ru/privatenull/pnlibrary/spi/tasks/PlatformTaskAdapter {
 	public static final field INSTANCE Lru/privatenull/pnlibrary/spi/tasks/UnsupportedPlatformTaskAdapter;
 	public fun schedule (Lru/privatenull/pnlibrary/spi/tasks/PlatformTaskRequest;)Lru/privatenull/pnlibrary/spi/tasks/PlatformTaskHandle;
