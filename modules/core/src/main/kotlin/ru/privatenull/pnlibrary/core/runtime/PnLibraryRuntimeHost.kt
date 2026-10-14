@@ -82,7 +82,12 @@ class PnLibraryRuntimeHost private constructor(
             )
 
             return try {
-                val update = RuntimeUpdateMonitor.register(library, owner, platform)
+                val update = RuntimeUpdateMonitor.register(
+                    library = library,
+                    owner = owner,
+                    identity = platform,
+                    ownership = platform,
+                )
                 PnLibraryRuntimeHost(library, update.monitor, platform.summaryName()).also {
                     runCatching {
                         val box = library.logging.box(owner, "pnLibrary", update.currentVersion)
