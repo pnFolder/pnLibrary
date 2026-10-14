@@ -59,7 +59,6 @@ placeholders, событий и cooldowns.
 | `modules/core` | Закрытое исполнение общих сервисов | 8 |
 | `modules/features/update` | Resolver и транзакции pnUpdate | 8 |
 | `modules/features/minecraft-localization` | Ленивые официальные переводы Minecraft и обратный поиск | 8 |
-| `modules/internal/bstats` | Неизменённые общие классы официального bStats | 8 |
 | `platforms/bukkit/runtime` | Bukkit, Spigot, Paper, Purpur, Leaf и Folia | 8 |
 | `platforms/bungee/runtime` | BungeeCord и совместимые прокси | 8 |
 | `platforms/velocity/runtime` | Velocity | 17 |

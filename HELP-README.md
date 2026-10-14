@@ -40,7 +40,6 @@ Remember this rule:
 | `modules/core` | Common runtime implementations with no Bukkit, Bungee, or Velocity imports |
 | `platforms/*/runtime` | Private native platform adapters and entry points |
 | `modules/features/update` | pnUpdate resolution, freezes and durable transactions |
-| `modules/internal/bstats` | Shared official bStats classes |
 | `distribution` | Relocated fat JARs for each platform |
 
 Dependencies point in one direction:
