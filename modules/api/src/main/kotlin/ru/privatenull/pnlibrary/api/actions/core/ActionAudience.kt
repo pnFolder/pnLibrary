@@ -2,9 +2,7 @@ package ru.privatenull.pnlibrary.api.actions
 
 import net.kyori.adventure.sound.Sound
 import net.kyori.adventure.text.Component
-import java.util.UUID
 import java.util.function.Supplier
-import ru.privatenull.pnlibrary.api.audiences.AudienceSender
 
 /**
  * A target that can receive player-facing action output.
@@ -64,53 +62,6 @@ interface LibraryAudience {
                     }
             }
     }
-}
-
-/**
- * Platform-neutral representation of an online player.
- *
- * Action implementations depend on this interface instead of server-specific
- * player classes, keeping the public API free from Bukkit/Bungee/Velocity
- * compile-time dependencies.
- */
-interface LibraryPlayer : AudienceSender {
-    /** Stable player UUID supplied by the server platform. */
-    val uniqueId: UUID
-
-    /** Stable textual sender identifier derived from [uniqueId]. */
-    override val id: String get() = uniqueId.toString()
-
-    /** Always `false` because this audience represents a player. */
-    override val isConsole: Boolean get() = false
-
-    /** Always `true` because this audience represents a player. */
-    override val isPlayer: Boolean get() = true
-
-    /** Current visible player name. */
-    override val name: String
-
-    /**
-     * Checks whether the player has a platform permission.
-     *
-     * @param permission permission node, for example `example.feature.use`
-     */
-    override fun hasPermission(permission: String): Boolean
-
-    /**
-     * Applies a temporary status effect to the player.
-     *
-     * @return `true` when the platform adapter applied the effect, or `false`
-     * when the effect key is unknown/unsupported by the current platform
-     */
-    fun applyEffect(effect: PlayerEffect): Boolean
-
-    /**
-     * Spawns a particle effect around the player.
-     *
-     * @return `true` when the platform adapter spawned the particle, or `false`
-     * when the particle key is unknown/unsupported by the current platform
-     */
-    fun spawnParticle(particle: PlayerParticle): Boolean
 }
 
 /**

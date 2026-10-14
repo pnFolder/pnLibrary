@@ -7,6 +7,7 @@ import net.md_5.bungee.api.ChatMessageType
 import net.md_5.bungee.api.chat.TextComponent
 import net.md_5.bungee.api.connection.ProxiedPlayer
 import ru.privatenull.pnlibrary.api.actions.LibraryPlayer
+import ru.privatenull.pnlibrary.api.actions.PlayerCapability
 import ru.privatenull.pnlibrary.api.actions.PlayerEffect
 import ru.privatenull.pnlibrary.api.actions.PlayerParticle
 import java.util.UUID
@@ -24,6 +25,10 @@ import java.util.UUID
 internal class BungeeLibraryPlayer private constructor(
     private val player: ProxiedPlayer,
 ) : LibraryPlayer {
+    override val capabilities: Set<PlayerCapability> = setOf(
+        PlayerCapability.MESSAGE,
+        PlayerCapability.ACTION_BAR,
+    )
     override val uniqueId: UUID get() = player.uniqueId
     override val name: String get() = player.name
 

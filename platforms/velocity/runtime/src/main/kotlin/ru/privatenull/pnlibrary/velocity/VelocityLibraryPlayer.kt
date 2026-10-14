@@ -4,6 +4,7 @@ import com.velocitypowered.api.proxy.Player
 import net.kyori.adventure.sound.Sound
 import net.kyori.adventure.text.Component
 import ru.privatenull.pnlibrary.api.actions.LibraryPlayer
+import ru.privatenull.pnlibrary.api.actions.PlayerCapability
 import ru.privatenull.pnlibrary.api.actions.PlayerEffect
 import ru.privatenull.pnlibrary.api.actions.PlayerParticle
 import java.util.UUID
@@ -17,6 +18,11 @@ import java.util.UUID
 internal class VelocityLibraryPlayer private constructor(
     private val player: Player,
 ) : LibraryPlayer {
+    override val capabilities: Set<PlayerCapability> = setOf(
+        PlayerCapability.MESSAGE,
+        PlayerCapability.ACTION_BAR,
+        PlayerCapability.SOUND,
+    )
     /** Returns the player's stable UUID. */
     override val uniqueId: UUID
         get() = player.uniqueId
