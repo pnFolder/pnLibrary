@@ -105,7 +105,7 @@ class PnLibraryRuntimeHost private constructor(
                     }
                 }
             } catch (error: Throwable) {
-                started.library.close()
+                runCatching { started.library.close() }.onFailure(error::addSuppressed)
                 throw error
             }
         }
@@ -123,7 +123,7 @@ class PnLibraryRuntimeHost private constructor(
                 host.registerPlatform(type, implementation)
                 host
             } catch (error: Throwable) {
-                host.close()
+                runCatching { host.close() }.onFailure(error::addSuppressed)
                 throw error
             }
         }

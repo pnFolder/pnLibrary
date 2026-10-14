@@ -71,7 +71,7 @@ internal object PnLibraryBootstrap {
             platform.binding.bind(created)
             created
         } catch (error: Throwable) {
-            created.close()
+            runCatching { created.close() }.onFailure(error::addSuppressed)
             throw error
         }
     }

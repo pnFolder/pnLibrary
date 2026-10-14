@@ -27,7 +27,7 @@ internal object RuntimeStartup {
             )
             Started(library, update.currentVersion, update.monitor)
         } catch (error: Throwable) {
-            library.close()
+            runCatching { library.close() }.onFailure(error::addSuppressed)
             throw error
         }
     }

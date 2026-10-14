@@ -21,7 +21,7 @@ internal object RuntimeBootstrapCoordinator {
             val runtime = RuntimeStartup.start(owner, library, context.identity, context.ownership)
             Started(runtime.library, runtime.currentVersion, runtime.updateMonitor, context.summaryName)
         } catch (error: Throwable) {
-            library.close()
+            runCatching { library.close() }.onFailure(error::addSuppressed)
             throw error
         }
     }
