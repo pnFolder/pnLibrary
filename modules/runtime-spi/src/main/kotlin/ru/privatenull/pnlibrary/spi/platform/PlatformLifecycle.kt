@@ -30,8 +30,11 @@ class PlatformLifecycle {
         return try {
             block()
         } catch (error: Throwable) {
-            closeTracked()
-            endBinding()
+            try {
+                closeTracked()?.let(error::addSuppressed)
+            } finally {
+                endBinding()
+            }
             throw error
         }
     }
@@ -53,16 +56,18 @@ class PlatformLifecycle {
     fun close(): Boolean {
         if (!closed.compareAndSet(false, true)) return false
         bound.set(false)
-        closeTracked()
+        closeTracked()?.let { throw it }
         return true
     }
 
-    private fun closeTracked() {
+    private fun closeTracked(): Throwable? {
         val failures = mutableListOf<Throwable>()
         resources.toList().asReversed().forEach { resource ->
             runCatching { resource.close() }.onFailure(failures::add)
         }
         resources.clear()
-        failures.firstOrNull()?.let { throw it }
+        val first = failures.firstOrNull() ?: return null
+        failures.drop(1).forEach(first::addSuppressed)
+        return first
     }
 }

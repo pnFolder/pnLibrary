@@ -94,4 +94,22 @@ class PlatformLifecycleTest {
         assertTrue(closed)
         lifecycle.bind { Unit }
     }
+
+    @Test
+    fun `failed binding preserves registration failure when cleanup also fails`() {
+        val lifecycle = PlatformLifecycle()
+        val registrationFailure = IllegalArgumentException("registration failed")
+        val cleanupFailure = IllegalStateException("cleanup failed")
+
+        val thrown = assertThrows<IllegalArgumentException> {
+            lifecycle.bind {
+                lifecycle.track(AutoCloseable { throw cleanupFailure })
+                throw registrationFailure
+            }
+        }
+
+        assertTrue(thrown === registrationFailure)
+        assertTrue(thrown.suppressed.single() === cleanupFailure)
+        lifecycle.bind { Unit }
+    }
 }
