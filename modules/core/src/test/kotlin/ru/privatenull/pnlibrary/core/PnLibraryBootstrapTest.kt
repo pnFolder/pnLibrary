@@ -2,6 +2,7 @@ package ru.privatenull.pnlibrary.core
 
 import ru.privatenull.pnlibrary.core.diagnostics.DiagnosticsRegistry
 import ru.privatenull.pnlibrary.core.runtime.PnLibraryBootstrap
+import ru.privatenull.pnlibrary.core.runtime.toRuntimeContext
 import org.junit.jupiter.api.Assertions.assertEquals
 import org.junit.jupiter.api.Assertions.assertNotNull
 import org.junit.jupiter.api.Assertions.assertSame
@@ -22,8 +23,8 @@ class PnLibraryBootstrapTest {
         val dummyOwner = DummyPlugin("pnMarket")
         val dummyPlatform = DummyPlatformAdapter()
 
-        val lib1 = PnLibraryBootstrap.bootstrap(dummyOwner, dummyPlatform)
-        val lib2 = PnLibraryBootstrap.bootstrap(DummyPlugin("another"), DummyPlatformAdapter())
+        val lib1 = PnLibraryBootstrap.bootstrap(dummyOwner, dummyPlatform.toRuntimeContext())
+        val lib2 = PnLibraryBootstrap.bootstrap(DummyPlugin("another"), DummyPlatformAdapter().toRuntimeContext())
 
         assertSame(lib1, lib2)
         assertEquals(dummyOwner, lib1.owner)

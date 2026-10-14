@@ -13,6 +13,7 @@ import ru.privatenull.pnlibrary.api.runtime.PnLibraryConfig
 import ru.privatenull.pnlibrary.core.diagnostics.DiagnosticCommandEvent
 import ru.privatenull.pnlibrary.core.diagnostics.DiagnosticCommandExecutor
 import ru.privatenull.pnlibrary.core.runtime.PnLibraryBootstrap
+import ru.privatenull.pnlibrary.core.runtime.toRuntimeContext
 import java.nio.file.Path
 import java.util.concurrent.CopyOnWriteArrayList
 import java.util.concurrent.CountDownLatch
@@ -26,7 +27,7 @@ class DiagnosticCommandExecutorTest {
         val platform = TestPlatform(temporary)
         val library = PnLibraryBootstrap.bootstrap(
             Any(),
-            platform,
+            platform.toRuntimeContext(),
             PnLibraryConfig(upload = false, uploadMode = "disabled", cooldownSeconds = 0),
         )
         val events = CopyOnWriteArrayList<DiagnosticCommandEvent>()
