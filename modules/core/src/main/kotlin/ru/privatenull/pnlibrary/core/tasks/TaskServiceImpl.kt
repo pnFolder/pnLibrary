@@ -2,10 +2,8 @@
 
 package ru.privatenull.pnlibrary.core.tasks
 
-import ru.privatenull.pnlibrary.api.logging.LogLevel
 import ru.privatenull.pnlibrary.api.plugin.PluginId
 import ru.privatenull.pnlibrary.api.tasks.*
-import ru.privatenull.pnlibrary.spi.platform.PlatformAdapter
 import ru.privatenull.pnlibrary.spi.tasks.*
 import java.time.Duration
 import java.time.Instant
@@ -21,10 +19,6 @@ internal class TaskServiceImpl(
     private val settings: TaskServiceSettings = TaskServiceSettings(),
     private val errorLogger: (Any, String, Throwable) -> Unit = { _, _, _ -> },
 ) : TaskService {
-    constructor(platform: PlatformAdapter, errorLogger: (Any, String, Throwable) -> Unit = { owner, message, error ->
-        platform.log(owner, LogLevel.ERROR, message, error)
-    }) : this(platform.taskAdapter, TaskServiceSettings(), errorLogger)
-
     private val lock = Any()
     private val scopes = Collections.synchronizedMap(IdentityHashMap<Any, MutableMap<PluginId, Scope>>())
     private val active = LinkedHashMap<TaskId, ManagedTask>()
