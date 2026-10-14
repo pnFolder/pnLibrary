@@ -16,7 +16,8 @@ second way to express an existing concept.
 - Platform SPI capabilities stay narrow: scheduler dispatch belongs to `PlatformExecution`, runtime
   registration belongs to `PlatformBinding`, ownership/metadata belongs to `PlatformOwnership`,
   diagnostic snapshots belong to `PlatformDiagnostics`, native log subscription belongs to
-  `PlatformLogObservation`, and optional native bridges belong to `PlatformServices`.
+  `PlatformLogObservation`, and optional native bridges belong to separate narrow platform
+  capabilities (`PlatformMetrics`, `PlatformCommands`, `PlatformAudience`, and `PlatformTasks`).
 - Implementation packages never appear in signatures of public API modules.
 
 ## 2. Construction

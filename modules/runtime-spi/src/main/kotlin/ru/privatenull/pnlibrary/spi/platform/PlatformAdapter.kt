@@ -12,7 +12,8 @@ package ru.privatenull.pnlibrary.spi.platform
  * [close] must be idempotent and prevent newly submitted platform work where practical.
  */
 interface PlatformAdapter : PlatformShutdown, PlatformIdentity, PlatformExecution, PlatformBinding,
-    PlatformReadiness, PlatformOwnership, PlatformDiagnostics, PlatformLogObservation, PlatformLogging, PlatformServices,
+    PlatformReadiness, PlatformOwnership, PlatformDiagnostics, PlatformLogObservation, PlatformLogging,
+    PlatformMetrics, PlatformCommands, PlatformAudience, PlatformTasks,
     PlatformStorage {
 
 }
