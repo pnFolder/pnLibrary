@@ -14,7 +14,9 @@ second way to express an existing concept.
 - `runtime-spi` contains only contracts implemented by a platform runtime for core. Consumer plugins
   do not depend on it.
 - Platform SPI capabilities stay narrow: scheduler dispatch belongs to `PlatformExecution`, runtime
-  registration belongs to `PlatformBinding`, and optional native bridges belong to `PlatformServices`.
+  registration belongs to `PlatformBinding`, ownership/metadata belongs to `PlatformOwnership`,
+  diagnostic snapshots belong to `PlatformDiagnostics`, native log subscription belongs to
+  `PlatformLogObservation`, and optional native bridges belong to `PlatformServices`.
 - Implementation packages never appear in signatures of public API modules.
 
 ## 2. Construction
