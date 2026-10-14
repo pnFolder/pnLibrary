@@ -96,8 +96,9 @@ is the composition root: it constructs and connects all service implementations.
 Start here when you need to know where a service comes from.
 
 [`PlatformAdapter`](modules/runtime-spi/src/main/kotlin/ru/privatenull/pnlibrary/spi/platform/PlatformAdapter.kt)
-handles native logging, metadata, scheduler dispatch, diagnostics, bStats, and
-binding platform commands/listeners. It is SPI, not consumer API. `PlatformType` describes one of the three
+is the native aggregate boundary, while its capabilities are split into identity, execution,
+binding, ownership, diagnostics, logging, and optional services (`PlatformServices`). It is SPI,
+not consumer API. `PlatformType` describes one of the three
 API families (`BUKKIT`, `BUNGEECORD`, or `VELOCITY`). A concrete implementation
 such as Paper, Folia, NullCordX, or a private fork is runtime metadata only.
 
