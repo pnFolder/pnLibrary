@@ -77,10 +77,6 @@ internal class PnLibraryImpl(
     private val commandAdapter: PlatformCommandAdapter,
     private val audienceAdapter: PlatformAudienceAdapter,
     private val taskAdapter: PlatformTaskAdapter,
-    private val platformId: String,
-    private val implementationName: String,
-    private val isProxy: Boolean,
-    private val isServer: Boolean,
     private val dataFolderHint: Path?,
     private val closePlatform: () -> Unit,
     override val diagnostics: DiagnosticsRegistry,
@@ -212,10 +208,10 @@ internal class PnLibraryImpl(
         "library" to linkedMapOf<String, Any?>(
             "version" to version,
             "closed" to isClosed,
-            "platform" to platformId,
-            "implementation" to implementationName,
-            "proxy" to isProxy,
-            "server" to isServer,
+            "platform" to platformIdentity.id,
+            "implementation" to platformIdentity.implementationName,
+            "proxy" to platformIdentity.isProxy,
+            "server" to platformIdentity.isServer,
             "dataFolder" to if (config.privacy) "[redacted]" else
                 dataFolder.toAbsolutePath().normalize().toString(),
             "configuration" to linkedMapOf<String, Any?>(
