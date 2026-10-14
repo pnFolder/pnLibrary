@@ -6,6 +6,10 @@ import ru.privatenull.pnlibrary.api.downloads.DownloadRegistration
 import ru.privatenull.pnlibrary.api.logging.LogLevel
 import ru.privatenull.pnlibrary.api.plugin.PluginDependency
 import ru.privatenull.pnlibrary.spi.platform.PlatformAdapter
+import ru.privatenull.pnlibrary.spi.platform.PlatformExecution
+import ru.privatenull.pnlibrary.spi.platform.PlatformIdentity
+import ru.privatenull.pnlibrary.spi.platform.PlatformLogging
+import ru.privatenull.pnlibrary.spi.platform.PlatformOwnership
 import ru.privatenull.pnlibrary.update.TrustedHttpClient
 import java.nio.file.Files
 import java.nio.file.Path
@@ -16,25 +20,34 @@ import java.util.concurrent.Executors
 import java.util.concurrent.atomic.AtomicBoolean
 
 internal class DirectDownloadManager(
-    private val platform: PlatformAdapter,
+    private val identity: PlatformIdentity,
+    private val ownership: PlatformOwnership,
+    private val execution: PlatformExecution,
+    private val logging: PlatformLogging,
     private val libraryData: Path,
     private val configuration: DownloadConfiguration,
     private val http: TrustedHttpClient = TrustedHttpClient(
         Duration.ofSeconds(8), Duration.ofSeconds(30),
     ),
 ) : AutoCloseable {
+    constructor(
+        platform: PlatformAdapter,
+        libraryData: Path,
+        configuration: DownloadConfiguration,
+        http: TrustedHttpClient = TrustedHttpClient(Duration.ofSeconds(8), Duration.ofSeconds(30)),
+    ) : this(platform, platform, platform, platform, libraryData, configuration, http)
     private val closed = AtomicBoolean(false)
     private val executor: ExecutorService = Executors.newSingleThreadExecutor { action ->
         Thread(action, "pnLibrary-direct-downloads").apply { isDaemon = true }
     }
     private val registrations = CopyOnWriteArrayList<DownloadRegistrationImpl>()
-    private val pluginJarVerifier = PluginJarVerifier(platform.type)
+    private val pluginJarVerifier = PluginJarVerifier(identity.type)
     private val filePublisher = AtomicDownloadPublisher(libraryData)
     private val artifactPreparer = DownloadArtifactPreparer(
-        platform.type, libraryData, configuration, http, MAX_BYTES,
+        identity.type, libraryData, configuration, http, MAX_BYTES,
     )
     private val dependencyStore = DownloadedDependencyStore(libraryData)
-    private val dependencyReporter = DependencyDownloadReporter(platform)
+    private val dependencyReporter = DependencyDownloadReporter(logging, ownership)
     private val dependencyRequestFactory = DependencyDownloadRequestFactory(
         requireNotNull(libraryData.parent) { "не найдена папка плагинов" },
     )
@@ -55,7 +68,7 @@ internal class DirectDownloadManager(
             val dependencyNames = declarations.dependencyNames()
             if (dependencyNames.isNotEmpty()) dependencyStore.record(dependencyNames)
         },
-        blocked = { reason -> platform.log(owner, LogLevel.WARNING, reason) },
+        blocked = { reason -> logging.log(owner, LogLevel.WARNING, reason) },
         dependenciesStaged = { declarations ->
             runCatching { dependencyReporter.staged(owner, declarations) }
         },
@@ -70,9 +83,9 @@ internal class DirectDownloadManager(
     }
 
     fun registerDependencies(owner: Any, dependencies: List<PluginDependency>): DownloadRegistration? {
-        val installed = runCatching { platform.installedPlugins() }.getOrNull().orEmpty()
-        platform.whenServerReady(Runnable {
-            confirmDownloadedDependencies(owner, runCatching { platform.installedPlugins() }.getOrNull().orEmpty())
+        val installed = runCatching { ownership.installedPlugins() }.getOrNull().orEmpty()
+        execution.whenServerReady(Runnable {
+            confirmDownloadedDependencies(owner, runCatching { ownership.installedPlugins() }.getOrNull().orEmpty())
         })
         val download = dependencyRequestFactory.create(dependencies, installed) ?: return null
         return register(owner, download.request) { declaration, path ->

@@ -95,6 +95,9 @@ internal class PnLibraryImpl(
     )
     private val directDownloadManager = DirectDownloadManager(
         platform,
+        platform,
+        platform,
+        platform,
         dataFolder,
         directDownloadConfiguration,
     )
