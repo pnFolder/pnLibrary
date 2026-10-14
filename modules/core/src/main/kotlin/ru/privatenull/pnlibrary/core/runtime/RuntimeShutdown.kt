@@ -9,8 +9,13 @@ internal class RuntimeShutdown {
     }
 
     fun run() {
+        val failures = mutableListOf<Throwable>()
         actions.forEach { action ->
-            runCatching(action)
+            runCatching(action).onFailure(failures::add)
         }
+
+        val first = failures.firstOrNull() ?: return
+        failures.drop(1).forEach(first::addSuppressed)
+        throw first
     }
 }
