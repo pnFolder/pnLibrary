@@ -55,6 +55,8 @@ placeholders, событий и cooldowns.
 | `modules/api` | Публичные интерфейсы: runtime, сервисы, события, задачи и остальные общие возможности | 8 |
 | `modules/common` | Общие модели Minecraft без зависимости от серверной платформы | 8 |
 | `platforms/bukkit/api` | Публичные Bukkit-контракты: окружение сервера и меню | 8 |
+| `platforms/bungee/api` | Публичный BungeeCord-контракт нативного proxy API | 8 |
+| `platforms/velocity/api` | Публичный Velocity-контракт нативного proxy API | 17 |
 | `modules/runtime-spi` | Внутренняя граница между core и платформами | 8 |
 | `modules/core` | Закрытое исполнение общих сервисов | 8 |
 | `modules/core` (`update` package) | Resolver и транзакции pnUpdate | 8 |
