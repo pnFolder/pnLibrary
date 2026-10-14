@@ -8,7 +8,7 @@ import java.util.concurrent.CompletableFuture
 import java.util.concurrent.CompletionStage
 import java.util.concurrent.ConcurrentHashMap
 import java.util.concurrent.atomic.AtomicBoolean
-import ru.privatenull.pnlibrary.spi.platform.PlatformAdapter
+import ru.privatenull.pnlibrary.spi.platform.PlatformIdentity
 
 /**
  * Concurrent placeholder registry shared by every plugin scope.
@@ -18,7 +18,7 @@ import ru.privatenull.pnlibrary.spi.platform.PlatformAdapter
  * resources owned by one plugin to be released together.
  */
 internal class PlaceholderHub(
-    private val platform: PlatformAdapter,
+    private val platform: PlatformIdentity,
     private val valueStore: GlobalPlaceholderValueStore = GlobalPlaceholderValueStore(),
 ) : PlaceholderAdapterRegistry {
     private val entries = ConcurrentHashMap<String, PlaceholderEntry<*>>()

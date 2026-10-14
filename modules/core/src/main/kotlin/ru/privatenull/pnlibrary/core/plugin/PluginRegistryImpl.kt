@@ -78,7 +78,7 @@ internal class PluginRegistryImpl(
     private val productResolver = ModuleProductResolver(platform)
     private val metadataFactory = ModuleMetadataFactory(platform, platform)
     private val resourceFactory = ModuleResourceFactory(
-        platform, events, tasks, services, logging, metrics, diagnostics, updates,
+        events, tasks, services, logging, metrics, diagnostics, updates,
         placeholderHub, currencyFeature, configurations, directDownloads, sharedComponentCache,
     )
     private val remotePolicyNotices = RemotePolicyNoticeRenderer(platform)
