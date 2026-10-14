@@ -12,7 +12,6 @@ plugins {
 apiValidation {
     ignoredProjects.addAll(
         listOf(
-            "bstats",
             "core",
             "distribution",
             "demo-bukkit",

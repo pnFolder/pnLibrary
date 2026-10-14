@@ -29,7 +29,7 @@ dependencies {
     implementation(libs.adventure.legacy)
     implementation(libs.adventure.gson)
     implementation(libs.adventure.plain)
-    implementation(project(":modules:internal:bstats"))
+    compileOnly(libs.faststats.core.j8)
     implementation(project(":modules:design:console"))
 
     testImplementation(libs.junit.jupiter)
