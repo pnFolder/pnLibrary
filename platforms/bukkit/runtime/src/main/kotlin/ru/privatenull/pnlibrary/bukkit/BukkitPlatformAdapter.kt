@@ -20,12 +20,12 @@ import ru.privatenull.pnlibrary.spi.audiences.PlatformAudienceAdapter
 import ru.privatenull.pnlibrary.spi.commands.PlatformCommandAdapter
 import ru.privatenull.pnlibrary.spi.metrics.PlatformMetricsFactory
 import ru.privatenull.pnlibrary.spi.platform.PlatformAdapter
+import ru.privatenull.pnlibrary.spi.platform.PlatformLifecycle
 import ru.privatenull.pnlibrary.spi.platform.PlatformSnapshot
 import ru.privatenull.pnlibrary.spi.platform.PluginSnapshot
 import ru.privatenull.pnlibrary.spi.tasks.PlatformTaskAdapter
 import java.util.concurrent.CompletableFuture
 import java.util.concurrent.TimeUnit
-import java.util.concurrent.atomic.AtomicBoolean
 import java.util.logging.Handler
 import java.util.logging.Level
 import java.util.logging.LogRecord
@@ -41,8 +41,7 @@ internal class BukkitPlatformAdapter(
     audienceService: BukkitAudienceService,
 ) : PlatformAdapter {
 
-    private val closed = AtomicBoolean()
-    private val bound = AtomicBoolean()
+    private val lifecycle = PlatformLifecycle()
     private val ownLogCall = ThreadLocal.withInitial { false }
     private val diagnosticsCollector = BukkitDiagnosticsCollector()
 
@@ -182,12 +181,7 @@ internal class BukkitPlatformAdapter(
 
     /** Registers commands and lifecycle listeners, rolling back partial initialization. */
     override fun bind(library: PnLibrary) {
-        check(!closed.get()) {
-            "Bukkit platform adapter is closed"
-        }
-        check(bound.compareAndSet(false, true)) {
-            "Bukkit platform adapter is already bound"
-        }
+        lifecycle.beginBinding()
 
         try {
             lifecycleListener = BukkitLifecycleListener(plugin, library).start()
@@ -197,7 +191,7 @@ internal class BukkitPlatformAdapter(
             )
         } catch (error: Throwable) {
             releaseBindings()
-            bound.set(false)
+            lifecycle.endBinding()
             throw error
         }
     }
@@ -225,7 +219,7 @@ internal class BukkitPlatformAdapter(
 
     /** Runs work on the primary thread or Folia global-region scheduler. */
     override fun executeGlobal(task: Runnable) {
-        if (closed.get()) return
+        if (lifecycle.isClosed) return
 
         if (ServerCapabilities.isFolia) {
             executeFoliaGlobal(task)
@@ -246,7 +240,7 @@ internal class BukkitPlatformAdapter(
 
     /** Routes player replies to their Folia region, otherwise to global dispatch. */
     override fun executeReply(recipient: Any, task: Runnable) {
-        if (closed.get()) return
+        if (lifecycle.isClosed) return
 
         val nativeRecipient = (recipient as? BukkitCommandSender)?.native ?: recipient
         if (nativeRecipient is Player && ServerCapabilities.isFolia) {
@@ -258,11 +252,11 @@ internal class BukkitPlatformAdapter(
     }
 
     override fun close() {
-        if (!closed.compareAndSet(false, true)) return
+        if (!lifecycle.close()) return
 
         releaseBindings()
         observeNativeLogs(null)
-        bound.set(false)
+        lifecycle.endBinding()
     }
 
     /** Dispatches global work without linking optional Folia classes. */
