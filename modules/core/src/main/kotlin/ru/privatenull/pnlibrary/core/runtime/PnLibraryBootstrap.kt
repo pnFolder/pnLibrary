@@ -57,7 +57,7 @@ internal object PnLibraryBootstrap {
             commandAdapter = platform.commands.commandAdapter,
             audienceAdapter = platform.audience.audienceAdapter,
             taskAdapter = platform.tasks.taskAdapter,
-            dataFolderHint = platform.storage.dataFolder,
+            dataFolderHint = platform.dataFolder,
             closePlatform = platform.close,
             diagnostics = globalRegistry,
             config = config,

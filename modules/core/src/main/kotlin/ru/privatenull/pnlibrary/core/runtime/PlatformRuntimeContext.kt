@@ -12,8 +12,8 @@ import ru.privatenull.pnlibrary.spi.platform.PlatformMetrics
 import ru.privatenull.pnlibrary.spi.platform.PlatformCommands
 import ru.privatenull.pnlibrary.spi.platform.PlatformAudience
 import ru.privatenull.pnlibrary.spi.platform.PlatformTasks
-import ru.privatenull.pnlibrary.spi.platform.PlatformStorage
 import ru.privatenull.pnlibrary.spi.platform.PlatformReadiness
+import java.nio.file.Path
 
 /** Prepared platform capabilities passed from the native boundary into the shared runtime. */
 internal data class PlatformRuntimeContext(
@@ -28,7 +28,7 @@ internal data class PlatformRuntimeContext(
     val commands: PlatformCommands,
     val audience: PlatformAudience,
     val tasks: PlatformTasks,
-    val storage: PlatformStorage,
+    val dataFolder: Path,
     val bind: (PnLibrary) -> Unit,
     val close: () -> Unit,
 ) {
@@ -52,7 +52,9 @@ internal fun PlatformAdapter.toRuntimeContext(): PlatformRuntimeContext = Platfo
     commands = this,
     audience = this,
     tasks = this,
-    storage = this,
+    dataFolder = requireNotNull(dataFolder) {
+        "Platform adapter must provide the pnLibrary data folder"
+    },
     bind = this::bind,
     close = this::close,
 )

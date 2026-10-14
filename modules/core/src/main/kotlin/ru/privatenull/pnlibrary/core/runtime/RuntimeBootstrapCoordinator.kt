@@ -12,13 +12,10 @@ internal object RuntimeBootstrapCoordinator {
     )
 
     fun start(owner: Any, context: PlatformRuntimeContext): Started {
-        val dataFolder = requireNotNull(context.storage.dataFolder) {
-            "Platform adapter must provide the pnLibrary data folder"
-        }
         val library = PnLibraryBootstrap.bootstrap(
             owner,
             context,
-            PnLibraryConfigLoader.load(dataFolder),
+            PnLibraryConfigLoader.load(context.dataFolder),
         )
         return try {
             val runtime = RuntimeStartup.start(owner, library, context.identity, context.ownership)

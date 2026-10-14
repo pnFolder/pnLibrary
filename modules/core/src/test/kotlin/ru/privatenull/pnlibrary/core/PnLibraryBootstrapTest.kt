@@ -14,6 +14,8 @@ import ru.privatenull.pnlibrary.spi.platform.PlatformAdapter
 import ru.privatenull.pnlibrary.api.platform.PlatformType
 import ru.privatenull.pnlibrary.api.runtime.PnLibrary
 import ru.privatenull.pnlibrary.api.runtime.PnLibraryProvider
+import java.nio.file.Files
+import java.nio.file.Path
 import java.util.function.Supplier
 
 class PnLibraryBootstrapTest {
@@ -69,6 +71,7 @@ class PnLibraryBootstrapTest {
         var boundLibrary: PnLibrary? = null
         override val type = PlatformType.BUKKIT
         override val id: String get() = "dummy"
+        override val dataFolder: Path = Files.createTempDirectory("pnlibrary-bootstrap-test")
         override fun bind(library: PnLibrary) {
             assertSame(library, PnLibraryProvider.get())
             boundLibrary = library
