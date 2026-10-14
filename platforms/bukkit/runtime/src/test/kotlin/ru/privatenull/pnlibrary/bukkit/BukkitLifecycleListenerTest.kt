@@ -46,6 +46,17 @@ class BukkitLifecycleListenerTest {
         assertEquals(0, calls.get())
     }
 
+    @Test
+    fun `callbacks registered after close are ignored`() {
+        val listener = BukkitLifecycleListener(mock<Plugin>(), null)
+        val calls = AtomicInteger()
+
+        listener.close()
+        listener.whenServerReady(Runnable { calls.incrementAndGet() })
+
+        assertEquals(0, calls.get())
+    }
+
     private fun markServerReady(listener: BukkitLifecycleListener) {
         val method = BukkitLifecycleListener::class.java.getDeclaredMethod("markServerReady")
         method.isAccessible = true

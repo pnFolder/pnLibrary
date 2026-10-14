@@ -35,12 +35,17 @@ internal class BukkitLifecycleListener(
 
     /** Runs a callback immediately when ready, otherwise queues it for server startup. */
     fun whenServerReady(task: Runnable) {
+        if (closed.get()) return
         if (serverReady.get()) {
             task.run()
             return
         }
 
         readyCallbacks += task
+        if (closed.get()) {
+            readyCallbacks.remove(task)
+            return
+        }
         // Readiness may have been published between the first check and the enqueue.
         // Remove and run this callback here so it cannot remain stranded in the queue.
         if (serverReady.get() && readyCallbacks.remove(task)) task.run()
