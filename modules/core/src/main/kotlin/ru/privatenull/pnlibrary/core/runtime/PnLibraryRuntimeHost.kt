@@ -75,7 +75,15 @@ class PnLibraryRuntimeHost private constructor(
             updateDirectory: Path,
         ): PnLibraryRuntimeHost {
             // Kept in the public API for compatibility with existing platform integrations.
-            val started = RuntimeStartup.start(owner, platform)
+            val dataFolder = requireNotNull(platform.dataFolder) {
+                "Platform adapter must provide the pnLibrary data folder"
+            }
+            val library = PnLibraryBootstrap.bootstrap(
+                owner,
+                platform,
+                PnLibraryConfigLoader.load(dataFolder),
+            )
+            val started = RuntimeStartup.start(owner, library, platform, platform)
             return try {
                 PnLibraryRuntimeHost(started.library, started.updateMonitor, platform.summaryName()).also {
                     runCatching {

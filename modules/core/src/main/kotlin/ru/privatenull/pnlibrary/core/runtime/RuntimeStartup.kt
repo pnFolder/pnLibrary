@@ -1,9 +1,10 @@
 package ru.privatenull.pnlibrary.core.runtime
 
 import ru.privatenull.pnlibrary.api.runtime.PnLibrary
-import ru.privatenull.pnlibrary.spi.platform.PlatformAdapter
+import ru.privatenull.pnlibrary.spi.platform.PlatformIdentity
+import ru.privatenull.pnlibrary.spi.platform.PlatformOwnership
 
-/** Creates the shared runtime and attaches its mandatory self-update monitor. */
+/** Attaches the mandatory self-update monitor to an already bootstrapped runtime. */
 internal object RuntimeStartup {
     data class Started(
         val library: PnLibrary,
@@ -11,21 +12,18 @@ internal object RuntimeStartup {
         val updateMonitor: AutoCloseable,
     )
 
-    fun start(owner: Any, platform: PlatformAdapter): Started {
-        val dataFolder = requireNotNull(platform.dataFolder) {
-            "Platform adapter must provide the pnLibrary data folder"
-        }
-        val library = PnLibraryBootstrap.bootstrap(
-            owner,
-            platform,
-            PnLibraryConfigLoader.load(dataFolder),
-        )
+    fun start(
+        owner: Any,
+        library: PnLibrary,
+        identity: PlatformIdentity,
+        ownership: PlatformOwnership,
+    ): Started {
         return try {
             val update = RuntimeUpdateMonitor.register(
                 library = library,
                 owner = owner,
-                identity = platform,
-                ownership = platform,
+                identity = identity,
+                ownership = ownership,
             )
             Started(library, update.currentVersion, update.monitor)
         } catch (error: Throwable) {
