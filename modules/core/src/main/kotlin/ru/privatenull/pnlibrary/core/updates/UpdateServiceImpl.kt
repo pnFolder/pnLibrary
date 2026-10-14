@@ -48,7 +48,7 @@ internal class UpdateServiceImpl(private val platform: PlatformAdapter, private 
     )
     private val installer = UpdateInstaller(platform, dataFolder, configuration, http)
     private val freezes = FreezeStore(dataFolder.resolve("updates/freezes.json"))
-    private val graphResolver = UpdateGraphResolver(platform, configuration, catalogGateway, freezes)
+    private val graphResolver = UpdateGraphResolver(platform, platform, configuration, catalogGateway, freezes)
     private val orchestrator = UpdateOrchestrator(
         configuration, UpdateStateStore(dataFolder.resolve("updates"), warning = {
             platform.log(platform, LogLevel.WARNING, it)
