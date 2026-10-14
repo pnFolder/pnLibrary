@@ -5,7 +5,7 @@ import ru.privatenull.pnlibrary.api.runtime.PnLibraryConfig
 import ru.privatenull.pnlibrary.core.diagnostics.ConfigReader
 import ru.privatenull.pnlibrary.core.diagnostics.DiagnosticsRegistry
 import ru.privatenull.pnlibrary.core.observability.ObservabilityReportSnapshot
-import ru.privatenull.pnlibrary.spi.platform.PlatformDiagnostics
+import ru.privatenull.pnlibrary.spi.platform.PlatformDiagnosticReport
 import ru.privatenull.pnlibrary.spi.platform.PlatformIdentity
 import java.nio.file.Path
 import java.time.Instant
@@ -16,7 +16,7 @@ internal class SupportReportAssembler(
     private val config: PnLibraryConfig,
     private val diagnostics: DiagnosticsRegistry,
     private val identity: PlatformIdentity,
-    private val diagnosticsPlatform: PlatformDiagnostics,
+    private val diagnosticsPlatform: PlatformDiagnosticReport,
     private val diagnosticLogs: () -> List<Map<String, Any?>>,
     private val diagnosticHistory: () -> List<Pair<String, ByteArray>>,
     private val observabilitySnapshot: () -> ObservabilityReportSnapshot,

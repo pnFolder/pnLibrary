@@ -6,6 +6,7 @@ import ru.privatenull.pnlibrary.api.logging.MessageBox
 import ru.privatenull.pnlibrary.api.logging.PnLogger
 import ru.privatenull.pnlibrary.api.runtime.PnLibraryBrand
 import ru.privatenull.pnlibrary.spi.platform.PlatformDiagnostics
+import ru.privatenull.pnlibrary.spi.platform.PlatformSnapshotProvider
 import ru.privatenull.pnlibrary.spi.platform.PlatformIdentity
 import ru.privatenull.pnlibrary.spi.platform.PlatformLogging
 import ru.privatenull.pnlibrary.spi.platform.PlatformOwnership
@@ -14,7 +15,7 @@ import ru.privatenull.pnlibrary.spi.platform.PlatformOwnership
 internal class PlatformLoggingService(
     private val logging: PlatformLogging,
     private val ownership: PlatformOwnership,
-    private val diagnostics: PlatformDiagnostics,
+    private val diagnostics: PlatformSnapshotProvider,
     private val identity: PlatformIdentity,
     private val diagnosticLogs: DiagnosticLogBuffer? = null,
 ) : LoggingService {

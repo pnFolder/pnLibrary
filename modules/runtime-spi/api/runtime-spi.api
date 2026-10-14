@@ -75,10 +75,13 @@ public abstract interface class ru/privatenull/pnlibrary/spi/platform/PlatformBi
 	public fun bind (Lru/privatenull/pnlibrary/api/runtime/PnLibrary;)V
 }
 
-public abstract interface class ru/privatenull/pnlibrary/spi/platform/PlatformDiagnostics {
+public abstract interface class ru/privatenull/pnlibrary/spi/platform/PlatformDiagnosticReport {
+	public fun diagnosticDetails (Z)Ljava/util/Map;
+}
+
+public abstract interface class ru/privatenull/pnlibrary/spi/platform/PlatformDiagnostics : ru/privatenull/pnlibrary/spi/platform/PlatformDiagnosticReport, ru/privatenull/pnlibrary/spi/platform/PlatformSnapshotProvider {
 	public fun details ()Ljava/util/Map;
 	public fun diagnosticDetails (Z)Ljava/util/Map;
-	public fun snapshot ()Lru/privatenull/pnlibrary/spi/platform/PlatformSnapshot;
 }
 
 public abstract interface class ru/privatenull/pnlibrary/spi/platform/PlatformExecution {
@@ -180,6 +183,10 @@ public final class ru/privatenull/pnlibrary/spi/platform/PlatformSnapshot {
 
 public final class ru/privatenull/pnlibrary/spi/platform/PlatformSnapshot$Companion {
 	public final fun unknown (Ljava/lang/String;)Lru/privatenull/pnlibrary/spi/platform/PlatformSnapshot;
+}
+
+public abstract interface class ru/privatenull/pnlibrary/spi/platform/PlatformSnapshotProvider {
+	public fun snapshot ()Lru/privatenull/pnlibrary/spi/platform/PlatformSnapshot;
 }
 
 public abstract interface class ru/privatenull/pnlibrary/spi/platform/PlatformStorage {
