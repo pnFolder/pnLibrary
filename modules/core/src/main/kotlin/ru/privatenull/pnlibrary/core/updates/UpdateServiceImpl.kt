@@ -37,27 +37,13 @@ internal class UpdateServiceImpl(
     private val executor = Executors.newSingleThreadScheduledExecutor { action ->
         Thread(action, "pnLibrary-update-orchestrator").apply { isDaemon = true }
     }
-    private val catalogExecutor = Executors.newFixedThreadPool(4) { action ->
-        Thread(action, "pnLibrary-catalog-fetch").apply { isDaemon = true }
-    }
-    private val catalogRequestExecutor = Executors.newFixedThreadPool(4) { action ->
-        Thread(action, "pnLibrary-catalog-request").apply { isDaemon = true }
-    }
     // Keep a manual `/pn update` responsive even when GitHub is unreachable.
     // The check can cover several registered products, so long per-request
     // timeouts otherwise add up and look like a frozen command.
-    private val http = TrustedHttpClient(Duration.ofSeconds(2), Duration.ofSeconds(3))
-    private val releaseCatalog = ReleaseCatalogClient(
-        http, ReleaseCatalogueStore(dataFolder.resolve("updates/catalog")), catalogExecutor, Duration.ofMinutes(30),
-    )
-    private val catalogGateway = ReleaseCatalogGateway(
-        client = releaseCatalog,
-        http = http,
-        requestExecutor = catalogRequestExecutor,
-    )
-    private val installer = UpdateInstaller(identity, dataFolder, configuration, http)
+    private val resources = UpdateRuntimeResources(dataFolder)
+    private val installer = UpdateInstaller(identity, dataFolder, configuration, resources.http)
     private val freezes = FreezeStore(dataFolder.resolve("updates/freezes.json"))
-    private val graphResolver = UpdateGraphResolver(ownership, identity, configuration, catalogGateway, freezes)
+    private val graphResolver = UpdateGraphResolver(ownership, identity, configuration, resources.catalogGateway, freezes)
     private val orchestrator = UpdateOrchestrator(
         configuration, UpdateStateStore(dataFolder.resolve("updates"), warning = {
             logging.log(this, LogLevel.WARNING, it)
@@ -138,8 +124,7 @@ internal class UpdateServiceImpl(
             entries.clear()
         }
         orchestrator.close()
-        catalogExecutor.shutdownNow()
-        catalogRequestExecutor.shutdownNow()
+        resources.close()
     }
 
     private fun resolveGraph(refreshMode: RefreshMode = RefreshMode.CACHED): ResolutionResult =
