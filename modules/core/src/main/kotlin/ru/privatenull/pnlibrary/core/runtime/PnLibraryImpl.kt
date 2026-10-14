@@ -134,7 +134,9 @@ internal class PnLibraryImpl(
         )
     }
     override val plugins: PluginRegistry = PluginRegistryImpl(
-        platform = platform,
+        ownership = platform,
+        identity = platform,
+        execution = platform,
         events = eventService,
         tasks = taskService,
         services = serviceManager,

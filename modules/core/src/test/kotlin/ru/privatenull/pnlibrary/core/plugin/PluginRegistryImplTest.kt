@@ -529,7 +529,9 @@ class PluginRegistryImplTest {
             updates: UpdateService = emptyProxy(UpdateService::class.java),
         ): PluginRegistryImpl =
             PluginRegistryImpl(
-                platform = platform,
+                ownership = platform,
+                identity = platform,
+                execution = platform,
                 events = events,
                 tasks = tasks,
                 services = ServiceManagerImpl(),
