@@ -4,6 +4,7 @@ import org.junit.jupiter.api.Assertions.assertEquals
 import org.junit.jupiter.api.Assertions.assertFalse
 import org.junit.jupiter.api.Assertions.assertTrue
 import org.junit.jupiter.api.Test
+import java.nio.file.Files
 import ru.privatenull.pnlibrary.api.logging.LogLevel
 import ru.privatenull.pnlibrary.spi.platform.PlatformAdapter
 import ru.privatenull.pnlibrary.api.platform.PlatformType
@@ -85,6 +86,7 @@ class DiagnosticLogBufferTest {
         val logged = mutableListOf<Pair<String, Throwable?>>()
         override val type = PlatformType.BUKKIT
         override val id = "test"
+        override val dataFolder = Files.createTempDirectory("pnlibrary-log-test")
         override fun ownerDetails(owner: Any) = mapOf("name" to "test-plugin")
         override fun diagnosticDetails(includeSensitive: Boolean): Map<String, Any?> = emptyMap()
         override fun executeGlobal(task: Runnable) = task.run()

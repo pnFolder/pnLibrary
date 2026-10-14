@@ -3,6 +3,7 @@ package ru.privatenull.pnlibrary.spi.platform
 import org.junit.jupiter.api.Assertions.assertEquals
 import org.junit.jupiter.api.Assertions.assertSame
 import org.junit.jupiter.api.Test
+import java.nio.file.Files
 import ru.privatenull.pnlibrary.api.logging.LogLevel
 import ru.privatenull.pnlibrary.api.platform.PlatformType
 
@@ -34,6 +35,7 @@ class PlatformAdapterLoggingTest {
         override val logHandler: (Any, LogLevel, String, Throwable?) -> Unit,
     ) : PlatformAdapter {
         override val type = PlatformType.BUKKIT
+        override val dataFolder = Files.createTempDirectory("pnlibrary-platform-test")
 
         override fun executeGlobal(task: Runnable) = task.run()
 

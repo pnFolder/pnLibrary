@@ -52,9 +52,7 @@ internal fun PlatformAdapter.toRuntimeContext(): PlatformRuntimeContext = Platfo
     commands = this,
     audience = this,
     tasks = this,
-    dataFolder = requireNotNull(dataFolder) {
-        "Platform adapter must provide the pnLibrary data folder"
-    },
+    dataFolder = dataFolder,
     bind = this::bind,
     close = this::close,
 )

@@ -1,5 +1,6 @@
 package ru.privatenull.pnlibrary.spi.platform
 
+import java.nio.file.Path
 
 /**
  * Runtime-only boundary between the shared engine and a native server platform.
@@ -13,7 +14,7 @@ package ru.privatenull.pnlibrary.spi.platform
  */
 interface PlatformAdapter : PlatformShutdown, PlatformIdentity, PlatformExecution, PlatformBinding,
     PlatformReadiness, PlatformOwnership, PlatformDiagnostics, PlatformLogObservation, PlatformLogging,
-    PlatformMetrics, PlatformCommands, PlatformAudience, PlatformTasks,
-    PlatformStorage {
-
+    PlatformMetrics, PlatformCommands, PlatformAudience, PlatformTasks {
+    /** Durable data root required by the shared runtime. */
+    val dataFolder: Path
 }

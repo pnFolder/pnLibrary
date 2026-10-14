@@ -6,6 +6,7 @@ import org.junit.jupiter.api.Assertions.assertFalse
 import org.junit.jupiter.api.Assertions.assertThrows
 import org.junit.jupiter.api.Assertions.assertTrue
 import org.junit.jupiter.api.Test
+import java.nio.file.Files
 import ru.privatenull.pnlibrary.api.commands.CommandContext
 import ru.privatenull.pnlibrary.api.commands.CommandDefinition
 import ru.privatenull.pnlibrary.api.commands.CommandSender
@@ -236,6 +237,7 @@ class CommandServiceImplTest {
     ) : PlatformAdapter {
         val errors = mutableListOf<Throwable>()
         override val type: PlatformType = PlatformType.BUKKIT
+        override val dataFolder = Files.createTempDirectory("pnlibrary-command-test")
         override fun diagnosticDetails(includeSensitive: Boolean): Map<String, Any?> = emptyMap()
         override fun executeGlobal(task: Runnable) = task.run()
         override fun executeReply(recipient: Any, task: Runnable) = task.run()

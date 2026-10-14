@@ -4,6 +4,7 @@ import org.junit.jupiter.api.Assertions.assertFalse
 import org.junit.jupiter.api.Assertions.assertThrows
 import org.junit.jupiter.api.Assertions.assertTrue
 import org.junit.jupiter.api.Test
+import java.nio.file.Files
 import ru.privatenull.pnlibrary.api.platform.PlatformType
 import ru.privatenull.pnlibrary.api.plugin.PluginId
 import ru.privatenull.pnlibrary.spi.platform.PlatformAdapter
@@ -27,6 +28,7 @@ class PlaceholderRegistrationLifecycleTest {
 
     private object TestPlatform : PlatformAdapter {
         override val type = PlatformType.BUKKIT
+        override val dataFolder = Files.createTempDirectory("pnlibrary-placeholder-test")
         override fun diagnosticDetails(includeSensitive: Boolean): Map<String, Any?> = emptyMap()
         override fun executeGlobal(task: Runnable) = task.run()
         override fun executeReply(recipient: Any, task: Runnable) = task.run()
