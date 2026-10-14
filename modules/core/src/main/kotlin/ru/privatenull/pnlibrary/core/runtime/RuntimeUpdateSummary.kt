@@ -8,7 +8,7 @@ import java.time.Instant
 internal object RuntimeUpdateSummary {
     fun of(registrations: List<UpdateRegistration>): Map<String, Any?> {
         val latestReleaseByChannel = registrations
-            .flatMap { it.availableReleases }
+            .flatMap { it.snapshot.availableReleases }
             .filter { it.publishedAt != null }
             .groupBy { it.channel.name }
             .mapValues { (_, releases) -> releases.maxByOrNull { it.publishedAt!! }!! }
