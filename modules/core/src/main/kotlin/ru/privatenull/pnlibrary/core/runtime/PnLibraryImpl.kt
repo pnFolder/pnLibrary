@@ -162,6 +162,9 @@ internal class PnLibraryImpl(
         val failedUpdates = updateSnapshots.count { it.snapshot.state.name.equals("FAILED", ignoreCase = true) }
         val diagnosticSummary = diagnostics.diagnosticSummary()
         val history = diagnostics.historyAnalytics()
+        val nativeLogs = support.logSummary()
+        val reports = support.reportSummary()
+        val observability = support.observabilityAnalytics()
         return linkedMapOf(
         "library" to linkedMapOf<String, Any?>(
             "version" to version,
@@ -216,40 +219,16 @@ internal class PnLibraryImpl(
             )
         },
         "updateSummary" to RuntimeUpdateSummary.of(updateSnapshots),
-        "analytics" to linkedMapOf<String, Any?>(
-            "status" to when {
-                taskFailures > 0 || failedUpdates > 0 -> "critical"
-                (history["occurrenceCount"] as? Number)?.toInt()?.let { it > 0 } == true -> "attention"
-                else -> "healthy"
-            },
-            "signals" to buildList {
-                if (taskFailures > 0) {
-                    add(linkedMapOf("code" to "taskFailures", "severity" to "critical", "count" to taskFailures))
-                }
-                if (failedUpdates > 0) {
-                    add(linkedMapOf("code" to "updateFailures", "severity" to "critical", "count" to failedUpdates))
-                }
-                if ((history["occurrenceCount"] as? Number)?.toInt()?.let { it > 0 } == true) {
-                    add(linkedMapOf("code" to "diagnosticIncidents", "severity" to "attention", "count" to history["occurrenceCount"]))
-                }
-            },
-            "resources" to linkedMapOf(
-                "registeredTasks" to taskSnapshots.size,
-                "registeredUpdates" to updateSnapshots.size,
-                "diagnosticEntries" to (diagnosticSummary["count"] ?: diagnosticSummary["total"]),
-                "nativeLogRecords" to support.logSummary()["count"],
-                "reportsCreated" to support.reportSummary()["created"],
-                "reportHistoryFiles" to (support.reportSummary()["history"] as? Map<*, *>)?.get("fileCount"),
-            ),
-            "counts" to linkedMapOf(
-                "taskFailures" to taskFailures,
-                "updateFailures" to failedUpdates,
-                "diagnosticIncidents" to history["incidentCount"],
-                "observabilityErrors" to support.observabilityAnalytics()["errorCount"],
-                "reportsFailed" to support.reportSummary()["failed"],
-                "reportSuccessRate" to support.reportSummary()["successRate"],
-                "uploads" to (support.reportSummary()["uploadLedger"] as? Map<*, *>)?.get("uploaded"),
-            ),
+        "analytics" to RuntimeAnalytics.of(
+            taskCount = taskSnapshots.size,
+            updateCount = updateSnapshots.size,
+            taskFailures = taskFailures,
+            failedUpdates = failedUpdates,
+            diagnosticSummary = diagnosticSummary,
+            history = history,
+            nativeLogs = nativeLogs,
+            reports = reports,
+            observability = observability,
         ),
         "metrics" to metricsRegistry.diagnosticSnapshot(),
         "metricsAnalytics" to metricsRegistry.diagnosticAnalytics(),
@@ -257,9 +236,9 @@ internal class PnLibraryImpl(
         "platformCoverage" to platformCoverage,
         "diagnostics" to diagnostics.diagnosticSummary(),
         "diagnosticHistory" to diagnostics.historyAnalytics(),
-        "nativeLogs" to support.logSummary(),
-        "reports" to support.reportSummary(),
-        "observability" to support.observabilityAnalytics(),
+        "nativeLogs" to nativeLogs,
+        "reports" to reports,
+        "observability" to observability,
         "configurationDeclarations" to diagnostics.configurations("all").map { declaration ->
             linkedMapOf<String, Any?>(
                 "plugin" to declaration.plugin,
