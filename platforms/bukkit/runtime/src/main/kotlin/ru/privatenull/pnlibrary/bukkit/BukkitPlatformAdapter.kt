@@ -3,7 +3,6 @@ package ru.privatenull.pnlibrary.bukkit
 import org.bukkit.Bukkit
 import org.bukkit.entity.Player
 import org.bukkit.plugin.Plugin
-import ru.privatenull.pnlibrary.api.commands.CommandRegistration
 import ru.privatenull.pnlibrary.api.logging.LogLevel
 import ru.privatenull.pnlibrary.api.platform.PlatformType
 import ru.privatenull.pnlibrary.api.plugin.PluginMetadata
@@ -48,9 +47,8 @@ internal class BukkitPlatformAdapter(
 
     @Volatile
     private var nativeLogObserver: ((Any, LogLevel, String, Throwable?) -> Unit)? = null
-
     private var lifecycleListener: BukkitLifecycleListener? = null
-    private var controlRegistration: CommandRegistration? = null
+
 
     private val nativeLogHandler = object : Handler() {
         override fun publish(record: LogRecord?) {
@@ -183,16 +181,11 @@ internal class BukkitPlatformAdapter(
     /** Registers commands and lifecycle listeners, rolling back partial initialization. */
     override fun bind(library: PnLibrary) {
         lifecycle.bind {
-            try {
-                lifecycleListener = BukkitLifecycleListener(plugin, library).start()
-                controlRegistration = library.commands.register(
-                    plugin,
-                    BukkitControlCommand(plugin, library).definition(),
-                )
-            } catch (error: Throwable) {
-                releaseBindings()
-                throw error
-            }
+            lifecycleListener = lifecycle.track(BukkitLifecycleListener(plugin, library).start())
+            lifecycle.track(library.commands.register(
+                plugin,
+                BukkitControlCommand(plugin, library).definition(),
+            ))
         }
     }
 
@@ -252,10 +245,13 @@ internal class BukkitPlatformAdapter(
     }
 
     override fun close() {
-        if (!lifecycle.close()) return
-
-        releaseBindings()
-        observeNativeLogs(null)
+        if (lifecycle.isClosed) return
+        try {
+            observeNativeLogs(null)
+        } finally {
+            lifecycle.close()
+            lifecycleListener = null
+        }
     }
 
     /** Dispatches global work without linking optional Folia classes. */
@@ -315,15 +311,6 @@ internal class BukkitPlatformAdapter(
                 error,
             )
         }
-    }
-
-    /** Releases command and lifecycle registrations. */
-    private fun releaseBindings() {
-        controlRegistration?.close()
-        controlRegistration = null
-
-        lifecycleListener?.close()
-        lifecycleListener = null
     }
 
     /** Converts native plugin metadata to the shared snapshot contract. */

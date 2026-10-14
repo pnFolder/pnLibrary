@@ -7,6 +7,7 @@ import org.junit.jupiter.api.assertThrows
 import java.util.concurrent.CountDownLatch
 import java.util.concurrent.Executors
 import java.util.concurrent.TimeUnit
+import java.util.concurrent.CopyOnWriteArrayList
 
 class PlatformLifecycleTest {
     @Test
@@ -62,5 +63,35 @@ class PlatformLifecycleTest {
             executor.shutdownNow()
             lifecycle.close()
         }
+    }
+
+    @Test
+    fun `close releases tracked resources in reverse order`() {
+        val lifecycle = PlatformLifecycle()
+        val closed = CopyOnWriteArrayList<String>()
+
+        lifecycle.bind {
+            lifecycle.track(AutoCloseable { closed += "first" })
+            lifecycle.track(AutoCloseable { closed += "second" })
+        }
+
+        assertTrue(lifecycle.close())
+        assertTrue(closed == listOf("second", "first"))
+    }
+
+    @Test
+    fun `failed binding releases resources registered before failure`() {
+        val lifecycle = PlatformLifecycle()
+        var closed = false
+
+        assertThrows<IllegalArgumentException> {
+            lifecycle.bind {
+                lifecycle.track(AutoCloseable { closed = true })
+                throw IllegalArgumentException("registration failed")
+            }
+        }
+
+        assertTrue(closed)
+        lifecycle.bind { Unit }
     }
 }

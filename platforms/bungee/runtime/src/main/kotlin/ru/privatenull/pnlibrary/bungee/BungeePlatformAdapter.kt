@@ -2,7 +2,6 @@ package ru.privatenull.pnlibrary.bungee
 
 import net.md_5.bungee.api.chat.TextComponent
 import net.md_5.bungee.api.plugin.Plugin
-import ru.privatenull.pnlibrary.api.commands.CommandRegistration
 import ru.privatenull.pnlibrary.api.logging.LogLevel
 import ru.privatenull.pnlibrary.api.platform.PlatformType
 import ru.privatenull.pnlibrary.api.plugin.PluginMetadata
@@ -31,7 +30,6 @@ internal class BungeePlatformAdapter(
 
     private val lifecycle = PlatformLifecycle()
 
-    private var updateCommand: CommandRegistration? = null
     private val uncaughtExceptionObserver = UncaughtExceptionLogObserver(plugin)
 
     override val type: PlatformType = PlatformType.BUNGEECORD
@@ -125,7 +123,7 @@ internal class BungeePlatformAdapter(
 
     /** Registers shared update commands exactly once for this runtime. */
     override fun bind(library: PnLibrary) {
-        updateCommand = lifecycle.bind { ProxyUpdateCommand(library).register(plugin) }
+        lifecycle.bind { lifecycle.track(ProxyUpdateCommand(library).register(plugin)) }
     }
 
     /** Dispatches work asynchronously; BungeeCord has no global main-thread scheduler. */
@@ -144,9 +142,6 @@ internal class BungeePlatformAdapter(
     override fun close() {
         if (!lifecycle.close()) return
         observeNativeLogs(null)
-
-        updateCommand?.close()
-        updateCommand = null
 
     }
 

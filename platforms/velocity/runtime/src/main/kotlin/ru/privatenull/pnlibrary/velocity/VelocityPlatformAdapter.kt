@@ -4,7 +4,6 @@ import com.velocitypowered.api.plugin.PluginDescription
 import com.velocitypowered.api.proxy.ProxyServer
 import net.kyori.adventure.text.serializer.legacy.LegacyComponentSerializer
 import org.slf4j.Logger
-import ru.privatenull.pnlibrary.api.commands.CommandRegistration
 import ru.privatenull.pnlibrary.api.logging.LogLevel
 import ru.privatenull.pnlibrary.api.platform.PlatformType
 import ru.privatenull.pnlibrary.api.plugin.PluginMetadata
@@ -41,7 +40,6 @@ internal class VelocityPlatformAdapter(
     private val diagnosticDetailsCollector = VelocityDiagnosticDetailsCollector(server)
     private val lifecycle = PlatformLifecycle()
 
-    private var updateCommand: CommandRegistration? = null
     private val uncaughtExceptionObserver = UncaughtExceptionLogObserver(plugin)
 
     override val type: PlatformType = PlatformType.VELOCITY
@@ -125,7 +123,7 @@ internal class VelocityPlatformAdapter(
 
     /** Registers pnLibrary-owned commands and marks the adapter as active. */
     override fun bind(library: PnLibrary) {
-        updateCommand = lifecycle.bind { ProxyUpdateCommand(library).register(plugin) }
+        lifecycle.bind { lifecycle.track(ProxyUpdateCommand(library).register(plugin)) }
     }
 
     /** Schedules work on Velocity's plugin scheduler. */
@@ -148,9 +146,6 @@ internal class VelocityPlatformAdapter(
             return
         }
         observeNativeLogs(null)
-
-        updateCommand?.close()
-        updateCommand = null
 
     }
 

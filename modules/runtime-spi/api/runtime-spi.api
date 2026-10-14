@@ -121,6 +121,7 @@ public final class ru/privatenull/pnlibrary/spi/platform/PlatformLifecycle {
 	public final fun close ()Z
 	public final fun endBinding ()V
 	public final fun isClosed ()Z
+	public final fun track (Ljava/lang/AutoCloseable;)Ljava/lang/AutoCloseable;
 }
 
 public abstract interface class ru/privatenull/pnlibrary/spi/platform/PlatformLogObservation {
