@@ -11,8 +11,8 @@ package ru.privatenull.pnlibrary.spi.platform
  * Unless a method says otherwise, an adapter must tolerate calls from pnLibrary worker threads.
  * [close] must be idempotent and prevent newly submitted platform work where practical.
  */
-interface PlatformAdapter : AutoCloseable, PlatformIdentity, PlatformExecution, PlatformOwnership,
-    PlatformDiagnostics, PlatformLogging, PlatformServices {
+interface PlatformAdapter : AutoCloseable, PlatformIdentity, PlatformExecution, PlatformBinding,
+    PlatformOwnership, PlatformDiagnostics, PlatformLogging, PlatformServices {
 
     /** Removes native hooks and rejects or ignores future dispatches. */
     override fun close()
