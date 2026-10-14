@@ -10,11 +10,13 @@ import ru.privatenull.pnlibrary.spi.platform.PlatformOwnership
 import ru.privatenull.pnlibrary.spi.platform.PlatformAdapter
 import ru.privatenull.pnlibrary.spi.platform.PlatformServices
 import ru.privatenull.pnlibrary.spi.platform.PlatformStorage
+import ru.privatenull.pnlibrary.spi.platform.PlatformReadiness
 
 /** Prepared platform capabilities passed from the native boundary into the shared runtime. */
 internal data class PlatformRuntimeContext(
     val identity: PlatformIdentity,
     val execution: PlatformExecution,
+    val readiness: PlatformReadiness,
     val ownership: PlatformOwnership,
     val diagnostics: PlatformDiagnostics,
     val logObservation: PlatformLogObservation,
@@ -39,6 +41,7 @@ internal data class PlatformRuntimeContext(
 internal fun PlatformAdapter.toRuntimeContext(): PlatformRuntimeContext = PlatformRuntimeContext(
     identity = this,
     execution = this,
+    readiness = this,
     ownership = this,
     diagnostics = this,
     logObservation = this,

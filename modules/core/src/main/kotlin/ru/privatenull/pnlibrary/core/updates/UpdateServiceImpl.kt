@@ -5,6 +5,7 @@ import ru.privatenull.pnlibrary.api.plugin.PluginDependency
 import ru.privatenull.pnlibrary.api.updates.*
 import ru.privatenull.pnlibrary.api.version.SemanticVersion
 import ru.privatenull.pnlibrary.spi.platform.PlatformExecution
+import ru.privatenull.pnlibrary.spi.platform.PlatformReadiness
 import ru.privatenull.pnlibrary.spi.platform.PlatformIdentity
 import ru.privatenull.pnlibrary.spi.platform.PlatformLogging
 import ru.privatenull.pnlibrary.spi.platform.PlatformOwnership
@@ -24,6 +25,7 @@ internal class UpdateServiceImpl(
     private val ownership: PlatformOwnership,
     private val identity: PlatformIdentity,
     private val execution: PlatformExecution,
+    private val readiness: PlatformReadiness,
     private val dataFolder: Path,
 ) : UpdateService, AutoCloseable {
     private val closed = AtomicBoolean(false)
@@ -43,7 +45,7 @@ internal class UpdateServiceImpl(
         configuration = configuration,
         dataFolder = dataFolder,
         logging = logging,
-        execution = execution,
+        readiness = readiness,
         installer = installer,
         registrations = registrations::snapshot,
         resolveGraph = ::resolveGraph,

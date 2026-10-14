@@ -6,6 +6,7 @@ import ru.privatenull.pnlibrary.api.downloads.DownloadRegistration
 import ru.privatenull.pnlibrary.api.logging.LogLevel
 import ru.privatenull.pnlibrary.api.plugin.PluginDependency
 import ru.privatenull.pnlibrary.spi.platform.PlatformExecution
+import ru.privatenull.pnlibrary.spi.platform.PlatformReadiness
 import ru.privatenull.pnlibrary.spi.platform.PlatformIdentity
 import ru.privatenull.pnlibrary.spi.platform.PlatformLogging
 import ru.privatenull.pnlibrary.spi.platform.PlatformOwnership
@@ -22,6 +23,7 @@ internal class DirectDownloadManager(
     private val identity: PlatformIdentity,
     private val ownership: PlatformOwnership,
     private val execution: PlatformExecution,
+    private val readiness: PlatformReadiness,
     private val logging: PlatformLogging,
     private val libraryData: Path,
     private val configuration: DownloadConfiguration,
@@ -77,7 +79,7 @@ internal class DirectDownloadManager(
 
     fun registerDependencies(owner: Any, dependencies: List<PluginDependency>): DownloadRegistration? {
         val installed = runCatching { ownership.installedPlugins() }.getOrNull().orEmpty()
-        execution.whenServerReady(Runnable {
+        readiness.whenServerReady(Runnable {
             confirmDownloadedDependencies(owner, runCatching { ownership.installedPlugins() }.getOrNull().orEmpty())
         })
         val download = dependencyRequestFactory.create(dependencies, installed) ?: return null

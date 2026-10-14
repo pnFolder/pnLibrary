@@ -4,6 +4,7 @@ import ru.privatenull.pnlibrary.api.logging.LogLevel
 import ru.privatenull.pnlibrary.api.updates.UpdatePlanSnapshot
 import ru.privatenull.pnlibrary.update.RefreshMode
 import ru.privatenull.pnlibrary.spi.platform.PlatformExecution
+import ru.privatenull.pnlibrary.spi.platform.PlatformReadiness
 import ru.privatenull.pnlibrary.spi.platform.PlatformLogging
 import ru.privatenull.pnlibrary.update.ResolutionResult
 import java.util.concurrent.Executors
@@ -14,7 +15,7 @@ internal class UpdateOrchestratorRuntime(
     private val configuration: UpdateConfiguration,
     dataFolder: Path,
     private val logging: PlatformLogging,
-    execution: PlatformExecution,
+    readiness: PlatformReadiness,
     installer: UpdateInstaller,
     registrations: () -> List<RegisteredUpdate>,
     resolveGraph: (RefreshMode) -> ResolutionResult,
@@ -40,7 +41,7 @@ internal class UpdateOrchestratorRuntime(
             logging.log(this, LogLevel.WARNING, "Update recovery failed", error)
         }
         it.start()
-        execution.whenServerReady(Runnable {
+        readiness.whenServerReady(Runnable {
             executor.execute { installer.reconcilePending(registrations(), it::healthResolved) }
         })
     }

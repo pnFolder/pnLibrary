@@ -7,6 +7,7 @@ import ru.privatenull.pnlibrary.api.metrics.MetricsService
 import ru.privatenull.pnlibrary.api.metrics.PluginMetrics
 import ru.privatenull.pnlibrary.spi.platform.PlatformDiagnostics
 import ru.privatenull.pnlibrary.spi.platform.PlatformExecution
+import ru.privatenull.pnlibrary.spi.platform.PlatformReadiness
 import ru.privatenull.pnlibrary.spi.platform.PlatformIdentity
 import ru.privatenull.pnlibrary.spi.platform.PlatformLogging
 import ru.privatenull.pnlibrary.spi.platform.PlatformLogObservation
@@ -68,6 +69,7 @@ internal class PnLibraryImpl(
     private val platformIdentity: PlatformIdentity,
     private val platformOwnership: PlatformOwnership,
     private val platformExecution: PlatformExecution,
+    private val platformReadiness: PlatformReadiness,
     private val platformLogging: PlatformLogging,
     private val platformDiagnostics: PlatformDiagnostics,
     private val platformLogObservation: PlatformLogObservation,
@@ -126,6 +128,7 @@ internal class PnLibraryImpl(
         platformOwnership,
         platformIdentity,
         platformExecution,
+        platformReadiness,
         dataFolder,
     )
     private val directDownloadConfiguration = DownloadConfiguration.load(
@@ -135,6 +138,7 @@ internal class PnLibraryImpl(
         platformIdentity,
         platformOwnership,
         platformExecution,
+        platformReadiness,
         platformLogging,
         dataFolder,
         directDownloadConfiguration,

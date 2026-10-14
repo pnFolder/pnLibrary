@@ -49,6 +49,7 @@ internal object PnLibraryBootstrap {
             platformIdentity = platform.identity,
             platformOwnership = platform.ownership,
             platformExecution = platform.execution,
+            platformReadiness = platform.readiness,
             platformLogging = platform.logging,
             platformDiagnostics = platform.diagnostics,
             platformLogObservation = platform.logObservation,
