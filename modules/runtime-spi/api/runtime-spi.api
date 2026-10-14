@@ -68,12 +68,8 @@ public final class ru/privatenull/pnlibrary/spi/platform/JavaSnapshot$Companion 
 	public final fun current ()Lru/privatenull/pnlibrary/spi/platform/JavaSnapshot;
 }
 
-public abstract interface class ru/privatenull/pnlibrary/spi/platform/PlatformAdapter : java/lang/AutoCloseable, ru/privatenull/pnlibrary/spi/platform/PlatformDiagnostics, ru/privatenull/pnlibrary/spi/platform/PlatformExecution, ru/privatenull/pnlibrary/spi/platform/PlatformIdentity, ru/privatenull/pnlibrary/spi/platform/PlatformLogging, ru/privatenull/pnlibrary/spi/platform/PlatformOwnership {
+public abstract interface class ru/privatenull/pnlibrary/spi/platform/PlatformAdapter : java/lang/AutoCloseable, ru/privatenull/pnlibrary/spi/platform/PlatformDiagnostics, ru/privatenull/pnlibrary/spi/platform/PlatformExecution, ru/privatenull/pnlibrary/spi/platform/PlatformIdentity, ru/privatenull/pnlibrary/spi/platform/PlatformLogging, ru/privatenull/pnlibrary/spi/platform/PlatformOwnership, ru/privatenull/pnlibrary/spi/platform/PlatformServices {
 	public abstract fun close ()V
-	public fun getAudienceAdapter ()Lru/privatenull/pnlibrary/spi/audiences/PlatformAudienceAdapter;
-	public fun getCommandAdapter ()Lru/privatenull/pnlibrary/spi/commands/PlatformCommandAdapter;
-	public fun getMetricsFactory ()Lru/privatenull/pnlibrary/spi/metrics/PlatformMetricsFactory;
-	public fun getTaskAdapter ()Lru/privatenull/pnlibrary/spi/tasks/PlatformTaskAdapter;
 }
 
 public abstract interface class ru/privatenull/pnlibrary/spi/platform/PlatformDiagnostics {
@@ -124,6 +120,13 @@ public abstract interface class ru/privatenull/pnlibrary/spi/platform/PlatformOw
 	public fun ownerMetadata (Ljava/lang/Object;)Lru/privatenull/pnlibrary/spi/platform/PluginSnapshot;
 	public fun remotePolicyContext (Ljava/lang/Object;Lru/privatenull/pnlibrary/api/plugin/PluginMetadata;Ljava/util/Map;)Lru/privatenull/pnlibrary/api/remote/RemotePolicyContext;
 	public fun unsupportedOwner (Ljava/lang/Object;)Lru/privatenull/pnlibrary/spi/platform/PluginSnapshot;
+}
+
+public abstract interface class ru/privatenull/pnlibrary/spi/platform/PlatformServices {
+	public fun getAudienceAdapter ()Lru/privatenull/pnlibrary/spi/audiences/PlatformAudienceAdapter;
+	public fun getCommandAdapter ()Lru/privatenull/pnlibrary/spi/commands/PlatformCommandAdapter;
+	public fun getMetricsFactory ()Lru/privatenull/pnlibrary/spi/metrics/PlatformMetricsFactory;
+	public fun getTaskAdapter ()Lru/privatenull/pnlibrary/spi/tasks/PlatformTaskAdapter;
 }
 
 public final class ru/privatenull/pnlibrary/spi/platform/PlatformSnapshot {
