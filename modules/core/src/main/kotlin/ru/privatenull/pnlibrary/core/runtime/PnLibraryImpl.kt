@@ -77,7 +77,9 @@ internal class PnLibraryImpl(
     val dataFolder: Path = platform.dataFolder ?: extractDataFolder(owner)
     private val support = SupportRuntime(
         owner = owner,
-        platform = platform,
+        ownership = platform,
+        identity = platform,
+        platformDiagnostics = platform,
         diagnostics = diagnostics,
         config = config,
         dataFolder = dataFolder,
