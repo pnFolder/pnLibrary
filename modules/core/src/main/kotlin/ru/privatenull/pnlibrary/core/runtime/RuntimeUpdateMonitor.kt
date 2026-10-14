@@ -1,7 +1,6 @@
 package ru.privatenull.pnlibrary.core.runtime
 
 import ru.privatenull.pnlibrary.api.runtime.PnLibrary
-import ru.privatenull.pnlibrary.api.platform.PlatformType
 import ru.privatenull.pnlibrary.api.updates.PluginUpdateRequest
 import ru.privatenull.pnlibrary.api.updates.UpdateRegistration
 import ru.privatenull.pnlibrary.spi.platform.PlatformIdentity
@@ -23,11 +22,7 @@ internal object RuntimeUpdateMonitor {
         val currentVersion = ownership.ownerDetails(owner)["version"]
             ?.takeIf { it.isNotBlank() }
             ?: error("The platform did not expose the pnLibrary version")
-        val artifactId = when (identity.type) {
-            PlatformType.BUKKIT -> "bukkit"
-            PlatformType.BUNGEECORD -> "bungee"
-            PlatformType.VELOCITY -> "velocity"
-        }
+        val artifactId = identity.type.artifactId
         val monitor = library.updates.register(
             owner,
             ru.privatenull.pnlibrary.api.updates.ProductDescriptor.library(currentVersion),

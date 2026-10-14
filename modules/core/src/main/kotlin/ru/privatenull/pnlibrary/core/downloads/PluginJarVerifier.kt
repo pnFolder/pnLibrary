@@ -20,12 +20,7 @@ internal class PluginJarVerifier(
     }
 
     private fun readDescriptor(path: Path): PluginDescriptor = JarFile(path.toFile()).use { jar ->
-        val descriptorName = when (platform) {
-            PlatformType.BUKKIT -> "plugin.yml"
-            PlatformType.BUNGEECORD -> "bungee.yml"
-            PlatformType.VELOCITY -> "velocity-plugin.json"
-        }
-        val entry = jar.getJarEntry(descriptorName)
+        val entry = jar.getJarEntry(platform.descriptorFileName)
             ?: throw IllegalArgumentException("JAR плагина не содержит поддерживаемого descriptor")
 
         @Suppress("UNCHECKED_CAST")

@@ -15,15 +15,19 @@ enum class PlatformType(
     val id: String,
     val displayName: String,
     val isProxy: Boolean,
+    /** Stable suffix used by published pnLibrary distribution artifacts. */
+    val artifactId: String,
+    /** Native plugin descriptor file used when validating downloaded plugin JARs. */
+    val descriptorFileName: String,
 ) {
     /** Bukkit-compatible server family, including Paper, Spigot, and Folia-compatible runtimes. */
-    BUKKIT("bukkit", "Bukkit", false),
+    BUKKIT("bukkit", "Bukkit", false, "bukkit", "plugin.yml"),
 
     /** BungeeCord-compatible proxy family, including compatible forks such as Waterfall. */
-    BUNGEECORD("bungeecord", "BungeeCord", true),
+    BUNGEECORD("bungeecord", "BungeeCord", true, "bungee", "bungee.yml"),
 
     /** Velocity proxy family using its native scheduler, commands, and plugin container model. */
-    VELOCITY("velocity", "Velocity", true),
+    VELOCITY("velocity", "Velocity", true, "velocity", "velocity-plugin.json"),
 
     ;
 
