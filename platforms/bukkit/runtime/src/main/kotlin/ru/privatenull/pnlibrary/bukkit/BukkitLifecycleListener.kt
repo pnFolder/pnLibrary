@@ -76,7 +76,7 @@ internal class BukkitLifecycleListener(
         val player = event.player
         if (!player.isOp && !player.hasPermission("pnlibrary.updates.notify")) return
         val runtime = library ?: return
-        runtime.tasks.scope(plugin).schedule(TaskSpec.builder()
+        runtime.taskScope().schedule(TaskSpec.builder()
             .execution(TaskExecution.entity(player))
             .delay(Duration.ofMillis(50))
             .action task@{

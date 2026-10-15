@@ -20,6 +20,7 @@ import ru.privatenull.pnlibrary.api.plugin.PluginRegistry
 import ru.privatenull.pnlibrary.api.platform.PlatformProvider
 import ru.privatenull.pnlibrary.api.services.ServiceManager
 import ru.privatenull.pnlibrary.api.tasks.TaskService
+import ru.privatenull.pnlibrary.api.tasks.TaskScope
 import ru.privatenull.pnlibrary.api.updates.UpdateService
 import java.io.Closeable
 
@@ -68,6 +69,9 @@ interface PnLibrary : Closeable {
 
     /** Cross-platform tasks grouped by their owner lifecycle. */
     val tasks: TaskService
+
+    /** Returns the task scope owned by this library runtime. */
+    fun taskScope(): TaskScope = tasks.scope(owner)
 
     /** Cross-platform commands registered and removed with their owner lifecycle. */
     val commands: CommandService
