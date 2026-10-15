@@ -10,9 +10,8 @@ import ru.privatenull.pnlibrary.api.runtime.PnLibrary
 
 /** Console-only update controls shared by both proxy platforms. */
 class ProxyUpdateCommand(private val library: PnLibrary) {
-    /** Registers the portable update command for the native platform owner. */
-    fun register(owner: Any): CommandRegistration =
-        library.commands.register(owner, definition())
+    /** Registers the portable update command for this library runtime. */
+    fun register(): CommandRegistration = library.registerCommand(definition())
 
     /** Builds the portable `pnupdate` command definition. */
     fun definition(): CommandDefinition = command("pnupdate") {

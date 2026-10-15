@@ -130,7 +130,7 @@ internal class VelocityPlatformAdapter(
 
     /** Registers pnLibrary-owned commands and marks the adapter as active. */
     override fun bind(library: PnLibrary) {
-        lifecycle.bind { lifecycle.track(ProxyUpdateCommand(library).register(plugin)) }
+        lifecycle.bind { lifecycle.track(ProxyUpdateCommand(library).register()) }
     }
 
     /** Schedules work on Velocity's plugin scheduler. */

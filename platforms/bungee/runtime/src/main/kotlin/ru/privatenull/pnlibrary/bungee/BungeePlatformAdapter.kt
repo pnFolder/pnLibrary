@@ -128,7 +128,7 @@ internal class BungeePlatformAdapter(
 
     /** Registers shared update commands exactly once for this runtime. */
     override fun bind(library: PnLibrary) {
-        lifecycle.bind { lifecycle.track(ProxyUpdateCommand(library).register(plugin)) }
+        lifecycle.bind { lifecycle.track(ProxyUpdateCommand(library).register()) }
     }
 
     /** Dispatches work asynchronously; BungeeCord has no global main-thread scheduler. */
