@@ -8,6 +8,14 @@ package ru.privatenull.pnlibrary.api.commands
 interface CommandService {
     /** Registers [command] and binds its lifecycle to [owner]. */
     fun register(owner: Any, command: CommandDefinition): CommandRegistration
+
+    /**
+     * Builds and registers a command while keeping the command-definition ceremony
+     * out of the call site.
+     */
+    fun register(owner: Any, name: String, configure: CommandBuilder.() -> Unit): CommandRegistration =
+        register(owner, command(name, configure))
+
     /** Closes every command registration belonging to [owner]. */
     fun unregisterOwner(owner: Any)
 }
