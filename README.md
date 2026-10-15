@@ -3,6 +3,8 @@
 Architecture references: [API design rules](docs/architecture/API-DESIGN-RULES.md),
 [feature boundaries](docs/architecture/FEATURE-BOUNDARIES.md), and the
 [deprecated API migration guide](docs/architecture/API-MIGRATION.md).
+The short public-vs-runtime architecture map is in
+[architecture overview](docs/architecture/OVERVIEW.md).
 
 ## Smart component updates
 
