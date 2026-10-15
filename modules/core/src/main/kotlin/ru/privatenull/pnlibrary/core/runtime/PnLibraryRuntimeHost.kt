@@ -68,8 +68,6 @@ class PnLibraryRuntimeHost private constructor(
          *
          * @param owner native pnLibrary plugin instance
          * @param platform adapter for the current server or proxy
-         * @param updateDirectory retained for binary/source compatibility. The update service
-         * derives its staging directory from the installed component JAR.
          */
         @JvmStatic
         fun start(

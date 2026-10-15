@@ -41,22 +41,22 @@ Progress:
 - commands: Kotlin receiver overloads delegate to the Java `Consumer` implementation and are hidden
   from Java bytecode lookup, removing lambda ambiguity;
 - diagnostics: `DiagnosticConfiguration.builder(path)` is canonical; `file(path)` is a deprecated
-  compatibility alias; declaration collections and collected snapshots are immutable;
+  declaration collections and collected snapshots are immutable;
 - configuration: access policies and groups expose immutable snapshots, groups have idempotent
   lifecycle, and ambiguous `local/global` aliases are deprecated;
 - registries: plugin, module, and update registries now expose the canonical `all/get/require`
-  vocabulary while retaining deprecated compatibility aliases;
+  vocabulary with one canonical name per operation;
 - services: typed service lookup now follows `get/require/all`; `getAll` remains as a deprecated
-  compatibility alias and runtime results are immutable;
+  runtime results are immutable;
 - dependencies: `DependencyBuilder.build()` now returns an immutable declaration snapshot;
 - tasks: task declarations and queries now expose immutable collection snapshots; textual query
   filters are normalized when the query is built; task lookup follows `get/require`, with `find`
-  retained as a deprecated compatibility alias; meaningless blank filters fail during `build()`;
+  meaningless blank filters fail during `build()`;
 - remote policies: platform-name matching is locale-stable and native handles are captured in an
   immutable context snapshot; policy construction now uses a canonical fluent builder, validates
   an absolute HTTPS source, and returns immutable custom values; `PluginBuilder.remotePolicy`
   accepts the completed declaration directly, while its callback overload remains a deprecated
-  compatibility adapter;
+  canonical fluent builder;
 - identifiers and protocol values: normalization in commands, downloads, placeholders, cooldowns,
   platform adapters, and trusted update hosts is locale-independent;
 - actions and placeholder provider views return immutable value/registry snapshots;
@@ -67,7 +67,7 @@ Progress:
   and prevents accidental re-enabling;
 - downloads: runtime state queries now return immutable snapshots;
 - placeholders: service-level `register(key, configure)` is now the canonical terminal operation;
-  the former two-step `placeholder(...).register()` flow remains only as a deprecated adapter;
+  the former two-step `placeholder(...).register()` flow is removed;
 - Bukkit menus: builder output protects its slot map and common Java overloads are generated and
   covered by a Java compilation test.
 
