@@ -26,9 +26,6 @@ import ru.privatenull.pnlibrary.spi.platform.PluginSnapshot
 import ru.privatenull.pnlibrary.spi.tasks.PlatformTaskAdapter
 import java.util.concurrent.CompletableFuture
 import java.util.concurrent.TimeUnit
-import java.util.logging.Handler
-import java.util.logging.Level
-import java.util.logging.LogRecord
 
 /**
  * Runtime adapter for Bukkit-compatible Minecraft servers.
@@ -42,40 +39,9 @@ internal class BukkitPlatformAdapter(
 ) : PlatformAdapter {
 
     private val lifecycle = PlatformLifecycle()
-    private val ownLogCall = ThreadLocal.withInitial { false }
     private val diagnosticsCollector = BukkitDiagnosticsCollector()
-
-    @Volatile
-    private var nativeLogObserver: ((Any, LogLevel, String, Throwable?) -> Unit)? = null
+    private val nativeLogBridge = BukkitNativeLogBridge(plugin)
     private var lifecycleListener: BukkitLifecycleListener? = null
-
-
-    private val nativeLogHandler = object : Handler() {
-        override fun publish(record: LogRecord?) {
-            if (record == null || ownLogCall.get()) return
-            if (record.level.intValue() < Level.WARNING.intValue()) return
-
-            val level = when {
-                record.level.intValue() >= Level.SEVERE.intValue() -> LogLevel.ERROR
-                else -> LogLevel.WARNING
-            }
-            val source = Bukkit.getPluginManager().plugins.firstOrNull { installedPlugin ->
-                record.loggerName?.contains(installedPlugin.name, ignoreCase = true) == true
-            } ?: plugin
-
-            nativeLogObserver?.invoke(
-                source,
-                level,
-                record.message ?: "Native platform error",
-                record.thrown,
-            )
-        }
-
-        override fun flush() = Unit
-
-        /** Releases bindings and native log observation once. */
-    override fun close() = Unit
-    }
 
     override val type: PlatformType = PlatformType.BUKKIT
     override val dataFolder = plugin.dataFolder.toPath()
@@ -104,22 +70,7 @@ internal class BukkitPlatformAdapter(
     override val taskAdapter: PlatformTaskAdapter =
         BukkitTaskAdapter(plugin)
 
-    override val logHandler: (Any, LogLevel, String, Throwable?) -> Unit =
-        { owner, level, message, error ->
-            val logger = (owner as? Plugin)?.logger ?: plugin.logger
-            val nativeLevel = when (level) {
-                LogLevel.WARNING -> Level.WARNING
-                LogLevel.ERROR -> Level.SEVERE
-                else -> Level.INFO
-            }
-
-            ownLogCall.set(true)
-            try {
-                logger.log(nativeLevel, message, error)
-            } finally {
-                ownLogCall.set(false)
-            }
-        }
+    override val logHandler: (Any, LogLevel, String, Throwable?) -> Unit = nativeLogBridge.logHandler
 
     /** Sends legacy-formatted output to the server console. */
     override fun console(owner: Any, message: String) {
@@ -168,14 +119,7 @@ internal class BukkitPlatformAdapter(
     override fun observeNativeLogs(
         observer: ((Any, LogLevel, String, Throwable?) -> Unit)?,
     ) {
-        if (nativeLogObserver == null && observer != null) {
-            Bukkit.getLogger().addHandler(nativeLogHandler)
-        }
-        if (nativeLogObserver != null && observer == null) {
-            Bukkit.getLogger().removeHandler(nativeLogHandler)
-        }
-
-        nativeLogObserver = observer
+        nativeLogBridge.observe(observer)
     }
 
     /** Registers commands and lifecycle listeners, rolling back partial initialization. */
