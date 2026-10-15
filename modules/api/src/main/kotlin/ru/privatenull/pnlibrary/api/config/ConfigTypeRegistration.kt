@@ -41,19 +41,9 @@ class ConfigTypeAccess private constructor(
         @JvmStatic
         fun ownerOnly() = Builder().build()
 
-        /** Alias for [ownerOnly]. */
-        @Deprecated("Use ownerOnly()", ReplaceWith("ownerOnly()"))
-        @JvmStatic
-        fun local() = ownerOnly()
-
         /** Creates an access policy that allows every pnLibrary plugin. */
         @JvmStatic
         fun everyone() = Builder().allowAll().build()
-
-        /** Alias for [everyone]. */
-        @Deprecated("Use everyone()", ReplaceWith("everyone()"))
-        @JvmStatic
-        fun global() = everyone()
 
         /** Creates an owner-plus-explicit-plugins access policy. */
         @JvmStatic

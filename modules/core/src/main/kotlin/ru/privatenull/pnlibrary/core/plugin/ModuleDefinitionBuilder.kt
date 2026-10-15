@@ -2,7 +2,6 @@ package ru.privatenull.pnlibrary.core.plugin
 
 import ru.privatenull.pnlibrary.api.diagnostics.DiagnosticContainer
 import ru.privatenull.pnlibrary.api.downloads.FileDownloads
-import ru.privatenull.pnlibrary.api.events.Listener
 import ru.privatenull.pnlibrary.api.plugin.MetricsBuilder
 import ru.privatenull.pnlibrary.api.plugin.PluginBuilder
 import ru.privatenull.pnlibrary.api.plugin.PluginDependency
@@ -35,7 +34,6 @@ internal class ModuleDefinitionBuilder : PluginBuilder {
     val dependencies = mutableListOf<PluginDependency>()
     var downloadsRequest: FileDownloads? = null
     var placeholderApiEnabled: Boolean = true
-    val listeners = mutableListOf<Listener>()
 
     override fun product(descriptor: ProductDescriptor): PluginBuilder = apply {
         require(productDescriptor == null) { "component descriptor is already configured" }
@@ -87,11 +85,6 @@ internal class ModuleDefinitionBuilder : PluginBuilder {
 
     override fun remotePolicy(policy: RemotePolicy): PluginBuilder = apply {
         remotePolicy = policy
-    }
-
-    @Deprecated("Register listeners through ModuleContext.events after the context has been created")
-    override fun listener(listener: Listener): PluginBuilder = apply {
-        listeners += listener
     }
 
     fun bindUpdatesTo(descriptor: ProductDescriptor?) {

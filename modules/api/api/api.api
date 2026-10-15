@@ -1401,8 +1401,6 @@ public final class ru/privatenull/pnlibrary/api/config/ConfigTypeAccess {
 	public final fun getAllowedPatterns ()Ljava/util/Set;
 	public final fun getAllowedPlugins ()Ljava/util/Set;
 	public final fun getDeniedPlugins ()Ljava/util/Set;
-	public static final fun global ()Lru/privatenull/pnlibrary/api/config/ConfigTypeAccess;
-	public static final fun local ()Lru/privatenull/pnlibrary/api/config/ConfigTypeAccess;
 	public static final fun ownerOnly ()Lru/privatenull/pnlibrary/api/config/ConfigTypeAccess;
 	public static final fun plugins ([Ljava/lang/String;)Lru/privatenull/pnlibrary/api/config/ConfigTypeAccess;
 }
@@ -1419,8 +1417,6 @@ public final class ru/privatenull/pnlibrary/api/config/ConfigTypeAccess$Builder 
 public final class ru/privatenull/pnlibrary/api/config/ConfigTypeAccess$Companion {
 	public final fun builder ()Lru/privatenull/pnlibrary/api/config/ConfigTypeAccess$Builder;
 	public final fun everyone ()Lru/privatenull/pnlibrary/api/config/ConfigTypeAccess;
-	public final fun global ()Lru/privatenull/pnlibrary/api/config/ConfigTypeAccess;
-	public final fun local ()Lru/privatenull/pnlibrary/api/config/ConfigTypeAccess;
 	public final fun ownerOnly ()Lru/privatenull/pnlibrary/api/config/ConfigTypeAccess;
 	public final fun plugins ([Ljava/lang/String;)Lru/privatenull/pnlibrary/api/config/ConfigTypeAccess;
 }
@@ -1554,7 +1550,6 @@ public final class ru/privatenull/pnlibrary/api/diagnostics/DiagnosticConfigurat
 	public static final field Companion Lru/privatenull/pnlibrary/api/diagnostics/DiagnosticConfiguration$Companion;
 	public synthetic fun <init> (Lru/privatenull/pnlibrary/api/diagnostics/DiagnosticConfiguration$Builder;Lkotlin/jvm/internal/DefaultConstructorMarker;)V
 	public static final fun builder (Ljava/lang/String;)Lru/privatenull/pnlibrary/api/diagnostics/DiagnosticConfiguration$Builder;
-	public static final fun file (Ljava/lang/String;)Lru/privatenull/pnlibrary/api/diagnostics/DiagnosticConfiguration$Builder;
 	public final fun getExcludedPaths ()Ljava/util/List;
 	public final fun getPath ()Ljava/lang/String;
 	public final fun getSecretKeyPatterns ()Ljava/util/List;
@@ -1570,7 +1565,6 @@ public final class ru/privatenull/pnlibrary/api/diagnostics/DiagnosticConfigurat
 
 public final class ru/privatenull/pnlibrary/api/diagnostics/DiagnosticConfiguration$Companion {
 	public final fun builder (Ljava/lang/String;)Lru/privatenull/pnlibrary/api/diagnostics/DiagnosticConfiguration$Builder;
-	public final fun file (Ljava/lang/String;)Lru/privatenull/pnlibrary/api/diagnostics/DiagnosticConfiguration$Builder;
 }
 
 public final class ru/privatenull/pnlibrary/api/diagnostics/DiagnosticContainer : ru/privatenull/pnlibrary/api/diagnostics/DiagnosticsContributor {
@@ -2242,7 +2236,6 @@ public abstract interface class ru/privatenull/pnlibrary/api/placeholders/Placeh
 	public fun publishToPlaceholderApi ()Lru/privatenull/pnlibrary/api/placeholders/PlaceholderBuilder;
 	public fun publishToPlaceholderApi (Ljava/lang/String;)Lru/privatenull/pnlibrary/api/placeholders/PlaceholderBuilder;
 	public fun publishToPlaceholderApi (Ljava/lang/String;Ljava/lang/String;)Lru/privatenull/pnlibrary/api/placeholders/PlaceholderBuilder;
-	public abstract fun register ()Lru/privatenull/pnlibrary/api/placeholders/PlaceholderRegistration;
 	public abstract fun resolve (Lru/privatenull/pnlibrary/api/placeholders/PlaceholderResolver;)Lru/privatenull/pnlibrary/api/placeholders/PlaceholderBuilder;
 	public abstract fun resolveAsync (Lru/privatenull/pnlibrary/api/placeholders/AsyncPlaceholderResolver;)Lru/privatenull/pnlibrary/api/placeholders/PlaceholderBuilder;
 	public abstract fun update (Lru/privatenull/pnlibrary/api/placeholders/PlaceholderUpdater;)Lru/privatenull/pnlibrary/api/placeholders/PlaceholderBuilder;
@@ -2376,11 +2369,9 @@ public abstract interface class ru/privatenull/pnlibrary/api/placeholders/Placeh
 	public abstract fun adapters ()Lru/privatenull/pnlibrary/api/placeholders/PlaceholderAdapterRegistry;
 	public abstract fun contains (Ljava/lang/String;)Z
 	public abstract fun formatter (Ljava/lang/String;Ljava/lang/Class;Lru/privatenull/pnlibrary/api/placeholders/PlaceholderFormatter;)V
-	public fun placeholder (Ljava/lang/String;Ljava/lang/Class;)Lru/privatenull/pnlibrary/api/placeholders/PlaceholderBuilder;
-	public abstract fun placeholder (Lru/privatenull/pnlibrary/api/placeholders/PlaceholderKey;)Lru/privatenull/pnlibrary/api/placeholders/PlaceholderBuilder;
 	public abstract fun provider (Lru/privatenull/pnlibrary/api/plugin/PluginId;)Lru/privatenull/pnlibrary/api/placeholders/PlaceholderProvider;
 	public fun register (Ljava/lang/String;Ljava/lang/Class;Ljava/util/function/Consumer;)Lru/privatenull/pnlibrary/api/placeholders/PlaceholderRegistration;
-	public fun register (Lru/privatenull/pnlibrary/api/placeholders/PlaceholderKey;Ljava/util/function/Consumer;)Lru/privatenull/pnlibrary/api/placeholders/PlaceholderRegistration;
+	public abstract fun register (Lru/privatenull/pnlibrary/api/placeholders/PlaceholderKey;Ljava/util/function/Consumer;)Lru/privatenull/pnlibrary/api/placeholders/PlaceholderRegistration;
 	public abstract fun render (Ljava/lang/String;Ljava/util/UUID;Ljava/util/Map;)Ljava/util/concurrent/CompletionStage;
 	public static synthetic fun render$default (Lru/privatenull/pnlibrary/api/placeholders/PlaceholderService;Ljava/lang/String;Ljava/util/UUID;Ljava/util/Map;ILjava/lang/Object;)Ljava/util/concurrent/CompletionStage;
 	public abstract fun resolve (Ljava/lang/String;Ljava/util/UUID;Ljava/util/Map;)Ljava/util/concurrent/CompletionStage;
@@ -2579,12 +2570,10 @@ public abstract interface class ru/privatenull/pnlibrary/api/plugin/PluginBuilde
 	public fun downloads (Ljava/nio/file/Path;Ljava/util/function/Consumer;)Lru/privatenull/pnlibrary/api/plugin/PluginBuilder;
 	public fun downloads (Ljava/util/function/Consumer;)Lru/privatenull/pnlibrary/api/plugin/PluginBuilder;
 	public abstract fun downloads (Lru/privatenull/pnlibrary/api/downloads/FileDownloads;)Lru/privatenull/pnlibrary/api/plugin/PluginBuilder;
-	public abstract fun listener (Lru/privatenull/pnlibrary/api/events/Listener;)Lru/privatenull/pnlibrary/api/plugin/PluginBuilder;
 	public abstract fun metadata (Ljava/util/function/Consumer;)Lru/privatenull/pnlibrary/api/plugin/PluginBuilder;
 	public abstract fun metrics (Ljava/util/function/Consumer;)Lru/privatenull/pnlibrary/api/plugin/PluginBuilder;
 	public abstract fun options (Ljava/util/function/Consumer;)Lru/privatenull/pnlibrary/api/plugin/PluginBuilder;
 	public abstract fun product (Lru/privatenull/pnlibrary/api/updates/ProductDescriptor;)Lru/privatenull/pnlibrary/api/plugin/PluginBuilder;
-	public fun remotePolicy (Ljava/util/function/Consumer;)Lru/privatenull/pnlibrary/api/plugin/PluginBuilder;
 	public abstract fun remotePolicy (Lru/privatenull/pnlibrary/api/plugin/RemotePolicy;)Lru/privatenull/pnlibrary/api/plugin/PluginBuilder;
 	public fun updates (Ljava/lang/String;Ljava/lang/String;Ljava/util/function/Consumer;)Lru/privatenull/pnlibrary/api/plugin/PluginBuilder;
 	public fun updates (Ljava/util/function/Consumer;)Lru/privatenull/pnlibrary/api/plugin/PluginBuilder;
@@ -2648,13 +2637,12 @@ public abstract interface class ru/privatenull/pnlibrary/api/plugin/PluginOption
 }
 
 public abstract interface class ru/privatenull/pnlibrary/api/plugin/PluginRegistration : java/lang/AutoCloseable {
-	public fun all ()Ljava/util/List;
+	public abstract fun all ()Ljava/util/List;
 	public abstract fun close ()V
 	public fun getModule (Ljava/lang/String;)Lru/privatenull/pnlibrary/api/plugin/ModuleContext;
 	public abstract fun getModule (Lru/privatenull/pnlibrary/api/plugin/ModuleId;)Lru/privatenull/pnlibrary/api/plugin/ModuleContext;
 	public abstract fun getOwner ()Ljava/lang/Object;
 	public abstract fun isClosed ()Z
-	public abstract fun modules ()Ljava/util/List;
 	public fun registerModule (Ljava/lang/String;Ljava/util/function/Consumer;)Lru/privatenull/pnlibrary/api/plugin/ModuleContext;
 	public abstract fun registerModule (Lru/privatenull/pnlibrary/api/plugin/ModuleId;Ljava/util/function/Consumer;)Lru/privatenull/pnlibrary/api/plugin/ModuleContext;
 	public static synthetic fun registerModule$default (Lru/privatenull/pnlibrary/api/plugin/PluginRegistration;Ljava/lang/String;Ljava/util/function/Consumer;ILjava/lang/Object;)Lru/privatenull/pnlibrary/api/plugin/ModuleContext;
@@ -2666,11 +2654,10 @@ public abstract interface class ru/privatenull/pnlibrary/api/plugin/PluginRegist
 }
 
 public abstract interface class ru/privatenull/pnlibrary/api/plugin/PluginRegistry : java/lang/AutoCloseable {
-	public fun all ()Ljava/util/List;
+	public abstract fun all ()Ljava/util/List;
 	public abstract fun close ()V
 	public abstract fun get (Ljava/lang/Object;)Lru/privatenull/pnlibrary/api/plugin/PluginRegistration;
 	public abstract fun register (Ljava/lang/Object;)Lru/privatenull/pnlibrary/api/plugin/PluginRegistration;
-	public abstract fun registrations ()Ljava/util/List;
 	public fun require (Ljava/lang/Object;)Lru/privatenull/pnlibrary/api/plugin/PluginRegistration;
 	public abstract fun unregister (Ljava/lang/Object;)V
 }
@@ -2706,15 +2693,6 @@ public final class ru/privatenull/pnlibrary/api/plugin/RemotePolicy$Builder {
 
 public final class ru/privatenull/pnlibrary/api/plugin/RemotePolicy$Companion {
 	public final fun builder ()Lru/privatenull/pnlibrary/api/plugin/RemotePolicy$Builder;
-}
-
-public final class ru/privatenull/pnlibrary/api/plugin/RemotePolicyBuilder {
-	public fun <init> ()V
-	public final fun build ()Lru/privatenull/pnlibrary/api/plugin/RemotePolicy;
-	public final fun checkEvery (Ljava/time/Duration;)V
-	public final fun onDeny (Lru/privatenull/pnlibrary/api/plugin/DenyAction;)V
-	public final fun source (Ljava/lang/String;)V
-	public final fun value (Ljava/lang/String;Ljava/lang/String;)V
 }
 
 public final class ru/privatenull/pnlibrary/api/plugin/VersionConstraint {
@@ -2963,9 +2941,8 @@ public final class ru/privatenull/pnlibrary/api/security/SecretValue : java/lang
 }
 
 public abstract interface class ru/privatenull/pnlibrary/api/services/ServiceManager {
-	public fun all (Ljava/lang/Class;)Ljava/util/List;
+	public abstract fun all (Ljava/lang/Class;)Ljava/util/List;
 	public abstract fun get (Ljava/lang/Class;)Ljava/lang/Object;
-	public abstract fun getAll (Ljava/lang/Class;)Ljava/util/List;
 	public abstract fun register (Ljava/lang/Class;Ljava/lang/Object;I)V
 	public static synthetic fun register$default (Lru/privatenull/pnlibrary/api/services/ServiceManager;Ljava/lang/Class;Ljava/lang/Object;IILjava/lang/Object;)V
 	public fun require (Ljava/lang/Class;)Ljava/lang/Object;
@@ -3075,25 +3052,14 @@ public final class ru/privatenull/pnlibrary/api/tasks/TaskQuery$Companion {
 }
 
 public abstract interface class ru/privatenull/pnlibrary/api/tasks/TaskScope : java/lang/AutoCloseable {
-	public abstract fun async (Ljava/lang/Runnable;)Lru/privatenull/pnlibrary/api/tasks/TaskHandle;
-	public abstract fun asyncThen (Ljava/util/function/Supplier;Ljava/util/function/Consumer;Ljava/util/function/Consumer;)Lru/privatenull/pnlibrary/api/tasks/TaskHandle;
 	public fun cancel (Lru/privatenull/pnlibrary/api/tasks/TaskId;)Z
 	public abstract fun cancelAll ()V
 	public fun close ()V
-	public abstract fun entity (Ljava/lang/Object;Ljava/lang/Runnable;)Lru/privatenull/pnlibrary/api/tasks/TaskHandle;
-	public fun find (Lru/privatenull/pnlibrary/api/tasks/TaskId;)Lru/privatenull/pnlibrary/api/tasks/TaskHandle;
-	public fun findByKey (Ljava/lang/String;)Lru/privatenull/pnlibrary/api/tasks/TaskHandle;
 	public fun get (Lru/privatenull/pnlibrary/api/tasks/TaskId;)Lru/privatenull/pnlibrary/api/tasks/TaskHandle;
 	public fun getByKey (Ljava/lang/String;)Lru/privatenull/pnlibrary/api/tasks/TaskHandle;
 	public abstract fun getOwner ()Ljava/lang/Object;
-	public abstract fun global (Ljava/lang/Runnable;)Lru/privatenull/pnlibrary/api/tasks/TaskHandle;
-	public abstract fun later (Ljava/time/Duration;Ljava/lang/Runnable;)Lru/privatenull/pnlibrary/api/tasks/TaskHandle;
-	public abstract fun laterEntity (Ljava/lang/Object;Ljava/time/Duration;Ljava/lang/Runnable;)Lru/privatenull/pnlibrary/api/tasks/TaskHandle;
 	public fun query (Lru/privatenull/pnlibrary/api/tasks/TaskQuery;)Ljava/util/List;
 	public static synthetic fun query$default (Lru/privatenull/pnlibrary/api/tasks/TaskScope;Lru/privatenull/pnlibrary/api/tasks/TaskQuery;ILjava/lang/Object;)Ljava/util/List;
-	public abstract fun repeat (Ljava/time/Duration;Ljava/time/Duration;Ljava/lang/Runnable;)Lru/privatenull/pnlibrary/api/tasks/TaskHandle;
-	public abstract fun repeatAsync (Ljava/time/Duration;Ljava/time/Duration;Ljava/lang/Runnable;)Lru/privatenull/pnlibrary/api/tasks/TaskHandle;
-	public abstract fun repeatEntity (Ljava/lang/Object;Ljava/time/Duration;Ljava/time/Duration;Ljava/lang/Runnable;)Lru/privatenull/pnlibrary/api/tasks/TaskHandle;
 	public fun require (Lru/privatenull/pnlibrary/api/tasks/TaskId;)Lru/privatenull/pnlibrary/api/tasks/TaskHandle;
 	public fun schedule (Lru/privatenull/pnlibrary/api/tasks/TaskSpec;)Lru/privatenull/pnlibrary/api/tasks/TaskHandle;
 }
@@ -3102,7 +3068,6 @@ public abstract interface class ru/privatenull/pnlibrary/api/tasks/TaskService :
 	public fun cancel (Lru/privatenull/pnlibrary/api/tasks/TaskId;)Z
 	public abstract fun close ()V
 	public abstract fun close (Ljava/lang/Object;)V
-	public fun find (Lru/privatenull/pnlibrary/api/tasks/TaskId;)Lru/privatenull/pnlibrary/api/tasks/TaskHandle;
 	public fun get (Lru/privatenull/pnlibrary/api/tasks/TaskId;)Lru/privatenull/pnlibrary/api/tasks/TaskHandle;
 	public fun query (Ljava/lang/Object;Lru/privatenull/pnlibrary/api/tasks/TaskQuery;)Ljava/util/List;
 	public fun query (Lru/privatenull/pnlibrary/api/tasks/TaskQuery;)Ljava/util/List;
@@ -3781,17 +3746,15 @@ public abstract interface class ru/privatenull/pnlibrary/api/updates/UpdateRegis
 }
 
 public abstract interface class ru/privatenull/pnlibrary/api/updates/UpdateService {
-	public fun all ()Ljava/util/List;
+	public abstract fun all ()Ljava/util/List;
 	public fun checkNow ()Ljava/util/concurrent/CompletionStage;
 	public fun confirm (Ljava/util/UUID;Ljava/lang/String;)Ljava/util/concurrent/CompletionStage;
 	public fun currentPlan ()Ljava/util/Optional;
-	public abstract fun find (Ljava/lang/String;)Lru/privatenull/pnlibrary/api/updates/UpdateRegistration;
-	public fun get (Ljava/lang/String;)Lru/privatenull/pnlibrary/api/updates/UpdateRegistration;
+	public abstract fun get (Ljava/lang/String;)Lru/privatenull/pnlibrary/api/updates/UpdateRegistration;
 	public fun history ()Ljava/util/List;
 	public fun register (Ljava/lang/Object;Lru/privatenull/pnlibrary/api/updates/ProductDescriptor;Lru/privatenull/pnlibrary/api/updates/PluginUpdateRequest;)Lru/privatenull/pnlibrary/api/updates/UpdateRegistration;
 	public abstract fun register (Ljava/lang/Object;Lru/privatenull/pnlibrary/api/updates/ProductDescriptor;Lru/privatenull/pnlibrary/api/updates/PluginUpdateRequest;Ljava/util/List;)Lru/privatenull/pnlibrary/api/updates/UpdateRegistration;
 	public static synthetic fun register$default (Lru/privatenull/pnlibrary/api/updates/UpdateService;Ljava/lang/Object;Lru/privatenull/pnlibrary/api/updates/ProductDescriptor;Lru/privatenull/pnlibrary/api/updates/PluginUpdateRequest;Ljava/util/List;ILjava/lang/Object;)Lru/privatenull/pnlibrary/api/updates/UpdateRegistration;
-	public abstract fun registrations ()Ljava/util/List;
 	public fun require (Ljava/lang/String;)Lru/privatenull/pnlibrary/api/updates/UpdateRegistration;
 	public fun rollback ()Ljava/util/concurrent/CompletionStage;
 	public fun stage (Ljava/util/UUID;)Ljava/util/concurrent/CompletionStage;

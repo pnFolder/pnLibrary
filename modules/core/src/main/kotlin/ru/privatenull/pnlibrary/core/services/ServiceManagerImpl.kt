@@ -55,9 +55,6 @@ internal class ServiceManagerImpl : ServiceManager, AutoCloseable {
     override fun <T : Any> all(type: Class<T>): List<T> =
         java.util.Collections.unmodifiableList(registrations(type).map { it.service })
 
-    @Deprecated("Use all(type)", ReplaceWith("all(type)"))
-    override fun <T : Any> getAll(type: Class<T>): List<T> = all(type)
-
     internal fun unregisterAll(owner: PluginId) {
         val registrations = synchronized(lock) { registrationsByOwner[owner]?.toList().orEmpty() }
         registrations.forEach { it.close() }
@@ -86,9 +83,6 @@ internal class ServiceManagerImpl : ServiceManager, AutoCloseable {
         override fun <T : Any> get(type: Class<T>): T? = this@ServiceManagerImpl.get(type)
 
         override fun <T : Any> all(type: Class<T>): List<T> = this@ServiceManagerImpl.all(type)
-        @Deprecated("Use all(type)", ReplaceWith("all(type)"))
-        override fun <T : Any> getAll(type: Class<T>): List<T> = all(type)
-
         override fun close() {
             if (ownerClosed.compareAndSet(false, true)) unregisterAll(owner)
         }

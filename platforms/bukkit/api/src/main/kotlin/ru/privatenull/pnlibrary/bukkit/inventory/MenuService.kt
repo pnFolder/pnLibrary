@@ -1,10 +1,7 @@
-@file:Suppress("DEPRECATION")
-
 package ru.privatenull.pnlibrary.bukkit.inventory
 
 import org.bukkit.entity.Player
 import org.bukkit.plugin.Plugin
-import ru.privatenull.pnlibrary.bukkit.server.PnBukkit
 
 /**
  * Opens reusable [Menu] definitions and tracks one active session per player.
@@ -29,17 +26,4 @@ interface MenuService {
 
     /** Closes every session owned by [owner] without invoking plugin close callbacks. */
     fun close(owner: Plugin)
-}
-
-/** Entry point for obtaining the installed Bukkit menu service. */
-@Deprecated(
-    message = "Use PnLibraryProvider.get().platform<BukkitPlatform>().menus instead",
-    replaceWith = ReplaceWith("PnLibraryProvider.get().platform<BukkitPlatform>().menus"),
-    level = DeprecationLevel.WARNING,
-)
-object PnMenus {
-
-    /** Returns the service installed by the active pnLibrary Bukkit runtime. */
-    @JvmStatic
-    fun get(): MenuService = PnBukkit.menus()
 }

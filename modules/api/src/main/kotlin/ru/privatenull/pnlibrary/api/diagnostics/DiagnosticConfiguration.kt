@@ -46,11 +46,6 @@ class DiagnosticConfiguration private constructor(builder: Builder) {
         @JvmStatic
         fun builder(path: String): Builder = Builder(path)
 
-        /** Compatibility alias retained for the current major API line. */
-        @Deprecated("Use builder(path)", ReplaceWith("builder(path)"))
-        @JvmStatic
-        fun file(path: String): Builder = builder(path)
-
         private val VALID_PATH = Regex("[A-Za-z0-9_./-]+\\.(?:yml|yaml|json|properties|toml|conf)")
 
         private fun validatePath(value: String?): String {

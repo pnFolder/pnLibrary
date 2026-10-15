@@ -1,7 +1,6 @@
 package ru.privatenull.pnlibrary.api.plugin
 
 import ru.privatenull.pnlibrary.api.diagnostics.DiagnosticContainer
-import ru.privatenull.pnlibrary.api.events.Listener
 import ru.privatenull.pnlibrary.api.updates.PluginUpdateRequest
 import ru.privatenull.pnlibrary.api.updates.ProductDescriptor
 import java.nio.file.Path
@@ -85,15 +84,6 @@ interface PluginBuilder {
     /** Attaches one validated reusable remote policy declaration. */
     fun remotePolicy(policy: RemotePolicy): PluginBuilder
 
-    /** Compatibility callback for the original non-fluent policy builder. */
-    @Suppress("DEPRECATION")
-    @Deprecated("Build a RemotePolicy with RemotePolicy.builder() and pass it directly")
-    fun remotePolicy(configure: Consumer<RemotePolicyBuilder>): PluginBuilder {
-        val builder = RemotePolicyBuilder()
-        configure.accept(builder)
-        return remotePolicy(builder.build())
-    }
-
     /** Builds direct-download declarations inline. */
     fun downloads(configure: Consumer<FileDownloads.Builder>): PluginBuilder {
         val builder = FileDownloads.builder()
@@ -108,15 +98,4 @@ interface PluginBuilder {
         return downloads(builder.build())
     }
 
-    /**
-     * Legacy listener declaration kept for API 1 binary/source compatibility.
-     *
-     * New code should register runtime listeners after registration through
-     * `context.events.register(listener)` or `context.events.subscribe(...)`.
-     */
-    @Deprecated(
-        "Register listeners through ModuleContext.events after the context has been created",
-        ReplaceWith("context.events.register(listener)"),
-    )
-    fun listener(listener: Listener): PluginBuilder
 }

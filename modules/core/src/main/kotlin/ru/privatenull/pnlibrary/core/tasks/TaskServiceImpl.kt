@@ -1,18 +1,13 @@
-@file:Suppress("OVERRIDE_DEPRECATION", "DEPRECATION")
-
 package ru.privatenull.pnlibrary.core.tasks
 
 import ru.privatenull.pnlibrary.api.plugin.PluginId
 import ru.privatenull.pnlibrary.api.tasks.*
 import ru.privatenull.pnlibrary.spi.tasks.*
-import java.time.Duration
 import java.time.Instant
 import java.util.Collections
 import java.util.IdentityHashMap
 import java.util.LinkedHashMap
 import java.util.concurrent.atomic.*
-import java.util.function.Consumer
-import java.util.function.Supplier
 
 internal class TaskServiceImpl(
     private val adapter: PlatformTaskAdapter,
@@ -36,7 +31,7 @@ internal class TaskServiceImpl(
         }
     }
 
-    override fun find(id: TaskId): TaskHandle? = synchronized(lock) { active[id] }
+    override fun get(id: TaskId): TaskHandle? = synchronized(lock) { active[id] }
     override fun query(query: TaskQuery): List<TaskSnapshot> = synchronized(lock) {
         immutableSnapshots((active.values.map { it.snapshot() } + history.values.map { it.snapshot })
             .filter { TaskQueryMatcher.matches(it, query) })
@@ -94,10 +89,10 @@ internal class TaskServiceImpl(
             }
         }
 
-        override fun find(id: TaskId): TaskHandle? = synchronized(lock) {
+        override fun get(id: TaskId): TaskHandle? = synchronized(lock) {
             active[id]?.takeIf { it.scopeToken === scopeToken }
         }
-        override fun findByKey(key: String): TaskHandle? = synchronized(lock) {
+        override fun getByKey(key: String): TaskHandle? = synchronized(lock) {
             active.values.firstOrNull { it.scopeToken === scopeToken && it.spec.key == key }
         }
         override fun query(query: TaskQuery): List<TaskSnapshot> = synchronized(lock) {
@@ -105,26 +100,6 @@ internal class TaskServiceImpl(
                 history.values.filter { it.scopeToken === scopeToken }.map { it.snapshot })
                 .filter { TaskQueryMatcher.matches(it, query) })
         }
-
-        override fun global(task: Runnable) = schedule(simple(TaskExecution.global(), action = task))
-        override fun async(task: Runnable) = schedule(simple(TaskExecution.async(), action = task))
-        override fun entity(recipient: Any, task: Runnable) = schedule(simple(TaskExecution.entity(recipient), action = task))
-        override fun later(delay: Duration, task: Runnable) = schedule(simple(TaskExecution.global(), delay, action = task))
-        override fun laterEntity(recipient: Any, delay: Duration, task: Runnable) =
-            schedule(simple(TaskExecution.entity(recipient), delay, action = task))
-        override fun repeat(delay: Duration, interval: Duration, task: Runnable) =
-            schedule(simple(TaskExecution.global(), delay, interval, task))
-        override fun repeatEntity(recipient: Any, delay: Duration, interval: Duration, task: Runnable) =
-            schedule(simple(TaskExecution.entity(recipient), delay, interval, task))
-        override fun repeatAsync(delay: Duration, interval: Duration, task: Runnable) =
-            schedule(simple(TaskExecution.async(), delay, interval, task))
-        override fun <T> asyncThen(work: Supplier<T>, success: Consumer<T>, failure: Consumer<Throwable>): TaskHandle =
-            schedule(TaskSpec.builder().execution(TaskExecution.async()).action {
-                runCatching(work::get).fold(
-                    { value -> global(Runnable { success.accept(value) }) },
-                    { error -> global(Runnable { failure.accept(error) }) },
-                )
-            }.build())
 
         override fun cancelAll() {
             if (!scopeClosed.compareAndSet(false, true)) return
@@ -137,18 +112,6 @@ internal class TaskServiceImpl(
             }
         }
     }
-
-    private fun simple(
-        execution: TaskExecution,
-        delay: Duration = Duration.ZERO,
-        interval: Duration? = null,
-        action: Runnable,
-    ): TaskSpec = TaskSpec.builder()
-        .execution(execution)
-        .delay(delay)
-        .interval(interval)
-        .action { action.run() }
-        .build()
 
     private inner class ManagedTask(val owner: Any, val scopeToken: Any, val spec: TaskSpec) : TaskHandle {
         override val id = TaskId.random()

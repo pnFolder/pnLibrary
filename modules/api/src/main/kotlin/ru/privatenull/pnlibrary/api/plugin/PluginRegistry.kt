@@ -1,7 +1,5 @@
 package ru.privatenull.pnlibrary.api.plugin
 
-import java.util.Collections
-
 /**
  * Registry of native platform plugins using one pnLibrary runtime.
  *
@@ -25,12 +23,7 @@ interface PluginRegistry : AutoCloseable {
     fun unregister(owner: Any)
 
     /** Returns an immutable snapshot of registered platform plugins. */
-    @Suppress("DEPRECATION")
-    fun all(): List<PluginRegistration> = Collections.unmodifiableList(ArrayList(registrations()))
-
-    /** Compatibility alias for [all]. */
-    @Deprecated("Use all()", ReplaceWith("all()"))
-    fun registrations(): List<PluginRegistration>
+    fun all(): List<PluginRegistration>
 
     /** Closes all registrations in reverse ownership order. */
     override fun close()

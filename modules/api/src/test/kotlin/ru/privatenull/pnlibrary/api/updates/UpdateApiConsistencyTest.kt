@@ -7,7 +7,7 @@ import ru.privatenull.pnlibrary.api.plugin.PluginDependency
 
 class UpdateApiConsistencyTest {
     @Test
-    fun `registry vocabulary delegates to compatibility implementation and returns immutable snapshots`() {
+    fun `registry vocabulary returns immutable snapshots`() {
         val registration = object : UpdateRegistration {
             override val repository = "owner/repository"
             override val snapshot = UpdateSnapshot(
@@ -26,8 +26,8 @@ class UpdateApiConsistencyTest {
                 dependencies: List<PluginDependency>,
             ) = registration
 
-            override fun registrations(): List<UpdateRegistration> = mutableListOf(registration)
-            override fun find(product: String): UpdateRegistration? =
+            override fun all(): List<UpdateRegistration> = java.util.Collections.unmodifiableList(listOf(registration))
+            override fun get(product: String): UpdateRegistration? =
                 registration.takeIf { product.equals("product", true) }
         }
 

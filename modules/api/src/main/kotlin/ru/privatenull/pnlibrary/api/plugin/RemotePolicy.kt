@@ -9,7 +9,6 @@ enum class DenyAction {
     DISABLE_PLUGIN,
     DISABLE_MODULE
 }
-
 /**
  * Reusable declaration for a remotely sourced policy.
  *
@@ -78,24 +77,4 @@ data class RemotePolicy(
         @JvmStatic
         fun builder(): Builder = Builder()
     }
-}
-
-/** Compatibility adapter used by the original plugin-registration callback. */
-@Deprecated("Use RemotePolicy.builder() for reusable policy declarations")
-class RemotePolicyBuilder {
-    private val delegate = RemotePolicy.builder()
-    /** Sets the remote source URI. */
-    fun source(value: String) { delegate.source(value) }
-
-    /** Sets the refresh interval. */
-    fun checkEvery(value: Duration) { delegate.checkEvery(value) }
-
-    /** Sets the action applied to denial. */
-    fun onDeny(value: DenyAction) { delegate.onDeny(value) }
-
-    /** Adds an application-defined policy value. */
-    fun value(key: String, value: String) { delegate.value(key, value) }
-
-    /** Builds the reusable policy declaration. */
-    fun build(): RemotePolicy = delegate.build()
 }

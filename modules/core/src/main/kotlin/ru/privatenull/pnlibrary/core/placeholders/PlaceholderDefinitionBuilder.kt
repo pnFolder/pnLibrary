@@ -53,8 +53,7 @@ internal class PlaceholderDefinitionBuilder<T : Any>(
     override fun fallback(value: T) = apply { fallback = value }
     override fun publish(publication: PlaceholderPublication) = apply { publications += publication }
 
-    @Deprecated("Register placeholders through PlaceholderService.register(key, configure)")
-    override fun register(): PlaceholderRegistration<T> {
+    fun install(): PlaceholderRegistration<T> {
         val entry = PlaceholderEntry(
             owner = owner,
             key = key,

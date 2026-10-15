@@ -203,10 +203,11 @@ class PluginRegistryImplTest {
 
         val plugin = registry.register(owner)
         val context = plugin.registerModule("pnClans") {
-            it.listener(listener).metrics { metrics ->
+            it.metrics { metrics ->
                 metrics.bStats(42).enabled(false)
             }
         }
+        context.events.register(listener)
 
         assertSame(context, plugin.getModule("PNCLANS"))
         assertEquals("pnclans", context.id.value)
@@ -561,8 +562,8 @@ class PluginRegistryImplTest {
                 this.dependencies = dependencies
                 return emptyProxy(UpdateRegistration::class.java)
             }
-            override fun registrations(): List<UpdateRegistration> = emptyList()
-            override fun find(product: String): UpdateRegistration? = null
+            override fun all(): List<UpdateRegistration> = emptyList()
+            override fun get(product: String): UpdateRegistration? = null
         }
 
         fun platform(): PlatformAdapter = proxy(PlatformAdapter::class.java) { methodName ->

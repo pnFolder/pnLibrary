@@ -73,7 +73,6 @@ internal class ModuleResourceFactory(
 
             serviceScope.register(CurrencyService::class.java, currencyScope)
             serviceScope.register(CurrencyStorageFactory::class.java, currency.storages)
-            definition.listeners.forEach(eventScope::register)
 
             // Resolve the live session on every capture, including after disable/restart.
             errorReporter = ErrorPipeline(object : ErrorReporter {

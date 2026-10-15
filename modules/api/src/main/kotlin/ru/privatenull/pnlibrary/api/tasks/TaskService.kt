@@ -1,8 +1,6 @@
 package ru.privatenull.pnlibrary.api.tasks
 
 import java.time.Duration
-import java.util.function.Consumer
-import java.util.function.Supplier
 
 /**
  * Cancellation handle for one scheduled action.
@@ -45,7 +43,7 @@ interface TaskHandle : AutoCloseable {
  * Example:
  * ```kotlin
  * val tasks = library.tasks.scope(plugin)
- * tasks.repeat(Duration.ZERO, Duration.ofMinutes(1)) {
+ * tasks.schedule(TaskSpec.builder().interval(Duration.ofMinutes(1)).action { })
  *     refreshOnlinePlayers()
  * }
  * tasks.close()
@@ -59,75 +57,20 @@ interface TaskScope : AutoCloseable {
     fun schedule(spec: TaskSpec): TaskHandle =
         throw UnsupportedOperationException("Unified task scheduling is not supported by this scope")
 
-    @Suppress("DEPRECATION")
     /** Returns the task identified by [id], or `null` when it is unavailable. */
-    fun get(id: TaskId): TaskHandle? = find(id)
+    fun get(id: TaskId): TaskHandle? = null
 
     /** Returns the task identified by [id] or fails when unavailable. */
     fun require(id: TaskId): TaskHandle = get(id) ?: error("Task $id is unavailable in this scope")
 
-    @Suppress("DEPRECATION")
     /** Returns the live task owning [key], or `null` when absent. */
-    fun getByKey(key: String): TaskHandle? = findByKey(key)
-
-    /** Legacy identifier lookup retained for source compatibility. */
-    @Deprecated("Use get(id)", ReplaceWith("get(id)"))
-    fun find(id: TaskId): TaskHandle? = null
-
-    /** Legacy key lookup retained for source compatibility. */
-    @Deprecated("Use getByKey(key)", ReplaceWith("getByKey(key)"))
-    fun findByKey(key: String): TaskHandle? = null
+    fun getByKey(key: String): TaskHandle? = null
 
     /** Returns detached snapshots of tasks in this scope that match [query]. */
     fun query(query: TaskQuery = TaskQuery.all()): List<TaskSnapshot> = emptyList()
 
     /** Cancels the task identified by [id] and reports whether it was active. */
     fun cancel(id: TaskId): Boolean = get(id)?.cancelIfActive() ?: false
-
-    /** Schedules [task] in the platform's global execution context. */
-    @Deprecated("Use schedule(TaskSpec)")
-    fun global(task: Runnable): TaskHandle
-
-    /** Runs [task] on pnLibrary's background executor. */
-    @Deprecated("Use schedule(TaskSpec)")
-    fun async(task: Runnable): TaskHandle
-
-    /** Schedules [task] in the platform execution context associated with [recipient]. */
-    @Deprecated("Use schedule(TaskSpec)")
-    fun entity(recipient: Any, task: Runnable): TaskHandle
-
-    /** Schedules [task] in the global context after [delay]. */
-    @Deprecated("Use schedule(TaskSpec)")
-    fun later(delay: Duration, task: Runnable): TaskHandle
-
-    /** Schedules [task] in [recipient]'s execution context after [delay]. */
-    @Deprecated("Use schedule(TaskSpec)")
-    fun laterEntity(recipient: Any, delay: Duration, task: Runnable): TaskHandle
-
-    /** Repeats [task] in the global context, first after [delay], then every [interval]. */
-    @Deprecated("Use schedule(TaskSpec)")
-    fun repeat(delay: Duration, interval: Duration, task: Runnable): TaskHandle
-
-    /** Repeats [task] in [recipient]'s execution context using the supplied timing. */
-    @Deprecated("Use schedule(TaskSpec)")
-    fun repeatEntity(recipient: Any, delay: Duration, interval: Duration, task: Runnable): TaskHandle
-
-    /** Repeats [task] on pnLibrary's background executor using the supplied timing. */
-    @Deprecated("Use schedule(TaskSpec)")
-    fun repeatAsync(delay: Duration, interval: Duration, task: Runnable): TaskHandle
-
-    /**
-     * Computes [work] asynchronously and dispatches its result to the global context.
-     *
-     * Exactly one of [success] or [failure] is invoked unless the returned handle or this scope is
-     * cancelled first. Exceptions thrown by either continuation are reported by the task logger.
-     */
-    @Deprecated("Use schedule(TaskSpec)")
-    fun <T> asyncThen(
-        work: Supplier<T>,
-        success: Consumer<T>,
-        failure: Consumer<Throwable>,
-    ): TaskHandle
 
     /** Cancels every task and permanently closes this scope. */
     fun cancelAll()
@@ -150,16 +93,11 @@ interface TaskService : AutoCloseable {
     /** Returns the active scope associated with [owner], creating it when necessary. */
     fun scope(owner: Any): TaskScope
 
-    @Suppress("DEPRECATION")
     /** Returns the task identified by [id] across all active scopes. */
-    fun get(id: TaskId): TaskHandle? = find(id)
+    fun get(id: TaskId): TaskHandle? = null
 
     /** Returns the task identified by [id] or fails when unavailable. */
     fun require(id: TaskId): TaskHandle = get(id) ?: error("Task $id is unavailable")
-
-    /** Legacy identifier lookup retained for source compatibility. */
-    @Deprecated("Use get(id)", ReplaceWith("get(id)"))
-    fun find(id: TaskId): TaskHandle? = null
 
     /** Returns detached snapshots across all scopes that match [query]. */
     fun query(query: TaskQuery = TaskQuery.all()): List<TaskSnapshot> = emptyList()

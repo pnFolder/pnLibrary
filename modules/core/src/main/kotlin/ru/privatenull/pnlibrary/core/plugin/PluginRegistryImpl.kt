@@ -113,9 +113,6 @@ internal class PluginRegistryImpl(
     override fun all(): List<PluginRegistration> =
         synchronized(plugins) { java.util.Collections.unmodifiableList(ArrayList(plugins.values)) }
 
-    @Deprecated("Use all()", ReplaceWith("all()"))
-    override fun registrations(): List<PluginRegistration> = all()
-
     override fun close() {
         if (!closed.compareAndSet(false, true)) return
         val current = synchronized(plugins) {
@@ -145,7 +142,7 @@ internal class PluginRegistryImpl(
             metadata = metadata,
             resources = resources,
             placeholderApiEnabled = definition.placeholderApiEnabled,
-            listenerCount = definition.listeners.size,
+            listenerCount = 0,
             productId = productDescriptor?.id?.value,
         )
     }
@@ -196,9 +193,6 @@ internal class PluginRegistryImpl(
 
         override fun all(): List<ModuleContext> =
             synchronized(moduleContexts) { java.util.Collections.unmodifiableList(ArrayList(moduleContexts.values)) }
-
-        @Deprecated("Use all()", ReplaceWith("all()"))
-        override fun modules(): List<ModuleContext> = all()
 
         override fun close() {
             detachPlugin(owner)?.closeInternal()
