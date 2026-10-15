@@ -19,7 +19,7 @@ import java.time.Duration
 import java.util.UUID
 
 object DemoCommands {
-    fun registerPortable(plugin: DemoPlugin, library: PnLibrary, context: ModuleContext, currency: Currency): CommandRegistration =
+    fun registerPortable(library: PnLibrary, context: ModuleContext, currency: Currency): CommandRegistration =
         library.registerCommand("pndemo-lib") {
             aliases("pndemoapi")
             permission("pndemo.use")
