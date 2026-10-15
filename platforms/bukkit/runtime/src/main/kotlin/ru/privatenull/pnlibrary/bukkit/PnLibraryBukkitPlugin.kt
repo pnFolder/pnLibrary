@@ -69,7 +69,7 @@ class PnLibraryBukkitPlugin : JavaPlugin(), Listener {
 
     /** Registers Bukkit-only services and the native platform view. */
     private fun installBukkitServices(host: PnLibraryRuntimeHost, adapter: BukkitPlatformAdapter) {
-        val menuService = MenuServiceImpl(this, host.library.tasks.scope(this))
+        val menuService = MenuServiceImpl(this, host.library.taskScope())
         host.registerService(ServerInfo::class.java, adapter.serverInfo)
         host.registerService(MenuService::class.java, menuService)
         host.registerPlatform(
