@@ -15,6 +15,9 @@ declared major release.
 | `TaskScope.find(id)` | `TaskScope.get(id)` or `require(id)` |
 | `TaskScope.findByKey(key)` | `TaskScope.getByKey(key)` |
 | `TaskScope.global/async/entity/later/repeat...` | `TaskScope.schedule(TaskSpec.builder()...build())` |
+| `library.commands.register(owner, command("name") { ... })` | `library.registerCommand("name") { ... }` |
+| `library.commands.register(owner, definition)` | `library.registerCommand(definition)` when the runtime owns the command |
+| `library.tasks.scope(libraryOwner)` | `library.taskScope()` |
 | `PlaceholderService.placeholder(...).register()` | `PlaceholderService.register(key) { ... }` |
 | Kotlin `placeholder<T>(name) { ... }` | Kotlin `register<T>(name) { ... }` |
 | `DiagnosticConfiguration.file(path)` | `DiagnosticConfiguration.builder(path)` |
@@ -25,6 +28,27 @@ declared major release.
 | `PluginBuilder.register()` | Registration is completed by `PluginRegistry.register(...)` / `registerModule(...)` |
 
 ## Optional capabilities
+
+## Bound runtime helpers
+
+`PnLibrary` provides bound helpers for resources owned by the library runtime itself:
+
+```kotlin
+import net.kyori.adventure.text.Component
+
+library.registerCommand("hello") {
+    executes { context -> context.sender.send(Component.text("Hello")) }
+}
+
+library.taskScope().schedule {
+    name = "refresh"
+    interval = Duration.ofMinutes(1)
+    run { refresh() }
+}
+```
+
+Use the explicit owner-based APIs when a separate plugin or module must have an
+independent lifecycle. The old forms remain available during the current major line.
 
 Optional APIs are obtained from `ModuleContext.services`. Currency is the first fully separated
 feature and is available through `CurrencyApi.get(context)`.
