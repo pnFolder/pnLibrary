@@ -38,7 +38,7 @@ class PnLibraryRuntimeHost private constructor(
 
     /** Registers the type-safe public API for the active native platform. */
     fun <T : Any> registerPlatform(type: Class<T>, implementation: T): AutoCloseable =
-        (library as PnLibraryImpl).registerPlatform(type, implementation)
+        (library as PlatformRegistration).registerPlatform(type, implementation)
 
     /** Stops the self-updater and closes the runtime. Safe to call repeatedly. */
     override fun close() {

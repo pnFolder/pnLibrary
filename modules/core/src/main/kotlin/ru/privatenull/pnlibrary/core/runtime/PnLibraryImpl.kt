@@ -65,7 +65,7 @@ internal class PnLibraryImpl(
     override val diagnostics: DiagnosticsRegistry,
     val config: PnLibraryConfig = PnLibraryConfig(),
     private val onClose: () -> Unit = {},
-) : PnLibrary {
+) : PnLibrary, PlatformRegistration {
 
     // Keep the service wiring readable while the platform boundary remains one context object.
     private val platformIdentity get() = platform.identity
@@ -318,7 +318,7 @@ internal class PnLibraryImpl(
         add { onClose() }
     }
 
-    internal fun <T : Any> registerPlatform(type: Class<T>, implementation: T): AutoCloseable =
+    override fun <T : Any> registerPlatform(type: Class<T>, implementation: T): AutoCloseable =
         platformProvider.register(type, implementation)
 
 }
