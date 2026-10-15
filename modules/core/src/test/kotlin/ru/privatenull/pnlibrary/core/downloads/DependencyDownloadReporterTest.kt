@@ -22,7 +22,7 @@ class DependencyDownloadReporterTest {
                 else -> null
             }
         } as PlatformAdapter
-        val reporter = DependencyDownloadReporter(platform)
+        val reporter = DependencyDownloadReporter(platform, platform)
         val declaration = FileDownloads.builder().file("dependency:Vault") {
             it.url("https://example.org/Vault.jar")
                 .destination(DownloadDestination.DATA_FOLDER, "Vault.jar")

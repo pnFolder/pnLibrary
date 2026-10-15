@@ -7,7 +7,7 @@ import ru.privatenull.pnlibrary.api.metrics.PluginMetrics
 import ru.privatenull.pnlibrary.api.metrics.MetricsProvider
 import ru.privatenull.pnlibrary.api.metrics.MetricsProviderConfiguration
 import ru.privatenull.pnlibrary.core.metrics.BStatsMetricsSession
-import ru.privatenull.pnlibrary.core.metrics.CompositePluginMetrics
+import ru.privatenull.pnlibrary.core.metrics.openConfiguredMetrics
 import ru.privatenull.pnlibrary.internal.faststatsvelocity.FastStatsVelocityProvider
 import ru.privatenull.pnlibrary.spi.metrics.PlatformMetricsFactory
 import java.nio.file.Path
@@ -25,19 +25,11 @@ class VelocityMetricsFactory(
         owner: Any,
         configurations: Collection<MetricsProviderConfiguration>,
     ): PluginMetrics {
-        val delegates = configurations.filter { it.enabled }.map { configuration ->
-            when (configuration.provider) {
-                MetricsProvider.BSTATS -> open(
-                    owner,
-                    requireNotNull(configuration.projectId) { "bStats requires a project ID" },
-                )
-                MetricsProvider.FASTSTATS -> openFastStats(owner, configuration)
-            }
-        }
-
-        require(delegates.isNotEmpty()) { "At least one metrics provider must be enabled" }
-
-        return if (delegates.size == 1) delegates.single() else CompositePluginMetrics(delegates)
+        return openConfiguredMetrics(
+            configurations,
+            bStats = { projectId -> open(owner, projectId) },
+            fastStats = { configuration -> openFastStats(owner, configuration) },
+        )
     }
 
     /** Opens a Velocity bStats session for the native plugin [owner]. */

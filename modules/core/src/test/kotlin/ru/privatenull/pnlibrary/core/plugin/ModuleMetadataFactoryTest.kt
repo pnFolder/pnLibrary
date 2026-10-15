@@ -25,7 +25,7 @@ class ModuleMetadataFactoryTest {
             metadataAuthors = "pnFolder"
         }
 
-        val metadata = ModuleMetadataFactory(platform).create(Any(), ModuleId.of("demo"), definition)
+        val metadata = ModuleMetadataFactory(platform, platform).create(Any(), ModuleId.of("demo"), definition)
 
         assertEquals("Explicit", metadata.name)
         assertEquals("2.0", metadata.version)

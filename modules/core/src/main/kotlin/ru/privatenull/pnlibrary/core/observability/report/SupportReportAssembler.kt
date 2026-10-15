@@ -5,7 +5,8 @@ import ru.privatenull.pnlibrary.api.runtime.PnLibraryConfig
 import ru.privatenull.pnlibrary.core.diagnostics.ConfigReader
 import ru.privatenull.pnlibrary.core.diagnostics.DiagnosticsRegistry
 import ru.privatenull.pnlibrary.core.observability.ObservabilityReportSnapshot
-import ru.privatenull.pnlibrary.spi.platform.PlatformAdapter
+import ru.privatenull.pnlibrary.spi.platform.PlatformDiagnosticReport
+import ru.privatenull.pnlibrary.spi.platform.PlatformIdentity
 import java.nio.file.Path
 import java.time.Instant
 
@@ -14,7 +15,8 @@ internal class SupportReportAssembler(
     private val dataFolder: Path,
     private val config: PnLibraryConfig,
     private val diagnostics: DiagnosticsRegistry,
-    private val platform: PlatformAdapter,
+    private val identity: PlatformIdentity,
+    private val diagnosticsPlatform: PlatformDiagnosticReport,
     private val diagnosticLogs: () -> List<Map<String, Any?>>,
     private val diagnosticHistory: () -> List<Pair<String, ByteArray>>,
     private val observabilitySnapshot: () -> ObservabilityReportSnapshot,
@@ -50,7 +52,7 @@ internal class SupportReportAssembler(
         request: DebugRequest,
         encrypted: Boolean,
     ) {
-        val platformDetails = platform.diagnosticDetails(includeSensitive = encrypted && !config.privacy)
+        val platformDetails = diagnosticsPlatform.diagnosticDetails(includeSensitive = encrypted && !config.privacy)
         val platformCoverage = platformDetails["coverage"]
         val runtimeDetails = runtimeDiagnostics()
         val systemDetails = system.collect(includeNetworkAddresses = encrypted && !config.privacy)
@@ -69,8 +71,8 @@ internal class SupportReportAssembler(
                 "producer" to "pnLibrary",
                 "generatedUtc" to Instant.now().toString(),
                 "target" to request.target,
-                "platform" to platform.id,
-                "platformImplementation" to platform.implementationName,
+                "platform" to identity.id,
+                "platformImplementation" to identity.implementationName,
                 "encrypted" to encrypted,
                 "diagnosticsMode" to "full",
                 "privacy" to config.privacy,

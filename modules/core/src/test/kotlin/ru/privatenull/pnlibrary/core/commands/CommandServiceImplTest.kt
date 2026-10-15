@@ -6,6 +6,7 @@ import org.junit.jupiter.api.Assertions.assertFalse
 import org.junit.jupiter.api.Assertions.assertThrows
 import org.junit.jupiter.api.Assertions.assertTrue
 import org.junit.jupiter.api.Test
+import java.nio.file.Files
 import ru.privatenull.pnlibrary.api.commands.CommandContext
 import ru.privatenull.pnlibrary.api.commands.CommandDefinition
 import ru.privatenull.pnlibrary.api.commands.CommandSender
@@ -24,7 +25,7 @@ class CommandServiceImplTest {
     fun `service dispatches a tree leaf and sanitizes predicate failures`() {
         val native = RecordingCommands()
         val platform = TestPlatform(native)
-        val service = CommandServiceImpl(platform)
+        val service = CommandServiceImpl(platform.commandAdapter, platform)
         var selected: String? = null
         service.register(Any(), command("group") {
             argument("group", ArgumentType.string()) {
@@ -54,7 +55,7 @@ class CommandServiceImplTest {
     @Test
     fun `authorized execution and suggestions reach the portable definition`() {
         val native = RecordingCommands()
-        val service = CommandServiceImpl(TestPlatform(native))
+        val service = CommandServiceImpl(TestPlatform(native).commandAdapter, TestPlatform(native))
         var executed = false
         service.register(Any(), command("hello") {
             permission("example.hello")
@@ -73,7 +74,7 @@ class CommandServiceImplTest {
     @Test
     fun `permission denial blocks execution and suggestions while configured console bypass works`() {
         val native = RecordingCommands()
-        val service = CommandServiceImpl(TestPlatform(native))
+        val service = CommandServiceImpl(TestPlatform(native).commandAdapter, TestPlatform(native))
         var executions = 0
         service.register(Any(), command("hello") {
             permission("example.hello")
@@ -99,7 +100,7 @@ class CommandServiceImplTest {
     @Test
     fun `name and alias collisions fail before native registration`() {
         val native = RecordingCommands()
-        val service = CommandServiceImpl(TestPlatform(native))
+        val service = CommandServiceImpl(TestPlatform(native).commandAdapter, TestPlatform(native))
         service.register(Any(), command("first") { aliases("shared") })
 
         assertThrows(IllegalArgumentException::class.java) {
@@ -114,7 +115,7 @@ class CommandServiceImplTest {
     @Test
     fun `failed native registration rolls reservations back`() {
         val native = RecordingCommands().apply { failNextRegistration = true }
-        val service = CommandServiceImpl(TestPlatform(native))
+        val service = CommandServiceImpl(TestPlatform(native).commandAdapter, TestPlatform(native))
 
         assertThrows(IllegalStateException::class.java) {
             service.register(Any(), command("hello") { aliases("hi") })
@@ -128,7 +129,7 @@ class CommandServiceImplTest {
     fun `handler failures are logged and sanitized`() {
         val native = RecordingCommands()
         val platform = TestPlatform(native)
-        val service = CommandServiceImpl(platform)
+        val service = CommandServiceImpl(platform.commandAdapter, platform)
         service.register(Any(), command("hello") {
             executesAsync { CompletableFuture.failedFuture(IllegalStateException("private detail")) }
             suggestsAsync { CompletableFuture.failedFuture(IllegalArgumentException("private suggestion")) }
@@ -149,7 +150,7 @@ class CommandServiceImplTest {
     @Test
     fun `registration owner and service closing unregister natively once`() {
         val native = RecordingCommands()
-        val service = CommandServiceImpl(TestPlatform(native))
+        val service = CommandServiceImpl(TestPlatform(native).commandAdapter, TestPlatform(native))
         val firstOwner = Any()
         val registration = service.register(firstOwner, command("first") {})
         service.register(firstOwner, command("second") {})
@@ -173,7 +174,7 @@ class CommandServiceImplTest {
     fun `one native close failure does not leak remaining registrations`() {
         val native = RecordingCommands().apply { failingCloseName = "second" }
         val platform = TestPlatform(native)
-        val service = CommandServiceImpl(platform)
+        val service = CommandServiceImpl(platform.commandAdapter, platform)
         service.register(Any(), command("first") {})
         service.register(Any(), command("second") {})
         service.register(Any(), command("third") {})
@@ -236,7 +237,8 @@ class CommandServiceImplTest {
     ) : PlatformAdapter {
         val errors = mutableListOf<Throwable>()
         override val type: PlatformType = PlatformType.BUKKIT
-        override fun details(): Map<String, Any?> = emptyMap()
+        override val dataFolder = Files.createTempDirectory("pnlibrary-command-test")
+        override fun diagnosticDetails(includeSensitive: Boolean): Map<String, Any?> = emptyMap()
         override fun executeGlobal(task: Runnable) = task.run()
         override fun executeReply(recipient: Any, task: Runnable) = task.run()
         override fun log(owner: Any, level: LogLevel, message: String, error: Throwable?) {

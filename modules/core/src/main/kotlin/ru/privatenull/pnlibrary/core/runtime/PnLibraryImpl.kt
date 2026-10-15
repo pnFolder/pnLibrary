@@ -4,10 +4,18 @@ import ru.privatenull.pnlibrary.api.diagnostics.DebugRequest
 import ru.privatenull.pnlibrary.api.diagnostics.DiagnosticReport
 import ru.privatenull.pnlibrary.api.logging.LoggingService
 import ru.privatenull.pnlibrary.api.metrics.MetricsService
-import ru.privatenull.pnlibrary.api.metrics.MetricsProvider
-import ru.privatenull.pnlibrary.api.metrics.MetricsProviderConfiguration
 import ru.privatenull.pnlibrary.api.metrics.PluginMetrics
-import ru.privatenull.pnlibrary.spi.platform.PlatformAdapter
+import ru.privatenull.pnlibrary.spi.platform.PlatformDiagnostics
+import ru.privatenull.pnlibrary.spi.platform.PlatformExecution
+import ru.privatenull.pnlibrary.spi.platform.PlatformReadiness
+import ru.privatenull.pnlibrary.spi.platform.PlatformIdentity
+import ru.privatenull.pnlibrary.spi.platform.PlatformLogging
+import ru.privatenull.pnlibrary.spi.platform.PlatformLogObservation
+import ru.privatenull.pnlibrary.spi.platform.PlatformOwnership
+import ru.privatenull.pnlibrary.spi.metrics.PlatformMetricsFactory
+import ru.privatenull.pnlibrary.spi.commands.PlatformCommandAdapter
+import ru.privatenull.pnlibrary.spi.audiences.PlatformAudienceAdapter
+import ru.privatenull.pnlibrary.spi.tasks.PlatformTaskAdapter
 import ru.privatenull.pnlibrary.api.runtime.PnLibrary
 import ru.privatenull.pnlibrary.api.runtime.PnLibraryConfig
 import ru.privatenull.pnlibrary.api.runtime.PnLibraryProvider
@@ -15,8 +23,6 @@ import ru.privatenull.pnlibrary.api.version.SemanticVersion
 import ru.privatenull.pnlibrary.core.diagnostics.DiagnosticsRegistry
 import ru.privatenull.pnlibrary.core.diagnostics.diagnosticCommand
 import ru.privatenull.pnlibrary.core.config.ConfigurationServiceImpl
-import ru.privatenull.pnlibrary.core.commands.CommandServiceImpl
-import ru.privatenull.pnlibrary.core.audiences.AudienceServiceImpl
 import ru.privatenull.pnlibrary.core.events.EventServiceImpl
 import ru.privatenull.pnlibrary.core.logging.PlatformLoggingService
 import ru.privatenull.pnlibrary.core.metrics.MetricsRegistry
@@ -26,8 +32,6 @@ import ru.privatenull.pnlibrary.core.placeholders.GlobalPlaceholderValueStore
 import ru.privatenull.pnlibrary.core.platform.PlatformProviderImpl
 import ru.privatenull.pnlibrary.currency.CurrencyFeature
 import ru.privatenull.pnlibrary.core.services.ServiceManagerImpl
-import ru.privatenull.pnlibrary.core.tasks.TaskServiceImpl
-import ru.privatenull.pnlibrary.api.tasks.TaskServiceSettings
 import ru.privatenull.pnlibrary.api.activity.ActivityService
 import ru.privatenull.pnlibrary.api.audiences.AudienceService
 import ru.privatenull.pnlibrary.api.commands.CommandService
@@ -46,7 +50,6 @@ import ru.privatenull.pnlibrary.core.downloads.DownloadConfiguration
 import ru.privatenull.pnlibrary.core.observability.SupportRuntime
 import ru.privatenull.pnlibrary.core.updates.UpdateServiceImpl
 import java.nio.file.Path
-import java.nio.file.Paths
 import java.util.concurrent.atomic.AtomicBoolean
 
 /**
@@ -58,26 +61,45 @@ import java.util.concurrent.atomic.AtomicBoolean
  */
 internal class PnLibraryImpl(
     override val owner: Any,
-    private val platform: PlatformAdapter,
+    private val platform: PlatformRuntimeContext,
     override val diagnostics: DiagnosticsRegistry,
     val config: PnLibraryConfig = PnLibraryConfig(),
     private val onClose: () -> Unit = {},
-) : PnLibrary {
+) : PnLibrary, PlatformRegistration {
+
+    // Keep the service wiring readable while the platform boundary remains one context object.
+    private val platformIdentity get() = platform.identity
+    private val platformOwnership get() = platform.ownership
+    private val platformExecution get() = platform.execution
+    private val platformReadiness get() = platform.readiness
+    private val platformLogging get() = platform.logging
+    private val platformDiagnostics get() = platform.diagnostics
+    private val platformLogObservation get() = platform.logObservation
+    private val metricsFactory get() = platform.metricsFactory
+    private val commandAdapter get() = platform.commandAdapter
+    private val audienceAdapter get() = platform.audienceAdapter
+    private val taskAdapter get() = platform.taskAdapter
+    private val dataFolderHint get() = platform.dataFolder
+    private val closePlatform get() = platform.shutdown::close
 
     override val configuration: PnLibraryConfig get() = config
 
-    override val version: String = platform.ownerDetails(owner)["version"] ?: "unknown"
+    override val version: String = platformOwnership.ownerDetails(owner)["version"] ?: "unknown"
     override fun isAtLeastVersion(minimumVersion: String): Boolean =
         SemanticVersion.tryParse(version)?.isAtLeast(minimumVersion) ?: false
 
     private val closedFlag = AtomicBoolean(false)
     override val isClosed: Boolean get() = closedFlag.get()
-    private val metricsRegistry = MetricsRegistry(platform.metricsFactory)
+    private val metricsRegistry = MetricsRegistry(metricsFactory)
     private var libraryMetrics: PluginMetrics? = null
-    val dataFolder: Path = platform.dataFolder ?: extractDataFolder(owner)
+    val dataFolder: Path = PlatformDataFolderResolver.resolve(owner, dataFolderHint)
     private val support = SupportRuntime(
         owner = owner,
-        platform = platform,
+        ownership = platformOwnership,
+        identity = platformIdentity,
+        platformDiagnostics = platformDiagnostics,
+        platformLogObservation = platformLogObservation,
+        platformLogging = platformLogging,
         diagnostics = diagnostics,
         config = config,
         dataFolder = dataFolder,
@@ -86,29 +108,51 @@ internal class PnLibraryImpl(
     override val observability get() = support.service
     override val activity: ActivityService get() = observability
     override val metrics: MetricsService get() = metricsRegistry
-    override val logging: LoggingService = PlatformLoggingService(platform, support.logs)
-    private val configurationService = ConfigurationServiceImpl(platform)
+    override val logging: LoggingService = PlatformLoggingService(
+        platformLogging,
+        platformOwnership,
+        platformDiagnostics,
+        platformIdentity,
+        support.logs,
+    )
+    private val configurationService = ConfigurationServiceImpl(platformOwnership)
     override val configurations: ConfigurationService get() = configurationService
-    private val updateService = UpdateServiceImpl(platform, dataFolder)
+    private val updateService = UpdateServiceImpl(
+        platformLogging,
+        platformOwnership,
+        platformOwnership,
+        platformIdentity,
+        platformExecution,
+        platformReadiness,
+        dataFolder,
+    )
     private val directDownloadConfiguration = DownloadConfiguration.load(
         dataFolder.resolve("downloads.yml"),
     )
     private val directDownloadManager = DirectDownloadManager(
-        platform,
+        platformIdentity,
+        platformOwnership,
+        platformOwnership,
+        platformExecution,
+        platformReadiness,
+        platformLogging,
         dataFolder,
         directDownloadConfiguration,
     )
     override val updates: UpdateService get() = updateService
-    private val taskSettings = TaskServiceSettings(config.taskHistoryCapacity)
-    private val taskService = TaskServiceImpl(
-        adapter = platform.taskAdapter,
-        settings = taskSettings,
+    private val platformServices = PlatformServiceSet(
+        commandAdapter = commandAdapter,
+        audienceAdapter = audienceAdapter,
+        taskAdapter = taskAdapter,
+        platformLogging = platformLogging,
+        taskHistoryCapacity = config.taskHistoryCapacity,
         errorLogger = ::recordAndLog,
     )
+    private val taskService get() = platformServices.tasks
     override val tasks: TaskService get() = taskService
-    private val commandService = CommandServiceImpl(platform)
+    private val commandService get() = platformServices.commands
     override val commands: CommandService get() = commandService
-    private val audienceService = AudienceServiceImpl(platform.audienceAdapter)
+    private val audienceService get() = platformServices.audiences
     override val audiences: AudienceService get() = audienceService
     private val serviceManager = ServiceManagerImpl()
     override val services: ServiceManager get() = serviceManager
@@ -118,7 +162,7 @@ internal class PnLibraryImpl(
     }
     override val events: EventService get() = eventService
     private val placeholderValueStore = GlobalPlaceholderValueStore()
-    private val placeholderHub = PlaceholderHub(platform, placeholderValueStore)
+    private val placeholderHub = PlaceholderHub(platformIdentity, placeholderValueStore)
     private val currencyFeature = CurrencyFeature()
     private val platformProvider = PlatformProviderImpl()
     override val platforms: PlatformProvider get() = platformProvider
@@ -131,7 +175,10 @@ internal class PnLibraryImpl(
         )
     }
     override val plugins: PluginRegistry = PluginRegistryImpl(
-        platform = platform,
+        ownership = platformOwnership,
+        identity = platformIdentity,
+        execution = platformExecution,
+        platformLogging = platformLogging,
         events = eventService,
         tasks = taskService,
         services = serviceManager,
@@ -150,158 +197,40 @@ internal class PnLibraryImpl(
     private fun runtimeDiagnostics(): Map<String, Any?> {
         val taskSnapshots = tasks.query()
         val updateSnapshots = updates.all()
-        val platformCoverage = platform.diagnosticDetails(includeSensitive = false)["coverage"]
+        val platformCoverage = platformDiagnostics.diagnosticDetails(includeSensitive = false)["coverage"]
         val taskFailures = taskSnapshots.count { it.lastFailure != null }
         val failedUpdates = updateSnapshots.count { it.snapshot.state.name.equals("FAILED", ignoreCase = true) }
-        val availableReleases = updateSnapshots.flatMap { it.snapshot.availableReleases }
-        val latestReleaseByChannel = availableReleases
-            .filter { it.publishedAt != null }
-            .groupBy { it.channel.name }
-            .mapValues { (_, releases) -> releases.maxByOrNull { it.publishedAt!! }!! }
         val diagnosticSummary = diagnostics.diagnosticSummary()
         val history = diagnostics.historyAnalytics()
+        val nativeLogs = support.logSummary()
+        val reports = support.reportSummary()
+        val observability = support.observabilityAnalytics()
         return linkedMapOf(
         "library" to linkedMapOf<String, Any?>(
             "version" to version,
             "closed" to isClosed,
-            "platform" to platform.id,
-            "implementation" to platform.implementationName,
-            "proxy" to platform.isProxy,
-            "server" to platform.isServer,
+            "platform" to platformIdentity.id,
+            "implementation" to platformIdentity.implementationName,
+            "proxy" to platformIdentity.isProxy,
+            "server" to platformIdentity.isServer,
             "dataFolder" to if (config.privacy) "[redacted]" else
                 dataFolder.toAbsolutePath().normalize().toString(),
-            "configuration" to linkedMapOf<String, Any?>(
-                "privacy" to config.privacy,
-                "configs" to config.configs,
-                "logs" to config.logs,
-                "upload" to config.upload,
-                "uploadMode" to config.uploadMode,
-                "historyRetentionDays" to config.historyRetentionDays,
-                "historyMaxBytes" to config.historyMaxBytes,
-                "logRecords" to config.logRecords,
-                "taskHistoryCapacity" to config.taskHistoryCapacity,
-                "keepReports" to config.keepReports,
-                "maxReportBytes" to config.maxReportBytes,
-                "excludedPathCount" to config.excludedPaths.size,
-                "redactionRuleCount" to (
-                    config.secretKeyPatterns.size + config.redactValuePatterns.size
-                ),
-            ),
+            "configuration" to RuntimeConfigurationDetails.of(config),
         ),
-        "tasks" to taskSnapshots.map { task ->
-            linkedMapOf<String, Any?>(
-                "id" to task.id.value,
-                "name" to task.name,
-                "owner" to task.ownerName,
-                "execution" to task.executionKind.name,
-                "status" to task.status.name,
-                "runCount" to task.runCount,
-                "skippedCount" to task.skippedCount,
-                "lastFailure" to task.lastFailure,
-            )
-        },
-        "taskSummary" to linkedMapOf<String, Any?>(
-            "count" to taskSnapshots.size,
-            "byStatus" to taskSnapshots.groupingBy { it.status.name }.eachCount(),
-            "byExecution" to taskSnapshots.groupingBy { it.executionKind.name }.eachCount(),
-            "runCount" to taskSnapshots.sumOf { it.runCount },
-            "skippedCount" to taskSnapshots.sumOf { it.skippedCount },
-            "failedCount" to taskSnapshots.count { it.lastFailure != null },
-            "failuresByOwner" to taskSnapshots
-                .filter { it.lastFailure != null }
-                .groupingBy { it.ownerName }
-                .eachCount(),
-            "failureMessages" to taskSnapshots
-                .mapNotNull { it.lastFailure?.take(256) }
-                .groupingBy { it }
-                .eachCount(),
-        ),
-        "updates" to updateSnapshots.map { registration ->
-            val snapshot = registration.snapshot
-            linkedMapOf<String, Any?>(
-                "product" to snapshot.product,
-                "repository" to registration.repository,
-                "currentVersion" to snapshot.currentVersion,
-                "latestVersion" to snapshot.latestVersion,
-                "channel" to snapshot.channel.name,
-                "state" to snapshot.state.name,
-                "currentJava" to snapshot.currentJava,
-                "requiredJava" to snapshot.requiredJava,
-                "automaticDownload" to snapshot.automaticDownload,
-                "releaseUrl" to snapshot.releaseUrl,
-                "message" to snapshot.message,
-                "availableReleases" to snapshot.availableReleases.map { release ->
-                    linkedMapOf<String, Any?>(
-                        "version" to release.version,
-                        "channel" to release.channel.name,
-                        "publishedAt" to release.publishedAt?.toString(),
-                    )
-                },
-            )
-        },
-        "updateSummary" to linkedMapOf<String, Any?>(
-            "count" to updateSnapshots.size,
-            "byChannel" to updateSnapshots.groupingBy { it.snapshot.channel.name }.eachCount(),
-            "byState" to updateSnapshots.groupingBy { it.snapshot.state.name }.eachCount(),
-            "availableCount" to updateSnapshots.count { it.snapshot.latestVersion != null },
-            "automaticDownloadCount" to updateSnapshots.count { it.snapshot.automaticDownload },
-            "javaIncompatibleCount" to updateSnapshots.count {
-                it.snapshot.state.name.contains("JAVA", ignoreCase = true) ||
-                    it.snapshot.message?.contains("java", ignoreCase = true) == true
-            },
-            "releaseCountByProduct" to updateSnapshots.associate {
-                it.snapshot.product to it.snapshot.availableReleases.size
-            },
-            "releaseCountByChannel" to updateSnapshots
-                .flatMap { it.snapshot.availableReleases }
-                .groupingBy { it.channel.name }
-                .eachCount(),
-            "latestPublishedAtByChannel" to latestReleaseByChannel.mapValues { (_, release) -> release.publishedAt!!.toString() },
-            "releaseAgeDaysByChannel" to latestReleaseByChannel.mapValues { (_, release) ->
-                java.time.Duration.between(release.publishedAt, java.time.Instant.now()).toDays().coerceAtLeast(0)
-            },
-            "staleChannelCount" to latestReleaseByChannel.count { (_, release) ->
-                java.time.Duration.between(release.publishedAt, java.time.Instant.now()).toDays() >= 30
-            },
-            "messages" to updateSnapshots
-                .mapNotNull { it.snapshot.message?.take(256) }
-                .groupingBy { it }
-                .eachCount(),
-        ),
-        "analytics" to linkedMapOf<String, Any?>(
-            "status" to when {
-                taskFailures > 0 || failedUpdates > 0 -> "critical"
-                (history["occurrenceCount"] as? Number)?.toInt()?.let { it > 0 } == true -> "attention"
-                else -> "healthy"
-            },
-            "signals" to buildList {
-                if (taskFailures > 0) {
-                    add(linkedMapOf("code" to "taskFailures", "severity" to "critical", "count" to taskFailures))
-                }
-                if (failedUpdates > 0) {
-                    add(linkedMapOf("code" to "updateFailures", "severity" to "critical", "count" to failedUpdates))
-                }
-                if ((history["occurrenceCount"] as? Number)?.toInt()?.let { it > 0 } == true) {
-                    add(linkedMapOf("code" to "diagnosticIncidents", "severity" to "attention", "count" to history["occurrenceCount"]))
-                }
-            },
-            "resources" to linkedMapOf(
-                "registeredTasks" to taskSnapshots.size,
-                "registeredUpdates" to updateSnapshots.size,
-                "diagnosticEntries" to (diagnosticSummary["count"] ?: diagnosticSummary["total"]),
-                "nativeLogRecords" to support.logSummary()["count"],
-                "reportsCreated" to support.reportSummary()["created"],
-                "reportHistoryFiles" to (support.reportSummary()["history"] as? Map<*, *>)?.get("fileCount"),
-            ),
-            "counts" to linkedMapOf(
-                "taskFailures" to taskFailures,
-                "updateFailures" to failedUpdates,
-                "diagnosticIncidents" to history["incidentCount"],
-                "observabilityErrors" to support.observabilityAnalytics()["errorCount"],
-                "reportsFailed" to support.reportSummary()["failed"],
-                "reportSuccessRate" to support.reportSummary()["successRate"],
-                "uploads" to (support.reportSummary()["uploadLedger"] as? Map<*, *>)?.get("uploaded"),
-            ),
+        "tasks" to RuntimeTaskDetails.entries(taskSnapshots),
+        "taskSummary" to RuntimeTaskDetails.summary(taskSnapshots),
+        "updates" to updateSnapshots.map(RuntimeUpdateDetails::registration),
+        "updateSummary" to RuntimeUpdateSummary.of(updateSnapshots),
+        "analytics" to RuntimeAnalytics.of(
+            taskCount = taskSnapshots.size,
+            updateCount = updateSnapshots.size,
+            taskFailures = taskFailures,
+            failedUpdates = failedUpdates,
+            diagnosticSummary = diagnosticSummary,
+            history = history,
+            nativeLogs = nativeLogs,
+            reports = reports,
+            observability = observability,
         ),
         "metrics" to metricsRegistry.diagnosticSnapshot(),
         "metricsAnalytics" to metricsRegistry.diagnosticAnalytics(),
@@ -309,9 +238,9 @@ internal class PnLibraryImpl(
         "platformCoverage" to platformCoverage,
         "diagnostics" to diagnostics.diagnosticSummary(),
         "diagnosticHistory" to diagnostics.historyAnalytics(),
-        "nativeLogs" to support.logSummary(),
-        "reports" to support.reportSummary(),
-        "observability" to support.observabilityAnalytics(),
+        "nativeLogs" to nativeLogs,
+        "reports" to reports,
+        "observability" to observability,
         "configurationDeclarations" to diagnostics.configurations("all").map { declaration ->
             linkedMapOf<String, Any?>(
                 "plugin" to declaration.plugin,
@@ -321,23 +250,11 @@ internal class PnLibraryImpl(
             )
         },
         "updateGraph" to linkedMapOf<String, Any?>(
-            "current" to updates.currentPlan().orElse(null)?.let(::updatePlanDetails),
-            "history" to updates.history().map(::updatePlanDetails),
+            "current" to updates.currentPlan().orElse(null)?.let(RuntimeUpdateDetails::of),
+            "history" to updates.history().map(RuntimeUpdateDetails::of),
         ),
         )
     }
-
-    private fun updatePlanDetails(snapshot: ru.privatenull.pnlibrary.api.updates.UpdatePlanSnapshot): Map<String, Any?> =
-        linkedMapOf(
-            "id" to snapshot.id.toString(),
-            "revision" to snapshot.revision,
-            "state" to snapshot.state.name,
-            "message" to snapshot.message,
-            "blockers" to snapshot.blockers.map { it.javaClass.simpleName },
-            "targetApi" to snapshot.plan?.targetApi,
-            "changeCount" to snapshot.plan?.changes?.size,
-            "selectedReleaseCount" to snapshot.plan?.selected?.size,
-        )
 
     fun init() {
         support.initialize { isClosed }
@@ -362,67 +279,46 @@ internal class PnLibraryImpl(
     }
 
     private fun startLibraryMetrics() {
-        var openedSession: PluginMetrics? = null
-        val session = runCatching {
-            metricsRegistry.open(
-                owner,
-                listOf(
-                    MetricsProviderConfiguration(
-                        provider = MetricsProvider.FASTSTATS,
-                        token = FASTSTATS_TOKEN,
-                    ),
-                ),
-            ).also { metrics ->
-                openedSession = metrics
-                metrics.simplePie("platform") { platform.type.name.lowercase() }
-                metrics.simplePie("implementation") { platform.implementationName }
-                metrics.start()
-            }
-        }.onFailure { error ->
-            runCatching { openedSession?.close() }
-            logging.logger(owner, "pnLibrary").warning(
-                "FastStats metrics could not be started: ${error.message ?: error.javaClass.simpleName}",
-            )
-        }.getOrNull()
-        libraryMetrics = session
+        libraryMetrics = RuntimeMetricsBootstrap(
+            registry = metricsRegistry,
+            platform = platformIdentity,
+            owner = owner,
+            warning = { message -> logging.logger(owner, "pnLibrary").warning(message) },
+        ).start()
     }
 
     override fun close() {
         if (closedFlag.compareAndSet(false, true)) {
-            runCatching { plugins.close() }
-            runCatching { commandService.close() }
-            runCatching { audienceService.close() }
-            runCatching { platformProvider.close() }
-            runCatching { currencyFeature.close() }
-            runCatching { configurationService.close() }
-            runCatching { libraryMetrics?.close() }
+            createShutdownPlan().run()
             libraryMetrics = null
-            runCatching { metricsRegistry.close() }
-            runCatching { updateService.close() }
-            runCatching { eventService.close() }
-            runCatching { serviceManager.close() }
-            runCatching { taskService.close() }
-            runCatching { support.close() }
-            PnLibraryProvider.clear(this)
-            runCatching { platform.close() }
-            onClose()
         }
     }
 
-    internal fun <T : Any> registerPlatform(type: Class<T>, implementation: T): AutoCloseable =
+    /**
+     * Keeps the runtime shutdown order in one named lifecycle boundary.
+     * The composition root only decides when to close; this method owns what
+     * must be closed and in which order.
+     */
+    private fun createShutdownPlan(): RuntimeShutdown = RuntimeShutdown().apply {
+        add { plugins.close() }
+        add { commandService.close() }
+        add { audienceService.close() }
+        add { platformProvider.close() }
+        add { currencyFeature.close() }
+        add { configurationService.close() }
+        add { libraryMetrics?.close() }
+        add { metricsRegistry.close() }
+        add { updateService.close() }
+        add { eventService.close() }
+        add { serviceManager.close() }
+        add { taskService.close() }
+        add { support.close() }
+        add { PnLibraryProvider.clear(this@PnLibraryImpl) }
+        add { closePlatform() }
+        add { onClose() }
+    }
+
+    override fun <T : Any> registerPlatform(type: Class<T>, implementation: T): AutoCloseable =
         platformProvider.register(type, implementation)
 
-    private fun extractDataFolder(owner: Any): Path {
-        return try {
-            val method = owner.javaClass.getMethod("getDataFolder")
-            val file = method.invoke(owner) as java.io.File
-            file.toPath()
-        } catch (_: Exception) {
-            Paths.get("plugins", owner.javaClass.simpleName)
-        }
-    }
-
-    private companion object {
-        const val FASTSTATS_TOKEN = "009192430b9bfffa176e8cc8dd67cad7"
-    }
 }

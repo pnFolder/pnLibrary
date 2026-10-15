@@ -12,7 +12,7 @@ import ru.privatenull.pnlibrary.api.plugin.PluginId
 import ru.privatenull.pnlibrary.core.config.yaml.AnnotatedYamlCodec
 import ru.privatenull.pnlibrary.core.config.yaml.CodeFirstYaml
 import ru.privatenull.pnlibrary.core.config.yaml.RuntimeConfigType
-import ru.privatenull.pnlibrary.spi.platform.PlatformAdapter
+import ru.privatenull.pnlibrary.spi.platform.PlatformOwnership
 import java.io.File
 import java.nio.file.Path
 import java.nio.file.Paths
@@ -22,7 +22,7 @@ import java.util.function.Supplier
 import java.util.logging.Logger
 
 internal class ConfigurationServiceImpl(
-    private val platform: PlatformAdapter,
+    private val platform: PlatformOwnership,
 ) : ConfigurationService, AutoCloseable {
     private val scopes = java.util.IdentityHashMap<Any, MutableMap<PluginId, Scope>>()
     private val runtimeTypes = linkedSetOf<TypeRegistration>()

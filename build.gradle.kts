@@ -12,7 +12,6 @@ plugins {
 apiValidation {
     ignoredProjects.addAll(
         listOf(
-            "bstats",
             "core",
             "distribution",
             "demo-bukkit",
@@ -21,8 +20,7 @@ apiValidation {
             "smoke-bungee",
             "smoke-velocity",
             "runtime",
-            "runtime-spi",
-            "update",
+            "faststats-velocity",
             "currency-runtime",
             "gradle",
             "maven",
@@ -87,12 +85,23 @@ subprojects {
     }
 }
 
+// Public API changes must be reviewed through the same verification gate as tests.
+// The runtime SPI is intentionally internal, while the API/platform artifacts keep
+// golden signatures that protect consumers from accidental binary breakage.
+tasks.named("check") {
+    dependsOn(
+        ":modules:api:apiCheck",
+        ":platforms:bukkit:api:apiCheck",
+        ":platforms:bungee:api:apiCheck",
+        ":platforms:velocity:api:apiCheck",
+    )
+}
+
 dependencies {
     dokka(project(":modules:common"))
     dokka(project(":modules:api"))
     dokka(project(":modules:runtime-spi"))
     dokka(project(":modules:core"))
-    dokka(project(":modules:features:update"))
     dokka(project(":modules:features:currency-api"))
     dokka(project(":modules:features:currency-runtime"))
     dokka(project(":modules:features:minecraft-localization"))

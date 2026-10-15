@@ -15,7 +15,11 @@ import ru.privatenull.pnlibrary.core.observability.report.SupportDeliveryFactory
 import ru.privatenull.pnlibrary.core.observability.report.SupportReportGenerator
 import ru.privatenull.pnlibrary.core.observability.reportSnapshot
 import ru.privatenull.pnlibrary.core.upload.UploadLedger
-import ru.privatenull.pnlibrary.spi.platform.PlatformAdapter
+import ru.privatenull.pnlibrary.spi.platform.PlatformDiagnostics
+import ru.privatenull.pnlibrary.spi.platform.PlatformIdentity
+import ru.privatenull.pnlibrary.spi.platform.PlatformOwnership
+import ru.privatenull.pnlibrary.spi.platform.PlatformLogObservation
+import ru.privatenull.pnlibrary.spi.platform.PlatformLogging
 import java.nio.file.Files
 import java.nio.file.Path
 import java.util.concurrent.Executors
@@ -27,7 +31,11 @@ import java.time.Instant
 /** Owns diagnostics, observation history, support reports, and their background work. */
 internal class SupportRuntime(
     private val owner: Any,
-    private val platform: PlatformAdapter,
+    private val ownership: PlatformOwnership,
+    private val identity: PlatformIdentity,
+    private val platformDiagnostics: PlatformDiagnostics,
+    private val platformLogObservation: PlatformLogObservation,
+    private val platformLogging: PlatformLogging,
     private val diagnostics: DiagnosticsRegistry,
     private val config: PnLibraryConfig,
     dataFolder: Path,
@@ -54,7 +62,8 @@ internal class SupportRuntime(
         dataFolder = dataFolder,
         config = config,
         diagnosticsRegistry = diagnostics,
-        platformAdapter = platform,
+        platformIdentity = identity,
+        platformDiagnostics = platformDiagnostics,
         encryptionCodec = encryption,
         uploader = uploader,
         uploadLedger = uploadLedger,
@@ -81,8 +90,8 @@ internal class SupportRuntime(
         logs.onChange { persistHistory() }
         diagnostics.onEventsChanged(::persistHistory)
         diagnostics.onActivityEvent(diagnosticBridge::record)
-        platform.observeNativeLogs { nativeOwner, level, message, error ->
-            logs.record(platform, nativeOwner, level, message, error)
+        platformLogObservation.observeNativeLogs { nativeOwner, level, message, error ->
+            logs.record(ownership, nativeOwner, level, message, error)
         }
 
         uploader?.let { remote ->
@@ -166,16 +175,16 @@ internal class SupportRuntime(
             ),
         )
 
-        val capture = logs.record(platform, logOwner, LogLevel.ERROR, message, error)
+        val capture = logs.record(ownership, logOwner, LogLevel.ERROR, message, error)
         when {
-            capture == null || capture.emitOriginal -> platform.log(logOwner, LogLevel.ERROR, message, error)
-            capture.summary != null -> platform.log(logOwner, LogLevel.ERROR, capture.summary, null)
+            capture == null || capture.emitOriginal -> platformLogging.log(logOwner, LogLevel.ERROR, message, error)
+            capture.summary != null -> platformLogging.log(logOwner, LogLevel.ERROR, capture.summary, null)
         }
     }
 
     override fun close() {
         worker.shutdownNow()
-        platform.observeNativeLogs(null)
+        platformLogObservation.observeNativeLogs(null)
         diagnostics.onEventsChanged(null)
         diagnostics.onActivityEvent(null)
         diagnostics.clear()

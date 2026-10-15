@@ -4,6 +4,7 @@ import org.junit.jupiter.api.Assertions.assertEquals
 import org.junit.jupiter.api.Assertions.assertFalse
 import org.junit.jupiter.api.Assertions.assertTrue
 import org.junit.jupiter.api.Test
+import java.nio.file.Files
 import ru.privatenull.pnlibrary.api.logging.LogLevel
 import ru.privatenull.pnlibrary.spi.platform.PlatformAdapter
 import ru.privatenull.pnlibrary.api.platform.PlatformType
@@ -65,7 +66,13 @@ class DiagnosticLogBufferTest {
     @Test
     fun `logger prints the full repeated error only once`() {
         val platform = TestPlatform()
-        val logger = PlatformLoggingService(platform, DiagnosticLogBuffer(10)).logger(this, "test")
+        val logger = PlatformLoggingService(
+            platform,
+            platform,
+            platform,
+            platform,
+            DiagnosticLogBuffer(10),
+        ).logger(this, "test")
         val error = IllegalStateException("database unavailable")
 
         logger.error("Load failed", error)
@@ -79,8 +86,9 @@ class DiagnosticLogBufferTest {
         val logged = mutableListOf<Pair<String, Throwable?>>()
         override val type = PlatformType.BUKKIT
         override val id = "test"
+        override val dataFolder = Files.createTempDirectory("pnlibrary-log-test")
         override fun ownerDetails(owner: Any) = mapOf("name" to "test-plugin")
-        override fun details(): Map<String, Any?> = emptyMap()
+        override fun diagnosticDetails(includeSensitive: Boolean): Map<String, Any?> = emptyMap()
         override fun executeGlobal(task: Runnable) = task.run()
         override fun executeReply(recipient: Any, task: Runnable) = task.run()
         override fun log(owner: Any, level: LogLevel, message: String, error: Throwable?) {

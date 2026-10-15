@@ -6,6 +6,7 @@ import org.bukkit.entity.Player
 import org.bukkit.potion.PotionEffect
 import org.bukkit.potion.PotionEffectType
 import ru.privatenull.pnlibrary.api.actions.LibraryPlayer
+import ru.privatenull.pnlibrary.api.actions.PlayerCapability
 import ru.privatenull.pnlibrary.api.actions.PlayerEffect
 import ru.privatenull.pnlibrary.api.actions.PlayerParticle
 import java.util.UUID
@@ -21,6 +22,7 @@ internal class BukkitLibraryPlayer(
     private val player: Player,
     private val audiences: BukkitAudienceService,
 ) : LibraryPlayer {
+    override val capabilities: Set<PlayerCapability> = PlayerCapability.values().toSet()
     override val uniqueId: UUID get() = player.uniqueId
     override val name: String get() = player.name
 

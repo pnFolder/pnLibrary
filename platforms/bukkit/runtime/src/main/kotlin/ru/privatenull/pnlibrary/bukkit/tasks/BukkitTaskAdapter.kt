@@ -6,13 +6,10 @@ import org.bukkit.scheduler.BukkitScheduler
 import org.bukkit.scheduler.BukkitTask
 import ru.privatenull.pnlibrary.api.tasks.TaskExecution
 import ru.privatenull.pnlibrary.bukkit.compat.ServerCapabilities
-import ru.privatenull.pnlibrary.spi.tasks.PlatformTaskAdapter
 import ru.privatenull.pnlibrary.spi.tasks.PlatformTaskHandle
 import ru.privatenull.pnlibrary.spi.tasks.PlatformTaskRequest
+import ru.privatenull.pnlibrary.spi.tasks.TrackingPlatformTaskAdapter
 import java.time.Duration
-import java.util.concurrent.ConcurrentHashMap
-import java.util.concurrent.atomic.AtomicBoolean
-import java.util.concurrent.atomic.AtomicReference
 import kotlin.math.ceil
 
 private const val NANOS_PER_TICK = 50_000_000.0
@@ -20,16 +17,6 @@ private const val NANOS_PER_TICK = 50_000_000.0
 /** Rounds a non-zero duration up to the next server tick. */
 internal fun durationToTicks(value: Duration): Long =
     if (value.isZero) 0 else ceil(value.toNanos() / NANOS_PER_TICK).toLong().coerceAtLeast(1)
-
-/** Releases one-shot callbacks even when their execution throws. */
-internal fun withCompletionRelease(request: PlatformTaskRequest, release: () -> Unit): PlatformTaskRequest =
-    request.copy(callback = Runnable {
-        try {
-            request.callback.run()
-        } finally {
-            if (request.interval == null) release()
-        }
-    })
 
 /**
  * Owns scheduled tasks and adapts requests to Bukkit or Folia.
@@ -39,32 +26,12 @@ internal fun withCompletionRelease(request: PlatformTaskRequest, release: () -> 
  */
 internal class BukkitTaskAdapter(
     private val plugin: Plugin,
-) : PlatformTaskAdapter {
+) : TrackingPlatformTaskAdapter() {
     private val foliaScheduler by lazy { FoliaSchedulerBridge(plugin) }
-    private val closed = AtomicBoolean(false)
-    private val handles = ConcurrentHashMap.newKeySet<NativeHandle>()
 
-    /** Schedules a callback and tracks it until completion or cancellation. */
-    override fun schedule(request: PlatformTaskRequest): PlatformTaskHandle {
-        check(!closed.get()) { "Bukkit task adapter is closed" }
-        val reference = AtomicReference<NativeHandle?>()
-        val completed = AtomicBoolean(false)
-        val forwarded = withCompletionRelease(request) {
-            completed.set(true)
-            reference.get()?.release()
-        }
-        val native = if (ServerCapabilities.isFolia) {
-            foliaScheduler.schedule(forwarded)
-        } else {
-            scheduleBukkit(forwarded)
-        }
-        return NativeHandle(native).also { handle ->
-            reference.set(handle)
-            handles += handle
-            if (completed.get()) {
-                handle.release()
-            }
-        }
+    override fun scheduleNative(request: PlatformTaskRequest): PlatformTaskHandle {
+        val native = if (ServerCapabilities.isFolia) foliaScheduler.schedule(request) else scheduleBukkit(request)
+        return NativeHandle(native)
     }
 
     /** Routes ordinary Bukkit requests to asynchronous or primary-thread scheduling. */
@@ -104,33 +71,15 @@ internal class BukkitTaskAdapter(
         else -> scheduler.runTask(plugin, callback)
     }
 
-    /** Cancels all native tasks still owned by this adapter. */
-    override fun close() {
-        if (!closed.compareAndSet(false, true)) return
-        handles.toList().forEach { it.cancel() }
-        handles.clear()
-    }
-
-    /** Tracks a native task and makes cancellation idempotent. */
     private inner class NativeHandle(
         private val native: Any,
     ) : PlatformTaskHandle {
-        private val cancelled = AtomicBoolean(false)
-
-        /** Cancels the native task at most once. */
         override fun cancel(): Boolean {
-            if (!cancelled.compareAndSet(false, true)) return false
             when (native) {
                 is BukkitTask -> native.cancel()
                 else -> foliaScheduler.cancel(native)
             }
-            handles.remove(this)
             return true
-        }
-
-        /** Untracks completed work without cancelling the native handle. */
-        fun release() {
-            handles.remove(this)
         }
     }
 }

@@ -2,7 +2,6 @@ package ru.privatenull.pnlibrary.bungee
 
 import net.md_5.bungee.api.chat.TextComponent
 import net.md_5.bungee.api.plugin.Plugin
-import ru.privatenull.pnlibrary.api.commands.CommandRegistration
 import ru.privatenull.pnlibrary.api.logging.LogLevel
 import ru.privatenull.pnlibrary.api.platform.PlatformType
 import ru.privatenull.pnlibrary.api.plugin.PluginMetadata
@@ -17,8 +16,10 @@ import ru.privatenull.pnlibrary.spi.metrics.PlatformMetricsFactory
 import ru.privatenull.pnlibrary.spi.platform.PlatformAdapter
 import ru.privatenull.pnlibrary.spi.platform.PlatformSnapshot
 import ru.privatenull.pnlibrary.spi.platform.PluginSnapshot
+import ru.privatenull.pnlibrary.spi.platform.UncaughtExceptionLogObserver
+import ru.privatenull.pnlibrary.spi.platform.PlatformLifecycle
+import ru.privatenull.pnlibrary.spi.platform.unsupportedOwner
 import ru.privatenull.pnlibrary.spi.tasks.PlatformTaskAdapter
-import java.util.concurrent.atomic.AtomicBoolean
 import java.util.logging.Level
 
 /** Runtime adapter for BungeeCord-compatible proxy servers. */
@@ -27,12 +28,9 @@ internal class BungeePlatformAdapter(
 ) : PlatformAdapter {
     private val diagnosticDetailsCollector = BungeeDiagnosticDetailsCollector(plugin)
 
-    private val closed = AtomicBoolean()
-    private val bound = AtomicBoolean()
+    private val lifecycle = PlatformLifecycle()
 
-    private var updateCommand: CommandRegistration? = null
-    private var previousUncaughtHandler: Thread.UncaughtExceptionHandler? = null
-    private var installedUncaughtHandler: Thread.UncaughtExceptionHandler? = null
+    private val uncaughtExceptionObserver = UncaughtExceptionLogObserver(plugin)
 
     override val type: PlatformType = PlatformType.BUNGEECORD
     override val dataFolder = plugin.dataFolder.toPath()
@@ -66,20 +64,7 @@ internal class BungeePlatformAdapter(
     /** Installs an uncaught-exception observer while preserving the previous JVM handler. */
     @Synchronized
     override fun observeNativeLogs(observer: ((Any, LogLevel, String, Throwable?) -> Unit)?) {
-        if (observer != null && installedUncaughtHandler == null) {
-            previousUncaughtHandler = Thread.getDefaultUncaughtExceptionHandler()
-            installedUncaughtHandler = Thread.UncaughtExceptionHandler { thread, error ->
-                observer(plugin, LogLevel.ERROR, "Uncaught exception on thread ${thread.name}", error)
-                previousUncaughtHandler?.uncaughtException(thread, error)
-            }
-            Thread.setDefaultUncaughtExceptionHandler(installedUncaughtHandler)
-        } else if (observer == null && installedUncaughtHandler != null) {
-            if (Thread.getDefaultUncaughtExceptionHandler() === installedUncaughtHandler) {
-                Thread.setDefaultUncaughtExceptionHandler(previousUncaughtHandler)
-            }
-            previousUncaughtHandler = null
-            installedUncaughtHandler = null
-        }
+        uncaughtExceptionObserver.observe(observer)
     }
 
     /** Sends legacy-formatted text to the proxy console. */
@@ -93,7 +78,7 @@ internal class BungeePlatformAdapter(
     /** Reads native plugin metadata, warning and returning null for unsupported owners. */
     override fun ownerMetadata(owner: Any): PluginSnapshot? {
         val target = owner as? Plugin
-            ?: return unsupportedOwner(owner)
+            ?: return unsupportedOwner(owner, this)
 
         return target.toSnapshot()
     }
@@ -133,27 +118,22 @@ internal class BungeePlatformAdapter(
                     "received ${owner.javaClass.name}",
             )
 
+        require(target in plugin.proxy.pluginManager.plugins) {
+            "Remote policy owner is not registered in the BungeeCord proxy: " +
+                target.javaClass.name
+        }
+
         return BungeeRemotePolicyContextFactory.create(target, values)
     }
 
     /** Registers shared update commands exactly once for this runtime. */
     override fun bind(library: PnLibrary) {
-        check(!closed.get()) {
-            "Bungee platform adapter is closed"
-        }
-        check(bound.compareAndSet(false, true)) {
-            "Bungee platform adapter is already bound"
-        }
-
-        updateCommand = library.commands.register(
-            plugin,
-            ProxyUpdateCommand(library).definition(),
-        )
+        lifecycle.bind { lifecycle.track(ProxyUpdateCommand(library).register(plugin)) }
     }
 
     /** Dispatches work asynchronously; BungeeCord has no global main-thread scheduler. */
     override fun executeGlobal(task: Runnable) {
-        if (closed.get()) return
+        if (lifecycle.isClosed) return
 
         plugin.proxy.scheduler.runAsync(plugin, task)
     }
@@ -165,13 +145,7 @@ internal class BungeePlatformAdapter(
 
     /** Releases observers and command registrations once. */
     override fun close() {
-        if (!closed.compareAndSet(false, true)) return
-        observeNativeLogs(null)
-
-        updateCommand?.close()
-        updateCommand = null
-
-        bound.set(false)
+        lifecycle.close { observeNativeLogs(null) }
     }
 
     /** Converts native plugin metadata to the shared snapshot contract. */

@@ -19,7 +19,6 @@ tasks.withType<JavaCompile>().configureEach { options.release = 8 }
 dependencies {
     implementation(project(":modules:api"))
     implementation(project(":modules:runtime-spi"))
-    implementation(project(":modules:features:update"))
     implementation(project(":modules:features:currency-runtime"))
     implementation(libs.kotlin.stdlib)
     implementation(libs.kotlin.compiler.embeddable)
@@ -29,7 +28,7 @@ dependencies {
     implementation(libs.adventure.legacy)
     implementation(libs.adventure.gson)
     implementation(libs.adventure.plain)
-    implementation(project(":modules:internal:bstats"))
+    compileOnly(libs.faststats.core.j8)
     implementation(project(":modules:design:console"))
 
     testImplementation(libs.junit.jupiter)

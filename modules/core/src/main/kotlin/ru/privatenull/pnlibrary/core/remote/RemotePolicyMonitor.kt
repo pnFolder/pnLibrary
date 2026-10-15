@@ -8,10 +8,12 @@ import ru.privatenull.pnlibrary.api.remote.RemotePolicyExplanation
 import ru.privatenull.pnlibrary.api.tasks.TaskExecution
 import ru.privatenull.pnlibrary.api.tasks.TaskScope
 import ru.privatenull.pnlibrary.api.tasks.TaskSpec
-import ru.privatenull.pnlibrary.spi.platform.PlatformAdapter
+import ru.privatenull.pnlibrary.spi.platform.PlatformExecution
+import ru.privatenull.pnlibrary.spi.platform.PlatformOwnerControl
 
 internal class RemotePolicyMonitor(
-    private val platform: PlatformAdapter,
+    private val ownership: PlatformOwnerControl,
+    private val execution: PlatformExecution,
     private val notices: RemotePolicyNoticeRenderer,
 ) {
     fun start(
@@ -24,7 +26,7 @@ internal class RemotePolicyMonitor(
         closeModule: () -> Unit,
         closePlugin: () -> Unit,
     ) {
-        val policyContext = platform.remotePolicyContext(owner, metadata, policy.values)
+        val policyContext = ownership.remotePolicyContext(owner, metadata, policy.values)
         tasks.schedule(
             TaskSpec.builder()
                 .name("remote policy: ${metadata.id.value}")
@@ -49,14 +51,14 @@ internal class RemotePolicyMonitor(
     ) {
         runCatching { RemotePolicyEngine.check(policy.source, policyContext) }
             .onSuccess { decision ->
-                platform.executeGlobal(Runnable {
+                execution.executeGlobal(Runnable {
                     if (isClosed()) return@Runnable
                     notices.render(owner, metadata, policy, decision.allowed, decision.explanation)
                     if (!decision.allowed) deny(owner, policy, closeModule, closePlugin)
                 })
             }
             .onFailure { error ->
-                platform.executeGlobal(Runnable {
+                execution.executeGlobal(Runnable {
                     if (isClosed()) return@Runnable
                     val explanation = RemotePolicyExplanation.builder("Ошибка проверки")
                         .child(RemotePolicyFailureInterpreter.message(error))
@@ -76,7 +78,7 @@ internal class RemotePolicyMonitor(
     ) {
         if (policy.onDeny == DenyAction.DISABLE_MODULE) {
             closeModule()
-        } else if (!platform.disableOwner(owner)) {
+        } else if (!ownership.disableOwner(owner)) {
             closePlugin()
         }
     }

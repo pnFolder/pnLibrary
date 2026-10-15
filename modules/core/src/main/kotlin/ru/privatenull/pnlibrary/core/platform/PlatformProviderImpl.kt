@@ -10,7 +10,10 @@ internal class PlatformProviderImpl : PlatformProvider, AutoCloseable {
     override fun <T : Any> get(type: Class<T>): T? = implementations[type]?.let(type::cast)
 
     override fun <T : Any> require(type: Class<T>): T = get(type)
-        ?: throw IllegalStateException("Platform API ${type.name} is not available in this runtime")
+        ?: throw IllegalStateException(
+            "Platform API ${type.name} is not available in this runtime; " +
+                "registered APIs: ${implementations.keys.joinToString { it.name }.ifEmpty { "none" }}",
+        )
 
     fun <T : Any> register(type: Class<T>, implementation: T): AutoCloseable {
         require(implementations.putIfAbsent(type, implementation) == null) {

@@ -2,6 +2,7 @@ package ru.privatenull.pnlibrary.core
 
 import ru.privatenull.pnlibrary.core.diagnostics.DiagnosticsRegistry
 import ru.privatenull.pnlibrary.core.runtime.PnLibraryBootstrap
+import ru.privatenull.pnlibrary.core.runtime.toRuntimeContext
 import org.junit.jupiter.api.Assertions.assertEquals
 import org.junit.jupiter.api.Assertions.assertNotNull
 import org.junit.jupiter.api.Assertions.assertSame
@@ -13,6 +14,8 @@ import ru.privatenull.pnlibrary.spi.platform.PlatformAdapter
 import ru.privatenull.pnlibrary.api.platform.PlatformType
 import ru.privatenull.pnlibrary.api.runtime.PnLibrary
 import ru.privatenull.pnlibrary.api.runtime.PnLibraryProvider
+import java.nio.file.Files
+import java.nio.file.Path
 import java.util.function.Supplier
 
 class PnLibraryBootstrapTest {
@@ -22,8 +25,8 @@ class PnLibraryBootstrapTest {
         val dummyOwner = DummyPlugin("pnMarket")
         val dummyPlatform = DummyPlatformAdapter()
 
-        val lib1 = PnLibraryBootstrap.bootstrap(dummyOwner, dummyPlatform)
-        val lib2 = PnLibraryBootstrap.bootstrap(DummyPlugin("another"), DummyPlatformAdapter())
+        val lib1 = PnLibraryBootstrap.bootstrap(dummyOwner, dummyPlatform.toRuntimeContext())
+        val lib2 = PnLibraryBootstrap.bootstrap(DummyPlugin("another"), DummyPlatformAdapter().toRuntimeContext())
 
         assertSame(lib1, lib2)
         assertEquals(dummyOwner, lib1.owner)
@@ -68,11 +71,12 @@ class PnLibraryBootstrapTest {
         var boundLibrary: PnLibrary? = null
         override val type = PlatformType.BUKKIT
         override val id: String get() = "dummy"
+        override val dataFolder: Path = Files.createTempDirectory("pnlibrary-bootstrap-test")
         override fun bind(library: PnLibrary) {
             assertSame(library, PnLibraryProvider.get())
             boundLibrary = library
         }
-        override fun details(): Map<String, Any?> = mapOf("test" to true)
+        override fun diagnosticDetails(includeSensitive: Boolean): Map<String, Any?> = mapOf("test" to true)
         override fun executeGlobal(task: Runnable) { task.run() }
         override fun executeReply(recipient: Any, task: Runnable) { task.run() }
         override fun close() {}

@@ -2,7 +2,7 @@ package ru.privatenull.pnlibrary.core.updates
 
 import ru.privatenull.pnlibrary.api.updates.UpdatePlan
 import ru.privatenull.pnlibrary.api.updates.UpdatePlanSnapshot
-import ru.privatenull.pnlibrary.spi.platform.PlatformAdapter
+import ru.privatenull.pnlibrary.spi.platform.PlatformIdentity
 import ru.privatenull.pnlibrary.update.ArtifactVerifier
 import ru.privatenull.pnlibrary.update.TrustedHttpClient
 import ru.privatenull.pnlibrary.update.UpdateTransaction
@@ -10,7 +10,7 @@ import java.nio.file.Path
 
 /** Stages update files and verifies a staged transaction after the next server start. */
 internal class UpdateInstaller(
-    platform: PlatformAdapter,
+    platform: PlatformIdentity,
     dataFolder: Path,
     private val configuration: UpdateConfiguration,
     http: TrustedHttpClient,

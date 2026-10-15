@@ -43,18 +43,17 @@ class PnLibraryVelocityPlugin @Inject constructor(
     fun onInitialize(event: ProxyInitializeEvent) {
         val adapter = VelocityPlatformAdapter(
             plugin = this,
-            server = server,
+            proxy = server,
             metricsFactory = VelocityMetricsFactory(metricsFactory, server, logger, dataDirectory),
             dataFolder = dataDirectory,
             logger = logger,
         )
-        runtimeHost = PnLibraryRuntimeHost.start(
+        runtimeHost = PnLibraryRuntimeHost.startAndRegisterPlatform(
             this,
             adapter,
-            dataDirectory.parent.resolve("update"),
-        ).also { host ->
-            host.registerPlatform(VelocityPlatform::class.java, VelocityPlatformImpl(server))
-        }
+            VelocityPlatform::class.java,
+            VelocityPlatformImpl(server),
+        )
     }
 
     /**

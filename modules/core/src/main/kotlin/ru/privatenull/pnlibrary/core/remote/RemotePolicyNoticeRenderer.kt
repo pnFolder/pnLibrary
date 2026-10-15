@@ -7,9 +7,9 @@ import ru.privatenull.pnlibrary.api.remote.RemotePolicyExplanation
 import ru.privatenull.pnlibrary.console.ConsoleCard
 import ru.privatenull.pnlibrary.console.ConsoleTheme
 import ru.privatenull.pnlibrary.console.ConsoleTree
-import ru.privatenull.pnlibrary.spi.platform.PlatformAdapter
+import ru.privatenull.pnlibrary.spi.platform.PlatformLogging
 
-internal class RemotePolicyNoticeRenderer(private val platform: PlatformAdapter) {
+internal class RemotePolicyNoticeRenderer(private val logging: PlatformLogging) {
     fun render(
         owner: Any,
         metadata: PluginMetadata,
@@ -39,7 +39,7 @@ internal class RemotePolicyNoticeRenderer(private val platform: PlatformAdapter)
             .blank()
             .status(action)
             .build()
-            .send { line -> platform.console(owner, line) }
+            .send { line -> logging.console(owner, line) }
     }
 
     private fun RemotePolicyExplanation.toConsoleTree(): ConsoleTree {

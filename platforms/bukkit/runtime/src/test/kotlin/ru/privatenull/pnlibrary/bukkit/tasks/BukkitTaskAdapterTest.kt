@@ -4,7 +4,9 @@ import org.junit.jupiter.api.Assertions.assertEquals
 import org.junit.jupiter.api.Test
 import java.time.Duration
 import ru.privatenull.pnlibrary.api.tasks.TaskExecution
+import ru.privatenull.pnlibrary.spi.tasks.PlatformTaskHandle
 import ru.privatenull.pnlibrary.spi.tasks.PlatformTaskRequest
+import ru.privatenull.pnlibrary.spi.tasks.TrackingPlatformTaskAdapter
 
 class BukkitTaskAdapterTest {
     @Test
@@ -15,10 +17,24 @@ class BukkitTaskAdapterTest {
     }
 
     @Test
-    fun `one shot wrapper releases after callback`() {
-        var released = false
+    fun `one shot task is released after callback`() {
+        val adapter = RecordingTaskAdapter()
         val request = PlatformTaskRequest(TaskExecution.Kind.GLOBAL, null, Duration.ZERO, null, Runnable {})
-        withCompletionRelease(request) { released = true }.callback.run()
-        assertEquals(true, released)
+        val handle = adapter.schedule(request)
+        assertEquals(1, adapter.active)
+        adapter.callback!!.run()
+        assertEquals(true, handle.cancel())
+        assertEquals(0, adapter.active)
+    }
+
+    private class RecordingTaskAdapter : TrackingPlatformTaskAdapter() {
+        var callback: Runnable? = null
+        var active = 0
+
+        override fun scheduleNative(request: PlatformTaskRequest): PlatformTaskHandle {
+            callback = request.callback
+            active++
+            return PlatformTaskHandle { active--; true }
+        }
     }
 }

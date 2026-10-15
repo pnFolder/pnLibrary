@@ -6,6 +6,10 @@ import ru.privatenull.pnlibrary.bukkit.api.BukkitPlatform
 import ru.privatenull.pnlibrary.bukkit.inventory.MenuService
 
 /** Simple access to Bukkit-specific services supplied by pnLibrary. */
+@Deprecated(
+    message = "Use PnLibraryProvider.get().platform<BukkitPlatform>() instead",
+    level = DeprecationLevel.WARNING,
+)
 object PnBukkit {
     /** Returns information about the running Bukkit/Paper/Purpur/Leaf/Folia server. */
     @JvmStatic

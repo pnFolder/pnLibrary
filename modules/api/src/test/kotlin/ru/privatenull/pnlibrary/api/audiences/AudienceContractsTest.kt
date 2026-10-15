@@ -9,6 +9,7 @@ import org.junit.jupiter.api.Test
 import ru.privatenull.pnlibrary.api.actions.LibraryPlayer
 import ru.privatenull.pnlibrary.api.actions.PlayerEffect
 import ru.privatenull.pnlibrary.api.actions.PlayerParticle
+import ru.privatenull.pnlibrary.api.actions.PlayerCapability
 import java.util.UUID
 
 class AudienceContractsTest {
@@ -21,6 +22,16 @@ class AudienceContractsTest {
         assertTrue(player.isPlayer)
         assertFalse(player.isConsole)
         assertTrue(player.hasPermission("example.use"))
+    }
+
+    @Test
+    fun `default player capabilities describe proxy-safe operations`() {
+        val player = TestPlayer(UUID.randomUUID())
+
+        assertEquals(
+            setOf(PlayerCapability.MESSAGE, PlayerCapability.ACTION_BAR),
+            player.capabilities,
+        )
     }
 
     private class TestPlayer(override val uniqueId: UUID) : LibraryPlayer {

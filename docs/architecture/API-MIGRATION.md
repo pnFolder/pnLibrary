@@ -27,8 +27,13 @@ declared major release.
 ## Optional capabilities
 
 Optional APIs are obtained from `ModuleContext.services`. Currency is the first fully separated
-feature and is available through `CurrencyApi.get(context)`. Compatibility properties for other
-features remain valid until their module extraction is complete.
+feature and is available through `CurrencyApi.get(context)`.
+
+The direct `PnLibrary` properties for metrics, tasks, commands, audiences, placeholders, and
+updates are compatibility facades for the current major line. New feature integrations should
+resolve their feature API from the module service container; the direct properties must not gain
+new feature-specific behavior. They can be removed only in a declared major release after each
+feature has a stable API/runtime boundary.
 
 ## Lifecycle
 

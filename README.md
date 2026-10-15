@@ -55,11 +55,12 @@ placeholders, событий и cooldowns.
 | `modules/api` | Публичные интерфейсы: runtime, сервисы, события, задачи и остальные общие возможности | 8 |
 | `modules/common` | Общие модели Minecraft без зависимости от серверной платформы | 8 |
 | `platforms/bukkit/api` | Публичные Bukkit-контракты: окружение сервера и меню | 8 |
+| `platforms/bungee/api` | Публичный BungeeCord-контракт нативного proxy API | 8 |
+| `platforms/velocity/api` | Публичный Velocity-контракт нативного proxy API | 17 |
 | `modules/runtime-spi` | Внутренняя граница между core и платформами | 8 |
 | `modules/core` | Закрытое исполнение общих сервисов | 8 |
-| `modules/features/update` | Resolver и транзакции pnUpdate | 8 |
+| `modules/core` (`update` package) | Resolver и транзакции pnUpdate | 8 |
 | `modules/features/minecraft-localization` | Ленивые официальные переводы Minecraft и обратный поиск | 8 |
-| `modules/internal/bstats` | Неизменённые общие классы официального bStats | 8 |
 | `platforms/bukkit/runtime` | Bukkit, Spigot, Paper, Purpur, Leaf и Folia | 8 |
 | `platforms/bungee/runtime` | BungeeCord и совместимые прокси | 8 |
 | `platforms/velocity/runtime` | Velocity | 17 |
@@ -130,6 +131,13 @@ dependencies {
 
 ```kotlin
 compileOnly("io.github.pnfolder:pnlibrary-bukkit-api:2.2.0-beta.2")
+```
+
+Для BungeeCord и Velocity используются соответствующие platform API:
+
+```kotlin
+compileOnly("io.github.pnfolder:pnlibrary-bungee-api:2.2.0-beta.2")
+compileOnly("io.github.pnfolder:pnlibrary-velocity-api:2.2.0-beta.2")
 ```
 
 Для Bukkit достаточно объявить `pnlibrary-bukkit-api`: общий API подтянется как

@@ -16,7 +16,7 @@ dependencies {
     compileOnly(project(":modules:features:currency-api"))
     compileOnly(project(":platforms:bukkit:api"))
     compileOnly(project(":modules:features:minecraft-localization"))
-    compileOnly(project(":modules:features:update"))
+    compileOnly(project(":modules:core"))
     compileOnly(libs.spigot.api.v18)
     compileOnly(libs.kotlin.stdlib)
 }

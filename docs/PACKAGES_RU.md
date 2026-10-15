@@ -16,6 +16,8 @@
 | `pnlibrary-core` / `core.config.yaml` | CodeFirstYaml и слияние новых ключей YAML |
 | `pnlibrary-runtime-spi` / `spi.platform` | Закрытая граница core и платформенных runtime |
 | `pnlibrary-bukkit-api` / `bukkit.inventory` | Публичный Bukkit API меню |
+| `pnlibrary-bungee-api` / `bungee.api` | Публичный BungeeCord API proxy |
+| `pnlibrary-velocity-api` / `velocity.api` | Публичный Velocity API proxy |
 | `core.runtime`, `core.tasks`, `core.logging`, `core.metrics`, `core.updates` | Реализации общих сервисов |
 | `core.diagnostics`, `core.security`, `core.upload` | Сбор, шифрование и загрузка отчётов |
 | `pnlibrary-bukkit` / `bukkit.compat` | Определение текущей версии Bukkit и его возможностей |
@@ -61,6 +63,9 @@ repositories { mavenLocal() }
 dependencies {
     compileOnly("io.github.pnfolder:pnlibrary-api:2.2.0-beta.2")
     compileOnly("io.github.pnfolder:pnlibrary-bukkit-api:2.2.0-beta.2")
+    // Для прокси вместо Bukkit API подключается один соответствующий артефакт:
+    // compileOnly("io.github.pnfolder:pnlibrary-bungee-api:2.2.0-beta.2")
+    // compileOnly("io.github.pnfolder:pnlibrary-velocity-api:2.2.0-beta.2")
 }
 ```
 

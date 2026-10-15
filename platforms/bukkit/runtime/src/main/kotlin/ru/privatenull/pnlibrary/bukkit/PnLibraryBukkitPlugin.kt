@@ -48,7 +48,6 @@ class PnLibraryBukkitPlugin : JavaPlugin(), Listener {
             val host = PnLibraryRuntimeHost.start(
                 this,
                 adapter,
-                server.updateFolderFile.toPath(),
             )
             runtimeHost = host
             installBukkitServices(host, adapter)

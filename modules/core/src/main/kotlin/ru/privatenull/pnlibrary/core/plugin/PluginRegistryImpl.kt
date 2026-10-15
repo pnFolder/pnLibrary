@@ -8,7 +8,10 @@ import ru.privatenull.pnlibrary.api.events.EventService
 import ru.privatenull.pnlibrary.api.logging.LoggingService
 import ru.privatenull.pnlibrary.api.logging.PnLogger
 import ru.privatenull.pnlibrary.api.metrics.MetricsService
-import ru.privatenull.pnlibrary.spi.platform.PlatformAdapter
+import ru.privatenull.pnlibrary.spi.platform.PlatformExecution
+import ru.privatenull.pnlibrary.spi.platform.PlatformIdentity
+import ru.privatenull.pnlibrary.spi.platform.PlatformOwnership
+import ru.privatenull.pnlibrary.spi.platform.PlatformLogging
 import ru.privatenull.pnlibrary.api.plugin.MetricsController
 import ru.privatenull.pnlibrary.api.plugin.PluginBuilder
 import ru.privatenull.pnlibrary.api.plugin.PluginRegistration
@@ -52,7 +55,10 @@ import ru.privatenull.pnlibrary.core.downloads.DirectDownloadManager
  * created resources are closed in reverse dependency order.
  */
 internal class PluginRegistryImpl(
-    private val platform: PlatformAdapter,
+    private val ownership: PlatformOwnership,
+    private val identity: PlatformIdentity,
+    private val execution: PlatformExecution,
+    private val platformLogging: PlatformLogging,
     private val events: EventService,
     private val tasks: TaskService,
     private val services: ServiceManagerImpl,
@@ -62,7 +68,7 @@ internal class PluginRegistryImpl(
     private val updates: UpdateService,
     private val placeholderHub: PlaceholderHub,
     private val currencyFeature: CurrencyFeature,
-    private val configurations: ConfigurationServiceImpl = ConfigurationServiceImpl(platform),
+    private val configurations: ConfigurationServiceImpl = ConfigurationServiceImpl(ownership),
     private val commands: CommandService? = null,
     private val directDownloads: DirectDownloadManager? = null,
     libraryVersion: String? = null,
@@ -75,24 +81,24 @@ internal class PluginRegistryImpl(
     private val closed = AtomicBoolean(false)
     private val registrationSequence = AtomicLong()
     private val sharedComponentCache = ComponentCache()
-    private val productResolver = ModuleProductResolver(platform)
-    private val metadataFactory = ModuleMetadataFactory(platform)
+    private val productResolver = ModuleProductResolver(ownership)
+    private val metadataFactory = ModuleMetadataFactory(ownership, identity)
     private val resourceFactory = ModuleResourceFactory(
-        platform, events, tasks, services, logging, metrics, diagnostics, updates,
+        events, tasks, services, logging, metrics, diagnostics, updates,
         placeholderHub, currencyFeature, configurations, directDownloads, sharedComponentCache,
     )
-    private val remotePolicyNotices = RemotePolicyNoticeRenderer(platform)
-    private val remotePolicies = RemotePolicyMonitor(platform, remotePolicyNotices)
-    private val dependencyValidator = ModuleDependencyValidator(platform) {
+    private val remotePolicyNotices = RemotePolicyNoticeRenderer(platformLogging)
+    private val remotePolicies = RemotePolicyMonitor(ownership, execution, remotePolicyNotices)
+    private val dependencyValidator = ModuleDependencyValidator(ownership) {
         directDownloads != null
     }
     override fun register(owner: Any): PluginRegistration = synchronized(plugins) {
         check(!closed.get()) { "PluginRegistry is closed" }
-        require(platform.acceptsOwner(owner)) {
-            "Object ${owner.javaClass.name} is not a supported owner for ${platform.type.id}"
+        require(ownership.acceptsOwner(owner)) {
+            "Object ${owner.javaClass.name} is not a supported owner for ${identity.type.id}"
         }
         require(!plugins.containsKey(owner)) { "This platform plugin is already registered" }
-        val details = platform.ownerDetails(owner)
+        val details = ownership.ownerDetails(owner)
         val nativeId = details["id"] ?: details["name"]
             ?: error("The platform did not expose a plugin ID for ${owner.javaClass.name}")
         Plugin(owner, PluginId.of(nativeId), registrationSequence.incrementAndGet()).also { plugins[owner] = it }

@@ -8,6 +8,7 @@ import org.junit.jupiter.api.Test
 class PlatformProviderImplTest {
     private interface TestPlatform
     private object Implementation : TestPlatform
+    private object Replacement : TestPlatform
 
     @Test
     fun `registers and removes a typed platform implementation`() {
@@ -33,5 +34,19 @@ class PlatformProviderImplTest {
             provider.require(Runnable::class.java)
         }
         assert(missing.message.orEmpty().contains(Runnable::class.java.name))
+        assert(missing.message.orEmpty().contains(TestPlatform::class.java.name))
+    }
+
+    @Test
+    fun `stale registration handle cannot remove a replacement`() {
+        val provider = PlatformProviderImpl()
+        val first = provider.register(TestPlatform::class.java, Implementation)
+
+        provider.close()
+        provider.register(TestPlatform::class.java, Replacement)
+
+        first.close()
+
+        assertSame(Replacement, provider.require(TestPlatform::class.java))
     }
 }

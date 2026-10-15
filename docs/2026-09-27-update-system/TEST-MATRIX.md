@@ -1,7 +1,7 @@
 # Матрица проверки системы обновлений
 
 Дата проверки: 2026-09-27  
-Ветка: `feat/pnlibrary-architecture-pnupdate`
+Ветка: `architecture/platform-phase-1`
 
 ## Автоматические проверки
 
@@ -26,7 +26,7 @@
 Полный прогон:
 
 ```powershell
-.\gradlew.bat :modules:api:test :modules:features:update:test :modules:core:test :platforms:bukkit:runtime:test
+.\gradlew.bat :modules:api:test :modules:core:test :platforms:bukkit:runtime:test
 ```
 
 Результат: `BUILD SUCCESSFUL`.

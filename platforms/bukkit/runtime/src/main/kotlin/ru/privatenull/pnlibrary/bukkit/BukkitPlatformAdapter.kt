@@ -3,7 +3,6 @@ package ru.privatenull.pnlibrary.bukkit
 import org.bukkit.Bukkit
 import org.bukkit.entity.Player
 import org.bukkit.plugin.Plugin
-import ru.privatenull.pnlibrary.api.commands.CommandRegistration
 import ru.privatenull.pnlibrary.api.logging.LogLevel
 import ru.privatenull.pnlibrary.api.platform.PlatformType
 import ru.privatenull.pnlibrary.api.plugin.PluginMetadata
@@ -20,15 +19,13 @@ import ru.privatenull.pnlibrary.spi.audiences.PlatformAudienceAdapter
 import ru.privatenull.pnlibrary.spi.commands.PlatformCommandAdapter
 import ru.privatenull.pnlibrary.spi.metrics.PlatformMetricsFactory
 import ru.privatenull.pnlibrary.spi.platform.PlatformAdapter
+import ru.privatenull.pnlibrary.spi.platform.PlatformLifecycle
+import ru.privatenull.pnlibrary.spi.platform.unsupportedOwner
 import ru.privatenull.pnlibrary.spi.platform.PlatformSnapshot
 import ru.privatenull.pnlibrary.spi.platform.PluginSnapshot
 import ru.privatenull.pnlibrary.spi.tasks.PlatformTaskAdapter
 import java.util.concurrent.CompletableFuture
 import java.util.concurrent.TimeUnit
-import java.util.concurrent.atomic.AtomicBoolean
-import java.util.logging.Handler
-import java.util.logging.Level
-import java.util.logging.LogRecord
 
 /**
  * Runtime adapter for Bukkit-compatible Minecraft servers.
@@ -41,43 +38,11 @@ internal class BukkitPlatformAdapter(
     audienceService: BukkitAudienceService,
 ) : PlatformAdapter {
 
-    private val closed = AtomicBoolean()
-    private val bound = AtomicBoolean()
-    private val ownLogCall = ThreadLocal.withInitial { false }
+    private val lifecycle = PlatformLifecycle()
     private val diagnosticsCollector = BukkitDiagnosticsCollector()
-
-    @Volatile
-    private var nativeLogObserver: ((Any, LogLevel, String, Throwable?) -> Unit)? = null
-
+    private val nativeLogBridge = BukkitNativeLogBridge(plugin)
+    private val schedulerBridge = BukkitSchedulerBridge(plugin, ::log)
     private var lifecycleListener: BukkitLifecycleListener? = null
-    private var controlRegistration: CommandRegistration? = null
-
-    private val nativeLogHandler = object : Handler() {
-        override fun publish(record: LogRecord?) {
-            if (record == null || ownLogCall.get()) return
-            if (record.level.intValue() < Level.WARNING.intValue()) return
-
-            val level = when {
-                record.level.intValue() >= Level.SEVERE.intValue() -> LogLevel.ERROR
-                else -> LogLevel.WARNING
-            }
-            val source = Bukkit.getPluginManager().plugins.firstOrNull { installedPlugin ->
-                record.loggerName?.contains(installedPlugin.name, ignoreCase = true) == true
-            } ?: plugin
-
-            nativeLogObserver?.invoke(
-                source,
-                level,
-                record.message ?: "Native platform error",
-                record.thrown,
-            )
-        }
-
-        override fun flush() = Unit
-
-        /** Releases bindings and native log observation once. */
-    override fun close() = Unit
-    }
 
     override val type: PlatformType = PlatformType.BUKKIT
     override val dataFolder = plugin.dataFolder.toPath()
@@ -106,22 +71,7 @@ internal class BukkitPlatformAdapter(
     override val taskAdapter: PlatformTaskAdapter =
         BukkitTaskAdapter(plugin)
 
-    override val logHandler: (Any, LogLevel, String, Throwable?) -> Unit =
-        { owner, level, message, error ->
-            val logger = (owner as? Plugin)?.logger ?: plugin.logger
-            val nativeLevel = when (level) {
-                LogLevel.WARNING -> Level.WARNING
-                LogLevel.ERROR -> Level.SEVERE
-                else -> Level.INFO
-            }
-
-            ownLogCall.set(true)
-            try {
-                logger.log(nativeLevel, message, error)
-            } finally {
-                ownLogCall.set(false)
-            }
-        }
+    override val logHandler: (Any, LogLevel, String, Throwable?) -> Unit = nativeLogBridge.logHandler
 
     /** Sends legacy-formatted output to the server console. */
     override fun console(owner: Any, message: String) {
@@ -131,7 +81,7 @@ internal class BukkitPlatformAdapter(
     /** Reads native plugin metadata, warning and returning null for unsupported owners. */
     override fun ownerMetadata(owner: Any): PluginSnapshot? {
         val target = owner as? Plugin
-            ?: return unsupportedOwner(owner)
+            ?: return unsupportedOwner(owner, this)
 
         return target.toSnapshot()
     }
@@ -156,12 +106,25 @@ internal class BukkitPlatformAdapter(
         owner: Any,
         metadata: PluginMetadata,
         values: Map<String, String>,
-    ): RemotePolicyContext =
-        BukkitRemotePolicyContextFactory.create(owner as Plugin, values)
+    ): RemotePolicyContext {
+        val target = owner as? Plugin
+            ?: throw IllegalArgumentException(
+                "Remote policy owner must be a Bukkit plugin; " +
+                    "received ${owner.javaClass.name}",
+            )
+
+        return BukkitRemotePolicyContextFactory.create(target, values)
+    }
 
     /** Disables a native plugin through Bukkit's plugin manager. */
     override fun disableOwner(owner: Any): Boolean {
-        Bukkit.getPluginManager().disablePlugin(owner as Plugin)
+        val target = owner as? Plugin
+            ?: throw IllegalArgumentException(
+                "Disabled owner must be a Bukkit plugin; " +
+                    "received ${owner.javaClass.name}",
+            )
+
+        Bukkit.getPluginManager().disablePlugin(target)
         return true
     }
 
@@ -170,35 +133,17 @@ internal class BukkitPlatformAdapter(
     override fun observeNativeLogs(
         observer: ((Any, LogLevel, String, Throwable?) -> Unit)?,
     ) {
-        if (nativeLogObserver == null && observer != null) {
-            Bukkit.getLogger().addHandler(nativeLogHandler)
-        }
-        if (nativeLogObserver != null && observer == null) {
-            Bukkit.getLogger().removeHandler(nativeLogHandler)
-        }
-
-        nativeLogObserver = observer
+        nativeLogBridge.observe(observer)
     }
 
     /** Registers commands and lifecycle listeners, rolling back partial initialization. */
     override fun bind(library: PnLibrary) {
-        check(!closed.get()) {
-            "Bukkit platform adapter is closed"
-        }
-        check(bound.compareAndSet(false, true)) {
-            "Bukkit platform adapter is already bound"
-        }
-
-        try {
-            lifecycleListener = BukkitLifecycleListener(plugin, library).start()
-            controlRegistration = library.commands.register(
+        lifecycle.bind {
+            lifecycleListener = lifecycle.track(BukkitLifecycleListener(plugin, library).start())
+            lifecycle.track(library.commands.register(
                 plugin,
                 BukkitControlCommand(plugin, library).definition(),
-            )
-        } catch (error: Throwable) {
-            releaseBindings()
-            bound.set(false)
-            throw error
+            ))
         }
     }
 
@@ -225,10 +170,10 @@ internal class BukkitPlatformAdapter(
 
     /** Runs work on the primary thread or Folia global-region scheduler. */
     override fun executeGlobal(task: Runnable) {
-        if (closed.get()) return
+        if (lifecycle.isClosed) return
 
         if (ServerCapabilities.isFolia) {
-            executeFoliaGlobal(task)
+            schedulerBridge.executeGlobal(task)
             return
         }
 
@@ -246,11 +191,11 @@ internal class BukkitPlatformAdapter(
 
     /** Routes player replies to their Folia region, otherwise to global dispatch. */
     override fun executeReply(recipient: Any, task: Runnable) {
-        if (closed.get()) return
+        if (lifecycle.isClosed) return
 
         val nativeRecipient = (recipient as? BukkitCommandSender)?.native ?: recipient
         if (nativeRecipient is Player && ServerCapabilities.isFolia) {
-            executeFoliaEntity(nativeRecipient, task)
+            schedulerBridge.executeEntity(nativeRecipient, task)
             return
         }
 
@@ -258,78 +203,7 @@ internal class BukkitPlatformAdapter(
     }
 
     override fun close() {
-        if (!closed.compareAndSet(false, true)) return
-
-        releaseBindings()
-        observeNativeLogs(null)
-        bound.set(false)
-    }
-
-    /** Dispatches global work without linking optional Folia classes. */
-    private fun executeFoliaGlobal(task: Runnable) {
-        try {
-            val scheduler = Bukkit::class.java
-                .getMethod("getGlobalRegionScheduler")
-                .invoke(null)
-            val run = scheduler.javaClass.getMethod(
-                "run",
-                Plugin::class.java,
-                java.util.function.Consumer::class.java,
-            )
-
-            run.invoke(
-                scheduler,
-                plugin,
-                java.util.function.Consumer<Any> { task.run() },
-            )
-        } catch (error: ReflectiveOperationException) {
-            log(
-                plugin,
-                LogLevel.ERROR,
-                "Не удалось передать задачу Folia GlobalRegionScheduler",
-                error,
-            )
-        }
-    }
-
-    /** Dispatches player work to its owning Folia region. */
-    private fun executeFoliaEntity(
-        player: Player,
-        task: Runnable,
-    ) {
-        try {
-            val scheduler = player.javaClass
-                .getMethod("getScheduler")
-                .invoke(player)
-            val run = scheduler.javaClass.getMethod(
-                "run",
-                Plugin::class.java,
-                java.util.function.Consumer::class.java,
-                Runnable::class.java,
-            )
-
-            run.invoke(
-                scheduler,
-                plugin,
-                java.util.function.Consumer<Any> { task.run() },
-                null,
-            )
-        } catch (error: Exception) {
-            log(
-                plugin,
-                LogLevel.ERROR,
-                "Не удалось передать задачу Folia EntityScheduler",
-                error,
-            )
-        }
-    }
-
-    /** Releases command and lifecycle registrations. */
-    private fun releaseBindings() {
-        controlRegistration?.close()
-        controlRegistration = null
-
-        lifecycleListener?.close()
+        lifecycle.close { observeNativeLogs(null) }
         lifecycleListener = null
     }
 

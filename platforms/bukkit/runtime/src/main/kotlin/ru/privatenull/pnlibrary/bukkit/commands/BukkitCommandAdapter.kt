@@ -16,13 +16,11 @@ import ru.privatenull.pnlibrary.api.commands.CommandSender
 import ru.privatenull.pnlibrary.api.audiences.AudienceSender
 import ru.privatenull.pnlibrary.bukkit.BukkitAudienceAdapter
 import ru.privatenull.pnlibrary.bukkit.BukkitAudienceService
-import ru.privatenull.pnlibrary.spi.commands.PlatformCommandAdapter
 import ru.privatenull.pnlibrary.spi.commands.PlatformCommandDispatcher
 import ru.privatenull.pnlibrary.spi.commands.PlatformCommandRegistration
+import ru.privatenull.pnlibrary.spi.commands.TrackingPlatformCommandAdapter
 import java.lang.reflect.Constructor
-import java.util.LinkedHashSet
 import java.util.concurrent.TimeUnit
-import java.util.concurrent.atomic.AtomicBoolean
 
 /**
  * Registers portable commands and owns their native Bukkit registrations.
@@ -34,7 +32,7 @@ internal class BukkitCommandAdapter internal constructor(
     private val plugin: Plugin,
     private val registrar: BukkitNativeCommandRegistrar,
     private val audience: (NativeCommandSender) -> AudienceSender,
-) : PlatformCommandAdapter {
+) : TrackingPlatformCommandAdapter() {
     /** Creates the native registrar and audience bridge. */
     constructor(plugin: Plugin, audiences: BukkitAudienceService) : this(
         plugin,
@@ -42,16 +40,12 @@ internal class BukkitCommandAdapter internal constructor(
         { sender -> requireNotNull(BukkitAudienceAdapter(audiences).sender(sender)) },
     )
 
-    private val closed = AtomicBoolean(false)
-    private val registrations = LinkedHashSet<Registration>()
-
     /** Registers portable execution and completion handlers with the native command manager. */
-    override fun register(
+    override fun registerNative(
         owner: Any,
         command: CommandDefinition,
         dispatcher: PlatformCommandDispatcher,
     ): PlatformCommandRegistration {
-        check(!closed.get()) { "Bukkit command adapter is closed" }
         val native = registrar.register(
             command,
             { sender, label, arguments ->
@@ -64,18 +58,7 @@ internal class BukkitCommandAdapter internal constructor(
                 }.getOrDefault(emptyList())
             },
         )
-        val registration = Registration(native)
-        synchronized(registrations) {
-            registrations += registration
-        }
-        return registration
-    }
-
-    /** Unregisters owned commands once. */
-    override fun close() {
-        if (!closed.compareAndSet(false, true)) return
-        val current = synchronized(registrations) { registrations.toList() }
-        current.asReversed().forEach(Registration::close)
+        return native
     }
 
     /** Converts native invocation arguments to the portable command context. */
@@ -89,19 +72,6 @@ internal class BukkitCommandAdapter internal constructor(
         invokedAlias = label,
         currentInput = arguments.lastOrNull().orEmpty(),
     )
-
-    /** Tracks one native command registration with idempotent cleanup. */
-    private inner class Registration(
-        private val native: PlatformCommandRegistration,
-    ) : PlatformCommandRegistration {
-        private val registrationClosed = AtomicBoolean(false)
-        /** Unregisters owned commands once. */
-    override fun close() {
-            if (!registrationClosed.compareAndSet(false, true)) return
-            synchronized(registrations) { registrations.remove(this) }
-            native.close()
-        }
-    }
 
 }
 

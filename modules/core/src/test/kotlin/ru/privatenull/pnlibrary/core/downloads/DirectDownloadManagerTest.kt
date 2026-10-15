@@ -182,7 +182,18 @@ class DirectDownloadManagerTest {
         platformType: PlatformType,
     ): DirectDownloadManager {
         val platform = Proxy.newProxyInstance(javaClass.classLoader, arrayOf(PlatformAdapter::class.java)) { _, method, _ ->
-            when (method.name) { "getType" -> platformType; "installedPlugins" -> installed; "details" -> emptyMap<String, String>(); else -> null }
+            when (method.name) {
+                "getType" -> platformType
+                "getArtifactId" -> platformType.name.lowercase()
+                "getDescriptorFileName" -> when (platformType) {
+                    PlatformType.BUKKIT -> "plugin.yml"
+                    PlatformType.BUNGEECORD -> "bungee.yml"
+                    PlatformType.VELOCITY -> "velocity-plugin.json"
+                }
+                "installedPlugins" -> installed
+                "details" -> emptyMap<String, String>()
+                else -> null
+            }
         } as PlatformAdapter
         val http = object : TrustedHttpClient(Duration.ofSeconds(1), Duration.ofSeconds(1), setOf("example.org")) {
             override fun get(uri: URI, maximumBytes: Int): ByteArray {
@@ -191,7 +202,7 @@ class DirectDownloadManagerTest {
                 return bytes.also { require(it.size <= maximumBytes) }
             }
         }
-        return DirectDownloadManager(platform, directory.resolve("plugins/pnLibrary"), DownloadConfiguration(
+        return DirectDownloadManager(platform, platform, platform, platform, platform, platform, directory.resolve("plugins/pnLibrary"), DownloadConfiguration(
             automatic = automatic,
         ), http)
     }

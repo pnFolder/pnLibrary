@@ -21,7 +21,7 @@ tasks.named<Jar>("jar") {
 
 dependencies {
     compileOnly(project(":modules:api"))
-    compileOnly(project(":modules:features:update"))
+    compileOnly(project(":modules:core"))
     compileOnly(project(":platforms:bukkit:api"))
     compileOnly(libs.spigot.api.v18)
 }

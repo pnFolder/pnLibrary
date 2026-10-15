@@ -1,8 +1,6 @@
 package ru.privatenull.pnlibrary.core.runtime
 
-import ru.privatenull.pnlibrary.api.platform.PlatformType
 import ru.privatenull.pnlibrary.api.runtime.PnLibrary
-import ru.privatenull.pnlibrary.api.updates.PluginUpdateRequest
 import ru.privatenull.pnlibrary.spi.platform.PlatformAdapter
 import java.nio.file.Path
 import java.util.concurrent.atomic.AtomicBoolean
@@ -40,19 +38,24 @@ class PnLibraryRuntimeHost private constructor(
 
     /** Registers the type-safe public API for the active native platform. */
     fun <T : Any> registerPlatform(type: Class<T>, implementation: T): AutoCloseable =
-        (library as PnLibraryImpl).registerPlatform(type, implementation)
+        (library as PlatformRegistration).registerPlatform(type, implementation)
 
     /** Stops the self-updater and closes the runtime. Safe to call repeatedly. */
     override fun close() {
         if (!closed.compareAndSet(false, true)) return
-        runCatching { updateMonitor.close() }
+        val failures = mutableListOf<Throwable>()
+        runCatching { updateMonitor.close() }.onFailure(failures::add)
         runCatching {
             library.logging.shutdownBox(library.owner, "pnLibrary", library.version)
                 .ok("Платформа", platformName)
                 .ok("Ресурсы", "задачи и регистрации освобождаются")
                 .show()
-        }
-        library.close()
+        }.onFailure(failures::add)
+        runCatching { library.close() }.onFailure(failures::add)
+
+        val first = failures.firstOrNull() ?: return
+        failures.drop(1).forEach(first::addSuppressed)
+        throw first
     }
 
     /** Complete runtime bootstrap entry point used by platform plugins. */
@@ -66,61 +69,83 @@ class PnLibraryRuntimeHost private constructor(
          *
          * @param owner native pnLibrary plugin instance
          * @param platform adapter for the current server or proxy
-         * @param updateDirectory native directory for staged updates
+         * @param updateDirectory retained for binary/source compatibility. The update service
+         * derives its staging directory from the installed component JAR.
          */
         @JvmStatic
         fun start(
             owner: Any,
             platform: PlatformAdapter,
-            updateDirectory: Path,
-        ): PnLibraryRuntimeHost {
-            val dataFolder = requireNotNull(platform.dataFolder) {
-                "Platform adapter must provide the pnLibrary data folder"
-            }
-            val library = PnLibraryBootstrap.bootstrap(
-                owner,
-                platform,
-                PnLibraryConfigLoader.load(dataFolder),
-            )
+        ): PnLibraryRuntimeHost = startInternal(owner, platform)
 
+        /**
+         * Legacy overload retained for integrations compiled against the old startup contract.
+         * The update service now derives its staging directory from the installed component JAR.
+         */
+        @Deprecated(
+            message = "The updateDirectory argument is ignored; use start(owner, platform)",
+            replaceWith = ReplaceWith("start(owner, platform)"),
+        )
+        @JvmStatic
+        @Suppress("UNUSED_PARAMETER")
+        fun start(
+            owner: Any,
+            platform: PlatformAdapter,
+            updateDirectory: Path,
+        ): PnLibraryRuntimeHost = startInternal(owner, platform)
+
+        private fun startInternal(
+            owner: Any,
+            platform: PlatformAdapter,
+        ): PnLibraryRuntimeHost {
+            val started = RuntimeBootstrapCoordinator.start(owner, platform.toRuntimeContext())
             return try {
-                val currentVersion = platform.ownerDetails(owner)["version"]
-                    ?.takeIf { it.isNotBlank() }
-                    ?: error("The platform did not expose the pnLibrary version")
-                val artifactId = platform.type.distributionArtifact()
-                val monitor = library.updates.register(
-                    owner,
-                    ru.privatenull.pnlibrary.api.updates.ProductDescriptor.library(currentVersion),
-                    PluginUpdateRequest.builder()
-                        .repository("pnFolder", "pnLibrary")
-                        .supportedApi(1, 1)
-                        .automaticDownload(false)
-                        .artifact("(?i)^pnLibrary-[0-9].*-$artifactId-java[0-9]+\\.jar$", 8)
-                        .build(),
-                )
-                PnLibraryRuntimeHost(library, monitor, platform.summaryName()).also {
+                PnLibraryRuntimeHost(started.library, started.updateMonitor, started.platformName).also {
                     runCatching {
-                        val box = library.logging.box(owner, "pnLibrary", currentVersion)
+                        val box = started.library.logging.box(owner, "pnLibrary", started.currentVersion)
                             .ok("Runtime", "общие сервисы запущены")
-                            .ok("Платформа", platform.summaryName())
+                            .ok("Платформа", started.platformName)
                             .ok("Обновления", "проверка релизов запущена")
                         box.show()
                     }
                 }
             } catch (error: Throwable) {
-                library.close()
+                runCatching { started.library.close() }.onFailure(error::addSuppressed)
                 throw error
             }
         }
+
+        /** Starts the runtime and registers the native platform API transactionally. */
+        @JvmStatic
+        fun <T : Any> startAndRegisterPlatform(
+            owner: Any,
+            platform: PlatformAdapter,
+            type: Class<T>,
+            implementation: T,
+        ): PnLibraryRuntimeHost {
+            val host = start(owner, platform)
+            return try {
+                host.registerPlatform(type, implementation)
+                host
+            } catch (error: Throwable) {
+                runCatching { host.close() }.onFailure(error::addSuppressed)
+                throw error
+            }
+        }
+
+        /** Legacy registration overload retained for existing platform integrations. */
+        @Deprecated(
+            message = "The updateDirectory argument is ignored; use startAndRegisterPlatform(owner, platform, type, implementation)",
+            replaceWith = ReplaceWith("startAndRegisterPlatform(owner, platform, type, implementation)"),
+        )
+        @JvmStatic
+        @Suppress("UNUSED_PARAMETER")
+        fun <T : Any> startAndRegisterPlatform(
+            owner: Any,
+            platform: PlatformAdapter,
+            updateDirectory: Path,
+            type: Class<T>,
+            implementation: T,
+        ): PnLibraryRuntimeHost = startAndRegisterPlatform(owner, platform, type, implementation)
     }
-}
-
-private fun PlatformAdapter.summaryName(): String =
-    if (implementationName.equals(type.displayName, ignoreCase = true)) type.displayName
-    else "${type.displayName} / $implementationName"
-
-private fun PlatformType.distributionArtifact(): String = when (this) {
-    PlatformType.BUKKIT -> "bukkit"
-    PlatformType.BUNGEECORD -> "bungee"
-    PlatformType.VELOCITY -> "velocity"
 }

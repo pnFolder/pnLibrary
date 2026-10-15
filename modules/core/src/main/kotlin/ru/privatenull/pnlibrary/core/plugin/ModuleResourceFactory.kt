@@ -30,10 +30,8 @@ import ru.privatenull.pnlibrary.core.tasks.TaskServiceImpl
 import ru.privatenull.pnlibrary.core.text.ComponentCache
 import ru.privatenull.pnlibrary.core.text.ComponentServiceImpl
 import ru.privatenull.pnlibrary.currency.CurrencyFeature
-import ru.privatenull.pnlibrary.spi.platform.PlatformAdapter
 
 internal class ModuleResourceFactory(
-    private val platform: PlatformAdapter,
     private val events: EventService,
     private val tasks: TaskService,
     private val services: ServiceManagerImpl,

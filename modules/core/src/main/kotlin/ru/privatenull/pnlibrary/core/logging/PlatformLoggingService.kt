@@ -5,11 +5,18 @@ import ru.privatenull.pnlibrary.api.logging.LoggingService
 import ru.privatenull.pnlibrary.api.logging.MessageBox
 import ru.privatenull.pnlibrary.api.logging.PnLogger
 import ru.privatenull.pnlibrary.api.runtime.PnLibraryBrand
-import ru.privatenull.pnlibrary.spi.platform.PlatformAdapter
+import ru.privatenull.pnlibrary.spi.platform.PlatformDiagnostics
+import ru.privatenull.pnlibrary.spi.platform.PlatformSnapshotProvider
+import ru.privatenull.pnlibrary.spi.platform.PlatformIdentity
+import ru.privatenull.pnlibrary.spi.platform.PlatformLogging
+import ru.privatenull.pnlibrary.spi.platform.PlatformOwnership
 
 /** Adapts library logging, diagnostics capture, and lifecycle summaries to one platform. */
 internal class PlatformLoggingService(
-    private val platform: PlatformAdapter,
+    private val logging: PlatformLogging,
+    private val ownership: PlatformOwnership,
+    private val diagnostics: PlatformSnapshotProvider,
+    private val identity: PlatformIdentity,
     private val diagnosticLogs: DiagnosticLogBuffer? = null,
 ) : LoggingService {
     private data class Row(val status: String, val label: String, val detail: String, val error: Throwable?)
@@ -57,7 +64,7 @@ internal class PlatformLoggingService(
             downloadUrl = url,
             downloaded = downloaded,
         )
-        UpdateNoticeRenderer.render(notice).forEach { line -> platform.console(owner, line) }
+        UpdateNoticeRenderer.render(notice).forEach { line -> logging.console(owner, line) }
     }
 
     private inner class MBox(
@@ -108,8 +115,8 @@ internal class PlatformLoggingService(
                 else -> gray
             }
             val titleParts = title.split(Regex("\\s+"), limit = 2)
-            val ownerMetadata = platform.ownerMetadata(owner)
-            val environment = platform.snapshot()
+            val ownerMetadata = ownership.ownerMetadata(owner)
+            val environment = diagnostics.snapshot()
             val product = explicitName ?: ownerMetadata?.name ?: titleParts.firstOrNull().orEmpty()
             val version = explicitVersion ?: ownerMetadata?.version ?: "неизвестна"
             val authors = ownerMetadata?.authors?.joinToString(", ").orEmpty().ifBlank { "неизвестны" }
@@ -117,25 +124,25 @@ internal class PlatformLoggingService(
             val engineVersion = environment.version
             val javaVersion = environment.java.version
 
-            platform.console(owner, "")
-            platform.console(owner, "$accent          ━━━━━━━━━━━ §lPNFOLDER PLUGIN$accent ━━━━━━━━━━━")
-            platform.console(owner, "$stateColor /\\_/\\")
-            platform.console(owner, "$stateColor( ${face()} )     ${white}§l$product $dark› ${accent}pnFolder")
-            platform.console(owner, "$stateColor > ^ <      $stateColor● §l$stateLabel")
-            platform.console(owner, "")
-            platform.console(owner, "$dark            ┌ ${gray}Версия       $white$version")
-            platform.console(owner, "$dark            ├ ${gray}Автор        $white$authors")
-            platform.console(owner, "$dark            ├ ${gray}Ядро         $white$engineName $engineVersion")
-            platform.console(owner, "$dark            ├ ${gray}Java         $white$javaVersion")
-            platform.console(owner, "$dark            └ ${gray}Библиотека   ${white}pnLibrary $dark• $gray${platform.id}")
-            platform.console(owner, "")
+            logging.console(owner, "")
+            logging.console(owner, "$accent          ━━━━━━━━━━━ §lPNFOLDER PLUGIN$accent ━━━━━━━━━━━")
+            logging.console(owner, "$stateColor /\\_/\\")
+            logging.console(owner, "$stateColor( ${face()} )     ${white}§l$product $dark› ${accent}pnFolder")
+            logging.console(owner, "$stateColor > ^ <      $stateColor● §l$stateLabel")
+            logging.console(owner, "")
+            logging.console(owner, "$dark            ┌ ${gray}Версия       $white$version")
+            logging.console(owner, "$dark            ├ ${gray}Автор        $white$authors")
+            logging.console(owner, "$dark            ├ ${gray}Ядро         $white$engineName $engineVersion")
+            logging.console(owner, "$dark            ├ ${gray}Java         $white$javaVersion")
+            logging.console(owner, "$dark            └ ${gray}Библиотека   ${white}pnLibrary $dark• $gray${identity.id}")
+            logging.console(owner, "")
             val sectionTitle = when (kind) {
                 MessageKind.ENABLED -> "СОСТОЯНИЕ СИСТЕМЫ"
                 MessageKind.DISABLED -> "ЗАВЕРШЕНИЕ РАБОТЫ"
                 MessageKind.GENERIC -> "ПОДРОБНОСТИ"
             }
-            platform.console(owner, "$dark          ─────────── ${white}§l$sectionTitle$dark ───────────")
-            platform.console(owner, "")
+            logging.console(owner, "$dark          ─────────── ${white}§l$sectionTitle$dark ───────────")
+            logging.console(owner, "")
             rows.forEach { row ->
                 val color = statusColor(row.status)
                 val label = row.label.padEnd(longestLabel)
@@ -145,17 +152,17 @@ internal class PlatformLoggingService(
                     "FAIL" -> "✕"
                     else -> "◇"
                 }
-                platform.console(owner, "$dark          $symbol $white$label  $color§l[ ${row.status} ]")
+                logging.console(owner, "$dark          $symbol $white$label  $color§l[ ${row.status} ]")
                 if (row.detail.isNotBlank()) {
-                    platform.console(owner, "$dark            └ $gray${row.detail}")
+                    logging.console(owner, "$dark            └ $gray${row.detail}")
                 }
                 row.error?.let {
                     val message = "$title — ${row.label}"
                     writeCaptured(owner, LogLevel.ERROR, message, it)
                 }
             }
-            platform.console(owner, "")
-            platform.console(owner, "$dark          ───────────────────────────────────────────────")
+            logging.console(owner, "")
+            logging.console(owner, "$dark          ───────────────────────────────────────────────")
             val resultText = when (kind) {
                 MessageKind.ENABLED -> "$product успешно включён"
                 MessageKind.DISABLED -> "$product корректно выключен"
@@ -171,16 +178,16 @@ internal class PlatformLoggingService(
                 MessageKind.DISABLED -> "■"
                 MessageKind.GENERIC -> "◆"
             }
-            platform.console(owner, "$stateColor          $resultSymbol $white§l$resultText")
-            platform.console(owner, "$gray            $resultDetail")
-            platform.console(owner, "")
-            platform.console(owner, "$accent          ✦ §lPNFOLDER SUPPORT $dark• ${white}НА СВЯЗИ")
-            platform.console(owner, "$white            Есть вопрос, ошибка, идея или просто нужна помощь?")
-            platform.console(owner, "$gray            Пишите по любому поводу — разберёмся, подскажем и поможем.")
-            platform.console(owner, "$gray            Нужен новый плагин? Обсудим бесплатную или заказную разработку.")
-            platform.console(owner, "$accent            Discord $dark› ${white}§n${PnLibraryBrand.SUPPORT_URL}")
-            platform.console(owner, "$dark          ───────────────────────────────────────────────")
-            platform.console(owner, "")
+            logging.console(owner, "$stateColor          $resultSymbol $white§l$resultText")
+            logging.console(owner, "$gray            $resultDetail")
+            logging.console(owner, "")
+            logging.console(owner, "$accent          ✦ §lPNFOLDER SUPPORT $dark• ${white}НА СВЯЗИ")
+            logging.console(owner, "$white            Есть вопрос, ошибка, идея или просто нужна помощь?")
+            logging.console(owner, "$gray            Пишите по любому поводу — разберёмся, подскажем и поможем.")
+            logging.console(owner, "$gray            Нужен новый плагин? Обсудим бесплатную или заказную разработку.")
+            logging.console(owner, "$accent            Discord $dark› ${white}§n${PnLibraryBrand.SUPPORT_URL}")
+            logging.console(owner, "$dark          ───────────────────────────────────────────────")
+            logging.console(owner, "")
         }
 
         private fun face() = when {
@@ -192,10 +199,10 @@ internal class PlatformLoggingService(
     }
 
     private fun writeCaptured(owner: Any, level: LogLevel, message: String, error: Throwable?) {
-        val capture = diagnosticLogs?.record(platform, owner, level, message, error)
+        val capture = diagnosticLogs?.record(ownership, owner, level, message, error)
         when {
-            capture == null || capture.emitOriginal -> platform.log(owner, level, message, error)
-            capture.summary != null -> platform.log(owner, level, capture.summary, null)
+            capture == null || capture.emitOriginal -> logging.log(owner, level, message, error)
+            capture.summary != null -> logging.log(owner, level, capture.summary, null)
         }
     }
 

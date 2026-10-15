@@ -11,6 +11,8 @@ import ru.privatenull.pnlibrary.api.plugin.ModuleContext
 import ru.privatenull.pnlibrary.api.plugin.PluginRegistration
 import ru.privatenull.pnlibrary.api.plugin.RemotePolicy
 import ru.privatenull.pnlibrary.api.runtime.PnLibraryProvider
+import ru.privatenull.pnlibrary.api.platform.platform
+import ru.privatenull.pnlibrary.bukkit.api.BukkitPlatform
 import ru.privatenull.pnlibrary.api.tasks.TaskSpec
 import ru.privatenull.pnlibrary.api.updates.ProductDescriptor
 import ru.privatenull.pnlibrary.api.updates.UpdateChannel
@@ -36,6 +38,7 @@ class DemoPlugin : JavaPlugin() {
             server.pluginManager.disablePlugin(this)
             return
         }
+        val bukkitPlatform = library.platform<BukkitPlatform>()
         state = DemoState(AtomicLong())
 
         pluginRegistration = library.plugins.register(this)
@@ -57,7 +60,7 @@ class DemoPlugin : JavaPlugin() {
                 configuration.bStats(32592)
                 configuration.charts { metrics ->
                     metrics.simplePie("server_platform") {
-                        server.name
+                        bukkitPlatform.serverInfo.displayName
                     }
                     metrics.singleLineChart("demo_joins") {
                         state.joins.get().toInt()

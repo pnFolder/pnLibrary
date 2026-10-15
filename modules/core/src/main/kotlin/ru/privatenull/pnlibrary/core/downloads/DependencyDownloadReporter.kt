@@ -5,11 +5,15 @@ import ru.privatenull.pnlibrary.api.logging.LogLevel
 import ru.privatenull.pnlibrary.console.ConsoleCard
 import ru.privatenull.pnlibrary.console.ConsoleTheme
 import ru.privatenull.pnlibrary.console.ConsoleTree
-import ru.privatenull.pnlibrary.spi.platform.PlatformAdapter
+import ru.privatenull.pnlibrary.spi.platform.PlatformLogging
+import ru.privatenull.pnlibrary.spi.platform.PlatformOwnerMetadata
 import java.io.IOException
 import java.nio.file.Paths
 
-internal class DependencyDownloadReporter(private val platform: PlatformAdapter) {
+internal class DependencyDownloadReporter(
+    private val logging: PlatformLogging,
+    private val ownership: PlatformOwnerMetadata,
+) {
     fun failure(owner: Any, error: Throwable, level: LogLevel) {
         val details = DownloadFailureInterpreter.explain(error)
         ConsoleCard.builder(errorTheme, "ЗАВИСИМОСТЬ НЕ ПОДГОТОВЛЕНА")
@@ -23,10 +27,10 @@ internal class DependencyDownloadReporter(private val platform: PlatformAdapter)
             .blank()
             .status("Файл не установлен")
             .build()
-            .send { platform.console(owner, it) }
+            .send { logging.console(owner, it) }
 
         if (error !is IllegalArgumentException && error !is IOException) {
-            platform.log(owner, level, "Пакет загрузок не подготовлен: ${details.reason}", error)
+            logging.log(owner, level, "Пакет загрузок не подготовлен: ${details.reason}", error)
         }
     }
 
@@ -44,7 +48,7 @@ internal class DependencyDownloadReporter(private val platform: PlatformAdapter)
             .blank()
             .status("Загрузка завершена")
             .build()
-            .send { platform.console(owner, it) }
+            .send { logging.console(owner, it) }
     }
 
     fun connected(owner: Any, dependencies: List<DownloadedDependency>) {
@@ -58,10 +62,10 @@ internal class DependencyDownloadReporter(private val platform: PlatformAdapter)
             .blank()
             .status("Зависимости загружены и работают")
             .build()
-            .send { platform.console(owner, it) }
+            .send { logging.console(owner, it) }
     }
 
-    private fun ownerName(owner: Any): String = platform.ownerDetails(owner)["name"] ?: "pnLibrary"
+    private fun ownerName(owner: Any): String = ownership.ownerDetails(owner)["name"] ?: "pnLibrary"
 
     private companion object {
         val successTheme = ConsoleTheme("§6", "§a", "§f", "§8", "§r")

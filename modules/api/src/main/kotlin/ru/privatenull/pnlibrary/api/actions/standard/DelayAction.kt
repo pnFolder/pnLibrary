@@ -3,6 +3,8 @@
 package ru.privatenull.pnlibrary.api.actions
 
 import ru.privatenull.pnlibrary.api.config.ConfigKey
+import ru.privatenull.pnlibrary.api.tasks.TaskExecution
+import ru.privatenull.pnlibrary.api.tasks.TaskSpec
 import java.time.Duration
 
 /**
@@ -26,8 +28,10 @@ data class DelayAction(
     }
 
     override fun execute(context: ActionContext) {
-        context.tasks.later(duration, Runnable {
-            context.execute(thenActions)
-        })
+        context.tasks.schedule(TaskSpec.builder()
+            .execution(TaskExecution.global())
+            .delay(duration)
+            .action { context.execute(thenActions) }
+            .build())
     }
 }

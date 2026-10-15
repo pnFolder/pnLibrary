@@ -4,11 +4,16 @@ import net.kyori.adventure.text.Component
 import ru.privatenull.pnlibrary.api.commands.ArgumentType
 import ru.privatenull.pnlibrary.api.commands.CommandDefinition
 import ru.privatenull.pnlibrary.api.commands.CommandContext
+import ru.privatenull.pnlibrary.api.commands.CommandRegistration
 import ru.privatenull.pnlibrary.api.commands.command
 import ru.privatenull.pnlibrary.api.runtime.PnLibrary
 
 /** Console-only update controls shared by both proxy platforms. */
 class ProxyUpdateCommand(private val library: PnLibrary) {
+    /** Registers the portable update command for the native platform owner. */
+    fun register(owner: Any): CommandRegistration =
+        library.commands.register(owner, definition())
+
     /** Builds the portable `pnupdate` command definition. */
     fun definition(): CommandDefinition = command("pnupdate") {
         permission("pnlibrary.updates.console")

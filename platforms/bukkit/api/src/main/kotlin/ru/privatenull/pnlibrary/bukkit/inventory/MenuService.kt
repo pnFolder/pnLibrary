@@ -1,3 +1,5 @@
+@file:Suppress("DEPRECATION")
+
 package ru.privatenull.pnlibrary.bukkit.inventory
 
 import org.bukkit.entity.Player
@@ -30,6 +32,11 @@ interface MenuService {
 }
 
 /** Entry point for obtaining the installed Bukkit menu service. */
+@Deprecated(
+    message = "Use PnLibraryProvider.get().platform<BukkitPlatform>().menus instead",
+    replaceWith = ReplaceWith("PnLibraryProvider.get().platform<BukkitPlatform>().menus"),
+    level = DeprecationLevel.WARNING,
+)
 object PnMenus {
 
     /** Returns the service installed by the active pnLibrary Bukkit runtime. */

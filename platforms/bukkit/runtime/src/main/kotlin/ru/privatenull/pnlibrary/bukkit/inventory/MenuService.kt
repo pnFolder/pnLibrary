@@ -19,6 +19,8 @@ import org.bukkit.inventory.InventoryHolder
 import org.bukkit.inventory.ItemStack
 import org.bukkit.plugin.Plugin
 import ru.privatenull.pnlibrary.api.tasks.TaskScope
+import ru.privatenull.pnlibrary.api.tasks.TaskExecution
+import ru.privatenull.pnlibrary.api.tasks.TaskSpec
 import java.time.Duration
 import java.util.IdentityHashMap
 import java.util.UUID
@@ -177,7 +179,11 @@ internal class MenuServiceImpl(
 
         /** Schedules a refresh on the player's execution context. */
         override fun refreshAfter(delay: Duration) {
-            tasks.laterEntity(player, delay, Runnable { refresh() })
+            tasks.schedule(TaskSpec.builder()
+                .execution(TaskExecution.entity(player))
+                .delay(delay)
+                .action { refresh() }
+                .build())
         }
 
         override fun close() {

@@ -65,7 +65,6 @@ fun ShadowJar.applyCommonConfig() {
 val bukkitRuntime: Configuration by configurations.creating
 dependencies {
     bukkitRuntime(project(":platforms:bukkit:runtime"))
-    bukkitRuntime(project(":modules:features:update"))
     // Folia scheduler layer is included at runtime; consumers decide whether to activate it
 }
 
@@ -83,7 +82,6 @@ tasks.register<ShadowJar>("shadowBukkit") {
 val bungeeRuntime: Configuration by configurations.creating
 dependencies {
     bungeeRuntime(project(":platforms:bungee:runtime"))
-    bungeeRuntime(project(":modules:features:update"))
 }
 
 tasks.register<ShadowJar>("shadowBungee") {
@@ -100,7 +98,6 @@ tasks.register<ShadowJar>("shadowBungee") {
 val velocityRuntime: Configuration by configurations.creating
 dependencies {
     velocityRuntime(project(":platforms:velocity:runtime"))
-    velocityRuntime(project(":modules:features:update"))
     velocityRuntime(project(":modules:internal:faststats-velocity"))
 }
 
@@ -122,7 +119,6 @@ dependencies {
     universalRuntime(project(":platforms:bukkit:runtime"))
     universalRuntime(project(":platforms:bungee:runtime"))
     universalRuntime(project(":platforms:velocity:runtime"))
-    universalRuntime(project(":modules:features:update"))
     universalRuntime(project(":modules:internal:faststats-velocity"))
 }
 

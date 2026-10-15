@@ -4,7 +4,6 @@ import com.velocitypowered.api.plugin.PluginDescription
 import com.velocitypowered.api.proxy.ProxyServer
 import net.kyori.adventure.text.serializer.legacy.LegacyComponentSerializer
 import org.slf4j.Logger
-import ru.privatenull.pnlibrary.api.commands.CommandRegistration
 import ru.privatenull.pnlibrary.api.logging.LogLevel
 import ru.privatenull.pnlibrary.api.platform.PlatformType
 import ru.privatenull.pnlibrary.api.plugin.PluginMetadata
@@ -17,11 +16,13 @@ import ru.privatenull.pnlibrary.spi.metrics.PlatformMetricsFactory
 import ru.privatenull.pnlibrary.spi.platform.PlatformAdapter
 import ru.privatenull.pnlibrary.spi.platform.PlatformSnapshot
 import ru.privatenull.pnlibrary.spi.platform.PluginSnapshot
+import ru.privatenull.pnlibrary.spi.platform.UncaughtExceptionLogObserver
+import ru.privatenull.pnlibrary.spi.platform.PlatformLifecycle
+import ru.privatenull.pnlibrary.spi.platform.unsupportedOwner
 import ru.privatenull.pnlibrary.spi.tasks.PlatformTaskAdapter
 import ru.privatenull.pnlibrary.velocity.commands.VelocityCommandAdapter
 import ru.privatenull.pnlibrary.velocity.tasks.VelocityTaskAdapter
 import java.nio.file.Path
-import java.util.concurrent.atomic.AtomicBoolean
 
 /**
  * Runtime adapter for Velocity proxy servers.
@@ -31,32 +32,29 @@ import java.util.concurrent.atomic.AtomicBoolean
  */
 internal class VelocityPlatformAdapter(
     val plugin: Any,
-    val server: ProxyServer,
+    val proxy: ProxyServer,
     override val metricsFactory: PlatformMetricsFactory,
     override val dataFolder: Path,
     private val logger: Logger,
 ) : PlatformAdapter {
-    private val diagnosticDetailsCollector = VelocityDiagnosticDetailsCollector(server)
-    private val closed = AtomicBoolean()
-    private val bound = AtomicBoolean()
+    private val diagnosticDetailsCollector = VelocityDiagnosticDetailsCollector(proxy)
+    private val lifecycle = PlatformLifecycle()
 
-    private var updateCommand: CommandRegistration? = null
-    private var previousUncaughtHandler: Thread.UncaughtExceptionHandler? = null
-    private var installedUncaughtHandler: Thread.UncaughtExceptionHandler? = null
+    private val uncaughtExceptionObserver = UncaughtExceptionLogObserver(plugin)
 
     override val type: PlatformType = PlatformType.VELOCITY
 
     override val implementationName: String
-        get() = server.version.name.ifBlank { type.displayName }
+        get() = proxy.version.name.ifBlank { type.displayName }
 
     override val commandAdapter: PlatformCommandAdapter =
-        VelocityCommandAdapter(plugin, server)
+        VelocityCommandAdapter(plugin, proxy)
 
     override val audienceAdapter: PlatformAudienceAdapter =
-        VelocityAudienceAdapter(server)
+        VelocityAudienceAdapter(proxy)
 
     override val taskAdapter: PlatformTaskAdapter =
-        VelocityTaskAdapter(plugin, server)
+        VelocityTaskAdapter(plugin, proxy)
 
     override val logHandler: (Any, LogLevel, String, Throwable?) -> Unit =
         { _, level, message, error ->
@@ -69,7 +67,7 @@ internal class VelocityPlatformAdapter(
 
     /** Sends a legacy-formatted message to the Velocity console. */
     override fun console(owner: Any, message: String) {
-        server.consoleCommandSource.sendMessage(
+        proxy.consoleCommandSource.sendMessage(
             LEGACY_SERIALIZER.deserialize(message),
         )
     }
@@ -77,50 +75,37 @@ internal class VelocityPlatformAdapter(
     /** Installs or removes the process-wide uncaught-exception observer. */
     @Synchronized
     override fun observeNativeLogs(observer: ((Any, LogLevel, String, Throwable?) -> Unit)?) {
-        if (observer != null && installedUncaughtHandler == null) {
-            previousUncaughtHandler = Thread.getDefaultUncaughtExceptionHandler()
-            installedUncaughtHandler = Thread.UncaughtExceptionHandler { thread, error ->
-                observer(plugin, LogLevel.ERROR, "Uncaught exception on thread ${thread.name}", error)
-                previousUncaughtHandler?.uncaughtException(thread, error)
-            }
-            Thread.setDefaultUncaughtExceptionHandler(installedUncaughtHandler)
-        } else if (observer == null && installedUncaughtHandler != null) {
-            if (Thread.getDefaultUncaughtExceptionHandler() === installedUncaughtHandler) {
-                Thread.setDefaultUncaughtExceptionHandler(previousUncaughtHandler)
-            }
-            previousUncaughtHandler = null
-            installedUncaughtHandler = null
-        }
+        uncaughtExceptionObserver.observe(observer)
     }
 
     /** Returns metadata for a native Velocity plugin owner. */
     override fun ownerMetadata(owner: Any): PluginSnapshot? {
-        val description = server.pluginManager.plugins
+        val description = proxy.pluginManager.plugins
             .firstOrNull { it.instance.orElse(null) === owner }
             ?.description
-            ?: return unsupportedOwner(owner)
+            ?: return unsupportedOwner(owner, this)
 
         return description.toSnapshot()
     }
 
     /** Returns installed Velocity plugin IDs and their versions. */
     override fun installedPlugins(): Map<String, String> =
-        server.pluginManager.plugins.associate { installedPlugin ->
+        proxy.pluginManager.plugins.associate { installedPlugin ->
             installedPlugin.description.id to
                 installedPlugin.description.version.orElse("unknown")
         }
 
     /** Captures a lightweight, non-sensitive snapshot of the proxy. */
     override fun snapshot(): PlatformSnapshot {
-        val platformVersion = server.version
+        val platformVersion = proxy.version
 
         return PlatformSnapshot(
             name = platformVersion.name,
             version = platformVersion.version,
             vendor = platformVersion.vendor,
-            onlinePlayers = server.playerCount,
-            registeredServers = server.allServers.map { it.serverInfo.name },
-            plugins = server.pluginManager.plugins.map { it.description.toSnapshot() },
+            onlinePlayers = proxy.playerCount,
+            registeredServers = proxy.allServers.map { it.serverInfo.name },
+            plugins = proxy.pluginManager.plugins.map { it.description.toSnapshot() },
         )
     }
 
@@ -133,31 +118,28 @@ internal class VelocityPlatformAdapter(
         owner: Any,
         metadata: PluginMetadata,
         values: Map<String, String>,
-    ): RemotePolicyContext =
-        VelocityRemotePolicyContextFactory.create(owner, server, values)
+    ): RemotePolicyContext {
+        val registered = proxy.pluginManager.fromInstance(owner).orElse(null)
+            ?: throw IllegalArgumentException(
+                "Remote policy owner must be a registered Velocity plugin; " +
+                    "received ${owner.javaClass.name}",
+            )
+
+        return VelocityRemotePolicyContextFactory.create(owner, proxy, values)
+    }
 
     /** Registers pnLibrary-owned commands and marks the adapter as active. */
     override fun bind(library: PnLibrary) {
-        check(!closed.get()) {
-            "Velocity platform adapter is closed"
-        }
-        check(bound.compareAndSet(false, true)) {
-            "Velocity platform adapter is already bound"
-        }
-
-        updateCommand = library.commands.register(
-            plugin,
-            ProxyUpdateCommand(library).definition(),
-        )
+        lifecycle.bind { lifecycle.track(ProxyUpdateCommand(library).register(plugin)) }
     }
 
     /** Schedules work on Velocity's plugin scheduler. */
     override fun executeGlobal(task: Runnable) {
-        if (closed.get()) {
+        if (lifecycle.isClosed) {
             return
         }
 
-        server.scheduler.buildTask(plugin, task).schedule()
+        proxy.scheduler.buildTask(plugin, task).schedule()
     }
 
     /** Dispatches a reply task using the proxy-wide scheduler. */
@@ -167,15 +149,7 @@ internal class VelocityPlatformAdapter(
 
     /** Releases commands, observers and lifecycle state owned by the adapter. */
     override fun close() {
-        if (!closed.compareAndSet(false, true)) {
-            return
-        }
-        observeNativeLogs(null)
-
-        updateCommand?.close()
-        updateCommand = null
-
-        bound.set(false)
+        lifecycle.close { observeNativeLogs(null) }
     }
 
     /** Converts native plugin metadata to the shared immutable representation. */
