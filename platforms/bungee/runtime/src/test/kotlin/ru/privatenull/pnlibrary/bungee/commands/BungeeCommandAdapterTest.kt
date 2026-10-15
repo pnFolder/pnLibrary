@@ -12,8 +12,10 @@ import ru.privatenull.pnlibrary.api.commands.CommandDefinition
 import ru.privatenull.pnlibrary.api.commands.command
 import ru.privatenull.pnlibrary.spi.commands.PlatformCommandDispatcher
 import ru.privatenull.pnlibrary.spi.commands.PlatformCommandRegistration
+import ru.privatenull.pnlibrary.spi.commands.NativeCommandRegistrar
 import java.lang.reflect.Proxy
 import java.util.concurrent.CompletableFuture
+import java.util.concurrent.CompletionStage
 
 class BungeeCommandAdapterTest {
     @Test
@@ -24,14 +26,14 @@ class BungeeCommandAdapterTest {
         val nativeSender = sender("ProxyConsole", setOf("example.use"))
         val adapter = BungeeCommandAdapter(
             plugin = Any(),
-            registrar = registrar,
+            nativeRegistrar = registrar,
             audience = { audience(it, it === nativeSender, messages, actionBars) },
         )
         val dispatcher = RecordingDispatcher()
         adapter.register(Any(), command("hello") { aliases("hi") }, dispatcher)
 
         registrar.execute(nativeSender, arrayOf("one"))
-        val suggestions = registrar.suggest(nativeSender, arrayOf("w"))
+        val suggestions = registrar.suggest(nativeSender, arrayOf("w")).toCompletableFuture().join()
         dispatcher.execution.sender.send(Component.text("done"))
         dispatcher.execution.sender.actionBar(Component.text("status"))
 
@@ -50,7 +52,7 @@ class BungeeCommandAdapterTest {
         val registrar = RecordingRegistrar()
         val adapter = BungeeCommandAdapter(
             plugin = Any(),
-            registrar = registrar,
+            nativeRegistrar = registrar,
             audience = { audience(it, false, mutableListOf(), mutableListOf()) },
         )
         val first = adapter.register(Any(), command("first") {}, RecordingDispatcher())
@@ -72,14 +74,14 @@ class BungeeCommandAdapterTest {
             CompletableFuture.completedFuture(listOf("world")).also { suggestion = context }
     }
 
-    private class RecordingRegistrar : BungeeNativeCommandRegistrar {
+    private class RecordingRegistrar : NativeCommandRegistrar<CommandSender> {
         lateinit var execute: (CommandSender, Array<String>) -> Unit
-        lateinit var suggest: (CommandSender, Array<String>) -> List<String>
+        lateinit var suggest: (CommandSender, Array<String>) -> CompletionStage<List<String>>
         var unregisterCalls = 0
         override fun register(
             command: CommandDefinition,
             execute: (CommandSender, Array<String>) -> Unit,
-            suggest: (CommandSender, Array<String>) -> List<String>,
+            suggest: (CommandSender, Array<String>) -> CompletionStage<List<String>>,
         ): PlatformCommandRegistration {
             this.execute = execute
             this.suggest = suggest

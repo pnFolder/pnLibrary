@@ -13,8 +13,10 @@ import ru.privatenull.pnlibrary.api.commands.CommandDefinition
 import ru.privatenull.pnlibrary.api.commands.command
 import ru.privatenull.pnlibrary.spi.commands.PlatformCommandDispatcher
 import ru.privatenull.pnlibrary.spi.commands.PlatformCommandRegistration
+import ru.privatenull.pnlibrary.spi.commands.NativeCommandRegistrar
 import java.lang.reflect.Proxy
 import java.util.concurrent.CompletableFuture
+import java.util.concurrent.CompletionStage
 
 class BukkitCommandAdapterTest {
     @Test
@@ -24,7 +26,7 @@ class BukkitCommandAdapterTest {
         val actionBars = mutableListOf<Component>()
         val adapter = BukkitCommandAdapter(
             plugin = proxy(Plugin::class.java) { defaultValue(it.returnType) },
-            registrar = registrar,
+            nativeRegistrar = registrar,
             audience = { audience(it, sent, actionBars) },
         )
         val definition = command("hello") { aliases("hi") }
@@ -32,12 +34,12 @@ class BukkitCommandAdapterTest {
         adapter.register(Any(), definition, dispatcher)
         val sender = sender("Alice", permissions = setOf("example.use"))
 
-        registrar.execute(sender, "HI", arrayOf("one", "two"))
-        val suggestions = registrar.suggest(sender, "hello", arrayOf("wo"))
+        registrar.execute(sender, arrayOf("one", "two"))
+        val suggestions = registrar.suggest(sender, arrayOf("wo")).toCompletableFuture().join()
         dispatcher.lastContext.sender.send(Component.text("done"))
         dispatcher.lastContext.sender.actionBar(Component.text("status"))
 
-        assertEquals("HI", dispatcher.executionContext.invokedAlias)
+        assertEquals("hello", dispatcher.executionContext.invokedAlias)
         assertEquals(listOf("one", "two"), dispatcher.executionContext.arguments)
         assertEquals("wo", dispatcher.lastContext.currentInput)
         assertEquals(listOf("world"), suggestions)
@@ -53,7 +55,7 @@ class BukkitCommandAdapterTest {
         val registrar = RecordingRegistrar()
         val adapter = BukkitCommandAdapter(
             plugin = proxy(Plugin::class.java) { defaultValue(it.returnType) },
-            registrar = registrar,
+            nativeRegistrar = registrar,
             audience = { audience(it, mutableListOf(), mutableListOf()) },
         )
         val first = adapter.register(Any(), command("first") {}, RecordingDispatcher())
@@ -76,15 +78,15 @@ class BukkitCommandAdapterTest {
             CompletableFuture.completedFuture(listOf("world")).also { lastContext = context }
     }
 
-    private class RecordingRegistrar : BukkitNativeCommandRegistrar {
-        lateinit var execute: (CommandSender, String, Array<String>) -> Unit
-        lateinit var suggest: (CommandSender, String, Array<String>) -> List<String>
+    private class RecordingRegistrar : NativeCommandRegistrar<CommandSender> {
+        lateinit var execute: (CommandSender, Array<String>) -> Unit
+        lateinit var suggest: (CommandSender, Array<String>) -> CompletionStage<List<String>>
         var unregisterCalls = 0
 
         override fun register(
             command: CommandDefinition,
-            execute: (CommandSender, String, Array<String>) -> Unit,
-            suggest: (CommandSender, String, Array<String>) -> List<String>,
+            execute: (CommandSender, Array<String>) -> Unit,
+            suggest: (CommandSender, Array<String>) -> CompletionStage<List<String>>,
         ): PlatformCommandRegistration {
             this.execute = execute
             this.suggest = suggest

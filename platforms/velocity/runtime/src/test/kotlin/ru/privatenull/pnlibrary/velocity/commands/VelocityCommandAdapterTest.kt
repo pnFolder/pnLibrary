@@ -14,6 +14,7 @@ import ru.privatenull.pnlibrary.api.commands.CommandDefinition
 import ru.privatenull.pnlibrary.api.commands.command
 import ru.privatenull.pnlibrary.spi.commands.PlatformCommandDispatcher
 import ru.privatenull.pnlibrary.spi.commands.PlatformCommandRegistration
+import ru.privatenull.pnlibrary.spi.commands.NativeCommandRegistrar
 import java.lang.reflect.Proxy
 import java.util.concurrent.CompletableFuture
 import java.util.concurrent.CompletionStage
@@ -27,7 +28,7 @@ class VelocityCommandAdapterTest {
         val source = source("VelocityConsole", setOf("example.use"), sent)
         val adapter = VelocityCommandAdapter(
             plugin = Any(),
-            registrar = registrar,
+            nativeRegistrar = registrar,
             audience = { audience(it, it === source, sent, actionBars) },
         )
         val pending = CompletableFuture<List<String>>()
@@ -76,7 +77,7 @@ class VelocityCommandAdapterTest {
             suggestions.also { suggestion = context }
     }
 
-    private class RecordingRegistrar : VelocityNativeCommandRegistrar {
+    private class RecordingRegistrar : NativeCommandRegistrar<CommandSource> {
         lateinit var execute: (CommandSource, Array<String>) -> Unit
         lateinit var suggest: (CommandSource, Array<String>) -> CompletionStage<List<String>>
         var unregisterCalls = 0

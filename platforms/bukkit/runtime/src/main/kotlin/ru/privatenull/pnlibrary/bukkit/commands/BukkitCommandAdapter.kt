@@ -16,11 +16,10 @@ import ru.privatenull.pnlibrary.api.commands.CommandSender
 import ru.privatenull.pnlibrary.api.audiences.AudienceSender
 import ru.privatenull.pnlibrary.bukkit.BukkitAudienceAdapter
 import ru.privatenull.pnlibrary.bukkit.BukkitAudienceService
-import ru.privatenull.pnlibrary.spi.commands.PlatformCommandDispatcher
 import ru.privatenull.pnlibrary.spi.commands.PlatformCommandRegistration
-import ru.privatenull.pnlibrary.spi.commands.TrackingPlatformCommandAdapter
+import ru.privatenull.pnlibrary.spi.commands.GenericPlatformCommandAdapter
+import ru.privatenull.pnlibrary.spi.commands.NativeCommandRegistrar
 import java.lang.reflect.Constructor
-import java.util.concurrent.TimeUnit
 
 /**
  * Registers portable commands and owns their native Bukkit registrations.
@@ -30,46 +29,26 @@ import java.util.concurrent.TimeUnit
  */
 internal class BukkitCommandAdapter internal constructor(
     private val plugin: Plugin,
-    private val registrar: BukkitNativeCommandRegistrar,
+    private val nativeRegistrar: NativeCommandRegistrar<NativeCommandSender>,
     private val audience: (NativeCommandSender) -> AudienceSender,
-) : TrackingPlatformCommandAdapter() {
+) : GenericPlatformCommandAdapter<NativeCommandSender>() {
+    override val registrar: NativeCommandRegistrar<NativeCommandSender> = nativeRegistrar
     /** Creates the native registrar and audience bridge. */
     constructor(plugin: Plugin, audiences: BukkitAudienceService) : this(
         plugin,
-        DefaultBukkitNativeCommandRegistrar(plugin),
+        nativeRegistrar = DefaultBukkitNativeCommandRegistrar(plugin),
         { sender -> requireNotNull(BukkitAudienceAdapter(audiences).sender(sender)) },
     )
 
-    /** Registers portable execution and completion handlers with the native command manager. */
-    override fun registerNative(
-        owner: Any,
-        command: CommandDefinition,
-        dispatcher: PlatformCommandDispatcher,
-    ): PlatformCommandRegistration {
-        val native = registrar.register(
-            command,
-            { sender, label, arguments ->
-                dispatcher.execute(command, context(sender, label, arguments))
-            },
-            { sender, label, arguments ->
-                runCatching {
-                    dispatcher.suggest(command, context(sender, label, arguments))
-                        .toCompletableFuture().get(1, TimeUnit.SECONDS)
-                }.getOrDefault(emptyList())
-            },
-        )
-        return native
-    }
-
     /** Converts native invocation arguments to the portable command context. */
-    private fun context(
-        sender: NativeCommandSender,
-        label: String,
+    override fun context(
+        source: NativeCommandSender,
+        alias: String,
         arguments: Array<String>,
     ): CommandContext = CommandContext(
-        sender = BukkitCommandSender(sender, audience(sender)),
+        sender = BukkitCommandSender(source, audience(source)),
         arguments = arguments.toList(),
-        invokedAlias = label,
+        invokedAlias = alias,
         currentInput = arguments.lastOrNull().orEmpty(),
     )
 
@@ -91,30 +70,23 @@ internal class BukkitCommandSender(
 }
 
 /** Native registration boundary used by the runtime and command tests. */
-internal interface BukkitNativeCommandRegistrar {
-    /** Registers execution and suggestion callbacks and returns an unregister operation. */
-    fun register(
-        command: CommandDefinition,
-        execute: (NativeCommandSender, String, Array<String>) -> Unit,
-        suggest: (NativeCommandSender, String, Array<String>) -> List<String>,
-    ): PlatformCommandRegistration
-}
-
 /** Uses declared plugin commands where available, otherwise the legacy command map. */
 private class DefaultBukkitNativeCommandRegistrar(
     private val plugin: Plugin,
-) : BukkitNativeCommandRegistrar {
+) : NativeCommandRegistrar<NativeCommandSender> {
     /** Registers portable execution and completion handlers with the native command manager. */
     override fun register(
         command: CommandDefinition,
-        execute: (NativeCommandSender, String, Array<String>) -> Unit,
-        suggest: (NativeCommandSender, String, Array<String>) -> List<String>,
+        execute: (NativeCommandSender, Array<String>) -> Unit,
+        suggest: (NativeCommandSender, Array<String>) -> java.util.concurrent.CompletionStage<List<String>>,
     ): PlatformCommandRegistration {
-        val executor = CommandExecutor { sender, _, label, args ->
-            execute(sender, label, args)
+        val executor = CommandExecutor { sender, _, _, args ->
+            execute(sender, args)
             true
         }
-        val completer = TabCompleter { sender, _, label, args -> suggest(sender, label, args) }
+        val completer = TabCompleter { sender, _, _, args ->
+            suggest(sender, args).toCompletableFuture().get(1, java.util.concurrent.TimeUnit.SECONDS)
+        }
         val declared = (plugin as? JavaPlugin)?.getCommand(command.name)
         if (declared != null) {
             declared.aliases = command.aliases.toList()

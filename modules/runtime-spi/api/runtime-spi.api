@@ -13,6 +13,17 @@ public final class ru/privatenull/pnlibrary/spi/audiences/UnsupportedPlatformAud
 	public fun sender (Ljava/lang/Object;)Lru/privatenull/pnlibrary/api/audiences/AudienceSender;
 }
 
+public abstract class ru/privatenull/pnlibrary/spi/commands/GenericPlatformCommandAdapter : ru/privatenull/pnlibrary/spi/commands/TrackingPlatformCommandAdapter {
+	public fun <init> ()V
+	protected abstract fun context (Ljava/lang/Object;Ljava/lang/String;[Ljava/lang/String;)Lru/privatenull/pnlibrary/api/commands/CommandContext;
+	protected abstract fun getRegistrar ()Lru/privatenull/pnlibrary/spi/commands/NativeCommandRegistrar;
+	protected final fun registerNative (Ljava/lang/Object;Lru/privatenull/pnlibrary/api/commands/CommandDefinition;Lru/privatenull/pnlibrary/spi/commands/PlatformCommandDispatcher;)Lru/privatenull/pnlibrary/spi/commands/PlatformCommandRegistration;
+}
+
+public abstract interface class ru/privatenull/pnlibrary/spi/commands/NativeCommandRegistrar {
+	public abstract fun register (Lru/privatenull/pnlibrary/api/commands/CommandDefinition;Lkotlin/jvm/functions/Function2;Lkotlin/jvm/functions/Function2;)Lru/privatenull/pnlibrary/spi/commands/PlatformCommandRegistration;
+}
+
 public abstract interface class ru/privatenull/pnlibrary/spi/commands/PlatformCommandAdapter : java/lang/AutoCloseable {
 	public fun close ()V
 	public abstract fun register (Ljava/lang/Object;Lru/privatenull/pnlibrary/api/commands/CommandDefinition;Lru/privatenull/pnlibrary/spi/commands/PlatformCommandDispatcher;)Lru/privatenull/pnlibrary/spi/commands/PlatformCommandRegistration;
