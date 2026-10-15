@@ -118,6 +118,11 @@ internal class BungeePlatformAdapter(
                     "received ${owner.javaClass.name}",
             )
 
+        require(target in plugin.proxy.pluginManager.plugins) {
+            "Remote policy owner is not registered in the BungeeCord proxy: " +
+                target.javaClass.name
+        }
+
         return BungeeRemotePolicyContextFactory.create(target, values)
     }
 
