@@ -219,29 +219,7 @@ internal class PnLibraryImpl(
         ),
         "tasks" to RuntimeTaskDetails.entries(taskSnapshots),
         "taskSummary" to RuntimeTaskDetails.summary(taskSnapshots),
-        "updates" to updateSnapshots.map { registration ->
-            val snapshot = registration.snapshot
-            linkedMapOf<String, Any?>(
-                "product" to snapshot.product,
-                "repository" to registration.repository,
-                "currentVersion" to snapshot.currentVersion,
-                "latestVersion" to snapshot.latestVersion,
-                "channel" to snapshot.channel.name,
-                "state" to snapshot.state.name,
-                "currentJava" to snapshot.currentJava,
-                "requiredJava" to snapshot.requiredJava,
-                "automaticDownload" to snapshot.automaticDownload,
-                "releaseUrl" to snapshot.releaseUrl,
-                "message" to snapshot.message,
-                "availableReleases" to snapshot.availableReleases.map { release ->
-                    linkedMapOf<String, Any?>(
-                        "version" to release.version,
-                        "channel" to release.channel.name,
-                        "publishedAt" to release.publishedAt?.toString(),
-                    )
-                },
-            )
-        },
+        "updates" to updateSnapshots.map(RuntimeUpdateDetails::registration),
         "updateSummary" to RuntimeUpdateSummary.of(updateSnapshots),
         "analytics" to RuntimeAnalytics.of(
             taskCount = taskSnapshots.size,
