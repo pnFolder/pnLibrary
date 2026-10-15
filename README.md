@@ -444,7 +444,7 @@ entity scheduler на Folia, основному потоку Bukkit/Paper либ
 прокси. На Bukkit scope автоматически закрывается при `PluginDisableEvent`.
 
 ```kotlin
-val runtimeTask = pn.taskScope().schedule {
+val runtimeTask = pn.runtimeTaskScope().schedule {
     name = "cache-refresh"
     delay = Duration.ofSeconds(5)
     interval = Duration.ofMinutes(1)

@@ -259,7 +259,7 @@ internal class PnLibraryImpl(
     fun init() {
         support.initialize { isClosed }
         startLibraryMetrics()
-        registerCommand(diagnosticCommand(this))
+        registerRuntimeCommand(diagnosticCommand(this))
     }
 
     override fun createDiagnosticReport(request: DebugRequest): DiagnosticReport {

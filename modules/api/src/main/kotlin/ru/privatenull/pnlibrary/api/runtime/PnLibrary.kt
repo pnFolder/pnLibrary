@@ -71,18 +71,18 @@ interface PnLibrary : Closeable {
     val tasks: TaskService
 
     /** Returns the task scope owned by this library runtime. */
-    fun taskScope(): TaskScope = tasks.scope(owner)
+    fun runtimeTaskScope(): TaskScope = tasks.scope(owner)
 
     /** Cross-platform commands registered and removed with their owner lifecycle. */
     val commands: CommandService
         get() = throw UnsupportedOperationException("Commands are not available in this runtime")
 
     /** Registers a command owned by this library runtime. */
-    fun registerCommand(name: String, configure: CommandBuilder.() -> Unit): CommandRegistration =
+    fun registerRuntimeCommand(name: String, configure: CommandBuilder.() -> Unit): CommandRegistration =
         commands.register(owner, name, configure)
 
     /** Registers an already-built command owned by this library runtime. */
-    fun registerCommand(command: CommandDefinition): CommandRegistration =
+    fun registerRuntimeCommand(command: CommandDefinition): CommandRegistration =
         commands.register(owner, command)
 
     /** Cross-platform player, console, native-sender, and composite audiences. */

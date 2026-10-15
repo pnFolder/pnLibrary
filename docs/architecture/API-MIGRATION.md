@@ -15,9 +15,9 @@ declared major release.
 | `TaskScope.find(id)` | `TaskScope.get(id)` or `require(id)` |
 | `TaskScope.findByKey(key)` | `TaskScope.getByKey(key)` |
 | `TaskScope.global/async/entity/later/repeat...` | `TaskScope.schedule(TaskSpec.builder()...build())` |
-| `library.commands.register(owner, command("name") { ... })` | `library.registerCommand("name") { ... }` |
-| `library.commands.register(owner, definition)` | `library.registerCommand(definition)` when the runtime owns the command |
-| `library.tasks.scope(libraryOwner)` | `library.taskScope()` |
+| `library.commands.register(libraryOwner, command("name") { ... })` | `library.registerRuntimeCommand("name") { ... }` |
+| `library.commands.register(plugin, command("name") { ... })` | Keep the explicit owner-based form: the plugin owns its lifecycle |
+| `library.tasks.scope(libraryOwner)` | `library.runtimeTaskScope()` |
 | `PlaceholderService.placeholder(...).register()` | `PlaceholderService.register(key) { ... }` |
 | Kotlin `placeholder<T>(name) { ... }` | Kotlin `register<T>(name) { ... }` |
 | `DiagnosticConfiguration.file(path)` | `DiagnosticConfiguration.builder(path)` |
@@ -36,11 +36,11 @@ declared major release.
 ```kotlin
 import net.kyori.adventure.text.Component
 
-library.registerCommand("hello") {
+library.registerRuntimeCommand("hello") {
     executes { context -> context.sender.send(Component.text("Hello")) }
 }
 
-library.taskScope().schedule {
+library.runtimeTaskScope().schedule {
     name = "refresh"
     interval = Duration.ofMinutes(1)
     run { refresh() }

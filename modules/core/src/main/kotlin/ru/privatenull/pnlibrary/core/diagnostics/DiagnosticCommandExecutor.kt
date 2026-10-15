@@ -52,7 +52,7 @@ class DiagnosticCommandExecutor @JvmOverloads constructor(
 
         lastRequestTimes[requesterId] = clock.millis()
         publish(DiagnosticCommandEvent.Started(request.target))
-        val tasks = library.taskScope()
+        val tasks = library.runtimeTaskScope()
         tasks.schedule(TaskSpec.builder()
             .execution(TaskExecution.async())
             .action {

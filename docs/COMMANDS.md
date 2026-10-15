@@ -9,7 +9,7 @@ do not import a server-platform API.
 ```kotlin
 import net.kyori.adventure.text.Component
 
-val registration = library.registerCommand("hello") {
+val registration = library.commands.register(plugin, "hello") {
     aliases("hi")
     permission("example.hello")
 
@@ -30,7 +30,7 @@ Commands may contain literals and typed arguments at any depth. Suggestions on a
 receive every value parsed earlier in the selected route:
 
 ```kotlin
-library.registerCommand("group") {
+library.commands.register(plugin, "group") {
     argument("group", ArgumentType.string()) {
         suggests { groups.visibleTo(it.sender.id) }
 
@@ -97,7 +97,7 @@ CommandDefinition hello = CommandDefinition.builder("hello")
     .executes(context -> context.getSender().send(Component.text("Hello!")))
     .build();
 
-CommandRegistration registration = library.registerCommand(hello);
+CommandRegistration registration = library.getCommands().register(plugin, hello);
 ```
 
 ## Sender and lifecycle

@@ -5,14 +5,14 @@ pnLibrary exposes one cross-platform scheduling primitive: `TaskScope.schedule(T
 For tasks owned by the whole library runtime, use the bound scope:
 
 ```kotlin
-val handle = library.taskScope().schedule {
+val handle = library.runtimeTaskScope().schedule {
     name = "cache-refresh"
     interval = Duration.ofMinutes(1)
     run { refreshCache() }
 }
 ```
 
-Use `library.tasks.scope(owner)` when a separate plugin or module lifecycle must own the task.
+Use `library.tasks.scope(owner)` when a separate plugin or module lifecycle must own the task. The runtime-bound helper is only for pnLibrary-owned work.
 
 ## Kotlin
 

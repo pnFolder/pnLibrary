@@ -92,7 +92,7 @@ class DemoPlugin : JavaPlugin() {
         DemoPlaceholders.register(context, currency, state)
         localization = DemoLocalization.start(this)
         DemoUpdateFeature.smoke(this)
-        command = DemoCommands.registerPortable(library, context, currency)
+          command = DemoCommands.registerPortable(this, library, context, currency)
         pulse = context.tasks.schedule(TaskSpec.builder().name("demo-pulse").key("demo-pulse")
             .interval(java.time.Duration.ofSeconds(30))
             .action { context.logger.info("pulse: online=${Bukkit.getOnlinePlayers().size}, joins=${state.joins.get()}") }

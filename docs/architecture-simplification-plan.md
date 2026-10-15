@@ -42,8 +42,10 @@ Plugin -> PnLibrary -> Service -> Core -> Platform Bridge -> Bukkit/Bungee/Veloc
 val library = PnLibrary.create(this)
 ```
 
-Команды и задачи уже получили bound-входы `library.registerCommand(...)` и
-`library.taskScope()`. Автоматическое создание runtime-адаптера остаётся следующим
+Внутренние команды и задачи библиотеки получили явно названные bound-входы
+`library.registerRuntimeCommand(...)` и `library.runtimeTaskScope()`. Команды и
+задачи consumer-плагина по-прежнему явно указывают владельца, чтобы их lifecycle
+закрывался вместе с этим плагином. Автоматическое создание runtime-адаптера остаётся следующим
 отдельным шагом.
 
 ## Фаза 3. Упростить командный API — выполнено для первого среза

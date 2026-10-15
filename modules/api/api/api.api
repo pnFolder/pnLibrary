@@ -2842,9 +2842,9 @@ public abstract interface class ru/privatenull/pnlibrary/api/runtime/PnLibrary :
 	public abstract fun getVersion ()Ljava/lang/String;
 	public abstract fun isAtLeastVersion (Ljava/lang/String;)Z
 	public abstract fun isClosed ()Z
-	public fun registerCommand (Ljava/lang/String;Lkotlin/jvm/functions/Function1;)Lru/privatenull/pnlibrary/api/commands/CommandRegistration;
-	public fun registerCommand (Lru/privatenull/pnlibrary/api/commands/CommandDefinition;)Lru/privatenull/pnlibrary/api/commands/CommandRegistration;
-	public fun taskScope ()Lru/privatenull/pnlibrary/api/tasks/TaskScope;
+	public fun registerRuntimeCommand (Ljava/lang/String;Lkotlin/jvm/functions/Function1;)Lru/privatenull/pnlibrary/api/commands/CommandRegistration;
+	public fun registerRuntimeCommand (Lru/privatenull/pnlibrary/api/commands/CommandDefinition;)Lru/privatenull/pnlibrary/api/commands/CommandRegistration;
+	public fun runtimeTaskScope ()Lru/privatenull/pnlibrary/api/tasks/TaskScope;
 }
 
 public final class ru/privatenull/pnlibrary/api/runtime/PnLibraryBrand {

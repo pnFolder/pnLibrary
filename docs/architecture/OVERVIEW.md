@@ -10,7 +10,7 @@ Plugin
   v
 PnLibrary
   |
-  +--> registerCommand(...)      команды
+  +--> commands.register(owner, ...) команды с явным lifecycle-владельцем
   +--> audiences                 сообщения и получатели
   +--> tasks                     задачи и TaskScope
   +--> plugins                   lifecycle модулей
@@ -42,7 +42,7 @@ Platform runtime переводит вызовы общего ядра в native
 ## Поток регистрации команды
 
 ```text
-library.registerCommand("hello") { ... }
+library.commands.register(plugin, "hello") { ... }
     |
     v
 CommandService
@@ -102,7 +102,7 @@ native bridge.
 ## Пример
 
 ```kotlin
-val registration = library.registerCommand("hello") {
+val registration = library.commands.register(plugin, "hello") {
     permission("example.hello")
     executes { context ->
         context.sender.send(Component.text("Hello!"))
