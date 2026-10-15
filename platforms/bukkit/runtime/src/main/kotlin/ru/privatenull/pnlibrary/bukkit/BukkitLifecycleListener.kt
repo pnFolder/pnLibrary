@@ -16,6 +16,8 @@ import org.bukkit.plugin.Plugin
 import org.bukkit.plugin.EventExecutor
 import ru.privatenull.pnlibrary.api.runtime.PnLibrary
 import ru.privatenull.pnlibrary.api.runtime.PnLibraryBrand
+import ru.privatenull.pnlibrary.api.tasks.TaskExecution
+import ru.privatenull.pnlibrary.api.tasks.TaskSpec
 import ru.privatenull.pnlibrary.api.updates.UpdateSnapshot
 import ru.privatenull.pnlibrary.api.updates.UpdateState
 import java.time.Duration
@@ -70,18 +72,20 @@ internal class BukkitLifecycleListener(
 
     /** Notifies authorized players about available or staged updates after joining. */
     @EventHandler
-    @Suppress("DEPRECATION")
     fun onAdministratorJoin(event: PlayerJoinEvent) {
         val player = event.player
         if (!player.isOp && !player.hasPermission("pnlibrary.updates.notify")) return
         val runtime = library ?: return
-        runtime.tasks.scope(plugin).laterEntity(player, Duration.ofMillis(50), Runnable {
-            val active = library ?: return@Runnable
+        runtime.tasks.scope(plugin).schedule(TaskSpec.builder()
+            .execution(TaskExecution.entity(player))
+            .delay(Duration.ofMillis(50))
+            .action task@{
+            val active = library ?: return@task
             val actionable = active.updates.all().map { it.snapshot }.filter {
                 it.state == UpdateState.AVAILABLE || it.state == UpdateState.DOWNLOADED ||
                     it.state == UpdateState.UPDATE_AVAILABLE || it.state == UpdateState.UPDATE_STAGED
             }
-            if (actionable.isEmpty() || !player.isOnline) return@Runnable
+            if (actionable.isEmpty() || !player.isOnline) return@task
             player.sendMessage("")
             player.sendMessage("§a «Состояние pnFolder»")
             player.sendMessage(" §7- §fОбновления: §eдоступны новые версии")
@@ -100,7 +104,8 @@ internal class BukkitLifecycleListener(
             player.spigot().sendMessage(check, TextComponent("  "), support)
             player.sendMessage("")
             player.sendTitle("§eОбновления pnFolder", "§fДоступно: §e${actionable.size}")
-        })
+            }
+            .build())
     }
 
     /** Releases registrations and task scopes belonging to the disabled plugin. */
