@@ -350,6 +350,26 @@ class PluginRegistryImplTest {
     }
 
     @Test
+    fun `module commands use native plugin and close independently`() {
+        val owner = Any()
+        val commands = RecordingCommandService()
+        val plugin = registry(commands = commands).register(owner)
+        val first = plugin.registerModule("first") { }
+        val second = plugin.registerModule("second") { }
+        val firstCommand = first.registerCommand("first") { }
+        val secondCommand = second.registerCommand("second") { }
+
+        assertSame(owner, commands.registeredOwners[0])
+        assertSame(owner, commands.registeredOwners[1])
+        first.close()
+        assertTrue(firstCommand.isClosed)
+        assertFalse(secondCommand.isClosed)
+        assertThrows(IllegalStateException::class.java) { first.registerCommand("late") { } }
+        plugin.close()
+        assertTrue(secondCommand.isClosed)
+    }
+
+    @Test
     fun `plugin context registers and closes multiple logical modules`() {
         val owner = Any()
         val registry = registry()
@@ -617,8 +637,15 @@ class PluginRegistryImplTest {
 
     private class RecordingCommandService : CommandService {
         val unregisteredOwners = mutableListOf<Any>()
+        val registeredOwners = mutableListOf<Any>()
         override fun register(owner: Any, command: CommandDefinition): CommandRegistration =
-            throw UnsupportedOperationException()
+            object : CommandRegistration {
+                init { registeredOwners += owner }
+                override val command = command
+                override var isClosed = false
+                    private set
+                override fun close() { isClosed = true }
+            }
         override fun unregisterOwner(owner: Any) {
             unregisteredOwners += owner
         }

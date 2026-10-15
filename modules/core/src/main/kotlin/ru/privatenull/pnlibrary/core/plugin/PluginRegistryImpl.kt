@@ -224,6 +224,19 @@ internal class PluginRegistryImpl(
     ) : ModuleContext {
         private val owner: Any get() = parent.owner
         private val contextClosed = AtomicBoolean(false)
+        private val moduleCommands = mutableListOf<ru.privatenull.pnlibrary.api.commands.CommandRegistration>()
+        override fun registerCommand(command: ru.privatenull.pnlibrary.api.commands.CommandDefinition): ru.privatenull.pnlibrary.api.commands.CommandRegistration =
+            synchronized(moduleCommands) {
+                check(!isClosed) { "Module is closed" }
+                val registration = checkNotNull(commands) { "Commands are unavailable" }.register(owner, command)
+                if (isClosed) {
+                    registration.close()
+                    error("Module is closed")
+                }
+                moduleCommands.removeAll { it.isClosed }
+                moduleCommands.add(registration)
+                registration
+            }
         override val isClosed: Boolean get() = contextClosed.get()
         override val tasks: TaskScope get() = resources.tasks
         override val events: EventScope get() = resources.events
@@ -273,7 +286,13 @@ internal class PluginRegistryImpl(
         fun closeInternal() {
             if (!contextClosed.compareAndSet(false, true)) return
             productId?.let { value -> synchronized(plugins) { productDescriptors.remove(value) } }
-            resources.close(this@PluginRegistryImpl.diagnostics, key)
+            val registrations = synchronized(moduleCommands) {
+                moduleCommands.toList().also { moduleCommands.clear() }
+            }
+            ResourceCleanup.closeAll(
+                { ResourceCleanup.closeAll(*registrations.asReversed().map { registration -> { registration.close() } }.toTypedArray()) },
+                { resources.close(this@PluginRegistryImpl.diagnostics, key) },
+            )
         }
 
     }

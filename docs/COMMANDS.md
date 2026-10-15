@@ -6,6 +6,20 @@ do not import a server-platform API.
 
 ## Kotlin
 
+For a logical module, use `context.registerCommand(...)`: closing that module removes
+its commands, while sibling modules keep theirs. The context is obtained from
+`library.plugins.register(plugin).registerModule("module-id")`; the native plugin
+is supplied once during plugin registration.
+
+```kotlin
+context.registerCommand("hello") {
+    executes { it.sender.send(Component.text("Hello!")) }
+}
+```
+
+Use the following lower-level form only for a command intended to live for the
+whole native plugin lifecycle:
+
 ```kotlin
 import net.kyori.adventure.text.Component
 
@@ -23,7 +37,7 @@ val registration = library.commands.register(plugin, "hello") {
         val target = context.arguments.firstOrNull() ?: "world"
         context.sender.send(Component.text("Hello, $target!"))
     }
-})
+}
 ```
 
 Commands may contain literals and typed arguments at any depth. Suggestions on a later argument
