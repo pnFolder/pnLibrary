@@ -7,7 +7,6 @@ import ru.privatenull.pnlibrary.api.placeholders.PlaceholderKey
 import ru.privatenull.pnlibrary.api.placeholders.PlaceholderRequest
 import ru.privatenull.pnlibrary.api.plugin.PluginId
 
-@Suppress("DEPRECATION")
 class PlaceholderDefinitionBuilderTest {
     @Test
     fun `builder creates and installs a resolvable entry`() {
@@ -21,7 +20,7 @@ class PlaceholderDefinitionBuilderTest {
             install = { installed = it },
         )
 
-        val registration = builder.resolve { "online" }.register()
+        val registration = builder.resolve { "online" }.install()
         val request = PlaceholderRequest(owner, owner, null, emptyMap(), emptyMap())
 
         assertEquals(registration, installed)
@@ -39,6 +38,6 @@ class PlaceholderDefinitionBuilderTest {
             install = {},
         )
 
-        assertThrows(IllegalStateException::class.java) { builder.register() }
+        assertThrows(IllegalStateException::class.java) { builder.install() }
     }
 }

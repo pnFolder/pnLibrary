@@ -292,24 +292,14 @@ interface UpdateService {
         register(owner, product, request, emptyList())
 
     /** Returns an immutable snapshot of current registrations. */
-    @Suppress("DEPRECATION")
-    fun all(): List<UpdateRegistration> = Collections.unmodifiableList(ArrayList(registrations()))
+    fun all(): List<UpdateRegistration>
 
     /** Finds a registration by product or repository name, ignoring case. */
-    @Suppress("DEPRECATION")
-    fun get(product: String): UpdateRegistration? = find(product)
+    fun get(product: String): UpdateRegistration?
 
     /** Returns a registration or fails with the requested product in the message. */
     fun require(product: String): UpdateRegistration =
         get(product) ?: error("Update registration '$product' is unavailable")
-
-    /** Compatibility alias for [all]. Implementations should return a stable snapshot. */
-    @Deprecated("Use all()", ReplaceWith("all()"))
-    fun registrations(): List<UpdateRegistration>
-
-    /** Compatibility alias for [get]. */
-    @Deprecated("Use get(product)", ReplaceWith("get(product)"))
-    fun find(product: String): UpdateRegistration?
 
     /** Refreshes every registered catalogue and resolves one complete compatibility plan. */
     fun checkNow(): CompletionStage<UpdatePlanSnapshot> = unsupported("graph update checks")

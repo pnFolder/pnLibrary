@@ -31,6 +31,5 @@ safe to revisit in a future major release.
 
 ## Revisit in the next major release
 
-The deprecated compatibility methods in the public API can be removed only after a migration window
-and a major-version boundary. They are no longer used by the library's own production code, but they
-remain part of the published consumer contract today.
+The deprecated compatibility methods have now been removed from the published API. Consumers must
+use the canonical contracts documented in the API modules and the migration table.

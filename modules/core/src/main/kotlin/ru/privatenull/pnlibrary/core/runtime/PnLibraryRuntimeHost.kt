@@ -2,7 +2,6 @@ package ru.privatenull.pnlibrary.core.runtime
 
 import ru.privatenull.pnlibrary.api.runtime.PnLibrary
 import ru.privatenull.pnlibrary.spi.platform.PlatformAdapter
-import java.nio.file.Path
 import java.util.concurrent.atomic.AtomicBoolean
 
 /**
@@ -69,29 +68,11 @@ class PnLibraryRuntimeHost private constructor(
          *
          * @param owner native pnLibrary plugin instance
          * @param platform adapter for the current server or proxy
-         * @param updateDirectory retained for binary/source compatibility. The update service
-         * derives its staging directory from the installed component JAR.
          */
         @JvmStatic
         fun start(
             owner: Any,
             platform: PlatformAdapter,
-        ): PnLibraryRuntimeHost = startInternal(owner, platform)
-
-        /**
-         * Legacy overload retained for integrations compiled against the old startup contract.
-         * The update service now derives its staging directory from the installed component JAR.
-         */
-        @Deprecated(
-            message = "The updateDirectory argument is ignored; use start(owner, platform)",
-            replaceWith = ReplaceWith("start(owner, platform)"),
-        )
-        @JvmStatic
-        @Suppress("UNUSED_PARAMETER")
-        fun start(
-            owner: Any,
-            platform: PlatformAdapter,
-            updateDirectory: Path,
         ): PnLibraryRuntimeHost = startInternal(owner, platform)
 
         private fun startInternal(
@@ -133,19 +114,5 @@ class PnLibraryRuntimeHost private constructor(
             }
         }
 
-        /** Legacy registration overload retained for existing platform integrations. */
-        @Deprecated(
-            message = "The updateDirectory argument is ignored; use startAndRegisterPlatform(owner, platform, type, implementation)",
-            replaceWith = ReplaceWith("startAndRegisterPlatform(owner, platform, type, implementation)"),
-        )
-        @JvmStatic
-        @Suppress("UNUSED_PARAMETER")
-        fun <T : Any> startAndRegisterPlatform(
-            owner: Any,
-            platform: PlatformAdapter,
-            updateDirectory: Path,
-            type: Class<T>,
-            implementation: T,
-        ): PnLibraryRuntimeHost = startAndRegisterPlatform(owner, platform, type, implementation)
     }
 }

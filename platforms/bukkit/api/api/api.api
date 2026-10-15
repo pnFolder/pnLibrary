@@ -165,17 +165,6 @@ public final class ru/privatenull/pnlibrary/bukkit/inventory/Menus {
 	public static final fun workbench (Ljava/lang/String;)Lru/privatenull/pnlibrary/bukkit/inventory/MenuBuilder;
 }
 
-public final class ru/privatenull/pnlibrary/bukkit/inventory/PnMenus {
-	public static final field INSTANCE Lru/privatenull/pnlibrary/bukkit/inventory/PnMenus;
-	public static final fun get ()Lru/privatenull/pnlibrary/bukkit/inventory/MenuService;
-}
-
-public final class ru/privatenull/pnlibrary/bukkit/server/PnBukkit {
-	public static final field INSTANCE Lru/privatenull/pnlibrary/bukkit/server/PnBukkit;
-	public static final fun menus ()Lru/privatenull/pnlibrary/bukkit/inventory/MenuService;
-	public static final fun server ()Lru/privatenull/pnlibrary/bukkit/server/ServerInfo;
-}
-
 public final class ru/privatenull/pnlibrary/bukkit/server/ServerInfo {
 	public fun <init> (Ljava/lang/String;Ljava/lang/String;Lru/privatenull/pnlibrary/common/minecraft/MinecraftVersion;Ljava/lang/String;)V
 	public final fun component1 ()Ljava/lang/String;

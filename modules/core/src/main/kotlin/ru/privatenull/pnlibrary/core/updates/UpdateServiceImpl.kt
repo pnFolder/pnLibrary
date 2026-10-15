@@ -96,10 +96,6 @@ internal class UpdateServiceImpl(
 
     override fun all(): List<UpdateRegistration> = registrations.publicSnapshot()
     override fun get(product: String): UpdateRegistration? = registrations.find(product)
-    @Deprecated("Use all()", ReplaceWith("all()"))
-    override fun registrations(): List<UpdateRegistration> = all()
-    @Deprecated("Use get(product)", ReplaceWith("get(product)"))
-    override fun find(product: String): UpdateRegistration? = get(product)
     override fun checkNow(): CompletionStage<UpdatePlanSnapshot> = orchestrator.checkNow()
     override fun currentPlan(): Optional<UpdatePlanSnapshot> = orchestrator.currentPlan()
     override fun stage(planId: UUID): CompletionStage<UpdatePlanSnapshot> = orchestrator.stage(planId)

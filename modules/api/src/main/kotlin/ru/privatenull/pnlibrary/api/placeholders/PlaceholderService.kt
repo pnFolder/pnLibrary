@@ -80,17 +80,6 @@ interface PlaceholderBuilder<T : Any> {
     fun publishToPlaceholderApi(namespace: String, name: String): PlaceholderBuilder<T> =
         publish(PlaceholderPublication("placeholderapi", namespace, name))
 
-    /**
-     * Validates and installs the definition.
-     *
-     * @throws IllegalStateException when no resolver was configured
-     * @throws IllegalArgumentException when the owner already registered the same key
-     */
-    @Deprecated(
-        message = "Register placeholders through PlaceholderService.register(key, configure)",
-        replaceWith = ReplaceWith("service.register(key, configure)"),
-    )
-    fun register(): PlaceholderRegistration<T>
 }
 
 /** Converts a resolved typed value into the string requested by a format expression. */
@@ -121,24 +110,16 @@ fun interface PlaceholderUpdater<T : Any> {
  */
 interface PlaceholderService : AutoCloseable {
     /** Configures and atomically registers one placeholder owned by this service. */
-    @Suppress("DEPRECATION")
     fun <T : Any> register(
         key: PlaceholderKey<T>,
         configure: Consumer<PlaceholderBuilder<T>>,
-    ): PlaceholderRegistration<T> = placeholder(key).also(configure::accept).register()
+    ): PlaceholderRegistration<T>
     /** Java-friendly overload that constructs [PlaceholderKey] from [name] and [type]. */
     fun <T : Any> register(
         name: String,
         type: Class<T>,
         configure: Consumer<PlaceholderBuilder<T>>,
     ): PlaceholderRegistration<T> = register(PlaceholderKey.of(name, type), configure)
-    /** Starts a definition for validated [key]. */
-    @Deprecated("Use register(key, configure); registration is the terminal service operation")
-    fun <T : Any> placeholder(key: PlaceholderKey<T>): PlaceholderBuilder<T>
-    /** Starts a definition by constructing a typed key from [name] and [type]. */
-    @Deprecated("Use register(name, type, configure); registration is the terminal service operation")
-    @Suppress("DEPRECATION")
-    fun <T : Any> placeholder(name: String, type: Class<T>): PlaceholderBuilder<T> = placeholder(PlaceholderKey.of(name, type))
     /** Registers a named formatter for values assignable to [type]. */
     fun <T : Any> formatter(name: String, type: Class<T>, formatter: PlaceholderFormatter<T>)
     /** Resolves one expression asynchronously, or completes with `null` when unknown. */

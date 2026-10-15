@@ -1,15 +1,14 @@
-@file:Suppress("OVERRIDE_DEPRECATION", "DEPRECATION")
-
 package ru.privatenull.pnlibrary.core.testing
 
 import ru.privatenull.pnlibrary.api.tasks.TaskHandle
+import ru.privatenull.pnlibrary.api.tasks.TaskContext
+import ru.privatenull.pnlibrary.api.tasks.TaskId
 import ru.privatenull.pnlibrary.api.tasks.TaskScope
+import ru.privatenull.pnlibrary.api.tasks.TaskSpec
 import ru.privatenull.pnlibrary.api.tasks.TaskService
-import java.time.Duration
-import java.util.concurrent.CompletableFuture
+import ru.privatenull.pnlibrary.api.tasks.TaskAction
+import java.time.Instant
 import java.util.concurrent.atomic.AtomicBoolean
-import java.util.function.Consumer
-import java.util.function.Supplier
 
 /** Small deterministic scheduler used by event and plugin unit tests. */
 internal class TestTaskService : TaskService {
@@ -20,37 +19,22 @@ internal class TestTaskService : TaskService {
     private class Scope(override val owner: Any) : TaskScope {
         private val closed = AtomicBoolean(false)
 
-        override fun global(task: Runnable): TaskHandle = runNow(task)
-        override fun async(task: Runnable): TaskHandle {
-            val handle = Handle()
-            CompletableFuture.runAsync {
-                if (!closed.get() && !handle.isCancelled) task.run()
-            }
-            return handle
-        }
-
-        override fun entity(recipient: Any, task: Runnable): TaskHandle = runNow(task)
-        override fun later(delay: Duration, task: Runnable): TaskHandle = runNow(task)
-        override fun laterEntity(recipient: Any, delay: Duration, task: Runnable): TaskHandle = runNow(task)
-        override fun repeat(delay: Duration, interval: Duration, task: Runnable): TaskHandle = runNow(task)
-        override fun repeatEntity(recipient: Any, delay: Duration, interval: Duration, task: Runnable): TaskHandle = runNow(task)
-        override fun repeatAsync(delay: Duration, interval: Duration, task: Runnable): TaskHandle = async(task)
-
-        override fun <T> asyncThen(
-            work: Supplier<T>,
-            success: Consumer<T>,
-            failure: Consumer<Throwable>,
-        ): TaskHandle = async(Runnable {
-            runCatching { work.get() }.fold(success::accept, failure::accept)
-        })
+        override fun schedule(spec: TaskSpec): TaskHandle = runNow(spec.action)
 
         override fun cancelAll() {
             closed.set(true)
         }
 
-        private fun runNow(task: Runnable): TaskHandle {
+        private fun runNow(task: TaskAction): TaskHandle {
             val handle = Handle()
-            if (!closed.get()) task.run()
+            if (!closed.get()) task.run(object : TaskContext {
+                override val id = TaskId("test-task")
+                override val name: String? = null
+                override val runNumber = 1L
+                override val scheduledAt = Instant.EPOCH
+                override val startedAt = Instant.EPOCH
+                override fun cancel() = handle.cancel()
+            })
             return handle
         }
     }

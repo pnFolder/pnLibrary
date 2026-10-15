@@ -11,10 +11,6 @@ inline fun <reified T : Any> ServiceManager.require(): T = require(T::class.java
 /** Returns every service registered for [T] in descending priority order. */
 inline fun <reified T : Any> ServiceManager.all(): List<T> = all(T::class.java)
 
-/** Compatibility alias for [all]. */
-@Deprecated("Use all<T>()", ReplaceWith("all<T>()"))
-inline fun <reified T : Any> ServiceManager.getAll(): List<T> = all(T::class.java)
-
 /**
  * Registers [service] under its reified API type [T].
  *

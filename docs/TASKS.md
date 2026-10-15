@@ -69,4 +69,5 @@ The history limit is configured at bootstrap with `PnLibraryConfig(taskHistoryCa
 
 Closing a handle cancels one task. Closing a `TaskScope` cancels every active task for that exact owner and rejects new work. Closing pnLibrary closes all scopes and the native task adapters. Cancellation is idempotent and does not interrupt an action already running.
 
-The older `global`, `later`, `repeat`, `entity`, and `asyncThen` methods remain compatibility wrappers, but new integrations should use `schedule`.
+The older `global`, `later`, `repeat`, `entity`, and `asyncThen` methods were removed. Integrations
+must use `schedule` with an explicit `TaskSpec`.

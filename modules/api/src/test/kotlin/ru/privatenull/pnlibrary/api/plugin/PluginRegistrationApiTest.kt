@@ -24,7 +24,7 @@ class PluginRegistrationApiTest {
         assertTrue("registerModule" in methods)
         assertTrue("getModule" in methods)
         assertTrue("unregisterModule" in methods)
-        assertTrue("modules" in methods)
+        assertTrue("all" in methods)
         assertFalse("getEvents" in methods)
         assertFalse("getTasks" in methods)
     }

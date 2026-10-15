@@ -8,6 +8,7 @@ import java.util.concurrent.CompletableFuture
 import java.util.concurrent.CompletionStage
 import java.util.concurrent.ConcurrentHashMap
 import java.util.concurrent.atomic.AtomicBoolean
+import java.util.function.Consumer
 import ru.privatenull.pnlibrary.spi.platform.PlatformIdentity
 
 /**
@@ -115,8 +116,10 @@ internal class PlaceholderHub(
             override fun all() = this@PlaceholderHub.all()
         }
 
-        @Deprecated("Use register(key, configure); registration is the terminal service operation")
-        override fun <T : Any> placeholder(key: PlaceholderKey<T>): PlaceholderBuilder<T> = PlaceholderDefinitionBuilder(
+        override fun <T : Any> register(
+            key: PlaceholderKey<T>,
+            configure: Consumer<PlaceholderBuilder<T>>,
+        ): PlaceholderRegistration<T> = PlaceholderDefinitionBuilder(
             owner = owner,
             key = key,
             placeholderApiEnabled = placeholderApiEnabled,
@@ -132,7 +135,7 @@ internal class PlaceholderHub(
                     owned.remove(full)
                 }
             }
-        }
+        }.also(configure::accept).install()
 
         override fun <T : Any> formatter(name: String, type: Class<T>, formatter: PlaceholderFormatter<T>) {
             synchronized(mutationLock) {

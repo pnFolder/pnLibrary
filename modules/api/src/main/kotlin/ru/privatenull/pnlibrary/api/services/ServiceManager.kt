@@ -48,10 +48,5 @@ interface ServiceManager {
         ?: error("Service ${type.name} is not available")
 
     /** Returns an immutable snapshot of active providers ordered by priority and registration time. */
-    @Suppress("DEPRECATION")
-    fun <T : Any> all(type: Class<T>): List<T> = java.util.Collections.unmodifiableList(ArrayList(getAll(type)))
-
-    /** Compatibility alias for [all]. */
-    @Deprecated("Use all(type)", ReplaceWith("all(type)"))
-    fun <T : Any> getAll(type: Class<T>): List<T>
+    fun <T : Any> all(type: Class<T>): List<T>
 }
