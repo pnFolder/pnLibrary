@@ -22,6 +22,22 @@ import java.util.concurrent.CompletableFuture
 
 class CommandServiceImplTest {
     @Test
+    fun `builder overload registers a command without manual definition construction`() {
+        val native = RecordingCommands()
+        val platform = TestPlatform(native)
+        val service = CommandServiceImpl(platform.commandAdapter, platform)
+
+        val registration = service.register(Any(), "hello") {
+            executes { }
+        }
+
+        assertEquals("hello", registration.command.name)
+        assertFalse(registration.isClosed)
+        registration.close()
+        assertTrue(registration.isClosed)
+    }
+
+    @Test
     fun `service dispatches a tree leaf and sanitizes predicate failures`() {
         val native = RecordingCommands()
         val platform = TestPlatform(native)
