@@ -129,4 +129,18 @@ class PlatformLifecycleTest {
         assertTrue(cleaned)
         assertFalse(lifecycle.close())
     }
+
+    @Test
+    fun `closed lifecycle rejects future binding`() {
+        val lifecycle = PlatformLifecycle()
+
+        assertTrue(lifecycle.close())
+
+        assertThrows<IllegalStateException> {
+            lifecycle.bind { Unit }
+        }
+        assertThrows<IllegalStateException> {
+            lifecycle.track(AutoCloseable { })
+        }
+    }
 }
