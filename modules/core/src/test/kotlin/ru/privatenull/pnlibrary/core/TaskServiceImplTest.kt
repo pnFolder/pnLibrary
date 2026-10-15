@@ -91,6 +91,25 @@ class TaskServiceImplTest {
     }
 
     @Test
+    fun `closing one owner cancels only that owner's tasks`() {
+        val adapter = RecordingAdapter()
+        val service = TaskServiceImpl(adapter)
+        val pluginOwner = Any()
+        val otherOwner = Any()
+        val pluginTask = service.scope(pluginOwner).schedule(spec("plugin"))
+        val otherTask = service.scope(otherOwner).schedule(spec("other"))
+
+        service.close(pluginOwner)
+
+        assertEquals(TaskStatus.CANCELLED, pluginTask.status)
+        assertTrue(pluginTask.isCancelled)
+        assertEquals(TaskStatus.SCHEDULED, otherTask.status)
+        assertFalse(otherTask.isCancelled)
+        assertTrue(adapter.handles[0].cancelled.get())
+        assertFalse(adapter.handles[1].cancelled.get())
+    }
+
+    @Test
     fun `canonical task lookup works for service and owner scope`() {
         val service = TaskServiceImpl(RecordingAdapter())
         val scope = service.scope(Any())
