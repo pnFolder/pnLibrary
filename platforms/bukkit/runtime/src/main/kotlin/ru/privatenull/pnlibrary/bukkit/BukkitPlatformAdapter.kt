@@ -106,12 +106,25 @@ internal class BukkitPlatformAdapter(
         owner: Any,
         metadata: PluginMetadata,
         values: Map<String, String>,
-    ): RemotePolicyContext =
-        BukkitRemotePolicyContextFactory.create(owner as Plugin, values)
+    ): RemotePolicyContext {
+        val target = owner as? Plugin
+            ?: throw IllegalArgumentException(
+                "Remote policy owner must be a Bukkit plugin; " +
+                    "received ${owner.javaClass.name}",
+            )
+
+        return BukkitRemotePolicyContextFactory.create(target, values)
+    }
 
     /** Disables a native plugin through Bukkit's plugin manager. */
     override fun disableOwner(owner: Any): Boolean {
-        Bukkit.getPluginManager().disablePlugin(owner as Plugin)
+        val target = owner as? Plugin
+            ?: throw IllegalArgumentException(
+                "Disabled owner must be a Bukkit plugin; " +
+                    "received ${owner.javaClass.name}",
+            )
+
+        Bukkit.getPluginManager().disablePlugin(target)
         return true
     }
 
