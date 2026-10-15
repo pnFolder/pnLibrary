@@ -15,7 +15,6 @@ kotlin {
 tasks.withType<JavaCompile>().configureEach { options.release = 8 }
 
 dependencies {
-    implementation(project(":modules:api"))
     api(project(":modules:features:currency-api"))
     implementation(libs.kotlin.stdlib)
     implementation(libs.gson)
