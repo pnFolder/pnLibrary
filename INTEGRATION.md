@@ -65,7 +65,10 @@ market.logger.success("Market loaded")
 AuctionCreatedEvent(auctionId).callEvent().thenAccept { allowed ->
     if (!allowed) logger.warn("Создание аукциона отменено")
 }
-market.tasks.async(Runnable { repository.cleanup() })
+market.tasks.schedule {
+    execution = TaskExecution.async()
+    run { repository.cleanup() }
+}
 
 market.metadata.version
 market.metadata.javaVersion

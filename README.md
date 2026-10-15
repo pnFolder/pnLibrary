@@ -308,7 +308,10 @@ override fun onDisable() {
 val context = pn.plugins.require(this).requireModule("market")
 context.logger.success("Market loaded")
 context.events.callEvent(MarketReloadEvent())
-context.tasks.async(Runnable { repository.cleanup() })
+context.tasks.schedule {
+    execution = TaskExecution.async()
+    run { repository.cleanup() }
+}
 
 context.metadata.version
 context.metadata.javaFeature
@@ -501,9 +504,10 @@ listeners. Имя события находится в `event.eventName` и по
 ```kotlin
 data class ClanCacheLoadedEvent(val clans: Int) : Event()
 
-context.tasks.async(Runnable {
-    ClanCacheLoadedEvent(loadedClans).callEvent()
-})
+context.tasks.schedule {
+    execution = TaskExecution.async()
+    run { ClanCacheLoadedEvent(loadedClans).callEvent() }
+}
 ```
 
 Шина не переключает поток скрытно: listeners выполняются в вызывающем потоке.
