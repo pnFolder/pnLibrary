@@ -53,7 +53,7 @@ class PnLibraryBukkitPlugin : JavaPlugin(), Listener {
             installBukkitServices(host, adapter)
             server.pluginManager.registerEvents(this, this)
             val currencyCommand = CurrencyCommandExecutor(this, host.library.currencyProviders)
-            host.library.registerCommand(currencyCommand.definition())
+            host.library.registerRuntimeCommand(currencyCommand.definition())
             connectPlaceholderApi()
             connectCurrencyAdapters()
         } catch (error: Throwable) {
@@ -69,7 +69,7 @@ class PnLibraryBukkitPlugin : JavaPlugin(), Listener {
 
     /** Registers Bukkit-only services and the native platform view. */
     private fun installBukkitServices(host: PnLibraryRuntimeHost, adapter: BukkitPlatformAdapter) {
-        val menuService = MenuServiceImpl(this, host.library.taskScope())
+        val menuService = MenuServiceImpl(this, host.library.runtimeTaskScope())
         host.registerService(ServerInfo::class.java, adapter.serverInfo)
         host.registerService(MenuService::class.java, menuService)
         host.registerPlatform(

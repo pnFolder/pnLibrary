@@ -140,7 +140,7 @@ internal class BukkitPlatformAdapter(
     override fun bind(library: PnLibrary) {
         lifecycle.bind {
             lifecycleListener = lifecycle.track(BukkitLifecycleListener(plugin, library).start())
-            lifecycle.track(library.registerCommand(BukkitControlCommand(plugin, library).definition()))
+            lifecycle.track(library.registerRuntimeCommand(BukkitControlCommand(plugin, library).definition()))
         }
     }
 
