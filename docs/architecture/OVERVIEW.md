@@ -78,6 +78,27 @@ Bukkit / Bungee / Velocity command API
 `api`, затем реализовать общую логику в `core`, и только после этого добавить
 минимальный native bridge в platform runtime.
 
+## Почему в SPI несколько platform-интерфейсов
+
+Интерфейсы `PlatformIdentity`, `PlatformExecution`, `PlatformOwnership`,
+`PlatformDiagnostics` и другие не являются отдельными реализациями для каждой
+платформы. Это узкие capability-контракты, которые позволяют core-компоненту
+зависеть только от нужной ему возможности:
+
+```text
+UpdateService        -> PlatformIdentity + PlatformExecution
+PluginRegistry       -> PlatformOwnership + PlatformExecution
+Diagnostics          -> PlatformDiagnostics + PlatformIdentity
+CommandService       -> PlatformLogging
+```
+
+Такое разделение оставляем, потому что оно уменьшает связанные зависимости внутри
+core. Упрощать нужно не механическим слиянием всех интерфейсов, а удалением
+контрактов без самостоятельного смысла и вынесением повторяющегося native-кода в
+общие generic-адаптеры. Именно поэтому регистрации команд уже используют общий
+`GenericPlatformCommandAdapter`, а Bukkit/Bungee/Velocity содержат только свой
+native bridge.
+
 ## Пример
 
 ```kotlin
