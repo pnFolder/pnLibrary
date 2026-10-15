@@ -3,6 +3,7 @@ package ru.privatenull.pnlibrary.api.runtime
 import ru.privatenull.pnlibrary.api.config.ConfigurationService
 import ru.privatenull.pnlibrary.api.commands.CommandService
 import ru.privatenull.pnlibrary.api.commands.CommandBuilder
+import ru.privatenull.pnlibrary.api.commands.CommandDefinition
 import ru.privatenull.pnlibrary.api.commands.CommandRegistration
 import ru.privatenull.pnlibrary.api.audiences.AudienceService
 import ru.privatenull.pnlibrary.api.activity.ActivityService
@@ -75,6 +76,10 @@ interface PnLibrary : Closeable {
     /** Registers a command owned by this library runtime. */
     fun registerCommand(name: String, configure: CommandBuilder.() -> Unit): CommandRegistration =
         commands.register(owner, name, configure)
+
+    /** Registers an already-built command owned by this library runtime. */
+    fun registerCommand(command: CommandDefinition): CommandRegistration =
+        commands.register(owner, command)
 
     /** Cross-platform player, console, native-sender, and composite audiences. */
     val audiences: AudienceService

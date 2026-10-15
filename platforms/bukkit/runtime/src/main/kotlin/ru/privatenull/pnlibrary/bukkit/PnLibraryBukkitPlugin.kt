@@ -53,7 +53,7 @@ class PnLibraryBukkitPlugin : JavaPlugin(), Listener {
             installBukkitServices(host, adapter)
             server.pluginManager.registerEvents(this, this)
             val currencyCommand = CurrencyCommandExecutor(this, host.library.currencyProviders)
-            host.library.commands.register(this, currencyCommand.definition())
+            host.library.registerCommand(currencyCommand.definition())
             connectPlaceholderApi()
             connectCurrencyAdapters()
         } catch (error: Throwable) {
