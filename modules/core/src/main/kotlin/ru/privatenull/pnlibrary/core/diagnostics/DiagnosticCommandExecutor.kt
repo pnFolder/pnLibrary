@@ -1,10 +1,10 @@
-@file:Suppress("DEPRECATION")
-
 package ru.privatenull.pnlibrary.core.diagnostics
 
 import ru.privatenull.pnlibrary.api.diagnostics.DebugRequest
 import ru.privatenull.pnlibrary.api.diagnostics.DiagnosticReport
 import ru.privatenull.pnlibrary.api.runtime.PnLibrary
+import ru.privatenull.pnlibrary.api.tasks.TaskExecution
+import ru.privatenull.pnlibrary.api.tasks.TaskSpec
 import java.time.Clock
 import java.util.concurrent.ConcurrentHashMap
 
@@ -53,14 +53,20 @@ class DiagnosticCommandExecutor @JvmOverloads constructor(
         lastRequestTimes[requesterId] = clock.millis()
         publish(DiagnosticCommandEvent.Started(request.target))
         val tasks = library.tasks.scope(library.owner)
-        tasks.async(Runnable {
+        tasks.schedule(TaskSpec.builder()
+            .execution(TaskExecution.async())
+            .action {
             val event = try {
                 DiagnosticCommandEvent.Completed(library.createDiagnosticReport(request))
             } catch (exception: Exception) {
                 DiagnosticCommandEvent.Failed(exception.message ?: exception.javaClass.simpleName)
             }
-            tasks.entity(recipient, Runnable { publish(event) })
-        })
+            tasks.schedule(TaskSpec.builder()
+                .execution(TaskExecution.entity(recipient))
+                .action { publish(event) }
+                .build())
+            }
+            .build())
     }
 
     private fun remainingCooldown(requesterId: String): Long {
