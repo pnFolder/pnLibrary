@@ -190,13 +190,8 @@ internal class BukkitPlatformAdapter(
     }
 
     override fun close() {
-        if (lifecycle.isClosed) return
-        try {
-            observeNativeLogs(null)
-        } finally {
-            lifecycle.close()
-            lifecycleListener = null
-        }
+        lifecycle.close { observeNativeLogs(null) }
+        lifecycleListener = null
     }
 
     /** Converts native plugin metadata to the shared snapshot contract. */
