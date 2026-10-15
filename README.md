@@ -441,23 +441,24 @@ entity scheduler на Folia, основному потоку Bukkit/Paper либ
 прокси. На Bukkit scope автоматически закрывается при `PluginDisableEvent`.
 
 ```kotlin
-private val tasks = pn.tasks.scope(this)
+val runtimeTask = pn.taskScope().schedule {
+    name = "cache-refresh"
+    delay = Duration.ofSeconds(5)
+    interval = Duration.ofMinutes(1)
+    execution = TaskExecution.global()
+    run { refreshCache() }
+}
 
-tasks.global(Runnable { reloadMenus() })
-tasks.async(Runnable { database.cleanup() })
-tasks.entity(player, Runnable { player.openInventory(menu) })
-tasks.later(Duration.ofSeconds(5), Runnable { refreshCache() })
-tasks.repeat(Duration.ZERO, Duration.ofMinutes(1), Runnable { refreshCache() })
-tasks.repeatEntity(player, Duration.ZERO, Duration.ofSeconds(1), Runnable { updateHud(player) })
-
-tasks.asyncThen(
-    Supplier { repository.load() },
-    Consumer { result -> applyOnServerThread(result) },
-    Consumer { error -> report(error) },
-)
+// Для отдельного plugin/module lifecycle:
+val pluginTasks = pn.tasks.scope(this)
+pluginTasks.schedule {
+    name = "menu-refresh"
+    execution = TaskExecution.global()
+    run { reloadMenus() }
+}
 
 override fun onDisable() {
-    tasks.close()
+    pluginTasks.close()
 }
 ```
 
