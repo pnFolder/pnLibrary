@@ -8,9 +8,8 @@ do not import a server-platform API.
 
 ```kotlin
 import net.kyori.adventure.text.Component
-import ru.privatenull.pnlibrary.api.commands.command
 
-val registration = library.commands.register(plugin, command("hello") {
+val registration = library.registerCommand("hello") {
     aliases("hi")
     permission("example.hello")
 
@@ -31,7 +30,7 @@ Commands may contain literals and typed arguments at any depth. Suggestions on a
 receive every value parsed earlier in the selected route:
 
 ```kotlin
-library.commands.register(plugin, command("group") {
+library.registerCommand("group") {
     argument("group", ArgumentType.string()) {
         suggests { groups.visibleTo(it.sender.id) }
 
@@ -98,7 +97,7 @@ CommandDefinition hello = CommandDefinition.builder("hello")
     .executes(context -> context.getSender().send(Component.text("Hello!")))
     .build();
 
-CommandRegistration registration = library.getCommands().register(plugin, hello);
+CommandRegistration registration = library.registerCommand(hello);
 ```
 
 ## Sender and lifecycle
