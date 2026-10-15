@@ -2,6 +2,8 @@ package ru.privatenull.pnlibrary.api.runtime
 
 import ru.privatenull.pnlibrary.api.config.ConfigurationService
 import ru.privatenull.pnlibrary.api.commands.CommandService
+import ru.privatenull.pnlibrary.api.commands.CommandBuilder
+import ru.privatenull.pnlibrary.api.commands.CommandRegistration
 import ru.privatenull.pnlibrary.api.audiences.AudienceService
 import ru.privatenull.pnlibrary.api.activity.ActivityService
 import ru.privatenull.pnlibrary.api.diagnostics.DebugRequest
@@ -69,6 +71,10 @@ interface PnLibrary : Closeable {
     /** Cross-platform commands registered and removed with their owner lifecycle. */
     val commands: CommandService
         get() = throw UnsupportedOperationException("Commands are not available in this runtime")
+
+    /** Registers a command owned by this library runtime. */
+    fun registerCommand(name: String, configure: CommandBuilder.() -> Unit): CommandRegistration =
+        commands.register(owner, name, configure)
 
     /** Cross-platform player, console, native-sender, and composite audiences. */
     val audiences: AudienceService
