@@ -118,8 +118,15 @@ internal class VelocityPlatformAdapter(
         owner: Any,
         metadata: PluginMetadata,
         values: Map<String, String>,
-    ): RemotePolicyContext =
-        VelocityRemotePolicyContextFactory.create(owner, proxy, values)
+    ): RemotePolicyContext {
+        val registered = proxy.pluginManager.fromInstance(owner).orElse(null)
+            ?: throw IllegalArgumentException(
+                "Remote policy owner must be a registered Velocity plugin; " +
+                    "received ${owner.javaClass.name}",
+            )
+
+        return VelocityRemotePolicyContextFactory.create(owner, proxy, values)
+    }
 
     /** Registers pnLibrary-owned commands and marks the adapter as active. */
     override fun bind(library: PnLibrary) {
