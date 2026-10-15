@@ -79,13 +79,22 @@ data class Observation(
         fun from(request: ObservationRequest, timestamp: Long = System.currentTimeMillis()): Observation = Observation(
             id = UUID.randomUUID().toString(),
             timestamp = timestamp,
-            plugin = request.plugin,
-            source = request.source,
-            message = request.message,
+            plugin = request.plugin?.take(MAX_ID_LENGTH),
+            source = request.source?.take(MAX_ID_LENGTH),
+            message = request.message.take(MAX_MESSAGE_LENGTH),
             level = request.level,
-            data = request.data,
+            data = request.data.entries.take(MAX_DATA_ENTRIES).associate { (key, value) ->
+                key.take(MAX_DATA_KEY_LENGTH) to value.take(MAX_DATA_VALUE_LENGTH)
+            },
             errorType = request.error?.javaClass?.name,
-            errorMessage = request.error?.message,
+            errorMessage = request.error?.message?.take(MAX_ERROR_MESSAGE_LENGTH),
         )
+
+        private const val MAX_ID_LENGTH = 128
+        private const val MAX_MESSAGE_LENGTH = 1_024
+        private const val MAX_DATA_ENTRIES = 32
+        private const val MAX_DATA_KEY_LENGTH = 128
+        private const val MAX_DATA_VALUE_LENGTH = 2_048
+        private const val MAX_ERROR_MESSAGE_LENGTH = 4_096
     }
 }

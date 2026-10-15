@@ -1,436 +1,77 @@
 package ru.privatenull.pnlibrary.bungee
 
 import net.md_5.bungee.api.plugin.Plugin
-import ru.privatenull.pnlibrary.spi.platform.PlatformSnapshot
 import ru.privatenull.pnlibrary.spi.platform.DiagnosticDetailsCollector
-import kotlin.time.TimeSource
-import java.io.File
-import java.io.FileInputStream
-import java.security.MessageDigest
+import ru.privatenull.pnlibrary.spi.platform.PlatformSnapshot
 
-/**
- * Collects proxy diagnostics, dependency health, artifact hashes, and aggregate player statistics.
- *
- * Individual player details and artifact paths are included only when explicitly permitted.
- * Collection history is bounded and retained in memory for the lifetime of this collector.
- */
+/** Collects the small set of BungeeCord facts that is useful during incident diagnosis. */
 internal class BungeeDiagnosticDetailsCollector(
     private val plugin: Plugin,
 ) {
-    private val collectionHistory = ArrayDeque<Map<String, Any?>>()
-
-    /** Enriches the shared platform snapshot with BungeeCord-specific diagnostic sections. */
-    fun collect(snapshot: PlatformSnapshot, includeSensitive: Boolean): Map<String, Any?> {
-        val collector = DiagnosticDetailsCollector { snapshot }
-        return collector.collect(includeSensitive) { details ->
-            collectDiagnosticDetails(includeSensitive, details)
-        }
-    }
-
-    /** Builds proxy sections and records collection timing without changing the report schema. */
-    private fun collectDiagnosticDetails(
-        includeSensitive: Boolean,
-        details: MutableMap<String, Any?>,
-    ) {
-        val started = TimeSource.Monotonic.markNow()
-        details["pluginDependencies"] = plugin.proxy.pluginManager.plugins.map { installedPlugin ->
-            val metadata = installedPlugin.description
-            linkedMapOf<String, Any?>(
-                "id" to metadata.name,
-                "depends" to metadata.depends.toList().sorted(),
-                "softDepends" to metadata.softDepends.toList().sorted(),
-                "libraries" to metadata.libraries.toList().sorted(),
-            )
-        }
-        val installedPluginNames = plugin.proxy.pluginManager.plugins
-            .map { it.description.name }
-            .toSet()
-        details["dependencyHealth"] = plugin.proxy.pluginManager.plugins.map { installedPlugin ->
-            val metadata = installedPlugin.description
-            val missingRequired = metadata.depends.filterNot(installedPluginNames::contains)
-            val missingOptional = metadata.softDepends.filterNot(installedPluginNames::contains)
-            linkedMapOf<String, Any?>(
-                "plugin" to metadata.name,
-                "missingRequired" to missingRequired.toList().sorted(),
-                "missingOptional" to missingOptional.toList().sorted(),
-                "healthy" to missingRequired.isEmpty(),
-            )
-        }
-        val dependencyEntries = (details["pluginDependencies"] as? Collection<*>).orEmpty()
-            .filterIsInstance<Map<*, *>>()
-        val installedNames = dependencyEntries.mapNotNull { it["id"]?.toString() }.toSet()
-        val requiredEdges = dependencyEntries.flatMap { entry ->
-            (entry["depends"] as? Collection<*>)
-                .orEmpty()
-                .mapNotNull { target -> target?.toString()?.let { linkedMapOf("from" to entry["id"].toString(), "to" to it) } }
-        }
-        val optionalEdges = dependencyEntries.flatMap { entry ->
-            (entry["softDepends"] as? Collection<*>)
-                .orEmpty()
-                .mapNotNull { target -> target?.toString()?.let { linkedMapOf("from" to entry["id"].toString(), "to" to it) } }
-        }
-        details["dependencyGraph"] = linkedMapOf(
-            "requiredEdges" to requiredEdges,
-            "optionalEdges" to optionalEdges,
-            "reverseDependents" to requiredEdges.groupBy({ it["to"].toString() }, { it["from"].toString() }),
-            "isolatedPlugins" to installedNames.filter { id -> requiredEdges.none { it["from"] == id || it["to"] == id } },
-            "cycles" to dependencyCycles(requiredEdges),
-        )
-        details["pluginArtifacts"] = plugin.proxy.pluginManager.plugins.map { installedPlugin ->
-            val metadata = installedPlugin.description
-            val file = metadata.file
-            linkedMapOf<String, Any?>(
-                "id" to metadata.name,
-                "path" to if (includeSensitive) file?.absolutePath else "[REDACTED]",
-                "sizeBytes" to file?.takeIf { it.isFile }?.length(),
-                "lastModifiedUtc" to file?.takeIf { it.isFile }?.let(::formatUtc),
-                "sha256" to file?.takeIf { it.isFile }?.let(::sha256),
-            )
-        }
-        details["pluginSummary"] = linkedMapOf(
-            "total" to plugin.proxy.pluginManager.plugins.size,
-            "versions" to plugin.proxy.pluginManager.plugins.associate {
-                it.description.name to it.description.version
-            },
-            "duplicateNames" to plugin.proxy.pluginManager.plugins
-                .groupingBy { it.description.name.lowercase() }
-                .eachCount()
-                .filterValues { it > 1 }
-                .keys
-                .sorted(),
-            "byMainClass" to plugin.proxy.pluginManager.plugins
-                .groupingBy { it.description.main }
-                .eachCount(),
-            "loadOrder" to plugin.proxy.pluginManager.plugins.map { it.description.name },
-        )
-        details["pluginHealth"] = plugin.proxy.pluginManager.plugins.map { installedPlugin ->
-            val metadata = installedPlugin.description
-            val health = (details["dependencyHealth"] as? Collection<*>)
-                ?.filterIsInstance<Map<*, *>>()
-                ?.firstOrNull { it["plugin"] == metadata.name }
-            val missing = health?.get("missingRequired") as? Collection<*>
-            linkedMapOf<String, Any?>(
-                "id" to metadata.name,
-                "version" to metadata.version,
-                "status" to if (missing.isNullOrEmpty()) "healthy" else "missingDependencies",
-                "missingRequired" to missing.orEmpty(),
-                "optionalDependencies" to metadata.softDepends.size,
-            )
-        }
-        val unhealthyPlugins = (details["pluginHealth"] as? Collection<*>)
-            ?.filterIsInstance<Map<*, *>>()
-            ?.count { it["status"] != "healthy" }
-            ?: 0
-        details["servers"] = plugin.proxy.servers.map { (name, info) ->
-            val address = info.address
-            linkedMapOf<String, Any?>(
-                "name" to name,
-                "host" to if (includeSensitive) address.hostString else "[REDACTED]",
-                "port" to address.port,
-                "players" to info.players.size,
-            )
-        }
-        val backendPlayerCounts = plugin.proxy.servers.mapValues { (_, info) -> info.players.size }
-        details["serverSummary"] = linkedMapOf(
-            "serverCount" to backendPlayerCounts.size,
-            "emptyServerCount" to backendPlayerCounts.count { it.value == 0 },
-            "totalPlayersOnBackends" to backendPlayerCounts.values.sum(),
-            "playersByServer" to backendPlayerCounts,
-        )
-        val playerPings = plugin.proxy.players.map { it.ping }.filter { it >= 0 }
-        details["playerSummary"] = linkedMapOf(
-            "onlineCount" to plugin.proxy.onlineCount,
-            "playersByServer" to plugin.proxy.players
-                .groupingBy { it.server?.info?.name ?: "[unassigned]" }
-                .eachCount(),
-            "pingMs" to linkedMapOf(
-                "min" to playerPings.minOrNull(),
-                "max" to playerPings.maxOrNull(),
-                "average" to playerPings.average().takeIf { playerPings.isNotEmpty() },
-                "buckets" to linkedMapOf(
-                    "under50ms" to playerPings.count { it < 50 },
-                    "50to99ms" to playerPings.count { it in 50..99 },
-                    "100to199ms" to playerPings.count { it in 100..199 },
-                    "200msOrMore" to playerPings.count { it >= 200 },
-                ),
-                "percentiles" to linkedMapOf(
-                    "p50" to percentile(playerPings, 0.50),
-                    "p95" to percentile(playerPings, 0.95),
-                    "p99" to percentile(playerPings, 0.99),
-                ),
-            ),
-        )
-        if (includeSensitive) {
-            details["players"] = plugin.proxy.players.map { player ->
-                linkedMapOf<String, Any?>(
-                    "username" to player.name,
-                    "uuid" to player.uniqueId.toString(),
-                    "ping" to player.ping,
-                    "server" to player.server?.info?.name,
-                )
+    fun collect(snapshot: PlatformSnapshot, includeSensitive: Boolean): Map<String, Any?> =
+        DiagnosticDetailsCollector { snapshot }.collect(includeSensitive) { details ->
+            val proxy = plugin.proxy
+            val plugins = proxy.pluginManager.plugins
+            val installedNames = plugins.map { it.description.name }.toSet()
+            val missingDependencies = plugins.mapNotNull { installedPlugin ->
+                val missing = installedPlugin.description.depends
+                    .filterNot(installedNames::contains)
+                    .sorted()
+                missing.takeIf { it.isNotEmpty() }?.let {
+                    linkedMapOf("plugin" to installedPlugin.description.name, "missing" to it)
+                }
             }
-        } else {
-            details["players"] = "redacted"
-        }
-        details["analytics"] = linkedMapOf(
-            "status" to proxyAnalyticsStatus(details),
-            "signals" to proxyAnalyticsSignals(details),
-            "resources" to linkedMapOf(
-                "onlinePlayers" to plugin.proxy.onlineCount,
-                "backendServers" to plugin.proxy.servers.size,
-                "emptyBackends" to backendPlayerCounts.count { it.value == 0 },
-                "backendLoadMax" to backendPlayerCounts.values.maxOrNull(),
-                "backendLoadMin" to backendPlayerCounts.values.minOrNull(),
-                "backendLoadBuckets" to linkedMapOf(
-                    "empty" to backendPlayerCounts.values.count { it == 0 },
-                    "1to10" to backendPlayerCounts.values.count { it in 1..10 },
-                    "11to50" to backendPlayerCounts.values.count { it in 11..50 },
-                    "51OrMore" to backendPlayerCounts.values.count { it >= 51 },
-                ),
-                "registeredPlugins" to plugin.proxy.pluginManager.plugins.size,
-                "sensitiveDataIncluded" to includeSensitive,
-            ),
-            "counts" to linkedMapOf(
-                "plugins" to plugin.proxy.pluginManager.plugins.size,
-                "backends" to plugin.proxy.servers.size,
-                "players" to plugin.proxy.onlineCount,
-                "missingRequiredDependencies" to dependencyHealthCount(details),
-                "missingOptionalDependencies" to dependencyMissingCount(details, "missingOptional"),
-                "highLatencyPlayers" to playerPings.count { it >= HIGH_PING_THRESHOLD },
-                "duplicatePluginNames" to ((details["pluginSummary"] as? Map<*, *>)?.get("duplicateNames") as? Collection<*>)?.size,
-                "unhealthyPlugins" to unhealthyPlugins,
-                "requiredDependencyEdges" to requiredEdges.size,
-                "optionalDependencyEdges" to optionalEdges.size,
-                "dependencyCycles" to dependencyCycles(requiredEdges).size,
-            ),
-            "playerDistribution" to linkedMapOf(
-                "byServer" to (details["playerSummary"] as? Map<*, *>)?.get("playersByServer"),
-                "pingBuckets" to ((details["playerSummary"] as? Map<*, *>)?.get("pingMs") as? Map<*, *>)?.get("buckets"),
-            ),
-            "backendDistribution" to backendDistribution(backendPlayerCounts, plugin.proxy.onlineCount),
-            "pluginDistribution" to pluginDistribution(details["pluginHealth"]),
-            "artifactDistribution" to artifactDistribution(details["pluginArtifacts"]),
-            "runtimeDistribution" to linkedMapOf(
-                "playersPerBackend" to plugin.proxy.onlineCount.toDouble() /
-                    plugin.proxy.servers.size.coerceAtLeast(1),
-                "backendUtilization" to backendPlayerCounts.values.count { it > 0 }
-                    .toDouble() / plugin.proxy.servers.size.coerceAtLeast(1),
-                "pluginHealthCoverage" to pluginHealthCoverage(details["pluginHealth"]),
-                "dependencyGraphCoverage" to linkedMapOf(
-                    "requiredEdges" to requiredEdges.size,
-                    "optionalEdges" to optionalEdges.size,
-                    "cycles" to dependencyCycles(requiredEdges).size,
-                ),
-            ),
-        )
-        details["coverage"] = linkedMapOf(
-            "sections" to listOf(
-                "platform",
-                "privacy",
-                "plugins",
-                "pluginDependencies",
-                "dependencyGraph",
-                "pluginArtifacts",
-                "pluginSummary",
-                "pluginHealth",
-                "analytics.pluginDistribution",
-                "analytics.backendDistribution",
-                "analytics.artifactDistribution",
-                "analytics.runtimeDistribution",
-                "servers",
-                "serverSummary",
-                "playerSummary",
-                "players",
-                "analytics",
-                "collectionAnalytics",
-                "playerSummary.pingPercentiles",
-            ),
-            "pluginCount" to plugin.proxy.pluginManager.plugins.size,
-            "backendCount" to plugin.proxy.servers.size,
-            "onlinePlayerCount" to plugin.proxy.onlineCount,
-        )
-        val durationMs = started.elapsedNow().inWholeMilliseconds
-        (details["collection"] as? MutableMap<String, Any?>)?.apply {
-            this["durationMs"] = durationMs
-            this["pluginCount"] = plugin.proxy.pluginManager.plugins.size
-            this["backendCount"] = plugin.proxy.servers.size
-            this["onlinePlayerCount"] = plugin.proxy.onlineCount
-        }
-        val analytics = details["analytics"] as? Map<*, *>
-        val sample = linkedMapOf<String, Any?>(
-            "completedUtc" to java.time.Instant.now().toString(),
-            "durationMs" to durationMs,
-            "signalCount" to (analytics?.get("signals") as? Collection<*>)?.size,
-            "status" to (analytics?.get("status") ?: "healthy"),
-        )
-        collectionHistory.addLast(sample)
-        while (collectionHistory.size > HISTORY_LIMIT) {
-            collectionHistory.removeFirst()
-        }
-        details["collectionAnalytics"] = linkedMapOf(
-            "sampleCount" to collectionHistory.size,
-            "byStatus" to collectionHistory.groupingBy { it["status"].toString() }.eachCount(),
-            "lastDurationMs" to durationMs,
-            "averageDurationMs" to collectionHistory.map { (it["durationMs"] as Number).toLong() }.average(),
-            "maxDurationMs" to collectionHistory.maxOf { (it["durationMs"] as Number).toLong() },
-            "recent" to collectionHistory.toList(),
-        )
-        (details["analytics"] as? MutableMap<String, Any?>)?.set("collection", details["collectionAnalytics"])
-    }
-
-    /** Derives diagnostic signals from dependency, backend, and latency summaries. */
-    private fun proxyAnalyticsSignals(details: Map<String, Any?>): List<Map<String, Any?>> {
-        val signals = mutableListOf<Map<String, Any?>>()
-        if (dependencyHealthCount(details) > 0) {
-            signals += linkedMapOf("code" to "missingRequiredDependencies", "severity" to "critical")
-        }
-        val duplicateNames = ((details["pluginSummary"] as? Map<*, *>)?.get("duplicateNames") as? Collection<*>)
-        if (!duplicateNames.isNullOrEmpty()) {
-            signals += linkedMapOf("code" to "duplicatePluginNames", "severity" to "warning", "count" to duplicateNames.size)
-        }
-        val unhealthy = (details["pluginHealth"] as? Collection<*>)?.count { (it as? Map<*, *>)?.get("status") != "healthy" } ?: 0
-        if (unhealthy > 0) signals += linkedMapOf("code" to "unhealthyPlugins", "severity" to "warning", "count" to unhealthy)
-        val summary = details["serverSummary"] as? Map<*, *>
-        if ((summary?.get("emptyServerCount") as? Number)?.toInt()?.let { it > 0 } == true) {
-            signals += linkedMapOf("code" to "emptyBackendServers", "severity" to "info")
-        }
-        val ping = ((details["playerSummary"] as? Map<*, *>)?.get("pingMs") as? Map<*, *>)?.get("average") as? Number
-        if (ping != null && ping.toDouble() >= HIGH_PING_THRESHOLD) {
-            signals += linkedMapOf("code" to "highPlayerLatency", "severity" to "warning", "averageMs" to ping)
-        }
-        val percentiles = ((details["playerSummary"] as? Map<*, *>)?.get("pingMs") as? Map<*, *>)?.get("percentiles") as? Map<*, *>
-        val p95 = (percentiles?.get("p95") as? Number)?.toDouble()
-        if (p95 != null && p95 >= HIGH_PING_THRESHOLD * 1.5) {
-            signals += linkedMapOf("code" to "highLatencyTail", "severity" to "elevated", "p95Ms" to p95)
-        }
-        return signals
-    }
-
-    /** Classifies the report using its strongest diagnostic signal. */
-    private fun proxyAnalyticsStatus(details: Map<String, Any?>): String = when {
-        proxyAnalyticsSignals(details).any { it["severity"] == "critical" } -> "critical"
-        proxyAnalyticsSignals(details).isNotEmpty() -> "attention"
-        else -> "healthy"
-    }
-
-    /** Counts plugins with missing required dependencies. */
-    private fun dependencyHealthCount(details: Map<String, Any?>): Int =
-        (details["dependencyHealth"] as? Collection<*>)
-            ?.count { (it as? Map<*, *>)?.get("healthy") == false }
-            ?: 0
-
-    /** Counts missing dependencies in the requested health field. */
-    private fun dependencyMissingCount(details: Map<String, Any?>, key: String): Int =
-        (details["dependencyHealth"] as? Collection<*>)
-            ?.sumOf { ((it as? Map<*, *>)?.get(key) as? Collection<*>)?.size ?: 0 }
-            ?: 0
-
-    /** Summarizes dependency health across observed plugins. */
-    private fun pluginDistribution(value: Any?): Map<String, Any?> {
-        val plugins = (value as? Collection<*>)?.filterIsInstance<Map<*, *>>().orEmpty()
-        return linkedMapOf(
-            "byStatus" to plugins.groupingBy { it["status"].toString() }.eachCount(),
-            "missingRequiredDependencies" to plugins.sumOf { (it["missingRequired"] as? Collection<*>)?.size ?: 0 },
-            "optionalDependencyTotals" to plugins.sumOf { (it["optionalDependencies"] as? Number)?.toInt() ?: 0 },
-        )
-    }
-
-    /** Summarizes the plugin health states present in the report. */
-    private fun pluginHealthCoverage(value: Any?): Map<String, Any?> {
-        val plugins = (value as? Collection<*>)?.filterIsInstance<Map<*, *>>().orEmpty()
-        return linkedMapOf(
-            "observed" to plugins.size,
-            "healthy" to plugins.count { it["status"] == "healthy" },
-            "attention" to plugins.count { it["status"] == "attention" },
-            "critical" to plugins.count { it["status"] == "critical" },
-        )
-    }
-
-    /** Summarizes available plugin JAR sizes. */
-    private fun artifactDistribution(value: Any?): Map<String, Any?> {
-        val artifacts = (value as? Collection<*>)?.filterIsInstance<Map<*, *>>().orEmpty()
-        val sizes = artifacts.mapNotNull { (it["sizeBytes"] as? Number)?.toLong() }
-        return linkedMapOf(
-            "pluginCount" to artifacts.size,
-            "availableArtifacts" to sizes.size,
-            "totalJarBytes" to sizes.sum(),
-            "largestJarBytes" to sizes.maxOrNull(),
-        )
-    }
-
-    /** Finds closed paths in the required-dependency graph. */
-    private fun dependencyCycles(edges: List<Map<String, String>>): List<List<String>> {
-        val graph = edges.groupBy({ it["from"].orEmpty() }, { it["to"].orEmpty() })
-        val cycles = linkedSetOf<List<String>>()
-        fun visit(node: String, path: List<String>) {
-            graph[node].orEmpty().forEach { next ->
-                val index = path.indexOf(next)
-                if (index >= 0) cycles += (path.subList(index, path.size) + next)
-                else if (path.size < graph.size + 1) visit(next, path + next)
-            }
-        }
-        graph.keys.forEach { visit(it, listOf(it)) }
-        return cycles.toList()
-    }
-
-    /** Summarizes backend player counts and relative load. */
-    private fun backendDistribution(counts: Map<String, Int>, totalPlayers: Int): Map<String, Any?> {
-        val denominator = totalPlayers.coerceAtLeast(1).toDouble()
-        val nodes = counts.entries
-            .sortedByDescending { it.value }
-            .map { (name, players) ->
+            val backends = proxy.servers.map { (name, info) ->
                 linkedMapOf<String, Any?>(
                     "name" to name,
-                    "players" to players,
-                    "share" to players / denominator,
-                    "state" to when {
-                        players == 0 -> "empty"
-                        players >= 51 -> "highLoad"
-                        else -> "active"
-                    },
-                )
+                    "players" to info.players.size,
+                ).apply {
+                    if (includeSensitive) {
+                        this["host"] = info.address.hostString
+                        this["port"] = info.address.port
+                    }
+                }
             }
-        val assigned = counts.values.sum()
-        return linkedMapOf(
-            "nodes" to nodes,
-            "nodeCount" to nodes.size,
-            "emptyNodes" to nodes.count { it["state"] == "empty" },
-            "highLoadNodes" to nodes.count { it["state"] == "highLoad" },
-            "assignedPlayers" to assigned,
-            "unassignedPlayers" to (totalPlayers - assigned).coerceAtLeast(0),
-            "busiest" to nodes.firstOrNull(),
-        )
-    }
+            val pings = proxy.players.map { it.ping }.filter { it >= 0 }
+            val p95 = percentile(pings, 0.95)
+            val signals = buildList<Map<String, Any?>> {
+                if (missingDependencies.isNotEmpty()) {
+                    add(linkedMapOf("code" to "missingRequiredDependencies", "count" to missingDependencies.size))
+                }
+                if (p95 != null && p95 >= HIGH_PING_THRESHOLD_MS) {
+                    add(linkedMapOf("code" to "highPlayerLatency", "p95Ms" to p95))
+                }
+            }
 
-    /** Formats an artifact modification time as an ISO-8601 UTC timestamp. */
-    private fun formatUtc(file: java.io.File): String =
-        java.time.Instant.ofEpochMilli(file.lastModified()).toString()
+            details["missingRequiredDependencies"] = missingDependencies
+            details["backends"] = backends
+            details["players"] = linkedMapOf(
+                "online" to proxy.onlineCount,
+                "byBackend" to proxy.players
+                    .groupingBy { it.server?.info?.name ?: "[unassigned]" }
+                    .eachCount(),
+                "pingMs" to pingSummary(pings),
+            )
+            details["health"] = linkedMapOf(
+                "status" to if (signals.isEmpty()) "healthy" else "attention",
+                "signals" to signals,
+            )
+        }
 
-    /** Returns the indexed percentile of non-negative ping samples. */
+    private fun pingSummary(values: List<Int>): Map<String, Any?> = linkedMapOf(
+        "min" to values.minOrNull(),
+        "average" to values.average().takeIf { values.isNotEmpty() },
+        "max" to values.maxOrNull(),
+        "p95" to percentile(values, 0.95),
+    )
+
     private fun percentile(values: List<Int>, percentile: Double): Int? {
         if (values.isEmpty()) return null
         val sorted = values.sorted()
-        val index = ((sorted.size - 1) * percentile).toInt().coerceIn(0, sorted.lastIndex)
-        return sorted[index]
+        return sorted[((sorted.size - 1) * percentile).toInt().coerceIn(0, sorted.lastIndex)]
     }
 
     private companion object {
-        const val HISTORY_LIMIT = 32
-        const val HIGH_PING_THRESHOLD = 200.0
+        const val HIGH_PING_THRESHOLD_MS = 300
     }
-
-    /** Hashes an artifact, returning null when it cannot be read. */
-    private fun sha256(file: File): String? = runCatching {
-        val digest = MessageDigest.getInstance("SHA-256")
-        FileInputStream(file).use { input ->
-            val buffer = ByteArray(16 * 1024)
-            while (true) {
-                val read = input.read(buffer)
-                if (read < 0) break
-                digest.update(buffer, 0, read)
-            }
-        }
-        digest.digest().joinToString("") { byte -> "%02x".format(byte) }
-    }.getOrNull()
-
 }

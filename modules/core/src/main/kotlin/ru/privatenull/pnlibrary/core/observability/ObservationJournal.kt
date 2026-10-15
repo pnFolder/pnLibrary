@@ -8,7 +8,10 @@ import java.nio.file.Path
 import java.nio.file.StandardOpenOption
 import java.util.ArrayDeque
 
-internal class ObservationJournal(dataFolder: Path) : AutoCloseable {
+internal class ObservationJournal(
+    dataFolder: Path,
+    private val clock: () -> Long = System::currentTimeMillis,
+) : AutoCloseable {
     private val gson = GsonBuilder().disableHtmlEscaping().create()
     private val lock = Any()
     private val observations = ArrayDeque<Observation>()
@@ -21,13 +24,20 @@ internal class ObservationJournal(dataFolder: Path) : AutoCloseable {
 
     fun append(observation: Observation) = synchronized(lock) {
         observations.addLast(observation)
-        Files.writeString(
-            file,
-            gson.toJson(observation) + "\n",
-            StandardCharsets.UTF_8,
-            StandardOpenOption.CREATE,
-            StandardOpenOption.APPEND,
-        )
+        val retained = ObservationRetention.active(observations, clock())
+        if (retained.size != observations.size) {
+            observations.clear()
+            observations.addAll(retained)
+            rewrite()
+        } else {
+            Files.writeString(
+                file,
+                gson.toJson(observation) + "\n",
+                StandardCharsets.UTF_8,
+                StandardOpenOption.CREATE,
+                StandardOpenOption.APPEND,
+            )
+        }
     }
 
     fun recent(): List<Observation> = synchronized(lock) { observations.toList() }

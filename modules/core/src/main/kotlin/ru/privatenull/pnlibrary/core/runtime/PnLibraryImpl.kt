@@ -197,7 +197,6 @@ internal class PnLibraryImpl(
     private fun runtimeDiagnostics(): Map<String, Any?> {
         val taskSnapshots = tasks.query()
         val updateSnapshots = updates.all()
-        val platformCoverage = platformDiagnostics.diagnosticDetails(includeSensitive = false)["coverage"]
         val taskFailures = taskSnapshots.count { it.lastFailure != null }
         val failedUpdates = updateSnapshots.count { it.snapshot.state.name.equals("FAILED", ignoreCase = true) }
         val diagnosticSummary = diagnostics.diagnosticSummary()
@@ -235,7 +234,6 @@ internal class PnLibraryImpl(
         "metrics" to metricsRegistry.diagnosticSnapshot(),
         "metricsAnalytics" to metricsRegistry.diagnosticAnalytics(),
         "commandsAnalytics" to commandService.diagnosticSnapshot(),
-        "platformCoverage" to platformCoverage,
         "diagnostics" to diagnostics.diagnosticSummary(),
         "diagnosticHistory" to diagnostics.historyAnalytics(),
         "nativeLogs" to nativeLogs,

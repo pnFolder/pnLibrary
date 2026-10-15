@@ -17,10 +17,9 @@ class DiagnosticDetailsCollectorTest {
                 it["analytics"] = linkedMapOf("status" to "healthy")
             }
 
-        assertEquals(snapshot.asMap(), details.filterKeys { it !in setOf("collection", "privacy", "analytics") })
-        assertEquals(false, (details["collection"] as Map<*, *>) ["includeSensitive"])
+        assertEquals(snapshot.asMap(), details.filterKeys { it !in setOf("privacy", "analytics") })
         assertEquals(false, (details["privacy"] as Map<*, *>) ["sensitiveDataIncluded"])
-        assertTrue(details["collection"] is Map<*, *>)
+        assertTrue((details["privacy"] as Map<*, *>) ["omittedFields"] is List<*>)
         assertEquals("healthy", (details["analytics"] as Map<*, *>) ["status"])
     }
 }

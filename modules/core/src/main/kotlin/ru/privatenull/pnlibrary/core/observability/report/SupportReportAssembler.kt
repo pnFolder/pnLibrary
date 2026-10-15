@@ -53,13 +53,12 @@ internal class SupportReportAssembler(
         encrypted: Boolean,
     ) {
         val platformDetails = diagnosticsPlatform.diagnosticDetails(includeSensitive = encrypted && !config.privacy)
-        val platformCoverage = platformDetails["coverage"]
         val runtimeDetails = runtimeDiagnostics()
         val systemDetails = system.collect(includeNetworkAddresses = encrypted && !config.privacy)
         val analytics = linkedMapOf<String, Any?>(
             "generatedUtc" to Instant.now().toString(),
-            "system" to systemDetails["analytics"],
-            "platform" to platformDetails["analytics"],
+            "system" to systemDetails["health"],
+            "platform" to platformDetails["health"],
             "runtime" to runtimeDetails["analytics"],
             "metrics" to runtimeDetails["metricsAnalytics"],
             "observability" to runtimeDetails["observability"],
@@ -67,7 +66,7 @@ internal class SupportReportAssembler(
         archive.json(
             "manifest.json",
             linkedMapOf(
-                "schemaVersion" to 3,
+                "schemaVersion" to 4,
                 "producer" to "pnLibrary",
                 "generatedUtc" to Instant.now().toString(),
                 "target" to request.target,
@@ -76,12 +75,6 @@ internal class SupportReportAssembler(
                 "encrypted" to encrypted,
                 "diagnosticsMode" to "full",
                 "privacy" to config.privacy,
-                "platformCoverage" to platformCoverage,
-                "runtimeCoverage" to linkedMapOf(
-                    "sectionCount" to runtimeDetails.size,
-                    "sections" to runtimeDetails.keys.sorted(),
-                ),
-                "analyticsCoverage" to analytics.keys.filterNot { it == "generatedUtc" }.sorted(),
             ),
         )
         runtimeDetails.takeIf { it.isNotEmpty() }?.let { archive.json("runtime.json", it) }

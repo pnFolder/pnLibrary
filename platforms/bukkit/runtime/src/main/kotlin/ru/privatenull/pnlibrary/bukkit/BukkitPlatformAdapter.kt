@@ -149,14 +149,14 @@ internal class BukkitPlatformAdapter(
         includeSensitive: Boolean,
     ): Map<String, Any?> {
         if (!ServerCapabilities.isFolia && Bukkit.isPrimaryThread()) {
-            return diagnosticsCollector.collect(includeSensitive)
+            return diagnosticsCollector.collect(snapshot(), includeSensitive)
         }
 
         val result = CompletableFuture<Map<String, Any?>>()
         executeGlobal(
             Runnable {
                 runCatching {
-                    diagnosticsCollector.collect(includeSensitive)
+                    diagnosticsCollector.collect(snapshot(), includeSensitive)
                 }.onSuccess(result::complete)
                     .onFailure(result::completeExceptionally)
             },

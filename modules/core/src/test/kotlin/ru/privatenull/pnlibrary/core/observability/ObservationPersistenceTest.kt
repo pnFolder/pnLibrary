@@ -15,10 +15,10 @@ class ObservationPersistenceTest {
     fun `journal reloads valid observations and skips malformed lines`() {
         val root = Files.createTempDirectory("observations")
         val observation = Observation.from(ObservationRequest(message = "started"), timestamp = 100)
-        ObservationJournal(root).use { it.append(observation) }
+        ObservationJournal(root, clock = { 100 }).use { it.append(observation) }
         Files.writeString(root.resolve("observability/observations.jsonl"), "not-json\n", java.nio.file.StandardOpenOption.APPEND)
 
-        ObservationJournal(root).use { journal ->
+        ObservationJournal(root, clock = { 100 }).use { journal ->
             assertEquals(listOf(observation), journal.recent())
         }
     }
@@ -90,11 +90,24 @@ class ObservationPersistenceTest {
     fun `runtime removes expired observations during startup`() {
         val root = Files.createTempDirectory("observation-retention")
         val old = Observation.from(ObservationRequest(message = "expired"), timestamp = 1)
-        ObservationJournal(root).use { it.append(old) }
+        ObservationJournal(root, clock = { 1 }).use { it.append(old) }
 
         val runtime = ObservationRuntimeFixture.openAfterThirtyDays(root)
 
         assertTrue(runtime.recent().isEmpty())
+    }
+
+    @Test
+    fun `journal applies retention while new observations are recorded`() {
+        val root = Files.createTempDirectory("observation-live-retention")
+        val old = Observation.from(ObservationRequest(message = "expired"), timestamp = 1)
+        val current = Observation.from(ObservationRequest(message = "current"), timestamp = 30L * 24 * 60 * 60 * 1000)
+        ObservationJournal(root, clock = { current.timestamp }).use { journal ->
+            journal.append(old)
+            journal.append(current)
+
+            assertEquals(listOf(current), journal.recent())
+        }
     }
 
     private object ObservationRuntimeFixture {

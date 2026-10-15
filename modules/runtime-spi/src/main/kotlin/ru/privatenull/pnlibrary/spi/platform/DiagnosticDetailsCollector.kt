@@ -1,7 +1,5 @@
 package ru.privatenull.pnlibrary.spi.platform
 
-import java.time.Instant
-
 /** Builds the common diagnostic envelope shared by every platform adapter. */
 class DiagnosticDetailsCollector(
     private val snapshotProvider: () -> PlatformSnapshot,
@@ -12,19 +10,9 @@ class DiagnosticDetailsCollector(
         enrich: (MutableMap<String, Any?>) -> Unit,
     ): Map<String, Any?> {
         val details = snapshotProvider().asMap().toMutableMap()
-        details["collection"] = linkedMapOf(
-            "startedUtc" to Instant.now().toString(),
-            "thread" to Thread.currentThread().name,
-            "includeSensitive" to includeSensitive,
-        )
         details["privacy"] = linkedMapOf(
             "sensitiveDataIncluded" to includeSensitive,
-            "redactedSections" to if (includeSensitive) {
-                emptyList<String>()
-            } else {
-                listOf("players", "serverHosts", "pluginPaths")
-            },
-            "playerIdentityFields" to listOf("username", "uuid", "ping", "server"),
+            "omittedFields" to if (includeSensitive) emptyList<String>() else listOf("backendAddresses"),
         )
 
         enrich(details)

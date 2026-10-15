@@ -42,6 +42,26 @@ class ObservabilityDslTest {
         assertEquals("GitHub timeout", service.lastRequest.message)
     }
 
+    @Test
+    fun `stored observation bounds free form diagnostic data`() {
+        val request = ObservationRequest(
+            plugin = "p".repeat(200),
+            source = "s".repeat(200),
+            message = "m".repeat(2_000),
+            data = (1..40).associate { "key-$it" to "v".repeat(3_000) },
+            error = IllegalStateException("e".repeat(5_000)),
+        )
+
+        val observation = Observation.from(request)
+
+        assertEquals(128, observation.plugin?.length)
+        assertEquals(128, observation.source?.length)
+        assertEquals(1_024, observation.message.length)
+        assertEquals(32, observation.data.size)
+        assertEquals(2_048, observation.data.values.first().length)
+        assertEquals(4_096, observation.errorMessage?.length)
+    }
+
     private class RecordingObservabilityService : ObservabilityService {
         lateinit var lastRequest: ObservationRequest
 

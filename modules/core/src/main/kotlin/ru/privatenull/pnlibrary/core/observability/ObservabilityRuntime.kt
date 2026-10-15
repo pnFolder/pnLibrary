@@ -16,7 +16,7 @@ internal class ObservabilityRuntime(
     reportFactory: ((ObservabilityReportRequest) -> ObservabilityReport)? = null,
 ) : ObservabilityService {
     private val recordLock = Any()
-    private val journal = ObservationJournal(dataFolder)
+    private val journal = ObservationJournal(dataFolder, clock)
     private val attachmentStore = AttachmentStore(dataFolder)
     private val statusRegistry = ComponentStatusRegistry()
     @Volatile
