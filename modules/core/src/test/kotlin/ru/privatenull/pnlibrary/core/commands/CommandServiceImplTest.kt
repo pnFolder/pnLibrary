@@ -175,6 +175,8 @@ class CommandServiceImplTest {
         registration.close()
         registration.close()
         service.unregisterOwner(firstOwner)
+        assertEquals(setOf("first", "second"), native.unregisteredNames)
+        assertFalse(native.unregisteredNames.contains("third"))
         service.close()
         service.close()
 
