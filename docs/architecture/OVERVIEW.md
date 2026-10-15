@@ -39,6 +39,24 @@ Platform bridge
 `api` содержит стабильные контракты. `core` содержит общую логику и lifecycle.
 Platform runtime переводит вызовы общего ядра в native API конкретного сервера.
 
+## Правило владения ресурсом
+
+`PnLibrary` — это точка доступа к сервисам, но не владелец ресурсов consumer-плагина.
+Если ресурс создаётся плагином, его владелец должен быть передан явно: это определяет,
+когда ресурс будет закрыт при отключении плагина.
+
+| Ресурс | Для consumer-плагина | Только для внутреннего runtime |
+|---|---|---|
+| Команда | `library.commands.register(plugin, ...)` | `library.registerRuntimeCommand(...)` |
+| Задача | `library.tasks.scope(plugin)` или `context.tasks` | `library.runtimeTaskScope()` |
+| Метрики | `library.metrics.open(plugin, ...)` | внутренний runtime metrics owner |
+| Конфигурация | `library.configurations.scope(plugin)` | внутренний runtime scope |
+| Обновление | `library.updates.register(plugin, ...)` | внутренние update checks |
+| События/модули | `library.plugins.register(plugin)` / `context.events` | runtime lifecycle |
+
+Не следует заменять `plugin` на `library.owner`: `library.owner` — это владелец самого
+pnLibrary, а не consumer-плагина.
+
 ## Поток регистрации команды
 
 ```text
