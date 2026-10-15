@@ -41,6 +41,7 @@ internal class BukkitPlatformAdapter(
     private val lifecycle = PlatformLifecycle()
     private val diagnosticsCollector = BukkitDiagnosticsCollector()
     private val nativeLogBridge = BukkitNativeLogBridge(plugin)
+    private val schedulerBridge = BukkitSchedulerBridge(plugin, ::log)
     private var lifecycleListener: BukkitLifecycleListener? = null
 
     override val type: PlatformType = PlatformType.BUKKIT
@@ -159,7 +160,7 @@ internal class BukkitPlatformAdapter(
         if (lifecycle.isClosed) return
 
         if (ServerCapabilities.isFolia) {
-            executeFoliaGlobal(task)
+            schedulerBridge.executeGlobal(task)
             return
         }
 
@@ -181,7 +182,7 @@ internal class BukkitPlatformAdapter(
 
         val nativeRecipient = (recipient as? BukkitCommandSender)?.native ?: recipient
         if (nativeRecipient is Player && ServerCapabilities.isFolia) {
-            executeFoliaEntity(nativeRecipient, task)
+            schedulerBridge.executeEntity(nativeRecipient, task)
             return
         }
 
@@ -195,65 +196,6 @@ internal class BukkitPlatformAdapter(
         } finally {
             lifecycle.close()
             lifecycleListener = null
-        }
-    }
-
-    /** Dispatches global work without linking optional Folia classes. */
-    private fun executeFoliaGlobal(task: Runnable) {
-        try {
-            val scheduler = Bukkit::class.java
-                .getMethod("getGlobalRegionScheduler")
-                .invoke(null)
-            val run = scheduler.javaClass.getMethod(
-                "run",
-                Plugin::class.java,
-                java.util.function.Consumer::class.java,
-            )
-
-            run.invoke(
-                scheduler,
-                plugin,
-                java.util.function.Consumer<Any> { task.run() },
-            )
-        } catch (error: ReflectiveOperationException) {
-            log(
-                plugin,
-                LogLevel.ERROR,
-                "Не удалось передать задачу Folia GlobalRegionScheduler",
-                error,
-            )
-        }
-    }
-
-    /** Dispatches player work to its owning Folia region. */
-    private fun executeFoliaEntity(
-        player: Player,
-        task: Runnable,
-    ) {
-        try {
-            val scheduler = player.javaClass
-                .getMethod("getScheduler")
-                .invoke(player)
-            val run = scheduler.javaClass.getMethod(
-                "run",
-                Plugin::class.java,
-                java.util.function.Consumer::class.java,
-                Runnable::class.java,
-            )
-
-            run.invoke(
-                scheduler,
-                plugin,
-                java.util.function.Consumer<Any> { task.run() },
-                null,
-            )
-        } catch (error: Exception) {
-            log(
-                plugin,
-                LogLevel.ERROR,
-                "Не удалось передать задачу Folia EntityScheduler",
-                error,
-            )
         }
     }
 
