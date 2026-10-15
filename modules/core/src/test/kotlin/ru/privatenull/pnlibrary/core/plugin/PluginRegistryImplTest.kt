@@ -1,5 +1,3 @@
-@file:Suppress("DEPRECATION", "OVERRIDE_DEPRECATION")
-
 package ru.privatenull.pnlibrary.core.plugin
 
 import org.junit.jupiter.api.Assertions.assertEquals
