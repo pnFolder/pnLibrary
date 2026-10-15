@@ -56,14 +56,15 @@ val library = PnLibrary.create(this)
 4. Оставить платформам только преобразование native source и регистрацию native-команды.
 5. Проверить единый сценарий на Bukkit, Bungee и Velocity.
 
-Первый срез завершён: добавлены bound-регистрации команд, сохранена совместимость
-старого API, встроенные команды и пользовательская документация переведены на новый
-путь, а platform-specific registrar остаётся внутри runtime.
+Первый срез завершён: для внутренних ресурсов runtime добавлены явно названные
+bound-регистрации, а consumer-команды сохранили явного lifecycle-владельца. Встроенные
+команды и пользовательская документация разделяют эти два сценария, а
+platform-specific registrar остаётся внутри runtime.
 
 Целевой сценарий:
 
 ```kotlin
-library.commands.register("kit") {
+library.registerRuntimeCommand("kit") {
     execute { context -> context.reply("Вы получили набор") }
     suggest { listOf("starter", "vip") }
 }
