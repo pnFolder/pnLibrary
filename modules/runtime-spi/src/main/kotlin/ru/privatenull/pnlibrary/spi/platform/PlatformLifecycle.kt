@@ -1,50 +1,94 @@
 package ru.privatenull.pnlibrary.spi.platform
 
 import kotlin.jvm.JvmSynthetic
-import java.util.concurrent.atomic.AtomicBoolean
-import java.util.concurrent.CopyOnWriteArrayList
 
-/** Shared lifecycle state for a platform adapter: open, bound, and closed. */
+/**
+ * Owns the registrations created by one platform adapter.
+ *
+ * A new adapter is [State.READY]. [bind] enters [State.BINDING] and creates
+ * commands or listeners registered through [track]. Successful binding leaves it
+ * [State.BOUND]; failed binding closes tracked resources and allows another attempt.
+ * [close] permanently moves either open state to [State.CLOSED].
+ *
+ * Mutations share one monitor, so shutdown waits for binding to finish.
+ * Resources close in reverse registration order, even if individual cleanup fails.
+ * Consumer plugin ownership is managed separately from this adapter lifecycle.
+ *
+ * Usage:
+ * ```kotlin
+ * lifecycle.bind {
+ *     lifecycle.track(registerCommand())
+ *     lifecycle.track(registerListener())
+ * }
+ * // During adapter shutdown:
+ * lifecycle.close { detachLogObserver() }
+ * ```
+ */
 class PlatformLifecycle {
-    private val closed = AtomicBoolean(false)
-    private val bound = AtomicBoolean(false)
-    private val resources = CopyOnWriteArrayList<AutoCloseable>()
+    /** Internal states; transitions are owned exclusively by [bind] and [close]. */
+    private enum class State {
+        /** No successful binding yet. Initial state and destination of a failed attempt. */
+        READY,
 
-    val isClosed: Boolean get() = closed.get()
+        /** Registration is running. Nested binding and shutdown from its callback are forbidden. */
+        BINDING,
 
+        /** Registration succeeded. Resources remain owned until shutdown. */
+        BOUND,
+
+        /** Shutdown started. This terminal state rejects new registrations and binding. */
+        CLOSED,
+    }
+
+    @Volatile
+    private var state = State.READY
+    private val resources = mutableListOf<AutoCloseable>()
+
+    /** Whether shutdown has started; this remains true even if cleanup fails. */
+    val isClosed: Boolean get() = state == State.CLOSED
+
+    /** Rejects work submitted after shutdown. */
     fun checkOpen() {
-        check(!closed.get()) { "Platform adapter is closed" }
+        check(!isClosed) { "Platform adapter is closed" }
     }
 
-    @Synchronized
-    fun beginBinding() {
-        checkOpen()
-        check(bound.compareAndSet(false, true)) { "Platform adapter is already bound" }
-    }
-
-    /** Runs one binding transaction and rolls back the bound state if registration fails. */
+    /**
+     * Registers adapter resources once, holding the lifecycle monitor throughout [block].
+     *
+     * On success: READY -> BINDING -> BOUND. On failure, tracked resources are closed
+     * and the lifecycle returns to READY so binding can be retried. The original
+     * registration error is rethrown with cleanup errors attached as suppressed exceptions.
+     * Another thread calling [close] waits until registration completes.
+     *
+     * @param block registration code; pass each owned registration to [track].
+     * @return the value returned by [block].
+     * @throws IllegalStateException if binding already started, succeeded, or shutdown started.
+     */
     @JvmSynthetic
     @Synchronized
     fun <T> bind(block: () -> T): T {
-        beginBinding()
+        checkOpen()
+        check(state == State.READY) { "Platform adapter binding already started or completed" }
+        state = State.BINDING
         return try {
-            block()
+            block().also { state = State.BOUND }
         } catch (error: Throwable) {
             try {
                 closeTracked()?.let(error::addSuppressed)
             } finally {
-                endBinding()
+                state = State.READY
             }
             throw error
         }
     }
 
-    @Synchronized
-    fun endBinding() {
-        bound.set(false)
-    }
-
-    /** Tracks a binding-owned resource so every adapter closes it through one lifecycle path. */
+    /**
+     * Transfers cleanup ownership of [resource] to this lifecycle and returns it unchanged.
+     * Resources may be tracked before, during, or after binding, until shutdown starts.
+     * They are closed in reverse order on shutdown or when binding fails.
+     *
+     * @throws IllegalStateException if shutdown already started; ownership is not transferred.
+     */
     @Synchronized
     fun <T : AutoCloseable> track(resource: T): T {
         checkOpen()
@@ -52,14 +96,24 @@ class PlatformLifecycle {
         return resource
     }
 
+    /** Shuts down once; returns false if shutdown already started. */
     @Synchronized
     fun close(): Boolean = close {}
 
-    /** Closes tracked resources and always runs [afterClose], even when cleanup fails. */
+    /**
+     * Permanently closes the adapter, releasing resources before running [afterClose].
+     * All cleanup actions are attempted. The first failure is thrown, with subsequent
+     * failures suppressed. The adapter remains closed even if cleanup fails.
+     *
+     * @param afterClose final cleanup, executed only on the first shutdown attempt.
+     * @return true on the first successful shutdown; false if already closed.
+     * @throws IllegalStateException when called from inside the binding callback.
+     */
     @Synchronized
     fun close(afterClose: () -> Unit): Boolean {
-        if (!closed.compareAndSet(false, true)) return false
-        bound.set(false)
+        if (isClosed) return false
+        check(state != State.BINDING) { "Cannot close the platform adapter inside its binding callback" }
+        state = State.CLOSED
         var failure = closeTracked()
         runCatching { afterClose() }.onFailure { cleanupFailure ->
             if (failure == null) {
@@ -74,10 +128,11 @@ class PlatformLifecycle {
 
     private fun closeTracked(): Throwable? {
         val failures = mutableListOf<Throwable>()
-        resources.toList().asReversed().forEach { resource ->
+        val closing = resources.toList().asReversed()
+        resources.clear()
+        closing.forEach { resource ->
             runCatching { resource.close() }.onFailure(failures::add)
         }
-        resources.clear()
         val first = failures.firstOrNull() ?: return null
         failures.drop(1).forEach(first::addSuppressed)
         return first

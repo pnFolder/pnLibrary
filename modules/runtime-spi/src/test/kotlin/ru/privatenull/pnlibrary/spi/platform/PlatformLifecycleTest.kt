@@ -14,10 +14,8 @@ class PlatformLifecycleTest {
     fun `binding is single shot until close`() {
         val lifecycle = PlatformLifecycle()
 
-        lifecycle.beginBinding()
-        assertThrows<IllegalStateException> { lifecycle.beginBinding() }
-        lifecycle.endBinding()
-        lifecycle.beginBinding()
+        lifecycle.bind { Unit }
+        assertThrows<IllegalStateException> { lifecycle.bind { Unit } }
         assertTrue(lifecycle.close())
         assertFalse(lifecycle.close())
         assertThrows<IllegalStateException> { lifecycle.checkOpen() }
@@ -34,7 +32,7 @@ class PlatformLifecycleTest {
         }
 
         lifecycle.bind { "registered" }
-        assertThrows<IllegalStateException> { lifecycle.beginBinding() }
+        assertThrows<IllegalStateException> { lifecycle.bind { Unit } }
     }
 
     @Test
@@ -128,6 +126,17 @@ class PlatformLifecycleTest {
         assertTrue(thrown === cleanupFailure)
         assertTrue(cleaned)
         assertFalse(lifecycle.close())
+    }
+
+    @Test
+    fun `nested shutdown fails binding and allows retry`() {
+        val lifecycle = PlatformLifecycle()
+        assertThrows<IllegalStateException> {
+            lifecycle.bind { lifecycle.close() }
+        }
+        assertFalse(lifecycle.isClosed)
+        lifecycle.bind { Unit }
+        assertTrue(lifecycle.close())
     }
 
     @Test
