@@ -61,6 +61,7 @@ internal class RegisteredUpdate(
         product = descriptor.id,
         version = catalogRelease.version,
         channel = catalogRelease.channel,
+        description = catalogRelease.description,
         supportedApi = catalogRelease.api,
         providesApi = catalogRelease.api.maximum.takeIf { descriptor.id.value == "pnlibrary" },
         repository = repository,
@@ -76,6 +77,7 @@ internal class RegisteredUpdate(
             )
         },
         publishedAt = catalogRelease.publishedAt,
+        changelogUrl = catalogRelease.changelogUrl?.toString(),
     )
 
     fun observe(releases: List<ProductRelease>, channel: UpdateChannel) {
@@ -96,10 +98,11 @@ internal class RegisteredUpdate(
                 automaticDownload = request.automaticDownload,
                 releaseUrl = "https://github.com/$repository/releases",
                 message = null,
+                latestChangelogUrl = latest?.changelogUrl,
                 supportedApi = request.supportedApi,
                 availableReleases = selection.all
                     .sortedByDescending(ProductRelease::version)
-                    .map { release -> ReleaseSummary(release.version.toString(), release.channel, release.publishedAt) },
+                    .map { release -> ReleaseSummary(release.version.toString(), release.channel, release.publishedAt, release.changelogUrl) },
             ),
         )
     }

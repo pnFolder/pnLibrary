@@ -36,12 +36,16 @@ internal object UpdateAnnouncementRenderer {
                 card.firstDetail("Плагин", change.product.value)
                     .detail("Версия", "${change.from ?: "не установлена"} → ${change.to}")
                     .detail("Канал", channel)
+                    .detail("Описание", release?.description?.takeIf { it.isNotBlank() } ?: "не указано")
                     .detail("Источник", if (release?.repository.isNullOrBlank()) "не указан" else "GitHub Releases")
                     .detail("Платформа", platform)
                     .detail("Совместимость API", api)
                     .detail("Java", java)
                     .detail("Почему выбрана", "версия новее и совместима")
                     .lastDetail("Файл", file)
+                release?.changelogUrl?.let { url ->
+                    card.detail("Изменения", url)
+                }
                 if (index != changes.lastIndex) card.blank()
             }
             val histories = registrations.filter { it.availableReleases.isNotEmpty() }

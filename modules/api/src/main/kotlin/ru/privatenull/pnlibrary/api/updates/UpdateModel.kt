@@ -101,6 +101,10 @@ data class ProductRelease(
     val artifacts: List<ArtifactDescriptor> = emptyList(),
     val externalPluginDependencies: List<ExternalPluginDependency> = emptyList(),
     val publishedAt: Instant? = null,
+    /** Link to the human-readable changelog for this release, when published. */
+    val changelogUrl: String? = null,
+    /** Short release summary suitable for update notifications. */
+    val description: String = "",
 ) {
     init {
         require(providesApi == null || providesApi > 0) { "provided API generation must be positive" }

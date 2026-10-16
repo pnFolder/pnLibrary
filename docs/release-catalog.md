@@ -34,6 +34,7 @@ https://raw.githubusercontent.com/<owner>/<repository>/<branch>/.pnlibrary/relea
       "version": "2.6.0",
       "channel": "stable",
       "description": "Стабильный релиз",
+      "changelogUrl": "https://github.com/pnFolder/pnLibrary/blob/main/.pnlibrary/changelogs/2.6.0.md",
       "publishedAt": "2026-09-29T12:00:00Z",
       "api": {
         "minimum": 1,
@@ -66,6 +67,8 @@ https://raw.githubusercontent.com/<owner>/<repository>/<branch>/.pnlibrary/relea
 - `version` — SemVer-версия релиза. Канал в неё не дублируется.
 - `channel` — `stable`, `beta`, `alpha` или `dev`.
 - `description` — короткое описание для логов и диагностики.
+- `changelogUrl` — необязательная HTTPS-ссылка на подробное описание изменений в Markdown.
+  Библиотека показывает её пользователю, но не скачивает и не исполняет содержимое.
 - `publishedAt` — время публикации в ISO-8601 UTC, например `2026-09-29T12:00:00Z`.
 - `api` — диапазон pnLibrary API, поддерживаемый релизом.
 - `artifacts` — JAR-файлы для конкретных платформ.
@@ -74,6 +77,15 @@ https://raw.githubusercontent.com/<owner>/<repository>/<branch>/.pnlibrary/relea
 - `platformApi` — диапазон native API для прокси. Для Bukkit это поле не добавляется.
 - `java` — минимальная и необязательная максимальная версия Java.
 - `url` — HTTPS-ссылка на опубликованный JAR.
+
+Полный changelog можно хранить рядом с каталогом, например:
+
+```text
+.pnlibrary/changelogs/2.6.0.md
+```
+
+В `releases.json` остаются только короткое `description` и ссылка `changelogUrl`.
+Каталоги без `changelogUrl` остаются валидными.
 
 `size`, `sha256` и `component.json` в каталоге не используются. Размер и SHA-256
 вычисляются библиотекой после скачивания. Фактическая проверка JAR выполняется

@@ -45,6 +45,7 @@ data class CatalogRelease(
     val version: SemanticVersion,
     val channel: UpdateChannel,
     val description: String,
+    val changelogUrl: URI? = null,
     val publishedAt: Instant,
     val api: ApiVersionRange,
     val artifacts: List<CatalogArtifact>,
@@ -101,6 +102,7 @@ class ReleaseCatalogCodec(private val maximumBytes: Int = MAX_BYTES) {
             version,
             declaredChannel,
             value.requiredString("description"),
+            value.optionalHttpsUrl("changelogUrl"),
             Instant.parse(value.requiredString("publishedAt")),
             value.requiredObject("api").apiRange(),
             artifacts,
@@ -134,6 +136,19 @@ class ReleaseCatalogCodec(private val maximumBytes: Int = MAX_BYTES) {
         if (value.isJsonNull || !value.isJsonObject) fail(name, "expected object or omitted field")
         val obj = value.asJsonObject
         return VersionRangeText(obj.requiredString("minimum"), obj.optionalString("maximum"))
+    }
+    private fun JsonObject.optionalHttpsUrl(name: String): URI? {
+        if (!has(name)) return null
+        val value = get(name)
+        if (value.isJsonNull || !value.isJsonPrimitive || !value.asJsonPrimitive.isString) {
+            fail(name, "expected HTTPS URL or omitted field")
+        }
+        val uri = try { URI.create(value.asString) }
+        catch (error: Exception) { fail(name, "invalid URL", error) }
+        require(uri.scheme.equals("https", true) && !uri.host.isNullOrBlank()) {
+            "$name must use HTTPS"
+        }
+        return uri
     }
     private fun JsonObject.requiredString(name: String) = get(name)?.takeIf { it.isJsonPrimitive && it.asJsonPrimitive.isString }
         ?.asString?.takeIf { it.isNotBlank() } ?: fail(name, "expected non-blank string")

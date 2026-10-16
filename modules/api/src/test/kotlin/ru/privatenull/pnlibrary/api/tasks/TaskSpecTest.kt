@@ -44,4 +44,26 @@ class TaskSpecTest {
         assertEquals("player", TaskExecution.entity("player").target)
         assertNotNull(TaskSpec::class.java.getMethod("builder"))
     }
+
+    @Test
+    fun `builder converts ticks to duration`() {
+        val spec = TaskSpec.builder()
+            .delayTicks(20)
+            .intervalTicks(100)
+            .action { }
+            .build()
+
+        assertEquals(Duration.ofSeconds(1), spec.delay)
+        assertEquals(Duration.ofSeconds(5), spec.interval)
+    }
+
+    @Test
+    fun `builder rejects negative ticks`() {
+        assertThrows(IllegalArgumentException::class.java) {
+            TaskSpec.builder().delayTicks(-1)
+        }
+        assertThrows(IllegalArgumentException::class.java) {
+            TaskSpec.builder().intervalTicks(-1)
+        }
+    }
 }

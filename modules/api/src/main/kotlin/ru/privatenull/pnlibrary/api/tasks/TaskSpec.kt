@@ -89,8 +89,22 @@ class TaskSpec private constructor(
         /** Sets the delay before the first invocation. */
         fun delay(value: Duration) = apply { delay = value }
 
+        /**
+         * Sets the delay before the first invocation in server ticks.
+         *
+         * One tick is defined as 50 milliseconds.
+         */
+        fun delayTicks(value: Long) = apply { delay = ticksToDuration(value, "Delay") }
+
         /** Sets a repeat interval, or `null` for one-shot execution. */
         fun interval(value: Duration?) = apply { interval = value }
+
+        /**
+         * Sets a repeat interval in server ticks.
+         *
+         * One tick is defined as 50 milliseconds.
+         */
+        fun intervalTicks(value: Long) = apply { interval = ticksToDuration(value, "Interval") }
 
         /** Adds a predicate that must pass before an invocation runs. */
         fun condition(value: BooleanSupplier) = apply { conditions += value }
@@ -123,6 +137,13 @@ class TaskSpec private constructor(
 
     /** Creates task-specification builders. */
     companion object {
+        private const val MILLIS_PER_TICK = 50L
+
+        private fun ticksToDuration(value: Long, label: String): Duration {
+            require(value >= 0) { "$label ticks must not be negative" }
+            return Duration.ofMillis(Math.multiplyExact(value, MILLIS_PER_TICK))
+        }
+
         /** Returns an empty Java-friendly task builder. */
         @JvmStatic
         fun builder(): Builder = Builder()
@@ -152,10 +173,17 @@ class TaskSpecBuilder internal constructor() {
     var delay: Duration
         get() = delegate.configuredDelay
         set(value) { delegate.delay(value) }
+
+    /** Sets the delay before the first invocation in server ticks. */
+    fun delayTicks(value: Long) { delegate.delayTicks(value) }
+
     /** Repeat interval, or `null` for a one-shot task. */
     var interval: Duration?
         get() = delegate.configuredInterval
         set(value) { delegate.interval(value) }
+
+    /** Sets a repeat interval in server ticks. */
+    fun intervalTicks(value: Long) { delegate.intervalTicks(value) }
     /** Application-defined lookup tags. */
     var tags: Set<String>
         get() = delegate.configuredTags

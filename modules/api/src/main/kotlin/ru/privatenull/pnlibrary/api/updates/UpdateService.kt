@@ -84,6 +84,8 @@ class UpdateSnapshot(
     val automaticDownload: Boolean,
     val releaseUrl: String?,
     val message: String?,
+    /** Link to the human-readable changelog for [latestVersion], when published. */
+    val latestChangelogUrl: String? = null,
     /** pnLibrary API generations supported by this registration, when declared. */
     val supportedApi: ApiVersionRange? = null,
     /** All known catalog releases, including channels not selected for installation. */
@@ -101,6 +103,8 @@ data class ReleaseSummary(
     val version: String,
     val channel: UpdateChannel,
     val publishedAt: Instant? = null,
+    /** Link to the human-readable changelog for this release, when published. */
+    val changelogUrl: String? = null,
 )
 
 /**

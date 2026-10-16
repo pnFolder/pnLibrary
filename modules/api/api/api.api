@@ -3132,8 +3132,10 @@ public final class ru/privatenull/pnlibrary/api/tasks/TaskSpec$Builder {
 	public final fun condition (Ljava/util/function/BooleanSupplier;)Lru/privatenull/pnlibrary/api/tasks/TaskSpec$Builder;
 	public final fun conflictPolicy (Lru/privatenull/pnlibrary/api/tasks/TaskConflictPolicy;)Lru/privatenull/pnlibrary/api/tasks/TaskSpec$Builder;
 	public final fun delay (Ljava/time/Duration;)Lru/privatenull/pnlibrary/api/tasks/TaskSpec$Builder;
+	public final fun delayTicks (J)Lru/privatenull/pnlibrary/api/tasks/TaskSpec$Builder;
 	public final fun execution (Lru/privatenull/pnlibrary/api/tasks/TaskExecution;)Lru/privatenull/pnlibrary/api/tasks/TaskSpec$Builder;
 	public final fun interval (Ljava/time/Duration;)Lru/privatenull/pnlibrary/api/tasks/TaskSpec$Builder;
+	public final fun intervalTicks (J)Lru/privatenull/pnlibrary/api/tasks/TaskSpec$Builder;
 	public final fun key (Ljava/lang/String;)Lru/privatenull/pnlibrary/api/tasks/TaskSpec$Builder;
 	public final fun name (Ljava/lang/String;)Lru/privatenull/pnlibrary/api/tasks/TaskSpec$Builder;
 	public final fun tag (Ljava/lang/String;)Lru/privatenull/pnlibrary/api/tasks/TaskSpec$Builder;
@@ -3147,6 +3149,7 @@ public final class ru/privatenull/pnlibrary/api/tasks/TaskSpec$Companion {
 public final class ru/privatenull/pnlibrary/api/tasks/TaskSpecBuilder {
 	public final fun cancelWhen (Lkotlin/jvm/functions/Function0;)V
 	public final fun condition (Lkotlin/jvm/functions/Function0;)V
+	public final fun delayTicks (J)V
 	public final fun getConflictPolicy ()Lru/privatenull/pnlibrary/api/tasks/TaskConflictPolicy;
 	public final fun getDelay ()Ljava/time/Duration;
 	public final fun getExecution ()Lru/privatenull/pnlibrary/api/tasks/TaskExecution;
@@ -3154,6 +3157,7 @@ public final class ru/privatenull/pnlibrary/api/tasks/TaskSpecBuilder {
 	public final fun getKey ()Ljava/lang/String;
 	public final fun getName ()Ljava/lang/String;
 	public final fun getTags ()Ljava/util/Set;
+	public final fun intervalTicks (J)V
 	public final fun run (Lru/privatenull/pnlibrary/api/tasks/TaskAction;)V
 	public final fun setConflictPolicy (Lru/privatenull/pnlibrary/api/tasks/TaskConflictPolicy;)V
 	public final fun setDelay (Ljava/time/Duration;)V
@@ -3617,10 +3621,12 @@ public final class ru/privatenull/pnlibrary/api/updates/ProductId$Companion {
 }
 
 public final class ru/privatenull/pnlibrary/api/updates/ProductRelease {
-	public fun <init> (Lru/privatenull/pnlibrary/api/updates/ProductId;Lru/privatenull/pnlibrary/api/version/SemanticVersion;Lru/privatenull/pnlibrary/api/updates/UpdateChannel;Lru/privatenull/pnlibrary/api/version/ApiVersionRange;Ljava/lang/Integer;Ljava/util/List;Ljava/lang/String;Ljava/util/List;Ljava/util/List;Ljava/time/Instant;)V
-	public synthetic fun <init> (Lru/privatenull/pnlibrary/api/updates/ProductId;Lru/privatenull/pnlibrary/api/version/SemanticVersion;Lru/privatenull/pnlibrary/api/updates/UpdateChannel;Lru/privatenull/pnlibrary/api/version/ApiVersionRange;Ljava/lang/Integer;Ljava/util/List;Ljava/lang/String;Ljava/util/List;Ljava/util/List;Ljava/time/Instant;ILkotlin/jvm/internal/DefaultConstructorMarker;)V
+	public fun <init> (Lru/privatenull/pnlibrary/api/updates/ProductId;Lru/privatenull/pnlibrary/api/version/SemanticVersion;Lru/privatenull/pnlibrary/api/updates/UpdateChannel;Lru/privatenull/pnlibrary/api/version/ApiVersionRange;Ljava/lang/Integer;Ljava/util/List;Ljava/lang/String;Ljava/util/List;Ljava/util/List;Ljava/time/Instant;Ljava/lang/String;Ljava/lang/String;)V
+	public synthetic fun <init> (Lru/privatenull/pnlibrary/api/updates/ProductId;Lru/privatenull/pnlibrary/api/version/SemanticVersion;Lru/privatenull/pnlibrary/api/updates/UpdateChannel;Lru/privatenull/pnlibrary/api/version/ApiVersionRange;Ljava/lang/Integer;Ljava/util/List;Ljava/lang/String;Ljava/util/List;Ljava/util/List;Ljava/time/Instant;Ljava/lang/String;Ljava/lang/String;ILkotlin/jvm/internal/DefaultConstructorMarker;)V
 	public final fun component1 ()Lru/privatenull/pnlibrary/api/updates/ProductId;
 	public final fun component10 ()Ljava/time/Instant;
+	public final fun component11 ()Ljava/lang/String;
+	public final fun component12 ()Ljava/lang/String;
 	public final fun component2 ()Lru/privatenull/pnlibrary/api/version/SemanticVersion;
 	public final fun component3 ()Lru/privatenull/pnlibrary/api/updates/UpdateChannel;
 	public final fun component4 ()Lru/privatenull/pnlibrary/api/version/ApiVersionRange;
@@ -3629,12 +3635,14 @@ public final class ru/privatenull/pnlibrary/api/updates/ProductRelease {
 	public final fun component7 ()Ljava/lang/String;
 	public final fun component8 ()Ljava/util/List;
 	public final fun component9 ()Ljava/util/List;
-	public final fun copy (Lru/privatenull/pnlibrary/api/updates/ProductId;Lru/privatenull/pnlibrary/api/version/SemanticVersion;Lru/privatenull/pnlibrary/api/updates/UpdateChannel;Lru/privatenull/pnlibrary/api/version/ApiVersionRange;Ljava/lang/Integer;Ljava/util/List;Ljava/lang/String;Ljava/util/List;Ljava/util/List;Ljava/time/Instant;)Lru/privatenull/pnlibrary/api/updates/ProductRelease;
-	public static synthetic fun copy$default (Lru/privatenull/pnlibrary/api/updates/ProductRelease;Lru/privatenull/pnlibrary/api/updates/ProductId;Lru/privatenull/pnlibrary/api/version/SemanticVersion;Lru/privatenull/pnlibrary/api/updates/UpdateChannel;Lru/privatenull/pnlibrary/api/version/ApiVersionRange;Ljava/lang/Integer;Ljava/util/List;Ljava/lang/String;Ljava/util/List;Ljava/util/List;Ljava/time/Instant;ILjava/lang/Object;)Lru/privatenull/pnlibrary/api/updates/ProductRelease;
+	public final fun copy (Lru/privatenull/pnlibrary/api/updates/ProductId;Lru/privatenull/pnlibrary/api/version/SemanticVersion;Lru/privatenull/pnlibrary/api/updates/UpdateChannel;Lru/privatenull/pnlibrary/api/version/ApiVersionRange;Ljava/lang/Integer;Ljava/util/List;Ljava/lang/String;Ljava/util/List;Ljava/util/List;Ljava/time/Instant;Ljava/lang/String;Ljava/lang/String;)Lru/privatenull/pnlibrary/api/updates/ProductRelease;
+	public static synthetic fun copy$default (Lru/privatenull/pnlibrary/api/updates/ProductRelease;Lru/privatenull/pnlibrary/api/updates/ProductId;Lru/privatenull/pnlibrary/api/version/SemanticVersion;Lru/privatenull/pnlibrary/api/updates/UpdateChannel;Lru/privatenull/pnlibrary/api/version/ApiVersionRange;Ljava/lang/Integer;Ljava/util/List;Ljava/lang/String;Ljava/util/List;Ljava/util/List;Ljava/time/Instant;Ljava/lang/String;Ljava/lang/String;ILjava/lang/Object;)Lru/privatenull/pnlibrary/api/updates/ProductRelease;
 	public fun equals (Ljava/lang/Object;)Z
 	public final fun getArtifacts ()Ljava/util/List;
+	public final fun getChangelogUrl ()Ljava/lang/String;
 	public final fun getChannel ()Lru/privatenull/pnlibrary/api/updates/UpdateChannel;
 	public final fun getDependencies ()Ljava/util/List;
+	public final fun getDescription ()Ljava/lang/String;
 	public final fun getExternalPluginDependencies ()Ljava/util/List;
 	public final fun getProduct ()Lru/privatenull/pnlibrary/api/updates/ProductId;
 	public final fun getProvidesApi ()Ljava/lang/Integer;
@@ -3666,14 +3674,16 @@ public final class ru/privatenull/pnlibrary/api/updates/ProductReleaseManifest {
 }
 
 public final class ru/privatenull/pnlibrary/api/updates/ReleaseSummary {
-	public fun <init> (Ljava/lang/String;Lru/privatenull/pnlibrary/api/updates/UpdateChannel;Ljava/time/Instant;)V
-	public synthetic fun <init> (Ljava/lang/String;Lru/privatenull/pnlibrary/api/updates/UpdateChannel;Ljava/time/Instant;ILkotlin/jvm/internal/DefaultConstructorMarker;)V
+	public fun <init> (Ljava/lang/String;Lru/privatenull/pnlibrary/api/updates/UpdateChannel;Ljava/time/Instant;Ljava/lang/String;)V
+	public synthetic fun <init> (Ljava/lang/String;Lru/privatenull/pnlibrary/api/updates/UpdateChannel;Ljava/time/Instant;Ljava/lang/String;ILkotlin/jvm/internal/DefaultConstructorMarker;)V
 	public final fun component1 ()Ljava/lang/String;
 	public final fun component2 ()Lru/privatenull/pnlibrary/api/updates/UpdateChannel;
 	public final fun component3 ()Ljava/time/Instant;
-	public final fun copy (Ljava/lang/String;Lru/privatenull/pnlibrary/api/updates/UpdateChannel;Ljava/time/Instant;)Lru/privatenull/pnlibrary/api/updates/ReleaseSummary;
-	public static synthetic fun copy$default (Lru/privatenull/pnlibrary/api/updates/ReleaseSummary;Ljava/lang/String;Lru/privatenull/pnlibrary/api/updates/UpdateChannel;Ljava/time/Instant;ILjava/lang/Object;)Lru/privatenull/pnlibrary/api/updates/ReleaseSummary;
+	public final fun component4 ()Ljava/lang/String;
+	public final fun copy (Ljava/lang/String;Lru/privatenull/pnlibrary/api/updates/UpdateChannel;Ljava/time/Instant;Ljava/lang/String;)Lru/privatenull/pnlibrary/api/updates/ReleaseSummary;
+	public static synthetic fun copy$default (Lru/privatenull/pnlibrary/api/updates/ReleaseSummary;Ljava/lang/String;Lru/privatenull/pnlibrary/api/updates/UpdateChannel;Ljava/time/Instant;Ljava/lang/String;ILjava/lang/Object;)Lru/privatenull/pnlibrary/api/updates/ReleaseSummary;
 	public fun equals (Ljava/lang/Object;)Z
+	public final fun getChangelogUrl ()Ljava/lang/String;
 	public final fun getChannel ()Lru/privatenull/pnlibrary/api/updates/UpdateChannel;
 	public final fun getPublishedAt ()Ljava/time/Instant;
 	public final fun getVersion ()Ljava/lang/String;
@@ -3743,13 +3753,14 @@ public abstract interface class ru/privatenull/pnlibrary/api/updates/UpdateServi
 }
 
 public final class ru/privatenull/pnlibrary/api/updates/UpdateSnapshot {
-	public fun <init> (Ljava/lang/String;Ljava/lang/String;Ljava/lang/String;Lru/privatenull/pnlibrary/api/updates/UpdateChannel;Lru/privatenull/pnlibrary/api/updates/UpdateState;IIZLjava/lang/String;Ljava/lang/String;Lru/privatenull/pnlibrary/api/version/ApiVersionRange;Ljava/util/List;)V
-	public synthetic fun <init> (Ljava/lang/String;Ljava/lang/String;Ljava/lang/String;Lru/privatenull/pnlibrary/api/updates/UpdateChannel;Lru/privatenull/pnlibrary/api/updates/UpdateState;IIZLjava/lang/String;Ljava/lang/String;Lru/privatenull/pnlibrary/api/version/ApiVersionRange;Ljava/util/List;ILkotlin/jvm/internal/DefaultConstructorMarker;)V
+	public fun <init> (Ljava/lang/String;Ljava/lang/String;Ljava/lang/String;Lru/privatenull/pnlibrary/api/updates/UpdateChannel;Lru/privatenull/pnlibrary/api/updates/UpdateState;IIZLjava/lang/String;Ljava/lang/String;Ljava/lang/String;Lru/privatenull/pnlibrary/api/version/ApiVersionRange;Ljava/util/List;)V
+	public synthetic fun <init> (Ljava/lang/String;Ljava/lang/String;Ljava/lang/String;Lru/privatenull/pnlibrary/api/updates/UpdateChannel;Lru/privatenull/pnlibrary/api/updates/UpdateState;IIZLjava/lang/String;Ljava/lang/String;Ljava/lang/String;Lru/privatenull/pnlibrary/api/version/ApiVersionRange;Ljava/util/List;ILkotlin/jvm/internal/DefaultConstructorMarker;)V
 	public final fun getAutomaticDownload ()Z
 	public final fun getAvailableReleases ()Ljava/util/List;
 	public final fun getChannel ()Lru/privatenull/pnlibrary/api/updates/UpdateChannel;
 	public final fun getCurrentJava ()I
 	public final fun getCurrentVersion ()Ljava/lang/String;
+	public final fun getLatestChangelogUrl ()Ljava/lang/String;
 	public final fun getLatestVersion ()Ljava/lang/String;
 	public final fun getMessage ()Ljava/lang/String;
 	public final fun getProduct ()Ljava/lang/String;

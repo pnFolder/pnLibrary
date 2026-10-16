@@ -1,0 +1,56 @@
+{
+  "schema": 1,
+  "product": "pnlibrary",
+  "releases": [
+    {
+      "version": "1.1.0",
+      "channel": "stable",
+      "description": "Добавлены ссылки на changelog и поддержка задержек задач в тиках.",
+      "changelogUrl": "https://github.com/pnFolder/pnLibrary/blob/main/.pnlibrary/changelogs/1.1.0.md",
+      "publishedAt": "2026-10-16T12:00:00Z",
+      "api": {
+        "minimum": 8,
+        "maximum": 8
+      },
+      "artifacts": [
+        {
+          "file": "pnLibrary-1.1.0-velocity.jar",
+          "platform": "VELOCITY",
+          "platformApi": {
+            "minimum": "3.3",
+            "maximum": "3.4"
+          },
+          "java": {
+            "minimum": 17
+          },
+          "url": "https://github.com/pnFolder/pnLibrary/releases/download/v1.1.0/pnLibrary-1.1.0-velocity.jar"
+        }
+      ]
+    },
+    {
+      "version": "1.0.0",
+      "channel": "stable",
+      "description": "Первый тестовый стабильный релиз.",
+      "changelogUrl": "https://github.com/pnFolder/pnLibrary/blob/main/.pnlibrary/changelogs/1.0.0.md",
+      "publishedAt": "2026-10-01T12:00:00Z",
+      "api": {
+        "minimum": 8,
+        "maximum": 8
+      },
+      "artifacts": [
+        {
+          "file": "pnLibrary-1.0.0-velocity.jar",
+          "platform": "VELOCITY",
+          "platformApi": {
+            "minimum": "3.3",
+            "maximum": "3.4"
+          },
+          "java": {
+            "minimum": 17
+          },
+          "url": "https://github.com/pnFolder/pnLibrary/releases/download/v1.0.0/pnLibrary-1.0.0-velocity.jar"
+        }
+      ]
+    }
+  ]
+}
