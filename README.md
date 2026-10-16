@@ -1,10 +1,8 @@
 # pnLibrary
 
-Architecture references: [API design rules](docs/architecture/API-DESIGN-RULES.md),
-[feature boundaries](docs/architecture/FEATURE-BOUNDARIES.md), and the
-[deprecated API migration guide](docs/architecture/API-MIGRATION.md).
-The short public-vs-runtime architecture map is in
-[architecture overview](docs/architecture/OVERVIEW.md).
+This branch contains the rewrite of the public API and platform integration.
+The documentation below describes the supported user-facing contracts; internal
+architecture notes and historical migration plans are intentionally not kept here.
 
 ## Smart component updates
 
@@ -67,8 +65,6 @@ placeholders, событий и cooldowns.
 | `platforms/bungee/runtime` | BungeeCord и совместимые прокси | 8 |
 | `platforms/velocity/runtime` | Velocity | 17 |
 | `distribution` | Сборка готовых платформенных JAR | — |
-
-Краткая карта кода для разработчика: [HELP-README.md](HELP-README.md).
 
 Typed configuration actions, plugin visibility, namespaces and lifecycle:
 [docs/ACTIONS.md](docs/ACTIONS.md). Release preparation rules:

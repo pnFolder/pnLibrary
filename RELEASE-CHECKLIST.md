@@ -4,7 +4,7 @@
 
 - The working tree contains no accidental files or unrelated staged changes.
 - `CHANGELOG.md` describes every public API change and compatibility break.
-- `README.md`, `HELP-README.md`, and feature documentation use the release API.
+- `README.md` and feature documentation use the release API.
 - No public example references removed or transitional classes as the preferred API.
 - All dynamic registrations are removed when their owning plugin context closes.
 - Bukkit, BungeeCord, and Velocity compile on the configured toolchain.
