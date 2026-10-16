@@ -27,20 +27,22 @@ class VelocityCommandAdapterTest {
         val actionBars = mutableListOf<Component>()
         val source = source("VelocityConsole", setOf("example.use"), sent)
         val adapter = VelocityCommandAdapter(
-            plugin = Any(),
-            nativeRegistrar = registrar,
+            registrar = registrar,
             audience = { audience(it, it === source, sent, actionBars) },
         )
         val pending = CompletableFuture<List<String>>()
         val dispatcher = RecordingDispatcher(pending)
-        adapter.register(Any(), command("hello") { aliases("hi") }, dispatcher)
+        val owner = Any()
+        adapter.register(owner, command("hello") { aliases("hi") }, dispatcher)
+        assertSame(owner, registrar.owner)
 
-        registrar.execute(source, arrayOf("one"))
-        val returned = registrar.suggest(source, arrayOf("w"))
+        registrar.execute(source, "hi", arrayOf("one"))
+        val returned = registrar.suggest(source, "hi", arrayOf("w"))
 
         assertFalse(returned.toCompletableFuture().isDone)
         pending.complete(listOf("world"))
         assertEquals(listOf("world"), returned.toCompletableFuture().join())
+        assertEquals("hi", dispatcher.execution.invokedAlias)
         assertEquals(listOf("one"), dispatcher.execution.arguments)
         assertEquals("w", dispatcher.suggestion.currentInput)
         assertTrue(dispatcher.execution.sender.isConsole)
@@ -54,7 +56,7 @@ class VelocityCommandAdapterTest {
     @Test
     fun `adapter closes every native registration exactly once`() {
         val registrar = RecordingRegistrar()
-        val adapter = VelocityCommandAdapter(Any(), registrar) { audience(it, false, mutableListOf(), mutableListOf()) }
+        val adapter = VelocityCommandAdapter(registrar) { audience(it, false, mutableListOf(), mutableListOf()) }
         val first = adapter.register(Any(), command("first") {}, RecordingDispatcher())
         adapter.register(Any(), command("second") {}, RecordingDispatcher())
 
@@ -78,14 +80,17 @@ class VelocityCommandAdapterTest {
     }
 
     private class RecordingRegistrar : NativeCommandRegistrar<CommandSource> {
-        lateinit var execute: (CommandSource, Array<String>) -> Unit
-        lateinit var suggest: (CommandSource, Array<String>) -> CompletionStage<List<String>>
+        lateinit var owner: Any
+        lateinit var execute: (CommandSource, String, Array<String>) -> Unit
+        lateinit var suggest: (CommandSource, String, Array<String>) -> CompletionStage<List<String>>
         var unregisterCalls = 0
         override fun register(
+            owner: Any,
             command: CommandDefinition,
-            execute: (CommandSource, Array<String>) -> Unit,
-            suggest: (CommandSource, Array<String>) -> CompletionStage<List<String>>,
+            execute: (CommandSource, String, Array<String>) -> Unit,
+            suggest: (CommandSource, String, Array<String>) -> CompletionStage<List<String>>,
         ): PlatformCommandRegistration {
+            this.owner = owner
             this.execute = execute
             this.suggest = suggest
             return PlatformCommandRegistration { unregisterCalls++ }

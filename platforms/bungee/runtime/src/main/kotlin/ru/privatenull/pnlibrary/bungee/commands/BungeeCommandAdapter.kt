@@ -22,7 +22,6 @@ import ru.privatenull.pnlibrary.spi.commands.NativeCommandRegistrar
  * Closing this adapter unregisters commands in reverse registration order.
  */
 internal class BungeeCommandAdapter internal constructor(
-    private val plugin: Any,
     private val nativeRegistrar: NativeCommandRegistrar<NativeCommandSender>,
     private val audience: (NativeCommandSender) -> AudienceSender,
 ) : GenericPlatformCommandAdapter<NativeCommandSender>() {
@@ -30,8 +29,7 @@ internal class BungeeCommandAdapter internal constructor(
     override val registrar: NativeCommandRegistrar<NativeCommandSender> = nativeRegistrar
     /** Creates the native command registrar and audience bridge. */
     constructor(plugin: Plugin) : this(
-        plugin,
-        nativeRegistrar = DefaultBungeeNativeCommandRegistrar(plugin),
+        nativeRegistrar = DefaultBungeeNativeCommandRegistrar(),
         { sender -> requireNotNull(BungeeAudienceAdapter(plugin).sender(sender)) },
     )
 
@@ -64,22 +62,23 @@ private class BungeeCommandSender(
 }
 
 /** Installs command and tab-completion handlers in the proxy plugin manager. */
-private class DefaultBungeeNativeCommandRegistrar(
-    private val plugin: Plugin,
-) : NativeCommandRegistrar<NativeCommandSender> {
+private class DefaultBungeeNativeCommandRegistrar : NativeCommandRegistrar<NativeCommandSender> {
     override fun register(
+        owner: Any,
         command: CommandDefinition,
-        execute: (NativeCommandSender, Array<String>) -> Unit,
-        suggest: (NativeCommandSender, Array<String>) -> java.util.concurrent.CompletionStage<List<String>>,
+        execute: (NativeCommandSender, String, Array<String>) -> Unit,
+        suggest: (NativeCommandSender, String, Array<String>) -> java.util.concurrent.CompletionStage<List<String>>,
     ): PlatformCommandRegistration {
+        val ownerPlugin = owner as? Plugin
+            ?: throw IllegalArgumentException("Command owner must be a Bungee plugin")
         val executeHandler = execute
         val suggestionHandler = suggest
         val native = object : Command(command.name, null, *command.aliases.toTypedArray()), TabExecutor {
-            override fun execute(sender: NativeCommandSender, args: Array<String>) = executeHandler(sender, args)
+            override fun execute(sender: NativeCommandSender, args: Array<String>) = executeHandler(sender, command.name, args)
             override fun onTabComplete(sender: NativeCommandSender, args: Array<String>): Iterable<String> =
-                suggestionHandler(sender, args).toCompletableFuture().get(1, java.util.concurrent.TimeUnit.SECONDS)
+                suggestionHandler(sender, command.name, args).toCompletableFuture().get(1, java.util.concurrent.TimeUnit.SECONDS)
         }
-        plugin.proxy.pluginManager.registerCommand(plugin, native)
-        return PlatformCommandRegistration { plugin.proxy.pluginManager.unregisterCommand(native) }
+        ownerPlugin.proxy.pluginManager.registerCommand(ownerPlugin, native)
+        return PlatformCommandRegistration { ownerPlugin.proxy.pluginManager.unregisterCommand(native) }
     }
 }

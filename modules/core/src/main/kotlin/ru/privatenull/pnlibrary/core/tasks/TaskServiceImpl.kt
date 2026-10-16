@@ -74,6 +74,7 @@ internal class TaskServiceImpl(
                 val native = try {
                     adapter.schedule(PlatformTaskRequest(
                         spec.execution.kind, spec.execution.target, spec.delay, spec.interval, Runnable(managed::invoke),
+                        owner = owner,
                     ))
                 } catch (error: Throwable) {
                     active.remove(managed.id)

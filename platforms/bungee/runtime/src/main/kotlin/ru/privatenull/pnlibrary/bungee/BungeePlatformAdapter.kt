@@ -4,12 +4,9 @@ import net.md_5.bungee.api.chat.TextComponent
 import net.md_5.bungee.api.plugin.Plugin
 import ru.privatenull.pnlibrary.api.logging.LogLevel
 import ru.privatenull.pnlibrary.api.platform.PlatformType
-import ru.privatenull.pnlibrary.api.plugin.PluginMetadata
 import ru.privatenull.pnlibrary.api.remote.RemotePolicyContext
-import ru.privatenull.pnlibrary.api.runtime.PnLibrary
 import ru.privatenull.pnlibrary.bungee.commands.BungeeCommandAdapter
 import ru.privatenull.pnlibrary.bungee.tasks.BungeeTaskAdapter
-import ru.privatenull.pnlibrary.core.updates.ProxyUpdateCommand
 import ru.privatenull.pnlibrary.spi.audiences.PlatformAudienceAdapter
 import ru.privatenull.pnlibrary.spi.commands.PlatformCommandAdapter
 import ru.privatenull.pnlibrary.spi.metrics.PlatformMetricsFactory
@@ -109,7 +106,6 @@ internal class BungeePlatformAdapter(
     /** Builds the remote-policy context for a validated native plugin owner. */
     override fun remotePolicyContext(
         owner: Any,
-        metadata: PluginMetadata,
         values: Map<String, String>,
     ): RemotePolicyContext {
         val target = owner as? Plugin
@@ -124,11 +120,6 @@ internal class BungeePlatformAdapter(
         }
 
         return BungeeRemotePolicyContextFactory.create(target, values)
-    }
-
-    /** Registers shared update commands exactly once for this runtime. */
-    override fun bind(library: PnLibrary) {
-        lifecycle.bind { lifecycle.track(ProxyUpdateCommand(library).register()) }
     }
 
     /** Dispatches work asynchronously; BungeeCord has no global main-thread scheduler. */

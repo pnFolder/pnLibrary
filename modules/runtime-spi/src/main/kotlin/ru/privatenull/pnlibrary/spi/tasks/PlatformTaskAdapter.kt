@@ -11,6 +11,7 @@ import java.time.Duration
  * @property delay delay before the first invocation
  * @property interval repeat interval, or `null` for one-shot execution
  * @property callback callback dispatched by the platform scheduler
+ * @property owner native plugin owning this task; supplied by the shared task scope
  */
 data class PlatformTaskRequest(
     val executionKind: TaskExecution.Kind,
@@ -18,6 +19,7 @@ data class PlatformTaskRequest(
     val delay: Duration,
     val interval: Duration?,
     val callback: Runnable,
+    val owner: Any? = null,
 ) {
     init {
         require(executionKind != TaskExecution.Kind.ENTITY || target != null) { "Entity task target is required" }

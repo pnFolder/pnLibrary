@@ -25,15 +25,14 @@ class BungeeCommandAdapterTest {
         val actionBars = mutableListOf<Component>()
         val nativeSender = sender("ProxyConsole", setOf("example.use"))
         val adapter = BungeeCommandAdapter(
-            plugin = Any(),
             nativeRegistrar = registrar,
             audience = { audience(it, it === nativeSender, messages, actionBars) },
         )
         val dispatcher = RecordingDispatcher()
         adapter.register(Any(), command("hello") { aliases("hi") }, dispatcher)
 
-        registrar.execute(nativeSender, arrayOf("one"))
-        val suggestions = registrar.suggest(nativeSender, arrayOf("w")).toCompletableFuture().join()
+        registrar.execute(nativeSender, "hello", arrayOf("one"))
+        val suggestions = registrar.suggest(nativeSender, "hello", arrayOf("w")).toCompletableFuture().join()
         dispatcher.execution.sender.send(Component.text("done"))
         dispatcher.execution.sender.actionBar(Component.text("status"))
 
@@ -51,7 +50,6 @@ class BungeeCommandAdapterTest {
     fun `closing registration and adapter unregisters each native command once`() {
         val registrar = RecordingRegistrar()
         val adapter = BungeeCommandAdapter(
-            plugin = Any(),
             nativeRegistrar = registrar,
             audience = { audience(it, false, mutableListOf(), mutableListOf()) },
         )
@@ -75,13 +73,14 @@ class BungeeCommandAdapterTest {
     }
 
     private class RecordingRegistrar : NativeCommandRegistrar<CommandSender> {
-        lateinit var execute: (CommandSender, Array<String>) -> Unit
-        lateinit var suggest: (CommandSender, Array<String>) -> CompletionStage<List<String>>
+        lateinit var execute: (CommandSender, String, Array<String>) -> Unit
+        lateinit var suggest: (CommandSender, String, Array<String>) -> CompletionStage<List<String>>
         var unregisterCalls = 0
         override fun register(
+            owner: Any,
             command: CommandDefinition,
-            execute: (CommandSender, Array<String>) -> Unit,
-            suggest: (CommandSender, Array<String>) -> CompletionStage<List<String>>,
+            execute: (CommandSender, String, Array<String>) -> Unit,
+            suggest: (CommandSender, String, Array<String>) -> CompletionStage<List<String>>,
         ): PlatformCommandRegistration {
             this.execute = execute
             this.suggest = suggest

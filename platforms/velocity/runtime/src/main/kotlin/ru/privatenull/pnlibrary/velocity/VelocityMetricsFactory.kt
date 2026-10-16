@@ -4,7 +4,6 @@ import com.velocitypowered.api.proxy.ProxyServer
 import org.bstats.velocity.Metrics
 import org.slf4j.Logger
 import ru.privatenull.pnlibrary.api.metrics.PluginMetrics
-import ru.privatenull.pnlibrary.api.metrics.MetricsProvider
 import ru.privatenull.pnlibrary.api.metrics.MetricsProviderConfiguration
 import ru.privatenull.pnlibrary.core.metrics.BStatsMetricsSession
 import ru.privatenull.pnlibrary.core.metrics.openConfiguredMetrics

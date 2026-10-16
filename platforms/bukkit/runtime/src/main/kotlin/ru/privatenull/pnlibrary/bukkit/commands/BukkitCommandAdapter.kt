@@ -28,15 +28,13 @@ import java.lang.reflect.Constructor
  * Commands are released in reverse registration order when this adapter closes.
  */
 internal class BukkitCommandAdapter internal constructor(
-    private val plugin: Plugin,
     private val nativeRegistrar: NativeCommandRegistrar<NativeCommandSender>,
     private val audience: (NativeCommandSender) -> AudienceSender,
 ) : GenericPlatformCommandAdapter<NativeCommandSender>() {
     override val registrar: NativeCommandRegistrar<NativeCommandSender> = nativeRegistrar
     /** Creates the native registrar and audience bridge. */
-    constructor(plugin: Plugin, audiences: BukkitAudienceService) : this(
-        plugin,
-        nativeRegistrar = DefaultBukkitNativeCommandRegistrar(plugin),
+    constructor(audiences: BukkitAudienceService) : this(
+        nativeRegistrar = DefaultBukkitNativeCommandRegistrar(),
         { sender -> requireNotNull(BukkitAudienceAdapter(audiences).sender(sender)) },
     )
 
@@ -71,23 +69,24 @@ internal class BukkitCommandSender(
 
 /** Native registration boundary used by the runtime and command tests. */
 /** Uses declared plugin commands where available, otherwise the legacy command map. */
-private class DefaultBukkitNativeCommandRegistrar(
-    private val plugin: Plugin,
-) : NativeCommandRegistrar<NativeCommandSender> {
+private class DefaultBukkitNativeCommandRegistrar : NativeCommandRegistrar<NativeCommandSender> {
     /** Registers portable execution and completion handlers with the native command manager. */
     override fun register(
+        owner: Any,
         command: CommandDefinition,
-        execute: (NativeCommandSender, Array<String>) -> Unit,
-        suggest: (NativeCommandSender, Array<String>) -> java.util.concurrent.CompletionStage<List<String>>,
+        execute: (NativeCommandSender, String, Array<String>) -> Unit,
+        suggest: (NativeCommandSender, String, Array<String>) -> java.util.concurrent.CompletionStage<List<String>>,
     ): PlatformCommandRegistration {
-        val executor = CommandExecutor { sender, _, _, args ->
-            execute(sender, args)
+        val ownerPlugin = owner as? Plugin
+            ?: throw IllegalArgumentException("Command owner must be a Bukkit plugin")
+        val executor = CommandExecutor { sender, _, label, args ->
+            execute(sender, label, args)
             true
         }
-        val completer = TabCompleter { sender, _, _, args ->
-            suggest(sender, args).toCompletableFuture().get(1, java.util.concurrent.TimeUnit.SECONDS)
+        val completer = TabCompleter { sender, _, label, args ->
+            suggest(sender, label, args).toCompletableFuture().get(1, java.util.concurrent.TimeUnit.SECONDS)
         }
-        val declared = (plugin as? JavaPlugin)?.getCommand(command.name)
+        val declared = (ownerPlugin as? JavaPlugin)?.getCommand(command.name)
         if (declared != null) {
             declared.aliases = command.aliases.toList()
             declared.executor = executor
@@ -99,13 +98,13 @@ private class DefaultBukkitNativeCommandRegistrar(
         }
 
         val commandMap = commandMap()
-        val native = pluginCommand(command.name).apply {
+        val native = pluginCommand(command.name, ownerPlugin).apply {
             aliases = command.aliases.toList()
             description = "pnLibrary portable command"
             this.executor = executor
             tabCompleter = completer
         }
-        commandMap.register(plugin.name, native)
+        commandMap.register(ownerPlugin.name, native)
         return PlatformCommandRegistration { native.unregister(commandMap) }
     }
 
@@ -117,12 +116,12 @@ private class DefaultBukkitNativeCommandRegistrar(
     }
 
     /** Constructs a native plugin command through Bukkit's non-public constructor. */
-    private fun pluginCommand(name: String): PluginCommand {
+    private fun pluginCommand(name: String, owner: Plugin): PluginCommand {
         val constructor: Constructor<PluginCommand> = PluginCommand::class.java.getDeclaredConstructor(
             String::class.java,
             Plugin::class.java,
         )
         constructor.isAccessible = true
-        return constructor.newInstance(name, plugin)
+        return constructor.newInstance(name, owner)
     }
 }

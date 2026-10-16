@@ -25,7 +25,6 @@ class BukkitCommandAdapterTest {
         val sent = mutableListOf<Component>()
         val actionBars = mutableListOf<Component>()
         val adapter = BukkitCommandAdapter(
-            plugin = proxy(Plugin::class.java) { defaultValue(it.returnType) },
             nativeRegistrar = registrar,
             audience = { audience(it, sent, actionBars) },
         )
@@ -34,12 +33,12 @@ class BukkitCommandAdapterTest {
         adapter.register(Any(), definition, dispatcher)
         val sender = sender("Alice", permissions = setOf("example.use"))
 
-        registrar.execute(sender, arrayOf("one", "two"))
-        val suggestions = registrar.suggest(sender, arrayOf("wo")).toCompletableFuture().join()
+        registrar.execute(sender, "hi", arrayOf("one", "two"))
+        val suggestions = registrar.suggest(sender, "hi", arrayOf("wo")).toCompletableFuture().join()
         dispatcher.lastContext.sender.send(Component.text("done"))
         dispatcher.lastContext.sender.actionBar(Component.text("status"))
 
-        assertEquals("hello", dispatcher.executionContext.invokedAlias)
+        assertEquals("hi", dispatcher.executionContext.invokedAlias)
         assertEquals(listOf("one", "two"), dispatcher.executionContext.arguments)
         assertEquals("wo", dispatcher.lastContext.currentInput)
         assertEquals(listOf("world"), suggestions)
@@ -54,7 +53,6 @@ class BukkitCommandAdapterTest {
     fun `registration and adapter close unregister each native command once`() {
         val registrar = RecordingRegistrar()
         val adapter = BukkitCommandAdapter(
-            plugin = proxy(Plugin::class.java) { defaultValue(it.returnType) },
             nativeRegistrar = registrar,
             audience = { audience(it, mutableListOf(), mutableListOf()) },
         )
@@ -79,14 +77,15 @@ class BukkitCommandAdapterTest {
     }
 
     private class RecordingRegistrar : NativeCommandRegistrar<CommandSender> {
-        lateinit var execute: (CommandSender, Array<String>) -> Unit
-        lateinit var suggest: (CommandSender, Array<String>) -> CompletionStage<List<String>>
+        lateinit var execute: (CommandSender, String, Array<String>) -> Unit
+        lateinit var suggest: (CommandSender, String, Array<String>) -> CompletionStage<List<String>>
         var unregisterCalls = 0
 
         override fun register(
+            owner: Any,
             command: CommandDefinition,
-            execute: (CommandSender, Array<String>) -> Unit,
-            suggest: (CommandSender, Array<String>) -> CompletionStage<List<String>>,
+            execute: (CommandSender, String, Array<String>) -> Unit,
+            suggest: (CommandSender, String, Array<String>) -> CompletionStage<List<String>>,
         ): PlatformCommandRegistration {
             this.execute = execute
             this.suggest = suggest

@@ -7,6 +7,45 @@ import ru.privatenull.pnlibrary.api.logging.LogLevel
 
 class UncaughtExceptionLogObserverTest {
     @Test
+    fun `observer failure cannot prevent the previous handler from seeing the exception`() {
+        val original = Thread.getDefaultUncaughtExceptionHandler()
+        var received: Throwable? = null
+        val failure = IllegalStateException("original")
+        val bridge = UncaughtExceptionLogObserver(Any())
+        try {
+            Thread.setDefaultUncaughtExceptionHandler { _, error -> received = error }
+            bridge.observe { _, _, _, _ -> error("observer failed") }
+            org.junit.jupiter.api.assertThrows<IllegalStateException> {
+                Thread.getDefaultUncaughtExceptionHandler().uncaughtException(Thread.currentThread(), failure)
+            }
+            assertSame(failure, received)
+        } finally {
+            bridge.observe(null)
+            Thread.setDefaultUncaughtExceptionHandler(original)
+        }
+    }
+
+    @Test
+    fun `replacing observer uses the latest callback`() {
+        val original = Thread.getDefaultUncaughtExceptionHandler()
+        val bridge = UncaughtExceptionLogObserver(Any())
+        var oldCalls = 0
+        var newCalls = 0
+        try {
+            Thread.setDefaultUncaughtExceptionHandler { _, _ -> }
+            bridge.observe { _, _, _, _ -> oldCalls++ }
+            bridge.observe { _, _, _, _ -> newCalls++ }
+            Thread.getDefaultUncaughtExceptionHandler()
+                .uncaughtException(Thread.currentThread(), IllegalStateException("test"))
+            assertEquals(0, oldCalls)
+            assertEquals(1, newCalls)
+        } finally {
+            bridge.observe(null)
+            Thread.setDefaultUncaughtExceptionHandler(original)
+        }
+    }
+
+    @Test
     fun `restores previous handler and reports owner`() {
         val original = Thread.getDefaultUncaughtExceptionHandler()
         val previous = Thread.UncaughtExceptionHandler { _, _ -> }

@@ -26,7 +26,7 @@ internal class RemotePolicyMonitor(
         closeModule: () -> Unit,
         closePlugin: () -> Unit,
     ) {
-        val policyContext = ownership.remotePolicyContext(owner, metadata, policy.values)
+        val policyContext = ownership.remotePolicyContext(owner, policy.values)
         tasks.schedule(
             TaskSpec.builder()
                 .name("remote policy: ${metadata.id.value}")

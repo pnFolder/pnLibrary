@@ -1,6 +1,7 @@
 package ru.privatenull.pnlibrary.velocity.tasks
 
 import com.velocitypowered.api.proxy.ProxyServer
+import ru.privatenull.pnlibrary.api.tasks.TaskExecution
 import ru.privatenull.pnlibrary.spi.tasks.PlatformTaskAdapter
 import ru.privatenull.pnlibrary.spi.tasks.PlatformTaskHandle
 import ru.privatenull.pnlibrary.spi.tasks.PlatformTaskRequest
@@ -19,9 +20,13 @@ internal class VelocityTaskAdapter internal constructor(
 ) : PlatformTaskAdapter {
 
     /** Creates an adapter backed by Velocity's scheduler. */
-    constructor(plugin: Any, server: ProxyServer) : this(
+    constructor(server: ProxyServer) : this(
         nativeSchedule = { request ->
-            val builder = server.scheduler.buildTask(plugin, request.callback)
+            val owner = requireNotNull(request.owner) { "Velocity tasks require a native plugin owner" }
+            require(server.pluginManager.fromInstance(owner).isPresent) {
+                "Task owner must be a registered Velocity plugin"
+            }
+            val builder = server.scheduler.buildTask(owner, request.callback)
 
             if (!request.delay.isZero) {
                 builder.delay(request.delay)
@@ -42,6 +47,9 @@ internal class VelocityTaskAdapter internal constructor(
     /** Schedules a request and starts tracking its cancellation handle. */
     override fun schedule(request: PlatformTaskRequest): PlatformTaskHandle {
         check(!closed.get()) { "Velocity task adapter is closed" }
+        require(request.executionKind != TaskExecution.Kind.ENTITY) {
+            "Velocity does not support entity scheduling"
+        }
 
         val reference = AtomicReference<TrackedHandle?>()
         val completed = AtomicBoolean(false)
@@ -50,6 +58,11 @@ internal class VelocityTaskAdapter internal constructor(
 
         reference.set(handle)
         handles += handle
+
+        if (closed.get()) {
+            handle.cancel()
+            error("Velocity task adapter is closed")
+        }
 
         if (completed.get()) {
             handle.release()
@@ -64,8 +77,15 @@ internal class VelocityTaskAdapter internal constructor(
             return
         }
 
-        handles.toList().forEach(TrackedHandle::cancel)
+        var failure: Throwable? = null
+        handles.toList().forEach { handle ->
+            runCatching { handle.cancel() }.onFailure { error ->
+                if (failure == null) failure = error
+                else if (failure !== error) failure?.addSuppressed(error)
+            }
+        }
         handles.clear()
+        failure?.let { throw it }
     }
 
     /** Wraps a request callback so completed one-shot tasks can be untracked safely. */
@@ -97,8 +117,11 @@ internal class VelocityTaskAdapter internal constructor(
                 return false
             }
 
-            delegate.cancel()
-            handles.remove(this)
+            try {
+                delegate.cancel()
+            } finally {
+                handles.remove(this)
+            }
             return true
         }
 

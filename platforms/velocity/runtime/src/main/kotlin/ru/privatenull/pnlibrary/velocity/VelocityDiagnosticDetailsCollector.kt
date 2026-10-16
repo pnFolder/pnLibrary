@@ -11,6 +11,7 @@ internal class VelocityDiagnosticDetailsCollector(
     fun collect(snapshot: PlatformSnapshot, includeSensitive: Boolean): Map<String, Any?> =
         DiagnosticDetailsCollector { snapshot }.collect(includeSensitive) { details ->
             val plugins = server.pluginManager.plugins
+            val players = server.allPlayers.toList()
             val installedIds = plugins.map { it.description.id }.toSet()
             val missingDependencies = plugins.mapNotNull { container ->
                 val missing = container.description.dependencies
@@ -22,18 +23,18 @@ internal class VelocityDiagnosticDetailsCollector(
                 }
             }
             val backends = server.allServers.map { connection ->
-                val address = connection.serverInfo.address
                 linkedMapOf<String, Any?>(
                     "name" to connection.serverInfo.name,
                     "players" to connection.playersConnected.size,
                 ).apply {
                     if (includeSensitive) {
+                        val address = connection.serverInfo.address
                         this["host"] = address.hostString
                         this["port"] = address.port
                     }
                 }
             }
-            val pings = server.allPlayers.map { it.ping }.filter { it >= 0 }
+            val pings = players.map { it.ping }.filter { it >= 0 }
             val p95 = percentile(pings, 0.95)
             val signals = buildList<Map<String, Any?>> {
                 if (missingDependencies.isNotEmpty()) {
@@ -47,8 +48,8 @@ internal class VelocityDiagnosticDetailsCollector(
             details["missingRequiredDependencies"] = missingDependencies
             details["backends"] = backends
             details["players"] = linkedMapOf(
-                "online" to server.playerCount,
-                "byBackend" to server.allPlayers
+                "online" to players.size,
+                "byBackend" to players
                     .groupingBy { it.currentServer.map { connection -> connection.serverInfo.name }.orElse("[unassigned]") }
                     .eachCount(),
                 "pingMs" to pingSummary(pings),
@@ -69,7 +70,8 @@ internal class VelocityDiagnosticDetailsCollector(
     private fun percentile(values: List<Long>, percentile: Double): Long? {
         if (values.isEmpty()) return null
         val sorted = values.sorted()
-        return sorted[((sorted.size - 1) * percentile).toInt().coerceIn(0, sorted.lastIndex)]
+        val index = kotlin.math.ceil(sorted.size * percentile).toInt() - 1
+        return sorted[index.coerceIn(0, sorted.lastIndex)]
     }
 
     private companion object {

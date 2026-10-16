@@ -21,7 +21,7 @@ public abstract class ru/privatenull/pnlibrary/spi/commands/GenericPlatformComma
 }
 
 public abstract interface class ru/privatenull/pnlibrary/spi/commands/NativeCommandRegistrar {
-	public abstract fun register (Lru/privatenull/pnlibrary/api/commands/CommandDefinition;Lkotlin/jvm/functions/Function2;Lkotlin/jvm/functions/Function2;)Lru/privatenull/pnlibrary/spi/commands/PlatformCommandRegistration;
+	public abstract fun register (Ljava/lang/Object;Lru/privatenull/pnlibrary/api/commands/CommandDefinition;Lkotlin/jvm/functions/Function3;Lkotlin/jvm/functions/Function3;)Lru/privatenull/pnlibrary/spi/commands/PlatformCommandRegistration;
 }
 
 public abstract interface class ru/privatenull/pnlibrary/spi/commands/PlatformCommandAdapter : java/lang/AutoCloseable {
@@ -144,7 +144,7 @@ public abstract interface class ru/privatenull/pnlibrary/spi/platform/PlatformLo
 
 public abstract interface class ru/privatenull/pnlibrary/spi/platform/PlatformOwnerControl {
 	public fun disableOwner (Ljava/lang/Object;)Z
-	public fun remotePolicyContext (Ljava/lang/Object;Lru/privatenull/pnlibrary/api/plugin/PluginMetadata;Ljava/util/Map;)Lru/privatenull/pnlibrary/api/remote/RemotePolicyContext;
+	public fun remotePolicyContext (Ljava/lang/Object;Ljava/util/Map;)Lru/privatenull/pnlibrary/api/remote/RemotePolicyContext;
 }
 
 public abstract interface class ru/privatenull/pnlibrary/spi/platform/PlatformOwnerMetadata {
@@ -242,19 +242,22 @@ public abstract interface class ru/privatenull/pnlibrary/spi/tasks/PlatformTaskH
 }
 
 public final class ru/privatenull/pnlibrary/spi/tasks/PlatformTaskRequest {
-	public fun <init> (Lru/privatenull/pnlibrary/api/tasks/TaskExecution$Kind;Ljava/lang/Object;Ljava/time/Duration;Ljava/time/Duration;Ljava/lang/Runnable;)V
+	public fun <init> (Lru/privatenull/pnlibrary/api/tasks/TaskExecution$Kind;Ljava/lang/Object;Ljava/time/Duration;Ljava/time/Duration;Ljava/lang/Runnable;Ljava/lang/Object;)V
+	public synthetic fun <init> (Lru/privatenull/pnlibrary/api/tasks/TaskExecution$Kind;Ljava/lang/Object;Ljava/time/Duration;Ljava/time/Duration;Ljava/lang/Runnable;Ljava/lang/Object;ILkotlin/jvm/internal/DefaultConstructorMarker;)V
 	public final fun component1 ()Lru/privatenull/pnlibrary/api/tasks/TaskExecution$Kind;
 	public final fun component2 ()Ljava/lang/Object;
 	public final fun component3 ()Ljava/time/Duration;
 	public final fun component4 ()Ljava/time/Duration;
 	public final fun component5 ()Ljava/lang/Runnable;
-	public final fun copy (Lru/privatenull/pnlibrary/api/tasks/TaskExecution$Kind;Ljava/lang/Object;Ljava/time/Duration;Ljava/time/Duration;Ljava/lang/Runnable;)Lru/privatenull/pnlibrary/spi/tasks/PlatformTaskRequest;
-	public static synthetic fun copy$default (Lru/privatenull/pnlibrary/spi/tasks/PlatformTaskRequest;Lru/privatenull/pnlibrary/api/tasks/TaskExecution$Kind;Ljava/lang/Object;Ljava/time/Duration;Ljava/time/Duration;Ljava/lang/Runnable;ILjava/lang/Object;)Lru/privatenull/pnlibrary/spi/tasks/PlatformTaskRequest;
+	public final fun component6 ()Ljava/lang/Object;
+	public final fun copy (Lru/privatenull/pnlibrary/api/tasks/TaskExecution$Kind;Ljava/lang/Object;Ljava/time/Duration;Ljava/time/Duration;Ljava/lang/Runnable;Ljava/lang/Object;)Lru/privatenull/pnlibrary/spi/tasks/PlatformTaskRequest;
+	public static synthetic fun copy$default (Lru/privatenull/pnlibrary/spi/tasks/PlatformTaskRequest;Lru/privatenull/pnlibrary/api/tasks/TaskExecution$Kind;Ljava/lang/Object;Ljava/time/Duration;Ljava/time/Duration;Ljava/lang/Runnable;Ljava/lang/Object;ILjava/lang/Object;)Lru/privatenull/pnlibrary/spi/tasks/PlatformTaskRequest;
 	public fun equals (Ljava/lang/Object;)Z
 	public final fun getCallback ()Ljava/lang/Runnable;
 	public final fun getDelay ()Ljava/time/Duration;
 	public final fun getExecutionKind ()Lru/privatenull/pnlibrary/api/tasks/TaskExecution$Kind;
 	public final fun getInterval ()Ljava/time/Duration;
+	public final fun getOwner ()Ljava/lang/Object;
 	public final fun getTarget ()Ljava/lang/Object;
 	public fun hashCode ()I
 	public fun toString ()Ljava/lang/String;

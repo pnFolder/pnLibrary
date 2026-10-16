@@ -26,9 +26,7 @@ object VelocityRemotePolicyContextFactory {
         values: Map<String, String> = emptyMap(),
     ): RemotePolicyContext {
         val manager = server.pluginManager
-        val descriptor = manager.fromInstance(plugin)
-            .orElseThrow()
-            .description
+        val descriptor = VelocityPluginRegistry(server).require(plugin).description
 
         val proxy = server.version
 

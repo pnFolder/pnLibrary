@@ -57,6 +57,9 @@ internal object PnLibraryBootstrap {
             created.init()
             PnLibraryProvider.install(created)
             platform.binding.bind(created)
+            if (platform.identity.isProxy) {
+                ru.privatenull.pnlibrary.core.updates.ProxyUpdateCommand(created).register()
+            }
             created
         } catch (error: Throwable) {
             runCatching { created.close() }.onFailure(error::addSuppressed)

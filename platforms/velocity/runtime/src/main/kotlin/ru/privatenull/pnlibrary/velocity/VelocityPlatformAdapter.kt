@@ -1,16 +1,11 @@
 package ru.privatenull.pnlibrary.velocity
 
-import com.velocitypowered.api.plugin.PluginDescription
 import com.velocitypowered.api.proxy.ProxyServer
 import net.kyori.adventure.text.serializer.legacy.LegacyComponentSerializer
 import org.slf4j.Logger
 import ru.privatenull.pnlibrary.api.logging.LogLevel
 import ru.privatenull.pnlibrary.api.platform.PlatformType
-import ru.privatenull.pnlibrary.api.plugin.PluginMetadata
 import ru.privatenull.pnlibrary.api.remote.RemotePolicyContext
-import ru.privatenull.pnlibrary.api.runtime.PnLibrary
-import ru.privatenull.pnlibrary.core.updates.ProxyUpdateCommand
-import ru.privatenull.pnlibrary.spi.audiences.PlatformAudienceAdapter
 import ru.privatenull.pnlibrary.spi.commands.PlatformCommandAdapter
 import ru.privatenull.pnlibrary.spi.metrics.PlatformMetricsFactory
 import ru.privatenull.pnlibrary.spi.platform.PlatformAdapter
@@ -23,22 +18,31 @@ import ru.privatenull.pnlibrary.spi.tasks.PlatformTaskAdapter
 import ru.privatenull.pnlibrary.velocity.commands.VelocityCommandAdapter
 import ru.privatenull.pnlibrary.velocity.tasks.VelocityTaskAdapter
 import java.nio.file.Path
+import java.time.Duration
+import ru.privatenull.pnlibrary.api.tasks.TaskExecution
+import ru.privatenull.pnlibrary.spi.tasks.PlatformTaskRequest
 
 /**
  * Runtime adapter for Velocity proxy servers.
  *
- * Velocity does not expose an entity-region scheduler. Global and recipient work therefore use
- * the native plugin scheduler owned by [plugin].
+ * Composes native command, task, audience, plugin metadata and diagnostics bridges.
+ * Consumer tasks carry their own plugin owner; internal global/reply work belongs to [plugin].
+ * Startup-dependent callbacks wait for [markReady], called by the plugin entry point after
+ * runtime creation and native API registration. Velocity has no entity-region scheduler.
  */
 internal class VelocityPlatformAdapter(
-    val plugin: Any,
-    val proxy: ProxyServer,
+    private val plugin: Any,
+    private val proxy: ProxyServer,
     override val metricsFactory: PlatformMetricsFactory,
     override val dataFolder: Path,
-    private val logger: Logger,
+    logger: Logger,
 ) : PlatformAdapter {
     private val diagnosticDetailsCollector = VelocityDiagnosticDetailsCollector(proxy)
     private val lifecycle = PlatformLifecycle()
+    private val plugins = VelocityPluginRegistry(proxy)
+    private val readinessLock = Any()
+    private var ready = false
+    private val pendingReadyTasks = mutableListOf<Runnable>()
 
     private val uncaughtExceptionObserver = UncaughtExceptionLogObserver(plugin)
 
@@ -47,14 +51,14 @@ internal class VelocityPlatformAdapter(
     override val implementationName: String
         get() = proxy.version.name.ifBlank { type.displayName }
 
-    override val commandAdapter: PlatformCommandAdapter =
-        VelocityCommandAdapter(plugin, proxy)
-
-    override val audienceAdapter: PlatformAudienceAdapter =
+    override val audienceAdapter: VelocityAudienceAdapter =
         VelocityAudienceAdapter(proxy)
 
+    override val commandAdapter: PlatformCommandAdapter =
+        VelocityCommandAdapter(proxy, audienceAdapter)
+
     override val taskAdapter: PlatformTaskAdapter =
-        VelocityTaskAdapter(plugin, proxy)
+        VelocityTaskAdapter(proxy)
 
     override val logHandler: (Any, LogLevel, String, Throwable?) -> Unit =
         { _, level, message, error ->
@@ -75,25 +79,18 @@ internal class VelocityPlatformAdapter(
     /** Installs or removes the process-wide uncaught-exception observer. */
     @Synchronized
     override fun observeNativeLogs(observer: ((Any, LogLevel, String, Throwable?) -> Unit)?) {
+        if (observer != null) lifecycle.checkOpen()
         uncaughtExceptionObserver.observe(observer)
     }
 
     /** Returns metadata for a native Velocity plugin owner. */
     override fun ownerMetadata(owner: Any): PluginSnapshot? {
-        val description = proxy.pluginManager.plugins
-            .firstOrNull { it.instance.orElse(null) === owner }
-            ?.description
-            ?: return unsupportedOwner(owner, this)
-
-        return description.toSnapshot()
+        return plugins.snapshot(owner) ?: unsupportedOwner(owner, this)
     }
 
     /** Returns installed Velocity plugin IDs and their versions. */
     override fun installedPlugins(): Map<String, String> =
-        proxy.pluginManager.plugins.associate { installedPlugin ->
-            installedPlugin.description.id to
-                installedPlugin.description.version.orElse("unknown")
-        }
+        plugins.versions()
 
     /** Captures a lightweight, non-sensitive snapshot of the proxy. */
     override fun snapshot(): PlatformSnapshot {
@@ -105,7 +102,7 @@ internal class VelocityPlatformAdapter(
             vendor = platformVersion.vendor,
             onlinePlayers = proxy.playerCount,
             registeredServers = proxy.allServers.map { it.serverInfo.name },
-            plugins = proxy.pluginManager.plugins.map { it.description.toSnapshot() },
+            plugins = plugins.snapshots(),
         )
     }
 
@@ -116,21 +113,9 @@ internal class VelocityPlatformAdapter(
     /** Builds the native context passed to a remotely loaded policy. */
     override fun remotePolicyContext(
         owner: Any,
-        metadata: PluginMetadata,
         values: Map<String, String>,
     ): RemotePolicyContext {
-        val registered = proxy.pluginManager.fromInstance(owner).orElse(null)
-            ?: throw IllegalArgumentException(
-                "Remote policy owner must be a registered Velocity plugin; " +
-                    "received ${owner.javaClass.name}",
-            )
-
         return VelocityRemotePolicyContextFactory.create(owner, proxy, values)
-    }
-
-    /** Registers pnLibrary-owned commands and marks the adapter as active. */
-    override fun bind(library: PnLibrary) {
-        lifecycle.bind { lifecycle.track(ProxyUpdateCommand(library).register()) }
     }
 
     /** Schedules work on Velocity's plugin scheduler. */
@@ -139,7 +124,31 @@ internal class VelocityPlatformAdapter(
             return
         }
 
-        proxy.scheduler.buildTask(plugin, task).schedule()
+        taskAdapter.schedule(PlatformTaskRequest(
+            TaskExecution.Kind.GLOBAL, null, Duration.ZERO, null, task, plugin,
+        ))
+    }
+
+    /** Defers startup-dependent work until the entry point has published the native API. */
+    override fun whenServerReady(task: Runnable) {
+        synchronized(readinessLock) {
+            if (lifecycle.isClosed) return
+            if (!ready) {
+                pendingReadyTasks += task
+                return
+            }
+        }
+        executeGlobal(task)
+    }
+
+    /** Called once the runtime and Velocity API registration both succeeded. */
+    internal fun markReady() {
+        val pending = synchronized(readinessLock) {
+            if (ready || lifecycle.isClosed) return
+            ready = true
+            pendingReadyTasks.toList().also { pendingReadyTasks.clear() }
+        }
+        pending.forEach(::executeGlobal)
     }
 
     /** Dispatches a reply task using the proxy-wide scheduler. */
@@ -147,19 +156,17 @@ internal class VelocityPlatformAdapter(
         executeGlobal(task)
     }
 
-    /** Releases commands, observers and lifecycle state owned by the adapter. */
+    /** Discards pending startup work, cancels native tasks and removes the exception observer. */
     override fun close() {
-        lifecycle.close { observeNativeLogs(null) }
+        lifecycle.close {
+            synchronized(readinessLock) { pendingReadyTasks.clear() }
+            try {
+                taskAdapter.close()
+            } finally {
+                observeNativeLogs(null)
+            }
+        }
     }
-
-    /** Converts native plugin metadata to the shared immutable representation. */
-    private fun PluginDescription.toSnapshot(): PluginSnapshot =
-        PluginSnapshot(
-            id = id,
-            name = name.orElse(id),
-            version = version.orElse("unknown"),
-            authors = authors,
-        )
 
     private companion object {
         val LEGACY_SERIALIZER: LegacyComponentSerializer =

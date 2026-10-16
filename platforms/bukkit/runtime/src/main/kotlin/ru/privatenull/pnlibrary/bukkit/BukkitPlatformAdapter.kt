@@ -5,7 +5,6 @@ import org.bukkit.entity.Player
 import org.bukkit.plugin.Plugin
 import ru.privatenull.pnlibrary.api.logging.LogLevel
 import ru.privatenull.pnlibrary.api.platform.PlatformType
-import ru.privatenull.pnlibrary.api.plugin.PluginMetadata
 import ru.privatenull.pnlibrary.api.remote.RemotePolicyContext
 import ru.privatenull.pnlibrary.api.runtime.PnLibrary
 import ru.privatenull.pnlibrary.bukkit.commands.BukkitCommandAdapter
@@ -63,7 +62,7 @@ internal class BukkitPlatformAdapter(
         BukkitMetricsFactory()
 
     override val commandAdapter: PlatformCommandAdapter =
-        BukkitCommandAdapter(plugin, audienceService)
+        BukkitCommandAdapter(audienceService)
 
     override val audienceAdapter: PlatformAudienceAdapter =
         BukkitAudienceAdapter(audienceService)
@@ -104,7 +103,6 @@ internal class BukkitPlatformAdapter(
     /** Creates a policy context for the native Bukkit plugin owner. */
     override fun remotePolicyContext(
         owner: Any,
-        metadata: PluginMetadata,
         values: Map<String, String>,
     ): RemotePolicyContext {
         val target = owner as? Plugin

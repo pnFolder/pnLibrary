@@ -40,7 +40,9 @@ class PnLibraryVelocityPlugin @Inject constructor(
      * @param event lifecycle signal supplied by Velocity; its payload is not required
      */
     @Subscribe
+    @Suppress("UNUSED_PARAMETER")
     fun onInitialize(event: ProxyInitializeEvent) {
+        check(runtimeHost == null) { "Velocity runtime is already initialized" }
         val adapter = VelocityPlatformAdapter(
             plugin = this,
             proxy = server,
@@ -48,12 +50,22 @@ class PnLibraryVelocityPlugin @Inject constructor(
             dataFolder = dataDirectory,
             logger = logger,
         )
-        runtimeHost = PnLibraryRuntimeHost.startAndRegisterPlatform(
-            this,
-            adapter,
-            VelocityPlatform::class.java,
-            VelocityPlatformImpl(server),
-        )
+        try {
+            runtimeHost = PnLibraryRuntimeHost.startAndRegisterPlatform(
+                this,
+                adapter,
+                VelocityPlatform::class.java,
+                VelocityPlatformImpl(server),
+            )
+            adapter.markReady()
+        } catch (error: Throwable) {
+            val host = runtimeHost
+            runtimeHost = null
+            runCatching {
+                if (host != null) host.close() else adapter.close()
+            }.onFailure(error::addSuppressed)
+            throw error
+        }
     }
 
     /**
@@ -62,8 +74,10 @@ class PnLibraryVelocityPlugin @Inject constructor(
      * @param event lifecycle signal supplied by Velocity; its payload is not required
      */
     @Subscribe
+    @Suppress("UNUSED_PARAMETER")
     fun onShutdown(event: ProxyShutdownEvent) {
-        runtimeHost?.close()
+        val host = runtimeHost
         runtimeHost = null
+        host?.close()
     }
 }

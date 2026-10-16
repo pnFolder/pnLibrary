@@ -6,11 +6,16 @@ import java.util.concurrent.CompletionStage
 
 /** Native source-specific registration boundary shared by every platform runtime. */
 interface NativeCommandRegistrar<S> {
-    /** Registers [command] and returns a handle that unregisters it. */
+    /**
+     * Registers [command] for its native [owner] and returns a handle that unregisters it.
+     * Callbacks receive the native source, invoked alias, and arguments in that order.
+     * Platforms without alias information may pass the canonical command name.
+     */
     fun register(
+        owner: Any,
         command: CommandDefinition,
-        execute: (S, Array<String>) -> Unit,
-        suggest: (S, Array<String>) -> CompletionStage<List<String>>,
+        execute: (S, String, Array<String>) -> Unit,
+        suggest: (S, String, Array<String>) -> CompletionStage<List<String>>,
     ): PlatformCommandRegistration
 }
 
@@ -29,12 +34,13 @@ abstract class GenericPlatformCommandAdapter<S> : TrackingPlatformCommandAdapter
         command: CommandDefinition,
         dispatcher: PlatformCommandDispatcher,
     ): PlatformCommandRegistration = registrar.register(
+        owner = owner,
         command = command,
-        execute = { source, arguments ->
-            dispatcher.execute(command, context(source, command.name, arguments))
+        execute = { source, alias, arguments ->
+            dispatcher.execute(command, context(source, alias, arguments))
         },
-        suggest = { source, arguments ->
-            dispatcher.suggest(command, context(source, command.name, arguments))
+        suggest = { source, alias, arguments ->
+            dispatcher.suggest(command, context(source, alias, arguments))
         },
     )
 }

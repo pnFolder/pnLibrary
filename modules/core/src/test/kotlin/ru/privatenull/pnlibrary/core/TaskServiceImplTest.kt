@@ -10,6 +10,19 @@ import java.util.concurrent.atomic.AtomicBoolean
 
 class TaskServiceImplTest {
     @Test
+    fun `native task request retains scope owner identity`() {
+        val adapter = RecordingAdapter()
+        val owner = Any()
+        val service = TaskServiceImpl(adapter)
+        try {
+            service.scope(owner).schedule(spec("owned"))
+            assertSame(owner, adapter.requests.single().owner)
+        } finally {
+            service.close()
+        }
+    }
+
+    @Test
     fun `task can cancel itself and native handle is cancelled`() {
         val adapter = RecordingAdapter()
         val service = TaskServiceImpl(adapter)
