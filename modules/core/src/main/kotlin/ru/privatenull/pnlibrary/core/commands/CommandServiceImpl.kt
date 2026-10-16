@@ -4,7 +4,6 @@ import net.kyori.adventure.text.Component
 import ru.privatenull.pnlibrary.api.commands.CommandContext
 import ru.privatenull.pnlibrary.api.commands.CommandDefinition
 import ru.privatenull.pnlibrary.api.commands.CommandRegistration
-import ru.privatenull.pnlibrary.api.commands.CommandService
 import ru.privatenull.pnlibrary.api.commands.completedExecution
 import ru.privatenull.pnlibrary.api.commands.completedSuggestions
 import ru.privatenull.pnlibrary.api.logging.LogLevel

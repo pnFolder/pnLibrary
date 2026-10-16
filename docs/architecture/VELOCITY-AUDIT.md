@@ -74,8 +74,10 @@ CommandSource разных платформ. Generic-параметры owner/pr
 Вместо распространения этих типов через весь core нативная граница проверяет
 регистрацию владельца и передаёт его без подмены в Velocity API.
 
-Публичный VelocityPlatform по-прежнему предоставляет ProxyServer. Пользовательский
-API PnLibrary не меняется. Изменяются внутренние SPI: NativeCommandRegistrar,
+Публичный VelocityPlatform по-прежнему предоставляет ProxyServer. После аудита
+регистрация команд и задач consumer-плагина переведена исключительно на ModuleContext:
+из PnLibrary удалены прямые task/command services и runtime helpers. Это намеренный
+breaking change, описанный в API-MIGRATION.md. Изменяются также SPI: NativeCommandRegistrar,
 PlatformTaskRequest и PlatformOwnerControl; собственные сторонние реализации этих
 SPI потребуют перекомпиляции/миграции.
 

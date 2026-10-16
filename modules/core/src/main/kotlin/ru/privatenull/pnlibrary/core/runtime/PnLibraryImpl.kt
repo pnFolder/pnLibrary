@@ -34,7 +34,8 @@ import ru.privatenull.pnlibrary.currency.CurrencyFeature
 import ru.privatenull.pnlibrary.core.services.ServiceManagerImpl
 import ru.privatenull.pnlibrary.api.activity.ActivityService
 import ru.privatenull.pnlibrary.api.audiences.AudienceService
-import ru.privatenull.pnlibrary.api.commands.CommandService
+import ru.privatenull.pnlibrary.api.commands.CommandDefinition
+import ru.privatenull.pnlibrary.api.commands.CommandRegistration
 import ru.privatenull.pnlibrary.api.config.ConfigurationService
 import ru.privatenull.pnlibrary.api.currency.CurrencyProviderRegistry
 import ru.privatenull.pnlibrary.api.events.EventService
@@ -43,7 +44,7 @@ import ru.privatenull.pnlibrary.api.placeholders.PlaceholderValueStore
 import ru.privatenull.pnlibrary.api.platform.PlatformProvider
 import ru.privatenull.pnlibrary.api.plugin.PluginRegistry
 import ru.privatenull.pnlibrary.api.services.ServiceManager
-import ru.privatenull.pnlibrary.api.tasks.TaskService
+import ru.privatenull.pnlibrary.api.tasks.TaskScope
 import ru.privatenull.pnlibrary.api.updates.UpdateService
 import ru.privatenull.pnlibrary.core.downloads.DirectDownloadManager
 import ru.privatenull.pnlibrary.core.downloads.DownloadConfiguration
@@ -65,7 +66,7 @@ internal class PnLibraryImpl(
     override val diagnostics: DiagnosticsRegistry,
     val config: PnLibraryConfig = PnLibraryConfig(),
     private val onClose: () -> Unit = {},
-) : PnLibrary, PlatformRegistration {
+) : PnLibrary, PlatformRegistration, RuntimeResources {
 
     // Keep the service wiring readable while the platform boundary remains one context object.
     private val platformIdentity get() = platform.identity
@@ -149,9 +150,10 @@ internal class PnLibraryImpl(
         errorLogger = ::recordAndLog,
     )
     private val taskService get() = platformServices.tasks
-    override val tasks: TaskService get() = taskService
+    override val runtimeTasks: TaskScope get() = taskService.scope(owner)
     private val commandService get() = platformServices.commands
-    override val commands: CommandService get() = commandService
+    override fun registerRuntimeCommand(command: CommandDefinition): CommandRegistration =
+        commandService.register(owner, command)
     private val audienceService get() = platformServices.audiences
     override val audiences: AudienceService get() = audienceService
     private val serviceManager = ServiceManagerImpl()
@@ -195,7 +197,7 @@ internal class PnLibraryImpl(
     )
 
     private fun runtimeDiagnostics(): Map<String, Any?> {
-        val taskSnapshots = tasks.query()
+        val taskSnapshots = taskService.query()
         val updateSnapshots = updates.all()
         val taskFailures = taskSnapshots.count { it.lastFailure != null }
         val failedUpdates = updateSnapshots.count { it.snapshot.state.name.equals("FAILED", ignoreCase = true) }

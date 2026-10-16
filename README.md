@@ -438,13 +438,16 @@ metrics = pn.metrics.open(this, projectId = 12345)
 
 Полное описание единого builder API, Java-примеров, условий, фильтров и нативных адаптеров находится в [docs/TASKS.md](docs/TASKS.md).
 
-Каждый плагин получает собственный scope. Таймер работает внутри pnLibrary, а
+Каждый модуль получает собственный scope через `context.tasks`. Таймер работает внутри pnLibrary, а
 само действие передаётся правильному планировщику платформы: глобальному или
 entity scheduler на Folia, основному потоку Bukkit/Paper либо планировщику
 прокси. На Bukkit scope автоматически закрывается при `PluginDisableEvent`.
 
 ```kotlin
-val runtimeTask = pn.runtimeTaskScope().schedule {
+val registration = pn.plugins.register(this)
+val context = registration.registerModule("main")
+
+context.tasks.schedule {
     name = "cache-refresh"
     delay = Duration.ofSeconds(5)
     interval = Duration.ofMinutes(1)
@@ -452,17 +455,9 @@ val runtimeTask = pn.runtimeTaskScope().schedule {
     run { refreshCache() }
 }
 
-// Для отдельного plugin/module lifecycle:
-val pluginTasks = pn.tasks.scope(this)
-pluginTasks.schedule {
-    name = "menu-refresh"
-    execution = TaskExecution.global()
-    run { reloadMenus() }
-}
+// При выключении своего плагина:
+registration.close() // Закрывает модули, отменяет задачи и удаляет команды.
 
-override fun onDisable() {
-    pluginTasks.close()
-}
 ```
 
 `TaskHandle.cancel()` останавливает отдельную задачу, `TaskScope.cancelAll()` —

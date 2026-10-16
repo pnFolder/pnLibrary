@@ -1,67 +1,53 @@
-# API migration guide
+# Миграция на регистрацию через ModuleContext
 
-Deprecated entry points remain binary-compatible throughout the current major line. New code should
-use the canonical form in the right column; adapters delegate to it and will be removed only in a
-declared major release.
+Это намеренное несовместимое изменение публичного API команд и задач. Прямые
+owner-based точки входа удалены, без deprecated-обёрток, чтобы они не оставались
+вторым способом регистрации.
 
-| Previous API | Canonical API |
-|---|---|
-| `PluginRegistry.registrations()` | `PluginRegistry.all()` |
-| `PluginRegistration.modules()` | `PluginRegistration.all()` |
-| `UpdateService.registrations()` | `UpdateService.all()` |
-| `UpdateService.find(product)` | `UpdateService.get(product)` or `require(product)` |
-| `ServiceManager.getAll(type)` | `ServiceManager.all(type)` |
-| `TaskService.find(id)` | `TaskService.get(id)` or `require(id)` |
-| `TaskScope.find(id)` | `TaskScope.get(id)` or `require(id)` |
-| `TaskScope.findByKey(key)` | `TaskScope.getByKey(key)` |
-| `TaskScope.global/async/entity/later/repeat...` | `TaskScope.schedule(TaskSpec.builder()...build())` |
-| `library.commands.register(libraryOwner, command("name") { ... })` | `library.registerRuntimeCommand("name") { ... }` |
-| `library.commands.register(plugin, command("name") { ... })` | Keep the explicit owner-based form: the plugin owns its lifecycle |
-| `library.tasks.scope(libraryOwner)` | `library.runtimeTaskScope()` |
-| `PlaceholderService.placeholder(...).register()` | `PlaceholderService.register(key) { ... }` |
-| Kotlin `placeholder<T>(name) { ... }` | Kotlin `register<T>(name) { ... }` |
-| `DiagnosticConfiguration.file(path)` | `DiagnosticConfiguration.builder(path)` |
-| `ConfigTypeAccess.local()` | `ConfigTypeAccess.ownerOnly()` |
-| `ConfigTypeAccess.global()` | `ConfigTypeAccess.everyone()` |
-| `PluginBuilder.remotePolicy { ... }` | `PluginBuilder.remotePolicy(RemotePolicy.builder()...build())` |
-| `RemotePolicyBuilder()` | `RemotePolicy.builder()` |
-| `PluginBuilder.register()` | Registration is completed by `PluginRegistry.register(...)` / `registerModule(...)` |
-
-## Optional capabilities
-
-## Bound runtime helpers
-
-`PnLibrary` provides bound helpers for resources owned by the library runtime itself:
+| Прежний вызов | Новый вызов |
+| --- | --- |
+| `library.commands.register(plugin, definition)` | `context.registerCommand(definition)` |
+| `library.commands.register(plugin, "name") { ... }` | `context.registerCommand("name") { ... }` |
+| `library.tasks.scope(plugin)` | `context.tasks` |
+| `library.tasks.query()` | `context.tasks.query()` для текущего модуля |
+| `library.registerRuntimeCommand(...)` в consumer plugin | `context.registerCommand(...)` |
+| `library.runtimeTaskScope()` в consumer plugin | `context.tasks` |
 
 ```kotlin
-import net.kyori.adventure.text.Component
+val registration = library.plugins.register(plugin)
+val context = registration.registerModule("main")
 
-library.registerRuntimeCommand("hello") {
-    executes { context -> context.sender.send(Component.text("Hello")) }
+context.registerCommand("hello") {
+    executes { invocation ->
+        invocation.sender.send(Component.text("Hello"))
+    }
 }
 
-library.runtimeTaskScope().schedule {
-    name = "refresh"
-    interval = Duration.ofMinutes(1)
-    run { refresh() }
-}
+context.tasks.schedule(TaskSpec.builder()
+    .name("refresh")
+    .interval(Duration.ofMinutes(1))
+    .action { refresh() }
+    .build())
+
+// При выключении native plugin:
+registration.close()
 ```
 
-Use the explicit owner-based APIs when a separate plugin or module must have an
-independent lifecycle. The old forms remain available during the current major line.
+Для Java:
+```java
+PluginRegistration registration = library.getPlugins().register(plugin);
+ModuleContext context = registration.registerModule("main", builder -> {});
+context.registerCommand(commandDefinition);
+context.getTasks().schedule(taskSpec);
+// При выключении:
+registration.close();
+```
 
-Optional APIs are obtained from `ModuleContext.services`. Currency is the first fully separated
-feature and is available through `CurrencyApi.get(context)`.
+Модуль автоматически освобождает его команды и задачи. При необходимости можно
+досрочно закрыть отдельный CommandRegistration или отменить TaskHandle.
+Владелец нативной регистрации — исходный plugin; соседние модули изолированы.
 
-The direct `PnLibrary` properties for metrics, tasks, commands, audiences, placeholders, and
-updates are compatibility facades for the current major line. New feature integrations should
-resolve their feature API from the module service container; the direct properties must not gain
-new feature-specific behavior. They can be removed only in a declared major release after each
-feature has a stable API/runtime boundary.
-
-## Lifecycle
-
-Keep every returned registration and close it when ownership ends. Closing is idempotent, and
-registrations expose `isClosed`, `isActive`, or a typed state where applicable. A
-`PluginRegistration` owns its modules; a `ModuleContext` owns registrations created during module
-configuration and releases them in reverse acquisition order.
+CommandService и TaskService перенесены из API во внутренние пакеты core.
+Consumer plugins, собранные со старыми вызовами, необходимо мигрировать и пересобрать.
+Внутренние pnLibrary-интеграции используют core RuntimeResources; этот мост
+не является заменой ModuleContext для сторонних плагинов.

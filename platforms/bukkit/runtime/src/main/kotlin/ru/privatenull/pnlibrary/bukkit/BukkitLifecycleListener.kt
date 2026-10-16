@@ -1,5 +1,6 @@
 package ru.privatenull.pnlibrary.bukkit
 
+import ru.privatenull.pnlibrary.core.runtime.runtimeTaskScope
 import net.md_5.bungee.api.ChatColor
 import net.md_5.bungee.api.chat.ClickEvent
 import net.md_5.bungee.api.chat.ComponentBuilder
@@ -108,11 +109,10 @@ internal class BukkitLifecycleListener(
             .build())
     }
 
-    /** Releases registrations and task scopes belonging to the disabled plugin. */
+    /** Closing the plugin registration releases all its module commands and task scopes. */
     @EventHandler
     fun onPluginDisable(event: PluginDisableEvent) {
         library?.plugins?.unregister(event.plugin)
-        library?.tasks?.close(event.plugin)
     }
 
     /** Drains queued readiness callbacks once. */

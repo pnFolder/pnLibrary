@@ -1,5 +1,6 @@
 package ru.privatenull.pnlibrary.core.updates
 
+import ru.privatenull.pnlibrary.core.runtime.registerRuntimeCommand
 import net.kyori.adventure.text.Component
 import ru.privatenull.pnlibrary.api.commands.ArgumentType
 import ru.privatenull.pnlibrary.api.commands.CommandDefinition

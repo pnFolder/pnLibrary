@@ -1104,12 +1104,6 @@ public abstract interface class ru/privatenull/pnlibrary/api/commands/CommandSen
 	public fun sendMessage (Lnet/kyori/adventure/text/Component;)V
 }
 
-public abstract interface class ru/privatenull/pnlibrary/api/commands/CommandService {
-	public fun register (Ljava/lang/Object;Ljava/lang/String;Lkotlin/jvm/functions/Function1;)Lru/privatenull/pnlibrary/api/commands/CommandRegistration;
-	public abstract fun register (Ljava/lang/Object;Lru/privatenull/pnlibrary/api/commands/CommandDefinition;)Lru/privatenull/pnlibrary/api/commands/CommandRegistration;
-	public abstract fun unregisterOwner (Ljava/lang/Object;)V
-}
-
 public abstract interface class ru/privatenull/pnlibrary/api/commands/SuggestionHandler {
 	public abstract fun suggest (Lru/privatenull/pnlibrary/api/commands/CommandContext;)Ljava/util/concurrent/CompletionStage;
 }
@@ -2825,7 +2819,6 @@ public abstract interface class ru/privatenull/pnlibrary/api/runtime/PnLibrary :
 	public abstract fun createDiagnosticReport (Lru/privatenull/pnlibrary/api/diagnostics/DebugRequest;)Lru/privatenull/pnlibrary/api/diagnostics/DiagnosticReport;
 	public fun getActivity ()Lru/privatenull/pnlibrary/api/activity/ActivityService;
 	public fun getAudiences ()Lru/privatenull/pnlibrary/api/audiences/AudienceService;
-	public fun getCommands ()Lru/privatenull/pnlibrary/api/commands/CommandService;
 	public abstract fun getConfiguration ()Lru/privatenull/pnlibrary/api/runtime/PnLibraryConfig;
 	public abstract fun getConfigurations ()Lru/privatenull/pnlibrary/api/config/ConfigurationService;
 	public abstract fun getDiagnostics ()Lru/privatenull/pnlibrary/api/diagnostics/DiagnosticsService;
@@ -2839,14 +2832,10 @@ public abstract interface class ru/privatenull/pnlibrary/api/runtime/PnLibrary :
 	public abstract fun getPlatforms ()Lru/privatenull/pnlibrary/api/platform/PlatformProvider;
 	public abstract fun getPlugins ()Lru/privatenull/pnlibrary/api/plugin/PluginRegistry;
 	public abstract fun getServices ()Lru/privatenull/pnlibrary/api/services/ServiceManager;
-	public abstract fun getTasks ()Lru/privatenull/pnlibrary/api/tasks/TaskService;
 	public abstract fun getUpdates ()Lru/privatenull/pnlibrary/api/updates/UpdateService;
 	public abstract fun getVersion ()Ljava/lang/String;
 	public abstract fun isAtLeastVersion (Ljava/lang/String;)Z
 	public abstract fun isClosed ()Z
-	public fun registerRuntimeCommand (Ljava/lang/String;Lkotlin/jvm/functions/Function1;)Lru/privatenull/pnlibrary/api/commands/CommandRegistration;
-	public fun registerRuntimeCommand (Lru/privatenull/pnlibrary/api/commands/CommandDefinition;)Lru/privatenull/pnlibrary/api/commands/CommandRegistration;
-	public fun runtimeTaskScope ()Lru/privatenull/pnlibrary/api/tasks/TaskScope;
 }
 
 public final class ru/privatenull/pnlibrary/api/runtime/PnLibraryBrand {
@@ -3068,19 +3057,6 @@ public abstract interface class ru/privatenull/pnlibrary/api/tasks/TaskScope : j
 	public static synthetic fun query$default (Lru/privatenull/pnlibrary/api/tasks/TaskScope;Lru/privatenull/pnlibrary/api/tasks/TaskQuery;ILjava/lang/Object;)Ljava/util/List;
 	public fun require (Lru/privatenull/pnlibrary/api/tasks/TaskId;)Lru/privatenull/pnlibrary/api/tasks/TaskHandle;
 	public fun schedule (Lru/privatenull/pnlibrary/api/tasks/TaskSpec;)Lru/privatenull/pnlibrary/api/tasks/TaskHandle;
-}
-
-public abstract interface class ru/privatenull/pnlibrary/api/tasks/TaskService : java/lang/AutoCloseable {
-	public fun cancel (Lru/privatenull/pnlibrary/api/tasks/TaskId;)Z
-	public abstract fun close ()V
-	public abstract fun close (Ljava/lang/Object;)V
-	public fun get (Lru/privatenull/pnlibrary/api/tasks/TaskId;)Lru/privatenull/pnlibrary/api/tasks/TaskHandle;
-	public fun query (Ljava/lang/Object;Lru/privatenull/pnlibrary/api/tasks/TaskQuery;)Ljava/util/List;
-	public fun query (Lru/privatenull/pnlibrary/api/tasks/TaskQuery;)Ljava/util/List;
-	public static synthetic fun query$default (Lru/privatenull/pnlibrary/api/tasks/TaskService;Ljava/lang/Object;Lru/privatenull/pnlibrary/api/tasks/TaskQuery;ILjava/lang/Object;)Ljava/util/List;
-	public static synthetic fun query$default (Lru/privatenull/pnlibrary/api/tasks/TaskService;Lru/privatenull/pnlibrary/api/tasks/TaskQuery;ILjava/lang/Object;)Ljava/util/List;
-	public fun require (Lru/privatenull/pnlibrary/api/tasks/TaskId;)Lru/privatenull/pnlibrary/api/tasks/TaskHandle;
-	public abstract fun scope (Ljava/lang/Object;)Lru/privatenull/pnlibrary/api/tasks/TaskScope;
 }
 
 public final class ru/privatenull/pnlibrary/api/tasks/TaskServiceSettings {

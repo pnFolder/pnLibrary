@@ -1,18 +1,16 @@
 # Tasks
 
-pnLibrary exposes one cross-platform scheduling primitive: `TaskScope.schedule(TaskSpec)`. Delays and intervals are owned by the native Bukkit/Paper/Folia, BungeeCord, or Velocity scheduler; pnLibrary adds owner lifecycle, conditions, status, querying, and consistent cancellation.
-
-For tasks owned by the whole library runtime, use the bound scope:
+Tasks are obtained only through `ModuleContext.tasks`. Register your native plugin
+once, then create its logical module:
 
 ```kotlin
-val handle = library.runtimeTaskScope().schedule {
-    name = "cache-refresh"
-    interval = Duration.ofMinutes(1)
-    run { refreshCache() }
-}
+val pluginRegistration = library.plugins.register(plugin)
+val context = pluginRegistration.registerModule("main")
+val tasks = context.tasks
 ```
 
-Use `library.tasks.scope(owner)` when a separate plugin or module lifecycle must own the task. The runtime-bound helper is only for pnLibrary-owned work.
+Closing the module cancels its tasks; closing the plugin registration closes all its
+modules. There is no public `PnLibrary.tasks` or owner-based scope factory.
 
 ## Kotlin
 
@@ -67,8 +65,8 @@ val runningHud = context.tasks.query(
         .build()
 )
 
-context.tasks.find(handle.id)?.cancel()
-library.tasks.query() // library-wide diagnostic view
+context.tasks.get(handle.id)?.cancel()
+context.tasks.query() // this module only
 ```
 
 `TaskId` is globally unique. `name` is only a display label and may repeat. An optional `key` is unique within one owner; `REJECT`, `KEEP_EXISTING`, and `REPLACE` define collision behavior.
@@ -79,7 +77,7 @@ The history limit is configured at bootstrap with `PnLibraryConfig(taskHistoryCa
 
 ## Lifecycle
 
-Closing a handle cancels one task. Closing a `TaskScope` cancels every active task for that exact owner and rejects new work. Closing pnLibrary closes all scopes and the native task adapters. Cancellation is idempotent and does not interrupt an action already running.
+Closing a handle cancels one task. Closing a `TaskScope` cancels every active task for that exact owner and rejects new work. Closing pnLibrary closes all registered modules and native task adapters. Cancellation is idempotent and does not interrupt an action already running.
 
 The older `global`, `later`, `repeat`, `entity`, and `asyncThen` methods were removed. Integrations
 must use `schedule` with an explicit `TaskSpec`.

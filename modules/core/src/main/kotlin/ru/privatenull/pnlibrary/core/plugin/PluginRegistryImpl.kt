@@ -1,5 +1,7 @@
 package ru.privatenull.pnlibrary.core.plugin
 
+import ru.privatenull.pnlibrary.core.commands.CommandService
+import ru.privatenull.pnlibrary.core.tasks.TaskService
 import ru.privatenull.pnlibrary.api.diagnostics.DiagnosticRegistration
 import ru.privatenull.pnlibrary.api.diagnostics.DiagnosticsService
 import ru.privatenull.pnlibrary.api.config.ConfigScope
@@ -25,7 +27,6 @@ import ru.privatenull.pnlibrary.api.plugin.PluginRegistry
 import ru.privatenull.pnlibrary.api.tasks.TaskScope
 import ru.privatenull.pnlibrary.core.remote.RemotePolicyNoticeRenderer
 import ru.privatenull.pnlibrary.core.remote.RemotePolicyMonitor
-import ru.privatenull.pnlibrary.api.tasks.TaskService
 import ru.privatenull.pnlibrary.api.updates.UpdateRegistration
 import ru.privatenull.pnlibrary.api.updates.UpdateService
 import ru.privatenull.pnlibrary.api.updates.ProductDescriptor
@@ -42,7 +43,6 @@ import ru.privatenull.pnlibrary.core.placeholders.PlaceholderHub
 import ru.privatenull.pnlibrary.core.text.ComponentCache
 import ru.privatenull.pnlibrary.api.cooldowns.CooldownService
 import ru.privatenull.pnlibrary.api.actions.ActionService
-import ru.privatenull.pnlibrary.api.commands.CommandService
 import ru.privatenull.pnlibrary.api.downloads.DownloadRegistration
 import ru.privatenull.pnlibrary.currency.CurrencyFeature
 import ru.privatenull.pnlibrary.core.downloads.DirectDownloadManager

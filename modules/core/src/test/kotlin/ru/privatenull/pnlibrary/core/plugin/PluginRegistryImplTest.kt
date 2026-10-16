@@ -1,5 +1,7 @@
 package ru.privatenull.pnlibrary.core.plugin
 
+import ru.privatenull.pnlibrary.core.commands.CommandService
+import ru.privatenull.pnlibrary.core.tasks.TaskService
 import org.junit.jupiter.api.Assertions.assertEquals
 import org.junit.jupiter.api.Assertions.assertFalse
 import org.junit.jupiter.api.Assertions.assertNull
@@ -11,7 +13,6 @@ import org.junit.jupiter.api.Test
 import ru.privatenull.pnlibrary.api.diagnostics.DiagnosticsService
 import ru.privatenull.pnlibrary.api.commands.CommandDefinition
 import ru.privatenull.pnlibrary.api.commands.CommandRegistration
-import ru.privatenull.pnlibrary.api.commands.CommandService
 import ru.privatenull.pnlibrary.api.events.Event
 import ru.privatenull.pnlibrary.api.events.EventHandler
 import ru.privatenull.pnlibrary.api.events.Listener
@@ -25,7 +26,7 @@ import ru.privatenull.pnlibrary.api.platform.PlatformType
 import ru.privatenull.pnlibrary.api.plugin.PluginBuilder
 import ru.privatenull.pnlibrary.api.plugin.Dependencies
 import ru.privatenull.pnlibrary.api.tasks.TaskScope
-import ru.privatenull.pnlibrary.api.tasks.TaskService
+import ru.privatenull.pnlibrary.api.tasks.TaskSpec
 import ru.privatenull.pnlibrary.api.updates.UpdateService
 import ru.privatenull.pnlibrary.api.updates.PluginUpdateRequest
 import ru.privatenull.pnlibrary.api.updates.UpdateRegistration
@@ -39,6 +40,8 @@ import ru.privatenull.pnlibrary.core.placeholders.PlaceholderHub
 import ru.privatenull.pnlibrary.core.testing.TestTaskService
 import ru.privatenull.pnlibrary.core.tasks.TaskServiceImpl
 import ru.privatenull.pnlibrary.spi.tasks.PlatformTaskAdapter
+import ru.privatenull.pnlibrary.spi.tasks.PlatformTaskRequest
+import ru.privatenull.pnlibrary.spi.tasks.PlatformTaskHandle
 import ru.privatenull.pnlibrary.core.services.ServiceManagerImpl
 import java.lang.reflect.Proxy
 import java.util.function.Supplier
@@ -341,12 +344,32 @@ class PluginRegistryImplTest {
 
     @Test
     fun `sibling modules receive isolated task scopes`() {
-        val tasks = TaskServiceImpl(emptyProxy(PlatformTaskAdapter::class.java))
-        val plugin = registry(tasks = tasks).register(Any())
+        val nativeOwners = mutableListOf<Any?>()
+        val native = object : PlatformTaskAdapter {
+            override fun schedule(request: PlatformTaskRequest): PlatformTaskHandle {
+                nativeOwners += request.owner
+                return PlatformTaskHandle { true }
+            }
+        }
+        val tasks = TaskServiceImpl(native)
+        val owner = Any()
+        val plugin = registry(tasks = tasks).register(owner)
         val first = plugin.registerModule("first") { }
         val second = plugin.registerModule("second") { }
 
         assertNotSame(first.tasks, second.tasks)
+        val spec = TaskSpec.builder().action { }.build()
+        val firstTask = first.tasks.schedule(spec)
+        val secondTask = second.tasks.schedule(spec)
+        assertSame(owner, nativeOwners[0])
+        assertSame(owner, nativeOwners[1])
+        first.close()
+        assertTrue(firstTask.isCancelled)
+        assertFalse(secondTask.isCancelled)
+        assertThrows(IllegalStateException::class.java) { first.tasks.schedule(spec) }
+        plugin.close()
+        assertTrue(secondTask.isCancelled)
+        tasks.close()
     }
 
     @Test

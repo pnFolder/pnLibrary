@@ -17,13 +17,13 @@ context.registerCommand("hello") {
 }
 ```
 
-Use the following lower-level form only for a command intended to live for the
-whole native plugin lifecycle:
+All consumer commands are registered through ModuleContext. Obtain the context once
+with `library.plugins.register(plugin).registerModule("main")`:
 
 ```kotlin
 import net.kyori.adventure.text.Component
 
-val registration = library.commands.register(plugin, "hello") {
+val registration = context.registerCommand("hello") {
     aliases("hi")
     permission("example.hello")
 
@@ -44,7 +44,7 @@ Commands may contain literals and typed arguments at any depth. Suggestions on a
 receive every value parsed earlier in the selected route:
 
 ```kotlin
-library.commands.register(plugin, "group") {
+context.registerCommand("group") {
     argument("group", ArgumentType.string()) {
         suggests { groups.visibleTo(it.sender.id) }
 
@@ -70,7 +70,7 @@ library.commands.register(plugin, "group") {
             }
         }
     }
-})
+}
 ```
 
 The tree has no depth limit. Exact literals take precedence over argument nodes. Built-in argument
@@ -107,11 +107,11 @@ import ru.privatenull.pnlibrary.api.commands.CommandRegistration;
 CommandDefinition hello = CommandDefinition.builder("hello")
     .aliases("hi")
     .permission("example.hello")
-    .suggests(context -> Arrays.asList("world", "server"))
-    .executes(context -> context.getSender().send(Component.text("Hello!")))
+    .suggests(invocation -> Arrays.asList("world", "server"))
+    .executes(invocation -> invocation.getSender().send(Component.text("Hello!")))
     .build();
 
-CommandRegistration registration = library.getCommands().register(plugin, hello);
+CommandRegistration registration = context.registerCommand(hello);
 ```
 
 ## Sender and lifecycle
@@ -123,7 +123,7 @@ are deliberately absent from the public contract.
 
 The returned `CommandRegistration` may be closed manually and repeated `close()` calls are safe.
 pnLibrary also associates every registration with its native `owner`: closing the owner's
-`PluginContext`, calling `plugins.unregister(owner)`, or shutting down pnLibrary removes all corresponding
+`ModuleContext`, calling `plugins.unregister(owner)`, or shutting down pnLibrary removes all corresponding
 native commands automatically.
 
 Primary names and aliases are normalized to lowercase. Blank names, whitespace inside names, an

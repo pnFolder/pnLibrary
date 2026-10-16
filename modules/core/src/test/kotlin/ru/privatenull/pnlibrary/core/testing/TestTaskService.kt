@@ -1,11 +1,11 @@
 package ru.privatenull.pnlibrary.core.testing
 
+import ru.privatenull.pnlibrary.core.tasks.TaskService
 import ru.privatenull.pnlibrary.api.tasks.TaskHandle
 import ru.privatenull.pnlibrary.api.tasks.TaskContext
 import ru.privatenull.pnlibrary.api.tasks.TaskId
 import ru.privatenull.pnlibrary.api.tasks.TaskScope
 import ru.privatenull.pnlibrary.api.tasks.TaskSpec
-import ru.privatenull.pnlibrary.api.tasks.TaskService
 import ru.privatenull.pnlibrary.api.tasks.TaskAction
 import java.time.Instant
 import java.util.concurrent.atomic.AtomicBoolean

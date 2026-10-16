@@ -1,5 +1,7 @@
 package ru.privatenull.pnlibrary.bukkit
 
+import ru.privatenull.pnlibrary.core.runtime.registerRuntimeCommand
+import ru.privatenull.pnlibrary.core.runtime.runtimeTaskScope
 import org.bukkit.event.EventHandler
 import org.bukkit.event.HandlerList
 import org.bukkit.event.Listener
