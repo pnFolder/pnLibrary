@@ -1,5 +1,6 @@
 package ru.privatenull.pnlibrary.core.commands
 
+import ru.privatenull.pnlibrary.api.commands.ArgumentType
 import ru.privatenull.pnlibrary.api.commands.CommandContext
 import ru.privatenull.pnlibrary.api.commands.CommandDefinition
 import ru.privatenull.pnlibrary.api.commands.CommandNode
@@ -98,7 +99,7 @@ internal class CommandTreeRouter {
 
     @Suppress("UNCHECKED_CAST")
     private fun parse(node: CommandNode, token: String): Any? =
-        (node.argumentType as? ru.privatenull.pnlibrary.api.commands.ArgumentType<Any>)?.parse(token)
+        (node.argumentType as? ArgumentType<Any>)?.parse(token)
 
     private fun usage(path: List<String>, node: CommandNode, context: CommandContext): String {
         val accessible = node.children.filter { allowed(it, context) }

@@ -3,8 +3,10 @@ package ru.privatenull.pnlibrary.core.metrics
 import org.junit.jupiter.api.Assertions.assertEquals
 import org.junit.jupiter.api.Assertions.assertThrows
 import org.junit.jupiter.api.Test
+import ru.privatenull.pnlibrary.api.metrics.ErrorReporter
 import ru.privatenull.pnlibrary.api.metrics.MetricsProvider
 import ru.privatenull.pnlibrary.api.metrics.PluginMetrics
+import ru.privatenull.pnlibrary.api.metrics.TelemetryError
 import java.util.concurrent.atomic.AtomicInteger
 import java.util.function.Supplier
 
@@ -44,8 +46,8 @@ class CompositePluginMetricsTest {
 
     @Test
     fun `composite exposes the error reporter owned by its provider`() {
-        val reporter = object : ru.privatenull.pnlibrary.api.metrics.ErrorReporter {
-            override fun capture(error: ru.privatenull.pnlibrary.api.metrics.TelemetryError) = Unit
+        val reporter = object : ErrorReporter {
+            override fun capture(error: TelemetryError) = Unit
             override fun close() = Unit
         }
         val charts = RecordingMetrics(MetricsProvider.BSTATS, mutableListOf())

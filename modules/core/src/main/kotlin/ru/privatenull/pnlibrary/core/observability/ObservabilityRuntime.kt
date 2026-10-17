@@ -1,12 +1,13 @@
 package ru.privatenull.pnlibrary.core.observability
 
 import ru.privatenull.pnlibrary.api.observability.ComponentStatus
-import ru.privatenull.pnlibrary.api.observability.Observation
-import ru.privatenull.pnlibrary.api.observability.ObservationQuery
-import ru.privatenull.pnlibrary.api.observability.ObservationRequest
 import ru.privatenull.pnlibrary.api.observability.ObservabilityReport
 import ru.privatenull.pnlibrary.api.observability.ObservabilityReportRequest
 import ru.privatenull.pnlibrary.api.observability.ObservabilityService
+import ru.privatenull.pnlibrary.api.observability.Observation
+import ru.privatenull.pnlibrary.api.observability.ObservationLevel
+import ru.privatenull.pnlibrary.api.observability.ObservationQuery
+import ru.privatenull.pnlibrary.api.observability.ObservationRequest
 import java.nio.file.Path
 import java.time.Instant
 
@@ -79,7 +80,7 @@ internal class ObservabilityRuntime(
         val recentWindow = events.filter { now - it.timestamp <= ANALYTICS_WINDOW_MS }
         val lastHour = events.filter { now - it.timestamp <= 60 * 60_000L }
         val lastDay = events.filter { now - it.timestamp <= 24 * 60 * 60_000L }
-        val recentErrors = recentWindow.count { it.errorType != null || it.level == ru.privatenull.pnlibrary.api.observability.ObservationLevel.ERROR || it.level == ru.privatenull.pnlibrary.api.observability.ObservationLevel.CRITICAL }
+        val recentErrors = recentWindow.count { it.errorType != null || it.level == ObservationLevel.ERROR || it.level == ObservationLevel.CRITICAL }
         val recent = events.takeLast(MAX_ANALYTICS_EVENTS).map { event ->
             linkedMapOf<String, Any?>(
                 "id" to event.id,
@@ -93,8 +94,8 @@ internal class ObservabilityRuntime(
             )
         }
         val statusHealth = when {
-            events.any { it.level == ru.privatenull.pnlibrary.api.observability.ObservationLevel.CRITICAL } -> "critical"
-            events.any { it.level == ru.privatenull.pnlibrary.api.observability.ObservationLevel.ERROR } ||
+            events.any { it.level == ObservationLevel.CRITICAL } -> "critical"
+            events.any { it.level == ObservationLevel.ERROR } ||
                 statuses.any { it.state.equals("failed", ignoreCase = true) || it.state.equals("degraded", ignoreCase = true) } -> "attention"
             else -> "healthy"
         }

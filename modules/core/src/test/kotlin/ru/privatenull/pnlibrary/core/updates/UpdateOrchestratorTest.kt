@@ -4,6 +4,7 @@ import org.junit.jupiter.api.Assertions.*
 import org.junit.jupiter.api.Test
 import org.junit.jupiter.api.io.TempDir
 import ru.privatenull.pnlibrary.api.updates.*
+import ru.privatenull.pnlibrary.api.updates.UpdateActor
 import ru.privatenull.pnlibrary.api.version.ApiVersionRange
 import ru.privatenull.pnlibrary.api.version.SemanticVersion
 import ru.privatenull.pnlibrary.core.updates.engine.ResolutionResult
@@ -240,10 +241,10 @@ class UpdateOrchestratorTest {
 
     @Test
     fun `manual operations retain their initiator through the executor`() {
-        val actor = ru.privatenull.pnlibrary.api.updates.UpdateActor(
-            ru.privatenull.pnlibrary.api.updates.UpdateActor.Kind.CONSOLE, "console", "Console",
+        val actor = UpdateActor(
+            UpdateActor.Kind.CONSOLE, "console", "Console",
         )
-        val observations = mutableListOf<Pair<String, ru.privatenull.pnlibrary.api.updates.UpdateActor>>()
+        val observations = mutableListOf<Pair<String, UpdateActor>>()
         val executor = Executors.newSingleThreadScheduledExecutor()
         val orchestrator = UpdateOrchestrator(
             UpdateConfiguration(), UpdateStateStore(directory), executor,
@@ -260,10 +261,10 @@ class UpdateOrchestratorTest {
 
     @Test
     fun `automatic staging is attributed to the system rather than the person checking`() {
-        val actor = ru.privatenull.pnlibrary.api.updates.UpdateActor(
-            ru.privatenull.pnlibrary.api.updates.UpdateActor.Kind.CONSOLE, "console", "Console",
+        val actor = UpdateActor(
+            UpdateActor.Kind.CONSOLE, "console", "Console",
         )
-        val observations = mutableListOf<Pair<String, ru.privatenull.pnlibrary.api.updates.UpdateActor>>()
+        val observations = mutableListOf<Pair<String, UpdateActor>>()
         val executor = Executors.newSingleThreadScheduledExecutor()
         val orchestrator = UpdateOrchestrator(
             UpdateConfiguration(downloads = UpdateConfiguration.Downloads(automatic = true)),
@@ -273,14 +274,14 @@ class UpdateOrchestratorTest {
         )
         try {
             orchestrator.checkNow(actor = actor).toCompletableFuture().get(2, TimeUnit.SECONDS)
-            assertEquals(listOf("CHECK" to actor, "STAGE" to ru.privatenull.pnlibrary.api.updates.UpdateActor.SYSTEM), observations)
+            assertEquals(listOf("CHECK" to actor, "STAGE" to UpdateActor.SYSTEM), observations)
         } finally { orchestrator.close() }
     }
 
     @Test
     fun `failed manual staging records its initiator without replacing the available plan`() {
-        val actor = ru.privatenull.pnlibrary.api.updates.UpdateActor(
-            ru.privatenull.pnlibrary.api.updates.UpdateActor.Kind.CONSOLE, "console", "Console",
+        val actor = UpdateActor(
+            UpdateActor.Kind.CONSOLE, "console", "Console",
         )
         val observations = mutableListOf<UpdatePlanSnapshot>()
         val executor = Executors.newSingleThreadScheduledExecutor()
@@ -314,7 +315,7 @@ class UpdateOrchestratorTest {
         val id = java.util.UUID.randomUUID()
         try {
             val saved = UpdatePlanSnapshot(id, 0, UpdateState.ROLLED_BACK, plan("2.0.0"), emptyList(), "saved set")
-            val restored = orchestrator.rollbackTo(ru.privatenull.pnlibrary.api.updates.UpdateActor.SYSTEM) { saved }
+            val restored = orchestrator.rollbackTo(UpdateActor.SYSTEM) { saved }
                 .toCompletableFuture().get(2, TimeUnit.SECONDS)
             assertEquals(id, restored.id)
             assertEquals("2.0.0", restored.plan?.changes?.single()?.to.toString())

@@ -1,5 +1,6 @@
 package ru.privatenull.pnlibrary.spi.commands
 
+import ru.privatenull.pnlibrary.api.commands.CommandDefinition
 import java.util.LinkedHashSet
 import java.util.concurrent.atomic.AtomicBoolean
 
@@ -10,13 +11,13 @@ abstract class TrackingPlatformCommandAdapter : PlatformCommandAdapter {
 
     protected abstract fun registerNative(
         owner: Any,
-        command: ru.privatenull.pnlibrary.api.commands.CommandDefinition,
+        command: CommandDefinition,
         dispatcher: PlatformCommandDispatcher,
     ): PlatformCommandRegistration
 
     final override fun register(
         owner: Any,
-        command: ru.privatenull.pnlibrary.api.commands.CommandDefinition,
+        command: CommandDefinition,
         dispatcher: PlatformCommandDispatcher,
     ): PlatformCommandRegistration {
         check(!closed.get()) { "Platform command adapter is closed" }

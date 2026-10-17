@@ -4,17 +4,18 @@ import org.junit.jupiter.api.Assertions.*
 import org.junit.jupiter.api.Test
 import org.junit.jupiter.api.io.TempDir
 import ru.privatenull.pnlibrary.common.minecraft.MinecraftVersion
+import ru.privatenull.pnlibrary.localization.TranslationException
 import ru.privatenull.pnlibrary.localization.TranslationRequest
 import ru.privatenull.pnlibrary.localization.TranslationSource
+import java.io.ByteArrayOutputStream
 import java.net.URI
 import java.nio.charset.StandardCharsets
-import java.nio.file.Path
 import java.nio.file.Files
+import java.nio.file.Path
 import java.security.MessageDigest
 import java.time.Duration
-import java.util.concurrent.ConcurrentHashMap
 import java.util.concurrent.CompletionException
-import java.io.ByteArrayOutputStream
+import java.util.concurrent.ConcurrentHashMap
 import java.util.zip.ZipEntry
 import java.util.zip.ZipOutputStream
 
@@ -144,7 +145,7 @@ class LocalizationServiceTest {
     fun `closed service rejects new operations`() {
         val service = service(Fixture())
         service.close()
-        assertThrows(ru.privatenull.pnlibrary.localization.TranslationException::class.java) { service.availableVersions() }
+        assertThrows(TranslationException::class.java) { service.availableVersions() }
     }
 
     private fun service(fixture: LocalizationHttpClient) = DefaultMinecraftLocalization(

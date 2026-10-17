@@ -14,6 +14,7 @@ import ru.privatenull.pnlibrary.api.commands.CommandRegistration
 import ru.privatenull.pnlibrary.api.currency.Currency
 import ru.privatenull.pnlibrary.api.plugin.ModuleContext
 import ru.privatenull.pnlibrary.api.runtime.PnLibrary
+import ru.privatenull.pnlibrary.api.runtime.PnLibraryProvider
 import java.math.BigDecimal
 import java.time.Duration
 import java.util.UUID
@@ -78,8 +79,8 @@ object DemoCommands {
 
 private object PnLibraryProviderFacade {
     fun sendAction(plugin: DemoPlugin, player: Player) {
-        val audience = ru.privatenull.pnlibrary.api.runtime.PnLibraryProvider.get().audiences.player(player.uniqueId) ?: return
-        plugin.context.actions.execute(audience, ru.privatenull.pnlibrary.api.runtime.PnLibraryProvider.get().audiences.all(),
+        val audience = PnLibraryProvider.get().audiences.player(player.uniqueId) ?: return
+        plugin.context.actions.execute(audience, PnLibraryProvider.get().audiences.all(),
             listOf(MessageAction(listOf("<aqua>pnDemo <white>uses the unified Action API"), target = ActionTarget.PLAYER)))
     }
 }

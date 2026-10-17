@@ -1,7 +1,9 @@
 package ru.privatenull.pnlibrary.api.plugin
 
-import java.util.Locale
 import ru.privatenull.pnlibrary.api.actions.ActionService
+import ru.privatenull.pnlibrary.api.commands.CommandBuilder
+import ru.privatenull.pnlibrary.api.commands.CommandDefinition
+import ru.privatenull.pnlibrary.api.commands.CommandRegistration
 import ru.privatenull.pnlibrary.api.config.ConfigScope
 import ru.privatenull.pnlibrary.api.cooldowns.CooldownService
 import ru.privatenull.pnlibrary.api.diagnostics.DiagnosticRegistration
@@ -14,15 +16,16 @@ import ru.privatenull.pnlibrary.api.services.ServiceManager
 import ru.privatenull.pnlibrary.api.tasks.TaskScope
 import ru.privatenull.pnlibrary.api.text.ComponentService
 import ru.privatenull.pnlibrary.api.updates.UpdateRegistration
+import java.util.Locale
 
 /** Owns the isolated pnLibrary capabilities of one logical plugin module. */
 interface ModuleContext : AutoCloseable {
     /** Registers a command released when this module closes. */
-    fun registerCommand(command: ru.privatenull.pnlibrary.api.commands.CommandDefinition): ru.privatenull.pnlibrary.api.commands.CommandRegistration =
+    fun registerCommand(command: CommandDefinition): CommandRegistration =
         throw UnsupportedOperationException("Module commands are not available in this runtime")
 
     /** Builds a command whose lifecycle belongs to this module. */
-    fun registerCommand(name: String, configure: ru.privatenull.pnlibrary.api.commands.CommandBuilder.() -> Unit): ru.privatenull.pnlibrary.api.commands.CommandRegistration =
+    fun registerCommand(name: String, configure: CommandBuilder.() -> Unit): CommandRegistration =
         registerCommand(ru.privatenull.pnlibrary.api.commands.command(name, configure))
 
     /** Registry-wide stable identity used by shared services and diagnostics. */

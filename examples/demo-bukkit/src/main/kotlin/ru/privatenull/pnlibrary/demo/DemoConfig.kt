@@ -1,9 +1,10 @@
 package ru.privatenull.pnlibrary.demo
 
-import ru.privatenull.pnlibrary.api.config.ConfigRange
 import ru.privatenull.pnlibrary.api.config.ConfigNotBlank
+import ru.privatenull.pnlibrary.api.config.ConfigRange
 import ru.privatenull.pnlibrary.api.config.ConfigScope
 import ru.privatenull.pnlibrary.api.config.ManagedConfig
+import ru.privatenull.pnlibrary.api.plugin.ModuleContext
 import java.util.function.Supplier
 
 data class DemoSettings(
@@ -14,7 +15,7 @@ data class DemoSettings(
 )
 
 object DemoConfig {
-    fun register(context: ru.privatenull.pnlibrary.api.plugin.ModuleContext): ManagedConfig<DemoSettings> {
+    fun register(context: ModuleContext): ManagedConfig<DemoSettings> {
         val scope: ConfigScope = context.configs
         val config = scope.yaml("demo-settings.yml", DemoSettings::class.java, Supplier { DemoSettings() })
         return config

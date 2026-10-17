@@ -2,6 +2,7 @@ package ru.privatenull.pnlibrary.core.runtime
 
 import ru.privatenull.pnlibrary.api.runtime.PnLibrary
 import ru.privatenull.pnlibrary.api.updates.PluginUpdateRequest
+import ru.privatenull.pnlibrary.api.updates.ProductDescriptor
 import ru.privatenull.pnlibrary.api.updates.UpdateRegistration
 import ru.privatenull.pnlibrary.spi.platform.PlatformIdentity
 import ru.privatenull.pnlibrary.spi.platform.PlatformOwnership
@@ -25,7 +26,7 @@ internal object RuntimeUpdateMonitor {
         val artifactId = identity.artifactId
         val monitor = library.updates.register(
             owner,
-            ru.privatenull.pnlibrary.api.updates.ProductDescriptor.library(currentVersion),
+            ProductDescriptor.library(currentVersion),
             PluginUpdateRequest.builder()
                 .repository("pnFolder", "pnLibrary")
                 .automaticDownload(false)

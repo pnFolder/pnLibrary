@@ -1,10 +1,11 @@
 package ru.privatenull.pnlibrary.api.plugin
 
-import ru.privatenull.pnlibrary.api.metrics.MetricsProvider
 import org.junit.jupiter.api.Assertions.assertEquals
-import org.junit.jupiter.api.Assertions.assertThrows
 import org.junit.jupiter.api.Assertions.assertFalse
+import org.junit.jupiter.api.Assertions.assertThrows
 import org.junit.jupiter.api.Test
+import ru.privatenull.pnlibrary.api.metrics.MetricsProvider
+import ru.privatenull.pnlibrary.api.metrics.PluginMetrics
 
 class MetricsBuilderTest {
     @Test
@@ -36,7 +37,7 @@ class MetricsBuilderTest {
             .charts { configured = true }
 
         assertFalse(builder.enabled)
-        builder.configure(object : ru.privatenull.pnlibrary.api.metrics.PluginMetrics {
+        builder.configure(object : PluginMetrics {
             override val projectId = 32592
             override fun simplePie(id: String, value: java.util.function.Supplier<String?>) = this
             override fun advancedPie(id: String, values: java.util.function.Supplier<Map<String, Int>>) = this

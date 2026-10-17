@@ -3,6 +3,7 @@ package ru.privatenull.pnlibrary.core.config
 import org.junit.jupiter.api.Assertions.assertEquals
 import org.junit.jupiter.api.Test
 import ru.privatenull.pnlibrary.api.config.ConfigSerializationContext
+import ru.privatenull.pnlibrary.api.config.ConfigSerializer
 import java.time.Duration
 import java.util.Locale
 
@@ -29,7 +30,7 @@ class BuiltInConfigSerializersTest {
 
     @Suppress("UNCHECKED_CAST")
     private fun <T : Any> serializer(type: Class<T>) =
-        serializers.getValue(type) as ru.privatenull.pnlibrary.api.config.ConfigSerializer<T>
+        serializers.getValue(type) as ConfigSerializer<T>
 
     private fun context(type: Class<*>) = ConfigSerializationContext(
         path = "value",

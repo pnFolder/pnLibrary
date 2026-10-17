@@ -4,6 +4,7 @@ import ru.privatenull.pnlibrary.api.logging.PnLogger
 import ru.privatenull.pnlibrary.api.plugin.DenyAction
 import ru.privatenull.pnlibrary.api.plugin.PluginMetadata
 import ru.privatenull.pnlibrary.api.plugin.RemotePolicy
+import ru.privatenull.pnlibrary.api.remote.RemotePolicyContext
 import ru.privatenull.pnlibrary.api.remote.RemotePolicyExplanation
 import ru.privatenull.pnlibrary.api.tasks.TaskExecution
 import ru.privatenull.pnlibrary.api.tasks.TaskScope
@@ -43,7 +44,7 @@ internal class RemotePolicyMonitor(
         owner: Any,
         metadata: PluginMetadata,
         policy: RemotePolicy,
-        policyContext: ru.privatenull.pnlibrary.api.remote.RemotePolicyContext,
+        policyContext: RemotePolicyContext,
         isClosed: () -> Boolean,
         logger: PnLogger,
         closeModule: () -> Unit,

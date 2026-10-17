@@ -1,5 +1,6 @@
 package ru.privatenull.pnlibrary.api.plugin
 
+import ru.privatenull.pnlibrary.api.metrics.FastStatsFacade
 import ru.privatenull.pnlibrary.api.metrics.PluginMetrics
 import ru.privatenull.pnlibrary.api.metrics.MetricsProviderConfiguration
 import ru.privatenull.pnlibrary.api.metrics.ErrorReporter
@@ -13,7 +14,7 @@ import java.util.function.Consumer
  */
 interface MetricsController : AutoCloseable {
     /** Returns the live FastStats backend, or null when absent or disabled. */
-    fun fastStatsOrNull(): ru.privatenull.pnlibrary.api.metrics.FastStatsFacade? = null
+    fun fastStatsOrNull(): FastStatsFacade? = null
     /** Whether this controller has been permanently released with its module context. */
     val isClosed: Boolean get() = false
     /** Whether a metrics session is currently active. */

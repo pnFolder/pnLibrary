@@ -4,6 +4,7 @@ import ru.privatenull.pnlibrary.api.runtime.PnLibrary
 import ru.privatenull.pnlibrary.api.runtime.PnLibraryConfig
 import ru.privatenull.pnlibrary.api.runtime.PnLibraryProvider
 import ru.privatenull.pnlibrary.core.diagnostics.DiagnosticsRegistry
+import ru.privatenull.pnlibrary.core.updates.ProxyUpdateCommand
 
 /**
  * Creates and publishes the single pnLibrary runtime in the current JVM.
@@ -58,7 +59,7 @@ internal object PnLibraryBootstrap {
             PnLibraryProvider.install(created)
             platform.binding.bind(created)
             if (platform.identity.isProxy) {
-                ru.privatenull.pnlibrary.core.updates.ProxyUpdateCommand(created).register()
+                ProxyUpdateCommand(created).register()
             }
             created
         } catch (error: Throwable) {

@@ -1,5 +1,6 @@
 package ru.privatenull.pnlibrary.core.plugin
 
+import ru.privatenull.pnlibrary.api.metrics.MetricsProvider
 import ru.privatenull.pnlibrary.api.metrics.MetricsProviderConfiguration
 import ru.privatenull.pnlibrary.api.metrics.PluginMetrics
 import java.util.function.Consumer
@@ -18,5 +19,5 @@ internal data class ModuleMetricsDefinition(
     }
 
     val projectId: Int?
-        get() = providers.firstOrNull { it.provider == ru.privatenull.pnlibrary.api.metrics.MetricsProvider.BSTATS }?.projectId
+        get() = providers.firstOrNull { it.provider == MetricsProvider.BSTATS }?.projectId
 }

@@ -1,11 +1,12 @@
 package ru.privatenull.pnlibrary.core.plugin
 
+import ru.privatenull.pnlibrary.api.metrics.ErrorReporter
+import ru.privatenull.pnlibrary.api.plugin.MetricsController
+import ru.privatenull.pnlibrary.api.metrics.FastStatsFacade
 import ru.privatenull.pnlibrary.api.metrics.MetricsService
 import ru.privatenull.pnlibrary.api.metrics.PluginMetrics
 import ru.privatenull.pnlibrary.api.metrics.MetricsProviderConfiguration
 import ru.privatenull.pnlibrary.api.metrics.MetricsProvider
-import ru.privatenull.pnlibrary.api.metrics.ErrorReporter
-import ru.privatenull.pnlibrary.api.plugin.MetricsController
 import java.util.concurrent.atomic.AtomicBoolean
 import java.util.function.Consumer
 
@@ -40,9 +41,9 @@ internal class MetricsControllerImpl(
     override fun errorReporterOrNull(): ErrorReporter? =
         session?.errorReporter?.let { errorReporter ?: it }
 
-    override fun fastStatsOrNull(): ru.privatenull.pnlibrary.api.metrics.FastStatsFacade? {
+    override fun fastStatsOrNull(): FastStatsFacade? {
         val backend = session?.fastStatsOrNull() ?: return null
-        return object : ru.privatenull.pnlibrary.api.metrics.FastStatsFacade {
+        return object : FastStatsFacade {
             override val metrics: PluginMetrics = backend.metrics
             override fun errorTracker(): ErrorReporter = errorReporter ?: backend.errorTracker()
         }

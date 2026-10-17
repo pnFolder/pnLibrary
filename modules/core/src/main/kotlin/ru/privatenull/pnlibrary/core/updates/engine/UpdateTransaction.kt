@@ -1,6 +1,7 @@
 package ru.privatenull.pnlibrary.core.updates.engine
 
 import ru.privatenull.pnlibrary.api.version.ApiVersionRange
+import ru.privatenull.pnlibrary.api.version.SemanticVersion
 import java.nio.file.Files
 import java.nio.file.Path
 import java.nio.file.Paths
@@ -319,7 +320,7 @@ class UpdateTransaction(
             record.installedTarget?.let { checkedPath(Paths.get(it), publicationRoot) }
             require(record.backupSha256 == null || record.backupSha256!!.matches(Regex("[0-9a-f]{64}"))) { "invalid backup digest" }
             listOfNotNull(record.expected, record.prior).forEach { version ->
-                ru.privatenull.pnlibrary.api.version.SemanticVersion.parse(version.version)
+                SemanticVersion.parse(version.version)
                 ApiVersionRange(version.minimumApi, version.maximumApi)
                 require(version.sha256 == null || version.sha256!!.matches(Regex("[0-9a-f]{64}"))) { "invalid persisted artifact digest" }
             }

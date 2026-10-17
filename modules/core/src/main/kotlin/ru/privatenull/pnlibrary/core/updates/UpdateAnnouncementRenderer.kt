@@ -1,9 +1,10 @@
 package ru.privatenull.pnlibrary.core.updates
 
-import ru.privatenull.pnlibrary.api.updates.UpdatePlanSnapshot
-import ru.privatenull.pnlibrary.api.updates.UpdateState
-import ru.privatenull.pnlibrary.api.updates.UpdateSnapshot
 import ru.privatenull.pnlibrary.api.updates.ReleaseSummary
+import ru.privatenull.pnlibrary.api.updates.UpdateChannel
+import ru.privatenull.pnlibrary.api.updates.UpdatePlanSnapshot
+import ru.privatenull.pnlibrary.api.updates.UpdateSnapshot
+import ru.privatenull.pnlibrary.api.updates.UpdateState
 import ru.privatenull.pnlibrary.console.ConsoleCard
 import ru.privatenull.pnlibrary.console.ConsoleTheme
 
@@ -79,11 +80,11 @@ internal object UpdateAnnouncementRenderer {
         return card.status(result).build().render()
     }
 
-    private fun channelName(channel: ru.privatenull.pnlibrary.api.updates.UpdateChannel): String = when (channel) {
-        ru.privatenull.pnlibrary.api.updates.UpdateChannel.STABLE -> "стабильный канал"
-        ru.privatenull.pnlibrary.api.updates.UpdateChannel.RC -> "канал RC"
-        ru.privatenull.pnlibrary.api.updates.UpdateChannel.BETA -> "тестовый канал Beta"
-        ru.privatenull.pnlibrary.api.updates.UpdateChannel.ALPHA -> "экспериментальный канал Alpha"
-        ru.privatenull.pnlibrary.api.updates.UpdateChannel.DEV -> "разрабатываемый канал Dev"
+    private fun channelName(channel: UpdateChannel): String = when (channel) {
+        UpdateChannel.STABLE -> "стабильный канал"
+        UpdateChannel.RC -> "канал RC"
+        UpdateChannel.BETA -> "тестовый канал Beta"
+        UpdateChannel.ALPHA -> "экспериментальный канал Alpha"
+        UpdateChannel.DEV -> "разрабатываемый канал Dev"
     }
 }

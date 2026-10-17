@@ -1,25 +1,23 @@
 package ru.privatenull.pnlibrary.core.plugin
 
-import org.mockito.Mockito.mock
-import org.mockito.Mockito.verify
-import org.mockito.Mockito.`when`
-import org.mockito.Mockito.doThrow
-import ru.privatenull.pnlibrary.core.downloads.DirectDownloadManager
-import ru.privatenull.pnlibrary.api.downloads.DownloadRegistration
-
-import ru.privatenull.pnlibrary.core.commands.CommandService
-import ru.privatenull.pnlibrary.core.tasks.TaskService
 import org.junit.jupiter.api.Assertions.assertEquals
 import org.junit.jupiter.api.Assertions.assertFalse
-import org.junit.jupiter.api.Assertions.assertNull
 import org.junit.jupiter.api.Assertions.assertNotSame
+import org.junit.jupiter.api.Assertions.assertNull
 import org.junit.jupiter.api.Assertions.assertSame
 import org.junit.jupiter.api.Assertions.assertThrows
 import org.junit.jupiter.api.Assertions.assertTrue
 import org.junit.jupiter.api.Test
-import ru.privatenull.pnlibrary.api.diagnostics.DiagnosticsService
+import org.mockito.Mockito.`when`
+import org.mockito.Mockito.doThrow
+import org.mockito.Mockito.mock
+import org.mockito.Mockito.verify
 import ru.privatenull.pnlibrary.api.commands.CommandDefinition
 import ru.privatenull.pnlibrary.api.commands.CommandRegistration
+import ru.privatenull.pnlibrary.api.diagnostics.DiagnosticsService
+import ru.privatenull.pnlibrary.api.downloads.DownloadDestination
+import ru.privatenull.pnlibrary.api.downloads.DownloadRegistration
+import ru.privatenull.pnlibrary.api.downloads.FileDownloads
 import ru.privatenull.pnlibrary.api.events.Event
 import ru.privatenull.pnlibrary.api.events.EventHandler
 import ru.privatenull.pnlibrary.api.events.Listener
@@ -28,30 +26,32 @@ import ru.privatenull.pnlibrary.api.logging.MessageBox
 import ru.privatenull.pnlibrary.api.logging.PnLogger
 import ru.privatenull.pnlibrary.api.metrics.MetricsService
 import ru.privatenull.pnlibrary.api.metrics.PluginMetrics
-import ru.privatenull.pnlibrary.spi.platform.PlatformAdapter
 import ru.privatenull.pnlibrary.api.platform.PlatformType
-import ru.privatenull.pnlibrary.api.plugin.PluginBuilder
 import ru.privatenull.pnlibrary.api.plugin.Dependencies
+import ru.privatenull.pnlibrary.api.plugin.PluginBuilder
+import ru.privatenull.pnlibrary.api.plugin.PluginDependency
 import ru.privatenull.pnlibrary.api.tasks.TaskScope
 import ru.privatenull.pnlibrary.api.tasks.TaskSpec
-import ru.privatenull.pnlibrary.api.updates.UpdateService
-import ru.privatenull.pnlibrary.api.updates.PluginUpdateRequest
-import ru.privatenull.pnlibrary.api.updates.UpdateRegistration
-import ru.privatenull.pnlibrary.api.downloads.DownloadDestination
-import ru.privatenull.pnlibrary.api.downloads.FileDownloads
-import ru.privatenull.pnlibrary.api.updates.ProductDescriptor
 import ru.privatenull.pnlibrary.api.updates.ExternalPluginDependency
-import ru.privatenull.pnlibrary.currency.CurrencyFeature
+import ru.privatenull.pnlibrary.api.updates.PluginUpdateRequest
+import ru.privatenull.pnlibrary.api.updates.ProductDescriptor
+import ru.privatenull.pnlibrary.api.updates.UpdateRegistration
+import ru.privatenull.pnlibrary.api.updates.UpdateService
+import ru.privatenull.pnlibrary.core.commands.CommandService
+import ru.privatenull.pnlibrary.core.downloads.DirectDownloadManager
 import ru.privatenull.pnlibrary.core.events.EventServiceImpl
 import ru.privatenull.pnlibrary.core.placeholders.PlaceholderHub
-import ru.privatenull.pnlibrary.core.tasks.TaskServiceImpl
-import ru.privatenull.pnlibrary.spi.tasks.PlatformTaskAdapter
-import ru.privatenull.pnlibrary.spi.tasks.PlatformTaskRequest
-import ru.privatenull.pnlibrary.spi.tasks.PlatformTaskHandle
 import ru.privatenull.pnlibrary.core.services.ServiceManagerImpl
+import ru.privatenull.pnlibrary.core.tasks.TaskService
+import ru.privatenull.pnlibrary.core.tasks.TaskServiceImpl
+import ru.privatenull.pnlibrary.currency.CurrencyFeature
+import ru.privatenull.pnlibrary.spi.platform.PlatformAdapter
+import ru.privatenull.pnlibrary.spi.tasks.PlatformTaskAdapter
+import ru.privatenull.pnlibrary.spi.tasks.PlatformTaskHandle
+import ru.privatenull.pnlibrary.spi.tasks.PlatformTaskRequest
 import java.lang.reflect.Proxy
-import java.util.function.Supplier
 import java.util.function.Consumer
+import java.util.function.Supplier
 
 class PluginRegistryImplTest {
     @Test
@@ -638,12 +638,12 @@ class PluginRegistryImplTest {
         private class RecordingUpdateService : UpdateService {
             var request: PluginUpdateRequest? = null
             var product: ProductDescriptor? = null
-            var dependencies: List<ru.privatenull.pnlibrary.api.plugin.PluginDependency> = emptyList()
+            var dependencies: List<PluginDependency> = emptyList()
             override fun register(
                 owner: Any,
                 product: ProductDescriptor,
                 request: PluginUpdateRequest,
-                dependencies: List<ru.privatenull.pnlibrary.api.plugin.PluginDependency>,
+                dependencies: List<PluginDependency>,
             ): UpdateRegistration {
                 this.product = product
                 this.request = request

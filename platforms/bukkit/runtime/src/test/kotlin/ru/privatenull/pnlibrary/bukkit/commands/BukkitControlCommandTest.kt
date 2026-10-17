@@ -4,17 +4,19 @@ import net.kyori.adventure.text.Component
 import org.bukkit.plugin.Plugin
 import org.junit.jupiter.api.Assertions.assertEquals
 import org.junit.jupiter.api.Test
-import ru.privatenull.pnlibrary.api.commands.CommandSender
 import ru.privatenull.pnlibrary.api.commands.CommandNodeKind
+import ru.privatenull.pnlibrary.api.commands.CommandSender
 import ru.privatenull.pnlibrary.api.runtime.PnLibrary
 import ru.privatenull.pnlibrary.api.updates.BlockedReason
-import ru.privatenull.pnlibrary.api.updates.ProductId
 import ru.privatenull.pnlibrary.api.updates.ProductChange
+import ru.privatenull.pnlibrary.api.updates.ProductId
+import ru.privatenull.pnlibrary.api.updates.UpdateChannel
 import ru.privatenull.pnlibrary.api.updates.UpdatePlan
 import ru.privatenull.pnlibrary.api.updates.UpdatePlanSnapshot
+import ru.privatenull.pnlibrary.api.updates.UpdateSnapshot
 import ru.privatenull.pnlibrary.api.updates.UpdateState
-import ru.privatenull.pnlibrary.api.version.SemanticVersion
 import ru.privatenull.pnlibrary.api.version.PnLibraryApi
+import ru.privatenull.pnlibrary.api.version.SemanticVersion
 import java.lang.reflect.Proxy
 import java.util.UUID
 
@@ -105,8 +107,8 @@ class BukkitControlCommandTest {
         listOf(ProductChange(ProductId.of("acceptance"), SemanticVersion.parse("2.2.0"), SemanticVersion.parse(latest ?: "2.5.0"))),
         emptyList(),
     ) else null, blockers, message) to
-        ru.privatenull.pnlibrary.api.updates.UpdateSnapshot(
-            "acceptance", "2.2.0", latest, ru.privatenull.pnlibrary.api.updates.UpdateChannel.STABLE,
+        UpdateSnapshot(
+            "acceptance", "2.2.0", latest, UpdateChannel.STABLE,
             state, 17, 8, false, null, message,
         )
 

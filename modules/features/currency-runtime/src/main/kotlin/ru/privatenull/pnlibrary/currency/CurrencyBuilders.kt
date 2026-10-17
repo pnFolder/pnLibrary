@@ -6,6 +6,7 @@ import ru.privatenull.pnlibrary.api.currency.CurrencyCommandSettings
 import ru.privatenull.pnlibrary.api.currency.CurrencyConfirmationMode
 import ru.privatenull.pnlibrary.api.currency.CurrencyDefinitionBuilder
 import ru.privatenull.pnlibrary.api.currency.CurrencyDescriptor
+import ru.privatenull.pnlibrary.api.currency.CurrencyKey
 import ru.privatenull.pnlibrary.api.currency.CurrencyOperations
 import ru.privatenull.pnlibrary.api.currency.CurrencyPlaceholderOptions
 import ru.privatenull.pnlibrary.api.currency.CurrencyProvider
@@ -72,7 +73,7 @@ internal class ManagedCurrencyDefinition(
     override fun commands(configure: Consumer<CurrencyCommandOptions>) = apply { configure.accept(commandOptions) }
 
     fun provider(): CurrencyProvider = ManagedCurrencyProvider(
-        key = ru.privatenull.pnlibrary.api.currency.CurrencyKey(owner, normalizeCurrencyName(name)),
+        key = CurrencyKey(owner, normalizeCurrencyName(name)),
         descriptor = descriptor.build(),
         storage = storage ?: error("Managed currency $owner:$name requires storage"),
         service = service,

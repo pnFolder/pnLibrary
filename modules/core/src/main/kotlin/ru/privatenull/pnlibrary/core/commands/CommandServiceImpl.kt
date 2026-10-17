@@ -7,6 +7,7 @@ import ru.privatenull.pnlibrary.api.commands.CommandRegistration
 import ru.privatenull.pnlibrary.api.commands.completedExecution
 import ru.privatenull.pnlibrary.api.commands.completedSuggestions
 import ru.privatenull.pnlibrary.api.logging.LogLevel
+import ru.privatenull.pnlibrary.spi.commands.PlatformCommandAdapter
 import ru.privatenull.pnlibrary.spi.commands.PlatformCommandDispatcher
 import ru.privatenull.pnlibrary.spi.commands.PlatformCommandRegistration
 import ru.privatenull.pnlibrary.spi.platform.PlatformLogging
@@ -19,7 +20,7 @@ import java.util.concurrent.atomic.AtomicLong
 
 /** Shared validation, permission, dispatch, and lifecycle engine for portable commands. */
 internal class CommandServiceImpl(
-    private val commandAdapter: ru.privatenull.pnlibrary.spi.commands.PlatformCommandAdapter,
+    private val commandAdapter: PlatformCommandAdapter,
     private val logging: PlatformLogging,
 ) : CommandService, PlatformCommandDispatcher, AutoCloseable {
     private val lock = Any()

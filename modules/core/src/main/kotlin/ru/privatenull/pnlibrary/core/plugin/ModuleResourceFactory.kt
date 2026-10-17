@@ -1,8 +1,5 @@
 package ru.privatenull.pnlibrary.core.plugin
 
-import ru.privatenull.pnlibrary.core.lifecycle.ResourceCleanup
-
-import ru.privatenull.pnlibrary.core.tasks.TaskService
 import ru.privatenull.pnlibrary.api.config.ConfigScope
 import ru.privatenull.pnlibrary.api.currency.CurrencyService
 import ru.privatenull.pnlibrary.api.currency.CurrencyStorageFactory
@@ -12,8 +9,9 @@ import ru.privatenull.pnlibrary.api.downloads.DownloadRegistration
 import ru.privatenull.pnlibrary.api.events.EventScope
 import ru.privatenull.pnlibrary.api.events.EventService
 import ru.privatenull.pnlibrary.api.logging.LoggingService
-import ru.privatenull.pnlibrary.api.metrics.MetricsService
 import ru.privatenull.pnlibrary.api.metrics.ErrorReporter
+import ru.privatenull.pnlibrary.api.metrics.MetricsService
+import ru.privatenull.pnlibrary.api.metrics.TelemetryError
 import ru.privatenull.pnlibrary.api.placeholders.PlaceholderService
 import ru.privatenull.pnlibrary.api.plugin.ModuleId
 import ru.privatenull.pnlibrary.api.plugin.PluginId
@@ -23,11 +21,13 @@ import ru.privatenull.pnlibrary.api.updates.UpdateRegistration
 import ru.privatenull.pnlibrary.api.updates.UpdateService
 import ru.privatenull.pnlibrary.core.config.ConfigurationServiceImpl
 import ru.privatenull.pnlibrary.core.cooldowns.CooldownServiceImpl
-import ru.privatenull.pnlibrary.core.metrics.ErrorPipeline
 import ru.privatenull.pnlibrary.core.downloads.CompositeDownloadRegistration
 import ru.privatenull.pnlibrary.core.downloads.DirectDownloadManager
+import ru.privatenull.pnlibrary.core.lifecycle.ResourceCleanup
+import ru.privatenull.pnlibrary.core.metrics.ErrorPipeline
 import ru.privatenull.pnlibrary.core.placeholders.PlaceholderHub
 import ru.privatenull.pnlibrary.core.services.ServiceManagerImpl
+import ru.privatenull.pnlibrary.core.tasks.TaskService
 import ru.privatenull.pnlibrary.core.tasks.TaskServiceImpl
 import ru.privatenull.pnlibrary.core.text.ComponentCache
 import ru.privatenull.pnlibrary.core.text.ComponentServiceImpl
@@ -78,7 +78,7 @@ internal class ModuleResourceFactory(
 
             // Resolve the live session on every capture, including after disable/restart.
             errorReporter = ErrorPipeline(object : ErrorReporter {
-                override fun capture(error: ru.privatenull.pnlibrary.api.metrics.TelemetryError) {
+                override fun capture(error: TelemetryError) {
                     metricsController?.sessionErrorReporter()?.capture(error)
                 }
 

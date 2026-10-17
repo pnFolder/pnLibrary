@@ -1,8 +1,9 @@
 package ru.privatenull.pnlibrary.core.updates
 
+import ru.privatenull.pnlibrary.api.updates.UpdateActor
+import ru.privatenull.pnlibrary.api.updates.UpdatePlan
 import ru.privatenull.pnlibrary.api.updates.UpdatePlanSnapshot
 import ru.privatenull.pnlibrary.api.updates.UpdateState
-import ru.privatenull.pnlibrary.api.updates.UpdateActor
 import ru.privatenull.pnlibrary.core.updates.engine.ResolutionResult
 import java.time.Clock
 import java.time.Instant
@@ -257,7 +258,7 @@ internal class UpdateOrchestrator(
         publish(UpdatePlanSnapshot(snapshot.id, snapshot.revision, UpdateState.UPDATE_STAGED, snapshot.plan, snapshot.blockers, null), actor, "STAGE")
     }
 
-    private fun fingerprint(state: UpdateState, plan: ru.privatenull.pnlibrary.api.updates.UpdatePlan?, blockers: List<*>): String =
+    private fun fingerprint(state: UpdateState, plan: UpdatePlan?, blockers: List<*>): String =
         buildString {
             append(state.name).append('|').append(plan?.targetApi).append('|')
             plan?.changes?.sortedBy { it.product.value }?.forEach {

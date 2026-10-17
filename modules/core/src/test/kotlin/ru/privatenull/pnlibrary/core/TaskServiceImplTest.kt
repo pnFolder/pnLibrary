@@ -2,6 +2,7 @@ package ru.privatenull.pnlibrary.core
 
 import org.junit.jupiter.api.Assertions.*
 import org.junit.jupiter.api.Test
+import ru.privatenull.pnlibrary.api.plugin.PluginId
 import ru.privatenull.pnlibrary.api.tasks.*
 import ru.privatenull.pnlibrary.core.tasks.TaskServiceImpl
 import ru.privatenull.pnlibrary.spi.tasks.*
@@ -16,7 +17,7 @@ class TaskServiceImplTest {
         service.close()
         assertThrows(IllegalStateException::class.java) { service.scope(Any()) }
         assertThrows(IllegalStateException::class.java) {
-            service.scope(Any(), ru.privatenull.pnlibrary.api.plugin.PluginId.of("module"))
+            service.scope(Any(), PluginId.of("module"))
         }
         assertTrue(adapter.requests.isEmpty())
     }

@@ -2,6 +2,7 @@ package ru.privatenull.pnlibrary.spi.commands
 
 import org.junit.jupiter.api.Assertions.assertEquals
 import org.junit.jupiter.api.Test
+import ru.privatenull.pnlibrary.api.commands.CommandContext
 import ru.privatenull.pnlibrary.api.commands.CommandDefinition
 import java.util.concurrent.CountDownLatch
 import java.util.concurrent.Executors
@@ -48,12 +49,12 @@ class TrackingPlatformCommandAdapterTest {
     private fun dispatcher() = object : PlatformCommandDispatcher {
         override fun execute(
             command: CommandDefinition,
-            context: ru.privatenull.pnlibrary.api.commands.CommandContext,
+            context: CommandContext,
         ) = ru.privatenull.pnlibrary.api.commands.completedExecution()
 
         override fun suggest(
             command: CommandDefinition,
-            context: ru.privatenull.pnlibrary.api.commands.CommandContext,
+            context: CommandContext,
         ) = ru.privatenull.pnlibrary.api.commands.completedSuggestions(emptyList())
     }
 }

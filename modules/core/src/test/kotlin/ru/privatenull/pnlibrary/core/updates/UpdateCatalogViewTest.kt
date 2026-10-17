@@ -5,6 +5,7 @@ import net.kyori.adventure.text.serializer.plain.PlainTextComponentSerializer
 import org.junit.jupiter.api.Assertions.*
 import org.junit.jupiter.api.Test
 import ru.privatenull.pnlibrary.api.updates.*
+import ru.privatenull.pnlibrary.api.version.SemanticVersion
 import java.time.Instant
 import java.util.UUID
 
@@ -69,8 +70,8 @@ class UpdateCatalogViewTest {
     fun `verified rollback is distinguished from a merely prepared rollback`() {
         val entry = UpdateHistoryEntry(UUID.randomUUID(), Instant.EPOCH, UUID.randomUUID(), UpdateState.ROLLED_BACK,
             UpdateActor.SYSTEM, "HEALTH_ROLLBACK", listOf(ProductChange(ProductId.of("pnlibrary"),
-                ru.privatenull.pnlibrary.api.version.SemanticVersion.parse("2.0.0"),
-                ru.privatenull.pnlibrary.api.version.SemanticVersion.parse("1.0.0"))), null)
+                SemanticVersion.parse("2.0.0"),
+                SemanticVersion.parse("1.0.0"))), null)
         val text = UpdateCatalogView.history(listOf(entry), 1, "/pn updates history").joinToString("\n", transform = ::plain)
         assertTrue(text.contains("откат подтверждён после перезапуска"))
         assertTrue(text.contains("2.0.0 → 1.0.0"))
