@@ -1,86 +1,191 @@
 package ru.privatenull.pnlibrary.core.updates
 
 import net.kyori.adventure.text.Component
+import net.kyori.adventure.text.event.HoverEvent
 import net.kyori.adventure.text.serializer.plain.PlainTextComponentSerializer
-import org.junit.jupiter.api.Assertions.*
+import org.junit.jupiter.api.Assertions.assertEquals
+import org.junit.jupiter.api.Assertions.assertFalse
+import org.junit.jupiter.api.Assertions.assertTrue
 import org.junit.jupiter.api.Test
-import ru.privatenull.pnlibrary.api.updates.*
+import ru.privatenull.pnlibrary.api.updates.ProductChange
+import ru.privatenull.pnlibrary.api.updates.ProductId
+import ru.privatenull.pnlibrary.api.updates.UpdateActor
+import ru.privatenull.pnlibrary.api.updates.UpdateBackup
+import ru.privatenull.pnlibrary.api.updates.UpdateBackupComponent
+import ru.privatenull.pnlibrary.api.updates.UpdateChannel
+import ru.privatenull.pnlibrary.api.updates.UpdateHistoryEntry
+import ru.privatenull.pnlibrary.api.updates.UpdateSnapshot
+import ru.privatenull.pnlibrary.api.updates.UpdateState
 import ru.privatenull.pnlibrary.api.version.SemanticVersion
 import java.time.Instant
+import java.time.ZoneOffset
 import java.util.UUID
 
 class UpdateCatalogViewTest {
+    private val bukkit = UpdateCatalogRoutes("/pn updates", update = { "/pn update $it" }, check = "/pn check")
+    private val proxy = UpdateCatalogRoutes("/pnupdate")
+    private val now = Instant.parse("2026-10-17T12:00:00Z")
+
     @Test
-    fun `Bukkit catalog includes navigation and an update action without losing the changelog link`() {
-        val lines = UpdateCatalogView.catalog(listOf(snapshot("pnlibrary", UpdateState.UPDATE_AVAILABLE,
-            "https://github.com/example/repo/blob/main/notes.md")), 1, false, "/pn updates list")
+    fun `catalog title counts plugins and updates and offers an update button per available plugin`() {
+        val lines = UpdateCatalogView.catalog(
+            listOf(
+                snapshot("pnlibrary", UpdateState.UPDATE_AVAILABLE, "https://github.com/example/repo/blob/main/notes.md"),
+                snapshot("currency", UpdateState.UP_TO_DATE),
+            ),
+            1, false, bukkit,
+        )
+        val text = lines.joinToString("\n", transform = ::plain)
+        assertTrue(plain(lines.first()).startsWith("Каталог 2 плагина · 1 к обновлению"))
+        assertTrue(text.contains("pnlibrary 1.0.0 [↑ 1.1.0]"))
         val actions = lines.flatMap(::clicks)
         assertTrue(actions.contains("/pn update pnlibrary"))
-        assertTrue(actions.containsAll(listOf("/pn updates available", "/pn updates history", "/pn updates backups", "/pn check")))
+        assertTrue(actions.contains("/pn updates info pnlibrary"))
         assertTrue(actions.contains("https://github.com/example/repo/blob/main/notes.md"))
-        assertTrue(lines.joinToString("\n", transform = ::plain).contains("1 к обновлению"))
+        assertTrue(actions.containsAll(listOf("/pn check", "/pn updates available", "/pn updates history", "/pn updates backups")))
+        assertFalse(plain(lines.first { plain(it).contains("currency") }).contains("[↑"))
     }
 
     @Test
-    fun `backup buttons open separate confirmation flows rather than executing a restore`() {
+    fun `without an update route the available version is shown as plain text`() {
+        val lines = UpdateCatalogView.catalog(listOf(snapshot("pnlibrary", UpdateState.UPDATE_AVAILABLE)), 1, false, proxy)
+        assertTrue(lines.joinToString("\n", transform = ::plain).contains("pnlibrary 1.0.0 → 1.1.0"))
+        assertFalse(lines.flatMap(::clicks).any { it.startsWith("/pn update ") })
+    }
+
+    @Test
+    fun `catalog paginates and the available filter excludes current components`() {
+        val snapshots = (1..12).map { snapshot("module-$it", UpdateState.UPDATE_AVAILABLE) } + snapshot("current", UpdateState.UP_TO_DATE)
+        val first = UpdateCatalogView.catalog(snapshots, 1, true, proxy)
+        val second = UpdateCatalogView.catalog(snapshots, 2, true, proxy)
+        assertEquals(10, first.count { plain(it).trimStart().startsWith("module-") })
+        assertEquals(2, second.count { plain(it).trimStart().startsWith("module-") })
+        assertFalse(first.any { plain(it).contains("current") })
+        assertTrue(first.joinToString("\n", transform = ::plain).contains("страница 1 из 2"))
+        assertTrue(first.flatMap(::clicks).contains("/pnupdate available 2"))
+        assertTrue(second.flatMap(::clicks).contains("/pnupdate available 1"))
+        assertTrue(UpdateCatalogView.catalog(snapshots, Int.MAX_VALUE, false, proxy).joinToString("\n", transform = ::plain)
+            .contains("Нет компонентов на этой странице"))
+    }
+
+    @Test
+    fun `only valid HTTPS changelog URLs become clickable`() {
+        val safe = UpdateCatalogView.catalog(
+            listOf(snapshot("safe", UpdateState.UPDATE_AVAILABLE, "https://github.com/example/repo/blob/main/notes.md")), 1, false, proxy,
+        )
+        assertTrue(safe.flatMap(::clicks).any { it.startsWith("https://github.com/") })
+        for (url in listOf("javascript:alert(1)", "file:///secret", "https://user:password@example.com/notes")) {
+            val unsafe = UpdateCatalogView.catalog(listOf(snapshot("unsafe", UpdateState.UPDATE_AVAILABLE, url)), 1, false, proxy)
+            assertFalse(unsafe.flatMap(::clicks).contains(url))
+        }
+    }
+
+    @Test
+    fun `history groups events by day and shows the version transition, outcome and actor`() {
+        val today = event("2026-10-17T09:05:00Z", UpdateState.UPDATE_STAGED, "STAGE", "Admin", "pnlibrary", "1.0.0", "1.1.0")
+        val yesterday = event("2026-10-16T18:00:00Z", UpdateState.UP_TO_DATE, "HEALTH", "System", "currency", "2.0.0", "2.1.0")
+        val older = event("2026-09-12T10:00:00Z", UpdateState.FAILED, "STAGE", "Admin", "pnlibrary", "0.9.0", "1.0.0")
+        val lines = UpdateCatalogView.history(listOf(today, yesterday, older), 1, bukkit, totalPages = 1, now = now, zone = ZoneOffset.UTC)
+        val text = lines.joinToString("\n", transform = ::plain)
+
+        assertTrue(plain(lines.first()).startsWith("История"))
+        assertTrue(text.indexOf("Сегодня") < text.indexOf("Вчера"))
+        assertTrue(text.indexOf("Вчера") < text.indexOf("12 сентября"))
+        assertTrue(text.contains("09:05 pnlibrary 1.0.0 → 1.1.0 подготовлено к перезапуску · Admin"))
+        assertTrue(text.contains("currency 2.0.0 → 2.1.0 применено после перезапуска · System"))
+        assertTrue(text.contains("pnlibrary 0.9.0 → 1.0.0 ошибка"))
+        assertFalse(text.contains("страница 1 из 1 [Старее]"))
+    }
+
+    @Test
+    fun `history lines offer a per plugin filter and the filtered view does not`() {
+        val entry = event("2026-10-17T09:05:00Z", UpdateState.UPDATE_STAGED, "STAGE", "Admin", "pnlibrary", "1.0.0", "1.1.0")
+        val all = UpdateCatalogView.history(listOf(entry), 1, bukkit, totalPages = 1, now = now, zone = ZoneOffset.UTC)
+        assertTrue(all.flatMap(::clicks).contains("/pn updates history plugin pnlibrary"))
+        assertTrue(hover(all.first { plain(it).contains("pnlibrary 1.0.0") }).contains("/pn updates history plugin pnlibrary"))
+
+        val filtered = UpdateCatalogView.history(listOf(entry), 1, bukkit, totalPages = 1, product = "pnlibrary", now = now, zone = ZoneOffset.UTC)
+        assertTrue(plain(filtered.first()).contains("pnlibrary"))
+        assertFalse(filtered.first { plain(it).contains("1.0.0 → 1.1.0") }.clickEvent() != null)
+    }
+
+    @Test
+    fun `history navigation reports page numbers and links to older and newer pages`() {
+        val entry = event("2026-10-17T09:05:00Z", UpdateState.UPDATE_STAGED, "STAGE", "Admin", "pnlibrary", "1.0.0", "1.1.0")
+        val middle = UpdateCatalogView.history(listOf(entry), 2, bukkit, totalPages = 4, now = now, zone = ZoneOffset.UTC)
+        assertTrue(middle.joinToString("\n", transform = ::plain).contains("страница 2 из 4"))
+        assertTrue(middle.flatMap(::clicks).containsAll(listOf("/pn updates history 1", "/pn updates history 3", "/pn updates list")))
+
+        val last = UpdateCatalogView.history(listOf(entry), 4, bukkit, totalPages = 4, now = now, zone = ZoneOffset.UTC)
+        assertFalse(last.flatMap(::clicks).contains("/pn updates history 5"))
+
+        val filtered = UpdateCatalogView.history(listOf(entry), 1, bukkit, totalPages = 2, product = "pnlibrary", now = now, zone = ZoneOffset.UTC)
+        assertTrue(filtered.flatMap(::clicks).contains("/pn updates history plugin pnlibrary 2"))
+    }
+
+    @Test
+    fun `verified rollback is distinguished from a merely prepared rollback`() {
+        val verified = event("2026-10-17T09:05:00Z", UpdateState.ROLLED_BACK, "HEALTH_ROLLBACK", "System", "pnlibrary", "2.0.0", "1.0.0")
+        val prepared = event("2026-10-17T08:05:00Z", UpdateState.ROLLED_BACK, "ROLLBACK", "Admin", "pnlibrary", "2.0.0", "1.0.0")
+        val text = UpdateCatalogView.history(listOf(verified, prepared), 1, bukkit, totalPages = 1, now = now, zone = ZoneOffset.UTC)
+            .joinToString("\n", transform = ::plain)
+        assertTrue(text.contains("откат к 2.0.0 откат подтверждён после перезапуска"))
+        assertTrue(text.contains("откат к 2.0.0 откат подготовлен к перезапуску"))
+    }
+
+    @Test
+    fun `an event without version changes shows its message as plain text`() {
+        val entry = UpdateHistoryEntry(UUID.randomUUID(), Instant.parse("2026-10-17T09:05:00Z"), UUID.randomUUID(),
+            UpdateState.FAILED, UpdateActor.SYSTEM, "CHECK", emptyList(), "<red>HTTP 404</red>")
+        val line = UpdateCatalogView.history(listOf(entry), 1, bukkit, totalPages = 1, now = now, zone = ZoneOffset.UTC)
+            .first { plain(it).contains("HTTP 404") }
+        assertTrue(plain(line).contains("<red>HTTP 404</red>"))
+        assertTrue(plain(line).contains("ошибка"))
+    }
+
+    @Test
+    fun `backups show age and open separate confirmation flows rather than executing a restore`() {
         val id = UUID.randomUUID()
-        val backup = UpdateBackup(id, Instant.EPOCH, UUID.randomUUID(),
+        val backup = UpdateBackup(id, now.minusSeconds(4L * 86_400), UUID.randomUUID(),
             listOf(UpdateBackupComponent(ProductId.of("pnlibrary"), "2.0.0", "1.0.0")), 2)
-        val actions = UpdateCatalogView.backups(listOf(backup), 1, "/pn updates backups").flatMap(::clicks)
+        val lines = UpdateCatalogView.backups(listOf(backup), 1, bukkit, now = now, zone = ZoneOffset.UTC)
+        val actions = lines.flatMap(::clicks)
+        assertTrue(plain(lines.first()).startsWith("Резервы 1 набор"))
+        assertTrue(lines.joinToString("\n", transform = ::plain).contains("pnlibrary 1.0.0 4 д назад"))
         assertTrue(actions.contains("/pn updates rollback $id"))
         assertTrue(actions.contains("/pn updates rollback $id configs"))
         assertFalse(actions.any { it.endsWith(" confirm") })
     }
 
     @Test
-    fun `catalog pages and available filter do not include current components`() {
-        val snapshots = (1..12).map { snapshot("module-$it", UpdateState.UPDATE_AVAILABLE) } + snapshot("current", UpdateState.UP_TO_DATE)
-        val first = UpdateCatalogView.catalog(snapshots, 1, true, "/pnupdate available")
-        val second = UpdateCatalogView.catalog(snapshots, 2, true, "/pnupdate available")
-        assertEquals(12, first.size)
-        assertEquals(4, second.size)
-        assertFalse(first.any { plain(it).contains("current") })
-        assertTrue(first.flatMap(::clicks).contains("/pnupdate available 2"))
-        assertTrue(second.flatMap(::clicks).contains("/pnupdate available 1"))
-        assertTrue(plain(UpdateCatalogView.catalog(snapshots, Int.MAX_VALUE, false, "/pnupdate list")[1]).contains("Нет компонентов"))
+    fun `info card lists the details and offers an update only when one is available`() {
+        val available = UpdateCatalogView.info(
+            snapshot("pnlibrary", UpdateState.UPDATE_AVAILABLE, "https://github.com/example/repo/blob/main/notes.md"), bukkit,
+        )
+        val text = available.joinToString("\n", transform = ::plain)
+        assertTrue(text.startsWith("pnlibrary доступно обновление"))
+        assertTrue(text.contains("Версия: 1.0.0"))
+        assertTrue(text.contains("Доступна: 1.1.0 [Изменения]"))
+        assertTrue(text.contains("Канал: stable"))
+        assertTrue(text.contains("Автозагрузка: выключена"))
+        assertTrue(available.flatMap(::clicks).containsAll(listOf("/pn update pnlibrary", "/pn updates history plugin pnlibrary", "/pn updates list")))
+
+        val current = UpdateCatalogView.info(snapshot("pnlibrary", UpdateState.UP_TO_DATE), bukkit)
+        assertFalse(current.flatMap(::clicks).contains("/pn update pnlibrary"))
     }
 
-    @Test
-    fun `only valid HTTPS changelog URLs become clickable`() {
-        val safe = UpdateCatalogView.catalog(listOf(snapshot("safe", UpdateState.UPDATE_AVAILABLE, "https://github.com/example/repo/blob/main/notes.md")), 1, false, "/pnupdate list")
-        assertTrue(safe.flatMap(::clicks).any { it.startsWith("https://github.com/") })
-        for (url in listOf("javascript:alert(1)", "file:///secret", "https://user:password@example.com/notes")) {
-            assertFalse(UpdateCatalogView.catalog(listOf(snapshot("unsafe", UpdateState.UPDATE_AVAILABLE, url)), 1, false, "/pnupdate list").flatMap(::clicks).contains(url))
-        }
-    }
-
-    @Test
-    fun `history shows event time actor and preparation rather than implying running installation`() {
-        val entry = UpdateHistoryEntry(UUID.randomUUID(), Instant.parse("2026-10-17T12:30:00Z"), UUID.randomUUID(),
-            UpdateState.UPDATE_STAGED, UpdateActor(UpdateActor.Kind.CONSOLE, "console", "Admin"), "STAGE", emptyList(), "ready")
-        val lines = UpdateCatalogView.history(listOf(entry), 1, "/pn updates history")
-        val text = lines.joinToString("\n", transform = ::plain)
-        assertTrue(text.contains("2026-10-17 12:30:00 UTC"))
-        assertTrue(text.contains("Admin"))
-        assertTrue(text.contains("подготовлено к перезапуску"))
-        assertFalse(text.contains("применено"))
-    }
-
-    @Test
-    fun `verified rollback is distinguished from a merely prepared rollback`() {
-        val entry = UpdateHistoryEntry(UUID.randomUUID(), Instant.EPOCH, UUID.randomUUID(), UpdateState.ROLLED_BACK,
-            UpdateActor.SYSTEM, "HEALTH_ROLLBACK", listOf(ProductChange(ProductId.of("pnlibrary"),
-                SemanticVersion.parse("2.0.0"),
-                SemanticVersion.parse("1.0.0"))), null)
-        val text = UpdateCatalogView.history(listOf(entry), 1, "/pn updates history").joinToString("\n", transform = ::plain)
-        assertTrue(text.contains("откат подтверждён после перезапуска"))
-        assertTrue(text.contains("2.0.0 → 1.0.0"))
-        assertFalse(text.contains("подготовлен"))
-    }
+    private fun event(at: String, state: UpdateState, operation: String, actor: String, product: String, from: String, to: String) =
+        UpdateHistoryEntry(UUID.randomUUID(), Instant.parse(at), UUID.randomUUID(), state,
+            UpdateActor(UpdateActor.Kind.CONSOLE, actor.lowercase(), actor), operation,
+            listOf(ProductChange(ProductId.of(product), SemanticVersion.parse(from), SemanticVersion.parse(to))), null)
 
     private fun snapshot(product: String, state: UpdateState, changelog: String? = null) =
         UpdateSnapshot(product, "1.0.0", "1.1.0", UpdateChannel.STABLE, state, 17, 8, false, null, null, changelog)
 
     private fun plain(component: Component) = PlainTextComponentSerializer.plainText().serialize(component)
     private fun clicks(component: Component): List<String> = listOfNotNull(component.clickEvent()?.value()) + component.children().flatMap(::clicks)
+    private fun hover(component: Component): String =
+        (component.hoverEvent()?.value() as? Component)?.let(::plain).orEmpty().also {
+            assertTrue(component.hoverEvent()?.action() == HoverEvent.Action.SHOW_TEXT)
+        }
 }

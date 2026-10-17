@@ -111,6 +111,7 @@ internal class UpdateServiceImpl(
     override fun stage(planId: UUID, actor: UpdateActor): CompletionStage<UpdatePlanSnapshot> = orchestrator.stage(planId, actor)
     override fun history(): List<UpdatePlanSnapshot> = orchestrator.history()
     override fun historyPage(page: Int, product: String?): CompletionStage<List<UpdateHistoryEntry>> = runtime.historyPage(page, product)
+    override fun historyCount(product: String?): CompletionStage<Int> = runtime.historyCount(product)
     override fun backups(): CompletionStage<List<UpdateBackup>> = runtime.readAsync {
         java.util.Collections.unmodifiableList(installer.backups())
     }

@@ -66,6 +66,40 @@ class UpdateEventJournalTest {
         assertTrue(Files.exists(directory.resolve("broken.json")))
     }
 
+    @Test
+    fun `an observation identical to the previous one is not stored again`() {
+        val journal = UpdateEventJournal(directory, clock)
+        journal.record(snapshot(1, "pnlibrary"))
+        journal.record(snapshot(2, "pnlibrary"))
+        assertEquals(1, journal.count())
+
+        journal.record(snapshot(3, "currency"))
+        journal.record(snapshot(4, "pnlibrary"))
+        assertEquals(3, journal.count())
+        assertEquals(2, journal.count(product = "pnlibrary"))
+    }
+
+    @Test
+    fun `duplicate suppression also applies right after reopening the journal`() {
+        UpdateEventJournal(directory, clock).record(snapshot(1, "pnlibrary"))
+        UpdateEventJournal(directory, clock).record(snapshot(2, "pnlibrary"))
+        assertEquals(1, UpdateEventJournal(directory, clock).count())
+    }
+
+    @Test
+    fun `only the newest events within the maximum age are kept`() {
+        val journal = UpdateEventJournal(directory, clock, maxAge = java.time.Duration.ofDays(30), maxEvents = 2)
+        journal.record(snapshot(1, "a"))
+        journal.record(snapshot(2, "b"))
+        journal.record(snapshot(3, "c"))
+        assertEquals(2, journal.prune().let { journal.count() })
+
+        val files = Files.list(directory).use { it.toList() }
+        Files.setLastModifiedTime(files.first(), java.nio.file.attribute.FileTime.from(instant.minusSeconds(40L * 86_400)))
+        assertEquals(1, journal.prune())
+        assertEquals(1, journal.count())
+    }
+
     private fun snapshot(revision: Long, product: String) = UpdatePlanSnapshot(
         UUID.randomUUID(), revision, UpdateState.UPDATE_AVAILABLE,
         UpdatePlan(8, listOf(ProductChange(ProductId.of(product), SemanticVersion.parse("1.0.0"), SemanticVersion.parse("1.1.0"))), emptyList()),

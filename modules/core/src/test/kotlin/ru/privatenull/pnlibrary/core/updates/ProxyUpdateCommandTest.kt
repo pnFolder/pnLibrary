@@ -69,7 +69,7 @@ class ProxyUpdateCommandTest {
 
     private fun execute(updates: Updates, sender: Sender, vararg arguments: String) {
         val library = Proxy.newProxyInstance(PnLibrary::class.java.classLoader, arrayOf(PnLibrary::class.java)) { _, method, _ ->
-            when (method.name) { "getUpdates" -> updates; else -> error("Unexpected call: ${method.name}") }
+            when (method.name) { "getUpdates" -> updates; "isClosed" -> false; else -> error("Unexpected call: ${method.name}") }
         } as PnLibrary
         val definition = ProxyUpdateCommand(library).definition()
         val route = CommandTreeRouter().route(definition, CommandContext(sender, arguments.toList(), "pnupdate", arguments.joinToString(" "))) as CommandRoute.Executable
@@ -99,6 +99,7 @@ class ProxyUpdateCommandTest {
             this.actor = actor
         }
         override fun historyPage(page: Int, product: String?) = CompletableFuture.completedFuture<List<UpdateHistoryEntry>>(emptyList()).also { pages.add(page) }
+        override fun historyCount(product: String?) = CompletableFuture.completedFuture(0)
         override fun rollback(transactionId: UUID, actor: UpdateActor) = CompletableFuture.completedFuture(current).also { rolledBack = transactionId }
         override fun rollback(transactionId: UUID, restoreConfigurations: Boolean, actor: UpdateActor) = CompletableFuture.completedFuture(current).also {
             rolledBack = transactionId

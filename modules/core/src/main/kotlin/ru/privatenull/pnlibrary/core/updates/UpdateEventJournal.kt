@@ -12,18 +12,28 @@ import ru.privatenull.pnlibrary.core.io.TextFiles
 import java.nio.charset.StandardCharsets.UTF_8
 import java.nio.file.AtomicMoveNotSupportedException
 import java.nio.file.Files
+import java.nio.file.LinkOption
 import java.nio.file.Path
 import java.nio.file.StandardCopyOption
 import java.time.Clock
+import java.time.Duration
 import java.time.Instant
 import java.util.UUID
 import kotlin.streams.toList
 
-/** Durable observations, separate from mutable resolver snapshots and release publication dates. */
+/**
+ * Durable observations, separate from mutable resolver snapshots and release publication dates.
+ *
+ * The journal is bounded: events older than [maxAge] (by file modification time) and everything beyond the
+ * newest [maxEvents] are deleted. An observation identical to the one before it is not written again, so
+ * repeated automatic checks of an unchanged state do not fill the history.
+ */
 internal class UpdateEventJournal(
     private val directory: Path,
     private val clock: Clock = Clock.systemUTC(),
     private val warning: (String) -> Unit = {},
+    private val maxAge: Duration = Duration.ofDays(DEFAULT_MAX_AGE_DAYS),
+    private val maxEvents: Int = DEFAULT_MAX_EVENTS,
 ) {
     data class Change(val product: String, val from: String?, val to: String)
 
@@ -39,8 +49,14 @@ internal class UpdateEventJournal(
         val message: String? = null,
     )
 
+    private var latest: Event? = null
+    private var latestLoaded = false
+    private var writesSincePrune = 0
+
     init {
+        require(maxEvents > 0) { "maxEvents must be positive" }
         Files.createDirectories(directory)
+        prune()
     }
 
     /** Records an observed state, not an assertion about who initiated the operation. */
@@ -52,6 +68,8 @@ internal class UpdateEventJournal(
             snapshot.plan?.changes.orEmpty().map { Change(it.product.value, it.from?.toString(), it.to.toString()) },
             actor, operation, snapshot.message?.take(4096),
         )
+        val previous = latestEvent()
+        if (previous != null && signature(previous) == signature(event)) return previous
         return write(event)
     }
 
@@ -63,6 +81,18 @@ internal class UpdateEventJournal(
         report.changes.map { Change(it.product.value, it.from?.toString(), it.to.toString()) },
         UpdateActor.SYSTEM, if (report.rollback) "HEALTH_ROLLBACK" else "HEALTH", report.message.take(4096),
     ))
+
+    private fun signature(event: Event): String =
+        "${event.operation}|${event.state}|${event.actor.kind}:${event.actor.id}|${event.message}|" +
+            event.changes.joinToString(";") { "${it.product}:${it.from}>${it.to}" }
+
+    private fun latestEvent(): Event? {
+        if (!latestLoaded) {
+            latest = readPage(1, 1, null).firstOrNull()
+            latestLoaded = true
+        }
+        return latest
+    }
 
     private fun write(event: Event): Event {
         val actor = event.actor
@@ -102,24 +132,56 @@ internal class UpdateEventJournal(
         } finally {
             Files.deleteIfExists(temporary)
         }
+        latest = event
+        latestLoaded = true
+        if (++writesSincePrune >= PRUNE_EVERY_WRITES) prune()
         return event
     }
+
+    /** Deletes events older than [maxAge] and any beyond the newest [maxEvents]; returns how many were removed. */
+    @Synchronized
+    fun prune(): Int {
+        writesSincePrune = 0
+        val cutoff = clock.instant().minus(maxAge).toEpochMilli()
+        val files = Files.list(directory).use { stream ->
+            stream.filter { it.fileName.toString().endsWith(".json") && Files.isRegularFile(it, LinkOption.NOFOLLOW_LINKS) }
+                .toList()
+        }.map { it to Files.getLastModifiedTime(it).toMillis() }.sortedByDescending { it.second }
+        var removed = 0
+        files.forEachIndexed { index, (path, modified) ->
+            if (index >= maxEvents || modified < cutoff) {
+                if (Files.deleteIfExists(path)) removed++
+            }
+        }
+        if (removed > 0) latestLoaded = false
+        return removed
+    }
+
+    /** Number of readable events, optionally restricted to one managed product. */
+    @Synchronized
+    fun count(product: String? = null): Int = readAll(product).size
 
     /** Reads bounded pages ordered by observation time, optionally restricted to one managed product. */
     @Synchronized
     fun read(page: Int = 1, pageSize: Int = 10, product: String? = null): List<Event> {
+        return readPage(page, pageSize, product)
+    }
+
+    private fun readPage(page: Int, pageSize: Int, product: String?): List<Event> {
         require(page > 0) { "page must be positive" }
         require(pageSize in 1..100) { "page size must be between 1 and 100" }
         val offset = (page.toLong() - 1) * pageSize
-        return Files.list(directory).use { files ->
-            files.filter { it.fileName.toString().endsWith(".json") && Files.isRegularFile(it, java.nio.file.LinkOption.NOFOLLOW_LINKS) }
-                .map { path -> readEvent(path) }
-                .filter { it != null }
-                .map { requireNotNull(it) }
-                .filter { product == null || it.changes.any { change -> change.product.equals(product, true) } }
-                .sorted(compareByDescending<Event> { it.occurredAt }.thenByDescending { it.revision }.thenBy { it.id })
-                .skip(offset).limit(pageSize.toLong()).toList()
-        }
+        return readAll(product).asSequence().drop(offset.coerceAtMost(Int.MAX_VALUE.toLong()).toInt()).take(pageSize).toList()
+    }
+
+    private fun readAll(product: String?): List<Event> = Files.list(directory).use { files ->
+        files.filter { it.fileName.toString().endsWith(".json") && Files.isRegularFile(it, LinkOption.NOFOLLOW_LINKS) }
+            .map { path -> readEvent(path) }
+            .filter { it != null }
+            .map { requireNotNull(it) }
+            .filter { product == null || it.changes.any { change -> change.product.equals(product, true) } }
+            .sorted(compareByDescending<Event> { it.occurredAt }.thenByDescending { it.revision }.thenBy { it.id })
+            .toList()
     }
 
     private fun readEvent(path: Path): Event? = try {
@@ -153,6 +215,9 @@ internal class UpdateEventJournal(
     }
 
     private companion object {
+        const val DEFAULT_MAX_AGE_DAYS = 90L
+        const val DEFAULT_MAX_EVENTS = 1_000
+        const val PRUNE_EVERY_WRITES = 25
         val OPERATIONS = setOf("STATE_OBSERVED", "CHECK", "STAGE", "ROLLBACK", "HEALTH", "HEALTH_ROLLBACK")
     }
 }

@@ -67,6 +67,12 @@ interface UpdateService {
             it.completeExceptionally(UnsupportedOperationException("Update service does not support durable history"))
         }
 
+    /** Counts the durable events [historyPage] pages through, optionally for one managed [product]. */
+    fun historyCount(product: String? = null): CompletionStage<Int> =
+        CompletableFuture<Int>().also {
+            it.completeExceptionally(UnsupportedOperationException("Update service does not support durable history"))
+        }
+
     /** Restores the previous JAR set from the newest rollback-capable transaction. */
     fun rollback(): CompletionStage<UpdatePlanSnapshot> = unsupported("manual update rollback")
 

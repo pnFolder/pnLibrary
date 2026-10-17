@@ -3811,6 +3811,8 @@ public abstract interface class ru/privatenull/pnlibrary/api/updates/UpdateServi
 	public fun currentPlan ()Ljava/util/Optional;
 	public abstract fun get (Ljava/lang/String;)Lru/privatenull/pnlibrary/api/updates/UpdateRegistration;
 	public fun history ()Ljava/util/List;
+	public fun historyCount (Ljava/lang/String;)Ljava/util/concurrent/CompletionStage;
+	public static synthetic fun historyCount$default (Lru/privatenull/pnlibrary/api/updates/UpdateService;Ljava/lang/String;ILjava/lang/Object;)Ljava/util/concurrent/CompletionStage;
 	public fun historyPage (ILjava/lang/String;)Ljava/util/concurrent/CompletionStage;
 	public static synthetic fun historyPage$default (Lru/privatenull/pnlibrary/api/updates/UpdateService;ILjava/lang/String;ILjava/lang/Object;)Ljava/util/concurrent/CompletionStage;
 	public fun register (Ljava/lang/Object;Lru/privatenull/pnlibrary/api/updates/ProductDescriptor;Lru/privatenull/pnlibrary/api/updates/PluginUpdateRequest;)Lru/privatenull/pnlibrary/api/updates/UpdateRegistration;

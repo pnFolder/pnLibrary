@@ -20,7 +20,8 @@ import ru.privatenull.pnlibrary.api.updates.ProductChange
 import ru.privatenull.pnlibrary.api.updates.UpdatePlanSnapshot
 import ru.privatenull.pnlibrary.api.updates.UpdateRegistration
 import ru.privatenull.pnlibrary.api.updates.UpdateActor
-import ru.privatenull.pnlibrary.core.updates.UpdateCatalogView
+import ru.privatenull.pnlibrary.core.updates.UpdateCatalogCommands
+import ru.privatenull.pnlibrary.core.updates.UpdateCatalogRoutes
 import java.util.UUID
 import java.util.concurrent.atomic.AtomicBoolean
 import java.time.Duration
@@ -34,6 +35,13 @@ internal class BukkitControlCommand(
 ) {
     private val tokens = UpdateConfirmationTokens()
     private val testErrors = BukkitDiagnosticTestErrors(plugin, library)
+    private val catalog = UpdateCatalogCommands(
+        library = library,
+        routes = UpdateCatalogRoutes("/pn updates", update = { product -> "/pn update $product" }, check = "/pn check"),
+        viewPermission = "pnlibrary.updates.view",
+        backupsPermission = "pnlibrary.updates.rollback",
+        deliver = { task -> if (!library.isClosed) plugin.server.scheduler.runTask(plugin, task) },
+    )
 
     private fun updateActor(sender: CommandSender): UpdateActor = when (sender) {
         is Player -> UpdateActor(UpdateActor.Kind.PLAYER, sender.uniqueId.toString(), sender.name)
@@ -44,7 +52,7 @@ internal class BukkitControlCommand(
     /** Builds the permission-aware control command tree. */
     fun definition(): CommandDefinition = command("pn") {
         permission("pnlibrary.admin")
-        executes { showCatalog(it, false) }
+        executes(catalog::showList)
         literal("status") {
             executes { native(it) { sender -> sendStatus(sender, null) } }
             argument("plugin", ArgumentType.string()) {
@@ -53,27 +61,8 @@ internal class BukkitControlCommand(
             }
         }
         literal("updates") {
-            executes { showCatalog(it, false) }
-            literal("list") {
-                permission("pnlibrary.updates.view")
-                executes { showCatalog(it, false) }
-                argument("page", ArgumentType.integer()) { executes { showCatalog(it, false) } }
-            }
-            literal("available") {
-                permission("pnlibrary.updates.view")
-                executes { showCatalog(it, true) }
-                argument("page", ArgumentType.integer()) { executes { showCatalog(it, true) } }
-            }
-            literal("history") {
-                permission("pnlibrary.updates.view")
-                executes(::showHistory)
-                argument("page", ArgumentType.integer()) { executes(::showHistory) }
-            }
-            literal("backups") {
-                permission("pnlibrary.updates.rollback")
-                executes(::showBackups)
-                argument("page", ArgumentType.integer()) { executes(::showBackups) }
-            }
+            executes(catalog::showList)
+            catalog.install { name, configure -> literal(name, configure) }
             literal("rollback") {
                 permission("pnlibrary.updates.rollback")
                 argument("transaction", ArgumentType.string()) {
@@ -134,13 +123,6 @@ internal class BukkitControlCommand(
         literal("error-chain") { executes { native(it) { sender -> testErrors.chained(sender) } } }
     }
 
-    private fun showCatalog(context: CommandContext, updatesOnly: Boolean) {
-        if (!ready(context)) return
-        val page = requestedPage(context) ?: return
-        UpdateCatalogView.catalog(library.updates.all().map { it.snapshot }, page, updatesOnly,
-            if (updatesOnly) "/pn updates available" else "/pn updates list").forEach(context.sender::send)
-    }
-
     /** Replies to the invoking sender immediately, then delivers the result on the server thread. */
     private fun checkUpdates(context: CommandContext) {
         if (library.isClosed) {
@@ -153,19 +135,7 @@ internal class BukkitControlCommand(
             if (!library.isClosed) plugin.server.scheduler.runTask(plugin, Runnable {
                 if (library.isClosed) return@Runnable
                 if (error != null) context.sender.send(Component.text("Не удалось проверить обновления: ${error.message}", NamedTextColor.RED))
-                else showCatalog(context, true)
-            })
-        }
-    }
-
-    private fun showBackups(context: CommandContext) {
-        if (!ready(context)) return
-        val page = requestedPage(context) ?: return
-        library.updates.backups().whenComplete { entries, error ->
-            if (!library.isClosed) plugin.server.scheduler.runTask(plugin, Runnable {
-                if (library.isClosed) return@Runnable
-                if (error != null) context.sender.send(Component.text("Не удалось прочитать резервные наборы."))
-                else UpdateCatalogView.backups(entries, page, "/pn updates backups").forEach(context.sender::send)
+                else catalog.showAvailable(context)
             })
         }
     }
@@ -193,26 +163,6 @@ internal class BukkitControlCommand(
                 context.sender.send(Component.text(if (error == null) "Набор $id подготовлен. Полностью перезапустите сервер." else "Не удалось подготовить откат: ${error.message}"))
             })
         }
-    }
-
-    private fun showHistory(context: CommandContext) {
-        if (!ready(context)) return
-        val page = requestedPage(context) ?: return
-        library.updates.historyPage(page).whenComplete { entries, error ->
-            if (!library.isClosed) plugin.server.scheduler.runTask(plugin, Runnable {
-                if (library.isClosed) return@Runnable
-                if (error != null) context.sender.send(Component.text("Не удалось прочитать историю обновлений."))
-                else UpdateCatalogView.history(entries, page, "/pn updates history").forEach(context.sender::send)
-            })
-        }
-    }
-
-    /** Reads the optional `page` argument, replying with an error and returning null when it is invalid. */
-    private fun requestedPage(context: CommandContext): Int? {
-        val page = if (context.contains("page")) context.get<Int>("page") else 1
-        if (page >= 1) return page
-        context.sender.send(Component.text("Номер страницы должен быть положительным."))
-        return null
     }
 
     private fun ready(context: CommandContext): Boolean {

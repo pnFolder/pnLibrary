@@ -16,28 +16,23 @@ class ProxyUpdateCommand(private val library: PnLibrary) {
     /** Registers the portable update command for this library runtime. */
     fun register(): CommandRegistration = library.registerRuntimeCommand(definition())
 
+    private val catalog = UpdateCatalogCommands(
+        library = library,
+        routes = UpdateCatalogRoutes("/pnupdate"),
+        guard = { context ->
+            context.sender.isConsole.also { allowed ->
+                if (!allowed) context.sender.send(Component.text("pnLibrary update catalog is console-only on proxy platforms."))
+            }
+        },
+    )
+
     /** Builds the portable `pnupdate` command definition. */
     fun definition(): CommandDefinition = command("pnupdate") {
         permission("pnlibrary.updates.console")
         executes { execute(it, "plan") }
         literal("plan") { executes { execute(it, "plan") } }
         literal("check") { executes { execute(it, "check") } }
-        literal("list") {
-            executes { showCatalog(it, false) }
-            argument("page", ArgumentType.integer()) { executes { showCatalog(it, false) } }
-        }
-        literal("available") {
-            executes { showCatalog(it, true) }
-            argument("page", ArgumentType.integer()) { executes { showCatalog(it, true) } }
-        }
-        literal("history") {
-            executes(::showHistory)
-            argument("page", ArgumentType.integer()) { executes(::showHistory) }
-        }
-        literal("backups") {
-            executes(::showBackups)
-            argument("page", ArgumentType.integer()) { executes(::showBackups) }
-        }
+        catalog.install { name, configure -> literal(name, configure) }
         literal("rollback") {
             argument("transaction", ArgumentType.string()) {
                 executes { rollbackSaved(it, false) }
@@ -79,40 +74,6 @@ class ProxyUpdateCommand(private val library: PnLibrary) {
                     "Update plan ${it.id}, revision ${it.revision}: ${it.state}; changes=${it.plan?.changes?.size ?: 0}; blockers=${it.blockers.size}"
                 } ?: "No update plan has been resolved."))
             }
-        }
-    }
-
-    private fun showCatalog(context: CommandContext, updatesOnly: Boolean) {
-        if (!context.sender.isConsole) {
-            context.sender.send(Component.text("pnLibrary proxy catalog is console-only."))
-            return
-        }
-        val page = if (context.contains("page")) context.get<Int>("page") else 1
-        if (page < 1) { context.sender.send(Component.text("Page must be positive.")); return }
-        UpdateCatalogView.catalog(library.updates.all().map { it.snapshot }, page, updatesOnly,
-            if (updatesOnly) "/pnupdate available" else "/pnupdate list").forEach(context.sender::send)
-    }
-
-    private fun showHistory(context: CommandContext) {
-        if (!context.sender.isConsole) {
-            context.sender.send(Component.text("pnLibrary proxy history is console-only."))
-            return
-        }
-        val page = if (context.contains("page")) context.get<Int>("page") else 1
-        if (page < 1) { context.sender.send(Component.text("Page must be positive.")); return }
-        library.updates.historyPage(page).whenComplete { entries, error ->
-            if (error != null) context.sender.send(Component.text("Could not read update history."))
-            else UpdateCatalogView.history(entries, page, "/pnupdate history").forEach(context.sender::send)
-        }
-    }
-
-    private fun showBackups(context: CommandContext) {
-        if (!context.sender.isConsole) { context.sender.send(Component.text("Rollback sets are console-only on proxies.")); return }
-        val page = if (context.contains("page")) context.get<Int>("page") else 1
-        if (page < 1) { context.sender.send(Component.text("Page must be positive.")); return }
-        library.updates.backups().whenComplete { entries, error ->
-            if (error != null) context.sender.send(Component.text("Could not read rollback sets."))
-            else UpdateCatalogView.backups(entries, page, "/pnupdate backups").forEach(context.sender::send)
         }
     }
 

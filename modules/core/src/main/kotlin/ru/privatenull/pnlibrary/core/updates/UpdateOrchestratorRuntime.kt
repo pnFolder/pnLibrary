@@ -107,6 +107,10 @@ internal class UpdateOrchestratorRuntime(
         }.let { java.util.Collections.unmodifiableList(it) }
     }
 
+    fun historyCount(product: String?): CompletionStage<Int> = readAsync {
+        journal.count(product?.let { ProductId.of(it).value })
+    }
+
     fun <T> readAsync(action: () -> T): CompletionStage<T> {
         val result = CompletableFuture<T>()
         pendingReads.add(result)
