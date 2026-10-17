@@ -22,7 +22,6 @@ import ru.privatenull.pnlibrary.api.updates.UpdatePlanSnapshot
 import ru.privatenull.pnlibrary.api.updates.UpdateRegistration
 import ru.privatenull.pnlibrary.api.updates.UpdateActor
 import ru.privatenull.pnlibrary.core.updates.UpdateCatalogView
-import java.util.Locale
 import java.util.UUID
 import java.util.concurrent.atomic.AtomicBoolean
 import java.time.Duration
@@ -48,10 +47,10 @@ internal class BukkitControlCommand(
         permission("pnlibrary.admin")
         executes { showCatalog(it, false) }
         literal("status") {
-            executes(::executeNative)
+            executes { native(it) { sender -> sendStatus(sender, null) } }
             argument("plugin", ArgumentType.string()) {
                 suggests { library.updates.all().map { it.snapshot.product } }
-                executes(::executeNative)
+                executes { native(it) { sender -> sendStatus(sender, it.get<String>("plugin")) } }
             }
         }
         literal("updates") {
@@ -92,38 +91,48 @@ internal class BukkitControlCommand(
         literal("update") {
             argument("plugin", ArgumentType.string()) {
                 suggests { library.updates.all().map { it.snapshot.product } }
-                executes(::executeNative)
+                executes { native(it) { sender -> update(sender, it.get<String>("plugin")) } }
             }
         }
         literal("update-confirm") {
-            argument("token", ArgumentType.string()) { executes(::executeNative) }
+            argument("token", ArgumentType.string()) {
+                executes { native(it) { sender -> confirmUpdate(sender, it.get<String>("token")) } }
+            }
         }
         literal("update-status") {
-            executes(::executeNative)
+            executes { native(it) { sender -> sendUpdateStatus(sender, null) } }
             argument("plugin", ArgumentType.string()) {
                 suggests { library.updates.all().map { it.snapshot.product } }
-                executes(::executeNative)
+                executes { native(it) { sender -> sendUpdateStatus(sender, it.get<String>("plugin")) } }
             }
         }
         literal("update-rollback") {
-            executes(::executeNative)
-            argument("token", ArgumentType.string()) { executes(::executeNative) }
-        }
-        literal("restart") {
-            executes(::executeNative)
-            argument("token", ArgumentType.string()) { executes(::executeNative) }
-        }
-        literal("debug") { executes(::executeNative) }
-        literal("support") { executes(::executeNative) }
-        literal("error") { executes(::executeNative) }
-        literal("error-repeat") {
-            executes(::executeNative)
-            argument("count", ArgumentType.integer()) {
-                suggests { REPEAT_COUNTS }
-                executes(::executeNative)
+            executes { native(it) { sender -> rollbackUpdate(sender, null) } }
+            argument("token", ArgumentType.string()) {
+                executes { native(it) { sender -> rollbackUpdate(sender, it.get<String>("token")) } }
             }
         }
-        literal("error-chain") { executes(::executeNative) }
+        literal("restart") {
+            executes { native(it) { sender -> handleRestart(sender, null) } }
+            argument("token", ArgumentType.string()) {
+                executes { native(it) { sender -> handleRestart(sender, it.get<String>("token")) } }
+            }
+        }
+        literal("debug") {
+            executes { native(it) { sender -> sender.sendMessage("§eИспользуйте /pndebug [all|plugin] [--full|--config|--logs]") } }
+        }
+        literal("support") {
+            executes { native(it) { sender -> sender.sendMessage("§eПоддержка pnFolder: §f${PnLibraryBrand.SUPPORT_URL}") } }
+        }
+        literal("error") { executes { native(it) { sender -> testErrors.unique(sender) } } }
+        literal("error-repeat") {
+            executes { native(it) { sender -> testErrors.repeated(sender, null) } }
+            argument("count", ArgumentType.integer()) {
+                suggests { REPEAT_COUNTS }
+                executes { native(it) { sender -> testErrors.repeated(sender, it.get<Int>("count")) } }
+            }
+        }
+        literal("error-chain") { executes { native(it) { sender -> testErrors.chained(sender) } } }
     }
 
     private fun showCatalog(context: CommandContext, updatesOnly: Boolean) {
@@ -213,38 +222,13 @@ internal class BukkitControlCommand(
         return false
     }
 
-    /** Unwraps a portable command sender before dispatching Bukkit operations. */
-    /** Dispatches control actions while rejecting requests after runtime shutdown. */
-    private fun executeNative(context: CommandContext) {
+    /** Unwraps the portable sender and runs [action] unless the runtime is already closed. */
+    private fun native(context: CommandContext, action: (CommandSender) -> Unit) {
         val sender = (context.sender as? BukkitCommandSender)?.native
-        if (sender == null) context.sender.send(Component.text("Unsupported Bukkit sender."))
-        else execute(sender, context.arguments)
-    }
-
-    private fun execute(sender: CommandSender, arguments: List<String>) {
-        if (library.isClosed) {
-            sender.sendMessage("§cpnLibrary не готова.")
-            return
-        }
-        val action = arguments.firstOrNull()?.lowercase(Locale.ROOT) ?: "status"
-        when (action) {
-            "status" -> sendStatus(sender, arguments.getOrNull(1))
-            "updates" -> sendUpdates(sender)
-            "update" -> update(sender, arguments.getOrNull(1))
-            "update-confirm" -> confirmUpdate(sender, arguments.getOrNull(1))
-            "update-status" -> sendUpdateStatus(sender, arguments.getOrNull(1))
-            "update-rollback" -> rollbackUpdate(sender, arguments.getOrNull(1))
-            "check" -> {
-                library.updates.checkNow(updateActor(sender))
-                sender.sendMessage("§eПовторная проверка обновлений запущена.")
-            }
-            "restart" -> handleRestart(sender, arguments.drop(1))
-            "support" -> sender.sendMessage("§eПоддержка pnFolder: §f${PnLibraryBrand.SUPPORT_URL}")
-            "debug" -> sender.sendMessage("§eИспользуйте /pndebug [all|plugin] [--full|--config|--logs]")
-            "error" -> testErrors.unique(sender)
-            "error-repeat" -> testErrors.repeated(sender, arguments.getOrNull(1))
-            "error-chain" -> testErrors.chained(sender)
-            else -> sender.sendMessage("§e/pn [status|updates|check|update|update-status|update-rollback|restart|debug|support|error|error-repeat|error-chain]")
+        when {
+            sender == null -> context.sender.send(Component.text("Unsupported Bukkit sender."))
+            library.isClosed -> sender.sendMessage("§cpnLibrary не готова.")
+            else -> action(sender)
         }
     }
 
@@ -445,7 +429,7 @@ internal class BukkitControlCommand(
 
     /** Validates the staged plan and a player confirmation before requesting restart. */
     @Suppress("DEPRECATION")
-    private fun handleRestart(sender: CommandSender, arguments: List<String>) {
+    private fun handleRestart(sender: CommandSender, supplied: String?) {
         if (!sender.hasPermission("pnlibrary.updates.restart")) {
             sender.sendMessage("§cНедостаточно прав для перезапуска.")
             return
@@ -455,7 +439,6 @@ internal class BukkitControlCommand(
             sender.sendMessage("§eНет подготовленных обновлений, требующих перезапуска.")
             return
         }
-        val supplied = arguments.firstOrNull()
         if (supplied != null && sender is Player) {
             if (!tokens.consume(supplied, sender.uniqueId, plan.id, plan.revision, UpdateAction.RESTART)) {
                 sender.sendMessage("§cПодтверждение истекло. Выполните /pn restart ещё раз.")
@@ -483,53 +466,6 @@ internal class BukkitControlCommand(
         )
         sender.spigot().sendMessage(confirm)
         sender.sendMessage("")
-    }
-
-    /** Lists product updates and the available administrator actions. */
-    private fun sendUpdates(sender: CommandSender) {
-        if (!sender.hasPermission("pnlibrary.updates.view")) {
-            sender.sendMessage("§cНедостаточно прав для просмотра обновлений.")
-            return
-        }
-        sender.sendMessage("")
-        sender.sendMessage("§e «Обновления pnFolder»")
-        val entries = library.updates.all()
-        if (entries.isEmpty()) sender.sendMessage(" §7Нет зарегистрированных плагинов.")
-        entries.forEach {
-            sendUpdateLine(sender, it.snapshot)
-        }
-        if (sender is Player && sender.hasPermission("pnlibrary.updates.download")) {
-            library.updates.currentPlan().orElse(null)?.takeIf { it.state == UpdateState.UPDATE_AVAILABLE }?.let { plan ->
-                sendPlanDownloadButton(sender, tokens.issue(
-                    sender.uniqueId, plan.id, plan.revision, UpdateAction.DOWNLOAD, Duration.ofMinutes(2),
-                ))
-            }
-        }
-        if (sender is Player) sendActionButtons(sender)
-        sender.sendMessage(" §7Ручная загрузка: §f/pn update <плагин>")
-        sender.sendMessage("")
-    }
-
-    /** Sends a player-bound update-plan confirmation button. */
-    @Suppress("DEPRECATION")
-    private fun sendPlanDownloadButton(player: Player, token: String) {
-        val button = BukkitChatButtons.runCommand(
-            "[ Скачать совместимый план ]", ChatColor.YELLOW, "/pn update-confirm $token",
-            "Скачать и проверить весь план",
-        )
-        player.spigot().sendMessage(button)
-    }
-
-    /** Sends update-check and support buttons. */
-    @Suppress("DEPRECATION")
-    private fun sendActionButtons(player: Player) {
-        val check = BukkitChatButtons.runCommand(
-            "[ Проверить ]", ChatColor.GREEN, "/pn check", "Повторно проверить все обновления",
-        )
-        val support = BukkitChatButtons.openUrl(
-            "[ Поддержка ]", ChatColor.GOLD, PnLibraryBrand.SUPPORT_URL, "Открыть Discord pnFolder",
-        )
-        player.spigot().sendMessage(check, TextComponent("  "), support)
     }
 
     /** Formats one product's update state in the established chat style. */

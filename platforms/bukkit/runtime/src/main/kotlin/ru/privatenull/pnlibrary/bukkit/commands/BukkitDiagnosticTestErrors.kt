@@ -22,8 +22,8 @@ internal class BukkitDiagnosticTestErrors(
     }
 
     /** Emits the same failure repeatedly to exercise deduplication. */
-    fun repeated(sender: CommandSender, rawCount: String?) {
-        val count = rawCount?.toIntOrNull()?.coerceIn(1, MAX_REPEATS) ?: DEFAULT_REPEATS
+    fun repeated(sender: CommandSender, requested: Int?) {
+        val count = requested?.coerceIn(1, MAX_REPEATS) ?: DEFAULT_REPEATS
         val logger = logger
         repeat(count) { logger.error("Repeated diagnostic test error", IllegalStateException("Generated repeated failure")) }
         sender.sendMessage("§aОдинаковая тестовая ошибка вызвана §f$count §aраз.")
