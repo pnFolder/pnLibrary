@@ -1,10 +1,8 @@
 package ru.privatenull.pnlibrary.bukkit.commands
 
 import net.kyori.adventure.text.Component
+import net.kyori.adventure.text.format.NamedTextColor
 import net.md_5.bungee.api.ChatColor
-import net.md_5.bungee.api.chat.ClickEvent
-import net.md_5.bungee.api.chat.ComponentBuilder
-import net.md_5.bungee.api.chat.HoverEvent
 import net.md_5.bungee.api.chat.TextComponent
 import org.bukkit.Bukkit
 import org.bukkit.command.CommandSender
@@ -37,6 +35,7 @@ internal class BukkitControlCommand(
     private val library: PnLibrary,
 ) {
     private val tokens = UpdateConfirmationTokens()
+    private val testErrors = BukkitDiagnosticTestErrors(plugin, library)
 
     private fun updateActor(sender: CommandSender): UpdateActor = when (sender) {
         is Player -> UpdateActor(UpdateActor.Kind.PLAYER, sender.uniqueId.toString(), sender.name)
@@ -129,8 +128,7 @@ internal class BukkitControlCommand(
 
     private fun showCatalog(context: CommandContext, updatesOnly: Boolean) {
         if (!ready(context)) return
-        val page = if (context.contains("page")) context.get<Int>("page") else 1
-        if (page < 1) { context.sender.send(Component.text("Номер страницы должен быть положительным.")); return }
+        val page = requestedPage(context) ?: return
         UpdateCatalogView.catalog(library.updates.all().map { it.snapshot }, page, updatesOnly,
             if (updatesOnly) "/pn updates available" else "/pn updates list").forEach(context.sender::send)
     }
@@ -138,15 +136,15 @@ internal class BukkitControlCommand(
     /** Replies to the invoking sender immediately, then delivers the result on the server thread. */
     private fun checkUpdates(context: CommandContext) {
         if (library.isClosed) {
-            context.sender.send(Component.text("pnLibrary не готова.", net.kyori.adventure.text.format.NamedTextColor.RED))
+            context.sender.send(Component.text("pnLibrary не готова.", NamedTextColor.RED))
             return
         }
         val native = (context.sender as? BukkitCommandSender)?.native ?: return
-        context.sender.send(Component.text("pnLibrary · Проверяю обновления…", net.kyori.adventure.text.format.NamedTextColor.YELLOW))
+        context.sender.send(Component.text("pnLibrary · Проверяю обновления…", NamedTextColor.YELLOW))
         library.updates.checkNow(updateActor(native)).whenComplete { _, error ->
             if (!library.isClosed) plugin.server.scheduler.runTask(plugin, Runnable {
                 if (library.isClosed) return@Runnable
-                if (error != null) context.sender.send(Component.text("Не удалось проверить обновления: ${error.message}", net.kyori.adventure.text.format.NamedTextColor.RED))
+                if (error != null) context.sender.send(Component.text("Не удалось проверить обновления: ${error.message}", NamedTextColor.RED))
                 else showCatalog(context, true)
             })
         }
@@ -154,8 +152,7 @@ internal class BukkitControlCommand(
 
     private fun showBackups(context: CommandContext) {
         if (!ready(context)) return
-        val page = if (context.contains("page")) context.get<Int>("page") else 1
-        if (page < 1) { context.sender.send(Component.text("Номер страницы должен быть положительным.")); return }
+        val page = requestedPage(context) ?: return
         library.updates.backups().whenComplete { entries, error ->
             if (!library.isClosed) plugin.server.scheduler.runTask(plugin, Runnable {
                 if (library.isClosed) return@Runnable
@@ -192,8 +189,7 @@ internal class BukkitControlCommand(
 
     private fun showHistory(context: CommandContext) {
         if (!ready(context)) return
-        val page = if (context.contains("page")) context.get<Int>("page") else 1
-        if (page < 1) { context.sender.send(Component.text("Номер страницы должен быть положительным.")); return }
+        val page = requestedPage(context) ?: return
         library.updates.historyPage(page).whenComplete { entries, error ->
             if (!library.isClosed) plugin.server.scheduler.runTask(plugin, Runnable {
                 if (library.isClosed) return@Runnable
@@ -203,9 +199,17 @@ internal class BukkitControlCommand(
         }
     }
 
+    /** Reads the optional `page` argument, replying with an error and returning null when it is invalid. */
+    private fun requestedPage(context: CommandContext): Int? {
+        val page = if (context.contains("page")) context.get<Int>("page") else 1
+        if (page >= 1) return page
+        context.sender.send(Component.text("Номер страницы должен быть положительным."))
+        return null
+    }
+
     private fun ready(context: CommandContext): Boolean {
         if (!library.isClosed) return true
-        context.sender.send(Component.text("pnLibrary не готова. Дождитесь полного запуска сервера.", net.kyori.adventure.text.format.NamedTextColor.RED))
+        context.sender.send(Component.text("pnLibrary не готова. Дождитесь полного запуска сервера.", NamedTextColor.RED))
         return false
     }
 
@@ -237,9 +241,9 @@ internal class BukkitControlCommand(
             "restart" -> handleRestart(sender, arguments.drop(1))
             "support" -> sender.sendMessage("§eПоддержка pnFolder: §f${PnLibraryBrand.SUPPORT_URL}")
             "debug" -> sender.sendMessage("§eИспользуйте /pndebug [all|plugin] [--full|--config|--logs]")
-            "error" -> emitUniqueTestError(sender)
-            "error-repeat" -> emitRepeatedTestError(sender, arguments.getOrNull(1))
-            "error-chain" -> emitChainedTestError(sender)
+            "error" -> testErrors.unique(sender)
+            "error-repeat" -> testErrors.repeated(sender, arguments.getOrNull(1))
+            "error-chain" -> testErrors.chained(sender)
             else -> sender.sendMessage("§e/pn [status|updates|check|update|update-status|update-rollback|restart|debug|support|error|error-repeat|error-chain]")
         }
     }
@@ -400,15 +404,10 @@ internal class BukkitControlCommand(
         }
         if (sender is Player && token == null) {
             val issued = tokens.issue(sender.uniqueId, plan.id, plan.revision, UpdateAction.ROLLBACK, Duration.ofSeconds(30))
-            val confirm = TextComponent("[ Подтвердить откат ]").apply {
-                color = ChatColor.RED
-                isBold = true
-                clickEvent = ClickEvent(ClickEvent.Action.RUN_COMMAND, "/pn update-rollback $issued")
-                hoverEvent = HoverEvent(
-                    HoverEvent.Action.SHOW_TEXT,
-                    ComponentBuilder("Предыдущие JAR будут подготовлены к перезапуску").color(ChatColor.GRAY).create(),
-                )
-            }
+            val confirm = BukkitChatButtons.runCommand(
+                "[ Подтвердить откат ]", ChatColor.RED, "/pn update-rollback $issued",
+                "Предыдущие JAR будут подготовлены к перезапуску",
+            )
             sender.sendMessage("§eОткат заменит весь связанный план обновления, а не один плагин.")
             sender.spigot().sendMessage(confirm)
             return
@@ -442,36 +441,6 @@ internal class BukkitControlCommand(
                 else sender.sendMessage("§cНе удалось подготовить обновление: ${error.message}")
             })
         }
-    }
-
-    /** Emits a uniquely identifiable diagnostic test failure. */
-    private fun emitUniqueTestError(sender: CommandSender) {
-        val id = UUID.randomUUID().toString().substring(0, 8)
-        library.logging.logger(plugin, "diagnostic-test").error(
-            "Unique diagnostic test error [$id]",
-            IllegalStateException("Generated unique failure [$id]"),
-        )
-        sender.sendMessage("§aСоздана уникальная тестовая ошибка: §f$id")
-    }
-
-    /** Emits repeated failures to exercise diagnostic deduplication. */
-    private fun emitRepeatedTestError(sender: CommandSender, rawCount: String?) {
-        val count = rawCount?.toIntOrNull()?.coerceIn(1, 1_000) ?: 10
-        val logger = library.logging.logger(plugin, "diagnostic-test")
-        repeat(count) { logger.error("Repeated diagnostic test error", repeatedTestException()) }
-        sender.sendMessage("§aОдинаковая тестовая ошибка вызвана §f$count §aраз.")
-    }
-
-    /** Creates the stable failure used by repeated-error tests. */
-    private fun repeatedTestException(): Throwable = IllegalStateException("Generated repeated failure")
-
-    /** Emits a nested failure to exercise cause-chain reporting. */
-    private fun emitChainedTestError(sender: CommandSender) {
-        val root = IllegalArgumentException("Invalid test database response")
-        val database = java.sql.SQLException("Test query execution failed", root)
-        val completion = java.util.concurrent.CompletionException("Test asynchronous operation failed", database)
-        library.logging.logger(plugin, "diagnostic-test").error("Chained diagnostic test error", completion)
-        sender.sendMessage("§aСоздана тестовая ошибка с полной цепочкой причин.")
     }
 
     /** Validates the staged plan and a player confirmation before requesting restart. */
@@ -509,15 +478,9 @@ internal class BukkitControlCommand(
         sender.sendMessage("§c§l Подтверждение перезапуска")
         sender.sendMessage(" §7Сейчас на сервере игроков: §f${Bukkit.getOnlinePlayers().size}")
         sender.sendMessage(" §7Подготовленные обновления применятся после полного перезапуска.")
-        val confirm = TextComponent("[ Подтвердить перезапуск ]").apply {
-                color = ChatColor.RED
-                isBold = true
-                clickEvent = ClickEvent(ClickEvent.Action.RUN_COMMAND, "/pn restart $token")
-                hoverEvent = HoverEvent(
-                    HoverEvent.Action.SHOW_TEXT,
-                    ComponentBuilder("Подтверждение действует 30 секунд").color(ChatColor.GRAY).create(),
-                )
-            }
+        val confirm = BukkitChatButtons.runCommand(
+            "[ Подтвердить перезапуск ]", ChatColor.RED, "/pn restart $token", "Подтверждение действует 30 секунд",
+        )
         sender.spigot().sendMessage(confirm)
         sender.sendMessage("")
     }
@@ -550,40 +513,21 @@ internal class BukkitControlCommand(
     /** Sends a player-bound update-plan confirmation button. */
     @Suppress("DEPRECATION")
     private fun sendPlanDownloadButton(player: Player, token: String) {
-        val button = TextComponent("[ Скачать совместимый план ]").apply {
-            color = ChatColor.YELLOW
-            isBold = true
-            clickEvent = ClickEvent(ClickEvent.Action.RUN_COMMAND, "/pn update-confirm $token")
-            hoverEvent = HoverEvent(HoverEvent.Action.SHOW_TEXT,
-                ComponentBuilder("Скачать и проверить весь план").color(ChatColor.GRAY).create())
-        }
+        val button = BukkitChatButtons.runCommand(
+            "[ Скачать совместимый план ]", ChatColor.YELLOW, "/pn update-confirm $token",
+            "Скачать и проверить весь план",
+        )
         player.spigot().sendMessage(button)
     }
 
     /** Sends update-check and support buttons. */
     @Suppress("DEPRECATION")
     private fun sendActionButtons(player: Player) {
-        fun button(text: String, color: ChatColor, action: ClickEvent, hint: String): TextComponent =
-            TextComponent(text).apply {
-                this.color = color
-                isBold = true
-                clickEvent = action
-                hoverEvent = HoverEvent(
-                    HoverEvent.Action.SHOW_TEXT,
-                    ComponentBuilder(hint).color(ChatColor.GRAY).create(),
-                )
-            }
-        val check = button(
-            "[ Проверить ]",
-            ChatColor.GREEN,
-            ClickEvent(ClickEvent.Action.RUN_COMMAND, "/pn check"),
-            "Повторно проверить все обновления",
+        val check = BukkitChatButtons.runCommand(
+            "[ Проверить ]", ChatColor.GREEN, "/pn check", "Повторно проверить все обновления",
         )
-        val support = button(
-            "[ Поддержка ]",
-            ChatColor.GOLD,
-            ClickEvent(ClickEvent.Action.OPEN_URL, PnLibraryBrand.SUPPORT_URL),
-            "Открыть Discord pnFolder",
+        val support = BukkitChatButtons.openUrl(
+            "[ Поддержка ]", ChatColor.GOLD, PnLibraryBrand.SUPPORT_URL, "Открыть Discord pnFolder",
         )
         player.spigot().sendMessage(check, TextComponent("  "), support)
     }
@@ -611,10 +555,6 @@ internal class BukkitControlCommand(
     }
 
     private companion object {
-        val CONTROL_ACTIONS = listOf(
-            "status", "updates", "check", "update", "update-status", "update-rollback", "restart", "debug", "support",
-            "error", "error-repeat", "error-chain",
-        )
         val REPEAT_COUNTS = listOf("10", "100", "1000")
     }
 }
