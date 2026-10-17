@@ -73,12 +73,12 @@ class CompositePluginMetricsTest {
     }
 
     private class RecordingMetrics(
-        override val provider: MetricsProvider,
+        private val provider: MetricsProvider,
         private val calls: MutableList<String>,
     ) : PluginMetrics {
         private val chartCount = AtomicInteger()
 
-        override val projectId: Int = 1
+        override val providers: Set<MetricsProvider> = setOf(provider)
         override fun simplePie(id: String, value: Supplier<String?>): PluginMetrics {
             chartCount.incrementAndGet()
             calls += "${provider.name.lowercase()}:chart"

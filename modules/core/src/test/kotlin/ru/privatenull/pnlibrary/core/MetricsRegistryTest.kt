@@ -1,55 +1,62 @@
 package ru.privatenull.pnlibrary.core
 
-import ru.privatenull.pnlibrary.core.metrics.MetricsRegistry
 import org.junit.jupiter.api.Assertions.assertEquals
 import org.junit.jupiter.api.Assertions.assertThrows
 import org.junit.jupiter.api.Test
-import ru.privatenull.pnlibrary.api.diagnostics.*
-import ru.privatenull.pnlibrary.api.logging.*
-import ru.privatenull.pnlibrary.api.metrics.*
+import ru.privatenull.pnlibrary.api.metrics.ErrorReporter
+import ru.privatenull.pnlibrary.api.metrics.MetricsProvider
+import ru.privatenull.pnlibrary.api.metrics.MetricsProviderConfiguration
+import ru.privatenull.pnlibrary.api.metrics.PluginMetrics
+import ru.privatenull.pnlibrary.core.metrics.MetricsRegistry
 import ru.privatenull.pnlibrary.spi.metrics.PlatformMetricsFactory
-import ru.privatenull.pnlibrary.api.runtime.*
-import ru.privatenull.pnlibrary.api.tasks.*
-import ru.privatenull.pnlibrary.api.updates.*
-import java.util.function.Supplier
 import java.util.concurrent.Executors
 import java.util.concurrent.TimeUnit
 import java.util.concurrent.atomic.AtomicInteger
+import java.util.function.Supplier
 
 class MetricsRegistryTest {
+    private val bStats = listOf(MetricsProviderConfiguration(MetricsProvider.BSTATS, projectId = 123))
+    private val fastStats = listOf(MetricsProviderConfiguration(MetricsProvider.FASTSTATS, token = "token"))
+
     @Test
     fun `closed registry rejects every metrics factory entry point`() {
         var opened = 0
         val registry = MetricsRegistry(object : PlatformMetricsFactory {
-            override fun open(owner: Any, projectId: Int): PluginMetrics {
+            override fun open(owner: Any, configurations: Collection<MetricsProviderConfiguration>): PluginMetrics {
                 opened++
-                return FakeMetrics(projectId) {}
+                return FakeMetrics {}
             }
-            override fun openErrorReporter(owner: Any, configurations: Collection<MetricsProviderConfiguration>): ErrorReporter? {
+
+            override fun openErrorReporter(
+                owner: Any,
+                configurations: Collection<MetricsProviderConfiguration>,
+            ): ErrorReporter? {
                 opened++
                 return null
             }
         })
-        val configuration = listOf(MetricsProviderConfiguration(MetricsProvider.FASTSTATS, token = "token"))
         registry.close()
-        assertThrows(IllegalStateException::class.java) { registry.open(Any(), 123) }
-        assertThrows(IllegalStateException::class.java) { registry.open(Any(), configuration) }
-        assertThrows(IllegalStateException::class.java) { registry.openErrorReporter(Any(), configuration) }
+        assertThrows(IllegalStateException::class.java) { registry.open(Any(), bStats) }
+        assertThrows(IllegalStateException::class.java) { registry.open(Any(), fastStats) }
+        assertThrows(IllegalStateException::class.java) { registry.openErrorReporter(Any(), fastStats) }
         assertEquals(0, opened)
         registry.close()
     }
 
     @Test
-    fun `project id is required and runtime closes sessions`() {
+    fun `an enabled provider is required and runtime closes sessions`() {
         var closed = 0
-        val factory = object : PlatformMetricsFactory {
-            override fun open(owner: Any, projectId: Int): PluginMetrics = FakeMetrics(projectId) { closed++ }
-        }
-        val registry = MetricsRegistry(factory)
+        val registry = MetricsRegistry(object : PlatformMetricsFactory {
+            override fun open(owner: Any, configurations: Collection<MetricsProviderConfiguration>): PluginMetrics =
+                FakeMetrics { closed++ }
+        })
 
-        assertThrows(IllegalArgumentException::class.java) { registry.open(Any(), 0) }
-        val first = registry.open(Any(), 123)
-        registry.open(Any(), 456)
+        assertThrows(IllegalArgumentException::class.java) { registry.open(Any(), emptyList()) }
+        assertThrows(IllegalArgumentException::class.java) {
+            registry.open(Any(), bStats.map { it.copy(enabled = false) })
+        }
+        val first = registry.open(Any(), bStats)
+        registry.open(Any(), fastStats)
         first.simplePie("storage_type") { "sqlite" }
         first.close()
         registry.close()
@@ -61,10 +68,10 @@ class MetricsRegistryTest {
     fun `managed metrics closes delegate only once under concurrent close`() {
         val closed = AtomicInteger()
         val registry = MetricsRegistry(object : PlatformMetricsFactory {
-            override fun open(owner: Any, projectId: Int): PluginMetrics =
-                FakeMetrics(projectId) { closed.incrementAndGet() }
+            override fun open(owner: Any, configurations: Collection<MetricsProviderConfiguration>): PluginMetrics =
+                FakeMetrics { closed.incrementAndGet() }
         })
-        val metrics = registry.open(Any(), 123)
+        val metrics = registry.open(Any(), bStats)
         val executor = Executors.newFixedThreadPool(8)
         try {
             repeat(64) { executor.submit { metrics.close() } }
@@ -82,30 +89,21 @@ class MetricsRegistryTest {
         var received: List<MetricsProviderConfiguration> = emptyList()
         var closed = 0
         val registry = MetricsRegistry(object : PlatformMetricsFactory {
-            override fun open(owner: Any, projectId: Int): PluginMetrics =
-                error("legacy open must not be used")
-
-            override fun open(
-                owner: Any,
-                configurations: Collection<MetricsProviderConfiguration>,
-            ): PluginMetrics {
+            override fun open(owner: Any, configurations: Collection<MetricsProviderConfiguration>): PluginMetrics {
                 received = configurations.toList()
-                return FakeMetrics(0) { closed++ }
+                return FakeMetrics { closed++ }
             }
         })
-        val configuration = MetricsProviderConfiguration(
-            provider = MetricsProvider.FASTSTATS,
-            token = "token",
-        )
 
-        registry.open(Any(), listOf(configuration))
+        registry.open(Any(), fastStats)
         registry.close()
 
-        assertEquals(listOf(configuration), received)
+        assertEquals(fastStats, received)
         assertEquals(1, closed)
     }
 
-    private class FakeMetrics(override val projectId: Int, val shutdown: () -> Unit) : PluginMetrics {
+    private class FakeMetrics(val shutdown: () -> Unit) : PluginMetrics {
+        override val providers: Set<MetricsProvider> = setOf(MetricsProvider.BSTATS)
         override fun simplePie(id: String, value: Supplier<String?>) = this
         override fun advancedPie(id: String, values: Supplier<Map<String, Int>>) = this
         override fun drilldownPie(id: String, values: Supplier<Map<String, Map<String, Int>>>) = this

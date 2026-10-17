@@ -1864,11 +1864,6 @@ public abstract interface class ru/privatenull/pnlibrary/api/metrics/ErrorReport
 	public fun installGlobalHandler ()V
 }
 
-public abstract interface class ru/privatenull/pnlibrary/api/metrics/FastStatsFacade {
-	public abstract fun errorTracker ()Lru/privatenull/pnlibrary/api/metrics/ErrorReporter;
-	public abstract fun getMetrics ()Lru/privatenull/pnlibrary/api/metrics/PluginMetrics;
-}
-
 public abstract class ru/privatenull/pnlibrary/api/metrics/MetricsCredentials : java/lang/AutoCloseable {
 	public fun close ()V
 	public abstract fun getProvider ()Lru/privatenull/pnlibrary/api/metrics/MetricsProvider;
@@ -1926,8 +1921,7 @@ public final class ru/privatenull/pnlibrary/api/metrics/MetricsProviderConfigura
 
 public abstract interface class ru/privatenull/pnlibrary/api/metrics/MetricsService {
 	public fun getProviders ()Ljava/util/Set;
-	public abstract fun open (Ljava/lang/Object;I)Lru/privatenull/pnlibrary/api/metrics/PluginMetrics;
-	public fun open (Ljava/lang/Object;Ljava/util/Collection;)Lru/privatenull/pnlibrary/api/metrics/PluginMetrics;
+	public abstract fun open (Ljava/lang/Object;Ljava/util/Collection;)Lru/privatenull/pnlibrary/api/metrics/PluginMetrics;
 	public fun openErrorReporter (Ljava/lang/Object;Ljava/util/Collection;)Lru/privatenull/pnlibrary/api/metrics/ErrorReporter;
 }
 
@@ -1936,11 +1930,8 @@ public abstract interface class ru/privatenull/pnlibrary/api/metrics/PluginMetri
 	public abstract fun advancedPie (Ljava/lang/String;Ljava/util/function/Supplier;)Lru/privatenull/pnlibrary/api/metrics/PluginMetrics;
 	public abstract fun close ()V
 	public abstract fun drilldownPie (Ljava/lang/String;Ljava/util/function/Supplier;)Lru/privatenull/pnlibrary/api/metrics/PluginMetrics;
-	public fun fastStatsOrNull ()Lru/privatenull/pnlibrary/api/metrics/FastStatsFacade;
 	public fun getErrorReporter ()Lru/privatenull/pnlibrary/api/metrics/ErrorReporter;
-	public abstract fun getProjectId ()I
-	public fun getProvider ()Lru/privatenull/pnlibrary/api/metrics/MetricsProvider;
-	public fun getProviders ()Ljava/util/Set;
+	public abstract fun getProviders ()Ljava/util/Set;
 	public abstract fun multiLineChart (Ljava/lang/String;Ljava/util/function/Supplier;)Lru/privatenull/pnlibrary/api/metrics/PluginMetrics;
 	public abstract fun simpleBarChart (Ljava/lang/String;Ljava/util/function/Supplier;)Lru/privatenull/pnlibrary/api/metrics/PluginMetrics;
 	public abstract fun simplePie (Ljava/lang/String;Ljava/util/function/Supplier;)Lru/privatenull/pnlibrary/api/metrics/PluginMetrics;
@@ -2504,18 +2495,15 @@ public final class ru/privatenull/pnlibrary/api/plugin/MetricsBuilder {
 }
 
 public abstract interface class ru/privatenull/pnlibrary/api/plugin/MetricsController : java/lang/AutoCloseable {
-	public abstract fun changeProjectId (I)V
 	public abstract fun close ()V
 	public abstract fun configure (Ljava/util/function/Consumer;)V
 	public abstract fun disable ()V
 	public abstract fun enable ()V
-	public abstract fun enable (I)V
 	public fun errorReporterOrNull ()Lru/privatenull/pnlibrary/api/metrics/ErrorReporter;
-	public fun fastStatsOrNull ()Lru/privatenull/pnlibrary/api/metrics/FastStatsFacade;
-	public abstract fun getProjectId ()Ljava/lang/Integer;
 	public fun getProviderConfigurations ()Ljava/util/List;
 	public fun isClosed ()Z
 	public abstract fun isEnabled ()Z
+	public abstract fun update (Lru/privatenull/pnlibrary/api/metrics/MetricsProviderConfiguration;)V
 }
 
 public abstract interface class ru/privatenull/pnlibrary/api/plugin/ModuleContext : java/lang/AutoCloseable {

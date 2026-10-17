@@ -1,5 +1,7 @@
 package ru.privatenull.pnlibrary.core.plugin
 
+import ru.privatenull.pnlibrary.api.metrics.MetricsProvider
+import ru.privatenull.pnlibrary.api.metrics.MetricsProviderConfiguration
 import org.junit.jupiter.api.Assertions.assertEquals
 import org.junit.jupiter.api.Assertions.assertNull
 import org.junit.jupiter.api.Test
@@ -24,8 +26,11 @@ class ModuleRuntimeSummaryTest {
 
     @Test
     fun `omits services that were not configured`() {
-        assertNull(ModuleRuntimeSummary.metrics(null, false))
-        assertEquals("disabled · project 123", ModuleRuntimeSummary.metrics(123, false))
+        assertNull(ModuleRuntimeSummary.metrics(emptyList(), false))
+        val bStats = MetricsProviderConfiguration(MetricsProvider.BSTATS, projectId = 123)
+        val fastStats = MetricsProviderConfiguration(MetricsProvider.FASTSTATS, token = "token")
+        assertEquals("disabled · bStats #123", ModuleRuntimeSummary.metrics(listOf(bStats), false))
+        assertEquals("enabled · bStats #123, FastStats", ModuleRuntimeSummary.metrics(listOf(bStats, fastStats), true))
         assertEquals("disabled", ModuleRuntimeSummary.placeholderApi(false, "ready"))
         assertEquals("unavailable", ModuleRuntimeSummary.placeholderApi(true, null))
     }

@@ -21,22 +21,13 @@ class CompositePluginMetrics(
     private val delegates = delegates.toList()
     private val closed = AtomicBoolean(false)
 
-    /** Returns the first FastStats capability exposed by a delegate. */
-    override fun fastStatsOrNull() = delegates.firstNotNullOfOrNull { it.fastStatsOrNull() }
-    /** Returns the first error reporter exposed by a delegate. */
-    override val errorReporter
-        get() = delegates.firstNotNullOfOrNull { it.errorReporter }
     init {
         require(this.delegates.isNotEmpty()) { "At least one metrics delegate is required" }
     }
 
-    /** Public bStats project ID, independent of backend declaration order. */
-    override val projectId: Int
-        get() = delegates.firstOrNull { it.provider == MetricsProvider.BSTATS }?.projectId ?: 0
-
-    /** Compatibility provider exposed by the first delegate. */
-    override val provider: MetricsProvider
-        get() = delegates.first().provider
+    /** Returns the first error reporter exposed by a delegate. */
+    override val errorReporter
+        get() = delegates.firstNotNullOfOrNull { it.errorReporter }
 
     /** Union of every represented metrics provider. */
     override val providers: Set<MetricsProvider> = Collections.unmodifiableSet(this.delegates

@@ -70,7 +70,7 @@ class AbstractMetricsSessionTest {
         assertThrows(IllegalStateException::class.java) { credentials.useToken { it } }
     }
 
-    private class RecordingSession : AbstractMetricsSession(42) {
+    private class RecordingSession : AbstractMetricsSession(MetricsCredentials.BStats(42)) {
         val charts = mutableListOf<Chart>()
         var shutdowns = 0
 

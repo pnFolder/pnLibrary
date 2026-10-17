@@ -1,12 +1,10 @@
 package ru.privatenull.pnlibrary.core.plugin
 
 import ru.privatenull.pnlibrary.api.metrics.ErrorReporter
-import ru.privatenull.pnlibrary.api.plugin.MetricsController
-import ru.privatenull.pnlibrary.api.metrics.FastStatsFacade
+import ru.privatenull.pnlibrary.api.metrics.MetricsProviderConfiguration
 import ru.privatenull.pnlibrary.api.metrics.MetricsService
 import ru.privatenull.pnlibrary.api.metrics.PluginMetrics
-import ru.privatenull.pnlibrary.api.metrics.MetricsProviderConfiguration
-import ru.privatenull.pnlibrary.api.metrics.MetricsProvider
+import ru.privatenull.pnlibrary.api.plugin.MetricsController
 import java.util.concurrent.atomic.AtomicBoolean
 import java.util.function.Consumer
 
@@ -21,33 +19,21 @@ internal class MetricsControllerImpl(
     private val closed = AtomicBoolean(false)
     private val configurers = definition.configurers.toMutableList()
     private val configuredProviders = definition.providers.toMutableList()
-    private val currentProjectId: Int?
-        get() = configuredProviders.firstOrNull { it.provider == MetricsProvider.BSTATS }?.projectId
 
     @Volatile
     private var session: PluginMetrics? = null
 
     init {
-        currentProjectId?.let { require(it > 0) { "metrics projectId must be positive" } }
         if (definition.enabled) enable()
     }
 
     override val isEnabled: Boolean get() = session != null
     override val isClosed: Boolean get() = closed.get()
-    override val projectId: Int? get() = synchronized(lock) { currentProjectId }
     override val providerConfigurations: List<MetricsProviderConfiguration>
         get() = synchronized(lock) { configuredProviders.toList() }
 
     override fun errorReporterOrNull(): ErrorReporter? =
         session?.errorReporter?.let { errorReporter ?: it }
-
-    override fun fastStatsOrNull(): FastStatsFacade? {
-        val backend = session?.fastStatsOrNull() ?: return null
-        return object : FastStatsFacade {
-            override val metrics: PluginMetrics = backend.metrics
-            override fun errorTracker(): ErrorReporter = errorReporter ?: backend.errorTracker()
-        }
-    }
 
     /** Returns the reporter owned by the live provider session. */
     internal fun sessionErrorReporter(): ErrorReporter? = session?.errorReporter
@@ -58,62 +44,49 @@ internal class MetricsControllerImpl(
         session = openSession()
     }
 
-    override fun enable(projectId: Int) = synchronized(lock) {
-        ensureOpen()
-        require(projectId > 0) { "metrics projectId must be positive" }
-        if (session != null && currentProjectId == projectId) return@synchronized
-        session?.close()
-        session = null
-        updateBStatsProjectId(projectId)
-        session = openSession()
-    }
-
     override fun disable() = synchronized(lock) {
         ensureOpen()
-        session?.close()
-        session = null
+        closeSession()
     }
 
-    override fun changeProjectId(projectId: Int) = synchronized(lock) {
+    override fun update(configuration: MetricsProviderConfiguration) = synchronized(lock) {
         ensureOpen()
-        require(projectId > 0) { "metrics projectId must be positive" }
-        if (currentProjectId == projectId) return@synchronized
-        val restart = session != null
-        session?.close()
-        session = null
-        updateBStatsProjectId(projectId)
-        if (restart) session = openSession()
+        val index = configuredProviders.indexOfFirst { it.provider == configuration.provider }
+        if (index >= 0 && configuredProviders[index] == configuration) return@synchronized
+        if (index < 0) configuredProviders += configuration else configuredProviders[index] = configuration
+        if (session != null) restart()
     }
 
     override fun configure(configure: Consumer<PluginMetrics>) {
         synchronized(lock) {
             ensureOpen()
             configurers += configure
-            if (session != null) {
-                session?.close()
-                session = null
-                session = openSession()
-            }
+            if (session != null) restart()
         }
     }
 
     override fun close() {
         if (!closed.compareAndSet(false, true)) return
         synchronized(lock) {
-            session?.close()
-            session = null
+            closeSession()
             configurers.clear()
         }
     }
 
+    private fun restart() {
+        closeSession()
+        session = openSession()
+    }
+
+    private fun closeSession() {
+        session?.close()
+        session = null
+    }
+
     private fun openSession(): PluginMetrics {
-        val opened = if (configuredProviders.isEmpty()) {
-            service.open(owner, requireNotNull(currentProjectId) {
-                "Metrics projectId is not configured"
-            })
-        } else {
-            service.open(owner, configuredProviders.filter { it.enabled })
-        }
+        val enabled = configuredProviders.filter { it.enabled }
+        require(enabled.isNotEmpty()) { "At least one metrics provider must be configured and enabled" }
+        val opened = service.open(owner, enabled)
         try {
             configurers.forEach { it.accept(opened) }
             opened.start()
@@ -125,13 +98,4 @@ internal class MetricsControllerImpl(
     }
 
     private fun ensureOpen() = check(!closed.get()) { "MetricsController is closed" }
-
-    private fun updateBStatsProjectId(projectId: Int) {
-        val index = configuredProviders.indexOfFirst { it.provider == MetricsProvider.BSTATS }
-        if (index < 0) {
-            configuredProviders += MetricsProviderConfiguration(MetricsProvider.BSTATS, projectId = projectId)
-        } else {
-            configuredProviders[index] = configuredProviders[index].copy(projectId = projectId, enabled = true)
-        }
-    }
 }

@@ -63,7 +63,7 @@ class ProviderMetricsFactoryTest {
         }
 
         private fun session(): PluginMetrics {
-            val delegate = NoopMetricsFactory.open(Any(), 1)
+            val delegate = NoopMetricsFactory.open(Any(), listOf(MetricsProviderConfiguration(MetricsProvider.BSTATS, projectId = 1)))
             val session = object : PluginMetrics by delegate {
                 override fun close() { closed += "close" }
             }

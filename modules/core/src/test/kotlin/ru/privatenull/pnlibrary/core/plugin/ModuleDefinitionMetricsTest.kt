@@ -23,7 +23,7 @@ class ModuleDefinitionMetricsTest {
                 setOf(MetricsProvider.BSTATS, MetricsProvider.FASTSTATS),
                 definition.metrics.providers.map { it.provider }.toSet(),
             )
-            assertEquals(10, definition.metrics.projectId)
+            assertEquals(10, definition.metrics.providers.single { it.provider == MetricsProvider.BSTATS }.projectId)
             assertEquals(true, definition.metrics.enabled)
         }
     }
@@ -34,7 +34,7 @@ class ModuleDefinitionMetricsTest {
         definition.metrics(Consumer { it.bStats(10) })
 
         assertThrows(IllegalArgumentException::class.java) { definition.metrics(Consumer { it.bStats(20) }) }
-        assertEquals(10, definition.metrics.projectId)
+        assertEquals(10, definition.metrics.providers.single().projectId)
         assertEquals(1, definition.metrics.providers.size)
     }
 }

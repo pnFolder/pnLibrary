@@ -5,54 +5,49 @@ import org.junit.jupiter.api.Assertions.assertFalse
 import org.junit.jupiter.api.Assertions.assertThrows
 import org.junit.jupiter.api.Assertions.assertTrue
 import org.junit.jupiter.api.Test
-import ru.privatenull.pnlibrary.api.metrics.MetricsService
-import ru.privatenull.pnlibrary.api.metrics.PluginMetrics
+import ru.privatenull.pnlibrary.api.metrics.ErrorReporter
 import ru.privatenull.pnlibrary.api.metrics.MetricsProvider
 import ru.privatenull.pnlibrary.api.metrics.MetricsProviderConfiguration
+import ru.privatenull.pnlibrary.api.metrics.MetricsService
+import ru.privatenull.pnlibrary.api.metrics.PluginMetrics
+import ru.privatenull.pnlibrary.api.metrics.TelemetryError
 import java.util.function.Consumer
 import java.util.function.Supplier
 
 class MetricsControllerImplTest {
     @Test
-    fun `enabling bStats adds it to a FastStats only configuration`() {
-        val requests = mutableListOf<List<MetricsProviderConfiguration>>()
-        val service = object : MetricsService {
-            override fun open(owner: Any, projectId: Int): PluginMetrics = RecordingMetrics(projectId)
-            override fun open(owner: Any, configurations: Collection<MetricsProviderConfiguration>): PluginMetrics {
-                requests += configurations.toList()
-                return RecordingMetrics(10)
-            }
-        }
+    fun `adding bStats to a FastStats only configuration opens both providers`() {
+        val service = RecordingMetricsService()
         val controller = MetricsControllerImpl(
             Any(), service,
-            ModuleMetricsDefinition(
-                providers = listOf(MetricsProviderConfiguration(MetricsProvider.FASTSTATS, token = "test-token")),
-            ),
+            ModuleMetricsDefinition(providers = listOf(fastStats()), enabled = false),
         )
-        controller.enable(10)
-        assertEquals(setOf(MetricsProvider.BSTATS, MetricsProvider.FASTSTATS),
-            requests.single().map { it.provider }.toSet())
+
+        controller.update(bStats(10))
+        controller.enable()
+
+        assertEquals(
+            setOf(MetricsProvider.BSTATS, MetricsProvider.FASTSTATS),
+            service.opened.single().providers,
+        )
         controller.close()
     }
 
     @Test
-    fun `FastStats facade follows enabled session lifecycle`() {
-        val reporter = object : ru.privatenull.pnlibrary.api.metrics.ErrorReporter {
-            override fun capture(error: ru.privatenull.pnlibrary.api.metrics.TelemetryError) = Unit
+    fun `error reporter follows enabled session lifecycle`() {
+        val reporter = object : ErrorReporter {
+            override fun capture(error: TelemetryError) = Unit
             override fun close() = Unit
         }
-        val service = object : MetricsService {
-            override fun open(owner: Any, projectId: Int): PluginMetrics =
-                RecordingMetrics(projectId, reporter)
-        }
+        val service = RecordingMetricsService(reporter)
         val controller = MetricsControllerImpl(Any(), service, definition(), null)
-        assertEquals(reporter, controller.fastStatsOrNull()?.errorTracker())
+        assertEquals(reporter, controller.errorReporterOrNull())
         controller.disable()
-        assertEquals(null, controller.fastStatsOrNull())
+        assertEquals(null, controller.errorReporterOrNull())
         controller.enable()
-        assertEquals(reporter, controller.fastStatsOrNull()?.errorTracker())
+        assertEquals(reporter, controller.errorReporterOrNull())
         controller.close()
-        assertEquals(null, controller.fastStatsOrNull())
+        assertEquals(null, controller.errorReporterOrNull())
     }
 
     @Test
@@ -71,7 +66,7 @@ class MetricsControllerImplTest {
     }
 
     @Test
-    fun `metrics can be disabled enabled and moved to another project`() {
+    fun `metrics can be disabled enabled and moved to another provider setup`() {
         val service = RecordingMetricsService()
         val controller = MetricsControllerImpl(
             owner = Any(),
@@ -82,24 +77,46 @@ class MetricsControllerImplTest {
         )
 
         assertTrue(controller.isEnabled)
-        assertEquals(listOf(10), service.opened.map { it.projectId })
+        assertEquals(listOf(listOf(10)), service.requestedProjectIds())
         assertEquals(listOf("mode"), service.opened.single().charts)
 
         controller.disable()
         assertFalse(controller.isEnabled)
         assertTrue(service.opened.single().closed)
-        assertEquals(10, controller.projectId)
+        assertEquals(listOf(bStats(10)), controller.providerConfigurations)
 
         controller.enable()
         assertTrue(controller.isEnabled)
-        assertEquals(listOf(10, 10), service.opened.map { it.projectId })
+        assertEquals(listOf(listOf(10), listOf(10)), service.requestedProjectIds())
 
-        controller.changeProjectId(20)
-        assertEquals(20, controller.projectId)
+        controller.update(bStats(20))
+        assertEquals(listOf(bStats(20)), controller.providerConfigurations)
         assertTrue(controller.isEnabled)
-        assertEquals(listOf(10, 10, 20), service.opened.map { it.projectId })
+        assertEquals(listOf(listOf(10), listOf(10), listOf(20)), service.requestedProjectIds())
         assertTrue(service.opened[1].closed)
         assertEquals(listOf("mode"), service.opened[2].charts)
+    }
+
+    @Test
+    fun `unchanged provider configuration does not restart the session`() {
+        val service = RecordingMetricsService()
+        val controller = MetricsControllerImpl(Any(), service, definition(), null)
+
+        controller.update(bStats(10))
+
+        assertEquals(1, service.opened.size)
+        assertFalse(service.opened.single().closed)
+    }
+
+    @Test
+    fun `enabling without an enabled provider is rejected`() {
+        val controller = MetricsControllerImpl(
+            Any(), RecordingMetricsService(),
+            ModuleMetricsDefinition(enabled = false),
+        )
+
+        assertThrows(IllegalArgumentException::class.java) { controller.enable() }
+        assertFalse(controller.isEnabled)
     }
 
     @Test
@@ -114,35 +131,39 @@ class MetricsControllerImplTest {
 
         assertTrue(controller.isClosed)
         assertThrows(IllegalStateException::class.java) { controller.enable() }
-        assertThrows(IllegalStateException::class.java) { controller.changeProjectId(20) }
+        assertThrows(IllegalStateException::class.java) { controller.update(bStats(20)) }
     }
 
-    private class RecordingMetricsService : MetricsService {
+    private class RecordingMetricsService(private val reporter: ErrorReporter? = null) : MetricsService {
         val opened = mutableListOf<RecordingMetrics>()
-        override fun open(owner: Any, projectId: Int): PluginMetrics =
-            RecordingMetrics(projectId).also { opened += it }
+        private val requests = mutableListOf<List<MetricsProviderConfiguration>>()
+
+        override fun open(owner: Any, configurations: Collection<MetricsProviderConfiguration>): PluginMetrics {
+            requests += configurations.toList()
+            return RecordingMetrics(configurations.map { it.provider }.toSet(), reporter).also { opened += it }
+        }
+
+        fun requestedProjectIds(): List<List<Int>> = requests.map { request -> request.mapNotNull { it.projectId } }
     }
 
     companion object {
+        private fun bStats(projectId: Int) = MetricsProviderConfiguration(MetricsProvider.BSTATS, projectId = projectId)
+        private fun fastStats() = MetricsProviderConfiguration(MetricsProvider.FASTSTATS, token = "test-token")
+
         private fun definition(
             enabled: Boolean = true,
             configurers: List<Consumer<PluginMetrics>> = emptyList(),
         ) = ModuleMetricsDefinition(
-            providers = listOf(
-                MetricsProviderConfiguration(MetricsProvider.BSTATS, projectId = 10),
-            ),
+            providers = listOf(bStats(10)),
             enabled = enabled,
             configurers = configurers,
         )
     }
 
     private class RecordingMetrics(
-        override val projectId: Int,
-        override val errorReporter: ru.privatenull.pnlibrary.api.metrics.ErrorReporter? = null,
+        override val providers: Set<MetricsProvider>,
+        override val errorReporter: ErrorReporter? = null,
     ) : PluginMetrics {
-        override val provider get() = if (errorReporter == null)
-            ru.privatenull.pnlibrary.api.metrics.MetricsProvider.BSTATS
-        else ru.privatenull.pnlibrary.api.metrics.MetricsProvider.FASTSTATS
         val charts = mutableListOf<String>()
         var closed = false
         override fun simplePie(id: String, value: Supplier<String?>) = apply { charts += id }

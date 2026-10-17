@@ -32,13 +32,6 @@ internal class MetricsRegistry(private val factory: PlatformMetricsFactory) : Me
         return manage(factory.open(owner, configurations))
     }
 
-    @Synchronized
-    override fun open(owner: Any, projectId: Int): PluginMetrics {
-        check(!closed) { "MetricsRegistry is closed" }
-        require(projectId > 0) { "bStats projectId must be positive" }
-        return manage(factory.open(owner, projectId))
-    }
-
     private fun manage(delegate: PluginMetrics): PluginMetrics {
         val managed = ManagedMetrics(delegate) { synchronized(this) { sessions.remove(it) } }
         sessions.add(managed)
@@ -48,9 +41,7 @@ internal class MetricsRegistry(private val factory: PlatformMetricsFactory) : Me
     @Synchronized
     fun diagnosticSnapshot(): List<Map<String, Any?>> = sessions.map { session ->
         linkedMapOf(
-            "provider" to session.provider.name,
             "providers" to session.providers.map { it.name },
-            "projectId" to session.projectId,
             "errorReporter" to (session.errorReporter != null),
             "errorPipeline" to (session.errorReporter as? ErrorPipeline)?.diagnosticSnapshot(),
         )

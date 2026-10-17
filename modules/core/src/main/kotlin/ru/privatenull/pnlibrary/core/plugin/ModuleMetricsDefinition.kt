@@ -1,6 +1,5 @@
 package ru.privatenull.pnlibrary.core.plugin
 
-import ru.privatenull.pnlibrary.api.metrics.MetricsProvider
 import ru.privatenull.pnlibrary.api.metrics.MetricsProviderConfiguration
 import ru.privatenull.pnlibrary.api.metrics.PluginMetrics
 import java.util.function.Consumer
@@ -17,7 +16,4 @@ internal data class ModuleMetricsDefinition(
             "Each metrics provider may be configured only once; combine bStats and FastStats in one metrics block"
         }
     }
-
-    val projectId: Int?
-        get() = providers.firstOrNull { it.provider == MetricsProvider.BSTATS }?.projectId
 }

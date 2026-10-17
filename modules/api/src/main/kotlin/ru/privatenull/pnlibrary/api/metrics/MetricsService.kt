@@ -2,7 +2,7 @@ package ru.privatenull.pnlibrary.api.metrics
 
 import java.util.function.Supplier
 
-/** Public pnLibrary abstraction over the platform-specific bStats implementation. */
+/** Public pnLibrary abstraction over the platform-specific metrics providers. */
 interface MetricsService {
     /** Providers available in the current platform runtime. */
     val providers: Set<MetricsProvider>
@@ -11,26 +11,18 @@ interface MetricsService {
     /**
      * Opens and owns one metrics session for a native plugin [owner].
      *
-     * @param projectId positive bStats project identifier assigned to that plugin
-     * @throws IllegalArgumentException when [projectId] is not positive
+     * Every enabled entry of [configurations] contributes one provider to the returned session.
+     *
+     * @throws IllegalArgumentException when no configuration is enabled or a provider lacks credentials
      */
-    fun open(owner: Any, projectId: Int): PluginMetrics
-
-    /** Opens one or more configured provider sessions through a neutral request object. */
-    fun open(owner: Any, configurations: Collection<MetricsProviderConfiguration>): PluginMetrics {
-        val configuration = configurations.firstOrNull { it.enabled }
-            ?: error("At least one metrics provider must be enabled")
-        return open(owner, requireNotNull(configuration.projectId) {
-            "Legacy MetricsService requires a numeric projectId for ${configuration.provider}"
-        })
-    }
+    fun open(owner: Any, configurations: Collection<MetricsProviderConfiguration>): PluginMetrics
 
     /** Opens the optional provider-backed error reporter for the same configuration. */
     fun openErrorReporter(owner: Any, configurations: Collection<MetricsProviderConfiguration>): ErrorReporter? = null
 }
 
 /**
- * Live plugin metrics session with fluent registration of standard bStats charts.
+ * Live plugin metrics session with fluent registration of standard charts.
  *
  * Suppliers are evaluated by the platform metrics implementation, potentially after
  * registration and on a background thread. They should therefore be thread-safe,
@@ -38,32 +30,15 @@ interface MetricsService {
  * to repeat and prevents its registry from retaining the session.
  */
 interface PluginMetrics : AutoCloseable {
-    /** Returns FastStats capabilities only for a session providing that backend. */
-    fun fastStatsOrNull(): FastStatsFacade? {
-        if (provider != MetricsProvider.FASTSTATS) return null
-        val reporter = errorReporter ?: return null
-        val session = this
-        return object : FastStatsFacade {
-            override val metrics: PluginMetrics = session
-            override fun errorTracker(): ErrorReporter = reporter
-        }
-    }
-    /** Error reporter owned by this session; absent for chart-only providers. */
+    /** Providers represented by this session; more than one when several are enabled. */
+    val providers: Set<MetricsProvider>
+
+    /** Error reporter owned by this session; absent when no provider supports error tracking. */
     val errorReporter: ErrorReporter?
         get() = null
+
     /** Starts provider submission after all configured charts and services are registered. */
     fun start() = Unit
-
-    /** Provider that owns this session. Composite sessions expose [MetricsProvider.BSTATS]. */
-    val provider: MetricsProvider
-        get() = MetricsProvider.BSTATS
-
-    /** Providers represented by this session; a composite may contain more than one. */
-    val providers: Set<MetricsProvider>
-        get() = setOf(provider)
-
-    /** Positive bStats project identifier associated with this session. */
-    val projectId: Int
 
     /** Registers a single categorical string value; `null` omits the current sample. */
     fun simplePie(id: String, value: Supplier<String?>): PluginMetrics

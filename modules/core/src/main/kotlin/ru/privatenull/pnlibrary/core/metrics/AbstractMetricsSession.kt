@@ -1,5 +1,6 @@
 package ru.privatenull.pnlibrary.core.metrics
 
+import ru.privatenull.pnlibrary.api.metrics.MetricsProvider
 import ru.privatenull.pnlibrary.api.metrics.PluginMetrics
 import ru.privatenull.pnlibrary.api.metrics.MetricsCredentials
 import java.util.concurrent.atomic.AtomicBoolean
@@ -15,15 +16,7 @@ abstract class AbstractMetricsSession(
     val credentials: MetricsCredentials<*>,
 ) : PluginMetrics {
 
-    /** Compatibility constructor for numeric bStats project identifiers. */
-    constructor(projectId: Int) : this(MetricsCredentials.BStats(projectId))
-
-    /** Legacy numeric view; FastStats credentials are represented by [credentials], not this value. */
-    final override val projectId: Int
-        get() = (credentials as? MetricsCredentials.BStats)?.projectId ?: 0
-
-    override val provider
-        get() = credentials.provider
+    final override val providers: Set<MetricsProvider> = setOf(credentials.provider)
 
     private val closed = AtomicBoolean(false)
 

@@ -1,5 +1,7 @@
 package ru.privatenull.pnlibrary.core.plugin
 
+import ru.privatenull.pnlibrary.api.metrics.MetricsProvider
+import ru.privatenull.pnlibrary.api.metrics.MetricsProviderConfiguration
 import org.junit.jupiter.api.Assertions.assertEquals
 import org.junit.jupiter.api.Assertions.assertFalse
 import org.junit.jupiter.api.Assertions.assertNotSame
@@ -543,13 +545,13 @@ class PluginRegistryImplTest {
 
     private class RecordingMetricsService : MetricsService {
         var lastProjectId: Int? = null
-        override fun open(owner: Any, projectId: Int): PluginMetrics {
-            lastProjectId = projectId
-            return NoopMetrics(projectId)
+        override fun open(owner: Any, configurations: Collection<MetricsProviderConfiguration>): PluginMetrics {
+            lastProjectId = configurations.firstNotNullOfOrNull { it.projectId }
+            return NoopMetrics(configurations.map { it.provider }.toSet())
         }
     }
 
-    private class NoopMetrics(override val projectId: Int) : PluginMetrics {
+    private class NoopMetrics(override val providers: Set<MetricsProvider>) : PluginMetrics {
         override fun simplePie(id: String, value: Supplier<String?>) = this
         override fun advancedPie(id: String, values: Supplier<Map<String, Int>>) = this
         override fun drilldownPie(id: String, values: Supplier<Map<String, Map<String, Int>>>) = this

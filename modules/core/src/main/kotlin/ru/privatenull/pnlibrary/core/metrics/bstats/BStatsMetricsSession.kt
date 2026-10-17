@@ -8,6 +8,7 @@ import org.bstats.charts.MultiLineChart
 import org.bstats.charts.SimpleBarChart
 import org.bstats.charts.SimplePie
 import org.bstats.charts.SingleLineChart
+import ru.privatenull.pnlibrary.api.metrics.MetricsCredentials
 import ru.privatenull.pnlibrary.core.metrics.AbstractMetricsSession
 
 /** Translates shared lazy chart definitions into native bStats charts. */
@@ -15,7 +16,7 @@ class BStatsMetricsSession(
     projectId: Int,
     private val addChart: (CustomChart) -> Unit,
     private val shutdown: () -> Unit,
-) : AbstractMetricsSession(projectId) {
+) : AbstractMetricsSession(MetricsCredentials.BStats(projectId)) {
 
     /** Registers the matching native chart without evaluating its supplier. */
     override fun register(chart: Chart) {

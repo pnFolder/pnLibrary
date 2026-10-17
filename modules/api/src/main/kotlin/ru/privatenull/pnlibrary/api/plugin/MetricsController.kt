@@ -1,45 +1,42 @@
 package ru.privatenull.pnlibrary.api.plugin
 
-import ru.privatenull.pnlibrary.api.metrics.FastStatsFacade
-import ru.privatenull.pnlibrary.api.metrics.PluginMetrics
-import ru.privatenull.pnlibrary.api.metrics.MetricsProviderConfiguration
 import ru.privatenull.pnlibrary.api.metrics.ErrorReporter
+import ru.privatenull.pnlibrary.api.metrics.MetricsProviderConfiguration
+import ru.privatenull.pnlibrary.api.metrics.PluginMetrics
 import java.util.function.Consumer
 
 /**
  * Runtime control over one plugin's optional metrics session.
  *
- * A configured project ID is retained while metrics are disabled, allowing [enable] to restart the
+ * Provider configurations are retained while metrics are disabled, allowing [enable] to restart the
  * same session. Closing the controller disables the session permanently with its plugin context.
  */
 interface MetricsController : AutoCloseable {
-    /** Returns the live FastStats backend, or null when absent or disabled. */
-    fun fastStatsOrNull(): FastStatsFacade? = null
     /** Whether this controller has been permanently released with its module context. */
     val isClosed: Boolean get() = false
+
     /** Whether a metrics session is currently active. */
     val isEnabled: Boolean
-    /** Configured bStats project ID, or `null` when metrics were not configured. */
-    val projectId: Int?
 
     /** Configured provider backends, including disabled entries retained for status reporting. */
     val providerConfigurations: List<MetricsProviderConfiguration>
         get() = emptyList()
 
-    /** Returns the configured error reporter, or null when no provider supports error tracking. */
+    /** Returns the error reporter of the live session, or null when absent or disabled. */
     fun errorReporterOrNull(): ErrorReporter? = null
 
-    /** Starts all enabled configured providers, including FastStats-only configurations. */
+    /** Starts every enabled configured provider. */
     fun enable()
-
-    /** Adds or enables bStats with [projectId], retaining other configured providers. */
-    fun enable(projectId: Int)
 
     /** Closes the active metrics session without forgetting its configuration. */
     fun disable()
 
-    /** Updates bStats without removing FastStats; restarts the session when it is enabled. */
-    fun changeProjectId(projectId: Int)
+    /**
+     * Adds or replaces the configuration of [configuration]'s provider, keeping other providers.
+     *
+     * The session is restarted when metrics are enabled; otherwise the change applies on [enable].
+     */
+    fun update(configuration: MetricsProviderConfiguration)
 
     /** Applies [configure] now and again whenever the session is restarted. */
     fun configure(configure: Consumer<PluginMetrics>)

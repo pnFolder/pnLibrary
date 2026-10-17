@@ -38,7 +38,7 @@ class MetricsBuilderTest {
 
         assertFalse(builder.enabled)
         builder.configure(object : PluginMetrics {
-            override val projectId = 32592
+            override val providers = setOf(MetricsProvider.BSTATS)
             override fun simplePie(id: String, value: java.util.function.Supplier<String?>) = this
             override fun advancedPie(id: String, values: java.util.function.Supplier<Map<String, Int>>) = this
             override fun drilldownPie(id: String, values: java.util.function.Supplier<Map<String, Map<String, Int>>>) = this

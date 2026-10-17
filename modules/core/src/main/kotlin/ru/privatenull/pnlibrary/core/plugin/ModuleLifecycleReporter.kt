@@ -21,7 +21,7 @@ internal class ModuleLifecycleReporter(
         logging.box(owner, metadata.name, metadata.version)
             .ok("Identifier", moduleId.value)
             .ok("Platform", ModuleRuntimeSummary.platform(metadata))
-            .status("Metrics", ModuleRuntimeSummary.metrics(resources.metrics.projectId, resources.metrics.isEnabled))
+            .status("Metrics", ModuleRuntimeSummary.metrics(resources.metrics.providerConfigurations, resources.metrics.isEnabled))
             .status("Updates", ModuleRuntimeSummary.updates(resources.updates))
             .status("Diagnostics", if (resources.diagnostics == null) null else "enabled")
             .status(
@@ -41,9 +41,9 @@ internal class ModuleLifecycleReporter(
             )
             .status(
                 "Metrics",
-                if (resources.metrics.projectId == null) null
+                if (resources.metrics.providerConfigurations.isEmpty()) null
                 else if (isClosed()) "stopped"
-                else ModuleRuntimeSummary.metrics(resources.metrics.projectId, resources.metrics.isEnabled),
+                else ModuleRuntimeSummary.metrics(resources.metrics.providerConfigurations, resources.metrics.isEnabled),
             )
 
     private fun MessageBox.status(label: String, detail: String?): MessageBox =

@@ -2,7 +2,6 @@ package ru.privatenull.pnlibrary.core.metrics.faststats
 
 import dev.faststats.ErrorTracker
 import dev.faststats.Metrics
-import ru.privatenull.pnlibrary.api.metrics.MetricsProvider
 import ru.privatenull.pnlibrary.api.metrics.MetricsCredentials
 import ru.privatenull.pnlibrary.core.metrics.AbstractMetricsSession
 import java.util.concurrent.atomic.AtomicBoolean
@@ -27,7 +26,6 @@ abstract class AbstractFastStatsMetricsSession(
         this(MetricsCredentials.FastStats(token), contextFactory)
 
     override val errorReporter = FastStatsErrorReporter()
-    override val provider: MetricsProvider = MetricsProvider.FASTSTATS
     private val started = AtomicBoolean(false)
     private val pending = mutableListOf<Chart>()
     private var context: FastStatsContext? = null

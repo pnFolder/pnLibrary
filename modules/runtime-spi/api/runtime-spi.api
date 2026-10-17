@@ -52,12 +52,11 @@ public final class ru/privatenull/pnlibrary/spi/commands/UnsupportedPlatformComm
 
 public final class ru/privatenull/pnlibrary/spi/metrics/NoopMetricsFactory : ru/privatenull/pnlibrary/spi/metrics/PlatformMetricsFactory {
 	public static final field INSTANCE Lru/privatenull/pnlibrary/spi/metrics/NoopMetricsFactory;
-	public fun open (Ljava/lang/Object;I)Lru/privatenull/pnlibrary/api/metrics/PluginMetrics;
+	public fun open (Ljava/lang/Object;Ljava/util/Collection;)Lru/privatenull/pnlibrary/api/metrics/PluginMetrics;
 }
 
 public abstract interface class ru/privatenull/pnlibrary/spi/metrics/PlatformMetricsFactory {
-	public abstract fun open (Ljava/lang/Object;I)Lru/privatenull/pnlibrary/api/metrics/PluginMetrics;
-	public fun open (Ljava/lang/Object;Ljava/util/Collection;)Lru/privatenull/pnlibrary/api/metrics/PluginMetrics;
+	public abstract fun open (Ljava/lang/Object;Ljava/util/Collection;)Lru/privatenull/pnlibrary/api/metrics/PluginMetrics;
 	public fun openErrorReporter (Ljava/lang/Object;Ljava/util/Collection;)Lru/privatenull/pnlibrary/api/metrics/ErrorReporter;
 }
 
