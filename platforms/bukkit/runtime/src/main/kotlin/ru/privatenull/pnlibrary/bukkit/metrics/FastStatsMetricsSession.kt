@@ -2,9 +2,9 @@ package ru.privatenull.pnlibrary.bukkit.metrics
 
 import dev.faststats.bukkit.BukkitContext
 import org.bukkit.plugin.Plugin
-import ru.privatenull.pnlibrary.internal.faststats.core.AbstractFastStatsMetricsSession
-import ru.privatenull.pnlibrary.internal.faststats.core.FastStatsContext
-import ru.privatenull.pnlibrary.internal.faststats.core.FastStatsContextFactory
+import ru.privatenull.pnlibrary.core.metrics.faststats.AbstractFastStatsMetricsSession
+import ru.privatenull.pnlibrary.core.metrics.faststats.FastStatsContext
+import ru.privatenull.pnlibrary.core.metrics.faststats.FastStatsContextFactory
 
 /** Bukkit adapter that supplies a Bukkit context to the shared FastStats session. */
 internal class FastStatsMetricsSession(plugin: Plugin, token: String) : AbstractFastStatsMetricsSession(

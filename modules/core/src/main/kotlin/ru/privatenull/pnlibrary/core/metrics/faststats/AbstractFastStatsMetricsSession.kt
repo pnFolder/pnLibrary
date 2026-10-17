@@ -1,4 +1,4 @@
-package ru.privatenull.pnlibrary.internal.faststats.core
+package ru.privatenull.pnlibrary.core.metrics.faststats
 
 import dev.faststats.ErrorTracker
 import dev.faststats.Metrics
@@ -62,11 +62,11 @@ abstract class AbstractFastStatsMetricsSession(
     private fun registerNative(factory: Metrics.Factory, chart: Chart) {
         when (chart) {
             is Chart.SimplePie -> FastStatsSupport.simplePie(factory, chart.id, chart.value)
-            is Chart.AdvancedPie -> FastStatsSupport.advancedPie(factory, chart.id, chart.values)
+            is Chart.AdvancedPie -> FastStatsSupport.numberMap(factory, chart.id, chart.values)
             is Chart.DrilldownPie -> FastStatsSupport.drilldownPie(factory, chart.id, chart.values)
             is Chart.SingleLine -> FastStatsSupport.singleLineChart(factory, chart.id, chart.value)
-            is Chart.MultiLine -> FastStatsSupport.advancedPie(factory, chart.id, chart.values)
-            is Chart.SimpleBar -> FastStatsSupport.advancedPie(factory, chart.id, chart.values)
+            is Chart.MultiLine -> FastStatsSupport.numberMap(factory, chart.id, chart.values)
+            is Chart.SimpleBar -> FastStatsSupport.numberMap(factory, chart.id, chart.values)
             is Chart.AdvancedBar -> FastStatsSupport.advancedBarChart(factory, chart.id, chart.values)
         }
     }

@@ -5,9 +5,9 @@ import com.velocitypowered.api.proxy.ProxyServer
 import dev.faststats.velocity.VelocityContext
 import org.slf4j.Logger
 import ru.privatenull.pnlibrary.api.metrics.PluginMetrics
-import ru.privatenull.pnlibrary.internal.faststats.core.AbstractFastStatsMetricsSession
-import ru.privatenull.pnlibrary.internal.faststats.core.FastStatsContext
-import ru.privatenull.pnlibrary.internal.faststats.core.FastStatsContextFactory
+import ru.privatenull.pnlibrary.core.metrics.faststats.AbstractFastStatsMetricsSession
+import ru.privatenull.pnlibrary.core.metrics.faststats.FastStatsContext
+import ru.privatenull.pnlibrary.core.metrics.faststats.FastStatsContextFactory
 import java.nio.file.Path
 
 /** Velocity adapter that supplies a Velocity context to the shared FastStats session. */

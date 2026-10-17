@@ -1,4 +1,4 @@
-package ru.privatenull.pnlibrary.core.metrics
+package ru.privatenull.pnlibrary.core.metrics.bstats
 
 import org.bstats.charts.AdvancedBarChart
 import org.bstats.charts.AdvancedPie
@@ -8,6 +8,7 @@ import org.bstats.charts.MultiLineChart
 import org.bstats.charts.SimpleBarChart
 import org.bstats.charts.SimplePie
 import org.bstats.charts.SingleLineChart
+import ru.privatenull.pnlibrary.core.metrics.AbstractMetricsSession
 
 /** Translates shared lazy chart definitions into native bStats charts. */
 class BStatsMetricsSession(

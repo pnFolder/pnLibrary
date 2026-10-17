@@ -1,4 +1,4 @@
-package ru.privatenull.pnlibrary.internal.faststats.core
+package ru.privatenull.pnlibrary.core.metrics.faststats
 
 import com.google.gson.JsonArray
 import com.google.gson.JsonObject
@@ -6,6 +6,7 @@ import dev.faststats.Metrics
 import dev.faststats.TrackedError
 import ru.privatenull.pnlibrary.api.metrics.ErrorReporter
 import ru.privatenull.pnlibrary.api.metrics.TelemetryError
+import ru.privatenull.pnlibrary.core.metrics.MetricsChartId
 import ru.privatenull.pnlibrary.internal.faststats.FastStatsBridge
 import java.util.concurrent.Callable
 import java.util.function.Supplier
@@ -14,14 +15,13 @@ import java.util.function.Supplier
 object FastStatsSupport {
     /** Validates and normalizes a metric identifier accepted by FastStats. */
     @JvmStatic
-    fun validId(id: String): String = id.trim().also {
-        require(it.matches(Regex("[A-Za-z0-9_-]{1,64}"))) { "Invalid FastStats metric id: $id" }
-    }
+    fun validId(id: String): String = MetricsChartId.normalize(id)
 
     fun simplePie(factory: Metrics.Factory, id: String, value: Supplier<String?>) =
         factory.addMetric(FastStatsBridge.string(validId(id), Callable { value.get() ?: "unknown" }))
 
-    fun advancedPie(factory: Metrics.Factory, id: String, values: Supplier<Map<String, Int>>) =
+    /** Publishes name-to-count pairs; FastStats represents pies, lines and simple bars identically. */
+    fun numberMap(factory: Metrics.Factory, id: String, values: Supplier<Map<String, Int>>) =
         factory.addMetric(FastStatsBridge.numberMap(validId(id), Callable { values.get() }))
 
     fun drilldownPie(factory: Metrics.Factory, id: String, values: Supplier<Map<String, Map<String, Int>>>) =

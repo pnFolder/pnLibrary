@@ -2,9 +2,9 @@ package ru.privatenull.pnlibrary.bungee.metrics
 
 import dev.faststats.bungee.BungeeContext
 import net.md_5.bungee.api.plugin.Plugin
-import ru.privatenull.pnlibrary.internal.faststats.core.AbstractFastStatsMetricsSession
-import ru.privatenull.pnlibrary.internal.faststats.core.FastStatsContext
-import ru.privatenull.pnlibrary.internal.faststats.core.FastStatsContextFactory
+import ru.privatenull.pnlibrary.core.metrics.faststats.AbstractFastStatsMetricsSession
+import ru.privatenull.pnlibrary.core.metrics.faststats.FastStatsContext
+import ru.privatenull.pnlibrary.core.metrics.faststats.FastStatsContextFactory
 
 /** BungeeCord adapter that supplies a Bungee context to the shared FastStats session. */
 internal class FastStatsMetricsSession(plugin: Plugin, token: String) : AbstractFastStatsMetricsSession(
