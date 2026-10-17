@@ -1,53 +1,56 @@
 package ru.privatenull.pnlibrary.core.plugin
 
-import ru.privatenull.pnlibrary.core.lifecycle.ResourceCleanup
-
-import ru.privatenull.pnlibrary.core.commands.CommandService
-import ru.privatenull.pnlibrary.core.tasks.TaskService
+import ru.privatenull.pnlibrary.api.actions.ActionService
+import ru.privatenull.pnlibrary.api.commands.CommandDefinition
+import ru.privatenull.pnlibrary.api.commands.CommandRegistration
+import ru.privatenull.pnlibrary.api.config.ConfigScope
+import ru.privatenull.pnlibrary.api.cooldowns.CooldownService
 import ru.privatenull.pnlibrary.api.diagnostics.DiagnosticRegistration
 import ru.privatenull.pnlibrary.api.diagnostics.DiagnosticsService
-import ru.privatenull.pnlibrary.api.config.ConfigScope
+import ru.privatenull.pnlibrary.api.downloads.DownloadRegistration
 import ru.privatenull.pnlibrary.api.events.EventScope
 import ru.privatenull.pnlibrary.api.events.EventService
 import ru.privatenull.pnlibrary.api.logging.LoggingService
 import ru.privatenull.pnlibrary.api.logging.PnLogger
 import ru.privatenull.pnlibrary.api.metrics.MetricsService
-import ru.privatenull.pnlibrary.spi.platform.PlatformExecution
-import ru.privatenull.pnlibrary.spi.platform.PlatformIdentity
-import ru.privatenull.pnlibrary.spi.platform.PlatformOwnership
-import ru.privatenull.pnlibrary.spi.platform.PlatformLogging
+import ru.privatenull.pnlibrary.api.placeholders.PlaceholderService
 import ru.privatenull.pnlibrary.api.plugin.MetricsController
-import ru.privatenull.pnlibrary.api.plugin.PluginBuilder
-import ru.privatenull.pnlibrary.api.plugin.PluginRegistration
-import ru.privatenull.pnlibrary.api.plugin.PluginId
 import ru.privatenull.pnlibrary.api.plugin.ModuleContext
 import ru.privatenull.pnlibrary.api.plugin.ModuleId
+import ru.privatenull.pnlibrary.api.plugin.PluginBuilder
+import ru.privatenull.pnlibrary.api.plugin.PluginId
 import ru.privatenull.pnlibrary.api.plugin.PluginLifecycle
-import ru.privatenull.pnlibrary.api.plugin.PluginMetadata
 import ru.privatenull.pnlibrary.api.plugin.PluginMessages
+import ru.privatenull.pnlibrary.api.plugin.PluginMetadata
+import ru.privatenull.pnlibrary.api.plugin.PluginRegistration
 import ru.privatenull.pnlibrary.api.plugin.PluginRegistry
+import ru.privatenull.pnlibrary.api.plugin.RemotePolicy
 import ru.privatenull.pnlibrary.api.tasks.TaskScope
-import ru.privatenull.pnlibrary.core.remote.RemotePolicyNoticeRenderer
-import ru.privatenull.pnlibrary.core.remote.RemotePolicyMonitor
+import ru.privatenull.pnlibrary.api.text.ComponentService
+import ru.privatenull.pnlibrary.api.updates.ProductDescriptor
 import ru.privatenull.pnlibrary.api.updates.UpdateRegistration
 import ru.privatenull.pnlibrary.api.updates.UpdateService
-import ru.privatenull.pnlibrary.api.updates.ProductDescriptor
 import ru.privatenull.pnlibrary.api.version.SemanticVersion
-import ru.privatenull.pnlibrary.core.services.ServiceManagerImpl
+import ru.privatenull.pnlibrary.core.commands.CommandService
 import ru.privatenull.pnlibrary.core.config.ConfigurationServiceImpl
+import ru.privatenull.pnlibrary.core.downloads.DirectDownloadManager
+import ru.privatenull.pnlibrary.core.lifecycle.ResourceCleanup
+import ru.privatenull.pnlibrary.core.placeholders.PlaceholderHub
+import ru.privatenull.pnlibrary.core.remote.RemotePolicyMonitor
+import ru.privatenull.pnlibrary.core.remote.RemotePolicyNoticeRenderer
+import ru.privatenull.pnlibrary.core.services.ServiceManagerImpl
+import ru.privatenull.pnlibrary.core.tasks.TaskService
+import ru.privatenull.pnlibrary.core.text.ComponentCache
+import ru.privatenull.pnlibrary.currency.CurrencyFeature
+import ru.privatenull.pnlibrary.spi.platform.PlatformExecution
+import ru.privatenull.pnlibrary.spi.platform.PlatformIdentity
+import ru.privatenull.pnlibrary.spi.platform.PlatformLogging
+import ru.privatenull.pnlibrary.spi.platform.PlatformOwnership
+import java.util.Collections
 import java.util.IdentityHashMap
 import java.util.concurrent.atomic.AtomicBoolean
 import java.util.concurrent.atomic.AtomicLong
 import java.util.function.Consumer
-import ru.privatenull.pnlibrary.api.placeholders.PlaceholderService
-import ru.privatenull.pnlibrary.api.text.ComponentService
-import ru.privatenull.pnlibrary.core.placeholders.PlaceholderHub
-import ru.privatenull.pnlibrary.core.text.ComponentCache
-import ru.privatenull.pnlibrary.api.cooldowns.CooldownService
-import ru.privatenull.pnlibrary.api.actions.ActionService
-import ru.privatenull.pnlibrary.api.downloads.DownloadRegistration
-import ru.privatenull.pnlibrary.currency.CurrencyFeature
-import ru.privatenull.pnlibrary.core.downloads.DirectDownloadManager
 
 /**
  * Owns plugin-scoped library services and coordinates their lifecycle.
@@ -113,7 +116,7 @@ internal class PluginRegistryImpl(
     }
 
     override fun all(): List<PluginRegistration> =
-        synchronized(plugins) { java.util.Collections.unmodifiableList(ArrayList(plugins.values)) }
+        synchronized(plugins) { Collections.unmodifiableList(ArrayList(plugins.values)) }
 
     override fun close() {
         if (!closed.compareAndSet(false, true)) return
@@ -146,7 +149,6 @@ internal class PluginRegistryImpl(
             metadata = metadata,
             resources = resources,
             placeholderApiEnabled = definition.placeholderApiEnabled,
-            listenerCount = 0,
             productId = productDescriptor?.id?.value,
         )
     }
@@ -196,7 +198,7 @@ internal class PluginRegistryImpl(
         }
 
         override fun all(): List<ModuleContext> =
-            synchronized(moduleContexts) { java.util.Collections.unmodifiableList(ArrayList(moduleContexts.values)) }
+            synchronized(moduleContexts) { Collections.unmodifiableList(ArrayList(moduleContexts.values)) }
 
         override fun close() {
             detachPlugin(owner)?.closeInternal()
@@ -223,13 +225,12 @@ internal class PluginRegistryImpl(
         override val metadata: PluginMetadata,
         private val resources: ModuleResources,
         private val placeholderApiEnabled: Boolean,
-        private val listenerCount: Int,
         private val productId: String?,
     ) : ModuleContext {
         private val owner: Any get() = parent.owner
         private val contextClosed = AtomicBoolean(false)
-        private val moduleCommands = mutableListOf<ru.privatenull.pnlibrary.api.commands.CommandRegistration>()
-        override fun registerCommand(command: ru.privatenull.pnlibrary.api.commands.CommandDefinition): ru.privatenull.pnlibrary.api.commands.CommandRegistration =
+        private val moduleCommands = mutableListOf<CommandRegistration>()
+        override fun registerCommand(command: CommandDefinition): CommandRegistration =
             synchronized(moduleCommands) {
                 check(!isClosed) { "Module is closed" }
                 val registration = checkNotNull(commands) { "Commands are unavailable" }.register(owner, command)
@@ -256,7 +257,7 @@ internal class PluginRegistryImpl(
         override val updates: UpdateRegistration? get() = resources.updates
         override val downloads: DownloadRegistration? get() = resources.downloads
 
-        fun startRemotePolicy(policy: ru.privatenull.pnlibrary.api.plugin.RemotePolicy) {
+        fun startRemotePolicy(policy: RemotePolicy) {
             remotePolicies.start(
                 owner = owner,
                 metadata = metadata,
@@ -277,7 +278,6 @@ internal class PluginRegistryImpl(
             logging = logging,
             placeholders = placeholderHub,
             placeholderApiEnabled = placeholderApiEnabled,
-            listenerCount = listenerCount,
             isClosed = { isClosed },
         )
         override val messages: PluginMessages = ModuleMessages(owner, logging)
@@ -298,7 +298,5 @@ internal class PluginRegistryImpl(
                 { resources.close(this@PluginRegistryImpl.diagnostics, key) },
             )
         }
-
     }
-
 }

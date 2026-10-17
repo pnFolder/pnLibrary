@@ -15,7 +15,6 @@ internal class ModuleLifecycleReporter(
     private val logging: LoggingService,
     private val placeholders: PlaceholderHub,
     private val placeholderApiEnabled: Boolean,
-    private val listenerCount: Int,
     private val isClosed: () -> Boolean,
 ) : PluginLifecycle {
     override fun enabled(): MessageBox =
@@ -32,7 +31,6 @@ internal class ModuleLifecycleReporter(
                     placeholders.get("placeholderapi")?.state?.name,
                 ),
             )
-            .status("Events", if (listenerCount == 0) null else "$listenerCount listener(s)")
 
     override fun disabled(): MessageBox =
         logging.shutdownBox(owner, metadata.name, metadata.version)
@@ -46,12 +44,6 @@ internal class ModuleLifecycleReporter(
                 if (resources.metrics.projectId == null) null
                 else if (isClosed()) "stopped"
                 else ModuleRuntimeSummary.metrics(resources.metrics.projectId, resources.metrics.isEnabled),
-            )
-            .status(
-                "Events",
-                if (listenerCount == 0) null
-                else if (isClosed()) "$listenerCount listener(s) removed"
-                else "$listenerCount listener(s)",
             )
 
     private fun MessageBox.status(label: String, detail: String?): MessageBox =
