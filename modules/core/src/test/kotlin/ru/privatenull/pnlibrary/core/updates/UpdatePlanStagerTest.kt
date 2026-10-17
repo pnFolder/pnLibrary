@@ -7,11 +7,11 @@ import ru.privatenull.pnlibrary.api.platform.PlatformType
 import ru.privatenull.pnlibrary.api.updates.*
 import ru.privatenull.pnlibrary.api.version.ApiVersionRange
 import ru.privatenull.pnlibrary.api.version.SemanticVersion
-import ru.privatenull.pnlibrary.update.ArtifactVerifier
-import ru.privatenull.pnlibrary.update.ArtifactVerificationException
-import ru.privatenull.pnlibrary.update.TrustedHttpClient
-import ru.privatenull.pnlibrary.update.UpdateTransaction
-import ru.privatenull.pnlibrary.update.TransactionJournal
+import ru.privatenull.pnlibrary.core.updates.engine.ArtifactVerifier
+import ru.privatenull.pnlibrary.core.updates.engine.ArtifactVerificationException
+import ru.privatenull.pnlibrary.core.updates.engine.TrustedHttpClient
+import ru.privatenull.pnlibrary.core.updates.engine.UpdateTransaction
+import ru.privatenull.pnlibrary.core.updates.engine.TransactionJournal
 import java.net.URI
 import java.nio.file.Files
 import java.nio.file.Path

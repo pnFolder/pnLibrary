@@ -14,7 +14,7 @@ import ru.privatenull.pnlibrary.api.updates.UpdatePlanSnapshot
 import ru.privatenull.pnlibrary.api.updates.UpdateRegistration
 import ru.privatenull.pnlibrary.api.updates.UpdateSnapshot
 import ru.privatenull.pnlibrary.api.updates.UpdateState
-import ru.privatenull.pnlibrary.update.CatalogRelease
+import ru.privatenull.pnlibrary.core.updates.engine.CatalogRelease
 import java.nio.file.Path
 import java.util.concurrent.CompletionStage
 import java.util.concurrent.atomic.AtomicBoolean

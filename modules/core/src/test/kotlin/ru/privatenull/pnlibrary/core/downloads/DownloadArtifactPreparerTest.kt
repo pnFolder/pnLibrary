@@ -7,7 +7,7 @@ import org.junit.jupiter.api.io.TempDir
 import ru.privatenull.pnlibrary.api.downloads.DownloadDestination
 import ru.privatenull.pnlibrary.api.downloads.FileDownloads
 import ru.privatenull.pnlibrary.api.platform.PlatformType
-import ru.privatenull.pnlibrary.update.TrustedHttpClient
+import ru.privatenull.pnlibrary.core.updates.engine.TrustedHttpClient
 import java.net.URI
 import java.nio.file.Files
 import java.nio.file.Path

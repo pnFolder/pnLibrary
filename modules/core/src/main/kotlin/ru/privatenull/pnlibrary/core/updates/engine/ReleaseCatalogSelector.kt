@@ -1,4 +1,4 @@
-package ru.privatenull.pnlibrary.update
+package ru.privatenull.pnlibrary.core.updates.engine
 
 import ru.privatenull.pnlibrary.api.platform.PlatformType
 import ru.privatenull.pnlibrary.api.updates.UpdateChannel

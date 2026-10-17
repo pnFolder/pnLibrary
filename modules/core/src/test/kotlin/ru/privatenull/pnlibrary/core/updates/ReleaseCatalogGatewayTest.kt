@@ -4,11 +4,11 @@ import org.junit.jupiter.api.Assertions.assertEquals
 import org.junit.jupiter.api.Assertions.assertTimeoutPreemptively
 import org.junit.jupiter.api.Test
 import org.junit.jupiter.api.io.TempDir
-import ru.privatenull.pnlibrary.update.RefreshMode
-import ru.privatenull.pnlibrary.update.ReleaseCatalog
-import ru.privatenull.pnlibrary.update.ReleaseCatalogClient
-import ru.privatenull.pnlibrary.update.ReleaseCatalogueStore
-import ru.privatenull.pnlibrary.update.TrustedHttpClient
+import ru.privatenull.pnlibrary.core.updates.engine.RefreshMode
+import ru.privatenull.pnlibrary.core.updates.engine.ReleaseCatalog
+import ru.privatenull.pnlibrary.core.updates.engine.ReleaseCatalogClient
+import ru.privatenull.pnlibrary.core.updates.engine.ReleaseCatalogueStore
+import ru.privatenull.pnlibrary.core.updates.engine.TrustedHttpClient
 import java.net.URI
 import java.nio.file.Path
 import java.time.Duration

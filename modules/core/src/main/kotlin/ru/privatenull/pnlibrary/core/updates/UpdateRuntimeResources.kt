@@ -1,8 +1,8 @@
 package ru.privatenull.pnlibrary.core.updates
 
-import ru.privatenull.pnlibrary.update.ReleaseCatalogClient
-import ru.privatenull.pnlibrary.update.ReleaseCatalogueStore
-import ru.privatenull.pnlibrary.update.TrustedHttpClient
+import ru.privatenull.pnlibrary.core.updates.engine.ReleaseCatalogClient
+import ru.privatenull.pnlibrary.core.updates.engine.ReleaseCatalogueStore
+import ru.privatenull.pnlibrary.core.updates.engine.TrustedHttpClient
 import java.nio.file.Path
 import java.time.Duration
 import java.util.concurrent.ExecutorService

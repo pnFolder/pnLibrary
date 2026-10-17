@@ -12,7 +12,7 @@ import ru.privatenull.pnlibrary.spi.platform.PlatformIdentity
 import ru.privatenull.pnlibrary.spi.platform.PlatformLogging
 import ru.privatenull.pnlibrary.spi.platform.PlatformOwnerMetadata
 import ru.privatenull.pnlibrary.spi.platform.PlatformPluginInventory
-import ru.privatenull.pnlibrary.update.*
+import ru.privatenull.pnlibrary.core.updates.engine.*
 import java.nio.file.Files
 import java.nio.file.Path
 import java.nio.file.Paths

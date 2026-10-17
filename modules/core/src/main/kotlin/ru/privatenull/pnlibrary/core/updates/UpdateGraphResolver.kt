@@ -10,11 +10,11 @@ import ru.privatenull.pnlibrary.api.version.PnLibraryApi
 import ru.privatenull.pnlibrary.spi.platform.PlatformIdentity
 import ru.privatenull.pnlibrary.spi.platform.PlatformOwnerMetadata
 import ru.privatenull.pnlibrary.spi.platform.PlatformPluginInventory
-import ru.privatenull.pnlibrary.update.RefreshMode
-import ru.privatenull.pnlibrary.update.FreezeStore
-import ru.privatenull.pnlibrary.update.ResolutionResult
-import ru.privatenull.pnlibrary.update.ResolverPolicy
-import ru.privatenull.pnlibrary.update.UpdateResolver
+import ru.privatenull.pnlibrary.core.updates.engine.RefreshMode
+import ru.privatenull.pnlibrary.core.updates.engine.FreezeStore
+import ru.privatenull.pnlibrary.core.updates.engine.ResolutionResult
+import ru.privatenull.pnlibrary.core.updates.engine.ResolverPolicy
+import ru.privatenull.pnlibrary.core.updates.engine.UpdateResolver
 import java.time.Instant
 
 /** Loads release catalogues and resolves one coherent update plan for all registered products. */

@@ -3,7 +3,7 @@ package ru.privatenull.pnlibrary.core.updates
 import ru.privatenull.pnlibrary.api.updates.UpdatePlanSnapshot
 import ru.privatenull.pnlibrary.api.updates.UpdateState
 import ru.privatenull.pnlibrary.api.updates.UpdateActor
-import ru.privatenull.pnlibrary.update.ResolutionResult
+import ru.privatenull.pnlibrary.core.updates.engine.ResolutionResult
 import java.time.Clock
 import java.time.Instant
 import java.util.Optional

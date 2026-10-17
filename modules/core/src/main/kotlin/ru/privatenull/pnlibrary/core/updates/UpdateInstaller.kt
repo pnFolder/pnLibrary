@@ -9,14 +9,14 @@ import ru.privatenull.pnlibrary.api.updates.ProductChange
 import ru.privatenull.pnlibrary.api.updates.UpdateState
 import ru.privatenull.pnlibrary.api.updates.UpdateConfigurationBackup
 import ru.privatenull.pnlibrary.api.version.SemanticVersion
-import ru.privatenull.pnlibrary.update.TransactionJournal
-import ru.privatenull.pnlibrary.update.UpdateProcessSession
+import ru.privatenull.pnlibrary.core.updates.engine.TransactionJournal
+import ru.privatenull.pnlibrary.core.updates.engine.UpdateProcessSession
 import java.time.Instant
 import java.util.UUID
 import ru.privatenull.pnlibrary.spi.platform.PlatformIdentity
-import ru.privatenull.pnlibrary.update.ArtifactVerifier
-import ru.privatenull.pnlibrary.update.TrustedHttpClient
-import ru.privatenull.pnlibrary.update.UpdateTransaction
+import ru.privatenull.pnlibrary.core.updates.engine.ArtifactVerifier
+import ru.privatenull.pnlibrary.core.updates.engine.TrustedHttpClient
+import ru.privatenull.pnlibrary.core.updates.engine.UpdateTransaction
 import java.nio.file.Path
 
 /** Stages update files and verifies a staged transaction after the next server start. */

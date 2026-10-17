@@ -1,4 +1,4 @@
-package ru.privatenull.pnlibrary.update
+package ru.privatenull.pnlibrary.core.updates.engine
 
 import ru.privatenull.pnlibrary.api.version.ApiVersionRange
 import java.nio.file.Files

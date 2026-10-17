@@ -4,7 +4,7 @@ import com.google.gson.Gson
 import ru.privatenull.pnlibrary.api.updates.ProductId
 import ru.privatenull.pnlibrary.api.updates.UpdateConfigurationBackup
 import ru.privatenull.pnlibrary.core.io.TextFiles
-import ru.privatenull.pnlibrary.update.UpdatePaths
+import ru.privatenull.pnlibrary.core.updates.engine.UpdatePaths
 import java.nio.channels.FileChannel
 import java.nio.charset.StandardCharsets.UTF_8
 import java.nio.file.*

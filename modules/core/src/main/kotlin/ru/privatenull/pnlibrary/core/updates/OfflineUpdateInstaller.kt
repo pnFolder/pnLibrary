@@ -3,7 +3,7 @@ package ru.privatenull.pnlibrary.core.updates
 import ru.privatenull.pnlibrary.api.updates.ProductId
 import ru.privatenull.pnlibrary.api.version.ApiVersionRange
 import ru.privatenull.pnlibrary.api.version.SemanticVersion
-import ru.privatenull.pnlibrary.update.*
+import ru.privatenull.pnlibrary.core.updates.engine.*
 import java.nio.file.Files
 import java.nio.file.Path
 import java.nio.file.Paths

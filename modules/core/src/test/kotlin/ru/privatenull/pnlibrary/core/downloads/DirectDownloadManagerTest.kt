@@ -13,7 +13,7 @@ import ru.privatenull.pnlibrary.api.downloads.FileDownloads
 import ru.privatenull.pnlibrary.api.platform.PlatformType
 import ru.privatenull.pnlibrary.api.updates.ExternalPluginDependency
 import ru.privatenull.pnlibrary.spi.platform.PlatformAdapter
-import ru.privatenull.pnlibrary.update.TrustedHttpClient
+import ru.privatenull.pnlibrary.core.updates.engine.TrustedHttpClient
 import java.io.ByteArrayOutputStream
 import java.lang.reflect.Proxy
 import java.net.URI

@@ -6,7 +6,7 @@ import org.junit.jupiter.api.io.TempDir
 import ru.privatenull.pnlibrary.api.updates.*
 import ru.privatenull.pnlibrary.api.version.ApiVersionRange
 import ru.privatenull.pnlibrary.api.version.SemanticVersion
-import ru.privatenull.pnlibrary.update.ResolutionResult
+import ru.privatenull.pnlibrary.core.updates.engine.ResolutionResult
 import java.nio.file.Path
 import java.time.Clock
 import java.time.Instant

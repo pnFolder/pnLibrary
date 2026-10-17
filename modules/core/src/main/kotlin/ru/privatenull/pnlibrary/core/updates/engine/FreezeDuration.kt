@@ -1,4 +1,4 @@
-package ru.privatenull.pnlibrary.update
+package ru.privatenull.pnlibrary.core.updates.engine
 
 import java.time.Duration
 

@@ -1,6 +1,6 @@
 package ru.privatenull.pnlibrary.core.updates
 
-import ru.privatenull.pnlibrary.update.UpdatePaths
+import ru.privatenull.pnlibrary.core.updates.engine.UpdatePaths
 import java.nio.channels.FileChannel
 import java.nio.channels.FileLock
 import java.nio.file.Files

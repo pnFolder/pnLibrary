@@ -1,11 +1,11 @@
 package ru.privatenull.pnlibrary.core.updates
 
 import com.google.gson.JsonParser
-import ru.privatenull.pnlibrary.update.RefreshMode
-import ru.privatenull.pnlibrary.update.ReleaseCatalog
-import ru.privatenull.pnlibrary.update.ReleaseCatalogClient
-import ru.privatenull.pnlibrary.update.ReleaseCatalogCodec
-import ru.privatenull.pnlibrary.update.TrustedHttpClient
+import ru.privatenull.pnlibrary.core.updates.engine.RefreshMode
+import ru.privatenull.pnlibrary.core.updates.engine.ReleaseCatalog
+import ru.privatenull.pnlibrary.core.updates.engine.ReleaseCatalogClient
+import ru.privatenull.pnlibrary.core.updates.engine.ReleaseCatalogCodec
+import ru.privatenull.pnlibrary.core.updates.engine.TrustedHttpClient
 import java.net.URI
 import java.util.Base64
 import java.util.concurrent.CompletableFuture

@@ -1,4 +1,4 @@
-package ru.privatenull.pnlibrary.update
+package ru.privatenull.pnlibrary.core.updates.engine
 import org.junit.jupiter.api.Assertions.assertTrue
 
 import org.junit.jupiter.api.Assertions.assertArrayEquals
