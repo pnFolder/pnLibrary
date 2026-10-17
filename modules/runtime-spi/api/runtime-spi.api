@@ -227,6 +227,13 @@ public final class ru/privatenull/pnlibrary/spi/platform/PluginSnapshot {
 	public fun toString ()Ljava/lang/String;
 }
 
+public final class ru/privatenull/pnlibrary/spi/platform/StartupGate {
+	public fun <init> (Lru/privatenull/pnlibrary/spi/platform/PlatformLifecycle;Lkotlin/jvm/functions/Function1;)V
+	public final fun discardPending ()V
+	public final fun markReady ()V
+	public final fun whenReady (Ljava/lang/Runnable;)V
+}
+
 public final class ru/privatenull/pnlibrary/spi/platform/UncaughtExceptionLogObserver {
 	public fun <init> (Ljava/lang/Object;)V
 	public final fun observe (Lkotlin/jvm/functions/Function4;)V

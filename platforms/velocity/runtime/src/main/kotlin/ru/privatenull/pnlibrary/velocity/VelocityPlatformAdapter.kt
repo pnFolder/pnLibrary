@@ -13,6 +13,7 @@ import ru.privatenull.pnlibrary.spi.platform.PlatformSnapshot
 import ru.privatenull.pnlibrary.spi.platform.PluginSnapshot
 import ru.privatenull.pnlibrary.spi.platform.UncaughtExceptionLogObserver
 import ru.privatenull.pnlibrary.spi.platform.PlatformLifecycle
+import ru.privatenull.pnlibrary.spi.platform.StartupGate
 import ru.privatenull.pnlibrary.spi.platform.unsupportedOwner
 import ru.privatenull.pnlibrary.spi.tasks.PlatformTaskAdapter
 import ru.privatenull.pnlibrary.velocity.commands.VelocityCommandAdapter
@@ -41,9 +42,7 @@ internal class VelocityPlatformAdapter(
     private val diagnosticDetailsCollector = VelocityDiagnosticDetailsCollector(proxy)
     private val lifecycle = PlatformLifecycle()
     private val plugins = VelocityPluginRegistry(proxy)
-    private val readinessLock = Any()
-    private var ready = false
-    private val pendingReadyTasks = mutableListOf<Runnable>()
+    private val startup = StartupGate(lifecycle, ::executeGlobal)
 
     private val uncaughtExceptionObserver = UncaughtExceptionLogObserver(plugin)
 
@@ -132,24 +131,12 @@ internal class VelocityPlatformAdapter(
 
     /** Defers startup-dependent work until the entry point has published the native API. */
     override fun whenServerReady(task: Runnable) {
-        synchronized(readinessLock) {
-            if (lifecycle.isClosed) return
-            if (!ready) {
-                pendingReadyTasks += task
-                return
-            }
-        }
-        executeGlobal(task)
+        startup.whenReady(task)
     }
 
     /** Called once the runtime and Velocity API registration both succeeded. */
     internal fun markReady() {
-        val pending = synchronized(readinessLock) {
-            if (ready || lifecycle.isClosed) return
-            ready = true
-            pendingReadyTasks.toList().also { pendingReadyTasks.clear() }
-        }
-        pending.forEach(::executeGlobal)
+        startup.markReady()
     }
 
     /** Dispatches a reply task using the proxy-wide scheduler. */
@@ -160,7 +147,7 @@ internal class VelocityPlatformAdapter(
     /** Discards pending startup work, cancels native tasks and removes the exception observer. */
     override fun close() {
         lifecycle.close {
-            synchronized(readinessLock) { pendingReadyTasks.clear() }
+            startup.discardPending()
             try {
                 taskAdapter.close()
             } finally {

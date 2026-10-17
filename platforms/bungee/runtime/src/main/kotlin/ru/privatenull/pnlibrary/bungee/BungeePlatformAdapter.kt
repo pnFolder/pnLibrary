@@ -15,6 +15,7 @@ import ru.privatenull.pnlibrary.spi.platform.PlatformSnapshot
 import ru.privatenull.pnlibrary.spi.platform.PluginSnapshot
 import ru.privatenull.pnlibrary.spi.platform.UncaughtExceptionLogObserver
 import ru.privatenull.pnlibrary.spi.platform.PlatformLifecycle
+import ru.privatenull.pnlibrary.spi.platform.StartupGate
 import ru.privatenull.pnlibrary.spi.platform.unsupportedOwner
 import ru.privatenull.pnlibrary.spi.tasks.PlatformTaskAdapter
 import java.util.logging.Level
@@ -27,9 +28,7 @@ internal class BungeePlatformAdapter(
     private val diagnosticDetailsCollector = BungeeDiagnosticDetailsCollector(plugin)
 
     private val lifecycle = PlatformLifecycle()
-    private val readinessLock = Any()
-    private var ready = false
-    private val pendingReadyTasks = mutableListOf<Runnable>()
+    private val startup = StartupGate(lifecycle, ::executeGlobal)
 
     private val uncaughtExceptionObserver = UncaughtExceptionLogObserver(plugin)
 
@@ -135,21 +134,12 @@ internal class BungeePlatformAdapter(
 
     /** Waits until the entry point has published the runtime and native platform API. */
     override fun whenServerReady(task: Runnable) {
-        synchronized(readinessLock) {
-            if (lifecycle.isClosed) return
-            if (!ready) { pendingReadyTasks += task; return }
-        }
-        executeGlobal(task)
+        startup.whenReady(task)
     }
 
     /** Releases startup callbacks once; other managed plugins may still use the startup grace. */
     internal fun markReady() {
-        val pending = synchronized(readinessLock) {
-            if (ready || lifecycle.isClosed) return
-            ready = true
-            pendingReadyTasks.toList().also { pendingReadyTasks.clear() }
-        }
-        pending.forEach(::executeGlobal)
+        startup.markReady()
     }
 
     /** Dispatches recipient work through the same asynchronous proxy scheduler. */
@@ -160,7 +150,7 @@ internal class BungeePlatformAdapter(
     /** Releases observers and command registrations once. */
     override fun close() {
         lifecycle.close {
-            synchronized(readinessLock) { pendingReadyTasks.clear() }
+            startup.discardPending()
             observeNativeLogs(null)
         }
     }
