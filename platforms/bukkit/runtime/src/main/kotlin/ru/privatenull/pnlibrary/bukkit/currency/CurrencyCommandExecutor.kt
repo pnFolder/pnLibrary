@@ -17,8 +17,6 @@ import java.time.ZoneId
 import java.time.format.DateTimeFormatter
 import java.util.UUID
 import java.util.concurrent.CompletionStage
-import java.util.concurrent.ConcurrentHashMap
-import java.security.SecureRandom
 
 /**
  * Builds and executes administrator-facing portable currency commands.
@@ -30,8 +28,7 @@ internal class CurrencyCommandExecutor(
     private val plugin: Plugin,
     private val currencies: CurrencyProviderRegistry,
 ) {
-    private val pending = ConcurrentHashMap<String, PendingOperation>()
-    private val random = SecureRandom()
+    private val confirmations = CurrencyConfirmationStore()
 
     /** Builds the currency command tree with capability-aware permissions and suggestions. */
     fun definition(): CommandDefinition = command("pncurrency") {
@@ -123,7 +120,7 @@ internal class CurrencyCommandExecutor(
     private fun onlinePlayers(): List<String> = Bukkit.getOnlinePlayers().map(Player::getName)
 
     private fun execute(sender: CommandSender, args: List<String>): Boolean {
-        discardExpired()
+        confirmations.discardExpired()
         if (args.isEmpty() || args[0].equals("help", true)) return help(sender)
         if (args[0].equals("confirm", true)) return confirm(sender, args.getOrNull(1))
         if (args[0].equals("cancel", true)) return cancel(sender, args.getOrNull(1))
@@ -289,10 +286,10 @@ internal class CurrencyCommandExecutor(
             complete(sender, execute(), completed)
             return true
         }
-        if (pending.size >= 1_000) return error(sender, "Too many currency operations are awaiting confirmation.")
-        val token = token()
-        val expiresAt = System.currentTimeMillis() + settings.confirmationTimeoutSeconds * 1_000L
-        pending[token] = PendingOperation(token, expiresAt, currency.key.toString(), description, sender.name, execute, completed)
+        val operation = confirmations.add(
+            settings.confirmationTimeoutSeconds, currency.key.toString(), description, sender.name, execute, completed,
+        ) ?: return error(sender, "Too many currency operations are awaiting confirmation.")
+        val token = operation.token
         val console = Bukkit.getConsoleSender()
         console.sendMessage("§8[§6Currency confirmation§8] §e$token §f· ${currency.key} · $description · requested by ${sender.name}")
         console.sendMessage(
@@ -306,7 +303,7 @@ internal class CurrencyCommandExecutor(
     private fun confirm(sender: CommandSender, token: String?): Boolean {
         if (sender !is ConsoleCommandSender) return error(sender, "Only the server console can confirm currency operations.")
         if (token == null) return error(sender, "Usage: /pncurrency confirm <code>")
-        val operation = pending.remove(token.uppercase()) ?: return error(sender, "Confirmation code is invalid or expired.")
+        val operation = confirmations.take(token) ?: return error(sender, "Confirmation code is invalid or expired.")
         if (operation.expiresAt < System.currentTimeMillis()) return error(sender, "Confirmation code has expired.")
         info(sender, "Confirmed ${operation.currency} · ${operation.description} · requested by ${operation.requestedBy}")
         complete(sender, operation.execute(), operation.completed)
@@ -315,22 +312,9 @@ internal class CurrencyCommandExecutor(
 
     private fun cancel(sender: CommandSender, token: String?): Boolean {
         if (sender !is ConsoleCommandSender) return error(sender, "Only the server console can cancel currency operations.")
-        if (token == null || pending.remove(token.uppercase()) == null) return error(sender, "Confirmation code is invalid or expired.")
+        if (token == null || confirmations.take(token) == null) return error(sender, "Confirmation code is invalid or expired.")
         info(sender, "Pending currency operation cancelled: ${token.uppercase()}")
         return true
-    }
-
-    private fun discardExpired() {
-        val now = System.currentTimeMillis()
-        pending.entries.removeIf { it.value.expiresAt < now }
-    }
-
-    private fun token(): String {
-        repeat(32) {
-            val value = buildString(10) { repeat(10) { append(TOKEN_ALPHABET[random.nextInt(TOKEN_ALPHABET.length)]) } }
-            if (!pending.containsKey(value)) return value
-        }
-        error("Unable to allocate a currency confirmation code")
     }
 
     private fun usage(sender: CommandSender, currency: Currency): Boolean {
@@ -378,16 +362,5 @@ internal class CurrencyCommandExecutor(
     companion object {
         private val TIME = DateTimeFormatter.ofPattern("yyyy-MM-dd HH:mm:ss").withZone(ZoneId.systemDefault())
         private val DEFAULT_MESSAGES = CurrencyCommandSettings()
-        private const val TOKEN_ALPHABET = "ABCDEFGHJKLMNPQRSTUVWXYZ23456789"
     }
-
-    private data class PendingOperation(
-        val token: String,
-        val expiresAt: Long,
-        val currency: String,
-        val description: String,
-        val requestedBy: String,
-        val execute: () -> CompletionStage<CurrencyResult>,
-        val completed: (CurrencyResult) -> Unit,
-    )
 }
