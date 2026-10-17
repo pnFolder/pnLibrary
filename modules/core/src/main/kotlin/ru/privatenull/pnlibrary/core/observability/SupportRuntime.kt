@@ -25,6 +25,7 @@ import java.nio.file.Path
 import java.util.concurrent.Executors
 import java.util.concurrent.TimeUnit
 import java.util.concurrent.atomic.AtomicBoolean
+import java.util.concurrent.RejectedExecutionException
 import java.util.concurrent.atomic.AtomicLong
 import java.time.Instant
 
@@ -72,6 +73,7 @@ internal class SupportRuntime(
         observabilitySnapshot = observations::reportSnapshot,
         runtimeDiagnostics = runtimeDiagnostics,
     )
+    private val persistRequested = AtomicBoolean(false)
     private val reportInProgress = AtomicBoolean(false)
     private val reportsCreated = AtomicLong()
     private val reportsFailed = AtomicLong()
@@ -93,6 +95,13 @@ internal class SupportRuntime(
         platformLogObservation.observeNativeLogs { nativeOwner, level, message, error ->
             logs.record(ownership, nativeOwner, level, message, error)
         }
+
+        worker.scheduleWithFixedDelay(
+            { if (!isRuntimeClosed()) runCatching { performMaintenance() } },
+            MAINTENANCE_INTERVAL_HOURS,
+            MAINTENANCE_INTERVAL_HOURS,
+            TimeUnit.HOURS,
+        )
 
         uploader?.let { remote ->
             worker.scheduleWithFixedDelay(
@@ -183,16 +192,47 @@ internal class SupportRuntime(
     }
 
     override fun close() {
-        worker.shutdownNow()
         platformLogObservation.observeNativeLogs(null)
         diagnostics.onEventsChanged(null)
         diagnostics.onActivityEvent(null)
+        worker.shutdownNow()
+        if (persistRequested.getAndSet(false)) runCatching { writeHistory() }
         diagnostics.clear()
         service.close()
     }
 
+    /**
+     * Requests a history snapshot. Bursts of incidents share one write, so a logging thread never
+     * waits for encryption and disk I/O; [close] flushes anything still pending.
+     */
     private fun persistHistory() {
+        if (!persistRequested.compareAndSet(false, true)) return
+        try {
+            worker.schedule(
+                { if (persistRequested.getAndSet(false)) runCatching { writeHistory() } },
+                HISTORY_FLUSH_DELAY_MS,
+                TimeUnit.MILLISECONDS,
+            )
+        } catch (_: RejectedExecutionException) {
+            persistRequested.set(false)
+        }
+    }
+
+    private fun writeHistory() {
         history.save(logs.snapshot(), diagnostics.eventSnapshot())
+    }
+
+    /** Applies every retention period: in-memory incidents, observations, attachments and history files. */
+    internal fun performMaintenance() {
+        logs.expireOlderThan(System.currentTimeMillis() - config.historyRetentionDays * MILLIS_PER_DAY)
+        observations.maintain()
+        history.prune()
+    }
+
+    private companion object {
+        const val HISTORY_FLUSH_DELAY_MS = 2_000L
+        const val MAINTENANCE_INTERVAL_HOURS = 1L
+        const val MILLIS_PER_DAY = 86_400_000L
     }
 
     private fun createObservabilityReport(request: ObservabilityReportRequest): ObservabilityReport {

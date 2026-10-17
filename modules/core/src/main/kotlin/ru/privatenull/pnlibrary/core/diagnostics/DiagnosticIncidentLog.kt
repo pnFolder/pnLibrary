@@ -113,6 +113,6 @@ internal class DiagnosticIncidentLog(
     )
 
     private companion object {
-        const val MAXIMUM_TIMELINE_ENTRIES = 100_000
+        const val MAXIMUM_TIMELINE_ENTRIES = 500
     }
 }

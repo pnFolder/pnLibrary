@@ -24,6 +24,11 @@ internal class ObservabilityRuntime(
     private var reportFactory = reportFactory
 
     init {
+        maintain()
+    }
+
+    /** Drops expired observations and the attachments that no longer belong to a retained one. */
+    fun maintain() = synchronized(recordLock) {
         val activeObservationIds = journal.applyRetention(clock())
         attachmentStore.removeOrphans(activeObservationIds)
     }

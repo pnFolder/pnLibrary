@@ -110,6 +110,18 @@ internal class DiagnosticLogBuffer(private val capacity: Int = 2_000) {
         )
     }
 
+    /** Removes incidents last seen before [cutoffMs]; returns how many were dropped. */
+    @Synchronized
+    fun expireOlderThan(cutoffMs: Long): Int {
+        val expired = incidents.values.filter { Instant.parse(it.lastSeenUtc).toEpochMilli() < cutoffMs }
+        expired.forEach { incident ->
+            incidents.remove(incident.id)
+            timelineEntryCount -= incident.occurrences.size
+        }
+        if (expired.isNotEmpty()) notifyChanged()
+        return expired.size
+    }
+
     @Synchronized
     fun snapshot(): List<Map<String, Any?>> = incidents.values.map { incident ->
         linkedMapOf<String, Any?>(

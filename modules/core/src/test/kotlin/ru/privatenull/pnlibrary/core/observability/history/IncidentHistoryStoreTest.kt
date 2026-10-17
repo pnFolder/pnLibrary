@@ -33,6 +33,22 @@ class IncidentHistoryStoreTest {
     }
 
     @Test
+    fun `prune removes history older than the retention period without saving`() {
+        val old = temporaryDirectory.resolve("old.pndlog")
+        val fresh = temporaryDirectory.resolve("fresh.pndlog")
+        Files.write(old, ByteArray(2))
+        Files.write(fresh, ByteArray(2))
+        Files.setLastModifiedTime(old, java.nio.file.attribute.FileTime.from(clock.instant().minusSeconds(40L * 86_400)))
+        Files.setLastModifiedTime(fresh, java.nio.file.attribute.FileTime.from(clock.instant().minusSeconds(86_400)))
+        val history = IncidentHistoryStore(temporaryDirectory, null, retentionDays = 30, maxBytes = 1_024, clock = clock)
+
+        history.prune()
+
+        assertFalse(Files.exists(old))
+        assertEquals(true, Files.exists(fresh))
+    }
+
+    @Test
     fun `file listing respects aggregate encrypted byte budget`() {
         Files.write(temporaryDirectory.resolve("a.pndlog"), ByteArray(3) { 1 })
         Files.write(temporaryDirectory.resolve("b.pndlog"), ByteArray(3) { 2 })

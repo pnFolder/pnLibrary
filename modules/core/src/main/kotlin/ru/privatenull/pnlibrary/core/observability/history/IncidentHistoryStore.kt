@@ -71,6 +71,12 @@ internal class IncidentHistoryStore(
         rotate()
     }
 
+    /** Applies the age, file-count and size limits without writing a new snapshot. */
+    @Synchronized
+    fun prune() {
+        if (Files.isDirectory(directory)) rotate()
+    }
+
     /**
      * Returns retained encrypted files without exceeding [maxBytes].
      *

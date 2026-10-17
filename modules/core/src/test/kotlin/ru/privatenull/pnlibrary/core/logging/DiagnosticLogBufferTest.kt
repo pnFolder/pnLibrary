@@ -26,6 +26,20 @@ class DiagnosticLogBufferTest {
     }
 
     @Test
+    fun `incidents last seen before the cutoff expire and later ones stay`() {
+        val buffer = DiagnosticLogBuffer(10)
+        val platform = TestPlatform()
+        buffer.record(platform, this, LogLevel.ERROR, "old failure", null)
+        val cutoff = System.currentTimeMillis() + 1
+        Thread.sleep(5)
+        buffer.record(platform, this, LogLevel.ERROR, "new failure", null)
+
+        assertEquals(1, buffer.expireOlderThan(cutoff))
+        assertEquals(listOf("new failure"), buffer.snapshot().map { it["message"] })
+        assertEquals(0, buffer.expireOlderThan(cutoff))
+    }
+
+    @Test
     fun `aggregates repeats with exact timestamps and keeps the complete throwable`() {
         val buffer = DiagnosticLogBuffer(10)
         val platform = TestPlatform()
