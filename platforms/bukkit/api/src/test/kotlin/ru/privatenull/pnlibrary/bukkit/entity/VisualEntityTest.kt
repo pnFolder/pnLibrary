@@ -1,4 +1,4 @@
-package ru.privatenull.pnlibrary.entity
+package ru.privatenull.pnlibrary.bukkit.entity
 
 import org.bukkit.Location
 import org.bukkit.World

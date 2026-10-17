@@ -1,4 +1,4 @@
-package ru.privatenull.pnlibrary.item
+package ru.privatenull.pnlibrary.bukkit.item
 
 import org.bukkit.inventory.ItemStack
 import org.bukkit.util.io.BukkitObjectInputStream

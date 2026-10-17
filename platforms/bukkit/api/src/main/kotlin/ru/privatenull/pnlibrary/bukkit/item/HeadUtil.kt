@@ -1,4 +1,4 @@
-package ru.privatenull.pnlibrary.item
+package ru.privatenull.pnlibrary.bukkit.item
 
 import org.bukkit.Bukkit
 import org.bukkit.Material

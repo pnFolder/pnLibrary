@@ -1,4 +1,4 @@
-package ru.privatenull.pnlibrary.item
+package ru.privatenull.pnlibrary.bukkit.item
 
 /** Converts legacy ampersand colors and RGB colors (`&#RRGGBB`) to item text. */
 internal object ItemText {
