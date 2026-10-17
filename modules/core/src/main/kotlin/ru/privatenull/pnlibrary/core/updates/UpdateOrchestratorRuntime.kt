@@ -12,7 +12,6 @@ import java.util.concurrent.CompletionStage
 import java.util.concurrent.ConcurrentHashMap
 import java.util.concurrent.atomic.AtomicBoolean
 import ru.privatenull.pnlibrary.core.updates.engine.RefreshMode
-import ru.privatenull.pnlibrary.spi.platform.PlatformExecution
 import ru.privatenull.pnlibrary.spi.platform.PlatformReadiness
 import ru.privatenull.pnlibrary.spi.platform.PlatformLogging
 import ru.privatenull.pnlibrary.core.updates.engine.ResolutionResult

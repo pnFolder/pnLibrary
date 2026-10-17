@@ -5,17 +5,6 @@ import ru.privatenull.pnlibrary.api.diagnostics.DiagnosticReport
 import ru.privatenull.pnlibrary.api.logging.LoggingService
 import ru.privatenull.pnlibrary.api.metrics.MetricsService
 import ru.privatenull.pnlibrary.api.metrics.PluginMetrics
-import ru.privatenull.pnlibrary.spi.platform.PlatformDiagnostics
-import ru.privatenull.pnlibrary.spi.platform.PlatformExecution
-import ru.privatenull.pnlibrary.spi.platform.PlatformReadiness
-import ru.privatenull.pnlibrary.spi.platform.PlatformIdentity
-import ru.privatenull.pnlibrary.spi.platform.PlatformLogging
-import ru.privatenull.pnlibrary.spi.platform.PlatformLogObservation
-import ru.privatenull.pnlibrary.spi.platform.PlatformOwnership
-import ru.privatenull.pnlibrary.spi.metrics.PlatformMetricsFactory
-import ru.privatenull.pnlibrary.spi.commands.PlatformCommandAdapter
-import ru.privatenull.pnlibrary.spi.audiences.PlatformAudienceAdapter
-import ru.privatenull.pnlibrary.spi.tasks.PlatformTaskAdapter
 import ru.privatenull.pnlibrary.api.runtime.PnLibrary
 import ru.privatenull.pnlibrary.api.runtime.PnLibraryConfig
 import ru.privatenull.pnlibrary.api.runtime.PnLibraryProvider

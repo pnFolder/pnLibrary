@@ -2,7 +2,6 @@ package ru.privatenull.pnlibrary.core
 
 import ru.privatenull.pnlibrary.core.upload.UploadLedger
 import ru.privatenull.pnlibrary.core.upload.UploadReceipt
-import org.junit.jupiter.api.Assertions.assertEquals
 import org.junit.jupiter.api.Assertions.assertTrue
 import org.junit.jupiter.api.Test
 import org.junit.jupiter.api.io.TempDir

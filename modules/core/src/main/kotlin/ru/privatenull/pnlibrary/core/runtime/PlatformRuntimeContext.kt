@@ -1,6 +1,5 @@
 package ru.privatenull.pnlibrary.core.runtime
 
-import ru.privatenull.pnlibrary.api.runtime.PnLibrary
 import ru.privatenull.pnlibrary.spi.platform.PlatformDiagnostics
 import ru.privatenull.pnlibrary.spi.platform.PlatformExecution
 import ru.privatenull.pnlibrary.spi.platform.PlatformIdentity

@@ -4,7 +4,6 @@ import net.kyori.adventure.text.Component
 import net.kyori.adventure.sound.Sound
 import net.kyori.adventure.key.Key
 import org.bukkit.command.CommandSender
-import org.bukkit.plugin.Plugin
 import org.junit.jupiter.api.Assertions.assertEquals
 import org.junit.jupiter.api.Test
 import ru.privatenull.pnlibrary.api.commands.CommandContext

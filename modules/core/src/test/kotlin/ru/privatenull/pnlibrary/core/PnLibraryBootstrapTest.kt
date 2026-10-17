@@ -8,7 +8,6 @@ import org.junit.jupiter.api.Assertions.assertNotNull
 import org.junit.jupiter.api.Assertions.assertSame
 import org.junit.jupiter.api.Assertions.assertTrue
 import org.junit.jupiter.api.Test
-import ru.privatenull.pnlibrary.api.diagnostics.DiagnosticLevel
 import ru.privatenull.pnlibrary.api.diagnostics.DiagnosticContainer
 import ru.privatenull.pnlibrary.spi.platform.PlatformAdapter
 import ru.privatenull.pnlibrary.api.platform.PlatformType

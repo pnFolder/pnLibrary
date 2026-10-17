@@ -4,6 +4,32 @@ public abstract interface class ru/privatenull/pnlibrary/bukkit/api/BukkitPlatfo
 	public abstract fun getServerInfo ()Lru/privatenull/pnlibrary/bukkit/server/ServerInfo;
 }
 
+public final class ru/privatenull/pnlibrary/bukkit/entity/VisualEntity {
+	public static final field Companion Lru/privatenull/pnlibrary/bukkit/entity/VisualEntity$Companion;
+	public synthetic fun <init> (Lorg/bukkit/entity/ArmorStand;DLorg/bukkit/Location;Lkotlin/jvm/internal/DefaultConstructorMarker;)V
+	public final fun addScoreboardTag (Ljava/lang/String;)V
+	public static final fun block (Lorg/bukkit/Location;Lorg/bukkit/Material;)Lru/privatenull/pnlibrary/bukkit/entity/VisualEntity;
+	public final fun entity ()Lorg/bukkit/entity/Entity;
+	public final fun getLocation ()Lorg/bukkit/Location;
+	public final fun isDead ()Z
+	public final fun isValid ()Z
+	public static final fun item (Lorg/bukkit/Location;Lorg/bukkit/inventory/ItemStack;)Lru/privatenull/pnlibrary/bukkit/entity/VisualEntity;
+	public final fun remove ()V
+	public final fun setBlock (Lorg/bukkit/Material;)V
+	public final fun setItem (Lorg/bukkit/inventory/ItemStack;)V
+	public final fun setRotation (FF)V
+	public final fun setScale (F)V
+	public final fun setText (Ljava/lang/String;)V
+	public final fun teleport (Lorg/bukkit/Location;)V
+	public static final fun text (Lorg/bukkit/Location;Ljava/lang/String;)Lru/privatenull/pnlibrary/bukkit/entity/VisualEntity;
+}
+
+public final class ru/privatenull/pnlibrary/bukkit/entity/VisualEntity$Companion {
+	public final fun block (Lorg/bukkit/Location;Lorg/bukkit/Material;)Lru/privatenull/pnlibrary/bukkit/entity/VisualEntity;
+	public final fun item (Lorg/bukkit/Location;Lorg/bukkit/inventory/ItemStack;)Lru/privatenull/pnlibrary/bukkit/entity/VisualEntity;
+	public final fun text (Lorg/bukkit/Location;Ljava/lang/String;)Lru/privatenull/pnlibrary/bukkit/entity/VisualEntity;
+}
+
 public final class ru/privatenull/pnlibrary/bukkit/inventory/Menu {
 	public fun <init> (Ljava/lang/String;ILru/privatenull/pnlibrary/bukkit/inventory/MenuType;Ljava/util/Map;Lru/privatenull/pnlibrary/bukkit/inventory/MenuRenderer;Lru/privatenull/pnlibrary/bukkit/inventory/MenuOpenHandler;Lru/privatenull/pnlibrary/bukkit/inventory/MenuCloseHandler;Lru/privatenull/pnlibrary/bukkit/inventory/MenuClickHandler;Z)V
 	public final fun component1 ()Ljava/lang/String;
@@ -165,6 +191,28 @@ public final class ru/privatenull/pnlibrary/bukkit/inventory/Menus {
 	public static final fun workbench (Ljava/lang/String;)Lru/privatenull/pnlibrary/bukkit/inventory/MenuBuilder;
 }
 
+public final class ru/privatenull/pnlibrary/bukkit/item/HeadUtil {
+	public static final field INSTANCE Lru/privatenull/pnlibrary/bukkit/item/HeadUtil;
+	public static final fun create (Ljava/lang/String;Ljava/lang/String;)Lorg/bukkit/inventory/ItemStack;
+	public static final fun normalizeTexture (Ljava/lang/String;)Ljava/lang/String;
+}
+
+public final class ru/privatenull/pnlibrary/bukkit/item/ItemFactory {
+	public static final field INSTANCE Lru/privatenull/pnlibrary/bukkit/item/ItemFactory;
+	public static final fun fromMap (Ljava/util/Map;)Lorg/bukkit/inventory/ItemStack;
+	public static final fun fromSection (Lorg/bukkit/configuration/ConfigurationSection;)Lorg/bukkit/inventory/ItemStack;
+	public static final fun isRealItem (Lorg/bukkit/inventory/ItemStack;)Z
+	public static final fun toMap (Lorg/bukkit/inventory/ItemStack;)Ljava/util/Map;
+	public static final fun writeExactItem (Lorg/bukkit/configuration/ConfigurationSection;Ljava/lang/String;Lorg/bukkit/inventory/ItemStack;)V
+	public static final fun writeItem (Lorg/bukkit/configuration/ConfigurationSection;Ljava/lang/String;Lorg/bukkit/inventory/ItemStack;)V
+}
+
+public final class ru/privatenull/pnlibrary/bukkit/item/ItemStackCodec {
+	public static final field INSTANCE Lru/privatenull/pnlibrary/bukkit/item/ItemStackCodec;
+	public static final fun decode (Ljava/lang/String;)Lorg/bukkit/inventory/ItemStack;
+	public static final fun encode (Lorg/bukkit/inventory/ItemStack;)Ljava/lang/String;
+}
+
 public final class ru/privatenull/pnlibrary/bukkit/server/ServerInfo {
 	public fun <init> (Ljava/lang/String;Ljava/lang/String;Lru/privatenull/pnlibrary/common/minecraft/MinecraftVersion;Ljava/lang/String;)V
 	public final fun component1 ()Ljava/lang/String;
@@ -183,53 +231,5 @@ public final class ru/privatenull/pnlibrary/bukkit/server/ServerInfo {
 	public final fun isMinecraftAtLeast (Lru/privatenull/pnlibrary/common/minecraft/MinecraftVersion;)Z
 	public final fun supports (Lru/privatenull/pnlibrary/common/minecraft/MinecraftVersionRange;)Z
 	public fun toString ()Ljava/lang/String;
-}
-
-public final class ru/privatenull/pnlibrary/entity/VisualEntity {
-	public static final field Companion Lru/privatenull/pnlibrary/entity/VisualEntity$Companion;
-	public synthetic fun <init> (Lorg/bukkit/entity/ArmorStand;DLorg/bukkit/Location;Lkotlin/jvm/internal/DefaultConstructorMarker;)V
-	public final fun addScoreboardTag (Ljava/lang/String;)V
-	public static final fun block (Lorg/bukkit/Location;Lorg/bukkit/Material;)Lru/privatenull/pnlibrary/entity/VisualEntity;
-	public final fun entity ()Lorg/bukkit/entity/Entity;
-	public final fun getLocation ()Lorg/bukkit/Location;
-	public final fun isDead ()Z
-	public final fun isValid ()Z
-	public static final fun item (Lorg/bukkit/Location;Lorg/bukkit/inventory/ItemStack;)Lru/privatenull/pnlibrary/entity/VisualEntity;
-	public final fun remove ()V
-	public final fun setBlock (Lorg/bukkit/Material;)V
-	public final fun setItem (Lorg/bukkit/inventory/ItemStack;)V
-	public final fun setRotation (FF)V
-	public final fun setScale (F)V
-	public final fun setText (Ljava/lang/String;)V
-	public final fun teleport (Lorg/bukkit/Location;)V
-	public static final fun text (Lorg/bukkit/Location;Ljava/lang/String;)Lru/privatenull/pnlibrary/entity/VisualEntity;
-}
-
-public final class ru/privatenull/pnlibrary/entity/VisualEntity$Companion {
-	public final fun block (Lorg/bukkit/Location;Lorg/bukkit/Material;)Lru/privatenull/pnlibrary/entity/VisualEntity;
-	public final fun item (Lorg/bukkit/Location;Lorg/bukkit/inventory/ItemStack;)Lru/privatenull/pnlibrary/entity/VisualEntity;
-	public final fun text (Lorg/bukkit/Location;Ljava/lang/String;)Lru/privatenull/pnlibrary/entity/VisualEntity;
-}
-
-public final class ru/privatenull/pnlibrary/item/HeadUtil {
-	public static final field INSTANCE Lru/privatenull/pnlibrary/item/HeadUtil;
-	public static final fun create (Ljava/lang/String;Ljava/lang/String;)Lorg/bukkit/inventory/ItemStack;
-	public static final fun normalizeTexture (Ljava/lang/String;)Ljava/lang/String;
-}
-
-public final class ru/privatenull/pnlibrary/item/ItemFactory {
-	public static final field INSTANCE Lru/privatenull/pnlibrary/item/ItemFactory;
-	public static final fun fromMap (Ljava/util/Map;)Lorg/bukkit/inventory/ItemStack;
-	public static final fun fromSection (Lorg/bukkit/configuration/ConfigurationSection;)Lorg/bukkit/inventory/ItemStack;
-	public static final fun isRealItem (Lorg/bukkit/inventory/ItemStack;)Z
-	public static final fun toMap (Lorg/bukkit/inventory/ItemStack;)Ljava/util/Map;
-	public static final fun writeExactItem (Lorg/bukkit/configuration/ConfigurationSection;Ljava/lang/String;Lorg/bukkit/inventory/ItemStack;)V
-	public static final fun writeItem (Lorg/bukkit/configuration/ConfigurationSection;Ljava/lang/String;Lorg/bukkit/inventory/ItemStack;)V
-}
-
-public final class ru/privatenull/pnlibrary/item/ItemStackCodec {
-	public static final field INSTANCE Lru/privatenull/pnlibrary/item/ItemStackCodec;
-	public static final fun decode (Ljava/lang/String;)Lorg/bukkit/inventory/ItemStack;
-	public static final fun encode (Lorg/bukkit/inventory/ItemStack;)Ljava/lang/String;
 }
 
