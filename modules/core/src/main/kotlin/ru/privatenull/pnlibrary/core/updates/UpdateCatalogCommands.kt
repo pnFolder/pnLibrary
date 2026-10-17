@@ -6,19 +6,28 @@ import ru.privatenull.pnlibrary.api.commands.ArgumentType
 import ru.privatenull.pnlibrary.api.commands.CommandContext
 import ru.privatenull.pnlibrary.api.commands.CommandNodeBuilder
 import ru.privatenull.pnlibrary.api.runtime.PnLibrary
+import ru.privatenull.pnlibrary.api.updates.UpdateActor
+import ru.privatenull.pnlibrary.api.updates.UpdateChannel
 import ru.privatenull.pnlibrary.api.updates.UpdateHistoryEntry
+import ru.privatenull.pnlibrary.api.updates.UpdateSnapshot
+import java.util.Locale
 import java.util.concurrent.CompletableFuture
+import java.util.concurrent.CompletionStage
 
 /**
- * The read-only catalog commands `list`, `available`, `info`, `history` and `backups`, shared by the Bukkit
- * `/pn updates` tree and the console-only `/pnupdate` command.
+ * The catalog commands `list`, `available`, `info`, `settings`, `set`, `history` and `backups`, shared by the
+ * Bukkit `/pn updates` tree and the console-only `/pnupdate` command.
  *
  * Platforms own what differs: the permissions, who may use the command ([guard]) and which thread results are
- * delivered on ([deliver]). Mutating commands (update, rollback, restart) stay with the platform because their
- * confirmation flows differ.
+ * delivered on ([deliver]). The commands that prepare, confirm or restore updates stay with the platform because
+ * their confirmation flows differ.
  *
- * @param viewPermission permission required for list, available, info and history, or null for none
+ * Output adapts to the sender: a sender that cannot click gets text without buttons and a list of commands,
+ * and the console gets ASCII only.
+ *
+ * @param viewPermission permission required for list, available, info, settings and history, or null for none
  * @param backupsPermission permission required for backups, which expose rollback identities
+ * @param managePermission permission required for `set`, which changes a component's channel or automatic download
  * @param guard returns whether the command may run for this sender; it reports the reason itself
  * @param deliver runs result delivery on the right thread; asynchronous results are never sent directly
  */
@@ -27,6 +36,7 @@ class UpdateCatalogCommands(
     private val routes: UpdateCatalogRoutes,
     private val viewPermission: String? = null,
     private val backupsPermission: String? = viewPermission,
+    private val managePermission: String? = viewPermission,
     private val guard: (CommandContext) -> Boolean = { true },
     private val deliver: (Runnable) -> Unit = Runnable::run,
 ) {
@@ -53,6 +63,37 @@ class UpdateCatalogCommands(
             argument("plugin", ArgumentType.string()) {
                 suggests { productNames() }
                 executes(::showInfo)
+            }
+        }
+        addLiteral("settings") {
+            viewPermission?.let(::permission)
+            argument("plugin", ArgumentType.string()) {
+                suggests { productNames() }
+                executes { showSettings(it, it.get<String>("plugin")) }
+            }
+        }
+        addLiteral("set") {
+            managePermission?.let(::permission)
+            argument("plugin", ArgumentType.string()) {
+                suggests { productNames() }
+                literal("channel") {
+                    argument("value", ArgumentType.string()) {
+                        suggests { UpdateCatalogView.CHANNELS.map { it.name.lowercase(Locale.ROOT) } }
+                        executes(::setChannel)
+                    }
+                }
+                literal("auto") {
+                    argument("value", ArgumentType.string()) {
+                        suggests { SWITCH_SUGGESTIONS }
+                        executes(::setAutomatic)
+                    }
+                }
+                literal("hold") {
+                    argument("value", ArgumentType.string()) {
+                        suggests { SWITCH_SUGGESTIONS }
+                        executes(::setHeld)
+                    }
+                }
             }
         }
         addLiteral("history") {
@@ -84,22 +125,85 @@ class UpdateCatalogCommands(
 
     private fun productNames(): List<String> = library.updates.all().map { it.snapshot.product }
 
+    /** Routes for this sender: no buttons when it cannot click, ASCII for the console, read-only without permission. */
+    private fun routesFor(context: CommandContext): UpdateCatalogRoutes = routes.copy(
+        interactive = routes.interactive && context.sender.supportsInteraction,
+        ascii = context.sender.isConsole,
+        editable = managePermission == null || context.sender.hasPermission(managePermission),
+    )
+
     private fun showCatalog(context: CommandContext, updatesOnly: Boolean) {
         if (!ready(context)) return
         val page = requestedPage(context) ?: return
-        UpdateCatalogView.catalog(library.updates.all().map { it.snapshot }, page, updatesOnly, routes)
+        UpdateCatalogView.catalog(library.updates.all().map { it.snapshot }, page, updatesOnly, routesFor(context))
             .forEach(context.sender::send)
     }
 
     private fun showInfo(context: CommandContext) {
         if (!ready(context)) return
-        val requested = context.get<String>("plugin")
+        val snapshot = snapshotOf(context, context.get<String>("plugin")) ?: return
+        UpdateCatalogView.info(snapshot, routesFor(context)).forEach(context.sender::send)
+    }
+
+    private fun showSettings(context: CommandContext, requested: String) {
+        if (!ready(context)) return
+        val snapshot = snapshotOf(context, requested) ?: return
+        UpdateCatalogView.settings(snapshot, routesFor(context)).forEach(context.sender::send)
+    }
+
+    private fun snapshotOf(context: CommandContext, requested: String): UpdateSnapshot? {
         val registration = library.updates.get(requested)
-        if (registration == null) {
-            context.sender.send(error("Плагин $requested не зарегистрирован в pnLibrary."))
+        if (registration == null) context.sender.send(error("Плагин $requested не зарегистрирован в pnLibrary."))
+        return registration?.snapshot
+    }
+
+    private fun setChannel(context: CommandContext) {
+        val value = context.get<String>("value")
+        val channel = UpdateCatalogView.CHANNELS.firstOrNull { it.name.equals(value, ignoreCase = true) }
+        if (channel == null) {
+            context.sender.send(error("Неизвестный канал $value. Доступны: ${UpdateCatalogView.CHANNELS.joinToString { it.name.lowercase(Locale.ROOT) }}."))
             return
         }
-        UpdateCatalogView.info(registration.snapshot, routes).forEach(context.sender::send)
+        change(context) { product, actor -> library.updates.setChannel(product, channel, actor) }
+    }
+
+    private fun setAutomatic(context: CommandContext) {
+        val enabled = switch(context) ?: return
+        change(context) { product, actor -> library.updates.setAutomaticDownload(product, enabled, actor) }
+    }
+
+    private fun setHeld(context: CommandContext) {
+        val held = switch(context) ?: return
+        change(context) { product, actor -> library.updates.setHeld(product, held, actor) }
+    }
+
+    private fun switch(context: CommandContext): Boolean? {
+        val value = context.get<String>("value")
+        val parsed = when (value.lowercase(Locale.ROOT)) {
+            "on", "true", "yes", "1", "вкл" -> true
+            "off", "false", "no", "0", "выкл" -> false
+            else -> null
+        }
+        if (parsed == null) context.sender.send(error("Укажите on или off, получено: $value."))
+        return parsed
+    }
+
+    /** Applies a setting, then shows the refreshed settings card, or the reason it was refused. */
+    private fun change(context: CommandContext, apply: (String, UpdateActor) -> CompletionStage<UpdateSnapshot>) {
+        if (!ready(context)) return
+        val product = context.get<String>("plugin")
+        val sender = context.sender
+        val actor = UpdateActor(if (sender.isConsole) UpdateActor.Kind.CONSOLE else UpdateActor.Kind.PLAYER, sender.id, sender.name)
+        apply(product, actor).whenComplete { snapshot, failure ->
+            deliver(Runnable {
+                if (failure != null) {
+                    val cause = generateSequence(failure) { it.cause }.last()
+                    sender.send(error(cause.message ?: "Не удалось изменить настройку."))
+                } else {
+                    UpdateCatalogView.settings(snapshot, routesFor(context)).forEach(sender::send)
+                }
+            })
+        }
     }
 
     private fun showHistory(context: CommandContext, product: String?) {
@@ -120,7 +224,7 @@ class UpdateCatalogCommands(
 
     private fun render(context: CommandContext, entries: List<UpdateHistoryEntry>, total: Int, page: Int, product: String?) {
         val pages = maxOf(1, (total + UpdateCatalogView.PAGE_SIZE - 1) / UpdateCatalogView.PAGE_SIZE)
-        UpdateCatalogView.history(entries, page, routes, totalPages = pages, product = product)
+        UpdateCatalogView.history(entries, page, routesFor(context), totalPages = pages, product = product)
             .forEach(context.sender::send)
     }
 
@@ -130,7 +234,7 @@ class UpdateCatalogCommands(
         library.updates.backups().whenComplete { backups, failure ->
             deliver(Runnable {
                 if (failure != null) context.sender.send(error("Не удалось прочитать резервные наборы."))
-                else UpdateCatalogView.backups(backups, page, routes).forEach(context.sender::send)
+                else UpdateCatalogView.backups(backups, page, routesFor(context)).forEach(context.sender::send)
             })
         }
     }
@@ -156,4 +260,8 @@ class UpdateCatalogCommands(
     }
 
     private fun error(text: String): Component = Component.text(text, NamedTextColor.RED)
+
+    private companion object {
+        val SWITCH_SUGGESTIONS = listOf("on", "off")
+    }
 }

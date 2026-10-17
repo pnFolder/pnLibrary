@@ -167,6 +167,74 @@ class UpdateCatalogViewTest {
     }
 
     @Test
+    fun `catalog title names the library channel and lines mark channels other than stable`() {
+        val lines = UpdateCatalogView.catalog(
+            listOf(
+                snapshot("pnlibrary", UpdateState.UP_TO_DATE, channel = UpdateChannel.BETA),
+                snapshot("shop", UpdateState.UP_TO_DATE),
+            ),
+            1, false, bukkit,
+        )
+        assertTrue(plain(lines.first()).contains("pnLibrary: beta"))
+        assertTrue(plain(lines.first { plain(it).contains("pnlibrary 1.0.0") }).contains("beta"))
+        assertFalse(plain(lines.first { plain(it).contains("shop 1.0.0") }).contains("stable"))
+    }
+
+    @Test
+    fun `settings card offers every channel, automatic download and holding as buttons except the current choice`() {
+        val lines = UpdateCatalogView.settings(snapshot("pnlibrary", UpdateState.UP_TO_DATE, channel = UpdateChannel.BETA), bukkit)
+        val text = lines.joinToString("\n", transform = ::plain)
+        assertTrue(text.contains("pnlibrary настройки"))
+        assertTrue(text.contains("Канал: stable rc beta alpha dev"))
+        assertTrue(text.contains("Автозагрузка: вкл выкл"))
+        assertTrue(text.contains("Обновления: предлагаются удержаны"))
+
+        val actions = lines.flatMap(::clicks)
+        assertTrue(actions.containsAll(listOf(
+            "/pn updates set pnlibrary channel stable", "/pn updates set pnlibrary channel alpha",
+            "/pn updates set pnlibrary auto on", "/pn updates set pnlibrary hold on",
+        )))
+        assertFalse(actions.contains("/pn updates set pnlibrary channel beta"))
+        assertFalse(actions.contains("/pn updates set pnlibrary auto off"))
+        assertFalse(actions.contains("/pn updates set pnlibrary hold off"))
+    }
+
+    @Test
+    fun `a reader without edit rights sees the choices but cannot click them`() {
+        val lines = UpdateCatalogView.settings(snapshot("pnlibrary", UpdateState.UP_TO_DATE), bukkit.copy(editable = false))
+        assertFalse(lines.flatMap(::clicks).any { it.contains(" set ") })
+        assertTrue(lines.joinToString("\n", transform = ::plain).contains("Канал: stable rc beta alpha dev"))
+    }
+
+    @Test
+    fun `a reader that cannot click gets text and a list of commands instead of buttons`() {
+        val text = bukkit.copy(interactive = false)
+        val pages = listOf(
+            UpdateCatalogView.catalog(listOf(snapshot("pnlibrary", UpdateState.UPDATE_AVAILABLE, "https://github.com/a/b")), 1, false, text),
+            UpdateCatalogView.info(snapshot("pnlibrary", UpdateState.UPDATE_AVAILABLE), text),
+            UpdateCatalogView.settings(snapshot("pnlibrary", UpdateState.UP_TO_DATE), text),
+            UpdateCatalogView.history(listOf(event("2026-10-17T09:05:00Z", UpdateState.UPDATE_STAGED, "STAGE", "Admin", "pnlibrary", "1.0.0", "1.1.0")),
+                1, text, totalPages = 2, now = now, zone = ZoneOffset.UTC),
+        )
+        pages.forEach { page -> assertTrue(page.flatMap(::clicks).isEmpty(), page.joinToString("\n", transform = ::plain)) }
+        assertTrue(pages[0].joinToString("\n", transform = ::plain).contains("Команды: /pn check"))
+        assertTrue(pages[0].joinToString("\n", transform = ::plain).contains("pnlibrary 1.0.0 → 1.1.0"))
+        assertTrue(pages[2].joinToString("\n", transform = ::plain).contains("/pn updates set pnlibrary channel <stable|rc|beta|alpha|dev>"))
+        assertTrue(pages[3].joinToString("\n", transform = ::plain).contains("следующая: /pn updates history 2"))
+    }
+
+    @Test
+    fun `the console variant avoids characters outside ASCII`() {
+        val ascii = proxy.copy(interactive = false, ascii = true)
+        val all = UpdateCatalogView.catalog(listOf(snapshot("pnlibrary", UpdateState.UPDATE_AVAILABLE)), 1, false, ascii) +
+            UpdateCatalogView.history(listOf(event("2026-10-17T09:05:00Z", UpdateState.UPDATE_STAGED, "STAGE", "Admin", "pnlibrary", "1.0.0", "1.1.0")),
+                1, ascii, totalPages = 1, now = now, zone = ZoneOffset.UTC)
+        val text = all.joinToString("\n", transform = ::plain)
+        assertTrue(text.contains("pnlibrary 1.0.0 -> 1.1.0"))
+        assertFalse(text.contains('→') || text.contains('↑') || text.contains('·'))
+    }
+
+    @Test
     fun `backups show age and open separate confirmation flows rather than executing a restore`() {
         val id = UUID.randomUUID()
         val backup = UpdateBackup(id, now.minusSeconds(4L * 86_400), UUID.randomUUID(),
@@ -202,8 +270,8 @@ class UpdateCatalogViewTest {
             UpdateActor(UpdateActor.Kind.CONSOLE, actor.lowercase(), actor), operation,
             listOf(ProductChange(ProductId.of(product), SemanticVersion.parse(from), SemanticVersion.parse(to))), null)
 
-    private fun snapshot(product: String, state: UpdateState, changelog: String? = null) =
-        UpdateSnapshot(product, "1.0.0", "1.1.0", UpdateChannel.STABLE, state, 17, 8, false, null, null, changelog)
+    private fun snapshot(product: String, state: UpdateState, changelog: String? = null, channel: UpdateChannel = UpdateChannel.STABLE) =
+        UpdateSnapshot(product, "1.0.0", "1.1.0", channel, state, 17, 8, false, null, null, changelog)
 
     private fun plain(component: Component) = PlainTextComponentSerializer.plainText().serialize(component)
     private fun clicks(component: Component): List<String> = listOfNotNull(component.clickEvent()?.value()) + component.children().flatMap(::clicks)

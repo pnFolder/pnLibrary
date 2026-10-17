@@ -37,6 +37,29 @@ class ProxyUpdateCommandTest {
     }
 
     @Test
+    fun `settings are changed by the console with an attributed actor`() {
+        val updates = Updates()
+        execute(updates, Sender(), "set", "pnlibrary", "channel", "BETA")
+        assertEquals("pnlibrary" to UpdateChannel.BETA, updates.channelSet)
+        assertEquals(UpdateActor.Kind.CONSOLE, updates.actor?.kind)
+        execute(updates, Sender(), "set", "pnlibrary", "auto", "on")
+        assertEquals("pnlibrary" to true, updates.automaticSet)
+        execute(updates, Sender(), "set", "pnlibrary", "hold", "off")
+        assertEquals("pnlibrary" to false, updates.heldSet)
+    }
+
+    @Test
+    fun `invalid values and non console callers never change settings`() {
+        val updates = Updates()
+        execute(updates, Sender(), "set", "pnlibrary", "channel", "nightly")
+        execute(updates, Sender(), "set", "pnlibrary", "auto", "maybe")
+        execute(updates, Sender(isConsole = false), "set", "pnlibrary", "channel", "beta")
+        assertNull(updates.channelSet)
+        assertNull(updates.automaticSet)
+        assertNull(updates.heldSet)
+    }
+
+    @Test
     fun `invalid plan ID never falls back to staging the current plan`() {
         val updates = Updates()
         execute(updates, Sender(), "stage", "invalid")
@@ -90,6 +113,16 @@ class ProxyUpdateCommandTest {
         var restoreConfigurations: Boolean? = null
         var actor: UpdateActor? = null
         val pages = mutableListOf<Int>()
+        var channelSet: Pair<String, UpdateChannel>? = null
+        var automaticSet: Pair<String, Boolean>? = null
+        var heldSet: Pair<String, Boolean>? = null
+        private fun snapshot() = UpdateSnapshot("pnlibrary", "1.0.0", null, UpdateChannel.BETA, UpdateState.UP_TO_DATE, 17, 8, false, null, null)
+        override fun setChannel(product: String, channel: UpdateChannel, actor: UpdateActor) =
+            CompletableFuture.completedFuture(snapshot()).also { channelSet = product to channel; this.actor = actor }
+        override fun setAutomaticDownload(product: String, enabled: Boolean, actor: UpdateActor) =
+            CompletableFuture.completedFuture(snapshot()).also { automaticSet = product to enabled }
+        override fun setHeld(product: String, held: Boolean, actor: UpdateActor) =
+            CompletableFuture.completedFuture(snapshot()).also { heldSet = product to held }
         override fun register(owner: Any, product: ProductDescriptor, request: PluginUpdateRequest, dependencies: List<PluginDependency>): UpdateRegistration = error("not used")
         override fun all(): List<UpdateRegistration> = emptyList()
         override fun get(product: String): UpdateRegistration? = null

@@ -2,6 +2,7 @@ package ru.privatenull.pnlibrary.core.updates
 
 import ru.privatenull.pnlibrary.api.logging.LogLevel
 import ru.privatenull.pnlibrary.api.updates.UpdatePlanSnapshot
+import ru.privatenull.pnlibrary.api.updates.UpdateActor
 import ru.privatenull.pnlibrary.api.updates.UpdateHistoryEntry
 import ru.privatenull.pnlibrary.api.updates.UpdateState
 import ru.privatenull.pnlibrary.api.updates.ProductChange
@@ -30,6 +31,7 @@ internal class UpdateOrchestratorRuntime(
     stageGraph: (UpdatePlanSnapshot) -> Unit,
     announce: (UpdatePlanSnapshot) -> Unit,
     automaticAllowed: (UpdatePlanSnapshot) -> Boolean,
+    automaticOverridesActive: () -> Boolean = { false },
 ) : AutoCloseable {
     private val closed = AtomicBoolean(false)
     private val pendingReads = ConcurrentHashMap.newKeySet<CompletableFuture<*>>()
@@ -59,6 +61,7 @@ internal class UpdateOrchestratorRuntime(
         automaticAllowed = automaticAllowed,
         remoteResolver = { resolveGraph(RefreshMode.FORCE_REMOTE) },
         beforeCheck = { installer.reconcileRecoveredFailures(registrations(), ::recordHealth) },
+        automaticOverridesActive = automaticOverridesActive,
         observeState = { snapshot, actor, operation ->
             runCatching { journal.record(snapshot, actor, operation) }.onFailure { error ->
                 // An observation failure must not turn an already staged transaction into a failed operation.
@@ -100,6 +103,20 @@ internal class UpdateOrchestratorRuntime(
     }
 
     /** Records components that appeared, disappeared or changed since the previous start. */
+    /** Records a change an administrator made to one component's settings and remembers it for the next start. */
+    fun recordSettingsChange(registration: RegisteredUpdate, message: String, actor: UpdateActor) {
+        runCatching {
+            journal.recordComponent(
+                ComponentLedger.OPERATION_SETTINGS_CHANGED, registration.product, registration.version, registration.version,
+                message, actor,
+            )
+            val snapshot = registration.snapshot
+            componentLedger.updateSettings(registration.product, snapshot.channel.name.lowercase(), snapshot.automaticDownload)
+        }.onFailure { error ->
+            if (!closed.get()) logging.log(this, LogLevel.WARNING, "Could not record a settings change", error)
+        }
+    }
+
     private fun observeComponents(installed: List<RegisteredUpdate>) {
         runCatching {
             componentLedger.observe(

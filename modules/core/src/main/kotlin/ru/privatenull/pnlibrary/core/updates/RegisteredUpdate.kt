@@ -31,6 +31,7 @@ internal class RegisteredUpdate(
     private val checkForUpdates: () -> CompletionStage<UpdatePlanSnapshot>,
     private val stagePlan: (UpdatePlanSnapshot) -> CompletionStage<UpdatePlanSnapshot>,
     private val onClose: (RegisteredUpdate) -> Unit,
+    private val effectiveAutomatic: () -> Boolean = { request.automaticDownload },
 ) : UpdateRegistration {
     val product: String = descriptor.id.value
     val version: String = descriptor.version.toString()
@@ -97,7 +98,7 @@ internal class RegisteredUpdate(
                 state = if (latest != null && latest.version > current) UpdateState.UPDATE_AVAILABLE else UpdateState.UP_TO_DATE,
                 currentJava = JavaRuntime.feature,
                 requiredJava = artifact.minimumJava,
-                automaticDownload = request.automaticDownload,
+                automaticDownload = effectiveAutomatic(),
                 releaseUrl = "https://github.com/$repository/releases",
                 message = null,
                 latestChangelogUrl = latest?.changelogUrl,
@@ -107,6 +108,17 @@ internal class RegisteredUpdate(
                     .map { release -> ReleaseSummary(release.version.toString(), release.channel, release.publishedAt, release.changelogUrl) },
             ),
         )
+    }
+
+    /** Re-reads the channel and automatic-download choice after an administrator changed them. */
+    fun refreshPolicy() {
+        state.updateAndGet { old ->
+            UpdateSnapshot(
+                old.product, old.currentVersion, old.latestVersion, selectedChannel(), old.state, old.currentJava,
+                old.requiredJava, effectiveAutomatic(), old.releaseUrl, old.message, old.latestChangelogUrl,
+                old.supportedApi, old.availableReleases,
+            )
+        }
     }
 
     override fun close() {
@@ -125,7 +137,7 @@ internal class RegisteredUpdate(
         state = UpdateState.CHECKING,
         currentJava = JavaRuntime.feature,
         requiredJava = artifact.minimumJava,
-        automaticDownload = request.automaticDownload,
+        automaticDownload = effectiveAutomatic(),
         releaseUrl = null,
         message = null,
         supportedApi = request.supportedApi,

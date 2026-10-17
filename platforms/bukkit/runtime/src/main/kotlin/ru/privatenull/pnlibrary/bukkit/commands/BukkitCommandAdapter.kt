@@ -30,12 +30,14 @@ import java.lang.reflect.Constructor
 internal class BukkitCommandAdapter internal constructor(
     private val nativeRegistrar: NativeCommandRegistrar<NativeCommandSender>,
     private val audience: (NativeCommandSender) -> AudienceSender,
+    private val interactive: () -> Boolean = { true },
 ) : GenericPlatformCommandAdapter<NativeCommandSender>() {
     override val registrar: NativeCommandRegistrar<NativeCommandSender> = nativeRegistrar
     /** Creates the native registrar and audience bridge. */
     constructor(audiences: BukkitAudienceService) : this(
         nativeRegistrar = DefaultBukkitNativeCommandRegistrar(),
         { sender -> requireNotNull(BukkitAudienceAdapter(audiences).sender(sender)) },
+        { audiences.nativeTransportAvailable },
     )
 
     /** Converts native invocation arguments to the portable command context. */
@@ -44,7 +46,7 @@ internal class BukkitCommandAdapter internal constructor(
         alias: String,
         arguments: Array<String>,
     ): CommandContext = CommandContext(
-        sender = BukkitCommandSender(source, audience(source)),
+        sender = BukkitCommandSender(source, audience(source), interactive),
         arguments = arguments.toList(),
         invokedAlias = alias,
         currentInput = arguments.lastOrNull().orEmpty(),
@@ -56,7 +58,12 @@ internal class BukkitCommandAdapter internal constructor(
 internal class BukkitCommandSender(
     internal val native: NativeCommandSender,
     private val audience: AudienceSender,
+    private val transportAvailable: () -> Boolean = { true },
 ) : CommandSender, AudienceSender by audience {
+
+    /** Buttons work for players only while the Adventure transport is in use; the fallback sends plain text. */
+    override val supportsInteraction: Boolean
+        get() = !isConsole && transportAvailable()
 
     override fun send(message: Component) = audience.sendMessage(message)
 

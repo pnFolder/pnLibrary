@@ -73,6 +73,21 @@ interface UpdateService {
             it.completeExceptionally(UnsupportedOperationException("Update service does not support durable history"))
         }
 
+    /**
+     * Switches the release [channel] of a managed [product] immediately. The choice is remembered across restarts
+     * and takes precedence over `updates.yml`. Does not grant permissions.
+     */
+    fun setChannel(product: String, channel: UpdateChannel, actor: UpdateActor): CompletionStage<UpdateSnapshot> =
+        unsupportedSetting("channel changes")
+
+    /** Turns automatic download of verified updates for [product] on or off, with the same persistence as [setChannel]. */
+    fun setAutomaticDownload(product: String, enabled: Boolean, actor: UpdateActor): CompletionStage<UpdateSnapshot> =
+        unsupportedSetting("automatic download changes")
+
+    /** Holds or releases updates of [product]; a hold ends by itself after seven days. */
+    fun setHeld(product: String, held: Boolean, actor: UpdateActor): CompletionStage<UpdateSnapshot> =
+        unsupportedSetting("holding updates")
+
     /** Restores the previous JAR set from the newest rollback-capable transaction. */
     fun rollback(): CompletionStage<UpdatePlanSnapshot> = unsupported("manual update rollback")
 
@@ -91,6 +106,11 @@ interface UpdateService {
     /** Explicitly opts into restoring the selected configuration snapshot at the next offline application. */
     fun rollback(transactionId: UUID, restoreConfigurations: Boolean, actor: UpdateActor): CompletionStage<UpdatePlanSnapshot> =
         if (restoreConfigurations) unsupported("configuration rollback") else rollback(transactionId, actor)
+
+    private fun unsupportedSetting(operation: String): CompletionStage<UpdateSnapshot> =
+        CompletableFuture<UpdateSnapshot>().also {
+            it.completeExceptionally(UnsupportedOperationException("Update service does not support $operation"))
+        }
 
     private fun unsupported(operation: String): CompletionStage<UpdatePlanSnapshot> =
         CompletableFuture<UpdatePlanSnapshot>().also {

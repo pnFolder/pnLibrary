@@ -19,6 +19,9 @@ permissions:
   pnlibrary.updates.view:
     description: Просматривать совместимый план обновлений
     default: op
+  pnlibrary.updates.settings:
+    description: Менять канал, автозагрузку и удержание обновлений плагина
+    default: op
   pnlibrary.updates.download:
     description: Загружать и проверять совместимый план обновлений
     default: op

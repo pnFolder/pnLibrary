@@ -14,6 +14,15 @@ interface CommandSender : AudienceSender {
     /** Whether this sender represents the server console. */
     override val isConsole: Boolean
 
+    /**
+     * Whether clickable and hoverable chat components reach this sender intact.
+     *
+     * False for the console, and for players on a server whose chat transport fell back to plain text. Senders
+     * for which it is false should be shown text that does not rely on buttons.
+     */
+    val supportsInteraction: Boolean
+        get() = !isConsole
+
     /** Returns whether this sender has [permission]. */
     override fun hasPermission(permission: String): Boolean
 

@@ -40,10 +40,13 @@ internal class UpdateServiceImpl(
     // The check can cover several registered products, so long per-request
     // timeouts otherwise add up and look like a frozen command.
     private val resources = UpdateRuntimeResources(dataFolder)
-    private val automaticPolicy = UpdateAutomaticPolicy(configuration) { registrations.snapshot() }
+    private val overrides = UpdatePolicyOverrides(dataFolder.resolve("updates/settings.json")) {
+        logging.log(this, LogLevel.WARNING, it)
+    }
+    private val automaticPolicy = UpdateAutomaticPolicy(configuration, overrides) { registrations.snapshot() }
     private val installer = UpdateInstaller(identity, dataFolder, configuration, resources.http)
     private val freezes = FreezeStore(dataFolder.resolve("updates/freezes.json"))
-    private val graphResolver = UpdateGraphResolver(ownership, inventory, identity, configuration, resources.catalogGateway, freezes)
+    private val graphResolver = UpdateGraphResolver(ownership, inventory, identity, configuration, resources.catalogGateway, freezes, overrides)
     private val runtime = UpdateOrchestratorRuntime(
         configuration = configuration,
         dataFolder = dataFolder,
@@ -57,6 +60,7 @@ internal class UpdateServiceImpl(
         automaticAllowed = { snapshot ->
             automaticPolicy.allows(snapshot) && installer.automaticUpdatesHealthy(registrations.snapshot().map { it.descriptor.id }.toSet())
         },
+        automaticOverridesActive = { configuration.enabled && overrides.anyAutomaticEnabled() },
     )
     private val orchestrator get() = runtime.orchestrator
 
@@ -95,6 +99,9 @@ internal class UpdateServiceImpl(
             checkForUpdates = orchestrator::checkNow,
             stagePlan = { snapshot -> orchestrator.stage(snapshot.id) },
             onClose = ::removeRegistration,
+            effectiveAutomatic = {
+                overrides.automatic(product.id.value) ?: request.automaticDownload
+            },
         )
         check(!closed.get()) { "update service is closed" }
         registrations.add(registration)
@@ -112,6 +119,64 @@ internal class UpdateServiceImpl(
     override fun history(): List<UpdatePlanSnapshot> = orchestrator.history()
     override fun historyPage(page: Int, product: String?): CompletionStage<List<UpdateHistoryEntry>> = runtime.historyPage(page, product)
     override fun historyCount(product: String?): CompletionStage<Int> = runtime.historyCount(product)
+    override fun setChannel(product: String, channel: UpdateChannel, actor: UpdateActor): CompletionStage<UpdateSnapshot> =
+        changeSetting(product, actor, recheck = true) { registration ->
+            val before = registration.snapshot.channel
+            if (before == channel) null
+            else {
+                overrides.setChannel(registration.product, channel)
+                "канал: ${before.name.lowercase()} → ${channel.name.lowercase()}"
+            }
+        }
+
+    override fun setAutomaticDownload(product: String, enabled: Boolean, actor: UpdateActor): CompletionStage<UpdateSnapshot> =
+        changeSetting(product, actor, recheck = false) { registration ->
+            val before = registration.snapshot.automaticDownload
+            if (before == enabled) null
+            else {
+                overrides.setAutomatic(registration.product, enabled)
+                "автозагрузка: ${if (before) "вкл" else "выкл"} → ${if (enabled) "вкл" else "выкл"}"
+            }
+        }
+
+    override fun setHeld(product: String, held: Boolean, actor: UpdateActor): CompletionStage<UpdateSnapshot> =
+        changeSetting(product, actor, recheck = true) { registration ->
+            val id = registration.descriptor.id
+            when {
+                held && !freezes.isFrozen(id) -> {
+                    freezes.freeze(id, java.time.Duration.ofDays(MAXIMUM_HOLD_DAYS))
+                    "обновления удержаны на $MAXIMUM_HOLD_DAYS дней"
+                }
+                !held && freezes.clear(id) -> "удержание обновлений снято"
+                else -> null
+            }
+        }
+
+    /** Applies one administrator setting, records it with its author and refreshes what readers see. */
+    private fun changeSetting(
+        product: String,
+        actor: UpdateActor,
+        recheck: Boolean,
+        change: (RegisteredUpdate) -> String?,
+    ): CompletionStage<UpdateSnapshot> {
+        val result = java.util.concurrent.CompletableFuture<UpdateSnapshot>()
+        try {
+            check(!closed.get()) { "update service is closed" }
+            val registration = registrations.find(product)
+                ?: throw IllegalArgumentException("Плагин $product не зарегистрирован в pnLibrary")
+            val description = change(registration)
+            registration.refreshPolicy()
+            if (description != null) {
+                runtime.recordSettingsChange(registration, description, actor)
+                if (recheck) runCatching { orchestrator.checkNow(actor = actor) }
+            }
+            result.complete(registration.snapshot)
+        } catch (error: Exception) {
+            result.completeExceptionally(error)
+        }
+        return result
+    }
+
     override fun backups(): CompletionStage<List<UpdateBackup>> = runtime.readAsync {
         java.util.Collections.unmodifiableList(installer.backups())
     }
@@ -128,6 +193,10 @@ internal class UpdateServiceImpl(
         registrations.close()
         runtime.close()
         resources.close()
+    }
+
+    private companion object {
+        const val MAXIMUM_HOLD_DAYS = 7L
     }
 
     private fun resolveGraph(refreshMode: RefreshMode = RefreshMode.CACHED): ResolutionResult =

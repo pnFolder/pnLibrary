@@ -40,6 +40,7 @@ internal class BukkitControlCommand(
         routes = UpdateCatalogRoutes("/pn updates", update = { product -> "/pn update $product" }, check = "/pn check"),
         viewPermission = "pnlibrary.updates.view",
         backupsPermission = "pnlibrary.updates.rollback",
+        managePermission = "pnlibrary.updates.settings",
         deliver = { task -> if (!library.isClosed) plugin.server.scheduler.runTask(plugin, task) },
     )
 

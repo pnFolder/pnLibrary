@@ -12,7 +12,7 @@ internal class UpdateRegistrationStore {
     fun remove(entry: RegisteredUpdate) { entries.remove(entry) }
     fun snapshot(): List<RegisteredUpdate> = entries.toList()
     fun publicSnapshot(): List<UpdateRegistration> = Collections.unmodifiableList(ArrayList(entries))
-    fun find(product: String): UpdateRegistration? = entries.firstOrNull {
+    fun find(product: String): RegisteredUpdate? = entries.firstOrNull {
         it.product.equals(product, true) || it.request.repositoryName.equals(product, true)
     }
     fun close() {

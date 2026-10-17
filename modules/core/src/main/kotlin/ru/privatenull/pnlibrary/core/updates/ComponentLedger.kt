@@ -54,6 +54,18 @@ internal class ComponentLedger(
         save(current)
     }
 
+    /**
+     * Stores the settings just changed by an administrator, so the next start does not report the same change
+     * again. Without a baseline there is nothing to update; the first observation will capture them.
+     */
+    @Synchronized
+    fun updateSettings(product: String, channel: String, automaticDownload: Boolean) {
+        val known = load()?.toMutableMap() ?: return
+        val before = known[product] ?: return
+        known[product] = before.copy(channel = channel, automaticDownload = automaticDownload)
+        save(known)
+    }
+
     private fun describeSettings(before: Component, now: Component): String? {
         val changes = buildList {
             if (before.channel != now.channel) add("канал: ${before.channel} → ${now.channel}")

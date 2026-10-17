@@ -78,11 +78,18 @@ internal class UpdateEventJournal(
      * changed version without the updater or had its channel or automatic download changed.
      */
     @Synchronized
-    fun recordComponent(operation: String, product: String, from: String?, to: String, message: String?): Event {
+    fun recordComponent(
+        operation: String,
+        product: String,
+        from: String?,
+        to: String,
+        message: String?,
+        actor: UpdateActor = UpdateActor.SYSTEM,
+    ): Event {
         require(operation in COMPONENT_OPERATIONS) { "invalid component operation" }
         return write(Event(
             UUID.randomUUID(), clock.instant(), UUID.randomUUID(), 0, UpdateState.UP_TO_DATE.name,
-            listOf(Change(product, from, to)), UpdateActor.SYSTEM, operation, message?.take(4096),
+            listOf(Change(product, from, to)), actor, operation, message?.take(4096),
         ))
     }
 

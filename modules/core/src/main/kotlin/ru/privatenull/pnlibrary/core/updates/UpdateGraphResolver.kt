@@ -25,6 +25,7 @@ internal class UpdateGraphResolver(
     private val configuration: UpdateConfiguration,
     private val catalogs: ReleaseCatalogGateway,
     private val freezes: FreezeStore,
+    private val overrides: UpdatePolicyOverrides? = null,
 ) {
     fun resolve(
         registrations: List<RegisteredUpdate>,
@@ -51,8 +52,9 @@ internal class UpdateGraphResolver(
         channelFor(registration.descriptor.id, registration.request.channel)
 
     fun channelFor(product: ProductId, fallback: UpdateChannel): UpdateChannel =
-        if (product.value == "pnlibrary") configuration.library.channel
-        else configuration.plugins[product.value]?.channel ?: fallback
+        overrides?.channel(product.value)
+            ?: if (product.value == "pnlibrary") configuration.library.channel
+            else configuration.plugins[product.value]?.channel ?: fallback
 
     private fun installedProducts(registrations: List<RegisteredUpdate>) = registrations.map { registration ->
         val providedApi = PnLibraryApi.VERSION.takeIf { registration.descriptor.id.value == "pnlibrary" }

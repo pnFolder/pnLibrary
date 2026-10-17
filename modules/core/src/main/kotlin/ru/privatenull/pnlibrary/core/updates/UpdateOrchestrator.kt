@@ -28,6 +28,7 @@ internal class UpdateOrchestrator(
     private val remoteResolver: (() -> ResolutionResult)? = null,
     private val observeState: (UpdatePlanSnapshot, UpdateActor, String) -> Unit = { _, _, _ -> },
     private val beforeCheck: () -> Unit = {},
+    private val automaticOverridesActive: () -> Boolean = { false },
 ) : AutoCloseable {
     private val lock = Any()
     private val closed = AtomicBoolean(false)
@@ -104,7 +105,7 @@ internal class UpdateOrchestrator(
         if (forceRemote) remoteResolver?.invoke() ?: resolver() else resolver()
 
     private fun automaticallyStageIfAllowed(snapshot: UpdatePlanSnapshot): UpdatePlanSnapshot {
-        val shouldStage = configuration.effectiveAutomaticDownloads &&
+        val shouldStage = (configuration.effectiveAutomaticDownloads || automaticOverridesActive()) &&
             snapshot.state == UpdateState.UPDATE_AVAILABLE && automaticAllowed(snapshot)
         if (!shouldStage) return snapshot
         try {
