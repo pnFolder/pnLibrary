@@ -33,11 +33,14 @@ dependencies {
     // The adapter is instantiated only after the factory checks for Java 21.
     compileOnly(files(rootProject.project(":modules:internal:faststats-velocity").tasks.named("jar")))
     compileOnly(libs.velocity.api)
+    // Provided by the proxy; used only to observe plugin warnings and errors.
+    compileOnly(libs.log4j.core)
 
     testImplementation(libs.junit.jupiter)
     testImplementation(libs.mockito.kotlin)
     testImplementation(libs.mockito.core)
     testImplementation(libs.velocity.api)
+    testImplementation(libs.log4j.core)
     testRuntimeOnly(libs.junit.launcher)
 }
 

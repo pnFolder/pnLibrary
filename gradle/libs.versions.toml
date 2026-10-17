@@ -29,6 +29,7 @@ mockito-kotlin            = { module = "org.mockito.kotlin:mockito-kotlin",     
 spigot-api-v18            = { module = "org.spigotmc:spigot-api",                                version.ref = "spigot18"               }
 bungeecord-api            = { module = "net.md-5:bungeecord-api",                                version.ref = "bungeecord"             }
 velocity-api              = { module = "com.velocitypowered:velocity-api",                       version.ref = "velocity"               }
+log4j-core                = { module = "org.apache.logging.log4j:log4j-core",                    version = "2.24.1"                     }
 adventure-api             = { module = "net.kyori:adventure-api",                                version.ref = "adventure"              }
 adventure-minimessage     = { module = "net.kyori:adventure-text-minimessage",                   version.ref = "adventure"              }
 adventure-legacy          = { module = "net.kyori:adventure-text-serializer-legacy",             version.ref = "adventure"              }

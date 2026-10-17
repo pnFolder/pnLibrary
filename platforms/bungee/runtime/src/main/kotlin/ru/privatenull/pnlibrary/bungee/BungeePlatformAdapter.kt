@@ -14,6 +14,7 @@ import ru.privatenull.pnlibrary.spi.platform.PlatformAdapter
 import ru.privatenull.pnlibrary.spi.platform.PlatformSnapshot
 import ru.privatenull.pnlibrary.spi.platform.PluginSnapshot
 import ru.privatenull.pnlibrary.spi.platform.UncaughtExceptionLogObserver
+import ru.privatenull.pnlibrary.spi.platform.JulLogObserver
 import ru.privatenull.pnlibrary.spi.platform.PlatformLifecycle
 import ru.privatenull.pnlibrary.spi.platform.StartupGate
 import ru.privatenull.pnlibrary.spi.platform.unsupportedOwner
@@ -31,6 +32,11 @@ internal class BungeePlatformAdapter(
     private val startup = StartupGate(lifecycle, ::executeGlobal)
 
     private val uncaughtExceptionObserver = UncaughtExceptionLogObserver(plugin)
+    private val logObserver = JulLogObserver({ plugin.proxy.logger }, plugin) { loggerName ->
+        val installed = plugin.proxy.pluginManager.plugins
+        JulLogObserver.matchName(loggerName, installed.map { it.description.name })
+            ?.let { name -> installed.first { it.description.name == name } }
+    }
 
     override val type: PlatformType = PlatformType.BUNGEECORD
     override val dataFolder = plugin.dataFolder.toPath()
@@ -58,12 +64,13 @@ internal class BungeePlatformAdapter(
                 else -> Level.INFO
             }
 
-            plugin.logger.log(nativeLevel, message, error)
+            logObserver.runOwn { plugin.logger.log(nativeLevel, message, error) }
         }
 
-    /** Installs an uncaught-exception observer while preserving the previous JVM handler. */
+    /** Forwards proxy and plugin warnings/errors and uncaught JVM exceptions, preserving the previous handler. */
     @Synchronized
     override fun observeNativeLogs(observer: ((Any, LogLevel, String, Throwable?) -> Unit)?) {
+        logObserver.observe(observer)
         uncaughtExceptionObserver.observe(observer)
     }
 

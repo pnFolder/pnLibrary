@@ -45,6 +45,9 @@ internal class VelocityPlatformAdapter(
     private val startup = StartupGate(lifecycle, ::executeGlobal)
 
     private val uncaughtExceptionObserver = UncaughtExceptionLogObserver(plugin)
+    private val logObserver = VelocityLogObserver(plugin) {
+        proxy.pluginManager.plugins.mapNotNull { it.instance.orElse(null) }
+    }
 
     override val type: PlatformType = PlatformType.VELOCITY
 
@@ -62,10 +65,12 @@ internal class VelocityPlatformAdapter(
 
     override val logHandler: (Any, LogLevel, String, Throwable?) -> Unit =
         { _, level, message, error ->
-            when (level) {
-                LogLevel.WARNING -> logger.warn(message, error)
-                LogLevel.ERROR -> logger.error(message, error)
-                else -> logger.info(message, error)
+            logObserver.runOwn {
+                when (level) {
+                    LogLevel.WARNING -> logger.warn(message, error)
+                    LogLevel.ERROR -> logger.error(message, error)
+                    else -> logger.info(message, error)
+                }
             }
         }
 
@@ -76,10 +81,11 @@ internal class VelocityPlatformAdapter(
         )
     }
 
-    /** Installs or removes the process-wide uncaught-exception observer. */
+    /** Forwards proxy and plugin warnings/errors and uncaught JVM exceptions, or stops doing so. */
     @Synchronized
     override fun observeNativeLogs(observer: ((Any, LogLevel, String, Throwable?) -> Unit)?) {
         if (observer != null) lifecycle.checkOpen()
+        logObserver.observe(observer)
         uncaughtExceptionObserver.observe(observer)
     }
 
