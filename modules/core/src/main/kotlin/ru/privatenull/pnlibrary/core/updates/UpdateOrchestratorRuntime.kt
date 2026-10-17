@@ -42,6 +42,13 @@ internal class UpdateOrchestratorRuntime(
         logging.log(this, LogLevel.WARNING, it)
     }) }
 
+    private val componentLedger by lazy {
+        ComponentLedger(dataFolder.resolve("updates/components.json"), journal, warning = {
+            logging.log(this, LogLevel.WARNING, it)
+        })
+    }
+    private val verifiedByHealth = ConcurrentHashMap.newKeySet<String>()
+
     val orchestrator = try { UpdateOrchestrator(
         configuration,
         UpdateStateStore(dataFolder.resolve("updates"), warning = { logging.log(this, LogLevel.WARNING, it) }),
@@ -82,6 +89,7 @@ internal class UpdateOrchestratorRuntime(
                     return
                 }
                 installer.reconcilePending(installed, ::recordHealth)
+                observeComponents(installed)
                 created.start()
             } catch (error: Exception) {
                 if (!closed.get()) logging.log(this, LogLevel.WARNING, "Could not verify restarted component versions; automatic checks were not started", error)
@@ -91,7 +99,25 @@ internal class UpdateOrchestratorRuntime(
         catch (error: java.util.concurrent.RejectedExecutionException) { if (!closed.get()) throw error }
     }
 
+    /** Records components that appeared, disappeared or changed since the previous start. */
+    private fun observeComponents(installed: List<RegisteredUpdate>) {
+        runCatching {
+            componentLedger.observe(
+                installed.associate { registration ->
+                    val snapshot = registration.snapshot
+                    registration.product to ComponentLedger.Component(
+                        registration.version, snapshot.channel.name.lowercase(), snapshot.automaticDownload,
+                    )
+                },
+                verifiedByHealth.toSet(),
+            )
+        }.onFailure { error ->
+            if (!closed.get()) logging.log(this, LogLevel.WARNING, "Could not record component changes", error)
+        }
+    }
+
     private fun recordHealth(report: UpdateHealthReport) {
+        if (report.healthy) report.changes.forEach { verifiedByHealth += it.product.value }
         journal.recordHealth(report)
         if (!closed.get()) runCatching { logging.log(this, if (report.healthy) LogLevel.INFO else LogLevel.WARNING, report.message) }
     }

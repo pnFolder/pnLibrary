@@ -73,6 +73,19 @@ internal class UpdateEventJournal(
         return write(event)
     }
 
+    /**
+     * Records a change of a managed component that happened outside an update plan: it appeared, disappeared,
+     * changed version without the updater or had its channel or automatic download changed.
+     */
+    @Synchronized
+    fun recordComponent(operation: String, product: String, from: String?, to: String, message: String?): Event {
+        require(operation in COMPONENT_OPERATIONS) { "invalid component operation" }
+        return write(Event(
+            UUID.randomUUID(), clock.instant(), UUID.randomUUID(), 0, UpdateState.UP_TO_DATE.name,
+            listOf(Change(product, from, to)), UpdateActor.SYSTEM, operation, message?.take(4096),
+        ))
+    }
+
     /** Writes the actual source transaction's transitions, never a newly resolved release plan. */
     @Synchronized
     fun recordHealth(report: UpdateHealthReport): Event = write(Event(
@@ -218,6 +231,10 @@ internal class UpdateEventJournal(
         const val DEFAULT_MAX_AGE_DAYS = 90L
         const val DEFAULT_MAX_EVENTS = 1_000
         const val PRUNE_EVERY_WRITES = 25
-        val OPERATIONS = setOf("STATE_OBSERVED", "CHECK", "STAGE", "ROLLBACK", "HEALTH", "HEALTH_ROLLBACK")
+        val COMPONENT_OPERATIONS = setOf(
+            ComponentLedger.OPERATION_ADDED, ComponentLedger.OPERATION_REMOVED,
+            ComponentLedger.OPERATION_VERSION_CHANGED, ComponentLedger.OPERATION_SETTINGS_CHANGED,
+        )
+        val OPERATIONS = setOf("STATE_OBSERVED", "CHECK", "STAGE", "ROLLBACK", "HEALTH", "HEALTH_ROLLBACK") + COMPONENT_OPERATIONS
     }
 }

@@ -144,6 +144,29 @@ class UpdateCatalogViewTest {
     }
 
     @Test
+    fun `component events say what was installed, removed, changed by hand or reconfigured`() {
+        fun component(operation: String, from: String?, to: String, message: String? = null) = UpdateHistoryEntry(
+            UUID.randomUUID(), Instant.parse("2026-10-17T09:05:00Z"), UUID.randomUUID(), UpdateState.UP_TO_DATE,
+            UpdateActor.SYSTEM, operation, listOf(ProductChange(ProductId.of("shop"), from?.let(SemanticVersion::parse), SemanticVersion.parse(to))),
+            message,
+        )
+        val text = UpdateCatalogView.history(
+            listOf(
+                component(ComponentLedger.OPERATION_ADDED, null, "1.0.0"),
+                component(ComponentLedger.OPERATION_REMOVED, "1.0.0", "1.0.0"),
+                component(ComponentLedger.OPERATION_VERSION_CHANGED, "1.0.0", "1.1.0"),
+                component(ComponentLedger.OPERATION_SETTINGS_CHANGED, "1.0.0", "1.0.0", "канал: stable → beta"),
+            ),
+            1, bukkit, totalPages = 1, now = now, zone = ZoneOffset.UTC,
+        ).joinToString("\n", transform = ::plain)
+
+        assertTrue(text.contains("shop 1.0.0 установлен"))
+        assertTrue(text.contains("shop 1.0.0 удалён"))
+        assertTrue(text.contains("shop 1.0.0 → 1.1.0 версия изменена вручную"))
+        assertTrue(text.contains("shop 1.0.0 канал: stable → beta"))
+    }
+
+    @Test
     fun `backups show age and open separate confirmation flows rather than executing a restore`() {
         val id = UUID.randomUUID()
         val backup = UpdateBackup(id, now.minusSeconds(4L * 86_400), UUID.randomUUID(),

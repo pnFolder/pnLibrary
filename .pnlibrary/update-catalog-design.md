@@ -47,7 +47,8 @@ updates/
   state.json                 latest resolver snapshot (existing)
   history/                   bounded resolver snapshots (existing)
   transactions/<id>/         durable transaction and JAR backups (existing)
-  events/                    timestamped, append-only action records (new)
+  events/                    timestamped action records, pruned by age and count
+  components.json            components, versions and settings seen at the last start
   configurations/<id>/      explicitly selected configuration backups
   configuration-restores/   offline restore journals and pre-restore snapshots
   install.lock              excludes concurrent runtime/offline installation
@@ -59,6 +60,15 @@ Record failed update operations without leaking credentials or arbitrary configu
 Read events newest first with bounded pagination; the API also supports a product filter.
 Do not infer installation time from release publication time or filesystem modification time.
 
+Besides plan operations (CHECK, STAGE, ROLLBACK, HEALTH, HEALTH_ROLLBACK, STATE_OBSERVED) the journal records
+component changes found by comparing `components.json` with the previous start: COMPONENT_ADDED,
+COMPONENT_REMOVED, VERSION_CHANGED (a version change the updater did not perform) and SETTINGS_CHANGED
+(channel or automatic download). The first start only writes the baseline.
+
+The journal is bounded: events older than 90 days and anything beyond the newest 1000 are deleted, and an
+observation identical to the previous event is not written again. Persisted incident history is rotated
+by age, file count and total size, and in-memory incidents expire after `history-retention-days`.
+
 ## Commands
 
 Bukkit uses `/pn updates` for catalog/history/backups/selected rollback. Proxy servers use
@@ -69,7 +79,9 @@ Bukkit uses `/pn updates` for catalog/history/backups/selected rollback. Proxy s
 - `check` (Bukkit: `/pn check`): refresh catalogs and resolve a plan.
 - `plan` (Bukkit: `/pn update-status`): selected plan state and blockers.
 - `stage <plan-id>` (proxy): stage exactly the requested plan, never silently substitute another plan.
-- `history [page]`: timestamp, actor, product, version transition and result.
+- `info <plugin>`: one component card with version, channel, automatic download, API, Java and links.
+- `history [page]`: events newest first, grouped by day, with the version transition, outcome and actor;
+  `history plugin <name> [page]` shows only one component. Pages are reported as "page X of Y".
 - `rollback <transaction-id>`: prepare a specific retained JAR set for restart.
 - `rollback <transaction-id> configs`: explicitly include its configuration snapshot.
 

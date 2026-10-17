@@ -236,9 +236,12 @@ object UpdateCatalogView {
                 .hoverEvent(hover(null)))
         }
         return entry.changes.map { change ->
-            val transition = if (entry.operation == "ROLLBACK" || entry.operation == "HEALTH_ROLLBACK") {
-                "откат к ${change.from ?: "не установлено"}"
-            } else "${change.from ?: "—"} → ${change.to}"
+            val transition = when (entry.operation) {
+                "ROLLBACK", "HEALTH_ROLLBACK" -> "откат к ${change.from ?: "не установлено"}"
+                ComponentLedger.OPERATION_ADDED -> "${change.to}"
+                ComponentLedger.OPERATION_REMOVED, ComponentLedger.OPERATION_SETTINGS_CHANGED -> "${change.from ?: change.to}"
+                else -> "${change.from ?: "—"} → ${change.to}"
+            }
             var line = time.append(Component.text("${change.product} ", NamedTextColor.WHITE))
                 .append(Component.text("$transition ", NamedTextColor.GRAY))
                 .append(Component.text(outcome, color))
@@ -250,6 +253,10 @@ object UpdateCatalogView {
     }
 
     private fun outcome(entry: UpdateHistoryEntry): Pair<String, NamedTextColor> = when {
+        entry.operation == ComponentLedger.OPERATION_ADDED -> "установлен" to NamedTextColor.GREEN
+        entry.operation == ComponentLedger.OPERATION_REMOVED -> "удалён" to NamedTextColor.RED
+        entry.operation == ComponentLedger.OPERATION_VERSION_CHANGED -> "версия изменена вручную" to NamedTextColor.GOLD
+        entry.operation == ComponentLedger.OPERATION_SETTINGS_CHANGED -> (entry.message ?: "настройки изменены") to NamedTextColor.YELLOW
         entry.state == UpdateState.FAILED -> "ошибка" to NamedTextColor.RED
         entry.operation == "HEALTH" && entry.state == UpdateState.UP_TO_DATE -> "применено после перезапуска" to NamedTextColor.GREEN
         entry.operation == "HEALTH_ROLLBACK" && entry.state == UpdateState.ROLLED_BACK -> "откат подтверждён после перезапуска" to NamedTextColor.GREEN
@@ -360,6 +367,10 @@ object UpdateCatalogView {
         "ROLLBACK" -> "откат"
         "HEALTH" -> "проверка запуска"
         "HEALTH_ROLLBACK" -> "проверка отката"
+        ComponentLedger.OPERATION_ADDED -> "установка"
+        ComponentLedger.OPERATION_REMOVED -> "удаление"
+        ComponentLedger.OPERATION_VERSION_CHANGED -> "смена версии"
+        ComponentLedger.OPERATION_SETTINGS_CHANGED -> "настройки"
         else -> "состояние"
     }
 
