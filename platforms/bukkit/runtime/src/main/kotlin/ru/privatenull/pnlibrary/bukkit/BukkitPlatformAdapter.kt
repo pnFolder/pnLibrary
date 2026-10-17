@@ -39,7 +39,7 @@ internal class BukkitPlatformAdapter(
 ) : PlatformAdapter {
 
     private val lifecycle = PlatformLifecycle()
-    private val diagnosticsCollector = BukkitDiagnosticsCollector()
+    private val diagnosticsCollector = BukkitDiagnosticDetailsCollector()
     private val nativeLogBridge = BukkitNativeLogBridge(plugin)
     private val schedulerBridge = BukkitSchedulerBridge(plugin, ::log)
     private var lifecycleListener: BukkitLifecycleListener? = null

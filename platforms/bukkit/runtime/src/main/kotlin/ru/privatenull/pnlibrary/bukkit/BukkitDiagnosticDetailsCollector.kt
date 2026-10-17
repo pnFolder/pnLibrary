@@ -6,7 +6,7 @@ import ru.privatenull.pnlibrary.spi.platform.DiagnosticDetailsCollector
 import ru.privatenull.pnlibrary.spi.platform.PlatformSnapshot
 
 /** Collects actionable Bukkit state without enumerating private or high-volume server data. */
-internal class BukkitDiagnosticsCollector {
+internal class BukkitDiagnosticDetailsCollector {
     fun collect(snapshot: PlatformSnapshot, includeSensitive: Boolean): Map<String, Any?> =
         DiagnosticDetailsCollector { snapshot }.collect(includeSensitive) { details ->
             val server = Bukkit.getServer()
