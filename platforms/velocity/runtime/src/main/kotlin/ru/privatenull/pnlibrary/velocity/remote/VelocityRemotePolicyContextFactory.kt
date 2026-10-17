@@ -1,4 +1,4 @@
-package ru.privatenull.pnlibrary.velocity
+package ru.privatenull.pnlibrary.velocity.remote
 
 import com.velocitypowered.api.proxy.ProxyServer
 import ru.privatenull.pnlibrary.api.platform.PlatformType
@@ -7,9 +7,10 @@ import ru.privatenull.pnlibrary.api.remote.ProductInfo
 import ru.privatenull.pnlibrary.api.remote.RemotePolicyContext
 import ru.privatenull.pnlibrary.api.remote.ServerInfo
 import ru.privatenull.pnlibrary.common.minecraft.MinecraftVersion
+import ru.privatenull.pnlibrary.velocity.VelocityPluginRegistry
 
 /** Creates remote-policy contexts from Velocity runtime metadata. */
-object VelocityRemotePolicyContextFactory {
+internal object VelocityRemotePolicyContextFactory {
 
     /**
      * Builds a context for [plugin] on [server] and appends caller-defined policy [values].
@@ -18,8 +19,6 @@ object VelocityRemotePolicyContextFactory {
      * @param server Velocity proxy that hosts the plugin.
      * @param values Additional non-sensitive values exposed to policy rules.
      */
-    @JvmStatic
-    @JvmOverloads
     fun create(
         plugin: Any,
         server: ProxyServer,

@@ -20,7 +20,8 @@ import ru.privatenull.pnlibrary.velocity.tasks.VelocityTaskAdapter
 import java.nio.file.Path
 import java.time.Duration
 import ru.privatenull.pnlibrary.api.tasks.TaskExecution
-import ru.privatenull.pnlibrary.spi.tasks.PlatformTaskRequest
+import ru.privatenull.pnlibrary.spi.tasks.PlatformTaskRequest
+import ru.privatenull.pnlibrary.velocity.remote.VelocityRemotePolicyContextFactory
 
 /**
  * Runtime adapter for Velocity proxy servers.
