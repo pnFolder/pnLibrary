@@ -20,6 +20,7 @@ import ru.privatenull.pnlibrary.spi.commands.PlatformCommandAdapter
 import ru.privatenull.pnlibrary.spi.metrics.PlatformMetricsFactory
 import ru.privatenull.pnlibrary.spi.platform.PlatformAdapter
 import ru.privatenull.pnlibrary.spi.platform.PlatformLifecycle
+import ru.privatenull.pnlibrary.spi.platform.UncaughtExceptionLogObserver
 import ru.privatenull.pnlibrary.spi.platform.unsupportedOwner
 import ru.privatenull.pnlibrary.spi.platform.PlatformSnapshot
 import ru.privatenull.pnlibrary.spi.platform.PluginSnapshot
@@ -41,6 +42,7 @@ internal class BukkitPlatformAdapter(
     private val lifecycle = PlatformLifecycle()
     private val diagnosticsCollector = BukkitDiagnosticDetailsCollector()
     private val nativeLogBridge = BukkitNativeLogBridge(plugin)
+    private val uncaughtExceptionObserver = UncaughtExceptionLogObserver(plugin)
     private val schedulerBridge = BukkitSchedulerBridge(plugin, ::log)
     private var lifecycleListener: BukkitLifecycleListener? = null
 
@@ -127,12 +129,13 @@ internal class BukkitPlatformAdapter(
         return true
     }
 
-    /** Registers or removes the native warning and error observer. */
+    /** Registers or removes the observer of server and plugin warnings, errors and uncaught thread exceptions. */
     @Synchronized
     override fun observeNativeLogs(
         observer: ((Any, LogLevel, String, Throwable?) -> Unit)?,
     ) {
         nativeLogBridge.observe(observer)
+        uncaughtExceptionObserver.observe(observer)
     }
 
     /** Registers commands and lifecycle listeners, rolling back partial initialization. */
