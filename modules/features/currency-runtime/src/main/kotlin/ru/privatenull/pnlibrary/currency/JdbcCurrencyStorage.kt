@@ -1,10 +1,7 @@
 package ru.privatenull.pnlibrary.currency
 
 import com.google.gson.Gson
-import com.google.gson.reflect.TypeToken
 import ru.privatenull.pnlibrary.api.currency.CurrencyAccount
-import ru.privatenull.pnlibrary.api.currency.CurrencyActor
-import ru.privatenull.pnlibrary.api.currency.CurrencyActorType
 import ru.privatenull.pnlibrary.api.currency.CurrencyDescriptor
 import ru.privatenull.pnlibrary.api.currency.CurrencyHistoryPage
 import ru.privatenull.pnlibrary.api.currency.CurrencyHistoryQuery
@@ -16,11 +13,8 @@ import ru.privatenull.pnlibrary.api.currency.CurrencyStorageSnapshot
 import ru.privatenull.pnlibrary.api.currency.CurrencyTransaction
 import ru.privatenull.pnlibrary.api.currency.CurrencyTransactionRequest
 import ru.privatenull.pnlibrary.api.currency.CurrencyTransactionStatus
-import ru.privatenull.pnlibrary.api.currency.CurrencyTransactionType
-import ru.privatenull.pnlibrary.api.plugin.PluginId
 import java.math.BigDecimal
 import java.sql.Connection
-import java.sql.ResultSet
 import java.sql.SQLException
 import java.sql.Timestamp
 import java.time.Instant
@@ -37,16 +31,13 @@ internal class JdbcCurrencyStorage(
     private val dataSource: DataSource,
     tablePrefix: String,
 ) : CurrencyStorage {
-    private val prefix = tablePrefix.also {
-        require(it.matches(Regex("[A-Za-z0-9_]+"))) {
-            "Invalid currency table prefix"
-        }
-    }
-    private val accountsTable = "${prefix}_accounts"
-    private val transactionsTable = "${prefix}_transactions"
+    private val schema = JdbcCurrencySchema(tablePrefix)
+    private val accountsTable = schema.accountsTable
+    private val transactionsTable = schema.transactionsTable
     private val initialized = AtomicBoolean(false)
     private val closed = AtomicBoolean(false)
     private val gson = Gson()
+    private val decoder = JdbcTransactionDecoder(gson)
     private val executor = Executors.newFixedThreadPool(2) { task ->
         Thread(task, "pnLibrary-currency-jdbc").apply {
             isDaemon = true
@@ -131,7 +122,7 @@ internal class JdbcCurrencyStorage(
                 }
                 statement.executeQuery().use { results ->
                     val values = mutableListOf<CurrencyTransaction>()
-                    while (results.next()) values += decode(results)
+                    while (results.next()) values += decoder.decode(results)
                     CurrencyHistoryPage(
                         items = values.take(query.limit),
                         offset = query.offset,
@@ -165,7 +156,7 @@ internal class JdbcCurrencyStorage(
                     statement.setString(1, currency.toString())
                     statement.executeQuery().use { results ->
                         while (results.next()) {
-                            transactions += decode(results)
+                            transactions += decoder.decode(results)
                         }
                     }
                 }
@@ -246,8 +237,8 @@ internal class JdbcCurrencyStorage(
             if (initialized.get()) return
             dataSource.connection.use { connection ->
                 connection.createStatement().use { statement ->
-                    statement.executeUpdate(createAccountsTableSql())
-                    statement.executeUpdate(createTransactionsTableSql())
+                    statement.executeUpdate(schema.createAccountsTableSql())
+                    statement.executeUpdate(schema.createTransactionsTableSql())
                 }
             }
             initialized.set(true)
@@ -382,7 +373,7 @@ internal class JdbcCurrencyStorage(
     }
 
     private fun insertTransaction(connection: Connection, value: CurrencyTransaction) {
-        connection.prepareStatement(insertTransactionSql()).use { statement ->
+        connection.prepareStatement(schema.insertTransactionSql()).use { statement ->
             val values = listOf(
                 value.id.toString(),
                 value.currency.toString(),
@@ -416,37 +407,8 @@ internal class JdbcCurrencyStorage(
         ).use { statement ->
             statement.setString(1, currency.toString())
             statement.setString(2, key)
-            statement.executeQuery().use { return if (it.next()) decode(it) else null }
+            statement.executeQuery().use { return if (it.next()) decoder.decode(it) else null }
         }
-    }
-
-    private fun decode(result: ResultSet): CurrencyTransaction {
-        val parts = result.getString("currency_id").split(':', limit = 2)
-        fun account(column: String) = result.getString(column)?.let(UUID::fromString)?.let(::CurrencyAccount)
-        val metadataType = object : TypeToken<Map<String, String>>() {}.type
-        return CurrencyTransaction(
-            id = UUID.fromString(result.getString("transaction_id")),
-            currency = CurrencyKey(PluginId.of(parts[0]), parts[1]),
-            type = CurrencyTransactionType.valueOf(result.getString("transaction_type")),
-            status = CurrencyTransactionStatus.valueOf(result.getString("status")),
-            amount = result.getBigDecimal("amount"),
-            source = account("source_account"),
-            target = account("target_account"),
-            actor = CurrencyActor(
-                CurrencyActorType.valueOf(result.getString("actor_type")),
-                result.getString("actor_id"),
-            ),
-            service = result.getString("service_id"),
-            reason = result.getString("reason_text"),
-            metadata = gson.fromJson(result.getString("metadata_text"), metadataType),
-            sourceBalanceBefore = result.getBigDecimal("source_before"),
-            sourceBalanceAfter = result.getBigDecimal("source_after"),
-            targetBalanceBefore = result.getBigDecimal("target_before"),
-            targetBalanceAfter = result.getBigDecimal("target_after"),
-            createdAt = result.getTimestamp("created_at").toInstant(),
-            failure = result.getString("failure_text"),
-            idempotencyKey = result.getString("idempotency_key"),
-        )
     }
 
     private fun <T> connection(operation: (Connection) -> T): T {
@@ -467,47 +429,4 @@ internal class JdbcCurrencyStorage(
         val sql: String,
         val parameters: List<Any>,
     )
-
-    private fun createAccountsTableSql(): String = """
-        CREATE TABLE IF NOT EXISTS $accountsTable (
-            currency_id VARCHAR(190) NOT NULL,
-            account_id VARCHAR(36) NOT NULL,
-            balance DECIMAL(38,18) NOT NULL,
-            PRIMARY KEY (currency_id, account_id)
-        )
-    """.trimIndent()
-
-    private fun createTransactionsTableSql(): String = """
-        CREATE TABLE IF NOT EXISTS $transactionsTable (
-            transaction_id VARCHAR(36) PRIMARY KEY,
-            currency_id VARCHAR(190) NOT NULL,
-            transaction_type VARCHAR(32) NOT NULL,
-            status VARCHAR(16) NOT NULL,
-            amount DECIMAL(38,18) NOT NULL,
-            source_account VARCHAR(36),
-            target_account VARCHAR(36),
-            actor_type VARCHAR(16) NOT NULL,
-            actor_id VARCHAR(190) NOT NULL,
-            service_id VARCHAR(190) NOT NULL,
-            reason_text TEXT,
-            metadata_text TEXT NOT NULL,
-            source_before DECIMAL(38,18),
-            source_after DECIMAL(38,18),
-            target_before DECIMAL(38,18),
-            target_after DECIMAL(38,18),
-            created_at TIMESTAMP NOT NULL,
-            failure_text TEXT,
-            idempotency_key VARCHAR(190),
-            UNIQUE (currency_id, idempotency_key)
-        )
-    """.trimIndent()
-
-    private fun insertTransactionSql(): String = """
-        INSERT INTO $transactionsTable (
-            transaction_id, currency_id, transaction_type, status, amount,
-            source_account, target_account, actor_type, actor_id, service_id,
-            reason_text, metadata_text, source_before, source_after,
-            target_before, target_after, created_at, failure_text, idempotency_key
-        ) VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?)
-    """.trimIndent()
 }
