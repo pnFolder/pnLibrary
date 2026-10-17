@@ -157,17 +157,21 @@ internal class CommandServiceImpl(
         logging.log(owner, LogLevel.ERROR, "Command suggestions failed", error)
     }
 
-    @Synchronized
-    fun diagnosticSnapshot(): Map<String, Any?> = linkedMapOf(
-        "registeredCount" to registrations.count { !it.isClosed },
-        "registeredNames" to registrations.filterNot { it.isClosed }.flatMap { it.command.aliases + it.command.name }.distinct().sorted(),
-        "executionCount" to executionCount.get(),
-        "suggestionCount" to suggestionCount.get(),
-        "executionFailureCount" to executionFailureCount.get(),
-        "suggestionFailureCount" to suggestionFailureCount.get(),
-        "executionsByCommand" to executionsByCommand.toSortedMap(),
-        "failuresByCommand" to failuresByCommand.toSortedMap(),
-    )
+    fun diagnosticSnapshot(): Map<String, Any?> = synchronized(lock) {
+        // Closing a registration marks it closed before acquiring this lock.
+        // Capture membership once so names and count describe the same set.
+        val current = registrations.filterNot { it.isClosed }
+        linkedMapOf(
+            "registeredCount" to current.size,
+            "registeredNames" to current.flatMap { it.command.aliases + it.command.name }.distinct().sorted(),
+            "executionCount" to executionCount.get(),
+            "suggestionCount" to suggestionCount.get(),
+            "executionFailureCount" to executionFailureCount.get(),
+            "suggestionFailureCount" to suggestionFailureCount.get(),
+            "executionsByCommand" to executionsByCommand.toSortedMap(),
+            "failuresByCommand" to failuresByCommand.toSortedMap(),
+        )
+    }
 
     private fun closeRegistrations(current: Iterable<Registration>) {
         current.forEach { registration ->

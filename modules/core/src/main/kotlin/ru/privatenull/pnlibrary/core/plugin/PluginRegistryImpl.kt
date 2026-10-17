@@ -1,5 +1,7 @@
 package ru.privatenull.pnlibrary.core.plugin
 
+import ru.privatenull.pnlibrary.core.lifecycle.ResourceCleanup
+
 import ru.privatenull.pnlibrary.core.commands.CommandService
 import ru.privatenull.pnlibrary.core.tasks.TaskService
 import ru.privatenull.pnlibrary.api.diagnostics.DiagnosticRegistration
@@ -121,8 +123,10 @@ internal class PluginRegistryImpl(
                 productDescriptors.clear()
             }
         }
-        current.forEach { it.closeInternal() }
-        directDownloads?.close()
+        ResourceCleanup.closeAll(
+            *current.map { plugin -> ({ plugin.closeInternal() }) }.toTypedArray(),
+            { directDownloads?.close() },
+        )
     }
 
     private fun createContext(

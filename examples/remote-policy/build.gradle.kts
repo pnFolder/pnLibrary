@@ -13,7 +13,4 @@ tasks.withType<JavaCompile>().configureEach { options.release = 8 }
 
 dependencies {
     compileOnly(project(":modules:api"))
-    // The policy is compiled against the contract shipped by the Bukkit runtime.
-    compileOnly(project(":platforms:bukkit:runtime"))
-    compileOnly(libs.spigot.api.v18)
 }

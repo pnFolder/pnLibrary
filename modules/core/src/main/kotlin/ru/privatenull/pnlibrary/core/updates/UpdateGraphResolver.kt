@@ -1,5 +1,7 @@
 package ru.privatenull.pnlibrary.core.updates
 
+import ru.privatenull.pnlibrary.common.jvm.JavaRuntime
+
 import ru.privatenull.pnlibrary.api.updates.ProductId
 import ru.privatenull.pnlibrary.api.updates.ProductRelease
 import ru.privatenull.pnlibrary.api.updates.UpdateChannel
@@ -40,7 +42,7 @@ internal class UpdateGraphResolver(
             defaultChannel = UpdateChannel.STABLE,
             frozen = frozenProducts(registrations),
             platform = identity.type,
-            javaFeature = Runtime.version().feature(),
+            javaFeature = JavaRuntime.feature,
             policy = resolverPolicy(),
         )
     }

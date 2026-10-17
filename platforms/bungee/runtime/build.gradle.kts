@@ -27,7 +27,6 @@ dependencies {
     compileOnly(libs.bungeecord.api)
 
     testImplementation(libs.junit.jupiter)
-    testImplementation(libs.mockito.kotlin)
     testImplementation(libs.bungeecord.api)
     testRuntimeOnly(libs.junit.launcher)
 }

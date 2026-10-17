@@ -1,5 +1,7 @@
 package ru.privatenull.pnlibrary.core.updates
 
+import ru.privatenull.pnlibrary.core.io.TextFiles
+
 import org.yaml.snakeyaml.LoaderOptions
 import org.yaml.snakeyaml.Yaml
 import org.yaml.snakeyaml.constructor.SafeConstructor
@@ -24,7 +26,7 @@ internal class UpdateConfigurationLoader(
             return defaults
         }
 
-        val source = Files.readString(file, StandardCharsets.UTF_8)
+        val source = TextFiles.read(file, StandardCharsets.UTF_8)
         val parsed = parseYaml(source)
         migrateLegacyConfiguration(file, parsed)?.let { return it }
         return readCurrentConfiguration(file, source, parsed)
@@ -110,7 +112,7 @@ internal class UpdateConfigurationLoader(
         private fun writeAtomic(file: Path, text: String) {
             val temporary = Files.createTempFile(file.toAbsolutePath().parent, file.fileName.toString(), ".tmp")
             try {
-                Files.writeString(temporary, text, StandardCharsets.UTF_8)
+                TextFiles.write(temporary, text, StandardCharsets.UTF_8)
                 try {
                     Files.move(temporary, file, StandardCopyOption.ATOMIC_MOVE, StandardCopyOption.REPLACE_EXISTING)
                 } catch (_: AtomicMoveNotSupportedException) {

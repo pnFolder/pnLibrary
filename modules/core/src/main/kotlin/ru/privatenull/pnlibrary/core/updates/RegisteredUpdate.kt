@@ -1,5 +1,7 @@
 package ru.privatenull.pnlibrary.core.updates
 
+import ru.privatenull.pnlibrary.common.jvm.JavaRuntime
+
 import ru.privatenull.pnlibrary.api.updates.PluginUpdateArtifact
 import ru.privatenull.pnlibrary.api.updates.PluginUpdateRequest
 import ru.privatenull.pnlibrary.api.updates.ArtifactDescriptor
@@ -92,8 +94,8 @@ internal class RegisteredUpdate(
                 currentVersion = version,
                 latestVersion = latest?.version?.toString(),
                 channel = channel,
-                state = if (latest != null && latest.version > current) UpdateState.AVAILABLE else UpdateState.CURRENT,
-                currentJava = Runtime.version().feature(),
+                state = if (latest != null && latest.version > current) UpdateState.UPDATE_AVAILABLE else UpdateState.UP_TO_DATE,
+                currentJava = JavaRuntime.feature,
                 requiredJava = artifact.minimumJava,
                 automaticDownload = request.automaticDownload,
                 releaseUrl = "https://github.com/$repository/releases",
@@ -121,7 +123,7 @@ internal class RegisteredUpdate(
         latestVersion = null,
         channel = selectedChannel(),
         state = UpdateState.CHECKING,
-        currentJava = Runtime.version().feature(),
+        currentJava = JavaRuntime.feature,
         requiredJava = artifact.minimumJava,
         automaticDownload = request.automaticDownload,
         releaseUrl = null,

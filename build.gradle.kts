@@ -79,8 +79,40 @@ subprojects {
                 )
             }
         }
+        // Bytecode target alone does not prevent calls to newer JDK APIs.
+        tasks.named<KotlinCompile>("compileKotlin") {
+            compilerOptions.freeCompilerArgs.add(
+                compilerOptions.jvmTarget.map { "-Xjdk-release=${it.target.removePrefix("1.")}" },
+            )
+        }
         tasks.withType<Test>().configureEach {
             useJUnitPlatform()
+        }
+    }
+}
+
+// Public contracts must never pull implementation modules onto their compile classpath.
+val publicModuleDependencies = mapOf(
+    ":modules:common" to emptySet<String>(),
+    ":modules:api" to setOf(":modules:common"),
+    ":modules:features:currency-api" to setOf(":modules:api"),
+    ":platforms:bukkit:api" to setOf(":modules:api", ":modules:common"),
+    ":platforms:bungee:api" to setOf(":modules:api"),
+    ":platforms:velocity:api" to setOf(":modules:api"),
+    ":modules:features:minecraft-localization" to setOf(":modules:common", ":platforms:bukkit:api"),
+)
+
+val verifyPublicModuleBoundaries = tasks.register("verifyPublicModuleBoundaries") {
+    group = "verification"
+    description = "Rejects implementation-module dependencies in public API artifacts"
+    doLast {
+        publicModuleDependencies.forEach { (modulePath, allowed) ->
+            val dependencies = project(modulePath).configurations.getByName("compileClasspath")
+                .allDependencies.withType<ProjectDependency>().map { it.path }.toSet()
+            val unexpected = dependencies - allowed
+            check(unexpected.isEmpty()) {
+                "$modulePath has forbidden implementation dependencies: ${unexpected.sorted()}"
+            }
         }
     }
 }
@@ -90,6 +122,7 @@ subprojects {
 // golden signatures that protect consumers from accidental binary breakage.
 tasks.named("check") {
     dependsOn(
+        verifyPublicModuleBoundaries,
         ":modules:api:apiCheck",
         ":platforms:bukkit:api:apiCheck",
         ":platforms:bungee:api:apiCheck",

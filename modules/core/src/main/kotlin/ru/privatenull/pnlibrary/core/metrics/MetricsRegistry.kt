@@ -11,8 +11,13 @@ import java.util.concurrent.atomic.AtomicBoolean
 
 /** Owns every platform metrics session and provides idempotent managed close handles. */
 internal class MetricsRegistry(private val factory: PlatformMetricsFactory) : MetricsService, AutoCloseable {
-    override fun openErrorReporter(owner: Any, configurations: Collection<MetricsProviderConfiguration>): ErrorReporter? =
-        factory.openErrorReporter(owner, configurations)
+    private var closed = false
+
+    @Synchronized
+    override fun openErrorReporter(owner: Any, configurations: Collection<MetricsProviderConfiguration>): ErrorReporter? {
+        check(!closed) { "MetricsRegistry is closed" }
+        return factory.openErrorReporter(owner, configurations)
+    }
     private val sessions = Collections.newSetFromMap(IdentityHashMap<PluginMetrics, Boolean>())
 
     @Synchronized
@@ -20,6 +25,7 @@ internal class MetricsRegistry(private val factory: PlatformMetricsFactory) : Me
         owner: Any,
         configurations: Collection<MetricsProviderConfiguration>,
     ): PluginMetrics {
+        check(!closed) { "MetricsRegistry is closed" }
         require(configurations.any { it.enabled }) {
             "At least one metrics provider must be enabled"
         }
@@ -28,6 +34,7 @@ internal class MetricsRegistry(private val factory: PlatformMetricsFactory) : Me
 
     @Synchronized
     override fun open(owner: Any, projectId: Int): PluginMetrics {
+        check(!closed) { "MetricsRegistry is closed" }
         require(projectId > 0) { "bStats projectId must be positive" }
         return manage(factory.open(owner, projectId))
     }
@@ -67,6 +74,8 @@ internal class MetricsRegistry(private val factory: PlatformMetricsFactory) : Me
 
     @Synchronized
     override fun close() {
+        if (closed) return
+        closed = true
         sessions.toList().forEach { runCatching { it.close() } }
         sessions.clear()
     }

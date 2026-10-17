@@ -28,7 +28,7 @@ function Get-ProjectVersion {
 function Set-ProjectVersion {
     param([string]$NewVersion)
     if ([string]::IsNullOrWhiteSpace($NewVersion)) {
-        throw 'Specify a version: set-version.bat 2.0.0-beta.7'
+        throw 'Specify a version: tools/release/release.ps1 -Action version -Version 2.0.0-beta.7'
     }
     if ($NewVersion -notmatch '^(0|[1-9]\d*)\.(0|[1-9]\d*)\.(0|[1-9]\d*)(?:-[0-9A-Za-z.-]+)?(?:\+[0-9A-Za-z.-]+)?$') {
         throw "Invalid semantic version: $NewVersion"
@@ -44,36 +44,18 @@ function Set-ProjectVersion {
     $properties = $properties -replace '(?m)^version=.*$', "version=$NewVersion"
     [IO.File]::WriteAllText((Join-Path $ProjectRoot 'gradle.properties'), $properties, [Text.UTF8Encoding]::new($false))
 
-    $documentation = @('README.md', 'INTEGRATION.md', 'HELP-README.md')
-    $documentation += Get-ChildItem -LiteralPath 'docs' -Filter '*.md' -File -Recurse | ForEach-Object FullName
-    foreach ($file in $documentation) {
-        if (-not (Test-Path -LiteralPath $file)) { continue }
-        $path = (Resolve-Path -LiteralPath $file).Path
-        $text = Get-Content -LiteralPath $path -Raw
-        $updated = $text.Replace($OldVersion, $NewVersion)
-        if ($updated -ne $text) {
-            [IO.File]::WriteAllText($path, $updated, [Text.UTF8Encoding]::new($false))
-        }
-    }
-
-    $changelog = Get-Content -LiteralPath 'CHANGELOG.md' -Raw
-    if ($changelog -notmatch "(?m)^## $([regex]::Escape($NewVersion))$") {
-        $heading = "# Changelog`r`n`r`n## $NewVersion`r`n`r`n- Describe the release changes.`r`n"
-        $changelog = $changelog -replace '^# Changelog\r?\n', $heading
-        [IO.File]::WriteAllText((Join-Path $ProjectRoot 'CHANGELOG.md'), $changelog, [Text.UTF8Encoding]::new($false))
-    }
     Write-Host "Version updated: $OldVersion -> $NewVersion"
 }
 
 function Build-Library {
-    Invoke-Checked '.\gradlew.bat' @('clean', 'test', ':distribution:build', '--console=plain')
+    Invoke-Checked '.\gradlew.bat' @('clean', 'check', ':distribution:build', '--console=plain')
     Write-Host "Artifacts: $ProjectRoot\distribution\build\libs"
 }
 
 function Publish-GitHub {
     param([string]$CommitMessage)
     if ([string]::IsNullOrWhiteSpace($CommitMessage)) {
-        throw 'Specify a commit message: publish-github.bat "release: 2.0.0-beta.7"'
+        throw 'Specify a commit message with -Message "release: 2.0.0-beta.7"'
     }
     Invoke-Checked 'git' @('rev-parse', '--is-inside-work-tree')
     $changes = & git status --short
@@ -92,7 +74,7 @@ function Publish-GitHub {
 
 function Publish-Central {
     Assert-CentralConfigured
-    foreach ($name in @('CENTRAL_USERNAME', 'CENTRAL_PASSWORD', 'SIGNING_KEY', 'SIGNING_PASSWORD')) {
+    foreach ($name in @('ORG_GRADLE_PROJECT_mavenCentralUsername', 'ORG_GRADLE_PROJECT_mavenCentralPassword', 'ORG_GRADLE_PROJECT_signingInMemoryKey', 'ORG_GRADLE_PROJECT_signingInMemoryKeyPassword')) {
         if ([string]::IsNullOrWhiteSpace([Environment]::GetEnvironmentVariable($name))) {
             throw "Required environment variable is missing: $name"
         }
@@ -107,7 +89,7 @@ function Assert-CentralConfigured {
         throw @'
 Maven Central is not configured in this project yet.
 Required before publishing: a verified Central Portal namespace, POM metadata,
-artifact signing, and CENTRAL_USERNAME/CENTRAL_PASSWORD plus a GPG key.
+artifact signing, and Gradle Maven Central credentials plus an in-memory GPG key.
 No files were uploaded.
 '@
     }

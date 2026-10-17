@@ -1,5 +1,7 @@
 package ru.privatenull.pnlibrary.core.downloads
 
+import ru.privatenull.pnlibrary.core.io.TextFiles
+
 import org.yaml.snakeyaml.LoaderOptions
 import org.yaml.snakeyaml.Yaml
 import org.yaml.snakeyaml.constructor.SafeConstructor
@@ -18,10 +20,10 @@ internal data class DownloadConfiguration(
     companion object {
         fun load(path: Path): DownloadConfiguration {
             Files.createDirectories(path.toAbsolutePath().parent)
-            if (!Files.exists(path)) Files.writeString(path, DEFAULT, StandardCharsets.UTF_8)
+            if (!Files.exists(path)) TextFiles.write(path, DEFAULT, StandardCharsets.UTF_8)
             val root = runCatching {
                 @Suppress("UNCHECKED_CAST")
-                (Yaml(SafeConstructor(LoaderOptions())).load<Any?>(Files.readString(path)) as? Map<String, Any?>)
+                (Yaml(SafeConstructor(LoaderOptions())).load<Any?>(TextFiles.read(path)) as? Map<String, Any?>)
                     ?.get("downloads") as? Map<String, Any?>
             }.getOrNull() ?: return DownloadConfiguration()
             val defaults = DownloadConfiguration()

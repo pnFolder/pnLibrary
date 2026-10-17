@@ -1,5 +1,7 @@
 package ru.privatenull.pnlibrary.core.plugin
 
+import ru.privatenull.pnlibrary.common.jvm.JavaRuntime
+
 import ru.privatenull.pnlibrary.api.plugin.ModuleId
 import ru.privatenull.pnlibrary.api.plugin.PluginMetadata
 import ru.privatenull.pnlibrary.spi.platform.PlatformIdentity
@@ -19,7 +21,7 @@ internal class ModuleMetadataFactory(
             platform = identity.type,
             platformImplementation = identity.implementationName,
             javaVersion = System.getProperty("java.version", "unknown"),
-            javaFeature = Runtime.version().feature(),
+            javaFeature = JavaRuntime.feature,
         )
     }
 

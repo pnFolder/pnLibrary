@@ -1,5 +1,7 @@
 package ru.privatenull.pnlibrary.core.downloads
 
+import ru.privatenull.pnlibrary.common.jvm.JavaRuntime
+
 import ru.privatenull.pnlibrary.api.downloads.DownloadDestination
 import ru.privatenull.pnlibrary.api.downloads.FileDownload
 import ru.privatenull.pnlibrary.api.downloads.FileDownloads
@@ -23,8 +25,8 @@ internal class DownloadArtifactPreparer(
         declaration: FileDownload,
         verifier: ((FileDownload, Path) -> Unit)?,
     ): PreparedDownload {
-        require(declaration.source.supports(platform, Runtime.version().feature())) {
-            "файл не поддерживает ${platform.displayName} / Java ${Runtime.version().feature()}"
+        require(declaration.source.supports(platform, JavaRuntime.feature)) {
+            "файл не поддерживает ${platform.displayName} / Java ${JavaRuntime.feature}"
         }
 
         val limit = declaration.source.size?.coerceAtMost(maximumBytes)?.toInt() ?: maximumBytes.toInt()

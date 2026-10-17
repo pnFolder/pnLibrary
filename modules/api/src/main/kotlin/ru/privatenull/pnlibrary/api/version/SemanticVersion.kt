@@ -1,5 +1,7 @@
 package ru.privatenull.pnlibrary.api.version
 
+import java.util.Collections
+
 /**
  * Platform-independent semantic version.
  *
@@ -17,9 +19,11 @@ class SemanticVersion private constructor(
     val minor: Int,
     /** Patch correction version. */
     val patch: Int,
-    /** Ordered prerelease identifiers, empty for a stable release. */
-    val prerelease: List<String>,
+    prerelease: List<String>,
 ) : Comparable<SemanticVersion> {
+
+    /** Immutable ordered prerelease identifiers, empty for a stable release. */
+    val prerelease: List<String> = Collections.unmodifiableList(ArrayList(prerelease))
 
     /** Returns `true` when this version is not older than [minimum]. */
     fun isAtLeast(minimum: SemanticVersion): Boolean = this >= minimum
@@ -39,12 +43,14 @@ class SemanticVersion private constructor(
         for (index in 0 until maxOf(prerelease.size, other.prerelease.size)) {
             val left = prerelease.getOrNull(index) ?: return -1
             val right = other.prerelease.getOrNull(index) ?: return 1
-            val leftNumber = left.toIntOrNull()
-            val rightNumber = right.toIntOrNull()
+            val leftNumber = left.all(Char::isDigit)
+            val rightNumber = right.all(Char::isDigit)
             val result = when {
-                leftNumber != null && rightNumber != null -> leftNumber.compareTo(rightNumber)
-                leftNumber != null -> -1
-                rightNumber != null -> 1
+                // Numeric identifiers have no leading zeros, so length defines magnitude.
+                leftNumber && rightNumber -> compareValues(left.length, right.length)
+                    .takeIf { it != 0 } ?: left.compareTo(right)
+                leftNumber -> -1
+                rightNumber -> 1
                 else -> left.compareTo(right)
             }
             if (result != 0) return result
@@ -56,7 +62,7 @@ class SemanticVersion private constructor(
     override fun equals(other: Any?): Boolean = other is SemanticVersion && compareTo(other) == 0
     /** Hashes exactly the fields that participate in [equals]. */
     override fun hashCode(): Int = listOf(major, minor, patch, prerelease).hashCode()
-    /** Returns the normalized SemVer string, including prerelease and build metadata. */
+    /** Returns the normalized version with prerelease identifiers; build metadata is omitted. */
     override fun toString(): String = "$major.$minor.$patch" +
         prerelease.takeIf(List<String>::isNotEmpty)?.joinToString(".", prefix = "-").orEmpty()
 

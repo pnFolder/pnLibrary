@@ -469,12 +469,12 @@ internal class BukkitControlCommand(
     private fun sendUpdateLine(sender: CommandSender, snapshot: UpdateSnapshot) {
         val product = if (snapshot.product.equals("pnlibrary", true)) "Библиотека" else "Плагин ${snapshot.product}"
         when (snapshot.state) {
-            UpdateState.UPDATE_AVAILABLE, UpdateState.AVAILABLE -> {
+            UpdateState.UPDATE_AVAILABLE -> {
                 sender.sendMessage(" §7- §f$product: §6${snapshot.currentVersion} §7→ §a${snapshot.latestVersion ?: "новая версия"}")
                 sender.sendMessage(" §7   §fКанал: §e${BukkitStatusLabels.channel(snapshot)}")
                 snapshot.supportedApi?.let { sender.sendMessage(" §7   §fAPI: §6${it.minimum}–${it.maximum}") }
             }
-            UpdateState.UPDATE_STAGED, UpdateState.DOWNLOADED ->
+            UpdateState.UPDATE_STAGED ->
                 sender.sendMessage(" §7- §f$product: §a${snapshot.latestVersion ?: snapshot.currentVersion} загружена; нужен перезапуск")
             UpdateState.FAILED ->
                 sender.sendMessage(" §7- §f$product: §cпроверка не выполнена")

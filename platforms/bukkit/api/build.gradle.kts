@@ -61,6 +61,7 @@ dependencies {
     compileOnly(libs.spigot.api.v18)
 
     testImplementation(libs.junit.jupiter)
+    testImplementation(libs.mockito.core)
     testImplementation(libs.spigot.api.v18)
     testRuntimeOnly(libs.junit.launcher)
 }

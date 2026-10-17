@@ -1,5 +1,7 @@
 package ru.privatenull.pnlibrary.update
 
+import kotlin.streams.toList
+
 import com.google.gson.GsonBuilder
 import java.nio.charset.StandardCharsets
 import java.nio.file.AtomicMoveNotSupportedException

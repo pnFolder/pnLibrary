@@ -2,6 +2,8 @@ package ru.privatenull.pnlibrary.core.metrics
 
 import ru.privatenull.pnlibrary.api.metrics.MetricsProvider
 import ru.privatenull.pnlibrary.api.metrics.PluginMetrics
+import ru.privatenull.pnlibrary.core.lifecycle.ResourceCleanup
+import java.util.Collections
 import java.util.function.Supplier
 import java.util.concurrent.atomic.AtomicBoolean
 
@@ -13,9 +15,10 @@ import java.util.concurrent.atomic.AtomicBoolean
  * to a chart that another provider cannot represent.
  */
 class CompositePluginMetrics(
-    private val delegates: List<PluginMetrics>,
+    delegates: List<PluginMetrics>,
     private val onClose: () -> Unit = {},
 ) : PluginMetrics {
+    private val delegates = delegates.toList()
     private val closed = AtomicBoolean(false)
 
     /** Returns the first FastStats capability exposed by a delegate. */
@@ -24,7 +27,7 @@ class CompositePluginMetrics(
     override val errorReporter
         get() = delegates.firstNotNullOfOrNull { it.errorReporter }
     init {
-        require(delegates.isNotEmpty()) { "At least one metrics delegate is required" }
+        require(this.delegates.isNotEmpty()) { "At least one metrics delegate is required" }
     }
 
     /** Public bStats project ID, independent of backend declaration order. */
@@ -36,9 +39,9 @@ class CompositePluginMetrics(
         get() = delegates.first().provider
 
     /** Union of every represented metrics provider. */
-    override val providers: Set<MetricsProvider> = delegates
+    override val providers: Set<MetricsProvider> = Collections.unmodifiableSet(this.delegates
         .flatMap { it.providers }
-        .toSet()
+        .toSet())
 
     /** Registers a simple pie chart with every delegate. */
     override fun simplePie(id: String, value: Supplier<String?>): PluginMetrics =
@@ -73,22 +76,10 @@ class CompositePluginMetrics(
     /** Closes delegates in reverse order and invokes the ownership callback. */
     override fun close() {
         if (!closed.compareAndSet(false, true)) return
-        var failure: Throwable? = null
-        for (delegate in delegates.asReversed()) {
-            try {
-                delegate.close()
-            } catch (error: Throwable) {
-                if (failure == null) failure = error
-                else if (failure !== error) failure.addSuppressed(error)
-            }
-        }
-        try {
-            onClose()
-        } catch (error: Throwable) {
-            if (failure == null) failure = error
-            else if (failure !== error) failure.addSuppressed(error)
-        }
-        failure?.let { throw it }
+        ResourceCleanup.closeAll(
+            *delegates.asReversed().map { delegate -> ({ delegate.close() }) }.toTypedArray(),
+            onClose,
+        )
     }
 
     /** Starts submission for every delegate. */

@@ -1,5 +1,12 @@
 package ru.privatenull.pnlibrary.core.plugin
 
+import org.mockito.Mockito.mock
+import org.mockito.Mockito.verify
+import org.mockito.Mockito.`when`
+import org.mockito.Mockito.doThrow
+import ru.privatenull.pnlibrary.core.downloads.DirectDownloadManager
+import ru.privatenull.pnlibrary.api.downloads.DownloadRegistration
+
 import ru.privatenull.pnlibrary.core.commands.CommandService
 import ru.privatenull.pnlibrary.core.tasks.TaskService
 import org.junit.jupiter.api.Assertions.assertEquals
@@ -37,7 +44,6 @@ import ru.privatenull.pnlibrary.api.updates.ExternalPluginDependency
 import ru.privatenull.pnlibrary.currency.CurrencyFeature
 import ru.privatenull.pnlibrary.core.events.EventServiceImpl
 import ru.privatenull.pnlibrary.core.placeholders.PlaceholderHub
-import ru.privatenull.pnlibrary.core.testing.TestTaskService
 import ru.privatenull.pnlibrary.core.tasks.TaskServiceImpl
 import ru.privatenull.pnlibrary.spi.tasks.PlatformTaskAdapter
 import ru.privatenull.pnlibrary.spi.tasks.PlatformTaskRequest
@@ -48,6 +54,45 @@ import java.util.function.Supplier
 import java.util.function.Consumer
 
 class PluginRegistryImplTest {
+    @Test
+    fun `failed file registration rolls back previously registered dependency downloads`() {
+        val owner = Any()
+        val downloads = mock(DirectDownloadManager::class.java)
+        val dependencyRegistration = mock(DownloadRegistration::class.java)
+        val failure = IllegalStateException("file registration failed")
+        val request = FileDownloads.builder().dataDirectory(java.nio.file.Paths.get("plugins/example"))
+            .file("asset") {
+                it.url("https://example.org/asset.bin").destination(DownloadDestination.DATA_FOLDER, "asset.bin")
+            }.build()
+        `when`(downloads.registerDependencies(owner, emptyList())).thenReturn(dependencyRegistration)
+        `when`(downloads.register(owner, request)).thenThrow(failure)
+        val registry = registry(directDownloads = downloads)
+        val thrown = assertThrows(IllegalStateException::class.java) {
+            registry.register(owner).registerModule("example") { it.downloads(request) }
+        }
+        assertSame(failure, thrown)
+        verify(dependencyRegistration).close()
+        registry.close()
+    }
+
+    @Test
+    fun `registry shutdown closes remaining plugins and downloads after a plugin fails`() {
+        val firstOwner = Any()
+        val secondOwner = Any()
+        val commands = mock(CommandService::class.java)
+        val downloads = mock(DirectDownloadManager::class.java)
+        val failure = IllegalStateException("plugin cleanup failed")
+        doThrow(failure).`when`(commands).unregisterOwner(firstOwner)
+        val registry = registry(commands = commands, directDownloads = downloads)
+        registry.register(firstOwner)
+        registry.register(secondOwner)
+        assertSame(failure, assertThrows(IllegalStateException::class.java) { registry.close() })
+        verify(commands).unregisterOwner(firstOwner)
+        verify(commands).unregisterOwner(secondOwner)
+        verify(downloads).close()
+        assertTrue(registry.all().isEmpty())
+    }
+
     @Test
     fun `depends creates an implicit component descriptor when no update declaration exists`() {
         val error = assertThrows(IllegalArgumentException::class.java) {
@@ -569,6 +614,7 @@ class PluginRegistryImplTest {
             commands: CommandService? = null,
             libraryVersion: String? = null,
             updates: UpdateService = emptyProxy(UpdateService::class.java),
+            directDownloads: DirectDownloadManager? = null,
         ): PluginRegistryImpl =
             PluginRegistryImpl(
                 ownership = platform,
@@ -585,6 +631,7 @@ class PluginRegistryImplTest {
                 placeholderHub = PlaceholderHub(platform),
                 currencyFeature = CurrencyFeature(),
                 commands = commands,
+                directDownloads = directDownloads,
                 libraryVersion = libraryVersion,
             )
 

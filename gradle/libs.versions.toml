@@ -42,7 +42,6 @@ maven-plugin-annotations  = { module = "org.apache.maven.plugin-tools:maven-plug
 faststats-bukkit-j8       = { module = "dev.faststats.metrics.j8:bukkit", version.ref = "faststats" }
 faststats-bungeecord-j8   = { module = "dev.faststats.metrics.j8:bungeecord", version.ref = "faststats" }
 faststats-core-j8         = { module = "dev.faststats.metrics.j8:core", version.ref = "faststats" }
-faststats-core            = { module = "dev.faststats.metrics:core", version.ref = "faststats" }
 faststats-velocity        = { module = "dev.faststats.metrics:velocity", version.ref = "faststats" }
 
 [plugins]

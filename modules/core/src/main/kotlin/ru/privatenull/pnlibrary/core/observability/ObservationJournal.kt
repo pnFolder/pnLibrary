@@ -1,5 +1,7 @@
 package ru.privatenull.pnlibrary.core.observability
 
+import ru.privatenull.pnlibrary.core.io.TextFiles
+
 import com.google.gson.GsonBuilder
 import ru.privatenull.pnlibrary.api.observability.Observation
 import java.nio.charset.StandardCharsets
@@ -30,7 +32,7 @@ internal class ObservationJournal(
             observations.addAll(retained)
             rewrite()
         } else {
-            Files.writeString(
+            TextFiles.write(
                 file,
                 gson.toJson(observation) + "\n",
                 StandardCharsets.UTF_8,
@@ -61,7 +63,7 @@ internal class ObservationJournal(
             return
         }
         val content = observations.joinToString(separator = "\n", postfix = "\n") { gson.toJson(it) }
-        Files.writeString(file, content, StandardCharsets.UTF_8)
+        TextFiles.write(file, content, StandardCharsets.UTF_8)
     }
 
     private fun load() = synchronized(lock) {

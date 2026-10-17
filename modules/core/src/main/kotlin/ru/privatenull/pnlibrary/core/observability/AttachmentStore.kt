@@ -1,5 +1,7 @@
 package ru.privatenull.pnlibrary.core.observability
 
+import ru.privatenull.pnlibrary.core.io.TextFiles
+
 import com.google.gson.GsonBuilder
 import com.google.gson.reflect.TypeToken
 import java.nio.file.Files
@@ -106,7 +108,7 @@ internal class AttachmentStore(dataFolder: Path) {
         if (!Files.isRegularFile(manifest)) return
         val type = object : TypeToken<List<AttachmentManifestEntry>>() {}.type
         val entries = runCatching {
-            gson.fromJson<List<AttachmentManifestEntry>>(Files.readString(manifest), type)
+            gson.fromJson<List<AttachmentManifestEntry>>(TextFiles.read(manifest), type)
         }.getOrDefault(emptyList())
         entries.mapNotNull(::restore).forEach { attachment -> attachments[attachment.id] = attachment }
     }
@@ -136,7 +138,7 @@ internal class AttachmentStore(dataFolder: Path) {
                 attachment.sha256,
             )
         }
-        Files.writeString(manifest, gson.toJson(entries))
+        TextFiles.write(manifest, gson.toJson(entries))
     }
 
     private fun contentType(path: Path): String = Files.probeContentType(path) ?: when (path.extension.lowercase()) {

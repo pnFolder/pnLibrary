@@ -21,6 +21,22 @@ class ItemUtilitiesTest {
     }
 
     @Test
+    fun `item codec rejects valid serialization of a non item`() {
+        val bytes = java.io.ByteArrayOutputStream()
+        java.io.ObjectOutputStream(bytes).use { it.writeObject("not an item") }
+        val encoded = java.util.Base64.getEncoder().encodeToString(bytes.toByteArray())
+        val error = assertThrows(IllegalArgumentException::class.java) { ItemStackCodec.decode(encoded) }
+        assertEquals("Encoded payload does not contain an ItemStack", error.cause?.message)
+    }
+
+    @Test
+    fun `item codec rejects missing payloads`() {
+        for (value in listOf(null, "", "  ")) {
+            assertThrows(IllegalArgumentException::class.java) { ItemStackCodec.decode(value) }
+        }
+    }
+
+    @Test
     fun `texture normalization accepts hashes urls and base64`() {
         val hash = "0123456789abcdef0123456789abcdef"
         val url = "https://textures.minecraft.net/texture/$hash"

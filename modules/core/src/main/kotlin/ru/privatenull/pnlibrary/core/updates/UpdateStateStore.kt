@@ -1,5 +1,9 @@
 package ru.privatenull.pnlibrary.core.updates
 
+import kotlin.streams.toList
+
+import ru.privatenull.pnlibrary.core.io.TextFiles
+
 import com.google.gson.JsonObject
 import com.google.gson.JsonArray
 import com.google.gson.JsonParser
@@ -68,11 +72,11 @@ internal class UpdateStateStore(
     private fun read(path: Path, quarantine: Boolean): UpdatePlanSnapshot? {
         if (!Files.isRegularFile(path)) return null
         return try {
-            val root = JsonParser.parseString(Files.readString(path, StandardCharsets.UTF_8)).asJsonObject
+            val root = JsonParser.parseString(TextFiles.read(path, StandardCharsets.UTF_8)).asJsonObject
             UpdatePlanSnapshot(
                 UUID.fromString(root.get("id").asString),
                 root.get("revision").asLong,
-                UpdateState.valueOf(root.get("state").asString),
+                decodeState(root.get("state").asString),
                 root.get("plan")?.takeUnless { it.isJsonNull }?.let { gson.fromJson(it, UpdatePlan::class.java) },
                 decodeBlockers(root),
                 root.get("message")?.takeUnless { it.isJsonNull }?.asString,
@@ -85,6 +89,14 @@ internal class UpdateStateStore(
             }
             null
         }
+    }
+
+    /** Read historical names without exposing duplicate states in the public API. */
+    private fun decodeState(value: String): UpdateState = when (value) {
+        "CURRENT" -> UpdateState.UP_TO_DATE
+        "AVAILABLE" -> UpdateState.UPDATE_AVAILABLE
+        "DOWNLOADED" -> UpdateState.UPDATE_STAGED
+        else -> UpdateState.valueOf(value)
     }
 
     private fun encode(snapshot: UpdatePlanSnapshot): ByteArray = JsonObject().apply {

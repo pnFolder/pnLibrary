@@ -171,7 +171,7 @@ internal object BukkitConsoleStatusRenderer {
 
     /** Checks whether the snapshot represents a downloadable update. */
     private fun UpdateSnapshot.hasAvailableUpdate(): Boolean =
-        state == UpdateState.UPDATE_AVAILABLE || state == UpdateState.AVAILABLE
+        state == UpdateState.UPDATE_AVAILABLE
 
     /** Combines the publication age with an absolute UTC timestamp. */
     private fun publishedAtLabel(instant: Instant): String =
@@ -236,7 +236,7 @@ internal object BukkitStatusLabels {
         return listOf(runtime, version)
             .filter(String::isNotBlank)
             .joinToString(" ")
-            .ifBlank { Runtime.version().toString() }
+            .ifBlank { System.getProperty("java.runtime.version", "unknown") }
     }
 
     /** Returns the localized, colored channel label for a snapshot. */

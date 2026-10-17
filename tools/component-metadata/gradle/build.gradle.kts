@@ -1,3 +1,5 @@
+import org.jetbrains.kotlin.gradle.dsl.JvmTarget
+
 plugins {
     alias(libs.plugins.kotlin.jvm)
     `java-gradle-plugin`
@@ -5,11 +7,11 @@ plugins {
 }
 
 tasks.withType<org.jetbrains.kotlin.gradle.tasks.KotlinCompile>().configureEach {
-    kotlinOptions.jvmTarget = "1.8"
+    compilerOptions.jvmTarget.set(JvmTarget.JVM_1_8)
 }
 subprojects {
     tasks.withType<org.jetbrains.kotlin.gradle.tasks.KotlinCompile>().configureEach {
-        kotlinOptions.jvmTarget = "1.8"
+        compilerOptions.jvmTarget.set(JvmTarget.JVM_1_8)
     }
 }
 
@@ -32,29 +34,15 @@ gradlePlugin {
 }
 
 dependencies {
-    // Keep the included build reproducible from a clean checkout. The previous
-    // fileTree dependency required core to have been built manually first.
+    // Resolve the same producer in the standalone included build and the main build.
     if (rootProject.name == "pnlibrary-component-metadata-gradle") {
         implementation(project(":core"))
     } else {
-        implementation(fileTree("../core/build/libs") {
-            include("*.jar")
-            exclude("*-sources.jar", "*-javadoc.jar")
-        })
+        implementation(project(":tools:component-metadata:core"))
     }
     testImplementation(gradleTestKit())
     testImplementation(libs.junit.jupiter)
     testRuntimeOnly(libs.junit.launcher)
-}
-
-// This project is also loaded as an isolated pluginManagement included build.
-// In the main multi-project build, make the file dependency's producer explicit.
-if (rootProject.name == "pnLibrary") {
-    listOf("pluginUnderTestMetadata", "validatePlugins").forEach { taskName ->
-        tasks.named(taskName) {
-            dependsOn(":tools:component-metadata:core:jar")
-        }
-    }
 }
 
 mavenPublishing {

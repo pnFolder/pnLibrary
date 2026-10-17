@@ -24,7 +24,7 @@ internal object BukkitUpdateMessages {
             plan.state == UpdateState.FAILED -> UpdateState.FAILED
             plan.state == UpdateState.ROLLED_BACK -> UpdateState.ROLLED_BACK
             change != null && plan.state == UpdateState.UPDATE_STAGED -> UpdateState.UPDATE_STAGED
-            change != null && (plugin.state in setOf(UpdateState.AVAILABLE, UpdateState.UPDATE_AVAILABLE) ||
+            change != null && (plugin.state == UpdateState.UPDATE_AVAILABLE ||
                 plan.state == UpdateState.UPDATE_AVAILABLE) -> UpdateState.UPDATE_AVAILABLE
             else -> UpdateState.UP_TO_DATE
         }

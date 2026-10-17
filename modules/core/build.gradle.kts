@@ -32,7 +32,7 @@ dependencies {
     implementation(project(":modules:design:console"))
 
     testImplementation(libs.junit.jupiter)
-    testImplementation(libs.mockito.kotlin)
+    testImplementation(libs.mockito.core)
     testRuntimeOnly(libs.junit.launcher)
 }
 

@@ -20,7 +20,6 @@ dependencies {
     implementation(libs.gson)
 
     testImplementation(libs.junit.jupiter)
-    testImplementation(libs.mockito.kotlin)
     testRuntimeOnly(libs.junit.launcher)
 }
 

@@ -83,8 +83,7 @@ internal class BukkitLifecycleListener(
             .action task@{
             val active = library ?: return@task
             val actionable = active.updates.all().map { it.snapshot }.filter {
-                it.state == UpdateState.AVAILABLE || it.state == UpdateState.DOWNLOADED ||
-                    it.state == UpdateState.UPDATE_AVAILABLE || it.state == UpdateState.UPDATE_STAGED
+                it.state == UpdateState.UPDATE_AVAILABLE || it.state == UpdateState.UPDATE_STAGED
             }
             if (actionable.isEmpty() || !player.isOnline) return@task
             player.sendMessage("")
@@ -146,11 +145,11 @@ internal class BukkitLifecycleListener(
     private fun sendUpdateLine(send: (String) -> Unit, snapshot: UpdateSnapshot) {
         val product = if (snapshot.product.equals("pnlibrary", true)) "Библиотека" else "Плагин ${snapshot.product}"
         when (snapshot.state) {
-            UpdateState.UPDATE_AVAILABLE, UpdateState.AVAILABLE -> {
+            UpdateState.UPDATE_AVAILABLE -> {
                 send(" §7 - §f$product: §6${snapshot.currentVersion} §7→ §a${snapshot.latestVersion ?: "новая версия"}")
                 send(" §7   §fКанал: §e${channelName(snapshot.channel)}")
             }
-            UpdateState.UPDATE_STAGED, UpdateState.DOWNLOADED ->
+            UpdateState.UPDATE_STAGED ->
                 send(" §7 - §f$product: §a${snapshot.latestVersion ?: snapshot.currentVersion} загружена; нужен перезапуск")
             UpdateState.FAILED ->
                 send(" §7 - §f$product: §cпроверка не выполнена")

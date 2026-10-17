@@ -3,6 +3,7 @@ package ru.privatenull.pnlibrary.core.downloads
 import org.junit.jupiter.api.Assertions.assertEquals
 import org.junit.jupiter.api.Assertions.assertSame
 import org.junit.jupiter.api.Assertions.assertTrue
+import org.junit.jupiter.api.Assertions.assertThrows
 import org.junit.jupiter.api.Test
 import ru.privatenull.pnlibrary.api.downloads.DownloadRegistration
 import ru.privatenull.pnlibrary.api.downloads.DownloadSnapshot
@@ -10,6 +11,20 @@ import ru.privatenull.pnlibrary.api.downloads.DownloadState
 import java.util.concurrent.CompletableFuture
 
 class CompositeDownloadRegistrationTest {
+    @Test
+    fun `closes both registrations and retains their failures`() {
+        val primary = IllegalStateException("first")
+        val secondary = IllegalArgumentException("second")
+        val first = StubRegistration("first", primary)
+        val second = StubRegistration("second", secondary)
+        val combined = requireNotNull(CompositeDownloadRegistration.combine(first, second))
+        val thrown = assertThrows(IllegalStateException::class.java) { combined.close() }
+        assertSame(primary, thrown)
+        assertEquals(listOf(secondary), thrown.suppressed.toList())
+        assertTrue(first.isClosed)
+        assertTrue(second.isClosed)
+    }
+
     @Test
     fun `combines snapshots downloads and close lifecycle`() {
         val first = StubRegistration("first")
@@ -36,7 +51,7 @@ class CompositeDownloadRegistrationTest {
         assertSame(registration, CompositeDownloadRegistration.combine(null, registration))
     }
 
-    private class StubRegistration(private val key: String) : DownloadRegistration {
+    private class StubRegistration(private val key: String, private val closeFailure: RuntimeException? = null) : DownloadRegistration {
         override var isClosed: Boolean = false
             private set
 
@@ -46,6 +61,7 @@ class CompositeDownloadRegistrationTest {
 
         override fun close() {
             isClosed = true
+            closeFailure?.let { throw it }
         }
     }
 }

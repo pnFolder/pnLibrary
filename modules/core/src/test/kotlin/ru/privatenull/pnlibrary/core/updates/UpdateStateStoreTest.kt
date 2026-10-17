@@ -17,10 +17,28 @@ class UpdateStateStoreTest {
     @TempDir lateinit var directory: Path
 
     @Test
+    fun `historical state names remain readable after API cleanup`() {
+        val store = UpdateStateStore(directory)
+        val names = mapOf(
+            "CURRENT" to UpdateState.UP_TO_DATE,
+            "AVAILABLE" to UpdateState.UPDATE_AVAILABLE,
+            "DOWNLOADED" to UpdateState.UPDATE_STAGED,
+        )
+        for ((oldName, expected) in names) {
+            val snapshot = UpdatePlanSnapshot(UUID.randomUUID(), 1, expected, null, emptyList(), null)
+            store.save(snapshot)
+            val path = directory.resolve("state.json")
+            Files.writeString(path, Files.readString(path).replace(expected.name, oldName))
+            assertEquals(expected, store.current()?.state)
+            assertEquals(snapshot.id, store.current()?.id)
+        }
+    }
+
+    @Test
     fun `persists current state atomically and bounds newest first history`() {
         val store = UpdateStateStore(directory, maximumEntries = 3, maximumBytes = 1024 * 1024)
         val snapshots = (1L..5L).map { revision ->
-            UpdatePlanSnapshot(UUID.randomUUID(), revision, UpdateState.CURRENT, null, emptyList(), "revision-$revision")
+            UpdatePlanSnapshot(UUID.randomUUID(), revision, UpdateState.UP_TO_DATE, null, emptyList(), "revision-$revision")
                 .also(store::save)
         }
 

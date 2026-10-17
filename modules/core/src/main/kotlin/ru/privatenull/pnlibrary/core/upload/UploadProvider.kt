@@ -1,7 +1,8 @@
 package ru.privatenull.pnlibrary.core.upload
 
+import ru.privatenull.pnlibrary.core.io.TextFiles
+
 import java.io.IOException
-import java.nio.file.Files
 import java.nio.file.Path
 
 /** One interchangeable destination capable of receiving a PN Support Archive. */
@@ -21,7 +22,7 @@ interface UploadProvider {
     /** Uploads an actual binary report file when the backend supports file storage. */
     @Throws(IOException::class)
     fun uploadFile(file: Path, contentType: String = "application/octet-stream"): UploadReceipt =
-        upload(Files.readString(file))
+        upload(TextFiles.read(file))
 
     /**
      * Deletes a previously uploaded report using the token stored in [receipt].

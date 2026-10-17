@@ -7,8 +7,9 @@
 ## Запуск
 
 1. Соберите `:examples:demo-bukkit:build`.
-2. Положите `examples/demo-bukkit/build/libs/pnLibrary-demo-bukkit-*.jar` в `plugins/` рядом
-   с соответствующим `pnLibrary-*-bukkit-java8.jar` и модулем `pnLibrary-minecraft-localization-*.jar`.
+2. Положите `examples/demo-bukkit/build/libs/pnLibrary-demo-bukkit-<version>.jar` в `plugins/` рядом
+   с соответствующим `pnLibrary-*-bukkit-java8.jar`. Используйте собранный Shadow JAR, а не `*-plain.jar`.
+   Optional-модуль локализации и его Gson уже включены в демоплагин с изолированными пакетами.
 3. Запустите Paper/Spigot и выполните `/pndemo status`.
 
 Команды:
@@ -45,12 +46,9 @@ Action API, Minecraft localization (ленивая загрузка `ru_ru`/`en_
 | `DemoLocalization.kt` | ленивый version-aware cache локализаций Minecraft |
 | `DemoState.kt` | потокобезопасное состояние, используемое несколькими модулями |
 | `DemoActionShowcase.kt` | все стандартные `Action`, все `ActionCondition`, `Expansion`-модели и enum-ветки |
-| `DemoUpdateFeature.kt` | optional update feature: freeze store, manifest codec и bounded artifact downloader |
-
-`modules:api`, `modules:common`, `modules:core` и `modules:features:minecraft-localization` используются напрямую.
-`modules:core`, `runtime-spi` и platform runtime — внутренние реализации pnLibrary: их нельзя
-подключать к прикладному плагину вместо обычного runtime, поэтому они демонстрируются самим
-runtime и не дублируются в example-плагине.
+Демоплагин использует публичные API и optional-модуль `minecraft-localization`.
+Обновления объявляются через `DemoDeclarations.kt`; внутренние классы updater и `modules:core`
+демоплагину не нужны.
 
 Для зависимостей используется единый DSL:
 

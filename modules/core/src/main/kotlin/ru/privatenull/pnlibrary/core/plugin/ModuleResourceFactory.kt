@@ -1,5 +1,7 @@
 package ru.privatenull.pnlibrary.core.plugin
 
+import ru.privatenull.pnlibrary.core.lifecycle.ResourceCleanup
+
 import ru.privatenull.pnlibrary.core.tasks.TaskService
 import ru.privatenull.pnlibrary.api.config.ConfigScope
 import ru.privatenull.pnlibrary.api.currency.CurrencyService
@@ -95,9 +97,10 @@ internal class ModuleResourceFactory(
                 updates.register(owner, requireNotNull(product), request, definition.dependencies)
             }
 
-            val dependencyDownloads = directDownloads?.registerDependencies(owner, definition.dependencies)
+            // Retain the first registration immediately so a later failure can roll it back.
+            downloadRegistration = directDownloads?.registerDependencies(owner, definition.dependencies)
             val fileDownloads = definition.downloadsRequest?.let { directDownloads?.register(owner, it) }
-            downloadRegistration = CompositeDownloadRegistration.combine(dependencyDownloads, fileDownloads)
+            downloadRegistration = CompositeDownloadRegistration.combine(downloadRegistration, fileDownloads)
 
             return ModuleResources(
                 tasks = taskScope,

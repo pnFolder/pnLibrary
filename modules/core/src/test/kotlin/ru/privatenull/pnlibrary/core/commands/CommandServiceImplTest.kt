@@ -22,6 +22,36 @@ import java.util.concurrent.CompletableFuture
 
 class CommandServiceImplTest {
     @Test
+    fun `diagnostic snapshots stay coherent during concurrent registration`() {
+        val native = RecordingCommands()
+        val platform = TestPlatform(native)
+        val service = CommandServiceImpl(native, platform)
+        val owner = Any()
+        val executor = java.util.concurrent.Executors.newFixedThreadPool(2)
+        val start = java.util.concurrent.CountDownLatch(1)
+        try {
+            val writer = executor.submit {
+                start.await()
+                repeat(500) { service.register(owner, command("temporary") {}).close() }
+            }
+            val reader = executor.submit {
+                start.await()
+                repeat(1000) {
+                    val snapshot = service.diagnosticSnapshot()
+                    assertEquals((snapshot["registeredNames"] as List<*>).size, snapshot["registeredCount"])
+                }
+            }
+            start.countDown()
+            writer.get(10, java.util.concurrent.TimeUnit.SECONDS)
+            reader.get(10, java.util.concurrent.TimeUnit.SECONDS)
+            assertEquals(0, service.diagnosticSnapshot()["registeredCount"])
+        } finally {
+            executor.shutdownNow()
+            service.close()
+        }
+    }
+
+    @Test
     fun `builder overload registers a command without manual definition construction`() {
         val native = RecordingCommands()
         val platform = TestPlatform(native)

@@ -10,6 +10,68 @@ import java.util.concurrent.atomic.AtomicBoolean
 
 class TaskServiceImplTest {
     @Test
+    fun `closed service rejects both native owner and named module scopes`() {
+        val adapter = RecordingAdapter()
+        val service = TaskServiceImpl(adapter)
+        service.close()
+        assertThrows(IllegalStateException::class.java) { service.scope(Any()) }
+        assertThrows(IllegalStateException::class.java) {
+            service.scope(Any(), ru.privatenull.pnlibrary.api.plugin.PluginId.of("module"))
+        }
+        assertTrue(adapter.requests.isEmpty())
+    }
+
+    @Test
+    fun `scope cleanup continues after native cancellation fails`() {
+        val adapter = RecordingAdapter(failingCancelIndex = 0)
+        val service = TaskServiceImpl(adapter)
+        val scope = service.scope(Any())
+        val first = scope.schedule(spec("first"))
+        val second = scope.schedule(spec("second"))
+        assertThrows(IllegalStateException::class.java) { scope.close() }
+        assertTrue(adapter.handles.all { it.cancelled.get() })
+        assertNull(service.get(first.id))
+        assertNull(service.get(second.id))
+        assertTrue(scope.query().all { it.status == TaskStatus.CANCELLED })
+        assertThrows(IllegalStateException::class.java) { scope.schedule(spec("late")) }
+        service.close()
+        assertTrue(adapter.closed)
+    }
+
+    @Test
+    fun `service cleanup closes all owners and adapter despite a cancellation failure`() {
+        val adapter = RecordingAdapter(failingCancelIndex = 0)
+        val service = TaskServiceImpl(adapter)
+        val first = service.scope(Any()).schedule(spec("first-owner"))
+        val second = service.scope(Any()).schedule(spec("second-owner"))
+        assertThrows(IllegalStateException::class.java) { service.close() }
+        assertTrue(adapter.handles.all { it.cancelled.get() })
+        assertTrue(adapter.closed)
+        assertNull(service.get(first.id))
+        assertNull(service.get(second.id))
+    }
+
+    @Test
+    fun `failed action is archived even when cancellation and error logging also fail`() {
+        val adapter = RecordingAdapter(failingCancelIndex = 0)
+        val actionFailure = IllegalStateException("action failed")
+        val loggerFailure = IllegalArgumentException("logger failed")
+        val reported = mutableListOf<Throwable>()
+        val service = TaskServiceImpl(adapter, errorLogger = { _, _, error ->
+            reported += error
+            throw loggerFailure
+        })
+        val task = service.scope(Any()).schedule(TaskSpec.builder().action { throw actionFailure }.build())
+        adapter.fire(0)
+        assertEquals(TaskStatus.FAILED, task.status)
+        assertNull(service.get(task.id))
+        assertNotNull(service.query().single().lastCompletedAt)
+        assertEquals(listOf(actionFailure), reported)
+        assertEquals(listOf("native cancellation failed", "logger failed"), actionFailure.suppressed.map { it.message })
+        service.close()
+    }
+
+    @Test
     fun `native task request retains scope owner identity`() {
         val adapter = RecordingAdapter()
         val owner = Any()
@@ -140,23 +202,34 @@ class TaskServiceImplTest {
     }
 
     private fun spec(name: String) = TaskSpec.builder().name(name).action { }.build()
-    private class RecordingAdapter(private val fireDuringSchedule: Boolean = false) : PlatformTaskAdapter {
+    private class RecordingAdapter(
+        private val fireDuringSchedule: Boolean = false,
+        private val failingCancelIndex: Int? = null,
+    ) : PlatformTaskAdapter {
         val requests = mutableListOf<PlatformTaskRequest>()
         val handles = mutableListOf<NativeHandle>()
+        var closed = false
+            private set
 
         override fun schedule(request: PlatformTaskRequest): PlatformTaskHandle {
             requests += request
-            val handle = NativeHandle()
+            val failure = if (handles.size == failingCancelIndex) IllegalStateException("native cancellation failed") else null
+            val handle = NativeHandle(failure)
             handles += handle
             if (fireDuringSchedule) request.callback.run()
             return handle
         }
 
         fun fire(index: Int) = requests[index].callback.run()
+        override fun close() { closed = true }
     }
-    private class NativeHandle : PlatformTaskHandle {
+    private class NativeHandle(private val failure: RuntimeException? = null) : PlatformTaskHandle {
         val cancelled = AtomicBoolean()
-        override fun cancel(): Boolean = cancelled.compareAndSet(false, true)
+        override fun cancel(): Boolean {
+            val changed = cancelled.compareAndSet(false, true)
+            if (changed) failure?.let { throw it }
+            return changed
+        }
     }
 
 }

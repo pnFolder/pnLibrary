@@ -5,6 +5,7 @@ import ru.privatenull.pnlibrary.api.downloads.DownloadSnapshot
 import ru.privatenull.pnlibrary.api.downloads.DownloadState
 import ru.privatenull.pnlibrary.api.downloads.FileDownload
 import ru.privatenull.pnlibrary.api.downloads.FileDownloads
+import ru.privatenull.pnlibrary.core.lifecycle.ResourceCleanup
 import java.util.Collections
 import java.util.concurrent.CompletableFuture
 import java.util.concurrent.CompletionStage
@@ -23,6 +24,7 @@ internal class DownloadRegistrationImpl(
     private val failed: (List<FileDownload>, Throwable) -> Unit,
     private val remove: (DownloadRegistrationImpl) -> Unit,
 ) : DownloadRegistration {
+    private val stateLock = Any()
     private val closed = AtomicBoolean(false)
     private val activeDownload = AtomicReference<CompletableFuture<List<DownloadSnapshot>>?>()
     private val currentSnapshots = AtomicReference(declaredSnapshots())
@@ -61,14 +63,24 @@ internal class DownloadRegistrationImpl(
             return promise
         }
 
-        activeDownload.get()?.let { return it }
-        if (!activeDownload.compareAndSet(null, promise)) return activeDownload.get() ?: promise
-
-        updateSnapshots(selectedFiles, DownloadState.DOWNLOADING)
+        synchronized(stateLock) {
+            if (closed.get() || managerIsClosed()) {
+                promise.completeExceptionally(IllegalStateException("регистрация загрузок закрыта"))
+                return promise
+            }
+            activeDownload.get()?.let { return it }
+            activeDownload.set(promise)
+            updateSnapshots(selectedFiles, DownloadState.DOWNLOADING)
+        }
         try {
             executor.execute { execute(selectedFiles, promise) }
         } catch (error: Throwable) {
-            activeDownload.compareAndSet(promise, null)
+            synchronized(stateLock) {
+                if (!closed.get() && !managerIsClosed()) {
+                    currentSnapshots.set(request.files.map { DownloadSnapshot(it.key, DownloadState.FAILED, error.message) })
+                }
+                activeDownload.compareAndSet(promise, null)
+            }
             promise.completeExceptionally(error)
         }
         return promise
@@ -85,9 +97,16 @@ internal class DownloadRegistrationImpl(
         promise: CompletableFuture<List<DownloadSnapshot>>,
         reason: String,
     ): CompletableFuture<List<DownloadSnapshot>> {
-        currentSnapshots.set(request.files.map { DownloadSnapshot(it.key, DownloadState.BLOCKED, reason) })
-        blocked(reason)
-        promise.complete(snapshots())
+        val result = synchronized(stateLock) {
+            if (closed.get() || managerIsClosed()) {
+                promise.completeExceptionally(IllegalStateException("регистрация загрузок закрыта"))
+                return promise
+            }
+            currentSnapshots.set(request.files.map { DownloadSnapshot(it.key, DownloadState.BLOCKED, reason) })
+            snapshots()
+        }
+        promise.complete(result)
+        runCatching { blocked(reason) }
         return promise
     }
 
@@ -96,46 +115,33 @@ internal class DownloadRegistrationImpl(
         promise: CompletableFuture<List<DownloadSnapshot>>,
     ) {
         if (closed.get() || managerIsClosed()) {
-            promise.complete(snapshots())
             activeDownload.compareAndSet(promise, null)
+            promise.complete(snapshots())
             return
         }
-
-        runCatching {
+        val outcome = runCatching {
             install(declarations) {
-                check(!closed.get()) { "регистрация загрузок закрыта" }
+                check(!closed.get() && !managerIsClosed()) { "регистрация загрузок закрыта" }
             }
-        }.onSuccess {
-            completeSuccessfully(declarations, promise)
-        }.onFailure { error ->
-            completeWithFailure(declarations, promise, error)
         }
-        activeDownload.compareAndSet(promise, null)
-    }
-
-    private fun completeSuccessfully(
-        declarations: List<FileDownload>,
-        promise: CompletableFuture<List<DownloadSnapshot>>,
-    ) {
-        if (!closed.get() && !managerIsClosed()) {
-            updateSnapshots(declarations, DownloadState.STAGED)
+        val result = try {
+            synchronized(stateLock) {
+                if (!closed.get() && !managerIsClosed()) {
+                    val error = outcome.exceptionOrNull()
+                    if (error == null) updateSnapshots(declarations, DownloadState.STAGED)
+                    else currentSnapshots.set(request.files.map { DownloadSnapshot(it.key, DownloadState.FAILED, error.message) })
+                }
+                snapshots()
+            }
+        } finally {
+            // Future callbacks may immediately start another download.
+            activeDownload.compareAndSet(promise, null)
         }
-        promise.complete(snapshots())
-        if (declarations.containsDependencies()) dependenciesStaged(declarations)
-    }
-
-    private fun completeWithFailure(
-        declarations: List<FileDownload>,
-        promise: CompletableFuture<List<DownloadSnapshot>>,
-        error: Throwable,
-    ) {
-        if (!closed.get() && !managerIsClosed()) {
-            currentSnapshots.set(request.files.map {
-                DownloadSnapshot(it.key, DownloadState.FAILED, error.message)
-            })
-            failed(declarations, error)
-        }
-        promise.complete(snapshots())
+        promise.complete(result)
+        if (closed.get() || managerIsClosed()) return
+        outcome.onSuccess {
+            if (declarations.containsDependencies()) runCatching { dependenciesStaged(declarations) }
+        }.onFailure { error -> ResourceCleanup.suppressInto(error, { failed(declarations, error) }) }
     }
 
     private fun updateSnapshots(activeFiles: List<FileDownload>, state: DownloadState) {
@@ -145,10 +151,12 @@ internal class DownloadRegistrationImpl(
     }
 
     override fun close() {
-        if (!closed.compareAndSet(false, true)) return
-        currentSnapshots.set(request.files.map { DownloadSnapshot(it.key, DownloadState.CLOSED) })
-        activeDownload.getAndSet(null)
-            ?.completeExceptionally(IllegalStateException("регистрация загрузок закрыта"))
+        val pending = synchronized(stateLock) {
+            if (!closed.compareAndSet(false, true)) return
+            currentSnapshots.set(request.files.map { DownloadSnapshot(it.key, DownloadState.CLOSED) })
+            activeDownload.getAndSet(null)
+        }
+        pending?.completeExceptionally(IllegalStateException("регистрация загрузок закрыта"))
         remove(this)
     }
 

@@ -11,4 +11,4 @@ The implementation is split into three modules:
 
 The component version defaults to the Gradle/Maven project version. The component ID defaults to the
 normalized Gradle project name or Maven `artifactId`. Configure it explicitly when the native plugin
-ID differs. See `docs/updates.md` for complete examples.
+ID differs. The example plugins under `examples/` demonstrate component registration.

@@ -1,5 +1,7 @@
 package ru.privatenull.pnlibrary.core.updates
 
+import ru.privatenull.pnlibrary.common.jvm.JavaRuntime
+
 import ru.privatenull.pnlibrary.api.logging.LogLevel
 import ru.privatenull.pnlibrary.api.plugin.PluginDependency
 import ru.privatenull.pnlibrary.api.updates.*
@@ -72,8 +74,8 @@ internal class UpdateServiceImpl(
         }
         val jar = Paths.get(owner.javaClass.protectionDomain.codeSource.location.toURI()).toAbsolutePath().normalize()
         require(Files.isRegularFile(jar)) { "Плагин должен быть запущен из JAR" }
-        val artifact = request.artifactFor(Runtime.version().feature(), identity.type)
-            ?: error("Для Java ${Runtime.version().feature()} не зарегистрирован совместимый артефакт ${request.repositoryName}")
+        val artifact = request.artifactFor(JavaRuntime.feature, identity.type)
+            ?: error("Для Java ${JavaRuntime.feature} не зарегистрирован совместимый артефакт ${request.repositoryName}")
         require(product.version == SemanticVersion.parse(version)) {
             "Product version ${product.version} does not match native plugin version $version"
         }

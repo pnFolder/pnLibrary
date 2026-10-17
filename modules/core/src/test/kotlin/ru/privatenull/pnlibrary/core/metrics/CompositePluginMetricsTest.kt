@@ -10,6 +10,22 @@ import java.util.function.Supplier
 
 class CompositePluginMetricsTest {
     @Test
+    fun `caller cannot remove owned backends or mutate provider metadata`() {
+        val calls = mutableListOf<String>()
+        val source = mutableListOf<PluginMetrics>(
+            RecordingMetrics(MetricsProvider.BSTATS, calls),
+            RecordingMetrics(MetricsProvider.FASTSTATS, calls),
+        )
+        val composite = CompositePluginMetrics(source)
+        source.clear()
+        assertThrows(UnsupportedOperationException::class.java) {
+            (composite.providers as MutableSet<MetricsProvider>).clear()
+        }
+        composite.close()
+        assertEquals(listOf("faststats:close", "bstats:close"), calls)
+    }
+
+    @Test
     fun `close releases every backend even when one backend fails`() {
         val calls = mutableListOf<String>()
         val first = RecordingMetrics(MetricsProvider.BSTATS, calls)

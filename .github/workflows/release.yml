@@ -35,6 +35,9 @@ jobs:
     runs-on: windows-latest
     timeout-minutes: 30
     env:
+      RELEASE_VERSION: ${{ inputs.version }}
+      RELEASE_MODE: ${{ inputs.mode }}
+      RELEASE_NOTES: ${{ inputs.release_notes }}
       ORG_GRADLE_PROJECT_mavenCentralUsername: ${{ secrets.MAVEN_CENTRAL_USERNAME }}
       ORG_GRADLE_PROJECT_mavenCentralPassword: ${{ secrets.MAVEN_CENTRAL_PASSWORD }}
       ORG_GRADLE_PROJECT_signingInMemoryKey: ${{ secrets.MAVEN_SIGNING_KEY }}
@@ -56,13 +59,13 @@ jobs:
       - name: Validate requested version
         shell: pwsh
         run: |
-          if ('${{ inputs.version }}' -notmatch '^(0|[1-9]\d*)\.(0|[1-9]\d*)\.(0|[1-9]\d*)(?:-[0-9A-Za-z.-]+)?(?:\+[0-9A-Za-z.-]+)?$') {
-            throw 'Invalid semantic version: ${{ inputs.version }}'
+          if ($env:RELEASE_VERSION -notmatch '^(0|[1-9]\d*)\.(0|[1-9]\d*)\.(0|[1-9]\d*)(?:-[0-9A-Za-z.-]+)?(?:\+[0-9A-Za-z.-]+)?$') {
+            throw "Invalid semantic version: $env:RELEASE_VERSION"
           }
-          if ('${{ inputs.mode }}' -eq 'central') {
+          if ($env:RELEASE_MODE -eq 'central') {
             $current = (Select-String gradle.properties '^version=(.+)$').Matches[0].Groups[1].Value
-            if ($current -ne '${{ inputs.version }}') {
-              throw "Requested ${{ inputs.version }}, but the repository contains $current"
+            if ($current -ne $env:RELEASE_VERSION) {
+              throw "Requested $env:RELEASE_VERSION, but the repository contains $current"
             }
           }
 
@@ -74,7 +77,7 @@ jobs:
           if ($tasks -notmatch 'publishAndReleaseToMavenCentral') {
             throw 'Maven Central publishing is not configured in Gradle'
           }
-          @('MAVEN_CENTRAL_USERNAME', 'MAVEN_CENTRAL_PASSWORD', 'MAVEN_SIGNING_KEY', 'MAVEN_SIGNING_PASSWORD') | ForEach-Object {
+          @('ORG_GRADLE_PROJECT_mavenCentralUsername', 'ORG_GRADLE_PROJECT_mavenCentralPassword', 'ORG_GRADLE_PROJECT_signingInMemoryKey', 'ORG_GRADLE_PROJECT_signingInMemoryKeyPassword') | ForEach-Object {
             $secret = (Get-Item "env:$_" -ErrorAction SilentlyContinue).Value
             if ([string]::IsNullOrWhiteSpace($secret)) { throw "Missing GitHub Actions secret: $_" }
           }
@@ -82,10 +85,10 @@ jobs:
       - name: Set project version
         if: inputs.mode == 'full'
         shell: pwsh
-        run: tools/release/release.ps1 -Action version -Version '${{ inputs.version }}'
+        run: tools/release/release.ps1 -Action version -Version $env:RELEASE_VERSION
 
       - name: Build and verify
-        run: .\gradlew.bat clean test :distribution:build --console=plain
+        run: .\gradlew.bat clean check :distribution:build --console=plain
 
       - name: Commit version and create tag
         if: inputs.mode == 'full'
@@ -93,11 +96,15 @@ jobs:
         run: |
           git config user.name 'pnFolder Release Bot'
           git config user.email 'actions@users.noreply.github.com'
-          git add gradle.properties README.md INTEGRATION.md HELP-README.md CHANGELOG.md docs
-          git commit -m 'release: ${{ inputs.version }}'
-          git tag -a 'v${{ inputs.version }}' -m 'pnLibrary ${{ inputs.version }}'
+          git add gradle.properties
+          git diff --cached --quiet
+          if ($LASTEXITCODE -ne 0) {
+            git commit -m "release: $env:RELEASE_VERSION"
+            if ($LASTEXITCODE -ne 0) { throw 'Release commit failed' }
+          }
+          git tag -a "v$env:RELEASE_VERSION" -m "pnLibrary $env:RELEASE_VERSION"
           git push origin HEAD
-          git push origin 'v${{ inputs.version }}'
+          git push origin "v$env:RELEASE_VERSION"
 
       - name: Create GitHub Release
         if: inputs.mode == 'full'
@@ -112,11 +119,11 @@ jobs:
             } |
             ForEach-Object FullName
           if (-not $artifacts) { throw 'No release JARs were built' }
-          $arguments = @('release', 'create', 'v${{ inputs.version }}') + $artifacts + @(
-            '--title', 'pnLibrary ${{ inputs.version }}',
-            '--notes', '${{ inputs.release_notes }}'
+          $arguments = @('release', 'create', "v$env:RELEASE_VERSION") + $artifacts + @(
+            '--title', "pnLibrary $env:RELEASE_VERSION",
+            '--notes', $env:RELEASE_NOTES
           )
-          if ('${{ inputs.version }}'.Contains('-')) { $arguments += '--prerelease' }
+          if ($env:RELEASE_VERSION.Contains('-')) { $arguments += '--prerelease' }
           & gh @arguments
           if ($LASTEXITCODE -ne 0) { throw 'GitHub Release creation failed' }
 

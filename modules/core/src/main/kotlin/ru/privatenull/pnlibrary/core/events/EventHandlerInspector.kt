@@ -69,8 +69,10 @@ internal object EventHandlerInspector {
             "@EventHandler method must return Unit or void: ${description(method)}"
         }
 
-        require(method.trySetAccessible()) {
-            "@EventHandler method is not accessible: ${description(method)}"
+        try {
+            method.isAccessible = true
+        } catch (error: RuntimeException) {
+            throw IllegalArgumentException("@EventHandler method is not accessible: ${description(method)}", error)
         }
         return Handler(method, annotation, method.parameterTypes[0].asSubclass(Event::class.java))
     }

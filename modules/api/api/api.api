@@ -2995,10 +2995,10 @@ public abstract interface class ru/privatenull/pnlibrary/api/tasks/TaskHandle : 
 	public abstract fun cancel ()V
 	public fun cancelIfActive ()Z
 	public fun close ()V
-	public fun getId ()Lru/privatenull/pnlibrary/api/tasks/TaskId;
-	public fun getStatus ()Lru/privatenull/pnlibrary/api/tasks/TaskStatus;
+	public abstract fun getId ()Lru/privatenull/pnlibrary/api/tasks/TaskId;
+	public abstract fun getStatus ()Lru/privatenull/pnlibrary/api/tasks/TaskStatus;
 	public abstract fun isCancelled ()Z
-	public fun snapshot ()Lru/privatenull/pnlibrary/api/tasks/TaskSnapshot;
+	public abstract fun snapshot ()Lru/privatenull/pnlibrary/api/tasks/TaskSnapshot;
 }
 
 public final class ru/privatenull/pnlibrary/api/tasks/TaskId {
@@ -3050,13 +3050,13 @@ public abstract interface class ru/privatenull/pnlibrary/api/tasks/TaskScope : j
 	public fun cancel (Lru/privatenull/pnlibrary/api/tasks/TaskId;)Z
 	public abstract fun cancelAll ()V
 	public fun close ()V
-	public fun get (Lru/privatenull/pnlibrary/api/tasks/TaskId;)Lru/privatenull/pnlibrary/api/tasks/TaskHandle;
-	public fun getByKey (Ljava/lang/String;)Lru/privatenull/pnlibrary/api/tasks/TaskHandle;
+	public abstract fun get (Lru/privatenull/pnlibrary/api/tasks/TaskId;)Lru/privatenull/pnlibrary/api/tasks/TaskHandle;
+	public abstract fun getByKey (Ljava/lang/String;)Lru/privatenull/pnlibrary/api/tasks/TaskHandle;
 	public abstract fun getOwner ()Ljava/lang/Object;
-	public fun query (Lru/privatenull/pnlibrary/api/tasks/TaskQuery;)Ljava/util/List;
+	public abstract fun query (Lru/privatenull/pnlibrary/api/tasks/TaskQuery;)Ljava/util/List;
 	public static synthetic fun query$default (Lru/privatenull/pnlibrary/api/tasks/TaskScope;Lru/privatenull/pnlibrary/api/tasks/TaskQuery;ILjava/lang/Object;)Ljava/util/List;
 	public fun require (Lru/privatenull/pnlibrary/api/tasks/TaskId;)Lru/privatenull/pnlibrary/api/tasks/TaskHandle;
-	public fun schedule (Lru/privatenull/pnlibrary/api/tasks/TaskSpec;)Lru/privatenull/pnlibrary/api/tasks/TaskHandle;
+	public abstract fun schedule (Lru/privatenull/pnlibrary/api/tasks/TaskSpec;)Lru/privatenull/pnlibrary/api/tasks/TaskHandle;
 }
 
 public final class ru/privatenull/pnlibrary/api/tasks/TaskServiceSettings {
@@ -3771,11 +3771,8 @@ public final class ru/privatenull/pnlibrary/api/updates/UpdateSnapshot {
 }
 
 public final class ru/privatenull/pnlibrary/api/updates/UpdateState : java/lang/Enum {
-	public static final field AVAILABLE Lru/privatenull/pnlibrary/api/updates/UpdateState;
 	public static final field BLOCKED Lru/privatenull/pnlibrary/api/updates/UpdateState;
 	public static final field CHECKING Lru/privatenull/pnlibrary/api/updates/UpdateState;
-	public static final field CURRENT Lru/privatenull/pnlibrary/api/updates/UpdateState;
-	public static final field DOWNLOADED Lru/privatenull/pnlibrary/api/updates/UpdateState;
 	public static final field DOWNLOADING Lru/privatenull/pnlibrary/api/updates/UpdateState;
 	public static final field FAILED Lru/privatenull/pnlibrary/api/updates/UpdateState;
 	public static final field FROZEN Lru/privatenull/pnlibrary/api/updates/UpdateState;

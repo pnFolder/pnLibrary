@@ -1,3 +1,8 @@
+public final class ru/privatenull/pnlibrary/common/jvm/JavaRuntime {
+	public static final field INSTANCE Lru/privatenull/pnlibrary/common/jvm/JavaRuntime;
+	public static final fun getFeature ()I
+}
+
 public final class ru/privatenull/pnlibrary/common/minecraft/MinecraftVersion : java/lang/Enum {
 	public static final field Companion Lru/privatenull/pnlibrary/common/minecraft/MinecraftVersion$Companion;
 	public static final field UNKNOWN Lru/privatenull/pnlibrary/common/minecraft/MinecraftVersion;

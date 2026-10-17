@@ -18,6 +18,28 @@ import java.util.concurrent.atomic.AtomicInteger
 
 class MetricsRegistryTest {
     @Test
+    fun `closed registry rejects every metrics factory entry point`() {
+        var opened = 0
+        val registry = MetricsRegistry(object : PlatformMetricsFactory {
+            override fun open(owner: Any, projectId: Int): PluginMetrics {
+                opened++
+                return FakeMetrics(projectId) {}
+            }
+            override fun openErrorReporter(owner: Any, configurations: Collection<MetricsProviderConfiguration>): ErrorReporter? {
+                opened++
+                return null
+            }
+        })
+        val configuration = listOf(MetricsProviderConfiguration(MetricsProvider.FASTSTATS, token = "token"))
+        registry.close()
+        assertThrows(IllegalStateException::class.java) { registry.open(Any(), 123) }
+        assertThrows(IllegalStateException::class.java) { registry.open(Any(), configuration) }
+        assertThrows(IllegalStateException::class.java) { registry.openErrorReporter(Any(), configuration) }
+        assertEquals(0, opened)
+        registry.close()
+    }
+
+    @Test
     fun `project id is required and runtime closes sessions`() {
         var closed = 0
         val factory = object : PlatformMetricsFactory {

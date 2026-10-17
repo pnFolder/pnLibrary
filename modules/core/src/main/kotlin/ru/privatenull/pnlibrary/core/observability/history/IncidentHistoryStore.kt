@@ -1,5 +1,7 @@
 package ru.privatenull.pnlibrary.core.observability.history
 
+import kotlin.streams.toList
+
 import com.google.gson.Gson
 import ru.privatenull.pnlibrary.core.security.EncryptedEnvelopeCodec
 import java.nio.charset.StandardCharsets

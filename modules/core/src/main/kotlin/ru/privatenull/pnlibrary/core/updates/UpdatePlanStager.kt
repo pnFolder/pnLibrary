@@ -1,5 +1,7 @@
 package ru.privatenull.pnlibrary.core.updates
 
+import ru.privatenull.pnlibrary.common.jvm.JavaRuntime
+
 import ru.privatenull.pnlibrary.api.platform.PlatformType
 import ru.privatenull.pnlibrary.api.updates.ArtifactDescriptor
 import ru.privatenull.pnlibrary.api.updates.ProductChange
@@ -82,7 +84,7 @@ internal class UpdatePlanStager(
         change: ProductChange,
         release: ProductRelease,
     ): ArtifactDescriptor = release.artifacts.firstOrNull { artifact ->
-        artifact.platform == platform && artifact.supports(Runtime.version().feature())
+        artifact.platform == platform && artifact.supports(JavaRuntime.feature)
     } ?: error("No ${platform.id} artifact for ${change.product} ${change.to}")
 
     private fun sha256(bytes: ByteArray): String = MessageDigest.getInstance("SHA-256")

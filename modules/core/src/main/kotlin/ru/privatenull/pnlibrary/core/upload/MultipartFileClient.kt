@@ -74,7 +74,7 @@ internal object MultipartFileClient {
                     result.write(buffer, 0, count)
                     if (result.size() > 16_384) throw IOException("${endpoint.host} response is too large")
                 }
-                result.toString(StandardCharsets.UTF_8)
+                result.toString(StandardCharsets.UTF_8.name())
             }
             return response.trim()
         } finally {

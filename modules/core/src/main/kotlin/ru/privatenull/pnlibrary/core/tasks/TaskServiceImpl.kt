@@ -1,6 +1,7 @@
 package ru.privatenull.pnlibrary.core.tasks
 
 import ru.privatenull.pnlibrary.api.plugin.PluginId
+import ru.privatenull.pnlibrary.core.lifecycle.ResourceCleanup
 import ru.privatenull.pnlibrary.api.tasks.*
 import ru.privatenull.pnlibrary.spi.tasks.*
 import java.time.Instant
@@ -15,7 +16,7 @@ internal class TaskServiceImpl(
     private val errorLogger: (Any, String, Throwable) -> Unit = { _, _, _ -> },
 ) : TaskService {
     private val lock = Any()
-    private val scopes = Collections.synchronizedMap(IdentityHashMap<Any, MutableMap<PluginId, Scope>>())
+    private val scopes = IdentityHashMap<Any, MutableMap<PluginId, Scope>>()
     private val active = LinkedHashMap<TaskId, ManagedTask>()
     private val history = LinkedHashMap<TaskId, Archived>()
     private val closed = AtomicBoolean(false)
@@ -24,11 +25,9 @@ internal class TaskServiceImpl(
         return scope(owner, PluginId.of(owner.javaClass.simpleName.ifBlank { "owner" }))
     }
 
-    internal fun scope(owner: Any, scopeId: PluginId): TaskScope {
+    internal fun scope(owner: Any, scopeId: PluginId): TaskScope = synchronized(scopes) {
         check(!closed.get()) { "TaskService is closed" }
-        return synchronized(scopes) {
-            scopes.getOrPut(owner) { linkedMapOf() }.getOrPut(scopeId) { Scope(owner, scopeId) }
-        }
+        scopes.getOrPut(owner) { linkedMapOf() }.getOrPut(scopeId) { Scope(owner, scopeId) }
     }
 
     override fun get(id: TaskId): TaskHandle? = synchronized(lock) { active[id] }
@@ -38,14 +37,18 @@ internal class TaskServiceImpl(
     }
     override fun query(owner: Any, query: TaskQuery): List<TaskSnapshot> = snapshots(owner, query)
     override fun close(owner: Any) {
-        synchronized(scopes) { scopes.remove(owner)?.values?.toList().orEmpty() }.forEach { it.cancelAll() }
+        val current = synchronized(scopes) { scopes.remove(owner)?.values?.toList().orEmpty() }
+        ResourceCleanup.closeAll(*current.map { scope -> ({ scope.cancelAll() }) }.toTypedArray())
     }
     override fun close() {
         if (!closed.compareAndSet(false, true)) return
-        synchronized(scopes) {
+        val current = synchronized(scopes) {
             scopes.values.flatMap { it.values }.also { scopes.clear() }
-        }.forEach { it.cancelAll() }
-        adapter.close()
+        }
+        ResourceCleanup.closeAll(
+            *current.map { scope -> ({ scope.cancelAll() }) }.toTypedArray(),
+            { adapter.close() },
+        )
     }
 
     private fun snapshots(owner: Any, query: TaskQuery) = synchronized(lock) {
@@ -104,11 +107,15 @@ internal class TaskServiceImpl(
 
         override fun cancelAll() {
             if (!scopeClosed.compareAndSet(false, true)) return
-            synchronized(lock) { active.values.filter { it.scopeToken === scopeToken }.toList() }.forEach { it.cancel() }
-            synchronized(scopes) {
-                scopes[owner]?.let { owned ->
-                    owned.remove(scopeId, this)
-                    if (owned.isEmpty()) scopes.remove(owner)
+            val pending = synchronized(lock) { active.values.filter { it.scopeToken === scopeToken }.toList() }
+            try {
+                ResourceCleanup.closeAll(*pending.map { task -> ({ task.cancel() }) }.toTypedArray())
+            } finally {
+                synchronized(scopes) {
+                    scopes[owner]?.let { owned ->
+                        owned.remove(scopeId, this)
+                        if (owned.isEmpty()) scopes.remove(owner)
+                    }
                 }
             }
         }
@@ -187,8 +194,12 @@ internal class TaskServiceImpl(
             } catch (error: Throwable) {
                 failure = "${error.javaClass.simpleName}: ${error.message.orEmpty()}"
                 state.set(TaskStatus.FAILED)
-                native.get()?.cancel()
-                errorLogger(owner, "[pnLibrary/tasks] Task ${spec.name ?: id} failed", error)
+                completed = Instant.now()
+                ResourceCleanup.suppressInto(
+                    error,
+                    { native.get()?.cancel() },
+                    { errorLogger(owner, "[pnLibrary/tasks] Task ${spec.name ?: id} failed", error) },
+                )
                 terminal()
             } finally {
                 running.set(false)
@@ -207,8 +218,11 @@ internal class TaskServiceImpl(
             if (!cancelled.compareAndSet(false, true)) return false
             state.set(TaskStatus.CANCELLED)
             completed = Instant.now()
-            native.get()?.cancel()
-            terminal()
+            try {
+                native.get()?.cancel()
+            } finally {
+                terminal()
+            }
             return true
         }
 

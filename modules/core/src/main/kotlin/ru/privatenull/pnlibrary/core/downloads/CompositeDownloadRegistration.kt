@@ -1,5 +1,7 @@
 package ru.privatenull.pnlibrary.core.downloads
 
+import ru.privatenull.pnlibrary.core.lifecycle.ResourceCleanup
+
 import ru.privatenull.pnlibrary.api.downloads.DownloadRegistration
 import ru.privatenull.pnlibrary.api.downloads.DownloadSnapshot
 import java.util.concurrent.CompletionStage
@@ -19,8 +21,7 @@ internal class CompositeDownloadRegistration private constructor(
         }
 
     override fun close() {
-        first.close()
-        second.close()
+        ResourceCleanup.closeAll({ first.close() }, { second.close() })
     }
 
     companion object {

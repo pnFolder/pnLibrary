@@ -1,5 +1,7 @@
 package ru.privatenull.pnlibrary.core.upload
 
+import ru.privatenull.pnlibrary.core.io.TextFiles
+
 import com.google.gson.Gson
 import com.google.gson.JsonParseException
 import com.google.gson.reflect.TypeToken
@@ -54,7 +56,7 @@ internal class UploadLedgerPersistence(
         if (!Files.isRegularFile(file)) throw IOException("unsafe upload ledger: not a regular file")
         if (Files.size(file) > MAX_LEDGER_BYTES) throw IOException("unsafe upload ledger: oversized")
         return try {
-            Files.readString(file, StandardCharsets.UTF_8)
+            TextFiles.read(file, StandardCharsets.UTF_8)
                 .let { JSON.fromJson<List<UploadLedgerEntry>?>(it, ENTRY_LIST_TYPE) }
                 .orEmpty()
                 .filter(UploadLedgerEntry::isValid)
@@ -72,7 +74,7 @@ internal class UploadLedgerPersistence(
         Files.createDirectories(parent)
         val temporary = Files.createTempFile(parent, "${file.fileName}.", ".tmp")
         try {
-            Files.writeString(
+            TextFiles.write(
                 temporary,
                 JSON.toJson(entries),
                 StandardCharsets.UTF_8,

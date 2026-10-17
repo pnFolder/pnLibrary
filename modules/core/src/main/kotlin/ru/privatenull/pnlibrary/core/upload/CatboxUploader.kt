@@ -1,5 +1,7 @@
 package ru.privatenull.pnlibrary.core.upload
 
+import ru.privatenull.pnlibrary.core.io.TextFiles
+
 import java.io.IOException
 import java.net.URI
 import java.nio.charset.StandardCharsets
@@ -27,7 +29,7 @@ class CatboxUploader(
     override fun upload(payload: String): UploadReceipt {
         val temporary = Files.createTempFile("pnlibrary-report-", ".pnsupport")
         return try {
-            Files.writeString(temporary, payload, StandardCharsets.UTF_8)
+            TextFiles.write(temporary, payload, StandardCharsets.UTF_8)
             uploadFile(temporary, "application/vnd.pnfolder.support")
         } finally {
             Files.deleteIfExists(temporary)
