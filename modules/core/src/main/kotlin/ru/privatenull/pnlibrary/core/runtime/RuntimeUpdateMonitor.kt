@@ -28,7 +28,6 @@ internal object RuntimeUpdateMonitor {
             ru.privatenull.pnlibrary.api.updates.ProductDescriptor.library(currentVersion),
             PluginUpdateRequest.builder()
                 .repository("pnFolder", "pnLibrary")
-                .supportedApi(1, 1)
                 .automaticDownload(false)
                 .artifact("(?i)^pnLibrary-[0-9].*-$artifactId-java[0-9]+\\.jar$", 8)
                 .build(),

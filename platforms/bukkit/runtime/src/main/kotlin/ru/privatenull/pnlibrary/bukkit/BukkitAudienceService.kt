@@ -1,6 +1,7 @@
 package ru.privatenull.pnlibrary.bukkit
 
 import net.kyori.adventure.platform.bukkit.BukkitAudiences
+import net.kyori.adventure.audience.Audience
 import net.kyori.adventure.sound.Sound
 import net.kyori.adventure.text.Component
 import net.kyori.adventure.text.serializer.legacy.LegacyComponentSerializer
@@ -14,22 +15,18 @@ import java.util.concurrent.atomic.AtomicBoolean
 /**
  * Lifecycle-owned Adventure transport for Bukkit players.
  *
- * The service prefers `adventure-platform-bukkit` and falls back to legacy Bukkit/Bungee message
+ * Paper recipients use their native Adventure API directly, retaining click and hover events.
+ * Older Bukkit servers use `adventure-platform-bukkit` and fall back to legacy Bukkit message
  * methods when Adventure initialization or delivery fails. Runtime degradation is sticky: after a
  * native transport failure, later messages use the fallback to avoid repeatedly failing calls.
  * Close this service with the owning plugin to release Adventure platform resources.
  */
-class BukkitAudienceService(plugin: Plugin) : AutoCloseable {
+class BukkitAudienceService internal constructor(plugin: Plugin, private val audiences: BukkitAudiences?) : AutoCloseable {
+    constructor(plugin: Plugin) : this(plugin, createProvider(plugin))
+
     private val logger = plugin.logger
     private val pluginServer = plugin.server
-    private val audiences = try {
-        BukkitAudiences.create(plugin)
-    } catch (error: Throwable) {
-        rethrowFatal(error)
-        logger.warning("Adventure Bukkit transport is unavailable (${error.javaClass.simpleName}); using legacy text fallback")
-        null
-    }
-    private val fallbackOnly = AtomicBoolean(audiences == null)
+    private val fallbackOnly = AtomicBoolean(audiences == null && !NATIVE_ADVENTURE)
 
     /** Whether the native Adventure transport is still available for new deliveries. */
     val nativeTransportAvailable: Boolean get() = !fallbackOnly.get()
@@ -67,11 +64,17 @@ class BukkitAudienceService(plugin: Plugin) : AutoCloseable {
     /** Tries Adventure delivery before switching to the sticky legacy fallback. */
     private fun send(player: Player, message: Component, actionBar: Boolean) {
         val provider = audiences
-        if (provider != null && !fallbackOnly.get()) {
+        if (!fallbackOnly.get() && (player is Audience || provider != null)) {
             try {
-                if (actionBar) provider.player(player.uniqueId).sendActionBar(message)
-                else provider.player(player.uniqueId).sendMessage(message)
-                return
+                // Paper players are already native audiences. Do not resolve the command's
+                // recipient through a separate UUID registry that may silently return empty.
+                val recipient = player as? Audience ?: requireNotNull(provider).player(player.uniqueId)
+                if (recipient === Audience.empty()) {
+                    fallbackOnly.set(true)
+                } else {
+                    if (actionBar) recipient.sendActionBar(message) else recipient.sendMessage(message)
+                    return
+                }
             } catch (error: Throwable) {
                 rethrowFatal(error)
                 // A broken/incompatible platform bridge must not break the calling plugin.
@@ -99,6 +102,9 @@ class BukkitAudienceService(plugin: Plugin) : AutoCloseable {
 
     /** Tries Adventure sound delivery, then the native Bukkit sound API. */
     internal fun playSound(player: Player, sound: Sound): Boolean {
+        if (player is Audience && !fallbackOnly.get()) {
+            try { player.playSound(sound); return true } catch (error: Throwable) { rethrowFatal(error) }
+        }
         val provider = audiences
         if (provider != null && !fallbackOnly.get()) {
             try {
@@ -120,6 +126,16 @@ class BukkitAudienceService(plugin: Plugin) : AutoCloseable {
 
     private companion object {
         val LEGACY: LegacyComponentSerializer = LegacyComponentSerializer.legacySection()
+        val NATIVE_ADVENTURE = Audience::class.java.isAssignableFrom(Player::class.java)
+
+        fun createProvider(plugin: Plugin): BukkitAudiences? {
+            if (NATIVE_ADVENTURE) return null
+            return try { BukkitAudiences.create(plugin) } catch (error: Throwable) {
+                rethrowFatal(error)
+                plugin.logger.warning("Adventure Bukkit transport is unavailable (${error.javaClass.simpleName}); using legacy text fallback")
+                null
+            }
+        }
 
         fun rethrowFatal(error: Throwable) {
             if (error is Error) throw error

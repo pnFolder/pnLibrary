@@ -3497,6 +3497,7 @@ public final class ru/privatenull/pnlibrary/api/updates/PluginUpdateRequest {
 	public final fun getArtifacts ()Ljava/util/List;
 	public final fun getAutomaticDownload ()Z
 	public final fun getChannel ()Lru/privatenull/pnlibrary/api/updates/UpdateChannel;
+	public final fun getConfigurationBackup ()Lru/privatenull/pnlibrary/api/updates/UpdateConfigurationBackup;
 	public final fun getRepositoryName ()Ljava/lang/String;
 	public final fun getRepositoryOwner ()Ljava/lang/String;
 	public final fun getSupportedApi ()Lru/privatenull/pnlibrary/api/version/ApiVersionRange;
@@ -3515,6 +3516,7 @@ public final class ru/privatenull/pnlibrary/api/updates/PluginUpdateRequest$Buil
 	public final fun automaticDownload (Z)Lru/privatenull/pnlibrary/api/updates/PluginUpdateRequest$Builder;
 	public final fun build ()Lru/privatenull/pnlibrary/api/updates/PluginUpdateRequest;
 	public final fun channel (Lru/privatenull/pnlibrary/api/updates/UpdateChannel;)Lru/privatenull/pnlibrary/api/updates/PluginUpdateRequest$Builder;
+	public final fun configurationBackup (Ljava/nio/file/Path;[Ljava/lang/String;)Lru/privatenull/pnlibrary/api/updates/PluginUpdateRequest$Builder;
 	public final fun exactArtifact (Ljava/lang/String;)Lru/privatenull/pnlibrary/api/updates/PluginUpdateRequest$Builder;
 	public final fun exactArtifact (Ljava/lang/String;I)Lru/privatenull/pnlibrary/api/updates/PluginUpdateRequest$Builder;
 	public final fun exactArtifact (Ljava/lang/String;ILjava/lang/Integer;)Lru/privatenull/pnlibrary/api/updates/PluginUpdateRequest$Builder;
@@ -3691,6 +3693,63 @@ public final class ru/privatenull/pnlibrary/api/updates/ReleaseSummary {
 	public fun toString ()Ljava/lang/String;
 }
 
+public final class ru/privatenull/pnlibrary/api/updates/UpdateActor {
+	public static final field Companion Lru/privatenull/pnlibrary/api/updates/UpdateActor$Companion;
+	public static final field SYSTEM Lru/privatenull/pnlibrary/api/updates/UpdateActor;
+	public static final field UNKNOWN Lru/privatenull/pnlibrary/api/updates/UpdateActor;
+	public fun <init> (Lru/privatenull/pnlibrary/api/updates/UpdateActor$Kind;Ljava/lang/String;Ljava/lang/String;)V
+	public final fun component1 ()Lru/privatenull/pnlibrary/api/updates/UpdateActor$Kind;
+	public final fun component2 ()Ljava/lang/String;
+	public final fun component3 ()Ljava/lang/String;
+	public final fun copy (Lru/privatenull/pnlibrary/api/updates/UpdateActor$Kind;Ljava/lang/String;Ljava/lang/String;)Lru/privatenull/pnlibrary/api/updates/UpdateActor;
+	public static synthetic fun copy$default (Lru/privatenull/pnlibrary/api/updates/UpdateActor;Lru/privatenull/pnlibrary/api/updates/UpdateActor$Kind;Ljava/lang/String;Ljava/lang/String;ILjava/lang/Object;)Lru/privatenull/pnlibrary/api/updates/UpdateActor;
+	public fun equals (Ljava/lang/Object;)Z
+	public final fun getId ()Ljava/lang/String;
+	public final fun getKind ()Lru/privatenull/pnlibrary/api/updates/UpdateActor$Kind;
+	public final fun getName ()Ljava/lang/String;
+	public fun hashCode ()I
+	public fun toString ()Ljava/lang/String;
+}
+
+public final class ru/privatenull/pnlibrary/api/updates/UpdateActor$Companion {
+}
+
+public final class ru/privatenull/pnlibrary/api/updates/UpdateActor$Kind : java/lang/Enum {
+	public static final field CONSOLE Lru/privatenull/pnlibrary/api/updates/UpdateActor$Kind;
+	public static final field INTEGRATION Lru/privatenull/pnlibrary/api/updates/UpdateActor$Kind;
+	public static final field PLAYER Lru/privatenull/pnlibrary/api/updates/UpdateActor$Kind;
+	public static final field SYSTEM Lru/privatenull/pnlibrary/api/updates/UpdateActor$Kind;
+	public static final field UNKNOWN Lru/privatenull/pnlibrary/api/updates/UpdateActor$Kind;
+	public static fun getEntries ()Lkotlin/enums/EnumEntries;
+	public static fun valueOf (Ljava/lang/String;)Lru/privatenull/pnlibrary/api/updates/UpdateActor$Kind;
+	public static fun values ()[Lru/privatenull/pnlibrary/api/updates/UpdateActor$Kind;
+}
+
+public final class ru/privatenull/pnlibrary/api/updates/UpdateBackup {
+	public fun <init> (Ljava/util/UUID;Ljava/time/Instant;Ljava/util/UUID;Ljava/util/List;I)V
+	public synthetic fun <init> (Ljava/util/UUID;Ljava/time/Instant;Ljava/util/UUID;Ljava/util/List;IILkotlin/jvm/internal/DefaultConstructorMarker;)V
+	public final fun getComponents ()Ljava/util/List;
+	public final fun getConfigurationFiles ()I
+	public final fun getCreatedAt ()Ljava/time/Instant;
+	public final fun getId ()Ljava/util/UUID;
+	public final fun getPlanId ()Ljava/util/UUID;
+}
+
+public final class ru/privatenull/pnlibrary/api/updates/UpdateBackupComponent {
+	public fun <init> (Lru/privatenull/pnlibrary/api/updates/ProductId;Ljava/lang/String;Ljava/lang/String;)V
+	public final fun component1 ()Lru/privatenull/pnlibrary/api/updates/ProductId;
+	public final fun component2 ()Ljava/lang/String;
+	public final fun component3 ()Ljava/lang/String;
+	public final fun copy (Lru/privatenull/pnlibrary/api/updates/ProductId;Ljava/lang/String;Ljava/lang/String;)Lru/privatenull/pnlibrary/api/updates/UpdateBackupComponent;
+	public static synthetic fun copy$default (Lru/privatenull/pnlibrary/api/updates/UpdateBackupComponent;Lru/privatenull/pnlibrary/api/updates/ProductId;Ljava/lang/String;Ljava/lang/String;ILjava/lang/Object;)Lru/privatenull/pnlibrary/api/updates/UpdateBackupComponent;
+	public fun equals (Ljava/lang/Object;)Z
+	public final fun getBackupVersion ()Ljava/lang/String;
+	public final fun getProduct ()Lru/privatenull/pnlibrary/api/updates/ProductId;
+	public final fun getUpdatedVersion ()Ljava/lang/String;
+	public fun hashCode ()I
+	public fun toString ()Ljava/lang/String;
+}
+
 public final class ru/privatenull/pnlibrary/api/updates/UpdateChannel : java/lang/Enum {
 	public static final field ALPHA Lru/privatenull/pnlibrary/api/updates/UpdateChannel;
 	public static final field BETA Lru/privatenull/pnlibrary/api/updates/UpdateChannel;
@@ -3701,6 +3760,24 @@ public final class ru/privatenull/pnlibrary/api/updates/UpdateChannel : java/lan
 	public static fun getEntries ()Lkotlin/enums/EnumEntries;
 	public static fun valueOf (Ljava/lang/String;)Lru/privatenull/pnlibrary/api/updates/UpdateChannel;
 	public static fun values ()[Lru/privatenull/pnlibrary/api/updates/UpdateChannel;
+}
+
+public final class ru/privatenull/pnlibrary/api/updates/UpdateConfigurationBackup {
+	public fun <init> (Ljava/nio/file/Path;Ljava/util/List;)V
+	public final fun getFiles ()Ljava/util/List;
+	public final fun getRoot ()Ljava/nio/file/Path;
+}
+
+public final class ru/privatenull/pnlibrary/api/updates/UpdateHistoryEntry {
+	public fun <init> (Ljava/util/UUID;Ljava/time/Instant;Ljava/util/UUID;Lru/privatenull/pnlibrary/api/updates/UpdateState;Lru/privatenull/pnlibrary/api/updates/UpdateActor;Ljava/lang/String;Ljava/util/List;Ljava/lang/String;)V
+	public final fun getActor ()Lru/privatenull/pnlibrary/api/updates/UpdateActor;
+	public final fun getChanges ()Ljava/util/List;
+	public final fun getId ()Ljava/util/UUID;
+	public final fun getMessage ()Ljava/lang/String;
+	public final fun getOccurredAt ()Ljava/time/Instant;
+	public final fun getOperation ()Ljava/lang/String;
+	public final fun getPlanId ()Ljava/util/UUID;
+	public final fun getState ()Lru/privatenull/pnlibrary/api/updates/UpdateState;
 }
 
 public final class ru/privatenull/pnlibrary/api/updates/UpdatePlan {
@@ -3739,17 +3816,25 @@ public abstract interface class ru/privatenull/pnlibrary/api/updates/UpdateRegis
 
 public abstract interface class ru/privatenull/pnlibrary/api/updates/UpdateService {
 	public abstract fun all ()Ljava/util/List;
+	public fun backups ()Ljava/util/concurrent/CompletionStage;
 	public fun checkNow ()Ljava/util/concurrent/CompletionStage;
+	public fun checkNow (Lru/privatenull/pnlibrary/api/updates/UpdateActor;)Ljava/util/concurrent/CompletionStage;
 	public fun confirm (Ljava/util/UUID;Ljava/lang/String;)Ljava/util/concurrent/CompletionStage;
 	public fun currentPlan ()Ljava/util/Optional;
 	public abstract fun get (Ljava/lang/String;)Lru/privatenull/pnlibrary/api/updates/UpdateRegistration;
 	public fun history ()Ljava/util/List;
+	public fun historyPage (ILjava/lang/String;)Ljava/util/concurrent/CompletionStage;
+	public static synthetic fun historyPage$default (Lru/privatenull/pnlibrary/api/updates/UpdateService;ILjava/lang/String;ILjava/lang/Object;)Ljava/util/concurrent/CompletionStage;
 	public fun register (Ljava/lang/Object;Lru/privatenull/pnlibrary/api/updates/ProductDescriptor;Lru/privatenull/pnlibrary/api/updates/PluginUpdateRequest;)Lru/privatenull/pnlibrary/api/updates/UpdateRegistration;
 	public abstract fun register (Ljava/lang/Object;Lru/privatenull/pnlibrary/api/updates/ProductDescriptor;Lru/privatenull/pnlibrary/api/updates/PluginUpdateRequest;Ljava/util/List;)Lru/privatenull/pnlibrary/api/updates/UpdateRegistration;
 	public static synthetic fun register$default (Lru/privatenull/pnlibrary/api/updates/UpdateService;Ljava/lang/Object;Lru/privatenull/pnlibrary/api/updates/ProductDescriptor;Lru/privatenull/pnlibrary/api/updates/PluginUpdateRequest;Ljava/util/List;ILjava/lang/Object;)Lru/privatenull/pnlibrary/api/updates/UpdateRegistration;
 	public fun require (Ljava/lang/String;)Lru/privatenull/pnlibrary/api/updates/UpdateRegistration;
 	public fun rollback ()Ljava/util/concurrent/CompletionStage;
+	public fun rollback (Ljava/util/UUID;Lru/privatenull/pnlibrary/api/updates/UpdateActor;)Ljava/util/concurrent/CompletionStage;
+	public fun rollback (Ljava/util/UUID;ZLru/privatenull/pnlibrary/api/updates/UpdateActor;)Ljava/util/concurrent/CompletionStage;
+	public fun rollback (Lru/privatenull/pnlibrary/api/updates/UpdateActor;)Ljava/util/concurrent/CompletionStage;
 	public fun stage (Ljava/util/UUID;)Ljava/util/concurrent/CompletionStage;
+	public fun stage (Ljava/util/UUID;Lru/privatenull/pnlibrary/api/updates/UpdateActor;)Ljava/util/concurrent/CompletionStage;
 }
 
 public final class ru/privatenull/pnlibrary/api/updates/UpdateSnapshot {

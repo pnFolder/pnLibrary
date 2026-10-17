@@ -20,6 +20,73 @@ class UpdateOrchestratorTest {
     @TempDir lateinit var directory: Path
 
     @Test
+    fun `a check returning after shutdown cannot announce or automatically stage its result`() {
+        val executor = Executors.newSingleThreadScheduledExecutor()
+        val entered = CountDownLatch(1)
+        val release = CountDownLatch(1)
+        val observed = AtomicInteger()
+        val staged = AtomicInteger()
+        val announced = AtomicInteger()
+        val orchestrator = UpdateOrchestrator(
+            UpdateConfiguration(downloads = UpdateConfiguration.Downloads(automatic = true)),
+            UpdateStateStore(directory), executor,
+            resolver = {
+                entered.countDown()
+                while (release.count > 0) try { release.await() } catch (_: InterruptedException) { }
+                ResolutionResult.Ready(plan("2.0.0"))
+            },
+            stageAction = { staged.incrementAndGet() }, announcement = { announced.incrementAndGet() },
+            observeState = { _, _, _ -> observed.incrementAndGet() },
+        )
+        try {
+            val result = orchestrator.checkNow().toCompletableFuture()
+            assertTrue(entered.await(2, TimeUnit.SECONDS))
+            orchestrator.close()
+            release.countDown()
+            assertTrue(executor.awaitTermination(2, TimeUnit.SECONDS))
+            assertTrue(result.isCompletedExceptionally)
+            assertEquals(0, observed.get())
+            assertEquals(0, staged.get())
+            assertEquals(0, announced.get())
+        } finally { release.countDown(); orchestrator.close() }
+    }
+
+    @Test
+    fun `close completes queued operations without executing their mutations`() {
+        val executor = Executors.newSingleThreadScheduledExecutor()
+        val entered = CountDownLatch(1)
+        val release = CountDownLatch(1)
+        executor.execute {
+            entered.countDown()
+            try { release.await() } catch (_: InterruptedException) { }
+        }
+        assertTrue(entered.await(2, TimeUnit.SECONDS))
+        val mutations = AtomicInteger()
+        val orchestrator = UpdateOrchestrator(
+            UpdateConfiguration(), UpdateStateStore(directory), executor,
+            resolver = { ResolutionResult.Ready(plan("2.0.0")) },
+            stageAction = { mutations.incrementAndGet() }, announcement = {},
+        )
+        try {
+            val check = orchestrator.checkNow().toCompletableFuture()
+            val stage = orchestrator.stage(java.util.UUID.randomUUID()).toCompletableFuture()
+            val rollback = orchestrator.rollbackTo(UpdateActor.SYSTEM) {
+                mutations.incrementAndGet()
+                error("must not execute")
+            }.toCompletableFuture()
+            orchestrator.close()
+            listOf(check, stage, rollback).forEach { future ->
+                assertThrows(java.util.concurrent.ExecutionException::class.java) {
+                    future.get(2, TimeUnit.SECONDS)
+                }
+            }
+            assertTrue(executor.awaitTermination(2, TimeUnit.SECONDS))
+            assertEquals(0, mutations.get())
+            assertTrue(orchestrator.stage(java.util.UUID.randomUUID()).toCompletableFuture().isCompletedExceptionally)
+        } finally { release.countDown(); orchestrator.close() }
+    }
+
+    @Test
     fun `coalesces checks announces changed plans and rejects stale staging`() {
         val calls = AtomicInteger()
         val entered = CountDownLatch(1)
@@ -169,6 +236,91 @@ class UpdateOrchestratorTest {
         } finally {
             orchestrator.close()
         }
+    }
+
+    @Test
+    fun `manual operations retain their initiator through the executor`() {
+        val actor = ru.privatenull.pnlibrary.api.updates.UpdateActor(
+            ru.privatenull.pnlibrary.api.updates.UpdateActor.Kind.CONSOLE, "console", "Console",
+        )
+        val observations = mutableListOf<Pair<String, ru.privatenull.pnlibrary.api.updates.UpdateActor>>()
+        val executor = Executors.newSingleThreadScheduledExecutor()
+        val orchestrator = UpdateOrchestrator(
+            UpdateConfiguration(), UpdateStateStore(directory), executor,
+            resolver = { ResolutionResult.Ready(plan("2.0.0")) }, stageAction = {}, announcement = {},
+            observeState = { _, recordedActor, operation -> observations.add(operation to recordedActor) },
+        )
+        try {
+            val plan = orchestrator.checkNow(actor = actor).toCompletableFuture().get(2, TimeUnit.SECONDS)
+            orchestrator.stage(plan.id, actor).toCompletableFuture().get(2, TimeUnit.SECONDS)
+            orchestrator.rollback(actor) {}.toCompletableFuture().get(2, TimeUnit.SECONDS)
+            assertEquals(listOf("CHECK" to actor, "STAGE" to actor, "ROLLBACK" to actor), observations)
+        } finally { orchestrator.close() }
+    }
+
+    @Test
+    fun `automatic staging is attributed to the system rather than the person checking`() {
+        val actor = ru.privatenull.pnlibrary.api.updates.UpdateActor(
+            ru.privatenull.pnlibrary.api.updates.UpdateActor.Kind.CONSOLE, "console", "Console",
+        )
+        val observations = mutableListOf<Pair<String, ru.privatenull.pnlibrary.api.updates.UpdateActor>>()
+        val executor = Executors.newSingleThreadScheduledExecutor()
+        val orchestrator = UpdateOrchestrator(
+            UpdateConfiguration(downloads = UpdateConfiguration.Downloads(automatic = true)),
+            UpdateStateStore(directory), executor,
+            resolver = { ResolutionResult.Ready(plan("2.0.0")) }, stageAction = {}, announcement = {},
+            observeState = { _, recordedActor, operation -> observations.add(operation to recordedActor) },
+        )
+        try {
+            orchestrator.checkNow(actor = actor).toCompletableFuture().get(2, TimeUnit.SECONDS)
+            assertEquals(listOf("CHECK" to actor, "STAGE" to ru.privatenull.pnlibrary.api.updates.UpdateActor.SYSTEM), observations)
+        } finally { orchestrator.close() }
+    }
+
+    @Test
+    fun `failed manual staging records its initiator without replacing the available plan`() {
+        val actor = ru.privatenull.pnlibrary.api.updates.UpdateActor(
+            ru.privatenull.pnlibrary.api.updates.UpdateActor.Kind.CONSOLE, "console", "Console",
+        )
+        val observations = mutableListOf<UpdatePlanSnapshot>()
+        val executor = Executors.newSingleThreadScheduledExecutor()
+        val orchestrator = UpdateOrchestrator(
+            UpdateConfiguration(), UpdateStateStore(directory), executor,
+            resolver = { ResolutionResult.Ready(plan("2.0.0")) },
+            stageAction = { error("checksum mismatch") }, announcement = {},
+            observeState = { snapshot, recordedActor, operation ->
+                if (operation == "STAGE") {
+                    assertEquals(actor, recordedActor)
+                    observations.add(snapshot)
+                }
+            },
+        )
+        try {
+            val selected = orchestrator.checkNow().toCompletableFuture().get(2, TimeUnit.SECONDS)
+            assertThrows(Exception::class.java) { orchestrator.stage(selected.id, actor).toCompletableFuture().get(2, TimeUnit.SECONDS) }
+            assertEquals(UpdateState.FAILED, observations.single().state)
+            assertEquals("checksum mismatch", observations.single().message)
+            assertEquals(UpdateState.UPDATE_AVAILABLE, orchestrator.currentPlan().get().state)
+        } finally { orchestrator.close() }
+    }
+
+    @Test
+    fun `saved rollback can publish its own plan without an unrelated current plan`() {
+        val executor = Executors.newSingleThreadScheduledExecutor()
+        val orchestrator = UpdateOrchestrator(
+            UpdateConfiguration(), UpdateStateStore(directory), executor,
+            resolver = { ResolutionResult.Ready(plan("3.0.0")) }, stageAction = {}, announcement = {},
+        )
+        val id = java.util.UUID.randomUUID()
+        try {
+            val saved = UpdatePlanSnapshot(id, 0, UpdateState.ROLLED_BACK, plan("2.0.0"), emptyList(), "saved set")
+            val restored = orchestrator.rollbackTo(ru.privatenull.pnlibrary.api.updates.UpdateActor.SYSTEM) { saved }
+                .toCompletableFuture().get(2, TimeUnit.SECONDS)
+            assertEquals(id, restored.id)
+            assertEquals("2.0.0", restored.plan?.changes?.single()?.to.toString())
+            assertEquals("saved set", restored.message)
+            assertEquals(UpdateState.ROLLED_BACK, orchestrator.currentPlan().get().state)
+        } finally { orchestrator.close() }
     }
 
     private fun plan(version: String): UpdatePlan {

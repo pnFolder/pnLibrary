@@ -47,6 +47,9 @@ class BukkitControlCommandTest {
             definition.root.children.map { it.name },
         )
         val update = definition.root.children.single { it.name == "update" }
+        val catalog = definition.root.children.single { it.name == "updates" }
+        assertEquals(listOf("list", "available", "history", "backups", "rollback"), catalog.children.map { it.name })
+        assertEquals("page", catalog.children.single { it.name == "history" }.children.single().name)
         assertEquals(CommandNodeKind.ARGUMENT, update.children.single().kind)
         assertEquals("plugin", update.children.single().name)
         val restart = definition.root.children.single { it.name == "restart" }

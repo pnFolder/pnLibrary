@@ -42,7 +42,7 @@ jobs:
           }
           tools/api/check-api-generation.ps1 -BaseRef $base
       - name: Test and build distributions
-        run: ./gradlew clean test apiCheck :distribution:build --warning-mode all
+        run: ./gradlew clean check apiCheck :distribution:build --warning-mode all
       - uses: actions/upload-artifact@v4
         with:
           name: pnLibrary-distributions

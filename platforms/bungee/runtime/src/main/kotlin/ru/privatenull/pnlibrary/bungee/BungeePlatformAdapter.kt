@@ -26,6 +26,9 @@ internal class BungeePlatformAdapter(
     private val diagnosticDetailsCollector = BungeeDiagnosticDetailsCollector(plugin)
 
     private val lifecycle = PlatformLifecycle()
+    private val readinessLock = Any()
+    private var ready = false
+    private val pendingReadyTasks = mutableListOf<Runnable>()
 
     private val uncaughtExceptionObserver = UncaughtExceptionLogObserver(plugin)
 
@@ -129,6 +132,25 @@ internal class BungeePlatformAdapter(
         plugin.proxy.scheduler.runAsync(plugin, task)
     }
 
+    /** Waits until the entry point has published the runtime and native platform API. */
+    override fun whenServerReady(task: Runnable) {
+        synchronized(readinessLock) {
+            if (lifecycle.isClosed) return
+            if (!ready) { pendingReadyTasks += task; return }
+        }
+        executeGlobal(task)
+    }
+
+    /** Releases startup callbacks once; other managed plugins may still use the startup grace. */
+    internal fun markReady() {
+        val pending = synchronized(readinessLock) {
+            if (ready || lifecycle.isClosed) return
+            ready = true
+            pendingReadyTasks.toList().also { pendingReadyTasks.clear() }
+        }
+        pending.forEach(::executeGlobal)
+    }
+
     /** Dispatches recipient work through the same asynchronous proxy scheduler. */
     override fun executeReply(recipient: Any, task: Runnable) {
         executeGlobal(task)
@@ -136,7 +158,10 @@ internal class BungeePlatformAdapter(
 
     /** Releases observers and command registrations once. */
     override fun close() {
-        lifecycle.close { observeNativeLogs(null) }
+        lifecycle.close {
+            synchronized(readinessLock) { pendingReadyTasks.clear() }
+            observeNativeLogs(null)
+        }
     }
 
     /** Converts native plugin metadata to the shared snapshot contract. */

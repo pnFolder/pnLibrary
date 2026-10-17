@@ -97,6 +97,7 @@ internal class ModuleDefinitionBuilder : PluginBuilder {
             .automaticDownload(source.automaticDownload)
             .supportedApi(descriptor.supportedApi.minimum, descriptor.supportedApi.maximum)
             .also { target -> copyArtifactRules(source, target) }
+            .also { target -> source.configurationBackup?.let { target.configurationBackup(it.root, *it.files.toTypedArray()) } }
             .build()
     }
 

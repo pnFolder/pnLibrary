@@ -3,6 +3,7 @@ import com.github.jengelman.gradle.plugins.shadow.tasks.ShadowJar
 import java.util.jar.JarFile
 
 evaluationDependsOn(":modules:api")
+evaluationDependsOn(":modules:core")
 evaluationDependsOn(":modules:common")
 evaluationDependsOn(":modules:features:minecraft-localization")
 evaluationDependsOn(":platforms:bukkit:api")
@@ -135,8 +136,48 @@ tasks.register<ShadowJar>("shadowUniversal") {
 }
 
 tasks.named("build") {
-    dependsOn("shadowBukkit", "shadowBungee", "shadowVelocity", "shadowUniversal", "copyDeveloperArtifacts")
+    dependsOn("shadowBukkit", "shadowBungee", "shadowVelocity", "shadowUniversal", "shadowUpdater", "copyDeveloperArtifacts")
 }
+
+// A separate classpath avoids locking the plugin JAR that the updater must replace on Windows.
+val updaterRuntime: Configuration by configurations.creating
+dependencies {
+    updaterRuntime(project(":modules:core")) { isTransitive = false }
+    updaterRuntime(project(":modules:api")) { isTransitive = false }
+    updaterRuntime(project(":modules:common")) { isTransitive = false }
+    updaterRuntime(libs.kotlin.stdlib)
+    updaterRuntime(libs.gson)
+}
+val shadowUpdater = tasks.register<ShadowJar>("shadowUpdater") {
+    group = "distribution"
+    description = "Standalone pre-start updater; do not place this helper in the plugins directory"
+    archiveBaseName = "pnLibrary-updater"
+    configurations = listOf(updaterRuntime)
+    applyCommonConfig()
+    manifest { attributes["Main-Class"] = "ru.privatenull.pnlibrary.core.updates.OfflineUpdateInstaller" }
+}
+
+val verifyOfflineInstaller = tasks.register<JavaExec>("verifyOfflineInstaller") {
+    group = "verification"
+    description = "Runs the packaged updater on an empty isolated installation"
+    dependsOn(shadowUpdater)
+    // The Copy task declares the shared libs directory as its output.
+    // When both tasks are requested, finish copying before reading a JAR from it.
+    mustRunAfter("copyDeveloperArtifacts")
+    classpath = files(shadowUpdater.flatMap { it.archiveFile })
+    mainClass.set("ru.privatenull.pnlibrary.core.updates.OfflineUpdateInstaller")
+    val fixture = layout.buildDirectory.dir("offline-installer-smoke/plugins/pnLibrary")
+    args("--server-stopped", fixture.get().asFile.absolutePath)
+    doFirst { fixture.get().asFile.mkdirs() }
+}
+tasks.named("check") { dependsOn(verifyOfflineInstaller) }
+
+val verifyUpdaterProcess = tasks.register("verifyUpdaterProcess") {
+    group = "verification"
+    description = "Tests update and rollback in a separate JVM using the executable updater JAR"
+    dependsOn(":modules:core:verifyUpdaterProcess")
+}
+tasks.named("check") { dependsOn(verifyUpdaterProcess) }
 
 val commonJar = project(":modules:common").tasks.named<Jar>("jar")
 val commonSources = project(":modules:common").tasks.named<Jar>("sourcesJar")

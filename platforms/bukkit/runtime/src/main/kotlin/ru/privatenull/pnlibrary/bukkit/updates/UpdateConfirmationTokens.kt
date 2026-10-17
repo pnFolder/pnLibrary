@@ -12,6 +12,7 @@ internal enum class UpdateAction {
     DOWNLOAD,
     RESTART,
     ROLLBACK,
+    ROLLBACK_CONFIGS,
 }
 
 /**

@@ -55,7 +55,9 @@ internal class UpdateServiceImpl(
         resolveGraph = ::resolveGraph,
         stageGraph = ::stageGraph,
         announce = ::announce,
-        automaticAllowed = automaticPolicy::allows,
+        automaticAllowed = { snapshot ->
+            automaticPolicy.allows(snapshot) && installer.automaticUpdatesHealthy(registrations.snapshot().map { it.descriptor.id }.toSet())
+        },
     )
     private val orchestrator get() = runtime.orchestrator
 
@@ -74,6 +76,11 @@ internal class UpdateServiceImpl(
         }
         val jar = Paths.get(owner.javaClass.protectionDomain.codeSource.location.toURI()).toAbsolutePath().normalize()
         require(Files.isRegularFile(jar)) { "Плагин должен быть запущен из JAR" }
+        request.configurationBackup?.let { backup ->
+            require(backup.root != jar.parent && backup.root.startsWith(jar.parent)) {
+                "configuration backup root must be a component data directory inside the plugins directory"
+            }
+        }
         val artifact = request.artifactFor(JavaRuntime.feature, identity.type)
             ?: error("Для Java ${JavaRuntime.feature} не зарегистрирован совместимый артефакт ${request.repositoryName}")
         require(product.version == SemanticVersion.parse(version)) {
@@ -99,12 +106,23 @@ internal class UpdateServiceImpl(
     override fun all(): List<UpdateRegistration> = registrations.publicSnapshot()
     override fun get(product: String): UpdateRegistration? = registrations.find(product)
     override fun checkNow(): CompletionStage<UpdatePlanSnapshot> = orchestrator.checkNow()
+    override fun checkNow(actor: UpdateActor): CompletionStage<UpdatePlanSnapshot> = orchestrator.checkNow(actor = actor)
     override fun currentPlan(): Optional<UpdatePlanSnapshot> = orchestrator.currentPlan()
     override fun stage(planId: UUID): CompletionStage<UpdatePlanSnapshot> = orchestrator.stage(planId)
+    override fun stage(planId: UUID, actor: UpdateActor): CompletionStage<UpdatePlanSnapshot> = orchestrator.stage(planId, actor)
     override fun history(): List<UpdatePlanSnapshot> = orchestrator.history()
-    override fun rollback(): CompletionStage<UpdatePlanSnapshot> = orchestrator.rollback {
+    override fun historyPage(page: Int, product: String?): CompletionStage<List<UpdateHistoryEntry>> = runtime.historyPage(page, product)
+    override fun backups(): CompletionStage<List<UpdateBackup>> = runtime.readAsync {
+        java.util.Collections.unmodifiableList(installer.backups())
+    }
+    override fun rollback(): CompletionStage<UpdatePlanSnapshot> = rollback(UpdateActor.UNKNOWN)
+    override fun rollback(actor: UpdateActor): CompletionStage<UpdatePlanSnapshot> = orchestrator.rollbackTo(actor) {
         installer.rollbackLatest()
     }
+    override fun rollback(transactionId: UUID, actor: UpdateActor): CompletionStage<UpdatePlanSnapshot> =
+        orchestrator.rollbackTo(actor, transactionId) { installer.rollback(transactionId) }
+    override fun rollback(transactionId: UUID, restoreConfigurations: Boolean, actor: UpdateActor): CompletionStage<UpdatePlanSnapshot> =
+        orchestrator.rollbackTo(actor, transactionId) { installer.rollback(transactionId, restoreConfigurations) }
     override fun close() {
         if (!closed.compareAndSet(false, true)) return
         registrations.close()

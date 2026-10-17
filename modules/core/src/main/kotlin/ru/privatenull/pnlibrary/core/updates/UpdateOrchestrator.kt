@@ -2,6 +2,7 @@ package ru.privatenull.pnlibrary.core.updates
 
 import ru.privatenull.pnlibrary.api.updates.UpdatePlanSnapshot
 import ru.privatenull.pnlibrary.api.updates.UpdateState
+import ru.privatenull.pnlibrary.api.updates.UpdateActor
 import ru.privatenull.pnlibrary.update.ResolutionResult
 import java.time.Clock
 import java.time.Instant
@@ -24,9 +25,22 @@ internal class UpdateOrchestrator(
     private val clock: Clock = Clock.systemUTC(),
     private val automaticAllowed: (UpdatePlanSnapshot) -> Boolean = { true },
     private val remoteResolver: (() -> ResolutionResult)? = null,
+    private val observeState: (UpdatePlanSnapshot, UpdateActor, String) -> Unit = { _, _, _ -> },
+    private val beforeCheck: () -> Unit = {},
 ) : AutoCloseable {
     private val lock = Any()
     private val closed = AtomicBoolean(false)
+    private val started = AtomicBoolean(false)
+    private val pending = java.util.concurrent.ConcurrentHashMap.newKeySet<CompletableFuture<UpdatePlanSnapshot>>()
+
+    private fun operationPromise(): CompletableFuture<UpdatePlanSnapshot> {
+        val promise = CompletableFuture<UpdatePlanSnapshot>()
+        pending.add(promise)
+        promise.whenComplete { _, _ -> pending.remove(promise) }
+        // Recheck after registration so concurrent close cannot miss this request.
+        if (closed.get()) promise.completeExceptionally(IllegalStateException("update orchestrator is closed"))
+        return promise
+    }
     private var inFlight: CompletableFuture<UpdatePlanSnapshot>? = null
     private var inFlightForced = false
     private var current: UpdatePlanSnapshot? = store.current()
@@ -36,26 +50,26 @@ internal class UpdateOrchestrator(
     private val sessionHistory = ArrayDeque<UpdatePlanSnapshot>()
 
     fun start() {
-        if (!configuration.effectiveChecksEnabled || closed.get()) return
+        if (!configuration.effectiveChecksEnabled || closed.get() || !started.compareAndSet(false, true)) return
         executor.scheduleWithFixedDelay(
-            { checkNow(false).exceptionally { null } },
+            { checkNow(false, UpdateActor.SYSTEM).exceptionally { null } },
             0,
             configuration.checks.interval.toMillis(),
             TimeUnit.MILLISECONDS,
         )
     }
 
-    fun checkNow(forceRemote: Boolean = true): CompletionStage<UpdatePlanSnapshot> = synchronized(lock) {
+    fun checkNow(forceRemote: Boolean = true, actor: UpdateActor = UpdateActor.UNKNOWN): CompletionStage<UpdatePlanSnapshot> = synchronized(lock) {
         check(!closed.get()) { "update orchestrator is closed" }
         inFlight?.let { active ->
             if (!forceRemote || inFlightForced) return@synchronized active
-            return@synchronized active.handle { _, _ -> Unit }.thenCompose { checkNow(true) }
+            return@synchronized active.handle { _, _ -> Unit }.thenCompose { checkNow(true, actor) }
         }
-        val promise = CompletableFuture<UpdatePlanSnapshot>()
+        val promise = operationPromise()
         inFlight = promise
         inFlightForced = forceRemote
         try {
-            executor.execute { performCheck(promise, forceRemote) }
+            executor.execute { performCheck(promise, forceRemote, actor) }
         } catch (error: Throwable) {
             releaseInFlight(promise)
             promise.completeExceptionally(error)
@@ -63,16 +77,26 @@ internal class UpdateOrchestrator(
         promise
     }
 
-    private fun performCheck(promise: CompletableFuture<UpdatePlanSnapshot>, forceRemote: Boolean) {
-        val completed = runCatching {
-            val checked = snapshot(resolve(forceRemote))
-            publish(checked)
-            automaticallyStageIfAllowed(checked)
-        }.getOrElse { error ->
-            failedSnapshot(error).also(::publish)
+    private fun performCheck(promise: CompletableFuture<UpdatePlanSnapshot>, forceRemote: Boolean, actor: UpdateActor) {
+        if (promise.isDone) { releaseInFlight(promise); return }
+        try {
+            val completed = runCatching {
+                beforeCheck()
+                val checked = snapshot(resolve(forceRemote))
+                check(!closed.get()) { "update orchestrator is closed" }
+                publish(checked, actor, "CHECK")
+                automaticallyStageIfAllowed(checked)
+            }.getOrElse { error ->
+                if (closed.get()) throw error
+                failedSnapshot(error).also { publish(it, actor, "CHECK") }
+            }
+            releaseInFlight(promise)
+            promise.complete(completed)
+        } catch (error: Throwable) {
+            promise.completeExceptionally(error)
+        } finally {
+            releaseInFlight(promise)
         }
-        releaseInFlight(promise)
-        promise.complete(completed)
     }
 
     private fun resolve(forceRemote: Boolean): ResolutionResult =
@@ -82,7 +106,12 @@ internal class UpdateOrchestrator(
         val shouldStage = configuration.effectiveAutomaticDownloads &&
             snapshot.state == UpdateState.UPDATE_AVAILABLE && automaticAllowed(snapshot)
         if (!shouldStage) return snapshot
-        stageInternal(snapshot)
+        try {
+            stageInternal(snapshot, UpdateActor.SYSTEM)
+        } catch (error: Throwable) {
+            observeFailure(snapshot.id, UpdateActor.SYSTEM, "STAGE", error)
+            throw error
+        }
         return requireNotNull(current)
     }
 
@@ -105,26 +134,31 @@ internal class UpdateOrchestrator(
 
     /** Queues a fresh graph check after any currently running check has released the coalescing slot. */
     fun registrationsChanged() {
-        if (closed.get() || !configuration.effectiveChecksEnabled) return
+        if (closed.get() || !started.get() || !configuration.effectiveChecksEnabled) return
         try {
-            executor.execute { if (!closed.get()) checkNow(false) }
+            executor.execute { if (!closed.get()) checkNow(false, UpdateActor.SYSTEM) }
         } catch (_: RejectedExecutionException) {
             // A concurrent executor shutdown is a normal lifecycle race. The owner
             // will close the orchestrator and no follow-up check is required.
         }
     }
 
-    fun stage(planId: UUID): CompletionStage<UpdatePlanSnapshot> {
-        val promise = CompletableFuture<UpdatePlanSnapshot>()
+    fun stage(planId: UUID, actor: UpdateActor = UpdateActor.UNKNOWN): CompletionStage<UpdatePlanSnapshot> {
+        val promise = operationPromise()
+        if (promise.isDone) return promise
         try {
             executor.execute {
+                if (promise.isDone) return@execute
                 try {
                     val selected = synchronized(lock) { current }
                     require(selected != null && selected.id == planId) { "stale or unknown update plan: $planId" }
                     require(selected.state == UpdateState.UPDATE_AVAILABLE) { "update plan is not available for staging" }
-                    stageInternal(selected)
+                    stageInternal(selected, actor)
                     promise.complete(requireNotNull(current))
-                } catch (error: Throwable) { promise.completeExceptionally(error) }
+                } catch (error: Throwable) {
+                    observeFailure(planId, actor, "STAGE", error)
+                    promise.completeExceptionally(error)
+                }
             }
         } catch (error: Throwable) {
             promise.completeExceptionally(error)
@@ -136,25 +170,34 @@ internal class UpdateOrchestrator(
         java.util.Collections.unmodifiableList(ArrayList(sessionHistory))
     }
 
-    fun rollback(action: () -> Unit): CompletionStage<UpdatePlanSnapshot> {
-        val promise = CompletableFuture<UpdatePlanSnapshot>()
+    fun rollback(actor: UpdateActor = UpdateActor.UNKNOWN, action: () -> Unit): CompletionStage<UpdatePlanSnapshot> = rollbackTo(actor) {
+        val selected = synchronized(lock) { current } ?: error("no update plan is available for rollback")
+        action()
+        UpdatePlanSnapshot(selected.id, selected.revision, UpdateState.ROLLED_BACK, selected.plan, selected.blockers,
+            "Предыдущие версии JAR подготовлены к следующему перезапуску.")
+    }
+
+    fun rollbackTo(actor: UpdateActor, failureId: UUID? = null, action: () -> UpdatePlanSnapshot): CompletionStage<UpdatePlanSnapshot> {
+        val promise = operationPromise()
+        if (promise.isDone) return promise
         try {
             executor.execute {
+                if (promise.isDone) return@execute
                 try {
-                    val selected = synchronized(lock) { current }
-                        ?: error("no update plan is available for rollback")
-                    action()
+                    val selected = action()
                     val restored = UpdatePlanSnapshot(
                         selected.id,
-                        selected.revision,
+                        ++revision,
                         UpdateState.ROLLED_BACK,
                         selected.plan,
                         selected.blockers,
-                        "Предыдущие версии JAR подготовлены к следующему перезапуску.",
+                        selected.message,
                     )
-                    publish(restored)
+                    publish(restored, actor, "ROLLBACK")
                     promise.complete(restored)
                 } catch (error: Throwable) {
+                    val planId = failureId ?: synchronized(lock) { current?.id } ?: UUID.randomUUID()
+                    observeFailure(planId, actor, "ROLLBACK", error)
                     promise.completeExceptionally(error)
                 }
             }
@@ -162,20 +205,6 @@ internal class UpdateOrchestrator(
             promise.completeExceptionally(error)
         }
         return promise
-    }
-
-    fun healthResolved(healthy: Boolean, message: String) {
-        if (closed.get()) return
-        val previous = synchronized(lock) { current }
-        val resolved = UpdatePlanSnapshot(
-            previous?.id ?: UUID.randomUUID(),
-            ++revision,
-            if (healthy) UpdateState.UP_TO_DATE else UpdateState.FAILED,
-            previous?.plan,
-            previous?.blockers.orEmpty(),
-            message,
-        )
-        publish(resolved)
     }
 
     private fun snapshot(result: ResolutionResult): UpdatePlanSnapshot {
@@ -192,14 +221,15 @@ internal class UpdateOrchestrator(
         return UpdatePlanSnapshot(UUID.randomUUID(), ++revision, state, plan, blockers, null)
     }
 
-    private fun publish(snapshot: UpdatePlanSnapshot) {
+    private fun publish(snapshot: UpdatePlanSnapshot, actor: UpdateActor = UpdateActor.UNKNOWN, operation: String = "STATE_OBSERVED") {
         synchronized(lock) {
             current = snapshot
             sessionHistory.addFirst(snapshot)
             while (sessionHistory.size > 100) sessionHistory.removeLast()
         }
         store.save(snapshot)
-        if (!configuration.effectiveConsoleNotifications) return
+        observeState(snapshot, actor, operation)
+        if (closed.get() || !configuration.effectiveConsoleNotifications) return
         val fingerprint = fingerprint(snapshot.state, snapshot.plan, snapshot.blockers)
         val now = clock.instant()
         val repeat = announcedAt?.let { !now.isBefore(it.plus(configuration.notifications.repeatInterval)) } ?: true
@@ -210,9 +240,21 @@ internal class UpdateOrchestrator(
         }
     }
 
-    private fun stageInternal(snapshot: UpdatePlanSnapshot) {
+    private fun observeFailure(planId: UUID, actor: UpdateActor, operation: String, error: Throwable) {
+        val selected = synchronized(lock) { current?.takeIf { it.id == planId } }
+        // A rejected operation is an audit event, not a replacement for the current valid plan.
+        runCatching {
+            observeState(UpdatePlanSnapshot(
+                planId, selected?.revision ?: 0, UpdateState.FAILED,
+                selected?.plan, selected?.blockers.orEmpty(), rootMessage(error),
+            ), actor, operation)
+        }.onFailure { if (it !== error) error.addSuppressed(it) }
+    }
+
+    private fun stageInternal(snapshot: UpdatePlanSnapshot, actor: UpdateActor) {
+        check(!closed.get()) { "update orchestrator is closed" }
         stageAction(snapshot)
-        publish(UpdatePlanSnapshot(snapshot.id, snapshot.revision, UpdateState.UPDATE_STAGED, snapshot.plan, snapshot.blockers, null))
+        publish(UpdatePlanSnapshot(snapshot.id, snapshot.revision, UpdateState.UPDATE_STAGED, snapshot.plan, snapshot.blockers, null), actor, "STAGE")
     }
 
     private fun fingerprint(state: UpdateState, plan: ru.privatenull.pnlibrary.api.updates.UpdatePlan?, blockers: List<*>): String =
@@ -229,6 +271,7 @@ internal class UpdateOrchestrator(
 
     override fun close() {
         if (!closed.compareAndSet(false, true)) return
+        pending.forEach { it.completeExceptionally(IllegalStateException("update orchestrator is closed")) }
         executor.shutdownNow()
     }
 }

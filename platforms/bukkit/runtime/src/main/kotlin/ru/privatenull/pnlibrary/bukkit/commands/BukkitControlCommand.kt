@@ -22,6 +22,8 @@ import ru.privatenull.pnlibrary.api.updates.UpdateState
 import ru.privatenull.pnlibrary.api.updates.ProductChange
 import ru.privatenull.pnlibrary.api.updates.UpdatePlanSnapshot
 import ru.privatenull.pnlibrary.api.updates.UpdateRegistration
+import ru.privatenull.pnlibrary.api.updates.UpdateActor
+import ru.privatenull.pnlibrary.core.updates.UpdateCatalogView
 import java.util.Locale
 import java.util.UUID
 import java.util.concurrent.atomic.AtomicBoolean
@@ -36,10 +38,16 @@ internal class BukkitControlCommand(
 ) {
     private val tokens = UpdateConfirmationTokens()
 
+    private fun updateActor(sender: CommandSender): UpdateActor = when (sender) {
+        is Player -> UpdateActor(UpdateActor.Kind.PLAYER, sender.uniqueId.toString(), sender.name)
+        is ConsoleCommandSender -> UpdateActor(UpdateActor.Kind.CONSOLE, "console", sender.name)
+        else -> UpdateActor(UpdateActor.Kind.INTEGRATION, sender.name, sender.name)
+    }
+
     /** Builds the permission-aware control command tree. */
     fun definition(): CommandDefinition = command("pn") {
         permission("pnlibrary.admin")
-        executes(::executeNative)
+        executes { showCatalog(it, false) }
         literal("status") {
             executes(::executeNative)
             argument("plugin", ArgumentType.string()) {
@@ -47,8 +55,41 @@ internal class BukkitControlCommand(
                 executes(::executeNative)
             }
         }
-        literal("updates") { executes(::executeNative) }
-        literal("check") { executes(::executeNative) }
+        literal("updates") {
+            executes { showCatalog(it, false) }
+            literal("list") {
+                permission("pnlibrary.updates.view")
+                executes { showCatalog(it, false) }
+                argument("page", ArgumentType.integer()) { executes { showCatalog(it, false) } }
+            }
+            literal("available") {
+                permission("pnlibrary.updates.view")
+                executes { showCatalog(it, true) }
+                argument("page", ArgumentType.integer()) { executes { showCatalog(it, true) } }
+            }
+            literal("history") {
+                permission("pnlibrary.updates.view")
+                executes(::showHistory)
+                argument("page", ArgumentType.integer()) { executes(::showHistory) }
+            }
+            literal("backups") {
+                permission("pnlibrary.updates.rollback")
+                executes(::showBackups)
+                argument("page", ArgumentType.integer()) { executes(::showBackups) }
+            }
+            literal("rollback") {
+                permission("pnlibrary.updates.rollback")
+                argument("transaction", ArgumentType.string()) {
+                    executes { rollbackSaved(it) }
+                    argument("confirmation", ArgumentType.string()) { executes { rollbackSaved(it) } }
+                    literal("configs") {
+                        executes { rollbackSaved(it, true) }
+                        argument("confirmation", ArgumentType.string()) { executes { rollbackSaved(it, true) } }
+                    }
+                }
+            }
+        }
+        literal("check") { executes(::checkUpdates) }
         literal("update") {
             argument("plugin", ArgumentType.string()) {
                 suggests { library.updates.all().map { it.snapshot.product } }
@@ -86,6 +127,88 @@ internal class BukkitControlCommand(
         literal("error-chain") { executes(::executeNative) }
     }
 
+    private fun showCatalog(context: CommandContext, updatesOnly: Boolean) {
+        if (!ready(context)) return
+        val page = if (context.contains("page")) context.get<Int>("page") else 1
+        if (page < 1) { context.sender.send(Component.text("Номер страницы должен быть положительным.")); return }
+        UpdateCatalogView.catalog(library.updates.all().map { it.snapshot }, page, updatesOnly,
+            if (updatesOnly) "/pn updates available" else "/pn updates list").forEach(context.sender::send)
+    }
+
+    /** Replies to the invoking sender immediately, then delivers the result on the server thread. */
+    private fun checkUpdates(context: CommandContext) {
+        if (library.isClosed) {
+            context.sender.send(Component.text("pnLibrary не готова.", net.kyori.adventure.text.format.NamedTextColor.RED))
+            return
+        }
+        val native = (context.sender as? BukkitCommandSender)?.native ?: return
+        context.sender.send(Component.text("pnLibrary · Проверяю обновления…", net.kyori.adventure.text.format.NamedTextColor.YELLOW))
+        library.updates.checkNow(updateActor(native)).whenComplete { _, error ->
+            if (!library.isClosed) plugin.server.scheduler.runTask(plugin, Runnable {
+                if (library.isClosed) return@Runnable
+                if (error != null) context.sender.send(Component.text("Не удалось проверить обновления: ${error.message}", net.kyori.adventure.text.format.NamedTextColor.RED))
+                else showCatalog(context, true)
+            })
+        }
+    }
+
+    private fun showBackups(context: CommandContext) {
+        if (!ready(context)) return
+        val page = if (context.contains("page")) context.get<Int>("page") else 1
+        if (page < 1) { context.sender.send(Component.text("Номер страницы должен быть положительным.")); return }
+        library.updates.backups().whenComplete { entries, error ->
+            if (!library.isClosed) plugin.server.scheduler.runTask(plugin, Runnable {
+                if (library.isClosed) return@Runnable
+                if (error != null) context.sender.send(Component.text("Не удалось прочитать резервные наборы."))
+                else UpdateCatalogView.backups(entries, page, "/pn updates backups").forEach(context.sender::send)
+            })
+        }
+    }
+
+    private fun rollbackSaved(context: CommandContext, restoreConfigurations: Boolean = false) {
+        if (!ready(context)) return
+        val native = (context.sender as? BukkitCommandSender)?.native ?: return
+        val id = runCatching { UUID.fromString(context.get<String>("transaction")) }.getOrNull()
+        if (id == null) { context.sender.send(Component.text("Некорректный ID транзакции.")); return }
+        val confirmation = if (context.contains("confirmation")) context.get<String>("confirmation") else null
+        val action = if (restoreConfigurations) UpdateAction.ROLLBACK_CONFIGS else UpdateAction.ROLLBACK
+        if (confirmation == null) {
+            val token = if (native is Player) tokens.issue(native.uniqueId, id, 0, action, Duration.ofSeconds(30)) else "confirm"
+            val command = "/pn updates rollback $id${if (restoreConfigurations) " configs" else ""} $token"
+            context.sender.send(Component.text("Будет восстановлен набор JAR${if (restoreConfigurations) " И выбранные конфигурации через офлайн-установщик" else " без изменения конфигураций"}. Подтвердить: $command")
+                .clickEvent(net.kyori.adventure.text.event.ClickEvent.runCommand(command)))
+            return
+        }
+        val confirmed = if (native is Player) tokens.consume(confirmation, native.uniqueId, id, 0, action)
+            else context.sender.isConsole && confirmation == "confirm"
+        if (!confirmed) { context.sender.send(Component.text("Подтверждение отката недействительно или истекло.")); return }
+        library.updates.rollback(id, restoreConfigurations, updateActor(native)).whenComplete { _, error ->
+            if (!library.isClosed) plugin.server.scheduler.runTask(plugin, Runnable {
+                if (library.isClosed) return@Runnable
+                context.sender.send(Component.text(if (error == null) "Набор $id подготовлен. Полностью перезапустите сервер." else "Не удалось подготовить откат: ${error.message}"))
+            })
+        }
+    }
+
+    private fun showHistory(context: CommandContext) {
+        if (!ready(context)) return
+        val page = if (context.contains("page")) context.get<Int>("page") else 1
+        if (page < 1) { context.sender.send(Component.text("Номер страницы должен быть положительным.")); return }
+        library.updates.historyPage(page).whenComplete { entries, error ->
+            if (!library.isClosed) plugin.server.scheduler.runTask(plugin, Runnable {
+                if (library.isClosed) return@Runnable
+                if (error != null) context.sender.send(Component.text("Не удалось прочитать историю обновлений."))
+                else UpdateCatalogView.history(entries, page, "/pn updates history").forEach(context.sender::send)
+            })
+        }
+    }
+
+    private fun ready(context: CommandContext): Boolean {
+        if (!library.isClosed) return true
+        context.sender.send(Component.text("pnLibrary не готова. Дождитесь полного запуска сервера.", net.kyori.adventure.text.format.NamedTextColor.RED))
+        return false
+    }
+
     /** Unwraps a portable command sender before dispatching Bukkit operations. */
     /** Dispatches control actions while rejecting requests after runtime shutdown. */
     private fun executeNative(context: CommandContext) {
@@ -108,7 +231,7 @@ internal class BukkitControlCommand(
             "update-status" -> sendUpdateStatus(sender, arguments.getOrNull(1))
             "update-rollback" -> rollbackUpdate(sender, arguments.getOrNull(1))
             "check" -> {
-                library.updates.all().forEach { it.checkNow() }
+                library.updates.checkNow(updateActor(sender))
                 sender.sendMessage("§eПовторная проверка обновлений запущена.")
             }
             "restart" -> handleRestart(sender, arguments.drop(1))
@@ -193,7 +316,7 @@ internal class BukkitControlCommand(
                 sender.sendMessage("§7Проверьте соединение сервера с raw.githubusercontent.com и повторите команду.")
             }
         }, 1200L)
-        library.updates.checkNow().whenComplete { result, error ->
+        library.updates.checkNow(updateActor(sender)).whenComplete { result, error ->
             if (!finished.compareAndSet(false, true)) return@whenComplete
             runOnServerThread {
                 if (error != null) showUpdateError(sender, "Проверка обновления не удалась", error)
@@ -221,7 +344,7 @@ internal class BukkitControlCommand(
     /** Downloads and validates the selected compatible update plan. */
     private fun stageUpdate(sender: CommandSender, plan: UpdatePlanSnapshot, change: ProductChange) {
         sender.sendMessage("§eСовместимое обновление ${change.product} ${change.from} → ${change.to} найдено. Скачиваю и проверяю…")
-        library.updates.stage(plan.id).whenComplete { _, error ->
+        library.updates.stage(plan.id, updateActor(sender)).whenComplete { _, error ->
             runOnServerThread {
                 if (error != null) showUpdateError(sender, "Не удалось подготовить обновление", error)
                 else sender.sendMessage(
@@ -294,7 +417,7 @@ internal class BukkitControlCommand(
             sender.sendMessage("§cПодтверждение отката истекло или уже использовано.")
             return
         }
-        library.updates.rollback().whenComplete { _, error ->
+        library.updates.rollback(updateActor(sender)).whenComplete { _, error ->
             plugin.server.scheduler.runTask(plugin, Runnable {
                 if (error == null) sender.sendMessage("§aПредыдущие версии плагинов подготовлены. Полностью перезапустите сервер.")
                 else sender.sendMessage("§cНе удалось подготовить откат: §f${error.message ?: error.javaClass.simpleName}")
@@ -313,7 +436,7 @@ internal class BukkitControlCommand(
             sender.sendMessage("§cПодтверждение устарело или уже использовано.")
             return
         }
-        library.updates.stage(plan.id).whenComplete { staged, error ->
+        library.updates.stage(plan.id, updateActor(sender)).whenComplete { staged, error ->
             plugin.server.scheduler.runTask(plugin, Runnable {
                 if (error == null) sender.sendMessage("§aПлан обновления проверен и подготовлен: ${staged.id}")
                 else sender.sendMessage("§cНе удалось подготовить обновление: ${error.message}")

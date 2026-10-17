@@ -23,6 +23,7 @@ class PnLibraryBungeePlugin : Plugin() {
             BungeePlatform::class.java,
             BungeePlatformImpl(proxy),
         )
+        adapter.markReady()
     }
 
     /** Closes the runtime and releases its scheduler, registrations, and integrations. */

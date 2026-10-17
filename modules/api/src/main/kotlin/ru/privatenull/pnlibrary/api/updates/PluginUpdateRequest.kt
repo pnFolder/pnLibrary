@@ -4,6 +4,7 @@ import ru.privatenull.pnlibrary.api.version.ApiVersionRange
 import ru.privatenull.pnlibrary.api.version.PnLibraryApi
 import ru.privatenull.pnlibrary.api.platform.PlatformType
 import java.util.Collections
+import java.nio.file.Path
 
 /**
  * Validated GitHub release and artifact-selection policy for one plugin.
@@ -41,6 +42,9 @@ class PluginUpdateRequest private constructor(builder: Builder) {
     /** Inclusive pnLibrary API generations supported by this product. */
     val supportedApi: ApiVersionRange = builder.supportedApi
 
+    /** Explicit opt-in configuration backup; absent by default. */
+    val configurationBackup: UpdateConfigurationBackup? = builder.configurationBackup
+
     /** Returns the most specific artifact compatible with [javaFeature], or `null`. */
     fun artifactFor(javaFeature: Int): PluginUpdateArtifact? = artifacts
         .filter { it.supports(javaFeature) }
@@ -59,6 +63,12 @@ class PluginUpdateRequest private constructor(builder: Builder) {
         internal var automaticDownload = true
         internal val artifacts = mutableListOf<PluginUpdateArtifact>()
         internal var supportedApi = ApiVersionRange(PnLibraryApi.VERSION, PnLibraryApi.VERSION)
+        internal var configurationBackup: UpdateConfigurationBackup? = null
+
+        /** Preserves only [files] relative to the component's own [dataDirectory] before updating. */
+        fun configurationBackup(dataDirectory: Path, vararg files: String) = apply {
+            configurationBackup = UpdateConfigurationBackup(dataDirectory, files.toList())
+        }
 
         /** Sets and validates the GitHub repository coordinates. */
         fun repository(owner: String, name: String) = apply {

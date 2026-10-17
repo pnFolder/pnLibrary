@@ -1,4 +1,5 @@
 package ru.privatenull.pnlibrary.update
+import org.junit.jupiter.api.Assertions.assertTrue
 
 import org.junit.jupiter.api.Assertions.assertArrayEquals
 import org.junit.jupiter.api.Assertions.assertEquals
@@ -185,6 +186,42 @@ class UpdateTransactionTest {
         }
 
         assertEquals(committed.journal, transaction.latestRollbackCandidate())
+    }
+
+    @Test
+    fun `selected rollback restores that saved set rather than the latest one`() {
+        val plugins = directory.resolve("plugins").also(Files::createDirectories)
+        val target = plugins.resolve("market.jar").also { Files.write(it, byteArrayOf(9)) }
+        val transaction = UpdateTransaction(directory.resolve("transactions"), ArtifactVerifier(1024 * 1024), plugins)
+        val first = artifact("first.jar", "market", "2.0.0", 4, byteArrayOf(1))
+        val saved = transaction.apply(listOf(TransactionArtifact(specification(first, "market", "2.0.0", 4), first, target))) { true }
+        val second = artifact("second.jar", "market", "3.0.0", 4, byteArrayOf(2))
+        transaction.apply(listOf(TransactionArtifact(specification(second, "market", "3.0.0", 4), second, target))) { true }
+        assertEquals(2, transaction.rollbackCandidates().size)
+        val id = java.util.UUID.fromString(TransactionJournal.load(saved.journal).id)
+        assertEquals(saved.journal, transaction.rollbackCandidate(id))
+        transaction.rollback(transaction.rollbackCandidate(id))
+        assertArrayEquals(byteArrayOf(9), Files.readAllBytes(target))
+        assertThrows(Exception::class.java) { transaction.rollbackCandidate(java.util.UUID.randomUUID()) }
+    }
+
+    @Test
+    fun `tampered target is rejected before any rollback file is changed`() {
+        val plugins = directory.resolve("plugins").also(Files::createDirectories)
+        val targets = listOf("market", "auth").map { plugins.resolve("$it.jar").also { path -> Files.write(path, byteArrayOf(9)) } }
+        val transaction = UpdateTransaction(directory.resolve("transactions"), ArtifactVerifier(1024 * 1024), plugins)
+        val inputs = listOf("market", "auth").mapIndexed { index, name ->
+            val source = artifact("$name-new.jar", name, "2.0.0", 4, byteArrayOf(index.toByte()))
+            TransactionArtifact(specification(source, name, "2.0.0", 4), source, targets[index])
+        }
+        val saved = transaction.apply(inputs) { true }
+        val outside = directory.resolve("outside.jar").also { Files.write(it, byteArrayOf(7)) }
+        val journal = TransactionJournal.load(saved.journal)
+        TransactionJournal.save(saved.journal, journal.copy(artifacts = listOf(journal.artifacts[0], journal.artifacts[1].copy(target = outside.toString()))))
+        assertThrows(IllegalArgumentException::class.java) { transaction.rollback(saved.journal) }
+        assertArrayEquals(Files.readAllBytes(inputs[0].source), Files.readAllBytes(targets[0]))
+        assertArrayEquals(byteArrayOf(7), Files.readAllBytes(outside))
+        assertTrue(transaction.rollbackCandidates().isEmpty())
     }
 
     private fun specification(path: Path, id: String, version: String, api: Int) = ArtifactSpecification(
