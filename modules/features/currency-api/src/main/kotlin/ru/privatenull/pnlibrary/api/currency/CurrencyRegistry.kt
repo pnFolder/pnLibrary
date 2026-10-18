@@ -170,8 +170,9 @@ interface CurrencyPlaceholderOptions {
  * Immutable command presentation and destructive-operation confirmation settings.
  *
  * Message strings may contain legacy `&` or `§` color codes and documented brace tokens
- * such as `{currency}`, `{amount}`, `{balance}`, and `{error}`. Exact command availability
- * and rendering remain platform-specific.
+ * such as `{currency}`, `{amount}`, `{balance}`, and `{error}`. The defaults use the legacy
+ * colors of pnLibrary's chat palette. Exact command availability and rendering remain
+ * platform-specific.
  *
  * @property enabled whether platform command integration is exposed
  * @property permissionPrefix custom permission root, or `null` for the generated default
@@ -186,11 +187,11 @@ interface CurrencyPlaceholderOptions {
 data class CurrencyCommandSettings(
     val enabled: Boolean = true,
     val permissionPrefix: String? = null,
-    val prefix: String = "§8[§6{currency}§8] ",
-    val success: String = "§aOperation completed: {amount}",
-    val failure: String = "§c{error}",
-    val balance: String = "§fBalance: §a{balance}",
-    val historyEmpty: String = "§7No transactions found.",
+    val prefix: String = "&7[&d{currency}&7] ",
+    val success: String = "&aОперация выполнена: &f{amount}",
+    val failure: String = "&c{error}",
+    val balance: String = "&bБаланс: &f{balance}",
+    val historyEmpty: String = "&bОпераций пока нет.",
     val confirmationMode: CurrencyConfirmationMode = CurrencyConfirmationMode.CONSOLE,
     val confirmationTimeoutSeconds: Int = 60,
 ) {

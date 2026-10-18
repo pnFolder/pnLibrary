@@ -36,6 +36,7 @@ class CurrencyBuildersTest {
         assertEquals(false, settings.enabled)
         assertEquals("custom.currency", settings.permissionPrefix)
         assertEquals(120, settings.confirmationTimeoutSeconds)
+        assertEquals(CurrencyCommandSettings(), settings.copy(enabled = true, permissionPrefix = null, confirmationTimeoutSeconds = 60))
         (provider as AutoCloseable).close()
     }
 
