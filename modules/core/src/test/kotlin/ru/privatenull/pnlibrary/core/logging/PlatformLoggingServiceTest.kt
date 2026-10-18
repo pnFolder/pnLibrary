@@ -1,10 +1,10 @@
 package ru.privatenull.pnlibrary.core.logging
 
+import net.kyori.adventure.text.format.NamedTextColor
 import org.junit.jupiter.api.Assertions.assertTrue
 import org.junit.jupiter.api.Test
 import ru.privatenull.pnlibrary.api.logging.LogLevel
 import ru.privatenull.pnlibrary.api.platform.PlatformType
-import ru.privatenull.pnlibrary.core.ui.ChatPalette
 import ru.privatenull.pnlibrary.core.ui.ConsoleStyle
 import ru.privatenull.pnlibrary.spi.platform.PlatformAdapter
 import java.nio.file.Files
@@ -19,10 +19,10 @@ class PlatformLoggingServiceTest {
             .warn("Кэш", "пуст")
             .show()
 
-        val accent = ConsoleStyle.color(ChatPalette.ACCENT)
+        val accent = ConsoleStyle.color(NamedTextColor.YELLOW)
         assertTrue(platform.lines.any { it.startsWith(accent) && it.contains("${ConsoleStyle.BOLD}PNFOLDER PLUGIN") })
-        assertTrue(platform.lines.any { it.contains("Хранилище") && it.endsWith("${ConsoleStyle.color(ChatPalette.OK)}${ConsoleStyle.BOLD}[ OK ]") })
-        assertTrue(platform.lines.any { it.endsWith("${ConsoleStyle.color(ChatPalette.WARN)}${ConsoleStyle.BOLD}[ WARN ]") })
+        assertTrue(platform.lines.any { it.contains("Хранилище") && it.endsWith("${ConsoleStyle.color(NamedTextColor.GREEN)}${ConsoleStyle.BOLD}[ OK ]") })
+        assertTrue(platform.lines.any { it.endsWith("${ConsoleStyle.color(NamedTextColor.GOLD)}${ConsoleStyle.BOLD}[ WARN ]") })
         val plain = platform.lines.joinToString("\n").replace(Regex("§[0-9a-fk-or]"), "")
         assertTrue("Demo успешно включён" in plain)
         assertTrue("└ пуст" in plain)

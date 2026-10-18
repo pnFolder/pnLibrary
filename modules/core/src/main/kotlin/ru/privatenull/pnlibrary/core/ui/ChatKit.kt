@@ -109,9 +109,9 @@ open class ChatKit(val reader: ChatReader) {
         return visible.drop(1).fold(text("  ").append(visible.first())) { line, button -> line.append(text(" ")).append(button) }
     }
 
-    /** A section heading inside a page in Russian quotes, such as `«Сегодня»` or `«Команды»`. */
+    /** A section heading inside a page in Russian quotes, such as `«Сегодня»` or `«Команды»`, all in the accent. */
     fun section(title: String): Component =
-        text("  ${glyph('«')}", ChatPalette.ACCENT).append(text(title, ChatPalette.TEXT)).append(text(glyph('»'), ChatPalette.ACCENT))
+        text("  ${glyph('«')}$title${glyph('»')}", ChatPalette.ACCENT)
 
     /**
      * A `«Команды»` section: one command per line, then what it does. Placeholders such as `<игрок>` stand out in

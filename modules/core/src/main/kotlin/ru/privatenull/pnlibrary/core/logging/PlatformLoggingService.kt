@@ -1,11 +1,11 @@
 package ru.privatenull.pnlibrary.core.logging
 
+import net.kyori.adventure.text.format.NamedTextColor
 import ru.privatenull.pnlibrary.api.logging.LogLevel
 import ru.privatenull.pnlibrary.api.logging.LoggingService
 import ru.privatenull.pnlibrary.api.logging.MessageBox
 import ru.privatenull.pnlibrary.api.logging.PnLogger
 import ru.privatenull.pnlibrary.api.runtime.PnLibraryBrand
-import ru.privatenull.pnlibrary.core.ui.ChatPalette
 import ru.privatenull.pnlibrary.core.ui.ConsoleStyle
 import ru.privatenull.pnlibrary.spi.platform.PlatformIdentity
 import ru.privatenull.pnlibrary.spi.platform.PlatformLogging
@@ -66,13 +66,14 @@ internal class PlatformLoggingService(
         override fun show() {
             check(!shown) { "MessageBox has already been shown" }
             shown = true
-            val accent = ConsoleStyle.color(ChatPalette.ACCENT)
-            val success = ConsoleStyle.color(ChatPalette.OK)
-            val warning = ConsoleStyle.color(ChatPalette.WARN)
-            val danger = ConsoleStyle.color(ChatPalette.DANGER)
-            val text = ConsoleStyle.color(ChatPalette.TEXT)
-            val hint = ConsoleStyle.color(ChatPalette.LABEL)
-            val soft = ConsoleStyle.color(ChatPalette.SOFT)
+            // The startup card keeps its own established console look: yellow brand, gray labels, dark rules.
+            val accent = ConsoleStyle.color(NamedTextColor.YELLOW)
+            val success = ConsoleStyle.color(NamedTextColor.GREEN)
+            val warning = ConsoleStyle.color(NamedTextColor.GOLD)
+            val danger = ConsoleStyle.color(NamedTextColor.RED)
+            val text = ConsoleStyle.color(NamedTextColor.WHITE)
+            val hint = ConsoleStyle.color(NamedTextColor.GRAY)
+            val soft = ConsoleStyle.color(NamedTextColor.DARK_GRAY)
             val bold = ConsoleStyle.BOLD
             val stateColor = when (kind) {
                 MessageKind.ENABLED -> success
