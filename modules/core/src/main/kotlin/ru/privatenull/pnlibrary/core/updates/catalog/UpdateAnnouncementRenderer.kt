@@ -6,7 +6,7 @@ import ru.privatenull.pnlibrary.api.updates.UpdatePlanSnapshot
 import ru.privatenull.pnlibrary.api.updates.UpdateSnapshot
 import ru.privatenull.pnlibrary.api.updates.UpdateState
 import ru.privatenull.pnlibrary.console.ConsoleCard
-import ru.privatenull.pnlibrary.console.ConsoleTheme
+import ru.privatenull.pnlibrary.core.ui.ConsoleStyle
 
 /** Renders automatic update notifications with the same card used by console status. */
 internal object UpdateAnnouncementRenderer {
@@ -19,8 +19,7 @@ internal object UpdateAnnouncementRenderer {
             UpdateState.ROLLED_BACK -> "предыдущие версии подготовлены" to "Нужен перезапуск сервера"
             else -> return emptyList()
         }
-        val theme = ConsoleTheme("§6", "§e", "§f", "§8", "§r")
-        val card = ConsoleCard.builder(theme, "ПРОВЕРКА ОБНОВЛЕНИЙ")
+        val card = ConsoleCard.builder(ConsoleStyle.THEME, "ПРОВЕРКА ОБНОВЛЕНИЙ")
             .mascot("^.^", "pnLibrary", subtitle)
             .blank()
         val changes = snapshot.plan?.changes.orEmpty()

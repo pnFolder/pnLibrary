@@ -3,8 +3,9 @@ package ru.privatenull.pnlibrary.core.downloads
 import ru.privatenull.pnlibrary.api.downloads.FileDownload
 import ru.privatenull.pnlibrary.api.logging.LogLevel
 import ru.privatenull.pnlibrary.console.ConsoleCard
-import ru.privatenull.pnlibrary.console.ConsoleTheme
 import ru.privatenull.pnlibrary.console.ConsoleTree
+import ru.privatenull.pnlibrary.core.ui.ChatTone
+import ru.privatenull.pnlibrary.core.ui.ConsoleStyle
 import ru.privatenull.pnlibrary.spi.platform.PlatformLogging
 import ru.privatenull.pnlibrary.spi.platform.PlatformOwnerMetadata
 import java.io.IOException
@@ -16,7 +17,7 @@ internal class DependencyDownloadReporter(
 ) {
     fun failure(owner: Any, error: Throwable, level: LogLevel) {
         val details = DownloadFailureInterpreter.explain(error)
-        ConsoleCard.builder(errorTheme, "ЗАВИСИМОСТЬ НЕ ПОДГОТОВЛЕНА")
+        ConsoleCard.builder(ConsoleStyle.theme(ChatTone.FAILURE), "ЗАВИСИМОСТЬ НЕ ПОДГОТОВЛЕНА")
             .mascot("x.x", ownerName(owner), details.headline)
             .blank()
             .tree(ConsoleTree.builder("Причина").child(details.reason).build())
@@ -36,7 +37,7 @@ internal class DependencyDownloadReporter(
 
     fun staged(owner: Any, declarations: List<FileDownload>) {
         val files = declarations.map { Paths.get(it.relativePath).fileName.toString() }
-        ConsoleCard.builder(successTheme, "ЗАВИСИМОСТИ ПОДГОТОВЛЕНЫ")
+        ConsoleCard.builder(ConsoleStyle.theme(ChatTone.SUCCESS), "ЗАВИСИМОСТИ ПОДГОТОВЛЕНЫ")
             .mascot("^.^", ownerName(owner), "файлы готовы к запуску")
             .blank()
             .tree(ConsoleTree.builder("Скачанные зависимости").apply { files.forEach(::child) }.build())
@@ -55,7 +56,7 @@ internal class DependencyDownloadReporter(
         val tree = ConsoleTree.builder("Подключённые зависимости")
             .apply { dependencies.forEach { child("${it.name} ${it.version}") } }
             .build()
-        ConsoleCard.builder(successTheme, "ЗАВИСИМОСТИ ПОДКЛЮЧЕНЫ")
+        ConsoleCard.builder(ConsoleStyle.theme(ChatTone.SUCCESS), "ЗАВИСИМОСТИ ПОДКЛЮЧЕНЫ")
             .mascot("^.^", ownerName(owner), "сервер успешно перезапущен")
             .blank()
             .tree(tree)
@@ -66,9 +67,4 @@ internal class DependencyDownloadReporter(
     }
 
     private fun ownerName(owner: Any): String = ownership.ownerDetails(owner)["name"] ?: "pnLibrary"
-
-    private companion object {
-        val successTheme = ConsoleTheme("§6", "§a", "§f", "§8", "§r")
-        val errorTheme = ConsoleTheme("§6", "§c", "§f", "§8", "§r")
-    }
 }
