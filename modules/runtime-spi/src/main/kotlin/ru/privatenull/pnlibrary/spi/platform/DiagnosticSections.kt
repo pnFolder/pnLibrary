@@ -1,5 +1,6 @@
 package ru.privatenull.pnlibrary.spi.platform
 
+import java.net.InetSocketAddress
 import kotlin.math.ceil
 
 /**
@@ -71,4 +72,55 @@ object DiagnosticSections {
         "status" to if (signals.isEmpty()) "healthy" else "attention",
         "signals" to signals,
     )
+
+    /**
+     * Adds the sections every proxy reports: unmet dependencies, backend servers, online players per backend
+     * with their latency summary, and health. Backend addresses are read and added only when [includeSensitive].
+     *
+     * @param playerBackends the backend of each online player, or null while the player is not connected to one
+     * @param pings latencies of the online players in milliseconds; negative values mean unknown and are skipped
+     */
+    @JvmStatic
+    fun proxySections(
+        details: MutableMap<String, Any?>,
+        includeSensitive: Boolean,
+        missingDependencies: List<Map<String, Any?>>,
+        backends: List<ProxyBackend>,
+        playerBackends: List<String?>,
+        pings: Collection<Long>,
+    ) {
+        val knownPings = pings.filter { it >= 0 }
+        details["missingRequiredDependencies"] = missingDependencies
+        details["backends"] = backends.map { backend ->
+            linkedMapOf<String, Any?>(
+                "name" to backend.name,
+                "players" to backend.players,
+            ).apply {
+                if (includeSensitive) {
+                    val address = backend.address()
+                    this["host"] = address.hostString
+                    this["port"] = address.port
+                }
+            }
+        }
+        details["players"] = linkedMapOf(
+            "online" to playerBackends.size,
+            "byBackend" to playerBackends.groupingBy { it ?: UNASSIGNED_BACKEND }.eachCount(),
+            "pingMs" to pingSummary(knownPings),
+        )
+        details["health"] = health(commonSignals(missingDependencies, knownPings))
+    }
+
+    private const val UNASSIGNED_BACKEND = "[unassigned]"
 }
+
+/**
+ * A backend server behind a proxy, as reported by [DiagnosticSections.proxySections].
+ *
+ * @property address reads the backend address; called only for reports that include sensitive data
+ */
+class ProxyBackend(
+    val name: String,
+    val players: Int,
+    val address: () -> InetSocketAddress,
+)

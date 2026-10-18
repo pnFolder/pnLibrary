@@ -1,5 +1,6 @@
 package ru.privatenull.pnlibrary.spi.platform
 
+import ru.privatenull.pnlibrary.spi.tasks.PlatformTaskAdapter
 import kotlin.jvm.JvmSynthetic
 
 /**
@@ -125,6 +126,23 @@ class PlatformLifecycle {
         failure?.let { throw it }
         return true
     }
+
+    /**
+     * Shuts a platform adapter down in the order every platform uses: tracked registrations, then startup
+     * work still waiting in [startup], then the native tasks of [tasks], and finally native log observation
+     * through [stopLogObservation]. Every step is attempted; failures are reported as by [close].
+     *
+     * @return true on the first shutdown; false if already closed.
+     */
+    fun closeAdapter(startup: StartupGate?, tasks: PlatformTaskAdapter, stopLogObservation: () -> Unit): Boolean =
+        close {
+            try {
+                startup?.discardPending()
+                tasks.close()
+            } finally {
+                stopLogObservation()
+            }
+        }
 
     private fun closeTracked(): Throwable? {
         val failures = mutableListOf<Throwable>()
