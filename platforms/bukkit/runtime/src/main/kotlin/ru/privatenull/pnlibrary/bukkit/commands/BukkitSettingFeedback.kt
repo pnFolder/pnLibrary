@@ -2,6 +2,7 @@ package ru.privatenull.pnlibrary.bukkit.commands
 
 import org.bukkit.entity.Player
 import org.bukkit.plugin.Plugin
+import ru.privatenull.pnlibrary.bukkit.BukkitTitle
 import ru.privatenull.pnlibrary.core.updates.catalog.UpdateCatalogCommands.SettingSaved
 
 /**
@@ -20,8 +21,7 @@ internal class BukkitSettingFeedback(private val plugin: Plugin) {
     }
 
     private fun title(player: Player, saved: SettingSaved) {
-        val title = "§d✔ §f${saved.setting}"
-        val subtitle = if (saved.from == saved.to) "§b${saved.to}" else "§b${saved.from} §d→ §f${saved.to}"
+        val (title, subtitle) = BukkitTitle.settingSaved(saved)
         val timed = runCatching {
             Player::class.java.getMethod(
                 "sendTitle", String::class.java, String::class.java, Int::class.javaPrimitiveType, Int::class.javaPrimitiveType, Int::class.javaPrimitiveType,
