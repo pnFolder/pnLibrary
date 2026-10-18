@@ -6,7 +6,6 @@ import ru.privatenull.pnlibrary.api.downloads.FileDownloads
 import ru.privatenull.pnlibrary.api.logging.LogLevel
 import ru.privatenull.pnlibrary.api.plugin.PluginDependency
 import ru.privatenull.pnlibrary.core.updates.engine.TrustedHttpClient
-import ru.privatenull.pnlibrary.spi.platform.PlatformExecution
 import ru.privatenull.pnlibrary.spi.platform.PlatformIdentity
 import ru.privatenull.pnlibrary.spi.platform.PlatformLogging
 import ru.privatenull.pnlibrary.spi.platform.PlatformOwnerMetadata
@@ -24,7 +23,6 @@ internal class DirectDownloadManager(
     private val identity: PlatformIdentity,
     private val ownership: PlatformOwnerMetadata,
     private val inventory: PlatformPluginInventory,
-    private val execution: PlatformExecution,
     private val readiness: PlatformReadiness,
     private val logging: PlatformLogging,
     private val libraryData: Path,

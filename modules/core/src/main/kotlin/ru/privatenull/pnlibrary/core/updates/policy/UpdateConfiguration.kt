@@ -16,7 +16,6 @@ internal data class UpdateConfiguration(
     val pluginUpdatesEnabled: Boolean = true,
     val pluginAutomaticDownload: Boolean = false,
     val plugins: Map<String, PluginPolicy> = emptyMap(),
-    val legacyChannel: String = "stable",
 ) {
     data class LibraryPolicy(
         val channel: UpdateChannel = UpdateChannel.STABLE,

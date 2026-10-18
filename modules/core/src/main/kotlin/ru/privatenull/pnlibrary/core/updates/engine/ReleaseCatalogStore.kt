@@ -64,10 +64,6 @@ internal class ReleaseCatalogStore(private val root: Path) {
 
     internal fun dataPath(uri: URI): Path = root.resolve(key(uri) + ".data")
     private fun digestPath(uri: URI): Path = root.resolve(key(uri) + ".sha256")
-    internal fun rewriteDigest(uri: URI) = synchronized(lock) {
-        val bytes = Files.readAllBytes(dataPath(uri))
-        AtomicFiles.write(digestPath(uri), Digests.sha256(bytes).toByteArray(StandardCharsets.US_ASCII))
-    }
 
     private fun key(uri: URI) = Digests.sha256(uri.toASCIIString().toByteArray(StandardCharsets.UTF_8))
 }

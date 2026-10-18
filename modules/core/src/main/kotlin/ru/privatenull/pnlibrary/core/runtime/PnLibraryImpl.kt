@@ -112,7 +112,6 @@ internal class PnLibraryImpl(
         platformOwnership,
         platformOwnership,
         platformIdentity,
-        platformExecution,
         platformReadiness,
         dataFolder,
     )
@@ -123,7 +122,6 @@ internal class PnLibraryImpl(
         platformIdentity,
         platformOwnership,
         platformOwnership,
-        platformExecution,
         platformReadiness,
         platformLogging,
         dataFolder,

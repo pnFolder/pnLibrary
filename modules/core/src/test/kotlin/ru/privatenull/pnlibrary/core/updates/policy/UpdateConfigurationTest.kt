@@ -138,7 +138,6 @@ class UpdateConfigurationTest {
         val configuration = UpdateConfiguration.load(file) { }
 
         assertTrue(configuration.downloads.automatic)
-        assertEquals("beta", configuration.legacyChannel)
         assertTrue(Files.isRegularFile(directory.resolve("updates.yml.pre-orchestrator.bak")))
         assertTrue(Files.readString(file).contains("updates:"))
     }

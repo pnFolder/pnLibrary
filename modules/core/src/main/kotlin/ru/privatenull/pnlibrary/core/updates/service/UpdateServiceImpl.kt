@@ -23,7 +23,6 @@ import ru.privatenull.pnlibrary.core.updates.install.UpdateInstaller
 import ru.privatenull.pnlibrary.core.updates.policy.UpdateAutomaticPolicy
 import ru.privatenull.pnlibrary.core.updates.policy.UpdateConfiguration
 import ru.privatenull.pnlibrary.core.updates.policy.UpdatePolicyOverrides
-import ru.privatenull.pnlibrary.spi.platform.PlatformExecution
 import ru.privatenull.pnlibrary.spi.platform.PlatformIdentity
 import ru.privatenull.pnlibrary.spi.platform.PlatformLogging
 import ru.privatenull.pnlibrary.spi.platform.PlatformOwnerMetadata
@@ -50,7 +49,6 @@ internal class UpdateServiceImpl(
     private val ownership: PlatformOwnerMetadata,
     private val inventory: PlatformPluginInventory,
     private val identity: PlatformIdentity,
-    private val execution: PlatformExecution,
     private val readiness: PlatformReadiness,
     private val dataFolder: Path,
 ) : UpdateService, AutoCloseable {
@@ -69,7 +67,7 @@ internal class UpdateServiceImpl(
     private val automaticPolicy = UpdateAutomaticPolicy(configuration, overrides) { registrations.snapshot() }
     private val installer = UpdateInstaller(identity, dataFolder, configuration, resources.http)
     private val freezes = FreezeStore(dataFolder.resolve("updates/freezes.json"))
-    private val graphResolver = UpdateGraphResolver(ownership, inventory, identity, configuration, resources.catalogGateway, freezes, overrides)
+    private val graphResolver = UpdateGraphResolver(inventory, identity, configuration, resources.catalogGateway, freezes, overrides)
     private val runtime = UpdateOrchestratorRuntime(
         configuration = configuration,
         dataFolder = dataFolder,
