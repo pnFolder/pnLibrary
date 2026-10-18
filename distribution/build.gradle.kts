@@ -154,7 +154,7 @@ val shadowUpdater = tasks.register<ShadowJar>("shadowUpdater") {
     archiveBaseName = "pnLibrary-updater"
     configurations = listOf(updaterRuntime)
     applyCommonConfig()
-    manifest { attributes["Main-Class"] = "ru.privatenull.pnlibrary.core.updates.OfflineUpdateInstaller" }
+    manifest { attributes["Main-Class"] = "ru.privatenull.pnlibrary.core.updates.install.OfflineUpdateInstaller" }
 }
 
 val verifyOfflineInstaller = tasks.register<JavaExec>("verifyOfflineInstaller") {
@@ -165,7 +165,7 @@ val verifyOfflineInstaller = tasks.register<JavaExec>("verifyOfflineInstaller") 
     // When both tasks are requested, finish copying before reading a JAR from it.
     mustRunAfter("copyDeveloperArtifacts")
     classpath = files(shadowUpdater.flatMap { it.archiveFile })
-    mainClass.set("ru.privatenull.pnlibrary.core.updates.OfflineUpdateInstaller")
+    mainClass.set("ru.privatenull.pnlibrary.core.updates.install.OfflineUpdateInstaller")
     val fixture = layout.buildDirectory.dir("offline-installer-smoke/plugins/pnLibrary")
     args("--server-stopped", fixture.get().asFile.absolutePath)
     doFirst { fixture.get().asFile.mkdirs() }

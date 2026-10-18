@@ -7,7 +7,7 @@ import net.kyori.adventure.text.format.TextColor
 import ru.privatenull.pnlibrary.api.updates.UpdateHistoryEntry
 import ru.privatenull.pnlibrary.api.updates.UpdateState
 import ru.privatenull.pnlibrary.core.ui.ChatPalette
-import ru.privatenull.pnlibrary.core.updates.ComponentLedger
+import ru.privatenull.pnlibrary.core.updates.install.ComponentLedger
 import java.time.Instant
 import java.time.LocalDate
 import java.time.ZoneId

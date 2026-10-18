@@ -4,7 +4,7 @@ import net.kyori.adventure.text.format.TextColor
 import ru.privatenull.pnlibrary.api.updates.UpdateChannel
 import ru.privatenull.pnlibrary.api.updates.UpdateState
 import ru.privatenull.pnlibrary.core.ui.ChatPalette
-import ru.privatenull.pnlibrary.core.updates.ComponentLedger
+import ru.privatenull.pnlibrary.core.updates.install.ComponentLedger
 import java.util.Locale
 
 /** The words and colors of update states, channels and history operations, shared by every catalog page. */

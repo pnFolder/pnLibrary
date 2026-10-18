@@ -25,7 +25,7 @@ import ru.privatenull.pnlibrary.api.version.SemanticVersion
 import ru.privatenull.pnlibrary.core.ui.ChatNotice
 import ru.privatenull.pnlibrary.core.ui.ChatPalette
 import ru.privatenull.pnlibrary.core.ui.ChatTone
-import ru.privatenull.pnlibrary.core.updates.ComponentLedger
+import ru.privatenull.pnlibrary.core.updates.install.ComponentLedger
 import java.time.Instant
 import java.time.ZoneOffset
 import java.util.UUID

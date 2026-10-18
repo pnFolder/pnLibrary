@@ -37,7 +37,7 @@ import ru.privatenull.pnlibrary.core.placeholders.PlaceholderHub
 import ru.privatenull.pnlibrary.core.platform.PlatformProviderImpl
 import ru.privatenull.pnlibrary.core.plugin.PluginRegistryImpl
 import ru.privatenull.pnlibrary.core.services.ServiceManagerImpl
-import ru.privatenull.pnlibrary.core.updates.UpdateServiceImpl
+import ru.privatenull.pnlibrary.core.updates.service.UpdateServiceImpl
 import ru.privatenull.pnlibrary.currency.CurrencyFeature
 import java.nio.file.Path
 import java.util.concurrent.atomic.AtomicBoolean
