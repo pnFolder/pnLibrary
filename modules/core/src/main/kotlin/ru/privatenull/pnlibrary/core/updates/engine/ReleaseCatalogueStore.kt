@@ -37,6 +37,7 @@ class ReleaseCatalogueStore(private val root: Path) {
                 CatalogueCacheHit(bytes, age <= ttl)
             }
         } catch (_: Exception) {
+            // An unreadable cache entry is treated as a miss and moved aside; the caller refetches it.
             quarantine(uri)
             null
         }
@@ -53,6 +54,7 @@ class ReleaseCatalogueStore(private val root: Path) {
     /** Moves corrupt cache files for [uri] aside for later diagnosis. */
     fun quarantine(uri: URI) = synchronized(lock) {
         val suffix = ".corrupt-${System.currentTimeMillis()}"
+        // A file that cannot be moved stays in place and fails verification again on the next read.
         listOf(dataPath(uri), digestPath(uri)).forEach { path ->
             if (Files.exists(path)) runCatching {
                 Files.move(path, path.resolveSibling(path.fileName.toString() + suffix), StandardCopyOption.REPLACE_EXISTING)

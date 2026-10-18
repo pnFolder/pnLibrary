@@ -98,7 +98,7 @@ internal class SupportRuntime(
         }
 
         worker.scheduleWithFixedDelay(
-            { if (!isRuntimeClosed()) runCatching { performMaintenance() } },
+            { if (!isRuntimeClosed()) runCatching { performMaintenance() }.onFailure(warnBackgroundFailure("Diagnostic retention maintenance")) },
             MAINTENANCE_INTERVAL_HOURS,
             MAINTENANCE_INTERVAL_HOURS,
             TimeUnit.HOURS,
@@ -106,7 +106,7 @@ internal class SupportRuntime(
 
         uploader?.let { remote ->
             worker.scheduleWithFixedDelay(
-                { if (!isRuntimeClosed()) runCatching { uploadLedger.cleanup(remote) } },
+                { if (!isRuntimeClosed()) runCatching { uploadLedger.cleanup(remote) }.onFailure(warnBackgroundFailure("Uploaded report cleanup")) },
                 0,
                 24,
                 TimeUnit.HOURS,
@@ -219,6 +219,12 @@ internal class SupportRuntime(
         }
     }
 
+    /** Logs a failed background job; a periodic task must not throw, or the executor cancels it. */
+    private fun warnBackgroundFailure(job: String): (Throwable) -> Unit = { error ->
+        platformLogging.log(this, LogLevel.WARNING, "$job failed", error)
+    }
+
+    // History writes stay silent: logging their failure would record a new incident and request another write.
     private fun writeHistory() {
         history.save(logs.snapshot(), diagnostics.eventSnapshot())
     }

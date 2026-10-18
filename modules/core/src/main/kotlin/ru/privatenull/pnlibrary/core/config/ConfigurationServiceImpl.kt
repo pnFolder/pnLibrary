@@ -61,6 +61,7 @@ internal class ConfigurationServiceImpl(
         val value = owner.javaClass.getMethod("getDataFolder").invoke(owner)
         (value as File).toPath()
     } catch (_: ReflectiveOperationException) {
+        // Owners without a Bukkit-style data folder use the conventional plugins/<id> directory.
         val id = platform.ownerDetails(owner)["id"] ?: owner.javaClass.simpleName
         Paths.get("plugins", id)
     }
@@ -68,6 +69,7 @@ internal class ConfigurationServiceImpl(
     private fun ownerLogger(owner: Any): Logger = try {
         owner.javaClass.getMethod("getLogger").invoke(owner) as Logger
     } catch (_: Exception) {
+        // Owners without their own logger get a JUL logger named after the owner.
         Logger.getLogger(platform.ownerDetails(owner)["id"] ?: owner.javaClass.name)
     }
 

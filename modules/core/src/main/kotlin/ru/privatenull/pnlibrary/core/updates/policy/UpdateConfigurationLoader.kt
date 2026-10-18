@@ -78,7 +78,9 @@ internal class UpdateConfigurationLoader(
     # Разрешить автоматическую загрузку новой версии самой pnLibrary.
     automatic-download: false
         """.trimEnd()
-        runCatching { writeAtomic(file, source.trimEnd() + block + "\n") }
+        runCatching { writeAtomic(file, source.trimEnd() + block + "\n") }.onFailure { error ->
+            warning("Could not add the library section to ${file.fileName}: ${error.message}")
+        }
     }
 
     private fun markMalformed() {
@@ -99,6 +101,7 @@ internal class UpdateConfigurationLoader(
                 ?.associate { it.key.toString() to it.value }
                 ?: emptyMap()
         } catch (_: Exception) {
+            // Unparseable YAML has no `updates` section, which the loader reports as malformed.
             emptyMap()
         }
 

@@ -181,7 +181,10 @@ internal class UpdateServiceImpl(
             registration.refreshPolicy()
             if (description != null) {
                 runtime.recordSettingsChange(registration, description, actor)
-                if (recheck) runCatching { orchestrator.checkNow(actor = actor) }
+                // The setting is already persisted, so a failed recheck is reported but does not fail the change.
+                if (recheck) runCatching { orchestrator.checkNow(actor = actor) }.onFailure { error ->
+                    logging.log(this, LogLevel.WARNING, "Update recheck after a settings change failed", error)
+                }
             }
             result.complete(registration.snapshot)
         } catch (error: Exception) {
