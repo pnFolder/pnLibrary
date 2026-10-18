@@ -4,6 +4,7 @@ import net.kyori.adventure.text.Component
 import net.kyori.adventure.text.event.ClickEvent
 import net.kyori.adventure.text.event.HoverEvent
 import net.kyori.adventure.text.format.TextColor
+import net.kyori.adventure.text.format.TextDecoration
 import ru.privatenull.pnlibrary.api.updates.UpdateBackup
 import ru.privatenull.pnlibrary.api.updates.UpdateChannel
 import ru.privatenull.pnlibrary.api.updates.UpdateHistoryEntry
@@ -51,10 +52,10 @@ data class UpdateCatalogRoutes(
 /**
  * Shared chat and console presentation of the managed update catalog.
  *
- * Every page is a card: a gradient header band with the title, an optional line of counters, rows led by a
- * colored status mark, a gradient rule and a footer with buttons and pagination. Details live in multi-line
- * hover cards so rows stay short enough for the default chat width. Apart from the title star, glyphs come from
- * Minecraft's bitmap font (`■ · » « ─ √`), so they look the same on every version. A reader that cannot click, such as the console
+ * Pages follow the calm layout of the Catalog plugin: a bold title with gray counters, an optional gray hint,
+ * then blank-line separated sections of rows (white names, gray details, one colored state word) and a footer of
+ * bracketed buttons whose brackets are gray and whose label carries the color. Details live in multi-line hover
+ * cards so rows stay short enough for the default chat width. A reader that cannot click, such as the console
  * or a legacy server without the Adventure transport, gets the same rows without buttons and a list of the
  * commands instead; the console additionally gets ASCII only. Nothing here calls the server or changes
  * updates, and stored text is only ever rendered as plain text, never interpreted as markup.
@@ -205,14 +206,16 @@ object UpdateCatalogView {
             require(page > 0) { "page must be positive" }
             val selected = snapshots.filter { !updatesOnly || it.state in pending }.sortedBy { it.product.lowercase() }
             val entries = selected.page(page)
-            val result = mutableListOf(header(if (updatesOnly) "Обновления" else "Каталог плагинов"), catalogSummary(snapshots))
+            val result = mutableListOf(header(if (updatesOnly) "Обновления" else "Каталог", catalogSummary(snapshots)))
+            if (routes.interactive && entries.isNotEmpty()) result += note("Нажмите на плагин, чтобы открыть его карточку.")
+            result += blank()
             entries.forEach { result += catalogRows(it) }
             if (entries.isEmpty()) result += when {
                 selected.isNotEmpty() -> note("На этой странице пусто.")
-                updatesOnly -> text("  √ Все плагины актуальны", UpdatePalette.OK)
+                updatesOnly -> text("  Все плагины актуальны.", UpdatePalette.OK)
                 else -> note("Пока нет плагинов, зарегистрированных в pnLibrary.")
             }
-            result += rule()
+            result += blank()
             actions(
                 button("[Проверить]", routes.check, "Запросить новые версии у каталогов", UpdatePalette.OK),
                 if (updatesOnly) button("[Все]", routes.list, "Все зарегистрированные плагины", UpdatePalette.ACCENT)
@@ -222,7 +225,6 @@ object UpdateCatalogView {
             )?.let { result += it }
             pager(page, pageCount(selected.size), if (updatesOnly) routes.available else routes.list, "Предыдущая", "Следующая")
                 ?.let { result += it }
-            if (routes.interactive && entries.isNotEmpty()) result += note("${glyph('›')} Наведите на плагин — детали, нажмите — карточка.", UpdatePalette.HINT)
             if (!routes.interactive) {
                 result += commandHints(
                     routes.check to "проверить обновления",
@@ -239,18 +241,19 @@ object UpdateCatalogView {
 
         fun history(entries: List<UpdateHistoryEntry>, page: Int, totalPages: Int?, product: String?): List<Component> {
             require(page > 0) { "page must be positive" }
-            val result = mutableListOf(header(if (product == null) "История" else "История · $product"))
+            val result = mutableListOf(header("История", product?.let { text(it, UpdatePalette.SOFT) }))
             var day: LocalDate? = null
             entries.forEach { entry ->
                 val entryDay = entry.occurredAt.atZone(zone).toLocalDate()
                 if (entryDay != day) {
                     day = entryDay
+                    result += blank()
                     result += text("  ${dayLabel(entryDay)}", UpdatePalette.ACCENT)
                 }
                 result += historyRows(entry, product == null)
             }
-            if (entries.isEmpty()) result += note(if (page == 1) "Событий пока нет." else "На этой странице пусто.")
-            result += rule()
+            if (entries.isEmpty()) result += listOf(blank(), note(if (page == 1) "Событий пока нет." else "На этой странице пусто."))
+            result += blank()
             val base = if (product == null) routes.history else routes.history(product)
             val pages = totalPages ?: if (entries.size >= PAGE_SIZE) page + 1 else page
             actions(
@@ -272,12 +275,16 @@ object UpdateCatalogView {
         fun backups(backups: List<UpdateBackup>, page: Int): List<Component> {
             require(page > 0) { "page must be positive" }
             val selected = backups.page(page)
-            val result = mutableListOf(header("Резервы · ${plural(backups.size, "набор", "набора", "наборов")}"))
+            val result = mutableListOf(
+                header("Резервы", text(plural(backups.size, "набор", "набора", "наборов"), UpdatePalette.SOFT)),
+                note("Сохранённые версии плагинов для отката."),
+                blank(),
+            )
             selected.forEach { result += backupRows(it) }
             if (selected.isEmpty()) {
                 result += note(if (backups.isEmpty()) "Резервов пока нет: они появятся после обновления." else "На этой странице пусто.")
             }
-            result += rule()
+            result += blank()
             actions(
                 button("[Плагины]", routes.list, "Все зарегистрированные плагины", UpdatePalette.ACCENT),
                 button("[История]", routes.history, "Кто, когда и что обновлял", UpdatePalette.ACCENT),
@@ -289,11 +296,9 @@ object UpdateCatalogView {
         fun info(snapshot: UpdateSnapshot, heldUntil: Instant?): List<Component> {
             val product = snapshot.product
             val update = snapshot.latestVersion?.takeIf { it != snapshot.currentVersion }
-            val result = mutableListOf(
-                header(product),
-                text("  ■ ", stateColor(snapshot.state)).append(text(stateLabel(snapshot.state), stateColor(snapshot.state))),
-            )
+            val result = mutableListOf(header(product, text(stateLabel(snapshot.state), stateColor(snapshot.state))))
             snapshot.message?.takeIf { it.isNotBlank() }?.let { result += note(it.take(MAX_MESSAGE)) }
+            result += blank()
             var version = field("Версия", versions(snapshot.currentVersion, update))
             snapshot.latestChangelogUrl?.takeIf(::safeLink)?.takeIf { update != null }?.let { version = version.append(changelogButton(it)) }
             result += version
@@ -304,17 +309,17 @@ object UpdateCatalogView {
             result += field("Автозагрузка", if (snapshot.automaticDownload) text("включена", UpdatePalette.OK) else text("выключена", UpdatePalette.DANGER))
                 .append(change(product, "Включить или выключить автоматическую загрузку"))
             val held = snapshot.state == UpdateState.FROZEN || heldUntil != null
-            result += field("Пауза", if (held) text(holdText(heldUntil), UpdatePalette.WARN) else text("нет", UpdatePalette.SOFT))
+            result += field("Пауза", if (held) text(holdText(heldUntil), UpdatePalette.WARN) else text("нет", UpdatePalette.TEXT))
                 .append(change(product, "Приостановить обновления на время или снять паузу"))
             result += requirements(snapshot)
-            result += rule()
+            result += blank()
             actions(
                 routes.update?.takeIf { snapshot.state == UpdateState.UPDATE_AVAILABLE }?.let {
                     button("[Обновить]", it(product), "Скачать, проверить и подготовить обновление.\nПрименится после перезапуска.", UpdatePalette.OK)
                 },
                 button("[Настройки]", routes.settings(product), "Канал, автозагрузка и пауза обновлений", UpdatePalette.ACCENT),
                 button("[История]", routes.history(product), "События только этого плагина", UpdatePalette.ACCENT),
-                button("[« Назад]", routes.list, "К списку плагинов", UpdatePalette.SOFT),
+                button("[Назад]", routes.list, "К списку плагинов", UpdatePalette.SOFT),
             )?.let { result += it }
             if (!routes.interactive) {
                 result += commandHints(
@@ -328,9 +333,13 @@ object UpdateCatalogView {
 
         fun settings(snapshot: UpdateSnapshot, heldUntil: Instant?): List<Component> {
             val product = snapshot.product
-            val result = mutableListOf(header("Настройки · $product"))
-            if (routes.interactive && !routes.editable) result += note("Только просмотр: нет права менять настройки.", UpdatePalette.HINT)
-            if (clickable) result += note("${glyph('›')} Нажмите на вариант, чтобы выбрать. ${glyph('■')} — выбрано.", UpdatePalette.HINT)
+            val result = mutableListOf(
+                header(product, text("настройки", UpdatePalette.SOFT)),
+                text("  ${version(snapshot.currentVersion)}", UpdatePalette.SOFT).append(dot()).append(channelTag(snapshot.channel)),
+            )
+            if (routes.interactive && !routes.editable) result += note("Только просмотр: нет права менять настройки.")
+            if (clickable) result += note("Выбранное подсвечено, нажмите на другой вариант.")
+            result += blank()
             result += choices("Канал", CHANNELS.map { it to channelName(it) }, snapshot.channel, ::channelColor) { channel ->
                 routes.set(product, "channel", channelName(channel)) to channelHint(channel)
             }
@@ -340,11 +349,11 @@ object UpdateCatalogView {
                     if (on) "Скачивать и проверять новые версии автоматически.\nПрименение — после перезапуска." else "Обновлять только по команде администратора"
             }
             result += holdRows(product, snapshot.state == UpdateState.FROZEN || heldUntil != null, heldUntil)
-            result += rule()
+            result += blank()
             actions(
                 button("[Карточка]", routes.info(product), "Сведения о плагине", UpdatePalette.ACCENT),
                 button("[История]", routes.history(product), "События только этого плагина", UpdatePalette.ACCENT),
-                button("[« Назад]", routes.list, "К списку плагинов", UpdatePalette.SOFT),
+                button("[Назад]", routes.list, "К списку плагинов", UpdatePalette.SOFT),
             )?.let { result += it }
             if (!routes.interactive || !routes.editable) {
                 result += commandHints(
@@ -372,24 +381,21 @@ object UpdateCatalogView {
         }
 
         fun confirmation(title: String, lines: List<String>, label: String, command: String, hint: String): List<Component> {
-            val result = mutableListOf(header(title))
-            lines.forEach { result += note(it) }
-            result += rule()
+            val result = mutableListOf(header(title), blank())
+            lines.forEach { result += note(it, UpdatePalette.TEXT) }
+            result += blank()
             if (routes.interactive) result += text("  ").append(button(label, command, hint, UpdatePalette.DANGER))
             else result += text("  Подтвердить: ", UpdatePalette.SOFT).append(text(command, UpdatePalette.HINT))
             return result
         }
 
         fun status(facts: List<Pair<String, String>>, snapshots: List<UpdateSnapshot>, support: String?): List<Component> {
-            val result = mutableListOf(header("Состояние pnFolder"))
+            val result = mutableListOf(header("Состояние", if (snapshots.isEmpty()) null else catalogSummary(snapshots)), blank())
             facts.forEach { (label, value) -> result += field(label, text(value, UpdatePalette.TEXT)) }
             result += Component.empty()
             if (snapshots.isEmpty()) result += note("Пока нет плагинов, зарегистрированных в pnLibrary.")
-            else {
-                result += catalogSummary(snapshots)
-                snapshots.sortedBy { it.product.lowercase() }.forEach { result += catalogRows(it) }
-            }
-            result += rule()
+            else snapshots.sortedBy { it.product.lowercase() }.forEach { result += catalogRows(it) }
+            result += blank()
             actions(
                 button("[Каталог]", routes.list, "Все плагины с настройками и историей", UpdatePalette.ACCENT),
                 button("[Проверить]", routes.check, "Запросить новые версии у каталогов", UpdatePalette.OK),
@@ -402,9 +408,9 @@ object UpdateCatalogView {
             val actionable = snapshots.filter { it.state == UpdateState.UPDATE_AVAILABLE || it.state == UpdateState.UPDATE_STAGED }
                 .sortedBy { it.product.lowercase() }
             if (actionable.isEmpty()) return emptyList()
-            val result = mutableListOf(header("Обновления pnFolder"), catalogSummary(actionable))
+            val result = mutableListOf(header("Обновления pnFolder", catalogSummary(actionable)), blank())
             actionable.forEach { result += catalogRows(it) }
-            result += rule()
+            result += blank()
             actions(
                 button("[Обновления]", routes.available, "Доступные и подготовленные обновления", UpdatePalette.ACCENT),
                 button("[Проверить]", routes.check, "Повторно проверить все обновления", UpdatePalette.OK),
@@ -415,43 +421,40 @@ object UpdateCatalogView {
 
         private fun supportButton(link: String): Component =
             if (!routes.interactive || !safeLink(link)) Component.empty()
-            else text("[Поддержка]", UpdatePalette.WARN).clickEvent(ClickEvent.openUrl(link))
+            else bracketed("Поддержка", UpdatePalette.WARN).clickEvent(ClickEvent.openUrl(link))
                 .hoverEvent(tooltip(text("Открыть поддержку pnFolder", UpdatePalette.TEXT), text(link.take(MAX_LINE), UpdatePalette.HINT)))
 
         // --- catalog -----------------------------------------------------------------------------------------
 
-        /** Counters under the catalog header; zero counters are left out and nothing pending reads as all clear. */
+        /** Counters beside the title; zero counters are left out and nothing pending reads as all clear. */
         private fun catalogSummary(snapshots: List<UpdateSnapshot>): Component {
             val available = snapshots.count { it.state == UpdateState.UPDATE_AVAILABLE }
             val staged = snapshots.count { it.state == UpdateState.UPDATE_STAGED || it.state == UpdateState.DOWNLOADING }
             val broken = snapshots.count { it.state in problems }
-            val chips = mutableListOf(chip(snapshots.size, UpdatePalette.TEXT, "плагин", "плагина", "плагинов"))
-            if (available > 0) chips += chip(available, UpdatePalette.INFO, "обновление", "обновления", "обновлений")
+            val chips = mutableListOf(chip(snapshots.size, UpdatePalette.ACCENT, "плагин", "плагина", "плагинов"))
+            if (available > 0) chips += chip(available, UpdatePalette.ACCENT, "к обновлению", "к обновлению", "к обновлению")
             if (staged > 0) chips += chip(staged, UpdatePalette.ORANGE, "к перезапуску", "к перезапуску", "к перезапуску")
             if (broken > 0) chips += chip(broken, UpdatePalette.DANGER, "ошибка", "ошибки", "ошибок")
-            if (available + staged == 0 && snapshots.isNotEmpty()) chips += text("√ всё актуально", UpdatePalette.OK)
-            return chips.drop(1).fold(text("  ").append(chips.first())) { line, chip -> line.append(dot()).append(chip) }
+            if (available + staged == 0 && snapshots.isNotEmpty()) chips += text("всё актуально", UpdatePalette.OK)
+            return chips.drop(1).fold(chips.first()) { line, chip -> line.append(dot()).append(chip) }
         }
 
-        /** A plugin row: status mark, name, versions and tags; the whole row opens the plugin card. */
+        /** A plugin row: name, versions, channel and state words; the whole row opens the plugin card. */
         private fun catalogRows(snapshot: UpdateSnapshot): List<Component> {
             val update = updateTarget(snapshot)
             val changelog = snapshot.latestChangelogUrl?.takeIf(::safeLink)?.takeIf { snapshot.state in pending }
-            var row = text("  ■ ", statusColor(snapshot.state))
-                .append(text(snapshot.product, UpdatePalette.TEXT)).append(text(" "))
+            var row = text("  ").append(text(snapshot.product, UpdatePalette.TEXT)).append(text(" "))
                 .append(versions(snapshot.currentVersion, update, changelog?.takeIf { routes.interactive }))
-            if (snapshot.channel != UpdateChannel.STABLE) row = row.append(dot()).append(channelTag(snapshot.channel))
+            if (snapshot.channel != UpdateChannel.STABLE) row = row.append(text("  ")).append(channelTag(snapshot.channel))
             if (snapshot.state != UpdateState.UP_TO_DATE && snapshot.state != UpdateState.UPDATE_AVAILABLE) {
-                row = row.append(dot()).append(text(shortStateLabel(snapshot.state), stateColor(snapshot.state)))
+                row = row.append(text("  ")).append(text(shortStateLabel(snapshot.state), stateColor(snapshot.state)))
             }
             routes.update?.takeIf { snapshot.state == UpdateState.UPDATE_AVAILABLE }?.let { command ->
                 row = row.append(spaced(button("[Обновить]", command(snapshot.product),
                     "Скачать, проверить и подготовить ${version(update ?: "")}.\nПрименится после перезапуска.", UpdatePalette.OK)))
             }
             row = row.hoverEvent(tooltip(*catalogCard(snapshot, update).toTypedArray()))
-            if (routes.interactive) {
-                row = row.append(text(" ${glyph('›')}", UpdatePalette.ACCENT)).clickEvent(ClickEvent.runCommand(routes.info(snapshot.product)))
-            }
+            if (routes.interactive) row = row.clickEvent(ClickEvent.runCommand(routes.info(snapshot.product)))
             val rows = mutableListOf(row)
             if (!routes.interactive && changelog != null) rows += text("      изменения: $changelog", UpdatePalette.HINT)
             return rows
@@ -465,7 +468,8 @@ object UpdateCatalogView {
             hoverField("Канал", channelTag(snapshot.channel)),
             hoverField("Автозагрузка", text(if (snapshot.automaticDownload) "включена" else "выключена", UpdatePalette.TEXT)),
             snapshot.message?.takeIf { it.isNotBlank() }?.let { text(it.take(MAX_MESSAGE), UpdatePalette.SOFT) },
-            text("› Нажмите, чтобы открыть карточку, обновить или настроить", UpdatePalette.HINT).takeIf { routes.interactive },
+            blank().takeIf { routes.interactive },
+            text("Нажмите, чтобы открыть карточку", UpdatePalette.ACCENT).takeIf { routes.interactive },
         )
 
         // --- info and settings -------------------------------------------------------------------------------
@@ -503,7 +507,7 @@ object UpdateCatalogView {
         /** The current pause with a button to lift it, and the periods to pause for or to replace the pause with. */
         private fun holdRows(product: String, held: Boolean, heldUntil: Instant?): List<Component> {
             if (!clickable) return listOf(field("Пауза", if (held) text(holdText(heldUntil), UpdatePalette.WARN) else text("нет", UpdatePalette.SOFT)))
-            if (!held) return listOf(field("Пауза", text("нет", UpdatePalette.SOFT).append(dot()).append(holdPeriods(product, replacing = false))))
+            if (!held) return listOf(field("Пауза", text("нет", UpdatePalette.ACCENT).append(text(" ")).append(holdPeriods(product, replacing = false))))
             return listOf(
                 field("Пауза", text(holdText(heldUntil), UpdatePalette.WARN)).append(text(" "))
                     .append(button("[Снять]", routes.set(product, "hold", "off"), "Снова предлагать и загружать обновления", UpdatePalette.OK)),
@@ -513,8 +517,8 @@ object UpdateCatalogView {
 
         private fun holdPeriods(product: String, replacing: Boolean): Component = HOLD_PERIODS.mapIndexed { index, period ->
             val hint = if (replacing) "Пауза на ${periodLabel(period)} с этого момента" else "Приостановить обновления на ${periodLabel(period)}"
-            text(if (index == 0) "" else "  ")
-                .append(button(periodLabel(period), routes.set(product, "hold", period), "$hint.\nНовые версии не предлагаются и не загружаются.", UpdatePalette.WARN))
+            text(if (index == 0) "" else " ")
+                .append(option(periodLabel(period), routes.set(product, "hold", period), "$hint.\nНовые версии не предлагаются и не загружаются."))
         }.fold(Component.empty()) { line, period -> line.append(period) }
 
         private fun holdText(until: Instant?): String =
@@ -536,7 +540,7 @@ object UpdateCatalogView {
         private fun change(product: String, hint: String): Component =
             if (!clickable) Component.empty() else text(" ").append(button("[изменить]", routes.settings(product), hint, UpdatePalette.ACCENT))
 
-        /** A row of mutually exclusive choices: the current one is filled in its color, the others are hollow buttons. */
+        /** A row of mutually exclusive choices: the current one in the accent color, the others gray and clickable. */
         private fun <T> choices(
             label: String,
             options: List<Pair<T, String>>,
@@ -546,25 +550,24 @@ object UpdateCatalogView {
         ): Component {
             val shown = options.map { (value, name) ->
                 when {
-                    value == current -> text("${glyph('■')} $name", color(value))
-                        .hoverEvent(tooltip(text("Выбрано сейчас", color(value))))
+                    value == current -> text(name, UpdatePalette.ACCENT).hoverEvent(tooltip(text("Выбрано сейчас", UpdatePalette.ACCENT)))
                     clickable -> {
                         val (run, hint) = command(value)
-                        text("${glyph('□')} $name", UpdatePalette.HINT).clickEvent(ClickEvent.runCommand(run))
-                            .hoverEvent(tooltip(text("Выбрать: $name", color(value)), text(hint, UpdatePalette.TEXT), text(run, UpdatePalette.HINT)))
+                        text(name, UpdatePalette.SOFT).clickEvent(ClickEvent.runCommand(run))
+                            .hoverEvent(tooltip(text("Выбрать: $name", color(value)), text(hint, UpdatePalette.TEXT), blank(), text(run, UpdatePalette.HINT)))
                     }
-                    else -> text("${glyph('□')} $name", UpdatePalette.FAINT)
+                    else -> text(name, UpdatePalette.FAINT)
                 }
             }
-            return field(label, shown.drop(1).fold(shown.first()) { line, option -> line.append(text("  ")).append(option) })
+            return field(label, shown.drop(1).fold(shown.first()) { line, option -> line.append(text(" ")).append(option) })
         }
 
         // --- history and backups -----------------------------------------------------------------------------
 
         private fun historyRows(entry: UpdateHistoryEntry, offerFilter: Boolean): List<Component> {
             val outcome = outcome(entry)
-            val lead = text("  ■ ", outcome.color).append(text("${clock.format(entry.occurredAt.atZone(zone))} ", UpdatePalette.HINT))
-            val tail = dot().append(text(outcome.label, outcome.color)).append(dot()).append(text(entry.actor.name, UpdatePalette.HINT))
+            val lead = text("    ")
+            val tail = text("  ").append(text(outcome.label, outcome.color))
             if (entry.changes.isEmpty()) {
                 val body = entry.message?.takeIf { it.isNotBlank() }?.take(MAX_LINE) ?: operationLabel(entry.operation)
                 return listOf(lead.append(text(body, UpdatePalette.TEXT)).append(tail).hoverEvent(historyCard(entry, outcome, null, false)))
@@ -578,7 +581,7 @@ object UpdateCatalogView {
                         text(version((change.from ?: change.to).toString()), UpdatePalette.SOFT)
                     else -> versions(change.from?.toString() ?: "-", change.to.toString())
                 }
-                var row = lead.append(text("$product ", UpdatePalette.TEXT)).append(transition).append(tail)
+                var row = lead.append(text("$product  ", UpdatePalette.TEXT)).append(transition).append(tail)
                     .hoverEvent(historyCard(entry, outcome, product, offerFilter))
                 if (offerFilter && routes.interactive) row = row.clickEvent(ClickEvent.runCommand(routes.history(product)))
                 row
@@ -591,11 +594,13 @@ object UpdateCatalogView {
                 product?.let { text(it, UpdatePalette.TEXT) },
                 hoverField("Событие", text(operationLabel(entry.operation), UpdatePalette.TEXT)),
                 hoverField("Итог", text(outcome.detail, outcome.color)),
-                hoverField("Кто", text("${entry.actor.name} (${entry.actor.kind.name.lowercase(Locale.ROOT)})", UpdatePalette.TEXT)),
+                hoverField("Кто", text(entry.actor.name, UpdatePalette.TEXT)),
                 hoverField("Когда", text("${fullTime.format(at)} · ${entry.occurredAt.atOffset(ZoneOffset.UTC)}", UpdatePalette.TEXT)),
                 hoverField("План", text(entry.planId.toString(), UpdatePalette.HINT)),
                 entry.message?.takeIf { it.isNotBlank() }?.let { text(it.take(MAX_MESSAGE), UpdatePalette.SOFT) },
-                product?.takeIf { offerFilter }?.let { text("» Только $it: ${routes.history(it)}", UpdatePalette.HINT) },
+                product?.takeIf { offerFilter }?.let { blank() },
+                product?.takeIf { offerFilter }?.let { text("Показать только $it", UpdatePalette.ACCENT) },
+                product?.takeIf { offerFilter }?.let { text(routes.history(it), UpdatePalette.HINT) },
             ).toTypedArray())
         }
 
@@ -626,12 +631,12 @@ object UpdateCatalogView {
                 hoverField("Вернёт", text("${component.product} ${component.backupVersion?.let(::version) ?: "?"}", UpdatePalette.TEXT)
                     .append(text(" (сейчас ${component.updatedVersion?.let(::version) ?: "?"})", UpdatePalette.SOFT)))
             } + hoverField("Конфигураций", text("${backup.configurationFiles}", UpdatePalette.TEXT))
-            var row = text("  ■ ", UpdatePalette.ACCENT).append(text(restores, UpdatePalette.TEXT))
-                .append(dot()).append(text(backup.createdAt?.let(::age) ?: "дата не записана", UpdatePalette.HINT))
+            var row = text("  ").append(text(restores, UpdatePalette.TEXT))
+                .append(text("  ")).append(text(backup.createdAt?.let(::age) ?: "дата не записана", UpdatePalette.SOFT))
                 .hoverEvent(tooltip(*card.toTypedArray()))
                 .append(spaced(button("[Откат]", routes.rollback(backup.id), "Открыть подтверждение отката.\nКонфигурации не меняются.", UpdatePalette.WARN)))
             if (backup.configurationFiles > 0) {
-                row = row.append(spaced(button("[+ конфиги]", routes.rollback(backup.id, true),
+                row = row.append(spaced(button("[+конфиги]", routes.rollback(backup.id, true),
                     "Открыть подтверждение отката JAR\nи выбранных конфигураций.", UpdatePalette.ORANGE)))
             }
             val rows = mutableListOf(row)
@@ -644,15 +649,15 @@ object UpdateCatalogView {
 
         // --- building blocks ---------------------------------------------------------------------------------
 
-        /** The first line of every page: the title inside a violet-to-fuchsia band. */
-        private fun header(title: String): Component {
-            val name = "${glyph('─').repeat(2)} ${glyph('✦')} ${shown(title)} "
-            val titleWidth = if (routes.ascii) name.length else (name.length * 2 + 2) / 3
-            return UpdatePalette.gradient(name + glyph('─').repeat(maxOf(3, RULE_WIDTH - titleWidth)))
+        /** The first line of every page: the title in bold accent, then its details after two spaces. */
+        private fun header(title: String, details: Component? = null): Component {
+            val name = Component.text(shown(title), UpdatePalette.ACCENT).decoration(TextDecoration.BOLD, true)
+            return if (details == null) name else Component.empty().append(name).append(text("  ")).append(details)
         }
 
-        /** A gradient line between a page's content and its footer. */
-        private fun rule(): Component = UpdatePalette.gradient(glyph('─').repeat(RULE_WIDTH))
+        /** Sections are separated by an empty line, never by rules or frames. */
+        private fun blank(): Component = Component.empty()
+
 
         private fun field(label: String, value: Component): Component = text("  $label: ", UpdatePalette.SOFT).append(value)
 
@@ -661,8 +666,8 @@ object UpdateCatalogView {
         private fun chip(count: Int, color: TextColor, one: String, few: String, many: String): Component =
             text("$count", color).append(text(" ${pluralWord(count, one, few, many)}", UpdatePalette.SOFT))
 
-        /** A faint separator between parts of a line. */
-        private fun dot(): Component = text(" · ", UpdatePalette.FAINT)
+        /** A separator between parts of a line. */
+        private fun dot(): Component = text(" · ", UpdatePalette.SOFT)
 
         private fun channelTag(channel: UpdateChannel): Component = text(channelName(channel), channelColor(channel))
 
@@ -678,7 +683,7 @@ object UpdateCatalogView {
                 next = next.clickEvent(ClickEvent.openUrl(changelog))
                     .hoverEvent(tooltip(text("Список изменений ${version(update)}", UpdatePalette.TEXT), text(changelog.take(MAX_LINE), UpdatePalette.HINT)))
             }
-            return base.append(text(" » ", UpdatePalette.FAINT)).append(next)
+            return base.append(text(" ${glyph('→')} ", UpdatePalette.SOFT)).append(next)
         }
 
         /** Versions that start with a digit read as `v1.2.0`; anything else is shown as published. */
@@ -703,27 +708,40 @@ object UpdateCatalogView {
             return visible.drop(1).fold(text("  ").append(visible.first())) { line, button -> line.append(text(" ")).append(button) }
         }
 
-        /** A clickable label, or nothing when the reader cannot click; [commandHints] lists the commands instead. */
+        /**
+         * A clickable `[label]` whose brackets are gray and whose label carries [color], or nothing when the reader
+         * cannot click; [commandHints] lists the commands instead.
+         */
         private fun button(label: String, command: String, hint: String, color: TextColor): Component =
             if (!routes.interactive) Component.empty()
-            else text(label, color).clickEvent(ClickEvent.runCommand(command))
-                .hoverEvent(tooltip(text(hint, UpdatePalette.TEXT), text(command, UpdatePalette.HINT)))
+            else bracketed(label.removePrefix("[").removeSuffix("]"), color).clickEvent(ClickEvent.runCommand(command))
+                .hoverEvent(tooltip(text(hint, UpdatePalette.TEXT), blank(), text(command, UpdatePalette.HINT)))
+
+        private fun bracketed(label: String, color: TextColor): Component =
+            text("[", UpdatePalette.SOFT).append(text(label, color)).append(text("]", UpdatePalette.SOFT))
+
+        /** A gray word that can be clicked, like the inactive choices of the settings card. */
+        private fun option(label: String, command: String, hint: String): Component =
+            if (!routes.interactive) Component.empty()
+            else text(label, UpdatePalette.SOFT).clickEvent(ClickEvent.runCommand(command))
+                .hoverEvent(tooltip(text(hint, UpdatePalette.TEXT), blank(), text(command, UpdatePalette.HINT)))
 
         /** [button] led by a space, or nothing when the button is hidden. */
         private fun spaced(button: Component): Component = if (button == Component.empty()) button else text(" ").append(button)
 
         private fun changelogButton(link: String): Component =
             if (!routes.interactive) text(" $link", UpdatePalette.HINT)
-            else text(" [Изменения]", UpdatePalette.INFO).clickEvent(ClickEvent.openUrl(link))
+            else text(" ").append(bracketed("Изменения", UpdatePalette.INFO)).clickEvent(ClickEvent.openUrl(link))
                 .hoverEvent(tooltip(text("Открыть список изменений", UpdatePalette.TEXT), text(link.take(MAX_LINE), UpdatePalette.HINT)))
 
         /** Previous and next page buttons around the page number; nothing for a single page. */
         private fun pager(page: Int, totalPages: Int, base: String, previous: String, next: String): Component? {
             if (totalPages <= 1) return null
             var line = text("  ")
-            if (page > 1) line = line.append(button("[« $previous]", "$base ${page - 1}", "Страница ${page - 1}", UpdatePalette.ACCENT)).append(text(" "))
-            line = line.append(text("страница $page из $totalPages", UpdatePalette.HINT))
-            if (page < totalPages) line = line.append(text(" ")).append(button("[$next »]", "$base ${page + 1}", "Страница ${page + 1}", UpdatePalette.ACCENT))
+            line = line.append(text("страница ", UpdatePalette.SOFT)).append(text("$page", UpdatePalette.ACCENT))
+                .append(text(" из ", UpdatePalette.SOFT)).append(text("$totalPages", UpdatePalette.ACCENT))
+            if (page > 1) line = line.append(text(" ")).append(button("[$previous]", "$base ${page - 1}", "Страница ${page - 1}", UpdatePalette.ACCENT))
+            if (page < totalPages) line = line.append(text(" ")).append(button("[$next]", "$base ${page + 1}", "Страница ${page + 1}", UpdatePalette.ACCENT))
             if (!routes.interactive && page < totalPages) line = line.append(text(" (следующая: $base ${page + 1})", UpdatePalette.HINT))
             return line
         }
@@ -734,7 +752,7 @@ object UpdateCatalogView {
                 command?.let { text("    $it", UpdatePalette.HINT).append(dot()).append(text(purpose, UpdatePalette.SOFT)) }
             }
 
-        private fun note(value: String, color: TextColor = UpdatePalette.SOFT): Component = text("  $value", color)
+        private fun note(value: String, color: TextColor = UpdatePalette.SOFT): Component = text(" $value", color)
 
         /** Lines of a hover card joined with line breaks. */
         private fun tooltip(vararg lines: Component): HoverEvent<Component> =
@@ -828,8 +846,6 @@ object UpdateCatalogView {
             UpdateState.CHECKING -> UpdatePalette.HINT
         }
 
-        /** The color of a row's status mark: the state color, except that a plain check reads as calm. */
-        private fun statusColor(state: UpdateState): TextColor = if (state == UpdateState.CHECKING) UpdatePalette.FAINT else stateColor(state)
 
         private fun stateLabel(state: UpdateState): String = when (state) {
             UpdateState.UP_TO_DATE -> "актуально"
@@ -868,7 +884,6 @@ object UpdateCatalogView {
 
     private const val MAX_MESSAGE = 512
     private const val MAX_LINE = 120
-    private const val RULE_WIDTH = 30
     private const val AGE_DAYS = 60L
 
     /** ASCII stand-ins for the console, see `asciiOnly`. */
