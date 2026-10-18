@@ -4,21 +4,33 @@ import net.kyori.adventure.text.Component
 import net.kyori.adventure.text.format.TextColor
 
 /**
- * RGB colors of the update catalog.
+ * RGB colors of the update catalog: violet-tinted neutrals for text and calm semantic colors for states.
  *
- * Servers older than 1.16 cannot show RGB; Adventure then substitutes the nearest legacy chat color, so the
- * pages stay readable everywhere and look their best on current clients.
+ * Servers older than 1.16 cannot show RGB; Adventure then substitutes the nearest legacy chat color by hue
+ * first. Every color is tuned so that each role still lands on its own legacy color there: text on white,
+ * secondary text on gray, hints on blue, separators on dark gray, the accent on light purple, and the
+ * semantic colors on green, aqua, yellow, gold and red.
  */
 internal object UpdatePalette {
-    val ACCENT: TextColor = TextColor.color(0xB57BFF)
-    val TEXT: TextColor = TextColor.color(0xF3F4F6)
-    val MUTED: TextColor = TextColor.color(0x9CA3AF)
-    val DIM: TextColor = TextColor.color(0x6B7280)
+    /** Primary text such as plugin names and values; legacy white. */
+    val TEXT: TextColor = TextColor.color(0xF7F2F7)
+
+    /** Secondary text: labels, current versions, descriptions; a soft mauve-lavender, legacy gray. */
+    val SOFT: TextColor = TextColor.color(0xCDBACF)
+
+    /** Hints, times, actors and commands; a cool periwinkle, legacy blue. */
+    val HINT: TextColor = TextColor.color(0x93A8E0)
+
+    /** Separators between parts of a line; a dim violet, legacy dark gray. */
+    val FAINT: TextColor = TextColor.color(0x64546E)
+
+    /** Navigation buttons and day headings; a soft orchid, legacy light purple. */
+    val ACCENT: TextColor = TextColor.color(0xD19BFF)
+
     val OK: TextColor = TextColor.color(0x4ADE80)
     val INFO: TextColor = TextColor.color(0x38BDF8)
-    val INFO_DIM: TextColor = TextColor.color(0x0EA5E9)
-    val WARN: TextColor = TextColor.color(0xFBBF24)
-    val ORANGE: TextColor = TextColor.color(0xFB923C)
+    val WARN: TextColor = TextColor.color(0xFDE047)
+    val ORANGE: TextColor = TextColor.color(0xFFA53A)
     val DANGER: TextColor = TextColor.color(0xF87171)
 
     private val GRADIENT_FROM: TextColor = TextColor.color(0x8B5CF6)
