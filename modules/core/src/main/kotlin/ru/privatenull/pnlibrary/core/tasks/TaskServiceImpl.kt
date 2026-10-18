@@ -23,6 +23,7 @@ import java.util.concurrent.atomic.AtomicBoolean
 import java.util.concurrent.atomic.AtomicLong
 import java.util.concurrent.atomic.AtomicReference
 
+/** Schedules tasks through the platform adapter, grouped into per-plugin scopes and kept in a bounded history. */
 internal class TaskServiceImpl(
     private val adapter: PlatformTaskAdapter,
     private val settings: TaskServiceSettings = TaskServiceSettings(),

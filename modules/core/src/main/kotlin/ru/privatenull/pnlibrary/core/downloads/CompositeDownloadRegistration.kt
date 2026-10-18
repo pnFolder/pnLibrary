@@ -5,6 +5,7 @@ import ru.privatenull.pnlibrary.api.downloads.DownloadSnapshot
 import ru.privatenull.pnlibrary.core.lifecycle.ResourceCleanup
 import java.util.concurrent.CompletionStage
 
+/** Presents two download registrations, such as declared files and dependencies, as one. */
 internal class CompositeDownloadRegistration private constructor(
     private val first: DownloadRegistration,
     private val second: DownloadRegistration,

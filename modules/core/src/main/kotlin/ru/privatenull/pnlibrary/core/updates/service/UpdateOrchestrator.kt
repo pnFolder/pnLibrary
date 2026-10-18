@@ -20,6 +20,7 @@ import java.util.concurrent.ScheduledExecutorService
 import java.util.concurrent.TimeUnit
 import java.util.concurrent.atomic.AtomicBoolean
 
+/** Runs update checks on a schedule or on request, keeps the current plan and stages automatic updates. */
 internal class UpdateOrchestrator(
     private val configuration: UpdateConfiguration,
     private val store: UpdateStateStore,
@@ -44,7 +45,7 @@ internal class UpdateOrchestrator(
         pending.add(promise)
         promise.whenComplete { _, _ -> pending.remove(promise) }
         // Recheck after registration so concurrent close cannot miss this request.
-        if (closed.get()) promise.completeExceptionally(IllegalStateException("update orchestrator is closed"))
+        if (closed.get()) promise.completeExceptionally(IllegalStateException("Update orchestrator is closed"))
         return promise
     }
     private var inFlight: CompletableFuture<UpdatePlanSnapshot>? = null
@@ -66,7 +67,7 @@ internal class UpdateOrchestrator(
     }
 
     fun checkNow(forceRemote: Boolean = true, actor: UpdateActor = UpdateActor.UNKNOWN): CompletionStage<UpdatePlanSnapshot> = synchronized(lock) {
-        check(!closed.get()) { "update orchestrator is closed" }
+        check(!closed.get()) { "Update orchestrator is closed" }
         inFlight?.let { active ->
             if (!forceRemote || inFlightForced) return@synchronized active
             return@synchronized active.handle { _, _ -> Unit }.thenCompose { checkNow(true, actor) }
@@ -89,7 +90,7 @@ internal class UpdateOrchestrator(
             val completed = runCatching {
                 beforeCheck()
                 val checked = snapshot(resolve(forceRemote))
-                check(!closed.get()) { "update orchestrator is closed" }
+                check(!closed.get()) { "Update orchestrator is closed" }
                 publish(checked, actor, "CHECK")
                 automaticallyStageIfAllowed(checked)
             }.getOrElse { error ->
@@ -157,8 +158,8 @@ internal class UpdateOrchestrator(
                 if (promise.isDone) return@execute
                 try {
                     val selected = synchronized(lock) { current }
-                    require(selected != null && selected.id == planId) { "stale or unknown update plan: $planId" }
-                    require(selected.state == UpdateState.UPDATE_AVAILABLE) { "update plan is not available for staging" }
+                    require(selected != null && selected.id == planId) { "Stale or unknown update plan: $planId" }
+                    require(selected.state == UpdateState.UPDATE_AVAILABLE) { "Update plan is not available for staging" }
                     stageInternal(selected, actor)
                     promise.complete(requireNotNull(current))
                 } catch (error: Throwable) {
@@ -177,7 +178,7 @@ internal class UpdateOrchestrator(
     }
 
     fun rollback(actor: UpdateActor = UpdateActor.UNKNOWN, action: () -> Unit): CompletionStage<UpdatePlanSnapshot> = rollbackTo(actor) {
-        val selected = synchronized(lock) { current } ?: error("no update plan is available for rollback")
+        val selected = synchronized(lock) { current } ?: error("No update plan is available for rollback")
         action()
         UpdatePlanSnapshot(selected.id, selected.revision, UpdateState.ROLLED_BACK, selected.plan, selected.blockers,
             "Предыдущие версии JAR подготовлены к следующему перезапуску.")
@@ -258,7 +259,7 @@ internal class UpdateOrchestrator(
     }
 
     private fun stageInternal(snapshot: UpdatePlanSnapshot, actor: UpdateActor) {
-        check(!closed.get()) { "update orchestrator is closed" }
+        check(!closed.get()) { "Update orchestrator is closed" }
         stageAction(snapshot)
         publish(UpdatePlanSnapshot(snapshot.id, snapshot.revision, UpdateState.UPDATE_STAGED, snapshot.plan, snapshot.blockers, null), actor, "STAGE")
     }
@@ -277,7 +278,7 @@ internal class UpdateOrchestrator(
 
     override fun close() {
         if (!closed.compareAndSet(false, true)) return
-        pending.forEach { it.completeExceptionally(IllegalStateException("update orchestrator is closed")) }
+        pending.forEach { it.completeExceptionally(IllegalStateException("Update orchestrator is closed")) }
         executor.shutdownNow()
     }
 }

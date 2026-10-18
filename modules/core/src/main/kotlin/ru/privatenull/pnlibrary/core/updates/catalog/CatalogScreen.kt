@@ -12,7 +12,7 @@ import java.time.ZoneId
 /** The plugin list, the server status card and the join notice: pages built from catalog rows. */
 internal class CatalogScreen(routes: UpdateCatalogRoutes, now: Instant, zone: ZoneId) : CatalogStyle(routes, now, zone) {
     fun catalog(snapshots: List<UpdateSnapshot>, page: Int, updatesOnly: Boolean): List<Component> {
-        require(page > 0) { "page must be positive" }
+        require(page > 0) { "Page must be positive" }
         val selected = snapshots.filter { !updatesOnly || it.state in CatalogLabels.PENDING }.sortedBy { it.product.lowercase() }
         val entries = selected.onPage(page)
         val result = mutableListOf(header(if (updatesOnly) "Обновления" else "Каталог", summary(snapshots)))

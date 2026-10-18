@@ -44,12 +44,12 @@ internal class RegisteredUpdate(
     override val snapshot: UpdateSnapshot get() = state.get()
 
     override fun checkNow() {
-        requireOpen()
+        checkOpen()
         checkForUpdates()
     }
 
     override fun downloadNow() {
-        requireOpen()
+        checkOpen()
         checkForUpdates().thenCompose(stagePlan)
     }
 
@@ -143,7 +143,7 @@ internal class RegisteredUpdate(
         supportedApi = request.supportedApi,
     )
 
-    private fun requireOpen() {
-        check(!closed.get()) { "update registration is closed" }
+    private fun checkOpen() {
+        check(!closed.get()) { "Update registration is closed" }
     }
 }

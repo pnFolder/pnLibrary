@@ -13,7 +13,7 @@ import ru.privatenull.pnlibrary.spi.platform.PlatformOwnership
 import ru.privatenull.pnlibrary.spi.platform.PlatformSnapshotProvider
 
 /** Adapts library logging, diagnostics capture, and lifecycle summaries to one platform. */
-internal class PlatformLoggingService(
+internal class LoggingServiceImpl(
     private val logging: PlatformLogging,
     private val ownership: PlatformOwnership,
     private val diagnostics: PlatformSnapshotProvider,

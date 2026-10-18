@@ -25,6 +25,7 @@ import java.time.Instant
 import java.util.UUID
 import kotlin.streams.toList
 
+/** Persists the current update plan and a bounded history of earlier ones, quarantining corrupt state. */
 internal class UpdateStateStore(
     private val root: Path,
     private val maximumEntries: Int = 100,
@@ -167,7 +168,7 @@ internal class UpdateStateStore(
                 )
                 "frozen" -> BlockedReason.Frozen(product)
                 "no-compatible-release" -> BlockedReason.NoCompatibleRelease(product, item.get("requiredApi").asInt)
-                else -> error("unknown update blocker type: ${item.get("type").asString}")
+                else -> error("Unknown update blocker type: ${item.get("type").asString}")
             }
         }.orEmpty()
 

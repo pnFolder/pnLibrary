@@ -8,6 +8,7 @@ import ru.privatenull.pnlibrary.api.plugin.MetricsController
 import java.util.concurrent.atomic.AtomicBoolean
 import java.util.function.Consumer
 
+/** Enables, reconfigures and closes one module's metrics session. */
 internal class MetricsControllerImpl(
     private val owner: Any,
     private val service: MetricsService,
@@ -39,18 +40,18 @@ internal class MetricsControllerImpl(
     internal fun sessionErrorReporter(): ErrorReporter? = session?.errorReporter
 
     override fun enable() = synchronized(lock) {
-        ensureOpen()
+        checkOpen()
         if (session != null) return@synchronized
         session = openSession()
     }
 
     override fun disable() = synchronized(lock) {
-        ensureOpen()
+        checkOpen()
         closeSession()
     }
 
     override fun update(configuration: MetricsProviderConfiguration) = synchronized(lock) {
-        ensureOpen()
+        checkOpen()
         val index = configuredProviders.indexOfFirst { it.provider == configuration.provider }
         if (index >= 0 && configuredProviders[index] == configuration) return@synchronized
         if (index < 0) configuredProviders += configuration else configuredProviders[index] = configuration
@@ -59,7 +60,7 @@ internal class MetricsControllerImpl(
 
     override fun configure(configure: Consumer<PluginMetrics>) {
         synchronized(lock) {
-            ensureOpen()
+            checkOpen()
             configurers += configure
             if (session != null) restart()
         }
@@ -97,5 +98,5 @@ internal class MetricsControllerImpl(
         }
     }
 
-    private fun ensureOpen() = check(!closed.get()) { "MetricsController is closed" }
+    private fun checkOpen() = check(!closed.get()) { "Metrics controller is closed" }
 }

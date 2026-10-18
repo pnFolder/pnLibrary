@@ -15,13 +15,11 @@ import ru.privatenull.pnlibrary.core.updates.policy.UpdateConfiguration
 import ru.privatenull.pnlibrary.core.updates.policy.UpdatePolicyOverrides
 import ru.privatenull.pnlibrary.core.updates.service.RegisteredUpdate
 import ru.privatenull.pnlibrary.spi.platform.PlatformIdentity
-import ru.privatenull.pnlibrary.spi.platform.PlatformOwnerMetadata
 import ru.privatenull.pnlibrary.spi.platform.PlatformPluginInventory
 import java.time.Instant
 
-/** Loads release catalogues and resolves one coherent update plan for all registered products. */
+/** Loads release catalogs and resolves one coherent update plan for all registered products. */
 internal class UpdateGraphResolver(
-    private val ownership: PlatformOwnerMetadata,
     private val inventory: PlatformPluginInventory,
     private val identity: PlatformIdentity,
     private val configuration: UpdateConfiguration,

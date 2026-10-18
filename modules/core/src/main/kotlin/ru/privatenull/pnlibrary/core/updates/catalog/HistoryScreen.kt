@@ -19,7 +19,7 @@ internal class HistoryScreen(routes: UpdateCatalogRoutes, now: Instant, zone: Zo
     private class Outcome(val label: String, val color: TextColor, val detail: String = label)
 
     fun history(entries: List<UpdateHistoryEntry>, page: Int, totalPages: Int?, product: String?): List<Component> {
-        require(page > 0) { "page must be positive" }
+        require(page > 0) { "Page must be positive" }
         val result = mutableListOf(header("История", product?.let { text(it, ChatPalette.SOFT) }))
         var day: LocalDate? = null
         entries.forEach { entry ->

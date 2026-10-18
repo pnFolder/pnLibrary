@@ -9,11 +9,11 @@ import ru.privatenull.pnlibrary.core.ui.ConsoleStyle
 import ru.privatenull.pnlibrary.spi.platform.PlatformAdapter
 import java.nio.file.Files
 
-class PlatformLoggingServiceTest {
+class LoggingServiceImplTest {
     @Test
     fun `startup box uses the shared console palette`() {
         val platform = ConsolePlatform()
-        PlatformLoggingService(platform, platform, platform, platform)
+        LoggingServiceImpl(platform, platform, platform, platform)
             .box(this, "Demo", "1.0.0")
             .ok("Хранилище", "подключено")
             .warn("Кэш", "пуст")

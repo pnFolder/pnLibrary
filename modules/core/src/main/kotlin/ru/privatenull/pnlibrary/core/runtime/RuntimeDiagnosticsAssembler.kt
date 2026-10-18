@@ -4,7 +4,7 @@ import ru.privatenull.pnlibrary.api.runtime.PnLibraryConfig
 import ru.privatenull.pnlibrary.api.updates.UpdateService
 import ru.privatenull.pnlibrary.core.commands.CommandServiceImpl
 import ru.privatenull.pnlibrary.core.diagnostics.DiagnosticsRegistry
-import ru.privatenull.pnlibrary.core.metrics.MetricsRegistry
+import ru.privatenull.pnlibrary.core.metrics.MetricsServiceImpl
 import ru.privatenull.pnlibrary.core.observability.SupportRuntime
 import ru.privatenull.pnlibrary.core.tasks.TaskService
 import ru.privatenull.pnlibrary.spi.platform.PlatformIdentity
@@ -21,7 +21,7 @@ internal class RuntimeDiagnosticsAssembler(
     private val updates: UpdateService,
     private val diagnostics: DiagnosticsRegistry,
     private val support: SupportRuntime,
-    private val metrics: MetricsRegistry,
+    private val metrics: MetricsServiceImpl,
     private val commands: CommandServiceImpl,
 ) {
     /** Returns one ordered snapshot of library, task, update, metric, and support state. */

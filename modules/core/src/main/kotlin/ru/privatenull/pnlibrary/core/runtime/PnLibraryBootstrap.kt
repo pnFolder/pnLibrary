@@ -40,8 +40,8 @@ internal object PnLibraryBootstrap {
         platform: PlatformRuntimeContext,
         config: PnLibraryConfig = PnLibraryConfig(),
     ): PnLibrary {
-        requireNotNull(owner) { "owner plugin must not be null" }
-        requireNotNull(platform) { "platform context must not be null" }
+        requireNotNull(owner) { "Owner plugin must not be null" }
+        requireNotNull(platform) { "Platform context must not be null" }
 
         val current = instance
         if (current != null && !current.isClosed) return current

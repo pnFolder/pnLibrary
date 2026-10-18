@@ -2,6 +2,7 @@ package ru.privatenull.pnlibrary.core.observability
 
 import ru.privatenull.pnlibrary.api.observability.ComponentStatus
 
+/** Latest reported status of every plugin component. */
 internal class ComponentStatusRegistry {
     private val lock = Any()
     private val statuses = linkedMapOf<ComponentKey, ComponentStatus>()

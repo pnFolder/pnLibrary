@@ -9,6 +9,7 @@ import java.nio.file.Path
 import java.nio.file.StandardOpenOption
 import java.util.ArrayDeque
 
+/** Append-only JSON Lines journal of observations that keeps only what retention allows. */
 internal class ObservationJournal(
     dataFolder: Path,
     private val clock: () -> Long = System::currentTimeMillis,

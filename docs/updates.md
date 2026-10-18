@@ -174,7 +174,7 @@ under `build/update-catalog-native`, bind loopback ports, disable metrics and re
 They do not change existing server directories. The synthetic release changes native/component
 version metadata only; it is never uploaded or presented as a published release. The tests verify
 installed JAR hashes, commands, original transaction attribution, real process restarts, durable
-health events and explicit configuration restoration. Network catalogue/resolver/staging policy
+health events and explicit configuration restoration. Network catalog/resolver/staging policy
 is covered separately by core tests, not inferred from the synthetic release test.
 
 ```

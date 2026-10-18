@@ -18,6 +18,7 @@ import ru.privatenull.pnlibrary.api.updates.UpdateRegistration
 import ru.privatenull.pnlibrary.core.lifecycle.ResourceCleanup
 import ru.privatenull.pnlibrary.core.services.ServiceManagerImpl
 
+/** Resources owned by one module, closed together in dependency order. */
 internal class ModuleResources(
     val tasks: TaskScope,
     val events: EventScope,

@@ -91,7 +91,7 @@ class NativeProxyUpdateTest {
             server.command("$command backups", "Резервные наборы pnLibrary")
             val transactionId = saved.journal.parent.fileName.toString()
             server.command("$command rollback $transactionId configs confirm",
-                if (bukkit) "Набор $transactionId подготовлен" else "Rollback set $transactionId prepared")
+                "Набор $transactionId подготовлен")
         }
         assertTrue(TransactionJournal.load(saved.journal).restoreConfigurations)
         Files.write(configuration, oldConfiguration.replace("v1", "v2").toByteArray())

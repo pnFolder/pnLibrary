@@ -19,8 +19,8 @@ internal open class TrustedHttpClient(
 ) {
 
     internal fun validate(uri: URI): URI {
-        require(uri.scheme.equals("https", true)) { "update URL must use HTTPS: $uri" }
-        require(uri.userInfo == null && uri.fragment == null) { "update URL contains forbidden components" }
+        require(uri.scheme.equals("https", true)) { "Update URL must use HTTPS: $uri" }
+        require(uri.userInfo == null && uri.fragment == null) { "Update URL contains forbidden components" }
         return uri
     }
 
@@ -39,14 +39,14 @@ internal open class TrustedHttpClient(
             try {
                 val status = connection.responseCode
                 if (status in REDIRECT_CODES) {
-                    if (redirect == MAX_REDIRECTS) error("too many update redirects")
-                    val location = connection.getHeaderField("Location") ?: error("redirect has no Location")
+                    if (redirect == MAX_REDIRECTS) error("Too many update redirects")
+                    val location = connection.getHeaderField("Location") ?: error("Redirect has no Location")
                     current = validate(current.resolve(location))
                     return@repeat
                 }
-                require(status in 200..299) { "update request failed with HTTP $status" }
+                require(status in 200..299) { "Update request failed with HTTP $status" }
                 require(connection.contentLengthLong < 0 || connection.contentLengthLong <= maximumBytes) {
-                    "update response exceeds $maximumBytes bytes"
+                    "Update response exceeds $maximumBytes bytes"
                 }
                 connection.inputStream.use { input ->
                     return readBounded(input, maximumBytes)
@@ -55,7 +55,7 @@ internal open class TrustedHttpClient(
                 connection.disconnect()
             }
         }
-        error("unreachable redirect state")
+        error("Unreachable redirect state")
     }
 
     internal fun readBounded(input: InputStream, maximumBytes: Int): ByteArray {
@@ -66,7 +66,7 @@ internal open class TrustedHttpClient(
             val read = input.read(buffer)
             if (read < 0) break
             total += read
-            require(total <= maximumBytes) { "update response exceeds $maximumBytes bytes" }
+            require(total <= maximumBytes) { "Update response exceeds $maximumBytes bytes" }
             output.write(buffer, 0, read)
         }
         return output.toByteArray()

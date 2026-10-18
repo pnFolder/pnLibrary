@@ -26,19 +26,19 @@ internal class UpdateTransaction(
     /** Verifies and publishes [artifacts], leaving the transaction awaiting restart health. */
     fun prepareForRestart(artifacts: List<TransactionArtifact>, planId: UUID? = null, targetApi: Int? = null, configurationSnapshot: UUID? = null,
         purpose: String = "STAGE", parentTransaction: UUID? = null): TransactionResult {
-        require(purpose in setOf("STAGE", "INSTALL", "RESTORE")) { "invalid transaction purpose" }
-        require(targetApi == null || targetApi > 0) { "invalid target API" }
-        require(artifacts.isNotEmpty()) { "transaction must contain at least one artifact" }
+        require(purpose in setOf("STAGE", "INSTALL", "RESTORE")) { "Invalid transaction purpose" }
+        require(targetApi == null || targetApi > 0) { "Invalid target API" }
+        require(artifacts.isNotEmpty()) { "Transaction must contain at least one artifact" }
         require(artifacts.map { it.specification.product }.distinct().size == artifacts.size) {
-            "transaction contains duplicate components"
+            "Transaction contains duplicate components"
         }
         require(artifacts.map { it.target.toAbsolutePath().normalize() }.distinct().size == artifacts.size) {
-            "transaction contains duplicate targets"
+            "Transaction contains duplicate targets"
         }
         artifacts.forEach { artifact ->
             val target = artifact.target.toAbsolutePath().normalize()
             require(target.startsWith(publicationRoot)) {
-                "publication target must stay inside $publicationRoot"
+                "Publication target must stay inside $publicationRoot"
             }
             journals.checkedPath(target, publicationRoot)
         }
@@ -135,16 +135,16 @@ internal class UpdateTransaction(
     /** Restores artifacts recorded by the completed or failed transaction. */
     fun rollback(journalPath: Path, restoreConfigurations: Boolean = false): TransactionResult {
         val normalized = journalPath.toAbsolutePath().normalize()
-        require(normalized.startsWith(root.toAbsolutePath().normalize())) { "rollback journal must stay inside transaction root" }
+        require(normalized.startsWith(root.toAbsolutePath().normalize())) { "Rollback journal must stay inside transaction root" }
         val journal = journals.load(normalized)
         require(journal.state == TransactionState.FAILED || journal.state == TransactionState.COMMITTED) {
-            "transaction ${journal.id} cannot be rolled back from ${journal.state}"
+            "Transaction ${journal.id} cannot be rolled back from ${journal.state}"
         }
-        require(journals.hasRollbackData(journal)) { "transaction ${journal.id} has no complete rollback data" }
-        require(journal.purpose in setOf(null, "STAGE")) { "internal installation transactions cannot be selected for rollback" }
+        require(journals.hasRollbackData(journal)) { "Transaction ${journal.id} has no complete rollback data" }
+        require(journal.purpose in setOf(null, "STAGE")) { "Internal installation transactions cannot be selected for rollback" }
         journal.rollbackRequested = true
         journal.appliedOperation = null
-        require(!restoreConfigurations || journal.configurationSnapshot != null) { "transaction has no configuration snapshot" }
+        require(!restoreConfigurations || journal.configurationSnapshot != null) { "Transaction has no configuration snapshot" }
         journal.restoreConfigurations = restoreConfigurations
         journal.rollbackSession = UpdateProcessSession.id
         journal.rollbackHealthVerified = false
@@ -182,7 +182,7 @@ internal class UpdateTransaction(
     private fun rollbackInternal(path: Path, journal: TransactionJournal) {
         // Validate the whole set before changing any target.
         journals.validate(path, journal)
-        require(journals.hasRollbackData(journal)) { "transaction ${journal.id} has no complete rollback data" }
+        require(journals.hasRollbackData(journal)) { "Transaction ${journal.id} has no complete rollback data" }
         journals.transition(path, journal, TransactionState.ROLLING_BACK)
         journal.artifacts.forEach { record ->
             val target = Paths.get(record.target)
@@ -213,7 +213,7 @@ internal class UpdateTransaction(
 
     internal fun revertInstallation(path: Path) {
         val journal = journals.load(path)
-        require(journal.purpose in setOf("INSTALL", "RESTORE")) { "not an internal installation transaction" }
+        require(journal.purpose in setOf("INSTALL", "RESTORE")) { "Not an internal installation transaction" }
         rollbackInternal(path, journal)
     }
 

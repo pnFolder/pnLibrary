@@ -29,11 +29,11 @@ internal class ConfigurationRestorer(private val snapshots: ConfigurationSnapsho
         val snapshot = snapshots.read(source)
         if (operation != null) {
             val previous = journals().map { it to readJournal(it) }.filter { it.second.operation == operation.toString() }
-            require(previous.all { it.second.source == source.toString() }) { "restore operation was bound to another snapshot" }
+            require(previous.all { it.second.source == source.toString() }) { "Restore operation was bound to another snapshot" }
             previous.firstOrNull { it.second.state == "APPLIED" }?.let { return UUID.fromString(it.second.id) }
         }
         val declarations = snapshot.files.groupBy { it.product }.map { (product, files) ->
-            require(files.map { it.root }.distinct().size == 1) { "component has conflicting configuration roots" }
+            require(files.map { it.root }.distinct().size == 1) { "Component has conflicting configuration roots" }
             ProductId.of(product) to UpdateConfigurationBackup(Paths.get(files.first().root), files.map { it.relative })
         }.toMap()
         val before = requireNotNull(snapshots.capture(UUID.fromString(snapshot.planId), declarations))
@@ -67,7 +67,7 @@ internal class ConfigurationRestorer(private val snapshots: ConfigurationSnapsho
         val file = directory.resolve(id.toString()).resolve("restore.json")
         val journal = readJournal(file)
         if (journal.state == "RECOVERED") return
-        require(journal.state in setOf("APPLIED", "APPLYING", "RECOVERING")) { "configuration restore has not been applied" }
+        require(journal.state in setOf("APPLIED", "APPLYING", "RECOVERING")) { "Configuration restore has not been applied" }
         recover(file, journal)
     }
 
@@ -82,13 +82,13 @@ internal class ConfigurationRestorer(private val snapshots: ConfigurationSnapsho
 
     private fun readJournal(path: Path): Journal {
         val file = UpdatePaths.inside(path, directory)
-        require(Files.size(file) <= 64 * 1024) { "restore journal exceeds size limit" }
+        require(Files.size(file) <= 64 * 1024) { "Restore journal exceeds size limit" }
         return gson.fromJson(TextFiles.read(file, UTF_8), Journal::class.java).also { journal ->
-            require(UUID.fromString(journal.id).toString() == file.parent.fileName.toString()) { "restore identity mismatch" }
+            require(UUID.fromString(journal.id).toString() == file.parent.fileName.toString()) { "Restore identity mismatch" }
             UUID.fromString(journal.source)
             UUID.fromString(journal.before)
             journal.operation?.let(UUID::fromString)
-            require(journal.state in setOf("PREPARED", "APPLYING", "RECOVERING", "APPLIED", "RECOVERED")) { "invalid restore state" }
+            require(journal.state in setOf("PREPARED", "APPLYING", "RECOVERING", "APPLIED", "RECOVERED")) { "Invalid restore state" }
         }
     }
 
@@ -106,13 +106,13 @@ internal class ConfigurationRestorer(private val snapshots: ConfigurationSnapsho
         snapshot.files.forEach { record ->
             val target = snapshots.target(record)
             require(!Files.exists(target, LinkOption.NOFOLLOW_LINKS) || Files.isRegularFile(target, LinkOption.NOFOLLOW_LINKS)) {
-                "configuration target is not a regular file"
+                "Configuration target is not a regular file"
             }
         }
         snapshot.files.forEach { record ->
             val target = snapshots.target(record)
             if (!record.existed) {
-                require(!Files.exists(target, LinkOption.NOFOLLOW_LINKS) || Files.isRegularFile(target, LinkOption.NOFOLLOW_LINKS)) { "configuration target is not a regular file" }
+                require(!Files.exists(target, LinkOption.NOFOLLOW_LINKS) || Files.isRegularFile(target, LinkOption.NOFOLLOW_LINKS)) { "Configuration target is not a regular file" }
                 Files.deleteIfExists(target)
             } else {
                 Files.createDirectories(target.parent)

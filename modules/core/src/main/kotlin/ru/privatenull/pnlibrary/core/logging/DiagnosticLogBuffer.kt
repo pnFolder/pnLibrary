@@ -2,16 +2,13 @@ package ru.privatenull.pnlibrary.core.logging
 
 import ru.privatenull.pnlibrary.api.logging.LogLevel
 import ru.privatenull.pnlibrary.core.diagnostics.DiagnosticRedactor
+import ru.privatenull.pnlibrary.core.diagnostics.DiagnosticThrowables
 import ru.privatenull.pnlibrary.spi.platform.PlatformOwnership
 import java.io.PrintWriter
 import java.io.StringWriter
-import java.nio.charset.StandardCharsets
-import java.security.MessageDigest
 import java.time.Instant
 import java.util.ArrayDeque
 import java.util.LinkedHashMap
-import java.util.concurrent.CompletionException
-import java.util.concurrent.ExecutionException
 
 /** Bounded session history that aggregates repeated warnings and errors without losing their timeline. */
 internal class DiagnosticLogBuffer(private val capacity: Int = 2_000) {
@@ -75,7 +72,7 @@ internal class DiagnosticLogBuffer(private val capacity: Int = 2_000) {
                 plugin = plugin,
                 message = safeMessage,
                 exceptionType = error?.javaClass?.name,
-                origin = error?.let(::origin),
+                origin = error?.let(DiagnosticThrowables::origin),
                 fullError = completeError,
                 consoleBlock = consoleBlock(now, level, safeMessage, completeError),
                 firstSeenUtc = now,
@@ -161,49 +158,8 @@ internal class DiagnosticLogBuffer(private val capacity: Int = 2_000) {
         changeListener?.let { listener -> runCatching { listener(snapshot()) } }
     }
 
-    private fun fingerprint(plugin: String, level: LogLevel, message: String, error: Throwable?): String {
-        val significant = unwrap(error)
-        val frame = significant?.stackTrace?.firstOrNull(::isApplicationFrame)
-            ?: significant?.stackTrace?.firstOrNull()
-        val source = listOf(
-            plugin,
-            level.name,
-            normalize(message),
-            significant?.javaClass?.name.orEmpty(),
-            normalize(significant?.message.orEmpty()),
-            frame?.className.orEmpty(),
-            frame?.methodName.orEmpty(),
-        ).joinToString("\u0000")
-        return MessageDigest.getInstance("SHA-256")
-            .digest(source.toByteArray(StandardCharsets.UTF_8))
-            .take(8)
-            .joinToString("") { "%02x".format(it) }
-    }
-
-    private fun unwrap(error: Throwable?): Throwable? {
-        var current = error ?: return null
-        while (current is CompletionException || current is ExecutionException) {
-            current = current.cause ?: break
-        }
-        return current
-    }
-
-    private fun origin(error: Throwable): Map<String, Any?>? {
-        val significant = unwrap(error) ?: error
-        val frame = significant.stackTrace.firstOrNull(::isApplicationFrame)
-            ?: significant.stackTrace.firstOrNull()
-            ?: return null
-        return linkedMapOf(
-            "class" to frame.className,
-            "method" to frame.methodName,
-            "file" to frame.fileName,
-            "line" to frame.lineNumber.takeIf { it >= 0 },
-        )
-    }
-
-    private fun isApplicationFrame(frame: StackTraceElement): Boolean = IGNORED_FRAME_PREFIXES.none {
-        frame.className.startsWith(it)
-    }
+    private fun fingerprint(plugin: String, level: LogLevel, message: String, error: Throwable?): String =
+        DiagnosticThrowables.fingerprint(listOf(plugin, level.name), message, error)
 
     private fun fullStackTrace(error: Throwable): String {
         val writer = StringWriter()
@@ -229,24 +185,10 @@ internal class DiagnosticLogBuffer(private val capacity: Int = 2_000) {
             fullError?.let { append('\n').append(it) }
         }
 
-    private fun normalize(value: String): String = value
-        .replace(UUID_PATTERN, "<uuid>")
-        .replace(LONG_NUMBER_PATTERN, "<number>")
-        .replace(WHITESPACE_PATTERN, " ")
-        .trim()
-
     companion object {
         private const val MAX_MESSAGE_CHARS = 4_096
         private const val MAX_ERROR_CHARS = 1_048_576
         private const val MAX_TIMELINE_OCCURRENCES = 100_000
         private const val SUMMARY_INTERVAL_MS = 5 * 60 * 1_000L
-        private val UUID_PATTERN = Regex("(?i)\\b[0-9a-f]{8}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{12}\\b")
-        private val LONG_NUMBER_PATTERN = Regex("\\b\\d{4,}\\b")
-        private val WHITESPACE_PATTERN = Regex("\\s+")
-        private val IGNORED_FRAME_PREFIXES = listOf(
-            "java.", "javax.", "kotlin.", "kotlinx.", "sun.", "jdk.",
-            "org.bukkit.", "net.minecraft.", "io.papermc.", "com.destroystokyo.paper.",
-            "ru.privatenull.pnlibrary.",
-        )
     }
 }

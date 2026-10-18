@@ -4,6 +4,7 @@ import ru.privatenull.pnlibrary.api.observability.Observation
 import ru.privatenull.pnlibrary.api.observability.ObservationLevel
 import java.time.Duration
 
+/** How long observations of each level are kept; critical ones stay until the hard size bound. */
 internal object ObservationRetention {
     fun active(observations: Collection<Observation>, now: Long): List<Observation> =
         observations.filter { observation ->

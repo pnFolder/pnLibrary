@@ -17,6 +17,7 @@ import java.io.ByteArrayInputStream
 import java.nio.file.Path
 import java.util.UUID
 
+/** Where an installed component lives and where its update is placed for the next restart. */
 internal data class InstalledUpdateTarget(
     val currentJar: Path,
     val updateDirectory: Path,

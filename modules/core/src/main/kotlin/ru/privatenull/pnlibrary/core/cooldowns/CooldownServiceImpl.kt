@@ -8,6 +8,7 @@ import java.util.UUID
 import java.util.concurrent.ConcurrentHashMap
 import java.util.concurrent.atomic.AtomicBoolean
 
+/** In-memory, thread-safe cooldowns keyed by subject and action, measured on the monotonic clock. */
 internal class CooldownServiceImpl : CooldownService {
     private data class Key(val subject: UUID, val action: String)
     private val deadlines = ConcurrentHashMap<Key, Long>()

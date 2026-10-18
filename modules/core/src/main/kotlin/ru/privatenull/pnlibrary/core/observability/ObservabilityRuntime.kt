@@ -11,6 +11,7 @@ import ru.privatenull.pnlibrary.api.observability.ObservationRequest
 import java.nio.file.Path
 import java.time.Instant
 
+/** Records observations with their attachments and component statuses, and applies retention to them. */
 internal class ObservabilityRuntime(
     dataFolder: Path,
     private val clock: () -> Long = System::currentTimeMillis,

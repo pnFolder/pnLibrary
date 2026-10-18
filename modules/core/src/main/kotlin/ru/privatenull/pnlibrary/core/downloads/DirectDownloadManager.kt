@@ -6,7 +6,6 @@ import ru.privatenull.pnlibrary.api.downloads.FileDownloads
 import ru.privatenull.pnlibrary.api.logging.LogLevel
 import ru.privatenull.pnlibrary.api.plugin.PluginDependency
 import ru.privatenull.pnlibrary.core.updates.engine.TrustedHttpClient
-import ru.privatenull.pnlibrary.spi.platform.PlatformExecution
 import ru.privatenull.pnlibrary.spi.platform.PlatformIdentity
 import ru.privatenull.pnlibrary.spi.platform.PlatformLogging
 import ru.privatenull.pnlibrary.spi.platform.PlatformOwnerMetadata
@@ -20,11 +19,11 @@ import java.util.concurrent.ExecutorService
 import java.util.concurrent.Executors
 import java.util.concurrent.atomic.AtomicBoolean
 
+/** Downloads, verifies and atomically publishes files declared by plugins, including missing plugin dependencies. */
 internal class DirectDownloadManager(
     private val identity: PlatformIdentity,
     private val ownership: PlatformOwnerMetadata,
     private val inventory: PlatformPluginInventory,
-    private val execution: PlatformExecution,
     private val readiness: PlatformReadiness,
     private val logging: PlatformLogging,
     private val libraryData: Path,
@@ -46,7 +45,7 @@ internal class DirectDownloadManager(
     private val dependencyStore = DownloadedDependencyStore(libraryData)
     private val dependencyReporter = DependencyDownloadReporter(logging, ownership)
     private val dependencyRequestFactory = DependencyDownloadRequestFactory(
-        requireNotNull(libraryData.parent) { "не найдена папка плагинов" },
+        requireNotNull(libraryData.parent) { "Library data directory must have a parent plugins directory" },
     )
 
     fun register(owner: Any, request: FileDownloads): DownloadRegistration = register(owner, request, null)
@@ -100,7 +99,7 @@ internal class DirectDownloadManager(
         beforePublish: () -> Unit = {},
         verifier: ((FileDownload, Path) -> Unit)? = null,
     ) {
-        check(!closed.get()) { "система загрузок закрыта" }
+        check(!closed.get()) { "Download manager is closed" }
         val prepared = mutableListOf<PreparedDownload>()
         try {
             declarations.forEach { prepared += artifactPreparer.prepare(request, it, verifier) }
@@ -111,7 +110,7 @@ internal class DirectDownloadManager(
         if (prepared.isEmpty()) return
         try {
             beforePublish()
-            check(!closed.get()) { "система загрузок закрыта" }
+            check(!closed.get()) { "Download manager is closed" }
             filePublisher.publish(prepared)
         } catch (error: Throwable) {
             prepared.forEach { Files.deleteIfExists(it.staging) }

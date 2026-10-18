@@ -37,11 +37,11 @@ internal class ConfigurationSnapshots(
 
     fun capture(planId: UUID, selections: Map<ProductId, UpdateConfigurationBackup>): UUID? {
         if (selections.isEmpty()) return null
-        require(selections.values.sumOf { it.files.size } <= 100) { "configuration snapshot exceeds 100 files" }
+        require(selections.values.sumOf { it.files.size } <= 100) { "Configuration snapshot exceeds 100 files" }
         val sources = selections.flatMap { (product, selection) -> selection.files.map { relative ->
             Triple(product, selection, relative) to checkedSource(selection.root, relative)
         } }
-        require(sources.map { it.second }.distinct().size == sources.size) { "configuration files overlap across components" }
+        require(sources.map { it.second }.distinct().size == sources.size) { "Configuration files overlap across components" }
         val id = UUID.randomUUID()
         val target = directory.toAbsolutePath().normalize().resolve(id.toString())
         UpdatePaths.inside(target.resolve("manifest.json"), directory)
@@ -56,14 +56,14 @@ internal class ConfigurationSnapshots(
                 FileRecord(product.value, request.root.toString(), relative, false, null, 0, null)
             } else {
                 val before = Files.readAttributes(source, BasicFileAttributes::class.java, LinkOption.NOFOLLOW_LINKS)
-                require(before.isRegularFile) { "configuration selection must name a regular file" }
+                require(before.isRegularFile) { "Configuration selection must name a regular file" }
                 val limit = minOf(maximumFileBytes, maximumTotalBytes - total)
-                require(before.size() <= limit) { "configuration snapshot exceeds size limit" }
+                require(before.size() <= limit) { "Configuration snapshot exceeds size limit" }
                 val blob = index.toString().padStart(4, '0') + ".bin"
                 val (size, hash) = copyBounded(source, target.resolve(blob), limit)
                 val after = Files.readAttributes(source, BasicFileAttributes::class.java, LinkOption.NOFOLLOW_LINKS)
                 require(before.size() == after.size() && before.lastModifiedTime() == after.lastModifiedTime() && before.fileKey() == after.fileKey()) {
-                    "configuration changed while being captured"
+                    "Configuration changed while being captured"
                 }
                 total += size
                 FileRecord(product.value, request.root.toString(), relative, true, blob, size, hash)
@@ -81,28 +81,28 @@ internal class ConfigurationSnapshots(
     fun read(id: UUID): Snapshot {
         val folder = directory.toAbsolutePath().normalize().resolve(id.toString())
         val manifest = UpdatePaths.inside(folder.resolve("manifest.json"), directory)
-        require(Files.isRegularFile(manifest, LinkOption.NOFOLLOW_LINKS) && Files.size(manifest) <= 1024 * 1024) { "invalid configuration manifest" }
+        require(Files.isRegularFile(manifest, LinkOption.NOFOLLOW_LINKS) && Files.size(manifest) <= 1024 * 1024) { "Invalid configuration manifest" }
         val snapshot = gson.fromJson(TextFiles.read(manifest, UTF_8), Snapshot::class.java)
-        require(snapshot.schema == 1 && snapshot.id == id.toString()) { "configuration snapshot identity mismatch" }
+        require(snapshot.schema == 1 && snapshot.id == id.toString()) { "Configuration snapshot identity mismatch" }
         UUID.fromString(snapshot.planId)
         Instant.parse(snapshot.createdAt)
-        require(snapshot.files.isNotEmpty() && snapshot.files.size <= 100) { "invalid configuration file count" }
+        require(snapshot.files.isNotEmpty() && snapshot.files.size <= 100) { "Invalid configuration file count" }
         val sources = mutableSetOf<Path>()
         val blobs = mutableSetOf<String>()
         var total = 0L
         snapshot.files.forEach { file ->
             ProductId.of(file.product)
             val declaration = UpdateConfigurationBackup(Paths.get(file.root), listOf(file.relative))
-            require(sources.add(checkedSource(declaration.root, declaration.files.single()))) { "duplicate configuration target" }
-            require(file.size in 0..maximumFileBytes) { "invalid configuration size" }
+            require(sources.add(checkedSource(declaration.root, declaration.files.single()))) { "Duplicate configuration target" }
+            require(file.size in 0..maximumFileBytes) { "Invalid configuration size" }
             total += file.size
-            require(total <= maximumTotalBytes) { "configuration snapshot exceeds size limit" }
+            require(total <= maximumTotalBytes) { "Configuration snapshot exceeds size limit" }
             if (file.existed) {
-                require(file.blob != null && file.blob.matches(Regex("[0-9]{4}\\.bin")) && blobs.add(file.blob)) { "invalid configuration blob" }
+                require(file.blob != null && file.blob.matches(Regex("[0-9]{4}\\.bin")) && blobs.add(file.blob)) { "Invalid configuration blob" }
                 val blob = UpdatePaths.inside(folder.resolve(file.blob), folder)
-                require(Files.isRegularFile(blob, LinkOption.NOFOLLOW_LINKS) && Files.size(blob) == file.size) { "configuration backup size mismatch" }
-                require(hash(blob) == file.sha256) { "configuration backup checksum mismatch" }
-            } else require(file.blob == null && file.sha256 == null && file.size == 0L) { "invalid absent configuration record" }
+                require(Files.isRegularFile(blob, LinkOption.NOFOLLOW_LINKS) && Files.size(blob) == file.size) { "Configuration backup size mismatch" }
+                require(hash(blob) == file.sha256) { "Configuration backup checksum mismatch" }
+            } else require(file.blob == null && file.sha256 == null && file.size == 0L) { "Invalid absent configuration record" }
         }
         return snapshot
     }
@@ -117,11 +117,11 @@ internal class ConfigurationSnapshots(
 
     /** Copies a validated blob to a temporary file, checking its bytes again during the copy. */
     fun copyForRestore(id: UUID, file: FileRecord, temporary: Path) {
-        require(file.existed && file.blob != null) { "configuration record has no backup content" }
+        require(file.existed && file.blob != null) { "Configuration record has no backup content" }
         val folder = directory.toAbsolutePath().normalize().resolve(id.toString())
         val blob = UpdatePaths.inside(folder.resolve(file.blob), folder)
         val (size, digest) = copyBounded(blob, temporary, file.size, replaceExisting = true)
-        require(size == file.size && digest == file.sha256) { "configuration backup changed during restoration" }
+        require(size == file.size && digest == file.sha256) { "Configuration backup changed during restoration" }
     }
 
     private fun copyBounded(source: Path, target: Path, maximum: Long, replaceExisting: Boolean = false): Pair<Long, String> {
@@ -136,7 +136,7 @@ internal class ConfigurationSnapshots(
                     val read = input.read(buffer)
                     if (read < 0) break
                     count += read
-                    require(count <= maximum) { "configuration snapshot exceeds size limit" }
+                    require(count <= maximum) { "Configuration snapshot exceeds size limit" }
                     digest.update(buffer, 0, read)
                     output.write(buffer, 0, read)
                 }
@@ -155,7 +155,7 @@ internal class ConfigurationSnapshots(
                 val read = input.read(buffer)
                 if (read < 0) break
                 total += read
-                require(total <= maximumFileBytes) { "configuration backup exceeds size limit" }
+                require(total <= maximumFileBytes) { "Configuration backup exceeds size limit" }
                 digest.update(buffer, 0, read)
             }
         }

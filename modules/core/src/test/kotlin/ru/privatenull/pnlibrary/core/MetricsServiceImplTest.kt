@@ -7,21 +7,21 @@ import ru.privatenull.pnlibrary.api.metrics.ErrorReporter
 import ru.privatenull.pnlibrary.api.metrics.MetricsProvider
 import ru.privatenull.pnlibrary.api.metrics.MetricsProviderConfiguration
 import ru.privatenull.pnlibrary.api.metrics.PluginMetrics
-import ru.privatenull.pnlibrary.core.metrics.MetricsRegistry
+import ru.privatenull.pnlibrary.core.metrics.MetricsServiceImpl
 import ru.privatenull.pnlibrary.spi.metrics.PlatformMetricsFactory
 import java.util.concurrent.Executors
 import java.util.concurrent.TimeUnit
 import java.util.concurrent.atomic.AtomicInteger
 import java.util.function.Supplier
 
-class MetricsRegistryTest {
+class MetricsServiceImplTest {
     private val bStats = listOf(MetricsProviderConfiguration(MetricsProvider.BSTATS, projectId = 123))
     private val fastStats = listOf(MetricsProviderConfiguration(MetricsProvider.FASTSTATS, token = "token"))
 
     @Test
     fun `closed registry rejects every metrics factory entry point`() {
         var opened = 0
-        val registry = MetricsRegistry(object : PlatformMetricsFactory {
+        val registry = MetricsServiceImpl(object : PlatformMetricsFactory {
             override fun open(owner: Any, configurations: Collection<MetricsProviderConfiguration>): PluginMetrics {
                 opened++
                 return FakeMetrics {}
@@ -46,7 +46,7 @@ class MetricsRegistryTest {
     @Test
     fun `an enabled provider is required and runtime closes sessions`() {
         var closed = 0
-        val registry = MetricsRegistry(object : PlatformMetricsFactory {
+        val registry = MetricsServiceImpl(object : PlatformMetricsFactory {
             override fun open(owner: Any, configurations: Collection<MetricsProviderConfiguration>): PluginMetrics =
                 FakeMetrics { closed++ }
         })
@@ -67,7 +67,7 @@ class MetricsRegistryTest {
     @Test
     fun `managed metrics closes delegate only once under concurrent close`() {
         val closed = AtomicInteger()
-        val registry = MetricsRegistry(object : PlatformMetricsFactory {
+        val registry = MetricsServiceImpl(object : PlatformMetricsFactory {
             override fun open(owner: Any, configurations: Collection<MetricsProviderConfiguration>): PluginMetrics =
                 FakeMetrics { closed.incrementAndGet() }
         })
@@ -88,7 +88,7 @@ class MetricsRegistryTest {
     fun `provider configuration is delegated and managed`() {
         var received: List<MetricsProviderConfiguration> = emptyList()
         var closed = 0
-        val registry = MetricsRegistry(object : PlatformMetricsFactory {
+        val registry = MetricsServiceImpl(object : PlatformMetricsFactory {
             override fun open(owner: Any, configurations: Collection<MetricsProviderConfiguration>): PluginMetrics {
                 received = configurations.toList()
                 return FakeMetrics { closed++ }

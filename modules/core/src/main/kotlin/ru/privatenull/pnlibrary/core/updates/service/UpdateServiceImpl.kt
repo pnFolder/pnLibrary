@@ -23,7 +23,6 @@ import ru.privatenull.pnlibrary.core.updates.install.UpdateInstaller
 import ru.privatenull.pnlibrary.core.updates.policy.UpdateAutomaticPolicy
 import ru.privatenull.pnlibrary.core.updates.policy.UpdateConfiguration
 import ru.privatenull.pnlibrary.core.updates.policy.UpdatePolicyOverrides
-import ru.privatenull.pnlibrary.spi.platform.PlatformExecution
 import ru.privatenull.pnlibrary.spi.platform.PlatformIdentity
 import ru.privatenull.pnlibrary.spi.platform.PlatformLogging
 import ru.privatenull.pnlibrary.spi.platform.PlatformOwnerMetadata
@@ -44,13 +43,12 @@ import java.util.concurrent.CompletableFuture
 import java.util.concurrent.CompletionStage
 import java.util.concurrent.atomic.AtomicBoolean
 
-/** One catalogue → resolver → verifier → transaction pipeline for every component. */
+/** One catalog → resolver → verifier → transaction pipeline for every component. */
 internal class UpdateServiceImpl(
     private val logging: PlatformLogging,
     private val ownership: PlatformOwnerMetadata,
     private val inventory: PlatformPluginInventory,
     private val identity: PlatformIdentity,
-    private val execution: PlatformExecution,
     private val readiness: PlatformReadiness,
     private val dataFolder: Path,
 ) : UpdateService, AutoCloseable {
@@ -69,7 +67,7 @@ internal class UpdateServiceImpl(
     private val automaticPolicy = UpdateAutomaticPolicy(configuration, overrides) { registrations.snapshot() }
     private val installer = UpdateInstaller(identity, dataFolder, configuration, resources.http)
     private val freezes = FreezeStore(dataFolder.resolve("updates/freezes.json"))
-    private val graphResolver = UpdateGraphResolver(ownership, inventory, identity, configuration, resources.catalogGateway, freezes, overrides)
+    private val graphResolver = UpdateGraphResolver(inventory, identity, configuration, resources.catalogGateway, freezes, overrides)
     private val runtime = UpdateOrchestratorRuntime(
         configuration = configuration,
         dataFolder = dataFolder,
@@ -93,22 +91,22 @@ internal class UpdateServiceImpl(
         request: PluginUpdateRequest,
         dependencies: List<PluginDependency>,
     ): UpdateRegistration {
-        check(!closed.get()) { "update service is closed" }
+        check(!closed.get()) { "Update service is closed" }
         val info = ownership.ownerDetails(owner)
         val nativeProductName = info["name"] ?: request.repositoryName
-        val version = info["version"] ?: error("Не удалось определить версию подключённого плагина")
+        val version = info["version"] ?: error("Cannot determine the version of the registering plugin")
         require(SemanticVersion.tryParse(version) != null) {
             "Version of $nativeProductName must be semantic: $version"
         }
         val jar = Paths.get(owner.javaClass.protectionDomain.codeSource.location.toURI()).toAbsolutePath().normalize()
-        require(Files.isRegularFile(jar)) { "Плагин должен быть запущен из JAR" }
+        require(Files.isRegularFile(jar)) { "Plugin must be loaded from a JAR file" }
         request.configurationBackup?.let { backup ->
             require(backup.root != jar.parent && backup.root.startsWith(jar.parent)) {
-                "configuration backup root must be a component data directory inside the plugins directory"
+                "Configuration backup root must be a component data directory inside the plugins directory"
             }
         }
         val artifact = request.artifactFor(JavaRuntime.feature, identity.type)
-            ?: error("Для Java ${JavaRuntime.feature} не зарегистрирован совместимый артефакт ${request.repositoryName}")
+            ?: error("No artifact of ${request.repositoryName} is registered for Java ${JavaRuntime.feature}")
         require(product.version == SemanticVersion.parse(version)) {
             "Product version ${product.version} does not match native plugin version $version"
         }
@@ -126,7 +124,7 @@ internal class UpdateServiceImpl(
                 overrides.automatic(product.id.value) ?: request.automaticDownload
             },
         )
-        check(!closed.get()) { "update service is closed" }
+        check(!closed.get()) { "Update service is closed" }
         registrations.add(registration)
         orchestrator.registrationsChanged()
         return registration
@@ -185,7 +183,7 @@ internal class UpdateServiceImpl(
     ): CompletionStage<UpdateSnapshot> {
         val result = CompletableFuture<UpdateSnapshot>()
         try {
-            check(!closed.get()) { "update service is closed" }
+            check(!closed.get()) { "Update service is closed" }
             val registration = registrations.find(product)
                 ?: throw IllegalArgumentException("Плагин $product не зарегистрирован в pnLibrary")
             val description = change(registration)

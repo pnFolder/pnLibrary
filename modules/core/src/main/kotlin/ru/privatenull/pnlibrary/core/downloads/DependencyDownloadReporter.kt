@@ -11,6 +11,7 @@ import ru.privatenull.pnlibrary.spi.platform.PlatformOwnerMetadata
 import java.io.IOException
 import java.nio.file.Paths
 
+/** Reports dependency downloads to the console: failures with advice, staged files and dependencies confirmed after a restart. */
 internal class DependencyDownloadReporter(
     private val logging: PlatformLogging,
     private val ownership: PlatformOwnerMetadata,

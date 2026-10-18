@@ -12,6 +12,7 @@ import ru.privatenull.pnlibrary.api.tasks.TaskSpec
 import ru.privatenull.pnlibrary.spi.platform.PlatformExecution
 import ru.privatenull.pnlibrary.spi.platform.PlatformOwnerControl
 
+/** Periodically evaluates a remote policy and stops the module or plugin when the policy denies it. */
 internal class RemotePolicyMonitor(
     private val ownership: PlatformOwnerControl,
     private val execution: PlatformExecution,

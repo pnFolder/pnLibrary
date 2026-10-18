@@ -10,6 +10,7 @@ import java.util.LinkedHashMap
 import java.util.Locale
 import java.util.concurrent.CompletionStage
 
+/** Outcome of routing one invocation: an executable node, a usage hint, or a permission denial. */
 internal sealed class CommandRoute {
     data class Executable(val node: CommandNode, val context: CommandContext) : CommandRoute()
     data class Invalid(val usage: String) : CommandRoute()

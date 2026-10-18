@@ -6,6 +6,7 @@ import ru.privatenull.pnlibrary.api.actions.LibraryAudience
 import ru.privatenull.pnlibrary.api.actions.LibraryPlayer
 import ru.privatenull.pnlibrary.api.text.ComponentSerializerType
 
+/** Creates action contexts backed by one module's components, logger, tasks and placeholders. */
 internal class ModuleActionService(
     private val resources: ModuleResources,
 ) : ActionService {

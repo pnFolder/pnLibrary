@@ -29,8 +29,8 @@ import ru.privatenull.pnlibrary.core.diagnostics.diagnosticCommand
 import ru.privatenull.pnlibrary.core.downloads.DirectDownloadManager
 import ru.privatenull.pnlibrary.core.downloads.DownloadConfiguration
 import ru.privatenull.pnlibrary.core.events.EventServiceImpl
-import ru.privatenull.pnlibrary.core.logging.PlatformLoggingService
-import ru.privatenull.pnlibrary.core.metrics.MetricsRegistry
+import ru.privatenull.pnlibrary.core.logging.LoggingServiceImpl
+import ru.privatenull.pnlibrary.core.metrics.MetricsServiceImpl
 import ru.privatenull.pnlibrary.core.observability.SupportRuntime
 import ru.privatenull.pnlibrary.core.placeholders.GlobalPlaceholderValueStore
 import ru.privatenull.pnlibrary.core.placeholders.PlaceholderHub
@@ -80,7 +80,7 @@ internal class PnLibraryImpl(
 
     private val closedFlag = AtomicBoolean(false)
     override val isClosed: Boolean get() = closedFlag.get()
-    private val metricsRegistry = MetricsRegistry(metricsFactory)
+    private val metricsService = MetricsServiceImpl(metricsFactory)
     private var libraryMetrics: PluginMetrics? = null
     val dataFolder: Path = PlatformDataFolderResolver.resolve(owner, dataFolderHint)
     private val support = SupportRuntime(
@@ -97,8 +97,8 @@ internal class PnLibraryImpl(
     )
     override val observability get() = support.service
     override val activity: ActivityService get() = observability
-    override val metrics: MetricsService get() = metricsRegistry
-    override val logging: LoggingService = PlatformLoggingService(
+    override val metrics: MetricsService get() = metricsService
+    override val logging: LoggingService = LoggingServiceImpl(
         platformLogging,
         platformOwnership,
         platformDiagnostics,
@@ -112,7 +112,6 @@ internal class PnLibraryImpl(
         platformOwnership,
         platformOwnership,
         platformIdentity,
-        platformExecution,
         platformReadiness,
         dataFolder,
     )
@@ -123,7 +122,6 @@ internal class PnLibraryImpl(
         platformIdentity,
         platformOwnership,
         platformOwnership,
-        platformExecution,
         platformReadiness,
         platformLogging,
         dataFolder,
@@ -176,7 +174,7 @@ internal class PnLibraryImpl(
         logging = logging,
         libraryVersion = version,
         configurations = configurationService,
-        metrics = metricsRegistry,
+        metrics = metricsService,
         diagnostics = diagnostics,
         updates = updateService,
         placeholderHub = placeholderHub,
@@ -194,7 +192,7 @@ internal class PnLibraryImpl(
         updates = updateService,
         diagnostics = diagnostics,
         support = support,
-        metrics = metricsRegistry,
+        metrics = metricsService,
         commands = commandService,
     )
 
@@ -222,7 +220,7 @@ internal class PnLibraryImpl(
 
     private fun startLibraryMetrics() {
         libraryMetrics = RuntimeMetricsBootstrap(
-            registry = metricsRegistry,
+            registry = metricsService,
             platform = platformIdentity,
             owner = owner,
             warning = { message -> logging.logger(owner, "pnLibrary").warning(message) },
@@ -239,7 +237,7 @@ internal class PnLibraryImpl(
                 currency = currencyFeature,
                 configurations = configurationService,
                 libraryMetrics = { libraryMetrics },
-                metrics = metricsRegistry,
+                metrics = metricsService,
                 updates = updateService,
                 events = AutoCloseable(eventService::close),
                 services = serviceManager,

@@ -53,7 +53,7 @@ internal class UpdateInstaller(
     fun stage(snapshot: UpdatePlanSnapshot, registrations: List<RegisteredUpdate>) {
         require(transaction.awaitingHealth().isEmpty() && transaction.awaitingRollbackHealth().isEmpty()) { "A prepared change is still awaiting restart verification" }
         require(transaction.pendingInstallations().isEmpty()) { "A prepared rollback must be applied before preparing another update" }
-        val plan = requireNotNull(snapshot.plan) { "update plan has no installable target" }
+        val plan = requireNotNull(snapshot.plan) { "Update plan has no installable target" }
         verifyPluginDownloadsAllowed(plan)
 
         val targets = registrations.associate { registration ->
@@ -93,7 +93,7 @@ internal class UpdateInstaller(
         val journal = TransactionJournal.load(candidate)
         if (restoreConfigurations) {
             val saved = requireNotNull(journal.configurationSnapshot) { "У этого набора нет снимка конфигураций" }
-            require(configurations.read(UUID.fromString(saved)).planId == journal.planId) { "configuration snapshot belongs to another plan" }
+            require(configurations.read(UUID.fromString(saved)).planId == journal.planId) { "Configuration snapshot belongs to another plan" }
         }
         // Legacy backups may lack version information. Never invent a version from the current plan.
         val changes = journal.artifacts.mapNotNull { artifact ->

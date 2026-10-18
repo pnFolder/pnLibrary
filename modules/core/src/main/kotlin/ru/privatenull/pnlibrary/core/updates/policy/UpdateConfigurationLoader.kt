@@ -37,13 +37,8 @@ internal class UpdateConfigurationLoader(
         if (parsed.containsKey("updates")) return null
         if (!parsed.containsKey("channel") && !parsed.containsKey("auto-download")) return null
 
-        val channel = (parsed["channel"] as? String)
-            ?.lowercase()
-            ?.takeIf(ALLOWED_CHANNELS::contains)
-            ?: "stable"
         val migrated = UpdateConfiguration(
             downloads = UpdateConfiguration.Downloads(automatic = parsed["auto-download"] == true),
-            legacyChannel = channel,
         )
         val backup = file.resolveSibling("${file.fileName}.pre-orchestrator.bak")
         if (!Files.exists(backup)) Files.copy(file, backup)
@@ -88,8 +83,6 @@ internal class UpdateConfigurationLoader(
     }
 
     companion object {
-        private val ALLOWED_CHANNELS = setOf("stable", "rc", "beta", "alpha", "dev")
-
         @Suppress("UNCHECKED_CAST")
         private fun parseYaml(source: String): Map<String, Any?> = try {
             val strictBooleans = source.replace(

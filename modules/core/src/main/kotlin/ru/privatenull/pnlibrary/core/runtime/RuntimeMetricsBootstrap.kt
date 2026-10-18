@@ -3,12 +3,12 @@ package ru.privatenull.pnlibrary.core.runtime
 import ru.privatenull.pnlibrary.api.metrics.MetricsProvider
 import ru.privatenull.pnlibrary.api.metrics.MetricsProviderConfiguration
 import ru.privatenull.pnlibrary.api.metrics.PluginMetrics
-import ru.privatenull.pnlibrary.core.metrics.MetricsRegistry
+import ru.privatenull.pnlibrary.core.metrics.MetricsServiceImpl
 import ru.privatenull.pnlibrary.spi.platform.PlatformIdentity
 
 /** Starts the built-in runtime telemetry without coupling the composition root to its details. */
 internal class RuntimeMetricsBootstrap(
-    private val registry: MetricsRegistry,
+    private val registry: MetricsServiceImpl,
     private val platform: PlatformIdentity,
     private val owner: Any,
     private val warning: (String) -> Unit,

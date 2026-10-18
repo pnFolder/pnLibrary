@@ -36,16 +36,16 @@ internal class ModuleDefinitionBuilder : PluginBuilder {
     var placeholderApiEnabled: Boolean = true
 
     override fun product(descriptor: ProductDescriptor): PluginBuilder = apply {
-        require(productDescriptor == null) { "component descriptor is already configured" }
+        require(productDescriptor == null) { "Component descriptor is already configured" }
         productDescriptor = descriptor
     }
 
     override fun depends(dependency: PluginDependency): PluginBuilder = apply {
         require(dependency.managed != null || dependency.external != null) {
-            "plugin dependency must provide a managed or external dependency"
+            "Plugin dependency must provide a managed or external dependency"
         }
         require(dependencies.none { it.refersToSameProductAs(dependency) }) {
-            "duplicate plugin dependency"
+            "Duplicate plugin dependency"
         }
         dependencies += dependency
     }
@@ -79,7 +79,7 @@ internal class ModuleDefinitionBuilder : PluginBuilder {
     }
 
     override fun downloads(request: FileDownloads): PluginBuilder = apply {
-        require(downloadsRequest == null) { "downloads are already configured" }
+        require(downloadsRequest == null) { "Downloads are already configured" }
         downloadsRequest = request
     }
 
@@ -149,7 +149,7 @@ internal class ModuleDefinitionBuilder : PluginBuilder {
         }
 
         private fun String.requireMetadata(field: String): String = trim().also { value ->
-            require(value.isNotEmpty()) { "plugin metadata $field must not be blank" }
+            require(value.isNotEmpty()) { "Plugin metadata $field must not be blank" }
         }
     }
 }

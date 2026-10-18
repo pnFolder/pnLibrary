@@ -10,19 +10,19 @@ import java.nio.file.StandardCopyOption
 import java.time.Duration
 
 /**
- * Validated cached catalogue entry.
+ * Validated cached catalog entry.
  *
- * @property bytes encoded catalogue bytes
+ * @property bytes encoded catalog bytes
  * @property fresh whether the cache age is within the requested TTL
  */
-internal data class CatalogueCacheHit(val bytes: ByteArray, val fresh: Boolean)
+internal data class CatalogCacheHit(val bytes: ByteArray, val fresh: Boolean)
 
-/** Digest-protected, atomic on-disk cache for release catalogues. */
-internal class ReleaseCatalogueStore(private val root: Path) {
+/** Digest-protected, atomic on-disk cache for release catalogs. */
+internal class ReleaseCatalogStore(private val root: Path) {
     private val lock = Any()
 
-    /** Reads and verifies the cached catalogue for [uri], when present. */
-    fun read(uri: URI, ttl: Duration): CatalogueCacheHit? = synchronized(lock) {
+    /** Reads and verifies the cached catalog for [uri], when present. */
+    fun read(uri: URI, ttl: Duration): CatalogCacheHit? = synchronized(lock) {
         val data = dataPath(uri)
         val digest = digestPath(uri)
         if (!Files.isRegularFile(data) || !Files.isRegularFile(digest)) return null
@@ -34,7 +34,7 @@ internal class ReleaseCatalogueStore(private val root: Path) {
                 null
             } else {
                 val age = Duration.ofMillis((System.currentTimeMillis() - Files.getLastModifiedTime(data).toMillis()).coerceAtLeast(0))
-                CatalogueCacheHit(bytes, age <= ttl)
+                CatalogCacheHit(bytes, age <= ttl)
             }
         } catch (_: Exception) {
             // An unreadable cache entry is treated as a miss and moved aside; the caller refetches it.
@@ -43,7 +43,7 @@ internal class ReleaseCatalogueStore(private val root: Path) {
         }
     }
 
-    /** Atomically writes catalogue [bytes] and their digest for [uri]. */
+    /** Atomically writes catalog [bytes] and their digest for [uri]. */
     fun write(uri: URI, bytes: ByteArray) = synchronized(lock) {
         val data = dataPath(uri)
         Files.createDirectories(data.parent)
@@ -64,10 +64,6 @@ internal class ReleaseCatalogueStore(private val root: Path) {
 
     internal fun dataPath(uri: URI): Path = root.resolve(key(uri) + ".data")
     private fun digestPath(uri: URI): Path = root.resolve(key(uri) + ".sha256")
-    internal fun rewriteDigest(uri: URI) = synchronized(lock) {
-        val bytes = Files.readAllBytes(dataPath(uri))
-        AtomicFiles.write(digestPath(uri), Digests.sha256(bytes).toByteArray(StandardCharsets.US_ASCII))
-    }
 
     private fun key(uri: URI) = Digests.sha256(uri.toASCIIString().toByteArray(StandardCharsets.UTF_8))
 }

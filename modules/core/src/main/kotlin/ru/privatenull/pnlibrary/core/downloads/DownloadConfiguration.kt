@@ -9,6 +9,7 @@ import java.nio.charset.StandardCharsets
 import java.nio.file.Files
 import java.nio.file.Path
 
+/** Administrator policy from `downloads.yml`: whether downloads run, start automatically, and which destinations are allowed. */
 internal data class DownloadConfiguration(
     val enabled: Boolean = true,
     val automatic: Boolean = false,
