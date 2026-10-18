@@ -32,6 +32,8 @@ import java.util.concurrent.CompletionStage
  * @param managePermission permission required for `set`, which changes a component's channel, automatic download or pause
  * @param guard returns whether the command may run for this sender; it reports the reason itself
  * @param deliver runs result delivery on the right thread; asynchronous results are never sent directly
+ * @param onSaved called on that thread after a setting was saved, so a platform can add its own feedback such as a
+ *   title and a sound
  */
 class UpdateCatalogCommands(
     private val library: PnLibrary,
@@ -41,7 +43,11 @@ class UpdateCatalogCommands(
     private val managePermission: String? = viewPermission,
     private val guard: (CommandContext) -> Boolean = { true },
     private val deliver: (Runnable) -> Unit = Runnable::run,
+    private val onSaved: (CommandContext, SettingSaved) -> Unit = { _, _ -> },
 ) {
+    /** A setting that was just saved: [setting] names it, for example "Канал", and [value] is what it is now. */
+    data class SettingSaved(val product: String, val setting: String, val value: String)
+
     /**
      * Adds the catalog literals through [addLiteral], which forwards to whichever command or node is being built.
      *
@@ -166,12 +172,12 @@ class UpdateCatalogCommands(
             context.sender.send(error("Неизвестный канал $value. Доступны: ${UpdateCatalogView.CHANNELS.joinToString { it.name.lowercase(Locale.ROOT) }}."))
             return
         }
-        change(context, "Канал: ${channel.name.lowercase(Locale.ROOT)}") { product, actor -> library.updates.setChannel(product, channel, actor) }
+        change(context, "Канал", channel.name.lowercase(Locale.ROOT)) { product, actor -> library.updates.setChannel(product, channel, actor) }
     }
 
     private fun setAutomatic(context: CommandContext) {
         val enabled = switch(context) ?: return
-        change(context, if (enabled) "Автозагрузка включена" else "Автозагрузка выключена") { product, actor ->
+        change(context, "Автозагрузка", if (enabled) "включена" else "выключена") { product, actor ->
             library.updates.setAutomaticDownload(product, enabled, actor)
         }
     }
@@ -187,8 +193,7 @@ class UpdateCatalogCommands(
                 return
             }
         }
-        val saved = if (duration == null) "Пауза снята" else "Обновления на паузе ${period(duration)}"
-        change(context, saved) { product, actor -> library.updates.setHeld(product, duration, actor) }
+        change(context, "Пауза", if (duration == null) "снята" else "на ${period(duration)}") { product, actor -> library.updates.setHeld(product, duration, actor) }
     }
 
     private fun period(duration: Duration): String = when {
@@ -208,8 +213,8 @@ class UpdateCatalogCommands(
         return parsed
     }
 
-    /** Applies a setting, then confirms it with [saved] above the refreshed settings card, or shows why it was refused. */
-    private fun change(context: CommandContext, saved: String, apply: (String, UpdateActor) -> CompletionStage<UpdateSnapshot>) {
+    /** Applies a setting, then confirms it below the refreshed settings card, or shows why it was refused. */
+    private fun change(context: CommandContext, setting: String, value: String, apply: (String, UpdateActor) -> CompletionStage<UpdateSnapshot>) {
         if (!ready(context)) return
         val product = context.get<String>("plugin")
         val sender = context.sender
@@ -222,7 +227,8 @@ class UpdateCatalogCommands(
                 } else {
                     val routes = routesFor(context)
                     val card = UpdateCatalogView.settings(snapshot, routes, library.updates.heldUntil(snapshot.product))
-                    (card + UpdateCatalogView.notice(UpdateNotice(UpdateTone.SUCCESS, "Сохранено. $saved."), routes)).forEach(sender::send)
+                    (card + UpdateCatalogView.notice(UpdateNotice(UpdateTone.SUCCESS, "Сохранено. $setting: $value."), routes)).forEach(sender::send)
+                    onSaved(context, SettingSaved(snapshot.product, setting, value))
                 }
             })
         }

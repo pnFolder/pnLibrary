@@ -40,6 +40,7 @@ internal class BukkitControlCommand(
 ) {
     private val tokens = UpdateConfirmationTokens()
     private val testErrors = BukkitDiagnosticTestErrors(plugin, library)
+    private val feedback = BukkitSettingFeedback(plugin)
     private val catalog = UpdateCatalogCommands(
         library = library,
         routes = ROUTES,
@@ -47,6 +48,7 @@ internal class BukkitControlCommand(
         backupsPermission = "pnlibrary.updates.rollback",
         managePermission = "pnlibrary.updates.settings",
         deliver = { task -> if (!library.isClosed) plugin.server.scheduler.runTask(plugin, task) },
+        onSaved = { context, saved -> (context.sender as? BukkitCommandSender)?.native?.let { it as? Player }?.let { feedback.show(it, saved) } },
     )
 
     /** Builds the permission-aware control command tree. */
