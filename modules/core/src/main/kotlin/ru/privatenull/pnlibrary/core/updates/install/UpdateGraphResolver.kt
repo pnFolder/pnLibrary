@@ -19,7 +19,7 @@ import ru.privatenull.pnlibrary.spi.platform.PlatformOwnerMetadata
 import ru.privatenull.pnlibrary.spi.platform.PlatformPluginInventory
 import java.time.Instant
 
-/** Loads release catalogues and resolves one coherent update plan for all registered products. */
+/** Loads release catalogs and resolves one coherent update plan for all registered products. */
 internal class UpdateGraphResolver(
     private val ownership: PlatformOwnerMetadata,
     private val inventory: PlatformPluginInventory,

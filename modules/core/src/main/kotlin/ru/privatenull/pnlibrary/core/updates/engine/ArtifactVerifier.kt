@@ -9,7 +9,7 @@ import java.nio.file.Path
 import java.nio.file.Paths
 
 /**
- * Trusted catalogue facts used to verify one downloaded artifact.
+ * Trusted catalog facts used to verify one downloaded artifact.
  *
  * @property product expected product identity
  * @property version expected product version

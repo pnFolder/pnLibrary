@@ -1,7 +1,7 @@
 package ru.privatenull.pnlibrary.core.updates.service
 
 import ru.privatenull.pnlibrary.core.updates.engine.ReleaseCatalogClient
-import ru.privatenull.pnlibrary.core.updates.engine.ReleaseCatalogueStore
+import ru.privatenull.pnlibrary.core.updates.engine.ReleaseCatalogStore
 import ru.privatenull.pnlibrary.core.updates.engine.TrustedHttpClient
 import ru.privatenull.pnlibrary.core.updates.install.ReleaseCatalogGateway
 import java.nio.file.Path
@@ -21,7 +21,7 @@ internal class UpdateRuntimeResources(dataFolder: Path) : AutoCloseable {
     val http = TrustedHttpClient(Duration.ofSeconds(2), Duration.ofSeconds(3))
     private val releaseCatalog = ReleaseCatalogClient(
         http,
-        ReleaseCatalogueStore(dataFolder.resolve("updates/catalog")),
+        ReleaseCatalogStore(dataFolder.resolve("updates/catalog")),
         catalogExecutor,
         Duration.ofMinutes(30),
     )

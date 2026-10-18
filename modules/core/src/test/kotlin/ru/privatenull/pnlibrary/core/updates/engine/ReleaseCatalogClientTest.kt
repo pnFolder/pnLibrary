@@ -27,7 +27,7 @@ class ReleaseCatalogClientTest {
                 """.trimIndent().toByteArray()
             }
         }
-        val client = ReleaseCatalogClient(http, ReleaseCatalogueStore(directory), Executor { it.run() }, Duration.ofHours(1))
+        val client = ReleaseCatalogClient(http, ReleaseCatalogStore(directory), Executor { it.run() }, Duration.ofHours(1))
         assertEquals("1.0.0", client.load(source).join().releases.single().version.toString())
         assertEquals("1.0.0", client.load(source).join().releases.single().version.toString())
         assertEquals(1, calls)

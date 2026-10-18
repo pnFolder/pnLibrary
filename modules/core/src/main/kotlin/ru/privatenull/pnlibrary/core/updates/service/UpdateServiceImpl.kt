@@ -44,7 +44,7 @@ import java.util.concurrent.CompletableFuture
 import java.util.concurrent.CompletionStage
 import java.util.concurrent.atomic.AtomicBoolean
 
-/** One catalogue → resolver → verifier → transaction pipeline for every component. */
+/** One catalog → resolver → verifier → transaction pipeline for every component. */
 internal class UpdateServiceImpl(
     private val logging: PlatformLogging,
     private val ownership: PlatformOwnerMetadata,

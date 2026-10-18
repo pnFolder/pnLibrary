@@ -8,7 +8,7 @@ import java.util.concurrent.Executor
 /** Loads one manually maintained releases.json and caches only valid snapshots. */
 internal class ReleaseCatalogClient(
     private val http: TrustedHttpClient,
-    private val store: ReleaseCatalogueStore,
+    private val store: ReleaseCatalogStore,
     private val executor: Executor,
     private val ttl: Duration,
     private val codec: ReleaseCatalogCodec = ReleaseCatalogCodec(),

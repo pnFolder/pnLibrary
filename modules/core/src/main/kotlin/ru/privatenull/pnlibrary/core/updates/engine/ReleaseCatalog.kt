@@ -11,10 +11,10 @@ import ru.privatenull.pnlibrary.api.version.SemanticVersion
 import java.net.URI
 import java.time.Instant
 
-/** Controls whether a catalogue may use its validated local cache. */
+/** Controls whether a catalog may use its validated local cache. */
 internal enum class RefreshMode { CACHED, FORCE_REMOTE }
 
-/** Invalid release-catalogue field with its logical [field] path. */
+/** Invalid release-catalog field with its logical [field] path. */
 internal class ManifestException(
     /** Logical JSON field path that failed validation. */
     val field: String,
@@ -24,7 +24,7 @@ internal class ManifestException(
     IllegalArgumentException("Invalid release catalog field '$field': $message", cause)
 
 /**
- * Parsed release catalogue.
+ * Parsed release catalog.
  *
  * @property product normalized product identifier
  * @property releases ordered published releases
@@ -32,7 +32,7 @@ internal class ManifestException(
 internal data class ReleaseCatalog(val product: String, val releases: List<CatalogRelease>)
 
 /**
- * One catalogue release.
+ * One catalog release.
  *
  * @property version semantic release version
  * @property channel declared release maturity
@@ -52,7 +52,7 @@ internal data class CatalogRelease(
 )
 
 /**
- * One platform artifact declared by a catalogue release.
+ * One platform artifact declared by a catalog release.
  *
  * @property file safe JAR filename
  * @property platform required platform family
@@ -72,9 +72,9 @@ internal data class CatalogArtifact(
     val url: URI,
 )
 
-/** Strict schema-1 JSON decoder for bounded release catalogues. */
+/** Strict schema-1 JSON decoder for bounded release catalogs. */
 internal class ReleaseCatalogCodec(private val maximumBytes: Int = MAX_BYTES) {
-    /** Decodes and validates catalogue [bytes]. */
+    /** Decodes and validates catalog [bytes]. */
     fun decode(bytes: ByteArray): ReleaseCatalog {
         require(bytes.size <= maximumBytes) { "Release catalog exceeds $maximumBytes bytes" }
         val root = try { JsonParser.parseString(bytes.toString(Charsets.UTF_8)).asJsonObject }
@@ -175,9 +175,9 @@ internal class ReleaseCatalogCodec(private val maximumBytes: Int = MAX_BYTES) {
 
     /** Public schema and size limits used by clients. */
     companion object {
-        /** Supported catalogue schema generation. */
+        /** Supported catalog schema generation. */
         const val SCHEMA = 1
-        /** Default maximum encoded catalogue size. */
+        /** Default maximum encoded catalog size. */
         const val MAX_BYTES = 1024 * 1024
         private val SAFE_FILE = Regex("[A-Za-z0-9][A-Za-z0-9._-]*")
     }
