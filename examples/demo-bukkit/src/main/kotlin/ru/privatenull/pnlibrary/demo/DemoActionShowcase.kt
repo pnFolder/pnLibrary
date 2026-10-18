@@ -31,7 +31,7 @@ import ru.privatenull.pnlibrary.api.runtime.PnLibraryProvider
 import java.time.Duration
 
 /**
- * Exhaustive catalogue of the public action implementations.  It is deliberately explicit:
+ * Exhaustive catalog of the public action implementations.  It is deliberately explicit:
  * adding a new action requires adding it here, so the demo becomes a compile-time API checklist.
  */
 object DemoActionShowcase {

@@ -21,7 +21,7 @@ class ProxyUpdateCommand(private val library: PnLibrary) {
         routes = UpdateCatalogRoutes("/pnupdate"),
         guard = { context ->
             context.sender.isConsole.also { allowed ->
-                if (!allowed) context.sender.send(Component.text("pnLibrary update catalog is console-only on proxy platforms."))
+                if (!allowed) context.sender.send(Component.text("На прокси каталог обновлений доступен только из консоли."))
             }
         },
     )
@@ -51,43 +51,43 @@ class ProxyUpdateCommand(private val library: PnLibrary) {
 
     private fun execute(context: CommandContext, action: String) {
         if (!context.sender.isConsole) {
-            context.sender.send(Component.text("pnLibrary update actions are console-only on proxy platforms."))
+            context.sender.send(Component.text("На прокси управлять обновлениями можно только из консоли."))
             return
         }
         when (action) {
             "check" -> library.updates.checkNow(actor(context)).whenComplete { snapshot, error ->
-                context.sender.send(Component.text(error?.let { "Update check failed: ${it.message}" }
-                    ?: "Update check complete: ${snapshot.state}, revision ${snapshot.revision}"))
+                context.sender.send(Component.text(error?.let { "Не удалось проверить обновления: ${it.message}" }
+                    ?: "Проверка завершена: ${snapshot.state}, ревизия ${snapshot.revision}"))
             }
             "stage" -> {
                 val current = library.updates.currentPlan().orElse(null)
                 val requested = if (context.contains("plan")) runCatching { UUID.fromString(context.get<String>("plan")) }.getOrNull() else current?.id
-                if (requested == null) context.sender.send(Component.text("No update plan is available or the plan ID is invalid."))
+                if (requested == null) context.sender.send(Component.text("Нет плана обновления, или его ID указан неверно."))
                 else library.updates.stage(requested, actor(context)).whenComplete { snapshot, error ->
-                    context.sender.send(Component.text(error?.let { "Update staging failed: ${it.message}" }
-                        ?: "Update plan staged: ${snapshot.id}"))
+                    context.sender.send(Component.text(error?.let { "Не удалось подготовить обновление: ${it.message}" }
+                        ?: "План обновления подготовлен: ${snapshot.id}"))
                 }
             }
             else -> {
                 val current = library.updates.currentPlan().orElse(null)
                 context.sender.send(Component.text(current?.let {
-                    "Update plan ${it.id}, revision ${it.revision}: ${it.state}; changes=${it.plan?.changes?.size ?: 0}; blockers=${it.blockers.size}"
-                } ?: "No update plan has been resolved."))
+                    "План ${it.id}, ревизия ${it.revision}: ${it.state}; изменений ${it.plan?.changes?.size ?: 0}, блокеров ${it.blockers.size}"
+                } ?: "План обновления ещё не составлен."))
             }
         }
     }
 
     private fun rollbackSaved(context: CommandContext, confirmed: Boolean, restoreConfigurations: Boolean = false) {
-        if (!context.sender.isConsole) { context.sender.send(Component.text("Rollback is console-only on proxies.")); return }
+        if (!context.sender.isConsole) { context.sender.send(Component.text("На прокси откат доступен только из консоли.")); return }
         val id = runCatching { UUID.fromString(context.get<String>("transaction")) }.getOrNull()
-        if (id == null) { context.sender.send(Component.text("Invalid transaction ID.")); return }
+        if (id == null) { context.sender.send(Component.text("Неверный ID набора.")); return }
         if (!confirmed) {
             val option = if (restoreConfigurations) " configs" else ""
-            context.sender.send(Component.text("Restore saved JARs${if (restoreConfigurations) " AND selected configuration files" else " without changing configurations"} with the offline updater: /pnupdate rollback $id$option confirm"))
+            context.sender.send(Component.text("Вернуть сохранённые JAR${if (restoreConfigurations) " вместе с выбранными файлами конфигурации" else " без изменения конфигураций"}: /pnupdate rollback $id$option confirm"))
             return
         }
         library.updates.rollback(id, restoreConfigurations, actor(context)).whenComplete { _, error ->
-            context.sender.send(Component.text(if (error == null) "Rollback set $id prepared. A full restart is required." else "Rollback failed: ${error.message}"))
+            context.sender.send(Component.text(if (error == null) "Набор $id подготовлен. Полностью перезапустите прокси." else "Не удалось откатить: ${error.message}"))
         }
     }
 
