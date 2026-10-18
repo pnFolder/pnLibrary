@@ -7,9 +7,9 @@ import ru.privatenull.pnlibrary.api.updates.UpdateSnapshot
 import ru.privatenull.pnlibrary.api.updates.UpdateState
 import ru.privatenull.pnlibrary.common.text.RussianText
 import ru.privatenull.pnlibrary.core.ui.ChatPalette
-import ru.privatenull.pnlibrary.core.updates.catalog.CatalogLabels.channelColor
-import ru.privatenull.pnlibrary.core.updates.catalog.CatalogLabels.channelHint
-import ru.privatenull.pnlibrary.core.updates.catalog.CatalogLabels.channelName
+import ru.privatenull.pnlibrary.core.updates.catalog.UpdateChannelLabels.channelColor
+import ru.privatenull.pnlibrary.core.updates.catalog.UpdateChannelLabels.channelHint
+import ru.privatenull.pnlibrary.core.updates.catalog.UpdateChannelLabels.channelName
 import java.time.Duration
 import java.time.Instant
 import java.time.ZoneId

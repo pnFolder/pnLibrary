@@ -8,6 +8,8 @@ import ru.privatenull.pnlibrary.api.plugin.ModuleId
 import ru.privatenull.pnlibrary.api.plugin.PluginMetadata
 import ru.privatenull.pnlibrary.api.plugin.RemotePolicy
 import ru.privatenull.pnlibrary.api.remote.RemotePolicyExplanation
+import ru.privatenull.pnlibrary.core.ui.ChatPalette
+import ru.privatenull.pnlibrary.core.ui.ConsoleStyle
 import ru.privatenull.pnlibrary.spi.platform.PlatformAdapter
 import java.lang.reflect.Proxy
 
@@ -40,6 +42,7 @@ class RemotePolicyNoticeRendererTest {
         assertTrue(lines.any { it.contains("ПРОВЕРКА СОВМЕСТИМОСТИ") })
         assertTrue(lines.any { it.contains("Требуется обновление") })
         assertTrue(lines.any { it.contains("Установлена 2.0.0") })
-        assertTrue(lines.any { it.contains("Модуль безопасно остановлен") })
+        assertTrue(lines.any { it.startsWith(ConsoleStyle.color(ChatPalette.DANGER)) && it.contains("Модуль безопасно остановлен") })
+        assertTrue(lines.any { it.startsWith(ConsoleStyle.THEME.border) && it.contains("ПРОВЕРКА СОВМЕСТИМОСТИ") })
     }
 }

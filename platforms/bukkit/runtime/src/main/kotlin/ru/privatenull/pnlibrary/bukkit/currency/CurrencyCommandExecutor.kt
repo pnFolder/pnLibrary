@@ -1,9 +1,9 @@
 package ru.privatenull.pnlibrary.bukkit.currency
 
 import net.kyori.adventure.text.Component
+import net.kyori.adventure.text.serializer.legacy.LegacyComponentSerializer
 import org.bukkit.Bukkit
 import org.bukkit.ChatColor
-import org.bukkit.command.CommandSender
 import org.bukkit.command.ConsoleCommandSender
 import org.bukkit.entity.Player
 import org.bukkit.plugin.Plugin
@@ -11,8 +11,27 @@ import ru.privatenull.pnlibrary.api.commands.ArgumentType
 import ru.privatenull.pnlibrary.api.commands.CommandContext
 import ru.privatenull.pnlibrary.api.commands.CommandDefinition
 import ru.privatenull.pnlibrary.api.commands.command
-import ru.privatenull.pnlibrary.api.currency.*
+import ru.privatenull.pnlibrary.api.currency.Currency
+import ru.privatenull.pnlibrary.api.currency.CurrencyAccount
+import ru.privatenull.pnlibrary.api.currency.CurrencyActor
+import ru.privatenull.pnlibrary.api.currency.CurrencyCommandSettings
+import ru.privatenull.pnlibrary.api.currency.CurrencyConfirmationMode
+import ru.privatenull.pnlibrary.api.currency.CurrencyHistoryQuery
+import ru.privatenull.pnlibrary.api.currency.CurrencyLedger
+import ru.privatenull.pnlibrary.api.currency.CurrencyProviderRegistry
+import ru.privatenull.pnlibrary.api.currency.CurrencyRejectReason
+import ru.privatenull.pnlibrary.api.currency.CurrencyResult
+import ru.privatenull.pnlibrary.api.currency.CurrencyTransaction
+import ru.privatenull.pnlibrary.api.currency.CurrencyTransactionRequest
+import ru.privatenull.pnlibrary.api.currency.CurrencyTransactionStatus
+import ru.privatenull.pnlibrary.api.currency.CurrencyTransactionType
 import ru.privatenull.pnlibrary.bukkit.commands.BukkitCommandSender
+import ru.privatenull.pnlibrary.common.text.RussianText
+import ru.privatenull.pnlibrary.core.ui.ChatKit
+import ru.privatenull.pnlibrary.core.ui.ChatNotice
+import ru.privatenull.pnlibrary.core.ui.ChatPalette
+import ru.privatenull.pnlibrary.core.ui.ChatReader
+import ru.privatenull.pnlibrary.core.ui.ChatTone
 import java.math.BigDecimal
 import java.time.ZoneId
 import java.time.format.DateTimeFormatter
@@ -23,7 +42,8 @@ import java.util.concurrent.CompletionStage
  * Builds and executes administrator-facing portable currency commands.
  *
  * Mutations honor provider capabilities and configured console-confirmation requirements.
- * Asynchronous operation results are delivered through the server scheduler.
+ * Asynchronous operation results are delivered through the server scheduler. Replies use the shared chat style;
+ * the configured templates of a currency keep their own legacy colors after the notice mark.
  */
 internal class CurrencyCommandExecutor(
     private val plugin: Plugin,
@@ -104,9 +124,14 @@ internal class CurrencyCommandExecutor(
     }
 
     private fun executePortable(context: CommandContext) {
-        val sender = (context.sender as? BukkitCommandSender)?.native
-        if (sender == null) context.sender.send(Component.text("Unsupported Bukkit sender."))
-        else execute(sender, context.arguments)
+        val sender = context.sender as? BukkitCommandSender
+        if (sender == null) {
+            ChatKit(ChatReader.of(context.sender))
+                .notice(ChatNotice(ChatTone.FAILURE, "Команда недоступна этому отправителю."))
+                .forEach(context.sender::send)
+        } else {
+            execute(sender, context.arguments)
+        }
     }
 
     private fun operationAllowed(context: CommandContext, operation: String): Boolean {
@@ -120,24 +145,19 @@ internal class CurrencyCommandExecutor(
 
     private fun onlinePlayers(): List<String> = Bukkit.getOnlinePlayers().map(Player::getName)
 
-    private fun execute(sender: CommandSender, args: List<String>): Boolean {
+    private fun execute(sender: BukkitCommandSender, args: List<String>): Boolean {
         confirmations.discardExpired()
         if (args.isEmpty() || args[0].equals("help", true)) return help(sender)
         if (args[0].equals("confirm", true)) return confirm(sender, args.getOrNull(1))
         if (args[0].equals("cancel", true)) return cancel(sender, args.getOrNull(1))
         if (args[0].equals("list", true)) {
             if (!allowed(sender, "pnlibrary.currency.list")) return true
-            val values = currencies.all().joinToString(", ") { it.key.toString() }
-            info(sender, if (values.isEmpty()) "No currencies are currently available." else values)
-            return true
+            return list(sender)
         }
         val currency = currencies.get(args[0])
-        if (currency == null) {
-            error(sender, "Unknown or unavailable currency: ${args[0]}")
-            return true
-        }
-        val settings = currency.extension(CurrencyCommandSettings::class.java) ?: DEFAULT_MESSAGES
-        if (!settings.enabled) return error(sender, "Commands are disabled for ${currency.key}.")
+            ?: return error(sender, "Валюта не найдена или недоступна: ${args[0]}")
+        val settings = settings(currency)
+        if (!settings.enabled) return error(sender, "Команды валюты ${currency.key} отключены.")
         if (args.size < 2) return usage(sender, currency)
         val operation = args[1].lowercase()
         val permission = "${settings.permissionPrefix ?: "pnlibrary.currency.${permissionPart(currency.key.toString())}"}.$operation"
@@ -154,30 +174,40 @@ internal class CurrencyCommandExecutor(
         }
     }
 
-    private fun balance(sender: CommandSender, currency: Currency, args: List<String>): Boolean {
-        val target = if (args.isEmpty()) (sender as? Player)?.uniqueId else playerId(args[0])
-        if (target == null) return error(sender, "Specify a player.")
+    /** Every available currency: its name, then the key used in commands. */
+    private fun list(sender: BukkitCommandSender): Boolean {
+        val all = currencies.all()
+        if (all.isEmpty()) return notify(sender, ChatTone.INFO, "Сейчас нет доступных валют.")
+        val kit = kit(sender)
+        val word = RussianText.plural(all.size.toLong(), "валюта", "валюты", "валют")
+        val rows = all.map { currency ->
+            kit.text("  ${currency.descriptor.displayName}", ChatPalette.TEXT).append(kit.dot())
+                .append(kit.text(currency.key.toString(), ChatPalette.SOFT))
+        }
+        kit.framed(listOf(kit.header("Валюты", kit.chip(all.size, word, ChatPalette.ACCENT)), kit.blank()) + rows)
+            .forEach(sender::send)
+        return true
+    }
+
+    private fun balance(sender: BukkitCommandSender, currency: Currency, args: List<String>): Boolean {
+        val target = if (args.isEmpty()) (sender.native as? Player)?.uniqueId else playerId(args[0])
+        if (target == null) return error(sender, "Укажите игрока.")
         complete(sender, currency.balance(target)) { amount ->
-            configured(
-                sender,
-                currency,
-                settings(currency).balance,
-                mapOf("balance" to currency.format(amount)),
-            )
+            configured(sender, currency, ChatTone.INFO, settings(currency).balance, mapOf("balance" to currency.format(amount)))
         }
         return true
     }
 
     private fun mutate(
-        sender: CommandSender,
+        sender: BukkitCommandSender,
         currency: Currency,
         args: List<String>,
         operation: String,
         call: (UUID, BigDecimal) -> CompletionStage<CurrencyResult>,
     ): Boolean {
-        if (args.size < 2) return error(sender, "Usage: /pncurrency ${currency.key} $operation <player> <amount>")
-        val target = playerId(args[0]) ?: return error(sender, "Player not found: ${args[0]}")
-        val amount = args[1].toBigDecimalOrNull() ?: return error(sender, "Invalid amount: ${args[1]}")
+        if (args.size < 2) return error(sender, "Использование: /pncurrency ${currency.key} $operation <игрок> <сумма>")
+        val target = playerId(args[0]) ?: return error(sender, "Игрок не найден: ${args[0]}")
+        val amount = args[1].toBigDecimalOrNull() ?: return error(sender, "Неверная сумма: ${args[1]}")
         val ledger = currency.extension(CurrencyLedger::class.java)
         val type = when (operation) {
             "add" -> CurrencyTransactionType.CREDIT
@@ -201,8 +231,8 @@ internal class CurrencyCommandExecutor(
         }
     }
 
-    private fun reset(sender: CommandSender, currency: Currency, args: List<String>): Boolean {
-        val target = args.firstOrNull()?.let(::playerId) ?: return error(sender, "Specify a player.")
+    private fun reset(sender: BukkitCommandSender, currency: Currency, args: List<String>): Boolean {
+        val target = args.firstOrNull()?.let(::playerId) ?: return error(sender, "Укажите игрока.")
         val ledger = currency.extension(CurrencyLedger::class.java)
         val execute = {
             ledger?.transact(CurrencyTransactionRequest(
@@ -216,11 +246,11 @@ internal class CurrencyCommandExecutor(
         }
     }
 
-    private fun pay(sender: CommandSender, currency: Currency, args: List<String>): Boolean {
-        val source = sender as? Player ?: return error(sender, "Only a player can use pay.")
-        if (args.size < 2) return error(sender, "Usage: /pncurrency ${currency.key} pay <player> <amount>")
-        val target = playerId(args[0]) ?: return error(sender, "Player not found: ${args[0]}")
-        val amount = args[1].toBigDecimalOrNull() ?: return error(sender, "Invalid amount: ${args[1]}")
+    private fun pay(sender: BukkitCommandSender, currency: Currency, args: List<String>): Boolean {
+        val source = sender.native as? Player ?: return error(sender, "Переводить валюту может только игрок.")
+        if (args.size < 2) return error(sender, "Использование: /pncurrency ${currency.key} pay <игрок> <сумма>")
+        val target = playerId(args[0]) ?: return error(sender, "Игрок не найден: ${args[0]}")
+        val amount = args[1].toBigDecimalOrNull() ?: return error(sender, "Неверная сумма: ${args[1]}")
         val ledger = currency.extension(CurrencyLedger::class.java)
         val stage = ledger?.transact(CurrencyTransactionRequest(
             CurrencyTransactionType.TRANSFER, amount,
@@ -232,27 +262,48 @@ internal class CurrencyCommandExecutor(
         return true
     }
 
-    private fun history(sender: CommandSender, currency: Currency, args: List<String>): Boolean {
+    /** The last ten transactions: time, kind, amount, who requested it and why. */
+    private fun history(sender: BukkitCommandSender, currency: Currency, args: List<String>): Boolean {
         val ledger = currency.extension(CurrencyLedger::class.java)
-            ?: return error(sender, "${currency.key} does not provide transaction history.")
+            ?: return error(sender, "Валюта ${currency.key} не ведёт историю операций.")
         val account = args.firstOrNull()?.let(::playerId)
         complete(sender, ledger.history(CurrencyHistoryQuery(account = account, limit = 10))) { page ->
-            if (page.items.isEmpty()) configured(sender, currency, settings(currency).historyEmpty)
-            page.items.forEach { transaction ->
-                val time = TIME.format(transaction.createdAt)
-                val amount = currency.format(transaction.amount)
-                val actor = "${transaction.actor.type}:${transaction.actor.id}"
-                val reason = transaction.reason ?: transaction.service
-                info(sender, "#$time ${transaction.type} $amount · $actor · $reason")
+            if (page.items.isEmpty()) {
+                configured(sender, currency, ChatTone.INFO, settings(currency).historyEmpty)
+                return@complete
             }
+            val kit = kit(sender)
+            val rows = page.items.map { transaction ->
+                kit.text("  ${TIME.format(transaction.createdAt)} ", ChatPalette.SOFT)
+                    .append(kit.text(typeLabel(transaction.type), ChatPalette.ACCENT))
+                    .append(kit.text(" ${currency.format(transaction.amount)}", ChatPalette.TEXT))
+                    .append(kit.dot())
+                    .append(kit.text("${transaction.actor.type}:${transaction.actor.id}", ChatPalette.LABEL))
+                    .append(kit.dot())
+                    .append(kit.text(transaction.reason ?: transaction.service, ChatPalette.LABEL))
+            }
+            kit.framed(listOf(kit.header("История", kit.text(currency.descriptor.displayName, ChatPalette.SOFT)), kit.blank()) + rows)
+                .forEach(sender::send)
         }
         return true
     }
 
-    private fun showResult(sender: CommandSender, currency: Currency, result: CurrencyResult, amount: BigDecimal) {
+    private fun typeLabel(type: CurrencyTransactionType): String = when (type) {
+        CurrencyTransactionType.CREDIT -> "начисление"
+        CurrencyTransactionType.DEBIT -> "списание"
+        CurrencyTransactionType.TRANSFER -> "перевод"
+        CurrencyTransactionType.SET_BALANCE -> "установка баланса"
+        CurrencyTransactionType.RESET -> "сброс"
+    }
+
+    private fun showResult(sender: BukkitCommandSender, currency: Currency, result: CurrencyResult, amount: BigDecimal) {
         val settings = settings(currency)
-        if (result.isSuccess) configured(sender, currency, settings.success, mapOf("amount" to currency.format(amount)))
-        else configured(sender, currency, settings.failure, mapOf("error" to (result.message ?: result.reason?.name ?: result.status.name)))
+        if (result.isSuccess) {
+            configured(sender, currency, ChatTone.SUCCESS, settings.success, mapOf("amount" to currency.format(amount)))
+        } else {
+            val error = result.message ?: result.reason?.name ?: result.status.name
+            configured(sender, currency, ChatTone.FAILURE, settings.failure, mapOf("error" to error))
+        }
     }
 
     private fun transactionResult(transaction: CurrencyTransaction): CurrencyResult = when (transaction.status) {
@@ -262,21 +313,22 @@ internal class CurrencyCommandExecutor(
         )
         CurrencyTransactionStatus.REJECTED -> CurrencyResult.rejected(CurrencyRejectReason.PROVIDER_REJECTED, transaction.failure)
         CurrencyTransactionStatus.FAILED -> CurrencyResult.failed(
-            IllegalStateException(transaction.failure ?: "Currency transaction failed"),
+            IllegalStateException(transaction.failure ?: "Транзакция не выполнена"),
         )
     }
 
-    private fun actor(sender: CommandSender): CurrencyActor =
-        if (sender is Player) CurrencyActor.player(sender.uniqueId) else CurrencyActor.server()
+    private fun actor(sender: BukkitCommandSender): CurrencyActor =
+        (sender.native as? Player)?.let { CurrencyActor.player(it.uniqueId) } ?: CurrencyActor.server()
 
-    private fun <T> complete(sender: CommandSender, stage: CompletionStage<T>, success: (T) -> Unit) {
+    private fun <T> complete(sender: BukkitCommandSender, stage: CompletionStage<T>, success: (T) -> Unit) {
         stage.whenComplete { value, failure -> Bukkit.getScheduler().runTask(plugin, Runnable {
-            if (failure == null) success(value) else error(sender, failure.cause?.message ?: failure.message ?: "Currency operation failed")
+            if (failure == null) success(value)
+            else error(sender, "Операция с валютой не выполнена.", failure.cause?.message ?: failure.message)
         }) }
     }
 
     private fun queueOrRun(
-        sender: CommandSender,
+        sender: BukkitCommandSender,
         currency: Currency,
         description: String,
         execute: () -> CompletionStage<CurrencyResult>,
@@ -289,50 +341,54 @@ internal class CurrencyCommandExecutor(
         }
         val operation = confirmations.add(
             settings.confirmationTimeoutSeconds, currency.key.toString(), description, sender.name, execute, completed,
-        ) ?: return error(sender, "Too many currency operations are awaiting confirmation.")
+        ) ?: return error(sender, "Слишком много операций с валютой ждут подтверждения.")
         val token = operation.token
         val console = Bukkit.getConsoleSender()
-        console.sendMessage("§8[§6Currency confirmation§8] §e$token §f· ${currency.key} · $description · requested by ${sender.name}")
-        console.sendMessage(
-            "§8[§6Currency confirmation§8] §fRun §e/pncurrency confirm $token " +
-                "§fwithin ${settings.confirmationTimeoutSeconds}s",
-        )
-        info(sender, "Operation awaits console confirmation. Code: $token")
-        return true
+        val kit = ChatKit(ChatReader.CONSOLE)
+        val request = "${currency.key} · $description · запросил ${sender.name}"
+        val confirm = "Подтвердите в течение ${settings.confirmationTimeoutSeconds} с: /pncurrency confirm $token"
+        (kit.notice(ChatNotice(ChatTone.WARNING, "Операция с валютой ждёт подтверждения: $token", request)) +
+            kit.notice(ChatNotice(ChatTone.INFO, confirm)))
+            .forEach { console.sendMessage(LEGACY.serialize(it)) }
+        return notify(sender, ChatTone.PROGRESS, "Операция ждёт подтверждения в консоли.", "Код: $token")
     }
 
-    private fun confirm(sender: CommandSender, token: String?): Boolean {
-        if (sender !is ConsoleCommandSender) return error(sender, "Only the server console can confirm currency operations.")
-        if (token == null) return error(sender, "Usage: /pncurrency confirm <code>")
-        val operation = confirmations.take(token) ?: return error(sender, "Confirmation code is invalid or expired.")
-        if (operation.expiresAt < System.currentTimeMillis()) return error(sender, "Confirmation code has expired.")
-        info(sender, "Confirmed ${operation.currency} · ${operation.description} · requested by ${operation.requestedBy}")
+    private fun confirm(sender: BukkitCommandSender, token: String?): Boolean {
+        if (sender.native !is ConsoleCommandSender) return error(sender, "Подтверждать операции с валютой может только консоль сервера.")
+        if (token == null) return error(sender, "Использование: /pncurrency confirm <код>")
+        val operation = confirmations.take(token) ?: return error(sender, "Код подтверждения неверен или устарел.")
+        if (operation.expiresAt < System.currentTimeMillis()) return error(sender, "Срок действия кода подтверждения истёк.")
+        notify(
+            sender, ChatTone.SUCCESS, "Подтверждено: ${operation.currency} · ${operation.description}",
+            "Запросил ${operation.requestedBy}",
+        )
         complete(sender, operation.execute(), operation.completed)
         return true
     }
 
-    private fun cancel(sender: CommandSender, token: String?): Boolean {
-        if (sender !is ConsoleCommandSender) return error(sender, "Only the server console can cancel currency operations.")
-        if (token == null || confirmations.take(token) == null) return error(sender, "Confirmation code is invalid or expired.")
-        info(sender, "Pending currency operation cancelled: ${token.uppercase()}")
+    private fun cancel(sender: BukkitCommandSender, token: String?): Boolean {
+        if (sender.native !is ConsoleCommandSender) return error(sender, "Отменять операции с валютой может только консоль сервера.")
+        if (token == null || confirmations.take(token) == null) return error(sender, "Код подтверждения неверен или устарел.")
+        return notify(sender, ChatTone.SUCCESS, "Операция с валютой отменена: ${token.uppercase()}")
+    }
+
+    private fun usage(sender: BukkitCommandSender, currency: Currency): Boolean =
+        notify(sender, ChatTone.WARNING, "Укажите действие.", "/pncurrency ${currency.key} <balance|add|take|set|reset|pay|history>")
+
+    private fun help(sender: BukkitCommandSender): Boolean {
+        val kit = kit(sender)
+        val hints = kit.commandHints(
+            "/pncurrency list" to "список валют",
+            "/pncurrency <валюта> <действие> ..." to "баланс и операции",
+            "/pncurrency <confirm|cancel> <код>" to "подтвердить или отменить операцию из консоли",
+        )
+        kit.framed(listOf(kit.header("Валюты"), kit.blank()) + hints).forEach(sender::send)
         return true
     }
 
-    private fun usage(sender: CommandSender, currency: Currency): Boolean {
-        info(sender, "/pncurrency ${currency.key} <balance|add|take|set|reset|pay|history>")
-        return true
-    }
-
-    private fun help(sender: CommandSender): Boolean {
-        info(sender, "/pncurrency list")
-        info(sender, "/pncurrency <namespace:name> <operation> ...")
-        info(sender, "Console: /pncurrency <confirm|cancel> <code>")
-        return true
-    }
-
-    private fun allowed(sender: CommandSender, permission: String): Boolean {
+    private fun allowed(sender: BukkitCommandSender, permission: String): Boolean {
         if (sender.hasPermission(permission)) return true
-        error(sender, "Missing permission: $permission")
+        error(sender, "Недостаточно прав.", "Нужно право $permission")
         return false
     }
 
@@ -340,28 +396,37 @@ internal class CurrencyCommandExecutor(
         ?: Bukkit.getOfflinePlayers().firstOrNull { it.name.equals(name, true) }?.uniqueId
     private fun permissionPart(value: String) = value.lowercase().replace(Regex("[^a-z0-9_.-]"), ".")
     private fun settings(currency: Currency) = currency.extension(CurrencyCommandSettings::class.java) ?: DEFAULT_MESSAGES
-    private fun configured(sender: CommandSender, currency: Currency, template: String, values: Map<String, String> = emptyMap()) {
-        val message = settings(currency).prefix.replace("{currency}", currency.descriptor.displayName)
+    private fun kit(sender: BukkitCommandSender) = ChatKit(ChatReader.of(sender))
+
+    /**
+     * A configured template of [currency] after the notice mark of [tone]. The template keeps its own legacy
+     * colors; the mark is a sibling, so uncolored template text does not take the tone's color.
+     */
+    private fun configured(
+        sender: BukkitCommandSender,
+        currency: Currency,
+        tone: ChatTone,
+        template: String,
+        values: Map<String, String> = emptyMap(),
+    ) {
+        val prefix = settings(currency).prefix.replace("{currency}", currency.descriptor.displayName)
         var body = template
         values.forEach { (key, value) -> body = body.replace("{$key}", value) }
-        sender.sendMessage(ChatColor.translateAlternateColorCodes('&', message + body))
+        val message = LEGACY.deserialize(ChatColor.translateAlternateColorCodes('&', prefix + body))
+        sender.send(Component.empty().append(kit(sender).mark(tone)).append(message))
     }
 
-    private fun info(sender: CommandSender, message: String) {
-        sender.sendMessage("§8[§6Currency§8] §f$message")
-    }
-
-    private fun success(sender: CommandSender, message: String) {
-        sender.sendMessage("§8[§6Currency§8] §a$message")
-    }
-
-    private fun error(sender: CommandSender, message: String): Boolean {
-        sender.sendMessage("§8[§6Currency§8] §c$message")
+    private fun notify(sender: BukkitCommandSender, tone: ChatTone, text: String, detail: String? = null): Boolean {
+        kit(sender).notice(ChatNotice(tone, text, detail)).forEach(sender::send)
         return true
     }
+
+    private fun error(sender: BukkitCommandSender, text: String, detail: String? = null): Boolean =
+        notify(sender, ChatTone.FAILURE, text, detail)
 
     companion object {
         private val TIME = DateTimeFormatter.ofPattern("yyyy-MM-dd HH:mm:ss").withZone(ZoneId.systemDefault())
         private val DEFAULT_MESSAGES = CurrencyCommandSettings()
+        private val LEGACY = LegacyComponentSerializer.legacySection()
     }
 }

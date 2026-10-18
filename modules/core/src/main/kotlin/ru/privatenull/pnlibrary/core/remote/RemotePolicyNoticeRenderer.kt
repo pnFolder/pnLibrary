@@ -5,8 +5,9 @@ import ru.privatenull.pnlibrary.api.plugin.PluginMetadata
 import ru.privatenull.pnlibrary.api.plugin.RemotePolicy
 import ru.privatenull.pnlibrary.api.remote.RemotePolicyExplanation
 import ru.privatenull.pnlibrary.console.ConsoleCard
-import ru.privatenull.pnlibrary.console.ConsoleTheme
 import ru.privatenull.pnlibrary.console.ConsoleTree
+import ru.privatenull.pnlibrary.core.ui.ChatTone
+import ru.privatenull.pnlibrary.core.ui.ConsoleStyle
 import ru.privatenull.pnlibrary.spi.platform.PlatformLogging
 
 internal class RemotePolicyNoticeRenderer(private val logging: PlatformLogging) {
@@ -22,7 +23,7 @@ internal class RemotePolicyNoticeRenderer(private val logging: PlatformLogging) 
             policy.onDeny == DenyAction.DISABLE_PLUGIN -> "Плагин безопасно отключён"
             else -> "Модуль безопасно остановлен"
         }
-        val theme = ConsoleTheme("§6", if (allowed) "§a" else "§c", "§f", "§8", "§r")
+        val theme = ConsoleStyle.theme(if (allowed) ChatTone.SUCCESS else ChatTone.FAILURE)
 
         ConsoleCard.builder(theme, "ПРОВЕРКА СОВМЕСТИМОСТИ")
             .mascot(

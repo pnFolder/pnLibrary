@@ -126,15 +126,16 @@ private class ManagedPlaceholderOptions(defaultNamespace: String) : CurrencyPlac
 }
 
 private class ManagedCommandOptions : CurrencyCommandOptions {
-    private var enabled = true
-    private var permissionPrefix: String? = null
-    private var prefix = "§8[§6{currency}§8] "
-    private var success = "§aOperation completed: {amount}"
-    private var failure = "§c{error}"
-    private var balance = "§fBalance: §a{balance}"
-    private var historyEmpty = "§7No transactions found."
-    private var confirmationMode = CurrencyConfirmationMode.CONSOLE
-    private var confirmationTimeoutSeconds = 60
+    private val defaults = CurrencyCommandSettings()
+    private var enabled = defaults.enabled
+    private var permissionPrefix = defaults.permissionPrefix
+    private var prefix = defaults.prefix
+    private var success = defaults.success
+    private var failure = defaults.failure
+    private var balance = defaults.balance
+    private var historyEmpty = defaults.historyEmpty
+    private var confirmationMode = defaults.confirmationMode
+    private var confirmationTimeoutSeconds = defaults.confirmationTimeoutSeconds
 
     override fun enabled(value: Boolean) = apply { enabled = value }
     override fun permissionPrefix(value: String) = apply { permissionPrefix = value.trim().ifEmpty { null } }

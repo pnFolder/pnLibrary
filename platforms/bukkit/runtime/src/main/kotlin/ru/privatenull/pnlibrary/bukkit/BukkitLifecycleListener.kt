@@ -93,7 +93,8 @@ internal class BukkitLifecycleListener(
     /** The two-argument title is the only one 1.8 servers have; newer servers merely deprecate it. */
     @Suppress("DEPRECATION")
     private fun showTitle(player: Player, pending: Int) {
-        player.sendTitle("§dОбновления pnFolder", "§fДоступно: §b$pending")
+        val (title, subtitle) = BukkitTitle.updatesPending(pending)
+        player.sendTitle(title, subtitle)
     }
 
     /** Closing the plugin registration releases all its module commands and task scopes. */

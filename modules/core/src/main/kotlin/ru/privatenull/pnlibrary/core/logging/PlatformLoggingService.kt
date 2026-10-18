@@ -5,6 +5,8 @@ import ru.privatenull.pnlibrary.api.logging.LoggingService
 import ru.privatenull.pnlibrary.api.logging.MessageBox
 import ru.privatenull.pnlibrary.api.logging.PnLogger
 import ru.privatenull.pnlibrary.api.runtime.PnLibraryBrand
+import ru.privatenull.pnlibrary.core.ui.ChatPalette
+import ru.privatenull.pnlibrary.core.ui.ConsoleStyle
 import ru.privatenull.pnlibrary.spi.platform.PlatformIdentity
 import ru.privatenull.pnlibrary.spi.platform.PlatformLogging
 import ru.privatenull.pnlibrary.spi.platform.PlatformOwnership
@@ -41,31 +43,6 @@ internal class PlatformLoggingService(
     override fun shutdownBox(owner: Any, name: String, version: String): MessageBox =
         MBox(owner, "$name $version", MessageKind.DISABLED, name, version)
 
-    internal fun showUpdateNotice(owner: Any, product: String, current: String, latest: String, channel: String,
-        minimumJava: Int, currentJava: Int, url: String) {
-        showUpdate(owner, product, current, latest, channel, minimumJava, currentJava, url, downloaded = true)
-    }
-
-    internal fun showUpdateAvailableNotice(owner: Any, product: String, current: String, latest: String, channel: String,
-        minimumJava: Int, currentJava: Int, url: String) {
-        showUpdate(owner, product, current, latest, channel, minimumJava, currentJava, url, downloaded = false)
-    }
-
-    private fun showUpdate(owner: Any, product: String, current: String, latest: String, channel: String,
-        minimumJava: Int, currentJava: Int, url: String, downloaded: Boolean) {
-        val notice = UpdateNotice(
-            product = product,
-            currentVersion = current,
-            latestVersion = latest,
-            channel = channel,
-            minimumJava = minimumJava,
-            currentJava = currentJava,
-            downloadUrl = url,
-            downloaded = downloaded,
-        )
-        UpdateNoticeRenderer.render(notice).forEach { line -> logging.console(owner, line) }
-    }
-
     private inner class MBox(
         private val owner: Any,
         private val title: String,
@@ -89,13 +66,14 @@ internal class PlatformLoggingService(
         override fun show() {
             check(!shown) { "MessageBox has already been shown" }
             shown = true
-            val accent = "§e"
-            val success = "§a"
-            val warning = "§6"
-            val danger = "§c"
-            val white = "§f"
-            val gray = "§7"
-            val dark = "§8"
+            val accent = ConsoleStyle.color(ChatPalette.ACCENT)
+            val success = ConsoleStyle.color(ChatPalette.OK)
+            val warning = ConsoleStyle.color(ChatPalette.WARN)
+            val danger = ConsoleStyle.color(ChatPalette.DANGER)
+            val text = ConsoleStyle.color(ChatPalette.TEXT)
+            val hint = ConsoleStyle.color(ChatPalette.LABEL)
+            val soft = ConsoleStyle.color(ChatPalette.SOFT)
+            val bold = ConsoleStyle.BOLD
             val stateColor = when (kind) {
                 MessageKind.ENABLED -> success
                 MessageKind.DISABLED -> danger
@@ -111,7 +89,7 @@ internal class PlatformLoggingService(
                 "OK" -> success
                 "WARN" -> warning
                 "FAIL" -> danger
-                else -> gray
+                else -> hint
             }
             val titleParts = title.split(Regex("\\s+"), limit = 2)
             val ownerMetadata = ownership.ownerMetadata(owner)
@@ -124,23 +102,23 @@ internal class PlatformLoggingService(
             val javaVersion = environment.java.version
 
             logging.console(owner, "")
-            logging.console(owner, "$accent          ━━━━━━━━━━━ §lPNFOLDER PLUGIN$accent ━━━━━━━━━━━")
+            logging.console(owner, "$accent          ━━━━━━━━━━━ ${bold}PNFOLDER PLUGIN$accent ━━━━━━━━━━━")
             logging.console(owner, "$stateColor /\\_/\\")
-            logging.console(owner, "$stateColor( ${face()} )     ${white}§l$product $dark› ${accent}pnFolder")
-            logging.console(owner, "$stateColor > ^ <      $stateColor● §l$stateLabel")
+            logging.console(owner, "$stateColor( ${face()} )     ${text}$bold$product $soft› ${accent}pnFolder")
+            logging.console(owner, "$stateColor > ^ <      $stateColor● $bold$stateLabel")
             logging.console(owner, "")
-            logging.console(owner, "$dark            ┌ ${gray}Версия       $white$version")
-            logging.console(owner, "$dark            ├ ${gray}Автор        $white$authors")
-            logging.console(owner, "$dark            ├ ${gray}Ядро         $white$engineName $engineVersion")
-            logging.console(owner, "$dark            ├ ${gray}Java         $white$javaVersion")
-            logging.console(owner, "$dark            └ ${gray}Библиотека   ${white}pnLibrary $dark• $gray${identity.id}")
+            logging.console(owner, "$soft            ┌ ${hint}Версия       $text$version")
+            logging.console(owner, "$soft            ├ ${hint}Автор        $text$authors")
+            logging.console(owner, "$soft            ├ ${hint}Ядро         $text$engineName $engineVersion")
+            logging.console(owner, "$soft            ├ ${hint}Java         $text$javaVersion")
+            logging.console(owner, "$soft            └ ${hint}Библиотека   ${text}pnLibrary $soft• $hint${identity.id}")
             logging.console(owner, "")
             val sectionTitle = when (kind) {
                 MessageKind.ENABLED -> "СОСТОЯНИЕ СИСТЕМЫ"
                 MessageKind.DISABLED -> "ЗАВЕРШЕНИЕ РАБОТЫ"
                 MessageKind.GENERIC -> "ПОДРОБНОСТИ"
             }
-            logging.console(owner, "$dark          ─────────── ${white}§l$sectionTitle$dark ───────────")
+            logging.console(owner, "$soft          ─────────── ${text}$bold$sectionTitle$soft ───────────")
             logging.console(owner, "")
             rows.forEach { row ->
                 val color = statusColor(row.status)
@@ -151,9 +129,9 @@ internal class PlatformLoggingService(
                     "FAIL" -> "✕"
                     else -> "◇"
                 }
-                logging.console(owner, "$dark          $symbol $white$label  $color§l[ ${row.status} ]")
+                logging.console(owner, "$soft          $symbol $text$label  $color$bold[ ${row.status} ]")
                 if (row.detail.isNotBlank()) {
-                    logging.console(owner, "$dark            └ $gray${row.detail}")
+                    logging.console(owner, "$soft            └ $hint${row.detail}")
                 }
                 row.error?.let {
                     val message = "$title — ${row.label}"
@@ -161,7 +139,7 @@ internal class PlatformLoggingService(
                 }
             }
             logging.console(owner, "")
-            logging.console(owner, "$dark          ───────────────────────────────────────────────")
+            logging.console(owner, "$soft          ───────────────────────────────────────────────")
             val resultText = when (kind) {
                 MessageKind.ENABLED -> "$product успешно включён"
                 MessageKind.DISABLED -> "$product корректно выключен"
@@ -177,15 +155,15 @@ internal class PlatformLoggingService(
                 MessageKind.DISABLED -> "■"
                 MessageKind.GENERIC -> "◆"
             }
-            logging.console(owner, "$stateColor          $resultSymbol $white§l$resultText")
-            logging.console(owner, "$gray            $resultDetail")
+            logging.console(owner, "$stateColor          $resultSymbol $text$bold$resultText")
+            logging.console(owner, "$hint            $resultDetail")
             logging.console(owner, "")
-            logging.console(owner, "$accent          ✦ §lPNFOLDER SUPPORT $dark• ${white}НА СВЯЗИ")
-            logging.console(owner, "$white            Есть вопрос, ошибка, идея или просто нужна помощь?")
-            logging.console(owner, "$gray            Пишите по любому поводу — разберёмся, подскажем и поможем.")
-            logging.console(owner, "$gray            Нужен новый плагин? Обсудим бесплатную или заказную разработку.")
-            logging.console(owner, "$accent            Discord $dark› ${white}§n${PnLibraryBrand.SUPPORT_URL}")
-            logging.console(owner, "$dark          ───────────────────────────────────────────────")
+            logging.console(owner, "$accent          ✦ ${bold}PNFOLDER SUPPORT $soft• ${text}НА СВЯЗИ")
+            logging.console(owner, "$text            Есть вопрос, ошибка, идея или просто нужна помощь?")
+            logging.console(owner, "$hint            Пишите по любому поводу — разберёмся, подскажем и поможем.")
+            logging.console(owner, "$hint            Нужен новый плагин? Обсудим бесплатную или заказную разработку.")
+            logging.console(owner, "$accent            Discord $soft› ${text}${ConsoleStyle.UNDERLINE}${PnLibraryBrand.SUPPORT_URL}")
+            logging.console(owner, "$soft          ───────────────────────────────────────────────")
             logging.console(owner, "")
         }
 
