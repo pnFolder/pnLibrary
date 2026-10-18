@@ -83,7 +83,7 @@ Bukkit uses `/pn updates` for catalog/history/backups/selected rollback. Proxy s
   (click to switch), automatic download, pause, API, Java and links.
 - `settings <plugin>`: channel, automatic download and pause as clickable choices.
 - `set <plugin> channel <stable|rc|beta|alpha|dev>`, `set <plugin> auto <on|off>`,
-  `set <plugin> hold <1m..30d|on|off>`: change one setting; it is remembered in `updates/settings.json`
+  `set <plugin> hold <1m..7d|on|off>`: change one setting; it is remembered in `updates/settings.json`
   (pauses in `updates/freezes.json`) and recorded in history with its author. `hold on` pauses for 7 days,
   a new period replaces the current pause, and a pause ends by itself.
 - `history [page]`: events newest first, grouped by day, with the version transition, outcome and actor;

@@ -4,6 +4,7 @@ import org.junit.jupiter.api.Assertions.*
 import org.junit.jupiter.api.Test
 import org.junit.jupiter.api.io.TempDir
 import ru.privatenull.pnlibrary.api.updates.ProductId
+import java.nio.file.Files
 import java.nio.file.Path
 import java.time.Clock
 import java.time.Duration
@@ -14,13 +15,21 @@ class FreezePolicyTest {
     @TempDir lateinit var directory: Path
 
     @Test
-    fun `accepts only durations from one minute through thirty days`() {
+    fun `accepts only durations from one minute through seven days`() {
         assertEquals(Duration.ofMinutes(1), FreezeDuration.parse("1m"))
         assertEquals(Duration.ofHours(2), FreezeDuration.parse("2h"))
-        assertEquals(Duration.ofDays(30), FreezeDuration.parse("30d"))
-        listOf("0m", "31d", "forever", "permanent", "1s").forEach { value ->
+        assertEquals(Duration.ofDays(7), FreezeDuration.parse("7d"))
+        listOf("0m", "8d", "30d", "forever", "permanent", "1s").forEach { value ->
             assertThrows(IllegalArgumentException::class.java, { FreezeDuration.parse(value) }, value)
         }
+    }
+
+    @Test
+    fun `a pause saved under the older thirty day limit ends within seven days`() {
+        val clock = MutableClock(Instant.parse("2026-09-17T10:00:00Z"))
+        val file = directory.resolve("freezes.json")
+        Files.write(file, """{"pnmarket":${clock.instant().plus(Duration.ofDays(30)).toEpochMilli()}}""".toByteArray())
+        assertEquals(Duration.ofDays(7), FreezeStore(file, clock).remaining(ProductId.of("pnmarket")))
     }
 
     @Test

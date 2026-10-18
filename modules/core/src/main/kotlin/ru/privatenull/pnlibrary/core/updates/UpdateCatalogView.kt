@@ -67,8 +67,8 @@ object UpdateCatalogView {
     /** Channels a component can be switched between, in order of increasing risk. */
     val CHANNELS: List<UpdateChannel> = UpdateChannel.values().toList()
 
-    /** Pause periods offered on the settings card, as accepted by `set <plugin> hold`. */
-    val HOLD_PERIODS: List<String> = listOf("1h", "1d", "3d", "7d", "30d")
+    /** Pause periods offered on the settings card, as accepted by `set <plugin> hold`; a pause lasts at most a week. */
+    val HOLD_PERIODS: List<String> = listOf("1h", "6h", "1d", "3d", "7d")
 
     private val pending = setOf(UpdateState.UPDATE_AVAILABLE, UpdateState.UPDATE_STAGED, UpdateState.DOWNLOADING)
     private val problems = setOf(UpdateState.FAILED, UpdateState.BLOCKED, UpdateState.INCOMPATIBLE)
@@ -339,6 +339,7 @@ object UpdateCatalogView {
             )
             if (routes.interactive && !routes.editable) result += note("Только просмотр: нет права менять настройки.")
             if (clickable) result += note("Нажмите на кнопку, чтобы выбрать. ${glyph('■')} — выбрано сейчас.")
+            if (clickable) result += note("Пауза — не дольше 7 дней.")
             result += blank()
             result += choices("Канал", CHANNELS.map { it to channelName(it) }, snapshot.channel, ::channelColor) { channel ->
                 routes.set(product, "channel", channelName(channel)) to channelHint(channel)
@@ -506,12 +507,12 @@ object UpdateCatalogView {
 
         /** The current pause with a button to lift it, and the periods to pause for or to replace the pause with. */
         private fun holdRows(product: String, held: Boolean, heldUntil: Instant?): List<Component> {
-            if (!clickable) return listOf(field("Пауза", if (held) text(holdText(heldUntil), UpdatePalette.WARN) else text("нет", UpdatePalette.SOFT)))
-            if (!held) return listOf(field("Пауза", selected("нет").append(text(" ")).append(holdPeriods(product, replacing = false))))
+            if (!clickable) return listOf(setting("Пауза", if (held) text(holdText(heldUntil), UpdatePalette.WARN) else selected("нет", UpdatePalette.OK)))
+            if (!held) return listOf(setting("Пауза", selected("нет", UpdatePalette.OK).append(text(" ")).append(holdPeriods(product, replacing = false))))
             return listOf(
-                field("Пауза", text(holdText(heldUntil), UpdatePalette.WARN)).append(text(" "))
+                setting("Пауза", selected(holdText(heldUntil), UpdatePalette.WARN)).append(text(" "))
                     .append(button("[Снять]", routes.set(product, "hold", "off"), "Снова предлагать и загружать обновления", UpdatePalette.OK)),
-                field("Новый срок", holdPeriods(product, replacing = true)),
+                setting("Продлить", holdPeriods(product, replacing = true)),
             )
         }
 
@@ -541,8 +542,8 @@ object UpdateCatalogView {
             if (!clickable) Component.empty() else text(" ").append(button("[изменить]", routes.settings(product), hint, UpdatePalette.ACCENT))
 
         /**
-         * A row of mutually exclusive choices drawn as buttons: the current one is `[■ name]` in the accent, the others
-         * are bracketed in their own color and switch to that choice on click.
+         * A row of mutually exclusive choices drawn as buttons, each in its own color: the current one is `[■ name]`,
+         * bold and with colored brackets, the others have gray brackets and switch to that choice on click.
          */
         private fun <T> choices(
             label: String,
@@ -553,7 +554,7 @@ object UpdateCatalogView {
         ): Component {
             val shown = options.map { (value, name) ->
                 when {
-                    value == current -> selected(name)
+                    value == current -> selected(name, color(value))
                     clickable -> {
                         val (run, hint) = command(value)
                         bracketed(name, color(value)).clickEvent(ClickEvent.runCommand(run))
@@ -562,7 +563,7 @@ object UpdateCatalogView {
                     else -> text(name, UpdatePalette.FAINT)
                 }
             }
-            return field(label, shown.drop(1).fold(shown.first()) { line, option -> line.append(text(" ")).append(option) })
+            return setting(label, shown.drop(1).fold(shown.first()) { line, option -> line.append(text(" ")).append(option) })
         }
 
         // --- history and backups -----------------------------------------------------------------------------
@@ -723,9 +724,13 @@ object UpdateCatalogView {
         private fun bracketed(label: String, color: TextColor): Component =
             text("[", UpdatePalette.SOFT).append(text(label, color)).append(text("]", UpdatePalette.SOFT))
 
-        /** The current choice of a settings row, marked so it reads as already pressed. */
-        private fun selected(label: String): Component =
-            text("[${glyph('■')} $label]", UpdatePalette.ACCENT).hoverEvent(tooltip(text("Выбрано сейчас", UpdatePalette.ACCENT)))
+        /** The current choice of a settings row: bold, marked and in its own color, so it reads as already pressed. */
+        private fun selected(label: String, color: TextColor): Component =
+            Component.text(shown("[${glyph('■')} $label]"), color).decoration(TextDecoration.BOLD, true)
+                .hoverEvent(tooltip(text("Выбрано сейчас", color)))
+
+        /** A settings row: the label in white, so the row reads as a control rather than a gray caption. */
+        private fun setting(label: String, value: Component): Component = text("  $label: ", UpdatePalette.TEXT).append(value)
 
         /** A bracketed choice in the warning color, like the pause periods of the settings card. */
         private fun option(label: String, command: String, hint: String): Component =

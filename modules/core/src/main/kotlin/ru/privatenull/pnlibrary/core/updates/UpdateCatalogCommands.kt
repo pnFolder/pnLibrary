@@ -183,7 +183,7 @@ class UpdateCatalogCommands(
             in OFF -> null
             in ON -> DEFAULT_HOLD
             else -> runCatching { FreezeDuration.parse(value) }.getOrElse {
-                context.sender.send(error("Укажите срок паузы от 1m до 30d (например 3d) или off, получено: $value."))
+                context.sender.send(error("Пауза — от 1m до 7d (например 3d) или off, получено: $value."))
                 return
             }
         }

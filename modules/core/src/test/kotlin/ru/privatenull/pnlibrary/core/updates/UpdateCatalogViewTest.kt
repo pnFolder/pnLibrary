@@ -225,15 +225,17 @@ class UpdateCatalogViewTest {
         assertTrue(text.contains(" Нажмите на кнопку, чтобы выбрать. ■ — выбрано сейчас."))
         val channel = row(lines, "Канал:")
         assertEquals("  Канал: [stable] [rc] [■ beta] [alpha] [dev]", plain(channel))
-        assertTrue(LegacyComponentSerializer.legacyAmpersand().serialize(channel).contains("&d[■ beta]"))
+        assertTrue(LegacyComponentSerializer.legacyAmpersand().serialize(channel).contains("&e&l[■ beta]"), LegacyComponentSerializer.legacyAmpersand().serialize(channel))
         assertTrue(LegacyComponentSerializer.legacyAmpersand().serialize(channel).contains("[&cdev&7]"))
         assertEquals("  Автозагрузка: [вкл] [■ выкл]", plain(row(lines, "Автозагрузка:")))
-        assertEquals("  Пауза: [■ нет] [1 ч] [1 д] [3 д] [7 д] [30 д]", plain(row(lines, "Пауза:")))
+        assertEquals("  Пауза: [■ нет] [1 ч] [6 ч] [1 д] [3 д] [7 д]", plain(row(lines, "Пауза:")))
+        assertTrue(text.contains("Пауза — не дольше 7 дней."))
+        assertTrue(LegacyComponentSerializer.legacyAmpersand().serialize(channel).startsWith("&f  Канал: "))
 
         val actions = lines.flatMap(::clicks)
         assertTrue(actions.containsAll(listOf(
             "/pn updates set pnlibrary channel stable", "/pn updates set pnlibrary channel alpha",
-            "/pn updates set pnlibrary auto on", "/pn updates set pnlibrary hold 3d", "/pn updates set pnlibrary hold 30d",
+            "/pn updates set pnlibrary auto on", "/pn updates set pnlibrary hold 3d", "/pn updates set pnlibrary hold 7d",
         )))
         assertFalse(actions.contains("/pn updates set pnlibrary channel beta"))
         assertFalse(actions.contains("/pn updates set pnlibrary auto off"))
@@ -258,8 +260,9 @@ class UpdateCatalogViewTest {
         val until = now.plusSeconds(3L * 86_400)
         val lines = UpdateCatalogView.settings(snapshot("pnlibrary", UpdateState.FROZEN), bukkit, heldUntil = until, now = now, zone = ZoneOffset.UTC)
         val text = text(lines)
-        assertTrue(text.contains("Пауза: до 20 окт. 12:00 · ещё 3 д [Снять]") || text.contains("Пауза: до 20 окт 12:00 · ещё 3 д [Снять]"), text)
-        assertTrue(text.contains("Новый срок: [1 ч] [1 д] [3 д] [7 д] [30 д]"))
+        assertTrue(text.contains("Пауза: [■ до 20 окт. 12:00 · ещё 3 д] [Снять]") || text.contains("Пауза: [■ до 20 окт 12:00 · ещё 3 д] [Снять]"), text)
+        assertTrue(text.contains("Продлить: [1 ч] [6 ч] [1 д] [3 д] [7 д]"))
+        assertFalse(lines.flatMap(::clicks).contains("/pn updates set pnlibrary hold 30d"))
         assertTrue(lines.flatMap(::clicks).containsAll(listOf("/pn updates set pnlibrary hold off", "/pn updates set pnlibrary hold 7d")))
 
         val info = text(UpdateCatalogView.info(snapshot("pnlibrary", UpdateState.FROZEN), bukkit, heldUntil = until, now = now, zone = ZoneOffset.UTC))

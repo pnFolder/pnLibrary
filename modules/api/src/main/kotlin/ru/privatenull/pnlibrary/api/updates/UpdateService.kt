@@ -91,7 +91,7 @@ interface UpdateService {
         setHeld(product, if (held) Duration.ofDays(7) else null, actor)
 
     /**
-     * Holds updates of [product] for [duration], from one minute to 30 days, replacing any earlier hold; null
+     * Holds updates of [product] for [duration], from one minute to seven days, replacing any earlier hold; null
      * releases it. A held component is neither offered nor downloaded until the hold ends by itself.
      */
     fun setHeld(product: String, duration: Duration?, actor: UpdateActor): CompletionStage<UpdateSnapshot> =

@@ -2,10 +2,13 @@ package ru.privatenull.pnlibrary.core.updates.engine
 
 import java.time.Duration
 
-/** Parses and validates administrator-supplied update-freeze durations. */
+/** Parses and validates administrator-supplied update-freeze durations: from one minute to seven days. */
 object FreezeDuration {
+    /** The longest pause: updates of a component can never be held for more than a week. */
+    val MAXIMUM: Duration = Duration.ofDays(7)
+
     private val minimum = Duration.ofMinutes(1)
-    private val maximum = Duration.ofDays(30)
+    private val maximum = MAXIMUM
     private val pattern = Regex("^(\\d+)([mhd])$", RegexOption.IGNORE_CASE)
 
     /** Parses a positive `m`, `h`, or `d` duration within supported bounds. */
@@ -26,7 +29,7 @@ object FreezeDuration {
     /** Returns [duration] after verifying the supported freeze interval. */
     fun validate(duration: Duration): Duration {
         require(duration >= minimum && duration <= maximum) {
-            "Freeze duration must be between 1 minute and 30 days"
+            "Freeze duration must be between 1 minute and 7 days"
         }
         return duration
     }

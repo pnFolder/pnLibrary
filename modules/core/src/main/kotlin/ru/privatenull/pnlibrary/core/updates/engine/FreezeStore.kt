@@ -69,8 +69,10 @@ class FreezeStore(
         val stored: Map<String, Long> = Files.newBufferedReader(path, StandardCharsets.UTF_8).use {
             gson.fromJson(it, type) ?: emptyMap()
         }
+        // A pause saved under an older, longer limit still ends within the current maximum.
+        val latest = clock.instant().plus(FreezeDuration.MAXIMUM)
         return stored.entries.associateTo(linkedMapOf()) {
-            ProductId.of(it.key) to Instant.ofEpochMilli(it.value)
+            ProductId.of(it.key) to minOf(Instant.ofEpochMilli(it.value), latest)
         }
     }
 
