@@ -217,18 +217,18 @@ class UpdateCatalogViewTest {
     // --- settings and info ---------------------------------------------------------------------------------------
 
     @Test
-    fun `settings highlight the current choice in the accent and offer the others as gray buttons`() {
+    fun `settings draw every choice as a button and mark the current one`() {
         val lines = UpdateCatalogView.settings(snapshot("pnlibrary", UpdateState.UP_TO_DATE, channel = UpdateChannel.BETA), bukkit)
         val text = text(lines)
         assertEquals("pnlibrary  настройки", plain(lines[1]))
         assertEquals("  v1.0.0 · beta", plain(lines[2]))
-        assertTrue(text.contains(" Выбранное подсвечено, нажмите на другой вариант."))
+        assertTrue(text.contains(" Нажмите на кнопку, чтобы выбрать. ■ — выбрано сейчас."))
         val channel = row(lines, "Канал:")
-        assertEquals("  Канал: stable rc beta alpha dev", plain(channel))
-        assertTrue(LegacyComponentSerializer.legacyAmpersand().serialize(channel).contains("&dbeta"))
-        assertFalse(LegacyComponentSerializer.legacyAmpersand().serialize(channel).contains("&dstable"))
-        assertEquals("  Автозагрузка: вкл выкл", plain(row(lines, "Автозагрузка:")))
-        assertEquals("  Пауза: нет 1 ч 1 д 3 д 7 д 30 д", plain(row(lines, "Пауза:")))
+        assertEquals("  Канал: [stable] [rc] [■ beta] [alpha] [dev]", plain(channel))
+        assertTrue(LegacyComponentSerializer.legacyAmpersand().serialize(channel).contains("&d[■ beta]"))
+        assertTrue(LegacyComponentSerializer.legacyAmpersand().serialize(channel).contains("[&cdev&7]"))
+        assertEquals("  Автозагрузка: [вкл] [■ выкл]", plain(row(lines, "Автозагрузка:")))
+        assertEquals("  Пауза: [■ нет] [1 ч] [1 д] [3 д] [7 д] [30 д]", plain(row(lines, "Пауза:")))
 
         val actions = lines.flatMap(::clicks)
         assertTrue(actions.containsAll(listOf(
@@ -247,8 +247,8 @@ class UpdateCatalogViewTest {
         val text = text(lines)
         assertFalse(lines.flatMap(::clicks).any { it.contains(" set ") })
         assertTrue(text.contains("Только просмотр"))
-        assertFalse(text.contains("Выбранное подсвечено"))
-        assertTrue(text.contains("Канал: stable rc beta alpha dev"))
+        assertFalse(text.contains("Нажмите на кнопку"))
+        assertTrue(text.contains("Канал: [■ stable] rc beta alpha dev"), text)
         assertTrue(text.contains("Пауза: до 17 окт. 13:00 · ещё 1 ч") || text.contains("Пауза: до 17 окт 13:00 · ещё 1 ч"), text)
         assertFalse(text.contains("[Снять]"))
     }
@@ -259,7 +259,7 @@ class UpdateCatalogViewTest {
         val lines = UpdateCatalogView.settings(snapshot("pnlibrary", UpdateState.FROZEN), bukkit, heldUntil = until, now = now, zone = ZoneOffset.UTC)
         val text = text(lines)
         assertTrue(text.contains("Пауза: до 20 окт. 12:00 · ещё 3 д [Снять]") || text.contains("Пауза: до 20 окт 12:00 · ещё 3 д [Снять]"), text)
-        assertTrue(text.contains("Новый срок: 1 ч 1 д 3 д 7 д 30 д"))
+        assertTrue(text.contains("Новый срок: [1 ч] [1 д] [3 д] [7 д] [30 д]"))
         assertTrue(lines.flatMap(::clicks).containsAll(listOf("/pn updates set pnlibrary hold off", "/pn updates set pnlibrary hold 7d")))
 
         val info = text(UpdateCatalogView.info(snapshot("pnlibrary", UpdateState.FROZEN), bukkit, heldUntil = until, now = now, zone = ZoneOffset.UTC))

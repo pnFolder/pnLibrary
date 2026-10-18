@@ -47,7 +47,11 @@ internal class UpdateEventJournal(
         val actor: UpdateActor = UpdateActor.UNKNOWN,
         val operation: String = "STATE_OBSERVED",
         val message: String? = null,
-    )
+    ) {
+        /** A scheduled check that found nothing: kept for auditing, but left out of the history people read. */
+        val routine: Boolean
+            get() = operation == "CHECK" && changes.isEmpty() && message == null && state == UpdateState.UP_TO_DATE.name
+    }
 
     private var latest: Event? = null
     private var latestLoaded = false
@@ -177,29 +181,33 @@ internal class UpdateEventJournal(
         return removed
     }
 
-    /** Number of readable events, optionally restricted to one managed product. */
+    /** Number of readable events, optionally restricted to one managed product; routine checks are not counted. */
     @Synchronized
-    fun count(product: String? = null): Int = readAll(product).size
+    fun count(product: String? = null): Int = readAll(product, includeRoutine = false).size
 
-    /** Reads bounded pages ordered by observation time, optionally restricted to one managed product. */
+    /**
+     * Reads bounded pages ordered by observation time, optionally restricted to one managed product. Routine checks
+     * that found nothing are left out, so the pages show what actually happened.
+     */
     @Synchronized
     fun read(page: Int = 1, pageSize: Int = 10, product: String? = null): List<Event> {
-        return readPage(page, pageSize, product)
+        return readPage(page, pageSize, product, includeRoutine = false)
     }
 
-    private fun readPage(page: Int, pageSize: Int, product: String?): List<Event> {
+    private fun readPage(page: Int, pageSize: Int, product: String?, includeRoutine: Boolean = true): List<Event> {
         require(page > 0) { "page must be positive" }
         require(pageSize in 1..100) { "page size must be between 1 and 100" }
         val offset = (page.toLong() - 1) * pageSize
-        return readAll(product).asSequence().drop(offset.coerceAtMost(Int.MAX_VALUE.toLong()).toInt()).take(pageSize).toList()
+        return readAll(product, includeRoutine).asSequence().drop(offset.coerceAtMost(Int.MAX_VALUE.toLong()).toInt()).take(pageSize).toList()
     }
 
-    private fun readAll(product: String?): List<Event> = Files.list(directory).use { files ->
+    private fun readAll(product: String?, includeRoutine: Boolean = true): List<Event> = Files.list(directory).use { files ->
         files.filter { it.fileName.toString().endsWith(".json") && Files.isRegularFile(it, LinkOption.NOFOLLOW_LINKS) }
             .map { path -> readEvent(path) }
             .filter { it != null }
             .map { requireNotNull(it) }
             .filter { product == null || it.changes.any { change -> change.product.equals(product, true) } }
+            .filter { includeRoutine || !it.routine }
             .sorted(compareByDescending<Event> { it.occurredAt }.thenByDescending { it.revision }.thenBy { it.id })
             .toList()
     }

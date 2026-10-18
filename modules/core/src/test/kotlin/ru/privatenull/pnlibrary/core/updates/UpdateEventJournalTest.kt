@@ -102,6 +102,17 @@ class UpdateEventJournalTest {
         assertEquals(1, journal.count())
     }
 
+    @Test
+    fun `checks that found nothing are kept on disk but left out of the history people read`() {
+        val journal = UpdateEventJournal(directory, clock)
+        val quiet = UpdatePlanSnapshot(UUID.randomUUID(), 1, UpdateState.UP_TO_DATE, null, emptyList(), null)
+        journal.record(quiet, UpdateActor.SYSTEM, "CHECK")
+        journal.record(snapshot(2, "pnlibrary"), UpdateActor.SYSTEM, "CHECK")
+        assertEquals(listOf(2L), journal.read().map { it.revision })
+        assertEquals(1, journal.count())
+        assertEquals(2, Files.list(directory).use { it.count() })
+    }
+
     private fun snapshot(revision: Long, product: String) = UpdatePlanSnapshot(
         UUID.randomUUID(), revision, UpdateState.UPDATE_AVAILABLE,
         UpdatePlan(8, listOf(ProductChange(ProductId.of(product), SemanticVersion.parse("1.0.0"), SemanticVersion.parse("1.1.0"))), emptyList()),

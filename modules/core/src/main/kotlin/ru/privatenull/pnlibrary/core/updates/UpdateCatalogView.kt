@@ -338,7 +338,7 @@ object UpdateCatalogView {
                 text("  ${version(snapshot.currentVersion)}", UpdatePalette.SOFT).append(dot()).append(channelTag(snapshot.channel)),
             )
             if (routes.interactive && !routes.editable) result += note("Только просмотр: нет права менять настройки.")
-            if (clickable) result += note("Выбранное подсвечено, нажмите на другой вариант.")
+            if (clickable) result += note("Нажмите на кнопку, чтобы выбрать. ${glyph('■')} — выбрано сейчас.")
             result += blank()
             result += choices("Канал", CHANNELS.map { it to channelName(it) }, snapshot.channel, ::channelColor) { channel ->
                 routes.set(product, "channel", channelName(channel)) to channelHint(channel)
@@ -507,7 +507,7 @@ object UpdateCatalogView {
         /** The current pause with a button to lift it, and the periods to pause for or to replace the pause with. */
         private fun holdRows(product: String, held: Boolean, heldUntil: Instant?): List<Component> {
             if (!clickable) return listOf(field("Пауза", if (held) text(holdText(heldUntil), UpdatePalette.WARN) else text("нет", UpdatePalette.SOFT)))
-            if (!held) return listOf(field("Пауза", text("нет", UpdatePalette.ACCENT).append(text(" ")).append(holdPeriods(product, replacing = false))))
+            if (!held) return listOf(field("Пауза", selected("нет").append(text(" ")).append(holdPeriods(product, replacing = false))))
             return listOf(
                 field("Пауза", text(holdText(heldUntil), UpdatePalette.WARN)).append(text(" "))
                     .append(button("[Снять]", routes.set(product, "hold", "off"), "Снова предлагать и загружать обновления", UpdatePalette.OK)),
@@ -540,7 +540,10 @@ object UpdateCatalogView {
         private fun change(product: String, hint: String): Component =
             if (!clickable) Component.empty() else text(" ").append(button("[изменить]", routes.settings(product), hint, UpdatePalette.ACCENT))
 
-        /** A row of mutually exclusive choices: the current one in the accent color, the others gray and clickable. */
+        /**
+         * A row of mutually exclusive choices drawn as buttons: the current one is `[■ name]` in the accent, the others
+         * are bracketed in their own color and switch to that choice on click.
+         */
         private fun <T> choices(
             label: String,
             options: List<Pair<T, String>>,
@@ -550,10 +553,10 @@ object UpdateCatalogView {
         ): Component {
             val shown = options.map { (value, name) ->
                 when {
-                    value == current -> text(name, UpdatePalette.ACCENT).hoverEvent(tooltip(text("Выбрано сейчас", UpdatePalette.ACCENT)))
+                    value == current -> selected(name)
                     clickable -> {
                         val (run, hint) = command(value)
-                        text(name, UpdatePalette.SOFT).clickEvent(ClickEvent.runCommand(run))
+                        bracketed(name, color(value)).clickEvent(ClickEvent.runCommand(run))
                             .hoverEvent(tooltip(text("Выбрать: $name", color(value)), text(hint, UpdatePalette.TEXT), blank(), text(run, UpdatePalette.HINT)))
                     }
                     else -> text(name, UpdatePalette.FAINT)
@@ -720,10 +723,14 @@ object UpdateCatalogView {
         private fun bracketed(label: String, color: TextColor): Component =
             text("[", UpdatePalette.SOFT).append(text(label, color)).append(text("]", UpdatePalette.SOFT))
 
-        /** A gray word that can be clicked, like the inactive choices of the settings card. */
+        /** The current choice of a settings row, marked so it reads as already pressed. */
+        private fun selected(label: String): Component =
+            text("[${glyph('■')} $label]", UpdatePalette.ACCENT).hoverEvent(tooltip(text("Выбрано сейчас", UpdatePalette.ACCENT)))
+
+        /** A bracketed choice in the warning color, like the pause periods of the settings card. */
         private fun option(label: String, command: String, hint: String): Component =
             if (!routes.interactive) Component.empty()
-            else text(label, UpdatePalette.SOFT).clickEvent(ClickEvent.runCommand(command))
+            else bracketed(label, UpdatePalette.WARN).clickEvent(ClickEvent.runCommand(command))
                 .hoverEvent(tooltip(text(hint, UpdatePalette.TEXT), blank(), text(command, UpdatePalette.HINT)))
 
         /** [button] led by a space, or nothing when the button is hidden. */
