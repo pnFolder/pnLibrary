@@ -22,6 +22,9 @@ permissions:
   pnlibrary.updates.settings:
     description: Менять канал, автозагрузку и удержание обновлений плагина
     default: op
+  pnlibrary.updates.rollback:
+    description: Просматривать резервные наборы и откатывать обновления
+    default: op
   pnlibrary.updates.download:
     description: Загружать и проверять совместимый план обновлений
     default: op
