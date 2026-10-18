@@ -85,14 +85,14 @@ class UpdateCatalogViewTest {
     }
 
     @Test
-    fun `rows keep a white name, gray versions and one colored word`() {
+    fun `rows keep a silver name, gray versions and one colored word`() {
         val lines = catalog(listOf(snapshot("shop", UpdateState.FROZEN, channel = UpdateChannel.BETA)), routes = bukkit)
         val row = row(lines, "shop")
         assertEquals("  shop v1.0.0  beta  пауза", plain(row))
         val legacy = LegacyComponentSerializer.legacyAmpersand().serialize(row)
         assertTrue(legacy.contains("&fshop"), legacy)
         assertTrue(legacy.contains("&7v1.0.0"), legacy)
-        assertTrue(legacy.contains("&eпауза"), legacy)
+        assertTrue(legacy.contains("&fпауза"), legacy)
         assertFalse(plain(row(catalog(listOf(snapshot("plain", UpdateState.UP_TO_DATE)), routes = bukkit), "plain")).contains("stable"))
     }
 
@@ -225,8 +225,8 @@ class UpdateCatalogViewTest {
         assertTrue(text.contains(" Нажмите на кнопку, чтобы выбрать. ■ — выбрано сейчас."))
         val channel = row(lines, "Канал:")
         assertEquals("  Канал: [stable] [rc] [■ beta] [alpha] [dev]", plain(channel))
-        assertTrue(LegacyComponentSerializer.legacyAmpersand().serialize(channel).contains("&d[■ beta]"))
-        assertTrue(LegacyComponentSerializer.legacyAmpersand().serialize(channel).contains("[&cdev&7]"))
+        assertTrue(LegacyComponentSerializer.legacyAmpersand().serialize(channel).contains("&9[■ beta]"))
+        assertTrue(LegacyComponentSerializer.legacyAmpersand().serialize(channel).contains("[&ddev&7]"))
         assertEquals("  Автозагрузка: [вкл] [■ выкл]", plain(row(lines, "Автозагрузка:")))
         assertEquals("  Пауза: [■ нет] [1 ч] [1 д] [3 д] [7 д] [30 д]", plain(row(lines, "Пауза:")))
 
@@ -376,7 +376,7 @@ class UpdateCatalogViewTest {
     }
 
     @Test
-    fun `every page starts with an empty line and a bold accent title`() {
+    fun `every page starts with an empty line and a bold gradient title`() {
         val pages = listOf(
             catalog(listOf(snapshot("shop", UpdateState.UP_TO_DATE)), routes = bukkit),
             history(emptyList()),
@@ -389,7 +389,8 @@ class UpdateCatalogViewTest {
             assertEquals("", plain(page[0]))
             val title = titleOf(page[1])
             assertTrue(title.hasDecoration(TextDecoration.BOLD), plain(page[1]))
-            assertEquals(UpdatePalette.ACCENT, title.color())
+            assertEquals(UpdatePalette.GLOW, title.children().first().color())
+            assertEquals(UpdatePalette.ACCENT, title.children().last().color())
         }
         assertTrue(UpdateCatalogView.notice(UpdateNotice(UpdateTone.SUCCESS, "Готово"), bukkit).none { plain(it).isEmpty() })
     }
@@ -398,28 +399,29 @@ class UpdateCatalogViewTest {
     fun `only the title word is bold, never the counters beside it`() {
         val header = catalog(listOf(snapshot("shop", UpdateState.UP_TO_DATE)), routes = bukkit)[1]
         val legacy = LegacyComponentSerializer.legacyAmpersand().serialize(header)
-        assertTrue(legacy.startsWith("&d&lКаталог&r"), legacy)
-        assertEquals(1, Regex("&l").findAll(legacy).count(), legacy)
+        assertTrue(legacy.startsWith("&9&lК"), legacy)
+        assertFalse(legacy.substringAfter("&r").contains("&l"), legacy)
     }
 
     @Test
-    fun `every palette role keeps its own color on servers without RGB`() {
-        val expected = mapOf(
+    fun `the studio palette stays readable on servers without RGB and never uses green, red or gold`() {
+        val expected = listOf(
             UpdatePalette.TEXT to NamedTextColor.WHITE, UpdatePalette.SOFT to NamedTextColor.GRAY,
             UpdatePalette.HINT to NamedTextColor.GRAY, UpdatePalette.FAINT to NamedTextColor.DARK_GRAY,
-            UpdatePalette.ACCENT to NamedTextColor.LIGHT_PURPLE, UpdatePalette.OK to NamedTextColor.GREEN,
-            UpdatePalette.INFO to NamedTextColor.AQUA, UpdatePalette.WARN to NamedTextColor.YELLOW,
-            UpdatePalette.ORANGE to NamedTextColor.GOLD, UpdatePalette.DANGER to NamedTextColor.RED,
+            UpdatePalette.ACCENT to NamedTextColor.BLUE, UpdatePalette.GLOW to NamedTextColor.BLUE,
+            UpdatePalette.ALERT to NamedTextColor.LIGHT_PURPLE,
         )
         expected.forEach { (color, legacy) -> assertEquals(legacy, NamedTextColor.nearestTo(color), color.asHexString()) }
+        assertEquals(0x635BFF, UpdatePalette.ACCENT.value())
+        assertEquals(0xA49CFF, UpdatePalette.GLOW.value())
     }
 
     @Test
     fun `buttons have gray brackets around a colored label`() {
         val lines = catalog(listOf(snapshot("shop", UpdateState.UP_TO_DATE)), routes = bukkit)
         val footer = LegacyComponentSerializer.legacyAmpersand().serialize(row(lines, "[Проверить]"))
-        assertTrue(footer.contains("&7[&aПроверить&7]"), footer)
-        assertTrue(footer.contains("&7[&dИстория&7]"), footer)
+        assertTrue(footer.contains("&7[&9Проверить&7]"), footer)
+        assertTrue(footer.contains("&7[&9История&7]"), footer)
     }
 
     // --- notices and other pages ---------------------------------------------------------------------------------

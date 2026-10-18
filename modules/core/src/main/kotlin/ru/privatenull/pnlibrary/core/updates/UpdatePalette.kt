@@ -1,34 +1,44 @@
 package ru.privatenull.pnlibrary.core.updates
 
+import net.kyori.adventure.text.Component
 import net.kyori.adventure.text.format.TextColor
 
 /**
- * RGB colors of the update catalog, after the Catalog plugin: a soft lavender accent for titles, numbers and the
- * selected choice, white names, neutral grays for everything secondary and calm semantic colors for states.
+ * Chat colors of the update catalog in the pnFolder studio palette: Electric Indigo as the main accent, Periwinkle
+ * for highlights and the start of the title gradient, Cool Silver for text, and quiet grays for everything
+ * secondary. There is no green, red or gold; states differ by indigo, periwinkle and orchid and by their words.
  *
- * Servers older than 1.16 cannot show RGB; Adventure then substitutes the nearest legacy chat color. Every role
- * lands on its own legacy color there: text on white, secondary text and hints on gray, disabled text on dark
- * gray, the accent on light purple, and the semantic colors on green, aqua, yellow, gold and red.
+ * Servers older than 1.16 cannot show RGB; Adventure then substitutes the nearest legacy chat color, matching hue
+ * first, so any blue tint turns a color blue there. The silver and grays are therefore kept neutral, landing on
+ * white, gray and dark gray, while indigo and periwinkle become blue and orchid becomes light purple.
  */
 internal object UpdatePalette {
-    /** Names and values; legacy white. */
-    val TEXT: TextColor = TextColor.color(0xF7F2F7)
+    /** Cool Silver: names, values and the main text; legacy white. */
+    val TEXT: TextColor = TextColor.color(0xEEECEE)
 
-    /** Labels, versions, brackets and descriptions; a neutral gray, legacy gray. */
-    val SOFT: TextColor = TextColor.color(0xBFB5C0)
+    /** Labels, versions, brackets and descriptions; legacy gray. */
+    val SOFT: TextColor = TextColor.color(0xBDB8BD)
 
-    /** Commands and secondary details in hover cards; a slightly darker gray, legacy gray. */
-    val HINT: TextColor = TextColor.color(0xA89EAA)
+    /** Commands and secondary details in hover cards; legacy gray. */
+    val HINT: TextColor = TextColor.color(0xA09CA0)
 
     /** Options the reader may not choose; legacy dark gray. */
-    val FAINT: TextColor = TextColor.color(0x64546E)
+    val FAINT: TextColor = TextColor.color(0x6A646A)
 
-    /** Titles, counters, day headings and the selected choice; a soft lavender, legacy light purple. */
-    val ACCENT: TextColor = TextColor.color(0xD19BFF)
+    /** Electric Indigo: buttons, counters, the selected choice and prepared updates; legacy blue. */
+    val ACCENT: TextColor = TextColor.color(0x635BFF)
 
-    val OK: TextColor = TextColor.color(0x6EE7A0)
-    val INFO: TextColor = TextColor.color(0x5BC8F5)
-    val WARN: TextColor = TextColor.color(0xFDE047)
-    val ORANGE: TextColor = TextColor.color(0xFFA53A)
-    val DANGER: TextColor = TextColor.color(0xFF7A7A)
+    /** Periwinkle: new versions, success and everything up to date; legacy blue. */
+    val GLOW: TextColor = TextColor.color(0xA49CFF)
+
+    /** Orchid: errors and anything that needs attention, instead of red; legacy light purple. */
+    val ALERT: TextColor = TextColor.color(0xE58BFF)
+
+    /** [text] in the studio gradient, Periwinkle to Electric Indigo, one color per character. */
+    fun gradient(text: String): Component {
+        val last = maxOf(1, text.length - 1)
+        return text.foldIndexed(Component.empty()) { index, line, char ->
+            line.append(Component.text(char.toString(), TextColor.lerp(index.toFloat() / last, GLOW, ACCENT)))
+        }
+    }
 }
