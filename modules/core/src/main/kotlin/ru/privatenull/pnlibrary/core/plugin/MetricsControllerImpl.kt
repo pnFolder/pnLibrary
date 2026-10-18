@@ -8,6 +8,7 @@ import ru.privatenull.pnlibrary.api.plugin.MetricsController
 import java.util.concurrent.atomic.AtomicBoolean
 import java.util.function.Consumer
 
+/** Enables, reconfigures and closes one module's metrics session. */
 internal class MetricsControllerImpl(
     private val owner: Any,
     private val service: MetricsService,

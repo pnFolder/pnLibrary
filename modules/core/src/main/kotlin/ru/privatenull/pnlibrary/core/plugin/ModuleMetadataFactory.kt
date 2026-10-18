@@ -6,6 +6,7 @@ import ru.privatenull.pnlibrary.common.jvm.JavaRuntime
 import ru.privatenull.pnlibrary.spi.platform.PlatformIdentity
 import ru.privatenull.pnlibrary.spi.platform.PlatformOwnership
 
+/** Builds module metadata from the definition, falling back to the native plugin description. */
 internal class ModuleMetadataFactory(
     private val ownership: PlatformOwnership,
     private val identity: PlatformIdentity,

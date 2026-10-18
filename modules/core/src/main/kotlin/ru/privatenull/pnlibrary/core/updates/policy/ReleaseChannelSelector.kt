@@ -4,6 +4,7 @@ import ru.privatenull.pnlibrary.api.updates.ProductId
 import ru.privatenull.pnlibrary.api.updates.ProductRelease
 import ru.privatenull.pnlibrary.api.updates.UpdateChannel
 
+/** A product's releases and the newest one its channel allows. */
 internal data class ReleaseChannelSelection(
     val all: List<ProductRelease>,
     val latestAllowed: ProductRelease?,

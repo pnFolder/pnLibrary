@@ -5,6 +5,7 @@ import java.nio.file.Path
 import java.time.Duration
 import java.time.Instant
 
+/** Administrator update policy from `updates.yml`: checks, notifications, downloads, installation and safety limits. */
 internal data class UpdateConfiguration(
     val enabled: Boolean = true,
     val checks: Checks = Checks(),

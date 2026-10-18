@@ -10,6 +10,7 @@ import ru.privatenull.pnlibrary.core.ui.ChatTone
 import ru.privatenull.pnlibrary.core.ui.ConsoleStyle
 import ru.privatenull.pnlibrary.spi.platform.PlatformLogging
 
+/** Prints the console card with the result of a remote compatibility check. */
 internal class RemotePolicyNoticeRenderer(private val logging: PlatformLogging) {
     fun render(
         owner: Any,

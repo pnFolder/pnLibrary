@@ -8,6 +8,7 @@ import java.nio.file.Files
 import java.nio.file.Path
 import java.util.UUID
 
+/** A file attached to an observation and copied into library storage. */
 internal data class StoredAttachment(
     val id: String,
     val observationId: String,
@@ -18,6 +19,7 @@ internal data class StoredAttachment(
     val storedPath: Path,
 )
 
+/** Stores observation attachments on disk with a manifest, refusing executable and unsafe files. */
 internal class AttachmentStore(dataFolder: Path) {
     private val gson = GsonBuilder().setPrettyPrinting().disableHtmlEscaping().create()
     private val directory = dataFolder.resolve("observability").resolve("attachments")
@@ -158,6 +160,7 @@ internal class AttachmentStore(dataFolder: Path) {
     }
 }
 
+/** Persisted manifest form of a [StoredAttachment], without its storage path. */
 private data class AttachmentManifestEntry(
     val id: String,
     val observationId: String,

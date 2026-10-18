@@ -22,6 +22,7 @@ import java.util.concurrent.atomic.AtomicBoolean
 import java.util.function.Supplier
 import java.util.logging.Logger
 
+/** Hands out one configuration scope per plugin, rooted at its data folder, and closes them with their owner. */
 internal class ConfigurationServiceImpl(
     private val platform: PlatformOwnership,
 ) : ConfigurationService, AutoCloseable {

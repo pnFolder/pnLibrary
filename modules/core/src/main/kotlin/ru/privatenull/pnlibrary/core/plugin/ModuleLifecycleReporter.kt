@@ -7,6 +7,7 @@ import ru.privatenull.pnlibrary.api.plugin.PluginLifecycle
 import ru.privatenull.pnlibrary.api.plugin.PluginMetadata
 import ru.privatenull.pnlibrary.core.placeholders.PlaceholderHub
 
+/** Builds the console cards printed when a module is enabled and disabled. */
 internal class ModuleLifecycleReporter(
     private val owner: Any,
     private val moduleId: ModuleId,

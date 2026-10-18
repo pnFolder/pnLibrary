@@ -17,6 +17,7 @@ import java.util.Collections
 import java.util.UUID
 import java.util.concurrent.atomic.AtomicLong
 
+/** Serializes, deserializes and renders components for one plugin with optional caching. */
 internal class ComponentServiceImpl(
     private val placeholders: PlaceholderService,
     private val sharedCache: ComponentCache,
@@ -137,6 +138,7 @@ internal class ComponentServiceImpl(
     }
 }
 
+/** Access-ordered cache of deserialized components with hit, miss and eviction counters. */
 internal class ComponentCache {
     private data class Value(val component: Component, var accessed: Long)
     private val values = Collections.synchronizedMap(LinkedHashMap<String, Value>(16, .75f, true))

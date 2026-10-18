@@ -20,6 +20,7 @@ import java.util.concurrent.ScheduledExecutorService
 import java.util.concurrent.TimeUnit
 import java.util.concurrent.atomic.AtomicBoolean
 
+/** Runs update checks on a schedule or on request, keeps the current plan and stages automatic updates. */
 internal class UpdateOrchestrator(
     private val configuration: UpdateConfiguration,
     private val store: UpdateStateStore,

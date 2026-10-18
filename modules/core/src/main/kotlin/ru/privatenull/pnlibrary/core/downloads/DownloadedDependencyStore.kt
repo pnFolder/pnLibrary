@@ -3,8 +3,10 @@ package ru.privatenull.pnlibrary.core.downloads
 import java.nio.file.Files
 import java.nio.file.Path
 
+/** A downloaded dependency that the server has loaded, with its installed version. */
 internal data class DownloadedDependency(val name: String, val version: String)
 
+/** Remembers downloaded dependencies until a restart confirms that the server loaded them. */
 internal class DownloadedDependencyStore(libraryData: Path) {
     internal val marker: Path = libraryData.resolve("downloads/dependencies.state")
 

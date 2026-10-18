@@ -6,6 +6,7 @@ import java.nio.file.Path
 import java.nio.file.StandardCopyOption
 import java.util.UUID
 
+/** A verified file waiting in [staging] to replace [target]. */
 internal data class PreparedDownload(
     val staging: Path,
     val target: Path,

@@ -146,6 +146,7 @@ internal class PlaceholderEntry<T : Any>(
     }
 }
 
+/** A resolved placeholder value with the time it was cached. */
 private data class CachedPlaceholderValue<T>(
     val value: T?,
     val writtenAtMillis: Long,

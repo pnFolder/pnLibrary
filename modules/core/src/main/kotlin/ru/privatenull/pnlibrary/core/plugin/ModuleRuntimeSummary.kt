@@ -5,6 +5,7 @@ import ru.privatenull.pnlibrary.api.metrics.MetricsProviderConfiguration
 import ru.privatenull.pnlibrary.api.plugin.PluginMetadata
 import ru.privatenull.pnlibrary.api.updates.UpdateRegistration
 
+/** Short labels for the module startup card: platform, metrics, updates and PlaceholderAPI. */
 internal object ModuleRuntimeSummary {
     fun platform(metadata: PluginMetadata): String =
         if (metadata.platformImplementation.equals(metadata.platform.displayName, ignoreCase = true)) {

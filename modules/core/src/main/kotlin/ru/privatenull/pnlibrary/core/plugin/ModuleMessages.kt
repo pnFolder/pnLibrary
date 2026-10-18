@@ -4,6 +4,7 @@ import ru.privatenull.pnlibrary.api.logging.LoggingService
 import ru.privatenull.pnlibrary.api.logging.MessageBox
 import ru.privatenull.pnlibrary.api.plugin.PluginMessages
 
+/** Console message boxes on behalf of one module. */
 internal class ModuleMessages(
     private val owner: Any,
     private val logging: LoggingService,

@@ -4,6 +4,7 @@ import com.google.gson.GsonBuilder
 import ru.privatenull.pnlibrary.api.observability.ObservationQuery
 import java.nio.charset.StandardCharsets
 
+/** Observation journal, attachments, statuses and analytics captured for one support report. */
 internal data class ObservabilityReportSnapshot(
     val journal: ByteArray,
     val attachmentManifest: ByteArray,

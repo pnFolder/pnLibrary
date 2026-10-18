@@ -1,5 +1,6 @@
 package ru.privatenull.pnlibrary.core.downloads
 
+/** Administrator-facing explanation of a failed download and what the user and the developer can do about it. */
 internal data class DownloadFailureDetails(
     val headline: String,
     val reason: String,
@@ -7,6 +8,7 @@ internal data class DownloadFailureDetails(
     val developerAction: String,
 )
 
+/** Turns download failures into Russian explanations for the console card. */
 internal object DownloadFailureInterpreter {
     private val pluginMismatch = Regex("скачанный JAR объявляет (.+), ожидался (.+)")
     private val versionMismatch = Regex("версия скачанного (.+) ([^ ]+) не соответствует требованию (.+)")

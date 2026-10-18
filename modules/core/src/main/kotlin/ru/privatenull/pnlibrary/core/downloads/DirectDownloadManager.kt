@@ -19,6 +19,7 @@ import java.util.concurrent.ExecutorService
 import java.util.concurrent.Executors
 import java.util.concurrent.atomic.AtomicBoolean
 
+/** Downloads, verifies and atomically publishes files declared by plugins, including missing plugin dependencies. */
 internal class DirectDownloadManager(
     private val identity: PlatformIdentity,
     private val ownership: PlatformOwnerMetadata,

@@ -7,11 +7,13 @@ import ru.privatenull.pnlibrary.api.updates.ExternalPluginDependency
 import ru.privatenull.pnlibrary.api.version.SemanticVersion
 import java.nio.file.Path
 
+/** Download request for missing plugin dependencies with the requirement each downloaded JAR must meet. */
 internal data class DependencyDownloadRequest(
     val request: FileDownloads,
     val requirements: Map<String, ExternalPluginDependency>,
 )
 
+/** Builds the download request for dependencies that are missing or too old and allow automatic download. */
 internal class DependencyDownloadRequestFactory(private val pluginDirectory: Path) {
     fun create(
         dependencies: List<PluginDependency>,

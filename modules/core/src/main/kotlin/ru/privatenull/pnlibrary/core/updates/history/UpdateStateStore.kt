@@ -25,6 +25,7 @@ import java.time.Instant
 import java.util.UUID
 import kotlin.streams.toList
 
+/** Persists the current update plan and a bounded history of earlier ones, quarantining corrupt state. */
 internal class UpdateStateStore(
     private val root: Path,
     private val maximumEntries: Int = 100,

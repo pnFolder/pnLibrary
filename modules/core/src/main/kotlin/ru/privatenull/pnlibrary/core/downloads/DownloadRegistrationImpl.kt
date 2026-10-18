@@ -13,6 +13,7 @@ import java.util.concurrent.Executor
 import java.util.concurrent.atomic.AtomicBoolean
 import java.util.concurrent.atomic.AtomicReference
 
+/** Tracks the files of one download request and runs at most one download of them at a time. */
 internal class DownloadRegistrationImpl(
     private val request: FileDownloads,
     private val configuration: DownloadConfiguration,

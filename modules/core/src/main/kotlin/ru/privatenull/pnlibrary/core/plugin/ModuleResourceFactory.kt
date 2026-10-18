@@ -33,6 +33,7 @@ import ru.privatenull.pnlibrary.core.text.ComponentCache
 import ru.privatenull.pnlibrary.core.text.ComponentServiceImpl
 import ru.privatenull.pnlibrary.currency.CurrencyFeature
 
+/** Opens every per-module resource and releases the ones already opened when a later one fails. */
 internal class ModuleResourceFactory(
     private val events: EventService,
     private val tasks: TaskService,
