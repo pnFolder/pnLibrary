@@ -17,14 +17,14 @@ internal object UpdatePalette {
     /** Labels, versions, brackets and descriptions; a neutral gray, legacy gray. */
     val SOFT: TextColor = TextColor.color(0xBFB5C0)
 
-    /** Commands and secondary details in hover cards; a slightly darker gray, legacy gray. */
-    val HINT: TextColor = TextColor.color(0xA89EAA)
-
     /** Options the reader may not choose; legacy dark gray. */
     val FAINT: TextColor = TextColor.color(0x64546E)
 
     /** Titles, counters, day headings and the selected choice; a soft lavender, legacy light purple. */
     val ACCENT: TextColor = TextColor.color(0xD19BFF)
+
+    /** Field labels, hints and descriptions: a calm sky blue, so cards read as colorful rather than gray; legacy aqua. */
+    val LABEL: TextColor = TextColor.color(0x7DD3FC)
 
     val OK: TextColor = TextColor.color(0x6EE7A0)
     val INFO: TextColor = TextColor.color(0x5BC8F5)

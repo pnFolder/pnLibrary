@@ -409,7 +409,7 @@ class UpdateCatalogViewTest {
     fun `every palette role keeps its own color on servers without RGB`() {
         val expected = mapOf(
             UpdatePalette.TEXT to NamedTextColor.WHITE, UpdatePalette.SOFT to NamedTextColor.GRAY,
-            UpdatePalette.HINT to NamedTextColor.GRAY, UpdatePalette.FAINT to NamedTextColor.DARK_GRAY,
+            UpdatePalette.LABEL to NamedTextColor.AQUA, UpdatePalette.FAINT to NamedTextColor.DARK_GRAY,
             UpdatePalette.ACCENT to NamedTextColor.LIGHT_PURPLE, UpdatePalette.OK to NamedTextColor.GREEN,
             UpdatePalette.INFO to NamedTextColor.AQUA, UpdatePalette.WARN to NamedTextColor.YELLOW,
             UpdatePalette.ORANGE to NamedTextColor.GOLD, UpdatePalette.DANGER to NamedTextColor.RED,
