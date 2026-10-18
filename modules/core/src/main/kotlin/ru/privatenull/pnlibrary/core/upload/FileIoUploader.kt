@@ -17,7 +17,7 @@ import java.time.Instant
  * @param endpoint HTTPS file.io endpoint
  * @throws IllegalArgumentException if [endpoint] is not HTTPS
  */
-class FileIoUploader(private val endpoint: URI = URI.create("https://file.io")) : UploadProvider {
+internal class FileIoUploader(private val endpoint: URI = URI.create("https://file.io")) : UploadProvider {
     init {
         require(endpoint.scheme.equals("https", ignoreCase = true)) {
             "file.io endpoint must use HTTPS"

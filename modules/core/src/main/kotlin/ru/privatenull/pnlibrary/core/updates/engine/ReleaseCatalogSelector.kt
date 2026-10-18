@@ -4,7 +4,7 @@ import ru.privatenull.pnlibrary.api.platform.PlatformType
 import ru.privatenull.pnlibrary.api.updates.UpdateChannel
 
 /** Deterministically selects the newest catalog release compatible with a runtime. */
-object ReleaseCatalogSelector {
+internal object ReleaseCatalogSelector {
     /** Selects the newest channel, platform, Java, and API-compatible release. */
     fun select(
         catalog: ReleaseCatalog,

@@ -6,21 +6,17 @@ import java.net.HttpURLConnection
 import java.net.URI
 import java.time.Duration
 
-/** Bounded HTTPS client with explicit redirect and timeout handling. */
-open class TrustedHttpClient(
+/**
+ * Bounded HTTPS client with explicit redirect and timeout handling.
+ *
+ * The client never changes JVM-wide networking properties. Hosts that publish IPv6 records
+ * without routing IPv6 should start the server with `-Djava.net.preferIPv4Stack=true`;
+ * the JVM reads that flag only at startup, so a library cannot set it reliably anyway.
+ */
+internal open class TrustedHttpClient(
     private val connectTimeout: Duration,
     private val readTimeout: Duration,
-    @Suppress("UNUSED_PARAMETER")
-    additionalHosts: Set<String> = emptySet(),
 ) {
-    init {
-        // Some Paper hosts advertise IPv6 DNS records but do not route IPv6.
-        // Java then waits for the socket timeout before trying another address,
-        // making every update source look unavailable. Prefer the working IPv4
-        // path for this small outbound updater client.
-        System.setProperty("java.net.preferIPv4Stack", "true")
-        System.setProperty("java.net.preferIPv4Addresses", "true")
-    }
 
     internal fun validate(uri: URI): URI {
         require(uri.scheme.equals("https", true)) { "update URL must use HTTPS: $uri" }

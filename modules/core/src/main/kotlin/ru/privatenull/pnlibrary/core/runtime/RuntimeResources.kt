@@ -17,14 +17,20 @@ internal interface RuntimeResources {
  * Native pnLibrary integration only. Consumer plugins obtain tasks through ModuleContext.tasks.
  * This bridge belongs to core, not to the published public API.
  */
-fun PnLibrary.runtimeTaskScope(): TaskScope = (this as RuntimeResources).runtimeTasks
+fun PnLibrary.runtimeTaskScope(): TaskScope = runtimeResources().runtimeTasks
 
 /** Registers a pnLibrary-owned command from core or a bundled native integration. */
 fun PnLibrary.registerRuntimeCommand(command: CommandDefinition): CommandRegistration =
-    (this as RuntimeResources).registerRuntimeCommand(command)
+    runtimeResources().registerRuntimeCommand(command)
 
 /** Builds a pnLibrary-owned command; consumer plugins use ModuleContext.registerCommand. */
 fun PnLibrary.registerRuntimeCommand(
     name: String,
     configure: CommandBuilder.() -> Unit,
 ): CommandRegistration = registerRuntimeCommand(command(name, configure))
+
+/** Only the core runtime implements [RuntimeResources]; any other [PnLibrary] is a wiring error. */
+private fun PnLibrary.runtimeResources(): RuntimeResources =
+    this as? RuntimeResources ?: throw IllegalStateException(
+        "Runtime resources are available only on the pnLibrary core runtime, not on ${javaClass.name}",
+    )

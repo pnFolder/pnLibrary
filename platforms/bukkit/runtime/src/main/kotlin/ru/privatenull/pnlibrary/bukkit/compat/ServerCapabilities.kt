@@ -10,7 +10,7 @@ import ru.privatenull.pnlibrary.common.minecraft.MinecraftVersion
  * Capability flags describe API availability, not whether a particular feature is enabled in the
  * server configuration.
  */
-object ServerCapabilities {
+internal object ServerCapabilities {
 
     /**
      * Resolved Minecraft version. The value is computed once and cached for the

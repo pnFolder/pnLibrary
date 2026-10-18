@@ -1,6 +1,9 @@
 package ru.privatenull.pnlibrary.core.commands
 
-import ru.privatenull.pnlibrary.api.commands.*
+import ru.privatenull.pnlibrary.api.commands.CommandBuilder
+import ru.privatenull.pnlibrary.api.commands.CommandDefinition
+import ru.privatenull.pnlibrary.api.commands.CommandRegistration
+import ru.privatenull.pnlibrary.api.commands.command
 
 /**
  * Registers portable commands and binds their lifecycle to an owner.

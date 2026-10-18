@@ -121,6 +121,7 @@ internal class IncidentHistoryStore(
         }
     }
 
+    // Retention is best-effort: a file that vanished or is locked is skipped and retried on the next prune.
     private fun fileSize(file: Path): Long? = try {
         Files.size(file)
     } catch (_: Exception) {

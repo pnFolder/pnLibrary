@@ -15,7 +15,7 @@ import java.time.Clock
  * @param file local JSON ledger path; deletion tokens never enter report archives
  * @param clock time source used for deterministic scheduling and cleanup
  */
-class UploadLedger @JvmOverloads constructor(
+internal class UploadLedger @JvmOverloads constructor(
     file: Path,
     private val clock: Clock = Clock.systemUTC(),
 ) {
@@ -78,6 +78,7 @@ class UploadLedger @JvmOverloads constructor(
     /** Safe operational view; deletion tokens and report links are never exposed. */
     @Synchronized
     fun diagnosticSnapshot(): Map<String, Any?> {
+        // Diagnostics must render even with an unreadable ledger; cleanup() surfaces the I/O error.
         val entries = runCatching { persistence.read() }.getOrDefault(emptyList())
         val now = clock.instant().epochSecond
         return linkedMapOf(
@@ -100,6 +101,7 @@ class UploadLedger @JvmOverloads constructor(
             ),
         )
     } catch (_: Exception) {
+        // A failed deletion keeps the entry in the ledger, so it is retried on the next cleanup.
         false
     }
 

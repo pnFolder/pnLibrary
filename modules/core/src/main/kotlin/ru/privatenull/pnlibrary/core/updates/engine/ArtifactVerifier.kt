@@ -34,7 +34,7 @@ data class ArtifactSpecification(
 }
 
 /** Raised when a downloaded artifact contradicts its trusted specification. */
-class ArtifactVerificationException(message: String) : IllegalArgumentException(message)
+internal class ArtifactVerificationException(message: String) : IllegalArgumentException(message)
 
 /** Verifies artifact paths, size limits, and optional publisher integrity metadata. */
 class ArtifactVerifier(

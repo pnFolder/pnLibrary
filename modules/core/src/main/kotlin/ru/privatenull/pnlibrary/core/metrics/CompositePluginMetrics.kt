@@ -14,7 +14,7 @@ import java.util.function.Supplier
  * extensions remain behind the provider's own adapter and are not silently reduced
  * to a chart that another provider cannot represent.
  */
-class CompositePluginMetrics(
+internal class CompositePluginMetrics(
     delegates: List<PluginMetrics>,
     private val onClose: () -> Unit = {},
 ) : PluginMetrics {

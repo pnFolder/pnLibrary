@@ -7,11 +7,11 @@ import java.time.Instant
 /** Aggregates update registrations into the stable runtime diagnostic summary. */
 internal object RuntimeUpdateSummary {
     fun of(registrations: List<UpdateRegistration>): Map<String, Any?> {
-        val latestReleaseByChannel = registrations
+        val latestPublishedAtByChannel: Map<String, Instant> = registrations
             .flatMap { it.snapshot.availableReleases }
-            .filter { it.publishedAt != null }
-            .groupBy { it.channel.name }
-            .mapValues { (_, releases) -> releases.maxByOrNull { it.publishedAt!! }!! }
+            .mapNotNull { release -> release.publishedAt?.let { release.channel.name to it } }
+            .groupBy({ it.first }, { it.second })
+            .mapValues { (_, publishedAt) -> publishedAt.max() }
 
         return linkedMapOf(
             "count" to registrations.size,
@@ -30,12 +30,12 @@ internal object RuntimeUpdateSummary {
                 .flatMap { it.snapshot.availableReleases }
                 .groupingBy { it.channel.name }
                 .eachCount(),
-            "latestPublishedAtByChannel" to latestReleaseByChannel.mapValues { (_, release) -> release.publishedAt!!.toString() },
-            "releaseAgeDaysByChannel" to latestReleaseByChannel.mapValues { (_, release) ->
-                Duration.between(release.publishedAt, Instant.now()).toDays().coerceAtLeast(0)
+            "latestPublishedAtByChannel" to latestPublishedAtByChannel.mapValues { (_, publishedAt) -> publishedAt.toString() },
+            "releaseAgeDaysByChannel" to latestPublishedAtByChannel.mapValues { (_, publishedAt) ->
+                Duration.between(publishedAt, Instant.now()).toDays().coerceAtLeast(0)
             },
-            "staleChannelCount" to latestReleaseByChannel.count { (_, release) ->
-                Duration.between(release.publishedAt, Instant.now()).toDays() >= 30
+            "staleChannelCount" to latestPublishedAtByChannel.count { (_, publishedAt) ->
+                Duration.between(publishedAt, Instant.now()).toDays() >= 30
             },
             "messages" to registrations
                 .mapNotNull { it.snapshot.message?.take(256) }

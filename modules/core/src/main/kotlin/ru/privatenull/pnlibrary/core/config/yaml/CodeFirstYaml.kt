@@ -111,8 +111,9 @@ class CodeFirstYaml<T> @JvmOverloads constructor(
         if (missing.isNotEmpty()) logger.info("Добавлены новые параметры в ${file.name}: ${missing.joinToString()}")
         if (unknown.isNotEmpty() && options.unknownValues == UnknownValuePolicy.REMOVE)
             logger.info("Удалены неизвестные параметры из ${file.name}: ${unknown.joinToString()}")
-        if (!migration?.applied.isNullOrEmpty())
-            logger.info("Применены миграции ${file.name}: ${migration!!.applied.joinToString()}")
+        migration?.applied?.takeIf { it.isNotEmpty() }?.let { applied ->
+            logger.info("Применены миграции ${file.name}: ${applied.joinToString()}")
+        }
         loadedValue = value
         return ConfigLoadResult(
             value,

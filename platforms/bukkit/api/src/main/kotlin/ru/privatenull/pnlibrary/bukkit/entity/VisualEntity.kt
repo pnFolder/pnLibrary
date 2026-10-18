@@ -103,7 +103,7 @@ class VisualEntity private constructor(
             for ((name, value) in listOf(
                 "setCollidable" to false, "setSilent" to true,
                 "setInvulnerable" to true, "setPersistent" to false,
-            )) optionalCapability(stand, name, Boolean::class.javaPrimitiveType!!, value)
+            )) optionalCapability(stand, name, java.lang.Boolean.TYPE, value)
             return stand
         }
 

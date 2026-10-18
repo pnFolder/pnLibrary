@@ -36,7 +36,7 @@ data class TransactionArtifact(
 )
 
 /** Exact persisted version/API metadata and the digest of its preserved bytes. */
-data class JournalVersion(val version: String, val minimumApi: Int, val maximumApi: Int, var sha256: String? = null)
+internal data class JournalVersion(val version: String, val minimumApi: Int, val maximumApi: Int, var sha256: String? = null)
 
 /**
  * Final observed transaction result.
@@ -57,7 +57,7 @@ data class TransactionResult(val state: TransactionState, val journal: Path)
  * @property expectedVersion version expected during post-restart health verification
  * @property previousVersion version stored in the rollback backup, when known
  */
-data class JournalArtifact(
+internal data class JournalArtifact(
     val component: String,
     val target: String,
     val staged: String,
@@ -93,7 +93,7 @@ data class PendingTransaction(
  * @property targetApi API generation of the original plan; null for older journals
  * @property configurationSnapshot optional immutable configuration snapshot identity
  */
-data class TransactionJournal(
+internal data class TransactionJournal(
     val id: String,
     var state: TransactionState,
     val artifacts: List<JournalArtifact>,

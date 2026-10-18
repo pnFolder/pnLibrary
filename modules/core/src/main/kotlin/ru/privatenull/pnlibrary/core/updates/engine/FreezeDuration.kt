@@ -3,7 +3,7 @@ package ru.privatenull.pnlibrary.core.updates.engine
 import java.time.Duration
 
 /** Parses and validates administrator-supplied update-freeze durations: from one minute to seven days. */
-object FreezeDuration {
+internal object FreezeDuration {
     /** The longest pause: updates of a component can never be held for more than a week. */
     val MAXIMUM: Duration = Duration.ofDays(7)
 

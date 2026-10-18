@@ -3,14 +3,26 @@ package ru.privatenull.pnlibrary.localization.internal
 import org.bukkit.Material
 import org.bukkit.enchantments.Enchantment
 import ru.privatenull.pnlibrary.common.minecraft.MinecraftVersion
-import ru.privatenull.pnlibrary.localization.*
+import ru.privatenull.pnlibrary.localization.LocaleTranslations
+import ru.privatenull.pnlibrary.localization.MinecraftLocalization
+import ru.privatenull.pnlibrary.localization.TranslationBundle
+import ru.privatenull.pnlibrary.localization.TranslationException
+import ru.privatenull.pnlibrary.localization.TranslationIndex
+import ru.privatenull.pnlibrary.localization.TranslationMetadata
+import ru.privatenull.pnlibrary.localization.TranslationRequest
+import ru.privatenull.pnlibrary.localization.TranslationSource
 import java.nio.file.Files
 import java.nio.file.Path
 import java.time.Duration
 import java.util.Collections
 import java.util.LinkedHashMap
 import java.util.Optional
-import java.util.concurrent.*
+import java.util.concurrent.CompletableFuture
+import java.util.concurrent.CompletionStage
+import java.util.concurrent.ConcurrentHashMap
+import java.util.concurrent.ExecutorService
+import java.util.concurrent.Executors
+import java.util.concurrent.Semaphore
 import java.util.concurrent.atomic.AtomicBoolean
 
 internal class DefaultMinecraftLocalization internal constructor(

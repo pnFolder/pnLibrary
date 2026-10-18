@@ -81,7 +81,10 @@ internal class UpdateStateStore(
             if (quarantine) {
                 val target = path.resolveSibling("${path.fileName}.corrupt-${Instant.now().toEpochMilli()}")
                 runCatching { Files.move(path, target, StandardCopyOption.REPLACE_EXISTING) }
-                warning("Corrupt update state was quarantined: ${error.message}")
+                    .onSuccess { warning("Corrupt update state was quarantined: ${error.message}") }
+                    .onFailure { moveError ->
+                        warning("Corrupt update state could not be quarantined (${moveError.message}): ${error.message}")
+                    }
             }
             null
         }
@@ -169,6 +172,7 @@ internal class UpdateStateStore(
         }.orEmpty()
 
     private fun prune() {
+        // A history file that vanished or is locked counts as empty; retention retries on the next write.
         val files = historyFiles().toMutableList()
         var bytes = files.sumOf { runCatching { Files.size(it) }.getOrDefault(0) }
         while (files.size > maximumEntries || bytes > maximumBytes) {

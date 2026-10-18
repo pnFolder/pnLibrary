@@ -8,7 +8,7 @@ import ru.privatenull.pnlibrary.core.metrics.bstats.BStatsMetricsSession
 import ru.privatenull.pnlibrary.core.metrics.faststats.SimpleFastStatsMetricsSession
 
 /** Opens independently managed bStats and FastStats sessions for Bukkit plugins. */
-class BukkitMetricsFactory : NativePluginMetricsFactory<Plugin>(
+internal class BukkitMetricsFactory : NativePluginMetricsFactory<Plugin>(
     ownerType = Plugin::class.java,
     platformName = "Bukkit",
     bStats = { plugin, projectId ->

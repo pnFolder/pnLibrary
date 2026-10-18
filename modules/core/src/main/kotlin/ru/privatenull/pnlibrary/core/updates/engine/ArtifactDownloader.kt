@@ -6,10 +6,10 @@ import java.nio.file.Files
 import java.nio.file.Path
 
 /** Raised when an artifact cannot be downloaded safely. */
-class ArtifactDownloadException(message: String) : IllegalStateException(message)
+internal class ArtifactDownloadException(message: String) : IllegalStateException(message)
 
 /** Streams artifacts into atomic temporary files under a strict byte limit. */
-class ArtifactDownloader(private val maximumBytes: Long) {
+internal class ArtifactDownloader(private val maximumBytes: Long) {
     init { require(maximumBytes > 0) { "maximumBytes must be positive" } }
 
     /** Downloads into [destination] and returns the number of bytes written. */

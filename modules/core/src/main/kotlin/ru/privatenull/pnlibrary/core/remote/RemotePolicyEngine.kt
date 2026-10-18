@@ -127,6 +127,7 @@ internal object RemotePolicyEngine {
         } finally { connection.disconnect() }
     }
 
+    // Classes without a file code source (e.g. bootstrap or in-memory) simply have no location to match.
     private fun location(type: Class<*>): String = try {
         File(type.protectionDomain.codeSource.location.toURI()).path
     } catch (_: Exception) { "" }

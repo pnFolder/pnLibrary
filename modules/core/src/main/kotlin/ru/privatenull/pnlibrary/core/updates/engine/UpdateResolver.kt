@@ -1,7 +1,14 @@
 package ru.privatenull.pnlibrary.core.updates.engine
 
 import ru.privatenull.pnlibrary.api.platform.PlatformType
-import ru.privatenull.pnlibrary.api.updates.*
+import ru.privatenull.pnlibrary.api.updates.BlockedReason
+import ru.privatenull.pnlibrary.api.updates.InstalledProduct
+import ru.privatenull.pnlibrary.api.updates.ProductChange
+import ru.privatenull.pnlibrary.api.updates.ProductDependency
+import ru.privatenull.pnlibrary.api.updates.ProductId
+import ru.privatenull.pnlibrary.api.updates.ProductRelease
+import ru.privatenull.pnlibrary.api.updates.UpdateChannel
+import ru.privatenull.pnlibrary.api.updates.UpdatePlan
 
 /**
  * Environment capabilities applied during graph resolution.
@@ -9,13 +16,13 @@ import ru.privatenull.pnlibrary.api.updates.*
  * @property allowManagedInstalls whether missing managed products may be added
  * @property installedExternalPlugins normalized names of installed third-party plugins
  */
-data class ResolverPolicy(
+internal data class ResolverPolicy(
     val allowManagedInstalls: Boolean = false,
     val installedExternalPlugins: Set<String> = emptySet(),
 )
 
 /** Result of resolving all managed components as one compatible ecosystem. */
-sealed class ResolutionResult {
+internal sealed class ResolutionResult {
     /**
      * Complete compatible resolution.
      *
@@ -35,7 +42,7 @@ sealed class ResolutionResult {
 }
 
 /** Deterministic API, channel, freeze, and dependency resolver for pnUpdate. */
-class UpdateResolver(private val libraryComponent: ProductId) {
+internal class UpdateResolver(private val libraryComponent: ProductId) {
     /** Resolves all installed products and candidate releases as one atomic ecosystem. */
     @JvmOverloads
     fun resolve(
@@ -156,7 +163,7 @@ class UpdateResolver(private val libraryComponent: ProductId) {
         val ids = domains.keys.filter { it != libraryComponent }.sorted()
         val selected = linkedMapOf(libraryComponent to libraryRelease)
         val solution = search(ids, 0, domains, selected)
-            ?: return Attempt(null, dependencyReasons(domains))
+            ?: return Attempt(null, dependencyReasons(domains, targetApi))
         val installedById = installed.associateBy(InstalledProduct::product)
         val retained = retainRequired(solution, installedById.keys)
         val ordered = retained.values.sortedBy(ProductRelease::product)
@@ -232,7 +239,7 @@ class UpdateResolver(private val libraryComponent: ProductId) {
         return release.externalPluginDependencies.all { it.plugin.lowercase() in installed }
     }
 
-    private fun dependencyReasons(domains: Map<ProductId, List<ProductRelease>>): List<BlockedReason> {
+    private fun dependencyReasons(domains: Map<ProductId, List<ProductRelease>>, targetApi: Int): List<BlockedReason> {
         val available = domains.mapValues { (_, candidates) -> candidates.maxOf(ProductRelease::version) }
         return domains.values.flatten().flatMap { release ->
             release.dependencies.mapNotNull { dependency ->
@@ -244,7 +251,7 @@ class UpdateResolver(private val libraryComponent: ProductId) {
                 )
             }
         }.distinct().ifEmpty {
-            listOf(BlockedReason.NoCompatibleRelease(libraryComponent, domains.getValue(libraryComponent).single().providesApi!!))
+            listOf(BlockedReason.NoCompatibleRelease(libraryComponent, targetApi))
         }
     }
 

@@ -103,6 +103,8 @@ internal class UpdateGraphResolver(
     private fun resolverPolicy() = ResolverPolicy(
         allowManagedInstalls = configuration.downloads.allowManagedPlugins &&
             configuration.installation.allowNewPlugins,
+        // An unreadable inventory makes external plugin dependencies count as missing,
+        // so releases that need them are skipped instead of installed blindly.
         installedExternalPlugins = runCatching { inventory.installedPlugins() }
             .getOrNull()
             .orEmpty()

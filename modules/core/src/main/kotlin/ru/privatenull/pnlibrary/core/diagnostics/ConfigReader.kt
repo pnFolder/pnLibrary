@@ -200,7 +200,9 @@ internal class ConfigReader(
                 if (pattern.matcher(key).find() || pattern.matcher(fullPath).find()) {
                     return true
                 }
-            } catch (_: Exception) { }
+            } catch (_: Exception) {
+                // A failing contributor pattern counts as no match; the built-in secret key check still applied.
+            }
         }
         return false
     }
@@ -211,7 +213,9 @@ internal class ConfigReader(
             if (pat.isNotBlank() && pat.length <= 256) {
                 try {
                     result.add(Pattern.compile(pat, Pattern.CASE_INSENSITIVE))
-                } catch (_: Exception) { }
+                } catch (_: Exception) {
+                    // Invalid operator patterns are skipped so one typo cannot block every support report.
+                }
             }
         }
         return result

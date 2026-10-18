@@ -195,7 +195,7 @@ class DirectDownloadManagerTest {
                 else -> null
             }
         } as PlatformAdapter
-        val http = object : TrustedHttpClient(Duration.ofSeconds(1), Duration.ofSeconds(1), setOf("example.org")) {
+        val http = object : TrustedHttpClient(Duration.ofSeconds(1), Duration.ofSeconds(1)) {
             override fun get(uri: URI, maximumBytes: Int): ByteArray {
                 entered?.countDown()
                 release?.await(5, TimeUnit.SECONDS)
