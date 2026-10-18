@@ -15,7 +15,6 @@ import ru.privatenull.pnlibrary.spi.platform.PlatformSnapshot
 import ru.privatenull.pnlibrary.spi.platform.PluginSnapshot
 import ru.privatenull.pnlibrary.spi.platform.StartupGate
 import ru.privatenull.pnlibrary.spi.platform.UncaughtExceptionLogObserver
-import ru.privatenull.pnlibrary.spi.platform.unsupportedOwner
 import ru.privatenull.pnlibrary.spi.tasks.PlatformTaskAdapter
 import ru.privatenull.pnlibrary.spi.tasks.PlatformTaskRequest
 import ru.privatenull.pnlibrary.velocity.commands.VelocityCommandAdapter
@@ -41,7 +40,7 @@ internal class VelocityPlatformAdapter(
 ) : PlatformAdapter {
     private val diagnosticDetailsCollector = VelocityDiagnosticDetailsCollector(proxy)
     private val lifecycle = PlatformLifecycle()
-    private val plugins = VelocityPluginRegistry(proxy)
+    private val plugins = velocityPlugins(proxy)
     private val startup = StartupGate(lifecycle, ::executeGlobal)
 
     private val uncaughtExceptionObserver = UncaughtExceptionLogObserver(plugin)
@@ -90,9 +89,7 @@ internal class VelocityPlatformAdapter(
     }
 
     /** Returns metadata for a native Velocity plugin owner. */
-    override fun ownerMetadata(owner: Any): PluginSnapshot? {
-        return plugins.snapshot(owner) ?: unsupportedOwner(owner, this)
-    }
+    override fun ownerMetadata(owner: Any): PluginSnapshot? = plugins.metadata(owner, this)
 
     /** Returns installed Velocity plugin IDs and their versions. */
     override fun installedPlugins(): Map<String, String> =
@@ -116,13 +113,12 @@ internal class VelocityPlatformAdapter(
     override fun diagnosticDetails(includeSensitive: Boolean): Map<String, Any?> =
         diagnosticDetailsCollector.collect(snapshot(), includeSensitive)
 
-    /** Builds the native context passed to a remotely loaded policy. */
+    /** Builds the native context passed to a remotely loaded policy of an installed plugin owner. */
     override fun remotePolicyContext(
         owner: Any,
         values: Map<String, String>,
-    ): RemotePolicyContext {
-        return VelocityRemotePolicyContextFactory.create(owner, proxy, values)
-    }
+    ): RemotePolicyContext =
+        VelocityRemotePolicyContextFactory.create(owner, plugins.requireInstalled(owner, "Remote policy owner"), proxy, values)
 
     /** Schedules work on Velocity's plugin scheduler. */
     override fun executeGlobal(task: Runnable) {

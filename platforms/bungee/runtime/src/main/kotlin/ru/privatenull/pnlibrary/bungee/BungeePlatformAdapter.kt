@@ -14,11 +14,11 @@ import ru.privatenull.pnlibrary.spi.metrics.PlatformMetricsFactory
 import ru.privatenull.pnlibrary.spi.platform.JulLogObserver
 import ru.privatenull.pnlibrary.spi.platform.PlatformAdapter
 import ru.privatenull.pnlibrary.spi.platform.PlatformLifecycle
+import ru.privatenull.pnlibrary.spi.platform.PlatformPlugins
 import ru.privatenull.pnlibrary.spi.platform.PlatformSnapshot
 import ru.privatenull.pnlibrary.spi.platform.PluginSnapshot
 import ru.privatenull.pnlibrary.spi.platform.StartupGate
 import ru.privatenull.pnlibrary.spi.platform.UncaughtExceptionLogObserver
-import ru.privatenull.pnlibrary.spi.platform.unsupportedOwner
 import ru.privatenull.pnlibrary.spi.tasks.PlatformTaskAdapter
 import java.util.logging.Level
 
@@ -29,6 +29,20 @@ internal class BungeePlatformAdapter(
     private val diagnosticDetailsCollector = BungeeDiagnosticDetailsCollector(plugin)
 
     private val lifecycle = PlatformLifecycle()
+    private val plugins = PlatformPlugins<Plugin>(
+        platformName = "BungeeCord",
+        installed = { plugin.proxy.pluginManager.plugins },
+        resolve = { owner -> owner as? Plugin },
+    ) { installed ->
+        val description = installed.description
+        PluginSnapshot(
+            id = description.name,
+            name = description.name,
+            version = description.version,
+            authors = listOfNotNull(description.author),
+            mainClass = description.main,
+        )
+    }
     private val startup = StartupGate(lifecycle, ::executeGlobal)
 
     private val uncaughtExceptionObserver = UncaughtExceptionLogObserver(plugin)
@@ -83,18 +97,10 @@ internal class BungeePlatformAdapter(
     }
 
     /** Reads native plugin metadata, warning and returning null for unsupported owners. */
-    override fun ownerMetadata(owner: Any): PluginSnapshot? {
-        val target = owner as? Plugin
-            ?: return unsupportedOwner(owner, this)
-
-        return target.toSnapshot()
-    }
+    override fun ownerMetadata(owner: Any): PluginSnapshot? = plugins.metadata(owner, this)
 
     /** Returns installed plugin names and versions for compatibility checks. */
-    override fun installedPlugins(): Map<String, String> =
-        plugin.proxy.pluginManager.plugins.associate { installedPlugin ->
-            installedPlugin.description.name to installedPlugin.description.version
-        }
+    override fun installedPlugins(): Map<String, String> = plugins.versions()
 
     /** Collects typed proxy metadata without exposing individual player identities. */
     override fun snapshot(): PlatformSnapshot {
@@ -105,7 +111,7 @@ internal class BungeePlatformAdapter(
             version = proxy.version,
             onlinePlayers = proxy.onlineCount,
             registeredServers = proxy.servers.keys.toList(),
-            plugins = proxy.pluginManager.plugins.map { it.toSnapshot() },
+            plugins = plugins.snapshots(),
         )
     }
 
@@ -117,20 +123,8 @@ internal class BungeePlatformAdapter(
     override fun remotePolicyContext(
         owner: Any,
         values: Map<String, String>,
-    ): RemotePolicyContext {
-        val target = owner as? Plugin
-            ?: throw IllegalArgumentException(
-                "Remote policy owner must be a BungeeCord plugin; " +
-                    "received ${owner.javaClass.name}",
-            )
-
-        require(target in plugin.proxy.pluginManager.plugins) {
-            "Remote policy owner is not registered in the BungeeCord proxy: " +
-                target.javaClass.name
-        }
-
-        return BungeeRemotePolicyContextFactory.create(target, values)
-    }
+    ): RemotePolicyContext =
+        BungeeRemotePolicyContextFactory.create(plugins.requireInstalled(owner, "Remote policy owner"), values)
 
     /** Dispatches work asynchronously; BungeeCord has no global main-thread scheduler. */
     override fun executeGlobal(task: Runnable) {
@@ -160,18 +154,5 @@ internal class BungeePlatformAdapter(
             startup.discardPending()
             observeNativeLogs(null)
         }
-    }
-
-    /** Converts native plugin metadata to the shared snapshot contract. */
-    private fun Plugin.toSnapshot(): PluginSnapshot {
-        val metadata = description
-
-        return PluginSnapshot(
-            id = metadata.name,
-            name = metadata.name,
-            version = metadata.version,
-            authors = listOfNotNull(metadata.author),
-            mainClass = metadata.main,
-        )
     }
 }

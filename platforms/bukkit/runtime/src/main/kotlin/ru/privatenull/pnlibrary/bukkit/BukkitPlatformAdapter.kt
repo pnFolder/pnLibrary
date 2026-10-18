@@ -20,10 +20,10 @@ import ru.privatenull.pnlibrary.spi.commands.PlatformCommandAdapter
 import ru.privatenull.pnlibrary.spi.metrics.PlatformMetricsFactory
 import ru.privatenull.pnlibrary.spi.platform.PlatformAdapter
 import ru.privatenull.pnlibrary.spi.platform.PlatformLifecycle
+import ru.privatenull.pnlibrary.spi.platform.PlatformPlugins
 import ru.privatenull.pnlibrary.spi.platform.PlatformSnapshot
 import ru.privatenull.pnlibrary.spi.platform.PluginSnapshot
 import ru.privatenull.pnlibrary.spi.platform.UncaughtExceptionLogObserver
-import ru.privatenull.pnlibrary.spi.platform.unsupportedOwner
 import ru.privatenull.pnlibrary.spi.tasks.PlatformTaskAdapter
 import java.util.concurrent.CompletableFuture
 import java.util.concurrent.TimeUnit
@@ -40,6 +40,20 @@ internal class BukkitPlatformAdapter(
 ) : PlatformAdapter {
 
     private val lifecycle = PlatformLifecycle()
+    private val plugins = PlatformPlugins<Plugin>(
+        platformName = "Bukkit",
+        installed = { Bukkit.getPluginManager().plugins.asList() },
+        resolve = { owner -> owner as? Plugin },
+    ) { installed ->
+        val description = installed.description
+        PluginSnapshot(
+            id = installed.name,
+            name = installed.name,
+            version = description.version,
+            authors = description.authors,
+            mainClass = description.main,
+        )
+    }
     private val diagnosticsCollector = BukkitDiagnosticDetailsCollector()
     private val nativeLogBridge = BukkitNativeLogBridge(plugin)
     private val uncaughtExceptionObserver = UncaughtExceptionLogObserver(plugin)
@@ -81,18 +95,10 @@ internal class BukkitPlatformAdapter(
     }
 
     /** Reads native plugin metadata, warning and returning null for unsupported owners. */
-    override fun ownerMetadata(owner: Any): PluginSnapshot? {
-        val target = owner as? Plugin
-            ?: return unsupportedOwner(owner, this)
-
-        return target.toSnapshot()
-    }
+    override fun ownerMetadata(owner: Any): PluginSnapshot? = plugins.metadata(owner, this)
 
     /** Returns installed plugin versions for compatibility checks. */
-    override fun installedPlugins(): Map<String, String> =
-        Bukkit.getPluginManager().plugins.associate { installedPlugin ->
-            installedPlugin.name to installedPlugin.description.version
-        }
+    override fun installedPlugins(): Map<String, String> = plugins.versions()
 
     /** Collects typed platform metadata without individual player identities. */
     override fun snapshot(): PlatformSnapshot =
@@ -100,32 +106,19 @@ internal class BukkitPlatformAdapter(
             name = implementationName,
             version = Bukkit.getBukkitVersion(),
             onlinePlayers = Bukkit.getOnlinePlayers().size,
-            plugins = Bukkit.getPluginManager().plugins.map { it.toSnapshot() },
+            plugins = plugins.snapshots(),
         )
 
-    /** Creates a policy context for the native Bukkit plugin owner. */
+    /** Creates a policy context for an installed native Bukkit plugin owner. */
     override fun remotePolicyContext(
         owner: Any,
         values: Map<String, String>,
-    ): RemotePolicyContext {
-        val target = owner as? Plugin
-            ?: throw IllegalArgumentException(
-                "Remote policy owner must be a Bukkit plugin; " +
-                    "received ${owner.javaClass.name}",
-            )
+    ): RemotePolicyContext =
+        BukkitRemotePolicyContextFactory.create(plugins.requireInstalled(owner, "Remote policy owner"), values)
 
-        return BukkitRemotePolicyContextFactory.create(target, values)
-    }
-
-    /** Disables a native plugin through Bukkit's plugin manager. */
+    /** Disables an installed native plugin through Bukkit's plugin manager. */
     override fun disableOwner(owner: Any): Boolean {
-        val target = owner as? Plugin
-            ?: throw IllegalArgumentException(
-                "Disabled owner must be a Bukkit plugin; " +
-                    "received ${owner.javaClass.name}",
-            )
-
-        Bukkit.getPluginManager().disablePlugin(target)
+        Bukkit.getPluginManager().disablePlugin(plugins.requireInstalled(owner, "Disabled owner"))
         return true
     }
 
@@ -205,15 +198,6 @@ internal class BukkitPlatformAdapter(
         lifecycle.close { observeNativeLogs(null) }
         lifecycleListener = null
     }
-
-    /** Converts native plugin metadata to the shared snapshot contract. */
-    private fun Plugin.toSnapshot(): PluginSnapshot =
-        PluginSnapshot(
-            id = name,
-            name = name,
-            version = description.version,
-            authors = description.authors,
-        )
 
     private companion object {
         const val DIAGNOSTIC_TIMEOUT_SECONDS = 15L
