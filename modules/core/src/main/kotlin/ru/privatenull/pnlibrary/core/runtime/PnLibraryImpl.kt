@@ -93,7 +93,7 @@ internal class PnLibraryImpl(
         diagnostics = diagnostics,
         config = config,
         dataFolder = dataFolder,
-        runtimeDiagnostics = ::runtimeDiagnostics,
+        runtimeDiagnostics = { runtimeDiagnostics.assemble() },
     )
     override val observability get() = support.service
     override val activity: ActivityService get() = observability
@@ -184,66 +184,19 @@ internal class PnLibraryImpl(
         commands = commandService,
         directDownloads = directDownloadManager,
     )
-
-    private fun runtimeDiagnostics(): Map<String, Any?> {
-        val taskSnapshots = taskService.query()
-        val updateSnapshots = updates.all()
-        val taskFailures = taskSnapshots.count { it.lastFailure != null }
-        val failedUpdates = updateSnapshots.count { it.snapshot.state.name.equals("FAILED", ignoreCase = true) }
-        val diagnosticSummary = diagnostics.diagnosticSummary()
-        val history = diagnostics.historyAnalytics()
-        val nativeLogs = support.logSummary()
-        val reports = support.reportSummary()
-        val observability = support.observabilityAnalytics()
-        return linkedMapOf(
-        "library" to linkedMapOf<String, Any?>(
-            "version" to version,
-            "closed" to isClosed,
-            "platform" to platformIdentity.id,
-            "implementation" to platformIdentity.implementationName,
-            "proxy" to platformIdentity.isProxy,
-            "server" to platformIdentity.isServer,
-            "dataFolder" to if (config.privacy) "[redacted]" else
-                dataFolder.toAbsolutePath().normalize().toString(),
-            "configuration" to RuntimeConfigurationDetails.of(config),
-        ),
-        "tasks" to RuntimeTaskDetails.entries(taskSnapshots),
-        "taskSummary" to RuntimeTaskDetails.summary(taskSnapshots),
-        "updates" to updateSnapshots.map(RuntimeUpdateDetails::registration),
-        "updateSummary" to RuntimeUpdateSummary.of(updateSnapshots),
-        "analytics" to RuntimeAnalytics.of(
-            taskCount = taskSnapshots.size,
-            updateCount = updateSnapshots.size,
-            taskFailures = taskFailures,
-            failedUpdates = failedUpdates,
-            diagnosticSummary = diagnosticSummary,
-            history = history,
-            nativeLogs = nativeLogs,
-            reports = reports,
-            observability = observability,
-        ),
-        "metrics" to metricsRegistry.diagnosticSnapshot(),
-        "metricsAnalytics" to metricsRegistry.diagnosticAnalytics(),
-        "commandsAnalytics" to commandService.diagnosticSnapshot(),
-        "diagnostics" to diagnostics.diagnosticSummary(),
-        "diagnosticHistory" to diagnostics.historyAnalytics(),
-        "nativeLogs" to nativeLogs,
-        "reports" to reports,
-        "observability" to observability,
-        "configurationDeclarations" to diagnostics.configurations("all").map { declaration ->
-            linkedMapOf<String, Any?>(
-                "plugin" to declaration.plugin,
-                "path" to declaration.configuration.path,
-                "dataDirectory" to if (config.privacy) "[redacted]"
-                else declaration.dataDirectory?.toString(),
-            )
-        },
-        "updateGraph" to linkedMapOf<String, Any?>(
-            "current" to updates.currentPlan().orElse(null)?.let(RuntimeUpdateDetails::of),
-            "history" to updates.history().map(RuntimeUpdateDetails::of),
-        ),
-        )
-    }
+    private val runtimeDiagnostics: RuntimeDiagnosticsAssembler = RuntimeDiagnosticsAssembler(
+        version = version,
+        isClosed = { isClosed },
+        identity = platformIdentity,
+        dataFolder = dataFolder,
+        config = config,
+        tasks = taskService,
+        updates = updateService,
+        diagnostics = diagnostics,
+        support = support,
+        metrics = metricsRegistry,
+        commands = commandService,
+    )
 
     fun init() {
         support.initialize { isClosed }
@@ -278,36 +231,28 @@ internal class PnLibraryImpl(
 
     override fun close() {
         if (closedFlag.compareAndSet(false, true)) {
-            createShutdownPlan().run()
+            RuntimeShutdownPlan(
+                plugins = plugins,
+                commands = commandService,
+                audiences = audienceService,
+                platforms = platformProvider,
+                currency = currencyFeature,
+                configurations = configurationService,
+                libraryMetrics = { libraryMetrics },
+                metrics = metricsRegistry,
+                updates = updateService,
+                events = AutoCloseable(eventService::close),
+                services = serviceManager,
+                tasks = taskService,
+                support = AutoCloseable(support::close),
+                releaseProvider = { PnLibraryProvider.clear(this) },
+                closePlatform = { closePlatform() },
+                onClose = onClose,
+            ).run()
             libraryMetrics = null
         }
     }
 
-    /**
-     * Keeps the runtime shutdown order in one named lifecycle boundary.
-     * The composition root only decides when to close; this method owns what
-     * must be closed and in which order.
-     */
-    private fun createShutdownPlan(): RuntimeShutdown = RuntimeShutdown().apply {
-        add { plugins.close() }
-        add { commandService.close() }
-        add { audienceService.close() }
-        add { platformProvider.close() }
-        add { currencyFeature.close() }
-        add { configurationService.close() }
-        add { libraryMetrics?.close() }
-        add { metricsRegistry.close() }
-        add { updateService.close() }
-        add { eventService.close() }
-        add { serviceManager.close() }
-        add { taskService.close() }
-        add { support.close() }
-        add { PnLibraryProvider.clear(this@PnLibraryImpl) }
-        add { closePlatform() }
-        add { onClose() }
-    }
-
     override fun <T : Any> registerPlatform(type: Class<T>, implementation: T): AutoCloseable =
         platformProvider.register(type, implementation)
-
 }
