@@ -14,7 +14,7 @@ import java.time.Instant
  * @param endpoint HTTPS API endpoint; configurable primarily for integration tests
  * @throws IllegalArgumentException if [endpoint] is not HTTPS
  */
-class CatboxUploader(
+internal class CatboxUploader(
     private val endpoint: URI = URI.create("https://catbox.moe/user/api.php"),
 ) : UploadProvider {
     init {

@@ -14,7 +14,7 @@ import java.nio.file.Path
 /**
  * Uploads an encrypted envelope directly to a custom HTTPS storage endpoint.
  */
-class EncryptedReportUploader @JvmOverloads constructor(
+internal class EncryptedReportUploader @JvmOverloads constructor(
     private val endpoint: URI,
     private val publicBase: URI,
     requireHttps: Boolean = true,

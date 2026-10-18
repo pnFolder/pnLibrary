@@ -6,7 +6,7 @@ import java.util.concurrent.CompletableFuture
 import java.util.concurrent.Executor
 
 /** Loads one manually maintained releases.json and caches only valid snapshots. */
-class ReleaseCatalogClient(
+internal class ReleaseCatalogClient(
     private val http: TrustedHttpClient,
     private val store: ReleaseCatalogueStore,
     private val executor: Executor,

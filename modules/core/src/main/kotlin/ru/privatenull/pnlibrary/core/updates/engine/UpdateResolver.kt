@@ -9,13 +9,13 @@ import ru.privatenull.pnlibrary.api.updates.*
  * @property allowManagedInstalls whether missing managed products may be added
  * @property installedExternalPlugins normalized names of installed third-party plugins
  */
-data class ResolverPolicy(
+internal data class ResolverPolicy(
     val allowManagedInstalls: Boolean = false,
     val installedExternalPlugins: Set<String> = emptySet(),
 )
 
 /** Result of resolving all managed components as one compatible ecosystem. */
-sealed class ResolutionResult {
+internal sealed class ResolutionResult {
     /**
      * Complete compatible resolution.
      *
@@ -35,7 +35,7 @@ sealed class ResolutionResult {
 }
 
 /** Deterministic API, channel, freeze, and dependency resolver for pnUpdate. */
-class UpdateResolver(private val libraryComponent: ProductId) {
+internal class UpdateResolver(private val libraryComponent: ProductId) {
     /** Resolves all installed products and candidate releases as one atomic ecosystem. */
     @JvmOverloads
     fun resolve(

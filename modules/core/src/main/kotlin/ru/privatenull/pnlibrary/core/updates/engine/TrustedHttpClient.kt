@@ -13,7 +13,7 @@ import java.time.Duration
  * without routing IPv6 should start the server with `-Djava.net.preferIPv4Stack=true`;
  * the JVM reads that flag only at startup, so a library cannot set it reliably anyway.
  */
-open class TrustedHttpClient(
+internal open class TrustedHttpClient(
     private val connectTimeout: Duration,
     private val readTimeout: Duration,
 ) {

@@ -10,7 +10,7 @@ import ru.privatenull.pnlibrary.internal.faststatsvelocity.FastStatsVelocityProv
 import java.nio.file.Path
 
 /** Creates bStats and FastStats sessions for Velocity using explicit platform adapters. */
-class VelocityMetricsFactory(
+internal class VelocityMetricsFactory(
     private val factory: Metrics.Factory,
     private val server: ProxyServer,
     private val logger: Logger,

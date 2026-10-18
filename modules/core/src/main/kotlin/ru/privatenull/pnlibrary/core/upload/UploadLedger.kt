@@ -15,7 +15,7 @@ import java.time.Clock
  * @param file local JSON ledger path; deletion tokens never enter report archives
  * @param clock time source used for deterministic scheduling and cleanup
  */
-class UploadLedger @JvmOverloads constructor(
+internal class UploadLedger @JvmOverloads constructor(
     file: Path,
     private val clock: Clock = Clock.systemUTC(),
 ) {

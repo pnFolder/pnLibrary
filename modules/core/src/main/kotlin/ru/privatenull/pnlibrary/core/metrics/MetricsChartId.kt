@@ -1,7 +1,7 @@
 package ru.privatenull.pnlibrary.core.metrics
 
 /** Chart identifier rules accepted by every supported metrics provider. */
-object MetricsChartId {
+internal object MetricsChartId {
     private val PATTERN = Regex("[A-Za-z0-9_-]{1,64}")
 
     /** Trims [id] and rejects values that a provider could not represent. */

@@ -22,7 +22,7 @@ import java.util.concurrent.atomic.AtomicBoolean
  * native transport failure, later messages use the fallback to avoid repeatedly failing calls.
  * Close this service with the owning plugin to release Adventure platform resources.
  */
-class BukkitAudienceService internal constructor(plugin: Plugin, private val audiences: BukkitAudiences?) : AutoCloseable {
+internal class BukkitAudienceService internal constructor(plugin: Plugin, private val audiences: BukkitAudiences?) : AutoCloseable {
     constructor(plugin: Plugin) : this(plugin, createProvider(plugin))
 
     private val logger = plugin.logger

@@ -5,7 +5,7 @@ import java.io.IOException
 import java.nio.file.Path
 
 /** One interchangeable destination capable of receiving a PN Support Archive. */
-interface UploadProvider {
+internal interface UploadProvider {
 
     /** Stable identifier for the backend, used in the upload ledger. */
     val backendId: String

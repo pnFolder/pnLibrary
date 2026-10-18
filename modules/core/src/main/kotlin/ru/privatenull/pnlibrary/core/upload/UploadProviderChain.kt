@@ -14,7 +14,7 @@ import java.nio.file.Path
  * @param providers non-empty ordered fallback list
  * @throws IllegalArgumentException if [providers] is empty
  */
-class UploadProviderChain(private val providers: List<UploadProvider>) : UploadProvider {
+internal class UploadProviderChain(private val providers: List<UploadProvider>) : UploadProvider {
     init { require(providers.isNotEmpty()) { "At least one upload provider is required" } }
     override val backendId = "provider-chain"
     override fun upload(payload: String): UploadReceipt = attempt { it.upload(payload) }

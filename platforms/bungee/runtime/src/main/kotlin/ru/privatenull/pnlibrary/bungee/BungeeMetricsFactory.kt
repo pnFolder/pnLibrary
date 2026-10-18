@@ -8,7 +8,7 @@ import ru.privatenull.pnlibrary.core.metrics.bstats.BStatsMetricsSession
 import ru.privatenull.pnlibrary.core.metrics.faststats.SimpleFastStatsMetricsSession
 
 /** Opens independently managed bStats and FastStats sessions for BungeeCord plugins. */
-class BungeeMetricsFactory : NativePluginMetricsFactory<Plugin>(
+internal class BungeeMetricsFactory : NativePluginMetricsFactory<Plugin>(
     ownerType = Plugin::class.java,
     platformName = "BungeeCord",
     bStats = { plugin, projectId ->

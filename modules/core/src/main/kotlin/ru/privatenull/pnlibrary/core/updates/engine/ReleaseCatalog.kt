@@ -12,10 +12,10 @@ import java.net.URI
 import java.time.Instant
 
 /** Controls whether a catalogue may use its validated local cache. */
-enum class RefreshMode { CACHED, FORCE_REMOTE }
+internal enum class RefreshMode { CACHED, FORCE_REMOTE }
 
 /** Invalid release-catalogue field with its logical [field] path. */
-class ManifestException(
+internal class ManifestException(
     /** Logical JSON field path that failed validation. */
     val field: String,
     message: String,
@@ -29,7 +29,7 @@ class ManifestException(
  * @property product normalized product identifier
  * @property releases ordered published releases
  */
-data class ReleaseCatalog(val product: String, val releases: List<CatalogRelease>)
+internal data class ReleaseCatalog(val product: String, val releases: List<CatalogRelease>)
 
 /**
  * One catalogue release.
@@ -41,7 +41,7 @@ data class ReleaseCatalog(val product: String, val releases: List<CatalogRelease
  * @property api supported pnLibrary API generations
  * @property artifacts platform-specific downloadable artifacts
  */
-data class CatalogRelease(
+internal data class CatalogRelease(
     val version: SemanticVersion,
     val channel: UpdateChannel,
     val description: String,
@@ -62,7 +62,7 @@ data class CatalogRelease(
  * @property javaMaximum newest supported Java feature version
  * @property url HTTPS artifact location
  */
-data class CatalogArtifact(
+internal data class CatalogArtifact(
     val file: String,
     val platform: PlatformType,
     val minecraft: VersionRangeText? = null,
@@ -73,7 +73,7 @@ data class CatalogArtifact(
 )
 
 /** Strict schema-1 JSON decoder for bounded release catalogues. */
-class ReleaseCatalogCodec(private val maximumBytes: Int = MAX_BYTES) {
+internal class ReleaseCatalogCodec(private val maximumBytes: Int = MAX_BYTES) {
     /** Decodes and validates catalogue [bytes]. */
     fun decode(bytes: ByteArray): ReleaseCatalog {
         require(bytes.size <= maximumBytes) { "release catalog exceeds $maximumBytes bytes" }

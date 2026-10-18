@@ -4,7 +4,7 @@ import org.bukkit.Bukkit
 import ru.privatenull.pnlibrary.common.minecraft.MinecraftVersion
 
 /** Resolves Minecraft versions through Bukkit without leaking Bukkit into the shared version API. */
-object BukkitMinecraftVersion {
+internal object BukkitMinecraftVersion {
     /** Returns the parsed version of the current Bukkit/Paper/Folia server. */
     @JvmStatic
     fun current(): MinecraftVersion = MinecraftVersion.parse(rawCurrent())

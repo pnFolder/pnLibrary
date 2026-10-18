@@ -15,10 +15,10 @@ import java.time.Duration
  * @property bytes encoded catalogue bytes
  * @property fresh whether the cache age is within the requested TTL
  */
-data class CatalogueCacheHit(val bytes: ByteArray, val fresh: Boolean)
+internal data class CatalogueCacheHit(val bytes: ByteArray, val fresh: Boolean)
 
 /** Digest-protected, atomic on-disk cache for release catalogues. */
-class ReleaseCatalogueStore(private val root: Path) {
+internal class ReleaseCatalogueStore(private val root: Path) {
     private val lock = Any()
 
     /** Reads and verifies the cached catalogue for [uri], when present. */

@@ -12,7 +12,7 @@ import java.util.concurrent.Callable
 import java.util.function.Supplier
 
 /** Shared, platform-neutral FastStats helpers used by every platform adapter. */
-object FastStatsSupport {
+internal object FastStatsSupport {
     /** Validates and normalizes a metric identifier accepted by FastStats. */
     @JvmStatic
     fun validId(id: String): String = MetricsChartId.normalize(id)

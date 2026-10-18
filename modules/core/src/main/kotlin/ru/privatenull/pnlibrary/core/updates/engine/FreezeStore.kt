@@ -12,7 +12,7 @@ import java.time.Duration
 import java.time.Instant
 
 /** Persists temporary per-product update freezes with automatic expiry cleanup. */
-class FreezeStore(
+internal class FreezeStore(
     private val path: Path,
     private val clock: Clock = Clock.systemUTC(),
 ) {

@@ -12,7 +12,7 @@ import java.net.URI
  * @property expiresEpochSeconds  Expiry timestamp in epoch seconds (0 if unavailable).
  * @property backend              Backend identifier, e.g. `"mclogs"`.
  */
-data class UploadReceipt(
+internal data class UploadReceipt(
     val link: URI,
     val id: String,
     val deleteToken: String,
