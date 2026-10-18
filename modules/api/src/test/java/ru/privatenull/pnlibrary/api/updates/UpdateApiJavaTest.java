@@ -4,7 +4,7 @@ import org.junit.jupiter.api.Test;
 
 import static org.junit.jupiter.api.Assertions.assertEquals;
 
-class JavaUpdateApiTest {
+class UpdateApiJavaTest {
     @Test
     void buildsProductDescriptorFromJava() {
         ProductDescriptor descriptor = ProductDescriptor.builder().version("3.4.0")

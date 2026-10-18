@@ -4,7 +4,7 @@ import org.junit.jupiter.api.Test;
 import static org.junit.jupiter.api.Assertions.assertEquals;
 import static org.junit.jupiter.api.Assertions.assertThrows;
 
-class JavaDownloadsApiTest {
+class DownloadsApiJavaTest {
     @Test
     void declaresFilesFromJava() {
         FileDownloads downloads = FileDownloads.builder()

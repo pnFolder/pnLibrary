@@ -18,7 +18,7 @@ import java.time.Duration;
 import static org.junit.jupiter.api.Assertions.assertEquals;
 import static org.junit.jupiter.api.Assertions.assertTrue;
 
-class ApiStyleJavaCompilationTest {
+class ApiStyleJavaTest {
     private static PlaceholderRegistration<String> registerPlaceholder(PlaceholderService service) {
         return service.register("status", String.class, placeholder -> placeholder
             .resolve(request -> "online")

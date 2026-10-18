@@ -5,7 +5,7 @@ import org.junit.jupiter.api.Test;
 import static org.junit.jupiter.api.Assertions.assertEquals;
 import static org.junit.jupiter.api.Assertions.assertThrows;
 
-class MenuApiJavaCompilationTest {
+class MenuApiJavaTest {
     @Test
     void menuFactoriesAndBuilderAreJavaFriendly() {
         Menu menu = Menus.chest("Example")

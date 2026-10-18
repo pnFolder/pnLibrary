@@ -7,7 +7,7 @@ import java.nio.file.Paths;
 
 import static org.junit.jupiter.api.Assertions.assertEquals;
 
-class JavaLocalizationApiTest {
+class LocalizationApiJavaTest {
     @Test
     void javaBuildersAreCallable() {
         TranslationRequest request = TranslationRequest.builder()
