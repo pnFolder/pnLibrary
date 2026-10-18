@@ -235,6 +235,19 @@ class UpdateCatalogViewTest {
     }
 
     @Test
+    fun `titles use RGB colors that legacy clients receive as the nearest standard color`() {
+        val title = UpdateCatalogView.catalog(listOf(snapshot("pnlibrary", UpdateState.UP_TO_DATE)), 1, false, bukkit).first()
+        val letters = title.children().take(3)
+        assertEquals(0x8B5CF6, letters.first().color()?.value())
+        assertTrue(letters.map { it.color()?.value() }.distinct().size > 1)
+        assertTrue(letters.none { it.color() is net.kyori.adventure.text.format.NamedTextColor })
+
+        val legacy = net.kyori.adventure.text.serializer.legacy.LegacyComponentSerializer.legacySection().serialize(title)
+        assertFalse(legacy.contains("§x"), legacy)
+        assertTrue(legacy.startsWith("§"), legacy)
+    }
+
+    @Test
     fun `backups show age and open separate confirmation flows rather than executing a restore`() {
         val id = UUID.randomUUID()
         val backup = UpdateBackup(id, now.minusSeconds(4L * 86_400), UUID.randomUUID(),

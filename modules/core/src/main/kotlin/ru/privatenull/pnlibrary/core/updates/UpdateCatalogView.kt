@@ -3,7 +3,7 @@ package ru.privatenull.pnlibrary.core.updates
 import net.kyori.adventure.text.Component
 import net.kyori.adventure.text.event.ClickEvent
 import net.kyori.adventure.text.event.HoverEvent
-import net.kyori.adventure.text.format.NamedTextColor
+import net.kyori.adventure.text.format.TextColor
 import net.kyori.adventure.text.format.TextDecoration
 import ru.privatenull.pnlibrary.api.updates.UpdateBackup
 import ru.privatenull.pnlibrary.api.updates.UpdateChannel
@@ -127,12 +127,12 @@ object UpdateCatalogView {
             if (entries.isEmpty()) result += muted(if (selected.isEmpty()) "Нет компонентов." else "Нет компонентов на этой странице.")
             result += blank()
             result += actions(
-                button("[Проверить]", routes.check, "Проверить новые версии", NamedTextColor.GREEN),
+                button("[Проверить]", routes.check, "Проверить новые версии", UpdatePalette.OK),
                 button(if (updatesOnly) "[Все]" else "[Обновления]", if (updatesOnly) routes.list else routes.available,
                     if (updatesOnly) "Все зарегистрированные компоненты" else "Только доступные и подготовленные обновления",
-                    NamedTextColor.LIGHT_PURPLE),
-                button("[История]", routes.history, "Кто, когда и что обновлял", NamedTextColor.LIGHT_PURPLE),
-                button("[Резервы]", routes.backups, "Сохранённые версии для отката", NamedTextColor.LIGHT_PURPLE),
+                    UpdatePalette.ACCENT),
+                button("[История]", routes.history, "Кто, когда и что обновлял", UpdatePalette.ACCENT),
+                button("[Резервы]", routes.backups, "Сохранённые версии для отката", UpdatePalette.ACCENT),
             )
             pager(page, pageCount(selected.size), if (updatesOnly) routes.available else routes.list)?.let { result += it }
             if (!routes.interactive) {
@@ -165,7 +165,7 @@ object UpdateCatalogView {
                 if (entryDay != day) {
                     day = entryDay
                     result += blank()
-                    result += text(" ${dayLabel(entryDay, now.atZone(zone).toLocalDate())}", NamedTextColor.LIGHT_PURPLE)
+                    result += text(" ${dayLabel(entryDay, now.atZone(zone).toLocalDate())}", UpdatePalette.ACCENT)
                 }
                 result += historyLines(entry, product == null, zone)
             }
@@ -191,26 +191,26 @@ object UpdateCatalogView {
             selected.forEach { backup ->
                 val age = backup.createdAt?.let { age(it, now, zone) } ?: "дата не записана"
                 var line = text("  ")
-                    .append(text(backup.components.joinToString { component -> "${component.product} ${component.backupVersion ?: "?"}" }, NamedTextColor.WHITE))
-                    .append(text(" $age", NamedTextColor.GRAY))
+                    .append(text(backup.components.joinToString { component -> "${component.product} ${component.backupVersion ?: "?"}" }, UpdatePalette.TEXT))
+                    .append(text(" $age", UpdatePalette.MUTED))
                     .hoverEvent(HoverEvent.showText(text(
                         "Набор: ${backup.id}\nОбновлено до: ${backup.components.joinToString { "${it.product} ${it.updatedVersion ?: "?"}" }}" +
                             "\nКонфигураций: ${backup.configurationFiles}")))
-                line = line.append(button(" [Откат]", routes.rollback(backup.id), "Открыть подтверждение отката без изменения конфигураций", NamedTextColor.YELLOW))
+                line = line.append(button(" [Откат]", routes.rollback(backup.id), "Открыть подтверждение отката без изменения конфигураций", UpdatePalette.WARN))
                 if (backup.configurationFiles > 0) {
                     line = line.append(button(" [+Конфиг]", routes.rollback(backup.id, true),
-                        "Открыть подтверждение отката JAR и выбранных конфигураций", NamedTextColor.GOLD))
+                        "Открыть подтверждение отката JAR и выбранных конфигураций", UpdatePalette.ORANGE))
                 }
                 result += line
                 if (!routes.interactive) {
-                    result += text("    откат: ${routes.rollback(backup.id)}", NamedTextColor.DARK_GRAY)
+                    result += text("    откат: ${routes.rollback(backup.id)}", UpdatePalette.DIM)
                 }
             }
             if (selected.isEmpty()) result += muted(if (backups.isEmpty()) "Нет сохранённых наборов." else "Нет наборов на этой странице.")
             result += blank()
             result += actions(
-                button("[Плагины]", routes.list, "Все зарегистрированные компоненты", NamedTextColor.LIGHT_PURPLE),
-                button("[История]", routes.history, "Кто, когда и что обновлял", NamedTextColor.LIGHT_PURPLE),
+                button("[Плагины]", routes.list, "Все зарегистрированные компоненты", UpdatePalette.ACCENT),
+                button("[История]", routes.history, "Кто, когда и что обновлял", UpdatePalette.ACCENT),
             )
             pager(page, pageCount(backups.size), routes.backups)?.let { result += it }
             return result
@@ -218,14 +218,14 @@ object UpdateCatalogView {
 
         fun info(snapshot: UpdateSnapshot): List<Component> {
             val result = mutableListOf<Component>(
-                text(snapshot.product, NamedTextColor.LIGHT_PURPLE, TextDecoration.BOLD)
+                text(snapshot.product, UpdatePalette.ACCENT, TextDecoration.BOLD)
                     .append(text(" ${stateLabel(snapshot.state)}", stateColor(snapshot.state))),
             )
-            snapshot.message?.takeIf { it.isNotBlank() }?.let { result += text(" ${it.take(MAX_MESSAGE)}", NamedTextColor.GRAY) }
+            snapshot.message?.takeIf { it.isNotBlank() }?.let { result += text(" ${it.take(MAX_MESSAGE)}", UpdatePalette.MUTED) }
             result += blank()
             result += field("Версия", snapshot.currentVersion)
             snapshot.latestVersion?.takeIf { it != snapshot.currentVersion }?.let { latest ->
-                var line = field("Доступна", latest, NamedTextColor.GREEN)
+                var line = field("Доступна", latest, UpdatePalette.OK)
                 snapshot.latestChangelogUrl?.takeIf(::safeLink)?.let { link -> line = line.append(changelogButton(link)) }
                 result += line
             }
@@ -236,11 +236,11 @@ object UpdateCatalogView {
             result += blank()
             val buttons = mutableListOf<Component>()
             routes.update?.takeIf { snapshot.state == UpdateState.UPDATE_AVAILABLE }?.let { update ->
-                buttons += button("[Обновить]", update(snapshot.product), "Проверить и подготовить обновление. Применение — после перезапуска.", NamedTextColor.GREEN)
+                buttons += button("[Обновить]", update(snapshot.product), "Проверить и подготовить обновление. Применение — после перезапуска.", UpdatePalette.OK)
             }
-            buttons += button("[Настройки]", routes.settings(snapshot.product), "Канал, автозагрузка и удержание обновлений", NamedTextColor.LIGHT_PURPLE)
-            buttons += button("[История]", routes.history(snapshot.product), "События только этого плагина", NamedTextColor.LIGHT_PURPLE)
-            buttons += button("[Назад]", routes.list, "К списку плагинов", NamedTextColor.GRAY)
+            buttons += button("[Настройки]", routes.settings(snapshot.product), "Канал, автозагрузка и удержание обновлений", UpdatePalette.ACCENT)
+            buttons += button("[История]", routes.history(snapshot.product), "События только этого плагина", UpdatePalette.ACCENT)
+            buttons += button("[Назад]", routes.list, "К списку плагинов", UpdatePalette.MUTED)
             result += actions(*buttons.toTypedArray())
             if (!routes.interactive) {
                 result += commandHints(
@@ -256,7 +256,7 @@ object UpdateCatalogView {
             val product = snapshot.product
             val held = snapshot.state == UpdateState.FROZEN
             val result = mutableListOf<Component>(
-                text(product, NamedTextColor.LIGHT_PURPLE, TextDecoration.BOLD).append(text(" настройки", NamedTextColor.GRAY)),
+                text(product, UpdatePalette.ACCENT, TextDecoration.BOLD).append(text(" настройки", UpdatePalette.MUTED)),
                 text("  ${snapshot.currentVersion} · ${channelName(snapshot.channel)}", channelColor(snapshot.channel)),
                 blank(),
                 choices("Канал", CHANNELS.map { it to channelName(it) }, snapshot.channel) { channel ->
@@ -273,8 +273,8 @@ object UpdateCatalogView {
                 blank(),
             )
             result += actions(
-                button("[Сведения]", routes.info(product), "Карточка плагина", NamedTextColor.LIGHT_PURPLE),
-                button("[Назад]", routes.list, "К списку плагинов", NamedTextColor.GRAY),
+                button("[Сведения]", routes.info(product), "Карточка плагина", UpdatePalette.ACCENT),
+                button("[Назад]", routes.list, "К списку плагинов", UpdatePalette.MUTED),
             )
             if (!routes.interactive || !routes.editable) {
                 result += commandHints(
@@ -290,15 +290,15 @@ object UpdateCatalogView {
 
         private fun catalogLine(snapshot: UpdateSnapshot): Component {
             val staged = snapshot.state == UpdateState.UPDATE_STAGED || snapshot.state == UpdateState.DOWNLOADING
-            var line = text("  ${snapshot.product}", NamedTextColor.WHITE).append(text(" ${snapshot.currentVersion}", NamedTextColor.GRAY))
+            var line = text("  ${snapshot.product}", UpdatePalette.TEXT).append(text(" ${snapshot.currentVersion}", UpdatePalette.MUTED))
             val latest = snapshot.latestVersion?.takeIf { it != snapshot.currentVersion }
             val update = routes.update
             line = when {
                 snapshot.state == UpdateState.UPDATE_AVAILABLE && update != null && routes.interactive ->
                     line.append(button(" [↑${latest?.let { " $it" }.orEmpty()}]", update(snapshot.product),
-                        "Проверить и подготовить обновление. Применение — после перезапуска.", NamedTextColor.GREEN))
+                        "Проверить и подготовить обновление. Применение — после перезапуска.", UpdatePalette.OK))
                 snapshot.state == UpdateState.UPDATE_AVAILABLE ->
-                    line.append(text(" → ${latest ?: "новая версия"}", NamedTextColor.GREEN))
+                    line.append(text(" → ${latest ?: "новая версия"}", UpdatePalette.OK))
                 staged -> line.append(text(" → ${latest ?: "?"} ${stateLabel(snapshot.state)}", stateColor(snapshot.state)))
                 snapshot.state != UpdateState.UP_TO_DATE -> line.append(text(" ${stateLabel(snapshot.state)}", stateColor(snapshot.state)))
                 else -> line
@@ -309,7 +309,7 @@ object UpdateCatalogView {
             snapshot.latestChangelogUrl?.takeIf(::safeLink)?.takeIf { snapshot.state in pending }?.let { link ->
                 line = line.append(changelogButton(link))
             }
-            line = line.append(button(" [i]", routes.info(snapshot.product), "Сведения о плагине", NamedTextColor.DARK_AQUA))
+            line = line.append(button(" [i]", routes.info(snapshot.product), "Сведения о плагине", UpdatePalette.INFO_DIM))
             return line.hoverEvent(HoverEvent.showText(text(
                 "Канал: ${channelName(snapshot.channel)}\nАвтозагрузка: ${if (snapshot.automaticDownload) "включена" else "выключена"}" +
                     snapshot.message?.takeIf { it.isNotBlank() }?.let { "\n${it.take(MAX_MESSAGE)}" }.orEmpty())))
@@ -317,8 +317,8 @@ object UpdateCatalogView {
 
         private fun historyLines(entry: UpdateHistoryEntry, offerFilter: Boolean, zone: ZoneId): List<Component> {
             val (outcome, color) = outcome(entry)
-            val time = text("  ${clock.format(entry.occurredAt.atZone(zone))} ", NamedTextColor.DARK_GRAY)
-            val actor = text(" · ${entry.actor.name}", NamedTextColor.DARK_GRAY)
+            val time = text("  ${clock.format(entry.occurredAt.atZone(zone))} ", UpdatePalette.DIM)
+            val actor = text(" · ${entry.actor.name}", UpdatePalette.DIM)
             fun hover(product: String?): HoverEvent<Component> = HoverEvent.showText(text(buildString {
                 product?.let { appendLine(it) }
                 appendLine("${operationLabel(entry.operation)} · ${entry.actor.kind.name.lowercase(Locale.ROOT)} ${entry.actor.name}")
@@ -329,7 +329,7 @@ object UpdateCatalogView {
             }.trimEnd()))
             if (entry.changes.isEmpty()) {
                 val body = entry.message?.takeIf { it.isNotBlank() }?.take(MAX_LINE) ?: operationLabel(entry.operation)
-                return listOf(time.append(text("$body ", NamedTextColor.WHITE)).append(text(outcome, color)).append(actor).hoverEvent(hover(null)))
+                return listOf(time.append(text("$body ", UpdatePalette.TEXT)).append(text(outcome, color)).append(actor).hoverEvent(hover(null)))
             }
             return entry.changes.map { change ->
                 val transition = when (entry.operation) {
@@ -338,8 +338,8 @@ object UpdateCatalogView {
                     ComponentLedger.OPERATION_REMOVED, ComponentLedger.OPERATION_SETTINGS_CHANGED -> "${change.from ?: change.to}"
                     else -> "${change.from ?: "-"} → ${change.to}"
                 }
-                var line = time.append(text("${change.product} ", NamedTextColor.WHITE))
-                    .append(text("$transition ", NamedTextColor.GRAY))
+                var line = time.append(text("${change.product} ", UpdatePalette.TEXT))
+                    .append(text("$transition ", UpdatePalette.MUTED))
                     .append(text(outcome, color))
                     .append(actor)
                     .hoverEvent(hover(change.product.toString()))
@@ -348,18 +348,18 @@ object UpdateCatalogView {
             }
         }
 
-        private fun outcome(entry: UpdateHistoryEntry): Pair<String, NamedTextColor> = when {
-            entry.operation == ComponentLedger.OPERATION_ADDED -> "установлен" to NamedTextColor.GREEN
-            entry.operation == ComponentLedger.OPERATION_REMOVED -> "удалён" to NamedTextColor.RED
-            entry.operation == ComponentLedger.OPERATION_VERSION_CHANGED -> "версия изменена вручную" to NamedTextColor.GOLD
-            entry.operation == ComponentLedger.OPERATION_SETTINGS_CHANGED -> (entry.message ?: "настройки изменены") to NamedTextColor.YELLOW
-            entry.state == UpdateState.FAILED -> "ошибка" to NamedTextColor.RED
-            entry.operation == "HEALTH" && entry.state == UpdateState.UP_TO_DATE -> "применено после перезапуска" to NamedTextColor.GREEN
-            entry.operation == "HEALTH_ROLLBACK" && entry.state == UpdateState.ROLLED_BACK -> "откат подтверждён после перезапуска" to NamedTextColor.GREEN
-            entry.operation == "ROLLBACK" || entry.state == UpdateState.ROLLED_BACK -> "откат подготовлен к перезапуску" to NamedTextColor.GOLD
-            entry.state == UpdateState.UPDATE_STAGED -> "подготовлено к перезапуску" to NamedTextColor.GOLD
-            entry.state == UpdateState.UPDATE_AVAILABLE -> "доступна новая версия" to NamedTextColor.AQUA
-            else -> stateLabel(entry.state) to NamedTextColor.GRAY
+        private fun outcome(entry: UpdateHistoryEntry): Pair<String, TextColor> = when {
+            entry.operation == ComponentLedger.OPERATION_ADDED -> "установлен" to UpdatePalette.OK
+            entry.operation == ComponentLedger.OPERATION_REMOVED -> "удалён" to UpdatePalette.DANGER
+            entry.operation == ComponentLedger.OPERATION_VERSION_CHANGED -> "версия изменена вручную" to UpdatePalette.ORANGE
+            entry.operation == ComponentLedger.OPERATION_SETTINGS_CHANGED -> (entry.message ?: "настройки изменены") to UpdatePalette.WARN
+            entry.state == UpdateState.FAILED -> "ошибка" to UpdatePalette.DANGER
+            entry.operation == "HEALTH" && entry.state == UpdateState.UP_TO_DATE -> "применено после перезапуска" to UpdatePalette.OK
+            entry.operation == "HEALTH_ROLLBACK" && entry.state == UpdateState.ROLLED_BACK -> "откат подтверждён после перезапуска" to UpdatePalette.OK
+            entry.operation == "ROLLBACK" || entry.state == UpdateState.ROLLED_BACK -> "откат подготовлен к перезапуску" to UpdatePalette.ORANGE
+            entry.state == UpdateState.UPDATE_STAGED -> "подготовлено к перезапуску" to UpdatePalette.ORANGE
+            entry.state == UpdateState.UPDATE_AVAILABLE -> "доступна новая версия" to UpdatePalette.INFO
+            else -> stateLabel(entry.state) to UpdatePalette.MUTED
         }
 
         // --- building blocks ---------------------------------------------------------------------------------
@@ -371,15 +371,15 @@ object UpdateCatalogView {
             current: T,
             command: (T) -> Pair<String, String>,
         ): Component {
-            var line = text("  $label: ", NamedTextColor.GRAY)
+            var line = text("  $label: ", UpdatePalette.MUTED)
             options.forEach { (value, name) ->
                 line = if (value == current) {
-                    line.append(text(name, NamedTextColor.GREEN, TextDecoration.BOLD))
+                    line.append(text(name, UpdatePalette.OK, TextDecoration.BOLD))
                 } else if (routes.interactive && routes.editable) {
                     val (run, hint) = command(value)
-                    line.append(text(name, NamedTextColor.GRAY).clickEvent(ClickEvent.runCommand(run)).hoverEvent(HoverEvent.showText(text(hint))))
+                    line.append(text(name, UpdatePalette.MUTED).clickEvent(ClickEvent.runCommand(run)).hoverEvent(HoverEvent.showText(text(hint))))
                 } else {
-                    line.append(text(name, NamedTextColor.DARK_GRAY))
+                    line.append(text(name, UpdatePalette.DIM))
                 }
                 line = line.append(text(" "))
             }
@@ -387,29 +387,29 @@ object UpdateCatalogView {
         }
 
         private fun historyNavigation(page: Int, totalPages: Int, base: String): Component {
-            var line = text("  страница $page из $totalPages", NamedTextColor.DARK_GRAY)
-            if (page > 1) line = line.append(button(" [Новее]", "$base ${page - 1}", "Более свежие события", NamedTextColor.LIGHT_PURPLE))
-            if (page < totalPages) line = line.append(button(" [Старее]", "$base ${page + 1}", "Более старые события", NamedTextColor.LIGHT_PURPLE))
-            if (!routes.interactive && page < totalPages) line = line.append(text(" (следующая: $base ${page + 1})", NamedTextColor.DARK_GRAY))
-            return line.append(button(" [Плагины]", routes.list, "Все зарегистрированные компоненты", NamedTextColor.LIGHT_PURPLE))
+            var line = text("  страница $page из $totalPages", UpdatePalette.DIM)
+            if (page > 1) line = line.append(button(" [Новее]", "$base ${page - 1}", "Более свежие события", UpdatePalette.ACCENT))
+            if (page < totalPages) line = line.append(button(" [Старее]", "$base ${page + 1}", "Более старые события", UpdatePalette.ACCENT))
+            if (!routes.interactive && page < totalPages) line = line.append(text(" (следующая: $base ${page + 1})", UpdatePalette.DIM))
+            return line.append(button(" [Плагины]", routes.list, "Все зарегистрированные компоненты", UpdatePalette.ACCENT))
         }
 
         private fun pager(page: Int, totalPages: Int, base: String): Component? {
             if (totalPages <= 1) return null
-            var line = text("  страница $page из $totalPages", NamedTextColor.DARK_GRAY)
-            if (page > 1) line = line.append(button(" [Назад]", "$base ${page - 1}", "Предыдущая страница", NamedTextColor.LIGHT_PURPLE))
-            if (page < totalPages) line = line.append(button(" [Далее]", "$base ${page + 1}", "Следующая страница", NamedTextColor.LIGHT_PURPLE))
+            var line = text("  страница $page из $totalPages", UpdatePalette.DIM)
+            if (page > 1) line = line.append(button(" [Назад]", "$base ${page - 1}", "Предыдущая страница", UpdatePalette.ACCENT))
+            if (page < totalPages) line = line.append(button(" [Далее]", "$base ${page + 1}", "Следующая страница", UpdatePalette.ACCENT))
             if (!routes.interactive) {
-                line = line.append(text(if (page < totalPages) " (следующая: $base ${page + 1})" else "", NamedTextColor.DARK_GRAY))
+                line = line.append(text(if (page < totalPages) " (следующая: $base ${page + 1})" else "", UpdatePalette.DIM))
             }
             return line
         }
 
         private fun title(name: String, details: String): Component =
-            text(name, NamedTextColor.LIGHT_PURPLE, TextDecoration.BOLD).append(text(if (details.isBlank()) "" else " $details", NamedTextColor.GRAY))
+            UpdatePalette.gradient(name).append(text(if (details.isBlank()) "" else " $details", UpdatePalette.MUTED))
 
-        private fun field(label: String, value: String, color: NamedTextColor = NamedTextColor.WHITE): Component =
-            text("  $label: ", NamedTextColor.GRAY).append(text(value, color))
+        private fun field(label: String, value: String, color: TextColor = UpdatePalette.TEXT): Component =
+            text("  $label: ", UpdatePalette.MUTED).append(text(value, color))
 
         private fun actions(vararg buttons: Component): Component {
             val visible = buttons.filter { it != Component.empty() }
@@ -418,26 +418,26 @@ object UpdateCatalogView {
         }
 
         /** A clickable label, or nothing when the reader cannot click; [commandHints] lists the commands instead. */
-        private fun button(label: String, command: String, hint: String, color: NamedTextColor): Component =
+        private fun button(label: String, command: String, hint: String, color: TextColor): Component =
             if (!routes.interactive) Component.empty()
             else text(label, color).clickEvent(ClickEvent.runCommand(command)).hoverEvent(HoverEvent.showText(text(hint)))
 
         private fun changelogButton(link: String): Component =
-            if (!routes.interactive) text(" $link", NamedTextColor.AQUA)
-            else text(" [Изменения]", NamedTextColor.AQUA).clickEvent(ClickEvent.openUrl(link))
+            if (!routes.interactive) text(" $link", UpdatePalette.INFO)
+            else text(" [Изменения]", UpdatePalette.INFO).clickEvent(ClickEvent.openUrl(link))
                 .hoverEvent(HoverEvent.showText(text("Открыть список изменений")))
 
         /** The footer of a reader that cannot click: what to type instead of pressing the buttons. */
         private fun commandHints(vararg hints: Pair<String?, String>): Component {
             val parts = hints.filter { it.first != null }.joinToString("  ") { "${it.first} (${it.second})" }
-            return text("  Команды: $parts", NamedTextColor.DARK_GRAY)
+            return text("  Команды: $parts", UpdatePalette.DIM)
         }
 
-        private fun muted(value: String): Component = text("  $value", NamedTextColor.GRAY)
+        private fun muted(value: String): Component = text("  $value", UpdatePalette.MUTED)
 
         private fun blank(): Component = Component.empty()
 
-        private fun text(value: String, color: NamedTextColor? = null, vararg decorations: TextDecoration): Component {
+        private fun text(value: String, color: TextColor? = null, vararg decorations: TextDecoration): Component {
             val shown = if (routes.ascii) asciiOnly(value) else value
             var component = Component.text(shown)
             if (color != null) component = component.color(color)
@@ -490,12 +490,12 @@ object UpdateCatalogView {
 
         private fun channelName(channel: UpdateChannel): String = channel.name.lowercase(Locale.ROOT)
 
-        private fun channelColor(channel: UpdateChannel): NamedTextColor = when (channel) {
-            UpdateChannel.STABLE -> NamedTextColor.GREEN
-            UpdateChannel.RC -> NamedTextColor.AQUA
-            UpdateChannel.BETA -> NamedTextColor.YELLOW
-            UpdateChannel.ALPHA -> NamedTextColor.GOLD
-            UpdateChannel.DEV -> NamedTextColor.RED
+        private fun channelColor(channel: UpdateChannel): TextColor = when (channel) {
+            UpdateChannel.STABLE -> UpdatePalette.OK
+            UpdateChannel.RC -> UpdatePalette.INFO
+            UpdateChannel.BETA -> UpdatePalette.WARN
+            UpdateChannel.ALPHA -> UpdatePalette.ORANGE
+            UpdateChannel.DEV -> UpdatePalette.DANGER
         }
 
         private fun channelHint(channel: UpdateChannel): String = when (channel) {
@@ -506,12 +506,12 @@ object UpdateCatalogView {
             UpdateChannel.DEV -> "Все сборки, включая разрабатываемые: только для тестового сервера"
         }
 
-        private fun stateColor(state: UpdateState): NamedTextColor = when (state) {
-            UpdateState.UPDATE_AVAILABLE -> NamedTextColor.GREEN
-            UpdateState.UPDATE_STAGED, UpdateState.DOWNLOADING, UpdateState.ROLLED_BACK -> NamedTextColor.GOLD
-            UpdateState.FAILED, UpdateState.BLOCKED, UpdateState.INCOMPATIBLE -> NamedTextColor.RED
-            UpdateState.FROZEN -> NamedTextColor.YELLOW
-            else -> NamedTextColor.GRAY
+        private fun stateColor(state: UpdateState): TextColor = when (state) {
+            UpdateState.UPDATE_AVAILABLE -> UpdatePalette.OK
+            UpdateState.UPDATE_STAGED, UpdateState.DOWNLOADING, UpdateState.ROLLED_BACK -> UpdatePalette.ORANGE
+            UpdateState.FAILED, UpdateState.BLOCKED, UpdateState.INCOMPATIBLE -> UpdatePalette.DANGER
+            UpdateState.FROZEN -> UpdatePalette.WARN
+            else -> UpdatePalette.MUTED
         }
 
         private fun stateLabel(state: UpdateState): String = when (state) {

@@ -1,7 +1,7 @@
 package ru.privatenull.pnlibrary.core.updates
 
 import net.kyori.adventure.text.Component
-import net.kyori.adventure.text.format.NamedTextColor
+import net.kyori.adventure.text.format.TextColor
 import ru.privatenull.pnlibrary.api.commands.ArgumentType
 import ru.privatenull.pnlibrary.api.commands.CommandContext
 import ru.privatenull.pnlibrary.api.commands.CommandNodeBuilder
@@ -259,7 +259,7 @@ class UpdateCatalogCommands(
         return false
     }
 
-    private fun error(text: String): Component = Component.text(text, NamedTextColor.RED)
+    private fun error(text: String): Component = Component.text(text, UpdatePalette.DANGER)
 
     private companion object {
         val SWITCH_SUGGESTIONS = listOf("on", "off")
