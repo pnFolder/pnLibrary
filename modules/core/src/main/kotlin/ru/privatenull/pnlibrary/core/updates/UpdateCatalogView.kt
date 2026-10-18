@@ -338,7 +338,7 @@ object UpdateCatalogView {
                 text("  ${version(snapshot.currentVersion)}", UpdatePalette.SOFT).append(dot()).append(channelTag(snapshot.channel)),
             )
             if (routes.interactive && !routes.editable) result += note("Только просмотр: нет права менять настройки.")
-            if (clickable) result += note("Нажмите на кнопку, чтобы выбрать. ${glyph('■')} — выбрано сейчас.")
+            if (clickable) result += note("Нажмите на кнопку, чтобы выбрать. ${glyph('✔')} — выбрано сейчас.")
             if (clickable) result += note("Пауза — не дольше 7 дней.")
             result += blank()
             result += choices("Канал", CHANNELS.map { it to channelName(it) }, snapshot.channel, ::channelColor) { channel ->
@@ -542,8 +542,8 @@ object UpdateCatalogView {
             if (!clickable) Component.empty() else text(" ").append(button("[изменить]", routes.settings(product), hint, UpdatePalette.ACCENT))
 
         /**
-         * A row of mutually exclusive choices drawn as buttons, each in its own color: the current one is `[■ name]`,
-         * bold and with colored brackets, the others have gray brackets and switch to that choice on click.
+         * A row of mutually exclusive choices drawn as buttons, each in its own color: the current one is `[✔ name]` in
+         * its color, the others have gray brackets and switch to that choice on click.
          */
         private fun <T> choices(
             label: String,
@@ -724,9 +724,9 @@ object UpdateCatalogView {
         private fun bracketed(label: String, color: TextColor): Component =
             text("[", UpdatePalette.SOFT).append(text(label, color)).append(text("]", UpdatePalette.SOFT))
 
-        /** The current choice of a settings row: bold, marked and in its own color, so it reads as already pressed. */
+        /** The current choice of a settings row: marked with a check and in its own color, so it reads as already pressed. */
         private fun selected(label: String, color: TextColor): Component =
-            Component.text(shown("[${glyph('■')} $label]"), color).decoration(TextDecoration.BOLD, true)
+            Component.text(shown("[${glyph('✔')} $label]"), color)
                 .hoverEvent(tooltip(text("Выбрано сейчас", color)))
 
         /** A settings row: the label in white, so the row reads as a control rather than a gray caption. */
@@ -900,7 +900,7 @@ object UpdateCatalogView {
 
     /** ASCII stand-ins for the console, see `asciiOnly`. */
     private val ASCII: Map<Char, String> = mapOf(
-        '─' to "-", '■' to "*", '□' to "o", '›' to ">", '✦' to "*", '·' to "|", '»' to "->", '«' to "<-", '√' to "+",
+        '─' to "-", '■' to "*", '✔' to "+", '□' to "o", '›' to ">", '✦' to "*", '·' to "|", '»' to "->", '«' to "<-", '√' to "+",
         '→' to "->", '—' to "-", '–' to "-", '…' to "...",
     )
 }
