@@ -166,12 +166,14 @@ class UpdateCatalogCommands(
             context.sender.send(error("Неизвестный канал $value. Доступны: ${UpdateCatalogView.CHANNELS.joinToString { it.name.lowercase(Locale.ROOT) }}."))
             return
         }
-        change(context) { product, actor -> library.updates.setChannel(product, channel, actor) }
+        change(context, "Канал: ${channel.name.lowercase(Locale.ROOT)}") { product, actor -> library.updates.setChannel(product, channel, actor) }
     }
 
     private fun setAutomatic(context: CommandContext) {
         val enabled = switch(context) ?: return
-        change(context) { product, actor -> library.updates.setAutomaticDownload(product, enabled, actor) }
+        change(context, if (enabled) "Автозагрузка включена" else "Автозагрузка выключена") { product, actor ->
+            library.updates.setAutomaticDownload(product, enabled, actor)
+        }
     }
 
     /** Pauses updates for a period such as `3d` (`on` means seven days), or lifts the pause with `off`. */
@@ -185,7 +187,14 @@ class UpdateCatalogCommands(
                 return
             }
         }
-        change(context) { product, actor -> library.updates.setHeld(product, duration, actor) }
+        val saved = if (duration == null) "Пауза снята" else "Обновления на паузе ${period(duration)}"
+        change(context, saved) { product, actor -> library.updates.setHeld(product, duration, actor) }
+    }
+
+    private fun period(duration: Duration): String = when {
+        duration.toDays() >= 1 -> "${duration.toDays()} д"
+        duration.toHours() >= 1 -> "${duration.toHours()} ч"
+        else -> "${duration.toMinutes()} мин"
     }
 
     private fun switch(context: CommandContext): Boolean? {
@@ -199,8 +208,8 @@ class UpdateCatalogCommands(
         return parsed
     }
 
-    /** Applies a setting, then shows the refreshed settings card, or the reason it was refused. */
-    private fun change(context: CommandContext, apply: (String, UpdateActor) -> CompletionStage<UpdateSnapshot>) {
+    /** Applies a setting, then confirms it with [saved] above the refreshed settings card, or shows why it was refused. */
+    private fun change(context: CommandContext, saved: String, apply: (String, UpdateActor) -> CompletionStage<UpdateSnapshot>) {
         if (!ready(context)) return
         val product = context.get<String>("plugin")
         val sender = context.sender
@@ -211,7 +220,9 @@ class UpdateCatalogCommands(
                     val cause = generateSequence(failure) { it.cause }.last()
                     sender.send(error(cause.message ?: "Не удалось изменить настройку."))
                 } else {
-                    UpdateCatalogView.settings(snapshot, routesFor(context), library.updates.heldUntil(snapshot.product)).forEach(sender::send)
+                    val routes = routesFor(context)
+                    val card = UpdateCatalogView.settings(snapshot, routes, library.updates.heldUntil(snapshot.product))
+                    (card + UpdateCatalogView.notice(UpdateNotice(UpdateTone.SUCCESS, "Сохранено. $saved."), routes)).forEach(sender::send)
                 }
             })
         }

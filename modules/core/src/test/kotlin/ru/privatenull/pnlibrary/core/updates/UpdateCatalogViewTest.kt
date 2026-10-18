@@ -41,8 +41,8 @@ class UpdateCatalogViewTest {
             routes = bukkit,
         )
         val text = lines.joinToString("\n", transform = ::plain)
-        assertTrue(plain(lines[0]).startsWith("── ✦ Каталог плагинов ─"), plain(lines[0]))
-        assertEquals("  2 плагина · 1 обновление", plain(lines[1]))
+        assertTrue(plain(lines[1]).startsWith("── ✦ Каталог плагинов ─"), plain(lines[1]))
+        assertEquals("  2 плагина · 1 обновление", plain(lines[2]))
         assertTrue(text.contains("■ pnlibrary v1.0.0 » v1.1.0 [Обновить]"), text)
         assertTrue(text.contains("■ currency v1.0.0"), text)
         val actions = lines.flatMap(::clicks)
@@ -74,11 +74,11 @@ class UpdateCatalogViewTest {
         val busy = catalog(listOf(
             snapshot("a", UpdateState.UPDATE_STAGED), snapshot("b", UpdateState.FAILED), snapshot("c", UpdateState.INCOMPATIBLE),
         ), routes = proxy)
-        assertEquals("  3 плагина · 1 к перезапуску · 2 ошибки", plain(busy[1]))
+        assertEquals("  3 плагина · 1 к перезапуску · 2 ошибки", plain(busy[2]))
         assertTrue(plain(busy.first { plain(it).contains(" a ") }).contains("v1.0.0 » v1.1.0 · ждёт перезапуска"))
 
         val calm = catalog(listOf(snapshot("a", UpdateState.UP_TO_DATE)), routes = proxy)
-        assertEquals("  1 плагин · √ всё актуально", plain(calm[1]))
+        assertEquals("  1 плагин · √ всё актуально", plain(calm[2]))
         val none = catalog(listOf(snapshot("a", UpdateState.UP_TO_DATE)), updatesOnly = true, routes = proxy)
         assertTrue(none.any { plain(it) == "  √ Все плагины актуальны" })
     }
@@ -123,7 +123,7 @@ class UpdateCatalogViewTest {
         val lines = history(listOf(today, yesterday, older))
         val text = lines.joinToString("\n", transform = ::plain)
 
-        assertTrue(plain(lines.first()).startsWith("── ✦ История ─"))
+        assertTrue(plain(lines[1]).startsWith("── ✦ История ─"))
         assertTrue(text.indexOf("Сегодня") < text.indexOf("Вчера"))
         assertTrue(text.indexOf("Вчера") < text.indexOf("12 сентября"))
         assertTrue(text.contains("■ 09:05 pnlibrary v1.0.0 » v1.1.0 · подготовлено · Admin"), text)
@@ -141,7 +141,7 @@ class UpdateCatalogViewTest {
         assertTrue(hover(all.first { plain(it).contains("pnlibrary v1.0.0") }).contains("/pn updates history plugin pnlibrary"))
 
         val filtered = history(listOf(entry), product = "pnlibrary")
-        assertTrue(plain(filtered.first()).contains("История · pnlibrary"))
+        assertTrue(plain(filtered[1]).contains("История · pnlibrary"))
         assertNull(filtered.first { plain(it).contains("v1.0.0 » v1.1.0") }.clickEvent())
         assertTrue(filtered.flatMap(::clicks).containsAll(listOf("/pn updates history", "/pn updates info pnlibrary")))
     }
@@ -202,7 +202,7 @@ class UpdateCatalogViewTest {
             listOf(snapshot("pnlibrary", UpdateState.UP_TO_DATE, channel = UpdateChannel.BETA), snapshot("shop", UpdateState.UP_TO_DATE)),
             routes = bukkit,
         )
-        assertTrue(plain(lines.first { plain(it).contains("pnlibrary v1.0.0") }).endsWith("· beta"))
+        assertTrue(plain(lines.first { plain(it).contains("pnlibrary v1.0.0") }).endsWith("· beta ›"))
         assertFalse(plain(lines.first { plain(it).contains("shop v1.0.0") }).contains("stable"))
     }
 
@@ -210,9 +210,10 @@ class UpdateCatalogViewTest {
     fun `settings card offers every channel, automatic download and holding as buttons except the current choice`() {
         val lines = UpdateCatalogView.settings(snapshot("pnlibrary", UpdateState.UP_TO_DATE, channel = UpdateChannel.BETA), bukkit)
         val text = lines.joinToString("\n", transform = ::plain)
-        assertTrue(plain(lines.first()).startsWith("── ✦ Настройки · pnlibrary ─"))
-        assertTrue(text.contains("Канал: stable  rc  ■ beta  alpha  dev"))
-        assertTrue(text.contains("Автозагрузка: вкл  ■ выкл"))
+        assertTrue(plain(lines[1]).startsWith("── ✦ Настройки · pnlibrary ─"))
+        assertTrue(text.contains("Канал: □ stable  □ rc  ■ beta  □ alpha  □ dev"))
+        assertTrue(text.contains("Автозагрузка: □ вкл  ■ выкл"))
+        assertTrue(text.contains("Нажмите на вариант, чтобы выбрать."))
         assertTrue(text.contains("Пауза: нет · 1 ч  1 д  3 д  7 д  30 д"))
 
         val actions = lines.flatMap(::clicks)
@@ -232,7 +233,7 @@ class UpdateCatalogViewTest {
         val text = lines.joinToString("\n", transform = ::plain)
         assertFalse(lines.flatMap(::clicks).any { it.contains(" set ") })
         assertTrue(text.contains("Только просмотр"))
-        assertTrue(text.contains("Канал: ■ stable  rc  beta  alpha  dev"))
+        assertTrue(text.contains("Канал: ■ stable  □ rc  □ beta  □ alpha  □ dev"))
         assertTrue(text.contains("Пауза: до 17 окт. 13:00 · ещё 1 ч") || text.contains("Пауза: до 17 окт 13:00 · ещё 1 ч"), text)
         assertFalse(text.contains("[Снять]"))
     }
@@ -274,7 +275,7 @@ class UpdateCatalogViewTest {
 
     @Test
     fun `titles use RGB colors that legacy clients receive as the nearest standard color`() {
-        val title = catalog(listOf(snapshot("pnlibrary", UpdateState.UP_TO_DATE)), routes = bukkit).first()
+        val title = catalog(listOf(snapshot("pnlibrary", UpdateState.UP_TO_DATE)), routes = bukkit)[1]
         val letters = title.children().take(3)
         assertTrue(letters.none { it.hasDecoration(TextDecoration.BOLD) })
         assertEquals(0x8B5CF6, letters.first().color()?.value())
@@ -305,7 +306,7 @@ class UpdateCatalogViewTest {
             listOf(UpdateBackupComponent(ProductId.of("pnlibrary"), "2.0.0", "1.0.0")), 2)
         val lines = UpdateCatalogView.backups(listOf(backup), 1, bukkit, now = now, zone = ZoneOffset.UTC)
         val actions = lines.flatMap(::clicks)
-        assertTrue(plain(lines.first()).startsWith("── ✦ Резервы · 1 набор ─"))
+        assertTrue(plain(lines[1]).startsWith("── ✦ Резервы · 1 набор ─"))
         val row = lines.first { plain(it).contains("pnlibrary") }
         assertEquals("  ■ pnlibrary v1.0.0 · 4 д назад [Откат] [+ конфиги]", plain(row))
         assertTrue(hover(row).contains("Вернёт: pnlibrary v1.0.0 (сейчас v2.0.0)"))
@@ -321,7 +322,7 @@ class UpdateCatalogViewTest {
             snapshot("pnlibrary", UpdateState.UPDATE_AVAILABLE, "https://github.com/example/repo/blob/main/notes.md"), bukkit,
         )
         val text = available.joinToString("\n", transform = ::plain)
-        assertTrue(text.startsWith("── ✦ pnlibrary ─"))
+        assertTrue(text.startsWith("\n── ✦ pnlibrary ─"))
         assertTrue(text.contains("\n  ■ доступно обновление\n"))
         assertTrue(text.contains("Версия: v1.0.0 » v1.1.0 [Изменения]"))
         assertTrue(text.contains("Канал: stable"))
@@ -387,7 +388,7 @@ class UpdateCatalogViewTest {
     fun `a confirmation card offers one button, or the command to type when the reader cannot click`() {
         val card = UpdateCatalogView.confirmation("Перезапуск сервера", listOf("Игроков на сервере: 3."),
             "[Подтвердить перезапуск]", "/pn restart abc", "Выполнить", bukkit)
-        assertTrue(plain(card.first()).contains("Перезапуск сервера"))
+        assertTrue(plain(card[1]).contains("Перезапуск сервера"))
         assertEquals(listOf("/pn restart abc"), card.flatMap(::clicks))
 
         val text = UpdateCatalogView.confirmation("Перезапуск сервера", listOf("Игроков на сервере: 3."),
@@ -419,6 +420,44 @@ class UpdateCatalogViewTest {
         assertTrue(text.contains("pnlibrary v1.0.0 » v1.1.0"))
         assertFalse(text.contains("shop"))
         assertTrue(lines.flatMap(::clicks).containsAll(listOf("/pn update pnlibrary", "/pn updates available")))
+    }
+
+    @Test
+    fun `every page starts with an empty line so it never runs into the previous output`() {
+        val pages = listOf(
+            catalog(listOf(snapshot("shop", UpdateState.UP_TO_DATE)), routes = bukkit),
+            history(emptyList()),
+            UpdateCatalogView.backups(emptyList(), 1, bukkit),
+            UpdateCatalogView.info(snapshot("shop", UpdateState.UP_TO_DATE), bukkit),
+            UpdateCatalogView.settings(snapshot("shop", UpdateState.UP_TO_DATE), bukkit),
+            UpdateCatalogView.confirmation("Откат", listOf("Вернутся JAR."), "[Да]", "/pn x", "Выполнить", bukkit),
+        )
+        pages.forEach { page ->
+            assertEquals("", plain(page[0]))
+            assertTrue(plain(page[1]).contains("✦"))
+        }
+        assertTrue(UpdateCatalogView.notice(UpdateNotice(UpdateTone.SUCCESS, "Готово"), bukkit).none { plain(it).isEmpty() })
+    }
+
+    @Test
+    fun `catalog rows show that they open the plugin card`() {
+        val row = catalog(listOf(snapshot("shop", UpdateState.UP_TO_DATE)), routes = bukkit).first { plain(it).contains("shop") }
+        assertTrue(plain(row).endsWith(" ›"))
+        assertEquals("/pn updates info shop", row.clickEvent()?.value())
+        val console = catalog(listOf(snapshot("shop", UpdateState.UP_TO_DATE)), routes = proxy.copy(interactive = false, ascii = true))
+        assertFalse(console.any { plain(it).endsWith(" >") })
+    }
+
+    @Test
+    fun `the info card links each setting to the settings card`() {
+        val lines = UpdateCatalogView.info(snapshot("shop", UpdateState.UP_TO_DATE), bukkit)
+        listOf("Канал:", "Автозагрузка:", "Пауза:").forEach { label ->
+            val row = lines.first { plain(it).contains(label) }
+            assertTrue(plain(row).endsWith("[изменить]"), plain(row))
+            assertTrue(clicks(row).contains("/pn updates settings shop"))
+        }
+        val readOnly = UpdateCatalogView.info(snapshot("shop", UpdateState.UP_TO_DATE), bukkit.copy(editable = false))
+        assertFalse(readOnly.any { plain(it).contains("[изменить]") })
     }
 
     private fun history(
