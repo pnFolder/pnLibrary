@@ -171,8 +171,8 @@ data class PlaceholderCachePolicy @JvmOverloads constructor(
     val cacheNullValues: Boolean = false,
 ) {
     init {
-        require(maximumEntries > 0) { "maximumEntries must be positive" }
-        require(expireAfterWriteMillis > 0) { "expireAfterWriteMillis must be positive" }
+        require(maximumEntries > 0) { "Cache maximumEntries must be positive" }
+        require(expireAfterWriteMillis > 0) { "Cache expireAfterWriteMillis must be positive" }
     }
     /** Factories for the most common cache policies. */
     companion object {

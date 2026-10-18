@@ -19,7 +19,7 @@ internal class VerifiedFileStore(private val root: Path) {
 
     fun read(path: Path, maximumBytes: Int = DEFAULT_READ_LIMIT): ByteArray? {
         if (!Files.isRegularFile(path)) return null
-        if (maximumBytes < 0) throw IllegalArgumentException("maximumBytes must not be negative")
+        if (maximumBytes < 0) throw IllegalArgumentException("Maximum bytes must not be negative")
         if (Files.size(path) > maximumBytes.toLong()) return null
         return Files.readAllBytes(path)
     }

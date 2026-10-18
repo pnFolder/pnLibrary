@@ -58,9 +58,9 @@ data class ServerInfo(
  * @property values application-defined immutable policy values
  */
 class RemotePolicyContext private constructor(builder: Builder) {
-    val product: ProductInfo = requireNotNull(builder.product)
-    val platform: PlatformInfo = requireNotNull(builder.platform)
-    val server: ServerInfo = requireNotNull(builder.server)
+    val product: ProductInfo = requireNotNull(builder.product) { "Remote policy context product is required" }
+    val platform: PlatformInfo = requireNotNull(builder.platform) { "Remote policy context platform is required" }
+    val server: ServerInfo = requireNotNull(builder.server) { "Remote policy context server is required" }
     val values: Map<String, String> = Collections.unmodifiableMap(HashMap(builder.values))
     private val nativeHandles: List<Any> = Collections.unmodifiableList(ArrayList(builder.nativeHandles))
 
@@ -70,7 +70,7 @@ class RemotePolicyContext private constructor(builder: Builder) {
 
     /** Returns a native handle assignable to [type] or fails when unavailable. */
     fun <T : Any> requireNative(type: Class<T>): T =
-        requireNotNull(nativeHandle(type)) { "native handle ${type.name} is unavailable on ${platform.type}" }
+        requireNotNull(nativeHandle(type)) { "Native handle ${type.name} is unavailable on ${platform.type}" }
 
     /** Fluent builder for an immutable [RemotePolicyContext]. */
     class Builder {
@@ -91,13 +91,13 @@ class RemotePolicyContext private constructor(builder: Builder) {
         /** Adds or replaces one application-defined policy value. */
         fun value(key: String, value: String) = apply {
             val normalized = key.trim()
-            require(normalized.isNotEmpty()) { "remote policy context value key must not be blank" }
+            require(normalized.isNotEmpty()) { "Remote policy context value key must not be blank" }
             values[normalized] = value
         }
         /** Adds all application-defined policy values from [value]. */
         fun values(value: Map<String, String>) = apply {
             val normalized = value.mapKeys { (key, _) ->
-                key.trim().also { require(it.isNotEmpty()) { "remote policy context value key must not be blank" } }
+                key.trim().also { require(it.isNotEmpty()) { "Remote policy context value key must not be blank" } }
             }
             values.putAll(normalized)
         }

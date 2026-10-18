@@ -21,7 +21,7 @@ class MetricsBuilder {
 
     /** Enables bStats for this module. */
     fun bStats(projectId: Int): MetricsBuilder = apply {
-        require(projectId > 0) { "metrics projectId must be positive" }
+        require(projectId > 0) { "Metrics project ID must be positive" }
         add(MetricsProviderConfiguration(MetricsProvider.BSTATS, projectId = projectId))
     }
 
@@ -38,7 +38,7 @@ class MetricsBuilder {
 
     /** Returns the configured providers, rejecting an empty setup. */
     fun build(): List<MetricsProviderConfiguration> {
-        require(configurations.isNotEmpty()) { "at least one metrics provider is required" }
+        require(configurations.isNotEmpty()) { "At least one metrics provider is required" }
         return configurations.toList()
     }
 
@@ -49,7 +49,7 @@ class MetricsBuilder {
 
     private fun add(configuration: MetricsProviderConfiguration) {
         require(configurations.none { it.provider == configuration.provider }) {
-            "metrics provider ${configuration.provider} is already configured"
+            "Metrics provider ${configuration.provider} is already configured"
         }
         configurations += configuration
     }

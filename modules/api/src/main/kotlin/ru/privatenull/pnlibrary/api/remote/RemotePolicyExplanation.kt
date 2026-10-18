@@ -39,7 +39,7 @@ class RemotePolicyExplanation private constructor(builder: Builder) {
         @JvmStatic
         fun builder(text: String): Builder {
             val normalized = text.trim()
-            require(normalized.isNotEmpty()) { "remote policy explanation must not be blank" }
+            require(normalized.isNotEmpty()) { "Remote policy explanation must not be blank" }
             return Builder(normalized)
         }
     }

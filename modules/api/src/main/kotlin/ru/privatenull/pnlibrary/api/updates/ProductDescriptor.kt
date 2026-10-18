@@ -17,10 +17,10 @@ class ProductDescriptor private constructor(
     val isBound: Boolean get() = boundId != null
     /** Installed semantic version. */
     val version: SemanticVersion = builder.version
-        ?: throw IllegalArgumentException("product version is required")
+        ?: throw IllegalArgumentException("Product version is required")
     /** Inclusive pnLibrary API generations accepted by this product. */
     val supportedApi: ApiVersionRange = builder.supportedApi
-        ?: throw IllegalArgumentException("pnLibrary API range is required")
+        ?: throw IllegalArgumentException("Supported pnLibrary API range is required")
     /** Maximum-risk release channel accepted by this product. */
     val channel: UpdateChannel = builder.channel
     /** Oldest Java feature version supported by this installation. */
@@ -60,8 +60,8 @@ class ProductDescriptor private constructor(
         /** Sets the inclusive Java feature-version range. */
         @JvmOverloads
         fun java(minimum: Int, maximum: Int? = null) = apply {
-            require(minimum >= 8) { "minimum Java must be at least 8" }
-            require(maximum == null || maximum >= minimum) { "maximum Java must be >= minimum Java" }
+            require(minimum >= 8) { "Minimum Java must be at least 8" }
+            require(maximum == null || maximum >= minimum) { "Maximum Java must be >= minimum Java" }
             minimumJava = minimum
             maximumJava = maximum
         }

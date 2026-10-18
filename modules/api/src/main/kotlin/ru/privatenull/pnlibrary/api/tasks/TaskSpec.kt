@@ -94,7 +94,7 @@ class TaskSpec private constructor(
          *
          * One tick is defined as 50 milliseconds.
          */
-        fun delayTicks(value: Long) = apply { delay = ticksToDuration(value, "Delay") }
+        fun delayTicks(value: Long) = apply { delay = ticksToDuration(value, "delay") }
 
         /** Sets a repeat interval, or `null` for one-shot execution. */
         fun interval(value: Duration?) = apply { interval = value }
@@ -104,7 +104,7 @@ class TaskSpec private constructor(
          *
          * One tick is defined as 50 milliseconds.
          */
-        fun intervalTicks(value: Long) = apply { interval = ticksToDuration(value, "Interval") }
+        fun intervalTicks(value: Long) = apply { interval = ticksToDuration(value, "interval") }
 
         /** Adds a predicate that must pass before an invocation runs. */
         fun condition(value: BooleanSupplier) = apply { conditions += value }
@@ -140,7 +140,7 @@ class TaskSpec private constructor(
         private const val MILLIS_PER_TICK = 50L
 
         private fun ticksToDuration(value: Long, label: String): Duration {
-            require(value >= 0) { "$label ticks must not be negative" }
+            require(value >= 0) { "Task $label ticks must not be negative" }
             return Duration.ofMillis(Math.multiplyExact(value, MILLIS_PER_TICK))
         }
 

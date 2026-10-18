@@ -80,30 +80,30 @@ data class PnLibraryConfig @JvmOverloads constructor(
 ) {
     init {
         require(uploadMode in setOf("encrypted", "disabled")) {
-            "uploadMode must be encrypted or disabled"
+            "Setting uploadMode must be encrypted or disabled"
         }
         require(uploadProviders.isNotEmpty() && uploadProviders.all { it in setOf("catbox", "fileio", "custom") }) {
-            "uploadProviders may contain catbox, fileio, and custom"
+            "Setting uploadProviders may contain only catbox, fileio, and custom"
         }
-        require(logRecords in 1..2_000) { "logRecords must be between 1 and 2000" }
-        require(historyRetentionDays in 1..365) { "historyRetentionDays must be between 1 and 365" }
-        require(historyMaxBytes in 1024 * 1024..256 * 1024 * 1024) { "historyMaxBytes must be between 1 and 256 MiB" }
-        require(cooldownSeconds in 0..3_600) { "cooldownSeconds must be between 0 and 3600" }
-        require(keepReports in 1..1_000) { "keepReports must be between 1 and 1000" }
-        require(maxReportBytes in 65_536..64 * 1024 * 1024) { "maxReportBytes must be between 64 KiB and 64 MiB" }
-        require(deleteAfterDays in 0..3_650) { "deleteAfterDays must be between 0 and 3650" }
-        require(taskHistoryCapacity in 0..10_000) { "taskHistoryCapacity must be between 0 and 10000" }
+        require(logRecords in 1..2_000) { "Setting logRecords must be between 1 and 2000" }
+        require(historyRetentionDays in 1..365) { "Setting historyRetentionDays must be between 1 and 365" }
+        require(historyMaxBytes in 1024 * 1024..256 * 1024 * 1024) { "Setting historyMaxBytes must be between 1 and 256 MiB" }
+        require(cooldownSeconds in 0..3_600) { "Setting cooldownSeconds must be between 0 and 3600" }
+        require(keepReports in 1..1_000) { "Setting keepReports must be between 1 and 1000" }
+        require(maxReportBytes in 65_536..64 * 1024 * 1024) { "Setting maxReportBytes must be between 64 KiB and 64 MiB" }
+        require(deleteAfterDays in 0..3_650) { "Setting deleteAfterDays must be between 0 and 3650" }
+        require(taskHistoryCapacity in 0..10_000) { "Setting taskHistoryCapacity must be between 0 and 10000" }
         require(excludedPaths.size <= 128 && secretKeyPatterns.size <= 64 && redactValuePatterns.size <= 64) {
-            "too many diagnostic redaction rules"
+            "Too many diagnostic redaction rules"
         }
-        require(uploadKeyId.isNotBlank() && uploadKeyId.length <= 128) { "uploadKeyId is invalid" }
-        excludedPaths.forEach { require(it.isNotBlank() && it.length <= 256) { "invalid excluded path: $it" } }
+        require(uploadKeyId.isNotBlank() && uploadKeyId.length <= 128) { "Setting uploadKeyId is invalid" }
+        excludedPaths.forEach { require(it.isNotBlank() && it.length <= 256) { "Invalid excluded path: $it" } }
         (secretKeyPatterns + redactValuePatterns).forEach { expression ->
-            require(expression.isNotBlank() && expression.length <= 256) { "invalid diagnostic regex" }
+            require(expression.isNotBlank() && expression.length <= 256) { "Invalid diagnostic regex" }
             try {
                 Pattern.compile(expression)
             } catch (exception: PatternSyntaxException) {
-                throw IllegalArgumentException("invalid diagnostic regex: $expression", exception)
+                throw IllegalArgumentException("Invalid diagnostic regex: $expression", exception)
             }
         }
     }

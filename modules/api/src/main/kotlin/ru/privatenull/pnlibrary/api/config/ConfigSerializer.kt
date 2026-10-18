@@ -36,7 +36,7 @@ data class ConfigSerializationContext(
  * object DurationSerializer : ConfigSerializer<Duration> {
  *     override fun serialize(value: Duration, context: ConfigSerializationContext) = value.toString()
  *     override fun deserialize(value: Any?, context: ConfigSerializationContext) =
- *         Duration.parse(value?.toString() ?: error("duration cannot be null"))
+ *         Duration.parse(value?.toString() ?: error("Duration must not be null"))
  * }
  * ```
  */

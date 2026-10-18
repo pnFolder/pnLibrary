@@ -29,7 +29,7 @@ class PluginId private constructor(
         fun of(value: String): PluginId {
             val normalized = value.trim().lowercase(Locale.ROOT)
             require(FORMAT.matches(normalized)) {
-                "pluginId must match ${FORMAT.pattern}"
+                "Plugin ID must match ${FORMAT.pattern}"
             }
             return PluginId(normalized)
         }

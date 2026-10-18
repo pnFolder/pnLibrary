@@ -56,7 +56,7 @@ object ItemFactory {
         requireNotNull(parent) { "Parent section must not be null" }
         require(!key.isNullOrBlank()) { "Item key must not be blank" }
         require(isRealItem(source)) { "Source must be a real item" }
-        val item = requireNotNull(source).clone()
+        val item = requireNotNull(source) { "Source item must not be null" }.clone()
         parent.set(key, null)
         val section = parent.createSection(key)
         section.set("material", item.type.name)
@@ -78,7 +78,7 @@ object ItemFactory {
         requireNotNull(parent) { "Parent section must not be null" }
         require(!key.isNullOrBlank()) { "Item key must not be blank" }
         require(isRealItem(source)) { "Source must be a real item" }
-        val item = requireNotNull(source).clone()
+        val item = requireNotNull(source) { "Source item must not be null" }.clone()
         val encoded = ItemStackCodec.encode(item)
         writeItem(parent, key, item)
         parent.getConfigurationSection(key).set("item_data", encoded)
@@ -88,7 +88,7 @@ object ItemFactory {
     @JvmStatic
     fun toMap(source: ItemStack?): Map<String, Any> {
         if (!isRealItem(source)) return emptyMap()
-        val item = requireNotNull(source).clone()
+        val item = requireNotNull(source) { "Source item must not be null" }.clone()
         return linkedMapOf<String, Any>("material" to item.type.name).apply {
             if (item.amount > 1) put("amount", item.amount)
             put("item_data", ItemStackCodec.encode(item))

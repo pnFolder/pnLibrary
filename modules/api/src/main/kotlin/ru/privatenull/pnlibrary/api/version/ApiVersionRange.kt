@@ -11,8 +11,8 @@ data class ApiVersionRange(
     val maximum: Int,
 ) {
     init {
-        require(minimum > 0) { "minimum API generation must be positive" }
-        require(maximum >= minimum) { "maximum API generation must be at least minimum" }
+        require(minimum > 0) { "Minimum API generation must be positive" }
+        require(maximum >= minimum) { "Maximum API generation must be at least minimum" }
     }
 
     /** Returns whether [version] is inside this inclusive range. */

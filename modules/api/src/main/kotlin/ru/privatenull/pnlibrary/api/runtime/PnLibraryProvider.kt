@@ -14,7 +14,7 @@ object PnLibraryProvider {
     /** Returns the installed runtime or fails outside its active lifecycle. */
     @JvmStatic
     fun get(): PnLibrary = instance
-        ?: throw IllegalStateException("pnLibrary runtime is not loaded; declare pnLibrary as a platform dependency")
+        ?: throw IllegalStateException("The pnLibrary runtime is not loaded; declare pnLibrary as a platform dependency")
 
     /** Returns the installed runtime, or `null` outside its active lifecycle. */
     @JvmStatic

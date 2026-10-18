@@ -32,7 +32,7 @@ data class DebugRequest(
         fun parse(args: Array<out String>, prefixed: Boolean = false): DebugRequest {
             var offset = 0
             if (prefixed) {
-                require(args.isNotEmpty() && args[0].equals("debug", ignoreCase = true)) { "usage" }
+                require(args.isNotEmpty() && args[0].equals("debug", ignoreCase = true)) { "Invalid debug command usage" }
                 offset = 1
             }
             var target = "all"
@@ -43,9 +43,9 @@ data class DebugRequest(
                 val v = args[i]
                 if (v.startsWith("--")) {
                     val f = v.lowercase(Locale.ROOT)
-                    require(f in knownFlags && flags.add(f)) { "usage" }
+                    require(f in knownFlags && flags.add(f)) { "Invalid debug command usage" }
                 } else {
-                    require(!targetChosen && VALID_TARGET.matches(v)) { "usage" }
+                    require(!targetChosen && VALID_TARGET.matches(v)) { "Invalid debug command usage" }
                     target = v
                     targetChosen = true
                 }

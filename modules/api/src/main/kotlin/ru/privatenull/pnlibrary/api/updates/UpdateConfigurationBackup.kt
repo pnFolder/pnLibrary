@@ -17,14 +17,14 @@ class UpdateConfigurationBackup(root: Path, files: List<String>) {
     val files: List<String> = Collections.unmodifiableList(files.map { value ->
         val path = Paths.get(value).normalize()
         require(value.isNotBlank() && !path.isAbsolute && path.root == null && path.toString().isNotEmpty() && path.toString() != "." && !path.startsWith("..")) {
-            "configuration paths must stay relative to the component data directory"
+            "Configuration paths must stay relative to the component data directory"
         }
-        require(value.none { it == '*' || it == '?' || it.isISOControl() }) { "configuration paths must be explicit file names" }
+        require(value.none { it == '*' || it == '?' || it.isISOControl() }) { "Configuration paths must be explicit file names" }
         path.toString()
     })
 
     init {
-        require(this.files.isNotEmpty() && this.files.size <= 100) { "declare between 1 and 100 configuration files" }
-        require(this.files.map { Paths.get(it) }.distinct().size == this.files.size) { "duplicate configuration paths" }
+        require(this.files.isNotEmpty() && this.files.size <= 100) { "Configuration backup must declare between 1 and 100 files" }
+        require(this.files.map { Paths.get(it) }.distinct().size == this.files.size) { "Duplicate configuration paths" }
     }
 }

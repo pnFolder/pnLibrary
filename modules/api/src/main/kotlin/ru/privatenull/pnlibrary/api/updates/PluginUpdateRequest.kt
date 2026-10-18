@@ -98,7 +98,7 @@ class PluginUpdateRequest private constructor(builder: Builder) {
         /** Adds an exact release asset name without exposing regular-expression escaping. */
         @JvmOverloads
         fun exactArtifact(name: String, minimumJava: Int = 8, maximumJava: Int? = null) = apply {
-            require(name.isNotBlank()) { "artifact name must not be blank" }
+            require(name.isNotBlank()) { "Artifact name must not be blank" }
             artifact("^${Regex.escape(name)}$", minimumJava, maximumJava)
         }
 
@@ -109,8 +109,8 @@ class PluginUpdateRequest private constructor(builder: Builder) {
         @JvmOverloads
         fun artifact(regex: String, minimumJava: Int, maximumJava: Int? = null) = apply {
             Regex(regex)
-            require(minimumJava >= 8) { "minimumJava must be at least 8" }
-            require(maximumJava == null || maximumJava >= minimumJava) { "maximumJava must be >= minimumJava" }
+            require(minimumJava >= 8) { "Minimum Java must be at least 8" }
+            require(maximumJava == null || maximumJava >= minimumJava) { "Maximum Java must be >= minimum Java" }
             artifacts += PluginUpdateArtifact(regex, minimumJava, maximumJava)
         }
 
@@ -118,15 +118,15 @@ class PluginUpdateRequest private constructor(builder: Builder) {
         @JvmOverloads
         fun artifact(regex: String, platform: PlatformType, minimumJava: Int, maximumJava: Int? = null) = apply {
             Regex(regex)
-            require(minimumJava >= 8) { "minimumJava must be at least 8" }
-            require(maximumJava == null || maximumJava >= minimumJava) { "maximumJava must be >= minimumJava" }
+            require(minimumJava >= 8) { "Minimum Java must be at least 8" }
+            require(maximumJava == null || maximumJava >= minimumJava) { "Maximum Java must be >= minimum Java" }
             artifacts += PluginUpdateArtifact(regex, minimumJava, maximumJava, platform)
         }
 
         /** Validates the complete policy and creates its immutable request. */
         fun build(): PluginUpdateRequest {
-            require(repositoryOwner.isNotBlank() && repositoryName.isNotBlank()) { "repository is required" }
-            require(artifacts.isNotEmpty()) { "at least one artifact is required" }
+            require(repositoryOwner.isNotBlank() && repositoryName.isNotBlank()) { "Repository is required" }
+            require(artifacts.isNotEmpty()) { "At least one artifact is required" }
             return PluginUpdateRequest(this)
         }
     }

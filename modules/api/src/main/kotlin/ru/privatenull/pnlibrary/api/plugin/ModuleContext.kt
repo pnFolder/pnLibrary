@@ -92,7 +92,7 @@ class ModuleId private constructor(
         @JvmStatic
         fun of(value: String): ModuleId {
             val normalized = value.trim().lowercase(Locale.ROOT)
-            require(FORMAT.matches(normalized)) { "moduleId must match ${FORMAT.pattern}" }
+            require(FORMAT.matches(normalized)) { "Module ID must match ${FORMAT.pattern}" }
             return ModuleId(normalized)
         }
     }

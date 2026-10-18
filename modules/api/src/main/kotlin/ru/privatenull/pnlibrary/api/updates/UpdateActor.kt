@@ -23,8 +23,8 @@ data class UpdateActor(val kind: Kind, val id: String, val name: String) {
     }
 
     init {
-        require(id.isNotBlank() && id.length <= 256 && id.none(Char::isISOControl)) { "invalid update actor ID" }
-        require(name.isNotBlank() && name.length <= 256 && name.none(Char::isISOControl)) { "invalid update actor name" }
+        require(id.isNotBlank() && id.length <= 256 && id.none(Char::isISOControl)) { "Invalid update actor ID" }
+        require(name.isNotBlank() && name.length <= 256 && name.none(Char::isISOControl)) { "Invalid update actor name" }
     }
 
     /** Standard identities for automatic operations and callers without explicit attribution. */

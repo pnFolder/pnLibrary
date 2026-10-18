@@ -23,7 +23,7 @@ data class MetricsProviderConfiguration(
     /** Creates independently owned typed credentials for a provider session. */
     fun credentials(): MetricsCredentials<*> = when (provider) {
         MetricsProvider.BSTATS -> MetricsCredentials.BStats(
-            requireNotNull(projectId) { "bStats requires a project ID" },
+            requireNotNull(projectId) { "Metrics project ID is required for bStats" },
         )
         MetricsProvider.FASTSTATS -> {
             val characters = requireNotNull(token) { "FastStats requires a project token" }.toCharArray()

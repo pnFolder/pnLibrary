@@ -39,8 +39,8 @@ class ManagedProductDependency(
     /** Returns this dependency as its managed representation. */
     override val managed: ManagedProductDependency get() = this
     init {
-        require(REPOSITORY_PART.matches(repositoryOwner)) { "invalid repository owner: $repositoryOwner" }
-        require(REPOSITORY_PART.matches(repositoryName)) { "invalid repository name: $repositoryName" }
+        require(REPOSITORY_PART.matches(repositoryOwner)) { "Invalid repository owner: $repositoryOwner" }
+        require(REPOSITORY_PART.matches(repositoryName)) { "Invalid repository name: $repositoryName" }
     }
 
     /** Validation constants for repository coordinates. */

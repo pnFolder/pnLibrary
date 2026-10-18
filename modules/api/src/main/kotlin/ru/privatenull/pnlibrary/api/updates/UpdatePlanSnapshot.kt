@@ -35,7 +35,7 @@ class UpdatePlanSnapshot(
     val blockers: List<BlockedReason> = Collections.unmodifiableList(blockers.toList())
 
     init {
-        require(revision >= 0) { "plan revision must not be negative" }
+        require(revision >= 0) { "Plan revision must not be negative" }
     }
 
     private fun <T> immutableCopy(values: List<T>): List<T> = Collections.unmodifiableList(ArrayList(values))

@@ -44,48 +44,48 @@ interface MinecraftLocalization : AutoCloseable {
         private var executor: ExecutorService? = null
 
         /** Sets the directory used for manifests, indexes, and locale caches. */
-        fun cacheDirectory(value: Path) = apply {
+        fun cacheDirectory(value: Path): Builder = apply {
             cacheDirectory = value
         }
 
         /** Sets how long version metadata may be reused without revalidation. */
-        fun manifestTtl(value: Duration) = apply {
-            require(!value.isNegative)
+        fun manifestTtl(value: Duration): Builder = apply {
+            require(!value.isNegative) { "Manifest TTL must not be negative" }
             manifestTtl = value
         }
 
         /** Sets the HTTP connection timeout. */
-        fun connectTimeout(value: Duration) = apply {
-            require(!value.isNegative && !value.isZero)
+        fun connectTimeout(value: Duration): Builder = apply {
+            require(!value.isNegative && !value.isZero) { "Connect timeout must be positive" }
             connectTimeout = value
         }
 
         /** Sets the HTTP response read timeout. */
-        fun readTimeout(value: Duration) = apply {
-            require(!value.isNegative && !value.isZero)
+        fun readTimeout(value: Duration): Builder = apply {
+            require(!value.isNegative && !value.isZero) { "Read timeout must be positive" }
             readTimeout = value
         }
 
         /** Sets the maximum number of locale bundles retained in memory. */
-        fun memoryEntries(value: Int) = apply {
-            require(value > 0)
+        fun memoryEntries(value: Int): Builder = apply {
+            require(value > 0) { "Memory entries must be positive" }
             memoryEntries = value
         }
 
         /** Sets the maximum number of concurrent network downloads. */
-        fun downloadConcurrency(value: Int) = apply {
-            require(value > 0)
+        fun downloadConcurrency(value: Int): Builder = apply {
+            require(value > 0) { "Download concurrency must be positive" }
             downloadConcurrency = value
         }
 
         /** Supplies an externally owned executor; the service will not shut it down. */
-        fun executor(value: ExecutorService) = apply {
+        fun executor(value: ExecutorService): Builder = apply {
             executor = value
         }
 
         /** Validates the settings and creates a localization service. */
         fun build(): MinecraftLocalization = DefaultMinecraftLocalization(
-            cacheDirectory = requireNotNull(cacheDirectory) { "cacheDirectory is required" },
+            cacheDirectory = requireNotNull(cacheDirectory) { "Cache directory is required" },
             manifestTtl = manifestTtl,
             connectTimeout = connectTimeout,
             readTimeout = readTimeout,

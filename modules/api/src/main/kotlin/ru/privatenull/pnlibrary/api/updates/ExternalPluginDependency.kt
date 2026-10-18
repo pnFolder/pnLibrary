@@ -46,7 +46,7 @@ class ExternalPluginDependency private constructor(builder: Builder) : PluginDep
         /** Sets an HTTPS page where administrators can obtain the plugin. */
         fun downloadPage(url: String) = apply {
             val parsed = URI.create(url)
-            require(parsed.scheme.equals("https", true) && !parsed.host.isNullOrBlank()) { "download page must use HTTPS" }
+            require(parsed.scheme.equals("https", true) && !parsed.host.isNullOrBlank()) { "Download page must use HTTPS" }
             downloadPage = parsed
         }
 
@@ -89,9 +89,9 @@ class ExternalPluginDependency private constructor(builder: Builder) : PluginDep
 
         /** Validates and creates the immutable dependency. */
         fun build(): ExternalPluginDependency {
-            require(downloadPage != null || artifact != null) { "external dependency requires a download page or artifact" }
+            require(downloadPage != null || artifact != null) { "External dependency requires a download page or artifact" }
             require(artifact != null || downloadPolicy == DownloadPolicy.MANUAL) {
-                "a download page cannot be installed automatically"
+                "A download page cannot be installed automatically"
             }
             versions()
             return ExternalPluginDependency(this)
@@ -103,7 +103,7 @@ class ExternalPluginDependency private constructor(builder: Builder) : PluginDep
         /** Starts a dependency for [plugin] with the supplied minimum version. */
         @JvmStatic
         fun builder(plugin: String, minimumVersion: String): Builder {
-            require(plugin.isNotBlank()) { "external plugin name must not be blank" }
+            require(plugin.isNotBlank()) { "External plugin name must not be blank" }
             return Builder(plugin.trim(), SemanticVersion.parse(minimumVersion))
         }
     }

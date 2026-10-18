@@ -13,6 +13,6 @@ data class UpdatePlan(
     val selected: List<ProductRelease>,
 ) {
     init {
-        require(targetApi > 0) { "target API generation must be positive" }
+        require(targetApi > 0) { "Target API generation must be positive" }
     }
 }

@@ -25,12 +25,12 @@ class ArtifactDescriptor(
     val downloadUri: URI?,
 ) {
     init {
-        require(SAFE_FILE.matches(file) && file.endsWith(".jar", true)) { "unsafe artifact filename: $file" }
-        require(minimumJava >= 8) { "minimum Java must be at least 8" }
-        require(maximumJava == null || maximumJava >= minimumJava) { "maximum Java must be >= minimum Java" }
-        require(size == null || size > 0) { "artifact size must be positive" }
-        require(sha256 == null || SHA_256.matches(sha256)) { "artifact SHA-256 is invalid" }
-        require(downloadUri == null || downloadUri.scheme.equals("https", true)) { "artifact URL must use HTTPS" }
+        require(SAFE_FILE.matches(file) && file.endsWith(".jar", true)) { "Unsafe artifact filename: $file" }
+        require(minimumJava >= 8) { "Minimum Java must be at least 8" }
+        require(maximumJava == null || maximumJava >= minimumJava) { "Maximum Java must be >= minimum Java" }
+        require(size == null || size > 0) { "Artifact size must be positive" }
+        require(sha256 == null || SHA_256.matches(sha256)) { "Artifact SHA-256 is invalid" }
+        require(downloadUri == null || downloadUri.scheme.equals("https", true)) { "Artifact URL must use HTTPS" }
     }
 
     /** Returns whether [javaFeature] is inside this artifact's Java range. */

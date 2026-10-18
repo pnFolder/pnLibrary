@@ -64,7 +64,7 @@ data class RemotePolicy(
 
         /** Validates required fields and creates the immutable policy. */
         fun build(): RemotePolicy = RemotePolicy(
-            requireNotNull(source) { "remote policy source is required" },
+            requireNotNull(source) { "Remote policy source is required" },
             checkEvery,
             onDeny,
             Collections.unmodifiableMap(LinkedHashMap(values)),

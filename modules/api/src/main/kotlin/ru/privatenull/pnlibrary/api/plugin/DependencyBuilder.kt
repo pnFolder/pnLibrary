@@ -19,7 +19,7 @@ class DependencyBuilder {
         configure.accept(builder)
         val dependency = builder.build()
         require(dependencies.none { it.managed?.product == dependency.product }) {
-            "duplicate product dependency: ${dependency.product}"
+            "Duplicate product dependency: ${dependency.product}"
         }
         dependencies += dependency
     }
@@ -30,7 +30,7 @@ class DependencyBuilder {
         configure.accept(builder)
         val dependency = builder.build()
         require(dependencies.none { it.external?.plugin?.equals(dependency.plugin, true) == true }) {
-            "duplicate plugin dependency: ${dependency.plugin}"
+            "Duplicate plugin dependency: ${dependency.plugin}"
         }
         dependencies += dependency
     }
@@ -72,7 +72,7 @@ class DependencyBuilder {
         fun downloadPolicy(value: DownloadPolicy) = apply { policy = value }
 
         internal fun build(): ManagedProductDependency {
-            val versions = VersionConstraint(requireNotNull(minimum) { "minimum product version is required" },
+            val versions = VersionConstraint(requireNotNull(minimum) { "Minimum product version is required" },
                 maximumInclusive, maximumExclusive)
             return ManagedProductDependency(id, versions,
                 requireNotNull(repositoryOwner) { "GitHub repository owner is required" },
@@ -93,7 +93,7 @@ class DependencyBuilder {
         private var verifyPluginId = true
         private var verifyVersion = true
 
-        init { require(name.isNotBlank()) { "external plugin name must not be blank" } }
+        init { require(name.isNotBlank()) { "External plugin name must not be blank" } }
 
         /** Sets the required minimum version. */
         fun minimumVersion(value: String) = apply { minimum = SemanticVersion.parse(value) }
@@ -105,7 +105,7 @@ class DependencyBuilder {
         fun downloadPage(url: String) = apply {
             val parsed = URI.create(url)
             require(parsed.scheme.equals("https", true) && !parsed.host.isNullOrBlank()) {
-                "download page must use HTTPS"
+                "Download page must use HTTPS"
             }
             page = parsed
         }
@@ -134,11 +134,11 @@ class DependencyBuilder {
         }
 
         internal fun build(): ExternalPluginDependency {
-            val minimumVersion = requireNotNull(minimum) { "minimum plugin version is required" }
+            val minimumVersion = requireNotNull(minimum) { "Minimum plugin version is required" }
             VersionConstraint(minimumVersion, maximumInclusive, maximumExclusive)
-            require(page != null || artifact != null) { "external dependency requires a download page or artifact" }
+            require(page != null || artifact != null) { "External dependency requires a download page or artifact" }
             require(artifact != null || policy == DownloadPolicy.MANUAL) {
-                "a download page cannot be installed automatically"
+                "A download page cannot be installed automatically"
             }
             return ExternalPluginDependency.builder(name.trim(), minimumVersion.toString())
                 .also { target ->

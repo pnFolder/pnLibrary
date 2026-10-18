@@ -144,8 +144,8 @@ data class ComponentCachePolicy @JvmOverloads constructor(
     val expireAfterAccessMillis: Long = 30 * 60 * 1_000L,
 ) {
     init {
-        require(maximumEntries > 0) { "maximumEntries must be positive" }
-        require(expireAfterAccessMillis > 0) { "expireAfterAccessMillis must be positive" }
+        require(maximumEntries > 0) { "Cache maximumEntries must be positive" }
+        require(expireAfterAccessMillis > 0) { "Cache expireAfterAccessMillis must be positive" }
     }
 }
 

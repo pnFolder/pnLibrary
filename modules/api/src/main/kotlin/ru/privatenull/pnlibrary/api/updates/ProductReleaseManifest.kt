@@ -15,8 +15,8 @@ import java.util.Locale
  */
 data class VersionRangeText(val minimum: String, val maximum: String? = null) {
     init {
-        require(minimum.isNotBlank()) { "minimum version must not be blank" }
-        require(maximum == null || maximum.isNotBlank()) { "maximum version must not be blank" }
+        require(minimum.isNotBlank()) { "Minimum version must not be blank" }
+        require(maximum == null || maximum.isNotBlank()) { "Maximum version must not be blank" }
     }
 }
 
@@ -39,8 +39,8 @@ data class ArtifactCompatibility(
     val maximumJava: Int? = null,
 ) {
     init {
-        require(minimumJava >= 8) { "minimum Java must be at least 8" }
-        require(maximumJava == null || maximumJava >= minimumJava) { "maximum Java must be >= minimum Java" }
+        require(minimumJava >= 8) { "Minimum Java must be at least 8" }
+        require(maximumJava == null || maximumJava >= minimumJava) { "Maximum Java must be >= minimum Java" }
     }
 }
 
@@ -62,12 +62,12 @@ data class ProductArtifact(
 ) {
     init {
         require(file.endsWith(".jar", true) && Paths.get(file).fileName.toString() == file) {
-            "artifact file must be a plain JAR filename"
+            "Artifact file must be a plain JAR filename"
         }
-        require(size > 0) { "artifact size must be positive" }
-        require(sha256.matches(Regex("[0-9a-fA-F]{64}"))) { "artifact SHA-256 is invalid" }
+        require(size > 0) { "Artifact size must be positive" }
+        require(sha256.matches(Regex("[0-9a-fA-F]{64}"))) { "Artifact SHA-256 is invalid" }
         require(downloadUri == null || downloadUri.scheme.equals("https", true)) {
-            "artifact download URI must use HTTPS"
+            "Artifact download URI must use HTTPS"
         }
     }
 }
@@ -89,10 +89,10 @@ data class ProductReleaseManifest(
     val artifacts: List<ProductArtifact>,
 ) {
     init {
-        require(displayName.isNotBlank()) { "display name must not be blank" }
-        require(artifacts.isNotEmpty()) { "release manifest must contain at least one artifact" }
+        require(displayName.isNotBlank()) { "Release display name must not be blank" }
+        require(artifacts.isNotEmpty()) { "Release manifest must contain at least one artifact" }
         require(artifacts.map { it.file.lowercase(Locale.ROOT) }.distinct().size == artifacts.size) {
-            "release manifest contains duplicate artifact filenames"
+            "Release manifest contains duplicate artifact filenames"
         }
     }
 }

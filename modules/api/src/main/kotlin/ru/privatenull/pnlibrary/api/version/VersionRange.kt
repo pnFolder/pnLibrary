@@ -22,7 +22,7 @@ class VersionRange private constructor(
 ) {
     init {
         require(minimum == null || maximum == null || minimum <= maximum) {
-            "minimum version must not be newer than maximum version"
+            "Minimum version must not be newer than maximum version"
         }
     }
 

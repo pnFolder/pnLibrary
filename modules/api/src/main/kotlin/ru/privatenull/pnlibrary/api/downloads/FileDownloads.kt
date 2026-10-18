@@ -62,7 +62,7 @@ enum class DownloadDestination { DATA_FOLDER, CACHE }
  * @property sha256 expected lowercase SHA-256 digest, when available
  */
 class DirectDownloadSource private constructor(builder: Builder) {
-    val uri: URI = builder.uri ?: error("download URL is required")
+    val uri: URI = requireNotNull(builder.uri) { "Download URL is required" }
     val platform: PlatformType? = builder.platform
     val minimumJava: Int = builder.minimumJava
     val maximumJava: Int? = builder.maximumJava
@@ -86,7 +86,7 @@ class DirectDownloadSource private constructor(builder: Builder) {
         /** Sets the required HTTPS download URL. */
         fun url(value: String) = apply {
             val parsed = URI.create(value)
-            require(parsed.scheme.equals("https", true) && !parsed.host.isNullOrBlank()) { "download URL must use HTTPS" }
+            require(parsed.scheme.equals("https", true) && !parsed.host.isNullOrBlank()) { "Download URL must use HTTPS" }
             uri = parsed
         }
 
@@ -96,14 +96,14 @@ class DirectDownloadSource private constructor(builder: Builder) {
         /** Restricts the source to the inclusive Java feature-version range. */
         @JvmOverloads
         fun java(minimum: Int, maximum: Int? = null) = apply {
-            require(minimum >= 8 && (maximum == null || maximum >= minimum)) { "invalid Java range" }
+            require(minimum >= 8 && (maximum == null || maximum >= minimum)) { "Java version range is invalid" }
             minimumJava = minimum
             maximumJava = maximum
         }
 
         /** Sets the expected [size] and SHA-256 digest used after download. */
         fun integrity(size: Long, sha256: String) = apply {
-            require(size > 0) { "download size must be positive" }
+            require(size > 0) { "Download size must be positive" }
             require(sha256.matches(Regex("[0-9a-fA-F]{64}"))) { "SHA-256 must contain 64 hexadecimal characters" }
             this.size = size
             this.sha256 = sha256.lowercase(Locale.ROOT)
@@ -179,8 +179,8 @@ class FileDownload internal constructor(builder: Builder) {
         }
 
         internal fun build(): FileDownload {
-            require(id.isNotBlank()) { "file download ID is required" }
-            require(relativePath.isNotBlank()) { "destination path is required" }
+            require(id.isNotBlank()) { "File download ID is required" }
+            require(relativePath.isNotBlank()) { "Download destination path is required" }
             return FileDownload(this)
         }
     }
@@ -190,7 +190,7 @@ class FileDownload internal constructor(builder: Builder) {
         private fun safeRelativePath(value: String): String {
             val path = Paths.get(value).normalize()
             require(!path.isAbsolute && path.nameCount > 0 && !path.startsWith("..")) {
-                "download destination must stay inside its root"
+                "Download destination must stay inside its root"
             }
             return path.toString().replace('\\', '/')
         }
@@ -220,13 +220,13 @@ class FileDownloads private constructor(builder: Builder) {
             val builder = FileDownload.Builder(id)
             configure.accept(builder)
             val file = builder.build()
-            require(files.none { it.key.equals(file.key, true) }) { "duplicate file download: ${file.key}" }
+            require(files.none { it.key.equals(file.key, true) }) { "Duplicate file download: ${file.key}" }
             files += file
         }
 
         /** Validates this declaration and creates an immutable download unit. */
         fun build(): FileDownloads {
-            require(files.isNotEmpty()) { "at least one file download is required" }
+            require(files.isNotEmpty()) { "At least one file download is required" }
             return FileDownloads(this)
         }
     }

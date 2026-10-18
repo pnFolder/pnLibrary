@@ -25,13 +25,13 @@ class VersionConstraint(
 ) {
     init {
         require(maximumInclusive == null || maximumExclusive == null) {
-            "only one maximum version bound may be declared"
+            "Only one maximum version bound may be declared"
         }
         require(maximumInclusive == null || maximumInclusive >= minimum) {
-            "inclusive maximum must be >= minimum"
+            "Inclusive maximum version must be >= minimum version"
         }
         require(maximumExclusive == null || maximumExclusive > minimum) {
-            "exclusive maximum must be > minimum"
+            "Exclusive maximum version must be > minimum version"
         }
     }
 
