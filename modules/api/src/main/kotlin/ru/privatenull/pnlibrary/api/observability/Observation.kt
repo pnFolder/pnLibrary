@@ -76,6 +76,7 @@ data class Observation(
     companion object {
         /** Creates a new observation with a generated identifier. */
         @JvmStatic
+        @JvmOverloads
         fun from(request: ObservationRequest, timestamp: Long = System.currentTimeMillis()): Observation = Observation(
             id = UUID.randomUUID().toString(),
             timestamp = timestamp,

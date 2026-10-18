@@ -79,6 +79,7 @@ class CommandBuilder internal constructor(name: String) {
     }
 
     /** Configures whether the console bypasses the root permission. */
+    @JvmOverloads
     fun consoleBypassesPermission(enabled: Boolean = true): CommandBuilder = apply {
         consoleBypassesPermission = enabled
     }

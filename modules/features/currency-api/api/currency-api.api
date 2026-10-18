@@ -429,7 +429,10 @@ public final class ru/privatenull/pnlibrary/api/currency/CurrencyResult {
 	public final fun getStatus ()Lru/privatenull/pnlibrary/api/currency/CurrencyResultStatus;
 	public fun hashCode ()I
 	public final fun isSuccess ()Z
+	public static final fun rejected (Lru/privatenull/pnlibrary/api/currency/CurrencyRejectReason;)Lru/privatenull/pnlibrary/api/currency/CurrencyResult;
 	public static final fun rejected (Lru/privatenull/pnlibrary/api/currency/CurrencyRejectReason;Ljava/lang/String;)Lru/privatenull/pnlibrary/api/currency/CurrencyResult;
+	public static final fun success ()Lru/privatenull/pnlibrary/api/currency/CurrencyResult;
+	public static final fun success (Ljava/math/BigDecimal;)Lru/privatenull/pnlibrary/api/currency/CurrencyResult;
 	public static final fun success (Ljava/math/BigDecimal;Ljava/math/BigDecimal;)Lru/privatenull/pnlibrary/api/currency/CurrencyResult;
 	public fun toString ()Ljava/lang/String;
 	public static final fun unavailable (Ljava/lang/String;)Lru/privatenull/pnlibrary/api/currency/CurrencyResult;
@@ -438,8 +441,11 @@ public final class ru/privatenull/pnlibrary/api/currency/CurrencyResult {
 
 public final class ru/privatenull/pnlibrary/api/currency/CurrencyResult$Companion {
 	public final fun failed (Ljava/lang/Throwable;)Lru/privatenull/pnlibrary/api/currency/CurrencyResult;
+	public final fun rejected (Lru/privatenull/pnlibrary/api/currency/CurrencyRejectReason;)Lru/privatenull/pnlibrary/api/currency/CurrencyResult;
 	public final fun rejected (Lru/privatenull/pnlibrary/api/currency/CurrencyRejectReason;Ljava/lang/String;)Lru/privatenull/pnlibrary/api/currency/CurrencyResult;
 	public static synthetic fun rejected$default (Lru/privatenull/pnlibrary/api/currency/CurrencyResult$Companion;Lru/privatenull/pnlibrary/api/currency/CurrencyRejectReason;Ljava/lang/String;ILjava/lang/Object;)Lru/privatenull/pnlibrary/api/currency/CurrencyResult;
+	public final fun success ()Lru/privatenull/pnlibrary/api/currency/CurrencyResult;
+	public final fun success (Ljava/math/BigDecimal;)Lru/privatenull/pnlibrary/api/currency/CurrencyResult;
 	public final fun success (Ljava/math/BigDecimal;Ljava/math/BigDecimal;)Lru/privatenull/pnlibrary/api/currency/CurrencyResult;
 	public static synthetic fun success$default (Lru/privatenull/pnlibrary/api/currency/CurrencyResult$Companion;Ljava/math/BigDecimal;Ljava/math/BigDecimal;ILjava/lang/Object;)Lru/privatenull/pnlibrary/api/currency/CurrencyResult;
 	public final fun unavailable (Ljava/lang/String;)Lru/privatenull/pnlibrary/api/currency/CurrencyResult;

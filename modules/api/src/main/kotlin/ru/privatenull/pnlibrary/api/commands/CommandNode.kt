@@ -72,6 +72,7 @@ class CommandNodeBuilder internal constructor(
     }
 
     /** Configures whether the console bypasses this node's permission. */
+    @JvmOverloads
     fun consoleBypassesPermission(enabled: Boolean = true): CommandNodeBuilder = apply {
         consoleBypassesPermission = enabled
     }

@@ -991,6 +991,7 @@ public final class ru/privatenull/pnlibrary/api/commands/CommandBuilder {
 	public final synthetic fun argument (Ljava/lang/String;Lru/privatenull/pnlibrary/api/commands/ArgumentType;Lkotlin/jvm/functions/Function1;)Lru/privatenull/pnlibrary/api/commands/CommandBuilder;
 	public final fun availableIf (Lru/privatenull/pnlibrary/api/commands/CommandAvailability;)Lru/privatenull/pnlibrary/api/commands/CommandBuilder;
 	public final fun build ()Lru/privatenull/pnlibrary/api/commands/CommandDefinition;
+	public final fun consoleBypassesPermission ()Lru/privatenull/pnlibrary/api/commands/CommandBuilder;
 	public final fun consoleBypassesPermission (Z)Lru/privatenull/pnlibrary/api/commands/CommandBuilder;
 	public static synthetic fun consoleBypassesPermission$default (Lru/privatenull/pnlibrary/api/commands/CommandBuilder;ZILjava/lang/Object;)Lru/privatenull/pnlibrary/api/commands/CommandBuilder;
 	public final fun executes (Ljava/util/function/Consumer;)Lru/privatenull/pnlibrary/api/commands/CommandBuilder;
@@ -1067,6 +1068,7 @@ public final class ru/privatenull/pnlibrary/api/commands/CommandNodeBuilder {
 	public final fun argument (Ljava/lang/String;Lru/privatenull/pnlibrary/api/commands/ArgumentType;Ljava/util/function/Consumer;)Lru/privatenull/pnlibrary/api/commands/CommandNodeBuilder;
 	public final synthetic fun argument (Ljava/lang/String;Lru/privatenull/pnlibrary/api/commands/ArgumentType;Lkotlin/jvm/functions/Function1;)Lru/privatenull/pnlibrary/api/commands/CommandNodeBuilder;
 	public final fun availableIf (Lru/privatenull/pnlibrary/api/commands/CommandAvailability;)Lru/privatenull/pnlibrary/api/commands/CommandNodeBuilder;
+	public final fun consoleBypassesPermission ()Lru/privatenull/pnlibrary/api/commands/CommandNodeBuilder;
 	public final fun consoleBypassesPermission (Z)Lru/privatenull/pnlibrary/api/commands/CommandNodeBuilder;
 	public static synthetic fun consoleBypassesPermission$default (Lru/privatenull/pnlibrary/api/commands/CommandNodeBuilder;ZILjava/lang/Object;)Lru/privatenull/pnlibrary/api/commands/CommandNodeBuilder;
 	public final fun executes (Ljava/util/function/Consumer;)Lru/privatenull/pnlibrary/api/commands/CommandNodeBuilder;
@@ -2043,6 +2045,7 @@ public final class ru/privatenull/pnlibrary/api/observability/Observation {
 	public final fun copy (Ljava/lang/String;JLjava/lang/String;Ljava/lang/String;Ljava/lang/String;Lru/privatenull/pnlibrary/api/observability/ObservationLevel;Ljava/util/Map;Ljava/lang/String;Ljava/lang/String;)Lru/privatenull/pnlibrary/api/observability/Observation;
 	public static synthetic fun copy$default (Lru/privatenull/pnlibrary/api/observability/Observation;Ljava/lang/String;JLjava/lang/String;Ljava/lang/String;Ljava/lang/String;Lru/privatenull/pnlibrary/api/observability/ObservationLevel;Ljava/util/Map;Ljava/lang/String;Ljava/lang/String;ILjava/lang/Object;)Lru/privatenull/pnlibrary/api/observability/Observation;
 	public fun equals (Ljava/lang/Object;)Z
+	public static final fun from (Lru/privatenull/pnlibrary/api/observability/ObservationRequest;)Lru/privatenull/pnlibrary/api/observability/Observation;
 	public static final fun from (Lru/privatenull/pnlibrary/api/observability/ObservationRequest;J)Lru/privatenull/pnlibrary/api/observability/Observation;
 	public final fun getData ()Ljava/util/Map;
 	public final fun getErrorMessage ()Ljava/lang/String;
@@ -2058,6 +2061,7 @@ public final class ru/privatenull/pnlibrary/api/observability/Observation {
 }
 
 public final class ru/privatenull/pnlibrary/api/observability/Observation$Companion {
+	public final fun from (Lru/privatenull/pnlibrary/api/observability/ObservationRequest;)Lru/privatenull/pnlibrary/api/observability/Observation;
 	public final fun from (Lru/privatenull/pnlibrary/api/observability/ObservationRequest;J)Lru/privatenull/pnlibrary/api/observability/Observation;
 	public static synthetic fun from$default (Lru/privatenull/pnlibrary/api/observability/Observation$Companion;Lru/privatenull/pnlibrary/api/observability/ObservationRequest;JILjava/lang/Object;)Lru/privatenull/pnlibrary/api/observability/Observation;
 }

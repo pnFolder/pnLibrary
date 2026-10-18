@@ -115,11 +115,13 @@ data class CurrencyResult(
     companion object {
         /** Creates a successful result with optional before-and-after balances. */
         @JvmStatic
+        @JvmOverloads
         fun success(previous: BigDecimal? = null, current: BigDecimal? = null) =
             CurrencyResult(CurrencyResultStatus.SUCCESS, previous, current)
 
         /** Creates a business-level rejection that should not normally be retried unchanged. */
         @JvmStatic
+        @JvmOverloads
         fun rejected(reason: CurrencyRejectReason, message: String? = null) =
             CurrencyResult(CurrencyResultStatus.REJECTED, reason = reason, message = message)
 
