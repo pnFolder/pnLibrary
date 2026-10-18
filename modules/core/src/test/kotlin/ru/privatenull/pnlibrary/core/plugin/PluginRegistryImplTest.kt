@@ -119,7 +119,7 @@ class PluginRegistryImplTest {
     @Test
     fun `updates declaration infers component without separate descriptor`() {
         val request = PluginUpdateRequest.builder().repository("pnFolder", "Example")
-            .apiVersions(1, 2)
+            .supportedApi(1, 2)
             .artifact("Example.jar", PlatformType.BUKKIT, 17).build()
 
         val error = assertThrows(IllegalArgumentException::class.java) {
@@ -135,7 +135,7 @@ class PluginRegistryImplTest {
     @Test
     fun `ordinary file delivery does not satisfy missing managed dependency gate`() {
         val request = PluginUpdateRequest.builder().repository("pnFolder", "Example")
-            .apiVersion(1)
+            .supportedApi(1, 1)
             .artifact("Example.jar", 17).build()
         val downloads = FileDownloads.builder().dataDirectory(Paths.get("plugins/example"))
             .file("economy-data") {
