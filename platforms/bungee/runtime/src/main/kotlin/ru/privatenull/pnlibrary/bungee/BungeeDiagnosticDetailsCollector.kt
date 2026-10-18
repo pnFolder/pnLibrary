@@ -23,8 +23,11 @@ internal class BungeeDiagnosticDetailsCollector(
                     "players" to info.players.size,
                 ).apply {
                     if (includeSensitive) {
-                        this["host"] = info.address.hostString
-                        this["port"] = info.address.port
+                        // ServerInfo.socketAddress is missing on old proxies; address stays supported there.
+                        @Suppress("DEPRECATION")
+                        val address = info.address
+                        this["host"] = address.hostString
+                        this["port"] = address.port
                     }
                 }
             }
