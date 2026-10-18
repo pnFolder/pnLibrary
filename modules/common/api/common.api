@@ -1,3 +1,23 @@
+public final class ru/privatenull/pnlibrary/common/io/AtomicFiles {
+	public static final field INSTANCE Lru/privatenull/pnlibrary/common/io/AtomicFiles;
+	public static final fun move (Ljava/nio/file/Path;Ljava/nio/file/Path;)V
+	public static final fun move (Ljava/nio/file/Path;Ljava/nio/file/Path;Z)V
+	public static synthetic fun move$default (Ljava/nio/file/Path;Ljava/nio/file/Path;ZILjava/lang/Object;)V
+	public static final fun write (Ljava/nio/file/Path;Lkotlin/jvm/functions/Function1;)V
+	public static final fun write (Ljava/nio/file/Path;ZLkotlin/jvm/functions/Function1;)V
+	public static final fun write (Ljava/nio/file/Path;[B)V
+	public static final fun write (Ljava/nio/file/Path;[BZ)V
+	public static synthetic fun write$default (Ljava/nio/file/Path;ZLkotlin/jvm/functions/Function1;ILjava/lang/Object;)V
+	public static synthetic fun write$default (Ljava/nio/file/Path;[BZILjava/lang/Object;)V
+}
+
+public final class ru/privatenull/pnlibrary/common/io/Digests {
+	public static final field INSTANCE Lru/privatenull/pnlibrary/common/io/Digests;
+	public static final fun hex ([B)Ljava/lang/String;
+	public static final fun sha256 (Ljava/nio/file/Path;)Ljava/lang/String;
+	public static final fun sha256 ([B)Ljava/lang/String;
+}
+
 public final class ru/privatenull/pnlibrary/common/jvm/JavaRuntime {
 	public static final field INSTANCE Lru/privatenull/pnlibrary/common/jvm/JavaRuntime;
 	public static final fun getFeature ()I

@@ -3,6 +3,7 @@ package ru.privatenull.pnlibrary.core.updates
 import com.google.gson.Gson
 import ru.privatenull.pnlibrary.api.updates.ProductId
 import ru.privatenull.pnlibrary.api.updates.UpdateConfigurationBackup
+import ru.privatenull.pnlibrary.common.io.AtomicFiles
 import ru.privatenull.pnlibrary.core.io.TextFiles
 import ru.privatenull.pnlibrary.core.updates.engine.UpdatePaths
 import java.nio.channels.FileChannel
@@ -66,8 +67,7 @@ internal class ConfigurationSnapshots(
         val temporary = target.resolve("manifest.tmp")
         TextFiles.write(temporary, gson.toJson(snapshot), UTF_8)
         FileChannel.open(temporary, StandardOpenOption.WRITE).use { it.force(true) }
-        try { Files.move(temporary, target.resolve("manifest.json"), StandardCopyOption.ATOMIC_MOVE) }
-        catch (_: AtomicMoveNotSupportedException) { Files.move(temporary, target.resolve("manifest.json")) }
+        AtomicFiles.move(temporary, target.resolve("manifest.json"), replaceExisting = false)
         return id
     }
 

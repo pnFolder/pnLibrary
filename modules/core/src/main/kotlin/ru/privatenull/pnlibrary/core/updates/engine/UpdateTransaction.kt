@@ -2,11 +2,11 @@ package ru.privatenull.pnlibrary.core.updates.engine
 
 import ru.privatenull.pnlibrary.api.version.ApiVersionRange
 import ru.privatenull.pnlibrary.api.version.SemanticVersion
+import ru.privatenull.pnlibrary.common.io.Digests
 import java.nio.file.Files
 import java.nio.file.Path
 import java.nio.file.Paths
 import java.nio.file.StandardCopyOption
-import java.security.MessageDigest
 import java.time.Instant
 import java.util.UUID
 import kotlin.streams.toList
@@ -369,18 +369,7 @@ class UpdateTransaction(
         TransactionJournal.save(path, journal)
     }
 
-    private fun digest(path: Path): String {
-        val hash = MessageDigest.getInstance("SHA-256")
-        Files.newInputStream(path).use { input ->
-            val buffer = ByteArray(8192)
-            while (true) {
-                val read = input.read(buffer)
-                if (read < 0) break
-                hash.update(buffer, 0, read)
-            }
-        }
-        return hash.digest().joinToString("") { "%02x".format(it) }
-    }
+    private fun digest(path: Path): String = Digests.sha256(path)
 
     private fun transition(path: Path, journal: TransactionJournal, state: TransactionState) {
         journal.state = state

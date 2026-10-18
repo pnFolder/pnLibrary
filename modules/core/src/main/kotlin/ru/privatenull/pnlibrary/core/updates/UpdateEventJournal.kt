@@ -8,13 +8,12 @@ import ru.privatenull.pnlibrary.api.updates.UpdateActor
 import ru.privatenull.pnlibrary.api.updates.UpdatePlanSnapshot
 import ru.privatenull.pnlibrary.api.updates.UpdateState
 import ru.privatenull.pnlibrary.api.version.SemanticVersion
+import ru.privatenull.pnlibrary.common.io.AtomicFiles
 import ru.privatenull.pnlibrary.core.io.TextFiles
 import java.nio.charset.StandardCharsets.UTF_8
-import java.nio.file.AtomicMoveNotSupportedException
 import java.nio.file.Files
 import java.nio.file.LinkOption
 import java.nio.file.Path
-import java.nio.file.StandardCopyOption
 import java.time.Clock
 import java.time.Duration
 import java.time.Instant
@@ -148,11 +147,7 @@ internal class UpdateEventJournal(
         val temporary = Files.createTempFile(directory, ".event-", ".tmp")
         try {
             TextFiles.write(temporary, json.toString(), UTF_8)
-            try {
-                Files.move(temporary, target, StandardCopyOption.ATOMIC_MOVE)
-            } catch (_: AtomicMoveNotSupportedException) {
-                Files.move(temporary, target)
-            }
+            AtomicFiles.move(temporary, target, replaceExisting = false)
         } finally {
             Files.deleteIfExists(temporary)
         }

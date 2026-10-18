@@ -2,10 +2,10 @@ package ru.privatenull.pnlibrary.core.observability
 
 import com.google.gson.GsonBuilder
 import com.google.gson.reflect.TypeToken
+import ru.privatenull.pnlibrary.common.io.Digests
 import ru.privatenull.pnlibrary.core.io.TextFiles
 import java.nio.file.Files
 import java.nio.file.Path
-import java.security.MessageDigest
 import java.util.UUID
 
 internal data class StoredAttachment(
@@ -59,7 +59,7 @@ internal class AttachmentStore(dataFolder: Path) {
             originalName = name,
             contentType = contentType,
             size = bytes.size.toLong(),
-            sha256 = sha256(bytes),
+            sha256 = Digests.sha256(bytes),
             storedPath = storedPath,
         ).also { attachment ->
             attachments[id] = attachment
@@ -149,9 +149,6 @@ internal class AttachmentStore(dataFolder: Path) {
         else -> "application/octet-stream"
     }
 
-    private fun sha256(bytes: ByteArray): String = MessageDigest.getInstance("SHA-256")
-        .digest(bytes)
-        .joinToString("") { byte -> "%02x".format(byte) }
 
     private val Path.extension: String
         get() = fileName.toString().substringAfterLast('.', "")

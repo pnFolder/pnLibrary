@@ -3,11 +3,10 @@ package ru.privatenull.pnlibrary.core.updates.engine
 import com.google.gson.Gson
 import com.google.gson.reflect.TypeToken
 import ru.privatenull.pnlibrary.api.updates.ProductId
+import ru.privatenull.pnlibrary.common.io.AtomicFiles
 import java.nio.charset.StandardCharsets
-import java.nio.file.AtomicMoveNotSupportedException
 import java.nio.file.Files
 import java.nio.file.Path
-import java.nio.file.StandardCopyOption
 import java.time.Clock
 import java.time.Duration
 import java.time.Instant
@@ -83,16 +82,7 @@ class FreezeStore(
         try {
             val stored = expiries.entries.associate { it.key.value to it.value.toEpochMilli() }
             Files.newBufferedWriter(temporary, StandardCharsets.UTF_8).use { gson.toJson(stored, it) }
-            try {
-                Files.move(
-                    temporary,
-                    path,
-                    StandardCopyOption.ATOMIC_MOVE,
-                    StandardCopyOption.REPLACE_EXISTING,
-                )
-            } catch (_: AtomicMoveNotSupportedException) {
-                Files.move(temporary, path, StandardCopyOption.REPLACE_EXISTING)
-            }
+            AtomicFiles.move(temporary, path)
         } finally {
             Files.deleteIfExists(temporary)
         }

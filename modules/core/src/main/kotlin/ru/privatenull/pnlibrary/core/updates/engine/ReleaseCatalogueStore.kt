@@ -1,12 +1,12 @@
 package ru.privatenull.pnlibrary.core.updates.engine
 
+import ru.privatenull.pnlibrary.common.io.AtomicFiles
+import ru.privatenull.pnlibrary.common.io.Digests
 import java.net.URI
 import java.nio.charset.StandardCharsets
-import java.nio.file.AtomicMoveNotSupportedException
 import java.nio.file.Files
 import java.nio.file.Path
 import java.nio.file.StandardCopyOption
-import java.security.MessageDigest
 import java.time.Duration
 
 /**
@@ -29,7 +29,7 @@ class ReleaseCatalogueStore(private val root: Path) {
         return try {
             val bytes = Files.readAllBytes(data)
             val expected = String(Files.readAllBytes(digest), StandardCharsets.US_ASCII).trim()
-            if (sha256(bytes) != expected) {
+            if (Digests.sha256(bytes) != expected) {
                 quarantine(uri)
                 null
             } else {
@@ -46,8 +46,8 @@ class ReleaseCatalogueStore(private val root: Path) {
     fun write(uri: URI, bytes: ByteArray) = synchronized(lock) {
         val data = dataPath(uri)
         Files.createDirectories(data.parent)
-        atomicWrite(data, bytes)
-        atomicWrite(digestPath(uri), sha256(bytes).toByteArray(StandardCharsets.US_ASCII))
+        AtomicFiles.write(data, bytes)
+        AtomicFiles.write(digestPath(uri), Digests.sha256(bytes).toByteArray(StandardCharsets.US_ASCII))
     }
 
     /** Moves corrupt cache files for [uri] aside for later diagnosis. */
@@ -64,24 +64,8 @@ class ReleaseCatalogueStore(private val root: Path) {
     private fun digestPath(uri: URI): Path = root.resolve(key(uri) + ".sha256")
     internal fun rewriteDigest(uri: URI) = synchronized(lock) {
         val bytes = Files.readAllBytes(dataPath(uri))
-        atomicWrite(digestPath(uri), sha256(bytes).toByteArray(StandardCharsets.US_ASCII))
+        AtomicFiles.write(digestPath(uri), Digests.sha256(bytes).toByteArray(StandardCharsets.US_ASCII))
     }
 
-    private fun key(uri: URI) = sha256(uri.toASCIIString().toByteArray(StandardCharsets.UTF_8))
-    private fun sha256(bytes: ByteArray) = MessageDigest.getInstance("SHA-256").digest(bytes)
-        .joinToString("") { "%02x".format(it) }
-    private fun atomicWrite(path: Path, bytes: ByteArray) {
-        Files.createDirectories(path.parent)
-        val temporary = Files.createTempFile(path.parent, path.fileName.toString(), ".tmp")
-        try {
-            Files.write(temporary, bytes)
-            try {
-                Files.move(temporary, path, StandardCopyOption.ATOMIC_MOVE, StandardCopyOption.REPLACE_EXISTING)
-            } catch (_: AtomicMoveNotSupportedException) {
-                Files.move(temporary, path, StandardCopyOption.REPLACE_EXISTING)
-            }
-        } finally {
-            Files.deleteIfExists(temporary)
-        }
-    }
+    private fun key(uri: URI) = Digests.sha256(uri.toASCIIString().toByteArray(StandardCharsets.UTF_8))
 }

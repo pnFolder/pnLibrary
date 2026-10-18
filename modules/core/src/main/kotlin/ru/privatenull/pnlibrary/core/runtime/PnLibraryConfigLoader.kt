@@ -4,11 +4,10 @@ import org.yaml.snakeyaml.LoaderOptions
 import org.yaml.snakeyaml.Yaml
 import org.yaml.snakeyaml.constructor.SafeConstructor
 import ru.privatenull.pnlibrary.api.runtime.PnLibraryConfig
+import ru.privatenull.pnlibrary.common.io.AtomicFiles
 import java.nio.charset.StandardCharsets
-import java.nio.file.AtomicMoveNotSupportedException
 import java.nio.file.Files
 import java.nio.file.Path
-import java.nio.file.StandardCopyOption
 
 /** Loads the installed runtime configuration from `plugins/pnLibrary/config.yml`. */
 internal object PnLibraryConfigLoader {
@@ -65,11 +64,7 @@ internal object PnLibraryConfigLoader {
         val temporary = Files.createTempFile(file.parent, "config.yml.", ".tmp")
         try {
             Files.write(temporary, DEFAULT_CONFIG.toByteArray(StandardCharsets.UTF_8))
-            try {
-                Files.move(temporary, file, StandardCopyOption.ATOMIC_MOVE)
-            } catch (_: AtomicMoveNotSupportedException) {
-                Files.move(temporary, file)
-            }
+            AtomicFiles.move(temporary, file, replaceExisting = false)
         } finally {
             Files.deleteIfExists(temporary)
         }

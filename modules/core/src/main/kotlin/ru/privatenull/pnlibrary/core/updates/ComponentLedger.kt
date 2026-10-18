@@ -2,12 +2,11 @@ package ru.privatenull.pnlibrary.core.updates
 
 import com.google.gson.GsonBuilder
 import com.google.gson.reflect.TypeToken
+import ru.privatenull.pnlibrary.common.io.AtomicFiles
 import ru.privatenull.pnlibrary.core.io.TextFiles
 import java.nio.charset.StandardCharsets.UTF_8
-import java.nio.file.AtomicMoveNotSupportedException
 import java.nio.file.Files
 import java.nio.file.Path
-import java.nio.file.StandardCopyOption
 
 /**
  * Remembers which managed components were present at the last start, so the history can say what appeared,
@@ -91,11 +90,7 @@ internal class ComponentLedger(
         val temporary = Files.createTempFile(file.parent, ".components-", ".tmp")
         try {
             TextFiles.write(temporary, gson.toJson(components.toSortedMap(), type), UTF_8)
-            try {
-                Files.move(temporary, file, StandardCopyOption.ATOMIC_MOVE, StandardCopyOption.REPLACE_EXISTING)
-            } catch (_: AtomicMoveNotSupportedException) {
-                Files.move(temporary, file, StandardCopyOption.REPLACE_EXISTING)
-            }
+            AtomicFiles.move(temporary, file)
         } finally {
             Files.deleteIfExists(temporary)
         }

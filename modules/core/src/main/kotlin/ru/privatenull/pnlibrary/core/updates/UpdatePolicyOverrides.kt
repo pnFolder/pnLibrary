@@ -4,12 +4,11 @@ import com.google.gson.GsonBuilder
 import com.google.gson.JsonObject
 import com.google.gson.JsonParser
 import ru.privatenull.pnlibrary.api.updates.UpdateChannel
+import ru.privatenull.pnlibrary.common.io.AtomicFiles
 import ru.privatenull.pnlibrary.core.io.TextFiles
 import java.nio.charset.StandardCharsets.UTF_8
-import java.nio.file.AtomicMoveNotSupportedException
 import java.nio.file.Files
 import java.nio.file.Path
-import java.nio.file.StandardCopyOption
 
 /**
  * Per-component channel and automatic-download choices made at runtime, for example from `/pn updates settings`.
@@ -75,11 +74,7 @@ internal class UpdatePolicyOverrides(
         val temporary = Files.createTempFile(file.parent, ".settings-", ".tmp")
         try {
             TextFiles.write(temporary, gson.toJson(json), UTF_8)
-            try {
-                Files.move(temporary, file, StandardCopyOption.ATOMIC_MOVE, StandardCopyOption.REPLACE_EXISTING)
-            } catch (_: AtomicMoveNotSupportedException) {
-                Files.move(temporary, file, StandardCopyOption.REPLACE_EXISTING)
-            }
+            AtomicFiles.move(temporary, file)
         } finally {
             Files.deleteIfExists(temporary)
         }

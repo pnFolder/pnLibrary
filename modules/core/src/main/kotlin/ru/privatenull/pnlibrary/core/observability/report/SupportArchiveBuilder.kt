@@ -2,9 +2,9 @@ package ru.privatenull.pnlibrary.core.observability.report
 
 import com.google.gson.Gson
 import com.google.gson.GsonBuilder
+import ru.privatenull.pnlibrary.common.io.Digests
 import java.io.ByteArrayOutputStream
 import java.nio.charset.StandardCharsets
-import java.security.MessageDigest
 import java.util.zip.ZipEntry
 import java.util.zip.ZipOutputStream
 
@@ -55,7 +55,7 @@ internal class SupportArchiveBuilder(
 
     /** Creates a ZIP containing all entries and an SHA-256 checksum manifest. */
     fun build(): ByteArray {
-        val checksums = entries.mapValues { (_, bytes) -> sha256(bytes) }
+        val checksums = entries.mapValues { (_, bytes) -> Digests.sha256(bytes) }
         val archiveEntries = entries + mapOf(
             CHECKSUM_PATH to gson.toJson(checksums).toByteArray(StandardCharsets.UTF_8),
         )
@@ -70,8 +70,6 @@ internal class SupportArchiveBuilder(
         return output.toByteArray()
     }
 
-    private fun sha256(bytes: ByteArray): String = MessageDigest.getInstance("SHA-256")
-        .digest(bytes).joinToString("") { "%02x".format(it) }
 
     private companion object {
         const val CHECKSUM_PATH = "checksums.json"

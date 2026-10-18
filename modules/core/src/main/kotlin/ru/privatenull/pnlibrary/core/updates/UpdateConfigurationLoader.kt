@@ -3,12 +3,11 @@ package ru.privatenull.pnlibrary.core.updates
 import org.yaml.snakeyaml.LoaderOptions
 import org.yaml.snakeyaml.Yaml
 import org.yaml.snakeyaml.constructor.SafeConstructor
+import ru.privatenull.pnlibrary.common.io.AtomicFiles
 import ru.privatenull.pnlibrary.core.io.TextFiles
 import java.nio.charset.StandardCharsets
-import java.nio.file.AtomicMoveNotSupportedException
 import java.nio.file.Files
 import java.nio.file.Path
-import java.nio.file.StandardCopyOption
 
 /** Reads, migrates and validates the persisted update policy. */
 internal class UpdateConfigurationLoader(
@@ -108,18 +107,7 @@ internal class UpdateConfigurationLoader(
         private fun Any?.asStringMap(): Map<String, Any?>? =
             (this as? Map<*, *>)?.entries?.associate { it.key.toString() to it.value }
 
-        private fun writeAtomic(file: Path, text: String) {
-            val temporary = Files.createTempFile(file.toAbsolutePath().parent, file.fileName.toString(), ".tmp")
-            try {
-                TextFiles.write(temporary, text, StandardCharsets.UTF_8)
-                try {
-                    Files.move(temporary, file, StandardCopyOption.ATOMIC_MOVE, StandardCopyOption.REPLACE_EXISTING)
-                } catch (_: AtomicMoveNotSupportedException) {
-                    Files.move(temporary, file, StandardCopyOption.REPLACE_EXISTING)
-                }
-            } finally {
-                Files.deleteIfExists(temporary)
-            }
-        }
+        private fun writeAtomic(file: Path, text: String) =
+            AtomicFiles.write(file) { temporary -> TextFiles.write(temporary, text, StandardCharsets.UTF_8) }
     }
 }

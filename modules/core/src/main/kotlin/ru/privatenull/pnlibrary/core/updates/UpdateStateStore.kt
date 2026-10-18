@@ -15,14 +15,12 @@ import ru.privatenull.pnlibrary.api.updates.UpdatePlanSnapshot
 import ru.privatenull.pnlibrary.api.updates.UpdateState
 import ru.privatenull.pnlibrary.api.version.ApiVersionRange
 import ru.privatenull.pnlibrary.api.version.SemanticVersion
+import ru.privatenull.pnlibrary.common.io.AtomicFiles
 import ru.privatenull.pnlibrary.core.io.TextFiles
-import java.nio.channels.FileChannel
 import java.nio.charset.StandardCharsets
-import java.nio.file.AtomicMoveNotSupportedException
 import java.nio.file.Files
 import java.nio.file.Path
 import java.nio.file.StandardCopyOption
-import java.nio.file.StandardOpenOption
 import java.time.Instant
 import java.util.UUID
 import kotlin.streams.toList
@@ -184,14 +182,5 @@ internal class UpdateStateStore(
         stream.filter(Files::isRegularFile).sorted(Comparator.reverseOrder()).toList()
     }
 
-    private fun writeAtomic(path: Path, bytes: ByteArray) {
-        Files.createDirectories(path.toAbsolutePath().parent)
-        val temporary = Files.createTempFile(path.toAbsolutePath().parent, path.fileName.toString(), ".tmp")
-        try {
-            Files.write(temporary, bytes)
-            FileChannel.open(temporary, StandardOpenOption.WRITE).use { it.force(true) }
-            try { Files.move(temporary, path, StandardCopyOption.ATOMIC_MOVE, StandardCopyOption.REPLACE_EXISTING) }
-            catch (_: AtomicMoveNotSupportedException) { Files.move(temporary, path, StandardCopyOption.REPLACE_EXISTING) }
-        } finally { Files.deleteIfExists(temporary) }
-    }
+    private fun writeAtomic(path: Path, bytes: ByteArray) = AtomicFiles.write(path, bytes, durable = true)
 }

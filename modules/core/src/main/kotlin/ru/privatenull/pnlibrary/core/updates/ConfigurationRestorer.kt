@@ -3,6 +3,7 @@ package ru.privatenull.pnlibrary.core.updates
 import com.google.gson.Gson
 import ru.privatenull.pnlibrary.api.updates.ProductId
 import ru.privatenull.pnlibrary.api.updates.UpdateConfigurationBackup
+import ru.privatenull.pnlibrary.common.io.AtomicFiles
 import ru.privatenull.pnlibrary.core.io.TextFiles
 import ru.privatenull.pnlibrary.core.updates.engine.UpdatePaths
 import java.nio.channels.FileChannel
@@ -122,8 +123,7 @@ internal class ConfigurationRestorer(private val snapshots: ConfigurationSnapsho
                     snapshots.copyForRestore(id, record, temporary)
                     // Recheck confinement immediately before publication.
                     snapshots.target(record)
-                    try { Files.move(temporary, target, StandardCopyOption.ATOMIC_MOVE, StandardCopyOption.REPLACE_EXISTING) }
-                    catch (_: AtomicMoveNotSupportedException) { Files.move(temporary, target, StandardCopyOption.REPLACE_EXISTING) }
+                    AtomicFiles.move(temporary, target)
                 } finally { Files.deleteIfExists(temporary) }
             }
         }
@@ -136,8 +136,7 @@ internal class ConfigurationRestorer(private val snapshots: ConfigurationSnapsho
         try {
             TextFiles.write(temporary, gson.toJson(journal), UTF_8)
             FileChannel.open(temporary, StandardOpenOption.WRITE).use { it.force(true) }
-            try { Files.move(temporary, file, StandardCopyOption.ATOMIC_MOVE, StandardCopyOption.REPLACE_EXISTING) }
-            catch (_: AtomicMoveNotSupportedException) { Files.move(temporary, file, StandardCopyOption.REPLACE_EXISTING) }
+            AtomicFiles.move(temporary, file)
         } finally { Files.deleteIfExists(temporary) }
     }
 }

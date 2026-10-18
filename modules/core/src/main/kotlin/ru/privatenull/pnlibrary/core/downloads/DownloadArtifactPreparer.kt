@@ -4,11 +4,11 @@ import ru.privatenull.pnlibrary.api.downloads.DownloadDestination
 import ru.privatenull.pnlibrary.api.downloads.FileDownload
 import ru.privatenull.pnlibrary.api.downloads.FileDownloads
 import ru.privatenull.pnlibrary.api.platform.PlatformType
+import ru.privatenull.pnlibrary.common.io.Digests
 import ru.privatenull.pnlibrary.common.jvm.JavaRuntime
 import ru.privatenull.pnlibrary.core.updates.engine.TrustedHttpClient
 import java.nio.file.Files
 import java.nio.file.Path
-import java.security.MessageDigest
 import java.util.UUID
 
 /** Downloads, validates and stages one declared file without publishing it. */
@@ -45,7 +45,7 @@ internal class DownloadArtifactPreparer(
             require(bytes.size.toLong() == expected) { "размер файла не совпадает" }
         }
         declaration.source.sha256?.let { expected ->
-            require(sha256(bytes).equals(expected, true)) { "SHA-256 файла не совпадает" }
+            require(Digests.sha256(bytes).equals(expected, true)) { "SHA-256 файла не совпадает" }
         }
     }
 
@@ -64,7 +64,4 @@ internal class DownloadArtifactPreparer(
         }
     }
 
-    private fun sha256(bytes: ByteArray): String = MessageDigest.getInstance("SHA-256")
-        .digest(bytes)
-        .joinToString("") { byte -> "%02x".format(byte) }
 }

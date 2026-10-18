@@ -1,10 +1,9 @@
 package ru.privatenull.pnlibrary.core.updates.engine
 
+import ru.privatenull.pnlibrary.common.io.AtomicFiles
 import java.io.InputStream
-import java.nio.file.AtomicMoveNotSupportedException
 import java.nio.file.Files
 import java.nio.file.Path
-import java.nio.file.StandardCopyOption
 
 /** Raised when an artifact cannot be downloaded safely. */
 class ArtifactDownloadException(message: String) : IllegalStateException(message)
@@ -33,11 +32,7 @@ class ArtifactDownloader(private val maximumBytes: Long) {
                     }
                 }
             }
-            try {
-                Files.move(temporary, absolute, StandardCopyOption.ATOMIC_MOVE, StandardCopyOption.REPLACE_EXISTING)
-            } catch (_: AtomicMoveNotSupportedException) {
-                Files.move(temporary, absolute, StandardCopyOption.REPLACE_EXISTING)
-            }
+            AtomicFiles.move(temporary, absolute)
             return total
         } finally {
             Files.deleteIfExists(temporary)

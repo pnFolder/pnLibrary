@@ -20,7 +20,6 @@ internal object PnLibraryBootstrap {
     private val globalRegistry = DiagnosticsRegistry()
 
     @JvmStatic
-    @JvmOverloads
     /**
      * Creates, initializes, publishes, and binds the process-wide runtime.
      *
@@ -34,6 +33,7 @@ internal object PnLibraryBootstrap {
      * @param config already validated runtime configuration
      * @return the active runtime, which may be an instance created by an earlier call
      */
+    @JvmOverloads
     @Synchronized
     fun bootstrap(
         owner: Any,

@@ -3,11 +3,11 @@ package ru.privatenull.pnlibrary.core.upload
 import com.google.gson.Gson
 import com.google.gson.JsonParseException
 import com.google.gson.reflect.TypeToken
+import ru.privatenull.pnlibrary.common.io.AtomicFiles
 import ru.privatenull.pnlibrary.core.io.TextFiles
 import java.io.IOException
 import java.net.URI
 import java.nio.charset.StandardCharsets
-import java.nio.file.AtomicMoveNotSupportedException
 import java.nio.file.Files
 import java.nio.file.Path
 import java.nio.file.StandardCopyOption
@@ -98,16 +98,7 @@ internal class UploadLedgerPersistence(
     }
 
     private fun move(source: Path, target: Path) {
-        try {
-            Files.move(
-                source,
-                target,
-                StandardCopyOption.REPLACE_EXISTING,
-                StandardCopyOption.ATOMIC_MOVE,
-            )
-        } catch (_: AtomicMoveNotSupportedException) {
-            Files.move(source, target, StandardCopyOption.REPLACE_EXISTING)
-        }
+        AtomicFiles.move(source, target)
     }
 
     private fun applyOwnerOnlyPermissions() {

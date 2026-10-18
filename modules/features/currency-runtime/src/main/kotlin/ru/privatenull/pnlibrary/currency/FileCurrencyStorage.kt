@@ -20,12 +20,11 @@ import ru.privatenull.pnlibrary.api.currency.CurrencyTransactionRequest
 import ru.privatenull.pnlibrary.api.currency.CurrencyTransactionStatus
 import ru.privatenull.pnlibrary.api.currency.CurrencyTransactionType
 import ru.privatenull.pnlibrary.api.plugin.PluginId
+import ru.privatenull.pnlibrary.common.io.AtomicFiles
 import java.math.BigDecimal
 import java.nio.charset.StandardCharsets
-import java.nio.file.AtomicMoveNotSupportedException
 import java.nio.file.Files
 import java.nio.file.Path
-import java.nio.file.StandardCopyOption
 import java.time.Instant
 import java.util.UUID
 import java.util.concurrent.CompletableFuture
@@ -213,11 +212,7 @@ internal class FileCurrencyStorage(
         val temporary = Files.createTempFile(parent, file.fileName.toString(), ".tmp")
         try {
             Files.newBufferedWriter(temporary, StandardCharsets.UTF_8).use { gson.toJson(root, it) }
-            try {
-                Files.move(temporary, file, StandardCopyOption.REPLACE_EXISTING, StandardCopyOption.ATOMIC_MOVE)
-            } catch (_: AtomicMoveNotSupportedException) {
-                Files.move(temporary, file, StandardCopyOption.REPLACE_EXISTING)
-            }
+            AtomicFiles.move(temporary, file)
         } finally { Files.deleteIfExists(temporary) }
     }
 

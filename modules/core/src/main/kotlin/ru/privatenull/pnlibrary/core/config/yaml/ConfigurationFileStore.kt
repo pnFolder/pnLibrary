@@ -1,9 +1,8 @@
 package ru.privatenull.pnlibrary.core.config.yaml
 
+import ru.privatenull.pnlibrary.common.io.AtomicFiles
 import java.io.File
-import java.nio.file.AtomicMoveNotSupportedException
 import java.nio.file.Files
-import java.nio.file.StandardCopyOption
 
 /**
  * Owns durable file operations for one YAML configuration document.
@@ -25,16 +24,7 @@ internal class ConfigurationFileStore(
         try {
             Files.write(temporary, normalized.toByteArray(Charsets.UTF_8))
             validator(normalized)
-            try {
-                Files.move(
-                    temporary,
-                    file.toPath(),
-                    StandardCopyOption.ATOMIC_MOVE,
-                    StandardCopyOption.REPLACE_EXISTING,
-                )
-            } catch (_: AtomicMoveNotSupportedException) {
-                Files.move(temporary, file.toPath(), StandardCopyOption.REPLACE_EXISTING)
-            }
+            AtomicFiles.move(temporary, file.toPath())
         } finally {
             Files.deleteIfExists(temporary)
         }

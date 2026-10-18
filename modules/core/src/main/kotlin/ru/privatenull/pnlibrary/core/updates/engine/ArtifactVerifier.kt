@@ -3,10 +3,10 @@ package ru.privatenull.pnlibrary.core.updates.engine
 import ru.privatenull.pnlibrary.api.updates.ProductId
 import ru.privatenull.pnlibrary.api.version.ApiVersionRange
 import ru.privatenull.pnlibrary.api.version.SemanticVersion
+import ru.privatenull.pnlibrary.common.io.Digests
 import java.nio.file.Files
 import java.nio.file.Path
 import java.nio.file.Paths
-import java.security.MessageDigest
 
 /**
  * Trusted catalogue facts used to verify one downloaded artifact.
@@ -49,23 +49,11 @@ class ArtifactVerifier(
         val size = Files.size(path)
         if (size > maximumBytes) fail("artifact exceeds the configured size limit")
         expected.size?.let { if (size != it) fail("artifact size does not match metadata") }
-        expected.sha256?.let { if (!sha256(path).equals(it, ignoreCase = true)) fail("artifact SHA-256 does not match metadata") }
+        expected.sha256?.let { if (!Digests.sha256(path).equals(it, ignoreCase = true)) fail("artifact SHA-256 does not match metadata") }
 
         // The release catalog is the single source of product identity/version/API.
     }
 
-    private fun sha256(path: Path): String {
-        val digest = MessageDigest.getInstance("SHA-256")
-        Files.newInputStream(path).use { input ->
-            val buffer = ByteArray(8192)
-            while (true) {
-                val count = input.read(buffer)
-                if (count < 0) break
-                digest.update(buffer, 0, count)
-            }
-        }
-        return digest.digest().joinToString("") { "%02x".format(it) }
-    }
 
     private fun fail(message: String): Nothing = throw ArtifactVerificationException(message)
 }

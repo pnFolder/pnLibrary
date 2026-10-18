@@ -1,12 +1,11 @@
 package ru.privatenull.pnlibrary.core.observability.history
 
 import com.google.gson.Gson
+import ru.privatenull.pnlibrary.common.io.AtomicFiles
 import ru.privatenull.pnlibrary.core.security.EncryptedEnvelopeCodec
 import java.nio.charset.StandardCharsets
-import java.nio.file.AtomicMoveNotSupportedException
 import java.nio.file.Files
 import java.nio.file.Path
-import java.nio.file.StandardCopyOption
 import java.time.Clock
 import java.time.ZoneOffset
 import java.time.format.DateTimeFormatter
@@ -61,11 +60,7 @@ internal class IncidentHistoryStore(
         val temporary = Files.createTempFile(directory, session, ".tmp")
         try {
             Files.write(temporary, encrypted)
-            try {
-                Files.move(temporary, target, StandardCopyOption.REPLACE_EXISTING, StandardCopyOption.ATOMIC_MOVE)
-            } catch (_: AtomicMoveNotSupportedException) {
-                Files.move(temporary, target, StandardCopyOption.REPLACE_EXISTING)
-            }
+            AtomicFiles.move(temporary, target)
         } finally {
             Files.deleteIfExists(temporary)
         }

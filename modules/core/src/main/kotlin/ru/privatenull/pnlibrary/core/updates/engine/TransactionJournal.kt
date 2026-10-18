@@ -2,12 +2,11 @@ package ru.privatenull.pnlibrary.core.updates.engine
 
 import com.google.gson.GsonBuilder
 import ru.privatenull.pnlibrary.api.version.ApiVersionRange
+import ru.privatenull.pnlibrary.common.io.AtomicFiles
 import java.nio.channels.FileChannel
 import java.nio.charset.StandardCharsets
-import java.nio.file.AtomicMoveNotSupportedException
 import java.nio.file.Files
 import java.nio.file.Path
-import java.nio.file.StandardCopyOption
 import java.nio.file.StandardOpenOption.WRITE
 import java.time.Instant
 
@@ -129,11 +128,7 @@ data class TransactionJournal(
             try {
                 Files.newBufferedWriter(temporary, StandardCharsets.UTF_8).use { gson.toJson(journal, it) }
                 FileChannel.open(temporary, WRITE).use { it.force(true) }
-                try {
-                    Files.move(temporary, path, StandardCopyOption.ATOMIC_MOVE, StandardCopyOption.REPLACE_EXISTING)
-                } catch (_: AtomicMoveNotSupportedException) {
-                    Files.move(temporary, path, StandardCopyOption.REPLACE_EXISTING)
-                }
+                AtomicFiles.move(temporary, path)
             } finally {
                 Files.deleteIfExists(temporary)
             }
