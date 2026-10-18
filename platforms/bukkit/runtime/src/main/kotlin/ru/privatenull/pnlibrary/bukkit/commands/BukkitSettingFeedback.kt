@@ -5,8 +5,9 @@ import org.bukkit.plugin.Plugin
 import ru.privatenull.pnlibrary.core.updates.UpdateCatalogCommands.SettingSaved
 
 /**
- * Short feedback after a setting was saved: a title and a subtitle that fade after about two seconds, and a small
- * chime that rises for "on" and falls for "off".
+ * Short feedback after a setting was saved: the setting's name as the title and what changed, such as
+ * `stable → beta`, as the subtitle, fading after about two seconds, and a small chime that rises for "on" and
+ * falls for "off".
  *
  * The 1.8 title API has no timings and different sound names, so both are chosen at runtime; nothing here may
  * break the command that was just completed.
@@ -19,8 +20,8 @@ internal class BukkitSettingFeedback(private val plugin: Plugin) {
     }
 
     private fun title(player: Player, saved: SettingSaved) {
-        val title = "§d✔ Сохранено"
-        val subtitle = "§f${saved.product} §b· ${saved.setting}: §f${saved.value}"
+        val title = "§d✔ §f${saved.setting}"
+        val subtitle = if (saved.from == saved.to) "§b${saved.to}" else "§b${saved.from} §d→ §f${saved.to}"
         val timed = runCatching {
             Player::class.java.getMethod(
                 "sendTitle", String::class.java, String::class.java, Int::class.javaPrimitiveType, Int::class.javaPrimitiveType, Int::class.javaPrimitiveType,
@@ -33,9 +34,10 @@ internal class BukkitSettingFeedback(private val plugin: Plugin) {
     }
 
     /** Rising notes for turning something on or picking a value, falling notes for turning it off. */
-    private fun notes(saved: SettingSaved): List<Float> = when (saved.value) {
-        "выключена" -> listOf(1.5f, 1.0f)
-        else -> if (saved.setting == "Пауза" && saved.value != "снята") listOf(0.8f, 1.0f) else listOf(1.0f, 1.26f, 1.5f)
+    private fun notes(saved: SettingSaved): List<Float> = when {
+        saved.to == "выключена" -> listOf(1.5f, 1.0f)
+        saved.setting == "Пауза" && saved.to != "нет" -> listOf(0.8f, 1.0f)
+        else -> listOf(1.0f, 1.26f, 1.5f)
     }
 
     private fun chime(player: Player, pitches: List<Float>) {

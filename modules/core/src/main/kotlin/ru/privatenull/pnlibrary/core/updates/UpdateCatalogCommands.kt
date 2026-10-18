@@ -10,6 +10,7 @@ import ru.privatenull.pnlibrary.api.updates.UpdateActor
 import ru.privatenull.pnlibrary.api.updates.UpdateChannel
 import ru.privatenull.pnlibrary.api.updates.UpdateHistoryEntry
 import ru.privatenull.pnlibrary.api.updates.UpdateSnapshot
+import ru.privatenull.pnlibrary.api.updates.UpdateState
 import ru.privatenull.pnlibrary.core.updates.engine.FreezeDuration
 import java.time.Duration
 import java.util.Locale
@@ -45,8 +46,11 @@ class UpdateCatalogCommands(
     private val deliver: (Runnable) -> Unit = Runnable::run,
     private val onSaved: (CommandContext, SettingSaved) -> Unit = { _, _ -> },
 ) {
-    /** A setting that was just saved: [setting] names it, for example "Канал", and [value] is what it is now. */
-    data class SettingSaved(val product: String, val setting: String, val value: String)
+    /**
+     * A setting that was just saved: [setting] names it, for example "Канал", [from] is what it was and [to] what it
+     * is now, both as short words such as "stable" or "включена".
+     */
+    data class SettingSaved(val product: String, val setting: String, val from: String, val to: String)
 
     /**
      * Adds the catalog literals through [addLiteral], which forwards to whichever command or node is being built.
@@ -172,12 +176,12 @@ class UpdateCatalogCommands(
             context.sender.send(error("Неизвестный канал $value. Доступны: ${UpdateCatalogView.CHANNELS.joinToString { it.name.lowercase(Locale.ROOT) }}."))
             return
         }
-        change(context, "Канал", channel.name.lowercase(Locale.ROOT)) { product, actor -> library.updates.setChannel(product, channel, actor) }
+        change(context, "Канал", { it.channel.name.lowercase(Locale.ROOT) }, channel.name.lowercase(Locale.ROOT)) { product, actor -> library.updates.setChannel(product, channel, actor) }
     }
 
     private fun setAutomatic(context: CommandContext) {
         val enabled = switch(context) ?: return
-        change(context, "Автозагрузка", if (enabled) "включена" else "выключена") { product, actor ->
+        change(context, "Автозагрузка", { if (it.automaticDownload) "включена" else "выключена" }, if (enabled) "включена" else "выключена") { product, actor ->
             library.updates.setAutomaticDownload(product, enabled, actor)
         }
     }
@@ -193,7 +197,7 @@ class UpdateCatalogCommands(
                 return
             }
         }
-        change(context, "Пауза", if (duration == null) "снята" else "на ${period(duration)}") { product, actor -> library.updates.setHeld(product, duration, actor) }
+        change(context, "Пауза", { if (it.state == UpdateState.FROZEN) "на паузе" else "нет" }, if (duration == null) "нет" else period(duration)) { product, actor -> library.updates.setHeld(product, duration, actor) }
     }
 
     private fun period(duration: Duration): String = when {
@@ -214,10 +218,11 @@ class UpdateCatalogCommands(
     }
 
     /** Applies a setting, then confirms it below the refreshed settings card, or shows why it was refused. */
-    private fun change(context: CommandContext, setting: String, value: String, apply: (String, UpdateActor) -> CompletionStage<UpdateSnapshot>) {
+    private fun change(context: CommandContext, setting: String, current: (UpdateSnapshot) -> String, value: String, apply: (String, UpdateActor) -> CompletionStage<UpdateSnapshot>) {
         if (!ready(context)) return
         val product = context.get<String>("plugin")
         val sender = context.sender
+        val before = library.updates.get(product)?.snapshot?.let(current) ?: value
         val actor = UpdateActor(if (sender.isConsole) UpdateActor.Kind.CONSOLE else UpdateActor.Kind.PLAYER, sender.id, sender.name)
         apply(product, actor).whenComplete { snapshot, failure ->
             deliver(Runnable {
@@ -226,9 +231,10 @@ class UpdateCatalogCommands(
                     sender.send(error(cause.message ?: "Не удалось изменить настройку."))
                 } else {
                     val routes = routesFor(context)
+                    val arrow = if (routes.ascii) "->" else "→"
                     val card = UpdateCatalogView.settings(snapshot, routes, library.updates.heldUntil(snapshot.product))
-                    (card + UpdateCatalogView.notice(UpdateNotice(UpdateTone.SUCCESS, "Сохранено. $setting: $value."), routes)).forEach(sender::send)
-                    onSaved(context, SettingSaved(snapshot.product, setting, value))
+                    (card + UpdateCatalogView.notice(UpdateNotice(UpdateTone.SUCCESS, "Сохранено. $setting: $before $arrow $value."), routes)).forEach(sender::send)
+                    onSaved(context, SettingSaved(snapshot.product, setting, before, value))
                 }
             })
         }
