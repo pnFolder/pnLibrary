@@ -108,7 +108,7 @@ class PlaceholderAccess private constructor(
         fun shared() = Builder().owner().allowAllLibraryPlugins().build()
         /** Creates an initially empty policy that denies access until rules are added. */
         @JvmStatic
-        fun builder() = Builder()
+        fun builder(): Builder = Builder()
         private fun wildcard(pattern: String, value: String) = Regex(
             "^" + pattern.split('*').joinToString(".*", transform = Regex::escape) + "$", RegexOption.IGNORE_CASE
         ).matches(value)

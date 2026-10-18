@@ -52,7 +52,7 @@ class ConfigTypeAccess private constructor(
 
         /** Creates a mutable access-policy builder. */
         @JvmStatic
-        fun builder() = Builder()
+        fun builder(): Builder = Builder()
 
         private fun glob(value: String): Pattern {
             val expression = value.split('*').joinToString(".*", transform = Pattern::quote)

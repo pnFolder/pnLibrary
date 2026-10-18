@@ -181,7 +181,7 @@ class ConfigMigrationPlan private constructor(
 
         /** Creates a migration-plan builder targeting [currentVersion]. */
         @JvmStatic
-        fun builder(currentVersion: String) = Builder(currentVersion)
+        fun builder(currentVersion: String): Builder = Builder(currentVersion)
     }
 
     /** Java-friendly builder for a directed configuration migration graph. */

@@ -112,6 +112,6 @@ class RemotePolicyContext private constructor(builder: Builder) {
     companion object {
         /** Returns an empty policy-context builder. */
         @JvmStatic
-        fun builder() = Builder()
+        fun builder(): Builder = Builder()
     }
 }

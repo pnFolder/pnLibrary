@@ -69,7 +69,7 @@ class TaskQuery private constructor(
     companion object {
         /** Returns an empty query builder. */
         @JvmStatic
-        fun builder() = Builder()
+        fun builder(): Builder = Builder()
 
         /** Returns a query matching every task. */
         @JvmStatic

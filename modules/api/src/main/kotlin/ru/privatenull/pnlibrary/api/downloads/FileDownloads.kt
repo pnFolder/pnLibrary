@@ -117,7 +117,7 @@ class DirectDownloadSource private constructor(builder: Builder) {
     companion object {
         /** Returns an empty source builder. */
         @JvmStatic
-        fun builder() = Builder()
+        fun builder(): Builder = Builder()
     }
 }
 
@@ -235,6 +235,6 @@ class FileDownloads private constructor(builder: Builder) {
     companion object {
         /** Returns an empty download-unit builder. */
         @JvmStatic
-        fun builder() = Builder()
+        fun builder(): Builder = Builder()
     }
 }

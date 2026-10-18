@@ -91,7 +91,7 @@ data class ConfigOptions @JvmOverloads constructor(
 
         /** Creates a Java-friendly fluent builder initialized with the defaults. */
         @JvmStatic
-        fun builder() = Builder()
+        fun builder(): Builder = Builder()
     }
 
     /** Java-friendly mutable builder for [ConfigOptions]. */

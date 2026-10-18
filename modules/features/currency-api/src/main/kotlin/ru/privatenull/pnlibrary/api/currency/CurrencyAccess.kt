@@ -35,7 +35,7 @@ class CurrencyAccess private constructor(
         fun shared() = Builder().owner().allowAll().build()
         /** Creates an initially empty policy builder. */
         @JvmStatic
-        fun builder() = Builder()
+        fun builder(): Builder = Builder()
         private fun wildcard(pattern: String, value: String) = Regex(
             "^" + pattern.split('*').joinToString(".*", transform = Regex::escape) + "$",
             RegexOption.IGNORE_CASE,
