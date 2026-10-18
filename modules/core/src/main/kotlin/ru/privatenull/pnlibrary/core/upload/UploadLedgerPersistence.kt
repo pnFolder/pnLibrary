@@ -51,9 +51,9 @@ internal class UploadLedgerPersistence(
     @Throws(IOException::class)
     fun read(): MutableList<UploadLedgerEntry> {
         if (!Files.exists(file)) return mutableListOf()
-        if (Files.isSymbolicLink(file)) throw IOException("unsafe upload ledger: symlink")
-        if (!Files.isRegularFile(file)) throw IOException("unsafe upload ledger: not a regular file")
-        if (Files.size(file) > MAX_LEDGER_BYTES) throw IOException("unsafe upload ledger: oversized")
+        if (Files.isSymbolicLink(file)) throw IOException("Unsafe upload ledger: symlink")
+        if (!Files.isRegularFile(file)) throw IOException("Unsafe upload ledger: not a regular file")
+        if (Files.size(file) > MAX_LEDGER_BYTES) throw IOException("Unsafe upload ledger: oversized")
         return try {
             TextFiles.read(file, StandardCharsets.UTF_8)
                 .let { JSON.fromJson<List<UploadLedgerEntry>?>(it, ENTRY_LIST_TYPE) }
@@ -93,7 +93,7 @@ internal class UploadLedgerPersistence(
         try {
             Files.move(file, quarantine, StandardCopyOption.REPLACE_EXISTING)
         } catch (exception: IOException) {
-            throw IOException("corrupt upload ledger could not be quarantined", exception)
+            throw IOException("Corrupt upload ledger could not be quarantined", exception)
         }
     }
 

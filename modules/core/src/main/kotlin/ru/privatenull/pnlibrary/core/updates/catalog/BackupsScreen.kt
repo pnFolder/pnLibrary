@@ -10,7 +10,7 @@ import java.time.ZoneId
 /** Retained rollback sets with their age; paths and file contents are never shown. */
 internal class BackupsScreen(routes: UpdateCatalogRoutes, now: Instant, zone: ZoneId) : CatalogStyle(routes, now, zone) {
     fun backups(backups: List<UpdateBackup>, page: Int): List<Component> {
-        require(page > 0) { "page must be positive" }
+        require(page > 0) { "Page must be positive" }
         val selected = backups.onPage(page)
         val result = mutableListOf(
             header("Резервы", text(RussianText.counted(backups.size.toLong(), "набор", "набора", "наборов"), ChatPalette.SOFT)),

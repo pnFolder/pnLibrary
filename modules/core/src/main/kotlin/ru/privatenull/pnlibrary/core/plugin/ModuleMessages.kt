@@ -9,7 +9,7 @@ internal class ModuleMessages(
     private val logging: LoggingService,
 ) : PluginMessages {
     override fun box(title: String): MessageBox {
-        require(title.isNotBlank()) { "message box title must not be blank" }
+        require(title.isNotBlank()) { "Message box title must not be blank" }
         return logging.box(owner, title.trim())
     }
 }

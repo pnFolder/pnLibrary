@@ -144,6 +144,6 @@ internal class RegisteredUpdate(
     )
 
     private fun requireOpen() {
-        check(!closed.get()) { "update registration is closed" }
+        check(!closed.get()) { "Update registration is closed" }
     }
 }

@@ -18,7 +18,7 @@ internal class DiagnosticContributors(
         dataDirectory: Path?,
     ): DiagnosticRegistration {
         val id = sanitizer.text(contributor.id, MAXIMUM_ID_LENGTH).also { sanitizedId ->
-            require(sanitizedId.isNotEmpty()) { "contributor id must not be empty" }
+            require(sanitizedId.isNotEmpty()) { "Contributor id must not be empty" }
         }
         val registered = RegisteredContributor(contributor, dataDirectory)
         contributors[id] = registered

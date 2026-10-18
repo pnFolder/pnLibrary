@@ -30,38 +30,38 @@ internal class TransactionJournalRepository(
     fun load(path: Path): TransactionJournal {
         val normalized = checkedPath(path, root)
         require(normalized.fileName.toString() == "journal.json" && normalized.parent.parent == root.toAbsolutePath().normalize()) {
-            "invalid transaction journal location"
+            "Invalid transaction journal location"
         }
-        require(Files.size(normalized) <= MAX_JOURNAL_BYTES) { "transaction journal exceeds size limit" }
+        require(Files.size(normalized) <= MAX_JOURNAL_BYTES) { "Transaction journal exceeds size limit" }
         return TransactionJournal.load(normalized).also { validate(normalized, it) }
     }
 
     /** Rejects journals whose identifiers, versions, digests, or paths are malformed or escape their roots. */
     fun validate(path: Path, journal: TransactionJournal) {
         val normalized = checkedPath(path, root)
-        require(journal.id == normalized.parent.fileName.toString()) { "transaction ID does not match its directory" }
-        require(journal.artifacts.isNotEmpty()) { "transaction has no artifacts" }
+        require(journal.id == normalized.parent.fileName.toString()) { "Transaction ID does not match its directory" }
+        require(journal.artifacts.isNotEmpty()) { "Transaction has no artifacts" }
         journal.createdAt?.let(Instant::parse)
         journal.planId?.let(UUID::fromString)
-        require(journal.targetApi == null || journal.targetApi > 0) { "invalid target API" }
+        require(journal.targetApi == null || journal.targetApi > 0) { "Invalid target API" }
         journal.configurationSnapshot?.let(UUID::fromString)
         journal.rollbackSession?.let(UUID::fromString)
         journal.healthCheckedAt?.let(Instant::parse)
-        require(journal.purpose in setOf(null, "STAGE", "INSTALL", "RESTORE")) { "invalid transaction purpose" }
+        require(journal.purpose in setOf(null, "STAGE", "INSTALL", "RESTORE")) { "Invalid transaction purpose" }
         journal.parentTransaction?.let(UUID::fromString)
         val targets = journal.artifacts.map { record ->
             checkedPath(Paths.get(record.backup), normalized.parent)
             checkedPath(Paths.get(record.staged), normalized.parent)
             record.installedTarget?.let { checkedPath(Paths.get(it), publicationRoot) }
-            require(isDigestOrNull(record.backupSha256)) { "invalid backup digest" }
+            require(isDigestOrNull(record.backupSha256)) { "Invalid backup digest" }
             listOfNotNull(record.expected, record.prior).forEach { version ->
                 SemanticVersion.parse(version.version)
                 ApiVersionRange(version.minimumApi, version.maximumApi)
-                require(isDigestOrNull(version.sha256)) { "invalid persisted artifact digest" }
+                require(isDigestOrNull(version.sha256)) { "Invalid persisted artifact digest" }
             }
             checkedPath(Paths.get(record.target), publicationRoot)
         }
-        require(targets.distinct().size == targets.size) { "transaction contains duplicate targets" }
+        require(targets.distinct().size == targets.size) { "Transaction contains duplicate targets" }
     }
 
     /** Persists [journal] at [path]. */

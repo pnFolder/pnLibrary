@@ -49,7 +49,7 @@ internal class DownloadRegistrationImpl(
     ): CompletableFuture<List<DownloadSnapshot>> {
         val promise = CompletableFuture<List<DownloadSnapshot>>()
         if (closed.get() || managerIsClosed()) {
-            promise.completeExceptionally(IllegalStateException("регистрация загрузок закрыта"))
+            promise.completeExceptionally(IllegalStateException("Download registration is closed"))
             return promise
         }
 
@@ -65,7 +65,7 @@ internal class DownloadRegistrationImpl(
 
         synchronized(stateLock) {
             if (closed.get() || managerIsClosed()) {
-                promise.completeExceptionally(IllegalStateException("регистрация загрузок закрыта"))
+                promise.completeExceptionally(IllegalStateException("Download registration is closed"))
                 return promise
             }
             activeDownload.get()?.let { return it }
@@ -99,7 +99,7 @@ internal class DownloadRegistrationImpl(
     ): CompletableFuture<List<DownloadSnapshot>> {
         val result = synchronized(stateLock) {
             if (closed.get() || managerIsClosed()) {
-                promise.completeExceptionally(IllegalStateException("регистрация загрузок закрыта"))
+                promise.completeExceptionally(IllegalStateException("Download registration is closed"))
                 return promise
             }
             currentSnapshots.set(request.files.map { DownloadSnapshot(it.key, DownloadState.BLOCKED, reason) })
@@ -121,7 +121,7 @@ internal class DownloadRegistrationImpl(
         }
         val outcome = runCatching {
             install(declarations) {
-                check(!closed.get() && !managerIsClosed()) { "регистрация загрузок закрыта" }
+                check(!closed.get() && !managerIsClosed()) { "Download registration is closed" }
             }
         }
         val result = try {
@@ -156,7 +156,7 @@ internal class DownloadRegistrationImpl(
             currentSnapshots.set(request.files.map { DownloadSnapshot(it.key, DownloadState.CLOSED) })
             activeDownload.getAndSet(null)
         }
-        pending?.completeExceptionally(IllegalStateException("регистрация загрузок закрыта"))
+        pending?.completeExceptionally(IllegalStateException("Download registration is closed"))
         remove(this)
     }
 

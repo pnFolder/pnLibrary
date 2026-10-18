@@ -167,7 +167,7 @@ internal class UpdateStateStore(
                 )
                 "frozen" -> BlockedReason.Frozen(product)
                 "no-compatible-release" -> BlockedReason.NoCompatibleRelease(product, item.get("requiredApi").asInt)
-                else -> error("unknown update blocker type: ${item.get("type").asString}")
+                else -> error("Unknown update blocker type: ${item.get("type").asString}")
             }
         }.orEmpty()
 

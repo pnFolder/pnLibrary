@@ -19,11 +19,11 @@ internal class RollbackCatalog(
     fun resolve(id: UUID): Path {
         val path = root.toAbsolutePath().normalize().resolve(id.toString()).resolve("journal.json")
         val journal = journals.load(path)
-        require(journal.purpose in setOf(null, "STAGE")) { "internal installation transaction is not a saved component set" }
+        require(journal.purpose in setOf(null, "STAGE")) { "Internal installation transaction is not a saved component set" }
         require(journal.state in ROLLBACK_STATES) {
-            "transaction $id cannot be rolled back from ${journal.state}"
+            "Transaction $id cannot be rolled back from ${journal.state}"
         }
-        require(journals.hasRollbackData(journal)) { "transaction $id has no complete rollback data" }
+        require(journals.hasRollbackData(journal)) { "Transaction $id has no complete rollback data" }
         return path
     }
 

@@ -15,7 +15,7 @@ internal class ArtifactDownloader(private val maximumBytes: Long) {
     /** Downloads into [destination] and returns the number of bytes written. */
     fun download(openStream: () -> InputStream, destination: Path): Long {
         val absolute = destination.toAbsolutePath().normalize()
-        val parent = absolute.parent ?: throw ArtifactDownloadException("download destination must have a parent")
+        val parent = absolute.parent ?: throw ArtifactDownloadException("Download destination must have a parent")
         Files.createDirectories(parent)
         val temporary = Files.createTempFile(parent, absolute.fileName.toString(), ".part")
         try {
@@ -27,7 +27,7 @@ internal class ArtifactDownloader(private val maximumBytes: Long) {
                         val count = input.read(buffer)
                         if (count < 0) break
                         total += count
-                        if (total > maximumBytes) throw ArtifactDownloadException("download exceeds the configured size limit")
+                        if (total > maximumBytes) throw ArtifactDownloadException("Download exceeds the configured size limit")
                         output.write(buffer, 0, count)
                     }
                 }

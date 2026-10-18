@@ -76,7 +76,7 @@ internal data class CatalogArtifact(
 internal class ReleaseCatalogCodec(private val maximumBytes: Int = MAX_BYTES) {
     /** Decodes and validates catalogue [bytes]. */
     fun decode(bytes: ByteArray): ReleaseCatalog {
-        require(bytes.size <= maximumBytes) { "release catalog exceeds $maximumBytes bytes" }
+        require(bytes.size <= maximumBytes) { "Release catalog exceeds $maximumBytes bytes" }
         val root = try { JsonParser.parseString(bytes.toString(Charsets.UTF_8)).asJsonObject }
         catch (error: Exception) { throw ManifestException("root", "malformed JSON", error) }
         val schema = root.requiredInt("schema")
@@ -86,7 +86,7 @@ internal class ReleaseCatalogCodec(private val maximumBytes: Int = MAX_BYTES) {
             decodeRelease(value.asJsonObject, "releases[$index]")
         }
         require(releases.map { it.version }.distinct().size == releases.size) {
-            "release catalog contains duplicate versions"
+            "Release catalog contains duplicate versions"
         }
         return ReleaseCatalog(product, releases)
     }

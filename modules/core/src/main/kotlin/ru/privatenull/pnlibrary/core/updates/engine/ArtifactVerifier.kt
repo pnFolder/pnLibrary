@@ -28,7 +28,7 @@ internal data class ArtifactSpecification(
 ) {
     init {
         require(fileName.isNotBlank() && Paths.get(fileName).fileName.toString() == fileName) { "fileName must be a plain file name" }
-        require(size == null || size > 0) { "artifact size must be positive" }
+        require(size == null || size > 0) { "Artifact size must be positive" }
         require(sha256 == null || sha256.matches(Regex("[0-9a-fA-F]{64}"))) { "SHA-256 must contain 64 hexadecimal characters" }
     }
 }

@@ -67,7 +67,7 @@ internal class UpdateEventJournal(
     /** Records an observed state, not an assertion about who initiated the operation. */
     @Synchronized
     fun record(snapshot: UpdatePlanSnapshot, actor: UpdateActor = UpdateActor.UNKNOWN, operation: String = "STATE_OBSERVED"): Event {
-        require(operation in OPERATIONS) { "invalid update operation" }
+        require(operation in OPERATIONS) { "Invalid update operation" }
         val event = Event(
             UUID.randomUUID(), clock.instant(), snapshot.id, snapshot.revision, snapshot.state.name,
             snapshot.plan?.changes.orEmpty().map { Change(it.product.value, it.from?.toString(), it.to.toString()) },
@@ -91,7 +91,7 @@ internal class UpdateEventJournal(
         message: String?,
         actor: UpdateActor = UpdateActor.SYSTEM,
     ): Event {
-        require(operation in COMPONENT_OPERATIONS) { "invalid component operation" }
+        require(operation in COMPONENT_OPERATIONS) { "Invalid component operation" }
         return write(Event(
             UUID.randomUUID(), clock.instant(), UUID.randomUUID(), 0, UpdateState.UP_TO_DATE.name,
             listOf(Change(product, from, to)), actor, operation, message?.take(4096),
@@ -145,7 +145,7 @@ internal class UpdateEventJournal(
             })
         }
         val target = directory.resolve("${event.id}.json")
-        require(json.toString().toByteArray(UTF_8).size <= 1024 * 1024) { "event exceeds size limit" }
+        require(json.toString().toByteArray(UTF_8).size <= 1024 * 1024) { "Event exceeds size limit" }
         val temporary = Files.createTempFile(directory, ".event-", ".tmp")
         try {
             TextFiles.write(temporary, json.toString(), UTF_8)
@@ -192,8 +192,8 @@ internal class UpdateEventJournal(
     }
 
     private fun readPage(page: Int, pageSize: Int, product: String?, includeRoutine: Boolean = true): List<Event> {
-        require(page > 0) { "page must be positive" }
-        require(pageSize in 1..100) { "page size must be between 1 and 100" }
+        require(page > 0) { "Page must be positive" }
+        require(pageSize in 1..100) { "Page size must be between 1 and 100" }
         val offset = (page.toLong() - 1) * pageSize
         return readAll(product, includeRoutine).asSequence().drop(offset.coerceAtMost(Int.MAX_VALUE.toLong()).toInt()).take(pageSize).toList()
     }
@@ -210,9 +210,9 @@ internal class UpdateEventJournal(
     }
 
     private fun readEvent(path: Path): Event? = try {
-        require(Files.size(path) <= 1024 * 1024) { "event exceeds size limit" }
+        require(Files.size(path) <= 1024 * 1024) { "Event exceeds size limit" }
         val json = JsonParser.parseString(TextFiles.read(path, UTF_8)).asJsonObject
-        require(json.get("schema").asInt == 1 && json.get("kind").asString == "STATE_OBSERVED") { "unsupported event schema" }
+        require(json.get("schema").asInt == 1 && json.get("kind").asString == "STATE_OBSERVED") { "Unsupported event schema" }
         Event(
             UUID.fromString(json.get("id").asString), Instant.parse(json.get("occurredAt").asString),
             UUID.fromString(json.get("planId").asString), json.get("revision").asLong, json.get("state").asString,
@@ -225,9 +225,9 @@ internal class UpdateEventJournal(
             json.get("operation")?.asString ?: "STATE_OBSERVED",
             json.get("message")?.takeUnless { it.isJsonNull }?.asString,
         ).also { event ->
-            require(event.revision >= 0) { "invalid event revision" }
+            require(event.revision >= 0) { "Invalid event revision" }
             UpdateState.valueOf(event.state)
-            require(event.operation in OPERATIONS) { "invalid update operation" }
+            require(event.operation in OPERATIONS) { "Invalid update operation" }
             event.changes.forEach { change ->
                 ProductId.of(change.product)
                 change.from?.let(SemanticVersion::parse)

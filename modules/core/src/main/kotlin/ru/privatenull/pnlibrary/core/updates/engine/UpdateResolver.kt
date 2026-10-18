@@ -55,15 +55,15 @@ internal class UpdateResolver(private val libraryComponent: ProductId) {
         javaFeature: Int = Int.MAX_VALUE,
         policy: ResolverPolicy = ResolverPolicy(),
     ): ResolutionResult {
-        require(installed.isNotEmpty()) { "at least one installed component is required" }
+        require(installed.isNotEmpty()) { "At least one installed component is required" }
         require(installed.map(InstalledProduct::product).distinct().size == installed.size) {
-            "installed component IDs must be unique"
+            "Installed component IDs must be unique"
         }
         val installedById = installed.associateBy(InstalledProduct::product)
         val currentLibrary = requireNotNull(installedById[libraryComponent]) {
-            "installed pnLibrary component is required"
+            "Installed pnLibrary component is required"
         }
-        require(currentLibrary.providesApi != null) { "installed pnLibrary must provide an API generation" }
+        require(currentLibrary.providesApi != null) { "Installed pnLibrary must provide an API generation" }
 
         val allowedReleases = releases.filter { release ->
             channels.getOrDefault(release.product, defaultChannel).accepts(release.channel)

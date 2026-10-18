@@ -29,7 +29,7 @@ object DiagnosticSections {
     /** Nearest-rank percentile of [values], or null when there are none. */
     @JvmStatic
     fun percentile(values: Collection<Long>, fraction: Double): Long? {
-        require(fraction in 0.0..1.0) { "fraction must be within 0..1" }
+        require(fraction in 0.0..1.0) { "Fraction must be within 0..1" }
         if (values.isEmpty()) return null
         val sorted = values.sorted()
         val rank = ceil(sorted.size * fraction).toInt() - 1

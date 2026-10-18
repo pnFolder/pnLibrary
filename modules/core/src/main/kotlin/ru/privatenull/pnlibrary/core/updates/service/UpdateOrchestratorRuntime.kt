@@ -148,7 +148,7 @@ internal class UpdateOrchestratorRuntime(
     }
 
     fun historyPage(page: Int, product: String?): CompletionStage<List<UpdateHistoryEntry>> = readAsync {
-        require(page > 0) { "page must be positive" }
+        require(page > 0) { "Page must be positive" }
         val normalized = product?.let { ProductId.of(it).value }
         journal.read(page, product = normalized).map { event ->
             UpdateHistoryEntry(event.id, event.occurredAt, event.planId, UpdateState.valueOf(event.state),
@@ -167,7 +167,7 @@ internal class UpdateOrchestratorRuntime(
         pendingReads.add(result)
         result.whenComplete { _, _ -> pendingReads.remove(result) }
         try {
-            check(!closed.get()) { "update service is closed" }
+            check(!closed.get()) { "Update service is closed" }
             executor.execute {
                 if (result.isDone) return@execute
                 runCatching(action).fold(result::complete, result::completeExceptionally)
@@ -180,7 +180,7 @@ internal class UpdateOrchestratorRuntime(
 
     override fun close() {
         if (!closed.compareAndSet(false, true)) return
-        pendingReads.forEach { it.completeExceptionally(IllegalStateException("update service is closed")) }
+        pendingReads.forEach { it.completeExceptionally(IllegalStateException("Update service is closed")) }
         try { orchestrator.close() } finally { releaseLockWhenIdle() }
     }
 

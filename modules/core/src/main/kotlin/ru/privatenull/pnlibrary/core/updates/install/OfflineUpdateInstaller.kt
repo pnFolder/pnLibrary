@@ -31,7 +31,7 @@ object OfflineUpdateInstaller {
 
     internal fun apply(dataDirectory: Path): Int {
         val data = dataDirectory.toAbsolutePath().normalize()
-        require(Files.isDirectory(data) && data.parent != null) { "library data directory does not exist" }
+        require(Files.isDirectory(data) && data.parent != null) { "Library data directory does not exist" }
         return UpdateInstallationLock.acquire(data).use {
             val plugins = data.parent
             val verifier = ArtifactVerifier(512L * 1024 * 1024)
@@ -42,7 +42,7 @@ object OfflineUpdateInstaller {
             transactions.recoverAll(offline = true)
             val pending = transactions.pendingInstallations().map { path -> prepare(transactions, verifier, snapshots, plugins, path) }
             require(pending.flatMap { it.artifacts }.map { it.target }.distinct().size == pending.sumOf { it.artifacts.size }) {
-                "conflicting prepared component sets; resolve them before starting the server"
+                "Conflicting prepared component sets; resolve them before starting the server"
             }
             pending.forEach { prepared ->
                 val child = transactions.appliedChildJournal(prepared.id, prepared.purpose) ?: run {
@@ -78,19 +78,19 @@ object OfflineUpdateInstaller {
         val journal = transactions.readJournal(path)
         val restoring = journal.state == TransactionState.ROLLED_BACK
         val configuration = if (restoring && journal.restoreConfigurations) {
-            val id = UUID.fromString(requireNotNull(journal.configurationSnapshot) { "no configuration snapshot was retained" })
-            require(snapshots.read(id).planId == journal.planId) { "configuration snapshot belongs to another plan" }
+            val id = UUID.fromString(requireNotNull(journal.configurationSnapshot) { "No configuration snapshot was retained" })
+            require(snapshots.read(id).planId == journal.planId) { "Configuration snapshot belongs to another plan" }
             id
         } else null
         val artifacts = journal.artifacts.map { record ->
-            val installed = requireNotNull(record.installedTarget) { "legacy transaction lacks an installation target; manual installation is required" }
+            val installed = requireNotNull(record.installedTarget) { "Legacy transaction lacks an installation target; manual installation is required" }
             val target = UpdatePaths.inside(Paths.get(installed), plugins)
-            require(target.parent == plugins && target.fileName.toString().endsWith(".jar", true)) { "invalid installed JAR target" }
+            require(target.parent == plugins && target.fileName.toString().endsWith(".jar", true)) { "Invalid installed JAR target" }
             val pending = Paths.get(record.target).toAbsolutePath().normalize()
-            require(pending.parent == plugins.resolve("update") && pending.fileName == target.fileName) { "invalid prepared update location" }
-            if (restoring) require(record.targetExisted) { "rollback of newly installed components requires explicit removal support" }
-            val version = requireNotNull(if (restoring) record.prior else record.expected) { "transaction lacks verified version metadata" }
-            val hash = requireNotNull(version.sha256) { "transaction lacks a preserved artifact checksum" }
+            require(pending.parent == plugins.resolve("update") && pending.fileName == target.fileName) { "Invalid prepared update location" }
+            if (restoring) require(record.targetExisted) { "Rollback of newly installed components requires explicit removal support" }
+            val version = requireNotNull(if (restoring) record.prior else record.expected) { "Transaction lacks verified version metadata" }
+            val hash = requireNotNull(version.sha256) { "Transaction lacks a preserved artifact checksum" }
             val source = Paths.get(if (restoring) record.backup else record.staged)
             val specification = ArtifactSpecification(ProductId.of(record.component), SemanticVersion.parse(version.version),
                 ApiVersionRange(version.minimumApi, version.maximumApi), source.fileName.toString(), Files.size(source), hash)
