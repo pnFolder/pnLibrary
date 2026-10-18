@@ -2,7 +2,7 @@ package ru.privatenull.pnlibrary.bukkit.commands
 
 import org.bukkit.entity.Player
 import org.bukkit.plugin.Plugin
-import ru.privatenull.pnlibrary.core.updates.UpdateCatalogCommands.SettingSaved
+import ru.privatenull.pnlibrary.core.updates.catalog.UpdateCatalogCommands.SettingSaved
 
 /**
  * Short feedback after a setting was saved: the setting's name as the title and what changed, such as

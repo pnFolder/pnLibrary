@@ -4,13 +4,13 @@ import ru.privatenull.pnlibrary.api.updates.BlockedReason
 import ru.privatenull.pnlibrary.api.updates.UpdatePlanSnapshot
 import ru.privatenull.pnlibrary.api.updates.UpdateSnapshot
 import ru.privatenull.pnlibrary.api.updates.UpdateState
-import ru.privatenull.pnlibrary.core.updates.UpdateNotice
-import ru.privatenull.pnlibrary.core.updates.UpdateTone
+import ru.privatenull.pnlibrary.core.ui.ChatNotice
+import ru.privatenull.pnlibrary.core.ui.ChatTone
 
 /** Pure, platform-independent wording of the update state used by Bukkit update commands. */
 internal object BukkitUpdateMessages {
     /** Describes the effective plan and product state as short messages. */
-    fun status(input: Pair<UpdatePlanSnapshot, UpdateSnapshot>): List<UpdateNotice> {
+    fun status(input: Pair<UpdatePlanSnapshot, UpdateSnapshot>): List<ChatNotice> {
         val (plan, plugin) = input
         val isLibrary = plugin.product.equals("pnlibrary", true)
         val subject = if (isLibrary) {
@@ -31,18 +31,18 @@ internal object BukkitUpdateMessages {
             else -> UpdateState.UP_TO_DATE
         }
         return when (state) {
-            UpdateState.FROZEN -> listOf(UpdateNotice(UpdateTone.WARNING, "Обновления $subjectGenitive временно приостановлены."))
-            UpdateState.BLOCKED -> listOf(UpdateNotice(UpdateTone.FAILURE, "Обновление $subjectGenitive заблокировано.")) +
-                plan.blockers.map { UpdateNotice(UpdateTone.WARNING, "Причина: ${blocker(it)}") }
-            UpdateState.FAILED -> listOf(UpdateNotice(UpdateTone.FAILURE, "Не удалось проверить обновление $subjectGenitive.",
+            UpdateState.FROZEN -> listOf(ChatNotice(ChatTone.WARNING, "Обновления $subjectGenitive временно приостановлены."))
+            UpdateState.BLOCKED -> listOf(ChatNotice(ChatTone.FAILURE, "Обновление $subjectGenitive заблокировано.")) +
+                plan.blockers.map { ChatNotice(ChatTone.WARNING, "Причина: ${blocker(it)}") }
+            UpdateState.FAILED -> listOf(ChatNotice(ChatTone.FAILURE, "Не удалось проверить обновление $subjectGenitive.",
                 sentence(plan.message ?: plugin.message ?: "неизвестная ошибка")))
-            UpdateState.UPDATE_AVAILABLE -> listOf(UpdateNotice(UpdateTone.INFO,
+            UpdateState.UPDATE_AVAILABLE -> listOf(ChatNotice(ChatTone.INFO,
                 "Для $subjectGenitive доступно обновление: v${plugin.currentVersion} » v${plugin.latestVersion ?: change?.to ?: "?"}."))
-            UpdateState.UPDATE_STAGED -> listOf(UpdateNotice(UpdateTone.SUCCESS, "Обновление $subjectGenitive проверено и подготовлено.",
+            UpdateState.UPDATE_STAGED -> listOf(ChatNotice(ChatTone.SUCCESS, "Обновление $subjectGenitive проверено и подготовлено.",
                 "Полностью перезапустите сервер."))
-            UpdateState.ROLLED_BACK -> listOf(UpdateNotice(UpdateTone.SUCCESS, "Предыдущая версия $subjectGenitive подготовлена.",
+            UpdateState.ROLLED_BACK -> listOf(ChatNotice(ChatTone.SUCCESS, "Предыдущая версия $subjectGenitive подготовлена.",
                 "Полностью перезапустите сервер."))
-            else -> listOf(UpdateNotice(UpdateTone.SUCCESS, "${subject.replaceFirstChar { it.uppercase() }} уже использует актуальную версию."))
+            else -> listOf(ChatNotice(ChatTone.SUCCESS, "${subject.replaceFirstChar { it.uppercase() }} уже использует актуальную версию."))
         }
     }
 

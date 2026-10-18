@@ -4,7 +4,7 @@ import ru.privatenull.pnlibrary.api.runtime.PnLibrary
 import ru.privatenull.pnlibrary.api.runtime.PnLibraryConfig
 import ru.privatenull.pnlibrary.api.runtime.PnLibraryProvider
 import ru.privatenull.pnlibrary.core.diagnostics.DiagnosticsRegistry
-import ru.privatenull.pnlibrary.core.updates.ProxyUpdateCommand
+import ru.privatenull.pnlibrary.core.updates.catalog.ProxyUpdateCommand
 
 /**
  * Creates and publishes the single pnLibrary runtime in the current JVM.
@@ -19,7 +19,6 @@ internal object PnLibraryBootstrap {
     private var instance: PnLibraryImpl? = null
     private val globalRegistry = DiagnosticsRegistry()
 
-    @JvmStatic
     /**
      * Creates, initializes, publishes, and binds the process-wide runtime.
      *
@@ -33,6 +32,7 @@ internal object PnLibraryBootstrap {
      * @param config already validated runtime configuration
      * @return the active runtime, which may be an instance created by an earlier call
      */
+    @JvmStatic
     @JvmOverloads
     @Synchronized
     fun bootstrap(

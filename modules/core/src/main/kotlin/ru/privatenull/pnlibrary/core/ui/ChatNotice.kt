@@ -1,7 +1,7 @@
-package ru.privatenull.pnlibrary.core.updates
+package ru.privatenull.pnlibrary.core.ui
 
-/** What a short update message reports, which decides its mark and color. */
-enum class UpdateTone {
+/** What a short message reports, which decides its mark and color. */
+enum class ChatTone {
     /** Work has started or is still running. */
     PROGRESS,
 
@@ -19,8 +19,8 @@ enum class UpdateTone {
 }
 
 /**
- * One short message of an update command, rendered by [UpdateCatalogView.notice].
+ * One short message of a command, rendered by [ChatKit.notice].
  *
  * @property detail an optional second line, such as the reason of a failure
  */
-data class UpdateNotice(val tone: UpdateTone, val text: String, val detail: String? = null)
+data class ChatNotice(val tone: ChatTone, val text: String, val detail: String? = null)

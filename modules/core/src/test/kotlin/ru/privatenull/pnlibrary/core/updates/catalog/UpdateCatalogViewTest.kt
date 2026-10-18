@@ -1,4 +1,4 @@
-package ru.privatenull.pnlibrary.core.updates
+package ru.privatenull.pnlibrary.core.updates.catalog
 
 import net.kyori.adventure.text.Component
 import net.kyori.adventure.text.event.HoverEvent
@@ -22,6 +22,10 @@ import ru.privatenull.pnlibrary.api.updates.UpdateHistoryEntry
 import ru.privatenull.pnlibrary.api.updates.UpdateSnapshot
 import ru.privatenull.pnlibrary.api.updates.UpdateState
 import ru.privatenull.pnlibrary.api.version.SemanticVersion
+import ru.privatenull.pnlibrary.core.ui.ChatNotice
+import ru.privatenull.pnlibrary.core.ui.ChatPalette
+import ru.privatenull.pnlibrary.core.ui.ChatTone
+import ru.privatenull.pnlibrary.core.updates.ComponentLedger
 import java.time.Instant
 import java.time.ZoneOffset
 import java.util.UUID
@@ -392,9 +396,9 @@ class UpdateCatalogViewTest {
             assertEquals("", plain(page[0]))
             val title = titleOf(page[1])
             assertTrue(title.hasDecoration(TextDecoration.BOLD), plain(page[1]))
-            assertEquals(UpdatePalette.ACCENT, title.color())
+            assertEquals(ChatPalette.ACCENT, title.color())
         }
-        assertTrue(UpdateCatalogView.notice(UpdateNotice(UpdateTone.SUCCESS, "Готово"), bukkit).none { plain(it).isEmpty() })
+        assertTrue(UpdateCatalogView.notice(ChatNotice(ChatTone.SUCCESS, "Готово"), bukkit).none { plain(it).isEmpty() })
     }
 
     @Test
@@ -408,11 +412,11 @@ class UpdateCatalogViewTest {
     @Test
     fun `every palette role keeps its own color on servers without RGB`() {
         val expected = mapOf(
-            UpdatePalette.TEXT to NamedTextColor.WHITE, UpdatePalette.SOFT to NamedTextColor.GRAY,
-            UpdatePalette.LABEL to NamedTextColor.AQUA, UpdatePalette.FAINT to NamedTextColor.DARK_GRAY,
-            UpdatePalette.ACCENT to NamedTextColor.LIGHT_PURPLE, UpdatePalette.OK to NamedTextColor.GREEN,
-            UpdatePalette.INFO to NamedTextColor.AQUA, UpdatePalette.WARN to NamedTextColor.YELLOW,
-            UpdatePalette.ORANGE to NamedTextColor.GOLD, UpdatePalette.DANGER to NamedTextColor.RED,
+            ChatPalette.TEXT to NamedTextColor.WHITE, ChatPalette.SOFT to NamedTextColor.GRAY,
+            ChatPalette.LABEL to NamedTextColor.AQUA, ChatPalette.FAINT to NamedTextColor.DARK_GRAY,
+            ChatPalette.ACCENT to NamedTextColor.LIGHT_PURPLE, ChatPalette.OK to NamedTextColor.GREEN,
+            ChatPalette.INFO to NamedTextColor.AQUA, ChatPalette.WARN to NamedTextColor.YELLOW,
+            ChatPalette.ORANGE to NamedTextColor.GOLD, ChatPalette.DANGER to NamedTextColor.RED,
         )
         expected.forEach { (color, legacy) -> assertEquals(legacy, NamedTextColor.nearestTo(color), color.asHexString()) }
     }
@@ -429,10 +433,10 @@ class UpdateCatalogViewTest {
 
     @Test
     fun `notices mark their tone and keep the detail on its own line`() {
-        val lines = UpdateCatalogView.notice(UpdateNotice(UpdateTone.FAILURE, "Не удалось подготовить откат.", "HTTP 404"), bukkit)
+        val lines = UpdateCatalogView.notice(ChatNotice(ChatTone.FAILURE, "Не удалось подготовить откат.", "HTTP 404"), bukkit)
         assertEquals(listOf("  ! Не удалось подготовить откат.", "    HTTP 404"), lines.map(::plain))
-        assertEquals("  √ Готово", plain(UpdateCatalogView.notice(UpdateNotice(UpdateTone.SUCCESS, "Готово"), bukkit).single()))
-        val console = UpdateCatalogView.notice(UpdateNotice(UpdateTone.PROGRESS, "Проверяю обновления…"), proxy.copy(interactive = false, ascii = true))
+        assertEquals("  √ Готово", plain(UpdateCatalogView.notice(ChatNotice(ChatTone.SUCCESS, "Готово"), bukkit).single()))
+        val console = UpdateCatalogView.notice(ChatNotice(ChatTone.PROGRESS, "Проверяю обновления…"), proxy.copy(interactive = false, ascii = true))
         assertEquals("  -> Проверяю обновления...", plain(console.single()))
     }
 

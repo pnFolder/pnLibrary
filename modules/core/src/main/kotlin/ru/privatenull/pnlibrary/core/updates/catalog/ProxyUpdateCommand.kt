@@ -1,4 +1,4 @@
-package ru.privatenull.pnlibrary.core.updates
+package ru.privatenull.pnlibrary.core.updates.catalog
 
 import net.kyori.adventure.text.Component
 import ru.privatenull.pnlibrary.api.commands.ArgumentType

@@ -17,7 +17,7 @@ import ru.privatenull.pnlibrary.api.tasks.TaskSpec
 import ru.privatenull.pnlibrary.api.updates.UpdateState
 import ru.privatenull.pnlibrary.bukkit.commands.BukkitControlCommand
 import ru.privatenull.pnlibrary.core.runtime.runtimeTaskScope
-import ru.privatenull.pnlibrary.core.updates.UpdateCatalogView
+import ru.privatenull.pnlibrary.core.updates.catalog.UpdateCatalogView
 import java.time.Duration
 import java.util.concurrent.CopyOnWriteArrayList
 import java.util.concurrent.atomic.AtomicBoolean

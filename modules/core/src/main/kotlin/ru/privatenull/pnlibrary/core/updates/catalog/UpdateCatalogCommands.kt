@@ -1,4 +1,4 @@
-package ru.privatenull.pnlibrary.core.updates
+package ru.privatenull.pnlibrary.core.updates.catalog
 
 import net.kyori.adventure.text.Component
 import ru.privatenull.pnlibrary.api.commands.ArgumentType
@@ -10,6 +10,9 @@ import ru.privatenull.pnlibrary.api.updates.UpdateHistoryEntry
 import ru.privatenull.pnlibrary.api.updates.UpdateSnapshot
 import ru.privatenull.pnlibrary.api.updates.UpdateState
 import ru.privatenull.pnlibrary.common.text.RussianText
+import ru.privatenull.pnlibrary.core.ui.ChatNotice
+import ru.privatenull.pnlibrary.core.ui.ChatPalette
+import ru.privatenull.pnlibrary.core.ui.ChatTone
 import ru.privatenull.pnlibrary.core.updates.engine.FreezeDuration
 import java.time.Duration
 import java.util.Locale
@@ -226,7 +229,7 @@ class UpdateCatalogCommands(
                     val routes = routesFor(context)
                     val arrow = if (routes.ascii) "->" else "→"
                     val card = UpdateCatalogView.settings(snapshot, routes, library.updates.heldUntil(snapshot.product))
-                    (card + UpdateCatalogView.notice(UpdateNotice(UpdateTone.SUCCESS, "Сохранено. $setting: $before $arrow $value."), routes)).forEach(sender::send)
+                    (card + UpdateCatalogView.notice(ChatNotice(ChatTone.SUCCESS, "Сохранено. $setting: $before $arrow $value."), routes)).forEach(sender::send)
                     onSaved(context, SettingSaved(snapshot.product, setting, before, value))
                 }
             })
@@ -286,7 +289,7 @@ class UpdateCatalogCommands(
         return false
     }
 
-    private fun error(text: String): Component = Component.text(text, UpdatePalette.DANGER)
+    private fun error(text: String): Component = Component.text(text, ChatPalette.DANGER)
 
     private companion object {
         val SWITCH_SUGGESTIONS = listOf("on", "off")
