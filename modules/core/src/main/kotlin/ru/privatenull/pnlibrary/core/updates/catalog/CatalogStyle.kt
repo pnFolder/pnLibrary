@@ -32,7 +32,7 @@ internal open class CatalogStyle(
     val clickable: Boolean = routes.interactive && routes.editable
 
     fun channelTag(channel: UpdateChannel): Component =
-        text(CatalogLabels.channelName(channel), CatalogLabels.channelColor(channel))
+        text(UpdateChannelLabels.channelName(channel), UpdateChannelLabels.channelColor(channel))
 
     /**
      * The current version, then an arrow and the highlighted new one when there is an update. With [changelog]

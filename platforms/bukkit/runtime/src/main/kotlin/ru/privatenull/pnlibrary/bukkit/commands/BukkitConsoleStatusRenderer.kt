@@ -10,7 +10,8 @@ import ru.privatenull.pnlibrary.api.updates.UpdateState
 import ru.privatenull.pnlibrary.api.version.SemanticVersion
 import ru.privatenull.pnlibrary.common.text.RussianText
 import ru.privatenull.pnlibrary.console.ConsoleCard
-import ru.privatenull.pnlibrary.console.ConsoleTheme
+import ru.privatenull.pnlibrary.core.ui.ConsoleStyle
+import ru.privatenull.pnlibrary.core.updates.catalog.UpdateChannelLabels
 import java.time.Duration
 import java.time.Instant
 import java.time.ZoneOffset
@@ -21,7 +22,7 @@ import java.util.Locale
 internal object BukkitConsoleStatusRenderer {
     /** Builds the console status card from registered update snapshots. */
     fun render(entries: List<UpdateRegistration>): List<String> {
-        val card = ConsoleCard.builder(THEME, "СОСТОЯНИЕ PNFOLDER")
+        val card = ConsoleCard.builder(ConsoleStyle.THEME, "СОСТОЯНИЕ PNFOLDER")
             .mascot("^.^", "pnLibrary", "библиотека платформы")
             .blank()
             .firstDetail("Продукт", "pnLibrary")
@@ -133,8 +134,8 @@ internal object BukkitConsoleStatusRenderer {
 
         card.blank()
         channels.forEachIndexed { index, (channel, release) ->
-            card.section(channelLabel(channel))
-                .detail("Версия", "${channelColor(channel)}${release.version}§r")
+            card.section(UpdateChannelLabels.channelTitle(channel).replaceFirstChar { it.titlecase(Locale.ROOT) })
+                .detail("Версия", ConsoleStyle.paint(release.version, UpdateChannelLabels.channelColor(channel)))
                 .lastDetail(
                     "Опубликована",
                     release.publishedAt?.let(::publishedAtLabel) ?: "дата неизвестна",
@@ -186,25 +187,6 @@ internal object BukkitConsoleStatusRenderer {
     /** Formats the current instant in the console UTC format. */
     private fun utcNow(): String = UTC_DATE_TIME.format(Instant.now())
 
-    /** Returns the localized heading for a release channel. */
-    private fun channelLabel(channel: UpdateChannel): String = when (channel) {
-        UpdateChannel.STABLE -> "Стабильный канал"
-        UpdateChannel.RC -> "Канал RC"
-        UpdateChannel.BETA -> "Тестовый канал Beta"
-        UpdateChannel.ALPHA -> "Экспериментальный канал Alpha"
-        UpdateChannel.DEV -> "Разрабатываемый канал Dev"
-    }
-
-    /** Returns the console color associated with a release channel. */
-    private fun channelColor(channel: UpdateChannel): String = when (channel) {
-        UpdateChannel.STABLE -> "§a"
-        UpdateChannel.RC -> "§b"
-        UpdateChannel.BETA -> "§e"
-        UpdateChannel.ALPHA -> "§6"
-        UpdateChannel.DEV -> "§c"
-    }
-
-    private val THEME = ConsoleTheme("§6", "§e", "§f", "§8", "§r")
     private val ZERO_VERSION = SemanticVersion.parse("0.0.0")
     private val DISPLAYED_CHANNELS = listOf(
         UpdateChannel.STABLE,
@@ -236,13 +218,8 @@ internal object BukkitStatusLabels {
     }
 
     /** Returns the localized, colored channel label for a snapshot. */
-    fun channel(snapshot: UpdateSnapshot): String = when (snapshot.channel) {
-        UpdateChannel.STABLE -> "§aстабильный канал§r"
-        UpdateChannel.RC -> "§bканал RC§r"
-        UpdateChannel.BETA -> "§eтестовый канал Beta§r"
-        UpdateChannel.ALPHA -> "§6экспериментальный канал Alpha§r"
-        UpdateChannel.DEV -> "§cразрабатываемый канал Dev§r"
-    }
+    fun channel(snapshot: UpdateSnapshot): String =
+        ConsoleStyle.paint(UpdateChannelLabels.channelTitle(snapshot.channel), UpdateChannelLabels.channelColor(snapshot.channel))
 
     /** Returns the branded library name or the registered product name. */
     fun product(product: String): String =

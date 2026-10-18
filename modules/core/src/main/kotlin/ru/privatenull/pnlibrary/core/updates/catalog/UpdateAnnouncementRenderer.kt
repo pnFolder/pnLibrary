@@ -1,7 +1,6 @@
 package ru.privatenull.pnlibrary.core.updates.catalog
 
 import ru.privatenull.pnlibrary.api.updates.ReleaseSummary
-import ru.privatenull.pnlibrary.api.updates.UpdateChannel
 import ru.privatenull.pnlibrary.api.updates.UpdatePlanSnapshot
 import ru.privatenull.pnlibrary.api.updates.UpdateSnapshot
 import ru.privatenull.pnlibrary.api.updates.UpdateState
@@ -27,7 +26,7 @@ internal object UpdateAnnouncementRenderer {
             card.section("ОБНОВЛЕНИЯ")
             changes.forEachIndexed { index, change ->
                 val release = snapshot.plan?.selected?.firstOrNull { it.product == change.product }
-                val channel = release?.channel?.let(::channelName) ?: "не указан"
+                val channel = release?.channel?.let(UpdateChannelLabels::channelTitle) ?: "не указан"
                 val api = release?.supportedApi?.let { "${it.minimum}–${it.maximum}" } ?: "не указан"
                 val artifact = release?.artifacts?.firstOrNull()
                 val platform = artifact?.platform?.displayName ?: "не указана"
@@ -56,7 +55,7 @@ internal object UpdateAnnouncementRenderer {
                         .groupBy(ReleaseSummary::channel)
                         .mapValues { (_, releases) -> releases.maxByOrNull { it.version } }
                     latestByChannel.values.filterNotNull().forEach { release ->
-                        card.firstDetail(channelName(release.channel), release.version)
+                        card.firstDetail(UpdateChannelLabels.channelTitle(release.channel), release.version)
                             .lastDetail("Опубликована", release.publishedAt?.toString() ?: "дата неизвестна")
                     }
                     if (index != histories.lastIndex) card.blank()
@@ -77,13 +76,5 @@ internal object UpdateAnnouncementRenderer {
                 .blank()
         }
         return card.status(result).build().render()
-    }
-
-    private fun channelName(channel: UpdateChannel): String = when (channel) {
-        UpdateChannel.STABLE -> "стабильный канал"
-        UpdateChannel.RC -> "канал RC"
-        UpdateChannel.BETA -> "тестовый канал Beta"
-        UpdateChannel.ALPHA -> "экспериментальный канал Alpha"
-        UpdateChannel.DEV -> "разрабатываемый канал Dev"
     }
 }
