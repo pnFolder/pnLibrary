@@ -4,11 +4,13 @@ import ru.privatenull.pnlibrary.api.updates.BlockedReason
 import ru.privatenull.pnlibrary.api.updates.UpdatePlanSnapshot
 import ru.privatenull.pnlibrary.api.updates.UpdateSnapshot
 import ru.privatenull.pnlibrary.api.updates.UpdateState
+import ru.privatenull.pnlibrary.core.updates.UpdateNotice
+import ru.privatenull.pnlibrary.core.updates.UpdateTone
 
-/** Pure, platform-independent wording used by Bukkit update commands. */
+/** Pure, platform-independent wording of the update state used by Bukkit update commands. */
 internal object BukkitUpdateMessages {
-    /** Formats the effective plan and product state as player-facing messages. */
-    fun status(input: Pair<UpdatePlanSnapshot, UpdateSnapshot>): List<String> {
+    /** Describes the effective plan and product state as short messages. */
+    fun status(input: Pair<UpdatePlanSnapshot, UpdateSnapshot>): List<UpdateNotice> {
         val (plan, plugin) = input
         val isLibrary = plugin.product.equals("pnlibrary", true)
         val subject = if (isLibrary) {
@@ -29,33 +31,27 @@ internal object BukkitUpdateMessages {
             else -> UpdateState.UP_TO_DATE
         }
         return when (state) {
-            UpdateState.FROZEN -> listOf("§eОбновления $subjectGenitive временно приостановлены.")
-            UpdateState.BLOCKED -> buildList {
-                add("§cОбновление $subjectGenitive заблокировано.")
-                plan.blockers.forEach { add("§7Причина: ${blocker(it)}") }
-            }
-            UpdateState.FAILED -> listOf(
-                "§cНе удалось проверить обновление $subjectGenitive: ${sentence(plan.message ?: plugin.message ?: "неизвестная ошибка")}",
-            )
-            UpdateState.UPDATE_AVAILABLE -> listOf(
-                "§eДля $subjectGenitive доступно обновление: ${plugin.currentVersion} → ${plugin.latestVersion ?: change?.to ?: "неизвестно"}.",
-            )
-            UpdateState.UPDATE_STAGED -> listOf(
-                "§aОбновление $subjectGenitive проверено и подготовлено. Полностью перезапустите сервер.",
-            )
-            UpdateState.ROLLED_BACK -> listOf(
-                "§aПредыдущая версия $subjectGenitive подготовлена. Полностью перезапустите сервер.",
-            )
-            else -> listOf("§a${subject.replaceFirstChar { it.uppercase() }} уже использует актуальную версию.")
+            UpdateState.FROZEN -> listOf(UpdateNotice(UpdateTone.WARNING, "Обновления $subjectGenitive временно приостановлены."))
+            UpdateState.BLOCKED -> listOf(UpdateNotice(UpdateTone.FAILURE, "Обновление $subjectGenitive заблокировано.")) +
+                plan.blockers.map { UpdateNotice(UpdateTone.WARNING, "Причина: ${blocker(it)}") }
+            UpdateState.FAILED -> listOf(UpdateNotice(UpdateTone.FAILURE, "Не удалось проверить обновление $subjectGenitive.",
+                sentence(plan.message ?: plugin.message ?: "неизвестная ошибка")))
+            UpdateState.UPDATE_AVAILABLE -> listOf(UpdateNotice(UpdateTone.INFO,
+                "Для $subjectGenitive доступно обновление: v${plugin.currentVersion} » v${plugin.latestVersion ?: change?.to ?: "?"}."))
+            UpdateState.UPDATE_STAGED -> listOf(UpdateNotice(UpdateTone.SUCCESS, "Обновление $subjectGenitive проверено и подготовлено.",
+                "Полностью перезапустите сервер."))
+            UpdateState.ROLLED_BACK -> listOf(UpdateNotice(UpdateTone.SUCCESS, "Предыдущая версия $subjectGenitive подготовлена.",
+                "Полностью перезапустите сервер."))
+            else -> listOf(UpdateNotice(UpdateTone.SUCCESS, "${subject.replaceFirstChar { it.uppercase() }} уже использует актуальную версию."))
         }
     }
 
     /** Explains the compatibility or policy reason blocking an update. */
     private fun blocker(reason: BlockedReason): String = when (reason) {
         is BlockedReason.ApiMismatch ->
-                "плагин ${reason.product} поддерживает pnLibrary API " +
-                    "${reason.supportedApi.minimum}–${reason.supportedApi.maximum}, " +
-                    "требуется API ${reason.requiredApi}."
+            "плагин ${reason.product} поддерживает pnLibrary API " +
+                "${reason.supportedApi.minimum}–${reason.supportedApi.maximum}, " +
+                "требуется API ${reason.requiredApi}."
         is BlockedReason.MissingDependency ->
             "для плагина ${reason.product} требуется ${reason.dependency} версии ${reason.minimumVersion} или новее."
         is BlockedReason.MissingExternalPluginDependency ->

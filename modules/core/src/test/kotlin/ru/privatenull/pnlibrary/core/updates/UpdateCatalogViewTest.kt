@@ -374,6 +374,53 @@ class UpdateCatalogViewTest {
     private fun catalog(snapshots: List<UpdateSnapshot>, page: Int = 1, updatesOnly: Boolean = false, routes: UpdateCatalogRoutes) =
         UpdateCatalogView.catalog(snapshots, page, updatesOnly, routes, now, ZoneOffset.UTC)
 
+    @Test
+    fun `notices mark their tone and keep the detail on its own line`() {
+        val lines = UpdateCatalogView.notice(UpdateNotice(UpdateTone.FAILURE, "Не удалось подготовить откат.", "HTTP 404"), bukkit)
+        assertEquals(listOf("  ! Не удалось подготовить откат.", "    HTTP 404"), lines.map(::plain))
+        assertEquals("  √ Готово", plain(UpdateCatalogView.notice(UpdateNotice(UpdateTone.SUCCESS, "Готово"), bukkit).single()))
+        val console = UpdateCatalogView.notice(UpdateNotice(UpdateTone.PROGRESS, "Проверяю обновления…"), proxy.copy(interactive = false, ascii = true))
+        assertEquals("  -> Проверяю обновления...", plain(console.single()))
+    }
+
+    @Test
+    fun `a confirmation card offers one button, or the command to type when the reader cannot click`() {
+        val card = UpdateCatalogView.confirmation("Перезапуск сервера", listOf("Игроков на сервере: 3."),
+            "[Подтвердить перезапуск]", "/pn restart abc", "Выполнить", bukkit)
+        assertTrue(plain(card.first()).contains("Перезапуск сервера"))
+        assertEquals(listOf("/pn restart abc"), card.flatMap(::clicks))
+
+        val text = UpdateCatalogView.confirmation("Перезапуск сервера", listOf("Игроков на сервере: 3."),
+            "[Подтвердить перезапуск]", "/pn restart abc", "Выполнить", bukkit.copy(interactive = false))
+        assertTrue(text.flatMap(::clicks).isEmpty())
+        assertEquals("  Подтвердить: /pn restart abc", plain(text.last()))
+    }
+
+    @Test
+    fun `the status card lists server facts and every component like the catalog`() {
+        val lines = UpdateCatalogView.status(listOf("Ядро" to "Paper 1.8.8", "Java" to "OpenJDK 8"),
+            listOf(snapshot("shop", UpdateState.UP_TO_DATE), snapshot("pnlibrary", UpdateState.UPDATE_AVAILABLE)),
+            bukkit, "https://discord.gg/example", now, ZoneOffset.UTC)
+        val text = lines.joinToString("\n", transform = ::plain)
+        assertTrue(text.contains("Ядро: Paper 1.8.8"))
+        assertTrue(text.indexOf("pnlibrary v1.0.0 » v1.1.0") < text.indexOf("shop v1.0.0"))
+        assertTrue(lines.flatMap(::clicks).containsAll(listOf("/pn updates list", "/pn check", "https://discord.gg/example")))
+    }
+
+    @Test
+    fun `the join notice lists only pending updates and is empty when everything is current`() {
+        val current = listOf(snapshot("shop", UpdateState.UP_TO_DATE))
+        assertTrue(UpdateCatalogView.announcement(current, bukkit, now = now, zone = ZoneOffset.UTC).isEmpty())
+
+        val lines = UpdateCatalogView.announcement(current + snapshot("pnlibrary", UpdateState.UPDATE_AVAILABLE), bukkit,
+            now = now, zone = ZoneOffset.UTC)
+        val text = lines.joinToString("\n", transform = ::plain)
+        assertTrue(text.contains("Обновления pnFolder"))
+        assertTrue(text.contains("pnlibrary v1.0.0 » v1.1.0"))
+        assertFalse(text.contains("shop"))
+        assertTrue(lines.flatMap(::clicks).containsAll(listOf("/pn update pnlibrary", "/pn updates available")))
+    }
+
     private fun history(
         entries: List<UpdateHistoryEntry>,
         page: Int = 1,

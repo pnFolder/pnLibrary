@@ -1,9 +1,5 @@
 package ru.privatenull.pnlibrary.bukkit.commands
 
-import net.kyori.adventure.text.Component
-import net.kyori.adventure.text.event.ClickEvent
-import net.kyori.adventure.text.format.NamedTextColor
-import net.md_5.bungee.api.ChatColor
 import org.bukkit.Bukkit
 import org.bukkit.command.CommandSender
 import org.bukkit.command.ConsoleCommandSender
@@ -19,17 +15,25 @@ import ru.privatenull.pnlibrary.api.updates.ProductChange
 import ru.privatenull.pnlibrary.api.updates.UpdateActor
 import ru.privatenull.pnlibrary.api.updates.UpdatePlanSnapshot
 import ru.privatenull.pnlibrary.api.updates.UpdateRegistration
-import ru.privatenull.pnlibrary.api.updates.UpdateSnapshot
 import ru.privatenull.pnlibrary.api.updates.UpdateState
 import ru.privatenull.pnlibrary.bukkit.updates.UpdateAction
 import ru.privatenull.pnlibrary.bukkit.updates.UpdateConfirmationTokens
 import ru.privatenull.pnlibrary.core.updates.UpdateCatalogCommands
 import ru.privatenull.pnlibrary.core.updates.UpdateCatalogRoutes
+import ru.privatenull.pnlibrary.core.updates.UpdateCatalogView
+import ru.privatenull.pnlibrary.core.updates.UpdateNotice
+import ru.privatenull.pnlibrary.core.updates.UpdateTone
 import java.time.Duration
 import java.util.UUID
 import java.util.concurrent.atomic.AtomicBoolean
+import ru.privatenull.pnlibrary.api.commands.CommandSender as Reply
 
-/** Bukkit-only `/pn` behavior expressed through the shared command builder. */
+/**
+ * Bukkit-only `/pn` behavior expressed through the shared command builder.
+ *
+ * Every reply is rendered by [UpdateCatalogView], so the status card, update progress and confirmations look like
+ * the catalog. The native sender is used only for permissions, identity and player-bound confirmations.
+ */
 internal class BukkitControlCommand(
     private val plugin: Plugin,
     private val library: PnLibrary,
@@ -38,28 +42,22 @@ internal class BukkitControlCommand(
     private val testErrors = BukkitDiagnosticTestErrors(plugin, library)
     private val catalog = UpdateCatalogCommands(
         library = library,
-        routes = UpdateCatalogRoutes("/pn updates", update = { product -> "/pn update $product" }, check = "/pn check"),
+        routes = ROUTES,
         viewPermission = "pnlibrary.updates.view",
         backupsPermission = "pnlibrary.updates.rollback",
         managePermission = "pnlibrary.updates.settings",
         deliver = { task -> if (!library.isClosed) plugin.server.scheduler.runTask(plugin, task) },
     )
 
-    private fun updateActor(sender: CommandSender): UpdateActor = when (sender) {
-        is Player -> UpdateActor(UpdateActor.Kind.PLAYER, sender.uniqueId.toString(), sender.name)
-        is ConsoleCommandSender -> UpdateActor(UpdateActor.Kind.CONSOLE, "console", sender.name)
-        else -> UpdateActor(UpdateActor.Kind.INTEGRATION, sender.name, sender.name)
-    }
-
     /** Builds the permission-aware control command tree. */
     fun definition(): CommandDefinition = command("pn") {
         permission("pnlibrary.admin")
         executes(catalog::showList)
         literal("status") {
-            executes { native(it) { sender -> sendStatus(sender, null) } }
+            executes { native(it) { sender, reply -> sendStatus(sender, reply, null) } }
             argument("plugin", ArgumentType.string()) {
-                suggests { library.updates.all().map { it.snapshot.product } }
-                executes { native(it) { sender -> sendStatus(sender, it.get<String>("plugin")) } }
+                suggests { productNames() }
+                executes { native(it) { sender, reply -> sendStatus(sender, reply, it.get<String>("plugin")) } }
             }
         }
         literal("updates") {
@@ -80,368 +78,340 @@ internal class BukkitControlCommand(
         literal("check") { executes(::checkUpdates) }
         literal("update") {
             argument("plugin", ArgumentType.string()) {
-                suggests { library.updates.all().map { it.snapshot.product } }
-                executes { native(it) { sender -> update(sender, it.get<String>("plugin")) } }
+                suggests { productNames() }
+                executes { native(it) { sender, reply -> update(sender, reply, it.get<String>("plugin")) } }
             }
         }
         literal("update-confirm") {
             argument("token", ArgumentType.string()) {
-                executes { native(it) { sender -> confirmUpdate(sender, it.get<String>("token")) } }
+                executes { native(it) { sender, reply -> confirmUpdate(sender, reply, it.get<String>("token")) } }
             }
         }
         literal("update-status") {
-            executes { native(it) { sender -> sendUpdateStatus(sender, null) } }
+            executes { native(it) { _, reply -> sendUpdateStatus(reply, null) } }
             argument("plugin", ArgumentType.string()) {
-                suggests { library.updates.all().map { it.snapshot.product } }
-                executes { native(it) { sender -> sendUpdateStatus(sender, it.get<String>("plugin")) } }
+                suggests { productNames() }
+                executes { native(it) { _, reply -> sendUpdateStatus(reply, it.get<String>("plugin")) } }
             }
         }
         literal("update-rollback") {
-            executes { native(it) { sender -> rollbackUpdate(sender, null) } }
+            executes { native(it) { sender, reply -> rollbackUpdate(sender, reply, null) } }
             argument("token", ArgumentType.string()) {
-                executes { native(it) { sender -> rollbackUpdate(sender, it.get<String>("token")) } }
+                executes { native(it) { sender, reply -> rollbackUpdate(sender, reply, it.get<String>("token")) } }
             }
         }
         literal("restart") {
-            executes { native(it) { sender -> handleRestart(sender, null) } }
+            executes { native(it) { sender, reply -> handleRestart(sender, reply, null) } }
             argument("token", ArgumentType.string()) {
-                executes { native(it) { sender -> handleRestart(sender, it.get<String>("token")) } }
+                executes { native(it) { sender, reply -> handleRestart(sender, reply, it.get<String>("token")) } }
             }
         }
         literal("debug") {
-            executes { native(it) { sender -> sender.sendMessage("§eИспользуйте /pndebug [all|plugin] [--full|--config|--logs]") } }
+            executes { native(it) { _, reply -> say(reply, UpdateTone.INFO, "Отчёт для поддержки: /pndebug [all|plugin] [--full|--config|--logs]") } }
         }
         literal("support") {
-            executes { native(it) { sender -> sender.sendMessage("§eПоддержка pnFolder: §f${PnLibraryBrand.SUPPORT_URL}") } }
+            executes { native(it) { _, reply -> say(reply, UpdateTone.INFO, "Поддержка pnFolder: ${PnLibraryBrand.SUPPORT_URL}") } }
         }
-        literal("error") { executes { native(it) { sender -> testErrors.unique(sender) } } }
+        literal("error") { executes { native(it) { _, reply -> testErrors.unique(reported(reply)) } } }
         literal("error-repeat") {
-            executes { native(it) { sender -> testErrors.repeated(sender, null) } }
+            executes { native(it) { _, reply -> testErrors.repeated(reported(reply), null) } }
             argument("count", ArgumentType.integer()) {
                 suggests { REPEAT_COUNTS }
-                executes { native(it) { sender -> testErrors.repeated(sender, it.get<Int>("count")) } }
+                executes { native(it) { _, reply -> testErrors.repeated(reported(reply), it.get<Int>("count")) } }
             }
         }
-        literal("error-chain") { executes { native(it) { sender -> testErrors.chained(sender) } } }
+        literal("error-chain") { executes { native(it) { _, reply -> testErrors.chained(reported(reply)) } } }
     }
 
-    /** Replies to the invoking sender immediately, then delivers the result on the server thread. */
+    // --- catalog -----------------------------------------------------------------------------------------------
+
+    /** Replies immediately, then shows the refreshed list of updates on the server thread. */
     private fun checkUpdates(context: CommandContext) {
-        if (library.isClosed) {
-            context.sender.send(Component.text("pnLibrary не готова.", NamedTextColor.RED))
-            return
-        }
+        if (!ready(context.sender)) return
         val native = (context.sender as? BukkitCommandSender)?.native ?: return
-        context.sender.send(Component.text("pnLibrary · Проверяю обновления…", NamedTextColor.YELLOW))
+        say(context.sender, UpdateTone.PROGRESS, "Проверяю обновления…")
         library.updates.checkNow(updateActor(native)).whenComplete { _, error ->
-            if (!library.isClosed) plugin.server.scheduler.runTask(plugin, Runnable {
-                if (library.isClosed) return@Runnable
-                if (error != null) context.sender.send(Component.text("Не удалось проверить обновления: ${error.message}", NamedTextColor.RED))
+            onServerThread {
+                if (error != null) fail(context.sender, "Не удалось проверить обновления", error)
                 else catalog.showAvailable(context)
-            })
+            }
         }
     }
 
+    /** Asks to confirm, then prepares exactly the saved transaction for the next restart. */
     private fun rollbackSaved(context: CommandContext, restoreConfigurations: Boolean = false) {
-        if (!ready(context)) return
-        val native = (context.sender as? BukkitCommandSender)?.native ?: return
+        val reply = context.sender
+        if (!ready(reply)) return
+        val native = (reply as? BukkitCommandSender)?.native ?: return
         val id = runCatching { UUID.fromString(context.get<String>("transaction")) }.getOrNull()
-        if (id == null) { context.sender.send(Component.text("Некорректный ID транзакции.")); return }
+            ?: return say(reply, UpdateTone.FAILURE, "Некорректный ID резервного набора.")
         val confirmation = if (context.contains("confirmation")) context.get<String>("confirmation") else null
         val action = if (restoreConfigurations) UpdateAction.ROLLBACK_CONFIGS else UpdateAction.ROLLBACK
         if (confirmation == null) {
-            val token = if (native is Player) tokens.issue(native.uniqueId, id, 0, action, Duration.ofSeconds(30)) else "confirm"
-            val command = "/pn updates rollback $id${if (restoreConfigurations) " configs" else ""} $token"
-            context.sender.send(Component.text("Будет восстановлен набор JAR${if (restoreConfigurations) " И выбранные конфигурации через офлайн-установщик" else " без изменения конфигураций"}. Подтвердить: $command")
-                .clickEvent(ClickEvent.runCommand(command)))
+            val token = if (native is Player) tokens.issue(native.uniqueId, id, 0, action, CONFIRMATION_TIME) else "confirm"
+            confirm(
+                reply,
+                "Откат к резервному набору",
+                listOf(
+                    if (restoreConfigurations) "Вернутся сохранённые JAR и выбранные конфигурации." else "Вернутся сохранённые JAR, конфигурации не изменятся.",
+                    "Применится после полного перезапуска сервера.",
+                ),
+                "[Подтвердить откат]",
+                ROUTES.rollback(id, restoreConfigurations) + " $token",
+            )
             return
         }
         val confirmed = if (native is Player) tokens.consume(confirmation, native.uniqueId, id, 0, action)
-            else context.sender.isConsole && confirmation == "confirm"
-        if (!confirmed) { context.sender.send(Component.text("Подтверждение отката недействительно или истекло.")); return }
+            else reply.isConsole && confirmation == "confirm"
+        if (!confirmed) return say(reply, UpdateTone.FAILURE, "Подтверждение отката недействительно или истекло.")
         library.updates.rollback(id, restoreConfigurations, updateActor(native)).whenComplete { _, error ->
-            if (!library.isClosed) plugin.server.scheduler.runTask(plugin, Runnable {
-                if (library.isClosed) return@Runnable
-                context.sender.send(Component.text(if (error == null) "Набор $id подготовлен. Полностью перезапустите сервер." else "Не удалось подготовить откат: ${error.message}"))
-            })
+            onServerThread {
+                if (error != null) fail(reply, "Не удалось подготовить откат", error)
+                else say(reply, UpdateTone.SUCCESS, "Резервный набор подготовлен.", "Полностью перезапустите сервер, чтобы применить его.")
+            }
         }
     }
 
-    private fun ready(context: CommandContext): Boolean {
-        if (!library.isClosed) return true
-        context.sender.send(Component.text("pnLibrary не готова. Дождитесь полного запуска сервера.", NamedTextColor.RED))
-        return false
-    }
+    // --- status ------------------------------------------------------------------------------------------------
 
-    /** Unwraps the portable sender and runs [action] unless the runtime is already closed. */
-    private fun native(context: CommandContext, action: (CommandSender) -> Unit) {
-        val sender = (context.sender as? BukkitCommandSender)?.native
-        when {
-            sender == null -> context.sender.send(Component.text("Unsupported Bukkit sender."))
-            library.isClosed -> sender.sendMessage("§cpnLibrary не готова.")
-            else -> action(sender)
-        }
-    }
-
-    /** Chooses console or in-game status output for the requested products. */
-    private fun sendStatus(sender: CommandSender, requested: String?) {
-        val entries = if (requested == null) {
-            library.updates.all()
-        } else {
-            listOfNotNull(library.updates.get(requested))
-        }
+    /** The detailed console card, or the server state card styled like the catalog. */
+    private fun sendStatus(sender: CommandSender, reply: Reply, requested: String?) {
+        val entries = if (requested == null) library.updates.all() else listOfNotNull(library.updates.get(requested))
         if (sender is ConsoleCommandSender && requested == null) {
-            renderConsoleStatus(sender, entries)
+            BukkitConsoleStatusRenderer.render(entries).forEach(sender::sendMessage)
             return
         }
-        sender.sendMessage("")
-        sender.sendMessage("§a «Состояние pnFolder»")
-        sender.sendMessage(" §7- §fЯдро: §6${Bukkit.getName()} ${Bukkit.getBukkitVersion()}")
-        sender.sendMessage(" §7- §fJava: §6${BukkitStatusLabels.javaRuntime()}")
-        sender.sendMessage(" §7- §fpnLibrary: §6${library.version}")
-        entries.firstOrNull()?.snapshot?.let { snapshot ->
-            sender.sendMessage(" §7- §fКанал: §e${BukkitStatusLabels.channel(snapshot)}")
-            snapshot.supportedApi?.let { api -> sender.sendMessage(" §7- §fAPI: §6${api.minimum}–${api.maximum}") }
-        }
-        if (entries.isEmpty()) {
-            sender.sendMessage(" §7- §fПлагины: §7нет зарегистрированных обновлений")
-        } else {
-            sender.sendMessage(" §7- §fОбновления:")
-            entries.forEach { sendUpdateLine(sender, it.snapshot) }
-        }
-        sender.sendMessage(" §7- §fПоддержка: §e${PnLibraryBrand.SUPPORT_URL}")
-        sender.sendMessage("")
+        if (requested != null && entries.isEmpty()) return notRegistered(reply, requested)
+        val facts = listOf(
+            "Ядро" to "${Bukkit.getName()} ${Bukkit.getBukkitVersion()}",
+            "Java" to BukkitStatusLabels.javaRuntime(),
+            "pnLibrary" to library.version.toString(),
+        )
+        UpdateCatalogView.status(facts, entries.map { it.snapshot }, routes(reply), PnLibraryBrand.SUPPORT_URL).forEach(reply::send)
     }
 
-    /** Sends the detailed console card without changing in-game formatting. */
-    private fun renderConsoleStatus(sender: CommandSender, entries: List<UpdateRegistration>) {
-        BukkitConsoleStatusRenderer.render(entries).forEach(sender::sendMessage)
+    /** Reports the current plan for all or one registered product. */
+    private fun sendUpdateStatus(reply: Reply, requested: String?) {
+        val plan = library.updates.currentPlan().orElse(null)
+            ?: return say(reply, UpdateTone.WARNING, "Проверка обновлений ещё не завершалась.", "Запустите её командой /pn check.")
+        val registrations = if (requested == null) library.updates.all() else listOfNotNull(library.updates.get(requested))
+        if (registrations.isEmpty()) return notRegistered(reply, requested ?: "с указанным именем")
+        notices(reply, registrations.flatMap { BukkitUpdateMessages.status(plan to it.snapshot) })
     }
+
+    // --- update ------------------------------------------------------------------------------------------------
 
     /** Validates download permissions and selects the requested update registration. */
-    private fun update(sender: CommandSender, name: String?) {
+    private fun update(sender: CommandSender, reply: Reply, name: String) {
         if (!sender.hasPermission("pnlibrary.updates.download")) {
-            sender.sendMessage("§cНедостаточно прав для загрузки обновлений.")
-            return
+            return say(reply, UpdateTone.FAILURE, "Недостаточно прав для загрузки обновлений.")
         }
-        if (name == null) {
-            sender.sendMessage("§eИспользование: /pn update <плагин>")
-            return
-        }
-        val registration = library.updates.get(name)
-        if (registration == null) {
-            sender.sendMessage("§cПлагин $name не зарегистрирован в pnLibrary.")
-            return
-        }
-        checkAndInstallUpdate(sender, registration)
+        val registration = library.updates.get(name) ?: return notRegistered(reply, name)
+        checkAndInstallUpdate(sender, reply, registration)
     }
 
     /** Checks the update plan with progress messages and a bounded user-facing timeout. */
-    private fun checkAndInstallUpdate(sender: CommandSender, registration: UpdateRegistration) {
+    private fun checkAndInstallUpdate(sender: CommandSender, reply: Reply, registration: UpdateRegistration) {
         val product = registration.snapshot.product
-        sender.sendMessage("§eПроверяю GitHub и ищу совместимое обновление $product…")
+        say(reply, UpdateTone.PROGRESS, "Ищу совместимое обновление $product…")
         val finished = AtomicBoolean(false)
         fun scheduleProgress() {
             plugin.server.scheduler.runTaskLater(plugin, Runnable {
                 if (finished.get()) return@Runnable
-                sender.sendMessage("§7Проверка ещё выполняется: жду ответ GitHub…")
+                say(reply, UpdateTone.PROGRESS, "Проверка ещё идёт: жду ответ каталога релизов…")
                 scheduleProgress()
-            }, 100L)
+            }, PROGRESS_TICKS)
         }
         scheduleProgress()
         plugin.server.scheduler.runTaskLater(plugin, Runnable {
             if (finished.compareAndSet(false, true)) {
-                sender.sendMessage("§cПроверка обновления прервана: источники не ответили за 60 секунд.")
-                sender.sendMessage("§7Проверьте соединение сервера с raw.githubusercontent.com и повторите команду.")
+                say(reply, UpdateTone.FAILURE, "Проверка прервана: источники не ответили за 60 секунд.",
+                    "Проверьте доступ сервера к raw.githubusercontent.com и повторите команду.")
             }
-        }, 1200L)
+        }, TIMEOUT_TICKS)
         library.updates.checkNow(updateActor(sender)).whenComplete { result, error ->
             if (!finished.compareAndSet(false, true)) return@whenComplete
-            runOnServerThread {
-                if (error != null) showUpdateError(sender, "Проверка обновления не удалась", error)
-                else handleUpdateCheck(sender, registration, result)
+            onServerThread {
+                if (error != null) fail(reply, "Проверка обновления не удалась", error)
+                else handleUpdateCheck(sender, reply, registration, result)
             }
         }
     }
 
-    /** Selects the requested product change or reports its current update state. */
-    private fun handleUpdateCheck(
-        sender: CommandSender,
-        registration: UpdateRegistration,
-        result: UpdatePlanSnapshot,
-    ) {
+    /** Stages the requested product change or reports its current update state. */
+    private fun handleUpdateCheck(sender: CommandSender, reply: Reply, registration: UpdateRegistration, result: UpdatePlanSnapshot) {
         val change = result.plan?.changes?.firstOrNull {
             it.product.value.equals(registration.snapshot.product, ignoreCase = true)
         }
         if (result.state != UpdateState.UPDATE_AVAILABLE || change == null) {
-            BukkitUpdateMessages.status(result to registration.snapshot).forEach(sender::sendMessage)
+            notices(reply, BukkitUpdateMessages.status(result to registration.snapshot))
             return
         }
-        stageUpdate(sender, result, change)
+        stageUpdate(sender, reply, result, change)
     }
 
     /** Downloads and validates the selected compatible update plan. */
-    private fun stageUpdate(sender: CommandSender, plan: UpdatePlanSnapshot, change: ProductChange) {
-        sender.sendMessage("§eСовместимое обновление ${change.product} ${change.from} → ${change.to} найдено. Скачиваю и проверяю…")
+    private fun stageUpdate(sender: CommandSender, reply: Reply, plan: UpdatePlanSnapshot, change: ProductChange) {
+        val transition = "${change.product} v${change.from} » v${change.to}"
+        say(reply, UpdateTone.PROGRESS, "Найдено $transition. Скачиваю и проверяю…")
         library.updates.stage(plan.id, updateActor(sender)).whenComplete { _, error ->
-            runOnServerThread {
-                if (error != null) showUpdateError(sender, "Не удалось подготовить обновление", error)
-                else sender.sendMessage(
-                    "§aОбновление ${change.product} ${change.from} → ${change.to} подготовлено. Перезапустите сервер.",
-                )
+            onServerThread {
+                if (error != null) fail(reply, "Не удалось подготовить обновление", error)
+                else say(reply, UpdateTone.SUCCESS, "Обновление $transition подготовлено.", "Перезапустите сервер, чтобы применить его.")
             }
         }
     }
 
-    /** Formats the root failure, including missing release artifacts. */
-    private fun showUpdateError(sender: CommandSender, title: String, error: Throwable) {
-        val cause = generateSequence(error) { it.cause }.last()
-        val rawMessage = cause.message ?: cause.javaClass.simpleName
-        val message = if (rawMessage.contains("HTTP 404", ignoreCase = true)) {
-            "файл обновления не найден на GitHub (HTTP 404); проверьте ссылку в каталоге релизов"
-        } else rawMessage
-        sender.sendMessage("§c$title: §f$message")
-    }
-
-    /** Schedules command feedback through the native server scheduler. */
-    private fun runOnServerThread(action: () -> Unit) {
-        plugin.server.scheduler.runTask(plugin, Runnable(action))
-    }
-
-    /** Reports the current plan for all or one registered product. */
-    private fun sendUpdateStatus(sender: CommandSender, requested: String?) {
-        val plan = library.updates.currentPlan().orElse(null)
-        if (plan == null) {
-            sender.sendMessage("§eПроверка обновлений ещё не завершалась.")
-            return
-        }
-        val registrations = if (requested == null) library.updates.all() else listOfNotNull(library.updates.get(requested))
-        if (registrations.isEmpty()) {
-            sender.sendMessage("§cПлагин ${requested ?: "с указанным именем"} не зарегистрирован в pnLibrary.")
-            return
-        }
-        registrations.forEach { registration ->
-            BukkitUpdateMessages.status(plan to registration.snapshot).forEach(sender::sendMessage)
-        }
-    }
-
-    /** Validates permissions and confirmation before staging a rollback. */
-    @Suppress("DEPRECATION")
-    private fun rollbackUpdate(sender: CommandSender, token: String?) {
-        if (!sender.hasPermission("pnlibrary.updates.rollback")) {
-            sender.sendMessage("§cНедостаточно прав для отката обновлений.")
-            return
-        }
-        val plan = library.updates.currentPlan().orElse(null)
-        if (plan == null) {
-            sender.sendMessage("§eНет плана обновления, который можно откатить.")
-            return
-        }
-        if (sender is Player && token == null) {
-            val issued = tokens.issue(sender.uniqueId, plan.id, plan.revision, UpdateAction.ROLLBACK, Duration.ofSeconds(30))
-            val confirm = BukkitChatButtons.runCommand(
-                "[ Подтвердить откат ]", ChatColor.RED, "/pn update-rollback $issued",
-                "Предыдущие JAR будут подготовлены к перезапуску",
-            )
-            sender.sendMessage("§eОткат заменит весь связанный план обновления, а не один плагин.")
-            sender.spigot().sendMessage(confirm)
-            return
-        }
-        if (sender is Player && !tokens.consume(token.orEmpty(), sender.uniqueId, plan.id, plan.revision, UpdateAction.ROLLBACK)) {
-            sender.sendMessage("§cПодтверждение отката истекло или уже использовано.")
-            return
-        }
-        library.updates.rollback(updateActor(sender)).whenComplete { _, error ->
-            plugin.server.scheduler.runTask(plugin, Runnable {
-                if (error == null) sender.sendMessage("§aПредыдущие версии плагинов подготовлены. Полностью перезапустите сервер.")
-                else sender.sendMessage("§cНе удалось подготовить откат: §f${error.message ?: error.javaClass.simpleName}")
-            })
-        }
-    }
-
     /** Consumes a player-bound confirmation before staging the update plan. */
-    private fun confirmUpdate(sender: CommandSender, token: String?) {
-        if (sender !is Player || token == null || !sender.hasPermission("pnlibrary.updates.download")) {
-            sender.sendMessage("§cНедоступное подтверждение обновления.")
-            return
+    private fun confirmUpdate(sender: CommandSender, reply: Reply, token: String) {
+        if (sender !is Player || !sender.hasPermission("pnlibrary.updates.download")) {
+            return say(reply, UpdateTone.FAILURE, "Это подтверждение недоступно.")
         }
         val plan = library.updates.currentPlan().orElse(null)
         if (plan == null || !tokens.consume(token, sender.uniqueId, plan.id, plan.revision, UpdateAction.DOWNLOAD)) {
-            sender.sendMessage("§cПодтверждение устарело или уже использовано.")
-            return
+            return say(reply, UpdateTone.FAILURE, "Подтверждение устарело или уже использовано.")
         }
         library.updates.stage(plan.id, updateActor(sender)).whenComplete { staged, error ->
-            plugin.server.scheduler.runTask(plugin, Runnable {
-                if (error == null) sender.sendMessage("§aПлан обновления проверен и подготовлен: ${staged.id}")
-                else sender.sendMessage("§cНе удалось подготовить обновление: ${error.message}")
-            })
+            onServerThread {
+                if (error != null) fail(reply, "Не удалось подготовить обновление", error)
+                else say(reply, UpdateTone.SUCCESS, "План обновления проверен и подготовлен.", "План: ${staged.id}")
+            }
+        }
+    }
+
+    // --- rollback and restart ----------------------------------------------------------------------------------
+
+    /** Validates permissions and confirmation before staging a rollback of the whole current plan. */
+    private fun rollbackUpdate(sender: CommandSender, reply: Reply, token: String?) {
+        if (!sender.hasPermission("pnlibrary.updates.rollback")) {
+            return say(reply, UpdateTone.FAILURE, "Недостаточно прав для отката обновлений.")
+        }
+        val plan = library.updates.currentPlan().orElse(null)
+            ?: return say(reply, UpdateTone.WARNING, "Нет плана обновления, который можно откатить.")
+        if (sender is Player && token == null) {
+            val issued = tokens.issue(sender.uniqueId, plan.id, plan.revision, UpdateAction.ROLLBACK, CONFIRMATION_TIME)
+            confirm(
+                reply,
+                "Откат обновления",
+                listOf("Откатится весь связанный план обновления, а не один плагин.", "Предыдущие JAR применятся после перезапуска."),
+                "[Подтвердить откат]",
+                "/pn update-rollback $issued",
+            )
+            return
+        }
+        if (sender is Player && !tokens.consume(token.orEmpty(), sender.uniqueId, plan.id, plan.revision, UpdateAction.ROLLBACK)) {
+            return say(reply, UpdateTone.FAILURE, "Подтверждение отката истекло или уже использовано.")
+        }
+        library.updates.rollback(updateActor(sender)).whenComplete { _, error ->
+            onServerThread {
+                if (error != null) fail(reply, "Не удалось подготовить откат", error)
+                else say(reply, UpdateTone.SUCCESS, "Предыдущие версии плагинов подготовлены.", "Полностью перезапустите сервер.")
+            }
         }
     }
 
     /** Validates the staged plan and a player confirmation before requesting restart. */
     @Suppress("DEPRECATION")
-    private fun handleRestart(sender: CommandSender, supplied: String?) {
+    private fun handleRestart(sender: CommandSender, reply: Reply, supplied: String?) {
         if (!sender.hasPermission("pnlibrary.updates.restart")) {
-            sender.sendMessage("§cНедостаточно прав для перезапуска.")
-            return
+            return say(reply, UpdateTone.FAILURE, "Недостаточно прав для перезапуска.")
         }
         val plan = library.updates.currentPlan().orElse(null)
         if (plan == null || plan.state != UpdateState.UPDATE_STAGED) {
-            sender.sendMessage("§eНет подготовленных обновлений, требующих перезапуска.")
-            return
-        }
-        if (supplied != null && sender is Player) {
-            if (!tokens.consume(supplied, sender.uniqueId, plan.id, plan.revision, UpdateAction.RESTART)) {
-                sender.sendMessage("§cПодтверждение истекло. Выполните /pn restart ещё раз.")
-                return
-            }
-            if (library.updates.currentPlan().orElse(null)?.let { it.id != plan.id || it.revision != plan.revision } != false) {
-                sender.sendMessage("§cПлан обновления изменился; подтвердите заново.")
-                return
-            }
-            Bukkit.broadcastMessage("§e[pnFolder] §fСервер перезапускается для применения обновлений.")
-            Bukkit.getScheduler().runTaskLater(plugin, Runnable { Bukkit.spigot().restart() }, 40L)
-            return
+            return say(reply, UpdateTone.WARNING, "Нет подготовленных обновлений, которым нужен перезапуск.")
         }
         if (sender !is Player) {
-            sender.sendMessage("§eКонсольный перезапуск должен выполняться настроенной серверной командой.")
+            return say(reply, UpdateTone.WARNING, "Из консоли перезапускайте сервер его обычной командой.")
+        }
+        if (supplied == null) {
+            val token = tokens.issue(sender.uniqueId, plan.id, plan.revision, UpdateAction.RESTART, CONFIRMATION_TIME)
+            confirm(
+                reply,
+                "Перезапуск сервера",
+                listOf("Игроков на сервере: ${Bukkit.getOnlinePlayers().size}.", "Подготовленные обновления применятся после перезапуска."),
+                "[Подтвердить перезапуск]",
+                "/pn restart $token",
+            )
             return
         }
-        val token = tokens.issue(sender.uniqueId, plan.id, plan.revision, UpdateAction.RESTART, Duration.ofSeconds(30))
-        sender.sendMessage("")
-        sender.sendMessage("§c§l Подтверждение перезапуска")
-        sender.sendMessage(" §7Сейчас на сервере игроков: §f${Bukkit.getOnlinePlayers().size}")
-        sender.sendMessage(" §7Подготовленные обновления применятся после полного перезапуска.")
-        val confirm = BukkitChatButtons.runCommand(
-            "[ Подтвердить перезапуск ]", ChatColor.RED, "/pn restart $token", "Подтверждение действует 30 секунд",
-        )
-        sender.spigot().sendMessage(confirm)
-        sender.sendMessage("")
+        if (!tokens.consume(supplied, sender.uniqueId, plan.id, plan.revision, UpdateAction.RESTART)) {
+            return say(reply, UpdateTone.FAILURE, "Подтверждение истекло. Выполните /pn restart ещё раз.")
+        }
+        if (library.updates.currentPlan().orElse(null)?.let { it.id != plan.id || it.revision != plan.revision } != false) {
+            return say(reply, UpdateTone.FAILURE, "План обновления изменился; подтвердите заново.")
+        }
+        Bukkit.broadcastMessage("§e[pnFolder] §fСервер перезапускается для применения обновлений.")
+        Bukkit.getScheduler().runTaskLater(plugin, Runnable { Bukkit.spigot().restart() }, RESTART_DELAY_TICKS)
     }
 
-    /** Formats one product's update state in the established chat style. */
-    private fun sendUpdateLine(sender: CommandSender, snapshot: UpdateSnapshot) {
-        val product = if (snapshot.product.equals("pnlibrary", true)) "Библиотека" else "Плагин ${snapshot.product}"
-        when (snapshot.state) {
-            UpdateState.UPDATE_AVAILABLE -> {
-                sender.sendMessage(" §7- §f$product: §6${snapshot.currentVersion} §7→ §a${snapshot.latestVersion ?: "новая версия"}")
-                sender.sendMessage(" §7   §fКанал: §e${BukkitStatusLabels.channel(snapshot)}")
-                snapshot.supportedApi?.let { sender.sendMessage(" §7   §fAPI: §6${it.minimum}–${it.maximum}") }
-            }
-            UpdateState.UPDATE_STAGED ->
-                sender.sendMessage(" §7- §f$product: §a${snapshot.latestVersion ?: snapshot.currentVersion} загружена; нужен перезапуск")
-            UpdateState.FAILED ->
-                sender.sendMessage(" §7- §f$product: §cпроверка не выполнена")
-            UpdateState.BLOCKED, UpdateState.INCOMPATIBLE ->
-                sender.sendMessage(" §7- §f$product: §cобновление недоступно")
-            UpdateState.FROZEN ->
-                sender.sendMessage(" §7- §f$product: §eобновления временно приостановлены")
-            else ->
-                sender.sendMessage(" §7- §f$product: §aактуальная версия ${snapshot.currentVersion}")
+    // --- replies -----------------------------------------------------------------------------------------------
+
+    /** Routes for this reader: buttons only when it can click, ASCII for the console. */
+    private fun routes(reply: Reply): UpdateCatalogRoutes =
+        ROUTES.copy(interactive = reply.supportsInteraction, ascii = reply.isConsole)
+
+    private fun say(reply: Reply, tone: UpdateTone, text: String, detail: String? = null) =
+        notices(reply, listOf(UpdateNotice(tone, text, detail)))
+
+    private fun notices(reply: Reply, notices: List<UpdateNotice>) =
+        UpdateCatalogView.notices(notices, routes(reply)).forEach(reply::send)
+
+    private fun confirm(reply: Reply, title: String, lines: List<String>, label: String, command: String) =
+        UpdateCatalogView.confirmation(title, lines + "Подтверждение действует 30 секунд.", label, command,
+            "Выполнить: $command", routes(reply)).forEach(reply::send)
+
+    private fun reported(reply: Reply): (String) -> Unit = { text -> say(reply, UpdateTone.SUCCESS, text) }
+
+    private fun notRegistered(reply: Reply, product: String) =
+        say(reply, UpdateTone.FAILURE, "Плагин $product не зарегистрирован в pnLibrary.")
+
+    /** Reports the root cause; a missing release file gets an explanation instead of a bare HTTP code. */
+    private fun fail(reply: Reply, title: String, error: Throwable) {
+        val cause = generateSequence(error) { it.cause }.last()
+        val message = cause.message ?: cause.javaClass.simpleName
+        val detail = if (message.contains("HTTP 404", ignoreCase = true)) {
+            "Файл обновления не найден (HTTP 404): проверьте ссылку в каталоге релизов."
+        } else message
+        say(reply, UpdateTone.FAILURE, "$title.", detail)
+    }
+
+    private fun ready(reply: Reply): Boolean {
+        if (!library.isClosed) return true
+        say(reply, UpdateTone.FAILURE, "pnLibrary ещё не готова. Дождитесь полного запуска сервера.")
+        return false
+    }
+
+    /** Unwraps the native sender and runs [action] with it and the reply channel, unless the runtime is closed. */
+    private fun native(context: CommandContext, action: (CommandSender, Reply) -> Unit) {
+        val sender = (context.sender as? BukkitCommandSender)?.native
+        when {
+            sender == null -> say(context.sender, UpdateTone.FAILURE, "Эта команда доступна только на Bukkit.")
+            ready(context.sender) -> action(sender, context.sender)
         }
     }
 
-    private companion object {
-        val REPEAT_COUNTS = listOf("10", "100", "1000")
+    /** Delivers asynchronous results on the server thread while the runtime is open. */
+    private fun onServerThread(action: () -> Unit) {
+        if (library.isClosed) return
+        plugin.server.scheduler.runTask(plugin, Runnable { if (!library.isClosed) action() })
+    }
+
+    private fun productNames(): List<String> = library.updates.all().map { it.snapshot.product }
+
+    private fun updateActor(sender: CommandSender): UpdateActor = when (sender) {
+        is Player -> UpdateActor(UpdateActor.Kind.PLAYER, sender.uniqueId.toString(), sender.name)
+        is ConsoleCommandSender -> UpdateActor(UpdateActor.Kind.CONSOLE, "console", sender.name)
+        else -> UpdateActor(UpdateActor.Kind.INTEGRATION, sender.name, sender.name)
+    }
+
+    internal companion object {
+        /** Catalog routes of the `/pn` tree, shared with the join notice. */
+        val ROUTES = UpdateCatalogRoutes("/pn updates", update = { product -> "/pn update $product" }, check = "/pn check")
+
+        private val REPEAT_COUNTS = listOf("10", "100", "1000")
+        private val CONFIRMATION_TIME: Duration = Duration.ofSeconds(30)
+        private const val PROGRESS_TICKS = 100L
+        private const val TIMEOUT_TICKS = 1_200L
+        private const val RESTART_DELAY_TICKS = 40L
     }
 }

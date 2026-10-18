@@ -140,6 +140,56 @@ object UpdateCatalogView {
         zone: ZoneId = ZoneId.systemDefault(),
     ): List<Component> = Renderer(routes, now, zone).settings(snapshot, heldUntil)
 
+    /** Renders one short message of an update command: a mark in the tone's color, the text and its detail. */
+    fun notice(notice: UpdateNotice, routes: UpdateCatalogRoutes): List<Component> =
+        Renderer(routes, Instant.now(), ZoneId.systemDefault()).notice(notice)
+
+    /** Renders [notices] one after another, as a single reply. */
+    fun notices(notices: List<UpdateNotice>, routes: UpdateCatalogRoutes): List<Component> =
+        notices.flatMap { notice(it, routes) }
+
+    /**
+     * Renders a card that asks to confirm a risky action, such as a rollback or a restart.
+     *
+     * @param lines what will happen, one sentence per line
+     * @param command the command that confirms; a reader that cannot click is told to type it
+     */
+    fun confirmation(
+        title: String,
+        lines: List<String>,
+        label: String,
+        command: String,
+        hint: String,
+        routes: UpdateCatalogRoutes,
+    ): List<Component> = Renderer(routes, Instant.now(), ZoneId.systemDefault()).confirmation(title, lines, label, command, hint)
+
+    /**
+     * Renders the state of the server and every registered component, for `/pn status`.
+     *
+     * @param facts labelled values shown before the components, such as the server core and Java
+     * @param support link opened by the support button, or null to hide it
+     */
+    fun status(
+        facts: List<Pair<String, String>>,
+        snapshots: List<UpdateSnapshot>,
+        routes: UpdateCatalogRoutes,
+        support: String? = null,
+        now: Instant = Instant.now(),
+        zone: ZoneId = ZoneId.systemDefault(),
+    ): List<Component> = Renderer(routes, now, zone).status(facts, snapshots, support)
+
+    /**
+     * Renders the notice an administrator gets on joining: only the components with an available or prepared
+     * update, or nothing when there are none.
+     */
+    fun announcement(
+        snapshots: List<UpdateSnapshot>,
+        routes: UpdateCatalogRoutes,
+        support: String? = null,
+        now: Instant = Instant.now(),
+        zone: ZoneId = ZoneId.systemDefault(),
+    ): List<Component> = Renderer(routes, now, zone).announcement(snapshots, support)
+
     /** What a history event led to: a short label for the row and the full wording for its hover card. */
     private class Outcome(val label: String, val color: TextColor, val detail: String = label)
 
@@ -297,6 +347,68 @@ object UpdateCatalogView {
             }
             return result
         }
+
+        fun notice(notice: UpdateNotice): List<Component> {
+            val (mark, color) = when (notice.tone) {
+                UpdateTone.PROGRESS -> '»' to UpdatePalette.ACCENT
+                UpdateTone.INFO -> '■' to UpdatePalette.INFO
+                UpdateTone.SUCCESS -> '√' to UpdatePalette.OK
+                UpdateTone.WARNING -> '!' to UpdatePalette.WARN
+                UpdateTone.FAILURE -> '!' to UpdatePalette.DANGER
+            }
+            val text = if (notice.tone == UpdateTone.FAILURE) UpdatePalette.DANGER else UpdatePalette.TEXT
+            return listOfNotNull(
+                text("  ${glyph(mark)} ", color).append(text(notice.text.take(MAX_MESSAGE), text)),
+                notice.detail?.takeIf { it.isNotBlank() }?.let { text("    ${it.take(MAX_MESSAGE)}", UpdatePalette.SOFT) },
+            )
+        }
+
+        fun confirmation(title: String, lines: List<String>, label: String, command: String, hint: String): List<Component> {
+            val result = mutableListOf(header(title))
+            lines.forEach { result += note(it) }
+            result += rule()
+            if (routes.interactive) result += text("  ").append(button(label, command, hint, UpdatePalette.DANGER))
+            else result += text("  Подтвердить: ", UpdatePalette.SOFT).append(text(command, UpdatePalette.HINT))
+            return result
+        }
+
+        fun status(facts: List<Pair<String, String>>, snapshots: List<UpdateSnapshot>, support: String?): List<Component> {
+            val result = mutableListOf(header("Состояние pnFolder"))
+            facts.forEach { (label, value) -> result += field(label, text(value, UpdatePalette.TEXT)) }
+            result += Component.empty()
+            if (snapshots.isEmpty()) result += note("Пока нет плагинов, зарегистрированных в pnLibrary.")
+            else {
+                result += catalogSummary(snapshots)
+                snapshots.sortedBy { it.product.lowercase() }.forEach { result += catalogRows(it) }
+            }
+            result += rule()
+            actions(
+                button("[Каталог]", routes.list, "Все плагины с настройками и историей", UpdatePalette.ACCENT),
+                button("[Проверить]", routes.check, "Запросить новые версии у каталогов", UpdatePalette.OK),
+                support?.let(::supportButton),
+            )?.let { result += it }
+            return result
+        }
+
+        fun announcement(snapshots: List<UpdateSnapshot>, support: String?): List<Component> {
+            val actionable = snapshots.filter { it.state == UpdateState.UPDATE_AVAILABLE || it.state == UpdateState.UPDATE_STAGED }
+                .sortedBy { it.product.lowercase() }
+            if (actionable.isEmpty()) return emptyList()
+            val result = mutableListOf(header("Обновления pnFolder"), catalogSummary(actionable))
+            actionable.forEach { result += catalogRows(it) }
+            result += rule()
+            actions(
+                button("[Обновления]", routes.available, "Доступные и подготовленные обновления", UpdatePalette.ACCENT),
+                button("[Проверить]", routes.check, "Повторно проверить все обновления", UpdatePalette.OK),
+                support?.let(::supportButton),
+            )?.let { result += it }
+            return result
+        }
+
+        private fun supportButton(link: String): Component =
+            if (!routes.interactive || !safeLink(link)) Component.empty()
+            else text("[Поддержка]", UpdatePalette.WARN).clickEvent(ClickEvent.openUrl(link))
+                .hoverEvent(tooltip(text("Открыть поддержку pnFolder", UpdatePalette.TEXT), text(link.take(MAX_LINE), UpdatePalette.HINT)))
 
         // --- catalog -----------------------------------------------------------------------------------------
 
