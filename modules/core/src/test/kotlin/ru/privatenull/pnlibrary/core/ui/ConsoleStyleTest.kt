@@ -10,7 +10,7 @@ class ConsoleStyleTest {
         assertEquals("§7", ConsoleStyle.color(ChatPalette.SOFT))
         assertEquals("§8", ConsoleStyle.color(ChatPalette.FAINT))
         assertEquals("§d", ConsoleStyle.color(ChatPalette.ACCENT))
-        assertEquals("§b", ConsoleStyle.color(ChatPalette.LABEL))
+        assertEquals("§d", ConsoleStyle.color(ChatPalette.LABEL))
         assertEquals("§a", ConsoleStyle.color(ChatPalette.OK))
         assertEquals("§b", ConsoleStyle.color(ChatPalette.INFO))
         assertEquals("§e", ConsoleStyle.color(ChatPalette.WARN))
@@ -29,7 +29,7 @@ class ConsoleStyleTest {
     @Test
     fun `the card theme follows the chat roles and tones only recolor values`() {
         val theme = ConsoleStyle.THEME
-        assertEquals(listOf("§d", "§f", "§b", "§7", "§r"), listOf(theme.border, theme.accent, theme.text, theme.muted, theme.reset))
+        assertEquals(listOf("§d", "§f", "§d", "§7", "§r"), listOf(theme.border, theme.accent, theme.text, theme.muted, theme.reset))
 
         val failure = ConsoleStyle.theme(ChatTone.FAILURE)
         assertEquals("§c", failure.accent)

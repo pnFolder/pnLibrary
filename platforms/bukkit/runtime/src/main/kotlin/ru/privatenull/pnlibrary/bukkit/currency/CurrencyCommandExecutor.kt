@@ -379,10 +379,18 @@ internal class CurrencyCommandExecutor(
         val kit = kit(sender)
         val hints = kit.commandHints(
             "/pncurrency list" to "список валют",
-            "/pncurrency <валюта> <действие> ..." to "баланс и операции",
-            "/pncurrency <confirm|cancel> <код>" to "подтвердить или отменить операцию из консоли",
+            "/pncurrency <валюта> balance [игрок]" to "баланс",
+            "/pncurrency <валюта> pay <игрок> <сумма>" to "перевести игроку",
+            "/pncurrency <валюта> history [игрок]" to "последние операции",
+            "/pncurrency <валюта> add <игрок> <сумма>" to "начислить",
+            "/pncurrency <валюта> take <игрок> <сумма>" to "списать",
+            "/pncurrency <валюта> set <игрок> <сумма>" to "установить баланс",
+            "/pncurrency <валюта> reset <игрок>" to "обнулить баланс",
+            "/pncurrency confirm <код>" to "подтвердить операцию из консоли",
+            "/pncurrency cancel <код>" to "отменить операцию из консоли",
         )
-        kit.framed(listOf(kit.header("Валюты"), kit.blank()) + hints).forEach(sender::send)
+        val intro = kit.note(if (kit.reader.interactive) "Нажмите на команду, чтобы вставить её в чат." else "Доступные действия зависят от прав.")
+        kit.framed(listOf(kit.header("Валюты", kit.text("помощь", ChatPalette.LABEL)), intro, kit.blank()) + hints).forEach(sender::send)
         return true
     }
 

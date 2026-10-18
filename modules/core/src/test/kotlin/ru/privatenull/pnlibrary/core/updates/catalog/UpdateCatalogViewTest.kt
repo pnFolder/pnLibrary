@@ -1,6 +1,7 @@
 package ru.privatenull.pnlibrary.core.updates.catalog
 
 import net.kyori.adventure.text.Component
+import net.kyori.adventure.text.event.ClickEvent
 import net.kyori.adventure.text.event.HoverEvent
 import net.kyori.adventure.text.format.NamedTextColor
 import net.kyori.adventure.text.format.TextDecoration
@@ -144,9 +145,9 @@ class UpdateCatalogViewTest {
         val text = text(lines)
 
         assertEquals("История", plain(lines[1]))
-        assertTrue(text.indexOf("  Сегодня") < text.indexOf("  Вчера"))
-        assertTrue(text.indexOf("  Вчера") < text.indexOf("  12 сентября"))
-        assertTrue(text.contains("\n\n  Вчера\n"), text)
+        assertTrue(text.indexOf("  «Сегодня»") < text.indexOf("  «Вчера»"))
+        assertTrue(text.indexOf("  «Вчера»") < text.indexOf("  «12 сентября»"))
+        assertTrue(text.contains("\n\n  «Вчера»\n"), text)
         assertTrue(text.contains("    pnlibrary  v1.0.0 → v1.1.0  подготовлено"), text)
         assertTrue(text.contains("    currency  v2.0.0 → v2.1.0  применено"))
         assertTrue(text.contains("    pnlibrary  v0.9.0 → v1.0.0  ошибка"))
@@ -251,7 +252,7 @@ class UpdateCatalogViewTest {
         val lines = UpdateCatalogView.settings(snapshot("pnlibrary", UpdateState.FROZEN), bukkit.copy(editable = false),
             heldUntil = now.plusSeconds(3600), now = now, zone = ZoneOffset.UTC)
         val text = text(lines)
-        assertFalse(lines.flatMap(::clicks).any { it.contains(" set ") })
+        assertFalse(lines.flatMap(::runs).any { it.contains(" set ") })
         assertTrue(text.contains("Только просмотр"))
         assertFalse(text.contains("Нажмите на кнопку"))
         assertTrue(text.contains("Канал: [✔ stable] rc beta alpha dev"), text)
@@ -359,7 +360,7 @@ class UpdateCatalogViewTest {
         )
         pages.forEach { page -> assertTrue(page.flatMap(::clicks).isEmpty(), text(page)) }
         val catalog = text(pages[0])
-        assertTrue(catalog.contains("  Команды:\n    /pn check · проверить обновления"), catalog)
+        assertTrue(catalog.contains("  «Команды»\n    /pn check — проверить обновления"), catalog)
         assertTrue(catalog.contains("pnlibrary v1.0.0 → v1.1.0\n      изменения: https://github.com/a/b"), catalog)
         assertFalse(catalog.contains("Нажмите"))
         assertTrue(text(pages[2]).contains("/pn updates set pnlibrary channel <stable|rc|beta|alpha|dev>"))
@@ -413,7 +414,7 @@ class UpdateCatalogViewTest {
     fun `every palette role keeps its own color on servers without RGB`() {
         val expected = mapOf(
             ChatPalette.TEXT to NamedTextColor.WHITE, ChatPalette.SOFT to NamedTextColor.GRAY,
-            ChatPalette.LABEL to NamedTextColor.AQUA, ChatPalette.FAINT to NamedTextColor.DARK_GRAY,
+            ChatPalette.LABEL to NamedTextColor.LIGHT_PURPLE, ChatPalette.FAINT to NamedTextColor.DARK_GRAY,
             ChatPalette.ACCENT to NamedTextColor.LIGHT_PURPLE, ChatPalette.OK to NamedTextColor.GREEN,
             ChatPalette.INFO to NamedTextColor.AQUA, ChatPalette.WARN to NamedTextColor.YELLOW,
             ChatPalette.ORANGE to NamedTextColor.GOLD, ChatPalette.DANGER to NamedTextColor.RED,
@@ -437,7 +438,7 @@ class UpdateCatalogViewTest {
         assertEquals(listOf("  ! Не удалось подготовить откат.", "    HTTP 404"), lines.map(::plain))
         assertEquals("  √ Готово", plain(UpdateCatalogView.notice(ChatNotice(ChatTone.SUCCESS, "Готово"), bukkit).single()))
         val console = UpdateCatalogView.notice(ChatNotice(ChatTone.PROGRESS, "Проверяю обновления…"), proxy.copy(interactive = false, ascii = true))
-        assertEquals("  -> Проверяю обновления...", plain(console.single()))
+        assertEquals("  >> Проверяю обновления...", plain(console.single()))
     }
 
     @Test
@@ -512,6 +513,10 @@ class UpdateCatalogViewTest {
     private fun row(lines: List<Component>, containing: String): Component = lines.first { plain(it).contains(containing) }
     private fun text(lines: List<Component>): String = lines.joinToString("\n", transform = ::plain)
     private fun plain(component: Component) = PlainTextComponentSerializer.plainText().serialize(component)
+    /** Commands a click runs right away, unlike suggestions that only fill the chat box. */
+    private fun runs(component: Component): List<String> =
+        listOfNotNull(component.clickEvent()?.takeIf { it.action() == ClickEvent.Action.RUN_COMMAND }?.value()) +
+            component.children().flatMap(::runs)
     private fun clicks(component: Component): List<String> = listOfNotNull(component.clickEvent()?.value()) + component.children().flatMap(::clicks)
     private fun hover(component: Component): String =
         (component.hoverEvent()?.value() as? Component)?.let(::plain).orEmpty().also {

@@ -4,12 +4,12 @@ import net.kyori.adventure.text.format.TextColor
 
 /**
  * The colors of every pnLibrary chat message, after the Catalog plugin: a soft lavender accent for titles, numbers
- * and the current choice, white names, sky-blue labels and hints, a neutral gray for versions and brackets, and
+ * and the current choice, white names, lilac labels and hints, a neutral gray for versions and brackets, and
  * calm semantic colors for states.
  *
  * Servers older than 1.16 cannot show RGB; Adventure then substitutes the nearest legacy chat color, matching hue
  * first. Every role lands on its own legacy color there: text on white, versions on gray, unavailable options on
- * dark gray, the accent on light purple, labels on aqua, and the semantic colors on green, aqua, yellow, gold and red.
+ * dark gray, the accent and labels on light purple, and the semantic colors on green, aqua, yellow, gold and red.
  */
 object ChatPalette {
     /** Names and values; legacy white. */
@@ -24,8 +24,8 @@ object ChatPalette {
     /** Titles, counters, day headings and navigation buttons; a soft lavender, legacy light purple. */
     @JvmField val ACCENT: TextColor = TextColor.color(0xD19BFF)
 
-    /** Field labels, hints and descriptions; a calm sky blue, legacy aqua. */
-    @JvmField val LABEL: TextColor = TextColor.color(0x7DD3FC)
+    /** Field labels, hints and descriptions; a soft lilac that sits beside the accent instead of competing with it. */
+    @JvmField val LABEL: TextColor = TextColor.color(0xDDB8F5)
 
     /** Success, up to date, turned on; legacy green. */
     @JvmField val OK: TextColor = TextColor.color(0x6EE7A0)

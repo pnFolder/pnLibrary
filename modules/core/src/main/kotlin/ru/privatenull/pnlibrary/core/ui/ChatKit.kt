@@ -109,11 +109,29 @@ open class ChatKit(val reader: ChatReader) {
         return visible.drop(1).fold(text("  ").append(visible.first())) { line, button -> line.append(text(" ")).append(button) }
     }
 
-    /** The footer of a reader that cannot click: one command per line with what it does. */
+    /** A section heading inside a page in Russian quotes, such as `«Сегодня»` or `«Команды»`. */
+    fun section(title: String): Component =
+        text("  ${glyph('«')}", ChatPalette.ACCENT).append(text(title, ChatPalette.TEXT)).append(text(glyph('»'), ChatPalette.ACCENT))
+
+    /**
+     * A `«Команды»` section: one command per line, then what it does. Placeholders such as `<игрок>` stand out in
+     * the accent; a reader who can click gets the command typed into the chat box by clicking its line.
+     */
     fun commandHints(vararg hints: Pair<String?, String>): List<Component> =
-        listOf(text("  Команды:", ChatPalette.LABEL)) + hints.mapNotNull { (command, purpose) ->
-            command?.let { text("    $it", ChatPalette.LABEL).append(dot()).append(text(purpose, ChatPalette.LABEL)) }
+        listOf(section("Команды")) + hints.mapNotNull { (command, purpose) -> command?.let { commandLine(it, purpose) } }
+
+    private fun commandLine(command: String, purpose: String): Component {
+        var line = text("    ")
+        PLACEHOLDER.split(command).zip(PLACEHOLDER.findAll(command).map { it.value }.toList() + "").forEach { (plain, placeholder) ->
+            line = line.append(text(plain, ChatPalette.TEXT))
+            if (placeholder.isNotEmpty()) line = line.append(text(placeholder, ChatPalette.ACCENT))
         }
+        line = line.append(text(" ${glyph('—')} ", ChatPalette.FAINT)).append(text(purpose, ChatPalette.LABEL))
+        if (!reader.interactive) return line
+        val typed = command.substringBefore('<').trimEnd() + " "
+        return line.clickEvent(ClickEvent.suggestCommand(typed))
+            .hoverEvent(tooltip(text("Нажмите, чтобы вставить команду", ChatPalette.TEXT), text(typed.trim(), ChatPalette.LABEL)))
+    }
 
     /** A counter such as `3 плагина`: the number in [color], the agreeing word in sky blue. */
     fun chip(count: Int, word: String, color: TextColor): Component =
@@ -189,8 +207,11 @@ open class ChatKit(val reader: ChatReader) {
 
         private const val MAX_LINK = 4096
 
+        /** `<игрок>`, `[сумма]` and the like inside a command. */
+        private val PLACEHOLDER = Regex("""<[^>]+>|\[[^]]+]""")
+
         private val ASCII: Map<Char, String> = mapOf(
-            '─' to "-", '■' to "*", '✔' to "+", '□' to "o", '›' to ">", '✦' to "*", '·' to "|", '»' to "->", '«' to "<-",
+            '─' to "-", '■' to "*", '✔' to "+", '□' to "o", '›' to ">", '✦' to "*", '·' to "|", '»' to ">>", '«' to "<<",
             '√' to "+", '→' to "->", '—' to "-", '–' to "-", '…' to "...",
         )
     }

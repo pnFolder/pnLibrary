@@ -46,9 +46,10 @@ class BukkitCurrencyCommandTest {
         val messages = run("help")
 
         assertEquals("", messages.first())
-        assertEquals("Валюты", messages[1])
-        assertTrue("    /pncurrency list | список валют" in messages)
-        assertTrue(messages.any { it.contains("/pncurrency <confirm|cancel> <код>") })
+        assertEquals("Валюты  помощь", messages[1])
+        assertTrue("<<Команды>>" in messages.map { it.trim() }, messages.toString())
+        assertTrue("    /pncurrency list - список валют" in messages, messages.toString())
+        assertTrue(messages.any { it.contains("/pncurrency <валюта> pay <игрок> <сумма> - перевести игроку") })
     }
 
     @Test

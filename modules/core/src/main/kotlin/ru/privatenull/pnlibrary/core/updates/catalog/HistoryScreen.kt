@@ -27,7 +27,7 @@ internal class HistoryScreen(routes: UpdateCatalogRoutes, now: Instant, zone: Zo
             if (entryDay != day) {
                 day = entryDay
                 result += blank()
-                result += text("  ${dayLabel(entryDay)}", ChatPalette.ACCENT)
+                result += section(dayLabel(entryDay))
             }
             result += rows(entry, offerFilter = product == null)
         }
