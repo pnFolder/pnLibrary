@@ -200,8 +200,9 @@ internal class BukkitPlatformAdapter(
         executeGlobal(task)
     }
 
+    /** Releases registrations, cancels native tasks and stops native log observation once. */
     override fun close() {
-        lifecycle.close { observeNativeLogs(null) }
+        lifecycle.closeAdapter(null, taskAdapter) { observeNativeLogs(null) }
         lifecycleListener = null
     }
 

@@ -1,9 +1,13 @@
 package ru.privatenull.pnlibrary.spi.platform
 
+import org.junit.jupiter.api.Assertions.assertEquals
 import org.junit.jupiter.api.Assertions.assertFalse
 import org.junit.jupiter.api.Assertions.assertTrue
 import org.junit.jupiter.api.Test
 import org.junit.jupiter.api.assertThrows
+import ru.privatenull.pnlibrary.spi.tasks.PlatformTaskAdapter
+import ru.privatenull.pnlibrary.spi.tasks.PlatformTaskHandle
+import ru.privatenull.pnlibrary.spi.tasks.PlatformTaskRequest
 import java.util.concurrent.CopyOnWriteArrayList
 import java.util.concurrent.CountDownLatch
 import java.util.concurrent.Executors
@@ -151,5 +155,43 @@ class PlatformLifecycleTest {
         assertThrows<IllegalStateException> {
             lifecycle.track(AutoCloseable { })
         }
+    }
+
+    @Test
+    fun `adapter shutdown releases registrations, startup work, tasks and log observation in order`() {
+        val lifecycle = PlatformLifecycle()
+        val steps = CopyOnWriteArrayList<String>()
+        val startup = StartupGate(lifecycle) { steps += "startup task ran" }
+        val tasks = object : PlatformTaskAdapter {
+            override fun schedule(request: PlatformTaskRequest) = PlatformTaskHandle { true }
+            override fun close() { steps += "tasks" }
+        }
+        lifecycle.track(AutoCloseable { steps += "registration" })
+        startup.whenReady(Runnable {})
+
+        assertTrue(lifecycle.closeAdapter(startup, tasks) { steps += "logs" })
+        startup.markReady()
+
+        assertEquals(listOf("registration", "tasks", "logs"), steps)
+        assertFalse(lifecycle.closeAdapter(startup, tasks) { steps += "logs" })
+    }
+
+    @Test
+    fun `adapter shutdown stops log observation when task cancellation fails`() {
+        val lifecycle = PlatformLifecycle()
+        var observing = true
+        val failure = IllegalStateException("cancel failed")
+        val tasks = object : PlatformTaskAdapter {
+            override fun schedule(request: PlatformTaskRequest) = PlatformTaskHandle { true }
+            override fun close() = throw failure
+        }
+
+        val thrown = assertThrows<IllegalStateException> {
+            lifecycle.closeAdapter(null, tasks) { observing = false }
+        }
+
+        assertTrue(thrown === failure)
+        assertFalse(observing)
+        assertTrue(lifecycle.isClosed)
     }
 }

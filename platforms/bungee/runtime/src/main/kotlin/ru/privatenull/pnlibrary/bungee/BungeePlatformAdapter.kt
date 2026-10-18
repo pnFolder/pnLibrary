@@ -139,11 +139,8 @@ internal class BungeePlatformAdapter(
         executeGlobal(task)
     }
 
-    /** Releases observers and command registrations once. */
+    /** Discards pending startup work, cancels native tasks and stops native log observation once. */
     override fun close() {
-        lifecycle.close {
-            startup.discardPending()
-            observeNativeLogs(null)
-        }
+        lifecycle.closeAdapter(startup, taskAdapter) { observeNativeLogs(null) }
     }
 }

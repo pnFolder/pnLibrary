@@ -146,16 +146,9 @@ internal class VelocityPlatformAdapter(
         executeGlobal(task)
     }
 
-    /** Discards pending startup work, cancels native tasks and removes the exception observer. */
+    /** Discards pending startup work, cancels native tasks and stops native log observation once. */
     override fun close() {
-        lifecycle.close {
-            startup.discardPending()
-            try {
-                taskAdapter.close()
-            } finally {
-                observeNativeLogs(null)
-            }
-        }
+        lifecycle.closeAdapter(startup, taskAdapter) { observeNativeLogs(null) }
     }
 
     private companion object {

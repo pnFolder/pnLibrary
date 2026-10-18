@@ -153,6 +153,7 @@ public final class ru/privatenull/pnlibrary/spi/platform/PlatformLifecycle {
 	public final fun checkOpen ()V
 	public final fun close ()Z
 	public final fun close (Lkotlin/jvm/functions/Function0;)Z
+	public final fun closeAdapter (Lru/privatenull/pnlibrary/spi/platform/StartupGate;Lru/privatenull/pnlibrary/spi/tasks/PlatformTaskAdapter;Lkotlin/jvm/functions/Function0;)Z
 	public final fun isClosed ()Z
 	public final fun track (Ljava/lang/AutoCloseable;)Ljava/lang/AutoCloseable;
 }
