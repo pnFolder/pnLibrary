@@ -20,7 +20,10 @@ sealed class MetricsCredentials<T> : AutoCloseable {
     override fun close() = Unit
 
     /** Public positive project identifier assigned by bStats. */
-    data class BStats(val projectId: Int) : MetricsCredentials<Int>() {
+    data class BStats(
+        /** Public bStats project identifier. */
+        val projectId: Int,
+    ) : MetricsCredentials<Int>() {
         init {
             require(projectId > 0) { "Metrics project ID must be positive for bStats" }
         }

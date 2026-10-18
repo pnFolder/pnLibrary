@@ -27,5 +27,6 @@ class SecretValue(value: CharArray) : AutoCloseable {
         characters.fill('\u0000')
     }
 
+    /** Returns a redacted placeholder so the secret never reaches logs. */
     override fun toString(): String = "SecretValue([REDACTED])"
 }
