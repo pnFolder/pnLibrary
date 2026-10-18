@@ -12,6 +12,7 @@ dependencies {
     implementation(libs.gson)
 
     testImplementation(libs.junit.jupiter)
+    testImplementation(libs.h2)
     testRuntimeOnly(libs.junit.launcher)
 }
 
