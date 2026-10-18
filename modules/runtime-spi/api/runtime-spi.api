@@ -73,6 +73,7 @@ public final class ru/privatenull/pnlibrary/spi/platform/DiagnosticSections {
 	public static final fun missingDependencies (Ljava/util/Map;Ljava/util/Set;)Ljava/util/List;
 	public static final fun percentile (Ljava/util/Collection;D)Ljava/lang/Long;
 	public static final fun pingSummary (Ljava/util/Collection;)Ljava/util/Map;
+	public static final fun proxySections (Ljava/util/Map;ZLjava/util/List;Ljava/util/List;Ljava/util/List;Ljava/util/Collection;)V
 }
 
 public final class ru/privatenull/pnlibrary/spi/platform/JavaSnapshot {
@@ -261,6 +262,13 @@ public final class ru/privatenull/pnlibrary/spi/platform/PluginSnapshot {
 	public final fun getVersion ()Ljava/lang/String;
 	public fun hashCode ()I
 	public fun toString ()Ljava/lang/String;
+}
+
+public final class ru/privatenull/pnlibrary/spi/platform/ProxyBackend {
+	public fun <init> (Ljava/lang/String;ILkotlin/jvm/functions/Function0;)V
+	public final fun getAddress ()Lkotlin/jvm/functions/Function0;
+	public final fun getName ()Ljava/lang/String;
+	public final fun getPlayers ()I
 }
 
 public final class ru/privatenull/pnlibrary/spi/platform/StartupGate {
