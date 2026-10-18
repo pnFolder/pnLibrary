@@ -1,5 +1,3 @@
-import org.jetbrains.kotlin.gradle.dsl.JvmTarget
-
 plugins {
     alias(libs.plugins.kotlin.jvm)
     `java-library`
@@ -46,14 +44,6 @@ mavenPublishing {
 
 base { archivesName = "pnLibrary-bukkit-api" }
 
-kotlin {
-    compilerOptions {
-        jvmTarget = JvmTarget.JVM_1_8
-    }
-}
-
-tasks.withType<JavaCompile>().configureEach { options.release = 8 }
-
 dependencies {
     api(project(":modules:common"))
     api(project(":modules:api"))
@@ -69,6 +59,4 @@ dependencies {
 java {
     withSourcesJar()
     withJavadocJar()
-    sourceCompatibility = JavaVersion.VERSION_1_8
-    targetCompatibility = JavaVersion.VERSION_1_8
 }

@@ -47,9 +47,20 @@ subprojects {
         maven("https://repo.faststats.dev/releases")                            { name = "faststats" }
     }
 
+    // Bytecode and API level: Java 8 unless a module sets `pn.java.release` in its gradle.properties
+    // (Velocity modules need 17, the FastStats Velocity bridge 21).
+    val javaRelease = (findProperty("pn.java.release") as String?)?.toInt() ?: 8
+
     tasks.withType<JavaCompile>().configureEach {
         options.encoding = "UTF-8"
+        options.release.set(javaRelease)
         options.compilerArgs.add("-Xlint:-options")
+    }
+    pluginManager.withPlugin("java") {
+        extensions.configure<JavaPluginExtension> {
+            sourceCompatibility = JavaVersion.toVersion(javaRelease)
+            targetCompatibility = JavaVersion.toVersion(javaRelease)
+        }
     }
 
     // Wire up Kotlin source sets for all subprojects that apply kotlin("jvm")
@@ -72,7 +83,7 @@ subprojects {
 
         tasks.withType<KotlinCompile>().configureEach {
             compilerOptions {
-                jvmTarget.set(JvmTarget.JVM_1_8)
+                jvmTarget.set(JvmTarget.fromTarget(if (javaRelease == 8) "1.8" else javaRelease.toString()))
                 freeCompilerArgs.addAll(
                     "-Xjvm-default=all",
                     "-opt-in=kotlin.RequiresOptIn"

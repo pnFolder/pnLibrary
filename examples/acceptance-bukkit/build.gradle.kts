@@ -5,13 +5,7 @@ plugins {
 
 base { archivesName = "pnLibrary-acceptance" }
 
-java {
-    sourceCompatibility = JavaVersion.VERSION_1_8
-    targetCompatibility = JavaVersion.VERSION_1_8
-}
-
 tasks.withType<JavaCompile>().configureEach {
-    options.release = 8
     options.encoding = "UTF-8"
 }
 
@@ -39,8 +33,6 @@ pnComponentMetadata {
     channel.set("beta")
     javaMinimum.set(8)
 }
-
-
 
 tasks.register<Sync>("assembleAcceptanceKit") {
     group = "distribution"

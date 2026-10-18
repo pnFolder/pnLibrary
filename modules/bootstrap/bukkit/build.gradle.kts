@@ -17,11 +17,8 @@ dependencies {
 java {
     withSourcesJar()
     withJavadocJar()
-    sourceCompatibility = JavaVersion.VERSION_1_8
-    targetCompatibility = JavaVersion.VERSION_1_8
 }
 
-tasks.withType<JavaCompile>().configureEach { options.release = 8 }
 tasks.withType<Test>().configureEach { useJUnitPlatform() }
 
 mavenPublishing {

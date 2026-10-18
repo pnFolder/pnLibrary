@@ -1,5 +1,4 @@
 // Production-style example plugin used to exercise pnLibrary visually on Bukkit/Paper.
-import org.jetbrains.kotlin.gradle.dsl.JvmTarget
 import com.github.jengelman.gradle.plugins.shadow.tasks.ShadowJar
 import java.util.jar.JarFile
 
@@ -10,9 +9,6 @@ plugins {
 }
 
 base { archivesName = "pnLibrary-demo-bukkit" }
-
-kotlin { compilerOptions { jvmTarget = JvmTarget.JVM_1_8 } }
-tasks.withType<JavaCompile>().configureEach { options.release = 8 }
 
 dependencies {
     compileOnly(project(":modules:api"))
@@ -58,11 +54,6 @@ val verifyDemoJar = tasks.register("verifyDemoJar") {
     }
 }
 tasks.named("check") { dependsOn(verifyDemoJar) }
-
-java {
-    sourceCompatibility = JavaVersion.VERSION_1_8
-    targetCompatibility = JavaVersion.VERSION_1_8
-}
 
 val resourceVersion = project.version.toString()
 tasks.named<ProcessResources>("processResources") {

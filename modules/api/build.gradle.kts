@@ -1,5 +1,4 @@
 // pnlibrary-api — zero server-platform dependencies, JVM 8 bytecode
-import org.jetbrains.kotlin.gradle.dsl.JvmTarget
 
 plugins {
     alias(libs.plugins.kotlin.jvm)
@@ -9,14 +8,6 @@ plugins {
 
 base { archivesName = "pnLibrary-api" }
 
-kotlin {
-    compilerOptions {
-        jvmTarget = JvmTarget.JVM_1_8
-    }
-}
-
-tasks.withType<JavaCompile>().configureEach { options.release = 8 }
-
 dependencies {
     api(project(":modules:common"))
     // Pure stdlib — no server-platform compile deps
@@ -24,11 +15,6 @@ dependencies {
     api(libs.adventure.api)
     testImplementation(libs.junit.jupiter)
     testRuntimeOnly(libs.junit.launcher)
-}
-
-java {
-    sourceCompatibility = JavaVersion.VERSION_1_8
-    targetCompatibility = JavaVersion.VERSION_1_8
 }
 
 // Public developer dependency. Runtime/platform JARs continue to be distributed

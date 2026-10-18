@@ -1,6 +1,5 @@
 // pnlibrary-bukkit — Bukkit/Spigot/Paper/Leaf/Purpur adapter, JVM 8 bytecode
 // Folia is detected at runtime via reflection; no compile-time Folia API needed.
-import org.jetbrains.kotlin.gradle.dsl.JvmTarget
 
 plugins {
     alias(libs.plugins.kotlin.jvm)
@@ -9,14 +8,6 @@ plugins {
 }
 
 base { archivesName = "pnLibrary-bukkit" }
-
-kotlin {
-    compilerOptions {
-        jvmTarget = JvmTarget.JVM_1_8
-    }
-}
-
-tasks.withType<JavaCompile>().configureEach { options.release = 8 }
 
 dependencies {
     implementation(project(":modules:api"))
@@ -48,11 +39,6 @@ tasks.named<ProcessResources>("processResources") {
     filesMatching("plugin.yml") {
         expand(mapOf("version" to resourceVersion))
     }
-}
-
-java {
-    sourceCompatibility = JavaVersion.VERSION_1_8
-    targetCompatibility = JavaVersion.VERSION_1_8
 }
 
 mavenPublishing {
