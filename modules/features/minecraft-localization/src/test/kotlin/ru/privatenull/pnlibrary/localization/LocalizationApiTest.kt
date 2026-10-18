@@ -26,4 +26,10 @@ class LocalizationApiTest {
             TranslationRequest.builder().version(MinecraftVersion.V1_21_4).locale("../ru_ru").build()
         }
     }
+
+    @Test
+    fun `dsl names the missing version`() {
+        val error = assertThrows<IllegalArgumentException> { TranslationRequestDsl().apply { locales("ru_ru") }.build() }
+        assertEquals("Minecraft version must be set", error.message)
+    }
 }
