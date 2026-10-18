@@ -1,7 +1,5 @@
 package ru.privatenull.pnlibrary.core.plugin
 
-import ru.privatenull.pnlibrary.api.metrics.MetricsProvider
-import ru.privatenull.pnlibrary.api.metrics.MetricsProviderConfiguration
 import org.junit.jupiter.api.Assertions.assertEquals
 import org.junit.jupiter.api.Assertions.assertFalse
 import org.junit.jupiter.api.Assertions.assertNotSame
@@ -26,6 +24,8 @@ import ru.privatenull.pnlibrary.api.events.Listener
 import ru.privatenull.pnlibrary.api.logging.LoggingService
 import ru.privatenull.pnlibrary.api.logging.MessageBox
 import ru.privatenull.pnlibrary.api.logging.PnLogger
+import ru.privatenull.pnlibrary.api.metrics.MetricsProvider
+import ru.privatenull.pnlibrary.api.metrics.MetricsProviderConfiguration
 import ru.privatenull.pnlibrary.api.metrics.MetricsService
 import ru.privatenull.pnlibrary.api.metrics.PluginMetrics
 import ru.privatenull.pnlibrary.api.platform.PlatformType
@@ -52,6 +52,7 @@ import ru.privatenull.pnlibrary.spi.tasks.PlatformTaskAdapter
 import ru.privatenull.pnlibrary.spi.tasks.PlatformTaskHandle
 import ru.privatenull.pnlibrary.spi.tasks.PlatformTaskRequest
 import java.lang.reflect.Proxy
+import java.nio.file.Paths
 import java.util.function.Consumer
 import java.util.function.Supplier
 
@@ -62,7 +63,7 @@ class PluginRegistryImplTest {
         val downloads = mock(DirectDownloadManager::class.java)
         val dependencyRegistration = mock(DownloadRegistration::class.java)
         val failure = IllegalStateException("file registration failed")
-        val request = FileDownloads.builder().dataDirectory(java.nio.file.Paths.get("plugins/example"))
+        val request = FileDownloads.builder().dataDirectory(Paths.get("plugins/example"))
             .file("asset") {
                 it.url("https://example.org/asset.bin").destination(DownloadDestination.DATA_FOLDER, "asset.bin")
             }.build()
@@ -136,7 +137,7 @@ class PluginRegistryImplTest {
         val request = PluginUpdateRequest.builder().repository("pnFolder", "Example")
             .apiVersion(1)
             .artifact("Example.jar", 17).build()
-        val downloads = FileDownloads.builder().dataDirectory(java.nio.file.Paths.get("plugins/example"))
+        val downloads = FileDownloads.builder().dataDirectory(Paths.get("plugins/example"))
             .file("economy-data") {
                 it.url("https://example.org/data.bin")
                     .destination(DownloadDestination.DATA_FOLDER, "data.bin")

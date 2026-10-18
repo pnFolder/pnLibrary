@@ -2,6 +2,7 @@ package ru.privatenull.pnlibrary.core.placeholders
 
 import ru.privatenull.pnlibrary.api.placeholders.PlaceholderValueScope
 import ru.privatenull.pnlibrary.api.placeholders.PlaceholderValueStore
+import java.util.Locale
 import java.util.UUID
 import java.util.concurrent.ConcurrentHashMap
 import java.util.function.UnaryOperator
@@ -59,7 +60,7 @@ internal class GlobalPlaceholderValueStore : PlaceholderValueStore {
     }
 
     private fun key(parameter: String): String {
-        val normalized = parameter.trim().lowercase(java.util.Locale.ROOT)
+        val normalized = parameter.trim().lowercase(Locale.ROOT)
         require(normalized.matches(PARAMETER)) { "Invalid placeholder value parameter: $parameter" }
         return normalized
     }

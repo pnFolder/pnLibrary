@@ -1,11 +1,11 @@
 package ru.privatenull.pnlibrary.api.plugin
 
 import ru.privatenull.pnlibrary.api.diagnostics.DiagnosticContainer
+import ru.privatenull.pnlibrary.api.downloads.FileDownloads
 import ru.privatenull.pnlibrary.api.updates.PluginUpdateRequest
 import ru.privatenull.pnlibrary.api.updates.ProductDescriptor
 import java.nio.file.Path
 import java.util.function.Consumer
-import ru.privatenull.pnlibrary.api.downloads.FileDownloads
 
 /**
  * Declarative setup evaluated by [PluginRegistry.register] before capabilities become visible.

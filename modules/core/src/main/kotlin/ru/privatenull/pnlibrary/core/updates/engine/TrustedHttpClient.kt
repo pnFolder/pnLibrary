@@ -1,10 +1,10 @@
 package ru.privatenull.pnlibrary.core.updates.engine
 
 import java.io.ByteArrayOutputStream
+import java.io.InputStream
 import java.net.HttpURLConnection
 import java.net.URI
 import java.time.Duration
-import java.io.InputStream
 
 /** Bounded HTTPS client with explicit redirect and timeout handling. */
 open class TrustedHttpClient(

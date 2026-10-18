@@ -2,6 +2,7 @@ package ru.privatenull.pnlibrary.core.updates.engine
 
 import java.net.URI
 import java.nio.charset.StandardCharsets
+import java.nio.file.AtomicMoveNotSupportedException
 import java.nio.file.Files
 import java.nio.file.Path
 import java.nio.file.StandardCopyOption
@@ -76,7 +77,7 @@ class ReleaseCatalogueStore(private val root: Path) {
             Files.write(temporary, bytes)
             try {
                 Files.move(temporary, path, StandardCopyOption.ATOMIC_MOVE, StandardCopyOption.REPLACE_EXISTING)
-            } catch (_: java.nio.file.AtomicMoveNotSupportedException) {
+            } catch (_: AtomicMoveNotSupportedException) {
                 Files.move(temporary, path, StandardCopyOption.REPLACE_EXISTING)
             }
         } finally {

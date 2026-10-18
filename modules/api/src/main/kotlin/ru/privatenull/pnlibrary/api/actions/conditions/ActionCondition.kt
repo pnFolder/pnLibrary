@@ -1,7 +1,7 @@
 package ru.privatenull.pnlibrary.api.actions
 
-import ru.privatenull.pnlibrary.api.config.ConfigPolymorphic
 import ru.privatenull.pnlibrary.api.config.ConfigKey
+import ru.privatenull.pnlibrary.api.config.ConfigPolymorphic
 import ru.privatenull.pnlibrary.api.config.ConfigType
 import ru.privatenull.pnlibrary.api.config.ConfigTypes
 

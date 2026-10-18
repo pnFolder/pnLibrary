@@ -3,10 +3,10 @@ package ru.privatenull.pnlibrary.core.updates
 import com.google.gson.JsonArray
 import com.google.gson.JsonObject
 import com.google.gson.JsonParser
-import ru.privatenull.pnlibrary.api.updates.UpdatePlanSnapshot
-import ru.privatenull.pnlibrary.api.updates.UpdateActor
-import ru.privatenull.pnlibrary.api.updates.UpdateState
 import ru.privatenull.pnlibrary.api.updates.ProductId
+import ru.privatenull.pnlibrary.api.updates.UpdateActor
+import ru.privatenull.pnlibrary.api.updates.UpdatePlanSnapshot
+import ru.privatenull.pnlibrary.api.updates.UpdateState
 import ru.privatenull.pnlibrary.api.version.SemanticVersion
 import ru.privatenull.pnlibrary.core.io.TextFiles
 import java.nio.charset.StandardCharsets.UTF_8

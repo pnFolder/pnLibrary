@@ -1,8 +1,8 @@
 package ru.privatenull.pnlibrary.core.diagnostics
 
-import org.junit.jupiter.api.Test
 import org.junit.jupiter.api.Assertions.assertEquals
 import org.junit.jupiter.api.Assertions.assertNotEquals
+import org.junit.jupiter.api.Test
 import ru.privatenull.pnlibrary.api.diagnostics.DiagnosticLevel
 
 class DiagnosticValueSanitizerTest {

@@ -1,7 +1,7 @@
 package ru.privatenull.pnlibrary.bukkit
 
-import net.kyori.adventure.platform.bukkit.BukkitAudiences
 import net.kyori.adventure.audience.Audience
+import net.kyori.adventure.platform.bukkit.BukkitAudiences
 import net.kyori.adventure.sound.Sound
 import net.kyori.adventure.text.Component
 import net.kyori.adventure.text.serializer.legacy.LegacyComponentSerializer
@@ -9,6 +9,7 @@ import org.bukkit.entity.Player
 import org.bukkit.plugin.Plugin
 import ru.privatenull.pnlibrary.api.actions.LibraryAudience
 import ru.privatenull.pnlibrary.api.actions.LibraryPlayer
+import java.lang.reflect.Array
 import java.util.UUID
 import java.util.concurrent.atomic.AtomicBoolean
 
@@ -95,7 +96,7 @@ class BukkitAudienceService internal constructor(plugin: Plugin, private val aud
             val textComponent = Class.forName("net.md_5.bungee.api.chat.TextComponent")
             val components = textComponent.getMethod("fromLegacyText", String::class.java).invoke(null, message)
             player.javaClass.getMethod("spigot").invoke(player).javaClass
-                .getMethod("sendMessage", chatType.javaClass, java.lang.reflect.Array.newInstance(componentType, 0).javaClass)
+                .getMethod("sendMessage", chatType.javaClass, Array.newInstance(componentType, 0).javaClass)
                 .invoke(player.spigot(), chatType, components)
         }.onFailure { player.sendMessage(message) }
     }

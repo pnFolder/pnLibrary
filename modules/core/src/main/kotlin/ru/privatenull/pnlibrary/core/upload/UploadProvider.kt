@@ -1,7 +1,6 @@
 package ru.privatenull.pnlibrary.core.upload
 
 import ru.privatenull.pnlibrary.core.io.TextFiles
-
 import java.io.IOException
 import java.nio.file.Path
 

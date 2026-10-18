@@ -1,20 +1,19 @@
 package ru.privatenull.pnlibrary.core.updates
 
-import ru.privatenull.pnlibrary.common.jvm.JavaRuntime
-
 import ru.privatenull.pnlibrary.api.updates.ProductId
 import ru.privatenull.pnlibrary.api.updates.ProductRelease
 import ru.privatenull.pnlibrary.api.updates.UpdateChannel
 import ru.privatenull.pnlibrary.api.updates.UpdatePlan
 import ru.privatenull.pnlibrary.api.version.PnLibraryApi
-import ru.privatenull.pnlibrary.spi.platform.PlatformIdentity
-import ru.privatenull.pnlibrary.spi.platform.PlatformOwnerMetadata
-import ru.privatenull.pnlibrary.spi.platform.PlatformPluginInventory
-import ru.privatenull.pnlibrary.core.updates.engine.RefreshMode
+import ru.privatenull.pnlibrary.common.jvm.JavaRuntime
 import ru.privatenull.pnlibrary.core.updates.engine.FreezeStore
+import ru.privatenull.pnlibrary.core.updates.engine.RefreshMode
 import ru.privatenull.pnlibrary.core.updates.engine.ResolutionResult
 import ru.privatenull.pnlibrary.core.updates.engine.ResolverPolicy
 import ru.privatenull.pnlibrary.core.updates.engine.UpdateResolver
+import ru.privatenull.pnlibrary.spi.platform.PlatformIdentity
+import ru.privatenull.pnlibrary.spi.platform.PlatformOwnerMetadata
+import ru.privatenull.pnlibrary.spi.platform.PlatformPluginInventory
 import java.time.Instant
 
 /** Loads release catalogues and resolves one coherent update plan for all registered products. */

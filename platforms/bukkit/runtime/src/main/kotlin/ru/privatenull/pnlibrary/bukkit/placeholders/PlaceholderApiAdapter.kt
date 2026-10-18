@@ -1,7 +1,7 @@
 package ru.privatenull.pnlibrary.bukkit.placeholders
 
-import me.clip.placeholderapi.expansion.PlaceholderExpansion
 import me.clip.placeholderapi.PlaceholderAPI
+import me.clip.placeholderapi.expansion.PlaceholderExpansion
 import org.bukkit.OfflinePlayer
 import org.bukkit.plugin.Plugin
 import ru.privatenull.pnlibrary.api.placeholders.ExternalPlaceholderRegistration

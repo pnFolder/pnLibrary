@@ -1,9 +1,9 @@
 package ru.privatenull.pnlibrary.core.updates
 
 import org.junit.jupiter.api.Assertions.*
+import org.junit.jupiter.api.io.TempDir
 import org.junit.jupiter.params.ParameterizedTest
 import org.junit.jupiter.params.provider.ValueSource
-import org.junit.jupiter.api.io.TempDir
 import ru.privatenull.pnlibrary.api.updates.ProductId
 import ru.privatenull.pnlibrary.api.updates.UpdateConfigurationBackup
 import ru.privatenull.pnlibrary.api.version.ApiVersionRange
@@ -12,6 +12,7 @@ import ru.privatenull.pnlibrary.core.updates.engine.*
 import java.nio.file.Files
 import java.nio.file.Path
 import java.nio.file.Paths
+import java.util.UUID
 import java.util.concurrent.TimeUnit
 
 /** Executed by distribution:verifyUpdaterProcess against the real shaded executable JAR. */
@@ -28,7 +29,7 @@ class OfflineUpdaterJarTest {
         val api = ApiVersionRange(8, 8)
         val specification = ArtifactSpecification(ProductId.of("pnlibrary"), SemanticVersion.parse("2.0.0"), api, "release.jar")
         val transactions = UpdateTransaction(data.resolve("updates/transactions"), ArtifactVerifier(1024), plugins)
-        val plan = java.util.UUID.randomUUID()
+        val plan = UUID.randomUUID()
         val config = data.resolve("config.yml").also { Files.writeString(it, "version: 1") }
         val unrelated = data.resolve("unrelated.yml").also { Files.writeString(it, "keep") }
         val snapshots = ConfigurationSnapshots(data.resolve("updates/configurations"), plugins)

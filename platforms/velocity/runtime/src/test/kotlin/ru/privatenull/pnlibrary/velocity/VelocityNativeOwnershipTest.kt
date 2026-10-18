@@ -1,18 +1,20 @@
 package ru.privatenull.pnlibrary.velocity
 
+import com.velocitypowered.api.command.Command
+import com.velocitypowered.api.command.CommandMeta
 import com.velocitypowered.api.proxy.ProxyServer
-import org.junit.jupiter.api.Test
 import org.junit.jupiter.api.Assertions.assertThrows
+import org.junit.jupiter.api.Test
 import org.mockito.Answers.RETURNS_DEEP_STUBS
 import org.mockito.Mockito.mock
 import org.mockito.kotlin.any
 import org.mockito.kotlin.verify
 import org.mockito.kotlin.whenever
+import ru.privatenull.pnlibrary.api.commands.CommandContext
+import ru.privatenull.pnlibrary.api.commands.CommandDefinition
 import ru.privatenull.pnlibrary.api.commands.command
 import ru.privatenull.pnlibrary.api.tasks.TaskExecution
 import ru.privatenull.pnlibrary.spi.commands.PlatformCommandDispatcher
-import ru.privatenull.pnlibrary.api.commands.CommandContext
-import ru.privatenull.pnlibrary.api.commands.CommandDefinition
 import ru.privatenull.pnlibrary.spi.tasks.PlatformTaskRequest
 import ru.privatenull.pnlibrary.velocity.commands.VelocityCommandAdapter
 import ru.privatenull.pnlibrary.velocity.tasks.VelocityTaskAdapter
@@ -48,7 +50,7 @@ class VelocityNativeOwnershipTest {
                 .register(owner, command("owned") { aliases("taken") }, dispatcher)
         }
         org.mockito.kotlin.verify(proxy.commandManager, org.mockito.kotlin.never())
-            .register(any<com.velocitypowered.api.command.CommandMeta>(), any<com.velocitypowered.api.command.Command>())
+            .register(any<CommandMeta>(), any<Command>())
     }
 
     @Test

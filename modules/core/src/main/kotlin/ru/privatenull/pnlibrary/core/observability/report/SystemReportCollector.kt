@@ -6,8 +6,7 @@ import java.time.Instant
 
 /** Collects a compact JVM and host snapshot used to diagnose common server failures. */
 internal class SystemReportCollector {
-    @Suppress("UNUSED_PARAMETER")
-    fun collect(includeNetworkAddresses: Boolean = false): Map<String, Any?> {
+    fun collect(): Map<String, Any?> {
         val runtime = ManagementFactory.getRuntimeMXBean()
         val os = ManagementFactory.getOperatingSystemMXBean()
         val memory = ManagementFactory.getMemoryMXBean()

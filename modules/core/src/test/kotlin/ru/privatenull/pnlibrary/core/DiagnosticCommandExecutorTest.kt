@@ -4,16 +4,17 @@ import org.junit.jupiter.api.Assertions.assertInstanceOf
 import org.junit.jupiter.api.Assertions.assertTrue
 import org.junit.jupiter.api.Test
 import org.junit.jupiter.api.io.TempDir
-import ru.privatenull.pnlibrary.spi.platform.PlatformAdapter
-import ru.privatenull.pnlibrary.spi.tasks.PlatformTaskAdapter
-import ru.privatenull.pnlibrary.spi.tasks.PlatformTaskHandle
-import ru.privatenull.pnlibrary.spi.tasks.PlatformTaskRequest
 import ru.privatenull.pnlibrary.api.platform.PlatformType
 import ru.privatenull.pnlibrary.api.runtime.PnLibraryConfig
 import ru.privatenull.pnlibrary.core.diagnostics.DiagnosticCommandEvent
 import ru.privatenull.pnlibrary.core.diagnostics.DiagnosticCommandExecutor
 import ru.privatenull.pnlibrary.core.runtime.PnLibraryBootstrap
 import ru.privatenull.pnlibrary.core.runtime.toRuntimeContext
+import ru.privatenull.pnlibrary.spi.platform.PlatformAdapter
+import ru.privatenull.pnlibrary.spi.tasks.PlatformTaskAdapter
+import ru.privatenull.pnlibrary.spi.tasks.PlatformTaskHandle
+import ru.privatenull.pnlibrary.spi.tasks.PlatformTaskRequest
+import java.nio.file.Files
 import java.nio.file.Path
 import java.util.concurrent.CopyOnWriteArrayList
 import java.util.concurrent.CountDownLatch
@@ -47,7 +48,7 @@ class DiagnosticCommandExecutorTest {
             assertTrue(completed.await(5, TimeUnit.SECONDS))
             assertInstanceOf(DiagnosticCommandEvent.Started::class.java, events.first())
             val result = events.filterIsInstance<DiagnosticCommandEvent.Completed>().single().report
-            assertTrue(java.nio.file.Files.isRegularFile(result.localFile))
+            assertTrue(Files.isRegularFile(result.localFile))
         } finally {
             library.close()
         }

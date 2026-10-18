@@ -1,7 +1,5 @@
 package ru.privatenull.pnlibrary.bukkit
 
-import ru.privatenull.pnlibrary.core.runtime.registerRuntimeCommand
-import ru.privatenull.pnlibrary.core.runtime.runtimeTaskScope
 import org.bukkit.event.EventHandler
 import org.bukkit.event.HandlerList
 import org.bukkit.event.Listener
@@ -13,14 +11,16 @@ import org.bukkit.plugin.java.JavaPlugin
 import ru.privatenull.pnlibrary.api.currency.CurrencyRegistration
 import ru.privatenull.pnlibrary.api.currency.currencyProviders
 import ru.privatenull.pnlibrary.api.plugin.PluginId
-import ru.privatenull.pnlibrary.bukkit.currency.BukkitCurrencyAdapters
 import ru.privatenull.pnlibrary.bukkit.api.BukkitPlatform
+import ru.privatenull.pnlibrary.bukkit.currency.BukkitCurrencyAdapters
 import ru.privatenull.pnlibrary.bukkit.currency.CurrencyCommandExecutor
 import ru.privatenull.pnlibrary.bukkit.inventory.MenuService
 import ru.privatenull.pnlibrary.bukkit.inventory.MenuServiceImpl
 import ru.privatenull.pnlibrary.bukkit.placeholders.PlaceholderApiAdapter
 import ru.privatenull.pnlibrary.bukkit.server.ServerInfo
 import ru.privatenull.pnlibrary.core.runtime.PnLibraryRuntimeHost
+import ru.privatenull.pnlibrary.core.runtime.registerRuntimeCommand
+import ru.privatenull.pnlibrary.core.runtime.runtimeTaskScope
 
 /**
  * Bukkit plugin entry point and lifecycle owner for the shared runtime and Bukkit-only services.

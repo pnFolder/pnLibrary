@@ -1,8 +1,8 @@
 package ru.privatenull.pnlibrary.core.metrics
 
-import ru.privatenull.pnlibrary.api.metrics.MetricsService
 import ru.privatenull.pnlibrary.api.metrics.ErrorReporter
 import ru.privatenull.pnlibrary.api.metrics.MetricsProviderConfiguration
+import ru.privatenull.pnlibrary.api.metrics.MetricsService
 import ru.privatenull.pnlibrary.api.metrics.PluginMetrics
 import ru.privatenull.pnlibrary.spi.metrics.PlatformMetricsFactory
 import java.util.Collections

@@ -6,6 +6,7 @@ import net.md_5.bungee.api.scheduler.TaskScheduler
 import org.junit.jupiter.api.Assertions.*
 import org.junit.jupiter.api.Test
 import org.mockito.Mockito.*
+import java.io.File
 
 class BungeeReadinessTest {
     @Test
@@ -15,7 +16,7 @@ class BungeeReadinessTest {
         val scheduler = mock(TaskScheduler::class.java)
         `when`(plugin.proxy).thenReturn(proxy)
         `when`(proxy.scheduler).thenReturn(scheduler)
-        `when`(plugin.dataFolder).thenReturn(java.io.File("build/readiness-test"))
+        `when`(plugin.dataFolder).thenReturn(File("build/readiness-test"))
         val scheduled = mutableListOf<Runnable>()
         doAnswer { invocation -> scheduled.add(invocation.getArgument(1)); null }
             .`when`(scheduler).runAsync(same(plugin), any(Runnable::class.java))
@@ -41,7 +42,7 @@ class BungeeReadinessTest {
     @Test
     fun `closing before readiness discards pending startup callbacks`() {
         val plugin = mock(Plugin::class.java)
-        `when`(plugin.dataFolder).thenReturn(java.io.File("build/readiness-test"))
+        `when`(plugin.dataFolder).thenReturn(File("build/readiness-test"))
         val adapter = BungeePlatformAdapter(plugin)
         adapter.whenServerReady(Runnable { fail("Closed adapter must not release startup work") })
         adapter.close()

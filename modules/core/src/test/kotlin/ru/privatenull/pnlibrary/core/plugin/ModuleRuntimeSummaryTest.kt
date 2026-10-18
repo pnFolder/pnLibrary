@@ -1,10 +1,10 @@
 package ru.privatenull.pnlibrary.core.plugin
 
-import ru.privatenull.pnlibrary.api.metrics.MetricsProvider
-import ru.privatenull.pnlibrary.api.metrics.MetricsProviderConfiguration
 import org.junit.jupiter.api.Assertions.assertEquals
 import org.junit.jupiter.api.Assertions.assertNull
 import org.junit.jupiter.api.Test
+import ru.privatenull.pnlibrary.api.metrics.MetricsProvider
+import ru.privatenull.pnlibrary.api.metrics.MetricsProviderConfiguration
 import ru.privatenull.pnlibrary.api.platform.PlatformType
 import ru.privatenull.pnlibrary.api.plugin.ModuleId
 import ru.privatenull.pnlibrary.api.plugin.PluginMetadata

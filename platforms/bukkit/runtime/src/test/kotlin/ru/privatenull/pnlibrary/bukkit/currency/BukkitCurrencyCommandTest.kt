@@ -6,10 +6,10 @@ import org.junit.jupiter.api.Assertions.assertTrue
 import org.junit.jupiter.api.Test
 import ru.privatenull.pnlibrary.api.commands.CommandNodeKind
 import ru.privatenull.pnlibrary.api.currency.Currency
+import ru.privatenull.pnlibrary.api.currency.CurrencyAccess
 import ru.privatenull.pnlibrary.api.currency.CurrencyProvider
 import ru.privatenull.pnlibrary.api.currency.CurrencyProviderRegistry
 import ru.privatenull.pnlibrary.api.currency.CurrencyRegistration
-import ru.privatenull.pnlibrary.api.currency.CurrencyAccess
 import ru.privatenull.pnlibrary.api.plugin.PluginId
 import java.lang.reflect.Proxy
 

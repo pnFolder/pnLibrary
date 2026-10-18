@@ -11,6 +11,7 @@ import ru.privatenull.pnlibrary.core.updates.engine.*
 import java.nio.file.Files
 import java.nio.file.Path
 import java.security.MessageDigest
+import java.util.UUID
 
 class OfflineUpdateInstallerTest {
     @TempDir lateinit var directory: Path
@@ -58,7 +59,7 @@ class OfflineUpdateInstallerTest {
         val specification = ArtifactSpecification(ProductId.of("pnlibrary"), SemanticVersion.parse("3.0.0"),
             ApiVersionRange(8, 8), source.fileName.toString())
         val result = fixture.transactions.prepareForRestart(listOf(TransactionArtifact(specification, source, fixture.active)),
-            purpose = "INSTALL", parentTransaction = java.util.UUID.fromString(TransactionJournal.load(fixture.journal).id))
+            purpose = "INSTALL", parentTransaction = UUID.fromString(TransactionJournal.load(fixture.journal).id))
         val journal = TransactionJournal.load(result.journal)
         TransactionJournal.save(result.journal, journal.copy(state = TransactionState.PUBLISHING))
         assertThrows(IllegalArgumentException::class.java) { fixture.transactions.recoverAll() }
@@ -96,7 +97,7 @@ class OfflineUpdateInstallerTest {
         val digest = MessageDigest.getInstance("SHA-256").digest(bytes).joinToString("") { "%02x".format(it) }
         val specification = ArtifactSpecification(ProductId.of("pnlibrary"), SemanticVersion.parse("2.0.0"), api, "release.jar", bytes.size.toLong(), digest)
         val transactions = UpdateTransaction(data.resolve("updates/transactions"), ArtifactVerifier(1024), plugins)
-        val plan = java.util.UUID.randomUUID()
+        val plan = UUID.randomUUID()
         val snapshot = if (configuration) {
             Files.writeString(data.resolve("config.yml"), "version: 1")
             ConfigurationSnapshots(data.resolve("updates/configurations"), plugins).capture(plan,

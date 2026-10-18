@@ -6,21 +6,21 @@ import ru.privatenull.pnlibrary.api.logging.LogLevel
 import ru.privatenull.pnlibrary.api.platform.PlatformType
 import ru.privatenull.pnlibrary.api.remote.RemotePolicyContext
 import ru.privatenull.pnlibrary.bungee.commands.BungeeCommandAdapter
+import ru.privatenull.pnlibrary.bungee.remote.BungeeRemotePolicyContextFactory
 import ru.privatenull.pnlibrary.bungee.tasks.BungeeTaskAdapter
 import ru.privatenull.pnlibrary.spi.audiences.PlatformAudienceAdapter
 import ru.privatenull.pnlibrary.spi.commands.PlatformCommandAdapter
 import ru.privatenull.pnlibrary.spi.metrics.PlatformMetricsFactory
+import ru.privatenull.pnlibrary.spi.platform.JulLogObserver
 import ru.privatenull.pnlibrary.spi.platform.PlatformAdapter
+import ru.privatenull.pnlibrary.spi.platform.PlatformLifecycle
 import ru.privatenull.pnlibrary.spi.platform.PlatformSnapshot
 import ru.privatenull.pnlibrary.spi.platform.PluginSnapshot
-import ru.privatenull.pnlibrary.spi.platform.UncaughtExceptionLogObserver
-import ru.privatenull.pnlibrary.spi.platform.JulLogObserver
-import ru.privatenull.pnlibrary.spi.platform.PlatformLifecycle
 import ru.privatenull.pnlibrary.spi.platform.StartupGate
+import ru.privatenull.pnlibrary.spi.platform.UncaughtExceptionLogObserver
 import ru.privatenull.pnlibrary.spi.platform.unsupportedOwner
 import ru.privatenull.pnlibrary.spi.tasks.PlatformTaskAdapter
-import java.util.logging.Level
-import ru.privatenull.pnlibrary.bungee.remote.BungeeRemotePolicyContextFactory
+import java.util.logging.Level
 
 /** Runtime adapter for BungeeCord-compatible proxy servers. */
 internal class BungeePlatformAdapter(

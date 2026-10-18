@@ -1,10 +1,9 @@
 package ru.privatenull.pnlibrary.core.updates
 
-import ru.privatenull.pnlibrary.core.io.TextFiles
-
 import org.yaml.snakeyaml.LoaderOptions
 import org.yaml.snakeyaml.Yaml
 import org.yaml.snakeyaml.constructor.SafeConstructor
+import ru.privatenull.pnlibrary.core.io.TextFiles
 import java.nio.charset.StandardCharsets
 import java.nio.file.AtomicMoveNotSupportedException
 import java.nio.file.Files

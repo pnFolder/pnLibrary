@@ -22,6 +22,7 @@ import ru.privatenull.pnlibrary.api.currency.CurrencyTransactionType
 import ru.privatenull.pnlibrary.api.plugin.PluginId
 import java.math.BigDecimal
 import java.nio.charset.StandardCharsets
+import java.nio.file.AtomicMoveNotSupportedException
 import java.nio.file.Files
 import java.nio.file.Path
 import java.nio.file.StandardCopyOption
@@ -214,7 +215,7 @@ internal class FileCurrencyStorage(
             Files.newBufferedWriter(temporary, StandardCharsets.UTF_8).use { gson.toJson(root, it) }
             try {
                 Files.move(temporary, file, StandardCopyOption.REPLACE_EXISTING, StandardCopyOption.ATOMIC_MOVE)
-            } catch (_: java.nio.file.AtomicMoveNotSupportedException) {
+            } catch (_: AtomicMoveNotSupportedException) {
                 Files.move(temporary, file, StandardCopyOption.REPLACE_EXISTING)
             }
         } finally { Files.deleteIfExists(temporary) }

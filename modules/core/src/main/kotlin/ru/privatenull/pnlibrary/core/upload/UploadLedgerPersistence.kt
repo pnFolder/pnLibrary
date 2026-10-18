@@ -1,10 +1,9 @@
 package ru.privatenull.pnlibrary.core.upload
 
-import ru.privatenull.pnlibrary.core.io.TextFiles
-
 import com.google.gson.Gson
 import com.google.gson.JsonParseException
 import com.google.gson.reflect.TypeToken
+import ru.privatenull.pnlibrary.core.io.TextFiles
 import java.io.IOException
 import java.net.URI
 import java.nio.charset.StandardCharsets

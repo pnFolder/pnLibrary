@@ -1,5 +1,6 @@
 package ru.privatenull.pnlibrary.api.commands
 
+import net.kyori.adventure.text.Component
 import org.junit.jupiter.api.Assertions.assertEquals
 import org.junit.jupiter.api.Assertions.assertFalse
 import org.junit.jupiter.api.Assertions.assertThrows
@@ -99,6 +100,6 @@ class CommandTreeBuilderTest {
         override val name = "Test"
         override val isConsole = false
         override fun hasPermission(permission: String) = true
-        override fun send(message: net.kyori.adventure.text.Component) = Unit
+        override fun send(message: Component) = Unit
     }
 }

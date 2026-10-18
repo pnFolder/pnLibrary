@@ -1,6 +1,7 @@
 package ru.privatenull.pnlibrary.api.commands
 
 import java.util.Collections
+import java.util.Locale
 import java.util.function.Consumer
 import java.util.function.Function
 
@@ -152,7 +153,7 @@ class CommandNodeBuilder internal constructor(
 private val NODE_NAME = Regex("[a-z0-9][a-z0-9:_-]*")
 private val ARGUMENT_NAME = Regex("[A-Za-z][A-Za-z0-9_-]*")
 
-private fun normalizeNodeName(value: String): String = value.trim().lowercase(java.util.Locale.ROOT).also {
+private fun normalizeNodeName(value: String): String = value.trim().lowercase(Locale.ROOT).also {
     require(NODE_NAME.matches(it)) { "Command literal must match ${NODE_NAME.pattern}" }
 }
 

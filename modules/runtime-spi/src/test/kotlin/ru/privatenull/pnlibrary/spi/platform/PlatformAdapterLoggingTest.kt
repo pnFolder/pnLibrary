@@ -3,9 +3,9 @@ package ru.privatenull.pnlibrary.spi.platform
 import org.junit.jupiter.api.Assertions.assertEquals
 import org.junit.jupiter.api.Assertions.assertSame
 import org.junit.jupiter.api.Test
-import java.nio.file.Files
 import ru.privatenull.pnlibrary.api.logging.LogLevel
 import ru.privatenull.pnlibrary.api.platform.PlatformType
+import java.nio.file.Files
 
 class PlatformAdapterLoggingTest {
     @Test

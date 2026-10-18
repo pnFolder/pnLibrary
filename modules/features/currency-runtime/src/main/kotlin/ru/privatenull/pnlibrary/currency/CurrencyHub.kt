@@ -21,9 +21,10 @@ import ru.privatenull.pnlibrary.api.currency.CurrencyService
 import ru.privatenull.pnlibrary.api.currency.CurrencyTransfers
 import ru.privatenull.pnlibrary.api.currency.CurrencyWithdrawals
 import ru.privatenull.pnlibrary.api.currency.ManagedCurrencyBuilder
-import ru.privatenull.pnlibrary.api.plugin.PluginId
 import ru.privatenull.pnlibrary.api.placeholders.PlaceholderService
+import ru.privatenull.pnlibrary.api.plugin.PluginId
 import java.math.BigDecimal
+import java.util.Collections
 import java.util.UUID
 import java.util.concurrent.CompletableFuture
 import java.util.concurrent.CompletionStage
@@ -53,7 +54,7 @@ internal class CurrencyHub : CurrencyProviderRegistry, AutoCloseable {
             ?.takeIf { it.state == CurrencyRegistrationState.ACTIVE }
     }
 
-    override fun all(): List<Currency> = java.util.Collections.unmodifiableList(
+    override fun all(): List<Currency> = Collections.unmodifiableList(
         entries.values
             .filter { it.state == CurrencyRegistrationState.ACTIVE }
             .sortedBy { it.key.toString() },
@@ -125,7 +126,7 @@ internal class CurrencyHub : CurrencyProviderRegistry, AutoCloseable {
             }
         }
 
-        override fun all(): List<Currency> = java.util.Collections.unmodifiableList(
+        override fun all(): List<Currency> = Collections.unmodifiableList(
             entries.values
                 .filter { it.state == CurrencyRegistrationState.ACTIVE && it.access.allows(it.key.owner, owner) }
                 .sortedBy { it.key.toString() },
@@ -152,7 +153,7 @@ internal class CurrencyHub : CurrencyProviderRegistry, AutoCloseable {
         val access: CurrencyAccess,
         private val registeredAliases: Set<String>,
     ) : CurrencyRegistration {
-        private val attachments = java.util.Collections.synchronizedList(mutableListOf<AutoCloseable>())
+        private val attachments = Collections.synchronizedList(mutableListOf<AutoCloseable>())
         private val enabled = AtomicBoolean(true)
         private val entryClosed = AtomicBoolean(false)
         override val descriptor get() = provider.descriptor

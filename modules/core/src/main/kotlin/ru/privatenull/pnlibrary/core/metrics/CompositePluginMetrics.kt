@@ -4,8 +4,8 @@ import ru.privatenull.pnlibrary.api.metrics.MetricsProvider
 import ru.privatenull.pnlibrary.api.metrics.PluginMetrics
 import ru.privatenull.pnlibrary.core.lifecycle.ResourceCleanup
 import java.util.Collections
-import java.util.function.Supplier
 import java.util.concurrent.atomic.AtomicBoolean
+import java.util.function.Supplier
 
 /**
  * Fan-out session used when more than one metrics provider is enabled.

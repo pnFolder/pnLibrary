@@ -1,8 +1,8 @@
 package ru.privatenull.pnlibrary.core.updates
 
 import org.junit.jupiter.api.Assertions.*
-import org.junit.jupiter.api.Test
 import org.junit.jupiter.api.Tag
+import org.junit.jupiter.api.Test
 import ru.privatenull.pnlibrary.api.updates.*
 import ru.privatenull.pnlibrary.api.version.ApiVersionRange
 import ru.privatenull.pnlibrary.api.version.PnLibraryApi

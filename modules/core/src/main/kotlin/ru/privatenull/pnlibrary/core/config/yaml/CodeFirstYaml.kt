@@ -1,20 +1,20 @@
 package ru.privatenull.pnlibrary.core.config.yaml
 
+import ru.privatenull.pnlibrary.api.config.CommentPolicy
 import ru.privatenull.pnlibrary.api.config.ConfigCodec
 import ru.privatenull.pnlibrary.api.config.ConfigLoadResult
+import ru.privatenull.pnlibrary.api.config.ConfigOptions
 import ru.privatenull.pnlibrary.api.config.ConfigProblem
 import ru.privatenull.pnlibrary.api.config.ConfigValidationException
 import ru.privatenull.pnlibrary.api.config.ConfigValueValidator
 import ru.privatenull.pnlibrary.api.config.ManagedConfig
-import ru.privatenull.pnlibrary.api.config.ConfigOptions
 import ru.privatenull.pnlibrary.api.config.MissingFilePolicy
 import ru.privatenull.pnlibrary.api.config.MissingValuePolicy
 import ru.privatenull.pnlibrary.api.config.UnknownValuePolicy
-import ru.privatenull.pnlibrary.api.config.CommentPolicy
 import java.io.File
+import java.util.function.UnaryOperator
 import java.util.logging.Level
 import java.util.logging.Logger
-import java.util.function.UnaryOperator
 
 /**
  * Loads typed YAML and synchronizes it with code-defined defaults.

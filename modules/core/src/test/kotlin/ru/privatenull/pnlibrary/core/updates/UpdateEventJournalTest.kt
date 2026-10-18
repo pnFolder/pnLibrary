@@ -7,7 +7,9 @@ import ru.privatenull.pnlibrary.api.updates.*
 import ru.privatenull.pnlibrary.api.version.SemanticVersion
 import java.nio.file.Files
 import java.nio.file.Path
+import java.nio.file.attribute.FileTime
 import java.time.Clock
+import java.time.Duration
 import java.time.Instant
 import java.time.ZoneOffset
 import java.util.UUID
@@ -88,14 +90,14 @@ class UpdateEventJournalTest {
 
     @Test
     fun `only the newest events within the maximum age are kept`() {
-        val journal = UpdateEventJournal(directory, clock, maxAge = java.time.Duration.ofDays(30), maxEvents = 2)
+        val journal = UpdateEventJournal(directory, clock, maxAge = Duration.ofDays(30), maxEvents = 2)
         journal.record(snapshot(1, "a"))
         journal.record(snapshot(2, "b"))
         journal.record(snapshot(3, "c"))
         assertEquals(2, journal.prune().let { journal.count() })
 
         val files = Files.list(directory).use { it.toList() }
-        Files.setLastModifiedTime(files.first(), java.nio.file.attribute.FileTime.from(instant.minusSeconds(40L * 86_400)))
+        Files.setLastModifiedTime(files.first(), FileTime.from(instant.minusSeconds(40L * 86_400)))
         assertEquals(1, journal.prune())
         assertEquals(1, journal.count())
     }

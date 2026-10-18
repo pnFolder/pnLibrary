@@ -1,25 +1,27 @@
 package ru.privatenull.pnlibrary.bukkit.commands
 
-import net.kyori.adventure.text.Component
 import net.kyori.adventure.sound.Sound
+import net.kyori.adventure.text.Component
 import org.bukkit.Bukkit
 import org.bukkit.command.CommandExecutor
 import org.bukkit.command.CommandMap
-import org.bukkit.command.CommandSender as NativeCommandSender
 import org.bukkit.command.PluginCommand
 import org.bukkit.command.TabCompleter
 import org.bukkit.plugin.Plugin
 import org.bukkit.plugin.java.JavaPlugin
+import ru.privatenull.pnlibrary.api.audiences.AudienceSender
 import ru.privatenull.pnlibrary.api.commands.CommandContext
 import ru.privatenull.pnlibrary.api.commands.CommandDefinition
 import ru.privatenull.pnlibrary.api.commands.CommandSender
-import ru.privatenull.pnlibrary.api.audiences.AudienceSender
 import ru.privatenull.pnlibrary.bukkit.BukkitAudienceAdapter
 import ru.privatenull.pnlibrary.bukkit.BukkitAudienceService
-import ru.privatenull.pnlibrary.spi.commands.PlatformCommandRegistration
 import ru.privatenull.pnlibrary.spi.commands.GenericPlatformCommandAdapter
 import ru.privatenull.pnlibrary.spi.commands.NativeCommandRegistrar
+import ru.privatenull.pnlibrary.spi.commands.PlatformCommandRegistration
 import java.lang.reflect.Constructor
+import java.util.concurrent.CompletionStage
+import java.util.concurrent.TimeUnit
+import org.bukkit.command.CommandSender as NativeCommandSender
 
 /**
  * Registers portable commands and owns their native Bukkit registrations.
@@ -82,7 +84,7 @@ private class DefaultBukkitNativeCommandRegistrar : NativeCommandRegistrar<Nativ
         owner: Any,
         command: CommandDefinition,
         execute: (NativeCommandSender, String, Array<String>) -> Unit,
-        suggest: (NativeCommandSender, String, Array<String>) -> java.util.concurrent.CompletionStage<List<String>>,
+        suggest: (NativeCommandSender, String, Array<String>) -> CompletionStage<List<String>>,
     ): PlatformCommandRegistration {
         val ownerPlugin = owner as? Plugin
             ?: throw IllegalArgumentException("Command owner must be a Bukkit plugin")
@@ -91,7 +93,7 @@ private class DefaultBukkitNativeCommandRegistrar : NativeCommandRegistrar<Nativ
             true
         }
         val completer = TabCompleter { sender, _, label, args ->
-            suggest(sender, label, args).toCompletableFuture().get(1, java.util.concurrent.TimeUnit.SECONDS)
+            suggest(sender, label, args).toCompletableFuture().get(1, TimeUnit.SECONDS)
         }
         val declared = (ownerPlugin as? JavaPlugin)?.getCommand(command.name)
         if (declared != null) {

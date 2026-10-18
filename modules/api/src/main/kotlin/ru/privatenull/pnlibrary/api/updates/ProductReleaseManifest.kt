@@ -5,6 +5,7 @@ import ru.privatenull.pnlibrary.api.version.ApiVersionRange
 import ru.privatenull.pnlibrary.api.version.SemanticVersion
 import java.net.URI
 import java.nio.file.Paths
+import java.util.Locale
 
 /**
  * Optional textual compatibility interval for Minecraft or a native platform API.
@@ -90,7 +91,7 @@ data class ProductReleaseManifest(
     init {
         require(displayName.isNotBlank()) { "display name must not be blank" }
         require(artifacts.isNotEmpty()) { "release manifest must contain at least one artifact" }
-        require(artifacts.map { it.file.lowercase(java.util.Locale.ROOT) }.distinct().size == artifacts.size) {
+        require(artifacts.map { it.file.lowercase(Locale.ROOT) }.distinct().size == artifacts.size) {
             "release manifest contains duplicate artifact filenames"
         }
     }

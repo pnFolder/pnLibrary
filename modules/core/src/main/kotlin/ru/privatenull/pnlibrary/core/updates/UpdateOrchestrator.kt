@@ -7,10 +7,12 @@ import ru.privatenull.pnlibrary.api.updates.UpdateState
 import ru.privatenull.pnlibrary.core.updates.engine.ResolutionResult
 import java.time.Clock
 import java.time.Instant
+import java.util.Collections
 import java.util.Optional
 import java.util.UUID
 import java.util.concurrent.CompletableFuture
 import java.util.concurrent.CompletionStage
+import java.util.concurrent.ConcurrentHashMap
 import java.util.concurrent.RejectedExecutionException
 import java.util.concurrent.ScheduledExecutorService
 import java.util.concurrent.TimeUnit
@@ -33,7 +35,7 @@ internal class UpdateOrchestrator(
     private val lock = Any()
     private val closed = AtomicBoolean(false)
     private val started = AtomicBoolean(false)
-    private val pending = java.util.concurrent.ConcurrentHashMap.newKeySet<CompletableFuture<UpdatePlanSnapshot>>()
+    private val pending = ConcurrentHashMap.newKeySet<CompletableFuture<UpdatePlanSnapshot>>()
 
     private fun operationPromise(): CompletableFuture<UpdatePlanSnapshot> {
         val promise = CompletableFuture<UpdatePlanSnapshot>()
@@ -169,7 +171,7 @@ internal class UpdateOrchestrator(
     }
 
     fun history(): List<UpdatePlanSnapshot> = synchronized(lock) {
-        java.util.Collections.unmodifiableList(ArrayList(sessionHistory))
+        Collections.unmodifiableList(ArrayList(sessionHistory))
     }
 
     fun rollback(actor: UpdateActor = UpdateActor.UNKNOWN, action: () -> Unit): CompletionStage<UpdatePlanSnapshot> = rollbackTo(actor) {

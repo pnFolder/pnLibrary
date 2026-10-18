@@ -8,6 +8,7 @@ import ru.privatenull.pnlibrary.localization.TranslationException
 import ru.privatenull.pnlibrary.localization.TranslationRequest
 import ru.privatenull.pnlibrary.localization.TranslationSource
 import java.io.ByteArrayOutputStream
+import java.io.IOException
 import java.net.URI
 import java.nio.charset.StandardCharsets
 import java.nio.file.Files
@@ -184,7 +185,7 @@ class LocalizationServiceTest {
     }
 
     private class FailingClient : LocalizationHttpClient(Duration.ZERO, Duration.ZERO) {
-        override fun get(uri: URI, maximumBytes: Int): ByteArray = throw java.io.IOException("offline")
+        override fun get(uri: URI, maximumBytes: Int): ByteArray = throw IOException("offline")
     }
 
     private class ClientArchiveFixture : LocalizationHttpClient(Duration.ZERO, Duration.ZERO) {

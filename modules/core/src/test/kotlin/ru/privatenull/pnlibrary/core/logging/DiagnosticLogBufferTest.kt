@@ -4,10 +4,11 @@ import org.junit.jupiter.api.Assertions.assertEquals
 import org.junit.jupiter.api.Assertions.assertFalse
 import org.junit.jupiter.api.Assertions.assertTrue
 import org.junit.jupiter.api.Test
-import java.nio.file.Files
 import ru.privatenull.pnlibrary.api.logging.LogLevel
-import ru.privatenull.pnlibrary.spi.platform.PlatformAdapter
 import ru.privatenull.pnlibrary.api.platform.PlatformType
+import ru.privatenull.pnlibrary.spi.platform.PlatformAdapter
+import java.nio.file.Files
+import java.util.concurrent.CompletionException
 
 class DiagnosticLogBufferTest {
     @Test
@@ -49,7 +50,7 @@ class DiagnosticLogBufferTest {
                 StackTraceElement("org.bukkit.plugin.EventExecutor", "execute", "EventExecutor.java", 77),
             )
         }
-        val error = java.util.concurrent.CompletionException(cause).apply {
+        val error = CompletionException(cause).apply {
             stackTrace = arrayOf(
                 StackTraceElement("java.util.concurrent.CompletableFuture", "encodeThrowable", "CompletableFuture.java", 315),
                 StackTraceElement("ru.privatenull.pncases.AnvilGUI", "click", "AnvilGUI.java", 362),

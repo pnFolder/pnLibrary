@@ -9,6 +9,8 @@ import ru.privatenull.pnlibrary.api.observability.Observation
 import ru.privatenull.pnlibrary.api.observability.ObservationLevel
 import ru.privatenull.pnlibrary.api.observability.ObservationRequest
 import java.nio.file.Files
+import java.nio.file.Path
+import java.nio.file.StandardOpenOption
 
 class ObservationPersistenceTest {
     @Test
@@ -16,7 +18,7 @@ class ObservationPersistenceTest {
         val root = Files.createTempDirectory("observations")
         val observation = Observation.from(ObservationRequest(message = "started"), timestamp = 100)
         ObservationJournal(root, clock = { 100 }).use { it.append(observation) }
-        Files.writeString(root.resolve("observability/observations.jsonl"), "not-json\n", java.nio.file.StandardOpenOption.APPEND)
+        Files.writeString(root.resolve("observability/observations.jsonl"), "not-json\n", StandardOpenOption.APPEND)
 
         ObservationJournal(root, clock = { 100 }).use { journal ->
             assertEquals(listOf(observation), journal.recent())
@@ -111,7 +113,7 @@ class ObservationPersistenceTest {
     }
 
     private object ObservationRuntimeFixture {
-        fun openAfterThirtyDays(root: java.nio.file.Path): ObservabilityRuntime = ObservabilityRuntime(
+        fun openAfterThirtyDays(root: Path): ObservabilityRuntime = ObservabilityRuntime(
             root,
             clock = { 30L * 24 * 60 * 60 * 1000 },
         )

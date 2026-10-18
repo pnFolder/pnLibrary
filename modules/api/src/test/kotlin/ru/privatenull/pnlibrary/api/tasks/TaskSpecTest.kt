@@ -5,8 +5,8 @@ import org.junit.jupiter.api.Assertions.assertNotEquals
 import org.junit.jupiter.api.Assertions.assertNotNull
 import org.junit.jupiter.api.Assertions.assertThrows
 import org.junit.jupiter.api.Test
-import java.time.Duration
 import ru.privatenull.pnlibrary.api.runtime.PnLibraryConfig
+import java.time.Duration
 
 class TaskSpecTest {
     @Test

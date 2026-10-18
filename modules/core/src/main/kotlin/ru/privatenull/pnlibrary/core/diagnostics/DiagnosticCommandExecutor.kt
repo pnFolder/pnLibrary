@@ -1,11 +1,11 @@
 package ru.privatenull.pnlibrary.core.diagnostics
 
-import ru.privatenull.pnlibrary.core.runtime.runtimeTaskScope
 import ru.privatenull.pnlibrary.api.diagnostics.DebugRequest
 import ru.privatenull.pnlibrary.api.diagnostics.DiagnosticReport
 import ru.privatenull.pnlibrary.api.runtime.PnLibrary
 import ru.privatenull.pnlibrary.api.tasks.TaskExecution
 import ru.privatenull.pnlibrary.api.tasks.TaskSpec
+import ru.privatenull.pnlibrary.core.runtime.runtimeTaskScope
 import java.time.Clock
 import java.util.concurrent.ConcurrentHashMap
 

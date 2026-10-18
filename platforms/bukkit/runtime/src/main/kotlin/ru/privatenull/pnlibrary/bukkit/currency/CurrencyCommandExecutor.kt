@@ -1,16 +1,17 @@
 package ru.privatenull.pnlibrary.bukkit.currency
 
+import net.kyori.adventure.text.Component
 import org.bukkit.Bukkit
 import org.bukkit.ChatColor
 import org.bukkit.command.CommandSender
 import org.bukkit.command.ConsoleCommandSender
 import org.bukkit.entity.Player
 import org.bukkit.plugin.Plugin
-import ru.privatenull.pnlibrary.api.currency.*
 import ru.privatenull.pnlibrary.api.commands.ArgumentType
 import ru.privatenull.pnlibrary.api.commands.CommandContext
 import ru.privatenull.pnlibrary.api.commands.CommandDefinition
 import ru.privatenull.pnlibrary.api.commands.command
+import ru.privatenull.pnlibrary.api.currency.*
 import ru.privatenull.pnlibrary.bukkit.commands.BukkitCommandSender
 import java.math.BigDecimal
 import java.time.ZoneId
@@ -104,7 +105,7 @@ internal class CurrencyCommandExecutor(
 
     private fun executePortable(context: CommandContext) {
         val sender = (context.sender as? BukkitCommandSender)?.native
-        if (sender == null) context.sender.send(net.kyori.adventure.text.Component.text("Unsupported Bukkit sender."))
+        if (sender == null) context.sender.send(Component.text("Unsupported Bukkit sender."))
         else execute(sender, context.arguments)
     }
 

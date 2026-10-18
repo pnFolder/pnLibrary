@@ -5,6 +5,7 @@ import java.net.URI
 import java.nio.file.Path
 import java.nio.file.Paths
 import java.util.Collections
+import java.util.Locale
 import java.util.concurrent.CompletionStage
 import java.util.function.Consumer
 
@@ -105,7 +106,7 @@ class DirectDownloadSource private constructor(builder: Builder) {
             require(size > 0) { "download size must be positive" }
             require(sha256.matches(Regex("[0-9a-fA-F]{64}"))) { "SHA-256 must contain 64 hexadecimal characters" }
             this.size = size
-            this.sha256 = sha256.lowercase(java.util.Locale.ROOT)
+            this.sha256 = sha256.lowercase(Locale.ROOT)
         }
 
         /** Validates this configuration and creates an immutable source. */

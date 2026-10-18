@@ -19,6 +19,7 @@ import ru.privatenull.pnlibrary.api.placeholders.PlaceholderKey
 import ru.privatenull.pnlibrary.api.placeholders.PlaceholderPublication
 import ru.privatenull.pnlibrary.api.placeholders.PlaceholderService
 import ru.privatenull.pnlibrary.api.plugin.PluginId
+import java.util.Locale
 import java.util.UUID
 import java.util.function.Consumer
 
@@ -161,6 +162,6 @@ private class ManagedCommandOptions : CurrencyCommandOptions {
     )
 }
 
-internal fun normalizeCurrencyName(value: String): String = value.trim().lowercase(java.util.Locale.ROOT).also {
+internal fun normalizeCurrencyName(value: String): String = value.trim().lowercase(Locale.ROOT).also {
     require(it.matches(Regex("[a-z0-9_.-]+"))) { "Invalid currency name: $value" }
 }

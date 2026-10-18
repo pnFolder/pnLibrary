@@ -1,5 +1,6 @@
 package ru.privatenull.pnlibrary.localization.internal
 
+import java.nio.file.AtomicMoveNotSupportedException
 import java.nio.file.Files
 import java.nio.file.Path
 import java.nio.file.StandardCopyOption
@@ -30,7 +31,7 @@ internal class VerifiedFileStore(private val root: Path) {
             Files.write(temporary, bytes)
             try {
                 Files.move(temporary, path, StandardCopyOption.ATOMIC_MOVE, StandardCopyOption.REPLACE_EXISTING)
-            } catch (_: java.nio.file.AtomicMoveNotSupportedException) {
+            } catch (_: AtomicMoveNotSupportedException) {
                 Files.move(temporary, path, StandardCopyOption.REPLACE_EXISTING)
             }
         } finally {

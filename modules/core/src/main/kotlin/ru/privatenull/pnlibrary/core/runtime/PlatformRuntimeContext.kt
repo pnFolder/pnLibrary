@@ -1,19 +1,19 @@
 package ru.privatenull.pnlibrary.core.runtime
 
+import ru.privatenull.pnlibrary.spi.audiences.PlatformAudienceAdapter
+import ru.privatenull.pnlibrary.spi.commands.PlatformCommandAdapter
+import ru.privatenull.pnlibrary.spi.metrics.PlatformMetricsFactory
+import ru.privatenull.pnlibrary.spi.platform.PlatformAdapter
+import ru.privatenull.pnlibrary.spi.platform.PlatformBinding
 import ru.privatenull.pnlibrary.spi.platform.PlatformDiagnostics
 import ru.privatenull.pnlibrary.spi.platform.PlatformExecution
 import ru.privatenull.pnlibrary.spi.platform.PlatformIdentity
-import ru.privatenull.pnlibrary.spi.platform.PlatformLogging
 import ru.privatenull.pnlibrary.spi.platform.PlatformLogObservation
+import ru.privatenull.pnlibrary.spi.platform.PlatformLogging
 import ru.privatenull.pnlibrary.spi.platform.PlatformOwnership
-import ru.privatenull.pnlibrary.spi.platform.PlatformAdapter
-import ru.privatenull.pnlibrary.spi.metrics.PlatformMetricsFactory
-import ru.privatenull.pnlibrary.spi.commands.PlatformCommandAdapter
-import ru.privatenull.pnlibrary.spi.audiences.PlatformAudienceAdapter
-import ru.privatenull.pnlibrary.spi.tasks.PlatformTaskAdapter
 import ru.privatenull.pnlibrary.spi.platform.PlatformReadiness
-import ru.privatenull.pnlibrary.spi.platform.PlatformBinding
 import ru.privatenull.pnlibrary.spi.platform.PlatformShutdown
+import ru.privatenull.pnlibrary.spi.tasks.PlatformTaskAdapter
 import java.nio.file.Path
 
 /** Prepared platform capabilities passed from the native boundary into the shared runtime. */

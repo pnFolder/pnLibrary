@@ -5,20 +5,20 @@ import org.bukkit.plugin.java.JavaPlugin
 import ru.privatenull.pnlibrary.api.commands.CommandRegistration
 import ru.privatenull.pnlibrary.api.currency.Currency
 import ru.privatenull.pnlibrary.api.diagnostics.DiagnosticContainer
-import ru.privatenull.pnlibrary.api.plugin.DownloadPolicy
+import ru.privatenull.pnlibrary.api.platform.platform
 import ru.privatenull.pnlibrary.api.plugin.DenyAction
+import ru.privatenull.pnlibrary.api.plugin.DownloadPolicy
 import ru.privatenull.pnlibrary.api.plugin.ModuleContext
 import ru.privatenull.pnlibrary.api.plugin.PluginRegistration
 import ru.privatenull.pnlibrary.api.plugin.RemotePolicy
 import ru.privatenull.pnlibrary.api.runtime.PnLibraryProvider
-import ru.privatenull.pnlibrary.api.platform.platform
-import ru.privatenull.pnlibrary.bukkit.api.BukkitPlatform
 import ru.privatenull.pnlibrary.api.tasks.TaskSpec
 import ru.privatenull.pnlibrary.api.updates.ProductDescriptor
 import ru.privatenull.pnlibrary.api.updates.UpdateChannel
+import ru.privatenull.pnlibrary.bukkit.api.BukkitPlatform
 import ru.privatenull.pnlibrary.localization.MinecraftLocalization
-import java.util.concurrent.atomic.AtomicLong
 import java.time.Duration
+import java.util.concurrent.atomic.AtomicLong
 
 /** Runnable pnLibrary showcase. Lifecycle wiring stays here; capabilities live in separate files. */
 class DemoPlugin : JavaPlugin() {
@@ -93,7 +93,7 @@ class DemoPlugin : JavaPlugin() {
         localization = DemoLocalization.start(this)
         command = DemoCommands.registerPortable(library, context, currency)
         pulse = context.tasks.schedule(TaskSpec.builder().name("demo-pulse").key("demo-pulse")
-            .interval(java.time.Duration.ofSeconds(30))
+            .interval(Duration.ofSeconds(30))
             .action { context.logger.info("pulse: online=${Bukkit.getOnlinePlayers().size}, joins=${state.joins.get()}") }
             .build())
         getCommand("pndemo")?.let { native ->

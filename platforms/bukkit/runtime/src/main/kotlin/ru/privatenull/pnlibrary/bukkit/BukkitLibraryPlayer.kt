@@ -1,7 +1,7 @@
 package ru.privatenull.pnlibrary.bukkit
 
-import net.kyori.adventure.text.Component
 import net.kyori.adventure.sound.Sound
+import net.kyori.adventure.text.Component
 import org.bukkit.entity.Player
 import org.bukkit.potion.PotionEffect
 import org.bukkit.potion.PotionEffectType

@@ -2,6 +2,8 @@ package ru.privatenull.pnlibrary.core.placeholders
 
 import ru.privatenull.pnlibrary.api.placeholders.*
 import ru.privatenull.pnlibrary.api.plugin.PluginId
+import ru.privatenull.pnlibrary.spi.platform.PlatformIdentity
+import java.util.Collections
 import java.util.Locale
 import java.util.UUID
 import java.util.concurrent.CompletableFuture
@@ -9,7 +11,6 @@ import java.util.concurrent.CompletionStage
 import java.util.concurrent.ConcurrentHashMap
 import java.util.concurrent.atomic.AtomicBoolean
 import java.util.function.Consumer
-import ru.privatenull.pnlibrary.spi.platform.PlatformIdentity
 
 /**
  * Concurrent placeholder registry shared by every plugin scope.
@@ -81,7 +82,7 @@ internal class PlaceholderHub(
     }
     override fun get(id: String): PlaceholderAdapter? = adapters[id.lowercase(Locale.ROOT)]
     override fun all(): List<PlaceholderAdapter> =
-        java.util.Collections.unmodifiableList(adapters.values.sortedBy(PlaceholderAdapter::id))
+        Collections.unmodifiableList(adapters.values.sortedBy(PlaceholderAdapter::id))
 
     private fun <T : Any> system(key: String, type: Class<T>, value: () -> T) {
         val owner = PluginId.of(SYSTEM_NAMESPACE)
@@ -159,7 +160,7 @@ internal class PlaceholderHub(
             override val pluginId = pluginId
             override fun resolve(key: String, playerId: UUID?): CompletionStage<Any?> =
                 resolveFor(owner, "${pluginId.value}:$key", playerId, emptyMap())
-            override fun keys(): Set<String> = java.util.Collections.unmodifiableSet(
+            override fun keys(): Set<String> = Collections.unmodifiableSet(
                 entries.values.filter { it.owner == pluginId && it.access.allows(pluginId, owner) }
                     .mapTo(linkedSetOf()) { it.key.value },
             )

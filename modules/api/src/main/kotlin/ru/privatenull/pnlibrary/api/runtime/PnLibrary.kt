@@ -1,8 +1,8 @@
 package ru.privatenull.pnlibrary.api.runtime
 
-import ru.privatenull.pnlibrary.api.config.ConfigurationService
-import ru.privatenull.pnlibrary.api.audiences.AudienceService
 import ru.privatenull.pnlibrary.api.activity.ActivityService
+import ru.privatenull.pnlibrary.api.audiences.AudienceService
+import ru.privatenull.pnlibrary.api.config.ConfigurationService
 import ru.privatenull.pnlibrary.api.diagnostics.DebugRequest
 import ru.privatenull.pnlibrary.api.diagnostics.DiagnosticReport
 import ru.privatenull.pnlibrary.api.diagnostics.DiagnosticsService
@@ -12,8 +12,8 @@ import ru.privatenull.pnlibrary.api.logging.LoggingService
 import ru.privatenull.pnlibrary.api.metrics.MetricsService
 import ru.privatenull.pnlibrary.api.placeholders.PlaceholderAdapterRegistry
 import ru.privatenull.pnlibrary.api.placeholders.PlaceholderValueStore
-import ru.privatenull.pnlibrary.api.plugin.PluginRegistry
 import ru.privatenull.pnlibrary.api.platform.PlatformProvider
+import ru.privatenull.pnlibrary.api.plugin.PluginRegistry
 import ru.privatenull.pnlibrary.api.services.ServiceManager
 import ru.privatenull.pnlibrary.api.updates.UpdateService
 import java.io.Closeable

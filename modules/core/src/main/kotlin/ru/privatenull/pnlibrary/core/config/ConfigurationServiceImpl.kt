@@ -16,6 +16,7 @@ import ru.privatenull.pnlibrary.spi.platform.PlatformOwnership
 import java.io.File
 import java.nio.file.Path
 import java.nio.file.Paths
+import java.util.IdentityHashMap
 import java.util.Locale
 import java.util.concurrent.atomic.AtomicBoolean
 import java.util.function.Supplier
@@ -24,7 +25,7 @@ import java.util.logging.Logger
 internal class ConfigurationServiceImpl(
     private val platform: PlatformOwnership,
 ) : ConfigurationService, AutoCloseable {
-    private val scopes = java.util.IdentityHashMap<Any, MutableMap<PluginId, Scope>>()
+    private val scopes = IdentityHashMap<Any, MutableMap<PluginId, Scope>>()
     private val runtimeTypes = linkedSetOf<TypeRegistration>()
     private val closed = AtomicBoolean(false)
 

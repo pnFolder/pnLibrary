@@ -1,19 +1,21 @@
 package ru.privatenull.pnlibrary.bungee.commands
 
-import net.kyori.adventure.text.Component
 import net.kyori.adventure.sound.Sound
-import net.md_5.bungee.api.CommandSender as NativeCommandSender
+import net.kyori.adventure.text.Component
 import net.md_5.bungee.api.plugin.Command
 import net.md_5.bungee.api.plugin.Plugin
 import net.md_5.bungee.api.plugin.TabExecutor
+import ru.privatenull.pnlibrary.api.audiences.AudienceSender
 import ru.privatenull.pnlibrary.api.commands.CommandContext
 import ru.privatenull.pnlibrary.api.commands.CommandDefinition
 import ru.privatenull.pnlibrary.api.commands.CommandSender
-import ru.privatenull.pnlibrary.api.audiences.AudienceSender
 import ru.privatenull.pnlibrary.bungee.BungeeAudienceAdapter
-import ru.privatenull.pnlibrary.spi.commands.PlatformCommandRegistration
 import ru.privatenull.pnlibrary.spi.commands.GenericPlatformCommandAdapter
 import ru.privatenull.pnlibrary.spi.commands.NativeCommandRegistrar
+import ru.privatenull.pnlibrary.spi.commands.PlatformCommandRegistration
+import java.util.concurrent.CompletionStage
+import java.util.concurrent.TimeUnit
+import net.md_5.bungee.api.CommandSender as NativeCommandSender
 
 /**
  * Registers portable commands with BungeeCord and owns their native registrations.
@@ -67,7 +69,7 @@ private class DefaultBungeeNativeCommandRegistrar : NativeCommandRegistrar<Nativ
         owner: Any,
         command: CommandDefinition,
         execute: (NativeCommandSender, String, Array<String>) -> Unit,
-        suggest: (NativeCommandSender, String, Array<String>) -> java.util.concurrent.CompletionStage<List<String>>,
+        suggest: (NativeCommandSender, String, Array<String>) -> CompletionStage<List<String>>,
     ): PlatformCommandRegistration {
         val ownerPlugin = owner as? Plugin
             ?: throw IllegalArgumentException("Command owner must be a Bungee plugin")
@@ -76,7 +78,7 @@ private class DefaultBungeeNativeCommandRegistrar : NativeCommandRegistrar<Nativ
         val native = object : Command(command.name, null, *command.aliases.toTypedArray()), TabExecutor {
             override fun execute(sender: NativeCommandSender, args: Array<String>) = executeHandler(sender, command.name, args)
             override fun onTabComplete(sender: NativeCommandSender, args: Array<String>): Iterable<String> =
-                suggestionHandler(sender, command.name, args).toCompletableFuture().get(1, java.util.concurrent.TimeUnit.SECONDS)
+                suggestionHandler(sender, command.name, args).toCompletableFuture().get(1, TimeUnit.SECONDS)
         }
         ownerPlugin.proxy.pluginManager.registerCommand(ownerPlugin, native)
         return PlatformCommandRegistration { ownerPlugin.proxy.pluginManager.unregisterCommand(native) }

@@ -3,10 +3,10 @@ package ru.privatenull.pnlibrary.core.updates.engine
 import org.junit.jupiter.api.Assertions.assertEquals
 import org.junit.jupiter.api.Assertions.assertTrue
 import org.junit.jupiter.api.Test
+import ru.privatenull.pnlibrary.api.platform.PlatformType
 import ru.privatenull.pnlibrary.api.updates.*
 import ru.privatenull.pnlibrary.api.version.ApiVersionRange
 import ru.privatenull.pnlibrary.api.version.SemanticVersion
-import ru.privatenull.pnlibrary.api.platform.PlatformType
 
 class UpdateResolverTest {
     private val library = ProductId.of("pnlibrary")

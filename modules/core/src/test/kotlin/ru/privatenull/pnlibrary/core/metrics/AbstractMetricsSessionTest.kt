@@ -4,8 +4,8 @@ import org.junit.jupiter.api.Assertions.assertEquals
 import org.junit.jupiter.api.Assertions.assertSame
 import org.junit.jupiter.api.Assertions.assertThrows
 import org.junit.jupiter.api.Test
-import java.util.function.Supplier
 import ru.privatenull.pnlibrary.api.metrics.MetricsCredentials
+import java.util.function.Supplier
 
 class AbstractMetricsSessionTest {
 

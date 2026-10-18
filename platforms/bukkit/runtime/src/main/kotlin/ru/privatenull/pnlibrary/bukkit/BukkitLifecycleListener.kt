@@ -1,30 +1,30 @@
 package ru.privatenull.pnlibrary.bukkit
 
-import ru.privatenull.pnlibrary.core.runtime.runtimeTaskScope
 import net.md_5.bungee.api.ChatColor
 import net.md_5.bungee.api.chat.ClickEvent
 import net.md_5.bungee.api.chat.ComponentBuilder
 import net.md_5.bungee.api.chat.HoverEvent
 import net.md_5.bungee.api.chat.TextComponent
-import org.bukkit.event.EventHandler
 import org.bukkit.event.Event
+import org.bukkit.event.EventHandler
 import org.bukkit.event.EventPriority
 import org.bukkit.event.HandlerList
 import org.bukkit.event.Listener
 import org.bukkit.event.player.PlayerJoinEvent
 import org.bukkit.event.server.PluginDisableEvent
-import org.bukkit.plugin.Plugin
 import org.bukkit.plugin.EventExecutor
+import org.bukkit.plugin.Plugin
 import ru.privatenull.pnlibrary.api.runtime.PnLibrary
 import ru.privatenull.pnlibrary.api.runtime.PnLibraryBrand
 import ru.privatenull.pnlibrary.api.tasks.TaskExecution
 import ru.privatenull.pnlibrary.api.tasks.TaskSpec
+import ru.privatenull.pnlibrary.api.updates.UpdateChannel
 import ru.privatenull.pnlibrary.api.updates.UpdateSnapshot
 import ru.privatenull.pnlibrary.api.updates.UpdateState
+import ru.privatenull.pnlibrary.core.runtime.runtimeTaskScope
 import java.time.Duration
 import java.util.concurrent.CopyOnWriteArrayList
 import java.util.concurrent.atomic.AtomicBoolean
-import ru.privatenull.pnlibrary.api.updates.UpdateChannel
 
 /** Bukkit lifecycle notifications kept separate from portable command registration. */
 internal class BukkitLifecycleListener(

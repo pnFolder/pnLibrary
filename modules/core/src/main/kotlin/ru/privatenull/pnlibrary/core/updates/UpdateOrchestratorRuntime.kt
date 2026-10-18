@@ -1,23 +1,26 @@
 package ru.privatenull.pnlibrary.core.updates
 
 import ru.privatenull.pnlibrary.api.logging.LogLevel
-import ru.privatenull.pnlibrary.api.updates.UpdatePlanSnapshot
-import ru.privatenull.pnlibrary.api.updates.UpdateActor
-import ru.privatenull.pnlibrary.api.updates.UpdateHistoryEntry
-import ru.privatenull.pnlibrary.api.updates.UpdateState
 import ru.privatenull.pnlibrary.api.updates.ProductChange
 import ru.privatenull.pnlibrary.api.updates.ProductId
+import ru.privatenull.pnlibrary.api.updates.UpdateActor
+import ru.privatenull.pnlibrary.api.updates.UpdateHistoryEntry
+import ru.privatenull.pnlibrary.api.updates.UpdatePlanSnapshot
+import ru.privatenull.pnlibrary.api.updates.UpdateState
 import ru.privatenull.pnlibrary.api.version.SemanticVersion
+import ru.privatenull.pnlibrary.core.updates.engine.RefreshMode
+import ru.privatenull.pnlibrary.core.updates.engine.ResolutionResult
+import ru.privatenull.pnlibrary.spi.platform.PlatformLogging
+import ru.privatenull.pnlibrary.spi.platform.PlatformReadiness
+import java.nio.file.Path
+import java.util.Collections
 import java.util.concurrent.CompletableFuture
 import java.util.concurrent.CompletionStage
 import java.util.concurrent.ConcurrentHashMap
-import java.util.concurrent.atomic.AtomicBoolean
-import ru.privatenull.pnlibrary.core.updates.engine.RefreshMode
-import ru.privatenull.pnlibrary.spi.platform.PlatformReadiness
-import ru.privatenull.pnlibrary.spi.platform.PlatformLogging
-import ru.privatenull.pnlibrary.core.updates.engine.ResolutionResult
 import java.util.concurrent.Executors
-import java.nio.file.Path
+import java.util.concurrent.RejectedExecutionException
+import java.util.concurrent.TimeUnit
+import java.util.concurrent.atomic.AtomicBoolean
 
 /** Owns the scheduler and lifecycle wiring around the update orchestrator. */
 internal class UpdateOrchestratorRuntime(
@@ -82,13 +85,13 @@ internal class UpdateOrchestratorRuntime(
     private fun beginStartupHealth(created: UpdateOrchestrator, installer: UpdateInstaller, registrations: () -> List<RegisteredUpdate>) {
         // Proxy readiness can precede other plugins' initialization listeners. Wait for expected
         // managed registrations, with a deadline, rather than falsely marking them absent.
-        val deadline = System.nanoTime() + java.util.concurrent.TimeUnit.SECONDS.toNanos(30)
+        val deadline = System.nanoTime() + TimeUnit.SECONDS.toNanos(30)
         fun attempt() {
             if (closed.get()) return
             try {
                 val installed = registrations()
                 if (installer.awaitingRegistrations(installed) && System.nanoTime() < deadline) {
-                    executor.schedule(::attempt, 250, java.util.concurrent.TimeUnit.MILLISECONDS)
+                    executor.schedule(::attempt, 250, TimeUnit.MILLISECONDS)
                     return
                 }
                 installer.reconcilePending(installed, ::recordHealth)
@@ -99,7 +102,7 @@ internal class UpdateOrchestratorRuntime(
             }
         }
         if (!closed.get()) try { executor.execute(::attempt) }
-        catch (error: java.util.concurrent.RejectedExecutionException) { if (!closed.get()) throw error }
+        catch (error: RejectedExecutionException) { if (!closed.get()) throw error }
     }
 
     /** Records components that appeared, disappeared or changed since the previous start. */
@@ -147,7 +150,7 @@ internal class UpdateOrchestratorRuntime(
                 event.actor, event.operation, event.changes.map { change ->
                     ProductChange(ProductId.of(change.product), change.from?.let(SemanticVersion::parse), SemanticVersion.parse(change.to))
                 }, event.message)
-        }.let { java.util.Collections.unmodifiableList(it) }
+        }.let { Collections.unmodifiableList(it) }
     }
 
     fun historyCount(product: String?): CompletionStage<Int> = readAsync {
@@ -182,7 +185,7 @@ internal class UpdateOrchestratorRuntime(
         if (executor.isTerminated) { installationLock.close(); return }
         Thread({
             while (!executor.isTerminated) {
-                try { executor.awaitTermination(1, java.util.concurrent.TimeUnit.DAYS) }
+                try { executor.awaitTermination(1, TimeUnit.DAYS) }
                 catch (_: InterruptedException) { /* The lock must remain held until writes stop. */ }
             }
             installationLock.close()

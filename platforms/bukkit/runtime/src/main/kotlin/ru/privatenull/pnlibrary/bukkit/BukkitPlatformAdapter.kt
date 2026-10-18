@@ -1,6 +1,5 @@
 package ru.privatenull.pnlibrary.bukkit
 
-import ru.privatenull.pnlibrary.core.runtime.registerRuntimeCommand
 import org.bukkit.Bukkit
 import org.bukkit.entity.Player
 import org.bukkit.plugin.Plugin
@@ -15,15 +14,16 @@ import ru.privatenull.pnlibrary.bukkit.compat.ServerCapabilities
 import ru.privatenull.pnlibrary.bukkit.remote.BukkitRemotePolicyContextFactory
 import ru.privatenull.pnlibrary.bukkit.server.ServerInfo
 import ru.privatenull.pnlibrary.bukkit.tasks.BukkitTaskAdapter
+import ru.privatenull.pnlibrary.core.runtime.registerRuntimeCommand
 import ru.privatenull.pnlibrary.spi.audiences.PlatformAudienceAdapter
 import ru.privatenull.pnlibrary.spi.commands.PlatformCommandAdapter
 import ru.privatenull.pnlibrary.spi.metrics.PlatformMetricsFactory
 import ru.privatenull.pnlibrary.spi.platform.PlatformAdapter
 import ru.privatenull.pnlibrary.spi.platform.PlatformLifecycle
-import ru.privatenull.pnlibrary.spi.platform.UncaughtExceptionLogObserver
-import ru.privatenull.pnlibrary.spi.platform.unsupportedOwner
 import ru.privatenull.pnlibrary.spi.platform.PlatformSnapshot
 import ru.privatenull.pnlibrary.spi.platform.PluginSnapshot
+import ru.privatenull.pnlibrary.spi.platform.UncaughtExceptionLogObserver
+import ru.privatenull.pnlibrary.spi.platform.unsupportedOwner
 import ru.privatenull.pnlibrary.spi.tasks.PlatformTaskAdapter
 import java.util.concurrent.CompletableFuture
 import java.util.concurrent.TimeUnit

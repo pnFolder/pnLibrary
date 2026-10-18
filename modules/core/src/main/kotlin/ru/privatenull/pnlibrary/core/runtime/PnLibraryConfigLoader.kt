@@ -5,6 +5,7 @@ import org.yaml.snakeyaml.Yaml
 import org.yaml.snakeyaml.constructor.SafeConstructor
 import ru.privatenull.pnlibrary.api.runtime.PnLibraryConfig
 import java.nio.charset.StandardCharsets
+import java.nio.file.AtomicMoveNotSupportedException
 import java.nio.file.Files
 import java.nio.file.Path
 import java.nio.file.StandardCopyOption
@@ -66,7 +67,7 @@ internal object PnLibraryConfigLoader {
             Files.write(temporary, DEFAULT_CONFIG.toByteArray(StandardCharsets.UTF_8))
             try {
                 Files.move(temporary, file, StandardCopyOption.ATOMIC_MOVE)
-            } catch (_: java.nio.file.AtomicMoveNotSupportedException) {
+            } catch (_: AtomicMoveNotSupportedException) {
                 Files.move(temporary, file)
             }
         } finally {

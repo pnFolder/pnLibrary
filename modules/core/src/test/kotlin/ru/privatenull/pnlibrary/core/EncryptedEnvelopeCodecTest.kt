@@ -1,12 +1,12 @@
 package ru.privatenull.pnlibrary.core
 
-import ru.privatenull.pnlibrary.core.security.EncryptedEnvelopeCodec
 import com.google.gson.Gson
 import com.google.gson.JsonObject
 import org.junit.jupiter.api.Assertions.assertEquals
 import org.junit.jupiter.api.Assertions.assertNotNull
 import org.junit.jupiter.api.Assertions.assertTrue
 import org.junit.jupiter.api.Test
+import ru.privatenull.pnlibrary.core.security.EncryptedEnvelopeCodec
 import java.security.KeyPairGenerator
 import java.util.Base64
 

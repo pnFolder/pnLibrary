@@ -1,7 +1,5 @@
 package ru.privatenull.pnlibrary.core.plugin
 
-import ru.privatenull.pnlibrary.core.lifecycle.ResourceCleanup
-
 import ru.privatenull.pnlibrary.api.config.ConfigScope
 import ru.privatenull.pnlibrary.api.cooldowns.CooldownService
 import ru.privatenull.pnlibrary.api.currency.CurrencyService
@@ -17,6 +15,7 @@ import ru.privatenull.pnlibrary.api.plugin.PluginId
 import ru.privatenull.pnlibrary.api.tasks.TaskScope
 import ru.privatenull.pnlibrary.api.text.ComponentService
 import ru.privatenull.pnlibrary.api.updates.UpdateRegistration
+import ru.privatenull.pnlibrary.core.lifecycle.ResourceCleanup
 import ru.privatenull.pnlibrary.core.services.ServiceManagerImpl
 
 internal class ModuleResources(

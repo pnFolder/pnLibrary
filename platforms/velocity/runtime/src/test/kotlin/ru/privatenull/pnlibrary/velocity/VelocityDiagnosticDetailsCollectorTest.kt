@@ -1,5 +1,6 @@
 package ru.privatenull.pnlibrary.velocity
 
+import com.velocitypowered.api.proxy.Player
 import com.velocitypowered.api.proxy.ProxyServer
 import com.velocitypowered.api.proxy.server.RegisteredServer
 import com.velocitypowered.api.proxy.server.ServerInfo
@@ -9,6 +10,7 @@ import org.mockito.kotlin.mock
 import org.mockito.kotlin.whenever
 import ru.privatenull.pnlibrary.spi.platform.PlatformSnapshot
 import java.net.InetSocketAddress
+import java.util.Optional
 
 class VelocityDiagnosticDetailsCollectorTest {
     @Test
@@ -18,9 +20,9 @@ class VelocityDiagnosticDetailsCollectorTest {
         whenever(proxy.pluginManager.plugins).thenReturn(emptyList())
         whenever(proxy.allServers).thenReturn(emptyList())
         val players = listOf(10L, 500L).map { ping ->
-            mock<com.velocitypowered.api.proxy.Player>().also {
+            mock<Player>().also {
                 whenever(it.ping).thenReturn(ping)
-                whenever(it.currentServer).thenReturn(java.util.Optional.empty())
+                whenever(it.currentServer).thenReturn(Optional.empty())
             }
         }
         whenever(proxy.allPlayers).thenReturn(players)

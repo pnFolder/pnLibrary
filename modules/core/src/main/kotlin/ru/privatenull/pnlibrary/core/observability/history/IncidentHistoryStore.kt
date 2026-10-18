@@ -1,16 +1,17 @@
 package ru.privatenull.pnlibrary.core.observability.history
 
-import kotlin.streams.toList
-
 import com.google.gson.Gson
 import ru.privatenull.pnlibrary.core.security.EncryptedEnvelopeCodec
 import java.nio.charset.StandardCharsets
+import java.nio.file.AtomicMoveNotSupportedException
 import java.nio.file.Files
 import java.nio.file.Path
 import java.nio.file.StandardCopyOption
 import java.time.Clock
+import java.time.ZoneOffset
 import java.time.format.DateTimeFormatter
 import java.util.UUID
+import kotlin.streams.toList
 
 /**
  * Persists a bounded, encrypted rolling history of diagnostic incidents.
@@ -62,7 +63,7 @@ internal class IncidentHistoryStore(
             Files.write(temporary, encrypted)
             try {
                 Files.move(temporary, target, StandardCopyOption.REPLACE_EXISTING, StandardCopyOption.ATOMIC_MOVE)
-            } catch (_: java.nio.file.AtomicMoveNotSupportedException) {
+            } catch (_: AtomicMoveNotSupportedException) {
                 Files.move(temporary, target, StandardCopyOption.REPLACE_EXISTING)
             }
         } finally {
@@ -141,6 +142,6 @@ internal class IncidentHistoryStore(
         const val MAX_FILES = 256
         const val MILLIS_PER_DAY = 86_400_000L
         val SESSION_TIME_FORMAT = DateTimeFormatter.ofPattern("yyyyMMdd-HHmmss")
-            .withZone(java.time.ZoneOffset.UTC)
+            .withZone(ZoneOffset.UTC)
     }
 }

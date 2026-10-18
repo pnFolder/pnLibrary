@@ -1,11 +1,9 @@
 package ru.privatenull.pnlibrary.core.updates
 
-import ru.privatenull.pnlibrary.common.jvm.JavaRuntime
-
-import ru.privatenull.pnlibrary.api.updates.PluginUpdateArtifact
-import ru.privatenull.pnlibrary.api.updates.PluginUpdateRequest
 import ru.privatenull.pnlibrary.api.updates.ArtifactDescriptor
 import ru.privatenull.pnlibrary.api.updates.InstalledProduct
+import ru.privatenull.pnlibrary.api.updates.PluginUpdateArtifact
+import ru.privatenull.pnlibrary.api.updates.PluginUpdateRequest
 import ru.privatenull.pnlibrary.api.updates.ProductDescriptor
 import ru.privatenull.pnlibrary.api.updates.ProductRelease
 import ru.privatenull.pnlibrary.api.updates.ReleaseSummary
@@ -14,6 +12,7 @@ import ru.privatenull.pnlibrary.api.updates.UpdatePlanSnapshot
 import ru.privatenull.pnlibrary.api.updates.UpdateRegistration
 import ru.privatenull.pnlibrary.api.updates.UpdateSnapshot
 import ru.privatenull.pnlibrary.api.updates.UpdateState
+import ru.privatenull.pnlibrary.common.jvm.JavaRuntime
 import ru.privatenull.pnlibrary.core.updates.engine.CatalogRelease
 import java.nio.file.Path
 import java.util.concurrent.CompletionStage

@@ -5,6 +5,7 @@ import org.bukkit.entity.Player
 import org.bukkit.plugin.Plugin
 import ru.privatenull.pnlibrary.api.logging.LogLevel
 import ru.privatenull.pnlibrary.bukkit.compat.ServerCapabilities
+import java.util.function.Consumer
 
 /** Dispatches work across Bukkit and Folia without exposing reflective details to the adapter. */
 internal class BukkitSchedulerBridge(
@@ -16,9 +17,9 @@ internal class BukkitSchedulerBridge(
             try {
                 val scheduler = Bukkit::class.java.getMethod("getGlobalRegionScheduler").invoke(null)
                 val run = scheduler.javaClass.getMethod(
-                    "run", Plugin::class.java, java.util.function.Consumer::class.java,
+                    "run", Plugin::class.java, Consumer::class.java,
                 )
-                run.invoke(scheduler, plugin, java.util.function.Consumer<Any> { task.run() })
+                run.invoke(scheduler, plugin, Consumer<Any> { task.run() })
             } catch (error: ReflectiveOperationException) {
                 errorLogger(plugin, LogLevel.ERROR, "Не удалось передать задачу Folia GlobalRegionScheduler", error)
             }
@@ -33,9 +34,9 @@ internal class BukkitSchedulerBridge(
         try {
             val scheduler = player.javaClass.getMethod("getScheduler").invoke(player)
             val run = scheduler.javaClass.getMethod(
-                "run", Plugin::class.java, java.util.function.Consumer::class.java, Runnable::class.java,
+                "run", Plugin::class.java, Consumer::class.java, Runnable::class.java,
             )
-            run.invoke(scheduler, plugin, java.util.function.Consumer<Any> { task.run() }, null)
+            run.invoke(scheduler, plugin, Consumer<Any> { task.run() }, null)
         } catch (error: Exception) {
             errorLogger(plugin, LogLevel.ERROR, "Не удалось передать задачу Folia EntityScheduler", error)
         }

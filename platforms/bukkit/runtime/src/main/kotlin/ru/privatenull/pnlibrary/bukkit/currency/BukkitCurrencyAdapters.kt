@@ -4,6 +4,7 @@ import org.bukkit.Bukkit
 import org.bukkit.plugin.Plugin
 import ru.privatenull.pnlibrary.api.currency.*
 import java.math.BigDecimal
+import java.math.RoundingMode
 import java.util.concurrent.CompletableFuture
 import java.util.concurrent.CompletionStage
 
@@ -36,7 +37,7 @@ private class ReflectiveVaultCurrency(private val economy: Any) :
         displayName = invoke("currencyNamePlural")?.toString()?.ifBlank { "Money" } ?: "Money",
         symbol = "",
         fractionDigits = digits,
-        roundingMode = java.math.RoundingMode.DOWN,
+        roundingMode = RoundingMode.DOWN,
     )
 
     override fun balance(account: CurrencyAccount) = completed {
@@ -76,7 +77,7 @@ private class ReflectiveVaultCurrency(private val economy: Any) :
 private class ReflectivePlayerPointsCurrency(private val api: Any) :
     CurrencyProvider, CurrencyDeposits, CurrencyWithdrawals, CurrencyBalanceMutation, CurrencyReset {
     private val methods = api.javaClass.methods.toList()
-    override val descriptor = CurrencyDescriptor("Points", "", 0, java.math.RoundingMode.DOWN)
+    override val descriptor = CurrencyDescriptor("Points", "", 0, RoundingMode.DOWN)
 
     override fun balance(account: CurrencyAccount) = completed {
         decimal(call(listOf("lookUp", "getPoints"), account.playerId))

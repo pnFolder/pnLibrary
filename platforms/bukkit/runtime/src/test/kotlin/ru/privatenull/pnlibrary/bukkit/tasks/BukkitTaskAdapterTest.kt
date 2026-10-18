@@ -2,11 +2,11 @@ package ru.privatenull.pnlibrary.bukkit.tasks
 
 import org.junit.jupiter.api.Assertions.assertEquals
 import org.junit.jupiter.api.Test
-import java.time.Duration
 import ru.privatenull.pnlibrary.api.tasks.TaskExecution
 import ru.privatenull.pnlibrary.spi.tasks.PlatformTaskHandle
 import ru.privatenull.pnlibrary.spi.tasks.PlatformTaskRequest
 import ru.privatenull.pnlibrary.spi.tasks.TrackingPlatformTaskAdapter
+import java.time.Duration
 
 class BukkitTaskAdapterTest {
     @Test

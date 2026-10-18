@@ -1,9 +1,9 @@
 package ru.privatenull.pnlibrary.core.updates
 
+import ru.privatenull.pnlibrary.api.updates.UpdateChannel
 import java.nio.file.Path
 import java.time.Duration
 import java.time.Instant
-import ru.privatenull.pnlibrary.api.updates.UpdateChannel
 
 internal data class UpdateConfiguration(
     val enabled: Boolean = true,

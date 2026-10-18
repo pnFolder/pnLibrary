@@ -6,6 +6,7 @@ import org.junit.jupiter.api.Assertions.assertThrows
 import org.junit.jupiter.api.Test
 import ru.privatenull.pnlibrary.api.metrics.MetricsProvider
 import ru.privatenull.pnlibrary.api.metrics.PluginMetrics
+import java.util.function.Supplier
 
 class MetricsBuilderTest {
     @Test
@@ -39,13 +40,13 @@ class MetricsBuilderTest {
         assertFalse(builder.enabled)
         builder.configure(object : PluginMetrics {
             override val providers = setOf(MetricsProvider.BSTATS)
-            override fun simplePie(id: String, value: java.util.function.Supplier<String?>) = this
-            override fun advancedPie(id: String, values: java.util.function.Supplier<Map<String, Int>>) = this
-            override fun drilldownPie(id: String, values: java.util.function.Supplier<Map<String, Map<String, Int>>>) = this
-            override fun singleLineChart(id: String, value: java.util.function.Supplier<Int>) = this
-            override fun multiLineChart(id: String, values: java.util.function.Supplier<Map<String, Int>>) = this
-            override fun simpleBarChart(id: String, values: java.util.function.Supplier<Map<String, Int>>) = this
-            override fun advancedBarChart(id: String, values: java.util.function.Supplier<Map<String, IntArray>>) = this
+            override fun simplePie(id: String, value: Supplier<String?>) = this
+            override fun advancedPie(id: String, values: Supplier<Map<String, Int>>) = this
+            override fun drilldownPie(id: String, values: Supplier<Map<String, Map<String, Int>>>) = this
+            override fun singleLineChart(id: String, value: Supplier<Int>) = this
+            override fun multiLineChart(id: String, values: Supplier<Map<String, Int>>) = this
+            override fun simpleBarChart(id: String, values: Supplier<Map<String, Int>>) = this
+            override fun advancedBarChart(id: String, values: Supplier<Map<String, IntArray>>) = this
             override fun close() = Unit
         })
         assertEquals(true, configured)

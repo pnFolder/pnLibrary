@@ -3,6 +3,7 @@ package ru.privatenull.pnlibrary.core.cooldowns
 import ru.privatenull.pnlibrary.api.cooldowns.CooldownResult
 import ru.privatenull.pnlibrary.api.cooldowns.CooldownService
 import java.time.Duration
+import java.util.Locale
 import java.util.UUID
 import java.util.concurrent.ConcurrentHashMap
 import java.util.concurrent.atomic.AtomicBoolean
@@ -70,7 +71,7 @@ internal class CooldownServiceImpl : CooldownService {
     private fun checkOpen() = check(!closed.get()) { "Cooldown service is closed" }
     private fun normalized(action: String): String = action
         .trim()
-        .lowercase(java.util.Locale.ROOT)
+        .lowercase(Locale.ROOT)
         .also {
             require(it.isNotEmpty()) { "Cooldown action cannot be blank" }
         }

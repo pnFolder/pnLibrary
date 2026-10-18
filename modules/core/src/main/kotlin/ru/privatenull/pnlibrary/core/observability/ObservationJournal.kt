@@ -1,9 +1,8 @@
 package ru.privatenull.pnlibrary.core.observability
 
-import ru.privatenull.pnlibrary.core.io.TextFiles
-
 import com.google.gson.GsonBuilder
 import ru.privatenull.pnlibrary.api.observability.Observation
+import ru.privatenull.pnlibrary.core.io.TextFiles
 import java.nio.charset.StandardCharsets
 import java.nio.file.Files
 import java.nio.file.Path

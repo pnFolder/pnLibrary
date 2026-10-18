@@ -1,5 +1,6 @@
 package ru.privatenull.pnlibrary.api.commands
 
+import net.kyori.adventure.sound.Sound
 import net.kyori.adventure.text.Component
 import ru.privatenull.pnlibrary.api.audiences.AudienceSender
 
@@ -36,5 +37,5 @@ interface CommandSender : AudienceSender {
     override fun actionBar(text: Component) = send(text)
 
     /** Returns `false` because generic command senders cannot play sounds. */
-    override fun playSound(sound: net.kyori.adventure.sound.Sound): Boolean = false
+    override fun playSound(sound: Sound): Boolean = false
 }

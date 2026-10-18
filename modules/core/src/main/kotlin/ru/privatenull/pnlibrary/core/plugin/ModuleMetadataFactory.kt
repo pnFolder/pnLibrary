@@ -1,9 +1,8 @@
 package ru.privatenull.pnlibrary.core.plugin
 
-import ru.privatenull.pnlibrary.common.jvm.JavaRuntime
-
 import ru.privatenull.pnlibrary.api.plugin.ModuleId
 import ru.privatenull.pnlibrary.api.plugin.PluginMetadata
+import ru.privatenull.pnlibrary.common.jvm.JavaRuntime
 import ru.privatenull.pnlibrary.spi.platform.PlatformIdentity
 import ru.privatenull.pnlibrary.spi.platform.PlatformOwnership
 

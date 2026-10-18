@@ -1,6 +1,7 @@
 package ru.privatenull.pnlibrary.bukkit.commands
 
 import net.kyori.adventure.text.Component
+import net.kyori.adventure.text.event.ClickEvent
 import net.kyori.adventure.text.format.NamedTextColor
 import net.md_5.bungee.api.ChatColor
 import org.bukkit.Bukkit
@@ -8,25 +9,25 @@ import org.bukkit.command.CommandSender
 import org.bukkit.command.ConsoleCommandSender
 import org.bukkit.entity.Player
 import org.bukkit.plugin.Plugin
-import ru.privatenull.pnlibrary.api.commands.CommandDefinition
-import ru.privatenull.pnlibrary.api.commands.CommandContext
 import ru.privatenull.pnlibrary.api.commands.ArgumentType
+import ru.privatenull.pnlibrary.api.commands.CommandContext
+import ru.privatenull.pnlibrary.api.commands.CommandDefinition
 import ru.privatenull.pnlibrary.api.commands.command
 import ru.privatenull.pnlibrary.api.runtime.PnLibrary
 import ru.privatenull.pnlibrary.api.runtime.PnLibraryBrand
-import ru.privatenull.pnlibrary.api.updates.UpdateSnapshot
-import ru.privatenull.pnlibrary.api.updates.UpdateState
 import ru.privatenull.pnlibrary.api.updates.ProductChange
+import ru.privatenull.pnlibrary.api.updates.UpdateActor
 import ru.privatenull.pnlibrary.api.updates.UpdatePlanSnapshot
 import ru.privatenull.pnlibrary.api.updates.UpdateRegistration
-import ru.privatenull.pnlibrary.api.updates.UpdateActor
-import ru.privatenull.pnlibrary.core.updates.UpdateCatalogCommands
-import ru.privatenull.pnlibrary.core.updates.UpdateCatalogRoutes
-import java.util.UUID
-import java.util.concurrent.atomic.AtomicBoolean
-import java.time.Duration
+import ru.privatenull.pnlibrary.api.updates.UpdateSnapshot
+import ru.privatenull.pnlibrary.api.updates.UpdateState
 import ru.privatenull.pnlibrary.bukkit.updates.UpdateAction
 import ru.privatenull.pnlibrary.bukkit.updates.UpdateConfirmationTokens
+import ru.privatenull.pnlibrary.core.updates.UpdateCatalogCommands
+import ru.privatenull.pnlibrary.core.updates.UpdateCatalogRoutes
+import java.time.Duration
+import java.util.UUID
+import java.util.concurrent.atomic.AtomicBoolean
 
 /** Bukkit-only `/pn` behavior expressed through the shared command builder. */
 internal class BukkitControlCommand(
@@ -152,7 +153,7 @@ internal class BukkitControlCommand(
             val token = if (native is Player) tokens.issue(native.uniqueId, id, 0, action, Duration.ofSeconds(30)) else "confirm"
             val command = "/pn updates rollback $id${if (restoreConfigurations) " configs" else ""} $token"
             context.sender.send(Component.text("Будет восстановлен набор JAR${if (restoreConfigurations) " И выбранные конфигурации через офлайн-установщик" else " без изменения конфигураций"}. Подтвердить: $command")
-                .clickEvent(net.kyori.adventure.text.event.ClickEvent.runCommand(command)))
+                .clickEvent(ClickEvent.runCommand(command)))
             return
         }
         val confirmed = if (native is Player) tokens.consume(confirmation, native.uniqueId, id, 0, action)

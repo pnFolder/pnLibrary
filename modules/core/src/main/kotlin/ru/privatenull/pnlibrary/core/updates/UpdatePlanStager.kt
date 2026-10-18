@@ -1,7 +1,5 @@
 package ru.privatenull.pnlibrary.core.updates
 
-import ru.privatenull.pnlibrary.common.jvm.JavaRuntime
-
 import ru.privatenull.pnlibrary.api.platform.PlatformType
 import ru.privatenull.pnlibrary.api.updates.ArtifactDescriptor
 import ru.privatenull.pnlibrary.api.updates.ProductChange
@@ -9,6 +7,7 @@ import ru.privatenull.pnlibrary.api.updates.ProductId
 import ru.privatenull.pnlibrary.api.updates.ProductRelease
 import ru.privatenull.pnlibrary.api.updates.UpdatePlan
 import ru.privatenull.pnlibrary.api.version.ApiVersionRange
+import ru.privatenull.pnlibrary.common.jvm.JavaRuntime
 import ru.privatenull.pnlibrary.core.updates.engine.ArtifactDownloader
 import ru.privatenull.pnlibrary.core.updates.engine.ArtifactSpecification
 import ru.privatenull.pnlibrary.core.updates.engine.TransactionArtifact

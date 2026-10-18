@@ -1,10 +1,10 @@
 package ru.privatenull.pnlibrary.api.updates
 
+import ru.privatenull.pnlibrary.api.platform.PlatformType
 import ru.privatenull.pnlibrary.api.version.ApiVersionRange
 import ru.privatenull.pnlibrary.api.version.PnLibraryApi
-import ru.privatenull.pnlibrary.api.platform.PlatformType
-import java.util.Collections
 import java.nio.file.Path
+import java.util.Collections
 
 /**
  * Validated GitHub release and artifact-selection policy for one plugin.

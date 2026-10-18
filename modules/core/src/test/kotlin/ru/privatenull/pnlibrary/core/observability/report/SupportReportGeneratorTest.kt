@@ -2,14 +2,14 @@ package ru.privatenull.pnlibrary.core.observability.report
 
 import org.junit.jupiter.api.Assertions.assertTrue
 import org.junit.jupiter.api.Test
-import java.nio.file.Files
 import org.junit.jupiter.api.io.TempDir
 import ru.privatenull.pnlibrary.api.diagnostics.DebugRequest
 import ru.privatenull.pnlibrary.api.diagnostics.DiagnosticContainer
-import ru.privatenull.pnlibrary.spi.platform.PlatformAdapter
 import ru.privatenull.pnlibrary.api.platform.PlatformType
 import ru.privatenull.pnlibrary.api.runtime.PnLibraryConfig
 import ru.privatenull.pnlibrary.core.diagnostics.DiagnosticsRegistry
+import ru.privatenull.pnlibrary.spi.platform.PlatformAdapter
+import java.nio.file.Files
 import java.nio.file.Path
 import java.util.zip.ZipFile
 

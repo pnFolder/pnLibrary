@@ -6,19 +6,22 @@ import org.junit.jupiter.api.Assertions.assertFalse
 import org.junit.jupiter.api.Assertions.assertThrows
 import org.junit.jupiter.api.Assertions.assertTrue
 import org.junit.jupiter.api.Test
-import java.nio.file.Files
+import ru.privatenull.pnlibrary.api.commands.ArgumentType
 import ru.privatenull.pnlibrary.api.commands.CommandContext
 import ru.privatenull.pnlibrary.api.commands.CommandDefinition
 import ru.privatenull.pnlibrary.api.commands.CommandSender
 import ru.privatenull.pnlibrary.api.commands.command
-import ru.privatenull.pnlibrary.api.commands.ArgumentType
 import ru.privatenull.pnlibrary.api.logging.LogLevel
 import ru.privatenull.pnlibrary.api.platform.PlatformType
 import ru.privatenull.pnlibrary.spi.commands.PlatformCommandAdapter
 import ru.privatenull.pnlibrary.spi.commands.PlatformCommandDispatcher
 import ru.privatenull.pnlibrary.spi.commands.PlatformCommandRegistration
 import ru.privatenull.pnlibrary.spi.platform.PlatformAdapter
+import java.nio.file.Files
 import java.util.concurrent.CompletableFuture
+import java.util.concurrent.CountDownLatch
+import java.util.concurrent.Executors
+import java.util.concurrent.TimeUnit
 
 class CommandServiceImplTest {
     @Test
@@ -27,8 +30,8 @@ class CommandServiceImplTest {
         val platform = TestPlatform(native)
         val service = CommandServiceImpl(native, platform)
         val owner = Any()
-        val executor = java.util.concurrent.Executors.newFixedThreadPool(2)
-        val start = java.util.concurrent.CountDownLatch(1)
+        val executor = Executors.newFixedThreadPool(2)
+        val start = CountDownLatch(1)
         try {
             val writer = executor.submit {
                 start.await()
@@ -42,8 +45,8 @@ class CommandServiceImplTest {
                 }
             }
             start.countDown()
-            writer.get(10, java.util.concurrent.TimeUnit.SECONDS)
-            reader.get(10, java.util.concurrent.TimeUnit.SECONDS)
+            writer.get(10, TimeUnit.SECONDS)
+            reader.get(10, TimeUnit.SECONDS)
             assertEquals(0, service.diagnosticSnapshot()["registeredCount"])
         } finally {
             executor.shutdownNow()

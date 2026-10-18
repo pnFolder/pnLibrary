@@ -8,13 +8,14 @@ import org.junit.jupiter.api.Test
 import ru.privatenull.pnlibrary.api.commands.CommandContext
 import ru.privatenull.pnlibrary.api.commands.CommandSender
 import ru.privatenull.pnlibrary.api.platform.PlatformType
-import ru.privatenull.pnlibrary.api.plugin.PluginRegistration
 import ru.privatenull.pnlibrary.api.plugin.ModuleContext
 import ru.privatenull.pnlibrary.api.plugin.ModuleId
-import ru.privatenull.pnlibrary.api.plugin.PluginMetadata
-import ru.privatenull.pnlibrary.api.plugin.PluginRegistry
 import ru.privatenull.pnlibrary.api.plugin.PluginId
+import ru.privatenull.pnlibrary.api.plugin.PluginMetadata
+import ru.privatenull.pnlibrary.api.plugin.PluginRegistration
+import ru.privatenull.pnlibrary.api.plugin.PluginRegistry
 import ru.privatenull.pnlibrary.api.runtime.PnLibrary
+import java.lang.reflect.Method
 import java.lang.reflect.Proxy
 
 class DiagnosticCommandTest {
@@ -99,7 +100,7 @@ class DiagnosticCommandTest {
         }
     }
 
-    private fun <T> proxy(type: Class<T>, handler: (java.lang.reflect.Method) -> Any?): T =
+    private fun <T> proxy(type: Class<T>, handler: (Method) -> Any?): T =
         type.cast(Proxy.newProxyInstance(type.classLoader, arrayOf(type)) { _, method, _ -> handler(method) })
 
     private fun defaultValue(type: Class<*>): Any? = when (type) {

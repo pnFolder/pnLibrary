@@ -10,8 +10,8 @@ import ru.privatenull.pnlibrary.api.runtime.PnLibrary
 import ru.privatenull.pnlibrary.api.updates.*
 import ru.privatenull.pnlibrary.core.commands.CommandRoute
 import ru.privatenull.pnlibrary.core.commands.CommandTreeRouter
-import java.time.Duration
 import java.lang.reflect.Proxy
+import java.time.Duration
 import java.util.Optional
 import java.util.UUID
 import java.util.concurrent.CompletableFuture

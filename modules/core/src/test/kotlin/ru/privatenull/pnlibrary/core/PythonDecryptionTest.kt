@@ -1,10 +1,10 @@
 package ru.privatenull.pnlibrary.core
 
-import ru.privatenull.pnlibrary.core.security.EncryptedEnvelopeCodec
 import org.junit.jupiter.api.Assertions.assertEquals
 import org.junit.jupiter.api.Assertions.assertTrue
 import org.junit.jupiter.api.Test
 import org.junit.jupiter.api.io.TempDir
+import ru.privatenull.pnlibrary.core.security.EncryptedEnvelopeCodec
 import java.io.File
 import java.nio.file.Path
 import java.security.KeyPairGenerator

@@ -1,19 +1,21 @@
 package ru.privatenull.pnlibrary.core.downloads
 
-import org.junit.jupiter.api.Assertions.assertEquals
-import org.junit.jupiter.api.Assertions.assertTrue
-import org.junit.jupiter.api.Assertions.assertSame
-import org.junit.jupiter.api.Assertions.assertNotSame
 import org.junit.jupiter.api.Assertions.assertDoesNotThrow
+import org.junit.jupiter.api.Assertions.assertEquals
+import org.junit.jupiter.api.Assertions.assertNotSame
+import org.junit.jupiter.api.Assertions.assertSame
 import org.junit.jupiter.api.Assertions.assertThrows
+import org.junit.jupiter.api.Assertions.assertTrue
 import org.junit.jupiter.api.Test
 import ru.privatenull.pnlibrary.api.downloads.DownloadDestination
 import ru.privatenull.pnlibrary.api.downloads.DownloadState
-import ru.privatenull.pnlibrary.api.downloads.FileDownloads
 import ru.privatenull.pnlibrary.api.downloads.FileDownload
+import ru.privatenull.pnlibrary.api.downloads.FileDownloads
+import java.util.concurrent.CompletionException
 import java.util.concurrent.Executor
-import java.util.concurrent.TimeUnit
 import java.util.concurrent.Executors
+import java.util.concurrent.RejectedExecutionException
+import java.util.concurrent.TimeUnit
 
 class DownloadRegistrationImplTest {
     @Test
@@ -52,10 +54,10 @@ class DownloadRegistrationImplTest {
     @Test
     fun `executor rejection records failure and releases the job reservation`() {
         val registration = registration(executor = Executor {
-            throw java.util.concurrent.RejectedExecutionException("executor stopped")
+            throw RejectedExecutionException("executor stopped")
         })
         val first = registration.downloadNow().toCompletableFuture()
-        assertThrows(java.util.concurrent.CompletionException::class.java) { first.join() }
+        assertThrows(CompletionException::class.java) { first.join() }
         assertEquals(DownloadState.FAILED, registration.snapshots().single().state)
         assertEquals("executor stopped", registration.snapshots().single().message)
         val second = registration.downloadNow().toCompletableFuture()

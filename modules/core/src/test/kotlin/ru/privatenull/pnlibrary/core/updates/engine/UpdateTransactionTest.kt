@@ -1,18 +1,18 @@
 package ru.privatenull.pnlibrary.core.updates.engine
-import org.junit.jupiter.api.Assertions.assertTrue
-
 import org.junit.jupiter.api.Assertions.assertArrayEquals
 import org.junit.jupiter.api.Assertions.assertEquals
 import org.junit.jupiter.api.Assertions.assertThrows
+import org.junit.jupiter.api.Assertions.assertTrue
 import org.junit.jupiter.api.Test
 import org.junit.jupiter.api.io.TempDir
 import ru.privatenull.pnlibrary.api.updates.ProductId
 import ru.privatenull.pnlibrary.api.version.ApiVersionRange
 import ru.privatenull.pnlibrary.api.version.SemanticVersion
+import java.io.ByteArrayInputStream
 import java.nio.file.Files
 import java.nio.file.Path
 import java.security.MessageDigest
-import java.io.ByteArrayInputStream
+import java.util.UUID
 import java.util.jar.JarEntry
 import java.util.jar.JarOutputStream
 
@@ -198,11 +198,11 @@ class UpdateTransactionTest {
         val second = artifact("second.jar", "market", "3.0.0", 4, byteArrayOf(2))
         transaction.apply(listOf(TransactionArtifact(specification(second, "market", "3.0.0", 4), second, target))) { true }
         assertEquals(2, transaction.rollbackCandidates().size)
-        val id = java.util.UUID.fromString(TransactionJournal.load(saved.journal).id)
+        val id = UUID.fromString(TransactionJournal.load(saved.journal).id)
         assertEquals(saved.journal, transaction.rollbackCandidate(id))
         transaction.rollback(transaction.rollbackCandidate(id))
         assertArrayEquals(byteArrayOf(9), Files.readAllBytes(target))
-        assertThrows(Exception::class.java) { transaction.rollbackCandidate(java.util.UUID.randomUUID()) }
+        assertThrows(Exception::class.java) { transaction.rollbackCandidate(UUID.randomUUID()) }
     }
 
     @Test

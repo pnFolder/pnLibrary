@@ -1,9 +1,9 @@
 package ru.privatenull.pnlibrary.api.updates
 
-import ru.privatenull.pnlibrary.api.version.SemanticVersion
-import ru.privatenull.pnlibrary.api.plugin.PluginDependency
 import ru.privatenull.pnlibrary.api.plugin.DownloadPolicy
+import ru.privatenull.pnlibrary.api.plugin.PluginDependency
 import ru.privatenull.pnlibrary.api.plugin.VersionConstraint
+import ru.privatenull.pnlibrary.api.version.SemanticVersion
 
 /**
  * A managed component dependency discoverable through a release catalogue.

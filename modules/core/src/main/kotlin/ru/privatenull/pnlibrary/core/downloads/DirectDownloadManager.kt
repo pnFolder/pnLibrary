@@ -1,17 +1,17 @@
 package ru.privatenull.pnlibrary.core.downloads
 
+import ru.privatenull.pnlibrary.api.downloads.DownloadRegistration
 import ru.privatenull.pnlibrary.api.downloads.FileDownload
 import ru.privatenull.pnlibrary.api.downloads.FileDownloads
-import ru.privatenull.pnlibrary.api.downloads.DownloadRegistration
 import ru.privatenull.pnlibrary.api.logging.LogLevel
 import ru.privatenull.pnlibrary.api.plugin.PluginDependency
+import ru.privatenull.pnlibrary.core.updates.engine.TrustedHttpClient
 import ru.privatenull.pnlibrary.spi.platform.PlatformExecution
-import ru.privatenull.pnlibrary.spi.platform.PlatformReadiness
 import ru.privatenull.pnlibrary.spi.platform.PlatformIdentity
 import ru.privatenull.pnlibrary.spi.platform.PlatformLogging
 import ru.privatenull.pnlibrary.spi.platform.PlatformOwnerMetadata
 import ru.privatenull.pnlibrary.spi.platform.PlatformPluginInventory
-import ru.privatenull.pnlibrary.core.updates.engine.TrustedHttpClient
+import ru.privatenull.pnlibrary.spi.platform.PlatformReadiness
 import java.nio.file.Files
 import java.nio.file.Path
 import java.time.Duration

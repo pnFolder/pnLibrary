@@ -6,8 +6,8 @@ import ru.privatenull.pnlibrary.api.config.*
 import java.lang.reflect.Modifier
 import java.lang.reflect.ParameterizedType
 import java.lang.reflect.Type
-import java.lang.reflect.Array as ReflectArray
 import java.util.function.Supplier
+import java.lang.reflect.Array as ReflectArray
 
 /**
  * Runtime extension of a polymorphic configuration type registry.

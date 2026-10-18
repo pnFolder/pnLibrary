@@ -5,8 +5,8 @@ import org.jetbrains.kotlin.cli.jvm.K2JVMCompiler
 import ru.privatenull.pnlibrary.api.remote.RemotePolicy
 import ru.privatenull.pnlibrary.api.remote.RemotePolicyContext
 import ru.privatenull.pnlibrary.api.remote.RemotePolicyResult
-import java.io.File
 import java.io.ByteArrayOutputStream
+import java.io.File
 import java.io.PrintStream
 import java.net.HttpURLConnection
 import java.net.URI
@@ -114,7 +114,7 @@ internal object RemotePolicyEngine {
         try {
             require(connection.responseCode in 200..299) { "Remote policy HTTP ${connection.responseCode}" }
             return connection.inputStream.use { input ->
-                val output = java.io.ByteArrayOutputStream()
+                val output = ByteArrayOutputStream()
                 val buffer = ByteArray(8192)
                 while (true) {
                     val count = input.read(buffer)

@@ -3,15 +3,15 @@ package ru.privatenull.pnlibrary.velocity.commands
 import com.velocitypowered.api.command.CommandSource
 import com.velocitypowered.api.command.SimpleCommand
 import com.velocitypowered.api.proxy.ProxyServer
-import net.kyori.adventure.text.Component
 import net.kyori.adventure.sound.Sound
+import net.kyori.adventure.text.Component
 import ru.privatenull.pnlibrary.api.audiences.AudienceSender
 import ru.privatenull.pnlibrary.api.commands.CommandContext
 import ru.privatenull.pnlibrary.api.commands.CommandDefinition
 import ru.privatenull.pnlibrary.api.commands.CommandSender
-import ru.privatenull.pnlibrary.spi.commands.PlatformCommandRegistration
 import ru.privatenull.pnlibrary.spi.commands.GenericPlatformCommandAdapter
 import ru.privatenull.pnlibrary.spi.commands.NativeCommandRegistrar
+import ru.privatenull.pnlibrary.spi.commands.PlatformCommandRegistration
 import ru.privatenull.pnlibrary.velocity.VelocityAudienceAdapter
 import java.util.concurrent.CompletionStage
 

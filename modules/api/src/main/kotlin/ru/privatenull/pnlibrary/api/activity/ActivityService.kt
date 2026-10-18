@@ -1,7 +1,7 @@
 package ru.privatenull.pnlibrary.api.activity
 
-import java.util.UUID
 import java.nio.file.Path
+import java.util.UUID
 
 /** Relative importance used for filtering and retaining recorded activity. */
 enum class ActivitySeverity {

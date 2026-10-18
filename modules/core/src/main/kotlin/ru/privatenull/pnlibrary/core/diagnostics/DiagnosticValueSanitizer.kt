@@ -7,6 +7,8 @@ import java.nio.charset.StandardCharsets
 import java.security.MessageDigest
 import java.util.IdentityHashMap
 import java.util.Locale
+import java.util.concurrent.CompletionException
+import java.util.concurrent.ExecutionException
 
 /**
  * Converts untrusted diagnostic values into bounded, redacted report data.
@@ -119,8 +121,8 @@ internal class DiagnosticValueSanitizer(
 
     private fun unwrap(error: Throwable?): Throwable? {
         var current = error ?: return null
-        while ((current is java.util.concurrent.CompletionException ||
-                current is java.util.concurrent.ExecutionException) && current.cause != null) {
+        while ((current is CompletionException ||
+                current is ExecutionException) && current.cause != null) {
             current = requireNotNull(current.cause)
         }
         return current

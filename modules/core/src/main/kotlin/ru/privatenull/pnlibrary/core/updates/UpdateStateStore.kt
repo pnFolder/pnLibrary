@@ -1,24 +1,21 @@
 package ru.privatenull.pnlibrary.core.updates
 
-import kotlin.streams.toList
-
-import ru.privatenull.pnlibrary.core.io.TextFiles
-
-import com.google.gson.JsonObject
-import com.google.gson.JsonArray
-import com.google.gson.JsonParser
 import com.google.gson.Gson
 import com.google.gson.GsonBuilder
+import com.google.gson.JsonArray
 import com.google.gson.JsonDeserializer
+import com.google.gson.JsonObject
+import com.google.gson.JsonParser
 import com.google.gson.JsonPrimitive
 import com.google.gson.JsonSerializer
+import ru.privatenull.pnlibrary.api.updates.BlockedReason
+import ru.privatenull.pnlibrary.api.updates.ProductId
 import ru.privatenull.pnlibrary.api.updates.UpdatePlan
 import ru.privatenull.pnlibrary.api.updates.UpdatePlanSnapshot
 import ru.privatenull.pnlibrary.api.updates.UpdateState
-import ru.privatenull.pnlibrary.api.updates.BlockedReason
-import ru.privatenull.pnlibrary.api.updates.ProductId
 import ru.privatenull.pnlibrary.api.version.ApiVersionRange
 import ru.privatenull.pnlibrary.api.version.SemanticVersion
+import ru.privatenull.pnlibrary.core.io.TextFiles
 import java.nio.channels.FileChannel
 import java.nio.charset.StandardCharsets
 import java.nio.file.AtomicMoveNotSupportedException
@@ -28,6 +25,7 @@ import java.nio.file.StandardCopyOption
 import java.nio.file.StandardOpenOption
 import java.time.Instant
 import java.util.UUID
+import kotlin.streams.toList
 
 internal class UpdateStateStore(
     private val root: Path,

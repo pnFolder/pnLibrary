@@ -2,6 +2,7 @@ package ru.privatenull.pnlibrary.core.services
 
 import ru.privatenull.pnlibrary.api.plugin.PluginId
 import ru.privatenull.pnlibrary.api.services.ServiceManager
+import java.util.Collections
 import java.util.concurrent.atomic.AtomicBoolean
 import java.util.concurrent.atomic.AtomicLong
 
@@ -53,7 +54,7 @@ internal class ServiceManagerImpl : ServiceManager, AutoCloseable {
     override fun <T : Any> get(type: Class<T>): T? = registrations(type).firstOrNull()?.service
 
     override fun <T : Any> all(type: Class<T>): List<T> =
-        java.util.Collections.unmodifiableList(registrations(type).map { it.service })
+        Collections.unmodifiableList(registrations(type).map { it.service })
 
     internal fun unregisterAll(owner: PluginId) {
         val registrations = synchronized(lock) { registrationsByOwner[owner]?.toList().orEmpty() }

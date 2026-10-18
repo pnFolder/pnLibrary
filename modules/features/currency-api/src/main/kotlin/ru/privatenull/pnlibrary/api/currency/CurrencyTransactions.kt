@@ -2,10 +2,10 @@ package ru.privatenull.pnlibrary.api.currency
 
 import ru.privatenull.pnlibrary.api.plugin.PluginId
 import java.math.BigDecimal
+import java.nio.file.Path
 import java.time.Instant
 import java.util.UUID
 import java.util.concurrent.CompletionStage
-import java.nio.file.Path
 import javax.sql.DataSource
 
 /** Balance mutation represented by a ledger transaction. */

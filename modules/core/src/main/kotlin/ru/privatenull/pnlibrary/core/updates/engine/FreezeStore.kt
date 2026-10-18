@@ -20,8 +20,8 @@ class FreezeStore(
     private val gson = Gson()
     private val expiries = load()
 
-    @Synchronized
     /** Freezes [component] for [duration] and returns its expiry. */
+    @Synchronized
     fun freeze(component: ProductId, duration: Duration): Instant {
         FreezeDuration.validate(duration)
         val expiry = clock.instant().plus(duration)
@@ -30,28 +30,28 @@ class FreezeStore(
         return expiry
     }
 
-    @Synchronized
     /** Clears [component]'s freeze and reports whether one existed. */
+    @Synchronized
     fun clear(component: ProductId): Boolean {
         val removed = expiries.remove(component) != null
         if (removed) persist()
         return removed
     }
 
-    @Synchronized
     /** Returns the remaining freeze duration, or `null` when unfrozen. */
+    @Synchronized
     fun remaining(component: ProductId): Duration? {
         removeExpired()
         val expiry = expiries[component] ?: return null
         return Duration.between(clock.instant(), expiry)
     }
 
-    @Synchronized
     /** Returns whether [component] currently has an active freeze. */
+    @Synchronized
     fun isFrozen(component: ProductId): Boolean = remaining(component) != null
 
-    @Synchronized
     /** Returns a detached map of active products to expiry instants. */
+    @Synchronized
     fun active(): Map<ProductId, Instant> {
         removeExpired()
         return expiries.toMap()

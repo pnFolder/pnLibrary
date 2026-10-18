@@ -1,10 +1,10 @@
 package ru.privatenull.pnlibrary.api.updates
 
+import ru.privatenull.pnlibrary.api.plugin.DownloadPolicy
+import ru.privatenull.pnlibrary.api.plugin.PluginDependency
+import ru.privatenull.pnlibrary.api.plugin.VersionConstraint
 import ru.privatenull.pnlibrary.api.version.SemanticVersion
 import java.net.URI
-import ru.privatenull.pnlibrary.api.plugin.PluginDependency
-import ru.privatenull.pnlibrary.api.plugin.DownloadPolicy
-import ru.privatenull.pnlibrary.api.plugin.VersionConstraint
 
 /** Required third-party plugin which may be manual-only or have an exact verified artifact. */
 class ExternalPluginDependency private constructor(builder: Builder) : PluginDependency {

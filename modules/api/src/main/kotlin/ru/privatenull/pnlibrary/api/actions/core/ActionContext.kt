@@ -6,6 +6,7 @@ import ru.privatenull.pnlibrary.api.placeholders.PlaceholderService
 import ru.privatenull.pnlibrary.api.tasks.TaskScope
 import ru.privatenull.pnlibrary.api.text.ComponentSerializerType
 import ru.privatenull.pnlibrary.api.text.ComponentService
+import java.util.Collections
 
 /**
  * Execution dependencies and per-invocation values shared by an action graph.
@@ -89,7 +90,7 @@ class ActionContext(
 
     /** Returns a snapshot of values currently available to conditions and actions. */
     fun values(): Map<String, Any?> =
-        java.util.Collections.unmodifiableMap(LinkedHashMap(runtimeValues))
+        Collections.unmodifiableMap(LinkedHashMap(runtimeValues))
 
     /** Stores a configuration-facing value for later actions and conditions. */
     fun setValue(name: String, value: Any?) = apply {

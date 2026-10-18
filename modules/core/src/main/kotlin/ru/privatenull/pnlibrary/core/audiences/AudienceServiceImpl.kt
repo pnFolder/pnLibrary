@@ -2,10 +2,10 @@ package ru.privatenull.pnlibrary.core.audiences
 
 import net.kyori.adventure.sound.Sound
 import net.kyori.adventure.text.Component
-import ru.privatenull.pnlibrary.api.audiences.AudienceSender
-import ru.privatenull.pnlibrary.api.audiences.AudienceService
 import ru.privatenull.pnlibrary.api.actions.LibraryAudience
 import ru.privatenull.pnlibrary.api.actions.LibraryPlayer
+import ru.privatenull.pnlibrary.api.audiences.AudienceSender
+import ru.privatenull.pnlibrary.api.audiences.AudienceService
 import ru.privatenull.pnlibrary.spi.audiences.PlatformAudienceAdapter
 import java.util.Collections
 import java.util.IdentityHashMap
@@ -21,7 +21,7 @@ internal class AudienceServiceImpl(
     override fun player(uniqueId: UUID): LibraryPlayer? = if (closed.get()) null else adapter.player(uniqueId)
     override fun sender(native: Any): AudienceSender? = if (closed.get()) null else adapter.sender(native)
     override fun onlinePlayers(): List<LibraryPlayer> = if (closed.get()) emptyList() else
-        java.util.Collections.unmodifiableList(ArrayList(adapter.onlinePlayers()))
+        Collections.unmodifiableList(ArrayList(adapter.onlinePlayers()))
     override fun all(): LibraryAudience = DynamicAudience(::onlinePlayers)
     override fun combine(audiences: Iterable<LibraryAudience>): LibraryAudience = CompositeAudience(audiences)
     override fun close() { closed.set(true) }

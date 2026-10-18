@@ -1,5 +1,6 @@
 package ru.privatenull.pnlibrary.core.runtime
 
+import java.io.File
 import java.nio.file.Path
 import java.nio.file.Paths
 
@@ -7,7 +8,7 @@ import java.nio.file.Paths
 internal object PlatformDataFolderResolver {
     fun resolve(owner: Any, hint: Path?): Path = hint ?: runCatching {
         val method = owner.javaClass.getMethod("getDataFolder")
-        (method.invoke(owner) as java.io.File).toPath()
+        (method.invoke(owner) as File).toPath()
     }.getOrElse {
         Paths.get("plugins", owner.javaClass.simpleName)
     }

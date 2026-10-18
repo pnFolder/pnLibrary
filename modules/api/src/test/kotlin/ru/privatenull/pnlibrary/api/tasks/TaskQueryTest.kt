@@ -3,6 +3,7 @@ package ru.privatenull.pnlibrary.api.tasks
 import org.junit.jupiter.api.Assertions.assertEquals
 import org.junit.jupiter.api.Assertions.assertThrows
 import org.junit.jupiter.api.Test
+import java.util.function.BooleanSupplier
 
 class TaskQueryTest {
     @Test
@@ -42,7 +43,7 @@ class TaskQueryTest {
         }
         assertThrows(UnsupportedOperationException::class.java) {
             @Suppress("UNCHECKED_CAST")
-            (spec.conditions as MutableList<java.util.function.BooleanSupplier>).clear()
+            (spec.conditions as MutableList<BooleanSupplier>).clear()
         }
     }
 

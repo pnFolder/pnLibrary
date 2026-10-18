@@ -1,7 +1,7 @@
 package ru.privatenull.pnlibrary.api.currency
 
-import ru.privatenull.pnlibrary.api.plugin.PluginId
 import ru.privatenull.pnlibrary.api.placeholders.PlaceholderAccess
+import ru.privatenull.pnlibrary.api.plugin.PluginId
 import java.math.BigDecimal
 import java.util.UUID
 import java.util.concurrent.CompletionStage

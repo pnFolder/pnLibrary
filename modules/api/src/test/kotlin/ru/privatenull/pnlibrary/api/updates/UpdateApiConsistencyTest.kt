@@ -1,10 +1,11 @@
 package ru.privatenull.pnlibrary.api.updates
 
-import org.junit.jupiter.api.Assertions.assertSame
 import org.junit.jupiter.api.Assertions.assertEquals
+import org.junit.jupiter.api.Assertions.assertSame
 import org.junit.jupiter.api.Assertions.assertThrows
 import org.junit.jupiter.api.Test
 import ru.privatenull.pnlibrary.api.plugin.PluginDependency
+import java.util.Collections
 
 class UpdateApiConsistencyTest {
     @Test
@@ -42,7 +43,7 @@ class UpdateApiConsistencyTest {
                 dependencies: List<PluginDependency>,
             ) = registration
 
-            override fun all(): List<UpdateRegistration> = java.util.Collections.unmodifiableList(listOf(registration))
+            override fun all(): List<UpdateRegistration> = Collections.unmodifiableList(listOf(registration))
             override fun get(product: String): UpdateRegistration? =
                 registration.takeIf { product.equals("product", true) }
         }

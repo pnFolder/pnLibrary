@@ -1,8 +1,8 @@
 package ru.privatenull.pnlibrary.core.metrics
 
+import ru.privatenull.pnlibrary.api.metrics.MetricsCredentials
 import ru.privatenull.pnlibrary.api.metrics.MetricsProvider
 import ru.privatenull.pnlibrary.api.metrics.PluginMetrics
-import ru.privatenull.pnlibrary.api.metrics.MetricsCredentials
 import java.util.concurrent.atomic.AtomicBoolean
 import java.util.function.Supplier
 

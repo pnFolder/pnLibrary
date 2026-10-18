@@ -3,9 +3,9 @@ package ru.privatenull.pnlibrary.core.downloads
 import org.yaml.snakeyaml.LoaderOptions
 import org.yaml.snakeyaml.Yaml
 import org.yaml.snakeyaml.constructor.SafeConstructor
-import ru.privatenull.pnlibrary.spi.platform.PlatformIdentity
 import ru.privatenull.pnlibrary.api.updates.ExternalPluginDependency
 import ru.privatenull.pnlibrary.api.version.SemanticVersion
+import ru.privatenull.pnlibrary.spi.platform.PlatformIdentity
 import java.nio.file.Path
 import java.util.jar.JarFile
 

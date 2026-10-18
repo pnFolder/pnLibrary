@@ -1,9 +1,9 @@
 package ru.privatenull.pnlibrary.demo
 
+import org.bukkit.entity.Player
 import ru.privatenull.pnlibrary.api.actions.*
 import ru.privatenull.pnlibrary.api.actions.standard.check.Expansion
 import ru.privatenull.pnlibrary.api.runtime.PnLibraryProvider
-import org.bukkit.entity.Player
 import java.time.Duration
 
 /**

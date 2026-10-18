@@ -7,6 +7,7 @@ import org.junit.jupiter.api.Test
 import org.junit.jupiter.api.io.TempDir
 import java.nio.file.Files
 import java.nio.file.Path
+import java.nio.file.attribute.FileTime
 import java.time.Clock
 import java.time.Instant
 import java.time.ZoneOffset
@@ -38,8 +39,8 @@ class IncidentHistoryStoreTest {
         val fresh = temporaryDirectory.resolve("fresh.pndlog")
         Files.write(old, ByteArray(2))
         Files.write(fresh, ByteArray(2))
-        Files.setLastModifiedTime(old, java.nio.file.attribute.FileTime.from(clock.instant().minusSeconds(40L * 86_400)))
-        Files.setLastModifiedTime(fresh, java.nio.file.attribute.FileTime.from(clock.instant().minusSeconds(86_400)))
+        Files.setLastModifiedTime(old, FileTime.from(clock.instant().minusSeconds(40L * 86_400)))
+        Files.setLastModifiedTime(fresh, FileTime.from(clock.instant().minusSeconds(86_400)))
         val history = IncidentHistoryStore(temporaryDirectory, null, retentionDays = 30, maxBytes = 1_024, clock = clock)
 
         history.prune()

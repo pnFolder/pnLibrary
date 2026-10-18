@@ -8,6 +8,9 @@ import org.junit.jupiter.api.Assertions.assertNull
 import org.junit.jupiter.api.Assertions.assertThrows
 import org.junit.jupiter.api.Assertions.assertTrue
 import org.junit.jupiter.api.Test
+import java.io.ByteArrayOutputStream
+import java.io.ObjectOutputStream
+import java.util.Base64
 
 class ItemUtilitiesTest {
     @Test
@@ -22,9 +25,9 @@ class ItemUtilitiesTest {
 
     @Test
     fun `item codec rejects valid serialization of a non item`() {
-        val bytes = java.io.ByteArrayOutputStream()
-        java.io.ObjectOutputStream(bytes).use { it.writeObject("not an item") }
-        val encoded = java.util.Base64.getEncoder().encodeToString(bytes.toByteArray())
+        val bytes = ByteArrayOutputStream()
+        ObjectOutputStream(bytes).use { it.writeObject("not an item") }
+        val encoded = Base64.getEncoder().encodeToString(bytes.toByteArray())
         val error = assertThrows(IllegalArgumentException::class.java) { ItemStackCodec.decode(encoded) }
         assertEquals("Encoded payload does not contain an ItemStack", error.cause?.message)
     }
@@ -40,7 +43,7 @@ class ItemUtilitiesTest {
     fun `texture normalization accepts hashes urls and base64`() {
         val hash = "0123456789abcdef0123456789abcdef"
         val url = "https://textures.minecraft.net/texture/$hash"
-        val encoded = java.util.Base64.getEncoder().encodeToString(
+        val encoded = Base64.getEncoder().encodeToString(
             "{\"textures\":{\"SKIN\":{\"url\":\"$url\"}}}".toByteArray(),
         )
 

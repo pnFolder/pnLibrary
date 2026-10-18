@@ -1,5 +1,6 @@
 package ru.privatenull.pnlibrary.core.audiences
 
+import net.kyori.adventure.key.Key
 import net.kyori.adventure.sound.Sound
 import net.kyori.adventure.text.Component
 import org.junit.jupiter.api.Assertions.assertEquals
@@ -7,10 +8,10 @@ import org.junit.jupiter.api.Assertions.assertFalse
 import org.junit.jupiter.api.Assertions.assertNull
 import org.junit.jupiter.api.Assertions.assertSame
 import org.junit.jupiter.api.Test
-import ru.privatenull.pnlibrary.api.audiences.AudienceSender
 import ru.privatenull.pnlibrary.api.actions.LibraryPlayer
 import ru.privatenull.pnlibrary.api.actions.PlayerEffect
 import ru.privatenull.pnlibrary.api.actions.PlayerParticle
+import ru.privatenull.pnlibrary.api.audiences.AudienceSender
 import ru.privatenull.pnlibrary.spi.audiences.PlatformAudienceAdapter
 import java.util.UUID
 
@@ -43,7 +44,7 @@ class AudienceServiceImplTest {
 
         composite.sendMessage(Component.text("hello"))
         val accepted = composite.playSound(Sound.sound(
-            org.junit.jupiter.api.assertDoesNotThrow { net.kyori.adventure.key.Key.key("test", "sound") },
+            org.junit.jupiter.api.assertDoesNotThrow { Key.key("test", "sound") },
             Sound.Source.MASTER, 1f, 1f,
         ))
 

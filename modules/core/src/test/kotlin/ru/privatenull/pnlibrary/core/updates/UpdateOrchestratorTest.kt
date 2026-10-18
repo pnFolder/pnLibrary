@@ -12,7 +12,9 @@ import java.nio.file.Path
 import java.time.Clock
 import java.time.Instant
 import java.time.ZoneId
+import java.util.UUID
 import java.util.concurrent.CountDownLatch
+import java.util.concurrent.ExecutionException
 import java.util.concurrent.Executors
 import java.util.concurrent.TimeUnit
 import java.util.concurrent.atomic.AtomicInteger
@@ -70,20 +72,20 @@ class UpdateOrchestratorTest {
         )
         try {
             val check = orchestrator.checkNow().toCompletableFuture()
-            val stage = orchestrator.stage(java.util.UUID.randomUUID()).toCompletableFuture()
+            val stage = orchestrator.stage(UUID.randomUUID()).toCompletableFuture()
             val rollback = orchestrator.rollbackTo(UpdateActor.SYSTEM) {
                 mutations.incrementAndGet()
                 error("must not execute")
             }.toCompletableFuture()
             orchestrator.close()
             listOf(check, stage, rollback).forEach { future ->
-                assertThrows(java.util.concurrent.ExecutionException::class.java) {
+                assertThrows(ExecutionException::class.java) {
                     future.get(2, TimeUnit.SECONDS)
                 }
             }
             assertTrue(executor.awaitTermination(2, TimeUnit.SECONDS))
             assertEquals(0, mutations.get())
-            assertTrue(orchestrator.stage(java.util.UUID.randomUUID()).toCompletableFuture().isCompletedExceptionally)
+            assertTrue(orchestrator.stage(UUID.randomUUID()).toCompletableFuture().isCompletedExceptionally)
         } finally { release.countDown(); orchestrator.close() }
     }
 
@@ -158,7 +160,7 @@ class UpdateOrchestratorTest {
         executor.shutdownNow()
         assertThrows(Exception::class.java) { orchestrator.checkNow().toCompletableFuture().get() }
         assertThrows(Exception::class.java) {
-            orchestrator.stage(java.util.UUID.randomUUID()).toCompletableFuture().get()
+            orchestrator.stage(UUID.randomUUID()).toCompletableFuture().get()
         }
         assertDoesNotThrow { orchestrator.registrationsChanged() }
         orchestrator.close()
@@ -312,7 +314,7 @@ class UpdateOrchestratorTest {
             UpdateConfiguration(), UpdateStateStore(directory), executor,
             resolver = { ResolutionResult.Ready(plan("3.0.0")) }, stageAction = {}, announcement = {},
         )
-        val id = java.util.UUID.randomUUID()
+        val id = UUID.randomUUID()
         try {
             val saved = UpdatePlanSnapshot(id, 0, UpdateState.ROLLED_BACK, plan("2.0.0"), emptyList(), "saved set")
             val restored = orchestrator.rollbackTo(UpdateActor.SYSTEM) { saved }

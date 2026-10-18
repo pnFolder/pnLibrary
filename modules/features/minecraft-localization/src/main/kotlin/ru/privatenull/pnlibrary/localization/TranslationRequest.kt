@@ -1,8 +1,8 @@
 package ru.privatenull.pnlibrary.localization
 
 import ru.privatenull.pnlibrary.common.minecraft.MinecraftVersion
-import java.util.Locale
 import java.util.Collections
+import java.util.Locale
 
 /**
  * Immutable request for exact Minecraft version/locale translation tables.

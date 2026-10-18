@@ -1,18 +1,19 @@
 package ru.privatenull.pnlibrary.bungee.commands
 
-import net.kyori.adventure.text.Component
 import net.kyori.adventure.sound.Sound
+import net.kyori.adventure.text.Component
 import net.md_5.bungee.api.CommandSender
 import org.junit.jupiter.api.Assertions.assertEquals
 import org.junit.jupiter.api.Assertions.assertTrue
 import org.junit.jupiter.api.Test
-import ru.privatenull.pnlibrary.api.commands.CommandContext
 import ru.privatenull.pnlibrary.api.audiences.AudienceSender
+import ru.privatenull.pnlibrary.api.commands.CommandContext
 import ru.privatenull.pnlibrary.api.commands.CommandDefinition
 import ru.privatenull.pnlibrary.api.commands.command
+import ru.privatenull.pnlibrary.spi.commands.NativeCommandRegistrar
 import ru.privatenull.pnlibrary.spi.commands.PlatformCommandDispatcher
 import ru.privatenull.pnlibrary.spi.commands.PlatformCommandRegistration
-import ru.privatenull.pnlibrary.spi.commands.NativeCommandRegistrar
+import java.lang.reflect.Method
 import java.lang.reflect.Proxy
 import java.util.concurrent.CompletableFuture
 import java.util.concurrent.CompletionStage
@@ -114,7 +115,7 @@ class BungeeCommandAdapterTest {
 
     private fun <T> proxy(
         type: Class<T>,
-        handler: (java.lang.reflect.Method, Array<out Any?>?) -> Any? = { method, _ -> defaultValue(method.returnType) },
+        handler: (Method, Array<out Any?>?) -> Any? = { method, _ -> defaultValue(method.returnType) },
     ): T = type.cast(Proxy.newProxyInstance(type.classLoader, arrayOf(type)) { _, method, args -> handler(method, args) })
 
     private fun defaultValue(type: Class<*>): Any? = when (type) {

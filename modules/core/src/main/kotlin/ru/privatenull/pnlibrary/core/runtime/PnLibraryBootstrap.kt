@@ -21,7 +21,6 @@ internal object PnLibraryBootstrap {
 
     @JvmStatic
     @JvmOverloads
-    @Synchronized
     /**
      * Creates, initializes, publishes, and binds the process-wide runtime.
      *
@@ -35,6 +34,7 @@ internal object PnLibraryBootstrap {
      * @param config already validated runtime configuration
      * @return the active runtime, which may be an instance created by an earlier call
      */
+    @Synchronized
     fun bootstrap(
         owner: Any,
         platform: PlatformRuntimeContext,

@@ -1,14 +1,16 @@
 package ru.privatenull.pnlibrary.localization.internal
 
+import com.google.gson.JsonArray
 import com.google.gson.JsonObject
 import com.google.gson.JsonParser
 import ru.privatenull.pnlibrary.common.minecraft.MinecraftVersion
 import ru.privatenull.pnlibrary.localization.TranslationException
+import java.io.ByteArrayOutputStream
 import java.net.URI
 import java.nio.charset.StandardCharsets
-import java.io.ByteArrayOutputStream
-import java.util.concurrent.ConcurrentHashMap
 import java.nio.file.Files
+import java.nio.file.Path
+import java.util.concurrent.ConcurrentHashMap
 import java.util.zip.ZipFile
 
 internal data class AssetReference(val hash: String, val size: Int)
@@ -87,7 +89,7 @@ internal class MojangAssetResolver(
     }
 
     private fun cachedJson(
-        path: java.nio.file.Path,
+        path: Path,
         uri: URI,
         limit: Int,
         name: String,
@@ -209,7 +211,7 @@ internal class MojangAssetResolver(
 
     private fun malformed(message: String) = TranslationException(TranslationException.Reason.MALFORMED_DATA, message)
     private fun JsonObject.string(name: String): String? = get(name)?.takeUnless { it.isJsonNull }?.asString
-    private fun com.google.gson.JsonArray?.orEmpty() = this?.toList().orEmpty()
+    private fun JsonArray?.orEmpty() = this?.toList().orEmpty()
 
     companion object {
         val MANIFEST: URI = URI.create("https://piston-meta.mojang.com/mc/game/version_manifest_v2.json")

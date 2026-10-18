@@ -9,6 +9,7 @@ import java.security.KeyFactory
 import java.security.PublicKey
 import java.security.SecureRandom
 import java.security.interfaces.RSAPublicKey
+import java.security.spec.MGF1ParameterSpec
 import java.security.spec.X509EncodedKeySpec
 import java.time.Instant
 import java.util.Base64
@@ -20,7 +21,6 @@ import javax.crypto.SecretKey
 import javax.crypto.spec.GCMParameterSpec
 import javax.crypto.spec.OAEPParameterSpec
 import javax.crypto.spec.PSource
-import java.security.spec.MGF1ParameterSpec
 
 /**
  * Versioned, wire-format–stable diagnostic envelope.

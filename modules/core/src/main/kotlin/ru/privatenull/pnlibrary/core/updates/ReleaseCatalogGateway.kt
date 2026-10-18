@@ -8,6 +8,7 @@ import ru.privatenull.pnlibrary.core.updates.engine.ReleaseCatalogCodec
 import ru.privatenull.pnlibrary.core.updates.engine.TrustedHttpClient
 import java.net.URI
 import java.util.Base64
+import java.util.Collections
 import java.util.concurrent.CompletableFuture
 import java.util.concurrent.Executor
 import java.util.concurrent.atomic.AtomicInteger
@@ -31,7 +32,7 @@ internal class ReleaseCatalogGateway(
     ): ReleaseCatalog {
         val endpoints = CatalogEndpoints(owner, repository)
         val result = CompletableFuture<ReleaseCatalog>()
-        val failures = java.util.Collections.synchronizedList(mutableListOf<String>())
+        val failures = Collections.synchronizedList(mutableListOf<String>())
         val remaining = AtomicInteger(ENDPOINT_COUNT)
 
         submit("raw", result, failures, remaining) {

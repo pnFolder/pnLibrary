@@ -7,8 +7,9 @@ import ru.privatenull.pnlibrary.api.platform.PlatformType
 import ru.privatenull.pnlibrary.api.updates.*
 import ru.privatenull.pnlibrary.api.version.ApiVersionRange
 import ru.privatenull.pnlibrary.api.version.SemanticVersion
-import ru.privatenull.pnlibrary.spi.platform.PlatformIdentity
 import ru.privatenull.pnlibrary.core.updates.engine.*
+import ru.privatenull.pnlibrary.spi.platform.PlatformIdentity
+import java.net.URI
 import java.nio.file.Files
 import java.nio.file.Path
 import java.time.Duration
@@ -103,7 +104,7 @@ class UpdateHealthHistoryTest {
         }
         val platform = object : PlatformIdentity { override val type = PlatformType.BUKKIT }
         val http = object : TrustedHttpClient(Duration.ofSeconds(1), Duration.ofSeconds(1)) {
-            override fun get(uri: java.net.URI, maximumBytes: Int): ByteArray = error("health verification must not access the network")
+            override fun get(uri: URI, maximumBytes: Int): ByteArray = error("health verification must not access the network")
         }
         return Fixture(data, plan, result.journal, transactions, UpdateInstaller(platform, data, UpdateConfiguration(), http))
     }

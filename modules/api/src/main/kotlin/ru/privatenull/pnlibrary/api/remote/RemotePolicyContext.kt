@@ -1,8 +1,8 @@
 package ru.privatenull.pnlibrary.api.remote
 
+import ru.privatenull.pnlibrary.api.platform.PlatformType
 import ru.privatenull.pnlibrary.common.minecraft.MinecraftVersion
 import ru.privatenull.pnlibrary.common.minecraft.MinecraftVersionInfo
-import ru.privatenull.pnlibrary.api.platform.PlatformType
 import java.util.Collections
 import java.util.Locale
 

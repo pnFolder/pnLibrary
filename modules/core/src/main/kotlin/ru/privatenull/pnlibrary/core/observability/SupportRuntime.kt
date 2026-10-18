@@ -17,17 +17,18 @@ import ru.privatenull.pnlibrary.core.observability.reportSnapshot
 import ru.privatenull.pnlibrary.core.upload.UploadLedger
 import ru.privatenull.pnlibrary.spi.platform.PlatformDiagnostics
 import ru.privatenull.pnlibrary.spi.platform.PlatformIdentity
-import ru.privatenull.pnlibrary.spi.platform.PlatformOwnership
 import ru.privatenull.pnlibrary.spi.platform.PlatformLogObservation
 import ru.privatenull.pnlibrary.spi.platform.PlatformLogging
+import ru.privatenull.pnlibrary.spi.platform.PlatformOwnership
 import java.nio.file.Files
 import java.nio.file.Path
+import java.time.Instant
+import java.util.concurrent.ConcurrentHashMap
 import java.util.concurrent.Executors
+import java.util.concurrent.RejectedExecutionException
 import java.util.concurrent.TimeUnit
 import java.util.concurrent.atomic.AtomicBoolean
-import java.util.concurrent.RejectedExecutionException
 import java.util.concurrent.atomic.AtomicLong
-import java.time.Instant
 
 /** Owns diagnostics, observation history, support reports, and their background work. */
 internal class SupportRuntime(
@@ -79,7 +80,7 @@ internal class SupportRuntime(
     private val reportsFailed = AtomicLong()
     private val reportDurationTotalMs = AtomicLong()
     private val reportSizeTotalBytes = AtomicLong()
-    private val reportFailuresByType = java.util.concurrent.ConcurrentHashMap<String, AtomicLong>()
+    private val reportFailuresByType = ConcurrentHashMap<String, AtomicLong>()
     @Volatile private var lastReportUtc: String? = null
     @Volatile private var lastReportDurationMs: Long? = null
     @Volatile private var lastReportSizeBytes: Long? = null

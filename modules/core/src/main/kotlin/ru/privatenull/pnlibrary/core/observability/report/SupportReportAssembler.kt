@@ -54,7 +54,7 @@ internal class SupportReportAssembler(
     ) {
         val platformDetails = diagnosticsPlatform.diagnosticDetails(includeSensitive = encrypted && !config.privacy)
         val runtimeDetails = runtimeDiagnostics()
-        val systemDetails = system.collect(includeNetworkAddresses = encrypted && !config.privacy)
+        val systemDetails = system.collect()
         val analytics = linkedMapOf<String, Any?>(
             "generatedUtc" to Instant.now().toString(),
             "system" to systemDetails["health"],

@@ -5,9 +5,9 @@ import org.bukkit.enchantments.Enchantment
 import ru.privatenull.pnlibrary.localization.TranslationIndex
 import ru.privatenull.pnlibrary.localization.TranslationMatch
 import java.text.Normalizer
-import java.util.Locale
 import java.util.Collections
 import java.util.LinkedHashMap
+import java.util.Locale
 
 internal class TranslationIndexImpl<T>(matches: List<TranslationMatch<T>>) : TranslationIndex<T> {
     private val entries = matches.map { Indexed(it, normalize(it.translation)) }

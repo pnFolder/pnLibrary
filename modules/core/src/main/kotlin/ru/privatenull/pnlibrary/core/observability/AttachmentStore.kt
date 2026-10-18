@@ -1,9 +1,8 @@
 package ru.privatenull.pnlibrary.core.observability
 
-import ru.privatenull.pnlibrary.core.io.TextFiles
-
 import com.google.gson.GsonBuilder
 import com.google.gson.reflect.TypeToken
+import ru.privatenull.pnlibrary.core.io.TextFiles
 import java.nio.file.Files
 import java.nio.file.Path
 import java.security.MessageDigest

@@ -1,7 +1,7 @@
 package ru.privatenull.pnlibrary.core.observability
 
-import org.junit.jupiter.api.Assertions.assertEquals
 import org.junit.jupiter.api.Assertions.assertArrayEquals
+import org.junit.jupiter.api.Assertions.assertEquals
 import org.junit.jupiter.api.Test
 import ru.privatenull.pnlibrary.api.activity.ActivityCategory
 import ru.privatenull.pnlibrary.api.activity.ActivityEvent

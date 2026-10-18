@@ -3,8 +3,8 @@ package ru.privatenull.pnlibrary.bungee.tasks
 import net.md_5.bungee.api.plugin.Plugin
 import ru.privatenull.pnlibrary.spi.tasks.PlatformTaskHandle
 import ru.privatenull.pnlibrary.spi.tasks.PlatformTaskRequest
-import java.util.concurrent.TimeUnit
 import ru.privatenull.pnlibrary.spi.tasks.TrackingPlatformTaskAdapter
+import java.util.concurrent.TimeUnit
 
 /**
  * Adapts portable task requests to BungeeCord's asynchronous scheduler.

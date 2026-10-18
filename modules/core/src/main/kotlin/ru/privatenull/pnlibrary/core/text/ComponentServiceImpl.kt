@@ -7,6 +7,7 @@ import net.kyori.adventure.text.serializer.legacy.LegacyComponentSerializer
 import net.kyori.adventure.text.serializer.plain.PlainTextComponentSerializer
 import ru.privatenull.pnlibrary.api.placeholders.PlaceholderService
 import ru.privatenull.pnlibrary.api.text.*
+import java.util.Collections
 import java.util.UUID
 import java.util.concurrent.atomic.AtomicLong
 
@@ -132,7 +133,7 @@ internal class ComponentServiceImpl(
 
 internal class ComponentCache {
     private data class Value(val component: Component, var accessed: Long)
-    private val values = java.util.Collections.synchronizedMap(LinkedHashMap<String, Value>(16, .75f, true))
+    private val values = Collections.synchronizedMap(LinkedHashMap<String, Value>(16, .75f, true))
     private val hits = AtomicLong()
     private val misses = AtomicLong()
     private val evictions = AtomicLong()

@@ -1,11 +1,10 @@
 package ru.privatenull.pnlibrary.core.downloads
 
-import ru.privatenull.pnlibrary.core.io.TextFiles
-
 import org.yaml.snakeyaml.LoaderOptions
 import org.yaml.snakeyaml.Yaml
 import org.yaml.snakeyaml.constructor.SafeConstructor
 import ru.privatenull.pnlibrary.api.downloads.DownloadDestination
+import ru.privatenull.pnlibrary.core.io.TextFiles
 import java.nio.charset.StandardCharsets
 import java.nio.file.Files
 import java.nio.file.Path

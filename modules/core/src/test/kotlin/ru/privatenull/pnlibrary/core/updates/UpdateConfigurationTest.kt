@@ -3,11 +3,11 @@ package ru.privatenull.pnlibrary.core.updates
 import org.junit.jupiter.api.Assertions.*
 import org.junit.jupiter.api.Test
 import org.junit.jupiter.api.io.TempDir
+import ru.privatenull.pnlibrary.api.updates.UpdateChannel
 import java.nio.file.Files
 import java.nio.file.Path
 import java.time.Duration
 import java.time.Instant
-import ru.privatenull.pnlibrary.api.updates.UpdateChannel
 
 class UpdateConfigurationTest {
     @TempDir lateinit var directory: Path

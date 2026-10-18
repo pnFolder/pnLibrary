@@ -8,11 +8,11 @@ import ru.privatenull.pnlibrary.api.diagnostics.DiagnosticRegistration
 import ru.privatenull.pnlibrary.api.diagnostics.DiagnosticsContributor
 import ru.privatenull.pnlibrary.api.diagnostics.ObservabilityService
 import ru.privatenull.pnlibrary.api.observability.ComponentStatus
+import ru.privatenull.pnlibrary.api.observability.ObservabilityReport
+import ru.privatenull.pnlibrary.api.observability.ObservabilityReportRequest
 import ru.privatenull.pnlibrary.api.observability.Observation
 import ru.privatenull.pnlibrary.api.observability.ObservationQuery
 import ru.privatenull.pnlibrary.api.observability.ObservationRequest
-import ru.privatenull.pnlibrary.api.observability.ObservabilityReport
-import ru.privatenull.pnlibrary.api.observability.ObservabilityReportRequest
 import ru.privatenull.pnlibrary.core.diagnostics.DiagnosticsRegistry
 import java.nio.file.Path
 

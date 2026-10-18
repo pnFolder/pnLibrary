@@ -9,6 +9,12 @@ import java.lang.reflect.Field
 import java.lang.reflect.Modifier
 import java.lang.reflect.ParameterizedType
 import java.lang.reflect.Type
+import java.util.LinkedList
+import java.util.Queue
+import java.util.SortedMap
+import java.util.SortedSet
+import java.util.TreeMap
+import java.util.TreeSet
 
 /**
  * Central reflection policy for annotated mutable configuration objects.
@@ -81,9 +87,9 @@ internal class ConfigObjectIntrospector(
     @Suppress("UNCHECKED_CAST")
     fun collection(type: Class<*>, values: Collection<Any?>, path: String): Collection<Any?> {
         if (type.isInterface || Modifier.isAbstract(type.modifiers)) return when {
-            java.util.SortedSet::class.java.isAssignableFrom(type) -> java.util.TreeSet(values)
+            SortedSet::class.java.isAssignableFrom(type) -> TreeSet(values)
             Set::class.java.isAssignableFrom(type) -> LinkedHashSet(values)
-            java.util.Queue::class.java.isAssignableFrom(type) -> java.util.LinkedList(values)
+            Queue::class.java.isAssignableFrom(type) -> LinkedList(values)
             else -> ArrayList(values)
         }
         val collection = instantiate(type, path) as? MutableCollection<Any?>
@@ -96,8 +102,8 @@ internal class ConfigObjectIntrospector(
     @Suppress("UNCHECKED_CAST")
     fun map(type: Class<*>, values: Map<Any?, Any?>, path: String): Map<Any?, Any?> {
         if (type.isInterface || Modifier.isAbstract(type.modifiers)) {
-            return if (java.util.SortedMap::class.java.isAssignableFrom(type)) {
-                java.util.TreeMap(values)
+            return if (SortedMap::class.java.isAssignableFrom(type)) {
+                TreeMap(values)
             } else {
                 LinkedHashMap(values)
             }

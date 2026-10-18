@@ -7,6 +7,7 @@ import ru.privatenull.pnlibrary.api.currency.currencies
 import ru.privatenull.pnlibrary.api.plugin.ModuleContext
 import java.math.BigDecimal
 import java.math.RoundingMode
+import java.util.UUID
 
 object DemoCurrency {
     fun register(context: ModuleContext, state: DemoState): Currency = context.currencies.register("coins") { definition ->
@@ -28,7 +29,7 @@ object DemoCurrency {
         }
     }
 
-    private fun mutate(state: DemoState, id: java.util.UUID, amount: BigDecimal, add: Boolean): CurrencyResult {
+    private fun mutate(state: DemoState, id: UUID, amount: BigDecimal, add: Boolean): CurrencyResult {
         val old = state.balances[id] ?: zero()
         val next = if (add) old + amount else old - amount
         if (next < BigDecimal.ZERO) return CurrencyResult.rejected(CurrencyRejectReason.INSUFFICIENT_FUNDS)

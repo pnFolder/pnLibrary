@@ -1,7 +1,7 @@
 package ru.privatenull.pnlibrary.api.plugin
 
-import java.time.Duration
 import java.net.URI
+import java.time.Duration
 import java.util.Collections
 
 /** Action applied when a remote policy denies operation. */
