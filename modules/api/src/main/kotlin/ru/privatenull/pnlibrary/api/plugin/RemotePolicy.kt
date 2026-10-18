@@ -1,5 +1,6 @@
 package ru.privatenull.pnlibrary.api.plugin
 
+import ru.privatenull.pnlibrary.api.internal.isHttps
 import java.net.URI
 import java.time.Duration
 import java.util.Collections
@@ -33,7 +34,7 @@ data class RemotePolicy(
         /** Sets and validates the Java/Kotlin policy source URI. */
         fun source(value: String) = apply {
             val uri = URI.create(value)
-            val https = uri.scheme.equals("https", true) && !uri.host.isNullOrBlank()
+            val https = uri.isHttps()
             val localFile = uri.scheme.equals("file", true) && uri.isAbsolute
             require(https || localFile) {
                 "Remote policy source must be an absolute HTTPS or file URL"

@@ -1,9 +1,9 @@
 package ru.privatenull.pnlibrary.api.config
 
 import ru.privatenull.pnlibrary.api.plugin.PluginId
+import ru.privatenull.pnlibrary.common.text.Wildcards
 import java.util.Collections
 import java.util.LinkedHashSet
-import java.util.regex.Pattern
 
 /**
  * Controls which plugin configurations may use a dynamically published polymorphic type.
@@ -31,7 +31,7 @@ class ConfigTypeAccess private constructor(
         if (consumer in deniedPlugins) return false
         if (owner == consumer) return true
         return allLibraryPlugins || consumer in allowedPlugins || allowedPatterns.any {
-            glob(it).matcher(consumer.value).matches()
+            Wildcards.matches(it, consumer.value)
         }
     }
 
@@ -53,11 +53,6 @@ class ConfigTypeAccess private constructor(
         /** Creates a mutable access-policy builder. */
         @JvmStatic
         fun builder(): Builder = Builder()
-
-        private fun glob(value: String): Pattern {
-            val expression = value.split('*').joinToString(".*", transform = Pattern::quote)
-            return Pattern.compile("^$expression$", Pattern.CASE_INSENSITIVE)
-        }
     }
 
     /** Fluent builder for [ConfigTypeAccess]. */

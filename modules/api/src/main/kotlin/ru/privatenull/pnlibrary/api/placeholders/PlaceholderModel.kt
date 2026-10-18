@@ -1,6 +1,7 @@
 package ru.privatenull.pnlibrary.api.placeholders
 
 import ru.privatenull.pnlibrary.api.plugin.PluginId
+import ru.privatenull.pnlibrary.common.text.Wildcards
 import java.time.Duration
 import java.util.Collections
 import java.util.UUID
@@ -96,7 +97,7 @@ class PlaceholderAccess private constructor(
         if (consumer in deniedPlugins) return false
         if (ownerAllowed && owner == consumer) return true
         if (allLibraryPlugins || consumer in allowedPlugins) return true
-        return allowedPatterns.any { wildcard(it, consumer.value) }
+        return allowedPatterns.any { Wildcards.matches(it, consumer.value) }
     }
     /** Common policies and the Java-friendly custom-policy entry point. */
     companion object {
@@ -109,9 +110,6 @@ class PlaceholderAccess private constructor(
         /** Creates an initially empty policy that denies access until rules are added. */
         @JvmStatic
         fun builder(): Builder = Builder()
-        private fun wildcard(pattern: String, value: String) = Regex(
-            "^" + pattern.split('*').joinToString(".*", transform = Regex::escape) + "$", RegexOption.IGNORE_CASE
-        ).matches(value)
     }
     /** Mutable builder for composing an immutable [PlaceholderAccess] policy. */
     class Builder {
@@ -128,7 +126,10 @@ class PlaceholderAccess private constructor(
         /** Adds exact plugin IDs to the allow set. */
         fun allow(vararg ids: String) = apply { ids.map(PluginId::of).forEach(allow::add) }
         /** Adds case-insensitive plugin-ID patterns; `*` is the wildcard token. */
-        fun allowMatching(vararg values: String) = apply { patterns += values }
+        fun allowMatching(vararg values: String) = apply {
+            require(values.none(String::isBlank)) { "Placeholder access patterns must not be blank" }
+            values.map(String::trim).forEach(patterns::add)
+        }
         /** Explicitly denies plugin IDs, overriding every allow rule. */
         fun deny(vararg ids: String) = apply { ids.map(PluginId::of).forEach(deny::add) }
         /** Creates an immutable access policy from the configured rules. */

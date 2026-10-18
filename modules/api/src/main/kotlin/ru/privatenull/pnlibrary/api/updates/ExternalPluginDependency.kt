@@ -1,5 +1,6 @@
 package ru.privatenull.pnlibrary.api.updates
 
+import ru.privatenull.pnlibrary.api.internal.requireHttpsUri
 import ru.privatenull.pnlibrary.api.plugin.DownloadPolicy
 import ru.privatenull.pnlibrary.api.plugin.PluginDependency
 import ru.privatenull.pnlibrary.api.plugin.VersionConstraint
@@ -45,9 +46,7 @@ class ExternalPluginDependency private constructor(builder: Builder) : PluginDep
 
         /** Sets an HTTPS page where administrators can obtain the plugin. */
         fun downloadPage(url: String) = apply {
-            val parsed = URI.create(url)
-            require(parsed.scheme.equals("https", true) && !parsed.host.isNullOrBlank()) { "Download page must use HTTPS" }
-            downloadPage = parsed
+            downloadPage = requireHttpsUri(url, "Download page must use HTTPS")
         }
 
         /** Sets a fully verified artifact suitable for automatic installation. */

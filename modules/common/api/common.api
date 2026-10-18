@@ -216,3 +216,8 @@ public final class ru/privatenull/pnlibrary/common/text/RussianText {
 	public static final fun remaining (Ljava/time/Duration;)Ljava/lang/String;
 }
 
+public final class ru/privatenull/pnlibrary/common/text/Wildcards {
+	public static final field INSTANCE Lru/privatenull/pnlibrary/common/text/Wildcards;
+	public static final fun matches (Ljava/lang/String;Ljava/lang/String;)Z
+}
+

@@ -1,5 +1,6 @@
 package ru.privatenull.pnlibrary.api.downloads
 
+import ru.privatenull.pnlibrary.api.internal.requireHttpsUri
 import ru.privatenull.pnlibrary.api.platform.PlatformType
 import java.net.URI
 import java.nio.file.Path
@@ -85,9 +86,7 @@ class DirectDownloadSource private constructor(builder: Builder) {
 
         /** Sets the required HTTPS download URL. */
         fun url(value: String) = apply {
-            val parsed = URI.create(value)
-            require(parsed.scheme.equals("https", true) && !parsed.host.isNullOrBlank()) { "Download URL must use HTTPS" }
-            uri = parsed
+            uri = requireHttpsUri(value, "Download URL must use HTTPS")
         }
 
         /** Restricts the source to [value]. */

@@ -1,5 +1,6 @@
 package ru.privatenull.pnlibrary.api.updates
 
+import ru.privatenull.pnlibrary.api.internal.isHttps
 import ru.privatenull.pnlibrary.api.platform.PlatformType
 import java.net.URI
 
@@ -30,7 +31,7 @@ class ArtifactDescriptor(
         require(maximumJava == null || maximumJava >= minimumJava) { "Maximum Java must be >= minimum Java" }
         require(size == null || size > 0) { "Artifact size must be positive" }
         require(sha256 == null || SHA_256.matches(sha256)) { "Artifact SHA-256 is invalid" }
-        require(downloadUri == null || downloadUri.scheme.equals("https", true)) { "Artifact URL must use HTTPS" }
+        require(downloadUri == null || downloadUri.isHttps()) { "Artifact URL must use HTTPS" }
     }
 
     /** Returns whether [javaFeature] is inside this artifact's Java range. */

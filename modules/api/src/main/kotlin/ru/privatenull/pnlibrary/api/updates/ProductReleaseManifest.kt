@@ -1,5 +1,6 @@
 package ru.privatenull.pnlibrary.api.updates
 
+import ru.privatenull.pnlibrary.api.internal.isHttps
 import ru.privatenull.pnlibrary.api.platform.PlatformType
 import ru.privatenull.pnlibrary.api.version.ApiVersionRange
 import ru.privatenull.pnlibrary.api.version.SemanticVersion
@@ -66,7 +67,7 @@ data class ProductArtifact(
         }
         require(size > 0) { "Artifact size must be positive" }
         require(sha256.matches(Regex("[0-9a-fA-F]{64}"))) { "Artifact SHA-256 is invalid" }
-        require(downloadUri == null || downloadUri.scheme.equals("https", true)) {
+        require(downloadUri == null || downloadUri.isHttps()) {
             "Artifact download URI must use HTTPS"
         }
     }

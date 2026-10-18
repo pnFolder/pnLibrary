@@ -1,6 +1,7 @@
 package ru.privatenull.pnlibrary.api.currency
 
 import ru.privatenull.pnlibrary.api.plugin.PluginId
+import ru.privatenull.pnlibrary.common.text.Wildcards
 import java.util.Collections
 
 /**
@@ -22,7 +23,7 @@ class CurrencyAccess private constructor(
         if (consumer in denied) return false
         if (ownerAllowed && owner == consumer) return true
         if (allPlugins || consumer in allowed) return true
-        return patterns.any { wildcard(it, consumer.value) }
+        return patterns.any { Wildcards.matches(it, consumer.value) }
     }
 
     /** Common visibility policies and the custom-policy builder entry point. */
@@ -36,10 +37,6 @@ class CurrencyAccess private constructor(
         /** Creates an initially empty policy builder. */
         @JvmStatic
         fun builder(): Builder = Builder()
-        private fun wildcard(pattern: String, value: String) = Regex(
-            "^" + pattern.split('*').joinToString(".*", transform = Regex::escape) + "$",
-            RegexOption.IGNORE_CASE,
-        ).matches(value)
     }
 
     /** Mutable Java-friendly builder for [CurrencyAccess]. */

@@ -1,5 +1,6 @@
 package ru.privatenull.pnlibrary.api.updates
 
+import ru.privatenull.pnlibrary.api.internal.isHttps
 import java.net.URI
 
 /**
@@ -15,7 +16,7 @@ class ExternalArtifact(
     val sha256: String?,
 ) {
     init {
-        require(uri.scheme.equals("https", true) && !uri.host.isNullOrBlank()) { "External artifact must use HTTPS" }
+        require(uri.isHttps()) { "External artifact must use HTTPS" }
         require(size == null || size > 0) { "External artifact size must be positive" }
         require(sha256 == null || SHA_256.matches(sha256)) { "External artifact SHA-256 is invalid" }
     }

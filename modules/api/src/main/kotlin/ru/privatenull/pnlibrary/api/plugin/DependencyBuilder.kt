@@ -1,5 +1,6 @@
 package ru.privatenull.pnlibrary.api.plugin
 
+import ru.privatenull.pnlibrary.api.internal.requireHttpsUri
 import ru.privatenull.pnlibrary.api.updates.ExternalArtifact
 import ru.privatenull.pnlibrary.api.updates.ExternalPluginDependency
 import ru.privatenull.pnlibrary.api.updates.ManagedProductDependency
@@ -103,11 +104,7 @@ class DependencyBuilder {
         fun maximumVersionExclusive(value: String) = apply { maximumExclusive = SemanticVersion.parse(value) }
         /** Sets the administrator-facing HTTPS download page. */
         fun downloadPage(url: String) = apply {
-            val parsed = URI.create(url)
-            require(parsed.scheme.equals("https", true) && !parsed.host.isNullOrBlank()) {
-                "Download page must use HTTPS"
-            }
-            page = parsed
+            page = requireHttpsUri(url, "Download page must use HTTPS")
         }
         /** Sets an exact verified artifact suitable for automatic installation. */
         fun artifact(url: String, size: Long, sha256: String) = apply {
