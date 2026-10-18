@@ -6,7 +6,13 @@ import net.kyori.adventure.text.serializer.gson.GsonComponentSerializer
 import net.kyori.adventure.text.serializer.legacy.LegacyComponentSerializer
 import net.kyori.adventure.text.serializer.plain.PlainTextComponentSerializer
 import ru.privatenull.pnlibrary.api.placeholders.PlaceholderService
-import ru.privatenull.pnlibrary.api.text.*
+import ru.privatenull.pnlibrary.api.text.ComponentCachePolicy
+import ru.privatenull.pnlibrary.api.text.ComponentCacheScope
+import ru.privatenull.pnlibrary.api.text.ComponentCacheStatistics
+import ru.privatenull.pnlibrary.api.text.ComponentSerializer
+import ru.privatenull.pnlibrary.api.text.ComponentSerializerType
+import ru.privatenull.pnlibrary.api.text.ComponentService
+import ru.privatenull.pnlibrary.api.text.ComponentTemplate
 import java.util.Collections
 import java.util.UUID
 import java.util.concurrent.atomic.AtomicLong

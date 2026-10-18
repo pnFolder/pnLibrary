@@ -1,6 +1,10 @@
 package ru.privatenull.pnlibrary.core.tasks
 
-import ru.privatenull.pnlibrary.api.tasks.*
+import ru.privatenull.pnlibrary.api.tasks.TaskHandle
+import ru.privatenull.pnlibrary.api.tasks.TaskId
+import ru.privatenull.pnlibrary.api.tasks.TaskQuery
+import ru.privatenull.pnlibrary.api.tasks.TaskScope
+import ru.privatenull.pnlibrary.api.tasks.TaskSnapshot
 
 /**
  * Cross-platform scheduling service with owner-scoped resource management.

@@ -1,7 +1,14 @@
 package ru.privatenull.pnlibrary.core.updates.engine
 
 import ru.privatenull.pnlibrary.api.platform.PlatformType
-import ru.privatenull.pnlibrary.api.updates.*
+import ru.privatenull.pnlibrary.api.updates.BlockedReason
+import ru.privatenull.pnlibrary.api.updates.InstalledProduct
+import ru.privatenull.pnlibrary.api.updates.ProductChange
+import ru.privatenull.pnlibrary.api.updates.ProductDependency
+import ru.privatenull.pnlibrary.api.updates.ProductId
+import ru.privatenull.pnlibrary.api.updates.ProductRelease
+import ru.privatenull.pnlibrary.api.updates.UpdateChannel
+import ru.privatenull.pnlibrary.api.updates.UpdatePlan
 
 /**
  * Environment capabilities applied during graph resolution.

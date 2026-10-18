@@ -1,14 +1,27 @@
 package ru.privatenull.pnlibrary.core.tasks
 
 import ru.privatenull.pnlibrary.api.plugin.PluginId
-import ru.privatenull.pnlibrary.api.tasks.*
+import ru.privatenull.pnlibrary.api.tasks.TaskConflictPolicy
+import ru.privatenull.pnlibrary.api.tasks.TaskContext
+import ru.privatenull.pnlibrary.api.tasks.TaskHandle
+import ru.privatenull.pnlibrary.api.tasks.TaskId
+import ru.privatenull.pnlibrary.api.tasks.TaskQuery
+import ru.privatenull.pnlibrary.api.tasks.TaskScope
+import ru.privatenull.pnlibrary.api.tasks.TaskServiceSettings
+import ru.privatenull.pnlibrary.api.tasks.TaskSnapshot
+import ru.privatenull.pnlibrary.api.tasks.TaskSpec
+import ru.privatenull.pnlibrary.api.tasks.TaskStatus
 import ru.privatenull.pnlibrary.core.lifecycle.ResourceCleanup
-import ru.privatenull.pnlibrary.spi.tasks.*
+import ru.privatenull.pnlibrary.spi.tasks.PlatformTaskAdapter
+import ru.privatenull.pnlibrary.spi.tasks.PlatformTaskHandle
+import ru.privatenull.pnlibrary.spi.tasks.PlatformTaskRequest
 import java.time.Instant
 import java.util.Collections
 import java.util.IdentityHashMap
 import java.util.LinkedHashMap
-import java.util.concurrent.atomic.*
+import java.util.concurrent.atomic.AtomicBoolean
+import java.util.concurrent.atomic.AtomicLong
+import java.util.concurrent.atomic.AtomicReference
 
 internal class TaskServiceImpl(
     private val adapter: PlatformTaskAdapter,

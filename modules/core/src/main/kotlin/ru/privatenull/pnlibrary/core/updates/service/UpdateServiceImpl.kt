@@ -2,11 +2,22 @@ package ru.privatenull.pnlibrary.core.updates.service
 
 import ru.privatenull.pnlibrary.api.logging.LogLevel
 import ru.privatenull.pnlibrary.api.plugin.PluginDependency
-import ru.privatenull.pnlibrary.api.updates.*
+import ru.privatenull.pnlibrary.api.updates.PluginUpdateRequest
+import ru.privatenull.pnlibrary.api.updates.ProductDescriptor
+import ru.privatenull.pnlibrary.api.updates.UpdateActor
+import ru.privatenull.pnlibrary.api.updates.UpdateBackup
+import ru.privatenull.pnlibrary.api.updates.UpdateChannel
+import ru.privatenull.pnlibrary.api.updates.UpdateHistoryEntry
+import ru.privatenull.pnlibrary.api.updates.UpdatePlanSnapshot
+import ru.privatenull.pnlibrary.api.updates.UpdateRegistration
+import ru.privatenull.pnlibrary.api.updates.UpdateService
+import ru.privatenull.pnlibrary.api.updates.UpdateSnapshot
 import ru.privatenull.pnlibrary.api.version.SemanticVersion
 import ru.privatenull.pnlibrary.common.jvm.JavaRuntime
 import ru.privatenull.pnlibrary.core.updates.catalog.UpdateAnnouncementRenderer
-import ru.privatenull.pnlibrary.core.updates.engine.*
+import ru.privatenull.pnlibrary.core.updates.engine.FreezeStore
+import ru.privatenull.pnlibrary.core.updates.engine.RefreshMode
+import ru.privatenull.pnlibrary.core.updates.engine.ResolutionResult
 import ru.privatenull.pnlibrary.core.updates.install.UpdateGraphResolver
 import ru.privatenull.pnlibrary.core.updates.install.UpdateInstaller
 import ru.privatenull.pnlibrary.core.updates.policy.UpdateAutomaticPolicy

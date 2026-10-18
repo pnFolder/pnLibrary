@@ -1,6 +1,18 @@
 package ru.privatenull.pnlibrary.core.placeholders
 
-import ru.privatenull.pnlibrary.api.placeholders.*
+import ru.privatenull.pnlibrary.api.placeholders.PlaceholderAccess
+import ru.privatenull.pnlibrary.api.placeholders.PlaceholderAdapter
+import ru.privatenull.pnlibrary.api.placeholders.PlaceholderAdapterRegistry
+import ru.privatenull.pnlibrary.api.placeholders.PlaceholderAdapterState
+import ru.privatenull.pnlibrary.api.placeholders.PlaceholderBuilder
+import ru.privatenull.pnlibrary.api.placeholders.PlaceholderCachePolicy
+import ru.privatenull.pnlibrary.api.placeholders.PlaceholderFormatter
+import ru.privatenull.pnlibrary.api.placeholders.PlaceholderKey
+import ru.privatenull.pnlibrary.api.placeholders.PlaceholderProvider
+import ru.privatenull.pnlibrary.api.placeholders.PlaceholderPublication
+import ru.privatenull.pnlibrary.api.placeholders.PlaceholderRegistration
+import ru.privatenull.pnlibrary.api.placeholders.PlaceholderRequest
+import ru.privatenull.pnlibrary.api.placeholders.PlaceholderService
 import ru.privatenull.pnlibrary.api.plugin.PluginId
 import ru.privatenull.pnlibrary.spi.platform.PlatformIdentity
 import java.util.Collections

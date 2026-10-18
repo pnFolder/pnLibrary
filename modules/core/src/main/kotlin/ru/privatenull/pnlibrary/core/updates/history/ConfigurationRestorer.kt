@@ -8,7 +8,12 @@ import ru.privatenull.pnlibrary.core.io.TextFiles
 import ru.privatenull.pnlibrary.core.updates.engine.UpdatePaths
 import java.nio.channels.FileChannel
 import java.nio.charset.StandardCharsets.UTF_8
-import java.nio.file.*
+import java.nio.file.FileSystems
+import java.nio.file.Files
+import java.nio.file.LinkOption
+import java.nio.file.Path
+import java.nio.file.Paths
+import java.nio.file.StandardOpenOption
 import java.nio.file.attribute.AclFileAttributeView
 import java.nio.file.attribute.PosixFilePermissions
 import java.util.UUID
