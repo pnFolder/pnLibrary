@@ -19,8 +19,8 @@ class ProductModelTest {
     fun `update request derives no product identity from repository`() {
         val request = PluginUpdateRequest.builder()
             .repository("pnFolder", "pnAuth")
-            .apiVersions(1, 2)
-            .artifactPattern("(?i)^pnauth-.*\\.jar$")
+            .supportedApi(1, 2)
+            .artifact("(?i)^pnauth-.*\\.jar$", 8)
             .build()
 
         assertEquals("pnAuth", request.repositoryName)

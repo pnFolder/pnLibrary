@@ -65,6 +65,7 @@ interface PluginBuilder {
     }
 
     /** Adds one dependency group; singular convenience alias for [dependencies]. */
+    @Deprecated("Alias of dependencies", ReplaceWith("dependencies(configure)"))
     fun dependency(configure: Consumer<DependencyBuilder>): PluginBuilder = dependencies(configure)
 
     /** Inline GitHub updater configuration with the repository already filled in. */

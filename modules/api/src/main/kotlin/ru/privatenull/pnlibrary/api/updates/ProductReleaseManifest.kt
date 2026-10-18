@@ -31,6 +31,7 @@ data class VersionRangeText(val minimum: String, val maximum: String? = null) {
  * @property minimumJava oldest supported Java feature version
  * @property maximumJava newest supported Java feature version, or `null` when unbounded
  */
+@Deprecated("Unused release-manifest model: the runtime reads release catalogs itself. Kept for binary compatibility only")
 data class ArtifactCompatibility(
     val platform: PlatformType,
     val minecraft: VersionRangeText? = null,
@@ -54,6 +55,8 @@ data class ArtifactCompatibility(
  * @property sha256 expected SHA-256 digest
  * @property downloadUri optional explicit HTTPS location
  */
+@Deprecated("Unused release-manifest model: the runtime reads release catalogs itself. Kept for binary compatibility only")
+@Suppress("DEPRECATION")
 data class ProductArtifact(
     val file: String,
     val compatibility: ArtifactCompatibility,
@@ -82,6 +85,8 @@ data class ProductArtifact(
  * @property channel declared release maturity
  * @property artifacts platform-specific downloadable JARs
  */
+@Deprecated("Unused release-manifest model: the runtime reads release catalogs itself. Kept for binary compatibility only")
+@Suppress("DEPRECATION")
 data class ProductReleaseManifest(
     val productId: ProductId,
     val displayName: String,

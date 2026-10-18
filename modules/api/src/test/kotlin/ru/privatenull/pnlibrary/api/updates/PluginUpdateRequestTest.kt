@@ -13,7 +13,7 @@ class PluginUpdateRequestTest {
     fun `update declaration describes repository API and platform artifacts`() {
         val request = PluginUpdateRequest.builder()
             .repository("pnFolder", "pnCases")
-            .apiVersions(1, 2)
+            .supportedApi(1, 2)
             .artifact("(?i)^pnCases-Bukkit-.*\\.jar$", PlatformType.BUKKIT, 17)
             .build()
 
@@ -25,7 +25,7 @@ class PluginUpdateRequestTest {
     fun `legacy declarations receive resolver compatible API defaults`() {
         val request = PluginUpdateRequest.builder()
             .repository("pnFolder", "PnMarket")
-            .artifactPattern("(?i)^pnmarket-.*\\.jar$")
+            .artifact("(?i)^pnmarket-.*\\.jar$", 8)
             .build()
 
         assertTrue(request.supportedApi.supports(PnLibraryApi.VERSION))

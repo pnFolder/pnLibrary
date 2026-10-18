@@ -91,8 +91,13 @@ class PluginUpdateRequest private constructor(builder: Builder) {
         }
 
         /** Declares one supported API generation. */
+        @Deprecated(
+            "Alias of supportedApi; declare the generation as a one-element range",
+            ReplaceWith("supportedApi(version, version)"),
+        )
         fun apiVersion(version: Int): Builder = supportedApi(version, version)
         /** Declares the inclusive range of supported pnLibrary API generations. */
+        @Deprecated("Alias of supportedApi", ReplaceWith("supportedApi(minimum, maximum)"))
         fun apiVersions(minimum: Int, maximum: Int): Builder = supportedApi(minimum, maximum)
 
         /** Adds an exact release asset name without exposing regular-expression escaping. */
@@ -103,6 +108,7 @@ class PluginUpdateRequest private constructor(builder: Builder) {
         }
 
         /** Adds an artifact pattern compatible with Java 8 and newer. */
+        @Deprecated("Alias of artifact with Java 8 as the minimum", ReplaceWith("artifact(regex, 8)"))
         fun artifactPattern(regex: String): Builder = artifact(regex, 8)
 
         /** Adds and validates one Java-bounded release artifact rule. */

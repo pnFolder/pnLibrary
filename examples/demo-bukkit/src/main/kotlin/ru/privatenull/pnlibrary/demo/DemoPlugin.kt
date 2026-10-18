@@ -72,7 +72,7 @@ class DemoPlugin : JavaPlugin() {
                     .automaticDownload(true)
                     .artifact("(?i)^pnLibrary-demo-bukkit-.*\\.jar$", minimumJava = 8)
             }
-            builder.dependency { dependencies ->
+            builder.dependencies { dependencies ->
                 dependencies.product("pnlibrary") { dependency ->
                     dependency.minimumVersion("1.0.0")
                         .github("pnFolder", "pnLibrary")
