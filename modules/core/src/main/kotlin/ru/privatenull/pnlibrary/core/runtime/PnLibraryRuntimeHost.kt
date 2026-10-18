@@ -1,6 +1,7 @@
 package ru.privatenull.pnlibrary.core.runtime
 
 import ru.privatenull.pnlibrary.api.runtime.PnLibrary
+import ru.privatenull.pnlibrary.api.plugin.RemotePolicy
 import ru.privatenull.pnlibrary.spi.platform.PlatformAdapter
 import java.util.concurrent.atomic.AtomicBoolean
 
@@ -60,6 +61,25 @@ class PnLibraryRuntimeHost private constructor(
     /** Complete runtime bootstrap entry point used by platform plugins. */
     companion object {
         /**
+         * One code-owned policy declaration for pnLibrary on Bukkit, Velocity and Bungee.
+         * Leave null to preserve normal startup. Only trusted policy source may be used:
+         * it executes Java/Kotlin code with the server process's permissions.
+         *
+         * Replace null with, for example:
+         * ```kotlin
+         * RemotePolicy.builder()
+         *     .source("https://example.org/pnLibrary/LibraryPolicy.kt")
+         *     .checkEvery(java.time.Duration.ofHours(6))
+         *     .value("product", "pnlibrary")
+         *     .build()
+         * ```
+         * A library has no independently stoppable module: only DISABLE_PLUGIN is valid.
+         * Checks begin after native readiness, asynchronously, just like consumer policies.
+         * A denied result or a loading/compilation error stops pnLibrary using the same monitor.
+         */
+        private val LIBRARY_POLICY: RemotePolicy? = null
+
+        /**
          * Starts a complete pnLibrary runtime for one platform.
          *
          * Initialization loads runtime configuration, bootstraps and binds the shared runtime,
@@ -68,20 +88,35 @@ class PnLibraryRuntimeHost private constructor(
          *
          * @param owner native pnLibrary plugin instance
          * @param platform adapter for the current server or proxy
+         * @param remotePolicy library-wide remote business policy; defaults to [LIBRARY_POLICY]
          */
         @JvmStatic
+        @JvmOverloads
         fun start(
             owner: Any,
             platform: PlatformAdapter,
-        ): PnLibraryRuntimeHost = startInternal(owner, platform)
+            remotePolicy: RemotePolicy? = LIBRARY_POLICY,
+        ): PnLibraryRuntimeHost = startInternal(owner, platform, remotePolicy)
 
         private fun startInternal(
             owner: Any,
             platform: PlatformAdapter,
+            remotePolicy: RemotePolicy?,
         ): PnLibraryRuntimeHost {
+            // Reject invalid declarations before allocating or publishing a runtime.
+            val policy = remotePolicy?.let(RuntimeRemotePolicy::validated)
             val started = RuntimeBootstrapCoordinator.start(owner, platform.toRuntimeContext())
             return try {
-                PnLibraryRuntimeHost(started.library, started.updateMonitor, started.platformName).also {
+                PnLibraryRuntimeHost(started.library, started.updateMonitor, started.platformName).also { host ->
+                    policy?.let { configured ->
+                        RuntimeRemotePolicy.start(
+                            library = started.library,
+                            platform = platform,
+                            policy = configured,
+                            isClosed = { host.closed.get() || started.library.isClosed },
+                            closeRuntime = host::close,
+                        )
+                    }
                     runCatching {
                         val box = started.library.logging.box(owner, "pnLibrary", started.currentVersion)
                             .ok("Runtime", "общие сервисы запущены")
@@ -91,6 +126,7 @@ class PnLibraryRuntimeHost private constructor(
                     }
                 }
             } catch (error: Throwable) {
+                runCatching { started.updateMonitor.close() }.onFailure(error::addSuppressed)
                 runCatching { started.library.close() }.onFailure(error::addSuppressed)
                 throw error
             }
@@ -98,13 +134,15 @@ class PnLibraryRuntimeHost private constructor(
 
         /** Starts the runtime and registers the native platform API transactionally. */
         @JvmStatic
+        @JvmOverloads
         fun <T : Any> startAndRegisterPlatform(
             owner: Any,
             platform: PlatformAdapter,
             type: Class<T>,
             implementation: T,
+            remotePolicy: RemotePolicy? = LIBRARY_POLICY,
         ): PnLibraryRuntimeHost {
-            val host = start(owner, platform)
+            val host = start(owner, platform, remotePolicy)
             return try {
                 host.registerPlatform(type, implementation)
                 host
