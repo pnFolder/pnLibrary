@@ -61,7 +61,29 @@ class JulLogObserver(
         }
     }
 
+    /**
+     * Platform log handler that writes each record to the logger [loggerFor] picks for its owner, at the
+     * matching [julLevel], without the record coming back as an observation.
+     */
+    fun logHandler(loggerFor: (owner: Any) -> Logger): (Any, LogLevel, String, Throwable?) -> Unit =
+        { owner, level, message, error ->
+            runOwn { loggerFor(owner).log(julLevel(level), message, error) }
+        }
+
     companion object {
+        /** The `java.util.logging` level a record of [level] is written at; errors are SEVERE. */
+        @JvmStatic
+        fun julLevel(level: LogLevel): Level = when (level) {
+            LogLevel.WARNING -> Level.WARNING
+            LogLevel.ERROR -> Level.SEVERE
+            else -> Level.INFO
+        }
+
+        /** The plugin among [plugins] whose [name] identifies [loggerName], chosen by [matchName]. */
+        @JvmStatic
+        fun <P : Any> matchPlugin(loggerName: String?, plugins: Collection<P>, name: (P) -> String): P? =
+            matchName(loggerName, plugins.map(name))?.let { match -> plugins.first { name(it) == match } }
+
         /**
          * Picks the name that identifies [loggerName]: an exact case-insensitive match first, otherwise
          * the longest name of at least three characters contained in it.

@@ -18,6 +18,7 @@ import ru.privatenull.pnlibrary.core.runtime.registerRuntimeCommand
 import ru.privatenull.pnlibrary.spi.audiences.PlatformAudienceAdapter
 import ru.privatenull.pnlibrary.spi.commands.PlatformCommandAdapter
 import ru.privatenull.pnlibrary.spi.metrics.PlatformMetricsFactory
+import ru.privatenull.pnlibrary.spi.platform.JulLogObserver
 import ru.privatenull.pnlibrary.spi.platform.PlatformAdapter
 import ru.privatenull.pnlibrary.spi.platform.PlatformLifecycle
 import ru.privatenull.pnlibrary.spi.platform.PlatformPlugins
@@ -55,7 +56,9 @@ internal class BukkitPlatformAdapter(
         )
     }
     private val diagnosticsCollector = BukkitDiagnosticDetailsCollector()
-    private val nativeLogBridge = BukkitNativeLogBridge(plugin)
+    private val logObserver = JulLogObserver({ Bukkit.getLogger() }, plugin) { loggerName ->
+        JulLogObserver.matchPlugin(loggerName, Bukkit.getPluginManager().plugins.asList()) { it.name }
+    }
     private val uncaughtExceptionObserver = UncaughtExceptionLogObserver(plugin)
     private val schedulerBridge = BukkitSchedulerBridge(plugin, ::log)
     private var lifecycleListener: BukkitLifecycleListener? = null
@@ -87,7 +90,9 @@ internal class BukkitPlatformAdapter(
     override val taskAdapter: PlatformTaskAdapter =
         BukkitTaskAdapter(plugin)
 
-    override val logHandler: (Any, LogLevel, String, Throwable?) -> Unit = nativeLogBridge.logHandler
+    /** Writes to the owning plugin's logger, falling back to pnLibrary's own. */
+    override val logHandler: (Any, LogLevel, String, Throwable?) -> Unit =
+        logObserver.logHandler { owner -> (owner as? Plugin)?.logger ?: plugin.logger }
 
     /** Sends legacy-formatted output to the server console. */
     override fun console(owner: Any, message: String) {
@@ -127,7 +132,8 @@ internal class BukkitPlatformAdapter(
     override fun observeNativeLogs(
         observer: ((Any, LogLevel, String, Throwable?) -> Unit)?,
     ) {
-        nativeLogBridge.observe(observer)
+        if (observer != null) lifecycle.checkOpen()
+        logObserver.observe(observer)
         uncaughtExceptionObserver.observe(observer)
     }
 

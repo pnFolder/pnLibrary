@@ -20,7 +20,6 @@ import ru.privatenull.pnlibrary.spi.platform.PluginSnapshot
 import ru.privatenull.pnlibrary.spi.platform.StartupGate
 import ru.privatenull.pnlibrary.spi.platform.UncaughtExceptionLogObserver
 import ru.privatenull.pnlibrary.spi.tasks.PlatformTaskAdapter
-import java.util.logging.Level
 
 /** Runtime adapter for BungeeCord-compatible proxy servers. */
 internal class BungeePlatformAdapter(
@@ -47,9 +46,7 @@ internal class BungeePlatformAdapter(
 
     private val uncaughtExceptionObserver = UncaughtExceptionLogObserver(plugin)
     private val logObserver = JulLogObserver({ plugin.proxy.logger }, plugin) { loggerName ->
-        val installed = plugin.proxy.pluginManager.plugins
-        JulLogObserver.matchName(loggerName, installed.map { it.description.name })
-            ?.let { name -> installed.first { it.description.name == name } }
+        JulLogObserver.matchPlugin(loggerName, plugin.proxy.pluginManager.plugins) { it.description.name }
     }
 
     override val type: PlatformType = PlatformType.BUNGEECORD
@@ -70,20 +67,14 @@ internal class BungeePlatformAdapter(
     override val taskAdapter: PlatformTaskAdapter =
         BungeeTaskAdapter(plugin)
 
+    /** Writes to the owning plugin's logger, falling back to pnLibrary's own. */
     override val logHandler: (Any, LogLevel, String, Throwable?) -> Unit =
-        { _, level, message, error ->
-            val nativeLevel = when (level) {
-                LogLevel.WARNING -> Level.WARNING
-                LogLevel.ERROR -> Level.SEVERE
-                else -> Level.INFO
-            }
-
-            logObserver.runOwn { plugin.logger.log(nativeLevel, message, error) }
-        }
+        logObserver.logHandler { owner -> (owner as? Plugin)?.logger ?: plugin.logger }
 
     /** Forwards proxy and plugin warnings/errors and uncaught JVM exceptions, preserving the previous handler. */
     @Synchronized
     override fun observeNativeLogs(observer: ((Any, LogLevel, String, Throwable?) -> Unit)?) {
+        if (observer != null) lifecycle.checkOpen()
         logObserver.observe(observer)
         uncaughtExceptionObserver.observe(observer)
     }
