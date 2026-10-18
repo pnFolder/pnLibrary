@@ -182,8 +182,8 @@ internal class DiagnosticLogBuffer(private val capacity: Int = 2_000) {
 
     private fun unwrap(error: Throwable?): Throwable? {
         var current = error ?: return null
-        while ((current is CompletionException || current is ExecutionException) && current.cause != null) {
-            current = current.cause!!
+        while (current is CompletionException || current is ExecutionException) {
+            current = current.cause ?: break
         }
         return current
     }

@@ -15,9 +15,10 @@ internal object TaskQueryMatcher {
         (query.id == null || snapshot.id == query.id) &&
             (query.key == null || snapshot.key == query.key)
 
-    private fun matchesName(snapshot: TaskSnapshot, query: TaskQuery): Boolean =
-        query.nameContains == null ||
-            snapshot.name?.contains(query.nameContains!!, ignoreCase = true) == true
+    private fun matchesName(snapshot: TaskSnapshot, query: TaskQuery): Boolean {
+        val fragment = query.nameContains ?: return true
+        return snapshot.name?.contains(fragment, ignoreCase = true) == true
+    }
 
     private fun matchesState(snapshot: TaskSnapshot, query: TaskQuery): Boolean =
         (query.statuses.isEmpty() || snapshot.status in query.statuses) &&

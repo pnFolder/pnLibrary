@@ -48,11 +48,12 @@ internal object YamlDefaultsMerger {
         var end = lines.size
         var indent = 0
         var found: Block? = null
-        path.forEach { key ->
-            found = blocks(lines, start, end, indent).firstOrNull { it.key == key } ?: return null
-            start = found!!.keyLine + 1
-            end = found!!.end
+        for (key in path) {
+            val block = blocks(lines, start, end, indent).firstOrNull { it.key == key } ?: return null
+            start = block.keyLine + 1
+            end = block.end
             indent += 2
+            found = block
         }
         return found
     }

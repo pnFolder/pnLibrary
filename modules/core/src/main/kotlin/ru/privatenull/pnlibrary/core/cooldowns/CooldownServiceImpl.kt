@@ -55,7 +55,10 @@ internal class CooldownServiceImpl : CooldownService {
         checkOpen()
         val key = Key(subject, normalized(action))
         val now = System.nanoTime()
-        val target = deadlines.compute(key) { _, old -> deadline(maxOf(now, old ?: now), duration) }!!
+        // The remapping function never returns null, so compute always stores and returns a deadline.
+        val target = checkNotNull(deadlines.compute(key) { _, old -> deadline(maxOf(now, old ?: now), duration) }) {
+            "Cooldown deadline was not stored"
+        }
         return nanos(target - now)
     }
     override fun reset(subject: UUID, action: String) = deadlines.remove(Key(subject, normalized(action))) != null

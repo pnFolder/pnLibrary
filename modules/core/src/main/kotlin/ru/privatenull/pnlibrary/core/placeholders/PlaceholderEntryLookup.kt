@@ -33,9 +33,10 @@ internal class PlaceholderEntryLookup(
             .filter { entry -> entry.owner == namespace }
             .mapNotNull { entry ->
                 PlaceholderPatternMatcher.match(entry.key.value, key)
-                    ?.let { parameters -> Match(entry, parameters) }
+                    ?.let { parameters -> entry to parameters }
             }
-            .maxByOrNull { match -> match.entry!!.key.value.length }
+            .maxByOrNull { (entry, _) -> entry.key.value.length }
+            ?.let { (entry, parameters) -> Match(entry, parameters) }
             ?: Match(null, emptyMap())
     }
 

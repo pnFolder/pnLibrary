@@ -173,14 +173,15 @@ internal class TaskServiceImpl(
                     return
                 }
                 state.set(TaskStatus.RUNNING)
-                started = Instant.now()
+                val runStartedAt = Instant.now()
+                started = runStartedAt
                 val number = runs.incrementAndGet()
                 spec.action.run(object : TaskContext {
                     override val id = this@ManagedTask.id
                     override val name = spec.name
                     override val runNumber = number
                     override val scheduledAt = created.plus(spec.delay)
-                    override val startedAt = started!!
+                    override val startedAt = runStartedAt
                     override fun cancel() = this@ManagedTask.cancel()
                 })
                 if (!cancelled.get()) {

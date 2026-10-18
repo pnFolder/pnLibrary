@@ -68,8 +68,8 @@ internal object UpdateAnnouncementRenderer {
             snapshot.blockers.forEachIndexed { index, blocker ->
                 if (index == snapshot.blockers.lastIndex) card.lastItem(blocker.toString()) else card.item(blocker.toString())
             }
-        } else if (!snapshot.message.isNullOrBlank()) {
-            card.section("ПРИЧИНА").lastItem(snapshot.message!!)
+        } else {
+            snapshot.message?.takeIf(String::isNotBlank)?.let { card.section("ПРИЧИНА").lastItem(it) }
         }
         card.blank().section("СОСТОЯНИЕ").lastItem(result).blank()
         if (snapshot.state == UpdateState.UPDATE_AVAILABLE) {

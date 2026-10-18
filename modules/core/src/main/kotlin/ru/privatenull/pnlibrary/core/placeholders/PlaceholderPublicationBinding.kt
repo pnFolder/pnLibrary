@@ -30,8 +30,7 @@ internal class PlaceholderPublicationBinding(
         get() = when {
             closed.get() -> PlaceholderAdapterState.CLOSED
             publicationFailed -> PlaceholderAdapterState.FAILED
-            delegate == null -> PlaceholderAdapterState.UNAVAILABLE
-            else -> delegate!!.state
+            else -> delegate?.state ?: PlaceholderAdapterState.UNAVAILABLE
         }
 
     @Synchronized
