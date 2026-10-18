@@ -9,6 +9,7 @@ import org.junit.jupiter.api.Assertions.assertTrue
 import org.junit.jupiter.api.Test
 import ru.privatenull.pnlibrary.api.updates.ProductChange
 import ru.privatenull.pnlibrary.api.updates.ProductId
+import ru.privatenull.pnlibrary.api.updates.ReleaseSummary
 import ru.privatenull.pnlibrary.api.updates.UpdateActor
 import ru.privatenull.pnlibrary.api.updates.UpdateBackup
 import ru.privatenull.pnlibrary.api.updates.UpdateBackupComponent
@@ -36,7 +37,7 @@ class UpdateCatalogViewTest {
             1, false, bukkit,
         )
         val text = lines.joinToString("\n", transform = ::plain)
-        assertTrue(plain(lines.first()).startsWith("Каталог 2 плагина · 1 к обновлению"))
+        assertTrue(plain(lines.first()).startsWith("✦ Каталог  2 плагина · 1 к обновлению"))
         assertTrue(text.contains("pnlibrary 1.0.0 [↑ 1.1.0]"))
         val actions = lines.flatMap(::clicks)
         assertTrue(actions.contains("/pn update pnlibrary"))
@@ -58,8 +59,8 @@ class UpdateCatalogViewTest {
         val snapshots = (1..12).map { snapshot("module-$it", UpdateState.UPDATE_AVAILABLE) } + snapshot("current", UpdateState.UP_TO_DATE)
         val first = UpdateCatalogView.catalog(snapshots, 1, true, proxy)
         val second = UpdateCatalogView.catalog(snapshots, 2, true, proxy)
-        assertEquals(10, first.count { plain(it).trimStart().startsWith("module-") })
-        assertEquals(2, second.count { plain(it).trimStart().startsWith("module-") })
+        assertEquals(10, first.count { plain(it).trimStart().startsWith("● module-") })
+        assertEquals(2, second.count { plain(it).trimStart().startsWith("● module-") })
         assertFalse(first.any { plain(it).contains("current") })
         assertTrue(first.joinToString("\n", transform = ::plain).contains("страница 1 из 2"))
         assertTrue(first.flatMap(::clicks).contains("/pnupdate available 2"))
@@ -88,7 +89,7 @@ class UpdateCatalogViewTest {
         val lines = UpdateCatalogView.history(listOf(today, yesterday, older), 1, bukkit, totalPages = 1, now = now, zone = ZoneOffset.UTC)
         val text = lines.joinToString("\n", transform = ::plain)
 
-        assertTrue(plain(lines.first()).startsWith("История"))
+        assertTrue(plain(lines.first()).startsWith("✦ История"))
         assertTrue(text.indexOf("Сегодня") < text.indexOf("Вчера"))
         assertTrue(text.indexOf("Вчера") < text.indexOf("12 сентября"))
         assertTrue(text.contains("09:05 pnlibrary 1.0.0 → 1.1.0 подготовлено к перезапуску · Admin"))
@@ -184,15 +185,15 @@ class UpdateCatalogViewTest {
     fun `settings card offers every channel, automatic download and holding as buttons except the current choice`() {
         val lines = UpdateCatalogView.settings(snapshot("pnlibrary", UpdateState.UP_TO_DATE, channel = UpdateChannel.BETA), bukkit)
         val text = lines.joinToString("\n", transform = ::plain)
-        assertTrue(text.contains("pnlibrary настройки"))
-        assertTrue(text.contains("Канал: stable rc beta alpha dev"))
-        assertTrue(text.contains("Автозагрузка: вкл выкл"))
-        assertTrue(text.contains("Обновления: предлагаются удержаны"))
+        assertTrue(text.contains("pnlibrary  настройки"))
+        assertTrue(text.contains("Канал: ○ stable  ○ rc  ● beta  ○ alpha  ○ dev"))
+        assertTrue(text.contains("Автозагрузка: ○ вкл  ● выкл"))
+        assertTrue(text.contains("Пауза: 1 ч  1 д  3 д  7 д  30 д"))
 
         val actions = lines.flatMap(::clicks)
         assertTrue(actions.containsAll(listOf(
             "/pn updates set pnlibrary channel stable", "/pn updates set pnlibrary channel alpha",
-            "/pn updates set pnlibrary auto on", "/pn updates set pnlibrary hold on",
+            "/pn updates set pnlibrary auto on", "/pn updates set pnlibrary hold 3d", "/pn updates set pnlibrary hold 30d",
         )))
         assertFalse(actions.contains("/pn updates set pnlibrary channel beta"))
         assertFalse(actions.contains("/pn updates set pnlibrary auto off"))
@@ -203,7 +204,7 @@ class UpdateCatalogViewTest {
     fun `a reader without edit rights sees the choices but cannot click them`() {
         val lines = UpdateCatalogView.settings(snapshot("pnlibrary", UpdateState.UP_TO_DATE), bukkit.copy(editable = false))
         assertFalse(lines.flatMap(::clicks).any { it.contains(" set ") })
-        assertTrue(lines.joinToString("\n", transform = ::plain).contains("Канал: stable rc beta alpha dev"))
+        assertTrue(lines.joinToString("\n", transform = ::plain).contains("Канал: ● stable  ○ rc  ○ beta  ○ alpha  ○ dev"))
     }
 
     @Test
@@ -231,13 +232,14 @@ class UpdateCatalogViewTest {
                 1, ascii, totalPages = 1, now = now, zone = ZoneOffset.UTC)
         val text = all.joinToString("\n", transform = ::plain)
         assertTrue(text.contains("pnlibrary 1.0.0 -> 1.1.0"))
-        assertFalse(text.contains('→') || text.contains('↑') || text.contains('·'))
+        assertFalse(text.any { it in "→↑·●○▬✦" }, text)
     }
 
     @Test
     fun `titles use RGB colors that legacy clients receive as the nearest standard color`() {
         val title = UpdateCatalogView.catalog(listOf(snapshot("pnlibrary", UpdateState.UP_TO_DATE)), 1, false, bukkit).first()
         val letters = title.children().take(3)
+        assertTrue(letters.none { it.hasDecoration(net.kyori.adventure.text.format.TextDecoration.BOLD) })
         assertEquals(0x8B5CF6, letters.first().color()?.value())
         assertTrue(letters.map { it.color()?.value() }.distinct().size > 1)
         assertTrue(letters.none { it.color() is net.kyori.adventure.text.format.NamedTextColor })
@@ -254,7 +256,7 @@ class UpdateCatalogViewTest {
             listOf(UpdateBackupComponent(ProductId.of("pnlibrary"), "2.0.0", "1.0.0")), 2)
         val lines = UpdateCatalogView.backups(listOf(backup), 1, bukkit, now = now, zone = ZoneOffset.UTC)
         val actions = lines.flatMap(::clicks)
-        assertTrue(plain(lines.first()).startsWith("Резервы 1 набор"))
+        assertTrue(plain(lines.first()).startsWith("✦ Резервы  1 набор"))
         assertTrue(lines.joinToString("\n", transform = ::plain).contains("pnlibrary 1.0.0 4 д назад"))
         assertTrue(actions.contains("/pn updates rollback $id"))
         assertTrue(actions.contains("/pn updates rollback $id configs"))
@@ -267,7 +269,7 @@ class UpdateCatalogViewTest {
             snapshot("pnlibrary", UpdateState.UPDATE_AVAILABLE, "https://github.com/example/repo/blob/main/notes.md"), bukkit,
         )
         val text = available.joinToString("\n", transform = ::plain)
-        assertTrue(text.startsWith("pnlibrary доступно обновление"))
+        assertTrue(text.startsWith("✦ pnlibrary  доступно обновление"))
         assertTrue(text.contains("Версия: 1.0.0"))
         assertTrue(text.contains("Доступна: 1.1.0 [Изменения]"))
         assertTrue(text.contains("Канал: stable"))
@@ -276,6 +278,34 @@ class UpdateCatalogViewTest {
 
         val current = UpdateCatalogView.info(snapshot("pnlibrary", UpdateState.UP_TO_DATE), bukkit)
         assertFalse(current.flatMap(::clicks).contains("/pn update pnlibrary"))
+    }
+
+    @Test
+    fun `a paused component shows when the pause ends and offers to lift or extend it`() {
+        val until = now.plusSeconds(3L * 86_400)
+        val lines = UpdateCatalogView.settings(snapshot("pnlibrary", UpdateState.FROZEN), bukkit, heldUntil = until, now = now, zone = ZoneOffset.UTC)
+        val text = lines.joinToString("\n", transform = ::plain)
+        assertTrue(text.contains("Пауза: до 20 окт. 12:00 (ещё 3 д) [Снять]") || text.contains("Пауза: до 20 окт 12:00 (ещё 3 д) [Снять]"), text)
+        assertTrue(lines.flatMap(::clicks).containsAll(listOf("/pn updates set pnlibrary hold off", "/pn updates set pnlibrary hold 7d")))
+
+        val info = UpdateCatalogView.info(snapshot("pnlibrary", UpdateState.FROZEN), bukkit, heldUntil = until, now = now, zone = ZoneOffset.UTC)
+        assertTrue(info.joinToString("\n", transform = ::plain).contains("(ещё 3 д)"))
+    }
+
+    @Test
+    fun `info card lists the newest release of every channel and switches channel on click`() {
+        val releases = listOf(
+            ReleaseSummary("1.1.0", UpdateChannel.STABLE, Instant.parse("2026-10-01T00:00:00Z")),
+            ReleaseSummary("1.0.5", UpdateChannel.STABLE, Instant.parse("2026-09-01T00:00:00Z")),
+            ReleaseSummary("1.2.0-beta.2", UpdateChannel.BETA, Instant.parse("2026-10-10T00:00:00Z")),
+        )
+        val snapshot = UpdateSnapshot("pnlibrary", "1.0.0", "1.1.0", UpdateChannel.STABLE, UpdateState.UPDATE_AVAILABLE,
+            17, 8, false, null, null, availableReleases = releases)
+        val lines = UpdateCatalogView.info(snapshot, bukkit)
+        assertTrue(lines.joinToString("\n", transform = ::plain).contains("Релизы: stable 1.1.0  beta 1.2.0-beta.2"))
+        val actions = lines.flatMap(::clicks)
+        assertTrue(actions.contains("/pn updates set pnlibrary channel beta"))
+        assertFalse(actions.contains("/pn updates set pnlibrary channel stable"))
     }
 
     private fun event(at: String, state: UpdateState, operation: String, actor: String, product: String, from: String, to: String) =

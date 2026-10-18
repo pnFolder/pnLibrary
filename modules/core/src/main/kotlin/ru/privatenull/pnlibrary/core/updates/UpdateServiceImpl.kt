@@ -1,23 +1,29 @@
 package ru.privatenull.pnlibrary.core.updates
 
-import ru.privatenull.pnlibrary.common.jvm.JavaRuntime
-
 import ru.privatenull.pnlibrary.api.logging.LogLevel
 import ru.privatenull.pnlibrary.api.plugin.PluginDependency
 import ru.privatenull.pnlibrary.api.updates.*
 import ru.privatenull.pnlibrary.api.version.SemanticVersion
+import ru.privatenull.pnlibrary.common.jvm.JavaRuntime
+import ru.privatenull.pnlibrary.core.updates.engine.*
 import ru.privatenull.pnlibrary.spi.platform.PlatformExecution
-import ru.privatenull.pnlibrary.spi.platform.PlatformReadiness
 import ru.privatenull.pnlibrary.spi.platform.PlatformIdentity
 import ru.privatenull.pnlibrary.spi.platform.PlatformLogging
 import ru.privatenull.pnlibrary.spi.platform.PlatformOwnerMetadata
 import ru.privatenull.pnlibrary.spi.platform.PlatformPluginInventory
-import ru.privatenull.pnlibrary.core.updates.engine.*
+import ru.privatenull.pnlibrary.spi.platform.PlatformReadiness
 import java.nio.file.Files
 import java.nio.file.Path
 import java.nio.file.Paths
+import java.time.Duration
+import java.time.Instant
+import java.time.ZoneId
+import java.time.format.DateTimeFormatter
+import java.util.Collections
+import java.util.Locale
 import java.util.Optional
 import java.util.UUID
+import java.util.concurrent.CompletableFuture
 import java.util.concurrent.CompletionStage
 import java.util.concurrent.atomic.AtomicBoolean
 
@@ -139,18 +145,19 @@ internal class UpdateServiceImpl(
             }
         }
 
-    override fun setHeld(product: String, held: Boolean, actor: UpdateActor): CompletionStage<UpdateSnapshot> =
+    override fun setHeld(product: String, duration: Duration?, actor: UpdateActor): CompletionStage<UpdateSnapshot> =
         changeSetting(product, actor, recheck = true) { registration ->
             val id = registration.descriptor.id
-            when {
-                held && !freezes.isFrozen(id) -> {
-                    freezes.freeze(id, java.time.Duration.ofDays(MAXIMUM_HOLD_DAYS))
-                    "обновления удержаны на $MAXIMUM_HOLD_DAYS дней"
-                }
-                !held && freezes.clear(id) -> "удержание обновлений снято"
-                else -> null
+            if (duration == null) {
+                if (freezes.clear(id)) "удержание обновлений снято" else null
+            } else {
+                val until = freezes.freeze(id, duration)
+                "обновления удержаны до ${HOLD_FORMAT.format(until.atZone(ZoneId.systemDefault()))}"
             }
         }
+
+    override fun heldUntil(product: String): Instant? =
+        registrations.find(product)?.let { freezes.active()[it.descriptor.id] }
 
     /** Applies one administrator setting, records it with its author and refreshes what readers see. */
     private fun changeSetting(
@@ -159,7 +166,7 @@ internal class UpdateServiceImpl(
         recheck: Boolean,
         change: (RegisteredUpdate) -> String?,
     ): CompletionStage<UpdateSnapshot> {
-        val result = java.util.concurrent.CompletableFuture<UpdateSnapshot>()
+        val result = CompletableFuture<UpdateSnapshot>()
         try {
             check(!closed.get()) { "update service is closed" }
             val registration = registrations.find(product)
@@ -178,7 +185,7 @@ internal class UpdateServiceImpl(
     }
 
     override fun backups(): CompletionStage<List<UpdateBackup>> = runtime.readAsync {
-        java.util.Collections.unmodifiableList(installer.backups())
+        Collections.unmodifiableList(installer.backups())
     }
     override fun rollback(): CompletionStage<UpdatePlanSnapshot> = rollback(UpdateActor.UNKNOWN)
     override fun rollback(actor: UpdateActor): CompletionStage<UpdatePlanSnapshot> = orchestrator.rollbackTo(actor) {
@@ -196,7 +203,7 @@ internal class UpdateServiceImpl(
     }
 
     private companion object {
-        const val MAXIMUM_HOLD_DAYS = 7L
+        val HOLD_FORMAT: DateTimeFormatter = DateTimeFormatter.ofPattern("d MMM HH:mm", Locale("ru"))
     }
 
     private fun resolveGraph(refreshMode: RefreshMode = RefreshMode.CACHED): ResolutionResult =

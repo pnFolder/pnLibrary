@@ -2,7 +2,6 @@ package ru.privatenull.pnlibrary.core.updates
 
 import net.kyori.adventure.text.Component
 import net.kyori.adventure.text.format.TextColor
-import net.kyori.adventure.text.format.TextDecoration
 
 /**
  * RGB colors of the update catalog.
@@ -25,11 +24,11 @@ internal object UpdatePalette {
     private val GRADIENT_FROM: TextColor = TextColor.color(0x8B5CF6)
     private val GRADIENT_TO: TextColor = TextColor.color(0xE879F9)
 
-    /** [text] with its color moving from violet to fuchsia, one color per character; bold. */
+    /** [text] with its color moving from violet to fuchsia, one color per character. */
     fun gradient(text: String): Component {
         val last = maxOf(1, text.length - 1)
         return text.foldIndexed(Component.empty()) { index, line, char ->
-            line.append(Component.text(char.toString(), TextColor.lerp(index.toFloat() / last, GRADIENT_FROM, GRADIENT_TO), TextDecoration.BOLD))
+            line.append(Component.text(char.toString(), TextColor.lerp(index.toFloat() / last, GRADIENT_FROM, GRADIENT_TO)))
         }
     }
 }

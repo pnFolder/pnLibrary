@@ -10,6 +10,8 @@ import ru.privatenull.pnlibrary.api.updates.UpdateActor
 import ru.privatenull.pnlibrary.api.updates.UpdateChannel
 import ru.privatenull.pnlibrary.api.updates.UpdateHistoryEntry
 import ru.privatenull.pnlibrary.api.updates.UpdateSnapshot
+import ru.privatenull.pnlibrary.core.updates.engine.FreezeDuration
+import java.time.Duration
 import java.util.Locale
 import java.util.concurrent.CompletableFuture
 import java.util.concurrent.CompletionStage
@@ -27,7 +29,7 @@ import java.util.concurrent.CompletionStage
  *
  * @param viewPermission permission required for list, available, info, settings and history, or null for none
  * @param backupsPermission permission required for backups, which expose rollback identities
- * @param managePermission permission required for `set`, which changes a component's channel or automatic download
+ * @param managePermission permission required for `set`, which changes a component's channel, automatic download or pause
  * @param guard returns whether the command may run for this sender; it reports the reason itself
  * @param deliver runs result delivery on the right thread; asynchronous results are never sent directly
  */
@@ -90,7 +92,7 @@ class UpdateCatalogCommands(
                 }
                 literal("hold") {
                     argument("value", ArgumentType.string()) {
-                        suggests { SWITCH_SUGGESTIONS }
+                        suggests { UpdateCatalogView.HOLD_PERIODS + "off" }
                         executes(::setHeld)
                     }
                 }
@@ -142,13 +144,13 @@ class UpdateCatalogCommands(
     private fun showInfo(context: CommandContext) {
         if (!ready(context)) return
         val snapshot = snapshotOf(context, context.get<String>("plugin")) ?: return
-        UpdateCatalogView.info(snapshot, routesFor(context)).forEach(context.sender::send)
+        UpdateCatalogView.info(snapshot, routesFor(context), library.updates.heldUntil(snapshot.product)).forEach(context.sender::send)
     }
 
     private fun showSettings(context: CommandContext, requested: String) {
         if (!ready(context)) return
         val snapshot = snapshotOf(context, requested) ?: return
-        UpdateCatalogView.settings(snapshot, routesFor(context)).forEach(context.sender::send)
+        UpdateCatalogView.settings(snapshot, routesFor(context), library.updates.heldUntil(snapshot.product)).forEach(context.sender::send)
     }
 
     private fun snapshotOf(context: CommandContext, requested: String): UpdateSnapshot? {
@@ -172,16 +174,25 @@ class UpdateCatalogCommands(
         change(context) { product, actor -> library.updates.setAutomaticDownload(product, enabled, actor) }
     }
 
+    /** Pauses updates for a period such as `3d` (`on` means seven days), or lifts the pause with `off`. */
     private fun setHeld(context: CommandContext) {
-        val held = switch(context) ?: return
-        change(context) { product, actor -> library.updates.setHeld(product, held, actor) }
+        val value = context.get<String>("value").lowercase(Locale.ROOT)
+        val duration = when (value) {
+            in OFF -> null
+            in ON -> DEFAULT_HOLD
+            else -> runCatching { FreezeDuration.parse(value) }.getOrElse {
+                context.sender.send(error("Укажите срок паузы от 1m до 30d (например 3d) или off, получено: $value."))
+                return
+            }
+        }
+        change(context) { product, actor -> library.updates.setHeld(product, duration, actor) }
     }
 
     private fun switch(context: CommandContext): Boolean? {
         val value = context.get<String>("value")
         val parsed = when (value.lowercase(Locale.ROOT)) {
-            "on", "true", "yes", "1", "вкл" -> true
-            "off", "false", "no", "0", "выкл" -> false
+            in ON -> true
+            in OFF -> false
             else -> null
         }
         if (parsed == null) context.sender.send(error("Укажите on или off, получено: $value."))
@@ -200,7 +211,7 @@ class UpdateCatalogCommands(
                     val cause = generateSequence(failure) { it.cause }.last()
                     sender.send(error(cause.message ?: "Не удалось изменить настройку."))
                 } else {
-                    UpdateCatalogView.settings(snapshot, routesFor(context)).forEach(sender::send)
+                    UpdateCatalogView.settings(snapshot, routesFor(context), library.updates.heldUntil(snapshot.product)).forEach(sender::send)
                 }
             })
         }
@@ -263,5 +274,8 @@ class UpdateCatalogCommands(
 
     private companion object {
         val SWITCH_SUGGESTIONS = listOf("on", "off")
+        val ON = setOf("on", "true", "yes", "1", "вкл")
+        val OFF = setOf("off", "false", "no", "0", "выкл")
+        val DEFAULT_HOLD: Duration = Duration.ofDays(7)
     }
 }

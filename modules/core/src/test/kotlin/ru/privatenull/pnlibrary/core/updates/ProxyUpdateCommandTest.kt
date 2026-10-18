@@ -10,6 +10,7 @@ import ru.privatenull.pnlibrary.api.runtime.PnLibrary
 import ru.privatenull.pnlibrary.api.updates.*
 import ru.privatenull.pnlibrary.core.commands.CommandRoute
 import ru.privatenull.pnlibrary.core.commands.CommandTreeRouter
+import java.time.Duration
 import java.lang.reflect.Proxy
 import java.util.Optional
 import java.util.UUID
@@ -44,8 +45,10 @@ class ProxyUpdateCommandTest {
         assertEquals(UpdateActor.Kind.CONSOLE, updates.actor?.kind)
         execute(updates, Sender(), "set", "pnlibrary", "auto", "on")
         assertEquals("pnlibrary" to true, updates.automaticSet)
+        execute(updates, Sender(), "set", "pnlibrary", "hold", "3d")
+        assertEquals("pnlibrary" to Duration.ofDays(3), updates.heldSet)
         execute(updates, Sender(), "set", "pnlibrary", "hold", "off")
-        assertEquals("pnlibrary" to false, updates.heldSet)
+        assertEquals("pnlibrary" to null, updates.heldSet)
     }
 
     @Test
@@ -53,6 +56,7 @@ class ProxyUpdateCommandTest {
         val updates = Updates()
         execute(updates, Sender(), "set", "pnlibrary", "channel", "nightly")
         execute(updates, Sender(), "set", "pnlibrary", "auto", "maybe")
+        execute(updates, Sender(), "set", "pnlibrary", "hold", "90d")
         execute(updates, Sender(isConsole = false), "set", "pnlibrary", "channel", "beta")
         assertNull(updates.channelSet)
         assertNull(updates.automaticSet)
@@ -115,14 +119,14 @@ class ProxyUpdateCommandTest {
         val pages = mutableListOf<Int>()
         var channelSet: Pair<String, UpdateChannel>? = null
         var automaticSet: Pair<String, Boolean>? = null
-        var heldSet: Pair<String, Boolean>? = null
+        var heldSet: Pair<String, Duration?>? = null
         private fun snapshot() = UpdateSnapshot("pnlibrary", "1.0.0", null, UpdateChannel.BETA, UpdateState.UP_TO_DATE, 17, 8, false, null, null)
         override fun setChannel(product: String, channel: UpdateChannel, actor: UpdateActor) =
             CompletableFuture.completedFuture(snapshot()).also { channelSet = product to channel; this.actor = actor }
         override fun setAutomaticDownload(product: String, enabled: Boolean, actor: UpdateActor) =
             CompletableFuture.completedFuture(snapshot()).also { automaticSet = product to enabled }
-        override fun setHeld(product: String, held: Boolean, actor: UpdateActor) =
-            CompletableFuture.completedFuture(snapshot()).also { heldSet = product to held }
+        override fun setHeld(product: String, duration: Duration?, actor: UpdateActor) =
+            CompletableFuture.completedFuture(snapshot()).also { heldSet = product to duration }
         override fun register(owner: Any, product: ProductDescriptor, request: PluginUpdateRequest, dependencies: List<PluginDependency>): UpdateRegistration = error("not used")
         override fun all(): List<UpdateRegistration> = emptyList()
         override fun get(product: String): UpdateRegistration? = null

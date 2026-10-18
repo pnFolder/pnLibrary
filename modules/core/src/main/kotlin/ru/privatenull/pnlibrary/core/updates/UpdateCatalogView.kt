@@ -52,8 +52,8 @@ data class UpdateCatalogRoutes(
 /**
  * Shared chat and console presentation of the managed update catalog.
  *
- * Pages follow one layout: a bold purple title with counters, compact lines with inline buttons, and a
- * footer with pagination and navigation. A reader that cannot click, such as the console or a legacy server
+ * Pages follow one layout: a gradient title with counters, lines led by a colored status dot with inline
+ * buttons, a gradient rule and a footer with actions and pagination. A reader that cannot click, such as the console or a legacy server
  * without the Adventure transport, gets the same lines without buttons and a list of the commands instead.
  * Nothing here calls the server or changes updates, and stored text is only ever rendered as plain text,
  * never interpreted as markup.
@@ -103,11 +103,30 @@ object UpdateCatalogView {
         zone: ZoneId = ZoneId.systemDefault(),
     ): List<Component> = Renderer(routes).backups(backups, page, now, zone)
 
-    /** Renders the details card of one component. */
-    fun info(snapshot: UpdateSnapshot, routes: UpdateCatalogRoutes): List<Component> = Renderer(routes).info(snapshot)
+    /**
+     * Renders the details card of one component: versions, the newest release of every channel and its pause.
+     *
+     * @param heldUntil when the current pause ends, from [ru.privatenull.pnlibrary.api.updates.UpdateService.heldUntil]
+     */
+    fun info(
+        snapshot: UpdateSnapshot,
+        routes: UpdateCatalogRoutes,
+        heldUntil: Instant? = null,
+        now: Instant = Instant.now(),
+        zone: ZoneId = ZoneId.systemDefault(),
+    ): List<Component> = Renderer(routes).info(snapshot, heldUntil, now, zone)
 
-    /** Renders the settings card of one component: channel, automatic download and holding updates. */
-    fun settings(snapshot: UpdateSnapshot, routes: UpdateCatalogRoutes): List<Component> = Renderer(routes).settings(snapshot)
+    /** Renders the settings card of one component: channel, automatic download and a pause for a chosen period. */
+    fun settings(
+        snapshot: UpdateSnapshot,
+        routes: UpdateCatalogRoutes,
+        heldUntil: Instant? = null,
+        now: Instant = Instant.now(),
+        zone: ZoneId = ZoneId.systemDefault(),
+    ): List<Component> = Renderer(routes).settings(snapshot, heldUntil, now, zone)
+
+    /** Pause periods offered on the settings card, as accepted by `set <plugin> hold`. */
+    val HOLD_PERIODS: List<String> = listOf("1h", "1d", "3d", "7d", "30d")
 
     private class Renderer(private val routes: UpdateCatalogRoutes) {
         // --- pages -------------------------------------------------------------------------------------------
@@ -125,7 +144,7 @@ object UpdateCatalogView {
             val result = mutableListOf(title(if (updatesOnly) "Обновления" else "Каталог", details))
             entries.forEach { result += catalogLine(it) }
             if (entries.isEmpty()) result += muted(if (selected.isEmpty()) "Нет компонентов." else "Нет компонентов на этой странице.")
-            result += blank()
+            result += rule()
             result += actions(
                 button("[Проверить]", routes.check, "Проверить новые версии", UpdatePalette.OK),
                 button(if (updatesOnly) "[Все]" else "[Обновления]", if (updatesOnly) routes.list else routes.available,
@@ -165,12 +184,12 @@ object UpdateCatalogView {
                 if (entryDay != day) {
                     day = entryDay
                     result += blank()
-                    result += text(" ${dayLabel(entryDay, now.atZone(zone).toLocalDate())}", UpdatePalette.ACCENT)
+                    result += text(" ${dayLabel(entryDay, now.atZone(zone).toLocalDate())}", UpdatePalette.ACCENT, TextDecoration.ITALIC)
                 }
                 result += historyLines(entry, product == null, zone)
             }
             if (entries.isEmpty()) result += muted("Нет событий на этой странице.")
-            result += blank()
+            result += rule()
             val base = if (product == null) routes.history else routes.history(product)
             val pages = totalPages ?: if (entries.size >= PAGE_SIZE) page + 1 else page
             result += historyNavigation(page, pages, base)
@@ -207,7 +226,7 @@ object UpdateCatalogView {
                 }
             }
             if (selected.isEmpty()) result += muted(if (backups.isEmpty()) "Нет сохранённых наборов." else "Нет наборов на этой странице.")
-            result += blank()
+            result += rule()
             result += actions(
                 button("[Плагины]", routes.list, "Все зарегистрированные компоненты", UpdatePalette.ACCENT),
                 button("[История]", routes.history, "Кто, когда и что обновлял", UpdatePalette.ACCENT),
@@ -216,12 +235,10 @@ object UpdateCatalogView {
             return result
         }
 
-        fun info(snapshot: UpdateSnapshot): List<Component> {
-            val result = mutableListOf<Component>(
-                text(snapshot.product, UpdatePalette.ACCENT, TextDecoration.BOLD)
-                    .append(text(" ${stateLabel(snapshot.state)}", stateColor(snapshot.state))),
-            )
-            snapshot.message?.takeIf { it.isNotBlank() }?.let { result += text(" ${it.take(MAX_MESSAGE)}", UpdatePalette.MUTED) }
+        fun info(snapshot: UpdateSnapshot, heldUntil: Instant?, now: Instant, zone: ZoneId): List<Component> {
+            val product = snapshot.product
+            val result = mutableListOf(title(product, stateLabel(snapshot.state), stateColor(snapshot.state)))
+            snapshot.message?.takeIf { it.isNotBlank() }?.let { result += muted(it.take(MAX_MESSAGE)) }
             result += blank()
             result += field("Версия", snapshot.currentVersion)
             snapshot.latestVersion?.takeIf { it != snapshot.currentVersion }?.let { latest ->
@@ -230,67 +247,124 @@ object UpdateCatalogView {
                 result += line
             }
             result += field("Канал", channelName(snapshot.channel), channelColor(snapshot.channel))
-            result += field("Автозагрузка", if (snapshot.automaticDownload) "включена" else "выключена")
+            releasesByChannel(snapshot)?.let { result += it }
+            result += field("Автозагрузка", if (snapshot.automaticDownload) "включена" else "выключена",
+                if (snapshot.automaticDownload) UpdatePalette.OK else UpdatePalette.MUTED)
+            if (snapshot.state == UpdateState.FROZEN || heldUntil != null) {
+                result += field("Пауза", holdText(heldUntil, now, zone), UpdatePalette.WARN)
+            }
             snapshot.supportedApi?.let { result += field("API", "${it.minimum}-${it.maximum}") }
-            result += field("Java", "${snapshot.currentJava} (нужна ${snapshot.requiredJava}+)")
-            result += blank()
+            result += field("Java", "${snapshot.currentJava} (нужна ${snapshot.requiredJava}+)",
+                if (snapshot.currentJava >= snapshot.requiredJava) UpdatePalette.TEXT else UpdatePalette.DANGER)
+            result += rule()
             val buttons = mutableListOf<Component>()
             routes.update?.takeIf { snapshot.state == UpdateState.UPDATE_AVAILABLE }?.let { update ->
-                buttons += button("[Обновить]", update(snapshot.product), "Проверить и подготовить обновление. Применение — после перезапуска.", UpdatePalette.OK)
+                buttons += button("[Обновить]", update(product), "Проверить и подготовить обновление. Применение — после перезапуска.", UpdatePalette.OK)
             }
-            buttons += button("[Настройки]", routes.settings(snapshot.product), "Канал, автозагрузка и удержание обновлений", UpdatePalette.ACCENT)
-            buttons += button("[История]", routes.history(snapshot.product), "События только этого плагина", UpdatePalette.ACCENT)
+            buttons += button("[Настройки]", routes.settings(product), "Канал, автозагрузка и пауза обновлений", UpdatePalette.ACCENT)
+            buttons += button("[История]", routes.history(product), "События только этого плагина", UpdatePalette.ACCENT)
             buttons += button("[Назад]", routes.list, "К списку плагинов", UpdatePalette.MUTED)
             result += actions(*buttons.toTypedArray())
             if (!routes.interactive) {
                 result += commandHints(
-                    routes.settings(snapshot.product) to "настройки",
-                    routes.history(snapshot.product) to "история плагина",
-                    routes.update?.invoke(snapshot.product) to "обновить",
+                    routes.settings(product) to "настройки",
+                    routes.history(product) to "история плагина",
+                    routes.update?.invoke(product) to "обновить",
                 )
             }
             return result
         }
 
-        fun settings(snapshot: UpdateSnapshot): List<Component> {
+        fun settings(snapshot: UpdateSnapshot, heldUntil: Instant?, now: Instant, zone: ZoneId): List<Component> {
             val product = snapshot.product
-            val held = snapshot.state == UpdateState.FROZEN
-            val result = mutableListOf<Component>(
-                text(product, UpdatePalette.ACCENT, TextDecoration.BOLD).append(text(" настройки", UpdatePalette.MUTED)),
-                text("  ${snapshot.currentVersion} · ${channelName(snapshot.channel)}", channelColor(snapshot.channel)),
+            val result = mutableListOf(
+                title(product, "настройки"),
+                text("  ${snapshot.currentVersion} · ", UpdatePalette.MUTED).append(text(channelName(snapshot.channel), channelColor(snapshot.channel))),
                 blank(),
-                choices("Канал", CHANNELS.map { it to channelName(it) }, snapshot.channel) { channel ->
+                choices("Канал", CHANNELS.map { it to channelName(it) }, snapshot.channel, ::channelColor) { channel ->
                     routes.set(product, "channel", channelName(channel)) to channelHint(channel)
                 },
-                choices("Автозагрузка", listOf(true to "вкл", false to "выкл"), snapshot.automaticDownload) { on ->
+                choices("Автозагрузка", listOf(true to "вкл", false to "выкл"), snapshot.automaticDownload,
+                    { on -> if (on) UpdatePalette.OK else UpdatePalette.MUTED }) { on ->
                     routes.set(product, "auto", if (on) "on" else "off") to
                         if (on) "Скачивать и проверять новые версии автоматически; применение — после перезапуска" else "Только по команде администратора"
                 },
-                choices("Обновления", listOf(false to "предлагаются", true to "удержаны"), held) { hold ->
-                    routes.set(product, "hold", if (hold) "on" else "off") to
-                        if (hold) "Не предлагать и не загружать обновления (до 7 дней)" else "Снова предлагать обновления"
-                },
-                blank(),
+                holdLine(product, snapshot.state == UpdateState.FROZEN || heldUntil != null, heldUntil, now, zone),
+                rule(),
             )
             result += actions(
                 button("[Сведения]", routes.info(product), "Карточка плагина", UpdatePalette.ACCENT),
+                button("[История]", routes.history(product), "События только этого плагина", UpdatePalette.ACCENT),
                 button("[Назад]", routes.list, "К списку плагинов", UpdatePalette.MUTED),
             )
             if (!routes.interactive || !routes.editable) {
                 result += commandHints(
                     routes.set(product, "channel", "<${CHANNELS.joinToString("|") { channelName(it) }}>") to "канал",
                     routes.set(product, "auto", "<on|off>") to "автозагрузка",
-                    routes.set(product, "hold", "<on|off>") to "удержание",
+                    routes.set(product, "hold", "<${HOLD_PERIODS.joinToString("|")}|off>") to "пауза",
                 )
             }
             return result
+        }
+
+        /** The newest known release of every channel; clicking one switches to its channel. */
+        private fun releasesByChannel(snapshot: UpdateSnapshot): Component? {
+            val newest = CHANNELS.mapNotNull { channel ->
+                snapshot.availableReleases.filter { it.channel == channel }
+                    .maxByOrNull { it.publishedAt ?: Instant.EPOCH }?.let { channel to it.version }
+            }
+            if (newest.isEmpty()) return null
+            return newest.fold(text("  Релизы: ", UpdatePalette.MUTED)) { line, (channel, version) ->
+                val entry = text("${channelName(channel)} ", channelColor(channel)).append(text(version, UpdatePalette.TEXT))
+                val shown = if (channel != snapshot.channel && routes.interactive && routes.editable) {
+                    entry.clickEvent(ClickEvent.runCommand(routes.set(snapshot.product, "channel", channelName(channel))))
+                        .hoverEvent(HoverEvent.showText(text("Переключиться на ${channelName(channel)}: ${channelHint(channel)}")))
+                } else entry
+                line.append(shown).append(text("  "))
+            }
+        }
+
+        /** Pause periods to choose from, or the end of the current pause with a button to lift it. */
+        private fun holdLine(product: String, held: Boolean, heldUntil: Instant?, now: Instant, zone: ZoneId): Component {
+            val editable = routes.interactive && routes.editable
+            var line = text("  Пауза: ", UpdatePalette.MUTED)
+            if (held) {
+                line = line.append(text("${holdText(heldUntil, now, zone)} ", UpdatePalette.WARN))
+                    .append(button("[Снять]", routes.set(product, "hold", "off"), "Снова предлагать и загружать обновления", UpdatePalette.OK))
+                if (editable) line = line.append(text("  продлить: ", UpdatePalette.DIM))
+            }
+            if (!editable) return if (held) line else line.append(text("нет", UpdatePalette.DIM))
+            HOLD_PERIODS.forEach { period ->
+                line = line.append(text(periodLabel(period), UpdatePalette.WARN)
+                    .clickEvent(ClickEvent.runCommand(routes.set(product, "hold", period)))
+                    .hoverEvent(HoverEvent.showText(text("Не предлагать и не загружать обновления ${periodLabel(period)}"))))
+                    .append(text("  "))
+            }
+            return line
+        }
+
+        private fun holdText(until: Instant?, now: Instant, zone: ZoneId): String =
+            if (until == null) "задана в updates.yml"
+            else "до ${fullTime.format(until.atZone(zone))} (${remaining(Duration.between(now, until))})"
+
+        private fun remaining(left: Duration): String = when {
+            left.toMinutes() < 60 -> "ещё ${maxOf(1, left.toMinutes())} мин"
+            left.toHours() < 48 -> "ещё ${left.toHours()} ч"
+            else -> "ещё ${left.toDays()} д"
+        }
+
+        private fun periodLabel(period: String): String = period.dropLast(1) + when (period.last()) {
+            'h' -> " ч"
+            'd' -> " д"
+            else -> " мин"
         }
 
         // --- lines -------------------------------------------------------------------------------------------
 
         private fun catalogLine(snapshot: UpdateSnapshot): Component {
             val staged = snapshot.state == UpdateState.UPDATE_STAGED || snapshot.state == UpdateState.DOWNLOADING
-            var line = text("  ${snapshot.product}", UpdatePalette.TEXT).append(text(" ${snapshot.currentVersion}", UpdatePalette.MUTED))
+            var line = text("  ● ", dotColor(snapshot.state))
+                .append(text(snapshot.product, UpdatePalette.TEXT)).append(text(" ${snapshot.currentVersion}", UpdatePalette.MUTED))
             val latest = snapshot.latestVersion?.takeIf { it != snapshot.currentVersion }
             val update = routes.update
             line = when {
@@ -364,24 +438,25 @@ object UpdateCatalogView {
 
         // --- building blocks ---------------------------------------------------------------------------------
 
-        /** A row of mutually exclusive choices; the current one is highlighted and the others are buttons. */
+        /** A row of mutually exclusive choices: the current one is marked in its color, the others are buttons. */
         private fun <T> choices(
             label: String,
             options: List<Pair<T, String>>,
             current: T,
+            color: (T) -> TextColor,
             command: (T) -> Pair<String, String>,
         ): Component {
             var line = text("  $label: ", UpdatePalette.MUTED)
             options.forEach { (value, name) ->
                 line = if (value == current) {
-                    line.append(text(name, UpdatePalette.OK, TextDecoration.BOLD))
+                    line.append(text("● $name", color(value)))
                 } else if (routes.interactive && routes.editable) {
                     val (run, hint) = command(value)
-                    line.append(text(name, UpdatePalette.MUTED).clickEvent(ClickEvent.runCommand(run)).hoverEvent(HoverEvent.showText(text(hint))))
+                    line.append(text("○ $name", UpdatePalette.MUTED).clickEvent(ClickEvent.runCommand(run)).hoverEvent(HoverEvent.showText(text(hint))))
                 } else {
-                    line.append(text(name, UpdatePalette.DIM))
+                    line.append(text("○ $name", UpdatePalette.DIM))
                 }
-                line = line.append(text(" "))
+                line = line.append(text("  "))
             }
             return line
         }
@@ -405,8 +480,13 @@ object UpdateCatalogView {
             return line
         }
 
-        private fun title(name: String, details: String): Component =
-            UpdatePalette.gradient(name).append(text(if (details.isBlank()) "" else " $details", UpdatePalette.MUTED))
+        /** A gradient name and muted details: the first line of every page. */
+        private fun title(name: String, details: String, color: TextColor = UpdatePalette.MUTED): Component =
+            UpdatePalette.gradient(if (routes.ascii) "> $name" else "✦ $name")
+                .append(text(if (details.isBlank()) "" else "  $details", color))
+
+        /** A thin gradient line between a page's content and its actions. */
+        private fun rule(): Component = UpdatePalette.gradient((if (routes.ascii) "-" else "▬").repeat(RULE_WIDTH))
 
         private fun field(label: String, value: String, color: TextColor = UpdatePalette.TEXT): Component =
             text("  $label: ", UpdatePalette.MUTED).append(text(value, color))
@@ -447,6 +527,7 @@ object UpdateCatalogView {
 
         private fun asciiOnly(value: String): String = value
             .replace("→", "->").replace("↑", "^").replace("·", "|").replace("—", "-").replace("–", "-")
+            .replace("●", "*").replace("○", "o")
 
         private fun <T> List<T>.page(page: Int): List<T> {
             val offset = (page.toLong() - 1) * PAGE_SIZE
@@ -514,6 +595,13 @@ object UpdateCatalogView {
             else -> UpdatePalette.MUTED
         }
 
+        private fun dotColor(state: UpdateState): TextColor = when (state) {
+            UpdateState.UP_TO_DATE -> UpdatePalette.OK
+            UpdateState.UPDATE_AVAILABLE -> UpdatePalette.INFO
+            UpdateState.CHECKING -> UpdatePalette.DIM
+            else -> stateColor(state)
+        }
+
         private fun stateLabel(state: UpdateState): String = when (state) {
             UpdateState.UP_TO_DATE -> "актуально"
             UpdateState.UPDATE_AVAILABLE -> "доступно обновление"
@@ -543,4 +631,5 @@ object UpdateCatalogView {
 
     private const val MAX_MESSAGE = 512
     private const val MAX_LINE = 120
+    private const val RULE_WIDTH = 24
 }

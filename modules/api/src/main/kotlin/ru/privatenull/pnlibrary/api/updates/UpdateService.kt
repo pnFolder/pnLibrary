@@ -1,6 +1,8 @@
 package ru.privatenull.pnlibrary.api.updates
 
 import ru.privatenull.pnlibrary.api.plugin.PluginDependency
+import java.time.Duration
+import java.time.Instant
 import java.util.Optional
 import java.util.UUID
 import java.util.concurrent.CompletableFuture
@@ -84,9 +86,19 @@ interface UpdateService {
     fun setAutomaticDownload(product: String, enabled: Boolean, actor: UpdateActor): CompletionStage<UpdateSnapshot> =
         unsupportedSetting("automatic download changes")
 
-    /** Holds or releases updates of [product]; a hold ends by itself after seven days. */
+    /** Holds updates of [product] for seven days, or releases a hold. */
     fun setHeld(product: String, held: Boolean, actor: UpdateActor): CompletionStage<UpdateSnapshot> =
+        setHeld(product, if (held) Duration.ofDays(7) else null, actor)
+
+    /**
+     * Holds updates of [product] for [duration], from one minute to 30 days, replacing any earlier hold; null
+     * releases it. A held component is neither offered nor downloaded until the hold ends by itself.
+     */
+    fun setHeld(product: String, duration: Duration?, actor: UpdateActor): CompletionStage<UpdateSnapshot> =
         unsupportedSetting("holding updates")
+
+    /** When the current hold of [product] ends, or null when its updates are not held. */
+    fun heldUntil(product: String): Instant? = null
 
     /** Restores the previous JAR set from the newest rollback-capable transaction. */
     fun rollback(): CompletionStage<UpdatePlanSnapshot> = unsupported("manual update rollback")
