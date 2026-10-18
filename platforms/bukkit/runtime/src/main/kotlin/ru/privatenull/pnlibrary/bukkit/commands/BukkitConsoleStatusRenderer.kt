@@ -8,6 +8,7 @@ import ru.privatenull.pnlibrary.api.updates.UpdateRegistration
 import ru.privatenull.pnlibrary.api.updates.UpdateSnapshot
 import ru.privatenull.pnlibrary.api.updates.UpdateState
 import ru.privatenull.pnlibrary.api.version.SemanticVersion
+import ru.privatenull.pnlibrary.common.text.RussianText
 import ru.privatenull.pnlibrary.console.ConsoleCard
 import ru.privatenull.pnlibrary.console.ConsoleTheme
 import java.time.Duration
@@ -177,14 +178,9 @@ internal object BukkitConsoleStatusRenderer {
     private fun publishedAtLabel(instant: Instant): String =
         "${publishedAge(instant)} · ${UTC_DATE_TIME.format(instant)}"
 
-    /** Formats a non-negative release age in minutes, hours, or days. */
+    /** Formats how long ago a release was published, in the wording shared with the chat catalog. */
     private fun publishedAge(instant: Instant): String {
-        val elapsed = Duration.between(instant, Instant.now()).coerceAtLeast(Duration.ZERO)
-        return when {
-            elapsed.toMinutes() < 60 -> "опубликована ${elapsed.toMinutes()} мин. назад"
-            elapsed.toHours() < 24 -> "опубликована ${elapsed.toHours()} ч. назад"
-            else -> "опубликована ${elapsed.toDays()} дн. назад"
-        }
+        return "опубликована ${RussianText.ago(Duration.between(instant, Instant.now()))}"
     }
 
     /** Formats the current instant in the console UTC format. */

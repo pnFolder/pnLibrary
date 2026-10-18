@@ -9,6 +9,7 @@ import ru.privatenull.pnlibrary.api.updates.UpdateActor
 import ru.privatenull.pnlibrary.api.updates.UpdateHistoryEntry
 import ru.privatenull.pnlibrary.api.updates.UpdateSnapshot
 import ru.privatenull.pnlibrary.api.updates.UpdateState
+import ru.privatenull.pnlibrary.common.text.RussianText
 import ru.privatenull.pnlibrary.core.updates.engine.FreezeDuration
 import java.time.Duration
 import java.util.Locale
@@ -195,13 +196,7 @@ class UpdateCatalogCommands(
                 return
             }
         }
-        change(context, "Пауза", { if (it.state == UpdateState.FROZEN) "на паузе" else "нет" }, if (duration == null) "нет" else period(duration)) { product, actor -> library.updates.setHeld(product, duration, actor) }
-    }
-
-    private fun period(duration: Duration): String = when {
-        duration.toDays() >= 1 -> "${duration.toDays()} д"
-        duration.toHours() >= 1 -> "${duration.toHours()} ч"
-        else -> "${duration.toMinutes()} мин"
+        change(context, "Пауза", { if (it.state == UpdateState.FROZEN) "на паузе" else "нет" }, if (duration == null) "нет" else RussianText.period(duration)) { product, actor -> library.updates.setHeld(product, duration, actor) }
     }
 
     private fun switch(context: CommandContext): Boolean? {

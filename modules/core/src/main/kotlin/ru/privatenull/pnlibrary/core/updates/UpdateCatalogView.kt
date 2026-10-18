@@ -10,6 +10,7 @@ import ru.privatenull.pnlibrary.api.updates.UpdateChannel
 import ru.privatenull.pnlibrary.api.updates.UpdateHistoryEntry
 import ru.privatenull.pnlibrary.api.updates.UpdateSnapshot
 import ru.privatenull.pnlibrary.api.updates.UpdateState
+import ru.privatenull.pnlibrary.common.text.RussianText
 import java.net.URI
 import java.time.Duration
 import java.time.Instant
@@ -276,7 +277,7 @@ object UpdateCatalogView {
             require(page > 0) { "page must be positive" }
             val selected = backups.page(page)
             val result = mutableListOf(
-                header("Резервы", text(plural(backups.size, "набор", "набора", "наборов"), UpdatePalette.SOFT)),
+                header("Резервы", text(RussianText.counted(backups.size.toLong(), "набор", "набора", "наборов"), UpdatePalette.SOFT)),
                 note("Сохранённые версии плагинов для отката."),
                 blank(),
             )
@@ -523,13 +524,7 @@ object UpdateCatalogView {
         }.fold(Component.empty()) { line, period -> line.append(period) }
 
         private fun holdText(until: Instant?): String =
-            if (until == null) "задана в updates.yml" else "до ${fullTime.format(until.atZone(zone))} · ${remaining(Duration.between(now, until))}"
-
-        private fun remaining(left: Duration): String = when {
-            left.toMinutes() < 60 -> "ещё ${maxOf(1, left.toMinutes())} мин"
-            left.toHours() < 48 -> "ещё ${left.toHours()} ч"
-            else -> "ещё ${left.toDays()} д"
-        }
+            if (until == null) "задана в updates.yml" else "до ${fullTime.format(until.atZone(zone))} · ${RussianText.remaining(Duration.between(now, until))}"
 
         private fun periodLabel(period: String): String = period.dropLast(1) + when (period.last()) {
             'h' -> " ч"
@@ -668,7 +663,7 @@ object UpdateCatalogView {
         private fun hoverField(label: String, value: Component): Component = text("$label: ", UpdatePalette.LABEL).append(value)
 
         private fun chip(count: Int, color: TextColor, one: String, few: String, many: String): Component =
-            text("$count", color).append(text(" ${pluralWord(count, one, few, many)}", UpdatePalette.LABEL))
+            text("$count", color).append(text(" ${RussianText.plural(count.toLong(), one, few, many)}", UpdatePalette.LABEL))
 
         /** A separator between parts of a line. */
         private fun dot(): Component = text(" · ", UpdatePalette.SOFT)
@@ -808,22 +803,7 @@ object UpdateCatalogView {
 
         private fun age(at: Instant): String {
             val elapsed = Duration.between(at, now)
-            return when {
-                elapsed.isNegative || elapsed.toMinutes() < 1 -> "только что"
-                elapsed.toMinutes() < 60 -> "${elapsed.toMinutes()} мин назад"
-                elapsed.toHours() < 24 -> "${elapsed.toHours()} ч назад"
-                elapsed.toDays() < AGE_DAYS -> "${elapsed.toDays()} д назад"
-                else -> dayYearFormat.format(at.atZone(zone))
-            }
-        }
-
-        private fun plural(count: Int, one: String, few: String, many: String): String = "$count ${pluralWord(count, one, few, many)}"
-
-        private fun pluralWord(count: Int, one: String, few: String, many: String): String = when {
-            count % 100 in 11..14 -> many
-            count % 10 == 1 -> one
-            count % 10 in 2..4 -> few
-            else -> many
+            return if (elapsed.toDays() < AGE_DAYS) RussianText.ago(elapsed) else dayYearFormat.format(at.atZone(zone))
         }
 
         private fun safeLink(value: String): Boolean = runCatching {

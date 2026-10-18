@@ -207,3 +207,12 @@ public final class ru/privatenull/pnlibrary/common/minecraft/MinecraftVersionRan
 	public static synthetic fun until$default (Lru/privatenull/pnlibrary/common/minecraft/MinecraftVersionRange$Companion;Lru/privatenull/pnlibrary/common/minecraft/MinecraftVersion;ZILjava/lang/Object;)Lru/privatenull/pnlibrary/common/minecraft/MinecraftVersionRange;
 }
 
+public final class ru/privatenull/pnlibrary/common/text/RussianText {
+	public static final field INSTANCE Lru/privatenull/pnlibrary/common/text/RussianText;
+	public static final fun ago (Ljava/time/Duration;)Ljava/lang/String;
+	public static final fun counted (JLjava/lang/String;Ljava/lang/String;Ljava/lang/String;)Ljava/lang/String;
+	public static final fun period (Ljava/time/Duration;)Ljava/lang/String;
+	public static final fun plural (JLjava/lang/String;Ljava/lang/String;Ljava/lang/String;)Ljava/lang/String;
+	public static final fun remaining (Ljava/time/Duration;)Ljava/lang/String;
+}
+
