@@ -18,7 +18,7 @@ import java.nio.file.Paths
  * @property size expected byte length, when published
  * @property sha256 expected SHA-256 digest, when published
  */
-data class ArtifactSpecification(
+internal data class ArtifactSpecification(
     val product: ProductId,
     val version: SemanticVersion,
     val supportedApi: ApiVersionRange,
@@ -37,7 +37,7 @@ data class ArtifactSpecification(
 internal class ArtifactVerificationException(message: String) : IllegalArgumentException(message)
 
 /** Verifies artifact paths, size limits, and optional publisher integrity metadata. */
-class ArtifactVerifier(
+internal class ArtifactVerifier(
     private val maximumBytes: Long,
 ) {
     init { require(maximumBytes > 0) { "maximumBytes must be positive" } }

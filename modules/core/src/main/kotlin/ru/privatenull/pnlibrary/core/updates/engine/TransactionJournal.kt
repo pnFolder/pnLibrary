@@ -11,7 +11,7 @@ import java.nio.file.StandardOpenOption.WRITE
 import java.time.Instant
 
 /** Durable lifecycle state of an update transaction. */
-enum class TransactionState {
+internal enum class TransactionState {
     CREATED, DOWNLOADING, VERIFIED, STAGED, PUBLISHING, ACTIVATING, AWAITING_HEALTH,
     COMMITTED, ROLLING_BACK, ROLLED_BACK, FAILED,
 }
@@ -25,7 +25,7 @@ enum class TransactionState {
  * @property rollbackSource current artifact preserved for rollback
  * @property previousVersion version preserved in the backup, when known
  */
-data class TransactionArtifact(
+internal data class TransactionArtifact(
     val specification: ArtifactSpecification,
     val source: Path,
     val target: Path,
@@ -44,7 +44,7 @@ internal data class JournalVersion(val version: String, val minimumApi: Int, val
  * @property state resulting durable lifecycle state
  * @property journal durable transaction journal path
  */
-data class TransactionResult(val state: TransactionState, val journal: Path)
+internal data class TransactionResult(val state: TransactionState, val journal: Path)
 
 /**
  * Durable paths and metadata for one journaled artifact.
@@ -72,7 +72,7 @@ internal data class JournalArtifact(
 )
 
 /** Transaction awaiting post-restart health confirmation. */
-data class PendingTransaction(
+internal data class PendingTransaction(
     /** Durable transaction journal path. */
     val journal: Path,
     /** Expected product versions keyed by normalized product ID. */

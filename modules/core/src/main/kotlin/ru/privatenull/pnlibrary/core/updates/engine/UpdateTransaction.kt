@@ -7,7 +7,7 @@ import java.nio.file.StandardCopyOption
 import java.util.UUID
 
 /** Coordinates verified staging, atomic publication, health confirmation, and rollback. */
-class UpdateTransaction(
+internal class UpdateTransaction(
     private val root: Path,
     private val verifier: ArtifactVerifier,
     publicationRoot: Path = root.toAbsolutePath().normalize().parent,

@@ -1,5 +1,7 @@
 package ru.privatenull.pnlibrary.bukkit.commands
 
+import net.kyori.adventure.text.Component
+import net.kyori.adventure.text.serializer.legacy.LegacyComponentSerializer
 import org.bukkit.Bukkit
 import org.bukkit.command.CommandSender
 import org.bukkit.command.ConsoleCommandSender
@@ -14,6 +16,7 @@ import ru.privatenull.pnlibrary.api.updates.UpdateRegistration
 import ru.privatenull.pnlibrary.api.updates.UpdateState
 import ru.privatenull.pnlibrary.bukkit.updates.UpdateAction
 import ru.privatenull.pnlibrary.bukkit.updates.UpdateConfirmationTokens
+import ru.privatenull.pnlibrary.core.ui.ChatPalette
 import ru.privatenull.pnlibrary.core.ui.ChatTone
 import ru.privatenull.pnlibrary.core.updates.catalog.UpdateCatalogCommands
 import ru.privatenull.pnlibrary.core.updates.catalog.UpdateCatalogView
@@ -250,11 +253,17 @@ internal class BukkitUpdateFlow(
         if (library.updates.currentPlan().orElse(null)?.let { it.id != plan.id || it.revision != plan.revision } != false) {
             return replies.say(reply, ChatTone.FAILURE, "План обновления изменился; подтвердите заново.")
         }
-        Bukkit.broadcastMessage("§e[pnFolder] §fСервер перезапускается для применения обновлений.")
+        Bukkit.broadcastMessage(RESTART_NOTICE)
         Bukkit.getScheduler().runTaskLater(plugin, Runnable { Bukkit.spigot().restart() }, RESTART_DELAY_TICKS)
     }
 
     private companion object {
+        /** The chat-wide restart warning in the palette; the broadcast API takes legacy text on every version. */
+        val RESTART_NOTICE: String = LegacyComponentSerializer.legacySection().serialize(
+            Component.text("[pnFolder] ", ChatPalette.ACCENT)
+                .append(Component.text("Сервер перезапускается для применения обновлений.", ChatPalette.TEXT)),
+        )
+
         val CONFIRMATION_TIME: Duration = Duration.ofSeconds(30)
         const val PROGRESS_TICKS = 100L
         const val TIMEOUT_TICKS = 1_200L
