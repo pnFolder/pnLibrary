@@ -85,23 +85,23 @@ class DirectDownloadSource private constructor(builder: Builder) {
         internal var sha256: String? = null
 
         /** Sets the required HTTPS download URL. */
-        fun url(value: String) = apply {
+        fun url(value: String): Builder = apply {
             uri = requireHttpsUri(value, "Download URL must use HTTPS")
         }
 
         /** Restricts the source to [value]. */
-        fun platform(value: PlatformType) = apply { platform = value }
+        fun platform(value: PlatformType): Builder = apply { platform = value }
 
         /** Restricts the source to the inclusive Java feature-version range. */
         @JvmOverloads
-        fun java(minimum: Int, maximum: Int? = null) = apply {
+        fun java(minimum: Int, maximum: Int? = null): Builder = apply {
             require(minimum >= 8 && (maximum == null || maximum >= minimum)) { "Java version range is invalid" }
             minimumJava = minimum
             maximumJava = maximum
         }
 
         /** Sets the expected [size] and SHA-256 digest used after download. */
-        fun integrity(size: Long, sha256: String) = apply {
+        fun integrity(size: Long, sha256: String): Builder = apply {
             require(size > 0) { "Download size must be positive" }
             require(sha256.matches(Regex("[0-9a-fA-F]{64}"))) { "SHA-256 must contain 64 hexadecimal characters" }
             this.size = size
@@ -109,7 +109,7 @@ class DirectDownloadSource private constructor(builder: Builder) {
         }
 
         /** Validates this configuration and creates an immutable source. */
-        fun build() = DirectDownloadSource(this)
+        fun build(): DirectDownloadSource = DirectDownloadSource(this)
     }
 
     /** Creates source builders. */
@@ -150,29 +150,29 @@ class FileDownload internal constructor(builder: Builder) {
         internal var relativePath = ""
 
         /** Sets whether this file is required for its owner to operate. */
-        fun required(value: Boolean) = apply { required = value }
+        fun required(value: Boolean): Builder = apply { required = value }
 
         /** Enables or disables ordinary automatic downloading. */
-        fun automaticDownload(value: Boolean) = apply { automatic = value }
+        fun automaticDownload(value: Boolean): Builder = apply { automatic = value }
 
         /** Enables or disables mandatory automatic downloading. */
-        fun forceAutomaticDownload(value: Boolean) = apply { forceAutomatic = value }
+        fun forceAutomaticDownload(value: Boolean): Builder = apply { forceAutomatic = value }
 
         /** Sets the source HTTPS URL. */
-        fun url(value: String) = apply { source.url(value) }
+        fun url(value: String): Builder = apply { source.url(value) }
 
         /** Restricts the source to [value]. */
-        fun platform(value: PlatformType) = apply { source.platform(value) }
+        fun platform(value: PlatformType): Builder = apply { source.platform(value) }
 
         /** Restricts the source to the inclusive Java feature-version range. */
         @JvmOverloads
-        fun java(minimum: Int, maximum: Int? = null) = apply { source.java(minimum, maximum) }
+        fun java(minimum: Int, maximum: Int? = null): Builder = apply { source.java(minimum, maximum) }
 
         /** Sets expected size and SHA-256 integrity metadata. */
-        fun integrity(size: Long, sha256: String) = apply { source.integrity(size, sha256) }
+        fun integrity(size: Long, sha256: String): Builder = apply { source.integrity(size, sha256) }
 
         /** Selects the destination root and confined relative path. */
-        fun destination(value: DownloadDestination, relativePath: String) = apply {
+        fun destination(value: DownloadDestination, relativePath: String): Builder = apply {
             destination = value
             this.relativePath = relativePath
         }
@@ -212,10 +212,10 @@ class FileDownloads private constructor(builder: Builder) {
         internal val files = mutableListOf<FileDownload>()
 
         /** Overrides the plugin data directory used by data-folder destinations. */
-        fun dataDirectory(value: Path) = apply { dataDirectory = value }
+        fun dataDirectory(value: Path): Builder = apply { dataDirectory = value }
 
         /** Declares and validates a file under the unique [id]. */
-        fun file(id: String, configure: Consumer<FileDownload.Builder>) = apply {
+        fun file(id: String, configure: Consumer<FileDownload.Builder>): Builder = apply {
             val builder = FileDownload.Builder(id)
             configure.accept(builder)
             val file = builder.build()

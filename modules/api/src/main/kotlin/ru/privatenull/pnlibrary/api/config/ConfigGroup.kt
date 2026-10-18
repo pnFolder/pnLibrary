@@ -22,7 +22,7 @@ class ConfigGroup : AutoCloseable {
     val isClosed: Boolean get() = closed.get()
 
     /** Adds [config] and returns this group for fluent calls. */
-    fun add(config: ManagedConfig<*>) = apply {
+    fun add(config: ManagedConfig<*>): ConfigGroup = apply {
         check(!closed.get()) { "Configuration group is closed" }
         configs += config
     }

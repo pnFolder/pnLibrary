@@ -50,16 +50,16 @@ data class CurrencyDescriptor(
         var roundingMode: RoundingMode = RoundingMode.DOWN
 
         /** Sets the human-readable name. */
-        fun displayName(value: String) = apply { displayName = value }
+        fun displayName(value: String): Builder = apply { displayName = value }
         /** Sets the short presentation symbol. */
-        fun symbol(value: String) = apply { symbol = value }
+        fun symbol(value: String): Builder = apply { symbol = value }
         /** Sets the required decimal scale. */
-        fun fractionDigits(value: Int) = apply { fractionDigits = value }
+        fun fractionDigits(value: Int): Builder = apply { fractionDigits = value }
         /** Configures an integer-only currency. */
-        fun wholeNumbers() = apply { fractionDigits = 0 }
+        fun wholeNumbers(): Builder = apply { fractionDigits = 0 }
         /** Sets the amount normalization mode. */
-        fun roundingMode(value: RoundingMode) = apply { roundingMode = value }
+        fun roundingMode(value: RoundingMode): Builder = apply { roundingMode = value }
         /** Validates and creates an immutable descriptor. */
-        fun build() = CurrencyDescriptor(displayName, symbol, fractionDigits, roundingMode)
+        fun build(): CurrencyDescriptor = CurrencyDescriptor(displayName, symbol, fractionDigits, roundingMode)
     }
 }

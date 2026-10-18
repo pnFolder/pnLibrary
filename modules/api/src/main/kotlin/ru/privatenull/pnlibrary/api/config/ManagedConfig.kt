@@ -37,7 +37,7 @@ class ConfigValidatorBuilder<T> {
     private val rules = mutableListOf<Rule<T>>()
 
     /** Adds a rule for the YAML [path]. */
-    fun require(path: String, message: String, condition: ConfigCondition<T>) = apply {
+    fun require(path: String, message: String, condition: ConfigCondition<T>): ConfigValidatorBuilder<T> = apply {
         require(path.isNotBlank()) { "Configuration path cannot be blank" }
         rules += Rule(path, message, condition)
     }

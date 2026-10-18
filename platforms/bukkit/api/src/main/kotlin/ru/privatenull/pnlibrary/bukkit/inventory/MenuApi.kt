@@ -199,36 +199,36 @@ class MenuBuilder internal constructor(private val title: String, private val ty
     private var cancelPlayerInventory = true
 
     /** Sets chest rows from one through six; ignored by fixed-size menu types. */
-    fun rows(value: Int) = apply {
+    fun rows(value: Int): MenuBuilder = apply {
         require(value in 1..6) { "Menu rows must be between 1 and 6" }
         rows = value
     }
 
     /** Controls whether clicks in the player's lower inventory are cancelled. */
-    fun cancelPlayerInventory(value: Boolean) = apply { cancelPlayerInventory = value }
+    fun cancelPlayerInventory(value: Boolean): MenuBuilder = apply { cancelPlayerInventory = value }
 
     /** Defines one validated slot, cloning [item] to isolate the menu definition. */
     @JvmOverloads
-    fun slot(index: Int, item: ItemStack?, editable: Boolean = false, click: MenuClickHandler? = null) = apply {
+    fun slot(index: Int, item: ItemStack?, editable: Boolean = false, click: MenuClickHandler? = null): MenuBuilder = apply {
         require(index in 0 until effectiveSize()) { "Slot $index is outside inventory" }
         items[index] = MenuItem(item?.clone(), click, editable)
     }
 
     /** Defines a non-editable item with a mandatory click handler. */
-    fun button(index: Int, item: ItemStack, click: MenuClickHandler) = slot(index, item, false, click)
+    fun button(index: Int, item: ItemStack, click: MenuClickHandler): MenuBuilder = slot(index, item, false, click)
 
     /** Defines an editable slot initially containing [item]. */
-    fun editable(index: Int, item: ItemStack) = slot(index, item, true, null)
+    fun editable(index: Int, item: ItemStack): MenuBuilder = slot(index, item, true, null)
 
     /** Defines an initially empty editable slot. */
-    fun editable(index: Int) = slot(index, null, true, null)
+    fun editable(index: Int): MenuBuilder = slot(index, null, true, null)
 
     /** Sets the handler invoked after any slot-specific handler. */
-    fun onClick(handler: MenuClickHandler) = apply { clickHandler = handler }
+    fun onClick(handler: MenuClickHandler): MenuBuilder = apply { clickHandler = handler }
 
     /** Fills undefined slots in `[from, until)` with clones of [item]. */
     @JvmOverloads
-    fun fill(item: ItemStack, from: Int = 0, until: Int = effectiveSize()) = apply {
+    fun fill(item: ItemStack, from: Int = 0, until: Int = effectiveSize()): MenuBuilder = apply {
         require(from >= 0 && until <= effectiveSize() && from <= until) {
             "Menu fill range [$from, $until) is outside inventory"
         }
@@ -236,7 +236,7 @@ class MenuBuilder internal constructor(private val title: String, private val ty
     }
 
     /** Fills undefined outer chest slots; fixed-size non-chest menus are rejected. */
-    fun border(item: ItemStack) = apply {
+    fun border(item: ItemStack): MenuBuilder = apply {
         require(type == MenuType.CHEST) { "Borders are available for chest menus" }
         for (slot in 0 until effectiveSize()) {
             val row = slot / 9
@@ -248,16 +248,16 @@ class MenuBuilder internal constructor(private val title: String, private val ty
     }
 
     /** Sets the dynamic renderer invoked on open and refresh. */
-    fun render(renderer: MenuRenderer) = apply { this.renderer = renderer }
+    fun render(renderer: MenuRenderer): MenuBuilder = apply { this.renderer = renderer }
 
     /** Sets the callback invoked after the inventory opens and renders. */
-    fun onOpen(handler: MenuOpenHandler) = apply { openHandler = handler }
+    fun onOpen(handler: MenuOpenHandler): MenuBuilder = apply { openHandler = handler }
 
     /** Sets the callback invoked for normal session closure. */
-    fun onClose(handler: MenuCloseHandler) = apply { closeHandler = handler }
+    fun onClose(handler: MenuCloseHandler): MenuBuilder = apply { closeHandler = handler }
 
     /** Creates an immutable menu and snapshot of all current slot definitions. */
-    fun build() = Menu(
+    fun build(): Menu = Menu(
         title = title,
         rows = rows,
         type = type,
@@ -277,25 +277,25 @@ object Menus {
 
     /** Creates a six-row chest builder; call [MenuBuilder.rows] to resize it. */
     @JvmStatic
-    fun chest(title: String) = MenuBuilder(title, MenuType.CHEST)
+    fun chest(title: String): MenuBuilder = MenuBuilder(title, MenuType.CHEST)
 
     /** Creates an anvil builder. */
     @JvmStatic
-    fun anvil(title: String) = MenuBuilder(title, MenuType.ANVIL)
+    fun anvil(title: String): MenuBuilder = MenuBuilder(title, MenuType.ANVIL)
 
     /** Creates a hopper builder. */
     @JvmStatic
-    fun hopper(title: String) = MenuBuilder(title, MenuType.HOPPER)
+    fun hopper(title: String): MenuBuilder = MenuBuilder(title, MenuType.HOPPER)
 
     /** Creates a dispenser builder. */
     @JvmStatic
-    fun dispenser(title: String) = MenuBuilder(title, MenuType.DISPENSER)
+    fun dispenser(title: String): MenuBuilder = MenuBuilder(title, MenuType.DISPENSER)
 
     /** Creates a dropper builder. */
     @JvmStatic
-    fun dropper(title: String) = MenuBuilder(title, MenuType.DROPPER)
+    fun dropper(title: String): MenuBuilder = MenuBuilder(title, MenuType.DROPPER)
 
     /** Creates a workbench builder. */
     @JvmStatic
-    fun workbench(title: String) = MenuBuilder(title, MenuType.WORKBENCH)
+    fun workbench(title: String): MenuBuilder = MenuBuilder(title, MenuType.WORKBENCH)
 }

@@ -53,6 +53,18 @@ class SourceConventionsTest {
         assertTrue(offenders.isEmpty(), "platform runtimes import each other in: ${relative(offenders)}")
     }
 
+    @Test
+    fun `public fluent builder methods declare their return type`() {
+        val offenders = sources.filter { file -> PUBLIC_API_MODULES.any { file.has(it) } }.flatMap { file ->
+            val text = String(Files.readAllBytes(file), Charsets.UTF_8)
+            INFERRED_APPLY.findAll(text)
+                .filterNot { PRIVATE_MODIFIER.containsMatchIn(text.substring(text.lastIndexOf('\n', it.range.first) + 1, it.range.first)) }
+                .map { "${relative(file)}: ${it.groupValues[1]}" }
+                .toList()
+        }
+        assertTrue(offenders.isEmpty(), "Fluent methods without an explicit return type: $offenders")
+    }
+
     private fun Path.has(fragment: String) = toString().replace('\\', '/').contains(fragment)
 
     private fun lines(file: Path): List<String> = Files.readAllLines(file)
@@ -63,6 +75,12 @@ class SourceConventionsTest {
 
     private companion object {
         val BUILD_DIRECTORIES = listOf("/build/", "/.gradle/", "/out/")
+        val PUBLIC_API_MODULES = listOf(
+            "modules/api/", "modules/common/", "modules/features/currency-api/", "modules/features/minecraft-localization/",
+            "platforms/bukkit/api/", "platforms/bungee/api/", "platforms/velocity/api/",
+        )
+        val INFERRED_APPLY = Regex("""fun\s+(?:<[^>]*>\s+)?(\w+)\((?:[^()]|\((?:[^()]|\([^()]*\))*\))*\)\s*=\s*apply\b""")
+        val PRIVATE_MODIFIER = Regex("""\b(?:private|internal)\b""")
         val PLATFORM_PACKAGES = listOf("ru.privatenull.pnlibrary.bukkit", "ru.privatenull.pnlibrary.bungee", "ru.privatenull.pnlibrary.velocity")
 
         /**

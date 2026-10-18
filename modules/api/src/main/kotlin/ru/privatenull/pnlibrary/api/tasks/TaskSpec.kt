@@ -75,51 +75,51 @@ class TaskSpec private constructor(
         internal val configuredTags: Set<String> get() = tags.toSet()
 
         /** Sets an optional human-readable task name. */
-        fun name(value: String?) = apply { name = value }
+        fun name(value: String?): Builder = apply { name = value }
 
         /** Sets an optional conflict-resolution key. */
-        fun key(value: String?) = apply { key = value }
+        fun key(value: String?): Builder = apply { key = value }
 
         /** Sets behavior for an existing task with the same key. */
-        fun conflictPolicy(value: TaskConflictPolicy) = apply { conflictPolicy = value }
+        fun conflictPolicy(value: TaskConflictPolicy): Builder = apply { conflictPolicy = value }
 
         /** Selects the platform execution context. */
-        fun execution(value: TaskExecution) = apply { execution = value }
+        fun execution(value: TaskExecution): Builder = apply { execution = value }
 
         /** Sets the delay before the first invocation. */
-        fun delay(value: Duration) = apply { delay = value }
+        fun delay(value: Duration): Builder = apply { delay = value }
 
         /**
          * Sets the delay before the first invocation in server ticks.
          *
          * One tick is defined as 50 milliseconds.
          */
-        fun delayTicks(value: Long) = apply { delay = ticksToDuration(value, "delay") }
+        fun delayTicks(value: Long): Builder = apply { delay = ticksToDuration(value, "delay") }
 
         /** Sets a repeat interval, or `null` for one-shot execution. */
-        fun interval(value: Duration?) = apply { interval = value }
+        fun interval(value: Duration?): Builder = apply { interval = value }
 
         /**
          * Sets a repeat interval in server ticks.
          *
          * One tick is defined as 50 milliseconds.
          */
-        fun intervalTicks(value: Long) = apply { interval = ticksToDuration(value, "interval") }
+        fun intervalTicks(value: Long): Builder = apply { interval = ticksToDuration(value, "interval") }
 
         /** Adds a predicate that must pass before an invocation runs. */
-        fun condition(value: BooleanSupplier) = apply { conditions += value }
+        fun condition(value: BooleanSupplier): Builder = apply { conditions += value }
 
         /** Adds a predicate that permanently cancels the task when it passes. */
-        fun cancelWhen(value: BooleanSupplier) = apply { cancellationConditions += value }
+        fun cancelWhen(value: BooleanSupplier): Builder = apply { cancellationConditions += value }
 
         /** Adds one non-blank lookup tag. */
-        fun tag(value: String) = apply { tags += value }
+        fun tag(value: String): Builder = apply { tags += value }
 
         /** Adds all supplied lookup tags. */
-        fun tags(values: Collection<String>) = apply { tags += values }
+        fun tags(values: Collection<String>): Builder = apply { tags += values }
 
         /** Sets the required task callback. */
-        fun action(value: TaskAction) = apply { action = value }
+        fun action(value: TaskAction): Builder = apply { action = value }
 
         /** Validates this declaration and creates an immutable task specification. */
         fun build(): TaskSpec {

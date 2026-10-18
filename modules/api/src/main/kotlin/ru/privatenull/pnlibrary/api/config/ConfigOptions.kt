@@ -104,27 +104,27 @@ data class ConfigOptions @JvmOverloads constructor(
         private var migrations: ConfigMigrationPlan? = null
         private var naming = ConfigNamingStrategy.AS_DECLARED
         /** Sets the missing-file policy. */
-        fun missingFile(value: MissingFilePolicy) = apply { missingFile = value }
+        fun missingFile(value: MissingFilePolicy): Builder = apply { missingFile = value }
 
         /** Sets the missing-value policy. */
-        fun missingValues(value: MissingValuePolicy) = apply { missingValues = value }
+        fun missingValues(value: MissingValuePolicy): Builder = apply { missingValues = value }
 
         /** Sets the unknown-value policy. */
-        fun unknownValues(value: UnknownValuePolicy) = apply { unknownValues = value }
+        fun unknownValues(value: UnknownValuePolicy): Builder = apply { unknownValues = value }
 
         /** Sets the comment synchronization policy. */
-        fun comments(value: CommentPolicy) = apply { comments = value }
+        fun comments(value: CommentPolicy): Builder = apply { comments = value }
 
         /** Enables or disables backups before rewrites. */
-        fun backups(value: Boolean) = apply { backups = value }
+        fun backups(value: Boolean): Builder = apply { backups = value }
 
         /** Attaches a versioned migration plan. */
-        fun migrations(value: ConfigMigrationPlan) = apply { migrations = value }
+        fun migrations(value: ConfigMigrationPlan): Builder = apply { migrations = value }
 
         /** Sets the default field naming strategy. */
-        fun naming(value: ConfigNamingStrategy) = apply { naming = value }
+        fun naming(value: ConfigNamingStrategy): Builder = apply { naming = value }
 
         /** Creates the immutable option set. */
-        fun build() = ConfigOptions(missingFile, missingValues, unknownValues, comments, backups, migrations, naming)
+        fun build(): ConfigOptions = ConfigOptions(missingFile, missingValues, unknownValues, comments, backups, migrations, naming)
     }
 }

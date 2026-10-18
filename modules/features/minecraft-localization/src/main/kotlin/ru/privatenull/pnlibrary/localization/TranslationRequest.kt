@@ -23,15 +23,15 @@ class TranslationRequest internal constructor(
         private var fallbackLocale: String? = null
 
         /** Selects the known Minecraft [value]. */
-        fun version(value: MinecraftVersion) = apply { version = value }
+        fun version(value: MinecraftVersion): Builder = apply { version = value }
         /** Adds one locale after normalization. */
-        fun locale(value: String) = apply { locales += normalizeLocale(value) }
+        fun locale(value: String): Builder = apply { locales += normalizeLocale(value) }
         /** Adds all supplied locale identifiers. */
-        fun locales(vararg values: String) = apply { values.forEach(::locale) }
+        fun locales(vararg values: String): Builder = apply { values.forEach(::locale) }
         /** Adds all locale identifiers in [values]. */
-        fun locales(values: Collection<String>) = apply { values.forEach(::locale) }
+        fun locales(values: Collection<String>): Builder = apply { values.forEach(::locale) }
         /** Sets the optional fallback locale after normalization. */
-        fun fallback(value: String?) = apply { fallbackLocale = value?.let(::normalizeLocale) }
+        fun fallback(value: String?): Builder = apply { fallbackLocale = value?.let(::normalizeLocale) }
 
         /** Validates and creates the immutable request. */
         fun build(): TranslationRequest {

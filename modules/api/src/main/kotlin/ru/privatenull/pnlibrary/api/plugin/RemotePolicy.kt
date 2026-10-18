@@ -32,7 +32,7 @@ data class RemotePolicy(
         private val values = linkedMapOf<String, String>()
 
         /** Sets and validates the Java/Kotlin policy source URI. */
-        fun source(value: String) = apply {
+        fun source(value: String): Builder = apply {
             val uri = URI.create(value)
             val https = uri.isHttps()
             val localFile = uri.scheme.equals("file", true) && uri.isAbsolute
@@ -46,22 +46,22 @@ data class RemotePolicy(
         }
 
         /** Sets the positive refresh interval. */
-        fun checkEvery(value: Duration) = apply {
+        fun checkEvery(value: Duration): Builder = apply {
             require(!value.isZero && !value.isNegative) { "Remote policy interval must be positive" }
             checkEvery = value
         }
 
         /** Sets the action applied to a denied result. */
-        fun onDeny(value: DenyAction) = apply { onDeny = value }
+        fun onDeny(value: DenyAction): Builder = apply { onDeny = value }
 
         /** Adds or replaces one application-defined policy value. */
-        fun value(key: String, value: String) = apply {
+        fun value(key: String, value: String): Builder = apply {
             val normalized = key.trim()
             require(normalized.isNotEmpty()) { "Remote policy value key must not be blank" }
             values[normalized] = value
         }
         /** Adds all application-defined policy [values]. */
-        fun values(values: Map<String, String>) = apply { values.forEach(::value) }
+        fun values(values: Map<String, String>): Builder = apply { values.forEach(::value) }
 
         /** Validates required fields and creates the immutable policy. */
         fun build(): RemotePolicy = RemotePolicy(

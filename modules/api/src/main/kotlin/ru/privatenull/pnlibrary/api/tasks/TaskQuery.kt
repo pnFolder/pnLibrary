@@ -31,22 +31,22 @@ class TaskQuery private constructor(
         private val tags = linkedSetOf<String>()
 
         /** Matches exactly [value]. */
-        fun id(value: TaskId) = apply { id = value }
+        fun id(value: TaskId): Builder = apply { id = value }
 
         /** Matches the normalized application-defined task key. */
-        fun key(value: String) = apply { key = value }
+        fun key(value: String): Builder = apply { key = value }
 
         /** Matches task names containing [value]. */
-        fun nameContains(value: String) = apply { nameContains = value }
+        fun nameContains(value: String): Builder = apply { nameContains = value }
 
         /** Adds accepted lifecycle states. */
-        fun status(vararg value: TaskStatus) = apply { statuses += value }
+        fun status(vararg value: TaskStatus): Builder = apply { statuses += value }
 
         /** Adds accepted execution kinds. */
-        fun execution(vararg value: TaskExecution.Kind) = apply { executionKinds += value }
+        fun execution(vararg value: TaskExecution.Kind): Builder = apply { executionKinds += value }
 
         /** Requires matching tasks to contain [value]. */
-        fun tag(value: String) = apply { tags += value }
+        fun tag(value: String): Builder = apply { tags += value }
 
         /** Validates and creates the immutable query. */
         fun build(): TaskQuery {
@@ -73,7 +73,7 @@ class TaskQuery private constructor(
 
         /** Returns a query matching every task. */
         @JvmStatic
-        fun all() = Builder().build()
+        fun all(): TaskQuery = Builder().build()
     }
 }
 

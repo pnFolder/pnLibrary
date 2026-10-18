@@ -47,19 +47,19 @@ class ProductDescriptor private constructor(
         internal var maximumJava: Int? = null
 
         /** Sets the inclusive pnLibrary API-generation range. */
-        fun pnLibraryApi(minimum: Int, maximum: Int) = apply {
+        fun pnLibraryApi(minimum: Int, maximum: Int): Builder = apply {
             supportedApi = ApiVersionRange(minimum, maximum)
         }
 
         /** Parses and sets the installed semantic [value]. */
-        fun version(value: String) = apply { version = SemanticVersion.parse(value) }
+        fun version(value: String): Builder = apply { version = SemanticVersion.parse(value) }
 
         /** Sets the maximum-risk update channel. */
-        fun channel(value: UpdateChannel) = apply { channel = value }
+        fun channel(value: UpdateChannel): Builder = apply { channel = value }
 
         /** Sets the inclusive Java feature-version range. */
         @JvmOverloads
-        fun java(minimum: Int, maximum: Int? = null) = apply {
+        fun java(minimum: Int, maximum: Int? = null): Builder = apply {
             require(minimum >= 8) { "Minimum Java must be at least 8" }
             require(maximum == null || maximum >= minimum) { "Maximum Java must be >= minimum Java" }
             minimumJava = minimum

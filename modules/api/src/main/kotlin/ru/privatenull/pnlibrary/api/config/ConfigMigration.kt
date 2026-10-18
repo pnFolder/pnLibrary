@@ -191,15 +191,15 @@ class ConfigMigrationPlan private constructor(
         private val steps = mutableListOf<Step>()
 
         /** Assigns [version] to existing files that do not contain the version key. */
-        fun assumeVersionWhenMissing(version: String) = apply { assumedVersion = checked(version) }
+        fun assumeVersionWhenMissing(version: String): Builder = apply { assumedVersion = checked(version) }
 
         /** Changes the root key used to read and write the schema version. */
-        fun versionKey(path: String) = apply {
+        fun versionKey(path: String): Builder = apply {
             versionKey = path.also { require(it.isNotBlank() && '.' !in it) { "Version key must be one YAML key" } }
         }
 
         /** Adds one unique directed migration step. */
-        fun migrate(from: String, to: String, migration: ConfigMigration) = apply {
+        fun migrate(from: String, to: String, migration: ConfigMigration): Builder = apply {
             val step = Step(checked(from), checked(to), migration)
             require(step.from != step.to) { "Migration versions must differ" }
             require(steps.none { it.from == step.from && it.to == step.to }) {

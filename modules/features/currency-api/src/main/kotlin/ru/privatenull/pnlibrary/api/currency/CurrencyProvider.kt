@@ -116,25 +116,25 @@ data class CurrencyResult(
         /** Creates a successful result with optional before-and-after balances. */
         @JvmStatic
         @JvmOverloads
-        fun success(previous: BigDecimal? = null, current: BigDecimal? = null) =
+        fun success(previous: BigDecimal? = null, current: BigDecimal? = null): CurrencyResult =
             CurrencyResult(CurrencyResultStatus.SUCCESS, previous, current)
 
         /** Creates a business-level rejection that should not normally be retried unchanged. */
         @JvmStatic
         @JvmOverloads
-        fun rejected(reason: CurrencyRejectReason, message: String? = null) =
+        fun rejected(reason: CurrencyRejectReason, message: String? = null): CurrencyResult =
             CurrencyResult(CurrencyResultStatus.REJECTED, reason = reason, message = message)
 
         /** Creates a result for a capability the selected provider does not implement. */
         @JvmStatic
-        fun unsupported(message: String) = CurrencyResult(CurrencyResultStatus.UNSUPPORTED, message = message)
+        fun unsupported(message: String): CurrencyResult = CurrencyResult(CurrencyResultStatus.UNSUPPORTED, message = message)
 
         /** Creates a potentially retryable temporary-availability result. */
         @JvmStatic
-        fun unavailable(message: String) = CurrencyResult(CurrencyResultStatus.UNAVAILABLE, message = message)
+        fun unavailable(message: String): CurrencyResult = CurrencyResult(CurrencyResultStatus.UNAVAILABLE, message = message)
 
         /** Creates an unexpected-failure result while preserving the original [error]. */
         @JvmStatic
-        fun failed(error: Throwable) = CurrencyResult(CurrencyResultStatus.FAILED, message = error.message, error = error)
+        fun failed(error: Throwable): CurrencyResult = CurrencyResult(CurrencyResultStatus.FAILED, message = error.message, error = error)
     }
 }

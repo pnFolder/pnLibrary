@@ -1,6 +1,7 @@
 package ru.privatenull.pnlibrary.localization
 
 import ru.privatenull.pnlibrary.common.minecraft.MinecraftVersion
+import java.util.concurrent.CompletionStage
 
 /** Kotlin DSL used to construct and load a [TranslationRequest]. */
 class TranslationRequestDsl internal constructor() {
@@ -19,5 +20,5 @@ class TranslationRequestDsl internal constructor() {
 
 /** Loads translations described by the Kotlin receiver [block]. */
 @JvmSynthetic
-fun MinecraftLocalization.load(block: TranslationRequestDsl.() -> Unit) =
+fun MinecraftLocalization.load(block: TranslationRequestDsl.() -> Unit): CompletionStage<TranslationBundle> =
     load(TranslationRequestDsl().apply(block).build())

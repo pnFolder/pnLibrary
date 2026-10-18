@@ -66,12 +66,12 @@ class PluginUpdateRequest private constructor(builder: Builder) {
         internal var configurationBackup: UpdateConfigurationBackup? = null
 
         /** Preserves only [files] relative to the component's own [dataDirectory] before updating. */
-        fun configurationBackup(dataDirectory: Path, vararg files: String) = apply {
+        fun configurationBackup(dataDirectory: Path, vararg files: String): Builder = apply {
             configurationBackup = UpdateConfigurationBackup(dataDirectory, files.toList())
         }
 
         /** Sets and validates the GitHub repository coordinates. */
-        fun repository(owner: String, name: String) = apply {
+        fun repository(owner: String, name: String): Builder = apply {
             require(owner.matches(REPOSITORY_PART) && name.matches(REPOSITORY_PART)) {
                 "Invalid GitHub repository: $owner/$name"
             }
@@ -80,34 +80,34 @@ class PluginUpdateRequest private constructor(builder: Builder) {
         }
 
         /** Sets the accepted release [value]. */
-        fun channel(value: UpdateChannel) = apply { channel = value }
+        fun channel(value: UpdateChannel): Builder = apply { channel = value }
 
         /** Enables or disables automatic verified downloads. */
-        fun automaticDownload(enabled: Boolean) = apply { automaticDownload = enabled }
+        fun automaticDownload(enabled: Boolean): Builder = apply { automaticDownload = enabled }
 
         /** Sets the inclusive pnLibrary API-generation range supported by the plugin. */
-        fun supportedApi(minimum: Int, maximum: Int) = apply {
+        fun supportedApi(minimum: Int, maximum: Int): Builder = apply {
             supportedApi = ApiVersionRange(minimum, maximum)
         }
 
         /** Declares one supported API generation. */
-        fun apiVersion(version: Int) = supportedApi(version, version)
+        fun apiVersion(version: Int): Builder = supportedApi(version, version)
         /** Declares the inclusive range of supported pnLibrary API generations. */
-        fun apiVersions(minimum: Int, maximum: Int) = supportedApi(minimum, maximum)
+        fun apiVersions(minimum: Int, maximum: Int): Builder = supportedApi(minimum, maximum)
 
         /** Adds an exact release asset name without exposing regular-expression escaping. */
         @JvmOverloads
-        fun exactArtifact(name: String, minimumJava: Int = 8, maximumJava: Int? = null) = apply {
+        fun exactArtifact(name: String, minimumJava: Int = 8, maximumJava: Int? = null): Builder = apply {
             require(name.isNotBlank()) { "Artifact name must not be blank" }
             artifact("^${Regex.escape(name)}$", minimumJava, maximumJava)
         }
 
         /** Adds an artifact pattern compatible with Java 8 and newer. */
-        fun artifactPattern(regex: String) = artifact(regex, 8)
+        fun artifactPattern(regex: String): Builder = artifact(regex, 8)
 
         /** Adds and validates one Java-bounded release artifact rule. */
         @JvmOverloads
-        fun artifact(regex: String, minimumJava: Int, maximumJava: Int? = null) = apply {
+        fun artifact(regex: String, minimumJava: Int, maximumJava: Int? = null): Builder = apply {
             Regex(regex)
             require(minimumJava >= 8) { "Minimum Java must be at least 8" }
             require(maximumJava == null || maximumJava >= minimumJava) { "Maximum Java must be >= minimum Java" }
@@ -116,7 +116,7 @@ class PluginUpdateRequest private constructor(builder: Builder) {
 
         /** Adds a release artifact restricted to one server platform. */
         @JvmOverloads
-        fun artifact(regex: String, platform: PlatformType, minimumJava: Int, maximumJava: Int? = null) = apply {
+        fun artifact(regex: String, platform: PlatformType, minimumJava: Int, maximumJava: Int? = null): Builder = apply {
             Regex(regex)
             require(minimumJava >= 8) { "Minimum Java must be at least 8" }
             require(maximumJava == null || maximumJava >= minimumJava) { "Maximum Java must be >= minimum Java" }

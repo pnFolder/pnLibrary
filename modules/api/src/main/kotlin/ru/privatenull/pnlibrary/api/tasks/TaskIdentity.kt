@@ -54,14 +54,14 @@ class TaskExecution private constructor(val kind: Kind, val target: Any?) {
     companion object {
         /** Selects the platform's global execution context. */
         @JvmStatic
-        fun global() = TaskExecution(Kind.GLOBAL, null)
+        fun global(): TaskExecution = TaskExecution(Kind.GLOBAL, null)
 
         /** Selects pnLibrary's asynchronous executor. */
         @JvmStatic
-        fun async() = TaskExecution(Kind.ASYNC, null)
+        fun async(): TaskExecution = TaskExecution(Kind.ASYNC, null)
 
         /** Selects the execution context associated with native [target]. */
         @JvmStatic
-        fun entity(target: Any) = TaskExecution(Kind.ENTITY, target)
+        fun entity(target: Any): TaskExecution = TaskExecution(Kind.ENTITY, target)
     }
 }

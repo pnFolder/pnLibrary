@@ -93,7 +93,7 @@ class ActionContext(
         Collections.unmodifiableMap(LinkedHashMap(runtimeValues))
 
     /** Stores a configuration-facing value for later actions and conditions. */
-    fun setValue(name: String, value: Any?) = apply {
+    fun setValue(name: String, value: Any?): ActionContext = apply {
         require(name.isNotBlank()) { "Action context value name must not be blank" }
         runtimeValues[name] = value
     }
@@ -108,7 +108,7 @@ class ActionContext(
     }
 
     /** Associates [value] with [type] and returns this context for fluent setup. */
-    fun <T : Any> put(type: Class<T>, value: T) = apply { objects[type] = value }
+    fun <T : Any> put(type: Class<T>, value: T): ActionContext = apply { objects[type] = value }
 
     /** Returns the object registered under the exact [type], or `null` when absent. */
     fun <T : Any> get(type: Class<T>): T? = objects[type]?.let(type::cast)

@@ -17,32 +17,32 @@ class ObservationScope internal constructor() {
     private val files = mutableListOf<Path>()
 
     /** Sets the logical plugin that owns the observation. */
-    fun plugin(value: String) = apply {
+    fun plugin(value: String): ObservationScope = apply {
         plugin = value
     }
 
     /** Sets the component or operation that produced the observation. */
-    fun source(value: String) = apply {
+    fun source(value: String): ObservationScope = apply {
         source = value
     }
 
     /** Sets the concise human-readable description. */
-    fun message(value: String) = apply {
+    fun message(value: String): ObservationScope = apply {
         message = value
     }
 
     /** Sets the severity and retention priority. */
-    fun level(value: ObservationLevel) = apply {
+    fun level(value: ObservationLevel): ObservationScope = apply {
         level = value
     }
 
     /** Adds structured values after converting them to safe strings. */
-    fun data(vararg values: Pair<String, Any?>) = apply {
+    fun data(vararg values: Pair<String, Any?>): ObservationScope = apply {
         values.forEach { (key, value) -> data[key] = value?.toString() ?: "null" }
     }
 
     /** Adds local files that will be copied as attachments when recorded. */
-    fun files(vararg paths: Path) = apply {
+    fun files(vararg paths: Path): ObservationScope = apply {
         files += paths
     }
 

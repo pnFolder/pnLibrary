@@ -45,41 +45,41 @@ class ExternalPluginDependency private constructor(builder: Builder) : PluginDep
         internal var verifyVersion = true
 
         /** Sets an HTTPS page where administrators can obtain the plugin. */
-        fun downloadPage(url: String) = apply {
+        fun downloadPage(url: String): Builder = apply {
             downloadPage = requireHttpsUri(url, "Download page must use HTTPS")
         }
 
         /** Sets a fully verified artifact suitable for automatic installation. */
-        fun artifact(url: String, size: Long, sha256: String) = apply {
+        fun artifact(url: String, size: Long, sha256: String): Builder = apply {
             artifact = ExternalArtifact(URI.create(url), size, sha256)
         }
         /** Sets an HTTPS artifact without publisher integrity metadata. */
-        fun url(value: String) = apply { artifact = ExternalArtifact(URI.create(value), null, null) }
+        fun url(value: String): Builder = apply { artifact = ExternalArtifact(URI.create(value), null, null) }
 
         /** Sets whether absence blocks the declaring product. */
-        fun required(value: Boolean) = apply { required = value }
+        fun required(value: Boolean): Builder = apply { required = value }
 
         /** Sets the inclusive maximum accepted plugin version. */
-        fun maximumVersion(value: String) = apply { maximumInclusive = SemanticVersion.parse(value) }
+        fun maximumVersion(value: String): Builder = apply { maximumInclusive = SemanticVersion.parse(value) }
 
         /** Sets the exclusive maximum accepted plugin version. */
-        fun maximumVersionExclusive(value: String) = apply { maximumExclusive = SemanticVersion.parse(value) }
+        fun maximumVersionExclusive(value: String): Builder = apply { maximumExclusive = SemanticVersion.parse(value) }
 
         /** Sets the download policy directly. */
-        fun downloadPolicy(value: DownloadPolicy) = apply { downloadPolicy = value }
+        fun downloadPolicy(value: DownloadPolicy): Builder = apply { downloadPolicy = value }
 
         /** Selects automatic or manual download policy. */
-        fun automaticDownload(value: Boolean) = apply {
+        fun automaticDownload(value: Boolean): Builder = apply {
             downloadPolicy = if (value) DownloadPolicy.AUTOMATIC else DownloadPolicy.MANUAL
         }
         /** Enables or disables staged plugin-ID verification. */
-        fun verifyPluginId(value: Boolean) = apply { verifyPluginId = value }
+        fun verifyPluginId(value: Boolean): Builder = apply { verifyPluginId = value }
 
         /** Enables or disables staged plugin-version verification. */
-        fun verifyVersion(value: Boolean) = apply { verifyVersion = value }
+        fun verifyVersion(value: Boolean): Builder = apply { verifyVersion = value }
 
         /** Enables or disables mandatory automatic installation. */
-        fun forceAutomaticDownload(value: Boolean) = apply {
+        fun forceAutomaticDownload(value: Boolean): Builder = apply {
             if (value) downloadPolicy = DownloadPolicy.FORCED
             else if (downloadPolicy == DownloadPolicy.FORCED) downloadPolicy = DownloadPolicy.MANUAL
         }

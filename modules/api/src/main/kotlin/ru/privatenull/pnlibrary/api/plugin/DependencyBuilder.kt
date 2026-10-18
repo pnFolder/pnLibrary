@@ -15,7 +15,7 @@ class DependencyBuilder {
     private val dependencies = mutableListOf<PluginDependency>()
 
     /** Adds a managed product dependency configured under [id]. */
-    fun product(id: String, configure: Consumer<ProductBuilder>) = apply {
+    fun product(id: String, configure: Consumer<ProductBuilder>): DependencyBuilder = apply {
         val builder = ProductBuilder(ProductId.of(id))
         configure.accept(builder)
         val dependency = builder.build()
@@ -26,7 +26,7 @@ class DependencyBuilder {
     }
 
     /** Adds an external native-plugin dependency configured under [name]. */
-    fun plugin(name: String, configure: Consumer<ExternalBuilder>) = apply {
+    fun plugin(name: String, configure: Consumer<ExternalBuilder>): DependencyBuilder = apply {
         val builder = ExternalBuilder(name)
         configure.accept(builder)
         val dependency = builder.build()
@@ -37,7 +37,7 @@ class DependencyBuilder {
     }
 
     /** Adds an external dependency with [minimumVersion] preconfigured. */
-    fun plugin(name: String, minimumVersion: String, configure: Consumer<ExternalBuilder>) =
+    fun plugin(name: String, minimumVersion: String, configure: Consumer<ExternalBuilder>): DependencyBuilder =
         plugin(name) { builder ->
             builder.minimumVersion(minimumVersion)
             configure.accept(builder)
@@ -57,20 +57,20 @@ class DependencyBuilder {
         private var policy = DownloadPolicy.MANUAL
 
         /** Sets the required minimum version. */
-        fun minimumVersion(value: String) = apply { minimum = SemanticVersion.parse(value) }
+        fun minimumVersion(value: String): ProductBuilder = apply { minimum = SemanticVersion.parse(value) }
         /** Sets the inclusive maximum version. */
-        fun maximumVersion(value: String) = apply { maximumInclusive = SemanticVersion.parse(value) }
+        fun maximumVersion(value: String): ProductBuilder = apply { maximumInclusive = SemanticVersion.parse(value) }
         /** Sets the exclusive maximum version. */
-        fun maximumVersionExclusive(value: String) = apply { maximumExclusive = SemanticVersion.parse(value) }
+        fun maximumVersionExclusive(value: String): ProductBuilder = apply { maximumExclusive = SemanticVersion.parse(value) }
         /** Sets the GitHub catalogue repository coordinates. */
-        fun github(owner: String, repository: String) = apply {
+        fun github(owner: String, repository: String): ProductBuilder = apply {
             repositoryOwner = owner
             repositoryName = repository
         }
         /** Sets whether absence blocks registration. */
-        fun required(value: Boolean) = apply { required = value }
+        fun required(value: Boolean): ProductBuilder = apply { required = value }
         /** Sets the dependency download policy. */
-        fun downloadPolicy(value: DownloadPolicy) = apply { policy = value }
+        fun downloadPolicy(value: DownloadPolicy): ProductBuilder = apply { policy = value }
 
         internal fun build(): ManagedProductDependency {
             val versions = VersionConstraint(requireNotNull(minimum) { "Minimum product version is required" },
@@ -97,35 +97,35 @@ class DependencyBuilder {
         init { require(name.isNotBlank()) { "External plugin name must not be blank" } }
 
         /** Sets the required minimum version. */
-        fun minimumVersion(value: String) = apply { minimum = SemanticVersion.parse(value) }
+        fun minimumVersion(value: String): ExternalBuilder = apply { minimum = SemanticVersion.parse(value) }
         /** Sets the inclusive maximum version. */
-        fun maximumVersion(value: String) = apply { maximumInclusive = SemanticVersion.parse(value) }
+        fun maximumVersion(value: String): ExternalBuilder = apply { maximumInclusive = SemanticVersion.parse(value) }
         /** Sets the exclusive maximum version. */
-        fun maximumVersionExclusive(value: String) = apply { maximumExclusive = SemanticVersion.parse(value) }
+        fun maximumVersionExclusive(value: String): ExternalBuilder = apply { maximumExclusive = SemanticVersion.parse(value) }
         /** Sets the administrator-facing HTTPS download page. */
-        fun downloadPage(url: String) = apply {
+        fun downloadPage(url: String): ExternalBuilder = apply {
             page = requireHttpsUri(url, "Download page must use HTTPS")
         }
         /** Sets an exact verified artifact suitable for automatic installation. */
-        fun artifact(url: String, size: Long, sha256: String) = apply {
+        fun artifact(url: String, size: Long, sha256: String): ExternalBuilder = apply {
             artifact = ExternalArtifact(URI.create(url), size, sha256)
         }
         /** Sets an HTTPS artifact without publisher integrity metadata. */
-        fun url(value: String) = apply { artifact = ExternalArtifact(URI.create(value), null, null) }
+        fun url(value: String): ExternalBuilder = apply { artifact = ExternalArtifact(URI.create(value), null, null) }
         /** Sets whether absence blocks registration. */
-        fun required(value: Boolean) = apply { required = value }
+        fun required(value: Boolean): ExternalBuilder = apply { required = value }
         /** Enables or disables staged plugin-ID verification. */
-        fun verifyPluginId(value: Boolean) = apply { verifyPluginId = value }
+        fun verifyPluginId(value: Boolean): ExternalBuilder = apply { verifyPluginId = value }
         /** Enables or disables staged plugin-version verification. */
-        fun verifyVersion(value: Boolean) = apply { verifyVersion = value }
+        fun verifyVersion(value: Boolean): ExternalBuilder = apply { verifyVersion = value }
         /** Sets the dependency download policy. */
-        fun downloadPolicy(value: DownloadPolicy) = apply { policy = value }
+        fun downloadPolicy(value: DownloadPolicy): ExternalBuilder = apply { policy = value }
         /** Selects automatic or manual installation. */
-        fun automaticDownload(value: Boolean) = apply {
+        fun automaticDownload(value: Boolean): ExternalBuilder = apply {
             policy = if (value) DownloadPolicy.AUTOMATIC else DownloadPolicy.MANUAL
         }
         /** Enables or disables mandatory automatic installation. */
-        fun forceAutomaticDownload(value: Boolean) = apply {
+        fun forceAutomaticDownload(value: Boolean): ExternalBuilder = apply {
             if (value) policy = DownloadPolicy.FORCED
             else if (policy == DownloadPolicy.FORCED) policy = DownloadPolicy.MANUAL
         }

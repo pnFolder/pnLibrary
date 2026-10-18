@@ -30,10 +30,10 @@ class CurrencyAccess private constructor(
     companion object {
         /** Creates a policy visible only to the owning plugin. */
         @JvmStatic
-        fun ownerOnly() = Builder().owner().build()
+        fun ownerOnly(): CurrencyAccess = Builder().owner().build()
         /** Creates a policy visible to the owner and every pnLibrary plugin. */
         @JvmStatic
-        fun shared() = Builder().owner().allowAll().build()
+        fun shared(): CurrencyAccess = Builder().owner().allowAll().build()
         /** Creates an initially empty policy builder. */
         @JvmStatic
         fun builder(): Builder = Builder()
@@ -48,20 +48,20 @@ class CurrencyAccess private constructor(
         private val denied = linkedSetOf<PluginId>()
 
         /** Allows the currency owner. */
-        fun owner() = apply { owner = true }
+        fun owner(): Builder = apply { owner = true }
         /** Allows every plugin registered with pnLibrary. */
-        fun allowAll() = apply { all = true }
+        fun allowAll(): Builder = apply { all = true }
         /** Adds exact validated plugin IDs to the allow set. */
-        fun allow(vararg pluginIds: String) = apply { pluginIds.map(PluginId::of).forEach(allowed::add) }
+        fun allow(vararg pluginIds: String): Builder = apply { pluginIds.map(PluginId::of).forEach(allowed::add) }
         /** Adds case-insensitive plugin-ID patterns using `*` as a wildcard. */
-        fun allowMatching(vararg patterns: String) = apply {
+        fun allowMatching(vararg patterns: String): Builder = apply {
             require(patterns.none(String::isBlank)) { "Currency access patterns must not be blank" }
             patterns.map(String::trim).forEach(this.patterns::add)
         }
         /** Adds exact plugin IDs to the deny set, which has highest priority. */
-        fun deny(vararg pluginIds: String) = apply { pluginIds.map(PluginId::of).forEach(denied::add) }
+        fun deny(vararg pluginIds: String): Builder = apply { pluginIds.map(PluginId::of).forEach(denied::add) }
         /** Creates an immutable policy from the current rules. */
-        fun build() = CurrencyAccess(
+        fun build(): CurrencyAccess = CurrencyAccess(
             owner,
             all,
             Collections.unmodifiableSet(LinkedHashSet(allowed)),

@@ -39,15 +39,15 @@ class ConfigTypeAccess private constructor(
     companion object {
         /** Creates an access policy that allows only the publishing plugin. */
         @JvmStatic
-        fun ownerOnly() = Builder().build()
+        fun ownerOnly(): ConfigTypeAccess = Builder().build()
 
         /** Creates an access policy that allows every pnLibrary plugin. */
         @JvmStatic
-        fun everyone() = Builder().allowAll().build()
+        fun everyone(): ConfigTypeAccess = Builder().allowAll().build()
 
         /** Creates an owner-plus-explicit-plugins access policy. */
         @JvmStatic
-        fun plugins(vararg pluginIds: String) =
+        fun plugins(vararg pluginIds: String): ConfigTypeAccess =
             Builder().allow(*pluginIds).build()
 
         /** Creates a mutable access-policy builder. */
@@ -63,18 +63,18 @@ class ConfigTypeAccess private constructor(
         private val denied = linkedSetOf<PluginId>()
 
         /** Allows every pnLibrary plugin unless denied explicitly. */
-        fun allowAll() = apply { all = true }
+        fun allowAll(): Builder = apply { all = true }
         /** Allows the supplied normalized plugin identifiers. */
-        fun allow(vararg pluginIds: String) = apply { pluginIds.map(PluginId::of).forEach(allowed::add) }
+        fun allow(vararg pluginIds: String): Builder = apply { pluginIds.map(PluginId::of).forEach(allowed::add) }
         /** Allows plugin identifiers matching any supplied case-insensitive glob. */
-        fun allowMatching(vararg patterns: String) = apply {
+        fun allowMatching(vararg patterns: String): Builder = apply {
             require(patterns.none(String::isBlank)) { "Config type access patterns must not be blank" }
             patterns.map(String::trim).forEach(this.patterns::add)
         }
         /** Denies the supplied plugins, overriding all allow rules. */
-        fun deny(vararg pluginIds: String) = apply { pluginIds.map(PluginId::of).forEach(denied::add) }
+        fun deny(vararg pluginIds: String): Builder = apply { pluginIds.map(PluginId::of).forEach(denied::add) }
         /** Creates an immutable access policy. */
-        fun build() = ConfigTypeAccess(
+        fun build(): ConfigTypeAccess = ConfigTypeAccess(
             all,
             Collections.unmodifiableSet(LinkedHashSet(allowed)),
             Collections.unmodifiableSet(LinkedHashSet(patterns)),

@@ -24,7 +24,7 @@ data class PlaceholderKey<T : Any>(val value: String, val type: Class<T>) {
 
         /** Creates and validates a typed placeholder key. */
         @JvmStatic
-        fun <T : Any> of(value: String, type: Class<T>) = PlaceholderKey(value, type)
+        fun <T : Any> of(value: String, type: Class<T>): PlaceholderKey<T> = PlaceholderKey(value, type)
     }
 }
 
@@ -103,10 +103,10 @@ class PlaceholderAccess private constructor(
     companion object {
         /** Creates a policy visible only to the plugin that owns the placeholder. */
         @JvmStatic
-        fun ownerOnly() = Builder().owner().build()
+        fun ownerOnly(): PlaceholderAccess = Builder().owner().build()
         /** Creates a policy visible to the owner and every pnLibrary plugin. */
         @JvmStatic
-        fun shared() = Builder().owner().allowAllLibraryPlugins().build()
+        fun shared(): PlaceholderAccess = Builder().owner().allowAllLibraryPlugins().build()
         /** Creates an initially empty policy that denies access until rules are added. */
         @JvmStatic
         fun builder(): Builder = Builder()
@@ -120,20 +120,20 @@ class PlaceholderAccess private constructor(
         private val deny = linkedSetOf<PluginId>()
 
         /** Allows the plugin that owns the placeholder. */
-        fun owner() = apply { owner = true }
+        fun owner(): Builder = apply { owner = true }
         /** Allows every plugin registered with pnLibrary. */
-        fun allowAllLibraryPlugins() = apply { all = true }
+        fun allowAllLibraryPlugins(): Builder = apply { all = true }
         /** Adds exact plugin IDs to the allow set. */
-        fun allow(vararg ids: String) = apply { ids.map(PluginId::of).forEach(allow::add) }
+        fun allow(vararg ids: String): Builder = apply { ids.map(PluginId::of).forEach(allow::add) }
         /** Adds case-insensitive plugin-ID patterns; `*` is the wildcard token. */
-        fun allowMatching(vararg values: String) = apply {
+        fun allowMatching(vararg values: String): Builder = apply {
             require(values.none(String::isBlank)) { "Placeholder access patterns must not be blank" }
             values.map(String::trim).forEach(patterns::add)
         }
         /** Explicitly denies plugin IDs, overriding every allow rule. */
-        fun deny(vararg ids: String) = apply { ids.map(PluginId::of).forEach(deny::add) }
+        fun deny(vararg ids: String): Builder = apply { ids.map(PluginId::of).forEach(deny::add) }
         /** Creates an immutable access policy from the configured rules. */
-        fun build() = PlaceholderAccess(
+        fun build(): PlaceholderAccess = PlaceholderAccess(
             owner,
             all,
             Collections.unmodifiableSet(LinkedHashSet(allow)),
@@ -179,14 +179,14 @@ data class PlaceholderCachePolicy @JvmOverloads constructor(
     companion object {
         /** Creates a policy with caching disabled. */
         @JvmStatic
-        fun none() = PlaceholderCachePolicy()
+        fun none(): PlaceholderCachePolicy = PlaceholderCachePolicy()
         /**
          * Creates a per-player policy retaining at most 10,000 entries for [duration].
          *
          * @throws IllegalArgumentException when [duration] is zero or negative
          */
         @JvmStatic
-        fun player(duration: Duration) =
+        fun player(duration: Duration): PlaceholderCachePolicy =
             PlaceholderCachePolicy(PlaceholderCacheScope.PLAYER, 10_000, duration.toMillis())
     }
 }
