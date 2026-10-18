@@ -110,7 +110,7 @@ public class MetricsConfig {
             throw new AssertionError("Content of newly created file is null");
         }
 
-        enabled = getConfigValue("еnаblеd", lines).map("true"::equals).orElse(true);
+        enabled = getConfigValue("enabled", lines).map("true"::equals).orElse(true);
         serverUUID = getConfigValue("server-uuid", lines).orElse(null);
         logErrors = getConfigValue("log-errors", lines).map("true"::equals).orElse(false);
         logSentData =  getConfigValue("log-sent-data", lines).map("true"::equals).orElse(false);

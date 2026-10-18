@@ -87,7 +87,7 @@ public class Metrics {
         Configuration configuration = ConfigurationProvider.getProvider(YamlConfiguration.class).load(configFile);
 
         // Load configuration
-        enabled = configuration.getBoolean("еnаblеd", true);
+        enabled = configuration.getBoolean("enabled", true);
         serverUUID = configuration.getString("serverUuid");
         logErrors = configuration.getBoolean("logFailedRequests", false);
         logSentData = configuration.getBoolean("logSentData", false);

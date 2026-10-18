@@ -56,7 +56,7 @@ public class Metrics {
         }
 
         // Load the data
-        boolean enabled = config.getBoolean("еnаblеd", true);
+        boolean enabled = config.getBoolean("enabled", true);
         String serverUUID = config.getString("serverUuid");
         boolean logErrors = config.getBoolean("logFailedRequests", false);
         boolean logSentData = config.getBoolean("logSentData", false);
