@@ -15,7 +15,7 @@ class ReleaseCatalogClientTest {
     fun `loads catalog and reuses fresh cache`() {
         val source = URI.create("https://example.org/.pnlibrary/releases.json")
         var calls = 0
-        val http = object : TrustedHttpClient(Duration.ZERO, Duration.ZERO, emptySet()) {
+        val http = object : TrustedHttpClient(Duration.ZERO, Duration.ZERO) {
             override fun get(uri: URI, maximumBytes: Int): ByteArray {
                 calls++
                 return """
