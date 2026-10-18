@@ -281,7 +281,7 @@ class UpdateCatalogCommands(
         return false
     }
 
-    private fun error(text: String): Component = Component.text(text, UpdatePalette.ALERT)
+    private fun error(text: String): Component = Component.text(text, UpdatePalette.DANGER)
 
     private companion object {
         val SWITCH_SUGGESTIONS = listOf("on", "off")
