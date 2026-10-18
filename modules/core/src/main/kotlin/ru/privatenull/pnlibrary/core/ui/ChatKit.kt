@@ -5,6 +5,7 @@ import net.kyori.adventure.text.event.ClickEvent
 import net.kyori.adventure.text.event.HoverEvent
 import net.kyori.adventure.text.format.TextColor
 import net.kyori.adventure.text.format.TextDecoration
+import ru.privatenull.pnlibrary.api.commands.CommandSender
 import java.net.URI
 
 /**
@@ -21,6 +22,10 @@ data class ChatReader(val interactive: Boolean = true, val ascii: Boolean = fals
 
         /** A server console: plain text in ASCII. */
         @JvmField val CONSOLE = ChatReader(interactive = false, ascii = true)
+
+        /** The reader behind a command [sender]: buttons only while its transport keeps them, ASCII on the console. */
+        @JvmStatic
+        fun of(sender: CommandSender): ChatReader = ChatReader(sender.supportsInteraction, sender.isConsole)
     }
 }
 
@@ -116,18 +121,22 @@ open class ChatKit(val reader: ChatReader) {
 
     /** One short message: a mark in the tone's color, the text, and its detail on the next line. */
     fun notice(notice: ChatNotice): List<Component> {
-        val (mark, color) = when (notice.tone) {
-            ChatTone.PROGRESS -> '»' to ChatPalette.ACCENT
-            ChatTone.INFO -> '■' to ChatPalette.INFO
-            ChatTone.SUCCESS -> '√' to ChatPalette.OK
-            ChatTone.WARNING -> '!' to ChatPalette.WARN
-            ChatTone.FAILURE -> '!' to ChatPalette.DANGER
-        }
         val textColor = if (notice.tone == ChatTone.FAILURE) ChatPalette.DANGER else ChatPalette.TEXT
         return listOfNotNull(
-            text("  ${glyph(mark)} ", color).append(text(notice.text.take(MAX_MESSAGE), textColor)),
+            mark(notice.tone).append(text(notice.text.take(MAX_MESSAGE), textColor)),
             notice.detail?.takeIf { it.isNotBlank() }?.let { text("    ${it.take(MAX_MESSAGE)}", ChatPalette.LABEL) },
         )
+    }
+
+    /** The indented mark that opens a [notice] line, in the tone's color; text appended to it reads as a notice. */
+    fun mark(tone: ChatTone): Component {
+        val symbol = when (tone) {
+            ChatTone.PROGRESS -> '»'
+            ChatTone.INFO -> '■'
+            ChatTone.SUCCESS -> '√'
+            ChatTone.WARNING, ChatTone.FAILURE -> '!'
+        }
+        return text("  ${glyph(symbol)} ", tone.color)
     }
 
     /**
