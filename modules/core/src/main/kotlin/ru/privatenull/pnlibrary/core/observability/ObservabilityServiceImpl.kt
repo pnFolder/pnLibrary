@@ -24,7 +24,7 @@ import java.nio.file.Path
  * views of the same runtime. This facade translates those calls; storage and
  * retention stay inside [ObservabilityRuntime].
  */
-internal class UnifiedObservabilityService(
+internal class ObservabilityServiceImpl(
     private val diagnostics: DiagnosticsRegistry,
     private val runtime: ObservabilityRuntime,
 ) : ObservabilityService {

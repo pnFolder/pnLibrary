@@ -45,7 +45,7 @@ internal class SupportRuntime(
 ) : AutoCloseable {
     private val observations = ObservabilityRuntime(dataFolder)
     private val diagnosticBridge = DiagnosticObservationBridge(observations)
-    val service = UnifiedObservabilityService(diagnostics, observations)
+    val service = ObservabilityServiceImpl(diagnostics, observations)
     val logs = DiagnosticLogBuffer(config.logRecords.coerceIn(10, 2_000))
 
     fun logSummary(): Map<String, Any?> = logs.summary()

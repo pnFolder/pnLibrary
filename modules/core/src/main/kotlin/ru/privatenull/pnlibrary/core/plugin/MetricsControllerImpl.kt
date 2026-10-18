@@ -97,5 +97,5 @@ internal class MetricsControllerImpl(
         }
     }
 
-    private fun checkOpen() = check(!closed.get()) { "MetricsController is closed" }
+    private fun checkOpen() = check(!closed.get()) { "Metrics controller is closed" }
 }

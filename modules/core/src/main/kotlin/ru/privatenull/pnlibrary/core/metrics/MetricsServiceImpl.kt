@@ -10,12 +10,12 @@ import java.util.IdentityHashMap
 import java.util.concurrent.atomic.AtomicBoolean
 
 /** Owns every platform metrics session and provides idempotent managed close handles. */
-internal class MetricsRegistry(private val factory: PlatformMetricsFactory) : MetricsService, AutoCloseable {
+internal class MetricsServiceImpl(private val factory: PlatformMetricsFactory) : MetricsService, AutoCloseable {
     private var closed = false
 
     @Synchronized
     override fun openErrorReporter(owner: Any, configurations: Collection<MetricsProviderConfiguration>): ErrorReporter? {
-        check(!closed) { "MetricsRegistry is closed" }
+        check(!closed) { "Metrics service is closed" }
         return factory.openErrorReporter(owner, configurations)
     }
     private val sessions = Collections.newSetFromMap(IdentityHashMap<PluginMetrics, Boolean>())
@@ -25,7 +25,7 @@ internal class MetricsRegistry(private val factory: PlatformMetricsFactory) : Me
         owner: Any,
         configurations: Collection<MetricsProviderConfiguration>,
     ): PluginMetrics {
-        check(!closed) { "MetricsRegistry is closed" }
+        check(!closed) { "Metrics service is closed" }
         require(configurations.any { it.enabled }) {
             "At least one metrics provider must be enabled"
         }
