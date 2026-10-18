@@ -28,7 +28,6 @@ dependencies {
 
     testImplementation(libs.junit.jupiter)
     testImplementation(libs.mockito.core)
-    testImplementation(libs.mockito.core)
     testImplementation(libs.spigot.api.v18)
     testRuntimeOnly(libs.junit.launcher)
 }
