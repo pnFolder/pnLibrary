@@ -41,31 +41,6 @@ internal class PlatformLoggingService(
     override fun shutdownBox(owner: Any, name: String, version: String): MessageBox =
         MBox(owner, "$name $version", MessageKind.DISABLED, name, version)
 
-    internal fun showUpdateNotice(owner: Any, product: String, current: String, latest: String, channel: String,
-        minimumJava: Int, currentJava: Int, url: String) {
-        showUpdate(owner, product, current, latest, channel, minimumJava, currentJava, url, downloaded = true)
-    }
-
-    internal fun showUpdateAvailableNotice(owner: Any, product: String, current: String, latest: String, channel: String,
-        minimumJava: Int, currentJava: Int, url: String) {
-        showUpdate(owner, product, current, latest, channel, minimumJava, currentJava, url, downloaded = false)
-    }
-
-    private fun showUpdate(owner: Any, product: String, current: String, latest: String, channel: String,
-        minimumJava: Int, currentJava: Int, url: String, downloaded: Boolean) {
-        val notice = UpdateNotice(
-            product = product,
-            currentVersion = current,
-            latestVersion = latest,
-            channel = channel,
-            minimumJava = minimumJava,
-            currentJava = currentJava,
-            downloadUrl = url,
-            downloaded = downloaded,
-        )
-        UpdateNoticeRenderer.render(notice).forEach { line -> logging.console(owner, line) }
-    }
-
     private inner class MBox(
         private val owner: Any,
         private val title: String,
