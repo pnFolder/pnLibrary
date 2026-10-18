@@ -17,17 +17,17 @@ jobs:
     strategy:
       fail-fast: false
       matrix:
-        module: ${{ fromJson(github.event_name == 'push' && '["modules:internal:bstats","modules:core","platforms:bukkit:runtime"]' || '["modules:api","platforms:bukkit:api","platforms:bungee:api","platforms:velocity:api","modules:internal:bstats","modules:core","platforms:bukkit:runtime"]') }}
+        module: ${{ fromJson(github.event_name == 'push' && '["modules:core","platforms:bukkit:runtime"]' || '["modules:api","platforms:bukkit:api","platforms:bungee:api","platforms:velocity:api","modules:core","platforms:bukkit:runtime"]') }}
 
     steps:
       - name: Checkout
         uses: actions/checkout@v4
 
-      - name: Set up JDK 26
+      - name: Set up JDK 21
         uses: actions/setup-java@v4
         with:
           distribution: temurin
-          java-version: '26'
+          java-version: '21'
           cache: gradle
 
       - name: Make Gradle wrapper executable

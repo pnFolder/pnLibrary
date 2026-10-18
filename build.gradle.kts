@@ -117,13 +117,16 @@ val verifyPublicModuleBoundaries = tasks.register("verifyPublicModuleBoundaries"
     }
 }
 
-// Public API changes must be reviewed through the same verification gate as tests.
-// The runtime SPI is intentionally internal, while the API/platform artifacts keep
-// golden signatures that protect consumers from accidental binary breakage.
+// Public API changes must be reviewed through the same verification gate as tests: every module with a golden
+// signature dump is checked, so consumers and platform adapters are protected from accidental binary breakage.
 tasks.named("check") {
     dependsOn(
         verifyPublicModuleBoundaries,
+        ":modules:common:apiCheck",
         ":modules:api:apiCheck",
+        ":modules:runtime-spi:apiCheck",
+        ":modules:features:currency-api:apiCheck",
+        ":modules:features:minecraft-localization:apiCheck",
         ":platforms:bukkit:api:apiCheck",
         ":platforms:bungee:api:apiCheck",
         ":platforms:velocity:api:apiCheck",
@@ -148,8 +151,9 @@ dependencies {
     dokka(project(":platforms:velocity:runtime"))
 }
 
-// Builds the local acceptance kit and copies only the current-version JARs to
-// the Paper test server. Existing unrelated plugin files are left untouched.
+// Builds the local acceptance kit and copies only the current-version JARs to the Paper test server named by
+// the `pnlibrary.installDir` Gradle property (for example in ~/.gradle/gradle.properties). Existing unrelated
+// plugin files are left untouched.
 tasks.register<Copy>("installAcceptanceToPaper") {
     group = "distribution"
     description = "Builds pnLibrary and acceptance, then installs them into the local Paper plugins directory"
@@ -159,5 +163,8 @@ tasks.register<Copy>("installAcceptanceToPaper") {
         include("pnLibrary-${releaseVersion}-bukkit-java8.jar")
         include("pnLibrary-acceptance-${releaseVersion}-bukkit-java8.jar")
     }
-    into(file("C:/Users/lpvan/Downloads/Server/Paper-Standalone/plugins"))
+    val installDir = providers.gradleProperty("pnlibrary.installDir")
+    into(installDir.map { file(it) }.orElse(provider {
+        throw GradleException("Set the pnlibrary.installDir Gradle property to the plugins directory of a test server")
+    }))
 }
