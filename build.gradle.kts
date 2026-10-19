@@ -106,7 +106,7 @@ subprojects {
 // Public contracts must never pull implementation modules onto their compile classpath.
 val publicModuleDependencies = mapOf(
     ":modules:common" to emptySet<String>(),
-    ":modules:api" to setOf(":modules:common"),
+    ":modules:api" to setOf(":modules:common", ":modules:features:config-api"),
     ":modules:features:currency-api" to setOf(":modules:api"),
     ":platforms:bukkit:api" to setOf(":modules:api", ":modules:common"),
     ":platforms:bungee:api" to setOf(":modules:api"),
