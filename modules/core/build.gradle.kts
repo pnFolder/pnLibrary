@@ -99,7 +99,7 @@ mavenPublishing {
         name.set("pnLibrary Core")
         description.set("Core implementation shared by pnLibrary platform modules.")
         inceptionYear.set("2026")
-        url.set("https://github.com/pnFolder/pnLibrary")
+        url.set("https://github.com/${rootProject.property("pnlibrary.repository")}")
 
         licenses {
             license {
@@ -118,9 +118,9 @@ mavenPublishing {
         }
 
         scm {
-            url.set("https://github.com/pnFolder/pnLibrary")
-            connection.set("scm:git:git://github.com/pnFolder/pnLibrary.git")
-            developerConnection.set("scm:git:ssh://git@github.com/pnFolder/pnLibrary.git")
+            url.set("https://github.com/${rootProject.property("pnlibrary.repository")}")
+            connection.set("scm:git:git://github.com/${rootProject.property("pnlibrary.repository")}.git")
+            developerConnection.set("scm:git:ssh://git@github.com/${rootProject.property("pnlibrary.repository")}.git")
         }
     }
 }

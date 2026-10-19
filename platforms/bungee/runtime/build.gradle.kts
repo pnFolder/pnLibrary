@@ -30,6 +30,7 @@ java {
 val identityProperties = mapOf(
     "version" to version.toString(),
     "name" to rootProject.property("pnlibrary.name").toString(),
+    "description" to rootProject.property("pnlibrary.description").toString(),
     "author" to rootProject.property("pnlibrary.authors").toString()
         .split(",").map(String::trim).filter(String::isNotEmpty).joinToString(", "),
 )

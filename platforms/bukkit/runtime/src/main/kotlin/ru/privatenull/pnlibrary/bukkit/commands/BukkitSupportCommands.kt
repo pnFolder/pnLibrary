@@ -2,7 +2,7 @@ package ru.privatenull.pnlibrary.bukkit.commands
 
 import org.bukkit.plugin.Plugin
 import ru.privatenull.pnlibrary.api.runtime.PnLibrary
-import ru.privatenull.pnlibrary.api.runtime.PnLibraryBrand
+import ru.privatenull.pnlibrary.api.runtime.PnLibraryIdentity
 import ru.privatenull.pnlibrary.core.ui.ChatTone
 import ru.privatenull.pnlibrary.api.commands.CommandSender as Reply
 
@@ -20,7 +20,7 @@ internal class BukkitSupportCommands(
 
     /** Shows where to get support. */
     fun support(reply: Reply) =
-        replies.say(reply, ChatTone.INFO, "Поддержка pnFolder: ${PnLibraryBrand.SUPPORT_URL}")
+        replies.say(reply, ChatTone.INFO, "Поддержка pnFolder: ${PnLibraryIdentity.SUPPORT_URL}")
 
     /** Logs one uniquely identifiable test error. */
     fun error(reply: Reply) = testErrors.unique(replies.reported(reply))

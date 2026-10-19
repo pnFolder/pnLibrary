@@ -1,7 +1,7 @@
 package ru.privatenull.pnlibrary.bukkit.commands
 
 import org.bukkit.Bukkit
-import ru.privatenull.pnlibrary.api.runtime.PnLibraryBrand
+import ru.privatenull.pnlibrary.api.runtime.PnLibraryIdentity
 import ru.privatenull.pnlibrary.api.updates.ReleaseSummary
 import ru.privatenull.pnlibrary.api.updates.UpdateChannel
 import ru.privatenull.pnlibrary.api.updates.UpdateRegistration
@@ -30,7 +30,7 @@ internal object BukkitConsoleStatusRenderer {
             .detail("Платформа", "Bukkit / Paper")
             .detail("Ядро", Bukkit.getBukkitVersion())
             .detail("Java", BukkitStatusLabels.javaRuntime())
-            .lastDetail("Поддержка", PnLibraryBrand.SUPPORT_URL)
+            .lastDetail("Поддержка", PnLibraryIdentity.SUPPORT_URL)
             .blank()
             .divider("ОБНОВЛЕНИЯ")
             .blank()

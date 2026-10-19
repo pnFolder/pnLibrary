@@ -11,7 +11,7 @@ import org.bukkit.event.server.PluginDisableEvent
 import org.bukkit.plugin.EventExecutor
 import org.bukkit.plugin.Plugin
 import ru.privatenull.pnlibrary.api.runtime.PnLibrary
-import ru.privatenull.pnlibrary.api.runtime.PnLibraryBrand
+import ru.privatenull.pnlibrary.api.runtime.PnLibraryIdentity
 import ru.privatenull.pnlibrary.api.tasks.TaskExecution
 import ru.privatenull.pnlibrary.api.tasks.TaskSpec
 import ru.privatenull.pnlibrary.api.updates.UpdateState
@@ -80,7 +80,7 @@ internal class BukkitLifecycleListener(
                 val active = library ?: return@task
                 if (!player.isOnline) return@task
                 val snapshots = active.updates.all().map { it.snapshot }
-                val notice = UpdateCatalogView.announcement(snapshots, BukkitControlCommand.ROUTES, PnLibraryBrand.SUPPORT_URL)
+                val notice = UpdateCatalogView.announcement(snapshots, BukkitControlCommand.ROUTES, PnLibraryIdentity.SUPPORT_URL)
                 if (notice.isEmpty()) return@task
                 val audience = active.audiences.player(player.uniqueId) ?: return@task
                 notice.forEach(audience::sendMessage)

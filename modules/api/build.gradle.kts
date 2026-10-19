@@ -17,6 +17,14 @@ val generateIdentity by tasks.registering {
     val authors = rootProject.property("pnlibrary.authors").toString()
         .split(",").map(String::trim).filter(String::isNotEmpty)
     val productVersion = rootProject.version.toString()
+    val organization = rootProject.property("pnlibrary.organization").toString()
+    val description = rootProject.property("pnlibrary.description").toString()
+    val repository = rootProject.property("pnlibrary.repository").toString()
+    val supportUrl = rootProject.property("pnlibrary.support-url").toString()
+    inputs.property("organization", organization)
+    inputs.property("description", description)
+    inputs.property("repository", repository)
+    inputs.property("supportUrl", supportUrl)
     inputs.property("productId", productId)
     inputs.property("productName", productName)
     inputs.property("authors", authors)
@@ -33,6 +41,11 @@ val generateIdentity by tasks.registering {
             |object PnLibraryIdentity {
             |    const val PRODUCT_ID = "$productId"
             |    const val NAME = "$productName"
+            |    const val ORGANIZATION = "$organization"
+            |    const val DESCRIPTION = "$description"
+            |    const val REPOSITORY = "$repository"
+            |    const val REPOSITORY_URL = "https://github.com/$repository"
+            |    const val SUPPORT_URL = "$supportUrl"
             |    /** Single display string for platforms that accept one author. */
             |    const val AUTHOR = "${authors.joinToString(", ")}"
             |    /** Every author, in declaration order, for platforms that accept a list. */
@@ -75,7 +88,7 @@ mavenPublishing {
         name.set("pnLibrary API")
         description.set("Public API for integrating Minecraft plugins with pnLibrary.")
         inceptionYear.set("2026")
-        url.set("https://github.com/pnFolder/pnLibrary")
+        url.set("https://github.com/${rootProject.property("pnlibrary.repository")}")
 
         licenses {
             license {
@@ -97,9 +110,9 @@ mavenPublishing {
         }
 
         scm {
-            url.set("https://github.com/pnFolder/pnLibrary")
-            connection.set("scm:git:git://github.com/pnFolder/pnLibrary.git")
-            developerConnection.set("scm:git:ssh://git@github.com/pnFolder/pnLibrary.git")
+            url.set("https://github.com/${rootProject.property("pnlibrary.repository")}")
+            connection.set("scm:git:git://github.com/${rootProject.property("pnlibrary.repository")}.git")
+            developerConnection.set("scm:git:ssh://git@github.com/${rootProject.property("pnlibrary.repository")}.git")
         }
     }
 }

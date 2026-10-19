@@ -25,7 +25,7 @@ mavenPublishing {
         name.set("pnLibrary Common")
         description.set("Shared platform-neutral Minecraft models for pnLibrary integrations.")
         inceptionYear.set("2026")
-        url.set("https://github.com/pnFolder/pnLibrary")
+        url.set("https://github.com/${rootProject.property("pnlibrary.repository")}")
         licenses {
             license {
                 name.set(providers.gradleProperty("POM_LICENSE_NAME"))
@@ -41,9 +41,9 @@ mavenPublishing {
             }
         }
         scm {
-            url.set("https://github.com/pnFolder/pnLibrary")
-            connection.set("scm:git:git://github.com/pnFolder/pnLibrary.git")
-            developerConnection.set("scm:git:ssh://git@github.com/pnFolder/pnLibrary.git")
+            url.set("https://github.com/${rootProject.property("pnlibrary.repository")}")
+            connection.set("scm:git:git://github.com/${rootProject.property("pnlibrary.repository")}.git")
+            developerConnection.set("scm:git:ssh://git@github.com/${rootProject.property("pnlibrary.repository")}.git")
         }
     }
 }

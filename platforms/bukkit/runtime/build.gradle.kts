@@ -40,6 +40,8 @@ val identityProperties = mapOf(
         .split(",").map(String::trim).filter(String::isNotEmpty)
         .joinToString(prefix = "[", postfix = "]") { "'$it'" },
     "author" to rootProject.property("pnlibrary.authors").toString().split(",").first().trim(),
+    "description" to rootProject.property("pnlibrary.description").toString(),
+    "website" to "https://github.com/" + rootProject.property("pnlibrary.repository"),
 )
 tasks.named<ProcessResources>("processResources") {
     inputs.properties(identityProperties)
@@ -62,7 +64,7 @@ mavenPublishing {
         name.set("pnLibrary Bukkit")
         description.set("Bukkit, Spigot, Paper, Leaf and Purpur adapter for pnLibrary.")
         inceptionYear.set("2026")
-        url.set("https://github.com/pnFolder/pnLibrary")
+        url.set("https://github.com/${rootProject.property("pnlibrary.repository")}")
 
         licenses {
             license {
@@ -81,9 +83,9 @@ mavenPublishing {
         }
 
         scm {
-            url.set("https://github.com/pnFolder/pnLibrary")
-            connection.set("scm:git:git://github.com/pnFolder/pnLibrary.git")
-            developerConnection.set("scm:git:ssh://git@github.com/pnFolder/pnLibrary.git")
+            url.set("https://github.com/${rootProject.property("pnlibrary.repository")}")
+            connection.set("scm:git:git://github.com/${rootProject.property("pnlibrary.repository")}.git")
+            developerConnection.set("scm:git:ssh://git@github.com/${rootProject.property("pnlibrary.repository")}.git")
         }
     }
 }

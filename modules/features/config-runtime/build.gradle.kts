@@ -25,7 +25,7 @@ mavenPublishing {
         name.set("pnLibrary Config")
         description.set("YAML-backed code-first configuration runtime for pnLibrary.")
         inceptionYear.set("2026")
-        url.set("https://github.com/pnFolder/pnLibrary")
+        url.set("https://github.com/${rootProject.property("pnlibrary.repository")}")
         licenses {
             license {
                 name.set(providers.gradleProperty("POM_LICENSE_NAME"))
@@ -35,9 +35,9 @@ mavenPublishing {
         }
         developers { developer { id.set("pnFolder"); name.set("pnFolder"); url.set("https://github.com/pnFolder") } }
         scm {
-            url.set("https://github.com/pnFolder/pnLibrary")
-            connection.set("scm:git:git://github.com/pnFolder/pnLibrary.git")
-            developerConnection.set("scm:git:ssh://git@github.com/pnFolder/pnLibrary.git")
+            url.set("https://github.com/${rootProject.property("pnlibrary.repository")}")
+            connection.set("scm:git:git://github.com/${rootProject.property("pnlibrary.repository")}.git")
+            developerConnection.set("scm:git:ssh://git@github.com/${rootProject.property("pnlibrary.repository")}.git")
         }
     }
 }

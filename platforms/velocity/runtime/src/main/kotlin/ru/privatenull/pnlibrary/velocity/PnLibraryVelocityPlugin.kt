@@ -25,6 +25,8 @@ import java.nio.file.Path
     id = PnLibraryIdentity.PRODUCT_ID,
     name = PnLibraryIdentity.NAME,
     authors = [PnLibraryIdentity.AUTHOR],
+    description = PnLibraryIdentity.DESCRIPTION,
+    url = PnLibraryIdentity.REPOSITORY_URL,
 )
 class PnLibraryVelocityPlugin @Inject constructor(
     private val server: ProxyServer,

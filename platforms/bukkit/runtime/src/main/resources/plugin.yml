@@ -2,7 +2,8 @@ name: '${name}'
 version: '${version}'
 main: ru.privatenull.pnlibrary.bukkit.PnLibraryBukkitPlugin
 authors: ${authors}
-description: Shared runtime and diagnostics for pnFolder plugins
+description: '${description}'
+website: '${website}'
 load: STARTUP
 folia-supported: true
 softdepend: [PlaceholderAPI, Vault, PlayerPoints]

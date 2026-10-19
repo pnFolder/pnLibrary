@@ -2,4 +2,4 @@ name: '${name}'
 version: '${version}'
 main: ru.privatenull.pnlibrary.bungee.PnLibraryBungeePlugin
 author: '${author}'
-description: Shared runtime and diagnostics for pnFolder plugins
+description: '${description}'

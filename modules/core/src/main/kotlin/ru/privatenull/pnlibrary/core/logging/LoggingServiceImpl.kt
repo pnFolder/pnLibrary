@@ -5,7 +5,7 @@ import ru.privatenull.pnlibrary.api.logging.LogLevel
 import ru.privatenull.pnlibrary.api.logging.LoggingService
 import ru.privatenull.pnlibrary.api.logging.MessageBox
 import ru.privatenull.pnlibrary.api.logging.PnLogger
-import ru.privatenull.pnlibrary.api.runtime.PnLibraryBrand
+import ru.privatenull.pnlibrary.api.runtime.PnLibraryIdentity
 import ru.privatenull.pnlibrary.core.ui.ConsoleStyle
 import ru.privatenull.pnlibrary.spi.platform.PlatformIdentity
 import ru.privatenull.pnlibrary.spi.platform.PlatformLogging
@@ -163,7 +163,7 @@ internal class LoggingServiceImpl(
             logging.console(owner, "$text            Есть вопрос, ошибка, идея или просто нужна помощь?")
             logging.console(owner, "$hint            Пишите по любому поводу — разберёмся, подскажем и поможем.")
             logging.console(owner, "$hint            Нужен новый плагин? Обсудим бесплатную или заказную разработку.")
-            logging.console(owner, "$accent            Discord $soft› ${text}${ConsoleStyle.UNDERLINE}${PnLibraryBrand.SUPPORT_URL}")
+            logging.console(owner, "$accent            Discord $soft› ${text}${ConsoleStyle.UNDERLINE}${PnLibraryIdentity.SUPPORT_URL}")
             logging.console(owner, "$soft          ───────────────────────────────────────────────")
             logging.console(owner, "")
         }

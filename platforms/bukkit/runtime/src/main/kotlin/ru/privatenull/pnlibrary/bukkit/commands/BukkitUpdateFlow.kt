@@ -9,7 +9,7 @@ import org.bukkit.entity.Player
 import org.bukkit.plugin.Plugin
 import ru.privatenull.pnlibrary.api.commands.CommandContext
 import ru.privatenull.pnlibrary.api.runtime.PnLibrary
-import ru.privatenull.pnlibrary.api.runtime.PnLibraryBrand
+import ru.privatenull.pnlibrary.api.runtime.PnLibraryIdentity
 import ru.privatenull.pnlibrary.api.updates.ProductChange
 import ru.privatenull.pnlibrary.api.updates.UpdatePlanSnapshot
 import ru.privatenull.pnlibrary.api.updates.UpdateRegistration
@@ -100,7 +100,7 @@ internal class BukkitUpdateFlow(
             "Java" to BukkitStatusLabels.javaRuntime(),
             "pnLibrary" to library.version.toString(),
         )
-        UpdateCatalogView.status(facts, entries.map { it.snapshot }, replies.routes(reply), PnLibraryBrand.SUPPORT_URL).forEach(reply::send)
+        UpdateCatalogView.status(facts, entries.map { it.snapshot }, replies.routes(reply), PnLibraryIdentity.SUPPORT_URL).forEach(reply::send)
     }
 
     /** Reports the current plan for all or one registered product. */

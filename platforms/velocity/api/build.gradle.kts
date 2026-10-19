@@ -12,10 +12,10 @@ mavenPublishing {
         name.set("pnLibrary Velocity API")
         description.set("Public Velocity platform contract for pnLibrary integrations.")
         inceptionYear.set("2026")
-        url.set("https://github.com/pnFolder/pnLibrary")
+        url.set("https://github.com/${rootProject.property("pnlibrary.repository")}")
         licenses { license { name.set(providers.gradleProperty("POM_LICENSE_NAME")); url.set(providers.gradleProperty("POM_LICENSE_URL")); distribution.set(providers.gradleProperty("POM_LICENSE_DIST").orElse("repo")) } }
         developers { developer { id.set("pnFolder"); name.set("pnFolder"); url.set("https://github.com/pnFolder") } }
-        scm { url.set("https://github.com/pnFolder/pnLibrary"); connection.set("scm:git:git://github.com/pnFolder/pnLibrary.git"); developerConnection.set("scm:git:ssh://git@github.com/pnFolder/pnLibrary.git") }
+        scm { url.set("https://github.com/${rootProject.property("pnlibrary.repository")}"); connection.set("scm:git:git://github.com/${rootProject.property("pnlibrary.repository")}.git"); developerConnection.set("scm:git:ssh://git@github.com/${rootProject.property("pnlibrary.repository")}.git") }
     }
 }
 

@@ -25,7 +25,7 @@ mavenPublishing {
         name.set("pnLibrary Console Style")
         description.set("Dependency-free styled console cards for pnFolder plugins.")
         inceptionYear.set("2026")
-        url.set("https://github.com/pnFolder/pnLibrary")
+        url.set("https://github.com/${rootProject.property("pnlibrary.repository")}")
         licenses {
             license {
                 name.set(providers.gradleProperty("POM_LICENSE_NAME"))
@@ -34,6 +34,6 @@ mavenPublishing {
             }
         }
         developers { developer { id.set("pnFolder"); name.set("pnFolder"); url.set("https://github.com/pnFolder") } }
-        scm { url.set("https://github.com/pnFolder/pnLibrary") }
+        scm { url.set("https://github.com/${rootProject.property("pnlibrary.repository")}") }
     }
 }
