@@ -22,6 +22,7 @@ apiValidation {
             "runtime",
             "faststats-velocity",
             "currency-runtime",
+            "config-runtime",
             "gradle",
             "maven",
         ),

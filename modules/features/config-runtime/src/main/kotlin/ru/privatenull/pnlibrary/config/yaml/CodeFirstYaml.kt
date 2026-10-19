@@ -1,4 +1,4 @@
-package ru.privatenull.pnlibrary.core.config.yaml
+package ru.privatenull.pnlibrary.config.yaml
 
 import ru.privatenull.pnlibrary.api.config.CommentPolicy
 import ru.privatenull.pnlibrary.api.config.ConfigCodec

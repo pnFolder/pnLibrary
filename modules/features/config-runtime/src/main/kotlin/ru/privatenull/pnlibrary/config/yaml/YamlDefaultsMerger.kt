@@ -1,4 +1,4 @@
-package ru.privatenull.pnlibrary.core.config.yaml
+package ru.privatenull.pnlibrary.config.yaml
 
 /** Recursively merges YAML defaults while preserving comments for [CodeFirstYaml]. */
 internal object YamlDefaultsMerger {

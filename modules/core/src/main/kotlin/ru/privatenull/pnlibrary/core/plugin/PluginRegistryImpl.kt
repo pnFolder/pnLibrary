@@ -32,7 +32,7 @@ import ru.privatenull.pnlibrary.api.updates.UpdateRegistration
 import ru.privatenull.pnlibrary.api.updates.UpdateService
 import ru.privatenull.pnlibrary.api.version.SemanticVersion
 import ru.privatenull.pnlibrary.core.commands.CommandService
-import ru.privatenull.pnlibrary.core.config.ConfigurationServiceImpl
+import ru.privatenull.pnlibrary.config.ConfigurationServiceImpl
 import ru.privatenull.pnlibrary.core.downloads.DirectDownloadManager
 import ru.privatenull.pnlibrary.core.lifecycle.ResourceCleanup
 import ru.privatenull.pnlibrary.core.placeholders.PlaceholderHub

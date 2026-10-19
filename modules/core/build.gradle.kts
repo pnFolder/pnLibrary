@@ -68,6 +68,7 @@ dependencies {
     implementation(project(":modules:api"))
     implementation(project(":modules:runtime-spi"))
     implementation(project(":modules:features:currency-runtime"))
+    implementation(project(":modules:features:config-runtime"))
     implementation(libs.kotlin.stdlib)
     implementation(libs.kotlin.compiler.embeddable)
     implementation(libs.gson)

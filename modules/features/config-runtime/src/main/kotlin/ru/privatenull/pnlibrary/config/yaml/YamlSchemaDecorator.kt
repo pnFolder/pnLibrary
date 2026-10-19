@@ -1,4 +1,4 @@
-package ru.privatenull.pnlibrary.core.config.yaml
+package ru.privatenull.pnlibrary.config.yaml
 
 /** Metadata used to place documentation around one generated YAML field. */
 internal data class YamlFieldMetadata(

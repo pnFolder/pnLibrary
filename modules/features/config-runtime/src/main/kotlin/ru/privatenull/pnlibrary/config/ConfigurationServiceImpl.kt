@@ -1,4 +1,4 @@
-package ru.privatenull.pnlibrary.core.config
+package ru.privatenull.pnlibrary.config
 
 import ru.privatenull.pnlibrary.api.config.ConfigOptions
 import ru.privatenull.pnlibrary.api.config.ConfigScope
@@ -9,9 +9,9 @@ import ru.privatenull.pnlibrary.api.config.ConfigValueValidator
 import ru.privatenull.pnlibrary.api.config.ConfigurationService
 import ru.privatenull.pnlibrary.api.config.ManagedConfig
 import ru.privatenull.pnlibrary.api.plugin.PluginId
-import ru.privatenull.pnlibrary.core.config.yaml.AnnotatedYamlCodec
-import ru.privatenull.pnlibrary.core.config.yaml.CodeFirstYaml
-import ru.privatenull.pnlibrary.core.config.yaml.RuntimeConfigType
+import ru.privatenull.pnlibrary.config.yaml.AnnotatedYamlCodec
+import ru.privatenull.pnlibrary.config.yaml.CodeFirstYaml
+import ru.privatenull.pnlibrary.config.yaml.RuntimeConfigType
 import ru.privatenull.pnlibrary.spi.platform.PlatformOwnership
 import java.io.File
 import java.nio.file.Path
@@ -23,7 +23,7 @@ import java.util.function.Supplier
 import java.util.logging.Logger
 
 /** Hands out one configuration scope per plugin, rooted at its data folder, and closes them with their owner. */
-internal class ConfigurationServiceImpl(
+class ConfigurationServiceImpl(
     private val platform: PlatformOwnership,
 ) : ConfigurationService, AutoCloseable {
     private val scopes = IdentityHashMap<Any, MutableMap<PluginId, Scope>>()
@@ -35,7 +35,7 @@ internal class ConfigurationServiceImpl(
         return scope(owner, pluginId)
     }
 
-    internal fun scope(owner: Any, pluginId: PluginId): ConfigScope = synchronized(scopes) {
+    fun scope(owner: Any, pluginId: PluginId): ConfigScope = synchronized(scopes) {
         check(!closed.get()) { "Configuration service is closed" }
         scopes.getOrPut(owner) { linkedMapOf() }.getOrPut(pluginId) {
             Scope(

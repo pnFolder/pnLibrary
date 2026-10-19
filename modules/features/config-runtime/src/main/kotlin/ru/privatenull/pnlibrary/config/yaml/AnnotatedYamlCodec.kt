@@ -1,4 +1,4 @@
-package ru.privatenull.pnlibrary.core.config.yaml
+package ru.privatenull.pnlibrary.config.yaml
 
 import org.yaml.snakeyaml.DumperOptions
 import org.yaml.snakeyaml.LoaderOptions

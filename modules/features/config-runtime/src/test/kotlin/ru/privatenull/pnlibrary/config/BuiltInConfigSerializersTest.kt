@@ -1,4 +1,4 @@
-package ru.privatenull.pnlibrary.core.config
+package ru.privatenull.pnlibrary.config
 
 import org.junit.jupiter.api.Assertions.assertEquals
 import org.junit.jupiter.api.Test

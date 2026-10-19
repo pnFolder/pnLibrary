@@ -1,4 +1,4 @@
-package ru.privatenull.pnlibrary.core.config.yaml
+package ru.privatenull.pnlibrary.config.yaml
 
 import org.junit.jupiter.api.Assertions.*
 import org.junit.jupiter.api.Test

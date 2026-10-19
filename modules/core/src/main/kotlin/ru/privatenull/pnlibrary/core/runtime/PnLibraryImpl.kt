@@ -23,7 +23,7 @@ import ru.privatenull.pnlibrary.api.services.ServiceManager
 import ru.privatenull.pnlibrary.api.tasks.TaskScope
 import ru.privatenull.pnlibrary.api.updates.UpdateService
 import ru.privatenull.pnlibrary.api.version.SemanticVersion
-import ru.privatenull.pnlibrary.core.config.ConfigurationServiceImpl
+import ru.privatenull.pnlibrary.config.ConfigurationServiceImpl
 import ru.privatenull.pnlibrary.core.diagnostics.DiagnosticsRegistry
 import ru.privatenull.pnlibrary.core.diagnostics.diagnosticCommand
 import ru.privatenull.pnlibrary.core.downloads.DirectDownloadManager

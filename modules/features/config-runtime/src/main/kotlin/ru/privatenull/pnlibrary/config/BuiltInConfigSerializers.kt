@@ -1,4 +1,4 @@
-package ru.privatenull.pnlibrary.core.config
+package ru.privatenull.pnlibrary.config
 
 import ru.privatenull.pnlibrary.api.config.ConfigSerializationContext
 import ru.privatenull.pnlibrary.api.config.ConfigSerializer

@@ -1,3 +1,17 @@
+public final class ru/privatenull/pnlibrary/api/plugin/PluginId {
+	public static final field Companion Lru/privatenull/pnlibrary/api/plugin/PluginId$Companion;
+	public synthetic fun <init> (Ljava/lang/String;Lkotlin/jvm/internal/DefaultConstructorMarker;)V
+	public fun equals (Ljava/lang/Object;)Z
+	public final fun getValue ()Ljava/lang/String;
+	public fun hashCode ()I
+	public static final fun of (Ljava/lang/String;)Lru/privatenull/pnlibrary/api/plugin/PluginId;
+	public fun toString ()Ljava/lang/String;
+}
+
+public final class ru/privatenull/pnlibrary/api/plugin/PluginId$Companion {
+	public final fun of (Ljava/lang/String;)Lru/privatenull/pnlibrary/api/plugin/PluginId;
+}
+
 public final class ru/privatenull/pnlibrary/common/io/AtomicFiles {
 	public static final field INSTANCE Lru/privatenull/pnlibrary/common/io/AtomicFiles;
 	public static final fun move (Ljava/nio/file/Path;Ljava/nio/file/Path;)V

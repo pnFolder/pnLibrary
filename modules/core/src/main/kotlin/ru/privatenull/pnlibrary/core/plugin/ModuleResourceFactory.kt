@@ -19,7 +19,7 @@ import ru.privatenull.pnlibrary.api.tasks.TaskScope
 import ru.privatenull.pnlibrary.api.updates.ProductDescriptor
 import ru.privatenull.pnlibrary.api.updates.UpdateRegistration
 import ru.privatenull.pnlibrary.api.updates.UpdateService
-import ru.privatenull.pnlibrary.core.config.ConfigurationServiceImpl
+import ru.privatenull.pnlibrary.config.ConfigurationServiceImpl
 import ru.privatenull.pnlibrary.core.cooldowns.CooldownServiceImpl
 import ru.privatenull.pnlibrary.core.downloads.CompositeDownloadRegistration
 import ru.privatenull.pnlibrary.core.downloads.DirectDownloadManager
