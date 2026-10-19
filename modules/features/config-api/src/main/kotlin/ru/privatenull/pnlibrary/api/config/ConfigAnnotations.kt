@@ -22,7 +22,7 @@ annotation class ConfigComment(vararg val value: String)
  * Overrides the YAML key without renaming the Java or Kotlin field.
  *
  * For example, `@field:ConfigKey("api-token") var token = ""` reads and writes `api-token`.
- * This explicit name takes precedence over [ConfigNaming] and [ConfigOptions.naming].
+ * This explicit name takes precedence over [ConfigOptions.naming].
  *
  * @property value exact YAML key used for reading and writing the field
  */
@@ -119,18 +119,6 @@ annotation class ConfigRequired
 @Target(AnnotationTarget.FIELD)
 @Retention(AnnotationRetention.RUNTIME)
 annotation class ConfigDefaultOnInvalid
-
-/**
- * Overrides the default YAML naming strategy for fields declared by this configuration class.
- *
- * `@ConfigNaming(ConfigNamingStrategy.KEBAB_CASE)` converts `connectionTimeout` to
- * `connection-timeout`. [ConfigKey] still wins for an individually annotated field.
- *
- * @property value naming strategy applied to fields without [ConfigKey]
- */
-@Target(AnnotationTarget.CLASS)
-@Retention(AnnotationRetention.RUNTIME)
-annotation class ConfigNaming(val value: ConfigNamingStrategy)
 
 /**
  * Declares previous YAML spellings accepted for an enum constant.

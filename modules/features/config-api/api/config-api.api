@@ -38,19 +38,6 @@ public final class ru/privatenull/pnlibrary/api/config/ConfigDocument {
 	public final fun transform (Ljava/lang/String;Ljava/util/function/UnaryOperator;)Lru/privatenull/pnlibrary/api/config/ConfigDocument;
 }
 
-public final class ru/privatenull/pnlibrary/api/config/ConfigGroup : java/lang/AutoCloseable {
-	public fun <init> ()V
-	public final fun add (Lru/privatenull/pnlibrary/api/config/ManagedConfig;)Lru/privatenull/pnlibrary/api/config/ConfigGroup;
-	public final fun all ()Ljava/util/List;
-	public fun close ()V
-	public final fun isClosed ()Z
-	public final fun loadAll ()V
-	public final fun reloadAll ()V
-	public final fun saveAll ()V
-	public final fun size ()I
-	public final fun unloadAll ()V
-}
-
 public abstract interface annotation class ru/privatenull/pnlibrary/api/config/ConfigIgnore : java/lang/annotation/Annotation {
 }
 
@@ -120,10 +107,6 @@ public final class ru/privatenull/pnlibrary/api/config/ConfigMigrationPlan$Step 
 	public final fun getTo ()Ljava/lang/String;
 	public fun hashCode ()I
 	public fun toString ()Ljava/lang/String;
-}
-
-public abstract interface annotation class ru/privatenull/pnlibrary/api/config/ConfigNaming : java/lang/annotation/Annotation {
-	public abstract fun value ()Lru/privatenull/pnlibrary/api/config/ConfigNamingStrategy;
 }
 
 public final class ru/privatenull/pnlibrary/api/config/ConfigNamingStrategy : java/lang/Enum {

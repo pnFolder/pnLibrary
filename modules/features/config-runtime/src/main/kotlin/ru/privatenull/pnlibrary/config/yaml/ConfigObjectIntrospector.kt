@@ -2,7 +2,6 @@ package ru.privatenull.pnlibrary.config.yaml
 
 import ru.privatenull.pnlibrary.api.config.ConfigIgnore
 import ru.privatenull.pnlibrary.api.config.ConfigKey
-import ru.privatenull.pnlibrary.api.config.ConfigNaming
 import ru.privatenull.pnlibrary.api.config.ConfigNamingStrategy
 import ru.privatenull.pnlibrary.api.config.ConfigOrder
 import java.lang.reflect.Field
@@ -23,7 +22,7 @@ import java.util.TreeSet
  * and collection materialization live here so every encode/decode/schema path uses
  * identical reflection rules.
  *
- * @param defaultNaming naming strategy used when a class has no [ConfigNaming]
+ * @param defaultNaming naming strategy applied to fields without an explicit key
  */
 internal class ConfigObjectIntrospector(
     private val defaultNaming: ConfigNamingStrategy,
@@ -48,10 +47,7 @@ internal class ConfigObjectIntrospector(
     fun key(field: Field): String = field.getAnnotation(ConfigKey::class.java)
         ?.value
         ?.takeIf(String::isNotBlank)
-        ?: applyNaming(
-            field.name,
-            field.declaringClass.getAnnotation(ConfigNaming::class.java)?.value ?: defaultNaming,
-        )
+        ?: applyNaming(field.name, defaultNaming)
 
     /** Reads an already-discovered field from [owner]. */
     fun read(field: Field, owner: Any): Any? = field.get(owner)
