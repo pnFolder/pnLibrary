@@ -179,6 +179,13 @@ class ConfigMigrationPlan private constructor(
     /** Entry point for constructing validated migration graphs. */
     companion object {
 
+        /**
+         * Version marker every managed file carries by default: version `1`, no steps.
+         * Files that predate the marker are assumed to be version `1`.
+         */
+        @JvmField
+        val INITIAL: ConfigMigrationPlan = builder("1").assumeVersionWhenMissing("1").build()
+
         /** Creates a migration-plan builder targeting [currentVersion]. */
         @JvmStatic
         fun builder(currentVersion: String): Builder = Builder(currentVersion)

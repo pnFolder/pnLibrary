@@ -73,6 +73,7 @@ public abstract interface class ru/privatenull/pnlibrary/api/config/ConfigMigrat
 
 public final class ru/privatenull/pnlibrary/api/config/ConfigMigrationPlan {
 	public static final field Companion Lru/privatenull/pnlibrary/api/config/ConfigMigrationPlan$Companion;
+	public static final field INITIAL Lru/privatenull/pnlibrary/api/config/ConfigMigrationPlan;
 	public synthetic fun <init> (Ljava/lang/String;Ljava/lang/String;Ljava/lang/String;Ljava/util/List;Lkotlin/jvm/internal/DefaultConstructorMarker;)V
 	public static final fun builder (Ljava/lang/String;)Lru/privatenull/pnlibrary/api/config/ConfigMigrationPlan$Builder;
 	public final fun getAssumedVersion ()Ljava/lang/String;
@@ -170,6 +171,7 @@ public final class ru/privatenull/pnlibrary/api/config/ConfigOptions$Builder {
 	public final fun missingValues (Lru/privatenull/pnlibrary/api/config/MissingValuePolicy;)Lru/privatenull/pnlibrary/api/config/ConfigOptions$Builder;
 	public final fun naming (Lru/privatenull/pnlibrary/api/config/ConfigNamingStrategy;)Lru/privatenull/pnlibrary/api/config/ConfigOptions$Builder;
 	public final fun unknownValues (Lru/privatenull/pnlibrary/api/config/UnknownValuePolicy;)Lru/privatenull/pnlibrary/api/config/ConfigOptions$Builder;
+	public final fun withoutVersion ()Lru/privatenull/pnlibrary/api/config/ConfigOptions$Builder;
 }
 
 public final class ru/privatenull/pnlibrary/api/config/ConfigOptions$Companion {

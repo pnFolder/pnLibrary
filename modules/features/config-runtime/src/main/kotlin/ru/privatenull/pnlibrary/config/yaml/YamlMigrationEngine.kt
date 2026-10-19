@@ -43,7 +43,7 @@ internal class YamlMigrationEngine {
      * valid migration route exists
      */
     fun migrate(content: String, plan: ConfigMigrationPlan): Result {
-        val loaded = yaml.load<Any?>(content)
+        val loaded = yaml.load<Any?>(content) ?: emptyMap<String, Any?>()
         require(loaded is Map<*, *>) { "Configuration root must be a YAML object" }
         val root = loaded.entries.associateTo(linkedMapOf()) { it.key.toString() to it.value }
         val document = ConfigDocument(root)
@@ -61,14 +61,23 @@ internal class YamlMigrationEngine {
                 throw IllegalStateException("Configuration migration ${step.from} -> ${step.to} failed", error)
             }
         }
-        if (route.isEmpty()) document.set(plan.versionKey, plan.currentVersion)
+        // The marker is re-added by stampDefaults together with its warning comment.
+        document.remove(plan.versionKey)
+        val body = document.toMap()
+        val dumped = if (body.isEmpty()) "" else yaml.dump(body).replace("\r\n", "\n").trimEnd() + "\n"
         return Result(
-            yaml.dump(document.toMap()).replace("\r\n", "\n").trimEnd() + "\n",
+            stampDefaults(dumped, plan),
             route.map { "${it.from} -> ${it.to}" },
         )
     }
 
     /** Prepends the current schema version to generated default [content]. */
     fun stampDefaults(content: String, plan: ConfigMigrationPlan): String =
-        "${plan.versionKey}: '${plan.currentVersion}'\n" + content
+        VERSION_WARNING + "${plan.versionKey}: '${plan.currentVersion}'\n" + content
+
+    private companion object {
+        const val VERSION_WARNING =
+            "# !!! DO NOT EDIT OR REMOVE THIS LINE: pnLibrary uses it to upgrade this file between versions. !!!\n" +
+                "# !!! НЕ МЕНЯЙТЕ И НЕ УДАЛЯЙТЕ ЭТУ СТРОКУ: pnLibrary использует её для обновления файла между версиями. !!!\n"
+    }
 }

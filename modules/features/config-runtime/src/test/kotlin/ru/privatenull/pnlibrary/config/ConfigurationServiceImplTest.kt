@@ -76,6 +76,40 @@ class ConfigurationServiceImplTest {
     }
 
     @Test
+    fun `every new file carries a version marker with a bilingual warning`() {
+        service().use { service ->
+            scope(service).yaml<ServiceSettings>("settings.yml") { ServiceSettings() }.load()
+            val text = Files.readString(directory.resolve("settings.yml"))
+            assertTrue(text.contains("_config-version: '1'"), text)
+            assertTrue(text.contains("DO NOT EDIT OR REMOVE"), text)
+            assertTrue(text.contains("НЕ МЕНЯЙТЕ И НЕ УДАЛЯЙТЕ"), text)
+        }
+    }
+
+    @Test
+    fun `administrator comments survive reload and a missing marker is added`() {
+        Files.writeString(directory.resolve("settings.yml"), "# my note\nretries: 4\nname: custom\n")
+        service().use { service ->
+            val config = scope(service).yaml<ServiceSettings>("settings.yml") { ServiceSettings() }
+            config.load()
+            config.reload()
+            val text = Files.readString(directory.resolve("settings.yml"))
+            assertTrue(text.contains("# my note"), text)
+            assertTrue(text.contains("_config-version: '1'"), text)
+            assertEquals(4, config.value.retries)
+        }
+    }
+
+    @Test
+    fun `withoutVersion omits the marker`() {
+        service().use { service ->
+            val options = ConfigOptions.builder().withoutVersion().build()
+            scope(service).yaml("settings.yml", options) { ServiceSettings() }.load()
+            assertFalse(Files.readString(directory.resolve("settings.yml")).contains("_config-version"))
+        }
+    }
+
+    @Test
     fun `type builder publishes a named implementation and closes it`() {
         service().use { service ->
             val registration = scope(service).type<Shape, Circle>().name("Circle").alias("round").priority(5).register()

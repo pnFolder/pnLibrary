@@ -69,7 +69,8 @@ class CodeFirstYaml<T> @JvmOverloads constructor(
 
         val original = fileStore.normalize(file.readText())
         val migration = options.migrations?.let { migrationEngine.migrate(original, it) }
-        val working = migration?.content?.let(fileStore::normalize) ?: original
+        // Re-dumped YAML loses administrator comments, so it is used only when a migration step ran.
+        val working = migration?.takeIf { it.applied.isNotEmpty() }?.content?.let(fileStore::normalize) ?: original
         val defaultPaths = YamlDefaultsMerger.paths(defaultsYaml).toSet()
         val workingPaths = YamlDefaultsMerger.paths(working).toSet()
         val missing = (defaultPaths - workingPaths).sorted()
