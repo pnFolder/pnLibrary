@@ -63,7 +63,7 @@ jobs:
             throw "Invalid semantic version: $env:RELEASE_VERSION"
           }
           if ($env:RELEASE_MODE -eq 'central') {
-            $current = (Select-String gradle.properties '^version=(.+)$').Matches[0].Groups[1].Value
+            $current = (Select-String -Path gradle.properties -Pattern '^version=(.+)$').Matches[0].Groups[1].Value
             if ($current -ne $env:RELEASE_VERSION) {
               throw "Requested $env:RELEASE_VERSION, but the repository contains $current"
             }
