@@ -45,9 +45,8 @@ dependencies {
     testRuntimeOnly(libs.junit.launcher)
 }
 
+// Internal tooling: not published to Maven Central.
 mavenPublishing {
-    publishToMavenCentral()
-    signAllPublications()
     coordinates("io.github.pnfolder", "pnlibrary-component-metadata-gradle", project.version.toString())
     pom {
         name.set("pnLibrary Component Metadata Gradle Plugin")

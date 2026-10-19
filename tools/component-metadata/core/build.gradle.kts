@@ -16,9 +16,8 @@ dependencies {
     testRuntimeOnly(libs.junit.launcher)
 }
 
+// Internal tooling: not published to Maven Central.
 mavenPublishing {
-    publishToMavenCentral()
-    signAllPublications()
     coordinates("io.github.pnfolder", "pnlibrary-component-metadata-core", project.version.toString())
     pom {
         name.set("pnLibrary Component Metadata Core")

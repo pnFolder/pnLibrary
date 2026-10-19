@@ -29,9 +29,8 @@ tasks.named<ProcessResources>("processResources") {
     }
 }
 
+// Internal tooling: not published to Maven Central.
 mavenPublishing {
-    publishToMavenCentral()
-    signAllPublications()
     coordinates("io.github.pnfolder", "pnlibrary-component-metadata-maven", project.version.toString())
     pom {
         name.set("pnLibrary Component Metadata Maven Plugin")
