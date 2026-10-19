@@ -16,7 +16,11 @@ mavenPublishing {
         licenses { license { name.set(providers.gradleProperty("POM_LICENSE_NAME")); url.set(providers.gradleProperty("POM_LICENSE_URL")); distribution.set(providers.gradleProperty("POM_LICENSE_DIST").orElse("repo")) } }
         developers {
             rootProject.property("pnlibrary.authors").toString().split(",").map(String::trim).forEach { author ->
-                developer { id.set(author); name.set(author) }
+                developer {
+                    id.set(author)
+                    name.set(author)
+                    url.set("https://github.com/" + rootProject.property("pnlibrary.organization"))
+                }
             }
         }
         scm { url.set("https://github.com/${rootProject.property("pnlibrary.repository")}"); connection.set("scm:git:git://github.com/${rootProject.property("pnlibrary.repository")}.git"); developerConnection.set("scm:git:ssh://git@github.com/${rootProject.property("pnlibrary.repository")}.git") }

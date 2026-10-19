@@ -39,7 +39,11 @@ mavenPublishing {
         }
         developers {
             rootProject.property("pnlibrary.authors").toString().split(",").map(String::trim).forEach { author ->
-                developer { id.set(author); name.set(author) }
+                developer {
+                    id.set(author)
+                    name.set(author)
+                    url.set("https://github.com/" + rootProject.property("pnlibrary.organization"))
+                }
             }
         }
         scm {
