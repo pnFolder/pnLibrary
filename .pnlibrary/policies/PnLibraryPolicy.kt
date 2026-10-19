@@ -1,11 +1,11 @@
 package pnfolder.policy
 
-import ru.privatenull.pnlibrary.api.platform.PlatformType
-import ru.privatenull.pnlibrary.api.remote.RemotePolicy
-import ru.privatenull.pnlibrary.api.remote.RemotePolicyContext
-import ru.privatenull.pnlibrary.api.remote.RemotePolicyExplanation
-import ru.privatenull.pnlibrary.api.remote.RemotePolicyResult
-import ru.privatenull.pnlibrary.api.version.SemanticVersion
+import org.pnfolder.pnlibrary.api.platform.PlatformType
+import org.pnfolder.pnlibrary.api.remote.RemotePolicy
+import org.pnfolder.pnlibrary.api.remote.RemotePolicyContext
+import org.pnfolder.pnlibrary.api.remote.RemotePolicyExplanation
+import org.pnfolder.pnlibrary.api.remote.RemotePolicyResult
+import org.pnfolder.pnlibrary.api.version.SemanticVersion
 
 /**
  * Демонстрационная политика самой pnLibrary, не подключённая автоматически.
