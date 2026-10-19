@@ -26,10 +26,10 @@ internal class CooldownServiceImpl : CooldownService {
         val now = System.nanoTime()
         while (true) {
             val current = deadlines[key]
-            if (current != null && current > now) return CooldownResult(false, nanos(current - now))
+            if (current != null && current > now) return CooldownResult.denied(nanos(current - now))
             val target = deadline(now, duration)
-            if (current == null && deadlines.putIfAbsent(key, target) == null) return CooldownResult(true, Duration.ZERO)
-            if (current != null && deadlines.replace(key, current, target)) return CooldownResult(true, Duration.ZERO)
+            if (current == null && deadlines.putIfAbsent(key, target) == null) return CooldownResult.allowed()
+            if (current != null && deadlines.replace(key, current, target)) return CooldownResult.allowed()
         }
     }
 
