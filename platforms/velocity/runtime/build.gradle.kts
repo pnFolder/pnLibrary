@@ -36,7 +36,7 @@ java {
 }
 
 // Velocity's @Plugin annotation takes compile-time literals only, so the descriptor class is generated
-// from gradle.properties. Lifecycle logic stays in PnLibraryVelocityRuntime.
+// from gradle.properties. Lifecycle logic stays in VelocityRuntime.
 val descriptorDir = layout.buildDirectory.dir("generated/velocity/kotlin")
 val descriptorResources = layout.buildDirectory.dir("generated/velocity/resources")
 val generateVelocityDescriptor by tasks.registering {
@@ -107,7 +107,7 @@ val generateVelocityDescriptor by tasks.registering {
             |    metricsFactory: Metrics.Factory,
             |    @DataDirectory dataDirectory: Path,
             |) {
-            |    private val runtime = PnLibraryVelocityRuntime(this, server, logger, metricsFactory, dataDirectory)
+            |    private val runtime = VelocityRuntime(this, server, logger, metricsFactory, dataDirectory)
             |
             |    @Subscribe
             |    fun onInitialize(event: ProxyInitializeEvent) = runtime.onInitialize(event)

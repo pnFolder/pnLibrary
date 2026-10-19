@@ -16,7 +16,7 @@ import java.nio.file.Path
  * the registered Velocity plugin instance, which pnLibrary uses for identity and diagnostics. The
  * initialize event creates one [PnLibraryRuntimeHost]; the shutdown event closes it.
  */
-class PnLibraryVelocityRuntime(
+internal class VelocityRuntime(
     private val owner: Any,
     private val server: ProxyServer,
     private val logger: Logger,
