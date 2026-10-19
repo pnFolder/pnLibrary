@@ -98,3 +98,42 @@ interface ConfigTypeRegistration : AutoCloseable {
     /** Deactivates and removes this registration. Closing is idempotent. */
     override fun close()
 }
+
+/**
+ * Fluent publication of one polymorphic configuration type, created by [ConfigScope.type].
+ *
+ * Only [name] is required. Without further calls the type is private to its owner, has priority
+ * zero and no aliases. Nothing is published until [register] is called.
+ */
+class ConfigTypeBuilder<T : Any> internal constructor(
+    private val scope: ConfigScope,
+    private val baseType: Class<T>,
+    private val implementation: Class<out T>,
+) {
+    private var name: String? = null
+    private val aliases = linkedSetOf<String>()
+    private var priority = 0
+    private var access = ConfigTypeAccess.ownerOnly()
+
+    /** Sets the primary discriminator value. */
+    fun name(value: String): ConfigTypeBuilder<T> = apply { name = value }
+
+    /** Adds alternative discriminator values accepted when reading. */
+    fun alias(vararg values: String): ConfigTypeBuilder<T> = apply { aliases.addAll(values) }
+
+    /** Sets the priority; the higher value wins when several registrations accept one identifier. */
+    fun priority(value: Int): ConfigTypeBuilder<T> = apply { priority = value }
+
+    /** Sets which plugins may use the type. */
+    fun access(value: ConfigTypeAccess): ConfigTypeBuilder<T> = apply { access = value }
+
+    /** Sets the access policy through a Java-friendly callback. */
+    fun access(configure: java.util.function.Consumer<ConfigTypeAccess.Builder>): ConfigTypeBuilder<T> =
+        access(ConfigTypeAccess.builder().also(configure::accept).build())
+
+    /** Publishes the type and returns its handle. */
+    fun register(): ConfigTypeRegistration {
+        val primary = requireNotNull(name) { "Config type name is required: call name(...) before register()" }
+        return scope.publishType(baseType, implementation, primary, LinkedHashSet(aliases), priority, access)
+    }
+}

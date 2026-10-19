@@ -1,6 +1,5 @@
 package ru.privatenull.pnlibrary.api.config
 
-import java.util.function.Consumer
 import java.util.function.Supplier
 
 /**
@@ -64,13 +63,27 @@ interface ConfigScope : AutoCloseable {
     fun <T : Any> serializer(type: Class<T>, serializer: ConfigSerializer<T>): ConfigScope
 
     /**
-     * Publishes one implementation of a polymorphic configuration [baseType].
+     * Starts publishing one implementation of a polymorphic configuration [baseType].
+     *
+     * ```kotlin
+     * scope.type(Action::class.java, MessageAction::class.java)
+     *     .name("message").alias("msg").priority(10).access(ConfigTypeAccess.everyone())
+     *     .register()
+     * ```
+     *
+     * Nothing is published until [ConfigTypeBuilder.register] is called.
+     */
+    fun <T : Any> type(baseType: Class<T>, implementation: Class<out T>): ConfigTypeBuilder<T> =
+        ConfigTypeBuilder(this, baseType, implementation)
+
+    /**
+     * Low-level publication behind [type]; prefer the builder.
      *
      * [name] and [aliases] are case-insensitive identifiers used in the discriminator field.
      * Higher [priority] wins when multiple visible registrations accept the same identifier, and
      * [access] controls which plugins may consume the type.
      */
-    fun <T : Any> type(
+    fun <T : Any> publishType(
         baseType: Class<T>,
         implementation: Class<out T>,
         name: String,
@@ -78,27 +91,6 @@ interface ConfigScope : AutoCloseable {
         priority: Int,
         access: ConfigTypeAccess,
     ): ConfigTypeRegistration
-
-    /** Publishes a private, zero-priority polymorphic implementation without aliases. */
-    fun <T : Any> type(baseType: Class<T>, implementation: Class<out T>, name: String): ConfigTypeRegistration =
-        type(baseType, implementation, name, emptySet(), 0, ConfigTypeAccess.ownerOnly())
-
-    /** Publishes a polymorphic type using a Java-friendly access-policy callback. */
-    fun <T : Any> type(
-        baseType: Class<T>,
-        implementation: Class<out T>,
-        name: String,
-        aliases: Set<String>,
-        priority: Int,
-        access: Consumer<ConfigTypeAccess.Builder>,
-    ): ConfigTypeRegistration = type(
-        baseType,
-        implementation,
-        name,
-        aliases,
-        priority,
-        ConfigTypeAccess.builder().also(access::accept).build(),
-    )
 
     /** Loads every registered file in registration order. */
     fun loadAll()
@@ -157,6 +149,16 @@ inline fun <reified T : Any> ConfigScope.yaml(
     validator: ConfigValueValidator<T>,
     noinline defaults: () -> T,
 ): ManagedConfig<T> = yaml(path, T::class.java, Supplier(defaults), options, validator)
+
+/**
+ * Starts publishing implementation [I] of polymorphic base type [B] while inferring both classes.
+ *
+ * ```kotlin
+ * scope.type<Action, MessageAction>().name("message").register()
+ * ```
+ */
+inline fun <reified B : Any, reified I : B> ConfigScope.type(): ConfigTypeBuilder<B> =
+    type(B::class.java, I::class.java)
 
 /**
  * Registers [serializer] for its inferred value type in this scope.

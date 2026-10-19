@@ -213,12 +213,11 @@ public abstract interface class ru/privatenull/pnlibrary/api/config/ConfigScope 
 	public abstract fun close ()V
 	public abstract fun getSize ()I
 	public abstract fun loadAll ()V
+	public abstract fun publishType (Ljava/lang/Class;Ljava/lang/Class;Ljava/lang/String;Ljava/util/Set;ILru/privatenull/pnlibrary/api/config/ConfigTypeAccess;)Lru/privatenull/pnlibrary/api/config/ConfigTypeRegistration;
 	public abstract fun reloadAll ()V
 	public abstract fun saveAll ()V
 	public abstract fun serializer (Ljava/lang/Class;Lru/privatenull/pnlibrary/api/config/ConfigSerializer;)Lru/privatenull/pnlibrary/api/config/ConfigScope;
-	public fun type (Ljava/lang/Class;Ljava/lang/Class;Ljava/lang/String;)Lru/privatenull/pnlibrary/api/config/ConfigTypeRegistration;
-	public fun type (Ljava/lang/Class;Ljava/lang/Class;Ljava/lang/String;Ljava/util/Set;ILjava/util/function/Consumer;)Lru/privatenull/pnlibrary/api/config/ConfigTypeRegistration;
-	public abstract fun type (Ljava/lang/Class;Ljava/lang/Class;Ljava/lang/String;Ljava/util/Set;ILru/privatenull/pnlibrary/api/config/ConfigTypeAccess;)Lru/privatenull/pnlibrary/api/config/ConfigTypeRegistration;
+	public fun type (Ljava/lang/Class;Ljava/lang/Class;)Lru/privatenull/pnlibrary/api/config/ConfigTypeBuilder;
 	public abstract fun yaml (Ljava/lang/String;Ljava/lang/Class;Ljava/util/function/Supplier;)Lru/privatenull/pnlibrary/api/config/ManagedConfig;
 	public fun yaml (Ljava/lang/String;Ljava/lang/Class;Ljava/util/function/Supplier;Lru/privatenull/pnlibrary/api/config/ConfigOptions;)Lru/privatenull/pnlibrary/api/config/ManagedConfig;
 	public abstract fun yaml (Ljava/lang/String;Ljava/lang/Class;Ljava/util/function/Supplier;Lru/privatenull/pnlibrary/api/config/ConfigOptions;Lru/privatenull/pnlibrary/api/config/ConfigValueValidator;)Lru/privatenull/pnlibrary/api/config/ManagedConfig;
@@ -288,6 +287,15 @@ public final class ru/privatenull/pnlibrary/api/config/ConfigTypeAccess$Companio
 	public final fun everyone ()Lru/privatenull/pnlibrary/api/config/ConfigTypeAccess;
 	public final fun ownerOnly ()Lru/privatenull/pnlibrary/api/config/ConfigTypeAccess;
 	public final fun plugins ([Ljava/lang/String;)Lru/privatenull/pnlibrary/api/config/ConfigTypeAccess;
+}
+
+public final class ru/privatenull/pnlibrary/api/config/ConfigTypeBuilder {
+	public final fun access (Ljava/util/function/Consumer;)Lru/privatenull/pnlibrary/api/config/ConfigTypeBuilder;
+	public final fun access (Lru/privatenull/pnlibrary/api/config/ConfigTypeAccess;)Lru/privatenull/pnlibrary/api/config/ConfigTypeBuilder;
+	public final fun alias ([Ljava/lang/String;)Lru/privatenull/pnlibrary/api/config/ConfigTypeBuilder;
+	public final fun name (Ljava/lang/String;)Lru/privatenull/pnlibrary/api/config/ConfigTypeBuilder;
+	public final fun priority (I)Lru/privatenull/pnlibrary/api/config/ConfigTypeBuilder;
+	public final fun register ()Lru/privatenull/pnlibrary/api/config/ConfigTypeRegistration;
 }
 
 public abstract interface class ru/privatenull/pnlibrary/api/config/ConfigTypeRegistration : java/lang/AutoCloseable {

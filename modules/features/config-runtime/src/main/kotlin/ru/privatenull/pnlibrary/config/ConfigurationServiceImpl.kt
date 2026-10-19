@@ -139,7 +139,7 @@ class ConfigurationServiceImpl(
             synchronized(serializers) { serializers[type] = serializer }
         }
 
-        override fun <T : Any> type(
+        override fun <T : Any> publishType(
             baseType: Class<T>, implementation: Class<out T>, name: String,
             aliases: Set<String>, priority: Int, access: ConfigTypeAccess,
         ): ConfigTypeRegistration {

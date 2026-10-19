@@ -1,6 +1,7 @@
 package ru.privatenull.pnlibrary.config
 
 import org.junit.jupiter.api.Assertions.assertEquals
+import org.junit.jupiter.api.Assertions.assertFalse
 import org.junit.jupiter.api.Assertions.assertThrows
 import org.junit.jupiter.api.Assertions.assertTrue
 import org.junit.jupiter.api.Test
@@ -9,6 +10,7 @@ import ru.privatenull.pnlibrary.api.config.ConfigOptions
 import ru.privatenull.pnlibrary.api.config.ConfigRange
 import ru.privatenull.pnlibrary.api.config.ConfigValidationException
 import ru.privatenull.pnlibrary.api.config.ConfigValidatorBuilder
+import ru.privatenull.pnlibrary.api.config.type
 import ru.privatenull.pnlibrary.api.config.yaml
 import ru.privatenull.pnlibrary.api.plugin.PluginId
 import ru.privatenull.pnlibrary.spi.platform.PlatformOwnership
@@ -72,4 +74,27 @@ class ConfigurationServiceImplTest {
             assertEquals("demo", config.load().value.name)
         }
     }
+
+    @Test
+    fun `type builder publishes a named implementation and closes it`() {
+        service().use { service ->
+            val registration = scope(service).type<Shape, Circle>().name("Circle").alias("round").priority(5).register()
+            assertEquals("circle", registration.name)
+            assertEquals(PluginId.of("tester"), registration.owner)
+            assertEquals(Circle::class.java, registration.implementation)
+            assertTrue(registration.isActive)
+            registration.close()
+            assertFalse(registration.isActive)
+        }
+    }
+
+    @Test
+    fun `type builder requires a name before registering`() {
+        service().use { service ->
+            assertThrows(IllegalArgumentException::class.java) { scope(service).type<Shape, Circle>().register() }
+        }
+    }
 }
+
+interface Shape
+class Circle : Shape
