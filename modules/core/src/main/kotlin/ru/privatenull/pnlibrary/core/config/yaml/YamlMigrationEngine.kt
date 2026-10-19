@@ -1,7 +1,10 @@
 package ru.privatenull.pnlibrary.core.config.yaml
 
 import org.yaml.snakeyaml.DumperOptions
+import org.yaml.snakeyaml.LoaderOptions
 import org.yaml.snakeyaml.Yaml
+import org.yaml.snakeyaml.constructor.SafeConstructor
+import org.yaml.snakeyaml.representer.Representer
 import ru.privatenull.pnlibrary.api.config.ConfigDocument
 import ru.privatenull.pnlibrary.api.config.ConfigMigrationPlan
 
@@ -13,12 +16,12 @@ import ru.privatenull.pnlibrary.api.config.ConfigMigrationPlan
  * complete route has finished.
  */
 internal class YamlMigrationEngine {
-    private val yaml = Yaml(DumperOptions().apply {
+    private val yaml = DumperOptions().apply {
         defaultFlowStyle = DumperOptions.FlowStyle.BLOCK
         isPrettyFlow = true
         indent = 2
         width = 120
-    })
+    }.let { options -> Yaml(SafeConstructor(LoaderOptions()), Representer(options), options) }
 
     /**
      * Successful migration output.

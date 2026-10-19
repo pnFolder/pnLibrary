@@ -1,7 +1,10 @@
 package ru.privatenull.pnlibrary.core.config.yaml
 
 import org.yaml.snakeyaml.DumperOptions
+import org.yaml.snakeyaml.LoaderOptions
 import org.yaml.snakeyaml.Yaml
+import org.yaml.snakeyaml.constructor.SafeConstructor
+import org.yaml.snakeyaml.representer.Representer
 import ru.privatenull.pnlibrary.api.config.ConfigAlias
 import ru.privatenull.pnlibrary.api.config.ConfigCodec
 import ru.privatenull.pnlibrary.api.config.ConfigComment
@@ -70,13 +73,13 @@ internal class AnnotatedYamlCodec<T : Any>(
     private val schemaInspector = ConfigSchemaInspector(introspector, serializerResolver)
     private val polymorphicResolver = ConfigPolymorphicResolver(runtimeTypes, consumer, introspector)
     override val requiredPaths: Set<String> = schemaInspector.requiredPaths(type)
-    private val yaml = Yaml(DumperOptions().apply {
+    private val yaml = DumperOptions().apply {
         defaultFlowStyle = DumperOptions.FlowStyle.BLOCK
         isPrettyFlow = true
         indent = 2
         indicatorIndent = 0
         width = 120
-    })
+    }.let { options -> Yaml(SafeConstructor(LoaderOptions()), Representer(options), options) }
 
     /** Serializes [value] and decorates generated YAML with schema comments. */
     override fun encode(value: T): String {

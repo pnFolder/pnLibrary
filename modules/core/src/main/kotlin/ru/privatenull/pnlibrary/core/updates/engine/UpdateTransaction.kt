@@ -90,7 +90,10 @@ internal class UpdateTransaction(
             records.forEach { record ->
                 val target = Paths.get(record.target)
                 target.parent?.let(Files::createDirectories)
-                Files.copy(Paths.get(record.staged), target, StandardCopyOption.REPLACE_EXISTING)
+                // Copy beside the target first, then atomically swap it in: a crash never leaves a partial jar.
+                val publishing = target.resolveSibling("${target.fileName}.publishing")
+                Files.copy(Paths.get(record.staged), publishing, StandardCopyOption.REPLACE_EXISTING)
+                Files.move(publishing, target, StandardCopyOption.ATOMIC_MOVE, StandardCopyOption.REPLACE_EXISTING)
             }
             journals.transition(journalPath, journal, TransactionState.AWAITING_HEALTH)
             return TransactionResult(journal.state, journalPath)

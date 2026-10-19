@@ -59,7 +59,15 @@ internal class JdbcCurrencyStorage(
         request: CurrencyTransactionRequest,
     ): CompletionStage<CurrencyTransaction> = async {
         ensureSchema()
-        dataSource.connection.use { connection ->
+        retryOnSerializationConflict { transactOnce(currency, descriptor, request) }
+    }
+
+    /** Runs one SERIALIZABLE attempt; [transact] retries it when the database reports a conflict. */
+    private fun transactOnce(
+        currency: CurrencyKey,
+        descriptor: CurrencyDescriptor,
+        request: CurrencyTransactionRequest,
+    ): CurrencyTransaction = dataSource.connection.use { connection ->
             connection.autoCommit = false
             connection.transactionIsolation = Connection.TRANSACTION_SERIALIZABLE
             try {
@@ -114,6 +122,23 @@ internal class JdbcCurrencyStorage(
                     ledger.findIdempotent(connection, currency, idempotencyKey)
                         ?: throw error
                 } else throw error
+            }
+        }
+
+    /**
+     * Retries [block] when PostgreSQL or MySQL reports a serialization failure or deadlock.
+     * Gives up after three attempts and rethrows the last error.
+     */
+    private fun <T> retryOnSerializationConflict(block: () -> T): T {
+        val maxAttempts = 3
+        var attempt = 1
+        while (true) {
+            try {
+                return block()
+            } catch (error: SQLException) {
+                val conflict = error.sqlState == "40001" || error.sqlState == "40P01"
+                if (!conflict || attempt >= maxAttempts) throw error
+                attempt++
             }
         }
     }

@@ -91,14 +91,31 @@ public final class PnLibraryBootstrap {
             if (actualSize != release.size) throw new IllegalStateException("downloaded size does not match GitHub metadata");
             if (!sha256(temporary).equals(release.sha256)) throw new IllegalStateException("downloaded SHA-256 does not match GitHub digest");
             validateJar(temporary);
-            moveAtomically(temporary, target);
-            Plugin loaded = plugin.getServer().getPluginManager().loadPlugin(target.toFile());
-            if (loaded == null || !PLUGIN_NAME.equals(loaded.getName())) {
-                throw new IllegalStateException("downloaded JAR is not the pnLibrary Bukkit plugin");
+            // Keep the previous jar so a failed install can be restored on disk for the next start.
+            Path previous = null;
+            if (Files.exists(target)) {
+                previous = target.resolveSibling(target.getFileName() + ".previous");
+                Files.copy(target, previous, StandardCopyOption.REPLACE_EXISTING);
             }
-            plugin.getServer().getPluginManager().enablePlugin(loaded);
-            if (!loaded.isEnabled()) throw new IllegalStateException("pnLibrary was installed but failed to enable");
-            success(plugin, loaded.getDescription().getVersion(), release.fileName, actualSize);
+            try {
+                moveAtomically(temporary, target);
+                Plugin loaded = plugin.getServer().getPluginManager().loadPlugin(target.toFile());
+                if (loaded == null || !PLUGIN_NAME.equals(loaded.getName())) {
+                    throw new IllegalStateException("downloaded JAR is not the pnLibrary Bukkit plugin");
+                }
+                plugin.getServer().getPluginManager().enablePlugin(loaded);
+                if (!loaded.isEnabled()) throw new IllegalStateException("pnLibrary was installed but failed to enable");
+                success(plugin, loaded.getDescription().getVersion(), release.fileName, actualSize);
+            } catch (Exception error) {
+                if (previous != null) {
+                    try {
+                        moveAtomically(previous, target);
+                    } catch (Exception restoreError) {
+                        error.addSuppressed(restoreError);
+                    }
+                }
+                throw error;
+            }
         } finally {
             Files.deleteIfExists(temporary);
         }
