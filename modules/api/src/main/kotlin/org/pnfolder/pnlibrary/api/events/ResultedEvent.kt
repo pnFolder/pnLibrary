@@ -31,8 +31,10 @@ abstract class ResultedEvent<R : ResultedEvent.Result> : Event() {
     class GenericResult private constructor(
         override val isAllowed: Boolean,
     ) : Result {
+        /** Renders as `allowed` or `denied`. */
         override fun toString(): String = if (isAllowed) "allowed" else "denied"
 
+        /** Factory methods for [GenericResult]. */
         companion object {
             private val ALLOWED = GenericResult(true)
             private val DENIED = GenericResult(false)
@@ -63,8 +65,10 @@ abstract class ResultedEvent<R : ResultedEvent.Result> : Event() {
         /** Java-friendly view of [reasonComponent]. */
         fun getReasonComponent(): Optional<Component> = Optional.ofNullable(reason)
 
+        /** Renders as `allowed` or `denied`. */
         override fun toString(): String = if (isAllowed) "allowed" else "denied"
 
+        /** Factory methods for [ComponentResult]. */
         companion object {
             private val ALLOWED = ComponentResult(true, null)
 

@@ -13,8 +13,10 @@ class CooldownResult private constructor(
     val allowed: Boolean,
     val remaining: Duration,
 ) {
+    /** Renders as `allowed` or `denied: <remaining>`. */
     override fun toString(): String = if (allowed) "allowed" else "denied: $remaining"
 
+    /** Factory methods for [CooldownResult]. */
     companion object {
         private val ALLOWED = CooldownResult(true, Duration.ZERO)
 
