@@ -8,7 +8,7 @@ import java.util.function.Consumer
  * ```
  * scope.on<PurchaseEvent>()
  *     .priority(EventPriority.HIGH)
- *     .ignoreDenied()
+ *     .ignoreCancelled()
  *     .listen { event -> ... }
  * ```
  *
@@ -19,17 +19,17 @@ class EventListenerBuilder<E : Event> internal constructor(
     private val eventType: Class<E>,
 ) {
     private var priority: Int = EventPriority.NORMAL
-    private var ignoreDenied: Boolean = false
+    private var ignoreCancelled: Boolean = false
 
     /** Sets the dispatch order; lower numbers run first. Defaults to [EventPriority.NORMAL]. */
     fun priority(value: Int): EventListenerBuilder<E> = apply { priority = value }
 
     /** Skips this listener when the event is already denied. Off by default. */
-    fun ignoreDenied(): EventListenerBuilder<E> = apply { ignoreDenied = true }
+    fun ignoreCancelled(): EventListenerBuilder<E> = apply { ignoreCancelled = true }
 
     /** Registers [listener] with the configured options and returns the live subscription. */
     fun listen(listener: Consumer<E>): EventSubscription =
-        scope.subscribe(eventType, priority, ignoreDenied, listener)
+        scope.subscribe(eventType, priority, ignoreCancelled, listener)
 }
 
 /** Starts building a subscription to [E] in this scope. */

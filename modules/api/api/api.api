@@ -1778,7 +1778,7 @@ public abstract interface annotation class ru/privatenull/pnlibrary/api/events/E
 }
 
 public final class ru/privatenull/pnlibrary/api/events/EventListenerBuilder {
-	public final fun ignoreDenied ()Lru/privatenull/pnlibrary/api/events/EventListenerBuilder;
+	public final fun ignoreCancelled ()Lru/privatenull/pnlibrary/api/events/EventListenerBuilder;
 	public final fun listen (Ljava/util/function/Consumer;)Lru/privatenull/pnlibrary/api/events/EventSubscription;
 	public final fun priority (I)Lru/privatenull/pnlibrary/api/events/EventListenerBuilder;
 }

@@ -9,7 +9,7 @@ import java.util.function.Consumer
  * Use [scope] once per [PluginId] and retain the returned handle. Event
  * classes and listeners depend only on `pnlibrary-api`, so the same code runs on
  * Bukkit, BungeeCord, and Velocity. [callEvent] invokes matching listeners immediately on the
- * calling thread and returns only after dispatch has finished. This makes mutable and cancellable
+ * calling thread and returns only after dispatch has finished. This makes mutable and resulted
  * events predictable: their final state is available as soon as the method returns.
  * Scope mutation and shutdown are safe from arbitrary threads.
  */
@@ -39,7 +39,7 @@ interface EventService : AutoCloseable {
 
     /**
      * Invokes every matching listener synchronously and returns the same event instance.
-     * Listener-written fields and cancellation state are final when this method returns.
+     * Listener-written fields and results are final when this method returns.
      */
     fun <E : Event> callEvent(event: E): E
 

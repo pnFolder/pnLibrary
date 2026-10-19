@@ -136,7 +136,7 @@ class EventServiceImplTest {
     }
 
     @Test
-    fun `builder applies priority and ignoreDenied then registers on listen`() {
+    fun `builder applies priority and ignoreCancelled then registers on listen`() {
         val calls = mutableListOf<String>()
         EventServiceImpl { _, _, _ -> }.use { events ->
             val scope = events.scope(PluginId.of("test"))
@@ -144,7 +144,7 @@ class EventServiceImplTest {
                 it.result = ResultedEvent.ComponentResult.denied(Component.text("no"))
             }
             scope.on<ResultEvent>().priority(EventPriority.LOW).listen { calls += "low" }
-            scope.on<ResultEvent>().ignoreDenied().listen { calls += "skipped-once-denied" }
+            scope.on<ResultEvent>().ignoreCancelled().listen { calls += "skipped-once-denied" }
             scope.on<ResultEvent>().priority(EventPriority.HIGH).listen { calls += "high" }
 
             events.callEvent(ResultEvent())
@@ -156,7 +156,7 @@ class EventServiceImplTest {
     fun `builder registers nothing until listen is called`() {
         EventServiceImpl { _, _, _ -> }.use { events ->
             val scope = events.scope(PluginId.of("test"))
-            scope.on<ResultEvent>().priority(EventPriority.HIGH).ignoreDenied()
+            scope.on<ResultEvent>().priority(EventPriority.HIGH).ignoreCancelled()
             var ran = false
             events.callEvent(ResultEvent())
             assertFalse(ran)
