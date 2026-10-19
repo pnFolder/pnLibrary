@@ -1,14 +1,7 @@
 package ru.privatenull.pnlibrary.api.config
 
-import java.util.ArrayDeque
 import java.util.Collections
 import java.util.function.UnaryOperator
-
-/** One transformation applied to an untyped configuration document during a version upgrade. */
-fun interface ConfigMigration {
-    /** Mutates [document] from the step's source schema toward its target schema. */
-    fun migrate(document: ConfigDocument)
-}
 
 /**
  * Mutable YAML-like document exposed to [ConfigMigration] implementations.
@@ -117,121 +110,5 @@ class ConfigDocument(source: Map<String, Any?>) {
         )
         is List<*> -> Collections.unmodifiableList(value.map(::immutableValue))
         else -> value
-    }
-}
-
-/**
- * Directed migration graph for one configuration file.
- *
- * [path] finds the shortest available route from the file's version to [currentVersion]. Steps are
- * returned in execution order. Version identifiers are numeric dotted versions with an optional
- * prerelease suffix, such as `2`, `2.1`, or `3.0-rc.1`.
- *
- * ```kotlin
- * val migrations = ConfigMigrationPlan.builder("2.0")
- *     .assumeVersionWhenMissing("1.0")
- *     .migrate("1.0", "2.0") { document ->
- *         document.move("database.host", "storage.host")
- *     }
- *     .build()
- * ```
- */
-class ConfigMigrationPlan private constructor(
-    /** Schema version written after a successful migration. */
-    val currentVersion: String,
-    /** Version assigned to documents without [versionKey], or `null` to reject them. */
-    val assumedVersion: String?,
-    /** Root YAML key that stores the schema version. */
-    val versionKey: String,
-    /** Immutable directed edges available to the migration engine. */
-    val steps: List<Step>,
-) {
-    /**
-     * One directed migration edge.
-     *
-     * @property from source schema version accepted by this edge
-     * @property to target schema version produced by this edge
-     * @property migration document transformation executed for the edge
-     */
-    data class Step(
-        val from: String,
-        val to: String,
-        val migration: ConfigMigration
-    )
-
-    /** Returns the shortest ordered migration route from [from] to [currentVersion]. */
-    fun path(from: String): List<Step> {
-        if (from == currentVersion) return emptyList()
-        val queue = ArrayDeque<Pair<String, List<Step>>>()
-        val visited = mutableSetOf(from)
-        queue.add(from to emptyList())
-        while (queue.isNotEmpty()) {
-            val (version, route) = queue.removeFirst()
-            steps.filter { it.from == version }.forEach { step ->
-                val next = route + step
-                if (step.to == currentVersion) return next
-                if (visited.add(step.to)) queue.add(step.to to next)
-            }
-        }
-        throw IllegalStateException("No configuration migration path from $from to $currentVersion")
-    }
-
-    /** Entry point for constructing validated migration graphs. */
-    companion object {
-
-        /**
-         * Version marker every managed file carries by default: version `1`, no steps.
-         * Files that predate the marker are assumed to be version `1`.
-         */
-        @JvmField
-        val INITIAL: ConfigMigrationPlan = builder("1").assumeVersionWhenMissing("1").build()
-
-        /** Creates a migration-plan builder targeting [currentVersion]. */
-        @JvmStatic
-        fun builder(currentVersion: String): Builder = Builder(currentVersion)
-    }
-
-    /** Java-friendly builder for a directed configuration migration graph. */
-    class Builder(private val currentVersion: String) {
-        private var assumedVersion: String? = null
-        private var versionKey = "_config-version"
-        private val steps = mutableListOf<Step>()
-
-        /** Assigns [version] to existing files that do not contain the version key. */
-        fun assumeVersionWhenMissing(version: String): Builder = apply { assumedVersion = checked(version) }
-
-        /** Changes the root key used to read and write the schema version. */
-        fun versionKey(path: String): Builder = apply {
-            versionKey = path.also { require(it.isNotBlank() && '.' !in it) { "Version key must be one YAML key" } }
-        }
-
-        /** Adds one unique directed migration step. */
-        fun migrate(from: String, to: String, migration: ConfigMigration): Builder = apply {
-            val step = Step(checked(from), checked(to), migration)
-            require(step.from != step.to) { "Migration versions must differ" }
-            require(steps.none { it.from == step.from && it.to == step.to }) {
-                "Duplicate migration ${step.from} -> ${step.to}"
-            }
-            steps += step
-        }
-
-        /** Validates versions and reachability of the assumed version and creates the plan. */
-        fun build(): ConfigMigrationPlan {
-            val target = checked(currentVersion)
-            val plan = ConfigMigrationPlan(
-                target,
-                assumedVersion,
-                versionKey,
-                Collections.unmodifiableList(ArrayList(steps)),
-            )
-            assumedVersion?.let(plan::path)
-            return plan
-        }
-
-        private fun checked(value: String) = value.trim().also {
-            require(it.matches(Regex("[0-9]+(?:\\.[0-9]+)*(?:-[0-9A-Za-z.-]+)?"))) {
-                "Invalid config version: $value"
-            }
-        }
     }
 }

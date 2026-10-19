@@ -3,7 +3,6 @@ package ru.privatenull.pnlibrary.api.architecture
 import org.junit.jupiter.api.Assertions.assertTrue
 import org.junit.jupiter.api.Test
 import ru.privatenull.pnlibrary.api.commands.CommandDefinition
-import ru.privatenull.pnlibrary.api.config.ConfigMigrationPlan
 import ru.privatenull.pnlibrary.api.config.ConfigOptions
 import ru.privatenull.pnlibrary.api.config.ConfigTypeAccess
 import ru.privatenull.pnlibrary.api.diagnostics.DiagnosticConfiguration
@@ -23,7 +22,6 @@ class BuilderArchitectureTest {
     fun `public value declarations expose static builder entry points`() {
         val entryPoints = listOf(
             Triple(CommandDefinition::class.java, arrayOf(String::class.java), "command"),
-            Triple(ConfigMigrationPlan::class.java, arrayOf(String::class.java), "config migration"),
             Triple(ConfigOptions::class.java, emptyArray(), "config options"),
             Triple(ConfigTypeAccess::class.java, emptyArray(), "config access"),
             Triple(DiagnosticConfiguration::class.java, arrayOf(String::class.java), "diagnostic configuration"),

@@ -62,25 +62,44 @@ val config = scope.yaml("settings.yml", ConfigOptions.DEFAULT, validator) { Sett
 
 Явное имя ключа задаёт `@ConfigKey` и всегда сильнее `naming`.
 
-## Версия файла и миграции
+## Версия файла и шаги изменений
 
-В каждый файл автоматически добавляется строка `_config-version: '1'` с предупреждением на английском и
-русском языках «не менять и не удалять». Указывать версию вручную не нужно: пока вы не подключили свой план,
-действует `ConfigMigrationPlan.INITIAL` (версия 1, шагов нет), а файлы без маркера считаются версией 1.
-Комментарии администратора при перезагрузке сохраняются.
-
-Когда формат изменится, задайте новую версию и шаги один раз в коде:
+В каждый файл добавляется маркер версии `_config-version: N` с предупреждением на двух языках. Вручную его
+трогать не нужно. Шаги описываются в классе, который наследует `ConfigSteps`:
 
 ```kotlin
-val plan = ConfigMigrationPlan.builder("2")
-    .assumeVersionWhenMissing("1")
-    .migrate("1", "2") { doc -> doc.rename("db.host", "db.hostname") }
-    .build()
+object ShopSteps : ConfigSteps<ShopConfig>() {
+    init {
+        version(2) {
+            rename("pool-size", "db.pool.size")
+        }
+        version(3) {
+            val address = get("redis-address")
+            put("redis.host", address.before(":"))
+            put("redis.port", address.after(":").toInt())
+            remove("redis-address")
+        }
+    }
+}
 
-scope.yaml("settings.yml", ConfigOptions.builder().migrations(plan).build()) { Settings() }
+val config = scope.yaml("shop.yml", ConfigOptions.builder().migrations(ShopSteps).build()) { ShopConfig() }
 ```
 
-Если маркер версии не нужен, используйте `ConfigOptions.builder().withoutVersion()`.
+Действия внутри `version(n) { ... }`:
+- `get(путь)` возвращает значение, его можно сохранить в переменную;
+- `put(путь, значение)` записывает значение, `remove(путь)` удаляет ключ;
+- `rename(откуда, куда)` переименовывает или переносит.
+
+Для значения доступны `before(...)`, `after(...)` и `toInt()`.
+
+Правила:
+- номера версий идут подряд, начиная с 2; версия 1 означает состояние до любых шагов;
+- старые шаги не меняем, новые дописываем в конец;
+- при загрузке применяются только версии новее маркера файла, файл без маркера считается версией 1;
+- если шаг не выполнился, файл остаётся без изменений, причина пишется в ошибку;
+- файл, созданный более новой версией плагина, читается, но не перезаписывается.
+
+Без маркера версии: `ConfigOptions.builder().withoutVersion()`.
 
 ## Полиморфные типы
 

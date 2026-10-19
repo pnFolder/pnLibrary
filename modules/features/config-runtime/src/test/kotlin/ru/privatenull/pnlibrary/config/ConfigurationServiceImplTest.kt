@@ -80,7 +80,7 @@ class ConfigurationServiceImplTest {
         service().use { service ->
             scope(service).yaml<ServiceSettings>("settings.yml") { ServiceSettings() }.load()
             val text = Files.readString(directory.resolve("settings.yml"))
-            assertTrue(text.contains("_config-version: '1'"), text)
+            assertTrue(text.contains("_config-version: 1"), text)
             assertTrue(text.contains("DO NOT EDIT OR REMOVE"), text)
             assertTrue(text.contains("НЕ МЕНЯЙТЕ И НЕ УДАЛЯЙТЕ"), text)
         }
@@ -95,7 +95,7 @@ class ConfigurationServiceImplTest {
             config.reload()
             val text = Files.readString(directory.resolve("settings.yml"))
             assertTrue(text.contains("# my note"), text)
-            assertTrue(text.contains("_config-version: '1'"), text)
+            assertTrue(text.contains("_config-version: 1"), text)
             assertEquals(4, config.value.retries)
         }
     }

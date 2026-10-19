@@ -78,8 +78,8 @@ data class ConfigOptions @JvmOverloads constructor(
     val comments: CommentPolicy = CommentPolicy.ADD_MISSING,
     /** Whether pnLibrary may create a backup before rewriting an existing file. */
     val backups: Boolean = true,
-    /** Versioned migration graph applied before typed decoding. By default every file gets a version marker; `null` omits it. */
-    val migrations: ConfigMigrationPlan? = ConfigMigrationPlan.INITIAL,
+    /** Numbered steps that bring older files up to this code's version. Use `null` with [withoutVersion] to omit the marker. */
+    val migrations: ConfigSteps<*>? = ConfigSteps.NONE,
     /** Default conversion from source field names to YAML keys. */
     val naming: ConfigNamingStrategy = ConfigNamingStrategy.AS_DECLARED,
 ) {
@@ -101,7 +101,7 @@ data class ConfigOptions @JvmOverloads constructor(
         private var unknownValues = UnknownValuePolicy.PRESERVE
         private var comments = CommentPolicy.ADD_MISSING
         private var backups = true
-        private var migrations: ConfigMigrationPlan? = ConfigMigrationPlan.INITIAL
+        private var migrations: ConfigSteps<*>? = ConfigSteps.NONE
         private var naming = ConfigNamingStrategy.AS_DECLARED
         /** Sets the missing-file policy. */
         fun missingFile(value: MissingFilePolicy): Builder = apply { missingFile = value }
@@ -119,7 +119,7 @@ data class ConfigOptions @JvmOverloads constructor(
         fun backups(value: Boolean): Builder = apply { backups = value }
 
         /** Attaches a versioned migration plan. */
-        fun migrations(value: ConfigMigrationPlan): Builder = apply { migrations = value }
+        fun migrations(value: ConfigSteps<*>): Builder = apply { migrations = value }
 
         /** Omits the version marker from the file; use only for files that must stay marker-free. */
         fun withoutVersion(): Builder = apply { migrations = null }

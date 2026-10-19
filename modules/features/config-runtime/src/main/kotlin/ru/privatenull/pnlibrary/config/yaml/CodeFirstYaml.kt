@@ -69,6 +69,13 @@ class CodeFirstYaml<T> @JvmOverloads constructor(
 
         val original = fileStore.normalize(file.readText())
         val migration = options.migrations?.let { migrationEngine.migrate(original, it) }
+        if (migration?.newerThanCode == true) {
+            // Written by a newer plugin version: read it as it is and never rewrite it.
+            logger.warning("Файл ${file.name} создан более новой версией плагина; он читается без изменений.")
+            val value = decodeAndValidate(original)
+            loadedValue = value
+            return ConfigLoadResult(value, emptyList(), null)
+        }
         // Re-dumped YAML loses administrator comments, so it is used only when a migration step ran.
         val working = migration?.takeIf { it.applied.isNotEmpty() }?.content?.let(fileStore::normalize) ?: original
         val defaultPaths = YamlDefaultsMerger.paths(defaultsYaml).toSet()

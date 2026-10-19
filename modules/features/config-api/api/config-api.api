@@ -10,6 +10,13 @@ public abstract interface annotation class ru/privatenull/pnlibrary/api/config/C
 	public abstract fun value ()[Ljava/lang/String;
 }
 
+public final class ru/privatenull/pnlibrary/api/config/ConfigChanges {
+	public final fun get (Ljava/lang/String;)Lru/privatenull/pnlibrary/api/config/Value;
+	public final fun put (Ljava/lang/String;Ljava/lang/Object;)V
+	public final fun remove (Ljava/lang/String;)V
+	public final fun rename (Ljava/lang/String;Ljava/lang/String;)V
+}
+
 public abstract interface class ru/privatenull/pnlibrary/api/config/ConfigCodec {
 	public abstract fun decode (Ljava/lang/String;)Ljava/lang/Object;
 	public abstract fun encode (Ljava/lang/Object;)Ljava/lang/String;
@@ -67,49 +74,6 @@ public final class ru/privatenull/pnlibrary/api/config/ConfigLoadResult {
 	public fun toString ()Ljava/lang/String;
 }
 
-public abstract interface class ru/privatenull/pnlibrary/api/config/ConfigMigration {
-	public abstract fun migrate (Lru/privatenull/pnlibrary/api/config/ConfigDocument;)V
-}
-
-public final class ru/privatenull/pnlibrary/api/config/ConfigMigrationPlan {
-	public static final field Companion Lru/privatenull/pnlibrary/api/config/ConfigMigrationPlan$Companion;
-	public static final field INITIAL Lru/privatenull/pnlibrary/api/config/ConfigMigrationPlan;
-	public synthetic fun <init> (Ljava/lang/String;Ljava/lang/String;Ljava/lang/String;Ljava/util/List;Lkotlin/jvm/internal/DefaultConstructorMarker;)V
-	public static final fun builder (Ljava/lang/String;)Lru/privatenull/pnlibrary/api/config/ConfigMigrationPlan$Builder;
-	public final fun getAssumedVersion ()Ljava/lang/String;
-	public final fun getCurrentVersion ()Ljava/lang/String;
-	public final fun getSteps ()Ljava/util/List;
-	public final fun getVersionKey ()Ljava/lang/String;
-	public final fun path (Ljava/lang/String;)Ljava/util/List;
-}
-
-public final class ru/privatenull/pnlibrary/api/config/ConfigMigrationPlan$Builder {
-	public fun <init> (Ljava/lang/String;)V
-	public final fun assumeVersionWhenMissing (Ljava/lang/String;)Lru/privatenull/pnlibrary/api/config/ConfigMigrationPlan$Builder;
-	public final fun build ()Lru/privatenull/pnlibrary/api/config/ConfigMigrationPlan;
-	public final fun migrate (Ljava/lang/String;Ljava/lang/String;Lru/privatenull/pnlibrary/api/config/ConfigMigration;)Lru/privatenull/pnlibrary/api/config/ConfigMigrationPlan$Builder;
-	public final fun versionKey (Ljava/lang/String;)Lru/privatenull/pnlibrary/api/config/ConfigMigrationPlan$Builder;
-}
-
-public final class ru/privatenull/pnlibrary/api/config/ConfigMigrationPlan$Companion {
-	public final fun builder (Ljava/lang/String;)Lru/privatenull/pnlibrary/api/config/ConfigMigrationPlan$Builder;
-}
-
-public final class ru/privatenull/pnlibrary/api/config/ConfigMigrationPlan$Step {
-	public fun <init> (Ljava/lang/String;Ljava/lang/String;Lru/privatenull/pnlibrary/api/config/ConfigMigration;)V
-	public final fun component1 ()Ljava/lang/String;
-	public final fun component2 ()Ljava/lang/String;
-	public final fun component3 ()Lru/privatenull/pnlibrary/api/config/ConfigMigration;
-	public final fun copy (Ljava/lang/String;Ljava/lang/String;Lru/privatenull/pnlibrary/api/config/ConfigMigration;)Lru/privatenull/pnlibrary/api/config/ConfigMigrationPlan$Step;
-	public static synthetic fun copy$default (Lru/privatenull/pnlibrary/api/config/ConfigMigrationPlan$Step;Ljava/lang/String;Ljava/lang/String;Lru/privatenull/pnlibrary/api/config/ConfigMigration;ILjava/lang/Object;)Lru/privatenull/pnlibrary/api/config/ConfigMigrationPlan$Step;
-	public fun equals (Ljava/lang/Object;)Z
-	public final fun getFrom ()Ljava/lang/String;
-	public final fun getMigration ()Lru/privatenull/pnlibrary/api/config/ConfigMigration;
-	public final fun getTo ()Ljava/lang/String;
-	public fun hashCode ()I
-	public fun toString ()Ljava/lang/String;
-}
-
 public final class ru/privatenull/pnlibrary/api/config/ConfigNamingStrategy : java/lang/Enum {
 	public static final field AS_DECLARED Lru/privatenull/pnlibrary/api/config/ConfigNamingStrategy;
 	public static final field CAMEL_CASE Lru/privatenull/pnlibrary/api/config/ConfigNamingStrategy;
@@ -136,23 +100,23 @@ public final class ru/privatenull/pnlibrary/api/config/ConfigOptions {
 	public fun <init> (Lru/privatenull/pnlibrary/api/config/MissingFilePolicy;Lru/privatenull/pnlibrary/api/config/MissingValuePolicy;Lru/privatenull/pnlibrary/api/config/UnknownValuePolicy;)V
 	public fun <init> (Lru/privatenull/pnlibrary/api/config/MissingFilePolicy;Lru/privatenull/pnlibrary/api/config/MissingValuePolicy;Lru/privatenull/pnlibrary/api/config/UnknownValuePolicy;Lru/privatenull/pnlibrary/api/config/CommentPolicy;)V
 	public fun <init> (Lru/privatenull/pnlibrary/api/config/MissingFilePolicy;Lru/privatenull/pnlibrary/api/config/MissingValuePolicy;Lru/privatenull/pnlibrary/api/config/UnknownValuePolicy;Lru/privatenull/pnlibrary/api/config/CommentPolicy;Z)V
-	public fun <init> (Lru/privatenull/pnlibrary/api/config/MissingFilePolicy;Lru/privatenull/pnlibrary/api/config/MissingValuePolicy;Lru/privatenull/pnlibrary/api/config/UnknownValuePolicy;Lru/privatenull/pnlibrary/api/config/CommentPolicy;ZLru/privatenull/pnlibrary/api/config/ConfigMigrationPlan;)V
-	public fun <init> (Lru/privatenull/pnlibrary/api/config/MissingFilePolicy;Lru/privatenull/pnlibrary/api/config/MissingValuePolicy;Lru/privatenull/pnlibrary/api/config/UnknownValuePolicy;Lru/privatenull/pnlibrary/api/config/CommentPolicy;ZLru/privatenull/pnlibrary/api/config/ConfigMigrationPlan;Lru/privatenull/pnlibrary/api/config/ConfigNamingStrategy;)V
-	public synthetic fun <init> (Lru/privatenull/pnlibrary/api/config/MissingFilePolicy;Lru/privatenull/pnlibrary/api/config/MissingValuePolicy;Lru/privatenull/pnlibrary/api/config/UnknownValuePolicy;Lru/privatenull/pnlibrary/api/config/CommentPolicy;ZLru/privatenull/pnlibrary/api/config/ConfigMigrationPlan;Lru/privatenull/pnlibrary/api/config/ConfigNamingStrategy;ILkotlin/jvm/internal/DefaultConstructorMarker;)V
+	public fun <init> (Lru/privatenull/pnlibrary/api/config/MissingFilePolicy;Lru/privatenull/pnlibrary/api/config/MissingValuePolicy;Lru/privatenull/pnlibrary/api/config/UnknownValuePolicy;Lru/privatenull/pnlibrary/api/config/CommentPolicy;ZLru/privatenull/pnlibrary/api/config/ConfigSteps;)V
+	public fun <init> (Lru/privatenull/pnlibrary/api/config/MissingFilePolicy;Lru/privatenull/pnlibrary/api/config/MissingValuePolicy;Lru/privatenull/pnlibrary/api/config/UnknownValuePolicy;Lru/privatenull/pnlibrary/api/config/CommentPolicy;ZLru/privatenull/pnlibrary/api/config/ConfigSteps;Lru/privatenull/pnlibrary/api/config/ConfigNamingStrategy;)V
+	public synthetic fun <init> (Lru/privatenull/pnlibrary/api/config/MissingFilePolicy;Lru/privatenull/pnlibrary/api/config/MissingValuePolicy;Lru/privatenull/pnlibrary/api/config/UnknownValuePolicy;Lru/privatenull/pnlibrary/api/config/CommentPolicy;ZLru/privatenull/pnlibrary/api/config/ConfigSteps;Lru/privatenull/pnlibrary/api/config/ConfigNamingStrategy;ILkotlin/jvm/internal/DefaultConstructorMarker;)V
 	public static final fun builder ()Lru/privatenull/pnlibrary/api/config/ConfigOptions$Builder;
 	public final fun component1 ()Lru/privatenull/pnlibrary/api/config/MissingFilePolicy;
 	public final fun component2 ()Lru/privatenull/pnlibrary/api/config/MissingValuePolicy;
 	public final fun component3 ()Lru/privatenull/pnlibrary/api/config/UnknownValuePolicy;
 	public final fun component4 ()Lru/privatenull/pnlibrary/api/config/CommentPolicy;
 	public final fun component5 ()Z
-	public final fun component6 ()Lru/privatenull/pnlibrary/api/config/ConfigMigrationPlan;
+	public final fun component6 ()Lru/privatenull/pnlibrary/api/config/ConfigSteps;
 	public final fun component7 ()Lru/privatenull/pnlibrary/api/config/ConfigNamingStrategy;
-	public final fun copy (Lru/privatenull/pnlibrary/api/config/MissingFilePolicy;Lru/privatenull/pnlibrary/api/config/MissingValuePolicy;Lru/privatenull/pnlibrary/api/config/UnknownValuePolicy;Lru/privatenull/pnlibrary/api/config/CommentPolicy;ZLru/privatenull/pnlibrary/api/config/ConfigMigrationPlan;Lru/privatenull/pnlibrary/api/config/ConfigNamingStrategy;)Lru/privatenull/pnlibrary/api/config/ConfigOptions;
-	public static synthetic fun copy$default (Lru/privatenull/pnlibrary/api/config/ConfigOptions;Lru/privatenull/pnlibrary/api/config/MissingFilePolicy;Lru/privatenull/pnlibrary/api/config/MissingValuePolicy;Lru/privatenull/pnlibrary/api/config/UnknownValuePolicy;Lru/privatenull/pnlibrary/api/config/CommentPolicy;ZLru/privatenull/pnlibrary/api/config/ConfigMigrationPlan;Lru/privatenull/pnlibrary/api/config/ConfigNamingStrategy;ILjava/lang/Object;)Lru/privatenull/pnlibrary/api/config/ConfigOptions;
+	public final fun copy (Lru/privatenull/pnlibrary/api/config/MissingFilePolicy;Lru/privatenull/pnlibrary/api/config/MissingValuePolicy;Lru/privatenull/pnlibrary/api/config/UnknownValuePolicy;Lru/privatenull/pnlibrary/api/config/CommentPolicy;ZLru/privatenull/pnlibrary/api/config/ConfigSteps;Lru/privatenull/pnlibrary/api/config/ConfigNamingStrategy;)Lru/privatenull/pnlibrary/api/config/ConfigOptions;
+	public static synthetic fun copy$default (Lru/privatenull/pnlibrary/api/config/ConfigOptions;Lru/privatenull/pnlibrary/api/config/MissingFilePolicy;Lru/privatenull/pnlibrary/api/config/MissingValuePolicy;Lru/privatenull/pnlibrary/api/config/UnknownValuePolicy;Lru/privatenull/pnlibrary/api/config/CommentPolicy;ZLru/privatenull/pnlibrary/api/config/ConfigSteps;Lru/privatenull/pnlibrary/api/config/ConfigNamingStrategy;ILjava/lang/Object;)Lru/privatenull/pnlibrary/api/config/ConfigOptions;
 	public fun equals (Ljava/lang/Object;)Z
 	public final fun getBackups ()Z
 	public final fun getComments ()Lru/privatenull/pnlibrary/api/config/CommentPolicy;
-	public final fun getMigrations ()Lru/privatenull/pnlibrary/api/config/ConfigMigrationPlan;
+	public final fun getMigrations ()Lru/privatenull/pnlibrary/api/config/ConfigSteps;
 	public final fun getMissingFile ()Lru/privatenull/pnlibrary/api/config/MissingFilePolicy;
 	public final fun getMissingValues ()Lru/privatenull/pnlibrary/api/config/MissingValuePolicy;
 	public final fun getNaming ()Lru/privatenull/pnlibrary/api/config/ConfigNamingStrategy;
@@ -166,7 +130,7 @@ public final class ru/privatenull/pnlibrary/api/config/ConfigOptions$Builder {
 	public final fun backups (Z)Lru/privatenull/pnlibrary/api/config/ConfigOptions$Builder;
 	public final fun build ()Lru/privatenull/pnlibrary/api/config/ConfigOptions;
 	public final fun comments (Lru/privatenull/pnlibrary/api/config/CommentPolicy;)Lru/privatenull/pnlibrary/api/config/ConfigOptions$Builder;
-	public final fun migrations (Lru/privatenull/pnlibrary/api/config/ConfigMigrationPlan;)Lru/privatenull/pnlibrary/api/config/ConfigOptions$Builder;
+	public final fun migrations (Lru/privatenull/pnlibrary/api/config/ConfigSteps;)Lru/privatenull/pnlibrary/api/config/ConfigOptions$Builder;
 	public final fun missingFile (Lru/privatenull/pnlibrary/api/config/MissingFilePolicy;)Lru/privatenull/pnlibrary/api/config/ConfigOptions$Builder;
 	public final fun missingValues (Lru/privatenull/pnlibrary/api/config/MissingValuePolicy;)Lru/privatenull/pnlibrary/api/config/ConfigOptions$Builder;
 	public final fun naming (Lru/privatenull/pnlibrary/api/config/ConfigNamingStrategy;)Lru/privatenull/pnlibrary/api/config/ConfigOptions$Builder;
@@ -252,6 +216,20 @@ public abstract interface annotation class ru/privatenull/pnlibrary/api/config/C
 public abstract interface class ru/privatenull/pnlibrary/api/config/ConfigSerializer {
 	public abstract fun deserialize (Ljava/lang/Object;Lru/privatenull/pnlibrary/api/config/ConfigSerializationContext;)Ljava/lang/Object;
 	public abstract fun serialize (Ljava/lang/Object;Lru/privatenull/pnlibrary/api/config/ConfigSerializationContext;)Ljava/lang/Object;
+}
+
+public class ru/privatenull/pnlibrary/api/config/ConfigSteps {
+	public static final field BASE_VERSION I
+	public static final field Companion Lru/privatenull/pnlibrary/api/config/ConfigSteps$Companion;
+	public static final field NONE Lru/privatenull/pnlibrary/api/config/ConfigSteps;
+	public static final field VERSION_KEY Ljava/lang/String;
+	public fun <init> ()V
+	public final fun applyTo (Lru/privatenull/pnlibrary/api/config/ConfigDocument;I)Ljava/util/List;
+	public final fun getLatestVersion ()I
+	protected final fun version (ILkotlin/jvm/functions/Function1;)V
+}
+
+public final class ru/privatenull/pnlibrary/api/config/ConfigSteps$Companion {
 }
 
 public abstract interface annotation class ru/privatenull/pnlibrary/api/config/ConfigType : java/lang/annotation/Annotation {
@@ -373,5 +351,11 @@ public final class ru/privatenull/pnlibrary/api/config/UnknownValuePolicy : java
 	public static fun getEntries ()Lkotlin/enums/EnumEntries;
 	public static fun valueOf (Ljava/lang/String;)Lru/privatenull/pnlibrary/api/config/UnknownValuePolicy;
 	public static fun values ()[Lru/privatenull/pnlibrary/api/config/UnknownValuePolicy;
+}
+
+public final class ru/privatenull/pnlibrary/api/config/Value {
+	public final fun after (Ljava/lang/String;)Lru/privatenull/pnlibrary/api/config/Value;
+	public final fun before (Ljava/lang/String;)Lru/privatenull/pnlibrary/api/config/Value;
+	public final fun toInt ()I
 }
 
