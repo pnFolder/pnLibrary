@@ -93,6 +93,7 @@ class ConfigurationServiceImpl(
             type: Class<T>,
             defaults: Supplier<T>,
             options: ConfigOptions,
+            validator: ConfigValueValidator<T>,
         ): ManagedConfig<T> {
             check(!scopeClosed.get()) { "Configuration scope is closed" }
             val relative = Paths.get(path).normalize()
@@ -119,7 +120,7 @@ class ConfigurationServiceImpl(
                 defaults = defaultValue,
                 codec = codec,
                 logger = logger,
-                validator = ConfigValueValidator(codec::validate),
+                validator = ConfigValueValidator { value -> codec.validate(value) + validator.validate(value) },
                 options = options,
             )
             val owned = OwnedConfig(target, handle)

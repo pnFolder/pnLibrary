@@ -38,7 +38,22 @@ interface ConfigScope : AutoCloseable {
      * `.yml` or `.yaml`. One scope cannot register the same normalized file twice. [defaults] is
      * evaluated while the handle is created and must return a non-null value.
      */
-    fun <T : Any> yaml(path: String, type: Class<T>, defaults: Supplier<T>, options: ConfigOptions): ManagedConfig<T>
+    fun <T : Any> yaml(path: String, type: Class<T>, defaults: Supplier<T>, options: ConfigOptions): ManagedConfig<T> =
+        yaml(path, type, defaults, options, ConfigValueValidator { emptyList() })
+
+    /**
+     * Registers a typed YAML file with an additional programmatic [validator].
+     *
+     * Annotation rules such as `@ConfigRange` and the [validator] both run on every load, reload
+     * and save; their problems are reported together in one [ConfigValidationException].
+     */
+    fun <T : Any> yaml(
+        path: String,
+        type: Class<T>,
+        defaults: Supplier<T>,
+        options: ConfigOptions,
+        validator: ConfigValueValidator<T>,
+    ): ManagedConfig<T>
 
     /**
      * Registers or replaces the scope-local serializer for [type].
@@ -125,6 +140,23 @@ inline fun <reified T : Any> ConfigScope.yaml(
     options: ConfigOptions,
     noinline defaults: () -> T,
 ): ManagedConfig<T> = yaml(path, T::class.java, Supplier(defaults), options)
+
+/**
+ * Registers a typed YAML file with explicit [options] and an extra programmatic [validator].
+ *
+ * ```kotlin
+ * val validator = ConfigValidatorBuilder<Settings>()
+ *     .require("database.port", "must be between 1 and 65535") { it.database.port in 1..65535 }
+ *     .build()
+ * val settings = scope.yaml("settings.yml", ConfigOptions.DEFAULT, validator) { Settings() }
+ * ```
+ */
+inline fun <reified T : Any> ConfigScope.yaml(
+    path: String,
+    options: ConfigOptions,
+    validator: ConfigValueValidator<T>,
+    noinline defaults: () -> T,
+): ManagedConfig<T> = yaml(path, T::class.java, Supplier(defaults), options, validator)
 
 /**
  * Registers [serializer] for its inferred value type in this scope.
