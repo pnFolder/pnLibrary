@@ -13,6 +13,9 @@ private val COMPONENT_ID = Regex("[a-z0-9][a-z0-9_.-]*")
  * @property version component semantic version
  * @property apiMinimum oldest supported pnLibrary API generation
  * @property apiMaximum newest supported pnLibrary API generation
+ * @property channel release channel, such as `stable` or `beta`
+ * @property javaMinimum oldest Java release the component runs on
+ * @property javaMaximum newest Java release the component runs on, or `null` when unbounded
  */
 data class ComponentMetadata(
     val id: String,

@@ -22,8 +22,11 @@ abstract class GenerateComponentMetadata : DefaultTask() {
     @get:Input abstract val apiMinimum: Property<Int>
     /** Newest supported pnLibrary API generation. */
     @get:Input abstract val apiMaximum: Property<Int>
+    /** Release channel, such as `stable` or `beta`. */
     @get:Input abstract val channel: Property<String>
+    /** Oldest Java release the component runs on. */
     @get:Input abstract val javaMinimum: Property<Int>
+    /** Newest Java release the component runs on, when bounded. */
     @get:Input @get:Optional abstract val javaMaximum: Property<Int>
     /** Resource root that receives `META-INF/pnlibrary/component.json`. */
     @get:OutputDirectory abstract val outputDirectory: DirectoryProperty

@@ -33,12 +33,15 @@ class GenerateComponentMetadataMojo : AbstractMojo() {
     @Parameter(property = "pnComponent.apiMaximum")
     var apiMaximum: Int? = null
 
+    /** Release channel, such as `stable` or `beta`. */
     @Parameter(property = "pnComponent.channel", defaultValue = "stable")
     var channel: String = "stable"
 
+    /** Oldest Java release the component runs on. */
     @Parameter(property = "pnComponent.javaMinimum", defaultValue = "8")
     var javaMinimum: Int = 8
 
+    /** Newest Java release the component runs on, when bounded. */
     @Parameter(property = "pnComponent.javaMaximum")
     var javaMaximum: Int? = null
 
