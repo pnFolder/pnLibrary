@@ -7,7 +7,6 @@ base { archivesName = "pnLibrary-console-style" }
 
 java {
     withSourcesJar()
-    withJavadocJar()
 }
 
 tasks.withType<Test>().configureEach { useJUnitPlatform() }
