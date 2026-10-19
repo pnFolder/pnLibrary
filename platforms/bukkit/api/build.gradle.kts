@@ -28,10 +28,8 @@ mavenPublishing {
             }
         }
         developers {
-            developer {
-                id.set("pnFolder")
-                name.set("pnFolder")
-                url.set("https://github.com/pnFolder")
+            rootProject.property("pnlibrary.authors").toString().split(",").map(String::trim).forEach { author ->
+                developer { id.set(author); name.set(author) }
             }
         }
         scm {

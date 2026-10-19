@@ -24,7 +24,7 @@ import java.nio.file.Path
 @Plugin(
     id = PnLibraryIdentity.PRODUCT_ID,
     name = PnLibraryIdentity.NAME,
-    authors = [PnLibraryIdentity.AUTHOR],
+    authors = ["privatenull", "inventorytype"],
     description = PnLibraryIdentity.DESCRIPTION,
     url = PnLibraryIdentity.REPOSITORY_URL,
 )

@@ -14,7 +14,11 @@ mavenPublishing {
         inceptionYear.set("2026")
         url.set("https://github.com/${rootProject.property("pnlibrary.repository")}")
         licenses { license { name.set(providers.gradleProperty("POM_LICENSE_NAME")); url.set(providers.gradleProperty("POM_LICENSE_URL")); distribution.set(providers.gradleProperty("POM_LICENSE_DIST").orElse("repo")) } }
-        developers { developer { id.set("pnFolder"); name.set("pnFolder"); url.set("https://github.com/pnFolder") } }
+        developers {
+            rootProject.property("pnlibrary.authors").toString().split(",").map(String::trim).forEach { author ->
+                developer { id.set(author); name.set(author) }
+            }
+        }
         scm { url.set("https://github.com/${rootProject.property("pnlibrary.repository")}"); connection.set("scm:git:git://github.com/${rootProject.property("pnlibrary.repository")}.git"); developerConnection.set("scm:git:ssh://git@github.com/${rootProject.property("pnlibrary.repository")}.git") }
     }
 }

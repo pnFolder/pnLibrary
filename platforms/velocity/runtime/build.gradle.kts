@@ -34,3 +34,21 @@ dependencies {
 java {
     withSourcesJar()
 }
+
+// The Velocity @Plugin annotation needs literal authors, so fail the build when it drifts from gradle.properties.
+val verifyVelocityAuthors by tasks.registering {
+    val source = file("src/main/kotlin/org/pnfolder/pnlibrary/velocity/PnLibraryVelocityPlugin.kt")
+    val expected = rootProject.property("pnlibrary.authors").toString()
+        .split(",").map(String::trim).filter(String::isNotEmpty)
+    inputs.file(source)
+    inputs.property("expected", expected)
+    doLast {
+        val declared = Regex("""authors\s*=\s*\[(.*?)]""", RegexOption.DOT_MATCHES_ALL)
+            .find(source.readText())?.groupValues?.get(1)
+            ?.split(",")?.map { it.trim().trim('"') }?.filter(String::isNotEmpty)
+        check(declared == expected) {
+            "Velocity @Plugin authors $declared do not match gradle.properties $expected"
+        }
+    }
+}
+tasks.named("check") { dependsOn(verifyVelocityAuthors) }
