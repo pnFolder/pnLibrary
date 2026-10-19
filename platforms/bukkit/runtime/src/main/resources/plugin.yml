@@ -1,6 +1,6 @@
 name: '${name}'
 version: '${version}'
-main: ru.privatenull.pnlibrary.bukkit.PnLibraryBukkitPlugin
+main: org.pnfolder.pnlibrary.bukkit.PnLibraryBukkitPlugin
 authors: ${authors}
 description: '${description}'
 website: '${website}'

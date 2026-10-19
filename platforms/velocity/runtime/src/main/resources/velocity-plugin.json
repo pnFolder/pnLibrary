@@ -4,5 +4,5 @@
   "version": "${version}",
   "description": "Shared runtime and diagnostics for pnFolder plugins",
   "authors": ["pnFolder"],
-  "main": "ru.privatenull.pnlibrary.velocity.PnLibraryVelocityPlugin"
+  "main": "org.pnfolder.pnlibrary.velocity.PnLibraryVelocityPlugin"
 }

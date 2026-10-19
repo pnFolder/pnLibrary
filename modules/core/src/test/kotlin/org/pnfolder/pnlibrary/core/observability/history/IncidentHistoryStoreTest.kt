@@ -1,0 +1,80 @@
+package org.pnfolder.pnlibrary.core.observability.history
+
+import org.junit.jupiter.api.Assertions.assertEquals
+import org.junit.jupiter.api.Assertions.assertFalse
+import org.junit.jupiter.api.Assertions.assertThrows
+import org.junit.jupiter.api.Test
+import org.junit.jupiter.api.io.TempDir
+import java.nio.file.Files
+import java.nio.file.Path
+import java.nio.file.attribute.FileTime
+import java.time.Clock
+import java.time.Instant
+import java.time.ZoneOffset
+
+class IncidentHistoryStoreTest {
+    @TempDir
+    lateinit var temporaryDirectory: Path
+
+    private val clock = Clock.fixed(Instant.parse("2026-01-01T00:00:00Z"), ZoneOffset.UTC)
+
+    @Test
+    fun `disabled encryption never persists plaintext history`() {
+        val history = IncidentHistoryStore(
+            directory = temporaryDirectory,
+            codec = null,
+            retentionDays = 30,
+            maxBytes = 1_024,
+            clock = clock,
+        )
+
+        history.save(listOf(mapOf("message" to "secret")), emptyMap())
+
+        assertFalse(Files.list(temporaryDirectory).use { it.findAny().isPresent })
+    }
+
+    @Test
+    fun `prune removes history older than the retention period without saving`() {
+        val old = temporaryDirectory.resolve("old.pndlog")
+        val fresh = temporaryDirectory.resolve("fresh.pndlog")
+        Files.write(old, ByteArray(2))
+        Files.write(fresh, ByteArray(2))
+        Files.setLastModifiedTime(old, FileTime.from(clock.instant().minusSeconds(40L * 86_400)))
+        Files.setLastModifiedTime(fresh, FileTime.from(clock.instant().minusSeconds(86_400)))
+        val history = IncidentHistoryStore(temporaryDirectory, null, retentionDays = 30, maxBytes = 1_024, clock = clock)
+
+        history.prune()
+
+        assertFalse(Files.exists(old))
+        assertEquals(true, Files.exists(fresh))
+    }
+
+    @Test
+    fun `file listing respects aggregate encrypted byte budget`() {
+        Files.write(temporaryDirectory.resolve("a.pndlog"), ByteArray(3) { 1 })
+        Files.write(temporaryDirectory.resolve("b.pndlog"), ByteArray(3) { 2 })
+        Files.write(temporaryDirectory.resolve("ignored.txt"), ByteArray(1))
+        val history = IncidentHistoryStore(
+            directory = temporaryDirectory,
+            codec = null,
+            retentionDays = 30,
+            maxBytes = 4,
+            clock = clock,
+        )
+
+        val files = history.files()
+
+        assertEquals(listOf("a.pndlog"), files.map { it.first })
+        assertEquals(3, files.single().second.size)
+    }
+
+    @Test
+    fun `rejects invalid retention limits`() {
+        assertThrows(IllegalArgumentException::class.java) {
+            IncidentHistoryStore(temporaryDirectory, null, retentionDays = 0, maxBytes = 1, clock = clock)
+        }
+        assertThrows(IllegalArgumentException::class.java) {
+            IncidentHistoryStore(temporaryDirectory, null, retentionDays = 1, maxBytes = 0, clock = clock)
+        }
+    }
+}

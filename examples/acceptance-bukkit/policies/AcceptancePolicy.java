@@ -1,9 +1,9 @@
 package acceptance.policy;
 
-import ru.privatenull.pnlibrary.api.remote.RemotePolicy;
-import ru.privatenull.pnlibrary.api.remote.RemotePolicyContext;
-import ru.privatenull.pnlibrary.api.remote.RemotePolicyExplanation;
-import ru.privatenull.pnlibrary.api.remote.RemotePolicyResult;
+import org.pnfolder.pnlibrary.api.remote.RemotePolicy;
+import org.pnfolder.pnlibrary.api.remote.RemotePolicyContext;
+import org.pnfolder.pnlibrary.api.remote.RemotePolicyExplanation;
+import org.pnfolder.pnlibrary.api.remote.RemotePolicyResult;
 
 /** Local acceptance policy. Change MINIMUM_VERSION to test allow and deny decisions. */
 public final class AcceptancePolicy implements RemotePolicy {

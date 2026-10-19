@@ -9,7 +9,7 @@ dependencies {
 
 tasks.shadowJar {
     relocate(
-        "ru.privatenull.pnlibrary.bootstrap",
+        "org.pnfolder.pnlibrary.bootstrap",
         "your.plugin.libs.pnlibrary.bootstrap",
     )
     relocate("com.google.gson", "your.plugin.libs.gson")

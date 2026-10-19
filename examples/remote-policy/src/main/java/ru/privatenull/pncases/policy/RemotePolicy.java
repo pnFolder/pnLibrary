@@ -1,10 +1,10 @@
 package ru.privatenull.pncases.policy;
 
-import ru.privatenull.pnlibrary.api.remote.RemotePolicyContext;
-import ru.privatenull.pnlibrary.api.remote.RemotePolicyResult;
+import org.pnfolder.pnlibrary.api.remote.RemotePolicyContext;
+import org.pnfolder.pnlibrary.api.remote.RemotePolicyResult;
 
 /** Example policy compiled as Java 8 and uploaded separately from pnCases. */
-public final class RemotePolicy implements ru.privatenull.pnlibrary.api.remote.RemotePolicy {
+public final class RemotePolicy implements org.pnfolder.pnlibrary.api.remote.RemotePolicy {
     private static final String MINIMUM_PLUGIN_VERSION = "2.4.0";
 
     @Override

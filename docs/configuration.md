@@ -10,7 +10,7 @@
 | `pnlibrary-config-api` (`:modules:features:config-api`) | Типы, аннотации и `ConfigScope`. От него зависят плагины. |
 | `pnlibrary-config` (`:modules:features:config-runtime`) | Реализация на SnakeYAML. Входит в сборку pnLibrary. |
 
-Пакет API: `ru.privatenull.pnlibrary.api.config`.
+Пакет API: `org.pnfolder.pnlibrary.api.config`.
 
 ## Минимальный пример
 

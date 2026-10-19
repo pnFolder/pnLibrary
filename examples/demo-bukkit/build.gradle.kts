@@ -25,8 +25,8 @@ tasks.named<Jar>("jar") { archiveClassifier.set("plain") }
 val demoJar = tasks.named<ShadowJar>("shadowJar") {
     archiveClassifier.set("")
     duplicatesStrategy = DuplicatesStrategy.INCLUDE
-    relocate("ru.privatenull.pnlibrary.localization", "ru.privatenull.pnlibrary.demo.libs.localization")
-    relocate("com.google.gson", "ru.privatenull.pnlibrary.demo.libs.gson")
+    relocate("org.pnfolder.pnlibrary.localization", "org.pnfolder.pnlibrary.demo.libs.localization")
+    relocate("com.google.gson", "org.pnfolder.pnlibrary.demo.libs.gson")
 }
 tasks.named("assemble") { dependsOn("shadowJar") }
 
@@ -39,14 +39,14 @@ val verifyDemoJar = tasks.register("verifyDemoJar") {
         JarFile(demoJar.get().archiveFile.get().asFile).use { jar ->
             for (entry in listOf(
                 "plugin.yml",
-                "ru/privatenull/pnlibrary/demo/DemoPlugin.class",
-                "ru/privatenull/pnlibrary/demo/libs/localization/MinecraftLocalization.class",
-                "ru/privatenull/pnlibrary/demo/libs/gson/Gson.class",
+                "org/pnfolder/pnlibrary/demo/DemoPlugin.class",
+                "org/pnfolder/pnlibrary/demo/libs/localization/MinecraftLocalization.class",
+                "org/pnfolder/pnlibrary/demo/libs/gson/Gson.class",
             )) check(jar.getJarEntry(entry) != null) { "Demo JAR is missing $entry" }
             for (entry in listOf(
-                "ru/privatenull/pnlibrary/api/runtime/PnLibrary.class",
-                "ru/privatenull/pnlibrary/core/runtime/PnLibraryImpl.class",
-                "ru/privatenull/pnlibrary/localization/MinecraftLocalization.class",
+                "org/pnfolder/pnlibrary/api/runtime/PnLibrary.class",
+                "org/pnfolder/pnlibrary/core/runtime/PnLibraryImpl.class",
+                "org/pnfolder/pnlibrary/localization/MinecraftLocalization.class",
                 "com/google/gson/Gson.class",
                 "kotlin/Unit.class",
             )) check(jar.getJarEntry(entry) == null) { "Demo JAR contains an unisolated dependency: $entry" }

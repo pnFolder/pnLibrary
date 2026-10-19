@@ -1,0 +1,28 @@
+package org.pnfolder.pnlibrary.core.runtime
+
+import org.pnfolder.pnlibrary.api.tasks.TaskServiceSettings
+import org.pnfolder.pnlibrary.core.audiences.AudienceServiceImpl
+import org.pnfolder.pnlibrary.core.commands.CommandServiceImpl
+import org.pnfolder.pnlibrary.core.tasks.TaskServiceImpl
+import org.pnfolder.pnlibrary.spi.audiences.PlatformAudienceAdapter
+import org.pnfolder.pnlibrary.spi.commands.PlatformCommandAdapter
+import org.pnfolder.pnlibrary.spi.platform.PlatformLogging
+import org.pnfolder.pnlibrary.spi.tasks.PlatformTaskAdapter
+
+/** Creates the services that are direct translations of native platform adapters. */
+internal class PlatformServiceSet(
+    commandAdapter: PlatformCommandAdapter,
+    audienceAdapter: PlatformAudienceAdapter,
+    taskAdapter: PlatformTaskAdapter,
+    platformLogging: PlatformLogging,
+    taskHistoryCapacity: Int,
+    errorLogger: (Any, String, Throwable) -> Unit,
+) {
+    val tasks = TaskServiceImpl(
+        adapter = taskAdapter,
+        settings = TaskServiceSettings(taskHistoryCapacity),
+        errorLogger = errorLogger,
+    )
+    val commands = CommandServiceImpl(commandAdapter, platformLogging)
+    val audiences = AudienceServiceImpl(audienceAdapter)
+}

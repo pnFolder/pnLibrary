@@ -1,0 +1,92 @@
+package org.pnfolder.pnlibrary.core.updates.policy
+
+import org.yaml.snakeyaml.LoaderOptions
+import org.yaml.snakeyaml.Yaml
+import org.yaml.snakeyaml.constructor.SafeConstructor
+import org.pnfolder.pnlibrary.common.io.AtomicFiles
+import org.pnfolder.pnlibrary.core.io.TextFiles
+import java.nio.charset.StandardCharsets
+import java.nio.file.Files
+import java.nio.file.Path
+
+/** Reads, migrates and validates the persisted update policy. */
+internal class UpdateConfigurationLoader(
+    private val warning: (String) -> Unit,
+) {
+    private var malformed = false
+
+    fun load(file: Path): UpdateConfiguration {
+        malformed = false
+        Files.createDirectories(file.toAbsolutePath().parent)
+        if (!Files.exists(file)) {
+            val defaults = UpdateConfiguration()
+            writeAtomic(file, defaults.toYaml())
+            return defaults
+        }
+
+        val source = TextFiles.read(file, StandardCharsets.UTF_8)
+        val parsed = parseYaml(source)
+        return readCurrentConfiguration(file, source, parsed)
+    }
+
+    private fun readCurrentConfiguration(
+        file: Path,
+        source: String,
+        parsed: Map<String, Any?>,
+    ): UpdateConfiguration {
+        val root = parsed.child("updates") ?: emptyMap<String, Any?>().also { markMalformed() }
+        ensureLibrarySection(file, source, parsed, root.child("library"))
+        val result = UpdatePolicyReader(::markMalformed).read(root)
+        if (malformed) warning("Invalid update configuration values were replaced with conservative defaults")
+        return result
+    }
+
+    private fun ensureLibrarySection(
+        file: Path,
+        source: String,
+        parsed: Map<String, Any?>,
+        library: Map<String, Any?>?,
+    ) {
+        if (library != null || !parsed.containsKey("updates") || source.contains("  library:\n")) return
+        val block = """
+
+  library:
+    # Канал релизов для самой pnLibrary: stable, rc, beta, alpha или dev.
+    channel: stable
+    # Разрешить автоматическую загрузку новой версии самой pnLibrary.
+    automatic-download: false
+        """.trimEnd()
+        runCatching { writeAtomic(file, source.trimEnd() + block + "\n") }.onFailure { error ->
+            warning("Could not add the library section to ${file.fileName}: ${error.message}")
+        }
+    }
+
+    private fun markMalformed() {
+        malformed = true
+    }
+
+    companion object {
+        @Suppress("UNCHECKED_CAST")
+        private fun parseYaml(source: String): Map<String, Any?> = try {
+            val strictBooleans = source.replace(
+                Regex("(?i)(:\\s*)(yes|no|on|off)(?=\\s*[,}#\\r\\n])"),
+                "$1\"$2\"",
+            )
+            (Yaml(SafeConstructor(LoaderOptions())).load<Any?>(strictBooleans) as? Map<*, *>)
+                ?.entries
+                ?.associate { it.key.toString() to it.value }
+                ?: emptyMap()
+        } catch (_: Exception) {
+            // Unparseable YAML has no `updates` section, which the loader reports as malformed.
+            emptyMap()
+        }
+
+        private fun Map<String, Any?>.child(key: String): Map<String, Any?>? = get(key).asStringMap()
+
+        private fun Any?.asStringMap(): Map<String, Any?>? =
+            (this as? Map<*, *>)?.entries?.associate { it.key.toString() to it.value }
+
+        private fun writeAtomic(file: Path, text: String) =
+            AtomicFiles.write(file) { temporary -> TextFiles.write(temporary, text, StandardCharsets.UTF_8) }
+    }
+}

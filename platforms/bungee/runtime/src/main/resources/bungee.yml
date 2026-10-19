@@ -1,5 +1,5 @@
 name: '${name}'
 version: '${version}'
-main: ru.privatenull.pnlibrary.bungee.PnLibraryBungeePlugin
+main: org.pnfolder.pnlibrary.bungee.PnLibraryBungeePlugin
 author: '${author}'
 description: '${description}'

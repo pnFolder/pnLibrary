@@ -1,0 +1,18 @@
+package org.pnfolder.pnlibrary.core.observability
+
+import org.pnfolder.pnlibrary.api.observability.ComponentStatus
+
+/** Latest reported status of every plugin component. */
+internal class ComponentStatusRegistry {
+    private val lock = Any()
+    private val statuses = linkedMapOf<ComponentKey, ComponentStatus>()
+
+    fun update(status: ComponentStatus): ComponentStatus = synchronized(lock) {
+        statuses[ComponentKey(status.plugin, status.component)] = status
+        status
+    }
+
+    fun snapshot(): List<ComponentStatus> = synchronized(lock) { statuses.values.toList() }
+
+    private data class ComponentKey(val plugin: String, val component: String)
+}

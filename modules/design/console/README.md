@@ -9,7 +9,7 @@ dependencies {
 
 tasks.shadowJar {
     relocate(
-        "ru.privatenull.pnlibrary.console",
+        "org.pnfolder.pnlibrary.console",
         "your.plugin.libs.pnlibrary.console",
     )
 }

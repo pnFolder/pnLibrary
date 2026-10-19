@@ -47,11 +47,11 @@ fun ShadowJar.applyCommonConfig() {
 
     // Keep kotlin.* intact: the runtime .kt policy compiler resolves the stdlib from this JAR.
     // Platform plugin classloaders isolate it from unrelated plugins.
-    relocate("kotlinx.",                "ru.privatenull.pnlibrary.libs.kotlinx.")
+    relocate("kotlinx.",                "org.pnfolder.pnlibrary.libs.kotlinx.")
     // Keep the compiler namespace intact: its ServiceLoader descriptors use these exact names.
-    relocate("com.google.gson",         "ru.privatenull.pnlibrary.libs.gson")
-    relocate("org.yaml.snakeyaml",      "ru.privatenull.pnlibrary.libs.yaml")
-    relocate("org.bstats",              "ru.privatenull.pnlibrary.libs.bstats")
+    relocate("com.google.gson",         "org.pnfolder.pnlibrary.libs.gson")
+    relocate("org.yaml.snakeyaml",      "org.pnfolder.pnlibrary.libs.yaml")
+    relocate("org.bstats",              "org.pnfolder.pnlibrary.libs.bstats")
 
     exclude("META-INF/versions/**")
     exclude("module-info.class")
@@ -155,7 +155,7 @@ val shadowUpdater = tasks.register<ShadowJar>("shadowUpdater") {
     archiveBaseName = "pnLibrary-updater"
     configurations = listOf(updaterRuntime)
     applyCommonConfig()
-    manifest { attributes["Main-Class"] = "ru.privatenull.pnlibrary.core.updates.install.OfflineUpdateInstaller" }
+    manifest { attributes["Main-Class"] = "org.pnfolder.pnlibrary.core.updates.install.OfflineUpdateInstaller" }
 }
 
 val verifyOfflineInstaller = tasks.register<JavaExec>("verifyOfflineInstaller") {
@@ -166,7 +166,7 @@ val verifyOfflineInstaller = tasks.register<JavaExec>("verifyOfflineInstaller") 
     // When both tasks are requested, finish copying before reading a JAR from it.
     mustRunAfter("copyDeveloperArtifacts")
     classpath = files(shadowUpdater.flatMap { it.archiveFile })
-    mainClass.set("ru.privatenull.pnlibrary.core.updates.install.OfflineUpdateInstaller")
+    mainClass.set("org.pnfolder.pnlibrary.core.updates.install.OfflineUpdateInstaller")
     val fixture = layout.buildDirectory.dir("offline-installer-smoke/plugins/pnLibrary")
     args("--server-stopped", fixture.get().asFile.absolutePath)
     doFirst { fixture.get().asFile.mkdirs() }
@@ -227,7 +227,7 @@ val releasePlatforms = listOf(
     ReleasePlatform("universal", "shadowUniversal"),
 )
 val apiVersionSource = rootProject.file(
-    "modules/api/src/main/kotlin/ru/privatenull/pnlibrary/api/version/PnLibraryApi.kt",
+    "modules/api/src/main/kotlin/org/pnfolder/pnlibrary/api/version/PnLibraryApi.kt",
 ).readText()
 val pnApiVersion = Regex("const\\s+val\\s+VERSION\\s*:\\s*Int\\s*=\\s*(\\d+)")
     .find(apiVersionSource)?.groupValues?.get(1)?.toInt()

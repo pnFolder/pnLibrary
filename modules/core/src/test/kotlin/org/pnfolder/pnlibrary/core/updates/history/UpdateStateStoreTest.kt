@@ -1,0 +1,94 @@
+package org.pnfolder.pnlibrary.core.updates.history
+
+import org.junit.jupiter.api.Assertions.*
+import org.junit.jupiter.api.Test
+import org.junit.jupiter.api.io.TempDir
+import org.pnfolder.pnlibrary.api.updates.*
+import org.pnfolder.pnlibrary.api.updates.UpdatePlanSnapshot
+import org.pnfolder.pnlibrary.api.updates.UpdateState
+import org.pnfolder.pnlibrary.api.version.ApiVersionRange
+import org.pnfolder.pnlibrary.api.version.SemanticVersion
+import java.nio.file.Files
+import java.nio.file.Path
+import java.time.Instant
+import java.util.UUID
+
+class UpdateStateStoreTest {
+    @TempDir lateinit var directory: Path
+
+    @Test
+    fun `historical state names remain readable after API cleanup`() {
+        val store = UpdateStateStore(directory)
+        val names = mapOf(
+            "CURRENT" to UpdateState.UP_TO_DATE,
+            "AVAILABLE" to UpdateState.UPDATE_AVAILABLE,
+            "DOWNLOADED" to UpdateState.UPDATE_STAGED,
+        )
+        for ((oldName, expected) in names) {
+            val snapshot = UpdatePlanSnapshot(UUID.randomUUID(), 1, expected, null, emptyList(), null)
+            store.save(snapshot)
+            val path = directory.resolve("state.json")
+            Files.writeString(path, Files.readString(path).replace(expected.name, oldName))
+            assertEquals(expected, store.current()?.state)
+            assertEquals(snapshot.id, store.current()?.id)
+        }
+    }
+
+    @Test
+    fun `persists current state atomically and bounds newest first history`() {
+        val store = UpdateStateStore(directory, maximumEntries = 3, maximumBytes = 1024 * 1024)
+        val snapshots = (1L..5L).map { revision ->
+            UpdatePlanSnapshot(UUID.randomUUID(), revision, UpdateState.UP_TO_DATE, null, emptyList(), "revision-$revision")
+                .also(store::save)
+        }
+
+        assertEquals(5, store.current()?.revision)
+        assertEquals(listOf(5L, 4L, 3L), store.history().map(UpdatePlanSnapshot::revision))
+        assertFalse(Files.exists(directory.resolve("state.json.tmp")))
+        assertEquals(3, Files.list(directory.resolve("history")).use { it.count() })
+        assertEquals(snapshots.last().id, store.current()?.id)
+    }
+
+    @Test
+    fun `corrupt state is quarantined instead of breaking startup`() {
+        Files.createDirectories(directory)
+        Files.writeString(directory.resolve("state.json"), "not-json")
+        val warnings = mutableListOf<String>()
+
+        val store = UpdateStateStore(directory, warning = warnings::add)
+
+        assertNull(store.current())
+        assertEquals(1, warnings.size)
+        assertTrue(Files.list(directory).use { files -> files.anyMatch { it.fileName.toString().startsWith("state.json.corrupt-") } })
+    }
+
+    @Test
+    fun `restores the complete selected plan after restart`() {
+        val component = ProductId.of("pnlibrary")
+        val version = SemanticVersion.parse("2.0.0")
+        val plan = UpdatePlan(1, listOf(ProductChange(component, SemanticVersion.parse("1.0.0"), version)),
+            listOf(ProductRelease(component, version, UpdateChannel.STABLE, ApiVersionRange(1, 1), providesApi = 1,
+                publishedAt = Instant.parse("2026-09-29T12:00:00Z"))))
+        val snapshot = UpdatePlanSnapshot(UUID.randomUUID(), 9, UpdateState.UPDATE_AVAILABLE, plan, emptyList(), null)
+
+        UpdateStateStore(directory).save(snapshot)
+        val restored = UpdateStateStore(directory).current()
+
+        assertEquals("pnlibrary", restored?.plan?.changes?.single()?.product?.value)
+        assertEquals("2.0.0", restored?.plan?.selected?.single()?.version.toString())
+        assertEquals(Instant.parse("2026-09-29T12:00:00Z"), restored?.plan?.selected?.single()?.publishedAt)
+    }
+
+    @Test
+    fun `restores structured blocker reasons after restart`() {
+        val blocker = BlockedReason.NoCompatibleRelease(ProductId.of("acceptance"), 2)
+        val snapshot = UpdatePlanSnapshot(
+            UUID.randomUUID(), 10, UpdateState.BLOCKED, null, listOf(blocker), null,
+        )
+
+        UpdateStateStore(directory).save(snapshot)
+        val restored = UpdateStateStore(directory).current()
+
+        assertEquals(listOf(blocker), restored?.blockers)
+    }
+}

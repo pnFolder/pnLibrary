@@ -1,6 +1,6 @@
 name: pnLibraryAcceptance
 version: '${version}'
-main: ru.privatenull.pnlibrary.acceptance.AcceptancePlugin
+main: org.pnfolder.pnlibrary.acceptance.AcceptancePlugin
 api-version: '1.13'
 author: pnFolder
 description: Manual acceptance test suite for pnLibrary on Bukkit/Paper

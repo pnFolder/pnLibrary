@@ -1,6 +1,6 @@
 plugins {
     java
-    id("ru.privatenull.pnlibrary.component-metadata")
+    id("org.pnfolder.pnlibrary.component-metadata")
 }
 
 base { archivesName = "pnLibrary-acceptance" }

@@ -1,0 +1,37 @@
+package org.pnfolder.pnlibrary.core.placeholders
+
+import org.junit.jupiter.api.Assertions.assertFalse
+import org.junit.jupiter.api.Assertions.assertThrows
+import org.junit.jupiter.api.Assertions.assertTrue
+import org.junit.jupiter.api.Test
+import org.pnfolder.pnlibrary.api.platform.PlatformType
+import org.pnfolder.pnlibrary.api.plugin.PluginId
+import org.pnfolder.pnlibrary.spi.platform.PlatformAdapter
+import java.nio.file.Files
+
+class PlaceholderRegistrationLifecycleTest {
+    @Test
+    fun `closed registration disappears and cannot be enabled again`() {
+        val service = PlaceholderHub(TestPlatform).scope(PluginId.of("demo"), false)
+        val registration = service.register("status", String::class.java) { it.resolve { "online" } }
+
+        assertTrue(service.contains("status"))
+        assertFalse(registration.isClosed)
+
+        registration.close()
+        registration.close()
+
+        assertTrue(registration.isClosed)
+        assertFalse(service.contains("status"))
+        assertThrows(IllegalStateException::class.java) { registration.enable() }
+    }
+
+    private object TestPlatform : PlatformAdapter {
+        override val type = PlatformType.BUKKIT
+        override val dataFolder = Files.createTempDirectory("pnlibrary-placeholder-test")
+        override fun diagnosticDetails(includeSensitive: Boolean): Map<String, Any?> = emptyMap()
+        override fun executeGlobal(task: Runnable) = task.run()
+        override fun executeReply(recipient: Any, task: Runnable) = task.run()
+        override fun close() = Unit
+    }
+}

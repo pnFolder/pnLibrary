@@ -25,8 +25,8 @@ java {
 gradlePlugin {
     plugins {
         create("pnComponentMetadata") {
-            id = "ru.privatenull.pnlibrary.component-metadata"
-            implementationClass = "ru.privatenull.pnlibrary.metadata.gradle.PnComponentMetadataPlugin"
+            id = "org.pnfolder.pnlibrary.component-metadata"
+            implementationClass = "org.pnfolder.pnlibrary.metadata.gradle.PnComponentMetadataPlugin"
             displayName = "pnLibrary component metadata"
             description = "Embeds pnLibrary component identity and API compatibility into a JAR"
         }

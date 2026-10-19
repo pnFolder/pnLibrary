@@ -3,7 +3,7 @@ param(
     [string]$BaseApiPath,
     [string]$CurrentApiPath = 'modules/api/api/api.api',
     [string]$BaseVersionPath,
-    [string]$CurrentVersionPath = 'modules/api/src/main/kotlin/ru/privatenull/pnlibrary/api/version/PnLibraryApi.kt'
+    [string]$CurrentVersionPath = 'modules/api/src/main/kotlin/org/pnfolder/pnlibrary/api/version/PnLibraryApi.kt'
 )
 
 $ErrorActionPreference = 'Stop'
@@ -60,8 +60,8 @@ $baseApi = if ($BaseRef) {
 }
 $baseVersionSource = if ($BaseRef) {
     Read-GitFileWithFallback $BaseRef `
-        'modules/api/src/main/kotlin/ru/privatenull/pnlibrary/api/version/PnLibraryApi.kt' `
-        'pnlibrary-api/src/main/kotlin/ru/privatenull/pnlibrary/api/version/PnLibraryApi.kt'
+        'modules/api/src/main/kotlin/org/pnfolder/pnlibrary/api/version/PnLibraryApi.kt' `
+        'pnlibrary-api/src/main/kotlin/org/pnfolder/pnlibrary/api/version/PnLibraryApi.kt'
 } else {
     Read-InputText $BaseVersionPath $null
 }

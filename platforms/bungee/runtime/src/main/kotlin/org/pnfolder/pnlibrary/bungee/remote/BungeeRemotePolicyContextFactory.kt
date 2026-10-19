@@ -1,0 +1,41 @@
+package org.pnfolder.pnlibrary.bungee.remote
+
+import net.md_5.bungee.api.plugin.Plugin
+import org.pnfolder.pnlibrary.api.platform.PlatformType
+import org.pnfolder.pnlibrary.api.remote.PlatformInfo
+import org.pnfolder.pnlibrary.api.remote.ProductInfo
+import org.pnfolder.pnlibrary.api.remote.RemotePolicyContext
+import org.pnfolder.pnlibrary.api.remote.ServerInfo
+import org.pnfolder.pnlibrary.common.minecraft.MinecraftVersion
+import java.util.Locale
+
+/** Creates remote-policy contexts from BungeeCord runtime metadata. */
+internal object BungeeRemotePolicyContextFactory {
+    /**
+     * Builds a context for [plugin] and appends caller-defined policy [values].
+     *
+     * @param plugin BungeeCord plugin that owns the policy evaluation.
+     * @param values Additional non-sensitive values exposed to policy rules.
+     */
+    fun create(plugin: Plugin, values: Map<String, String> = emptyMap()): RemotePolicyContext {
+        val proxy = plugin.proxy
+        val description = plugin.description
+        val version = proxy.version
+
+        return RemotePolicyContext.builder()
+            .product(
+                ProductInfo(
+                    description.name.lowercase(Locale.ROOT),
+                    description.name,
+                    description.version,
+                ),
+            )
+            .platform(PlatformInfo(PlatformType.BUNGEECORD, proxy.name, version))
+            .server(ServerInfo(version, MinecraftVersion.parseInfo(null)))
+            .values(values)
+            .nativeHandle(plugin)
+            .nativeHandle(proxy)
+            .nativeHandle(proxy.pluginManager)
+            .build()
+    }
+}

@@ -1,4 +1,4 @@
-public abstract interface class ru/privatenull/pnlibrary/velocity/api/VelocityPlatform {
+public abstract interface class org/pnfolder/pnlibrary/velocity/api/VelocityPlatform {
 	public abstract fun getProxy ()Lcom/velocitypowered/api/proxy/ProxyServer;
 }
 

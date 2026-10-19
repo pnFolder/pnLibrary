@@ -1,0 +1,172 @@
+package org.pnfolder.pnlibrary.core.observability.report
+
+import org.pnfolder.pnlibrary.api.diagnostics.DebugRequest
+import org.pnfolder.pnlibrary.api.runtime.PnLibraryConfig
+import org.pnfolder.pnlibrary.core.diagnostics.ConfigReader
+import org.pnfolder.pnlibrary.core.diagnostics.DiagnosticsRegistry
+import org.pnfolder.pnlibrary.core.observability.ObservabilityReportSnapshot
+import org.pnfolder.pnlibrary.spi.platform.PlatformDiagnosticReport
+import org.pnfolder.pnlibrary.spi.platform.PlatformIdentity
+import java.nio.file.Path
+import java.time.Instant
+
+/** Collects runtime information and assembles the plaintext support ZIP. */
+internal class SupportReportAssembler(
+    private val dataFolder: Path,
+    private val config: PnLibraryConfig,
+    private val diagnostics: DiagnosticsRegistry,
+    private val identity: PlatformIdentity,
+    private val diagnosticsPlatform: PlatformDiagnosticReport,
+    private val diagnosticLogs: () -> List<Map<String, Any?>>,
+    private val diagnosticHistory: () -> List<Pair<String, ByteArray>>,
+    private val observabilitySnapshot: () -> ObservabilityReportSnapshot,
+    private val runtimeDiagnostics: () -> Map<String, Any?> = { emptyMap() },
+) {
+    private val system = SystemReportCollector()
+    private val configurations = ConfigReader(dataFolder, config)
+
+    fun assemble(request: DebugRequest, encrypted: Boolean): ByteArray {
+        val archive = SupportArchiveBuilder(config.maxReportBytes.toLong())
+        addEnvironment(archive, request, encrypted)
+        addPluginDiagnostics(archive, request.target)
+
+        if (request.logs && config.logs) {
+            addObservabilityData(archive)
+            addDiagnosticLogs(archive)
+            addDiagnosticHistory(archive)
+        }
+        if (request.configs && config.configs) {
+            addConfigurations(archive, request.target, encrypted)
+        }
+
+        return archive.build().also { bytes ->
+            require(bytes.size <= config.maxReportBytes) {
+                "Diagnostic archive exceeds configured limit " +
+                    "(${bytes.size} > ${config.maxReportBytes} bytes)"
+            }
+        }
+    }
+
+    private fun addEnvironment(
+        archive: SupportArchiveBuilder,
+        request: DebugRequest,
+        encrypted: Boolean,
+    ) {
+        val platformDetails = diagnosticsPlatform.diagnosticDetails(includeSensitive = encrypted && !config.privacy)
+        val runtimeDetails = runtimeDiagnostics()
+        val systemDetails = system.collect()
+        val analytics = linkedMapOf<String, Any?>(
+            "generatedUtc" to Instant.now().toString(),
+            "system" to systemDetails["health"],
+            "platform" to platformDetails["health"],
+            "runtime" to runtimeDetails["analytics"],
+            "metrics" to runtimeDetails["metricsAnalytics"],
+            "observability" to runtimeDetails["observability"],
+        )
+        archive.json(
+            "manifest.json",
+            linkedMapOf(
+                "schemaVersion" to 4,
+                "producer" to "pnLibrary",
+                "generatedUtc" to Instant.now().toString(),
+                "target" to request.target,
+                "platform" to identity.id,
+                "platformImplementation" to identity.implementationName,
+                "encrypted" to encrypted,
+                "diagnosticsMode" to "full",
+                "privacy" to config.privacy,
+            ),
+        )
+        runtimeDetails.takeIf { it.isNotEmpty() }?.let { archive.json("runtime.json", it) }
+        archive.json("analytics.json", analytics)
+        archive.json("system.json", systemDetails)
+        archive.text("threads.txt", system.threadDump())
+        archive.json("platform.json", platformDetails)
+    }
+
+    private fun addPluginDiagnostics(archive: SupportArchiveBuilder, target: String) {
+        diagnostics.snapshot(target).forEach { (plugin, snapshot) ->
+            archive.json("plugins/${safePath(plugin)}/diagnostics.json", snapshot)
+        }
+    }
+
+    private fun addObservabilityData(archive: SupportArchiveBuilder) {
+        val snapshot = observabilitySnapshot()
+        if (snapshot.analytics.isNotEmpty()) {
+            archive.json("observability/analytics.json", snapshot.analytics)
+        }
+        if (snapshot.statuses.isNotEmpty()) {
+            archive.json("observability/statuses.json", snapshot.statuses)
+        }
+        if (snapshot.journal.isNotEmpty()) {
+            archive.bytes("observability/observations.jsonl", snapshot.journal)
+        }
+        if (snapshot.attachmentManifest.isNotEmpty()) {
+            archive.bytes("observability/attachments.json", snapshot.attachmentManifest)
+        }
+        snapshot.attachments.forEach { (name, bytes) ->
+            archive.bytes("observability/attachments/$name", bytes)
+        }
+    }
+
+    private fun addDiagnosticLogs(archive: SupportArchiveBuilder) {
+        diagnosticLogs()
+            .takeLast(config.logRecords.coerceIn(1, 2_000))
+            .groupBy { log -> safePath(log["plugin"]?.toString() ?: "runtime") }
+            .forEach { (plugin, logs) ->
+                archive.json("plugins/$plugin/logs/incidents.json", logs)
+            }
+    }
+
+    private fun addDiagnosticHistory(archive: SupportArchiveBuilder) {
+        diagnosticHistory().forEach { (name, content) ->
+            archive.bytes("history/${safePath(name)}", content)
+        }
+    }
+
+    private fun addConfigurations(
+        archive: SupportArchiveBuilder,
+        target: String,
+        encrypted: Boolean,
+    ) {
+        diagnostics.configurations(target).forEach { registered ->
+            val root = registered.dataDirectory ?: dataFolder
+            val directory = "plugins/${safePath(registered.plugin)}/configuration/"
+            if (encrypted) {
+                val file = configurations.readExactFile(registered.configuration, root)
+                val path = safeConfigurationPath(file.path)
+                if (file.error == null) {
+                    archive.bytes(directory + path, requireNotNull(file.content))
+                } else {
+                    archive.text(directory + "$path.error.txt", file.error + "\n")
+                }
+            } else {
+                val file = configurations.readRedactedFile(registered.configuration, root)
+                val path = safeConfigurationPath(file.path)
+                if (file.error == null) {
+                    archive.text(directory + path, file.content)
+                } else {
+                    archive.text(directory + "$path.error.txt", file.error + "\n")
+                }
+            }
+        }
+    }
+
+    private fun safePath(value: String): String = value
+        .lowercase()
+        .replace(Regex("[^a-z0-9._-]+"), "-")
+        .trim('-')
+        .ifBlank { "unknown" }
+        .take(96)
+
+    private fun safeConfigurationPath(value: String): String = value
+        .replace('\\', '/')
+        .split('/')
+        .filter { component -> component.isNotBlank() && component != "." && component != ".." }
+        .joinToString("/") { component ->
+            component.replace(Regex("[^A-Za-z0-9._-]+"), "_")
+                .take(128)
+                .ifBlank { "config" }
+        }
+        .ifBlank { "config.txt" }
+}

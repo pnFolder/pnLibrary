@@ -1,6 +1,6 @@
 name: pnLibraryDemo
 version: '${version}'
-main: ru.privatenull.pnlibrary.demo.DemoPlugin
+main: org.pnfolder.pnlibrary.demo.DemoPlugin
 api-version: '1.13'
 author: pnFolder
 description: Visual production-style integration demo for pnLibrary

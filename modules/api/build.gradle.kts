@@ -31,11 +31,12 @@ val generateIdentity by tasks.registering {
     inputs.property("version", productVersion)
     outputs.dir(identityDir)
     doLast {
-        val target = identityDir.get().file("ru/privatenull/pnlibrary/api/runtime/PnLibraryIdentity.kt").asFile
+        identityDir.get().asFile.deleteRecursively()
+        val target = identityDir.get().file("org/pnfolder/pnlibrary/api/runtime/PnLibraryIdentity.kt").asFile
         target.parentFile.mkdirs()
         target.writeText(
             """
-            |package ru.privatenull.pnlibrary.api.runtime
+            |package org.pnfolder.pnlibrary.api.runtime
             |
             |/** Generated from gradle.properties. Change the pnlibrary.* keys there, not this file. */
             |object PnLibraryIdentity {
@@ -61,6 +62,7 @@ kotlin.sourceSets.named("main") {
     kotlin.srcDir(identityDir)
 }
 tasks.named("compileKotlin") { dependsOn(generateIdentity) }
+tasks.matching { it.name == "sourcesJar" }.configureEach { dependsOn(generateIdentity) }
 
 dependencies {
     api(project(":modules:common"))
