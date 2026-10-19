@@ -135,6 +135,37 @@ class EventServiceImplTest {
         }
     }
 
+    @Test
+    fun `builder applies priority and ignoreDenied then registers on listen`() {
+        val calls = mutableListOf<String>()
+        EventServiceImpl { _, _, _ -> }.use { events ->
+            val scope = events.scope(PluginId.of("test"))
+            scope.on<ResultEvent>().priority(EventPriority.LOWEST).listen {
+                it.result = ResultedEvent.ComponentResult.denied(Component.text("no"))
+            }
+            scope.on<ResultEvent>().priority(EventPriority.LOW).listen { calls += "low" }
+            scope.on<ResultEvent>().ignoreDenied().listen { calls += "skipped-once-denied" }
+            scope.on<ResultEvent>().priority(EventPriority.HIGH).listen { calls += "high" }
+
+            events.callEvent(ResultEvent())
+            assertEquals(listOf("low", "high"), calls)
+        }
+    }
+
+    @Test
+    fun `builder registers nothing until listen is called`() {
+        EventServiceImpl { _, _, _ -> }.use { events ->
+            val scope = events.scope(PluginId.of("test"))
+            scope.on<ResultEvent>().priority(EventPriority.HIGH).ignoreDenied()
+            var ran = false
+            events.callEvent(ResultEvent())
+            assertFalse(ran)
+            scope.on<ResultEvent>().listen { ran = true }
+            events.callEvent(ResultEvent())
+            assertTrue(ran)
+        }
+    }
+
     private open class TestEvent : Event()
     private class ResultEvent : ResultedEvent<ResultedEvent.ComponentResult>() {
         override var result: ResultedEvent.ComponentResult = ResultedEvent.ComponentResult.allowed()

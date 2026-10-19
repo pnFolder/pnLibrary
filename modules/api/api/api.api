@@ -1777,6 +1777,16 @@ public abstract interface annotation class ru/privatenull/pnlibrary/api/events/E
 	public abstract fun priority ()I
 }
 
+public final class ru/privatenull/pnlibrary/api/events/EventListenerBuilder {
+	public final fun ignoreDenied ()Lru/privatenull/pnlibrary/api/events/EventListenerBuilder;
+	public final fun listen (Ljava/util/function/Consumer;)Lru/privatenull/pnlibrary/api/events/EventSubscription;
+	public final fun priority (I)Lru/privatenull/pnlibrary/api/events/EventListenerBuilder;
+}
+
+public final class ru/privatenull/pnlibrary/api/events/EventListenerBuilderKt {
+	public static final fun on (Lru/privatenull/pnlibrary/api/events/EventScope;Ljava/lang/Class;)Lru/privatenull/pnlibrary/api/events/EventListenerBuilder;
+}
+
 public abstract interface class ru/privatenull/pnlibrary/api/events/EventListenerRegistration : java/lang/AutoCloseable {
 	public abstract fun close ()V
 	public abstract fun getHandlerCount ()I
