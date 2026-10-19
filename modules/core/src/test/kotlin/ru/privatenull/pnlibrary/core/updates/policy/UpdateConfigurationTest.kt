@@ -131,15 +131,15 @@ class UpdateConfigurationTest {
     }
 
     @Test
-    fun `migrates legacy policy once and preserves a backup`() {
+    fun `file without an updates section falls back to safe defaults with a warning`() {
         val file = directory.resolve("updates.yml")
         Files.writeString(file, "channel: beta\nauto-download: true\n")
+        val warnings = mutableListOf<String>()
 
-        val configuration = UpdateConfiguration.load(file) { }
+        val configuration = UpdateConfiguration.load(file, warnings::add)
 
-        assertTrue(configuration.downloads.automatic)
-        assertTrue(Files.isRegularFile(directory.resolve("updates.yml.pre-orchestrator.bak")))
-        assertTrue(Files.readString(file).contains("updates:"))
+        assertFalse(configuration.downloads.automatic)
+        assertTrue(warnings.isNotEmpty())
     }
 
     @Test

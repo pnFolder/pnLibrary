@@ -76,11 +76,3 @@ val registration = scope.type<Action, MessageAction>()
 ```
 
 Без `access` тип виден только владельцу. Закрытие `registration` убирает тип.
-
-## Что изменилось по сравнению с ранними сборками
-
-- Конфигурация вынесена из `pnlibrary-api` и `pnlibrary-core` в отдельные модули.
-- Удалены `ConfigGroup` и аннотация `@ConfigNaming`: используйте `ConfigScope.loadAll/reloadAll/saveAll`
-  и `ConfigOptions.naming`.
-- Методы `ConfigScope.type(...)` с шестью параметрами заменены на билдер; низкоуровневый вариант
-  называется `publishType`.

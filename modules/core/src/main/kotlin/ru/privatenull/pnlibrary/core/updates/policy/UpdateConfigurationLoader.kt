@@ -26,24 +26,7 @@ internal class UpdateConfigurationLoader(
 
         val source = TextFiles.read(file, StandardCharsets.UTF_8)
         val parsed = parseYaml(source)
-        migrateLegacyConfiguration(file, parsed)?.let { return it }
         return readCurrentConfiguration(file, source, parsed)
-    }
-
-    private fun migrateLegacyConfiguration(
-        file: Path,
-        parsed: Map<String, Any?>,
-    ): UpdateConfiguration? {
-        if (parsed.containsKey("updates")) return null
-        if (!parsed.containsKey("channel") && !parsed.containsKey("auto-download")) return null
-
-        val migrated = UpdateConfiguration(
-            downloads = UpdateConfiguration.Downloads(automatic = parsed["auto-download"] == true),
-        )
-        val backup = file.resolveSibling("${file.fileName}.pre-orchestrator.bak")
-        if (!Files.exists(backup)) Files.copy(file, backup)
-        writeAtomic(file, migrated.toYaml())
-        return migrated
     }
 
     private fun readCurrentConfiguration(
