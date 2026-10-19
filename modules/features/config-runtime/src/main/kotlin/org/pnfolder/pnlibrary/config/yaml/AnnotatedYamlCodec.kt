@@ -45,7 +45,7 @@ internal data class RuntimeConfigType(
  * Decoding starts from a fresh [defaults] instance, preserving field defaults for
  * absent YAML keys. Fields may use custom serializers, validation annotations,
  * naming policies, generated comments, and polymorphic implementations. Static,
- * transient, synthetic, and [ConfigIgnore] fields are excluded.
+ * transient, synthetic, and `@ConfigIgnore` fields are excluded.
  *
  * Configuration classes must expose mutable backing fields. Nested concrete
  * objects and annotation serializers require a no-argument constructor unless a

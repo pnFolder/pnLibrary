@@ -66,6 +66,7 @@ open class ConfigSteps<T : Any> {
 
     private class Group(val number: Int, val changes: ConfigChanges.() -> Unit)
 
+    /** Constants for the version marker and the empty step set. */
     companion object {
         /** Key that stores the last applied version in a configuration file. */
         const val VERSION_KEY = "_config-version"

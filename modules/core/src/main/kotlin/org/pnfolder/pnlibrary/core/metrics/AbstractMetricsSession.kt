@@ -11,11 +11,14 @@ import java.util.function.Supplier
  *
  * Suppliers are retained without evaluation. Providers translate [Chart] into their native
  * format and invoke suppliers only when collecting samples.
+ *
+ * @property credentials credentials of the provider this session reports to
  */
 abstract class AbstractMetricsSession(
     val credentials: MetricsCredentials<*>,
 ) : PluginMetrics {
 
+    /** The single provider this session reports to, taken from [credentials]. */
     final override val providers: Set<MetricsProvider> = setOf(credentials.provider)
 
     private val closed = AtomicBoolean(false)
@@ -83,28 +86,67 @@ abstract class AbstractMetricsSession(
         return normalized
     }
 
-    /** Typed, lazy chart definitions shared by provider adapters. */
+    /**
+     * Typed, lazy chart definitions shared by provider adapters.
+     *
+     * @property id stable chart identifier used by the provider
+     */
     sealed class Chart(open val id: String) {
 
-        /** A single categorical string sample. */
+        /**
+         * A single categorical string sample.
+         *
+         * @property id stable chart identifier used by the provider
+         * @property value supplier of the current category, or `null` when there is none
+         */
         data class SimplePie(override val id: String, val value: Supplier<String?>) : Chart(id)
 
-        /** Category-to-count samples. */
+        /**
+         * Category-to-count samples.
+         *
+         * @property id stable chart identifier used by the provider
+         * @property values supplier of category-to-count pairs
+         */
         data class AdvancedPie(override val id: String, val values: Supplier<Map<String, Int>>) : Chart(id)
 
-        /** Group-to-category-to-count samples. */
+        /**
+         * Group-to-category-to-count samples.
+         *
+         * @property id stable chart identifier used by the provider
+         * @property values supplier of group-to-category-to-count pairs
+         */
         data class DrilldownPie(override val id: String, val values: Supplier<Map<String, Map<String, Int>>>) : Chart(id)
 
-        /** A single numeric time-series sample. */
+        /**
+         * A single numeric time-series sample.
+         *
+         * @property id stable chart identifier used by the provider
+         * @property value supplier of the current number
+         */
         data class SingleLine(override val id: String, val value: Supplier<Int>) : Chart(id)
 
-        /** Named numeric time-series samples. */
+        /**
+         * Named numeric time-series samples.
+         *
+         * @property id stable chart identifier used by the provider
+         * @property values supplier of series name-to-number pairs
+         */
         data class MultiLine(override val id: String, val values: Supplier<Map<String, Int>>) : Chart(id)
 
-        /** Named numeric bars. */
+        /**
+         * Named numeric bars.
+         *
+         * @property id stable chart identifier used by the provider
+         * @property values supplier of bar name-to-number pairs
+         */
         data class SimpleBar(override val id: String, val values: Supplier<Map<String, Int>>) : Chart(id)
 
-        /** Named numeric arrays of bars. */
+        /**
+         * Named numeric arrays of bars.
+         *
+         * @property id stable chart identifier used by the provider
+         * @property values supplier of bar name-to-values pairs
+         */
         data class AdvancedBar(override val id: String, val values: Supplier<Map<String, IntArray>>) : Chart(id)
     }
 

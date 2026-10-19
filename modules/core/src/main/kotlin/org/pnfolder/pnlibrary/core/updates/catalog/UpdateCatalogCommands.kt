@@ -52,6 +52,14 @@ class UpdateCatalogCommands(
      * A setting that was just saved: [setting] names it, for example "Канал", [from] is what it was and [to] what it
      * is now, both as short words such as "stable" or "включена".
      */
+    /**
+     * A setting that was changed from a player or console command.
+     *
+     * @property product product whose setting changed
+     * @property setting name of the changed setting
+     * @property from value before the change
+     * @property to value after the change
+     */
     data class SettingSaved(val product: String, val setting: String, val from: String, val to: String)
 
     /**

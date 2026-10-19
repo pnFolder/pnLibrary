@@ -29,7 +29,6 @@ import java.nio.file.Path
  * @param dataFolder runtime data root and parent of the `reports` directory
  * @param config immutable diagnostic and upload policy
  * @param diagnosticsRegistry source of plugin snapshots and configuration declarations
- * @param platformAdapter source of platform-specific diagnostic values
  * @param encryptionCodec envelope codec required in encrypted mode
  * @param uploader optional remote destination or ordered provider chain
  * @param uploadLedger optional persistence for remote deletion receipts

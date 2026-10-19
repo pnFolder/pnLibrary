@@ -4,7 +4,7 @@ import java.util.Collections
 import java.util.function.UnaryOperator
 
 /**
- * Mutable YAML-like document exposed to [ConfigMigration] implementations.
+ * Mutable YAML-like document exposed to [ConfigSteps] implementations.
  *
  * Paths use dot-separated map keys, for example `database.pool.maximum`. Lists are values and
  * cannot be traversed by index. The constructor and [toMap] defensively copy nested maps and lists,

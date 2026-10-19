@@ -19,6 +19,7 @@ abstract class ProviderMetricsFactory : PlatformMetricsFactory {
     /** Opens a FastStats session for the native plugin [owner]. */
     protected abstract fun openFastStats(owner: Any, token: String): PluginMetrics
 
+    /** Opens every configured provider and returns one session that reports to all of them. */
     final override fun open(owner: Any, configurations: Collection<MetricsProviderConfiguration>): PluginMetrics {
         val opened = mutableListOf<PluginMetrics>()
         try {

@@ -78,7 +78,7 @@ data class ConfigOptions @JvmOverloads constructor(
     val comments: CommentPolicy = CommentPolicy.ADD_MISSING,
     /** Whether pnLibrary may create a backup before rewriting an existing file. */
     val backups: Boolean = true,
-    /** Numbered steps that bring older files up to this code's version. Use `null` with [withoutVersion] to omit the marker. */
+    /** Numbered steps that bring older files up to this code's version. Use `null`, or `Builder.withoutVersion()`, to omit the marker. */
     val migrations: ConfigSteps<*>? = ConfigSteps.NONE,
     /** Default conversion from source field names to YAML keys. */
     val naming: ConfigNamingStrategy = ConfigNamingStrategy.AS_DECLARED,

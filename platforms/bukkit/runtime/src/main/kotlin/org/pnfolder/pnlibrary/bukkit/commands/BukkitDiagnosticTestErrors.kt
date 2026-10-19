@@ -6,7 +6,7 @@ import java.sql.SQLException
 import java.util.UUID
 import java.util.concurrent.CompletionException
 
-/** Emits synthetic failures used to exercise diagnostics deduplication and cause-chain reporting; [report] confirms each one. */
+/** Emits synthetic failures used to exercise diagnostics deduplication and cause-chain reporting; `report` confirms each one. */
 internal class BukkitDiagnosticTestErrors(
     private val plugin: Plugin,
     private val library: PnLibrary,

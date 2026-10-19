@@ -30,11 +30,13 @@ class ConfigurationServiceImpl(
     private val runtimeTypes = linkedSetOf<TypeRegistration>()
     private val closed = AtomicBoolean(false)
 
+    /** Returns the scope of [owner], using the plugin id the platform reports for it. */
     override fun scope(owner: Any): ConfigScope {
         val pluginId = PluginId.of(platform.ownerDetails(owner)["id"] ?: owner.javaClass.simpleName)
         return scope(owner, pluginId)
     }
 
+    /** Returns the scope of [owner] and [pluginId], creating it on first use. Fails after [close]. */
     fun scope(owner: Any, pluginId: PluginId): ConfigScope = synchronized(scopes) {
         check(!closed.get()) { "Configuration service is closed" }
         scopes.getOrPut(owner) { linkedMapOf() }.getOrPut(pluginId) {
@@ -47,10 +49,12 @@ class ConfigurationServiceImpl(
         }
     }
 
+    /** Closes and forgets every scope that [owner] created. */
     fun close(owner: Any) {
         synchronized(scopes) { scopes.remove(owner)?.values?.toList().orEmpty() }.forEach { it.close() }
     }
 
+    /** Closes every scope and rejects further [scope] calls. Repeated calls do nothing. */
     override fun close() {
         if (!closed.compareAndSet(false, true)) return
         synchronized(scopes) {

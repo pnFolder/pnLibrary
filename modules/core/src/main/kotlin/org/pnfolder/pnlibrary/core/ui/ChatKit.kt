@@ -16,6 +16,7 @@ import java.net.URI
  * @property ascii whether to avoid characters outside ASCII and Cyrillic, for consoles with a legacy code page
  */
 data class ChatReader(val interactive: Boolean = true, val ascii: Boolean = false) {
+    /** Ready-made readers for the common cases and the factory for a command sender. */
     companion object {
         /** A player whose client shows buttons and hover cards. */
         @JvmField val PLAYER = ChatReader()
@@ -37,6 +38,8 @@ data class ChatReader(val interactive: Boolean = true, val ascii: Boolean = fals
  * carries the color. Details live in multi-line hover cards. A reader that cannot click gets the same rows without
  * buttons; the console additionally gets ASCII only. Stored text is only ever rendered as plain text, never
  * interpreted as markup.
+ *
+ * @property reader the reader whose capabilities decide buttons, hover cards and characters
  */
 open class ChatKit(val reader: ChatReader) {
     /** A page: an empty line first, so it never runs into the chat above it, such as the previous page. */
@@ -198,6 +201,7 @@ open class ChatKit(val reader: ChatReader) {
         }
     }
 
+    /** Shared palettes and character maps used when rendering chat messages. */
     companion object {
         /** The longest stored text a page shows, such as an error message. */
         const val MAX_MESSAGE = 512

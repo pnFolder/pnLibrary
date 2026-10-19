@@ -14,7 +14,7 @@ import org.pnfolder.pnlibrary.api.tasks.TaskSnapshot
  * adapters decide the exact global and entity execution model, including Folia region dispatch.
  * Scope creation, lookup, queries, cancellation, and shutdown are safe from arbitrary threads.
  * Query results are detached immutable snapshots; task actions run in the execution context
- * selected by [TaskSpec.execution], not necessarily on the calling thread.
+ * selected by `TaskSpec.execution`, not necessarily on the calling thread.
  */
 internal interface TaskService : AutoCloseable {
     /** Returns the active scope associated with [owner], creating it when necessary. */

@@ -48,8 +48,10 @@ internal object FastStatsSupport {
 
 /** Sends pnLibrary telemetry errors to the FastStats tracker. */
 class FastStatsErrorReporter : ErrorReporter {
+    /** Native FastStats error tracker that receives captured errors. */
     val tracker = FastStatsBridge.errorTracker()
 
+    /** Converts a [TelemetryError] into a tracked FastStats error with its attributes. */
     override fun capture(error: TelemetryError) {
         val throwable = RuntimeException("${error.type}: ${error.message}").apply {
             stackTrace = error.stackTrace.map { frame ->
@@ -62,5 +64,6 @@ class FastStatsErrorReporter : ErrorReporter {
         error.attributes.forEach { (key, value) -> value?.let { tracked.attributes().put(key, it.toString()) } }
     }
 
+    /** Nothing to release: the FastStats tracker lives for the whole process. */
     override fun close() = Unit
 }

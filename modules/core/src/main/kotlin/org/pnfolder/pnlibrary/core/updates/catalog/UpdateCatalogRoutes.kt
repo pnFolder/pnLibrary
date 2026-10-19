@@ -19,13 +19,30 @@ data class UpdateCatalogRoutes(
     val ascii: Boolean = false,
     val editable: Boolean = true,
 ) {
+    /** Command that lists every installed product. */
     val list: String get() = "$root list"
+
+    /** Command that lists products with a newer release available. */
     val available: String get() = "$root available"
+
+    /** Command that shows the update history. */
     val history: String get() = "$root history"
+
+    /** Command that lists the available rollback backups. */
     val backups: String get() = "$root backups"
+
+    /** Command that shows the details of one product. */
     fun info(product: String): String = "$root info $product"
+
+    /** Command that opens the settings of one product. */
     fun settings(product: String): String = "$root settings $product"
+
+    /** Command that shows the update history of one product. */
     fun history(product: String): String = "$root history plugin $product"
+
+    /** Command that changes one setting of one product to [value]. */
     fun set(product: String, setting: String, value: String): String = "$root set $product $setting $value"
+
+    /** Command that restores the backup [id], optionally with its configuration files. */
     fun rollback(id: Any, configurations: Boolean = false): String = "$root rollback $id" + if (configurations) " configs" else ""
 }
