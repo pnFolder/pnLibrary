@@ -1,8 +1,0 @@
-{
-  "id": "pnlibrary",
-  "name": "pnLibrary",
-  "version": "${version}",
-  "description": "Shared runtime and diagnostics for pnFolder plugins",
-  "authors": ["pnFolder"],
-  "main": "org.pnfolder.pnlibrary.velocity.PnLibraryVelocityPlugin"
-}
