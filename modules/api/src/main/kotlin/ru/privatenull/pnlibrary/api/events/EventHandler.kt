@@ -7,7 +7,7 @@ package ru.privatenull.pnlibrary.api.events
  * `void`. It may use any visibility. Smaller numeric priorities run first.
  *
  * @property priority Numeric dispatch order; any integer is valid.
- * @property ignoreCancelled Skip the method after a cancellable event is cancelled.
+ * @property ignoreCancelled Skip the method when the event is already denied ([Event.isAllowed] is `false`).
  */
 @Target(AnnotationTarget.FUNCTION)
 @Retention(AnnotationRetention.RUNTIME)

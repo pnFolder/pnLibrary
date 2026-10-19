@@ -1,5 +1,6 @@
 package ru.privatenull.pnlibrary.core.events
 
+import net.kyori.adventure.text.Component
 import org.junit.jupiter.api.Assertions.*
 import org.junit.jupiter.api.Test
 import ru.privatenull.pnlibrary.api.events.*
@@ -21,21 +22,51 @@ class EventServiceImplTest {
     }
 
     @Test
-    fun `mutable cancellation state is available immediately`() {
+    fun `denied result is visible immediately and skips ignoreCancelled listeners`() {
         EventServiceImpl { _, _, _ -> }.use { events ->
             val scope = events.scope(PluginId.of("test"))
-            scope.subscribe(MutableEvent::class.java, EventPriority.LOW, Consumer {
+            scope.subscribe(ResultEvent::class.java, EventPriority.LOW, Consumer {
                 it.value = "handled"
-                it.isCancelled = true
+                it.result = ResultedEvent.ComponentResult.denied(Component.text("nope"))
             })
-            scope.subscribe(MutableEvent::class.java, EventPriority.NORMAL, true, Consumer {
-                error("cancelled event must be skipped")
+            scope.subscribe(ResultEvent::class.java, EventPriority.NORMAL, true, Consumer {
+                error("denied event must be skipped")
             })
-            val event = MutableEvent()
+            val event = ResultEvent()
             val returned = scope.callEvent(event)
             assertSame(event, returned)
             assertEquals("handled", event.value)
-            assertTrue(event.isCancelled)
+            assertFalse(event.isAllowed)
+            assertEquals(Component.text("nope"), event.denyReason)
+        }
+    }
+
+    @Test
+    fun `allowed result keeps ignoreCancelled listeners running`() {
+        var ran = false
+        EventServiceImpl { _, _, _ -> }.use { events ->
+            events.scope(PluginId.of("test")).subscribe(ResultEvent::class.java, EventPriority.NORMAL, true, Consumer {
+                ran = true
+            })
+            val event = ResultEvent()
+            assertTrue(event.isAllowed)
+            events.callEvent(event)
+            assertTrue(ran)
+            assertNull(event.denyReason)
+        }
+    }
+
+    @Test
+    fun `typed subscription receives every resulted event`() {
+        var seen = 0
+        EventServiceImpl { _, _, _ -> }.use { events ->
+            events.scope(PluginId.of("test")).subscribe(
+                ResultedEvent::class.java as Class<ResultedEvent<*>>,
+                Consumer { seen++ },
+            )
+            events.callEvent(ResultEvent())
+            events.callEvent(ResultEvent())
+            assertEquals(2, seen)
         }
     }
 
@@ -105,8 +136,8 @@ class EventServiceImplTest {
     }
 
     private open class TestEvent : Event()
-    private class MutableEvent : Event(), Cancellable {
-        override var isCancelled = false
+    private class ResultEvent : ResultedEvent<ResultedEvent.ComponentResult>() {
+        override var result: ResultedEvent.ComponentResult = ResultedEvent.ComponentResult.allowed()
         var value = "initial"
     }
 

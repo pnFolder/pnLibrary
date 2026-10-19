@@ -152,5 +152,36 @@ class PnLibraryRuntimeHost private constructor(
             }
         }
 
+        /**
+         * Full platform entry-point bootstrap: starts the runtime, registers the native platform API,
+         * then runs [onReady] to release startup-gated callbacks.
+         *
+         * Any failure closes everything created in this attempt and rethrows the original error, so
+         * a plugin's lifecycle method only needs to store the returned host.
+         */
+        @JvmStatic
+        @JvmOverloads
+        fun <T : Any> launchPlatform(
+            owner: Any,
+            platform: PlatformAdapter,
+            type: Class<T>,
+            implementation: T,
+            onReady: () -> Unit = {},
+        ): PnLibraryRuntimeHost {
+            val host = try {
+                startAndRegisterPlatform(owner, platform, type, implementation)
+            } catch (error: Throwable) {
+                runCatching { platform.close() }.onFailure(error::addSuppressed)
+                throw error
+            }
+            return try {
+                onReady()
+                host
+            } catch (error: Throwable) {
+                runCatching { host.close() }.onFailure(error::addSuppressed)
+                throw error
+            }
+        }
+
     }
 }

@@ -50,22 +50,13 @@ class PnLibraryVelocityPlugin @Inject constructor(
             dataFolder = dataDirectory,
             logger = logger,
         )
-        try {
-            runtimeHost = PnLibraryRuntimeHost.startAndRegisterPlatform(
-                this,
-                adapter,
-                VelocityPlatform::class.java,
-                VelocityPlatformImpl(server),
-            )
-            adapter.markReady()
-        } catch (error: Throwable) {
-            val host = runtimeHost
-            runtimeHost = null
-            runCatching {
-                if (host != null) host.close() else adapter.close()
-            }.onFailure(error::addSuppressed)
-            throw error
-        }
+        runtimeHost = PnLibraryRuntimeHost.launchPlatform(
+            this,
+            adapter,
+            VelocityPlatform::class.java,
+            VelocityPlatformImpl(server),
+            adapter::markReady,
+        )
     }
 
     /**

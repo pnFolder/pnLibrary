@@ -1,5 +1,6 @@
 package ru.privatenull.pnlibrary.api.events
 
+import net.kyori.adventure.text.Component
 import ru.privatenull.pnlibrary.api.runtime.PnLibraryProvider
 
 /**
@@ -15,11 +16,21 @@ abstract class Event {
     }
 
     /**
-     * Calls every matching listener before returning. Returns `false` when this event implements
-     * [Cancellable] and a listener cancelled it; otherwise returns `true`.
+     * Whether the event may proceed after listeners ran. A [ResultedEvent] reports its result;
+     * any other event is always allowed.
+     */
+    val isAllowed: Boolean
+        get() = (this as? ResultedEvent<*>)?.result?.isAllowed ?: true
+
+    /** Denial reason from a [ResultedEvent.ComponentResult] set by a listener, or `null` when none was given. */
+    val denyReason: Component?
+        get() = ((this as? ResultedEvent<*>)?.result as? ResultedEvent.ComponentResult)?.reasonComponent
+
+    /**
+     * Calls every matching listener before returning and returns [isAllowed] at that point.
      */
     fun callEvent(): Boolean {
         PnLibraryProvider.get().events.callEvent(this)
-        return (this as? Cancellable)?.isCancelled != true
+        return isAllowed
     }
 }

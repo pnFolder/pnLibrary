@@ -2,7 +2,6 @@
 
 package ru.privatenull.pnlibrary.core.events
 
-import ru.privatenull.pnlibrary.api.events.Cancellable
 import ru.privatenull.pnlibrary.api.events.Event
 import ru.privatenull.pnlibrary.api.events.EventListenerRegistration
 import ru.privatenull.pnlibrary.api.events.EventScope
@@ -47,7 +46,7 @@ internal class EventServiceImpl(
 
         matching.forEach { subscription ->
             if (subscription.isClosed) return@forEach
-            if (subscription.ignoreCancelled && (event as? Cancellable)?.isCancelled == true) {
+            if (subscription.ignoreCancelled && !event.isAllowed) {
                 return@forEach
             }
             try {
