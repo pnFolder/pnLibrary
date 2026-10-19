@@ -1,12 +1,12 @@
-package ru.privatenull.pnlibrary.demo
+package org.pnfolder.pnlibrary.demo
 
 import org.bukkit.entity.Player
-import ru.privatenull.pnlibrary.api.actions.ActionTarget
-import ru.privatenull.pnlibrary.api.actions.MessageAction
-import ru.privatenull.pnlibrary.api.events.Event
-import ru.privatenull.pnlibrary.api.events.EventHandler
-import ru.privatenull.pnlibrary.api.events.Listener
-import ru.privatenull.pnlibrary.api.runtime.PnLibraryProvider
+import org.pnfolder.pnlibrary.api.actions.ActionTarget
+import org.pnfolder.pnlibrary.api.actions.MessageAction
+import org.pnfolder.pnlibrary.api.events.Event
+import org.pnfolder.pnlibrary.api.events.EventHandler
+import org.pnfolder.pnlibrary.api.events.Listener
+import org.pnfolder.pnlibrary.api.runtime.PnLibraryProvider
 
 class DemoEvent : Event()
 
