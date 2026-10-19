@@ -10,6 +10,7 @@ base { archivesName = "pnLibrary-api" }
 
 dependencies {
     api(project(":modules:common"))
+    api(project(":modules:features:config-api"))
     // Pure stdlib — no server-platform compile deps
     api(libs.kotlin.stdlib)
     api(libs.adventure.api)

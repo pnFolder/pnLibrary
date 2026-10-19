@@ -9,6 +9,7 @@ include(
     ":modules:api",
     ":modules:core",
     ":modules:runtime-spi",
+    ":modules:features:config-api",
     ":modules:features:currency-api",
     ":modules:features:currency-runtime",
     ":modules:features:minecraft-localization",
