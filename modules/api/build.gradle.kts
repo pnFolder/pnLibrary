@@ -8,6 +8,47 @@ plugins {
 
 base { archivesName = "pnLibrary-api" }
 
+// Product identity generated from gradle.properties (pnlibrary.* keys), so the name and author
+// live in one file. The generated source is never edited by hand.
+val identityDir = layout.buildDirectory.dir("generated/identity/kotlin")
+val generateIdentity by tasks.registering {
+    val productId = rootProject.property("pnlibrary.product-id").toString()
+    val productName = rootProject.property("pnlibrary.name").toString()
+    val authors = rootProject.property("pnlibrary.authors").toString()
+        .split(",").map(String::trim).filter(String::isNotEmpty)
+    val productVersion = rootProject.version.toString()
+    inputs.property("productId", productId)
+    inputs.property("productName", productName)
+    inputs.property("authors", authors)
+    inputs.property("version", productVersion)
+    outputs.dir(identityDir)
+    doLast {
+        val target = identityDir.get().file("ru/privatenull/pnlibrary/api/runtime/PnLibraryIdentity.kt").asFile
+        target.parentFile.mkdirs()
+        target.writeText(
+            """
+            |package ru.privatenull.pnlibrary.api.runtime
+            |
+            |/** Generated from gradle.properties. Change the pnlibrary.* keys there, not this file. */
+            |object PnLibraryIdentity {
+            |    const val PRODUCT_ID = "$productId"
+            |    const val NAME = "$productName"
+            |    /** Single display string for platforms that accept one author. */
+            |    const val AUTHOR = "${authors.joinToString(", ")}"
+            |    /** Every author, in declaration order, for platforms that accept a list. */
+            |    val AUTHORS: List<String> = listOf(${authors.joinToString(", ") { "\"$it\"" }})
+            |    const val VERSION = "$productVersion"
+            |}
+            |""".trimMargin(),
+        )
+    }
+}
+
+kotlin.sourceSets.named("main") {
+    kotlin.srcDir(identityDir)
+}
+tasks.named("compileKotlin") { dependsOn(generateIdentity) }
+
 dependencies {
     api(project(":modules:common"))
     api(project(":modules:features:config-api"))

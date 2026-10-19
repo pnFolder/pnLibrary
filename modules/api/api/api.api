@@ -2564,6 +2564,15 @@ public final class ru/privatenull/pnlibrary/api/runtime/PnLibraryConfig {
 	public fun toString ()Ljava/lang/String;
 }
 
+public final class ru/privatenull/pnlibrary/api/runtime/PnLibraryIdentity {
+	public static final field AUTHOR Ljava/lang/String;
+	public static final field INSTANCE Lru/privatenull/pnlibrary/api/runtime/PnLibraryIdentity;
+	public static final field NAME Ljava/lang/String;
+	public static final field PRODUCT_ID Ljava/lang/String;
+	public static final field VERSION Ljava/lang/String;
+	public final fun getAUTHORS ()Ljava/util/List;
+}
+
 public final class ru/privatenull/pnlibrary/api/runtime/PnLibraryProvider {
 	public static final field INSTANCE Lru/privatenull/pnlibrary/api/runtime/PnLibraryProvider;
 	public static final fun clear (Lru/privatenull/pnlibrary/api/runtime/PnLibrary;)V

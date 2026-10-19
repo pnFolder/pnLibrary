@@ -9,6 +9,7 @@ import com.velocitypowered.api.plugin.annotation.DataDirectory
 import com.velocitypowered.api.proxy.ProxyServer
 import org.bstats.velocity.Metrics
 import org.slf4j.Logger
+import ru.privatenull.pnlibrary.api.runtime.PnLibraryIdentity
 import ru.privatenull.pnlibrary.core.runtime.PnLibraryRuntimeHost
 import ru.privatenull.pnlibrary.velocity.api.VelocityPlatform
 import java.nio.file.Path
@@ -21,9 +22,9 @@ import java.nio.file.Path
  * platform resources owned by that host.
  */
 @Plugin(
-    id = "pnlibrary",
-    name = "pnLibrary",
-    authors = ["pnFolder"],
+    id = PnLibraryIdentity.PRODUCT_ID,
+    name = PnLibraryIdentity.NAME,
+    authors = [PnLibraryIdentity.AUTHOR],
 )
 class PnLibraryVelocityPlugin @Inject constructor(
     private val server: ProxyServer,

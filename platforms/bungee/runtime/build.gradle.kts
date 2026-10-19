@@ -26,3 +26,16 @@ dependencies {
 java {
     withSourcesJar()
 }
+
+val identityProperties = mapOf(
+    "version" to version.toString(),
+    "name" to rootProject.property("pnlibrary.name").toString(),
+    "author" to rootProject.property("pnlibrary.authors").toString()
+        .split(",").map(String::trim).filter(String::isNotEmpty).joinToString(", "),
+)
+tasks.named<ProcessResources>("processResources") {
+    inputs.properties(identityProperties)
+    filesMatching("bungee.yml") {
+        expand(identityProperties)
+    }
+}

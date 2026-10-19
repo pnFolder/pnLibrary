@@ -1,7 +1,7 @@
-name: pnLibrary
+name: '${name}'
 version: '${version}'
 main: ru.privatenull.pnlibrary.bukkit.PnLibraryBukkitPlugin
-author: pnFolder
+authors: ${authors}
 description: Shared runtime and diagnostics for pnFolder plugins
 load: STARTUP
 folia-supported: true

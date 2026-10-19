@@ -33,10 +33,18 @@ dependencies {
 }
 
 val resourceVersion = version.toString()
+val identityProperties = mapOf(
+    "version" to resourceVersion,
+    "name" to rootProject.property("pnlibrary.name").toString(),
+    "authors" to rootProject.property("pnlibrary.authors").toString()
+        .split(",").map(String::trim).filter(String::isNotEmpty)
+        .joinToString(prefix = "[", postfix = "]") { "'$it'" },
+    "author" to rootProject.property("pnlibrary.authors").toString().split(",").first().trim(),
+)
 tasks.named<ProcessResources>("processResources") {
-    inputs.property("version", resourceVersion)
+    inputs.properties(identityProperties)
     filesMatching("plugin.yml") {
-        expand(mapOf("version" to resourceVersion))
+        expand(identityProperties)
     }
 }
 
