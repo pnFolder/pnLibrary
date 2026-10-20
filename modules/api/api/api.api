@@ -1069,23 +1069,81 @@ public final class org/pnfolder/pnlibrary/api/chat/ChatTone : java/lang/Enum {
 	public static fun values ()[Lorg/pnfolder/pnlibrary/api/chat/ChatTone;
 }
 
+public final class org/pnfolder/pnlibrary/api/commands/ArgumentSpec {
+	public static final field BOOLEAN Lorg/pnfolder/pnlibrary/api/commands/ArgumentSpec;
+	public static final field Companion Lorg/pnfolder/pnlibrary/api/commands/ArgumentSpec$Companion;
+	public static final field TEXT Lorg/pnfolder/pnlibrary/api/commands/ArgumentSpec;
+	public synthetic fun <init> (Lorg/pnfolder/pnlibrary/api/commands/ArgumentSpec$Kind;Ljava/lang/Double;Ljava/lang/Double;Ljava/util/List;Lkotlin/jvm/internal/DefaultConstructorMarker;)V
+	public static final fun choice (Ljava/util/List;)Lorg/pnfolder/pnlibrary/api/commands/ArgumentSpec;
+	public static final fun decimal ()Lorg/pnfolder/pnlibrary/api/commands/ArgumentSpec;
+	public static final fun decimal (D)Lorg/pnfolder/pnlibrary/api/commands/ArgumentSpec;
+	public static final fun decimal (DD)Lorg/pnfolder/pnlibrary/api/commands/ArgumentSpec;
+	public final fun getChoices ()Ljava/util/List;
+	public final fun getKind ()Lorg/pnfolder/pnlibrary/api/commands/ArgumentSpec$Kind;
+	public final fun getMaximum ()Ljava/lang/Double;
+	public final fun getMinimum ()Ljava/lang/Double;
+	public static final fun integer ()Lorg/pnfolder/pnlibrary/api/commands/ArgumentSpec;
+	public static final fun integer (I)Lorg/pnfolder/pnlibrary/api/commands/ArgumentSpec;
+	public static final fun integer (II)Lorg/pnfolder/pnlibrary/api/commands/ArgumentSpec;
+	public static final fun long ()Lorg/pnfolder/pnlibrary/api/commands/ArgumentSpec;
+	public static final fun long (J)Lorg/pnfolder/pnlibrary/api/commands/ArgumentSpec;
+	public static final fun long (JJ)Lorg/pnfolder/pnlibrary/api/commands/ArgumentSpec;
+}
+
+public final class org/pnfolder/pnlibrary/api/commands/ArgumentSpec$Companion {
+	public final fun choice (Ljava/util/List;)Lorg/pnfolder/pnlibrary/api/commands/ArgumentSpec;
+	public final fun decimal ()Lorg/pnfolder/pnlibrary/api/commands/ArgumentSpec;
+	public final fun decimal (D)Lorg/pnfolder/pnlibrary/api/commands/ArgumentSpec;
+	public final fun decimal (DD)Lorg/pnfolder/pnlibrary/api/commands/ArgumentSpec;
+	public static synthetic fun decimal$default (Lorg/pnfolder/pnlibrary/api/commands/ArgumentSpec$Companion;DDILjava/lang/Object;)Lorg/pnfolder/pnlibrary/api/commands/ArgumentSpec;
+	public final fun integer ()Lorg/pnfolder/pnlibrary/api/commands/ArgumentSpec;
+	public final fun integer (I)Lorg/pnfolder/pnlibrary/api/commands/ArgumentSpec;
+	public final fun integer (II)Lorg/pnfolder/pnlibrary/api/commands/ArgumentSpec;
+	public static synthetic fun integer$default (Lorg/pnfolder/pnlibrary/api/commands/ArgumentSpec$Companion;IIILjava/lang/Object;)Lorg/pnfolder/pnlibrary/api/commands/ArgumentSpec;
+	public final fun long ()Lorg/pnfolder/pnlibrary/api/commands/ArgumentSpec;
+	public final fun long (J)Lorg/pnfolder/pnlibrary/api/commands/ArgumentSpec;
+	public final fun long (JJ)Lorg/pnfolder/pnlibrary/api/commands/ArgumentSpec;
+	public static synthetic fun long$default (Lorg/pnfolder/pnlibrary/api/commands/ArgumentSpec$Companion;JJILjava/lang/Object;)Lorg/pnfolder/pnlibrary/api/commands/ArgumentSpec;
+}
+
+public final class org/pnfolder/pnlibrary/api/commands/ArgumentSpec$Kind : java/lang/Enum {
+	public static final field BOOLEAN Lorg/pnfolder/pnlibrary/api/commands/ArgumentSpec$Kind;
+	public static final field CHOICE Lorg/pnfolder/pnlibrary/api/commands/ArgumentSpec$Kind;
+	public static final field DECIMAL Lorg/pnfolder/pnlibrary/api/commands/ArgumentSpec$Kind;
+	public static final field INTEGER Lorg/pnfolder/pnlibrary/api/commands/ArgumentSpec$Kind;
+	public static final field LONG Lorg/pnfolder/pnlibrary/api/commands/ArgumentSpec$Kind;
+	public static final field TEXT Lorg/pnfolder/pnlibrary/api/commands/ArgumentSpec$Kind;
+	public static fun getEntries ()Lkotlin/enums/EnumEntries;
+	public static fun valueOf (Ljava/lang/String;)Lorg/pnfolder/pnlibrary/api/commands/ArgumentSpec$Kind;
+	public static fun values ()[Lorg/pnfolder/pnlibrary/api/commands/ArgumentSpec$Kind;
+}
+
 public abstract interface class org/pnfolder/pnlibrary/api/commands/ArgumentType {
 	public static final field Companion Lorg/pnfolder/pnlibrary/api/commands/ArgumentType$Companion;
 	public static fun boolean ()Lorg/pnfolder/pnlibrary/api/commands/ArgumentType;
+	public static fun choice ([Ljava/lang/String;)Lorg/pnfolder/pnlibrary/api/commands/ArgumentType;
 	public static fun decimal ()Lorg/pnfolder/pnlibrary/api/commands/ArgumentType;
+	public static fun decimal (DD)Lorg/pnfolder/pnlibrary/api/commands/ArgumentType;
 	public static fun enumeration (Ljava/lang/Class;)Lorg/pnfolder/pnlibrary/api/commands/ArgumentType;
+	public fun getSpec ()Lorg/pnfolder/pnlibrary/api/commands/ArgumentSpec;
 	public static fun integer ()Lorg/pnfolder/pnlibrary/api/commands/ArgumentType;
+	public static fun integer (II)Lorg/pnfolder/pnlibrary/api/commands/ArgumentType;
 	public static fun long ()Lorg/pnfolder/pnlibrary/api/commands/ArgumentType;
+	public static fun long (JJ)Lorg/pnfolder/pnlibrary/api/commands/ArgumentType;
 	public abstract fun parse (Ljava/lang/String;)Ljava/lang/Object;
 	public static fun string ()Lorg/pnfolder/pnlibrary/api/commands/ArgumentType;
 }
 
 public final class org/pnfolder/pnlibrary/api/commands/ArgumentType$Companion {
 	public final fun boolean ()Lorg/pnfolder/pnlibrary/api/commands/ArgumentType;
+	public final fun choice ([Ljava/lang/String;)Lorg/pnfolder/pnlibrary/api/commands/ArgumentType;
 	public final fun decimal ()Lorg/pnfolder/pnlibrary/api/commands/ArgumentType;
+	public final fun decimal (DD)Lorg/pnfolder/pnlibrary/api/commands/ArgumentType;
 	public final fun enumeration (Ljava/lang/Class;)Lorg/pnfolder/pnlibrary/api/commands/ArgumentType;
 	public final fun integer ()Lorg/pnfolder/pnlibrary/api/commands/ArgumentType;
+	public final fun integer (II)Lorg/pnfolder/pnlibrary/api/commands/ArgumentType;
 	public final fun long ()Lorg/pnfolder/pnlibrary/api/commands/ArgumentType;
+	public final fun long (JJ)Lorg/pnfolder/pnlibrary/api/commands/ArgumentType;
 	public final fun string ()Lorg/pnfolder/pnlibrary/api/commands/ArgumentType;
 }
 

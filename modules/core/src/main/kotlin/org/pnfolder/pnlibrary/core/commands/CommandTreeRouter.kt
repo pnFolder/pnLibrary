@@ -1,5 +1,6 @@
 package org.pnfolder.pnlibrary.core.commands
 
+import org.pnfolder.pnlibrary.api.commands.ArgumentSpec
 import org.pnfolder.pnlibrary.api.commands.ArgumentType
 import org.pnfolder.pnlibrary.api.commands.CommandContext
 import org.pnfolder.pnlibrary.api.commands.CommandDefinition
@@ -82,12 +83,22 @@ internal class CommandTreeRouter {
         val argument = node.children.firstOrNull { it.kind == CommandNodeKind.ARGUMENT }
             ?.takeIf { allowed(it, suggestionContext) }
         val stage = when {
-            argument != null -> argument.suggestions.suggest(suggestionContext)
+            argument != null -> argument.suggestions.suggest(suggestionContext).thenApply { it + builtInSuggestions(argument) }
             node.children.isEmpty() -> node.suggestions.suggest(suggestionContext)
             else -> completedSuggestions(emptyList())
         }
         return stage.thenApply { dynamic ->
             (literals + dynamic.filter { it.startsWith(partial, ignoreCase = true) }).distinct()
+        }
+    }
+
+    /** The accepted values of a choice or boolean argument, offered even when the command suggests nothing itself. */
+    private fun builtInSuggestions(argument: CommandNode): List<String> {
+        val spec = argument.argumentType?.spec ?: return emptyList()
+        return when (spec.kind) {
+            ArgumentSpec.Kind.CHOICE -> spec.choices
+            ArgumentSpec.Kind.BOOLEAN -> listOf("true", "false")
+            else -> emptyList()
         }
     }
 

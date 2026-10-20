@@ -35,9 +35,9 @@ internal class BukkitCommandAdapter internal constructor(
     private val interactive: () -> Boolean = { true },
 ) : GenericPlatformCommandAdapter<NativeCommandSender>() {
     override val registrar: NativeCommandRegistrar<NativeCommandSender> = nativeRegistrar
-    /** Creates the native registrar and audience bridge. */
-    constructor(audiences: BukkitAudienceService) : this(
-        nativeRegistrar = DefaultBukkitNativeCommandRegistrar(),
+    /** Creates the native registrar, preferring Paper's command API where the server has it, and the audience bridge. */
+    constructor(audiences: BukkitAudienceService, plugin: Plugin) : this(
+        nativeRegistrar = PaperCommandSupport.choose(plugin, DefaultBukkitNativeCommandRegistrar()),
         { sender -> requireNotNull(BukkitAudienceAdapter(audiences).sender(sender)) },
         { audiences.nativeTransportAvailable },
     )

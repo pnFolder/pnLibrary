@@ -82,7 +82,7 @@ internal class BukkitPlatformAdapter(
         BukkitMetricsFactory()
 
     override val commandAdapter: PlatformCommandAdapter =
-        BukkitCommandAdapter(audienceService)
+        BukkitCommandAdapter(audienceService, plugin)
 
     override val audienceAdapter: PlatformAudienceAdapter =
         BukkitAudienceAdapter(audienceService)

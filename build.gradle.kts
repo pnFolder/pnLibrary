@@ -21,6 +21,7 @@ apiValidation {
             "smoke-velocity",
             "runtime",
             "faststats-velocity",
+            "paper",
             "currency-runtime",
             "config-runtime",
             "gradle",
@@ -43,6 +44,7 @@ subprojects {
         mavenCentral()
         maven("https://repo.papermc.io/repository/maven-public/")  { name = "papermc" }
         maven("https://hub.spigotmc.org/nexus/content/repositories/snapshots/") { name = "spigot" }
+        maven("https://libraries.minecraft.net")                                { name = "minecraft" }
         maven("https://repo.md-5.net/content/repositories/snapshots/")          { name = "bungeecord" }
         maven("https://repo.extendedclip.com/releases/")                        { name = "placeholderapi" }
         maven("https://repo.faststats.dev/releases")                            { name = "faststats" }

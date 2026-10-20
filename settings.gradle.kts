@@ -19,6 +19,7 @@ include(
     ":modules:design:console",
     ":platforms:bukkit:api",
     ":platforms:bukkit:runtime",
+    ":platforms:bukkit:paper",
     ":platforms:bungee:api",
     ":platforms:bungee:runtime",
     ":platforms:velocity:api",

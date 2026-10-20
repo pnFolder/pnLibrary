@@ -8,6 +8,7 @@ snakeyaml               = "2.3"
 junit                   = "5.11.4"
 mockito                 = "5.20.0"
 spigot18                = "1.8.8-R0.1-SNAPSHOT"
+paper                   = "1.21.4-R0.1-SNAPSHOT"
 bungeecord              = "1.21-R0.4"
 velocity                = "3.3.0-SNAPSHOT"
 adventure               = "4.17.0"
@@ -28,6 +29,7 @@ mockito-core              = { module = "org.mockito:mockito-core",              
 mockito-kotlin            = { module = "org.mockito.kotlin:mockito-kotlin",                      version = "5.4.0"                      }
 h2                        = { module = "com.h2database:h2",                                      version = "2.2.224"                    }
 spigot-api-v18            = { module = "org.spigotmc:spigot-api",                                version.ref = "spigot18"               }
+paper-api                 = { module = "io.papermc.paper:paper-api",                             version.ref = "paper"                  }
 bungeecord-api            = { module = "net.md-5:bungeecord-api",                                version.ref = "bungeecord"             }
 velocity-api              = { module = "com.velocitypowered:velocity-api",                       version.ref = "velocity"               }
 log4j-core                = { module = "org.apache.logging.log4j:log4j-core",                    version = "2.24.1"                     }
