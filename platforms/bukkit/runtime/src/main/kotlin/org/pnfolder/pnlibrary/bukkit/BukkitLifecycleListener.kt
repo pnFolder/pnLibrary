@@ -16,6 +16,7 @@ import org.pnfolder.pnlibrary.api.tasks.TaskExecution
 import org.pnfolder.pnlibrary.api.tasks.TaskSpec
 import org.pnfolder.pnlibrary.api.updates.UpdateState
 import org.pnfolder.pnlibrary.bukkit.commands.BukkitControlCommand
+import org.pnfolder.pnlibrary.core.runtime.journalJoinNotice
 import org.pnfolder.pnlibrary.core.runtime.runtimeTaskScope
 import org.pnfolder.pnlibrary.core.updates.catalog.UpdateCatalogView
 import java.time.Duration
@@ -71,7 +72,9 @@ internal class BukkitLifecycleListener(
     @EventHandler
     fun onAdministratorJoin(event: PlayerJoinEvent) {
         val player = event.player
-        if (!player.isOp && !player.hasPermission("pnlibrary.updates.notify")) return
+        val canSeeUpdates = player.isOp || player.hasPermission("pnlibrary.updates.notify")
+        val canSeeJournal = player.isOp || player.hasPermission("pnlibrary.events.view")
+        if (!canSeeUpdates && !canSeeJournal) return
         val runtime = library ?: return
         runtime.runtimeTaskScope().schedule(TaskSpec.builder()
             .execution(TaskExecution.entity(player))
@@ -79,10 +82,12 @@ internal class BukkitLifecycleListener(
             .action task@{
                 val active = library ?: return@task
                 if (!player.isOnline) return@task
+                val audience = active.audiences.player(player.uniqueId) ?: return@task
+                if (canSeeJournal) active.journalJoinNotice().forEach(audience::sendMessage)
+                if (!canSeeUpdates) return@task
                 val snapshots = active.updates.all().map { it.snapshot }
                 val notice = UpdateCatalogView.announcement(snapshots, BukkitControlCommand.ROUTES, PnLibraryIdentity.SUPPORT_URL)
                 if (notice.isEmpty()) return@task
-                val audience = active.audiences.player(player.uniqueId) ?: return@task
                 notice.forEach(audience::sendMessage)
                 val pending = snapshots.count { it.state == UpdateState.UPDATE_AVAILABLE || it.state == UpdateState.UPDATE_STAGED }
                 showTitle(player, pending)

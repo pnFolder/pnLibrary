@@ -76,6 +76,55 @@ internal class DiagnosticsSettings {
     @field:ConfigRange(min = 0.0, max = 3600.0)
     var cooldownSeconds: Int = 10
 
+    @field:ConfigNewLine
+    @field:ConfigComment(
+        "=== Журнал событий ===",
+        "Сколько дней хранить информационные записи журнала (от 1 до 3650).",
+    )
+    @field:ConfigRange(min = 1.0, max = 3650.0)
+    var journalInfoDays: Int = 7
+
+    @field:ConfigComment("Сколько дней хранить предупреждения (от 1 до 3650).")
+    @field:ConfigRange(min = 1.0, max = 3650.0)
+    var journalWarningDays: Int = 30
+
+    @field:ConfigComment("Сколько дней хранить ошибки (от 1 до 3650).")
+    @field:ConfigRange(min = 1.0, max = 3650.0)
+    var journalErrorDays: Int = 90
+
+    @field:ConfigComment(
+        "Писать ли в журнал предупреждения и ошибки плагинов, которые не подключены к pnLibrary.",
+        "По умолчанию выключено: в журнале только pnLibrary и плагины, которые пишут через неё.",
+    )
+    var journalForeignPlugins: Boolean = false
+
+    @field:ConfigComment(
+        "Показывать ли администратору при входе краткую сводку: что сломалось недавно, при запуске, только что",
+        "или повторяется. Если всё в порядке, сообщение не показывается. Нужно право pnlibrary.events.view или OP.",
+    )
+    var journalJoinNotice: Boolean = true
+
+    @field:ConfigComment("За сколько последних часов считать события в этой сводке (от 1 до 720).")
+    @field:ConfigRange(min = 1.0, max = 720.0)
+    var journalJoinNoticeHours: Int = 24
+
+    @field:ConfigNewLine
+    @field:ConfigComment(
+        "=== Время ===",
+        "Часовой пояс для всех времён, которые показывает pnLibrary (журнал, обновления).",
+        "Хранится время всегда в UTC, поэтому смена пояса ничего не портит. Примеры: UTC, Europe/Moscow.",
+        "При создании файла подставляется часовой пояс сервера.",
+    )
+    var timeZone: String = java.time.ZoneId.systemDefault().id
+
+    @field:ConfigNewLine
+    @field:ConfigComment(
+        "=== Сообщения ===",
+        "Что видит игрок, если у него нет права на команду pnLibrary или другого плагина,",
+        "у которого нет собственного сообщения (до 256 символов).",
+    )
+    var noPermissionMessage: String = "Недостаточно прав для этой команды."
+
     /** Converts the file model to the immutable runtime policy, which validates the remaining rules. */
     fun toConfig(): PnLibraryConfig = PnLibraryConfig(
         upload = upload,
@@ -92,5 +141,14 @@ internal class DiagnosticsSettings {
         secretKeyPatterns = secretKeyPatterns.toList(),
         redactValuePatterns = redactValuePatterns.toList(),
         privacy = privacy,
+        journalInfoDays = journalInfoDays,
+        journalWarningDays = journalWarningDays,
+        journalErrorDays = journalErrorDays,
+        noPermissionMessage = noPermissionMessage,
+        journalForeignPlugins = journalForeignPlugins,
+        journalJoinNotice = journalJoinNotice,
+        journalJoinNoticeHours = journalJoinNoticeHours,
+        timeZone = timeZone.trim().takeIf { runCatching { java.time.ZoneId.of(it) }.isSuccess }
+            ?: java.time.ZoneId.systemDefault().id,
     )
 }

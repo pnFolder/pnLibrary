@@ -26,6 +26,15 @@ import org.pnfolder.pnlibrary.api.version.SemanticVersion
 import org.pnfolder.pnlibrary.config.ConfigurationServiceImpl
 import org.pnfolder.pnlibrary.core.diagnostics.DiagnosticsRegistry
 import org.pnfolder.pnlibrary.core.diagnostics.diagnosticCommand
+import org.pnfolder.pnlibrary.core.journal.JournalLevel
+import org.pnfolder.pnlibrary.core.journal.JournalRecord
+import org.pnfolder.pnlibrary.core.journal.JournalStore
+import org.pnfolder.pnlibrary.core.journal.journalCommand
+import org.pnfolder.pnlibrary.core.journal.toJournalLevel
+import net.kyori.adventure.text.Component
+import java.time.Duration
+import org.pnfolder.pnlibrary.core.journal.joinDigest
+import java.time.ZoneId
 import org.pnfolder.pnlibrary.core.downloads.DirectDownloadManager
 import org.pnfolder.pnlibrary.api.logging.LogLevel
 import org.pnfolder.pnlibrary.core.downloads.DownloadConfiguration
@@ -84,6 +93,10 @@ internal class PnLibraryImpl(
     private val metricsService = MetricsServiceImpl(metricsFactory)
     private var libraryMetrics: PluginMetrics? = null
     val dataFolder: Path = PlatformDataFolderResolver.resolve(owner, dataFolderHint)
+    init {
+        DisplayZone.zone = ZoneId.of(config.timeZone)
+    }
+
     private val support = SupportRuntime(
         owner = owner,
         ownership = platformOwnership,
@@ -95,17 +108,46 @@ internal class PnLibraryImpl(
         config = config,
         dataFolder = dataFolder,
         runtimeDiagnostics = { runtimeDiagnostics.assemble() },
+        journal = ::writeJournal,
     )
     override val observability get() = support.service
     override val activity: ActivityService get() = observability
     override val metrics: MetricsService get() = metricsService
+    private val journal = JournalStore(
+        dataFolder.resolve("journal"),
+        mapOf(
+            JournalLevel.INFO to Duration.ofDays(config.journalInfoDays.toLong()),
+            JournalLevel.WARNING to Duration.ofDays(config.journalWarningDays.toLong()),
+            JournalLevel.ERROR to Duration.ofDays(config.journalErrorDays.toLong()),
+        ),
+    ).also { store -> runCatching { store.prune() } }
     override val logging: LoggingService = LoggingServiceImpl(
         platformLogging,
         platformOwnership,
         platformDiagnostics,
         platformIdentity,
         support.logs,
+        journal = ::writeJournal,
     )
+
+    /** Adds one log line, from the library, a plugin or the platform itself, to the event journal. */
+    private fun writeJournal(owner: Any, level: LogLevel, message: String, error: Throwable?) {
+        journal.append(
+            JournalRecord(
+                timeMillis = System.currentTimeMillis(),
+                level = level.toJournalLevel(),
+                source = platformOwnership.ownerDetails(owner)["id"] ?: owner.javaClass.simpleName,
+                type = if (error != null) "ERROR" else "LOG",
+                message = message,
+                details = error?.let {
+                    mapOf(
+                        "exception" to it.javaClass.name,
+                        JournalRecord.STACKTRACE to JournalRecord.stackTraceOf(it),
+                    )
+                }.orEmpty(),
+            ),
+        )
+    }
     private val configurationService = ConfigurationServiceImpl(platformOwnership)
     override val configurations: ConfigurationService get() = configurationService
     private val updateService = UpdateServiceImpl(
@@ -136,9 +178,21 @@ internal class PnLibraryImpl(
         platformLogging = platformLogging,
         taskHistoryCapacity = config.taskHistoryCapacity,
         errorLogger = ::recordAndLog,
+        noPermissionMessage = config.noPermissionMessage,
     )
     private val taskService get() = platformServices.tasks
     override val runtimeTasks: TaskScope get() = taskService.scope(owner)
+
+    private val startedAtMillis = System.currentTimeMillis()
+
+    override fun journalJoinNotice(): List<Component> {
+        if (!config.journalJoinNotice) return emptyList()
+        val now = System.currentTimeMillis()
+        val since = now - Duration.ofHours(config.journalJoinNoticeHours.toLong()).toMillis()
+        return runCatching {
+            joinDigest(journal.read(sinceMillis = since, limit = 5_000), now, config.journalJoinNoticeHours, startedAtMillis)
+        }.getOrDefault(emptyList())
+    }
     private val commandService get() = platformServices.commands
     override fun registerRuntimeCommand(command: CommandDefinition): CommandRegistration =
         commandService.register(owner, command)
@@ -195,12 +249,14 @@ internal class PnLibraryImpl(
         support = support,
         metrics = metricsService,
         commands = commandService,
+        journal = { journal.summary() },
     )
 
     fun init() {
         support.initialize { isClosed }
         startLibraryMetrics()
         registerRuntimeCommand(diagnosticCommand(this))
+        registerRuntimeCommand(journalCommand(journal))
         registerRuntimeCommand(
             libraryInfoCommand(this, platformIdentity) {
                 platformOwnership.ownerDetails(owner)["version"] ?: "неизвестна"

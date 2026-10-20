@@ -17,6 +17,9 @@ permissions:
   pnlibrary.updates.notify:
     description: Получать уведомления об обновлениях при входе
     default: op
+  pnlibrary.events.view:
+    description: Смотреть журнал событий (/pnevents) и получать сводку ошибок при входе
+    default: op
   pnlibrary.updates.view:
     description: Просматривать совместимый план обновлений
     default: op

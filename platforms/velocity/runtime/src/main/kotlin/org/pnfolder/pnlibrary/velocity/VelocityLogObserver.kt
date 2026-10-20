@@ -13,11 +13,12 @@ import org.pnfolder.pnlibrary.api.logging.LogLevel
  * Forwards WARN and ERROR events of Velocity's Log4j2 backend to the shared log observation contract.
  *
  * Velocity names a plugin's SLF4J logger after its main class, so an event is attributed to the plugin whose
- * main-class package is the longest prefix of the logger name; other events go to [fallbackOwner].
+ * main-class package is the longest prefix of the logger name, or whose id equals it; other events go to [fallbackOwner].
  * Events written through [runOwn] are skipped. When Log4j is unavailable the observer silently does nothing.
  */
 internal class VelocityLogObserver(
     private val fallbackOwner: Any,
+    private val pluginById: (String) -> Any? = { null },
     private val pluginInstances: () -> Collection<Any>,
 ) {
     private val ownLogCall = ThreadLocal.withInitial { false }
@@ -47,6 +48,8 @@ internal class VelocityLogObserver(
     /** Returns the plugin whose main-class package is the longest prefix of [loggerName]. */
     internal fun resolveOwner(loggerName: String?): Any? {
         if (loggerName.isNullOrBlank()) return null
+        // Velocity names a plugin's logger after its id when the plugin takes the injected logger.
+        pluginById(loggerName)?.let { return it }
         return pluginInstances().mapNotNull { instance ->
             val prefix = instance.javaClass.name.substringBeforeLast('.', "")
             if (prefix.contains('.') && (loggerName == instance.javaClass.name || loggerName.startsWith("$prefix."))) {

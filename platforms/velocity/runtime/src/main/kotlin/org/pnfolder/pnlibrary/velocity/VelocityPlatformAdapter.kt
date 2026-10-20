@@ -44,9 +44,11 @@ internal class VelocityPlatformAdapter(
     private val startup = StartupGate(lifecycle, ::executeGlobal)
 
     private val uncaughtExceptionObserver = UncaughtExceptionLogObserver(plugin)
-    private val logObserver = VelocityLogObserver(plugin) {
-        proxy.pluginManager.plugins.mapNotNull { it.instance.orElse(null) }
-    }
+    private val logObserver = VelocityLogObserver(
+        plugin,
+        pluginInstances = { proxy.pluginManager.plugins.mapNotNull { it.instance.orElse(null) } },
+        pluginById = { id -> proxy.pluginManager.getPlugin(id.lowercase()).orElse(null)?.instance?.orElse(null) },
+    )
 
     override val type: PlatformType = PlatformType.VELOCITY
 

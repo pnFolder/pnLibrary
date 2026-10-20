@@ -23,6 +23,7 @@ internal class RuntimeDiagnosticsAssembler(
     private val support: SupportRuntime,
     private val metrics: MetricsServiceImpl,
     private val commands: CommandServiceImpl,
+    private val journal: () -> Map<String, Any?> = { emptyMap() },
 ) {
     /** Returns one ordered snapshot of library, task, update, metric, and support state. */
     fun assemble(): Map<String, Any?> {
@@ -47,6 +48,7 @@ internal class RuntimeDiagnosticsAssembler(
                     dataFolder.toAbsolutePath().normalize().toString(),
                 "configuration" to RuntimeConfigurationDetails.of(config),
             ),
+            "journal" to runCatching(journal).getOrElse { linkedMapOf("error" to (it.message ?: it.javaClass.simpleName)) },
             "tasks" to RuntimeTaskDetails.entries(taskSnapshots),
             "taskSummary" to RuntimeTaskDetails.summary(taskSnapshots),
             "updates" to updateSnapshots.map(RuntimeUpdateDetails::registration),

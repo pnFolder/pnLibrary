@@ -3,6 +3,7 @@ package org.pnfolder.pnlibrary.core.runtime
 import org.pnfolder.pnlibrary.api.tasks.TaskServiceSettings
 import org.pnfolder.pnlibrary.core.audiences.AudienceServiceImpl
 import org.pnfolder.pnlibrary.core.commands.CommandServiceImpl
+import org.pnfolder.pnlibrary.core.commands.DEFAULT_NO_PERMISSION
 import org.pnfolder.pnlibrary.core.tasks.TaskServiceImpl
 import org.pnfolder.pnlibrary.spi.audiences.PlatformAudienceAdapter
 import org.pnfolder.pnlibrary.spi.commands.PlatformCommandAdapter
@@ -17,12 +18,13 @@ internal class PlatformServiceSet(
     platformLogging: PlatformLogging,
     taskHistoryCapacity: Int,
     errorLogger: (Any, String, Throwable) -> Unit,
+    noPermissionMessage: String = DEFAULT_NO_PERMISSION,
 ) {
     val tasks = TaskServiceImpl(
         adapter = taskAdapter,
         settings = TaskServiceSettings(taskHistoryCapacity),
         errorLogger = errorLogger,
     )
-    val commands = CommandServiceImpl(commandAdapter, platformLogging)
+    val commands = CommandServiceImpl(commandAdapter, platformLogging, noPermissionMessage)
     val audiences = AudienceServiceImpl(audienceAdapter)
 }

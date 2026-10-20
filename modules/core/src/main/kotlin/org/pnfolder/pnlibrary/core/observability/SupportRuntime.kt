@@ -42,6 +42,7 @@ internal class SupportRuntime(
     private val config: PnLibraryConfig,
     dataFolder: Path,
     private val runtimeDiagnostics: () -> Map<String, Any?> = { emptyMap() },
+    private val journal: ((Any, LogLevel, String, Throwable?) -> Unit)? = null,
 ) : AutoCloseable {
     private val observations = ObservabilityRuntime(dataFolder)
     private val diagnosticBridge = DiagnosticObservationBridge(observations)
@@ -94,6 +95,10 @@ internal class SupportRuntime(
         diagnostics.onEventsChanged(::persistHistory)
         diagnostics.onActivityEvent(diagnosticBridge::record)
         platformLogObservation.observeNativeLogs { nativeOwner, level, message, error ->
+            // Plugins that do not use pnLibrary reach the journal only when the admin asked for it.
+            if (config.journalForeignPlugins || nativeOwner === owner) {
+                runCatching { journal?.invoke(nativeOwner, level, message, error) }
+            }
             logs.record(ownership, nativeOwner, level, message, error)
         }
 
@@ -185,6 +190,7 @@ internal class SupportRuntime(
             ),
         )
 
+        runCatching { journal?.invoke(logOwner, LogLevel.ERROR, message, error) }
         val capture = logs.record(ownership, logOwner, LogLevel.ERROR, message, error)
         when {
             capture == null || capture.emitOriginal -> platformLogging.log(logOwner, LogLevel.ERROR, message, error)

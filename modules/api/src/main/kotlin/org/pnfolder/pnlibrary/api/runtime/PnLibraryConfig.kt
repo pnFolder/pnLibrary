@@ -77,8 +77,26 @@ data class PnLibraryConfig @JvmOverloads constructor(
     val secretKeyPatterns: List<String> = emptyList(),
     val redactValuePatterns: List<String> = emptyList(),
     val privacy: Boolean = true,
+    val journalInfoDays: Int = 7,
+    val journalWarningDays: Int = 30,
+    val journalErrorDays: Int = 90,
+    val noPermissionMessage: String = "Недостаточно прав для этой команды.",
+    val journalForeignPlugins: Boolean = false,
+    val timeZone: String = "UTC",
+    val journalJoinNotice: Boolean = true,
+    val journalJoinNoticeHours: Int = 24,
 ) {
     init {
+        require(noPermissionMessage.isNotBlank() && noPermissionMessage.length <= 256) {
+            "Setting noPermissionMessage must be 1 to 256 characters"
+        }
+        require(runCatching { java.time.ZoneId.of(timeZone) }.isSuccess) {
+            "Setting timeZone must be a time zone id such as UTC or Europe/Moscow"
+        }
+        require(journalJoinNoticeHours in 1..720) { "Setting journalJoinNoticeHours must be between 1 and 720" }
+        require(journalInfoDays in 1..3650) { "Setting journalInfoDays must be between 1 and 3650" }
+        require(journalWarningDays in 1..3650) { "Setting journalWarningDays must be between 1 and 3650" }
+        require(journalErrorDays in 1..3650) { "Setting journalErrorDays must be between 1 and 3650" }
         require(uploadMode in setOf("encrypted", "disabled")) {
             "Setting uploadMode must be encrypted or disabled"
         }

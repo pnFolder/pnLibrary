@@ -19,6 +19,7 @@ internal class LoggingServiceImpl(
     private val diagnostics: PlatformSnapshotProvider,
     private val identity: PlatformIdentity,
     private val diagnosticLogs: DiagnosticLogBuffer? = null,
+    private val journal: ((Any, LogLevel, String, Throwable?) -> Unit)? = null,
 ) : LoggingService {
     private data class Row(val status: String, val label: String, val detail: String, val error: Throwable?)
     private enum class MessageKind { GENERIC, ENABLED, DISABLED }
@@ -177,6 +178,8 @@ internal class LoggingServiceImpl(
     }
 
     private fun writeCaptured(owner: Any, level: LogLevel, message: String, error: Throwable?) {
+        // The journal must never break logging itself, so its failures are dropped here.
+        runCatching { journal?.invoke(owner, level, message, error) }
         val capture = diagnosticLogs?.record(ownership, owner, level, message, error)
         when {
             capture == null || capture.emitOriginal -> logging.log(owner, level, message, error)

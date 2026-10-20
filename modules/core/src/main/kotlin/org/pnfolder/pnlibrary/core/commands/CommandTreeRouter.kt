@@ -14,7 +14,8 @@ import java.util.concurrent.CompletionStage
 internal sealed class CommandRoute {
     data class Executable(val node: CommandNode, val context: CommandContext) : CommandRoute()
     data class Invalid(val usage: String) : CommandRoute()
-    data object Denied : CommandRoute()
+    /** The sender may not enter a node; [message] is that node's own text, or `null` to use the command's. */
+    data class Denied(val message: String?) : CommandRoute()
 }
 
 /** Parses and completes immutable command trees without knowing the native server platform. */
@@ -23,7 +24,7 @@ internal class CommandTreeRouter {
         var node = command.root
         val values = LinkedHashMap<String, Any>()
         var routed = context.copy(parsedValues = values.toMap())
-        if (!allowed(node, routed)) return CommandRoute.Denied
+        if (!allowed(node, routed)) return CommandRoute.Denied(node.noPermissionMessage)
         val path = mutableListOf(command.name)
 
         context.arguments.forEach { token ->
@@ -32,7 +33,7 @@ internal class CommandTreeRouter {
             }
             val child = literal ?: node.children.firstOrNull { it.kind == CommandNodeKind.ARGUMENT }
                 ?: return CommandRoute.Invalid(usage(path, node, routed))
-            if (!allowed(child, routed)) return CommandRoute.Denied
+            if (!allowed(child, routed)) return CommandRoute.Denied(child.noPermissionMessage)
             if (child.kind == CommandNodeKind.ARGUMENT) {
                 val parsed = parse(child, token) ?: return CommandRoute.Invalid(usage(path, node, routed))
                 values[child.name] = parsed

@@ -143,7 +143,23 @@ class CommandServiceImplTest {
 
         assertEquals(1, executions)
         assertTrue(deniedSuggestions.isEmpty())
-        assertEquals(listOf(Component.text("You do not have permission.")), denied.messages)
+        assertEquals(listOf(Component.text("Недостаточно прав для этой команды.")), denied.messages)
+    }
+
+    @Test
+    fun `a command can replace the default no-permission message with its own text`() {
+        val native = RecordingCommands()
+        val service = CommandServiceImpl(TestPlatform(native).commandAdapter, TestPlatform(native))
+        service.register(Any(), command("hello") {
+            permission("example.hello")
+            noPermissionMessage("Нужна покупка доступа: /shop buy hello")
+            executes { }
+        })
+        val denied = TestSender()
+
+        native.dispatcher.execute(native.command, context(denied)).toCompletableFuture().join()
+
+        assertEquals(listOf(Component.text("Нужна покупка доступа: /shop buy hello")), denied.messages)
     }
 
     @Test
@@ -237,7 +253,55 @@ class CommandServiceImplTest {
         assertTrue(platform.errors.any { it.message == "close failed" })
     }
 
-    private fun context(sender: TestSender) = CommandContext(sender, emptyList(), "hello", "")
+    @Test
+    fun `a subcommand message wins over the command message and the configured default`() {
+        val native = RecordingCommands()
+        val service = CommandServiceImpl(
+            TestPlatform(native).commandAdapter, TestPlatform(native), "Настроенный текст из config.yml",
+        )
+        service.register(Any(), command("hello") {
+            noPermissionMessage("Текст команды")
+            executes { }
+            literal("vip") {
+                permission("example.vip")
+                noPermissionMessage("Это только для VIP")
+                executes { }
+            }
+            literal("staff") {
+                permission("example.staff")
+                executes { }
+            }
+        })
+        val sender = TestSender()
+
+        native.dispatcher.execute(native.command, context(sender, "vip")).toCompletableFuture().join()
+        native.dispatcher.execute(native.command, context(sender, "staff")).toCompletableFuture().join()
+
+        assertEquals(
+            listOf(Component.text("Это только для VIP"), Component.text("Текст команды")),
+            sender.messages,
+        )
+    }
+
+    @Test
+    fun `the configured default replaces the built in text when nothing more specific is set`() {
+        val native = RecordingCommands()
+        val service = CommandServiceImpl(
+            TestPlatform(native).commandAdapter, TestPlatform(native), "Настроенный текст из config.yml",
+        )
+        service.register(Any(), command("hello") {
+            permission("example.hello")
+            executes { }
+        })
+        val sender = TestSender()
+
+        native.dispatcher.execute(native.command, context(sender)).toCompletableFuture().join()
+
+        assertEquals(listOf(Component.text("Настроенный текст из config.yml")), sender.messages)
+    }
+
+    private fun context(sender: TestSender, vararg arguments: String) =
+        CommandContext(sender, arguments.toList(), "hello", "")
 
     private class TestSender(
         private val permissions: Set<String> = emptySet(),

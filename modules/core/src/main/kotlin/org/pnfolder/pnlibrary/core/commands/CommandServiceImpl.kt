@@ -19,9 +19,16 @@ import java.util.concurrent.atomic.AtomicBoolean
 import java.util.concurrent.atomic.AtomicLong
 
 /** Shared validation, permission, dispatch, and lifecycle engine for portable commands. */
+/** Shown when neither the denied node nor its command has a no-permission message and the config sets none. */
+internal const val DEFAULT_NO_PERMISSION = "Недостаточно прав для этой команды."
+
+/**
+ * @param defaultNoPermission text for a denial that has no message on its node or command; set in `config.yml`
+ */
 internal class CommandServiceImpl(
     private val commandAdapter: PlatformCommandAdapter,
     private val logging: PlatformLogging,
+    private val defaultNoPermission: String = DEFAULT_NO_PERMISSION,
 ) : CommandService, PlatformCommandDispatcher, AutoCloseable {
     private val lock = Any()
     private val closed = AtomicBoolean(false)
@@ -90,11 +97,13 @@ internal class CommandServiceImpl(
         val executable = when (route) {
             is CommandRoute.Executable -> route
             is CommandRoute.Invalid -> {
-                context.sender.send(Component.text("Usage: ${route.usage}"))
+                context.sender.send(Component.text("Использование: ${route.usage}"))
                 return completedExecution()
             }
-            CommandRoute.Denied -> {
-                context.sender.send(Component.text("You do not have permission."))
+            is CommandRoute.Denied -> {
+                context.sender.send(
+                    Component.text(route.message ?: registration.command.noPermissionMessage ?: defaultNoPermission),
+                )
                 return completedExecution()
             }
         }

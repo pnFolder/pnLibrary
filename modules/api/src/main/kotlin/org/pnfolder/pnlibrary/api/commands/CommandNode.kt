@@ -31,6 +31,7 @@ fun interface CommandAvailability {
  * @property suggestions suggestion callback for this route
  * @property isExecutable whether this route may be executed
  * @property children immutable child routes
+ * @property noPermissionMessage text shown when the sender lacks [permission], or `null` to use the command's own
  */
 class CommandNode internal constructor(
     val kind: CommandNodeKind,
@@ -43,6 +44,7 @@ class CommandNode internal constructor(
     val suggestions: SuggestionHandler,
     val isExecutable: Boolean,
     children: List<CommandNode>,
+    val noPermissionMessage: String? = null,
 ) {
     val children: List<CommandNode> = Collections.unmodifiableList(ArrayList(children))
 }
@@ -60,6 +62,7 @@ class CommandNodeBuilder internal constructor(
     }
     private var permission: String? = null
     private var consoleBypassesPermission = false
+    private var noPermissionMessage: String? = null
     private var availability = CommandAvailability { true }
     private var execution = CommandHandler { completedExecution() }
     private var suggestions = SuggestionHandler { completedSuggestions(emptyList()) }
@@ -69,6 +72,13 @@ class CommandNodeBuilder internal constructor(
     /** Requires the non-blank permission [value] for this node. */
     fun permission(value: String): CommandNodeBuilder = apply {
         permission = value.trim().also { require(it.isNotEmpty()) { "Command permission must not be blank" } }
+    }
+
+    /** Sets the message shown to a sender who lacks this node's permission; it overrides the command's own text. */
+    fun noPermissionMessage(value: String): CommandNodeBuilder = apply {
+        noPermissionMessage = value.trim().also {
+            require(it.isNotEmpty()) { "No-permission message must not be blank" }
+        }
     }
 
     /** Configures whether the console bypasses this node's permission. */
@@ -138,7 +148,7 @@ class CommandNodeBuilder internal constructor(
         validateChildren()
         return CommandNode(
             kind, name, argumentType, permission, consoleBypassesPermission, availability,
-            execution, suggestions, executable, children.map(CommandNodeBuilder::build),
+            execution, suggestions, executable, children.map(CommandNodeBuilder::build), noPermissionMessage,
         )
     }
 

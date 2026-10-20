@@ -176,7 +176,12 @@ open class ChatKit(val reader: ChatReader) {
     /** Plain text in [color]; the console gets the ASCII form. */
     fun text(value: String, color: TextColor? = null): Component {
         val component = Component.text(shown(value))
-        return if (color == null) component else component.color(color)
+        return when {
+            color == null -> component
+            // Consoles show only the 16 classic colors; a custom RGB value there turns into broken escape codes.
+            reader.ascii -> component.color(net.kyori.adventure.text.format.NamedTextColor.nearestTo(color))
+            else -> component.color(color)
+        }
     }
 
     /** [value] as this reader can display it. */

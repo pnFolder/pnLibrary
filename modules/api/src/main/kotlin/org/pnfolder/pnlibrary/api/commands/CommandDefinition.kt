@@ -30,6 +30,7 @@ fun interface SuggestionHandler {
  * @property suggestions root suggestion callback
  * @property root immutable root of the parsed command tree
  * @property aliases normalized immutable command aliases
+ * @property noPermissionMessage text shown to a sender who lacks the permission, or `null` for the default
  */
 class CommandDefinition internal constructor(
     val name: String,
@@ -39,6 +40,7 @@ class CommandDefinition internal constructor(
     val execution: CommandHandler,
     val suggestions: SuggestionHandler,
     val root: CommandNode,
+    val noPermissionMessage: String? = null,
 ) {
     val aliases: Set<String> = Collections.unmodifiableSet(LinkedHashSet(aliases))
 
@@ -56,6 +58,7 @@ class CommandBuilder internal constructor(name: String) {
     private val aliases = linkedSetOf<String>()
     private var permission: String? = null
     private var consoleBypassesPermission: Boolean = false
+    private var noPermissionMessage: String? = null
     private var execution = CommandHandler { completedExecution() }
     private var executable = false
     private var suggestions = SuggestionHandler { completedSuggestions(emptyList()) }
@@ -75,6 +78,16 @@ class CommandBuilder internal constructor(name: String) {
     fun permission(value: String): CommandBuilder = apply {
         permission = value.trim().also {
             require(it.isNotEmpty()) { "Command permission must not be blank" }
+        }
+    }
+
+    /**
+     * Sets the message shown to a sender who lacks the root permission, for example
+     * `noPermissionMessage("У вас нет права на /pnevents. Попросите администратора.")`.
+     */
+    fun noPermissionMessage(value: String): CommandBuilder = apply {
+        noPermissionMessage = value.trim().also {
+            require(it.isNotEmpty()) { "No-permission message must not be blank" }
         }
     }
 
@@ -143,6 +156,7 @@ class CommandBuilder internal constructor(name: String) {
     fun build(): CommandDefinition {
         val rootBuilder = CommandNodeBuilder(CommandNodeKind.ROOT, name).apply {
             permission?.let(::permission)
+            noPermissionMessage?.let(::noPermissionMessage)
             consoleBypassesPermission(consoleBypassesPermission)
             availableIf(availability)
             if (executable) executesAsync(execution)
@@ -158,6 +172,7 @@ class CommandBuilder internal constructor(name: String) {
             execution = execution,
             suggestions = suggestions,
             root = root,
+            noPermissionMessage = noPermissionMessage,
         )
     }
 }
