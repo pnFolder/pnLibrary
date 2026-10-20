@@ -711,7 +711,7 @@ class PluginRegistryImplTest {
     private class RecordingCommandService : CommandService {
         val unregisteredOwners = mutableListOf<Any>()
         val registeredOwners = mutableListOf<Any>()
-        override fun register(owner: Any, command: CommandDefinition): CommandRegistration =
+        override fun register(owner: Any, command: CommandDefinition, feedback: org.pnfolder.pnlibrary.core.commands.CommandFeedbackScope?): CommandRegistration =
             object : CommandRegistration {
                 init { registeredOwners += owner }
                 override val command = command

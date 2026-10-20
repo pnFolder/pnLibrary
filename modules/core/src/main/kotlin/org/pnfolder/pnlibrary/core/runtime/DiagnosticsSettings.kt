@@ -125,6 +125,33 @@ internal class DiagnosticsSettings {
     )
     var noPermissionMessage: String = "Недостаточно прав для этой команды."
 
+    @field:ConfigComment(
+        "Звук, который слышит игрок вместе с этим сообщением, например entity.villager.no.",
+        "Пусто: без звука. Плагин может заменить и текст, и звук своим обработчиком.",
+    )
+    var noPermissionSound: String = ""
+
+    @field:ConfigComment(
+        "Что видит игрок, если ввёл команду неверно. {usage} заменяется на подсказку вида /команда <аргумент>.",
+        "Каждый плагин и каждая команда могут задать свой ответ; это стандарт для всех остальных.",
+    )
+    var usageMessage: String = "Использование: {usage}"
+
+    @field:ConfigComment(
+        "Что видит игрок, если аргумент не подошёл. Можно использовать {value} (что ввели), {argument} (какой аргумент)",
+        "и {usage}. Так же настраиваются ответы ниже; любой плагин или команда могут ответить по-своему.",
+    )
+    var invalidArgumentMessage: String = "Неверное значение «{value}» для {argument}. {usage}"
+
+    @field:ConfigComment("Что видит игрок, если указанного игрока нет в сети. {value} — введённое имя.")
+    var playerNotFoundMessage: String = "Игрок {value} сейчас не в сети."
+
+    @field:ConfigComment("Что видит консоль, если команда только для игроков.")
+    var playerOnlyMessage: String = "Эту команду можно использовать только в игре."
+
+    @field:ConfigComment("Что видит игрок, если команда только для консоли.")
+    var consoleOnlyMessage: String = "Эту команду можно использовать только из консоли."
+
     /** Converts the file model to the immutable runtime policy, which validates the remaining rules. */
     fun toConfig(): PnLibraryConfig = PnLibraryConfig(
         upload = upload,
@@ -145,6 +172,12 @@ internal class DiagnosticsSettings {
         journalWarningDays = journalWarningDays,
         journalErrorDays = journalErrorDays,
         noPermissionMessage = noPermissionMessage,
+        noPermissionSound = noPermissionSound.trim(),
+        usageMessage = usageMessage,
+        invalidArgumentMessage = invalidArgumentMessage,
+        playerNotFoundMessage = playerNotFoundMessage,
+        playerOnlyMessage = playerOnlyMessage,
+        consoleOnlyMessage = consoleOnlyMessage,
         journalForeignPlugins = journalForeignPlugins,
         journalJoinNotice = journalJoinNotice,
         journalJoinNoticeHours = journalJoinNoticeHours,

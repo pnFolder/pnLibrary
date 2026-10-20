@@ -33,6 +33,7 @@ import org.pnfolder.pnlibrary.core.journal.journalCommand
 import org.pnfolder.pnlibrary.core.journal.toJournalLevel
 import net.kyori.adventure.text.Component
 import java.time.Duration
+import org.pnfolder.pnlibrary.core.commands.standardCommandFeedback
 import org.pnfolder.pnlibrary.core.journal.joinDigest
 import java.time.ZoneId
 import org.pnfolder.pnlibrary.core.downloads.DirectDownloadManager
@@ -178,7 +179,7 @@ internal class PnLibraryImpl(
         platformLogging = platformLogging,
         taskHistoryCapacity = config.taskHistoryCapacity,
         errorLogger = ::recordAndLog,
-        noPermissionMessage = config.noPermissionMessage,
+        commandFeedback = standardCommandFeedback(config),
     )
     private val taskService get() = platformServices.tasks
     override val runtimeTasks: TaskScope get() = taskService.scope(owner)

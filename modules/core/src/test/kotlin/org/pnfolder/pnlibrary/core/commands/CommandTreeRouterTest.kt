@@ -55,9 +55,12 @@ class CommandTreeRouterTest {
 
         assertEquals(listOf("public"), deniedSuggestions)
         assertEquals(listOf("public", "secret"), allowedSuggestions)
-        val deniedUsage = router.route(definition, context(listOf("builders"))) as CommandRoute.Invalid
-        assertEquals("/group <group> public", deniedUsage.usage)
-        assertTrue(router.route(definition, context(listOf("builders", "secret", "delete"))) is CommandRoute.Denied)
+        val deniedUsage = router.route(definition, context(listOf("builders"))) as CommandRoute.Problem
+        assertEquals("/group <group> public", deniedUsage.details["usage"])
+        assertEquals(
+            org.pnfolder.pnlibrary.api.commands.CommandProblemKind.DENIED,
+            (router.route(definition, context(listOf("builders", "secret", "delete"))) as CommandRoute.Problem).kind,
+        )
         assertFalse(router.suggest(definition, context(listOf("other", "secret", ""), setOf("groups.secret")))
             .toCompletableFuture().join().contains("delete"))
     }
@@ -93,8 +96,8 @@ class CommandTreeRouterTest {
         }
         val router = CommandTreeRouter()
 
-        assertEquals("/amount <value>", (router.route(definition, context(emptyList())) as CommandRoute.Invalid).usage)
-        assertEquals("/amount <value>", (router.route(definition, context(listOf("wrong"))) as CommandRoute.Invalid).usage)
+        assertEquals("/amount <value>", (router.route(definition, context(emptyList())) as CommandRoute.Problem).details["usage"])
+        assertEquals("/amount <value>", (router.route(definition, context(listOf("wrong"))) as CommandRoute.Problem).details["usage"])
     }
 
     private fun context(arguments: List<String>, permissions: Set<String> = emptySet()) = CommandContext(

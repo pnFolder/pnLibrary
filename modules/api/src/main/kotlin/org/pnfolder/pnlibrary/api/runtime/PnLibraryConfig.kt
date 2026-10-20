@@ -84,6 +84,12 @@ data class PnLibraryConfig @JvmOverloads constructor(
     val journalForeignPlugins: Boolean = false,
     val timeZone: String = "UTC",
     val journalJoinNotice: Boolean = true,
+    val noPermissionSound: String = "",
+    val usageMessage: String = "Использование: {usage}",
+    val invalidArgumentMessage: String = "Неверное значение «{value}» для {argument}. {usage}",
+    val playerNotFoundMessage: String = "Игрок {value} сейчас не в сети.",
+    val playerOnlyMessage: String = "Эту команду можно использовать только в игре.",
+    val consoleOnlyMessage: String = "Эту команду можно использовать только из консоли.",
     val journalJoinNoticeHours: Int = 24,
 ) {
     init {
@@ -94,6 +100,18 @@ data class PnLibraryConfig @JvmOverloads constructor(
             "Setting timeZone must be a time zone id such as UTC or Europe/Moscow"
         }
         require(journalJoinNoticeHours in 1..720) { "Setting journalJoinNoticeHours must be between 1 and 720" }
+        require(noPermissionSound.isEmpty() || Regex("[a-z0-9_.:/-]+").matches(noPermissionSound)) {
+            "Setting noPermissionSound must be empty or a sound key such as entity.villager.no"
+        }
+        listOf(
+            "invalidArgumentMessage" to invalidArgumentMessage, "playerNotFoundMessage" to playerNotFoundMessage,
+            "playerOnlyMessage" to playerOnlyMessage, "consoleOnlyMessage" to consoleOnlyMessage,
+        ).forEach { (name, text) ->
+            require(text.isNotBlank() && text.length <= 256) { "Setting $name must be 1 to 256 characters" }
+        }
+        require(usageMessage.length <= 256 && usageMessage.contains("{usage}")) {
+            "Setting usageMessage must contain {usage} and be at most 256 characters"
+        }
         require(journalInfoDays in 1..3650) { "Setting journalInfoDays must be between 1 and 3650" }
         require(journalWarningDays in 1..3650) { "Setting journalWarningDays must be between 1 and 3650" }
         require(journalErrorDays in 1..3650) { "Setting journalErrorDays must be between 1 and 3650" }

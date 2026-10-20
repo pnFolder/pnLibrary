@@ -1,5 +1,8 @@
 package org.pnfolder.pnlibrary.api.plugin
 
+import net.kyori.adventure.text.Component
+import org.pnfolder.pnlibrary.api.commands.CommandProblemHandler
+import org.pnfolder.pnlibrary.api.commands.CommandProblemKind
 import java.util.function.Consumer
 
 /** Registration of one native platform plugin and all logical modules it owns. */
@@ -8,6 +11,29 @@ interface PluginRegistration : AutoCloseable {
     val owner: Any
     /** Whether this registration has released its modules. */
     val isClosed: Boolean
+
+    /**
+     * Answers problems of [kind] for every command of this plugin, in all of its modules, with [handler]. A module,
+     * command or subcommand that sets its own answer wins; this wins over the library's standard answer from
+     * `config.yml`.
+     */
+    fun onCommandProblem(kind: CommandProblemKind, handler: CommandProblemHandler) {
+        throw UnsupportedOperationException("Plugin commands are not available in this runtime")
+    }
+
+    /** Answers problems of [kind] for every command of this plugin with the plain [message]. */
+    fun onCommandProblem(kind: CommandProblemKind, message: String) {
+        onCommandProblem(kind, CommandProblemHandler { problem -> problem.sender.send(Component.text(problem.text(message.trim()))) })
+    }
+
+    /** Answers a sender who may not use any command of this plugin; shorthand for [onCommandProblem] with `DENIED`. */
+    fun onCommandDenied(handler: CommandProblemHandler) = onCommandProblem(CommandProblemKind.DENIED, handler)
+
+    /** Answers a mistyped command of this plugin; shorthand for [onCommandProblem] with `USAGE`. */
+    fun onCommandUsage(handler: CommandProblemHandler) = onCommandProblem(CommandProblemKind.USAGE, handler)
+
+    /** Sets the plain text for a denied sender of any command of this plugin. */
+    fun commandNoPermissionMessage(text: String) = onCommandProblem(CommandProblemKind.DENIED, text)
 
     /** Registers a logical module identified by [id]. */
     fun registerModule(

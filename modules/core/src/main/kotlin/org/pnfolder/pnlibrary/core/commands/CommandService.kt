@@ -11,8 +11,11 @@ import org.pnfolder.pnlibrary.api.commands.command
  * Command callbacks execute in the context selected by the platform dispatcher.
  */
 internal interface CommandService {
-    /** Registers [command] and binds its lifecycle to [owner]. */
-    fun register(owner: Any, command: CommandDefinition): CommandRegistration
+    /**
+     * Registers [command] and binds its lifecycle to [owner]; [feedback] holds what the owning module wants every
+     * one of its commands to answer when a sender is denied or types the command wrongly.
+     */
+    fun register(owner: Any, command: CommandDefinition, feedback: CommandFeedbackScope? = null): CommandRegistration
 
     /**
      * Builds and registers a command while keeping the command-definition ceremony

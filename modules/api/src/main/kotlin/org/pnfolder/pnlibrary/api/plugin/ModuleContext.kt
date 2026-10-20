@@ -4,6 +4,9 @@ import org.pnfolder.pnlibrary.api.actions.ActionService
 import org.pnfolder.pnlibrary.api.commands.CommandBuilder
 import org.pnfolder.pnlibrary.api.commands.CommandDefinition
 import org.pnfolder.pnlibrary.api.commands.CommandRegistration
+import net.kyori.adventure.text.Component
+import org.pnfolder.pnlibrary.api.commands.CommandProblemHandler
+import org.pnfolder.pnlibrary.api.commands.CommandProblemKind
 import org.pnfolder.pnlibrary.api.config.ConfigScope
 import org.pnfolder.pnlibrary.api.cooldowns.CooldownService
 import org.pnfolder.pnlibrary.api.diagnostics.DiagnosticRegistration
@@ -23,6 +26,29 @@ interface ModuleContext : AutoCloseable {
     /** Registers a command released when this module closes. */
     fun registerCommand(command: CommandDefinition): CommandRegistration =
         throw UnsupportedOperationException("Module commands are not available in this runtime")
+
+    /**
+     * Answers problems of [kind] for every command of this module with [handler]. A handler on a command or
+     * subcommand wins over this; this wins over the plugin-wide [PluginRegistration.onCommandProblem], which wins over
+     * the library's standard answer from `config.yml`.
+     */
+    fun onCommandProblem(kind: CommandProblemKind, handler: CommandProblemHandler) {
+        throw UnsupportedOperationException("Module commands are not available in this runtime")
+    }
+
+    /** Answers problems of [kind] for every command of this module with the plain [message]. */
+    fun onCommandProblem(kind: CommandProblemKind, message: String) {
+        onCommandProblem(kind, CommandProblemHandler { problem -> problem.sender.send(Component.text(problem.text(message.trim()))) })
+    }
+
+    /** Answers a sender who may not use any command of this module; shorthand for [onCommandProblem] with `DENIED`. */
+    fun onCommandDenied(handler: CommandProblemHandler) = onCommandProblem(CommandProblemKind.DENIED, handler)
+
+    /** Answers a mistyped command of this module; shorthand for [onCommandProblem] with `USAGE`. */
+    fun onCommandUsage(handler: CommandProblemHandler) = onCommandProblem(CommandProblemKind.USAGE, handler)
+
+    /** Sets the plain text for a denied sender of any command of this module. */
+    fun commandNoPermissionMessage(text: String) = onCommandProblem(CommandProblemKind.DENIED, text)
 
     /** Builds a command whose lifecycle belongs to this module. */
     fun registerCommand(name: String, configure: CommandBuilder.() -> Unit): CommandRegistration =

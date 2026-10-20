@@ -1125,12 +1125,14 @@ public abstract interface class org/pnfolder/pnlibrary/api/commands/ArgumentType
 	public static fun decimal ()Lorg/pnfolder/pnlibrary/api/commands/ArgumentType;
 	public static fun decimal (DD)Lorg/pnfolder/pnlibrary/api/commands/ArgumentType;
 	public static fun enumeration (Ljava/lang/Class;)Lorg/pnfolder/pnlibrary/api/commands/ArgumentType;
+	public fun getProblem ()Lorg/pnfolder/pnlibrary/api/commands/CommandProblemKind;
 	public fun getSpec ()Lorg/pnfolder/pnlibrary/api/commands/ArgumentSpec;
 	public static fun integer ()Lorg/pnfolder/pnlibrary/api/commands/ArgumentType;
 	public static fun integer (II)Lorg/pnfolder/pnlibrary/api/commands/ArgumentType;
 	public static fun long ()Lorg/pnfolder/pnlibrary/api/commands/ArgumentType;
 	public static fun long (JJ)Lorg/pnfolder/pnlibrary/api/commands/ArgumentType;
 	public abstract fun parse (Ljava/lang/String;)Ljava/lang/Object;
+	public static fun player (Lkotlin/jvm/functions/Function1;)Lorg/pnfolder/pnlibrary/api/commands/ArgumentType;
 	public static fun string ()Lorg/pnfolder/pnlibrary/api/commands/ArgumentType;
 }
 
@@ -1144,6 +1146,7 @@ public final class org/pnfolder/pnlibrary/api/commands/ArgumentType$Companion {
 	public final fun integer (II)Lorg/pnfolder/pnlibrary/api/commands/ArgumentType;
 	public final fun long ()Lorg/pnfolder/pnlibrary/api/commands/ArgumentType;
 	public final fun long (JJ)Lorg/pnfolder/pnlibrary/api/commands/ArgumentType;
+	public final fun player (Lkotlin/jvm/functions/Function1;)Lorg/pnfolder/pnlibrary/api/commands/ArgumentType;
 	public final fun string ()Lorg/pnfolder/pnlibrary/api/commands/ArgumentType;
 }
 
@@ -1160,12 +1163,18 @@ public final class org/pnfolder/pnlibrary/api/commands/CommandBuilder {
 	public final fun consoleBypassesPermission ()Lorg/pnfolder/pnlibrary/api/commands/CommandBuilder;
 	public final fun consoleBypassesPermission (Z)Lorg/pnfolder/pnlibrary/api/commands/CommandBuilder;
 	public static synthetic fun consoleBypassesPermission$default (Lorg/pnfolder/pnlibrary/api/commands/CommandBuilder;ZILjava/lang/Object;)Lorg/pnfolder/pnlibrary/api/commands/CommandBuilder;
+	public final fun consoleOnly ()Lorg/pnfolder/pnlibrary/api/commands/CommandBuilder;
 	public final fun executes (Ljava/util/function/Consumer;)Lorg/pnfolder/pnlibrary/api/commands/CommandBuilder;
 	public final fun executesAsync (Lorg/pnfolder/pnlibrary/api/commands/CommandHandler;)Lorg/pnfolder/pnlibrary/api/commands/CommandBuilder;
 	public final fun literal (Ljava/lang/String;Ljava/util/function/Consumer;)Lorg/pnfolder/pnlibrary/api/commands/CommandBuilder;
 	public final synthetic fun literal (Ljava/lang/String;Lkotlin/jvm/functions/Function1;)Lorg/pnfolder/pnlibrary/api/commands/CommandBuilder;
 	public final fun noPermissionMessage (Ljava/lang/String;)Lorg/pnfolder/pnlibrary/api/commands/CommandBuilder;
+	public final fun onDenied (Lorg/pnfolder/pnlibrary/api/commands/CommandProblemHandler;)Lorg/pnfolder/pnlibrary/api/commands/CommandBuilder;
+	public final fun onProblem (Lorg/pnfolder/pnlibrary/api/commands/CommandProblemKind;Ljava/lang/String;)Lorg/pnfolder/pnlibrary/api/commands/CommandBuilder;
+	public final fun onProblem (Lorg/pnfolder/pnlibrary/api/commands/CommandProblemKind;Lorg/pnfolder/pnlibrary/api/commands/CommandProblemHandler;)Lorg/pnfolder/pnlibrary/api/commands/CommandBuilder;
+	public final fun onUsage (Lorg/pnfolder/pnlibrary/api/commands/CommandProblemHandler;)Lorg/pnfolder/pnlibrary/api/commands/CommandBuilder;
 	public final fun permission (Ljava/lang/String;)Lorg/pnfolder/pnlibrary/api/commands/CommandBuilder;
+	public final fun playerOnly ()Lorg/pnfolder/pnlibrary/api/commands/CommandBuilder;
 	public final fun suggests (Ljava/util/function/Function;)Lorg/pnfolder/pnlibrary/api/commands/CommandBuilder;
 	public final fun suggestsAsync (Lorg/pnfolder/pnlibrary/api/commands/SuggestionHandler;)Lorg/pnfolder/pnlibrary/api/commands/CommandBuilder;
 }
@@ -1229,6 +1238,8 @@ public final class org/pnfolder/pnlibrary/api/commands/CommandNode {
 	public final fun getName ()Ljava/lang/String;
 	public final fun getNoPermissionMessage ()Ljava/lang/String;
 	public final fun getPermission ()Ljava/lang/String;
+	public final fun getProblemHandlers ()Ljava/util/Map;
+	public final fun getSenderRule ()Lorg/pnfolder/pnlibrary/api/commands/SenderRule;
 	public final fun getSuggestions ()Lorg/pnfolder/pnlibrary/api/commands/SuggestionHandler;
 	public final fun isExecutable ()Z
 }
@@ -1240,12 +1251,18 @@ public final class org/pnfolder/pnlibrary/api/commands/CommandNodeBuilder {
 	public final fun consoleBypassesPermission ()Lorg/pnfolder/pnlibrary/api/commands/CommandNodeBuilder;
 	public final fun consoleBypassesPermission (Z)Lorg/pnfolder/pnlibrary/api/commands/CommandNodeBuilder;
 	public static synthetic fun consoleBypassesPermission$default (Lorg/pnfolder/pnlibrary/api/commands/CommandNodeBuilder;ZILjava/lang/Object;)Lorg/pnfolder/pnlibrary/api/commands/CommandNodeBuilder;
+	public final fun consoleOnly ()Lorg/pnfolder/pnlibrary/api/commands/CommandNodeBuilder;
 	public final fun executes (Ljava/util/function/Consumer;)Lorg/pnfolder/pnlibrary/api/commands/CommandNodeBuilder;
 	public final fun executesAsync (Lorg/pnfolder/pnlibrary/api/commands/CommandHandler;)Lorg/pnfolder/pnlibrary/api/commands/CommandNodeBuilder;
 	public final fun literal (Ljava/lang/String;Ljava/util/function/Consumer;)Lorg/pnfolder/pnlibrary/api/commands/CommandNodeBuilder;
 	public final synthetic fun literal (Ljava/lang/String;Lkotlin/jvm/functions/Function1;)Lorg/pnfolder/pnlibrary/api/commands/CommandNodeBuilder;
 	public final fun noPermissionMessage (Ljava/lang/String;)Lorg/pnfolder/pnlibrary/api/commands/CommandNodeBuilder;
+	public final fun onDenied (Lorg/pnfolder/pnlibrary/api/commands/CommandProblemHandler;)Lorg/pnfolder/pnlibrary/api/commands/CommandNodeBuilder;
+	public final fun onProblem (Lorg/pnfolder/pnlibrary/api/commands/CommandProblemKind;Ljava/lang/String;)Lorg/pnfolder/pnlibrary/api/commands/CommandNodeBuilder;
+	public final fun onProblem (Lorg/pnfolder/pnlibrary/api/commands/CommandProblemKind;Lorg/pnfolder/pnlibrary/api/commands/CommandProblemHandler;)Lorg/pnfolder/pnlibrary/api/commands/CommandNodeBuilder;
+	public final fun onUsage (Lorg/pnfolder/pnlibrary/api/commands/CommandProblemHandler;)Lorg/pnfolder/pnlibrary/api/commands/CommandNodeBuilder;
 	public final fun permission (Ljava/lang/String;)Lorg/pnfolder/pnlibrary/api/commands/CommandNodeBuilder;
+	public final fun playerOnly ()Lorg/pnfolder/pnlibrary/api/commands/CommandNodeBuilder;
 	public final fun suggests (Ljava/util/function/Function;)Lorg/pnfolder/pnlibrary/api/commands/CommandNodeBuilder;
 	public final fun suggestsAsync (Lorg/pnfolder/pnlibrary/api/commands/SuggestionHandler;)Lorg/pnfolder/pnlibrary/api/commands/CommandNodeBuilder;
 }
@@ -1257,6 +1274,58 @@ public final class org/pnfolder/pnlibrary/api/commands/CommandNodeKind : java/la
 	public static fun getEntries ()Lkotlin/enums/EnumEntries;
 	public static fun valueOf (Ljava/lang/String;)Lorg/pnfolder/pnlibrary/api/commands/CommandNodeKind;
 	public static fun values ()[Lorg/pnfolder/pnlibrary/api/commands/CommandNodeKind;
+}
+
+public final class org/pnfolder/pnlibrary/api/commands/CommandProblem {
+	public fun <init> (Lorg/pnfolder/pnlibrary/api/commands/CommandProblemKind;Lorg/pnfolder/pnlibrary/api/commands/CommandContext;Ljava/util/Map;)V
+	public synthetic fun <init> (Lorg/pnfolder/pnlibrary/api/commands/CommandProblemKind;Lorg/pnfolder/pnlibrary/api/commands/CommandContext;Ljava/util/Map;ILkotlin/jvm/internal/DefaultConstructorMarker;)V
+	public final fun detail (Ljava/lang/String;)Ljava/lang/String;
+	public final fun getContext ()Lorg/pnfolder/pnlibrary/api/commands/CommandContext;
+	public final fun getDetails ()Ljava/util/Map;
+	public final fun getKind ()Lorg/pnfolder/pnlibrary/api/commands/CommandProblemKind;
+	public final fun getSender ()Lorg/pnfolder/pnlibrary/api/commands/CommandSender;
+	public final fun text (Ljava/lang/String;)Ljava/lang/String;
+}
+
+public final class org/pnfolder/pnlibrary/api/commands/CommandProblemException : java/lang/RuntimeException {
+	public fun <init> (Lorg/pnfolder/pnlibrary/api/commands/CommandProblemKind;)V
+	public fun <init> (Lorg/pnfolder/pnlibrary/api/commands/CommandProblemKind;Ljava/util/Map;)V
+	public synthetic fun <init> (Lorg/pnfolder/pnlibrary/api/commands/CommandProblemKind;Ljava/util/Map;ILkotlin/jvm/internal/DefaultConstructorMarker;)V
+	public final fun getDetails ()Ljava/util/Map;
+	public final fun getKind ()Lorg/pnfolder/pnlibrary/api/commands/CommandProblemKind;
+}
+
+public abstract interface class org/pnfolder/pnlibrary/api/commands/CommandProblemHandler {
+	public abstract fun handle (Lorg/pnfolder/pnlibrary/api/commands/CommandProblem;)V
+}
+
+public final class org/pnfolder/pnlibrary/api/commands/CommandProblemKind {
+	public static final field CONSOLE_ONLY Lorg/pnfolder/pnlibrary/api/commands/CommandProblemKind;
+	public static final field COOLDOWN Lorg/pnfolder/pnlibrary/api/commands/CommandProblemKind;
+	public static final field Companion Lorg/pnfolder/pnlibrary/api/commands/CommandProblemKind$Companion;
+	public static final field DENIED Lorg/pnfolder/pnlibrary/api/commands/CommandProblemKind;
+	public static final field FAILED Lorg/pnfolder/pnlibrary/api/commands/CommandProblemKind;
+	public static final field INCOMPLETE Lorg/pnfolder/pnlibrary/api/commands/CommandProblemKind;
+	public static final field INVALID_ARGUMENT Lorg/pnfolder/pnlibrary/api/commands/CommandProblemKind;
+	public static final field PLAYER_NOT_FOUND Lorg/pnfolder/pnlibrary/api/commands/CommandProblemKind;
+	public static final field PLAYER_ONLY Lorg/pnfolder/pnlibrary/api/commands/CommandProblemKind;
+	public static final field UNKNOWN_ARGUMENT Lorg/pnfolder/pnlibrary/api/commands/CommandProblemKind;
+	public static final field USAGE Lorg/pnfolder/pnlibrary/api/commands/CommandProblemKind;
+	public synthetic fun <init> (Ljava/lang/String;Lorg/pnfolder/pnlibrary/api/commands/CommandProblemKind;Lkotlin/jvm/internal/DefaultConstructorMarker;)V
+	public static final fun custom (Ljava/lang/String;)Lorg/pnfolder/pnlibrary/api/commands/CommandProblemKind;
+	public static final fun custom (Ljava/lang/String;Lorg/pnfolder/pnlibrary/api/commands/CommandProblemKind;)Lorg/pnfolder/pnlibrary/api/commands/CommandProblemKind;
+	public fun equals (Ljava/lang/Object;)Z
+	public final fun getId ()Ljava/lang/String;
+	public final fun getLineage ()Ljava/util/List;
+	public final fun getParent ()Lorg/pnfolder/pnlibrary/api/commands/CommandProblemKind;
+	public fun hashCode ()I
+	public fun toString ()Ljava/lang/String;
+}
+
+public final class org/pnfolder/pnlibrary/api/commands/CommandProblemKind$Companion {
+	public final fun custom (Ljava/lang/String;)Lorg/pnfolder/pnlibrary/api/commands/CommandProblemKind;
+	public final fun custom (Ljava/lang/String;Lorg/pnfolder/pnlibrary/api/commands/CommandProblemKind;)Lorg/pnfolder/pnlibrary/api/commands/CommandProblemKind;
+	public static synthetic fun custom$default (Lorg/pnfolder/pnlibrary/api/commands/CommandProblemKind$Companion;Ljava/lang/String;Lorg/pnfolder/pnlibrary/api/commands/CommandProblemKind;ILjava/lang/Object;)Lorg/pnfolder/pnlibrary/api/commands/CommandProblemKind;
 }
 
 public abstract interface class org/pnfolder/pnlibrary/api/commands/CommandRegistration : java/lang/AutoCloseable {
@@ -1275,6 +1344,15 @@ public abstract interface class org/pnfolder/pnlibrary/api/commands/CommandSende
 	public fun playSound (Lnet/kyori/adventure/sound/Sound;)Z
 	public abstract fun send (Lnet/kyori/adventure/text/Component;)V
 	public fun sendMessage (Lnet/kyori/adventure/text/Component;)V
+}
+
+public final class org/pnfolder/pnlibrary/api/commands/SenderRule : java/lang/Enum {
+	public static final field ANY Lorg/pnfolder/pnlibrary/api/commands/SenderRule;
+	public static final field CONSOLE Lorg/pnfolder/pnlibrary/api/commands/SenderRule;
+	public static final field PLAYER Lorg/pnfolder/pnlibrary/api/commands/SenderRule;
+	public static fun getEntries ()Lkotlin/enums/EnumEntries;
+	public static fun valueOf (Ljava/lang/String;)Lorg/pnfolder/pnlibrary/api/commands/SenderRule;
+	public static fun values ()[Lorg/pnfolder/pnlibrary/api/commands/SenderRule;
 }
 
 public abstract interface class org/pnfolder/pnlibrary/api/commands/SuggestionHandler {
@@ -2348,6 +2426,7 @@ public abstract interface class org/pnfolder/pnlibrary/api/plugin/MetricsControl
 
 public abstract interface class org/pnfolder/pnlibrary/api/plugin/ModuleContext : java/lang/AutoCloseable {
 	public abstract fun close ()V
+	public fun commandNoPermissionMessage (Ljava/lang/String;)V
 	public abstract fun getActions ()Lorg/pnfolder/pnlibrary/api/actions/ActionService;
 	public abstract fun getComponents ()Lorg/pnfolder/pnlibrary/api/text/ComponentService;
 	public abstract fun getConfigs ()Lorg/pnfolder/pnlibrary/api/config/ConfigScope;
@@ -2368,6 +2447,10 @@ public abstract interface class org/pnfolder/pnlibrary/api/plugin/ModuleContext 
 	public abstract fun getTasks ()Lorg/pnfolder/pnlibrary/api/tasks/TaskScope;
 	public abstract fun getUpdates ()Lorg/pnfolder/pnlibrary/api/updates/UpdateRegistration;
 	public abstract fun isClosed ()Z
+	public fun onCommandDenied (Lorg/pnfolder/pnlibrary/api/commands/CommandProblemHandler;)V
+	public fun onCommandProblem (Lorg/pnfolder/pnlibrary/api/commands/CommandProblemKind;Ljava/lang/String;)V
+	public fun onCommandProblem (Lorg/pnfolder/pnlibrary/api/commands/CommandProblemKind;Lorg/pnfolder/pnlibrary/api/commands/CommandProblemHandler;)V
+	public fun onCommandUsage (Lorg/pnfolder/pnlibrary/api/commands/CommandProblemHandler;)V
 	public fun registerCommand (Ljava/lang/String;Lkotlin/jvm/functions/Function1;)Lorg/pnfolder/pnlibrary/api/commands/CommandRegistration;
 	public fun registerCommand (Lorg/pnfolder/pnlibrary/api/commands/CommandDefinition;)Lorg/pnfolder/pnlibrary/api/commands/CommandRegistration;
 }
@@ -2450,10 +2533,15 @@ public abstract interface class org/pnfolder/pnlibrary/api/plugin/PluginOptions 
 public abstract interface class org/pnfolder/pnlibrary/api/plugin/PluginRegistration : java/lang/AutoCloseable {
 	public abstract fun all ()Ljava/util/List;
 	public abstract fun close ()V
+	public fun commandNoPermissionMessage (Ljava/lang/String;)V
 	public fun getModule (Ljava/lang/String;)Lorg/pnfolder/pnlibrary/api/plugin/ModuleContext;
 	public abstract fun getModule (Lorg/pnfolder/pnlibrary/api/plugin/ModuleId;)Lorg/pnfolder/pnlibrary/api/plugin/ModuleContext;
 	public abstract fun getOwner ()Ljava/lang/Object;
 	public abstract fun isClosed ()Z
+	public fun onCommandDenied (Lorg/pnfolder/pnlibrary/api/commands/CommandProblemHandler;)V
+	public fun onCommandProblem (Lorg/pnfolder/pnlibrary/api/commands/CommandProblemKind;Ljava/lang/String;)V
+	public fun onCommandProblem (Lorg/pnfolder/pnlibrary/api/commands/CommandProblemKind;Lorg/pnfolder/pnlibrary/api/commands/CommandProblemHandler;)V
+	public fun onCommandUsage (Lorg/pnfolder/pnlibrary/api/commands/CommandProblemHandler;)V
 	public fun registerModule (Ljava/lang/String;Ljava/util/function/Consumer;)Lorg/pnfolder/pnlibrary/api/plugin/ModuleContext;
 	public abstract fun registerModule (Lorg/pnfolder/pnlibrary/api/plugin/ModuleId;Ljava/util/function/Consumer;)Lorg/pnfolder/pnlibrary/api/plugin/ModuleContext;
 	public static synthetic fun registerModule$default (Lorg/pnfolder/pnlibrary/api/plugin/PluginRegistration;Ljava/lang/String;Ljava/util/function/Consumer;ILjava/lang/Object;)Lorg/pnfolder/pnlibrary/api/plugin/ModuleContext;
@@ -2683,8 +2771,14 @@ public final class org/pnfolder/pnlibrary/api/runtime/PnLibraryConfig {
 	public fun <init> (ZLjava/lang/String;Ljava/util/List;Ljava/lang/String;Ljava/lang/String;Ljava/lang/String;Ljava/lang/String;ZZZIIIIIIIILjava/util/List;Ljava/util/List;Ljava/util/List;ZIIILjava/lang/String;Z)V
 	public fun <init> (ZLjava/lang/String;Ljava/util/List;Ljava/lang/String;Ljava/lang/String;Ljava/lang/String;Ljava/lang/String;ZZZIIIIIIIILjava/util/List;Ljava/util/List;Ljava/util/List;ZIIILjava/lang/String;ZLjava/lang/String;)V
 	public fun <init> (ZLjava/lang/String;Ljava/util/List;Ljava/lang/String;Ljava/lang/String;Ljava/lang/String;Ljava/lang/String;ZZZIIIIIIIILjava/util/List;Ljava/util/List;Ljava/util/List;ZIIILjava/lang/String;ZLjava/lang/String;Z)V
-	public fun <init> (ZLjava/lang/String;Ljava/util/List;Ljava/lang/String;Ljava/lang/String;Ljava/lang/String;Ljava/lang/String;ZZZIIIIIIIILjava/util/List;Ljava/util/List;Ljava/util/List;ZIIILjava/lang/String;ZLjava/lang/String;ZI)V
-	public synthetic fun <init> (ZLjava/lang/String;Ljava/util/List;Ljava/lang/String;Ljava/lang/String;Ljava/lang/String;Ljava/lang/String;ZZZIIIIIIIILjava/util/List;Ljava/util/List;Ljava/util/List;ZIIILjava/lang/String;ZLjava/lang/String;ZIILkotlin/jvm/internal/DefaultConstructorMarker;)V
+	public fun <init> (ZLjava/lang/String;Ljava/util/List;Ljava/lang/String;Ljava/lang/String;Ljava/lang/String;Ljava/lang/String;ZZZIIIIIIIILjava/util/List;Ljava/util/List;Ljava/util/List;ZIIILjava/lang/String;ZLjava/lang/String;ZLjava/lang/String;)V
+	public fun <init> (ZLjava/lang/String;Ljava/util/List;Ljava/lang/String;Ljava/lang/String;Ljava/lang/String;Ljava/lang/String;ZZZIIIIIIIILjava/util/List;Ljava/util/List;Ljava/util/List;ZIIILjava/lang/String;ZLjava/lang/String;ZLjava/lang/String;Ljava/lang/String;)V
+	public fun <init> (ZLjava/lang/String;Ljava/util/List;Ljava/lang/String;Ljava/lang/String;Ljava/lang/String;Ljava/lang/String;ZZZIIIIIIIILjava/util/List;Ljava/util/List;Ljava/util/List;ZIIILjava/lang/String;ZLjava/lang/String;ZLjava/lang/String;Ljava/lang/String;Ljava/lang/String;)V
+	public fun <init> (ZLjava/lang/String;Ljava/util/List;Ljava/lang/String;Ljava/lang/String;Ljava/lang/String;Ljava/lang/String;ZZZIIIIIIIILjava/util/List;Ljava/util/List;Ljava/util/List;ZIIILjava/lang/String;ZLjava/lang/String;ZLjava/lang/String;Ljava/lang/String;Ljava/lang/String;Ljava/lang/String;)V
+	public fun <init> (ZLjava/lang/String;Ljava/util/List;Ljava/lang/String;Ljava/lang/String;Ljava/lang/String;Ljava/lang/String;ZZZIIIIIIIILjava/util/List;Ljava/util/List;Ljava/util/List;ZIIILjava/lang/String;ZLjava/lang/String;ZLjava/lang/String;Ljava/lang/String;Ljava/lang/String;Ljava/lang/String;Ljava/lang/String;)V
+	public fun <init> (ZLjava/lang/String;Ljava/util/List;Ljava/lang/String;Ljava/lang/String;Ljava/lang/String;Ljava/lang/String;ZZZIIIIIIIILjava/util/List;Ljava/util/List;Ljava/util/List;ZIIILjava/lang/String;ZLjava/lang/String;ZLjava/lang/String;Ljava/lang/String;Ljava/lang/String;Ljava/lang/String;Ljava/lang/String;Ljava/lang/String;)V
+	public fun <init> (ZLjava/lang/String;Ljava/util/List;Ljava/lang/String;Ljava/lang/String;Ljava/lang/String;Ljava/lang/String;ZZZIIIIIIIILjava/util/List;Ljava/util/List;Ljava/util/List;ZIIILjava/lang/String;ZLjava/lang/String;ZLjava/lang/String;Ljava/lang/String;Ljava/lang/String;Ljava/lang/String;Ljava/lang/String;Ljava/lang/String;I)V
+	public synthetic fun <init> (ZLjava/lang/String;Ljava/util/List;Ljava/lang/String;Ljava/lang/String;Ljava/lang/String;Ljava/lang/String;ZZZIIIIIIIILjava/util/List;Ljava/util/List;Ljava/util/List;ZIIILjava/lang/String;ZLjava/lang/String;ZLjava/lang/String;Ljava/lang/String;Ljava/lang/String;Ljava/lang/String;Ljava/lang/String;Ljava/lang/String;IIILkotlin/jvm/internal/DefaultConstructorMarker;)V
 	public final fun component1 ()Z
 	public final fun component10 ()Z
 	public final fun component11 ()I
@@ -2708,23 +2802,31 @@ public final class org/pnfolder/pnlibrary/api/runtime/PnLibraryConfig {
 	public final fun component28 ()Ljava/lang/String;
 	public final fun component29 ()Z
 	public final fun component3 ()Ljava/util/List;
-	public final fun component30 ()I
+	public final fun component30 ()Ljava/lang/String;
+	public final fun component31 ()Ljava/lang/String;
+	public final fun component32 ()Ljava/lang/String;
+	public final fun component33 ()Ljava/lang/String;
+	public final fun component34 ()Ljava/lang/String;
+	public final fun component35 ()Ljava/lang/String;
+	public final fun component36 ()I
 	public final fun component4 ()Ljava/lang/String;
 	public final fun component5 ()Ljava/lang/String;
 	public final fun component6 ()Ljava/lang/String;
 	public final fun component7 ()Ljava/lang/String;
 	public final fun component8 ()Z
 	public final fun component9 ()Z
-	public final fun copy (ZLjava/lang/String;Ljava/util/List;Ljava/lang/String;Ljava/lang/String;Ljava/lang/String;Ljava/lang/String;ZZZIIIIIIIILjava/util/List;Ljava/util/List;Ljava/util/List;ZIIILjava/lang/String;ZLjava/lang/String;ZI)Lorg/pnfolder/pnlibrary/api/runtime/PnLibraryConfig;
-	public static synthetic fun copy$default (Lorg/pnfolder/pnlibrary/api/runtime/PnLibraryConfig;ZLjava/lang/String;Ljava/util/List;Ljava/lang/String;Ljava/lang/String;Ljava/lang/String;Ljava/lang/String;ZZZIIIIIIIILjava/util/List;Ljava/util/List;Ljava/util/List;ZIIILjava/lang/String;ZLjava/lang/String;ZIILjava/lang/Object;)Lorg/pnfolder/pnlibrary/api/runtime/PnLibraryConfig;
+	public final fun copy (ZLjava/lang/String;Ljava/util/List;Ljava/lang/String;Ljava/lang/String;Ljava/lang/String;Ljava/lang/String;ZZZIIIIIIIILjava/util/List;Ljava/util/List;Ljava/util/List;ZIIILjava/lang/String;ZLjava/lang/String;ZLjava/lang/String;Ljava/lang/String;Ljava/lang/String;Ljava/lang/String;Ljava/lang/String;Ljava/lang/String;I)Lorg/pnfolder/pnlibrary/api/runtime/PnLibraryConfig;
+	public static synthetic fun copy$default (Lorg/pnfolder/pnlibrary/api/runtime/PnLibraryConfig;ZLjava/lang/String;Ljava/util/List;Ljava/lang/String;Ljava/lang/String;Ljava/lang/String;Ljava/lang/String;ZZZIIIIIIIILjava/util/List;Ljava/util/List;Ljava/util/List;ZIIILjava/lang/String;ZLjava/lang/String;ZLjava/lang/String;Ljava/lang/String;Ljava/lang/String;Ljava/lang/String;Ljava/lang/String;Ljava/lang/String;IIILjava/lang/Object;)Lorg/pnfolder/pnlibrary/api/runtime/PnLibraryConfig;
 	public fun equals (Ljava/lang/Object;)Z
 	public final fun getAllowPlaintext ()Z
 	public final fun getConfigs ()Z
+	public final fun getConsoleOnlyMessage ()Ljava/lang/String;
 	public final fun getCooldownSeconds ()I
 	public final fun getDeleteAfterDays ()I
 	public final fun getExcludedPaths ()Ljava/util/List;
 	public final fun getHistoryMaxBytes ()I
 	public final fun getHistoryRetentionDays ()I
+	public final fun getInvalidArgumentMessage ()Ljava/lang/String;
 	public final fun getJournalErrorDays ()I
 	public final fun getJournalForeignPlugins ()Z
 	public final fun getJournalInfoDays ()I
@@ -2736,6 +2838,9 @@ public final class org/pnfolder/pnlibrary/api/runtime/PnLibraryConfig {
 	public final fun getLogs ()Z
 	public final fun getMaxReportBytes ()I
 	public final fun getNoPermissionMessage ()Ljava/lang/String;
+	public final fun getNoPermissionSound ()Ljava/lang/String;
+	public final fun getPlayerNotFoundMessage ()Ljava/lang/String;
+	public final fun getPlayerOnlyMessage ()Ljava/lang/String;
 	public final fun getPrivacy ()Z
 	public final fun getRedactValuePatterns ()Ljava/util/List;
 	public final fun getSecretKeyPatterns ()Ljava/util/List;
@@ -2748,6 +2853,7 @@ public final class org/pnfolder/pnlibrary/api/runtime/PnLibraryConfig {
 	public final fun getUploadProviders ()Ljava/util/List;
 	public final fun getUploadPublicBase ()Ljava/lang/String;
 	public final fun getUploadPublicKey ()Ljava/lang/String;
+	public final fun getUsageMessage ()Ljava/lang/String;
 	public fun hashCode ()I
 	public fun toString ()Ljava/lang/String;
 }

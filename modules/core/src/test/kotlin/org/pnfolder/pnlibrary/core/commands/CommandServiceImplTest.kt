@@ -7,6 +7,9 @@ import org.junit.jupiter.api.Assertions.assertThrows
 import org.junit.jupiter.api.Assertions.assertTrue
 import org.junit.jupiter.api.Test
 import org.pnfolder.pnlibrary.api.commands.ArgumentType
+import org.pnfolder.pnlibrary.api.commands.CommandProblemException
+import org.pnfolder.pnlibrary.api.commands.CommandProblemHandler
+import org.pnfolder.pnlibrary.api.commands.CommandProblemKind
 import org.pnfolder.pnlibrary.api.commands.CommandContext
 import org.pnfolder.pnlibrary.api.commands.CommandDefinition
 import org.pnfolder.pnlibrary.api.commands.CommandSender
@@ -300,6 +303,186 @@ class CommandServiceImplTest {
         assertEquals(listOf(Component.text("Настроенный текст из config.yml")), sender.messages)
     }
 
+    private fun say(text: String) = CommandProblemHandler { it.sender.send(Component.text(it.text(text))) }
+
+    private fun service(native: RecordingCommands, standard: StandardCommandFeedback = StandardCommandFeedback()) =
+        CommandServiceImpl(TestPlatform(native).commandAdapter, TestPlatform(native), standard)
+
+    private fun run(native: RecordingCommands, sender: TestSender, vararg arguments: String) =
+        native.dispatcher.execute(native.command, context(sender, *arguments)).toCompletableFuture().join()
+
+    private fun textOf(component: Component) = (component as net.kyori.adventure.text.TextComponent).content()
+
+    @Test
+    fun `a denial handler gets the sender and the missing permission instead of a fixed text`() {
+        val native = RecordingCommands()
+        val seen = mutableListOf<String>()
+        service(native).register(Any(), command("hello") {
+            executes { }
+            onDenied { problem -> seen += "command:${problem.sender.id}:${problem.detail("permission")}" }
+            literal("vip") {
+                permission("example.vip")
+                onDenied { problem ->
+                    seen += "node:${problem.detail("permission")}"
+                    problem.sender.send(Component.text("Свой ответ"))
+                }
+                executes { }
+            }
+            literal("staff") { permission("example.staff"); executes { } }
+        })
+        val sender = TestSender()
+
+        run(native, sender, "vip")
+        run(native, sender, "staff")
+
+        assertEquals(listOf("node:example.vip", "command:sender:example.staff"), seen)
+        assertEquals(listOf(Component.text("Свой ответ")), sender.messages)
+    }
+
+    @Test
+    fun `a handler that fails is logged and the next level answers, never an error shown to the sender`() {
+        val native = RecordingCommands()
+        service(native, StandardCommandFeedback(deniedMessage = "Настроенный текст")).register(Any(), command("hello") {
+            permission("example.hello")
+            executes { }
+            onDenied { error("handler is broken") }
+        })
+        val sender = TestSender()
+
+        run(native, sender)
+
+        assertEquals(listOf(Component.text("Настроенный текст")), sender.messages)
+    }
+
+    @Test
+    fun `the chain goes from subcommand to command to module to plugin to the library standard`() {
+        val native = RecordingCommands()
+        val standard = StandardCommandFeedback(deniedMessage = "Стандарт библиотеки")
+        val plugin = CommandFeedbackScope()
+        val module = CommandFeedbackScope(plugin)
+        module.handlers[CommandProblemKind.DENIED] = say("Текст модуля")
+        plugin.handlers[CommandProblemKind.DENIED] = say("Текст плагина")
+        val sender = TestSender()
+        service(native, standard).register(Any(), command("hello") {
+            executes { }
+            literal("node") { permission("p.node"); noPermissionMessage("Текст узла"); executes { } }
+            literal("module") { permission("p.module"); executes { } }
+        }, module)
+
+        run(native, sender, "node")
+        run(native, sender, "module")
+        module.handlers.remove(CommandProblemKind.DENIED)
+        run(native, sender, "module")
+        plugin.handlers.remove(CommandProblemKind.DENIED)
+        run(native, sender, "module")
+
+        assertEquals(
+            listOf("Текст узла", "Текст модуля", "Текст плагина", "Стандарт библиотеки").map(Component::text),
+            sender.messages,
+        )
+    }
+
+    @Test
+    fun `the standard answer can add a sound and reshape the usage line`() {
+        val native = RecordingCommands()
+        val sound = net.kyori.adventure.sound.Sound.sound(net.kyori.adventure.key.Key.key("entity.villager.no"), net.kyori.adventure.sound.Sound.Source.MASTER, 1f, 1f)
+        service(native, StandardCommandFeedback(deniedMessage = "Нет прав", deniedSound = sound, usageFormat = "Подсказка → {usage}"))
+            .register(Any(), command("hello") { permission("p.hello"); executes { }; literal("a") { executes { } } })
+        val denied = TestSender()
+        val allowed = TestSender(setOf("p.hello"))
+
+        run(native, denied)
+        run(native, allowed, "zzz")
+
+        assertEquals(listOf(Component.text("Нет прав")), denied.messages)
+        assertEquals(listOf(sound), denied.sounds)
+        assertTrue(textOf(allowed.messages.single()).startsWith("Подсказка → /hello"))
+    }
+
+    @Test
+    fun `a wrong argument is its own kind and a usage handler still catches it when nothing more specific is set`() {
+        val native = RecordingCommands()
+        val service = service(native)
+        service.register(Any(), command("hello") {
+            literal("buy") { argument("amount", ArgumentType.integer(1, 5)) { executes { } } }
+        })
+        val plain = TestSender()
+        run(native, plain, "buy", "99")
+        assertEquals("Неверное значение «99» для amount. /hello buy <amount>", textOf(plain.messages.single()))
+
+        val caught = TestSender()
+        val second = RecordingCommands()
+        service(second).register(Any(), command("hello") {
+            onUsage { problem -> problem.sender.send(Component.text("общий: ${problem.kind}")) }
+            literal("buy") { argument("amount", ArgumentType.integer(1, 5)) { executes { } } }
+        })
+        run(second, caught, "buy", "99")
+        run(second, caught, "zzz")
+        run(second, caught, "buy")
+        assertEquals(
+            listOf("общий: pnlibrary:invalid-argument", "общий: pnlibrary:unknown-argument", "общий: pnlibrary:incomplete"),
+            caught.messages.map(::textOf),
+        )
+
+        val exact = TestSender()
+        val third = RecordingCommands()
+        service(third).register(Any(), command("hello") {
+            onUsage { problem -> problem.sender.send(Component.text("общий")) }
+            onProblem(CommandProblemKind.INVALID_ARGUMENT, "точный: {argument}={value}")
+            literal("buy") { argument("amount", ArgumentType.integer(1, 5)) { executes { } } }
+        })
+        run(third, exact, "buy", "x")
+        assertEquals("точный: amount=x", textOf(exact.messages.single()))
+    }
+
+    @Test
+    fun `a player argument that names nobody is reported as player not found`() {
+        val native = RecordingCommands()
+        service(native).register(Any(), command("hello") {
+            literal("kick") { argument("who", ArgumentType.player { null }) { executes { } } }
+        })
+        val sender = TestSender()
+
+        run(native, sender, "kick", "Steve")
+
+        assertEquals("Игрок Steve сейчас не в сети.", textOf(sender.messages.single()))
+    }
+
+    @Test
+    fun `player only and console only commands answer the wrong sender`() {
+        val native = RecordingCommands()
+        service(native).register(Any(), command("hello") {
+            literal("game") { playerOnly(); executes { } }
+            literal("admin") { consoleOnly(); executes { } }
+        })
+        val console = TestSender(console = true)
+        val player = TestSender()
+
+        run(native, console, "game")
+        run(native, player, "admin")
+
+        assertEquals("Эту команду можно использовать только в игре.", textOf(console.messages.single()))
+        assertEquals("Эту команду можно использовать только из консоли.", textOf(player.messages.single()))
+    }
+
+    @Test
+    fun `a command can raise a problem of its own kind and any level can answer it`() {
+        val noMoney = CommandProblemKind.custom("shop:no-money")
+        val native = RecordingCommands()
+        val module = CommandFeedbackScope()
+        module.handlers[noMoney] = CommandProblemHandler { it.sender.send(Component.text("Не хватает ${it.detail("price")} монет")) }
+        service(native).register(Any(), command("hello") {
+            executes { throw CommandProblemException(noMoney, mapOf("price" to 50)) }
+            literal("other") { executes { throw CommandProblemException(CommandProblemKind.custom("shop:unknown")) } }
+        }, module)
+        val sender = TestSender()
+
+        run(native, sender)
+        run(native, sender, "other")
+
+        assertEquals(listOf("Не хватает 50 монет", "Не удалось выполнить команду."), sender.messages.map(::textOf))
+    }
+
     private fun context(sender: TestSender, vararg arguments: String) =
         CommandContext(sender, arguments.toList(), "hello", "")
 
@@ -308,6 +491,8 @@ class CommandServiceImplTest {
         private val console: Boolean = false,
     ) : CommandSender {
         val messages = mutableListOf<Component>()
+        val sounds = mutableListOf<net.kyori.adventure.sound.Sound>()
+        override fun playSound(sound: net.kyori.adventure.sound.Sound): Boolean { sounds += sound; return true }
         override val id: String = "sender"
         override val name: String = "Sender"
         override val isConsole: Boolean get() = console

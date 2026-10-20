@@ -1,9 +1,13 @@
 package org.pnfolder.pnlibrary.api.commands
 
+import net.kyori.adventure.text.Component
 import java.util.Collections
 import java.util.Locale
 import java.util.function.Consumer
 import java.util.function.Function
+
+/** Who may enter a command node. */
+enum class SenderRule { ANY, PLAYER, CONSOLE }
 
 /** Structural role of a node in a command tree. */
 enum class CommandNodeKind {
@@ -32,6 +36,8 @@ fun interface CommandAvailability {
  * @property isExecutable whether this route may be executed
  * @property children immutable child routes
  * @property noPermissionMessage text shown when the sender lacks [permission], or `null` to use the command's own
+ * @property problemHandlers handlers for problems that occur at or below this node, by kind
+ * @property senderRule who may enter this node
  */
 class CommandNode internal constructor(
     val kind: CommandNodeKind,
@@ -45,7 +51,10 @@ class CommandNode internal constructor(
     val isExecutable: Boolean,
     children: List<CommandNode>,
     val noPermissionMessage: String? = null,
+    problemHandlers: Map<CommandProblemKind, CommandProblemHandler> = emptyMap(),
+    val senderRule: SenderRule = SenderRule.ANY,
 ) {
+    val problemHandlers: Map<CommandProblemKind, CommandProblemHandler> = Collections.unmodifiableMap(LinkedHashMap(problemHandlers))
     val children: List<CommandNode> = Collections.unmodifiableList(ArrayList(children))
 }
 
@@ -63,6 +72,8 @@ class CommandNodeBuilder internal constructor(
     private var permission: String? = null
     private var consoleBypassesPermission = false
     private var noPermissionMessage: String? = null
+    private val problemHandlers = linkedMapOf<CommandProblemKind, CommandProblemHandler>()
+    private var senderRule = SenderRule.ANY
     private var availability = CommandAvailability { true }
     private var execution = CommandHandler { completedExecution() }
     private var suggestions = SuggestionHandler { completedSuggestions(emptyList()) }
@@ -80,6 +91,33 @@ class CommandNodeBuilder internal constructor(
             require(it.isNotEmpty()) { "No-permission message must not be blank" }
         }
     }
+
+    /**
+     * Answers problems of [kind] that happen at or below this node with [handler]: message the sender, play a
+     * sound, notify staff, anything. This node's handler wins over the command's, the module's, the plugin's and
+     * the library's. A kind without a handler is answered by its parent kind's handler on the same level.
+     */
+    fun onProblem(kind: CommandProblemKind, handler: CommandProblemHandler): CommandNodeBuilder = apply {
+        problemHandlers[kind] = handler
+    }
+
+    /** Answers problems of [kind] with the plain [message]; `{usage}`, `{value}`, `{argument}` fill in from the problem. */
+    fun onProblem(kind: CommandProblemKind, message: String): CommandNodeBuilder = apply {
+        val text = message.trim().also { require(it.isNotEmpty()) { "Problem message must not be blank" } }
+        problemHandlers[kind] = CommandProblemHandler { problem -> problem.sender.send(Component.text(problem.text(text))) }
+    }
+
+    /** Answers a sender who may not enter this node; shorthand for `onProblem(CommandProblemKind.DENIED, handler)`. */
+    fun onDenied(handler: CommandProblemHandler): CommandNodeBuilder = onProblem(CommandProblemKind.DENIED, handler)
+
+    /** Answers a mistyped command at or below this node; shorthand for `onProblem(CommandProblemKind.USAGE, handler)`. */
+    fun onUsage(handler: CommandProblemHandler): CommandNodeBuilder = onProblem(CommandProblemKind.USAGE, handler)
+
+    /** Lets only players enter this node; the console gets the [CommandProblemKind.PLAYER_ONLY] answer. */
+    fun playerOnly(): CommandNodeBuilder = apply { senderRule = SenderRule.PLAYER }
+
+    /** Lets only the console enter this node; players get the [CommandProblemKind.CONSOLE_ONLY] answer. */
+    fun consoleOnly(): CommandNodeBuilder = apply { senderRule = SenderRule.CONSOLE }
 
     /** Configures whether the console bypasses this node's permission. */
     @JvmOverloads
@@ -148,7 +186,7 @@ class CommandNodeBuilder internal constructor(
         validateChildren()
         return CommandNode(
             kind, name, argumentType, permission, consoleBypassesPermission, availability,
-            execution, suggestions, executable, children.map(CommandNodeBuilder::build), noPermissionMessage,
+            execution, suggestions, executable, children.map(CommandNodeBuilder::build), noPermissionMessage, problemHandlers, senderRule,
         )
     }
 

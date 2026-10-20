@@ -4,6 +4,11 @@ import net.kyori.adventure.text.Component
 import org.pnfolder.pnlibrary.api.commands.CommandContext
 import org.pnfolder.pnlibrary.api.commands.CommandDefinition
 import org.pnfolder.pnlibrary.api.commands.CommandRegistration
+import org.pnfolder.pnlibrary.api.commands.CommandNode
+import org.pnfolder.pnlibrary.api.commands.CommandProblem
+import org.pnfolder.pnlibrary.api.commands.CommandProblemException
+import org.pnfolder.pnlibrary.api.commands.CommandProblemHandler
+import org.pnfolder.pnlibrary.api.commands.CommandProblemKind
 import org.pnfolder.pnlibrary.api.commands.completedExecution
 import org.pnfolder.pnlibrary.api.commands.completedSuggestions
 import org.pnfolder.pnlibrary.api.logging.LogLevel
@@ -23,13 +28,20 @@ import java.util.concurrent.atomic.AtomicLong
 internal const val DEFAULT_NO_PERMISSION = "Недостаточно прав для этой команды."
 
 /**
- * @param defaultNoPermission text for a denial that has no message on its node or command; set in `config.yml`
+ * Answers a problem with a command from the most specific level that has an answer: the subcommand, the command, the
+ * plugin module, the plugin as a whole, and last [standard], the library's own wording from `config.yml`.
+ *
+ * @param standard the library's reactions, used when nothing more specific answers
  */
 internal class CommandServiceImpl(
     private val commandAdapter: PlatformCommandAdapter,
     private val logging: PlatformLogging,
-    private val defaultNoPermission: String = DEFAULT_NO_PERMISSION,
+    private val standard: StandardCommandFeedback = StandardCommandFeedback(),
 ) : CommandService, PlatformCommandDispatcher, AutoCloseable {
+    /** Convenience for callers that only configure the no-permission text. */
+    constructor(commandAdapter: PlatformCommandAdapter, logging: PlatformLogging, defaultNoPermission: String) :
+        this(commandAdapter, logging, StandardCommandFeedback(deniedMessage = defaultNoPermission))
+
     private val lock = Any()
     private val closed = AtomicBoolean(false)
     private val reservedNames = linkedSetOf<String>()
@@ -44,7 +56,7 @@ internal class CommandServiceImpl(
     private val executionsByCommand = linkedMapOf<String, Long>()
     private val failuresByCommand = linkedMapOf<String, Long>()
 
-    override fun register(owner: Any, command: CommandDefinition): CommandRegistration {
+    override fun register(owner: Any, command: CommandDefinition, feedback: CommandFeedbackScope?): CommandRegistration {
         val names = linkedSetOf(command.name).apply { addAll(command.aliases) }
         synchronized(lock) {
             check(!closed.get()) { "CommandService is closed" }
@@ -60,7 +72,7 @@ internal class CommandServiceImpl(
             throw error
         }
 
-        val registration = Registration(owner, command, names, native)
+        val registration = Registration(owner, command, names, native, feedback)
         synchronized(lock) {
             if (closed.get()) {
                 reservedNames.removeAll(names)
@@ -96,28 +108,76 @@ internal class CommandServiceImpl(
         }
         val executable = when (route) {
             is CommandRoute.Executable -> route
-            is CommandRoute.Invalid -> {
-                context.sender.send(Component.text("Использование: ${route.usage}"))
-                return completedExecution()
-            }
-            is CommandRoute.Denied -> {
-                context.sender.send(
-                    Component.text(route.message ?: registration.command.noPermissionMessage ?: defaultNoPermission),
-                )
+            is CommandRoute.Problem -> {
+                answer(registration, CommandProblem(route.kind, context, route.details), route.nodes)
                 return completedExecution()
             }
         }
         val stage = try {
             executable.node.execution.execute(executable.context)
         } catch (error: Throwable) {
-            executionFailed(registration.owner, registration.command.name, context, error)
+            failed(registration, executable, error)
             return completedExecution()
         }
         return stage.handle { _, error ->
-            if (error != null) executionFailed(registration.owner, registration.command.name, context, unwrap(error))
+            if (error != null) failed(registration, executable, unwrap(error))
             null
         }
     }
+
+    /**
+     * A command that threw a [CommandProblemException] reports a problem of its own: it is answered through the same
+     * levels as any other. Anything else is an unexpected error, which is logged and shown as a failure.
+     */
+    private fun failed(registration: Registration, executable: CommandRoute.Executable, error: Throwable) {
+        val problem = generateSequence(error) { it.cause }.filterIsInstance<CommandProblemException>().firstOrNull()
+        if (problem == null) {
+            executionFailed(registration.owner, registration.command.name, executable.context, error)
+            return
+        }
+        answer(registration, CommandProblem(problem.kind, executable.context, problem.details), executable.path.asReversed())
+    }
+
+    /**
+     * Answers [problem] from the most specific level that can: the nodes from the deepest involved up to the command,
+     * then the plugin module, then the plugin, then the library standard. On each level a handler for the problem's
+     * kind comes first, then one for its parent kinds; at a node, a plain no-permission text counts as a handler.
+     */
+    private fun answer(registration: Registration, problem: CommandProblem, nodes: List<CommandNode>) {
+        fun handledBy(handlers: Map<CommandProblemKind, CommandProblemHandler>): Boolean {
+            for (kind in problem.kind.lineage) {
+                val handler = handlers[kind] ?: continue
+                if (react(registration) { handler.handle(problem) }) return true
+            }
+            return false
+        }
+        for (node in nodes) {
+            if (handledBy(node.problemHandlers)) return
+            val text = node.noPermissionMessage
+            if (problem.kind == CommandProblemKind.DENIED && text != null &&
+                react(registration) { problem.sender.send(Component.text(text)) }
+            ) return
+        }
+        var scope = registration.feedback
+        while (scope != null) {
+            if (handledBy(scope.handlers)) return
+            scope = scope.parent
+        }
+        react(registration) { standard.answer(problem) }
+    }
+
+    /**
+     * Runs a plugin's reaction. When it throws, the failure is logged and `false` returned so the next level answers;
+     * the sender never sees a broken handler's error.
+     */
+    private inline fun react(registration: Registration, reaction: () -> Unit): Boolean =
+        try {
+            reaction()
+            true
+        } catch (error: Exception) {
+            logging.log(registration.owner, LogLevel.ERROR, "Command feedback handler failed", error)
+            false
+        }
 
     override fun suggest(
         command: CommandDefinition,
@@ -198,6 +258,7 @@ internal class CommandServiceImpl(
         override val command: CommandDefinition,
         private val names: Set<String>,
         private val native: PlatformCommandRegistration,
+        val feedback: CommandFeedbackScope?,
     ) : CommandRegistration {
         private val registrationClosed = AtomicBoolean(false)
         override val isClosed: Boolean get() = registrationClosed.get()

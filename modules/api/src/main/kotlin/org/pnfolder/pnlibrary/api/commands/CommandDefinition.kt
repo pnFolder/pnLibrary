@@ -1,5 +1,6 @@
 package org.pnfolder.pnlibrary.api.commands
 
+import net.kyori.adventure.text.Component
 import java.util.Collections
 import java.util.LinkedHashSet
 import java.util.Locale
@@ -59,6 +60,8 @@ class CommandBuilder internal constructor(name: String) {
     private var permission: String? = null
     private var consoleBypassesPermission: Boolean = false
     private var noPermissionMessage: String? = null
+    private val problemHandlers = linkedMapOf<CommandProblemKind, CommandProblemHandler>()
+    private var senderRule = SenderRule.ANY
     private var execution = CommandHandler { completedExecution() }
     private var executable = false
     private var suggestions = SuggestionHandler { completedSuggestions(emptyList()) }
@@ -90,6 +93,33 @@ class CommandBuilder internal constructor(name: String) {
             require(it.isNotEmpty()) { "No-permission message must not be blank" }
         }
     }
+
+    /**
+     * Answers problems of [kind] with [handler]: message the sender, play a sound, notify staff, anything. A handler
+     * on a subcommand wins over this one; this one wins over the module's, the plugin's and the library's. A kind
+     * without a handler is answered by its parent kind's handler on the same level.
+     */
+    fun onProblem(kind: CommandProblemKind, handler: CommandProblemHandler): CommandBuilder = apply {
+        problemHandlers[kind] = handler
+    }
+
+    /** Answers problems of [kind] with the plain [message]; `{usage}`, `{value}`, `{argument}` fill in from the problem. */
+    fun onProblem(kind: CommandProblemKind, message: String): CommandBuilder = apply {
+        val text = message.trim().also { require(it.isNotEmpty()) { "Problem message must not be blank" } }
+        problemHandlers[kind] = CommandProblemHandler { problem -> problem.sender.send(Component.text(problem.text(text))) }
+    }
+
+    /** Answers a sender who may not use this command; shorthand for `onProblem(CommandProblemKind.DENIED, handler)`. */
+    fun onDenied(handler: CommandProblemHandler): CommandBuilder = onProblem(CommandProblemKind.DENIED, handler)
+
+    /** Answers a mistyped command; shorthand for `onProblem(CommandProblemKind.USAGE, handler)`. */
+    fun onUsage(handler: CommandProblemHandler): CommandBuilder = onProblem(CommandProblemKind.USAGE, handler)
+
+    /** Lets only players use this command; the console gets the [CommandProblemKind.PLAYER_ONLY] answer. */
+    fun playerOnly(): CommandBuilder = apply { senderRule = SenderRule.PLAYER }
+
+    /** Lets only the console use this command; players get the [CommandProblemKind.CONSOLE_ONLY] answer. */
+    fun consoleOnly(): CommandBuilder = apply { senderRule = SenderRule.CONSOLE }
 
     /** Configures whether the console bypasses the root permission. */
     @JvmOverloads
@@ -157,6 +187,12 @@ class CommandBuilder internal constructor(name: String) {
         val rootBuilder = CommandNodeBuilder(CommandNodeKind.ROOT, name).apply {
             permission?.let(::permission)
             noPermissionMessage?.let(::noPermissionMessage)
+            problemHandlers.forEach { (kind, handler) -> onProblem(kind, handler) }
+            when (senderRule) {
+                SenderRule.PLAYER -> playerOnly()
+                SenderRule.CONSOLE -> consoleOnly()
+                SenderRule.ANY -> Unit
+            }
             consoleBypassesPermission(consoleBypassesPermission)
             availableIf(availability)
             if (executable) executesAsync(execution)

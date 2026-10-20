@@ -6,26 +6,30 @@ import org.pnfolder.pnlibrary.api.commands.CommandContext
 import org.pnfolder.pnlibrary.api.commands.CommandDefinition
 import org.pnfolder.pnlibrary.api.commands.CommandNode
 import org.pnfolder.pnlibrary.api.commands.CommandNodeKind
+import org.pnfolder.pnlibrary.api.commands.SenderRule
+import org.pnfolder.pnlibrary.api.commands.CommandProblemKind
 import org.pnfolder.pnlibrary.api.commands.completedSuggestions
 import java.util.LinkedHashMap
 import java.util.Locale
 import java.util.concurrent.CompletionStage
 
-/** Outcome of routing one invocation: an executable node, a usage hint, or a permission denial. */
+/** Outcome of routing one invocation: a node that can run, or a problem to answer. */
 internal sealed class CommandRoute {
-    data class Executable(val node: CommandNode, val context: CommandContext) : CommandRoute()
-    data class Invalid(val usage: String) : CommandRoute()
-    /** The sender may not enter a node; [message] is that node's own text, or `null` to use the command's. */
-    data class Denied(val message: String?) : CommandRoute()
+    /** [path] runs from the command's root down to [node]. */
+    data class Executable(val node: CommandNode, val context: CommandContext, val path: List<CommandNode>) : CommandRoute()
+
+    /** Something went wrong; [nodes] runs from the deepest node involved up to the command's root. */
+    data class Problem(val kind: CommandProblemKind, val details: Map<String, Any?>, val nodes: List<CommandNode>) : CommandRoute()
 }
 
 /** Parses and completes immutable command trees without knowing the native server platform. */
 internal class CommandTreeRouter {
     fun route(command: CommandDefinition, context: CommandContext): CommandRoute {
         var node = command.root
+        val nodes = mutableListOf(node)
         val values = LinkedHashMap<String, Any>()
         var routed = context.copy(parsedValues = values.toMap())
-        if (!allowed(node, routed)) return CommandRoute.Denied(node.noPermissionMessage)
+        blocked(node, routed)?.let { return problem(it.first, it.second, nodes) }
         val path = mutableListOf(command.name)
 
         context.arguments.forEach { token ->
@@ -33,10 +37,19 @@ internal class CommandTreeRouter {
                 it.kind == CommandNodeKind.LITERAL && it.name.equals(token, ignoreCase = true)
             }
             val child = literal ?: node.children.firstOrNull { it.kind == CommandNodeKind.ARGUMENT }
-                ?: return CommandRoute.Invalid(usage(path, node, routed))
-            if (!allowed(child, routed)) return CommandRoute.Denied(child.noPermissionMessage)
+                ?: return problem(
+                    CommandProblemKind.UNKNOWN_ARGUMENT,
+                    mapOf("usage" to usage(path, node, routed), "value" to token),
+                    nodes,
+                )
+            nodes += child
+            blocked(child, routed)?.let { return problem(it.first, it.second, nodes) }
             if (child.kind == CommandNodeKind.ARGUMENT) {
-                val parsed = parse(child, token) ?: return CommandRoute.Invalid(usage(path, node, routed))
+                val parsed = parse(child, token) ?: return problem(
+                    child.argumentType?.problem ?: CommandProblemKind.INVALID_ARGUMENT,
+                    mapOf("usage" to usage(path, node, routed), "argument" to child.name, "value" to token),
+                    nodes,
+                )
                 values[child.name] = parsed
                 path += "<${child.name}>"
             } else {
@@ -46,9 +59,22 @@ internal class CommandTreeRouter {
             routed = context.copy(parsedValues = values.toMap())
         }
 
-        return if (node.isExecutable) CommandRoute.Executable(node, routed)
-        else CommandRoute.Invalid(usage(path, node, routed))
+        return if (node.isExecutable) CommandRoute.Executable(node, routed, nodes)
+        else problem(CommandProblemKind.INCOMPLETE, mapOf("usage" to usage(path, node, routed)), nodes)
     }
+
+    /** Why the sender may not enter [node], or `null` when it may. */
+    private fun blocked(node: CommandNode, context: CommandContext): Pair<CommandProblemKind, Map<String, Any?>>? {
+        if (!allowed(node, context)) return CommandProblemKind.DENIED to mapOf("permission" to node.permission.orEmpty())
+        return when (node.senderRule) {
+            SenderRule.PLAYER -> if (context.sender.isConsole) CommandProblemKind.PLAYER_ONLY to emptyMap() else null
+            SenderRule.CONSOLE -> if (!context.sender.isConsole) CommandProblemKind.CONSOLE_ONLY to emptyMap() else null
+            SenderRule.ANY -> null
+        }
+    }
+
+    private fun problem(kind: CommandProblemKind, details: Map<String, Any?>, nodes: List<CommandNode>) =
+        CommandRoute.Problem(kind, details, nodes.asReversed())
 
     fun suggest(command: CommandDefinition, context: CommandContext): CompletionStage<List<String>> {
         var node = command.root

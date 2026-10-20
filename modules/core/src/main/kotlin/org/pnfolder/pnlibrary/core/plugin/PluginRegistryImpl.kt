@@ -3,6 +3,8 @@ package org.pnfolder.pnlibrary.core.plugin
 import org.pnfolder.pnlibrary.api.actions.ActionService
 import org.pnfolder.pnlibrary.api.commands.CommandDefinition
 import org.pnfolder.pnlibrary.api.commands.CommandRegistration
+import org.pnfolder.pnlibrary.api.commands.CommandProblemHandler
+import org.pnfolder.pnlibrary.api.commands.CommandProblemKind
 import org.pnfolder.pnlibrary.api.config.ConfigScope
 import org.pnfolder.pnlibrary.api.cooldowns.CooldownService
 import org.pnfolder.pnlibrary.api.diagnostics.DiagnosticRegistration
@@ -32,6 +34,7 @@ import org.pnfolder.pnlibrary.api.updates.UpdateRegistration
 import org.pnfolder.pnlibrary.api.updates.UpdateService
 import org.pnfolder.pnlibrary.api.version.SemanticVersion
 import org.pnfolder.pnlibrary.core.commands.CommandService
+import org.pnfolder.pnlibrary.core.commands.CommandFeedbackScope
 import org.pnfolder.pnlibrary.config.ConfigurationServiceImpl
 import org.pnfolder.pnlibrary.core.downloads.DirectDownloadManager
 import org.pnfolder.pnlibrary.core.lifecycle.ResourceCleanup
@@ -164,6 +167,12 @@ internal class PluginRegistryImpl(
         private val pluginClosed = AtomicBoolean(false)
         override val isClosed: Boolean get() = pluginClosed.get()
 
+        /** What the whole plugin answers to a denied or mistyped command; each module's scope inherits from it. */
+        val commandFeedback = CommandFeedbackScope()
+        override fun onCommandProblem(kind: CommandProblemKind, handler: CommandProblemHandler) {
+            commandFeedback.handlers[kind] = handler
+        }
+
         override fun registerModule(id: ModuleId, configure: Consumer<PluginBuilder>): ModuleContext =
             synchronized(plugins) { synchronized(moduleContexts) {
                 check(!pluginClosed.get()) { "Plugin context is closed" }
@@ -230,10 +239,11 @@ internal class PluginRegistryImpl(
         private val owner: Any get() = parent.owner
         private val contextClosed = AtomicBoolean(false)
         private val moduleCommands = mutableListOf<CommandRegistration>()
+        private val commandFeedback = CommandFeedbackScope(parent.commandFeedback)
         override fun registerCommand(command: CommandDefinition): CommandRegistration =
             synchronized(moduleCommands) {
                 check(!isClosed) { "Module is closed" }
-                val registration = checkNotNull(commands) { "Commands are unavailable" }.register(owner, command)
+                val registration = checkNotNull(commands) { "Commands are unavailable" }.register(owner, command, commandFeedback)
                 if (isClosed) {
                     registration.close()
                     error("Module is closed")
@@ -242,6 +252,9 @@ internal class PluginRegistryImpl(
                 moduleCommands.add(registration)
                 registration
             }
+        override fun onCommandProblem(kind: CommandProblemKind, handler: CommandProblemHandler) {
+            commandFeedback.handlers[kind] = handler
+        }
         override val isClosed: Boolean get() = contextClosed.get()
         override val tasks: TaskScope get() = resources.tasks
         override val events: EventScope get() = resources.events

@@ -1,5 +1,6 @@
 package org.pnfolder.pnlibrary.core.runtime
 
+import org.pnfolder.pnlibrary.core.commands.StandardCommandFeedback
 import org.pnfolder.pnlibrary.api.tasks.TaskServiceSettings
 import org.pnfolder.pnlibrary.core.audiences.AudienceServiceImpl
 import org.pnfolder.pnlibrary.core.commands.CommandServiceImpl
@@ -18,13 +19,13 @@ internal class PlatformServiceSet(
     platformLogging: PlatformLogging,
     taskHistoryCapacity: Int,
     errorLogger: (Any, String, Throwable) -> Unit,
-    noPermissionMessage: String = DEFAULT_NO_PERMISSION,
+    commandFeedback: StandardCommandFeedback = StandardCommandFeedback(),
 ) {
     val tasks = TaskServiceImpl(
         adapter = taskAdapter,
         settings = TaskServiceSettings(taskHistoryCapacity),
         errorLogger = errorLogger,
     )
-    val commands = CommandServiceImpl(commandAdapter, platformLogging, noPermissionMessage)
+    val commands = CommandServiceImpl(commandAdapter, platformLogging, commandFeedback)
     val audiences = AudienceServiceImpl(audienceAdapter)
 }

@@ -1,5 +1,6 @@
 package org.pnfolder.pnlibrary.api.commands
 
+import org.pnfolder.pnlibrary.api.actions.LibraryPlayer
 import java.math.BigDecimal
 import java.util.Locale
 
@@ -66,6 +67,13 @@ fun interface ArgumentType<T : Any> {
      * native support ignore it; the portable [parse] always decides in the end.
      */
     val spec: ArgumentSpec get() = ArgumentSpec.TEXT
+
+    /**
+     * The kind of problem reported when [parse] returns `null`. The default is
+     * [CommandProblemKind.INVALID_ARGUMENT]; a player argument says [CommandProblemKind.PLAYER_NOT_FOUND], and a
+     * type of your own can name a [CommandProblemKind.custom] kind so that it gets its own answer.
+     */
+    val problem: CommandProblemKind get() = CommandProblemKind.INVALID_ARGUMENT
 
     /** Built-in argument parsers and parser factories. */
     companion object {
@@ -135,6 +143,17 @@ fun interface ArgumentType<T : Any> {
             typed(ArgumentSpec.choice(type.enumConstants.map { it.name.lowercase(Locale.ROOT) })) { value ->
                 type.enumConstants.firstOrNull { it.name.equals(value, ignoreCase = true) }
             }
+
+        /**
+         * Returns an argument that finds an online player by the typed name with [lookup]. A name nobody answers to
+         * is reported as [CommandProblemKind.PLAYER_NOT_FOUND], which the library answers with "player is not
+         * online" unless a handler says otherwise.
+         */
+        @JvmStatic
+        fun player(lookup: (String) -> LibraryPlayer?): ArgumentType<LibraryPlayer> = object : ArgumentType<LibraryPlayer> {
+            override fun parse(value: String): LibraryPlayer? = lookup(value)
+            override val problem: CommandProblemKind get() = CommandProblemKind.PLAYER_NOT_FOUND
+        }
 
         /**
          * Returns a case-insensitive parser for one of [values]; the parsed value is the spelling declared here.
