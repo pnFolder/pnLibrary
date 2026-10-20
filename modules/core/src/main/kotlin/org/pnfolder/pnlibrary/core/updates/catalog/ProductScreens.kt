@@ -6,7 +6,7 @@ import net.kyori.adventure.text.format.TextColor
 import org.pnfolder.pnlibrary.api.updates.UpdateSnapshot
 import org.pnfolder.pnlibrary.api.updates.UpdateState
 import org.pnfolder.pnlibrary.common.text.RussianText
-import org.pnfolder.pnlibrary.core.ui.ChatPalette
+import org.pnfolder.pnlibrary.api.chat.ChatPalette
 import org.pnfolder.pnlibrary.core.updates.catalog.UpdateChannelLabels.channelColor
 import org.pnfolder.pnlibrary.core.updates.catalog.UpdateChannelLabels.channelHint
 import org.pnfolder.pnlibrary.core.updates.catalog.UpdateChannelLabels.channelName
@@ -70,6 +70,16 @@ internal class ProductScreens(routes: UpdateCatalogRoutes, now: Instant, zone: Z
         result += choices("Канал", UpdateCatalogView.CHANNELS.map { it to channelName(it) }, snapshot.channel, ::channelColor) { channel ->
             routes.set(product, "channel", channelName(channel)) to channelHint(channel)
         }
+        if (clickable) {
+            actions(
+                button(
+                    "[Канал плагина]",
+                    routes.set(product, "channel", "default"),
+                    "Убрать выбор администратора: канал определяет сам плагин",
+                    ChatPalette.SOFT,
+                ),
+            )?.let { result += it }
+        }
         result += choices("Автозагрузка", listOf(true to "вкл", false to "выкл"), snapshot.automaticDownload,
             { on -> if (on) ChatPalette.OK else ChatPalette.DANGER }) { on ->
             routes.set(product, "auto", if (on) "on" else "off") to
@@ -84,7 +94,7 @@ internal class ProductScreens(routes: UpdateCatalogRoutes, now: Instant, zone: Z
         )?.let { result += it }
         if (!routes.interactive || !routes.editable) {
             result += commandHints(
-                routes.set(product, "channel", "<${UpdateCatalogView.CHANNELS.joinToString("|") { channelName(it) }}>") to "канал",
+                routes.set(product, "channel", "<${UpdateCatalogView.CHANNELS.joinToString("|") { channelName(it) }}|default>") to "канал (default: как задал плагин)",
                 routes.set(product, "auto", "<on|off>") to "автозагрузка",
                 routes.set(product, "hold", "<${UpdateCatalogView.HOLD_PERIODS.joinToString("|")}|off>") to "пауза",
             )

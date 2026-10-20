@@ -32,7 +32,7 @@ internal object YamlSchemaDecorator {
                     result += ""
                 }
                 metadata.comments.forEach { comment ->
-                    result += " ".repeat(indent) + "# " + comment
+                    result += " ".repeat(indent) + commentLine(comment)
                 }
                 if (metadata.children.isNotEmpty()) {
                     schemasByIndent[indent + YAML_INDENT] = metadata.children
@@ -44,6 +44,12 @@ internal object YamlSchemaDecorator {
         }
         return result.joinToString("\n").trimEnd() + "\n"
     }
+
+    /** Renders [lines] as YAML comments, writing a blank line as a bare `#` without trailing space. */
+    fun commentLines(lines: Array<out String>, indent: String): String =
+        lines.joinToString("\n") { indent + commentLine(it) }
+
+    private fun commentLine(text: String): String = if (text.isBlank()) "#" else "# $text"
 
     private const val YAML_INDENT = 2
 }

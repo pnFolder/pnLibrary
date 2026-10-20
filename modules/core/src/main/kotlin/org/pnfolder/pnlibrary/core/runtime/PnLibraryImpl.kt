@@ -26,7 +26,14 @@ import org.pnfolder.pnlibrary.api.version.SemanticVersion
 import org.pnfolder.pnlibrary.config.ConfigurationServiceImpl
 import org.pnfolder.pnlibrary.core.diagnostics.DiagnosticsRegistry
 import org.pnfolder.pnlibrary.core.diagnostics.diagnosticCommand
+import org.pnfolder.pnlibrary.core.journal.JournalLevel
+import org.pnfolder.pnlibrary.core.journal.JournalRecord
+import org.pnfolder.pnlibrary.core.journal.JournalStore
+import org.pnfolder.pnlibrary.core.journal.journalCommand
+import org.pnfolder.pnlibrary.core.journal.toJournalLevel
+import java.time.Duration
 import org.pnfolder.pnlibrary.core.downloads.DirectDownloadManager
+import org.pnfolder.pnlibrary.api.logging.LogLevel
 import org.pnfolder.pnlibrary.core.downloads.DownloadConfiguration
 import org.pnfolder.pnlibrary.core.events.EventServiceImpl
 import org.pnfolder.pnlibrary.core.logging.LoggingServiceImpl
@@ -98,12 +105,32 @@ internal class PnLibraryImpl(
     override val observability get() = support.service
     override val activity: ActivityService get() = observability
     override val metrics: MetricsService get() = metricsService
+    private val journal = JournalStore(
+        dataFolder.resolve("journal"),
+        mapOf(
+            JournalLevel.INFO to Duration.ofDays(config.journalInfoDays.toLong()),
+            JournalLevel.WARNING to Duration.ofDays(config.journalWarningDays.toLong()),
+            JournalLevel.ERROR to Duration.ofDays(config.journalErrorDays.toLong()),
+        ),
+    ).also { store -> runCatching { store.prune() } }
     override val logging: LoggingService = LoggingServiceImpl(
         platformLogging,
         platformOwnership,
         platformDiagnostics,
         platformIdentity,
         support.logs,
+        journal = { owner, level, message, error ->
+            journal.append(
+                JournalRecord(
+                    timeMillis = System.currentTimeMillis(),
+                    level = level.toJournalLevel(),
+                    source = platformOwnership.ownerDetails(owner)["id"] ?: owner.javaClass.simpleName,
+                    type = if (error != null) "ERROR" else "LOG",
+                    message = message,
+                    details = error?.let { mapOf("exception" to it.javaClass.name) }.orEmpty(),
+                ),
+            )
+        },
     )
     private val configurationService = ConfigurationServiceImpl(platformOwnership)
     override val configurations: ConfigurationService get() = configurationService
@@ -117,7 +144,7 @@ internal class PnLibraryImpl(
     )
     private val directDownloadConfiguration = DownloadConfiguration.load(
         dataFolder.resolve("downloads.yml"),
-    )
+    ) { platformLogging.log(this, LogLevel.WARNING, it) }
     private val directDownloadManager = DirectDownloadManager(
         platformIdentity,
         platformOwnership,
@@ -200,6 +227,12 @@ internal class PnLibraryImpl(
         support.initialize { isClosed }
         startLibraryMetrics()
         registerRuntimeCommand(diagnosticCommand(this))
+        registerRuntimeCommand(journalCommand(journal))
+        registerRuntimeCommand(
+            libraryInfoCommand(this, platformIdentity) {
+                platformOwnership.ownerDetails(owner)["version"] ?: "неизвестна"
+            },
+        )
     }
 
     override fun createDiagnosticReport(request: DebugRequest): DiagnosticReport {

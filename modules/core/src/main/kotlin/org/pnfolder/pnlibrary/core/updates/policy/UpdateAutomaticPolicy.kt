@@ -16,9 +16,8 @@ internal class UpdateAutomaticPolicy(
             val chosen = overrides?.automatic(component.value)
             if (component.value == "pnlibrary") chosen ?: configuration.library.automaticDownload
             else {
-                val policy = configuration.plugins[component.value]
-                configuration.pluginUpdatesEnabled && policy?.enabled != false &&
-                    (chosen ?: policy?.automaticDownload ?: (configuration.pluginAutomaticDownload ||
+                configuration.pluginUpdatesEnabled && component.value !in configuration.ignoredPlugins &&
+                    (chosen ?: (configuration.pluginAutomaticDownload ||
                         registrations().firstOrNull { it.descriptor.id == component }
                             ?.request?.automaticDownload == true))
             }

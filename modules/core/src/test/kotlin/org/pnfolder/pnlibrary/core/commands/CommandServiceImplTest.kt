@@ -143,7 +143,23 @@ class CommandServiceImplTest {
 
         assertEquals(1, executions)
         assertTrue(deniedSuggestions.isEmpty())
-        assertEquals(listOf(Component.text("You do not have permission.")), denied.messages)
+        assertEquals(listOf(Component.text("Недостаточно прав для этой команды.")), denied.messages)
+    }
+
+    @Test
+    fun `a command can replace the default no-permission message with its own text`() {
+        val native = RecordingCommands()
+        val service = CommandServiceImpl(TestPlatform(native).commandAdapter, TestPlatform(native))
+        service.register(Any(), command("hello") {
+            permission("example.hello")
+            noPermissionMessage("Нужна покупка доступа: /shop buy hello")
+            executes { }
+        })
+        val denied = TestSender()
+
+        native.dispatcher.execute(native.command, context(denied)).toCompletableFuture().join()
+
+        assertEquals(listOf(Component.text("Нужна покупка доступа: /shop buy hello")), denied.messages)
     }
 
     @Test

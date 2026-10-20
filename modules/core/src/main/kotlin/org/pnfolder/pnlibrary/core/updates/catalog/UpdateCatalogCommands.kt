@@ -10,9 +10,9 @@ import org.pnfolder.pnlibrary.api.updates.UpdateHistoryEntry
 import org.pnfolder.pnlibrary.api.updates.UpdateSnapshot
 import org.pnfolder.pnlibrary.api.updates.UpdateState
 import org.pnfolder.pnlibrary.common.text.RussianText
-import org.pnfolder.pnlibrary.core.ui.ChatNotice
-import org.pnfolder.pnlibrary.core.ui.ChatPalette
-import org.pnfolder.pnlibrary.core.ui.ChatTone
+import org.pnfolder.pnlibrary.api.chat.ChatNotice
+import org.pnfolder.pnlibrary.api.chat.ChatPalette
+import org.pnfolder.pnlibrary.api.chat.ChatTone
 import org.pnfolder.pnlibrary.core.updates.engine.FreezeDuration
 import java.time.Duration
 import java.util.Locale
@@ -100,7 +100,7 @@ class UpdateCatalogCommands(
                 suggests { productNames() }
                 literal("channel") {
                     argument("value", ArgumentType.string()) {
-                        suggests { UpdateCatalogView.CHANNELS.map { it.name.lowercase(Locale.ROOT) } }
+                        suggests { UpdateCatalogView.CHANNELS.map { it.name.lowercase(Locale.ROOT) } + DEFAULT_CHANNEL }
                         executes(::setChannel)
                     }
                 }
@@ -179,8 +179,15 @@ class UpdateCatalogCommands(
         return registration?.snapshot
     }
 
+    /** Sets the release channel, or removes the administrator's choice with `default` so the plugin decides again. */
     private fun setChannel(context: CommandContext) {
         val value = context.get<String>("value")
+        if (value.equals(DEFAULT_CHANNEL, ignoreCase = true)) {
+            change(context, "Канал", { it.channel.name.lowercase(Locale.ROOT) }, "как задал плагин") { product, actor ->
+                library.updates.setChannel(product, null, actor)
+            }
+            return
+        }
         val channel = UpdateCatalogView.CHANNELS.firstOrNull { it.name.equals(value, ignoreCase = true) }
         if (channel == null) {
             context.sender.send(error("Неизвестный канал $value. Доступны: ${UpdateCatalogView.CHANNELS.joinToString { it.name.lowercase(Locale.ROOT) }}."))
@@ -304,5 +311,6 @@ class UpdateCatalogCommands(
         val ON = setOf("on", "true", "yes", "1", "вкл")
         val OFF = setOf("off", "false", "no", "0", "выкл")
         val DEFAULT_HOLD: Duration = Duration.ofDays(7)
+        const val DEFAULT_CHANNEL = "default"
     }
 }

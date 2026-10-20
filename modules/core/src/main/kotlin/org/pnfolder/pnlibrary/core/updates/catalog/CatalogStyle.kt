@@ -6,9 +6,9 @@ import net.kyori.adventure.text.format.TextColor
 import org.pnfolder.pnlibrary.api.updates.UpdateChannel
 import org.pnfolder.pnlibrary.api.updates.UpdateSnapshot
 import org.pnfolder.pnlibrary.common.text.RussianText
-import org.pnfolder.pnlibrary.core.ui.ChatKit
-import org.pnfolder.pnlibrary.core.ui.ChatPalette
-import org.pnfolder.pnlibrary.core.ui.ChatReader
+import org.pnfolder.pnlibrary.api.chat.ChatKit
+import org.pnfolder.pnlibrary.api.chat.ChatPalette
+import org.pnfolder.pnlibrary.api.chat.ChatReader
 import java.time.Duration
 import java.time.Instant
 import java.time.LocalDate

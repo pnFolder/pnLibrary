@@ -43,6 +43,8 @@ class ProxyUpdateCommandTest {
         execute(updates, Sender(), "set", "pnlibrary", "channel", "BETA")
         assertEquals("pnlibrary" to UpdateChannel.BETA, updates.channelSet)
         assertEquals(UpdateActor.Kind.CONSOLE, updates.actor?.kind)
+        execute(updates, Sender(), "set", "pnlibrary", "channel", "default")
+        assertEquals("pnlibrary" to null, updates.channelSet)
         execute(updates, Sender(), "set", "pnlibrary", "auto", "on")
         assertEquals("pnlibrary" to true, updates.automaticSet)
         execute(updates, Sender(), "set", "pnlibrary", "hold", "3d")
@@ -117,11 +119,11 @@ class ProxyUpdateCommandTest {
         var restoreConfigurations: Boolean? = null
         var actor: UpdateActor? = null
         val pages = mutableListOf<Int>()
-        var channelSet: Pair<String, UpdateChannel>? = null
+        var channelSet: Pair<String, UpdateChannel?>? = null
         var automaticSet: Pair<String, Boolean>? = null
         var heldSet: Pair<String, Duration?>? = null
         private fun snapshot() = UpdateSnapshot("pnlibrary", "1.0.0", null, UpdateChannel.BETA, UpdateState.UP_TO_DATE, 17, 8, false, null, null)
-        override fun setChannel(product: String, channel: UpdateChannel, actor: UpdateActor) =
+        override fun setChannel(product: String, channel: UpdateChannel?, actor: UpdateActor) =
             CompletableFuture.completedFuture(snapshot()).also { channelSet = product to channel; this.actor = actor }
         override fun setAutomaticDownload(product: String, enabled: Boolean, actor: UpdateActor) =
             CompletableFuture.completedFuture(snapshot()).also { automaticSet = product to enabled }

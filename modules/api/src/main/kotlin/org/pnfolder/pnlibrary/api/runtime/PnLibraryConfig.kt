@@ -77,8 +77,14 @@ data class PnLibraryConfig @JvmOverloads constructor(
     val secretKeyPatterns: List<String> = emptyList(),
     val redactValuePatterns: List<String> = emptyList(),
     val privacy: Boolean = true,
+    val journalInfoDays: Int = 7,
+    val journalWarningDays: Int = 30,
+    val journalErrorDays: Int = 90,
 ) {
     init {
+        require(journalInfoDays in 1..365) { "Setting journalInfoDays must be between 1 and 365" }
+        require(journalWarningDays in 1..365) { "Setting journalWarningDays must be between 1 and 365" }
+        require(journalErrorDays in 1..365) { "Setting journalErrorDays must be between 1 and 365" }
         require(uploadMode in setOf("encrypted", "disabled")) {
             "Setting uploadMode must be encrypted or disabled"
         }

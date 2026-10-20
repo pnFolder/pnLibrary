@@ -17,8 +17,8 @@ import org.pnfolder.pnlibrary.api.updates.UpdateSnapshot
 import org.pnfolder.pnlibrary.api.updates.UpdateState
 import org.pnfolder.pnlibrary.api.version.PnLibraryApi
 import org.pnfolder.pnlibrary.api.version.SemanticVersion
-import org.pnfolder.pnlibrary.core.ui.ChatNotice
-import org.pnfolder.pnlibrary.core.ui.ChatTone
+import org.pnfolder.pnlibrary.api.chat.ChatNotice
+import org.pnfolder.pnlibrary.api.chat.ChatTone
 import java.lang.reflect.Proxy
 import java.util.UUID
 

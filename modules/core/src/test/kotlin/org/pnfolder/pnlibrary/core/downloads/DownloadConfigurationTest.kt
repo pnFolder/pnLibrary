@@ -11,31 +11,44 @@ class DownloadConfigurationTest {
     @TempDir lateinit var directory: Path
 
     @Test
-    fun `creates conservative configuration separate from updates`() {
+    fun `creates a conservative commented file separate from updates`() {
         val path = directory.resolve("downloads.yml")
         val configuration = DownloadConfiguration.load(path)
 
         assertTrue(configuration.enabled)
         assertFalse(configuration.automatic)
-        assertTrue(Files.readString(path).startsWith("downloads:"))
+        val text = Files.readString(path)
+        assertTrue(text.contains("enabled: true"))
+        assertTrue(text.contains("data-folder: true"))
+        assertTrue(text.contains("# Включить систему загрузок"))
     }
 
     @Test
     fun `reads destination policy without host allowlists`() {
         val path = directory.resolve("downloads.yml")
         Files.writeString(path, """
-            downloads:
-              enabled: true
-              automatic: true
-              destinations:
-                plugins: false
-                data-folder: true
-                cache: false
+            enabled: true
+            automatic: true
+            destinations:
+              data-folder: true
+              cache: false
         """.trimIndent())
 
         val configuration = DownloadConfiguration.load(path)
 
         assertTrue(configuration.automatic)
         assertEquals(setOf(DownloadDestination.DATA_FOLDER), configuration.destinations)
+    }
+
+    @Test
+    fun `removes stale keys and reports them`() {
+        val path = directory.resolve("downloads.yml")
+        Files.writeString(path, "downloads:\n  enabled: true\nplugins: false\n")
+        val warnings = mutableListOf<String>()
+
+        DownloadConfiguration.load(path, warnings::add)
+
+        assertTrue(warnings.any { it.contains("plugins") })
+        assertFalse(Files.readString(path).contains("plugins:"))
     }
 }

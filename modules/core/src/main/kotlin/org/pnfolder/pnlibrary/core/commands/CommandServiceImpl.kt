@@ -19,6 +19,9 @@ import java.util.concurrent.atomic.AtomicBoolean
 import java.util.concurrent.atomic.AtomicLong
 
 /** Shared validation, permission, dispatch, and lifecycle engine for portable commands. */
+/** Shown when a command has no [CommandDefinition.noPermissionMessage] of its own. */
+private const val DEFAULT_NO_PERMISSION = "Недостаточно прав для этой команды."
+
 internal class CommandServiceImpl(
     private val commandAdapter: PlatformCommandAdapter,
     private val logging: PlatformLogging,
@@ -90,11 +93,11 @@ internal class CommandServiceImpl(
         val executable = when (route) {
             is CommandRoute.Executable -> route
             is CommandRoute.Invalid -> {
-                context.sender.send(Component.text("Usage: ${route.usage}"))
+                context.sender.send(Component.text("Использование: ${route.usage}"))
                 return completedExecution()
             }
             CommandRoute.Denied -> {
-                context.sender.send(Component.text("You do not have permission."))
+                context.sender.send(Component.text(registration.command.noPermissionMessage ?: DEFAULT_NO_PERMISSION))
                 return completedExecution()
             }
         }

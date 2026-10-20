@@ -1,5 +1,6 @@
 package org.pnfolder.pnlibrary.core.runtime
 
+import org.pnfolder.pnlibrary.api.logging.LogLevel
 import org.pnfolder.pnlibrary.api.runtime.PnLibrary
 
 /** Coordinates native bootstrap, shared runtime startup, and platform-facing startup metadata. */
@@ -15,7 +16,7 @@ internal object RuntimeBootstrapCoordinator {
         val library = PnLibraryBootstrap.bootstrap(
             owner,
             context,
-            PnLibraryConfigLoader.load(context.dataFolder),
+            PnLibraryConfigLoader.load(context.dataFolder) { context.logging.log(owner, LogLevel.WARNING, it) },
         )
         return try {
             val runtime = RuntimeStartup.start(owner, library, context.identity, context.ownership)

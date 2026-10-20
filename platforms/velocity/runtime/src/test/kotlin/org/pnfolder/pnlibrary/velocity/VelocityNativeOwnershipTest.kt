@@ -58,7 +58,7 @@ class VelocityNativeOwnershipTest {
         val proxy = mock(ProxyServer::class.java, RETURNS_DEEP_STUBS)
         val owner = Any()
         whenever(proxy.pluginManager.fromInstance(owner)).thenReturn(Optional.of(mock()))
-        val adapter = VelocityTaskAdapter(proxy)
+        val adapter = VelocityTaskAdapter(proxy, { "demo" }, {})
         val handle = adapter.schedule(PlatformTaskRequest(
             TaskExecution.Kind.ASYNC, null, Duration.ZERO, null, Runnable {}, owner,
         ))
@@ -77,7 +77,7 @@ class VelocityNativeOwnershipTest {
                 .register(owner, command("owned") {}, dispatcher)
         }
         assertThrows(IllegalArgumentException::class.java) {
-            VelocityTaskAdapter(proxy).schedule(PlatformTaskRequest(
+            VelocityTaskAdapter(proxy, { "demo" }, {}).schedule(PlatformTaskRequest(
                 TaskExecution.Kind.ASYNC, null, Duration.ZERO, null, Runnable {}, owner,
             ))
         }

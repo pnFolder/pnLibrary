@@ -6,11 +6,11 @@ import org.pnfolder.pnlibrary.api.commands.CommandDefinition
 import org.pnfolder.pnlibrary.api.commands.command
 import org.pnfolder.pnlibrary.api.diagnostics.DiagnosticReport
 import org.pnfolder.pnlibrary.api.runtime.PnLibrary
-import org.pnfolder.pnlibrary.core.ui.ChatKit
-import org.pnfolder.pnlibrary.core.ui.ChatNotice
-import org.pnfolder.pnlibrary.core.ui.ChatPalette
-import org.pnfolder.pnlibrary.core.ui.ChatReader
-import org.pnfolder.pnlibrary.core.ui.ChatTone
+import org.pnfolder.pnlibrary.api.chat.ChatKit
+import org.pnfolder.pnlibrary.api.chat.ChatNotice
+import org.pnfolder.pnlibrary.api.chat.ChatPalette
+import org.pnfolder.pnlibrary.api.chat.ChatReader
+import org.pnfolder.pnlibrary.api.chat.ChatTone
 import java.util.Locale
 
 /** Builds pnLibrary's diagnostics command without depending on a native command API. */

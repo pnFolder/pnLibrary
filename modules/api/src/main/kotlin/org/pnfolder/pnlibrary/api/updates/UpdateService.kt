@@ -77,9 +77,10 @@ interface UpdateService {
 
     /**
      * Switches the release [channel] of a managed [product] immediately. The choice is remembered across restarts
-     * and takes precedence over `updates.yml`. Does not grant permissions.
+     * and takes precedence over the channel the plugin declares itself. A `null` [channel] removes the choice, so
+     * the plugin's own channel applies again. Does not grant permissions.
      */
-    fun setChannel(product: String, channel: UpdateChannel, actor: UpdateActor): CompletionStage<UpdateSnapshot> =
+    fun setChannel(product: String, channel: UpdateChannel?, actor: UpdateActor): CompletionStage<UpdateSnapshot> =
         unsupportedSetting("channel changes")
 
     /** Turns automatic download of verified updates for [product] on or off, with the same persistence as [setChannel]. */

@@ -164,8 +164,7 @@ internal class UpdateInstaller(
         plan.changes
             .filterNot { change -> change.product.value == "pnlibrary" }
             .forEach { change ->
-                val policy = configuration.plugins[change.product.value]
-                require(configuration.pluginUpdatesEnabled && policy?.enabled != false) {
+                require(configuration.pluginUpdatesEnabled && change.product.value !in configuration.ignoredPlugins) {
                     "Загрузка плагина ${change.product} отключена политикой обновлений"
                 }
             }

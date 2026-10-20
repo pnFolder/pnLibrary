@@ -3,7 +3,7 @@ package org.pnfolder.pnlibrary.bukkit
 import net.kyori.adventure.text.Component
 import net.kyori.adventure.text.format.TextColor
 import net.kyori.adventure.text.serializer.legacy.LegacyComponentSerializer
-import org.pnfolder.pnlibrary.core.ui.ChatPalette
+import org.pnfolder.pnlibrary.api.chat.ChatPalette
 import org.pnfolder.pnlibrary.core.updates.catalog.UpdateCatalogCommands.SettingSaved
 
 /**

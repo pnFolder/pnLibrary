@@ -7,8 +7,8 @@ import org.bukkit.plugin.Plugin
 import org.pnfolder.pnlibrary.api.commands.CommandContext
 import org.pnfolder.pnlibrary.api.runtime.PnLibrary
 import org.pnfolder.pnlibrary.api.updates.UpdateActor
-import org.pnfolder.pnlibrary.core.ui.ChatNotice
-import org.pnfolder.pnlibrary.core.ui.ChatTone
+import org.pnfolder.pnlibrary.api.chat.ChatNotice
+import org.pnfolder.pnlibrary.api.chat.ChatTone
 import org.pnfolder.pnlibrary.core.updates.catalog.UpdateCatalogRoutes
 import org.pnfolder.pnlibrary.core.updates.catalog.UpdateCatalogView
 import org.pnfolder.pnlibrary.api.commands.CommandSender as Reply
