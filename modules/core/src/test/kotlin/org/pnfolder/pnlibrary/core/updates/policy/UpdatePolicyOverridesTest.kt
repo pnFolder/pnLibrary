@@ -55,6 +55,20 @@ class UpdatePolicyOverridesTest {
     }
 
     @Test
+    fun `removing a channel choice hands the decision back to the plugin and survives reopening`() {
+        val overrides = UpdatePolicyOverrides(file)
+        overrides.setChannel("shop", UpdateChannel.BETA)
+        overrides.setChannel("pnlibrary", UpdateChannel.RC)
+
+        overrides.setChannel("shop", null)
+
+        assertNull(overrides.channel("shop"))
+        val reopened = UpdatePolicyOverrides(file)
+        assertNull(reopened.channel("shop"))
+        assertEquals(UpdateChannel.RC, reopened.channel("pnlibrary"))
+    }
+
+    @Test
     fun `unreadable or invalid content is ignored with a warning`() {
         Files.createDirectories(file.parent)
         Files.writeString(file, "{ not json")

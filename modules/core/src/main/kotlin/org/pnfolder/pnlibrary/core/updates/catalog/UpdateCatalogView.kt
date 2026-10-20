@@ -5,9 +5,9 @@ import org.pnfolder.pnlibrary.api.updates.UpdateBackup
 import org.pnfolder.pnlibrary.api.updates.UpdateChannel
 import org.pnfolder.pnlibrary.api.updates.UpdateHistoryEntry
 import org.pnfolder.pnlibrary.api.updates.UpdateSnapshot
-import org.pnfolder.pnlibrary.core.ui.ChatKit
-import org.pnfolder.pnlibrary.core.ui.ChatNotice
-import org.pnfolder.pnlibrary.core.ui.ChatReader
+import org.pnfolder.pnlibrary.api.chat.ChatKit
+import org.pnfolder.pnlibrary.api.chat.ChatNotice
+import org.pnfolder.pnlibrary.api.chat.ChatReader
 import java.time.Instant
 import java.time.ZoneId
 

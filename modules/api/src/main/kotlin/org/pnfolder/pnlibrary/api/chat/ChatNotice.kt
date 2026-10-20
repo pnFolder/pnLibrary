@@ -1,4 +1,4 @@
-package org.pnfolder.pnlibrary.core.ui
+package org.pnfolder.pnlibrary.api.chat
 
 import net.kyori.adventure.text.format.TextColor
 

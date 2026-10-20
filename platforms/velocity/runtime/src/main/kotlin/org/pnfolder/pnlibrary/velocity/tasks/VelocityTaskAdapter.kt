@@ -16,11 +16,18 @@ import java.util.concurrent.atomic.AtomicReference
  * One-shot tasks are removed from the tracking set immediately after their callback finishes.
  */
 internal class VelocityTaskAdapter internal constructor(
+    private val describeOwner: (Any?) -> String,
+    private val warning: (String) -> Unit,
     private val nativeSchedule: (PlatformTaskRequest) -> PlatformTaskHandle,
 ) : PlatformTaskAdapter {
 
-    /** Creates an adapter backed by Velocity's scheduler. */
-    constructor(server: ProxyServer) : this(
+    /**
+     * Creates an adapter backed by Velocity's scheduler. [describeOwner] names the plugin that asked for a task,
+     * and [warning] receives a notice every time an entity task is run on the proxy scheduler instead.
+     */
+    constructor(server: ProxyServer, describeOwner: (Any?) -> String, warning: (String) -> Unit) : this(
+        describeOwner = describeOwner,
+        warning = warning,
         nativeSchedule = { request ->
             val owner = requireNotNull(request.owner) { "Velocity tasks require a native plugin owner" }
             require(server.pluginManager.fromInstance(owner).isPresent) {
@@ -44,11 +51,19 @@ internal class VelocityTaskAdapter internal constructor(
     private val closed = AtomicBoolean(false)
     private val handles = ConcurrentHashMap.newKeySet<TrackedHandle>()
 
-    /** Schedules a request and starts tracking its cancellation handle. */
+    /**
+     * Schedules a request and starts tracking its cancellation handle.
+     *
+     * Velocity has no entity scheduler, so an entity task runs on the proxy scheduler instead, and every such
+     * call writes a warning that names the plugin which asked for it.
+     */
     override fun schedule(request: PlatformTaskRequest): PlatformTaskHandle {
         check(!closed.get()) { "Velocity task adapter is closed" }
-        require(request.executionKind != TaskExecution.Kind.ENTITY) {
-            "Velocity does not support entity scheduling"
+        if (request.executionKind == TaskExecution.Kind.ENTITY) {
+            warning(
+                "Плагин ${describeOwner(request.owner)} запросил задачу, привязанную к игроку. " +
+                    "Velocity такие задачи не поддерживает: задача выполнена на общем планировщике прокси.",
+            )
         }
 
         val reference = AtomicReference<TrackedHandle?>()

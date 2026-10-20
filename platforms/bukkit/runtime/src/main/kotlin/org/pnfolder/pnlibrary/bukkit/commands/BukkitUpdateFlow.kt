@@ -16,8 +16,8 @@ import org.pnfolder.pnlibrary.api.updates.UpdateRegistration
 import org.pnfolder.pnlibrary.api.updates.UpdateState
 import org.pnfolder.pnlibrary.bukkit.updates.UpdateAction
 import org.pnfolder.pnlibrary.bukkit.updates.UpdateConfirmationTokens
-import org.pnfolder.pnlibrary.core.ui.ChatPalette
-import org.pnfolder.pnlibrary.core.ui.ChatTone
+import org.pnfolder.pnlibrary.api.chat.ChatPalette
+import org.pnfolder.pnlibrary.api.chat.ChatTone
 import org.pnfolder.pnlibrary.core.updates.catalog.UpdateCatalogCommands
 import org.pnfolder.pnlibrary.core.updates.catalog.UpdateCatalogView
 import java.time.Duration

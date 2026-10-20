@@ -27,6 +27,7 @@ import org.pnfolder.pnlibrary.config.ConfigurationServiceImpl
 import org.pnfolder.pnlibrary.core.diagnostics.DiagnosticsRegistry
 import org.pnfolder.pnlibrary.core.diagnostics.diagnosticCommand
 import org.pnfolder.pnlibrary.core.downloads.DirectDownloadManager
+import org.pnfolder.pnlibrary.api.logging.LogLevel
 import org.pnfolder.pnlibrary.core.downloads.DownloadConfiguration
 import org.pnfolder.pnlibrary.core.events.EventServiceImpl
 import org.pnfolder.pnlibrary.core.logging.LoggingServiceImpl
@@ -117,7 +118,7 @@ internal class PnLibraryImpl(
     )
     private val directDownloadConfiguration = DownloadConfiguration.load(
         dataFolder.resolve("downloads.yml"),
-    )
+    ) { platformLogging.log(this, LogLevel.WARNING, it) }
     private val directDownloadManager = DirectDownloadManager(
         platformIdentity,
         platformOwnership,
@@ -200,6 +201,11 @@ internal class PnLibraryImpl(
         support.initialize { isClosed }
         startLibraryMetrics()
         registerRuntimeCommand(diagnosticCommand(this))
+        registerRuntimeCommand(
+            libraryInfoCommand(this, platformIdentity) {
+                platformOwnership.ownerDetails(owner)["version"] ?: "неизвестна"
+            },
+        )
     }
 
     override fun createDiagnosticReport(request: DebugRequest): DiagnosticReport {

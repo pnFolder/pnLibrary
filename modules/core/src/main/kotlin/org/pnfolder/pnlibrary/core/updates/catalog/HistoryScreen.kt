@@ -6,7 +6,7 @@ import net.kyori.adventure.text.event.HoverEvent
 import net.kyori.adventure.text.format.TextColor
 import org.pnfolder.pnlibrary.api.updates.UpdateHistoryEntry
 import org.pnfolder.pnlibrary.api.updates.UpdateState
-import org.pnfolder.pnlibrary.core.ui.ChatPalette
+import org.pnfolder.pnlibrary.api.chat.ChatPalette
 import org.pnfolder.pnlibrary.core.updates.install.ComponentLedger
 import java.time.Instant
 import java.time.LocalDate

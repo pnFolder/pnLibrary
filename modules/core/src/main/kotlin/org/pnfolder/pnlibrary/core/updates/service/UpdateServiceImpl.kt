@@ -140,13 +140,21 @@ internal class UpdateServiceImpl(
     override fun history(): List<UpdatePlanSnapshot> = orchestrator.history()
     override fun historyPage(page: Int, product: String?): CompletionStage<List<UpdateHistoryEntry>> = runtime.historyPage(page, product)
     override fun historyCount(product: String?): CompletionStage<Int> = runtime.historyCount(product)
-    override fun setChannel(product: String, channel: UpdateChannel, actor: UpdateActor): CompletionStage<UpdateSnapshot> =
+    override fun setChannel(product: String, channel: UpdateChannel?, actor: UpdateActor): CompletionStage<UpdateSnapshot> =
         changeSetting(product, actor, recheck = true) { registration ->
             val before = registration.snapshot.channel
-            if (before == channel) null
-            else {
-                overrides.setChannel(registration.product, channel)
-                "канал: ${before.name.lowercase()} → ${channel.name.lowercase()}"
+            val chosen = overrides.channel(registration.product)
+            when {
+                chosen == channel -> null
+                channel == null -> {
+                    overrides.setChannel(registration.product, null)
+                    val after = graphResolver.channelFor(registration)
+                    "выбор канала снят: ${before.name.lowercase()} → ${after.name.lowercase()}, канал определяет плагин"
+                }
+                else -> {
+                    overrides.setChannel(registration.product, channel)
+                    "канал: ${before.name.lowercase()} → ${channel.name.lowercase()}"
+                }
             }
         }
 

@@ -5,6 +5,7 @@ import org.pnfolder.pnlibrary.api.version.ApiVersionRange
 import org.pnfolder.pnlibrary.api.version.PnLibraryApi
 import java.nio.file.Path
 import java.util.Collections
+import java.util.function.Supplier
 
 /**
  * Validated GitHub release and artifact-selection policy for one plugin.
@@ -30,8 +31,22 @@ class PluginUpdateRequest private constructor(builder: Builder) {
     /** GitHub repository name. */
     val repositoryName: String = builder.repositoryName
 
-    /** Highest prerelease maturity accepted by the updater. */
-    val channel: UpdateChannel = builder.channel
+    private val channelSource: Supplier<UpdateChannel> = builder.channelSource
+
+    /**
+     * Highest prerelease maturity the plugin asks for by default.
+     *
+     * Read on every update check, so a plugin that supplies the channel from its own configuration
+     * (see [Builder.channel]) is followed without registering again. A channel chosen by an
+     * administrator through pnLibrary takes precedence over this value. A failing or `null` source
+     * counts as [UpdateChannel.STABLE].
+     */
+    val channel: UpdateChannel
+        get() = try {
+            channelSource.get() ?: UpdateChannel.STABLE
+        } catch (_: Exception) {
+            UpdateChannel.STABLE
+        }
 
     /** Whether a newly discovered compatible artifact should be downloaded. */
     val automaticDownload: Boolean = builder.automaticDownload
@@ -59,7 +74,7 @@ class PluginUpdateRequest private constructor(builder: Builder) {
     class Builder internal constructor() {
         internal var repositoryOwner = ""
         internal var repositoryName = ""
-        internal var channel = UpdateChannel.STABLE
+        internal var channelSource: Supplier<UpdateChannel> = Supplier { UpdateChannel.STABLE }
         internal var automaticDownload = true
         internal val artifacts = mutableListOf<PluginUpdateArtifact>()
         internal var supportedApi = ApiVersionRange(PnLibraryApi.VERSION, PnLibraryApi.VERSION)
@@ -79,8 +94,14 @@ class PluginUpdateRequest private constructor(builder: Builder) {
             repositoryName = name
         }
 
-        /** Sets the accepted release [value]. */
-        fun channel(value: UpdateChannel): Builder = apply { channel = value }
+        /** Sets the default release channel of the plugin. An administrator's choice in pnLibrary overrides it. */
+        fun channel(value: UpdateChannel): Builder = apply { channelSource = Supplier { value } }
+
+        /**
+         * Takes the default release channel from [source] on every update check, for example from the
+         * plugin's own configuration. An administrator's choice in pnLibrary overrides it.
+         */
+        fun channel(source: Supplier<UpdateChannel>): Builder = apply { channelSource = source }
 
         /** Enables or disables automatic verified downloads. */
         fun automaticDownload(enabled: Boolean): Builder = apply { automaticDownload = enabled }

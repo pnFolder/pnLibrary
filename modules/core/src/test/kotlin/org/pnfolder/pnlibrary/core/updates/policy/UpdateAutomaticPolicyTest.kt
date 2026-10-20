@@ -21,15 +21,14 @@ class UpdateAutomaticPolicyTest {
         val config = UpdateConfiguration(library = UpdateConfiguration.LibraryPolicy(automaticDownload = true))
         val combined = plan("pnlibrary", "managed-module")
         assertFalse(UpdateAutomaticPolicy(config) { emptyList() }.allows(combined))
-        val allowed = config.copy(plugins = mapOf("managed-module" to UpdateConfiguration.PluginPolicy(automaticDownload = true)))
+        val allowed = config.copy(pluginAutomaticDownload = true)
         assertTrue(UpdateAutomaticPolicy(allowed) { emptyList() }.allows(combined))
         assertFalse(UpdateAutomaticPolicy(allowed.copy(pluginUpdatesEnabled = false)) { emptyList() }.allows(combined))
     }
 
     @Test
     fun `an explicitly disabled product cannot inherit a global automatic permission`() {
-        val config = UpdateConfiguration(pluginAutomaticDownload = true,
-            plugins = mapOf("managed-module" to UpdateConfiguration.PluginPolicy(enabled = false, automaticDownload = true)))
+        val config = UpdateConfiguration(pluginAutomaticDownload = true, ignoredPlugins = setOf("managed-module"))
         assertFalse(UpdateAutomaticPolicy(config) { emptyList() }.allows(plan("managed-module")))
     }
 

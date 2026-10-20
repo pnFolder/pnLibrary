@@ -23,9 +23,9 @@ import org.pnfolder.pnlibrary.api.updates.UpdateHistoryEntry
 import org.pnfolder.pnlibrary.api.updates.UpdateSnapshot
 import org.pnfolder.pnlibrary.api.updates.UpdateState
 import org.pnfolder.pnlibrary.api.version.SemanticVersion
-import org.pnfolder.pnlibrary.core.ui.ChatNotice
-import org.pnfolder.pnlibrary.core.ui.ChatPalette
-import org.pnfolder.pnlibrary.core.ui.ChatTone
+import org.pnfolder.pnlibrary.api.chat.ChatNotice
+import org.pnfolder.pnlibrary.api.chat.ChatPalette
+import org.pnfolder.pnlibrary.api.chat.ChatTone
 import org.pnfolder.pnlibrary.core.updates.install.ComponentLedger
 import java.time.Instant
 import java.time.ZoneOffset
@@ -363,7 +363,7 @@ class UpdateCatalogViewTest {
         assertTrue(catalog.contains("  «Команды»\n    /pn check — проверить обновления"), catalog)
         assertTrue(catalog.contains("pnlibrary v1.0.0 → v1.1.0\n      изменения: https://github.com/a/b"), catalog)
         assertFalse(catalog.contains("Нажмите"))
-        assertTrue(text(pages[2]).contains("/pn updates set pnlibrary channel <stable|rc|beta|alpha|dev>"))
+        assertTrue(text(pages[2]).contains("/pn updates set pnlibrary channel <stable|rc|beta|alpha|dev|default>"))
         assertTrue(text(pages[3]).contains("следующая: /pn updates history 2"))
     }
 

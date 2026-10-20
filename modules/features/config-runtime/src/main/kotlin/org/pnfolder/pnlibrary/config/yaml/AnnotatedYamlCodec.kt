@@ -75,7 +75,7 @@ internal class AnnotatedYamlCodec<T : Any>(
     override val requiredPaths: Set<String> = schemaInspector.requiredPaths(type)
     private val yaml = DumperOptions().apply {
         defaultFlowStyle = DumperOptions.FlowStyle.BLOCK
-        isPrettyFlow = true
+        isPrettyFlow = false
         indent = 2
         indicatorIndent = 0
         width = 120
@@ -86,7 +86,7 @@ internal class AnnotatedYamlCodec<T : Any>(
         val raw = yaml.dump(toYamlValue(value, type, "", emptyList(), value))
         val body = YamlSchemaDecorator.decorate(raw, schemaInspector.metadata(type, value))
         val header = type.getAnnotation(ConfigComment::class.java)?.value.orEmpty()
-        return if (header.isEmpty()) body else header.joinToString("\n") { "# $it" } + "\n" + body
+        return if (header.isEmpty()) body else YamlSchemaDecorator.commentLines(header, "") + "\n\n" + body
     }
 
     /**

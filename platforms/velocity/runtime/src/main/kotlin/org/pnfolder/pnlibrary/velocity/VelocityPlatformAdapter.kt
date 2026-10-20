@@ -60,7 +60,15 @@ internal class VelocityPlatformAdapter(
         VelocityCommandAdapter(proxy, audienceAdapter)
 
     override val taskAdapter: PlatformTaskAdapter =
-        VelocityTaskAdapter(proxy)
+        VelocityTaskAdapter(
+            server = proxy,
+            describeOwner = { owner ->
+                owner?.let { proxy.pluginManager.fromInstance(it).orElse(null)?.description?.name?.orElse(null) }
+                    ?: owner?.javaClass?.simpleName
+                    ?: "неизвестен"
+            },
+            warning = { message -> logger.error(message) },
+        )
 
     override val logHandler: (Any, LogLevel, String, Throwable?) -> Unit =
         { _, level, message, error ->

@@ -8,11 +8,14 @@ import java.time.Duration
 import java.util.concurrent.atomic.AtomicBoolean
 
 class VelocityTaskAdapterTest {
+    private val NAMES: (Any?) -> String = { "demo" }
+    private val WARN: (String) -> Unit = {}
+
     @Test
     fun `task created during shutdown is cancelled and rejected`() {
         val cancelled = AtomicBoolean()
         lateinit var adapter: VelocityTaskAdapter
-        adapter = VelocityTaskAdapter {
+        adapter = VelocityTaskAdapter(NAMES, WARN) {
             adapter.close()
             PlatformTaskHandle { cancelled.compareAndSet(false, true) }
         }
@@ -26,7 +29,7 @@ class VelocityTaskAdapterTest {
     fun `close attempts every cancellation even if one fails`() {
         var scheduled = 0
         var cancellations = 0
-        val adapter = VelocityTaskAdapter {
+        val adapter = VelocityTaskAdapter(NAMES, WARN) {
             val index = scheduled++
             PlatformTaskHandle {
                 cancellations++
@@ -44,18 +47,28 @@ class VelocityTaskAdapterTest {
     }
 
     @Test
-    fun `entity scheduling fails instead of silently running globally`() {
-        val adapter = VelocityTaskAdapter { fail("Native scheduler must not be called") }
-        assertThrows(IllegalArgumentException::class.java) {
-            adapter.schedule(PlatformTaskRequest(TaskExecution.Kind.ENTITY, Any(), Duration.ZERO, null, Runnable {}))
+    fun `entity scheduling runs on the proxy scheduler and warns with the plugin name on every call`() {
+        val warnings = mutableListOf<String>()
+        var scheduled = 0
+        val adapter = VelocityTaskAdapter({ "shop" }, { warnings += it }) {
+            scheduled++
+            PlatformTaskHandle { true }
         }
+        val request = PlatformTaskRequest(TaskExecution.Kind.ENTITY, Any(), Duration.ZERO, null, Runnable {})
+
+        adapter.schedule(request)
+        adapter.schedule(request)
+
+        assertEquals(2, scheduled)
+        assertEquals(2, warnings.size)
+        assertTrue(warnings.all { it.contains("shop") && it.contains("игроку") })
     }
 
     @Test
     fun `adapter forwards native duration request and closes registrations`() {
         var seen: PlatformTaskRequest? = null
         val cancelled = AtomicBoolean()
-        val adapter = VelocityTaskAdapter { request ->
+        val adapter = VelocityTaskAdapter(NAMES, WARN) { request ->
             seen = request
             PlatformTaskHandle { cancelled.compareAndSet(false, true) }
         }
@@ -73,7 +86,7 @@ class VelocityTaskAdapterTest {
     fun `completed one shot is released before adapter close`() {
         lateinit var callback: Runnable
         val cancelled = AtomicBoolean()
-        val adapter = VelocityTaskAdapter { request ->
+        val adapter = VelocityTaskAdapter(NAMES, WARN) { request ->
             callback = request.callback
             PlatformTaskHandle { cancelled.compareAndSet(false, true) }
         }

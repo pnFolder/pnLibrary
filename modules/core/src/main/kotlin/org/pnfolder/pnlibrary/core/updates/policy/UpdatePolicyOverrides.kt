@@ -36,9 +36,10 @@ internal class UpdatePolicyOverrides(
     /** Whether any component was switched to automatic download at runtime. */
     fun anyAutomaticEnabled(): Boolean = state.automatic.values.any { it }
 
+    /** Remembers [channel] for [product], or forgets the choice when [channel] is null. */
     @Synchronized
-    fun setChannel(product: String, channel: UpdateChannel) {
-        state = state.copy(channels = state.channels + (product to channel))
+    fun setChannel(product: String, channel: UpdateChannel?) {
+        state = state.copy(channels = if (channel == null) state.channels - product else state.channels + (product to channel))
         save()
     }
 
