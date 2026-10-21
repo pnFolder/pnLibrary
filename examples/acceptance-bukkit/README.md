@@ -30,7 +30,7 @@ gradlew.bat :examples:acceptance-bukkit:assembleAcceptanceKit
 | `/pnaccept update` | обновления (после включения в `config.yml`) |
 | `/pnaccept download` | загрузку дополнительных файлов (после включения в `config.yml`) |
 
-## Удалённая политика
+## Политика
 
 Готовые политики на Java и Kotlin лежат в `policies/AcceptancePolicy.java` и `policies/AcceptancePolicy.kt`. Они
 требуют версию плагина `2.3.0`, поэтому текущий приёмочный плагин (`2.2.0-beta.2`) получит отказ.

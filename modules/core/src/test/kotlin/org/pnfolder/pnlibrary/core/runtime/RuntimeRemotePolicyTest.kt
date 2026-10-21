@@ -66,6 +66,41 @@ class RuntimeRemotePolicyTest {
     }
 
     @Test
+    fun `a policy that cannot be checked keeps the library running when told to`() {
+        val missing = RemotePolicySettings.builder().source(directory.resolve("Missing.kt").toUri().toString())
+            .onError(org.pnfolder.pnlibrary.api.plugin.PolicyErrorAction.KEEP_RUNNING).build()
+        val fixture = fixture(PlatformType.BUKKIT)
+        fixture.start(missing)
+        fixture.ready.single().run()
+        fixture.task!!.action.run(mock(TaskContext::class.java))
+        assertEquals(0, fixture.closes)
+        verify(fixture.platform, never()).disableOwner(fixture.owner)
+    }
+
+    @Test
+    fun `a policy that cannot be checked at start stops the plugin, but after one success a failure only warns`() {
+        val untilChecked = org.pnfolder.pnlibrary.api.plugin.PolicyErrorAction.DENY_UNTIL_CHECKED
+        val missing = RemotePolicySettings.builder().source(directory.resolve("Absent.kt").toUri().toString())
+            .onError(untilChecked).build()
+        val atStart = fixture(PlatformType.BUKKIT)
+        atStart.start(missing)
+        atStart.ready.single().run()
+        atStart.task!!.action.run(mock(TaskContext::class.java))
+        assertEquals(1, atStart.closes)
+
+        val allowed = policy("LaterPolicy", true)
+        val checkedOnce = allowed.copy(onError = untilChecked)
+        val later = fixture(PlatformType.BUKKIT)
+        later.start(checkedOnce)
+        later.ready.single().run()
+        later.task!!.action.run(mock(TaskContext::class.java))
+        Files.delete(directory.resolve("LaterPolicy.java"))
+        later.task!!.action.run(mock(TaskContext::class.java))
+        assertEquals(0, later.closes)
+        verify(later.platform, never()).disableOwner(later.owner)
+    }
+
+    @Test
     fun `unreadable policy and setup failures stop the library rather than ignore its policy`() {
         val missing = RemotePolicySettings.builder().source(directory.resolve("Missing.kt").toUri().toString()).build()
         val fixture = fixture(PlatformType.VELOCITY)

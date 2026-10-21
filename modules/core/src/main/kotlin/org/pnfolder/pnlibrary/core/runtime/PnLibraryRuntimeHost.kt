@@ -1,8 +1,11 @@
 package org.pnfolder.pnlibrary.core.runtime
 
 import org.pnfolder.pnlibrary.api.runtime.PnLibrary
+import org.pnfolder.pnlibrary.api.plugin.DenyAction
+import org.pnfolder.pnlibrary.api.plugin.PolicyErrorAction
 import org.pnfolder.pnlibrary.api.plugin.RemotePolicySettings
 import org.pnfolder.pnlibrary.spi.platform.PlatformAdapter
+import java.time.Duration
 import java.util.concurrent.atomic.AtomicBoolean
 
 /**
@@ -61,23 +64,21 @@ class PnLibraryRuntimeHost private constructor(
     /** Complete runtime bootstrap entry point used by platform plugins. */
     companion object {
         /**
-         * One code-owned policy declaration for pnLibrary on Bukkit, Velocity and Bungee.
-         * Leave null to preserve normal startup. Only trusted policy source may be used:
-         * it executes Java/Kotlin code with the server process's permissions.
+         * The policy of pnLibrary itself on Bukkit, Velocity and BungeeCord, published in the `pnlibrary-policy`
+         * repository. It executes Java code with the server's permissions, so only that trusted source is used.
          *
-         * Replace null with, for example:
-         * ```kotlin
-         * RemotePolicySettings.builder()
-         *     .source("https://example.org/pnLibrary/LibraryPolicy.kt")
-         *     .checkEvery(java.time.Duration.ofHours(6))
-         *     .value("product", "pnlibrary")
-         *     .build()
-         * ```
-         * A library has no independently stoppable module: only DISABLE_PLUGIN is valid.
-         * Checks begin after native readiness, asynchronously, just like consumer policies.
-         * A denied result or a loading/compilation error stops pnLibrary using the same monitor.
+         * Checks begin after native readiness, asynchronously, and repeat every six hours. Only an explicit denial
+         * stops pnLibrary (a library has no module to stop, so DISABLE_PLUGIN is the only valid action). A policy that
+         * cannot be downloaded or compiled at start, for example offline or on a JRE without `javac`, stops pnLibrary
+         * too; after one successful check such a failure only logs a warning.
          */
-        private val LIBRARY_POLICY: RemotePolicySettings? = null
+        private val LIBRARY_POLICY: RemotePolicySettings? = RemotePolicySettings.builder()
+            .source("https://raw.githubusercontent.com/pnFolder/pnlibrary-policy/main/.pnlibrary/policies/PnLibraryPolicy.java")
+            .onDeny(DenyAction.DISABLE_PLUGIN)
+            .checkEvery(Duration.ofHours(2))
+            // A library that could not be checked at start does not run; once checked, a dropped network only warns.
+            .onError(PolicyErrorAction.DENY_UNTIL_CHECKED)
+            .build()
 
         /**
          * Starts a complete pnLibrary runtime for one platform.

@@ -7,6 +7,7 @@ import org.pnfolder.pnlibrary.api.remote.RemotePolicyExplanation
 import org.pnfolder.pnlibrary.console.ConsoleCard
 import org.pnfolder.pnlibrary.console.ConsoleTree
 import org.pnfolder.pnlibrary.api.chat.ChatTone
+import org.pnfolder.pnlibrary.common.text.RussianText
 import org.pnfolder.pnlibrary.core.ui.ConsoleStyle
 import org.pnfolder.pnlibrary.spi.platform.PlatformLogging
 
@@ -40,6 +41,32 @@ internal class RemotePolicyNoticeRenderer(private val logging: PlatformLogging) 
             .tree(explanation.toConsoleTree())
             .blank()
             .status(action)
+            .build()
+            .send { line -> logging.console(owner, line) }
+    }
+
+    /**
+     * A policy that could not be checked while the plugin keeps running: why, what to do, and when it is retried.
+     * [network] adds the hint that the check needs internet access.
+     */
+    fun unchecked(owner: Any, metadata: PluginMetadata, policy: RemotePolicySettings, reason: String, network: Boolean) {
+        val card = ConsoleCard.builder(ConsoleStyle.theme(ChatTone.WARNING), "ПРОВЕРКА СОВМЕСТИМОСТИ")
+            .mascot("o.o", metadata.name, "проверку выполнить не удалось")
+            .blank()
+            .detail("Установлена", metadata.version)
+            .lastDetail("Следующая попытка", "через " + RussianText.period(policy.checkEvery))
+            .blank()
+            .section("Причина")
+            .lastItem(reason)
+            .section("Что делать")
+        if (network) {
+            card.item("Для проверки нужен интернет")
+                .lastItem("Откройте серверу доступ к raw.githubusercontent.com")
+        } else {
+            card.lastItem("Пришлите этот лог автору плагина")
+        }
+        card.blank()
+            .status("Плагин продолжает работу")
             .build()
             .send { line -> logging.console(owner, line) }
     }

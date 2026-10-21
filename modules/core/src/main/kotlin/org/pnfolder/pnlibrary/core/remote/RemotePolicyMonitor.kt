@@ -3,6 +3,7 @@ package org.pnfolder.pnlibrary.core.remote
 import org.pnfolder.pnlibrary.api.logging.PnLogger
 import org.pnfolder.pnlibrary.api.plugin.DenyAction
 import org.pnfolder.pnlibrary.api.plugin.PluginMetadata
+import org.pnfolder.pnlibrary.api.plugin.PolicyErrorAction
 import org.pnfolder.pnlibrary.api.plugin.RemotePolicySettings
 import org.pnfolder.pnlibrary.api.remote.RemotePolicyContext
 import org.pnfolder.pnlibrary.api.remote.RemotePolicyExplanation
@@ -11,6 +12,7 @@ import org.pnfolder.pnlibrary.api.tasks.TaskScope
 import org.pnfolder.pnlibrary.api.tasks.TaskSpec
 import org.pnfolder.pnlibrary.spi.platform.PlatformExecution
 import org.pnfolder.pnlibrary.spi.platform.PlatformOwnerControl
+import java.util.concurrent.atomic.AtomicBoolean
 
 /** Periodically evaluates a remote policy and stops the module or plugin when the policy denies it. */
 internal class RemotePolicyMonitor(
@@ -29,13 +31,14 @@ internal class RemotePolicyMonitor(
         closePlugin: () -> Unit,
     ) {
         val policyContext = ownership.remotePolicyContext(owner, policy.values)
+        val checked = AtomicBoolean()
         tasks.schedule(
             TaskSpec.builder()
                 .name("remote policy: ${metadata.id.value}")
                 .execution(TaskExecution.async())
                 .interval(policy.checkEvery)
                 .action {
-                    if (!isClosed()) check(owner, metadata, policy, policyContext, isClosed, logger, closeModule, closePlugin)
+                    if (!isClosed()) check(owner, metadata, policy, policyContext, checked, isClosed, logger, closeModule, closePlugin)
                 }
                 .build(),
         )
@@ -46,6 +49,7 @@ internal class RemotePolicyMonitor(
         metadata: PluginMetadata,
         policy: RemotePolicySettings,
         policyContext: RemotePolicyContext,
+        checked: AtomicBoolean,
         isClosed: () -> Boolean,
         logger: PnLogger,
         closeModule: () -> Unit,
@@ -56,16 +60,28 @@ internal class RemotePolicyMonitor(
                 execution.executeGlobal(Runnable {
                     if (isClosed()) return@Runnable
                     notices.render(owner, metadata, policy, decision.allowed, decision.explanation)
-                    if (!decision.allowed) deny(owner, policy, closeModule, closePlugin)
+                    if (decision.allowed) checked.set(true) else deny(owner, policy, closeModule, closePlugin)
                 })
             }
             .onFailure { error ->
                 execution.executeGlobal(Runnable {
                     if (isClosed()) return@Runnable
+                    val keepRunning = policy.onError == PolicyErrorAction.KEEP_RUNNING ||
+                        policy.onError == PolicyErrorAction.DENY_UNTIL_CHECKED && checked.get()
+                    if (keepRunning) {
+                        notices.unchecked(
+                            owner, metadata, policy,
+                            RemotePolicyFailureInterpreter.message(error),
+                            RemotePolicyFailureInterpreter.isNetwork(error),
+                        )
+                        return@Runnable
+                    }
                     val explanation = RemotePolicyExplanation.builder("Ошибка проверки")
                         .child(RemotePolicyFailureInterpreter.message(error))
-                        .build()
-                    notices.render(owner, metadata, policy, false, explanation)
+                    if (RemotePolicyFailureInterpreter.isNetwork(error)) {
+                        explanation.child("Для запуска нужен интернет: откройте серверу доступ к raw.githubusercontent.com")
+                    }
+                    notices.render(owner, metadata, policy, false, explanation.build())
                     logger.error("Remote policy failed for ${metadata.name}", error)
                     deny(owner, policy, closeModule, closePlugin)
                 })

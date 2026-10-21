@@ -67,7 +67,7 @@ Velocity требует 17, Paper Brigadier и FastStats для Velocity тре�
 | `distribution` | сборка jar-файлов и офлайн-установщика обновлений |
 | `examples/demo-bukkit` | демо-плагин со всеми возможностями и полный пример команд `ShopExamplePlugin` |
 | `examples/acceptance-bukkit` | приёмочный плагин на Java |
-| `examples/remote-policy` | пример удалённой политики |
+| `examples/remote-policy` | пример политики |
 | `examples/smoke-*` | проверка, что собранные jar компилируются у плагина на каждой платформе |
 | `tools/*` | скрипты релиза, проверки поколения API и приёмки |
 
@@ -89,7 +89,7 @@ Velocity требует 17, Paper Brigadier и FastStats для Velocity тре�
 | `core.downloads` | загрузка зависимостей плагинов |
 | `core.metrics` | bStats и FastStats за одним `MetricsService` |
 | `core.plugin` | регистрация плагинов и модулей |
-| `core.remote` | удалённые политики |
+| `core.remote` | политики |
 | `core.placeholders`, `core.events`, `core.tasks`, `core.cooldowns`, `core.services`, `core.audiences`, `core.text` | реализации одноимённых сервисов API |
 | `core.ui` | цвета палитры для консоли |
 | `core.io`, `core.security`, `core.lifecycle` | текстовые файлы, шифрование, очистка ресурсов |
