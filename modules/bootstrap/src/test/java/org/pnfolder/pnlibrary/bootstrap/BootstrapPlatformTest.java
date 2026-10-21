@@ -28,6 +28,13 @@ class BootstrapPlatformTest {
     }
 
     @Test
+    void theSupportLinkDefaultsToPnFolderAndCanBeReplacedByAnHttpsLink() {
+        assertTrue(BootstrapOptions.builder("1.0.0").build().supportUrl().startsWith("https://"));
+        assertEquals("https://discord.gg/mine", BootstrapOptions.builder("1.0.0").support("https://discord.gg/mine").build().supportUrl());
+        assertThrows(IllegalArgumentException.class, () -> BootstrapOptions.builder("1.0.0").support("http://example.org").build());
+    }
+
+    @Test
     void theRestartCountdownIsOffByDefaultAndAnnouncesEveryTenSecondsThenTheLastFive() {
         assertEquals(0, BootstrapOptions.builder("1.0.0").build().restartCountdown());
         assertEquals(30, BootstrapOptions.builder("1.0.0").restartCountdown(30).build().restartCountdown());

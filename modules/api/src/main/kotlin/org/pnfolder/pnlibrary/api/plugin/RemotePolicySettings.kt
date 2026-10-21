@@ -33,6 +33,7 @@ enum class PolicyErrorAction {
  * @property checkEvery interval between policy refreshes
  * @property onDeny action applied after a denied result
  * @property onError what an unreachable, uncompilable or failing policy means
+ * @property supportUrl where administrators get help when the plugin cannot run; `null` means the pnFolder Discord
  * @property values immutable application-defined policy values
  */
 data class RemotePolicySettings(
@@ -41,6 +42,7 @@ data class RemotePolicySettings(
     val onDeny: DenyAction = DenyAction.DISABLE_PLUGIN,
     val values: Map<String, String> = emptyMap(),
     val onError: PolicyErrorAction = PolicyErrorAction.DENY,
+    val supportUrl: String? = null,
 ) {
     /** Fluent Java-friendly builder for [RemotePolicySettings]. */
     class Builder internal constructor() {
@@ -48,6 +50,7 @@ data class RemotePolicySettings(
         private var checkEvery: Duration = Duration.ofHours(6)
         private var onDeny: DenyAction = DenyAction.DISABLE_PLUGIN
         private var onError: PolicyErrorAction = PolicyErrorAction.DENY
+        private var supportUrl: String? = null
         private val values = linkedMapOf<String, String>()
 
         /** Sets and validates the Java/Kotlin policy source URI. */
@@ -76,6 +79,12 @@ data class RemotePolicySettings(
         /** Sets what a policy that cannot be checked means; [PolicyErrorAction.DENY] by default. */
         fun onError(value: PolicyErrorAction): Builder = apply { onError = value }
 
+        /** Sets the support link shown when the plugin cannot run, such as a Discord invite; HTTPS only. */
+        fun support(url: String): Builder = apply {
+            require(URI.create(url).isHttps()) { "Support link must be an HTTPS URL" }
+            supportUrl = url
+        }
+
         /** Adds or replaces one application-defined policy value. */
         fun value(key: String, value: String): Builder = apply {
             val normalized = key.trim()
@@ -92,6 +101,7 @@ data class RemotePolicySettings(
             onDeny,
             Collections.unmodifiableMap(LinkedHashMap(values)),
             onError,
+            supportUrl,
         )
     }
 

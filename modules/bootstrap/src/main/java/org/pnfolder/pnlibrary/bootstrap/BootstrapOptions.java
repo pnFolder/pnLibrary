@@ -9,6 +9,7 @@ public final class BootstrapOptions {
     private final String repositoryName;
     private final long maximumBytes;
     private final int restartCountdown;
+    private final String supportUrl;
 
     private BootstrapOptions(Builder builder) {
         this.minimumVersion = BootstrapVersion.normalize(builder.minimumVersion);
@@ -20,6 +21,8 @@ public final class BootstrapOptions {
             throw new IllegalArgumentException("restartCountdown must be between 0 and 300 seconds");
         }
         this.restartCountdown = builder.restartCountdown;
+        if (!builder.supportUrl.startsWith("https://")) throw new IllegalArgumentException("support link must be an HTTPS URL");
+        this.supportUrl = builder.supportUrl;
     }
 
     /** Returns the minimum required library version.
@@ -42,6 +45,10 @@ public final class BootstrapOptions {
      * @return seconds, or {@code 0} when the proxy is never stopped automatically */
     public int restartCountdown() { return restartCountdown; }
 
+    /** Returns where administrators get help when pnLibrary cannot be installed.
+     * @return an HTTPS link, the pnFolder Discord by default */
+    public String supportUrl() { return supportUrl; }
+
     /**
      * Creates an options builder that requires at least {@code minimumVersion}.
      *
@@ -63,6 +70,7 @@ public final class BootstrapOptions {
         private String repositoryName = "pnLibrary";
         private long maximumBytes = 512L * 1024L * 1024L;
         private int restartCountdown;
+        private String supportUrl = BootstrapDefaults.SUPPORT_URL;
 
         private Builder(String minimumVersion) { this.minimumVersion = minimumVersion; }
 
@@ -100,6 +108,17 @@ public final class BootstrapOptions {
          */
         public Builder restartCountdown(int seconds) {
             this.restartCountdown = seconds;
+            return this;
+        }
+
+        /**
+         * Sets the support link shown when pnLibrary cannot be installed or is too old, such as your own Discord.
+         *
+         * @param url HTTPS link; the pnFolder Discord by default
+         * @return this builder
+         */
+        public Builder support(String url) {
+            this.supportUrl = java.util.Objects.requireNonNull(url, "url");
             return this;
         }
 

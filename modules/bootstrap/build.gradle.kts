@@ -17,6 +17,33 @@ java {
     withSourcesJar()
 }
 
+// The support link comes from gradle.properties, like PnLibraryIdentity, so it is written in one place only.
+val defaultsDir = layout.buildDirectory.dir("generated/bootstrap/java")
+val generateDefaults = tasks.register("generateBootstrapDefaults") {
+    val supportUrl = rootProject.property("pnlibrary.support-url").toString()
+    inputs.property("supportUrl", supportUrl)
+    outputs.dir(defaultsDir)
+    doLast {
+        val target = defaultsDir.get().file("org/pnfolder/pnlibrary/bootstrap/BootstrapDefaults.java").asFile
+        target.parentFile.mkdirs()
+        target.writeText(
+            """
+            |package org.pnfolder.pnlibrary.bootstrap;
+            |
+            |/** Generated from gradle.properties. Change the pnlibrary.* keys there, not this file. */
+            |final class BootstrapDefaults {
+            |    static final String SUPPORT_URL = "$supportUrl";
+            |
+            |    private BootstrapDefaults() {}
+            |}
+            |""".trimMargin(),
+        )
+    }
+}
+sourceSets.named("main") { java.srcDir(defaultsDir) }
+tasks.named("compileJava") { dependsOn(generateDefaults) }
+tasks.matching { it.name == "sourcesJar" }.configureEach { dependsOn(generateDefaults) }
+
 tasks.withType<Test>().configureEach { useJUnitPlatform() }
 
 mavenPublishing {

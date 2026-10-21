@@ -126,6 +126,7 @@ class MyPlugin @Inject constructor(private val proxy: ProxyServer) {
 val options = BootstrapOptions.builder("1.0.0")
     .repository("pnFolder", "pnLibrary")     // откуда брать релизы
     .maximumBytes(256L * 1024 * 1024)        // предел размера файла
+    .support("https://discord.gg/...")       // куда писать, если не получается; по умолчанию Discord pnFolder
     .build()
 PnLibraryBootstrap.ensureInstalled(this, options)
 ```

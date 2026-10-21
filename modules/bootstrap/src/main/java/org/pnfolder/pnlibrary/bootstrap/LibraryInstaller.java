@@ -75,6 +75,8 @@ public final class LibraryInstaller {
                 .section("Что делать")
                 .item("Обновите pnLibrary: " + platform.updateHint())
                 .lastItem("или скачайте вручную: " + releasesPage())
+                .section("Не получается?")
+                .lastItem("Напишите в поддержку: " + options.supportUrl())
                 .blank()
                 .status(pluginName + " не был запущен")
                 .build().send(console::send);
@@ -214,6 +216,8 @@ public final class LibraryInstaller {
                 .item("Проверьте доступ сервера к GitHub")
                 .item("Скачайте jar для " + platform.displayName() + " вручную")
                 .lastItem(releasesPage())
+                .section("Не получается?")
+                .lastItem("Напишите в поддержку: " + options.supportUrl())
                 .blank()
                 .status(pluginName + " не был запущен")
                 .build().send(console::send);

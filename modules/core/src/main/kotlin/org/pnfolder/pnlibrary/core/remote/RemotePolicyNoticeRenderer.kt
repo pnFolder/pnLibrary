@@ -4,6 +4,7 @@ import org.pnfolder.pnlibrary.api.plugin.DenyAction
 import org.pnfolder.pnlibrary.api.plugin.PluginMetadata
 import org.pnfolder.pnlibrary.api.plugin.RemotePolicySettings
 import org.pnfolder.pnlibrary.api.remote.RemotePolicyExplanation
+import org.pnfolder.pnlibrary.api.runtime.PnLibraryIdentity
 import org.pnfolder.pnlibrary.console.ConsoleCard
 import org.pnfolder.pnlibrary.console.ConsoleTree
 import org.pnfolder.pnlibrary.api.chat.ChatTone
@@ -27,7 +28,7 @@ internal class RemotePolicyNoticeRenderer(private val logging: PlatformLogging) 
         }
         val theme = ConsoleStyle.theme(if (allowed) ChatTone.SUCCESS else ChatTone.FAILURE)
 
-        ConsoleCard.builder(theme, "ПРОВЕРКА СОВМЕСТИМОСТИ")
+        val card = ConsoleCard.builder(theme, "ПРОВЕРКА СОВМЕСТИМОСТИ")
             .mascot(
                 if (allowed) "^.^" else "x.x",
                 metadata.name,
@@ -39,7 +40,8 @@ internal class RemotePolicyNoticeRenderer(private val logging: PlatformLogging) 
             .blank()
             .section(if (allowed) "Результат" else "Почему запуск остановлен")
             .tree(explanation.toConsoleTree())
-            .blank()
+        if (!allowed) card.section("Не получается?").lastItem("Напишите в поддержку: " + support(policy))
+        card.blank()
             .status(action)
             .build()
             .send { line -> logging.console(owner, line) }
@@ -65,11 +67,14 @@ internal class RemotePolicyNoticeRenderer(private val logging: PlatformLogging) 
         } else {
             card.lastItem("Пришлите этот лог автору плагина")
         }
+        card.section("Не получается?").lastItem("Напишите в поддержку: " + support(policy))
         card.blank()
             .status("Плагин продолжает работу")
             .build()
             .send { line -> logging.console(owner, line) }
     }
+
+    private fun support(policy: RemotePolicySettings): String = policy.supportUrl ?: PnLibraryIdentity.SUPPORT_URL
 
     private fun RemotePolicyExplanation.toConsoleTree(): ConsoleTree {
         val tree = ConsoleTree.builder(text)
