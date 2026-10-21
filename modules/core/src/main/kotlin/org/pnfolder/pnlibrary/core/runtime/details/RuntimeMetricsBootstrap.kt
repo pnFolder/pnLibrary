@@ -20,6 +20,10 @@ internal class RuntimeMetricsBootstrap(
                 owner,
                 listOf(
                     MetricsProviderConfiguration(
+                        provider = MetricsProvider.BSTATS,
+                        projectId = BSTATS_PROJECT_ID,
+                    ),
+                    MetricsProviderConfiguration(
                         provider = MetricsProvider.FASTSTATS,
                         token = FASTSTATS_TOKEN,
                     ),
@@ -32,11 +36,12 @@ internal class RuntimeMetricsBootstrap(
             }
         }.onFailure { error ->
             runCatching { openedSession?.close() }
-            warning("FastStats metrics could not be started: ${error.message ?: error.javaClass.simpleName}")
+            warning("Metrics could not be started: ${error.message ?: error.javaClass.simpleName}")
         }.getOrNull()
     }
 
     private companion object {
-        const val FASTSTATS_TOKEN = "009192430b9bfffa176e8cc8dd67cad7"
+        const val BSTATS_PROJECT_ID = 34864
+        const val FASTSTATS_TOKEN = "f42221b1c859605f4c717b427f5df910"
     }
 }
