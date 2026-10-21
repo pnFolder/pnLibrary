@@ -1,7 +1,6 @@
 package org.pnfolder.pnlibrary.api.updates
 
 import org.pnfolder.pnlibrary.api.version.ApiVersionRange
-import java.util.Collections
 
 /**
  * Immutable point-in-time state of one registered product updater.
@@ -35,5 +34,5 @@ class UpdateSnapshot(
     availableReleases: List<ReleaseSummary> = emptyList(),
 ) {
     /** Immutable copy of known catalog releases, including channels not selected for installation. */
-    val availableReleases: List<ReleaseSummary> = Collections.unmodifiableList(ArrayList(availableReleases))
+    val availableReleases: List<ReleaseSummary> = availableReleases.frozen()
 }

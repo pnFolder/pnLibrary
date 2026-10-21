@@ -17,8 +17,8 @@ class ExternalArtifact(
 ) {
     init {
         require(uri.isHttps()) { "External artifact must use HTTPS" }
-        require(size == null || size > 0) { "External artifact size must be positive" }
-        require(sha256 == null || SHA_256.matches(sha256)) { "External artifact SHA-256 is invalid" }
+        requirePositiveSize(size, "External artifact")
+        requireSha256(sha256, "External artifact")
     }
 
     /** Integrity validation constants. */

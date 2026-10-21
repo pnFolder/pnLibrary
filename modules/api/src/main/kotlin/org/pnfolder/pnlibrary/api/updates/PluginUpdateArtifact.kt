@@ -18,6 +18,5 @@ class PluginUpdateArtifact(
 ) {
 
     /** Returns whether [javaFeature] is inside this artifact's inclusive Java range. */
-    fun supports(javaFeature: Int): Boolean =
-        javaFeature >= minimumJava && (maximumJava == null || javaFeature <= maximumJava)
+    fun supports(javaFeature: Int): Boolean = javaInRange(javaFeature, minimumJava, maximumJava)
 }

@@ -1,7 +1,6 @@
 package org.pnfolder.pnlibrary.api.updates
 
 import java.time.Instant
-import java.util.Collections
 import java.util.UUID
 
 /**
@@ -26,5 +25,5 @@ class UpdateHistoryEntry(
     val message: String?,
 ) {
     /** Immutable version transitions associated with this event. */
-    val changes: List<ProductChange> = Collections.unmodifiableList(ArrayList(changes))
+    val changes: List<ProductChange> = changes.frozen()
 }

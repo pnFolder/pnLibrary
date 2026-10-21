@@ -18,6 +18,6 @@ data class InstalledProduct(
     val providesApi: Int? = null,
 ) {
     init {
-        require(providesApi == null || providesApi > 0) { "Provided API generation must be positive" }
+        requireProvidedApi(providesApi)
     }
 }

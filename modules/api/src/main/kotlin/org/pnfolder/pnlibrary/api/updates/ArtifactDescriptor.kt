@@ -29,18 +29,16 @@ class ArtifactDescriptor(
         require(SAFE_FILE.matches(file) && file.endsWith(".jar", true)) { "Unsafe artifact filename: $file" }
         require(minimumJava >= 8) { "Minimum Java must be at least 8" }
         require(maximumJava == null || maximumJava >= minimumJava) { "Maximum Java must be >= minimum Java" }
-        require(size == null || size > 0) { "Artifact size must be positive" }
-        require(sha256 == null || SHA_256.matches(sha256)) { "Artifact SHA-256 is invalid" }
+        requirePositiveSize(size, "Artifact")
+        requireSha256(sha256, "Artifact")
         require(downloadUri == null || downloadUri.isHttps()) { "Artifact URL must use HTTPS" }
     }
 
     /** Returns whether [javaFeature] is inside this artifact's Java range. */
-    fun supports(javaFeature: Int): Boolean = javaFeature >= minimumJava &&
-        (maximumJava == null || javaFeature <= maximumJava)
+    fun supports(javaFeature: Int): Boolean = javaInRange(javaFeature, minimumJava, maximumJava)
 
     /** Filename and integrity validation constants. */
     companion object {
         private val SAFE_FILE = Regex("[A-Za-z0-9][A-Za-z0-9._-]*")
-        private val SHA_256 = Regex("[0-9a-fA-F]{64}")
     }
 }

@@ -1,6 +1,5 @@
 package org.pnfolder.pnlibrary.api.updates
 
-import java.util.Collections
 import java.util.UUID
 
 /**
@@ -23,20 +22,19 @@ class UpdatePlanSnapshot(
 ) {
     /** Detached graph with immutable lists, safe to share with observers. */
     val plan: UpdatePlan? = plan?.copy(
-        changes = immutableCopy(plan.changes),
-        selected = immutableCopy(plan.selected.map { release ->
+        changes = plan.changes.frozen(),
+        selected = plan.selected.map { release ->
             release.copy(
-                dependencies = immutableCopy(release.dependencies),
-                artifacts = immutableCopy(release.artifacts),
-                externalPluginDependencies = immutableCopy(release.externalPluginDependencies),
+                dependencies = release.dependencies.frozen(),
+                artifacts = release.artifacts.frozen(),
+                externalPluginDependencies = release.externalPluginDependencies.frozen(),
             )
-        }),
+        }.frozen(),
     )
-    val blockers: List<BlockedReason> = Collections.unmodifiableList(blockers.toList())
+    val blockers: List<BlockedReason> = blockers.frozen()
 
     init {
         require(revision >= 0) { "Plan revision must not be negative" }
     }
 
-    private fun <T> immutableCopy(values: List<T>): List<T> = Collections.unmodifiableList(ArrayList(values))
 }

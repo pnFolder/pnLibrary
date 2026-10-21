@@ -35,7 +35,7 @@ data class ProductRelease(
     val description: String = "",
 ) {
     init {
-        require(providesApi == null || providesApi > 0) { "Provided API generation must be positive" }
+        requireProvidedApi(providesApi)
         require(dependencies.map(ProductDependency::product).distinct().size == dependencies.size) {
             "Product release contains duplicate dependencies"
         }

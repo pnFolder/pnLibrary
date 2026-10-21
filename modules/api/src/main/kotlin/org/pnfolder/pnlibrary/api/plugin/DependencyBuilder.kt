@@ -1,12 +1,9 @@
 package org.pnfolder.pnlibrary.api.plugin
 
-import org.pnfolder.pnlibrary.api.internal.requireHttpsUri
-import org.pnfolder.pnlibrary.api.updates.ExternalArtifact
 import org.pnfolder.pnlibrary.api.updates.ExternalPluginDependency
 import org.pnfolder.pnlibrary.api.updates.ManagedProductDependency
 import org.pnfolder.pnlibrary.api.updates.ProductId
 import org.pnfolder.pnlibrary.api.version.SemanticVersion
-import java.net.URI
 import java.util.Collections
 import java.util.function.Consumer
 
@@ -84,74 +81,42 @@ class DependencyBuilder {
 
     /** Fluent builder for one third-party native-plugin dependency. */
     class ExternalBuilder internal constructor(private val name: String) {
-        private var minimum: SemanticVersion? = null
-        private var maximumInclusive: SemanticVersion? = null
-        private var maximumExclusive: SemanticVersion? = null
-        private var page: URI? = null
-        private var artifact: ExternalArtifact? = null
-        private var required = true
-        private var policy = DownloadPolicy.MANUAL
-        private var verifyPluginId = true
-        private var verifyVersion = true
+        private var minimum: String? = null
+        private val settings = mutableListOf<Consumer<ExternalPluginDependency.Builder>>()
 
         init { require(name.isNotBlank()) { "External plugin name must not be blank" } }
 
-        /** Sets the required minimum version. */
-        fun minimumVersion(value: String): ExternalBuilder = apply { minimum = SemanticVersion.parse(value) }
-        /** Sets the inclusive maximum version. */
-        fun maximumVersion(value: String): ExternalBuilder = apply { maximumInclusive = SemanticVersion.parse(value) }
-        /** Sets the exclusive maximum version. */
-        fun maximumVersionExclusive(value: String): ExternalBuilder = apply { maximumExclusive = SemanticVersion.parse(value) }
-        /** Sets the administrator-facing HTTPS download page. */
-        fun downloadPage(url: String): ExternalBuilder = apply {
-            page = requireHttpsUri(url, "Download page must use HTTPS")
+        fun minimumVersion(value: String): ExternalBuilder = apply {
+            SemanticVersion.parse(value)
+            minimum = value
         }
-        /** Sets an exact verified artifact suitable for automatic installation. */
-        fun artifact(url: String, size: Long, sha256: String): ExternalBuilder = apply {
-            artifact = ExternalArtifact(URI.create(url), size, sha256)
+        fun maximumVersion(value: String): ExternalBuilder {
+            SemanticVersion.parse(value)
+            return add { it.maximumVersion(value) }
         }
-        /** Sets an HTTPS artifact without publisher integrity metadata. */
-        fun url(value: String): ExternalBuilder = apply { artifact = ExternalArtifact(URI.create(value), null, null) }
-        /** Sets whether absence blocks registration. */
-        fun required(value: Boolean): ExternalBuilder = apply { required = value }
-        /** Enables or disables staged plugin-ID verification. */
-        fun verifyPluginId(value: Boolean): ExternalBuilder = apply { verifyPluginId = value }
-        /** Enables or disables staged plugin-version verification. */
-        fun verifyVersion(value: Boolean): ExternalBuilder = apply { verifyVersion = value }
-        /** Sets the dependency download policy. */
-        fun downloadPolicy(value: DownloadPolicy): ExternalBuilder = apply { policy = value }
-        /** Selects automatic or manual installation. */
-        fun automaticDownload(value: Boolean): ExternalBuilder = apply {
-            policy = if (value) DownloadPolicy.AUTOMATIC else DownloadPolicy.MANUAL
+        fun maximumVersionExclusive(value: String): ExternalBuilder {
+            SemanticVersion.parse(value)
+            return add { it.maximumVersionExclusive(value) }
         }
-        /** Enables or disables mandatory automatic installation. */
-        fun forceAutomaticDownload(value: Boolean): ExternalBuilder = apply {
-            if (value) policy = DownloadPolicy.FORCED
-            else if (policy == DownloadPolicy.FORCED) policy = DownloadPolicy.MANUAL
-        }
+        fun downloadPage(url: String): ExternalBuilder = add { it.downloadPage(url) }
+        fun artifact(url: String, size: Long, sha256: String): ExternalBuilder = add { it.artifact(url, size, sha256) }
+        fun url(value: String): ExternalBuilder = add { it.url(value) }
+        fun required(value: Boolean): ExternalBuilder = add { it.required(value) }
+        fun verifyPluginId(value: Boolean): ExternalBuilder = add { it.verifyPluginId(value) }
+        fun verifyVersion(value: Boolean): ExternalBuilder = add { it.verifyVersion(value) }
+        fun downloadPolicy(value: DownloadPolicy): ExternalBuilder = add { it.downloadPolicy(value) }
+        fun automaticDownload(value: Boolean): ExternalBuilder = add { it.automaticDownload(value) }
+        fun forceAutomaticDownload(value: Boolean): ExternalBuilder = add { it.forceAutomaticDownload(value) }
+
+        private fun add(step: Consumer<ExternalPluginDependency.Builder>): ExternalBuilder = apply { settings += step }
 
         internal fun build(): ExternalPluginDependency {
-            val minimumVersion = requireNotNull(minimum) { "Minimum plugin version is required" }
-            VersionConstraint(minimumVersion, maximumInclusive, maximumExclusive)
-            require(page != null || artifact != null) { "External dependency requires a download page or artifact" }
-            require(artifact != null || policy == DownloadPolicy.MANUAL) {
-                "A download page cannot be installed automatically"
-            }
-            return ExternalPluginDependency.builder(name.trim(), minimumVersion.toString())
-                .also { target ->
-                    maximumInclusive?.let { target.maximumVersion(it.toString()) }
-                    maximumExclusive?.let { target.maximumVersionExclusive(it.toString()) }
-                    page?.let { target.downloadPage(it.toString()) }
-                    artifact?.let {
-                        if (it.size != null && it.sha256 != null) target.artifact(it.uri.toString(), it.size, it.sha256)
-                        else target.url(it.uri.toString())
-                    }
-                }
-                .required(required)
-                .verifyPluginId(verifyPluginId)
-                .verifyVersion(verifyVersion)
-                .downloadPolicy(policy)
-                .build()
+            val builder = ExternalPluginDependency.builder(
+                name,
+                requireNotNull(minimum) { "Minimum plugin version is required" },
+            )
+            settings.forEach { it.accept(builder) }
+            return builder.build()
         }
     }
 }

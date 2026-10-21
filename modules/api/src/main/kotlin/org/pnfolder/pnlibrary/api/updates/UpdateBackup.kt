@@ -1,7 +1,6 @@
 package org.pnfolder.pnlibrary.api.updates
 
 import java.time.Instant
-import java.util.Collections
 import java.util.UUID
 
 /**
@@ -19,7 +18,7 @@ class UpdateBackup(
     val configurationFiles: Int = 0,
 ) {
     /** Immutable description of the complete component set restored together. */
-    val components: List<UpdateBackupComponent> = Collections.unmodifiableList(ArrayList(components))
+    val components: List<UpdateBackupComponent> = components.frozen()
 }
 
 /**
