@@ -1,6 +1,5 @@
 plugins {
     java
-    id("org.pnfolder.pnlibrary.component-metadata")
 }
 
 base { archivesName = "pnLibrary-acceptance" }
@@ -24,14 +23,6 @@ val resourceVersion = rootProject.version.toString()
 tasks.named<ProcessResources>("processResources") {
     inputs.property("version", resourceVersion)
     filesMatching("plugin.yml") { expand(mapOf("version" to resourceVersion)) }
-}
-
-pnComponentMetadata {
-    id.set("acceptance")
-    version.set(resourceVersion)
-    apiVersions(1, 1)
-    channel.set("beta")
-    javaMinimum.set(8)
 }
 
 tasks.register<Sync>("assembleAcceptanceKit") {

@@ -24,8 +24,6 @@ apiValidation {
             "paper",
             "currency-runtime",
             "config-runtime",
-            "gradle",
-            "maven",
         ),
     )
 }

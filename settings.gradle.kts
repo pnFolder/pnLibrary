@@ -1,7 +1,3 @@
-pluginManagement {
-    includeBuild("tools/component-metadata/gradle")
-}
-
 rootProject.name = "pnLibrary"
 
 include(
@@ -31,7 +27,4 @@ include(
     ":examples:smoke-bukkit",
     ":examples:smoke-bungee",
     ":examples:smoke-velocity",
-    ":tools:component-metadata:core",
-    ":tools:component-metadata:gradle",
-    ":tools:component-metadata:maven",
 )
