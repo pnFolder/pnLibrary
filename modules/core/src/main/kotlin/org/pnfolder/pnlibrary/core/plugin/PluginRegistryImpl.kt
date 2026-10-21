@@ -3,8 +3,8 @@ package org.pnfolder.pnlibrary.core.plugin
 import org.pnfolder.pnlibrary.api.actions.ActionService
 import org.pnfolder.pnlibrary.api.commands.CommandDefinition
 import org.pnfolder.pnlibrary.api.commands.CommandRegistration
-import org.pnfolder.pnlibrary.api.commands.CommandProblemHandler
-import org.pnfolder.pnlibrary.api.commands.CommandProblemKind
+import org.pnfolder.pnlibrary.api.commands.CommandError
+import org.pnfolder.pnlibrary.api.commands.CommandErrorHandler
 import org.pnfolder.pnlibrary.api.config.ConfigScope
 import org.pnfolder.pnlibrary.api.cooldowns.CooldownService
 import org.pnfolder.pnlibrary.api.diagnostics.DiagnosticRegistration
@@ -169,8 +169,8 @@ internal class PluginRegistryImpl(
 
         /** What the whole plugin answers to a denied or mistyped command; each module's scope inherits from it. */
         val commandFeedback = CommandFeedbackScope()
-        override fun onCommandProblem(kind: CommandProblemKind, handler: CommandProblemHandler) {
-            commandFeedback.handlers[kind] = handler
+        override fun <E : CommandError> onCommandError(type: Class<E>, handler: CommandErrorHandler<E>) {
+            commandFeedback.handlers[type] = handler
         }
 
         override fun registerModule(id: ModuleId, configure: Consumer<PluginBuilder>): ModuleContext =
@@ -252,8 +252,8 @@ internal class PluginRegistryImpl(
                 moduleCommands.add(registration)
                 registration
             }
-        override fun onCommandProblem(kind: CommandProblemKind, handler: CommandProblemHandler) {
-            commandFeedback.handlers[kind] = handler
+        override fun <E : CommandError> onCommandError(type: Class<E>, handler: CommandErrorHandler<E>) {
+            commandFeedback.handlers[type] = handler
         }
         override val isClosed: Boolean get() = contextClosed.get()
         override val tasks: TaskScope get() = resources.tasks

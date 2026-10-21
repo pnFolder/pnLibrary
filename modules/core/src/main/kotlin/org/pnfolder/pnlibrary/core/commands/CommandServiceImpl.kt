@@ -4,11 +4,10 @@ import net.kyori.adventure.text.Component
 import org.pnfolder.pnlibrary.api.commands.CommandContext
 import org.pnfolder.pnlibrary.api.commands.CommandDefinition
 import org.pnfolder.pnlibrary.api.commands.CommandRegistration
+import org.pnfolder.pnlibrary.api.commands.CommandError
+import org.pnfolder.pnlibrary.api.commands.CommandFailure
 import org.pnfolder.pnlibrary.api.commands.CommandNode
-import org.pnfolder.pnlibrary.api.commands.CommandProblem
-import org.pnfolder.pnlibrary.api.commands.CommandProblemException
-import org.pnfolder.pnlibrary.api.commands.CommandProblemHandler
-import org.pnfolder.pnlibrary.api.commands.CommandProblemKind
+import org.pnfolder.pnlibrary.api.commands.NoPermission
 import org.pnfolder.pnlibrary.api.commands.completedExecution
 import org.pnfolder.pnlibrary.api.commands.completedSuggestions
 import org.pnfolder.pnlibrary.api.logging.LogLevel
@@ -109,7 +108,7 @@ internal class CommandServiceImpl(
         val executable = when (route) {
             is CommandRoute.Executable -> route
             is CommandRoute.Problem -> {
-                answer(registration, CommandProblem(route.kind, context, route.details), route.nodes)
+                answer(registration, context, route.error, route.nodes)
                 return completedExecution()
             }
         }
@@ -126,44 +125,40 @@ internal class CommandServiceImpl(
     }
 
     /**
-     * A command that threw a [CommandProblemException] reports a problem of its own: it is answered through the same
+     * A command that stopped with a [CommandFailure] reports an error of its own: it is answered through the same
      * levels as any other. Anything else is an unexpected error, which is logged and shown as a failure.
      */
     private fun failed(registration: Registration, executable: CommandRoute.Executable, error: Throwable) {
-        val problem = generateSequence(error) { it.cause }.filterIsInstance<CommandProblemException>().firstOrNull()
-        if (problem == null) {
+        val failure = generateSequence(error) { it.cause }.filterIsInstance<CommandFailure>().firstOrNull()
+        if (failure == null) {
             executionFailed(registration.owner, registration.command.name, executable.context, error)
             return
         }
-        answer(registration, CommandProblem(problem.kind, executable.context, problem.details), executable.path.asReversed())
+        answer(registration, executable.context, failure.error, executable.path.asReversed())
     }
 
     /**
-     * Answers [problem] from the most specific level that can: the nodes from the deepest involved up to the command,
-     * then the plugin module, then the plugin, then the library standard. On each level a handler for the problem's
-     * kind comes first, then one for its parent kinds; at a node, a plain no-permission text counts as a handler.
+     * Answers [error] from the most specific level that can: the nodes from the deepest involved up to the command,
+     * then the plugin module, then the plugin, then the library standard. On each level the handler of the error's
+     * own class comes first, then the one of its nearest base class; at a node, a plain no-permission text counts as
+     * a handler.
      */
-    private fun answer(registration: Registration, problem: CommandProblem, nodes: List<CommandNode>) {
-        fun handledBy(handlers: Map<CommandProblemKind, CommandProblemHandler>): Boolean {
-            for (kind in problem.kind.lineage) {
-                val handler = handlers[kind] ?: continue
-                if (react(registration) { handler.handle(problem) }) return true
-            }
-            return false
+    private fun answer(registration: Registration, context: CommandContext, error: CommandError, nodes: List<CommandNode>) {
+        fun handledBy(handlers: ErrorHandlers): Boolean {
+            val handler = handlerFor(handlers, error) ?: return false
+            return react(registration) { handler.handle(context, error) }
         }
         for (node in nodes) {
-            if (handledBy(node.problemHandlers)) return
+            if (handledBy(node.errorHandlers)) return
             val text = node.noPermissionMessage
-            if (problem.kind == CommandProblemKind.DENIED && text != null &&
-                react(registration) { problem.sender.send(Component.text(text)) }
-            ) return
+            if (error is NoPermission && text != null && react(registration) { context.sender.send(Component.text(text)) }) return
         }
         var scope = registration.feedback
         while (scope != null) {
             if (handledBy(scope.handlers)) return
             scope = scope.parent
         }
-        react(registration) { standard.answer(problem) }
+        react(registration) { standard.answer(context, error) }
     }
 
     /**

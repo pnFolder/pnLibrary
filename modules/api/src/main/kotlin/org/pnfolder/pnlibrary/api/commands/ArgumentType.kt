@@ -69,11 +69,15 @@ fun interface ArgumentType<T : Any> {
     val spec: ArgumentSpec get() = ArgumentSpec.TEXT
 
     /**
-     * The kind of problem reported when [parse] returns `null`. The default is
-     * [CommandProblemKind.INVALID_ARGUMENT]; a player argument says [CommandProblemKind.PLAYER_NOT_FOUND], and a
-     * type of your own can name a [CommandProblemKind.custom] kind so that it gets its own answer.
+     * The error reported when [parse] returns `null`: by default an [InvalidArgument]. A player argument answers
+     * [PlayerNotFound], and a type of your own can return an error class of its own, such as `UnknownItem(value)`,
+     * so that it gets its own answer.
+     *
+     * @param usage the usage hint of the command
+     * @param argument the name of the argument that failed
+     * @param value what was typed
      */
-    val problem: CommandProblemKind get() = CommandProblemKind.INVALID_ARGUMENT
+    fun error(usage: String, argument: String, value: String): CommandError = InvalidArgument(usage, argument, value)
 
     /** Built-in argument parsers and parser factories. */
     companion object {
@@ -146,13 +150,13 @@ fun interface ArgumentType<T : Any> {
 
         /**
          * Returns an argument that finds an online player by the typed name with [lookup]. A name nobody answers to
-         * is reported as [CommandProblemKind.PLAYER_NOT_FOUND], which the library answers with "player is not
+         * is reported as [PlayerNotFound], which the library answers with "player is not
          * online" unless a handler says otherwise.
          */
         @JvmStatic
         fun player(lookup: (String) -> LibraryPlayer?): ArgumentType<LibraryPlayer> = object : ArgumentType<LibraryPlayer> {
             override fun parse(value: String): LibraryPlayer? = lookup(value)
-            override val problem: CommandProblemKind get() = CommandProblemKind.PLAYER_NOT_FOUND
+            override fun error(usage: String, argument: String, value: String): CommandError = PlayerNotFound(usage, argument, value)
         }
 
         /**

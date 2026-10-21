@@ -36,7 +36,7 @@ fun interface CommandAvailability {
  * @property isExecutable whether this route may be executed
  * @property children immutable child routes
  * @property noPermissionMessage text shown when the sender lacks [permission], or `null` to use the command's own
- * @property problemHandlers handlers for problems that occur at or below this node, by kind
+ * @property errorHandlers handlers for errors that occur at or below this node, by error class
  * @property senderRule who may enter this node
  */
 class CommandNode internal constructor(
@@ -51,10 +51,10 @@ class CommandNode internal constructor(
     val isExecutable: Boolean,
     children: List<CommandNode>,
     val noPermissionMessage: String? = null,
-    problemHandlers: Map<CommandProblemKind, CommandProblemHandler> = emptyMap(),
+    errorHandlers: Map<Class<out CommandError>, CommandErrorHandler<*>> = emptyMap(),
     val senderRule: SenderRule = SenderRule.ANY,
 ) {
-    val problemHandlers: Map<CommandProblemKind, CommandProblemHandler> = Collections.unmodifiableMap(LinkedHashMap(problemHandlers))
+    val errorHandlers: Map<Class<out CommandError>, CommandErrorHandler<*>> = Collections.unmodifiableMap(LinkedHashMap(errorHandlers))
     val children: List<CommandNode> = Collections.unmodifiableList(ArrayList(children))
 }
 
@@ -72,7 +72,7 @@ class CommandNodeBuilder internal constructor(
     private var permission: String? = null
     private var consoleBypassesPermission = false
     private var noPermissionMessage: String? = null
-    private val problemHandlers = linkedMapOf<CommandProblemKind, CommandProblemHandler>()
+    @PublishedApi internal val errorHandlers = linkedMapOf<Class<out CommandError>, CommandErrorHandler<*>>()
     private var senderRule = SenderRule.ANY
     private var availability = CommandAvailability { true }
     private var execution = CommandHandler { completedExecution() }
@@ -93,30 +93,37 @@ class CommandNodeBuilder internal constructor(
     }
 
     /**
-     * Answers problems of [kind] that happen at or below this node with [handler]: message the sender, play a
-     * sound, notify staff, anything. This node's handler wins over the command's, the module's, the plugin's and
-     * the library's. A kind without a handler is answered by its parent kind's handler on the same level.
+     * Answers errors of class [type], and of every class derived from it, with [handler]: message the sender, play a
+     * sound, notify staff, anything. The most specific level wins: a subcommand over the command, the command over the
+     * module, the module over the plugin, the plugin over the library's standard answer. On one level the handler of
+     * the nearest class wins, so `NoPermission` is answered before `CommandError`.
      */
-    fun onProblem(kind: CommandProblemKind, handler: CommandProblemHandler): CommandNodeBuilder = apply {
-        problemHandlers[kind] = handler
+    fun <E : CommandError> onError(type: Class<E>, handler: CommandErrorHandler<E>): CommandNodeBuilder = apply {
+        errorHandlers[type] = handler
     }
 
-    /** Answers problems of [kind] with the plain [message]; `{usage}`, `{value}`, `{argument}` fill in from the problem. */
-    fun onProblem(kind: CommandProblemKind, message: String): CommandNodeBuilder = apply {
-        val text = message.trim().also { require(it.isNotEmpty()) { "Problem message must not be blank" } }
-        problemHandlers[kind] = CommandProblemHandler { problem -> problem.sender.send(Component.text(problem.text(text))) }
+    /** Answers errors of class [type] with the plain [message]; `{name}` fills in from [CommandError.placeholders]. */
+    fun <E : CommandError> onError(type: Class<E>, message: String): CommandNodeBuilder = apply {
+        val text = message.trim().also { require(it.isNotEmpty()) { "Error message must not be blank" } }
+        errorHandlers[type] = CommandErrorHandler<E> { context, error -> context.sender.send(Component.text(error.format(text))) }
     }
 
-    /** Answers a sender who may not enter this node; shorthand for `onProblem(CommandProblemKind.DENIED, handler)`. */
-    fun onDenied(handler: CommandProblemHandler): CommandNodeBuilder = onProblem(CommandProblemKind.DENIED, handler)
+    /**
+     * Kotlin form: `onError<NoPermission> { error -> sender.send(...) }`. Inside the lambda `this` is the
+     * [CommandContext], so `sender` is right there, and `error` has its own typed fields.
+     */
+    @JvmSynthetic
+    inline fun <reified E : CommandError> onError(noinline handler: CommandContext.(E) -> Unit): CommandNodeBuilder =
+        onError(E::class.java, CommandErrorHandler<E> { context, error -> context.handler(error) })
 
-    /** Answers a mistyped command at or below this node; shorthand for `onProblem(CommandProblemKind.USAGE, handler)`. */
-    fun onUsage(handler: CommandProblemHandler): CommandNodeBuilder = onProblem(CommandProblemKind.USAGE, handler)
+    /** Kotlin form with plain text: `onError<InvalidArgument>("«{value}» не подходит для {argument}")`. */
+    @JvmSynthetic
+    inline fun <reified E : CommandError> onError(message: String): CommandNodeBuilder = onError(E::class.java, message)
 
-    /** Lets only players enter this node; the console gets the [CommandProblemKind.PLAYER_ONLY] answer. */
+    /** Lets only players enter this node; the console gets the [PlayerOnly] answer. */
     fun playerOnly(): CommandNodeBuilder = apply { senderRule = SenderRule.PLAYER }
 
-    /** Lets only the console enter this node; players get the [CommandProblemKind.CONSOLE_ONLY] answer. */
+    /** Lets only the console enter this node; players get the [ConsoleOnly] answer. */
     fun consoleOnly(): CommandNodeBuilder = apply { senderRule = SenderRule.CONSOLE }
 
     /** Configures whether the console bypasses this node's permission. */
@@ -178,6 +185,10 @@ class CommandNodeBuilder internal constructor(
         children += CommandNodeBuilder(CommandNodeKind.ARGUMENT, name, type).also(configure::accept)
     }
 
+    internal fun putErrorHandler(type: Class<out CommandError>, handler: CommandErrorHandler<*>) {
+        errorHandlers[type] = handler
+    }
+
     internal fun addBuiltChild(child: CommandNodeBuilder) {
         children += child
     }
@@ -186,7 +197,7 @@ class CommandNodeBuilder internal constructor(
         validateChildren()
         return CommandNode(
             kind, name, argumentType, permission, consoleBypassesPermission, availability,
-            execution, suggestions, executable, children.map(CommandNodeBuilder::build), noPermissionMessage, problemHandlers, senderRule,
+            execution, suggestions, executable, children.map(CommandNodeBuilder::build), noPermissionMessage, errorHandlers, senderRule,
         )
     }
 

@@ -7,9 +7,13 @@ import org.junit.jupiter.api.Assertions.assertThrows
 import org.junit.jupiter.api.Assertions.assertTrue
 import org.junit.jupiter.api.Test
 import org.pnfolder.pnlibrary.api.commands.ArgumentType
-import org.pnfolder.pnlibrary.api.commands.CommandProblemException
-import org.pnfolder.pnlibrary.api.commands.CommandProblemHandler
-import org.pnfolder.pnlibrary.api.commands.CommandProblemKind
+import org.pnfolder.pnlibrary.api.commands.BadUsage
+import org.pnfolder.pnlibrary.api.commands.CommandError
+import org.pnfolder.pnlibrary.api.commands.CommandErrorHandler
+import org.pnfolder.pnlibrary.api.commands.InvalidArgument
+import org.pnfolder.pnlibrary.api.commands.NoPermission
+import org.pnfolder.pnlibrary.api.commands.ensure
+import org.pnfolder.pnlibrary.api.commands.fail
 import org.pnfolder.pnlibrary.api.commands.CommandContext
 import org.pnfolder.pnlibrary.api.commands.CommandDefinition
 import org.pnfolder.pnlibrary.api.commands.CommandSender
@@ -303,7 +307,9 @@ class CommandServiceImplTest {
         assertEquals(listOf(Component.text("Настроенный текст из config.yml")), sender.messages)
     }
 
-    private fun say(text: String) = CommandProblemHandler { it.sender.send(Component.text(it.text(text))) }
+    private fun say(text: String) = CommandErrorHandler<CommandError> { context, error ->
+        context.sender.send(Component.text(error.format(text)))
+    }
 
     private fun service(native: RecordingCommands, standard: StandardCommandFeedback = StandardCommandFeedback()) =
         CommandServiceImpl(TestPlatform(native).commandAdapter, TestPlatform(native), standard)
@@ -313,18 +319,28 @@ class CommandServiceImplTest {
 
     private fun textOf(component: Component) = (component as net.kyori.adventure.text.TextComponent).content()
 
+    /** An error of the plugin's own: fields instead of a map of strings, and its text built from them. */
+    private class NoMoney(val price: Int) : CommandError() {
+        override fun placeholders() = mapOf("price" to price)
+    }
+
+    /** An error that knows what to say when nobody answers it. */
+    private class ShopClosed : CommandError("Магазин закрыт")
+
+    private class Unexplained : CommandError()
+
     @Test
-    fun `a denial handler gets the sender and the missing permission instead of a fixed text`() {
+    fun `a handler receives the typed error and the context, so the sender is right there`() {
         val native = RecordingCommands()
         val seen = mutableListOf<String>()
         service(native).register(Any(), command("hello") {
             executes { }
-            onDenied { problem -> seen += "command:${problem.sender.id}:${problem.detail("permission")}" }
+            onError<NoPermission> { error -> seen += "command:${sender.id}:${error.permission}" }
             literal("vip") {
                 permission("example.vip")
-                onDenied { problem ->
-                    seen += "node:${problem.detail("permission")}"
-                    problem.sender.send(Component.text("Свой ответ"))
+                onError<NoPermission> { error ->
+                    seen += "node:${error.permission}"
+                    sender.send(Component.text("Свой ответ"))
                 }
                 executes { }
             }
@@ -345,7 +361,7 @@ class CommandServiceImplTest {
         service(native, StandardCommandFeedback(deniedMessage = "Настроенный текст")).register(Any(), command("hello") {
             permission("example.hello")
             executes { }
-            onDenied { error("handler is broken") }
+            onError<NoPermission> { error("handler is broken") }
         })
         val sender = TestSender()
 
@@ -357,13 +373,12 @@ class CommandServiceImplTest {
     @Test
     fun `the chain goes from subcommand to command to module to plugin to the library standard`() {
         val native = RecordingCommands()
-        val standard = StandardCommandFeedback(deniedMessage = "Стандарт библиотеки")
         val plugin = CommandFeedbackScope()
         val module = CommandFeedbackScope(plugin)
-        module.handlers[CommandProblemKind.DENIED] = say("Текст модуля")
-        plugin.handlers[CommandProblemKind.DENIED] = say("Текст плагина")
+        module.handlers[NoPermission::class.java] = say("Текст модуля")
+        plugin.handlers[NoPermission::class.java] = say("Текст плагина")
         val sender = TestSender()
-        service(native, standard).register(Any(), command("hello") {
+        service(native, StandardCommandFeedback(deniedMessage = "Стандарт библиотеки")).register(Any(), command("hello") {
             executes { }
             literal("node") { permission("p.node"); noPermissionMessage("Текст узла"); executes { } }
             literal("module") { permission("p.module"); executes { } }
@@ -371,9 +386,9 @@ class CommandServiceImplTest {
 
         run(native, sender, "node")
         run(native, sender, "module")
-        module.handlers.remove(CommandProblemKind.DENIED)
+        module.handlers.remove(NoPermission::class.java)
         run(native, sender, "module")
-        plugin.handlers.remove(CommandProblemKind.DENIED)
+        plugin.handlers.remove(NoPermission::class.java)
         run(native, sender, "module")
 
         assertEquals(
@@ -400,35 +415,31 @@ class CommandServiceImplTest {
     }
 
     @Test
-    fun `a wrong argument is its own kind and a usage handler still catches it when nothing more specific is set`() {
+    fun `a handler for a base class answers every error derived from it until something more specific is set`() {
         val native = RecordingCommands()
-        val service = service(native)
-        service.register(Any(), command("hello") {
+        val plain = TestSender()
+        service(native).register(Any(), command("hello") {
             literal("buy") { argument("amount", ArgumentType.integer(1, 5)) { executes { } } }
         })
-        val plain = TestSender()
         run(native, plain, "buy", "99")
         assertEquals("Неверное значение «99» для amount. /hello buy <amount>", textOf(plain.messages.single()))
 
         val caught = TestSender()
         val second = RecordingCommands()
         service(second).register(Any(), command("hello") {
-            onUsage { problem -> problem.sender.send(Component.text("общий: ${problem.kind}")) }
+            onError<BadUsage> { error -> sender.send(Component.text("общий: ${error.javaClass.simpleName}")) }
             literal("buy") { argument("amount", ArgumentType.integer(1, 5)) { executes { } } }
         })
         run(second, caught, "buy", "99")
         run(second, caught, "zzz")
         run(second, caught, "buy")
-        assertEquals(
-            listOf("общий: pnlibrary:invalid-argument", "общий: pnlibrary:unknown-argument", "общий: pnlibrary:incomplete"),
-            caught.messages.map(::textOf),
-        )
+        assertEquals(listOf("общий: InvalidArgument", "общий: UnknownArgument", "общий: IncompleteCommand"), caught.messages.map(::textOf))
 
         val exact = TestSender()
         val third = RecordingCommands()
         service(third).register(Any(), command("hello") {
-            onUsage { problem -> problem.sender.send(Component.text("общий")) }
-            onProblem(CommandProblemKind.INVALID_ARGUMENT, "точный: {argument}={value}")
+            onError<BadUsage> { sender.send(Component.text("общий")) }
+            onError<InvalidArgument>("точный: {argument}={value}")
             literal("buy") { argument("amount", ArgumentType.integer(1, 5)) { executes { } } }
         })
         run(third, exact, "buy", "x")
@@ -466,21 +477,26 @@ class CommandServiceImplTest {
     }
 
     @Test
-    fun `a command can raise a problem of its own kind and any level can answer it`() {
-        val noMoney = CommandProblemKind.custom("shop:no-money")
+    fun `a command stops with an error of its own and any level can answer it`() {
         val native = RecordingCommands()
         val module = CommandFeedbackScope()
-        module.handlers[noMoney] = CommandProblemHandler { it.sender.send(Component.text("Не хватает ${it.detail("price")} монет")) }
+        module.handlers[NoMoney::class.java] = CommandErrorHandler<NoMoney> { context, error ->
+            context.sender.send(Component.text("Не хватает ${error.price} монет"))
+        }
         service(native).register(Any(), command("hello") {
-            executes { throw CommandProblemException(noMoney, mapOf("price" to 50)) }
-            literal("other") { executes { throw CommandProblemException(CommandProblemKind.custom("shop:unknown")) } }
+            executes { context -> context.ensure(false) { NoMoney(50) } }
+            literal("closed") { executes { context -> context.fail(ShopClosed()) } }
+            literal("odd") { executes { context -> context.fail(Unexplained()) } }
+            literal("fine") { executes { context -> context.ensure(true) { NoMoney(1) } } }
         }, module)
         val sender = TestSender()
 
         run(native, sender)
-        run(native, sender, "other")
+        run(native, sender, "closed")
+        run(native, sender, "odd")
+        run(native, sender, "fine")
 
-        assertEquals(listOf("Не хватает 50 монет", "Не удалось выполнить команду."), sender.messages.map(::textOf))
+        assertEquals(listOf("Не хватает 50 монет", "Магазин закрыт", "Не удалось выполнить команду."), sender.messages.map(::textOf))
     }
 
     private fun context(sender: TestSender, vararg arguments: String) =

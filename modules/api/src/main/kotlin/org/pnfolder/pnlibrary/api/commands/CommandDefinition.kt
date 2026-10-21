@@ -60,7 +60,7 @@ class CommandBuilder internal constructor(name: String) {
     private var permission: String? = null
     private var consoleBypassesPermission: Boolean = false
     private var noPermissionMessage: String? = null
-    private val problemHandlers = linkedMapOf<CommandProblemKind, CommandProblemHandler>()
+    @PublishedApi internal val errorHandlers = linkedMapOf<Class<out CommandError>, CommandErrorHandler<*>>()
     private var senderRule = SenderRule.ANY
     private var execution = CommandHandler { completedExecution() }
     private var executable = false
@@ -95,30 +95,37 @@ class CommandBuilder internal constructor(name: String) {
     }
 
     /**
-     * Answers problems of [kind] with [handler]: message the sender, play a sound, notify staff, anything. A handler
-     * on a subcommand wins over this one; this one wins over the module's, the plugin's and the library's. A kind
-     * without a handler is answered by its parent kind's handler on the same level.
+     * Answers errors of class [type], and of every class derived from it, with [handler]: message the sender, play a
+     * sound, notify staff, anything. The most specific level wins: a subcommand over the command, the command over the
+     * module, the module over the plugin, the plugin over the library's standard answer. On one level the handler of
+     * the nearest class wins, so `NoPermission` is answered before `CommandError`.
      */
-    fun onProblem(kind: CommandProblemKind, handler: CommandProblemHandler): CommandBuilder = apply {
-        problemHandlers[kind] = handler
+    fun <E : CommandError> onError(type: Class<E>, handler: CommandErrorHandler<E>): CommandBuilder = apply {
+        errorHandlers[type] = handler
     }
 
-    /** Answers problems of [kind] with the plain [message]; `{usage}`, `{value}`, `{argument}` fill in from the problem. */
-    fun onProblem(kind: CommandProblemKind, message: String): CommandBuilder = apply {
-        val text = message.trim().also { require(it.isNotEmpty()) { "Problem message must not be blank" } }
-        problemHandlers[kind] = CommandProblemHandler { problem -> problem.sender.send(Component.text(problem.text(text))) }
+    /** Answers errors of class [type] with the plain [message]; `{name}` fills in from [CommandError.placeholders]. */
+    fun <E : CommandError> onError(type: Class<E>, message: String): CommandBuilder = apply {
+        val text = message.trim().also { require(it.isNotEmpty()) { "Error message must not be blank" } }
+        errorHandlers[type] = CommandErrorHandler<E> { context, error -> context.sender.send(Component.text(error.format(text))) }
     }
 
-    /** Answers a sender who may not use this command; shorthand for `onProblem(CommandProblemKind.DENIED, handler)`. */
-    fun onDenied(handler: CommandProblemHandler): CommandBuilder = onProblem(CommandProblemKind.DENIED, handler)
+    /**
+     * Kotlin form: `onError<NoPermission> { error -> sender.send(...) }`. Inside the lambda `this` is the
+     * [CommandContext], so `sender` is right there, and `error` has its own typed fields.
+     */
+    @JvmSynthetic
+    inline fun <reified E : CommandError> onError(noinline handler: CommandContext.(E) -> Unit): CommandBuilder =
+        onError(E::class.java, CommandErrorHandler<E> { context, error -> context.handler(error) })
 
-    /** Answers a mistyped command; shorthand for `onProblem(CommandProblemKind.USAGE, handler)`. */
-    fun onUsage(handler: CommandProblemHandler): CommandBuilder = onProblem(CommandProblemKind.USAGE, handler)
+    /** Kotlin form with plain text: `onError<InvalidArgument>("«{value}» не подходит для {argument}")`. */
+    @JvmSynthetic
+    inline fun <reified E : CommandError> onError(message: String): CommandBuilder = onError(E::class.java, message)
 
-    /** Lets only players use this command; the console gets the [CommandProblemKind.PLAYER_ONLY] answer. */
+    /** Lets only players use this command; the console gets the [PlayerOnly] answer. */
     fun playerOnly(): CommandBuilder = apply { senderRule = SenderRule.PLAYER }
 
-    /** Lets only the console use this command; players get the [CommandProblemKind.CONSOLE_ONLY] answer. */
+    /** Lets only the console use this command; players get the [ConsoleOnly] answer. */
     fun consoleOnly(): CommandBuilder = apply { senderRule = SenderRule.CONSOLE }
 
     /** Configures whether the console bypasses the root permission. */
@@ -184,10 +191,11 @@ class CommandBuilder internal constructor(name: String) {
 
     /** Validates this tree and creates an immutable command definition. */
     fun build(): CommandDefinition {
+        val commandHandlers = errorHandlers.toMap() // read before the node builder, which has a map of the same name
         val rootBuilder = CommandNodeBuilder(CommandNodeKind.ROOT, name).apply {
             permission?.let(::permission)
             noPermissionMessage?.let(::noPermissionMessage)
-            problemHandlers.forEach { (kind, handler) -> onProblem(kind, handler) }
+            commandHandlers.forEach { (type, handler) -> putErrorHandler(type, handler) }
             when (senderRule) {
                 SenderRule.PLAYER -> playerOnly()
                 SenderRule.CONSOLE -> consoleOnly()

@@ -60,5 +60,6 @@ dependencies {
 ## Документация
 
 - [Архитектура и модули](docs/architecture.md)
+- [Команды: ошибки, уровни ответа, полный пример](docs/commands.md)
 - [Система обновлений](docs/updates.md)
 - [Валюта](docs/currency.md)
