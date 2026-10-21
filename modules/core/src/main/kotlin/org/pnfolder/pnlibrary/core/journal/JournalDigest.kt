@@ -5,6 +5,7 @@ import net.kyori.adventure.text.event.ClickEvent
 import net.kyori.adventure.text.format.TextColor
 import org.pnfolder.pnlibrary.api.chat.ChatKit
 import org.pnfolder.pnlibrary.api.chat.ChatPalette
+import org.pnfolder.pnlibrary.common.text.RussianText
 import org.pnfolder.pnlibrary.api.chat.ChatReader
 import org.pnfolder.pnlibrary.core.runtime.DisplayZone
 import java.time.Duration
@@ -88,16 +89,16 @@ internal fun joinDigest(records: List<JournalRecord>, now: Long, windowHours: In
     val summary = mutableListOf<Component>()
     if (errors.isNotEmpty()) {
         summary += kit.text(kit.glyph('●') + " $errorCount ", ChatPalette.DANGER)
-            .append(kit.text(plural(errorCount.toLong(), "ошибка", "ошибки", "ошибок"), ChatPalette.SOFT))
+            .append(kit.text(RussianText.plural(errorCount.toLong(), "ошибка", "ошибки", "ошибок"), ChatPalette.SOFT))
     }
     if (warnings.isNotEmpty()) {
         summary += kit.text(kit.glyph('▲') + " $warningCount ", ChatPalette.WARN)
-            .append(kit.text(plural(warningCount.toLong(), "предупреждение", "предупреждения", "предупреждений"), ChatPalette.SOFT))
+            .append(kit.text(RussianText.plural(warningCount.toLong(), "предупреждение", "предупреждения", "предупреждений"), ChatPalette.SOFT))
     }
 
     val lines = mutableListOf<Component>(
         kit.blank(),
-        kit.header("Журнал", kit.text("за последние $windowHours ${plural(windowHours.toLong(), "час", "часа", "часов")}", ChatPalette.LABEL)),
+        kit.header("Журнал", kit.text("за последние $windowHours ${RussianText.plural(windowHours.toLong(), "час", "часа", "часов")}", ChatPalette.LABEL)),
         summary.drop(1).fold(kit.text("  ").append(summary.first())) { line, part -> line.append(kit.text("   ")).append(part) },
         strip(kit, relevant, now, windowHours, startedAtMillis),
     )
@@ -122,11 +123,11 @@ private fun levelColor(level: JournalLevel): TextColor = when (level) {
     JournalLevel.INFO -> ChatPalette.INFO
 }
 
-private val CLOCK: DateTimeFormatter = DateTimeFormatter.ofPattern("HH:mm")
+private val HOUR_MINUTE: DateTimeFormatter = DateTimeFormatter.ofPattern("HH:mm")
 private val DATE_CLOCK: DateTimeFormatter = DateTimeFormatter.ofPattern("dd.MM HH:mm")
 
 private fun clock(millis: Long, withDate: Boolean): String =
-    (if (withDate) DATE_CLOCK else CLOCK).withZone(DisplayZone.zone).format(Instant.ofEpochMilli(millis))
+    (if (withDate) DATE_CLOCK else HOUR_MINUTE).withZone(DisplayZone.zone).format(Instant.ofEpochMilli(millis))
 
 /**
  * A strip of [STRIP_COLUMNS] columns over the window, oldest first: the height is how many problems fell into the
@@ -166,7 +167,7 @@ private fun strip(kit: ChatKit, relevant: List<JournalRecord>, now: Long, window
         .sortedWith(compareByDescending<Int> { errors[it] * 1_000 + warnings[it] }.thenByDescending { it })
         .take(STRIP_WORST)
     val withDate = windowMillis > Duration.ofHours(24).toMillis()
-    val tip = mutableListOf<Component>(kit.text("Последние $windowHours ${plural(windowHours.toLong(), "час", "часа", "часов")}", ChatPalette.LABEL), kit.blank())
+    val tip = mutableListOf<Component>(kit.text("Последние $windowHours ${RussianText.plural(windowHours.toLong(), "час", "часа", "часов")}", ChatPalette.LABEL), kit.blank())
     worst.forEach { column ->
         val start = now - (STRIP_COLUMNS - column) * columnMillis
         var row = kit.text(clock(start, withDate) + "  ", ChatPalette.SOFT)

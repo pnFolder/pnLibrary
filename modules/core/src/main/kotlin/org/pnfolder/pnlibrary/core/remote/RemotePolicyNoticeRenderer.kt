@@ -2,7 +2,7 @@ package org.pnfolder.pnlibrary.core.remote
 
 import org.pnfolder.pnlibrary.api.plugin.DenyAction
 import org.pnfolder.pnlibrary.api.plugin.PluginMetadata
-import org.pnfolder.pnlibrary.api.plugin.RemotePolicy
+import org.pnfolder.pnlibrary.api.plugin.RemotePolicySettings
 import org.pnfolder.pnlibrary.api.remote.RemotePolicyExplanation
 import org.pnfolder.pnlibrary.console.ConsoleCard
 import org.pnfolder.pnlibrary.console.ConsoleTree
@@ -15,7 +15,7 @@ internal class RemotePolicyNoticeRenderer(private val logging: PlatformLogging) 
     fun render(
         owner: Any,
         metadata: PluginMetadata,
-        policy: RemotePolicy,
+        policy: RemotePolicySettings,
         allowed: Boolean,
         explanation: RemotePolicyExplanation,
     ) {

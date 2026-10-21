@@ -6,7 +6,7 @@ import org.slf4j.Logger
 import org.pnfolder.pnlibrary.api.metrics.PluginMetrics
 import org.pnfolder.pnlibrary.core.metrics.ProviderMetricsFactory
 import org.pnfolder.pnlibrary.core.metrics.bstats.BStatsMetricsSession
-import org.pnfolder.pnlibrary.internal.faststatsvelocity.FastStatsVelocityProvider
+import org.pnfolder.pnlibrary.velocity.faststats.FastStatsVelocityProvider
 import java.nio.file.Path
 
 /** Creates bStats and FastStats sessions for Velocity using explicit platform adapters. */

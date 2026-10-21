@@ -3,7 +3,7 @@ package org.pnfolder.pnlibrary.core.remote
 import org.pnfolder.pnlibrary.api.logging.PnLogger
 import org.pnfolder.pnlibrary.api.plugin.DenyAction
 import org.pnfolder.pnlibrary.api.plugin.PluginMetadata
-import org.pnfolder.pnlibrary.api.plugin.RemotePolicy
+import org.pnfolder.pnlibrary.api.plugin.RemotePolicySettings
 import org.pnfolder.pnlibrary.api.remote.RemotePolicyContext
 import org.pnfolder.pnlibrary.api.remote.RemotePolicyExplanation
 import org.pnfolder.pnlibrary.api.tasks.TaskExecution
@@ -21,7 +21,7 @@ internal class RemotePolicyMonitor(
     fun start(
         owner: Any,
         metadata: PluginMetadata,
-        policy: RemotePolicy,
+        policy: RemotePolicySettings,
         tasks: TaskScope,
         isClosed: () -> Boolean,
         logger: PnLogger,
@@ -44,7 +44,7 @@ internal class RemotePolicyMonitor(
     private fun check(
         owner: Any,
         metadata: PluginMetadata,
-        policy: RemotePolicy,
+        policy: RemotePolicySettings,
         policyContext: RemotePolicyContext,
         isClosed: () -> Boolean,
         logger: PnLogger,
@@ -74,7 +74,7 @@ internal class RemotePolicyMonitor(
 
     private fun deny(
         owner: Any,
-        policy: RemotePolicy,
+        policy: RemotePolicySettings,
         closeModule: () -> Unit,
         closePlugin: () -> Unit,
     ) {

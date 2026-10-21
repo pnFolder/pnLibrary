@@ -10,7 +10,7 @@ import org.pnfolder.pnlibrary.api.plugin.DenyAction
 import org.pnfolder.pnlibrary.api.plugin.DownloadPolicy
 import org.pnfolder.pnlibrary.api.plugin.ModuleContext
 import org.pnfolder.pnlibrary.api.plugin.PluginRegistration
-import org.pnfolder.pnlibrary.api.plugin.RemotePolicy
+import org.pnfolder.pnlibrary.api.plugin.RemotePolicySettings
 import org.pnfolder.pnlibrary.api.runtime.PnLibraryProvider
 import org.pnfolder.pnlibrary.api.tasks.TaskSpec
 import org.pnfolder.pnlibrary.api.updates.ProductDescriptor
@@ -49,7 +49,7 @@ class DemoPlugin : JavaPlugin() {
                     .build()
             )
             config.getString("remote-policy.source")?.takeIf(String::isNotBlank)?.let { source ->
-                builder.remotePolicy(RemotePolicy.builder()
+                builder.remotePolicy(RemotePolicySettings.builder()
                     .source(source)
                     .checkEvery(Duration.ofHours(6))
                     .onDeny(DenyAction.DISABLE_PLUGIN)

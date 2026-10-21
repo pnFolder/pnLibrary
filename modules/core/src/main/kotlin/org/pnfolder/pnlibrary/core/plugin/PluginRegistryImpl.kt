@@ -26,7 +26,7 @@ import org.pnfolder.pnlibrary.api.plugin.PluginMessages
 import org.pnfolder.pnlibrary.api.plugin.PluginMetadata
 import org.pnfolder.pnlibrary.api.plugin.PluginRegistration
 import org.pnfolder.pnlibrary.api.plugin.PluginRegistry
-import org.pnfolder.pnlibrary.api.plugin.RemotePolicy
+import org.pnfolder.pnlibrary.api.plugin.RemotePolicySettings
 import org.pnfolder.pnlibrary.api.tasks.TaskScope
 import org.pnfolder.pnlibrary.api.text.ComponentService
 import org.pnfolder.pnlibrary.api.updates.ProductDescriptor
@@ -270,7 +270,7 @@ internal class PluginRegistryImpl(
         override val updates: UpdateRegistration? get() = resources.updates
         override val downloads: DownloadRegistration? get() = resources.downloads
 
-        fun startRemotePolicy(policy: RemotePolicy) {
+        fun startRemotePolicy(policy: RemotePolicySettings) {
             remotePolicies.start(
                 owner = owner,
                 metadata = metadata,

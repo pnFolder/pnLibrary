@@ -1,40 +1,41 @@
-# pnLibrary Bukkit acceptance plugin
+# Приёмочный плагин (Bukkit)
 
-This module is a manual end-to-end test client for a real Bukkit/Paper server. It is intentionally
-separate from `demo-bukkit`: the demo shows integration style, while this plugin exposes switches
-and commands for verifying pnLibrary subsystems one by one.
+Плагин для ручной проверки pnLibrary на настоящем сервере Bukkit или Paper. Он отделён от `demo-bukkit` намеренно:
+демо показывает, как писать плагин, а этот плагин даёт переключатели и команды, чтобы проверить подсистемы по
+одной.
 
-Build both runnable JARs:
+## Сборка
 
 ```text
 gradlew.bat :examples:acceptance-bukkit:assembleAcceptanceKit
 ```
 
-The ready-to-copy pair is placed in the root `build/acceptance-bukkit` directory. Copy both JARs
-from there into the server's `plugins` directory:
+Готовая пара jar-файлов появится в корневой папке `build/acceptance-bukkit`. Скопируйте обе в `plugins`:
 
-- `distribution/build/libs/pnLibrary-<version>-bukkit-java8.jar`
-- `examples/acceptance-bukkit/build/libs/pnLibrary-acceptance-bukkit-<version>.jar`
+- `pnLibrary-<версия>-bukkit-java8.jar`
+- `pnLibrary-acceptance-bukkit-<версия>.jar`
 
-Start the server and run `/pnaccept status`. Optional network-facing checks are disabled in
-`plugins/pnLibraryAcceptance/config.yml`; enable one at a time and restart the server.
+Запустите сервер и выполните `/pnaccept status`. Проверки, которые ходят в сеть, выключены в
+`plugins/pnLibraryAcceptance/config.yml`. Включайте их по одной и перезапускайте сервер.
 
-Useful checks:
+## Проверки
 
-- `/pnaccept event` — event bus;
-- `/pnaccept task` — unified scheduler;
-- `/pnaccept cooldown` twice — cooldown state;
-- `/pnaccept metrics` — metrics lifecycle;
-- `/pnaccept diagnostics`, then `/pndebug acceptance --local` — diagnostic collection;
-- `/pnaccept update` — updater, after enabling it in `config.yml`;
-- `/pnaccept download` — auxiliary file delivery, after enabling it in `config.yml`.
-# Remote policy acceptance check
+| Команда | Что проверяет |
+|---|---|
+| `/pnaccept event` | шину событий |
+| `/pnaccept task` | планировщик задач |
+| `/pnaccept cooldown` (дважды) | кулдауны |
+| `/pnaccept metrics` | жизненный цикл метрик |
+| `/pnaccept diagnostics`, затем `/pndebug acceptance --local` | сбор диагностики |
+| `/pnaccept update` | обновления (после включения в `config.yml`) |
+| `/pnaccept download` | загрузку дополнительных файлов (после включения в `config.yml`) |
 
-Ready-to-upload Java and Kotlin policies are located in `policies/AcceptancePolicy.java`
-and `policies/AcceptancePolicy.kt`.
-It requires plugin version `2.3.0`, so the current `2.2.0-beta.2` acceptance plugin is denied.
+## Удалённая политика
 
-For a local check, enable the feature in `config.yml` and use an absolute file URL:
+Готовые политики на Java и Kotlin лежат в `policies/AcceptancePolicy.java` и `policies/AcceptancePolicy.kt`. Они
+требуют версию плагина `2.3.0`, поэтому текущий приёмочный плагин (`2.2.0-beta.2`) получит отказ.
+
+Для локальной проверки включите политику в `config.yml` и укажите абсолютный путь к файлу:
 
 ```yaml
 remote-policy:
@@ -43,4 +44,5 @@ remote-policy:
   source: file:///C:/path/to/AcceptancePolicy.java
 ```
 
-For GitHub, upload the same file and use its raw `https://raw.githubusercontent.com/.../AcceptancePolicy.java` URL.
+Для проверки через GitHub загрузите тот же файл и укажите его адрес
+`https://raw.githubusercontent.com/.../AcceptancePolicy.java`.

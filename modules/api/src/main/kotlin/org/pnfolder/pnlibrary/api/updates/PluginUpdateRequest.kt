@@ -111,26 +111,12 @@ class PluginUpdateRequest private constructor(builder: Builder) {
             supportedApi = ApiVersionRange(minimum, maximum)
         }
 
-        /** Declares one supported API generation. */
-        @Deprecated(
-            "Alias of supportedApi; declare the generation as a one-element range",
-            ReplaceWith("supportedApi(version, version)"),
-        )
-        fun apiVersion(version: Int): Builder = supportedApi(version, version)
-        /** Declares the inclusive range of supported pnLibrary API generations. */
-        @Deprecated("Alias of supportedApi", ReplaceWith("supportedApi(minimum, maximum)"))
-        fun apiVersions(minimum: Int, maximum: Int): Builder = supportedApi(minimum, maximum)
-
         /** Adds an exact release asset name without exposing regular-expression escaping. */
         @JvmOverloads
         fun exactArtifact(name: String, minimumJava: Int = 8, maximumJava: Int? = null): Builder = apply {
             require(name.isNotBlank()) { "Artifact name must not be blank" }
             artifact("^${Regex.escape(name)}$", minimumJava, maximumJava)
         }
-
-        /** Adds an artifact pattern compatible with Java 8 and newer. */
-        @Deprecated("Alias of artifact with Java 8 as the minimum", ReplaceWith("artifact(regex, 8)"))
-        fun artifactPattern(regex: String): Builder = artifact(regex, 8)
 
         /** Adds and validates one Java-bounded release artifact rule. */
         @JvmOverloads

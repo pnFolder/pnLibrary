@@ -7,7 +7,7 @@ import org.pnfolder.pnlibrary.api.placeholders.PlaceholderAccess;
 import org.pnfolder.pnlibrary.api.placeholders.PlaceholderRegistration;
 import org.pnfolder.pnlibrary.api.placeholders.PlaceholderService;
 import org.pnfolder.pnlibrary.api.plugin.DenyAction;
-import org.pnfolder.pnlibrary.api.plugin.RemotePolicy;
+import org.pnfolder.pnlibrary.api.plugin.RemotePolicySettings;
 import org.pnfolder.pnlibrary.api.tasks.TaskExecution;
 import org.pnfolder.pnlibrary.api.tasks.TaskSpec;
 import org.pnfolder.pnlibrary.api.updates.PluginUpdateRequest;
@@ -52,7 +52,7 @@ class ApiStyleJavaTest {
             .literal("reload", node -> node.executes(context -> { }))
             .build();
 
-        RemotePolicy policy = RemotePolicy.builder()
+        RemotePolicySettings policy = RemotePolicySettings.builder()
             .source("https://example.invalid/Policy.java")
             .checkEvery(Duration.ofHours(6))
             .onDeny(DenyAction.DISABLE_MODULE)

@@ -1,56 +1,52 @@
-# pnLibrary Demo Bukkit
+# Демо-плагин (Bukkit)
 
-Это отдельный production-style демонстрационный плагин. Он не встраивает pnLibrary в свой JAR:
-на сервере должен быть установлен обычный `pnLibrary` runtime, а demo подключается к нему через
-`PnLibraryProvider` и `PluginContext`.
+Отдельный плагин, который показывает почти все возможности pnLibrary так, как их стоит использовать в настоящем
+плагине. pnLibrary в его jar не встроена: на сервере должна стоять обычная pnLibrary, а демо подключается к ней
+через `PnLibraryProvider`.
 
 ## Запуск
 
-1. Соберите `:examples:demo-bukkit:build`.
-2. Положите `examples/demo-bukkit/build/libs/pnLibrary-demo-bukkit-<version>.jar` в `plugins/` рядом
-   с соответствующим `pnLibrary-*-bukkit-java8.jar`. Используйте собранный Shadow JAR, а не `*-plain.jar`.
-   Optional-модуль локализации и его Gson уже включены в демоплагин с изолированными пакетами.
-3. Запустите Paper/Spigot и выполните `/pndemo status`.
+1. Соберите `gradlew :examples:demo-bukkit:build`.
+2. Положите `examples/demo-bukkit/build/libs/pnLibrary-demo-bukkit-<версия>.jar` в `plugins/` рядом с
+   `pnLibrary-<версия>-bukkit-java8.jar`. Берите собранный shadow-jar, а не `*-plain.jar`: в него уже включён
+   модуль локализации со своим Gson в изолированных пакетах.
+3. Запустите Paper или Spigot и выполните `/pndemo status`.
 
-Команды:
+## Команды
 
-- `/pndemo status` — показывает контекст и публикует тестовое событие;
-- `/pndemo balance` — читает баланс игрока через Currency API;
-- `/pndemo give <amount>` — демонстрирует мутацию валюты и cooldown;
-- `/pndemo reload` — перезагружает конфигурацию demo.
-- `/pndemo-lib status` (`/pndemoapi status`) — та же проверка через portable Command API pnLibrary;
-- `/pndemo-lib give <amount>` — аргумент с типизированным parsing и асинхронным ответом.
+| Команда | Что показывает |
+|---|---|
+| `/pndemo status` | контекст плагина; публикует тестовое событие и выполняет все стандартные действия |
+| `/pndemo balance` | баланс игрока через API валюты |
+| `/pndemo give <сумма>` | изменение валюты и кулдаун |
+| `/pndemo reload` | перезагрузку конфига демо |
+| `/pndemo-lib status` (`/pndemoapi status`) | то же через команды pnLibrary |
+| `/pndemo-lib give <сумма>` | типизированный аргумент и асинхронный ответ |
 
-При включении плагин регистрирует lifecycle summary, bStats-метрики, diagnostics snapshot,
-typed placeholder `pndemo_coins`, повторяющуюся задачу, listener и lightweight currency.
-Команда `pndemo-lib` регистрируется самой библиотекой и не требует ручной записи в `plugin.yml`.
-Также демонстрация использует конфигурационный scope, typed services, component serialization,
-Action API, Minecraft localization (ленивая загрузка `ru_ru`/`en_us`), update declaration и
-отдельное direct-download declaration без автоматической загрузки.
+`/pndemo-lib` регистрирует сама библиотека, в `plugin.yml` её нет.
 
-## Карта исходников
-
-Демонстрация намеренно разделена по ответственностям, чтобы её можно было использовать как
-шаблон реального плагина:
+## Что где лежит
 
 | Файл | Что показывает |
 |---|---|
-| `DemoPlugin.kt` | жизненный цикл, регистрацию `PluginContext`, graceful shutdown |
-| `DemoDeclarations.kt` | API-совместимые обновления и независимые direct downloads |
-| `DemoConfig.kt` | типизированный YAML scope, аннотации и синхронизацию defaults |
-| `DemoCurrency.kt` | descriptor, balance/deposit/withdraw/set/reset/format операции |
-| `DemoPlaceholders.kt` | кэширование, fallback и публикацию в PlaceholderAPI |
-| `DemoCommands.kt` | native Bukkit-команда и portable command builder с typed argument |
-| `DemoLibraryEvents.kt` / `DemoBukkitEvents.kt` | библиотечные события и platform listener |
-| `DemoDiagnostics.kt` | динамический diagnostics snapshot и конфигурационный файл |
-| `DemoLocalization.kt` | ленивый version-aware cache локализаций Minecraft |
-| `DemoState.kt` | потокобезопасное состояние, используемое несколькими модулями |
-| `DemoActionShowcase.kt` | все стандартные `Action`, все `ActionCondition`, `Expansion`-модели и enum-ветки |
-Демоплагин использует публичные API и optional-модуль `minecraft-localization`.
-Обновления объявляются через `DemoDeclarations.kt`; внутренние классы updater и `modules:core`
-демоплагину не нужны.
+| `ShopExamplePlugin.kt` | **полный пример команд**: свои ошибки, пять уровней ответа, проверка прав. Подробно в [docs/commands.md](../../docs/commands.md) |
+| `DemoPlugin.kt` | жизненный цикл, регистрацию плагина и модулей, аккуратное выключение |
+| `DemoDeclarations.kt` | объявление обновлений и прямых загрузок файлов |
+| `DemoConfig.kt` | типизированный YAML-конфиг, аннотации и дописывание значений по умолчанию |
+| `DemoCurrency.kt` | своя валюта: описание, баланс, пополнение, списание, установка, сброс, формат |
+| `DemoPlaceholders.kt` | плейсхолдеры: кэш, запасное значение, публикацию в PlaceholderAPI |
+| `DemoCommands.kt` | обычную команду Bukkit и команду pnLibrary с типизированным аргументом |
+| `DemoLibraryEvents.kt`, `DemoBukkitEvents.kt` | события библиотеки и слушатель Bukkit |
+| `DemoDiagnostics.kt` | живой снимок диагностики и файл конфигурации в отчёте |
+| `DemoLocalization.kt` | ленивую загрузку переводов Minecraft с учётом версии |
+| `DemoState.kt` | потокобезопасное состояние, общее для нескольких модулей |
+| `DemoActionShowcase.kt` | все стандартные действия (`Action`), все условия и перечисления |
 
-Для зависимостей используется единый DSL:
+Демо использует только публичный API и модуль `minecraft-localization`. Классы `core` ему не нужны.
+
+## Зависимости плагина
+
+Зависимости объявляются одним DSL:
 
 ```kotlin
 builder.depends(
@@ -59,37 +55,28 @@ builder.depends(
 )
 ```
 
-`managed` участвует в графе pnLibrary-компонентов, а `plugin` описывает сторонний серверный
-плагин. Для стороннего плагина можно передать вместо страницы проверенный HTTPS-артефакт с
-размером и SHA-256. Старые `managedDependency`/`externalDependency` остаются доступными внутри
-низкоуровневых descriptor/update builders.
-
-Политика задаётся прямо на зависимости:
+`managed` добавляет компонент pnFolder в общий граф обновлений. `plugin` описывает сторонний плагин. Для
+стороннего плагина вместо страницы можно указать проверенный HTTPS-файл с размером и SHA-256:
 
 ```kotlin
 Dependencies.plugin(
     "OptionalPlugin", "1.0.0", "https://example.org/plugin.jar",
     size = 1234,
-    sha256 = "<64 hex chars>",
+    sha256 = "<64 шестнадцатеричных символа>",
     required = false,
     automaticDownload = true,
     forceAutomaticDownload = true,
 )
 ```
 
-`required = false` не блокирует запуск, если плагин отсутствует. `automaticDownload = true`
-только разрешает автоматическую загрузку; фактическое решение всё равно принимает глобальная
-политика pnLibrary в `downloads.yml`: `enabled`, `automatic`, список разрешённых hosts и
-разрешённые назначения. Если нужен сознательный override именно `automatic: false`, указывается
-`forceAutomaticDownload = true`. Он не отключает `enabled`, HTTPS/allowlist, проверку размера,
-SHA-256 или ограничения назначения.
+| Параметр | Что значит |
+|---|---|
+| `required = false` | запуск не блокируется, если плагина нет |
+| `automaticDownload = true` | загрузка разрешена с вашей стороны. Решает всё равно `downloads.yml` администратора: `enabled`, `automatic`, список разрешённых сайтов и папок |
+| `forceAutomaticDownload = true` | обходит только `automatic: false`. Не обходит `enabled`, HTTPS, список сайтов, проверку размера и SHA-256 |
 
-Listener не входит в декларативный `PluginBuilder`: после получения контекста он регистрируется
-через `context.events.register(...)` или типобезопасный `context.events.subscribe(...)`. Поэтому
-runtime-подписки находятся рядом с lifecycle-кодом и автоматически удаляются при `context.close()`.
+## Слушатели событий
 
-При `/pndemo status` showcase выполняет полный граф действий: message, action-bar, sound,
-particle, effect, console log, no-op, sequence, delay, switch, conditional и операции со
-значениями. Отдельно создаются `UpdatePlaceholderAction`, все условия доступа/вероятности/
-сравнения и полный набор `Expansion` expression/operator/value моделей. Это сделано намеренно:
-demo является API-каталогом, а не только красивым примером одного сценария.
+Слушатель не входит в декларативный `PluginBuilder`. Он регистрируется после получения контекста через
+`context.events.register(...)` или `context.events.subscribe(...)` и снимается сам при `context.close()`. Так
+подписки лежат рядом с кодом жизненного цикла.

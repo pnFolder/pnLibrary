@@ -5,7 +5,6 @@ import com.google.gson.JsonObject
 import com.google.gson.JsonParser
 import org.pnfolder.pnlibrary.api.platform.PlatformType
 import org.pnfolder.pnlibrary.api.updates.UpdateChannel
-import org.pnfolder.pnlibrary.api.updates.VersionRangeText
 import org.pnfolder.pnlibrary.api.version.ApiVersionRange
 import org.pnfolder.pnlibrary.api.version.SemanticVersion
 import java.net.URI
@@ -180,5 +179,13 @@ internal class ReleaseCatalogCodec(private val maximumBytes: Int = MAX_BYTES) {
         /** Default maximum encoded catalog size. */
         const val MAX_BYTES = 1024 * 1024
         private val SAFE_FILE = Regex("[A-Za-z0-9][A-Za-z0-9._-]*")
+    }
+}
+
+/** Textual compatibility interval for Minecraft or a native platform API, as written in a release catalog. */
+internal data class VersionRangeText(val minimum: String, val maximum: String? = null) {
+    init {
+        require(minimum.isNotBlank()) { "Minimum version must not be blank" }
+        require(maximum == null || maximum.isNotBlank()) { "Maximum version must not be blank" }
     }
 }

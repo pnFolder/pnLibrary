@@ -3,7 +3,7 @@ package org.pnfolder.pnlibrary.core.runtime
 import org.pnfolder.pnlibrary.api.plugin.DenyAction
 import org.pnfolder.pnlibrary.api.plugin.ModuleId
 import org.pnfolder.pnlibrary.api.plugin.PluginMetadata
-import org.pnfolder.pnlibrary.api.plugin.RemotePolicy
+import org.pnfolder.pnlibrary.api.plugin.RemotePolicySettings
 import org.pnfolder.pnlibrary.api.runtime.PnLibrary
 import org.pnfolder.pnlibrary.common.jvm.JavaRuntime
 import org.pnfolder.pnlibrary.core.remote.RemotePolicyMonitor
@@ -13,18 +13,18 @@ import java.util.concurrent.atomic.AtomicBoolean
 
 /** Connects the existing policy engine to the library owner, without creating a synthetic module. */
 internal object RuntimeRemotePolicy {
-    fun validated(policy: RemotePolicy): RemotePolicy {
+    fun validated(policy: RemotePolicySettings): RemotePolicySettings {
         require(policy.onDeny == DenyAction.DISABLE_PLUGIN) {
             "pnLibrary policy must use DISABLE_PLUGIN: the library is not a consumer module"
         }
-        return RemotePolicy.builder().source(policy.source).checkEvery(policy.checkEvery)
+        return RemotePolicySettings.builder().source(policy.source).checkEvery(policy.checkEvery)
             .onDeny(policy.onDeny).values(policy.values).build()
     }
 
     fun start(
         library: PnLibrary,
         platform: PlatformAdapter,
-        policy: RemotePolicy,
+        policy: RemotePolicySettings,
         isClosed: () -> Boolean,
         closeRuntime: () -> Unit,
     ) {

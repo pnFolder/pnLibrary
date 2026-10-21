@@ -16,7 +16,7 @@ dependencies {
     implementation(libs.kotlin.stdlib)
     // The adapter is instantiated only after the factory checks for Java 21. The bridge is built for Java 21,
     // so this Java 17 module asks for that variant explicitly instead of failing Gradle's JVM-version matching.
-    compileOnly(project(":modules:internal:faststats-velocity")) {
+    compileOnly(project(":platforms:velocity:faststats")) {
         attributes { attribute(TargetJvmVersion.TARGET_JVM_VERSION_ATTRIBUTE, 21) }
     }
     compileOnly(libs.velocity.api)

@@ -78,7 +78,7 @@ dependencies {
     implementation(libs.adventure.gson)
     implementation(libs.adventure.plain)
     compileOnly(libs.faststats.core.j8)
-    implementation(project(":modules:design:console"))
+    implementation(project(":modules:console"))
 
     testImplementation(libs.junit.jupiter)
     testImplementation(libs.mockito.core)

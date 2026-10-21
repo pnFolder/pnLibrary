@@ -20,7 +20,7 @@ apiValidation {
             "smoke-bungee",
             "smoke-velocity",
             "runtime",
-            "faststats-velocity",
+            "faststats",
             "paper",
             "currency-runtime",
             "config-runtime",
@@ -153,8 +153,8 @@ dependencies {
     dokka(project(":modules:features:currency-api"))
     dokka(project(":modules:features:currency-runtime"))
     dokka(project(":modules:features:minecraft-localization"))
-    dokka(project(":modules:bootstrap:bukkit"))
-    dokka(project(":modules:design:console"))
+    dokka(project(":platforms:bukkit:bootstrap"))
+    dokka(project(":modules:console"))
     dokka(project(":platforms:bukkit:api"))
     dokka(project(":platforms:bungee:api"))
     dokka(project(":platforms:velocity:api"))

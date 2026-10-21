@@ -6,10 +6,10 @@ import org.pnfolder.pnlibrary.api.config.ConfigurationService
 import org.pnfolder.pnlibrary.api.diagnostics.DebugRequest
 import org.pnfolder.pnlibrary.api.diagnostics.DiagnosticReport
 import org.pnfolder.pnlibrary.api.diagnostics.DiagnosticsService
-import org.pnfolder.pnlibrary.api.diagnostics.ObservabilityService
 import org.pnfolder.pnlibrary.api.events.EventService
 import org.pnfolder.pnlibrary.api.logging.LoggingService
 import org.pnfolder.pnlibrary.api.metrics.MetricsService
+import org.pnfolder.pnlibrary.api.observability.ObservabilityService
 import org.pnfolder.pnlibrary.api.placeholders.PlaceholderAdapterRegistry
 import org.pnfolder.pnlibrary.api.placeholders.PlaceholderValueStore
 import org.pnfolder.pnlibrary.api.platform.PlatformProvider
@@ -41,13 +41,11 @@ interface PnLibrary : Closeable {
     /** Registry for diagnostic data contributed by consumer plugins. */
     val diagnostics: DiagnosticsService
 
-    /** Unified diagnostics and activity entry point for support data. */
+    /** Observations, component status and support reports. */
     val observability: ObservabilityService
-        get() = throw UnsupportedOperationException("Observability service is not available in this runtime")
 
     /** Local bounded activity journal used by diagnostics and support reports. */
     val activity: ActivityService
-        get() = throw UnsupportedOperationException("Activity journal is not available in this runtime")
 
     /** Managed bStats sessions; every plugin supplies its own project ID. */
     val metrics: MetricsService
@@ -63,7 +61,6 @@ interface PnLibrary : Closeable {
 
     /** Cross-platform player, console, native-sender, and composite audiences. */
     val audiences: AudienceService
-        get() = throw UnsupportedOperationException("Audiences are not available in this runtime")
 
     /** Typed process-wide services with plugin-owned registrations. */
     val services: ServiceManager

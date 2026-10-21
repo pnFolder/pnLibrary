@@ -3,13 +3,15 @@ package org.pnfolder.pnlibrary.core.observability
 import org.pnfolder.pnlibrary.api.activity.ActivityAttachment
 import org.pnfolder.pnlibrary.api.activity.ActivityEvent
 import org.pnfolder.pnlibrary.api.activity.ActivityQuery
+import org.pnfolder.pnlibrary.api.activity.ActivityService
 import org.pnfolder.pnlibrary.api.diagnostics.DiagnosticLevel
 import org.pnfolder.pnlibrary.api.diagnostics.DiagnosticRegistration
 import org.pnfolder.pnlibrary.api.diagnostics.DiagnosticsContributor
-import org.pnfolder.pnlibrary.api.diagnostics.ObservabilityService
+import org.pnfolder.pnlibrary.api.diagnostics.DiagnosticsService
 import org.pnfolder.pnlibrary.api.observability.ComponentStatus
 import org.pnfolder.pnlibrary.api.observability.ObservabilityReport
 import org.pnfolder.pnlibrary.api.observability.ObservabilityReportRequest
+import org.pnfolder.pnlibrary.api.observability.ObservabilityService
 import org.pnfolder.pnlibrary.api.observability.Observation
 import org.pnfolder.pnlibrary.api.observability.ObservationQuery
 import org.pnfolder.pnlibrary.api.observability.ObservationRequest
@@ -20,14 +22,15 @@ import java.nio.file.Path
  * One entry point for diagnostics, observations, activity history, attachments,
  * component status, and support reports.
  *
- * The older diagnostics and activity interfaces remain available as compatible
- * views of the same runtime. This facade translates those calls; storage and
- * retention stay inside [ObservabilityRuntime].
+ * [PnLibrary.diagnostics][org.pnfolder.pnlibrary.api.runtime.PnLibrary.diagnostics],
+ * [PnLibrary.activity][org.pnfolder.pnlibrary.api.runtime.PnLibrary.activity] and
+ * [PnLibrary.observability][org.pnfolder.pnlibrary.api.runtime.PnLibrary.observability] are this one object seen
+ * through three interfaces. Storage and retention stay inside [ObservabilityRuntime].
  */
 internal class ObservabilityServiceImpl(
     private val diagnostics: DiagnosticsRegistry,
     private val runtime: ObservabilityRuntime,
-) : ObservabilityService {
+) : DiagnosticsService, ActivityService, ObservabilityService {
     override val apiVersion: Int
         get() = diagnostics.apiVersion
 

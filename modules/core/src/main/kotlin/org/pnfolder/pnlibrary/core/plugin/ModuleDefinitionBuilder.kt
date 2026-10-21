@@ -7,7 +7,7 @@ import org.pnfolder.pnlibrary.api.plugin.PluginBuilder
 import org.pnfolder.pnlibrary.api.plugin.PluginDependency
 import org.pnfolder.pnlibrary.api.plugin.PluginMetadataBuilder
 import org.pnfolder.pnlibrary.api.plugin.PluginOptions
-import org.pnfolder.pnlibrary.api.plugin.RemotePolicy
+import org.pnfolder.pnlibrary.api.plugin.RemotePolicySettings
 import org.pnfolder.pnlibrary.api.updates.PluginUpdateRequest
 import org.pnfolder.pnlibrary.api.updates.ProductDescriptor
 import java.nio.file.Path
@@ -21,7 +21,7 @@ import java.util.function.Consumer
  * user-facing configuration two distinct responsibilities.
  */
 internal class ModuleDefinitionBuilder : PluginBuilder {
-    var remotePolicy: RemotePolicy? = null
+    var remotePolicy: RemotePolicySettings? = null
     var metadataName: String? = null
     var metadataVersion: String? = null
     var metadataAuthors: String? = null
@@ -83,7 +83,7 @@ internal class ModuleDefinitionBuilder : PluginBuilder {
         downloadsRequest = request
     }
 
-    override fun remotePolicy(policy: RemotePolicy): PluginBuilder = apply {
+    override fun remotePolicy(policy: RemotePolicySettings): PluginBuilder = apply {
         remotePolicy = policy
     }
 

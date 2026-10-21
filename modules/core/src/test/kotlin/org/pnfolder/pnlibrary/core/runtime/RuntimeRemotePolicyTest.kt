@@ -8,7 +8,7 @@ import org.pnfolder.pnlibrary.api.logging.LoggingService
 import org.pnfolder.pnlibrary.api.logging.PnLogger
 import org.pnfolder.pnlibrary.api.platform.PlatformType
 import org.pnfolder.pnlibrary.api.plugin.DenyAction
-import org.pnfolder.pnlibrary.api.plugin.RemotePolicy
+import org.pnfolder.pnlibrary.api.plugin.RemotePolicySettings
 import org.pnfolder.pnlibrary.api.remote.PlatformInfo
 import org.pnfolder.pnlibrary.api.remote.ProductInfo
 import org.pnfolder.pnlibrary.api.remote.RemotePolicyContext
@@ -67,7 +67,7 @@ class RuntimeRemotePolicyTest {
 
     @Test
     fun `unreadable policy and setup failures stop the library rather than ignore its policy`() {
-        val missing = RemotePolicy.builder().source(directory.resolve("Missing.kt").toUri().toString()).build()
+        val missing = RemotePolicySettings.builder().source(directory.resolve("Missing.kt").toUri().toString()).build()
         val fixture = fixture(PlatformType.VELOCITY)
         fixture.start(missing)
         fixture.ready.single().run()
@@ -105,13 +105,13 @@ class RuntimeRemotePolicyTest {
         val platform = mock(PlatformAdapter::class.java)
         val modulePolicy = policy("ModulePolicy", true).copy(onDeny = DenyAction.DISABLE_MODULE)
         assertThrows(IllegalArgumentException::class.java) { PnLibraryRuntimeHost.start(Any(), platform, modulePolicy) }
-        assertThrows(IllegalArgumentException::class.java) { RuntimeRemotePolicy.validated(RemotePolicy("http://example.org/Unsafe.java")) }
+        assertThrows(IllegalArgumentException::class.java) { RuntimeRemotePolicy.validated(RemotePolicySettings("http://example.org/Unsafe.java")) }
         verifyNoInteractions(platform)
         assertNotNull(PnLibraryRuntimeHost::class.java.getMethod("start", Any::class.java, PlatformAdapter::class.java))
         assertNotNull(PnLibraryRuntimeHost::class.java.getMethod("startAndRegisterPlatform", Any::class.java, PlatformAdapter::class.java, Class::class.java, Any::class.java))
     }
 
-    private fun policy(name: String, allowed: Boolean): RemotePolicy {
+    private fun policy(name: String, allowed: Boolean): RemotePolicySettings {
         val source = directory.resolve("$name.java")
         Files.write(source, """
             import org.pnfolder.pnlibrary.api.remote.*;
@@ -122,7 +122,7 @@ class RuntimeRemotePolicyTest {
                 }
             }
         """.trimIndent().toByteArray())
-        return RemotePolicy.builder().source(source.toUri().toString()).checkEvery(Duration.ofMinutes(15))
+        return RemotePolicySettings.builder().source(source.toUri().toString()).checkEvery(Duration.ofMinutes(15))
             .value("product", "pnlibrary").build()
     }
 
@@ -155,7 +155,7 @@ class RuntimeRemotePolicyTest {
                 .server(ServerInfo("1.0", MinecraftVersion.parseInfo(null))).build()
             `when`(platform.remotePolicyContext(owner, mapOf("product" to "pnlibrary"))).thenReturn(context)
         }
-        fun start(policy: RemotePolicy) = RuntimeRemotePolicy.start(library, platform, policy, { closed }) { closes++; closed = true }
+        fun start(policy: RemotePolicySettings) = RuntimeRemotePolicy.start(library, platform, policy, { closed }) { closes++; closed = true }
     }
 }
 

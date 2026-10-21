@@ -12,7 +12,7 @@ permissions:
     description: Управление pnLibrary и обновлениями pnFolder
     default: op
   pnlibrary.debug:
-    description: Allows creating encrypted pnLibrary diagnostic reports
+    description: Создавать зашифрованные отчёты для поддержки (/pndebug)
     default: op
   pnlibrary.updates.notify:
     description: Получать уведомления об обновлениях при входе
@@ -24,7 +24,7 @@ permissions:
     description: Просматривать совместимый план обновлений
     default: op
   pnlibrary.updates.settings:
-    description: Менять канал, автозагрузку и удержание обновлений плагина
+    description: Менять канал, автозагрузку и паузу обновлений плагина
     default: op
   pnlibrary.updates.rollback:
     description: Просматривать резервные наборы и откатывать обновления
@@ -36,5 +36,5 @@ permissions:
     description: Разрешать установку новых управляемых компонентов
     default: op
   pnlibrary.updates.restart:
-    description: Подтверждать перезапуск после staging
+    description: Подтверждать перезапуск после подготовки обновления
     default: op

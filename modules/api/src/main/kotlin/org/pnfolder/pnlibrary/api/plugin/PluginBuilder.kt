@@ -64,10 +64,6 @@ interface PluginBuilder {
         return depends(*builder.build().toTypedArray())
     }
 
-    /** Adds one dependency group; singular convenience alias for [dependencies]. */
-    @Deprecated("Alias of dependencies", ReplaceWith("dependencies(configure)"))
-    fun dependency(configure: Consumer<DependencyBuilder>): PluginBuilder = dependencies(configure)
-
     /** Inline GitHub updater configuration with the repository already filled in. */
     fun updates(
         repositoryOwner: String,
@@ -83,7 +79,7 @@ interface PluginBuilder {
     fun downloads(request: FileDownloads): PluginBuilder
 
     /** Attaches one validated reusable remote policy declaration. */
-    fun remotePolicy(policy: RemotePolicy): PluginBuilder
+    fun remotePolicy(policy: RemotePolicySettings): PluginBuilder
 
     /** Builds direct-download declarations inline. */
     fun downloads(configure: Consumer<FileDownloads.Builder>): PluginBuilder {

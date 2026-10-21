@@ -1,186 +1,228 @@
-# Managed update catalog
+# Обновления
 
-## Scope
+pnLibrary обновляет себя и плагины pnFolder, которые зарегистрировались в её сервисе обновлений. Чужие плагины
+в каталог не попадают: их список используется только для проверки зависимостей. Bukkit, BungeeCord и Velocity
+используют один каталог, одни правила, один журнал и одни транзакции. Различаются только команды и то, как
+подготовленные файлы попадают на место при перезапуске.
 
-Only pnLibrary and components explicitly registered with its update service appear in the catalog.
-The native plugin inventory is used for dependency checks, not as a catalog of arbitrary plugins.
-Bukkit, Velocity and Bungee share the catalog, policy, journal and transaction implementation.
-Platform adapters own command delivery and publication of prepared artifacts at restart.
-Never replace an active plugin JAR or claim that a prepared update is already running.
+Главное правило: работающий jar-файл никогда не заменяется на ходу. Обновление **подготавливается**, а
+применяется при следующем запуске сервера. Библиотека никогда не говорит «обновлено», пока новая версия
+действительно не запустилась.
 
-## Existing foundation
+## 1. Как проходит обновление
 
-- RuntimeUpdateMonitor registers pnLibrary itself.
-- UpdateAutomaticPolicy checks administrator and per-product automatic download permissions.
-- UpdateGraphResolver resolves compatible component sets.
-- UpdateStateStore persists plan snapshots, not a complete administrator audit journal.
-- UpdateTransaction preserves JAR backups and supports recovery and rollback.
-- ProxyUpdateCommand exposes plan, check, stage, list, available and paginated history.
-- UpdateEventJournal persists event time, actor, operation, outcome and version transitions.
-- Bukkit exposes catalog pages through `/pn updates list|available|history [page]`.
+```
+проверить каталоги → подобрать совместимые версии → проверить права → сохранить выбранные конфиги
+→ скачать и сверить SHA-256 → подготовить транзакцию → перезапуск → убедиться, что запустились
+нужные версии → записать итог в журнал
+```
 
-## Target workflow
+Автоматическая подготовка разрешена, только если выполнено всё сразу:
 
-Check catalogs -> resolve compatibility -> authorize operation -> snapshot configured paths
--> download and verify -> prepare transaction -> restart -> reconcile loaded versions
--> record applied or failed outcome.
+- администратор явно разрешил автозагрузку;
+- совпадают версия API pnLibrary, Java и платформа;
+- все зависимости совместимы;
+- у файлов есть контрольные суммы от издателя;
+- есть всё, что нужно для отката;
+- нет другой незавершённой транзакции.
 
-Automatic staging requires explicit administrator permission, compatible API/Java/platform and
-dependencies, trusted artifacts, complete rollback data, and no conflicting active transaction.
-Compatibility is not proof that arbitrary plugin code is safe. Do not automatically restart.
-Without a verified platform restart installer, report staging as unsupported instead of success.
-Published catalog artifacts must contain their actual SHA-256 digests with the default
-`require-sha256: true` policy. A missing digest or a mismatch rejects staging; the downloader's
-own computed digest is never substituted for publisher integrity metadata.
+Совместимость не означает, что код чужого плагина безопасен. Поэтому сервер **никогда не перезапускается сам**.
 
-Self-update checks are registered automatically. To opt into automatic preparation, edit the
-existing `updates.yml` (do not replace unrelated settings) and set `updates.enabled: true` and
-`updates.library.automatic-download: true`. The library channel remains independently selected
-by `updates.library.channel`. This permits verified preparation, not a live JAR replacement or
-an automatic server restart. Every changed module in the same atomic plan must also be allowed
-by its own policy; permission for pnLibrary alone cannot bypass a disabled module.
+Каталог обязан публиковать настоящие SHA-256 файлов (`require-sha256: true` по умолчанию). Если суммы нет или она
+не совпала, подготовка отклоняется. Сумму, посчитанную при скачивании, библиотека не подставляет вместо суммы
+издателя.
 
-## Persistent layout beneath the library data directory
+## 2. Настройка (`updates.yml`)
+
+Проверка обновлений самой pnLibrary включена всегда. Чтобы разрешить автоматическую подготовку, откройте
+существующий `updates.yml` (не заменяйте файл целиком) и задайте:
+
+```yaml
+updates:
+  enabled: true
+  library:
+    channel: stable           # stable, rc, beta, alpha или dev
+    automatic-download: true
+```
+
+Это разрешает только подготовку проверенных файлов: ни замены jar на ходу, ни перезапуска не будет. Если в одном
+плане меняется несколько модулей, каждый должен быть разрешён своей настройкой. Разрешение для pnLibrary не
+обходит выключенный модуль.
+
+## 3. Команды
+
+На Bukkit всё находится под `/pn`. На BungeeCord и Velocity работает `/pnupdate`, и всё, что что-то меняет,
+доступно только из консоли.
+
+| Команда | Что делает |
+|---|---|
+| `/pn` или `/pn updates list [страница]` | все управляемые плагины: текущая и доступная версия, состояние |
+| `/pn updates available [страница]` | только плагины с доступным или подготовленным обновлением |
+| `/pn check` (прокси: `check`) | обновить каталоги и составить план |
+| `/pn update-status` (прокси: `plan`) | состояние плана и что ему мешает |
+| `/pn update <плагин>`, затем `/pn update-confirm <код>` | подготовить обновление; код привязан к игроку |
+| `stage <план>` (только прокси) | подготовить ровно этот план и никакой другой |
+| `/pn updates info <плагин>` | карточка: версия, канал, свежая версия каждого канала (по клику канал переключается), автозагрузка, пауза, API, Java, ссылки |
+| `/pn updates settings <плагин>` | канал, автозагрузка и пауза кнопками |
+| `/pn updates set <плагин> channel <stable\|rc\|beta\|alpha\|dev>` | сменить канал |
+| `/pn updates set <плагин> auto <on\|off>` | включить или выключить автозагрузку |
+| `/pn updates set <плагин> hold <1m..7d\|on\|off>` | поставить обновления на паузу; `on` значит 7 дней, новая пауза заменяет старую, пауза снимается сама |
+| `/pn updates history [страница]` | события, новые сверху, по дням: переход версий, итог, кто сделал |
+| `/pn updates history plugin <имя> [страница]` | история одного плагина |
+| `/pn updates backups` | сохранённые наборы для отката |
+| `/pn updates rollback <транзакция>` | подготовить откат к сохранённому набору jar |
+| `/pn updates rollback <транзакция> configs` | то же, вместе с сохранёнными конфигами |
+
+Настройки запоминаются в `updates/settings.json`, паузы в `updates/freezes.json`. Каждое изменение попадает в
+историю вместе с автором.
+
+Опасные действия требуют права и подтверждения, привязанного к автору, операции и транзакции. Откат из консоли
+подтверждается словом `confirm` в конце. Кнопки в чате вызывают те же проверенные обработчики, что и набранные
+команды. В консоли всё читается без наведения и кликов. Ссылка на список изменений открывает страницу релиза:
+Markdown в чат не выводится.
+
+### Права
+
+| Право | Что разрешает |
+|---|---|
+| `pnlibrary.admin` | всё управление pnLibrary и обновлениями |
+| `pnlibrary.updates.view` | смотреть план обновлений |
+| `pnlibrary.updates.settings` | менять канал, автозагрузку и паузу |
+| `pnlibrary.updates.download` | скачивать и проверять план |
+| `pnlibrary.updates.install` | разрешать установку новых компонентов |
+| `pnlibrary.updates.restart` | подтверждать перезапуск после подготовки |
+| `pnlibrary.updates.rollback` | смотреть резервные наборы и откатывать |
+| `pnlibrary.updates.notify` | получать напоминание об обновлениях при входе |
+
+## 4. Применение перед запуском: `pnLibrary-updater`
+
+В релиз входит отдельный `pnLibrary-updater-<версия>.jar`. Это не плагин: держите его **вне** папки `plugins` и
+запускайте только тогда, когда JVM сервера полностью остановлена:
+
+```
+java -jar pnLibrary-updater-<версия>.jar --server-stopped plugins/pnLibrary
+```
+
+Скрипт запуска должен стартовать сервер, только если установщик завершился успешно. Сам установщик сервер не
+останавливает и не запускает. Его файловая блокировка не даст работать параллельно с живой pnLibrary или другим
+установщиком, но не заменяет проверку администратора, что сервер остановлен. Не запускайте его во время старта
+сервера или после простого выключения pnLibrary при работающих других плагинах.
+
+Что делает установщик:
+
+1. Ещё раз сверяет суммы сохранённых файлов.
+2. Ведёт отдельную транзакцию восстановления.
+3. Публикует новый набор jar и забирает подготовленные файлы платформы.
+
+Проверка, что всё запустилось, происходит при следующем старте сервера, а не в том же процессе. Прерванную запись
+jar-файлов восстанавливает только этот установщик.
+
+## 5. Резервные копии конфигов
+
+Автор плагина перечисляет файлы явно:
+
+```kotlin
+PluginUpdateRequest.builder()
+    .configurationBackup(dataDirectory, "config.yml", "messages.yml")
+```
+
+Сохраняются только файлы изменившихся зарегистрированных компонентов. Свой `updates.yml` pnLibrary сохраняет
+сама. Номер снимка хранится в той же транзакции обновления.
+
+Правила:
+
+- копируются только зарегистрированные пути компонента, а не вся папка плагина или сервера;
+- символические ссылки, пути за пределами зарегистрированных папок и совпадающие имена отклоняются; есть
+  ограничения на число и размер файлов;
+- базы данных, кэши, ключи и прочие файлы сами собой никогда не попадают в копию;
+- у копии есть манифест с хешами;
+- копии, на которые ссылается возможный откат, не удаляются при очистке.
+
+Обычный откат конфиги не трогает. Чтобы вернуть и их:
+
+- Bukkit: `/pn updates rollback <транзакция> configs` и подтверждение, привязанное к игроку;
+- консоль прокси: `/pnupdate rollback <транзакция> configs confirm`.
+
+Команда только ставит задачу и ничего не восстанавливает на живом сервере. Остановите JVM и запустите
+установщик. В момент восстановления текущие файлы сохраняются ещё раз, включая те, которых не было в исходном
+снимке. Посторонние файлы не удаляются. Если установка не удалась, установщик возвращает и прежние jar, и
+прежние конфиги. Если вернуть не получилось, он завершается с ненулевым кодом, и скрипт запуска не должен
+стартовать сервер.
+
+## 6. Проверка после запуска
+
+События старта сохраняют исходную транзакцию и реальные переходы версий, даже если новая проверка уже составила
+другой план. Подтверждение отката записывается отдельным событием `HEALTH_ROLLBACK`. Проверяется, что загрузились
+нужные версии зарегистрированных плагинов, а не их бизнес-логика.
+
+Фоновые проверки начинаются после сверки при старте. На прокси зарегистрированным плагинам даётся 30 секунд
+на инициализацию. Если проверка не прошла, автоматическая подготовка для этих плагинов останавливается. Снять
+запрет может только следующая проверка, которая увидит ожидаемые версии. Простой перезапуск или загрузка
+каталога его не снимают.
+
+## 7. Журнал обновлений
+
+Файлы лежат в папке данных pnLibrary:
 
 ```
 updates/
-  state.json                 latest resolver snapshot (existing)
-  history/                   bounded resolver snapshots (existing)
-  transactions/<id>/         durable transaction and JAR backups (existing)
-  events/                    timestamped action records, pruned by age and count
-  components.json            components, versions and settings seen at the last start
-  configurations/<id>/      explicitly selected configuration backups
-  configuration-restores/   offline restore journals and pre-restore snapshots
-  install.lock              excludes concurrent runtime/offline installation
+  state.json                 последний снимок плана
+  history/                   ограниченная история снимков плана
+  transactions/<id>/         транзакции и резервные jar
+  events/                    события с временем, удаляются по возрасту и количеству
+  components.json            компоненты, версии и настройки на прошлом старте
+  configurations/<id>/       выбранные резервные копии конфигов
+  configuration-restores/    журналы восстановления конфигов и снимки перед восстановлением
+  install.lock               не даёт рантайму и установщику работать одновременно
+  settings.json              канал и автозагрузка по плагинам
+  freezes.json               паузы
 ```
 
-Each event records schema, event ID, transaction/plan ID, UTC instant, actor kind and stable ID,
-action, product IDs, old/new versions and outcome. System actions use an explicit SYSTEM actor.
-Record failed update operations without leaking credentials or arbitrary configuration values.
-Read events newest first with bounded pagination; the API also supports a product filter.
-Do not infer installation time from release publication time or filesystem modification time.
+Каждое событие хранит:
 
-Besides plan operations (CHECK, STAGE, ROLLBACK, HEALTH, HEALTH_ROLLBACK, STATE_OBSERVED) the journal records
-component changes found by comparing `components.json` with the previous start: COMPONENT_ADDED,
-COMPONENT_REMOVED, VERSION_CHANGED (a version change the updater did not perform) and SETTINGS_CHANGED
-(channel or automatic download). The first start only writes the baseline.
+- номер события и номер транзакции или плана;
+- время в UTC;
+- кто сделал (игрок, консоль или `SYSTEM`);
+- действие, плагины, старую и новую версию;
+- итог.
 
-The journal is bounded: events older than 90 days and anything beyond the newest 1000 are deleted, and an
-observation identical to the previous event is not written again. Persisted incident history is rotated
-by age, file count and total size, and in-memory incidents expire after `history-retention-days`.
+Ключи и значения конфигов в журнал не попадают. Время установки никогда не выводится из даты релиза или даты
+файла.
 
-## Commands
+Кроме операций плана (`CHECK`, `STAGE`, `ROLLBACK`, `HEALTH`, `HEALTH_ROLLBACK`, `STATE_OBSERVED`), журнал отмечает
+изменения, найденные сравнением `components.json` с прошлым стартом:
 
-Bukkit uses `/pn updates` for catalog/history/backups/selected rollback. Proxy servers use
-`/pnupdate`; proxy mutations are console-only:
+- `COMPONENT_ADDED`, `COMPONENT_REMOVED`;
+- `VERSION_CHANGED`: версия поменялась не через обновление;
+- `SETTINGS_CHANGED`: сменился канал или автозагрузка.
 
-- `list [page]`: managed components, running/available version and state.
-- `available [page]`: only components with an available/prepared update.
-- `check` (Bukkit: `/pn check`): refresh catalogs and resolve a plan.
-- `plan` (Bukkit: `/pn update-status`): selected plan state and blockers.
-- `stage <plan-id>` (proxy): stage exactly the requested plan, never silently substitute another plan.
-- `info <plugin>`: one component card with version, channel, the newest release of every channel
-  (click to switch), automatic download, pause, API, Java and links.
-- `settings <plugin>`: channel, automatic download and pause as clickable choices.
-- `set <plugin> channel <stable|rc|beta|alpha|dev>`, `set <plugin> auto <on|off>`,
-  `set <plugin> hold <1m..7d|on|off>`: change one setting; it is remembered in `updates/settings.json`
-  (pauses in `updates/freezes.json`) and recorded in history with its author. `hold on` pauses for 7 days,
-  a new period replaces the current pause, and a pause ends by itself.
-- `history [page]`: events newest first, grouped by day, with the version transition, outcome and actor;
-  `history plugin <name> [page]` shows only one component. Pages are reported as "page X of Y".
-- `rollback <transaction-id>`: prepare a specific retained JAR set for restart.
-- `rollback <transaction-id> configs`: explicitly include its configuration snapshot.
+Первый старт только записывает исходное состояние.
 
-Bukkit keeps its existing `/pn update <product>` and player-bound `/pn update-confirm <token>`
-workflow for preparing an update. A selected console rollback requires the final `confirm` word.
+Журнал ограничен: удаляются события старше 90 дней и всё сверх последних 1000. Наблюдение, совпадающее с
+предыдущим событием, повторно не пишется.
 
-Sensitive actions require permissions and confirmation bound to actor, operation and transaction.
-Clickable chat controls invoke the same validated handlers as typed commands.
-Console output remains readable without hover or click. Changelog links open human-readable release
-notes; never download and render their full Markdown into Minecraft chat.
+## 8. Для разработчиков библиотеки: приёмка на настоящих серверах
 
-## Configuration backup rules
+Эти тесты используют jar-файлы серверов, которые вы указываете сами. Они создают свои папки в
+`build/update-catalog-native`, слушают только локальные порты, выключают метрики и сохраняют логи каждого этапа.
+Существующие серверы не трогаются. Синтетический релиз меняет только метаданные версий, никуда не загружается и
+не выдаётся за настоящий.
 
-Back up only registered component-owned configuration paths, not entire plugin/server directories.
-Reject symlinks, paths outside registered roots and collisions; impose file/count/size limits.
-Never include databases, caches, credentials or arbitrary files implicitly.
-Store a manifest and hashes. Snapshot current files again before a destructive restore.
-Configuration restore is opt-in, requires a stopped component/restart installation, and must not
-delete unrelated files or newly created files outside the snapshot manifest.
-Retention must preserve backups referenced by rollback-capable transactions.
+Проверяются:
 
-## Required verification
+- хеши установленных jar;
+- команды;
+- привязка к исходной транзакции;
+- настоящие перезапуски процесса;
+- события проверки после запуска;
+- явное восстановление конфигов.
 
-Persist/reopen journal; actor and timestamp fidelity; pagination and filtering; no foreign plugins;
-explicit auto-update policy; artifact rejection; requested-plan identity; concurrent actions;
-restart reconciliation; interrupted transaction recovery; exact transaction rollback;
-configuration path/symlink/limit checks; restore failure recovery; Bukkit and both proxy commands.
-Live-server acceptance must distinguish prepared, applied and rolled-back running versions.
-
-## Pre-start application
-
-The distribution includes a separate `pnLibrary-updater-<version>.jar`. Keep it outside `plugins`
-and run it only after the server/proxy JVM has completely stopped:
-
-```
-java -jar pnLibrary-updater-<version>.jar --server-stopped plugins/pnLibrary
-```
-
-The server launcher must start the JVM only when the updater exits successfully. The updater
-does not stop a running server and does not restart it. Its file lock rejects an active pnLibrary
-runtime or another installer; it is not a substitute for the operator's stopped-server check.
-Do not run it during startup or after merely disabling pnLibrary while other plugins remain active.
-The GitHub release workflow includes the standalone updater alongside the platform plugin JARs;
-the updater is not a server plugin and must not be copied into `plugins`.
-
-Application checks preserved artifact hashes again, keeps a separate recovery transaction,
-publishes the installed JAR set and consumes matching platform update files. Runtime health
-confirmation happens after the subsequent server start, never during preparation in the same
-process. Interrupted installed-JAR writes are recovered only by the offline installer.
-
-## Configuration restore consent
-
-Declare explicit files with `PluginUpdateRequest.builder().configurationBackup(dataDirectory,
-"config.yml", "messages.yml")`. Only changed registered components are captured; pnLibrary
-preserves its own `updates.yml`. The snapshot ID is stored in the same update transaction.
-
-An ordinary selected rollback leaves configuration untouched. To include the retained files:
-
-- Bukkit: `/pn updates rollback <transaction-id> configs`, then use the player-bound confirmation.
-- Proxy console: `/pnupdate rollback <transaction-id> configs confirm`.
-
-The command queues intent; it never restores live files. Stop the JVM and run the updater before
-starting again. Current configuration is captured at actual restoration time, including files
-that were absent in the original snapshot. Unrelated paths are never removed. A failed enclosing
-installation attempts to recover both the pre-operation JARs and the pre-operation configuration;
-unresolved recovery causes a nonzero updater exit and must prevent the launcher from starting.
-
-## Startup verification
-
-Startup events retain the originating transaction/plan and its actual version transitions, even
-if a newer remote check has already produced another plan. Rollback confirmation is a distinct
-`HEALTH_ROLLBACK` event. Confirmation verifies loaded registered versions, not arbitrary plugin
-business logic or future behavior.
-
-Background checks start after startup reconciliation. On proxies, expected registrations get a
-bounded 30-second initialization grace period. A failed verification prevents further automatic
-staging for affected registered products. A subsequent check may clear that condition only after
-observing the expected versions; merely restarting or fetching a catalog does not clear it.
-
-## Reproducing native acceptance
-
-Native tests require explicitly supplied existing platform JARs. They create unique directories
-under `build/update-catalog-native`, bind loopback ports, disable metrics and retain phase logs.
-They do not change existing server directories. The synthetic release changes native/component
-version metadata only; it is never uploaded or presented as a published release. The tests verify
-installed JAR hashes, commands, original transaction attribution, real process restarts, durable
-health events and explicit configuration restoration. Network catalog/resolver/staging policy
-is covered separately by core tests, not inferred from the synthetic release test.
+Сетевую часть (каталог, подбор версий, правила подготовки) покрывают тесты `core`.
 
 ```
 gradlew :modules:core:verifyNativeProxyUpdates -PvelocityServerJar=<velocity.jar> -PbungeeServerJar=<bungeecord.jar>
-gradlew :modules:core:verifyNativeBukkitUpdates -PpaperServerJar=<paper.jar> -PpaperEulaFile=<already-accepted-eula.txt>
+gradlew :modules:core:verifyNativeBukkitUpdates -PpaperServerJar=<paper.jar> -PpaperEulaFile=<уже-принятый-eula.txt>
 ```
 
-The Paper test must be authorized by the operator and supplied an already accepted EULA; it does
-not accept terms. Only server software caches are copied, never worlds, plugin data or secrets.
+Тест Paper запускается только с разрешения администратора и с уже принятым EULA: сам он условия не принимает.
+Копируются только кэши серверного ПО, никогда миры, данные плагинов или секреты.

@@ -1,31 +1,42 @@
-# Example remote policy
+# Пример удалённой политики
 
-The Java source in this project is an example remote policy. Publish the raw `.java` file at an HTTPS URL.
+Удалённая политика — это один файл `.java` или `.kt`, который pnLibrary скачивает, компилирует и запускает, чтобы
+решить, можно ли плагину или модулю работать. Так автор может, например, отключить устаревшую версию плагина у
+всех серверов, не выпуская обновление.
 
-Build it with:
+Пример `MinimumVersionPolicy.java` пропускает версии плагина начиная с `2.4.0`. Более старые получают отказ:
 
 ```text
-gradlew :examples:remote-policy:build
+Установлена версия 2.3.1, требуется 2.4.0. Скачайте новую версию плагина.
 ```
 
-The host plugin points directly to a raw `.java` file. The package and class name
-are read from the source automatically; they are not written in the host plugin.
+## Как подключить
 
-The host plugin registers it with pnLibrary:
+1. Опубликуйте файл политики по HTTPS, например как raw-файл на GitHub.
+2. Укажите его при регистрации модуля:
 
 ```kotlin
 val plugin = library.plugins.register(this)
 plugin.registerModule("pncase") { builder ->
-    builder.remotePolicy { policy ->
-        policy.source("https://raw.githubusercontent.com/pnFolder/pnRemotePolicies/main/pnCase/RemotePolicy.java")
-        policy.checkEvery(Duration.ofHours(6))
-        policy.onDeny(DenyAction.DISABLE_MODULE)
-    }
+    builder.remotePolicy(
+        RemotePolicySettings.builder()
+            .source("https://raw.githubusercontent.com/<владелец>/<репозиторий>/main/MinimumVersionPolicy.java")
+            .checkEvery(Duration.ofHours(6))
+            .onDeny(DenyAction.DISABLE_MODULE)
+            .build(),
+    )
 }
 ```
 
-The example allows plugin version `2.4.0` and newer. Older versions are denied:
+Пакет и имя класса библиотека читает из самого файла, в плагине их писать не нужно. `onDeny` выбирает, что
+выключить при отказе: модуль (`DISABLE_MODULE`) или весь плагин (`DISABLE_PLUGIN`). `checkEvery` задаёт, как
+часто политика проверяется заново.
+
+Политика реализует `org.pnfolder.pnlibrary.api.remote.RemotePolicy` и возвращает
+`RemotePolicyResult.allow()` или `RemotePolicyResult.deny("причина")`.
+
+Проверить, что пример компилируется:
 
 ```text
-Установлена версия 2.3.1, требуется 2.4.0. Скачайте новую версию плагина.
+gradlew :examples:remote-policy:build
 ```

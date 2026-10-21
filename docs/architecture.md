@@ -1,69 +1,106 @@
 # Архитектура
 
-pnLibrary — один рантайм на сервер, который общие для всех плагинов pnFolder сервисы предоставляет через
-стабильный публичный API. Платформенные различия изолированы в адаптерах.
+pnLibrary запускается на сервере один раз и раздаёт всем плагинам pnFolder общие сервисы через публичный API.
+Всё, что зависит от платформы (Bukkit, BungeeCord, Velocity), спрятано в адаптерах.
 
 ## Слои
 
 ```
 плагины pnFolder
-      │  compileOnly
+      │  compileOnly: видят только контракты
       ▼
-modules/api ─────────── modules/common            публичный контракт (бинарная совместимость)
-platforms/*/api                                    платформенные расширения API
+modules/api, modules/common, features/*-api      публичный контракт, проверяется на бинарную совместимость
+platforms/*/api                                  контракты конкретной платформы (меню, предметы, ...)
       ▲
       │ реализует
-modules/core ─────────► modules/runtime-spi       рантайм: обновления, диагностика, метрики, UI
-      ▲                       ▲
-      │                       │ реализует
-platforms/bukkit|bungee|velocity/runtime           адаптеры: команды, задачи, логи, аудитории
+modules/core ──────────► modules/runtime-spi     рантайм: обновления, журнал, команды, метрики, отчёты
+      ▲                        ▲
+      │                        │ реализует
+platforms/*/runtime                              адаптеры платформ: команды, задачи, логи, игроки
       ▲
-distribution                                       shadow-сборки, в том числе universal
+distribution                                     итоговые jar-файлы, в том числе universal
 ```
 
-Правила, которые проверяет сборка:
+Плагин видит только интерфейсы и модели. Где лежит реализация, он не знает, и она может меняться, не ломая его.
+Сервисы платформы плагин получает так:
 
-- публичные модули (`api`, `common`, `currency-api`, `platforms/*/api`) не зависят от реализаций —
-  задача `verifyPublicModuleBoundaries`;
-- изменения публичного API видны в дампах `*/api/*.api`, `apiCheck` входит в `check`;
-- байткод Java 8 по умолчанию, модуль повышает уровень свойством `pn.java.release` в своём `gradle.properties`.
+```kotlin
+val library = PnLibraryProvider.get()
+val bukkit = library.platform<BukkitPlatform>()
+bukkit.items.fromSection(config.getConfigurationSection("reward"))
+bukkit.menus.open(this, player, menu)
+```
+
+## Что проверяет сборка
+
+| Правило | Где проверяется |
+|---|---|
+| публичные модули не зависят от реализаций | задача `verifyPublicModuleBoundaries` |
+| в публичных модулях нет рефлексии и платформенной реализации | `SourceConventionsTest` |
+| `core` не знает о платформах, платформы не знают друг о друге | `SourceConventionsTest` |
+| каждое изменение публичного API видно в слепках `*/api/*.api` | `apiCheck`, входит в `check` |
+| импорты без `*`, цвета только из палитры, у fluent-методов явный тип | `SourceConventionsTest` |
+
+Байткод по умолчанию Java 8. Модуль повышает уровень свойством `pn.java.release` в своём `gradle.properties`:
+Velocity требует 17, Paper Brigadier и FastStats для Velocity требуют 21.
 
 ## Модули
 
 | Модуль | Назначение |
 |---|---|
-| `modules/common` | общие JVM-помощники: `AtomicFiles`, `Digests`, `RussianText`, версии Minecraft и Java |
-| `modules/api` | публичный API: команды, задачи, события, конфиги, обновления, диагностика, метрики |
-| `modules/runtime-spi` | контракт платформенного адаптера и общие части адаптеров (`PlatformPlugins`, `JulLogObserver`, `PlatformLifecycle`, `DiagnosticSections`) |
+| `modules/common` | общие помощники JVM: `AtomicFiles`, `Digests`, `RussianText`, версии Minecraft и Java |
+| `modules/api` | публичный API: команды, задачи, события, конфиги, обновления, диагностика, метрики, чат |
+| `modules/runtime-spi` | контракт адаптера платформы и общие части адаптеров |
 | `modules/core` | реализация рантайма |
-| `modules/features/currency-*` | валюта: API и реализация хранилищ (файл, JDBC) |
+| `modules/console` | карточки и деревья для консоли (Java, без зависимостей) |
+| `modules/features/config-*` | типизированные YAML-конфиги: API и реализация, см. [configuration.md](configuration.md) |
+| `modules/features/currency-*` | валюта: API и реализация хранилищ, см. [currency.md](currency.md) |
 | `modules/features/minecraft-localization` | переводы ванильных названий (Bukkit) |
-| `modules/design/console` | консольные карточки |
-| `modules/bootstrap/bukkit` | встраиваемый установщик pnLibrary для плагинов |
-| `modules/internal/faststats-velocity` | мост FastStats для Velocity (Java 21) |
-| `platforms/*` | API и рантайм-адаптеры Bukkit, BungeeCord, Velocity |
+| `platforms/bukkit/api` | контракты Bukkit: `BukkitPlatform`, меню, предметы, визуальные сущности, `ServerInfo` |
+| `platforms/bukkit/runtime` | адаптер Bukkit, Spigot, Paper и Folia и реализации контрактов выше |
+| `platforms/bukkit/paper` | регистрация команд через Brigadier на Paper (Java 21) |
+| `platforms/bukkit/bootstrap` | встраиваемый установщик: плагин сам скачивает pnLibrary, если её нет |
+| `platforms/bungee/api`, `platforms/velocity/api` | доступ к прокси-серверу платформы |
+| `platforms/bungee/runtime`, `platforms/velocity/runtime` | адаптеры прокси |
+| `platforms/velocity/faststats` | мост FastStats для Velocity (Java 21) |
 | `distribution` | сборка jar-файлов и офлайн-установщика обновлений |
-| `examples/*` | демонстрационные, приёмочные и smoke-плагины |
-| `tools/*` | генерация метаданных компонентов, скрипты релиза и проверки |
+| `examples/demo-bukkit` | демо-плагин со всеми возможностями и полный пример команд `ShopExamplePlugin` |
+| `examples/acceptance-bukkit` | приёмочный плагин на Java |
+| `examples/remote-policy` | пример удалённой политики |
+| `examples/smoke-*` | проверка, что собранные jar компилируются у плагина на каждой платформе |
+| `tools/*` | скрипты релиза, проверки поколения API и приёмки |
 
 ## Пакеты `core`
 
-| Пакет | Ответственность |
+| Пакет | За что отвечает |
 |---|---|
-| `core.runtime` | сборка рантайма, жизненный цикл, конфигурация |
-| `core.ui` | единый стиль сообщений в чате: `ChatPalette`, `ChatKit`, `ChatNotice` |
+| `core.runtime` | запуск рантайма (`PnLibraryLauncher`), жизненный цикл, `config.yml`, часовой пояс |
+| `core.commands` | дерево команд, разбор аргументов, пять уровней ответа на ошибки |
+| `core.journal` | журнал событий `/pnevents` и сводка ошибок при входе |
+| `core.observability`, `core.diagnostics`, `core.logging` | «чёрный ящик», отчёты для поддержки, логи |
+| `core.upload` | загрузка зашифрованных отчётов |
 | `core.updates.catalog` | страницы и команды каталога обновлений |
 | `core.updates.service` | сервис обновлений и оркестратор |
-| `core.updates.policy` | `updates.yml`, переопределения, каналы, автозагрузка |
-| `core.updates.install` | разрешение графа, подготовка, установка, офлайн-установщик |
-| `core.updates.history` | журнал событий, состояние, снимки конфигураций |
+| `core.updates.policy` | `updates.yml`, каналы, автозагрузка, переопределения |
+| `core.updates.install` | подбор версий, подготовка, установка, офлайн-установщик |
+| `core.updates.history` | журнал обновлений, состояние, снимки конфигов |
 | `core.updates.engine` | каталоги релизов, загрузка, проверка, транзакции, пауза |
-| `core.observability`, `core.diagnostics`, `core.logging` | чёрный ящик, отчёты, логи |
+| `core.downloads` | загрузка зависимостей плагинов |
 | `core.metrics` | bStats и FastStats за одним `MetricsService` |
-| `core.io` | текстовые файлы с совместимостью с Java 8 |
+| `core.plugin` | регистрация плагинов и модулей |
+| `core.remote` | удалённые политики |
+| `core.placeholders`, `core.events`, `core.tasks`, `core.cooldowns`, `core.services`, `core.audiences`, `core.text` | реализации одноимённых сервисов API |
+| `core.ui` | цвета палитры для консоли |
+| `core.io`, `core.security`, `core.lifecycle` | текстовые файлы, шифрование, очистка ресурсов |
 
 ## Сообщения
 
-Все сообщения игрокам строятся через `core.ui.ChatKit`: заголовок жирным акцентом, голубые подписи, белые
-значения, серые скобки у цветных кнопок, секции через пустую строку. Цвета `ChatPalette` подобраны так, что на
-серверах до 1.16 каждая роль превращается в свой стандартный цвет. Консоль получает тот же текст в ASCII.
+Все сообщения строятся через `api.chat.ChatKit`:
+
+- в начале пустая строка и заголовок;
+- секции отделяются пустой строкой, без рамок и линий;
+- подробности спрятаны в карточки при наведении;
+- у кнопок серые скобки и цветная подпись.
+
+Цвета берутся из ролей `ChatPalette`. На серверах до 1.16 каждая роль превращается в свой стандартный цвет.
+Консоль получает тот же текст без кнопок, в ASCII и с ближайшими стандартными цветами.

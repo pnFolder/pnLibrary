@@ -1,5 +1,39 @@
 # Изменения
 
+## Порядок в структуре (ломающие изменения)
+
+**Bukkit API: только контракты**
+- `ItemFactory`, `HeadUtil` и `ItemStackCodec` заменены сервисом `BukkitPlatform.items` (`ItemService`):
+  `fromSection`, `fromMap`, `write`, `writeExact`, `toMap`, `head`, `encode`, `decode`, `isReal`.
+- Предмет можно собрать вручную: `items.create(itemSpec { material(...); name(...); customize { ... } })`.
+- Свой формат конфига (`ItemFormat`): другие имена ключей и свои поля (`field("glow") { item, value -> ... }`).
+  `items.read(...)` отдаёт `ItemSpec`, который можно поправить через `toBuilder()` перед созданием.
+- `VisualEntity` стал интерфейсом. Создание через `BukkitPlatform.visuals` (`VisualService`): `item`, `block`, `text`.
+  `entity()` стал свойством `entity`, `isDead` удалён (это `!isValid`).
+- Реализации переехали в `platforms/bukkit/runtime`. Сборка запрещает рефлексию в публичных модулях.
+- `MenuApi.kt` переименован в `Menu.kt` (типы не менялись).
+
+**Имена**
+- `api.plugin.RemotePolicy` → `RemotePolicySettings`: настройки «откуда брать политику». `api.remote.RemotePolicy`
+  остался самой политикой.
+- Удалён второй `ObservabilityService` из `api.diagnostics`. `PnLibrary.observability` теперь
+  `api.observability.ObservabilityService`. `observability`, `activity` и `audiences` больше не бросают
+  `UnsupportedOperationException` по умолчанию.
+- Внутренний `core.runtime.PnLibraryBootstrap` → `PnLibraryLauncher`, чтобы не путать с установщиком.
+
+**Модули**
+- `modules/design/console` → `modules/console`, артефакт `pnlibrary-console`.
+- `modules/bootstrap/bukkit` → `platforms/bukkit/bootstrap`, пакет `org.pnfolder.pnlibrary.bukkit.bootstrap`.
+- `modules/internal/faststats-velocity` → `platforms/velocity/faststats`, пакет `org.pnfolder.pnlibrary.velocity.faststats`.
+
+**Удалено неиспользуемое**
+- Модели `actions.standard.check.Expansion` и `ProductReleaseManifest`: их никто не исполнял и не читал.
+- Синонимы `PluginBuilder.dependency`, `apiVersion`, `apiVersions`, `artifactPattern`.
+
+**Документация**
+- `docs/updates.md`, `docs/currency.md`, `docs/architecture.md` и README модулей и примеров переписаны на русском
+  как руководства.
+
 ## 0.0.1-dev.1 — большая чистка
 
 **События (ломающие изменения)**

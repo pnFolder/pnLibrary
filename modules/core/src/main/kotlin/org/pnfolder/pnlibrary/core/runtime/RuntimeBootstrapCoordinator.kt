@@ -13,7 +13,7 @@ internal object RuntimeBootstrapCoordinator {
     )
 
     fun start(owner: Any, context: PlatformRuntimeContext): Started {
-        val library = PnLibraryBootstrap.bootstrap(
+        val library = PnLibraryLauncher.bootstrap(
             owner,
             context,
             PnLibraryConfigLoader.load(context.dataFolder) { context.logging.log(owner, LogLevel.WARNING, it) },

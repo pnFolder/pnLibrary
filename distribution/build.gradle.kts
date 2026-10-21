@@ -101,7 +101,7 @@ tasks.register<ShadowJar>("shadowBungee") {
 val velocityRuntime: Configuration by configurations.creating
 dependencies {
     velocityRuntime(project(":platforms:velocity:runtime"))
-    velocityRuntime(project(":modules:internal:faststats-velocity"))
+    velocityRuntime(project(":platforms:velocity:faststats"))
 }
 
 tasks.register<ShadowJar>("shadowVelocity") {
@@ -123,7 +123,7 @@ dependencies {
     universalRuntime(project(":platforms:bukkit:paper"))
     universalRuntime(project(":platforms:bungee:runtime"))
     universalRuntime(project(":platforms:velocity:runtime"))
-    universalRuntime(project(":modules:internal:faststats-velocity"))
+    universalRuntime(project(":platforms:velocity:faststats"))
 }
 
 tasks.register<ShadowJar>("shadowUniversal") {

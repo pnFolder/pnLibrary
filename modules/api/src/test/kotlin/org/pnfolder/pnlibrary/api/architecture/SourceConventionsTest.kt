@@ -65,6 +65,14 @@ class SourceConventionsTest {
         assertTrue(offenders.isEmpty(), "Fluent methods without an explicit return type: $offenders")
     }
 
+    @Test
+    fun `public API modules hold contracts, not reflective platform code`() {
+        // A self-contained feature module keeps its implementation in an `internal` package; that is not API.
+        val offenders = sources.filter { file -> PUBLIC_API_MODULES.any { file.has(it) } && !file.has("/internal/") }
+            .filter { file -> lines(file).any { line -> REFLECTION.any { it in line } } }
+        assertTrue(offenders.isEmpty(), "Reflection belongs in a runtime module, found in: ${relative(offenders)}")
+    }
+
     private fun Path.has(fragment: String) = toString().replace('\\', '/').contains(fragment)
 
     private fun lines(file: Path): List<String> = Files.readAllLines(file)
@@ -81,6 +89,7 @@ class SourceConventionsTest {
         )
         val INFERRED_APPLY = Regex("""fun\s+(?:<[^>]*>\s+)?(\w+)\((?:[^()]|\((?:[^()]|\([^()]*\))*\))*\)\s*=\s*apply\b""")
         val PRIVATE_MODIFIER = Regex("""\b(?:private|internal)\b""")
+        val REFLECTION = listOf("Class.forName(", ".getMethod(", ".getDeclaredField(", ".getDeclaredMethod(", ".invoke(")
         val PLATFORM_PACKAGES = listOf("org.pnfolder.pnlibrary.bukkit", "org.pnfolder.pnlibrary.bungee", "org.pnfolder.pnlibrary.velocity")
 
         /**
@@ -92,7 +101,7 @@ class SourceConventionsTest {
             "modules/core/src/main/kotlin/org/pnfolder/pnlibrary/core/text/ComponentServiceImpl.kt",
             "modules/core/src/main/kotlin/org/pnfolder/pnlibrary/core/diagnostics/DiagnosticRedactor.kt",
             "modules/features/currency-api/src/main/kotlin/org/pnfolder/pnlibrary/api/currency/CurrencyRegistry.kt",
-            "platforms/bukkit/api/src/main/kotlin/org/pnfolder/pnlibrary/bukkit/item/ItemText.kt",
+            "platforms/bukkit/runtime/src/main/kotlin/org/pnfolder/pnlibrary/bukkit/item/ItemText.kt",
         )
     }
 }

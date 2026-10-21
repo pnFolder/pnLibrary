@@ -1,7 +1,7 @@
 package org.pnfolder.pnlibrary.core.runtime
 
 import org.pnfolder.pnlibrary.api.runtime.PnLibrary
-import org.pnfolder.pnlibrary.api.plugin.RemotePolicy
+import org.pnfolder.pnlibrary.api.plugin.RemotePolicySettings
 import org.pnfolder.pnlibrary.spi.platform.PlatformAdapter
 import java.util.concurrent.atomic.AtomicBoolean
 
@@ -67,7 +67,7 @@ class PnLibraryRuntimeHost private constructor(
          *
          * Replace null with, for example:
          * ```kotlin
-         * RemotePolicy.builder()
+         * RemotePolicySettings.builder()
          *     .source("https://example.org/pnLibrary/LibraryPolicy.kt")
          *     .checkEvery(java.time.Duration.ofHours(6))
          *     .value("product", "pnlibrary")
@@ -77,7 +77,7 @@ class PnLibraryRuntimeHost private constructor(
          * Checks begin after native readiness, asynchronously, just like consumer policies.
          * A denied result or a loading/compilation error stops pnLibrary using the same monitor.
          */
-        private val LIBRARY_POLICY: RemotePolicy? = null
+        private val LIBRARY_POLICY: RemotePolicySettings? = null
 
         /**
          * Starts a complete pnLibrary runtime for one platform.
@@ -95,13 +95,13 @@ class PnLibraryRuntimeHost private constructor(
         fun start(
             owner: Any,
             platform: PlatformAdapter,
-            remotePolicy: RemotePolicy? = LIBRARY_POLICY,
+            remotePolicy: RemotePolicySettings? = LIBRARY_POLICY,
         ): PnLibraryRuntimeHost = startInternal(owner, platform, remotePolicy)
 
         private fun startInternal(
             owner: Any,
             platform: PlatformAdapter,
-            remotePolicy: RemotePolicy?,
+            remotePolicy: RemotePolicySettings?,
         ): PnLibraryRuntimeHost {
             // Reject invalid declarations before allocating or publishing a runtime.
             val policy = remotePolicy?.let(RuntimeRemotePolicy::validated)
@@ -140,7 +140,7 @@ class PnLibraryRuntimeHost private constructor(
             platform: PlatformAdapter,
             type: Class<T>,
             implementation: T,
-            remotePolicy: RemotePolicy? = LIBRARY_POLICY,
+            remotePolicy: RemotePolicySettings? = LIBRARY_POLICY,
         ): PnLibraryRuntimeHost {
             val host = start(owner, platform, remotePolicy)
             return try {

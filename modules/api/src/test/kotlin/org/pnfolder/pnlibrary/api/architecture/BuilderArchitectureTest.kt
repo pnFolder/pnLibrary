@@ -8,7 +8,7 @@ import org.pnfolder.pnlibrary.api.config.ConfigTypeAccess
 import org.pnfolder.pnlibrary.api.diagnostics.DiagnosticConfiguration
 import org.pnfolder.pnlibrary.api.diagnostics.DiagnosticContainer
 import org.pnfolder.pnlibrary.api.downloads.FileDownloads
-import org.pnfolder.pnlibrary.api.plugin.RemotePolicy
+import org.pnfolder.pnlibrary.api.plugin.RemotePolicySettings
 import org.pnfolder.pnlibrary.api.remote.RemotePolicyContext
 import org.pnfolder.pnlibrary.api.tasks.TaskQuery
 import org.pnfolder.pnlibrary.api.tasks.TaskSpec
@@ -27,7 +27,7 @@ class BuilderArchitectureTest {
             Triple(DiagnosticConfiguration::class.java, arrayOf(String::class.java), "diagnostic configuration"),
             Triple(DiagnosticContainer::class.java, arrayOf(String::class.java), "diagnostic container"),
             Triple(FileDownloads::class.java, emptyArray(), "file downloads"),
-            Triple(RemotePolicy::class.java, emptyArray(), "remote policy"),
+            Triple(RemotePolicySettings::class.java, emptyArray(), "remote policy"),
             Triple(RemotePolicyContext::class.java, emptyArray(), "remote policy context"),
             Triple(TaskQuery::class.java, emptyArray(), "task query"),
             Triple(TaskSpec::class.java, emptyArray(), "task spec"),

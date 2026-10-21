@@ -8,7 +8,7 @@ import org.pnfolder.pnlibrary.api.platform.PlatformType
 import org.pnfolder.pnlibrary.api.runtime.PnLibraryConfig
 import org.pnfolder.pnlibrary.core.diagnostics.DiagnosticCommandEvent
 import org.pnfolder.pnlibrary.core.diagnostics.DiagnosticCommandExecutor
-import org.pnfolder.pnlibrary.core.runtime.PnLibraryBootstrap
+import org.pnfolder.pnlibrary.core.runtime.PnLibraryLauncher
 import org.pnfolder.pnlibrary.core.runtime.toRuntimeContext
 import org.pnfolder.pnlibrary.spi.platform.PlatformAdapter
 import org.pnfolder.pnlibrary.spi.tasks.PlatformTaskAdapter
@@ -26,7 +26,7 @@ class DiagnosticCommandExecutorTest {
     @Test
     fun `command flow creates report and publishes completion`() {
         val platform = TestPlatform(temporary)
-        val library = PnLibraryBootstrap.bootstrap(
+        val library = PnLibraryLauncher.bootstrap(
             Any(),
             platform.toRuntimeContext(),
             PnLibraryConfig(upload = false, uploadMode = "disabled", cooldownSeconds = 0),

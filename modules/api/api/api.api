@@ -486,313 +486,6 @@ public final class org/pnfolder/pnlibrary/api/actions/ValueCondition : org/pnfol
 	public fun toString ()Ljava/lang/String;
 }
 
-public final class org/pnfolder/pnlibrary/api/actions/standard/check/Expansion {
-	public fun <init> ()V
-	public fun <init> (Ljava/util/List;)V
-	public synthetic fun <init> (Ljava/util/List;ILkotlin/jvm/internal/DefaultConstructorMarker;)V
-	public final fun component1 ()Ljava/util/List;
-	public final fun copy (Ljava/util/List;)Lorg/pnfolder/pnlibrary/api/actions/standard/check/Expansion;
-	public static synthetic fun copy$default (Lorg/pnfolder/pnlibrary/api/actions/standard/check/Expansion;Ljava/util/List;ILjava/lang/Object;)Lorg/pnfolder/pnlibrary/api/actions/standard/check/Expansion;
-	public fun equals (Ljava/lang/Object;)Z
-	public final fun getActions ()Ljava/util/List;
-	public fun hashCode ()I
-	public fun toString ()Ljava/lang/String;
-}
-
-public final class org/pnfolder/pnlibrary/api/actions/standard/check/Expansion$CheckOperator : java/lang/Enum {
-	public static final field IS_ARRAY Lorg/pnfolder/pnlibrary/api/actions/standard/check/Expansion$CheckOperator;
-	public static final field IS_BOOLEAN Lorg/pnfolder/pnlibrary/api/actions/standard/check/Expansion$CheckOperator;
-	public static final field IS_EMPTY Lorg/pnfolder/pnlibrary/api/actions/standard/check/Expansion$CheckOperator;
-	public static final field IS_NOT_ARRAY Lorg/pnfolder/pnlibrary/api/actions/standard/check/Expansion$CheckOperator;
-	public static final field IS_NOT_BOOLEAN Lorg/pnfolder/pnlibrary/api/actions/standard/check/Expansion$CheckOperator;
-	public static final field IS_NOT_EMPTY Lorg/pnfolder/pnlibrary/api/actions/standard/check/Expansion$CheckOperator;
-	public static final field IS_NOT_NULL Lorg/pnfolder/pnlibrary/api/actions/standard/check/Expansion$CheckOperator;
-	public static final field IS_NOT_NUMBER Lorg/pnfolder/pnlibrary/api/actions/standard/check/Expansion$CheckOperator;
-	public static final field IS_NOT_OBJECT Lorg/pnfolder/pnlibrary/api/actions/standard/check/Expansion$CheckOperator;
-	public static final field IS_NOT_STRING Lorg/pnfolder/pnlibrary/api/actions/standard/check/Expansion$CheckOperator;
-	public static final field IS_NULL Lorg/pnfolder/pnlibrary/api/actions/standard/check/Expansion$CheckOperator;
-	public static final field IS_NUMBER Lorg/pnfolder/pnlibrary/api/actions/standard/check/Expansion$CheckOperator;
-	public static final field IS_OBJECT Lorg/pnfolder/pnlibrary/api/actions/standard/check/Expansion$CheckOperator;
-	public static final field IS_STRING Lorg/pnfolder/pnlibrary/api/actions/standard/check/Expansion$CheckOperator;
-	public static fun getEntries ()Lkotlin/enums/EnumEntries;
-	public static fun valueOf (Ljava/lang/String;)Lorg/pnfolder/pnlibrary/api/actions/standard/check/Expansion$CheckOperator;
-	public static fun values ()[Lorg/pnfolder/pnlibrary/api/actions/standard/check/Expansion$CheckOperator;
-}
-
-public final class org/pnfolder/pnlibrary/api/actions/standard/check/Expansion$ComparisonOperator : java/lang/Enum {
-	public static final field CONTAINS Lorg/pnfolder/pnlibrary/api/actions/standard/check/Expansion$ComparisonOperator;
-	public static final field ENDS_WITH Lorg/pnfolder/pnlibrary/api/actions/standard/check/Expansion$ComparisonOperator;
-	public static final field EQUALS Lorg/pnfolder/pnlibrary/api/actions/standard/check/Expansion$ComparisonOperator;
-	public static final field GREATER_THAN Lorg/pnfolder/pnlibrary/api/actions/standard/check/Expansion$ComparisonOperator;
-	public static final field GREATER_THAN_OR_EQUALS Lorg/pnfolder/pnlibrary/api/actions/standard/check/Expansion$ComparisonOperator;
-	public static final field IN Lorg/pnfolder/pnlibrary/api/actions/standard/check/Expansion$ComparisonOperator;
-	public static final field LESS_THAN Lorg/pnfolder/pnlibrary/api/actions/standard/check/Expansion$ComparisonOperator;
-	public static final field LESS_THAN_OR_EQUALS Lorg/pnfolder/pnlibrary/api/actions/standard/check/Expansion$ComparisonOperator;
-	public static final field NOT_CONTAINS Lorg/pnfolder/pnlibrary/api/actions/standard/check/Expansion$ComparisonOperator;
-	public static final field NOT_ENDS_WITH Lorg/pnfolder/pnlibrary/api/actions/standard/check/Expansion$ComparisonOperator;
-	public static final field NOT_EQUALS Lorg/pnfolder/pnlibrary/api/actions/standard/check/Expansion$ComparisonOperator;
-	public static final field NOT_IN Lorg/pnfolder/pnlibrary/api/actions/standard/check/Expansion$ComparisonOperator;
-	public static final field NOT_STARTS_WITH Lorg/pnfolder/pnlibrary/api/actions/standard/check/Expansion$ComparisonOperator;
-	public static final field STARTS_WITH Lorg/pnfolder/pnlibrary/api/actions/standard/check/Expansion$ComparisonOperator;
-	public static fun getEntries ()Lkotlin/enums/EnumEntries;
-	public static fun valueOf (Ljava/lang/String;)Lorg/pnfolder/pnlibrary/api/actions/standard/check/Expansion$ComparisonOperator;
-	public static fun values ()[Lorg/pnfolder/pnlibrary/api/actions/standard/check/Expansion$ComparisonOperator;
-}
-
-public abstract interface class org/pnfolder/pnlibrary/api/actions/standard/check/Expansion$Condition {
-}
-
-public final class org/pnfolder/pnlibrary/api/actions/standard/check/Expansion$Condition$All : org/pnfolder/pnlibrary/api/actions/standard/check/Expansion$Condition {
-	public fun <init> (Ljava/util/List;)V
-	public final fun component1 ()Ljava/util/List;
-	public final fun copy (Ljava/util/List;)Lorg/pnfolder/pnlibrary/api/actions/standard/check/Expansion$Condition$All;
-	public static synthetic fun copy$default (Lorg/pnfolder/pnlibrary/api/actions/standard/check/Expansion$Condition$All;Ljava/util/List;ILjava/lang/Object;)Lorg/pnfolder/pnlibrary/api/actions/standard/check/Expansion$Condition$All;
-	public fun equals (Ljava/lang/Object;)Z
-	public final fun getConditions ()Ljava/util/List;
-	public fun hashCode ()I
-	public fun toString ()Ljava/lang/String;
-}
-
-public final class org/pnfolder/pnlibrary/api/actions/standard/check/Expansion$Condition$Any : org/pnfolder/pnlibrary/api/actions/standard/check/Expansion$Condition {
-	public fun <init> (Ljava/util/List;)V
-	public final fun component1 ()Ljava/util/List;
-	public final fun copy (Ljava/util/List;)Lorg/pnfolder/pnlibrary/api/actions/standard/check/Expansion$Condition$Any;
-	public static synthetic fun copy$default (Lorg/pnfolder/pnlibrary/api/actions/standard/check/Expansion$Condition$Any;Ljava/util/List;ILjava/lang/Object;)Lorg/pnfolder/pnlibrary/api/actions/standard/check/Expansion$Condition$Any;
-	public fun equals (Ljava/lang/Object;)Z
-	public final fun getConditions ()Ljava/util/List;
-	public fun hashCode ()I
-	public fun toString ()Ljava/lang/String;
-}
-
-public final class org/pnfolder/pnlibrary/api/actions/standard/check/Expansion$Condition$Check : org/pnfolder/pnlibrary/api/actions/standard/check/Expansion$Condition {
-	public fun <init> (Lorg/pnfolder/pnlibrary/api/actions/standard/check/Expansion$Expression;Lorg/pnfolder/pnlibrary/api/actions/standard/check/Expansion$CheckOperator;)V
-	public final fun component1 ()Lorg/pnfolder/pnlibrary/api/actions/standard/check/Expansion$Expression;
-	public final fun component2 ()Lorg/pnfolder/pnlibrary/api/actions/standard/check/Expansion$CheckOperator;
-	public final fun copy (Lorg/pnfolder/pnlibrary/api/actions/standard/check/Expansion$Expression;Lorg/pnfolder/pnlibrary/api/actions/standard/check/Expansion$CheckOperator;)Lorg/pnfolder/pnlibrary/api/actions/standard/check/Expansion$Condition$Check;
-	public static synthetic fun copy$default (Lorg/pnfolder/pnlibrary/api/actions/standard/check/Expansion$Condition$Check;Lorg/pnfolder/pnlibrary/api/actions/standard/check/Expansion$Expression;Lorg/pnfolder/pnlibrary/api/actions/standard/check/Expansion$CheckOperator;ILjava/lang/Object;)Lorg/pnfolder/pnlibrary/api/actions/standard/check/Expansion$Condition$Check;
-	public fun equals (Ljava/lang/Object;)Z
-	public final fun getExpression ()Lorg/pnfolder/pnlibrary/api/actions/standard/check/Expansion$Expression;
-	public final fun getOperator ()Lorg/pnfolder/pnlibrary/api/actions/standard/check/Expansion$CheckOperator;
-	public fun hashCode ()I
-	public fun toString ()Ljava/lang/String;
-}
-
-public final class org/pnfolder/pnlibrary/api/actions/standard/check/Expansion$Condition$Comparison : org/pnfolder/pnlibrary/api/actions/standard/check/Expansion$Condition {
-	public fun <init> (Lorg/pnfolder/pnlibrary/api/actions/standard/check/Expansion$Expression;Lorg/pnfolder/pnlibrary/api/actions/standard/check/Expansion$ComparisonOperator;Lorg/pnfolder/pnlibrary/api/actions/standard/check/Expansion$Expression;)V
-	public final fun component1 ()Lorg/pnfolder/pnlibrary/api/actions/standard/check/Expansion$Expression;
-	public final fun component2 ()Lorg/pnfolder/pnlibrary/api/actions/standard/check/Expansion$ComparisonOperator;
-	public final fun component3 ()Lorg/pnfolder/pnlibrary/api/actions/standard/check/Expansion$Expression;
-	public final fun copy (Lorg/pnfolder/pnlibrary/api/actions/standard/check/Expansion$Expression;Lorg/pnfolder/pnlibrary/api/actions/standard/check/Expansion$ComparisonOperator;Lorg/pnfolder/pnlibrary/api/actions/standard/check/Expansion$Expression;)Lorg/pnfolder/pnlibrary/api/actions/standard/check/Expansion$Condition$Comparison;
-	public static synthetic fun copy$default (Lorg/pnfolder/pnlibrary/api/actions/standard/check/Expansion$Condition$Comparison;Lorg/pnfolder/pnlibrary/api/actions/standard/check/Expansion$Expression;Lorg/pnfolder/pnlibrary/api/actions/standard/check/Expansion$ComparisonOperator;Lorg/pnfolder/pnlibrary/api/actions/standard/check/Expansion$Expression;ILjava/lang/Object;)Lorg/pnfolder/pnlibrary/api/actions/standard/check/Expansion$Condition$Comparison;
-	public fun equals (Ljava/lang/Object;)Z
-	public final fun getLeft ()Lorg/pnfolder/pnlibrary/api/actions/standard/check/Expansion$Expression;
-	public final fun getOperator ()Lorg/pnfolder/pnlibrary/api/actions/standard/check/Expansion$ComparisonOperator;
-	public final fun getRight ()Lorg/pnfolder/pnlibrary/api/actions/standard/check/Expansion$Expression;
-	public fun hashCode ()I
-	public fun toString ()Ljava/lang/String;
-}
-
-public final class org/pnfolder/pnlibrary/api/actions/standard/check/Expansion$Condition$Not : org/pnfolder/pnlibrary/api/actions/standard/check/Expansion$Condition {
-	public fun <init> (Lorg/pnfolder/pnlibrary/api/actions/standard/check/Expansion$Condition;)V
-	public final fun component1 ()Lorg/pnfolder/pnlibrary/api/actions/standard/check/Expansion$Condition;
-	public final fun copy (Lorg/pnfolder/pnlibrary/api/actions/standard/check/Expansion$Condition;)Lorg/pnfolder/pnlibrary/api/actions/standard/check/Expansion$Condition$Not;
-	public static synthetic fun copy$default (Lorg/pnfolder/pnlibrary/api/actions/standard/check/Expansion$Condition$Not;Lorg/pnfolder/pnlibrary/api/actions/standard/check/Expansion$Condition;ILjava/lang/Object;)Lorg/pnfolder/pnlibrary/api/actions/standard/check/Expansion$Condition$Not;
-	public fun equals (Ljava/lang/Object;)Z
-	public final fun getCondition ()Lorg/pnfolder/pnlibrary/api/actions/standard/check/Expansion$Condition;
-	public fun hashCode ()I
-	public fun toString ()Ljava/lang/String;
-}
-
-public abstract interface class org/pnfolder/pnlibrary/api/actions/standard/check/Expansion$ConfigValue {
-	public static final field Companion Lorg/pnfolder/pnlibrary/api/actions/standard/check/Expansion$ConfigValue$Companion;
-}
-
-public final class org/pnfolder/pnlibrary/api/actions/standard/check/Expansion$ConfigValue$Array : org/pnfolder/pnlibrary/api/actions/standard/check/Expansion$ConfigValue {
-	public fun <init> ()V
-	public fun <init> (Ljava/util/List;)V
-	public synthetic fun <init> (Ljava/util/List;ILkotlin/jvm/internal/DefaultConstructorMarker;)V
-	public final fun component1 ()Ljava/util/List;
-	public final fun copy (Ljava/util/List;)Lorg/pnfolder/pnlibrary/api/actions/standard/check/Expansion$ConfigValue$Array;
-	public static synthetic fun copy$default (Lorg/pnfolder/pnlibrary/api/actions/standard/check/Expansion$ConfigValue$Array;Ljava/util/List;ILjava/lang/Object;)Lorg/pnfolder/pnlibrary/api/actions/standard/check/Expansion$ConfigValue$Array;
-	public fun equals (Ljava/lang/Object;)Z
-	public final fun getValues ()Ljava/util/List;
-	public fun hashCode ()I
-	public fun toString ()Ljava/lang/String;
-}
-
-public final class org/pnfolder/pnlibrary/api/actions/standard/check/Expansion$ConfigValue$Boolean : org/pnfolder/pnlibrary/api/actions/standard/check/Expansion$ConfigValue {
-	public fun <init> (Z)V
-	public final fun component1 ()Z
-	public final fun copy (Z)Lorg/pnfolder/pnlibrary/api/actions/standard/check/Expansion$ConfigValue$Boolean;
-	public static synthetic fun copy$default (Lorg/pnfolder/pnlibrary/api/actions/standard/check/Expansion$ConfigValue$Boolean;ZILjava/lang/Object;)Lorg/pnfolder/pnlibrary/api/actions/standard/check/Expansion$ConfigValue$Boolean;
-	public fun equals (Ljava/lang/Object;)Z
-	public final fun getValue ()Z
-	public fun hashCode ()I
-	public fun toString ()Ljava/lang/String;
-}
-
-public final class org/pnfolder/pnlibrary/api/actions/standard/check/Expansion$ConfigValue$Companion {
-	public final fun arrayOf ([Lorg/pnfolder/pnlibrary/api/actions/standard/check/Expansion$ConfigValue;)Lorg/pnfolder/pnlibrary/api/actions/standard/check/Expansion$ConfigValue;
-	public final fun nullValue ()Lorg/pnfolder/pnlibrary/api/actions/standard/check/Expansion$ConfigValue;
-	public final fun objectOf ([Lkotlin/Pair;)Lorg/pnfolder/pnlibrary/api/actions/standard/check/Expansion$ConfigValue;
-	public final fun of (B)Lorg/pnfolder/pnlibrary/api/actions/standard/check/Expansion$ConfigValue;
-	public final fun of (D)Lorg/pnfolder/pnlibrary/api/actions/standard/check/Expansion$ConfigValue;
-	public final fun of (F)Lorg/pnfolder/pnlibrary/api/actions/standard/check/Expansion$ConfigValue;
-	public final fun of (I)Lorg/pnfolder/pnlibrary/api/actions/standard/check/Expansion$ConfigValue;
-	public final fun of (J)Lorg/pnfolder/pnlibrary/api/actions/standard/check/Expansion$ConfigValue;
-	public final fun of (Ljava/lang/String;)Lorg/pnfolder/pnlibrary/api/actions/standard/check/Expansion$ConfigValue;
-	public final fun of (S)Lorg/pnfolder/pnlibrary/api/actions/standard/check/Expansion$ConfigValue;
-	public final fun of (Z)Lorg/pnfolder/pnlibrary/api/actions/standard/check/Expansion$ConfigValue;
-}
-
-public final class org/pnfolder/pnlibrary/api/actions/standard/check/Expansion$ConfigValue$Decimal : org/pnfolder/pnlibrary/api/actions/standard/check/Expansion$ConfigValue {
-	public fun <init> (D)V
-	public final fun component1 ()D
-	public final fun copy (D)Lorg/pnfolder/pnlibrary/api/actions/standard/check/Expansion$ConfigValue$Decimal;
-	public static synthetic fun copy$default (Lorg/pnfolder/pnlibrary/api/actions/standard/check/Expansion$ConfigValue$Decimal;DILjava/lang/Object;)Lorg/pnfolder/pnlibrary/api/actions/standard/check/Expansion$ConfigValue$Decimal;
-	public fun equals (Ljava/lang/Object;)Z
-	public final fun getValue ()D
-	public fun hashCode ()I
-	public fun toString ()Ljava/lang/String;
-}
-
-public final class org/pnfolder/pnlibrary/api/actions/standard/check/Expansion$ConfigValue$Integer : org/pnfolder/pnlibrary/api/actions/standard/check/Expansion$ConfigValue {
-	public fun <init> (J)V
-	public final fun component1 ()J
-	public final fun copy (J)Lorg/pnfolder/pnlibrary/api/actions/standard/check/Expansion$ConfigValue$Integer;
-	public static synthetic fun copy$default (Lorg/pnfolder/pnlibrary/api/actions/standard/check/Expansion$ConfigValue$Integer;JILjava/lang/Object;)Lorg/pnfolder/pnlibrary/api/actions/standard/check/Expansion$ConfigValue$Integer;
-	public fun equals (Ljava/lang/Object;)Z
-	public final fun getValue ()J
-	public fun hashCode ()I
-	public fun toString ()Ljava/lang/String;
-}
-
-public final class org/pnfolder/pnlibrary/api/actions/standard/check/Expansion$ConfigValue$Null : org/pnfolder/pnlibrary/api/actions/standard/check/Expansion$ConfigValue {
-	public static final field INSTANCE Lorg/pnfolder/pnlibrary/api/actions/standard/check/Expansion$ConfigValue$Null;
-	public fun equals (Ljava/lang/Object;)Z
-	public fun hashCode ()I
-	public fun toString ()Ljava/lang/String;
-}
-
-public final class org/pnfolder/pnlibrary/api/actions/standard/check/Expansion$ConfigValue$Object : org/pnfolder/pnlibrary/api/actions/standard/check/Expansion$ConfigValue {
-	public fun <init> ()V
-	public fun <init> (Ljava/util/Map;)V
-	public synthetic fun <init> (Ljava/util/Map;ILkotlin/jvm/internal/DefaultConstructorMarker;)V
-	public final fun component1 ()Ljava/util/Map;
-	public final fun copy (Ljava/util/Map;)Lorg/pnfolder/pnlibrary/api/actions/standard/check/Expansion$ConfigValue$Object;
-	public static synthetic fun copy$default (Lorg/pnfolder/pnlibrary/api/actions/standard/check/Expansion$ConfigValue$Object;Ljava/util/Map;ILjava/lang/Object;)Lorg/pnfolder/pnlibrary/api/actions/standard/check/Expansion$ConfigValue$Object;
-	public fun equals (Ljava/lang/Object;)Z
-	public final fun getValues ()Ljava/util/Map;
-	public fun hashCode ()I
-	public fun toString ()Ljava/lang/String;
-}
-
-public final class org/pnfolder/pnlibrary/api/actions/standard/check/Expansion$ConfigValue$String : org/pnfolder/pnlibrary/api/actions/standard/check/Expansion$ConfigValue {
-	public fun <init> (Ljava/lang/String;)V
-	public final fun component1 ()Ljava/lang/String;
-	public final fun copy (Ljava/lang/String;)Lorg/pnfolder/pnlibrary/api/actions/standard/check/Expansion$ConfigValue$String;
-	public static synthetic fun copy$default (Lorg/pnfolder/pnlibrary/api/actions/standard/check/Expansion$ConfigValue$String;Ljava/lang/String;ILjava/lang/Object;)Lorg/pnfolder/pnlibrary/api/actions/standard/check/Expansion$ConfigValue$String;
-	public fun equals (Ljava/lang/Object;)Z
-	public final fun getValue ()Ljava/lang/String;
-	public fun hashCode ()I
-	public fun toString ()Ljava/lang/String;
-}
-
-public abstract interface class org/pnfolder/pnlibrary/api/actions/standard/check/Expansion$Expression {
-	public static final field Companion Lorg/pnfolder/pnlibrary/api/actions/standard/check/Expansion$Expression$Companion;
-}
-
-public final class org/pnfolder/pnlibrary/api/actions/standard/check/Expansion$Expression$Companion {
-	public final fun function (Lorg/pnfolder/pnlibrary/api/actions/standard/check/Expansion$FunctionType;[Lorg/pnfolder/pnlibrary/api/actions/standard/check/Expansion$Expression;)Lorg/pnfolder/pnlibrary/api/actions/standard/check/Expansion$Expression;
-	public final fun literal (B)Lorg/pnfolder/pnlibrary/api/actions/standard/check/Expansion$Expression;
-	public final fun literal (D)Lorg/pnfolder/pnlibrary/api/actions/standard/check/Expansion$Expression;
-	public final fun literal (F)Lorg/pnfolder/pnlibrary/api/actions/standard/check/Expansion$Expression;
-	public final fun literal (I)Lorg/pnfolder/pnlibrary/api/actions/standard/check/Expansion$Expression;
-	public final fun literal (J)Lorg/pnfolder/pnlibrary/api/actions/standard/check/Expansion$Expression;
-	public final fun literal (Ljava/lang/String;)Lorg/pnfolder/pnlibrary/api/actions/standard/check/Expansion$Expression;
-	public final fun literal (Lorg/pnfolder/pnlibrary/api/actions/standard/check/Expansion$ConfigValue;)Lorg/pnfolder/pnlibrary/api/actions/standard/check/Expansion$Expression;
-	public final fun literal (S)Lorg/pnfolder/pnlibrary/api/actions/standard/check/Expansion$Expression;
-	public final fun literal (Z)Lorg/pnfolder/pnlibrary/api/actions/standard/check/Expansion$Expression;
-	public final fun nullValue ()Lorg/pnfolder/pnlibrary/api/actions/standard/check/Expansion$Expression;
-	public final fun variable (Ljava/lang/String;)Lorg/pnfolder/pnlibrary/api/actions/standard/check/Expansion$Expression;
-}
-
-public final class org/pnfolder/pnlibrary/api/actions/standard/check/Expansion$Expression$Function : org/pnfolder/pnlibrary/api/actions/standard/check/Expansion$Expression {
-	public fun <init> (Lorg/pnfolder/pnlibrary/api/actions/standard/check/Expansion$FunctionType;Ljava/util/List;)V
-	public synthetic fun <init> (Lorg/pnfolder/pnlibrary/api/actions/standard/check/Expansion$FunctionType;Ljava/util/List;ILkotlin/jvm/internal/DefaultConstructorMarker;)V
-	public final fun component1 ()Lorg/pnfolder/pnlibrary/api/actions/standard/check/Expansion$FunctionType;
-	public final fun component2 ()Ljava/util/List;
-	public final fun copy (Lorg/pnfolder/pnlibrary/api/actions/standard/check/Expansion$FunctionType;Ljava/util/List;)Lorg/pnfolder/pnlibrary/api/actions/standard/check/Expansion$Expression$Function;
-	public static synthetic fun copy$default (Lorg/pnfolder/pnlibrary/api/actions/standard/check/Expansion$Expression$Function;Lorg/pnfolder/pnlibrary/api/actions/standard/check/Expansion$FunctionType;Ljava/util/List;ILjava/lang/Object;)Lorg/pnfolder/pnlibrary/api/actions/standard/check/Expansion$Expression$Function;
-	public fun equals (Ljava/lang/Object;)Z
-	public final fun getArguments ()Ljava/util/List;
-	public final fun getFunction ()Lorg/pnfolder/pnlibrary/api/actions/standard/check/Expansion$FunctionType;
-	public fun hashCode ()I
-	public fun toString ()Ljava/lang/String;
-}
-
-public final class org/pnfolder/pnlibrary/api/actions/standard/check/Expansion$Expression$Literal : org/pnfolder/pnlibrary/api/actions/standard/check/Expansion$Expression {
-	public fun <init> (Lorg/pnfolder/pnlibrary/api/actions/standard/check/Expansion$ConfigValue;)V
-	public final fun component1 ()Lorg/pnfolder/pnlibrary/api/actions/standard/check/Expansion$ConfigValue;
-	public final fun copy (Lorg/pnfolder/pnlibrary/api/actions/standard/check/Expansion$ConfigValue;)Lorg/pnfolder/pnlibrary/api/actions/standard/check/Expansion$Expression$Literal;
-	public static synthetic fun copy$default (Lorg/pnfolder/pnlibrary/api/actions/standard/check/Expansion$Expression$Literal;Lorg/pnfolder/pnlibrary/api/actions/standard/check/Expansion$ConfigValue;ILjava/lang/Object;)Lorg/pnfolder/pnlibrary/api/actions/standard/check/Expansion$Expression$Literal;
-	public fun equals (Ljava/lang/Object;)Z
-	public final fun getValue ()Lorg/pnfolder/pnlibrary/api/actions/standard/check/Expansion$ConfigValue;
-	public fun hashCode ()I
-	public fun toString ()Ljava/lang/String;
-}
-
-public final class org/pnfolder/pnlibrary/api/actions/standard/check/Expansion$Expression$Variable : org/pnfolder/pnlibrary/api/actions/standard/check/Expansion$Expression {
-	public fun <init> (Ljava/lang/String;)V
-	public final fun component1 ()Ljava/lang/String;
-	public final fun copy (Ljava/lang/String;)Lorg/pnfolder/pnlibrary/api/actions/standard/check/Expansion$Expression$Variable;
-	public static synthetic fun copy$default (Lorg/pnfolder/pnlibrary/api/actions/standard/check/Expansion$Expression$Variable;Ljava/lang/String;ILjava/lang/Object;)Lorg/pnfolder/pnlibrary/api/actions/standard/check/Expansion$Expression$Variable;
-	public fun equals (Ljava/lang/Object;)Z
-	public final fun getKey ()Ljava/lang/String;
-	public fun hashCode ()I
-	public fun toString ()Ljava/lang/String;
-}
-
-public final class org/pnfolder/pnlibrary/api/actions/standard/check/Expansion$FunctionType : java/lang/Enum {
-	public static final field FIRST Lorg/pnfolder/pnlibrary/api/actions/standard/check/Expansion$FunctionType;
-	public static final field GET Lorg/pnfolder/pnlibrary/api/actions/standard/check/Expansion$FunctionType;
-	public static final field JOIN Lorg/pnfolder/pnlibrary/api/actions/standard/check/Expansion$FunctionType;
-	public static final field KEYS Lorg/pnfolder/pnlibrary/api/actions/standard/check/Expansion$FunctionType;
-	public static final field LAST Lorg/pnfolder/pnlibrary/api/actions/standard/check/Expansion$FunctionType;
-	public static final field LENGTH Lorg/pnfolder/pnlibrary/api/actions/standard/check/Expansion$FunctionType;
-	public static final field LOWERCASE Lorg/pnfolder/pnlibrary/api/actions/standard/check/Expansion$FunctionType;
-	public static final field REPLACE Lorg/pnfolder/pnlibrary/api/actions/standard/check/Expansion$FunctionType;
-	public static final field SIZE Lorg/pnfolder/pnlibrary/api/actions/standard/check/Expansion$FunctionType;
-	public static final field SPLIT Lorg/pnfolder/pnlibrary/api/actions/standard/check/Expansion$FunctionType;
-	public static final field SUBSTRING Lorg/pnfolder/pnlibrary/api/actions/standard/check/Expansion$FunctionType;
-	public static final field TO_BOOLEAN Lorg/pnfolder/pnlibrary/api/actions/standard/check/Expansion$FunctionType;
-	public static final field TO_DECIMAL Lorg/pnfolder/pnlibrary/api/actions/standard/check/Expansion$FunctionType;
-	public static final field TO_INTEGER Lorg/pnfolder/pnlibrary/api/actions/standard/check/Expansion$FunctionType;
-	public static final field TO_STRING Lorg/pnfolder/pnlibrary/api/actions/standard/check/Expansion$FunctionType;
-	public static final field TRIM Lorg/pnfolder/pnlibrary/api/actions/standard/check/Expansion$FunctionType;
-	public static final field UPPERCASE Lorg/pnfolder/pnlibrary/api/actions/standard/check/Expansion$FunctionType;
-	public static final field VALUES Lorg/pnfolder/pnlibrary/api/actions/standard/check/Expansion$FunctionType;
-	public static fun getEntries ()Lkotlin/enums/EnumEntries;
-	public static fun valueOf (Ljava/lang/String;)Lorg/pnfolder/pnlibrary/api/actions/standard/check/Expansion$FunctionType;
-	public static fun values ()[Lorg/pnfolder/pnlibrary/api/actions/standard/check/Expansion$FunctionType;
-}
-
-public final class org/pnfolder/pnlibrary/api/actions/standard/check/Expansion$If {
-	public fun <init> (Lorg/pnfolder/pnlibrary/api/actions/standard/check/Expansion$Condition;Ljava/util/List;Ljava/util/List;)V
-	public synthetic fun <init> (Lorg/pnfolder/pnlibrary/api/actions/standard/check/Expansion$Condition;Ljava/util/List;Ljava/util/List;ILkotlin/jvm/internal/DefaultConstructorMarker;)V
-	public final fun component1 ()Lorg/pnfolder/pnlibrary/api/actions/standard/check/Expansion$Condition;
-	public final fun component2 ()Ljava/util/List;
-	public final fun component3 ()Ljava/util/List;
-	public final fun copy (Lorg/pnfolder/pnlibrary/api/actions/standard/check/Expansion$Condition;Ljava/util/List;Ljava/util/List;)Lorg/pnfolder/pnlibrary/api/actions/standard/check/Expansion$If;
-	public static synthetic fun copy$default (Lorg/pnfolder/pnlibrary/api/actions/standard/check/Expansion$If;Lorg/pnfolder/pnlibrary/api/actions/standard/check/Expansion$Condition;Ljava/util/List;Ljava/util/List;ILjava/lang/Object;)Lorg/pnfolder/pnlibrary/api/actions/standard/check/Expansion$If;
-	public fun equals (Ljava/lang/Object;)Z
-	public final fun getCondition ()Lorg/pnfolder/pnlibrary/api/actions/standard/check/Expansion$Condition;
-	public final fun getElseActions ()Ljava/util/List;
-	public final fun getThenActions ()Ljava/util/List;
-	public fun hashCode ()I
-	public fun toString ()Ljava/lang/String;
-}
-
 public final class org/pnfolder/pnlibrary/api/activity/ActivityAttachment {
 	public fun <init> (Ljava/lang/String;Ljava/lang/String;Ljava/lang/String;Ljava/lang/String;JLjava/lang/String;)V
 	public final fun component1 ()Ljava/lang/String;
@@ -1530,9 +1223,6 @@ public abstract interface class org/pnfolder/pnlibrary/api/diagnostics/Diagnosti
 
 public final class org/pnfolder/pnlibrary/api/diagnostics/DiagnosticsService$Companion {
 	public static final field API_VERSION I
-}
-
-public abstract interface class org/pnfolder/pnlibrary/api/diagnostics/ObservabilityService : org/pnfolder/pnlibrary/api/activity/ActivityService, org/pnfolder/pnlibrary/api/diagnostics/DiagnosticsService, org/pnfolder/pnlibrary/api/observability/ObservabilityService {
 }
 
 public final class org/pnfolder/pnlibrary/api/downloads/DirectDownloadSource {
@@ -2490,7 +2180,6 @@ public final class org/pnfolder/pnlibrary/api/plugin/ModuleId$Companion {
 
 public abstract interface class org/pnfolder/pnlibrary/api/plugin/PluginBuilder {
 	public fun dependencies (Ljava/util/function/Consumer;)Lorg/pnfolder/pnlibrary/api/plugin/PluginBuilder;
-	public fun dependency (Ljava/util/function/Consumer;)Lorg/pnfolder/pnlibrary/api/plugin/PluginBuilder;
 	public abstract fun depends (Lorg/pnfolder/pnlibrary/api/plugin/PluginDependency;)Lorg/pnfolder/pnlibrary/api/plugin/PluginBuilder;
 	public fun depends ([Lorg/pnfolder/pnlibrary/api/plugin/PluginDependency;)Lorg/pnfolder/pnlibrary/api/plugin/PluginBuilder;
 	public abstract fun diagnostics (Ljava/nio/file/Path;Lorg/pnfolder/pnlibrary/api/diagnostics/DiagnosticContainer;)Lorg/pnfolder/pnlibrary/api/plugin/PluginBuilder;
@@ -2501,7 +2190,7 @@ public abstract interface class org/pnfolder/pnlibrary/api/plugin/PluginBuilder 
 	public abstract fun metrics (Ljava/util/function/Consumer;)Lorg/pnfolder/pnlibrary/api/plugin/PluginBuilder;
 	public abstract fun options (Ljava/util/function/Consumer;)Lorg/pnfolder/pnlibrary/api/plugin/PluginBuilder;
 	public abstract fun product (Lorg/pnfolder/pnlibrary/api/updates/ProductDescriptor;)Lorg/pnfolder/pnlibrary/api/plugin/PluginBuilder;
-	public abstract fun remotePolicy (Lorg/pnfolder/pnlibrary/api/plugin/RemotePolicy;)Lorg/pnfolder/pnlibrary/api/plugin/PluginBuilder;
+	public abstract fun remotePolicy (Lorg/pnfolder/pnlibrary/api/plugin/RemotePolicySettings;)Lorg/pnfolder/pnlibrary/api/plugin/PluginBuilder;
 	public fun updates (Ljava/lang/String;Ljava/lang/String;Ljava/util/function/Consumer;)Lorg/pnfolder/pnlibrary/api/plugin/PluginBuilder;
 	public fun updates (Ljava/util/function/Consumer;)Lorg/pnfolder/pnlibrary/api/plugin/PluginBuilder;
 	public abstract fun updates (Lorg/pnfolder/pnlibrary/api/updates/PluginUpdateRequest;)Lorg/pnfolder/pnlibrary/api/plugin/PluginBuilder;
@@ -2577,17 +2266,17 @@ public abstract interface class org/pnfolder/pnlibrary/api/plugin/PluginRegistry
 	public abstract fun unregister (Ljava/lang/Object;)V
 }
 
-public final class org/pnfolder/pnlibrary/api/plugin/RemotePolicy {
-	public static final field Companion Lorg/pnfolder/pnlibrary/api/plugin/RemotePolicy$Companion;
+public final class org/pnfolder/pnlibrary/api/plugin/RemotePolicySettings {
+	public static final field Companion Lorg/pnfolder/pnlibrary/api/plugin/RemotePolicySettings$Companion;
 	public fun <init> (Ljava/lang/String;Ljava/time/Duration;Lorg/pnfolder/pnlibrary/api/plugin/DenyAction;Ljava/util/Map;)V
 	public synthetic fun <init> (Ljava/lang/String;Ljava/time/Duration;Lorg/pnfolder/pnlibrary/api/plugin/DenyAction;Ljava/util/Map;ILkotlin/jvm/internal/DefaultConstructorMarker;)V
-	public static final fun builder ()Lorg/pnfolder/pnlibrary/api/plugin/RemotePolicy$Builder;
+	public static final fun builder ()Lorg/pnfolder/pnlibrary/api/plugin/RemotePolicySettings$Builder;
 	public final fun component1 ()Ljava/lang/String;
 	public final fun component2 ()Ljava/time/Duration;
 	public final fun component3 ()Lorg/pnfolder/pnlibrary/api/plugin/DenyAction;
 	public final fun component4 ()Ljava/util/Map;
-	public final fun copy (Ljava/lang/String;Ljava/time/Duration;Lorg/pnfolder/pnlibrary/api/plugin/DenyAction;Ljava/util/Map;)Lorg/pnfolder/pnlibrary/api/plugin/RemotePolicy;
-	public static synthetic fun copy$default (Lorg/pnfolder/pnlibrary/api/plugin/RemotePolicy;Ljava/lang/String;Ljava/time/Duration;Lorg/pnfolder/pnlibrary/api/plugin/DenyAction;Ljava/util/Map;ILjava/lang/Object;)Lorg/pnfolder/pnlibrary/api/plugin/RemotePolicy;
+	public final fun copy (Ljava/lang/String;Ljava/time/Duration;Lorg/pnfolder/pnlibrary/api/plugin/DenyAction;Ljava/util/Map;)Lorg/pnfolder/pnlibrary/api/plugin/RemotePolicySettings;
+	public static synthetic fun copy$default (Lorg/pnfolder/pnlibrary/api/plugin/RemotePolicySettings;Ljava/lang/String;Ljava/time/Duration;Lorg/pnfolder/pnlibrary/api/plugin/DenyAction;Ljava/util/Map;ILjava/lang/Object;)Lorg/pnfolder/pnlibrary/api/plugin/RemotePolicySettings;
 	public fun equals (Ljava/lang/Object;)Z
 	public final fun getCheckEvery ()Ljava/time/Duration;
 	public final fun getOnDeny ()Lorg/pnfolder/pnlibrary/api/plugin/DenyAction;
@@ -2597,17 +2286,17 @@ public final class org/pnfolder/pnlibrary/api/plugin/RemotePolicy {
 	public fun toString ()Ljava/lang/String;
 }
 
-public final class org/pnfolder/pnlibrary/api/plugin/RemotePolicy$Builder {
-	public final fun build ()Lorg/pnfolder/pnlibrary/api/plugin/RemotePolicy;
-	public final fun checkEvery (Ljava/time/Duration;)Lorg/pnfolder/pnlibrary/api/plugin/RemotePolicy$Builder;
-	public final fun onDeny (Lorg/pnfolder/pnlibrary/api/plugin/DenyAction;)Lorg/pnfolder/pnlibrary/api/plugin/RemotePolicy$Builder;
-	public final fun source (Ljava/lang/String;)Lorg/pnfolder/pnlibrary/api/plugin/RemotePolicy$Builder;
-	public final fun value (Ljava/lang/String;Ljava/lang/String;)Lorg/pnfolder/pnlibrary/api/plugin/RemotePolicy$Builder;
-	public final fun values (Ljava/util/Map;)Lorg/pnfolder/pnlibrary/api/plugin/RemotePolicy$Builder;
+public final class org/pnfolder/pnlibrary/api/plugin/RemotePolicySettings$Builder {
+	public final fun build ()Lorg/pnfolder/pnlibrary/api/plugin/RemotePolicySettings;
+	public final fun checkEvery (Ljava/time/Duration;)Lorg/pnfolder/pnlibrary/api/plugin/RemotePolicySettings$Builder;
+	public final fun onDeny (Lorg/pnfolder/pnlibrary/api/plugin/DenyAction;)Lorg/pnfolder/pnlibrary/api/plugin/RemotePolicySettings$Builder;
+	public final fun source (Ljava/lang/String;)Lorg/pnfolder/pnlibrary/api/plugin/RemotePolicySettings$Builder;
+	public final fun value (Ljava/lang/String;Ljava/lang/String;)Lorg/pnfolder/pnlibrary/api/plugin/RemotePolicySettings$Builder;
+	public final fun values (Ljava/util/Map;)Lorg/pnfolder/pnlibrary/api/plugin/RemotePolicySettings$Builder;
 }
 
-public final class org/pnfolder/pnlibrary/api/plugin/RemotePolicy$Companion {
-	public final fun builder ()Lorg/pnfolder/pnlibrary/api/plugin/RemotePolicy$Builder;
+public final class org/pnfolder/pnlibrary/api/plugin/RemotePolicySettings$Companion {
+	public final fun builder ()Lorg/pnfolder/pnlibrary/api/plugin/RemotePolicySettings$Builder;
 }
 
 public final class org/pnfolder/pnlibrary/api/plugin/VersionConstraint {
@@ -2735,15 +2424,15 @@ public final class org/pnfolder/pnlibrary/api/remote/ServerInfo {
 public abstract interface class org/pnfolder/pnlibrary/api/runtime/PnLibrary : java/io/Closeable {
 	public abstract fun close ()V
 	public abstract fun createDiagnosticReport (Lorg/pnfolder/pnlibrary/api/diagnostics/DebugRequest;)Lorg/pnfolder/pnlibrary/api/diagnostics/DiagnosticReport;
-	public fun getActivity ()Lorg/pnfolder/pnlibrary/api/activity/ActivityService;
-	public fun getAudiences ()Lorg/pnfolder/pnlibrary/api/audiences/AudienceService;
+	public abstract fun getActivity ()Lorg/pnfolder/pnlibrary/api/activity/ActivityService;
+	public abstract fun getAudiences ()Lorg/pnfolder/pnlibrary/api/audiences/AudienceService;
 	public abstract fun getConfiguration ()Lorg/pnfolder/pnlibrary/api/runtime/PnLibraryConfig;
 	public abstract fun getConfigurations ()Lorg/pnfolder/pnlibrary/api/config/ConfigurationService;
 	public abstract fun getDiagnostics ()Lorg/pnfolder/pnlibrary/api/diagnostics/DiagnosticsService;
 	public abstract fun getEvents ()Lorg/pnfolder/pnlibrary/api/events/EventService;
 	public abstract fun getLogging ()Lorg/pnfolder/pnlibrary/api/logging/LoggingService;
 	public abstract fun getMetrics ()Lorg/pnfolder/pnlibrary/api/metrics/MetricsService;
-	public fun getObservability ()Lorg/pnfolder/pnlibrary/api/diagnostics/ObservabilityService;
+	public abstract fun getObservability ()Lorg/pnfolder/pnlibrary/api/observability/ObservabilityService;
 	public abstract fun getOwner ()Ljava/lang/Object;
 	public abstract fun getPlaceholderAdapters ()Lorg/pnfolder/pnlibrary/api/placeholders/PlaceholderAdapterRegistry;
 	public abstract fun getPlaceholderValues ()Lorg/pnfolder/pnlibrary/api/placeholders/PlaceholderValueStore;
@@ -3245,28 +2934,6 @@ public abstract interface class org/pnfolder/pnlibrary/api/text/ComponentTemplat
 	public abstract fun value (Ljava/lang/String;Ljava/lang/Object;)Lorg/pnfolder/pnlibrary/api/text/ComponentTemplate;
 }
 
-public final class org/pnfolder/pnlibrary/api/updates/ArtifactCompatibility {
-	public fun <init> (Lorg/pnfolder/pnlibrary/api/platform/PlatformType;Lorg/pnfolder/pnlibrary/api/updates/VersionRangeText;Lorg/pnfolder/pnlibrary/api/updates/VersionRangeText;Lorg/pnfolder/pnlibrary/api/version/ApiVersionRange;ILjava/lang/Integer;)V
-	public synthetic fun <init> (Lorg/pnfolder/pnlibrary/api/platform/PlatformType;Lorg/pnfolder/pnlibrary/api/updates/VersionRangeText;Lorg/pnfolder/pnlibrary/api/updates/VersionRangeText;Lorg/pnfolder/pnlibrary/api/version/ApiVersionRange;ILjava/lang/Integer;ILkotlin/jvm/internal/DefaultConstructorMarker;)V
-	public final fun component1 ()Lorg/pnfolder/pnlibrary/api/platform/PlatformType;
-	public final fun component2 ()Lorg/pnfolder/pnlibrary/api/updates/VersionRangeText;
-	public final fun component3 ()Lorg/pnfolder/pnlibrary/api/updates/VersionRangeText;
-	public final fun component4 ()Lorg/pnfolder/pnlibrary/api/version/ApiVersionRange;
-	public final fun component5 ()I
-	public final fun component6 ()Ljava/lang/Integer;
-	public final fun copy (Lorg/pnfolder/pnlibrary/api/platform/PlatformType;Lorg/pnfolder/pnlibrary/api/updates/VersionRangeText;Lorg/pnfolder/pnlibrary/api/updates/VersionRangeText;Lorg/pnfolder/pnlibrary/api/version/ApiVersionRange;ILjava/lang/Integer;)Lorg/pnfolder/pnlibrary/api/updates/ArtifactCompatibility;
-	public static synthetic fun copy$default (Lorg/pnfolder/pnlibrary/api/updates/ArtifactCompatibility;Lorg/pnfolder/pnlibrary/api/platform/PlatformType;Lorg/pnfolder/pnlibrary/api/updates/VersionRangeText;Lorg/pnfolder/pnlibrary/api/updates/VersionRangeText;Lorg/pnfolder/pnlibrary/api/version/ApiVersionRange;ILjava/lang/Integer;ILjava/lang/Object;)Lorg/pnfolder/pnlibrary/api/updates/ArtifactCompatibility;
-	public fun equals (Ljava/lang/Object;)Z
-	public final fun getMaximumJava ()Ljava/lang/Integer;
-	public final fun getMinecraft ()Lorg/pnfolder/pnlibrary/api/updates/VersionRangeText;
-	public final fun getMinimumJava ()I
-	public final fun getPlatform ()Lorg/pnfolder/pnlibrary/api/platform/PlatformType;
-	public final fun getPlatformApi ()Lorg/pnfolder/pnlibrary/api/updates/VersionRangeText;
-	public final fun getPnLibraryApi ()Lorg/pnfolder/pnlibrary/api/version/ApiVersionRange;
-	public fun hashCode ()I
-	public fun toString ()Ljava/lang/String;
-}
-
 public final class org/pnfolder/pnlibrary/api/updates/ArtifactDescriptor {
 	public static final field Companion Lorg/pnfolder/pnlibrary/api/updates/ArtifactDescriptor$Companion;
 	public fun <init> (Ljava/lang/String;Lorg/pnfolder/pnlibrary/api/platform/PlatformType;ILjava/lang/Integer;Ljava/lang/Long;Ljava/lang/String;Ljava/net/URI;)V
@@ -3472,15 +3139,12 @@ public final class org/pnfolder/pnlibrary/api/updates/PluginUpdateRequest {
 }
 
 public final class org/pnfolder/pnlibrary/api/updates/PluginUpdateRequest$Builder {
-	public final fun apiVersion (I)Lorg/pnfolder/pnlibrary/api/updates/PluginUpdateRequest$Builder;
-	public final fun apiVersions (II)Lorg/pnfolder/pnlibrary/api/updates/PluginUpdateRequest$Builder;
 	public final fun artifact (Ljava/lang/String;I)Lorg/pnfolder/pnlibrary/api/updates/PluginUpdateRequest$Builder;
 	public final fun artifact (Ljava/lang/String;ILjava/lang/Integer;)Lorg/pnfolder/pnlibrary/api/updates/PluginUpdateRequest$Builder;
 	public final fun artifact (Ljava/lang/String;Lorg/pnfolder/pnlibrary/api/platform/PlatformType;I)Lorg/pnfolder/pnlibrary/api/updates/PluginUpdateRequest$Builder;
 	public final fun artifact (Ljava/lang/String;Lorg/pnfolder/pnlibrary/api/platform/PlatformType;ILjava/lang/Integer;)Lorg/pnfolder/pnlibrary/api/updates/PluginUpdateRequest$Builder;
 	public static synthetic fun artifact$default (Lorg/pnfolder/pnlibrary/api/updates/PluginUpdateRequest$Builder;Ljava/lang/String;ILjava/lang/Integer;ILjava/lang/Object;)Lorg/pnfolder/pnlibrary/api/updates/PluginUpdateRequest$Builder;
 	public static synthetic fun artifact$default (Lorg/pnfolder/pnlibrary/api/updates/PluginUpdateRequest$Builder;Ljava/lang/String;Lorg/pnfolder/pnlibrary/api/platform/PlatformType;ILjava/lang/Integer;ILjava/lang/Object;)Lorg/pnfolder/pnlibrary/api/updates/PluginUpdateRequest$Builder;
-	public final fun artifactPattern (Ljava/lang/String;)Lorg/pnfolder/pnlibrary/api/updates/PluginUpdateRequest$Builder;
 	public final fun automaticDownload (Z)Lorg/pnfolder/pnlibrary/api/updates/PluginUpdateRequest$Builder;
 	public final fun build ()Lorg/pnfolder/pnlibrary/api/updates/PluginUpdateRequest;
 	public final fun channel (Ljava/util/function/Supplier;)Lorg/pnfolder/pnlibrary/api/updates/PluginUpdateRequest$Builder;
@@ -3496,26 +3160,6 @@ public final class org/pnfolder/pnlibrary/api/updates/PluginUpdateRequest$Builde
 
 public final class org/pnfolder/pnlibrary/api/updates/PluginUpdateRequest$Companion {
 	public final fun builder ()Lorg/pnfolder/pnlibrary/api/updates/PluginUpdateRequest$Builder;
-}
-
-public final class org/pnfolder/pnlibrary/api/updates/ProductArtifact {
-	public fun <init> (Ljava/lang/String;Lorg/pnfolder/pnlibrary/api/updates/ArtifactCompatibility;JLjava/lang/String;Ljava/net/URI;)V
-	public synthetic fun <init> (Ljava/lang/String;Lorg/pnfolder/pnlibrary/api/updates/ArtifactCompatibility;JLjava/lang/String;Ljava/net/URI;ILkotlin/jvm/internal/DefaultConstructorMarker;)V
-	public final fun component1 ()Ljava/lang/String;
-	public final fun component2 ()Lorg/pnfolder/pnlibrary/api/updates/ArtifactCompatibility;
-	public final fun component3 ()J
-	public final fun component4 ()Ljava/lang/String;
-	public final fun component5 ()Ljava/net/URI;
-	public final fun copy (Ljava/lang/String;Lorg/pnfolder/pnlibrary/api/updates/ArtifactCompatibility;JLjava/lang/String;Ljava/net/URI;)Lorg/pnfolder/pnlibrary/api/updates/ProductArtifact;
-	public static synthetic fun copy$default (Lorg/pnfolder/pnlibrary/api/updates/ProductArtifact;Ljava/lang/String;Lorg/pnfolder/pnlibrary/api/updates/ArtifactCompatibility;JLjava/lang/String;Ljava/net/URI;ILjava/lang/Object;)Lorg/pnfolder/pnlibrary/api/updates/ProductArtifact;
-	public fun equals (Ljava/lang/Object;)Z
-	public final fun getCompatibility ()Lorg/pnfolder/pnlibrary/api/updates/ArtifactCompatibility;
-	public final fun getDownloadUri ()Ljava/net/URI;
-	public final fun getFile ()Ljava/lang/String;
-	public final fun getSha256 ()Ljava/lang/String;
-	public final fun getSize ()J
-	public fun hashCode ()I
-	public fun toString ()Ljava/lang/String;
 }
 
 public final class org/pnfolder/pnlibrary/api/updates/ProductChange {
@@ -3620,25 +3264,6 @@ public final class org/pnfolder/pnlibrary/api/updates/ProductRelease {
 	public final fun getPublishedAt ()Ljava/time/Instant;
 	public final fun getRepository ()Ljava/lang/String;
 	public final fun getSupportedApi ()Lorg/pnfolder/pnlibrary/api/version/ApiVersionRange;
-	public final fun getVersion ()Lorg/pnfolder/pnlibrary/api/version/SemanticVersion;
-	public fun hashCode ()I
-	public fun toString ()Ljava/lang/String;
-}
-
-public final class org/pnfolder/pnlibrary/api/updates/ProductReleaseManifest {
-	public fun <init> (Lorg/pnfolder/pnlibrary/api/updates/ProductId;Ljava/lang/String;Lorg/pnfolder/pnlibrary/api/version/SemanticVersion;Lorg/pnfolder/pnlibrary/api/updates/UpdateChannel;Ljava/util/List;)V
-	public final fun component1 ()Lorg/pnfolder/pnlibrary/api/updates/ProductId;
-	public final fun component2 ()Ljava/lang/String;
-	public final fun component3 ()Lorg/pnfolder/pnlibrary/api/version/SemanticVersion;
-	public final fun component4 ()Lorg/pnfolder/pnlibrary/api/updates/UpdateChannel;
-	public final fun component5 ()Ljava/util/List;
-	public final fun copy (Lorg/pnfolder/pnlibrary/api/updates/ProductId;Ljava/lang/String;Lorg/pnfolder/pnlibrary/api/version/SemanticVersion;Lorg/pnfolder/pnlibrary/api/updates/UpdateChannel;Ljava/util/List;)Lorg/pnfolder/pnlibrary/api/updates/ProductReleaseManifest;
-	public static synthetic fun copy$default (Lorg/pnfolder/pnlibrary/api/updates/ProductReleaseManifest;Lorg/pnfolder/pnlibrary/api/updates/ProductId;Ljava/lang/String;Lorg/pnfolder/pnlibrary/api/version/SemanticVersion;Lorg/pnfolder/pnlibrary/api/updates/UpdateChannel;Ljava/util/List;ILjava/lang/Object;)Lorg/pnfolder/pnlibrary/api/updates/ProductReleaseManifest;
-	public fun equals (Ljava/lang/Object;)Z
-	public final fun getArtifacts ()Ljava/util/List;
-	public final fun getChannel ()Lorg/pnfolder/pnlibrary/api/updates/UpdateChannel;
-	public final fun getDisplayName ()Ljava/lang/String;
-	public final fun getProductId ()Lorg/pnfolder/pnlibrary/api/updates/ProductId;
 	public final fun getVersion ()Lorg/pnfolder/pnlibrary/api/version/SemanticVersion;
 	public fun hashCode ()I
 	public fun toString ()Ljava/lang/String;
@@ -3845,20 +3470,6 @@ public final class org/pnfolder/pnlibrary/api/updates/UpdateState : java/lang/En
 	public static fun getEntries ()Lkotlin/enums/EnumEntries;
 	public static fun valueOf (Ljava/lang/String;)Lorg/pnfolder/pnlibrary/api/updates/UpdateState;
 	public static fun values ()[Lorg/pnfolder/pnlibrary/api/updates/UpdateState;
-}
-
-public final class org/pnfolder/pnlibrary/api/updates/VersionRangeText {
-	public fun <init> (Ljava/lang/String;Ljava/lang/String;)V
-	public synthetic fun <init> (Ljava/lang/String;Ljava/lang/String;ILkotlin/jvm/internal/DefaultConstructorMarker;)V
-	public final fun component1 ()Ljava/lang/String;
-	public final fun component2 ()Ljava/lang/String;
-	public final fun copy (Ljava/lang/String;Ljava/lang/String;)Lorg/pnfolder/pnlibrary/api/updates/VersionRangeText;
-	public static synthetic fun copy$default (Lorg/pnfolder/pnlibrary/api/updates/VersionRangeText;Ljava/lang/String;Ljava/lang/String;ILjava/lang/Object;)Lorg/pnfolder/pnlibrary/api/updates/VersionRangeText;
-	public fun equals (Ljava/lang/Object;)Z
-	public final fun getMaximum ()Ljava/lang/String;
-	public final fun getMinimum ()Ljava/lang/String;
-	public fun hashCode ()I
-	public fun toString ()Ljava/lang/String;
 }
 
 public final class org/pnfolder/pnlibrary/api/version/ApiVersionRange {

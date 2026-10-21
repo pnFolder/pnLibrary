@@ -6,7 +6,7 @@ import org.pnfolder.pnlibrary.api.platform.PlatformType
 import org.pnfolder.pnlibrary.api.plugin.DenyAction
 import org.pnfolder.pnlibrary.api.plugin.ModuleId
 import org.pnfolder.pnlibrary.api.plugin.PluginMetadata
-import org.pnfolder.pnlibrary.api.plugin.RemotePolicy
+import org.pnfolder.pnlibrary.api.plugin.RemotePolicySettings
 import org.pnfolder.pnlibrary.api.remote.RemotePolicyExplanation
 import org.pnfolder.pnlibrary.api.chat.ChatPalette
 import org.pnfolder.pnlibrary.core.ui.ConsoleStyle
@@ -29,7 +29,7 @@ class RemotePolicyNoticeRendererTest {
             ModuleId.of("demo"), "Demo", "2.0.0", "pnFolder",
             PlatformType.BUKKIT, "Paper", "25", 25,
         )
-        val policy = RemotePolicy.builder()
+        val policy = RemotePolicySettings.builder()
             .source("https://example.org/policy.kt")
             .onDeny(DenyAction.DISABLE_MODULE)
             .build()

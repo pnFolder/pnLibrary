@@ -14,7 +14,7 @@ import org.pnfolder.pnlibrary.api.plugin.DenyAction;
 import org.pnfolder.pnlibrary.api.plugin.DownloadPolicy;
 import org.pnfolder.pnlibrary.api.plugin.ModuleContext;
 import org.pnfolder.pnlibrary.api.plugin.PluginRegistration;
-import org.pnfolder.pnlibrary.api.plugin.RemotePolicy;
+import org.pnfolder.pnlibrary.api.plugin.RemotePolicySettings;
 import org.pnfolder.pnlibrary.api.runtime.PnLibrary;
 import org.pnfolder.pnlibrary.api.runtime.PnLibraryProvider;
 import org.pnfolder.pnlibrary.api.tasks.TaskSpec;
@@ -85,7 +85,7 @@ public final class AcceptancePlugin extends JavaPlugin implements CommandExecuto
                     .automaticDownload(false).required(false)));
             }
             if (getConfig().getBoolean("remote-policy.enabled", false)) {
-                builder.remotePolicy(RemotePolicy.builder()
+                builder.remotePolicy(RemotePolicySettings.builder()
                     .source(getConfig().getString("remote-policy.source"))
                     .checkEvery(Duration.ofHours(6))
                     .onDeny(DenyAction.valueOf(getConfig()
