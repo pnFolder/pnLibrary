@@ -1,5 +1,6 @@
 package org.pnfolder.pnlibrary.core.plugin
 
+import org.pnfolder.pnlibrary.api.actions.Action
 import org.pnfolder.pnlibrary.api.actions.ActionContext
 import org.pnfolder.pnlibrary.api.actions.ActionService
 import org.pnfolder.pnlibrary.api.actions.LibraryAudience
@@ -15,6 +16,7 @@ internal class ModuleActionService(
         allPlayers: LibraryAudience,
         values: Map<String, Any?>,
         serializerType: ComponentSerializerType,
+        templates: Map<String, List<Action>>,
     ) = ActionContext(
         player = player,
         allPlayers = allPlayers,
@@ -23,6 +25,7 @@ internal class ModuleActionService(
         tasks = resources.tasks,
         serializerType = serializerType,
         values = values,
+        templates = templates,
         placeholders = resources.placeholders,
     )
 }

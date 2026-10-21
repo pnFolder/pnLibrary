@@ -46,4 +46,30 @@ interface LibraryPlayer : AudienceSender {
 
     /** Spawns a particle effect around the player. */
     fun spawnParticle(particle: PlayerParticle): Boolean
+
+    /**
+     * Runs [command] as the player, or as the console when [asConsole] is `true`.
+     *
+     * @param command command line without the leading slash
+     * @return whether the platform accepted the command; `false` when it cannot run commands
+     */
+    fun runCommand(command: String, asConsole: Boolean): Boolean = false
+
+    /**
+     * Returns how many items matching [query] the player carries, or `null` when the platform has
+     * no player inventory.
+     */
+    fun countItems(query: ItemQuery): Int? = null
+
+    /**
+     * Returns the player's experience, as levels when [asLevels] is `true` and as points otherwise,
+     * or `null` when the platform has no experience.
+     */
+    fun experience(asLevels: Boolean): Double? = null
+
+    /**
+     * Returns the distance in blocks to the point [x], [y], [z] in [world], or `null` when the
+     * player is in another world or the platform has no positions.
+     */
+    fun distanceTo(world: String, x: Double, y: Double, z: Double): Double? = null
 }

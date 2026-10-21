@@ -7,6 +7,7 @@ import org.pnfolder.pnlibrary.api.actions.LibraryPlayer
 import org.pnfolder.pnlibrary.api.audiences.AudienceSender
 import org.pnfolder.pnlibrary.api.audiences.AudienceService
 import org.pnfolder.pnlibrary.spi.audiences.PlatformAudienceAdapter
+import java.time.Duration
 import java.util.Collections
 import java.util.IdentityHashMap
 import java.util.UUID
@@ -31,6 +32,8 @@ internal class AudienceServiceImpl(
         override fun sendMessage(text: Component) = CompositeAudience(receivers()).sendMessage(text)
         override fun actionBar(text: Component) = CompositeAudience(receivers()).actionBar(text)
         override fun playSound(sound: Sound) = CompositeAudience(receivers()).playSound(sound)
+        override fun showTitle(title: Component, subtitle: Component, fadeIn: Duration, stay: Duration, fadeOut: Duration) =
+            CompositeAudience(receivers()).showTitle(title, subtitle, fadeIn, stay, fadeOut)
     }
 
     private class CompositeAudience(receivers: Iterable<LibraryAudience>) : LibraryAudience {
@@ -43,6 +46,20 @@ internal class AudienceServiceImpl(
             receivers.forEach { receiver ->
                 try {
                     if (!receiver.playSound(sound)) accepted = false
+                } catch (error: Throwable) {
+                    if (error is Error) throw error
+                    accepted = false
+                }
+            }
+            return accepted
+        }
+
+        override fun showTitle(title: Component, subtitle: Component, fadeIn: Duration, stay: Duration, fadeOut: Duration): Boolean {
+            if (receivers.isEmpty()) return false
+            var accepted = true
+            receivers.forEach { receiver ->
+                try {
+                    if (!receiver.showTitle(title, subtitle, fadeIn, stay, fadeOut)) accepted = false
                 } catch (error: Throwable) {
                     if (error is Error) throw error
                     accepted = false

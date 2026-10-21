@@ -47,3 +47,51 @@ interface ConfigSerializer<T : Any> {
     /** Converts a parsed YAML [value] into the requested custom type. */
     fun deserialize(value: Any?, context: ConfigSerializationContext): T
 }
+
+/**
+ * Reads a polymorphic value from one line of text instead of a YAML object.
+ *
+ * Declare it with [ConfigTextForm] on the polymorphic base type. The line `"[message] Hello"` can then
+ * stand where the full object `{ type: message, messages: [Hello] }` is accepted. Objects keep working.
+ *
+ * Implementations should reject invalid text with a descriptive exception; pnLibrary adds the path.
+ */
+interface ConfigTextParser<T : Any> {
+    /** Converts [text] into a value of the polymorphic base type. */
+    fun parse(text: String, context: ConfigSerializationContext): T
+}
+
+/**
+ * Lets a polymorphic base type be written as a single line of text, read by [value].
+ *
+ * The parser class must expose a no-argument constructor or Kotlin `object` instance.
+ *
+ * @property value parser applied when the YAML value is a string
+ */
+@Target(AnnotationTarget.CLASS)
+@Retention(AnnotationRetention.RUNTIME)
+annotation class ConfigTextForm(val value: kotlin.reflect.KClass<out ConfigTextParser<*>>)
+
+/**
+ * Rewrites a YAML object into the object the polymorphic codec expects, before its `type` is read.
+ *
+ * Declare it with [ConfigNodeForm] on the polymorphic base type. It lets an object without a `type`
+ * (a wrapper such as `delay: 2s` with a `do:` list) stand where an action is accepted.
+ *
+ * Implementations return [node] unchanged when they do not recognise it.
+ */
+interface ConfigNodeRewriter {
+    /** Returns the object to decode in place of [node]; [path] is the location used in messages. */
+    fun rewrite(node: Map<String, Any?>, path: String): Map<String, Any?>
+}
+
+/**
+ * Lets a polymorphic base type accept objects without a `type`, converted by [value] first.
+ *
+ * The rewriter class must expose a no-argument constructor or Kotlin `object` instance.
+ *
+ * @property value rewriter applied to every object read for the base type
+ */
+@Target(AnnotationTarget.CLASS)
+@Retention(AnnotationRetention.RUNTIME)
+annotation class ConfigNodeForm(val value: kotlin.reflect.KClass<out ConfigNodeRewriter>)

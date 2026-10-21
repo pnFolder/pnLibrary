@@ -4,6 +4,7 @@ import net.kyori.adventure.audience.Audience
 import net.kyori.adventure.platform.bukkit.BukkitAudiences
 import net.kyori.adventure.sound.Sound
 import net.kyori.adventure.text.Component
+import net.kyori.adventure.title.Title
 import net.kyori.adventure.text.serializer.legacy.LegacyComponentSerializer
 import org.bukkit.entity.Player
 import org.bukkit.plugin.Plugin
@@ -117,6 +118,24 @@ internal class BukkitAudienceService internal constructor(plugin: Plugin, privat
         }
         return runCatching {
             player.playSound(player.location, sound.name().asString(), sound.volume(), sound.pitch())
+        }.isSuccess
+    }
+
+    /** Shows a title through Adventure when available, otherwise through the legacy two-line API. */
+    @Suppress("DEPRECATION")
+    internal fun showTitle(player: Player, title: Title): Boolean {
+        val provider = audiences
+        if (!fallbackOnly.get() && (player is Audience || provider != null)) {
+            try {
+                val recipient = player as? Audience ?: requireNotNull(provider).player(player.uniqueId)
+                recipient.showTitle(title)
+                return true
+            } catch (error: Throwable) {
+                rethrowFatal(error)
+            }
+        }
+        return runCatching {
+            player.sendTitle(LEGACY.serialize(title.title()), LEGACY.serialize(title.subtitle()))
         }.isSuccess
     }
 

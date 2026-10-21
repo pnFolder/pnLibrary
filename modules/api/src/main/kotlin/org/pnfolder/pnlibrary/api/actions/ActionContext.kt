@@ -1,11 +1,16 @@
+@file:Suppress("DEPRECATION")
+
 package org.pnfolder.pnlibrary.api.actions
 
 import net.kyori.adventure.text.Component
 import org.pnfolder.pnlibrary.api.logging.PnLogger
 import org.pnfolder.pnlibrary.api.placeholders.PlaceholderService
+import org.pnfolder.pnlibrary.api.tasks.TaskExecution
+import org.pnfolder.pnlibrary.api.tasks.TaskSpec
 import org.pnfolder.pnlibrary.api.tasks.TaskScope
 import org.pnfolder.pnlibrary.api.text.ComponentSerializerType
 import org.pnfolder.pnlibrary.api.text.ComponentService
+import java.time.Duration
 import java.util.Collections
 
 /**
@@ -32,6 +37,7 @@ import java.util.Collections
  * @property serializerType default text serializer for this invocation
  * @property values named scalar-like values consumed by [ActionCondition] implementations
  * @property placeholders plugin-scoped placeholder service used for controlled updates, or `null`
+ * @property templates named action lists that `[run]` actions can call
  * @param initialObjects objects initially available from [get] and [require]
  */
 class ActionContext(
@@ -44,6 +50,7 @@ class ActionContext(
     val values: Map<String, Any?> = emptyMap(),
     initialObjects: Map<Class<*>, Any> = emptyMap(),
     val placeholders: PlaceholderService? = null,
+    val templates: Map<String, List<Action>> = emptyMap(),
 ) {
     private val runtimeValues = LinkedHashMap(values)
     private val objects = HashMap(initialObjects)
@@ -73,8 +80,97 @@ class ActionContext(
     /** Resolves an action [target] to the corresponding audience for this invocation. */
     fun target(target: ActionTarget): LibraryAudience = if (target == ActionTarget.PLAYER) player else allPlayers
 
-    /** Executes [actions] in iteration order with this same context. */
-    fun execute(actions: Iterable<Action>) = actions.forEach { it.execute(this) }
+    /** Whether a `stop` action has ended this invocation; no later action of it runs. */
+    var stopped: Boolean = false
+        private set
+
+    /** Ends this invocation: actions that have not started yet are skipped. */
+    fun stop() {
+        stopped = true
+    }
+
+    private var templateDepth = 0
+
+    /**
+     * Executes [actions] in iteration order with this same context, until [stop] is called.
+     *
+     * A [WaitAction] pauses the actions after it: they run once its duration has passed, scheduled through
+     * [tasks]. The caller does not wait for them.
+     */
+    fun execute(actions: Iterable<Action>) {
+        val list = actions as? List<Action> ?: actions.toList()
+        for ((index, action) in list.withIndex()) {
+            if (stopped) return
+            if (action is WaitAction) {
+                val rest = list.subList(index + 1, list.size)
+                if (rest.isNotEmpty()) later(action.duration) { execute(rest) }
+                return
+            }
+            action.execute(this)
+        }
+    }
+
+    /**
+     * Runs the template called [name], or writes a warning when there is none or templates call each other
+     * more than [MAX_TEMPLATE_DEPTH] levels deep.
+     */
+    fun runTemplate(name: String) {
+        val list = templates[name]
+        if (list == null) {
+            val hint = Suggestions.closest(name, templates.keys)
+                ?.let { " Did you mean '$it'?" }.orEmpty()
+            logger.warning("Template '$name' is not defined.$hint")
+            return
+        }
+        if (templateDepth >= MAX_TEMPLATE_DEPTH) {
+            logger.warning("Template '$name' is called too deeply; check that templates do not call each other in a loop")
+            return
+        }
+        templateDepth++
+        try {
+            execute(list)
+        } finally {
+            templateDepth--
+        }
+    }
+
+    private fun later(duration: Duration, block: () -> Unit) {
+        tasks.schedule(TaskSpec.builder()
+            .execution(TaskExecution.global())
+            .delay(duration)
+            .action { block() }
+            .build())
+    }
+
+    /**
+     * Reads [expression] as a value: a context value or placeholder name, a single `%placeholder%` or
+     * `[[name]]`, or text that contains them. Returns `null` when a bare name is unknown.
+     */
+    fun read(expression: String): Any? {
+        val trimmed = expression.trim()
+        TOKEN.matchEntire(trimmed)?.let { return lookup(tokenName(it)) }
+        if (TOKEN.containsMatchIn(trimmed)) return format(trimmed)
+        return resolve(trimmed)
+    }
+
+    /** Like [read], but returns [expression] itself, with its tokens replaced, when nothing matches. */
+    fun textOf(expression: String): String =
+        runCatching { read(expression) }.getOrNull()?.toString() ?: format(expression)
+
+    /**
+     * Replaces `[[name]]` and `%name%` in plain [text] with the matching context value or placeholder.
+     * `player` and `player_name` are always the player's name.
+     *
+     * Unknown names stay as written, so a typo is visible instead of silently empty.
+     */
+    fun format(text: String): String = TOKEN.replace(text) { match ->
+        runCatching { lookup(tokenName(match)) }.getOrNull()?.toString() ?: match.value
+    }
+
+    private fun tokenName(match: MatchResult): String = match.groupValues[1].ifEmpty { match.groupValues[2] }
+
+    private fun lookup(name: String): Any? =
+        if (name == "player" || name == "player_name") player.name else resolve(name)
 
     /** Returns the named condition value, or `null` when it is absent or explicitly null. */
     fun value(name: String): Any? = runtimeValues[name]
@@ -122,7 +218,11 @@ class ActionContext(
     /** Removes and returns the object registered under [type], if present. */
     fun <T : Any> remove(type: Class<T>): T? = objects.remove(type)?.let(type::cast)
 
-    private companion object {
-        val LOCAL_PLACEHOLDER = Regex("\\[\\[([^\\[\\]]+)]]")
+    companion object {
+        /** Deepest chain of templates calling templates before the next call is refused. */
+        const val MAX_TEMPLATE_DEPTH = 16
+
+        private val LOCAL_PLACEHOLDER = Regex("\\[\\[([^\\[\\]]+)]]")
+        private val TOKEN = Regex("\\[\\[([^\\[\\]]+)]]|%([A-Za-z0-9_.:-]+)%")
     }
 }

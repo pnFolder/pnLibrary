@@ -88,6 +88,14 @@ public final class org/pnfolder/pnlibrary/api/config/ConfigNamingStrategy : java
 public abstract interface annotation class org/pnfolder/pnlibrary/api/config/ConfigNewLine : java/lang/annotation/Annotation {
 }
 
+public abstract interface annotation class org/pnfolder/pnlibrary/api/config/ConfigNodeForm : java/lang/annotation/Annotation {
+	public abstract fun value ()Ljava/lang/Class;
+}
+
+public abstract interface class org/pnfolder/pnlibrary/api/config/ConfigNodeRewriter {
+	public abstract fun rewrite (Ljava/util/Map;Ljava/lang/String;)Ljava/util/Map;
+}
+
 public abstract interface annotation class org/pnfolder/pnlibrary/api/config/ConfigNotBlank : java/lang/annotation/Annotation {
 }
 
@@ -230,6 +238,14 @@ public class org/pnfolder/pnlibrary/api/config/ConfigSteps {
 }
 
 public final class org/pnfolder/pnlibrary/api/config/ConfigSteps$Companion {
+}
+
+public abstract interface annotation class org/pnfolder/pnlibrary/api/config/ConfigTextForm : java/lang/annotation/Annotation {
+	public abstract fun value ()Ljava/lang/Class;
+}
+
+public abstract interface class org/pnfolder/pnlibrary/api/config/ConfigTextParser {
+	public abstract fun parse (Ljava/lang/String;Lorg/pnfolder/pnlibrary/api/config/ConfigSerializationContext;)Ljava/lang/Object;
 }
 
 public abstract interface annotation class org/pnfolder/pnlibrary/api/config/ConfigType : java/lang/annotation/Annotation {

@@ -8,7 +8,7 @@ import org.pnfolder.pnlibrary.api.text.ComponentSerializerType
  * Implementations supply infrastructure such as text parsing, logging, and task scope.
  * The service does not own action definitions and does not catch execution failures.
  */
-interface ActionService {
+interface  ActionService {
     /**
      * Creates a fresh context for one logical invocation.
      *
@@ -16,13 +16,23 @@ interface ActionService {
      * @param allPlayers wider dynamic audience available to targeted actions
      * @param values named values exposed to conditions
      * @param serializerType default parser for text-producing actions
+     * @param templates named action lists that `[run]` actions can call
      */
     fun context(
         player: LibraryPlayer,
         allPlayers: LibraryAudience,
         values: Map<String, Any?> = emptyMap(),
         serializerType: ComponentSerializerType = ComponentSerializerType.ADAPTIVE,
+        templates: Map<String, List<Action>>,
     ): ActionContext
+
+    /** Same as the full overload, with no templates. Kept so older callers and implementations still work. */
+    fun context(
+        player: LibraryPlayer,
+        allPlayers: LibraryAudience,
+        values: Map<String, Any?> = emptyMap(),
+        serializerType: ComponentSerializerType = ComponentSerializerType.ADAPTIVE,
+    ): ActionContext = context(player, allPlayers, values, serializerType, emptyMap())
 
     /** Executes one [action] immediately with [context]. */
     fun execute(context: ActionContext, action: Action) = action.execute(context)

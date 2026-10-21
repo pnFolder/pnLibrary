@@ -1,18 +1,8 @@
 package org.pnfolder.pnlibrary.api.actions
 
 import org.pnfolder.pnlibrary.api.config.ConfigKey
-import org.pnfolder.pnlibrary.api.config.ConfigPolymorphic
-import org.pnfolder.pnlibrary.api.config.ConfigType
-import org.pnfolder.pnlibrary.api.config.ConfigTypes
+import org.pnfolder.pnlibrary.api.config.ConfigSerializeWith
 
-@ConfigPolymorphic(discriminator = "type")
-@ConfigTypes(
-    ConfigType(ValueCondition::class, "compare", aliases = ["value"]),
-    ConfigType(EnabledCondition::class, "flag", aliases = ["enabled"]),
-    ConfigType(PermissionCondition::class, "permission", aliases = ["perm"]),
-    ConfigType(ChanceCondition::class, "chance"),
-    ConfigType(NotCondition::class, "not"),
-)
 /**
  * A configuration-friendly predicate evaluated against one [ActionContext].
  *
@@ -20,6 +10,7 @@ import org.pnfolder.pnlibrary.api.config.ConfigTypes
  * should be side-effect free because compound conditions may evaluate them repeatedly
  * across separate executions of the same action graph.
  */
+@ConfigSerializeWith(ConditionSerializer::class)
 fun interface ActionCondition {
     /** Returns whether [context] satisfies this condition. */
     fun matches(context: ActionContext): Boolean
@@ -35,6 +26,7 @@ fun interface ActionCondition {
  * @property flag key read from [ActionContext.values]
  * @property enabled boolean state required for a match
  */
+@ConfigSerializeWith(ConditionSerializer::class)
 data class EnabledCondition(
     @field:ConfigKey("name")
     val flag: String = "",
@@ -58,6 +50,7 @@ data class EnabledCondition(
  *
  * @property permission platform permission node required from the invoking player
  */
+@ConfigSerializeWith(ConditionSerializer::class)
 data class PermissionCondition(
     @field:ConfigKey("node")
     val permission: String = "",
@@ -73,6 +66,7 @@ data class PermissionCondition(
  * never matches and `1.0` always matches
  * @throws IllegalArgumentException when [probability] is outside the supported range
  */
+@ConfigSerializeWith(ConditionSerializer::class)
 data class ChanceCondition(
     val probability: Double = 1.0,
 ) : ActionCondition {
@@ -85,6 +79,7 @@ data class ChanceCondition(
  *
  * @property check predicate to negate, or `null` for an always-matching condition
  */
+@ConfigSerializeWith(ConditionSerializer::class)
 data class NotCondition(
     @field:ConfigKey("check")
     val check: ActionCondition? = null,
@@ -108,6 +103,10 @@ enum class Comparison {
     LESS_THAN,
     /** Numeric less-than-or-equal comparison. */
     LESS_OR_EQUAL,
+    /** Numeric equality, so `5` equals `5.0`. */
+    NUMBER_EQUALS,
+    /** Numeric inequality. */
+    NUMBER_NOT_EQUALS,
     /** Whether a nonblank value exists; does not use [ValueCondition.value]. */
     PRESENT,
     /** Whether the value is missing or blank; does not use [ValueCondition.value]. */
@@ -126,6 +125,7 @@ enum class Comparison {
  * @property value right-hand operand, ignored for presence checks
  * @property ignoreCase whether textual comparisons use case-insensitive matching
  */
+@ConfigSerializeWith(ConditionSerializer::class)
 data class ValueCondition(
     val source: String = "",
     @field:ConfigKey("operator")
@@ -134,7 +134,7 @@ data class ValueCondition(
     val ignoreCase: Boolean = true,
 ) : ActionCondition {
     override fun matches(context: ActionContext): Boolean {
-        val raw = context.resolve(source)
+        val raw = context.read(source)
         if (operator == Comparison.PRESENT) return raw != null && raw.toString().isNotBlank()
         if (operator == Comparison.ABSENT) return raw == null || raw.toString().isBlank()
         val actual = raw?.toString() ?: return false
@@ -142,7 +142,7 @@ data class ValueCondition(
         val right = if (ignoreCase) value.lowercase() else value
         fun numeric(predicate: (Double, Double) -> Boolean): Boolean {
             val a = actual.toDoubleOrNull() ?: return false
-            val b = context.resolve(value)?.toString()?.toDoubleOrNull() ?: value.toDoubleOrNull() ?: return false
+            val b = context.read(value)?.toString()?.toDoubleOrNull() ?: value.toDoubleOrNull() ?: return false
             return predicate(a, b)
         }
         return when (operator) {
@@ -153,6 +153,8 @@ data class ValueCondition(
             Comparison.GREATER_OR_EQUAL -> numeric { a, b -> a >= b }
             Comparison.LESS_THAN -> numeric { a, b -> a < b }
             Comparison.LESS_OR_EQUAL -> numeric { a, b -> a <= b }
+            Comparison.NUMBER_EQUALS -> numeric { a, b -> a == b }
+            Comparison.NUMBER_NOT_EQUALS -> numeric { a, b -> a != b }
             Comparison.PRESENT, Comparison.ABSENT -> false
         }
     }

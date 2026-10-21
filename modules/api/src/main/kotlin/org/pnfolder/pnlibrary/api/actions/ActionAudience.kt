@@ -2,6 +2,7 @@ package org.pnfolder.pnlibrary.api.actions
 
 import net.kyori.adventure.sound.Sound
 import net.kyori.adventure.text.Component
+import java.time.Duration
 import java.util.function.Supplier
 
 /**
@@ -33,6 +34,19 @@ interface LibraryAudience {
      */
     fun playSound(sound: Sound): Boolean
 
+    /**
+     * Shows a title and subtitle to every receiver in this audience.
+     *
+     * @param title main line, already deserialized by the caller
+     * @param subtitle second line, already deserialized by the caller
+     * @param fadeIn how long the title takes to appear
+     * @param stay how long it stays fully visible
+     * @param fadeOut how long it takes to disappear
+     * @return `true` when the platform accepted the title for every receiver; `false` by default, for
+     * platforms that cannot show titles
+     */
+    fun showTitle(title: Component, subtitle: Component, fadeIn: Duration, stay: Duration, fadeOut: Duration): Boolean = false
+
     /** Factories for audiences whose membership is computed on demand. */
     companion object {
         /**
@@ -60,6 +74,16 @@ interface LibraryAudience {
                     players.get().fold(true) { accepted, player ->
                         player.playSound(sound) && accepted
                     }
+
+                override fun showTitle(
+                    title: Component,
+                    subtitle: Component,
+                    fadeIn: Duration,
+                    stay: Duration,
+                    fadeOut: Duration,
+                ): Boolean = players.get().fold(true) { accepted, player ->
+                    player.showTitle(title, subtitle, fadeIn, stay, fadeOut) && accepted
+                }
             }
     }
 }

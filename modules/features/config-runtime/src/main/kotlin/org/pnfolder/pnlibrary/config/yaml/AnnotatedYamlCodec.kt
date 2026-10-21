@@ -14,6 +14,8 @@ import org.pnfolder.pnlibrary.api.config.ConfigPolymorphic
 import org.pnfolder.pnlibrary.api.config.ConfigProblem
 import org.pnfolder.pnlibrary.api.config.ConfigSerializationContext
 import org.pnfolder.pnlibrary.api.config.ConfigSerializer
+import org.pnfolder.pnlibrary.api.config.ConfigNodeForm
+import org.pnfolder.pnlibrary.api.config.ConfigTextForm
 import java.lang.reflect.Array as ReflectArray
 import java.lang.reflect.Modifier
 import java.lang.reflect.ParameterizedType
@@ -178,7 +180,11 @@ internal class AnnotatedYamlCodec<T : Any>(
                         val allowed = schemaInspector.enumDescription(field.type)
                         " Allowed values: $allowed. Default: ${current ?: "null"}."
                     } else ""
-                    throw IllegalArgumentException("Invalid configuration value at $path: ${raw ?: "null"}.$detail", error)
+                    if (error is LocatedConfigException) throw error
+                    throw IllegalArgumentException(
+                        "$INVALID_VALUE $path: ${shown(raw)}.$detail${reasonSuffix(error)}",
+                        error,
+                    )
                 }
             }
             field.set(target, converted)
@@ -216,7 +222,7 @@ internal class AnnotatedYamlCodec<T : Any>(
         if (Collection::class.java.isAssignableFrom(rawType) && value is List<*>) {
             val elementType = (targetType as? ParameterizedType)?.actualTypeArguments?.getOrNull(0) ?: Any::class.java
             val converted = value.mapIndexed { index, item ->
-                convert(item, elementType, path = "$path[$index]", annotations = annotations)
+                located("$path[$index]") { convert(item, elementType, path = "$path[$index]", annotations = annotations) }
             }
             return introspector.collection(rawType, converted, path)
         }
@@ -225,7 +231,9 @@ internal class AnnotatedYamlCodec<T : Any>(
             val keyType = arguments?.getOrNull(0) ?: String::class.java
             val valueType = arguments?.getOrNull(1) ?: Any::class.java
             val converted = linkedMapOf<Any?, Any?>().also { out ->
-                value.forEach { (key, item) -> out[convert(key, keyType)] = convert(item, valueType, path = "$path.$key") }
+                value.forEach { (key, item) ->
+                    out[convert(key, keyType)] = located("$path.$key") { convert(item, valueType, path = "$path.$key") }
+                }
             }
             return introspector.map(rawType, converted, path)
         }
@@ -241,17 +249,50 @@ internal class AnnotatedYamlCodec<T : Any>(
     }
 
     private fun polymorphic(value: Any, baseType: Class<*>, path: String, annotations: List<Annotation>): Any {
+        if (value is String) {
+            val parser = baseType.getAnnotation(ConfigTextForm::class.java)?.value?.java
+                ?: throw IllegalArgumentException("Polymorphic value at $path must be a YAML object")
+            @Suppress("UNCHECKED_CAST")
+            return serializerResolver.textParser(parser)
+                .parse(value, context(baseType, path, annotations, null)) as Any
+        }
         require(value is Map<*, *>) { "Polymorphic value at $path must be a YAML object" }
+        val node = rewritten(value, baseType, path)
         val discriminator = baseType.getAnnotation(ConfigPolymorphic::class.java).discriminator
-        val entry = value.entries.firstOrNull { it.key?.toString()?.equals(discriminator, true) == true }
+        val entry = node.entries.firstOrNull { it.key?.toString()?.equals(discriminator, true) == true }
             ?: error("Missing '$discriminator' for ${baseType.simpleName} at $path")
         val name = entry.value?.toString()?.trim().orEmpty()
         val implementation = polymorphicResolver.decodingType(baseType, annotations, name, path)
         val body = linkedMapOf<Any?, Any?>().also { result ->
-            value.forEach { (key, item) -> if (key != entry.key) result[key] = item }
+            node.forEach { (key, item) -> if (key != entry.key) result[key] = item }
         }
         return introspector.instantiate(implementation, path).also { populate(it, implementation, body, path) }
     }
+
+    private fun rewritten(value: Map<*, *>, baseType: Class<*>, path: String): Map<*, *> {
+        val rewriter = baseType.getAnnotation(ConfigNodeForm::class.java)?.value?.java ?: return value
+        val node = value.entries.associate { it.key.toString() to it.value }
+        return serializerResolver.nodeRewriter(rewriter).rewrite(node, path)
+    }
+
+    /** Runs [block]; a failure is reported at [location] with its own reason, once, at the deepest entry. */
+    private fun <R> located(location: String, block: () -> R): R = try {
+        block()
+    } catch (error: LocatedConfigException) {
+        throw error
+    } catch (error: IllegalArgumentException) {
+        val reason = error.message ?: error.javaClass.simpleName
+        if (reason.startsWith(INVALID_VALUE)) throw error
+        throw LocatedConfigException(location, reason, error)
+    }
+
+    private fun shown(raw: Any?): String {
+        val text = raw?.toString() ?: "null"
+        return if (text.length > MAX_SHOWN) text.take(MAX_SHOWN) + "..." else text
+    }
+
+    private fun reasonSuffix(error: Exception): String =
+        if (error is IllegalArgumentException && !error.message.isNullOrBlank()) " Reason: ${error.message}" else ""
 
     private fun enumAlias(type: Class<*>, value: Any?, path: String): Any? {
         if (!type.isEnum || value !is String) return value
@@ -261,6 +302,14 @@ internal class AnnotatedYamlCodec<T : Any>(
         }
         require(matches.size <= 1) { "Enum alias '$value' is ambiguous at $path in ${type.name}" }
         return matches.singleOrNull()?.name ?: value
+    }
+
+    private class LocatedConfigException(location: String, reason: String, cause: Throwable) :
+        IllegalArgumentException("$INVALID_VALUE $location: $reason", cause)
+
+    private companion object {
+        const val MAX_SHOWN = 120
+        const val INVALID_VALUE = "Invalid configuration value at"
     }
 
     private fun context(

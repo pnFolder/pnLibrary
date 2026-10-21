@@ -2,13 +2,20 @@ package org.pnfolder.pnlibrary.bukkit
 
 import net.kyori.adventure.sound.Sound
 import net.kyori.adventure.text.Component
+import net.kyori.adventure.title.Title
+import org.bukkit.ChatColor
+import org.bukkit.Location
+import org.bukkit.Material
 import org.bukkit.entity.Player
+import org.bukkit.inventory.ItemStack
 import org.bukkit.potion.PotionEffect
 import org.bukkit.potion.PotionEffectType
+import org.pnfolder.pnlibrary.api.actions.ItemQuery
 import org.pnfolder.pnlibrary.api.actions.LibraryPlayer
 import org.pnfolder.pnlibrary.api.actions.PlayerCapability
 import org.pnfolder.pnlibrary.api.actions.PlayerEffect
 import org.pnfolder.pnlibrary.api.actions.PlayerParticle
+import java.time.Duration
 import java.util.UUID
 
 /**
@@ -42,6 +49,10 @@ internal class BukkitLibraryPlayer(
     /** Plays a sound, falling back to the native Bukkit API where needed. */
     override fun playSound(sound: Sound): Boolean = audiences.playSound(player, sound)
 
+    /** Shows a title through the version-safe audience transport. */
+    override fun showTitle(title: Component, subtitle: Component, fadeIn: Duration, stay: Duration, fadeOut: Duration): Boolean =
+        audiences.showTitle(player, Title.title(title, subtitle, Title.Times.times(fadeIn, stay, fadeOut)))
+
     /** Applies a potion effect using the best constructor supported by this server. */
     override fun applyEffect(effect: PlayerEffect): Boolean {
         val type = PotionEffectType.getByName(effect.key.uppercase()) ?: return false
@@ -60,6 +71,50 @@ internal class BukkitLibraryPlayer(
         }.getOrElse { PotionEffect(type, ticks, effect.amplifier, effect.ambient) }
         return player.addPotionEffect(configured, true)
     }
+
+    /** Dispatches a command as the player or as the console. */
+    override fun runCommand(command: String, asConsole: Boolean): Boolean {
+        val sender = if (asConsole) player.server.consoleSender else player
+        return player.server.dispatchCommand(sender, command)
+    }
+
+    /** Counts items in the main inventory and hotbar that fit [query]; unknown materials count as zero. */
+    override fun countItems(query: ItemQuery): Int? {
+        val material = materialOf(query.material) ?: return 0
+        return player.inventory.contents
+            .filter { stack -> stack != null && stack.type == material && fits(stack, query) }
+            .sumOf { stack -> stack.amount }
+    }
+
+    /** Returns experience levels or total points of the native player. */
+    override fun experience(asLevels: Boolean): Double? =
+        if (asLevels) player.level.toDouble() else player.totalExperience.toDouble()
+
+    /** Measures the distance to a point, or returns null when the player is in another world. */
+    override fun distanceTo(world: String, x: Double, y: Double, z: Double): Double? {
+        val here = player.location
+        val current = here.world ?: return null
+        if (!current.name.equals(world, ignoreCase = true)) return null
+        return here.distance(Location(current, x, y, z))
+    }
+
+    private fun materialOf(name: String): Material? =
+        Material.matchMaterial(name.trim().removePrefix("minecraft:").uppercase())
+
+    private fun fits(stack: ItemStack, query: ItemQuery): Boolean {
+        if (query.name == null && query.nameContains == null && query.loreContains == null) return true
+        val meta = stack.itemMeta ?: return false
+        val ignoreCase = query.ignoreCase
+        val display = if (meta.hasDisplayName()) meta.displayName else null
+        val exactName = query.name
+        if (exactName != null && display?.equals(colored(exactName), ignoreCase) != true) return false
+        val partialName = query.nameContains
+        if (partialName != null && display?.contains(colored(partialName), ignoreCase) != true) return false
+        val needle = query.loreContains ?: return true
+        return meta.lore.orEmpty().any { line -> line.contains(colored(needle), ignoreCase) }
+    }
+
+    private fun colored(text: String): String = ChatColor.translateAlternateColorCodes('&', text)
 
     /** Renders a supported particle, returning false when the server lacks the required API. */
     override fun spawnParticle(particle: PlayerParticle): Boolean {

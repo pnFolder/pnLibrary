@@ -1,10 +1,14 @@
 package org.pnfolder.pnlibrary.api.actions
 
+import org.pnfolder.pnlibrary.api.config.ConfigNodeForm
 import org.pnfolder.pnlibrary.api.config.ConfigPolymorphic
+import org.pnfolder.pnlibrary.api.config.ConfigTextForm
 import org.pnfolder.pnlibrary.api.config.ConfigType
 import org.pnfolder.pnlibrary.api.config.ConfigTypes
 
 @ConfigPolymorphic(discriminator = "type")
+@ConfigTextForm(ActionLine::class)
+@ConfigNodeForm(ActionNode::class)
 @ConfigTypes(
     ConfigType(MessageAction::class, "message", aliases = ["messages", "msg"]),
     ConfigType(ActionBarAction::class, "action-bar", aliases = ["actionbar"]),
@@ -14,12 +18,19 @@ import org.pnfolder.pnlibrary.api.config.ConfigTypes
     ConfigType(ConditionalAction::class, "if", aliases = ["when", "condition"]),
     ConfigType(EffectAction::class, "effect", aliases = ["potion-effect"]),
     ConfigType(ParticleAction::class, "particle", aliases = ["particles"]),
-    ConfigType(SequenceAction::class, "sequence", aliases = ["run", "group"]),
+    ConfigType(SequenceAction::class, "sequence", aliases = ["group"]),
     ConfigType(SetValueAction::class, "set-value", aliases = ["set"]),
     ConfigType(CopyValueAction::class, "copy-value", aliases = ["copy"]),
     ConfigType(RemoveValueAction::class, "remove-value", aliases = ["unset"]),
     ConfigType(SwitchAction::class, "switch", aliases = ["match"]),
     ConfigType(NoOpAction::class, "noop", aliases = ["ignore", "silent"]),
+    ConfigType(CommandAction::class, "command", aliases = ["cmd"]),
+    ConfigType(StopAction::class, "stop", aliases = ["return"]),
+    ConfigType(WaitAction::class, "wait", aliases = ["pause"]),
+    ConfigType(RepeatAction::class, "repeat"),
+    ConfigType(TitleAction::class, "title"),
+    ConfigType(RunAction::class, "run", aliases = ["template"]),
+    ConfigType(RequirementsAction::class, "requirements", aliases = ["require", "check"]),
     ConfigType(UpdatePlaceholderAction::class, "update-placeholder", aliases = ["write-placeholder"]),
 )
 /**
