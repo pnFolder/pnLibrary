@@ -98,7 +98,7 @@ val coins = module.currencies.register("coins") { definition ->
 ```
 
 Операции, которые вы не описали, валюта не поддерживает: `supports(...)` вернёт `false`, а вызов вернёт
-`UNSUPPORTED`. Полный рабочий пример лежит в `examples/demo-bukkit/.../DemoCurrency.kt`.
+`UNSUPPORTED`.
 
 ## 4. Кто видит валюту
 

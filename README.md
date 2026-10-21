@@ -87,4 +87,4 @@ API содержит только интерфейсы и модели, реал
 - [Валюта](docs/currency.md)
 - [Встраиваемый установщик для всех платформ](modules/bootstrap/README.md)
 - [Консольные карточки](modules/console/README.md)
-- [Примеры](examples/demo-bukkit/README.md)
+- [Приёмочный плагин](examples/acceptance-bukkit/README.md)

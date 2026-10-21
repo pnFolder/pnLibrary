@@ -14,11 +14,6 @@ apiValidation {
         listOf(
             "core",
             "distribution",
-            "demo-bukkit",
-            "remote-policy",
-            "smoke-bukkit",
-            "smoke-bungee",
-            "smoke-velocity",
             "runtime",
             "faststats",
             "paper",

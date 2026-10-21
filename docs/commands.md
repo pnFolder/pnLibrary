@@ -15,13 +15,11 @@
 
 ## 2. Полный пример
 
-Ниже весь файл целиком, без пропусков. Он лежит в репозитории как
-`examples/demo-bukkit/src/main/kotlin/org/pnfolder/pnlibrary/demo/ShopExamplePlugin.kt` и компилируется вместе с
-библиотекой. В `plugin.yml` он не прописан, поэтому не запускается; чтобы попробовать, скопируйте классы в свой плагин
-с `depend: [pnLibrary]`.
+Ниже весь файл целиком, без пропусков. Чтобы попробовать, скопируйте его в свой плагин с `depend: [pnLibrary]`
+и укажите в `plugin.yml` `main: com.example.shop.ShopExamplePlugin`. Команды в `plugin.yml` прописывать не нужно.
 
 ```kotlin
-package org.pnfolder.pnlibrary.demo
+package com.example.shop
 
 import net.kyori.adventure.key.Key
 import net.kyori.adventure.sound.Sound
@@ -52,9 +50,7 @@ class NoMoney(val price: Int) : CommandError() {
 /**
  * A complete example: a small shop plugin that shows every level at which a command can answer an error.
  *
- * It is not listed in plugin.yml, so it never runs; it exists to be read and to be compiled with the library.
- * To try it, copy the classes into a plugin that has `depend: [pnLibrary]`. Nothing is declared in plugin.yml for
- * the commands: pnLibrary registers them itself.
+ * Nothing is declared in plugin.yml for the commands: pnLibrary registers them itself.
  */
 class ShopExamplePlugin : JavaPlugin() {
     private val balances = ConcurrentHashMap<UUID, Int>()

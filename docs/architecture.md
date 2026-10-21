@@ -65,10 +65,7 @@ Velocity требует 17, Paper Brigadier и FastStats для Velocity тре�
 | `platforms/bungee/runtime`, `platforms/velocity/runtime` | адаптеры прокси |
 | `platforms/velocity/faststats` | мост FastStats для Velocity (Java 21) |
 | `distribution` | сборка jar-файлов и офлайн-установщика обновлений |
-| `examples/demo-bukkit` | демо-плагин со всеми возможностями и полный пример команд `ShopExamplePlugin` |
 | `examples/acceptance-bukkit` | приёмочный плагин на Java |
-| `examples/remote-policy` | пример политики |
-| `examples/smoke-*` | проверка, что собранные jar компилируются у плагина на каждой платформе |
 | `tools/*` | скрипты релиза, проверки поколения API и приёмки |
 
 ## Пакеты `core`

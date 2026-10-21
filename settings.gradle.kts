@@ -24,10 +24,5 @@ include(
     ":platforms:velocity:runtime",
     ":platforms:velocity:bootstrap",
     ":distribution",
-    ":examples:demo-bukkit",
     ":examples:acceptance-bukkit",
-    ":examples:remote-policy",
-    ":examples:smoke-bukkit",
-    ":examples:smoke-bungee",
-    ":examples:smoke-velocity",
 )
