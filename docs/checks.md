@@ -98,7 +98,7 @@ checks:
 
 ## Запись DeluxeMenus
 
-Блок как в DeluxeMenus читается без изменений: `requirements`, `optional`, `minimum_requirements`, `stop_at_success`, `deny_commands`, `success_commands`.
+Ключи блока как в DeluxeMenus: `requirements`, `optional`, `minimum_requirements`, `stop_at_success`, `deny_commands`, `success_commands`. Действия внутри пишутся через `type`, как везде.
 
 ```yaml
 checks:
@@ -115,7 +115,8 @@ checks:
         optional: true
     minimum_requirements: 1
     deny_commands:
-      - '[message] &7Нужен 30 уровень или VIP'
+      - type: message
+        message: '&7Нужен 30 уровень или VIP'
 ```
 
 Старое действие `type: requirements` с таким блоком тоже работает и означает `require`.

@@ -15,7 +15,7 @@ import org.pnfolder.pnlibrary.api.actions.builtin.RunAction
 import org.pnfolder.pnlibrary.api.actions.builtin.SoundAction
 import org.pnfolder.pnlibrary.api.actions.builtin.StopAction
 import org.pnfolder.pnlibrary.api.actions.builtin.TitleAction
-import org.pnfolder.pnlibrary.api.actions.internal.ActionLine
+import org.pnfolder.pnlibrary.api.actions.internal.ActionText
 import org.pnfolder.pnlibrary.api.actions.internal.ActionNode
 import org.pnfolder.pnlibrary.api.config.ConfigNodeForm
 import org.pnfolder.pnlibrary.api.config.ConfigPolymorphic
@@ -24,7 +24,7 @@ import org.pnfolder.pnlibrary.api.config.ConfigType
 import org.pnfolder.pnlibrary.api.config.ConfigTypes
 
 @ConfigPolymorphic(discriminator = "type")
-@ConfigTextForm(ActionLine::class)
+@ConfigTextForm(ActionText::class)
 @ConfigNodeForm(ActionNode::class)
 @ConfigTypes(
     ConfigType(MessageAction::class, "message", aliases = ["messages", "msg"]),

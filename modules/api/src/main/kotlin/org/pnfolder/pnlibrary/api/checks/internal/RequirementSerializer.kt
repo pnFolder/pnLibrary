@@ -1,8 +1,6 @@
 package org.pnfolder.pnlibrary.api.checks.internal
 
 import org.pnfolder.pnlibrary.api.actions.Action
-import org.pnfolder.pnlibrary.api.actions.builtin.MessageAction
-import org.pnfolder.pnlibrary.api.actions.internal.ActionLine
 import org.pnfolder.pnlibrary.api.checks.Requirement
 import org.pnfolder.pnlibrary.api.config.ConfigSerializationContext
 import org.pnfolder.pnlibrary.api.config.ConfigSerializer
@@ -17,8 +15,8 @@ import org.pnfolder.pnlibrary.api.internal.Suggestions
  * - One entry: the fields of a check (`type`, …) or `if: "%x% >= 5"`, plus `optional`, `deny` and `success`.
  * - Text: `"%vault_eco_balance% >= 100"`, a check with nothing to run.
  *
- * `deny` and `success` hold actions: `[tag]` lines, objects with a `type`, or plain text, which is a chat message.
- * `deny_commands` and `success_commands` are their DeluxeMenus names.
+ * `deny` and `success` hold actions written with a `type`. `deny_commands` and `success_commands` are their
+ * DeluxeMenus names.
  */
 object RequirementSerializer : ConfigSerializer<Requirement> {
     private val shortKeys = listOf("check", "deny", "success", "deny_commands", "success_commands")
@@ -102,8 +100,8 @@ object RequirementSerializer : ConfigSerializer<Requirement> {
             single.value.deny.isEmpty() && single.value.success.isEmpty()
         ) {
             val out = linkedMapOf<String, Any?>("check" to CheckSerializer.write(checkOf(single.value)))
-            if (value.deny.isNotEmpty()) out["deny"] = value.deny.map(::line)
-            if (value.success.isNotEmpty()) out["success"] = value.success.map(::line)
+            if (value.deny.isNotEmpty()) out["deny"] = written(value.deny, context, "deny")
+            if (value.success.isNotEmpty()) out["success"] = written(value.success, context, "success")
             return out
         }
         val entries = linkedMapOf<String, Any?>()
@@ -112,15 +110,15 @@ object RequirementSerializer : ConfigSerializer<Requirement> {
                 ?: throw UnsupportedOperationException("Check '$name' cannot be written to configuration")
             val out = LinkedHashMap<String, Any?>(written)
             if (entry.optional) out["optional"] = true
-            if (entry.success.isNotEmpty()) out["success_commands"] = entry.success.map(::line)
-            if (entry.deny.isNotEmpty()) out["deny_commands"] = entry.deny.map(::line)
+            if (entry.success.isNotEmpty()) out["success"] = written(entry.success, context, "requirements.$name.success")
+            if (entry.deny.isNotEmpty()) out["deny"] = written(entry.deny, context, "requirements.$name.deny")
             entries[name] = out
         }
         val out = linkedMapOf<String, Any?>("requirements" to entries)
         if (value.minimum > 0) out["minimum_requirements"] = value.minimum
         if (value.stopAtSuccess) out["stop_at_success"] = true
-        if (value.success.isNotEmpty()) out["success_commands"] = value.success.map(::line)
-        if (value.deny.isNotEmpty()) out["deny_commands"] = value.deny.map(::line)
+        if (value.success.isNotEmpty()) out["success"] = written(value.success, context, "success")
+        if (value.deny.isNotEmpty()) out["deny"] = written(value.deny, context, "deny")
         return out
     }
 
@@ -135,7 +133,7 @@ object RequirementSerializer : ConfigSerializer<Requirement> {
         }
     }
 
-    /** Reads `deny`/`success` (or their DeluxeMenus names) as actions; text without a tag is a chat message. */
+    /** Reads `deny`/`success` (or their DeluxeMenus names) as a list of actions written with a `type`. */
     private fun actions(
         fields: Map<String, Any?>, long: String, short: String, context: ConfigSerializationContext,
     ): List<Action> {
@@ -148,15 +146,13 @@ object RequirementSerializer : ConfigSerializer<Requirement> {
         }
     }
 
-    private fun action(item: Any?, context: ConfigSerializationContext, path: String): Action = when {
-        item is String && item.trimStart().startsWith("[") -> ActionLine.parse(item)
-        item is String -> MessageAction(listOf(item))
-        item is Map<*, *> && context.decoder != null -> context.decode(item, Action::class.java, path)
-        else -> throw IllegalArgumentException("An action must be a [tag] line, a text or an object with a 'type'")
+    private fun action(item: Any?, context: ConfigSerializationContext, path: String): Action {
+        checkNotNull(context.decoder) { "Actions can only be read while a configuration loads" }
+        return context.decode(item, Action::class.java, path)
     }
 
-    private fun line(action: Action): String = ActionLine.format(action)
-        ?: throw UnsupportedOperationException("${action.javaClass.simpleName} cannot be written as a [tag] line")
+    private fun written(actions: List<Action>, context: ConfigSerializationContext, key: String): List<Any?> =
+        actions.mapIndexed { index, action -> context.encode(action, Action::class.java, "${context.path}.$key[$index]") }
 
     private fun whole(raw: Any?, key: String): Int? = raw?.let {
         (it as? Number)?.toInt() ?: it.toString().trim().toIntOrNull()

@@ -344,17 +344,15 @@ public final class org/pnfolder/pnlibrary/api/actions/builtin/TitleAction : org/
 	public fun toString ()Ljava/lang/String;
 }
 
-public final class org/pnfolder/pnlibrary/api/actions/internal/ActionLine : org/pnfolder/pnlibrary/api/config/ConfigTextParser {
-	public static final field INSTANCE Lorg/pnfolder/pnlibrary/api/actions/internal/ActionLine;
-	public final fun format (Lorg/pnfolder/pnlibrary/api/actions/Action;)Ljava/lang/String;
-	public final fun parse (Ljava/lang/String;)Lorg/pnfolder/pnlibrary/api/actions/Action;
-	public synthetic fun parse (Ljava/lang/String;Lorg/pnfolder/pnlibrary/api/config/ConfigSerializationContext;)Ljava/lang/Object;
-	public fun parse (Ljava/lang/String;Lorg/pnfolder/pnlibrary/api/config/ConfigSerializationContext;)Lorg/pnfolder/pnlibrary/api/actions/Action;
-}
-
 public final class org/pnfolder/pnlibrary/api/actions/internal/ActionNode : org/pnfolder/pnlibrary/api/config/ConfigNodeRewriter {
 	public static final field INSTANCE Lorg/pnfolder/pnlibrary/api/actions/internal/ActionNode;
 	public fun rewrite (Ljava/util/Map;Ljava/lang/String;)Ljava/util/Map;
+}
+
+public final class org/pnfolder/pnlibrary/api/actions/internal/ActionText : org/pnfolder/pnlibrary/api/config/ConfigTextParser {
+	public static final field INSTANCE Lorg/pnfolder/pnlibrary/api/actions/internal/ActionText;
+	public synthetic fun parse (Ljava/lang/String;Lorg/pnfolder/pnlibrary/api/config/ConfigSerializationContext;)Ljava/lang/Object;
+	public fun parse (Ljava/lang/String;Lorg/pnfolder/pnlibrary/api/config/ConfigSerializationContext;)Lorg/pnfolder/pnlibrary/api/actions/Action;
 }
 
 public final class org/pnfolder/pnlibrary/api/activity/ActivityAttachment {

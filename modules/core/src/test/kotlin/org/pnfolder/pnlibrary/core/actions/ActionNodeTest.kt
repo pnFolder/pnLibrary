@@ -95,10 +95,9 @@ class ActionNodeTest {
     }
 
     @Test
-    fun `wrappers nest and the older forms still read`() {
+    fun `wrappers nest and the messages list still reads`() {
         val actions = load(
             "buy:",
-            "  - \"[message] line\"",
             "  - type: message",
             "    messages: [old]",
             "  - type: delay",
@@ -111,9 +110,8 @@ class ActionNodeTest {
             "            message: Inner",
         )
 
-        assertEquals(MessageAction(listOf("line")), actions[0])
-        assertEquals(MessageAction(listOf("old")), actions[1])
-        val delay = actions[2] as DelayAction
+        assertEquals(MessageAction(listOf("old")), actions[0])
+        val delay = actions[1] as DelayAction
         assertInstanceOf(IfAction::class.java, delay.thenActions.single())
     }
 

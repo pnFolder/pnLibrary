@@ -27,10 +27,10 @@ join:
 
 | `type` | Что делает | Настройки |
 |---|---|---|
-| `message` | сообщение игроку | `message` (строка) или `messages` (список), `target: all_players` — всем |
+| `message` | сообщение игроку | `message` (строка) или `messages` (список), `target: ALL_PLAYERS` — всем |
 | `actionbar` | текст над панелью предметов | `text` |
 | `title` | большой заголовок | `title`, `subtitle`, `fade-in`, `stay`, `fade-out` |
-| `sound` | звук | `sound`, `volume`, `pitch` |
+| `sound` | звук | `sound` (`entity.villager.no` или `ENTITY_VILLAGER_NO`), `volume`, `pitch` |
 | `console` | команда от консоли | `command` без `/` |
 | `player` | команда от игрока | `command` без `/` |
 | `log` | запись в журнал сервера | `text`, `level` |
@@ -81,45 +81,18 @@ buy:
 
 `check:` принимает имя проверки из блока `checks:` или проверку прямо на месте (`type: permission` и т. д.). Подробно — в [checks.md](checks.md).
 
-## Короткая запись строкой
-
-Для одного действия можно писать строку, как в DeluxeMenus. Это то же самое, что запись с `type`.
-
-```yaml
-- '[message] &aПривет, %player_name%!'
-- '[console] give %player_name% diamond 1'
-- '[message] Через секунду<delay=20>'
-- '[broadcast] Кто-то купил алмаз!<chance=10>'
-- '[wait 2s]'
-```
-
-| Тег | То же самое, что |
-|---|---|
-| `[message]`, `[broadcast]` | `message` игроку / всем |
-| `[minimessage]`, `[minibroadcast]`, `[json]`, `[jsonbroadcast]` | `message` в формате MiniMessage или JSON |
-| `[actionbar]` | `actionbar` |
-| `[console]`, `[player]`, `[commandevent]` | `console`, `player` |
-| `[sound]`, `[broadcastsound]` | `sound`: `название громкость высота` |
-| `[title]`, `[broadcasttitle]` | `title`: `заголовок;подзаголовок;появление;показ;исчезновение` (тики) |
-| `[log]` | `log` |
-| `[run] имя` | `run` |
-| `[stop]` | `stop` |
-| `[wait 2s]` | `delay` без `do`: всё ниже ждёт |
-| `<delay=20>`, `<delay=2s>` в конце строки | `delay` вокруг этой строки |
-| `<chance=25>` в конце строки | `chance` вокруг этой строки |
-
-Звук можно писать как в Bukkit (`ENTITY_VILLAGER_NO`) или ключом Minecraft (`entity.villager.no`). Если в названии есть слова через подчёркивание (`experience_orb`), пишите ключом.
-
 ## Шаблоны
 
-Одинаковые куски описываются один раз и вызываются по имени: `type: run` с `name: refuse` или `[run] refuse`. Шаблоны передаёт плагин. Неизвестное имя даёт предупреждение с подсказкой, зацикливание останавливается на 16 уровнях.
+Одинаковые куски описываются один раз и вызываются по имени: `type: run` с `name: refuse`. Шаблоны передаёт плагин. Неизвестное имя даёт предупреждение с подсказкой, зацикливание останавливается на 16 уровнях.
 
 ## Ошибки в конфиге
 
-Ошибка говорит, где она и что не так, и подсказывает при опечатке:
+Ошибка говорит, где она и что не так, и подсказывает при опечатке. Действие строкой (`'[console] give …'`, как в DeluxeMenus) не принимается: ошибка показывает, как записать его через `type`:
 
 ```
-Invalid configuration value at buy[1]: Unknown action tag [mesage]. Did you mean [message]?
+Invalid configuration value at buy[1]: An action is written with a 'type', not as a line of text. Write it as:
+- type: console
+  command: give %player_name% apple
 ```
 
 ## Из кода

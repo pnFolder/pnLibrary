@@ -13,11 +13,13 @@ import org.pnfolder.pnlibrary.api.actions.Action
 import org.pnfolder.pnlibrary.api.actions.ActionContext
 import org.pnfolder.pnlibrary.api.actions.builtin.CommandAction
 import org.pnfolder.pnlibrary.api.actions.builtin.CommandRunner
+import org.pnfolder.pnlibrary.api.actions.builtin.LogAction
 import org.pnfolder.pnlibrary.api.actions.builtin.SoundAction
 import org.pnfolder.pnlibrary.api.actions.builtin.TitleAction
 import org.pnfolder.pnlibrary.api.audiences.LibraryAudience
 import org.pnfolder.pnlibrary.api.audiences.LibraryPlayer
 import org.pnfolder.pnlibrary.api.checks.Requirement
+import org.pnfolder.pnlibrary.api.checks.builtin.PermissionCheck
 import org.pnfolder.pnlibrary.api.config.ConfigOptions
 import org.pnfolder.pnlibrary.api.config.yaml
 import org.pnfolder.pnlibrary.api.logging.PnLogger
@@ -81,7 +83,9 @@ class CheckSystemTest {
         "    deny:",
         "      - type: log",
         "        text: no money",
-        "    success: '[log] paid'",
+        "    success:",
+        "      - type: log",
+        "        text: paid",
         "  vip:",
         "    check:",
         "      type: permission",
@@ -215,6 +219,37 @@ class CheckSystemTest {
             TitleAction("Hi", fadeIn = Duration.ofSeconds(1), stay = Duration.ofSeconds(3), fadeOut = Duration.ofSeconds(2)),
             file.buy[1],
         )
+    }
+
+    @Test
+    fun `a line of text in deny is rejected`() {
+        val error = assertThrows(IllegalArgumentException::class.java) {
+            load("checks:", "  a:", "    check: b", "    deny:", "      - '[message] no'")
+        }
+
+        assertTrue(error.message!!.contains("checks.a.deny[0]") && error.message!!.contains("type: message"), error.message)
+    }
+
+    @Test
+    fun `default checks are written with type and read back the same`() {
+        val defaults = ShopFile(
+            checks = mapOf(
+                "vip" to Requirement(
+                    PermissionCheck("group.vip"),
+                    deny = listOf(LogAction("no vip")),
+                    success = listOf(CommandAction("say hi", CommandRunner.CONSOLE)),
+                ),
+            ),
+        )
+        ConfigurationServiceImpl(object : PlatformOwnership {}).use {
+            val scope = it.scope(ActionFormatTest.Owner(directory.toFile()), PluginId.of("tester"))
+            scope.yaml<ShopFile>("written.yml", ConfigOptions.DEFAULT) { defaults }.load()
+        }
+        val text = Files.readString(directory.resolve("written.yml"))
+        assertTrue(text.contains("type: log") && !text.contains("[log]"), text)
+
+        Files.copy(directory.resolve("written.yml"), directory.resolve("shop.yml"))
+        assertEquals(defaults.checks, load(*Files.readAllLines(directory.resolve("written.yml")).toTypedArray()).checks)
     }
 
     @Test

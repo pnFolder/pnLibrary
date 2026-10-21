@@ -22,7 +22,6 @@ import org.pnfolder.pnlibrary.api.actions.builtin.RunAction
 import org.pnfolder.pnlibrary.api.actions.builtin.SoundAction
 import org.pnfolder.pnlibrary.api.actions.builtin.StopAction
 import org.pnfolder.pnlibrary.api.actions.builtin.TitleAction
-import org.pnfolder.pnlibrary.api.actions.internal.ActionLine
 import org.pnfolder.pnlibrary.api.audiences.LibraryAudience
 import org.pnfolder.pnlibrary.api.audiences.LibraryPlayer
 import org.pnfolder.pnlibrary.api.checks.Requirement
@@ -58,70 +57,6 @@ import java.util.logging.Logger
 class ActionFormatTest {
     @TempDir
     lateinit var directory: Path
-
-    // ---- action lines ----
-
-    @Test
-    fun `tags build the matching actions`() {
-        assertEquals(MessageAction(listOf("&aHi %player_name%")), ActionLine.parse("[message] &aHi %player_name%"))
-        assertEquals(
-            MessageAction(listOf("Hi"), target = ActionTarget.ALL_PLAYERS),
-            ActionLine.parse("[broadcast] Hi"),
-        )
-        assertEquals(CommandAction("give %player_name% apple", CommandRunner.CONSOLE), ActionLine.parse("[console] give %player_name% apple"))
-        assertEquals(CommandAction("spawn", CommandRunner.PLAYER), ActionLine.parse("[player] spawn"))
-        assertEquals(CommandAction("spawn", CommandRunner.PLAYER), ActionLine.parse("[commandevent] spawn"))
-        assertInstanceOf(StopAction::class.java, ActionLine.parse("[stop]"))
-    }
-
-    @Test
-    fun `tags are not case sensitive`() {
-        assertEquals(ActionLine.parse("[message] Hi"), ActionLine.parse("[MESSAGE] Hi"))
-    }
-
-    @Test
-    fun `a sound takes a name, volume and pitch`() {
-        val sound = ActionLine.parse("[sound] ENTITY_VILLAGER_NO 0.5 2") as SoundAction
-
-        assertEquals("entity.villager.no", sound.key)
-        assertEquals(0.5f, sound.volume)
-        assertEquals(2f, sound.pitch)
-        assertEquals("minecraft:block.note_block.pling", (ActionLine.parse("[sound] minecraft:block.note_block.pling") as SoundAction).key)
-    }
-
-    @Test
-    fun `delay waits ticks or seconds before the action`() {
-        val ticks = ActionLine.parse("[message] Hi<delay=20>") as DelayAction
-        val seconds = ActionLine.parse("[message] Hi <delay=2s>") as DelayAction
-
-        assertEquals(Duration.ofSeconds(1), ticks.duration)
-        assertEquals(Duration.ofSeconds(2), seconds.duration)
-        assertEquals(listOf(MessageAction(listOf("Hi"))), ticks.thenActions)
-    }
-
-    @Test
-    fun `chance wraps the action and delay and chance can be combined`() {
-        val chance = ActionLine.parse("[message] Hi<chance=25>") as IfAction
-        assertEquals(ChanceCheck(0.25), chance.check)
-
-        val both = ActionLine.parse("[message] Hi<delay=40><chance=50>") as IfAction
-        assertEquals(ChanceCheck(0.5), both.check)
-        assertInstanceOf(DelayAction::class.java, both.thenActions.single())
-    }
-
-    @Test
-    fun `invalid lines are rejected with a clear reason`() {
-        assertTrue(assertThrows(IllegalArgumentException::class.java) { ActionLine.parse("[teleport] 1 2 3") }.message!!.startsWith("Unknown action tag [teleport]."))
-        assertTrue(assertThrows(IllegalArgumentException::class.java) { ActionLine.parse("Hello") }.message!!.contains("[tag]"))
-        assertThrows(IllegalArgumentException::class.java) { ActionLine.parse("[message] Hi<chance=150>") }
-        assertThrows(IllegalArgumentException::class.java) { ActionLine.parse("[message] Hi<delay=soon>") }
-    }
-
-    @Test
-    fun `lines written back read the same`() {
-        listOf("[message] Hello", "[broadcast] Hello", "[console] say hi", "[player] spawn", "[actionbar] Hi", "[stop]", "[log] note")
-            .forEach { line -> assertEquals(line, ActionLine.format(ActionLine.parse(line)), line) }
-    }
 
     // ---- conditions ----
 
@@ -175,13 +110,6 @@ class ActionFormatTest {
         assertTrue(assertThrows(IllegalArgumentException::class.java) { condition("type" to "has wings") }.message!!.contains("has wings"))
         assertTrue(assertThrows(IllegalArgumentException::class.java) { condition("type" to "has permission") }.message!!.contains("permission"))
         assertThrows(IllegalArgumentException::class.java) { condition("permission" to "x") }
-    }
-
-    @Test
-    fun `a mistyped tag suggests the closest one`() {
-        val message = assertThrows(IllegalArgumentException::class.java) { ActionLine.parse("[mesage] hi") }.message!!
-
-        assertTrue(message.contains("Did you mean [message]?"), message)
     }
 
     @Test
@@ -241,10 +169,11 @@ class ActionFormatTest {
     }
 
     @Test
-    fun `a bad line is reported at its own entry with the reason`() {
+    fun `a line of text is rejected at its entry with the object to write instead`() {
         Files.writeString(
             directory.resolve("shop.yml"),
-            listOf("buy:", "  - \"[message] fine\"", "  - \"[mesage] oops\"").joinToString("\n") + "\n",
+            listOf("buy:", "  - type: message", "    message: fine", "  - \"[console] give %player_name% apple\"")
+                .joinToString("\n") + "\n",
         )
 
         val service = ConfigurationServiceImpl(object : PlatformOwnership {})
@@ -256,8 +185,7 @@ class ActionFormatTest {
 
             val message = error.message!!
             assertTrue(message.contains("at buy[1]"), message)
-            assertTrue(message.contains("Did you mean [message]?"), message)
-            assertTrue(!message.contains("[message] fine"), message)
+            assertTrue(message.contains("type: console") && message.contains("command: give %player_name% apple"), message)
         }
     }
 
@@ -273,7 +201,8 @@ class ActionFormatTest {
                 "        type: has permission",
                 "        permission: shop.use",
                 "        deny_comands:",
-                "          - \"[message] no\"",
+                "          - type: message",
+                "            message: no",
             ).joinToString("\n") + "\n",
         )
 
@@ -303,7 +232,8 @@ class ActionFormatTest {
                 "      type: has permission",
                 "      permission: shop.use",
                 "  deny_commands:",
-                "    - \"[log] no\"",
+                "    - type: log",
+                "      text: no",
             ).joinToString(System.lineSeparator()) + System.lineSeparator(),
         )
         val service = ConfigurationServiceImpl(object : PlatformOwnership {})
@@ -332,14 +262,20 @@ class ActionFormatTest {
             directory.resolve("shop.yml"),
             listOf(
                 "buy:",
-                "  - \"[title] &aWelcome;&7Hi;10;70;20\"",
-                "  - \"[wait 2s]\"",
-                "  - \"[run] refuse\"",
+                "  - type: title",
+                "    title: '&aWelcome'",
+                "    subtitle: '&7Hi'",
+                "  - type: delay",
+                "    duration: 2s",
+                "  - type: run",
+                "    name: refuse",
                 "  - type: requirements",
                 "    requirements:",
                 "      rich:",
                 "        if: \"%vault_eco_balance% >= 100\"",
-                "        deny: \"&cNeed 100\"",
+                "        deny:",
+                "          - type: message",
+                "            message: '&cNeed 100'",
                 "      sober: \"%drunk% == 0\"",
             ).joinToString("\n") + "\n",
         )
@@ -368,9 +304,15 @@ class ActionFormatTest {
             directory.resolve("shop.yml"),
             """
             buy:
-              - "[message] &aHello %player_name%"
-              - "[sound] ENTITY_PLAYER_LEVELUP 1 1"
-              - "[console] give %player_name% diamond 1<delay=20>"
+              - type: message
+                message: "&aHello %player_name%"
+              - type: sound
+                sound: ENTITY_PLAYER_LEVELUP
+              - type: delay
+                duration: 1s
+                do:
+                  - type: console
+                    command: give %player_name% diamond 1
               - type: requirements
                 requirements:
                   rich:
@@ -378,22 +320,26 @@ class ActionFormatTest {
                     input: "%vault_eco_balance%"
                     output: 100
                     deny_commands:
-                      - "[message] &cNot enough"
+                      - type: message
+                        message: "&cNot enough"
                   vip:
                     type: has permission
                     permission: shop.vip
                     optional: true
                     success_commands:
-                      - "[message] VIP discount"
+                      - type: message
+                        message: VIP discount
                   not_banned:
                     type: "!has permission"
                     permission: shop.banned
                 minimum_requirements: 1
                 stop_at_success: true
                 deny_commands:
-                  - "[sound] ENTITY_VILLAGER_NO"
+                  - type: sound
+                    sound: ENTITY_VILLAGER_NO
                 success_commands:
-                  - "[console] eco take %player_name% 100"
+                  - type: console
+                    command: eco take %player_name% 100
             gate:
               requirements:
                 near:

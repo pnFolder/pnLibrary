@@ -16,8 +16,8 @@ import org.pnfolder.pnlibrary.api.actions.ActionTarget
 import org.pnfolder.pnlibrary.api.actions.builtin.DelayAction
 import org.pnfolder.pnlibrary.api.actions.builtin.MessageAction
 import org.pnfolder.pnlibrary.api.actions.builtin.RunAction
+import org.pnfolder.pnlibrary.api.actions.builtin.StopAction
 import org.pnfolder.pnlibrary.api.actions.builtin.TitleAction
-import org.pnfolder.pnlibrary.api.actions.internal.ActionLine
 import org.pnfolder.pnlibrary.api.audiences.LibraryAudience
 import org.pnfolder.pnlibrary.api.audiences.LibraryPlayer
 import org.pnfolder.pnlibrary.api.audiences.PlayerEffect
@@ -62,14 +62,6 @@ class ActionExtrasTest {
     // ---- [wait] ----
 
     @Test
-    fun `wait tags read ticks and seconds in both spellings`() {
-        assertEquals(DelayAction(Duration.ofSeconds(2)), ActionLine.parse("[wait 2s]"))
-        assertEquals(DelayAction(Duration.ofSeconds(2)), ActionLine.parse("[wait] 40"))
-        assertEquals(DelayAction(Duration.ofMillis(500)), ActionLine.parse("[WAIT 10]"))
-        assertThrows(IllegalArgumentException::class.java) { ActionLine.parse("[wait soon]") }
-    }
-
-    @Test
     fun `a wait pauses only what comes after it`() {
         val ctx = context()
 
@@ -93,7 +85,7 @@ class ActionExtrasTest {
     fun `run executes the named template`() {
         val ctx = context(templates = mapOf("refuse" to listOf(say("refused"), say("sound"))))
 
-        ctx.execute(listOf(ActionLine.parse("[run] refuse"), say("after")))
+        ctx.execute(listOf(RunAction("refuse"), say("after")))
 
         assertEquals(listOf("refused", "sound", "after"), log)
     }
@@ -120,37 +112,12 @@ class ActionExtrasTest {
 
     @Test
     fun `a stop inside a template ends the whole chain`() {
-        val ctx = context(templates = mapOf("quit" to listOf(ActionLine.parse("[stop]"))))
+        val ctx = context(templates = mapOf("quit" to listOf(StopAction())))
 
         ctx.execute(listOf(RunAction("quit"), say("never")))
 
         assertEquals(emptyList<String>(), log)
         assertTrue(ctx.stopped)
-    }
-
-    // ---- [title] ----
-
-    @Test
-    fun `a title line reads text, subtitle and times in ticks`() {
-        val title = ActionLine.parse("[title] &aVictory;&7Well done;10;70;20") as TitleAction
-
-        assertEquals("&aVictory", title.title)
-        assertEquals("&7Well done", title.subtitle)
-        assertEquals(Duration.ofMillis(500), title.fadeIn)
-        assertEquals(Duration.ofMillis(3500), title.stay)
-        assertEquals(Duration.ofMillis(1000), title.fadeOut)
-    }
-
-    @Test
-    fun `a title needs only the first part and broadcast reaches everyone`() {
-        val single = ActionLine.parse("[title] Hello") as TitleAction
-        assertEquals("", single.subtitle)
-        assertEquals(TitleAction().stay, single.stay)
-
-        val all = ActionLine.parse("[broadcasttitle] Hello") as TitleAction
-        assertEquals(ActionTarget.ALL_PLAYERS, all.target)
-        assertThrows(IllegalArgumentException::class.java) { ActionLine.parse("[title] a;b;1;2;3;4") }
-        assertThrows(IllegalArgumentException::class.java) { ActionLine.parse("[title] a;b;soon") }
     }
 
     @Test
@@ -164,30 +131,13 @@ class ActionExtrasTest {
         assertTrue(ctx.player is Recorder)
     }
 
-    @Test
-    fun `lines written back read the same`() {
-        listOf("[wait 40]", "[run] refuse", "[title] A;B;10;70;20", "[broadcasttitle] A;;10;70;20").forEach { line ->
-            assertEquals(line, ActionLine.format(ActionLine.parse(line)), line)
-        }
-    }
-
     // ---- requirement shortcuts ----
 
     @Test
-    fun `an if line replaces the type and a short deny is a chat message`() {
-        val req = requirement("if" to "%vault_eco_balance% >= 100", "deny" to "&cNeed 100 coins")
+    fun `an if line replaces the type`() {
+        val req = requirement("if" to "%vault_eco_balance% >= 100")
 
         assertEquals(ValueCheck("%vault_eco_balance%", Comparison.GREATER_OR_EQUAL, "100"), req.check)
-        assertEquals(listOf<Action>(MessageAction(listOf("&cNeed 100 coins"))), req.deny)
-    }
-
-    @Test
-    fun `a short list may mix plain messages and tag lines`() {
-        val req = requirement("if" to "permission shop.use", "deny" to listOf("&cNo", "[sound] ENTITY_VILLAGER_NO"), "success" to "&aWelcome")
-
-        assertEquals(2, req.deny.size)
-        assertInstanceOf(MessageAction::class.java, req.deny[0])
-        assertEquals(listOf<Action>(MessageAction(listOf("&aWelcome"))), req.success)
     }
 
     @Test
