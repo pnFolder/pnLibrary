@@ -1,7 +1,7 @@
 public abstract interface class org/pnfolder/pnlibrary/spi/audiences/PlatformAudienceAdapter {
 	public abstract fun console ()Lorg/pnfolder/pnlibrary/api/audiences/AudienceSender;
 	public abstract fun onlinePlayers ()Ljava/util/List;
-	public abstract fun player (Ljava/util/UUID;)Lorg/pnfolder/pnlibrary/api/actions/LibraryPlayer;
+	public abstract fun player (Ljava/util/UUID;)Lorg/pnfolder/pnlibrary/api/audiences/LibraryPlayer;
 	public abstract fun sender (Ljava/lang/Object;)Lorg/pnfolder/pnlibrary/api/audiences/AudienceSender;
 }
 
@@ -9,7 +9,7 @@ public final class org/pnfolder/pnlibrary/spi/audiences/UnsupportedPlatformAudie
 	public static final field INSTANCE Lorg/pnfolder/pnlibrary/spi/audiences/UnsupportedPlatformAudienceAdapter;
 	public fun console ()Lorg/pnfolder/pnlibrary/api/audiences/AudienceSender;
 	public fun onlinePlayers ()Ljava/util/List;
-	public fun player (Ljava/util/UUID;)Lorg/pnfolder/pnlibrary/api/actions/LibraryPlayer;
+	public fun player (Ljava/util/UUID;)Lorg/pnfolder/pnlibrary/api/audiences/LibraryPlayer;
 	public fun sender (Ljava/lang/Object;)Lorg/pnfolder/pnlibrary/api/audiences/AudienceSender;
 }
 

@@ -1,6 +1,7 @@
 package org.pnfolder.pnlibrary.core.actions
 
 import org.junit.jupiter.api.Assertions.assertEquals
+import org.junit.jupiter.api.Assertions.assertFalse
 import org.junit.jupiter.api.Assertions.assertInstanceOf
 import org.junit.jupiter.api.Assertions.assertThrows
 import org.junit.jupiter.api.Assertions.assertTrue
@@ -10,35 +11,35 @@ import org.mockito.Mockito.mock
 import org.mockito.Mockito.mockingDetails
 import org.pnfolder.pnlibrary.api.actions.Action
 import org.pnfolder.pnlibrary.api.actions.ActionContext
-import org.pnfolder.pnlibrary.api.actions.ActionLine
 import org.pnfolder.pnlibrary.api.actions.ActionTarget
-import org.pnfolder.pnlibrary.api.actions.CommandAction
-import org.pnfolder.pnlibrary.api.actions.CommandRunner
-import org.pnfolder.pnlibrary.api.actions.ChanceCondition
-import org.pnfolder.pnlibrary.api.actions.Comparison
-import org.pnfolder.pnlibrary.api.actions.ConditionSerializer
-import org.pnfolder.pnlibrary.api.actions.ConditionalAction
-import org.pnfolder.pnlibrary.api.actions.DelayAction
-import org.pnfolder.pnlibrary.api.actions.ExperienceCondition
-import org.pnfolder.pnlibrary.api.actions.ItemCondition
-import org.pnfolder.pnlibrary.api.actions.LibraryAudience
-import org.pnfolder.pnlibrary.api.actions.LibraryPlayer
-import org.pnfolder.pnlibrary.api.actions.LengthCondition
-import org.pnfolder.pnlibrary.api.actions.MessageAction
-import org.pnfolder.pnlibrary.api.actions.NotCondition
-import org.pnfolder.pnlibrary.api.actions.PermissionCondition
-import org.pnfolder.pnlibrary.api.actions.PermissionsCondition
-import org.pnfolder.pnlibrary.api.actions.RegexCondition
-import org.pnfolder.pnlibrary.api.actions.RequirementSerializer
-import org.pnfolder.pnlibrary.api.actions.RequirementsAction
-import org.pnfolder.pnlibrary.api.actions.RunAction
-import org.pnfolder.pnlibrary.api.actions.SoundAction
-import org.pnfolder.pnlibrary.api.actions.WaitAction
-import org.pnfolder.pnlibrary.api.actions.TitleAction
-import org.pnfolder.pnlibrary.api.actions.StopAction
-import org.pnfolder.pnlibrary.api.actions.TypeCondition
-import org.pnfolder.pnlibrary.api.actions.ValueCondition
-import org.pnfolder.pnlibrary.api.actions.ValueType
+import org.pnfolder.pnlibrary.api.actions.builtin.CommandAction
+import org.pnfolder.pnlibrary.api.actions.builtin.CommandRunner
+import org.pnfolder.pnlibrary.api.actions.builtin.DelayAction
+import org.pnfolder.pnlibrary.api.actions.builtin.IfAction
+import org.pnfolder.pnlibrary.api.actions.builtin.MessageAction
+import org.pnfolder.pnlibrary.api.actions.builtin.RequireAction
+import org.pnfolder.pnlibrary.api.actions.builtin.RunAction
+import org.pnfolder.pnlibrary.api.actions.builtin.SoundAction
+import org.pnfolder.pnlibrary.api.actions.builtin.StopAction
+import org.pnfolder.pnlibrary.api.actions.builtin.TitleAction
+import org.pnfolder.pnlibrary.api.actions.internal.ActionLine
+import org.pnfolder.pnlibrary.api.audiences.LibraryAudience
+import org.pnfolder.pnlibrary.api.audiences.LibraryPlayer
+import org.pnfolder.pnlibrary.api.checks.Requirement
+import org.pnfolder.pnlibrary.api.checks.builtin.ChanceCheck
+import org.pnfolder.pnlibrary.api.checks.builtin.Comparison
+import org.pnfolder.pnlibrary.api.checks.builtin.ExperienceCheck
+import org.pnfolder.pnlibrary.api.checks.builtin.ItemCheck
+import org.pnfolder.pnlibrary.api.checks.builtin.LengthCheck
+import org.pnfolder.pnlibrary.api.checks.builtin.NotCheck
+import org.pnfolder.pnlibrary.api.checks.builtin.PermissionCheck
+import org.pnfolder.pnlibrary.api.checks.builtin.PermissionsCheck
+import org.pnfolder.pnlibrary.api.checks.builtin.RegexCheck
+import org.pnfolder.pnlibrary.api.checks.builtin.TypeCheck
+import org.pnfolder.pnlibrary.api.checks.builtin.ValueCheck
+import org.pnfolder.pnlibrary.api.checks.builtin.ValueType
+import org.pnfolder.pnlibrary.api.checks.internal.CheckSerializer
+import org.pnfolder.pnlibrary.api.checks.internal.RequirementSerializer
 import org.pnfolder.pnlibrary.api.config.ConfigOptions
 import org.pnfolder.pnlibrary.api.config.ConfigSerializationContext
 import org.pnfolder.pnlibrary.api.config.yaml
@@ -100,11 +101,11 @@ class ActionFormatTest {
 
     @Test
     fun `chance wraps the action and delay and chance can be combined`() {
-        val chance = ActionLine.parse("[message] Hi<chance=25>") as ConditionalAction
-        assertEquals(listOf(ChanceCondition(0.25)), chance.allChecks)
+        val chance = ActionLine.parse("[message] Hi<chance=25>") as IfAction
+        assertEquals(ChanceCheck(0.25), chance.check)
 
-        val both = ActionLine.parse("[message] Hi<delay=40><chance=50>") as ConditionalAction
-        assertEquals(ChanceCondition(0.5), both.allChecks.single())
+        val both = ActionLine.parse("[message] Hi<delay=40><chance=50>") as IfAction
+        assertEquals(ChanceCheck(0.5), both.check)
         assertInstanceOf(DelayAction::class.java, both.thenActions.single())
     }
 
@@ -124,13 +125,13 @@ class ActionFormatTest {
 
     // ---- conditions ----
 
-    private fun condition(vararg pairs: Pair<String, Any?>) = ConditionSerializer.parse(mapOf(*pairs))
+    private fun condition(vararg pairs: Pair<String, Any?>) = CheckSerializer.parse(mapOf(*pairs))
 
     @Test
     fun `permission types read their fields`() {
-        assertEquals(PermissionCondition("shop.use"), condition("type" to "has permission", "permission" to "shop.use"))
+        assertEquals(PermissionCheck("shop.use"), condition("type" to "has permission", "permission" to "shop.use"))
         assertEquals(
-            PermissionsCondition(listOf("a", "b"), 1),
+            PermissionsCheck(listOf("a", "b"), 1),
             condition("type" to "has permissions", "permissions" to listOf("a", "b"), "minimum" to 1),
         )
     }
@@ -138,35 +139,35 @@ class ActionFormatTest {
     @Test
     fun `a bang negates and the spelling of keys does not matter`() {
         val negated = condition("type" to "!has permission", "permission" to "shop.use")
-        assertEquals(NotCondition(PermissionCondition("shop.use")), negated)
+        assertEquals(NotCheck(PermissionCheck("shop.use")), negated)
 
         val item = condition("type" to "has-item", "material" to "diamond", "amount" to 3, "name-contains" to "Key", "loreContains" to "Rare")
-        assertEquals(ItemCondition("diamond", 3, nameContains = "Key", loreContains = "Rare", ignoreCase = false), item)
+        assertEquals(ItemCheck("diamond", 3, nameContains = "Key", loreContains = "Rare", ignoreCase = false), item)
     }
 
     @Test
     fun `string types and comparators read input and output`() {
         assertEquals(
-            ValueCondition("%player_world%", Comparison.EQUALS, "world", ignoreCase = false),
+            ValueCheck("%player_world%", Comparison.EQUALS, "world", ignoreCase = false),
             condition("type" to "string equals", "input" to "%player_world%", "output" to "world"),
         )
         assertEquals(
-            ValueCondition("a", Comparison.EQUALS, "b", ignoreCase = true),
+            ValueCheck("a", Comparison.EQUALS, "b", ignoreCase = true),
             condition("type" to "string equals ignorecase", "input" to "a", "output" to "b"),
         )
         assertEquals(
-            ValueCondition("%vault_eco_balance%", Comparison.GREATER_OR_EQUAL, "100"),
+            ValueCheck("%vault_eco_balance%", Comparison.GREATER_OR_EQUAL, "100"),
             condition("type" to ">=", "input" to "%vault_eco_balance%", "output" to 100),
         )
-        assertEquals(ValueCondition("x", Comparison.NUMBER_EQUALS, "5"), condition("type" to "==", "input" to "x", "output" to 5))
+        assertEquals(ValueCheck("x", Comparison.NUMBER_EQUALS, "5"), condition("type" to "==", "input" to "x", "output" to 5))
     }
 
     @Test
     fun `other types read their fields`() {
-        assertEquals(ExperienceCondition(30, true), condition("type" to "has exp", "amount" to 30, "level" to true))
-        assertEquals(LengthCondition("x", 2, 8), condition("type" to "string length", "input" to "x", "min" to 2, "max" to 8))
-        assertEquals(TypeCondition("x", ValueType.UUID), condition("type" to "is object", "input" to "x", "object" to "uuid"))
-        assertEquals(RegexCondition("x", "[a-z]+"), condition("type" to "regex matches", "input" to "x", "regex" to "[a-z]+"))
+        assertEquals(ExperienceCheck(30, true), condition("type" to "has exp", "amount" to 30, "level" to true))
+        assertEquals(LengthCheck("x", 2, 8), condition("type" to "string length", "input" to "x", "min" to 2, "max" to 8))
+        assertEquals(TypeCheck("x", ValueType.UUID), condition("type" to "is object", "input" to "x", "object" to "uuid"))
+        assertEquals(RegexCheck("x", "[a-z]+"), condition("type" to "regex matches", "input" to "x", "regex" to "[a-z]+"))
     }
 
     @Test
@@ -214,16 +215,16 @@ class ActionFormatTest {
     @Test
     fun `conditions written back read the same`() {
         listOf(
-            PermissionCondition("a.b"),
-            PermissionsCondition(listOf("a", "b"), 2),
-            ExperienceCondition(5, true),
-            LengthCondition("x", 1, 9),
-            ValueCondition("x", Comparison.GREATER_THAN, "5"),
-            ValueCondition("x", Comparison.EQUALS, "y", ignoreCase = false),
-            NotCondition(PermissionCondition("a")),
+            PermissionCheck("a.b"),
+            PermissionsCheck(listOf("a", "b"), 2),
+            ExperienceCheck(5, true),
+            LengthCheck("x", 1, 9),
+            ValueCheck("x", Comparison.GREATER_THAN, "5"),
+            ValueCheck("x", Comparison.EQUALS, "y", ignoreCase = false),
+            NotCheck(PermissionCheck("a")),
         ).forEach { original ->
-            val written = ConditionSerializer.describe(original)!!
-            assertEquals(original, ConditionSerializer.parse(written), written.toString())
+            val written = CheckSerializer.describe(original)!!
+            assertEquals(original, CheckSerializer.parse(written), written.toString())
         }
     }
 
@@ -231,7 +232,7 @@ class ActionFormatTest {
 
     data class ShopConfig(
         var buy: List<Action> = emptyList(),
-        var gate: RequirementsAction = RequirementsAction(),
+        var gate: Requirement = Requirement(),
     )
 
     class Owner(private val folder: File) {
@@ -284,7 +285,7 @@ class ActionFormatTest {
             }
 
             val message = error.message!!
-            assertTrue(message.contains("at buy[0].requirements.rich"), message)
+            assertTrue(message.contains("at buy[0].requirement.requirements.rich"), message)
             assertTrue(message.contains("Did you mean 'deny_commands'?"), message)
             assertEquals(1, Regex("Invalid configuration value at").findAll(message).count(), message)
         }
@@ -318,11 +319,10 @@ class ActionFormatTest {
                 tasks = mock(TaskScope::class.java),
             )
 
-            gate.execute(context)
+            assertFalse(gate.test(context))
 
             val warnings = mockingDetails(logger).invocations.filter { call -> call.method.name == "warning" }
             assertTrue(warnings.any { call -> call.arguments[0].toString().contains("can never pass") }, warnings.toString())
-            assertTrue(context.stopped)
         }
     }
 
@@ -350,14 +350,14 @@ class ActionFormatTest {
             val loaded = scope.yaml<ShopConfig>("shop.yml", ConfigOptions.DEFAULT) { ShopConfig() }.load().value
 
             assertInstanceOf(TitleAction::class.java, loaded.buy[0])
-            assertEquals(WaitAction(Duration.ofSeconds(2)), loaded.buy[1])
+            assertEquals(DelayAction(Duration.ofSeconds(2)), loaded.buy[1])
             assertEquals(RunAction("refuse"), loaded.buy[2])
-            val requirements = loaded.buy[3] as RequirementsAction
-            assertEquals(listOf("rich", "sober"), requirements.requirements.keys.toList())
-            assertEquals(1, requirements.requirements.getValue("rich").deny.size)
+            val requirements = (loaded.buy[3] as RequireAction).requirement!!
+            assertEquals(listOf("rich", "sober"), requirements.entries.keys.toList())
+            assertEquals(1, requirements.entries.getValue("rich").deny.size)
             assertEquals(
-                ValueCondition("%drunk%", Comparison.NUMBER_EQUALS, "0"),
-                requirements.requirements.getValue("sober").check,
+                ValueCheck("%drunk%", Comparison.NUMBER_EQUALS, "0"),
+                requirements.entries.getValue("sober").check,
             )
         }
     }
@@ -411,15 +411,15 @@ class ActionFormatTest {
             assertEquals(MessageAction(listOf("&aHello %player_name%")), loaded.buy[0])
             assertInstanceOf(SoundAction::class.java, loaded.buy[1])
             assertInstanceOf(DelayAction::class.java, loaded.buy[2])
-            val requirements = loaded.buy[3] as RequirementsAction
-            assertEquals(listOf("rich", "vip", "not_banned"), requirements.requirements.keys.toList())
+            val requirements = (loaded.buy[3] as RequireAction).requirement!!
+            assertEquals(listOf("rich", "vip", "not_banned"), requirements.entries.keys.toList())
             assertEquals(1, requirements.minimum)
             assertTrue(requirements.stopAtSuccess)
-            assertEquals(1, requirements.requirements.getValue("rich").deny.size)
-            assertTrue(requirements.requirements.getValue("vip").optional)
-            assertEquals(NotCondition(PermissionCondition("shop.banned")), requirements.requirements.getValue("not_banned").check)
+            assertEquals(1, requirements.entries.getValue("rich").deny.size)
+            assertTrue(requirements.entries.getValue("vip").optional)
+            assertEquals(NotCheck(PermissionCheck("shop.banned")), requirements.entries.getValue("not_banned").check)
             assertEquals(listOf(CommandAction("eco take %player_name% 100")), requirements.success)
-            assertEquals(1, loaded.gate.requirements.size)
+            assertEquals(1, loaded.gate.entries.size)
         }
     }
 }

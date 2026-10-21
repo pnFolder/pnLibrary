@@ -20,9 +20,42 @@ data class ConfigSerializationContext(
     val annotations: List<Annotation>,
     /** Value supplied by the code-defined default model, or `null`. */
     val defaultValue: Any?,
+    /** Reads a nested value the way the configuration does, or `null` when used outside a configuration load. */
+    val decoder: ConfigValueDecoder? = null,
+    /** Writes a nested value the way the configuration does, or `null` when used outside a configuration save. */
+    val encoder: ConfigValueEncoder? = null,
 ) {
     /** Returns the first field annotation assignable to [type], or `null`. */
     fun <A : Annotation> annotation(type: Class<A>): A? = annotations.firstOrNull(type::isInstance)?.let(type::cast)
+
+    /**
+     * Reads [value], found at [path], as [type] with every rule of the configuration: polymorphic `type`,
+     * text forms, custom serializers and error locations.
+     *
+     * @throws IllegalStateException when this context has no [decoder]
+     */
+    fun <T : Any> decode(value: Any?, type: Class<T>, path: String): T =
+        type.cast(checkNotNull(decoder) { "Nested values cannot be read here" }.decode(value, type, path))
+
+    /**
+     * Writes [value] as [type] with every rule of the configuration, including the `type` of polymorphic values.
+     *
+     * @throws IllegalStateException when this context has no [encoder]
+     */
+    fun encode(value: Any?, type: Type, path: String): Any? =
+        checkNotNull(encoder) { "Nested values cannot be written here" }.encode(value, type, path)
+}
+
+/** Writes one nested configuration value; supplied by the configuration runtime. */
+fun interface ConfigValueEncoder {
+    /** Converts [value], declared as [type] at [path], into YAML-compatible data. */
+    fun encode(value: Any?, type: Type, path: String): Any?
+}
+
+/** Reads one nested configuration value; supplied by the configuration runtime. */
+fun interface ConfigValueDecoder {
+    /** Converts [value], found at [path], into [type]. */
+    fun decode(value: Any?, type: Type, path: String): Any?
 }
 
 /**

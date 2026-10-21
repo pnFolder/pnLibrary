@@ -6,10 +6,10 @@ import net.kyori.adventure.text.serializer.legacy.LegacyComponentSerializer
 import net.md_5.bungee.api.ChatMessageType
 import net.md_5.bungee.api.chat.TextComponent
 import net.md_5.bungee.api.connection.ProxiedPlayer
-import org.pnfolder.pnlibrary.api.actions.LibraryPlayer
-import org.pnfolder.pnlibrary.api.actions.PlayerCapability
-import org.pnfolder.pnlibrary.api.actions.PlayerEffect
-import org.pnfolder.pnlibrary.api.actions.PlayerParticle
+import org.pnfolder.pnlibrary.api.audiences.LibraryPlayer
+import org.pnfolder.pnlibrary.api.audiences.PlayerCapability
+import org.pnfolder.pnlibrary.api.audiences.PlayerEffect
+import org.pnfolder.pnlibrary.api.audiences.PlayerParticle
 import java.util.UUID
 
 /**

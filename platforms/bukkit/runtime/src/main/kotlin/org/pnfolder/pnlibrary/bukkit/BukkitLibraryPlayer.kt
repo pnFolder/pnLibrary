@@ -10,11 +10,11 @@ import org.bukkit.entity.Player
 import org.bukkit.inventory.ItemStack
 import org.bukkit.potion.PotionEffect
 import org.bukkit.potion.PotionEffectType
-import org.pnfolder.pnlibrary.api.actions.ItemQuery
-import org.pnfolder.pnlibrary.api.actions.LibraryPlayer
-import org.pnfolder.pnlibrary.api.actions.PlayerCapability
-import org.pnfolder.pnlibrary.api.actions.PlayerEffect
-import org.pnfolder.pnlibrary.api.actions.PlayerParticle
+import org.pnfolder.pnlibrary.api.audiences.ItemQuery
+import org.pnfolder.pnlibrary.api.audiences.LibraryPlayer
+import org.pnfolder.pnlibrary.api.audiences.PlayerCapability
+import org.pnfolder.pnlibrary.api.audiences.PlayerEffect
+import org.pnfolder.pnlibrary.api.audiences.PlayerParticle
 import java.time.Duration
 import java.util.UUID
 

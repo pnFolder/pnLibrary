@@ -3,11 +3,18 @@
 package org.pnfolder.pnlibrary.api.actions
 
 import net.kyori.adventure.text.Component
+import org.pnfolder.pnlibrary.api.actions.builtin.DelayAction
+import org.pnfolder.pnlibrary.api.audiences.LibraryAudience
+import org.pnfolder.pnlibrary.api.audiences.LibraryPlayer
+import org.pnfolder.pnlibrary.api.checks.Check
+import org.pnfolder.pnlibrary.api.checks.CheckContext
+import org.pnfolder.pnlibrary.api.checks.Requirement
+import org.pnfolder.pnlibrary.api.internal.Suggestions
 import org.pnfolder.pnlibrary.api.logging.PnLogger
 import org.pnfolder.pnlibrary.api.placeholders.PlaceholderService
 import org.pnfolder.pnlibrary.api.tasks.TaskExecution
-import org.pnfolder.pnlibrary.api.tasks.TaskSpec
 import org.pnfolder.pnlibrary.api.tasks.TaskScope
+import org.pnfolder.pnlibrary.api.tasks.TaskSpec
 import org.pnfolder.pnlibrary.api.text.ComponentSerializerType
 import org.pnfolder.pnlibrary.api.text.ComponentService
 import java.time.Duration
@@ -35,23 +42,25 @@ import java.util.Collections
  * @property logger plugin-bound logger used for warnings and diagnostics
  * @property tasks plugin-bound task scope used for deferred work
  * @property serializerType default text serializer for this invocation
- * @property values named scalar-like values consumed by [ActionCondition] implementations
+ * @property values named scalar-like values consumed by [Check] implementations
  * @property placeholders plugin-scoped placeholder service used for controlled updates, or `null`
  * @property templates named action lists that `[run]` actions can call
+ * @property checks named requirements from the `checks:` block, used by `if` and `require` actions
  * @param initialObjects objects initially available from [get] and [require]
  */
 class ActionContext(
-    val player: LibraryPlayer,
+    override val player: LibraryPlayer,
     val allPlayers: LibraryAudience,
     val components: ComponentService,
-    val logger: PnLogger,
+    override val logger: PnLogger,
     val tasks: TaskScope,
     val serializerType: ComponentSerializerType = ComponentSerializerType.ADAPTIVE,
     val values: Map<String, Any?> = emptyMap(),
     initialObjects: Map<Class<*>, Any> = emptyMap(),
     val placeholders: PlaceholderService? = null,
     val templates: Map<String, List<Action>> = emptyMap(),
-) {
+    val checks: Map<String, Requirement> = emptyMap(),
+) : CheckContext {
     private val runtimeValues = LinkedHashMap(values)
     private val objects = HashMap(initialObjects)
 
@@ -91,17 +100,21 @@ class ActionContext(
 
     private var templateDepth = 0
 
+    override fun requirement(name: String): Requirement? = checks[name]
+
+    override fun requirementNames(): Set<String> = checks.keys
+
     /**
      * Executes [actions] in iteration order with this same context, until [stop] is called.
      *
-     * A [WaitAction] pauses the actions after it: they run once its duration has passed, scheduled through
-     * [tasks]. The caller does not wait for them.
+     * A [DelayAction] without actions of its own pauses the actions after it: they run once its duration has
+     * passed, scheduled through [tasks]. The caller does not wait for them.
      */
     fun execute(actions: Iterable<Action>) {
         val list = actions as? List<Action> ?: actions.toList()
         for ((index, action) in list.withIndex()) {
             if (stopped) return
-            if (action is WaitAction) {
+            if (action is DelayAction && action.thenActions.isEmpty()) {
                 val rest = list.subList(index + 1, list.size)
                 if (rest.isNotEmpty()) later(action.duration) { execute(rest) }
                 return
@@ -146,7 +159,7 @@ class ActionContext(
      * Reads [expression] as a value: a context value or placeholder name, a single `%placeholder%` or
      * `[[name]]`, or text that contains them. Returns `null` when a bare name is unknown.
      */
-    fun read(expression: String): Any? {
+    override fun read(expression: String): Any? {
         val trimmed = expression.trim()
         TOKEN.matchEntire(trimmed)?.let { return lookup(tokenName(it)) }
         if (TOKEN.containsMatchIn(trimmed)) return format(trimmed)
@@ -154,7 +167,7 @@ class ActionContext(
     }
 
     /** Like [read], but returns [expression] itself, with its tokens replaced, when nothing matches. */
-    fun textOf(expression: String): String =
+    override fun textOf(expression: String): String =
         runCatching { read(expression) }.getOrNull()?.toString() ?: format(expression)
 
     /**
@@ -173,7 +186,7 @@ class ActionContext(
         if (name == "player" || name == "player_name") player.name else resolve(name)
 
     /** Returns the named condition value, or `null` when it is absent or explicitly null. */
-    fun value(name: String): Any? = runtimeValues[name]
+    override fun value(name: String): Any? = runtimeValues[name]
 
     /** Resolves a local `[name|formatters]` or regular placeholder expression. */
     fun resolve(reference: String): Any? {

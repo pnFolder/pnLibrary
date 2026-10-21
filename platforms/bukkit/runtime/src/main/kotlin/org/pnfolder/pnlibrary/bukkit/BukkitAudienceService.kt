@@ -4,12 +4,12 @@ import net.kyori.adventure.audience.Audience
 import net.kyori.adventure.platform.bukkit.BukkitAudiences
 import net.kyori.adventure.sound.Sound
 import net.kyori.adventure.text.Component
-import net.kyori.adventure.title.Title
 import net.kyori.adventure.text.serializer.legacy.LegacyComponentSerializer
+import net.kyori.adventure.title.Title
 import org.bukkit.entity.Player
 import org.bukkit.plugin.Plugin
-import org.pnfolder.pnlibrary.api.actions.LibraryAudience
-import org.pnfolder.pnlibrary.api.actions.LibraryPlayer
+import org.pnfolder.pnlibrary.api.audiences.LibraryAudience
+import org.pnfolder.pnlibrary.api.audiences.LibraryPlayer
 import java.lang.reflect.Array
 import java.util.UUID
 import java.util.concurrent.atomic.AtomicBoolean

@@ -1,21 +1,21 @@
 package org.pnfolder.pnlibrary.config.yaml
 
-import org.yaml.snakeyaml.DumperOptions
-import org.yaml.snakeyaml.LoaderOptions
-import org.yaml.snakeyaml.Yaml
-import org.yaml.snakeyaml.constructor.SafeConstructor
-import org.yaml.snakeyaml.representer.Representer
 import org.pnfolder.pnlibrary.api.config.ConfigAlias
 import org.pnfolder.pnlibrary.api.config.ConfigCodec
 import org.pnfolder.pnlibrary.api.config.ConfigComment
 import org.pnfolder.pnlibrary.api.config.ConfigDefaultOnInvalid
+import org.pnfolder.pnlibrary.api.config.ConfigNodeForm
 import org.pnfolder.pnlibrary.api.config.ConfigOptions
 import org.pnfolder.pnlibrary.api.config.ConfigPolymorphic
 import org.pnfolder.pnlibrary.api.config.ConfigProblem
 import org.pnfolder.pnlibrary.api.config.ConfigSerializationContext
 import org.pnfolder.pnlibrary.api.config.ConfigSerializer
-import org.pnfolder.pnlibrary.api.config.ConfigNodeForm
 import org.pnfolder.pnlibrary.api.config.ConfigTextForm
+import org.yaml.snakeyaml.DumperOptions
+import org.yaml.snakeyaml.LoaderOptions
+import org.yaml.snakeyaml.Yaml
+import org.yaml.snakeyaml.constructor.SafeConstructor
+import org.yaml.snakeyaml.representer.Representer
 import java.lang.reflect.Array as ReflectArray
 import java.lang.reflect.Modifier
 import java.lang.reflect.ParameterizedType
@@ -180,7 +180,7 @@ internal class AnnotatedYamlCodec<T : Any>(
                         val allowed = schemaInspector.enumDescription(field.type)
                         " Allowed values: $allowed. Default: ${current ?: "null"}."
                     } else ""
-                    if (error is LocatedConfigException) throw error
+                    if (error is LocatedConfigException || error.message.orEmpty().startsWith(INVALID_VALUE)) throw error
                     throw IllegalArgumentException(
                         "$INVALID_VALUE $path: ${shown(raw)}.$detail${reasonSuffix(error)}",
                         error,
@@ -314,7 +314,11 @@ internal class AnnotatedYamlCodec<T : Any>(
 
     private fun context(
         declaredType: Type, path: String, annotations: List<Annotation>, defaultValue: Any?,
-    ) = ConfigSerializationContext(path, declaredType, introspector.rawClass(declaredType), annotations, defaultValue)
+    ) = ConfigSerializationContext(
+        path, declaredType, introspector.rawClass(declaredType), annotations, defaultValue,
+        decoder = { value, type, at -> located(at) { convert(value, type, path = at) } },
+        encoder = { value, type, at -> toYamlValue(value, type, at) },
+    )
 
     private fun ConfigSerializer<Any>.serializeUntyped(value: Any, context: ConfigSerializationContext): Any? =
         serialize(value, context)

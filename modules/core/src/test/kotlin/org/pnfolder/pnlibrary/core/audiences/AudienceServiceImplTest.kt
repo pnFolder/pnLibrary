@@ -8,10 +8,10 @@ import org.junit.jupiter.api.Assertions.assertFalse
 import org.junit.jupiter.api.Assertions.assertNull
 import org.junit.jupiter.api.Assertions.assertSame
 import org.junit.jupiter.api.Test
-import org.pnfolder.pnlibrary.api.actions.LibraryPlayer
-import org.pnfolder.pnlibrary.api.actions.PlayerEffect
-import org.pnfolder.pnlibrary.api.actions.PlayerParticle
 import org.pnfolder.pnlibrary.api.audiences.AudienceSender
+import org.pnfolder.pnlibrary.api.audiences.LibraryPlayer
+import org.pnfolder.pnlibrary.api.audiences.PlayerEffect
+import org.pnfolder.pnlibrary.api.audiences.PlayerParticle
 import org.pnfolder.pnlibrary.spi.audiences.PlatformAudienceAdapter
 import java.util.UUID
 

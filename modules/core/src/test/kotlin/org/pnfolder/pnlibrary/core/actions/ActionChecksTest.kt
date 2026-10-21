@@ -10,28 +10,28 @@ import org.junit.jupiter.api.Test
 import org.mockito.Mockito.mock
 import org.pnfolder.pnlibrary.api.actions.Action
 import org.pnfolder.pnlibrary.api.actions.ActionContext
-import org.pnfolder.pnlibrary.api.actions.CommandAction
-import org.pnfolder.pnlibrary.api.actions.CommandRunner
-import org.pnfolder.pnlibrary.api.actions.Comparison
-import org.pnfolder.pnlibrary.api.actions.ConditionSerializer
-import org.pnfolder.pnlibrary.api.actions.ConditionalAction
-import org.pnfolder.pnlibrary.api.actions.ExperienceCondition
-import org.pnfolder.pnlibrary.api.actions.ItemCondition
-import org.pnfolder.pnlibrary.api.actions.ItemQuery
-import org.pnfolder.pnlibrary.api.actions.LengthCondition
-import org.pnfolder.pnlibrary.api.actions.LibraryAudience
-import org.pnfolder.pnlibrary.api.actions.LibraryPlayer
-import org.pnfolder.pnlibrary.api.actions.NearCondition
-import org.pnfolder.pnlibrary.api.actions.PermissionsCondition
-import org.pnfolder.pnlibrary.api.actions.PlayerEffect
-import org.pnfolder.pnlibrary.api.actions.PlayerParticle
-import org.pnfolder.pnlibrary.api.actions.RegexCondition
-import org.pnfolder.pnlibrary.api.actions.Requirement
-import org.pnfolder.pnlibrary.api.actions.RequirementsAction
-import org.pnfolder.pnlibrary.api.actions.StopAction
-import org.pnfolder.pnlibrary.api.actions.TypeCondition
-import org.pnfolder.pnlibrary.api.actions.ValueCondition
-import org.pnfolder.pnlibrary.api.actions.ValueType
+import org.pnfolder.pnlibrary.api.actions.builtin.CommandAction
+import org.pnfolder.pnlibrary.api.actions.builtin.CommandRunner
+import org.pnfolder.pnlibrary.api.actions.builtin.IfAction
+import org.pnfolder.pnlibrary.api.actions.builtin.RequireAction
+import org.pnfolder.pnlibrary.api.actions.builtin.StopAction
+import org.pnfolder.pnlibrary.api.audiences.ItemQuery
+import org.pnfolder.pnlibrary.api.audiences.LibraryAudience
+import org.pnfolder.pnlibrary.api.audiences.LibraryPlayer
+import org.pnfolder.pnlibrary.api.audiences.PlayerEffect
+import org.pnfolder.pnlibrary.api.audiences.PlayerParticle
+import org.pnfolder.pnlibrary.api.checks.Requirement
+import org.pnfolder.pnlibrary.api.checks.builtin.Comparison
+import org.pnfolder.pnlibrary.api.checks.builtin.ExperienceCheck
+import org.pnfolder.pnlibrary.api.checks.builtin.ItemCheck
+import org.pnfolder.pnlibrary.api.checks.builtin.LengthCheck
+import org.pnfolder.pnlibrary.api.checks.builtin.NearCheck
+import org.pnfolder.pnlibrary.api.checks.builtin.PermissionsCheck
+import org.pnfolder.pnlibrary.api.checks.builtin.RegexCheck
+import org.pnfolder.pnlibrary.api.checks.builtin.TypeCheck
+import org.pnfolder.pnlibrary.api.checks.builtin.ValueCheck
+import org.pnfolder.pnlibrary.api.checks.builtin.ValueType
+import org.pnfolder.pnlibrary.api.checks.internal.CheckSerializer
 import org.pnfolder.pnlibrary.api.logging.PnLogger
 import org.pnfolder.pnlibrary.api.tasks.TaskScope
 import org.pnfolder.pnlibrary.api.text.ComponentService
@@ -52,7 +52,7 @@ class ActionChecksTest {
 
     private fun say(text: String) = Action { log += text }
 
-    private fun atLeast(key: String, value: String) = ValueCondition(key, Comparison.GREATER_OR_EQUAL, value)
+    private fun atLeast(key: String, value: String) = ValueCheck(key, Comparison.GREATER_OR_EQUAL, value)
 
     // ---- stop and command ----
 
@@ -60,8 +60,8 @@ class ActionChecksTest {
     fun `stop in a branch ends the whole invocation`() {
         val ctx = context().setValue("slots", 0)
 
-        ctx.execute(listOf(ConditionalAction(
-            allChecks = listOf(atLeast("slots", "1")),
+        ctx.execute(listOf(IfAction(
+            check = atLeast("slots", "1"),
             thenActions = listOf(recording),
             elseActions = listOf(StopAction()),
         ), recording))
@@ -74,8 +74,8 @@ class ActionChecksTest {
     fun `without stop the rest of the list runs`() {
         val ctx = context().setValue("slots", 3)
 
-        ctx.execute(listOf(ConditionalAction(
-            allChecks = listOf(atLeast("slots", "1")),
+        ctx.execute(listOf(IfAction(
+            check = atLeast("slots", "1"),
             thenActions = listOf(recording),
             elseActions = listOf(StopAction()),
         ), recording))
@@ -109,18 +109,18 @@ class ActionChecksTest {
     private fun shop(
         minimum: Int = 0,
         stopAtSuccess: Boolean = false,
-    ) = RequirementsAction(
-        requirements = linkedMapOf(
-            "space" to Requirement(atLeast("slots", "1"), deny = listOf(say("no space")), success = listOf(say("space ok"))),
-            "money" to Requirement(atLeast("money", "100"), deny = listOf(say("no money"))),
-            "vip" to Requirement(atLeast("vip", "1"), optional = true, success = listOf(say("vip ok"))),
-            "bonus" to Requirement(atLeast("bonus", "1"), optional = true, success = listOf(say("bonus ok"))),
+    ) = RequireAction(requirement = Requirement(
+        entries = linkedMapOf(
+            "space" to Requirement.Entry(atLeast("slots", "1"), deny = listOf(say("no space")), success = listOf(say("space ok"))),
+            "money" to Requirement.Entry(atLeast("money", "100"), deny = listOf(say("no money"))),
+            "vip" to Requirement.Entry(atLeast("vip", "1"), optional = true, success = listOf(say("vip ok"))),
+            "bonus" to Requirement.Entry(atLeast("bonus", "1"), optional = true, success = listOf(say("bonus ok"))),
         ),
         minimum = minimum,
         stopAtSuccess = stopAtSuccess,
         success = listOf(say("given")),
         deny = listOf(say("denied")),
-    )
+    ))
 
     @Test
     fun `requirements run the success actions of matched checks and then the shared success`() {
@@ -179,12 +179,12 @@ class ActionChecksTest {
 
     @Test
     fun `a bang before the type inverts a check`() {
-        val action = RequirementsAction(
-            requirements = linkedMapOf("not banned" to Requirement(ConditionSerializer.parse(
+        val action = RequireAction(requirement = Requirement(
+            entries = linkedMapOf("not banned" to Requirement.Entry(CheckSerializer.parse(
                 mapOf("type" to "!>=", "input" to "banned", "output" to "1"),
             ))),
             success = listOf(say("welcome")),
-        )
+        ))
 
         action.execute(context().setValue("banned", 0))
         assertEquals(listOf("welcome"), log)
@@ -196,10 +196,10 @@ class ActionChecksTest {
 
     @Test
     fun `a requirement without a check counts as failed`() {
-        val action = RequirementsAction(
-            requirements = linkedMapOf("empty" to Requirement(null, deny = listOf(say("bad")))),
+        val action = RequireAction(requirement = Requirement(
+            entries = linkedMapOf("empty" to Requirement.Entry(null, deny = listOf(say("bad")))),
             success = listOf(say("given")),
-        )
+        ))
 
         action.execute(context())
 
@@ -207,10 +207,11 @@ class ActionChecksTest {
     }
 
     @Test
-    fun `minimum above the number of optional checks is rejected`() {
-        assertThrows(IllegalArgumentException::class.java) {
-            RequirementsAction(requirements = mapOf("a" to Requirement(atLeast("a", "1"))), minimum = 1)
-        }
+    fun `minimum above the number of optional checks never passes`() {
+        val requirement = Requirement(entries = mapOf("a" to Requirement.Entry(atLeast("a", "1"))), minimum = 1)
+
+        assertFalse(requirement.check(context().setValue("a", 5)))
+        assertThrows(IllegalArgumentException::class.java) { Requirement(minimum = -1) }
     }
 
     // ---- conditions ----
@@ -219,10 +220,10 @@ class ActionChecksTest {
     fun `permissions need all entries or the minimum`() {
         val ctx = context(FakePlayer(permissions = setOf("a.use", "b.use")))
 
-        assertTrue(PermissionsCondition(listOf("a.use", "b.use")).matches(ctx))
-        assertFalse(PermissionsCondition(listOf("a.use", "c.use")).matches(ctx))
-        assertTrue(PermissionsCondition(listOf("a.use", "c.use"), minimum = 1).matches(ctx))
-        assertFalse(PermissionsCondition(emptyList()).matches(ctx))
+        assertTrue(PermissionsCheck(listOf("a.use", "b.use")).matches(ctx))
+        assertFalse(PermissionsCheck(listOf("a.use", "c.use")).matches(ctx))
+        assertTrue(PermissionsCheck(listOf("a.use", "c.use"), minimum = 1).matches(ctx))
+        assertFalse(PermissionsCheck(emptyList()).matches(ctx))
     }
 
     @Test
@@ -230,65 +231,65 @@ class ActionChecksTest {
         val player = FakePlayer(items = mapOf("diamond" to 5))
         val ctx = context(player)
 
-        assertTrue(ItemCondition("diamond", 5, nameContains = "Key").matches(ctx))
-        assertFalse(ItemCondition("diamond", 6).matches(ctx))
-        assertFalse(ItemCondition("", 1).matches(ctx))
+        assertTrue(ItemCheck("diamond", 5, nameContains = "Key").matches(ctx))
+        assertFalse(ItemCheck("diamond", 6).matches(ctx))
+        assertFalse(ItemCheck("", 1).matches(ctx))
         assertEquals(ItemQuery("diamond", null, "Key", null, true), player.queries.first())
     }
 
     @Test
     fun `has-item never matches on a platform without inventories`() {
-        assertFalse(ItemCondition("diamond").matches(context(FakePlayer(inventory = false))))
+        assertFalse(ItemCheck("diamond").matches(context(FakePlayer(inventory = false))))
     }
 
     @Test
     fun `has-exp compares points or levels`() {
         val ctx = context(FakePlayer(points = 500.0, levels = 12.0))
 
-        assertTrue(ExperienceCondition(500).matches(ctx))
-        assertFalse(ExperienceCondition(501).matches(ctx))
-        assertTrue(ExperienceCondition(12, level = true).matches(ctx))
-        assertFalse(ExperienceCondition(13, level = true).matches(ctx))
+        assertTrue(ExperienceCheck(500).matches(ctx))
+        assertFalse(ExperienceCheck(501).matches(ctx))
+        assertTrue(ExperienceCheck(12, level = true).matches(ctx))
+        assertFalse(ExperienceCheck(13, level = true).matches(ctx))
     }
 
     @Test
     fun `is-near compares the distance in the named world`() {
         val ctx = context(FakePlayer(distance = 4.0))
 
-        assertTrue(NearCondition("world,10,64,10", 5.0).matches(ctx))
-        assertFalse(NearCondition("world,10,64,10", 3.0).matches(ctx))
-        assertFalse(NearCondition("nether,10,64,10", 5.0).matches(ctx))
-        assertThrows(IllegalArgumentException::class.java) { NearCondition("world,10,64", 5.0) }
+        assertTrue(NearCheck("world,10,64,10", 5.0).matches(ctx))
+        assertFalse(NearCheck("world,10,64,10", 3.0).matches(ctx))
+        assertFalse(NearCheck("nether,10,64,10", 5.0).matches(ctx))
+        assertThrows(IllegalArgumentException::class.java) { NearCheck("world,10,64", 5.0) }
     }
 
     @Test
     fun `regex must match the whole value`() {
         val ctx = context().setValue("code", "AB-123")
 
-        assertTrue(RegexCondition("code", "[A-Z]{2}-\\d+").matches(ctx))
-        assertFalse(RegexCondition("code", "\\d+").matches(ctx))
-        assertTrue(RegexCondition("id-[[code]]", "id-AB-123").matches(ctx))
-        assertThrows(IllegalArgumentException::class.java) { RegexCondition("code", "[") }
+        assertTrue(RegexCheck("code", "[A-Z]{2}-\\d+").matches(ctx))
+        assertFalse(RegexCheck("code", "\\d+").matches(ctx))
+        assertTrue(RegexCheck("id-[[code]]", "id-AB-123").matches(ctx))
+        assertThrows(IllegalArgumentException::class.java) { RegexCheck("code", "[") }
     }
 
     @Test
     fun `length checks the range`() {
         val ctx = context().setValue("word", "hello")
 
-        assertTrue(LengthCondition("word", 3, 5).matches(ctx))
-        assertFalse(LengthCondition("word", 6, 10).matches(ctx))
-        assertThrows(IllegalArgumentException::class.java) { LengthCondition("word", 5, 3) }
+        assertTrue(LengthCheck("word", 3, 5).matches(ctx))
+        assertFalse(LengthCheck("word", 6, 10).matches(ctx))
+        assertThrows(IllegalArgumentException::class.java) { LengthCheck("word", 5, 3) }
     }
 
     @Test
     fun `is-type recognizes numbers and uuids`() {
         val ctx = context().setValue("n", "42").setValue("d", "4.5").setValue("u", UUID.randomUUID().toString())
 
-        assertTrue(TypeCondition("n", ValueType.INT).matches(ctx))
-        assertFalse(TypeCondition("d", ValueType.INT).matches(ctx))
-        assertTrue(TypeCondition("d", ValueType.DOUBLE).matches(ctx))
-        assertTrue(TypeCondition("u", ValueType.UUID).matches(ctx))
-        assertFalse(TypeCondition("n", ValueType.UUID).matches(ctx))
+        assertTrue(TypeCheck("n", ValueType.INT).matches(ctx))
+        assertFalse(TypeCheck("d", ValueType.INT).matches(ctx))
+        assertTrue(TypeCheck("d", ValueType.DOUBLE).matches(ctx))
+        assertTrue(TypeCheck("u", ValueType.UUID).matches(ctx))
+        assertFalse(TypeCheck("n", ValueType.UUID).matches(ctx))
     }
 
     private class FakePlayer(

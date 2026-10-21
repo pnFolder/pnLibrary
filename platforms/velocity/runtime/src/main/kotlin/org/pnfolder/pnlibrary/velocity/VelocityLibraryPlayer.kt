@@ -3,10 +3,10 @@ package org.pnfolder.pnlibrary.velocity
 import com.velocitypowered.api.proxy.Player
 import net.kyori.adventure.sound.Sound
 import net.kyori.adventure.text.Component
-import org.pnfolder.pnlibrary.api.actions.LibraryPlayer
-import org.pnfolder.pnlibrary.api.actions.PlayerCapability
-import org.pnfolder.pnlibrary.api.actions.PlayerEffect
-import org.pnfolder.pnlibrary.api.actions.PlayerParticle
+import org.pnfolder.pnlibrary.api.audiences.LibraryPlayer
+import org.pnfolder.pnlibrary.api.audiences.PlayerCapability
+import org.pnfolder.pnlibrary.api.audiences.PlayerEffect
+import org.pnfolder.pnlibrary.api.audiences.PlayerParticle
 import java.util.UUID
 
 /**

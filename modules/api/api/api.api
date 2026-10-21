@@ -2,33 +2,11 @@ public abstract interface class org/pnfolder/pnlibrary/api/actions/Action {
 	public abstract fun execute (Lorg/pnfolder/pnlibrary/api/actions/ActionContext;)V
 }
 
-public final class org/pnfolder/pnlibrary/api/actions/ActionBarAction : org/pnfolder/pnlibrary/api/actions/Action {
-	public fun <init> ()V
-	public fun <init> (Ljava/lang/String;Lorg/pnfolder/pnlibrary/api/text/ComponentSerializerType;Lorg/pnfolder/pnlibrary/api/actions/ActionTarget;)V
-	public synthetic fun <init> (Ljava/lang/String;Lorg/pnfolder/pnlibrary/api/text/ComponentSerializerType;Lorg/pnfolder/pnlibrary/api/actions/ActionTarget;ILkotlin/jvm/internal/DefaultConstructorMarker;)V
-	public final fun component1 ()Ljava/lang/String;
-	public final fun component2 ()Lorg/pnfolder/pnlibrary/api/text/ComponentSerializerType;
-	public final fun component3 ()Lorg/pnfolder/pnlibrary/api/actions/ActionTarget;
-	public final fun copy (Ljava/lang/String;Lorg/pnfolder/pnlibrary/api/text/ComponentSerializerType;Lorg/pnfolder/pnlibrary/api/actions/ActionTarget;)Lorg/pnfolder/pnlibrary/api/actions/ActionBarAction;
-	public static synthetic fun copy$default (Lorg/pnfolder/pnlibrary/api/actions/ActionBarAction;Ljava/lang/String;Lorg/pnfolder/pnlibrary/api/text/ComponentSerializerType;Lorg/pnfolder/pnlibrary/api/actions/ActionTarget;ILjava/lang/Object;)Lorg/pnfolder/pnlibrary/api/actions/ActionBarAction;
-	public fun equals (Ljava/lang/Object;)Z
-	public fun execute (Lorg/pnfolder/pnlibrary/api/actions/ActionContext;)V
-	public final fun getSerializerType ()Lorg/pnfolder/pnlibrary/api/text/ComponentSerializerType;
-	public final fun getTarget ()Lorg/pnfolder/pnlibrary/api/actions/ActionTarget;
-	public final fun getText ()Ljava/lang/String;
-	public fun hashCode ()I
-	public fun toString ()Ljava/lang/String;
-}
-
-public abstract interface class org/pnfolder/pnlibrary/api/actions/ActionCondition {
-	public abstract fun matches (Lorg/pnfolder/pnlibrary/api/actions/ActionContext;)Z
-}
-
-public final class org/pnfolder/pnlibrary/api/actions/ActionContext {
+public final class org/pnfolder/pnlibrary/api/actions/ActionContext : org/pnfolder/pnlibrary/api/checks/CheckContext {
 	public static final field Companion Lorg/pnfolder/pnlibrary/api/actions/ActionContext$Companion;
 	public static final field MAX_TEMPLATE_DEPTH I
-	public fun <init> (Lorg/pnfolder/pnlibrary/api/actions/LibraryPlayer;Lorg/pnfolder/pnlibrary/api/actions/LibraryAudience;Lorg/pnfolder/pnlibrary/api/text/ComponentService;Lorg/pnfolder/pnlibrary/api/logging/PnLogger;Lorg/pnfolder/pnlibrary/api/tasks/TaskScope;Lorg/pnfolder/pnlibrary/api/text/ComponentSerializerType;Ljava/util/Map;Ljava/util/Map;Lorg/pnfolder/pnlibrary/api/placeholders/PlaceholderService;Ljava/util/Map;)V
-	public synthetic fun <init> (Lorg/pnfolder/pnlibrary/api/actions/LibraryPlayer;Lorg/pnfolder/pnlibrary/api/actions/LibraryAudience;Lorg/pnfolder/pnlibrary/api/text/ComponentService;Lorg/pnfolder/pnlibrary/api/logging/PnLogger;Lorg/pnfolder/pnlibrary/api/tasks/TaskScope;Lorg/pnfolder/pnlibrary/api/text/ComponentSerializerType;Ljava/util/Map;Ljava/util/Map;Lorg/pnfolder/pnlibrary/api/placeholders/PlaceholderService;Ljava/util/Map;ILkotlin/jvm/internal/DefaultConstructorMarker;)V
+	public fun <init> (Lorg/pnfolder/pnlibrary/api/audiences/LibraryPlayer;Lorg/pnfolder/pnlibrary/api/audiences/LibraryAudience;Lorg/pnfolder/pnlibrary/api/text/ComponentService;Lorg/pnfolder/pnlibrary/api/logging/PnLogger;Lorg/pnfolder/pnlibrary/api/tasks/TaskScope;Lorg/pnfolder/pnlibrary/api/text/ComponentSerializerType;Ljava/util/Map;Ljava/util/Map;Lorg/pnfolder/pnlibrary/api/placeholders/PlaceholderService;Ljava/util/Map;Ljava/util/Map;)V
+	public synthetic fun <init> (Lorg/pnfolder/pnlibrary/api/audiences/LibraryPlayer;Lorg/pnfolder/pnlibrary/api/audiences/LibraryAudience;Lorg/pnfolder/pnlibrary/api/text/ComponentService;Lorg/pnfolder/pnlibrary/api/logging/PnLogger;Lorg/pnfolder/pnlibrary/api/tasks/TaskScope;Lorg/pnfolder/pnlibrary/api/text/ComponentSerializerType;Ljava/util/Map;Ljava/util/Map;Lorg/pnfolder/pnlibrary/api/placeholders/PlaceholderService;Ljava/util/Map;Ljava/util/Map;ILkotlin/jvm/internal/DefaultConstructorMarker;)V
 	public final fun component (Ljava/lang/Iterable;Lorg/pnfolder/pnlibrary/api/text/ComponentSerializerType;)Lnet/kyori/adventure/text/Component;
 	public final fun component (Ljava/lang/String;Lorg/pnfolder/pnlibrary/api/text/ComponentSerializerType;)Lnet/kyori/adventure/text/Component;
 	public static synthetic fun component$default (Lorg/pnfolder/pnlibrary/api/actions/ActionContext;Ljava/lang/Iterable;Lorg/pnfolder/pnlibrary/api/text/ComponentSerializerType;ILjava/lang/Object;)Lnet/kyori/adventure/text/Component;
@@ -36,11 +14,12 @@ public final class org/pnfolder/pnlibrary/api/actions/ActionContext {
 	public final fun execute (Ljava/lang/Iterable;)V
 	public final fun format (Ljava/lang/String;)Ljava/lang/String;
 	public final fun get (Ljava/lang/Class;)Ljava/lang/Object;
-	public final fun getAllPlayers ()Lorg/pnfolder/pnlibrary/api/actions/LibraryAudience;
+	public final fun getAllPlayers ()Lorg/pnfolder/pnlibrary/api/audiences/LibraryAudience;
+	public final fun getChecks ()Ljava/util/Map;
 	public final fun getComponents ()Lorg/pnfolder/pnlibrary/api/text/ComponentService;
-	public final fun getLogger ()Lorg/pnfolder/pnlibrary/api/logging/PnLogger;
+	public fun getLogger ()Lorg/pnfolder/pnlibrary/api/logging/PnLogger;
 	public final fun getPlaceholders ()Lorg/pnfolder/pnlibrary/api/placeholders/PlaceholderService;
-	public final fun getPlayer ()Lorg/pnfolder/pnlibrary/api/actions/LibraryPlayer;
+	public fun getPlayer ()Lorg/pnfolder/pnlibrary/api/audiences/LibraryPlayer;
 	public final fun getSerializerType ()Lorg/pnfolder/pnlibrary/api/text/ComponentSerializerType;
 	public final fun getStopped ()Z
 	public final fun getTasks ()Lorg/pnfolder/pnlibrary/api/tasks/TaskScope;
@@ -48,46 +27,33 @@ public final class org/pnfolder/pnlibrary/api/actions/ActionContext {
 	public final fun getValues ()Ljava/util/Map;
 	public final fun has (Ljava/lang/Class;)Z
 	public final fun put (Ljava/lang/Class;Ljava/lang/Object;)Lorg/pnfolder/pnlibrary/api/actions/ActionContext;
-	public final fun read (Ljava/lang/String;)Ljava/lang/Object;
+	public fun read (Ljava/lang/String;)Ljava/lang/Object;
 	public final fun remove (Ljava/lang/Class;)Ljava/lang/Object;
 	public final fun removeValue (Ljava/lang/String;)Ljava/lang/Object;
 	public final fun require (Ljava/lang/Class;)Ljava/lang/Object;
+	public fun requirement (Ljava/lang/String;)Lorg/pnfolder/pnlibrary/api/checks/Requirement;
+	public fun requirementNames ()Ljava/util/Set;
 	public final fun resolve (Ljava/lang/String;)Ljava/lang/Object;
 	public final fun runTemplate (Ljava/lang/String;)V
 	public final fun setValue (Ljava/lang/String;Ljava/lang/Object;)Lorg/pnfolder/pnlibrary/api/actions/ActionContext;
 	public final fun stop ()V
-	public final fun target (Lorg/pnfolder/pnlibrary/api/actions/ActionTarget;)Lorg/pnfolder/pnlibrary/api/actions/LibraryAudience;
-	public final fun textOf (Ljava/lang/String;)Ljava/lang/String;
+	public final fun target (Lorg/pnfolder/pnlibrary/api/actions/ActionTarget;)Lorg/pnfolder/pnlibrary/api/audiences/LibraryAudience;
+	public fun textOf (Ljava/lang/String;)Ljava/lang/String;
 	public final fun updatePlaceholder (Ljava/lang/String;Ljava/lang/String;)Ljava/lang/Object;
-	public final fun value (Ljava/lang/String;)Ljava/lang/Object;
+	public fun value (Ljava/lang/String;)Ljava/lang/Object;
 	public final fun values ()Ljava/util/Map;
 }
 
 public final class org/pnfolder/pnlibrary/api/actions/ActionContext$Companion {
 }
 
-public final class org/pnfolder/pnlibrary/api/actions/ActionLine : org/pnfolder/pnlibrary/api/config/ConfigTextParser {
-	public static final field INSTANCE Lorg/pnfolder/pnlibrary/api/actions/ActionLine;
-	public final fun format (Lorg/pnfolder/pnlibrary/api/actions/Action;)Ljava/lang/String;
-	public final fun parse (Ljava/lang/String;)Lorg/pnfolder/pnlibrary/api/actions/Action;
-	public synthetic fun parse (Ljava/lang/String;Lorg/pnfolder/pnlibrary/api/config/ConfigSerializationContext;)Ljava/lang/Object;
-	public fun parse (Ljava/lang/String;Lorg/pnfolder/pnlibrary/api/config/ConfigSerializationContext;)Lorg/pnfolder/pnlibrary/api/actions/Action;
-}
-
-public final class org/pnfolder/pnlibrary/api/actions/ActionNode : org/pnfolder/pnlibrary/api/config/ConfigNodeRewriter {
-	public static final field INSTANCE Lorg/pnfolder/pnlibrary/api/actions/ActionNode;
-	public fun rewrite (Ljava/util/Map;Ljava/lang/String;)Ljava/util/Map;
-}
-
 public abstract interface class org/pnfolder/pnlibrary/api/actions/ActionService {
-	public fun context (Lorg/pnfolder/pnlibrary/api/actions/LibraryPlayer;Lorg/pnfolder/pnlibrary/api/actions/LibraryAudience;Ljava/util/Map;Lorg/pnfolder/pnlibrary/api/text/ComponentSerializerType;)Lorg/pnfolder/pnlibrary/api/actions/ActionContext;
-	public abstract fun context (Lorg/pnfolder/pnlibrary/api/actions/LibraryPlayer;Lorg/pnfolder/pnlibrary/api/actions/LibraryAudience;Ljava/util/Map;Lorg/pnfolder/pnlibrary/api/text/ComponentSerializerType;Ljava/util/Map;)Lorg/pnfolder/pnlibrary/api/actions/ActionContext;
-	public static synthetic fun context$default (Lorg/pnfolder/pnlibrary/api/actions/ActionService;Lorg/pnfolder/pnlibrary/api/actions/LibraryPlayer;Lorg/pnfolder/pnlibrary/api/actions/LibraryAudience;Ljava/util/Map;Lorg/pnfolder/pnlibrary/api/text/ComponentSerializerType;ILjava/lang/Object;)Lorg/pnfolder/pnlibrary/api/actions/ActionContext;
-	public static synthetic fun context$default (Lorg/pnfolder/pnlibrary/api/actions/ActionService;Lorg/pnfolder/pnlibrary/api/actions/LibraryPlayer;Lorg/pnfolder/pnlibrary/api/actions/LibraryAudience;Ljava/util/Map;Lorg/pnfolder/pnlibrary/api/text/ComponentSerializerType;Ljava/util/Map;ILjava/lang/Object;)Lorg/pnfolder/pnlibrary/api/actions/ActionContext;
+	public abstract fun context (Lorg/pnfolder/pnlibrary/api/audiences/LibraryPlayer;Lorg/pnfolder/pnlibrary/api/audiences/LibraryAudience;Ljava/util/Map;Lorg/pnfolder/pnlibrary/api/text/ComponentSerializerType;Ljava/util/Map;Ljava/util/Map;)Lorg/pnfolder/pnlibrary/api/actions/ActionContext;
+	public static synthetic fun context$default (Lorg/pnfolder/pnlibrary/api/actions/ActionService;Lorg/pnfolder/pnlibrary/api/audiences/LibraryPlayer;Lorg/pnfolder/pnlibrary/api/audiences/LibraryAudience;Ljava/util/Map;Lorg/pnfolder/pnlibrary/api/text/ComponentSerializerType;Ljava/util/Map;Ljava/util/Map;ILjava/lang/Object;)Lorg/pnfolder/pnlibrary/api/actions/ActionContext;
 	public fun execute (Lorg/pnfolder/pnlibrary/api/actions/ActionContext;Ljava/lang/Iterable;)V
 	public fun execute (Lorg/pnfolder/pnlibrary/api/actions/ActionContext;Lorg/pnfolder/pnlibrary/api/actions/Action;)V
-	public fun execute (Lorg/pnfolder/pnlibrary/api/actions/LibraryPlayer;Lorg/pnfolder/pnlibrary/api/actions/LibraryAudience;Ljava/lang/Iterable;Ljava/util/Map;)V
-	public static synthetic fun execute$default (Lorg/pnfolder/pnlibrary/api/actions/ActionService;Lorg/pnfolder/pnlibrary/api/actions/LibraryPlayer;Lorg/pnfolder/pnlibrary/api/actions/LibraryAudience;Ljava/lang/Iterable;Ljava/util/Map;ILjava/lang/Object;)V
+	public fun execute (Lorg/pnfolder/pnlibrary/api/audiences/LibraryPlayer;Lorg/pnfolder/pnlibrary/api/audiences/LibraryAudience;Ljava/lang/Iterable;Ljava/util/Map;)V
+	public static synthetic fun execute$default (Lorg/pnfolder/pnlibrary/api/actions/ActionService;Lorg/pnfolder/pnlibrary/api/audiences/LibraryPlayer;Lorg/pnfolder/pnlibrary/api/audiences/LibraryAudience;Ljava/lang/Iterable;Ljava/util/Map;ILjava/lang/Object;)V
 }
 
 public final class org/pnfolder/pnlibrary/api/actions/ActionTarget : java/lang/Enum {
@@ -98,132 +64,56 @@ public final class org/pnfolder/pnlibrary/api/actions/ActionTarget : java/lang/E
 	public static fun values ()[Lorg/pnfolder/pnlibrary/api/actions/ActionTarget;
 }
 
-public final class org/pnfolder/pnlibrary/api/actions/ChanceCondition : org/pnfolder/pnlibrary/api/actions/ActionCondition {
+public final class org/pnfolder/pnlibrary/api/actions/builtin/ActionBarAction : org/pnfolder/pnlibrary/api/actions/Action {
 	public fun <init> ()V
-	public fun <init> (D)V
-	public synthetic fun <init> (DILkotlin/jvm/internal/DefaultConstructorMarker;)V
-	public final fun component1 ()D
-	public final fun copy (D)Lorg/pnfolder/pnlibrary/api/actions/ChanceCondition;
-	public static synthetic fun copy$default (Lorg/pnfolder/pnlibrary/api/actions/ChanceCondition;DILjava/lang/Object;)Lorg/pnfolder/pnlibrary/api/actions/ChanceCondition;
-	public fun equals (Ljava/lang/Object;)Z
-	public final fun getProbability ()D
-	public fun hashCode ()I
-	public fun matches (Lorg/pnfolder/pnlibrary/api/actions/ActionContext;)Z
-	public fun toString ()Ljava/lang/String;
-}
-
-public final class org/pnfolder/pnlibrary/api/actions/CommandAction : org/pnfolder/pnlibrary/api/actions/Action {
-	public fun <init> ()V
-	public fun <init> (Ljava/lang/String;Lorg/pnfolder/pnlibrary/api/actions/CommandRunner;)V
-	public synthetic fun <init> (Ljava/lang/String;Lorg/pnfolder/pnlibrary/api/actions/CommandRunner;ILkotlin/jvm/internal/DefaultConstructorMarker;)V
+	public fun <init> (Ljava/lang/String;Lorg/pnfolder/pnlibrary/api/text/ComponentSerializerType;Lorg/pnfolder/pnlibrary/api/actions/ActionTarget;)V
+	public synthetic fun <init> (Ljava/lang/String;Lorg/pnfolder/pnlibrary/api/text/ComponentSerializerType;Lorg/pnfolder/pnlibrary/api/actions/ActionTarget;ILkotlin/jvm/internal/DefaultConstructorMarker;)V
 	public final fun component1 ()Ljava/lang/String;
-	public final fun component2 ()Lorg/pnfolder/pnlibrary/api/actions/CommandRunner;
-	public final fun copy (Ljava/lang/String;Lorg/pnfolder/pnlibrary/api/actions/CommandRunner;)Lorg/pnfolder/pnlibrary/api/actions/CommandAction;
-	public static synthetic fun copy$default (Lorg/pnfolder/pnlibrary/api/actions/CommandAction;Ljava/lang/String;Lorg/pnfolder/pnlibrary/api/actions/CommandRunner;ILjava/lang/Object;)Lorg/pnfolder/pnlibrary/api/actions/CommandAction;
+	public final fun component2 ()Lorg/pnfolder/pnlibrary/api/text/ComponentSerializerType;
+	public final fun component3 ()Lorg/pnfolder/pnlibrary/api/actions/ActionTarget;
+	public final fun copy (Ljava/lang/String;Lorg/pnfolder/pnlibrary/api/text/ComponentSerializerType;Lorg/pnfolder/pnlibrary/api/actions/ActionTarget;)Lorg/pnfolder/pnlibrary/api/actions/builtin/ActionBarAction;
+	public static synthetic fun copy$default (Lorg/pnfolder/pnlibrary/api/actions/builtin/ActionBarAction;Ljava/lang/String;Lorg/pnfolder/pnlibrary/api/text/ComponentSerializerType;Lorg/pnfolder/pnlibrary/api/actions/ActionTarget;ILjava/lang/Object;)Lorg/pnfolder/pnlibrary/api/actions/builtin/ActionBarAction;
 	public fun equals (Ljava/lang/Object;)Z
 	public fun execute (Lorg/pnfolder/pnlibrary/api/actions/ActionContext;)V
-	public final fun getCommand ()Ljava/lang/String;
-	public final fun getRunner ()Lorg/pnfolder/pnlibrary/api/actions/CommandRunner;
-	public fun hashCode ()I
-	public fun toString ()Ljava/lang/String;
-}
-
-public final class org/pnfolder/pnlibrary/api/actions/CommandRunner : java/lang/Enum {
-	public static final field CONSOLE Lorg/pnfolder/pnlibrary/api/actions/CommandRunner;
-	public static final field PLAYER Lorg/pnfolder/pnlibrary/api/actions/CommandRunner;
-	public static fun getEntries ()Lkotlin/enums/EnumEntries;
-	public static fun valueOf (Ljava/lang/String;)Lorg/pnfolder/pnlibrary/api/actions/CommandRunner;
-	public static fun values ()[Lorg/pnfolder/pnlibrary/api/actions/CommandRunner;
-}
-
-public final class org/pnfolder/pnlibrary/api/actions/Comparison : java/lang/Enum {
-	public static final field ABSENT Lorg/pnfolder/pnlibrary/api/actions/Comparison;
-	public static final field CONTAINS Lorg/pnfolder/pnlibrary/api/actions/Comparison;
-	public static final field EQUALS Lorg/pnfolder/pnlibrary/api/actions/Comparison;
-	public static final field GREATER_OR_EQUAL Lorg/pnfolder/pnlibrary/api/actions/Comparison;
-	public static final field GREATER_THAN Lorg/pnfolder/pnlibrary/api/actions/Comparison;
-	public static final field LESS_OR_EQUAL Lorg/pnfolder/pnlibrary/api/actions/Comparison;
-	public static final field LESS_THAN Lorg/pnfolder/pnlibrary/api/actions/Comparison;
-	public static final field NOT_EQUALS Lorg/pnfolder/pnlibrary/api/actions/Comparison;
-	public static final field NUMBER_EQUALS Lorg/pnfolder/pnlibrary/api/actions/Comparison;
-	public static final field NUMBER_NOT_EQUALS Lorg/pnfolder/pnlibrary/api/actions/Comparison;
-	public static final field PRESENT Lorg/pnfolder/pnlibrary/api/actions/Comparison;
-	public static fun getEntries ()Lkotlin/enums/EnumEntries;
-	public static fun valueOf (Ljava/lang/String;)Lorg/pnfolder/pnlibrary/api/actions/Comparison;
-	public static fun values ()[Lorg/pnfolder/pnlibrary/api/actions/Comparison;
-}
-
-public final class org/pnfolder/pnlibrary/api/actions/ConditionSerializer : org/pnfolder/pnlibrary/api/config/ConfigSerializer {
-	public static final field INSTANCE Lorg/pnfolder/pnlibrary/api/actions/ConditionSerializer;
-	public final fun describe (Lorg/pnfolder/pnlibrary/api/actions/ActionCondition;)Ljava/util/Map;
-	public synthetic fun deserialize (Ljava/lang/Object;Lorg/pnfolder/pnlibrary/api/config/ConfigSerializationContext;)Ljava/lang/Object;
-	public fun deserialize (Ljava/lang/Object;Lorg/pnfolder/pnlibrary/api/config/ConfigSerializationContext;)Lorg/pnfolder/pnlibrary/api/actions/ActionCondition;
-	public final fun parse (Ljava/util/Map;Ljava/util/Set;)Lorg/pnfolder/pnlibrary/api/actions/ActionCondition;
-	public static synthetic fun parse$default (Lorg/pnfolder/pnlibrary/api/actions/ConditionSerializer;Ljava/util/Map;Ljava/util/Set;ILjava/lang/Object;)Lorg/pnfolder/pnlibrary/api/actions/ActionCondition;
-	public synthetic fun serialize (Ljava/lang/Object;Lorg/pnfolder/pnlibrary/api/config/ConfigSerializationContext;)Ljava/lang/Object;
-	public fun serialize (Lorg/pnfolder/pnlibrary/api/actions/ActionCondition;Lorg/pnfolder/pnlibrary/api/config/ConfigSerializationContext;)Ljava/lang/Object;
-}
-
-public final class org/pnfolder/pnlibrary/api/actions/ConditionalAction : org/pnfolder/pnlibrary/api/actions/Action {
-	public fun <init> ()V
-	public fun <init> (Ljava/util/List;Ljava/util/List;Ljava/util/List;Ljava/util/List;)V
-	public synthetic fun <init> (Ljava/util/List;Ljava/util/List;Ljava/util/List;Ljava/util/List;ILkotlin/jvm/internal/DefaultConstructorMarker;)V
-	public final fun component1 ()Ljava/util/List;
-	public final fun component2 ()Ljava/util/List;
-	public final fun component3 ()Ljava/util/List;
-	public final fun component4 ()Ljava/util/List;
-	public final fun copy (Ljava/util/List;Ljava/util/List;Ljava/util/List;Ljava/util/List;)Lorg/pnfolder/pnlibrary/api/actions/ConditionalAction;
-	public static synthetic fun copy$default (Lorg/pnfolder/pnlibrary/api/actions/ConditionalAction;Ljava/util/List;Ljava/util/List;Ljava/util/List;Ljava/util/List;ILjava/lang/Object;)Lorg/pnfolder/pnlibrary/api/actions/ConditionalAction;
-	public fun equals (Ljava/lang/Object;)Z
-	public fun execute (Lorg/pnfolder/pnlibrary/api/actions/ActionContext;)V
-	public final fun getAllChecks ()Ljava/util/List;
-	public final fun getAnyChecks ()Ljava/util/List;
-	public final fun getElseActions ()Ljava/util/List;
-	public final fun getThenActions ()Ljava/util/List;
-	public fun hashCode ()I
-	public fun toString ()Ljava/lang/String;
-}
-
-public final class org/pnfolder/pnlibrary/api/actions/ConsoleLogAction : org/pnfolder/pnlibrary/api/actions/Action {
-	public fun <init> ()V
-	public fun <init> (Ljava/lang/String;Lorg/pnfolder/pnlibrary/api/logging/LogLevel;)V
-	public synthetic fun <init> (Ljava/lang/String;Lorg/pnfolder/pnlibrary/api/logging/LogLevel;ILkotlin/jvm/internal/DefaultConstructorMarker;)V
-	public final fun component1 ()Ljava/lang/String;
-	public final fun component2 ()Lorg/pnfolder/pnlibrary/api/logging/LogLevel;
-	public final fun copy (Ljava/lang/String;Lorg/pnfolder/pnlibrary/api/logging/LogLevel;)Lorg/pnfolder/pnlibrary/api/actions/ConsoleLogAction;
-	public static synthetic fun copy$default (Lorg/pnfolder/pnlibrary/api/actions/ConsoleLogAction;Ljava/lang/String;Lorg/pnfolder/pnlibrary/api/logging/LogLevel;ILjava/lang/Object;)Lorg/pnfolder/pnlibrary/api/actions/ConsoleLogAction;
-	public fun equals (Ljava/lang/Object;)Z
-	public fun execute (Lorg/pnfolder/pnlibrary/api/actions/ActionContext;)V
-	public final fun getLevel ()Lorg/pnfolder/pnlibrary/api/logging/LogLevel;
+	public final fun getSerializerType ()Lorg/pnfolder/pnlibrary/api/text/ComponentSerializerType;
+	public final fun getTarget ()Lorg/pnfolder/pnlibrary/api/actions/ActionTarget;
 	public final fun getText ()Ljava/lang/String;
 	public fun hashCode ()I
 	public fun toString ()Ljava/lang/String;
 }
 
-public final class org/pnfolder/pnlibrary/api/actions/CopyValueAction : org/pnfolder/pnlibrary/api/actions/Action {
+public final class org/pnfolder/pnlibrary/api/actions/builtin/CommandAction : org/pnfolder/pnlibrary/api/actions/Action {
 	public fun <init> ()V
-	public fun <init> (Ljava/lang/String;Ljava/lang/String;)V
-	public synthetic fun <init> (Ljava/lang/String;Ljava/lang/String;ILkotlin/jvm/internal/DefaultConstructorMarker;)V
+	public fun <init> (Ljava/lang/String;Lorg/pnfolder/pnlibrary/api/actions/builtin/CommandRunner;)V
+	public synthetic fun <init> (Ljava/lang/String;Lorg/pnfolder/pnlibrary/api/actions/builtin/CommandRunner;ILkotlin/jvm/internal/DefaultConstructorMarker;)V
 	public final fun component1 ()Ljava/lang/String;
-	public final fun component2 ()Ljava/lang/String;
-	public final fun copy (Ljava/lang/String;Ljava/lang/String;)Lorg/pnfolder/pnlibrary/api/actions/CopyValueAction;
-	public static synthetic fun copy$default (Lorg/pnfolder/pnlibrary/api/actions/CopyValueAction;Ljava/lang/String;Ljava/lang/String;ILjava/lang/Object;)Lorg/pnfolder/pnlibrary/api/actions/CopyValueAction;
+	public final fun component2 ()Lorg/pnfolder/pnlibrary/api/actions/builtin/CommandRunner;
+	public final fun copy (Ljava/lang/String;Lorg/pnfolder/pnlibrary/api/actions/builtin/CommandRunner;)Lorg/pnfolder/pnlibrary/api/actions/builtin/CommandAction;
+	public static synthetic fun copy$default (Lorg/pnfolder/pnlibrary/api/actions/builtin/CommandAction;Ljava/lang/String;Lorg/pnfolder/pnlibrary/api/actions/builtin/CommandRunner;ILjava/lang/Object;)Lorg/pnfolder/pnlibrary/api/actions/builtin/CommandAction;
 	public fun equals (Ljava/lang/Object;)Z
 	public fun execute (Lorg/pnfolder/pnlibrary/api/actions/ActionContext;)V
-	public final fun getFrom ()Ljava/lang/String;
-	public final fun getTo ()Ljava/lang/String;
+	public final fun getCommand ()Ljava/lang/String;
+	public final fun getRunner ()Lorg/pnfolder/pnlibrary/api/actions/builtin/CommandRunner;
 	public fun hashCode ()I
 	public fun toString ()Ljava/lang/String;
 }
 
-public final class org/pnfolder/pnlibrary/api/actions/DelayAction : org/pnfolder/pnlibrary/api/actions/Action {
+public final class org/pnfolder/pnlibrary/api/actions/builtin/CommandRunner : java/lang/Enum {
+	public static final field CONSOLE Lorg/pnfolder/pnlibrary/api/actions/builtin/CommandRunner;
+	public static final field PLAYER Lorg/pnfolder/pnlibrary/api/actions/builtin/CommandRunner;
+	public static fun getEntries ()Lkotlin/enums/EnumEntries;
+	public static fun valueOf (Ljava/lang/String;)Lorg/pnfolder/pnlibrary/api/actions/builtin/CommandRunner;
+	public static fun values ()[Lorg/pnfolder/pnlibrary/api/actions/builtin/CommandRunner;
+}
+
+public final class org/pnfolder/pnlibrary/api/actions/builtin/DelayAction : org/pnfolder/pnlibrary/api/actions/Action {
 	public fun <init> ()V
 	public fun <init> (Ljava/time/Duration;Ljava/util/List;)V
 	public synthetic fun <init> (Ljava/time/Duration;Ljava/util/List;ILkotlin/jvm/internal/DefaultConstructorMarker;)V
 	public final fun component1 ()Ljava/time/Duration;
 	public final fun component2 ()Ljava/util/List;
-	public final fun copy (Ljava/time/Duration;Ljava/util/List;)Lorg/pnfolder/pnlibrary/api/actions/DelayAction;
-	public static synthetic fun copy$default (Lorg/pnfolder/pnlibrary/api/actions/DelayAction;Ljava/time/Duration;Ljava/util/List;ILjava/lang/Object;)Lorg/pnfolder/pnlibrary/api/actions/DelayAction;
+	public final fun copy (Ljava/time/Duration;Ljava/util/List;)Lorg/pnfolder/pnlibrary/api/actions/builtin/DelayAction;
+	public static synthetic fun copy$default (Lorg/pnfolder/pnlibrary/api/actions/builtin/DelayAction;Ljava/time/Duration;Ljava/util/List;ILjava/lang/Object;)Lorg/pnfolder/pnlibrary/api/actions/builtin/DelayAction;
 	public fun equals (Ljava/lang/Object;)Z
 	public fun execute (Lorg/pnfolder/pnlibrary/api/actions/ActionContext;)V
 	public final fun getDuration ()Ljava/time/Duration;
@@ -232,7 +122,7 @@ public final class org/pnfolder/pnlibrary/api/actions/DelayAction : org/pnfolder
 	public fun toString ()Ljava/lang/String;
 }
 
-public final class org/pnfolder/pnlibrary/api/actions/EffectAction : org/pnfolder/pnlibrary/api/actions/Action {
+public final class org/pnfolder/pnlibrary/api/actions/builtin/EffectAction : org/pnfolder/pnlibrary/api/actions/Action {
 	public fun <init> ()V
 	public fun <init> (Ljava/lang/String;Ljava/time/Duration;IZZZ)V
 	public synthetic fun <init> (Ljava/lang/String;Ljava/time/Duration;IZZZILkotlin/jvm/internal/DefaultConstructorMarker;)V
@@ -242,8 +132,8 @@ public final class org/pnfolder/pnlibrary/api/actions/EffectAction : org/pnfolde
 	public final fun component4 ()Z
 	public final fun component5 ()Z
 	public final fun component6 ()Z
-	public final fun copy (Ljava/lang/String;Ljava/time/Duration;IZZZ)Lorg/pnfolder/pnlibrary/api/actions/EffectAction;
-	public static synthetic fun copy$default (Lorg/pnfolder/pnlibrary/api/actions/EffectAction;Ljava/lang/String;Ljava/time/Duration;IZZZILjava/lang/Object;)Lorg/pnfolder/pnlibrary/api/actions/EffectAction;
+	public final fun copy (Ljava/lang/String;Ljava/time/Duration;IZZZ)Lorg/pnfolder/pnlibrary/api/actions/builtin/EffectAction;
+	public static synthetic fun copy$default (Lorg/pnfolder/pnlibrary/api/actions/builtin/EffectAction;Ljava/lang/String;Ljava/time/Duration;IZZZILjava/lang/Object;)Lorg/pnfolder/pnlibrary/api/actions/builtin/EffectAction;
 	public fun equals (Ljava/lang/Object;)Z
 	public fun execute (Lorg/pnfolder/pnlibrary/api/actions/ActionContext;)V
 	public final fun getAmbient ()Z
@@ -256,138 +146,63 @@ public final class org/pnfolder/pnlibrary/api/actions/EffectAction : org/pnfolde
 	public fun toString ()Ljava/lang/String;
 }
 
-public final class org/pnfolder/pnlibrary/api/actions/EnabledCondition : org/pnfolder/pnlibrary/api/actions/ActionCondition {
+public final class org/pnfolder/pnlibrary/api/actions/builtin/GroupAction : org/pnfolder/pnlibrary/api/actions/Action {
 	public fun <init> ()V
-	public fun <init> (Ljava/lang/String;Z)V
-	public synthetic fun <init> (Ljava/lang/String;ZILkotlin/jvm/internal/DefaultConstructorMarker;)V
-	public final fun component1 ()Ljava/lang/String;
-	public final fun component2 ()Z
-	public final fun copy (Ljava/lang/String;Z)Lorg/pnfolder/pnlibrary/api/actions/EnabledCondition;
-	public static synthetic fun copy$default (Lorg/pnfolder/pnlibrary/api/actions/EnabledCondition;Ljava/lang/String;ZILjava/lang/Object;)Lorg/pnfolder/pnlibrary/api/actions/EnabledCondition;
+	public fun <init> (Ljava/util/List;)V
+	public synthetic fun <init> (Ljava/util/List;ILkotlin/jvm/internal/DefaultConstructorMarker;)V
+	public final fun component1 ()Ljava/util/List;
+	public final fun copy (Ljava/util/List;)Lorg/pnfolder/pnlibrary/api/actions/builtin/GroupAction;
+	public static synthetic fun copy$default (Lorg/pnfolder/pnlibrary/api/actions/builtin/GroupAction;Ljava/util/List;ILjava/lang/Object;)Lorg/pnfolder/pnlibrary/api/actions/builtin/GroupAction;
 	public fun equals (Ljava/lang/Object;)Z
-	public final fun getEnabled ()Z
-	public final fun getFlag ()Ljava/lang/String;
+	public fun execute (Lorg/pnfolder/pnlibrary/api/actions/ActionContext;)V
+	public final fun getSteps ()Ljava/util/List;
 	public fun hashCode ()I
-	public fun matches (Lorg/pnfolder/pnlibrary/api/actions/ActionContext;)Z
 	public fun toString ()Ljava/lang/String;
 }
 
-public final class org/pnfolder/pnlibrary/api/actions/ExperienceCondition : org/pnfolder/pnlibrary/api/actions/ActionCondition {
+public final class org/pnfolder/pnlibrary/api/actions/builtin/IfAction : org/pnfolder/pnlibrary/api/actions/Action {
 	public fun <init> ()V
-	public fun <init> (IZ)V
-	public synthetic fun <init> (IZILkotlin/jvm/internal/DefaultConstructorMarker;)V
-	public final fun component1 ()I
-	public final fun component2 ()Z
-	public final fun copy (IZ)Lorg/pnfolder/pnlibrary/api/actions/ExperienceCondition;
-	public static synthetic fun copy$default (Lorg/pnfolder/pnlibrary/api/actions/ExperienceCondition;IZILjava/lang/Object;)Lorg/pnfolder/pnlibrary/api/actions/ExperienceCondition;
+	public fun <init> (Lorg/pnfolder/pnlibrary/api/checks/Check;Ljava/util/List;Ljava/util/List;)V
+	public synthetic fun <init> (Lorg/pnfolder/pnlibrary/api/checks/Check;Ljava/util/List;Ljava/util/List;ILkotlin/jvm/internal/DefaultConstructorMarker;)V
+	public final fun component1 ()Lorg/pnfolder/pnlibrary/api/checks/Check;
+	public final fun component2 ()Ljava/util/List;
+	public final fun component3 ()Ljava/util/List;
+	public final fun copy (Lorg/pnfolder/pnlibrary/api/checks/Check;Ljava/util/List;Ljava/util/List;)Lorg/pnfolder/pnlibrary/api/actions/builtin/IfAction;
+	public static synthetic fun copy$default (Lorg/pnfolder/pnlibrary/api/actions/builtin/IfAction;Lorg/pnfolder/pnlibrary/api/checks/Check;Ljava/util/List;Ljava/util/List;ILjava/lang/Object;)Lorg/pnfolder/pnlibrary/api/actions/builtin/IfAction;
 	public fun equals (Ljava/lang/Object;)Z
-	public final fun getAmount ()I
-	public final fun getLevel ()Z
+	public fun execute (Lorg/pnfolder/pnlibrary/api/actions/ActionContext;)V
+	public final fun getCheck ()Lorg/pnfolder/pnlibrary/api/checks/Check;
+	public final fun getElseActions ()Ljava/util/List;
+	public final fun getThenActions ()Ljava/util/List;
 	public fun hashCode ()I
-	public fun matches (Lorg/pnfolder/pnlibrary/api/actions/ActionContext;)Z
 	public fun toString ()Ljava/lang/String;
 }
 
-public final class org/pnfolder/pnlibrary/api/actions/ItemCondition : org/pnfolder/pnlibrary/api/actions/ActionCondition {
+public final class org/pnfolder/pnlibrary/api/actions/builtin/LogAction : org/pnfolder/pnlibrary/api/actions/Action {
 	public fun <init> ()V
-	public fun <init> (Ljava/lang/String;ILjava/lang/String;Ljava/lang/String;Ljava/lang/String;Z)V
-	public synthetic fun <init> (Ljava/lang/String;ILjava/lang/String;Ljava/lang/String;Ljava/lang/String;ZILkotlin/jvm/internal/DefaultConstructorMarker;)V
+	public fun <init> (Ljava/lang/String;Lorg/pnfolder/pnlibrary/api/logging/LogLevel;)V
+	public synthetic fun <init> (Ljava/lang/String;Lorg/pnfolder/pnlibrary/api/logging/LogLevel;ILkotlin/jvm/internal/DefaultConstructorMarker;)V
 	public final fun component1 ()Ljava/lang/String;
-	public final fun component2 ()I
-	public final fun component3 ()Ljava/lang/String;
-	public final fun component4 ()Ljava/lang/String;
-	public final fun component5 ()Ljava/lang/String;
-	public final fun component6 ()Z
-	public final fun copy (Ljava/lang/String;ILjava/lang/String;Ljava/lang/String;Ljava/lang/String;Z)Lorg/pnfolder/pnlibrary/api/actions/ItemCondition;
-	public static synthetic fun copy$default (Lorg/pnfolder/pnlibrary/api/actions/ItemCondition;Ljava/lang/String;ILjava/lang/String;Ljava/lang/String;Ljava/lang/String;ZILjava/lang/Object;)Lorg/pnfolder/pnlibrary/api/actions/ItemCondition;
+	public final fun component2 ()Lorg/pnfolder/pnlibrary/api/logging/LogLevel;
+	public final fun copy (Ljava/lang/String;Lorg/pnfolder/pnlibrary/api/logging/LogLevel;)Lorg/pnfolder/pnlibrary/api/actions/builtin/LogAction;
+	public static synthetic fun copy$default (Lorg/pnfolder/pnlibrary/api/actions/builtin/LogAction;Ljava/lang/String;Lorg/pnfolder/pnlibrary/api/logging/LogLevel;ILjava/lang/Object;)Lorg/pnfolder/pnlibrary/api/actions/builtin/LogAction;
 	public fun equals (Ljava/lang/Object;)Z
-	public final fun getAmount ()I
-	public final fun getIgnoreCase ()Z
-	public final fun getLoreContains ()Ljava/lang/String;
-	public final fun getMaterial ()Ljava/lang/String;
-	public final fun getName ()Ljava/lang/String;
-	public final fun getNameContains ()Ljava/lang/String;
-	public fun hashCode ()I
-	public fun matches (Lorg/pnfolder/pnlibrary/api/actions/ActionContext;)Z
-	public fun toString ()Ljava/lang/String;
-}
-
-public final class org/pnfolder/pnlibrary/api/actions/ItemQuery {
-	public fun <init> (Ljava/lang/String;Ljava/lang/String;Ljava/lang/String;Ljava/lang/String;Z)V
-	public synthetic fun <init> (Ljava/lang/String;Ljava/lang/String;Ljava/lang/String;Ljava/lang/String;ZILkotlin/jvm/internal/DefaultConstructorMarker;)V
-	public final fun component1 ()Ljava/lang/String;
-	public final fun component2 ()Ljava/lang/String;
-	public final fun component3 ()Ljava/lang/String;
-	public final fun component4 ()Ljava/lang/String;
-	public final fun component5 ()Z
-	public final fun copy (Ljava/lang/String;Ljava/lang/String;Ljava/lang/String;Ljava/lang/String;Z)Lorg/pnfolder/pnlibrary/api/actions/ItemQuery;
-	public static synthetic fun copy$default (Lorg/pnfolder/pnlibrary/api/actions/ItemQuery;Ljava/lang/String;Ljava/lang/String;Ljava/lang/String;Ljava/lang/String;ZILjava/lang/Object;)Lorg/pnfolder/pnlibrary/api/actions/ItemQuery;
-	public fun equals (Ljava/lang/Object;)Z
-	public final fun getIgnoreCase ()Z
-	public final fun getLoreContains ()Ljava/lang/String;
-	public final fun getMaterial ()Ljava/lang/String;
-	public final fun getName ()Ljava/lang/String;
-	public final fun getNameContains ()Ljava/lang/String;
+	public fun execute (Lorg/pnfolder/pnlibrary/api/actions/ActionContext;)V
+	public final fun getLevel ()Lorg/pnfolder/pnlibrary/api/logging/LogLevel;
+	public final fun getText ()Ljava/lang/String;
 	public fun hashCode ()I
 	public fun toString ()Ljava/lang/String;
 }
 
-public final class org/pnfolder/pnlibrary/api/actions/LengthCondition : org/pnfolder/pnlibrary/api/actions/ActionCondition {
-	public fun <init> ()V
-	public fun <init> (Ljava/lang/String;II)V
-	public synthetic fun <init> (Ljava/lang/String;IIILkotlin/jvm/internal/DefaultConstructorMarker;)V
-	public final fun component1 ()Ljava/lang/String;
-	public final fun component2 ()I
-	public final fun component3 ()I
-	public final fun copy (Ljava/lang/String;II)Lorg/pnfolder/pnlibrary/api/actions/LengthCondition;
-	public static synthetic fun copy$default (Lorg/pnfolder/pnlibrary/api/actions/LengthCondition;Ljava/lang/String;IIILjava/lang/Object;)Lorg/pnfolder/pnlibrary/api/actions/LengthCondition;
-	public fun equals (Ljava/lang/Object;)Z
-	public final fun getInput ()Ljava/lang/String;
-	public final fun getMax ()I
-	public final fun getMin ()I
-	public fun hashCode ()I
-	public fun matches (Lorg/pnfolder/pnlibrary/api/actions/ActionContext;)Z
-	public fun toString ()Ljava/lang/String;
-}
-
-public abstract interface class org/pnfolder/pnlibrary/api/actions/LibraryAudience {
-	public static final field Companion Lorg/pnfolder/pnlibrary/api/actions/LibraryAudience$Companion;
-	public abstract fun actionBar (Lnet/kyori/adventure/text/Component;)V
-	public static fun dynamic (Ljava/util/function/Supplier;)Lorg/pnfolder/pnlibrary/api/actions/LibraryAudience;
-	public abstract fun playSound (Lnet/kyori/adventure/sound/Sound;)Z
-	public abstract fun sendMessage (Lnet/kyori/adventure/text/Component;)V
-	public fun showTitle (Lnet/kyori/adventure/text/Component;Lnet/kyori/adventure/text/Component;Ljava/time/Duration;Ljava/time/Duration;Ljava/time/Duration;)Z
-}
-
-public final class org/pnfolder/pnlibrary/api/actions/LibraryAudience$Companion {
-	public final fun dynamic (Ljava/util/function/Supplier;)Lorg/pnfolder/pnlibrary/api/actions/LibraryAudience;
-}
-
-public abstract interface class org/pnfolder/pnlibrary/api/actions/LibraryPlayer : org/pnfolder/pnlibrary/api/audiences/AudienceSender {
-	public abstract fun applyEffect (Lorg/pnfolder/pnlibrary/api/actions/PlayerEffect;)Z
-	public fun countItems (Lorg/pnfolder/pnlibrary/api/actions/ItemQuery;)Ljava/lang/Integer;
-	public fun distanceTo (Ljava/lang/String;DDD)Ljava/lang/Double;
-	public fun experience (Z)Ljava/lang/Double;
-	public fun getCapabilities ()Ljava/util/Set;
-	public fun getId ()Ljava/lang/String;
-	public abstract fun getName ()Ljava/lang/String;
-	public abstract fun getUniqueId ()Ljava/util/UUID;
-	public abstract fun hasPermission (Ljava/lang/String;)Z
-	public fun isConsole ()Z
-	public fun isPlayer ()Z
-	public fun runCommand (Ljava/lang/String;Z)Z
-	public abstract fun spawnParticle (Lorg/pnfolder/pnlibrary/api/actions/PlayerParticle;)Z
-}
-
-public final class org/pnfolder/pnlibrary/api/actions/MessageAction : org/pnfolder/pnlibrary/api/actions/Action {
+public final class org/pnfolder/pnlibrary/api/actions/builtin/MessageAction : org/pnfolder/pnlibrary/api/actions/Action {
 	public fun <init> ()V
 	public fun <init> (Ljava/util/List;Lorg/pnfolder/pnlibrary/api/text/ComponentSerializerType;Lorg/pnfolder/pnlibrary/api/actions/ActionTarget;)V
 	public synthetic fun <init> (Ljava/util/List;Lorg/pnfolder/pnlibrary/api/text/ComponentSerializerType;Lorg/pnfolder/pnlibrary/api/actions/ActionTarget;ILkotlin/jvm/internal/DefaultConstructorMarker;)V
 	public final fun component1 ()Ljava/util/List;
 	public final fun component2 ()Lorg/pnfolder/pnlibrary/api/text/ComponentSerializerType;
 	public final fun component3 ()Lorg/pnfolder/pnlibrary/api/actions/ActionTarget;
-	public final fun copy (Ljava/util/List;Lorg/pnfolder/pnlibrary/api/text/ComponentSerializerType;Lorg/pnfolder/pnlibrary/api/actions/ActionTarget;)Lorg/pnfolder/pnlibrary/api/actions/MessageAction;
-	public static synthetic fun copy$default (Lorg/pnfolder/pnlibrary/api/actions/MessageAction;Ljava/util/List;Lorg/pnfolder/pnlibrary/api/text/ComponentSerializerType;Lorg/pnfolder/pnlibrary/api/actions/ActionTarget;ILjava/lang/Object;)Lorg/pnfolder/pnlibrary/api/actions/MessageAction;
+	public final fun copy (Ljava/util/List;Lorg/pnfolder/pnlibrary/api/text/ComponentSerializerType;Lorg/pnfolder/pnlibrary/api/actions/ActionTarget;)Lorg/pnfolder/pnlibrary/api/actions/builtin/MessageAction;
+	public static synthetic fun copy$default (Lorg/pnfolder/pnlibrary/api/actions/builtin/MessageAction;Ljava/util/List;Lorg/pnfolder/pnlibrary/api/text/ComponentSerializerType;Lorg/pnfolder/pnlibrary/api/actions/ActionTarget;ILjava/lang/Object;)Lorg/pnfolder/pnlibrary/api/actions/builtin/MessageAction;
 	public fun equals (Ljava/lang/Object;)Z
 	public fun execute (Lorg/pnfolder/pnlibrary/api/actions/ActionContext;)V
 	public final fun getMessages ()Ljava/util/List;
@@ -397,42 +212,7 @@ public final class org/pnfolder/pnlibrary/api/actions/MessageAction : org/pnfold
 	public fun toString ()Ljava/lang/String;
 }
 
-public final class org/pnfolder/pnlibrary/api/actions/NearCondition : org/pnfolder/pnlibrary/api/actions/ActionCondition {
-	public fun <init> ()V
-	public fun <init> (Ljava/lang/String;D)V
-	public synthetic fun <init> (Ljava/lang/String;DILkotlin/jvm/internal/DefaultConstructorMarker;)V
-	public final fun component1 ()Ljava/lang/String;
-	public final fun component2 ()D
-	public final fun copy (Ljava/lang/String;D)Lorg/pnfolder/pnlibrary/api/actions/NearCondition;
-	public static synthetic fun copy$default (Lorg/pnfolder/pnlibrary/api/actions/NearCondition;Ljava/lang/String;DILjava/lang/Object;)Lorg/pnfolder/pnlibrary/api/actions/NearCondition;
-	public fun equals (Ljava/lang/Object;)Z
-	public final fun getDistance ()D
-	public final fun getLocation ()Ljava/lang/String;
-	public fun hashCode ()I
-	public fun matches (Lorg/pnfolder/pnlibrary/api/actions/ActionContext;)Z
-	public fun toString ()Ljava/lang/String;
-}
-
-public final class org/pnfolder/pnlibrary/api/actions/NoOpAction : org/pnfolder/pnlibrary/api/actions/Action {
-	public fun <init> ()V
-	public fun execute (Lorg/pnfolder/pnlibrary/api/actions/ActionContext;)V
-}
-
-public final class org/pnfolder/pnlibrary/api/actions/NotCondition : org/pnfolder/pnlibrary/api/actions/ActionCondition {
-	public fun <init> ()V
-	public fun <init> (Lorg/pnfolder/pnlibrary/api/actions/ActionCondition;)V
-	public synthetic fun <init> (Lorg/pnfolder/pnlibrary/api/actions/ActionCondition;ILkotlin/jvm/internal/DefaultConstructorMarker;)V
-	public final fun component1 ()Lorg/pnfolder/pnlibrary/api/actions/ActionCondition;
-	public final fun copy (Lorg/pnfolder/pnlibrary/api/actions/ActionCondition;)Lorg/pnfolder/pnlibrary/api/actions/NotCondition;
-	public static synthetic fun copy$default (Lorg/pnfolder/pnlibrary/api/actions/NotCondition;Lorg/pnfolder/pnlibrary/api/actions/ActionCondition;ILjava/lang/Object;)Lorg/pnfolder/pnlibrary/api/actions/NotCondition;
-	public fun equals (Ljava/lang/Object;)Z
-	public final fun getCheck ()Lorg/pnfolder/pnlibrary/api/actions/ActionCondition;
-	public fun hashCode ()I
-	public fun matches (Lorg/pnfolder/pnlibrary/api/actions/ActionContext;)Z
-	public fun toString ()Ljava/lang/String;
-}
-
-public final class org/pnfolder/pnlibrary/api/actions/ParticleAction : org/pnfolder/pnlibrary/api/actions/Action {
+public final class org/pnfolder/pnlibrary/api/actions/builtin/ParticleAction : org/pnfolder/pnlibrary/api/actions/Action {
 	public fun <init> ()V
 	public fun <init> (Ljava/lang/String;IDDDD)V
 	public synthetic fun <init> (Ljava/lang/String;IDDDDILkotlin/jvm/internal/DefaultConstructorMarker;)V
@@ -442,8 +222,8 @@ public final class org/pnfolder/pnlibrary/api/actions/ParticleAction : org/pnfol
 	public final fun component4 ()D
 	public final fun component5 ()D
 	public final fun component6 ()D
-	public final fun copy (Ljava/lang/String;IDDDD)Lorg/pnfolder/pnlibrary/api/actions/ParticleAction;
-	public static synthetic fun copy$default (Lorg/pnfolder/pnlibrary/api/actions/ParticleAction;Ljava/lang/String;IDDDDILjava/lang/Object;)Lorg/pnfolder/pnlibrary/api/actions/ParticleAction;
+	public final fun copy (Ljava/lang/String;IDDDD)Lorg/pnfolder/pnlibrary/api/actions/builtin/ParticleAction;
+	public static synthetic fun copy$default (Lorg/pnfolder/pnlibrary/api/actions/builtin/ParticleAction;Ljava/lang/String;IDDDDILjava/lang/Object;)Lorg/pnfolder/pnlibrary/api/actions/builtin/ParticleAction;
 	public fun equals (Ljava/lang/Object;)Z
 	public fun execute (Lorg/pnfolder/pnlibrary/api/actions/ActionContext;)V
 	public final fun getCount ()I
@@ -456,123 +236,8 @@ public final class org/pnfolder/pnlibrary/api/actions/ParticleAction : org/pnfol
 	public fun toString ()Ljava/lang/String;
 }
 
-public final class org/pnfolder/pnlibrary/api/actions/PermissionCondition : org/pnfolder/pnlibrary/api/actions/ActionCondition {
-	public fun <init> ()V
-	public fun <init> (Ljava/lang/String;)V
-	public synthetic fun <init> (Ljava/lang/String;ILkotlin/jvm/internal/DefaultConstructorMarker;)V
-	public final fun component1 ()Ljava/lang/String;
-	public final fun copy (Ljava/lang/String;)Lorg/pnfolder/pnlibrary/api/actions/PermissionCondition;
-	public static synthetic fun copy$default (Lorg/pnfolder/pnlibrary/api/actions/PermissionCondition;Ljava/lang/String;ILjava/lang/Object;)Lorg/pnfolder/pnlibrary/api/actions/PermissionCondition;
-	public fun equals (Ljava/lang/Object;)Z
-	public final fun getPermission ()Ljava/lang/String;
-	public fun hashCode ()I
-	public fun matches (Lorg/pnfolder/pnlibrary/api/actions/ActionContext;)Z
-	public fun toString ()Ljava/lang/String;
-}
-
-public final class org/pnfolder/pnlibrary/api/actions/PermissionsCondition : org/pnfolder/pnlibrary/api/actions/ActionCondition {
-	public fun <init> ()V
-	public fun <init> (Ljava/util/List;Ljava/lang/Integer;)V
-	public synthetic fun <init> (Ljava/util/List;Ljava/lang/Integer;ILkotlin/jvm/internal/DefaultConstructorMarker;)V
-	public final fun component1 ()Ljava/util/List;
-	public final fun component2 ()Ljava/lang/Integer;
-	public final fun copy (Ljava/util/List;Ljava/lang/Integer;)Lorg/pnfolder/pnlibrary/api/actions/PermissionsCondition;
-	public static synthetic fun copy$default (Lorg/pnfolder/pnlibrary/api/actions/PermissionsCondition;Ljava/util/List;Ljava/lang/Integer;ILjava/lang/Object;)Lorg/pnfolder/pnlibrary/api/actions/PermissionsCondition;
-	public fun equals (Ljava/lang/Object;)Z
-	public final fun getMinimum ()Ljava/lang/Integer;
-	public final fun getPermissions ()Ljava/util/List;
-	public fun hashCode ()I
-	public fun matches (Lorg/pnfolder/pnlibrary/api/actions/ActionContext;)Z
-	public fun toString ()Ljava/lang/String;
-}
-
-public final class org/pnfolder/pnlibrary/api/actions/PlayerCapability : java/lang/Enum {
-	public static final field ACTION_BAR Lorg/pnfolder/pnlibrary/api/actions/PlayerCapability;
-	public static final field EFFECT Lorg/pnfolder/pnlibrary/api/actions/PlayerCapability;
-	public static final field MESSAGE Lorg/pnfolder/pnlibrary/api/actions/PlayerCapability;
-	public static final field PARTICLE Lorg/pnfolder/pnlibrary/api/actions/PlayerCapability;
-	public static final field SOUND Lorg/pnfolder/pnlibrary/api/actions/PlayerCapability;
-	public static fun getEntries ()Lkotlin/enums/EnumEntries;
-	public static fun valueOf (Ljava/lang/String;)Lorg/pnfolder/pnlibrary/api/actions/PlayerCapability;
-	public static fun values ()[Lorg/pnfolder/pnlibrary/api/actions/PlayerCapability;
-}
-
-public final class org/pnfolder/pnlibrary/api/actions/PlayerEffect {
-	public fun <init> (Ljava/lang/String;Ljava/time/Duration;IZZZ)V
-	public synthetic fun <init> (Ljava/lang/String;Ljava/time/Duration;IZZZILkotlin/jvm/internal/DefaultConstructorMarker;)V
-	public final fun component1 ()Ljava/lang/String;
-	public final fun component2 ()Ljava/time/Duration;
-	public final fun component3 ()I
-	public final fun component4 ()Z
-	public final fun component5 ()Z
-	public final fun component6 ()Z
-	public final fun copy (Ljava/lang/String;Ljava/time/Duration;IZZZ)Lorg/pnfolder/pnlibrary/api/actions/PlayerEffect;
-	public static synthetic fun copy$default (Lorg/pnfolder/pnlibrary/api/actions/PlayerEffect;Ljava/lang/String;Ljava/time/Duration;IZZZILjava/lang/Object;)Lorg/pnfolder/pnlibrary/api/actions/PlayerEffect;
-	public fun equals (Ljava/lang/Object;)Z
-	public final fun getAmbient ()Z
-	public final fun getAmplifier ()I
-	public final fun getDuration ()Ljava/time/Duration;
-	public final fun getIcon ()Z
-	public final fun getKey ()Ljava/lang/String;
-	public final fun getParticles ()Z
-	public fun hashCode ()I
-	public fun toString ()Ljava/lang/String;
-}
-
-public final class org/pnfolder/pnlibrary/api/actions/PlayerParticle {
-	public fun <init> (Ljava/lang/String;IDDDD)V
-	public synthetic fun <init> (Ljava/lang/String;IDDDDILkotlin/jvm/internal/DefaultConstructorMarker;)V
-	public final fun component1 ()Ljava/lang/String;
-	public final fun component2 ()I
-	public final fun component3 ()D
-	public final fun component4 ()D
-	public final fun component5 ()D
-	public final fun component6 ()D
-	public final fun copy (Ljava/lang/String;IDDDD)Lorg/pnfolder/pnlibrary/api/actions/PlayerParticle;
-	public static synthetic fun copy$default (Lorg/pnfolder/pnlibrary/api/actions/PlayerParticle;Ljava/lang/String;IDDDDILjava/lang/Object;)Lorg/pnfolder/pnlibrary/api/actions/PlayerParticle;
-	public fun equals (Ljava/lang/Object;)Z
-	public final fun getCount ()I
-	public final fun getKey ()Ljava/lang/String;
-	public final fun getOffsetX ()D
-	public final fun getOffsetY ()D
-	public final fun getOffsetZ ()D
-	public final fun getSpeed ()D
-	public fun hashCode ()I
-	public fun toString ()Ljava/lang/String;
-}
-
-public final class org/pnfolder/pnlibrary/api/actions/RegexCondition : org/pnfolder/pnlibrary/api/actions/ActionCondition {
-	public fun <init> ()V
-	public fun <init> (Ljava/lang/String;Ljava/lang/String;)V
-	public synthetic fun <init> (Ljava/lang/String;Ljava/lang/String;ILkotlin/jvm/internal/DefaultConstructorMarker;)V
-	public final fun component1 ()Ljava/lang/String;
-	public final fun component2 ()Ljava/lang/String;
-	public final fun copy (Ljava/lang/String;Ljava/lang/String;)Lorg/pnfolder/pnlibrary/api/actions/RegexCondition;
-	public static synthetic fun copy$default (Lorg/pnfolder/pnlibrary/api/actions/RegexCondition;Ljava/lang/String;Ljava/lang/String;ILjava/lang/Object;)Lorg/pnfolder/pnlibrary/api/actions/RegexCondition;
-	public fun equals (Ljava/lang/Object;)Z
-	public final fun getInput ()Ljava/lang/String;
-	public final fun getRegex ()Ljava/lang/String;
-	public fun hashCode ()I
-	public fun matches (Lorg/pnfolder/pnlibrary/api/actions/ActionContext;)Z
-	public fun toString ()Ljava/lang/String;
-}
-
-public final class org/pnfolder/pnlibrary/api/actions/RemoveValueAction : org/pnfolder/pnlibrary/api/actions/Action {
-	public fun <init> ()V
-	public fun <init> (Ljava/lang/String;)V
-	public synthetic fun <init> (Ljava/lang/String;ILkotlin/jvm/internal/DefaultConstructorMarker;)V
-	public final fun component1 ()Ljava/lang/String;
-	public final fun copy (Ljava/lang/String;)Lorg/pnfolder/pnlibrary/api/actions/RemoveValueAction;
-	public static synthetic fun copy$default (Lorg/pnfolder/pnlibrary/api/actions/RemoveValueAction;Ljava/lang/String;ILjava/lang/Object;)Lorg/pnfolder/pnlibrary/api/actions/RemoveValueAction;
-	public fun equals (Ljava/lang/Object;)Z
-	public fun execute (Lorg/pnfolder/pnlibrary/api/actions/ActionContext;)V
-	public final fun getKey ()Ljava/lang/String;
-	public fun hashCode ()I
-	public fun toString ()Ljava/lang/String;
-}
-
-public final class org/pnfolder/pnlibrary/api/actions/RepeatAction : org/pnfolder/pnlibrary/api/actions/Action {
-	public static final field Companion Lorg/pnfolder/pnlibrary/api/actions/RepeatAction$Companion;
+public final class org/pnfolder/pnlibrary/api/actions/builtin/RepeatAction : org/pnfolder/pnlibrary/api/actions/Action {
+	public static final field Companion Lorg/pnfolder/pnlibrary/api/actions/builtin/RepeatAction$Companion;
 	public static final field MAX_TIMES I
 	public fun <init> ()V
 	public fun <init> (ILjava/time/Duration;Ljava/util/List;)V
@@ -580,8 +245,8 @@ public final class org/pnfolder/pnlibrary/api/actions/RepeatAction : org/pnfolde
 	public final fun component1 ()I
 	public final fun component2 ()Ljava/time/Duration;
 	public final fun component3 ()Ljava/util/List;
-	public final fun copy (ILjava/time/Duration;Ljava/util/List;)Lorg/pnfolder/pnlibrary/api/actions/RepeatAction;
-	public static synthetic fun copy$default (Lorg/pnfolder/pnlibrary/api/actions/RepeatAction;ILjava/time/Duration;Ljava/util/List;ILjava/lang/Object;)Lorg/pnfolder/pnlibrary/api/actions/RepeatAction;
+	public final fun copy (ILjava/time/Duration;Ljava/util/List;)Lorg/pnfolder/pnlibrary/api/actions/builtin/RepeatAction;
+	public static synthetic fun copy$default (Lorg/pnfolder/pnlibrary/api/actions/builtin/RepeatAction;ILjava/time/Duration;Ljava/util/List;ILjava/lang/Object;)Lorg/pnfolder/pnlibrary/api/actions/builtin/RepeatAction;
 	public fun equals (Ljava/lang/Object;)Z
 	public fun execute (Lorg/pnfolder/pnlibrary/api/actions/ActionContext;)V
 	public final fun getEvery ()Ljava/time/Duration;
@@ -591,65 +256,34 @@ public final class org/pnfolder/pnlibrary/api/actions/RepeatAction : org/pnfolde
 	public fun toString ()Ljava/lang/String;
 }
 
-public final class org/pnfolder/pnlibrary/api/actions/RepeatAction$Companion {
+public final class org/pnfolder/pnlibrary/api/actions/builtin/RepeatAction$Companion {
 }
 
-public final class org/pnfolder/pnlibrary/api/actions/Requirement {
+public final class org/pnfolder/pnlibrary/api/actions/builtin/RequireAction : org/pnfolder/pnlibrary/api/actions/Action {
 	public fun <init> ()V
-	public fun <init> (Lorg/pnfolder/pnlibrary/api/actions/ActionCondition;ZLjava/util/List;Ljava/util/List;)V
-	public synthetic fun <init> (Lorg/pnfolder/pnlibrary/api/actions/ActionCondition;ZLjava/util/List;Ljava/util/List;ILkotlin/jvm/internal/DefaultConstructorMarker;)V
-	public final fun component1 ()Lorg/pnfolder/pnlibrary/api/actions/ActionCondition;
-	public final fun component2 ()Z
+	public fun <init> (Lorg/pnfolder/pnlibrary/api/checks/Check;Lorg/pnfolder/pnlibrary/api/checks/Requirement;Ljava/util/List;)V
+	public synthetic fun <init> (Lorg/pnfolder/pnlibrary/api/checks/Check;Lorg/pnfolder/pnlibrary/api/checks/Requirement;Ljava/util/List;ILkotlin/jvm/internal/DefaultConstructorMarker;)V
+	public final fun component1 ()Lorg/pnfolder/pnlibrary/api/checks/Check;
+	public final fun component2 ()Lorg/pnfolder/pnlibrary/api/checks/Requirement;
 	public final fun component3 ()Ljava/util/List;
-	public final fun component4 ()Ljava/util/List;
-	public final fun copy (Lorg/pnfolder/pnlibrary/api/actions/ActionCondition;ZLjava/util/List;Ljava/util/List;)Lorg/pnfolder/pnlibrary/api/actions/Requirement;
-	public static synthetic fun copy$default (Lorg/pnfolder/pnlibrary/api/actions/Requirement;Lorg/pnfolder/pnlibrary/api/actions/ActionCondition;ZLjava/util/List;Ljava/util/List;ILjava/lang/Object;)Lorg/pnfolder/pnlibrary/api/actions/Requirement;
-	public fun equals (Ljava/lang/Object;)Z
-	public final fun getCheck ()Lorg/pnfolder/pnlibrary/api/actions/ActionCondition;
-	public final fun getDeny ()Ljava/util/List;
-	public final fun getOptional ()Z
-	public final fun getSuccess ()Ljava/util/List;
-	public fun hashCode ()I
-	public fun toString ()Ljava/lang/String;
-}
-
-public final class org/pnfolder/pnlibrary/api/actions/RequirementSerializer : org/pnfolder/pnlibrary/api/config/ConfigSerializer {
-	public static final field INSTANCE Lorg/pnfolder/pnlibrary/api/actions/RequirementSerializer;
-	public synthetic fun deserialize (Ljava/lang/Object;Lorg/pnfolder/pnlibrary/api/config/ConfigSerializationContext;)Ljava/lang/Object;
-	public fun deserialize (Ljava/lang/Object;Lorg/pnfolder/pnlibrary/api/config/ConfigSerializationContext;)Lorg/pnfolder/pnlibrary/api/actions/Requirement;
-	public synthetic fun serialize (Ljava/lang/Object;Lorg/pnfolder/pnlibrary/api/config/ConfigSerializationContext;)Ljava/lang/Object;
-	public fun serialize (Lorg/pnfolder/pnlibrary/api/actions/Requirement;Lorg/pnfolder/pnlibrary/api/config/ConfigSerializationContext;)Ljava/lang/Object;
-}
-
-public final class org/pnfolder/pnlibrary/api/actions/RequirementsAction : org/pnfolder/pnlibrary/api/actions/Action {
-	public fun <init> ()V
-	public fun <init> (Ljava/util/Map;IZLjava/util/List;Ljava/util/List;)V
-	public synthetic fun <init> (Ljava/util/Map;IZLjava/util/List;Ljava/util/List;ILkotlin/jvm/internal/DefaultConstructorMarker;)V
-	public final fun component1 ()Ljava/util/Map;
-	public final fun component2 ()I
-	public final fun component3 ()Z
-	public final fun component4 ()Ljava/util/List;
-	public final fun component5 ()Ljava/util/List;
-	public final fun copy (Ljava/util/Map;IZLjava/util/List;Ljava/util/List;)Lorg/pnfolder/pnlibrary/api/actions/RequirementsAction;
-	public static synthetic fun copy$default (Lorg/pnfolder/pnlibrary/api/actions/RequirementsAction;Ljava/util/Map;IZLjava/util/List;Ljava/util/List;ILjava/lang/Object;)Lorg/pnfolder/pnlibrary/api/actions/RequirementsAction;
+	public final fun copy (Lorg/pnfolder/pnlibrary/api/checks/Check;Lorg/pnfolder/pnlibrary/api/checks/Requirement;Ljava/util/List;)Lorg/pnfolder/pnlibrary/api/actions/builtin/RequireAction;
+	public static synthetic fun copy$default (Lorg/pnfolder/pnlibrary/api/actions/builtin/RequireAction;Lorg/pnfolder/pnlibrary/api/checks/Check;Lorg/pnfolder/pnlibrary/api/checks/Requirement;Ljava/util/List;ILjava/lang/Object;)Lorg/pnfolder/pnlibrary/api/actions/builtin/RequireAction;
 	public fun equals (Ljava/lang/Object;)Z
 	public fun execute (Lorg/pnfolder/pnlibrary/api/actions/ActionContext;)V
+	public final fun getCheck ()Lorg/pnfolder/pnlibrary/api/checks/Check;
 	public final fun getDeny ()Ljava/util/List;
-	public final fun getMinimum ()I
-	public final fun getRequirements ()Ljava/util/Map;
-	public final fun getStopAtSuccess ()Z
-	public final fun getSuccess ()Ljava/util/List;
+	public final fun getRequirement ()Lorg/pnfolder/pnlibrary/api/checks/Requirement;
 	public fun hashCode ()I
 	public fun toString ()Ljava/lang/String;
 }
 
-public final class org/pnfolder/pnlibrary/api/actions/RunAction : org/pnfolder/pnlibrary/api/actions/Action {
+public final class org/pnfolder/pnlibrary/api/actions/builtin/RunAction : org/pnfolder/pnlibrary/api/actions/Action {
 	public fun <init> ()V
 	public fun <init> (Ljava/lang/String;)V
 	public synthetic fun <init> (Ljava/lang/String;ILkotlin/jvm/internal/DefaultConstructorMarker;)V
 	public final fun component1 ()Ljava/lang/String;
-	public final fun copy (Ljava/lang/String;)Lorg/pnfolder/pnlibrary/api/actions/RunAction;
-	public static synthetic fun copy$default (Lorg/pnfolder/pnlibrary/api/actions/RunAction;Ljava/lang/String;ILjava/lang/Object;)Lorg/pnfolder/pnlibrary/api/actions/RunAction;
+	public final fun copy (Ljava/lang/String;)Lorg/pnfolder/pnlibrary/api/actions/builtin/RunAction;
+	public static synthetic fun copy$default (Lorg/pnfolder/pnlibrary/api/actions/builtin/RunAction;Ljava/lang/String;ILjava/lang/Object;)Lorg/pnfolder/pnlibrary/api/actions/builtin/RunAction;
 	public fun equals (Ljava/lang/Object;)Z
 	public fun execute (Lorg/pnfolder/pnlibrary/api/actions/ActionContext;)V
 	public final fun getName ()Ljava/lang/String;
@@ -657,37 +291,7 @@ public final class org/pnfolder/pnlibrary/api/actions/RunAction : org/pnfolder/p
 	public fun toString ()Ljava/lang/String;
 }
 
-public final class org/pnfolder/pnlibrary/api/actions/SequenceAction : org/pnfolder/pnlibrary/api/actions/Action {
-	public fun <init> ()V
-	public fun <init> (Ljava/util/List;)V
-	public synthetic fun <init> (Ljava/util/List;ILkotlin/jvm/internal/DefaultConstructorMarker;)V
-	public final fun component1 ()Ljava/util/List;
-	public final fun copy (Ljava/util/List;)Lorg/pnfolder/pnlibrary/api/actions/SequenceAction;
-	public static synthetic fun copy$default (Lorg/pnfolder/pnlibrary/api/actions/SequenceAction;Ljava/util/List;ILjava/lang/Object;)Lorg/pnfolder/pnlibrary/api/actions/SequenceAction;
-	public fun equals (Ljava/lang/Object;)Z
-	public fun execute (Lorg/pnfolder/pnlibrary/api/actions/ActionContext;)V
-	public final fun getSteps ()Ljava/util/List;
-	public fun hashCode ()I
-	public fun toString ()Ljava/lang/String;
-}
-
-public final class org/pnfolder/pnlibrary/api/actions/SetValueAction : org/pnfolder/pnlibrary/api/actions/Action {
-	public fun <init> ()V
-	public fun <init> (Ljava/lang/String;Ljava/lang/String;)V
-	public synthetic fun <init> (Ljava/lang/String;Ljava/lang/String;ILkotlin/jvm/internal/DefaultConstructorMarker;)V
-	public final fun component1 ()Ljava/lang/String;
-	public final fun component2 ()Ljava/lang/String;
-	public final fun copy (Ljava/lang/String;Ljava/lang/String;)Lorg/pnfolder/pnlibrary/api/actions/SetValueAction;
-	public static synthetic fun copy$default (Lorg/pnfolder/pnlibrary/api/actions/SetValueAction;Ljava/lang/String;Ljava/lang/String;ILjava/lang/Object;)Lorg/pnfolder/pnlibrary/api/actions/SetValueAction;
-	public fun equals (Ljava/lang/Object;)Z
-	public fun execute (Lorg/pnfolder/pnlibrary/api/actions/ActionContext;)V
-	public final fun getKey ()Ljava/lang/String;
-	public final fun getValue ()Ljava/lang/String;
-	public fun hashCode ()I
-	public fun toString ()Ljava/lang/String;
-}
-
-public final class org/pnfolder/pnlibrary/api/actions/SoundAction : org/pnfolder/pnlibrary/api/actions/Action {
+public final class org/pnfolder/pnlibrary/api/actions/builtin/SoundAction : org/pnfolder/pnlibrary/api/actions/Action {
 	public fun <init> ()V
 	public fun <init> (Ljava/lang/String;Lnet/kyori/adventure/sound/Sound$Source;FFLorg/pnfolder/pnlibrary/api/actions/ActionTarget;)V
 	public synthetic fun <init> (Ljava/lang/String;Lnet/kyori/adventure/sound/Sound$Source;FFLorg/pnfolder/pnlibrary/api/actions/ActionTarget;ILkotlin/jvm/internal/DefaultConstructorMarker;)V
@@ -696,8 +300,8 @@ public final class org/pnfolder/pnlibrary/api/actions/SoundAction : org/pnfolder
 	public final fun component3 ()F
 	public final fun component4 ()F
 	public final fun component5 ()Lorg/pnfolder/pnlibrary/api/actions/ActionTarget;
-	public final fun copy (Ljava/lang/String;Lnet/kyori/adventure/sound/Sound$Source;FFLorg/pnfolder/pnlibrary/api/actions/ActionTarget;)Lorg/pnfolder/pnlibrary/api/actions/SoundAction;
-	public static synthetic fun copy$default (Lorg/pnfolder/pnlibrary/api/actions/SoundAction;Ljava/lang/String;Lnet/kyori/adventure/sound/Sound$Source;FFLorg/pnfolder/pnlibrary/api/actions/ActionTarget;ILjava/lang/Object;)Lorg/pnfolder/pnlibrary/api/actions/SoundAction;
+	public final fun copy (Ljava/lang/String;Lnet/kyori/adventure/sound/Sound$Source;FFLorg/pnfolder/pnlibrary/api/actions/ActionTarget;)Lorg/pnfolder/pnlibrary/api/actions/builtin/SoundAction;
+	public static synthetic fun copy$default (Lorg/pnfolder/pnlibrary/api/actions/builtin/SoundAction;Ljava/lang/String;Lnet/kyori/adventure/sound/Sound$Source;FFLorg/pnfolder/pnlibrary/api/actions/ActionTarget;ILjava/lang/Object;)Lorg/pnfolder/pnlibrary/api/actions/builtin/SoundAction;
 	public fun equals (Ljava/lang/Object;)Z
 	public fun execute (Lorg/pnfolder/pnlibrary/api/actions/ActionContext;)V
 	public final fun getKey ()Ljava/lang/String;
@@ -709,32 +313,12 @@ public final class org/pnfolder/pnlibrary/api/actions/SoundAction : org/pnfolder
 	public fun toString ()Ljava/lang/String;
 }
 
-public final class org/pnfolder/pnlibrary/api/actions/StopAction : org/pnfolder/pnlibrary/api/actions/Action {
+public final class org/pnfolder/pnlibrary/api/actions/builtin/StopAction : org/pnfolder/pnlibrary/api/actions/Action {
 	public fun <init> ()V
 	public fun execute (Lorg/pnfolder/pnlibrary/api/actions/ActionContext;)V
 }
 
-public final class org/pnfolder/pnlibrary/api/actions/SwitchAction : org/pnfolder/pnlibrary/api/actions/Action {
-	public fun <init> ()V
-	public fun <init> (Ljava/lang/String;Ljava/util/Map;Ljava/util/List;Z)V
-	public synthetic fun <init> (Ljava/lang/String;Ljava/util/Map;Ljava/util/List;ZILkotlin/jvm/internal/DefaultConstructorMarker;)V
-	public final fun component1 ()Ljava/lang/String;
-	public final fun component2 ()Ljava/util/Map;
-	public final fun component3 ()Ljava/util/List;
-	public final fun component4 ()Z
-	public final fun copy (Ljava/lang/String;Ljava/util/Map;Ljava/util/List;Z)Lorg/pnfolder/pnlibrary/api/actions/SwitchAction;
-	public static synthetic fun copy$default (Lorg/pnfolder/pnlibrary/api/actions/SwitchAction;Ljava/lang/String;Ljava/util/Map;Ljava/util/List;ZILjava/lang/Object;)Lorg/pnfolder/pnlibrary/api/actions/SwitchAction;
-	public fun equals (Ljava/lang/Object;)Z
-	public fun execute (Lorg/pnfolder/pnlibrary/api/actions/ActionContext;)V
-	public final fun getCases ()Ljava/util/Map;
-	public final fun getDefaultActions ()Ljava/util/List;
-	public final fun getIgnoreCase ()Z
-	public final fun getSource ()Ljava/lang/String;
-	public fun hashCode ()I
-	public fun toString ()Ljava/lang/String;
-}
-
-public final class org/pnfolder/pnlibrary/api/actions/TitleAction : org/pnfolder/pnlibrary/api/actions/Action {
+public final class org/pnfolder/pnlibrary/api/actions/builtin/TitleAction : org/pnfolder/pnlibrary/api/actions/Action {
 	public fun <init> ()V
 	public fun <init> (Ljava/lang/String;Ljava/lang/String;Ljava/time/Duration;Ljava/time/Duration;Ljava/time/Duration;Lorg/pnfolder/pnlibrary/api/text/ComponentSerializerType;Lorg/pnfolder/pnlibrary/api/actions/ActionTarget;)V
 	public synthetic fun <init> (Ljava/lang/String;Ljava/lang/String;Ljava/time/Duration;Ljava/time/Duration;Ljava/time/Duration;Lorg/pnfolder/pnlibrary/api/text/ComponentSerializerType;Lorg/pnfolder/pnlibrary/api/actions/ActionTarget;ILkotlin/jvm/internal/DefaultConstructorMarker;)V
@@ -745,8 +329,8 @@ public final class org/pnfolder/pnlibrary/api/actions/TitleAction : org/pnfolder
 	public final fun component5 ()Ljava/time/Duration;
 	public final fun component6 ()Lorg/pnfolder/pnlibrary/api/text/ComponentSerializerType;
 	public final fun component7 ()Lorg/pnfolder/pnlibrary/api/actions/ActionTarget;
-	public final fun copy (Ljava/lang/String;Ljava/lang/String;Ljava/time/Duration;Ljava/time/Duration;Ljava/time/Duration;Lorg/pnfolder/pnlibrary/api/text/ComponentSerializerType;Lorg/pnfolder/pnlibrary/api/actions/ActionTarget;)Lorg/pnfolder/pnlibrary/api/actions/TitleAction;
-	public static synthetic fun copy$default (Lorg/pnfolder/pnlibrary/api/actions/TitleAction;Ljava/lang/String;Ljava/lang/String;Ljava/time/Duration;Ljava/time/Duration;Ljava/time/Duration;Lorg/pnfolder/pnlibrary/api/text/ComponentSerializerType;Lorg/pnfolder/pnlibrary/api/actions/ActionTarget;ILjava/lang/Object;)Lorg/pnfolder/pnlibrary/api/actions/TitleAction;
+	public final fun copy (Ljava/lang/String;Ljava/lang/String;Ljava/time/Duration;Ljava/time/Duration;Ljava/time/Duration;Lorg/pnfolder/pnlibrary/api/text/ComponentSerializerType;Lorg/pnfolder/pnlibrary/api/actions/ActionTarget;)Lorg/pnfolder/pnlibrary/api/actions/builtin/TitleAction;
+	public static synthetic fun copy$default (Lorg/pnfolder/pnlibrary/api/actions/builtin/TitleAction;Ljava/lang/String;Ljava/lang/String;Ljava/time/Duration;Ljava/time/Duration;Ljava/time/Duration;Lorg/pnfolder/pnlibrary/api/text/ComponentSerializerType;Lorg/pnfolder/pnlibrary/api/actions/ActionTarget;ILjava/lang/Object;)Lorg/pnfolder/pnlibrary/api/actions/builtin/TitleAction;
 	public fun equals (Ljava/lang/Object;)Z
 	public fun execute (Lorg/pnfolder/pnlibrary/api/actions/ActionContext;)V
 	public final fun getFadeIn ()Ljava/time/Duration;
@@ -760,81 +344,17 @@ public final class org/pnfolder/pnlibrary/api/actions/TitleAction : org/pnfolder
 	public fun toString ()Ljava/lang/String;
 }
 
-public final class org/pnfolder/pnlibrary/api/actions/TypeCondition : org/pnfolder/pnlibrary/api/actions/ActionCondition {
-	public fun <init> ()V
-	public fun <init> (Ljava/lang/String;Lorg/pnfolder/pnlibrary/api/actions/ValueType;)V
-	public synthetic fun <init> (Ljava/lang/String;Lorg/pnfolder/pnlibrary/api/actions/ValueType;ILkotlin/jvm/internal/DefaultConstructorMarker;)V
-	public final fun component1 ()Ljava/lang/String;
-	public final fun component2 ()Lorg/pnfolder/pnlibrary/api/actions/ValueType;
-	public final fun copy (Ljava/lang/String;Lorg/pnfolder/pnlibrary/api/actions/ValueType;)Lorg/pnfolder/pnlibrary/api/actions/TypeCondition;
-	public static synthetic fun copy$default (Lorg/pnfolder/pnlibrary/api/actions/TypeCondition;Ljava/lang/String;Lorg/pnfolder/pnlibrary/api/actions/ValueType;ILjava/lang/Object;)Lorg/pnfolder/pnlibrary/api/actions/TypeCondition;
-	public fun equals (Ljava/lang/Object;)Z
-	public final fun getInput ()Ljava/lang/String;
-	public final fun getType ()Lorg/pnfolder/pnlibrary/api/actions/ValueType;
-	public fun hashCode ()I
-	public fun matches (Lorg/pnfolder/pnlibrary/api/actions/ActionContext;)Z
-	public fun toString ()Ljava/lang/String;
+public final class org/pnfolder/pnlibrary/api/actions/internal/ActionLine : org/pnfolder/pnlibrary/api/config/ConfigTextParser {
+	public static final field INSTANCE Lorg/pnfolder/pnlibrary/api/actions/internal/ActionLine;
+	public final fun format (Lorg/pnfolder/pnlibrary/api/actions/Action;)Ljava/lang/String;
+	public final fun parse (Ljava/lang/String;)Lorg/pnfolder/pnlibrary/api/actions/Action;
+	public synthetic fun parse (Ljava/lang/String;Lorg/pnfolder/pnlibrary/api/config/ConfigSerializationContext;)Ljava/lang/Object;
+	public fun parse (Ljava/lang/String;Lorg/pnfolder/pnlibrary/api/config/ConfigSerializationContext;)Lorg/pnfolder/pnlibrary/api/actions/Action;
 }
 
-public final class org/pnfolder/pnlibrary/api/actions/UpdatePlaceholderAction : org/pnfolder/pnlibrary/api/actions/Action {
-	public fun <init> ()V
-	public fun <init> (Ljava/lang/String;Ljava/lang/String;Ljava/lang/String;)V
-	public synthetic fun <init> (Ljava/lang/String;Ljava/lang/String;Ljava/lang/String;ILkotlin/jvm/internal/DefaultConstructorMarker;)V
-	public final fun component1 ()Ljava/lang/String;
-	public final fun component2 ()Ljava/lang/String;
-	public final fun component3 ()Ljava/lang/String;
-	public final fun copy (Ljava/lang/String;Ljava/lang/String;Ljava/lang/String;)Lorg/pnfolder/pnlibrary/api/actions/UpdatePlaceholderAction;
-	public static synthetic fun copy$default (Lorg/pnfolder/pnlibrary/api/actions/UpdatePlaceholderAction;Ljava/lang/String;Ljava/lang/String;Ljava/lang/String;ILjava/lang/Object;)Lorg/pnfolder/pnlibrary/api/actions/UpdatePlaceholderAction;
-	public fun equals (Ljava/lang/Object;)Z
-	public fun execute (Lorg/pnfolder/pnlibrary/api/actions/ActionContext;)V
-	public final fun getReference ()Ljava/lang/String;
-	public final fun getResult ()Ljava/lang/String;
-	public final fun getValue ()Ljava/lang/String;
-	public fun hashCode ()I
-	public fun toString ()Ljava/lang/String;
-}
-
-public final class org/pnfolder/pnlibrary/api/actions/ValueCondition : org/pnfolder/pnlibrary/api/actions/ActionCondition {
-	public fun <init> ()V
-	public fun <init> (Ljava/lang/String;Lorg/pnfolder/pnlibrary/api/actions/Comparison;Ljava/lang/String;Z)V
-	public synthetic fun <init> (Ljava/lang/String;Lorg/pnfolder/pnlibrary/api/actions/Comparison;Ljava/lang/String;ZILkotlin/jvm/internal/DefaultConstructorMarker;)V
-	public final fun component1 ()Ljava/lang/String;
-	public final fun component2 ()Lorg/pnfolder/pnlibrary/api/actions/Comparison;
-	public final fun component3 ()Ljava/lang/String;
-	public final fun component4 ()Z
-	public final fun copy (Ljava/lang/String;Lorg/pnfolder/pnlibrary/api/actions/Comparison;Ljava/lang/String;Z)Lorg/pnfolder/pnlibrary/api/actions/ValueCondition;
-	public static synthetic fun copy$default (Lorg/pnfolder/pnlibrary/api/actions/ValueCondition;Ljava/lang/String;Lorg/pnfolder/pnlibrary/api/actions/Comparison;Ljava/lang/String;ZILjava/lang/Object;)Lorg/pnfolder/pnlibrary/api/actions/ValueCondition;
-	public fun equals (Ljava/lang/Object;)Z
-	public final fun getIgnoreCase ()Z
-	public final fun getOperator ()Lorg/pnfolder/pnlibrary/api/actions/Comparison;
-	public final fun getSource ()Ljava/lang/String;
-	public final fun getValue ()Ljava/lang/String;
-	public fun hashCode ()I
-	public fun matches (Lorg/pnfolder/pnlibrary/api/actions/ActionContext;)Z
-	public fun toString ()Ljava/lang/String;
-}
-
-public final class org/pnfolder/pnlibrary/api/actions/ValueType : java/lang/Enum {
-	public static final field DOUBLE Lorg/pnfolder/pnlibrary/api/actions/ValueType;
-	public static final field INT Lorg/pnfolder/pnlibrary/api/actions/ValueType;
-	public static final field UUID Lorg/pnfolder/pnlibrary/api/actions/ValueType;
-	public static fun getEntries ()Lkotlin/enums/EnumEntries;
-	public static fun valueOf (Ljava/lang/String;)Lorg/pnfolder/pnlibrary/api/actions/ValueType;
-	public static fun values ()[Lorg/pnfolder/pnlibrary/api/actions/ValueType;
-}
-
-public final class org/pnfolder/pnlibrary/api/actions/WaitAction : org/pnfolder/pnlibrary/api/actions/Action {
-	public fun <init> ()V
-	public fun <init> (Ljava/time/Duration;)V
-	public synthetic fun <init> (Ljava/time/Duration;ILkotlin/jvm/internal/DefaultConstructorMarker;)V
-	public final fun component1 ()Ljava/time/Duration;
-	public final fun copy (Ljava/time/Duration;)Lorg/pnfolder/pnlibrary/api/actions/WaitAction;
-	public static synthetic fun copy$default (Lorg/pnfolder/pnlibrary/api/actions/WaitAction;Ljava/time/Duration;ILjava/lang/Object;)Lorg/pnfolder/pnlibrary/api/actions/WaitAction;
-	public fun equals (Ljava/lang/Object;)Z
-	public fun execute (Lorg/pnfolder/pnlibrary/api/actions/ActionContext;)V
-	public final fun getDuration ()Ljava/time/Duration;
-	public fun hashCode ()I
-	public fun toString ()Ljava/lang/String;
+public final class org/pnfolder/pnlibrary/api/actions/internal/ActionNode : org/pnfolder/pnlibrary/api/config/ConfigNodeRewriter {
+	public static final field INSTANCE Lorg/pnfolder/pnlibrary/api/actions/internal/ActionNode;
+	public fun rewrite (Ljava/util/Map;Ljava/lang/String;)Ljava/util/Map;
 }
 
 public final class org/pnfolder/pnlibrary/api/activity/ActivityAttachment {
@@ -988,7 +508,7 @@ public final class org/pnfolder/pnlibrary/api/activity/ActivitySeverity : java/l
 	public static fun values ()[Lorg/pnfolder/pnlibrary/api/activity/ActivitySeverity;
 }
 
-public abstract interface class org/pnfolder/pnlibrary/api/audiences/AudienceSender : org/pnfolder/pnlibrary/api/actions/LibraryAudience {
+public abstract interface class org/pnfolder/pnlibrary/api/audiences/AudienceSender : org/pnfolder/pnlibrary/api/audiences/LibraryAudience {
 	public abstract fun getId ()Ljava/lang/String;
 	public abstract fun getName ()Ljava/lang/String;
 	public abstract fun hasPermission (Ljava/lang/String;)Z
@@ -997,12 +517,116 @@ public abstract interface class org/pnfolder/pnlibrary/api/audiences/AudienceSen
 }
 
 public abstract interface class org/pnfolder/pnlibrary/api/audiences/AudienceService {
-	public abstract fun all ()Lorg/pnfolder/pnlibrary/api/actions/LibraryAudience;
-	public abstract fun combine (Ljava/lang/Iterable;)Lorg/pnfolder/pnlibrary/api/actions/LibraryAudience;
+	public abstract fun all ()Lorg/pnfolder/pnlibrary/api/audiences/LibraryAudience;
+	public abstract fun combine (Ljava/lang/Iterable;)Lorg/pnfolder/pnlibrary/api/audiences/LibraryAudience;
 	public abstract fun console ()Lorg/pnfolder/pnlibrary/api/audiences/AudienceSender;
 	public abstract fun onlinePlayers ()Ljava/util/List;
-	public abstract fun player (Ljava/util/UUID;)Lorg/pnfolder/pnlibrary/api/actions/LibraryPlayer;
+	public abstract fun player (Ljava/util/UUID;)Lorg/pnfolder/pnlibrary/api/audiences/LibraryPlayer;
 	public abstract fun sender (Ljava/lang/Object;)Lorg/pnfolder/pnlibrary/api/audiences/AudienceSender;
+}
+
+public final class org/pnfolder/pnlibrary/api/audiences/ItemQuery {
+	public fun <init> (Ljava/lang/String;Ljava/lang/String;Ljava/lang/String;Ljava/lang/String;Z)V
+	public synthetic fun <init> (Ljava/lang/String;Ljava/lang/String;Ljava/lang/String;Ljava/lang/String;ZILkotlin/jvm/internal/DefaultConstructorMarker;)V
+	public final fun component1 ()Ljava/lang/String;
+	public final fun component2 ()Ljava/lang/String;
+	public final fun component3 ()Ljava/lang/String;
+	public final fun component4 ()Ljava/lang/String;
+	public final fun component5 ()Z
+	public final fun copy (Ljava/lang/String;Ljava/lang/String;Ljava/lang/String;Ljava/lang/String;Z)Lorg/pnfolder/pnlibrary/api/audiences/ItemQuery;
+	public static synthetic fun copy$default (Lorg/pnfolder/pnlibrary/api/audiences/ItemQuery;Ljava/lang/String;Ljava/lang/String;Ljava/lang/String;Ljava/lang/String;ZILjava/lang/Object;)Lorg/pnfolder/pnlibrary/api/audiences/ItemQuery;
+	public fun equals (Ljava/lang/Object;)Z
+	public final fun getIgnoreCase ()Z
+	public final fun getLoreContains ()Ljava/lang/String;
+	public final fun getMaterial ()Ljava/lang/String;
+	public final fun getName ()Ljava/lang/String;
+	public final fun getNameContains ()Ljava/lang/String;
+	public fun hashCode ()I
+	public fun toString ()Ljava/lang/String;
+}
+
+public abstract interface class org/pnfolder/pnlibrary/api/audiences/LibraryAudience {
+	public static final field Companion Lorg/pnfolder/pnlibrary/api/audiences/LibraryAudience$Companion;
+	public abstract fun actionBar (Lnet/kyori/adventure/text/Component;)V
+	public static fun dynamic (Ljava/util/function/Supplier;)Lorg/pnfolder/pnlibrary/api/audiences/LibraryAudience;
+	public abstract fun playSound (Lnet/kyori/adventure/sound/Sound;)Z
+	public abstract fun sendMessage (Lnet/kyori/adventure/text/Component;)V
+	public fun showTitle (Lnet/kyori/adventure/text/Component;Lnet/kyori/adventure/text/Component;Ljava/time/Duration;Ljava/time/Duration;Ljava/time/Duration;)Z
+}
+
+public final class org/pnfolder/pnlibrary/api/audiences/LibraryAudience$Companion {
+	public final fun dynamic (Ljava/util/function/Supplier;)Lorg/pnfolder/pnlibrary/api/audiences/LibraryAudience;
+}
+
+public abstract interface class org/pnfolder/pnlibrary/api/audiences/LibraryPlayer : org/pnfolder/pnlibrary/api/audiences/AudienceSender {
+	public abstract fun applyEffect (Lorg/pnfolder/pnlibrary/api/audiences/PlayerEffect;)Z
+	public fun countItems (Lorg/pnfolder/pnlibrary/api/audiences/ItemQuery;)Ljava/lang/Integer;
+	public fun distanceTo (Ljava/lang/String;DDD)Ljava/lang/Double;
+	public fun experience (Z)Ljava/lang/Double;
+	public fun getCapabilities ()Ljava/util/Set;
+	public fun getId ()Ljava/lang/String;
+	public abstract fun getName ()Ljava/lang/String;
+	public abstract fun getUniqueId ()Ljava/util/UUID;
+	public abstract fun hasPermission (Ljava/lang/String;)Z
+	public fun isConsole ()Z
+	public fun isPlayer ()Z
+	public fun runCommand (Ljava/lang/String;Z)Z
+	public abstract fun spawnParticle (Lorg/pnfolder/pnlibrary/api/audiences/PlayerParticle;)Z
+}
+
+public final class org/pnfolder/pnlibrary/api/audiences/PlayerCapability : java/lang/Enum {
+	public static final field ACTION_BAR Lorg/pnfolder/pnlibrary/api/audiences/PlayerCapability;
+	public static final field EFFECT Lorg/pnfolder/pnlibrary/api/audiences/PlayerCapability;
+	public static final field MESSAGE Lorg/pnfolder/pnlibrary/api/audiences/PlayerCapability;
+	public static final field PARTICLE Lorg/pnfolder/pnlibrary/api/audiences/PlayerCapability;
+	public static final field SOUND Lorg/pnfolder/pnlibrary/api/audiences/PlayerCapability;
+	public static fun getEntries ()Lkotlin/enums/EnumEntries;
+	public static fun valueOf (Ljava/lang/String;)Lorg/pnfolder/pnlibrary/api/audiences/PlayerCapability;
+	public static fun values ()[Lorg/pnfolder/pnlibrary/api/audiences/PlayerCapability;
+}
+
+public final class org/pnfolder/pnlibrary/api/audiences/PlayerEffect {
+	public fun <init> (Ljava/lang/String;Ljava/time/Duration;IZZZ)V
+	public synthetic fun <init> (Ljava/lang/String;Ljava/time/Duration;IZZZILkotlin/jvm/internal/DefaultConstructorMarker;)V
+	public final fun component1 ()Ljava/lang/String;
+	public final fun component2 ()Ljava/time/Duration;
+	public final fun component3 ()I
+	public final fun component4 ()Z
+	public final fun component5 ()Z
+	public final fun component6 ()Z
+	public final fun copy (Ljava/lang/String;Ljava/time/Duration;IZZZ)Lorg/pnfolder/pnlibrary/api/audiences/PlayerEffect;
+	public static synthetic fun copy$default (Lorg/pnfolder/pnlibrary/api/audiences/PlayerEffect;Ljava/lang/String;Ljava/time/Duration;IZZZILjava/lang/Object;)Lorg/pnfolder/pnlibrary/api/audiences/PlayerEffect;
+	public fun equals (Ljava/lang/Object;)Z
+	public final fun getAmbient ()Z
+	public final fun getAmplifier ()I
+	public final fun getDuration ()Ljava/time/Duration;
+	public final fun getIcon ()Z
+	public final fun getKey ()Ljava/lang/String;
+	public final fun getParticles ()Z
+	public fun hashCode ()I
+	public fun toString ()Ljava/lang/String;
+}
+
+public final class org/pnfolder/pnlibrary/api/audiences/PlayerParticle {
+	public fun <init> (Ljava/lang/String;IDDDD)V
+	public synthetic fun <init> (Ljava/lang/String;IDDDDILkotlin/jvm/internal/DefaultConstructorMarker;)V
+	public final fun component1 ()Ljava/lang/String;
+	public final fun component2 ()I
+	public final fun component3 ()D
+	public final fun component4 ()D
+	public final fun component5 ()D
+	public final fun component6 ()D
+	public final fun copy (Ljava/lang/String;IDDDD)Lorg/pnfolder/pnlibrary/api/audiences/PlayerParticle;
+	public static synthetic fun copy$default (Lorg/pnfolder/pnlibrary/api/audiences/PlayerParticle;Ljava/lang/String;IDDDDILjava/lang/Object;)Lorg/pnfolder/pnlibrary/api/audiences/PlayerParticle;
+	public fun equals (Ljava/lang/Object;)Z
+	public final fun getCount ()I
+	public final fun getKey ()Ljava/lang/String;
+	public final fun getOffsetX ()D
+	public final fun getOffsetY ()D
+	public final fun getOffsetZ ()D
+	public final fun getSpeed ()D
+	public fun hashCode ()I
+	public fun toString ()Ljava/lang/String;
 }
 
 public class org/pnfolder/pnlibrary/api/chat/ChatKit {
@@ -1111,6 +735,378 @@ public final class org/pnfolder/pnlibrary/api/chat/ChatTone : java/lang/Enum {
 	public static fun getEntries ()Lkotlin/enums/EnumEntries;
 	public static fun valueOf (Ljava/lang/String;)Lorg/pnfolder/pnlibrary/api/chat/ChatTone;
 	public static fun values ()[Lorg/pnfolder/pnlibrary/api/chat/ChatTone;
+}
+
+public abstract interface class org/pnfolder/pnlibrary/api/checks/Check {
+	public abstract fun matches (Lorg/pnfolder/pnlibrary/api/checks/CheckContext;)Z
+}
+
+public abstract interface class org/pnfolder/pnlibrary/api/checks/CheckContext {
+	public abstract fun getLogger ()Lorg/pnfolder/pnlibrary/api/logging/PnLogger;
+	public abstract fun getPlayer ()Lorg/pnfolder/pnlibrary/api/audiences/LibraryPlayer;
+	public abstract fun read (Ljava/lang/String;)Ljava/lang/Object;
+	public abstract fun requirement (Ljava/lang/String;)Lorg/pnfolder/pnlibrary/api/checks/Requirement;
+	public fun requirementNames ()Ljava/util/Set;
+	public abstract fun textOf (Ljava/lang/String;)Ljava/lang/String;
+	public abstract fun value (Ljava/lang/String;)Ljava/lang/Object;
+}
+
+public final class org/pnfolder/pnlibrary/api/checks/Requirement {
+	public static final field SINGLE Ljava/lang/String;
+	public fun <init> ()V
+	public fun <init> (Ljava/util/Map;IZLjava/util/List;Ljava/util/List;)V
+	public synthetic fun <init> (Ljava/util/Map;IZLjava/util/List;Ljava/util/List;ILkotlin/jvm/internal/DefaultConstructorMarker;)V
+	public fun <init> (Lorg/pnfolder/pnlibrary/api/checks/Check;Ljava/util/List;Ljava/util/List;)V
+	public synthetic fun <init> (Lorg/pnfolder/pnlibrary/api/checks/Check;Ljava/util/List;Ljava/util/List;ILkotlin/jvm/internal/DefaultConstructorMarker;)V
+	public final fun check (Lorg/pnfolder/pnlibrary/api/checks/CheckContext;)Z
+	public final fun component1 ()Ljava/util/Map;
+	public final fun component2 ()I
+	public final fun component3 ()Z
+	public final fun component4 ()Ljava/util/List;
+	public final fun component5 ()Ljava/util/List;
+	public final fun copy (Ljava/util/Map;IZLjava/util/List;Ljava/util/List;)Lorg/pnfolder/pnlibrary/api/checks/Requirement;
+	public static synthetic fun copy$default (Lorg/pnfolder/pnlibrary/api/checks/Requirement;Ljava/util/Map;IZLjava/util/List;Ljava/util/List;ILjava/lang/Object;)Lorg/pnfolder/pnlibrary/api/checks/Requirement;
+	public fun equals (Ljava/lang/Object;)Z
+	public final fun getDeny ()Ljava/util/List;
+	public final fun getEntries ()Ljava/util/Map;
+	public final fun getMinimum ()I
+	public final fun getStopAtSuccess ()Z
+	public final fun getSuccess ()Ljava/util/List;
+	public fun hashCode ()I
+	public final fun test (Lorg/pnfolder/pnlibrary/api/actions/ActionContext;)Z
+	public fun toString ()Ljava/lang/String;
+}
+
+public final class org/pnfolder/pnlibrary/api/checks/Requirement$Entry {
+	public fun <init> ()V
+	public fun <init> (Lorg/pnfolder/pnlibrary/api/checks/Check;ZLjava/util/List;Ljava/util/List;)V
+	public synthetic fun <init> (Lorg/pnfolder/pnlibrary/api/checks/Check;ZLjava/util/List;Ljava/util/List;ILkotlin/jvm/internal/DefaultConstructorMarker;)V
+	public final fun component1 ()Lorg/pnfolder/pnlibrary/api/checks/Check;
+	public final fun component2 ()Z
+	public final fun component3 ()Ljava/util/List;
+	public final fun component4 ()Ljava/util/List;
+	public final fun copy (Lorg/pnfolder/pnlibrary/api/checks/Check;ZLjava/util/List;Ljava/util/List;)Lorg/pnfolder/pnlibrary/api/checks/Requirement$Entry;
+	public static synthetic fun copy$default (Lorg/pnfolder/pnlibrary/api/checks/Requirement$Entry;Lorg/pnfolder/pnlibrary/api/checks/Check;ZLjava/util/List;Ljava/util/List;ILjava/lang/Object;)Lorg/pnfolder/pnlibrary/api/checks/Requirement$Entry;
+	public fun equals (Ljava/lang/Object;)Z
+	public final fun getCheck ()Lorg/pnfolder/pnlibrary/api/checks/Check;
+	public final fun getDeny ()Ljava/util/List;
+	public final fun getOptional ()Z
+	public final fun getSuccess ()Ljava/util/List;
+	public fun hashCode ()I
+	public fun toString ()Ljava/lang/String;
+}
+
+public final class org/pnfolder/pnlibrary/api/checks/builtin/AllCheck : org/pnfolder/pnlibrary/api/checks/Check {
+	public fun <init> ()V
+	public fun <init> (Ljava/util/List;)V
+	public synthetic fun <init> (Ljava/util/List;ILkotlin/jvm/internal/DefaultConstructorMarker;)V
+	public final fun component1 ()Ljava/util/List;
+	public final fun copy (Ljava/util/List;)Lorg/pnfolder/pnlibrary/api/checks/builtin/AllCheck;
+	public static synthetic fun copy$default (Lorg/pnfolder/pnlibrary/api/checks/builtin/AllCheck;Ljava/util/List;ILjava/lang/Object;)Lorg/pnfolder/pnlibrary/api/checks/builtin/AllCheck;
+	public fun equals (Ljava/lang/Object;)Z
+	public final fun getChecks ()Ljava/util/List;
+	public fun hashCode ()I
+	public fun matches (Lorg/pnfolder/pnlibrary/api/checks/CheckContext;)Z
+	public fun toString ()Ljava/lang/String;
+}
+
+public final class org/pnfolder/pnlibrary/api/checks/builtin/AnyCheck : org/pnfolder/pnlibrary/api/checks/Check {
+	public fun <init> ()V
+	public fun <init> (Ljava/util/List;)V
+	public synthetic fun <init> (Ljava/util/List;ILkotlin/jvm/internal/DefaultConstructorMarker;)V
+	public final fun component1 ()Ljava/util/List;
+	public final fun copy (Ljava/util/List;)Lorg/pnfolder/pnlibrary/api/checks/builtin/AnyCheck;
+	public static synthetic fun copy$default (Lorg/pnfolder/pnlibrary/api/checks/builtin/AnyCheck;Ljava/util/List;ILjava/lang/Object;)Lorg/pnfolder/pnlibrary/api/checks/builtin/AnyCheck;
+	public fun equals (Ljava/lang/Object;)Z
+	public final fun getChecks ()Ljava/util/List;
+	public fun hashCode ()I
+	public fun matches (Lorg/pnfolder/pnlibrary/api/checks/CheckContext;)Z
+	public fun toString ()Ljava/lang/String;
+}
+
+public final class org/pnfolder/pnlibrary/api/checks/builtin/AtLeastCheck : org/pnfolder/pnlibrary/api/checks/Check {
+	public fun <init> ()V
+	public fun <init> (ILjava/util/List;)V
+	public synthetic fun <init> (ILjava/util/List;ILkotlin/jvm/internal/DefaultConstructorMarker;)V
+	public final fun component1 ()I
+	public final fun component2 ()Ljava/util/List;
+	public final fun copy (ILjava/util/List;)Lorg/pnfolder/pnlibrary/api/checks/builtin/AtLeastCheck;
+	public static synthetic fun copy$default (Lorg/pnfolder/pnlibrary/api/checks/builtin/AtLeastCheck;ILjava/util/List;ILjava/lang/Object;)Lorg/pnfolder/pnlibrary/api/checks/builtin/AtLeastCheck;
+	public fun equals (Ljava/lang/Object;)Z
+	public final fun getChecks ()Ljava/util/List;
+	public final fun getCount ()I
+	public fun hashCode ()I
+	public fun matches (Lorg/pnfolder/pnlibrary/api/checks/CheckContext;)Z
+	public fun toString ()Ljava/lang/String;
+}
+
+public final class org/pnfolder/pnlibrary/api/checks/builtin/ChanceCheck : org/pnfolder/pnlibrary/api/checks/Check {
+	public fun <init> ()V
+	public fun <init> (D)V
+	public synthetic fun <init> (DILkotlin/jvm/internal/DefaultConstructorMarker;)V
+	public final fun component1 ()D
+	public final fun copy (D)Lorg/pnfolder/pnlibrary/api/checks/builtin/ChanceCheck;
+	public static synthetic fun copy$default (Lorg/pnfolder/pnlibrary/api/checks/builtin/ChanceCheck;DILjava/lang/Object;)Lorg/pnfolder/pnlibrary/api/checks/builtin/ChanceCheck;
+	public fun equals (Ljava/lang/Object;)Z
+	public final fun getProbability ()D
+	public fun hashCode ()I
+	public fun matches (Lorg/pnfolder/pnlibrary/api/checks/CheckContext;)Z
+	public fun toString ()Ljava/lang/String;
+}
+
+public final class org/pnfolder/pnlibrary/api/checks/builtin/Comparison : java/lang/Enum {
+	public static final field ABSENT Lorg/pnfolder/pnlibrary/api/checks/builtin/Comparison;
+	public static final field CONTAINS Lorg/pnfolder/pnlibrary/api/checks/builtin/Comparison;
+	public static final field EQUALS Lorg/pnfolder/pnlibrary/api/checks/builtin/Comparison;
+	public static final field GREATER_OR_EQUAL Lorg/pnfolder/pnlibrary/api/checks/builtin/Comparison;
+	public static final field GREATER_THAN Lorg/pnfolder/pnlibrary/api/checks/builtin/Comparison;
+	public static final field LESS_OR_EQUAL Lorg/pnfolder/pnlibrary/api/checks/builtin/Comparison;
+	public static final field LESS_THAN Lorg/pnfolder/pnlibrary/api/checks/builtin/Comparison;
+	public static final field NOT_EQUALS Lorg/pnfolder/pnlibrary/api/checks/builtin/Comparison;
+	public static final field NUMBER_EQUALS Lorg/pnfolder/pnlibrary/api/checks/builtin/Comparison;
+	public static final field NUMBER_NOT_EQUALS Lorg/pnfolder/pnlibrary/api/checks/builtin/Comparison;
+	public static final field PRESENT Lorg/pnfolder/pnlibrary/api/checks/builtin/Comparison;
+	public static fun getEntries ()Lkotlin/enums/EnumEntries;
+	public static fun valueOf (Ljava/lang/String;)Lorg/pnfolder/pnlibrary/api/checks/builtin/Comparison;
+	public static fun values ()[Lorg/pnfolder/pnlibrary/api/checks/builtin/Comparison;
+}
+
+public final class org/pnfolder/pnlibrary/api/checks/builtin/ExperienceCheck : org/pnfolder/pnlibrary/api/checks/Check {
+	public fun <init> ()V
+	public fun <init> (IZ)V
+	public synthetic fun <init> (IZILkotlin/jvm/internal/DefaultConstructorMarker;)V
+	public final fun component1 ()I
+	public final fun component2 ()Z
+	public final fun copy (IZ)Lorg/pnfolder/pnlibrary/api/checks/builtin/ExperienceCheck;
+	public static synthetic fun copy$default (Lorg/pnfolder/pnlibrary/api/checks/builtin/ExperienceCheck;IZILjava/lang/Object;)Lorg/pnfolder/pnlibrary/api/checks/builtin/ExperienceCheck;
+	public fun equals (Ljava/lang/Object;)Z
+	public final fun getAmount ()I
+	public final fun getLevel ()Z
+	public fun hashCode ()I
+	public fun matches (Lorg/pnfolder/pnlibrary/api/checks/CheckContext;)Z
+	public fun toString ()Ljava/lang/String;
+}
+
+public final class org/pnfolder/pnlibrary/api/checks/builtin/FlagCheck : org/pnfolder/pnlibrary/api/checks/Check {
+	public fun <init> ()V
+	public fun <init> (Ljava/lang/String;Z)V
+	public synthetic fun <init> (Ljava/lang/String;ZILkotlin/jvm/internal/DefaultConstructorMarker;)V
+	public final fun component1 ()Ljava/lang/String;
+	public final fun component2 ()Z
+	public final fun copy (Ljava/lang/String;Z)Lorg/pnfolder/pnlibrary/api/checks/builtin/FlagCheck;
+	public static synthetic fun copy$default (Lorg/pnfolder/pnlibrary/api/checks/builtin/FlagCheck;Ljava/lang/String;ZILjava/lang/Object;)Lorg/pnfolder/pnlibrary/api/checks/builtin/FlagCheck;
+	public fun equals (Ljava/lang/Object;)Z
+	public final fun getEnabled ()Z
+	public final fun getFlag ()Ljava/lang/String;
+	public fun hashCode ()I
+	public fun matches (Lorg/pnfolder/pnlibrary/api/checks/CheckContext;)Z
+	public fun toString ()Ljava/lang/String;
+}
+
+public final class org/pnfolder/pnlibrary/api/checks/builtin/ItemCheck : org/pnfolder/pnlibrary/api/checks/Check {
+	public fun <init> ()V
+	public fun <init> (Ljava/lang/String;ILjava/lang/String;Ljava/lang/String;Ljava/lang/String;Z)V
+	public synthetic fun <init> (Ljava/lang/String;ILjava/lang/String;Ljava/lang/String;Ljava/lang/String;ZILkotlin/jvm/internal/DefaultConstructorMarker;)V
+	public final fun component1 ()Ljava/lang/String;
+	public final fun component2 ()I
+	public final fun component3 ()Ljava/lang/String;
+	public final fun component4 ()Ljava/lang/String;
+	public final fun component5 ()Ljava/lang/String;
+	public final fun component6 ()Z
+	public final fun copy (Ljava/lang/String;ILjava/lang/String;Ljava/lang/String;Ljava/lang/String;Z)Lorg/pnfolder/pnlibrary/api/checks/builtin/ItemCheck;
+	public static synthetic fun copy$default (Lorg/pnfolder/pnlibrary/api/checks/builtin/ItemCheck;Ljava/lang/String;ILjava/lang/String;Ljava/lang/String;Ljava/lang/String;ZILjava/lang/Object;)Lorg/pnfolder/pnlibrary/api/checks/builtin/ItemCheck;
+	public fun equals (Ljava/lang/Object;)Z
+	public final fun getAmount ()I
+	public final fun getIgnoreCase ()Z
+	public final fun getLoreContains ()Ljava/lang/String;
+	public final fun getMaterial ()Ljava/lang/String;
+	public final fun getName ()Ljava/lang/String;
+	public final fun getNameContains ()Ljava/lang/String;
+	public fun hashCode ()I
+	public fun matches (Lorg/pnfolder/pnlibrary/api/checks/CheckContext;)Z
+	public fun toString ()Ljava/lang/String;
+}
+
+public final class org/pnfolder/pnlibrary/api/checks/builtin/LengthCheck : org/pnfolder/pnlibrary/api/checks/Check {
+	public fun <init> ()V
+	public fun <init> (Ljava/lang/String;II)V
+	public synthetic fun <init> (Ljava/lang/String;IIILkotlin/jvm/internal/DefaultConstructorMarker;)V
+	public final fun component1 ()Ljava/lang/String;
+	public final fun component2 ()I
+	public final fun component3 ()I
+	public final fun copy (Ljava/lang/String;II)Lorg/pnfolder/pnlibrary/api/checks/builtin/LengthCheck;
+	public static synthetic fun copy$default (Lorg/pnfolder/pnlibrary/api/checks/builtin/LengthCheck;Ljava/lang/String;IIILjava/lang/Object;)Lorg/pnfolder/pnlibrary/api/checks/builtin/LengthCheck;
+	public fun equals (Ljava/lang/Object;)Z
+	public final fun getInput ()Ljava/lang/String;
+	public final fun getMax ()I
+	public final fun getMin ()I
+	public fun hashCode ()I
+	public fun matches (Lorg/pnfolder/pnlibrary/api/checks/CheckContext;)Z
+	public fun toString ()Ljava/lang/String;
+}
+
+public final class org/pnfolder/pnlibrary/api/checks/builtin/NamedCheck : org/pnfolder/pnlibrary/api/checks/Check {
+	public fun <init> ()V
+	public fun <init> (Ljava/lang/String;)V
+	public synthetic fun <init> (Ljava/lang/String;ILkotlin/jvm/internal/DefaultConstructorMarker;)V
+	public final fun component1 ()Ljava/lang/String;
+	public final fun copy (Ljava/lang/String;)Lorg/pnfolder/pnlibrary/api/checks/builtin/NamedCheck;
+	public static synthetic fun copy$default (Lorg/pnfolder/pnlibrary/api/checks/builtin/NamedCheck;Ljava/lang/String;ILjava/lang/Object;)Lorg/pnfolder/pnlibrary/api/checks/builtin/NamedCheck;
+	public fun equals (Ljava/lang/Object;)Z
+	public final fun getName ()Ljava/lang/String;
+	public fun hashCode ()I
+	public fun matches (Lorg/pnfolder/pnlibrary/api/checks/CheckContext;)Z
+	public fun toString ()Ljava/lang/String;
+}
+
+public final class org/pnfolder/pnlibrary/api/checks/builtin/NearCheck : org/pnfolder/pnlibrary/api/checks/Check {
+	public fun <init> ()V
+	public fun <init> (Ljava/lang/String;D)V
+	public synthetic fun <init> (Ljava/lang/String;DILkotlin/jvm/internal/DefaultConstructorMarker;)V
+	public final fun component1 ()Ljava/lang/String;
+	public final fun component2 ()D
+	public final fun copy (Ljava/lang/String;D)Lorg/pnfolder/pnlibrary/api/checks/builtin/NearCheck;
+	public static synthetic fun copy$default (Lorg/pnfolder/pnlibrary/api/checks/builtin/NearCheck;Ljava/lang/String;DILjava/lang/Object;)Lorg/pnfolder/pnlibrary/api/checks/builtin/NearCheck;
+	public fun equals (Ljava/lang/Object;)Z
+	public final fun getDistance ()D
+	public final fun getLocation ()Ljava/lang/String;
+	public fun hashCode ()I
+	public fun matches (Lorg/pnfolder/pnlibrary/api/checks/CheckContext;)Z
+	public fun toString ()Ljava/lang/String;
+}
+
+public final class org/pnfolder/pnlibrary/api/checks/builtin/NotCheck : org/pnfolder/pnlibrary/api/checks/Check {
+	public fun <init> ()V
+	public fun <init> (Lorg/pnfolder/pnlibrary/api/checks/Check;)V
+	public synthetic fun <init> (Lorg/pnfolder/pnlibrary/api/checks/Check;ILkotlin/jvm/internal/DefaultConstructorMarker;)V
+	public final fun component1 ()Lorg/pnfolder/pnlibrary/api/checks/Check;
+	public final fun copy (Lorg/pnfolder/pnlibrary/api/checks/Check;)Lorg/pnfolder/pnlibrary/api/checks/builtin/NotCheck;
+	public static synthetic fun copy$default (Lorg/pnfolder/pnlibrary/api/checks/builtin/NotCheck;Lorg/pnfolder/pnlibrary/api/checks/Check;ILjava/lang/Object;)Lorg/pnfolder/pnlibrary/api/checks/builtin/NotCheck;
+	public fun equals (Ljava/lang/Object;)Z
+	public final fun getCheck ()Lorg/pnfolder/pnlibrary/api/checks/Check;
+	public fun hashCode ()I
+	public fun matches (Lorg/pnfolder/pnlibrary/api/checks/CheckContext;)Z
+	public fun toString ()Ljava/lang/String;
+}
+
+public final class org/pnfolder/pnlibrary/api/checks/builtin/PermissionCheck : org/pnfolder/pnlibrary/api/checks/Check {
+	public fun <init> ()V
+	public fun <init> (Ljava/lang/String;)V
+	public synthetic fun <init> (Ljava/lang/String;ILkotlin/jvm/internal/DefaultConstructorMarker;)V
+	public final fun component1 ()Ljava/lang/String;
+	public final fun copy (Ljava/lang/String;)Lorg/pnfolder/pnlibrary/api/checks/builtin/PermissionCheck;
+	public static synthetic fun copy$default (Lorg/pnfolder/pnlibrary/api/checks/builtin/PermissionCheck;Ljava/lang/String;ILjava/lang/Object;)Lorg/pnfolder/pnlibrary/api/checks/builtin/PermissionCheck;
+	public fun equals (Ljava/lang/Object;)Z
+	public final fun getPermission ()Ljava/lang/String;
+	public fun hashCode ()I
+	public fun matches (Lorg/pnfolder/pnlibrary/api/checks/CheckContext;)Z
+	public fun toString ()Ljava/lang/String;
+}
+
+public final class org/pnfolder/pnlibrary/api/checks/builtin/PermissionsCheck : org/pnfolder/pnlibrary/api/checks/Check {
+	public fun <init> ()V
+	public fun <init> (Ljava/util/List;Ljava/lang/Integer;)V
+	public synthetic fun <init> (Ljava/util/List;Ljava/lang/Integer;ILkotlin/jvm/internal/DefaultConstructorMarker;)V
+	public final fun component1 ()Ljava/util/List;
+	public final fun component2 ()Ljava/lang/Integer;
+	public final fun copy (Ljava/util/List;Ljava/lang/Integer;)Lorg/pnfolder/pnlibrary/api/checks/builtin/PermissionsCheck;
+	public static synthetic fun copy$default (Lorg/pnfolder/pnlibrary/api/checks/builtin/PermissionsCheck;Ljava/util/List;Ljava/lang/Integer;ILjava/lang/Object;)Lorg/pnfolder/pnlibrary/api/checks/builtin/PermissionsCheck;
+	public fun equals (Ljava/lang/Object;)Z
+	public final fun getMinimum ()Ljava/lang/Integer;
+	public final fun getPermissions ()Ljava/util/List;
+	public fun hashCode ()I
+	public fun matches (Lorg/pnfolder/pnlibrary/api/checks/CheckContext;)Z
+	public fun toString ()Ljava/lang/String;
+}
+
+public final class org/pnfolder/pnlibrary/api/checks/builtin/RegexCheck : org/pnfolder/pnlibrary/api/checks/Check {
+	public fun <init> ()V
+	public fun <init> (Ljava/lang/String;Ljava/lang/String;)V
+	public synthetic fun <init> (Ljava/lang/String;Ljava/lang/String;ILkotlin/jvm/internal/DefaultConstructorMarker;)V
+	public final fun component1 ()Ljava/lang/String;
+	public final fun component2 ()Ljava/lang/String;
+	public final fun copy (Ljava/lang/String;Ljava/lang/String;)Lorg/pnfolder/pnlibrary/api/checks/builtin/RegexCheck;
+	public static synthetic fun copy$default (Lorg/pnfolder/pnlibrary/api/checks/builtin/RegexCheck;Ljava/lang/String;Ljava/lang/String;ILjava/lang/Object;)Lorg/pnfolder/pnlibrary/api/checks/builtin/RegexCheck;
+	public fun equals (Ljava/lang/Object;)Z
+	public final fun getInput ()Ljava/lang/String;
+	public final fun getRegex ()Ljava/lang/String;
+	public fun hashCode ()I
+	public fun matches (Lorg/pnfolder/pnlibrary/api/checks/CheckContext;)Z
+	public fun toString ()Ljava/lang/String;
+}
+
+public final class org/pnfolder/pnlibrary/api/checks/builtin/TypeCheck : org/pnfolder/pnlibrary/api/checks/Check {
+	public fun <init> ()V
+	public fun <init> (Ljava/lang/String;Lorg/pnfolder/pnlibrary/api/checks/builtin/ValueType;)V
+	public synthetic fun <init> (Ljava/lang/String;Lorg/pnfolder/pnlibrary/api/checks/builtin/ValueType;ILkotlin/jvm/internal/DefaultConstructorMarker;)V
+	public final fun component1 ()Ljava/lang/String;
+	public final fun component2 ()Lorg/pnfolder/pnlibrary/api/checks/builtin/ValueType;
+	public final fun copy (Ljava/lang/String;Lorg/pnfolder/pnlibrary/api/checks/builtin/ValueType;)Lorg/pnfolder/pnlibrary/api/checks/builtin/TypeCheck;
+	public static synthetic fun copy$default (Lorg/pnfolder/pnlibrary/api/checks/builtin/TypeCheck;Ljava/lang/String;Lorg/pnfolder/pnlibrary/api/checks/builtin/ValueType;ILjava/lang/Object;)Lorg/pnfolder/pnlibrary/api/checks/builtin/TypeCheck;
+	public fun equals (Ljava/lang/Object;)Z
+	public final fun getInput ()Ljava/lang/String;
+	public final fun getType ()Lorg/pnfolder/pnlibrary/api/checks/builtin/ValueType;
+	public fun hashCode ()I
+	public fun matches (Lorg/pnfolder/pnlibrary/api/checks/CheckContext;)Z
+	public fun toString ()Ljava/lang/String;
+}
+
+public final class org/pnfolder/pnlibrary/api/checks/builtin/ValueCheck : org/pnfolder/pnlibrary/api/checks/Check {
+	public fun <init> ()V
+	public fun <init> (Ljava/lang/String;Lorg/pnfolder/pnlibrary/api/checks/builtin/Comparison;Ljava/lang/String;Z)V
+	public synthetic fun <init> (Ljava/lang/String;Lorg/pnfolder/pnlibrary/api/checks/builtin/Comparison;Ljava/lang/String;ZILkotlin/jvm/internal/DefaultConstructorMarker;)V
+	public final fun component1 ()Ljava/lang/String;
+	public final fun component2 ()Lorg/pnfolder/pnlibrary/api/checks/builtin/Comparison;
+	public final fun component3 ()Ljava/lang/String;
+	public final fun component4 ()Z
+	public final fun copy (Ljava/lang/String;Lorg/pnfolder/pnlibrary/api/checks/builtin/Comparison;Ljava/lang/String;Z)Lorg/pnfolder/pnlibrary/api/checks/builtin/ValueCheck;
+	public static synthetic fun copy$default (Lorg/pnfolder/pnlibrary/api/checks/builtin/ValueCheck;Ljava/lang/String;Lorg/pnfolder/pnlibrary/api/checks/builtin/Comparison;Ljava/lang/String;ZILjava/lang/Object;)Lorg/pnfolder/pnlibrary/api/checks/builtin/ValueCheck;
+	public fun equals (Ljava/lang/Object;)Z
+	public final fun getIgnoreCase ()Z
+	public final fun getOperator ()Lorg/pnfolder/pnlibrary/api/checks/builtin/Comparison;
+	public final fun getSource ()Ljava/lang/String;
+	public final fun getValue ()Ljava/lang/String;
+	public fun hashCode ()I
+	public fun matches (Lorg/pnfolder/pnlibrary/api/checks/CheckContext;)Z
+	public fun toString ()Ljava/lang/String;
+}
+
+public final class org/pnfolder/pnlibrary/api/checks/builtin/ValueType : java/lang/Enum {
+	public static final field DOUBLE Lorg/pnfolder/pnlibrary/api/checks/builtin/ValueType;
+	public static final field INT Lorg/pnfolder/pnlibrary/api/checks/builtin/ValueType;
+	public static final field UUID Lorg/pnfolder/pnlibrary/api/checks/builtin/ValueType;
+	public static fun getEntries ()Lkotlin/enums/EnumEntries;
+	public static fun valueOf (Ljava/lang/String;)Lorg/pnfolder/pnlibrary/api/checks/builtin/ValueType;
+	public static fun values ()[Lorg/pnfolder/pnlibrary/api/checks/builtin/ValueType;
+}
+
+public final class org/pnfolder/pnlibrary/api/checks/internal/CheckSerializer : org/pnfolder/pnlibrary/api/config/ConfigSerializer {
+	public static final field INSTANCE Lorg/pnfolder/pnlibrary/api/checks/internal/CheckSerializer;
+	public final fun describe (Lorg/pnfolder/pnlibrary/api/checks/Check;)Ljava/util/Map;
+	public synthetic fun deserialize (Ljava/lang/Object;Lorg/pnfolder/pnlibrary/api/config/ConfigSerializationContext;)Ljava/lang/Object;
+	public fun deserialize (Ljava/lang/Object;Lorg/pnfolder/pnlibrary/api/config/ConfigSerializationContext;)Lorg/pnfolder/pnlibrary/api/checks/Check;
+	public final fun parse (Ljava/util/Map;Ljava/util/Set;)Lorg/pnfolder/pnlibrary/api/checks/Check;
+	public static synthetic fun parse$default (Lorg/pnfolder/pnlibrary/api/checks/internal/CheckSerializer;Ljava/util/Map;Ljava/util/Set;ILjava/lang/Object;)Lorg/pnfolder/pnlibrary/api/checks/Check;
+	public final fun read (Ljava/lang/Object;Ljava/lang/String;)Lorg/pnfolder/pnlibrary/api/checks/Check;
+	public synthetic fun serialize (Ljava/lang/Object;Lorg/pnfolder/pnlibrary/api/config/ConfigSerializationContext;)Ljava/lang/Object;
+	public fun serialize (Lorg/pnfolder/pnlibrary/api/checks/Check;Lorg/pnfolder/pnlibrary/api/config/ConfigSerializationContext;)Ljava/lang/Object;
+	public final fun write (Lorg/pnfolder/pnlibrary/api/checks/Check;)Ljava/lang/Object;
+}
+
+public final class org/pnfolder/pnlibrary/api/checks/internal/RequirementEntrySerializer : org/pnfolder/pnlibrary/api/config/ConfigSerializer {
+	public static final field INSTANCE Lorg/pnfolder/pnlibrary/api/checks/internal/RequirementEntrySerializer;
+	public synthetic fun deserialize (Ljava/lang/Object;Lorg/pnfolder/pnlibrary/api/config/ConfigSerializationContext;)Ljava/lang/Object;
+	public fun deserialize (Ljava/lang/Object;Lorg/pnfolder/pnlibrary/api/config/ConfigSerializationContext;)Lorg/pnfolder/pnlibrary/api/checks/Requirement$Entry;
+	public synthetic fun serialize (Ljava/lang/Object;Lorg/pnfolder/pnlibrary/api/config/ConfigSerializationContext;)Ljava/lang/Object;
+	public fun serialize (Lorg/pnfolder/pnlibrary/api/checks/Requirement$Entry;Lorg/pnfolder/pnlibrary/api/config/ConfigSerializationContext;)Ljava/lang/Object;
+}
+
+public final class org/pnfolder/pnlibrary/api/checks/internal/RequirementSerializer : org/pnfolder/pnlibrary/api/config/ConfigSerializer {
+	public static final field INSTANCE Lorg/pnfolder/pnlibrary/api/checks/internal/RequirementSerializer;
+	public synthetic fun deserialize (Ljava/lang/Object;Lorg/pnfolder/pnlibrary/api/config/ConfigSerializationContext;)Ljava/lang/Object;
+	public fun deserialize (Ljava/lang/Object;Lorg/pnfolder/pnlibrary/api/config/ConfigSerializationContext;)Lorg/pnfolder/pnlibrary/api/checks/Requirement;
+	public synthetic fun serialize (Ljava/lang/Object;Lorg/pnfolder/pnlibrary/api/config/ConfigSerializationContext;)Ljava/lang/Object;
+	public fun serialize (Lorg/pnfolder/pnlibrary/api/checks/Requirement;Lorg/pnfolder/pnlibrary/api/config/ConfigSerializationContext;)Ljava/lang/Object;
 }
 
 public final class org/pnfolder/pnlibrary/api/commands/ArgumentSpec {

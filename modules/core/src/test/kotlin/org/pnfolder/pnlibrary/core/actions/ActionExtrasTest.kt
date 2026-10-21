@@ -12,22 +12,22 @@ import org.mockito.Mockito.mock
 import org.mockito.Mockito.mockingDetails
 import org.pnfolder.pnlibrary.api.actions.Action
 import org.pnfolder.pnlibrary.api.actions.ActionContext
-import org.pnfolder.pnlibrary.api.actions.ActionLine
 import org.pnfolder.pnlibrary.api.actions.ActionTarget
-import org.pnfolder.pnlibrary.api.actions.Comparison
-import org.pnfolder.pnlibrary.api.actions.LibraryAudience
-import org.pnfolder.pnlibrary.api.actions.LibraryPlayer
-import org.pnfolder.pnlibrary.api.actions.MessageAction
-import org.pnfolder.pnlibrary.api.actions.NotCondition
-import org.pnfolder.pnlibrary.api.actions.PermissionCondition
-import org.pnfolder.pnlibrary.api.actions.PlayerEffect
-import org.pnfolder.pnlibrary.api.actions.PlayerParticle
-import org.pnfolder.pnlibrary.api.actions.RegexCondition
-import org.pnfolder.pnlibrary.api.actions.RequirementSerializer
-import org.pnfolder.pnlibrary.api.actions.RunAction
-import org.pnfolder.pnlibrary.api.actions.TitleAction
-import org.pnfolder.pnlibrary.api.actions.ValueCondition
-import org.pnfolder.pnlibrary.api.actions.WaitAction
+import org.pnfolder.pnlibrary.api.actions.builtin.DelayAction
+import org.pnfolder.pnlibrary.api.actions.builtin.MessageAction
+import org.pnfolder.pnlibrary.api.actions.builtin.RunAction
+import org.pnfolder.pnlibrary.api.actions.builtin.TitleAction
+import org.pnfolder.pnlibrary.api.actions.internal.ActionLine
+import org.pnfolder.pnlibrary.api.audiences.LibraryAudience
+import org.pnfolder.pnlibrary.api.audiences.LibraryPlayer
+import org.pnfolder.pnlibrary.api.audiences.PlayerEffect
+import org.pnfolder.pnlibrary.api.audiences.PlayerParticle
+import org.pnfolder.pnlibrary.api.checks.builtin.Comparison
+import org.pnfolder.pnlibrary.api.checks.builtin.NotCheck
+import org.pnfolder.pnlibrary.api.checks.builtin.PermissionCheck
+import org.pnfolder.pnlibrary.api.checks.builtin.RegexCheck
+import org.pnfolder.pnlibrary.api.checks.builtin.ValueCheck
+import org.pnfolder.pnlibrary.api.checks.internal.RequirementSerializer
 import org.pnfolder.pnlibrary.api.config.ConfigSerializationContext
 import org.pnfolder.pnlibrary.api.logging.PnLogger
 import org.pnfolder.pnlibrary.api.tasks.TaskScope
@@ -57,15 +57,15 @@ class ActionExtrasTest {
     private fun requirement(vararg pairs: Pair<String, Any?>) = RequirementSerializer.deserialize(
         mapOf(*pairs),
         ConfigSerializationContext("test", Any::class.java, Any::class.java, emptyList(), null),
-    )
+    ).entries.values.single()
 
     // ---- [wait] ----
 
     @Test
     fun `wait tags read ticks and seconds in both spellings`() {
-        assertEquals(WaitAction(Duration.ofSeconds(2)), ActionLine.parse("[wait 2s]"))
-        assertEquals(WaitAction(Duration.ofSeconds(2)), ActionLine.parse("[wait] 40"))
-        assertEquals(WaitAction(Duration.ofMillis(500)), ActionLine.parse("[WAIT 10]"))
+        assertEquals(DelayAction(Duration.ofSeconds(2)), ActionLine.parse("[wait 2s]"))
+        assertEquals(DelayAction(Duration.ofSeconds(2)), ActionLine.parse("[wait] 40"))
+        assertEquals(DelayAction(Duration.ofMillis(500)), ActionLine.parse("[WAIT 10]"))
         assertThrows(IllegalArgumentException::class.java) { ActionLine.parse("[wait soon]") }
     }
 
@@ -73,7 +73,7 @@ class ActionExtrasTest {
     fun `a wait pauses only what comes after it`() {
         val ctx = context()
 
-        ctx.execute(listOf(say("before"), WaitAction(Duration.ofSeconds(2)), say("after")))
+        ctx.execute(listOf(say("before"), DelayAction(Duration.ofSeconds(2)), say("after")))
 
         assertEquals(listOf("before"), log)
         assertEquals(1, mockingDetails(tasks).invocations.count { it.method.name == "schedule" })
@@ -81,7 +81,7 @@ class ActionExtrasTest {
 
     @Test
     fun `a wait at the end schedules nothing`() {
-        context().execute(listOf(say("only"), WaitAction(Duration.ofSeconds(2))))
+        context().execute(listOf(say("only"), DelayAction(Duration.ofSeconds(2))))
 
         assertEquals(listOf("only"), log)
         assertEquals(0, mockingDetails(tasks).invocations.count { it.method.name == "schedule" })
@@ -177,7 +177,7 @@ class ActionExtrasTest {
     fun `an if line replaces the type and a short deny is a chat message`() {
         val req = requirement("if" to "%vault_eco_balance% >= 100", "deny" to "&cNeed 100 coins")
 
-        assertEquals(ValueCondition("%vault_eco_balance%", Comparison.GREATER_OR_EQUAL, "100"), req.check)
+        assertEquals(ValueCheck("%vault_eco_balance%", Comparison.GREATER_OR_EQUAL, "100"), req.check)
         assertEquals(listOf<Action>(MessageAction(listOf("&cNeed 100 coins"))), req.deny)
     }
 
@@ -195,9 +195,9 @@ class ActionExtrasTest {
         val req = RequirementSerializer.deserialize(
             "%x% < 5",
             ConfigSerializationContext("t", Any::class.java, Any::class.java, emptyList(), null),
-        )
+        ).entries.values.single()
 
-        assertEquals(ValueCondition("%x%", Comparison.LESS_THAN, "5"), req.check)
+        assertEquals(ValueCheck("%x%", Comparison.LESS_THAN, "5"), req.check)
         assertEquals(emptyList<Action>(), req.deny)
     }
 
@@ -206,16 +206,16 @@ class ActionExtrasTest {
         fun parse(text: String) = RequirementSerializer.deserialize(
             text,
             ConfigSerializationContext("t", Any::class.java, Any::class.java, emptyList(), null),
-        ).check
+        ).entries.values.single().check
 
-        assertEquals(ValueCondition("%a%", Comparison.NUMBER_EQUALS, "5"), parse("%a% == 5"))
-        assertEquals(ValueCondition("%a%", Comparison.GREATER_THAN, "5"), parse("%a%>5"))
-        assertEquals(ValueCondition("%rank%", Comparison.EQUALS, "vip", ignoreCase = true), parse("%rank% is vip"))
-        assertEquals(ValueCondition("%n%", Comparison.CONTAINS, "Al", ignoreCase = false), parse("%n% contains Al"))
-        assertEquals(RegexCondition("%code%", "[A-Z]{2}-\\d+"), parse("%code% matches [A-Z]{2}-\\d+"))
-        assertEquals(PermissionCondition("shop.use"), parse("permission shop.use"))
-        assertEquals(NotCondition(PermissionCondition("shop.banned")), parse("!permission shop.banned"))
-        assertEquals(NotCondition(PermissionCondition("shop.banned")), parse("not permission shop.banned"))
+        assertEquals(ValueCheck("%a%", Comparison.NUMBER_EQUALS, "5"), parse("%a% == 5"))
+        assertEquals(ValueCheck("%a%", Comparison.GREATER_THAN, "5"), parse("%a%>5"))
+        assertEquals(ValueCheck("%rank%", Comparison.EQUALS, "vip", ignoreCase = true), parse("%rank% is vip"))
+        assertEquals(ValueCheck("%n%", Comparison.CONTAINS, "Al", ignoreCase = false), parse("%n% contains Al"))
+        assertEquals(RegexCheck("%code%", "[A-Z]{2}-\\d+"), parse("%code% matches [A-Z]{2}-\\d+"))
+        assertEquals(PermissionCheck("shop.use"), parse("permission shop.use"))
+        assertEquals(NotCheck(PermissionCheck("shop.banned")), parse("!permission shop.banned"))
+        assertEquals(NotCheck(PermissionCheck("shop.banned")), parse("not permission shop.banned"))
     }
 
     @Test

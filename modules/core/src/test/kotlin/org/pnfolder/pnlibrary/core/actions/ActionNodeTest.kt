@@ -7,14 +7,14 @@ import org.junit.jupiter.api.Assertions.assertTrue
 import org.junit.jupiter.api.Test
 import org.junit.jupiter.api.io.TempDir
 import org.pnfolder.pnlibrary.api.actions.Action
-import org.pnfolder.pnlibrary.api.actions.ChanceCondition
-import org.pnfolder.pnlibrary.api.actions.ConditionalAction
-import org.pnfolder.pnlibrary.api.actions.DelayAction
-import org.pnfolder.pnlibrary.api.actions.MessageAction
-import org.pnfolder.pnlibrary.api.actions.PermissionCondition
-import org.pnfolder.pnlibrary.api.actions.RepeatAction
-import org.pnfolder.pnlibrary.api.actions.RunAction
-import org.pnfolder.pnlibrary.api.actions.SequenceAction
+import org.pnfolder.pnlibrary.api.actions.builtin.DelayAction
+import org.pnfolder.pnlibrary.api.actions.builtin.GroupAction
+import org.pnfolder.pnlibrary.api.actions.builtin.IfAction
+import org.pnfolder.pnlibrary.api.actions.builtin.MessageAction
+import org.pnfolder.pnlibrary.api.actions.builtin.RepeatAction
+import org.pnfolder.pnlibrary.api.actions.builtin.RunAction
+import org.pnfolder.pnlibrary.api.checks.builtin.ChanceCheck
+import org.pnfolder.pnlibrary.api.checks.builtin.PermissionCheck
 import org.pnfolder.pnlibrary.api.config.ConfigOptions
 import org.pnfolder.pnlibrary.api.config.yaml
 import org.pnfolder.pnlibrary.api.plugin.PluginId
@@ -79,19 +79,19 @@ class ActionNodeTest {
         assertEquals(MessageAction(listOf("Hello, %player_name%")), actions[0])
         assertEquals(DelayAction(Duration.ofSeconds(2), listOf(MessageAction(listOf("Later")))), actions[1])
         assertEquals(
-            ConditionalAction(allChecks = listOf(ChanceCondition(0.1)), thenActions = listOf(MessageAction(listOf("Lucky")))),
+            IfAction(ChanceCheck(0.1), listOf(MessageAction(listOf("Lucky")))),
             actions[2],
         )
         assertEquals(
-            ConditionalAction(
-                allChecks = listOf(PermissionCondition("group.vip")),
+            IfAction(
+                check = PermissionCheck("group.vip"),
                 thenActions = listOf(MessageAction(listOf("VIP"))),
                 elseActions = listOf(MessageAction(listOf("Buy VIP"))),
             ),
             actions[3],
         )
         assertEquals(RepeatAction(3, Duration.ofSeconds(1), listOf(MessageAction(listOf("Tick")))), actions[4])
-        assertEquals(SequenceAction(listOf(MessageAction(listOf("One")))), actions[5])
+        assertEquals(GroupAction(listOf(MessageAction(listOf("One")))), actions[5])
     }
 
     @Test
@@ -114,7 +114,7 @@ class ActionNodeTest {
         assertEquals(MessageAction(listOf("line")), actions[0])
         assertEquals(MessageAction(listOf("old")), actions[1])
         val delay = actions[2] as DelayAction
-        assertInstanceOf(ConditionalAction::class.java, delay.thenActions.single())
+        assertInstanceOf(IfAction::class.java, delay.thenActions.single())
     }
 
     @Test
@@ -139,7 +139,7 @@ class ActionNodeTest {
         )
 
         assertEquals(RunAction("refuse"), actions[0])
-        assertInstanceOf(SequenceAction::class.java, actions[1])
+        assertInstanceOf(GroupAction::class.java, actions[1])
     }
 
     @Test
@@ -157,8 +157,8 @@ class ActionNodeTest {
         )
 
         assertEquals(
-            ConditionalAction(
-                allChecks = listOf(ChanceCondition(0.25)),
+            IfAction(
+                check = ChanceCheck(0.25),
                 thenActions = listOf(MessageAction(listOf("Won"))),
                 elseActions = listOf(MessageAction(listOf("Lost"))),
             ),
@@ -174,9 +174,9 @@ class ActionNodeTest {
     }
 
     @Test
-    fun `a check that is not an object is rejected`() {
+    fun `a check that is neither a name nor an object is rejected`() {
         val error = assertThrows(IllegalArgumentException::class.java) {
-            load("buy:", "  - type: if", "    check: not-an-object-yet", "    do: []")
+            load("buy:", "  - type: if", "    check: 5", "    do: []")
         }
 
         assertTrue(error.message!!.contains("at buy[0]"), error.message)

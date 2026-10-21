@@ -1,6 +1,6 @@
 package org.pnfolder.pnlibrary.api.commands
 
-import org.pnfolder.pnlibrary.api.actions.LibraryPlayer
+import org.pnfolder.pnlibrary.api.audiences.LibraryPlayer
 import java.math.BigDecimal
 import java.util.Locale
 
