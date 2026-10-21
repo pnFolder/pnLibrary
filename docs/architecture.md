@@ -66,7 +66,8 @@ Velocity требует 17, Paper Brigadier и FastStats для Velocity тре�
 | `platforms/velocity/faststats` | мост FastStats для Velocity (Java 21) |
 | `distribution` | сборка jar-файлов и офлайн-установщика обновлений |
 | `examples/acceptance-bukkit` | приёмочный плагин на Java |
-| `tools/*` | скрипты релиза, проверки поколения API и приёмки |
+| `tools/release`, `tools/api` | скрипты, которые запускает CI: выпуск релиза и проверка поколения API |
+| `tools/support` | `decode_pnsupport.py`: расшифровка отчётов `/pndebug` |
 
 ## Пакеты `core`
 
