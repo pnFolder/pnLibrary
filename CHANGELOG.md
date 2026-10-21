@@ -1,5 +1,33 @@
 # Изменения
 
+## Действия и проверки (ломающие изменения)
+
+**Действия — только объекты с `type`**
+- Строки `[message] текст`, `<delay=…>`, `<chance=…>`, `[wait 2s]` больше не читаются. Ошибка показывает,
+  как записать то же действие через `type`.
+- Обёртки: `delay`, `chance`, `if`, `require`, `repeat`, `group` с действиями в `do:`. `delay` без `do`
+  ставит на паузу всё, что ниже.
+- `type: console` теперь команда от консоли (как в DeluxeMenus), запись в журнал — `type: log`.
+  `type: player` — команда от игрока.
+- Удалены `SwitchAction`, `NoOpAction`, `SetValueAction`, `CopyValueAction`, `RemoveValueAction`,
+  `UpdatePlaceholderAction`, `WaitAction` (это `DelayAction` без `do`), `ConditionalAction` (это `IfAction`),
+  `RequirementsAction` (это `RequireAction`). `SequenceAction` → `GroupAction`, `ConsoleLogAction` → `LogAction`.
+- Встроенные действия переехали в `api.actions.builtin`.
+
+**Проверки — отдельный пакет `api.checks`**
+- `ActionCondition` → `Check`, условия `*Condition` → `*Check` (`api.checks.builtin`).
+- Новые сочетания: `all`, `any`, `not`, `at-least`; проверка по имени (`check: has-100`).
+- `Requirement` — проверка с `deny` и `success`; плагин передаёт свой блок `checks:` в
+  `ActionService.context(..., checks = ...)`. `check(context)` — только ответ, `test(context)` — ответ и действия.
+
+**Пакеты**
+- `LibraryPlayer`, `LibraryAudience`, `PlayerEffect`, `PlayerParticle`, `ItemQuery` → `api.audiences`.
+- `DependencyBuilder`, `PluginDependency`, `DownloadPolicy`, `VersionConstraint`, `ExternalPluginDependency`,
+  `ExternalArtifact`, `ManagedProductDependency` → `api.dependencies`.
+- `MetricsBuilder`, `MetricsController` → `api.metrics`; `RemotePolicySettings`, `DenyAction`,
+  `PolicyErrorAction` → `api.remote`.
+- `api.updates`: релизы и план → `api.updates.release`, откаты и история → `api.updates.backup`.
+
 ## Порядок в структуре (ломающие изменения)
 
 **Bukkit API: только контракты**
