@@ -6,12 +6,8 @@ plugins {
 base { archivesName = "pnLibrary-bootstrap-bukkit" }
 
 dependencies {
-    implementation(project(":modules:console"))
+    api(project(":modules:bootstrap"))
     compileOnly(libs.spigot.api.v18)
-    implementation(libs.gson)
-
-    testImplementation(libs.junit.jupiter)
-    testRuntimeOnly(libs.junit.launcher)
 }
 
 java {

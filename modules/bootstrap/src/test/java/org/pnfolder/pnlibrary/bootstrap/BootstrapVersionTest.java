@@ -1,4 +1,4 @@
-package org.pnfolder.pnlibrary.bukkit.bootstrap;
+package org.pnfolder.pnlibrary.bootstrap;
 
 import org.junit.jupiter.api.Test;
 

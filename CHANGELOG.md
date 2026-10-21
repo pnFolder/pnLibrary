@@ -24,6 +24,14 @@
 **Модули**
 - `modules/design/console` → `modules/console`, артефакт `pnlibrary-console`.
 - `modules/bootstrap/bukkit` → `platforms/bukkit/bootstrap`, пакет `org.pnfolder.pnlibrary.bukkit.bootstrap`.
+
+**Встраиваемый установщик на всех платформах**
+- Общая часть в `modules/bootstrap` (`pnlibrary-bootstrap`), входы `pnlibrary-bootstrap-bukkit`, `-bungee`, `-velocity`
+  с одинаковым `PnLibraryBootstrap.ensureInstalled(..., "версия")` и `ensureCompatible(...)`.
+- Скачивается только `universal.jar`. Релиз теперь публикует и его.
+- На прокси скачанная pnLibrary подключается после перезапуска. Устаревшая версия получает понятную карточку
+  с командой обновления.
+- `BootstrapVersion` стал публичным.
 - `modules/internal/faststats-velocity` → `platforms/velocity/faststats`, пакет `org.pnfolder.pnlibrary.velocity.faststats`.
 
 **Удалено неиспользуемое**

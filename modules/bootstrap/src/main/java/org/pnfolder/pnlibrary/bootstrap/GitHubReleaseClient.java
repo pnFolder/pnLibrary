@@ -1,4 +1,4 @@
-package org.pnfolder.pnlibrary.bukkit.bootstrap;
+package org.pnfolder.pnlibrary.bootstrap;
 
 import com.google.gson.JsonArray;
 import com.google.gson.JsonElement;
@@ -19,7 +19,7 @@ final class GitHubReleaseClient {
 
     GitHubReleaseClient(BootstrapOptions options) { this.options = options; }
 
-    Release release() throws IOException {
+    LibraryRelease release() throws IOException {
         String root = "https://api.github.com/repos/" + options.repositoryOwner() + "/" + options.repositoryName();
         JsonObject stable = readJson(root + "/releases/latest");
         String stableVersion = version(stable);
@@ -47,22 +47,23 @@ final class GitHubReleaseClient {
         }
     }
 
-    private Release parse(JsonObject release, boolean stable) {
+    /** The universal jar of the release; it works on every platform. */
+    private LibraryRelease parse(JsonObject release, boolean stable) {
         JsonArray assets = release.getAsJsonArray("assets");
         if (assets == null) throw new IllegalStateException("GitHub release has no assets");
         for (JsonElement element : assets) {
             JsonObject asset = element.getAsJsonObject();
             String name = string(asset, "name");
-            if (!name.matches("(?i)^pnLibrary-.*-bukkit-.*\\.jar$")) continue;
+            if (!BootstrapPlatform.isUniversal(name)) continue;
             String digest = string(asset, "digest");
             if (digest == null || !digest.matches("(?i)^sha256:[0-9a-f]{64}$")) continue;
             URI uri = URI.create(string(asset, "browser_download_url"));
             if (!"https".equalsIgnoreCase(uri.getScheme()) || uri.getHost() == null) continue;
             long size = asset.has("size") ? asset.get("size").getAsLong() : -1;
             if (size < 1 || size > options.maximumBytes()) continue;
-            return new Release(version(release), name, uri, digest.substring(7).toLowerCase(Locale.ROOT), size, stable);
+            return new LibraryRelease(version(release), name, uri, digest.substring(7).toLowerCase(Locale.ROOT), size, stable);
         }
-        throw new IllegalStateException("release has no verified Bukkit pnLibrary JAR");
+        throw new IllegalStateException("release " + version(release) + " has no verified universal pnLibrary JAR");
     }
 
     private JsonObject readJson(String url) throws IOException {
@@ -83,7 +84,7 @@ final class GitHubReleaseClient {
         connection.setReadTimeout(30_000);
         connection.setInstanceFollowRedirects(true);
         connection.setRequestProperty("Accept", accept);
-        connection.setRequestProperty("User-Agent", "pnLibrary-bootstrap-bukkit");
+        connection.setRequestProperty("User-Agent", "pnLibrary-bootstrap");
         int status = connection.getResponseCode();
         if (status < 200 || status >= 300) {
             connection.disconnect();
@@ -114,23 +115,5 @@ final class GitHubReleaseClient {
     private static String string(JsonObject value, String name) {
         JsonElement element = value.get(name);
         return element == null || element.isJsonNull() ? null : element.getAsString();
-    }
-
-    static final class Release {
-        final String version;
-        final String fileName;
-        final URI uri;
-        final String sha256;
-        final long size;
-        final boolean stable;
-
-        Release(String version, String fileName, URI uri, String sha256, long size, boolean stable) {
-            this.version = version;
-            this.fileName = fileName;
-            this.uri = uri;
-            this.sha256 = sha256;
-            this.size = size;
-            this.stable = stable;
-        }
     }
 }

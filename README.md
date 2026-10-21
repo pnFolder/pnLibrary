@@ -85,6 +85,6 @@ API содержит только интерфейсы и модели, реал
 - [Конфигурации](docs/configuration.md)
 - [Обновления: команды, права, откат](docs/updates.md)
 - [Валюта](docs/currency.md)
-- [Встраиваемый установщик](platforms/bukkit/bootstrap/README.md)
+- [Встраиваемый установщик для всех платформ](modules/bootstrap/README.md)
 - [Консольные карточки](modules/console/README.md)
 - [Примеры](examples/demo-bukkit/README.md)

@@ -1,13 +1,14 @@
-package org.pnfolder.pnlibrary.bukkit.bootstrap;
+package org.pnfolder.pnlibrary.bootstrap;
 
 import java.util.Objects;
 
-/** Immutable settings for embedding the pnLibrary Bukkit bootstrapper. */
+/** Immutable settings of the embedded pnLibrary installer, shared by every platform. */
 public final class BootstrapOptions {
     private final String minimumVersion;
     private final String repositoryOwner;
     private final String repositoryName;
     private final long maximumBytes;
+    private final int restartCountdown;
 
     private BootstrapOptions(Builder builder) {
         this.minimumVersion = BootstrapVersion.normalize(builder.minimumVersion);
@@ -15,6 +16,10 @@ public final class BootstrapOptions {
         this.repositoryName = part(builder.repositoryName, "repositoryName");
         if (builder.maximumBytes < 1) throw new IllegalArgumentException("maximumBytes must be positive");
         this.maximumBytes = builder.maximumBytes;
+        if (builder.restartCountdown < 0 || builder.restartCountdown > 300) {
+            throw new IllegalArgumentException("restartCountdown must be between 0 and 300 seconds");
+        }
+        this.restartCountdown = builder.restartCountdown;
     }
 
     /** Returns the minimum required library version.
@@ -32,6 +37,10 @@ public final class BootstrapOptions {
     /** Returns the download size limit.
      * @return the maximum number of bytes accepted for a downloaded library JAR */
     public long maximumBytes() { return maximumBytes; }
+
+    /** Returns the countdown before a proxy stops itself after installing pnLibrary.
+     * @return seconds, or {@code 0} when the proxy is never stopped automatically */
+    public int restartCountdown() { return restartCountdown; }
 
     /**
      * Creates an options builder that requires at least {@code minimumVersion}.
@@ -53,6 +62,7 @@ public final class BootstrapOptions {
         private String repositoryOwner = "pnFolder";
         private String repositoryName = "pnLibrary";
         private long maximumBytes = 512L * 1024L * 1024L;
+        private int restartCountdown;
 
         private Builder(String minimumVersion) { this.minimumVersion = minimumVersion; }
 
@@ -77,6 +87,19 @@ public final class BootstrapOptions {
          */
         public Builder maximumBytes(long value) {
             this.maximumBytes = value;
+            return this;
+        }
+
+        /**
+         * On BungeeCord and Velocity, stops the proxy {@code seconds} after pnLibrary was downloaded, counting down in
+         * the console and to online players, so that the hosting panel or start script brings it back with pnLibrary.
+         * Off by default: then the console shows the stop command to type when convenient. Bukkit never needs it.
+         *
+         * @param seconds countdown from 1 through 300; {@code 0} turns it off
+         * @return this builder
+         */
+        public Builder restartCountdown(int seconds) {
+            this.restartCountdown = seconds;
             return this;
         }
 

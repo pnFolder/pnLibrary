@@ -1,10 +1,10 @@
-package org.pnfolder.pnlibrary.bukkit.bootstrap;
+package org.pnfolder.pnlibrary.bootstrap;
 
 import java.util.regex.Matcher;
 import java.util.regex.Pattern;
 
-/** SemVer comparison available before pnLibrary or a Kotlin runtime is installed. */
-final class BootstrapVersion {
+/** Semantic version comparison that works before pnLibrary or a Kotlin runtime is installed. */
+public final class BootstrapVersion {
     private static final Pattern VERSION = Pattern.compile(
             "(0|[1-9]\\d*)\\.(0|[1-9]\\d*)\\.(0|[1-9]\\d*)"
                     + "(?:-([0-9A-Za-z-]+(?:\\.[0-9A-Za-z-]+)*))?"
@@ -13,7 +13,14 @@ final class BootstrapVersion {
 
     private BootstrapVersion() {}
 
-    static String normalize(String value) {
+    /**
+     * Validates [value] as a semantic version and removes a leading {@code v}.
+     *
+     * @param value version such as {@code 1.2.0}, {@code v1.2.0} or {@code 1.2.0-beta.1}
+     * @return the normalized version
+     * @throws IllegalArgumentException when the value is not a semantic version
+     */
+    public static String normalize(String value) {
         if (value == null) throw new IllegalArgumentException("version is required");
         String normalized = value.trim();
         if (normalized.startsWith("v") || normalized.startsWith("V")) normalized = normalized.substring(1);
@@ -31,7 +38,14 @@ final class BootstrapVersion {
         return normalized;
     }
 
-    static boolean isAtLeast(String actual, String required) {
+    /**
+     * Compares two semantic versions; a pre-release is older than its release and build metadata is ignored.
+     *
+     * @param actual version that is present
+     * @param required lowest acceptable version
+     * @return {@code true} when {@code actual} is {@code required} or newer
+     */
+    public static boolean isAtLeast(String actual, String required) {
         String[] left = parts(actual);
         String[] right = parts(required);
         String[] leftCore = left[0].split("\\.");
