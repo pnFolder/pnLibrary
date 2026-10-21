@@ -4,7 +4,8 @@ import org.junit.jupiter.api.Assertions.assertEquals
 import org.junit.jupiter.api.Assertions.assertSame
 import org.junit.jupiter.api.Assertions.assertThrows
 import org.junit.jupiter.api.Test
-import org.pnfolder.pnlibrary.api.plugin.PluginDependency
+import org.pnfolder.pnlibrary.api.dependencies.PluginDependency
+import org.pnfolder.pnlibrary.api.updates.release.ReleaseSummary
 import java.util.Collections
 
 class UpdateApiConsistencyTest {

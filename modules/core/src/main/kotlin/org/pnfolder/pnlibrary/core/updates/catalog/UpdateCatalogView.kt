@@ -1,9 +1,9 @@
 package org.pnfolder.pnlibrary.core.updates.catalog
 
 import net.kyori.adventure.text.Component
-import org.pnfolder.pnlibrary.api.updates.UpdateBackup
+import org.pnfolder.pnlibrary.api.updates.backup.UpdateBackup
 import org.pnfolder.pnlibrary.api.updates.UpdateChannel
-import org.pnfolder.pnlibrary.api.updates.UpdateHistoryEntry
+import org.pnfolder.pnlibrary.api.updates.backup.UpdateHistoryEntry
 import org.pnfolder.pnlibrary.api.updates.UpdateSnapshot
 import org.pnfolder.pnlibrary.api.chat.ChatKit
 import org.pnfolder.pnlibrary.api.chat.ChatNotice

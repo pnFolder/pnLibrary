@@ -3,6 +3,7 @@ package org.pnfolder.pnlibrary.core.runtime
 import org.junit.jupiter.api.Assertions.assertEquals
 import org.junit.jupiter.api.Assertions.assertTrue
 import org.junit.jupiter.api.Test
+import org.pnfolder.pnlibrary.core.runtime.details.RuntimeAnalytics
 
 class RuntimeAnalyticsTest {
     @Test

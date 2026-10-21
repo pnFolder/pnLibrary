@@ -9,7 +9,7 @@ import org.pnfolder.pnlibrary.api.runtime.PnLibraryConfig
 import org.pnfolder.pnlibrary.core.diagnostics.DiagnosticCommandEvent
 import org.pnfolder.pnlibrary.core.diagnostics.DiagnosticCommandExecutor
 import org.pnfolder.pnlibrary.core.runtime.PnLibraryLauncher
-import org.pnfolder.pnlibrary.core.runtime.toRuntimeContext
+import org.pnfolder.pnlibrary.core.runtime.platform.toRuntimeContext
 import org.pnfolder.pnlibrary.spi.platform.PlatformAdapter
 import org.pnfolder.pnlibrary.spi.tasks.PlatformTaskAdapter
 import org.pnfolder.pnlibrary.spi.tasks.PlatformTaskHandle

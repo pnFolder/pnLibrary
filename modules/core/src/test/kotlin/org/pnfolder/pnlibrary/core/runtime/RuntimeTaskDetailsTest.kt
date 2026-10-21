@@ -6,6 +6,7 @@ import org.pnfolder.pnlibrary.api.tasks.TaskExecution
 import org.pnfolder.pnlibrary.api.tasks.TaskId
 import org.pnfolder.pnlibrary.api.tasks.TaskSnapshot
 import org.pnfolder.pnlibrary.api.tasks.TaskStatus
+import org.pnfolder.pnlibrary.core.runtime.details.RuntimeTaskDetails
 import java.time.Instant
 
 class RuntimeTaskDetailsTest {

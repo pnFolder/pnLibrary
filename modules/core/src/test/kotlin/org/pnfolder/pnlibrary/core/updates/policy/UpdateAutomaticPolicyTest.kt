@@ -3,6 +3,7 @@ package org.pnfolder.pnlibrary.core.updates.policy
 import org.junit.jupiter.api.Assertions.*
 import org.junit.jupiter.api.Test
 import org.pnfolder.pnlibrary.api.updates.*
+import org.pnfolder.pnlibrary.api.updates.release.*
 import org.pnfolder.pnlibrary.api.version.SemanticVersion
 import java.util.UUID
 

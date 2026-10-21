@@ -4,6 +4,7 @@ import org.junit.jupiter.api.Assertions.*
 import org.junit.jupiter.api.Test
 import org.junit.jupiter.api.io.TempDir
 import org.pnfolder.pnlibrary.api.updates.*
+import org.pnfolder.pnlibrary.api.updates.release.*
 import org.pnfolder.pnlibrary.api.version.SemanticVersion
 import java.nio.file.Files
 import java.nio.file.Path

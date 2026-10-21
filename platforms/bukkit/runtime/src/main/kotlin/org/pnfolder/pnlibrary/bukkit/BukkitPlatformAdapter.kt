@@ -14,7 +14,7 @@ import org.pnfolder.pnlibrary.bukkit.compat.ServerCapabilities
 import org.pnfolder.pnlibrary.bukkit.remote.BukkitRemotePolicyContextFactory
 import org.pnfolder.pnlibrary.bukkit.server.ServerInfo
 import org.pnfolder.pnlibrary.bukkit.tasks.BukkitTaskAdapter
-import org.pnfolder.pnlibrary.core.runtime.registerRuntimeCommand
+import org.pnfolder.pnlibrary.core.runtime.lifecycle.registerRuntimeCommand
 import org.pnfolder.pnlibrary.spi.audiences.PlatformAudienceAdapter
 import org.pnfolder.pnlibrary.spi.commands.PlatformCommandAdapter
 import org.pnfolder.pnlibrary.spi.metrics.PlatformMetricsFactory

@@ -7,8 +7,8 @@ import org.mockito.Mockito.*
 import org.pnfolder.pnlibrary.api.logging.LoggingService
 import org.pnfolder.pnlibrary.api.logging.PnLogger
 import org.pnfolder.pnlibrary.api.platform.PlatformType
-import org.pnfolder.pnlibrary.api.plugin.DenyAction
-import org.pnfolder.pnlibrary.api.plugin.RemotePolicySettings
+import org.pnfolder.pnlibrary.api.remote.DenyAction
+import org.pnfolder.pnlibrary.api.remote.RemotePolicySettings
 import org.pnfolder.pnlibrary.api.remote.PlatformInfo
 import org.pnfolder.pnlibrary.api.remote.ProductInfo
 import org.pnfolder.pnlibrary.api.remote.RemotePolicyContext
@@ -16,6 +16,8 @@ import org.pnfolder.pnlibrary.api.remote.ServerInfo
 import org.pnfolder.pnlibrary.api.runtime.PnLibrary
 import org.pnfolder.pnlibrary.api.tasks.*
 import org.pnfolder.pnlibrary.common.minecraft.MinecraftVersion
+import org.pnfolder.pnlibrary.core.runtime.details.RuntimeRemotePolicy
+import org.pnfolder.pnlibrary.core.runtime.lifecycle.RuntimeResources
 import org.pnfolder.pnlibrary.spi.platform.PlatformAdapter
 import java.nio.file.Files
 import java.nio.file.Path
@@ -68,7 +70,7 @@ class RuntimeRemotePolicyTest {
     @Test
     fun `a policy that cannot be checked keeps the library running when told to`() {
         val missing = RemotePolicySettings.builder().source(directory.resolve("Missing.kt").toUri().toString())
-            .onError(org.pnfolder.pnlibrary.api.plugin.PolicyErrorAction.KEEP_RUNNING).build()
+            .onError(org.pnfolder.pnlibrary.api.remote.PolicyErrorAction.KEEP_RUNNING).build()
         val fixture = fixture(PlatformType.BUKKIT)
         fixture.start(missing)
         fixture.ready.single().run()
@@ -79,7 +81,7 @@ class RuntimeRemotePolicyTest {
 
     @Test
     fun `a policy that cannot be checked at start stops the plugin, but after one success a failure only warns`() {
-        val untilChecked = org.pnfolder.pnlibrary.api.plugin.PolicyErrorAction.DENY_UNTIL_CHECKED
+        val untilChecked = org.pnfolder.pnlibrary.api.remote.PolicyErrorAction.DENY_UNTIL_CHECKED
         val missing = RemotePolicySettings.builder().source(directory.resolve("Absent.kt").toUri().toString())
             .onError(untilChecked).build()
         val atStart = fixture(PlatformType.BUKKIT)

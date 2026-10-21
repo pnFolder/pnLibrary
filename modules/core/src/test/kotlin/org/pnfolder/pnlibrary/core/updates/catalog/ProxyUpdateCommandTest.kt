@@ -5,9 +5,10 @@ import org.junit.jupiter.api.Assertions.*
 import org.junit.jupiter.api.Test
 import org.pnfolder.pnlibrary.api.commands.CommandContext
 import org.pnfolder.pnlibrary.api.commands.CommandSender
-import org.pnfolder.pnlibrary.api.plugin.PluginDependency
+import org.pnfolder.pnlibrary.api.dependencies.PluginDependency
 import org.pnfolder.pnlibrary.api.runtime.PnLibrary
 import org.pnfolder.pnlibrary.api.updates.*
+import org.pnfolder.pnlibrary.api.updates.backup.*
 import org.pnfolder.pnlibrary.core.commands.CommandRoute
 import org.pnfolder.pnlibrary.core.commands.CommandTreeRouter
 import java.lang.reflect.Proxy

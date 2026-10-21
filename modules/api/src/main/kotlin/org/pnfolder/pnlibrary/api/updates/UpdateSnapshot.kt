@@ -1,5 +1,6 @@
 package org.pnfolder.pnlibrary.api.updates
 
+import org.pnfolder.pnlibrary.api.updates.release.ReleaseSummary
 import org.pnfolder.pnlibrary.api.version.ApiVersionRange
 
 /**

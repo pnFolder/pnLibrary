@@ -4,7 +4,7 @@ import org.junit.jupiter.api.Assertions.assertEquals
 import org.junit.jupiter.api.Assertions.assertNull
 import org.junit.jupiter.api.Test
 import org.junit.jupiter.api.io.TempDir
-import org.pnfolder.pnlibrary.api.updates.ExternalPluginDependency
+import org.pnfolder.pnlibrary.api.dependencies.ExternalPluginDependency
 import java.nio.file.Path
 
 class DependencyDownloadRequestFactoryTest {

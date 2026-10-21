@@ -29,12 +29,12 @@ import org.pnfolder.pnlibrary.api.metrics.MetricsProviderConfiguration
 import org.pnfolder.pnlibrary.api.metrics.MetricsService
 import org.pnfolder.pnlibrary.api.metrics.PluginMetrics
 import org.pnfolder.pnlibrary.api.platform.PlatformType
-import org.pnfolder.pnlibrary.api.plugin.Dependencies
+import org.pnfolder.pnlibrary.api.dependencies.Dependencies
 import org.pnfolder.pnlibrary.api.plugin.PluginBuilder
-import org.pnfolder.pnlibrary.api.plugin.PluginDependency
+import org.pnfolder.pnlibrary.api.dependencies.PluginDependency
 import org.pnfolder.pnlibrary.api.tasks.TaskScope
 import org.pnfolder.pnlibrary.api.tasks.TaskSpec
-import org.pnfolder.pnlibrary.api.updates.ExternalPluginDependency
+import org.pnfolder.pnlibrary.api.dependencies.ExternalPluginDependency
 import org.pnfolder.pnlibrary.api.updates.PluginUpdateRequest
 import org.pnfolder.pnlibrary.api.updates.ProductDescriptor
 import org.pnfolder.pnlibrary.api.updates.UpdateRegistration

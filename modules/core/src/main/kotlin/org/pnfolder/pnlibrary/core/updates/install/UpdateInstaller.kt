@@ -1,11 +1,11 @@
 package org.pnfolder.pnlibrary.core.updates.install
 
-import org.pnfolder.pnlibrary.api.updates.ProductChange
+import org.pnfolder.pnlibrary.api.updates.release.ProductChange
 import org.pnfolder.pnlibrary.api.updates.ProductId
-import org.pnfolder.pnlibrary.api.updates.UpdateBackup
-import org.pnfolder.pnlibrary.api.updates.UpdateBackupComponent
-import org.pnfolder.pnlibrary.api.updates.UpdateConfigurationBackup
-import org.pnfolder.pnlibrary.api.updates.UpdatePlan
+import org.pnfolder.pnlibrary.api.updates.backup.UpdateBackup
+import org.pnfolder.pnlibrary.api.updates.backup.UpdateBackupComponent
+import org.pnfolder.pnlibrary.api.updates.backup.UpdateConfigurationBackup
+import org.pnfolder.pnlibrary.api.updates.release.UpdatePlan
 import org.pnfolder.pnlibrary.api.updates.UpdatePlanSnapshot
 import org.pnfolder.pnlibrary.api.updates.UpdateState
 import org.pnfolder.pnlibrary.api.version.SemanticVersion

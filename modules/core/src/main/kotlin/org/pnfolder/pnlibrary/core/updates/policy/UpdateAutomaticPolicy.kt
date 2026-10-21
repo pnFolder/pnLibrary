@@ -1,6 +1,6 @@
 package org.pnfolder.pnlibrary.core.updates.policy
 
-import org.pnfolder.pnlibrary.api.updates.ProductChange
+import org.pnfolder.pnlibrary.api.updates.release.ProductChange
 import org.pnfolder.pnlibrary.api.updates.UpdatePlanSnapshot
 import org.pnfolder.pnlibrary.core.updates.service.RegisteredUpdate
 

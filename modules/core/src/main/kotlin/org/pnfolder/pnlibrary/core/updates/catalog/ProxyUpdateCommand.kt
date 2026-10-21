@@ -8,7 +8,7 @@ import org.pnfolder.pnlibrary.api.commands.CommandRegistration
 import org.pnfolder.pnlibrary.api.commands.command
 import org.pnfolder.pnlibrary.api.runtime.PnLibrary
 import org.pnfolder.pnlibrary.api.updates.UpdateActor
-import org.pnfolder.pnlibrary.core.runtime.registerRuntimeCommand
+import org.pnfolder.pnlibrary.core.runtime.lifecycle.registerRuntimeCommand
 import java.util.UUID
 
 /** Console-only update controls shared by both proxy platforms. */

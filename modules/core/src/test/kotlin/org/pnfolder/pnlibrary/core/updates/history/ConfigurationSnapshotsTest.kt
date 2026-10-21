@@ -5,7 +5,7 @@ import org.junit.jupiter.api.Assertions.*
 import org.junit.jupiter.api.Test
 import org.junit.jupiter.api.io.TempDir
 import org.pnfolder.pnlibrary.api.updates.ProductId
-import org.pnfolder.pnlibrary.api.updates.UpdateConfigurationBackup
+import org.pnfolder.pnlibrary.api.updates.backup.UpdateConfigurationBackup
 import java.nio.file.Files
 import java.nio.file.Path
 import java.util.UUID

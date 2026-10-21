@@ -1,6 +1,6 @@
 package org.pnfolder.pnlibrary.core.updates.catalog
 
-import org.pnfolder.pnlibrary.api.updates.ReleaseSummary
+import org.pnfolder.pnlibrary.api.updates.release.ReleaseSummary
 import org.pnfolder.pnlibrary.api.updates.UpdatePlanSnapshot
 import org.pnfolder.pnlibrary.api.updates.UpdateSnapshot
 import org.pnfolder.pnlibrary.api.updates.UpdateState

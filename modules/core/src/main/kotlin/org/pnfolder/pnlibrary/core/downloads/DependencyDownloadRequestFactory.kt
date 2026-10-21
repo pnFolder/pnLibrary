@@ -2,8 +2,8 @@ package org.pnfolder.pnlibrary.core.downloads
 
 import org.pnfolder.pnlibrary.api.downloads.DownloadDestination
 import org.pnfolder.pnlibrary.api.downloads.FileDownloads
-import org.pnfolder.pnlibrary.api.plugin.PluginDependency
-import org.pnfolder.pnlibrary.api.updates.ExternalPluginDependency
+import org.pnfolder.pnlibrary.api.dependencies.PluginDependency
+import org.pnfolder.pnlibrary.api.dependencies.ExternalPluginDependency
 import org.pnfolder.pnlibrary.api.version.SemanticVersion
 import java.nio.file.Path
 

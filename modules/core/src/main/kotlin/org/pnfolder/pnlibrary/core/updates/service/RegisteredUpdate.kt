@@ -1,12 +1,12 @@
 package org.pnfolder.pnlibrary.core.updates.service
 
-import org.pnfolder.pnlibrary.api.updates.ArtifactDescriptor
-import org.pnfolder.pnlibrary.api.updates.InstalledProduct
+import org.pnfolder.pnlibrary.api.updates.release.ArtifactDescriptor
+import org.pnfolder.pnlibrary.api.updates.release.InstalledProduct
 import org.pnfolder.pnlibrary.api.updates.PluginUpdateArtifact
 import org.pnfolder.pnlibrary.api.updates.PluginUpdateRequest
 import org.pnfolder.pnlibrary.api.updates.ProductDescriptor
-import org.pnfolder.pnlibrary.api.updates.ProductRelease
-import org.pnfolder.pnlibrary.api.updates.ReleaseSummary
+import org.pnfolder.pnlibrary.api.updates.release.ProductRelease
+import org.pnfolder.pnlibrary.api.updates.release.ReleaseSummary
 import org.pnfolder.pnlibrary.api.updates.UpdateChannel
 import org.pnfolder.pnlibrary.api.updates.UpdatePlanSnapshot
 import org.pnfolder.pnlibrary.api.updates.UpdateRegistration

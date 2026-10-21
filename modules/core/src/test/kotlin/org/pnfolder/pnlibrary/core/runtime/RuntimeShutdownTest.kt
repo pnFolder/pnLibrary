@@ -5,6 +5,7 @@ import org.junit.jupiter.api.Assertions.assertSame
 import org.junit.jupiter.api.Assertions.assertTrue
 import org.junit.jupiter.api.Test
 import org.junit.jupiter.api.assertThrows
+import org.pnfolder.pnlibrary.core.runtime.lifecycle.RuntimeShutdown
 
 class RuntimeShutdownTest {
     @Test

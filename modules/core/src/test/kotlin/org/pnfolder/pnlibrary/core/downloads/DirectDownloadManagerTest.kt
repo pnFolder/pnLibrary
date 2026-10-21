@@ -11,7 +11,7 @@ import org.pnfolder.pnlibrary.api.downloads.DownloadDestination
 import org.pnfolder.pnlibrary.api.downloads.DownloadState
 import org.pnfolder.pnlibrary.api.downloads.FileDownloads
 import org.pnfolder.pnlibrary.api.platform.PlatformType
-import org.pnfolder.pnlibrary.api.updates.ExternalPluginDependency
+import org.pnfolder.pnlibrary.api.dependencies.ExternalPluginDependency
 import org.pnfolder.pnlibrary.core.updates.engine.TrustedHttpClient
 import org.pnfolder.pnlibrary.spi.platform.PlatformAdapter
 import java.io.ByteArrayOutputStream

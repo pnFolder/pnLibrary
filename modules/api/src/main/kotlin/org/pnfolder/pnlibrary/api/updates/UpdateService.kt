@@ -1,6 +1,8 @@
 package org.pnfolder.pnlibrary.api.updates
 
-import org.pnfolder.pnlibrary.api.plugin.PluginDependency
+import org.pnfolder.pnlibrary.api.dependencies.PluginDependency
+import org.pnfolder.pnlibrary.api.updates.backup.UpdateBackup
+import org.pnfolder.pnlibrary.api.updates.backup.UpdateHistoryEntry
 import java.time.Duration
 import java.time.Instant
 import java.util.Optional

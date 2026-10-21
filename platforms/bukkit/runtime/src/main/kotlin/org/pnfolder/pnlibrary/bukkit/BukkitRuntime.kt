@@ -8,8 +8,8 @@ import org.pnfolder.pnlibrary.bukkit.inventory.MenuService
 import org.pnfolder.pnlibrary.bukkit.inventory.MenuServiceImpl
 import org.pnfolder.pnlibrary.bukkit.server.ServerInfo
 import org.pnfolder.pnlibrary.core.runtime.PnLibraryRuntimeHost
-import org.pnfolder.pnlibrary.core.runtime.registerRuntimeCommand
-import org.pnfolder.pnlibrary.core.runtime.runtimeTaskScope
+import org.pnfolder.pnlibrary.core.runtime.lifecycle.registerRuntimeCommand
+import org.pnfolder.pnlibrary.core.runtime.lifecycle.runtimeTaskScope
 
 /**
  * Owns everything the Bukkit plugin starts: the shared runtime, Bukkit services and optional

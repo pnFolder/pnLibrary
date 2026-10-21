@@ -8,11 +8,11 @@ import org.pnfolder.pnlibrary.api.config.ConfigTypeAccess
 import org.pnfolder.pnlibrary.api.diagnostics.DiagnosticConfiguration
 import org.pnfolder.pnlibrary.api.diagnostics.DiagnosticContainer
 import org.pnfolder.pnlibrary.api.downloads.FileDownloads
-import org.pnfolder.pnlibrary.api.plugin.RemotePolicySettings
+import org.pnfolder.pnlibrary.api.remote.RemotePolicySettings
 import org.pnfolder.pnlibrary.api.remote.RemotePolicyContext
 import org.pnfolder.pnlibrary.api.tasks.TaskQuery
 import org.pnfolder.pnlibrary.api.tasks.TaskSpec
-import org.pnfolder.pnlibrary.api.updates.ExternalPluginDependency
+import org.pnfolder.pnlibrary.api.dependencies.ExternalPluginDependency
 import org.pnfolder.pnlibrary.api.updates.PluginUpdateRequest
 import org.pnfolder.pnlibrary.api.updates.ProductDescriptor
 import java.lang.reflect.Modifier

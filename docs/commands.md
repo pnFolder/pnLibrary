@@ -27,7 +27,7 @@ import net.kyori.adventure.text.Component
 import net.kyori.adventure.text.format.NamedTextColor
 import org.bukkit.Bukkit
 import org.bukkit.plugin.java.JavaPlugin
-import org.pnfolder.pnlibrary.api.actions.LibraryPlayer
+import org.pnfolder.pnlibrary.api.audiences.LibraryPlayer
 import org.pnfolder.pnlibrary.api.commands.ArgumentType
 import org.pnfolder.pnlibrary.api.commands.BadUsage
 import org.pnfolder.pnlibrary.api.commands.CommandContext

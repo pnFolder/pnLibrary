@@ -1,6 +1,6 @@
 package org.pnfolder.pnlibrary.core.updates.service
 
-import org.pnfolder.pnlibrary.api.updates.ProductChange
+import org.pnfolder.pnlibrary.api.updates.release.ProductChange
 import java.util.UUID
 
 /** Observed loaded versions for one durable transaction, independent of the current release plan. */

@@ -2,7 +2,7 @@ package org.pnfolder.pnlibrary.core.updates.history
 
 import com.google.gson.Gson
 import org.pnfolder.pnlibrary.api.updates.ProductId
-import org.pnfolder.pnlibrary.api.updates.UpdateConfigurationBackup
+import org.pnfolder.pnlibrary.api.updates.backup.UpdateConfigurationBackup
 import org.pnfolder.pnlibrary.common.io.AtomicFiles
 import org.pnfolder.pnlibrary.core.io.TextFiles
 import org.pnfolder.pnlibrary.core.updates.engine.UpdatePaths

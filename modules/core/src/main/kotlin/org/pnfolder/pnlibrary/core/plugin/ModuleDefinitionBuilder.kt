@@ -2,12 +2,12 @@ package org.pnfolder.pnlibrary.core.plugin
 
 import org.pnfolder.pnlibrary.api.diagnostics.DiagnosticContainer
 import org.pnfolder.pnlibrary.api.downloads.FileDownloads
-import org.pnfolder.pnlibrary.api.plugin.MetricsBuilder
+import org.pnfolder.pnlibrary.api.metrics.MetricsBuilder
 import org.pnfolder.pnlibrary.api.plugin.PluginBuilder
-import org.pnfolder.pnlibrary.api.plugin.PluginDependency
+import org.pnfolder.pnlibrary.api.dependencies.PluginDependency
 import org.pnfolder.pnlibrary.api.plugin.PluginMetadataBuilder
 import org.pnfolder.pnlibrary.api.plugin.PluginOptions
-import org.pnfolder.pnlibrary.api.plugin.RemotePolicySettings
+import org.pnfolder.pnlibrary.api.remote.RemotePolicySettings
 import org.pnfolder.pnlibrary.api.updates.PluginUpdateRequest
 import org.pnfolder.pnlibrary.api.updates.ProductDescriptor
 import java.nio.file.Path

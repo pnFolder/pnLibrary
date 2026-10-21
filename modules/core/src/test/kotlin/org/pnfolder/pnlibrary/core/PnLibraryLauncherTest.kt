@@ -11,7 +11,7 @@ import org.pnfolder.pnlibrary.api.runtime.PnLibrary
 import org.pnfolder.pnlibrary.api.runtime.PnLibraryProvider
 import org.pnfolder.pnlibrary.core.diagnostics.DiagnosticsRegistry
 import org.pnfolder.pnlibrary.core.runtime.PnLibraryLauncher
-import org.pnfolder.pnlibrary.core.runtime.toRuntimeContext
+import org.pnfolder.pnlibrary.core.runtime.platform.toRuntimeContext
 import org.pnfolder.pnlibrary.spi.platform.PlatformAdapter
 import java.nio.file.Files
 import java.nio.file.Path
