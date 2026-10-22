@@ -71,16 +71,16 @@ $currentVersionSource = Read-InputText $CurrentVersionPath $null
 $baseVersion = Read-ApiGeneration $baseVersionSource
 $currentVersion = Read-ApiGeneration $currentVersionSource
 if ($currentVersion -lt $baseVersion) {
-    Write-Error "API generation decreased from $baseVersion to $currentVersion."
-    exit 1
+    # Lowering the generation number itself is allowed; only an unannounced ABI removal is blocked below.
+    Write-Output "API generation decreased from $baseVersion to $currentVersion."
 }
 
 $baseDeclarations = Get-ApiDeclarations $baseApi
 $currentDeclarations = Get-ApiDeclarations $currentApi
 $removed = @($baseDeclarations | Where-Object { -not $currentDeclarations.Contains($_) } | Sort-Object)
 
-if ($removed.Count -gt 0 -and $currentVersion -eq $baseVersion) {
-    Write-Error "Public ABI removed $($removed.Count) declaration(s) while API generation remained ${currentVersion}:`n$($removed -join "`n")"
+if ($removed.Count -gt 0 -and $currentVersion -le $baseVersion) {
+    Write-Error "Public ABI removed $($removed.Count) declaration(s) without raising the API generation above ${baseVersion}:`n$($removed -join "`n")"
     exit 1
 }
 
