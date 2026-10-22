@@ -1848,6 +1848,7 @@ public abstract interface annotation class org/pnfolder/pnlibrary/api/events/Eve
 
 public final class org/pnfolder/pnlibrary/api/events/EventListenerBuilder {
 	public final fun ignoreCancelled ()Lorg/pnfolder/pnlibrary/api/events/EventListenerBuilder;
+	public final fun ignoreDenied ()Lorg/pnfolder/pnlibrary/api/events/EventListenerBuilder;
 	public final fun listen (Ljava/util/function/Consumer;)Lorg/pnfolder/pnlibrary/api/events/EventSubscription;
 	public final fun priority (I)Lorg/pnfolder/pnlibrary/api/events/EventListenerBuilder;
 }
@@ -1886,6 +1887,7 @@ public abstract interface class org/pnfolder/pnlibrary/api/events/EventScope : j
 
 public abstract interface class org/pnfolder/pnlibrary/api/events/EventService : java/lang/AutoCloseable {
 	public abstract fun callEvent (Lorg/pnfolder/pnlibrary/api/events/Event;)Lorg/pnfolder/pnlibrary/api/events/Event;
+	public fun callEventAsync (Lorg/pnfolder/pnlibrary/api/events/Event;Ljava/util/concurrent/Executor;)Ljava/util/concurrent/CompletionStage;
 	public abstract fun close ()V
 	public fun register (Lorg/pnfolder/pnlibrary/api/plugin/PluginId;Lorg/pnfolder/pnlibrary/api/events/Listener;)Lorg/pnfolder/pnlibrary/api/events/EventListenerRegistration;
 	public abstract fun scope (Lorg/pnfolder/pnlibrary/api/plugin/PluginId;)Lorg/pnfolder/pnlibrary/api/events/EventScope;

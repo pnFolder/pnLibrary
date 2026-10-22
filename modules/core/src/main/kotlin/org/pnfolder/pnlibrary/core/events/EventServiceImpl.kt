@@ -38,27 +38,30 @@ internal class EventServiceImpl(
     }
 
     /**
-     * Sorted listeners per event class. Any change to the subscriptions bumps [generation] and empties the
-     * cache, so a lookup either hits a list built for the current subscriptions or rebuilds it. Weak keys let
-     * an unloaded plugin's event classes be collected when nothing listens to them.
+     * Sorted listeners per event class. Adding or closing a subscription for type T drops only the cached
+     * lists of classes that T matches, so churn on one event never slows the others. A list built while a
+     * change was happening is returned for that call but not cached. Weak keys let an unloaded plugin's
+     * event classes be collected when nothing listens to them.
      */
-    private class Cached(val generation: Long, val handlers: List<Subscription<out Event>>)
     private val generation = AtomicLong()
-    private val cache = java.util.Collections.synchronizedMap(java.util.WeakHashMap<Class<*>, Cached>())
+    private val cache = java.util.WeakHashMap<Class<*>, List<Subscription<out Event>>>()
 
-    private fun invalidateHandlers() {
-        generation.incrementAndGet()
-        cache.clear()
+    /** Forgets cached lists affected by a subscription to [changed]; `null` forgets everything. */
+    private fun invalidateHandlers(changed: Class<*>?) {
+        synchronized(cache) {
+            generation.incrementAndGet()
+            if (changed == null) cache.clear() else cache.keys.removeAll { changed.isAssignableFrom(it) }
+        }
     }
 
     private fun handlersFor(type: Class<*>): List<Subscription<out Event>> {
-        val current = generation.get()
-        cache[type]?.let { if (it.generation == current) return it.handlers }
+        val before = generation.get()
+        synchronized(cache) { cache[type] }?.let { return it }
         val built = subscriptions.asSequence()
             .filter { !it.isClosed && it.eventType.isAssignableFrom(type) }
             .sortedWith(compareBy<Subscription<out Event>> { it.priority }.thenBy { it.order })
             .toList()
-        cache[type] = Cached(current, built)
+        synchronized(cache) { if (generation.get() == before) cache[type] = built }
         return built
     }
 
@@ -74,6 +77,8 @@ internal class EventServiceImpl(
             try {
                 subscription.invoke(event)
             } catch (error: Throwable) {
+                // A broken listener is logged and skipped; a dying JVM (out of memory, stack overflow) is not ours to hide.
+                if (error is VirtualMachineError) throw error
                 errorLogger(
                     subscription.scope.pluginId,
                     "[pnLibrary/events] Listener failed for ${event.javaClass.name}",
@@ -93,7 +98,7 @@ internal class EventServiceImpl(
         val current = synchronized(scopes) { scopes.values.toList().also { scopes.clear() } }
         current.forEach { it.closeInternal() }
         subscriptions.clear()
-        invalidateHandlers()
+        invalidateHandlers(null)
     }
 
     private inner class Scope(override val pluginId: PluginId) : EventScope {
@@ -137,7 +142,7 @@ internal class EventServiceImpl(
             )
             ownedSubscriptions += subscription
             subscriptions += subscription
-            invalidateHandlers()
+            invalidateHandlers(eventType)
             if (closed.get() || scopeClosed.get()) subscription.close()
             return subscription
         }
@@ -192,7 +197,7 @@ internal class EventServiceImpl(
         override fun close() {
             if (!subscriptionClosed.compareAndSet(false, true)) return
             subscriptions.remove(this)
-            invalidateHandlers()
+            invalidateHandlers(eventType)
             scope.remove(this)
         }
     }

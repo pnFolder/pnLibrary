@@ -1,7 +1,11 @@
 package org.pnfolder.pnlibrary.api.events
 
 import org.pnfolder.pnlibrary.api.plugin.PluginId
+import java.util.concurrent.CompletableFuture
+import java.util.concurrent.CompletionStage
+import java.util.concurrent.Executor
 import java.util.function.Consumer
+import java.util.function.Supplier
 
 /**
  * Process-wide platform-independent event bus.
@@ -42,6 +46,14 @@ interface EventService : AutoCloseable {
      * Listener-written fields and results are final when this method returns.
      */
     fun <E : Event> callEvent(event: E): E
+
+    /**
+     * Dispatches [event] on [executor] and completes with the same instance once every listener has run.
+     * Listeners then run on the executor's thread, not the caller's, so pass a platform-appropriate executor
+     * (for example one that hops to the server thread) when listeners touch the game world.
+     */
+    fun <E : Event> callEventAsync(event: E, executor: Executor): CompletionStage<E> =
+        CompletableFuture.supplyAsync(Supplier { callEvent(event) }, executor)
 
     /** Removes and closes the scope belonging to [pluginId]. */
     fun unregisterAll(pluginId: PluginId)

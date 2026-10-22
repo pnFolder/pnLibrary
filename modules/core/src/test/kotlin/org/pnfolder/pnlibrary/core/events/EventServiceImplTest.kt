@@ -156,7 +156,7 @@ class EventServiceImplTest {
     fun `builder registers nothing until listen is called`() {
         EventServiceImpl { _, _, _ -> }.use { events ->
             val scope = events.scope(PluginId.of("test"))
-            scope.on<ResultEvent>().priority(EventPriority.HIGH).ignoreCancelled()
+            scope.on<ResultEvent>().priority(EventPriority.HIGH).ignoreDenied()
             var ran = false
             events.callEvent(ResultEvent())
             assertFalse(ran)
@@ -202,6 +202,58 @@ class EventServiceImplTest {
     fun `an event nobody listens to dispatches without error and is not retained`() {
         EventServiceImpl { _, _, _ -> }.use { events ->
             repeat(1_000) { events.callEvent(TestEvent()) }
+        }
+    }
+
+    @Test
+    fun `changing listeners of one event leaves another event's dispatch correct`() {
+        val calls = mutableListOf<String>()
+        EventServiceImpl { _, _, _ -> }.use { events ->
+            val scope = events.scope(PluginId.of("test"))
+            scope.subscribe(ResultEvent::class.java, Consumer { calls += "result" })
+            scope.subscribe(TestEvent::class.java, Consumer { calls += "test" })
+            events.callEvent(ResultEvent())
+            events.callEvent(TestEvent())
+
+            repeat(50) { scope.subscribe(TestEvent::class.java, Consumer { calls += "churn" }).close() }
+            calls.clear()
+            events.callEvent(ResultEvent())
+            events.callEvent(TestEvent())
+            assertEquals(listOf("result", "test"), calls)
+        }
+    }
+
+    @Test
+    fun `async call runs listeners on the given executor and completes with the same event`() {
+        val listenerThread = java.util.concurrent.atomic.AtomicReference<Thread>()
+        val executor = java.util.concurrent.Executors.newSingleThreadExecutor { Thread(it, "event-test-worker") }
+        try {
+            EventServiceImpl { _, _, _ -> }.use { events ->
+                events.scope(PluginId.of("test")).subscribe(TestEvent::class.java, Consumer {
+                    listenerThread.set(Thread.currentThread())
+                })
+                val event = TestEvent()
+                val done = events.callEventAsync(event, executor).toCompletableFuture().get(5, java.util.concurrent.TimeUnit.SECONDS)
+                assertSame(event, done)
+                assertEquals("event-test-worker", listenerThread.get().name)
+            }
+        } finally { executor.shutdownNow() }
+    }
+
+    @Test
+    fun `a failing listener is logged and skipped but a dying JVM is not hidden`() {
+        val logged = mutableListOf<Throwable>()
+        var after = 0
+        EventServiceImpl { _, _, error -> logged += error }.use { events ->
+            val scope = events.scope(PluginId.of("test"))
+            scope.subscribe(TestEvent::class.java, EventPriority.LOW, Consumer { error("plugin bug") })
+            scope.subscribe(TestEvent::class.java, EventPriority.HIGH, Consumer { after++ })
+            events.callEvent(TestEvent())
+            assertEquals(1, logged.size)
+            assertEquals(1, after)
+
+            scope.subscribe(TestEvent::class.java, EventPriority.LOWEST, Consumer { throw OutOfMemoryError("simulated") })
+            assertThrows(OutOfMemoryError::class.java) { events.callEvent(TestEvent()) }
         }
     }
 
