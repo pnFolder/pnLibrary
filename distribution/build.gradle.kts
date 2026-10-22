@@ -25,6 +25,13 @@ tasks.named<ShadowJar>("shadowJar") { enabled = false }
 // the distribution project's cached value can leave a new filename carrying
 // an older component.json after a version bump.
 val pnVer = rootProject.version.toString()
+val pnChannel = when {
+    pnVer.contains("-dev") -> "dev"
+    pnVer.contains("-alpha") -> "alpha"
+    pnVer.contains("-beta") -> "beta"
+    pnVer.contains("-rc") -> "rc"
+    else -> "stable"
+}
 
 // ── Relocation config shared by all shadow tasks ─────────────────────────────
 fun ShadowJar.applyCommonConfig() {
@@ -240,7 +247,7 @@ fun installedComponentMetadata(): String = """
       "schema": 1,
       "product": "${rootProject.property("pnlibrary.product-id")}",
       "version": "$pnVer",
-      "channel": "${if (pnVer.contains("-dev")) "dev" else if (pnVer.contains("-alpha")) "alpha" else if (pnVer.contains("-beta")) "beta" else "stable"}",
+      "channel": "$pnChannel",
       "pnLibraryApi": {
         "minimum": $pnApiVersion,
         "maximum": $pnApiVersion
