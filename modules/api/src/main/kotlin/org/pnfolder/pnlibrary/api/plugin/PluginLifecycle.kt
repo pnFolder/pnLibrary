@@ -16,10 +16,4 @@ interface PluginLifecycle {
 
     /** Creates a disabled message with name and version filled from [metadata]. */
     fun disabled(): MessageBox
-
-    /** Like [enabled], without the rows pnLibrary would add for [hide]; the plugin's own rows are never hidden. */
-    fun enabled(vararg hide: LifecycleRow): MessageBox
-
-    /** Like [disabled], without the rows pnLibrary would add for [hide]; the plugin's own rows are never hidden. */
-    fun disabled(vararg hide: LifecycleRow): MessageBox
 }

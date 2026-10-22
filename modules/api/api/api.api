@@ -1962,6 +1962,7 @@ public abstract interface class org/pnfolder/pnlibrary/api/logging/LoggingServic
 public abstract interface class org/pnfolder/pnlibrary/api/logging/MessageBox {
 	public abstract fun fail (Ljava/lang/String;Ljava/lang/String;Ljava/lang/Throwable;)Lorg/pnfolder/pnlibrary/api/logging/MessageBox;
 	public static synthetic fun fail$default (Lorg/pnfolder/pnlibrary/api/logging/MessageBox;Ljava/lang/String;Ljava/lang/String;Ljava/lang/Throwable;ILjava/lang/Object;)Lorg/pnfolder/pnlibrary/api/logging/MessageBox;
+	public fun hide ([Lorg/pnfolder/pnlibrary/api/plugin/LifecycleRow;)Lorg/pnfolder/pnlibrary/api/logging/MessageBox;
 	public abstract fun ok (Ljava/lang/String;Ljava/lang/String;)Lorg/pnfolder/pnlibrary/api/logging/MessageBox;
 	public abstract fun show ()V
 	public abstract fun skip (Ljava/lang/String;Ljava/lang/String;)Lorg/pnfolder/pnlibrary/api/logging/MessageBox;
@@ -2637,9 +2638,7 @@ public abstract interface class org/pnfolder/pnlibrary/api/plugin/PluginBuilder 
 
 public abstract interface class org/pnfolder/pnlibrary/api/plugin/PluginLifecycle {
 	public abstract fun disabled ()Lorg/pnfolder/pnlibrary/api/logging/MessageBox;
-	public abstract fun disabled ([Lorg/pnfolder/pnlibrary/api/plugin/LifecycleRow;)Lorg/pnfolder/pnlibrary/api/logging/MessageBox;
 	public abstract fun enabled ()Lorg/pnfolder/pnlibrary/api/logging/MessageBox;
-	public abstract fun enabled ([Lorg/pnfolder/pnlibrary/api/plugin/LifecycleRow;)Lorg/pnfolder/pnlibrary/api/logging/MessageBox;
 	public abstract fun getMetadata ()Lorg/pnfolder/pnlibrary/api/plugin/PluginMetadata;
 }
 

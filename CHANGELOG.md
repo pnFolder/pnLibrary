@@ -2,7 +2,7 @@
 
 ## Карточки включения и выключения
 
-- Плагин может убрать строки, которые pnLibrary добавляет сама: `lifecycle.enabled(LifecycleRow.IDENTIFIER, LifecycleRow.PLATFORM)`.
+- Плагин может скрыть строки, которые pnLibrary добавляет сама: `lifecycle.enabled().hide(LifecycleRow.IDENTIFIER, LifecycleRow.PLATFORM)`.
   `LifecycleRow.NOT_CONFIGURED` убирает все строки «SKIP: not configured». Строки самого плагина не скрываются.
 - Консольные карточки сами выбирают `┌ ├ └` по месту строки в группе; подписи белые, значения в цвете статуса.
 

@@ -1,5 +1,7 @@
 package org.pnfolder.pnlibrary.api.logging
 
+import org.pnfolder.pnlibrary.api.plugin.LifecycleRow
+
 /** Semantic severity and presentation category for plugin log messages. */
 enum class LogLevel {
     /** Normal operational information. */
@@ -73,6 +75,13 @@ interface MessageBox {
 
     /** Adds a failed row and optional original [error]. */
     fun fail(label: String, detail: String, error: Throwable? = null): MessageBox
+
+    /**
+     * Hides the rows pnLibrary adds by itself to a lifecycle card (enabled or disabled), for example
+     * `lifecycle.enabled().hide(LifecycleRow.IDENTIFIER, LifecycleRow.NOT_CONFIGURED)`. The plugin's own rows are
+     * never hidden, and on a generic box this does nothing.
+     */
+    fun hide(vararg rows: LifecycleRow): MessageBox = this
 
     /** Writes the complete box to the owning plugin's native console. */
     fun show()

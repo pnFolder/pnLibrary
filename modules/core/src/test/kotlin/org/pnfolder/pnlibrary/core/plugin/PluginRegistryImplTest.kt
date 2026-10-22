@@ -542,11 +542,11 @@ class PluginRegistryImplTest {
         assertEquals(listOf("Identifier", "Platform", "Metrics", "Updates", "Diagnostics", "PlaceholderAPI", "Mine"), logging.rows)
 
         logging.rows.clear()
-        context.lifecycle.enabled(LifecycleRow.IDENTIFIER, LifecycleRow.PLATFORM).ok("Mine", "x").show()
+        context.lifecycle.enabled().hide(LifecycleRow.IDENTIFIER, LifecycleRow.PLATFORM).ok("Mine", "x").show()
         assertEquals(listOf("Metrics", "Updates", "Diagnostics", "PlaceholderAPI", "Mine"), logging.rows)
 
         logging.rows.clear()
-        context.lifecycle.enabled(LifecycleRow.NOT_CONFIGURED).ok("Mine", "x").show()
+        context.lifecycle.enabled().hide(LifecycleRow.NOT_CONFIGURED).ok("Mine", "x").show()
         assertEquals(listOf("Identifier", "Platform", "PlaceholderAPI", "Mine"), logging.rows)
     }
 
