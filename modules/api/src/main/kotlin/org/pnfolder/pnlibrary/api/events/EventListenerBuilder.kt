@@ -8,7 +8,7 @@ import java.util.function.Consumer
  * ```
  * scope.on<PurchaseEvent>()
  *     .priority(EventPriority.HIGH)
- *     .ignoreCancelled()
+ *     .ignoreDenied()
  *     .listen { event -> ... }
  * ```
  *
@@ -24,8 +24,12 @@ class EventListenerBuilder<E : Event> internal constructor(
     /** Sets the dispatch order; lower numbers run first. Defaults to [EventPriority.NORMAL]. */
     fun priority(value: Int): EventListenerBuilder<E> = apply { priority = value }
 
-    /** Skips this listener when the event is already denied. Off by default. */
-    fun ignoreCancelled(): EventListenerBuilder<E> = apply { ignoreCancelled = true }
+    /** Skips this listener when the event is already denied ([Event.isAllowed] is `false`). Off by default. */
+    fun ignoreDenied(): EventListenerBuilder<E> = apply { ignoreCancelled = true }
+
+    /** Older name of [ignoreDenied]: pnLibrary events are denied through their result, not cancelled. */
+    @Deprecated("Use ignoreDenied()", ReplaceWith("ignoreDenied()"))
+    fun ignoreCancelled(): EventListenerBuilder<E> = ignoreDenied()
 
     /** Registers [listener] with the configured options and returns the live subscription. */
     fun listen(listener: Consumer<E>): EventSubscription =

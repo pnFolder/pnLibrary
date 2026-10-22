@@ -13,19 +13,26 @@ import org.pnfolder.pnlibrary.core.runtime.PnLibraryRuntimeHost
  */
 internal class BungeeRuntime(private val plugin: Plugin) {
     private var host: PnLibraryRuntimeHost? = null
+    private var playerEvents: BungeePlayerEvents? = null
 
     fun start() {
         val adapter = BungeePlatformAdapter(plugin)
-        host = PnLibraryRuntimeHost.launchPlatform(
+        val started = PnLibraryRuntimeHost.launchPlatform(
             plugin,
             adapter,
             BungeePlatform::class.java,
             BungeePlatformImpl(plugin.proxy),
             adapter::markReady,
         )
+        host = started
+        val listener = BungeePlayerEvents(started.library)
+        plugin.proxy.pluginManager.registerListener(plugin, listener)
+        playerEvents = listener
     }
 
     fun stop() {
+        playerEvents?.let { runCatching { plugin.proxy.pluginManager.unregisterListener(it) } }
+        playerEvents = null
         host?.close()
         host = null
     }

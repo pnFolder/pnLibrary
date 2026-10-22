@@ -7,6 +7,7 @@ import org.bukkit.event.EventPriority
 import org.bukkit.event.HandlerList
 import org.bukkit.event.Listener
 import org.bukkit.event.player.PlayerJoinEvent
+import org.bukkit.event.player.PlayerQuitEvent
 import org.bukkit.event.server.PluginDisableEvent
 import org.bukkit.plugin.EventExecutor
 import org.bukkit.plugin.Plugin
@@ -16,6 +17,7 @@ import org.pnfolder.pnlibrary.api.tasks.TaskExecution
 import org.pnfolder.pnlibrary.api.tasks.TaskSpec
 import org.pnfolder.pnlibrary.api.updates.UpdateState
 import org.pnfolder.pnlibrary.bukkit.commands.BukkitControlCommand
+import org.pnfolder.pnlibrary.core.events.PlayerLifecyclePublisher
 import org.pnfolder.pnlibrary.core.runtime.lifecycle.journalJoinNotice
 import org.pnfolder.pnlibrary.core.runtime.lifecycle.runtimeTaskScope
 import org.pnfolder.pnlibrary.core.updates.catalog.UpdateCatalogView
@@ -66,6 +68,18 @@ internal class BukkitLifecycleListener(
                 plugin,
             )
         }
+    }
+
+    /** Announces the portable join event once every other listener has handled the native one. */
+    @EventHandler(priority = EventPriority.MONITOR)
+    fun publishPlayerJoined(event: PlayerJoinEvent) {
+        library?.let { PlayerLifecyclePublisher.joined(it, event.player.uniqueId, event.player.name) }
+    }
+
+    /** Announces the portable quit event while the player is still resolvable. */
+    @EventHandler(priority = EventPriority.MONITOR)
+    fun publishPlayerLeft(event: PlayerQuitEvent) {
+        library?.let { PlayerLifecyclePublisher.left(it, event.player.uniqueId, event.player.name) }
     }
 
     /** Notifies authorized players about available or staged updates after joining, in the catalog's style. */
