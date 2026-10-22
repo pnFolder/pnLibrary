@@ -241,6 +241,28 @@ class EventServiceImplTest {
     }
 
     @Test
+    fun `a listener added while other threads dispatch is seen by the next call`() {
+        EventServiceImpl { _, _, _ -> }.use { events ->
+            val scope = events.scope(PluginId.of("test"))
+            val running = java.util.concurrent.atomic.AtomicBoolean(true)
+            val readers = (1..4).map { Thread { while (running.get()) events.callEvent(TestEvent()) }.apply { start() } }
+            try {
+                repeat(300) { n ->
+                    val seen = java.util.concurrent.atomic.AtomicInteger()
+                    val subscription = scope.subscribe(TestEvent::class.java, Consumer { seen.incrementAndGet() })
+                    val before = seen.get()
+                    events.callEvent(TestEvent())
+                    assertTrue(seen.get() > before, "round $n: listener subscribed before the call was not invoked")
+                    subscription.close()
+                }
+            } finally {
+                running.set(false)
+                readers.forEach { it.join(5_000) }
+            }
+        }
+    }
+
+    @Test
     fun `a failing listener is logged and skipped but a dying JVM is not hidden`() {
         val logged = mutableListOf<Throwable>()
         var after = 0
