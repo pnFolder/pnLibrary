@@ -101,6 +101,7 @@ subprojects {
 val publicModuleDependencies = mapOf(
     ":modules:common" to emptySet<String>(),
     ":modules:api" to setOf(":modules:common", ":modules:features:config-api"),
+    ":modules:features:config-api" to setOf(":modules:common"),
     ":modules:features:currency-api" to setOf(":modules:api"),
     ":platforms:bukkit:api" to setOf(":modules:api", ":modules:common"),
     ":platforms:bungee:api" to setOf(":modules:api"),
@@ -131,6 +132,7 @@ tasks.named("check") {
         ":modules:common:apiCheck",
         ":modules:api:apiCheck",
         ":modules:runtime-spi:apiCheck",
+        ":modules:features:config-api:apiCheck",
         ":modules:features:currency-api:apiCheck",
         ":modules:features:minecraft-localization:apiCheck",
         ":platforms:bukkit:api:apiCheck",

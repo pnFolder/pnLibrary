@@ -85,6 +85,7 @@ class SourceConventionsTest {
         val BUILD_DIRECTORIES = listOf("/build/", "/.gradle/", "/out/")
         val PUBLIC_API_MODULES = listOf(
             "modules/api/", "modules/common/", "modules/features/currency-api/", "modules/features/minecraft-localization/",
+            "modules/features/config-api/",
             "platforms/bukkit/api/", "platforms/bungee/api/", "platforms/velocity/api/",
         )
         val INFERRED_APPLY = Regex("""fun\s+(?:<[^>]*>\s+)?(\w+)\((?:[^()]|\((?:[^()]|\([^()]*\))*\))*\)\s*=\s*apply\b""")
