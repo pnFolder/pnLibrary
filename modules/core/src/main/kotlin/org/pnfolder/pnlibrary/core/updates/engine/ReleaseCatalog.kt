@@ -54,12 +54,14 @@ internal data class CatalogRelease(
  * One platform artifact declared by a catalog release.
  *
  * @property file safe JAR filename
- * @property platform required platform family
+ * @property platform required platform family, or [PlatformType.UNIVERSAL] for one JAR built for every platform
  * @property minecraft optional compatible Minecraft range
  * @property platformApi optional compatible proxy API range
  * @property javaMinimum oldest supported Java feature version
  * @property javaMaximum newest supported Java feature version
  * @property url HTTPS artifact location
+ * @property sha256 optional published SHA-256 digest
+ * @property size optional published byte size
  */
 internal data class CatalogArtifact(
     val file: String,
@@ -69,6 +71,8 @@ internal data class CatalogArtifact(
     val javaMinimum: Int,
     val javaMaximum: Int? = null,
     val url: URI,
+    val sha256: String? = null,
+    val size: Long? = null,
 )
 
 /** Strict schema-1 JSON decoder for bounded release catalogs. */
@@ -114,18 +118,29 @@ internal class ReleaseCatalogCodec(private val maximumBytes: Int = MAX_BYTES) {
         require(SAFE_FILE.matches(file) && file.endsWith(".jar", true)) { "$field.file is not a safe JAR filename" }
         val platform = try { PlatformType.valueOf(value.requiredString("platform").uppercase()) }
             catch (error: Exception) { throw ManifestException("$field.platform", "unknown platform", error) }
-        val java = value.requiredObject("java")
-        val minimum = java.requiredInt("minimum")
-        val maximum = java.optionalInt("maximum")
+        // Absent only for a UNIVERSAL artifact that imposes no Java restriction beyond the library's own floor.
+        val java = if (value.has("java")) value.requiredObject("java") else null
+        val minimum = java?.requiredInt("minimum") ?: 8
+        val maximum = java?.optionalInt("maximum")
         require(minimum >= 8 && (maximum == null || maximum >= minimum)) { "$field.java range is invalid" }
         val minecraft = value.optionalRange("minecraft")
         val platformApi = value.optionalRange("platformApi")
-        require(!(minecraft != null && platform.isProxy)) { "$field.minecraft is only valid for server platforms" }
-        require(!(platformApi != null && platform.isServer)) { "$field.platformApi is only valid for proxy platforms" }
+        if (platform == PlatformType.UNIVERSAL) {
+            require(minecraft == null && platformApi == null) {
+                "$field: a UNIVERSAL artifact must not declare minecraft or platformApi"
+            }
+        } else {
+            require(!(minecraft != null && platform.isProxy)) { "$field.minecraft is only valid for server platforms" }
+            require(!(platformApi != null && platform.isServer)) { "$field.platformApi is only valid for proxy platforms" }
+        }
         val url = try { URI(value.requiredString("url")) }
             catch (error: Exception) { throw ManifestException("$field.url", "invalid URL", error) }
         require(url.scheme.equals("https", true)) { "$field.url must use HTTPS" }
-        return CatalogArtifact(file, platform, minecraft, platformApi, minimum, maximum, url)
+        val sha256 = value.optionalString("sha256")?.also {
+            require(it.matches(SHA256)) { "$field.sha256 must have 64 hexadecimal characters" }
+        }?.lowercase()
+        val size = value.optionalLong("size")?.also { require(it > 0) { "$field.size must be positive" } }
+        return CatalogArtifact(file, platform, minecraft, platformApi, minimum, maximum, url, sha256, size)
     }
 
     private fun JsonObject.apiRange() = ApiVersionRange(requiredInt("minimum"), requiredInt("maximum"))
@@ -164,6 +179,11 @@ internal class ReleaseCatalogCodec(private val maximumBytes: Int = MAX_BYTES) {
         if (value.isJsonNull) fail(name, "null is not allowed; omit the field")
         try { value.asInt } catch (error: Exception) { fail(name, "expected integer", error) }
     }
+    private fun JsonObject.optionalLong(name: String): Long? = if (!has(name)) null else {
+        val value = get(name)
+        if (value.isJsonNull) fail(name, "null is not allowed; omit the field")
+        try { value.asLong } catch (error: Exception) { fail(name, "expected integer", error) }
+    }
     private fun JsonObject.requiredObject(name: String) = get(name)?.takeIf { it.isJsonObject }?.asJsonObject
         ?: fail(name, "expected object")
     private fun JsonObject.requiredArray(name: String): JsonArray = get(name)?.takeIf { it.isJsonArray }?.asJsonArray
@@ -179,6 +199,7 @@ internal class ReleaseCatalogCodec(private val maximumBytes: Int = MAX_BYTES) {
         /** Default maximum encoded catalog size. */
         const val MAX_BYTES = 1024 * 1024
         private val SAFE_FILE = Regex("[A-Za-z0-9][A-Za-z0-9._-]*")
+        private val SHA256 = Regex("(?i)[0-9a-f]{64}")
     }
 }
 

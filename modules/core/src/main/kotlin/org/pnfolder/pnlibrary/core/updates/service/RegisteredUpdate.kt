@@ -75,8 +75,8 @@ internal class RegisteredUpdate(
                 platform = artifact.platform,
                 minimumJava = artifact.javaMinimum,
                 maximumJava = artifact.javaMaximum,
-                size = null,
-                sha256 = null,
+                size = artifact.size,
+                sha256 = artifact.sha256,
                 downloadUri = artifact.url,
             )
         },

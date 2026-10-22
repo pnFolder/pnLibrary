@@ -9,30 +9,37 @@
       "changelogUrl": "https://github.com/pnFolder/pnLibrary/blob/main/.pnlibrary/changelogs/0.0.1-dev.2.md",
       "publishedAt": "2026-10-22T12:33:57Z",
       "api": { "minimum": 1, "maximum": 1 },
-      "installer": {
-        "file": "pnLibrary-0.0.1-dev.2-universal.jar",
-        "url": "https://github.com/pnFolder/pnLibrary/releases/download/v0.0.1-dev.2/pnLibrary-0.0.1-dev.2-universal.jar",
-        "sha256": "0100f288a514b1f0dddf881a2264c81029deb1a13f382e0b9a412bd0ed957683",
-        "size": 69909103
-      },
       "artifacts": [
+        {
+          "file": "pnLibrary-0.0.1-dev.2-universal.jar",
+          "platform": "UNIVERSAL",
+          "url": "https://github.com/pnFolder/pnLibrary/releases/download/v0.0.1-dev.2/pnLibrary-0.0.1-dev.2-universal.jar",
+          "sha256": "0100f288a514b1f0dddf881a2264c81029deb1a13f382e0b9a412bd0ed957683",
+          "size": 69909103
+        },
         {
           "file": "pnLibrary-0.0.1-dev.2-bukkit-java8.jar",
           "platform": "BUKKIT",
           "java": { "minimum": 8 },
-          "url": "https://github.com/pnFolder/pnLibrary/releases/download/v0.0.1-dev.2/pnLibrary-0.0.1-dev.2-bukkit-java8.jar"
+          "url": "https://github.com/pnFolder/pnLibrary/releases/download/v0.0.1-dev.2/pnLibrary-0.0.1-dev.2-bukkit-java8.jar",
+          "sha256": "5c7035a283d6e466698a9645c2844f4f87232a43102819aad0eddd66ec9d785b",
+          "size": 69783667
         },
         {
           "file": "pnLibrary-0.0.1-dev.2-bungeecord-java8.jar",
           "platform": "BUNGEECORD",
           "java": { "minimum": 8 },
-          "url": "https://github.com/pnFolder/pnLibrary/releases/download/v0.0.1-dev.2/pnLibrary-0.0.1-dev.2-bungeecord-java8.jar"
+          "url": "https://github.com/pnFolder/pnLibrary/releases/download/v0.0.1-dev.2/pnLibrary-0.0.1-dev.2-bungeecord-java8.jar",
+          "sha256": "a99451d0235748cc103edb8f3830f35c6961ecf62fcacb8bdf934b58c5de6d98",
+          "size": 69085526
         },
         {
           "file": "pnLibrary-0.0.1-dev.2-velocity-java17.jar",
           "platform": "VELOCITY",
           "java": { "minimum": 17 },
-          "url": "https://github.com/pnFolder/pnLibrary/releases/download/v0.0.1-dev.2/pnLibrary-0.0.1-dev.2-velocity-java17.jar"
+          "url": "https://github.com/pnFolder/pnLibrary/releases/download/v0.0.1-dev.2/pnLibrary-0.0.1-dev.2-velocity-java17.jar",
+          "sha256": "19df4b744bdbea56201b5d1f98b643b0a541118c4a49200cb62c572704faf536",
+          "size": 69106285
         }
       ]
     }

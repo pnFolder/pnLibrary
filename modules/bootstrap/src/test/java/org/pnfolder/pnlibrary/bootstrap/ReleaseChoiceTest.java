@@ -43,10 +43,15 @@ class ReleaseChoiceTest {
 
     private static final String SUM = "bbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbb";
 
+    /** A release whose {@code artifacts} list describes a universal jar the installer can take without asking GitHub. */
     private static String described(String version, String channel, String sum) {
-        return "{\"version\":\"" + version + "\",\"channel\":\"" + channel + "\",\"installer\":{\"file\":\"pnLibrary-"
-                + version + "-universal.jar\",\"url\":\"https://example.org/files/pnLibrary-" + version
-                + "-universal.jar\",\"sha256\":\"" + sum + "\",\"size\":4096}}";
+        return describedPlatform(version, channel, "UNIVERSAL", "pnLibrary-" + version + "-universal.jar", sum);
+    }
+
+    private static String describedPlatform(String version, String channel, String platform, String file, String sum) {
+        return "{\"version\":\"" + version + "\",\"channel\":\"" + channel + "\",\"artifacts\":[{\"platform\":\""
+                + platform + "\",\"file\":\"" + file + "\",\"url\":\"https://example.org/files/" + file
+                + "\",\"sha256\":\"" + sum + "\",\"size\":4096}]}";
     }
 
     private static String entry(String version, String channel) {
@@ -54,9 +59,13 @@ class ReleaseChoiceTest {
     }
 
     private LibraryRelease choose(String minimum) throws IOException {
+        return choose(minimum, BootstrapPlatform.BUKKIT);
+    }
+
+    private LibraryRelease choose(String minimum, BootstrapPlatform platform) throws IOException {
         BootstrapOptions options = minimum == null
                 ? BootstrapOptions.builder().build() : BootstrapOptions.builder(minimum).build();
-        return new GitHubReleaseClient(options, (url, accept) -> {
+        return new GitHubReleaseClient(options, platform, (url, accept) -> {
             String answer = answers.get(url);
             if (answer == null) throw new IOException("GitHub returned HTTP 404");
             return answer;
@@ -86,6 +95,20 @@ class ReleaseChoiceTest {
         assertEquals(SUM, release.sha256());
         assertEquals(4096L, release.size());
         assertTrue(release.stable());
+    }
+
+    @Test
+    void aPlatformSpecificArtifactIsPreferredOverAUniversalOneInTheSameRelease() throws IOException {
+        String json = "{\"schema\":1,\"product\":\"pnlibrary\",\"releases\":[{\"version\":\"1.0.0\",\"channel\":\"stable\","
+                + "\"artifacts\":[{\"platform\":\"UNIVERSAL\",\"file\":\"pnLibrary-1.0.0-universal.jar\","
+                + "\"url\":\"https://example.org/files/universal.jar\",\"sha256\":\"" + SUM + "\"},"
+                + "{\"platform\":\"BUKKIT\",\"file\":\"pnLibrary-1.0.0-bukkit-java8.jar\","
+                + "\"url\":\"https://example.org/files/bukkit.jar\",\"sha256\":\"" + SUM + "\",\"java\":{\"minimum\":8}}]}]}";
+        answers.put(LIST, json);
+
+        LibraryRelease release = choose(null, BootstrapPlatform.BUKKIT);
+
+        assertEquals("pnLibrary-1.0.0-bukkit-java8.jar", release.fileName());
     }
 
     @Test

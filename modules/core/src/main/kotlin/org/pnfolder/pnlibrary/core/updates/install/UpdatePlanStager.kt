@@ -89,11 +89,15 @@ internal class UpdatePlanStager(
         )
     }
 
+    /** The artifact built exactly for [platform], or, when none is listed, one built for every platform. */
     private fun selectArtifact(
         change: ProductChange,
         release: ProductRelease,
-    ): ArtifactDescriptor = release.artifacts.firstOrNull { artifact ->
-        artifact.platform == platform && artifact.supports(JavaRuntime.feature)
-    } ?: error("No ${platform.id} artifact for ${change.product} ${change.to}")
+    ): ArtifactDescriptor {
+        val candidates = release.artifacts.filter { it.matchesPlatform(platform) && it.supports(JavaRuntime.feature) }
+        return candidates.firstOrNull { it.platform == platform }
+            ?: candidates.firstOrNull()
+            ?: error("No ${platform.id} artifact for ${change.product} ${change.to}")
+    }
 
 }

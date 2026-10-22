@@ -14,6 +14,7 @@ interface PlatformIdentity {
             PlatformType.BUKKIT -> "bukkit"
             PlatformType.BUNGEECORD -> "bungee"
             PlatformType.VELOCITY -> "velocity"
+            PlatformType.UNIVERSAL -> error("UNIVERSAL is a release artifact, not a plugin identity")
         }
     /** Native descriptor file used when validating downloaded plugin JARs. */
     val descriptorFileName: String
@@ -21,5 +22,6 @@ interface PlatformIdentity {
             PlatformType.BUKKIT -> "plugin.yml"
             PlatformType.BUNGEECORD -> "bungee.yml"
             PlatformType.VELOCITY -> "velocity-plugin.json"
+            PlatformType.UNIVERSAL -> error("UNIVERSAL is a release artifact, not a plugin identity")
         }
 }

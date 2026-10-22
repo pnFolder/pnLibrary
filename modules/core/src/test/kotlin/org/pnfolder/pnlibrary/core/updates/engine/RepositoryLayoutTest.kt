@@ -1,10 +1,10 @@
 package org.pnfolder.pnlibrary.core.updates.engine
 
-import com.google.gson.JsonParser
 import org.junit.jupiter.api.Assertions.assertEquals
 import org.junit.jupiter.api.Assertions.assertNotNull
 import org.junit.jupiter.api.Assertions.assertTrue
 import org.junit.jupiter.api.Test
+import org.pnfolder.pnlibrary.api.platform.PlatformType
 import java.nio.file.Files
 import java.nio.file.Path
 import java.nio.file.Paths
@@ -40,22 +40,16 @@ class RepositoryLayoutTest {
     }
 
     @Test
-    fun `an installer block describes a universal jar with a checksum`() {
+    fun `every universal artifact names a universal jar and carries a checksum`() {
         listOf("releases.json", "releases.example.json").forEach { name ->
-            val root = JsonParser.parseString(Files.readString(folder.resolve(name))).asJsonObject
-            root.getAsJsonArray("releases").map { it.asJsonObject }.forEach { release ->
-                val installer = release.getAsJsonObject("installer") ?: return@forEach
-                val version = release.get("version").asString
-                assertTrue(
-                    installer.get("file").asString.matches(Regex("(?i)^pnLibrary-[0-9][^/\\\\]*-universal\\.jar\$")),
-                    "$name: the installer file of $version must be a universal jar",
-                )
-                assertTrue(installer.get("url").asString.startsWith("https://"), "$name: the installer link of $version must be HTTPS")
-                assertTrue(
-                    installer.get("sha256").asString.matches(Regex("(?i)[0-9a-f]{64}")),
-                    "$name: the installer sha256 of $version must have 64 hexadecimal characters",
-                )
-                installer.get("size")?.let { assertTrue(it.asLong > 0, "$name: the installer size of $version must be positive") }
+            catalog(name).releases.forEach { release ->
+                release.artifacts.filter { it.platform == PlatformType.UNIVERSAL }.forEach { artifact ->
+                    assertTrue(
+                        artifact.file.matches(Regex("(?i)^pnLibrary-[0-9][^/\\\\]*-universal\\.jar\$")),
+                        "$name: the universal artifact of ${release.version} must be named a universal jar",
+                    )
+                    assertNotNull(artifact.sha256, "$name: the universal artifact of ${release.version} has no sha256")
+                }
             }
         }
     }

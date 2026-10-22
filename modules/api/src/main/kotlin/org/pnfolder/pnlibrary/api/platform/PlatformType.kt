@@ -25,6 +25,12 @@ enum class PlatformType(
     /** Velocity proxy family using its native scheduler, commands, and plugin container model. */
     VELOCITY("velocity", "Velocity", true),
 
+    /**
+     * Not a real runtime family: a release artifact built for every platform at once. Valid only as
+     * [org.pnfolder.pnlibrary.api.updates.release.ArtifactDescriptor.platform]; never a plugin's own identity.
+     */
+    UNIVERSAL("universal", "Universal", false),
+
     ;
 
     /** Whether this family runs a Minecraft server rather than a proxy. */

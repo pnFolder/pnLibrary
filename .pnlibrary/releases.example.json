@@ -12,15 +12,46 @@
         "minimum": 8,
         "maximum": 8
       },
-      "installer": {
-        "file": "pnLibrary-1.1.0-universal.jar",
-        "url": "https://github.com/pnFolder/pnLibrary/releases/download/v1.1.0/pnLibrary-1.1.0-universal.jar",
-        "sha256": "0123456789abcdef0123456789abcdef0123456789abcdef0123456789abcdef",
-        "size": 12345678
-      },
       "artifacts": [
         {
-          "file": "pnLibrary-1.1.0-velocity.jar",
+          "file": "pnLibrary-1.1.0-universal.jar",
+          "platform": "UNIVERSAL",
+          "url": "https://github.com/pnFolder/pnLibrary/releases/download/v1.1.0/pnLibrary-1.1.0-universal.jar",
+          "sha256": "a1b2c3d4e5f6a1b2c3d4e5f6a1b2c3d4e5f6a1b2c3d4e5f6a1b2c3d4e5f6a1b2",
+          "size": 70123456
+        },
+        {
+          "file": "pnLibrary-1.1.0-bukkit-java8.jar",
+          "platform": "BUKKIT",
+          "java": {
+            "minimum": 8
+          },
+          "url": "https://github.com/pnFolder/pnLibrary/releases/download/v1.1.0/pnLibrary-1.1.0-bukkit-java8.jar",
+          "sha256": "b2c3d4e5f6a1b2c3d4e5f6a1b2c3d4e5f6a1b2c3d4e5f6a1b2c3d4e5f6a1b2c3",
+          "size": 69500000
+        },
+        {
+          "file": "pnLibrary-1.1.0-bukkit-java21.jar",
+          "platform": "BUKKIT",
+          "java": {
+            "minimum": 21
+          },
+          "url": "https://github.com/pnFolder/pnLibrary/releases/download/v1.1.0/pnLibrary-1.1.0-bukkit-java21.jar",
+          "sha256": "e5f6a1b2c3d4e5f6a1b2c3d4e5f6a1b2c3d4e5f6a1b2c3d4e5f6a1b2c3d4e5f6",
+          "size": 65100000
+        },
+        {
+          "file": "pnLibrary-1.1.0-bungeecord-java8.jar",
+          "platform": "BUNGEECORD",
+          "java": {
+            "minimum": 8
+          },
+          "url": "https://github.com/pnFolder/pnLibrary/releases/download/v1.1.0/pnLibrary-1.1.0-bungeecord-java8.jar",
+          "sha256": "c3d4e5f6a1b2c3d4e5f6a1b2c3d4e5f6a1b2c3d4e5f6a1b2c3d4e5f6a1b2c3d4",
+          "size": 68800000
+        },
+        {
+          "file": "pnLibrary-1.1.0-velocity-java17.jar",
           "platform": "VELOCITY",
           "platformApi": {
             "minimum": "3.3",
@@ -29,7 +60,9 @@
           "java": {
             "minimum": 17
           },
-          "url": "https://github.com/pnFolder/pnLibrary/releases/download/v1.1.0/pnLibrary-1.1.0-velocity.jar"
+          "url": "https://github.com/pnFolder/pnLibrary/releases/download/v1.1.0/pnLibrary-1.1.0-velocity-java17.jar",
+          "sha256": "d4e5f6a1b2c3d4e5f6a1b2c3d4e5f6a1b2c3d4e5f6a1b2c3d4e5f6a1b2c3d4e5",
+          "size": 68900000
         }
       ]
     },
@@ -45,16 +78,11 @@
       },
       "artifacts": [
         {
-          "file": "pnLibrary-1.0.0-velocity.jar",
-          "platform": "VELOCITY",
-          "platformApi": {
-            "minimum": "3.3",
-            "maximum": "3.4"
-          },
-          "java": {
-            "minimum": 17
-          },
-          "url": "https://github.com/pnFolder/pnLibrary/releases/download/v1.0.0/pnLibrary-1.0.0-velocity.jar"
+          "file": "pnLibrary-1.0.0-universal.jar",
+          "platform": "UNIVERSAL",
+          "url": "https://github.com/pnFolder/pnLibrary/releases/download/v1.0.0/pnLibrary-1.0.0-universal.jar",
+          "sha256": "f6a1b2c3d4e5f6a1b2c3d4e5f6a1b2c3d4e5f6a1b2c3d4e5f6a1b2c3d4e5f6a1",
+          "size": 70200000
         }
       ]
     }

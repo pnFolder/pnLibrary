@@ -16,6 +16,10 @@
 
 ## `releases.json`
 
+Один список `artifacts` описывает все файлы релиза — и те, что скачивает уже установленная pnLibrary при обновлении,
+и тот, что скачивает встроенный установщик при первой установке. Это одна и та же структура, отдельного блока для
+установщика нет.
+
 ```json
 {
   "schema": 1,
@@ -28,19 +32,30 @@
       "changelogUrl": "https://github.com/pnFolder/pnLibrary/blob/main/.pnlibrary/changelogs/1.1.0.md",
       "publishedAt": "2026-10-16T12:00:00Z",
       "api": { "minimum": 8, "maximum": 8 },
-      "installer": {
-        "file": "pnLibrary-1.1.0-universal.jar",
-        "url": "https://github.com/pnFolder/pnLibrary/releases/download/v1.1.0/pnLibrary-1.1.0-universal.jar",
-        "sha256": "0123456789abcdef0123456789abcdef0123456789abcdef0123456789abcdef",
-        "size": 12345678
-      },
       "artifacts": [
+        {
+          "file": "pnLibrary-1.1.0-universal.jar",
+          "platform": "UNIVERSAL",
+          "url": "https://github.com/pnFolder/pnLibrary/releases/download/v1.1.0/pnLibrary-1.1.0-universal.jar",
+          "sha256": "a1b2c3d4e5f6a1b2c3d4e5f6a1b2c3d4e5f6a1b2c3d4e5f6a1b2c3d4e5f6a1b2",
+          "size": 70123456
+        },
+        {
+          "file": "pnLibrary-1.1.0-bukkit-java8.jar",
+          "platform": "BUKKIT",
+          "java": { "minimum": 8 },
+          "url": "https://github.com/pnFolder/pnLibrary/releases/download/v1.1.0/pnLibrary-1.1.0-bukkit-java8.jar",
+          "sha256": "b2c3d4e5f6a1b2c3d4e5f6a1b2c3d4e5f6a1b2c3d4e5f6a1b2c3d4e5f6a1b2c3",
+          "size": 69500000
+        },
         {
           "file": "pnLibrary-1.1.0-velocity-java17.jar",
           "platform": "VELOCITY",
           "platformApi": { "minimum": "3.3", "maximum": "3.4" },
           "java": { "minimum": 17 },
-          "url": "https://github.com/pnFolder/pnLibrary/releases/download/v1.1.0/pnLibrary-1.1.0-velocity-java17.jar"
+          "url": "https://github.com/pnFolder/pnLibrary/releases/download/v1.1.0/pnLibrary-1.1.0-velocity-java17.jar",
+          "sha256": "d4e5f6a1b2c3d4e5f6a1b2c3d4e5f6a1b2c3d4e5f6a1b2c3d4e5f6a1b2c3d4e5",
+          "size": 68900000
         }
       ]
     }
@@ -58,24 +73,34 @@
 | `changelogUrl` | ссылка на файл из `changelogs/` (необязательно) |
 | `publishedAt` | время публикации в UTC |
 | `api` | какие версии API pnLibrary поддерживает релиз |
-| `installer` | универсальный JAR для первой установки встроенным установщиком (необязательно, см. ниже) |
-| `artifacts` | файлы релиза по платформам: имя, платформа, диапазон версий платформы, Java и ссылка |
+| `artifacts` | файлы релиза: имя, платформа, диапазоны версий, ссылка, сумма (см. ниже) |
 
-### Блок `installer`
+### Записи `artifacts`
 
-Встроенный установщик (`PnLibraryBootstrap`) ставит один универсальный JAR `<имя>-<версия>-universal.jar`, который
-подходит всем платформам. Если описать его в этом блоке, установщик берёт ссылку, размер и контрольную сумму прямо из
-списка репозитория, а GitHub не спрашивает.
+Один релиз может перечислять сколько угодно файлов: один универсальный на все платформы, отдельные файлы под каждую
+платформу, и даже несколько файлов одной платформы под разные версии Java (например, отдельно под Java 8 и под Java 21)
+— для серверов со старой Java. И обновление уже установленной pnLibrary, и встроенный установщик берут из этого списка
+файл, который подходит их платформе и версии Java: **сначала запись под точную платформу, и только если такой нет —
+запись `"platform": "UNIVERSAL"`.** Так можно опубликовать только `UNIVERSAL` (минимум усилий) либо добавить к нему
+более узкие файлы для случаев, которые он не покрывает.
 
 | Поле | Смысл |
 |---|---|
-| `file` | имя универсального JAR, обязательно вида `<имя>-<версия>-universal.jar` |
+| `file` | безопасное имя JAR; для `platform: "UNIVERSAL"` — обязательно вида `<имя>-<версия>-universal.jar` |
+| `platform` | `BUKKIT`, `BUNGEECORD`, `VELOCITY` или `UNIVERSAL` (один файл для всех трёх) |
+| `java` | диапазон версий Java (необязательно; без него файл не ограничен по Java) |
+| `minecraft` | диапазон версий Minecraft, только для `BUKKIT` (необязательно) |
+| `platformApi` | диапазон версии платформы, только для `BUNGEECORD`/`VELOCITY` (необязательно) |
 | `url` | ссылка на файл, только HTTPS |
-| `sha256` | SHA-256 файла, 64 шестнадцатеричных символа; скачанный файл с другой суммой отклоняется |
+| `sha256` | SHA-256 файла, 64 шестнадцатеричных символа (необязательно, но без него установщик не примет файл — см. ниже) |
 | `size` | размер в байтах (необязательно); если указан, должен совпасть со скачанным |
 
-Блок с ошибкой (чужое имя файла, не HTTPS, сумма не из 64 символов, слишком большой размер) пропускается, и файл с суммой
-установщик берёт из GitHub-релиза этой версии. Обычные обновления блок `installer` не читают.
+Запись `UNIVERSAL` не может указывать `minecraft` или `platformApi` — она работает на всех платформах сразу.
+
+Встроенный установщик принимает только запись с правильно заполненными `file`, `sha256` (64 символа) и HTTPS-ссылкой
+`url`; запись с ошибкой (не тот формат имени для `UNIVERSAL`, не HTTPS, сумма не из 64 символов, слишком большой
+размер) пропускается. Если во всём релизе нет ни одной годной записи под платформу установщика (ни точной, ни
+`UNIVERSAL`), он идёт за файлом на GitHub-релиз этой версии.
 
 Правила: версии не повторяются, у релиза есть хотя бы один файл, ссылки только по HTTPS. Нарушение любого правила
 сообщается с путём к полю (`releases[2].artifacts[0].url`). Пустой список `"releases": []` допустим.

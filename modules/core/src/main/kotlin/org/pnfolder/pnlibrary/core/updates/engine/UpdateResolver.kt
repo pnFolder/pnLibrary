@@ -68,7 +68,7 @@ internal class UpdateResolver(private val libraryComponent: ProductId) {
         val allowedReleases = releases.filter { release ->
             channels.getOrDefault(release.product, defaultChannel).accepts(release.channel)
         }.filter { release -> release.artifacts.isEmpty() || release.artifacts.any { artifact ->
-            (platform == null || artifact.platform == platform) && artifact.supports(javaFeature)
+            (platform == null || artifact.matchesPlatform(platform)) && artifact.supports(javaFeature)
         } }
         val currentLibraryRelease = currentLibrary.asRelease()
         val libraryDomain = if (libraryComponent in frozen) {

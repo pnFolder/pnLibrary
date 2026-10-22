@@ -92,7 +92,7 @@ public final class LibraryInstaller {
      * @throws Exception when GitHub is unreachable or the file does not verify; nothing is left behind
      */
     public Placement download(Path pluginsDirectory) throws Exception {
-        GitHubReleaseClient client = new GitHubReleaseClient(options);
+        GitHubReleaseClient client = new GitHubReleaseClient(options, platform);
         LibraryRelease release = client.release();
         Path directory = pluginsDirectory.toAbsolutePath().normalize();
         Files.createDirectories(directory);

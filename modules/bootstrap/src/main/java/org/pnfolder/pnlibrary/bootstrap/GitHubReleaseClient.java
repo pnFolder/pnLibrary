@@ -16,6 +16,8 @@ import java.util.Locale;
 final class GitHubReleaseClient {
     private static final int JSON_LIMIT = 2 * 1024 * 1024;
     private final BootstrapOptions options;
+    private final BootstrapPlatform platform;
+    private final int javaFeature;
     private final Fetcher fetcher;
 
     /** Where the text of a web address comes from; replaced in tests. */
@@ -31,11 +33,28 @@ final class GitHubReleaseClient {
         String get(String url, String accept) throws IOException;
     }
 
-    GitHubReleaseClient(BootstrapOptions options) { this(options, null); }
+    GitHubReleaseClient(BootstrapOptions options, BootstrapPlatform platform) { this(options, platform, currentJavaFeature(), null); }
 
-    GitHubReleaseClient(BootstrapOptions options, Fetcher fetcher) {
+    GitHubReleaseClient(BootstrapOptions options, BootstrapPlatform platform, Fetcher fetcher) {
+        this(options, platform, currentJavaFeature(), fetcher);
+    }
+
+    GitHubReleaseClient(BootstrapOptions options, BootstrapPlatform platform, int javaFeature, Fetcher fetcher) {
         this.options = options;
+        this.platform = platform;
+        this.javaFeature = javaFeature;
         this.fetcher = fetcher != null ? fetcher : this::fetch;
+    }
+
+    /** The running JVM's feature version ({@code 8}, {@code 17}, {@code 21}, ...), read without any Java 9+ API. */
+    private static int currentJavaFeature() {
+        String spec = System.getProperty("java.specification.version", "8").trim();
+        if (spec.startsWith("1.")) spec = spec.substring(2);
+        try {
+            return Integer.parseInt(spec);
+        } catch (RuntimeException invalid) {
+            return 8;
+        }
     }
 
     /**
@@ -48,8 +67,8 @@ final class GitHubReleaseClient {
      * no stable one, the newest of any kind;</li>
      * <li>the GitHub release of the exact lowest version, if it was asked for.</li>
      * </ol>
-     * The file and its checksum come from the list when it describes them in an {@code installer} block, otherwise
-     * from the GitHub release of the chosen version.
+     * The file and its checksum come from the list's {@code artifacts}, when one entry fits this platform and Java
+     * version; otherwise from the GitHub release of the chosen version.
      *
      * @return the release to download
      * @throws IOException when GitHub cannot be reached
@@ -80,8 +99,11 @@ final class GitHubReleaseClient {
     private LibraryRelease fromRepositoryList(String root) {
         String json = listJson();
         if (json == null) return null;
-        RepositoryCatalog.Listed listed = RepositoryCatalog.pick(json, options.minimumVersion(), true, options.maximumBytes());
-        if (listed == null) listed = RepositoryCatalog.pick(json, options.minimumVersion(), false, options.maximumBytes());
+        RepositoryCatalog.Listed listed =
+                RepositoryCatalog.pick(json, options.minimumVersion(), true, options.maximumBytes(), platform, javaFeature);
+        if (listed == null) {
+            listed = RepositoryCatalog.pick(json, options.minimumVersion(), false, options.maximumBytes(), platform, javaFeature);
+        }
         if (listed == null) return null;
         if (listed.release() != null) return listed.release();
         try {

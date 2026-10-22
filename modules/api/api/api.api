@@ -2552,6 +2552,7 @@ public abstract interface class org/pnfolder/pnlibrary/api/platform/PlatformProv
 public final class org/pnfolder/pnlibrary/api/platform/PlatformType : java/lang/Enum {
 	public static final field BUKKIT Lorg/pnfolder/pnlibrary/api/platform/PlatformType;
 	public static final field BUNGEECORD Lorg/pnfolder/pnlibrary/api/platform/PlatformType;
+	public static final field UNIVERSAL Lorg/pnfolder/pnlibrary/api/platform/PlatformType;
 	public static final field VELOCITY Lorg/pnfolder/pnlibrary/api/platform/PlatformType;
 	public final fun getDisplayName ()Ljava/lang/String;
 	public static fun getEntries ()Lkotlin/enums/EnumEntries;
@@ -3730,6 +3731,7 @@ public final class org/pnfolder/pnlibrary/api/updates/release/ArtifactDescriptor
 	public final fun getPlatform ()Lorg/pnfolder/pnlibrary/api/platform/PlatformType;
 	public final fun getSha256 ()Ljava/lang/String;
 	public final fun getSize ()Ljava/lang/Long;
+	public final fun matchesPlatform (Lorg/pnfolder/pnlibrary/api/platform/PlatformType;)Z
 	public final fun supports (I)Z
 }
 

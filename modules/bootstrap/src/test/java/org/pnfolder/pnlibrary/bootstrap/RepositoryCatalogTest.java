@@ -6,12 +6,32 @@ import static org.junit.jupiter.api.Assertions.assertNull;
 import org.junit.jupiter.api.Test;
 
 class RepositoryCatalogTest {
+    private static final String SUM = "c123456789abcdef0123456789abcdef0123456789abcdef0123456789abcdef";
+
     private static String list(String... releases) {
         return "{\"schema\":1,\"product\":\"pnlibrary\",\"releases\":[" + String.join(",", releases) + "]}";
     }
 
     private static String release(String version, String channel) {
         return "{\"version\":\"" + version + "\",\"channel\":\"" + channel + "\"}";
+    }
+
+    private static String releaseWithArtifacts(String version, String channel, String... artifacts) {
+        return "{\"version\":\"" + version + "\",\"channel\":\"" + channel + "\",\"artifacts\":["
+                + String.join(",", artifacts) + "]}";
+    }
+
+    private static String artifact(String platform, String file, String sum) {
+        return artifact(platform, file, sum, null, null);
+    }
+
+    private static String artifact(String platform, String file, String sum, Long size, Integer javaMinimum) {
+        StringBuilder json = new StringBuilder("{\"platform\":\"").append(platform).append("\",\"file\":\"")
+                .append(file).append("\",\"url\":\"https://example.org/").append(file)
+                .append("\",\"sha256\":\"").append(sum).append('"');
+        if (size != null) json.append(",\"size\":").append(size);
+        if (javaMinimum != null) json.append(",\"java\":{\"minimum\":").append(javaMinimum).append('}');
+        return json.append('}').toString();
     }
 
     @Test
@@ -44,37 +64,76 @@ class RepositoryCatalogTest {
     }
 
     @Test
-    void theInstallerBlockOfTheNewestReleaseDescribesItsFile() {
-        String sum = "c123456789abcdef0123456789abcdef0123456789abcdef0123456789abcdef";
-        String json = list("{\"version\":\"1.0.0\",\"channel\":\"stable\",\"installer\":{"
-                + "\"file\":\"pnLibrary-1.0.0-universal.jar\",\"url\":\"https://example.org/a.jar\","
-                + "\"sha256\":\"" + sum + "\",\"size\":2048}}");
+    void anExactPlatformArtifactWinsOverAUniversalOneInTheSameRelease() {
+        String json = list(releaseWithArtifacts("1.0.0", "stable",
+                artifact("UNIVERSAL", "pnLibrary-1.0.0-universal.jar", SUM),
+                artifact("BUKKIT", "pnLibrary-1.0.0-bukkit-java8.jar", SUM)));
 
-        RepositoryCatalog.Listed listed = RepositoryCatalog.pick(json, "0.0.0", true, 1_000_000L);
+        RepositoryCatalog.Listed listed = RepositoryCatalog.pick(json, "0.0.0", true, 1_000_000L, BootstrapPlatform.BUKKIT, 8);
 
         assertEquals("1.0.0", listed.version());
-        assertEquals("https://example.org/a.jar", listed.release().uri().toString());
-        assertEquals(sum, listed.release().sha256());
-        assertEquals(2048L, listed.release().size());
+        assertEquals("pnLibrary-1.0.0-bukkit-java8.jar", listed.release().fileName());
     }
 
     @Test
-    void anIncompleteOrUnsafeInstallerBlockIsIgnoredButTheVersionStays() {
-        String[] blocks = {
-                "{\"file\":\"other.jar\",\"url\":\"https://example.org/a.jar\",\"sha256\":\"%s\"}",
-                "{\"file\":\"pnLibrary-1.0.0-universal.jar\",\"url\":\"http://example.org/a.jar\",\"sha256\":\"%s\"}",
-                "{\"file\":\"pnLibrary-1.0.0-universal.jar\",\"url\":\"https://example.org/a.jar\",\"sha256\":\"short\"}",
-                "{\"file\":\"pnLibrary-1.0.0-universal.jar\",\"url\":\"https://example.org/a.jar\",\"sha256\":\"%s\",\"size\":99999999}",
+    void aUniversalArtifactIsUsedWhenNoExactPlatformOneIsListed() {
+        String json = list(releaseWithArtifacts("1.0.0", "stable",
+                artifact("UNIVERSAL", "pnLibrary-1.0.0-universal.jar", SUM)));
+
+        RepositoryCatalog.Listed listed = RepositoryCatalog.pick(json, "0.0.0", true, 1_000_000L, BootstrapPlatform.VELOCITY, 21);
+
+        assertEquals("pnLibrary-1.0.0-universal.jar", listed.release().fileName());
+        assertEquals(SUM, listed.release().sha256());
+    }
+
+    @Test
+    void anArtifactOfAnotherPlatformIsNeverUsed() {
+        String json = list(releaseWithArtifacts("1.0.0", "stable",
+                artifact("BUNGEECORD", "pnLibrary-1.0.0-bungeecord-java8.jar", SUM)));
+
+        RepositoryCatalog.Listed listed = RepositoryCatalog.pick(json, "0.0.0", true, 1_000_000L, BootstrapPlatform.BUKKIT, 8);
+
+        assertEquals("1.0.0", listed.version());
+        assertNull(listed.release());
+    }
+
+    @Test
+    void anArtifactWhoseJavaRangeDoesNotFitIsSkipped() {
+        String json = list(releaseWithArtifacts("1.0.0", "stable",
+                artifact("BUKKIT", "pnLibrary-1.0.0-bukkit-java17.jar", SUM, null, 17)));
+
+        RepositoryCatalog.Listed onOldJava = RepositoryCatalog.pick(json, "0.0.0", true, 1_000_000L, BootstrapPlatform.BUKKIT, 8);
+        RepositoryCatalog.Listed onNewJava = RepositoryCatalog.pick(json, "0.0.0", true, 1_000_000L, BootstrapPlatform.BUKKIT, 21);
+
+        assertNull(onOldJava.release());
+        assertEquals("pnLibrary-1.0.0-bukkit-java17.jar", onNewJava.release().fileName());
+    }
+
+    @Test
+    void whenNoPlatformIsGivenTheVersionIsStillPicked() {
+        String json = list(releaseWithArtifacts("1.0.0", "stable", artifact("UNIVERSAL", "pnLibrary-1.0.0-universal.jar", SUM)));
+
+        RepositoryCatalog.Listed listed = RepositoryCatalog.pick(json, "0.0.0", true, 1_000_000L, null, 0);
+
+        assertEquals("1.0.0", listed.version());
+        assertNull(listed.release());
+    }
+
+    @Test
+    void anIncompleteOrUnsafeArtifactIsIgnoredButTheVersionStays() {
+        String[] entries = {
+                artifact("UNIVERSAL", "other.jar", SUM),
+                "{\"platform\":\"UNIVERSAL\",\"file\":\"pnLibrary-1.0.0-universal.jar\",\"url\":\"http://example.org/a.jar\",\"sha256\":\"" + SUM + "\"}",
+                "{\"platform\":\"UNIVERSAL\",\"file\":\"pnLibrary-1.0.0-universal.jar\",\"url\":\"https://example.org/a.jar\",\"sha256\":\"short\"}",
+                artifact("UNIVERSAL", "pnLibrary-1.0.0-universal.jar", SUM, 99_999_999L, null),
         };
-        String sum = "0123456789abcdef0123456789abcdef0123456789abcdef0123456789abcdef";
-        for (String block : blocks) {
-            String json = list("{\"version\":\"1.0.0\",\"channel\":\"stable\",\"installer\":"
-                    + String.format(block, sum) + "}");
+        for (String entry : entries) {
+            String json = list(releaseWithArtifacts("1.0.0", "stable", entry));
 
-            RepositoryCatalog.Listed listed = RepositoryCatalog.pick(json, "0.0.0", true, 1_000_000L);
+            RepositoryCatalog.Listed listed = RepositoryCatalog.pick(json, "0.0.0", true, 1_000_000L, BootstrapPlatform.BUKKIT, 8);
 
-            assertEquals("1.0.0", listed.version(), block);
-            assertNull(listed.release(), block);
+            assertEquals("1.0.0", listed.version(), entry);
+            assertNull(listed.release(), entry);
         }
     }
 

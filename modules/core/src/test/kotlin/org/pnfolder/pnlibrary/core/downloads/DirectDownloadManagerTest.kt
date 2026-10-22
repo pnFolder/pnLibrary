@@ -189,6 +189,7 @@ class DirectDownloadManagerTest {
                     PlatformType.BUKKIT -> "plugin.yml"
                     PlatformType.BUNGEECORD -> "bungee.yml"
                     PlatformType.VELOCITY -> "velocity-plugin.json"
+                    PlatformType.UNIVERSAL -> error("not a real platform")
                 }
                 "installedPlugins" -> installed
                 "details" -> emptyMap<String, String>()

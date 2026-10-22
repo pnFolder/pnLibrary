@@ -40,6 +40,9 @@ class ArtifactDescriptor(
     /** Returns whether [javaFeature] is inside this artifact's Java range. */
     fun supports(javaFeature: Int): Boolean = javaInRange(javaFeature, minimumJava, maximumJava)
 
+    /** Returns whether this artifact runs on [target]: an exact platform match, or one built for every platform. */
+    fun matchesPlatform(target: PlatformType): Boolean = platform == target || platform == PlatformType.UNIVERSAL
+
     /** Filename and integrity validation constants. */
     companion object {
         private val SAFE_FILE = Regex("[A-Za-z0-9][A-Za-z0-9._-]*")

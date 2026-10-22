@@ -16,10 +16,14 @@ internal object ReleaseCatalogSelector {
         .asSequence()
         .filter { acceptedChannel.accepts(it.channel) }
         .filter { it.api.supports(apiVersion) }
-        .filter { it.artifacts.any { artifact -> artifact.platform == platform && artifact.supports(javaFeature) } }
+        .filter { it.artifacts.any { artifact -> artifact.matchesPlatform(platform) && artifact.supports(javaFeature) } }
         .sortedByDescending { it.version }
         .firstOrNull()
 
     private fun CatalogArtifact.supports(javaFeature: Int): Boolean =
         javaFeature >= javaMinimum && (javaMaximum == null || javaFeature <= javaMaximum)
 }
+
+/** Whether this artifact runs on [target]: an exact platform match, or one built for every platform. */
+internal fun CatalogArtifact.matchesPlatform(target: PlatformType): Boolean =
+    platform == target || platform == PlatformType.UNIVERSAL

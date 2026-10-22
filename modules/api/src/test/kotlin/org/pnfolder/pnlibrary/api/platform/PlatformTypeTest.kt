@@ -7,11 +7,16 @@ import org.junit.jupiter.api.Test
 
 class PlatformTypeTest {
     @Test
-    fun `only API families are platform types`() {
+    fun `only API families, plus the UNIVERSAL release artifact, are platform types`() {
         assertEquals(
-            listOf(PlatformType.BUKKIT, PlatformType.BUNGEECORD, PlatformType.VELOCITY),
+            listOf(PlatformType.BUKKIT, PlatformType.BUNGEECORD, PlatformType.VELOCITY, PlatformType.UNIVERSAL),
             PlatformType.entries,
         )
+    }
+
+    @Test
+    fun `UNIVERSAL is not a proxy role, though it is never a real plugin identity in the first place`() {
+        assertFalse(PlatformType.UNIVERSAL.isProxy)
     }
 
     @Test
