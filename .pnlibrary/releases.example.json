@@ -12,6 +12,12 @@
         "minimum": 8,
         "maximum": 8
       },
+      "installer": {
+        "file": "pnLibrary-1.1.0-universal.jar",
+        "url": "https://github.com/pnFolder/pnLibrary/releases/download/v1.1.0/pnLibrary-1.1.0-universal.jar",
+        "sha256": "0123456789abcdef0123456789abcdef0123456789abcdef0123456789abcdef",
+        "size": 12345678
+      },
       "artifacts": [
         {
           "file": "pnLibrary-1.1.0-velocity.jar",

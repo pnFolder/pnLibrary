@@ -84,6 +84,7 @@ API содержит только интерфейсы и модели, реал
 - [Команды: ошибки, уровни ответа, полный пример](docs/commands.md)
 - [Конфигурации](docs/configuration.md)
 - [Обновления: команды, права, откат](docs/updates.md)
+- [Папка `.pnlibrary` в репозитории плагина](docs/repository.md)
 - [Валюта](docs/currency.md)
 - [Встраиваемый установщик для всех платформ](modules/bootstrap/README.md)
 - [Консольные карточки](modules/console/README.md)

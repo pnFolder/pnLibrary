@@ -2,7 +2,7 @@ package org.pnfolder.pnlibrary.bootstrap;
 
 import java.net.URI;
 
-/** One verified pnLibrary jar of a GitHub release: where to get it and what it must hash to. */
+/** One verified pnLibrary jar of a release: where to get it and what it must hash to. */
 public final class LibraryRelease {
     private final String version;
     private final String fileName;
@@ -29,18 +29,23 @@ public final class LibraryRelease {
     public String fileName() { return fileName; }
 
     /** Returns the HTTPS download address.
-     * @return the GitHub asset URL */
+     * @return the address of the jar, from the repository list or the GitHub release */
     public URI uri() { return uri; }
 
-    /** Returns the SHA-256 published by GitHub.
+    /** Returns the SHA-256 the jar must have.
      * @return 64 lowercase hex characters */
     public String sha256() { return sha256; }
 
-    /** Returns the size published by GitHub.
-     * @return the size in bytes */
+    /** Returns the size published for the jar.
+     * @return the size in bytes, or {@code -1} when the repository list does not say */
     public long size() { return size; }
 
-    /** Returns whether this is the latest stable release rather than the exact minimum version.
-     * @return {@code true} for the latest stable release */
+    /** Returns a copy with the size that was actually downloaded.
+     * @param actual size in bytes
+     * @return the same release with a known size */
+    LibraryRelease withSize(long actual) { return new LibraryRelease(version, fileName, uri, sha256, actual, stable); }
+
+    /** Returns whether this is a stable release rather than a beta, alpha, dev or release candidate.
+     * @return {@code true} for a stable release */
     public boolean stable() { return stable; }
 }

@@ -25,4 +25,5 @@ include(
     ":platforms:velocity:bootstrap",
     ":distribution",
     ":examples:acceptance-bukkit",
+    ":examples:bootstrap-bukkit",
 )

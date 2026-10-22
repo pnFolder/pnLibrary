@@ -9,15 +9,16 @@ import java.util.regex.Pattern;
  */
 public enum BootstrapPlatform {
     /** Bukkit, Spigot, Paper and Folia: plugin {@code pnLibrary} in {@code plugin.yml}. */
-    BUKKIT("Bukkit", "plugin.yml", "pnLibrary", "/pn update pnLibrary", "stop"),
+    BUKKIT("Bukkit", "plugin.yml", BootstrapDefaults.PRODUCT_NAME, "/pn update " + BootstrapDefaults.PRODUCT_NAME, "stop"),
 
     /** BungeeCord and Waterfall: plugin {@code pnLibrary} in {@code bungee.yml}. */
-    BUNGEECORD("BungeeCord", "bungee.yml", "pnLibrary", "/pn update check; /pn update stage", "end"),
+    BUNGEECORD("BungeeCord", "bungee.yml", BootstrapDefaults.PRODUCT_NAME,"/pn update check; /pn update stage", "end"),
 
     /** Velocity: plugin id {@code pnlibrary} in {@code velocity-plugin.json}. */
-    VELOCITY("Velocity", "velocity-plugin.json", "pnlibrary", "/pn update check; /pn update stage", "shutdown");
+    VELOCITY("Velocity", "velocity-plugin.json", BootstrapDefaults.PRODUCT_ID,"/pn update check; /pn update stage", "shutdown");
 
-    private static final Pattern UNIVERSAL = Pattern.compile("(?i)^pnLibrary-[0-9][^/\\\\]*-universal\\.jar$");
+    private static final Pattern UNIVERSAL = Pattern.compile(
+            "(?i)^" + Pattern.quote(BootstrapDefaults.PRODUCT_NAME) + "-[0-9][^/\\\\]*-universal\\.jar$");
 
     private final String displayName;
     private final String descriptor;

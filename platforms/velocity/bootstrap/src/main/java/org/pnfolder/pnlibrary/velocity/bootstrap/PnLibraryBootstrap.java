@@ -37,6 +37,18 @@ public final class PnLibraryBootstrap {
     private PnLibraryBootstrap() {}
 
     /**
+     * Installs the newest stable pnLibrary when it is missing, for a plugin that works with any version. When there
+     * is no stable release the newest release of any kind is used.
+     *
+     * @param proxy the Velocity server
+     * @param plugin instance of the plugin that needs pnLibrary
+     * @return {@code true} when a suitable pnLibrary is loaded; {@code false} after a download that needs a restart
+     */
+    public static boolean ensureInstalled(ProxyServer proxy, Object plugin) {
+        return ensureInstalled(proxy, plugin, BootstrapOptions.builder().build());
+    }
+
+    /**
      * Downloads pnLibrary from the default repository when it is missing, or checks the installed version.
      *
      * @param proxy the Velocity server

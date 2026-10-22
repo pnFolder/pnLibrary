@@ -5,6 +5,7 @@ import java.util.Objects;
 /** Immutable settings of the embedded pnLibrary installer, shared by every platform. */
 public final class BootstrapOptions {
     private final String minimumVersion;
+    private final boolean hasMinimum;
     private final String repositoryOwner;
     private final String repositoryName;
     private final long maximumBytes;
@@ -12,7 +13,8 @@ public final class BootstrapOptions {
     private final String supportUrl;
 
     private BootstrapOptions(Builder builder) {
-        this.minimumVersion = BootstrapVersion.normalize(builder.minimumVersion);
+        this.hasMinimum = builder.minimumVersion != null && !builder.minimumVersion.trim().isEmpty();
+        this.minimumVersion = hasMinimum ? BootstrapVersion.normalize(builder.minimumVersion) : "0.0.0";
         this.repositoryOwner = part(builder.repositoryOwner, "repositoryOwner");
         this.repositoryName = part(builder.repositoryName, "repositoryName");
         if (builder.maximumBytes < 1) throw new IllegalArgumentException("maximumBytes must be positive");
@@ -26,8 +28,12 @@ public final class BootstrapOptions {
     }
 
     /** Returns the minimum required library version.
-     * @return the minimum pnLibrary version accepted by the embedding plugin */
+     * @return the minimum pnLibrary version accepted by the embedding plugin, {@code 0.0.0} when any version will do */
     public String minimumVersion() { return minimumVersion; }
+
+    /** Tells whether the embedding plugin named a lowest version.
+     * @return {@code false} when any version will do, so the newest stable release is installed */
+    public boolean hasMinimum() { return hasMinimum; }
 
     /** Returns the configured repository owner.
      * @return the GitHub organization or account that owns the release repository */
@@ -52,10 +58,18 @@ public final class BootstrapOptions {
     /**
      * Creates an options builder that requires at least {@code minimumVersion}.
      *
-     * @param minimumVersion minimum compatible semantic version
+     * @param minimumVersion minimum compatible semantic version; {@code null} or blank when any version will do
      * @return a new options builder
      */
     public static Builder builder(String minimumVersion) { return new Builder(minimumVersion); }
+
+    /**
+     * Creates an options builder for a plugin that works with any pnLibrary version: the newest stable release is
+     * installed, or the newest release of any kind when there is no stable one.
+     *
+     * @return a new options builder
+     */
+    public static Builder builder() { return new Builder(null); }
 
     private static String part(String value, String field) {
         Objects.requireNonNull(value, field);
@@ -66,8 +80,8 @@ public final class BootstrapOptions {
     /** Fluent builder for validated bootstrap options. */
     public static final class Builder {
         private final String minimumVersion;
-        private String repositoryOwner = "pnFolder";
-        private String repositoryName = "pnLibrary";
+        private String repositoryOwner = BootstrapDefaults.REPOSITORY_OWNER;
+        private String repositoryName = BootstrapDefaults.REPOSITORY_NAME;
         private long maximumBytes = 512L * 1024L * 1024L;
         private int restartCountdown;
         private String supportUrl = BootstrapDefaults.SUPPORT_URL;

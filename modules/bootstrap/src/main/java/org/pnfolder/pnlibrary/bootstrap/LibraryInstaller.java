@@ -57,7 +57,7 @@ public final class LibraryInstaller {
      */
     public boolean checkInstalled(String installedVersion) {
         if (installedVersion == null) {
-            failed(new IllegalStateException("pnLibrary установлена, но не запустилась: смотрите её ошибки выше в логе"));
+            failed(new IllegalStateException(BootstrapDefaults.PRODUCT_NAME + " установлена, но не запустилась: смотрите её ошибки выше в логе"));
             return false;
         }
         boolean compatible;
@@ -68,12 +68,12 @@ public final class LibraryInstaller {
         }
         if (compatible) return true;
         ConsoleCard.builder(console.theme(BootstrapConsole.Tone.FAILURE), "PNLIBRARY УСТАРЕЛА")
-                .mascot("( -.- )", pluginName + " › нужна более новая pnLibrary", "запуск плагина остановлен")
+                .mascot("( -.- )", pluginName + " › нужна более новая " + BootstrapDefaults.PRODUCT_NAME, "запуск плагина остановлен")
                 .blank()
                 .detail("Установлена", installedVersion)
                 .lastDetail("Нужна", "от " + options.minimumVersion())
                 .section("Что делать")
-                .item("Обновите pnLibrary командой " + platform.updateHint())
+                .item("Обновите " + BootstrapDefaults.PRODUCT_NAME + " командой " + platform.updateHint())
                 .lastItem("или скачайте вручную: " + releasesPage())
                 .section("Не получается?")
                 .lastItem("Напишите в поддержку: " + options.supportUrl())
@@ -102,11 +102,11 @@ public final class LibraryInstaller {
         }
 
         ConsoleCard.builder(console.theme(BootstrapConsole.Tone.PROGRESS), "УСТАНОВКА PNLIBRARY")
-                .mascot("( o.o )", pluginName + " › подготовка зависимости", "pnLibrary не найдена на сервере")
+                .mascot("( o.o )", pluginName + " › подготовка зависимости", BootstrapDefaults.PRODUCT_NAME + " не найдена на сервере")
                 .blank()
-                .detail("Источник", "GitHub Releases")
+                .detail("Источник", release.uri().getHost())
                 .detail("Платформа", platform.displayName())
-                .detail("Канал", release.stable() ? "stable" : "точная версия")
+                .detail("Выпуск", release.stable() ? "стабильный" : "предварительный (нестабильный)")
                 .detail("Версия", release.version())
                 .lastDetail("Файл", release.fileName())
                 .blank()
@@ -116,8 +116,10 @@ public final class LibraryInstaller {
         Path temporary = Files.createTempFile(directory, ".pnlibrary-bootstrap-", ".tmp");
         try {
             client.download(release.uri(), temporary);
-            if (Files.size(temporary) != release.size()) throw new IllegalStateException("downloaded size does not match GitHub metadata");
-            if (!sha256(temporary).equals(release.sha256())) throw new IllegalStateException("downloaded SHA-256 does not match GitHub digest");
+            long downloaded = Files.size(temporary);
+            if (release.size() >= 0 && downloaded != release.size()) throw new IllegalStateException("downloaded size does not match the release metadata");
+            if (!sha256(temporary).equals(release.sha256())) throw new IllegalStateException("downloaded SHA-256 does not match the release checksum");
+            release = release.withSize(downloaded);
             validateJar(temporary);
             Path previous = null;
             if (Files.exists(target)) {
@@ -143,13 +145,21 @@ public final class LibraryInstaller {
         ConsoleCard.Builder card = ConsoleCard.builder(
                         console.theme(restartRequired ? BootstrapConsole.Tone.PROGRESS : BootstrapConsole.Tone.SUCCESS),
                         restartRequired ? "НУЖЕН ПЕРЕЗАПУСК" : "PNLIBRARY ГОТОВА")
-                .mascot(restartRequired ? "( o.o )" : "( ^.^ )", "pnLibrary установлена",
+                .mascot(restartRequired ? "( o.o )" : "( ^.^ )", BootstrapDefaults.PRODUCT_NAME + " установлена",
                         restartRequired ? platform.displayName() + " подключит её после перезапуска" : "общая система pnFolder подключена")
                 .blank()
                 .detail("Версия", placement.release().version())
+                .detail("Выпуск", placement.release().stable() ? "стабильный" : "предварительный (нестабильный)")
                 .detail("Файл", placement.release().fileName())
                 .lastDetail("Размер", String.format(Locale.US, "%.2f MiB", bytes / 1048576.0))
                 .blank();
+        if (!placement.release().stable()) {
+            card.section("Это предварительная версия")
+                    .item("Стабильного релиза " + BootstrapDefaults.PRODUCT_NAME + " пока нет, поэтому установлена " + placement.release().version())
+                    .item("В ней возможны ошибки и изменения, на основном сервере сначала проверьте работу")
+                    .lastItem("Когда выйдет стабильная версия, обновите её: " + platform.updateHint())
+                    .blank();
+        }
         if (restartRequired && countdown > 0) {
             card.section("Перезапуск")
                     .item(platform.displayName() + " остановится через " + countdown + " с")
@@ -170,7 +180,7 @@ public final class LibraryInstaller {
      * @return for example {@code [pnLibrary] Перезапуск прокси через 3 с: установлена pnLibrary для pnCases}
      */
     public String countdownLine(int secondsLeft) {
-        return "[pnLibrary] Перезапуск прокси через " + secondsLeft + " с: установлена pnLibrary для " + pluginName;
+        return "[" + BootstrapDefaults.PRODUCT_NAME + "] Перезапуск прокси через " + secondsLeft + " с: установлена " + BootstrapDefaults.PRODUCT_NAME + " для " + pluginName;
     }
 
     /**
@@ -179,7 +189,7 @@ public final class LibraryInstaller {
      * @return the reason for the stop
      */
     public String stopReason() {
-        return "Перезапуск: установлена pnLibrary для " + pluginName + ". Зайдите через минуту.";
+        return "Перезапуск: установлена " + BootstrapDefaults.PRODUCT_NAME + " для " + pluginName + ". Зайдите через минуту.";
     }
 
     /**
@@ -208,7 +218,7 @@ public final class LibraryInstaller {
         String reason = error.getMessage() == null || error.getMessage().trim().isEmpty()
                 ? error.getClass().getSimpleName() : error.getMessage();
         ConsoleCard.builder(console.theme(BootstrapConsole.Tone.FAILURE), "ОШИБКА ЗАПУСКА")
-                .mascot("( x.x )", pluginName + " › pnLibrary недоступна", "запуск плагина остановлен")
+                .mascot("( x.x )", pluginName + " › " + BootstrapDefaults.PRODUCT_NAME + " недоступна", "запуск плагина остановлен")
                 .blank()
                 .section("Причина")
                 .lastItem(reason)

@@ -14,8 +14,10 @@ import org.pnfolder.pnlibrary.console.ConsoleTheme;
  * has no dependency on pnLibrary itself.
  *
  * <pre>{@code
- * public void onLoad() {
- *     if (!PnLibraryBootstrap.ensureInstalled(this, "1.0.0")) getServer().getPluginManager().disablePlugin(this);
+ * public void onLoad() { ready = PnLibraryBootstrap.ensureInstalled(this, "1.0.0"); }
+ *
+ * public void onEnable() {
+ *     if (!ready) { getServer().getPluginManager().disablePlugin(this); return; }
  * }
  * }</pre>
  *
@@ -23,6 +25,17 @@ import org.pnfolder.pnlibrary.console.ConsoleTheme;
  */
 public final class PnLibraryBootstrap {
     private PnLibraryBootstrap() {}
+
+    /**
+     * Installs the newest stable pnLibrary when it is missing, for a plugin that works with any version. When there
+     * is no stable release the newest release of any kind is used.
+     *
+     * @param plugin plugin that needs pnLibrary
+     * @return {@code true} when a suitable pnLibrary is running
+     */
+    public static boolean ensureInstalled(JavaPlugin plugin) {
+        return ensureInstalled(plugin, BootstrapOptions.builder().build());
+    }
 
     /**
      * Installs pnLibrary from the default repository when it is missing, or checks the installed version.
