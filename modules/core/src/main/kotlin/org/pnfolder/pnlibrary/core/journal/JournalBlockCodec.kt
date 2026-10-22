@@ -4,6 +4,8 @@ import java.io.ByteArrayInputStream
 import java.io.ByteArrayOutputStream
 import java.io.DataInputStream
 import java.io.DataOutputStream
+import java.io.EOFException
+import java.io.InputStream
 import java.util.zip.CRC32
 import java.util.zip.GZIPInputStream
 import java.util.zip.GZIPOutputStream
@@ -51,25 +53,36 @@ internal object JournalBlockCodec {
      */
     fun decodeAll(bytes: ByteArray): List<JournalRecord> {
         val result = mutableListOf<JournalRecord>()
-        var offset = 0
-        while (bytes.size - offset >= HEADER_BYTES) {
-            val header = DataInputStream(ByteArrayInputStream(bytes, offset, HEADER_BYTES))
-            val length = header.readInt()
-            val expectedCrc = header.readInt().toLong() and 0xFFFF_FFFFL
-            if (length < 0 || length > MAX_PAYLOAD_BYTES) break
-            val end = offset + HEADER_BYTES + length
-            if (end > bytes.size) break
-            val payload = bytes.copyOfRange(offset + HEADER_BYTES, end)
-            offset = end
-            if (CRC32().apply { update(payload) }.value != expectedCrc) continue
-            result += runCatching { decodePayload(payload) }.getOrElse { emptyList() }
-        }
+        visit(ByteArrayInputStream(bytes), bytes.size.toLong()) { result += it }
         return result
+    }
+
+    /** Streams intact blocks under a byte budget, retaining one compressed block at a time. */
+    fun visit(stream: InputStream, maximumBytes: Long, record: (JournalRecord) -> Unit) {
+        val input = DataInputStream(stream)
+        var remaining = maximumBytes
+        while (remaining >= HEADER_BYTES) {
+            val length: Int
+            val expectedCrc: Long
+            try {
+                length = input.readInt()
+                expectedCrc = input.readInt().toLong() and 0xFFFF_FFFFL
+            } catch (_: EOFException) { break }
+            remaining -= HEADER_BYTES
+            if (length < 0 || length > MAX_PAYLOAD_BYTES) break
+            if (length > remaining) break
+            val payload = ByteArray(length)
+            try { input.readFully(payload) } catch (_: EOFException) { break }
+            remaining -= length
+            if (CRC32().apply { update(payload) }.value != expectedCrc) continue
+            runCatching { decodePayload(payload) }.getOrElse { emptyList() }.forEach(record)
+        }
     }
 
     private fun decodePayload(payload: ByteArray): List<JournalRecord> =
         DataInputStream(GZIPInputStream(ByteArrayInputStream(payload))).use { input ->
             val count = input.readInt()
+            require(count in 0..10_000) { "Invalid journal record count" }
             List(count) { readRecord(input) }
         }
 

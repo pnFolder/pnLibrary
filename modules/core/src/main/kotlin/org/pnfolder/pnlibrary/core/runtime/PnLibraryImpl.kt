@@ -63,6 +63,9 @@ import org.pnfolder.pnlibrary.core.updates.service.UpdateServiceImpl
 import org.pnfolder.pnlibrary.currency.CurrencyFeature
 import java.nio.file.Path
 import java.util.concurrent.atomic.AtomicBoolean
+import java.util.concurrent.atomic.AtomicLong
+import org.pnfolder.pnlibrary.common.concurrent.ManagedWorker
+import org.pnfolder.pnlibrary.core.lifecycle.ResourceCleanup
 
 /**
  * Composes all service implementations into one [PnLibrary] runtime.
@@ -133,6 +136,8 @@ internal class PnLibraryImpl(
             JournalLevel.ERROR to Duration.ofDays(config.journalErrorDays.toLong()),
         ),
     ).also { store -> runCatching { store.prune() } }
+    private val journalWorker = ManagedWorker("pnLibrary-journal")
+    private val failedJournalWrites = AtomicLong()
     override val logging: LoggingService = LoggingServiceImpl(
         platformLogging,
         platformOwnership,
@@ -144,8 +149,7 @@ internal class PnLibraryImpl(
 
     /** Adds one log line, from the library, a plugin or the platform itself, to the event journal. */
     private fun writeJournal(owner: Any, level: LogLevel, message: String, error: Throwable?) {
-        journal.append(
-            JournalRecord(
+        val record = JournalRecord(
                 timeMillis = System.currentTimeMillis(),
                 level = level.toJournalLevel(),
                 source = platformOwnership.ownerDetails(owner)["id"] ?: owner.javaClass.simpleName,
@@ -157,8 +161,8 @@ internal class PnLibraryImpl(
                         JournalRecord.STACKTRACE to JournalRecord.stackTraceOf(it),
                     )
                 }.orEmpty(),
-            ),
-        )
+            )
+        journalWorker.submit { journal.append(record) }.exceptionally { failedJournalWrites.incrementAndGet(); null }
     }
     private val configurationService = ConfigurationServiceImpl(platformOwnership)
     override val configurations: ConfigurationService get() = configurationService
@@ -265,7 +269,7 @@ internal class PnLibraryImpl(
         support = support,
         metrics = metricsService,
         commands = commandService,
-        journal = { journal.summary() },
+        journal = { journal.summary() + ("failedWrites" to failedJournalWrites.get()) },
     )
 
     fun init() {
@@ -321,7 +325,7 @@ internal class PnLibraryImpl(
                 events = AutoCloseable(eventService::close),
                 services = serviceManager,
                 tasks = taskService,
-                support = AutoCloseable(support::close),
+                support = AutoCloseable { ResourceCleanup.closeAll({ support.close() }, { journalWorker.close() }) },
                 releaseProvider = { PnLibraryProvider.clear(this) },
                 closePlatform = { closePlatform() },
                 onClose = onClose,

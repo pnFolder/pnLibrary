@@ -118,4 +118,33 @@ class JournalStoreTest {
             stream.filter { it.fileName.toString().startsWith("$group-") }
                 .collect(java.util.stream.Collectors.toList()).single()
         }
+
+    @Test
+    fun `segments rotate and disk retention keeps the newest events`() {
+        val journal = JournalStore(directory, retention, Clock.fixed(day, ZoneOffset.UTC),
+            maximumSegmentBytes = 180, maximumDiskBytes = 700)
+        repeat(40) { n -> journal.append(record(JournalLevel.INFO, "shop", "event-$n", day.plusSeconds(n.toLong()))) }
+        val bytes = Files.list(directory).use { files -> files.mapToLong(Files::size).sum() }
+        assertTrue(bytes <= 700)
+        assertEquals(listOf("event-39", "event-38", "event-37"), journal.read(limit = 3).map { it.message })
+    }
+
+    @Test
+    fun `streaming selection preserves newest timestamps even when records arrive out of order`() {
+        val journal = store()
+        listOf(3L, 1L, 5L, 2L, 4L).forEach { n ->
+            journal.append(record(JournalLevel.INFO, "shop", "$n", day.plusSeconds(n)))
+        }
+        assertEquals(listOf("5", "4"), journal.read(limit = 2).map { it.message })
+    }
+
+    @Test
+    fun `read budget exhaustion is visible instead of reading an entire oversized history`() {
+        val journal = JournalStore(directory, retention, Clock.fixed(day, ZoneOffset.UTC), maximumReadBytes = 8)
+        journal.append(record(JournalLevel.ERROR, "shop", "error"))
+        assertTrue(journal.read().isEmpty())
+        val errors = journal.summary().getValue("error") as Map<*, *>
+        assertEquals(true, errors["readBudgetExhausted"])
+        assertEquals(true, errors["countCapped"])
+    }
 }
