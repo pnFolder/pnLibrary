@@ -24,7 +24,7 @@ final class DemoRuntime {
         if (library == null) return null;
         PluginRegistration registration = library.getPlugins().register(plugin);
         ModuleContext context = registration.registerModule("demo", builder -> builder.product(
-                ProductDescriptor.builder().version(plugin.getDescription().getVersion()).pnLibraryApi(1, 1).build()));
+                ProductDescriptor.builder().version(plugin.getDescription().getVersion()).pnLibraryApi(1, 2).build()));
         context.getLifecycle().enabled()
                 .ok("Runtime", library.getVersion())
                 .ok("Module", context.getId().getValue())

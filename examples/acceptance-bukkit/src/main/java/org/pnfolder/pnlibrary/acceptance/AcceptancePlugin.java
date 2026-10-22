@@ -52,7 +52,7 @@ public final class AcceptancePlugin extends JavaPlugin implements CommandExecuto
         context = pluginRegistration.registerModule("acceptance", builder -> {
             builder.product(ProductDescriptor.builder()
                     .version(getDescription().getVersion())
-                .pnLibraryApi(1, 1).build());
+                .pnLibraryApi(1, 2).build());
             builder.metrics(configuration -> {
                 configuration.bStats(getConfig().getInt("metrics.project-id", 32592));
                 configuration.enabled(getConfig().getBoolean("metrics.enabled", false));
