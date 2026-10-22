@@ -234,3 +234,15 @@ gradlew :modules:core:verifyNativeBukkitUpdates -PpaperServerJar=<paper.jar> -Pp
 
 Тест Paper запускается только с разрешения администратора и с уже принятым EULA: сам он условия не принимает.
 Копируются только кэши серверного ПО, никогда миры, данные плагинов или секреты.
+
+В Actions workflow `Native platform acceptance` запускает эти циклы отдельно для Paper, Folia, Velocity и Bungee.
+Для каждой платформы администратор задаёт repository variables `NATIVE_PAPER_URL` / `NATIVE_PAPER_SHA256`
+(аналогично `FOLIA`, `VELOCITY`, `BUNGEE`). URL должен вести на JAR по HTTPS; SHA-256 фиксирует конкретную сборку.
+Для Paper/Folia secret `NATIVE_MINECRAFT_EULA` содержит уже принятый администратором `eula.txt`.
+Отсутствие параметров завершает выбранный job ошибкой, а не пропускает проверку. Логи и отчёты сохраняются как artifacts.
+
+Версия Java для серверов выбирается при ручном запуске workflow; сам Gradle работает на Java 21.
+Локально можно передать `-PnativeJavaExecutable=<java>`; отдельный proxy выбирается через
+`-PnativePlatform=velocity` или `bungee`, Folia — через `-PbukkitPlatform=folia` и `-PpaperServerJar=<folia.jar>`.
+Основной CI отдельно проверяет запуск упакованного updater на Java 8, 17 и 21. Это smoke-проверка updater,
+а не доказательство совместимости всех подсистем сервера с каждой JVM.

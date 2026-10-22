@@ -17,13 +17,19 @@ tasks.register<Test>("verifyNativeProxyUpdates") {
     mustRunAfter(":distribution:copyDeveloperArtifacts")
     testClassesDirs = sourceSets["test"].output.classesDirs
     classpath = sourceSets["test"].runtimeClasspath
-    useJUnitPlatform { excludeTags("paper") }
+    val nativePlatform = providers.gradleProperty("nativePlatform").orElse("all").get()
+    require(nativePlatform in listOf("all", "velocity", "bungee")) { "nativePlatform must be all, velocity or bungee" }
+    useJUnitPlatform {
+        excludeTags("paper")
+        if (nativePlatform != "all") includeTags(nativePlatform)
+    }
     include("**/NativeProxyUpdateTest.class")
     outputs.upToDateWhen { false }
     systemProperty("pnlibrary.native.fixtures", rootProject.layout.buildDirectory.dir("update-catalog-native").get().asFile.absolutePath)
     systemProperty("pnlibrary.native.version", rootProject.version.toString())
     systemProperty("pnlibrary.native.distribution", project(":distribution").layout.buildDirectory.dir("libs").get().asFile.absolutePath)
-    listOf("velocityServerJar", "bungeeServerJar").forEach { name ->
+    providers.gradleProperty("nativeJavaExecutable").orNull?.let { systemProperty("pnlibrary.native.javaExecutable", it) }
+    listOf("velocityServerJar", "bungeeServerJar").filter { nativePlatform == "all" || it.startsWith(nativePlatform) }.forEach { name ->
         val server = providers.gradleProperty(name)
         if (server.isPresent) { inputs.file(server); systemProperty("pnlibrary.native.$name", server.get()) }
         doFirst { require(server.isPresent) { "Supply -P$name=<existing server JAR>; no server download or existing server mutation is performed" } }
@@ -43,6 +49,8 @@ tasks.register<Test>("verifyNativeBukkitUpdates") {
     systemProperty("pnlibrary.native.fixtures", rootProject.layout.buildDirectory.dir("update-catalog-native").get().asFile.absolutePath)
     systemProperty("pnlibrary.native.version", rootProject.version.toString())
     systemProperty("pnlibrary.native.distribution", project(":distribution").layout.buildDirectory.dir("libs").get().asFile.absolutePath)
+    systemProperty("pnlibrary.native.bukkitPlatform", providers.gradleProperty("bukkitPlatform").orElse("paper").get())
+    providers.gradleProperty("nativeJavaExecutable").orNull?.let { systemProperty("pnlibrary.native.javaExecutable", it) }
     listOf("paperServerJar", "paperEulaFile").forEach { name ->
         val source = providers.gradleProperty(name)
         if (source.isPresent) { inputs.file(source); systemProperty("pnlibrary.native.$name", source.get()) }

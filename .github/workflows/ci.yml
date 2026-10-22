@@ -48,3 +48,27 @@ jobs:
           name: pnLibrary-distributions
           path: distribution/build/libs/*.jar
           if-no-files-found: error
+
+  java-compatibility:
+    needs: verify
+    runs-on: ubuntu-latest
+    strategy:
+      fail-fast: false
+      matrix:
+        java: ['8', '17', '21']
+    steps:
+      - uses: actions/download-artifact@v4
+        with:
+          name: pnLibrary-distributions
+          path: distributions
+      - uses: actions/setup-java@v4
+        with:
+          distribution: temurin
+          java-version: ${{ matrix.java }}
+      - name: Run packaged updater on the supported JVM
+        shell: bash
+        run: |
+          jars=(distributions/pnLibrary-updater-*.jar)
+          test "${#jars[@]}" -eq 1
+          mkdir -p fixture/plugins/pnLibrary
+          java -jar "${jars[0]}" --server-stopped "$PWD/fixture/plugins/pnLibrary"

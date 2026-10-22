@@ -31,13 +31,13 @@ import java.util.zip.ZipOutputStream
  * reconciliation, the packaged offline installer and explicit configuration rollback.
  */
 class NativeProxyUpdateTest {
-    @Test fun `Velocity applies and rolls back its own library with durable console attribution`() = cycle(true)
-    @Test fun `Bungee applies and rolls back its own library with durable console attribution`() = cycle(false)
+    @Test @Tag("velocity") fun `Velocity applies and rolls back its own library with durable console attribution`() = cycle(true)
+    @Test @Tag("bungee") fun `Bungee applies and rolls back its own library with durable console attribution`() = cycle(false)
     @Test @Tag("paper")
     fun `Paper applies and rolls back its own library with durable console attribution`() = cycle(false, true)
 
     private fun cycle(velocity: Boolean, bukkit: Boolean = false) {
-        val label = if (bukkit) "paper" else if (velocity) "velocity" else "bungee"
+        val label = if (bukkit) System.getProperty("pnlibrary.native.bukkitPlatform", "paper") else if (velocity) "velocity" else "bungee"
         val fixture = Paths.get(required("fixtures")).resolve("$label-${UUID.randomUUID()}")
         val plugins = fixture.resolve("plugins").also(Files::createDirectories)
         val data = plugins.resolve(if (velocity) "pnlibrary" else "pnLibrary").also(Files::createDirectories)
@@ -213,7 +213,7 @@ class NativeProxyUpdateTest {
 
     private fun boot(fixture: Path, velocity: Boolean, phase: String, bukkit: Boolean = false): Server {
         val log = fixture.resolve("$phase.log")
-        val arguments = mutableListOf(java(), "-Xms128M", "-Xmx1G", "-Dfile.encoding=UTF-8",
+        val arguments = mutableListOf(System.getProperty("pnlibrary.native.javaExecutable", java()), "-Xms128M", "-Xmx1G", "-Dfile.encoding=UTF-8",
             "-Dstdout.encoding=UTF-8", "-Dstderr.encoding=UTF-8", "-Dterminal.jline=false",
             "-Dterminal.ansi=false", "-jar", "server.jar")
         if (bukkit) arguments.add("--nogui")
