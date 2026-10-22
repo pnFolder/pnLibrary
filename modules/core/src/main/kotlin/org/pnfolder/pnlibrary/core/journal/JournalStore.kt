@@ -41,7 +41,6 @@ internal class JournalStore(
     }
 
     private var lastPrunedOn: LocalDate? = null
-    @Volatile private var readTruncated = false
 
     /**
      * Writes [record] as one block to today's file of its level.
@@ -86,7 +85,15 @@ internal class JournalStore(
         source: String? = null,
         sinceMillis: Long? = null,
         limit: Int = 100,
-    ): List<JournalRecord> {
+    ): List<JournalRecord> = readSnapshot(levels, source, sinceMillis, limit).records
+
+    /** Newest-first read; [Snapshot.truncated] tells whether the byte budget stopped it before all matches. */
+    private fun readSnapshot(
+        levels: Set<JournalLevel>,
+        source: String?,
+        sinceMillis: Long?,
+        limit: Int,
+    ): Snapshot {
         require(limit in 1..100_000) { "Journal limit must be between 1 and 100000" }
         val wanted = if (levels.isEmpty()) JournalLevel.values().toSet() else levels
         val sinceDate = sinceMillis?.let { Instant.ofEpochMilli(it).atZone(ZoneOffset.UTC).toLocalDate() }
@@ -100,27 +107,28 @@ internal class JournalStore(
             val date = dateOf(file)
             if (newest.size >= limit && date != scannedDate) break
             scannedDate = date
-            if (remaining <= 0) { truncated = true; break }
             try {
                 val size = Files.size(file)
-                val budget = minOf(size, remaining)
+                // Files are read whole and newest first: a file that does not fit is skipped, so the
+                // returned records are always the newest complete set rather than an arbitrary prefix.
+                if (size > remaining) { truncated = true; break }
                 Files.newInputStream(file).buffered().use { input ->
-                    JournalBlockCodec.visit(input, budget) { record ->
+                    JournalBlockCodec.visit(input, size) { record ->
                         if ((source == null || record.source == source) && (sinceMillis == null || record.timeMillis >= sinceMillis)) {
                             if (newest.size < limit) newest.add(record)
                             else if (record.timeMillis > newest.peek().timeMillis) { newest.poll(); newest.add(record) }
                         }
                     }
                 }
-                remaining -= budget
-                if (size > budget) { truncated = true; break }
+                remaining -= size
             } catch (_: java.nio.file.NoSuchFileException) {
                 // Retention can remove a segment after the reader takes its snapshot.
             }
         }
-        readTruncated = truncated
-        return newest.sortedByDescending { it.timeMillis }
+        return Snapshot(newest.sortedByDescending { it.timeMillis }, truncated)
     }
+
+    private class Snapshot(val records: List<JournalRecord>, val truncated: Boolean)
 
     /**
      * Counts and retention per level for diagnostic reports. It holds no message text, so it is safe to share:
@@ -129,11 +137,12 @@ internal class JournalStore(
     fun summary(): Map<String, Any?> {
         val since = clock.millis() - Duration.ofHours(24).toMillis()
         return JournalLevel.values().associate { level ->
-            val recent = read(levels = setOf(level), sinceMillis = since, limit = SUMMARY_LIMIT)
+            val snapshot = readSnapshot(levels = setOf(level), source = null, sinceMillis = since, limit = SUMMARY_LIMIT)
+            val recent = snapshot.records
             level.fileGroup to linkedMapOf<String, Any?>(
                 "recordsLast24h" to recent.size,
-                "countCapped" to (recent.size >= SUMMARY_LIMIT || readTruncated),
-                "readBudgetExhausted" to readTruncated,
+                "countCapped" to (recent.size >= SUMMARY_LIMIT || snapshot.truncated),
+                "readBudgetExhausted" to snapshot.truncated,
                 "maximumReadBytes" to maximumReadBytes,
                 "maximumDiskBytes" to maximumDiskBytes,
                 "newestAtMillis" to recent.firstOrNull()?.timeMillis,
@@ -161,9 +170,11 @@ internal class JournalStore(
         return removed + enforceDiskBudget()
     }
 
+    /** Evicts oldest files first, but routine levels before ERROR so the disk budget never drops errors early. */
     private fun enforceDiskBudget(): Int {
         val files = JournalLevel.values().flatMap(::filesOf)
-            .sortedWith(compareBy<Path> { dateOf(it) }.thenBy(::segmentOf))
+            .sortedWith(compareBy<Path> { it.fileName.toString().startsWith("${JournalLevel.ERROR.fileGroup}-") }
+                .thenBy { dateOf(it) }.thenBy(::segmentOf))
         var total = files.sumOf { Files.size(it) }
         var removed = 0
         for (file in files) {

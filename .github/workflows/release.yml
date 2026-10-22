@@ -115,8 +115,14 @@ jobs:
             git commit -m "release: $env:RELEASE_VERSION"
             if ($LASTEXITCODE -ne 0) { throw 'Release commit failed' }
           }
-          git tag -a "v$env:RELEASE_VERSION" -m "pnLibrary $env:RELEASE_VERSION"
-          if ($LASTEXITCODE -ne 0) { throw 'Release tag creation failed' }
+          # A re-run after a partial failure may reuse the tag only if it already points at this commit.
+          $existingTag = git rev-parse -q --verify "refs/tags/v$env:RELEASE_VERSION^{commit}"
+          if ($LASTEXITCODE -eq 0) {
+            if ($existingTag -ne (git rev-parse HEAD)) { throw "Tag v$env:RELEASE_VERSION already points at another commit" }
+          } else {
+            git tag -a "v$env:RELEASE_VERSION" -m "pnLibrary $env:RELEASE_VERSION"
+            if ($LASTEXITCODE -ne 0) { throw 'Release tag creation failed' }
+          }
           git push origin HEAD
           if ($LASTEXITCODE -ne 0) { throw 'Release commit push failed' }
           git push origin "v$env:RELEASE_VERSION"

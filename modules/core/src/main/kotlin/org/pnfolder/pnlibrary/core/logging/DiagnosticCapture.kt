@@ -13,6 +13,12 @@ internal class DiagnosticCapture(
     private val onError: (Any, String, Throwable) -> Unit = { _, _, _ -> },
 ) : PlatformLogging {
     private val emitting = ThreadLocal<Boolean>()
+    private val echoes = java.util.concurrent.ConcurrentHashMap<String, Long>()
+
+    private companion object {
+        const val ECHO_WINDOW_NANOS = 2_000_000_000L
+        const val ECHO_LIMIT = 512
+    }
 
     override fun log(owner: Any, level: LogLevel, message: String, error: Throwable?) {
         val result = capture(owner, level, message, error, true)
@@ -21,6 +27,7 @@ internal class DiagnosticCapture(
             result.summary != null -> result.summary
             else -> return
         }
+        rememberEcho(level, output)
         emit { native.log(owner, level, output, if (output == message) error else null) }
     }
 
@@ -28,8 +35,20 @@ internal class DiagnosticCapture(
 
     /** Native observers already have console output; never emit it again or capture our own echo. */
     fun observe(owner: Any, level: LogLevel, message: String, error: Throwable?, includeJournal: Boolean) {
-        if (emitting.get() == true) return
+        if (emitting.get() == true || echoedRecently(level, message)) return
         capture(owner, level, message, error, includeJournal)
+    }
+
+    /** A native logger may echo our line on another thread, where the thread-local guard cannot see it. */
+    private fun echoedRecently(level: LogLevel, message: String): Boolean {
+        val emittedAt = echoes["$level|$message"] ?: return false
+        return System.nanoTime() - emittedAt < ECHO_WINDOW_NANOS
+    }
+
+    private fun rememberEcho(level: LogLevel, message: String) {
+        val now = System.nanoTime()
+        if (echoes.size > ECHO_LIMIT) echoes.entries.removeIf { now - it.value >= ECHO_WINDOW_NANOS }
+        if (echoes.size <= ECHO_LIMIT) echoes["$level|$message"] = now
     }
 
     private fun capture(owner: Any, level: LogLevel, message: String, error: Throwable?, includeJournal: Boolean): DiagnosticLogBuffer.CaptureResult? {

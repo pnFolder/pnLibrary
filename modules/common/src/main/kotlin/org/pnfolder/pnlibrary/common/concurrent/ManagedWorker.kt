@@ -51,7 +51,11 @@ class ManagedWorker(
         promise
     }
 
-    /** Rejects new work and waits for accepted operations; timeout/interruption is reported to callers. */
+    /**
+     * Rejects new work and waits up to the close timeout for accepted operations. It never throws, so it is safe
+     * during plugin disable: work still unfinished at the timeout, or when the caller is interrupted, is abandoned
+     * and its promises fail, which callers observe through the promises.
+     */
     override fun close() {
         synchronized(lock) {
             if (!closed) { closed = true; executor.shutdown() }
@@ -59,15 +63,15 @@ class ManagedWorker(
         if (workerThread.get() == true) return
         try {
             if (executor.awaitTermination(closeTimeout.toMillis(), TimeUnit.MILLISECONDS)) return
-            val error = IllegalStateException("Background work did not finish within $closeTimeout")
-            executor.shutdownNow()
-            pending.toList().forEach { it.completeExceptionally(error) }
-            throw error
+            abandon(IllegalStateException("Background work did not finish within $closeTimeout"))
         } catch (error: InterruptedException) {
-            executor.shutdownNow()
-            pending.toList().forEach { it.completeExceptionally(error) }
+            abandon(error)
             Thread.currentThread().interrupt()
-            throw IllegalStateException("Interrupted while draining background work", error)
         }
+    }
+
+    private fun abandon(error: Throwable) {
+        executor.shutdownNow()
+        pending.toList().forEach { it.completeExceptionally(error) }
     }
 }

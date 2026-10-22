@@ -27,7 +27,7 @@ class ManagedWorkerTest {
         val rejected = worker.submit { 3 }
         try {
             assertTrue(rejected.isCompletedExceptionally)
-            assertThrows<IllegalStateException> { worker.close() }
+            worker.close()
             assertTrue(running.isDone)
             assertTrue(queued.isCompletedExceptionally)
         } finally { release.countDown(); worker.close() }

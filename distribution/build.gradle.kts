@@ -2,7 +2,10 @@
 import com.github.jengelman.gradle.plugins.shadow.tasks.ShadowJar
 import groovy.json.JsonSlurper
 import groovy.json.JsonOutput
+import java.io.DataInputStream
+import java.io.InputStream
 import java.security.MessageDigest
+import java.util.jar.JarEntry
 import java.util.jar.JarFile
 
 evaluationDependsOn(":modules:api")
@@ -246,11 +249,22 @@ data class ReleasePlatform(
 )
 
 val releasePlatforms = listOf(
+    // Minimum = the oldest Java the JAR starts on. Java 21-only code (Paper, Velocity FastStats) is allowed
+    // in these JARs only under the optional packages below, which are loaded reflectively on Java 21 only.
     ReleasePlatform("bukkit-java8", "shadowBukkit", 8, "BUKKIT"),
     ReleasePlatform("bungeecord-java8", "shadowBungee", 8, "BUNGEECORD"),
     ReleasePlatform("velocity-java17", "shadowVelocity", 17, "VELOCITY"),
     ReleasePlatform("universal", "shadowUniversal", 8, "UNIVERSAL"),
 )
+// Packages compiled for Java 21 that ship inside JARs starting on older Java. Nothing outside them may name them;
+// they are reached only by reflection after the runtime's Java version check.
+val optionalJavaPackages = listOf(
+    "org/pnfolder/pnlibrary/bukkit/paper/",
+    "org/pnfolder/pnlibrary/velocity/faststats/",
+    "dev/faststats/velocity/",
+)
+// Velocity proxy code: only the Velocity entrypoint loads it, so it may need Java 17 inside a Java 8 universal JAR.
+val velocityJavaPackage = "org/pnfolder/pnlibrary/velocity/"
 val apiVersionSource = rootProject.file(
     "modules/api/src/main/kotlin/org/pnfolder/pnlibrary/api/version/PnLibraryApi.kt",
 ).readText()
@@ -327,6 +341,29 @@ val verifyEmbeddedMetadata = tasks.register("verifyEmbeddedMetadata") {
                 val javaCompatibility = metadata["java"] as? Map<*, *>
                 require(javaCompatibility?.get("minimum") == platform.minimumJava) {
                     "Incorrect embedded Java compatibility in ${jar.name}: expected Java ${platform.minimumJava}"
+                }
+                // Class-file major version = Java release + 44. Code above the declared minimum must live under
+                // an optional package, and nothing outside those packages may refer to them by name.
+                val classes: List<Pair<String, ByteArray>> = archive.entries().toList()
+                    .filter { it.name.endsWith(".class") }
+                    .map { entry: JarEntry -> entry.name to archive.getInputStream(entry).use { it.readBytes() } }
+                for ((name, bytes) in classes) {
+                    val major = DataInputStream(bytes.inputStream()).run { readInt(); readUnsignedShort(); readUnsignedShort() }
+                    val allowed = when {
+                        optionalJavaPackages.any { name.startsWith(it) } -> 21
+                        name.startsWith(velocityJavaPackage) -> maxOf(17, platform.minimumJava)
+                        else -> platform.minimumJava
+                    }
+                    require(major - 44 <= allowed) {
+                        "$name in ${jar.name} needs Java ${major - 44}; allowed for this JAR is Java $allowed"
+                    }
+                }
+                for ((name, bytes) in classes) {
+                    if (optionalJavaPackages.any { name.startsWith(it) }) continue
+                    val text = String(bytes, Charsets.ISO_8859_1)
+                    require(optionalJavaPackages.none { text.contains(it) }) {
+                        "$name in ${jar.name} references an optional Java 21 package directly"
+                    }
                 }
             }
         }

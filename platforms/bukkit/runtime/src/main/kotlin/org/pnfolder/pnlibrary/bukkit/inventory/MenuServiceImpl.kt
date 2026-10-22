@@ -217,6 +217,8 @@ internal class MenuServiceImpl(
 
         override fun close() {
             if (finished.get()) return
+            // A disabled owner can no longer run scheduled native work; drop tracking so the session cannot linger.
+            if (!owner.isEnabled) { finish(false); return }
             execution.execute(player) {
                 if (!finished.get()) {
                     try { if (owns(player.openInventory.topInventory, this)) player.closeInventory() }

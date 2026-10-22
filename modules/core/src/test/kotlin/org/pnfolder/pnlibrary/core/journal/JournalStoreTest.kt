@@ -147,4 +147,38 @@ class JournalStoreTest {
         assertEquals(true, errors["readBudgetExhausted"])
         assertEquals(true, errors["countCapped"])
     }
+
+    @Test
+    fun `disk budget evicts routine files before error files`() {
+        store().append(record(JournalLevel.ERROR, "shop", "kept"))
+        val errorBytes = Files.size(onlyFile("error"))
+        store().append(record(JournalLevel.INFO, "shop", "routine"))
+        val infoBytes = Files.size(onlyFile("info"))
+        Files.list(directory).use { it.forEach(Files::delete) }
+
+        // One error block plus one routine block exceeds this budget, so each new routine block forces eviction.
+        val journal = JournalStore(directory, retention, Clock.fixed(day, ZoneOffset.UTC),
+            maximumSegmentBytes = 1, maximumDiskBytes = maxOf(errorBytes, infoBytes) + 1)
+        journal.append(record(JournalLevel.ERROR, "shop", "kept"))
+        repeat(3) { journal.append(record(JournalLevel.INFO, "shop", "routine")) }
+
+        assertEquals(listOf("kept"), store().read(levels = setOf(JournalLevel.ERROR)).map { it.message })
+        assertEquals(emptyList<JournalRecord>(), store().read(levels = setOf(JournalLevel.INFO)))
+    }
+
+    @Test
+    fun `read budget returns whole newest files and reports the truncation`() {
+        store().append(record(JournalLevel.INFO, "shop", "old"))
+        val oneFileBytes = Files.size(onlyFile("info"))
+        Files.list(directory).use { it.forEach(Files::delete) }
+
+        val journal = JournalStore(directory, retention, Clock.fixed(day, ZoneOffset.UTC),
+            maximumSegmentBytes = 1, maximumReadBytes = oneFileBytes + 1)
+        journal.append(record(JournalLevel.INFO, "shop", "old", day))
+        journal.append(record(JournalLevel.INFO, "shop", "new", day.plusSeconds(1)))
+
+        assertEquals(listOf("new"), journal.read(levels = setOf(JournalLevel.INFO)).map { it.message })
+        val info = journal.summary().getValue("info") as Map<*, *>
+        assertEquals(true, info["readBudgetExhausted"])
+    }
 }

@@ -61,11 +61,13 @@ function Get-RepositoryApiDeclarations {
         $modules = @(Get-Content -LiteralPath 'gradle/public-modules.properties' |
             Where-Object { $_.Trim() -and -not $_.Trim().StartsWith('#') } |
             ForEach-Object { $_.Split('=')[0].Trim() })
-        @($modules + 'modules/runtime-spi' | ForEach-Object {
-            Get-ChildItem -LiteralPath (Join-Path $_ 'api') -Filter '*.api' | ForEach-Object {
-                [IO.Path]::GetRelativePath((Get-Location).Path, $_.FullName).Replace('\', '/')
+        $result = @()
+        foreach ($module in @($modules + 'modules/runtime-spi')) {
+            foreach ($file in @(Get-ChildItem -LiteralPath (Join-Path $module 'api') -Filter '*.api')) {
+                $result += [IO.Path]::GetRelativePath((Get-Location).Path, $file.FullName).Replace('\', '/')
             }
-        })
+        }
+        $result
     }
     $declarations = [System.Collections.Generic.HashSet[string]]::new([System.StringComparer]::Ordinal)
     foreach ($path in $paths) {
