@@ -34,3 +34,6 @@ try {
         -not [IO.Path]::GetFileName($resolved).StartsWith('pnlibrary-release-test-')) { throw "Unexpected test directory: $resolved" }
     Remove-Item -LiteralPath $resolved -Recurse -Force
 }
+
+# Expected-failure checks above leave a non-zero $LASTEXITCODE; reaching here means every assertion passed.
+exit 0

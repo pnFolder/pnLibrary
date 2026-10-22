@@ -91,3 +91,6 @@ try {
     }
     Remove-Item -LiteralPath $testRoot -Recurse -Force
 }
+
+# Expected-failure checks above leave a non-zero $LASTEXITCODE; reaching here means every assertion passed.
+exit 0
