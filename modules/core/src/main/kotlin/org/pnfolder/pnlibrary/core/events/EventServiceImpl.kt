@@ -46,34 +46,44 @@ internal class EventServiceImpl(
     private val generation = AtomicLong()
     private val cache = java.util.WeakHashMap<Class<*>, List<Subscription<out Event>>>()
 
+    /** The most recently used lookup, readable without a lock: hot events repeat the same class. */
+    private class Last(val type: Class<*>, val handlers: List<Subscription<out Event>>)
+    @Volatile private var last: Last? = null
+
     /** Forgets cached lists affected by a subscription to [changed]; `null` forgets everything. */
     private fun invalidateHandlers(changed: Class<*>?) {
         synchronized(cache) {
             generation.incrementAndGet()
+            last = null
             if (changed == null) cache.clear() else cache.keys.removeAll { changed.isAssignableFrom(it) }
         }
     }
 
     private fun handlersFor(type: Class<*>): List<Subscription<out Event>> {
+        last?.let { if (it.type === type) return it.handlers }
         val before = generation.get()
-        synchronized(cache) { cache[type] }?.let { return it }
+        // Setting `last` inside the lock keeps it consistent with invalidation: a list read just before a
+        // change can never be republished as the fast-path entry after the change cleared it.
+        synchronized(cache) { cache[type]?.also { last = Last(type, it) } }?.let { return it }
         val built = subscriptions.asSequence()
             .filter { !it.isClosed && it.eventType.isAssignableFrom(type) }
             .sortedWith(compareBy<Subscription<out Event>> { it.priority }.thenBy { it.order })
             .toList()
-        synchronized(cache) { if (generation.get() == before) cache[type] = built }
+        synchronized(cache) {
+            if (generation.get() == before) {
+                cache[type] = built
+                last = Last(type, built)
+            }
+        }
         return built
     }
 
     private fun dispatchInline(event: Event) {
-        check(!closed.get()) { "EventService is closed" }
         val matching = handlersFor(event.javaClass)
-
-        matching.forEach { subscription ->
-            if (subscription.isClosed) return@forEach
-            if (subscription.ignoreCancelled && !event.isAllowed) {
-                return@forEach
-            }
+        for (index in matching.indices) {
+            val subscription = matching[index]
+            if (subscription.isClosed) continue
+            if (subscription.ignoreCancelled && !event.isAllowed) continue
             try {
                 subscription.invoke(event)
             } catch (error: Throwable) {
@@ -86,7 +96,6 @@ internal class EventServiceImpl(
                 )
             }
         }
-
     }
 
     override fun unregisterAll(pluginId: PluginId) {
