@@ -40,7 +40,7 @@ class VersionConstraint(
             (maximumExclusive == null || version < maximumExclusive)
 }
 
-/** One dependency accepted by [PluginBuilder.depends]. */
+/** One dependency accepted by `PluginBuilder.depends`. */
 interface PluginDependency {
     /** Whether absence or an outdated version blocks plugin registration. */
     val required: Boolean get() = true

@@ -14,7 +14,7 @@ import org.pnfolder.pnlibrary.api.config.ConfigSerializeWith
  * equal to `true`, `yes`, `on`, `1`, or `enabled` ignoring case. Missing and all other
  * values are false.
  *
- * @property flag key read from [ActionContext.values]
+ * @property flag key read from `ActionContext.values`
  * @property enabled boolean state required for a match
  */
 @ConfigSerializeWith(CheckSerializer::class)
@@ -111,7 +111,7 @@ enum class Comparison {
  * actual and configured values to parse as [Double] and return false otherwise. [Comparison.PRESENT]
  * requires a nonblank value; [Comparison.ABSENT] accepts either a missing or blank value.
  *
- * @property source key read from [ActionContext.values]
+ * @property source key read from `ActionContext.values`
  * @property operator operation applied to the context value
  * @property value right-hand operand, ignored for presence checks
  * @property ignoreCase whether textual comparisons use case-insensitive matching

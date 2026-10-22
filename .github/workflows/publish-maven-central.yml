@@ -14,10 +14,6 @@ jobs:
   publish:
     if: github.event_name != 'push' || github.event.head_commit.message == 'Trigger Maven Central publish'
     runs-on: ubuntu-latest
-    strategy:
-      fail-fast: false
-      matrix:
-        module: ${{ fromJson(github.event_name == 'push' && '["modules:core","platforms:bukkit:runtime"]' || '["modules:api","platforms:bukkit:api","platforms:bungee:api","platforms:velocity:api","modules:core","platforms:bukkit:runtime"]') }}
 
     steps:
       - name: Checkout
@@ -49,7 +45,7 @@ jobs:
           test -n "$POM_LICENSE_NAME" || { echo "Missing repository variable: MAVEN_LICENSE_NAME"; exit 1; }
           test -n "$POM_LICENSE_URL" || { echo "Missing repository variable: MAVEN_LICENSE_URL"; exit 1; }
 
-      - name: Publish ${{ matrix.module }} to Maven Central
+      - name: Publish all modules to Maven Central
         env:
           ORG_GRADLE_PROJECT_mavenCentralUsername: ${{ secrets.MAVEN_CENTRAL_USERNAME }}
           ORG_GRADLE_PROJECT_mavenCentralPassword: ${{ secrets.MAVEN_CENTRAL_PASSWORD }}
@@ -58,6 +54,4 @@ jobs:
           ORG_GRADLE_PROJECT_POM_LICENSE_NAME: ${{ vars.MAVEN_LICENSE_NAME }}
           ORG_GRADLE_PROJECT_POM_LICENSE_URL: ${{ vars.MAVEN_LICENSE_URL }}
           ORG_GRADLE_PROJECT_POM_LICENSE_DIST: repo
-        run: ./gradlew --no-daemon :${{ matrix.module }}:publishAndReleaseToMavenCentral
-
-# platform modules publish trigger
+        run: ./gradlew --no-daemon publishAndReleaseToMavenCentral --no-configuration-cache

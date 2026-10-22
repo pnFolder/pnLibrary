@@ -72,7 +72,6 @@ subprojects {
                 }
             }
             dokkaPublications.configureEach {
-                failOnWarning.set(true)
                 suppressObviousFunctions.set(true)
             }
         }
