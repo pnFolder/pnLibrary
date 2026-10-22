@@ -67,15 +67,18 @@ internal object BrigadierTrees {
      * Brigadier does (`yes` for a boolean, `1e3` for a decimal) stays a plain word, so the client never rejects
      * what the server would take.
      */
+    private fun bound(value: Double?, spec: ArgumentSpec): Double =
+        requireNotNull(value) { "${spec.kind} argument needs both bounds" }
+
     @Suppress("UNCHECKED_CAST")
     internal fun typeOf(spec: ArgumentSpec): ArgumentType<Any> = when (spec.kind) {
         ArgumentSpec.Kind.INTEGER ->
-            IntegerArgumentType.integer(spec.minimum!!.toInt(), spec.maximum!!.toInt())
+            IntegerArgumentType.integer(bound(spec.minimum, spec).toInt(), bound(spec.maximum, spec).toInt())
         ArgumentSpec.Kind.LONG ->
-            LongArgumentType.longArg(spec.minimum!!.toLong(), spec.maximum!!.toLong())
+            LongArgumentType.longArg(bound(spec.minimum, spec).toLong(), bound(spec.maximum, spec).toLong())
         ArgumentSpec.Kind.DECIMAL ->
             if (spec.minimum == -Double.MAX_VALUE && spec.maximum == Double.MAX_VALUE) StringArgumentType.word()
-            else DoubleArgumentType.doubleArg(spec.minimum!!, spec.maximum!!)
+            else DoubleArgumentType.doubleArg(bound(spec.minimum, spec), bound(spec.maximum, spec))
         ArgumentSpec.Kind.BOOLEAN, ArgumentSpec.Kind.CHOICE, ArgumentSpec.Kind.TEXT -> StringArgumentType.word()
     } as ArgumentType<Any>
 
