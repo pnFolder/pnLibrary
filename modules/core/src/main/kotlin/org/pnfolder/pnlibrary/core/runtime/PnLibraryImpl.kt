@@ -124,6 +124,13 @@ internal class PnLibraryImpl(
         dataFolder = dataFolder,
         runtimeDiagnostics = { runtimeDiagnostics.assemble() },
         journal = ::writeJournal,
+        onRuntimeError = { logOwner, error ->
+            libraryMetrics?.errorReporter?.capture(
+                throwable = error,
+                operation = "pnlibrary.runtime",
+                attributes = mapOf("source" to logOwner.javaClass.name),
+            )
+        },
     )
     override val observability get() = support.service
     override val activity: ActivityService get() = observability
@@ -145,6 +152,7 @@ internal class PnLibraryImpl(
         platformIdentity,
         support.logs,
         journal = ::writeJournal,
+        capture = support.capture,
     )
 
     /** Adds one log line, from the library, a plugin or the platform itself, to the event journal. */
@@ -167,7 +175,7 @@ internal class PnLibraryImpl(
     private val configurationService = ConfigurationServiceImpl(platformOwnership)
     override val configurations: ConfigurationService get() = configurationService
     private val updateService = UpdateServiceImpl(
-        platformLogging,
+        support.capture,
         platformOwnership,
         platformOwnership,
         platformIdentity,
@@ -176,13 +184,13 @@ internal class PnLibraryImpl(
     )
     private val directDownloadConfiguration = DownloadConfiguration.load(
         dataFolder.resolve("downloads.yml"),
-    ) { platformLogging.log(this, LogLevel.WARNING, it) }
+    ) { support.capture.log(this, LogLevel.WARNING, it) }
     private val directDownloadManager = DirectDownloadManager(
         platformIdentity,
         platformOwnership,
         platformOwnership,
         platformReadiness,
-        platformLogging,
+        support.capture,
         dataFolder,
         directDownloadConfiguration,
     )
@@ -191,7 +199,7 @@ internal class PnLibraryImpl(
         commandAdapter = commandAdapter,
         audienceAdapter = audienceAdapter,
         taskAdapter = taskAdapter,
-        platformLogging = platformLogging,
+        platformLogging = support.capture,
         taskHistoryCapacity = config.taskHistoryCapacity,
         errorLogger = ::recordAndLog,
         commandFeedback = standardCommandFeedback(config),
@@ -242,7 +250,7 @@ internal class PnLibraryImpl(
         ownership = platformOwnership,
         identity = platformIdentity,
         execution = platformExecution,
-        platformLogging = platformLogging,
+        platformLogging = support.capture,
         events = eventService,
         tasks = taskService,
         services = serviceManager,
@@ -292,13 +300,6 @@ internal class PnLibraryImpl(
 
     private fun recordAndLog(logOwner: Any, message: String, error: Throwable) {
         support.recordRuntimeError(logOwner, message, error)
-        runCatching {
-            libraryMetrics?.errorReporter?.capture(
-                throwable = error,
-                operation = "pnlibrary.runtime",
-                attributes = mapOf("source" to logOwner.javaClass.name),
-            )
-        }
     }
 
     private fun startLibraryMetrics() {
