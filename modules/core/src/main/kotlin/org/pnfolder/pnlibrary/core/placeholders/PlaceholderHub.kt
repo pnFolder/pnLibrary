@@ -210,7 +210,8 @@ internal class PlaceholderHub(
         if (!entry.access.allows(entry.owner, consumer)) return failed(SecurityException("Plugin $consumer cannot read ${entry.owner}:${entry.key.value}"))
         val request = PlaceholderRequest(entry.owner, consumer, playerId, params, values)
         @Suppress("UNCHECKED_CAST")
-        return (entry as PlaceholderEntry<Any>).resolve(request).thenApply { format(consumer, it, pieces.drop(1), playerId, values, request) }
+        return (entry as PlaceholderEntry<Any>).resolve(request)
+            .thenApply { format(consumer, it, pieces.drop(1), playerId, values, request, entry.formats) }
     }
 
     private fun updateFor(
@@ -245,9 +246,10 @@ internal class PlaceholderHub(
         playerId: UUID?,
         values: Map<String, Any?>,
         existing: PlaceholderRequest? = null,
+        own: Map<String, PlaceholderFormatterRegistry.FormatterDefinition<*>> = emptyMap(),
     ): Any? {
         val request = existing ?: PlaceholderRequest(consumer, consumer, playerId, emptyMap(), values)
-        return formatterRegistry.format(consumer, value, pipeline, request)
+        return formatterRegistry.format(consumer, value, pipeline, request, own)
     }
 
     private fun id(owner: PluginId, key: String): String =

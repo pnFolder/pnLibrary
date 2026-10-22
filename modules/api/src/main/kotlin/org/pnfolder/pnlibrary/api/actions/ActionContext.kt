@@ -11,6 +11,7 @@ import org.pnfolder.pnlibrary.api.checks.CheckContext
 import org.pnfolder.pnlibrary.api.checks.Requirement
 import org.pnfolder.pnlibrary.api.internal.Suggestions
 import org.pnfolder.pnlibrary.api.logging.PnLogger
+import org.pnfolder.pnlibrary.api.placeholders.PlaceholderAdapterState
 import org.pnfolder.pnlibrary.api.placeholders.PlaceholderService
 import org.pnfolder.pnlibrary.api.tasks.TaskExecution
 import org.pnfolder.pnlibrary.api.tasks.TaskScope
@@ -64,16 +65,9 @@ class ActionContext(
     private val runtimeValues = LinkedHashMap(values)
     private val objects = HashMap(initialObjects)
 
-    /** Parses [text] with [type], or with [serializerType] when no override is supplied. */
-    fun component(text: String, type: ComponentSerializerType? = null): Component {
-        val normalizedText = LOCAL_PLACEHOLDER.replace(text) { match ->
-            "{${match.groupValues[1]}}"
-        }
-        return components.template(normalizedText, type ?: serializerType)
-            .player(player.uniqueId)
-            .also { template -> runtimeValues.forEach { (name, value) -> template.value(name, value) } }
-            .render()
-    }
+    /** Fills in the placeholders of [text] (see [format]), then parses it with [type] or [serializerType]. */
+    fun component(text: String, type: ComponentSerializerType? = null): Component =
+        components.deserialize(format(text), type ?: serializerType)
 
     /** Parses [lines] as one component using the explicit or context-default serializer. */
     fun component(lines: Iterable<String>, type: ComponentSerializerType? = null): Component {
@@ -156,12 +150,12 @@ class ActionContext(
     }
 
     /**
-     * Reads [expression] as a value: a context value or placeholder name, a single `%placeholder%` or
-     * `[[name]]`, or text that contains them. Returns `null` when a bare name is unknown.
+     * Reads [expression] as a value: one `[value]`, `{placeholder}` or `%external%`, text that contains them, or a
+     * bare name (a context value first, then a pnLibrary placeholder). Returns `null` when nothing matches.
      */
     override fun read(expression: String): Any? {
         val trimmed = expression.trim()
-        TOKEN.matchEntire(trimmed)?.let { return lookup(tokenName(it)) }
+        TOKEN.matchEntire(trimmed)?.let { return valueOf(it) }
         if (TOKEN.containsMatchIn(trimmed)) return format(trimmed)
         return resolve(trimmed)
     }
@@ -171,19 +165,52 @@ class ActionContext(
         runCatching { read(expression) }.getOrNull()?.toString() ?: format(expression)
 
     /**
-     * Replaces `[[name]]` and `%name%` in plain [text] with the matching context value or placeholder.
-     * `player` and `player_name` are always the player's name.
+     * Replaces the placeholders in plain [text], each kind in its own brackets, in one pass:
      *
+     * | Written | Taken from |
+     * |---|---|
+     * | `[name]` | a value of this context (and `player`) |
+     * | `{name}`, `{plugin:key}` | pnLibrary placeholders: the plugin's own, the library's, another plugin's |
+     * | `%name%` | the external PlaceholderAPI only |
+     *
+     * Any of the first two takes a chain of formats after a bar, such as `{money|group}`.
+     * `player` and `player_name` are always the player's name. Text that a placeholder produced is not read again.
      * Unknown names stay as written, so a typo is visible instead of silently empty.
      */
     fun format(text: String): String = TOKEN.replace(text) { match ->
-        runCatching { lookup(tokenName(match)) }.getOrNull()?.toString() ?: match.value
+        runCatching { valueOf(match) }.getOrNull()?.toString() ?: match.value
     }
 
-    private fun tokenName(match: MatchResult): String = match.groupValues[1].ifEmpty { match.groupValues[2] }
+    private fun valueOf(match: MatchResult): Any? {
+        val groups = match.groups
+        return when {
+            groups[1] != null -> named(groups[1]!!.value.trim()) { local(it, match.groupValues[2]) }
+            groups[3] != null -> named(groups[3]!!.value.trim()) { library(it) }
+            else -> named(groups[4]!!.value) { external(it) }
+        }
+    }
 
-    private fun lookup(name: String): Any? =
-        if (name == "player" || name == "player_name") player.name else resolve(name)
+    private inline fun named(name: String, lookup: (String) -> Any?): Any? =
+        if (name == "player" || name == "player_name") player.name else lookup(name)
+
+    /** A value of this context; a `|format` chain is applied by the placeholder service. */
+    private fun local(name: String, pipeline: String): Any? {
+        val value = runtimeValues[name] ?: return null
+        val service = placeholders
+        if (pipeline.isEmpty() || service == null) return value
+        return service.render("[$name$pipeline]", player.uniqueId, runtimeValues).toCompletableFuture().join()
+    }
+
+    /** A pnLibrary placeholder, looked up without this context's values so the two kinds never mix. */
+    private fun library(expression: String): Any? =
+        placeholders?.resolve(expression, player.uniqueId)?.toCompletableFuture()?.join()
+
+    /** A PlaceholderAPI placeholder, or `null` when that bridge is not available. */
+    private fun external(name: String): Any? {
+        val adapter = placeholders?.adapters()?.get(EXTERNAL_ADAPTER) ?: return null
+        if (adapter.state != PlaceholderAdapterState.AVAILABLE && adapter.state != PlaceholderAdapterState.REGISTERED) return null
+        return adapter.resolve(player.uniqueId, name)
+    }
 
     /** Returns the named condition value, or `null` when it is absent or explicitly null. */
     override fun value(name: String): Any? = runtimeValues[name]
@@ -235,7 +262,9 @@ class ActionContext(
         /** Deepest chain of templates calling templates before the next call is refused. */
         const val MAX_TEMPLATE_DEPTH = 16
 
-        private val LOCAL_PLACEHOLDER = Regex("\\[\\[([^\\[\\]]+)]]")
-        private val TOKEN = Regex("\\[\\[([^\\[\\]]+)]]|%([A-Za-z0-9_.:-]+)%")
+        private const val EXTERNAL_ADAPTER = "placeholderapi"
+
+        /** `[value]`, `{placeholder}` and `%external%`, each with its own capture groups. */
+        private val TOKEN = Regex("\\[([^\\[\\]{}|%]+)((?:\\|[^\\[\\]{}]*)?)]|\\{(?![?:/])([^{}]+)}|%([A-Za-z0-9_.:-]+)%")
     }
 }

@@ -28,6 +28,8 @@ internal class PlaceholderEntry<T : Any>(
     private val cachePolicy: PlaceholderCachePolicy,
     private val fallback: T?,
     private val adapterLookup: (String) -> PlaceholderAdapter?,
+    /** Formats only this placeholder understands, by lowercase name. */
+    val formats: Map<String, PlaceholderFormatterRegistry.FormatterDefinition<T>> = emptyMap(),
 ) : PlaceholderRegistration<T> {
     private val enabled = AtomicBoolean(true)
     private val closed = AtomicBoolean(false)

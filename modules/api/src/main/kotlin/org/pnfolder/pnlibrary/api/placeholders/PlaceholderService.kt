@@ -65,6 +65,15 @@ interface PlaceholderBuilder<T : Any> {
     /** Sets the value returned for null resolver results and while disabled. */
     fun fallback(value: T): PlaceholderBuilder<T>
 
+    /**
+     * Adds a format that only this placeholder understands: `{money|short}` calls [formatter] with the typed value.
+     *
+     * [name] uses lowercase letters, digits, `_` and `-`, and may be used once per placeholder. A format of this
+     * placeholder wins over a plugin-wide or built-in one with the same name. It runs only while the value is still
+     * a [T]; after an earlier format in the chain turned it into text, it is skipped.
+     */
+    fun format(name: String, formatter: PlaceholderFormatter<T>): PlaceholderBuilder<T>
+
     /** Requests publication through an external placeholder adapter. */
     fun publish(publication: PlaceholderPublication): PlaceholderBuilder<T>
 

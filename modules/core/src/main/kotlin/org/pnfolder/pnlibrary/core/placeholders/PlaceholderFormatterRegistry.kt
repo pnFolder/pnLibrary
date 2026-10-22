@@ -24,6 +24,13 @@ internal class PlaceholderFormatterRegistry {
         register(systemOwner, "duration", Any::class.java) { value, _, _ ->
             PlaceholderBuiltInFormatters.duration(value)
         }
+        register(systemOwner, "number", Any::class.java) { value, arguments, _ ->
+            PlaceholderBuiltInFormatters.number(value, arguments)
+        }
+        register(systemOwner, "group", Any::class.java) { value, _, _ -> PlaceholderBuiltInFormatters.group(value) }
+        register(systemOwner, "short", Any::class.java) { value, _, _ -> PlaceholderBuiltInFormatters.short(value) }
+        register(systemOwner, "capitalize", Any::class.java) { value, _, _ -> PlaceholderBuiltInFormatters.capitalize(value) }
+        register(systemOwner, "trim", Any::class.java) { value, _, _ -> value.toString().trim() }
     }
 
     fun <T : Any> register(
@@ -45,6 +52,7 @@ internal class PlaceholderFormatterRegistry {
         value: Any?,
         pipeline: List<String>,
         request: PlaceholderRequest,
+        own: Map<String, FormatterDefinition<*>> = emptyMap(),
     ): Any? {
         var current = value
         pipeline.forEach { expression ->
@@ -53,7 +61,7 @@ internal class PlaceholderFormatterRegistry {
             if (name == "default" && (current == null || current.toString().isBlank())) {
                 current = arguments.joinToString(",")
             } else {
-                current = applyFormatter(request.owner, consumer, name, current, arguments, request)
+                current = applyFormatter(request.owner, consumer, name, current, arguments, request, own)
             }
         }
         return current
@@ -66,9 +74,11 @@ internal class PlaceholderFormatterRegistry {
         value: Any?,
         arguments: List<String>,
         request: PlaceholderRequest,
+        own: Map<String, FormatterDefinition<*>>,
     ): Any? {
         if (value == null) return null
-        val definition = formatters[id(owner, name)]
+        val definition = own[name.lowercase(Locale.ROOT)]
+            ?: formatters[id(owner, name)]
             ?: formatters[id(consumer, name)]
             ?: formatters[id(systemOwner, name)]
             ?: return value
@@ -81,13 +91,14 @@ internal class PlaceholderFormatterRegistry {
     private fun id(owner: PluginId, name: String): String =
         "${owner.value}:${name.lowercase(Locale.ROOT)}"
 
-    private data class FormatterDefinition<T : Any>(
+    /** A format with the type of value it accepts; [owner] is the plugin that registered it. */
+    internal data class FormatterDefinition<T : Any>(
         val owner: PluginId,
         val type: Class<T>,
         val formatter: PlaceholderFormatter<T>,
     )
 
-    private companion object {
+    internal companion object {
         const val SYSTEM_NAMESPACE = "pnlibrary"
         val VALID_NAME = Regex("[a-z0-9_-]+")
     }

@@ -5,6 +5,7 @@ import org.pnfolder.pnlibrary.api.placeholders.PlaceholderAccess
 import org.pnfolder.pnlibrary.api.placeholders.PlaceholderAdapter
 import org.pnfolder.pnlibrary.api.placeholders.PlaceholderBuilder
 import org.pnfolder.pnlibrary.api.placeholders.PlaceholderCachePolicy
+import org.pnfolder.pnlibrary.api.placeholders.PlaceholderFormatter
 import org.pnfolder.pnlibrary.api.placeholders.PlaceholderKey
 import org.pnfolder.pnlibrary.api.placeholders.PlaceholderPublication
 import org.pnfolder.pnlibrary.api.placeholders.PlaceholderRegistration
@@ -32,6 +33,7 @@ internal class PlaceholderDefinitionBuilder<T : Any>(
     private var cachePolicy = PlaceholderCachePolicy.none()
     private var fallback: T? = null
     private val publications = mutableListOf<PlaceholderPublication>()
+    private val formats = linkedMapOf<String, PlaceholderFormatterRegistry.FormatterDefinition<T>>()
 
     override fun resolve(resolver: PlaceholderResolver<T>) = apply {
         this.resolver = { request -> CompletableFuture.completedFuture(resolver.resolve(request)) }
@@ -53,6 +55,13 @@ internal class PlaceholderDefinitionBuilder<T : Any>(
     override fun fallback(value: T) = apply { fallback = value }
     override fun publish(publication: PlaceholderPublication) = apply { publications += publication }
 
+    override fun format(name: String, formatter: PlaceholderFormatter<T>) = apply {
+        require(name.matches(PlaceholderFormatterRegistry.VALID_NAME)) { "Invalid format name: $name" }
+        require(formats.putIfAbsent(name, PlaceholderFormatterRegistry.FormatterDefinition(owner, key.type, formatter)) == null) {
+            "Placeholder ${key.value} already has a format named '$name'"
+        }
+    }
+
     fun install(): PlaceholderRegistration<T> {
         val entry = PlaceholderEntry(
             owner = owner,
@@ -64,6 +73,7 @@ internal class PlaceholderDefinitionBuilder<T : Any>(
             cachePolicy = cachePolicy,
             fallback = fallback,
             adapterLookup = adapterLookup,
+            formats = formats.toMap(),
         )
         install(entry)
         publications

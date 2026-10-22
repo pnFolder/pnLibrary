@@ -16,7 +16,7 @@ enum class CommandRunner {
 /**
  * Runs a server command.
  *
- * `[[player]]` and other `[[name]]` values are replaced in the text before it runs. If the
+ * `[player]` and other `[name]`, `{name}` and `%name%` placeholders are replaced in the text before it runs. If the
  * platform refuses the command, a warning is written to the action logger and execution continues.
  *
  * @property command command line without the leading slash

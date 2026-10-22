@@ -10,7 +10,7 @@ import java.util.regex.PatternSyntaxException
 /**
  * Matches when the whole [input] fits the regular expression [regex].
  *
- * [input] is a context value or placeholder name, or plain text with `[[name]]` parts.
+ * [input] is a context value or placeholder name, or plain text with `[name]`, `{name}` or `%name%` parts.
  *
  * @property input value to test
  * @property regex Java regular expression the entire value must match

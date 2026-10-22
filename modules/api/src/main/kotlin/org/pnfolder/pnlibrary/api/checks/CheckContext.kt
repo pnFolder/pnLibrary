@@ -16,7 +16,7 @@ interface CheckContext {
     /** Logger for warnings about checks that cannot be evaluated. */
     val logger: PnLogger
 
-    /** Resolves `%placeholder%`, `[[value]]` or a plain value name, or returns `null`. */
+    /** Resolves `[value]`, `{placeholder}`, `%external%` or a plain value name, or returns `null`. */
     fun read(expression: String): Any?
 
     /** Returns [expression] with every placeholder and value replaced, as text. */

@@ -89,7 +89,7 @@ class ActionChecksTest {
         val player = FakePlayer()
         val ctx = context(player)
 
-        CommandAction("/give [[player]] apple 1", CommandRunner.CONSOLE).execute(ctx)
+        CommandAction("/give [player] apple 1", CommandRunner.CONSOLE).execute(ctx)
         CommandAction("spawn", CommandRunner.PLAYER).execute(ctx)
 
         assertEquals(listOf("console: give Alice apple 1", "player: spawn"), player.commands)
@@ -99,9 +99,9 @@ class ActionChecksTest {
     fun `unknown placeholders stay visible in the command text`() {
         val player = FakePlayer()
 
-        CommandAction("say [[missing]]").execute(context(player))
+        CommandAction("say [missing]").execute(context(player))
 
-        assertEquals(listOf("console: say [[missing]]"), player.commands)
+        assertEquals(listOf("console: say [missing]"), player.commands)
     }
 
     // ---- requirements ----
@@ -268,7 +268,7 @@ class ActionChecksTest {
 
         assertTrue(RegexCheck("code", "[A-Z]{2}-\\d+").matches(ctx))
         assertFalse(RegexCheck("code", "\\d+").matches(ctx))
-        assertTrue(RegexCheck("id-[[code]]", "id-AB-123").matches(ctx))
+        assertTrue(RegexCheck("id-[code]", "id-AB-123").matches(ctx))
         assertThrows(IllegalArgumentException::class.java) { RegexCheck("code", "[") }
     }
 

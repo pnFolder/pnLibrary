@@ -2363,6 +2363,7 @@ public abstract interface class org/pnfolder/pnlibrary/api/placeholders/Placehol
 	public abstract fun access (Lorg/pnfolder/pnlibrary/api/placeholders/PlaceholderAccess;)Lorg/pnfolder/pnlibrary/api/placeholders/PlaceholderBuilder;
 	public abstract fun cache (Lorg/pnfolder/pnlibrary/api/placeholders/PlaceholderCachePolicy;)Lorg/pnfolder/pnlibrary/api/placeholders/PlaceholderBuilder;
 	public abstract fun fallback (Ljava/lang/Object;)Lorg/pnfolder/pnlibrary/api/placeholders/PlaceholderBuilder;
+	public abstract fun format (Ljava/lang/String;Lorg/pnfolder/pnlibrary/api/placeholders/PlaceholderFormatter;)Lorg/pnfolder/pnlibrary/api/placeholders/PlaceholderBuilder;
 	public abstract fun publish (Lorg/pnfolder/pnlibrary/api/placeholders/PlaceholderPublication;)Lorg/pnfolder/pnlibrary/api/placeholders/PlaceholderBuilder;
 	public fun publishToPlaceholderApi ()Lorg/pnfolder/pnlibrary/api/placeholders/PlaceholderBuilder;
 	public fun publishToPlaceholderApi (Ljava/lang/String;)Lorg/pnfolder/pnlibrary/api/placeholders/PlaceholderBuilder;
