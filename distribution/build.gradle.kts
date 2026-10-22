@@ -1,5 +1,6 @@
 // pnlibrary-distribution — produces fat JARs for each platform with relocated Kotlin runtime
 import com.github.jengelman.gradle.plugins.shadow.tasks.ShadowJar
+import groovy.json.JsonSlurper
 import java.util.jar.JarFile
 
 evaluationDependsOn(":modules:api")
@@ -227,13 +228,14 @@ tasks.register<Copy>("copyDeveloperArtifacts") {
 data class ReleasePlatform(
     val id: String,
     val shadowTask: String,
+    val minimumJava: Int,
 )
 
 val releasePlatforms = listOf(
-    ReleasePlatform("bukkit-java8", "shadowBukkit"),
-    ReleasePlatform("bungeecord-java8", "shadowBungee"),
-    ReleasePlatform("velocity-java17", "shadowVelocity"),
-    ReleasePlatform("universal", "shadowUniversal"),
+    ReleasePlatform("bukkit-java8", "shadowBukkit", 8),
+    ReleasePlatform("bungeecord-java8", "shadowBungee", 8),
+    ReleasePlatform("velocity-java17", "shadowVelocity", 17),
+    ReleasePlatform("universal", "shadowUniversal", 8),
 )
 val apiVersionSource = rootProject.file(
     "modules/api/src/main/kotlin/org/pnfolder/pnlibrary/api/version/PnLibraryApi.kt",
@@ -242,7 +244,7 @@ val pnApiVersion = Regex("const\\s+val\\s+VERSION\\s*:\\s*Int\\s*=\\s*(\\d+)")
     .find(apiVersionSource)?.groupValues?.get(1)?.toInt()
     ?: error("PnLibraryApi.VERSION was not found")
 
-fun installedComponentMetadata(): String = """
+fun installedComponentMetadata(platform: ReleasePlatform): String = """
     {
       "schema": 1,
       "product": "${rootProject.property("pnlibrary.product-id")}",
@@ -253,7 +255,7 @@ fun installedComponentMetadata(): String = """
         "maximum": $pnApiVersion
       },
       "java": {
-        "minimum": 8
+        "minimum": ${platform.minimumJava}
       }
     }
 """.trimIndent() + "\n"
@@ -266,12 +268,13 @@ val releaseArtifactTasks = releasePlatforms.map { platform ->
     val generateEmbedded = tasks.register("generate${suffix}Metadata") {
         inputs.property("releaseVersion", pnVer)
         inputs.property("apiVersion", pnApiVersion)
+        inputs.property("minimumJava", platform.minimumJava)
         val outputFile = generatedDirectory.map { it.file("META-INF/pnlibrary/component.json") }
         outputs.file(outputFile)
         doLast {
             outputFile.get().asFile.apply {
                 parentFile.mkdirs()
-                writeText(installedComponentMetadata(), Charsets.UTF_8)
+                writeText(installedComponentMetadata(platform), Charsets.UTF_8)
             }
         }
     }
@@ -303,8 +306,10 @@ val verifyEmbeddedMetadata = tasks.register("verifyEmbeddedMetadata") {
                 require(json.contains("\"channel\":")) {
                     "Missing embedded release channel in ${jar.name}"
                 }
-                require(json.contains("\"java\":")) {
-                    "Missing embedded Java compatibility in ${jar.name}"
+                val metadata = JsonSlurper().parseText(json) as Map<*, *>
+                val javaCompatibility = metadata["java"] as? Map<*, *>
+                require(javaCompatibility?.get("minimum") == platform.minimumJava) {
+                    "Incorrect embedded Java compatibility in ${jar.name}: expected Java ${platform.minimumJava}"
                 }
             }
         }
