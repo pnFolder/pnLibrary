@@ -182,11 +182,12 @@ class ActionContext(
     }
 
     private fun valueOf(match: MatchResult): Any? {
-        val groups = match.groups
+        val localGroup = match.groups[1]
+        val libraryGroup = match.groups[3]
         return when {
-            groups[1] != null -> named(groups[1]!!.value.trim()) { local(it, match.groupValues[2]) }
-            groups[3] != null -> named(groups[3]!!.value.trim()) { library(it) }
-            else -> named(groups[4]!!.value) { external(it) }
+            localGroup != null -> named(localGroup.value.trim()) { local(it, match.groupValues[2]) }
+            libraryGroup != null -> named(libraryGroup.value.trim()) { library(it) }
+            else -> named(requireNotNull(match.groups[4]) { "Token matched no placeholder group" }.value) { external(it) }
         }
     }
 
