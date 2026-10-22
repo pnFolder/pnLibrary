@@ -1,5 +1,40 @@
 {
   "schema": 1,
   "product": "pnlibrary",
-  "releases": []
+  "releases": [
+    {
+      "version": "0.0.1-dev.2",
+      "channel": "alpha",
+      "description": "Development build that publishes the universal JAR for the embedded installer.",
+      "changelogUrl": "https://github.com/pnFolder/pnLibrary/blob/main/.pnlibrary/changelogs/0.0.1-dev.2.md",
+      "publishedAt": "2026-10-22T12:33:57Z",
+      "api": { "minimum": 1, "maximum": 1 },
+      "installer": {
+        "file": "pnLibrary-0.0.1-dev.2-universal.jar",
+        "url": "https://github.com/pnFolder/pnLibrary/releases/download/v0.0.1-dev.2/pnLibrary-0.0.1-dev.2-universal.jar",
+        "sha256": "0100f288a514b1f0dddf881a2264c81029deb1a13f382e0b9a412bd0ed957683",
+        "size": 69909103
+      },
+      "artifacts": [
+        {
+          "file": "pnLibrary-0.0.1-dev.2-bukkit-java8.jar",
+          "platform": "BUKKIT",
+          "java": { "minimum": 8 },
+          "url": "https://github.com/pnFolder/pnLibrary/releases/download/v0.0.1-dev.2/pnLibrary-0.0.1-dev.2-bukkit-java8.jar"
+        },
+        {
+          "file": "pnLibrary-0.0.1-dev.2-bungeecord-java8.jar",
+          "platform": "BUNGEECORD",
+          "java": { "minimum": 8 },
+          "url": "https://github.com/pnFolder/pnLibrary/releases/download/v0.0.1-dev.2/pnLibrary-0.0.1-dev.2-bungeecord-java8.jar"
+        },
+        {
+          "file": "pnLibrary-0.0.1-dev.2-velocity-java17.jar",
+          "platform": "VELOCITY",
+          "java": { "minimum": 17 },
+          "url": "https://github.com/pnFolder/pnLibrary/releases/download/v0.0.1-dev.2/pnLibrary-0.0.1-dev.2-velocity-java17.jar"
+        }
+      ]
+    }
+  ]
 }
