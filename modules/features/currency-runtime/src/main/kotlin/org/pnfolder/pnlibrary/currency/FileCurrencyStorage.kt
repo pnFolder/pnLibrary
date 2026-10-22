@@ -27,11 +27,8 @@ import java.nio.file.Files
 import java.nio.file.Path
 import java.time.Instant
 import java.util.UUID
-import java.util.concurrent.CompletableFuture
+import org.pnfolder.pnlibrary.common.concurrent.ManagedWorker
 import java.util.concurrent.CompletionStage
-import java.util.concurrent.Executors
-import java.util.concurrent.RejectedExecutionException
-import java.util.concurrent.atomic.AtomicBoolean
 
 /** Single-writer JSON storage with in-memory indexes and rollback on persistence failure. */
 internal class FileCurrencyStorage(
@@ -39,10 +36,7 @@ internal class FileCurrencyStorage(
     private val maximumTransactions: Int,
 ) : CurrencyStorage {
     private val lock = Any()
-    private val closed = AtomicBoolean(false)
-    private val executor = Executors.newSingleThreadExecutor { task ->
-        Thread(task, "pnLibrary-currency-file").apply { isDaemon = true }
-    }
+    private val worker = ManagedWorker("pnLibrary-currency-file")
     private val balances = linkedMapOf<String, BigDecimal>()
     private val transactions = mutableListOf<CurrencyTransaction>()
     private val idempotency = hashMapOf<String, CurrencyTransaction>()
@@ -168,7 +162,7 @@ internal class FileCurrencyStorage(
     }
 
     override fun close() {
-        if (closed.compareAndSet(false, true)) executor.shutdown()
+        worker.close()
     }
 
     private fun apply(currency: CurrencyKey, descriptor: CurrencyDescriptor, request: CurrencyTransactionRequest): CurrencyTransaction {
@@ -291,14 +285,7 @@ internal class FileCurrencyStorage(
         transactions.removeIf { it.currency == currency }
         idempotency.keys.removeIf { it.startsWith(prefix) }
     }
-    private fun <T> async(operation: () -> T): CompletionStage<T> {
-        check(!closed.get()) { "Currency storage is closed" }
-        return try {
-            CompletableFuture.supplyAsync(operation, executor)
-        } catch (error: RejectedExecutionException) {
-            CompletableFuture<T>().also { it.completeExceptionally(error) }
-        }
-    }
+    private fun <T> async(operation: () -> T): CompletionStage<T> = worker.submit(operation)
 
     private data class StorageState(
         val balances: Map<String, BigDecimal>,

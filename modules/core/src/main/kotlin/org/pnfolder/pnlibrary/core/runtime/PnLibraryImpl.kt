@@ -5,7 +5,6 @@ import org.pnfolder.pnlibrary.api.audiences.AudienceService
 import org.pnfolder.pnlibrary.api.commands.CommandDefinition
 import org.pnfolder.pnlibrary.api.commands.CommandRegistration
 import org.pnfolder.pnlibrary.api.config.ConfigurationService
-import org.pnfolder.pnlibrary.api.currency.CurrencyProviderRegistry
 import org.pnfolder.pnlibrary.api.diagnostics.DebugRequest
 import org.pnfolder.pnlibrary.api.diagnostics.DiagnosticReport
 import org.pnfolder.pnlibrary.api.events.EventService
@@ -24,17 +23,14 @@ import org.pnfolder.pnlibrary.api.services.ServiceManager
 import org.pnfolder.pnlibrary.api.tasks.TaskScope
 import org.pnfolder.pnlibrary.api.updates.UpdateService
 import org.pnfolder.pnlibrary.api.version.SemanticVersion
-import org.pnfolder.pnlibrary.config.ConfigurationServiceImpl
 import org.pnfolder.pnlibrary.core.diagnostics.DiagnosticsRegistry
 import org.pnfolder.pnlibrary.core.diagnostics.diagnosticCommand
-import org.pnfolder.pnlibrary.core.journal.JournalLevel
-import org.pnfolder.pnlibrary.core.journal.JournalRecord
-import org.pnfolder.pnlibrary.core.journal.JournalStore
 import org.pnfolder.pnlibrary.core.journal.journalCommand
-import org.pnfolder.pnlibrary.core.journal.toJournalLevel
 import net.kyori.adventure.text.Component
 import org.pnfolder.pnlibrary.core.runtime.details.RuntimeDiagnosticsAssembler
 import org.pnfolder.pnlibrary.core.runtime.details.RuntimeMetricsBootstrap
+import org.pnfolder.pnlibrary.core.runtime.details.RuntimeFeatureSet
+import org.pnfolder.pnlibrary.core.runtime.details.RuntimeJournal
 import org.pnfolder.pnlibrary.core.runtime.lifecycle.RuntimeResources
 import org.pnfolder.pnlibrary.core.runtime.lifecycle.RuntimeShutdownPlan
 import org.pnfolder.pnlibrary.core.runtime.lifecycle.journalJoinNotice
@@ -47,22 +43,16 @@ import java.time.Duration
 import org.pnfolder.pnlibrary.core.commands.standardCommandFeedback
 import org.pnfolder.pnlibrary.core.journal.joinDigest
 import java.time.ZoneId
-import org.pnfolder.pnlibrary.core.downloads.DirectDownloadManager
 import org.pnfolder.pnlibrary.api.logging.LogLevel
-import org.pnfolder.pnlibrary.core.downloads.DownloadConfiguration
 import org.pnfolder.pnlibrary.core.events.EventServiceImpl
 import org.pnfolder.pnlibrary.core.logging.LoggingServiceImpl
 import org.pnfolder.pnlibrary.core.metrics.MetricsServiceImpl
 import org.pnfolder.pnlibrary.core.observability.SupportRuntime
-import org.pnfolder.pnlibrary.core.placeholders.GlobalPlaceholderValueStore
-import org.pnfolder.pnlibrary.core.placeholders.PlaceholderHub
 import org.pnfolder.pnlibrary.core.platform.PlatformProviderImpl
 import org.pnfolder.pnlibrary.core.plugin.PluginRegistryImpl
-import org.pnfolder.pnlibrary.core.services.ServiceManagerImpl
-import org.pnfolder.pnlibrary.core.updates.service.UpdateServiceImpl
-import org.pnfolder.pnlibrary.currency.CurrencyFeature
 import java.nio.file.Path
 import java.util.concurrent.atomic.AtomicBoolean
+import org.pnfolder.pnlibrary.core.lifecycle.ResourceCleanup
 
 /**
  * Composes all service implementations into one [PnLibrary] runtime.
@@ -83,7 +73,6 @@ internal class PnLibraryImpl(
     private val platformIdentity get() = platform.identity
     private val platformOwnership get() = platform.ownership
     private val platformExecution get() = platform.execution
-    private val platformReadiness get() = platform.readiness
     private val platformLogging get() = platform.logging
     private val platformDiagnostics get() = platform.diagnostics
     private val platformLogObservation get() = platform.logObservation
@@ -109,6 +98,8 @@ internal class PnLibraryImpl(
         DisplayZone.zone = ZoneId.of(config.timeZone)
     }
 
+    private val journalRuntime = RuntimeJournal(dataFolder, config, platformOwnership)
+    private val journal get() = journalRuntime.store
     private val support = SupportRuntime(
         owner = owner,
         ownership = platformOwnership,
@@ -120,74 +111,38 @@ internal class PnLibraryImpl(
         config = config,
         dataFolder = dataFolder,
         runtimeDiagnostics = { runtimeDiagnostics.assemble() },
-        journal = ::writeJournal,
+        journal = journalRuntime::record,
+        onRuntimeError = { logOwner, error ->
+            libraryMetrics?.errorReporter?.capture(
+                throwable = error,
+                operation = "pnlibrary.runtime",
+                attributes = mapOf("source" to logOwner.javaClass.name),
+            )
+        },
     )
     override val observability get() = support.service
     override val activity: ActivityService get() = observability
     override val metrics: MetricsService get() = metricsService
-    private val journal = JournalStore(
-        dataFolder.resolve("journal"),
-        mapOf(
-            JournalLevel.INFO to Duration.ofDays(config.journalInfoDays.toLong()),
-            JournalLevel.WARNING to Duration.ofDays(config.journalWarningDays.toLong()),
-            JournalLevel.ERROR to Duration.ofDays(config.journalErrorDays.toLong()),
-        ),
-    ).also { store -> runCatching { store.prune() } }
     override val logging: LoggingService = LoggingServiceImpl(
         platformLogging,
         platformOwnership,
         platformDiagnostics,
         platformIdentity,
         support.logs,
-        journal = ::writeJournal,
+        capture = support.capture,
     )
 
-    /** Adds one log line, from the library, a plugin or the platform itself, to the event journal. */
-    private fun writeJournal(owner: Any, level: LogLevel, message: String, error: Throwable?) {
-        journal.append(
-            JournalRecord(
-                timeMillis = System.currentTimeMillis(),
-                level = level.toJournalLevel(),
-                source = platformOwnership.ownerDetails(owner)["id"] ?: owner.javaClass.simpleName,
-                type = if (error != null) "ERROR" else "LOG",
-                message = message,
-                details = error?.let {
-                    mapOf(
-                        "exception" to it.javaClass.name,
-                        JournalRecord.STACKTRACE to JournalRecord.stackTraceOf(it),
-                    )
-                }.orEmpty(),
-            ),
-        )
-    }
-    private val configurationService = ConfigurationServiceImpl(platformOwnership)
+    private val features = RuntimeFeatureSet(platform, dataFolder, support.capture)
+    private val configurationService get() = features.configurations
     override val configurations: ConfigurationService get() = configurationService
-    private val updateService = UpdateServiceImpl(
-        platformLogging,
-        platformOwnership,
-        platformOwnership,
-        platformIdentity,
-        platformReadiness,
-        dataFolder,
-    )
-    private val directDownloadConfiguration = DownloadConfiguration.load(
-        dataFolder.resolve("downloads.yml"),
-    ) { platformLogging.log(this, LogLevel.WARNING, it) }
-    private val directDownloadManager = DirectDownloadManager(
-        platformIdentity,
-        platformOwnership,
-        platformOwnership,
-        platformReadiness,
-        platformLogging,
-        dataFolder,
-        directDownloadConfiguration,
-    )
+    private val updateService get() = features.updates
+    private val directDownloadManager get() = features.downloads
     override val updates: UpdateService get() = updateService
     private val platformServices = PlatformServiceSet(
         commandAdapter = commandAdapter,
         audienceAdapter = audienceAdapter,
         taskAdapter = taskAdapter,
-        platformLogging = platformLogging,
+        platformLogging = support.capture,
         taskHistoryCapacity = config.taskHistoryCapacity,
         errorLogger = ::recordAndLog,
         commandFeedback = standardCommandFeedback(config),
@@ -214,31 +169,25 @@ internal class PnLibraryImpl(
         commandService.register(owner, command)
     private val audienceService get() = platformServices.audiences
     override val audiences: AudienceService get() = audienceService
-    private val serviceManager = ServiceManagerImpl()
+    private val serviceManager get() = features.services
     override val services: ServiceManager get() = serviceManager
     private val eventService = EventServiceImpl { pluginId, message, error ->
         val identifiedMessage = "[$pluginId] $message"
         recordAndLog(owner, identifiedMessage, error)
     }
     override val events: EventService get() = eventService
-    private val placeholderValueStore = GlobalPlaceholderValueStore()
-    private val placeholderHub = PlaceholderHub(platformIdentity, placeholderValueStore)
-    private val currencyFeature = CurrencyFeature()
+    private val placeholderValueStore get() = features.placeholderValues
+    private val placeholderHub get() = features.placeholders
+    private val currencyFeature get() = features.currency
     private val platformProvider = PlatformProviderImpl()
     override val platforms: PlatformProvider get() = platformProvider
     override val placeholderAdapters: PlaceholderAdapterRegistry get() = placeholderHub
     override val placeholderValues: PlaceholderValueStore get() = placeholderValueStore
-    init {
-        serviceManager.register(
-            CurrencyProviderRegistry::class.java,
-            currencyFeature.providers,
-        )
-    }
     override val plugins: PluginRegistry = PluginRegistryImpl(
         ownership = platformOwnership,
         identity = platformIdentity,
         execution = platformExecution,
-        platformLogging = platformLogging,
+        platformLogging = support.capture,
         events = eventService,
         tasks = taskService,
         services = serviceManager,
@@ -265,7 +214,7 @@ internal class PnLibraryImpl(
         support = support,
         metrics = metricsService,
         commands = commandService,
-        journal = { journal.summary() },
+        journal = journalRuntime::summary,
     )
 
     fun init() {
@@ -288,13 +237,6 @@ internal class PnLibraryImpl(
 
     private fun recordAndLog(logOwner: Any, message: String, error: Throwable) {
         support.recordRuntimeError(logOwner, message, error)
-        runCatching {
-            libraryMetrics?.errorReporter?.capture(
-                throwable = error,
-                operation = "pnlibrary.runtime",
-                attributes = mapOf("source" to logOwner.javaClass.name),
-            )
-        }
     }
 
     private fun startLibraryMetrics() {
@@ -321,7 +263,7 @@ internal class PnLibraryImpl(
                 events = AutoCloseable(eventService::close),
                 services = serviceManager,
                 tasks = taskService,
-                support = AutoCloseable(support::close),
+                support = AutoCloseable { ResourceCleanup.closeAll({ support.close() }, { journalRuntime.close() }) },
                 releaseProvider = { PnLibraryProvider.clear(this) },
                 closePlatform = { closePlatform() },
                 onClose = onClose,

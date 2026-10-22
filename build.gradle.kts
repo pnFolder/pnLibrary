@@ -19,6 +19,7 @@ apiValidation {
             "paper",
             "currency-runtime",
             "config-runtime",
+            "policy-kotlin",
         ),
     )
 }
@@ -98,20 +99,26 @@ subprojects {
 }
 
 // Public contracts must never pull implementation modules onto their compile classpath.
-val publicModuleDependencies = mapOf(
-    ":modules:common" to emptySet<String>(),
-    ":modules:api" to setOf(":modules:common", ":modules:features:config-api"),
-    ":modules:features:currency-api" to setOf(":modules:api"),
-    ":platforms:bukkit:api" to setOf(":modules:api", ":modules:common"),
-    ":platforms:bungee:api" to setOf(":modules:api"),
-    ":platforms:velocity:api" to setOf(":modules:api"),
-    ":modules:features:minecraft-localization" to setOf(":modules:common", ":platforms:bukkit:api"),
-)
+val publicModulesFile = file("gradle/public-modules.properties")
+val publicModuleDependencies = publicModulesFile.readLines().map(String::trim)
+    .filter { it.isNotEmpty() && !it.startsWith("#") }.associate { line ->
+        val path = ":" + line.substringBefore('=').replace('/', ':')
+        path to line.substringAfter('=').split(',').filter(String::isNotBlank)
+            .map { ":" + it.trim().replace('/', ':') }.toSet()
+    }
 
 val verifyPublicModuleBoundaries = tasks.register("verifyPublicModuleBoundaries") {
     group = "verification"
     description = "Rejects implementation-module dependencies in public API artifacts"
+    inputs.file(publicModulesFile)
     doLast {
+        val signatureModules = subprojects.filter { module ->
+            module.file("api").listFiles()?.any { it.extension == "api" } == true
+        }.map { it.path }.toSet() - ":modules:runtime-spi"
+        check(signatureModules == publicModuleDependencies.keys) {
+            "Public module registry and signature modules differ: " +
+                "${(signatureModules - publicModuleDependencies.keys) + (publicModuleDependencies.keys - signatureModules)}"
+        }
         publicModuleDependencies.forEach { (modulePath, allowed) ->
             val dependencies = project(modulePath).configurations.getByName("compileClasspath")
                 .allDependencies.withType<ProjectDependency>().map { it.path }.toSet()
@@ -128,14 +135,8 @@ val verifyPublicModuleBoundaries = tasks.register("verifyPublicModuleBoundaries"
 tasks.named("check") {
     dependsOn(
         verifyPublicModuleBoundaries,
-        ":modules:common:apiCheck",
-        ":modules:api:apiCheck",
+        publicModuleDependencies.keys.map { "$it:apiCheck" },
         ":modules:runtime-spi:apiCheck",
-        ":modules:features:currency-api:apiCheck",
-        ":modules:features:minecraft-localization:apiCheck",
-        ":platforms:bukkit:api:apiCheck",
-        ":platforms:bungee:api:apiCheck",
-        ":platforms:velocity:api:apiCheck",
     )
 }
 

@@ -56,7 +56,41 @@ try {
     Invoke-Case 'forbidden-removal' $base $removal 4 4 1
     Invoke-Case 'generation-increase' $base $removal 4 5 0
     Invoke-Case 'generation-decrease' $base $addition 4 3 1
+    $repo = Join-Path $testRoot 'all-modules'
+    @('gradle', 'modules/api/api', 'modules/features/config-api/api', 'modules/runtime-spi/api', 'modules/api/src/main/kotlin/org/pnfolder/pnlibrary/api/version') |
+        ForEach-Object { New-Item -ItemType Directory -Path (Join-Path $repo $_) -Force | Out-Null }
+    [IO.File]::WriteAllText((Join-Path $repo 'gradle/public-modules.properties'), "modules/api=modules/features/config-api`nmodules/features/config-api=`n")
+    [IO.File]::WriteAllText((Join-Path $repo 'modules/api/api/api.api'), $base)
+    [IO.File]::WriteAllText((Join-Path $repo 'modules/runtime-spi/api/runtime-spi.api'), $base)
+    $configDump = Join-Path $repo 'modules/features/config-api/api/config-api.api'
+    [IO.File]::WriteAllText($configDump, $base)
+    [IO.File]::WriteAllText((Join-Path $repo 'modules/api/src/main/kotlin/org/pnfolder/pnlibrary/api/version/PnLibraryApi.kt'), 'const val VERSION: Int = 4')
+    & git -C $repo init --quiet
+    & git -C $repo -c user.name=ApiPolicyTest -c user.email=test@example.invalid add .
+    & git -C $repo -c user.name=ApiPolicyTest -c user.email=test@example.invalid commit --quiet -m baseline
+    if ($LASTEXITCODE -ne 0) { throw 'Cannot prepare the multi-module API fixture' }
+    [IO.File]::WriteAllText($configDump, $removal)
+    Push-Location -LiteralPath $repo
+    try {
+        $output = & pwsh -NoProfile -File $checker -BaseRef HEAD 2>&1 | Out-String
+        if ($LASTEXITCODE -ne 1 -or $output -notmatch 'modules/features/config-api/api/config-api.api') {
+            throw "Removing a config API declaration was not rejected: $output"
+        }
+        [IO.File]::WriteAllText((Join-Path $repo 'gradle/public-modules.properties'), "modules/api=`n")
+        $output = & pwsh -NoProfile -File $checker -BaseRef HEAD 2>&1 | Out-String
+        if ($LASTEXITCODE -ne 1 -or $output -notmatch 'modules/features/config-api/api/config-api.api') {
+            throw "Removing a module from the registry bypassed compatibility checks: $output"
+        }
+    } finally { Pop-Location }
     Write-Output 'API generation policy tests passed.'
 } finally {
+    $resolved = [IO.Path]::GetFullPath($testRoot)
+    if ([IO.Path]::GetDirectoryName($resolved).TrimEnd('\', '/') -ne [IO.Path]::GetTempPath().TrimEnd('\', '/') -or
+        -not [IO.Path]::GetFileName($resolved).StartsWith('pnlibrary-api-policy-')) {
+        throw "Refusing to remove an unexpected test directory: $resolved"
+    }
     Remove-Item -LiteralPath $testRoot -Recurse -Force
 }
+
+# Expected-failure checks above leave a non-zero $LASTEXITCODE; reaching here means every assertion passed.
+exit 0

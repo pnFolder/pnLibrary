@@ -10,6 +10,7 @@ include(
     ":modules:features:currency-api",
     ":modules:features:currency-runtime",
     ":modules:features:minecraft-localization",
+    ":modules:features:policy-kotlin",
     ":platforms:velocity:faststats",
     ":platforms:bukkit:bootstrap",
     ":modules:console",

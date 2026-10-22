@@ -53,7 +53,32 @@ function Get-ApiDeclarations {
     return $result
 }
 
-$baseApi = if ($BaseRef) {
+function Get-RepositoryApiDeclarations {
+    param([string]$Ref)
+    $paths = if ($Ref) {
+        @(& git ls-tree -r --name-only $Ref | Where-Object { $_ -match '^(modules|platforms)/.+/api/[^/]+\.api$' })
+    } else {
+        $modules = @(Get-Content -LiteralPath 'gradle/public-modules.properties' |
+            Where-Object { $_.Trim() -and -not $_.Trim().StartsWith('#') } |
+            ForEach-Object { $_.Split('=')[0].Trim() })
+        $result = @()
+        foreach ($module in @($modules + 'modules/runtime-spi')) {
+            foreach ($file in @(Get-ChildItem -LiteralPath (Join-Path $module 'api') -Filter '*.api')) {
+                $result += [IO.Path]::GetRelativePath((Get-Location).Path, $file.FullName).Replace('\', '/')
+            }
+        }
+        $result
+    }
+    $declarations = [System.Collections.Generic.HashSet[string]]::new([System.StringComparer]::Ordinal)
+    foreach ($path in $paths) {
+        $dump = Read-InputText $path $Ref
+        foreach ($entry in (Get-ApiDeclarations $dump)) { [void]$declarations.Add("${path}::$entry") }
+    }
+    return ,$declarations
+}
+
+$allModules = $BaseRef -and -not $PSBoundParameters.ContainsKey('CurrentApiPath')
+$baseApi = if ($allModules) { '' } elseif ($BaseRef) {
     Read-GitFileWithFallback $BaseRef 'modules/api/api/api.api' 'pnlibrary-api/api/pnlibrary-api.api'
 } else {
     Read-InputText $BaseApiPath $null
@@ -65,18 +90,17 @@ $baseVersionSource = if ($BaseRef) {
 } else {
     Read-InputText $BaseVersionPath $null
 }
-$currentApi = Read-InputText $CurrentApiPath $null
+$currentApi = if ($allModules) { '' } else { Read-InputText $CurrentApiPath $null }
 $currentVersionSource = Read-InputText $CurrentVersionPath $null
 
 $baseVersion = Read-ApiGeneration $baseVersionSource
 $currentVersion = Read-ApiGeneration $currentVersionSource
 if ($currentVersion -lt $baseVersion) {
-    # Lowering the generation number itself is allowed; only an unannounced ABI removal is blocked below.
-    Write-Output "API generation decreased from $baseVersion to $currentVersion."
+    throw "API generation must not decrease: $baseVersion -> $currentVersion"
 }
 
-$baseDeclarations = Get-ApiDeclarations $baseApi
-$currentDeclarations = Get-ApiDeclarations $currentApi
+$baseDeclarations = if ($allModules) { Get-RepositoryApiDeclarations $BaseRef } else { Get-ApiDeclarations $baseApi }
+$currentDeclarations = if ($allModules) { Get-RepositoryApiDeclarations '' } else { Get-ApiDeclarations $currentApi }
 $removed = @($baseDeclarations | Where-Object { -not $currentDeclarations.Contains($_) } | Sort-Object)
 
 if ($removed.Count -gt 0 -and $currentVersion -le $baseVersion) {

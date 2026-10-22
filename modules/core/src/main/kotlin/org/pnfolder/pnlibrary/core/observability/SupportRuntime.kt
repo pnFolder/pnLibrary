@@ -10,6 +10,7 @@ import org.pnfolder.pnlibrary.api.observability.ObservabilityReportRequest
 import org.pnfolder.pnlibrary.api.runtime.PnLibraryConfig
 import org.pnfolder.pnlibrary.core.diagnostics.DiagnosticsRegistry
 import org.pnfolder.pnlibrary.core.logging.DiagnosticLogBuffer
+import org.pnfolder.pnlibrary.core.logging.DiagnosticCapture
 import org.pnfolder.pnlibrary.core.observability.history.IncidentHistoryStore
 import org.pnfolder.pnlibrary.core.observability.report.SupportDeliveryFactory
 import org.pnfolder.pnlibrary.core.observability.report.SupportReportGenerator
@@ -43,11 +44,22 @@ internal class SupportRuntime(
     dataFolder: Path,
     private val runtimeDiagnostics: () -> Map<String, Any?> = { emptyMap() },
     private val journal: ((Any, LogLevel, String, Throwable?) -> Unit)? = null,
+    private val onRuntimeError: (Any, Throwable) -> Unit = { _, _ -> },
 ) : AutoCloseable {
     private val observations = ObservabilityRuntime(dataFolder)
     private val diagnosticBridge = DiagnosticObservationBridge(observations)
     val service = ObservabilityServiceImpl(diagnostics, observations)
     val logs = DiagnosticLogBuffer(config.logRecords.coerceIn(10, 2_000))
+    val capture = DiagnosticCapture(ownership, platformLogging, logs, journal) { logOwner, message, error ->
+        service.record(
+            type = "RUNTIME_ERROR",
+            category = ActivityCategory.ERROR,
+            severity = ActivitySeverity.ERROR,
+            source = logOwner.javaClass.name,
+            metadata = mapOf("message" to message.take(512), "exception" to error.javaClass.name),
+        )
+        onRuntimeError(logOwner, error)
+    }
 
     fun logSummary(): Map<String, Any?> = logs.summary()
 
@@ -95,11 +107,7 @@ internal class SupportRuntime(
         diagnostics.onEventsChanged(::persistHistory)
         diagnostics.onActivityEvent(diagnosticBridge::record)
         platformLogObservation.observeNativeLogs { nativeOwner, level, message, error ->
-            // Plugins that do not use pnLibrary reach the journal only when the admin asked for it.
-            if (config.journalForeignPlugins || nativeOwner === owner) {
-                runCatching { journal?.invoke(nativeOwner, level, message, error) }
-            }
-            logs.record(ownership, nativeOwner, level, message, error)
+            capture.observe(nativeOwner, level, message, error, config.journalForeignPlugins || nativeOwner === owner)
         }
 
         worker.scheduleWithFixedDelay(
@@ -179,23 +187,7 @@ internal class SupportRuntime(
     fun observabilityAnalytics(): Map<String, Any?> = observations.analytics()
 
     fun recordRuntimeError(logOwner: Any, message: String, error: Throwable) {
-        service.record(
-            type = "RUNTIME_ERROR",
-            category = ActivityCategory.ERROR,
-            severity = ActivitySeverity.ERROR,
-            source = logOwner.javaClass.name,
-            metadata = mapOf(
-                "message" to message.take(512),
-                "exception" to error.javaClass.name,
-            ),
-        )
-
-        runCatching { journal?.invoke(logOwner, LogLevel.ERROR, message, error) }
-        val capture = logs.record(ownership, logOwner, LogLevel.ERROR, message, error)
-        when {
-            capture == null || capture.emitOriginal -> platformLogging.log(logOwner, LogLevel.ERROR, message, error)
-            capture.summary != null -> platformLogging.log(logOwner, LogLevel.ERROR, capture.summary, null)
-        }
+        capture.log(logOwner, LogLevel.ERROR, message, error)
     }
 
     override fun close() {
@@ -227,7 +219,7 @@ internal class SupportRuntime(
 
     /** Logs a failed background job; a periodic task must not throw, or the executor cancels it. */
     private fun warnBackgroundFailure(job: String): (Throwable) -> Unit = { error ->
-        platformLogging.log(this, LogLevel.WARNING, "$job failed", error)
+        capture.log(this, LogLevel.WARNING, "$job failed", error)
     }
 
     // History writes stay silent: logging their failure would record a new incident and request another write.

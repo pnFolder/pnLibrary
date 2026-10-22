@@ -1,13 +1,12 @@
 package org.pnfolder.pnlibrary.core.remote
 
-import org.jetbrains.kotlin.cli.common.ExitCode
-import org.jetbrains.kotlin.cli.jvm.K2JVMCompiler
 import org.pnfolder.pnlibrary.api.remote.RemotePolicy
 import org.pnfolder.pnlibrary.api.remote.RemotePolicyContext
 import org.pnfolder.pnlibrary.api.remote.RemotePolicyResult
 import java.io.ByteArrayOutputStream
 import java.io.File
-import java.io.PrintStream
+import java.lang.reflect.InvocationTargetException
+import org.pnfolder.pnlibrary.common.io.Digests
 import java.net.HttpURLConnection
 import java.net.URI
 import java.net.URLClassLoader
@@ -51,6 +50,11 @@ internal object RemotePolicyEngine {
         context: RemotePolicyContext,
         extension: String = "java",
     ): RemotePolicyResult {
+        context.values["pnlibrary.policy.sha256"]?.let { expected ->
+            require(expected.matches(Regex("[0-9a-fA-F]{64}")) && Digests.sha256(source).equals(expected, true)) {
+                "Remote policy SHA-256 does not match the pinned source"
+            }
+        }
         val text = source.toString(StandardCharsets.UTF_8)
         val simpleName = classPattern.find(text)?.groupValues?.get(1)
             ?: error("Remote policy does not declare a class")
@@ -90,20 +94,22 @@ internal object RemotePolicyEngine {
     }
 
     private fun compileKotlin(file: Path, root: Path, classpath: String) {
-        val diagnostics = ByteArrayOutputStream()
-        val exit = PrintStream(diagnostics, true, "UTF-8").use { output ->
-            K2JVMCompiler().exec(
-                output,
-                "-d", root.toString(),
-                "-classpath", classpath,
-                "-jvm-target", "1.8",
-                "-no-stdlib",
-                "-no-reflect",
-                file.toString(),
-            )
-        }
-        require(exit == ExitCode.OK) {
-            diagnostics.toString("UTF-8").trim().ifBlank { "Remote Kotlin policy compilation failed: $exit" }
+        val configured = System.getProperty("pnlibrary.policy.kotlinCompiler")?.let { Paths.get(it).toAbsolutePath().normalize() }
+        configured?.let { require(Files.isRegularFile(it)) { "Kotlin policy compiler JAR does not exist: $it" } }
+        val extensionLoader = configured?.let { URLClassLoader(arrayOf(it.toUri().toURL()), javaClass.classLoader) }
+        try {
+            val type = try {
+                Class.forName("org.pnfolder.pnlibrary.policy.kotlin.KotlinPolicyCompiler", true, extensionLoader ?: javaClass.classLoader)
+            } catch (missing: ClassNotFoundException) {
+                throw IllegalStateException("Kotlin policies require the optional pnLibrary-policy-kotlin JAR; " +
+                    "set -Dpnlibrary.policy.kotlinCompiler=/absolute/path/to/compiler.jar", missing)
+            }
+            try {
+                type.getMethod("compile", Path::class.java, Path::class.java, String::class.java)
+                    .invoke(null, file, root, classpath + File.pathSeparator + location(type))
+            } catch (error: InvocationTargetException) { throw error.targetException }
+        } finally {
+            extensionLoader?.close()
         }
     }
 

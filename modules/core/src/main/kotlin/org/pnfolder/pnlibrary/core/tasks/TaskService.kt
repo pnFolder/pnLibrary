@@ -5,6 +5,7 @@ import org.pnfolder.pnlibrary.api.tasks.TaskId
 import org.pnfolder.pnlibrary.api.tasks.TaskQuery
 import org.pnfolder.pnlibrary.api.tasks.TaskScope
 import org.pnfolder.pnlibrary.api.tasks.TaskSnapshot
+import org.pnfolder.pnlibrary.api.plugin.PluginId
 
 /**
  * Cross-platform scheduling service with owner-scoped resource management.
@@ -19,6 +20,9 @@ import org.pnfolder.pnlibrary.api.tasks.TaskSnapshot
 internal interface TaskService : AutoCloseable {
     /** Returns the active scope associated with [owner], creating it when necessary. */
     fun scope(owner: Any): TaskScope
+
+    /** Returns an independently owned module scope for the native owner. */
+    fun scope(owner: Any, scopeId: PluginId): TaskScope = scope(owner)
 
     /** Returns the task identified by [id] across all active scopes. */
     fun get(id: TaskId): TaskHandle? = null

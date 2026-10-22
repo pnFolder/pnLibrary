@@ -18,7 +18,7 @@ on:
         required: true
         type: string
       publish_central:
-        description: Publish API artifacts to Maven Central
+        description: Publish configured Maven artifacts to Maven Central
         required: true
         type: boolean
         default: true
@@ -42,6 +42,9 @@ jobs:
       ORG_GRADLE_PROJECT_mavenCentralPassword: ${{ secrets.MAVEN_CENTRAL_PASSWORD }}
       ORG_GRADLE_PROJECT_signingInMemoryKey: ${{ secrets.SIGNING_KEY }}
       ORG_GRADLE_PROJECT_signingInMemoryKeyPassword: ${{ secrets.SIGNING_PASSWORD }}
+      ORG_GRADLE_PROJECT_POM_LICENSE_NAME: ${{ vars.MAVEN_LICENSE_NAME }}
+      ORG_GRADLE_PROJECT_POM_LICENSE_URL: ${{ vars.MAVEN_LICENSE_URL }}
+      ORG_GRADLE_PROJECT_POM_LICENSE_DIST: repo
     steps:
       - uses: actions/checkout@v4
         with:
@@ -67,6 +70,10 @@ jobs:
             if ($current -ne $env:RELEASE_VERSION) {
               throw "Requested $env:RELEASE_VERSION, but the repository contains $current"
             }
+            $tag = git rev-parse "refs/tags/v$env:RELEASE_VERSION^{commit}"
+            if ($LASTEXITCODE -ne 0 -or $tag -ne (git rev-parse HEAD)) {
+              throw 'Central-only mode must run on the exact release tag; use the existing-version publication workflow'
+            }
           }
 
       - name: Verify Maven Central support
@@ -77,10 +84,7 @@ jobs:
           if ($tasks -notmatch 'publishAndReleaseToMavenCentral') {
             throw 'Maven Central publishing is not configured in Gradle'
           }
-          @('ORG_GRADLE_PROJECT_mavenCentralUsername', 'ORG_GRADLE_PROJECT_mavenCentralPassword', 'ORG_GRADLE_PROJECT_signingInMemoryKey', 'ORG_GRADLE_PROJECT_signingInMemoryKeyPassword') | ForEach-Object {
-            $secret = (Get-Item "env:$_" -ErrorAction SilentlyContinue).Value
-            if ([string]::IsNullOrWhiteSpace($secret)) { throw "Missing GitHub Actions secret: $_" }
-          }
+          ./tools/release/publish-central.ps1 -ValidateOnly
 
       - name: Set project version
         if: inputs.mode == 'full'
@@ -90,21 +94,39 @@ jobs:
       - name: Build and verify
         run: .\gradlew.bat clean check :distribution:build --console=plain
 
+      - name: Verify release tooling
+        shell: pwsh
+        run: ./tools/release/check-release-tools.tests.ps1
+
+      - name: Generate catalog and changelog from packaged metadata
+        if: inputs.mode == 'full'
+        shell: pwsh
+        run: tools/release/update-catalog.ps1 -ManifestPath distribution/build/libs/release-manifest.json -Notes $env:RELEASE_NOTES
+
       - name: Commit version and create tag
         if: inputs.mode == 'full'
         shell: pwsh
         run: |
           git config user.name 'pnFolder Release Bot'
           git config user.email 'actions@users.noreply.github.com'
-          git add gradle.properties
+          git add gradle.properties .pnlibrary/releases.json ".pnlibrary/changelogs/$env:RELEASE_VERSION.md"
           git diff --cached --quiet
           if ($LASTEXITCODE -ne 0) {
             git commit -m "release: $env:RELEASE_VERSION"
             if ($LASTEXITCODE -ne 0) { throw 'Release commit failed' }
           }
-          git tag -a "v$env:RELEASE_VERSION" -m "pnLibrary $env:RELEASE_VERSION"
+          # A re-run after a partial failure may reuse the tag only if it already points at this commit.
+          $existingTag = git rev-parse -q --verify "refs/tags/v$env:RELEASE_VERSION^{commit}"
+          if ($LASTEXITCODE -eq 0) {
+            if ($existingTag -ne (git rev-parse HEAD)) { throw "Tag v$env:RELEASE_VERSION already points at another commit" }
+          } else {
+            git tag -a "v$env:RELEASE_VERSION" -m "pnLibrary $env:RELEASE_VERSION"
+            if ($LASTEXITCODE -ne 0) { throw 'Release tag creation failed' }
+          }
           git push origin HEAD
+          if ($LASTEXITCODE -ne 0) { throw 'Release commit push failed' }
           git push origin "v$env:RELEASE_VERSION"
+          if ($LASTEXITCODE -ne 0) { throw 'Release tag push failed' }
 
       - name: Create GitHub Release
         if: inputs.mode == 'full'
@@ -112,16 +134,18 @@ jobs:
         env:
           GH_TOKEN: ${{ secrets.GITHUB_TOKEN }}
         run: |
-          $artifacts = Get-ChildItem 'distribution/build/libs' -File |
-            Where-Object {
-              $_.Name -eq 'checksums.sha256' -or
-              $_.Name -eq "pnLibrary-updater-$env:RELEASE_VERSION.jar" -or
-              $_.Name -match '^pnLibrary-[0-9].*-(universal|bukkit-java8|bungeecord-java8|velocity-java17)\.jar(?:\.meta\.json|\.sha256)?$'
-            } |
-            ForEach-Object FullName
+          $manifest = Get-Content -LiteralPath 'distribution/build/libs/release-manifest.json' -Raw | ConvertFrom-Json
+          if ($manifest.version -ne $env:RELEASE_VERSION) { throw 'Release manifest version mismatch' }
+          $artifacts = @($manifest.assets | ForEach-Object {
+            if ([IO.Path]::GetFileName($_) -ne $_) { throw 'Invalid release asset filename' }
+            (Get-Item -LiteralPath (Join-Path 'distribution/build/libs' $_)).FullName
+          })
           if (-not $artifacts) { throw 'No release JARs were built' }
           if (-not (Test-Path -LiteralPath "distribution/build/libs/pnLibrary-updater-$env:RELEASE_VERSION.jar")) {
             throw 'The standalone restart updater must be included in the release'
+          }
+          if (-not (Test-Path -LiteralPath "distribution/build/libs/pnLibrary-policy-kotlin-$env:RELEASE_VERSION.jar")) {
+            throw 'The optional Kotlin policy compiler must be included in the release'
           }
           $arguments = @('release', 'create', "v$env:RELEASE_VERSION") + $artifacts + @(
             '--title', "pnLibrary $env:RELEASE_VERSION",
@@ -131,6 +155,6 @@ jobs:
           & gh @arguments
           if ($LASTEXITCODE -ne 0) { throw 'GitHub Release creation failed' }
 
-      - name: Publish API artifacts to Maven Central
+      - name: Publish configured artifacts to Maven Central
         if: inputs.publish_central
-        run: .\gradlew.bat publishAndReleaseToMavenCentral --no-configuration-cache --console=plain
+        uses: ./.github/actions/publish-central

@@ -15,8 +15,17 @@ import java.nio.file.Files
 import java.nio.file.Path
 import java.security.MessageDigest
 import java.time.Duration
+import java.util.concurrent.CompletableFuture
 import java.util.concurrent.CompletionException
 import java.util.concurrent.ConcurrentHashMap
+import java.util.concurrent.CountDownLatch
+import java.util.concurrent.ExecutorService
+import java.util.concurrent.Executors
+import java.util.concurrent.LinkedBlockingQueue
+import java.util.concurrent.RejectedExecutionException
+import java.util.concurrent.ThreadPoolExecutor
+import java.util.concurrent.TimeUnit
+import java.util.concurrent.atomic.AtomicBoolean
 import java.util.zip.ZipEntry
 import java.util.zip.ZipOutputStream
 
@@ -149,10 +158,120 @@ class LocalizationServiceTest {
         assertThrows(TranslationException::class.java) { service.availableVersions() }
     }
 
-    private fun service(fixture: LocalizationHttpClient) = DefaultMinecraftLocalization(
+    @Test
+    fun `rejected locale submissions fail asynchronously and allow load and refresh retries`() {
+        val request = TranslationRequest.builder().version(MinecraftVersion.V1_21_4).locale("ru_ru").build()
+        for (refresh in listOf(false, true)) {
+            val executor = RejectOnceExecutor()
+            try {
+                service(Fixture(), executor).use { service ->
+                    val rejected = (if (refresh) service.refresh(request) else service.load(request)).toCompletableFuture()
+                    assertTrue(rejected.isCompletedExceptionally)
+                    assertSame(executor.rejection, assertThrows(CompletionException::class.java) { rejected.join() }.cause)
+
+                    val retry = (if (refresh) service.refresh(request) else service.load(request)).toCompletableFuture()
+                    assertEquals("Алмазный меч", retry.get(5, TimeUnit.SECONDS).locale("ru_ru")
+                        .translate("item.minecraft.diamond_sword").orElseThrow())
+                }
+            } finally {
+                executor.shutdownNow()
+            }
+        }
+    }
+
+    @Test
+    fun `callers sharing a rejected locale submission receive the same failure`() {
+        val request = TranslationRequest.builder().version(MinecraftVersion.V1_21_4).locale("ru_ru").build()
+        lateinit var service: DefaultMinecraftLocalization
+        var shared: CompletableFuture<*>? = null
+        val executor = RejectOnceExecutor { shared = service.load(request).toCompletableFuture() }
+        try {
+            service = service(Fixture(), executor)
+            service.use {
+                val rejected = it.load(request).toCompletableFuture()
+                val second = requireNotNull(shared)
+                assertTrue(rejected.isCompletedExceptionally)
+                assertTrue(second.isCompletedExceptionally)
+                assertSame(executor.rejection, assertThrows(CompletionException::class.java) { rejected.join() }.cause)
+                assertSame(executor.rejection, assertThrows(CompletionException::class.java) { second.join() }.cause)
+            }
+        } finally {
+            executor.shutdownNow()
+        }
+    }
+
+    @Test
+    fun `rejected metadata submissions fail their returned futures`() {
+        val executor = Executors.newSingleThreadExecutor()
+        executor.shutdown()
+        service(Fixture(), executor).use { service ->
+            val operations = listOf(service.availableVersions(), service.availableLocales(MinecraftVersion.V1_21_4))
+            for (operation in operations) {
+                val future = operation.toCompletableFuture()
+                assertTrue(future.isCompletedExceptionally)
+                assertInstanceOf(RejectedExecutionException::class.java,
+                    assertThrows(CompletionException::class.java) { future.join() }.cause)
+            }
+        }
+    }
+
+    private fun service(fixture: LocalizationHttpClient, executor: ExecutorService? = null) = DefaultMinecraftLocalization(
         directory, Duration.ofHours(1), Duration.ofSeconds(1), Duration.ofSeconds(1),
-        4, 2, null, fixture,
+        4, 2, executor, fixture,
     )
+
+    @Test
+    fun `close settles queued metadata and locale operations without shutting down supplied executor`() {
+        val executor = Executors.newSingleThreadExecutor()
+        val occupied = CountDownLatch(1)
+        val release = CountDownLatch(1)
+        executor.execute { occupied.countDown(); release.await() }
+        assertTrue(occupied.await(5, TimeUnit.SECONDS))
+        try {
+            val service = service(Fixture(), executor)
+            val request = TranslationRequest.builder().version(MinecraftVersion.V1_21_4).locale("ru_ru").build()
+            val operations = listOf(service.availableVersions(), service.availableLocales(MinecraftVersion.V1_21_4), service.load(request))
+            service.close()
+            for (operation in operations) {
+                val error = assertThrows(CompletionException::class.java) { operation.toCompletableFuture().join() }.cause
+                assertEquals(TranslationException.Reason.CLOSED, (error as TranslationException).reason)
+            }
+            assertFalse(executor.isShutdown)
+            release.countDown()
+            assertEquals(42, executor.submit<Int> { 42 }.get(5, TimeUnit.SECONDS))
+        } finally { release.countDown(); executor.shutdownNow() }
+    }
+
+    @Test
+    fun `close racing executor submission settles the accepted operation`() {
+        lateinit var service: DefaultMinecraftLocalization
+        val executor = object : ThreadPoolExecutor(1, 1, 0, TimeUnit.MILLISECONDS, LinkedBlockingQueue()) {
+            override fun execute(command: Runnable) {
+                service.close()
+                super.execute(command)
+            }
+        }
+        try {
+            service = service(Fixture(), executor)
+            val future = service.availableVersions().toCompletableFuture()
+            val error = assertThrows(CompletionException::class.java) { future.join() }.cause
+            assertEquals(TranslationException.Reason.CLOSED, (error as TranslationException).reason)
+        } finally { executor.shutdownNow() }
+    }
+
+    private class RejectOnceExecutor(private val beforeRejection: () -> Unit = {}) :
+        ThreadPoolExecutor(1, 1, 0, TimeUnit.MILLISECONDS, LinkedBlockingQueue()) {
+        val rejection = RejectedExecutionException("Test executor rejected the submission")
+        private val rejectNext = AtomicBoolean(true)
+
+        override fun execute(command: Runnable) {
+            if (rejectNext.compareAndSet(true, false)) {
+                beforeRejection()
+                throw rejection
+            }
+            super.execute(command)
+        }
+    }
 
     private class Fixture(private val delayMillis: Long = 0) : LocalizationHttpClient(Duration.ZERO, Duration.ZERO) {
         val calls = ConcurrentHashMap<URI, Int>()

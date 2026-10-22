@@ -73,13 +73,7 @@ function Publish-GitHub {
 }
 
 function Publish-Central {
-    Assert-CentralConfigured
-    foreach ($name in @('ORG_GRADLE_PROJECT_mavenCentralUsername', 'ORG_GRADLE_PROJECT_mavenCentralPassword', 'ORG_GRADLE_PROJECT_signingInMemoryKey', 'ORG_GRADLE_PROJECT_signingInMemoryKeyPassword')) {
-        if ([string]::IsNullOrWhiteSpace([Environment]::GetEnvironmentVariable($name))) {
-            throw "Required environment variable is missing: $name"
-        }
-    }
-    Invoke-Checked '.\gradlew.bat' @('publishAndReleaseToMavenCentral', '--no-configuration-cache', '--console=plain')
+    & (Join-Path $PSScriptRoot 'publish-central.ps1')
 }
 
 function Assert-CentralConfigured {

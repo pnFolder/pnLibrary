@@ -1,0 +1,7 @@
+name: Publish Maven Central artifacts
+description: Shared credential and license validation followed by signed Maven publication
+runs:
+  using: composite
+  steps:
+    - shell: pwsh
+      run: ./tools/release/publish-central.ps1

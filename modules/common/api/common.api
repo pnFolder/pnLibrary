@@ -12,6 +12,13 @@ public final class org/pnfolder/pnlibrary/api/plugin/PluginId$Companion {
 	public final fun of (Ljava/lang/String;)Lorg/pnfolder/pnlibrary/api/plugin/PluginId;
 }
 
+public final class org/pnfolder/pnlibrary/common/concurrent/ManagedWorker : java/lang/AutoCloseable {
+	public fun <init> (Ljava/lang/String;IILjava/time/Duration;)V
+	public synthetic fun <init> (Ljava/lang/String;IILjava/time/Duration;ILkotlin/jvm/internal/DefaultConstructorMarker;)V
+	public fun close ()V
+	public final fun submit (Lkotlin/jvm/functions/Function0;)Ljava/util/concurrent/CompletableFuture;
+}
+
 public final class org/pnfolder/pnlibrary/common/io/AtomicFiles {
 	public static final field INSTANCE Lorg/pnfolder/pnlibrary/common/io/AtomicFiles;
 	public static final fun move (Ljava/nio/file/Path;Ljava/nio/file/Path;)V

@@ -79,6 +79,12 @@ data class RemotePolicySettings(
         /** Sets what a policy that cannot be checked means; [PolicyErrorAction.DENY] by default. */
         fun onError(value: PolicyErrorAction): Builder = apply { onError = value }
 
+        /** Pins the exact trusted source bytes before compilation or execution. */
+        fun sha256(value: String): Builder = apply {
+            require(value.matches(Regex("[0-9a-fA-F]{64}"))) { "Policy SHA-256 must contain 64 hexadecimal characters" }
+            values["pnlibrary.policy.sha256"] = value.lowercase(java.util.Locale.ROOT)
+        }
+
         /** Sets the support link shown when the plugin cannot run, such as a Discord invite; HTTPS only. */
         fun support(url: String): Builder = apply {
             require(URI.create(url).isHttps()) { "Support link must be an HTTPS URL" }

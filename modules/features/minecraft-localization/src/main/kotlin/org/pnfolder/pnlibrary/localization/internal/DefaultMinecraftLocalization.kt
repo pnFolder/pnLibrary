@@ -22,6 +22,7 @@ import java.util.concurrent.CompletionStage
 import java.util.concurrent.ConcurrentHashMap
 import java.util.concurrent.ExecutorService
 import java.util.concurrent.Executors
+import java.util.concurrent.RejectedExecutionException
 import java.util.concurrent.Semaphore
 import java.util.concurrent.atomic.AtomicBoolean
 
@@ -43,6 +44,8 @@ internal class DefaultMinecraftLocalization internal constructor(
     private val resolver = MojangAssetResolver(httpClient ?: LocalizationHttpClient(connectTimeout, readTimeout), store)
     private val permits = Semaphore(downloadConcurrency)
     private val closed = AtomicBoolean(false)
+    private val lifecycle = Any()
+    private val pending = HashSet<CompletableFuture<*>>()
     private val inFlight = ConcurrentHashMap<CacheKey, CompletableFuture<LoadedLocale>>()
     private val memory = object : LinkedHashMap<CacheKey, LoadedLocale>(16, 0.75f, true) {
         override fun removeEldestEntry(eldest: MutableMap.MutableEntry<CacheKey, LoadedLocale>?) = size > memoryEntries
@@ -85,20 +88,10 @@ internal class DefaultMinecraftLocalization internal constructor(
         val promise = CompletableFuture<LoadedLocale>()
         val existing = inFlight.putIfAbsent(key, promise)
         if (existing != null) return existing
-        executor.execute {
-            try {
-                permits.acquire()
-                val loaded = try { loadLocaleNow(key, refresh) } finally { permits.release() }
-                // Remove ownership before publishing completion. A caller unblocked by complete()
-                // must never observe this finished request as an active download.
-                inFlight.remove(key, promise)
-                promise.complete(loaded)
-            } catch (error: Throwable) {
-                inFlight.remove(key, promise)
-                promise.completeExceptionally(error)
-            }
+        return submit(promise, beforeCompletion = { inFlight.remove(key, promise) }) {
+            permits.acquire()
+            try { loadLocaleNow(key, refresh) } finally { permits.release() }
         }
-        return promise
     }
 
     private fun loadLocaleNow(key: CacheKey, refresh: Boolean): LoadedLocale {
@@ -126,7 +119,7 @@ internal class DefaultMinecraftLocalization internal constructor(
 
     private fun cache(key: CacheKey, bytes: ByteArray, metadata: TranslationMetadata): LoadedLocale {
         val loaded = LoadedLocale(key.locale, TranslationJsonCodec.parse(bytes), metadata)
-        synchronized(memory) { memory[key] = loaded }
+        synchronized(memory) { if (!closed.get()) memory[key] = loaded }
         return loaded
     }
 
@@ -147,11 +140,47 @@ internal class DefaultMinecraftLocalization internal constructor(
 
     private fun <T> async(action: () -> T): CompletableFuture<T> {
         ensureOpen()
-        return CompletableFuture.supplyAsync({ action() }, executor)
+        return submit(CompletableFuture(), action = action)
+    }
+
+    private fun <T> submit(
+        promise: CompletableFuture<T>,
+        beforeCompletion: () -> Unit = {},
+        action: () -> T,
+    ): CompletableFuture<T> {
+        val accepted = synchronized(lifecycle) {
+            if (closed.get()) false else { pending.add(promise); true }
+        }
+        if (!accepted) {
+            beforeCompletion()
+            promise.completeExceptionally(closedError())
+            return promise
+        }
+        promise.whenComplete { _, _ -> synchronized(lifecycle) { pending.remove(promise) } }
+        try {
+            executor.execute {
+                if (!promise.isDone) {
+                    try {
+                        ensureOpen()
+                        val result = action()
+                        // Release download ownership before waking callers, including refresh requests.
+                        beforeCompletion()
+                        promise.complete(result)
+                    } catch (error: Throwable) {
+                        beforeCompletion()
+                        promise.completeExceptionally(error)
+                    }
+                }
+            }
+        } catch (error: RejectedExecutionException) {
+            beforeCompletion()
+            promise.completeExceptionally(error)
+        }
+        return promise
     }
 
     private fun ensureOpen() {
-        if (closed.get()) throw TranslationException(TranslationException.Reason.CLOSED, "Minecraft localization service is closed")
+        if (closed.get()) throw closedError()
     }
 
     private fun requireKnown(version: MinecraftVersion) {
@@ -161,12 +190,17 @@ internal class DefaultMinecraftLocalization internal constructor(
     }
 
     override fun close() {
-        if (!closed.compareAndSet(false, true)) return
-        inFlight.values.forEach { it.cancel(true) }
+        val abandoned = synchronized(lifecycle) {
+            if (!closed.compareAndSet(false, true)) return
+            pending.toList().also { pending.clear() }
+        }
+        inFlight.clear()
+        abandoned.forEach { it.completeExceptionally(closedError()) }
         synchronized(memory) { memory.clear() }
         if (ownsExecutor) executor.shutdownNow()
     }
 
+    private fun closedError() = TranslationException(TranslationException.Reason.CLOSED, "Minecraft localization service is closed")
     private fun offline() = TranslationException(TranslationException.Reason.OFFLINE, "No cached Minecraft manifest is available")
     private fun <T> failed(error: Throwable): CompletableFuture<T> = CompletableFuture<T>().also { it.completeExceptionally(error) }
     private data class CacheKey(val version: MinecraftVersion, val locale: String)

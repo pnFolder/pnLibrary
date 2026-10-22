@@ -1,0 +1,74 @@
+name: Native platform acceptance
+
+on:
+  workflow_dispatch:
+    inputs:
+      platform:
+        description: Server to verify using repository-pinned server software
+        type: choice
+        options: [all, paper, folia, velocity, bungee]
+        default: all
+        required: true
+      java:
+        description: Java version required by the supplied server builds
+        type: choice
+        options: ['21', '17', '8']
+        default: '21'
+        required: true
+
+permissions:
+  contents: read
+
+jobs:
+  native:
+    runs-on: ubuntu-latest
+    timeout-minutes: 35
+    strategy:
+      fail-fast: false
+      matrix:
+        platform: ${{ inputs.platform == 'all' && fromJSON('["paper","folia","velocity","bungee"]') || fromJSON(format('["{0}"]', inputs.platform)) }}
+    steps:
+      - uses: actions/checkout@v4
+      - uses: actions/setup-java@v4
+        with:
+          distribution: temurin
+          java-version: ${{ inputs.java }}
+      - name: Remember server JVM
+        shell: bash
+        run: echo "SERVER_JAVA=$JAVA_HOME/bin/java" >> "$GITHUB_ENV"
+      - uses: actions/setup-java@v4
+        with:
+          distribution: temurin
+          java-version: '21'
+      - uses: gradle/actions/setup-gradle@v4
+      - name: Download and verify pinned server software
+        shell: pwsh
+        env:
+          PLATFORM: ${{ matrix.platform }}
+          SERVER_URL: ${{ vars[format('NATIVE_{0}_URL', matrix.platform)] }}
+          SERVER_SHA256: ${{ vars[format('NATIVE_{0}_SHA256', matrix.platform)] }}
+          ACCEPTED_EULA: ${{ secrets.NATIVE_MINECRAFT_EULA }}
+        run: tools/ci/prepare-native.ps1
+      - name: Verify install, restart, health and configuration rollback
+        shell: pwsh
+        env:
+          PLATFORM: ${{ matrix.platform }}
+        run: |
+          $server = Join-Path $PWD 'build/native-software/server.jar'
+          $args = @('--console=plain', "-PnativeJavaExecutable=$env:SERVER_JAVA")
+          if ($env:PLATFORM -in @('paper', 'folia')) {
+            $eula = Join-Path $PWD 'build/native-software/eula.txt'
+            $args += @(':modules:core:verifyNativeBukkitUpdates', "-PbukkitPlatform=$env:PLATFORM", "-PpaperServerJar=$server", "-PpaperEulaFile=$eula")
+          } else {
+            $args += @(':modules:core:verifyNativeProxyUpdates', "-PnativePlatform=$env:PLATFORM", "-P$($env:PLATFORM)ServerJar=$server")
+          }
+          & ./gradlew @args
+          if ($LASTEXITCODE -ne 0) { throw 'Native platform acceptance failed' }
+      - uses: actions/upload-artifact@v4
+        if: always()
+        with:
+          name: native-${{ matrix.platform }}-java${{ inputs.java }}
+          path: |
+            modules/core/build/reports/tests/verifyNative*
+            build/update-catalog-native/**/*.log
+          if-no-files-found: ignore

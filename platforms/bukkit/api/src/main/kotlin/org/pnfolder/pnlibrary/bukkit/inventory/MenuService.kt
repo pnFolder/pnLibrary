@@ -9,6 +9,9 @@ import org.bukkit.plugin.Plugin
  * Opening a new menu replaces the player's previous pnLibrary session. Registrations
  * are owned by the plugin supplied to [open] and are closed automatically when that
  * plugin is disabled.
+ * Opening, rendering, and inventory reads/writes require the player's owning thread (the main
+ * thread on Bukkit, the entity's region on Folia). Bulk close is safe from any thread and schedules
+ * native view cleanup on each player; cleanup requires a live native scheduler.
  */
 interface MenuService {
 

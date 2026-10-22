@@ -2,6 +2,7 @@ package org.pnfolder.pnlibrary.api.architecture
 
 import org.junit.jupiter.api.Assertions.assertTrue
 import org.junit.jupiter.api.Test
+import org.junit.jupiter.api.TestInstance
 import java.nio.file.Files
 import java.nio.file.Path
 import java.nio.file.Paths
@@ -10,17 +11,24 @@ import java.nio.file.Paths
  * Conventions every production source in the repository follows, checked on the source text so they hold for
  * all modules at once: explicit imports, one message style, and layers that never reach sideways or upwards.
  */
+@TestInstance(TestInstance.Lifecycle.PER_CLASS)
 class SourceConventionsTest {
     private val root: Path = generateSequence(Paths.get("").toAbsolutePath()) { it.parent }
         .first { Files.exists(it.resolve("settings.gradle.kts")) }
 
-    private val sources: List<Path> by lazy {
-        Files.walk(root).use { paths ->
-            paths.filter { Files.isRegularFile(it) && it.toString().endsWith(".kt") }
+    private val productionSources: List<Path> by lazy {
+        listOf("modules", "platforms", "examples").flatMap { group -> Files.walk(root.resolve(group)).use { paths ->
+            paths.filter { Files.isRegularFile(it) && (it.toString().endsWith(".kt") || it.toString().endsWith(".java")) }
                 .filter { path -> path.has("src/main") && BUILD_DIRECTORIES.none { path.has(it) } }
                 .toList()
-        }
+        } }
     }
+
+    private val publicApiModules = Files.readAllLines(root.resolve("gradle/public-modules.properties"))
+        .map(String::trim).filter { it.isNotEmpty() && !it.startsWith("#") }
+        .map { it.substringBefore('=') + "/" }
+
+    private val sources: List<Path> get() = productionSources.filter { it.toString().endsWith(".kt") }
 
     @Test
     fun `production code imports every name explicitly`() {
@@ -37,25 +45,24 @@ class SourceConventionsTest {
 
     @Test
     fun `the runtime core never depends on a platform`() {
-        val offenders = sources.filter { it.has("modules/core/") }
-            .filter { file -> lines(file).any { line -> PLATFORM_PACKAGES.any { line.startsWith("import $it.") } } }
-        assertTrue(offenders.isEmpty(), "core imports platform code in: ${relative(offenders)}")
+        val offenders = productionSources.filter { it.has("modules/core/") }
+            .mapNotNull { platformReferences(it, PlatformSourceReferences.packages.values.flatten()) }
+        assertTrue(offenders.isEmpty(), "core references platform code in: $offenders")
     }
 
     @Test
     fun `platform runtimes never depend on each other`() {
-        val offenders = PLATFORM_PACKAGES.flatMap { own ->
-            val platform = own.substringAfterLast('.')
-            sources.filter { it.has("platforms/$platform/") }.filter { file ->
-                lines(file).any { line -> PLATFORM_PACKAGES.any { other -> other != own && line.startsWith("import $other.") } }
-            }
+        val offenders = PlatformSourceReferences.packages.flatMap { (platform, _) ->
+            val forbidden = PlatformSourceReferences.packages.filterKeys { it != platform }.values.flatten()
+            productionSources.filter { it.has("platforms/$platform/") }
+                .mapNotNull { platformReferences(it, forbidden) }
         }
-        assertTrue(offenders.isEmpty(), "platform runtimes import each other in: ${relative(offenders)}")
+        assertTrue(offenders.isEmpty(), "platform runtimes reference each other in: $offenders")
     }
 
     @Test
     fun `public fluent builder methods declare their return type`() {
-        val offenders = sources.filter { file -> PUBLIC_API_MODULES.any { file.has(it) } }.flatMap { file ->
+        val offenders = sources.filter { file -> publicApiModules.any { file.has(it) } }.flatMap { file ->
             val text = String(Files.readAllBytes(file), Charsets.UTF_8)
             INFERRED_APPLY.findAll(text)
                 .filterNot { PRIVATE_MODIFIER.containsMatchIn(text.substring(text.lastIndexOf('\n', it.range.first) + 1, it.range.first)) }
@@ -68,9 +75,18 @@ class SourceConventionsTest {
     @Test
     fun `public API modules hold contracts, not reflective platform code`() {
         // A self-contained feature module keeps its implementation in an `internal` package; that is not API.
-        val offenders = sources.filter { file -> PUBLIC_API_MODULES.any { file.has(it) } && !file.has("/internal/") }
+        val offenders = sources.filter { file -> publicApiModules.any { file.has(it) } && !file.has("/internal/") }
             .filter { file -> lines(file).any { line -> REFLECTION.any { it in line } } }
         assertTrue(offenders.isEmpty(), "Reflection belongs in a runtime module, found in: ${relative(offenders)}")
+    }
+
+    private fun platformReferences(file: Path, forbidden: Collection<String>): String? {
+        val references = PlatformSourceReferences.find(
+            String(Files.readAllBytes(file), Charsets.UTF_8),
+            javaSource = file.toString().endsWith(".java"),
+            forbiddenPackages = forbidden,
+        )
+        return references.takeIf { it.isNotEmpty() }?.let { "${relative(file)}: $it" }
     }
 
     private fun Path.has(fragment: String) = toString().replace('\\', '/').contains(fragment)
@@ -83,14 +99,9 @@ class SourceConventionsTest {
 
     private companion object {
         val BUILD_DIRECTORIES = listOf("/build/", "/.gradle/", "/out/")
-        val PUBLIC_API_MODULES = listOf(
-            "modules/api/", "modules/common/", "modules/features/currency-api/", "modules/features/minecraft-localization/",
-            "platforms/bukkit/api/", "platforms/bungee/api/", "platforms/velocity/api/",
-        )
         val INFERRED_APPLY = Regex("""fun\s+(?:<[^>]*>\s+)?(\w+)\((?:[^()]|\((?:[^()]|\([^()]*\))*\))*\)\s*=\s*apply\b""")
         val PRIVATE_MODIFIER = Regex("""\b(?:private|internal)\b""")
         val REFLECTION = listOf("Class.forName(", ".getMethod(", ".getDeclaredField(", ".getDeclaredMethod(", ".invoke(")
-        val PLATFORM_PACKAGES = listOf("org.pnfolder.pnlibrary.bukkit", "org.pnfolder.pnlibrary.bungee", "org.pnfolder.pnlibrary.velocity")
 
         /**
          * Files whose job is the legacy text format itself: parsers and serializers, the redactor that strips codes

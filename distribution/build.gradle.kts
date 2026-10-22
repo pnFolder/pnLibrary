@@ -1,5 +1,11 @@
 // pnlibrary-distribution — produces fat JARs for each platform with relocated Kotlin runtime
 import com.github.jengelman.gradle.plugins.shadow.tasks.ShadowJar
+import groovy.json.JsonSlurper
+import groovy.json.JsonOutput
+import java.io.DataInputStream
+import java.io.InputStream
+import java.security.MessageDigest
+import java.util.jar.JarEntry
 import java.util.jar.JarFile
 
 evaluationDependsOn(":modules:api")
@@ -25,6 +31,13 @@ tasks.named<ShadowJar>("shadowJar") { enabled = false }
 // the distribution project's cached value can leave a new filename carrying
 // an older component.json after a version bump.
 val pnVer = rootProject.version.toString()
+val pnChannel = when {
+    pnVer.contains("-dev") -> "dev"
+    pnVer.contains("-alpha") -> "alpha"
+    pnVer.contains("-beta") -> "beta"
+    pnVer.contains("-rc") -> "rc"
+    else -> "stable"
+}
 
 // ── Relocation config shared by all shadow tasks ─────────────────────────────
 fun ShadowJar.applyCommonConfig() {
@@ -140,6 +153,17 @@ tasks.register<ShadowJar>("shadowUniversal") {
 
 tasks.named("build") {
     dependsOn("shadowBukkit", "shadowBungee", "shadowVelocity", "shadowUniversal", "shadowUpdater", "copyDeveloperArtifacts")
+    dependsOn("shadowPolicyKotlin")
+}
+
+// Optional extension: ordinary platform JARs never include the Kotlin compiler.
+val policyKotlinRuntime: Configuration by configurations.creating
+dependencies { policyKotlinRuntime(project(":modules:features:policy-kotlin")) }
+tasks.register<ShadowJar>("shadowPolicyKotlin") {
+    group = "distribution"
+    archiveBaseName = "${rootProject.property("pnlibrary.name")}-policy-kotlin"
+    configurations = listOf(policyKotlinRuntime)
+    applyCommonConfig()
 }
 
 // A separate classpath avoids locking the plugin JAR that the updater must replace on Windows.
@@ -220,14 +244,27 @@ tasks.register<Copy>("copyDeveloperArtifacts") {
 data class ReleasePlatform(
     val id: String,
     val shadowTask: String,
+    val minimumJava: Int,
+    val catalogPlatform: String,
 )
 
 val releasePlatforms = listOf(
-    ReleasePlatform("bukkit-java8", "shadowBukkit"),
-    ReleasePlatform("bungeecord-java8", "shadowBungee"),
-    ReleasePlatform("velocity-java17", "shadowVelocity"),
-    ReleasePlatform("universal", "shadowUniversal"),
+    // Minimum = the oldest Java the JAR starts on. Java 21-only code (Paper, Velocity FastStats) is allowed
+    // in these JARs only under the optional packages below, which are loaded reflectively on Java 21 only.
+    ReleasePlatform("bukkit-java8", "shadowBukkit", 8, "BUKKIT"),
+    ReleasePlatform("bungeecord-java8", "shadowBungee", 8, "BUNGEECORD"),
+    ReleasePlatform("velocity-java17", "shadowVelocity", 17, "VELOCITY"),
+    ReleasePlatform("universal", "shadowUniversal", 8, "UNIVERSAL"),
 )
+// Packages compiled for Java 21 that ship inside JARs starting on older Java. Nothing outside them may name them;
+// they are reached only by reflection after the runtime's Java version check.
+val optionalJavaPackages = listOf(
+    "org/pnfolder/pnlibrary/bukkit/paper/",
+    "org/pnfolder/pnlibrary/velocity/faststats/",
+    "dev/faststats/velocity/",
+)
+// Velocity proxy code: only the Velocity entrypoint loads it, so it may need Java 17 inside a Java 8 universal JAR.
+val velocityJavaPackage = "org/pnfolder/pnlibrary/velocity/"
 val apiVersionSource = rootProject.file(
     "modules/api/src/main/kotlin/org/pnfolder/pnlibrary/api/version/PnLibraryApi.kt",
 ).readText()
@@ -235,18 +272,18 @@ val pnApiVersion = Regex("const\\s+val\\s+VERSION\\s*:\\s*Int\\s*=\\s*(\\d+)")
     .find(apiVersionSource)?.groupValues?.get(1)?.toInt()
     ?: error("PnLibraryApi.VERSION was not found")
 
-fun installedComponentMetadata(): String = """
+fun installedComponentMetadata(platform: ReleasePlatform): String = """
     {
       "schema": 1,
       "product": "${rootProject.property("pnlibrary.product-id")}",
       "version": "$pnVer",
-      "channel": "${if (pnVer.contains("-dev")) "dev" else if (pnVer.contains("-alpha")) "alpha" else if (pnVer.contains("-beta")) "beta" else "stable"}",
+      "channel": "$pnChannel",
       "pnLibraryApi": {
         "minimum": $pnApiVersion,
         "maximum": $pnApiVersion
       },
       "java": {
-        "minimum": 8
+        "minimum": ${platform.minimumJava}
       }
     }
 """.trimIndent() + "\n"
@@ -259,12 +296,13 @@ val releaseArtifactTasks = releasePlatforms.map { platform ->
     val generateEmbedded = tasks.register("generate${suffix}Metadata") {
         inputs.property("releaseVersion", pnVer)
         inputs.property("apiVersion", pnApiVersion)
+        inputs.property("minimumJava", platform.minimumJava)
         val outputFile = generatedDirectory.map { it.file("META-INF/pnlibrary/component.json") }
         outputs.file(outputFile)
         doLast {
             outputFile.get().asFile.apply {
                 parentFile.mkdirs()
-                writeText(installedComponentMetadata(), Charsets.UTF_8)
+                writeText(installedComponentMetadata(platform), Charsets.UTF_8)
             }
         }
     }
@@ -284,6 +322,9 @@ val verifyEmbeddedMetadata = tasks.register("verifyEmbeddedMetadata") {
             val jar = layout.buildDirectory.file("libs/pnLibrary-$pnVer-${platform.id}.jar").get().asFile
             require(jar.isFile) { "Missing platform JAR: ${jar.name}" }
             JarFile(jar).use { archive ->
+                require(archive.getJarEntry("org/jetbrains/kotlin/cli/jvm/K2JVMCompiler.class") == null) {
+                    "The optional Kotlin compiler must not be bundled in ${jar.name}"
+                }
                 val embedded = archive.getJarEntry("META-INF/pnlibrary/component.json")
                     ?: error("Missing embedded component metadata in ${jar.name}")
                 val json = archive.getInputStream(embedded).bufferedReader(Charsets.UTF_8).use { it.readText() }
@@ -296,8 +337,33 @@ val verifyEmbeddedMetadata = tasks.register("verifyEmbeddedMetadata") {
                 require(json.contains("\"channel\":")) {
                     "Missing embedded release channel in ${jar.name}"
                 }
-                require(json.contains("\"java\":")) {
-                    "Missing embedded Java compatibility in ${jar.name}"
+                val metadata = JsonSlurper().parseText(json) as Map<*, *>
+                val javaCompatibility = metadata["java"] as? Map<*, *>
+                require(javaCompatibility?.get("minimum") == platform.minimumJava) {
+                    "Incorrect embedded Java compatibility in ${jar.name}: expected Java ${platform.minimumJava}"
+                }
+                // Class-file major version = Java release + 44. Code above the declared minimum must live under
+                // an optional package, and nothing outside those packages may refer to them by name.
+                val classes: List<Pair<String, ByteArray>> = archive.entries().toList()
+                    .filter { it.name.endsWith(".class") }
+                    .map { entry: JarEntry -> entry.name to archive.getInputStream(entry).use { it.readBytes() } }
+                for ((name, bytes) in classes) {
+                    val major = DataInputStream(bytes.inputStream()).run { readInt(); readUnsignedShort(); readUnsignedShort() }
+                    val allowed = when {
+                        optionalJavaPackages.any { name.startsWith(it) } -> 21
+                        name.startsWith(velocityJavaPackage) -> maxOf(17, platform.minimumJava)
+                        else -> platform.minimumJava
+                    }
+                    require(major - 44 <= allowed) {
+                        "$name in ${jar.name} needs Java ${major - 44}; allowed for this JAR is Java $allowed"
+                    }
+                }
+                for ((name, bytes) in classes) {
+                    if (optionalJavaPackages.any { name.startsWith(it) }) continue
+                    val text = String(bytes, Charsets.ISO_8859_1)
+                    require(optionalJavaPackages.none { text.contains(it) }) {
+                        "$name in ${jar.name} references an optional Java 21 package directly"
+                    }
                 }
             }
         }
@@ -307,3 +373,65 @@ val verifyEmbeddedMetadata = tasks.register("verifyEmbeddedMetadata") {
 tasks.named("build") {
     dependsOn(verifyEmbeddedMetadata)
 }
+
+val writeReleaseManifest = tasks.register("writeReleaseManifest") {
+    group = "distribution"
+    description = "Derives release catalog data, sidecars and checksums from verified packaged artifacts"
+    dependsOn(verifyEmbeddedMetadata, shadowUpdater, "shadowPolicyKotlin")
+    mustRunAfter("copyDeveloperArtifacts")
+    val artifactNames = releasePlatforms.map { "pnLibrary-$pnVer-${it.id}.jar" } +
+        listOf("pnLibrary-updater-$pnVer.jar", "pnLibrary-policy-kotlin-$pnVer.jar")
+    val directory = layout.buildDirectory.dir("libs")
+    inputs.files(artifactNames.map { directory.map { dir -> dir.file(it) } })
+    inputs.property("repository", rootProject.property("pnlibrary.repository").toString())
+    outputs.files((listOf("release-manifest.json", "checksums.sha256") + releasePlatforms.flatMap {
+        listOf("pnLibrary-$pnVer-${it.id}.jar.meta.json", "pnLibrary-$pnVer-${it.id}.jar.sha256")
+    }).map { directory.map { dir -> dir.file(it) } })
+    doLast {
+        val libs = directory.get().asFile
+        fun hash(file: File): String {
+            val digest = MessageDigest.getInstance("SHA-256")
+            file.inputStream().use { input ->
+                val buffer = ByteArray(64 * 1024)
+                while (true) {
+                    val count = input.read(buffer)
+                    if (count < 0) break
+                    digest.update(buffer, 0, count)
+                }
+            }
+            return digest.digest().joinToString("") { "%02x".format(it) }
+        }
+        val hashes = artifactNames.associateWith { hash(libs.resolve(it)) }
+        val repository = rootProject.property("pnlibrary.repository").toString()
+        val artifacts = releasePlatforms.map { platform ->
+            val file = libs.resolve("pnLibrary-$pnVer-${platform.id}.jar")
+            val metadata = JarFile(file).use { jar ->
+                jar.getInputStream(jar.getJarEntry("META-INF/pnlibrary/component.json")).bufferedReader().use {
+                    JsonSlurper().parseText(it.readText()) as Map<*, *>
+                }
+            }
+            require(metadata["version"] == pnVer && metadata["channel"] == pnChannel)
+            libs.resolve("${file.name}.meta.json").writeText(JsonOutput.prettyPrint(JsonOutput.toJson(metadata)) + "\n")
+            libs.resolve("${file.name}.sha256").writeText("${hashes.getValue(file.name)}  ${file.name}\n")
+            linkedMapOf(
+                "file" to file.name, "platform" to platform.catalogPlatform,
+                "java" to metadata["java"],
+                "url" to "https://github.com/$repository/releases/download/v$pnVer/${file.name}",
+                "sha256" to hashes.getValue(file.name), "size" to file.length(),
+            )
+        }
+        libs.resolve("checksums.sha256").writeText(hashes.entries.joinToString("\n", postfix = "\n") { "${it.value}  ${it.key}" })
+        val assets = artifactNames + releasePlatforms.flatMap {
+            listOf("pnLibrary-$pnVer-${it.id}.jar.meta.json", "pnLibrary-$pnVer-${it.id}.jar.sha256")
+        } + listOf("checksums.sha256", "release-manifest.json")
+        val manifest = linkedMapOf(
+            "schema" to 1, "product" to rootProject.property("pnlibrary.product-id").toString(),
+            "repository" to repository,
+            "version" to pnVer, "channel" to pnChannel,
+            "api" to mapOf("minimum" to pnApiVersion, "maximum" to pnApiVersion),
+            "artifacts" to artifacts, "assets" to assets,
+        )
+        libs.resolve("release-manifest.json").writeText(JsonOutput.prettyPrint(JsonOutput.toJson(manifest)) + "\n")
+    }
+}
+tasks.named("build") { dependsOn(writeReleaseManifest) }

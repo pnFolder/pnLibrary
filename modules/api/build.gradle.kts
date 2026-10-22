@@ -71,6 +71,7 @@ dependencies {
     api(libs.kotlin.stdlib)
     api(libs.adventure.api)
     testImplementation(libs.junit.jupiter)
+    testImplementation(libs.kotlin.compiler.embeddable)
     testRuntimeOnly(libs.junit.launcher)
 }
 

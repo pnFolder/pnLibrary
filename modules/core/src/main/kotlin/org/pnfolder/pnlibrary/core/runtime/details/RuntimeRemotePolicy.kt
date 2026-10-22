@@ -20,7 +20,9 @@ internal object RuntimeRemotePolicy {
             "pnLibrary policy must use DISABLE_PLUGIN: the library is not a consumer module"
         }
         return RemotePolicySettings.builder().source(policy.source).checkEvery(policy.checkEvery)
-            .onDeny(policy.onDeny).values(policy.values).build()
+            .onDeny(policy.onDeny).onError(policy.onError).values(policy.values)
+            .apply { policy.supportUrl?.let { support(it) } }
+            .build()
     }
 
     fun start(
