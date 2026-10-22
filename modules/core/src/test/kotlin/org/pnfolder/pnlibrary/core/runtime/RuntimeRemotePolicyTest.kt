@@ -8,6 +8,7 @@ import org.pnfolder.pnlibrary.api.logging.LoggingService
 import org.pnfolder.pnlibrary.api.logging.PnLogger
 import org.pnfolder.pnlibrary.api.platform.PlatformType
 import org.pnfolder.pnlibrary.api.remote.DenyAction
+import org.pnfolder.pnlibrary.api.remote.PolicyErrorAction
 import org.pnfolder.pnlibrary.api.remote.RemotePolicySettings
 import org.pnfolder.pnlibrary.api.remote.PlatformInfo
 import org.pnfolder.pnlibrary.api.remote.ProductInfo
@@ -25,6 +26,24 @@ import java.time.Duration
 
 class RuntimeRemotePolicyTest {
     @TempDir lateinit var directory: Path
+
+    @Test
+    fun `validation preserves every policy setting including optional support and error actions`() {
+        for (action in PolicyErrorAction.values()) {
+            for (support in listOf(null, "https://example.org/support")) {
+                val policy = RemotePolicySettings(
+                    source = directory.resolve("Policy.java").toUri().toString(),
+                    checkEvery = Duration.ofMinutes(15),
+                    onDeny = DenyAction.DISABLE_PLUGIN,
+                    values = mapOf("product" to "pnlibrary"),
+                    onError = action,
+                    supportUrl = support,
+                )
+
+                assertEquals(policy, RuntimeRemotePolicy.validated(policy), "action=$action, support=$support")
+            }
+        }
+    }
 
     @Test
     fun `library policy waits for readiness schedules once and uses library owned tasks`() {
@@ -192,7 +211,8 @@ class RuntimeRemotePolicyTest {
                 .server(ServerInfo("1.0", MinecraftVersion.parseInfo(null))).build()
             `when`(platform.remotePolicyContext(owner, mapOf("product" to "pnlibrary"))).thenReturn(context)
         }
-        fun start(policy: RemotePolicySettings) = RuntimeRemotePolicy.start(library, platform, policy, { closed }) { closes++; closed = true }
+        fun start(policy: RemotePolicySettings) =
+            RuntimeRemotePolicy.start(library, platform, RuntimeRemotePolicy.validated(policy), { closed }) { closes++; closed = true }
     }
 }
 
