@@ -30,6 +30,7 @@ import org.pnfolder.pnlibrary.api.metrics.MetricsService
 import org.pnfolder.pnlibrary.api.metrics.PluginMetrics
 import org.pnfolder.pnlibrary.api.platform.PlatformType
 import org.pnfolder.pnlibrary.api.dependencies.Dependencies
+import org.pnfolder.pnlibrary.api.plugin.LifecycleRow
 import org.pnfolder.pnlibrary.api.plugin.PluginBuilder
 import org.pnfolder.pnlibrary.api.dependencies.PluginDependency
 import org.pnfolder.pnlibrary.api.tasks.TaskScope
@@ -532,6 +533,23 @@ class PluginRegistryImplTest {
         assertEquals(1, logging.shutdownMessages)
     }
 
+    @Test
+    fun `an enabled card can leave out the rows pnLibrary adds by itself`() {
+        val logging = RecordingLoggingService()
+        val context = registry(logging = logging).register(Any()).registerModule("example") { }
+
+        context.lifecycle.enabled().ok("Mine", "x").show()
+        assertEquals(listOf("Identifier", "Platform", "Metrics", "Updates", "Diagnostics", "PlaceholderAPI", "Mine"), logging.rows)
+
+        logging.rows.clear()
+        context.lifecycle.enabled(LifecycleRow.IDENTIFIER, LifecycleRow.PLATFORM).ok("Mine", "x").show()
+        assertEquals(listOf("Metrics", "Updates", "Diagnostics", "PlaceholderAPI", "Mine"), logging.rows)
+
+        logging.rows.clear()
+        context.lifecycle.enabled(LifecycleRow.NOT_CONFIGURED).ok("Mine", "x").show()
+        assertEquals(listOf("Identifier", "Platform", "PlaceholderAPI", "Mine"), logging.rows)
+    }
+
     private class RecordingListener : Listener {
         var calls = 0
             private set
@@ -584,20 +602,21 @@ class PluginRegistryImplTest {
         var genericMessages = 0
         var startupMessages = 0
         var shutdownMessages = 0
+        val rows = mutableListOf<String>()
         override fun logger(owner: Any, name: String): PnLogger = emptyProxy(PnLogger::class.java)
         override fun box(owner: Any, title: String): MessageBox =
-            RecordingMessageBox { genericMessages++ }
+            RecordingMessageBox(rows) { genericMessages++ }
         override fun box(owner: Any, name: String, version: String): MessageBox =
-            RecordingMessageBox { startupMessages++ }
+            RecordingMessageBox(rows) { startupMessages++ }
         override fun shutdownBox(owner: Any, title: String): MessageBox =
-            RecordingMessageBox { shutdownMessages++ }
+            RecordingMessageBox(rows) { shutdownMessages++ }
     }
 
-    private class RecordingMessageBox(private val onShow: () -> Unit) : MessageBox {
-        override fun ok(label: String, detail: String) = this
-        override fun warn(label: String, detail: String) = this
-        override fun skip(label: String, detail: String) = this
-        override fun fail(label: String, detail: String, error: Throwable?) = this
+    private class RecordingMessageBox(private val rows: MutableList<String>, private val onShow: () -> Unit) : MessageBox {
+        override fun ok(label: String, detail: String) = apply { rows += label }
+        override fun warn(label: String, detail: String) = apply { rows += label }
+        override fun skip(label: String, detail: String) = apply { rows += label }
+        override fun fail(label: String, detail: String, error: Throwable?) = apply { rows += label }
         override fun show() = onShow()
     }
 

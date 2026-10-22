@@ -2561,6 +2561,20 @@ public final class org/pnfolder/pnlibrary/api/platform/PlatformType : java/lang/
 	public static fun values ()[Lorg/pnfolder/pnlibrary/api/platform/PlatformType;
 }
 
+public final class org/pnfolder/pnlibrary/api/plugin/LifecycleRow : java/lang/Enum {
+	public static final field DIAGNOSTICS Lorg/pnfolder/pnlibrary/api/plugin/LifecycleRow;
+	public static final field IDENTIFIER Lorg/pnfolder/pnlibrary/api/plugin/LifecycleRow;
+	public static final field METRICS Lorg/pnfolder/pnlibrary/api/plugin/LifecycleRow;
+	public static final field NOT_CONFIGURED Lorg/pnfolder/pnlibrary/api/plugin/LifecycleRow;
+	public static final field PLACEHOLDER_API Lorg/pnfolder/pnlibrary/api/plugin/LifecycleRow;
+	public static final field PLATFORM Lorg/pnfolder/pnlibrary/api/plugin/LifecycleRow;
+	public static final field RESOURCES Lorg/pnfolder/pnlibrary/api/plugin/LifecycleRow;
+	public static final field UPDATES Lorg/pnfolder/pnlibrary/api/plugin/LifecycleRow;
+	public static fun getEntries ()Lkotlin/enums/EnumEntries;
+	public static fun valueOf (Ljava/lang/String;)Lorg/pnfolder/pnlibrary/api/plugin/LifecycleRow;
+	public static fun values ()[Lorg/pnfolder/pnlibrary/api/plugin/LifecycleRow;
+}
+
 public abstract interface class org/pnfolder/pnlibrary/api/plugin/ModuleContext : java/lang/AutoCloseable {
 	public abstract fun close ()V
 	public abstract fun getActions ()Lorg/pnfolder/pnlibrary/api/actions/ActionService;
@@ -2623,7 +2637,9 @@ public abstract interface class org/pnfolder/pnlibrary/api/plugin/PluginBuilder 
 
 public abstract interface class org/pnfolder/pnlibrary/api/plugin/PluginLifecycle {
 	public abstract fun disabled ()Lorg/pnfolder/pnlibrary/api/logging/MessageBox;
+	public abstract fun disabled ([Lorg/pnfolder/pnlibrary/api/plugin/LifecycleRow;)Lorg/pnfolder/pnlibrary/api/logging/MessageBox;
 	public abstract fun enabled ()Lorg/pnfolder/pnlibrary/api/logging/MessageBox;
+	public abstract fun enabled ([Lorg/pnfolder/pnlibrary/api/plugin/LifecycleRow;)Lorg/pnfolder/pnlibrary/api/logging/MessageBox;
 	public abstract fun getMetadata ()Lorg/pnfolder/pnlibrary/api/plugin/PluginMetadata;
 }
 

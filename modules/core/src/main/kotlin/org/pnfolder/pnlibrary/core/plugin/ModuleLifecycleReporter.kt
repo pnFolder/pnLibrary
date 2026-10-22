@@ -2,6 +2,7 @@ package org.pnfolder.pnlibrary.core.plugin
 
 import org.pnfolder.pnlibrary.api.logging.LoggingService
 import org.pnfolder.pnlibrary.api.logging.MessageBox
+import org.pnfolder.pnlibrary.api.plugin.LifecycleRow
 import org.pnfolder.pnlibrary.api.plugin.ModuleId
 import org.pnfolder.pnlibrary.api.plugin.PluginLifecycle
 import org.pnfolder.pnlibrary.api.plugin.PluginMetadata
@@ -18,35 +19,51 @@ internal class ModuleLifecycleReporter(
     private val placeholderApiEnabled: Boolean,
     private val isClosed: () -> Boolean,
 ) : PluginLifecycle {
-    override fun enabled(): MessageBox =
-        logging.box(owner, metadata.name, metadata.version)
-            .ok("Identifier", moduleId.value)
-            .ok("Platform", ModuleRuntimeSummary.platform(metadata))
-            .status("Metrics", ModuleRuntimeSummary.metrics(resources.metrics.providerConfigurations, resources.metrics.isEnabled))
-            .status("Updates", ModuleRuntimeSummary.updates(resources.updates))
-            .status("Diagnostics", if (resources.diagnostics == null) null else "enabled")
+    override fun enabled(): MessageBox = enabled(*emptyArray<LifecycleRow>())
+
+    override fun disabled(): MessageBox = disabled(*emptyArray<LifecycleRow>())
+
+    override fun enabled(vararg hide: LifecycleRow): MessageBox {
+        val hidden = hide.toSet()
+        return logging.box(owner, metadata.name, metadata.version)
+            .ok(hidden, LifecycleRow.IDENTIFIER, "Identifier", moduleId.value)
+            .ok(hidden, LifecycleRow.PLATFORM, "Platform", ModuleRuntimeSummary.platform(metadata))
+            .status(hidden, LifecycleRow.METRICS, "Metrics",
+                ModuleRuntimeSummary.metrics(resources.metrics.providerConfigurations, resources.metrics.isEnabled))
+            .status(hidden, LifecycleRow.UPDATES, "Updates", ModuleRuntimeSummary.updates(resources.updates))
+            .status(hidden, LifecycleRow.DIAGNOSTICS, "Diagnostics", if (resources.diagnostics == null) null else "enabled")
             .status(
-                "PlaceholderAPI",
+                hidden, LifecycleRow.PLACEHOLDER_API, "PlaceholderAPI",
                 ModuleRuntimeSummary.placeholderApi(
                     placeholderApiEnabled,
                     placeholders.get("placeholderapi")?.state?.name,
                 ),
             )
+    }
 
-    override fun disabled(): MessageBox =
-        logging.shutdownBox(owner, metadata.name, metadata.version)
-            .status("Resources", if (isClosed()) "released" else "close pending")
+    override fun disabled(vararg hide: LifecycleRow): MessageBox {
+        val hidden = hide.toSet()
+        return logging.shutdownBox(owner, metadata.name, metadata.version)
+            .status(hidden, LifecycleRow.RESOURCES, "Resources", if (isClosed()) "released" else "close pending")
             .status(
-                "Updates",
+                hidden, LifecycleRow.UPDATES, "Updates",
                 if (resources.updates == null) null else if (isClosed()) "stopped" else "registered",
             )
             .status(
-                "Metrics",
+                hidden, LifecycleRow.METRICS, "Metrics",
                 if (resources.metrics.providerConfigurations.isEmpty()) null
                 else if (isClosed()) "stopped"
                 else ModuleRuntimeSummary.metrics(resources.metrics.providerConfigurations, resources.metrics.isEnabled),
             )
+    }
 
-    private fun MessageBox.status(label: String, detail: String?): MessageBox =
-        if (detail == null) skip(label, "not configured") else ok(label, detail)
+    private fun MessageBox.ok(hidden: Set<LifecycleRow>, row: LifecycleRow, label: String, detail: String): MessageBox =
+        if (row in hidden) this else ok(label, detail)
+
+    /** A configured feature is shown with its state; an unconfigured one reads "not configured" unless hidden. */
+    private fun MessageBox.status(hidden: Set<LifecycleRow>, row: LifecycleRow, label: String, detail: String?): MessageBox = when {
+        row in hidden -> this
+        detail == null -> if (LifecycleRow.NOT_CONFIGURED in hidden) this else skip(label, "not configured")
+        else -> ok(label, detail)
+    }
 }

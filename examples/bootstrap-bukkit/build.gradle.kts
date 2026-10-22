@@ -13,6 +13,9 @@ tasks.withType<JavaCompile>().configureEach {
 
 dependencies {
     implementation(project(":platforms:bukkit:bootstrap"))
+    // Provided at runtime by pnLibrary itself, which this plugin installs when it is missing.
+    compileOnly(project(":modules:api"))
+    compileOnly(project(":platforms:bukkit:api"))
     compileOnly(libs.spigot.api.v18)
 }
 
