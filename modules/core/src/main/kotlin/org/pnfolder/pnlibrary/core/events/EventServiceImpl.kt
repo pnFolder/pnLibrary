@@ -37,12 +37,34 @@ internal class EventServiceImpl(
         return event
     }
 
-    private fun dispatchInline(event: Event) {
-        check(!closed.get()) { "EventService is closed" }
-        val matching = subscriptions.asSequence()
-            .filter { !it.isClosed && it.eventType.isAssignableFrom(event.javaClass) }
+    /**
+     * Sorted listeners per event class. Any change to the subscriptions bumps [generation] and empties the
+     * cache, so a lookup either hits a list built for the current subscriptions or rebuilds it. Weak keys let
+     * an unloaded plugin's event classes be collected when nothing listens to them.
+     */
+    private class Cached(val generation: Long, val handlers: List<Subscription<out Event>>)
+    private val generation = AtomicLong()
+    private val cache = java.util.Collections.synchronizedMap(java.util.WeakHashMap<Class<*>, Cached>())
+
+    private fun invalidateHandlers() {
+        generation.incrementAndGet()
+        cache.clear()
+    }
+
+    private fun handlersFor(type: Class<*>): List<Subscription<out Event>> {
+        val current = generation.get()
+        cache[type]?.let { if (it.generation == current) return it.handlers }
+        val built = subscriptions.asSequence()
+            .filter { !it.isClosed && it.eventType.isAssignableFrom(type) }
             .sortedWith(compareBy<Subscription<out Event>> { it.priority }.thenBy { it.order })
             .toList()
+        cache[type] = Cached(current, built)
+        return built
+    }
+
+    private fun dispatchInline(event: Event) {
+        check(!closed.get()) { "EventService is closed" }
+        val matching = handlersFor(event.javaClass)
 
         matching.forEach { subscription ->
             if (subscription.isClosed) return@forEach
@@ -71,6 +93,7 @@ internal class EventServiceImpl(
         val current = synchronized(scopes) { scopes.values.toList().also { scopes.clear() } }
         current.forEach { it.closeInternal() }
         subscriptions.clear()
+        invalidateHandlers()
     }
 
     private inner class Scope(override val pluginId: PluginId) : EventScope {
@@ -114,6 +137,7 @@ internal class EventServiceImpl(
             )
             ownedSubscriptions += subscription
             subscriptions += subscription
+            invalidateHandlers()
             if (closed.get() || scopeClosed.get()) subscription.close()
             return subscription
         }
@@ -168,6 +192,7 @@ internal class EventServiceImpl(
         override fun close() {
             if (!subscriptionClosed.compareAndSet(false, true)) return
             subscriptions.remove(this)
+            invalidateHandlers()
             scope.remove(this)
         }
     }

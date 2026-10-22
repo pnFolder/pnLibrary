@@ -166,6 +166,45 @@ class EventServiceImplTest {
         }
     }
 
+    @Test
+    fun `listeners added or removed after a warm call take effect on the next call`() {
+        val calls = mutableListOf<String>()
+        EventServiceImpl { _, _, _ -> }.use { events ->
+            val scope = events.scope(PluginId.of("test"))
+            val first = scope.subscribe(TestEvent::class.java, EventPriority.NORMAL, Consumer { calls += "first" })
+            events.callEvent(TestEvent())
+            assertEquals(listOf("first"), calls)
+
+            scope.subscribe(TestEvent::class.java, EventPriority.LOW, Consumer { calls += "earlier" })
+            events.callEvent(TestEvent())
+            assertEquals(listOf("first", "earlier", "first"), calls)
+
+            first.close()
+            events.callEvent(TestEvent())
+            assertEquals(listOf("first", "earlier", "first", "earlier"), calls)
+        }
+    }
+
+    @Test
+    fun `closing a plugin scope removes its listeners from an already cached dispatch`() {
+        var ran = 0
+        EventServiceImpl { _, _, _ -> }.use { events ->
+            val id = PluginId.of("test")
+            events.scope(id).subscribe(TestEvent::class.java, Consumer { ran++ })
+            events.callEvent(TestEvent())
+            events.unregisterAll(id)
+            events.callEvent(TestEvent())
+            assertEquals(1, ran)
+        }
+    }
+
+    @Test
+    fun `an event nobody listens to dispatches without error and is not retained`() {
+        EventServiceImpl { _, _, _ -> }.use { events ->
+            repeat(1_000) { events.callEvent(TestEvent()) }
+        }
+    }
+
     private open class TestEvent : Event()
     private class ResultEvent : ResultedEvent<ResultedEvent.ComponentResult>() {
         override var result: ResultedEvent.ComponentResult = ResultedEvent.ComponentResult.allowed()
