@@ -18,6 +18,7 @@ import java.time.Duration
 import java.util.concurrent.CompletableFuture
 import java.util.concurrent.CompletionException
 import java.util.concurrent.ConcurrentHashMap
+import java.util.concurrent.CountDownLatch
 import java.util.concurrent.ExecutorService
 import java.util.concurrent.Executors
 import java.util.concurrent.LinkedBlockingQueue
@@ -218,6 +219,45 @@ class LocalizationServiceTest {
         directory, Duration.ofHours(1), Duration.ofSeconds(1), Duration.ofSeconds(1),
         4, 2, executor, fixture,
     )
+
+    @Test
+    fun `close settles queued metadata and locale operations without shutting down supplied executor`() {
+        val executor = Executors.newSingleThreadExecutor()
+        val occupied = CountDownLatch(1)
+        val release = CountDownLatch(1)
+        executor.execute { occupied.countDown(); release.await() }
+        assertTrue(occupied.await(5, TimeUnit.SECONDS))
+        try {
+            val service = service(Fixture(), executor)
+            val request = TranslationRequest.builder().version(MinecraftVersion.V1_21_4).locale("ru_ru").build()
+            val operations = listOf(service.availableVersions(), service.availableLocales(MinecraftVersion.V1_21_4), service.load(request))
+            service.close()
+            for (operation in operations) {
+                val error = assertThrows(CompletionException::class.java) { operation.toCompletableFuture().join() }.cause
+                assertEquals(TranslationException.Reason.CLOSED, (error as TranslationException).reason)
+            }
+            assertFalse(executor.isShutdown)
+            release.countDown()
+            assertEquals(42, executor.submit<Int> { 42 }.get(5, TimeUnit.SECONDS))
+        } finally { release.countDown(); executor.shutdownNow() }
+    }
+
+    @Test
+    fun `close racing executor submission settles the accepted operation`() {
+        lateinit var service: DefaultMinecraftLocalization
+        val executor = object : ThreadPoolExecutor(1, 1, 0, TimeUnit.MILLISECONDS, LinkedBlockingQueue()) {
+            override fun execute(command: Runnable) {
+                service.close()
+                super.execute(command)
+            }
+        }
+        try {
+            service = service(Fixture(), executor)
+            val future = service.availableVersions().toCompletableFuture()
+            val error = assertThrows(CompletionException::class.java) { future.join() }.cause
+            assertEquals(TranslationException.Reason.CLOSED, (error as TranslationException).reason)
+        } finally { executor.shutdownNow() }
+    }
 
     private class RejectOnceExecutor(private val beforeRejection: () -> Unit = {}) :
         ThreadPoolExecutor(1, 1, 0, TimeUnit.MILLISECONDS, LinkedBlockingQueue()) {
