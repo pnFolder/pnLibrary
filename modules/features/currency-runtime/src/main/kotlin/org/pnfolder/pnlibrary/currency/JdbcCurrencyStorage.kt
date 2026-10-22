@@ -18,10 +18,8 @@ import java.sql.Connection
 import java.sql.SQLException
 import java.time.Instant
 import java.util.UUID
-import java.util.concurrent.CompletableFuture
+import org.pnfolder.pnlibrary.common.concurrent.ManagedWorker
 import java.util.concurrent.CompletionStage
-import java.util.concurrent.Executors
-import java.util.concurrent.RejectedExecutionException
 import java.util.concurrent.atomic.AtomicBoolean
 import javax.sql.DataSource
 
@@ -37,17 +35,12 @@ internal class JdbcCurrencyStorage(
 ) : CurrencyStorage {
     private val schema = JdbcCurrencySchema(tablePrefix)
     private val initialized = AtomicBoolean(false)
-    private val closed = AtomicBoolean(false)
     private val gson = Gson()
     private val decoder = JdbcTransactionDecoder(gson)
     private val ledger = JdbcCurrencyLedger(schema, gson, decoder)
     private val historyQuery = JdbcHistoryQuery(schema, decoder)
     private val snapshots = JdbcCurrencySnapshots(schema, ledger, decoder)
-    private val executor = Executors.newFixedThreadPool(2) { task ->
-        Thread(task, "pnLibrary-currency-jdbc").apply {
-            isDaemon = true
-        }
-    }
+    private val worker = ManagedWorker("pnLibrary-currency-jdbc", parallelism = 2)
 
     override fun balance(currency: CurrencyKey, account: CurrencyAccount): CompletionStage<BigDecimal> = async {
         connection { connection -> ledger.readBalance(connection, currency, account, false) }
@@ -166,7 +159,7 @@ internal class JdbcCurrencyStorage(
     }
 
     override fun close() {
-        if (closed.compareAndSet(false, true)) executor.shutdown()
+        worker.close()
     }
 
     private fun ensureSchema() {
@@ -199,12 +192,5 @@ internal class JdbcCurrencyStorage(
         }
     }
 
-    private fun <T> async(operation: () -> T): CompletionStage<T> {
-        check(!closed.get()) { "Currency storage is closed" }
-        return try {
-            CompletableFuture.supplyAsync(operation, executor)
-        } catch (error: RejectedExecutionException) {
-            CompletableFuture<T>().also { it.completeExceptionally(error) }
-        }
-    }
+    private fun <T> async(operation: () -> T): CompletionStage<T> = worker.submit(operation)
 }

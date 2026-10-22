@@ -20,6 +20,26 @@ import java.util.UUID
 
 class FileCurrencyStorageTest {
     @Test
+    fun `close persists queued transactions before returning`(@TempDir directory: Path) {
+        val file = directory.resolve("queued.json")
+        val currency = CurrencyKey(PluginId.of("test"), "coins")
+        val account = CurrencyAccount(UUID.randomUUID())
+        val descriptor = CurrencyDescriptor("Coins", "C", 2, RoundingMode.DOWN)
+        val storage = FileCurrencyStorage(file, 100)
+        val operations = (1..20).map {
+            storage.transact(currency, descriptor, CurrencyTransactionRequest(
+                type = CurrencyTransactionType.CREDIT, amount = BigDecimal.ONE, target = account,
+                actor = CurrencyActor.system("test"), service = "close-test",
+            )).toCompletableFuture()
+        }
+        storage.close()
+        operations.forEach { assertEquals(CurrencyTransactionStatus.COMMITTED, it.join().status) }
+        FileCurrencyStorage(file, 100).use {
+            assertEquals(BigDecimal("20.00"), it.balance(currency, account).toCompletableFuture().join())
+        }
+    }
+
+    @Test
     fun `transaction survives close and reopen`(@TempDir directory: Path) {
         val file = directory.resolve("currency.json")
         val currency = CurrencyKey(PluginId.of("test"), "coins")

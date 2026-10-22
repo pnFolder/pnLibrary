@@ -39,7 +39,7 @@ internal class TaskServiceImpl(
         return scope(owner, PluginId.of(owner.javaClass.simpleName.ifBlank { "owner" }))
     }
 
-    internal fun scope(owner: Any, scopeId: PluginId): TaskScope = synchronized(scopes) {
+    override fun scope(owner: Any, scopeId: PluginId): TaskScope = synchronized(scopes) {
         check(!closed.get()) { "TaskService is closed" }
         scopes.getOrPut(owner) { linkedMapOf() }.getOrPut(scopeId) { Scope(owner, scopeId) }
     }

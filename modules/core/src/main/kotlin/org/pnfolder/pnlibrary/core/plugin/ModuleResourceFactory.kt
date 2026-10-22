@@ -28,7 +28,6 @@ import org.pnfolder.pnlibrary.core.metrics.ErrorPipeline
 import org.pnfolder.pnlibrary.core.placeholders.PlaceholderHub
 import org.pnfolder.pnlibrary.core.services.ServiceManagerImpl
 import org.pnfolder.pnlibrary.core.tasks.TaskService
-import org.pnfolder.pnlibrary.core.tasks.TaskServiceImpl
 import org.pnfolder.pnlibrary.core.text.ComponentCache
 import org.pnfolder.pnlibrary.core.text.ComponentServiceImpl
 import org.pnfolder.pnlibrary.currency.CurrencyFeature
@@ -68,7 +67,7 @@ internal class ModuleResourceFactory(
         val serviceScope = services.ownedBy(moduleKey)
 
         try {
-            taskScope = if (tasks is TaskServiceImpl) tasks.scope(owner, moduleKey) else tasks.scope(owner)
+            taskScope = tasks.scope(owner, moduleKey)
             eventScope = events.scope(moduleKey)
             configScope = configurations.scope(owner, moduleKey)
             placeholderScope = placeholders.scope(moduleKey, definition.placeholderApiEnabled)
