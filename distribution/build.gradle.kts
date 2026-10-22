@@ -1,6 +1,8 @@
 // pnlibrary-distribution — produces fat JARs for each platform with relocated Kotlin runtime
 import com.github.jengelman.gradle.plugins.shadow.tasks.ShadowJar
 import groovy.json.JsonSlurper
+import groovy.json.JsonOutput
+import java.security.MessageDigest
 import java.util.jar.JarFile
 
 evaluationDependsOn(":modules:api")
@@ -240,13 +242,14 @@ data class ReleasePlatform(
     val id: String,
     val shadowTask: String,
     val minimumJava: Int,
+    val catalogPlatform: String,
 )
 
 val releasePlatforms = listOf(
-    ReleasePlatform("bukkit-java8", "shadowBukkit", 8),
-    ReleasePlatform("bungeecord-java8", "shadowBungee", 8),
-    ReleasePlatform("velocity-java17", "shadowVelocity", 17),
-    ReleasePlatform("universal", "shadowUniversal", 8),
+    ReleasePlatform("bukkit-java8", "shadowBukkit", 8, "BUKKIT"),
+    ReleasePlatform("bungeecord-java8", "shadowBungee", 8, "BUNGEECORD"),
+    ReleasePlatform("velocity-java17", "shadowVelocity", 17, "VELOCITY"),
+    ReleasePlatform("universal", "shadowUniversal", 8, "UNIVERSAL"),
 )
 val apiVersionSource = rootProject.file(
     "modules/api/src/main/kotlin/org/pnfolder/pnlibrary/api/version/PnLibraryApi.kt",
@@ -333,3 +336,65 @@ val verifyEmbeddedMetadata = tasks.register("verifyEmbeddedMetadata") {
 tasks.named("build") {
     dependsOn(verifyEmbeddedMetadata)
 }
+
+val writeReleaseManifest = tasks.register("writeReleaseManifest") {
+    group = "distribution"
+    description = "Derives release catalog data, sidecars and checksums from verified packaged artifacts"
+    dependsOn(verifyEmbeddedMetadata, shadowUpdater, "shadowPolicyKotlin")
+    mustRunAfter("copyDeveloperArtifacts")
+    val artifactNames = releasePlatforms.map { "pnLibrary-$pnVer-${it.id}.jar" } +
+        listOf("pnLibrary-updater-$pnVer.jar", "pnLibrary-policy-kotlin-$pnVer.jar")
+    val directory = layout.buildDirectory.dir("libs")
+    inputs.files(artifactNames.map { directory.map { dir -> dir.file(it) } })
+    inputs.property("repository", rootProject.property("pnlibrary.repository").toString())
+    outputs.files((listOf("release-manifest.json", "checksums.sha256") + releasePlatforms.flatMap {
+        listOf("pnLibrary-$pnVer-${it.id}.jar.meta.json", "pnLibrary-$pnVer-${it.id}.jar.sha256")
+    }).map { directory.map { dir -> dir.file(it) } })
+    doLast {
+        val libs = directory.get().asFile
+        fun hash(file: File): String {
+            val digest = MessageDigest.getInstance("SHA-256")
+            file.inputStream().use { input ->
+                val buffer = ByteArray(64 * 1024)
+                while (true) {
+                    val count = input.read(buffer)
+                    if (count < 0) break
+                    digest.update(buffer, 0, count)
+                }
+            }
+            return digest.digest().joinToString("") { "%02x".format(it) }
+        }
+        val hashes = artifactNames.associateWith { hash(libs.resolve(it)) }
+        val repository = rootProject.property("pnlibrary.repository").toString()
+        val artifacts = releasePlatforms.map { platform ->
+            val file = libs.resolve("pnLibrary-$pnVer-${platform.id}.jar")
+            val metadata = JarFile(file).use { jar ->
+                jar.getInputStream(jar.getJarEntry("META-INF/pnlibrary/component.json")).bufferedReader().use {
+                    JsonSlurper().parseText(it.readText()) as Map<*, *>
+                }
+            }
+            require(metadata["version"] == pnVer && metadata["channel"] == pnChannel)
+            libs.resolve("${file.name}.meta.json").writeText(JsonOutput.prettyPrint(JsonOutput.toJson(metadata)) + "\n")
+            libs.resolve("${file.name}.sha256").writeText("${hashes.getValue(file.name)}  ${file.name}\n")
+            linkedMapOf(
+                "file" to file.name, "platform" to platform.catalogPlatform,
+                "java" to metadata["java"],
+                "url" to "https://github.com/$repository/releases/download/v$pnVer/${file.name}",
+                "sha256" to hashes.getValue(file.name), "size" to file.length(),
+            )
+        }
+        libs.resolve("checksums.sha256").writeText(hashes.entries.joinToString("\n", postfix = "\n") { "${it.value}  ${it.key}" })
+        val assets = artifactNames + releasePlatforms.flatMap {
+            listOf("pnLibrary-$pnVer-${it.id}.jar.meta.json", "pnLibrary-$pnVer-${it.id}.jar.sha256")
+        } + listOf("checksums.sha256", "release-manifest.json")
+        val manifest = linkedMapOf(
+            "schema" to 1, "product" to rootProject.property("pnlibrary.product-id").toString(),
+            "repository" to repository,
+            "version" to pnVer, "channel" to pnChannel,
+            "api" to mapOf("minimum" to pnApiVersion, "maximum" to pnApiVersion),
+            "artifacts" to artifacts, "assets" to assets,
+        )
+        libs.resolve("release-manifest.json").writeText(JsonOutput.prettyPrint(JsonOutput.toJson(manifest)) + "\n")
+    }
+}
+tasks.named("build") { dependsOn(writeReleaseManifest) }

@@ -67,7 +67,7 @@
 | `schema` | всегда `1` |
 | `product` | id продукта, как он зарегистрирован в pnLibrary |
 | `version` | версия релиза по semver; на GitHub ему соответствует тег `v<версия>` |
-| `channel` | `stable`, `beta`, `alpha` или `dev`; обычные серверы получают только `stable` |
+| `channel` | `stable`, `rc`, `beta`, `alpha` или `dev`; обычные серверы получают только `stable` |
 | `description` | короткое описание в одну строку, оно показывается в уведомлении |
 | `changelogUrl` | ссылка на файл из `changelogs/` (необязательно) |
 | `publishedAt` | время публикации в UTC |
