@@ -14,13 +14,15 @@ class SourceConventionsTest {
     private val root: Path = generateSequence(Paths.get("").toAbsolutePath()) { it.parent }
         .first { Files.exists(it.resolve("settings.gradle.kts")) }
 
-    private val sources: List<Path> by lazy {
+    private val productionSources: List<Path> by lazy {
         Files.walk(root).use { paths ->
-            paths.filter { Files.isRegularFile(it) && it.toString().endsWith(".kt") }
+            paths.filter { Files.isRegularFile(it) && (it.toString().endsWith(".kt") || it.toString().endsWith(".java")) }
                 .filter { path -> path.has("src/main") && BUILD_DIRECTORIES.none { path.has(it) } }
                 .toList()
         }
     }
+
+    private val sources: List<Path> get() = productionSources.filter { it.toString().endsWith(".kt") }
 
     @Test
     fun `production code imports every name explicitly`() {
@@ -37,20 +39,19 @@ class SourceConventionsTest {
 
     @Test
     fun `the runtime core never depends on a platform`() {
-        val offenders = sources.filter { it.has("modules/core/") }
-            .filter { file -> lines(file).any { line -> PLATFORM_PACKAGES.any { line.startsWith("import $it.") } } }
-        assertTrue(offenders.isEmpty(), "core imports platform code in: ${relative(offenders)}")
+        val offenders = productionSources.filter { it.has("modules/core/") }
+            .mapNotNull { platformReferences(it, PlatformSourceReferences.packages.values.flatten()) }
+        assertTrue(offenders.isEmpty(), "core references platform code in: $offenders")
     }
 
     @Test
     fun `platform runtimes never depend on each other`() {
-        val offenders = PLATFORM_PACKAGES.flatMap { own ->
-            val platform = own.substringAfterLast('.')
-            sources.filter { it.has("platforms/$platform/") }.filter { file ->
-                lines(file).any { line -> PLATFORM_PACKAGES.any { other -> other != own && line.startsWith("import $other.") } }
-            }
+        val offenders = PlatformSourceReferences.packages.flatMap { (platform, _) ->
+            val forbidden = PlatformSourceReferences.packages.filterKeys { it != platform }.values.flatten()
+            productionSources.filter { it.has("platforms/$platform/") }
+                .mapNotNull { platformReferences(it, forbidden) }
         }
-        assertTrue(offenders.isEmpty(), "platform runtimes import each other in: ${relative(offenders)}")
+        assertTrue(offenders.isEmpty(), "platform runtimes reference each other in: $offenders")
     }
 
     @Test
@@ -73,6 +74,15 @@ class SourceConventionsTest {
         assertTrue(offenders.isEmpty(), "Reflection belongs in a runtime module, found in: ${relative(offenders)}")
     }
 
+    private fun platformReferences(file: Path, forbidden: Collection<String>): String? {
+        val references = PlatformSourceReferences.find(
+            String(Files.readAllBytes(file), Charsets.UTF_8),
+            javaSource = file.toString().endsWith(".java"),
+            forbiddenPackages = forbidden,
+        )
+        return references.takeIf { it.isNotEmpty() }?.let { "${relative(file)}: $it" }
+    }
+
     private fun Path.has(fragment: String) = toString().replace('\\', '/').contains(fragment)
 
     private fun lines(file: Path): List<String> = Files.readAllLines(file)
@@ -91,7 +101,6 @@ class SourceConventionsTest {
         val INFERRED_APPLY = Regex("""fun\s+(?:<[^>]*>\s+)?(\w+)\((?:[^()]|\((?:[^()]|\([^()]*\))*\))*\)\s*=\s*apply\b""")
         val PRIVATE_MODIFIER = Regex("""\b(?:private|internal)\b""")
         val REFLECTION = listOf("Class.forName(", ".getMethod(", ".getDeclaredField(", ".getDeclaredMethod(", ".invoke(")
-        val PLATFORM_PACKAGES = listOf("org.pnfolder.pnlibrary.bukkit", "org.pnfolder.pnlibrary.bungee", "org.pnfolder.pnlibrary.velocity")
 
         /**
          * Files whose job is the legacy text format itself: parsers and serializers, the redactor that strips codes
