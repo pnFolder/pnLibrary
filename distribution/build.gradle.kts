@@ -148,6 +148,17 @@ tasks.register<ShadowJar>("shadowUniversal") {
 
 tasks.named("build") {
     dependsOn("shadowBukkit", "shadowBungee", "shadowVelocity", "shadowUniversal", "shadowUpdater", "copyDeveloperArtifacts")
+    dependsOn("shadowPolicyKotlin")
+}
+
+// Optional extension: ordinary platform JARs never include the Kotlin compiler.
+val policyKotlinRuntime: Configuration by configurations.creating
+dependencies { policyKotlinRuntime(project(":modules:features:policy-kotlin")) }
+tasks.register<ShadowJar>("shadowPolicyKotlin") {
+    group = "distribution"
+    archiveBaseName = "${rootProject.property("pnlibrary.name")}-policy-kotlin"
+    configurations = listOf(policyKotlinRuntime)
+    applyCommonConfig()
 }
 
 // A separate classpath avoids locking the plugin JAR that the updater must replace on Windows.
@@ -294,6 +305,9 @@ val verifyEmbeddedMetadata = tasks.register("verifyEmbeddedMetadata") {
             val jar = layout.buildDirectory.file("libs/pnLibrary-$pnVer-${platform.id}.jar").get().asFile
             require(jar.isFile) { "Missing platform JAR: ${jar.name}" }
             JarFile(jar).use { archive ->
+                require(archive.getJarEntry("org/jetbrains/kotlin/cli/jvm/K2JVMCompiler.class") == null) {
+                    "The optional Kotlin compiler must not be bundled in ${jar.name}"
+                }
                 val embedded = archive.getJarEntry("META-INF/pnlibrary/component.json")
                     ?: error("Missing embedded component metadata in ${jar.name}")
                 val json = archive.getInputStream(embedded).bufferedReader(Charsets.UTF_8).use { it.readText() }

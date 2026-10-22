@@ -70,7 +70,6 @@ dependencies {
     implementation(project(":modules:features:currency-runtime"))
     implementation(project(":modules:features:config-runtime"))
     implementation(libs.kotlin.stdlib)
-    implementation(libs.kotlin.compiler.embeddable)
     implementation(libs.gson)
     implementation(libs.snakeyaml)
     implementation(libs.adventure.minimessage)
@@ -81,6 +80,7 @@ dependencies {
     implementation(project(":modules:console"))
 
     testImplementation(libs.junit.jupiter)
+    testImplementation(project(":modules:features:policy-kotlin"))
     testImplementation(libs.mockito.core)
     testRuntimeOnly(libs.junit.launcher)
 }

@@ -19,6 +19,7 @@ apiValidation {
             "paper",
             "currency-runtime",
             "config-runtime",
+            "policy-kotlin",
         ),
     )
 }
