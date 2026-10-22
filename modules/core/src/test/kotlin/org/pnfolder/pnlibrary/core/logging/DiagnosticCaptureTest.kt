@@ -40,6 +40,23 @@ class DiagnosticCaptureTest {
     }
 
     @Test
+    fun `an echo delivered on another thread is ignored but unrelated lines still count`() {
+        var journaled = 0
+        lateinit var capture: DiagnosticCapture
+        val native = object : PlatformLogging {
+            override fun log(owner: Any, level: LogLevel, message: String, error: Throwable?) {
+                Thread { capture.observe(owner, level, message, error, true) }.apply { start() }.join()
+            }
+        }
+        capture = DiagnosticCapture(ownership, native, DiagnosticLogBuffer(), { _, _, _, _ -> journaled++ })
+        capture.log(this, LogLevel.WARNING, "disk is slow", null)
+        assertEquals(1, journaled)
+
+        Thread { capture.observe(this, LogLevel.WARNING, "someone else's warning", null, true) }.apply { start() }.join()
+        assertEquals(2, journaled)
+    }
+
+    @Test
     fun `broken diagnostic sinks cannot prevent console output`() {
         var printed = 0
         val native = object : PlatformLogging {

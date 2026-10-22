@@ -150,7 +150,9 @@ class JournalStoreTest {
 
     @Test
     fun `disk budget evicts routine files before error files`() {
-        store().append(record(JournalLevel.ERROR, "shop", "kept"))
+        // The error is older than every routine record, so plain oldest-first eviction would delete it first.
+        val olderDay = day.minus(Duration.ofDays(1))
+        store().append(record(JournalLevel.ERROR, "shop", "kept", olderDay))
         val errorBytes = Files.size(onlyFile("error"))
         store().append(record(JournalLevel.INFO, "shop", "routine"))
         val infoBytes = Files.size(onlyFile("info"))
@@ -159,7 +161,7 @@ class JournalStoreTest {
         // One error block plus one routine block exceeds this budget, so each new routine block forces eviction.
         val journal = JournalStore(directory, retention, Clock.fixed(day, ZoneOffset.UTC),
             maximumSegmentBytes = 1, maximumDiskBytes = maxOf(errorBytes, infoBytes) + 1)
-        journal.append(record(JournalLevel.ERROR, "shop", "kept"))
+        journal.append(record(JournalLevel.ERROR, "shop", "kept", olderDay))
         repeat(3) { journal.append(record(JournalLevel.INFO, "shop", "routine")) }
 
         assertEquals(listOf("kept"), store().read(levels = setOf(JournalLevel.ERROR)).map { it.message })
@@ -167,17 +169,18 @@ class JournalStoreTest {
     }
 
     @Test
-    fun `read budget returns whole newest files and reports the truncation`() {
-        store().append(record(JournalLevel.INFO, "shop", "old"))
-        val oneFileBytes = Files.size(onlyFile("info"))
+    fun `read budget never returns the stale prefix of a file it cannot read whole`() {
+        store().append(record(JournalLevel.INFO, "shop", "first"))
+        val oneRecordBytes = Files.size(onlyFile("info"))
         Files.list(directory).use { it.forEach(Files::delete) }
 
+        // Both records share one file that is larger than the budget; a prefix read would return only "first".
         val journal = JournalStore(directory, retention, Clock.fixed(day, ZoneOffset.UTC),
-            maximumSegmentBytes = 1, maximumReadBytes = oneFileBytes + 1)
-        journal.append(record(JournalLevel.INFO, "shop", "old", day))
-        journal.append(record(JournalLevel.INFO, "shop", "new", day.plusSeconds(1)))
+            maximumReadBytes = oneRecordBytes + 1)
+        journal.append(record(JournalLevel.INFO, "shop", "first", day))
+        journal.append(record(JournalLevel.INFO, "shop", "second", day.plusSeconds(1)))
 
-        assertEquals(listOf("new"), journal.read(levels = setOf(JournalLevel.INFO)).map { it.message })
+        assertEquals(emptyList<JournalRecord>(), journal.read(levels = setOf(JournalLevel.INFO)))
         val info = journal.summary().getValue("info") as Map<*, *>
         assertEquals(true, info["readBudgetExhausted"])
     }
