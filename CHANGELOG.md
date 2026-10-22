@@ -11,6 +11,15 @@
 - Новые форматы: `number:N`, `group`, `short`, `capitalize`, `trim`. Свои форматы регистрируются через
   `PlaceholderService.formatter`.
 
+## Метрики
+
+- Отправка bStats одна на все платформы (`BStatsClient`), раньше было три копии `Metrics.java`. На платформе остаётся
+  только своё: название, поля о сервере, планировщик, лог. Файл настроек `plugins/bStats/config.yml` (Bukkit,
+  BungeeCord) и `config.txt` (Velocity) общий для всех плагинов сервера, как и раньше.
+- BungeeCord больше не отключает метрики, если не удалось прочитать файл настроек: идентификатор берётся в памяти, как на
+  Bukkit. Файл, который нельзя прочитать, считается отказом: данные не отправляются.
+- Velocity больше не получает `Metrics.Factory` через Guice.
+
 ## Команды: всё под `/pn` (ломающие изменения)
 
 - `/pnevents` → `/pn events`, `/pndebug` → `/pn debug`, `/pncurrency` → `/pn money` (только Bukkit). Отдельной

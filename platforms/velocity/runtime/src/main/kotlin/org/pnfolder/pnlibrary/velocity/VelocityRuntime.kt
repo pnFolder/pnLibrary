@@ -3,7 +3,6 @@ package org.pnfolder.pnlibrary.velocity
 import com.velocitypowered.api.event.proxy.ProxyInitializeEvent
 import com.velocitypowered.api.event.proxy.ProxyShutdownEvent
 import com.velocitypowered.api.proxy.ProxyServer
-import org.bstats.velocity.Metrics
 import org.slf4j.Logger
 import org.pnfolder.pnlibrary.core.runtime.PnLibraryRuntimeHost
 import org.pnfolder.pnlibrary.velocity.api.VelocityPlatform
@@ -20,7 +19,6 @@ internal class VelocityRuntime(
     private val owner: Any,
     private val server: ProxyServer,
     private val logger: Logger,
-    private val metricsFactory: Metrics.Factory,
     private val dataDirectory: Path,
 ) {
     private var runtimeHost: PnLibraryRuntimeHost? = null
@@ -36,7 +34,7 @@ internal class VelocityRuntime(
         val adapter = VelocityPlatformAdapter(
             plugin = owner,
             proxy = server,
-            metricsFactory = VelocityMetricsFactory(metricsFactory, server, logger, dataDirectory),
+            metricsFactory = VelocityMetricsFactory(server, logger, dataDirectory),
             dataFolder = dataDirectory,
             logger = logger,
         )

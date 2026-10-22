@@ -88,7 +88,6 @@ val generateVelocityDescriptor by tasks.registering {
             |import com.velocitypowered.api.plugin.Plugin
             |import com.velocitypowered.api.plugin.annotation.DataDirectory
             |import com.velocitypowered.api.proxy.ProxyServer
-            |import org.bstats.velocity.Metrics
             |import org.slf4j.Logger
             |import java.nio.file.Path
             |
@@ -104,10 +103,9 @@ val generateVelocityDescriptor by tasks.registering {
             |class PnLibraryVelocityPlugin @Inject constructor(
             |    server: ProxyServer,
             |    logger: Logger,
-            |    metricsFactory: Metrics.Factory,
             |    @DataDirectory dataDirectory: Path,
             |) {
-            |    private val runtime = VelocityRuntime(this, server, logger, metricsFactory, dataDirectory)
+            |    private val runtime = VelocityRuntime(this, server, logger, dataDirectory)
             |
             |    @Subscribe
             |    fun onInitialize(event: ProxyInitializeEvent) = runtime.onInitialize(event)
