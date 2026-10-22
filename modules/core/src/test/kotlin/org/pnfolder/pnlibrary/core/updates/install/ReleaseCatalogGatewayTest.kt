@@ -43,7 +43,9 @@ class ReleaseCatalogGatewayTest {
 
         try {
             val loaded = AtomicReference<ReleaseCatalog>()
-            assertTimeoutPreemptively(Duration.ofSeconds(3)) {
+            // A real deadlock hangs forever; a generous bound only guards against that, not against a loaded CI
+            // runner's thread-scheduling jitter across the two single-thread executors used here.
+            assertTimeoutPreemptively(Duration.ofSeconds(15)) {
                 loaded.set(gateway.load("owner", "example", RefreshMode.FORCE_REMOTE))
             }
             val catalog = loaded.get()
