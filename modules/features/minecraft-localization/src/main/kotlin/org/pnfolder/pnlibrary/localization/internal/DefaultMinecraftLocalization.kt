@@ -22,6 +22,7 @@ import java.util.concurrent.CompletionStage
 import java.util.concurrent.ConcurrentHashMap
 import java.util.concurrent.ExecutorService
 import java.util.concurrent.Executors
+import java.util.concurrent.RejectedExecutionException
 import java.util.concurrent.Semaphore
 import java.util.concurrent.atomic.AtomicBoolean
 
@@ -85,7 +86,7 @@ internal class DefaultMinecraftLocalization internal constructor(
         val promise = CompletableFuture<LoadedLocale>()
         val existing = inFlight.putIfAbsent(key, promise)
         if (existing != null) return existing
-        executor.execute {
+        val task = Runnable {
             try {
                 permits.acquire()
                 val loaded = try { loadLocaleNow(key, refresh) } finally { permits.release() }
@@ -97,6 +98,12 @@ internal class DefaultMinecraftLocalization internal constructor(
                 inFlight.remove(key, promise)
                 promise.completeExceptionally(error)
             }
+        }
+        try {
+            executor.execute(task)
+        } catch (error: RejectedExecutionException) {
+            inFlight.remove(key, promise)
+            promise.completeExceptionally(error)
         }
         return promise
     }
@@ -147,7 +154,11 @@ internal class DefaultMinecraftLocalization internal constructor(
 
     private fun <T> async(action: () -> T): CompletableFuture<T> {
         ensureOpen()
-        return CompletableFuture.supplyAsync({ action() }, executor)
+        return try {
+            CompletableFuture.supplyAsync({ action() }, executor)
+        } catch (error: RejectedExecutionException) {
+            failed(error)
+        }
     }
 
     private fun ensureOpen() {
