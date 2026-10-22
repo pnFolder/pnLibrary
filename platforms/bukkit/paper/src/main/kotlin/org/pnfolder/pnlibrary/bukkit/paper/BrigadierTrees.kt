@@ -97,7 +97,7 @@ internal object BrigadierTrees {
 internal class CommandLine(val label: String, val arguments: List<String>) {
     companion object {
         /**
-         * Splits [input]. A label such as `pnlibrary:pnevents` keeps only the command name. With [keepTrailing] a
+         * Splits [input]. A label such as `pnlibrary:pn` keeps only the command name. With [keepTrailing] a
          * line that ends with a space has an empty last argument, which is what tab completion needs.
          */
         fun of(input: String, keepTrailing: Boolean): CommandLine {

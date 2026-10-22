@@ -5,7 +5,7 @@ import org.pnfolder.pnlibrary.api.runtime.PnLibraryConfig
 import org.pnfolder.pnlibrary.api.runtime.PnLibraryProvider
 import org.pnfolder.pnlibrary.core.diagnostics.DiagnosticsRegistry
 import org.pnfolder.pnlibrary.core.runtime.platform.PlatformRuntimeContext
-import org.pnfolder.pnlibrary.core.updates.catalog.ProxyUpdateCommand
+import org.pnfolder.pnlibrary.core.commands.ProxyControlCommand
 
 /**
  * Creates and publishes the single pnLibrary runtime in the current JVM.
@@ -60,7 +60,7 @@ internal object PnLibraryLauncher {
             PnLibraryProvider.install(created)
             platform.binding.bind(created)
             if (platform.identity.isProxy) {
-                ProxyUpdateCommand(created).register()
+                ProxyControlCommand(created).register()
             }
             created
         } catch (error: Throwable) {

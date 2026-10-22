@@ -21,7 +21,7 @@ import java.util.concurrent.CompletionStage
 
 /**
  * The catalog commands `list`, `available`, `info`, `settings`, `set`, `history` and `backups`, shared by the
- * Bukkit `/pn updates` tree and the console-only `/pnupdate` command.
+ * Bukkit `/pn updates` tree and the console-only `/pn update` command of the proxies.
  *
  * Platforms own what differs: the permissions, who may use the command ([guard]) and which thread results are
  * delivered on ([deliver]). The commands that prepare, confirm or restore updates stay with the platform because
@@ -66,7 +66,7 @@ class UpdateCatalogCommands(
      * Adds the catalog literals through [addLiteral], which forwards to whichever command or node is being built.
      *
      * ```
-     * command("pnupdate") { catalog.install { name, configure -> literal(name, configure) } }
+     * command("update") { catalog.install { name, configure -> literal(name, configure) } }
      * ```
      */
     fun install(addLiteral: (String, CommandNodeBuilder.() -> Unit) -> Unit) {

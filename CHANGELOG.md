@@ -1,5 +1,25 @@
 # Изменения
 
+## Команды: всё под `/pn` (ломающие изменения)
+
+- `/pnevents` → `/pn events`, `/pndebug` → `/pn debug`, `/pncurrency` → `/pn money` (только Bukkit). Отдельной
+  остаётся только `/pninfo`.
+- На BungeeCord и Velocity тоже есть `/pn`: `/pn events`, `/pn debug` и `/pn update …` (бывший `/pnupdate`, только
+  консоль). Команд `/pnevents`, `/pndebug`, `/pnupdate` на прокси больше нет.
+- У `/pn` есть запасные названия `/pnlib` и `/pnlibrary`: если другой плагин занял `/pn`, управление остаётся
+  доступным (ещё работает `/pnlibrary:pn`, которое Bukkit добавляет сам).
+- У `/pn` больше нет права на корне: каждая административная подкоманда просит `pnlibrary.admin` сама, а
+  `/pn events` и `/pn debug` — свои `pnlibrary.events.view` и `pnlibrary.debug`. Модератору с одним правом на журнал
+  не нужен `pnlibrary.admin`.
+- Подтверждения сведены в одну команду. `update-confirm`, `update-status`, `update-rollback` и `restart` убраны:
+  `/pn update rollback` и `/pn update restart` выдают одноразовый код, `/pn update confirm <код>` выполняет то, для
+  чего код выдан. Откат к резервному набору (`/pn updates rollback <id> [configs]`) подтверждается так же, слово
+  `confirm` в конце команды больше не нужно. `update-confirm` была мёртвой: код для неё нигде не выдавался.
+- Статус плана: `/pn update status [плагин]`. Слова `confirm`, `status`, `rollback`, `restart` заняты командой, плагин с
+  таким именем не может зарегистрировать обновления (ошибка при регистрации).
+- API: `CommandBuilder.mount(name, definition)` встраивает готовую команду как подкоманду; её обработчики видят
+  свои аргументы без ведущего слова.
+
 ## Действия и проверки (ломающие изменения)
 
 **Действия — только объекты с `type`**

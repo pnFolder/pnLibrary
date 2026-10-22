@@ -6,17 +6,13 @@ import org.pnfolder.pnlibrary.api.runtime.PnLibraryIdentity
 import org.pnfolder.pnlibrary.api.chat.ChatTone
 import org.pnfolder.pnlibrary.api.commands.CommandSender as Reply
 
-/** The `/pn` support helpers: debug and support hints, and the diagnostic test errors. */
+/** The `/pn` support helpers: the support link and the diagnostic test errors. */
 internal class BukkitSupportCommands(
     plugin: Plugin,
     library: PnLibrary,
     private val replies: BukkitCommandReplies,
 ) {
     private val testErrors = BukkitDiagnosticTestErrors(plugin, library)
-
-    /** Points to the support report command. */
-    fun debug(reply: Reply) =
-        replies.say(reply, ChatTone.INFO, "Отчёт для поддержки: /pndebug [all|plugin] [--full|--config|--logs]")
 
     /** Shows where to get support. */
     fun support(reply: Reply) =

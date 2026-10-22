@@ -1213,6 +1213,7 @@ public final class org/pnfolder/pnlibrary/api/commands/CommandBuilder {
 	public final fun getErrorHandlers ()Ljava/util/LinkedHashMap;
 	public final fun literal (Ljava/lang/String;Ljava/util/function/Consumer;)Lorg/pnfolder/pnlibrary/api/commands/CommandBuilder;
 	public final synthetic fun literal (Ljava/lang/String;Lkotlin/jvm/functions/Function1;)Lorg/pnfolder/pnlibrary/api/commands/CommandBuilder;
+	public final fun mount (Ljava/lang/String;Lorg/pnfolder/pnlibrary/api/commands/CommandDefinition;)Lorg/pnfolder/pnlibrary/api/commands/CommandBuilder;
 	public final fun noPermissionMessage (Ljava/lang/String;)Lorg/pnfolder/pnlibrary/api/commands/CommandBuilder;
 	public final fun onError (Ljava/lang/Class;Ljava/lang/String;)Lorg/pnfolder/pnlibrary/api/commands/CommandBuilder;
 	public final fun onError (Ljava/lang/Class;Lorg/pnfolder/pnlibrary/api/commands/CommandErrorHandler;)Lorg/pnfolder/pnlibrary/api/commands/CommandBuilder;

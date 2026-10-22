@@ -196,12 +196,16 @@ internal class PnLibraryImpl(
 
     private val startedAtMillis = System.currentTimeMillis()
 
+    private val mountable = LinkedHashMap<String, CommandDefinition>()
+
+    override fun mountableCommand(name: String): CommandDefinition? = mountable[name]
+
     override fun journalJoinNotice(): List<Component> {
         if (!config.journalJoinNotice) return emptyList()
         val now = System.currentTimeMillis()
         val since = now - Duration.ofHours(config.journalJoinNoticeHours.toLong()).toMillis()
         return runCatching {
-            joinDigest(journal.read(sinceMillis = since, limit = 5_000), now, config.journalJoinNoticeHours, startedAtMillis)
+            joinDigest(journal.read(sinceMillis = since, limit = 5_000), now, config.journalJoinNoticeHours, startedAtMillis, EVENTS_COMMAND)
         }.getOrDefault(emptyList())
     }
     private val commandService get() = platformServices.commands
@@ -266,8 +270,9 @@ internal class PnLibraryImpl(
     fun init() {
         support.initialize { isClosed }
         startLibraryMetrics()
-        registerRuntimeCommand(diagnosticCommand(this))
-        registerRuntimeCommand(journalCommand(journal))
+        // The platform's `/pn` control command holds these as `/pn debug` and `/pn events`.
+        mountable["debug"] = diagnosticCommand(this, "/pn debug")
+        mountable["events"] = journalCommand(journal, EVENTS_COMMAND)
         registerRuntimeCommand(
             libraryInfoCommand(this, platformIdentity) {
                 platformOwnership.ownerDetails(owner)["version"] ?: "неизвестна"
@@ -326,4 +331,9 @@ internal class PnLibraryImpl(
 
     override fun <T : Any> registerPlatform(type: Class<T>, implementation: T): AutoCloseable =
         platformProvider.register(type, implementation)
+
+    private companion object {
+        /** How the journal command is written in chat buttons and notices: it lives under `/pn` on every platform. */
+        const val EVENTS_COMMAND = "/pn events"
+    }
 }

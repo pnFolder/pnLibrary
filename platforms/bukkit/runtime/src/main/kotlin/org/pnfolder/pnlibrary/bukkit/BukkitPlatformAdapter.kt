@@ -3,6 +3,7 @@ package org.pnfolder.pnlibrary.bukkit
 import org.bukkit.Bukkit
 import org.bukkit.entity.Player
 import org.bukkit.plugin.Plugin
+import org.pnfolder.pnlibrary.api.currency.currencyProviders
 import org.pnfolder.pnlibrary.api.logging.LogLevel
 import org.pnfolder.pnlibrary.api.platform.PlatformType
 import org.pnfolder.pnlibrary.api.remote.RemotePolicyContext
@@ -141,7 +142,7 @@ internal class BukkitPlatformAdapter(
     override fun bind(library: PnLibrary) {
         lifecycle.bind {
             lifecycleListener = lifecycle.track(BukkitLifecycleListener(plugin, library).start())
-            lifecycle.track(library.registerRuntimeCommand(BukkitControlCommand(plugin, library).definition()))
+            lifecycle.track(library.registerRuntimeCommand(BukkitControlCommand(plugin, library, library.currencyProviders).definition()))
         }
     }
 

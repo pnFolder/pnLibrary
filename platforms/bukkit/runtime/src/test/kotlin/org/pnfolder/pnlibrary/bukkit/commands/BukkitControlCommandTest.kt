@@ -3,9 +3,11 @@ package org.pnfolder.pnlibrary.bukkit.commands
 import net.kyori.adventure.text.Component
 import org.bukkit.plugin.Plugin
 import org.junit.jupiter.api.Assertions.assertEquals
+import org.junit.jupiter.api.Assertions.assertTrue
 import org.junit.jupiter.api.Test
 import org.pnfolder.pnlibrary.api.commands.CommandNodeKind
 import org.pnfolder.pnlibrary.api.commands.CommandSender
+import org.pnfolder.pnlibrary.api.currency.CurrencyProviderRegistry
 import org.pnfolder.pnlibrary.api.runtime.PnLibrary
 import org.pnfolder.pnlibrary.api.updates.BlockedReason
 import org.pnfolder.pnlibrary.api.updates.release.ProductChange
@@ -28,37 +30,26 @@ class BukkitControlCommandTest {
         val definition = BukkitControlCommand(
             plugin = proxy(Plugin::class.java),
             library = proxy(PnLibrary::class.java),
+            currencies = proxy(CurrencyProviderRegistry::class.java),
         ).definition()
 
         assertEquals("pn", definition.name)
-        assertEquals("pnlibrary.admin", definition.permission)
+        // The root has no permission of its own: every administrative word asks for pnlibrary.admin by itself.
+        assertEquals(null, definition.permission)
         assertEquals(
-            listOf(
-                "status",
-                "updates",
-                "check",
-                "update",
-                "update-confirm",
-                "update-status",
-                "update-rollback",
-                "restart",
-                "debug",
-                "support",
-                "error",
-                "error-repeat",
-                "error-chain",
-            ),
+            listOf("status", "check", "updates", "update", "support", "error", "error-repeat", "error-chain", "money"),
             definition.root.children.map { it.name },
         )
+        val administrative = definition.root.children.filter { it.name != "money" }
+        assertTrue(administrative.all { it.permission == "pnlibrary.admin" }, administrative.map { it.name }.toString())
         val update = definition.root.children.single { it.name == "update" }
         val catalog = definition.root.children.single { it.name == "updates" }
         assertEquals(listOf("list", "available", "info", "settings", "set", "history", "backups", "rollback"), catalog.children.map { it.name })
         assertEquals(listOf("page", "plugin"), catalog.children.single { it.name == "history" }.children.map { it.name })
         assertEquals("plugin", catalog.children.single { it.name == "info" }.children.single().name)
-        assertEquals(CommandNodeKind.ARGUMENT, update.children.single().kind)
-        assertEquals("plugin", update.children.single().name)
-        val restart = definition.root.children.single { it.name == "restart" }
-        assertEquals("token", restart.children.single().name)
+        assertEquals(listOf("plugin", "confirm", "status", "rollback", "restart"), update.children.map { it.name })
+        assertEquals(CommandNodeKind.ARGUMENT, update.children.first().kind)
+        assertEquals("token", update.children.single { it.name == "confirm" }.children.single().name)
     }
 
     @Test

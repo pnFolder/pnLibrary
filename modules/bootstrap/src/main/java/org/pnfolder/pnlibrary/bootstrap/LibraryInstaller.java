@@ -73,7 +73,7 @@ public final class LibraryInstaller {
                 .detail("Установлена", installedVersion)
                 .lastDetail("Нужна", "от " + options.minimumVersion())
                 .section("Что делать")
-                .item("Обновите pnLibrary: " + platform.updateHint())
+                .item("Обновите pnLibrary командой " + platform.updateHint())
                 .lastItem("или скачайте вручную: " + releasesPage())
                 .section("Не получается?")
                 .lastItem("Напишите в поддержку: " + options.supportUrl())

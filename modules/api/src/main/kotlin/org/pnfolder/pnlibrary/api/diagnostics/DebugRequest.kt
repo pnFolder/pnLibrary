@@ -3,7 +3,7 @@ package org.pnfolder.pnlibrary.api.diagnostics
 import java.util.Locale
 
 /**
- * Parsed `/pndebug` command invocation.
+ * Parsed `/pn debug` command invocation.
  *
  * @property target  Plugin name or `"all"`.
  * @property configs Whether configuration files should be collected.

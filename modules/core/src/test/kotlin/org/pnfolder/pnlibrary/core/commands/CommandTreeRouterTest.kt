@@ -102,6 +102,47 @@ class CommandTreeRouterTest {
         assertEquals("/amount <value>", usageOf(listOf("wrong")))
     }
 
+    @Test
+    fun `a mounted command lives under another one and sees its own arguments`() {
+        val seen = mutableListOf<List<String>>()
+        val events = command("events") {
+            permission("events.view")
+            executes { seen += it.arguments }
+            literal("view") {
+                argument("id", ArgumentType.string()) { executes { seen += it.arguments } }
+            }
+        }
+        val control = command("control") {
+            literal("status") { permission("control.admin"); executes { } }
+            mount("events", events)
+        }
+        val router = CommandTreeRouter()
+
+        val root = router.route(control, context(listOf("events"), setOf("events.view")))
+        val card = router.route(control, context(listOf("events", "view", "abc"), setOf("events.view")))
+        (root as CommandRoute.Executable).node.execution.execute(root.context)
+        (card as CommandRoute.Executable).node.execution.execute(card.context)
+
+        assertEquals(listOf(emptyList(), listOf("view", "abc")), seen)
+        // The permission of the mounted command stays its own, and the control command's does not leak into it.
+        val denied = router.route(control, context(listOf("events"), setOf("control.admin")))
+        assertTrue((denied as CommandRoute.Problem).error is org.pnfolder.pnlibrary.api.commands.NoPermission)
+        val suggestions = router.suggest(control, context(listOf(""), setOf("events.view"))).toCompletableFuture().join()
+        assertEquals(listOf("events"), suggestions)
+    }
+
+    @Test
+    fun `mounting under a name that is taken is refused`() {
+        val other = command("other") { executes { } }
+
+        org.junit.jupiter.api.Assertions.assertThrows(IllegalArgumentException::class.java) {
+            command("control") {
+                literal("events") { executes { } }
+                mount("events", other)
+            }
+        }
+    }
+
     private fun context(arguments: List<String>, permissions: Set<String> = emptySet()) = CommandContext(
         sender = TestSender(permissions),
         arguments = arguments,

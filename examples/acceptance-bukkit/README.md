@@ -26,7 +26,7 @@ gradlew.bat :examples:acceptance-bukkit:assembleAcceptanceKit
 | `/pnaccept task` | планировщик задач |
 | `/pnaccept cooldown` (дважды) | кулдауны |
 | `/pnaccept metrics` | жизненный цикл метрик |
-| `/pnaccept diagnostics`, затем `/pndebug acceptance --local` | сбор диагностики |
+| `/pnaccept diagnostics`, затем `/pn debug acceptance --local` | сбор диагностики |
 | `/pnaccept update` | обновления (после включения в `config.yml`) |
 | `/pnaccept download` | загрузку дополнительных файлов (после включения в `config.yml`) |
 

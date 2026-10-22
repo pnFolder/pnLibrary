@@ -67,6 +67,7 @@ class CommandBuilder internal constructor(name: String) {
     private var suggestions = SuggestionHandler { completedSuggestions(emptyList()) }
     private var availability = CommandAvailability { true }
     private val children = mutableListOf<CommandNodeBuilder>()
+    private val mounted = mutableListOf<CommandNode>()
 
     /** Adds normalized command aliases. */
     fun aliases(vararg values: String): CommandBuilder = apply {
@@ -86,7 +87,7 @@ class CommandBuilder internal constructor(name: String) {
 
     /**
      * Sets the message shown to a sender who lacks the root permission, for example
-     * `noPermissionMessage("У вас нет права на /pnevents. Попросите администратора.")`.
+     * `noPermissionMessage("У вас нет права на /pn events. Попросите администратора.")`.
      */
     fun noPermissionMessage(value: String): CommandBuilder = apply {
         noPermissionMessage = value.trim().also {
@@ -189,6 +190,16 @@ class CommandBuilder internal constructor(name: String) {
         children += CommandNodeBuilder(CommandNodeKind.ARGUMENT, name, type).also(configure::accept)
     }
 
+    /**
+     * Adds the whole tree of [definition] as the literal [name], so a separate command can live under this one.
+     *
+     * The mounted node keeps its permission, sender rule, availability, handlers and children. The aliases of
+     * [definition] are not carried over.
+     */
+    fun mount(name: String, definition: CommandDefinition): CommandBuilder = apply {
+        mounted += mountedNode(name, definition)
+    }
+
     /** Validates this tree and creates an immutable command definition. */
     fun build(): CommandDefinition {
         val commandHandlers = errorHandlers.toMap() // read before the node builder, which has a map of the same name
@@ -206,6 +217,7 @@ class CommandBuilder internal constructor(name: String) {
             if (executable) executesAsync(execution)
             suggestsAsync(suggestions)
             children.forEach { child -> addBuiltChild(child) }
+            addMounted(mounted)
         }
         val root = rootBuilder.build()
         return CommandDefinition(

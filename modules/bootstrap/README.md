@@ -107,7 +107,7 @@ class MyPlugin @Inject constructor(private val proxy: ProxyServer) {
 На Bukkit перезапуск не нужен, параметр там ничего не делает.
 
 Скачанную pnLibrary установщик сам не
-обновляет: если версия старая, он говорит, как её обновить (`/pn update pnLibrary` на Bukkit, `pnupdate` в консоли
+обновляет: если версия старая, он говорит, как её обновить (`/pn update pnLibrary` на Bukkit, `/pn update check` и `/pn update stage` в консоли
 прокси).
 
 Только проверить, без установки: `PnLibraryBootstrap.ensureCompatible(...)` с теми же аргументами.

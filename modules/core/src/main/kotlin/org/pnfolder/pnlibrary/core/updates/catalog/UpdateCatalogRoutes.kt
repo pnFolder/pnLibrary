@@ -2,7 +2,7 @@ package org.pnfolder.pnlibrary.core.updates.catalog
 
 /**
  * Commands a catalog page links to, so one view serves both the Bukkit `/pn updates` tree and the
- * console-only `/pnupdate` command.
+ * console-only `/pn update` command of the proxies.
  *
  * @property root base of the catalog commands, for example `/pn updates`
  * @property update builds the command that prepares an update for one product; null hides update buttons

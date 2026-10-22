@@ -16,7 +16,7 @@ pnLibrary даёт плагинам общий реестр валют. Плаг
 | `pnlibrary-currency` (`:modules:features:currency-runtime`) | реализация: реестр, проводки, хранилища в файле и JDBC. Входит в jar pnLibrary |
 
 Пакет API: `org.pnfolder.pnlibrary.api.currency`. В модулях валюты нет классов Bukkit, BungeeCord, Velocity, Vault или
-PlayerPoints. Мосты к Vault и PlayerPoints и команда `/pncurrency` живут в `platforms/bukkit/runtime`.
+PlayerPoints. Мосты к Vault и PlayerPoints и команда `/pn money` живут в `platforms/bukkit/runtime`.
 
 ## 1. Взять валюту
 
@@ -111,7 +111,7 @@ currency.access { it.owner().allow("pnshop").allowMatching("pn*").deny("pnbeta")
 
 Запрет сильнее разрешения.
 
-## 5. Команда `/pncurrency` (Bukkit)
+## 5. Команда `/pn money` (Bukkit)
 
 Для управляемых валют библиотека сама регистрирует команду администратора. Её подкоманды:
 

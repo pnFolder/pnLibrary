@@ -84,11 +84,11 @@ class BrigadierTreesTest {
 
     @Test
     fun `a command line is split into the label and its arguments`() {
-        val typed = CommandLine.of("pnlibrary:pnevents view  abc", keepTrailing = false)
-        assertEquals("pnevents", typed.label)
-        assertEquals(listOf("view", "abc"), typed.arguments)
+        val typed = CommandLine.of("pnlibrary:pn events  abc", keepTrailing = false)
+        assertEquals("pn", typed.label)
+        assertEquals(listOf("events", "abc"), typed.arguments)
 
-        val completing = CommandLine.of("/pnevents view ", keepTrailing = true)
-        assertEquals(listOf("view", ""), completing.arguments)
+        val completing = CommandLine.of("/pn events view ", keepTrailing = true)
+        assertEquals(listOf("events", "view", ""), completing.arguments)
     }
 }

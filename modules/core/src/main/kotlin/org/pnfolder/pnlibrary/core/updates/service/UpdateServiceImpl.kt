@@ -20,6 +20,7 @@ import org.pnfolder.pnlibrary.core.updates.engine.RefreshMode
 import org.pnfolder.pnlibrary.core.updates.engine.ResolutionResult
 import org.pnfolder.pnlibrary.core.updates.install.UpdateGraphResolver
 import org.pnfolder.pnlibrary.core.updates.install.UpdateInstaller
+import org.pnfolder.pnlibrary.core.updates.catalog.UpdateCommandWords
 import org.pnfolder.pnlibrary.core.updates.policy.UpdateAutomaticPolicy
 import org.pnfolder.pnlibrary.core.updates.policy.UpdateConfiguration
 import org.pnfolder.pnlibrary.core.updates.policy.UpdatePolicyOverrides
@@ -93,6 +94,12 @@ internal class UpdateServiceImpl(
         check(!closed.get()) { "Update service is closed" }
         val info = ownership.ownerDetails(owner)
         val nativeProductName = info["name"] ?: request.repositoryName
+        listOf(nativeProductName, request.repositoryName).firstOrNull(UpdateCommandWords::isReserved)?.let { word ->
+            throw IllegalArgumentException(
+                "A plugin cannot be called '$word' for updates: it is a word of the /pn update command " +
+                    "(${UpdateCommandWords.RESERVED.joinToString()}). Rename the plugin or its repository.",
+            )
+        }
         val version = info["version"] ?: error("Cannot determine the version of the registering plugin")
         require(SemanticVersion.tryParse(version) != null) {
             "Version of $nativeProductName must be semantic: $version"

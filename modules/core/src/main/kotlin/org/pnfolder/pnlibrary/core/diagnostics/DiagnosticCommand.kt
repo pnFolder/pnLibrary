@@ -14,10 +14,9 @@ import org.pnfolder.pnlibrary.api.chat.ChatTone
 import java.util.Locale
 
 /** Builds pnLibrary's diagnostics command without depending on a native command API. */
-internal fun diagnosticCommand(library: PnLibrary): CommandDefinition {
+internal fun diagnosticCommand(library: PnLibrary, root: String = "/pn debug"): CommandDefinition {
     val executor = DiagnosticCommandExecutor(library)
-    return command("pndebug") {
-        aliases("pnlib")
+    return command("debug") {
         permission("pnlibrary.debug")
         consoleBypassesPermission()
         suggests { context -> diagnosticSuggestions(library, context) }
@@ -28,7 +27,7 @@ internal fun diagnosticCommand(library: PnLibrary): CommandDefinition {
                 prefixed = false,
                 requesterId = context.sender.id,
                 recipient = context.sender,
-            ) { event -> event.render(kit).forEach(context.sender::send) }
+            ) { event -> event.render(kit, root).forEach(context.sender::send) }
         }
     }
 }
@@ -48,9 +47,9 @@ private fun diagnosticSuggestions(library: PnLibrary, context: CommandContext): 
 }
 
 /** Renders diagnostics state once for every native platform, as notices in the shared chat style. */
-internal fun DiagnosticCommandEvent.render(kit: ChatKit): List<Component> = when (this) {
+internal fun DiagnosticCommandEvent.render(kit: ChatKit, root: String = "/pn debug"): List<Component> = when (this) {
     DiagnosticCommandEvent.InvalidUsage ->
-        kit.notice(ChatNotice(ChatTone.WARNING, "Неизвестные аргументы.", "/pndebug [all|плагин] [--full|--config|--logs] [--local]"))
+        kit.notice(ChatNotice(ChatTone.WARNING, "Неизвестные аргументы.", "$root [all|плагин] [--full|--config|--logs] [--local]"))
     is DiagnosticCommandEvent.CoolingDown ->
         kit.notice(ChatNotice(ChatTone.WARNING, "Подождите $seconds с перед следующим отчётом."))
     is DiagnosticCommandEvent.Started ->

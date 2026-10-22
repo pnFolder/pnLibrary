@@ -12,6 +12,7 @@ import org.junit.jupiter.api.Test
 import org.mockito.ArgumentCaptor
 import org.mockito.Mockito.*
 import org.pnfolder.pnlibrary.api.commands.CommandContext
+import org.pnfolder.pnlibrary.api.currency.CurrencyProviderRegistry
 import org.pnfolder.pnlibrary.api.runtime.PnLibrary
 import org.pnfolder.pnlibrary.api.updates.UpdateService
 import org.pnfolder.pnlibrary.bukkit.commands.BukkitCommandSender
@@ -63,7 +64,7 @@ class PlayerCommandReplyTest {
         val updates = mock(UpdateService::class.java)
         `when`(library.updates).thenReturn(updates)
         `when`(updates.all()).thenReturn(emptyList())
-        val definition = BukkitControlCommand(plugin, library).definition()
+        val definition = BukkitControlCommand(plugin, library, mock(CurrencyProviderRegistry::class.java)).definition()
         val root = definition.root
         val catalog = root.children.single { it.name == "updates" }
         val sender = BukkitCommandSender(player, requireNotNull(BukkitAudienceAdapter(service).sender(player)))

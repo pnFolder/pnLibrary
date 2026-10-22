@@ -12,13 +12,13 @@ permissions:
     description: Управление pnLibrary и обновлениями pnFolder
     default: op
   pnlibrary.debug:
-    description: Создавать зашифрованные отчёты для поддержки (/pndebug)
+    description: Создавать зашифрованные отчёты для поддержки (/pn debug)
     default: op
   pnlibrary.updates.notify:
     description: Получать уведомления об обновлениях при входе
     default: op
   pnlibrary.events.view:
-    description: Смотреть журнал событий (/pnevents) и получать сводку ошибок при входе
+    description: Смотреть журнал событий (/pn events) и получать сводку ошибок при входе
     default: op
   pnlibrary.updates.view:
     description: Просматривать совместимый план обновлений

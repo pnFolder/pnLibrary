@@ -79,6 +79,7 @@ class CommandNodeBuilder internal constructor(
     private var suggestions = SuggestionHandler { completedSuggestions(emptyList()) }
     private var executable = false
     private val children = mutableListOf<CommandNodeBuilder>()
+    private val mounted = mutableListOf<CommandNode>()
 
     /** Requires the non-blank permission [value] for this node. */
     fun permission(value: String): CommandNodeBuilder = apply {
@@ -193,21 +194,56 @@ class CommandNodeBuilder internal constructor(
         children += child
     }
 
+    internal fun addMounted(nodes: List<CommandNode>) {
+        mounted += nodes
+    }
+
+
     internal fun build(): CommandNode {
         validateChildren()
         return CommandNode(
             kind, name, argumentType, permission, consoleBypassesPermission, availability,
-            execution, suggestions, executable, children.map(CommandNodeBuilder::build), noPermissionMessage, errorHandlers, senderRule,
+            execution, suggestions, executable, children.map(CommandNodeBuilder::build) + mounted, noPermissionMessage, errorHandlers, senderRule,
         )
     }
 
     private fun validateChildren() {
-        val duplicate = children.groupBy { it.kind to it.name }.entries.firstOrNull { it.value.size > 1 }
+        val names = children.map { it.kind to it.name } + mounted.map { it.kind to it.name }
+        val duplicate = names.groupBy { it }.entries.firstOrNull { it.value.size > 1 }
         require(duplicate == null) { "Duplicate command child '${duplicate?.key?.second}'" }
         require(children.count { it.kind == CommandNodeKind.ARGUMENT } <= 1) {
             "A command node cannot have multiple argument children"
         }
     }
+}
+
+/**
+ * Copies the root of [definition] as a literal called [name] directly under another command's root.
+ *
+ * The handlers of every node in the copy see their arguments as if the mounted command stood alone: the literal
+ * that leads to it is dropped, so `/pn events view abc` reaches the handler as `view abc`.
+ */
+internal fun mountedNode(name: String, definition: CommandDefinition): CommandNode =
+    rebased(definition.root, normalizeNodeName(name))
+
+private fun rebased(node: CommandNode, mountName: String? = null): CommandNode {
+    val execution = node.execution
+    val suggestions = node.suggestions
+    return CommandNode(
+        if (mountName != null) CommandNodeKind.LITERAL else node.kind,
+        mountName ?: node.name,
+        node.argumentType,
+        node.permission,
+        node.consoleBypassesPermission,
+        node.availability,
+        CommandHandler { context -> execution.execute(context.copy(arguments = context.arguments.drop(1))) },
+        SuggestionHandler { context -> suggestions.suggest(context.copy(arguments = context.arguments.drop(1))) },
+        node.isExecutable,
+        node.children.map { rebased(it) },
+        node.noPermissionMessage,
+        node.errorHandlers,
+        node.senderRule,
+    )
 }
 
 private val NODE_NAME = Regex("[a-z0-9][a-z0-9:_-]*")

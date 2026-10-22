@@ -55,7 +55,13 @@ private enum class Reason(val word: String, val advice: String) {
  * @param windowHours length of the window, shown in the header
  * @param startedAtMillis when the library started, to recognize startup problems
  */
-internal fun joinDigest(records: List<JournalRecord>, now: Long, windowHours: Int, startedAtMillis: Long): List<Component> {
+internal fun joinDigest(
+    records: List<JournalRecord>,
+    now: Long,
+    windowHours: Int,
+    startedAtMillis: Long,
+    root: String = "/pn events",
+): List<Component> {
     val kit = ChatKit(ChatReader())
     val relevant = records.filter { it.level != JournalLevel.INFO }
     val groups = relevant.groupBy { it.fingerprint }.values
@@ -102,7 +108,7 @@ internal fun joinDigest(records: List<JournalRecord>, now: Long, windowHours: In
         summary.drop(1).fold(kit.text("  ").append(summary.first())) { line, part -> line.append(kit.text("   ")).append(part) },
         strip(kit, relevant, now, windowHours, startedAtMillis),
     )
-    notable.forEach { lines += notableLine(kit, it, reasonOf(it), now) }
+    notable.forEach { lines += notableLine(kit, it, reasonOf(it), now, root) }
     if (topReason == Reason.PLAIN) {
         if (errors.isEmpty()) lines += kit.note("Ничего срочного. Загляните в журнал, когда будет время.", ChatPalette.FAINT)
     } else {
@@ -111,8 +117,8 @@ internal fun joinDigest(records: List<JournalRecord>, now: Long, windowHours: In
     lines += kit.blank()
     val urgent = errors.isNotEmpty() || topReason != Reason.PLAIN
     lines += kit.actions(
-        kit.button("открыть журнал", if (errors.isNotEmpty()) "/pnevents error" else "/pnevents warning", "Список событий", ChatPalette.ACCENT),
-        if (urgent) kit.button("подробнее", "/pnevents view ${ranked.first().first().fingerprint}", "Карточка главного события", ChatPalette.ACCENT) else null,
+        kit.button("открыть журнал", if (errors.isNotEmpty()) "$root error" else "$root warning", "Список событий", ChatPalette.ACCENT),
+        if (urgent) kit.button("подробнее", "$root view ${ranked.first().first().fingerprint}", "Карточка главного события", ChatPalette.ACCENT) else null,
     ) ?: kit.blank()
     return lines
 }
@@ -180,7 +186,7 @@ private fun strip(kit: ChatKit, relevant: List<JournalRecord>, now: Long, window
 }
 
 /** `  ● pnShop ×3 старт  Database is locked`, clickable to open the card; the reason word is dropped when plain. */
-private fun notableLine(kit: ChatKit, group: List<JournalRecord>, reason: Reason, now: Long): Component {
+private fun notableLine(kit: ChatKit, group: List<JournalRecord>, reason: Reason, now: Long, root: String): Component {
     val record = group.first()
     val color = levelColor(record.level)
     val icon = if (record.level == JournalLevel.ERROR) '●' else '▲'
@@ -211,5 +217,5 @@ private fun notableLine(kit: ChatKit, group: List<JournalRecord>, reason: Reason
         kit.blank(),
         kit.text("Нажмите, чтобы открыть карточку", ChatPalette.FAINT),
     )
-    return line.clickEvent(ClickEvent.runCommand("/pnevents view ${record.fingerprint}")).hoverEvent(kit.tooltip(*tip.toTypedArray()))
+    return line.clickEvent(ClickEvent.runCommand("$root view ${record.fingerprint}")).hoverEvent(kit.tooltip(*tip.toTypedArray()))
 }

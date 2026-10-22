@@ -12,10 +12,10 @@ public enum BootstrapPlatform {
     BUKKIT("Bukkit", "plugin.yml", "pnLibrary", "/pn update pnLibrary", "stop"),
 
     /** BungeeCord and Waterfall: plugin {@code pnLibrary} in {@code bungee.yml}. */
-    BUNGEECORD("BungeeCord", "bungee.yml", "pnLibrary", "pnupdate в консоли прокси", "end"),
+    BUNGEECORD("BungeeCord", "bungee.yml", "pnLibrary", "/pn update check; /pn update stage", "end"),
 
     /** Velocity: plugin id {@code pnlibrary} in {@code velocity-plugin.json}. */
-    VELOCITY("Velocity", "velocity-plugin.json", "pnlibrary", "pnupdate в консоли прокси", "shutdown");
+    VELOCITY("Velocity", "velocity-plugin.json", "pnlibrary", "/pn update check; /pn update stage", "shutdown");
 
     private static final Pattern UNIVERSAL = Pattern.compile("(?i)^pnLibrary-[0-9][^/\\\\]*-universal\\.jar$");
 

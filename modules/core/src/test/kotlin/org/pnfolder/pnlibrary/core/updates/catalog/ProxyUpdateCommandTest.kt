@@ -102,7 +102,7 @@ class ProxyUpdateCommandTest {
             when (method.name) { "getUpdates" -> updates; "isClosed" -> false; else -> error("Unexpected call: ${method.name}") }
         } as PnLibrary
         val definition = ProxyUpdateCommand(library).definition()
-        val route = CommandTreeRouter().route(definition, CommandContext(sender, arguments.toList(), "pnupdate", arguments.joinToString(" "))) as CommandRoute.Executable
+        val route = CommandTreeRouter().route(definition, CommandContext(sender, arguments.toList(), "update", arguments.joinToString(" "))) as CommandRoute.Executable
         route.node.execution.execute(route.context).toCompletableFuture().join()
     }
 

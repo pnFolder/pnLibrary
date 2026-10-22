@@ -13,7 +13,7 @@ import org.pnfolder.pnlibrary.common.text.RussianText
 import org.pnfolder.pnlibrary.core.runtime.DisplayZone
 import java.util.Locale
 
-/** Rows shown on one page of `/pnevents`. */
+/** rows shown on one page of `/pn events`. */
 private const val PAGE_SIZE = 5
 
 /** Longest message shown in a player's chat so lines do not flood it; the console and the card show all. */
@@ -33,47 +33,46 @@ private const val CARD_WIDTH = 56
 private const val REPEAT_ROWS = 15
 
 /**
- * `/pnevents [info|warning|error|all] [page]`: the journal with repeats of one event folded into a single row.
+ * `/pn events [info|warning|error|all] [page]`: the journal with repeats of one event folded into a single row.
  *
  * A row shows the last time, level, source, how many times it happened and a message that is shortened in
  * player chat and whole in the console. Hovering shows a summary; clicking opens the card
- * `/pnevents view <id>` with the full text, first and last time and the stack trace, plus buttons for the
- * repeats (`/pnevents times <id>`) and for copying a report to hand to the plugin author.
+ * `/pn events view <id>` with the full text, first and last time and the stack trace, plus buttons for the
+ * repeats (`/pn events times <id>`) and for copying a report to hand to the plugin author.
  * Requires `pnlibrary.events.view`; the console always may read it.
  */
-internal fun journalCommand(journal: JournalStore): CommandDefinition = command("pnevents") {
-    aliases("pnevent")
+internal fun journalCommand(journal: JournalStore, root: String = "/pn events"): CommandDefinition = command("events") {
     permission("pnlibrary.events.view")
     noPermissionMessage("Журнал событий доступен администраторам. Нужно право pnlibrary.events.view.")
     consoleBypassesPermission()
     // The router accepts only declared words, so every level, page and card id is declared here.
-    executes { context -> list(context.sender, ChatKit(ChatReader.of(context.sender)), journal, context.arguments) }
+    executes { context -> list(context.sender, ChatKit(ChatReader.of(context.sender)), journal, context.arguments, root) }
     listOf("all", "info", "warning", "error").forEach { level ->
         literal(level) {
-            executes { context -> list(context.sender, ChatKit(ChatReader.of(context.sender)), journal, context.arguments) }
+            executes { context -> list(context.sender, ChatKit(ChatReader.of(context.sender)), journal, context.arguments, root) }
             argument("page", ArgumentType.integer()) {
-                executes { context -> list(context.sender, ChatKit(ChatReader.of(context.sender)), journal, context.arguments) }
+                executes { context -> list(context.sender, ChatKit(ChatReader.of(context.sender)), journal, context.arguments, root) }
             }
         }
     }
     literal("view") {
         argument("id", ArgumentType.string()) {
             executes { context ->
-                card(context.sender, ChatKit(ChatReader.of(context.sender)), journal, context.arguments.getOrNull(1), repeats = false)
+                card(context.sender, ChatKit(ChatReader.of(context.sender)), journal, context.arguments.getOrNull(1), repeats = false, root = root)
             }
         }
     }
     literal("full") {
         argument("id", ArgumentType.string()) {
             executes { context ->
-                card(context.sender, ChatKit(ChatReader.of(context.sender)), journal, context.arguments.getOrNull(1), repeats = false, fullTrace = true)
+                card(context.sender, ChatKit(ChatReader.of(context.sender)), journal, context.arguments.getOrNull(1), repeats = false, fullTrace = true, root = root)
             }
         }
     }
     literal("times") {
         argument("id", ArgumentType.string()) {
             executes { context ->
-                card(context.sender, ChatKit(ChatReader.of(context.sender)), journal, context.arguments.getOrNull(1), repeats = true)
+                card(context.sender, ChatKit(ChatReader.of(context.sender)), journal, context.arguments.getOrNull(1), repeats = true, root = root)
             }
         }
     }
@@ -120,7 +119,7 @@ private val FILTERS = listOf(
     Triple("info", "инфо", setOf(JournalLevel.INFO)),
 )
 
-private fun list(sender: CommandSender, kit: ChatKit, journal: JournalStore, arguments: List<String>) {
+private fun list(sender: CommandSender, kit: ChatKit, journal: JournalStore, arguments: List<String>, root: String) {
     val word = arguments.getOrNull(0)?.lowercase(Locale.ROOT) ?: "all"
     val filter = FILTERS.firstOrNull { it.first == word || (word == "warn" && it.first == "warning") }
     if (filter == null) {
@@ -139,20 +138,20 @@ private fun list(sender: CommandSender, kit: ChatKit, journal: JournalStore, arg
         kit.blank(),
         kit.blank(),
         kit.header("События", kit.text("${groups.size} ${RussianText.plural(groups.size.toLong(), "запись", "записи", "записей")}", ChatPalette.LABEL)),
-        tabs(kit, everything, filter.first),
+        tabs(kit, everything, filter.first, root),
         kit.blank(),
     )
     if (rows.isEmpty()) lines += kit.note("Здесь пока пусто.")
     rows.forEach { group ->
-        lines += row(kit, group, sender.isConsole)
+        lines += row(kit, group, sender.isConsole, root)
         lines += kit.blank()
     }
     if (pages > 1) {
-        lines += pager(kit, filter.first, page, pages)
+        lines += pager(kit, filter.first, page, pages, root)
     }
     if (!kit.reader.interactive) {
         lines += kit.blank()
-        lines += kit.note("Уровни: /pnevents all | error | warning | info [страница]; карточка: /pnevents view <id>")
+        lines += kit.note("Уровни: $root all | error | warning | info [страница]; карточка: $root view <id>")
     }
     lines.forEach(sender::send)
 }
@@ -161,7 +160,7 @@ private fun list(sender: CommandSender, kit: ChatKit, journal: JournalStore, arg
  * `Показать:` and one button per filter, such as `[ошибки 3]`. Every button has the same gray brackets; the open
  * filter is violet and the others are gray, so the difference is one color and never depends on the level.
  */
-private fun tabs(kit: ChatKit, everything: List<List<JournalRecord>>, current: String): Component {
+private fun tabs(kit: ChatKit, everything: List<List<JournalRecord>>, current: String, root: String): Component {
     var line = kit.text(" Показать: ", ChatPalette.LABEL)
     FILTERS.forEachIndexed { index, (word, label, levels) ->
         if (index > 0) line = line.append(kit.text(" "))
@@ -171,17 +170,17 @@ private fun tabs(kit: ChatKit, everything: List<List<JournalRecord>>, current: S
         val button = kit.text("[", ChatPalette.FAINT).append(kit.text("$label $count", body)).append(kit.text("]", ChatPalette.FAINT))
         line = line.append(
             if (open || !kit.reader.interactive) button
-            else button.clickEvent(ClickEvent.runCommand("/pnevents $word"))
-                .hoverEvent(kit.tooltip(kit.text("Нажмите, чтобы показать: $label", ChatPalette.ACCENT), kit.blank(), kit.text("/pnevents $word", ChatPalette.LABEL))),
+            else button.clickEvent(ClickEvent.runCommand("$root $word"))
+                .hoverEvent(kit.tooltip(kit.text("Нажмите, чтобы показать: $label", ChatPalette.ACCENT), kit.blank(), kit.text("$root $word", ChatPalette.LABEL))),
         )
     }
     return line
 }
 
 /** `« 1 … 4 [5] 6 … 12 »`: arrows and a window of page numbers, so a long journal is never one wall of rows. */
-private fun pager(kit: ChatKit, word: String, page: Int, pages: Int): Component {
+private fun pager(kit: ChatKit, word: String, page: Int, pages: Int, root: String): Component {
     fun link(target: Int, label: String): Component =
-        kit.option(label, "/pnevents $word $target", "Страница $target из $pages", ChatPalette.SOFT)
+        kit.option(label, "$root $word $target", "Страница $target из $pages", ChatPalette.SOFT)
     val shown = (listOf(1, pages) + (page - 1..page + 1)).filter { it in 1..pages }.distinct().sorted()
     var line = kit.text("  ")
     line = line.append(if (page > 1) link(page - 1, "‹ назад") else kit.text("[‹ назад]", ChatPalette.FAINT))
@@ -202,7 +201,7 @@ private fun pager(kit: ChatKit, word: String, page: Int, pages: Int): Component 
  * One event as a two-line block with a colored bar on its left edge: the source, the repeat count and how long
  * ago on the first line, the message on the second. [group] holds the repeats, newest first.
  */
-private fun row(kit: ChatKit, group: List<JournalRecord>, full: Boolean): Component {
+private fun row(kit: ChatKit, group: List<JournalRecord>, full: Boolean, root: String): Component {
     val record = group.first()
     val (tag, color) = levelStyle(record.level)
     val text = if (!full && record.message.length > CHAT_CHARS) record.message.take(CHAT_CHARS) + "…" else record.message
@@ -229,7 +228,7 @@ private fun row(kit: ChatKit, group: List<JournalRecord>, full: Boolean): Compon
     val second = kit.text(" ").append(secondBar).append(kit.text("   $text", ChatPalette.TEXT))
     return first.append(Component.newline()).append(second)
         .hoverEvent(kit.tooltip(*hover.toTypedArray()))
-        .clickEvent(ClickEvent.runCommand("/pnevents view ${record.fingerprint}"))
+        .clickEvent(ClickEvent.runCommand("$root view ${record.fingerprint}"))
 }
 
 /** The detail card of one event, or the timeline of its occurrences when [repeats] is set. */
@@ -240,6 +239,7 @@ private fun card(
     id: String?,
     repeats: Boolean,
     fullTrace: Boolean = false,
+    root: String,
 ) {
     val group = journal.read(limit = SCAN_LIMIT).filter { it.fingerprint == id }.sortedByDescending { it.timeMillis }
     if (id == null || group.isEmpty()) {
@@ -318,12 +318,12 @@ private fun card(
         lines += kit.blank()
     }
     val buttons = mutableListOf<Component?>(
-        kit.button("назад", "/pnevents", "К списку событий", ChatPalette.ACCENT),
-        if (repeats) kit.button("карточка", "/pnevents view $id", "Вернуться к карточке", ChatPalette.ACCENT)
-        else if (group.size > 1) kit.button("повторы", "/pnevents times $id", "Когда это повторялось", ChatPalette.ACCENT)
+        kit.button("назад", "$root", "К списку событий", ChatPalette.ACCENT),
+        if (repeats) kit.button("карточка", "$root view $id", "Вернуться к карточке", ChatPalette.ACCENT)
+        else if (group.size > 1) kit.button("повторы", "$root times $id", "Когда это повторялось", ChatPalette.ACCENT)
         else null,
-        if (traceHidden) kit.button("показать всё", "/pnevents full $id", "Стек вызовов целиком, ничего не свёрнуто", ChatPalette.ACCENT)
-        else if (fullTrace) kit.button("свернуть", "/pnevents view $id", "Снова свернуть служебные вызовы", ChatPalette.ACCENT)
+        if (traceHidden) kit.button("показать всё", "$root full $id", "Стек вызовов целиком, ничего не свёрнуто", ChatPalette.ACCENT)
+        else if (fullTrace) kit.button("свернуть", "$root view $id", "Снова свернуть служебные вызовы", ChatPalette.ACCENT)
         else null,
     )
     if (kit.reader.interactive) {

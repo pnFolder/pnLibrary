@@ -3,12 +3,10 @@ package org.pnfolder.pnlibrary.bukkit
 import org.bukkit.plugin.java.JavaPlugin
 import org.pnfolder.pnlibrary.api.currency.currencyProviders
 import org.pnfolder.pnlibrary.bukkit.api.BukkitPlatform
-import org.pnfolder.pnlibrary.bukkit.currency.CurrencyCommandExecutor
 import org.pnfolder.pnlibrary.bukkit.inventory.MenuService
 import org.pnfolder.pnlibrary.bukkit.inventory.MenuServiceImpl
 import org.pnfolder.pnlibrary.bukkit.server.ServerInfo
 import org.pnfolder.pnlibrary.core.runtime.PnLibraryRuntimeHost
-import org.pnfolder.pnlibrary.core.runtime.lifecycle.registerRuntimeCommand
 import org.pnfolder.pnlibrary.core.runtime.lifecycle.runtimeTaskScope
 
 /**
@@ -36,9 +34,6 @@ internal class BukkitRuntime(private val plugin: JavaPlugin) {
             integrations = optional
             plugin.server.pluginManager.registerEvents(optional, plugin)
             optional.start(runtime)
-            runtime.library.registerRuntimeCommand(
-                CurrencyCommandExecutor(plugin, runtime.library.currencyProviders).definition(),
-            )
         } catch (error: Throwable) {
             stop()
             throw error

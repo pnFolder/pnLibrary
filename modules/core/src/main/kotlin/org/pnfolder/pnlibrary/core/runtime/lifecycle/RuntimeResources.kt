@@ -13,6 +13,9 @@ internal interface RuntimeResources {
     val runtimeTasks: TaskScope
     fun registerRuntimeCommand(command: CommandDefinition): CommandRegistration
 
+    /** A shared command the platform puts under its own control command (`events`, `debug`), or `null`. */
+    fun mountableCommand(name: String): CommandDefinition?
+
     /** The notice for an administrator who has just joined: recent problems from the journal, or nothing. */
     fun journalJoinNotice(): List<Component>
 }
@@ -29,6 +32,12 @@ fun PnLibrary.journalJoinNotice(): List<Component> = runtimeResources().journalJ
 /** Registers a pnLibrary-owned command from core or a bundled native integration. */
 fun PnLibrary.registerRuntimeCommand(command: CommandDefinition): CommandRegistration =
     runtimeResources().registerRuntimeCommand(command)
+
+/**
+ * A shared command that this platform does not register on its own: the platform mounts it under its control
+ * command instead (`events` and `debug` under Bukkit `/pn`). `null` where the command is registered separately.
+ */
+fun PnLibrary.mountableCommand(name: String): CommandDefinition? = (this as? RuntimeResources)?.mountableCommand(name)
 
 /** Builds a pnLibrary-owned command; consumer plugins use ModuleContext.registerCommand. */
 fun PnLibrary.registerRuntimeCommand(

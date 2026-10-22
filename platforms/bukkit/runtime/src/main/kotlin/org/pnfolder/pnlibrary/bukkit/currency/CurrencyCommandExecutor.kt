@@ -52,8 +52,7 @@ internal class CurrencyCommandExecutor(
     private val confirmations = CurrencyConfirmationStore()
 
     /** Builds the currency command tree with capability-aware permissions and suggestions. */
-    fun definition(): CommandDefinition = command("pncurrency") {
-        aliases("pncurrencies")
+    fun definition(): CommandDefinition = command("money") {
         executes(::executePortable)
         literal("list") {
             permission("pnlibrary.currency.list")
@@ -205,7 +204,7 @@ internal class CurrencyCommandExecutor(
         operation: String,
         call: (UUID, BigDecimal) -> CompletionStage<CurrencyResult>,
     ): Boolean {
-        if (args.size < 2) return error(sender, "Использование: /pncurrency ${currency.key} $operation <игрок> <сумма>")
+        if (args.size < 2) return error(sender, "Использование: /pn money ${currency.key} $operation <игрок> <сумма>")
         val target = playerId(args[0]) ?: return error(sender, "Игрок не найден: ${args[0]}")
         val amount = args[1].toBigDecimalOrNull() ?: return error(sender, "Неверная сумма: ${args[1]}")
         val ledger = currency.extension(CurrencyLedger::class.java)
@@ -222,7 +221,7 @@ internal class CurrencyCommandExecutor(
                 target = if (type == CurrencyTransactionType.DEBIT) null else CurrencyAccount(target),
                 actor = actor(sender),
                 service = "pnlibrary.command",
-                reason = "Command /pncurrency $operation",
+                reason = "Command /pn money $operation",
                 metadata = mapOf("requestedBy" to sender.name, "approval" to "console"),
             )).thenApply(::transactionResult)
         }
@@ -237,7 +236,7 @@ internal class CurrencyCommandExecutor(
         val execute = {
             ledger?.transact(CurrencyTransactionRequest(
                 CurrencyTransactionType.RESET, BigDecimal.ZERO, target = CurrencyAccount(target),
-                actor = actor(sender), service = "pnlibrary.command", reason = "Command /pncurrency reset",
+                actor = actor(sender), service = "pnlibrary.command", reason = "Command /pn money reset",
                 metadata = mapOf("requestedBy" to sender.name, "approval" to "console"),
             ))?.thenApply(::transactionResult) ?: currency.reset(target)
         }
@@ -248,7 +247,7 @@ internal class CurrencyCommandExecutor(
 
     private fun pay(sender: BukkitCommandSender, currency: Currency, args: List<String>): Boolean {
         val source = sender.native as? Player ?: return error(sender, "Переводить валюту может только игрок.")
-        if (args.size < 2) return error(sender, "Использование: /pncurrency ${currency.key} pay <игрок> <сумма>")
+        if (args.size < 2) return error(sender, "Использование: /pn money ${currency.key} pay <игрок> <сумма>")
         val target = playerId(args[0]) ?: return error(sender, "Игрок не найден: ${args[0]}")
         val amount = args[1].toBigDecimalOrNull() ?: return error(sender, "Неверная сумма: ${args[1]}")
         val ledger = currency.extension(CurrencyLedger::class.java)
@@ -346,7 +345,7 @@ internal class CurrencyCommandExecutor(
         val console = Bukkit.getConsoleSender()
         val kit = ChatKit(ChatReader.CONSOLE)
         val request = "${currency.key} · $description · запросил ${sender.name}"
-        val confirm = "Подтвердите в течение ${settings.confirmationTimeoutSeconds} с: /pncurrency confirm $token"
+        val confirm = "Подтвердите в течение ${settings.confirmationTimeoutSeconds} с: /pn money confirm $token"
         (kit.notice(ChatNotice(ChatTone.WARNING, "Операция с валютой ждёт подтверждения: $token", request)) +
             kit.notice(ChatNotice(ChatTone.INFO, confirm)))
             .forEach { console.sendMessage(LEGACY.serialize(it)) }
@@ -355,7 +354,7 @@ internal class CurrencyCommandExecutor(
 
     private fun confirm(sender: BukkitCommandSender, token: String?): Boolean {
         if (sender.native !is ConsoleCommandSender) return error(sender, "Подтверждать операции с валютой может только консоль сервера.")
-        if (token == null) return error(sender, "Использование: /pncurrency confirm <код>")
+        if (token == null) return error(sender, "Использование: /pn money confirm <код>")
         val operation = confirmations.take(token) ?: return error(sender, "Код подтверждения неверен или устарел.")
         if (operation.expiresAt < System.currentTimeMillis()) return error(sender, "Срок действия кода подтверждения истёк.")
         notify(
@@ -373,21 +372,21 @@ internal class CurrencyCommandExecutor(
     }
 
     private fun usage(sender: BukkitCommandSender, currency: Currency): Boolean =
-        notify(sender, ChatTone.WARNING, "Укажите действие.", "/pncurrency ${currency.key} <balance|add|take|set|reset|pay|history>")
+        notify(sender, ChatTone.WARNING, "Укажите действие.", "/pn money ${currency.key} <balance|add|take|set|reset|pay|history>")
 
     private fun help(sender: BukkitCommandSender): Boolean {
         val kit = kit(sender)
         val hints = kit.commandHints(
-            "/pncurrency list" to "список валют",
-            "/pncurrency <валюта> balance [игрок]" to "баланс",
-            "/pncurrency <валюта> pay <игрок> <сумма>" to "перевести игроку",
-            "/pncurrency <валюта> history [игрок]" to "последние операции",
-            "/pncurrency <валюта> add <игрок> <сумма>" to "начислить",
-            "/pncurrency <валюта> take <игрок> <сумма>" to "списать",
-            "/pncurrency <валюта> set <игрок> <сумма>" to "установить баланс",
-            "/pncurrency <валюта> reset <игрок>" to "обнулить баланс",
-            "/pncurrency confirm <код>" to "подтвердить операцию из консоли",
-            "/pncurrency cancel <код>" to "отменить операцию из консоли",
+            "/pn money list" to "список валют",
+            "/pn money <валюта> balance [игрок]" to "баланс",
+            "/pn money <валюта> pay <игрок> <сумма>" to "перевести игроку",
+            "/pn money <валюта> history [игрок]" to "последние операции",
+            "/pn money <валюта> add <игрок> <сумма>" to "начислить",
+            "/pn money <валюта> take <игрок> <сумма>" to "списать",
+            "/pn money <валюта> set <игрок> <сумма>" to "установить баланс",
+            "/pn money <валюта> reset <игрок>" to "обнулить баланс",
+            "/pn money confirm <код>" to "подтвердить операцию из консоли",
+            "/pn money cancel <код>" to "отменить операцию из консоли",
         )
         val intro = kit.note(if (kit.reader.interactive) "Нажмите на команду, чтобы вставить её в чат." else "Доступные действия зависят от прав.")
         kit.framed(listOf(kit.header("Валюты", kit.text("помощь", ChatPalette.LABEL)), intro, kit.blank()) + hints).forEach(sender::send)

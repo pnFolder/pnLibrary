@@ -28,8 +28,7 @@ class BukkitCurrencyCommandTest {
             currencies = EmptyCurrencies,
         ).definition()
 
-        assertEquals("pncurrency", definition.name)
-        assertEquals(setOf("pncurrencies"), definition.aliases)
+        assertEquals("money", definition.name)
         assertEquals(listOf("list", "confirm", "cancel"), definition.root.children.take(3).map { it.name })
         val currency = definition.root.children.single { it.kind == CommandNodeKind.ARGUMENT }
         assertEquals("currency", currency.name)
@@ -48,8 +47,8 @@ class BukkitCurrencyCommandTest {
         assertEquals("", messages.first())
         assertEquals("Валюты  помощь", messages[1])
         assertTrue("<<Команды>>" in messages.map { it.trim() }, messages.toString())
-        assertTrue("    /pncurrency list - список валют" in messages, messages.toString())
-        assertTrue(messages.any { it.contains("/pncurrency <валюта> pay <игрок> <сумма> - перевести игроку") })
+        assertTrue("    /pn money list - список валют" in messages, messages.toString())
+        assertTrue(messages.any { it.contains("/pn money <валюта> pay <игрок> <сумма> - перевести игроку") })
     }
 
     @Test
@@ -63,12 +62,12 @@ class BukkitCurrencyCommandTest {
         assertEquals(listOf("  ! Недостаточно прав.", "    Нужно право pnlibrary.currency.list"), run("list", permitted = false))
     }
 
-    /** Runs `/pncurrency` from the console and returns the replies as plain text. */
+    /** Runs `/pn money` from the console and returns the replies as plain text. */
     private fun run(vararg arguments: String, permitted: Boolean = true): List<String> {
         val console = ConsoleAudience(permitted)
         val sender = BukkitCommandSender(proxy(NativeCommandSender::class.java), console)
         CurrencyCommandExecutor(proxy(Plugin::class.java), EmptyCurrencies).definition().execution
-            .execute(CommandContext(sender, arguments.toList(), "pncurrency", arguments.last()))
+            .execute(CommandContext(sender, arguments.toList(), "money", arguments.last()))
             .toCompletableFuture().join()
         return console.messages.map { LegacyComponentSerializer.legacySection().serialize(it).replace(Regex("§."), "") }
     }

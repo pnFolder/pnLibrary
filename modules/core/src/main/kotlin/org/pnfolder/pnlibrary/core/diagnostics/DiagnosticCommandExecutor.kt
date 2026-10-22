@@ -10,7 +10,7 @@ import java.time.Clock
 import java.util.concurrent.ConcurrentHashMap
 
 /**
- * Runs the platform-independent `/pndebug` command flow.
+ * Runs the platform-independent `/pn debug` command flow.
  *
  * Platform adapters remain responsible for permissions, native command
  * registration, and message rendering. Parsing, cooldown, background report

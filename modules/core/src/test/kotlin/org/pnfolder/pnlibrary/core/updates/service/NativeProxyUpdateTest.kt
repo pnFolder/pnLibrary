@@ -61,7 +61,7 @@ class NativeProxyUpdateTest {
         Files.write(configuration, oldConfiguration.toByteArray())
         val startedAt = Instant.now()
 
-        val command = if (bukkit) "pn updates" else "pnupdate"
+        val command = if (bukkit) "pn updates" else "pn update"
         boot(fixture, velocity, "initial", bukkit).use { server ->
             server.command("$command list", "pnlibrary · $originalVersion")
             server.command("$command history", "История pnLibrary")

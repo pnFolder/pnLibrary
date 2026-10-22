@@ -9,9 +9,16 @@ import java.util.concurrent.ConcurrentHashMap
 
 /** Describes the operation authorized by a single-use confirmation token. */
 internal enum class UpdateAction {
-    DOWNLOAD,
+    /** Restart the server to apply the staged plan. */
     RESTART,
+
+    /** Roll back the whole current update plan. */
+    PLAN_ROLLBACK,
+
+    /** Restore one saved backup set; the grant is bound to the backup id. */
     ROLLBACK,
+
+    /** Restore one saved backup set together with its configuration files. */
     ROLLBACK_CONFIGS,
 }
 
@@ -25,7 +32,7 @@ internal class UpdateConfirmationTokens(
     private val clock: () -> Instant = Instant::now,
 ) {
     /** Immutable authorization captured when a token is issued. */
-    private data class Grant(
+    internal data class Grant(
         val player: UUID,
         val plan: UUID,
         val revision: Long,
@@ -65,6 +72,20 @@ internal class UpdateConfirmationTokens(
             return false
         }
         return grants.remove(token, grant)
+    }
+
+    /**
+     * Consumes the grant of [token] for [player] whatever its action, and returns it, or `null` when the token is
+     * unknown, expired, already used or was issued to someone else.
+     */
+    fun redeem(token: String, player: UUID): Grant? {
+        val grant = grants[token] ?: return null
+        if (grant.player != player) return null
+        if (!clock().isBefore(grant.expiresAt)) {
+            grants.remove(token, grant)
+            return null
+        }
+        return grant.takeIf { grants.remove(token, it) }
     }
 
     /** Removes expired grants and returns the number still active. */

@@ -33,7 +33,7 @@ import java.util.UUID
 
 class UpdateCatalogViewTest {
     private val bukkit = UpdateCatalogRoutes("/pn updates", update = { "/pn update $it" }, check = "/pn check")
-    private val proxy = UpdateCatalogRoutes("/pnupdate")
+    private val proxy = UpdateCatalogRoutes("/pn update")
     private val now = Instant.parse("2026-10-17T12:00:00Z")
 
     // --- catalog -------------------------------------------------------------------------------------------------
@@ -105,7 +105,7 @@ class UpdateCatalogViewTest {
     fun `without an update route the available version is shown as plain text`() {
         val lines = catalog(listOf(snapshot("pnlibrary", UpdateState.UPDATE_AVAILABLE)), routes = proxy)
         assertEquals("  pnlibrary v1.0.0 → v1.1.0", plain(row(lines, "pnlibrary")))
-        assertFalse(lines.flatMap(::clicks).any { it.startsWith("/pn update ") })
+        assertFalse(lines.flatMap(::clicks).any { it == "/pn update pnlibrary" })
     }
 
     @Test
@@ -118,8 +118,8 @@ class UpdateCatalogViewTest {
         assertFalse(first.drop(2).any { plain(it).contains("current") })
         assertTrue(text(first).contains("страница 1 из 2 [Следующая]"))
         assertTrue(text(second).contains("страница 2 из 2 [Предыдущая]"))
-        assertTrue(first.flatMap(::clicks).contains("/pnupdate available 2"))
-        assertTrue(second.flatMap(::clicks).contains("/pnupdate available 1"))
+        assertTrue(first.flatMap(::clicks).contains("/pn update available 2"))
+        assertTrue(second.flatMap(::clicks).contains("/pn update available 1"))
         assertTrue(text(catalog(snapshots, Int.MAX_VALUE, false, proxy)).contains("На этой странице пусто"))
     }
 
@@ -444,14 +444,14 @@ class UpdateCatalogViewTest {
     @Test
     fun `a confirmation card offers one button, or the command to type when the reader cannot click`() {
         val card = UpdateCatalogView.confirmation("Перезапуск сервера", listOf("Игроков на сервере: 3."),
-            "[Подтвердить перезапуск]", "/pn restart abc", "Выполнить", bukkit)
+            "[Подтвердить перезапуск]", "/pn update confirm abc", "Выполнить", bukkit)
         assertEquals("Перезапуск сервера", plain(card[1]))
-        assertEquals(listOf("/pn restart abc"), card.flatMap(::clicks))
+        assertEquals(listOf("/pn update confirm abc"), card.flatMap(::clicks))
 
         val text = UpdateCatalogView.confirmation("Перезапуск сервера", listOf("Игроков на сервере: 3."),
-            "[Подтвердить перезапуск]", "/pn restart abc", "Выполнить", bukkit.copy(interactive = false))
+            "[Подтвердить перезапуск]", "/pn update confirm abc", "Выполнить", bukkit.copy(interactive = false))
         assertTrue(text.flatMap(::clicks).isEmpty())
-        assertEquals("  Подтвердить: /pn restart abc", plain(text.last()))
+        assertEquals("  Подтвердить: /pn update confirm abc", plain(text.last()))
     }
 
     @Test

@@ -67,7 +67,7 @@ Velocity требует 17, Paper Brigadier и FastStats для Velocity тре�
 | `distribution` | сборка jar-файлов и офлайн-установщика обновлений |
 | `examples/acceptance-bukkit` | приёмочный плагин на Java |
 | `tools/release`, `tools/api` | скрипты, которые запускает CI: выпуск релиза и проверка поколения API |
-| `tools/support` | `decode_pnsupport.py`: расшифровка отчётов `/pndebug` |
+| `tools/support` | `decode_pnsupport.py`: расшифровка отчётов `/pn debug` |
 
 ## Пакеты `core`
 
@@ -75,7 +75,7 @@ Velocity требует 17, Paper Brigadier и FastStats для Velocity тре�
 |---|---|
 | `core.runtime` | запуск рантайма (`PnLibraryLauncher`), жизненный цикл, `config.yml`, часовой пояс |
 | `core.commands` | дерево команд, разбор аргументов, пять уровней ответа на ошибки |
-| `core.journal` | журнал событий `/pnevents` и сводка ошибок при входе |
+| `core.journal` | журнал событий `/pn events` и сводка ошибок при входе |
 | `core.observability`, `core.diagnostics`, `core.logging` | «чёрный ящик», отчёты для поддержки, логи |
 | `core.upload` | загрузка зашифрованных отчётов |
 | `core.updates.catalog` | страницы и команды каталога обновлений |

@@ -26,9 +26,11 @@ import java.util.concurrent.atomic.AtomicBoolean
 import org.pnfolder.pnlibrary.api.commands.CommandSender as Reply
 
 /**
- * The `/pn` update flow: status, check, stage, confirm, rollback, and restart.
+ * The `/pn` update flow: status, check, stage, rollback, restart, and the one confirmation they share.
  *
- * Destructive steps require a player-bound confirmation token; asynchronous results are delivered on the server thread.
+ * Rollback and restart are asked for first and happen on `/pn update confirm <token>`: the token says which of
+ * them it grants, so there is a single confirmation command. A token belongs to the player (or the console) that
+ * asked, works once and expires; asynchronous results are delivered on the server thread.
  */
 internal class BukkitUpdateFlow(
     private val plugin: Plugin,
@@ -51,39 +53,42 @@ internal class BukkitUpdateFlow(
         }
     }
 
-    /** Asks to confirm, then prepares exactly the saved transaction for the next restart. */
+    /** Asks to confirm a rollback to one saved backup set; the confirmation prepares it for the next restart. */
     fun rollbackSaved(context: CommandContext, restoreConfigurations: Boolean = false) {
         val reply = context.sender
         if (!replies.ready(reply)) return
         val native = (reply as? BukkitCommandSender)?.native ?: return
         val id = runCatching { UUID.fromString(context.get<String>("transaction")) }.getOrNull()
             ?: return replies.say(reply, ChatTone.FAILURE, "Некорректный ID резервного набора.")
-        val confirmation = if (context.contains("confirmation")) context.get<String>("confirmation") else null
         val action = if (restoreConfigurations) UpdateAction.ROLLBACK_CONFIGS else UpdateAction.ROLLBACK
-        if (confirmation == null) {
-            val token = if (native is Player) tokens.issue(native.uniqueId, id, 0, action, CONFIRMATION_TIME) else "confirm"
-            replies.confirm(
-                reply,
-                "Откат к резервному набору",
-                listOf(
-                    if (restoreConfigurations) "Вернутся сохранённые JAR и выбранные конфигурации." else "Вернутся сохранённые JAR, конфигурации не изменятся.",
-                    "Применится после полного перезапуска сервера.",
-                ),
-                "[Подтвердить откат]",
-                BukkitControlCommand.ROUTES.rollback(id, restoreConfigurations) + " $token",
-            )
-            return
-        }
-        val confirmed = if (native is Player) tokens.consume(confirmation, native.uniqueId, id, 0, action)
-            else reply.isConsole && confirmation == "confirm"
-        if (!confirmed) return replies.say(reply, ChatTone.FAILURE, "Подтверждение отката недействительно или истекло.")
-        library.updates.rollback(id, restoreConfigurations, replies.updateActor(native)).whenComplete { _, error ->
-            replies.onServerThread {
-                if (error != null) replies.fail(reply, "Не удалось подготовить откат", error)
-                else replies.say(reply, ChatTone.SUCCESS, "Резервный набор подготовлен.", "Полностью перезапустите сервер, чтобы применить его.")
-            }
-        }
+        askToConfirm(
+            native, reply, id, 0, action,
+            "Откат к резервному набору",
+            listOf(
+                if (restoreConfigurations) "Вернутся сохранённые JAR и выбранные конфигурации." else "Вернутся сохранённые JAR, конфигурации не изменятся.",
+                "Применится после полного перезапуска сервера.",
+            ),
+            "[Подтвердить откат]",
+        )
     }
+
+    /** Shows the confirmation card for [action] with a fresh token and the command that redeems it. */
+    private fun askToConfirm(
+        native: CommandSender,
+        reply: Reply,
+        plan: UUID,
+        revision: Long,
+        action: UpdateAction,
+        title: String,
+        lines: List<String>,
+        label: String,
+    ) {
+        val token = tokens.issue(identityOf(native), plan, revision, action, CONFIRMATION_TIME)
+        replies.confirm(reply, title, lines, label, BukkitControlCommand.confirmCommand(token))
+    }
+
+    /** A player's own id, or one fixed id for the console, so that both get tokens only they can use. */
+    private fun identityOf(sender: CommandSender): UUID = (sender as? Player)?.uniqueId ?: CONSOLE_ID
 
     // --- status ------------------------------------------------------------------------------------------------
 
@@ -175,57 +180,25 @@ internal class BukkitUpdateFlow(
         }
     }
 
-    /** Consumes a player-bound confirmation before staging the update plan. */
-    fun confirmUpdate(sender: CommandSender, reply: Reply, token: String) {
-        if (sender !is Player || !sender.hasPermission("pnlibrary.updates.download")) {
-            return replies.say(reply, ChatTone.FAILURE, "Это подтверждение недоступно.")
-        }
-        val plan = library.updates.currentPlan().orElse(null)
-        if (plan == null || !tokens.consume(token, sender.uniqueId, plan.id, plan.revision, UpdateAction.DOWNLOAD)) {
-            return replies.say(reply, ChatTone.FAILURE, "Подтверждение устарело или уже использовано.")
-        }
-        library.updates.stage(plan.id, replies.updateActor(sender)).whenComplete { staged, error ->
-            replies.onServerThread {
-                if (error != null) replies.fail(reply, "Не удалось подготовить обновление", error)
-                else replies.say(reply, ChatTone.SUCCESS, "План обновления проверен и подготовлен.", "План: ${staged.id}")
-            }
-        }
-    }
+    // --- rollback, restart and the confirmation ------------------------------------------------------------------
 
-    // --- rollback and restart ----------------------------------------------------------------------------------
-
-    /** Validates permissions and confirmation before staging a rollback of the whole current plan. */
-    fun rollbackUpdate(sender: CommandSender, reply: Reply, token: String?) {
+    /** Asks to confirm a rollback of the whole current update plan. */
+    fun rollbackUpdate(sender: CommandSender, reply: Reply) {
         if (!sender.hasPermission("pnlibrary.updates.rollback")) {
             return replies.say(reply, ChatTone.FAILURE, "Недостаточно прав для отката обновлений.")
         }
         val plan = library.updates.currentPlan().orElse(null)
             ?: return replies.say(reply, ChatTone.WARNING, "Нет плана обновления, который можно откатить.")
-        if (sender is Player && token == null) {
-            val issued = tokens.issue(sender.uniqueId, plan.id, plan.revision, UpdateAction.ROLLBACK, CONFIRMATION_TIME)
-            replies.confirm(
-                reply,
-                "Откат обновления",
-                listOf("Откатится весь связанный план обновления, а не один плагин.", "Предыдущие JAR применятся после перезапуска."),
-                "[Подтвердить откат]",
-                "/pn update-rollback $issued",
-            )
-            return
-        }
-        if (sender is Player && !tokens.consume(token.orEmpty(), sender.uniqueId, plan.id, plan.revision, UpdateAction.ROLLBACK)) {
-            return replies.say(reply, ChatTone.FAILURE, "Подтверждение отката истекло или уже использовано.")
-        }
-        library.updates.rollback(replies.updateActor(sender)).whenComplete { _, error ->
-            replies.onServerThread {
-                if (error != null) replies.fail(reply, "Не удалось подготовить откат", error)
-                else replies.say(reply, ChatTone.SUCCESS, "Предыдущие версии плагинов подготовлены.", "Полностью перезапустите сервер.")
-            }
-        }
+        askToConfirm(
+            sender, reply, plan.id, plan.revision, UpdateAction.PLAN_ROLLBACK,
+            "Откат обновления",
+            listOf("Откатится весь связанный план обновления, а не один плагин.", "Предыдущие JAR применятся после перезапуска."),
+            "[Подтвердить откат]",
+        )
     }
 
-    /** Validates the staged plan and a player confirmation before requesting restart. */
-    @Suppress("DEPRECATION")
-    fun handleRestart(sender: CommandSender, reply: Reply, supplied: String?) {
+    /** Asks to confirm the restart that applies the staged plan. */
+    fun restartUpdate(sender: CommandSender, reply: Reply) {
         if (!sender.hasPermission("pnlibrary.updates.restart")) {
             return replies.say(reply, ChatTone.FAILURE, "Недостаточно прав для перезапуска.")
         }
@@ -236,23 +209,60 @@ internal class BukkitUpdateFlow(
         if (sender !is Player) {
             return replies.say(reply, ChatTone.WARNING, "Из консоли перезапускайте сервер его обычной командой.")
         }
-        if (supplied == null) {
-            val token = tokens.issue(sender.uniqueId, plan.id, plan.revision, UpdateAction.RESTART, CONFIRMATION_TIME)
-            replies.confirm(
-                reply,
-                "Перезапуск сервера",
-                listOf("Игроков на сервере: ${Bukkit.getOnlinePlayers().size}.", "Подготовленные обновления применятся после перезапуска."),
-                "[Подтвердить перезапуск]",
-                "/pn restart $token",
-            )
-            return
+        askToConfirm(
+            sender, reply, plan.id, plan.revision, UpdateAction.RESTART,
+            "Перезапуск сервера",
+            listOf("Игроков на сервере: ${Bukkit.getOnlinePlayers().size}.", "Подготовленные обновления применятся после перезапуска."),
+            "[Подтвердить перезапуск]",
+        )
+    }
+
+    /** Runs what [token] grants: a rollback of the plan, a rollback to a saved backup set, or the restart. */
+    fun confirm(sender: CommandSender, reply: Reply, token: String) {
+        val grant = tokens.redeem(token, identityOf(sender))
+            ?: return replies.say(reply, ChatTone.FAILURE, "Подтверждение недействительно, истекло или уже использовано.")
+        when (grant.action) {
+            UpdateAction.PLAN_ROLLBACK -> runPlanRollback(sender, reply, grant)
+            UpdateAction.RESTART -> runRestart(sender, reply, grant)
+            UpdateAction.ROLLBACK -> runSavedRollback(sender, reply, grant.plan, restoreConfigurations = false)
+            UpdateAction.ROLLBACK_CONFIGS -> runSavedRollback(sender, reply, grant.plan, restoreConfigurations = true)
         }
-        if (!tokens.consume(supplied, sender.uniqueId, plan.id, plan.revision, UpdateAction.RESTART)) {
-            return replies.say(reply, ChatTone.FAILURE, "Подтверждение истекло. Выполните /pn restart ещё раз.")
+    }
+
+    private fun planIsStill(grant: UpdateConfirmationTokens.Grant): Boolean =
+        library.updates.currentPlan().orElse(null)?.let { it.id == grant.plan && it.revision == grant.revision } == true
+
+    private fun runPlanRollback(sender: CommandSender, reply: Reply, grant: UpdateConfirmationTokens.Grant) {
+        if (!sender.hasPermission("pnlibrary.updates.rollback")) {
+            return replies.say(reply, ChatTone.FAILURE, "Недостаточно прав для отката обновлений.")
         }
-        if (library.updates.currentPlan().orElse(null)?.let { it.id != plan.id || it.revision != plan.revision } != false) {
-            return replies.say(reply, ChatTone.FAILURE, "План обновления изменился; подтвердите заново.")
+        if (!planIsStill(grant)) return replies.say(reply, ChatTone.FAILURE, "План обновления изменился; запросите откат заново.")
+        library.updates.rollback(replies.updateActor(sender)).whenComplete { _, error ->
+            replies.onServerThread {
+                if (error != null) replies.fail(reply, "Не удалось подготовить откат", error)
+                else replies.say(reply, ChatTone.SUCCESS, "Предыдущие версии плагинов подготовлены.", "Полностью перезапустите сервер.")
+            }
         }
+    }
+
+    private fun runSavedRollback(sender: CommandSender, reply: Reply, id: UUID, restoreConfigurations: Boolean) {
+        if (!sender.hasPermission("pnlibrary.updates.rollback")) {
+            return replies.say(reply, ChatTone.FAILURE, "Недостаточно прав для отката обновлений.")
+        }
+        library.updates.rollback(id, restoreConfigurations, replies.updateActor(sender)).whenComplete { _, error ->
+            replies.onServerThread {
+                if (error != null) replies.fail(reply, "Не удалось подготовить откат", error)
+                else replies.say(reply, ChatTone.SUCCESS, "Резервный набор подготовлен.", "Полностью перезапустите сервер, чтобы применить его.")
+            }
+        }
+    }
+
+    @Suppress("DEPRECATION")
+    private fun runRestart(sender: CommandSender, reply: Reply, grant: UpdateConfirmationTokens.Grant) {
+        if (!sender.hasPermission("pnlibrary.updates.restart")) {
+            return replies.say(reply, ChatTone.FAILURE, "Недостаточно прав для перезапуска.")
+        }
+        if (!planIsStill(grant)) return replies.say(reply, ChatTone.FAILURE, "План обновления изменился; запросите перезапуск заново.")
         Bukkit.broadcastMessage(RESTART_NOTICE)
         Bukkit.getScheduler().runTaskLater(plugin, Runnable { Bukkit.spigot().restart() }, RESTART_DELAY_TICKS)
     }
@@ -265,6 +275,9 @@ internal class BukkitUpdateFlow(
         )
 
         val CONFIRMATION_TIME: Duration = Duration.ofSeconds(30)
+
+        /** The identity the console's tokens are bound to. */
+        val CONSOLE_ID: UUID = UUID(0L, 0L)
         const val PROGRESS_TICKS = 100L
         const val TIMEOUT_TICKS = 1_200L
         const val RESTART_DELAY_TICKS = 40L

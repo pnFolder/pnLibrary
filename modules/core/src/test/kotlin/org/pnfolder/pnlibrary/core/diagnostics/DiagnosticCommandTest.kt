@@ -30,11 +30,10 @@ class DiagnosticCommandTest {
         val definition = diagnosticCommand(library)
 
         val suggestions = definition.suggestions.suggest(
-            CommandContext(TestSender(), emptyList(), "pndebug", "example"),
+            CommandContext(TestSender(), emptyList(), "debug", "example"),
         ).toCompletableFuture().join()
 
-        assertEquals("pndebug", definition.name)
-        assertEquals(setOf("pnlib"), definition.aliases)
+        assertEquals("debug", definition.name)
         assertEquals("pnlibrary.debug", definition.permission)
         assertTrue(definition.consoleBypassesPermission)
         assertEquals(listOf("example.pnclans"), suggestions)
@@ -46,7 +45,7 @@ class DiagnosticCommandTest {
         val definition = diagnosticCommand(library)
 
         val suggestions = definition.suggestions.suggest(
-            CommandContext(TestSender(), emptyList(), "pndebug", ""),
+            CommandContext(TestSender(), emptyList(), "debug", ""),
         ).toCompletableFuture().join()
 
         assertEquals(
@@ -62,11 +61,11 @@ class DiagnosticCommandTest {
         val definition = diagnosticCommand(library)
 
         definition.execution.execute(
-            CommandContext(sender, listOf("--unknown"), "pndebug", "--unknown"),
+            CommandContext(sender, listOf("--unknown"), "debug", "--unknown"),
         ).toCompletableFuture().join()
 
         assertEquals(
-            listOf("  ! Неизвестные аргументы.", "    /pndebug [all|плагин] [--full|--config|--logs] [--local]"),
+            listOf("  ! Неизвестные аргументы.", "    /pn debug [all|плагин] [--full|--config|--logs] [--local]"),
             sender.messages.map(PlainTextComponentSerializer.plainText()::serialize),
         )
     }

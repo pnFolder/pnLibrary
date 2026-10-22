@@ -4,21 +4,18 @@ import net.kyori.adventure.text.Component
 import org.pnfolder.pnlibrary.api.commands.ArgumentType
 import org.pnfolder.pnlibrary.api.commands.CommandContext
 import org.pnfolder.pnlibrary.api.commands.CommandDefinition
-import org.pnfolder.pnlibrary.api.commands.CommandRegistration
 import org.pnfolder.pnlibrary.api.commands.command
 import org.pnfolder.pnlibrary.api.runtime.PnLibrary
 import org.pnfolder.pnlibrary.api.updates.UpdateActor
-import org.pnfolder.pnlibrary.core.runtime.lifecycle.registerRuntimeCommand
 import java.util.UUID
 
-/** Console-only update controls shared by both proxy platforms. */
+/**
+ * Console-only update controls shared by both proxy platforms, mounted as `/pn update` by [ProxyControlCommand].
+ */
 class ProxyUpdateCommand(private val library: PnLibrary) {
-    /** Registers the portable update command for this library runtime. */
-    fun register(): CommandRegistration = library.registerRuntimeCommand(definition())
-
     private val catalog = UpdateCatalogCommands(
         library = library,
-        routes = UpdateCatalogRoutes("/pnupdate"),
+        routes = UpdateCatalogRoutes("/pn update"),
         guard = { context ->
             context.sender.isConsole.also { allowed ->
                 if (!allowed) context.sender.send(Component.text("На прокси каталог обновлений доступен только из консоли."))
@@ -26,8 +23,8 @@ class ProxyUpdateCommand(private val library: PnLibrary) {
         },
     )
 
-    /** Builds the portable `pnupdate` command definition. */
-    fun definition(): CommandDefinition = command("pnupdate") {
+    /** Builds the portable update command definition; it is mounted under `/pn` as `update`. */
+    fun definition(): CommandDefinition = command("update") {
         permission("pnlibrary.updates.console")
         executes { execute(it, "plan") }
         literal("plan") { executes { execute(it, "plan") } }
@@ -83,7 +80,7 @@ class ProxyUpdateCommand(private val library: PnLibrary) {
         if (id == null) { context.sender.send(Component.text("Неверный ID набора.")); return }
         if (!confirmed) {
             val option = if (restoreConfigurations) " configs" else ""
-            context.sender.send(Component.text("Вернуть сохранённые JAR${if (restoreConfigurations) " вместе с выбранными файлами конфигурации" else " без изменения конфигураций"}: /pnupdate rollback $id$option confirm"))
+            context.sender.send(Component.text("Вернуть сохранённые JAR${if (restoreConfigurations) " вместе с выбранными файлами конфигурации" else " без изменения конфигураций"}: /pn update rollback $id$option confirm"))
             return
         }
         library.updates.rollback(id, restoreConfigurations, actor(context)).whenComplete { _, error ->
