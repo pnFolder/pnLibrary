@@ -8,12 +8,12 @@ import java.util.List;
 public final class ConsoleCard {
     private final ConsoleTheme theme;
     private final String title;
-    private final List<String> lines;
+    private final List<Object> lines;
 
     private ConsoleCard(Builder builder) {
         this.theme = builder.theme;
         this.title = builder.title;
-        this.lines = Collections.unmodifiableList(new ArrayList<String>(builder.lines));
+        this.lines = Collections.unmodifiableList(new ArrayList<Object>(builder.lines));
     }
 
     /**
@@ -31,10 +31,52 @@ public final class ConsoleCard {
         List<String> result = new ArrayList<String>();
         result.add("");
         result.add(theme.border + "          ━━━━━━━━━━━ " + title + " ━━━━━━━━━━━" + theme.reset);
-        result.addAll(lines);
+        for (int index = 0; index < lines.size(); index++) {
+            Object line = lines.get(index);
+            if (line instanceof Row) result.add(((Row) line).render(theme, connector(index)));
+            else result.add((String) line);
+        }
         result.add(theme.border + "          ━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━" + theme.reset);
         result.add("");
         return Collections.unmodifiableList(result);
+    }
+
+    private static String pad(String value, int width) {
+        String checked = value;
+        StringBuilder result = new StringBuilder(checked);
+        while (result.length() < width) result.append(' ');
+        if (result.length() >= width) result.append("  ");
+        return result.toString();
+    }
+
+    /** A detail or item row whose connector depends on its neighbours, so a group can never be drawn out of order. */
+    private static final class Row {
+        private final boolean detail;
+        private final String label;
+        private final String value;
+
+        private Row(boolean detail, String label, String value) {
+            this.detail = detail;
+            this.label = label;
+            this.value = value;
+        }
+
+        private String render(ConsoleTheme theme, String connector) {
+            if (!detail) return theme.muted + "              " + connector + " " + label + theme.reset;
+            return theme.muted + "            " + connector + " " + theme.text + pad(label, 22)
+                    + theme.accent + value + theme.reset;
+        }
+    }
+
+    /** The connector of the row at {@code index}: top, middle or bottom of its run of rows of the same kind. */
+    private String connector(int index) {
+        Row row = (Row) lines.get(index);
+        boolean before = index > 0 && lines.get(index - 1) instanceof Row && ((Row) lines.get(index - 1)).detail == row.detail;
+        boolean after = index + 1 < lines.size() && lines.get(index + 1) instanceof Row
+                && ((Row) lines.get(index + 1)).detail == row.detail;
+        if (!after) return "└";
+        if (!row.detail) return "├"; // the section heading above is the top of an item group
+        return before ? "├" : "┌";
     }
 
     /** Sends this card.
@@ -48,7 +90,7 @@ public final class ConsoleCard {
     public static final class Builder {
         private final ConsoleTheme theme;
         private final String title;
-        private final List<String> lines = new ArrayList<String>();
+        private final List<Object> lines = new ArrayList<Object>();
 
         private Builder(ConsoleTheme theme, String title) {
             if (theme == null) throw new IllegalArgumentException("theme is required");
@@ -102,8 +144,7 @@ public final class ConsoleCard {
          * @return this builder
          */
         public Builder firstDetail(String label, Object value) {
-            lines.add(theme.muted + "            ┌ " + theme.text + pad(label, 22)
-                    + theme.accent + String.valueOf(value) + theme.reset);
+            lines.add(new Row(true, text(label), String.valueOf(value)));
             return this;
         }
 
@@ -115,8 +156,7 @@ public final class ConsoleCard {
          * @return this builder
          */
         public Builder detail(String label, Object value) {
-            lines.add(theme.muted + "            ├ " + theme.text + pad(label, 22)
-                    + theme.accent + String.valueOf(value) + theme.reset);
+            lines.add(new Row(true, text(label), String.valueOf(value)));
             return this;
         }
 
@@ -128,8 +168,7 @@ public final class ConsoleCard {
          * @return this builder
          */
         public Builder lastDetail(String label, Object value) {
-            lines.add(theme.muted + "            └ " + theme.text + pad(label, 22)
-                    + theme.accent + String.valueOf(value) + theme.reset);
+            lines.add(new Row(true, text(label), String.valueOf(value)));
             return this;
         }
 
@@ -163,7 +202,7 @@ public final class ConsoleCard {
          * @return this builder
          */
         public Builder item(String value) {
-            lines.add(theme.muted + "              ├ " + text(value) + theme.reset);
+            lines.add(new Row(false, text(value), ""));
             return this;
         }
 
@@ -174,7 +213,7 @@ public final class ConsoleCard {
          * @return this builder
          */
         public Builder lastItem(String value) {
-            lines.add(theme.muted + "              └ " + text(value) + theme.reset);
+            lines.add(new Row(false, text(value), ""));
             return this;
         }
 
@@ -206,7 +245,7 @@ public final class ConsoleCard {
         public ConsoleCard build() { return new ConsoleCard(this); }
 
         private void appendTree(ConsoleTree node, String prefix, boolean last, boolean root) {
-            String connector = root ? "┌ " : (last ? "└ " : "├ ");
+            String connector = root ? (node.children().isEmpty() ? "└ " : "┌ ") : (last ? "└ " : "├ ");
             lines.add(theme.muted + "            " + prefix + connector + theme.text + node.text() + theme.reset);
             List<ConsoleTree> children = node.children();
             for (int index = 0; index < children.size(); index++) {
@@ -220,12 +259,5 @@ public final class ConsoleCard {
             return value;
         }
 
-        private static String pad(String value, int width) {
-            String checked = text(value);
-            StringBuilder result = new StringBuilder(checked);
-            while (result.length() < width) result.append(' ');
-            if (result.length() >= width) result.append("  ");
-            return result.toString();
-        }
     }
 }

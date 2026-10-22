@@ -65,4 +65,32 @@ class ConsoleCardTest {
         assertTrue(lines.stream().anyMatch(line -> line.matches(".*Выбранный канал\\s+стабильный канал.*")));
         assertTrue(lines.stream().anyMatch(line -> line.matches(".*Установленная версия\\s+2.2.0.*")));
     }
+
+    @Test
+    void connectorsFollowThePositionInTheGroupWhateverMethodAddedTheRow() {
+        List<String> lines = ConsoleCard.builder(ConsoleTheme.plain(), "STATUS")
+            .detail("Первая", "1").detail("Вторая", "2").lastDetail("Третья", "3")
+            .blank()
+            .section("Причина").item("Один").lastItem("Два")
+            .blank()
+            .detail("Одна", "1")
+            .build().render();
+
+        assertTrue(lines.stream().anyMatch(line -> line.contains("┌ Первая")));
+        assertTrue(lines.stream().anyMatch(line -> line.contains("├ Вторая")));
+        assertTrue(lines.stream().anyMatch(line -> line.contains("└ Третья")));
+        assertTrue(lines.stream().anyMatch(line -> line.contains("├ Один")));
+        assertTrue(lines.stream().anyMatch(line -> line.contains("└ Два")));
+        assertTrue(lines.stream().anyMatch(line -> line.contains("└ Одна")), "a single row closes its own group");
+    }
+
+    @Test
+    void aTreeWithoutChildrenIsNotDrawnAsTheTopOfAnOpenBranch() {
+        List<String> lines = ConsoleCard.builder(ConsoleTheme.plain(), "POLICY")
+            .tree(ConsoleTree.builder("Проверка пройдена").build())
+            .build().render();
+
+        assertTrue(lines.stream().anyMatch(line -> line.contains("└ Проверка пройдена")));
+        assertTrue(lines.stream().noneMatch(line -> line.contains("┌ Проверка пройдена")));
+    }
 }

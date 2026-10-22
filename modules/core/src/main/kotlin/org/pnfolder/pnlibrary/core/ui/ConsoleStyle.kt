@@ -28,7 +28,7 @@ object ConsoleStyle {
     /** Restores the console's default style. */
     @JvmField val RESET: String = "${LegacyComponentSerializer.SECTION_CHAR}r"
 
-    /** Every card: lavender borders, sky-blue labels, white values and gray connectors. */
+    /** Every card: lavender borders, white labels and text, gray connectors; values follow the tone. */
     @JvmField val THEME: ConsoleTheme = theme(ChatPalette.TEXT)
 
     /** [THEME] whose mascot, values and status line carry the [tone]'s color, such as green for success. */
@@ -44,7 +44,7 @@ object ConsoleStyle {
     fun paint(text: String, color: TextColor): String = color(color) + text + RESET
 
     private fun theme(accent: TextColor): ConsoleTheme =
-        ConsoleTheme(color(ChatPalette.ACCENT), color(accent), color(ChatPalette.LABEL), color(ChatPalette.SOFT), RESET)
+        ConsoleTheme(color(ChatPalette.ACCENT), color(accent), color(ChatPalette.TEXT), color(ChatPalette.SOFT), RESET)
 
     /** The style sequence the serializer writes in front of a one-character probe. */
     private fun format(probe: Component): String = LEGACY.serialize(probe).removeSuffix(PROBE)
