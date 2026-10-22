@@ -58,7 +58,8 @@ public final class PnLibraryBootstrap {
     public static boolean ensureInstalled(JavaPlugin plugin, BootstrapOptions options) {
         LibraryInstaller installer = installer(plugin, options);
         Plugin installed = plugin.getServer().getPluginManager().getPlugin(BootstrapPlatform.BUKKIT.pluginName());
-        if (installed != null) return installer.checkInstalled(versionOf(installed));
+        // While the server loads plugins, pnLibrary may be loaded and not yet enabled; that is normal here.
+        if (installed != null) return installer.checkInstalled(installed.getDescription().getVersion());
         LibraryInstaller.Placement placement = null;
         try {
             placement = installer.download(plugin.getDataFolder().getParentFile().toPath());

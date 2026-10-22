@@ -4,3 +4,4 @@ main: org.pnfolder.demo.BootstrapDemoPlugin
 api-version: '1.13'
 author: pnFolder
 description: Installs pnLibrary on its own when the server does not have it
+softdepend: [pnLibrary]

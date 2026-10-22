@@ -14,7 +14,7 @@ public final class BootstrapDemoPlugin extends JavaPlugin {
 
     @Override
     public void onEnable() {
-        if (!ready) {
+        if (!ready || !getServer().getPluginManager().isPluginEnabled("pnLibrary")) {
             getServer().getPluginManager().disablePlugin(this);
             return;
         }
