@@ -22,6 +22,7 @@ internal class VelocityRuntime(
     private val dataDirectory: Path,
 ) {
     private var runtimeHost: PnLibraryRuntimeHost? = null
+    private var playerEvents: VelocityPlayerEvents? = null
 
     /**
      * Starts the shared runtime when Velocity announces proxy initialization.
@@ -38,13 +39,17 @@ internal class VelocityRuntime(
             dataFolder = dataDirectory,
             logger = logger,
         )
-        runtimeHost = PnLibraryRuntimeHost.launchPlatform(
+        val started = PnLibraryRuntimeHost.launchPlatform(
             owner,
             adapter,
             VelocityPlatform::class.java,
             VelocityPlatformImpl(server),
             adapter::markReady,
         )
+        runtimeHost = started
+        val listener = VelocityPlayerEvents(started.library)
+        server.eventManager.register(owner, listener)
+        playerEvents = listener
     }
 
     /**
@@ -54,6 +59,8 @@ internal class VelocityRuntime(
      */
     @Suppress("UNUSED_PARAMETER")
     fun onShutdown(event: ProxyShutdownEvent) {
+        playerEvents?.let { runCatching { server.eventManager.unregisterListener(owner, it) } }
+        playerEvents = null
         val host = runtimeHost
         runtimeHost = null
         host?.close()
