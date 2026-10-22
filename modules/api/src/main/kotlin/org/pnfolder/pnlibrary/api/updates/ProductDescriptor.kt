@@ -1,5 +1,6 @@
 package org.pnfolder.pnlibrary.api.updates
 
+import org.pnfolder.pnlibrary.api.runtime.PnLibraryIdentity
 import org.pnfolder.pnlibrary.api.version.ApiVersionRange
 import org.pnfolder.pnlibrary.api.version.PnLibraryApi
 import org.pnfolder.pnlibrary.api.version.SemanticVersion
@@ -83,6 +84,6 @@ class ProductDescriptor private constructor(
             .version(version)
             .pnLibraryApi(PnLibraryApi.VERSION, PnLibraryApi.VERSION)
             .build()
-            .bindTo("pnlibrary")
+            .bindTo(PnLibraryIdentity.PRODUCT_ID)
     }
 }

@@ -4,7 +4,7 @@ plugins {
     alias(libs.plugins.maven.publish)
 }
 
-base { archivesName = "pnLibrary-minecraft-localization" }
+base { archivesName = "${rootProject.property("pnlibrary.name")}-minecraft-localization" }
 
 dependencies {
     api(project(":modules:common"))

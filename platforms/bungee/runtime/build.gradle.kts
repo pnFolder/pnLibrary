@@ -5,7 +5,7 @@ plugins {
     `java-library`
 }
 
-base { archivesName = "pnLibrary-bungee" }
+base { archivesName = "${rootProject.property("pnlibrary.name")}-bungee" }
 
 dependencies {
     implementation(project(":modules:api"))

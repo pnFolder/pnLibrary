@@ -18,6 +18,7 @@ import org.pnfolder.pnlibrary.api.platform.PlatformProvider
 import org.pnfolder.pnlibrary.api.plugin.PluginRegistry
 import org.pnfolder.pnlibrary.api.runtime.PnLibrary
 import org.pnfolder.pnlibrary.api.runtime.PnLibraryConfig
+import org.pnfolder.pnlibrary.api.runtime.PnLibraryIdentity
 import org.pnfolder.pnlibrary.api.runtime.PnLibraryProvider
 import org.pnfolder.pnlibrary.api.services.ServiceManager
 import org.pnfolder.pnlibrary.api.tasks.TaskScope
@@ -301,7 +302,7 @@ internal class PnLibraryImpl(
             registry = metricsService,
             platform = platformIdentity,
             owner = owner,
-            warning = { message -> logging.logger(owner, "pnLibrary").warning(message) },
+            warning = { message -> logging.logger(owner, PnLibraryIdentity.NAME).warning(message) },
         ).start()
     }
 

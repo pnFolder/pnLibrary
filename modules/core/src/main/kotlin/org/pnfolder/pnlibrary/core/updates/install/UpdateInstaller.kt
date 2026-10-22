@@ -1,5 +1,6 @@
 package org.pnfolder.pnlibrary.core.updates.install
 
+import org.pnfolder.pnlibrary.api.runtime.PnLibraryIdentity
 import org.pnfolder.pnlibrary.api.updates.release.ProductChange
 import org.pnfolder.pnlibrary.api.updates.ProductId
 import org.pnfolder.pnlibrary.api.updates.backup.UpdateBackup
@@ -66,7 +67,7 @@ internal class UpdateInstaller(
         val changed = plan.changes.map { it.product }.toSet()
         val selections = registrations.filter { it.descriptor.id in changed }.mapNotNull { registration ->
             val selection = registration.request.configurationBackup
-                ?: libraryConfiguration.takeIf { registration.product == "pnlibrary" }
+                ?: libraryConfiguration.takeIf { registration.product == PnLibraryIdentity.PRODUCT_ID }
             selection?.let { registration.descriptor.id to it }
         }.toMap()
         val configurationSnapshot = configurations.capture(snapshot.id, selections)
@@ -162,7 +163,7 @@ internal class UpdateInstaller(
 
     private fun verifyPluginDownloadsAllowed(plan: UpdatePlan) {
         plan.changes
-            .filterNot { change -> change.product.value == "pnlibrary" }
+            .filterNot { change -> change.product.value == PnLibraryIdentity.PRODUCT_ID }
             .forEach { change ->
                 require(configuration.pluginUpdatesEnabled && change.product.value !in configuration.ignoredPlugins) {
                     "Загрузка плагина ${change.product} отключена политикой обновлений"

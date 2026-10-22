@@ -4,7 +4,7 @@ plugins {
     alias(libs.plugins.maven.publish)
 }
 
-base { archivesName = "pnLibrary-common" }
+base { archivesName = "${rootProject.property("pnlibrary.name")}-common" }
 
 dependencies {
     api(libs.kotlin.stdlib)

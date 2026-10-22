@@ -27,7 +27,7 @@ mavenPublishing {
     }
 }
 
-base { archivesName = "pnLibrary-bungee-api" }
+base { archivesName = "${rootProject.property("pnlibrary.name")}-bungee-api" }
 
 dependencies {
     api(project(":modules:api"))

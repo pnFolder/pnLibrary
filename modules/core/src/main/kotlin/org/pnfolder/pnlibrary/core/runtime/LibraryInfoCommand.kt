@@ -3,6 +3,7 @@ package org.pnfolder.pnlibrary.core.runtime
 import org.pnfolder.pnlibrary.api.commands.CommandDefinition
 import org.pnfolder.pnlibrary.api.commands.command
 import org.pnfolder.pnlibrary.api.runtime.PnLibrary
+import org.pnfolder.pnlibrary.api.runtime.PnLibraryIdentity
 import org.pnfolder.pnlibrary.api.version.PnLibraryApi
 import org.pnfolder.pnlibrary.api.chat.ChatKit
 import org.pnfolder.pnlibrary.api.chat.ChatPalette
@@ -24,7 +25,7 @@ internal fun libraryInfoCommand(
     executes { context ->
         val kit = ChatKit(ChatReader.of(context.sender))
         val rows = listOf(
-            kit.header("pnLibrary"),
+            kit.header(PnLibraryIdentity.NAME),
             kit.field("Версия", kit.text(version(), ChatPalette.TEXT)),
             kit.field("Платформа", kit.text("${identity.implementationName} (${identity.id})", ChatPalette.TEXT)),
             kit.field("Версия API", kit.text("${PnLibraryApi.VERSION}", ChatPalette.TEXT)),

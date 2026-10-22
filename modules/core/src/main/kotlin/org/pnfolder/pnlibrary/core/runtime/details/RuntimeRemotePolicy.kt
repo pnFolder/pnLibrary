@@ -5,6 +5,7 @@ import org.pnfolder.pnlibrary.api.plugin.ModuleId
 import org.pnfolder.pnlibrary.api.plugin.PluginMetadata
 import org.pnfolder.pnlibrary.api.remote.RemotePolicySettings
 import org.pnfolder.pnlibrary.api.runtime.PnLibrary
+import org.pnfolder.pnlibrary.api.runtime.PnLibraryIdentity
 import org.pnfolder.pnlibrary.common.jvm.JavaRuntime
 import org.pnfolder.pnlibrary.core.remote.RemotePolicyMonitor
 import org.pnfolder.pnlibrary.core.remote.RemotePolicyNoticeRenderer
@@ -36,8 +37,8 @@ internal object RuntimeRemotePolicy {
             try {
                 val details = platform.ownerDetails(owner)
                 val metadata = PluginMetadata(
-                    ModuleId.of("pnlibrary"), details["name"] ?: "pnLibrary", library.version,
-                    details["authors"] ?: "pnFolder", platform.type, platform.implementationName,
+                    ModuleId.of(PnLibraryIdentity.PRODUCT_ID), details["name"] ?: PnLibraryIdentity.NAME, library.version,
+                    details["authors"] ?: PnLibraryIdentity.ORGANIZATION, platform.type, platform.implementationName,
                     System.getProperty("java.version", "unknown"), JavaRuntime.feature,
                 )
                 RemotePolicyMonitor(platform, platform, RemotePolicyNoticeRenderer(platform)).start(

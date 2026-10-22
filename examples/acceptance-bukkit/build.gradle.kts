@@ -2,7 +2,7 @@ plugins {
     java
 }
 
-base { archivesName = "pnLibrary-acceptance" }
+base { archivesName = "${rootProject.property("pnlibrary.name")}-acceptance" }
 
 tasks.withType<JavaCompile>().configureEach {
     options.encoding = "UTF-8"

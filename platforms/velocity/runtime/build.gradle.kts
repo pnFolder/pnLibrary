@@ -6,7 +6,7 @@ plugins {
     `java-library`
 }
 
-base { archivesName = "pnLibrary-velocity" }
+base { archivesName = "${rootProject.property("pnlibrary.name")}-velocity" }
 
 dependencies {
     implementation(project(":modules:api"))

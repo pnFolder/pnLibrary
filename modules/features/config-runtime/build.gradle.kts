@@ -4,7 +4,7 @@ plugins {
     alias(libs.plugins.maven.publish)
 }
 
-base { archivesName = "pnLibrary-config" }
+base { archivesName = "${rootProject.property("pnlibrary.name")}-config" }
 
 dependencies {
     api(project(":modules:features:config-api"))

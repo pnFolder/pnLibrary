@@ -4,7 +4,7 @@ plugins {
     alias(libs.plugins.maven.publish)
 }
 
-base { archivesName = "pnLibrary-currency-api" }
+base { archivesName = "${rootProject.property("pnlibrary.name")}-currency-api" }
 
 dependencies {
     api(project(":modules:api"))

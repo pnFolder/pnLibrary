@@ -23,9 +23,9 @@ internal object BukkitConsoleStatusRenderer {
     /** Builds the console status card from registered update snapshots. */
     fun render(entries: List<UpdateRegistration>): List<String> {
         val card = ConsoleCard.builder(ConsoleStyle.THEME, "СОСТОЯНИЕ PNFOLDER")
-            .mascot("^.^", "pnLibrary", "библиотека платформы")
+            .mascot("^.^", PnLibraryIdentity.NAME, "библиотека платформы")
             .blank()
-            .firstDetail("Продукт", "pnLibrary")
+            .firstDetail("Продукт", PnLibraryIdentity.NAME)
             .detail("Назначение", "общая библиотека pnFolder")
             .detail("Платформа", "Bukkit / Paper")
             .detail("Ядро", Bukkit.getBukkitVersion())
@@ -223,5 +223,5 @@ internal object BukkitStatusLabels {
 
     /** Returns the branded library name or the registered product name. */
     fun product(product: String): String =
-        if (product.equals("pnlibrary", true)) "pnLibrary" else product
+        if (product.equals(PnLibraryIdentity.PRODUCT_ID, true)) PnLibraryIdentity.NAME else product
 }

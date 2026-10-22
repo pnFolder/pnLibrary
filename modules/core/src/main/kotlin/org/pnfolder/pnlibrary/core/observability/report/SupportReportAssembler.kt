@@ -2,6 +2,7 @@ package org.pnfolder.pnlibrary.core.observability.report
 
 import org.pnfolder.pnlibrary.api.diagnostics.DebugRequest
 import org.pnfolder.pnlibrary.api.runtime.PnLibraryConfig
+import org.pnfolder.pnlibrary.api.runtime.PnLibraryIdentity
 import org.pnfolder.pnlibrary.core.diagnostics.ConfigReader
 import org.pnfolder.pnlibrary.core.diagnostics.DiagnosticsRegistry
 import org.pnfolder.pnlibrary.core.observability.ObservabilityReportSnapshot
@@ -67,7 +68,7 @@ internal class SupportReportAssembler(
             "manifest.json",
             linkedMapOf(
                 "schemaVersion" to 4,
-                "producer" to "pnLibrary",
+                "producer" to PnLibraryIdentity.NAME,
                 "generatedUtc" to Instant.now().toString(),
                 "target" to request.target,
                 "platform" to identity.id,

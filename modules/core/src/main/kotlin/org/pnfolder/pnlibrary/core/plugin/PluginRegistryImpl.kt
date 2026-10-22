@@ -27,6 +27,7 @@ import org.pnfolder.pnlibrary.api.plugin.PluginMetadata
 import org.pnfolder.pnlibrary.api.plugin.PluginRegistration
 import org.pnfolder.pnlibrary.api.plugin.PluginRegistry
 import org.pnfolder.pnlibrary.api.remote.RemotePolicySettings
+import org.pnfolder.pnlibrary.api.runtime.PnLibraryIdentity
 import org.pnfolder.pnlibrary.api.tasks.TaskScope
 import org.pnfolder.pnlibrary.api.text.ComponentService
 import org.pnfolder.pnlibrary.api.updates.ProductDescriptor
@@ -84,7 +85,7 @@ internal class PluginRegistryImpl(
 
     private val plugins = IdentityHashMap<Any, Plugin>()
     private val productDescriptors = linkedMapOf<String, ProductDescriptor>().apply {
-        libraryVersion?.let(SemanticVersion::tryParse)?.let { put("pnlibrary", ProductDescriptor.library(it.toString())) }
+        libraryVersion?.let(SemanticVersion::tryParse)?.let { put(PnLibraryIdentity.PRODUCT_ID, ProductDescriptor.library(it.toString())) }
     }
     private val closed = AtomicBoolean(false)
     private val registrationSequence = AtomicLong()

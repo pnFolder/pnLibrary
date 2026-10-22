@@ -3,7 +3,7 @@ plugins {
     `java-library`
 }
 
-base { archivesName = "pnLibrary-runtime-spi" }
+base { archivesName = "${rootProject.property("pnlibrary.name")}-runtime-spi" }
 
 dependencies {
     api(project(":modules:api"))

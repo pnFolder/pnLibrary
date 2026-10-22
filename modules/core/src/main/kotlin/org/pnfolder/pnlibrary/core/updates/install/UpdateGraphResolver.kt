@@ -1,5 +1,6 @@
 package org.pnfolder.pnlibrary.core.updates.install
 
+import org.pnfolder.pnlibrary.api.runtime.PnLibraryIdentity
 import org.pnfolder.pnlibrary.api.updates.ProductId
 import org.pnfolder.pnlibrary.api.updates.release.ProductRelease
 import org.pnfolder.pnlibrary.api.updates.UpdateChannel
@@ -36,7 +37,7 @@ internal class UpdateGraphResolver(
         val releases = loadReleases(registrations, refreshMode)
         observeLatestVersions(registrations, releases)
 
-        return UpdateResolver(ProductId.of("pnlibrary")).resolve(
+        return UpdateResolver(ProductId.of(PnLibraryIdentity.PRODUCT_ID)).resolve(
             installed = installedProducts(registrations),
             releases = releases,
             channels = registrations.associate { it.descriptor.id to channelFor(it) },
@@ -53,11 +54,11 @@ internal class UpdateGraphResolver(
 
     fun channelFor(product: ProductId, fallback: UpdateChannel): UpdateChannel =
         overrides?.channel(product.value)
-            ?: if (product.value == "pnlibrary") configuration.library.channel
+            ?: if (product.value == PnLibraryIdentity.PRODUCT_ID) configuration.library.channel
             else fallback
 
     private fun installedProducts(registrations: List<RegisteredUpdate>) = registrations.map { registration ->
-        val providedApi = PnLibraryApi.VERSION.takeIf { registration.descriptor.id.value == "pnlibrary" }
+        val providedApi = PnLibraryApi.VERSION.takeIf { registration.descriptor.id.value == PnLibraryIdentity.PRODUCT_ID }
         registration.installedProduct(providedApi)
     }
 

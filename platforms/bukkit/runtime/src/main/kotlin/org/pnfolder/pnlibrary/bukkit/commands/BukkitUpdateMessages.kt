@@ -1,5 +1,6 @@
 package org.pnfolder.pnlibrary.bukkit.commands
 
+import org.pnfolder.pnlibrary.api.runtime.PnLibraryIdentity
 import org.pnfolder.pnlibrary.api.updates.BlockedReason
 import org.pnfolder.pnlibrary.api.updates.UpdatePlanSnapshot
 import org.pnfolder.pnlibrary.api.updates.UpdateSnapshot
@@ -12,7 +13,7 @@ internal object BukkitUpdateMessages {
     /** Describes the effective plan and product state as short messages. */
     fun status(input: Pair<UpdatePlanSnapshot, UpdateSnapshot>): List<ChatNotice> {
         val (plan, plugin) = input
-        val isLibrary = plugin.product.equals("pnlibrary", true)
+        val isLibrary = plugin.product.equals(PnLibraryIdentity.PRODUCT_ID, true)
         val subject = if (isLibrary) {
             "библиотека pnLibrary"
         } else {

@@ -3,7 +3,7 @@ plugins {
     alias(libs.plugins.maven.publish)
 }
 
-base { archivesName = "pnLibrary-bootstrap-bungee" }
+base { archivesName = "${rootProject.property("pnlibrary.name")}-bootstrap-bungee" }
 
 dependencies {
     api(project(":modules:bootstrap"))

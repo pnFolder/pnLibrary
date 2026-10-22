@@ -74,7 +74,7 @@ dependencies {
 tasks.register<ShadowJar>("shadowBukkit") {
     group = "distribution"
     description = "Fat JAR for Bukkit/Spigot/Paper/Folia with relocated Kotlin runtime"
-    archiveBaseName = "pnLibrary"
+    archiveBaseName = "${rootProject.property("pnlibrary.name")}"
     configurations = listOf(bukkitRuntime)
     applyCommonConfig()
     archiveClassifier = "bukkit-java8"
@@ -90,7 +90,7 @@ dependencies {
 tasks.register<ShadowJar>("shadowBungee") {
     group = "distribution"
     description = "Fat JAR for BungeeCord / Waterfall with relocated Kotlin runtime"
-    archiveBaseName = "pnLibrary"
+    archiveBaseName = "${rootProject.property("pnlibrary.name")}"
     configurations = listOf(bungeeRuntime)
     applyCommonConfig()
     archiveClassifier = "bungeecord-java8"
@@ -107,7 +107,7 @@ dependencies {
 tasks.register<ShadowJar>("shadowVelocity") {
     group = "distribution"
     description = "Fat JAR for Velocity 3.x with relocated Kotlin runtime"
-    archiveBaseName = "pnLibrary"
+    archiveBaseName = "${rootProject.property("pnlibrary.name")}"
     configurations = listOf(velocityRuntime)
     applyCommonConfig()
     archiveClassifier = "velocity-java17"
@@ -129,7 +129,7 @@ dependencies {
 tasks.register<ShadowJar>("shadowUniversal") {
     group = "distribution"
     description = "Universal fat JAR for Bukkit/Paper, BungeeCord and Velocity"
-    archiveBaseName = "pnLibrary"
+    archiveBaseName = "${rootProject.property("pnlibrary.name")}"
     configurations = listOf(universalRuntime)
     applyCommonConfig()
     archiveClassifier = "universal"
@@ -154,7 +154,7 @@ dependencies {
 val shadowUpdater = tasks.register<ShadowJar>("shadowUpdater") {
     group = "distribution"
     description = "Standalone pre-start updater; do not place this helper in the plugins directory"
-    archiveBaseName = "pnLibrary-updater"
+    archiveBaseName = "${rootProject.property("pnlibrary.name")}-updater"
     configurations = listOf(updaterRuntime)
     applyCommonConfig()
     manifest { attributes["Main-Class"] = "org.pnfolder.pnlibrary.core.updates.install.OfflineUpdateInstaller" }
@@ -238,7 +238,7 @@ val pnApiVersion = Regex("const\\s+val\\s+VERSION\\s*:\\s*Int\\s*=\\s*(\\d+)")
 fun installedComponentMetadata(): String = """
     {
       "schema": 1,
-      "product": "pnlibrary",
+      "product": "${rootProject.property("pnlibrary.product-id")}",
       "version": "$pnVer",
       "channel": "${if (pnVer.contains("-dev")) "dev" else if (pnVer.contains("-alpha")) "alpha" else if (pnVer.contains("-beta")) "beta" else "stable"}",
       "pnLibraryApi": {

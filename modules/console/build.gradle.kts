@@ -3,7 +3,7 @@ plugins {
     alias(libs.plugins.maven.publish)
 }
 
-base { archivesName = "pnLibrary-console" }
+base { archivesName = "${rootProject.property("pnlibrary.name")}-console" }
 
 java {
     withSourcesJar()

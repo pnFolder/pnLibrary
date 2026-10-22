@@ -14,6 +14,7 @@ import org.pnfolder.pnlibrary.api.placeholders.PlaceholderRegistration
 import org.pnfolder.pnlibrary.api.placeholders.PlaceholderRequest
 import org.pnfolder.pnlibrary.api.placeholders.PlaceholderService
 import org.pnfolder.pnlibrary.api.plugin.PluginId
+import org.pnfolder.pnlibrary.api.runtime.PnLibraryIdentity
 import org.pnfolder.pnlibrary.spi.platform.PlatformIdentity
 import java.util.Collections
 import java.util.Locale
@@ -75,7 +76,7 @@ internal class PlaceholderHub(
             adapterLookup = ::get,
         )
         entries[id(owner, commandKey.value)] = commandEntry
-        commandEntry.publish(PlaceholderPublication("placeholderapi", "pnlibrary", "defaultvalue"))
+        commandEntry.publish(PlaceholderPublication("placeholderapi", PnLibraryIdentity.PRODUCT_ID, "defaultvalue"))
     }
 
     fun scope(owner: PluginId, placeholderApiEnabled: Boolean = true): PlaceholderService =
@@ -258,7 +259,7 @@ internal class PlaceholderHub(
     private fun <T> failed(error: Throwable): CompletionStage<T> = CompletableFuture<T>().also { it.completeExceptionally(error) }
 
     private companion object {
-        const val SYSTEM_NAMESPACE = "pnlibrary"
+        const val SYSTEM_NAMESPACE = PnLibraryIdentity.PRODUCT_ID
     }
 
 }

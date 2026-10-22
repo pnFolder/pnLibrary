@@ -27,7 +27,7 @@ mavenPublishing {
     }
 }
 
-base { archivesName = "pnLibrary-velocity-api" }
+base { archivesName = "${rootProject.property("pnlibrary.name")}-velocity-api" }
 
 dependencies {
     api(project(":modules:api"))

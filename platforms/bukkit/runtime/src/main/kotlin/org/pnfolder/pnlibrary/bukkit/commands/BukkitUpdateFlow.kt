@@ -103,7 +103,7 @@ internal class BukkitUpdateFlow(
         val facts = listOf(
             "Ядро" to "${Bukkit.getName()} ${Bukkit.getBukkitVersion()}",
             "Java" to BukkitStatusLabels.javaRuntime(),
-            "pnLibrary" to library.version.toString(),
+            PnLibraryIdentity.NAME to library.version.toString(),
         )
         UpdateCatalogView.status(facts, entries.map { it.snapshot }, replies.routes(reply), PnLibraryIdentity.SUPPORT_URL).forEach(reply::send)
     }

@@ -1,5 +1,6 @@
 package org.pnfolder.pnlibrary.core.updates.service
 
+import org.pnfolder.pnlibrary.api.runtime.PnLibraryIdentity
 import org.pnfolder.pnlibrary.api.updates.release.ArtifactDescriptor
 import org.pnfolder.pnlibrary.api.updates.release.InstalledProduct
 import org.pnfolder.pnlibrary.api.updates.PluginUpdateArtifact
@@ -66,7 +67,7 @@ internal class RegisteredUpdate(
         channel = catalogRelease.channel,
         description = catalogRelease.description,
         supportedApi = catalogRelease.api,
-        providesApi = catalogRelease.api.maximum.takeIf { descriptor.id.value == "pnlibrary" },
+        providesApi = catalogRelease.api.maximum.takeIf { descriptor.id.value == PnLibraryIdentity.PRODUCT_ID },
         repository = repository,
         artifacts = catalogRelease.artifacts.map { artifact ->
             ArtifactDescriptor(

@@ -3,7 +3,7 @@ plugins {
     `java-library`
 }
 
-base { archivesName = "pnLibrary-faststats-velocity" }
+base { archivesName = "${rootProject.property("pnlibrary.name")}-faststats-velocity" }
 
 dependencies {
     implementation(project(":modules:api"))

@@ -4,6 +4,7 @@ import org.pnfolder.pnlibrary.api.runtime.PnLibrary
 import org.pnfolder.pnlibrary.api.remote.DenyAction
 import org.pnfolder.pnlibrary.api.remote.PolicyErrorAction
 import org.pnfolder.pnlibrary.api.remote.RemotePolicySettings
+import org.pnfolder.pnlibrary.api.runtime.PnLibraryIdentity
 import org.pnfolder.pnlibrary.core.runtime.details.RuntimeRemotePolicy
 import org.pnfolder.pnlibrary.core.runtime.lifecycle.RuntimeBootstrapCoordinator
 import org.pnfolder.pnlibrary.core.runtime.platform.PlatformRegistration
@@ -53,7 +54,7 @@ class PnLibraryRuntimeHost private constructor(
         val failures = mutableListOf<Throwable>()
         runCatching { updateMonitor.close() }.onFailure(failures::add)
         runCatching {
-            library.logging.shutdownBox(library.owner, "pnLibrary", library.version)
+            library.logging.shutdownBox(library.owner, PnLibraryIdentity.NAME, library.version)
                 .ok("Платформа", platformName)
                 .ok("Ресурсы", "задачи и регистрации освобождаются")
                 .show()
@@ -123,7 +124,7 @@ class PnLibraryRuntimeHost private constructor(
                         )
                     }
                     runCatching {
-                        val box = started.library.logging.box(owner, "pnLibrary", started.currentVersion)
+                        val box = started.library.logging.box(owner, PnLibraryIdentity.NAME, started.currentVersion)
                             .ok("Runtime", "общие сервисы запущены")
                             .ok("Платформа", started.platformName)
                             .ok("Обновления", "проверка релизов запущена")

@@ -1,5 +1,6 @@
 package org.pnfolder.pnlibrary.core.updates.catalog
 
+import org.pnfolder.pnlibrary.api.runtime.PnLibraryIdentity
 import org.pnfolder.pnlibrary.api.updates.release.ReleaseSummary
 import org.pnfolder.pnlibrary.api.updates.UpdatePlanSnapshot
 import org.pnfolder.pnlibrary.api.updates.UpdateSnapshot
@@ -19,7 +20,7 @@ internal object UpdateAnnouncementRenderer {
             else -> return emptyList()
         }
         val card = ConsoleCard.builder(ConsoleStyle.THEME, "ПРОВЕРКА ОБНОВЛЕНИЙ")
-            .mascot("^.^", "pnLibrary", subtitle)
+            .mascot("^.^", PnLibraryIdentity.NAME, subtitle)
             .blank()
         val changes = snapshot.plan?.changes.orEmpty()
         if (changes.isNotEmpty()) {

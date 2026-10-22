@@ -3,7 +3,7 @@ plugins {
     alias(libs.plugins.maven.publish)
 }
 
-base { archivesName = "pnLibrary-bootstrap-velocity" }
+base { archivesName = "${rootProject.property("pnlibrary.name")}-bootstrap-velocity" }
 
 dependencies {
     api(project(":modules:bootstrap"))

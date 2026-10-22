@@ -3,7 +3,7 @@ plugins {
     alias(libs.plugins.maven.publish)
 }
 
-base { archivesName = "pnLibrary-bootstrap-bukkit" }
+base { archivesName = "${rootProject.property("pnlibrary.name")}-bootstrap-bukkit" }
 
 dependencies {
     api(project(":modules:bootstrap"))

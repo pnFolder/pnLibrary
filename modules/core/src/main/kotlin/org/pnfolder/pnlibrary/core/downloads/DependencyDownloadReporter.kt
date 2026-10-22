@@ -2,6 +2,7 @@ package org.pnfolder.pnlibrary.core.downloads
 
 import org.pnfolder.pnlibrary.api.downloads.FileDownload
 import org.pnfolder.pnlibrary.api.logging.LogLevel
+import org.pnfolder.pnlibrary.api.runtime.PnLibraryIdentity
 import org.pnfolder.pnlibrary.console.ConsoleCard
 import org.pnfolder.pnlibrary.console.ConsoleTree
 import org.pnfolder.pnlibrary.api.chat.ChatTone
@@ -67,5 +68,5 @@ internal class DependencyDownloadReporter(
             .send { logging.console(owner, it) }
     }
 
-    private fun ownerName(owner: Any): String = ownership.ownerDetails(owner)["name"] ?: "pnLibrary"
+    private fun ownerName(owner: Any): String = ownership.ownerDetails(owner)["name"] ?: PnLibraryIdentity.NAME
 }

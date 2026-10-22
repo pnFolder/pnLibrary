@@ -7,7 +7,7 @@ plugins {
     alias(libs.plugins.maven.publish)
 }
 
-base { archivesName = "pnLibrary-bukkit" }
+base { archivesName = "${rootProject.property("pnlibrary.name")}-bukkit" }
 
 dependencies {
     implementation(project(":modules:api"))

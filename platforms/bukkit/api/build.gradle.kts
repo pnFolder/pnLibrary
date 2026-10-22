@@ -44,7 +44,7 @@ mavenPublishing {
     }
 }
 
-base { archivesName = "pnLibrary-bukkit-api" }
+base { archivesName = "${rootProject.property("pnlibrary.name")}-bukkit-api" }
 
 dependencies {
     api(project(":modules:common"))

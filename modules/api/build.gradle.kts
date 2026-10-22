@@ -6,7 +6,7 @@ plugins {
     alias(libs.plugins.maven.publish)
 }
 
-base { archivesName = "pnLibrary-api" }
+base { archivesName = "${rootProject.property("pnlibrary.name")}-api" }
 
 // Product identity generated from gradle.properties (pnlibrary.* keys), so the name and author
 // live in one file. The generated source is never edited by hand.

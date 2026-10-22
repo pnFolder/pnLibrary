@@ -7,7 +7,7 @@ plugins {
     `java-library`
 }
 
-base { archivesName = "pnLibrary-bukkit-paper" }
+base { archivesName = "${rootProject.property("pnlibrary.name")}-bukkit-paper" }
 
 dependencies {
     implementation(libs.kotlin.stdlib)

@@ -3,6 +3,7 @@ package org.pnfolder.pnlibrary.core.placeholders
 import org.pnfolder.pnlibrary.api.placeholders.PlaceholderFormatter
 import org.pnfolder.pnlibrary.api.placeholders.PlaceholderRequest
 import org.pnfolder.pnlibrary.api.plugin.PluginId
+import org.pnfolder.pnlibrary.api.runtime.PnLibraryIdentity
 import java.util.Locale
 import java.util.concurrent.ConcurrentHashMap
 
@@ -99,7 +100,7 @@ internal class PlaceholderFormatterRegistry {
     )
 
     internal companion object {
-        const val SYSTEM_NAMESPACE = "pnlibrary"
+        const val SYSTEM_NAMESPACE = PnLibraryIdentity.PRODUCT_ID
         val VALID_NAME = Regex("[a-z0-9_-]+")
     }
 }

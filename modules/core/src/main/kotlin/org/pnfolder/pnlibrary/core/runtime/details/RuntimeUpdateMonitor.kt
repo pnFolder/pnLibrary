@@ -1,6 +1,7 @@
 package org.pnfolder.pnlibrary.core.runtime.details
 
 import org.pnfolder.pnlibrary.api.runtime.PnLibrary
+import org.pnfolder.pnlibrary.api.runtime.PnLibraryIdentity
 import org.pnfolder.pnlibrary.api.updates.PluginUpdateRequest
 import org.pnfolder.pnlibrary.api.updates.ProductDescriptor
 import org.pnfolder.pnlibrary.api.updates.UpdateRegistration
@@ -28,9 +29,9 @@ internal object RuntimeUpdateMonitor {
             owner,
             ProductDescriptor.library(currentVersion),
             PluginUpdateRequest.builder()
-                .repository("pnFolder", "pnLibrary")
+                .repository(PnLibraryIdentity.REPOSITORY.substringBefore('/'), PnLibraryIdentity.REPOSITORY.substringAfter('/'))
                 .automaticDownload(false)
-                .artifact("(?i)^pnLibrary-[0-9].*-$artifactId-java[0-9]+\\.jar$", 8)
+                .artifact("(?i)^${PnLibraryIdentity.NAME}-[0-9].*-$artifactId-java[0-9]+\\.jar$", 8)
                 .build(),
         )
         return Registration(currentVersion, monitor)

@@ -3,7 +3,7 @@ plugins {
     alias(libs.plugins.maven.publish)
 }
 
-base { archivesName = "pnLibrary-bootstrap" }
+base { archivesName = "${rootProject.property("pnlibrary.name")}-bootstrap" }
 
 dependencies {
     api(project(":modules:console"))
@@ -17,11 +17,25 @@ java {
     withSourcesJar()
 }
 
-// The support link comes from gradle.properties, like PnLibraryIdentity, so it is written in one place only.
+// The repository, product name and support link come from gradle.properties, like PnLibraryIdentity, so each is written in one place only.
 val defaultsDir = layout.buildDirectory.dir("generated/bootstrap/java")
 val generateDefaults = tasks.register("generateBootstrapDefaults") {
     val supportUrl = rootProject.property("pnlibrary.support-url").toString()
+    val repository = rootProject.property("pnlibrary.repository").toString()
+    val productName = rootProject.property("pnlibrary.name").toString()
+    val productId = rootProject.property("pnlibrary.product-id").toString()
+    val repositoryOwner = repository.substringBefore('/')
+    val repositoryName = repository.substringAfter('/', "")
+    check(Regex("[A-Za-z0-9_-]+").matches(productName) && Regex("[a-z0-9_-]+").matches(productId)) {
+        "pnlibrary.name and pnlibrary.product-id may only hold letters, digits, '_' and '-': '$productName', '$productId'"
+    }
+    check(repositoryOwner.isNotBlank() && repositoryName.isNotBlank() && '/' !in repositoryName) {
+        "pnlibrary.repository must look like owner/name, but is '$repository'"
+    }
     inputs.property("supportUrl", supportUrl)
+    inputs.property("repository", repository)
+    inputs.property("productName", productName)
+    inputs.property("productId", productId)
     outputs.dir(defaultsDir)
     doLast {
         val target = defaultsDir.get().file("org/pnfolder/pnlibrary/bootstrap/BootstrapDefaults.java").asFile
@@ -33,6 +47,10 @@ val generateDefaults = tasks.register("generateBootstrapDefaults") {
             |/** Generated from gradle.properties. Change the pnlibrary.* keys there, not this file. */
             |final class BootstrapDefaults {
             |    static final String SUPPORT_URL = "$supportUrl";
+            |    static final String REPOSITORY_OWNER = "$repositoryOwner";
+            |    static final String REPOSITORY_NAME = "$repositoryName";
+            |    static final String PRODUCT_NAME = "$productName";
+            |    static final String PRODUCT_ID = "$productId";
             |
             |    private BootstrapDefaults() {}
             |}

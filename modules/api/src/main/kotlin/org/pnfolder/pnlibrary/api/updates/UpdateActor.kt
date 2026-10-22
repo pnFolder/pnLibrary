@@ -1,5 +1,7 @@
 package org.pnfolder.pnlibrary.api.updates
 
+import org.pnfolder.pnlibrary.api.runtime.PnLibraryIdentity
+
 /**
  * Initiator recorded in update history; identity is audit metadata, not an authorization token.
  *
@@ -30,7 +32,7 @@ data class UpdateActor(val kind: Kind, val id: String, val name: String) {
     /** Standard identities for automatic operations and callers without explicit attribution. */
     companion object {
         /** Internal scheduled work, not an administrator command. */
-        @JvmField val SYSTEM = UpdateActor(Kind.SYSTEM, "system", "pnLibrary")
+        @JvmField val SYSTEM = UpdateActor(Kind.SYSTEM, "system", PnLibraryIdentity.NAME)
         /** Compatibility calls which did not supply an initiator. */
         @JvmField val UNKNOWN = UpdateActor(Kind.UNKNOWN, "unknown", "Unknown")
     }

@@ -1,5 +1,6 @@
 package org.pnfolder.pnlibrary.core.updates.policy
 
+import org.pnfolder.pnlibrary.api.runtime.PnLibraryIdentity
 import org.pnfolder.pnlibrary.api.updates.release.ProductChange
 import org.pnfolder.pnlibrary.api.updates.UpdatePlanSnapshot
 import org.pnfolder.pnlibrary.core.updates.service.RegisteredUpdate
@@ -14,7 +15,7 @@ internal class UpdateAutomaticPolicy(
         val changed = snapshot.plan?.changes?.map(ProductChange::product).orEmpty()
         return changed.all { component ->
             val chosen = overrides?.automatic(component.value)
-            if (component.value == "pnlibrary") chosen ?: configuration.library.automaticDownload
+            if (component.value == PnLibraryIdentity.PRODUCT_ID) chosen ?: configuration.library.automaticDownload
             else {
                 configuration.pluginUpdatesEnabled && component.value !in configuration.ignoredPlugins &&
                     (chosen ?: (configuration.pluginAutomaticDownload ||

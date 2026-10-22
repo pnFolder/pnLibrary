@@ -5,7 +5,7 @@ plugins {
     `java-library`
     alias(libs.plugins.maven.publish)
 }
-base { archivesName = "pnLibrary-core" }
+base { archivesName = "${rootProject.property("pnlibrary.name")}-core" }
 
 // The packaged-JAR process test has its own distribution verification task.
 tasks.named<Test>("test") { exclude("**/OfflineUpdaterJarTest.class", "**/NativeProxyUpdateTest.class") }

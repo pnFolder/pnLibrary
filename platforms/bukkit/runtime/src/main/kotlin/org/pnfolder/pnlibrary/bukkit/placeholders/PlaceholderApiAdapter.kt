@@ -12,6 +12,7 @@ import org.pnfolder.pnlibrary.api.placeholders.PlaceholderPublication
 import org.pnfolder.pnlibrary.api.placeholders.PlaceholderRequest
 import org.pnfolder.pnlibrary.api.placeholders.PlaceholderResolver
 import org.pnfolder.pnlibrary.api.plugin.PluginId
+import org.pnfolder.pnlibrary.api.runtime.PnLibraryIdentity
 import java.util.Locale
 import java.util.UUID
 import java.util.concurrent.ConcurrentHashMap
@@ -89,7 +90,7 @@ internal class PlaceholderApiAdapter(
     ) : PlaceholderExpansion() {
         val handlers = ConcurrentHashMap<String, Handler>()
         override fun getIdentifier() = namespace
-        override fun getAuthor() = this@PlaceholderApiAdapter.plugin.description.authors.joinToString(",").ifBlank { "pnLibrary" }
+        override fun getAuthor() = this@PlaceholderApiAdapter.plugin.description.authors.joinToString(",").ifBlank { PnLibraryIdentity.NAME }
         override fun getVersion() = this@PlaceholderApiAdapter.plugin.description.version
         override fun persist() = true
         /** Matches the longest published key and forwards its optional parameter to the resolver. */
