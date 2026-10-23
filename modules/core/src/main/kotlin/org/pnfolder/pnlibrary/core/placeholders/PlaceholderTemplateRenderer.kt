@@ -13,31 +13,31 @@ internal class PlaceholderTemplateRenderer(
         template: String,
         playerId: UUID?,
         values: Map<String, Any?>,
-    ): CompletionStage<String> {
-        var output = renderConditions(template, playerId, values)
-        output = renderLocalExpressions(output, playerId, values)
-        return renderOrdinaryExpressions(output, playerId, values)
-    }
+    ): CompletionStage<String> =
+        renderConditions(template, playerId, values, MAXIMUM_CONDITIONAL_DEPTH)
+            .thenCompose { output -> renderLocalExpressions(output, playerId, values) }
+            .thenCompose { output -> renderOrdinaryExpressions(output, playerId, values) }
 
     private fun renderLocalExpressions(
         template: String,
         playerId: UUID?,
         values: Map<String, Any?>,
-    ): String {
-        var output = template
-        val tokens = LOCAL_EXPRESSION.findAll(output)
+    ): CompletionStage<String> {
+        val expressions = LOCAL_EXPRESSION.findAll(template)
             .map { match -> match.value }
-            .filter { token -> LocalPlaceholderExpression.parse(token) != null }
             .distinct()
+            .mapNotNull { token -> LocalPlaceholderExpression.parse(token)?.let { token to it } }
             .toList()
-
-        tokens.forEach { token ->
-            val expression = LocalPlaceholderExpression.parse(token) ?: return@forEach
-            val value = resolve(expression.reference, playerId, values).toCompletableFuture().join()
-            val formatted = format(value, expression.formatters, playerId, values)
-            output = output.replace(token, formatted?.toString() ?: token)
+        var result: CompletionStage<String> = CompletableFuture.completedFuture(template)
+        expressions.forEach { (token, expression) ->
+            result = result.thenCompose { current ->
+                resolve(expression.reference, playerId, values).thenApply { value ->
+                    val formatted = format(value, expression.formatters, playerId, values)
+                    current.replace(token, formatted?.toString() ?: token)
+                }
+            }
         }
-        return output
+        return result
     }
 
     private fun renderOrdinaryExpressions(
@@ -64,15 +64,14 @@ internal class PlaceholderTemplateRenderer(
         template: String,
         playerId: UUID?,
         values: Map<String, Any?>,
-    ): String {
-        var output = template
-        repeat(MAXIMUM_CONDITIONAL_DEPTH) {
-            val match = CONDITIONAL.find(output) ?: return output
-            val value = resolve(match.groupValues[1], playerId, values).toCompletableFuture().join()
+        depth: Int,
+    ): CompletionStage<String> {
+        val match = CONDITIONAL.find(template)
+        if (match == null || depth == 0) return CompletableFuture.completedFuture(template)
+        return resolve(match.groupValues[1], playerId, values).thenCompose { value ->
             val replacement = if (isTruthy(value)) match.groupValues[2] else match.groupValues[3]
-            output = output.replaceRange(match.range, replacement)
+            renderConditions(template.replaceRange(match.range, replacement), playerId, values, depth - 1)
         }
-        return output
     }
 
     private fun isTruthy(value: Any?): Boolean =

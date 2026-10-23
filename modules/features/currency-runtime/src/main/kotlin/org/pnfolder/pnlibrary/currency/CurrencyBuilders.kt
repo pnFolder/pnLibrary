@@ -19,9 +19,12 @@ import org.pnfolder.pnlibrary.api.placeholders.PlaceholderKey
 import org.pnfolder.pnlibrary.api.placeholders.PlaceholderPublication
 import org.pnfolder.pnlibrary.api.placeholders.PlaceholderService
 import org.pnfolder.pnlibrary.api.plugin.PluginId
+import java.math.BigDecimal
 import java.time.Duration
 import java.util.Locale
 import java.util.UUID
+import java.util.concurrent.CompletableFuture
+import java.util.concurrent.CompletionStage
 import java.util.function.Consumer
 
 /** Common access and alias configuration shared by all currency builders. */
@@ -88,9 +91,9 @@ internal class ManagedCurrencyDefinition(
         val normalizedName = normalizeCurrencyName(name)
         val prefix = "currency.$normalizedName"
 
-        fun register(key: String, resolver: (UUID?) -> Any?): AutoCloseable {
+        fun register(key: String, resolver: (UUID?) -> CompletionStage<Any?>): AutoCloseable {
             return placeholders.register(PlaceholderKey.of("$prefix.$key", Any::class.java)) { builder ->
-                builder.resolve { request -> resolver(request.playerId) }
+                builder.resolveAsync { request -> resolver(request.playerId) }
                     .access(placeholderOptions.access)
                 if (placeholderOptions.placeholderApi) {
                     builder.publish(
@@ -100,12 +103,14 @@ internal class ManagedCurrencyDefinition(
             }
         }
 
+        fun ofPlayer(transform: (BigDecimal) -> Any?): (UUID?) -> CompletionStage<Any?> = { playerId ->
+            playerId?.let { currency.balance(it).thenApply(transform) } ?: CompletableFuture.completedFuture(null)
+        }
+
         return listOf(
-            register("balance") { playerId -> playerId?.let { currency.balance(it).toCompletableFuture().join() } },
-            register("formatted") { playerId ->
-                playerId?.let { currency.format(currency.balance(it).toCompletableFuture().join()) }
-            },
-            register("symbol") { currency.descriptor.symbol },
+            register("balance", ofPlayer { it }),
+            register("formatted", ofPlayer(currency::format)),
+            register("symbol") { CompletableFuture.completedFuture(currency.descriptor.symbol) },
         )
     }
 }
