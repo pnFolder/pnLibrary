@@ -51,10 +51,13 @@ class ConfigurationSnapshotsTest {
         val (_, data) = fixture()
         val store = ConfigurationSnapshots(directory.resolve("snapshots"), directory.resolve("plugins"), maximumFileBytes = 2)
         Files.writeString(data.resolve("large.yml"), "123")
-        assertThrows(IllegalArgumentException::class.java) { store.capture(UUID.randomUUID(), mapOf(ProductId.of("example") to UpdateConfigurationBackup(data, listOf("large.yml")))) }
+        assertThrows(IllegalArgumentException::class.java) { store.capture(UUID.randomUUID(), mapOf(ProductId.of("example") to UpdateConfigurationBackup(data,
+            listOf("large.yml")))) }
         Files.createDirectory(data.resolve("nested"))
-        assertThrows(IllegalArgumentException::class.java) { store.capture(UUID.randomUUID(), mapOf(ProductId.of("example") to UpdateConfigurationBackup(data, listOf("nested")))) }
-        assertThrows(IllegalArgumentException::class.java) { store.capture(UUID.randomUUID(), mapOf(ProductId.of("example") to UpdateConfigurationBackup(directory.resolve("outside"), listOf("config.yml")))) }
+        assertThrows(IllegalArgumentException::class.java) { store.capture(UUID.randomUUID(), mapOf(ProductId.of("example") to UpdateConfigurationBackup(data,
+            listOf("nested")))) }
+        assertThrows(IllegalArgumentException::class.java) { store.capture(UUID.randomUUID(),
+            mapOf(ProductId.of("example") to UpdateConfigurationBackup(directory.resolve("outside"), listOf("config.yml")))) }
         assertThrows(IllegalArgumentException::class.java) { UpdateConfigurationBackup(data, listOf("../outside.yml")) }
     }
 

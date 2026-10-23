@@ -2,11 +2,11 @@ package org.pnfolder.pnlibrary.bukkit.commands
 
 import org.bukkit.Bukkit
 import org.pnfolder.pnlibrary.api.runtime.PnLibraryIdentity
-import org.pnfolder.pnlibrary.api.updates.release.ReleaseSummary
 import org.pnfolder.pnlibrary.api.updates.UpdateChannel
 import org.pnfolder.pnlibrary.api.updates.UpdateRegistration
 import org.pnfolder.pnlibrary.api.updates.UpdateSnapshot
 import org.pnfolder.pnlibrary.api.updates.UpdateState
+import org.pnfolder.pnlibrary.api.updates.release.ReleaseSummary
 import org.pnfolder.pnlibrary.api.version.SemanticVersion
 import org.pnfolder.pnlibrary.common.text.RussianText
 import org.pnfolder.pnlibrary.console.ConsoleCard

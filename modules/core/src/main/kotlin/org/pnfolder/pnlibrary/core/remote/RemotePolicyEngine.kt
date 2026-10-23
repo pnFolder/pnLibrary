@@ -3,10 +3,10 @@ package org.pnfolder.pnlibrary.core.remote
 import org.pnfolder.pnlibrary.api.remote.RemotePolicy
 import org.pnfolder.pnlibrary.api.remote.RemotePolicyContext
 import org.pnfolder.pnlibrary.api.remote.RemotePolicyResult
+import org.pnfolder.pnlibrary.common.io.Digests
 import java.io.ByteArrayOutputStream
 import java.io.File
 import java.lang.reflect.InvocationTargetException
-import org.pnfolder.pnlibrary.common.io.Digests
 import java.net.HttpURLConnection
 import java.net.URI
 import java.net.URLClassLoader

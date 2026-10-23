@@ -9,8 +9,8 @@ import org.mockito.Mockito.mock
 import org.mockito.kotlin.any
 import org.mockito.kotlin.eq
 import org.mockito.kotlin.whenever
-import org.slf4j.Logger
 import org.pnfolder.pnlibrary.spi.metrics.NoopMetricsFactory
+import org.slf4j.Logger
 import java.nio.file.Path
 import java.util.Optional
 

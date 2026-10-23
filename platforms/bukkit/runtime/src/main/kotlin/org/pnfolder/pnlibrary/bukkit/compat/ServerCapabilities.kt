@@ -85,4 +85,3 @@ internal object ServerCapabilities {
             false
         }
 }
-

@@ -102,7 +102,8 @@ class ProxyUpdateCommandTest {
             when (method.name) { "getUpdates" -> updates; "isClosed" -> false; else -> error("Unexpected call: ${method.name}") }
         } as PnLibrary
         val definition = ProxyUpdateCommand(library).definition()
-        val route = CommandTreeRouter().route(definition, CommandContext(sender, arguments.toList(), "update", arguments.joinToString(" "))) as CommandRoute.Executable
+        val route = CommandTreeRouter().route(definition, CommandContext(sender, arguments.toList(), "update",
+            arguments.joinToString(" "))) as CommandRoute.Executable
         route.node.execution.execute(route.context).toCompletableFuture().join()
     }
 
@@ -130,7 +131,8 @@ class ProxyUpdateCommandTest {
             CompletableFuture.completedFuture(snapshot()).also { automaticSet = product to enabled }
         override fun setHeld(product: String, duration: Duration?, actor: UpdateActor) =
             CompletableFuture.completedFuture(snapshot()).also { heldSet = product to duration }
-        override fun register(owner: Any, product: ProductDescriptor, request: PluginUpdateRequest, dependencies: List<PluginDependency>): UpdateRegistration = error("not used")
+        override fun register(owner: Any, product: ProductDescriptor, request: PluginUpdateRequest,
+            dependencies: List<PluginDependency>): UpdateRegistration = error("not used")
         override fun all(): List<UpdateRegistration> = emptyList()
         override fun get(product: String): UpdateRegistration? = null
         override fun currentPlan(): Optional<UpdatePlanSnapshot> = Optional.of(current)
@@ -138,7 +140,8 @@ class ProxyUpdateCommandTest {
             staged = planId
             this.actor = actor
         }
-        override fun historyPage(page: Int, product: String?) = CompletableFuture.completedFuture<List<UpdateHistoryEntry>>(emptyList()).also { pages.add(page) }
+        override fun historyPage(page: Int,
+            product: String?) = CompletableFuture.completedFuture<List<UpdateHistoryEntry>>(emptyList()).also { pages.add(page) }
         override fun historyCount(product: String?) = CompletableFuture.completedFuture(0)
         override fun rollback(transactionId: UUID, actor: UpdateActor) = CompletableFuture.completedFuture(current).also { rolledBack = transactionId }
         override fun rollback(transactionId: UUID, restoreConfigurations: Boolean, actor: UpdateActor) = CompletableFuture.completedFuture(current).also {

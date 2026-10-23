@@ -1,18 +1,18 @@
 package org.pnfolder.pnlibrary.core.updates.service
 
 import org.pnfolder.pnlibrary.api.runtime.PnLibraryIdentity
-import org.pnfolder.pnlibrary.api.updates.release.ArtifactDescriptor
-import org.pnfolder.pnlibrary.api.updates.release.InstalledProduct
 import org.pnfolder.pnlibrary.api.updates.PluginUpdateArtifact
 import org.pnfolder.pnlibrary.api.updates.PluginUpdateRequest
 import org.pnfolder.pnlibrary.api.updates.ProductDescriptor
-import org.pnfolder.pnlibrary.api.updates.release.ProductRelease
-import org.pnfolder.pnlibrary.api.updates.release.ReleaseSummary
 import org.pnfolder.pnlibrary.api.updates.UpdateChannel
 import org.pnfolder.pnlibrary.api.updates.UpdatePlanSnapshot
 import org.pnfolder.pnlibrary.api.updates.UpdateRegistration
 import org.pnfolder.pnlibrary.api.updates.UpdateSnapshot
 import org.pnfolder.pnlibrary.api.updates.UpdateState
+import org.pnfolder.pnlibrary.api.updates.release.ArtifactDescriptor
+import org.pnfolder.pnlibrary.api.updates.release.InstalledProduct
+import org.pnfolder.pnlibrary.api.updates.release.ProductRelease
+import org.pnfolder.pnlibrary.api.updates.release.ReleaseSummary
 import org.pnfolder.pnlibrary.common.jvm.JavaRuntime
 import org.pnfolder.pnlibrary.core.updates.engine.CatalogRelease
 import org.pnfolder.pnlibrary.core.updates.policy.ReleaseChannelSelector

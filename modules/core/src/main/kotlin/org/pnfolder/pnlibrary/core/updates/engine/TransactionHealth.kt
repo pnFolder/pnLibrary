@@ -13,7 +13,8 @@ internal class TransactionHealth(
         val normalized = journalPath.toAbsolutePath().normalize()
         require(normalized.startsWith(root.toAbsolutePath().normalize())) { "Health journal must stay inside transaction root" }
         val journal = journals.load(normalized)
-        require(journal.state == TransactionState.AWAITING_HEALTH || (journal.state == TransactionState.FAILED && journal.healthFailure && !journal.rollbackRequested)) {
+        require(journal.state == TransactionState.AWAITING_HEALTH || (journal.state == TransactionState.FAILED && journal.healthFailure &&
+            !journal.rollbackRequested)) {
             "Transaction ${journal.id} is not awaiting a health check"
         }
         journal.healthCheckedAt = Instant.now().toString()
@@ -44,7 +45,8 @@ internal class TransactionHealth(
     /** Records the post-restart health outcome of the rollback at [path]. */
     fun completeRollback(path: Path, healthy: Boolean) {
         val journal = journals.load(path)
-        require(journal.rollbackRequested && (journal.state == TransactionState.ROLLED_BACK || (journal.state == TransactionState.FAILED && journal.healthFailure))) { "No rollback awaits verification" }
+        require(journal.rollbackRequested && (journal.state == TransactionState.ROLLED_BACK || (journal.state == TransactionState.FAILED &&
+            journal.healthFailure))) { "No rollback awaits verification" }
         journal.rollbackHealthVerified = true
         journal.healthCheckedAt = Instant.now().toString()
         journal.healthFailure = !healthy

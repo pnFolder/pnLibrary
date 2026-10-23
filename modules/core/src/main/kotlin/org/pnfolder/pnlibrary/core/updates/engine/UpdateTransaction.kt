@@ -60,7 +60,8 @@ internal class UpdateTransaction(
                 artifact.specification.version.toString(),
                 artifact.previousVersion,
                 artifact.installedTarget?.toAbsolutePath()?.normalize()?.toString(),
-                JournalVersion(artifact.specification.version.toString(), artifact.specification.supportedApi.minimum, artifact.specification.supportedApi.maximum),
+                JournalVersion(artifact.specification.version.toString(), artifact.specification.supportedApi.minimum,
+                    artifact.specification.supportedApi.maximum),
                 artifact.previousApi?.let { api -> artifact.previousVersion?.let { JournalVersion(it, api.minimum, api.maximum) } },
             )
         }

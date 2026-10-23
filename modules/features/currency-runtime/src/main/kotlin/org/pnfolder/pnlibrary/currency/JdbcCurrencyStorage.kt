@@ -13,12 +13,12 @@ import org.pnfolder.pnlibrary.api.currency.CurrencyStorageSnapshot
 import org.pnfolder.pnlibrary.api.currency.CurrencyTransaction
 import org.pnfolder.pnlibrary.api.currency.CurrencyTransactionRequest
 import org.pnfolder.pnlibrary.api.currency.CurrencyTransactionStatus
+import org.pnfolder.pnlibrary.common.concurrent.ManagedWorker
 import java.math.BigDecimal
 import java.sql.Connection
 import java.sql.SQLException
 import java.time.Instant
 import java.util.UUID
-import org.pnfolder.pnlibrary.common.concurrent.ManagedWorker
 import java.util.concurrent.CompletionStage
 import java.util.concurrent.atomic.AtomicBoolean
 import javax.sql.DataSource

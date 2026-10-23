@@ -20,6 +20,7 @@ import org.pnfolder.pnlibrary.api.currency.CurrencyTransactionRequest
 import org.pnfolder.pnlibrary.api.currency.CurrencyTransactionStatus
 import org.pnfolder.pnlibrary.api.currency.CurrencyTransactionType
 import org.pnfolder.pnlibrary.api.plugin.PluginId
+import org.pnfolder.pnlibrary.common.concurrent.ManagedWorker
 import org.pnfolder.pnlibrary.common.io.AtomicFiles
 import java.math.BigDecimal
 import java.nio.charset.StandardCharsets
@@ -27,7 +28,6 @@ import java.nio.file.Files
 import java.nio.file.Path
 import java.time.Instant
 import java.util.UUID
-import org.pnfolder.pnlibrary.common.concurrent.ManagedWorker
 import java.util.concurrent.CompletionStage
 
 /** Single-writer JSON storage with in-memory indexes and rollback on persistence failure. */

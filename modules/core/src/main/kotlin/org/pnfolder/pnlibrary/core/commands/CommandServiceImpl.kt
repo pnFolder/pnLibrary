@@ -3,10 +3,10 @@ package org.pnfolder.pnlibrary.core.commands
 import net.kyori.adventure.text.Component
 import org.pnfolder.pnlibrary.api.commands.CommandContext
 import org.pnfolder.pnlibrary.api.commands.CommandDefinition
-import org.pnfolder.pnlibrary.api.commands.CommandRegistration
 import org.pnfolder.pnlibrary.api.commands.CommandError
 import org.pnfolder.pnlibrary.api.commands.CommandFailure
 import org.pnfolder.pnlibrary.api.commands.CommandNode
+import org.pnfolder.pnlibrary.api.commands.CommandRegistration
 import org.pnfolder.pnlibrary.api.commands.NoPermission
 import org.pnfolder.pnlibrary.api.commands.completedExecution
 import org.pnfolder.pnlibrary.api.commands.completedSuggestions

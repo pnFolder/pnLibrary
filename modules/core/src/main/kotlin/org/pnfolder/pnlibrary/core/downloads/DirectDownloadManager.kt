@@ -1,10 +1,10 @@
 package org.pnfolder.pnlibrary.core.downloads
 
+import org.pnfolder.pnlibrary.api.dependencies.PluginDependency
 import org.pnfolder.pnlibrary.api.downloads.DownloadRegistration
 import org.pnfolder.pnlibrary.api.downloads.FileDownload
 import org.pnfolder.pnlibrary.api.downloads.FileDownloads
 import org.pnfolder.pnlibrary.api.logging.LogLevel
-import org.pnfolder.pnlibrary.api.dependencies.PluginDependency
 import org.pnfolder.pnlibrary.core.updates.engine.TrustedHttpClient
 import org.pnfolder.pnlibrary.spi.platform.PlatformIdentity
 import org.pnfolder.pnlibrary.spi.platform.PlatformLogging

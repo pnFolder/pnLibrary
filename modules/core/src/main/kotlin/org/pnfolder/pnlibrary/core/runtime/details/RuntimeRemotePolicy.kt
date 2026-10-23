@@ -1,15 +1,15 @@
 package org.pnfolder.pnlibrary.core.runtime.details
 
-import org.pnfolder.pnlibrary.api.remote.DenyAction
 import org.pnfolder.pnlibrary.api.plugin.ModuleId
 import org.pnfolder.pnlibrary.api.plugin.PluginMetadata
+import org.pnfolder.pnlibrary.api.remote.DenyAction
 import org.pnfolder.pnlibrary.api.remote.RemotePolicySettings
 import org.pnfolder.pnlibrary.api.runtime.PnLibrary
 import org.pnfolder.pnlibrary.api.runtime.PnLibraryIdentity
 import org.pnfolder.pnlibrary.common.jvm.JavaRuntime
+import org.pnfolder.pnlibrary.core.lifecycle.runtimeTaskScope
 import org.pnfolder.pnlibrary.core.remote.RemotePolicyMonitor
 import org.pnfolder.pnlibrary.core.remote.RemotePolicyNoticeRenderer
-import org.pnfolder.pnlibrary.core.lifecycle.runtimeTaskScope
 import org.pnfolder.pnlibrary.spi.platform.PlatformAdapter
 import java.util.concurrent.atomic.AtomicBoolean
 

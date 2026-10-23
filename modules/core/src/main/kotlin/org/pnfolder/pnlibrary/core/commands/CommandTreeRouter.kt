@@ -4,14 +4,14 @@ import org.pnfolder.pnlibrary.api.commands.ArgumentSpec
 import org.pnfolder.pnlibrary.api.commands.ArgumentType
 import org.pnfolder.pnlibrary.api.commands.CommandContext
 import org.pnfolder.pnlibrary.api.commands.CommandDefinition
+import org.pnfolder.pnlibrary.api.commands.CommandError
 import org.pnfolder.pnlibrary.api.commands.CommandNode
 import org.pnfolder.pnlibrary.api.commands.CommandNodeKind
-import org.pnfolder.pnlibrary.api.commands.SenderRule
-import org.pnfolder.pnlibrary.api.commands.CommandError
+import org.pnfolder.pnlibrary.api.commands.ConsoleOnly
 import org.pnfolder.pnlibrary.api.commands.IncompleteCommand
 import org.pnfolder.pnlibrary.api.commands.NoPermission
 import org.pnfolder.pnlibrary.api.commands.PlayerOnly
-import org.pnfolder.pnlibrary.api.commands.ConsoleOnly
+import org.pnfolder.pnlibrary.api.commands.SenderRule
 import org.pnfolder.pnlibrary.api.commands.UnknownArgument
 import org.pnfolder.pnlibrary.api.commands.completedSuggestions
 import java.util.LinkedHashMap

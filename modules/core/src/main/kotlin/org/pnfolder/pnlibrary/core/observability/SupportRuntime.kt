@@ -9,8 +9,8 @@ import org.pnfolder.pnlibrary.api.observability.ObservabilityReport
 import org.pnfolder.pnlibrary.api.observability.ObservabilityReportRequest
 import org.pnfolder.pnlibrary.api.runtime.PnLibraryConfig
 import org.pnfolder.pnlibrary.core.diagnostics.DiagnosticsRegistry
-import org.pnfolder.pnlibrary.core.logging.DiagnosticLogBuffer
 import org.pnfolder.pnlibrary.core.logging.DiagnosticCapture
+import org.pnfolder.pnlibrary.core.logging.DiagnosticLogBuffer
 import org.pnfolder.pnlibrary.core.observability.history.IncidentHistoryStore
 import org.pnfolder.pnlibrary.core.observability.report.SupportDeliveryFactory
 import org.pnfolder.pnlibrary.core.observability.report.SupportReportGenerator

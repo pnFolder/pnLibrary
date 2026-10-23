@@ -23,7 +23,6 @@ internal val FRAMEWORK = listOf(
     "net.kyori.", "org.jetbrains.",
 )
 
-
 /** One trace line as colored text, and whether it is a frame of the JDK, the server or a library. */
 internal fun traceLine(kit: ChatKit, line: String): Pair<Component, Boolean> {
     val text = line.replace("\t", " ").trim()

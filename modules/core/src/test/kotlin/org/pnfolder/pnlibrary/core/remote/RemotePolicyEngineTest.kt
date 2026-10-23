@@ -2,16 +2,16 @@ package org.pnfolder.pnlibrary.core.remote
 
 import org.junit.jupiter.api.Assertions.assertEquals
 import org.junit.jupiter.api.Assertions.assertFalse
+import org.junit.jupiter.api.Assertions.assertTrue
 import org.junit.jupiter.api.Test
+import org.junit.jupiter.api.assertThrows
 import org.pnfolder.pnlibrary.api.platform.PlatformType
 import org.pnfolder.pnlibrary.api.remote.PlatformInfo
 import org.pnfolder.pnlibrary.api.remote.ProductInfo
 import org.pnfolder.pnlibrary.api.remote.RemotePolicyContext
 import org.pnfolder.pnlibrary.api.remote.ServerInfo
-import org.pnfolder.pnlibrary.common.minecraft.MinecraftVersion
 import org.pnfolder.pnlibrary.common.io.Digests
-import org.junit.jupiter.api.Assertions.assertTrue
-import org.junit.jupiter.api.assertThrows
+import org.pnfolder.pnlibrary.common.minecraft.MinecraftVersion
 
 class RemotePolicyEngineTest {
     @Test

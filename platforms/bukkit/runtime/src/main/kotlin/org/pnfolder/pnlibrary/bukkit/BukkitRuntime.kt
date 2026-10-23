@@ -1,13 +1,12 @@
 package org.pnfolder.pnlibrary.bukkit
 
 import org.bukkit.plugin.java.JavaPlugin
-import org.pnfolder.pnlibrary.api.currency.currencyProviders
 import org.pnfolder.pnlibrary.bukkit.api.BukkitPlatform
 import org.pnfolder.pnlibrary.bukkit.inventory.MenuService
 import org.pnfolder.pnlibrary.bukkit.inventory.MenuServiceImpl
 import org.pnfolder.pnlibrary.bukkit.server.ServerInfo
-import org.pnfolder.pnlibrary.core.runtime.PnLibraryRuntimeHost
 import org.pnfolder.pnlibrary.core.lifecycle.runtimeTaskScope
+import org.pnfolder.pnlibrary.core.runtime.PnLibraryRuntimeHost
 
 /**
  * Owns everything the Bukkit plugin starts: the shared runtime, Bukkit services and optional

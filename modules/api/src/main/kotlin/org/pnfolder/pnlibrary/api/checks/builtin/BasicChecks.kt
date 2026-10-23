@@ -6,7 +6,6 @@ import org.pnfolder.pnlibrary.api.checks.internal.CheckSerializer
 import org.pnfolder.pnlibrary.api.config.ConfigKey
 import org.pnfolder.pnlibrary.api.config.ConfigSerializeWith
 
-
 /**
  * Interprets a named context value as a boolean and compares it with [enabled].
  *

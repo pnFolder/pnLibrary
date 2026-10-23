@@ -198,7 +198,6 @@ class CommandNodeBuilder internal constructor(
         mounted += nodes
     }
 
-
     internal fun build(): CommandNode {
         validateChildren()
         return CommandNode(

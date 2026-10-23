@@ -112,7 +112,8 @@ internal class ConfigurationRestorer(private val snapshots: ConfigurationSnapsho
         snapshot.files.forEach { record ->
             val target = snapshots.target(record)
             if (!record.existed) {
-                require(!Files.exists(target, LinkOption.NOFOLLOW_LINKS) || Files.isRegularFile(target, LinkOption.NOFOLLOW_LINKS)) { "Configuration target is not a regular file" }
+                require(!Files.exists(target, LinkOption.NOFOLLOW_LINKS) || Files.isRegularFile(target,
+                    LinkOption.NOFOLLOW_LINKS)) { "Configuration target is not a regular file" }
                 Files.deleteIfExists(target)
             } else {
                 Files.createDirectories(target.parent)

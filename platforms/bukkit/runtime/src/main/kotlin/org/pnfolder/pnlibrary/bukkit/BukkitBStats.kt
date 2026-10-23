@@ -1,7 +1,6 @@
 package org.pnfolder.pnlibrary.bukkit
 
 import org.bukkit.Bukkit
-import org.bukkit.entity.Player
 import org.bukkit.plugin.Plugin
 import org.pnfolder.pnlibrary.core.metrics.bstats.BStatsClient
 import org.pnfolder.pnlibrary.core.metrics.bstats.BStatsSettings

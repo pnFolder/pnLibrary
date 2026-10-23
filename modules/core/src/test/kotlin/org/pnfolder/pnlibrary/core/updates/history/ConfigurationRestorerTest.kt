@@ -18,7 +18,8 @@ class ConfigurationRestorerTest {
         val (snapshots, data) = fixture()
         val config = data.resolve("config.yml")
         Files.writeString(config, "version: 1")
-        val original = snapshots.capture(UUID.randomUUID(), mapOf(ProductId.of("example") to UpdateConfigurationBackup(data, listOf("config.yml", "optional.yml"))))!!
+        val original = snapshots.capture(UUID.randomUUID(), mapOf(ProductId.of("example") to UpdateConfigurationBackup(data, listOf("config.yml",
+            "optional.yml"))))!!
         Files.writeString(config, "version: 2")
         Files.writeString(data.resolve("optional.yml"), "new generated file")
         Files.writeString(data.resolve("unrelated.yml"), "keep me")

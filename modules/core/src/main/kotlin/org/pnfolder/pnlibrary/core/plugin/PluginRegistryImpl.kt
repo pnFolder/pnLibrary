@@ -2,9 +2,9 @@ package org.pnfolder.pnlibrary.core.plugin
 
 import org.pnfolder.pnlibrary.api.actions.ActionService
 import org.pnfolder.pnlibrary.api.commands.CommandDefinition
-import org.pnfolder.pnlibrary.api.commands.CommandRegistration
 import org.pnfolder.pnlibrary.api.commands.CommandError
 import org.pnfolder.pnlibrary.api.commands.CommandErrorHandler
+import org.pnfolder.pnlibrary.api.commands.CommandRegistration
 import org.pnfolder.pnlibrary.api.config.ConfigScope
 import org.pnfolder.pnlibrary.api.cooldowns.CooldownService
 import org.pnfolder.pnlibrary.api.diagnostics.DiagnosticRegistration
@@ -14,9 +14,9 @@ import org.pnfolder.pnlibrary.api.events.EventScope
 import org.pnfolder.pnlibrary.api.events.EventService
 import org.pnfolder.pnlibrary.api.logging.LoggingService
 import org.pnfolder.pnlibrary.api.logging.PnLogger
+import org.pnfolder.pnlibrary.api.metrics.MetricsController
 import org.pnfolder.pnlibrary.api.metrics.MetricsService
 import org.pnfolder.pnlibrary.api.placeholders.PlaceholderService
-import org.pnfolder.pnlibrary.api.metrics.MetricsController
 import org.pnfolder.pnlibrary.api.plugin.ModuleContext
 import org.pnfolder.pnlibrary.api.plugin.ModuleId
 import org.pnfolder.pnlibrary.api.plugin.PluginBuilder
@@ -34,9 +34,9 @@ import org.pnfolder.pnlibrary.api.updates.ProductDescriptor
 import org.pnfolder.pnlibrary.api.updates.UpdateRegistration
 import org.pnfolder.pnlibrary.api.updates.UpdateService
 import org.pnfolder.pnlibrary.api.version.SemanticVersion
-import org.pnfolder.pnlibrary.core.commands.CommandService
-import org.pnfolder.pnlibrary.core.commands.CommandFeedbackScope
 import org.pnfolder.pnlibrary.config.ConfigurationServiceImpl
+import org.pnfolder.pnlibrary.core.commands.CommandFeedbackScope
+import org.pnfolder.pnlibrary.core.commands.CommandService
 import org.pnfolder.pnlibrary.core.downloads.DirectDownloadManager
 import org.pnfolder.pnlibrary.core.lifecycle.ResourceCleanup
 import org.pnfolder.pnlibrary.core.placeholders.PlaceholderHub

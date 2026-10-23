@@ -42,6 +42,5 @@ internal class BungeeTaskAdapter internal constructor(
         }
     })
 
-
     override fun scheduleNative(request: PlatformTaskRequest): PlatformTaskHandle = nativeSchedule(request)
 }

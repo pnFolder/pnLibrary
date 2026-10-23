@@ -80,11 +80,17 @@ class ProxyUpdateCommand(private val library: PnLibrary) {
         if (id == null) { context.sender.send(Component.text("Неверный ID набора.")); return }
         if (!confirmed) {
             val option = if (restoreConfigurations) " configs" else ""
-            context.sender.send(Component.text("Вернуть сохранённые JAR${if (restoreConfigurations) " вместе с выбранными файлами конфигурации" else " без изменения конфигураций"}: /pn update rollback $id$option confirm"))
+            val restored = if (restoreConfigurations) " вместе с выбранными файлами конфигурации" else " без изменения конфигураций"
+            context.sender.send(Component.text("Вернуть сохранённые JAR$restored: /pn update rollback $id$option confirm"))
             return
         }
         library.updates.rollback(id, restoreConfigurations, actor(context)).whenComplete { _, error ->
-            context.sender.send(Component.text(if (error == null) "Набор $id подготовлен. Полностью перезапустите прокси." else "Не удалось откатить: ${error.message}"))
+            val message = if (error == null) {
+                "Набор $id подготовлен. Полностью перезапустите прокси."
+            } else {
+                "Не удалось откатить: ${error.message}"
+            }
+            context.sender.send(Component.text(message))
         }
     }
 

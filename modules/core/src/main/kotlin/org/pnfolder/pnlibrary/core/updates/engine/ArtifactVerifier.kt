@@ -54,6 +54,5 @@ internal class ArtifactVerifier(
         // The release catalog is the single source of product identity/version/API.
     }
 
-
     private fun fail(message: String): Nothing = throw ArtifactVerificationException(message)
 }

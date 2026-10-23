@@ -3,10 +3,10 @@ package org.pnfolder.pnlibrary.core.updates.policy
 import org.junit.jupiter.api.Assertions.assertEquals
 import org.junit.jupiter.api.Test
 import org.pnfolder.pnlibrary.api.platform.PlatformType
-import org.pnfolder.pnlibrary.api.updates.release.ArtifactDescriptor
 import org.pnfolder.pnlibrary.api.updates.ProductId
-import org.pnfolder.pnlibrary.api.updates.release.ProductRelease
 import org.pnfolder.pnlibrary.api.updates.UpdateChannel
+import org.pnfolder.pnlibrary.api.updates.release.ArtifactDescriptor
+import org.pnfolder.pnlibrary.api.updates.release.ProductRelease
 import org.pnfolder.pnlibrary.api.version.ApiVersionRange
 import org.pnfolder.pnlibrary.api.version.SemanticVersion
 

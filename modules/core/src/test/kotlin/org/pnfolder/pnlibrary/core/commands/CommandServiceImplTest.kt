@@ -8,16 +8,16 @@ import org.junit.jupiter.api.Assertions.assertTrue
 import org.junit.jupiter.api.Test
 import org.pnfolder.pnlibrary.api.commands.ArgumentType
 import org.pnfolder.pnlibrary.api.commands.BadUsage
-import org.pnfolder.pnlibrary.api.commands.CommandError
-import org.pnfolder.pnlibrary.api.commands.CommandErrorHandler
-import org.pnfolder.pnlibrary.api.commands.InvalidArgument
-import org.pnfolder.pnlibrary.api.commands.NoPermission
-import org.pnfolder.pnlibrary.api.commands.ensure
-import org.pnfolder.pnlibrary.api.commands.fail
 import org.pnfolder.pnlibrary.api.commands.CommandContext
 import org.pnfolder.pnlibrary.api.commands.CommandDefinition
+import org.pnfolder.pnlibrary.api.commands.CommandError
+import org.pnfolder.pnlibrary.api.commands.CommandErrorHandler
 import org.pnfolder.pnlibrary.api.commands.CommandSender
+import org.pnfolder.pnlibrary.api.commands.InvalidArgument
+import org.pnfolder.pnlibrary.api.commands.NoPermission
 import org.pnfolder.pnlibrary.api.commands.command
+import org.pnfolder.pnlibrary.api.commands.ensure
+import org.pnfolder.pnlibrary.api.commands.fail
 import org.pnfolder.pnlibrary.api.logging.LogLevel
 import org.pnfolder.pnlibrary.api.platform.PlatformType
 import org.pnfolder.pnlibrary.spi.commands.PlatformCommandAdapter
@@ -400,7 +400,8 @@ class CommandServiceImplTest {
     @Test
     fun `the standard answer can add a sound and reshape the usage line`() {
         val native = RecordingCommands()
-        val sound = net.kyori.adventure.sound.Sound.sound(net.kyori.adventure.key.Key.key("entity.villager.no"), net.kyori.adventure.sound.Sound.Source.MASTER, 1f, 1f)
+        val sound = net.kyori.adventure.sound.Sound.sound(net.kyori.adventure.key.Key.key("entity.villager.no"), net.kyori.adventure.sound.Sound.Source.MASTER,
+            1f, 1f)
         service(native, StandardCommandFeedback(deniedMessage = "Нет прав", deniedSound = sound, usageFormat = "Подсказка → {usage}"))
             .register(Any(), command("hello") { permission("p.hello"); executes { }; literal("a") { executes { } } })
         val denied = TestSender()

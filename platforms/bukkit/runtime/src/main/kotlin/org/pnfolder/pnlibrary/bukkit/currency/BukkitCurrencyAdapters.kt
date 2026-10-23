@@ -27,7 +27,6 @@ internal object BukkitCurrencyAdapters {
         ReflectiveVaultCurrency(economy)
     }.getOrNull()
 
-
     /** Resolves the enabled PlayerPoints plugin API, or null when unavailable. */
     fun playerPoints(plugin: Plugin): CurrencyProvider? = runCatching {
         val target = plugin.server.pluginManager.getPlugin("PlayerPoints") ?: return null

@@ -7,6 +7,11 @@ import org.bukkit.ChatColor
 import org.bukkit.command.ConsoleCommandSender
 import org.bukkit.entity.Player
 import org.bukkit.plugin.Plugin
+import org.pnfolder.pnlibrary.api.chat.ChatKit
+import org.pnfolder.pnlibrary.api.chat.ChatNotice
+import org.pnfolder.pnlibrary.api.chat.ChatPalette
+import org.pnfolder.pnlibrary.api.chat.ChatReader
+import org.pnfolder.pnlibrary.api.chat.ChatTone
 import org.pnfolder.pnlibrary.api.commands.ArgumentType
 import org.pnfolder.pnlibrary.api.commands.CommandContext
 import org.pnfolder.pnlibrary.api.commands.CommandDefinition
@@ -27,11 +32,6 @@ import org.pnfolder.pnlibrary.api.currency.CurrencyTransactionStatus
 import org.pnfolder.pnlibrary.api.currency.CurrencyTransactionType
 import org.pnfolder.pnlibrary.bukkit.commands.BukkitCommandSender
 import org.pnfolder.pnlibrary.common.text.RussianText
-import org.pnfolder.pnlibrary.api.chat.ChatKit
-import org.pnfolder.pnlibrary.api.chat.ChatNotice
-import org.pnfolder.pnlibrary.api.chat.ChatPalette
-import org.pnfolder.pnlibrary.api.chat.ChatReader
-import org.pnfolder.pnlibrary.api.chat.ChatTone
 import java.math.BigDecimal
 import java.time.ZoneId
 import java.time.format.DateTimeFormatter

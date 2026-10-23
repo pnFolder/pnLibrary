@@ -1,12 +1,12 @@
 package org.pnfolder.pnlibrary.bukkit.commands
 
+import org.pnfolder.pnlibrary.api.chat.ChatNotice
+import org.pnfolder.pnlibrary.api.chat.ChatTone
 import org.pnfolder.pnlibrary.api.runtime.PnLibraryIdentity
 import org.pnfolder.pnlibrary.api.updates.BlockedReason
 import org.pnfolder.pnlibrary.api.updates.UpdatePlanSnapshot
 import org.pnfolder.pnlibrary.api.updates.UpdateSnapshot
 import org.pnfolder.pnlibrary.api.updates.UpdateState
-import org.pnfolder.pnlibrary.api.chat.ChatNotice
-import org.pnfolder.pnlibrary.api.chat.ChatTone
 
 /** Pure, platform-independent wording of the update state used by Bukkit update commands. */
 internal object BukkitUpdateMessages {

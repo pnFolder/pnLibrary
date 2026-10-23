@@ -1,11 +1,11 @@
 package org.pnfolder.pnlibrary.core.downloads
 
+import org.pnfolder.pnlibrary.api.chat.ChatTone
 import org.pnfolder.pnlibrary.api.downloads.FileDownload
 import org.pnfolder.pnlibrary.api.logging.LogLevel
 import org.pnfolder.pnlibrary.api.runtime.PnLibraryIdentity
 import org.pnfolder.pnlibrary.console.ConsoleCard
 import org.pnfolder.pnlibrary.console.ConsoleTree
-import org.pnfolder.pnlibrary.api.chat.ChatTone
 import org.pnfolder.pnlibrary.core.ui.ConsoleStyle
 import org.pnfolder.pnlibrary.spi.platform.PlatformLogging
 import org.pnfolder.pnlibrary.spi.platform.PlatformOwnerMetadata

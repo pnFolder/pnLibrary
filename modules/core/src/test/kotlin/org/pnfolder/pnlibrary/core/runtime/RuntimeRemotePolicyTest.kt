@@ -8,17 +8,17 @@ import org.pnfolder.pnlibrary.api.logging.LoggingService
 import org.pnfolder.pnlibrary.api.logging.PnLogger
 import org.pnfolder.pnlibrary.api.platform.PlatformType
 import org.pnfolder.pnlibrary.api.remote.DenyAction
-import org.pnfolder.pnlibrary.api.remote.PolicyErrorAction
-import org.pnfolder.pnlibrary.api.remote.RemotePolicySettings
 import org.pnfolder.pnlibrary.api.remote.PlatformInfo
+import org.pnfolder.pnlibrary.api.remote.PolicyErrorAction
 import org.pnfolder.pnlibrary.api.remote.ProductInfo
 import org.pnfolder.pnlibrary.api.remote.RemotePolicyContext
+import org.pnfolder.pnlibrary.api.remote.RemotePolicySettings
 import org.pnfolder.pnlibrary.api.remote.ServerInfo
 import org.pnfolder.pnlibrary.api.runtime.PnLibrary
 import org.pnfolder.pnlibrary.api.tasks.*
 import org.pnfolder.pnlibrary.common.minecraft.MinecraftVersion
-import org.pnfolder.pnlibrary.core.runtime.details.RuntimeRemotePolicy
 import org.pnfolder.pnlibrary.core.lifecycle.RuntimeResources
+import org.pnfolder.pnlibrary.core.runtime.details.RuntimeRemotePolicy
 import org.pnfolder.pnlibrary.spi.platform.PlatformAdapter
 import java.nio.file.Files
 import java.nio.file.Path
@@ -164,7 +164,8 @@ class RuntimeRemotePolicyTest {
         assertThrows(IllegalArgumentException::class.java) { RuntimeRemotePolicy.validated(RemotePolicySettings("http://example.org/Unsafe.java")) }
         verifyNoInteractions(platform)
         assertNotNull(PnLibraryRuntimeHost::class.java.getMethod("start", Any::class.java, PlatformAdapter::class.java))
-        assertNotNull(PnLibraryRuntimeHost::class.java.getMethod("startAndRegisterPlatform", Any::class.java, PlatformAdapter::class.java, Class::class.java, Any::class.java))
+        assertNotNull(PnLibraryRuntimeHost::class.java.getMethod("startAndRegisterPlatform", Any::class.java, PlatformAdapter::class.java, Class::class.java,
+            Any::class.java))
     }
 
     private fun policy(name: String, allowed: Boolean): RemotePolicySettings {

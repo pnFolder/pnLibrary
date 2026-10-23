@@ -1,12 +1,12 @@
 package org.pnfolder.pnlibrary.core.updates.service
 
 import org.pnfolder.pnlibrary.api.logging.LogLevel
-import org.pnfolder.pnlibrary.api.updates.release.ProductChange
 import org.pnfolder.pnlibrary.api.updates.ProductId
 import org.pnfolder.pnlibrary.api.updates.UpdateActor
-import org.pnfolder.pnlibrary.api.updates.backup.UpdateHistoryEntry
 import org.pnfolder.pnlibrary.api.updates.UpdatePlanSnapshot
 import org.pnfolder.pnlibrary.api.updates.UpdateState
+import org.pnfolder.pnlibrary.api.updates.backup.UpdateHistoryEntry
+import org.pnfolder.pnlibrary.api.updates.release.ProductChange
 import org.pnfolder.pnlibrary.api.version.SemanticVersion
 import org.pnfolder.pnlibrary.core.updates.engine.RefreshMode
 import org.pnfolder.pnlibrary.core.updates.engine.ResolutionResult
@@ -103,7 +103,8 @@ internal class UpdateOrchestratorRuntime(
                 observeComponents(installed)
                 created.start()
             } catch (error: Exception) {
-                if (!closed.get()) logging.log(this, LogLevel.WARNING, "Could not verify restarted component versions; automatic checks were not started", error)
+                if (!closed.get()) logging.log(this, LogLevel.WARNING, "Could not verify restarted component versions; automatic checks were not started",
+                    error)
             }
         }
         if (!closed.get()) try { executor.execute(::attempt) }
