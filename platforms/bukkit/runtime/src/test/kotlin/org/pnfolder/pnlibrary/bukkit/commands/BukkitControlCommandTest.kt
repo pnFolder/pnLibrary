@@ -5,22 +5,22 @@ import org.bukkit.plugin.Plugin
 import org.junit.jupiter.api.Assertions.assertEquals
 import org.junit.jupiter.api.Assertions.assertTrue
 import org.junit.jupiter.api.Test
+import org.pnfolder.pnlibrary.api.chat.ChatNotice
+import org.pnfolder.pnlibrary.api.chat.ChatTone
 import org.pnfolder.pnlibrary.api.commands.CommandNodeKind
 import org.pnfolder.pnlibrary.api.commands.CommandSender
 import org.pnfolder.pnlibrary.api.currency.CurrencyProviderRegistry
 import org.pnfolder.pnlibrary.api.runtime.PnLibrary
 import org.pnfolder.pnlibrary.api.updates.BlockedReason
-import org.pnfolder.pnlibrary.api.updates.release.ProductChange
 import org.pnfolder.pnlibrary.api.updates.ProductId
 import org.pnfolder.pnlibrary.api.updates.UpdateChannel
-import org.pnfolder.pnlibrary.api.updates.release.UpdatePlan
 import org.pnfolder.pnlibrary.api.updates.UpdatePlanSnapshot
 import org.pnfolder.pnlibrary.api.updates.UpdateSnapshot
 import org.pnfolder.pnlibrary.api.updates.UpdateState
+import org.pnfolder.pnlibrary.api.updates.release.ProductChange
+import org.pnfolder.pnlibrary.api.updates.release.UpdatePlan
 import org.pnfolder.pnlibrary.api.version.PnLibraryApi
 import org.pnfolder.pnlibrary.api.version.SemanticVersion
-import org.pnfolder.pnlibrary.api.chat.ChatNotice
-import org.pnfolder.pnlibrary.api.chat.ChatTone
 import java.lang.reflect.Proxy
 import java.util.UUID
 

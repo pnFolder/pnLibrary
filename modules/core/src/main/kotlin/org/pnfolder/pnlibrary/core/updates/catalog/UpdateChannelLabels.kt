@@ -1,8 +1,8 @@
 package org.pnfolder.pnlibrary.core.updates.catalog
 
 import net.kyori.adventure.text.format.TextColor
-import org.pnfolder.pnlibrary.api.updates.UpdateChannel
 import org.pnfolder.pnlibrary.api.chat.ChatPalette
+import org.pnfolder.pnlibrary.api.updates.UpdateChannel
 import java.util.Locale
 
 /** The words and colors of update channels, shared by the chat catalog and every console card. */

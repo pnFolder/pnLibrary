@@ -1,8 +1,8 @@
 package org.pnfolder.pnlibrary.config.yaml
 
+import org.pnfolder.pnlibrary.api.config.ConfigNodeRewriter
 import org.pnfolder.pnlibrary.api.config.ConfigSerializeWith
 import org.pnfolder.pnlibrary.api.config.ConfigSerializer
-import org.pnfolder.pnlibrary.api.config.ConfigNodeRewriter
 import org.pnfolder.pnlibrary.api.config.ConfigTextForm
 import org.pnfolder.pnlibrary.api.config.ConfigTextParser
 import java.lang.reflect.Field

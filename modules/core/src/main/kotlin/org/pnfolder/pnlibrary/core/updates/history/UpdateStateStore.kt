@@ -10,9 +10,9 @@ import com.google.gson.JsonPrimitive
 import com.google.gson.JsonSerializer
 import org.pnfolder.pnlibrary.api.updates.BlockedReason
 import org.pnfolder.pnlibrary.api.updates.ProductId
-import org.pnfolder.pnlibrary.api.updates.release.UpdatePlan
 import org.pnfolder.pnlibrary.api.updates.UpdatePlanSnapshot
 import org.pnfolder.pnlibrary.api.updates.UpdateState
+import org.pnfolder.pnlibrary.api.updates.release.UpdatePlan
 import org.pnfolder.pnlibrary.api.version.ApiVersionRange
 import org.pnfolder.pnlibrary.api.version.SemanticVersion
 import org.pnfolder.pnlibrary.common.io.AtomicFiles

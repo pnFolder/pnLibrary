@@ -8,12 +8,15 @@ import org.junit.jupiter.api.Assertions.assertSame
 import org.junit.jupiter.api.Assertions.assertThrows
 import org.junit.jupiter.api.Assertions.assertTrue
 import org.junit.jupiter.api.Test
-import org.mockito.Mockito.`when`
 import org.mockito.Mockito.doThrow
 import org.mockito.Mockito.mock
 import org.mockito.Mockito.verify
+import org.mockito.Mockito.`when`
 import org.pnfolder.pnlibrary.api.commands.CommandDefinition
 import org.pnfolder.pnlibrary.api.commands.CommandRegistration
+import org.pnfolder.pnlibrary.api.dependencies.Dependencies
+import org.pnfolder.pnlibrary.api.dependencies.ExternalPluginDependency
+import org.pnfolder.pnlibrary.api.dependencies.PluginDependency
 import org.pnfolder.pnlibrary.api.diagnostics.DiagnosticsService
 import org.pnfolder.pnlibrary.api.downloads.DownloadDestination
 import org.pnfolder.pnlibrary.api.downloads.DownloadRegistration
@@ -29,13 +32,10 @@ import org.pnfolder.pnlibrary.api.metrics.MetricsProviderConfiguration
 import org.pnfolder.pnlibrary.api.metrics.MetricsService
 import org.pnfolder.pnlibrary.api.metrics.PluginMetrics
 import org.pnfolder.pnlibrary.api.platform.PlatformType
-import org.pnfolder.pnlibrary.api.dependencies.Dependencies
 import org.pnfolder.pnlibrary.api.plugin.LifecycleRow
 import org.pnfolder.pnlibrary.api.plugin.PluginBuilder
-import org.pnfolder.pnlibrary.api.dependencies.PluginDependency
 import org.pnfolder.pnlibrary.api.tasks.TaskScope
 import org.pnfolder.pnlibrary.api.tasks.TaskSpec
-import org.pnfolder.pnlibrary.api.dependencies.ExternalPluginDependency
 import org.pnfolder.pnlibrary.api.updates.PluginUpdateRequest
 import org.pnfolder.pnlibrary.api.updates.ProductDescriptor
 import org.pnfolder.pnlibrary.api.updates.UpdateRegistration
@@ -730,7 +730,8 @@ class PluginRegistryImplTest {
     private class RecordingCommandService : CommandService {
         val unregisteredOwners = mutableListOf<Any>()
         val registeredOwners = mutableListOf<Any>()
-        override fun register(owner: Any, command: CommandDefinition, feedback: org.pnfolder.pnlibrary.core.commands.CommandFeedbackScope?): CommandRegistration =
+        override fun register(owner: Any, command: CommandDefinition,
+            feedback: org.pnfolder.pnlibrary.core.commands.CommandFeedbackScope?): CommandRegistration =
             object : CommandRegistration {
                 init { registeredOwners += owner }
                 override val command = command

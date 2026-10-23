@@ -1,9 +1,9 @@
 package org.pnfolder.pnlibrary.core.runtime
 
-import org.pnfolder.pnlibrary.api.runtime.PnLibrary
 import org.pnfolder.pnlibrary.api.remote.DenyAction
 import org.pnfolder.pnlibrary.api.remote.PolicyErrorAction
 import org.pnfolder.pnlibrary.api.remote.RemotePolicySettings
+import org.pnfolder.pnlibrary.api.runtime.PnLibrary
 import org.pnfolder.pnlibrary.api.runtime.PnLibraryIdentity
 import org.pnfolder.pnlibrary.core.runtime.details.RuntimeRemotePolicy
 import org.pnfolder.pnlibrary.core.runtime.lifecycle.RuntimeBootstrapCoordinator

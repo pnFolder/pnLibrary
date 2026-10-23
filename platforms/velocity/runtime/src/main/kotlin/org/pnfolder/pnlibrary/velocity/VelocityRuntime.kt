@@ -3,9 +3,9 @@ package org.pnfolder.pnlibrary.velocity
 import com.velocitypowered.api.event.proxy.ProxyInitializeEvent
 import com.velocitypowered.api.event.proxy.ProxyShutdownEvent
 import com.velocitypowered.api.proxy.ProxyServer
-import org.slf4j.Logger
 import org.pnfolder.pnlibrary.core.runtime.PnLibraryRuntimeHost
 import org.pnfolder.pnlibrary.velocity.api.VelocityPlatform
+import org.slf4j.Logger
 import java.nio.file.Path
 
 /**

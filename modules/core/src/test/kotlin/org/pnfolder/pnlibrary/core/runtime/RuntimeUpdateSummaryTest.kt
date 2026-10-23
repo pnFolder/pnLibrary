@@ -2,11 +2,11 @@ package org.pnfolder.pnlibrary.core.runtime
 
 import org.junit.jupiter.api.Assertions.assertEquals
 import org.junit.jupiter.api.Test
-import org.pnfolder.pnlibrary.api.updates.release.ReleaseSummary
 import org.pnfolder.pnlibrary.api.updates.UpdateChannel
 import org.pnfolder.pnlibrary.api.updates.UpdateRegistration
 import org.pnfolder.pnlibrary.api.updates.UpdateSnapshot
 import org.pnfolder.pnlibrary.api.updates.UpdateState
+import org.pnfolder.pnlibrary.api.updates.release.ReleaseSummary
 import org.pnfolder.pnlibrary.core.runtime.details.RuntimeUpdateSummary
 import java.time.Instant
 

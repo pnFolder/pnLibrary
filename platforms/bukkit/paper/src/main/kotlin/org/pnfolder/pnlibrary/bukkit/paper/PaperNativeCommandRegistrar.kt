@@ -3,8 +3,8 @@ package org.pnfolder.pnlibrary.bukkit.paper
 import io.papermc.paper.command.brigadier.CommandSourceStack
 import io.papermc.paper.command.brigadier.Commands
 import io.papermc.paper.plugin.lifecycle.event.handler.LifecycleEventHandler
-import io.papermc.paper.plugin.lifecycle.event.types.LifecycleEvents
 import io.papermc.paper.plugin.lifecycle.event.registrar.ReloadableRegistrarEvent
+import io.papermc.paper.plugin.lifecycle.event.types.LifecycleEvents
 import org.bukkit.command.CommandSender
 import org.bukkit.plugin.Plugin
 import org.pnfolder.pnlibrary.api.commands.CommandDefinition
@@ -77,7 +77,10 @@ class PaperNativeCommandRegistrar(
             val meta = (entry.owner ?: plugin).pluginMeta
             registrar.register(meta, node, "pnLibrary portable command", entry.command.aliases.toList())
         } catch (error: Exception) {
-            plugin.logger.warning("Command /${entry.command.name} could not use Paper's command API (${error.javaClass.simpleName}); using the classic command map")
+            plugin.logger.warning(
+                "Command /${entry.command.name} could not use Paper's command API " +
+                    "(${error.javaClass.simpleName}); using the classic command map",
+            )
             entry.fallbackRegistration = fallback.register(entry.owner ?: plugin, entry.command, entry.execute, entry.suggest)
         }
     }

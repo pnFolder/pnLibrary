@@ -1,10 +1,10 @@
 package org.pnfolder.pnlibrary.core.plugin
 
 import org.pnfolder.pnlibrary.api.metrics.ErrorReporter
+import org.pnfolder.pnlibrary.api.metrics.MetricsController
 import org.pnfolder.pnlibrary.api.metrics.MetricsProviderConfiguration
 import org.pnfolder.pnlibrary.api.metrics.MetricsService
 import org.pnfolder.pnlibrary.api.metrics.PluginMetrics
-import org.pnfolder.pnlibrary.api.metrics.MetricsController
 import java.util.concurrent.atomic.AtomicBoolean
 import java.util.function.Consumer
 

@@ -2,7 +2,6 @@ package org.pnfolder.pnlibrary.velocity
 
 import com.velocitypowered.api.proxy.ProxyServer
 import net.kyori.adventure.text.serializer.legacy.LegacyComponentSerializer
-import org.slf4j.Logger
 import org.pnfolder.pnlibrary.api.logging.LogLevel
 import org.pnfolder.pnlibrary.api.platform.PlatformType
 import org.pnfolder.pnlibrary.api.remote.RemotePolicyContext
@@ -20,6 +19,7 @@ import org.pnfolder.pnlibrary.spi.tasks.PlatformTaskRequest
 import org.pnfolder.pnlibrary.velocity.commands.VelocityCommandAdapter
 import org.pnfolder.pnlibrary.velocity.remote.VelocityRemotePolicyContextFactory
 import org.pnfolder.pnlibrary.velocity.tasks.VelocityTaskAdapter
+import org.slf4j.Logger
 import java.nio.file.Path
 import java.time.Duration
 

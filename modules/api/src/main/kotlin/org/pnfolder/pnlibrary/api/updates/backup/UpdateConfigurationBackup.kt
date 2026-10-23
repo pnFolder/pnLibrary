@@ -16,7 +16,8 @@ class UpdateConfigurationBackup(root: Path, files: List<String>) {
     /** Immutable normalized paths relative to [root]. Missing files are recorded as absent. */
     val files: List<String> = Collections.unmodifiableList(files.map { value ->
         val path = Paths.get(value).normalize()
-        require(value.isNotBlank() && !path.isAbsolute && path.root == null && path.toString().isNotEmpty() && path.toString() != "." && !path.startsWith("..")) {
+        require(value.isNotBlank() && !path.isAbsolute && path.root == null && path.toString().isNotEmpty() && path.toString() != "." &&
+            !path.startsWith("..")) {
             "Configuration paths must stay relative to the component data directory"
         }
         require(value.none { it == '*' || it == '?' || it.isISOControl() }) { "Configuration paths must be explicit file names" }

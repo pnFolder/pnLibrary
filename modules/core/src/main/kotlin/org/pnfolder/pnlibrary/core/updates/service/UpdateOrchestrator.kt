@@ -1,9 +1,9 @@
 package org.pnfolder.pnlibrary.core.updates.service
 
 import org.pnfolder.pnlibrary.api.updates.UpdateActor
-import org.pnfolder.pnlibrary.api.updates.release.UpdatePlan
 import org.pnfolder.pnlibrary.api.updates.UpdatePlanSnapshot
 import org.pnfolder.pnlibrary.api.updates.UpdateState
+import org.pnfolder.pnlibrary.api.updates.release.UpdatePlan
 import org.pnfolder.pnlibrary.core.updates.engine.ResolutionResult
 import org.pnfolder.pnlibrary.core.updates.history.UpdateStateStore
 import org.pnfolder.pnlibrary.core.updates.policy.UpdateConfiguration

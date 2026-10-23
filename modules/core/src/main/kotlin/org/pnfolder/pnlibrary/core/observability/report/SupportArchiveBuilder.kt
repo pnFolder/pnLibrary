@@ -70,7 +70,6 @@ internal class SupportArchiveBuilder(
         return output.toByteArray()
     }
 
-
     private companion object {
         const val CHECKSUM_PATH = "checksums.json"
     }

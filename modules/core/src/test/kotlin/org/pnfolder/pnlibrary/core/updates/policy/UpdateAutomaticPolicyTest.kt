@@ -34,5 +34,6 @@ class UpdateAutomaticPolicyTest {
     }
 
     private fun plan(vararg products: String) = UpdatePlanSnapshot(UUID.randomUUID(), 1, UpdateState.UPDATE_AVAILABLE,
-        UpdatePlan(1, products.map { ProductChange(ProductId.of(it), SemanticVersion.parse("1.0.0"), SemanticVersion.parse("2.0.0")) }, emptyList()), emptyList(), null)
+        UpdatePlan(1, products.map { ProductChange(ProductId.of(it), SemanticVersion.parse("1.0.0"), SemanticVersion.parse("2.0.0")) },
+            emptyList()), emptyList(), null)
 }

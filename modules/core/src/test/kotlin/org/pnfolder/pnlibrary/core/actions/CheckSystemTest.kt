@@ -6,9 +6,9 @@ import org.junit.jupiter.api.Assertions.assertThrows
 import org.junit.jupiter.api.Assertions.assertTrue
 import org.junit.jupiter.api.Test
 import org.junit.jupiter.api.io.TempDir
-import org.mockito.Mockito.`when`
 import org.mockito.Mockito.mock
 import org.mockito.Mockito.mockingDetails
+import org.mockito.Mockito.`when`
 import org.pnfolder.pnlibrary.api.actions.Action
 import org.pnfolder.pnlibrary.api.actions.ActionContext
 import org.pnfolder.pnlibrary.api.actions.builtin.CommandAction

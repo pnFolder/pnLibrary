@@ -261,7 +261,8 @@ class NativeProxyUpdateTest {
     }
 
     private fun required(name: String): String = requireNotNull(System.getProperty("pnlibrary.native.$name"))
-    private fun java(): String = Paths.get(System.getProperty("java.home"), "bin", if (System.getProperty("os.name").startsWith("Windows")) "java.exe" else "java").toString()
+    private fun java(): String = Paths.get(System.getProperty("java.home"), "bin",
+        if (System.getProperty("os.name").startsWith("Windows")) "java.exe" else "java").toString()
     private fun digest(path: Path): String {
         val sha = MessageDigest.getInstance("SHA-256")
         Files.newInputStream(path).use { input -> val buffer = ByteArray(65536); while (true) {

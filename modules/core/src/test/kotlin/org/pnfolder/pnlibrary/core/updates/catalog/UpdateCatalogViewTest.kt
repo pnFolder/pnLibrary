@@ -12,20 +12,20 @@ import org.junit.jupiter.api.Assertions.assertFalse
 import org.junit.jupiter.api.Assertions.assertNull
 import org.junit.jupiter.api.Assertions.assertTrue
 import org.junit.jupiter.api.Test
-import org.pnfolder.pnlibrary.api.updates.release.ProductChange
-import org.pnfolder.pnlibrary.api.updates.ProductId
-import org.pnfolder.pnlibrary.api.updates.release.ReleaseSummary
-import org.pnfolder.pnlibrary.api.updates.UpdateActor
-import org.pnfolder.pnlibrary.api.updates.backup.UpdateBackup
-import org.pnfolder.pnlibrary.api.updates.backup.UpdateBackupComponent
-import org.pnfolder.pnlibrary.api.updates.UpdateChannel
-import org.pnfolder.pnlibrary.api.updates.backup.UpdateHistoryEntry
-import org.pnfolder.pnlibrary.api.updates.UpdateSnapshot
-import org.pnfolder.pnlibrary.api.updates.UpdateState
-import org.pnfolder.pnlibrary.api.version.SemanticVersion
 import org.pnfolder.pnlibrary.api.chat.ChatNotice
 import org.pnfolder.pnlibrary.api.chat.ChatPalette
 import org.pnfolder.pnlibrary.api.chat.ChatTone
+import org.pnfolder.pnlibrary.api.updates.ProductId
+import org.pnfolder.pnlibrary.api.updates.UpdateActor
+import org.pnfolder.pnlibrary.api.updates.UpdateChannel
+import org.pnfolder.pnlibrary.api.updates.UpdateSnapshot
+import org.pnfolder.pnlibrary.api.updates.UpdateState
+import org.pnfolder.pnlibrary.api.updates.backup.UpdateBackup
+import org.pnfolder.pnlibrary.api.updates.backup.UpdateBackupComponent
+import org.pnfolder.pnlibrary.api.updates.backup.UpdateHistoryEntry
+import org.pnfolder.pnlibrary.api.updates.release.ProductChange
+import org.pnfolder.pnlibrary.api.updates.release.ReleaseSummary
+import org.pnfolder.pnlibrary.api.version.SemanticVersion
 import org.pnfolder.pnlibrary.core.updates.install.ComponentLedger
 import java.time.Instant
 import java.time.ZoneOffset
@@ -230,7 +230,8 @@ class UpdateCatalogViewTest {
         assertTrue(text.contains(" Нажмите на кнопку, чтобы выбрать. ✔ — выбрано сейчас."))
         val channel = row(lines, "Канал:")
         assertEquals("  Канал: [stable] [rc] [✔ beta] [alpha] [dev]", plain(channel))
-        assertTrue(LegacyComponentSerializer.legacyAmpersand().serialize(channel).contains("&e[✔ beta]"), LegacyComponentSerializer.legacyAmpersand().serialize(channel))
+        assertTrue(LegacyComponentSerializer.legacyAmpersand().serialize(channel).contains("&e[✔ beta]"),
+            LegacyComponentSerializer.legacyAmpersand().serialize(channel))
         assertTrue(LegacyComponentSerializer.legacyAmpersand().serialize(channel).contains("[&cdev&7]"))
         assertEquals("  Автозагрузка: [вкл] [✔ выкл]", plain(row(lines, "Автозагрузка:")))
         assertEquals("  Пауза: [✔ нет] [1 ч] [6 ч] [1 д] [3 д] [7 д]", plain(row(lines, "Пауза:")))

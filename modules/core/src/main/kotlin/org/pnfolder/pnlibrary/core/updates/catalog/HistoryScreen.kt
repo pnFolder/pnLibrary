@@ -4,9 +4,9 @@ import net.kyori.adventure.text.Component
 import net.kyori.adventure.text.event.ClickEvent
 import net.kyori.adventure.text.event.HoverEvent
 import net.kyori.adventure.text.format.TextColor
-import org.pnfolder.pnlibrary.api.updates.backup.UpdateHistoryEntry
-import org.pnfolder.pnlibrary.api.updates.UpdateState
 import org.pnfolder.pnlibrary.api.chat.ChatPalette
+import org.pnfolder.pnlibrary.api.updates.UpdateState
+import org.pnfolder.pnlibrary.api.updates.backup.UpdateHistoryEntry
 import org.pnfolder.pnlibrary.core.updates.install.ComponentLedger
 import java.time.Instant
 import java.time.LocalDate

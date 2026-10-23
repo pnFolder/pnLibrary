@@ -23,7 +23,8 @@ internal val TIME_WITH_YEAR: DateTimeFormatter =
 internal fun stamp(millis: Long): String {
     val instant = java.time.Instant.ofEpochMilli(millis)
     val zone = DisplayZone.zone
-    return if (instant.atZone(zone).year == java.time.LocalDate.now(zone).year) TIME.withZone(zone).format(instant) else TIME_WITH_YEAR.withZone(zone).format(instant)
+    val sameYear = instant.atZone(zone).year == java.time.LocalDate.now(zone).year
+    return (if (sameYear) TIME else TIME_WITH_YEAR).withZone(zone).format(instant)
 }
 internal val RU = Locale("ru")
 internal val LONG_DAY: DateTimeFormatter = DateTimeFormatter.ofPattern("d MMMM", RU)

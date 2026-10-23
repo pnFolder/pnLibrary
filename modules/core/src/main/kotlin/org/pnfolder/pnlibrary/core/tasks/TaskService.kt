@@ -1,11 +1,11 @@
 package org.pnfolder.pnlibrary.core.tasks
 
+import org.pnfolder.pnlibrary.api.plugin.PluginId
 import org.pnfolder.pnlibrary.api.tasks.TaskHandle
 import org.pnfolder.pnlibrary.api.tasks.TaskId
 import org.pnfolder.pnlibrary.api.tasks.TaskQuery
 import org.pnfolder.pnlibrary.api.tasks.TaskScope
 import org.pnfolder.pnlibrary.api.tasks.TaskSnapshot
-import org.pnfolder.pnlibrary.api.plugin.PluginId
 
 /**
  * Cross-platform scheduling service with owner-scoped resource management.

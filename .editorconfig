@@ -13,6 +13,15 @@ max_line_length = 160
 ij_kotlin_allow_trailing_comma = true
 ij_kotlin_allow_trailing_comma_on_call_site = true
 ij_kotlin_imports_layout = *, java.**, javax.**, kotlin.**, ^
+# ktlint: only the rules below are enforced; everything else stays a matter of taste.
+ktlint_standard = disabled
+ktlint_standard_import-ordering = enabled
+ktlint_standard_no-unused-imports = enabled
+ktlint_standard_no-wildcard-imports = enabled
+ktlint_standard_no-trailing-spaces = enabled
+ktlint_standard_no-consecutive-blank-lines = enabled
+ktlint_standard_final-newline = enabled
+ktlint_standard_max-line-length = enabled
 
 [*.{yml,yaml,json,toml}]
 indent_size = 2
@@ -22,3 +31,7 @@ trim_trailing_whitespace = false
 
 [*.{bat,ps1}]
 end_of_line = crlf
+
+# Tests may use wildcard imports (for example JUnit assertions); production code may not.
+[**/src/test/**/*.kt]
+ktlint_standard_no-wildcard-imports = disabled

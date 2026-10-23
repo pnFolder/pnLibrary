@@ -4,7 +4,6 @@ import net.kyori.adventure.sound.Sound
 import net.kyori.adventure.text.Component
 import org.junit.jupiter.api.Assertions.assertEquals
 import org.junit.jupiter.api.Assertions.assertFalse
-import org.junit.jupiter.api.Assertions.assertInstanceOf
 import org.junit.jupiter.api.Assertions.assertThrows
 import org.junit.jupiter.api.Assertions.assertTrue
 import org.junit.jupiter.api.Test
@@ -12,12 +11,9 @@ import org.mockito.Mockito.mock
 import org.mockito.Mockito.mockingDetails
 import org.pnfolder.pnlibrary.api.actions.Action
 import org.pnfolder.pnlibrary.api.actions.ActionContext
-import org.pnfolder.pnlibrary.api.actions.ActionTarget
 import org.pnfolder.pnlibrary.api.actions.builtin.DelayAction
-import org.pnfolder.pnlibrary.api.actions.builtin.MessageAction
 import org.pnfolder.pnlibrary.api.actions.builtin.RunAction
 import org.pnfolder.pnlibrary.api.actions.builtin.StopAction
-import org.pnfolder.pnlibrary.api.actions.builtin.TitleAction
 import org.pnfolder.pnlibrary.api.audiences.LibraryAudience
 import org.pnfolder.pnlibrary.api.audiences.LibraryPlayer
 import org.pnfolder.pnlibrary.api.audiences.PlayerEffect
@@ -170,8 +166,10 @@ class ActionExtrasTest {
 
     @Test
     fun `mixed or unreadable requirements are rejected with a reason`() {
-        assertTrue(assertThrows(IllegalArgumentException::class.java) { requirement("if" to "%a% >= 1", "type" to "has permission") }.message!!.contains("either 'if' or 'type'"))
-        assertTrue(assertThrows(IllegalArgumentException::class.java) { requirement("if" to "%a% >= 1", "deny" to "x", "deny_commands" to listOf("[message] y")) }.message!!.contains("either 'deny' or 'deny_commands'"))
+        assertTrue(assertThrows(IllegalArgumentException::class.java) { requirement("if" to "%a% >= 1",
+            "type" to "has permission") }.message!!.contains("either 'if' or 'type'"))
+        assertTrue(assertThrows(IllegalArgumentException::class.java) { requirement("if" to "%a% >= 1", "deny" to "x",
+            "deny_commands" to listOf("[message] y")) }.message!!.contains("either 'deny' or 'deny_commands'"))
         assertTrue(assertThrows(IllegalArgumentException::class.java) { requirement("if" to "banana") }.message!!.contains("Cannot read requirement 'banana'"))
     }
 

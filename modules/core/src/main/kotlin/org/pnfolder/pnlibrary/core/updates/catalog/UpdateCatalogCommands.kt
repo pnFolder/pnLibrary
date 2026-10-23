@@ -1,18 +1,18 @@
 package org.pnfolder.pnlibrary.core.updates.catalog
 
 import net.kyori.adventure.text.Component
+import org.pnfolder.pnlibrary.api.chat.ChatNotice
+import org.pnfolder.pnlibrary.api.chat.ChatPalette
+import org.pnfolder.pnlibrary.api.chat.ChatTone
 import org.pnfolder.pnlibrary.api.commands.ArgumentType
 import org.pnfolder.pnlibrary.api.commands.CommandContext
 import org.pnfolder.pnlibrary.api.commands.CommandNodeBuilder
 import org.pnfolder.pnlibrary.api.runtime.PnLibrary
 import org.pnfolder.pnlibrary.api.updates.UpdateActor
-import org.pnfolder.pnlibrary.api.updates.backup.UpdateHistoryEntry
 import org.pnfolder.pnlibrary.api.updates.UpdateSnapshot
 import org.pnfolder.pnlibrary.api.updates.UpdateState
+import org.pnfolder.pnlibrary.api.updates.backup.UpdateHistoryEntry
 import org.pnfolder.pnlibrary.common.text.RussianText
-import org.pnfolder.pnlibrary.api.chat.ChatNotice
-import org.pnfolder.pnlibrary.api.chat.ChatPalette
-import org.pnfolder.pnlibrary.api.chat.ChatTone
 import org.pnfolder.pnlibrary.core.updates.engine.FreezeDuration
 import java.time.Duration
 import java.util.Locale
@@ -193,7 +193,8 @@ class UpdateCatalogCommands(
             context.sender.send(error("Неизвестный канал $value. Доступны: ${UpdateCatalogView.CHANNELS.joinToString { it.name.lowercase(Locale.ROOT) }}."))
             return
         }
-        change(context, "Канал", { it.channel.name.lowercase(Locale.ROOT) }, channel.name.lowercase(Locale.ROOT)) { product, actor -> library.updates.setChannel(product, channel, actor) }
+        change(context, "Канал", { it.channel.name.lowercase(Locale.ROOT) }, channel.name.lowercase(Locale.ROOT)) { product,
+            actor -> library.updates.setChannel(product, channel, actor) }
     }
 
     private fun setAutomatic(context: CommandContext) {
@@ -214,7 +215,8 @@ class UpdateCatalogCommands(
                 return
             }
         }
-        change(context, "Пауза", { if (it.state == UpdateState.FROZEN) "на паузе" else "нет" }, if (duration == null) "нет" else RussianText.period(duration)) { product, actor -> library.updates.setHeld(product, duration, actor) }
+        change(context, "Пауза", { if (it.state == UpdateState.FROZEN) "на паузе" else "нет" },
+            if (duration == null) "нет" else RussianText.period(duration)) { product, actor -> library.updates.setHeld(product, duration, actor) }
     }
 
     private fun switch(context: CommandContext): Boolean? {
@@ -229,7 +231,8 @@ class UpdateCatalogCommands(
     }
 
     /** Applies a setting, then confirms it below the refreshed settings card, or shows why it was refused. */
-    private fun change(context: CommandContext, setting: String, current: (UpdateSnapshot) -> String, value: String, apply: (String, UpdateActor) -> CompletionStage<UpdateSnapshot>) {
+    private fun change(context: CommandContext, setting: String, current: (UpdateSnapshot) -> String, value: String, apply: (String,
+        UpdateActor) -> CompletionStage<UpdateSnapshot>) {
         if (!ready(context)) return
         val product = context.get<String>("plugin")
         val sender = context.sender

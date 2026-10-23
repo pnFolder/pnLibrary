@@ -1,14 +1,14 @@
 package org.pnfolder.pnlibrary.core.updates.install
 
 import org.pnfolder.pnlibrary.api.runtime.PnLibraryIdentity
-import org.pnfolder.pnlibrary.api.updates.release.ProductChange
 import org.pnfolder.pnlibrary.api.updates.ProductId
+import org.pnfolder.pnlibrary.api.updates.UpdatePlanSnapshot
+import org.pnfolder.pnlibrary.api.updates.UpdateState
 import org.pnfolder.pnlibrary.api.updates.backup.UpdateBackup
 import org.pnfolder.pnlibrary.api.updates.backup.UpdateBackupComponent
 import org.pnfolder.pnlibrary.api.updates.backup.UpdateConfigurationBackup
+import org.pnfolder.pnlibrary.api.updates.release.ProductChange
 import org.pnfolder.pnlibrary.api.updates.release.UpdatePlan
-import org.pnfolder.pnlibrary.api.updates.UpdatePlanSnapshot
-import org.pnfolder.pnlibrary.api.updates.UpdateState
 import org.pnfolder.pnlibrary.api.version.SemanticVersion
 import org.pnfolder.pnlibrary.core.updates.engine.ArtifactVerifier
 import org.pnfolder.pnlibrary.core.updates.engine.TransactionJournal
@@ -52,7 +52,8 @@ internal class UpdateInstaller(
     }
 
     fun stage(snapshot: UpdatePlanSnapshot, registrations: List<RegisteredUpdate>) {
-        require(transaction.awaitingHealth().isEmpty() && transaction.awaitingRollbackHealth().isEmpty()) { "A prepared change is still awaiting restart verification" }
+        require(transaction.awaitingHealth().isEmpty() &&
+            transaction.awaitingRollbackHealth().isEmpty()) { "A prepared change is still awaiting restart verification" }
         require(transaction.pendingInstallations().isEmpty()) { "A prepared rollback must be applied before preparing another update" }
         val plan = requireNotNull(snapshot.plan) { "Update plan has no installable target" }
         verifyPluginDownloadsAllowed(plan)
@@ -88,7 +89,8 @@ internal class UpdateInstaller(
     }
 
     fun rollback(id: UUID, restoreConfigurations: Boolean = false): UpdatePlanSnapshot {
-        require(transaction.awaitingHealth().isEmpty() && transaction.awaitingRollbackHealth().isEmpty()) { "A prepared change is still awaiting restart verification" }
+        require(transaction.awaitingHealth().isEmpty() &&
+            transaction.awaitingRollbackHealth().isEmpty()) { "A prepared change is still awaiting restart verification" }
         require(transaction.pendingInstallations().isEmpty()) { "Another rollback is already prepared for restart" }
         val candidate = transaction.rollbackCandidate(id)
         val journal = TransactionJournal.load(candidate)
@@ -104,7 +106,8 @@ internal class UpdateInstaller(
         }
         val snapshot = UpdatePlanSnapshot(journal.planId?.let(UUID::fromString) ?: id, 0, UpdateState.ROLLED_BACK,
             journal.targetApi?.let { UpdatePlan(it, changes, emptyList()) }, emptyList(),
-            "Резервный набор $id подготовлен к следующему перезапуску${if (restoreConfigurations) " с восстановлением конфигураций" else " без изменения конфигураций"}.")
+            "Резервный набор $id подготовлен к следующему перезапуску" +
+            "${if (restoreConfigurations) " с восстановлением конфигураций" else " без изменения конфигураций"}.")
         transaction.rollback(candidate, restoreConfigurations)
         return snapshot
     }
@@ -135,7 +138,8 @@ internal class UpdateInstaller(
                 val updated = artifact.expectedVersion?.let(SemanticVersion::tryParse)
                 when {
                     pending.rollback && previous != null && updated != null -> ProductChange(ProductId.of(artifact.component), updated, previous)
-                    !pending.rollback && updated != null && (previous != null || !artifact.targetExisted) -> ProductChange(ProductId.of(artifact.component), previous, updated)
+                    !pending.rollback && updated != null && (previous != null || !artifact.targetExisted) -> ProductChange(ProductId.of(artifact.component),
+                        previous, updated)
                     else -> null
                 }
             }

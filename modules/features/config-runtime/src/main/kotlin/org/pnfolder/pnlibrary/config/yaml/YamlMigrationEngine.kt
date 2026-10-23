@@ -1,12 +1,12 @@
 package org.pnfolder.pnlibrary.config.yaml
 
+import org.pnfolder.pnlibrary.api.config.ConfigDocument
+import org.pnfolder.pnlibrary.api.config.ConfigSteps
 import org.yaml.snakeyaml.DumperOptions
 import org.yaml.snakeyaml.LoaderOptions
 import org.yaml.snakeyaml.Yaml
 import org.yaml.snakeyaml.constructor.SafeConstructor
 import org.yaml.snakeyaml.representer.Representer
-import org.pnfolder.pnlibrary.api.config.ConfigDocument
-import org.pnfolder.pnlibrary.api.config.ConfigSteps
 
 /**
  * Brings an existing file to the version of its [ConfigSteps] and renders the result.

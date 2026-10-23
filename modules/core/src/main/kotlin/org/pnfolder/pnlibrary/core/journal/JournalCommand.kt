@@ -65,7 +65,8 @@ internal fun journalCommand(journal: JournalStore, root: String = "/pn events"):
     literal("full") {
         argument("id", ArgumentType.string()) {
             executes { context ->
-                card(context.sender, ChatKit(ChatReader.of(context.sender)), journal, context.arguments.getOrNull(1), repeats = false, fullTrace = true, root = root)
+                card(context.sender, ChatKit(ChatReader.of(context.sender)), journal, context.arguments.getOrNull(1), repeats = false, fullTrace = true,
+                    root = root)
             }
         }
     }
@@ -171,7 +172,8 @@ private fun tabs(kit: ChatKit, everything: List<List<JournalRecord>>, current: S
         line = line.append(
             if (open || !kit.reader.interactive) button
             else button.clickEvent(ClickEvent.runCommand("$root $word"))
-                .hoverEvent(kit.tooltip(kit.text("Нажмите, чтобы показать: $label", ChatPalette.ACCENT), kit.blank(), kit.text("$root $word", ChatPalette.LABEL))),
+                .hoverEvent(kit.tooltip(kit.text("Нажмите, чтобы показать: $label", ChatPalette.ACCENT), kit.blank(), kit.text("$root $word",
+                    ChatPalette.LABEL))),
         )
     }
     return line
@@ -264,7 +266,8 @@ private fun card(
     lines += kit.field("Часовой пояс", kit.text(zoneLabel(), ChatPalette.SOFT))
     if (group.size > 1) {
         val gap = (group.first().timeMillis - group.last().timeMillis) / (group.size - 1)
-        lines += kit.field("Первый раз", moment(kit, group.last().timeMillis).append(kit.text("  ${ago(group.last().timeMillis)}", agoColor(group.last().timeMillis))))
+        lines += kit.field("Первый раз", moment(kit, group.last().timeMillis).append(kit.text("  ${ago(group.last().timeMillis)}",
+            agoColor(group.last().timeMillis))))
         lines += kit.field(
             "Повторов",
             kit.text(group.size.toString(), ChatPalette.ORANGE).append(kit.text("  примерно раз в ${span(gap)}", ChatPalette.SOFT)),

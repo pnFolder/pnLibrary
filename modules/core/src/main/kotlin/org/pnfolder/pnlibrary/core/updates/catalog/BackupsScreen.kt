@@ -1,9 +1,9 @@
 package org.pnfolder.pnlibrary.core.updates.catalog
 
 import net.kyori.adventure.text.Component
+import org.pnfolder.pnlibrary.api.chat.ChatPalette
 import org.pnfolder.pnlibrary.api.updates.backup.UpdateBackup
 import org.pnfolder.pnlibrary.common.text.RussianText
-import org.pnfolder.pnlibrary.api.chat.ChatPalette
 import java.time.Instant
 import java.time.ZoneId
 

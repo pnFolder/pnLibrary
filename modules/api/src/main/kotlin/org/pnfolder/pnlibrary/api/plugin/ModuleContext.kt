@@ -1,12 +1,12 @@
 package org.pnfolder.pnlibrary.api.plugin
 
+import net.kyori.adventure.text.Component
 import org.pnfolder.pnlibrary.api.actions.ActionService
 import org.pnfolder.pnlibrary.api.commands.CommandBuilder
 import org.pnfolder.pnlibrary.api.commands.CommandDefinition
-import org.pnfolder.pnlibrary.api.commands.CommandRegistration
-import net.kyori.adventure.text.Component
 import org.pnfolder.pnlibrary.api.commands.CommandError
 import org.pnfolder.pnlibrary.api.commands.CommandErrorHandler
+import org.pnfolder.pnlibrary.api.commands.CommandRegistration
 import org.pnfolder.pnlibrary.api.config.ConfigScope
 import org.pnfolder.pnlibrary.api.cooldowns.CooldownService
 import org.pnfolder.pnlibrary.api.diagnostics.DiagnosticRegistration
@@ -30,7 +30,8 @@ interface ModuleContext : AutoCloseable {
 
     /**
      * Answers errors of class [type] for every command of this module with [handler]. The most specific level
-     * wins: a handler on a command or subcommand over this one, this one over the plugin-wide answer of [PluginRegistration.onCommandError], over the library's standard
+     * wins: a handler on a command or subcommand over this one, this one over the plugin-wide answer of
+     * [PluginRegistration.onCommandError], over the library's standard
      * answer from `config.yml`.
      */
     fun <E : CommandError> onCommandError(type: Class<E>, handler: CommandErrorHandler<E>) {

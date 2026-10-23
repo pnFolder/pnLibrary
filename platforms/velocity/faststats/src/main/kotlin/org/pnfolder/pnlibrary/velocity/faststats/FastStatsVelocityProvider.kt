@@ -2,9 +2,9 @@ package org.pnfolder.pnlibrary.velocity.faststats
 
 import com.velocitypowered.api.proxy.ProxyServer
 import dev.faststats.velocity.VelocityContext
-import org.slf4j.Logger
 import org.pnfolder.pnlibrary.api.metrics.PluginMetrics
 import org.pnfolder.pnlibrary.core.metrics.faststats.SimpleFastStatsMetricsSession
+import org.slf4j.Logger
 import java.nio.file.Path
 
 /** Velocity adapter that supplies a Velocity context to the shared FastStats session. */

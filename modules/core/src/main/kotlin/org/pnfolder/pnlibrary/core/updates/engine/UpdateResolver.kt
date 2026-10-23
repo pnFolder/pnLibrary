@@ -2,12 +2,12 @@ package org.pnfolder.pnlibrary.core.updates.engine
 
 import org.pnfolder.pnlibrary.api.platform.PlatformType
 import org.pnfolder.pnlibrary.api.updates.BlockedReason
+import org.pnfolder.pnlibrary.api.updates.ProductId
+import org.pnfolder.pnlibrary.api.updates.UpdateChannel
 import org.pnfolder.pnlibrary.api.updates.release.InstalledProduct
 import org.pnfolder.pnlibrary.api.updates.release.ProductChange
 import org.pnfolder.pnlibrary.api.updates.release.ProductDependency
-import org.pnfolder.pnlibrary.api.updates.ProductId
 import org.pnfolder.pnlibrary.api.updates.release.ProductRelease
-import org.pnfolder.pnlibrary.api.updates.UpdateChannel
 import org.pnfolder.pnlibrary.api.updates.release.UpdatePlan
 
 /**

@@ -1,9 +1,9 @@
 package org.pnfolder.pnlibrary.core.updates.install
 
 import org.pnfolder.pnlibrary.api.platform.PlatformType
+import org.pnfolder.pnlibrary.api.updates.ProductId
 import org.pnfolder.pnlibrary.api.updates.release.ArtifactDescriptor
 import org.pnfolder.pnlibrary.api.updates.release.ProductChange
-import org.pnfolder.pnlibrary.api.updates.ProductId
 import org.pnfolder.pnlibrary.api.updates.release.ProductRelease
 import org.pnfolder.pnlibrary.api.updates.release.UpdatePlan
 import org.pnfolder.pnlibrary.api.version.ApiVersionRange

@@ -5,8 +5,8 @@ import net.kyori.adventure.text.event.ClickEvent
 import net.kyori.adventure.text.format.TextColor
 import org.pnfolder.pnlibrary.api.chat.ChatKit
 import org.pnfolder.pnlibrary.api.chat.ChatPalette
-import org.pnfolder.pnlibrary.common.text.RussianText
 import org.pnfolder.pnlibrary.api.chat.ChatReader
+import org.pnfolder.pnlibrary.common.text.RussianText
 import org.pnfolder.pnlibrary.core.ui.DisplayZone
 import java.time.Duration
 import java.time.Instant
@@ -173,7 +173,8 @@ private fun strip(kit: ChatKit, relevant: List<JournalRecord>, now: Long, window
         .sortedWith(compareByDescending<Int> { errors[it] * 1_000 + warnings[it] }.thenByDescending { it })
         .take(STRIP_WORST)
     val withDate = windowMillis > Duration.ofHours(24).toMillis()
-    val tip = mutableListOf<Component>(kit.text("Последние $windowHours ${RussianText.plural(windowHours.toLong(), "час", "часа", "часов")}", ChatPalette.LABEL), kit.blank())
+    val tip = mutableListOf<Component>(kit.text("Последние $windowHours ${RussianText.plural(windowHours.toLong(), "час", "часа", "часов")}",
+        ChatPalette.LABEL), kit.blank())
     worst.forEach { column ->
         val start = now - (STRIP_COLUMNS - column) * columnMillis
         var row = kit.text(clock(start, withDate) + "  ", ChatPalette.SOFT)

@@ -4,9 +4,20 @@ import org.gradle.api.tasks.Copy
 
 plugins {
     alias(libs.plugins.kotlin.jvm) apply false
+    id("com.diffplug.spotless") version "8.10.4"
     alias(libs.plugins.shadow)     apply false
     alias(libs.plugins.dokka)
     id("org.jetbrains.kotlinx.binary-compatibility-validator") version "0.18.2"
+}
+
+// Source style is enforced by ktlint with only the rules named in .editorconfig, and runs as part of `check`.
+// `./gradlew spotlessApply` fixes what can be fixed automatically (imports, whitespace, blank lines).
+spotless {
+    kotlin {
+        target("modules/**/*.kt", "platforms/**/*.kt", "examples/**/*.kt")
+        targetExclude("**/build/**")
+        ktlint()
+    }
 }
 
 apiValidation {

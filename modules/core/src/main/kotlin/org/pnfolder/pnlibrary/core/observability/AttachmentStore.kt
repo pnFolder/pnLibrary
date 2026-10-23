@@ -151,7 +151,6 @@ internal class AttachmentStore(dataFolder: Path) {
         else -> "application/octet-stream"
     }
 
-
     private val Path.extension: String
         get() = fileName.toString().substringAfterLast('.', "")
 

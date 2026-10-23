@@ -2,10 +2,10 @@ package org.pnfolder.pnlibrary.core.updates.catalog
 
 import net.kyori.adventure.text.Component
 import net.kyori.adventure.text.event.ClickEvent
+import org.pnfolder.pnlibrary.api.chat.ChatPalette
 import org.pnfolder.pnlibrary.api.updates.UpdateChannel
 import org.pnfolder.pnlibrary.api.updates.UpdateSnapshot
 import org.pnfolder.pnlibrary.api.updates.UpdateState
-import org.pnfolder.pnlibrary.api.chat.ChatPalette
 import java.time.Instant
 import java.time.ZoneId
 

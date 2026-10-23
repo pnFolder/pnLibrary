@@ -16,11 +16,11 @@ import org.yaml.snakeyaml.LoaderOptions
 import org.yaml.snakeyaml.Yaml
 import org.yaml.snakeyaml.constructor.SafeConstructor
 import org.yaml.snakeyaml.representer.Representer
-import java.lang.reflect.Array as ReflectArray
 import java.lang.reflect.Modifier
 import java.lang.reflect.ParameterizedType
 import java.lang.reflect.Type
 import java.util.function.Supplier
+import java.lang.reflect.Array as ReflectArray
 
 /**
  * Runtime extension of a polymorphic configuration type registry.

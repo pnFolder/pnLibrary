@@ -55,7 +55,8 @@ class JournalDigestTest {
 
     @Test
     fun `a fresh event that repeats gets the advice for repeating problems and fits one chat line`() {
-        val records = (1..16).map { record(JournalLevel.ERROR, "pnLibrary", "Error occurred while enabling pnLibraryAcceptance v2.2.0-beta.6 (Is it up to date?)", now - it * 30_000L) }
+        val records = (1..16).map { record(JournalLevel.ERROR, "pnLibrary",
+            "Error occurred while enabling pnLibraryAcceptance v2.2.0-beta.6 (Is it up to date?)", now - it * 30_000L) }
 
         val shown = lines(records)
         val text = shown.joinToString("\n")

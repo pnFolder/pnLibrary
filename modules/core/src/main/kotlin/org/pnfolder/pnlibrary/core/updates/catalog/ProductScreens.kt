@@ -3,10 +3,10 @@ package org.pnfolder.pnlibrary.core.updates.catalog
 import net.kyori.adventure.text.Component
 import net.kyori.adventure.text.event.ClickEvent
 import net.kyori.adventure.text.format.TextColor
+import org.pnfolder.pnlibrary.api.chat.ChatPalette
 import org.pnfolder.pnlibrary.api.updates.UpdateSnapshot
 import org.pnfolder.pnlibrary.api.updates.UpdateState
 import org.pnfolder.pnlibrary.common.text.RussianText
-import org.pnfolder.pnlibrary.api.chat.ChatPalette
 import org.pnfolder.pnlibrary.core.updates.catalog.UpdateChannelLabels.channelColor
 import org.pnfolder.pnlibrary.core.updates.catalog.UpdateChannelLabels.channelHint
 import org.pnfolder.pnlibrary.core.updates.catalog.UpdateChannelLabels.channelName
@@ -94,7 +94,8 @@ internal class ProductScreens(routes: UpdateCatalogRoutes, now: Instant, zone: Z
         )?.let { result += it }
         if (!routes.interactive || !routes.editable) {
             result += commandHints(
-                routes.set(product, "channel", "<${UpdateCatalogView.CHANNELS.joinToString("|") { channelName(it) }}|default>") to "канал (default: как задал плагин)",
+                routes.set(product, "channel",
+                    "<${UpdateCatalogView.CHANNELS.joinToString("|") { channelName(it) }}|default>") to "канал (default: как задал плагин)",
                 routes.set(product, "auto", "<on|off>") to "автозагрузка",
                 routes.set(product, "hold", "<${UpdateCatalogView.HOLD_PERIODS.joinToString("|")}|off>") to "пауза",
             )

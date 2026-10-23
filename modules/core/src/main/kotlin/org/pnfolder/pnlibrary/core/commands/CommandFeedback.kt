@@ -3,12 +3,12 @@ package org.pnfolder.pnlibrary.core.commands
 import net.kyori.adventure.key.Key
 import net.kyori.adventure.sound.Sound
 import net.kyori.adventure.text.Component
+import org.pnfolder.pnlibrary.api.commands.BadUsage
 import org.pnfolder.pnlibrary.api.commands.CommandContext
 import org.pnfolder.pnlibrary.api.commands.CommandError
 import org.pnfolder.pnlibrary.api.commands.CommandErrorHandler
 import org.pnfolder.pnlibrary.api.commands.CommandFailed
 import org.pnfolder.pnlibrary.api.commands.ConsoleOnly
-import org.pnfolder.pnlibrary.api.commands.BadUsage
 import org.pnfolder.pnlibrary.api.commands.InvalidArgument
 import org.pnfolder.pnlibrary.api.commands.NoPermission
 import org.pnfolder.pnlibrary.api.commands.OnCooldown

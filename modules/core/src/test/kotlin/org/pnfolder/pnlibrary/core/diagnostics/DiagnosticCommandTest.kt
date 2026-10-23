@@ -6,6 +6,8 @@ import net.kyori.adventure.text.serializer.plain.PlainTextComponentSerializer
 import org.junit.jupiter.api.Assertions.assertEquals
 import org.junit.jupiter.api.Assertions.assertTrue
 import org.junit.jupiter.api.Test
+import org.pnfolder.pnlibrary.api.chat.ChatKit
+import org.pnfolder.pnlibrary.api.chat.ChatReader
 import org.pnfolder.pnlibrary.api.commands.CommandContext
 import org.pnfolder.pnlibrary.api.commands.CommandSender
 import org.pnfolder.pnlibrary.api.diagnostics.DiagnosticReport
@@ -17,8 +19,6 @@ import org.pnfolder.pnlibrary.api.plugin.PluginMetadata
 import org.pnfolder.pnlibrary.api.plugin.PluginRegistration
 import org.pnfolder.pnlibrary.api.plugin.PluginRegistry
 import org.pnfolder.pnlibrary.api.runtime.PnLibrary
-import org.pnfolder.pnlibrary.api.chat.ChatKit
-import org.pnfolder.pnlibrary.api.chat.ChatReader
 import java.lang.reflect.Method
 import java.lang.reflect.Proxy
 import java.nio.file.Paths

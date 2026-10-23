@@ -1,8 +1,8 @@
 package org.pnfolder.pnlibrary.core.updates.policy
 
 import org.pnfolder.pnlibrary.api.updates.ProductId
-import org.pnfolder.pnlibrary.api.updates.release.ProductRelease
 import org.pnfolder.pnlibrary.api.updates.UpdateChannel
+import org.pnfolder.pnlibrary.api.updates.release.ProductRelease
 
 /** A product's releases and the newest one its channel allows. */
 internal data class ReleaseChannelSelection(

@@ -1,16 +1,16 @@
 package org.pnfolder.pnlibrary.core.diagnostics
 
 import net.kyori.adventure.text.Component
-import org.pnfolder.pnlibrary.api.commands.CommandContext
-import org.pnfolder.pnlibrary.api.commands.CommandDefinition
-import org.pnfolder.pnlibrary.api.commands.command
-import org.pnfolder.pnlibrary.api.diagnostics.DiagnosticReport
-import org.pnfolder.pnlibrary.api.runtime.PnLibrary
 import org.pnfolder.pnlibrary.api.chat.ChatKit
 import org.pnfolder.pnlibrary.api.chat.ChatNotice
 import org.pnfolder.pnlibrary.api.chat.ChatPalette
 import org.pnfolder.pnlibrary.api.chat.ChatReader
 import org.pnfolder.pnlibrary.api.chat.ChatTone
+import org.pnfolder.pnlibrary.api.commands.CommandContext
+import org.pnfolder.pnlibrary.api.commands.CommandDefinition
+import org.pnfolder.pnlibrary.api.commands.command
+import org.pnfolder.pnlibrary.api.diagnostics.DiagnosticReport
+import org.pnfolder.pnlibrary.api.runtime.PnLibrary
 import java.util.Locale
 
 /** Builds pnLibrary's diagnostics command without depending on a native command API. */

@@ -2,8 +2,8 @@ package org.pnfolder.pnlibrary.core.updates.install
 
 import org.pnfolder.pnlibrary.api.runtime.PnLibraryIdentity
 import org.pnfolder.pnlibrary.api.updates.ProductId
-import org.pnfolder.pnlibrary.api.updates.release.ProductRelease
 import org.pnfolder.pnlibrary.api.updates.UpdateChannel
+import org.pnfolder.pnlibrary.api.updates.release.ProductRelease
 import org.pnfolder.pnlibrary.api.updates.release.UpdatePlan
 import org.pnfolder.pnlibrary.api.version.PnLibraryApi
 import org.pnfolder.pnlibrary.common.jvm.JavaRuntime
@@ -17,7 +17,6 @@ import org.pnfolder.pnlibrary.core.updates.policy.UpdatePolicyOverrides
 import org.pnfolder.pnlibrary.core.updates.service.RegisteredUpdate
 import org.pnfolder.pnlibrary.spi.platform.PlatformIdentity
 import org.pnfolder.pnlibrary.spi.platform.PlatformPluginInventory
-import java.time.Instant
 
 /** Loads release catalogs and resolves one coherent update plan for all registered products. */
 internal class UpdateGraphResolver(
