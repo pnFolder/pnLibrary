@@ -16,6 +16,7 @@ import org.pnfolder.pnlibrary.spi.tasks.PlatformTaskHandle
 import org.pnfolder.pnlibrary.spi.tasks.PlatformTaskRequest
 import java.nio.file.Files
 import java.nio.file.Path
+import java.time.Duration
 import java.util.concurrent.CopyOnWriteArrayList
 import java.util.concurrent.CountDownLatch
 import java.util.concurrent.TimeUnit
@@ -29,7 +30,7 @@ class DiagnosticCommandExecutorTest {
         val library = PnLibraryLauncher.bootstrap(
             Any(),
             platform.toRuntimeContext(),
-            PnLibraryConfig(upload = false, uploadMode = "disabled", cooldownSeconds = 0),
+            PnLibraryConfig(upload = false, uploadMode = "disabled", cooldown = Duration.ZERO),
         )
         val events = CopyOnWriteArrayList<DiagnosticCommandEvent>()
         val completed = CountDownLatch(1)

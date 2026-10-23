@@ -71,7 +71,7 @@ class DiagnosticCommandExecutor @JvmOverloads constructor(
     }
 
     private fun remainingCooldown(requesterId: String): Long {
-        val cooldownMillis = library.configuration.cooldownSeconds * 1_000L
+        val cooldownMillis = library.configuration.cooldown.toMillis()
         if (cooldownMillis == 0L) return 0
         val elapsed = clock.millis() - (lastRequestTimes[requesterId] ?: return 0)
         return if (elapsed >= cooldownMillis) 0 else (cooldownMillis - elapsed + 999L) / 1_000L

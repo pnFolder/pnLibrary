@@ -1,5 +1,6 @@
 package org.pnfolder.pnlibrary.api.runtime
 
+import java.time.Duration
 import java.util.regex.Pattern
 import java.util.regex.PatternSyntaxException
 
@@ -39,7 +40,7 @@ import java.util.regex.PatternSyntaxException
  * @property logRecords maximum number of recent log records included in one report
  * @property historyRetentionDays maximum age of persisted diagnostic history entries
  * @property historyMaxBytes total byte budget for persisted diagnostic history
- * @property cooldownSeconds minimum delay between diagnostic commands from one caller
+ * @property cooldown minimum delay between diagnostic commands from one caller
  * @property keepReports maximum number of locally retained report archives
  * @property maxReportBytes maximum uncompressed report size in bytes
  * @property deleteAfterDays age at which local reports are deleted; `0` disables
@@ -68,7 +69,7 @@ data class PnLibraryConfig @JvmOverloads constructor(
     val logRecords: Int = 200,
     val historyRetentionDays: Int = 30,
     val historyMaxBytes: Int = 32 * 1024 * 1024,
-    val cooldownSeconds: Int = 10,
+    val cooldown: Duration = Duration.ofSeconds(10),
     val keepReports: Int = 10,
     val maxReportBytes: Int = 8 * 1024 * 1024,
     val deleteAfterDays: Int = 90,
@@ -124,7 +125,7 @@ data class PnLibraryConfig @JvmOverloads constructor(
         require(logRecords in 1..2_000) { "Setting logRecords must be between 1 and 2000" }
         require(historyRetentionDays in 1..365) { "Setting historyRetentionDays must be between 1 and 365" }
         require(historyMaxBytes in 1024 * 1024..256 * 1024 * 1024) { "Setting historyMaxBytes must be between 1 and 256 MiB" }
-        require(cooldownSeconds in 0..3_600) { "Setting cooldownSeconds must be between 0 and 3600" }
+        require(!cooldown.isNegative && cooldown <= Duration.ofHours(1)) { "Setting cooldown must be between 0 and 1 hour" }
         require(keepReports in 1..1_000) { "Setting keepReports must be between 1 and 1000" }
         require(maxReportBytes in 65_536..64 * 1024 * 1024) { "Setting maxReportBytes must be between 64 KiB and 64 MiB" }
         require(deleteAfterDays in 0..3_650) { "Setting deleteAfterDays must be between 0 and 3650" }

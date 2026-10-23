@@ -8,6 +8,7 @@ import org.pnfolder.pnlibrary.api.currency.CurrencyCommandSettings
 import org.pnfolder.pnlibrary.api.currency.CurrencyKey
 import org.pnfolder.pnlibrary.api.plugin.PluginId
 import java.nio.file.Path
+import java.time.Duration
 import java.util.function.Consumer
 
 class CurrencyBuildersTest {
@@ -27,7 +28,7 @@ class CurrencyBuildersTest {
         definition.commands(Consumer { commands ->
             commands.enabled(false)
             commands.permissionPrefix(" custom.currency ")
-            commands.confirmationTimeoutSeconds(120)
+            commands.confirmationTimeout(Duration.ofSeconds(120))
         })
 
         val provider = definition.provider()
@@ -35,8 +36,8 @@ class CurrencyBuildersTest {
 
         assertEquals(false, settings.enabled)
         assertEquals("custom.currency", settings.permissionPrefix)
-        assertEquals(120, settings.confirmationTimeoutSeconds)
-        assertEquals(CurrencyCommandSettings(), settings.copy(enabled = true, permissionPrefix = null, confirmationTimeoutSeconds = 60))
+        assertEquals(Duration.ofSeconds(120), settings.confirmationTimeout)
+        assertEquals(CurrencyCommandSettings(), settings.copy(enabled = true, permissionPrefix = null, confirmationTimeout = Duration.ofSeconds(60)))
         (provider as AutoCloseable).close()
     }
 

@@ -19,6 +19,7 @@ import org.pnfolder.pnlibrary.api.placeholders.PlaceholderKey
 import org.pnfolder.pnlibrary.api.placeholders.PlaceholderPublication
 import org.pnfolder.pnlibrary.api.placeholders.PlaceholderService
 import org.pnfolder.pnlibrary.api.plugin.PluginId
+import java.time.Duration
 import java.util.Locale
 import java.util.UUID
 import java.util.function.Consumer
@@ -135,7 +136,7 @@ private class ManagedCommandOptions : CurrencyCommandOptions {
     private var balance = defaults.balance
     private var historyEmpty = defaults.historyEmpty
     private var confirmationMode = defaults.confirmationMode
-    private var confirmationTimeoutSeconds = defaults.confirmationTimeoutSeconds
+    private var confirmationTimeout = defaults.confirmationTimeout
 
     override fun enabled(value: Boolean) = apply { enabled = value }
     override fun permissionPrefix(value: String) = apply { permissionPrefix = value.trim().ifEmpty { null } }
@@ -145,10 +146,7 @@ private class ManagedCommandOptions : CurrencyCommandOptions {
     override fun balance(value: String) = apply { balance = value }
     override fun historyEmpty(value: String) = apply { historyEmpty = value }
     override fun confirmation(mode: CurrencyConfirmationMode) = apply { confirmationMode = mode }
-    override fun confirmationTimeoutSeconds(value: Int) = apply {
-        require(value in 10..600) { "Currency confirmation timeout must be between 10 and 600 seconds" }
-        confirmationTimeoutSeconds = value
-    }
+    override fun confirmationTimeout(value: Duration) = apply { confirmationTimeout = value }
 
     fun build() = CurrencyCommandSettings(
         enabled = enabled,
@@ -159,7 +157,7 @@ private class ManagedCommandOptions : CurrencyCommandOptions {
         balance = balance,
         historyEmpty = historyEmpty,
         confirmationMode = confirmationMode,
-        confirmationTimeoutSeconds = confirmationTimeoutSeconds,
+        confirmationTimeout = confirmationTimeout,
     )
 }
 

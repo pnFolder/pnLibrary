@@ -154,5 +154,5 @@ private data class CachedPlaceholderValue<T>(
     val writtenAtMillis: Long,
 ) {
     fun expired(policy: PlaceholderCachePolicy): Boolean =
-        System.currentTimeMillis() - writtenAtMillis >= policy.expireAfterWriteMillis
+        System.currentTimeMillis() - writtenAtMillis >= policy.expireAfterWrite.toMillis()
 }

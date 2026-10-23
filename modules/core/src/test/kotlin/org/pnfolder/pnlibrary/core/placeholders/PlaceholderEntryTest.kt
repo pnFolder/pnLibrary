@@ -9,6 +9,7 @@ import org.pnfolder.pnlibrary.api.placeholders.PlaceholderCacheScope
 import org.pnfolder.pnlibrary.api.placeholders.PlaceholderKey
 import org.pnfolder.pnlibrary.api.placeholders.PlaceholderRequest
 import org.pnfolder.pnlibrary.api.plugin.PluginId
+import java.time.Duration
 import java.util.concurrent.CompletableFuture
 import java.util.concurrent.atomic.AtomicInteger
 
@@ -26,7 +27,7 @@ class PlaceholderEntryTest {
             updater = null,
             access = PlaceholderAccess.ownerOnly(),
             updateAccess = PlaceholderAccess.ownerOnly(),
-            cachePolicy = PlaceholderCachePolicy(PlaceholderCacheScope.GLOBAL, 1, 60_000),
+            cachePolicy = PlaceholderCachePolicy(PlaceholderCacheScope.GLOBAL, 1, Duration.ofSeconds(60)),
             fallback = "offline",
             adapterLookup = { null },
         )
@@ -60,7 +61,7 @@ class PlaceholderEntryTest {
             cachePolicy = PlaceholderCachePolicy(
                 scope = PlaceholderCacheScope.GLOBAL,
                 maximumEntries = 1,
-                expireAfterWriteMillis = 60_000,
+                expireAfterWrite = Duration.ofSeconds(60),
                 cacheNullValues = true,
             ),
             fallback = null,

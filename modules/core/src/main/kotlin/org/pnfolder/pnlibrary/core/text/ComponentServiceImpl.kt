@@ -60,8 +60,6 @@ internal class ComponentServiceImpl(
     override fun template(input: String): ComponentTemplate = Template(input, defaultSerializerType)
     override fun template(input: String, type: ComponentSerializerType): ComponentTemplate = Template(input, type)
     override fun configureCache(policy: ComponentCachePolicy) {
-        require(policy.maximumEntries > 0) { "maximumEntries must be positive" }
-        require(policy.expireAfterAccessMillis > 0) { "expireAfterAccessMillis must be positive" }
         cachePolicy = policy
         pluginCache.trim(policy.maximumEntries)
     }
@@ -148,7 +146,7 @@ internal class ComponentCache {
 
     fun get(key: String, policy: ComponentCachePolicy): Component? = synchronized(values) {
         val value = values[key]
-        if (value == null || System.currentTimeMillis() - value.accessed >= policy.expireAfterAccessMillis) {
+        if (value == null || System.currentTimeMillis() - value.accessed >= policy.expireAfterAccess.toMillis()) {
             if (value != null) {
                 values.remove(key)
             }

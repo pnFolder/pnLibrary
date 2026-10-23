@@ -339,13 +339,13 @@ internal class CurrencyCommandExecutor(
             return true
         }
         val operation = confirmations.add(
-            settings.confirmationTimeoutSeconds, currency.key.toString(), description, sender.name, execute, completed,
+            settings.confirmationTimeout.seconds.toInt(), currency.key.toString(), description, sender.name, execute, completed,
         ) ?: return error(sender, "Слишком много операций с валютой ждут подтверждения.")
         val token = operation.token
         val console = Bukkit.getConsoleSender()
         val kit = ChatKit(ChatReader.CONSOLE)
         val request = "${currency.key} · $description · запросил ${sender.name}"
-        val confirm = "Подтвердите в течение ${settings.confirmationTimeoutSeconds} с: /pn money confirm $token"
+        val confirm = "Подтвердите в течение ${settings.confirmationTimeout.seconds} с: /pn money confirm $token"
         (kit.notice(ChatNotice(ChatTone.WARNING, "Операция с валютой ждёт подтверждения: $token", request)) +
             kit.notice(ChatNotice(ChatTone.INFO, confirm)))
             .forEach { console.sendMessage(LEGACY.serialize(it)) }

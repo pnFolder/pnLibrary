@@ -125,7 +125,7 @@ public final class org/pnfolder/pnlibrary/api/currency/CurrencyCapability : java
 public abstract interface class org/pnfolder/pnlibrary/api/currency/CurrencyCommandOptions {
 	public abstract fun balance (Ljava/lang/String;)Lorg/pnfolder/pnlibrary/api/currency/CurrencyCommandOptions;
 	public abstract fun confirmation (Lorg/pnfolder/pnlibrary/api/currency/CurrencyConfirmationMode;)Lorg/pnfolder/pnlibrary/api/currency/CurrencyCommandOptions;
-	public abstract fun confirmationTimeoutSeconds (I)Lorg/pnfolder/pnlibrary/api/currency/CurrencyCommandOptions;
+	public abstract fun confirmationTimeout (Ljava/time/Duration;)Lorg/pnfolder/pnlibrary/api/currency/CurrencyCommandOptions;
 	public abstract fun enabled (Z)Lorg/pnfolder/pnlibrary/api/currency/CurrencyCommandOptions;
 	public abstract fun failure (Ljava/lang/String;)Lorg/pnfolder/pnlibrary/api/currency/CurrencyCommandOptions;
 	public abstract fun historyEmpty (Ljava/lang/String;)Lorg/pnfolder/pnlibrary/api/currency/CurrencyCommandOptions;
@@ -136,8 +136,8 @@ public abstract interface class org/pnfolder/pnlibrary/api/currency/CurrencyComm
 
 public final class org/pnfolder/pnlibrary/api/currency/CurrencyCommandSettings {
 	public fun <init> ()V
-	public fun <init> (ZLjava/lang/String;Ljava/lang/String;Ljava/lang/String;Ljava/lang/String;Ljava/lang/String;Ljava/lang/String;Lorg/pnfolder/pnlibrary/api/currency/CurrencyConfirmationMode;I)V
-	public synthetic fun <init> (ZLjava/lang/String;Ljava/lang/String;Ljava/lang/String;Ljava/lang/String;Ljava/lang/String;Ljava/lang/String;Lorg/pnfolder/pnlibrary/api/currency/CurrencyConfirmationMode;IILkotlin/jvm/internal/DefaultConstructorMarker;)V
+	public fun <init> (ZLjava/lang/String;Ljava/lang/String;Ljava/lang/String;Ljava/lang/String;Ljava/lang/String;Ljava/lang/String;Lorg/pnfolder/pnlibrary/api/currency/CurrencyConfirmationMode;Ljava/time/Duration;)V
+	public synthetic fun <init> (ZLjava/lang/String;Ljava/lang/String;Ljava/lang/String;Ljava/lang/String;Ljava/lang/String;Ljava/lang/String;Lorg/pnfolder/pnlibrary/api/currency/CurrencyConfirmationMode;Ljava/time/Duration;ILkotlin/jvm/internal/DefaultConstructorMarker;)V
 	public final fun component1 ()Z
 	public final fun component2 ()Ljava/lang/String;
 	public final fun component3 ()Ljava/lang/String;
@@ -146,13 +146,13 @@ public final class org/pnfolder/pnlibrary/api/currency/CurrencyCommandSettings {
 	public final fun component6 ()Ljava/lang/String;
 	public final fun component7 ()Ljava/lang/String;
 	public final fun component8 ()Lorg/pnfolder/pnlibrary/api/currency/CurrencyConfirmationMode;
-	public final fun component9 ()I
-	public final fun copy (ZLjava/lang/String;Ljava/lang/String;Ljava/lang/String;Ljava/lang/String;Ljava/lang/String;Ljava/lang/String;Lorg/pnfolder/pnlibrary/api/currency/CurrencyConfirmationMode;I)Lorg/pnfolder/pnlibrary/api/currency/CurrencyCommandSettings;
-	public static synthetic fun copy$default (Lorg/pnfolder/pnlibrary/api/currency/CurrencyCommandSettings;ZLjava/lang/String;Ljava/lang/String;Ljava/lang/String;Ljava/lang/String;Ljava/lang/String;Ljava/lang/String;Lorg/pnfolder/pnlibrary/api/currency/CurrencyConfirmationMode;IILjava/lang/Object;)Lorg/pnfolder/pnlibrary/api/currency/CurrencyCommandSettings;
+	public final fun component9 ()Ljava/time/Duration;
+	public final fun copy (ZLjava/lang/String;Ljava/lang/String;Ljava/lang/String;Ljava/lang/String;Ljava/lang/String;Ljava/lang/String;Lorg/pnfolder/pnlibrary/api/currency/CurrencyConfirmationMode;Ljava/time/Duration;)Lorg/pnfolder/pnlibrary/api/currency/CurrencyCommandSettings;
+	public static synthetic fun copy$default (Lorg/pnfolder/pnlibrary/api/currency/CurrencyCommandSettings;ZLjava/lang/String;Ljava/lang/String;Ljava/lang/String;Ljava/lang/String;Ljava/lang/String;Ljava/lang/String;Lorg/pnfolder/pnlibrary/api/currency/CurrencyConfirmationMode;Ljava/time/Duration;ILjava/lang/Object;)Lorg/pnfolder/pnlibrary/api/currency/CurrencyCommandSettings;
 	public fun equals (Ljava/lang/Object;)Z
 	public final fun getBalance ()Ljava/lang/String;
 	public final fun getConfirmationMode ()Lorg/pnfolder/pnlibrary/api/currency/CurrencyConfirmationMode;
-	public final fun getConfirmationTimeoutSeconds ()I
+	public final fun getConfirmationTimeout ()Ljava/time/Duration;
 	public final fun getEnabled ()Z
 	public final fun getFailure ()Ljava/lang/String;
 	public final fun getHistoryEmpty ()Ljava/lang/String;

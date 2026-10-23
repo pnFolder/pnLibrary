@@ -3,6 +3,7 @@ package org.pnfolder.pnlibrary.api.currency
 import org.pnfolder.pnlibrary.api.placeholders.PlaceholderAccess
 import org.pnfolder.pnlibrary.api.plugin.PluginId
 import java.math.BigDecimal
+import java.time.Duration
 import java.util.UUID
 import java.util.concurrent.CompletionStage
 import java.util.function.BiFunction
@@ -182,7 +183,7 @@ interface CurrencyPlaceholderOptions {
  * @property balance template for balance lookup
  * @property historyEmpty response used when a ledger query returns no rows
  * @property confirmationMode second-step policy for destructive administration
- * @property confirmationTimeoutSeconds confirmation lifetime from 10 through 600 seconds
+ * @property confirmationTimeout confirmation lifetime from 10 seconds through 10 minutes
  */
 data class CurrencyCommandSettings(
     val enabled: Boolean = true,
@@ -193,12 +194,17 @@ data class CurrencyCommandSettings(
     val balance: String = "&bБаланс: &f{balance}",
     val historyEmpty: String = "&bОпераций пока нет.",
     val confirmationMode: CurrencyConfirmationMode = CurrencyConfirmationMode.CONSOLE,
-    val confirmationTimeoutSeconds: Int = 60,
+    val confirmationTimeout: Duration = Duration.ofSeconds(60),
 ) {
     init {
-        require(confirmationTimeoutSeconds in 10..600) {
-            "Currency confirmation timeout must be between 10 and 600 seconds"
+        require(confirmationTimeout in MIN_CONFIRMATION_TIMEOUT..MAX_CONFIRMATION_TIMEOUT) {
+            "Currency confirmation timeout must be between 10 seconds and 10 minutes"
         }
+    }
+
+    private companion object {
+        val MIN_CONFIRMATION_TIMEOUT: Duration = Duration.ofSeconds(10)
+        val MAX_CONFIRMATION_TIMEOUT: Duration = Duration.ofMinutes(10)
     }
 }
 
@@ -226,8 +232,8 @@ interface CurrencyCommandOptions {
     fun historyEmpty(value: String): CurrencyCommandOptions
     /** Sets the destructive-operation confirmation policy. */
     fun confirmation(mode: CurrencyConfirmationMode): CurrencyCommandOptions
-    /** Sets confirmation lifetime from 10 through 600 seconds. */
-    fun confirmationTimeoutSeconds(value: Int): CurrencyCommandOptions
+    /** Sets confirmation lifetime from 10 seconds through 10 minutes. */
+    fun confirmationTimeout(value: Duration): CurrencyCommandOptions
 }
 
 /**

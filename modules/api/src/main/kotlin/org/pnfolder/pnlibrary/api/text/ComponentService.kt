@@ -1,6 +1,7 @@
 package org.pnfolder.pnlibrary.api.text
 
 import net.kyori.adventure.text.Component
+import java.time.Duration
 import java.util.UUID
 
 /**
@@ -135,17 +136,17 @@ enum class ComponentCacheScope {
  * @property scope ownership boundary for cached entries; [ComponentCacheScope.NONE]
  * disables caching
  * @property maximumEntries maximum number of retained entries
- * @property expireAfterAccessMillis idle time after which an entry may be evicted
- * @throws IllegalArgumentException when either numeric limit is not positive
+ * @property expireAfterAccess idle time after which an entry may be evicted
+ * @throws IllegalArgumentException when either limit is not positive
  */
 data class ComponentCachePolicy @JvmOverloads constructor(
     val scope: ComponentCacheScope = ComponentCacheScope.PLUGIN,
     val maximumEntries: Int = 1_000,
-    val expireAfterAccessMillis: Long = 30 * 60 * 1_000L,
+    val expireAfterAccess: Duration = Duration.ofMinutes(30),
 ) {
     init {
         require(maximumEntries > 0) { "Cache maximumEntries must be positive" }
-        require(expireAfterAccessMillis > 0) { "Cache expireAfterAccessMillis must be positive" }
+        require(!expireAfterAccess.isZero && !expireAfterAccess.isNegative) { "Cache expireAfterAccess must be positive" }
     }
 }
 

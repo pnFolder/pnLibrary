@@ -4,6 +4,7 @@ import org.pnfolder.pnlibrary.api.config.ConfigComment
 import org.pnfolder.pnlibrary.api.config.ConfigNewLine
 import org.pnfolder.pnlibrary.api.config.ConfigRange
 import org.pnfolder.pnlibrary.api.runtime.PnLibraryConfig
+import java.time.Duration
 
 /**
  * Content of `plugins/pnLibrary/config.yml`: diagnostic reports, their privacy and storage.
@@ -160,7 +161,7 @@ internal class DiagnosticsSettings {
         logRecords = logRecords,
         historyRetentionDays = historyRetentionDays,
         historyMaxBytes = historyMaxBytes,
-        cooldownSeconds = cooldownSeconds,
+        cooldown = Duration.ofSeconds(cooldownSeconds.toLong()),
         keepReports = keepReports,
         maxReportBytes = maxReportBytes,
         deleteAfterDays = deleteAfterDays,

@@ -2435,18 +2435,18 @@ public final class org/pnfolder/pnlibrary/api/placeholders/PlaceholderCachePolic
 	public fun <init> ()V
 	public fun <init> (Lorg/pnfolder/pnlibrary/api/placeholders/PlaceholderCacheScope;)V
 	public fun <init> (Lorg/pnfolder/pnlibrary/api/placeholders/PlaceholderCacheScope;I)V
-	public fun <init> (Lorg/pnfolder/pnlibrary/api/placeholders/PlaceholderCacheScope;IJ)V
-	public fun <init> (Lorg/pnfolder/pnlibrary/api/placeholders/PlaceholderCacheScope;IJZ)V
-	public synthetic fun <init> (Lorg/pnfolder/pnlibrary/api/placeholders/PlaceholderCacheScope;IJZILkotlin/jvm/internal/DefaultConstructorMarker;)V
+	public fun <init> (Lorg/pnfolder/pnlibrary/api/placeholders/PlaceholderCacheScope;ILjava/time/Duration;)V
+	public fun <init> (Lorg/pnfolder/pnlibrary/api/placeholders/PlaceholderCacheScope;ILjava/time/Duration;Z)V
+	public synthetic fun <init> (Lorg/pnfolder/pnlibrary/api/placeholders/PlaceholderCacheScope;ILjava/time/Duration;ZILkotlin/jvm/internal/DefaultConstructorMarker;)V
 	public final fun component1 ()Lorg/pnfolder/pnlibrary/api/placeholders/PlaceholderCacheScope;
 	public final fun component2 ()I
-	public final fun component3 ()J
+	public final fun component3 ()Ljava/time/Duration;
 	public final fun component4 ()Z
-	public final fun copy (Lorg/pnfolder/pnlibrary/api/placeholders/PlaceholderCacheScope;IJZ)Lorg/pnfolder/pnlibrary/api/placeholders/PlaceholderCachePolicy;
-	public static synthetic fun copy$default (Lorg/pnfolder/pnlibrary/api/placeholders/PlaceholderCachePolicy;Lorg/pnfolder/pnlibrary/api/placeholders/PlaceholderCacheScope;IJZILjava/lang/Object;)Lorg/pnfolder/pnlibrary/api/placeholders/PlaceholderCachePolicy;
+	public final fun copy (Lorg/pnfolder/pnlibrary/api/placeholders/PlaceholderCacheScope;ILjava/time/Duration;Z)Lorg/pnfolder/pnlibrary/api/placeholders/PlaceholderCachePolicy;
+	public static synthetic fun copy$default (Lorg/pnfolder/pnlibrary/api/placeholders/PlaceholderCachePolicy;Lorg/pnfolder/pnlibrary/api/placeholders/PlaceholderCacheScope;ILjava/time/Duration;ZILjava/lang/Object;)Lorg/pnfolder/pnlibrary/api/placeholders/PlaceholderCachePolicy;
 	public fun equals (Ljava/lang/Object;)Z
 	public final fun getCacheNullValues ()Z
-	public final fun getExpireAfterWriteMillis ()J
+	public final fun getExpireAfterWrite ()Ljava/time/Duration;
 	public final fun getMaximumEntries ()I
 	public final fun getScope ()Lorg/pnfolder/pnlibrary/api/placeholders/PlaceholderCacheScope;
 	public fun hashCode ()I
@@ -2964,36 +2964,36 @@ public final class org/pnfolder/pnlibrary/api/runtime/PnLibraryConfig {
 	public fun <init> (ZLjava/lang/String;Ljava/util/List;Ljava/lang/String;Ljava/lang/String;Ljava/lang/String;Ljava/lang/String;ZZZI)V
 	public fun <init> (ZLjava/lang/String;Ljava/util/List;Ljava/lang/String;Ljava/lang/String;Ljava/lang/String;Ljava/lang/String;ZZZII)V
 	public fun <init> (ZLjava/lang/String;Ljava/util/List;Ljava/lang/String;Ljava/lang/String;Ljava/lang/String;Ljava/lang/String;ZZZIII)V
-	public fun <init> (ZLjava/lang/String;Ljava/util/List;Ljava/lang/String;Ljava/lang/String;Ljava/lang/String;Ljava/lang/String;ZZZIIII)V
-	public fun <init> (ZLjava/lang/String;Ljava/util/List;Ljava/lang/String;Ljava/lang/String;Ljava/lang/String;Ljava/lang/String;ZZZIIIII)V
-	public fun <init> (ZLjava/lang/String;Ljava/util/List;Ljava/lang/String;Ljava/lang/String;Ljava/lang/String;Ljava/lang/String;ZZZIIIIII)V
-	public fun <init> (ZLjava/lang/String;Ljava/util/List;Ljava/lang/String;Ljava/lang/String;Ljava/lang/String;Ljava/lang/String;ZZZIIIIIII)V
-	public fun <init> (ZLjava/lang/String;Ljava/util/List;Ljava/lang/String;Ljava/lang/String;Ljava/lang/String;Ljava/lang/String;ZZZIIIIIIII)V
-	public fun <init> (ZLjava/lang/String;Ljava/util/List;Ljava/lang/String;Ljava/lang/String;Ljava/lang/String;Ljava/lang/String;ZZZIIIIIIIILjava/util/List;)V
-	public fun <init> (ZLjava/lang/String;Ljava/util/List;Ljava/lang/String;Ljava/lang/String;Ljava/lang/String;Ljava/lang/String;ZZZIIIIIIIILjava/util/List;Ljava/util/List;)V
-	public fun <init> (ZLjava/lang/String;Ljava/util/List;Ljava/lang/String;Ljava/lang/String;Ljava/lang/String;Ljava/lang/String;ZZZIIIIIIIILjava/util/List;Ljava/util/List;Ljava/util/List;)V
-	public fun <init> (ZLjava/lang/String;Ljava/util/List;Ljava/lang/String;Ljava/lang/String;Ljava/lang/String;Ljava/lang/String;ZZZIIIIIIIILjava/util/List;Ljava/util/List;Ljava/util/List;Z)V
-	public fun <init> (ZLjava/lang/String;Ljava/util/List;Ljava/lang/String;Ljava/lang/String;Ljava/lang/String;Ljava/lang/String;ZZZIIIIIIIILjava/util/List;Ljava/util/List;Ljava/util/List;ZI)V
-	public fun <init> (ZLjava/lang/String;Ljava/util/List;Ljava/lang/String;Ljava/lang/String;Ljava/lang/String;Ljava/lang/String;ZZZIIIIIIIILjava/util/List;Ljava/util/List;Ljava/util/List;ZII)V
-	public fun <init> (ZLjava/lang/String;Ljava/util/List;Ljava/lang/String;Ljava/lang/String;Ljava/lang/String;Ljava/lang/String;ZZZIIIIIIIILjava/util/List;Ljava/util/List;Ljava/util/List;ZIII)V
-	public fun <init> (ZLjava/lang/String;Ljava/util/List;Ljava/lang/String;Ljava/lang/String;Ljava/lang/String;Ljava/lang/String;ZZZIIIIIIIILjava/util/List;Ljava/util/List;Ljava/util/List;ZIIILjava/lang/String;)V
-	public fun <init> (ZLjava/lang/String;Ljava/util/List;Ljava/lang/String;Ljava/lang/String;Ljava/lang/String;Ljava/lang/String;ZZZIIIIIIIILjava/util/List;Ljava/util/List;Ljava/util/List;ZIIILjava/lang/String;Z)V
-	public fun <init> (ZLjava/lang/String;Ljava/util/List;Ljava/lang/String;Ljava/lang/String;Ljava/lang/String;Ljava/lang/String;ZZZIIIIIIIILjava/util/List;Ljava/util/List;Ljava/util/List;ZIIILjava/lang/String;ZLjava/lang/String;)V
-	public fun <init> (ZLjava/lang/String;Ljava/util/List;Ljava/lang/String;Ljava/lang/String;Ljava/lang/String;Ljava/lang/String;ZZZIIIIIIIILjava/util/List;Ljava/util/List;Ljava/util/List;ZIIILjava/lang/String;ZLjava/lang/String;Z)V
-	public fun <init> (ZLjava/lang/String;Ljava/util/List;Ljava/lang/String;Ljava/lang/String;Ljava/lang/String;Ljava/lang/String;ZZZIIIIIIIILjava/util/List;Ljava/util/List;Ljava/util/List;ZIIILjava/lang/String;ZLjava/lang/String;ZLjava/lang/String;)V
-	public fun <init> (ZLjava/lang/String;Ljava/util/List;Ljava/lang/String;Ljava/lang/String;Ljava/lang/String;Ljava/lang/String;ZZZIIIIIIIILjava/util/List;Ljava/util/List;Ljava/util/List;ZIIILjava/lang/String;ZLjava/lang/String;ZLjava/lang/String;Ljava/lang/String;)V
-	public fun <init> (ZLjava/lang/String;Ljava/util/List;Ljava/lang/String;Ljava/lang/String;Ljava/lang/String;Ljava/lang/String;ZZZIIIIIIIILjava/util/List;Ljava/util/List;Ljava/util/List;ZIIILjava/lang/String;ZLjava/lang/String;ZLjava/lang/String;Ljava/lang/String;Ljava/lang/String;)V
-	public fun <init> (ZLjava/lang/String;Ljava/util/List;Ljava/lang/String;Ljava/lang/String;Ljava/lang/String;Ljava/lang/String;ZZZIIIIIIIILjava/util/List;Ljava/util/List;Ljava/util/List;ZIIILjava/lang/String;ZLjava/lang/String;ZLjava/lang/String;Ljava/lang/String;Ljava/lang/String;Ljava/lang/String;)V
-	public fun <init> (ZLjava/lang/String;Ljava/util/List;Ljava/lang/String;Ljava/lang/String;Ljava/lang/String;Ljava/lang/String;ZZZIIIIIIIILjava/util/List;Ljava/util/List;Ljava/util/List;ZIIILjava/lang/String;ZLjava/lang/String;ZLjava/lang/String;Ljava/lang/String;Ljava/lang/String;Ljava/lang/String;Ljava/lang/String;)V
-	public fun <init> (ZLjava/lang/String;Ljava/util/List;Ljava/lang/String;Ljava/lang/String;Ljava/lang/String;Ljava/lang/String;ZZZIIIIIIIILjava/util/List;Ljava/util/List;Ljava/util/List;ZIIILjava/lang/String;ZLjava/lang/String;ZLjava/lang/String;Ljava/lang/String;Ljava/lang/String;Ljava/lang/String;Ljava/lang/String;Ljava/lang/String;)V
-	public fun <init> (ZLjava/lang/String;Ljava/util/List;Ljava/lang/String;Ljava/lang/String;Ljava/lang/String;Ljava/lang/String;ZZZIIIIIIIILjava/util/List;Ljava/util/List;Ljava/util/List;ZIIILjava/lang/String;ZLjava/lang/String;ZLjava/lang/String;Ljava/lang/String;Ljava/lang/String;Ljava/lang/String;Ljava/lang/String;Ljava/lang/String;I)V
-	public synthetic fun <init> (ZLjava/lang/String;Ljava/util/List;Ljava/lang/String;Ljava/lang/String;Ljava/lang/String;Ljava/lang/String;ZZZIIIIIIIILjava/util/List;Ljava/util/List;Ljava/util/List;ZIIILjava/lang/String;ZLjava/lang/String;ZLjava/lang/String;Ljava/lang/String;Ljava/lang/String;Ljava/lang/String;Ljava/lang/String;Ljava/lang/String;IIILkotlin/jvm/internal/DefaultConstructorMarker;)V
+	public fun <init> (ZLjava/lang/String;Ljava/util/List;Ljava/lang/String;Ljava/lang/String;Ljava/lang/String;Ljava/lang/String;ZZZIIILjava/time/Duration;)V
+	public fun <init> (ZLjava/lang/String;Ljava/util/List;Ljava/lang/String;Ljava/lang/String;Ljava/lang/String;Ljava/lang/String;ZZZIIILjava/time/Duration;I)V
+	public fun <init> (ZLjava/lang/String;Ljava/util/List;Ljava/lang/String;Ljava/lang/String;Ljava/lang/String;Ljava/lang/String;ZZZIIILjava/time/Duration;II)V
+	public fun <init> (ZLjava/lang/String;Ljava/util/List;Ljava/lang/String;Ljava/lang/String;Ljava/lang/String;Ljava/lang/String;ZZZIIILjava/time/Duration;III)V
+	public fun <init> (ZLjava/lang/String;Ljava/util/List;Ljava/lang/String;Ljava/lang/String;Ljava/lang/String;Ljava/lang/String;ZZZIIILjava/time/Duration;IIII)V
+	public fun <init> (ZLjava/lang/String;Ljava/util/List;Ljava/lang/String;Ljava/lang/String;Ljava/lang/String;Ljava/lang/String;ZZZIIILjava/time/Duration;IIIILjava/util/List;)V
+	public fun <init> (ZLjava/lang/String;Ljava/util/List;Ljava/lang/String;Ljava/lang/String;Ljava/lang/String;Ljava/lang/String;ZZZIIILjava/time/Duration;IIIILjava/util/List;Ljava/util/List;)V
+	public fun <init> (ZLjava/lang/String;Ljava/util/List;Ljava/lang/String;Ljava/lang/String;Ljava/lang/String;Ljava/lang/String;ZZZIIILjava/time/Duration;IIIILjava/util/List;Ljava/util/List;Ljava/util/List;)V
+	public fun <init> (ZLjava/lang/String;Ljava/util/List;Ljava/lang/String;Ljava/lang/String;Ljava/lang/String;Ljava/lang/String;ZZZIIILjava/time/Duration;IIIILjava/util/List;Ljava/util/List;Ljava/util/List;Z)V
+	public fun <init> (ZLjava/lang/String;Ljava/util/List;Ljava/lang/String;Ljava/lang/String;Ljava/lang/String;Ljava/lang/String;ZZZIIILjava/time/Duration;IIIILjava/util/List;Ljava/util/List;Ljava/util/List;ZI)V
+	public fun <init> (ZLjava/lang/String;Ljava/util/List;Ljava/lang/String;Ljava/lang/String;Ljava/lang/String;Ljava/lang/String;ZZZIIILjava/time/Duration;IIIILjava/util/List;Ljava/util/List;Ljava/util/List;ZII)V
+	public fun <init> (ZLjava/lang/String;Ljava/util/List;Ljava/lang/String;Ljava/lang/String;Ljava/lang/String;Ljava/lang/String;ZZZIIILjava/time/Duration;IIIILjava/util/List;Ljava/util/List;Ljava/util/List;ZIII)V
+	public fun <init> (ZLjava/lang/String;Ljava/util/List;Ljava/lang/String;Ljava/lang/String;Ljava/lang/String;Ljava/lang/String;ZZZIIILjava/time/Duration;IIIILjava/util/List;Ljava/util/List;Ljava/util/List;ZIIILjava/lang/String;)V
+	public fun <init> (ZLjava/lang/String;Ljava/util/List;Ljava/lang/String;Ljava/lang/String;Ljava/lang/String;Ljava/lang/String;ZZZIIILjava/time/Duration;IIIILjava/util/List;Ljava/util/List;Ljava/util/List;ZIIILjava/lang/String;Z)V
+	public fun <init> (ZLjava/lang/String;Ljava/util/List;Ljava/lang/String;Ljava/lang/String;Ljava/lang/String;Ljava/lang/String;ZZZIIILjava/time/Duration;IIIILjava/util/List;Ljava/util/List;Ljava/util/List;ZIIILjava/lang/String;ZLjava/lang/String;)V
+	public fun <init> (ZLjava/lang/String;Ljava/util/List;Ljava/lang/String;Ljava/lang/String;Ljava/lang/String;Ljava/lang/String;ZZZIIILjava/time/Duration;IIIILjava/util/List;Ljava/util/List;Ljava/util/List;ZIIILjava/lang/String;ZLjava/lang/String;Z)V
+	public fun <init> (ZLjava/lang/String;Ljava/util/List;Ljava/lang/String;Ljava/lang/String;Ljava/lang/String;Ljava/lang/String;ZZZIIILjava/time/Duration;IIIILjava/util/List;Ljava/util/List;Ljava/util/List;ZIIILjava/lang/String;ZLjava/lang/String;ZLjava/lang/String;)V
+	public fun <init> (ZLjava/lang/String;Ljava/util/List;Ljava/lang/String;Ljava/lang/String;Ljava/lang/String;Ljava/lang/String;ZZZIIILjava/time/Duration;IIIILjava/util/List;Ljava/util/List;Ljava/util/List;ZIIILjava/lang/String;ZLjava/lang/String;ZLjava/lang/String;Ljava/lang/String;)V
+	public fun <init> (ZLjava/lang/String;Ljava/util/List;Ljava/lang/String;Ljava/lang/String;Ljava/lang/String;Ljava/lang/String;ZZZIIILjava/time/Duration;IIIILjava/util/List;Ljava/util/List;Ljava/util/List;ZIIILjava/lang/String;ZLjava/lang/String;ZLjava/lang/String;Ljava/lang/String;Ljava/lang/String;)V
+	public fun <init> (ZLjava/lang/String;Ljava/util/List;Ljava/lang/String;Ljava/lang/String;Ljava/lang/String;Ljava/lang/String;ZZZIIILjava/time/Duration;IIIILjava/util/List;Ljava/util/List;Ljava/util/List;ZIIILjava/lang/String;ZLjava/lang/String;ZLjava/lang/String;Ljava/lang/String;Ljava/lang/String;Ljava/lang/String;)V
+	public fun <init> (ZLjava/lang/String;Ljava/util/List;Ljava/lang/String;Ljava/lang/String;Ljava/lang/String;Ljava/lang/String;ZZZIIILjava/time/Duration;IIIILjava/util/List;Ljava/util/List;Ljava/util/List;ZIIILjava/lang/String;ZLjava/lang/String;ZLjava/lang/String;Ljava/lang/String;Ljava/lang/String;Ljava/lang/String;Ljava/lang/String;)V
+	public fun <init> (ZLjava/lang/String;Ljava/util/List;Ljava/lang/String;Ljava/lang/String;Ljava/lang/String;Ljava/lang/String;ZZZIIILjava/time/Duration;IIIILjava/util/List;Ljava/util/List;Ljava/util/List;ZIIILjava/lang/String;ZLjava/lang/String;ZLjava/lang/String;Ljava/lang/String;Ljava/lang/String;Ljava/lang/String;Ljava/lang/String;Ljava/lang/String;)V
+	public fun <init> (ZLjava/lang/String;Ljava/util/List;Ljava/lang/String;Ljava/lang/String;Ljava/lang/String;Ljava/lang/String;ZZZIIILjava/time/Duration;IIIILjava/util/List;Ljava/util/List;Ljava/util/List;ZIIILjava/lang/String;ZLjava/lang/String;ZLjava/lang/String;Ljava/lang/String;Ljava/lang/String;Ljava/lang/String;Ljava/lang/String;Ljava/lang/String;I)V
+	public synthetic fun <init> (ZLjava/lang/String;Ljava/util/List;Ljava/lang/String;Ljava/lang/String;Ljava/lang/String;Ljava/lang/String;ZZZIIILjava/time/Duration;IIIILjava/util/List;Ljava/util/List;Ljava/util/List;ZIIILjava/lang/String;ZLjava/lang/String;ZLjava/lang/String;Ljava/lang/String;Ljava/lang/String;Ljava/lang/String;Ljava/lang/String;Ljava/lang/String;IIILkotlin/jvm/internal/DefaultConstructorMarker;)V
 	public final fun component1 ()Z
 	public final fun component10 ()Z
 	public final fun component11 ()I
 	public final fun component12 ()I
 	public final fun component13 ()I
-	public final fun component14 ()I
+	public final fun component14 ()Ljava/time/Duration;
 	public final fun component15 ()I
 	public final fun component16 ()I
 	public final fun component17 ()I
@@ -3024,13 +3024,13 @@ public final class org/pnfolder/pnlibrary/api/runtime/PnLibraryConfig {
 	public final fun component7 ()Ljava/lang/String;
 	public final fun component8 ()Z
 	public final fun component9 ()Z
-	public final fun copy (ZLjava/lang/String;Ljava/util/List;Ljava/lang/String;Ljava/lang/String;Ljava/lang/String;Ljava/lang/String;ZZZIIIIIIIILjava/util/List;Ljava/util/List;Ljava/util/List;ZIIILjava/lang/String;ZLjava/lang/String;ZLjava/lang/String;Ljava/lang/String;Ljava/lang/String;Ljava/lang/String;Ljava/lang/String;Ljava/lang/String;I)Lorg/pnfolder/pnlibrary/api/runtime/PnLibraryConfig;
-	public static synthetic fun copy$default (Lorg/pnfolder/pnlibrary/api/runtime/PnLibraryConfig;ZLjava/lang/String;Ljava/util/List;Ljava/lang/String;Ljava/lang/String;Ljava/lang/String;Ljava/lang/String;ZZZIIIIIIIILjava/util/List;Ljava/util/List;Ljava/util/List;ZIIILjava/lang/String;ZLjava/lang/String;ZLjava/lang/String;Ljava/lang/String;Ljava/lang/String;Ljava/lang/String;Ljava/lang/String;Ljava/lang/String;IIILjava/lang/Object;)Lorg/pnfolder/pnlibrary/api/runtime/PnLibraryConfig;
+	public final fun copy (ZLjava/lang/String;Ljava/util/List;Ljava/lang/String;Ljava/lang/String;Ljava/lang/String;Ljava/lang/String;ZZZIIILjava/time/Duration;IIIILjava/util/List;Ljava/util/List;Ljava/util/List;ZIIILjava/lang/String;ZLjava/lang/String;ZLjava/lang/String;Ljava/lang/String;Ljava/lang/String;Ljava/lang/String;Ljava/lang/String;Ljava/lang/String;I)Lorg/pnfolder/pnlibrary/api/runtime/PnLibraryConfig;
+	public static synthetic fun copy$default (Lorg/pnfolder/pnlibrary/api/runtime/PnLibraryConfig;ZLjava/lang/String;Ljava/util/List;Ljava/lang/String;Ljava/lang/String;Ljava/lang/String;Ljava/lang/String;ZZZIIILjava/time/Duration;IIIILjava/util/List;Ljava/util/List;Ljava/util/List;ZIIILjava/lang/String;ZLjava/lang/String;ZLjava/lang/String;Ljava/lang/String;Ljava/lang/String;Ljava/lang/String;Ljava/lang/String;Ljava/lang/String;IIILjava/lang/Object;)Lorg/pnfolder/pnlibrary/api/runtime/PnLibraryConfig;
 	public fun equals (Ljava/lang/Object;)Z
 	public final fun getAllowPlaintext ()Z
 	public final fun getConfigs ()Z
 	public final fun getConsoleOnlyMessage ()Ljava/lang/String;
-	public final fun getCooldownSeconds ()I
+	public final fun getCooldown ()Ljava/time/Duration;
 	public final fun getDeleteAfterDays ()I
 	public final fun getExcludedPaths ()Ljava/util/List;
 	public final fun getHistoryMaxBytes ()I
@@ -3348,15 +3348,15 @@ public final class org/pnfolder/pnlibrary/api/text/ComponentCachePolicy {
 	public fun <init> ()V
 	public fun <init> (Lorg/pnfolder/pnlibrary/api/text/ComponentCacheScope;)V
 	public fun <init> (Lorg/pnfolder/pnlibrary/api/text/ComponentCacheScope;I)V
-	public fun <init> (Lorg/pnfolder/pnlibrary/api/text/ComponentCacheScope;IJ)V
-	public synthetic fun <init> (Lorg/pnfolder/pnlibrary/api/text/ComponentCacheScope;IJILkotlin/jvm/internal/DefaultConstructorMarker;)V
+	public fun <init> (Lorg/pnfolder/pnlibrary/api/text/ComponentCacheScope;ILjava/time/Duration;)V
+	public synthetic fun <init> (Lorg/pnfolder/pnlibrary/api/text/ComponentCacheScope;ILjava/time/Duration;ILkotlin/jvm/internal/DefaultConstructorMarker;)V
 	public final fun component1 ()Lorg/pnfolder/pnlibrary/api/text/ComponentCacheScope;
 	public final fun component2 ()I
-	public final fun component3 ()J
-	public final fun copy (Lorg/pnfolder/pnlibrary/api/text/ComponentCacheScope;IJ)Lorg/pnfolder/pnlibrary/api/text/ComponentCachePolicy;
-	public static synthetic fun copy$default (Lorg/pnfolder/pnlibrary/api/text/ComponentCachePolicy;Lorg/pnfolder/pnlibrary/api/text/ComponentCacheScope;IJILjava/lang/Object;)Lorg/pnfolder/pnlibrary/api/text/ComponentCachePolicy;
+	public final fun component3 ()Ljava/time/Duration;
+	public final fun copy (Lorg/pnfolder/pnlibrary/api/text/ComponentCacheScope;ILjava/time/Duration;)Lorg/pnfolder/pnlibrary/api/text/ComponentCachePolicy;
+	public static synthetic fun copy$default (Lorg/pnfolder/pnlibrary/api/text/ComponentCachePolicy;Lorg/pnfolder/pnlibrary/api/text/ComponentCacheScope;ILjava/time/Duration;ILjava/lang/Object;)Lorg/pnfolder/pnlibrary/api/text/ComponentCachePolicy;
 	public fun equals (Ljava/lang/Object;)Z
-	public final fun getExpireAfterAccessMillis ()J
+	public final fun getExpireAfterAccess ()Ljava/time/Duration;
 	public final fun getMaximumEntries ()I
 	public final fun getScope ()Lorg/pnfolder/pnlibrary/api/text/ComponentCacheScope;
 	public fun hashCode ()I
