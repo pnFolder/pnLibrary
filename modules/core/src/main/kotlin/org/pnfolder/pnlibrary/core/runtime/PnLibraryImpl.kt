@@ -24,6 +24,7 @@ import org.pnfolder.pnlibrary.api.services.ServiceManager
 import org.pnfolder.pnlibrary.api.tasks.TaskScope
 import org.pnfolder.pnlibrary.api.updates.UpdateService
 import org.pnfolder.pnlibrary.api.version.SemanticVersion
+import org.pnfolder.pnlibrary.common.time.DisplayZone
 import org.pnfolder.pnlibrary.core.commands.standardCommandFeedback
 import org.pnfolder.pnlibrary.core.diagnostics.DiagnosticsRegistry
 import org.pnfolder.pnlibrary.core.diagnostics.diagnosticCommand
@@ -48,7 +49,6 @@ import org.pnfolder.pnlibrary.core.runtime.platform.PlatformDataFolderResolver
 import org.pnfolder.pnlibrary.core.runtime.platform.PlatformRegistration
 import org.pnfolder.pnlibrary.core.runtime.platform.PlatformRuntimeContext
 import org.pnfolder.pnlibrary.core.runtime.platform.PlatformServiceSet
-import org.pnfolder.pnlibrary.core.ui.DisplayZone
 import java.nio.file.Path
 import java.time.Duration
 import java.time.ZoneId

@@ -10,6 +10,7 @@ import java.util.jar.JarFile
 
 evaluationDependsOn(":modules:api")
 evaluationDependsOn(":modules:core")
+evaluationDependsOn(":modules:updates")
 evaluationDependsOn(":modules:common")
 evaluationDependsOn(":modules:features:config-api")
 evaluationDependsOn(":modules:features:minecraft-localization")
@@ -170,6 +171,7 @@ tasks.register<ShadowJar>("shadowPolicyKotlin") {
 val updaterRuntime: Configuration by configurations.creating
 dependencies {
     updaterRuntime(project(":modules:core")) { isTransitive = false }
+    updaterRuntime(project(":modules:updates")) { isTransitive = false }
     updaterRuntime(project(":modules:api")) { isTransitive = false }
     updaterRuntime(project(":modules:common")) { isTransitive = false }
     updaterRuntime(libs.kotlin.stdlib)
@@ -202,7 +204,7 @@ tasks.named("check") { dependsOn(verifyOfflineInstaller) }
 val verifyUpdaterProcess = tasks.register("verifyUpdaterProcess") {
     group = "verification"
     description = "Tests update and rollback in a separate JVM using the executable updater JAR"
-    dependsOn(":modules:core:verifyUpdaterProcess")
+    dependsOn(":modules:updates:verifyUpdaterProcess")
 }
 tasks.named("check") { dependsOn(verifyUpdaterProcess) }
 

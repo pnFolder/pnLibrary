@@ -58,9 +58,9 @@ jobs:
           $args = @('--console=plain', "-PnativeJavaExecutable=$env:SERVER_JAVA")
           if ($env:PLATFORM -in @('paper', 'folia')) {
             $eula = Join-Path $PWD 'build/native-software/eula.txt'
-            $args += @(':modules:core:verifyNativeBukkitUpdates', "-PbukkitPlatform=$env:PLATFORM", "-PpaperServerJar=$server", "-PpaperEulaFile=$eula")
+            $args += @(':modules:updates:verifyNativeBukkitUpdates', "-PbukkitPlatform=$env:PLATFORM", "-PpaperServerJar=$server", "-PpaperEulaFile=$eula")
           } else {
-            $args += @(':modules:core:verifyNativeProxyUpdates', "-PnativePlatform=$env:PLATFORM", "-P$($env:PLATFORM)ServerJar=$server")
+            $args += @(':modules:updates:verifyNativeProxyUpdates', "-PnativePlatform=$env:PLATFORM", "-P$($env:PLATFORM)ServerJar=$server")
           }
           & ./gradlew @args
           if ($LASTEXITCODE -ne 0) { throw 'Native platform acceptance failed' }

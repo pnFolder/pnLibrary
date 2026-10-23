@@ -9,6 +9,7 @@ import org.pnfolder.pnlibrary.core.placeholders.GlobalPlaceholderValueStore
 import org.pnfolder.pnlibrary.core.placeholders.PlaceholderHub
 import org.pnfolder.pnlibrary.core.runtime.platform.PlatformRuntimeContext
 import org.pnfolder.pnlibrary.core.services.ServiceManagerImpl
+import org.pnfolder.pnlibrary.core.ui.ConsoleStyle
 import org.pnfolder.pnlibrary.core.updates.service.UpdateServiceImpl
 import org.pnfolder.pnlibrary.currency.CurrencyFeature
 import org.pnfolder.pnlibrary.spi.platform.PlatformLogging
@@ -24,6 +25,7 @@ internal class RuntimeFeatureSet(
     val configurations = ConfigurationServiceImpl(platform.ownership)
     val updates = UpdateServiceImpl(
         logging, platform.ownership, platform.ownership, platform.identity, platform.readiness, dataFolder,
+        ConsoleStyle.THEME,
     )
     private val downloadConfiguration = DownloadConfiguration.load(dataFolder.resolve("downloads.yml")) {
         logging.log(this, LogLevel.WARNING, it)
