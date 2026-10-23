@@ -1,8 +1,11 @@
 import org.jetbrains.kotlin.gradle.dsl.JvmTarget
 import org.jetbrains.kotlin.gradle.tasks.KotlinCompile
 import org.gradle.api.tasks.Copy
+import org.gradle.api.tasks.SourceSetContainer
+import org.gradle.testing.jacoco.tasks.JacocoReport
 
 plugins {
+    jacoco
     alias(libs.plugins.kotlin.jvm) apply false
     alias(libs.plugins.shadow)     apply false
     alias(libs.plugins.dokka)
@@ -94,6 +97,32 @@ subprojects {
         }
         tasks.withType<Test>().configureEach {
             useJUnitPlatform()
+        }
+        // Coverage data is collected by every test run; reports are only built on request (see coverageReport).
+        pluginManager.apply("jacoco")
+    }
+}
+
+// One report over every module's tests: `./gradlew test coverageReport`, then open
+// build/reports/coverage/html/index.html. It shows which production code no test executes.
+val coverageReport = tasks.register<JacocoReport>("coverageReport") {
+    group = "verification"
+    description = "Aggregated JaCoCo coverage report for all modules (run the tests first)"
+    reports {
+        html.required.set(true)
+        xml.required.set(true)
+        html.outputLocation.set(layout.buildDirectory.dir("reports/coverage/html"))
+        xml.outputLocation.set(layout.buildDirectory.file("reports/coverage/coverage.xml"))
+    }
+}
+subprojects {
+    pluginManager.withPlugin("jacoco") {
+        coverageReport.configure {
+            val main = this@subprojects.extensions.getByType<SourceSetContainer>().getByName("main")
+            sourceDirectories.from(main.allSource.srcDirs)
+            classDirectories.from(main.output.classesDirs.asFileTree.matching { exclude("org/bstats/**") })
+            // Depends on the module's `test` task, so the report always reflects a fresh run.
+            executionData(this@subprojects.tasks.named("test").get())
         }
     }
 }
