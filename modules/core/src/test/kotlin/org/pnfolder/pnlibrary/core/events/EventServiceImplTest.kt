@@ -5,6 +5,9 @@ import org.junit.jupiter.api.Assertions.*
 import org.junit.jupiter.api.Test
 import org.pnfolder.pnlibrary.api.events.*
 import org.pnfolder.pnlibrary.api.plugin.PluginId
+import org.pnfolder.pnlibrary.api.runtime.PnLibrary
+import org.pnfolder.pnlibrary.api.runtime.PnLibraryProvider
+import java.lang.reflect.Proxy
 import java.util.function.Consumer
 
 class EventServiceImplTest {
@@ -276,6 +279,28 @@ class EventServiceImplTest {
 
             scope.subscribe(TestEvent::class.java, EventPriority.LOWEST, Consumer { throw OutOfMemoryError("simulated") })
             assertThrows(OutOfMemoryError::class.java) { events.callEvent(TestEvent()) }
+        }
+    }
+
+    @Test
+    fun `callResult returns the typed result the listeners left`() {
+        EventServiceImpl { _, _, _ -> }.use { events ->
+            val library = Proxy.newProxyInstance(javaClass.classLoader, arrayOf(PnLibrary::class.java)) { _, method, _ ->
+                if (method.name == "getEvents") events else error("unused ${method.name}")
+            } as PnLibrary
+            PnLibraryProvider.install(library)
+            try {
+                events.scope(PluginId.of("test")).subscribe(ResultEvent::class.java, EventPriority.NORMAL, Consumer {
+                    it.result = ResultedEvent.ComponentResult.denied(Component.text("closed"))
+                })
+
+                val result: ResultedEvent.ComponentResult = ResultEvent().callResult()
+
+                assertFalse(result.isAllowed)
+                assertEquals(Component.text("closed"), result.reasonComponent)
+            } finally {
+                PnLibraryProvider.clear(library)
+            }
         }
     }
 

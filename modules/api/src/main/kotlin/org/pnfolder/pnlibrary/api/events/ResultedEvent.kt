@@ -21,6 +21,15 @@ abstract class ResultedEvent<R : ResultedEvent.Result> : Event() {
      */
     abstract var result: R
 
+    /**
+     * Calls every matching listener, then returns the typed [result] they left. Use it instead of
+     * [Event.callEvent] when the outcome carries more than allowed or denied.
+     */
+    fun callResult(): R {
+        callEvent()
+        return result
+    }
+
     /** Outcome that listeners leave on a [ResultedEvent]. Implement it to carry extra data. */
     interface Result {
         /** Whether the event may proceed after dispatch. */

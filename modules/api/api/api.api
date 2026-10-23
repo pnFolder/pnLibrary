@@ -1906,6 +1906,7 @@ public abstract interface class org/pnfolder/pnlibrary/api/events/Listener {
 
 public abstract class org/pnfolder/pnlibrary/api/events/ResultedEvent : org/pnfolder/pnlibrary/api/events/Event {
 	public fun <init> ()V
+	public final fun callResult ()Lorg/pnfolder/pnlibrary/api/events/ResultedEvent$Result;
 	public abstract fun getResult ()Lorg/pnfolder/pnlibrary/api/events/ResultedEvent$Result;
 	public abstract fun setResult (Lorg/pnfolder/pnlibrary/api/events/ResultedEvent$Result;)V
 }
