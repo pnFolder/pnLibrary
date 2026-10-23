@@ -39,6 +39,14 @@ public final class org/pnfolder/pnlibrary/common/io/Digests {
 	public static final fun sha256 ([B)Ljava/lang/String;
 }
 
+public final class org/pnfolder/pnlibrary/common/io/TextFiles {
+	public static final field INSTANCE Lorg/pnfolder/pnlibrary/common/io/TextFiles;
+	public final fun read (Ljava/nio/file/Path;Ljava/nio/charset/Charset;)Ljava/lang/String;
+	public static synthetic fun read$default (Lorg/pnfolder/pnlibrary/common/io/TextFiles;Ljava/nio/file/Path;Ljava/nio/charset/Charset;ILjava/lang/Object;)Ljava/lang/String;
+	public final fun write (Ljava/nio/file/Path;Ljava/lang/CharSequence;Ljava/nio/charset/Charset;[Ljava/nio/file/OpenOption;)Ljava/nio/file/Path;
+	public static synthetic fun write$default (Lorg/pnfolder/pnlibrary/common/io/TextFiles;Ljava/nio/file/Path;Ljava/lang/CharSequence;Ljava/nio/charset/Charset;[Ljava/nio/file/OpenOption;ILjava/lang/Object;)Ljava/nio/file/Path;
+}
+
 public final class org/pnfolder/pnlibrary/common/jvm/JavaRuntime {
 	public static final field INSTANCE Lorg/pnfolder/pnlibrary/common/jvm/JavaRuntime;
 	public static final fun getFeature ()I
@@ -240,5 +248,11 @@ public final class org/pnfolder/pnlibrary/common/text/RussianText {
 public final class org/pnfolder/pnlibrary/common/text/Wildcards {
 	public static final field INSTANCE Lorg/pnfolder/pnlibrary/common/text/Wildcards;
 	public static final fun matches (Ljava/lang/String;Ljava/lang/String;)Z
+}
+
+public final class org/pnfolder/pnlibrary/common/time/DisplayZone {
+	public static final field INSTANCE Lorg/pnfolder/pnlibrary/common/time/DisplayZone;
+	public final fun getZone ()Ljava/time/ZoneId;
+	public final fun setZone (Ljava/time/ZoneId;)V
 }
 

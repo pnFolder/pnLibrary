@@ -2,7 +2,7 @@ package org.pnfolder.pnlibrary.core.observability
 
 import com.google.gson.GsonBuilder
 import org.pnfolder.pnlibrary.api.observability.Observation
-import org.pnfolder.pnlibrary.core.io.TextFiles
+import org.pnfolder.pnlibrary.common.io.TextFiles
 import java.nio.charset.StandardCharsets
 import java.nio.file.Files
 import java.nio.file.Path

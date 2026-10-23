@@ -27,6 +27,7 @@ apiValidation {
     ignoredProjects.addAll(
         listOf(
             "core",
+            "updates",
             "distribution",
             "runtime",
             "faststats",
@@ -185,6 +186,7 @@ dependencies {
     dokka(project(":modules:api"))
     dokka(project(":modules:runtime-spi"))
     dokka(project(":modules:core"))
+    dokka(project(":modules:updates"))
     dokka(project(":modules:features:currency-api"))
     dokka(project(":modules:features:currency-runtime"))
     dokka(project(":modules:features:minecraft-localization"))

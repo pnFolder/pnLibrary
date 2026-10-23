@@ -3,7 +3,7 @@ package org.pnfolder.pnlibrary.core.observability
 import com.google.gson.GsonBuilder
 import com.google.gson.reflect.TypeToken
 import org.pnfolder.pnlibrary.common.io.Digests
-import org.pnfolder.pnlibrary.core.io.TextFiles
+import org.pnfolder.pnlibrary.common.io.TextFiles
 import java.nio.file.Files
 import java.nio.file.Path
 import java.util.UUID

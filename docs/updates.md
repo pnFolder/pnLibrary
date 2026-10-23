@@ -228,8 +228,8 @@ updates/
 Сетевую часть (каталог, подбор версий, правила подготовки) покрывают тесты `core`.
 
 ```
-gradlew :modules:core:verifyNativeProxyUpdates -PvelocityServerJar=<velocity.jar> -PbungeeServerJar=<bungeecord.jar>
-gradlew :modules:core:verifyNativeBukkitUpdates -PpaperServerJar=<paper.jar> -PpaperEulaFile=<уже-принятый-eula.txt>
+gradlew :modules:updates:verifyNativeProxyUpdates -PvelocityServerJar=<velocity.jar> -PbungeeServerJar=<bungeecord.jar>
+gradlew :modules:updates:verifyNativeBukkitUpdates -PpaperServerJar=<paper.jar> -PpaperEulaFile=<уже-принятый-eula.txt>
 ```
 
 Тест Paper запускается только с разрешения администратора и с уже принятым EULA: сам он условия не принимает.
