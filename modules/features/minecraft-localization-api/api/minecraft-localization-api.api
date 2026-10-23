@@ -1,0 +1,340 @@
+public abstract interface class org/pnfolder/pnlibrary/localization/LocaleTranslations {
+	public abstract fun getLocale ()Ljava/lang/String;
+	public abstract fun getMetadata ()Lorg/pnfolder/pnlibrary/localization/TranslationMetadata;
+	public abstract fun keys ()Lorg/pnfolder/pnlibrary/localization/TranslationIndex;
+	public abstract fun translate (Ljava/lang/String;)Ljava/util/Optional;
+	public fun translate (Lorg/pnfolder/pnlibrary/localization/TranslatableType;Ljava/lang/Object;)Lorg/pnfolder/pnlibrary/localization/Translation;
+	public fun translateOrKey (Ljava/lang/String;)Ljava/lang/String;
+	public abstract fun translations ()Ljava/util/Map;
+}
+
+public final class org/pnfolder/pnlibrary/localization/MinecraftLocale : java/lang/Enum {
+	public static final field AF_ZA Lorg/pnfolder/pnlibrary/localization/MinecraftLocale;
+	public static final field AR_SA Lorg/pnfolder/pnlibrary/localization/MinecraftLocale;
+	public static final field AST_ES Lorg/pnfolder/pnlibrary/localization/MinecraftLocale;
+	public static final field AZ_AZ Lorg/pnfolder/pnlibrary/localization/MinecraftLocale;
+	public static final field BAR Lorg/pnfolder/pnlibrary/localization/MinecraftLocale;
+	public static final field BA_RU Lorg/pnfolder/pnlibrary/localization/MinecraftLocale;
+	public static final field BE_BY Lorg/pnfolder/pnlibrary/localization/MinecraftLocale;
+	public static final field BG_BG Lorg/pnfolder/pnlibrary/localization/MinecraftLocale;
+	public static final field BRB Lorg/pnfolder/pnlibrary/localization/MinecraftLocale;
+	public static final field BR_FR Lorg/pnfolder/pnlibrary/localization/MinecraftLocale;
+	public static final field BS_BA Lorg/pnfolder/pnlibrary/localization/MinecraftLocale;
+	public static final field CA_ES Lorg/pnfolder/pnlibrary/localization/MinecraftLocale;
+	public static final field CS_CZ Lorg/pnfolder/pnlibrary/localization/MinecraftLocale;
+	public static final field CY_GB Lorg/pnfolder/pnlibrary/localization/MinecraftLocale;
+	public static final field Companion Lorg/pnfolder/pnlibrary/localization/MinecraftLocale$Companion;
+	public static final field DA_DK Lorg/pnfolder/pnlibrary/localization/MinecraftLocale;
+	public static final field DE_AT Lorg/pnfolder/pnlibrary/localization/MinecraftLocale;
+	public static final field DE_CH Lorg/pnfolder/pnlibrary/localization/MinecraftLocale;
+	public static final field DE_DE Lorg/pnfolder/pnlibrary/localization/MinecraftLocale;
+	public static final field EL_GR Lorg/pnfolder/pnlibrary/localization/MinecraftLocale;
+	public static final field ENP Lorg/pnfolder/pnlibrary/localization/MinecraftLocale;
+	public static final field ENWS Lorg/pnfolder/pnlibrary/localization/MinecraftLocale;
+	public static final field EN_AU Lorg/pnfolder/pnlibrary/localization/MinecraftLocale;
+	public static final field EN_CA Lorg/pnfolder/pnlibrary/localization/MinecraftLocale;
+	public static final field EN_GB Lorg/pnfolder/pnlibrary/localization/MinecraftLocale;
+	public static final field EN_NZ Lorg/pnfolder/pnlibrary/localization/MinecraftLocale;
+	public static final field EN_PT Lorg/pnfolder/pnlibrary/localization/MinecraftLocale;
+	public static final field EN_UD Lorg/pnfolder/pnlibrary/localization/MinecraftLocale;
+	public static final field EN_US Lorg/pnfolder/pnlibrary/localization/MinecraftLocale;
+	public static final field EO_UY Lorg/pnfolder/pnlibrary/localization/MinecraftLocale;
+	public static final field ESAN Lorg/pnfolder/pnlibrary/localization/MinecraftLocale;
+	public static final field ES_AR Lorg/pnfolder/pnlibrary/localization/MinecraftLocale;
+	public static final field ES_CL Lorg/pnfolder/pnlibrary/localization/MinecraftLocale;
+	public static final field ES_EC Lorg/pnfolder/pnlibrary/localization/MinecraftLocale;
+	public static final field ES_ES Lorg/pnfolder/pnlibrary/localization/MinecraftLocale;
+	public static final field ES_MX Lorg/pnfolder/pnlibrary/localization/MinecraftLocale;
+	public static final field ES_UY Lorg/pnfolder/pnlibrary/localization/MinecraftLocale;
+	public static final field ES_VE Lorg/pnfolder/pnlibrary/localization/MinecraftLocale;
+	public static final field ET_EE Lorg/pnfolder/pnlibrary/localization/MinecraftLocale;
+	public static final field EU_ES Lorg/pnfolder/pnlibrary/localization/MinecraftLocale;
+	public static final field FA_IR Lorg/pnfolder/pnlibrary/localization/MinecraftLocale;
+	public static final field FIL_PH Lorg/pnfolder/pnlibrary/localization/MinecraftLocale;
+	public static final field FI_FI Lorg/pnfolder/pnlibrary/localization/MinecraftLocale;
+	public static final field FO_FO Lorg/pnfolder/pnlibrary/localization/MinecraftLocale;
+	public static final field FRA_DE Lorg/pnfolder/pnlibrary/localization/MinecraftLocale;
+	public static final field FR_CA Lorg/pnfolder/pnlibrary/localization/MinecraftLocale;
+	public static final field FR_FR Lorg/pnfolder/pnlibrary/localization/MinecraftLocale;
+	public static final field FUR_IT Lorg/pnfolder/pnlibrary/localization/MinecraftLocale;
+	public static final field FY_NL Lorg/pnfolder/pnlibrary/localization/MinecraftLocale;
+	public static final field GA_IE Lorg/pnfolder/pnlibrary/localization/MinecraftLocale;
+	public static final field GD_GB Lorg/pnfolder/pnlibrary/localization/MinecraftLocale;
+	public static final field GL_ES Lorg/pnfolder/pnlibrary/localization/MinecraftLocale;
+	public static final field HAW_US Lorg/pnfolder/pnlibrary/localization/MinecraftLocale;
+	public static final field HE_IL Lorg/pnfolder/pnlibrary/localization/MinecraftLocale;
+	public static final field HI_IN Lorg/pnfolder/pnlibrary/localization/MinecraftLocale;
+	public static final field HR_HR Lorg/pnfolder/pnlibrary/localization/MinecraftLocale;
+	public static final field HU_HU Lorg/pnfolder/pnlibrary/localization/MinecraftLocale;
+	public static final field HY_AM Lorg/pnfolder/pnlibrary/localization/MinecraftLocale;
+	public static final field ID_ID Lorg/pnfolder/pnlibrary/localization/MinecraftLocale;
+	public static final field IG_NG Lorg/pnfolder/pnlibrary/localization/MinecraftLocale;
+	public static final field IO_EN Lorg/pnfolder/pnlibrary/localization/MinecraftLocale;
+	public static final field ISV Lorg/pnfolder/pnlibrary/localization/MinecraftLocale;
+	public static final field IS_IS Lorg/pnfolder/pnlibrary/localization/MinecraftLocale;
+	public static final field IT_IT Lorg/pnfolder/pnlibrary/localization/MinecraftLocale;
+	public static final field JA_JP Lorg/pnfolder/pnlibrary/localization/MinecraftLocale;
+	public static final field JBO_EN Lorg/pnfolder/pnlibrary/localization/MinecraftLocale;
+	public static final field KA_GE Lorg/pnfolder/pnlibrary/localization/MinecraftLocale;
+	public static final field KK_KZ Lorg/pnfolder/pnlibrary/localization/MinecraftLocale;
+	public static final field KN_IN Lorg/pnfolder/pnlibrary/localization/MinecraftLocale;
+	public static final field KO_KR Lorg/pnfolder/pnlibrary/localization/MinecraftLocale;
+	public static final field KSH Lorg/pnfolder/pnlibrary/localization/MinecraftLocale;
+	public static final field KW_GB Lorg/pnfolder/pnlibrary/localization/MinecraftLocale;
+	public static final field LA_LA Lorg/pnfolder/pnlibrary/localization/MinecraftLocale;
+	public static final field LB_LU Lorg/pnfolder/pnlibrary/localization/MinecraftLocale;
+	public static final field LI_LI Lorg/pnfolder/pnlibrary/localization/MinecraftLocale;
+	public static final field LMO Lorg/pnfolder/pnlibrary/localization/MinecraftLocale;
+	public static final field LOL_US Lorg/pnfolder/pnlibrary/localization/MinecraftLocale;
+	public static final field LT_LT Lorg/pnfolder/pnlibrary/localization/MinecraftLocale;
+	public static final field LV_LV Lorg/pnfolder/pnlibrary/localization/MinecraftLocale;
+	public static final field LZH Lorg/pnfolder/pnlibrary/localization/MinecraftLocale;
+	public static final field MK_MK Lorg/pnfolder/pnlibrary/localization/MinecraftLocale;
+	public static final field MN_MN Lorg/pnfolder/pnlibrary/localization/MinecraftLocale;
+	public static final field MS_MY Lorg/pnfolder/pnlibrary/localization/MinecraftLocale;
+	public static final field MT_MT Lorg/pnfolder/pnlibrary/localization/MinecraftLocale;
+	public static final field NAH Lorg/pnfolder/pnlibrary/localization/MinecraftLocale;
+	public static final field NDS_DE Lorg/pnfolder/pnlibrary/localization/MinecraftLocale;
+	public static final field NL_BE Lorg/pnfolder/pnlibrary/localization/MinecraftLocale;
+	public static final field NL_NL Lorg/pnfolder/pnlibrary/localization/MinecraftLocale;
+	public static final field NN_NO Lorg/pnfolder/pnlibrary/localization/MinecraftLocale;
+	public static final field NO_NO Lorg/pnfolder/pnlibrary/localization/MinecraftLocale;
+	public static final field OC_FR Lorg/pnfolder/pnlibrary/localization/MinecraftLocale;
+	public static final field OVD Lorg/pnfolder/pnlibrary/localization/MinecraftLocale;
+	public static final field PL_PL Lorg/pnfolder/pnlibrary/localization/MinecraftLocale;
+	public static final field PT_BR Lorg/pnfolder/pnlibrary/localization/MinecraftLocale;
+	public static final field PT_PT Lorg/pnfolder/pnlibrary/localization/MinecraftLocale;
+	public static final field QYA_AA Lorg/pnfolder/pnlibrary/localization/MinecraftLocale;
+	public static final field RO_RO Lorg/pnfolder/pnlibrary/localization/MinecraftLocale;
+	public static final field RPR Lorg/pnfolder/pnlibrary/localization/MinecraftLocale;
+	public static final field RU_RU Lorg/pnfolder/pnlibrary/localization/MinecraftLocale;
+	public static final field RY_UA Lorg/pnfolder/pnlibrary/localization/MinecraftLocale;
+	public static final field SAH_SAH Lorg/pnfolder/pnlibrary/localization/MinecraftLocale;
+	public static final field SE_NO Lorg/pnfolder/pnlibrary/localization/MinecraftLocale;
+	public static final field SK_SK Lorg/pnfolder/pnlibrary/localization/MinecraftLocale;
+	public static final field SL_SI Lorg/pnfolder/pnlibrary/localization/MinecraftLocale;
+	public static final field SO_SO Lorg/pnfolder/pnlibrary/localization/MinecraftLocale;
+	public static final field SQ_AL Lorg/pnfolder/pnlibrary/localization/MinecraftLocale;
+	public static final field SR_SP Lorg/pnfolder/pnlibrary/localization/MinecraftLocale;
+	public static final field SV_SE Lorg/pnfolder/pnlibrary/localization/MinecraftLocale;
+	public static final field SWG Lorg/pnfolder/pnlibrary/localization/MinecraftLocale;
+	public static final field SXU Lorg/pnfolder/pnlibrary/localization/MinecraftLocale;
+	public static final field SZL Lorg/pnfolder/pnlibrary/localization/MinecraftLocale;
+	public static final field TA_IN Lorg/pnfolder/pnlibrary/localization/MinecraftLocale;
+	public static final field TH_TH Lorg/pnfolder/pnlibrary/localization/MinecraftLocale;
+	public static final field TLH_AA Lorg/pnfolder/pnlibrary/localization/MinecraftLocale;
+	public static final field TL_PH Lorg/pnfolder/pnlibrary/localization/MinecraftLocale;
+	public static final field TOK Lorg/pnfolder/pnlibrary/localization/MinecraftLocale;
+	public static final field TR_TR Lorg/pnfolder/pnlibrary/localization/MinecraftLocale;
+	public static final field TT_RU Lorg/pnfolder/pnlibrary/localization/MinecraftLocale;
+	public static final field TZL_TZL Lorg/pnfolder/pnlibrary/localization/MinecraftLocale;
+	public static final field UK_UA Lorg/pnfolder/pnlibrary/localization/MinecraftLocale;
+	public static final field VAL_ES Lorg/pnfolder/pnlibrary/localization/MinecraftLocale;
+	public static final field VEC_IT Lorg/pnfolder/pnlibrary/localization/MinecraftLocale;
+	public static final field VI_VN Lorg/pnfolder/pnlibrary/localization/MinecraftLocale;
+	public static final field VP_VL Lorg/pnfolder/pnlibrary/localization/MinecraftLocale;
+	public static final field YI_DE Lorg/pnfolder/pnlibrary/localization/MinecraftLocale;
+	public static final field YO_NG Lorg/pnfolder/pnlibrary/localization/MinecraftLocale;
+	public static final field ZH_CN Lorg/pnfolder/pnlibrary/localization/MinecraftLocale;
+	public static final field ZH_HK Lorg/pnfolder/pnlibrary/localization/MinecraftLocale;
+	public static final field ZH_TW Lorg/pnfolder/pnlibrary/localization/MinecraftLocale;
+	public static final field ZLM_ARAB Lorg/pnfolder/pnlibrary/localization/MinecraftLocale;
+	public final fun getCode ()Ljava/lang/String;
+	public final fun getEnglishName ()Ljava/lang/String;
+	public static fun getEntries ()Lkotlin/enums/EnumEntries;
+	public final fun getNativeName ()Ljava/lang/String;
+	public static final fun parse (Ljava/lang/String;)Lorg/pnfolder/pnlibrary/localization/MinecraftLocale;
+	public static fun valueOf (Ljava/lang/String;)Lorg/pnfolder/pnlibrary/localization/MinecraftLocale;
+	public static fun values ()[Lorg/pnfolder/pnlibrary/localization/MinecraftLocale;
+}
+
+public final class org/pnfolder/pnlibrary/localization/MinecraftLocale$Companion {
+	public final fun parse (Ljava/lang/String;)Lorg/pnfolder/pnlibrary/localization/MinecraftLocale;
+}
+
+public abstract interface class org/pnfolder/pnlibrary/localization/MinecraftLocalization : java/lang/AutoCloseable {
+	public static final field Companion Lorg/pnfolder/pnlibrary/localization/MinecraftLocalization$Companion;
+	public abstract fun availableLocales (Lorg/pnfolder/pnlibrary/common/minecraft/MinecraftVersion;)Ljava/util/concurrent/CompletionStage;
+	public abstract fun availableVersions ()Ljava/util/concurrent/CompletionStage;
+	public static fun builder ()Lorg/pnfolder/pnlibrary/localization/MinecraftLocalization$Builder;
+	public abstract fun close ()V
+	public abstract fun load (Lorg/pnfolder/pnlibrary/localization/TranslationRequest;)Ljava/util/concurrent/CompletionStage;
+	public fun locale (Lorg/pnfolder/pnlibrary/common/minecraft/MinecraftVersion;Ljava/lang/String;)Ljava/util/concurrent/CompletionStage;
+	public fun locale (Lorg/pnfolder/pnlibrary/common/minecraft/MinecraftVersion;Lorg/pnfolder/pnlibrary/localization/MinecraftLocale;)Ljava/util/concurrent/CompletionStage;
+	public abstract fun refresh (Lorg/pnfolder/pnlibrary/localization/TranslationRequest;)Ljava/util/concurrent/CompletionStage;
+}
+
+public final class org/pnfolder/pnlibrary/localization/MinecraftLocalization$Builder {
+	public final fun build ()Lorg/pnfolder/pnlibrary/localization/MinecraftLocalization;
+	public final fun cacheDirectory (Ljava/nio/file/Path;)Lorg/pnfolder/pnlibrary/localization/MinecraftLocalization$Builder;
+	public final fun connectTimeout (Ljava/time/Duration;)Lorg/pnfolder/pnlibrary/localization/MinecraftLocalization$Builder;
+	public final fun downloadConcurrency (I)Lorg/pnfolder/pnlibrary/localization/MinecraftLocalization$Builder;
+	public final fun executor (Ljava/util/concurrent/ExecutorService;)Lorg/pnfolder/pnlibrary/localization/MinecraftLocalization$Builder;
+	public final fun manifestTtl (Ljava/time/Duration;)Lorg/pnfolder/pnlibrary/localization/MinecraftLocalization$Builder;
+	public final fun memoryEntries (I)Lorg/pnfolder/pnlibrary/localization/MinecraftLocalization$Builder;
+	public final fun readTimeout (Ljava/time/Duration;)Lorg/pnfolder/pnlibrary/localization/MinecraftLocalization$Builder;
+}
+
+public final class org/pnfolder/pnlibrary/localization/MinecraftLocalization$Companion {
+	public final fun builder ()Lorg/pnfolder/pnlibrary/localization/MinecraftLocalization$Builder;
+}
+
+public final class org/pnfolder/pnlibrary/localization/MinecraftLocalizationDslKt {
+	public static final synthetic fun load (Lorg/pnfolder/pnlibrary/localization/MinecraftLocalization;Lkotlin/jvm/functions/Function1;)Ljava/util/concurrent/CompletionStage;
+}
+
+public abstract interface class org/pnfolder/pnlibrary/localization/TranslatableType {
+	public abstract fun fallbackName (Ljava/lang/Object;)Ljava/lang/String;
+	public abstract fun keysOf (Ljava/lang/Object;)Ljava/util/List;
+}
+
+public final class org/pnfolder/pnlibrary/localization/Translation {
+	public fun <init> (Ljava/lang/String;Ljava/lang/String;Z)V
+	public final fun component1 ()Ljava/lang/String;
+	public final fun component2 ()Ljava/lang/String;
+	public final fun component3 ()Z
+	public final fun copy (Ljava/lang/String;Ljava/lang/String;Z)Lorg/pnfolder/pnlibrary/localization/Translation;
+	public static synthetic fun copy$default (Lorg/pnfolder/pnlibrary/localization/Translation;Ljava/lang/String;Ljava/lang/String;ZILjava/lang/Object;)Lorg/pnfolder/pnlibrary/localization/Translation;
+	public fun equals (Ljava/lang/Object;)Z
+	public final fun getKey ()Ljava/lang/String;
+	public final fun getLocalized ()Z
+	public final fun getText ()Ljava/lang/String;
+	public fun hashCode ()I
+	public fun toString ()Ljava/lang/String;
+}
+
+public abstract interface class org/pnfolder/pnlibrary/localization/TranslationBundle {
+	public abstract fun getLocales ()Ljava/util/Set;
+	public abstract fun getVersion ()Lorg/pnfolder/pnlibrary/common/minecraft/MinecraftVersion;
+	public abstract fun locale (Ljava/lang/String;)Lorg/pnfolder/pnlibrary/localization/LocaleTranslations;
+	public fun locale (Lorg/pnfolder/pnlibrary/localization/MinecraftLocale;)Lorg/pnfolder/pnlibrary/localization/LocaleTranslations;
+}
+
+public final class org/pnfolder/pnlibrary/localization/TranslationCategory : java/lang/Enum {
+	public static final field BIOME Lorg/pnfolder/pnlibrary/localization/TranslationCategory;
+	public static final field BLOCK Lorg/pnfolder/pnlibrary/localization/TranslationCategory;
+	public static final field COLOR Lorg/pnfolder/pnlibrary/localization/TranslationCategory;
+	public static final field Companion Lorg/pnfolder/pnlibrary/localization/TranslationCategory$Companion;
+	public static final field EFFECT Lorg/pnfolder/pnlibrary/localization/TranslationCategory;
+	public static final field ENCHANTMENT Lorg/pnfolder/pnlibrary/localization/TranslationCategory;
+	public static final field ENTITY Lorg/pnfolder/pnlibrary/localization/TranslationCategory;
+	public static final field GAME_MODE Lorg/pnfolder/pnlibrary/localization/TranslationCategory;
+	public static final field ITEM Lorg/pnfolder/pnlibrary/localization/TranslationCategory;
+	public static final field VANILLA_NAMESPACE Ljava/lang/String;
+	public static fun getEntries ()Lkotlin/enums/EnumEntries;
+	public final fun getId ()Ljava/lang/String;
+	public final fun key (Ljava/lang/String;Ljava/lang/String;)Ljava/lang/String;
+	public static synthetic fun key$default (Lorg/pnfolder/pnlibrary/localization/TranslationCategory;Ljava/lang/String;Ljava/lang/String;ILjava/lang/Object;)Ljava/lang/String;
+	public final fun prefix (Ljava/lang/String;)Ljava/lang/String;
+	public static synthetic fun prefix$default (Lorg/pnfolder/pnlibrary/localization/TranslationCategory;Ljava/lang/String;ILjava/lang/Object;)Ljava/lang/String;
+	public static fun valueOf (Ljava/lang/String;)Lorg/pnfolder/pnlibrary/localization/TranslationCategory;
+	public static fun values ()[Lorg/pnfolder/pnlibrary/localization/TranslationCategory;
+}
+
+public final class org/pnfolder/pnlibrary/localization/TranslationCategory$Companion {
+}
+
+public final class org/pnfolder/pnlibrary/localization/TranslationException : java/lang/RuntimeException {
+	public fun <init> (Lorg/pnfolder/pnlibrary/localization/TranslationException$Reason;Ljava/lang/String;Ljava/lang/Throwable;)V
+	public synthetic fun <init> (Lorg/pnfolder/pnlibrary/localization/TranslationException$Reason;Ljava/lang/String;Ljava/lang/Throwable;ILkotlin/jvm/internal/DefaultConstructorMarker;)V
+	public final fun getReason ()Lorg/pnfolder/pnlibrary/localization/TranslationException$Reason;
+}
+
+public final class org/pnfolder/pnlibrary/localization/TranslationException$Reason : java/lang/Enum {
+	public static final field CLOSED Lorg/pnfolder/pnlibrary/localization/TranslationException$Reason;
+	public static final field INTEGRITY Lorg/pnfolder/pnlibrary/localization/TranslationException$Reason;
+	public static final field INVALID_LOCALE Lorg/pnfolder/pnlibrary/localization/TranslationException$Reason;
+	public static final field MALFORMED_DATA Lorg/pnfolder/pnlibrary/localization/TranslationException$Reason;
+	public static final field OFFLINE Lorg/pnfolder/pnlibrary/localization/TranslationException$Reason;
+	public static final field REMOTE Lorg/pnfolder/pnlibrary/localization/TranslationException$Reason;
+	public static final field UNAVAILABLE_LOCALE Lorg/pnfolder/pnlibrary/localization/TranslationException$Reason;
+	public static final field UNSUPPORTED_VERSION Lorg/pnfolder/pnlibrary/localization/TranslationException$Reason;
+	public static fun getEntries ()Lkotlin/enums/EnumEntries;
+	public static fun valueOf (Ljava/lang/String;)Lorg/pnfolder/pnlibrary/localization/TranslationException$Reason;
+	public static fun values ()[Lorg/pnfolder/pnlibrary/localization/TranslationException$Reason;
+}
+
+public abstract interface class org/pnfolder/pnlibrary/localization/TranslationIndex {
+	public static final field Companion Lorg/pnfolder/pnlibrary/localization/TranslationIndex$Companion;
+	public abstract fun findExact (Ljava/lang/String;)Ljava/util/List;
+	public abstract fun search (Ljava/lang/String;)Ljava/util/List;
+}
+
+public final class org/pnfolder/pnlibrary/localization/TranslationIndex$Companion {
+	public final fun of (Ljava/util/List;)Lorg/pnfolder/pnlibrary/localization/TranslationIndex;
+}
+
+public final class org/pnfolder/pnlibrary/localization/TranslationMatch {
+	public fun <init> (Ljava/lang/String;Ljava/lang/String;Ljava/lang/Object;)V
+	public final fun component1 ()Ljava/lang/String;
+	public final fun component2 ()Ljava/lang/String;
+	public final fun component3 ()Ljava/lang/Object;
+	public final fun copy (Ljava/lang/String;Ljava/lang/String;Ljava/lang/Object;)Lorg/pnfolder/pnlibrary/localization/TranslationMatch;
+	public static synthetic fun copy$default (Lorg/pnfolder/pnlibrary/localization/TranslationMatch;Ljava/lang/String;Ljava/lang/String;Ljava/lang/Object;ILjava/lang/Object;)Lorg/pnfolder/pnlibrary/localization/TranslationMatch;
+	public fun equals (Ljava/lang/Object;)Z
+	public final fun getKey ()Ljava/lang/String;
+	public final fun getTranslation ()Ljava/lang/String;
+	public final fun getValue ()Ljava/lang/Object;
+	public fun hashCode ()I
+	public fun toString ()Ljava/lang/String;
+}
+
+public final class org/pnfolder/pnlibrary/localization/TranslationMetadata {
+	public fun <init> (Lorg/pnfolder/pnlibrary/localization/TranslationSource;Ljava/lang/String;Z)V
+	public final fun component1 ()Lorg/pnfolder/pnlibrary/localization/TranslationSource;
+	public final fun component2 ()Ljava/lang/String;
+	public final fun component3 ()Z
+	public final fun copy (Lorg/pnfolder/pnlibrary/localization/TranslationSource;Ljava/lang/String;Z)Lorg/pnfolder/pnlibrary/localization/TranslationMetadata;
+	public static synthetic fun copy$default (Lorg/pnfolder/pnlibrary/localization/TranslationMetadata;Lorg/pnfolder/pnlibrary/localization/TranslationSource;Ljava/lang/String;ZILjava/lang/Object;)Lorg/pnfolder/pnlibrary/localization/TranslationMetadata;
+	public fun equals (Ljava/lang/Object;)Z
+	public final fun getSha1 ()Ljava/lang/String;
+	public final fun getSource ()Lorg/pnfolder/pnlibrary/localization/TranslationSource;
+	public final fun getStale ()Z
+	public fun hashCode ()I
+	public fun toString ()Ljava/lang/String;
+}
+
+public final class org/pnfolder/pnlibrary/localization/TranslationRequest {
+	public static final field Companion Lorg/pnfolder/pnlibrary/localization/TranslationRequest$Companion;
+	public static final fun builder ()Lorg/pnfolder/pnlibrary/localization/TranslationRequest$Builder;
+	public final fun getFallbackLocale ()Ljava/lang/String;
+	public final fun getLocales ()Ljava/util/Set;
+	public final fun getVersion ()Lorg/pnfolder/pnlibrary/common/minecraft/MinecraftVersion;
+}
+
+public final class org/pnfolder/pnlibrary/localization/TranslationRequest$Builder {
+	public final fun build ()Lorg/pnfolder/pnlibrary/localization/TranslationRequest;
+	public final fun fallback (Ljava/lang/String;)Lorg/pnfolder/pnlibrary/localization/TranslationRequest$Builder;
+	public final fun fallback (Lorg/pnfolder/pnlibrary/localization/MinecraftLocale;)Lorg/pnfolder/pnlibrary/localization/TranslationRequest$Builder;
+	public final fun locale (Ljava/lang/String;)Lorg/pnfolder/pnlibrary/localization/TranslationRequest$Builder;
+	public final fun locale (Lorg/pnfolder/pnlibrary/localization/MinecraftLocale;)Lorg/pnfolder/pnlibrary/localization/TranslationRequest$Builder;
+	public final fun locales (Ljava/util/Collection;)Lorg/pnfolder/pnlibrary/localization/TranslationRequest$Builder;
+	public final fun locales ([Ljava/lang/String;)Lorg/pnfolder/pnlibrary/localization/TranslationRequest$Builder;
+	public final fun locales ([Lorg/pnfolder/pnlibrary/localization/MinecraftLocale;)Lorg/pnfolder/pnlibrary/localization/TranslationRequest$Builder;
+	public final fun version (Lorg/pnfolder/pnlibrary/common/minecraft/MinecraftVersion;)Lorg/pnfolder/pnlibrary/localization/TranslationRequest$Builder;
+}
+
+public final class org/pnfolder/pnlibrary/localization/TranslationRequest$Companion {
+	public final fun builder ()Lorg/pnfolder/pnlibrary/localization/TranslationRequest$Builder;
+}
+
+public final class org/pnfolder/pnlibrary/localization/TranslationRequestDsl {
+	public field version Lorg/pnfolder/pnlibrary/common/minecraft/MinecraftVersion;
+	public final fun fallback (Ljava/lang/String;)V
+	public final fun fallback (Lorg/pnfolder/pnlibrary/localization/MinecraftLocale;)V
+	public final fun getVersion ()Lorg/pnfolder/pnlibrary/common/minecraft/MinecraftVersion;
+	public final fun locales ([Ljava/lang/String;)V
+	public final fun locales ([Lorg/pnfolder/pnlibrary/localization/MinecraftLocale;)V
+	public final fun setVersion (Lorg/pnfolder/pnlibrary/common/minecraft/MinecraftVersion;)V
+}
+
+public final class org/pnfolder/pnlibrary/localization/TranslationSource : java/lang/Enum {
+	public static final field DISK Lorg/pnfolder/pnlibrary/localization/TranslationSource;
+	public static final field MEMORY Lorg/pnfolder/pnlibrary/localization/TranslationSource;
+	public static final field NETWORK Lorg/pnfolder/pnlibrary/localization/TranslationSource;
+	public static final field STALE_DISK Lorg/pnfolder/pnlibrary/localization/TranslationSource;
+	public static fun getEntries ()Lkotlin/enums/EnumEntries;
+	public static fun valueOf (Ljava/lang/String;)Lorg/pnfolder/pnlibrary/localization/TranslationSource;
+	public static fun values ()[Lorg/pnfolder/pnlibrary/localization/TranslationSource;
+}
+

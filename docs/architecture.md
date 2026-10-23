@@ -56,10 +56,11 @@ Velocity требует 17, Paper Brigadier и FastStats для Velocity тре�
 | `modules/console` | карточки и деревья для консоли (Java, без зависимостей) |
 | `modules/features/config-*` | типизированные YAML-конфиги: API и реализация, см. [configuration.md](configuration.md) |
 | `modules/features/currency-*` | валюта: API и реализация хранилищ, см. [currency.md](currency.md) |
-| `modules/features/minecraft-localization` | переводы ванильных названий (Bukkit) |
+| `modules/features/minecraft-localization-api` | платформонезависимый API загрузки и поиска ванильных переводов Mojang (без Bukkit) |
 | `platforms/bukkit/api` | контракты Bukkit: `BukkitPlatform`, меню, предметы, визуальные сущности, `ServerInfo` |
 | `platforms/bukkit/runtime` | адаптер Bukkit, Spigot, Paper и Folia и реализации контрактов выше |
 | `platforms/bukkit/paper` | регистрация команд через Brigadier на Paper (Java 21) |
+| `platforms/bukkit/localization` | реализация `minecraft-localization-api` для Bukkit: индексы материалов и зачарований (`BukkitLocaleTranslations`) |
 | `modules/bootstrap` | общая часть встраиваемого установщика: версии, релиз GitHub, проверка и установка `universal.jar` |
 | `platforms/*/bootstrap` | вход установщика для Bukkit, BungeeCord и Velocity: плагин сам ставит pnLibrary и проверяет версию |
 | `platforms/bungee/api`, `platforms/velocity/api` | доступ к прокси-серверу платформы |

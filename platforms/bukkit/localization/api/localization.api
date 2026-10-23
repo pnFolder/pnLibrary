@@ -1,0 +1,34 @@
+public abstract interface class org/pnfolder/pnlibrary/bukkit/localization/BukkitLocaleTranslations : org/pnfolder/pnlibrary/localization/LocaleTranslations {
+	public static final field Companion Lorg/pnfolder/pnlibrary/bukkit/localization/BukkitLocaleTranslations$Companion;
+	public abstract fun biomes ()Lorg/pnfolder/pnlibrary/localization/TranslationIndex;
+	public abstract fun colors ()Lorg/pnfolder/pnlibrary/localization/TranslationIndex;
+	public abstract fun effects ()Lorg/pnfolder/pnlibrary/localization/TranslationIndex;
+	public abstract fun enchantments ()Lorg/pnfolder/pnlibrary/localization/TranslationIndex;
+	public abstract fun entities ()Lorg/pnfolder/pnlibrary/localization/TranslationIndex;
+	public abstract fun gameModes ()Lorg/pnfolder/pnlibrary/localization/TranslationIndex;
+	public abstract fun materials ()Lorg/pnfolder/pnlibrary/localization/TranslationIndex;
+	public fun translate (Lorg/bukkit/DyeColor;)Lorg/pnfolder/pnlibrary/localization/Translation;
+	public fun translate (Lorg/bukkit/GameMode;)Lorg/pnfolder/pnlibrary/localization/Translation;
+	public fun translate (Lorg/bukkit/Material;)Lorg/pnfolder/pnlibrary/localization/Translation;
+	public fun translate (Lorg/bukkit/block/Biome;)Lorg/pnfolder/pnlibrary/localization/Translation;
+	public fun translate (Lorg/bukkit/enchantments/Enchantment;)Lorg/pnfolder/pnlibrary/localization/Translation;
+	public fun translate (Lorg/bukkit/entity/EntityType;)Lorg/pnfolder/pnlibrary/localization/Translation;
+	public fun translate (Lorg/bukkit/potion/PotionEffectType;)Lorg/pnfolder/pnlibrary/localization/Translation;
+	public static fun wrap (Lorg/pnfolder/pnlibrary/localization/LocaleTranslations;)Lorg/pnfolder/pnlibrary/bukkit/localization/BukkitLocaleTranslations;
+}
+
+public final class org/pnfolder/pnlibrary/bukkit/localization/BukkitLocaleTranslations$Companion {
+	public final fun wrap (Lorg/pnfolder/pnlibrary/localization/LocaleTranslations;)Lorg/pnfolder/pnlibrary/bukkit/localization/BukkitLocaleTranslations;
+}
+
+public final class org/pnfolder/pnlibrary/bukkit/localization/BukkitTranslatables {
+	public static final field BIOME Lorg/pnfolder/pnlibrary/localization/TranslatableType;
+	public static final field COLOR Lorg/pnfolder/pnlibrary/localization/TranslatableType;
+	public static final field EFFECT Lorg/pnfolder/pnlibrary/localization/TranslatableType;
+	public static final field ENCHANTMENT Lorg/pnfolder/pnlibrary/localization/TranslatableType;
+	public static final field ENTITY Lorg/pnfolder/pnlibrary/localization/TranslatableType;
+	public static final field GAME_MODE Lorg/pnfolder/pnlibrary/localization/TranslatableType;
+	public static final field INSTANCE Lorg/pnfolder/pnlibrary/bukkit/localization/BukkitTranslatables;
+	public static final field MATERIAL Lorg/pnfolder/pnlibrary/localization/TranslatableType;
+}
+
