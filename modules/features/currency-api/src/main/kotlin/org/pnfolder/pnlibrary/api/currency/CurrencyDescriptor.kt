@@ -39,7 +39,7 @@ data class CurrencyDescriptor(
     }
 
     /** Mutable Java-friendly builder initialized with display [name]. */
-    class Builder(name: String) {
+    class Builder internal constructor(name: String) {
         /** Human-readable currency name. */
         var displayName: String = name
         /** Short symbol appended or prepended by presentation code. */

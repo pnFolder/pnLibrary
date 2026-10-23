@@ -73,7 +73,7 @@ class RemotePolicyContext private constructor(builder: Builder) {
         requireNotNull(nativeHandle(type)) { "Native handle ${type.name} is unavailable on ${platform.type}" }
 
     /** Fluent builder for an immutable [RemotePolicyContext]. */
-    class Builder {
+    class Builder internal constructor() {
         internal var product: ProductInfo? = null
         internal var platform: PlatformInfo? = null
         internal var server: ServerInfo? = null

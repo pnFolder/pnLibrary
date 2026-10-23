@@ -40,7 +40,7 @@ class CurrencyAccess private constructor(
     }
 
     /** Mutable Java-friendly builder for [CurrencyAccess]. */
-    class Builder {
+    class Builder internal constructor() {
         private var owner = false
         private var all = false
         private val allowed = linkedSetOf<PluginId>()

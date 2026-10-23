@@ -95,7 +95,7 @@ data class ConfigOptions @JvmOverloads constructor(
     }
 
     /** Java-friendly mutable builder for [ConfigOptions]. */
-    class Builder {
+    class Builder internal constructor() {
         private var missingFile = MissingFilePolicy.CREATE
         private var missingValues = MissingValuePolicy.ADD
         private var unknownValues = UnknownValuePolicy.PRESERVE

@@ -73,6 +73,13 @@ class SourceConventionsTest {
     }
 
     @Test
+    fun `public builders are created through builder(), never a public constructor`() {
+        val offenders = sources.filter { file -> publicApiModules.any { file.has(it) } }
+            .filter { file -> lines(file).any { PUBLIC_BUILDER_CONSTRUCTOR.containsMatchIn(it) } }
+        assertTrue(offenders.isEmpty(), "Builders with a public constructor in: ${relative(offenders)}")
+    }
+
+    @Test
     fun `public API modules hold contracts, not reflective platform code`() {
         // A self-contained feature module keeps its implementation in an `internal` package; that is not API.
         val offenders = sources.filter { file -> publicApiModules.any { file.has(it) } && !file.has("/internal/") }
@@ -100,6 +107,7 @@ class SourceConventionsTest {
     private companion object {
         val BUILD_DIRECTORIES = listOf("/build/", "/.gradle/", "/out/")
         val INFERRED_APPLY = Regex("""fun\s+(?:<[^>]*>\s+)?(\w+)\((?:[^()]|\((?:[^()]|\([^()]*\))*\))*\)\s*=\s*apply\b""")
+        val PUBLIC_BUILDER_CONSTRUCTOR = Regex("""^\s*(?:open\s+)?class\s+(?:\w+)?Builder(?:<[^>]*>)?\s*(?:\(|\{)""")
         val PRIVATE_MODIFIER = Regex("""\b(?:private|internal)\b""")
         val REFLECTION = listOf("Class.forName(", ".getMethod(", ".getDeclaredField(", ".getDeclaredMethod(", ".invoke(")
 

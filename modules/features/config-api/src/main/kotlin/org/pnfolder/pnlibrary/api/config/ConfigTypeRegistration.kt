@@ -56,7 +56,7 @@ class ConfigTypeAccess private constructor(
     }
 
     /** Fluent builder for [ConfigTypeAccess]. */
-    class Builder {
+    class Builder internal constructor() {
         private var all = false
         private val allowed = linkedSetOf<PluginId>()
         private val patterns = linkedSetOf<String>()

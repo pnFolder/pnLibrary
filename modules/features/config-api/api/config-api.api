@@ -134,7 +134,6 @@ public final class org/pnfolder/pnlibrary/api/config/ConfigOptions {
 }
 
 public final class org/pnfolder/pnlibrary/api/config/ConfigOptions$Builder {
-	public fun <init> ()V
 	public final fun backups (Z)Lorg/pnfolder/pnlibrary/api/config/ConfigOptions$Builder;
 	public final fun build ()Lorg/pnfolder/pnlibrary/api/config/ConfigOptions;
 	public final fun comments (Lorg/pnfolder/pnlibrary/api/config/CommentPolicy;)Lorg/pnfolder/pnlibrary/api/config/ConfigOptions$Builder;
@@ -277,7 +276,6 @@ public final class org/pnfolder/pnlibrary/api/config/ConfigTypeAccess {
 }
 
 public final class org/pnfolder/pnlibrary/api/config/ConfigTypeAccess$Builder {
-	public fun <init> ()V
 	public final fun allow ([Ljava/lang/String;)Lorg/pnfolder/pnlibrary/api/config/ConfigTypeAccess$Builder;
 	public final fun allowAll ()Lorg/pnfolder/pnlibrary/api/config/ConfigTypeAccess$Builder;
 	public final fun allowMatching ([Ljava/lang/String;)Lorg/pnfolder/pnlibrary/api/config/ConfigTypeAccess$Builder;

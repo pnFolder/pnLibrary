@@ -112,7 +112,7 @@ class PlaceholderAccess private constructor(
         fun builder(): Builder = Builder()
     }
     /** Mutable builder for composing an immutable [PlaceholderAccess] policy. */
-    class Builder {
+    class Builder internal constructor() {
         private var owner = false
         private var all = false
         private val allow = linkedSetOf<PluginId>()

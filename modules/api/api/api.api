@@ -2352,7 +2352,6 @@ public final class org/pnfolder/pnlibrary/api/placeholders/PlaceholderAccess {
 }
 
 public final class org/pnfolder/pnlibrary/api/placeholders/PlaceholderAccess$Builder {
-	public fun <init> ()V
 	public final fun allow ([Ljava/lang/String;)Lorg/pnfolder/pnlibrary/api/placeholders/PlaceholderAccess$Builder;
 	public final fun allowAllLibraryPlugins ()Lorg/pnfolder/pnlibrary/api/placeholders/PlaceholderAccess$Builder;
 	public final fun allowMatching ([Ljava/lang/String;)Lorg/pnfolder/pnlibrary/api/placeholders/PlaceholderAccess$Builder;
@@ -2820,7 +2819,6 @@ public final class org/pnfolder/pnlibrary/api/remote/RemotePolicyContext {
 }
 
 public final class org/pnfolder/pnlibrary/api/remote/RemotePolicyContext$Builder {
-	public fun <init> ()V
 	public final fun build ()Lorg/pnfolder/pnlibrary/api/remote/RemotePolicyContext;
 	public final fun nativeHandle (Ljava/lang/Object;)Lorg/pnfolder/pnlibrary/api/remote/RemotePolicyContext$Builder;
 	public final fun platform (Lorg/pnfolder/pnlibrary/api/remote/PlatformInfo;)Lorg/pnfolder/pnlibrary/api/remote/RemotePolicyContext$Builder;

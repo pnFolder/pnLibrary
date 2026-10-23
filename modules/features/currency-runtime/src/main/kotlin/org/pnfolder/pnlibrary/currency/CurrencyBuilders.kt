@@ -41,7 +41,7 @@ internal open class CurrencyOptions : CurrencyRegistrationOptions {
 
 /** Assembles a lightweight callback-backed provider. */
 internal class CurrencyDefinition(private val name: String) : CurrencyOptions(), CurrencyDefinitionBuilder {
-    private val descriptor = CurrencyDescriptor.Builder(name)
+    private val descriptor = CurrencyDescriptor.builder(name)
     private val operations = CurrencyOperationsBuilder()
 
     override fun descriptor(configure: Consumer<CurrencyDescriptor.Builder>) = apply { configure.accept(descriptor) }
@@ -54,7 +54,7 @@ internal class ManagedCurrencyDefinition(
     private val owner: PluginId,
     private val name: String,
 ) : CurrencyOptions(), ManagedCurrencyBuilder {
-    private val descriptor = CurrencyDescriptor.Builder(name)
+    private val descriptor = CurrencyDescriptor.builder(name)
     private var storage: CurrencyStorage? = null
     private var ownsStorage = false
     private var service = owner.value
