@@ -14,6 +14,7 @@ import java.nio.file.Path
 import java.time.Duration
 import java.util.Base64
 import java.util.concurrent.Executors
+import java.util.concurrent.TimeUnit
 import java.util.concurrent.atomic.AtomicReference
 
 class ReleaseCatalogGatewayTest {
@@ -54,6 +55,10 @@ class ReleaseCatalogGatewayTest {
         } finally {
             requestExecutor.shutdownNow()
             catalogExecutor.shutdownNow()
+            // The catalog client may still be writing its cache file; JUnit deletes the temporary directory next,
+            // so wait until both threads have actually stopped instead of racing that cleanup.
+            requestExecutor.awaitTermination(10, TimeUnit.SECONDS)
+            catalogExecutor.awaitTermination(10, TimeUnit.SECONDS)
         }
     }
 

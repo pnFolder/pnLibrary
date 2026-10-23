@@ -18,7 +18,7 @@ import org.pnfolder.pnlibrary.api.runtime.PnLibrary
 import org.pnfolder.pnlibrary.api.tasks.*
 import org.pnfolder.pnlibrary.common.minecraft.MinecraftVersion
 import org.pnfolder.pnlibrary.core.runtime.details.RuntimeRemotePolicy
-import org.pnfolder.pnlibrary.core.runtime.lifecycle.RuntimeResources
+import org.pnfolder.pnlibrary.core.lifecycle.RuntimeResources
 import org.pnfolder.pnlibrary.spi.platform.PlatformAdapter
 import java.nio.file.Files
 import java.nio.file.Path

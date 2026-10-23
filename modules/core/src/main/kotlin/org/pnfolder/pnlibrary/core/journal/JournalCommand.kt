@@ -10,7 +10,7 @@ import org.pnfolder.pnlibrary.api.commands.CommandDefinition
 import org.pnfolder.pnlibrary.api.commands.CommandSender
 import org.pnfolder.pnlibrary.api.commands.command
 import org.pnfolder.pnlibrary.common.text.RussianText
-import org.pnfolder.pnlibrary.core.runtime.DisplayZone
+import org.pnfolder.pnlibrary.core.ui.DisplayZone
 import java.util.Locale
 
 /** rows shown on one page of `/pn events`. */

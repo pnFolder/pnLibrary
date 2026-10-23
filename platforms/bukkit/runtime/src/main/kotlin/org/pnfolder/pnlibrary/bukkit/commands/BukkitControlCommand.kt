@@ -10,7 +10,7 @@ import org.pnfolder.pnlibrary.api.commands.command
 import org.pnfolder.pnlibrary.api.currency.CurrencyProviderRegistry
 import org.pnfolder.pnlibrary.api.runtime.PnLibrary
 import org.pnfolder.pnlibrary.bukkit.currency.CurrencyCommandExecutor
-import org.pnfolder.pnlibrary.core.runtime.lifecycle.mountableCommand
+import org.pnfolder.pnlibrary.core.lifecycle.mountableCommand
 import org.pnfolder.pnlibrary.core.updates.catalog.UpdateCatalogCommands
 import org.pnfolder.pnlibrary.core.updates.catalog.UpdateCatalogRoutes
 

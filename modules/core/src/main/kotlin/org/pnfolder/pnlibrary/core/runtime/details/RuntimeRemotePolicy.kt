@@ -9,7 +9,7 @@ import org.pnfolder.pnlibrary.api.runtime.PnLibraryIdentity
 import org.pnfolder.pnlibrary.common.jvm.JavaRuntime
 import org.pnfolder.pnlibrary.core.remote.RemotePolicyMonitor
 import org.pnfolder.pnlibrary.core.remote.RemotePolicyNoticeRenderer
-import org.pnfolder.pnlibrary.core.runtime.lifecycle.runtimeTaskScope
+import org.pnfolder.pnlibrary.core.lifecycle.runtimeTaskScope
 import org.pnfolder.pnlibrary.spi.platform.PlatformAdapter
 import java.util.concurrent.atomic.AtomicBoolean
 
