@@ -9,14 +9,20 @@ import org.bukkit.entity.EntityType
 import org.bukkit.potion.PotionEffectType
 import org.junit.jupiter.api.Assertions.assertEquals
 import org.junit.jupiter.api.Assertions.assertFalse
+import org.junit.jupiter.api.Assertions.assertNull
 import org.junit.jupiter.api.Assertions.assertTrue
 import org.junit.jupiter.api.Test
 import org.pnfolder.pnlibrary.localization.LocaleTranslations
 import org.pnfolder.pnlibrary.localization.TranslationMetadata
 import org.pnfolder.pnlibrary.localization.TranslationSource
+import org.pnfolder.pnlibrary.localization.layout.KeyboardLayout
+import org.pnfolder.pnlibrary.localization.layout.KeyboardLayouts
 import java.util.Optional
 
-private class FakeLocaleTranslations(private val values: Map<String, String>) : LocaleTranslations {
+private class FakeLocaleTranslations(
+    private val values: Map<String, String>,
+    override val layouts: KeyboardLayouts = KeyboardLayouts.builtIn,
+) : LocaleTranslations {
     override val locale = "ru_ru"
     override val metadata = TranslationMetadata(TranslationSource.MEMORY, null, false)
     override fun translate(key: String): Optional<String> = Optional.ofNullable(values[key])
@@ -118,5 +124,19 @@ class ForwardLookupTest {
         assertEquals("Спешка", legacyTranslations.translate(PotionEffectType.FAST_DIGGING).text)
         assertEquals("Зомби", legacyTranslations.translate(EntityType.ZOMBIE).text)
         assertTrue(legacyTranslations.translate(EntityType.ZOMBIE).localized)
+    }
+
+    @Test
+    fun `reverse searches read queries against the layouts of the table`() {
+        val registry = KeyboardLayouts.create()
+        val dvorak = KeyboardLayout.of("bukkit-test-dvorak", "',.pyfgcrl/=\\aoeuidhtns-;qjkxbmwv`[")
+        val table = BukkitLocaleTranslations.wrap(FakeLocaleTranslations(mapOf("block.minecraft.stone" to "Stone"), registry))
+        val typed = KeyboardLayout.convert("stone", dvorak, KeyboardLayout.EN_US)
+
+        assertNull(table.materials().best(typed))
+        val handle = registry.register(dvorak)
+        assertEquals(Material.STONE, table.materials().best(typed)?.value)
+        handle.close()
+        assertNull(table.materials().best(typed))
     }
 }

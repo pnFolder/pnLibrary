@@ -1958,6 +1958,43 @@ public abstract class org/pnfolder/pnlibrary/api/events/player/PlayerLifecycleEv
 	public final fun getUniqueId ()Ljava/util/UUID;
 }
 
+public abstract class org/pnfolder/pnlibrary/api/expansions/AbstractExpansion : org/pnfolder/pnlibrary/api/expansions/Expansion {
+	protected fun <init> (Ljava/lang/String;)V
+	public final fun close ()V
+	public final fun disable ()V
+	public final fun enable ()V
+	public final fun getId ()Ljava/lang/String;
+	public final fun getState ()Lorg/pnfolder/pnlibrary/api/expansions/ExpansionState;
+	protected fun onClose ()V
+	protected abstract fun onDisable ()V
+	protected abstract fun onEnable ()V
+}
+
+public abstract interface class org/pnfolder/pnlibrary/api/expansions/Expansion : java/lang/AutoCloseable {
+	public abstract fun close ()V
+	public abstract fun disable ()V
+	public abstract fun enable ()V
+	public abstract fun getId ()Ljava/lang/String;
+	public abstract fun getState ()Lorg/pnfolder/pnlibrary/api/expansions/ExpansionState;
+}
+
+public abstract interface class org/pnfolder/pnlibrary/api/expansions/ExpansionManager {
+	public abstract fun all ()Ljava/util/List;
+	public abstract fun get (Ljava/lang/Class;)Lorg/pnfolder/pnlibrary/api/expansions/Expansion;
+	public abstract fun get (Ljava/lang/String;)Lorg/pnfolder/pnlibrary/api/expansions/Expansion;
+	public abstract fun register (Lorg/pnfolder/pnlibrary/api/expansions/Expansion;)Ljava/lang/AutoCloseable;
+}
+
+public final class org/pnfolder/pnlibrary/api/expansions/ExpansionState : java/lang/Enum {
+	public static final field CLOSED Lorg/pnfolder/pnlibrary/api/expansions/ExpansionState;
+	public static final field DISABLED Lorg/pnfolder/pnlibrary/api/expansions/ExpansionState;
+	public static final field ENABLED Lorg/pnfolder/pnlibrary/api/expansions/ExpansionState;
+	public static final field FAILED Lorg/pnfolder/pnlibrary/api/expansions/ExpansionState;
+	public static fun getEntries ()Lkotlin/enums/EnumEntries;
+	public static fun valueOf (Ljava/lang/String;)Lorg/pnfolder/pnlibrary/api/expansions/ExpansionState;
+	public static fun values ()[Lorg/pnfolder/pnlibrary/api/expansions/ExpansionState;
+}
+
 public final class org/pnfolder/pnlibrary/api/logging/LogLevel : java/lang/Enum {
 	public static final field ERROR Lorg/pnfolder/pnlibrary/api/logging/LogLevel;
 	public static final field INFO Lorg/pnfolder/pnlibrary/api/logging/LogLevel;
@@ -2604,9 +2641,11 @@ public abstract interface class org/pnfolder/pnlibrary/api/plugin/ModuleContext 
 	public abstract fun getDownloads ()Lorg/pnfolder/pnlibrary/api/downloads/DownloadRegistration;
 	public abstract fun getErrors ()Lorg/pnfolder/pnlibrary/api/metrics/ErrorReporter;
 	public abstract fun getEvents ()Lorg/pnfolder/pnlibrary/api/events/EventScope;
+	public fun getExpansions ()Lorg/pnfolder/pnlibrary/api/expansions/ExpansionManager;
 	public abstract fun getId ()Lorg/pnfolder/pnlibrary/api/plugin/ModuleId;
 	public abstract fun getKey ()Lorg/pnfolder/pnlibrary/api/plugin/PluginId;
 	public abstract fun getLifecycle ()Lorg/pnfolder/pnlibrary/api/plugin/PluginLifecycle;
+	public fun getLocalization ()Lorg/pnfolder/pnlibrary/localization/MinecraftLocalization;
 	public abstract fun getLogger ()Lorg/pnfolder/pnlibrary/api/logging/PnLogger;
 	public abstract fun getMessages ()Lorg/pnfolder/pnlibrary/api/plugin/PluginMessages;
 	public abstract fun getMetadata ()Lorg/pnfolder/pnlibrary/api/plugin/PluginMetadata;
@@ -2893,6 +2932,7 @@ public abstract interface class org/pnfolder/pnlibrary/api/runtime/PnLibrary : j
 	public abstract fun getConfigurations ()Lorg/pnfolder/pnlibrary/api/config/ConfigurationService;
 	public abstract fun getDiagnostics ()Lorg/pnfolder/pnlibrary/api/diagnostics/DiagnosticsService;
 	public abstract fun getEvents ()Lorg/pnfolder/pnlibrary/api/events/EventService;
+	public abstract fun getExpansions ()Lorg/pnfolder/pnlibrary/api/expansions/ExpansionManager;
 	public abstract fun getLogging ()Lorg/pnfolder/pnlibrary/api/logging/LoggingService;
 	public abstract fun getMetrics ()Lorg/pnfolder/pnlibrary/api/metrics/MetricsService;
 	public abstract fun getObservability ()Lorg/pnfolder/pnlibrary/api/observability/ObservabilityService;

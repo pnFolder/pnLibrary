@@ -43,6 +43,7 @@ import org.pnfolder.pnlibrary.api.updates.UpdateService
 import org.pnfolder.pnlibrary.core.commands.CommandService
 import org.pnfolder.pnlibrary.core.downloads.DirectDownloadManager
 import org.pnfolder.pnlibrary.core.events.EventServiceImpl
+import org.pnfolder.pnlibrary.core.expansions.ExpansionManagerImpl
 import org.pnfolder.pnlibrary.core.placeholders.PlaceholderHub
 import org.pnfolder.pnlibrary.core.services.ServiceManagerImpl
 import org.pnfolder.pnlibrary.core.tasks.TaskService
@@ -620,7 +621,7 @@ class PluginRegistryImplTest {
         override fun show() = onShow()
     }
 
-    private companion object {
+    internal companion object {
         fun PluginRegistryImpl.registerModule(
             owner: Any,
             id: String,
@@ -637,6 +638,8 @@ class PluginRegistryImplTest {
             libraryVersion: String? = null,
             updates: UpdateService = emptyProxy(UpdateService::class.java),
             directDownloads: DirectDownloadManager? = null,
+            expansions: ExpansionManagerImpl = ExpansionManagerImpl { _, _ -> },
+            libraryExpansions: ExpansionManagerImpl = ExpansionManagerImpl { _, _ -> },
         ): PluginRegistryImpl =
             PluginRegistryImpl(
                 ownership = platform,
@@ -650,8 +653,7 @@ class PluginRegistryImplTest {
                 metrics = metrics,
                 diagnostics = emptyProxy(DiagnosticsService::class.java),
                 updates = updates,
-                placeholderHub = PlaceholderHub(platform),
-                currencyFeature = CurrencyFeature(),
+                shared = SharedFeatures(PlaceholderHub(platform), CurrencyFeature(), expansions, libraryExpansions),
                 commands = commands,
                 directDownloads = directDownloads,
                 libraryVersion = libraryVersion,

@@ -13,6 +13,8 @@ internal class RuntimeShutdownPlan(
     private val audiences: AutoCloseable,
     private val platforms: AutoCloseable,
     private val currency: AutoCloseable,
+    private val expansions: AutoCloseable,
+    private val libraryExpansions: AutoCloseable,
     private val configurations: AutoCloseable,
     private val libraryMetrics: () -> AutoCloseable?,
     private val metrics: AutoCloseable,
@@ -32,6 +34,8 @@ internal class RuntimeShutdownPlan(
         add { audiences.close() }
         add { platforms.close() }
         add { currency.close() }
+        add { expansions.close() }
+        add { libraryExpansions.close() }
         add { configurations.close() }
         add { libraryMetrics()?.close() }
         add { metrics.close() }

@@ -4,6 +4,7 @@ import groovy.json.JsonSlurper
 import groovy.json.JsonOutput
 import java.io.DataInputStream
 import java.io.InputStream
+import java.net.URLClassLoader
 import java.security.MessageDigest
 import java.util.jar.JarEntry
 import java.util.jar.JarFile
@@ -82,6 +83,7 @@ fun ShadowJar.applyCommonConfig() {
 val bukkitRuntime: Configuration by configurations.creating
 dependencies {
     bukkitRuntime(project(":platforms:bukkit:runtime"))
+    bukkitRuntime(project(":platforms:bukkit:localization"))
     bukkitRuntime(project(":platforms:bukkit:paper"))
     // Folia scheduler layer is included at runtime; consumers decide whether to activate it
 }
@@ -135,6 +137,7 @@ tasks.register<ShadowJar>("shadowVelocity") {
 val universalRuntime: Configuration by configurations.creating
 dependencies {
     universalRuntime(project(":platforms:bukkit:runtime"))
+    universalRuntime(project(":platforms:bukkit:localization"))
     universalRuntime(project(":platforms:bukkit:paper"))
     universalRuntime(project(":platforms:bungee:runtime"))
     universalRuntime(project(":platforms:velocity:runtime"))
@@ -380,6 +383,74 @@ val verifyEmbeddedMetadata = tasks.register("verifyEmbeddedMetadata") {
 tasks.named("build") {
     dependsOn(verifyEmbeddedMetadata)
 }
+
+// The neutral localization API ships in every JAR; its Bukkit layer only where org.bukkit exists (a proxy JAR with it
+// would fail at class load, a Bukkit JAR without it fails a plugin's first BukkitLocaleTranslations call).
+val verifyLocalizationContents = tasks.register("verifyLocalizationContents") {
+    group = "verification"
+    description = "Verifies each platform JAR holds the localization classes it needs and no Bukkit ones on proxies"
+    dependsOn(releaseArtifactTasks)
+    doLast {
+        val neutral = listOf(
+            "org/pnfolder/pnlibrary/localization/MinecraftLocalization.class",
+            "org/pnfolder/pnlibrary/localization/layout/KeyboardLayout.class",
+        )
+        val bukkitPackage = "org/pnfolder/pnlibrary/bukkit/localization/"
+        val bukkit = listOf("BukkitLocaleTranslations", "BukkitTranslatables").map { "$bukkitPackage$it.class" }
+        val withBukkit = setOf("bukkit-java8", "universal")
+        releasePlatforms.forEach { platform ->
+            val jar = layout.buildDirectory.file("libs/pnLibrary-$pnVer-${platform.id}.jar").get().asFile
+            require(jar.isFile) { "Missing platform JAR: ${jar.name}" }
+            JarFile(jar).use { archive ->
+                val expected = if (platform.id in withBukkit) neutral + bukkit else neutral
+                expected.firstOrNull { archive.getJarEntry(it) == null }?.let { error("${jar.name} is missing $it") }
+                if (platform.id !in withBukkit) {
+                    archive.entries().asSequence().map { it.name }.firstOrNull { it.startsWith(bukkitPackage) }
+                        ?.let { error("${jar.name} must not contain the Bukkit localization class $it") }
+                }
+            }
+        }
+    }
+}
+tasks.named("build") { dependsOn(verifyLocalizationContents) }
+tasks.named("check") { dependsOn(verifyLocalizationContents) }
+
+// A class that is present can still fail to link; load the whole Bukkit layer the way a server would see it,
+// with the Spigot API as the only thing outside the JAR.
+val spigotApiProbe: Configuration by configurations.creating
+dependencies { spigotApiProbe(libs.spigot.api.v18) }
+
+val verifyBukkitLocalizationLoads = tasks.register("verifyBukkitLocalizationLoads") {
+    group = "verification"
+    description = "Loads every Bukkit localization class from the Bukkit JAR against the Spigot API alone"
+    dependsOn("shadowBukkit")
+    inputs.files(spigotApiProbe)
+    doLast {
+        val jar = layout.buildDirectory.file("libs/pnLibrary-$pnVer-bukkit-java8.jar").get().asFile
+        val names = JarFile(jar).use { archive ->
+            archive.entries().asSequence().map { it.name }
+                .filter { it.startsWith("org/pnfolder/pnlibrary/bukkit/localization/") && it.endsWith(".class") }
+                .map { it.removeSuffix(".class").replace('/', '.') }.toList()
+        }
+        require(names.isNotEmpty()) { "${jar.name} holds no Bukkit localization classes" }
+        val server = spigotApiProbe.files.map { it.toURI().toURL() }.toTypedArray()
+        URLClassLoader(server, null).use { parent ->
+            URLClassLoader(arrayOf(jar.toURI().toURL()), parent).use { loader ->
+                names.forEach { name ->
+                    try {
+                        Class.forName(name, true, loader).also { it.declaredMethods; it.declaredFields }
+                    } catch (error: LinkageError) {
+                        throw GradleException("$name does not load from ${jar.name}: $error", error)
+                    } catch (error: ClassNotFoundException) {
+                        throw GradleException("$name does not load from ${jar.name}: $error", error)
+                    }
+                }
+            }
+        }
+    }
+}
+tasks.named("build") { dependsOn(verifyBukkitLocalizationLoads) }
+tasks.named("check") { dependsOn(verifyBukkitLocalizationLoads) }
 
 val writeReleaseManifest = tasks.register("writeReleaseManifest") {
     group = "distribution"

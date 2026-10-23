@@ -9,6 +9,7 @@ import org.pnfolder.pnlibrary.api.config.ConfigurationService
 import org.pnfolder.pnlibrary.api.diagnostics.DebugRequest
 import org.pnfolder.pnlibrary.api.diagnostics.DiagnosticReport
 import org.pnfolder.pnlibrary.api.events.EventService
+import org.pnfolder.pnlibrary.api.expansions.ExpansionManager
 import org.pnfolder.pnlibrary.api.logging.LoggingService
 import org.pnfolder.pnlibrary.api.metrics.MetricsService
 import org.pnfolder.pnlibrary.api.metrics.PluginMetrics
@@ -40,6 +41,7 @@ import org.pnfolder.pnlibrary.core.metrics.MetricsServiceImpl
 import org.pnfolder.pnlibrary.core.observability.SupportRuntime
 import org.pnfolder.pnlibrary.core.platform.PlatformProviderImpl
 import org.pnfolder.pnlibrary.core.plugin.PluginRegistryImpl
+import org.pnfolder.pnlibrary.core.plugin.SharedFeatures
 import org.pnfolder.pnlibrary.core.runtime.details.RuntimeDiagnosticsAssembler
 import org.pnfolder.pnlibrary.core.runtime.details.RuntimeFeatureSet
 import org.pnfolder.pnlibrary.core.runtime.details.RuntimeJournal
@@ -171,6 +173,7 @@ internal class PnLibraryImpl(
     override val audiences: AudienceService get() = audienceService
     private val serviceManager get() = features.services
     override val services: ServiceManager get() = serviceManager
+    override val expansions: ExpansionManager get() = features.expansions
     private val eventService = EventServiceImpl { pluginId, message, error ->
         val identifiedMessage = "[$pluginId] $message"
         recordAndLog(owner, identifiedMessage, error)
@@ -197,8 +200,7 @@ internal class PnLibraryImpl(
         metrics = metricsService,
         diagnostics = diagnostics,
         updates = updateService,
-        placeholderHub = placeholderHub,
-        currencyFeature = currencyFeature,
+        shared = SharedFeatures(placeholderHub, currencyFeature, features.expansions, features.libraryExpansions),
         commands = commandService,
         directDownloads = directDownloadManager,
     )
@@ -256,6 +258,8 @@ internal class PnLibraryImpl(
                 audiences = audienceService,
                 platforms = platformProvider,
                 currency = currencyFeature,
+                expansions = features.expansions,
+                libraryExpansions = features.libraryExpansions,
                 configurations = configurationService,
                 libraryMetrics = { libraryMetrics },
                 metrics = metricsService,

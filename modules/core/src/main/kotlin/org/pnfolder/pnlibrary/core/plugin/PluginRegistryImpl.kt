@@ -38,14 +38,14 @@ import org.pnfolder.pnlibrary.config.ConfigurationServiceImpl
 import org.pnfolder.pnlibrary.core.commands.CommandFeedbackScope
 import org.pnfolder.pnlibrary.core.commands.CommandService
 import org.pnfolder.pnlibrary.core.downloads.DirectDownloadManager
+import org.pnfolder.pnlibrary.core.expansions.LocalizationExpansion
 import org.pnfolder.pnlibrary.core.lifecycle.ResourceCleanup
-import org.pnfolder.pnlibrary.core.placeholders.PlaceholderHub
 import org.pnfolder.pnlibrary.core.remote.RemotePolicyMonitor
 import org.pnfolder.pnlibrary.core.remote.RemotePolicyNoticeRenderer
 import org.pnfolder.pnlibrary.core.services.ServiceManagerImpl
 import org.pnfolder.pnlibrary.core.tasks.TaskService
 import org.pnfolder.pnlibrary.core.text.ComponentCache
-import org.pnfolder.pnlibrary.currency.CurrencyFeature
+import org.pnfolder.pnlibrary.localization.MinecraftLocalization
 import org.pnfolder.pnlibrary.spi.platform.PlatformExecution
 import org.pnfolder.pnlibrary.spi.platform.PlatformIdentity
 import org.pnfolder.pnlibrary.spi.platform.PlatformLogging
@@ -75,8 +75,7 @@ internal class PluginRegistryImpl(
     private val metrics: MetricsService,
     private val diagnostics: DiagnosticsService,
     private val updates: UpdateService,
-    private val placeholderHub: PlaceholderHub,
-    private val currencyFeature: CurrencyFeature,
+    private val shared: SharedFeatures,
     private val configurations: ConfigurationServiceImpl = ConfigurationServiceImpl(ownership),
     private val commands: CommandService? = null,
     private val directDownloads: DirectDownloadManager? = null,
@@ -94,7 +93,7 @@ internal class PluginRegistryImpl(
     private val metadataFactory = ModuleMetadataFactory(ownership, identity)
     private val resourceFactory = ModuleResourceFactory(
         events, tasks, services, logging, metrics, diagnostics, updates,
-        placeholderHub, currencyFeature, configurations, directDownloads, sharedComponentCache,
+        shared.placeholders, shared.currency, configurations, directDownloads, sharedComponentCache,
     )
     private val remotePolicyNotices = RemotePolicyNoticeRenderer(platformLogging)
     private val remotePolicies = RemotePolicyMonitor(ownership, execution, remotePolicyNotices)
@@ -260,6 +259,8 @@ internal class PluginRegistryImpl(
         override val tasks: TaskScope get() = resources.tasks
         override val events: EventScope get() = resources.events
         override val services: ServiceManagerImpl.OwnedServices get() = resources.services
+        override val expansions = ModuleExpansions(shared.expansions, shared.libraryExpansions)
+        override val localization: MinecraftLocalization get() = expansions.view(LocalizationExpansion::class.java)
         override val logger: PnLogger get() = resources.logger
         override val configs: ConfigScope get() = resources.configs
         override val placeholders: PlaceholderService get() = resources.placeholders
@@ -290,7 +291,7 @@ internal class PluginRegistryImpl(
             metadata = metadata,
             resources = resources,
             logging = logging,
-            placeholders = placeholderHub,
+            placeholders = shared.placeholders,
             placeholderApiEnabled = placeholderApiEnabled,
             isClosed = { isClosed },
         )
@@ -309,6 +310,7 @@ internal class PluginRegistryImpl(
             }
             ResourceCleanup.closeAll(
                 { ResourceCleanup.closeAll(*registrations.asReversed().map { registration -> { registration.close() } }.toTypedArray()) },
+                { expansions.close() },
                 { resources.close(this@PluginRegistryImpl.diagnostics, key) },
             )
         }

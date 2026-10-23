@@ -1,5 +1,6 @@
 package org.pnfolder.pnlibrary.localization
 
+import org.pnfolder.pnlibrary.localization.layout.KeyboardLayouts
 import java.util.Optional
 
 /**
@@ -13,6 +14,8 @@ interface LocaleTranslations {
     val locale: String
     /** Provenance and integrity metadata for this table. */
     val metadata: TranslationMetadata
+    /** The keyboard layouts that reverse searches over this table read queries against. */
+    val layouts: KeyboardLayouts get() = KeyboardLayouts.builtIn
     /** Returns the translation for [key], when present. */
     fun translate(key: String): Optional<String>
     /** Returns the translation for [key], or [key] itself when absent. */

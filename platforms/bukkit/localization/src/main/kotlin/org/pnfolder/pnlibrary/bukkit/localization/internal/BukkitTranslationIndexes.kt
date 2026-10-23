@@ -11,6 +11,7 @@ import org.pnfolder.pnlibrary.localization.TranslatableType
 import org.pnfolder.pnlibrary.localization.TranslationCategory
 import org.pnfolder.pnlibrary.localization.TranslationIndex
 import org.pnfolder.pnlibrary.localization.TranslationMatch
+import org.pnfolder.pnlibrary.localization.layout.KeyboardLayouts
 import java.util.Locale
 
 // --- Forward lookup: Bukkit value -> candidate translation keys ---
@@ -85,55 +86,62 @@ internal object GameModeTranslatable : TranslatableType<GameMode> {
 
 // --- Reverse lookup: translated text -> Bukkit value ---
 
-internal fun bukkitMaterials(values: Map<String, String>): TranslationIndex<Material> = TranslationIndex.of(
+internal fun bukkitMaterials(values: Map<String, String>, layouts: KeyboardLayouts): TranslationIndex<Material> = TranslationIndex.of(
     values.asSequence()
         .filter { (key, _) -> key.startsWith(TranslationCategory.ITEM.prefix()) || key.startsWith(TranslationCategory.BLOCK.prefix()) }
         .map { (key, value) ->
             TranslationMatch(key, value, Material.matchMaterial(key.substringAfterLast('.').uppercase(Locale.ROOT)))
         }
         .toList(),
+    layouts,
 )
 
-internal fun bukkitEnchantments(values: Map<String, String>): TranslationIndex<Enchantment> = TranslationIndex.of(
+internal fun bukkitEnchantments(values: Map<String, String>, layouts: KeyboardLayouts): TranslationIndex<Enchantment> = TranslationIndex.of(
     values.asSequence()
         .filter { (key, _) -> key.startsWith(TranslationCategory.ENCHANTMENT.prefix()) }
         .map { (key, value) -> TranslationMatch(key, value, enchantmentOf(key.substringAfterLast('.').uppercase(Locale.ROOT))) }
         .toList(),
+    layouts,
 )
 
-internal fun bukkitEntities(values: Map<String, String>): TranslationIndex<EntityType> = TranslationIndex.of(
+internal fun bukkitEntities(values: Map<String, String>, layouts: KeyboardLayouts): TranslationIndex<EntityType> = TranslationIndex.of(
     values.asSequence()
         .filter { (key, _) -> key.startsWith(TranslationCategory.ENTITY.prefix()) }
         .map { (key, value) -> TranslationMatch(key, value, entityOf(key.substringAfterLast('.').uppercase(Locale.ROOT))) }
         .toList(),
+    layouts,
 )
 
-internal fun bukkitEffects(values: Map<String, String>): TranslationIndex<PotionEffectType> = TranslationIndex.of(
+internal fun bukkitEffects(values: Map<String, String>, layouts: KeyboardLayouts): TranslationIndex<PotionEffectType> = TranslationIndex.of(
     values.asSequence()
         .filter { (key, _) -> key.startsWith(TranslationCategory.EFFECT.prefix()) }
         .map { (key, value) -> TranslationMatch(key, value, effectOf(key.substringAfterLast('.').uppercase(Locale.ROOT))) }
         .toList(),
+    layouts,
 )
 
-internal fun bukkitBiomes(values: Map<String, String>): TranslationIndex<Biome> = TranslationIndex.of(
+internal fun bukkitBiomes(values: Map<String, String>, layouts: KeyboardLayouts): TranslationIndex<Biome> = TranslationIndex.of(
     values.asSequence()
         .filter { (key, _) -> key.startsWith(TranslationCategory.BIOME.prefix()) }
         .map { (key, value) -> TranslationMatch(key, value, biomeOf(key.substringAfterLast('.').uppercase(Locale.ROOT))) }
         .toList(),
+    layouts,
 )
 
-internal fun bukkitColors(values: Map<String, String>): TranslationIndex<DyeColor> = TranslationIndex.of(
+internal fun bukkitColors(values: Map<String, String>, layouts: KeyboardLayouts): TranslationIndex<DyeColor> = TranslationIndex.of(
     values.asSequence()
         .filter { (key, _) -> key.startsWith(TranslationCategory.COLOR.prefix()) }
         .map { (key, value) -> TranslationMatch(key, value, colorOf(key.substringAfterLast('.').uppercase(Locale.ROOT))) }
         .toList(),
+    layouts,
 )
 
-internal fun bukkitGameModes(values: Map<String, String>): TranslationIndex<GameMode> = TranslationIndex.of(
+internal fun bukkitGameModes(values: Map<String, String>, layouts: KeyboardLayouts): TranslationIndex<GameMode> = TranslationIndex.of(
     values.asSequence()
         .filter { (key, _) -> key.startsWith(TranslationCategory.GAME_MODE.prefix()) }
         .map { (key, value) -> TranslationMatch(key, value, gameModeOf(key.substringAfterLast('.').uppercase(Locale.ROOT))) }
         .toList(),
+    layouts,
 )
 
 private fun enchantmentOf(modernName: String): Enchantment? {

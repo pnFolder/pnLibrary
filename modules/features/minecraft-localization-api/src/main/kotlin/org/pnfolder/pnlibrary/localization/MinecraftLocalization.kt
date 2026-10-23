@@ -2,6 +2,7 @@ package org.pnfolder.pnlibrary.localization
 
 import org.pnfolder.pnlibrary.common.minecraft.MinecraftVersion
 import org.pnfolder.pnlibrary.localization.internal.DefaultMinecraftLocalization
+import org.pnfolder.pnlibrary.localization.layout.KeyboardLayouts
 import java.nio.file.Path
 import java.time.Duration
 import java.util.concurrent.CompletionStage
@@ -14,6 +15,12 @@ import java.util.concurrent.ExecutorService
  * releases owned executors and rejects new requests.
  */
 interface MinecraftLocalization : AutoCloseable {
+    /**
+     * Keyboard layouts that reverse searches over the loaded tables read queries against. Register a layout here once
+     * and every index of every table loaded by this service uses it.
+     */
+    val layouts: KeyboardLayouts
+
     /** Returns known release versions in descending order. */
     fun availableVersions(): CompletionStage<List<MinecraftVersion>>
 
@@ -46,6 +53,7 @@ interface MinecraftLocalization : AutoCloseable {
         private var memoryEntries = 8
         private var downloadConcurrency = 2
         private var executor: ExecutorService? = null
+        private var layouts: KeyboardLayouts = KeyboardLayouts.create()
 
         /** Sets the directory used for manifests, indexes, and locale caches. */
         fun cacheDirectory(value: Path): Builder = apply {
@@ -87,6 +95,11 @@ interface MinecraftLocalization : AutoCloseable {
             executor = value
         }
 
+        /** Supplies an externally owned layout registry; the service will not close it. Each service has its own by default. */
+        fun layouts(value: KeyboardLayouts): Builder = apply {
+            layouts = value
+        }
+
         /** Validates the settings and creates a localization service. */
         fun build(): MinecraftLocalization = DefaultMinecraftLocalization(
             cacheDirectory = requireNotNull(cacheDirectory) { "Cache directory is required" },
@@ -96,6 +109,7 @@ interface MinecraftLocalization : AutoCloseable {
             memoryEntries = memoryEntries,
             downloadConcurrency = downloadConcurrency,
             suppliedExecutor = executor,
+            layouts = layouts,
         )
     }
 

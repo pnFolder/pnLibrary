@@ -9,6 +9,7 @@ import org.pnfolder.pnlibrary.localization.TranslationIndex
 import org.pnfolder.pnlibrary.localization.TranslationMetadata
 import org.pnfolder.pnlibrary.localization.TranslationRequest
 import org.pnfolder.pnlibrary.localization.TranslationSource
+import org.pnfolder.pnlibrary.localization.layout.KeyboardLayouts
 import java.nio.file.Files
 import java.nio.file.Path
 import java.time.Duration
@@ -33,6 +34,7 @@ internal class DefaultMinecraftLocalization internal constructor(
     downloadConcurrency: Int,
     suppliedExecutor: ExecutorService?,
     httpClient: LocalizationHttpClient? = null,
+    override val layouts: KeyboardLayouts = KeyboardLayouts.create(),
 ) : MinecraftLocalization {
     private val ownsExecutor = suppliedExecutor == null
     private val executor = suppliedExecutor ?: Executors.newFixedThreadPool(downloadConcurrency) { task ->
@@ -116,7 +118,7 @@ internal class DefaultMinecraftLocalization internal constructor(
     }
 
     private fun cache(key: CacheKey, bytes: ByteArray, metadata: TranslationMetadata): LoadedLocale {
-        val loaded = LoadedLocale(key.locale, TranslationJsonCodec.parse(bytes), metadata)
+        val loaded = LoadedLocale(key.locale, TranslationJsonCodec.parse(bytes), metadata, layouts)
         synchronized(memory) { if (!closed.get()) memory[key] = loaded }
         return loaded
     }
@@ -213,17 +215,18 @@ internal class LoadedLocale private constructor(
     override val locale: String,
     private val data: LocaleData,
     override val metadata: TranslationMetadata,
+    override val layouts: KeyboardLayouts,
 ) : LocaleTranslations {
-    constructor(locale: String, values: Map<String, String>, metadata: TranslationMetadata) :
-        this(locale, LocaleData(values), metadata)
+    constructor(locale: String, values: Map<String, String>, metadata: TranslationMetadata, layouts: KeyboardLayouts) :
+        this(locale, LocaleData(values, layouts), metadata, layouts)
     override fun translate(key: String): Optional<String> = Optional.ofNullable(data.values[key])
     override fun translations(): Map<String, String> = data.values
     override fun keys(): TranslationIndex<String> = data.keys
-    fun withSource(source: TranslationSource) = LoadedLocale(locale, data, metadata.copy(source = source))
+    fun withSource(source: TranslationSource) = LoadedLocale(locale, data, metadata.copy(source = source), layouts)
 
-    private class LocaleData(values: Map<String, String>) {
+    private class LocaleData(values: Map<String, String>, layouts: KeyboardLayouts) {
         val values = Collections.unmodifiableMap(LinkedHashMap(values))
-        val keys by lazy { TranslationIndexImpl.keys(this.values) }
+        val keys by lazy { TranslationIndexImpl.keys(this.values, layouts) }
     }
 }
 

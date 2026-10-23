@@ -13,6 +13,7 @@ dependencies {
     api(project(":modules:updates"))
     implementation(project(":modules:features:currency-runtime"))
     implementation(project(":modules:features:config-runtime"))
+    implementation(project(":modules:features:minecraft-localization-api"))
     implementation(libs.kotlin.stdlib)
     implementation(libs.gson)
     implementation(libs.snakeyaml)

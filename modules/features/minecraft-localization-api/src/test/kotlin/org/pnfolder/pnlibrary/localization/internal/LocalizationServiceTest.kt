@@ -7,6 +7,8 @@ import org.pnfolder.pnlibrary.common.minecraft.MinecraftVersion
 import org.pnfolder.pnlibrary.localization.TranslationException
 import org.pnfolder.pnlibrary.localization.TranslationRequest
 import org.pnfolder.pnlibrary.localization.TranslationSource
+import org.pnfolder.pnlibrary.localization.layout.KeyboardLayout
+import org.pnfolder.pnlibrary.localization.layout.KeyboardLayouts
 import java.io.ByteArrayOutputStream
 import java.io.IOException
 import java.net.URI
@@ -213,10 +215,36 @@ class LocalizationServiceTest {
         }
     }
 
-    private fun service(fixture: LocalizationHttpClient, executor: ExecutorService? = null) = DefaultMinecraftLocalization(
+    private fun service(
+        fixture: LocalizationHttpClient,
+        executor: ExecutorService? = null,
+        layouts: KeyboardLayouts = KeyboardLayouts.create(),
+    ) = DefaultMinecraftLocalization(
         directory, Duration.ofHours(1), Duration.ofSeconds(1), Duration.ofSeconds(1),
-        4, 2, executor, fixture,
+        4, 2, executor, fixture, layouts,
     )
+
+    @Test
+    fun `loaded tables search with the layouts of the service that loaded them`() {
+        val layouts = KeyboardLayouts.create()
+        service(Fixture(), layouts = layouts).use { service ->
+            val request = TranslationRequest.builder().version(MinecraftVersion.V1_21_4).locale("ru_ru").build()
+            val table = service.load(request).toCompletableFuture().join().locale("ru_ru")
+
+            assertSame(layouts, service.layouts)
+            assertSame(layouts, table.layouts)
+            assertSame(layouts, table.keys().layouts)
+        }
+        layouts.register(KeyboardLayout.of("service-test", "abcdefghijklmnopqrstuvwxyz012345678")).close()
+    }
+
+    @Test
+    fun `each service has its own layouts unless one is supplied to the builder`() {
+        val shared = KeyboardLayouts.create()
+        val first = org.pnfolder.pnlibrary.localization.MinecraftLocalization.builder().cacheDirectory(directory).build()
+        val second = org.pnfolder.pnlibrary.localization.MinecraftLocalization.builder().cacheDirectory(directory).layouts(shared).build()
+        first.use { second.use { assertSame(shared, second.layouts); assertNotSame(first.layouts, second.layouts) } }
+    }
 
     @Test
     fun `close settles queued metadata and locale operations without shutting down supplied executor`() {

@@ -7,6 +7,7 @@ import org.pnfolder.pnlibrary.api.diagnostics.DebugRequest
 import org.pnfolder.pnlibrary.api.diagnostics.DiagnosticReport
 import org.pnfolder.pnlibrary.api.diagnostics.DiagnosticsService
 import org.pnfolder.pnlibrary.api.events.EventService
+import org.pnfolder.pnlibrary.api.expansions.ExpansionManager
 import org.pnfolder.pnlibrary.api.logging.LoggingService
 import org.pnfolder.pnlibrary.api.metrics.MetricsService
 import org.pnfolder.pnlibrary.api.observability.ObservabilityService
@@ -64,6 +65,9 @@ interface PnLibrary : Closeable {
 
     /** Typed process-wide services with plugin-owned registrations. */
     val services: ServiceManager
+
+    /** Shared features, such as localization, that the library enables and disables as units. */
+    val expansions: ExpansionManager
 
     /** Mode-aware cross-platform event bus with plugin-ID-bound subscriptions. */
     val events: EventService

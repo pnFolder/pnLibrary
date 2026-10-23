@@ -72,13 +72,13 @@ interface BukkitLocaleTranslations : LocaleTranslations {
 private class BukkitLocaleTranslationsAdapter(
     private val delegate: LocaleTranslations,
 ) : BukkitLocaleTranslations, LocaleTranslations by delegate {
-    private val materialsIndex by lazy { bukkitMaterials(delegate.translations()) }
-    private val enchantmentsIndex by lazy { bukkitEnchantments(delegate.translations()) }
-    private val entitiesIndex by lazy { bukkitEntities(delegate.translations()) }
-    private val effectsIndex by lazy { bukkitEffects(delegate.translations()) }
-    private val biomesIndex by lazy { bukkitBiomes(delegate.translations()) }
-    private val colorsIndex by lazy { bukkitColors(delegate.translations()) }
-    private val gameModesIndex by lazy { bukkitGameModes(delegate.translations()) }
+    private val materialsIndex by lazy { bukkitMaterials(delegate.translations(), delegate.layouts) }
+    private val enchantmentsIndex by lazy { bukkitEnchantments(delegate.translations(), delegate.layouts) }
+    private val entitiesIndex by lazy { bukkitEntities(delegate.translations(), delegate.layouts) }
+    private val effectsIndex by lazy { bukkitEffects(delegate.translations(), delegate.layouts) }
+    private val biomesIndex by lazy { bukkitBiomes(delegate.translations(), delegate.layouts) }
+    private val colorsIndex by lazy { bukkitColors(delegate.translations(), delegate.layouts) }
+    private val gameModesIndex by lazy { bukkitGameModes(delegate.translations(), delegate.layouts) }
 
     override fun materials(): TranslationIndex<Material> = materialsIndex
     override fun enchantments(): TranslationIndex<Enchantment> = enchantmentsIndex

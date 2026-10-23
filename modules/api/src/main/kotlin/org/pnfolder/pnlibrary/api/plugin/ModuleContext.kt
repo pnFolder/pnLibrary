@@ -12,6 +12,7 @@ import org.pnfolder.pnlibrary.api.cooldowns.CooldownService
 import org.pnfolder.pnlibrary.api.diagnostics.DiagnosticRegistration
 import org.pnfolder.pnlibrary.api.downloads.DownloadRegistration
 import org.pnfolder.pnlibrary.api.events.EventScope
+import org.pnfolder.pnlibrary.api.expansions.ExpansionManager
 import org.pnfolder.pnlibrary.api.logging.PnLogger
 import org.pnfolder.pnlibrary.api.metrics.ErrorReporter
 import org.pnfolder.pnlibrary.api.metrics.MetricsController
@@ -20,6 +21,7 @@ import org.pnfolder.pnlibrary.api.services.ServiceManager
 import org.pnfolder.pnlibrary.api.tasks.TaskScope
 import org.pnfolder.pnlibrary.api.text.ComponentService
 import org.pnfolder.pnlibrary.api.updates.UpdateRegistration
+import org.pnfolder.pnlibrary.localization.MinecraftLocalization
 import java.util.Locale
 
 /** Owns the isolated pnLibrary capabilities of one logical plugin module. */
@@ -64,6 +66,22 @@ interface ModuleContext : AutoCloseable {
     val tasks: TaskScope
     /** Module-local service registry. */
     val services: ServiceManager
+    /**
+     * Official Minecraft translations, the only way a plugin reaches them. Loading is shared by every plugin, so a
+     * version and locale one plugin loaded is cached for all. Closing this view does nothing, and keyboard layouts
+     * registered through its `layouts` are removed when this module closes; no handle needs closing.
+     *
+     * Available on game servers only: on a proxy this throws [UnsupportedOperationException].
+     */
+    val localization: MinecraftLocalization
+        get() = throw UnsupportedOperationException("Minecraft localization is not available on this platform")
+    /**
+     * The library's expansions with ownership: what this module registers through it is disabled and unregistered when
+     * the module closes, with no handle to keep. Lookups read the same registry as `PnLibrary.expansions`, and ids stay
+     * unique across the library.
+     */
+    val expansions: ExpansionManager
+        get() = throw UnsupportedOperationException("Expansions are not available in this runtime")
     /** Module-bound structured logger. */
     val logger: PnLogger
     /** Module-bound configuration scope. */

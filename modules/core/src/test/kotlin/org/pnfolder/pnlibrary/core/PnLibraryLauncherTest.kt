@@ -2,16 +2,20 @@ package org.pnfolder.pnlibrary.core
 
 import org.junit.jupiter.api.Assertions.assertEquals
 import org.junit.jupiter.api.Assertions.assertNotNull
+import org.junit.jupiter.api.Assertions.assertNull
 import org.junit.jupiter.api.Assertions.assertSame
 import org.junit.jupiter.api.Assertions.assertTrue
 import org.junit.jupiter.api.Test
 import org.pnfolder.pnlibrary.api.diagnostics.DiagnosticContainer
+import org.pnfolder.pnlibrary.api.expansions.AbstractExpansion
+import org.pnfolder.pnlibrary.api.expansions.ExpansionState
 import org.pnfolder.pnlibrary.api.platform.PlatformType
 import org.pnfolder.pnlibrary.api.runtime.PnLibrary
 import org.pnfolder.pnlibrary.api.runtime.PnLibraryProvider
 import org.pnfolder.pnlibrary.core.diagnostics.DiagnosticsRegistry
 import org.pnfolder.pnlibrary.core.runtime.PnLibraryLauncher
 import org.pnfolder.pnlibrary.core.runtime.platform.toRuntimeContext
+import org.pnfolder.pnlibrary.localization.MinecraftLocalization
 import org.pnfolder.pnlibrary.spi.platform.PlatformAdapter
 import java.nio.file.Files
 import java.nio.file.Path
@@ -34,6 +38,42 @@ class PnLibraryLauncherTest {
         lib1.close()
         assertTrue(lib1.isClosed)
         assertEquals(null, PnLibraryProvider.getOrNull())
+    }
+
+    @Test
+    fun `the localization loader is neither a service nor a public expansion`() {
+        val library = PnLibraryLauncher.bootstrap(DummyPlugin("pnMarket"), DummyPlatformAdapter().toRuntimeContext())
+        try {
+            assertNull(library.services.get(MinecraftLocalization::class.java))
+            assertNull(library.expansions.get("localization"))
+        } finally {
+            library.close()
+        }
+    }
+
+    @Test
+    fun `the library wide expansions register and list and hold nothing of the library's own`() {
+        val library = PnLibraryLauncher.bootstrap(DummyPlugin("pnMarket"), DummyPlatformAdapter().toRuntimeContext())
+        try {
+            assertNull(library.expansions.get("localization"))
+            assertTrue(library.expansions.all().isEmpty())
+            assertNull(library.services.get(MinecraftLocalization::class.java))
+
+            val weather = object : AbstractExpansion("weather") {
+                override fun onEnable() = Unit
+                override fun onDisable() = Unit
+            }
+            val handle = library.expansions.register(weather)
+            assertSame(weather, library.expansions.get("weather"))
+            assertSame(weather, library.expansions.get(weather.javaClass))
+            assertEquals(ExpansionState.ENABLED, weather.state)
+
+            handle.close()
+            assertNull(library.expansions.get("weather"))
+            assertEquals(ExpansionState.DISABLED, weather.state)
+        } finally {
+            library.close()
+        }
     }
 
     @Test
