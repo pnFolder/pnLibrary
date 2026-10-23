@@ -38,7 +38,7 @@ object UpdateCatalogView {
         updatesOnly: Boolean,
         routes: UpdateCatalogRoutes,
         now: Instant = Instant.now(),
-        zone: ZoneId = org.pnfolder.pnlibrary.core.runtime.DisplayZone.zone,
+        zone: ZoneId = org.pnfolder.pnlibrary.core.ui.DisplayZone.zone,
     ): List<Component> = CatalogScreen(routes, now, zone).catalog(snapshots, page, updatesOnly)
 
     /**
@@ -56,7 +56,7 @@ object UpdateCatalogView {
         totalPages: Int? = null,
         product: String? = null,
         now: Instant = Instant.now(),
-        zone: ZoneId = org.pnfolder.pnlibrary.core.runtime.DisplayZone.zone,
+        zone: ZoneId = org.pnfolder.pnlibrary.core.ui.DisplayZone.zone,
     ): List<Component> = HistoryScreen(routes, now, zone).history(entries, page, totalPages, product)
 
     /** Renders retained rollback sets with their age; paths and file contents are never shown. */
@@ -65,7 +65,7 @@ object UpdateCatalogView {
         page: Int,
         routes: UpdateCatalogRoutes,
         now: Instant = Instant.now(),
-        zone: ZoneId = org.pnfolder.pnlibrary.core.runtime.DisplayZone.zone,
+        zone: ZoneId = org.pnfolder.pnlibrary.core.ui.DisplayZone.zone,
     ): List<Component> = BackupsScreen(routes, now, zone).backups(backups, page)
 
     /**
@@ -78,7 +78,7 @@ object UpdateCatalogView {
         routes: UpdateCatalogRoutes,
         heldUntil: Instant? = null,
         now: Instant = Instant.now(),
-        zone: ZoneId = org.pnfolder.pnlibrary.core.runtime.DisplayZone.zone,
+        zone: ZoneId = org.pnfolder.pnlibrary.core.ui.DisplayZone.zone,
     ): List<Component> = ProductScreens(routes, now, zone).info(snapshot, heldUntil)
 
     /** Renders the settings card of one component: channel, automatic download and a pause for a chosen period. */
@@ -87,7 +87,7 @@ object UpdateCatalogView {
         routes: UpdateCatalogRoutes,
         heldUntil: Instant? = null,
         now: Instant = Instant.now(),
-        zone: ZoneId = org.pnfolder.pnlibrary.core.runtime.DisplayZone.zone,
+        zone: ZoneId = org.pnfolder.pnlibrary.core.ui.DisplayZone.zone,
     ): List<Component> = ProductScreens(routes, now, zone).settings(snapshot, heldUntil)
 
     /**
@@ -102,7 +102,7 @@ object UpdateCatalogView {
         routes: UpdateCatalogRoutes,
         support: String? = null,
         now: Instant = Instant.now(),
-        zone: ZoneId = org.pnfolder.pnlibrary.core.runtime.DisplayZone.zone,
+        zone: ZoneId = org.pnfolder.pnlibrary.core.ui.DisplayZone.zone,
     ): List<Component> = CatalogScreen(routes, now, zone).status(facts, snapshots, support)
 
     /**
@@ -114,7 +114,7 @@ object UpdateCatalogView {
         routes: UpdateCatalogRoutes,
         support: String? = null,
         now: Instant = Instant.now(),
-        zone: ZoneId = org.pnfolder.pnlibrary.core.runtime.DisplayZone.zone,
+        zone: ZoneId = org.pnfolder.pnlibrary.core.ui.DisplayZone.zone,
     ): List<Component> = CatalogScreen(routes, now, zone).announcement(snapshots, support)
 
     /** Renders one short message of an update command: a mark in the tone's color, the text and its detail. */

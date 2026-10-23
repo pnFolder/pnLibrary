@@ -5,7 +5,7 @@ import org.pnfolder.pnlibrary.api.diagnostics.DiagnosticReport
 import org.pnfolder.pnlibrary.api.runtime.PnLibrary
 import org.pnfolder.pnlibrary.api.tasks.TaskExecution
 import org.pnfolder.pnlibrary.api.tasks.TaskSpec
-import org.pnfolder.pnlibrary.core.runtime.lifecycle.runtimeTaskScope
+import org.pnfolder.pnlibrary.core.lifecycle.runtimeTaskScope
 import java.time.Clock
 import java.util.concurrent.ConcurrentHashMap
 

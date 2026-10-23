@@ -5,8 +5,8 @@ import org.pnfolder.pnlibrary.api.commands.CommandDefinition
 import org.pnfolder.pnlibrary.api.commands.CommandRegistration
 import org.pnfolder.pnlibrary.api.commands.command
 import org.pnfolder.pnlibrary.api.runtime.PnLibrary
-import org.pnfolder.pnlibrary.core.runtime.lifecycle.mountableCommand
-import org.pnfolder.pnlibrary.core.runtime.lifecycle.registerRuntimeCommand
+import org.pnfolder.pnlibrary.core.lifecycle.mountableCommand
+import org.pnfolder.pnlibrary.core.lifecycle.registerRuntimeCommand
 import org.pnfolder.pnlibrary.core.updates.catalog.ProxyUpdateCommand
 
 /**

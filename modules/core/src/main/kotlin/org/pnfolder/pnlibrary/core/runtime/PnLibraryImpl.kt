@@ -31,10 +31,11 @@ import org.pnfolder.pnlibrary.core.runtime.details.RuntimeDiagnosticsAssembler
 import org.pnfolder.pnlibrary.core.runtime.details.RuntimeMetricsBootstrap
 import org.pnfolder.pnlibrary.core.runtime.details.RuntimeFeatureSet
 import org.pnfolder.pnlibrary.core.runtime.details.RuntimeJournal
-import org.pnfolder.pnlibrary.core.runtime.lifecycle.RuntimeResources
+import org.pnfolder.pnlibrary.core.lifecycle.RuntimeResources
+import org.pnfolder.pnlibrary.core.ui.DisplayZone
 import org.pnfolder.pnlibrary.core.runtime.lifecycle.RuntimeShutdownPlan
-import org.pnfolder.pnlibrary.core.runtime.lifecycle.journalJoinNotice
-import org.pnfolder.pnlibrary.core.runtime.lifecycle.registerRuntimeCommand
+import org.pnfolder.pnlibrary.core.lifecycle.journalJoinNotice
+import org.pnfolder.pnlibrary.core.lifecycle.registerRuntimeCommand
 import org.pnfolder.pnlibrary.core.runtime.platform.PlatformDataFolderResolver
 import org.pnfolder.pnlibrary.core.runtime.platform.PlatformRegistration
 import org.pnfolder.pnlibrary.core.runtime.platform.PlatformRuntimeContext

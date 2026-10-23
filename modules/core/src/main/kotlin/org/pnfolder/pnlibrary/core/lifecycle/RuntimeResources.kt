@@ -1,4 +1,4 @@
-package org.pnfolder.pnlibrary.core.runtime.lifecycle
+package org.pnfolder.pnlibrary.core.lifecycle
 
 import net.kyori.adventure.text.Component
 import org.pnfolder.pnlibrary.api.commands.CommandBuilder

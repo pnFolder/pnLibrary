@@ -5,7 +5,7 @@ import net.kyori.adventure.text.format.TextColor
 import org.pnfolder.pnlibrary.api.chat.ChatKit
 import org.pnfolder.pnlibrary.api.chat.ChatPalette
 import org.pnfolder.pnlibrary.common.text.RussianText
-import org.pnfolder.pnlibrary.core.runtime.DisplayZone
+import org.pnfolder.pnlibrary.core.ui.DisplayZone
 import java.time.format.DateTimeFormatter
 import java.util.Locale
 

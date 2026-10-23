@@ -18,8 +18,8 @@ import org.pnfolder.pnlibrary.api.tasks.TaskSpec
 import org.pnfolder.pnlibrary.api.updates.UpdateState
 import org.pnfolder.pnlibrary.bukkit.commands.BukkitControlCommand
 import org.pnfolder.pnlibrary.core.events.PlayerLifecyclePublisher
-import org.pnfolder.pnlibrary.core.runtime.lifecycle.journalJoinNotice
-import org.pnfolder.pnlibrary.core.runtime.lifecycle.runtimeTaskScope
+import org.pnfolder.pnlibrary.core.lifecycle.journalJoinNotice
+import org.pnfolder.pnlibrary.core.lifecycle.runtimeTaskScope
 import org.pnfolder.pnlibrary.core.updates.catalog.UpdateCatalogView
 import java.time.Duration
 import java.util.concurrent.CopyOnWriteArrayList

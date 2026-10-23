@@ -181,7 +181,7 @@ internal class UpdateServiceImpl(
                 if (freezes.clear(id)) "удержание обновлений снято" else null
             } else {
                 val until = freezes.freeze(id, duration)
-                "обновления удержаны до ${HOLD_FORMAT.format(until.atZone(org.pnfolder.pnlibrary.core.runtime.DisplayZone.zone))}"
+                "обновления удержаны до ${HOLD_FORMAT.format(until.atZone(org.pnfolder.pnlibrary.core.ui.DisplayZone.zone))}"
             }
         }
 
