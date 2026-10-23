@@ -1,7 +1,7 @@
 package org.pnfolder.pnlibrary.core.runtime
 
 import org.pnfolder.pnlibrary.api.runtime.PnLibraryConfig
-import org.pnfolder.pnlibrary.core.config.LibraryConfigFiles
+import org.pnfolder.pnlibrary.config.LibraryConfigFiles
 import java.nio.file.Path
 import java.util.function.Supplier
 

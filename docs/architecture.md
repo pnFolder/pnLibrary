@@ -52,6 +52,7 @@ Velocity требует 17, Paper Brigadier и FastStats для Velocity тре�
 | `modules/api` | публичный API: команды, задачи, события, конфиги, обновления, диагностика, метрики, чат |
 | `modules/runtime-spi` | контракт адаптера платформы и общие части адаптеров |
 | `modules/core` | реализация рантайма |
+| `modules/updates` | обновления: каталог релизов, выбор версий, установка, откат; от `core` не зависит, `core` подключает её и передаёт тему консоли |
 | `modules/console` | карточки и деревья для консоли (Java, без зависимостей) |
 | `modules/features/config-*` | типизированные YAML-конфиги: API и реализация, см. [configuration.md](configuration.md) |
 | `modules/features/currency-*` | валюта: API и реализация хранилищ, см. [currency.md](currency.md) |

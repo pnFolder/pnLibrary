@@ -1,6 +1,6 @@
 package org.pnfolder.pnlibrary.core.upload
 
-import org.pnfolder.pnlibrary.core.io.TextFiles
+import org.pnfolder.pnlibrary.common.io.TextFiles
 import java.io.IOException
 import java.net.URI
 import java.nio.charset.StandardCharsets

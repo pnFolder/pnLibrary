@@ -4,6 +4,7 @@ include(
     ":modules:common",
     ":modules:api",
     ":modules:core",
+    ":modules:updates",
     ":modules:runtime-spi",
     ":modules:features:config-api",
     ":modules:features:config-runtime",

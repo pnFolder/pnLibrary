@@ -4,7 +4,7 @@ import com.google.gson.Gson
 import com.google.gson.JsonParseException
 import com.google.gson.reflect.TypeToken
 import org.pnfolder.pnlibrary.common.io.AtomicFiles
-import org.pnfolder.pnlibrary.core.io.TextFiles
+import org.pnfolder.pnlibrary.common.io.TextFiles
 import java.io.IOException
 import java.net.URI
 import java.nio.charset.StandardCharsets

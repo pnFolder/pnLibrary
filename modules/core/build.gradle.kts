@@ -7,74 +7,10 @@ plugins {
 }
 base { archivesName = "${rootProject.property("pnlibrary.name")}-core" }
 
-// The packaged-JAR process test has its own distribution verification task.
-tasks.named<Test>("test") { exclude("**/OfflineUpdaterJarTest.class", "**/NativeProxyUpdateTest.class") }
-
-tasks.register<Test>("verifyNativeProxyUpdates") {
-    group = "verification"
-    description = "Runs isolated real Velocity and Bungee update/restart/configuration rollback tests"
-    dependsOn("testClasses", ":distribution:shadowVelocity", ":distribution:shadowBungee", ":distribution:shadowUpdater")
-    mustRunAfter(":distribution:copyDeveloperArtifacts")
-    testClassesDirs = sourceSets["test"].output.classesDirs
-    classpath = sourceSets["test"].runtimeClasspath
-    val nativePlatform = providers.gradleProperty("nativePlatform").orElse("all").get()
-    require(nativePlatform in listOf("all", "velocity", "bungee")) { "nativePlatform must be all, velocity or bungee" }
-    useJUnitPlatform {
-        excludeTags("paper")
-        if (nativePlatform != "all") includeTags(nativePlatform)
-    }
-    include("**/NativeProxyUpdateTest.class")
-    outputs.upToDateWhen { false }
-    systemProperty("pnlibrary.native.fixtures", rootProject.layout.buildDirectory.dir("update-catalog-native").get().asFile.absolutePath)
-    systemProperty("pnlibrary.native.version", rootProject.version.toString())
-    systemProperty("pnlibrary.native.distribution", project(":distribution").layout.buildDirectory.dir("libs").get().asFile.absolutePath)
-    providers.gradleProperty("nativeJavaExecutable").orNull?.let { systemProperty("pnlibrary.native.javaExecutable", it) }
-    listOf("velocityServerJar", "bungeeServerJar").filter { nativePlatform == "all" || it.startsWith(nativePlatform) }.forEach { name ->
-        val server = providers.gradleProperty(name)
-        if (server.isPresent) { inputs.file(server); systemProperty("pnlibrary.native.$name", server.get()) }
-        doFirst { require(server.isPresent) { "Supply -P$name=<existing server JAR>; no server download or existing server mutation is performed" } }
-    }
-}
-
-tasks.register<Test>("verifyNativeBukkitUpdates") {
-    group = "verification"
-    description = "Runs an isolated Paper update/restart/configuration rollback test with an explicitly supplied accepted EULA"
-    dependsOn("testClasses", ":distribution:shadowBukkit", ":distribution:shadowUpdater")
-    mustRunAfter(":distribution:copyDeveloperArtifacts")
-    testClassesDirs = sourceSets["test"].output.classesDirs
-    classpath = sourceSets["test"].runtimeClasspath
-    useJUnitPlatform { includeTags("paper") }
-    include("**/NativeProxyUpdateTest.class")
-    outputs.upToDateWhen { false }
-    systemProperty("pnlibrary.native.fixtures", rootProject.layout.buildDirectory.dir("update-catalog-native").get().asFile.absolutePath)
-    systemProperty("pnlibrary.native.version", rootProject.version.toString())
-    systemProperty("pnlibrary.native.distribution", project(":distribution").layout.buildDirectory.dir("libs").get().asFile.absolutePath)
-    systemProperty("pnlibrary.native.bukkitPlatform", providers.gradleProperty("bukkitPlatform").orElse("paper").get())
-    providers.gradleProperty("nativeJavaExecutable").orNull?.let { systemProperty("pnlibrary.native.javaExecutable", it) }
-    listOf("paperServerJar", "paperEulaFile").forEach { name ->
-        val source = providers.gradleProperty(name)
-        if (source.isPresent) { inputs.file(source); systemProperty("pnlibrary.native.$name", source.get()) }
-        doFirst { require(source.isPresent) { "Supply -P$name=<existing file>; the test cannot accept the Minecraft EULA for you" } }
-    }
-}
-
-tasks.register<Test>("verifyUpdaterProcess") {
-    group = "verification"
-    description = "Tests the executable updater in separate JVM processes"
-    dependsOn(":distribution:shadowUpdater", "testClasses")
-    mustRunAfter(":distribution:copyDeveloperArtifacts")
-    testClassesDirs = sourceSets["test"].output.classesDirs
-    classpath = sourceSets["test"].runtimeClasspath
-    useJUnitPlatform()
-    include("**/OfflineUpdaterJarTest.class")
-    val updaterJar = project(":distribution").layout.buildDirectory.file("libs/pnLibrary-updater-${rootProject.version}.jar")
-    inputs.file(updaterJar)
-    systemProperty("pnlibrary.updater.jar", updaterJar.get().asFile.absolutePath)
-}
-
 dependencies {
     implementation(project(":modules:api"))
     implementation(project(":modules:runtime-spi"))
+    api(project(":modules:updates"))
     implementation(project(":modules:features:currency-runtime"))
     implementation(project(":modules:features:config-runtime"))
     implementation(libs.kotlin.stdlib)

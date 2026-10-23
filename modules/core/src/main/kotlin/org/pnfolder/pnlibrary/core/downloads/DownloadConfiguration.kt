@@ -1,7 +1,7 @@
 package org.pnfolder.pnlibrary.core.downloads
 
 import org.pnfolder.pnlibrary.api.downloads.DownloadDestination
-import org.pnfolder.pnlibrary.core.config.LibraryConfigFiles
+import org.pnfolder.pnlibrary.config.LibraryConfigFiles
 import java.nio.file.Path
 import java.util.function.Supplier
 
