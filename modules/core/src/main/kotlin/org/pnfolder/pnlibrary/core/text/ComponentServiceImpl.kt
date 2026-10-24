@@ -15,6 +15,7 @@ import org.pnfolder.pnlibrary.api.text.ComponentService
 import org.pnfolder.pnlibrary.api.text.ComponentTemplate
 import java.util.Collections
 import java.util.UUID
+import java.util.concurrent.CompletionStage
 import java.util.concurrent.atomic.AtomicLong
 
 /** Serializes, deserializes and renders components for one plugin with optional caching. */
@@ -78,8 +79,8 @@ internal class ComponentServiceImpl(
         private var playerId: UUID? = null
         override fun value(name: String, value: Any?) = apply { values[name] = value }
         override fun player(playerId: UUID) = apply { this.playerId = playerId }
-        override fun render(): Component = serializer(serializerType)
-            .deserialize(placeholders.render(source, playerId, values).toCompletableFuture().join())
+        override fun renderAsync(): CompletionStage<Component> = placeholders.render(source, playerId, values)
+            .thenApply(serializer(serializerType)::deserialize)
     }
 
     private fun serializerFor(type: ComponentSerializerType): ComponentSerializer = object : ComponentSerializer {

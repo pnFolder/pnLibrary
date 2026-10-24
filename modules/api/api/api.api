@@ -3469,7 +3469,8 @@ public abstract interface class org/pnfolder/pnlibrary/api/text/ComponentService
 
 public abstract interface class org/pnfolder/pnlibrary/api/text/ComponentTemplate {
 	public abstract fun player (Ljava/util/UUID;)Lorg/pnfolder/pnlibrary/api/text/ComponentTemplate;
-	public abstract fun render ()Lnet/kyori/adventure/text/Component;
+	public fun render ()Lnet/kyori/adventure/text/Component;
+	public abstract fun renderAsync ()Ljava/util/concurrent/CompletionStage;
 	public abstract fun value (Ljava/lang/String;Ljava/lang/Object;)Lorg/pnfolder/pnlibrary/api/text/ComponentTemplate;
 }
 
