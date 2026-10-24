@@ -30,7 +30,7 @@ data class CommandAction(
     override fun execute(context: ActionContext) {
         val line = context.format(command).trim().removePrefix("/")
         if (line.isEmpty()) return
-        if (!context.player.runCommand(line, runner == CommandRunner.CONSOLE)) {
+        if (!context.player.runCommand(line, runner == CommandRunner.CONSOLE).isDelivered) {
             context.logger.warning("Command action was not accepted by the current platform: $line")
         }
     }

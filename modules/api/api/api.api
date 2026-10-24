@@ -523,6 +523,43 @@ public abstract interface class org/pnfolder/pnlibrary/api/audiences/AudienceSer
 	public abstract fun sender (Ljava/lang/Object;)Lorg/pnfolder/pnlibrary/api/audiences/AudienceSender;
 }
 
+public abstract interface class org/pnfolder/pnlibrary/api/audiences/Delivery {
+	public static final field Companion Lorg/pnfolder/pnlibrary/api/audiences/Delivery$Companion;
+	public static fun combine (Ljava/lang/Iterable;)Lorg/pnfolder/pnlibrary/api/audiences/Delivery;
+	public fun isDelivered ()Z
+	public static fun of (Z)Lorg/pnfolder/pnlibrary/api/audiences/Delivery;
+}
+
+public final class org/pnfolder/pnlibrary/api/audiences/Delivery$Companion {
+	public final fun combine (Ljava/lang/Iterable;)Lorg/pnfolder/pnlibrary/api/audiences/Delivery;
+	public final fun of (Z)Lorg/pnfolder/pnlibrary/api/audiences/Delivery;
+}
+
+public final class org/pnfolder/pnlibrary/api/audiences/Delivery$Delivered : org/pnfolder/pnlibrary/api/audiences/Delivery {
+	public static final field INSTANCE Lorg/pnfolder/pnlibrary/api/audiences/Delivery$Delivered;
+	public fun equals (Ljava/lang/Object;)Z
+	public fun hashCode ()I
+	public fun toString ()Ljava/lang/String;
+}
+
+public final class org/pnfolder/pnlibrary/api/audiences/Delivery$Failed : org/pnfolder/pnlibrary/api/audiences/Delivery {
+	public fun <init> (Ljava/lang/Throwable;)V
+	public final fun component1 ()Ljava/lang/Throwable;
+	public final fun copy (Ljava/lang/Throwable;)Lorg/pnfolder/pnlibrary/api/audiences/Delivery$Failed;
+	public static synthetic fun copy$default (Lorg/pnfolder/pnlibrary/api/audiences/Delivery$Failed;Ljava/lang/Throwable;ILjava/lang/Object;)Lorg/pnfolder/pnlibrary/api/audiences/Delivery$Failed;
+	public fun equals (Ljava/lang/Object;)Z
+	public final fun getCause ()Ljava/lang/Throwable;
+	public fun hashCode ()I
+	public fun toString ()Ljava/lang/String;
+}
+
+public final class org/pnfolder/pnlibrary/api/audiences/Delivery$Unsupported : org/pnfolder/pnlibrary/api/audiences/Delivery {
+	public static final field INSTANCE Lorg/pnfolder/pnlibrary/api/audiences/Delivery$Unsupported;
+	public fun equals (Ljava/lang/Object;)Z
+	public fun hashCode ()I
+	public fun toString ()Ljava/lang/String;
+}
+
 public final class org/pnfolder/pnlibrary/api/audiences/ItemQuery {
 	public fun <init> (Ljava/lang/String;Ljava/lang/String;Ljava/lang/String;Ljava/lang/String;Z)V
 	public synthetic fun <init> (Ljava/lang/String;Ljava/lang/String;Ljava/lang/String;Ljava/lang/String;ZILkotlin/jvm/internal/DefaultConstructorMarker;)V
@@ -547,9 +584,9 @@ public abstract interface class org/pnfolder/pnlibrary/api/audiences/LibraryAudi
 	public static final field Companion Lorg/pnfolder/pnlibrary/api/audiences/LibraryAudience$Companion;
 	public abstract fun actionBar (Lnet/kyori/adventure/text/Component;)V
 	public static fun dynamic (Ljava/util/function/Supplier;)Lorg/pnfolder/pnlibrary/api/audiences/LibraryAudience;
-	public abstract fun playSound (Lnet/kyori/adventure/sound/Sound;)Z
+	public abstract fun playSound (Lnet/kyori/adventure/sound/Sound;)Lorg/pnfolder/pnlibrary/api/audiences/Delivery;
 	public abstract fun sendMessage (Lnet/kyori/adventure/text/Component;)V
-	public fun showTitle (Lnet/kyori/adventure/text/Component;Lnet/kyori/adventure/text/Component;Ljava/time/Duration;Ljava/time/Duration;Ljava/time/Duration;)Z
+	public fun showTitle (Lnet/kyori/adventure/text/Component;Lnet/kyori/adventure/text/Component;Ljava/time/Duration;Ljava/time/Duration;Ljava/time/Duration;)Lorg/pnfolder/pnlibrary/api/audiences/Delivery;
 }
 
 public final class org/pnfolder/pnlibrary/api/audiences/LibraryAudience$Companion {
@@ -557,7 +594,7 @@ public final class org/pnfolder/pnlibrary/api/audiences/LibraryAudience$Companio
 }
 
 public abstract interface class org/pnfolder/pnlibrary/api/audiences/LibraryPlayer : org/pnfolder/pnlibrary/api/audiences/AudienceSender {
-	public abstract fun applyEffect (Lorg/pnfolder/pnlibrary/api/audiences/PlayerEffect;)Z
+	public abstract fun applyEffect (Lorg/pnfolder/pnlibrary/api/audiences/PlayerEffect;)Lorg/pnfolder/pnlibrary/api/audiences/Delivery;
 	public fun countItems (Lorg/pnfolder/pnlibrary/api/audiences/ItemQuery;)Ljava/lang/Integer;
 	public fun distanceTo (Ljava/lang/String;DDD)Ljava/lang/Double;
 	public fun experience (Z)Ljava/lang/Double;
@@ -568,8 +605,8 @@ public abstract interface class org/pnfolder/pnlibrary/api/audiences/LibraryPlay
 	public abstract fun hasPermission (Ljava/lang/String;)Z
 	public fun isConsole ()Z
 	public fun isPlayer ()Z
-	public fun runCommand (Ljava/lang/String;Z)Z
-	public abstract fun spawnParticle (Lorg/pnfolder/pnlibrary/api/audiences/PlayerParticle;)Z
+	public fun runCommand (Ljava/lang/String;Z)Lorg/pnfolder/pnlibrary/api/audiences/Delivery;
+	public abstract fun spawnParticle (Lorg/pnfolder/pnlibrary/api/audiences/PlayerParticle;)Lorg/pnfolder/pnlibrary/api/audiences/Delivery;
 }
 
 public final class org/pnfolder/pnlibrary/api/audiences/PlayerCapability : java/lang/Enum {
@@ -1361,7 +1398,7 @@ public abstract interface class org/pnfolder/pnlibrary/api/commands/CommandSende
 	public fun getSupportsInteraction ()Z
 	public abstract fun hasPermission (Ljava/lang/String;)Z
 	public abstract fun isConsole ()Z
-	public fun playSound (Lnet/kyori/adventure/sound/Sound;)Z
+	public fun playSound (Lnet/kyori/adventure/sound/Sound;)Lorg/pnfolder/pnlibrary/api/audiences/Delivery;
 	public abstract fun send (Lnet/kyori/adventure/text/Component;)V
 	public fun sendMessage (Lnet/kyori/adventure/text/Component;)V
 }

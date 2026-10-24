@@ -41,18 +41,18 @@ interface LibraryPlayer : AudienceSender {
     override fun hasPermission(permission: String): Boolean
 
     /** Applies a temporary status effect to the player. */
-    fun applyEffect(effect: PlayerEffect): Boolean
+    fun applyEffect(effect: PlayerEffect): Delivery
 
     /** Spawns a particle effect around the player. */
-    fun spawnParticle(particle: PlayerParticle): Boolean
+    fun spawnParticle(particle: PlayerParticle): Delivery
 
     /**
      * Runs [command] as the player, or as the console when [asConsole] is `true`.
      *
      * @param command command line without the leading slash
-     * @return whether the platform accepted the command; `false` when it cannot run commands
+     * @return [Delivery.Unsupported] by default, for platforms that cannot run commands
      */
-    fun runCommand(command: String, asConsole: Boolean): Boolean = false
+    fun runCommand(command: String, asConsole: Boolean): Delivery = Delivery.Unsupported
 
     /**
      * Returns how many items matching [query] the player carries, or `null` when the platform has

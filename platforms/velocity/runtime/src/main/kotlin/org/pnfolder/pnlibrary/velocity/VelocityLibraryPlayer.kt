@@ -3,6 +3,7 @@ package org.pnfolder.pnlibrary.velocity
 import com.velocitypowered.api.proxy.Player
 import net.kyori.adventure.sound.Sound
 import net.kyori.adventure.text.Component
+import org.pnfolder.pnlibrary.api.audiences.Delivery
 import org.pnfolder.pnlibrary.api.audiences.LibraryPlayer
 import org.pnfolder.pnlibrary.api.audiences.PlayerCapability
 import org.pnfolder.pnlibrary.api.audiences.PlayerEffect
@@ -40,17 +41,17 @@ internal class VelocityLibraryPlayer private constructor(
     /** Sends an Adventure action bar message to the player. */
     override fun actionBar(text: Component) = player.sendActionBar(text)
 
-    /** Plays a native sound and reports successful dispatch. */
-    override fun playSound(sound: Sound): Boolean {
+    /** Plays a native sound and reports it as delivered. */
+    override fun playSound(sound: Sound): Delivery {
         player.playSound(sound)
-        return true
+        return Delivery.Delivered
     }
 
     /** Velocity cannot apply server-side potion effects through its proxy API. */
-    override fun applyEffect(effect: PlayerEffect): Boolean = false
+    override fun applyEffect(effect: PlayerEffect): Delivery = Delivery.Unsupported
 
     /** Velocity cannot spawn server-side particles through its proxy API. */
-    override fun spawnParticle(particle: PlayerParticle): Boolean = false
+    override fun spawnParticle(particle: PlayerParticle): Delivery = Delivery.Unsupported
 
     companion object {
         /** Wraps [player] in the platform-neutral player contract. */

@@ -10,6 +10,7 @@ import org.bukkit.command.TabCompleter
 import org.bukkit.plugin.Plugin
 import org.bukkit.plugin.java.JavaPlugin
 import org.pnfolder.pnlibrary.api.audiences.AudienceSender
+import org.pnfolder.pnlibrary.api.audiences.Delivery
 import org.pnfolder.pnlibrary.api.commands.CommandContext
 import org.pnfolder.pnlibrary.api.commands.CommandDefinition
 import org.pnfolder.pnlibrary.api.commands.CommandSender
@@ -73,7 +74,7 @@ internal class BukkitCommandSender(
 
     override fun actionBar(text: Component) = audience.actionBar(text)
 
-    override fun playSound(sound: Sound): Boolean = audience.playSound(sound)
+    override fun playSound(sound: Sound): Delivery = audience.playSound(sound)
 }
 
 /** Native registration boundary used by the runtime and command tests. */

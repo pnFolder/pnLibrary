@@ -6,6 +6,7 @@ import com.velocitypowered.api.proxy.ProxyServer
 import net.kyori.adventure.sound.Sound
 import net.kyori.adventure.text.Component
 import org.pnfolder.pnlibrary.api.audiences.AudienceSender
+import org.pnfolder.pnlibrary.api.audiences.Delivery
 import org.pnfolder.pnlibrary.api.commands.CommandContext
 import org.pnfolder.pnlibrary.api.commands.CommandDefinition
 import org.pnfolder.pnlibrary.api.commands.CommandSender
@@ -55,7 +56,7 @@ private class VelocityCommandSender(
     // Explicit overrides preserve native delivery instead of CommandSender's fallback defaults.
     override fun sendMessage(text: Component) = audience.sendMessage(text)
     override fun actionBar(text: Component) = audience.actionBar(text)
-    override fun playSound(sound: Sound): Boolean = audience.playSound(sound)
+    override fun playSound(sound: Sound): Delivery = audience.playSound(sound)
 }
 
 /** Default registrar backed by Velocity's command manager. */

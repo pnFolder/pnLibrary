@@ -3,6 +3,7 @@ package org.pnfolder.pnlibrary.api.commands
 import net.kyori.adventure.sound.Sound
 import net.kyori.adventure.text.Component
 import org.pnfolder.pnlibrary.api.audiences.AudienceSender
+import org.pnfolder.pnlibrary.api.audiences.Delivery
 
 /** Platform-neutral command sender exposed to command handlers. */
 interface CommandSender : AudienceSender {
@@ -36,6 +37,6 @@ interface CommandSender : AudienceSender {
     /** Falls back to chat output when the platform has no specialized action bar adapter. */
     override fun actionBar(text: Component) = send(text)
 
-    /** Returns `false` because generic command senders cannot play sounds. */
-    override fun playSound(sound: Sound): Boolean = false
+    /** Returns [Delivery.Unsupported] because generic command senders cannot play sounds. */
+    override fun playSound(sound: Sound): Delivery = Delivery.Unsupported
 }

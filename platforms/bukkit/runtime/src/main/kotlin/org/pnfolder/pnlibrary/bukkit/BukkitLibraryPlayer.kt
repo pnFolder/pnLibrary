@@ -10,6 +10,7 @@ import org.bukkit.entity.Player
 import org.bukkit.inventory.ItemStack
 import org.bukkit.potion.PotionEffect
 import org.bukkit.potion.PotionEffectType
+import org.pnfolder.pnlibrary.api.audiences.Delivery
 import org.pnfolder.pnlibrary.api.audiences.ItemQuery
 import org.pnfolder.pnlibrary.api.audiences.LibraryPlayer
 import org.pnfolder.pnlibrary.api.audiences.PlayerCapability
@@ -47,15 +48,15 @@ internal class BukkitLibraryPlayer(
     }
 
     /** Plays a sound, falling back to the native Bukkit API where needed. */
-    override fun playSound(sound: Sound): Boolean = audiences.playSound(player, sound)
+    override fun playSound(sound: Sound): Delivery = audiences.playSound(player, sound)
 
     /** Shows a title through the version-safe audience transport. */
-    override fun showTitle(title: Component, subtitle: Component, fadeIn: Duration, stay: Duration, fadeOut: Duration): Boolean =
+    override fun showTitle(title: Component, subtitle: Component, fadeIn: Duration, stay: Duration, fadeOut: Duration): Delivery =
         audiences.showTitle(player, Title.title(title, subtitle, Title.Times.times(fadeIn, stay, fadeOut)))
 
     /** Applies a potion effect using the best constructor supported by this server. */
-    override fun applyEffect(effect: PlayerEffect): Boolean {
-        val type = PotionEffectType.getByName(effect.key.uppercase()) ?: return false
+    override fun applyEffect(effect: PlayerEffect): Delivery {
+        val type = PotionEffectType.getByName(effect.key.uppercase()) ?: return Delivery.Unsupported
         val ticks = (effect.duration.toMillis() / MILLIS_PER_TICK)
             .coerceIn(1L, Int.MAX_VALUE.toLong())
             .toInt()
@@ -69,13 +70,13 @@ internal class BukkitLibraryPlayer(
                 Boolean::class.javaPrimitiveType,
             ).newInstance(type, ticks, effect.amplifier, effect.ambient, effect.particles, effect.icon)
         }.getOrElse { PotionEffect(type, ticks, effect.amplifier, effect.ambient) }
-        return player.addPotionEffect(configured, true)
+        return Delivery.of(player.addPotionEffect(configured, true))
     }
 
     /** Dispatches a command as the player or as the console. */
-    override fun runCommand(command: String, asConsole: Boolean): Boolean {
+    override fun runCommand(command: String, asConsole: Boolean): Delivery {
         val sender = if (asConsole) player.server.consoleSender else player
-        return player.server.dispatchCommand(sender, command)
+        return Delivery.of(player.server.dispatchCommand(sender, command))
     }
 
     /** Counts items in the main inventory and hotbar that fit [query]; unknown materials count as zero. */
@@ -116,15 +117,15 @@ internal class BukkitLibraryPlayer(
 
     private fun colored(text: String): String = ChatColor.translateAlternateColorCodes('&', text)
 
-    /** Renders a supported particle, returning false when the server lacks the required API. */
-    override fun spawnParticle(particle: PlayerParticle): Boolean {
-        val type = runCatching { Class.forName("org.bukkit.Particle") }.getOrNull() ?: return false
+    /** Renders a supported particle, returning [Delivery.Unsupported] when the server lacks the required API. */
+    override fun spawnParticle(particle: PlayerParticle): Delivery {
+        val type = runCatching { Class.forName("org.bukkit.Particle") }.getOrNull() ?: return Delivery.Unsupported
         val constant = type.enumConstants.firstOrNull {
             (it as Enum<*>).name.equals(particle.key, ignoreCase = true)
-        } ?: return false
+        } ?: return Delivery.Unsupported
         val method = player.javaClass.methods.firstOrNull {
             it.name == "spawnParticle" && it.parameterTypes.size == 7 && it.parameterTypes[0] == type
-        } ?: return false
+        } ?: return Delivery.Unsupported
         return runCatching {
             method.invoke(
                 player,
@@ -137,10 +138,10 @@ internal class BukkitLibraryPlayer(
                 particle.speed,
             )
         }.fold(
-            onSuccess = { true },
+            onSuccess = { Delivery.Delivered },
             onFailure = { error ->
                 rethrowFatal(error)
-                false
+                Delivery.Failed(error)
             },
         )
     }

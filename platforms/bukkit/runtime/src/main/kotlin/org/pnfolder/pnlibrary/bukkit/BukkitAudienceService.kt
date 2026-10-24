@@ -8,6 +8,7 @@ import net.kyori.adventure.text.serializer.legacy.LegacyComponentSerializer
 import net.kyori.adventure.title.Title
 import org.bukkit.entity.Player
 import org.bukkit.plugin.Plugin
+import org.pnfolder.pnlibrary.api.audiences.Delivery
 import org.pnfolder.pnlibrary.api.audiences.LibraryAudience
 import org.pnfolder.pnlibrary.api.audiences.LibraryPlayer
 import java.lang.reflect.Array
@@ -103,40 +104,36 @@ internal class BukkitAudienceService internal constructor(plugin: Plugin, privat
     }
 
     /** Tries Adventure sound delivery, then the native Bukkit sound API. */
-    internal fun playSound(player: Player, sound: Sound): Boolean {
+    internal fun playSound(player: Player, sound: Sound): Delivery {
         if (player is Audience && !fallbackOnly.get()) {
-            try { player.playSound(sound); return true } catch (error: Throwable) { rethrowFatal(error) }
+            try { player.playSound(sound); return Delivery.Delivered } catch (error: Throwable) { rethrowFatal(error) }
         }
         val provider = audiences
         if (provider != null && !fallbackOnly.get()) {
             try {
                 provider.player(player.uniqueId).playSound(sound)
-                return true
+                return Delivery.Delivered
             } catch (error: Throwable) {
                 rethrowFatal(error)
             }
         }
-        return runCatching {
-            player.playSound(player.location, sound.name().asString(), sound.volume(), sound.pitch())
-        }.isSuccess
+        return deliver { player.playSound(player.location, sound.name().asString(), sound.volume(), sound.pitch()) }
     }
 
     /** Shows a title through Adventure when available, otherwise through the legacy two-line API. */
     @Suppress("DEPRECATION")
-    internal fun showTitle(player: Player, title: Title): Boolean {
+    internal fun showTitle(player: Player, title: Title): Delivery {
         val provider = audiences
         if (!fallbackOnly.get() && (player is Audience || provider != null)) {
             try {
                 val recipient = player as? Audience ?: requireNotNull(provider).player(player.uniqueId)
                 recipient.showTitle(title)
-                return true
+                return Delivery.Delivered
             } catch (error: Throwable) {
                 rethrowFatal(error)
             }
         }
-        return runCatching {
-            player.sendTitle(LEGACY.serialize(title.title()), LEGACY.serialize(title.subtitle()))
-        }.isSuccess
+        return deliver { player.sendTitle(LEGACY.serialize(title.title()), LEGACY.serialize(title.subtitle())) }
     }
 
     /** Releases the underlying Adventure audience provider when one was created. */
@@ -159,6 +156,15 @@ internal class BukkitAudienceService internal constructor(plugin: Plugin, privat
 
         fun rethrowFatal(error: Throwable) {
             if (error is Error) throw error
+        }
+
+        /** Runs the last-resort native call, keeping the platform's error instead of a bare failure flag. */
+        inline fun deliver(send: () -> Unit): Delivery = try {
+            send()
+            Delivery.Delivered
+        } catch (error: Throwable) {
+            rethrowFatal(error)
+            Delivery.Failed(error)
         }
     }
 }

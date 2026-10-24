@@ -6,6 +6,7 @@ import net.md_5.bungee.api.plugin.Command
 import net.md_5.bungee.api.plugin.Plugin
 import net.md_5.bungee.api.plugin.TabExecutor
 import org.pnfolder.pnlibrary.api.audiences.AudienceSender
+import org.pnfolder.pnlibrary.api.audiences.Delivery
 import org.pnfolder.pnlibrary.api.commands.CommandContext
 import org.pnfolder.pnlibrary.api.commands.CommandDefinition
 import org.pnfolder.pnlibrary.api.commands.CommandSender
@@ -60,7 +61,7 @@ private class BungeeCommandSender(
 
     override fun actionBar(text: Component) = audience.actionBar(text)
 
-    override fun playSound(sound: Sound): Boolean = audience.playSound(sound)
+    override fun playSound(sound: Sound): Delivery = audience.playSound(sound)
 }
 
 /** Installs command and tab-completion handlers in the proxy plugin manager. */

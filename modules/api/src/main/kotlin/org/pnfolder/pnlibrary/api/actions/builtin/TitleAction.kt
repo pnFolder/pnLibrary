@@ -34,13 +34,13 @@ data class TitleAction(
     }
 
     override fun execute(context: ActionContext) {
-        val shown = context.target(target).showTitle(
+        val delivery = context.target(target).showTitle(
             context.component(title, serializerType),
             context.component(subtitle, serializerType),
             fadeIn,
             stay,
             fadeOut,
         )
-        if (!shown) context.logger.warning("Title action is unsupported by the current platform")
+        if (!delivery.isDelivered) context.logger.warning("Title action is unsupported by the current platform")
     }
 }

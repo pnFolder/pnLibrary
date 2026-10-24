@@ -29,10 +29,9 @@ interface LibraryAudience {
     /**
      * Plays a sound for every receiver in this audience.
      *
-     * @return `true` when the current platform accepted the sound request for
-     * every receiver, or `false` when at least one receiver/platform rejected it
+     * @return [Delivery.Delivered] when the platform accepted the sound for every receiver, otherwise why not
      */
-    fun playSound(sound: Sound): Boolean
+    fun playSound(sound: Sound): Delivery
 
     /**
      * Shows a title and subtitle to every receiver in this audience.
@@ -42,10 +41,11 @@ interface LibraryAudience {
      * @param fadeIn how long the title takes to appear
      * @param stay how long it stays fully visible
      * @param fadeOut how long it takes to disappear
-     * @return `true` when the platform accepted the title for every receiver; `false` by default, for
-     * platforms that cannot show titles
+     * @return [Delivery.Delivered] when the platform accepted the title for every receiver; [Delivery.Unsupported]
+     * by default, for platforms that cannot show titles
      */
-    fun showTitle(title: Component, subtitle: Component, fadeIn: Duration, stay: Duration, fadeOut: Duration): Boolean = false
+    fun showTitle(title: Component, subtitle: Component, fadeIn: Duration, stay: Duration, fadeOut: Duration): Delivery =
+        Delivery.Unsupported
 
     /** Factories for audiences whose membership is computed on demand. */
     companion object {
@@ -70,10 +70,8 @@ interface LibraryAudience {
                     players.get().forEach { player -> player.actionBar(text) }
                 }
 
-                override fun playSound(sound: Sound): Boolean =
-                    players.get().fold(true) { accepted, player ->
-                        player.playSound(sound) && accepted
-                    }
+                override fun playSound(sound: Sound): Delivery =
+                    Delivery.combine(players.get().map { player -> player.playSound(sound) })
 
                 override fun showTitle(
                     title: Component,
@@ -81,9 +79,9 @@ interface LibraryAudience {
                     fadeIn: Duration,
                     stay: Duration,
                     fadeOut: Duration,
-                ): Boolean = players.get().fold(true) { accepted, player ->
-                    player.showTitle(title, subtitle, fadeIn, stay, fadeOut) && accepted
-                }
+                ): Delivery = Delivery.combine(
+                    players.get().map { player -> player.showTitle(title, subtitle, fadeIn, stay, fadeOut) },
+                )
             }
     }
 }

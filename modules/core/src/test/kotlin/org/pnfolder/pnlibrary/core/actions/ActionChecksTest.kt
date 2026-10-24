@@ -15,6 +15,7 @@ import org.pnfolder.pnlibrary.api.actions.builtin.CommandRunner
 import org.pnfolder.pnlibrary.api.actions.builtin.IfAction
 import org.pnfolder.pnlibrary.api.actions.builtin.RequireAction
 import org.pnfolder.pnlibrary.api.actions.builtin.StopAction
+import org.pnfolder.pnlibrary.api.audiences.Delivery
 import org.pnfolder.pnlibrary.api.audiences.ItemQuery
 import org.pnfolder.pnlibrary.api.audiences.LibraryAudience
 import org.pnfolder.pnlibrary.api.audiences.LibraryPlayer
@@ -307,12 +308,12 @@ class ActionChecksTest {
         override fun hasPermission(permission: String) = permission in permissions
         override fun sendMessage(text: Component) = Unit
         override fun actionBar(text: Component) = Unit
-        override fun playSound(sound: Sound) = true
-        override fun applyEffect(effect: PlayerEffect) = false
-        override fun spawnParticle(particle: PlayerParticle) = false
-        override fun runCommand(command: String, asConsole: Boolean): Boolean {
+        override fun playSound(sound: Sound) = Delivery.Delivered
+        override fun applyEffect(effect: PlayerEffect) = Delivery.Unsupported
+        override fun spawnParticle(particle: PlayerParticle) = Delivery.Unsupported
+        override fun runCommand(command: String, asConsole: Boolean): Delivery {
             commands += (if (asConsole) "console: " else "player: ") + command
-            return true
+            return Delivery.Delivered
         }
         override fun countItems(query: ItemQuery): Int? {
             queries += query

@@ -9,6 +9,7 @@ import org.junit.jupiter.api.Assertions.assertNull
 import org.junit.jupiter.api.Assertions.assertSame
 import org.junit.jupiter.api.Test
 import org.pnfolder.pnlibrary.api.audiences.AudienceSender
+import org.pnfolder.pnlibrary.api.audiences.Delivery
 import org.pnfolder.pnlibrary.api.audiences.LibraryPlayer
 import org.pnfolder.pnlibrary.api.audiences.PlayerEffect
 import org.pnfolder.pnlibrary.api.audiences.PlayerParticle
@@ -49,7 +50,7 @@ class AudienceServiceImplTest {
         ))
 
         assertEquals(listOf("first:message", "broken:message", "last:message", "first:sound", "broken:sound", "last:sound"), calls)
-        assertFalse(accepted)
+        assertFalse(accepted.isDelivered)
 
         members += Player(UUID.randomUUID(), "NowOnline", calls)
         service.all().actionBar(Component.text("bar"))
@@ -73,9 +74,9 @@ class AudienceServiceImplTest {
 
         override fun actionBar(text: Component) { calls += "$name:bar" }
 
-        override fun playSound(sound: Sound): Boolean {
+        override fun playSound(sound: Sound): Delivery {
             calls += "$name:sound"
-            return soundAccepted
+            return Delivery.of(soundAccepted)
         }
     }
 
@@ -86,8 +87,8 @@ class AudienceServiceImplTest {
     ) : Sender(name, calls = calls), LibraryPlayer {
         override val id get() = uniqueId.toString()
         override val isConsole get() = false
-        override fun applyEffect(effect: PlayerEffect) = false
-        override fun spawnParticle(particle: PlayerParticle) = false
+        override fun applyEffect(effect: PlayerEffect) = Delivery.Unsupported
+        override fun spawnParticle(particle: PlayerParticle) = Delivery.Unsupported
     }
 
     private class RecordingAdapter(

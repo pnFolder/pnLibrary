@@ -27,7 +27,7 @@ data class SoundAction(
 ) : Action {
     override fun execute(context: ActionContext) {
         val sound = Sound.sound(Key.key(key), source, volume, pitch)
-        if (!context.target(target).playSound(sound)) {
+        if (!context.target(target).playSound(sound).isDelivered) {
             context.logger.warning("Sound action is unsupported by the current platform: $key")
         }
     }

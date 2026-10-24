@@ -6,6 +6,7 @@ import org.junit.jupiter.api.Assertions.assertEquals
 import org.junit.jupiter.api.Assertions.assertFalse
 import org.junit.jupiter.api.Assertions.assertTrue
 import org.junit.jupiter.api.Test
+import org.pnfolder.pnlibrary.api.audiences.Delivery
 import java.util.UUID
 
 class AudienceContractsTest {
@@ -35,8 +36,8 @@ class AudienceContractsTest {
         override fun hasPermission(permission: String) = permission == "example.use"
         override fun sendMessage(text: Component) = Unit
         override fun actionBar(text: Component) = Unit
-        override fun playSound(sound: Sound) = true
-        override fun applyEffect(effect: PlayerEffect) = false
-        override fun spawnParticle(particle: PlayerParticle) = false
+        override fun playSound(sound: Sound) = Delivery.Delivered
+        override fun applyEffect(effect: PlayerEffect) = Delivery.Unsupported
+        override fun spawnParticle(particle: PlayerParticle) = Delivery.Unsupported
     }
 }

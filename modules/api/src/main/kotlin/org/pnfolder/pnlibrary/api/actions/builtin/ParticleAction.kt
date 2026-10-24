@@ -29,7 +29,7 @@ data class ParticleAction(
 ) : Action {
     override fun execute(context: ActionContext) {
         val particle = PlayerParticle(key, count, offsetX, offsetY, offsetZ, speed)
-        if (!context.player.spawnParticle(particle)) {
+        if (!context.player.spawnParticle(particle).isDelivered) {
             context.logger.warning("Particle action is unsupported by the current platform: $key")
         }
     }

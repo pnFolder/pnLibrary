@@ -30,7 +30,7 @@ data class EffectAction(
 ) : Action {
     override fun execute(context: ActionContext) {
         val effect = PlayerEffect(key, duration, amplifier, ambient, particles, icon)
-        if (!context.player.applyEffect(effect)) {
+        if (!context.player.applyEffect(effect).isDelivered) {
             context.logger.warning("Effect action is unsupported by the current platform: $key")
         }
     }

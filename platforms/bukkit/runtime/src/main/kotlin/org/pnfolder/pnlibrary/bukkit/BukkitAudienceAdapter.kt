@@ -8,6 +8,7 @@ import org.bukkit.command.CommandSender
 import org.bukkit.command.ConsoleCommandSender
 import org.bukkit.entity.Player
 import org.pnfolder.pnlibrary.api.audiences.AudienceSender
+import org.pnfolder.pnlibrary.api.audiences.Delivery
 import org.pnfolder.pnlibrary.api.audiences.LibraryPlayer
 import org.pnfolder.pnlibrary.spi.audiences.PlatformAudienceAdapter
 import java.util.UUID
@@ -44,7 +45,7 @@ internal class BukkitAudienceAdapter(
         override fun hasPermission(permission: String) = sender.hasPermission(permission)
         override fun sendMessage(text: Component) = sender.sendMessage(LEGACY.serialize(text))
         override fun actionBar(text: Component) = sendMessage(text)
-        override fun playSound(sound: Sound) = false
+        override fun playSound(sound: Sound) = Delivery.Unsupported
     }
 
     private companion object {

@@ -8,6 +8,7 @@ import org.junit.jupiter.api.Assertions.assertEquals
 import org.junit.jupiter.api.Assertions.assertTrue
 import org.junit.jupiter.api.Test
 import org.pnfolder.pnlibrary.api.audiences.AudienceSender
+import org.pnfolder.pnlibrary.api.audiences.Delivery
 import org.pnfolder.pnlibrary.api.commands.CommandContext
 import org.pnfolder.pnlibrary.api.commands.CommandNodeKind
 import org.pnfolder.pnlibrary.api.currency.Currency
@@ -82,7 +83,7 @@ class BukkitCurrencyCommandTest {
             messages += text
         }
         override fun actionBar(text: Component) = sendMessage(text)
-        override fun playSound(sound: Sound) = false
+        override fun playSound(sound: Sound) = Delivery.Unsupported
     }
 
     private object EmptyCurrencies : CurrencyProviderRegistry {

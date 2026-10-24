@@ -7,6 +7,7 @@ import org.junit.jupiter.api.Assertions.assertEquals
 import org.junit.jupiter.api.Assertions.assertTrue
 import org.junit.jupiter.api.Test
 import org.pnfolder.pnlibrary.api.audiences.AudienceSender
+import org.pnfolder.pnlibrary.api.audiences.Delivery
 import org.pnfolder.pnlibrary.api.commands.CommandContext
 import org.pnfolder.pnlibrary.api.commands.CommandDefinition
 import org.pnfolder.pnlibrary.api.commands.command
@@ -110,7 +111,7 @@ class BungeeCommandAdapterTest {
         override fun hasPermission(permission: String) = sender.hasPermission(permission)
         override fun sendMessage(text: Component) { messages += text }
         override fun actionBar(text: Component) { actionBars += text }
-        override fun playSound(sound: Sound) = false
+        override fun playSound(sound: Sound) = Delivery.Unsupported
     }
 
     private fun <T> proxy(

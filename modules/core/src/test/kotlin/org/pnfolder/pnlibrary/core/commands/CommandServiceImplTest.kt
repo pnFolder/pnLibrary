@@ -6,6 +6,7 @@ import org.junit.jupiter.api.Assertions.assertFalse
 import org.junit.jupiter.api.Assertions.assertThrows
 import org.junit.jupiter.api.Assertions.assertTrue
 import org.junit.jupiter.api.Test
+import org.pnfolder.pnlibrary.api.audiences.Delivery
 import org.pnfolder.pnlibrary.api.commands.ArgumentType
 import org.pnfolder.pnlibrary.api.commands.BadUsage
 import org.pnfolder.pnlibrary.api.commands.CommandContext
@@ -509,7 +510,7 @@ class CommandServiceImplTest {
     ) : CommandSender {
         val messages = mutableListOf<Component>()
         val sounds = mutableListOf<net.kyori.adventure.sound.Sound>()
-        override fun playSound(sound: net.kyori.adventure.sound.Sound): Boolean { sounds += sound; return true }
+        override fun playSound(sound: net.kyori.adventure.sound.Sound): Delivery { sounds += sound; return Delivery.Delivered }
         override val id: String = "sender"
         override val name: String = "Sender"
         override val isConsole: Boolean get() = console

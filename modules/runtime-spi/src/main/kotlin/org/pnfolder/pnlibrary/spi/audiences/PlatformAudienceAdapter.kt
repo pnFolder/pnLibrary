@@ -3,6 +3,7 @@ package org.pnfolder.pnlibrary.spi.audiences
 import net.kyori.adventure.sound.Sound
 import net.kyori.adventure.text.Component
 import org.pnfolder.pnlibrary.api.audiences.AudienceSender
+import org.pnfolder.pnlibrary.api.audiences.Delivery
 import org.pnfolder.pnlibrary.api.audiences.LibraryPlayer
 import java.util.UUID
 
@@ -27,7 +28,7 @@ object UnsupportedPlatformAudienceAdapter : PlatformAudienceAdapter {
         override fun hasPermission(permission: String) = false
         override fun sendMessage(text: Component) = Unit
         override fun actionBar(text: Component) = Unit
-        override fun playSound(sound: Sound) = false
+        override fun playSound(sound: Sound) = Delivery.Unsupported
     }
     /** Returns a no-op console audience. */
     override fun console() = console

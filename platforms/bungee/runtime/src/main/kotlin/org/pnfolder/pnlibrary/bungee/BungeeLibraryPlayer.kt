@@ -6,6 +6,7 @@ import net.kyori.adventure.text.serializer.legacy.LegacyComponentSerializer
 import net.md_5.bungee.api.ChatMessageType
 import net.md_5.bungee.api.chat.TextComponent
 import net.md_5.bungee.api.connection.ProxiedPlayer
+import org.pnfolder.pnlibrary.api.audiences.Delivery
 import org.pnfolder.pnlibrary.api.audiences.LibraryPlayer
 import org.pnfolder.pnlibrary.api.audiences.PlayerCapability
 import org.pnfolder.pnlibrary.api.audiences.PlayerEffect
@@ -45,14 +46,14 @@ internal class BungeeLibraryPlayer private constructor(
         player.sendMessage(ChatMessageType.ACTION_BAR, *TextComponent.fromLegacyText(LEGACY.serialize(text)))
     }
 
-    /** Returns false because this proxy adapter cannot play server-side sounds. */
-    override fun playSound(sound: Sound): Boolean = false
+    /** Returns [Delivery.Unsupported] because this proxy adapter cannot play server-side sounds. */
+    override fun playSound(sound: Sound): Delivery = Delivery.Unsupported
 
-    /** Returns false because potion effects require a backend server. */
-    override fun applyEffect(effect: PlayerEffect): Boolean = false
+    /** Returns [Delivery.Unsupported] because potion effects require a backend server. */
+    override fun applyEffect(effect: PlayerEffect): Delivery = Delivery.Unsupported
 
-    /** Returns false because particle rendering requires a backend server. */
-    override fun spawnParticle(particle: PlayerParticle): Boolean = false
+    /** Returns [Delivery.Unsupported] because particle rendering requires a backend server. */
+    override fun spawnParticle(particle: PlayerParticle): Delivery = Delivery.Unsupported
 
     companion object {
         private val LEGACY = LegacyComponentSerializer.legacySection()

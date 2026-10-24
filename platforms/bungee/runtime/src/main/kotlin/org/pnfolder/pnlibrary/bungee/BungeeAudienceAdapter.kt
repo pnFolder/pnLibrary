@@ -8,6 +8,7 @@ import net.md_5.bungee.api.chat.TextComponent
 import net.md_5.bungee.api.connection.ProxiedPlayer
 import net.md_5.bungee.api.plugin.Plugin
 import org.pnfolder.pnlibrary.api.audiences.AudienceSender
+import org.pnfolder.pnlibrary.api.audiences.Delivery
 import org.pnfolder.pnlibrary.api.audiences.LibraryPlayer
 import org.pnfolder.pnlibrary.spi.audiences.PlatformAudienceAdapter
 import java.util.UUID
@@ -43,7 +44,7 @@ internal class BungeeAudienceAdapter(
         override fun hasPermission(permission: String) = sender.hasPermission(permission)
         override fun sendMessage(text: Component) = sender.sendMessage(*TextComponent.fromLegacyText(LEGACY.serialize(text)))
         override fun actionBar(text: Component) = sendMessage(text)
-        override fun playSound(sound: Sound) = false
+        override fun playSound(sound: Sound) = Delivery.Unsupported
     }
 
     private companion object {

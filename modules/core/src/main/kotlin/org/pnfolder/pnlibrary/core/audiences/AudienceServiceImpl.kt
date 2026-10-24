@@ -4,6 +4,7 @@ import net.kyori.adventure.sound.Sound
 import net.kyori.adventure.text.Component
 import org.pnfolder.pnlibrary.api.audiences.AudienceSender
 import org.pnfolder.pnlibrary.api.audiences.AudienceService
+import org.pnfolder.pnlibrary.api.audiences.Delivery
 import org.pnfolder.pnlibrary.api.audiences.LibraryAudience
 import org.pnfolder.pnlibrary.api.audiences.LibraryPlayer
 import org.pnfolder.pnlibrary.spi.audiences.PlatformAudienceAdapter
@@ -40,33 +41,20 @@ internal class AudienceServiceImpl(
         private val receivers = receivers.filterDistinctByIdentity()
         override fun sendMessage(text: Component) = each { it.sendMessage(text) }
         override fun actionBar(text: Component) = each { it.actionBar(text) }
-        override fun playSound(sound: Sound): Boolean {
-            if (receivers.isEmpty()) return false
-            var accepted = true
-            receivers.forEach { receiver ->
-                try {
-                    if (!receiver.playSound(sound)) accepted = false
-                } catch (error: Throwable) {
-                    if (error is Error) throw error
-                    accepted = false
-                }
-            }
-            return accepted
-        }
+        override fun playSound(sound: Sound): Delivery = deliverEach { it.playSound(sound) }
 
-        override fun showTitle(title: Component, subtitle: Component, fadeIn: Duration, stay: Duration, fadeOut: Duration): Boolean {
-            if (receivers.isEmpty()) return false
-            var accepted = true
-            receivers.forEach { receiver ->
+        override fun showTitle(title: Component, subtitle: Component, fadeIn: Duration, stay: Duration, fadeOut: Duration) =
+            deliverEach { it.showTitle(title, subtitle, fadeIn, stay, fadeOut) }
+
+        private inline fun deliverEach(operation: (LibraryAudience) -> Delivery): Delivery =
+            Delivery.combine(receivers.map { receiver ->
                 try {
-                    if (!receiver.showTitle(title, subtitle, fadeIn, stay, fadeOut)) accepted = false
+                    operation(receiver)
                 } catch (error: Throwable) {
                     if (error is Error) throw error
-                    accepted = false
+                    Delivery.Failed(error)
                 }
-            }
-            return accepted
-        }
+            })
 
         private inline fun each(operation: (LibraryAudience) -> Unit) {
             receivers.forEach { receiver ->
@@ -87,7 +75,7 @@ internal class AudienceServiceImpl(
             override fun hasPermission(permission: String) = false
             override fun sendMessage(text: Component) = Unit
             override fun actionBar(text: Component) = Unit
-            override fun playSound(sound: Sound) = false
+            override fun playSound(sound: Sound) = Delivery.Unsupported
         }
 
         fun Iterable<LibraryAudience>.filterDistinctByIdentity(): List<LibraryAudience> {

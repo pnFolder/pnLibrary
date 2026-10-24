@@ -14,6 +14,7 @@ import org.pnfolder.pnlibrary.api.actions.ActionContext
 import org.pnfolder.pnlibrary.api.actions.builtin.DelayAction
 import org.pnfolder.pnlibrary.api.actions.builtin.RunAction
 import org.pnfolder.pnlibrary.api.actions.builtin.StopAction
+import org.pnfolder.pnlibrary.api.audiences.Delivery
 import org.pnfolder.pnlibrary.api.audiences.LibraryAudience
 import org.pnfolder.pnlibrary.api.audiences.LibraryPlayer
 import org.pnfolder.pnlibrary.api.audiences.PlayerEffect
@@ -121,7 +122,7 @@ class ActionExtrasTest {
         val ctx = context(Recorder(titles = false))
         // the mocked component service returns nothing, so use a message-free title through the player directly
         val player = Recorder(titles = false)
-        assertFalse(player.showTitle(Component.empty(), Component.empty(), Duration.ZERO, Duration.ZERO, Duration.ZERO))
+        assertFalse(player.showTitle(Component.empty(), Component.empty(), Duration.ZERO, Duration.ZERO, Duration.ZERO).isDelivered)
         assertEquals(emptyList<String>(), log)
         assertEquals(emptyList<String>(), warnings())
         assertTrue(ctx.player is Recorder)
@@ -197,9 +198,9 @@ class ActionExtrasTest {
         override fun hasPermission(permission: String) = false
         override fun sendMessage(text: Component) = Unit
         override fun actionBar(text: Component) = Unit
-        override fun playSound(sound: Sound) = true
-        override fun applyEffect(effect: PlayerEffect) = false
-        override fun spawnParticle(particle: PlayerParticle) = false
-        override fun showTitle(title: Component, subtitle: Component, fadeIn: Duration, stay: Duration, fadeOut: Duration) = titles
+        override fun playSound(sound: Sound) = Delivery.Delivered
+        override fun applyEffect(effect: PlayerEffect) = Delivery.Unsupported
+        override fun spawnParticle(particle: PlayerParticle) = Delivery.Unsupported
+        override fun showTitle(title: Component, subtitle: Component, fadeIn: Duration, stay: Duration, fadeOut: Duration) = Delivery.of(titles)
     }
 }

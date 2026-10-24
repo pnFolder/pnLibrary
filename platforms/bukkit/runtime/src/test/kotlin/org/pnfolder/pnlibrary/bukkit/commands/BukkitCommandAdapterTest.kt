@@ -7,6 +7,7 @@ import org.bukkit.command.CommandSender
 import org.junit.jupiter.api.Assertions.assertEquals
 import org.junit.jupiter.api.Test
 import org.pnfolder.pnlibrary.api.audiences.AudienceSender
+import org.pnfolder.pnlibrary.api.audiences.Delivery
 import org.pnfolder.pnlibrary.api.commands.CommandContext
 import org.pnfolder.pnlibrary.api.commands.CommandDefinition
 import org.pnfolder.pnlibrary.api.commands.command
@@ -43,7 +44,8 @@ class BukkitCommandAdapterTest {
         assertEquals(listOf("world"), suggestions)
         assertEquals(listOf(Component.text("done")), sent)
         assertEquals(listOf(Component.text("status")), actionBars)
-        assertEquals(true, dispatcher.lastContext.sender.playSound(Sound.sound(Key.key("minecraft:block.note_block.bell"), Sound.Source.MASTER, 1f, 1f)))
+        val bell = Sound.sound(Key.key("minecraft:block.note_block.bell"), Sound.Source.MASTER, 1f, 1f)
+        assertEquals(Delivery.Delivered, dispatcher.lastContext.sender.playSound(bell))
         assertEquals("Alice", dispatcher.executionContext.sender.name)
         assertEquals(true, dispatcher.executionContext.sender.hasPermission("example.use"))
     }
@@ -112,7 +114,7 @@ class BukkitCommandAdapterTest {
         override fun hasPermission(permission: String) = sender.hasPermission(permission)
         override fun sendMessage(text: Component) { messages += text }
         override fun actionBar(text: Component) { actionBars += text }
-        override fun playSound(sound: Sound) = true
+        override fun playSound(sound: Sound) = Delivery.Delivered
     }
 
     private fun <T> proxy(type: Class<T>, handler: (MethodCall) -> Any?): T = type.cast(
