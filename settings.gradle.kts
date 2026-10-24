@@ -11,7 +11,6 @@ include(
     ":modules:features:currency-api",
     ":modules:features:currency-runtime",
     ":modules:features:minecraft-localization-api",
-    ":modules:features:policy-kotlin",
     ":platforms:velocity:faststats",
     ":platforms:bukkit:bootstrap",
     ":platforms:bukkit:localization",

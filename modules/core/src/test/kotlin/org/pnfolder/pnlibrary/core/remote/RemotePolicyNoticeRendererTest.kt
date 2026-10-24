@@ -30,7 +30,7 @@ class RemotePolicyNoticeRendererTest {
             PlatformType.BUKKIT, "Paper", "25", 25,
         )
         val policy = RemotePolicySettings.builder()
-            .source("https://example.org/policy.kt")
+            .source("https://example.org/Policy.java")
             .onDeny(DenyAction.DISABLE_MODULE)
             .build()
         val explanation = RemotePolicyExplanation.builder("Требуется обновление")

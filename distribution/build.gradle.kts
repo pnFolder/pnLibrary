@@ -61,10 +61,8 @@ fun ShadowJar.applyCommonConfig() {
         duplicatesStrategy = DuplicatesStrategy.EXCLUDE
     }
 
-    // Keep kotlin.* intact: the runtime .kt policy compiler resolves the stdlib from this JAR.
-    // Platform plugin classloaders isolate it from unrelated plugins.
+    // kotlin.* stays intact; platform plugin classloaders isolate it from unrelated plugins.
     relocate("kotlinx.",                "org.pnfolder.pnlibrary.libs.kotlinx.")
-    // Keep the compiler namespace intact: its ServiceLoader descriptors use these exact names.
     relocate("com.google.gson",         "org.pnfolder.pnlibrary.libs.gson")
     relocate("org.yaml.snakeyaml",      "org.pnfolder.pnlibrary.libs.yaml")
     relocate("org.bstats",              "org.pnfolder.pnlibrary.libs.bstats")
@@ -75,8 +73,6 @@ fun ShadowJar.applyCommonConfig() {
     exclude("META-INF/*.RSA")
     exclude("META-INF/*.DSA")
     exclude("META-INF/INDEX.LIST")
-    // Keep Kotlin module metadata so runtime-compiled .kt policies can resolve stdlib extensions.
-    // Kotlin built-ins are retained because the optional remote .kt policy compiler needs them.
 }
 
 // ── Bukkit / Spigot / Paper / Leaf / Purpur / Folia (universal) ──────────────
@@ -158,17 +154,6 @@ tasks.register<ShadowJar>("shadowUniversal") {
 
 tasks.named("build") {
     dependsOn("shadowBukkit", "shadowBungee", "shadowVelocity", "shadowUniversal", "shadowUpdater", "copyDeveloperArtifacts")
-    dependsOn("shadowPolicyKotlin")
-}
-
-// Optional extension: ordinary platform JARs never include the Kotlin compiler.
-val policyKotlinRuntime: Configuration by configurations.creating
-dependencies { policyKotlinRuntime(project(":modules:features:policy-kotlin")) }
-tasks.register<ShadowJar>("shadowPolicyKotlin") {
-    group = "distribution"
-    archiveBaseName = "${rootProject.property("pnlibrary.name")}-policy-kotlin"
-    configurations = listOf(policyKotlinRuntime)
-    applyCommonConfig()
 }
 
 // A separate classpath avoids locking the plugin JAR that the updater must replace on Windows.
@@ -333,7 +318,7 @@ val verifyEmbeddedMetadata = tasks.register("verifyEmbeddedMetadata") {
             require(jar.isFile) { "Missing platform JAR: ${jar.name}" }
             JarFile(jar).use { archive ->
                 require(archive.getJarEntry("org/jetbrains/kotlin/cli/jvm/K2JVMCompiler.class") == null) {
-                    "The optional Kotlin compiler must not be bundled in ${jar.name}"
+                    "The Kotlin compiler must not be bundled in ${jar.name}"
                 }
                 val embedded = archive.getJarEntry("META-INF/pnlibrary/component.json")
                     ?: error("Missing embedded component metadata in ${jar.name}")
@@ -455,10 +440,10 @@ tasks.named("check") { dependsOn(verifyBukkitLocalizationLoads) }
 val writeReleaseManifest = tasks.register("writeReleaseManifest") {
     group = "distribution"
     description = "Derives release catalog data, sidecars and checksums from verified packaged artifacts"
-    dependsOn(verifyEmbeddedMetadata, shadowUpdater, "shadowPolicyKotlin")
+    dependsOn(verifyEmbeddedMetadata, shadowUpdater)
     mustRunAfter("copyDeveloperArtifacts")
     val artifactNames = releasePlatforms.map { "pnLibrary-$pnVer-${it.id}.jar" } +
-        listOf("pnLibrary-updater-$pnVer.jar", "pnLibrary-policy-kotlin-$pnVer.jar")
+        listOf("pnLibrary-updater-$pnVer.jar")
     val directory = layout.buildDirectory.dir("libs")
     inputs.files(artifactNames.map { directory.map { dir -> dir.file(it) } })
     inputs.property("repository", rootProject.property("pnlibrary.repository").toString())

@@ -88,7 +88,7 @@ class RuntimeRemotePolicyTest {
 
     @Test
     fun `a policy that cannot be checked keeps the library running when told to`() {
-        val missing = RemotePolicySettings.builder().source(directory.resolve("Missing.kt").toUri().toString())
+        val missing = RemotePolicySettings.builder().source(directory.resolve("Missing.java").toUri().toString())
             .onError(org.pnfolder.pnlibrary.api.remote.PolicyErrorAction.KEEP_RUNNING).build()
         val fixture = fixture(PlatformType.BUKKIT)
         fixture.start(missing)
@@ -101,7 +101,7 @@ class RuntimeRemotePolicyTest {
     @Test
     fun `a policy that cannot be checked at start stops the plugin, but after one success a failure only warns`() {
         val untilChecked = org.pnfolder.pnlibrary.api.remote.PolicyErrorAction.DENY_UNTIL_CHECKED
-        val missing = RemotePolicySettings.builder().source(directory.resolve("Absent.kt").toUri().toString())
+        val missing = RemotePolicySettings.builder().source(directory.resolve("Absent.java").toUri().toString())
             .onError(untilChecked).build()
         val atStart = fixture(PlatformType.BUKKIT)
         atStart.start(missing)
@@ -123,7 +123,7 @@ class RuntimeRemotePolicyTest {
 
     @Test
     fun `unreadable policy and setup failures stop the library rather than ignore its policy`() {
-        val missing = RemotePolicySettings.builder().source(directory.resolve("Missing.kt").toUri().toString()).build()
+        val missing = RemotePolicySettings.builder().source(directory.resolve("Missing.java").toUri().toString()).build()
         val fixture = fixture(PlatformType.VELOCITY)
         fixture.start(missing)
         fixture.ready.single().run()

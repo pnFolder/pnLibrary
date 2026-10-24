@@ -144,9 +144,6 @@ jobs:
           if (-not (Test-Path -LiteralPath "distribution/build/libs/pnLibrary-updater-$env:RELEASE_VERSION.jar")) {
             throw 'The standalone restart updater must be included in the release'
           }
-          if (-not (Test-Path -LiteralPath "distribution/build/libs/pnLibrary-policy-kotlin-$env:RELEASE_VERSION.jar")) {
-            throw 'The optional Kotlin policy compiler must be included in the release'
-          }
           $arguments = @('release', 'create', "v$env:RELEASE_VERSION") + $artifacts + @(
             '--title', "pnLibrary $env:RELEASE_VERSION",
             '--notes', $env:RELEASE_NOTES

@@ -25,7 +25,6 @@ dependencies {
     implementation(project(":modules:console"))
 
     testImplementation(libs.junit.jupiter)
-    testImplementation(project(":modules:features:policy-kotlin"))
     testImplementation(libs.mockito.core)
     testRuntimeOnly(libs.junit.launcher)
 }

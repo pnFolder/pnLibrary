@@ -29,7 +29,7 @@ enum class PolicyErrorAction {
 /**
  * Reusable declaration for a remotely sourced policy.
  *
- * @property source absolute HTTPS or file URI of Java/Kotlin policy source
+ * @property source absolute HTTPS or file URI of the `.java` policy source
  * @property checkEvery interval between policy refreshes
  * @property onDeny action applied after a denied result
  * @property onError what an unreachable, uncompilable or failing policy means
@@ -53,7 +53,7 @@ data class RemotePolicySettings(
         private var supportUrl: String? = null
         private val values = linkedMapOf<String, String>()
 
-        /** Sets and validates the Java/Kotlin policy source URI. */
+        /** Sets and validates the `.java` policy source URI. */
         fun source(value: String): Builder = apply {
             val uri = URI.create(value)
             val https = uri.isHttps()
@@ -61,8 +61,8 @@ data class RemotePolicySettings(
             require(https || localFile) {
                 "Remote policy source must be an absolute HTTPS or file URL"
             }
-            require(uri.path.endsWith(".java", true) || uri.path.endsWith(".kt", true)) {
-                "Remote policy source must be a .java or .kt file"
+            require(uri.path.endsWith(".java", true)) {
+                "Remote policy source must be a .java file"
             }
             source = uri.toASCIIString()
         }

@@ -20,10 +20,6 @@ class RemotePolicyBuilderTest {
             "file:///C:/policies/AcceptancePolicy.java",
             RemotePolicySettings.builder().source("file:///C:/policies/AcceptancePolicy.java").build().source,
         )
-        assertEquals(
-            "file:///C:/policies/AcceptancePolicy.kt",
-            RemotePolicySettings.builder().source("file:///C:/policies/AcceptancePolicy.kt").build().source,
-        )
         assertThrows(UnsupportedOperationException::class.java) {
             @Suppress("UNCHECKED_CAST")
             (policy.values as MutableMap<String, String>)["changed"] = "true"
@@ -33,6 +29,9 @@ class RemotePolicyBuilderTest {
         }
         assertThrows(IllegalArgumentException::class.java) {
             RemotePolicySettings.builder().source("file:///C:/policies/policy.txt")
+        }
+        assertThrows(IllegalArgumentException::class.java) {
+            RemotePolicySettings.builder().source("file:///C:/policies/Policy.kt")
         }
         assertThrows(IllegalArgumentException::class.java) {
             RemotePolicySettings.builder().source("https://example.org/policy.java").checkEvery(Duration.ZERO)

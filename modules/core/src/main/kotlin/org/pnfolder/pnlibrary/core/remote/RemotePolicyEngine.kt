@@ -6,7 +6,6 @@ import org.pnfolder.pnlibrary.api.remote.RemotePolicyResult
 import org.pnfolder.pnlibrary.common.io.Digests
 import java.io.ByteArrayOutputStream
 import java.io.File
-import java.lang.reflect.InvocationTargetException
 import java.net.HttpURLConnection
 import java.net.URI
 import java.net.URLClassLoader
@@ -25,17 +24,13 @@ internal object RemotePolicyEngine {
 
     fun check(url: String, context: RemotePolicyContext): RemotePolicyResult {
         val uri = URI(url)
-        val extension = when {
-            uri.path.endsWith(".java", true) -> "java"
-            uri.path.endsWith(".kt", true) -> "kt"
-            else -> throw IllegalArgumentException("Remote policy source must be a .java or .kt file")
-        }
+        require(uri.path.endsWith(".java", true)) { "Remote policy source must be a .java file" }
         val source = when {
             uri.scheme.equals("https", true) -> download(uri)
             uri.scheme.equals("file", true) -> readLocal(uri)
             else -> throw IllegalArgumentException("Remote policy requires an HTTPS or file URL")
         }
-        return checkSource(source, context, extension)
+        return checkSource(source, context)
     }
 
     private fun readLocal(uri: URI): ByteArray {
@@ -48,7 +43,6 @@ internal object RemotePolicyEngine {
     internal fun checkSource(
         source: ByteArray,
         context: RemotePolicyContext,
-        extension: String = "java",
     ): RemotePolicyResult {
         context.values["pnlibrary.policy.sha256"]?.let { expected ->
             require(expected.matches(Regex("[0-9a-fA-F]{64}")) && Digests.sha256(source).equals(expected, true)) {
@@ -62,13 +56,12 @@ internal object RemotePolicyEngine {
         val name = if (packageName == null) simpleName else "$packageName.$simpleName"
         val root = Files.createTempDirectory("pnlibrary-policy-")
         try {
-            val file = root.resolve(name.replace('.', '/') + ".$extension")
+            val file = root.resolve(name.replace('.', '/') + ".java")
             Files.createDirectories(file.parent)
             Files.write(file, source)
             val classpath = listOf(System.getProperty("java.class.path", ""), location(RemotePolicy::class.java), location(RemotePolicyContext::class.java))
                 .filter(String::isNotBlank).joinToString(File.pathSeparator)
-            if (extension.equals("kt", true)) compileKotlin(file, root, classpath)
-            else compileJava(file, root, classpath)
+            compileJava(file, root, classpath)
             URLClassLoader(arrayOf(root.toUri().toURL()), RemotePolicy::class.java.classLoader).use { loader ->
                 val type = Class.forName(name, true, loader)
                 require(RemotePolicy::class.java.isAssignableFrom(type)) { "Remote class must implement RemotePolicy" }
@@ -91,26 +84,6 @@ internal object RemotePolicyEngine {
             val arguments = compatibility + arrayOf("-classpath", classpath, "-d", root.toString(), file.toString())
             val exit = compiler.run(null, null, null, *arguments)
             require(exit == 0) { "Remote policy compilation failed" }
-    }
-
-    private fun compileKotlin(file: Path, root: Path, classpath: String) {
-        val configured = System.getProperty("pnlibrary.policy.kotlinCompiler")?.let { Paths.get(it).toAbsolutePath().normalize() }
-        configured?.let { require(Files.isRegularFile(it)) { "Kotlin policy compiler JAR does not exist: $it" } }
-        val extensionLoader = configured?.let { URLClassLoader(arrayOf(it.toUri().toURL()), javaClass.classLoader) }
-        try {
-            val type = try {
-                Class.forName("org.pnfolder.pnlibrary.policy.kotlin.KotlinPolicyCompiler", true, extensionLoader ?: javaClass.classLoader)
-            } catch (missing: ClassNotFoundException) {
-                throw IllegalStateException("Kotlin policies require the optional pnLibrary-policy-kotlin JAR; " +
-                    "set -Dpnlibrary.policy.kotlinCompiler=/absolute/path/to/compiler.jar", missing)
-            }
-            try {
-                type.getMethod("compile", Path::class.java, Path::class.java, String::class.java)
-                    .invoke(null, file, root, classpath + File.pathSeparator + location(type))
-            } catch (error: InvocationTargetException) { throw error.targetException }
-        } finally {
-            extensionLoader?.close()
-        }
     }
 
     private fun download(uri: URI): ByteArray {
