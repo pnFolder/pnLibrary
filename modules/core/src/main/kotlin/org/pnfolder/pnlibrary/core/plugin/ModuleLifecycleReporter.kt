@@ -2,11 +2,11 @@ package org.pnfolder.pnlibrary.core.plugin
 
 import org.pnfolder.pnlibrary.api.logging.LoggingService
 import org.pnfolder.pnlibrary.api.logging.MessageBox
+import org.pnfolder.pnlibrary.api.placeholders.PlaceholderAdapterRegistry
 import org.pnfolder.pnlibrary.api.plugin.LifecycleRow
 import org.pnfolder.pnlibrary.api.plugin.ModuleId
 import org.pnfolder.pnlibrary.api.plugin.PluginLifecycle
 import org.pnfolder.pnlibrary.api.plugin.PluginMetadata
-import org.pnfolder.pnlibrary.core.placeholders.PlaceholderHub
 
 /** Builds the console cards printed when a module is enabled and disabled. */
 internal class ModuleLifecycleReporter(
@@ -15,7 +15,7 @@ internal class ModuleLifecycleReporter(
     override val metadata: PluginMetadata,
     private val resources: ModuleResources,
     private val logging: LoggingService,
-    private val placeholders: PlaceholderHub,
+    private val placeholders: PlaceholderAdapterRegistry,
     private val placeholderApiEnabled: Boolean,
     private val isClosed: () -> Boolean,
 ) : PluginLifecycle {

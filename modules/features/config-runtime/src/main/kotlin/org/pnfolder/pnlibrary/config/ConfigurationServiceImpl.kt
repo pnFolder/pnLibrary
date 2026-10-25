@@ -6,7 +6,6 @@ import org.pnfolder.pnlibrary.api.config.ConfigSerializer
 import org.pnfolder.pnlibrary.api.config.ConfigTypeAccess
 import org.pnfolder.pnlibrary.api.config.ConfigTypeRegistration
 import org.pnfolder.pnlibrary.api.config.ConfigValueValidator
-import org.pnfolder.pnlibrary.api.config.ConfigurationService
 import org.pnfolder.pnlibrary.api.config.ManagedConfig
 import org.pnfolder.pnlibrary.api.plugin.PluginId
 import org.pnfolder.pnlibrary.config.yaml.AnnotatedYamlCodec
@@ -25,7 +24,7 @@ import java.util.logging.Logger
 /** Hands out one configuration scope per plugin, rooted at its data folder, and closes them with their owner. */
 class ConfigurationServiceImpl(
     private val platform: PlatformOwnership,
-) : ConfigurationService, AutoCloseable {
+) : ConfigurationRuntime {
     private val scopes = IdentityHashMap<Any, MutableMap<PluginId, Scope>>()
     private val runtimeTypes = linkedSetOf<TypeRegistration>()
     private val closed = AtomicBoolean(false)
@@ -37,7 +36,7 @@ class ConfigurationServiceImpl(
     }
 
     /** Returns the scope of [owner] and [pluginId], creating it on first use. Fails after [close]. */
-    fun scope(owner: Any, pluginId: PluginId): ConfigScope = synchronized(scopes) {
+    override fun scope(owner: Any, pluginId: PluginId): ConfigScope = synchronized(scopes) {
         check(!closed.get()) { "Configuration service is closed" }
         scopes.getOrPut(owner) { linkedMapOf() }.getOrPut(pluginId) {
             Scope(
@@ -50,7 +49,7 @@ class ConfigurationServiceImpl(
     }
 
     /** Closes and forgets every scope that [owner] created. */
-    fun close(owner: Any) {
+    override fun close(owner: Any) {
         synchronized(scopes) { scopes.remove(owner)?.values?.toList().orEmpty() }.forEach { it.close() }
     }
 

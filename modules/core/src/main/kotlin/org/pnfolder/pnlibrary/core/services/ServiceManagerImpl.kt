@@ -7,7 +7,7 @@ import java.util.concurrent.atomic.AtomicBoolean
 import java.util.concurrent.atomic.AtomicLong
 
 /** Thread-safe implementation of the typed, plugin-owned service registry. */
-internal class ServiceManagerImpl : ServiceManager, AutoCloseable {
+internal class ServiceManagerImpl : ServiceManager, ServiceScopeFactory, AutoCloseable {
     private val lock = Any()
     private val providers = hashMapOf<Class<*>, MutableList<Registration<*>>>()
     private val registrationsByOwner = hashMapOf<PluginId, MutableList<Registration<*>>>()
@@ -31,7 +31,7 @@ internal class ServiceManagerImpl : ServiceManager, AutoCloseable {
         priority: Int = 0,
     ) = add(owner, type, service, priority)
 
-    internal fun ownedBy(owner: PluginId): OwnedServices = OwnedServices(owner)
+    override fun ownedBy(owner: PluginId): ServiceScope = OwnedServices(owner)
 
     private fun <T : Any> add(owner: PluginId?, type: Class<T>, service: T, priority: Int) {
         synchronized(lock) {
@@ -56,7 +56,7 @@ internal class ServiceManagerImpl : ServiceManager, AutoCloseable {
     override fun <T : Any> all(type: Class<T>): List<T> =
         Collections.unmodifiableList(registrations(type).map { it.service })
 
-    internal fun unregisterAll(owner: PluginId) {
+    private fun unregisterAll(owner: PluginId) {
         val registrations = synchronized(lock) { registrationsByOwner[owner]?.toList().orEmpty() }
         registrations.forEach { it.close() }
     }
@@ -68,7 +68,7 @@ internal class ServiceManagerImpl : ServiceManager, AutoCloseable {
         registration?.close()
     }
 
-    internal inner class OwnedServices(private val owner: PluginId) : ServiceManager, AutoCloseable {
+    private inner class OwnedServices(private val owner: PluginId) : ServiceScope {
         private val ownerClosed = AtomicBoolean(false)
 
         override fun <T : Any> register(type: Class<T>, service: T, priority: Int) {

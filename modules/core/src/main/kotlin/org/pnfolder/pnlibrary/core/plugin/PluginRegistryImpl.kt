@@ -28,21 +28,22 @@ import org.pnfolder.pnlibrary.api.plugin.PluginRegistration
 import org.pnfolder.pnlibrary.api.plugin.PluginRegistry
 import org.pnfolder.pnlibrary.api.remote.RemotePolicySettings
 import org.pnfolder.pnlibrary.api.runtime.PnLibraryIdentity
+import org.pnfolder.pnlibrary.api.services.ServiceManager
 import org.pnfolder.pnlibrary.api.tasks.TaskScope
 import org.pnfolder.pnlibrary.api.text.ComponentService
 import org.pnfolder.pnlibrary.api.updates.ProductDescriptor
 import org.pnfolder.pnlibrary.api.updates.UpdateRegistration
 import org.pnfolder.pnlibrary.api.updates.UpdateService
 import org.pnfolder.pnlibrary.api.version.SemanticVersion
-import org.pnfolder.pnlibrary.config.ConfigurationServiceImpl
+import org.pnfolder.pnlibrary.config.ConfigurationRuntime
 import org.pnfolder.pnlibrary.core.commands.CommandFeedbackScope
 import org.pnfolder.pnlibrary.core.commands.CommandService
-import org.pnfolder.pnlibrary.core.downloads.DirectDownloadManager
+import org.pnfolder.pnlibrary.core.downloads.DownloadService
 import org.pnfolder.pnlibrary.core.expansions.LocalizationExpansion
 import org.pnfolder.pnlibrary.core.lifecycle.ResourceCleanup
 import org.pnfolder.pnlibrary.core.remote.RemotePolicyMonitor
 import org.pnfolder.pnlibrary.core.remote.RemotePolicyNoticeRenderer
-import org.pnfolder.pnlibrary.core.services.ServiceManagerImpl
+import org.pnfolder.pnlibrary.core.services.ServiceScopeFactory
 import org.pnfolder.pnlibrary.core.tasks.TaskService
 import org.pnfolder.pnlibrary.core.text.ComponentCache
 import org.pnfolder.pnlibrary.localization.MinecraftLocalization
@@ -70,15 +71,15 @@ internal class PluginRegistryImpl(
     private val platformLogging: PlatformLogging,
     private val events: EventService,
     private val tasks: TaskService,
-    private val services: ServiceManagerImpl,
+    private val services: ServiceScopeFactory,
     private val logging: LoggingService,
     private val metrics: MetricsService,
     private val diagnostics: DiagnosticsService,
     private val updates: UpdateService,
     private val shared: SharedFeatures,
-    private val configurations: ConfigurationServiceImpl = ConfigurationServiceImpl(ownership),
+    private val configurations: ConfigurationRuntime,
     private val commands: CommandService? = null,
-    private val directDownloads: DirectDownloadManager? = null,
+    private val directDownloads: DownloadService? = null,
     libraryVersion: String? = null,
 ) : PluginRegistry {
 
@@ -258,7 +259,7 @@ internal class PluginRegistryImpl(
         override val isClosed: Boolean get() = contextClosed.get()
         override val tasks: TaskScope get() = resources.tasks
         override val events: EventScope get() = resources.events
-        override val services: ServiceManagerImpl.OwnedServices get() = resources.services
+        override val services: ServiceManager get() = resources.services
         override val expansions = ModuleExpansions(shared.expansions, shared.libraryExpansions)
         override val localization: MinecraftLocalization get() = expansions.view(LocalizationExpansion::class.java)
         override val logger: PnLogger get() = resources.logger
