@@ -1,6 +1,5 @@
 package org.pnfolder.pnlibrary.api.config
 
-import java.io.File
 import java.util.function.UnaryOperator
 
 /** Converts between a typed code-first model [T] and YAML text. */
@@ -25,41 +24,6 @@ fun interface ConfigCondition<T> {
 }
 
 /**
- * Builds readable validation rules without manually creating problem lists.
- *
- * ```kotlin
- * val validator = ConfigValidatorBuilder<Settings>()
- *     .require("database.port", "must be between 1 and 65535") { it.database.port in 1..65535 }
- *     .build()
- * ```
- */
-class ConfigValidatorBuilder<T> {
-    private val rules = mutableListOf<Rule<T>>()
-
-    /** Adds a rule for the YAML [path]. */
-    fun require(path: String, message: String, condition: ConfigCondition<T>): ConfigValidatorBuilder<T> = apply {
-        require(path.isNotBlank()) { "Configuration path cannot be blank" }
-        rules += Rule(path, message, condition)
-    }
-
-    /** Creates an immutable validator from the configured rules. */
-    fun build(): ConfigValueValidator<T> {
-        val snapshot = rules.toList()
-        return ConfigValueValidator { value ->
-            snapshot.mapNotNull { rule ->
-                if (rule.condition.test(value)) null else ConfigProblem(rule.path, rule.message)
-            }
-        }
-    }
-
-    private data class Rule<T>(
-        val path: String,
-        val message: String,
-        val condition: ConfigCondition<T>
-    )
-}
-
-/**
  * One semantic configuration problem.
  *
  * @property path full dot-separated YAML path, such as `database.pool-size`
@@ -68,28 +32,6 @@ class ConfigValidatorBuilder<T> {
 data class ConfigProblem(
     val path: String,
     val message: String,
-)
-
-/**
- * Result of loading and synchronizing one code-first configuration file.
- *
- * All path collections use full dot-separated YAML paths and are empty when that synchronization
- * phase made no changes.
- *
- * @property value validated typed value now held by the managed configuration
- * @property addedPaths missing default values inserted into the document
- * @property backup backup of the original file, or `null` when no backup was needed or enabled
- * @property removedPaths unknown YAML values removed according to [UnknownValuePolicy.REMOVE]
- * @property addedComments code-defined comments inserted into the document
- * @property appliedMigrations ordered migration labels applied before decoding
- */
-data class ConfigLoadResult<T>(
-    val value: T,
-    val addedPaths: List<String>,
-    val backup: File?,
-    val removedPaths: List<String> = emptyList(),
-    val addedComments: List<String> = emptyList(),
-    val appliedMigrations: List<String> = emptyList(),
 )
 
 /**

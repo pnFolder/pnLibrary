@@ -9,6 +9,7 @@ import org.pnfolder.pnlibrary.api.events.EventService
 import org.pnfolder.pnlibrary.api.events.EventSubscription
 import org.pnfolder.pnlibrary.api.events.Listener
 import org.pnfolder.pnlibrary.api.plugin.PluginId
+import org.pnfolder.pnlibrary.common.lang.Failures
 import java.util.concurrent.CopyOnWriteArrayList
 import java.util.concurrent.atomic.AtomicBoolean
 import java.util.concurrent.atomic.AtomicLong
@@ -88,7 +89,7 @@ internal class EventServiceImpl(
                 subscription.invoke(event)
             } catch (error: Throwable) {
                 // A broken listener is logged and skipped; a dying JVM (out of memory, stack overflow) is not ours to hide.
-                if (error is VirtualMachineError) throw error
+                Failures.rethrowIfFatal(error)
                 errorLogger(
                     subscription.scope.pluginId,
                     "[pnLibrary/events] Listener failed for ${event.javaClass.name}",

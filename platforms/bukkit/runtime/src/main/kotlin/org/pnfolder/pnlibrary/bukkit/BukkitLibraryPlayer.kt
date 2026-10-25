@@ -16,6 +16,7 @@ import org.pnfolder.pnlibrary.api.audiences.LibraryPlayer
 import org.pnfolder.pnlibrary.api.audiences.PlayerCapability
 import org.pnfolder.pnlibrary.api.audiences.PlayerEffect
 import org.pnfolder.pnlibrary.api.audiences.PlayerParticle
+import org.pnfolder.pnlibrary.common.lang.Failures
 import java.time.Duration
 import java.util.UUID
 
@@ -140,7 +141,7 @@ internal class BukkitLibraryPlayer(
         }.fold(
             onSuccess = { Delivery.Delivered },
             onFailure = { error ->
-                rethrowFatal(error)
+                Failures.rethrowIfFatal(error)
                 Delivery.Failed(error)
             },
         )
@@ -148,9 +149,5 @@ internal class BukkitLibraryPlayer(
 
     private companion object {
         const val MILLIS_PER_TICK = 50L
-
-        fun rethrowFatal(error: Throwable) {
-            if (error is Error) throw error
-        }
     }
 }

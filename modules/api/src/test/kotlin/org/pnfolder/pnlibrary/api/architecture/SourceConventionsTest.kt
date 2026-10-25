@@ -116,10 +116,10 @@ class SourceConventionsTest {
          * from reports, and KDoc describing accepted input. Example plugins are left out: they show plain Bukkit use.
          */
         val LEGACY_TEXT_ALLOWED = setOf(
-            "modules/api/src/main/kotlin/org/pnfolder/pnlibrary/api/text/ComponentService.kt",
+            "modules/api/src/main/kotlin/org/pnfolder/pnlibrary/api/text/ComponentSerializerType.kt",
             "modules/core/src/main/kotlin/org/pnfolder/pnlibrary/core/text/ComponentServiceImpl.kt",
             "modules/core/src/main/kotlin/org/pnfolder/pnlibrary/core/diagnostics/DiagnosticRedactor.kt",
-            "modules/features/currency-api/src/main/kotlin/org/pnfolder/pnlibrary/api/currency/CurrencyRegistry.kt",
+            "modules/features/currency-api/src/main/kotlin/org/pnfolder/pnlibrary/api/currency/CurrencyCommandSettings.kt",
             "platforms/bukkit/runtime/src/main/kotlin/org/pnfolder/pnlibrary/bukkit/item/ItemText.kt",
         )
     }

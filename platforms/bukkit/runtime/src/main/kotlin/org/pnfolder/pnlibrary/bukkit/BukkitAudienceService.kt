@@ -11,6 +11,7 @@ import org.bukkit.plugin.Plugin
 import org.pnfolder.pnlibrary.api.audiences.Delivery
 import org.pnfolder.pnlibrary.api.audiences.LibraryAudience
 import org.pnfolder.pnlibrary.api.audiences.LibraryPlayer
+import org.pnfolder.pnlibrary.common.lang.Failures
 import java.lang.reflect.Array
 import java.util.UUID
 import java.util.concurrent.atomic.AtomicBoolean
@@ -79,7 +80,7 @@ internal class BukkitAudienceService internal constructor(plugin: Plugin, privat
                     return
                 }
             } catch (error: Throwable) {
-                rethrowFatal(error)
+                Failures.rethrowIfFatal(error)
                 // A broken/incompatible platform bridge must not break the calling plugin.
                 if (fallbackOnly.compareAndSet(false, true)) {
                     logger.warning("Adventure Bukkit transport failed (${error.javaClass.simpleName}); switched to legacy text fallback")
@@ -106,7 +107,7 @@ internal class BukkitAudienceService internal constructor(plugin: Plugin, privat
     /** Tries Adventure sound delivery, then the native Bukkit sound API. */
     internal fun playSound(player: Player, sound: Sound): Delivery {
         if (player is Audience && !fallbackOnly.get()) {
-            try { player.playSound(sound); return Delivery.Delivered } catch (error: Throwable) { rethrowFatal(error) }
+            try { player.playSound(sound); return Delivery.Delivered } catch (error: Throwable) { Failures.rethrowIfFatal(error) }
         }
         val provider = audiences
         if (provider != null && !fallbackOnly.get()) {
@@ -114,7 +115,7 @@ internal class BukkitAudienceService internal constructor(plugin: Plugin, privat
                 provider.player(player.uniqueId).playSound(sound)
                 return Delivery.Delivered
             } catch (error: Throwable) {
-                rethrowFatal(error)
+                Failures.rethrowIfFatal(error)
             }
         }
         return deliver { player.playSound(player.location, sound.name().asString(), sound.volume(), sound.pitch()) }
@@ -130,7 +131,7 @@ internal class BukkitAudienceService internal constructor(plugin: Plugin, privat
                 recipient.showTitle(title)
                 return Delivery.Delivered
             } catch (error: Throwable) {
-                rethrowFatal(error)
+                Failures.rethrowIfFatal(error)
             }
         }
         return deliver { player.sendTitle(LEGACY.serialize(title.title()), LEGACY.serialize(title.subtitle())) }
@@ -148,14 +149,10 @@ internal class BukkitAudienceService internal constructor(plugin: Plugin, privat
         fun createProvider(plugin: Plugin): BukkitAudiences? {
             if (NATIVE_ADVENTURE) return null
             return try { BukkitAudiences.create(plugin) } catch (error: Throwable) {
-                rethrowFatal(error)
+                Failures.rethrowIfFatal(error)
                 plugin.logger.warning("Adventure Bukkit transport is unavailable (${error.javaClass.simpleName}); using legacy text fallback")
                 null
             }
-        }
-
-        fun rethrowFatal(error: Throwable) {
-            if (error is Error) throw error
         }
 
         /** Runs the last-resort native call, keeping the platform's error instead of a bare failure flag. */
@@ -163,7 +160,7 @@ internal class BukkitAudienceService internal constructor(plugin: Plugin, privat
             send()
             Delivery.Delivered
         } catch (error: Throwable) {
-            rethrowFatal(error)
+            Failures.rethrowIfFatal(error)
             Delivery.Failed(error)
         }
     }

@@ -1,7 +1,6 @@
 package org.pnfolder.pnlibrary.api.activity
 
 import java.nio.file.Path
-import java.util.UUID
 
 /** Relative importance used for filtering and retaining recorded activity. */
 enum class ActivitySeverity {
@@ -13,111 +12,8 @@ enum class ActivitySeverity {
     CRITICAL
 }
 
-/** Broad subsystem classification assigned to an activity event. */
-enum class ActivityCategory {
-    LIFECYCLE,
-    USER_ACTION,
-    UPDATE,
-    DIAGNOSTICS,
-    COMMAND,
-    FEATURE,
-    SECURITY,
-    ERROR,
-    SYSTEM
-}
-
-/**
- * Immutable record of one noteworthy library or plugin operation.
- *
- * @property eventId unique identifier used to associate attachments with this event
- * @property timestamp creation time expressed as Unix epoch milliseconds
- * @property type stable application-defined event type
- * @property category broad subsystem classification
- * @property severity importance used for filtering and retention
- * @property sessionId optional runtime-session identifier
- * @property correlationId optional identifier joining related operations
- * @property source component or class that produced the event
- * @property pluginId plugin responsible for the event, when applicable
- * @property metadata bounded structured details safe to include in diagnostics
- */
-data class ActivityEvent(
-    val eventId: String = UUID.randomUUID().toString(),
-    val timestamp: Long = System.currentTimeMillis(),
-    val type: String,
-    val category: ActivityCategory = ActivityCategory.SYSTEM,
-    val severity: ActivitySeverity = ActivitySeverity.INFO,
-    val sessionId: String? = null,
-    val correlationId: String? = null,
-    val source: String? = null,
-    val pluginId: String? = null,
-    val metadata: Map<String, String> = emptyMap(),
-)
-
-/**
- * Filters applied when reading recent activity.
- *
- * @property limit maximum number of events to return
- * @property pluginId optional plugin identifier to match
- * @property category optional category to match
- * @property minimumSeverity least severe event to include
- * @property since inclusive lower timestamp bound in Unix epoch milliseconds
- * @property until inclusive upper timestamp bound in Unix epoch milliseconds
- */
-data class ActivityQuery(
-    val limit: Int = 50,
-    val pluginId: String? = null,
-    val category: ActivityCategory? = null,
-    val minimumSeverity: ActivitySeverity? = null,
-    val since: Long? = null,
-    val until: Long? = null,
-)
-
-/**
- * Metadata describing a file or byte payload attached to an activity event.
- *
- * @property id unique attachment identifier
- * @property eventId identifier of the owning event
- * @property name caller-visible attachment name
- * @property contentType media type recorded for the payload
- * @property size payload size in bytes
- * @property sha256 lowercase SHA-256 digest used to verify payload integrity
- */
-data class ActivityAttachment(
-    val id: String,
-    val eventId: String,
-    val name: String,
-    val contentType: String,
-    val size: Long,
-    val sha256: String,
-)
-
 /** Files selected for one activity record before they are persisted. */
 typealias ActivityFile = Path
-
-/**
- * One inspectable activity snapshot submitted as a single unit.
- *
- * @property files files to attach after the event is persisted
- * @property type stable application-defined event type
- * @property category broad subsystem classification
- * @property severity importance used for filtering and retention
- * @property sessionId optional runtime-session identifier
- * @property correlationId optional identifier joining related operations
- * @property source component or class that produced the snapshot
- * @property pluginId plugin responsible for the snapshot, when applicable
- * @property metadata bounded structured details safe to include in diagnostics
- */
-data class ActivityBundle(
-    val files: List<ActivityFile> = emptyList(),
-    val type: String = "DIAGNOSTIC",
-    val category: ActivityCategory = ActivityCategory.SYSTEM,
-    val severity: ActivitySeverity = ActivitySeverity.INFO,
-    val sessionId: String? = null,
-    val correlationId: String? = null,
-    val source: String? = null,
-    val pluginId: String? = null,
-    val metadata: Map<String, String> = emptyMap(),
-)
 
 /** Records bounded operational history and attachments for diagnostic reports. */
 interface ActivityService : AutoCloseable {

@@ -7,6 +7,7 @@ import org.pnfolder.pnlibrary.api.audiences.AudienceService
 import org.pnfolder.pnlibrary.api.audiences.Delivery
 import org.pnfolder.pnlibrary.api.audiences.LibraryAudience
 import org.pnfolder.pnlibrary.api.audiences.LibraryPlayer
+import org.pnfolder.pnlibrary.common.lang.Failures
 import org.pnfolder.pnlibrary.spi.audiences.PlatformAudienceAdapter
 import java.time.Duration
 import java.util.Collections
@@ -51,7 +52,7 @@ internal class AudienceServiceImpl(
                 try {
                     operation(receiver)
                 } catch (error: Throwable) {
-                    if (error is Error) throw error
+                    Failures.rethrowIfFatal(error)
                     Delivery.Failed(error)
                 }
             })
@@ -61,7 +62,7 @@ internal class AudienceServiceImpl(
                 try {
                     operation(receiver)
                 } catch (error: Throwable) {
-                    if (error is Error) throw error
+                    Failures.rethrowIfFatal(error)
                 }
             }
         }

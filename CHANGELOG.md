@@ -1,5 +1,31 @@
 # Изменения
 
+## Типизированные результаты и единый стиль API (ломающие изменения)
+
+- `playSound`, `showTitle`, `applyEffect`, `spawnParticle` и `runCommand` возвращают `Delivery` вместо `Boolean`:
+  `Delivered`, `Unsupported` или `Failed(причина)`. Проверка успеха — `delivery.isDelivered`. Нужно поправить свои реализации
+  `LibraryPlayer` и `LibraryAudience`.
+- У билдеров `PlaceholderAccess`, `RemotePolicyContext`, `ConfigOptions`, `ConfigTypeAccess`, `CurrencyAccess` и
+  `CurrencyDescriptor` конструктор стал `internal`: создавайте их через `builder()`. Тест архитектуры следит, чтобы публичных
+  конструкторов у билдеров больше не появлялось.
+- Публичные настройки времени принимают `Duration` вместо чисел (например, `confirmationTimeout` у валюты).
+- `ResultedEvent.callResult()` вызывает событие и сразу возвращает его типизированный результат.
+- Появился `ComponentTemplate.renderAsync()`; шаблоны плейсхолдеров больше не блокируют поток при условиях и локальных выражениях.
+  `render()` остался и ждёт результат.
+- Запасные пути не ловили `NoClassDefFoundError` и `NoSuchMethodError` (несовместимый мост платформы), потому что любой `Error`
+  считался фатальным. Теперь фатальна только `VirtualMachineError` (`Failures.rethrowIfFatal`), как в обработке событий.
+
+## Локализация Minecraft и расширения
+
+- Официальные переводы Mojang вынесены в нейтральный модуль `minecraft-localization-api`, реализация для Bukkit — отдельно.
+  Локализация есть только на игровых серверах и доступна через `ModuleContext.localization`. См. `docs/localization.md`.
+- Перевод любых объектов Bukkit (`Material`, `EntityType`, `Enchantment` и других) возвращает `Translation`; языки заданы типом
+  `MinecraftLocale`.
+- Поиск по названию с опечатками и неверной раскладкой клавиатуры: `findExact`, `search`, `fuzzy`, `suggest`, `best`. Раскладки
+  расширяемы через `KeyboardLayouts`.
+- Система расширений (`Expansion`, `ModuleContext.expansions`, `PnLibrary.expansions`) снова основная. Собственные службы библиотеки
+  вынесены в отдельный реестр, плагин не может их отключить. См. `docs/expansions.md`.
+
 ## Удалённые политики только на Java (ломающее изменение)
 
 - Поддержка `.kt`-политик убрана вместе с отдельным файлом `pnLibrary-policy-kotlin` (около 62 МБ) и параметром
