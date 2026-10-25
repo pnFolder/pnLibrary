@@ -1,7 +1,9 @@
 package org.pnfolder.pnlibrary.core.downloads
 
 import org.pnfolder.pnlibrary.common.io.AtomicFiles
+import org.pnfolder.pnlibrary.core.lifecycle.ResourceCleanup
 import java.nio.file.Files
+import java.nio.file.LinkOption
 import java.nio.file.Path
 import java.nio.file.StandardCopyOption
 import java.util.UUID
@@ -15,6 +17,7 @@ internal data class PreparedDownload(
 /** Publishes a prepared download batch as one recoverable filesystem transaction. */
 internal class AtomicDownloadPublisher(
     private val libraryData: Path,
+    private val moveFile: (Path, Path) -> Unit = { source, target -> AtomicFiles.move(source, target) },
 ) {
     fun publish(downloads: List<PreparedDownload>) {
         val transactionDirectory = libraryData.resolve("downloads/transactions/${UUID.randomUUID()}")
@@ -25,15 +28,16 @@ internal class AtomicDownloadPublisher(
             downloads.forEachIndexed { index, download ->
                 Files.createDirectories(download.target.parent)
                 backupExistingTarget(download.target, index, transactionDirectory)?.let(backups::add)
-                move(download.staging, download.target)
+                moveFile(download.staging, download.target)
                 publishedTargets.add(download.target)
             }
         } catch (error: Throwable) {
-            rollback(publishedTargets, backups)
+            rollback(error, publishedTargets, backups)
+            // A backup that could not be restored is the only remaining copy of the original file.
+            ResourceCleanup.suppressInto(error, { cleanTemporaryFiles(downloads, emptyList(), transactionDirectory) })
             throw error
-        } finally {
-            cleanTemporaryFiles(downloads, backups, transactionDirectory)
         }
+        cleanTemporaryFiles(downloads, backups, transactionDirectory)
     }
 
     private fun backupExistingTarget(
@@ -41,7 +45,8 @@ internal class AtomicDownloadPublisher(
         index: Int,
         transactionDirectory: Path,
     ): Backup? {
-        if (!Files.exists(target)) return null
+        if (!Files.exists(target, LinkOption.NOFOLLOW_LINKS)) return null
+        require(Files.isRegularFile(target, LinkOption.NOFOLLOW_LINKS)) { "Download target must be a regular file: $target" }
 
         val backup = transactionDirectory.resolve("$index-${target.fileName}")
         Files.createDirectories(backup.parent)
@@ -50,13 +55,17 @@ internal class AtomicDownloadPublisher(
     }
 
     private fun rollback(
+        primary: Throwable,
         publishedTargets: List<Path>,
         backups: List<Backup>,
     ) {
-        publishedTargets.asReversed().forEach(Files::deleteIfExists)
-        backups.asReversed().forEach { backup ->
-            if (Files.exists(backup.file)) move(backup.file, backup.originalTarget)
-        }
+        ResourceCleanup.suppressInto(
+            primary,
+            *publishedTargets.asReversed().map { target -> ({ Files.deleteIfExists(target); Unit }) }.toTypedArray(),
+            *backups.asReversed().map { backup ->
+                { if (Files.exists(backup.file)) moveFile(backup.file, backup.originalTarget) }
+            }.toTypedArray(),
+        )
     }
 
     private fun cleanTemporaryFiles(
@@ -64,13 +73,11 @@ internal class AtomicDownloadPublisher(
         backups: List<Backup>,
         transactionDirectory: Path,
     ) {
-        downloads.forEach { Files.deleteIfExists(it.staging) }
-        backups.forEach { Files.deleteIfExists(it.file) }
-        runCatching { Files.deleteIfExists(transactionDirectory) }
-    }
-
-    private fun move(source: Path, target: Path) {
-        AtomicFiles.move(source, target)
+        ResourceCleanup.closeAll(
+            *downloads.map { download -> ({ Files.deleteIfExists(download.staging); Unit }) }.toTypedArray(),
+            *backups.map { backup -> ({ Files.deleteIfExists(backup.file); Unit }) }.toTypedArray(),
+            { runCatching { Files.deleteIfExists(transactionDirectory) }; Unit },
+        )
     }
 
     private data class Backup(

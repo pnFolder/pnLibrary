@@ -6,6 +6,7 @@ import org.pnfolder.pnlibrary.api.downloads.FileDownloads
 import org.pnfolder.pnlibrary.api.platform.PlatformType
 import org.pnfolder.pnlibrary.common.io.Digests
 import org.pnfolder.pnlibrary.common.jvm.JavaRuntime
+import org.pnfolder.pnlibrary.core.lifecycle.ResourceCleanup
 import org.pnfolder.pnlibrary.core.updates.engine.TrustedHttpClient
 import java.nio.file.Files
 import java.nio.file.Path
@@ -28,16 +29,21 @@ internal class DownloadArtifactPreparer(
             "файл не поддерживает ${platform.displayName} / Java ${JavaRuntime.feature}"
         }
 
+        val target = target(request, declaration)
         val limit = declaration.source.size?.coerceAtMost(maximumBytes)?.toInt() ?: maximumBytes.toInt()
         val bytes = http.get(declaration.source.uri, limit)
         verifyIntegrity(declaration, bytes)
 
-        val target = target(request, declaration)
         val staging = libraryData.resolve("downloads/staging").resolve("${UUID.randomUUID()}-${target.fileName}")
         Files.createDirectories(staging.parent)
-        Files.write(staging, bytes)
-        verifier?.invoke(declaration, staging)
-        return PreparedDownload(staging, target)
+        try {
+            Files.write(staging, bytes)
+            verifier?.invoke(declaration, staging)
+            return PreparedDownload(staging, target)
+        } catch (error: Throwable) {
+            ResourceCleanup.suppressInto(error, { Files.deleteIfExists(staging) })
+            throw error
+        }
     }
 
     private fun verifyIntegrity(declaration: FileDownload, bytes: ByteArray) {
