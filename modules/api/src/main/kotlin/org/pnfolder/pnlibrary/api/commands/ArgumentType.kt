@@ -24,6 +24,7 @@ class ArgumentSpec private constructor(
 
     val choices: List<String> = choices.toList()
 
+    /** Specs of the built-in argument shapes. */
     companion object {
         /** Any single word. */
         @JvmField

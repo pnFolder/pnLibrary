@@ -62,6 +62,7 @@ interface BukkitLocaleTranslations : LocaleTranslations {
     /** Returns a reverse-search index of Bukkit game modes. */
     fun gameModes(): TranslationIndex<GameMode>
 
+    /** Factories for [BukkitLocaleTranslations]. */
     companion object {
         /** Wraps a neutral [translations] table, resolving its entries to Bukkit value types. */
         @JvmStatic

@@ -30,6 +30,7 @@ interface KeyboardLayouts : AutoCloseable {
     /** Removes every registered layout and rejects further registrations. */
     override fun close()
 
+    /** Ready-made registries. */
     companion object {
         /** The built-in layouts only. It is read-only: [register] throws [UnsupportedOperationException]. */
         @JvmField

@@ -196,7 +196,7 @@ private fun gameModeOf(path: String): GameMode? = GameMode.values().firstOrNull 
 
 // --- Reflection kept out of the public API files (enforced by SourceConventionsTest) ---
 
-/** Exact key via [org.bukkit.Translatable], absent on legacy servers. */
+/** Exact key via `org.bukkit.Translatable`, absent on legacy servers. */
 private fun translationKey(value: Any): String? = try {
     value.javaClass.methods.firstOrNull { it.name == "getTranslationKey" && it.parameterTypes.isEmpty() }
         ?.invoke(value) as? String

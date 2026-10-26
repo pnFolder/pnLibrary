@@ -18,6 +18,7 @@ import org.pnfolder.pnlibrary.api.tasks.TaskScope
 import org.pnfolder.pnlibrary.api.tasks.TaskSpec
 import org.pnfolder.pnlibrary.api.text.ComponentSerializerType
 import org.pnfolder.pnlibrary.api.text.ComponentService
+import org.pnfolder.pnlibrary.common.lang.runCatchingNonFatal
 import java.time.Duration
 import java.util.Collections
 
@@ -162,7 +163,7 @@ class ActionContext(
 
     /** Like [read], but returns [expression] itself, with its tokens replaced, when nothing matches. */
     override fun textOf(expression: String): String =
-        runCatching { read(expression) }.getOrNull()?.toString() ?: format(expression)
+        runCatchingNonFatal { read(expression) }.getOrNull()?.toString() ?: format(expression)
 
     /**
      * Replaces the placeholders in plain [text], each kind in its own brackets, in one pass:
@@ -178,7 +179,7 @@ class ActionContext(
      * Unknown names stay as written, so a typo is visible instead of silently empty.
      */
     fun format(text: String): String = TOKEN.replace(text) { match ->
-        runCatching { valueOf(match) }.getOrNull()?.toString() ?: match.value
+        runCatchingNonFatal { valueOf(match) }.getOrNull()?.toString() ?: match.value
     }
 
     private fun valueOf(match: MatchResult): Any? {
@@ -259,6 +260,7 @@ class ActionContext(
     /** Removes and returns the object registered under [type], if present. */
     fun <T : Any> remove(type: Class<T>): T? = objects.remove(type)?.let(type::cast)
 
+    /** Limits shared by every action context. */
     companion object {
         /** Deepest chain of templates calling templates before the next call is refused. */
         const val MAX_TEMPLATE_DEPTH = 16

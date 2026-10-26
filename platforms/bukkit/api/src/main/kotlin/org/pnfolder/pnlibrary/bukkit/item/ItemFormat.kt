@@ -25,6 +25,15 @@ fun interface ItemField {
  * ```
  *
  * Keys not listed keep their default names. A `material` written as `base64:<texture>` is read as a texture.
+ *
+ * @property material key of the material
+ * @property amount key of the stack size
+ * @property name key of the display name
+ * @property lore key of the lore lines
+ * @property enchantments key of the enchantments
+ * @property textures keys that may hold a head texture
+ * @property exact key of the exact serialized item data
+ * @property fields extra fields read by key
  */
 class ItemFormat private constructor(
     val material: String,

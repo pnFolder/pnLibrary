@@ -30,6 +30,7 @@ import org.pnfolder.pnlibrary.api.config.ConfigNodeRewriter
  * The older `if` form with `all`, `any` and `then` is read as well.
  */
 object ActionNode : ConfigNodeRewriter {
+    /** Rewrites the older `if` form into the current action node shape. */
     override fun rewrite(node: Map<String, Any?>, path: String): Map<String, Any?> {
         val key = node.keys.firstOrNull { it.equals("type", ignoreCase = true) }
             ?: return if (node.keys.any { it.equals("requirements", ignoreCase = true) }) requirements(node, null) else node

@@ -11,7 +11,7 @@ import org.pnfolder.pnlibrary.common.lang.runCatchingNonFatal
 import java.util.UUID
 
 /**
- * Console-only update controls shared by both proxy platforms, mounted as `/pn update` by [ProxyControlCommand].
+ * Console-only update controls shared by both proxy platforms, mounted as `/pn update` by `ProxyControlCommand`.
  */
 class ProxyUpdateCommand(private val library: PnLibrary) {
     private val catalog = UpdateCatalogCommands(

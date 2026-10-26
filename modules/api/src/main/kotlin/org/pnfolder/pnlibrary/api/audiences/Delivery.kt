@@ -11,9 +11,14 @@ sealed interface Delivery {
     /** The platform has no way to do this, or the audience had no receivers. */
     data object Unsupported : Delivery
 
-    /** The platform could do this, but the attempt failed with [cause]. */
+    /**
+     * The platform could do this, but the attempt failed with [cause].
+     *
+     * @property cause the failure reported by the platform
+     */
     data class Failed(val cause: Throwable) : Delivery
 
+    /** Helpers for building [Delivery] values. */
     companion object {
         /** Maps a platform answer that only says accepted or not to [Delivered] or [Unsupported]. */
         @JvmStatic

@@ -31,17 +31,29 @@ open class CommandError @JvmOverloads constructor(val defaultMessage: String? = 
     }
 }
 
-/** The sender may not use the command or subcommand. [permission] is empty when an availability rule hid it instead. */
+/**
+ * The sender may not use the command or subcommand.
+ *
+ * @property permission missing permission; empty when an availability rule hid the command instead
+ */
 open class NoPermission(val permission: String) : CommandError() {
     override fun placeholders() = mapOf("permission" to permission)
 }
 
-/** The command was typed wrongly. [usage] is the generated hint, such as `/shop buy <item>`. */
+/**
+ * The command was typed wrongly.
+ *
+ * @property usage generated hint, such as `/shop buy <item>`
+ */
 open class BadUsage(val usage: String) : CommandError() {
     override fun placeholders(): Map<String, Any?> = mapOf("usage" to usage)
 }
 
-/** A word the command does not know, or one too many. */
+/**
+ * A word the command does not know, or one too many.
+ *
+ * @property value the unexpected word
+ */
 open class UnknownArgument(usage: String, val value: String) : BadUsage(usage) {
     override fun placeholders(): Map<String, Any?> = super.placeholders() + ("value" to value)
 }
@@ -49,7 +61,12 @@ open class UnknownArgument(usage: String, val value: String) : BadUsage(usage) {
 /** The command stopped before a part it needs. */
 open class IncompleteCommand(usage: String) : BadUsage(usage)
 
-/** An argument that does not parse: [argument] is its name and [value] what was typed. */
+/**
+ * An argument that does not parse.
+ *
+ * @property argument name of the argument
+ * @property value what was typed
+ */
 open class InvalidArgument(usage: String, val argument: String, val value: String) : BadUsage(usage) {
     override fun placeholders(): Map<String, Any?> = super.placeholders() + mapOf("argument" to argument, "value" to value)
 }
@@ -63,7 +80,11 @@ class PlayerOnly : CommandError()
 /** The command needs the console and the sender is a player. */
 class ConsoleOnly : CommandError()
 
-/** The sender used the command again too soon; [remaining] is how long to wait. */
+/**
+ * The sender used the command again too soon.
+ *
+ * @property remaining how long to wait
+ */
 open class OnCooldown(val remaining: Duration) : CommandError() {
     override fun placeholders(): Map<String, Any?> =
         mapOf("seconds" to ((remaining.toMillis() + 999) / 1000), "remaining" to remaining)
@@ -75,6 +96,8 @@ open class CommandFailed @JvmOverloads constructor(defaultMessage: String? = nul
 /**
  * Stops the command with [error]. The library answers it through the five levels like any other error, so the
  * command does not print anything itself. Java callers may throw this directly.
+ *
+ * @property error the error to answer with
  */
 class CommandFailure(val error: CommandError) : RuntimeException(error.javaClass.simpleName, null, false, false)
 
