@@ -41,6 +41,17 @@ import org.pnfolder.pnlibrary.core.commands.CommandService
 import org.pnfolder.pnlibrary.core.downloads.DirectDownloadManager
 import org.pnfolder.pnlibrary.core.expansions.LocalizationExpansion
 import org.pnfolder.pnlibrary.core.lifecycle.ResourceCleanup
+import org.pnfolder.pnlibrary.core.plugin.module.ModuleActionService
+import org.pnfolder.pnlibrary.core.plugin.module.ModuleDefinitionBuilder
+import org.pnfolder.pnlibrary.core.plugin.module.ModuleDependencyValidator
+import org.pnfolder.pnlibrary.core.plugin.module.ModuleExpansions
+import org.pnfolder.pnlibrary.core.plugin.module.ModuleLifecycleReporter
+import org.pnfolder.pnlibrary.core.plugin.module.ModuleMessages
+import org.pnfolder.pnlibrary.core.plugin.module.ModuleMetadataFactory
+import org.pnfolder.pnlibrary.core.plugin.module.ModuleProductResolver
+import org.pnfolder.pnlibrary.core.plugin.module.ModuleResourceFactory
+import org.pnfolder.pnlibrary.core.plugin.module.ModuleResources
+import org.pnfolder.pnlibrary.core.plugin.module.ModuleServiceKeyFactory
 import org.pnfolder.pnlibrary.core.remote.RemotePolicyMonitor
 import org.pnfolder.pnlibrary.core.services.ServiceManagerImpl
 import org.pnfolder.pnlibrary.core.tasks.TaskService

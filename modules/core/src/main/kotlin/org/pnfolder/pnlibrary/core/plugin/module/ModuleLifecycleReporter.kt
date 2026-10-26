@@ -1,4 +1,4 @@
-package org.pnfolder.pnlibrary.core.plugin
+package org.pnfolder.pnlibrary.core.plugin.module
 
 import org.pnfolder.pnlibrary.api.logging.LoggingService
 import org.pnfolder.pnlibrary.api.logging.MessageBox
@@ -7,6 +7,7 @@ import org.pnfolder.pnlibrary.api.plugin.LifecycleRow
 import org.pnfolder.pnlibrary.api.plugin.ModuleId
 import org.pnfolder.pnlibrary.api.plugin.PluginLifecycle
 import org.pnfolder.pnlibrary.api.plugin.PluginMetadata
+import org.pnfolder.pnlibrary.core.plugin.HidingLifecycleBox
 
 /** Builds the console cards printed when a module is enabled and disabled. */
 internal class ModuleLifecycleReporter(

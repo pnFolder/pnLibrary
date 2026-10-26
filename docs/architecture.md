@@ -116,6 +116,7 @@ Velocity требует 17, Paper Brigadier и FastStats для Velocity тре�
 | `core.downloads` | загрузка зависимостей плагинов |
 | `core.metrics` | bStats и FastStats за одним `MetricsService` |
 | `core.plugin` | регистрация плагинов и модулей |
+| `core.plugin.module` | сборка модуля: ресурсы, метаданные, зависимости, расширения |
 | `core.remote` | политики |
 | `core.placeholders`, `core.events`, `core.tasks`, `core.cooldowns`, `core.services`, `core.audiences`, `core.text` | реализации одноимённых сервисов API |
 | `core.ui` | цвета палитры для консоли |

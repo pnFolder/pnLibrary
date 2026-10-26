@@ -6,6 +6,7 @@ import org.pnfolder.pnlibrary.api.metrics.MetricsProviderConfiguration
 import org.pnfolder.pnlibrary.api.metrics.MetricsService
 import org.pnfolder.pnlibrary.api.metrics.PluginMetrics
 import org.pnfolder.pnlibrary.common.lang.runCatchingNonFatal
+import org.pnfolder.pnlibrary.core.plugin.module.ModuleMetricsDefinition
 import java.util.concurrent.atomic.AtomicBoolean
 import java.util.function.Consumer
 
