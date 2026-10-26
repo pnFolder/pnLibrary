@@ -1,5 +1,10 @@
 # Изменения
 
+## Проверка API
+
+- `tools/api/check-api-generation.ps1` для версии `-dev` только предупреждает об удалённых объявлениях: опубликованного API
+  ещё нет, и ломающие правки не требуют повышения поколения. Для релизных версий правило прежнее.
+
 ## События
 
 - `@EventHandler(ignoreCancelled)` и `EventListenerBuilder.ignoreCancelled()` переименованы в `ignoreDenied`: события в pnLibrary
