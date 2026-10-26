@@ -120,7 +120,9 @@ object DiagnosticSections {
  * @property address reads the backend address; called only for reports that include sensitive data
  */
 class ProxyBackend(
+    /** Backend server name. */
     val name: String,
+    /** Players currently connected to the backend. */
     val players: Int,
     val address: () -> InetSocketAddress,
 )

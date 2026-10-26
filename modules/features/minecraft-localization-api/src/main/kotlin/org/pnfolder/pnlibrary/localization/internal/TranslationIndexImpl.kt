@@ -10,6 +10,10 @@ import java.util.LinkedHashMap
 import java.util.Locale
 import kotlin.math.abs
 
+/**
+ * Search index over translated names: exact lookup, search and fuzzy matching that also
+ * tolerates text typed in a different keyboard layout.
+ */
 internal class TranslationIndexImpl<T>(
     matches: List<TranslationMatch<T>>,
     override val layouts: KeyboardLayouts = KeyboardLayouts.builtIn,

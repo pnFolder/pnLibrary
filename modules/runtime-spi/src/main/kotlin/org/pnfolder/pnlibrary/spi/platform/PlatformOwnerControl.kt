@@ -8,5 +8,6 @@ interface PlatformOwnerControl {
     fun remotePolicyContext(owner: Any, values: Map<String, String>): RemotePolicyContext =
         throw UnsupportedOperationException("Remote policy is unavailable")
 
+    /** Disables the native plugin [owner]; returns `false` when the platform cannot do it. */
     fun disableOwner(owner: Any): Boolean = false
 }

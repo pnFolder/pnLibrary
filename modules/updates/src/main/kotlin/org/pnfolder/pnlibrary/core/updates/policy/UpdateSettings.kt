@@ -16,6 +16,9 @@ import java.util.Locale
     "Канал, автозагрузку и временную паузу конкретного плагина меняют командами:",
     "  set <плагин> channel <канал>, set <плагин> auto <on|off>, set <плагин> hold <период>.",
 )
+/**
+ * Configuration section that controls update checks, downloads and installation.
+ */
 internal class UpdateSettings {
     @field:ConfigDefaultOnInvalid
     @field:ConfigComment("Главный выключатель автоматических действий. false: только проверки и уведомления.")

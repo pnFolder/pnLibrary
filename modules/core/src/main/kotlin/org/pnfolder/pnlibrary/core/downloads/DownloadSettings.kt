@@ -11,6 +11,9 @@ import org.pnfolder.pnlibrary.api.downloads.DownloadDestination
     "Правила для файлов, которые плагины скачивают через API pnLibrary.",
     "Адреса скачивания не ограничиваются; ограничиваются только действия и места сохранения.",
 )
+/**
+ * Configuration section that restricts which download actions plugins may perform through pnLibrary.
+ */
 internal class DownloadSettings {
     @field:ConfigDefaultOnInvalid
     @field:ConfigComment("Включить систему загрузок. false: все запросы плагинов на загрузку отклоняются.")

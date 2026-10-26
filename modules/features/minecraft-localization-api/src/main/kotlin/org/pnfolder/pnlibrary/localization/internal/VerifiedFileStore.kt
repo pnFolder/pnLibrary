@@ -6,6 +6,10 @@ import java.nio.file.Path
 import java.nio.file.StandardCopyOption
 import java.security.MessageDigest
 
+/**
+ * Cache directory layout for localization files with bounded reads, atomic writes, SHA-1 helpers
+ * and quarantine for files that fail verification.
+ */
 internal class VerifiedFileStore(private val root: Path) {
     fun translation(version: String, locale: String): Path = root.resolve("translations").resolve(version).resolve("$locale.json")
     fun manifest(): Path = root.resolve("version-manifest.json")

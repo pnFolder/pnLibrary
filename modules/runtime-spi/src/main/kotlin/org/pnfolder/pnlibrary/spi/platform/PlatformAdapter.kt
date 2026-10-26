@@ -24,8 +24,12 @@ interface PlatformAdapter : PlatformShutdown, PlatformIdentity, PlatformExecutio
     PlatformReadiness, PlatformOwnership, PlatformDiagnostics, PlatformLogObservation, PlatformLogging {
     /** Durable data root required by the shared runtime. */
     val dataFolder: Path
+    /** Factory for native metrics; no-op by default. */
     val metricsFactory: PlatformMetricsFactory get() = NoopMetricsFactory
+    /** Native command registration; unsupported by default. */
     val commandAdapter: PlatformCommandAdapter get() = UnsupportedPlatformCommandAdapter
+    /** Native message delivery; unsupported by default. */
     val audienceAdapter: PlatformAudienceAdapter get() = UnsupportedPlatformAudienceAdapter
+    /** Native task scheduling; unsupported by default. */
     val taskAdapter: PlatformTaskAdapter get() = UnsupportedPlatformTaskAdapter
 }

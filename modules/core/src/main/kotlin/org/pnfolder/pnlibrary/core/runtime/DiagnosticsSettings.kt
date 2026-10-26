@@ -19,6 +19,9 @@ import java.time.Duration
     "Диагностический отчёт собирает сведения о сервере и плагинах, чтобы упростить поддержку.",
     "Отчёт всегда сохраняется на сервере. Отправка во внешний сервис всегда идёт в зашифрованном виде.",
 )
+/**
+ * Configuration section for diagnostic report collection, retention and delivery.
+ */
 internal class DiagnosticsSettings {
     @field:ConfigComment(
         "=== Отправка отчёта ===",
