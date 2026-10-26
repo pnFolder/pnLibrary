@@ -12,10 +12,23 @@ import java.nio.file.Path
 import java.util.concurrent.ConcurrentHashMap
 import java.util.zip.ZipFile
 
+/**
+ * Hash and size of one asset listed in a Mojang asset index.
+ */
 internal data class AssetReference(val hash: String, val size: Int)
+/**
+ * Verified bytes of a language file together with its SHA-1 hash.
+ */
 internal data class ResolvedLanguage(val bytes: ByteArray, val hash: String)
+/**
+ * Parsed asset metadata of one Minecraft version.
+ */
 private data class VersionAssets(val metadata: JsonObject, val objects: Map<String, AssetReference>)
 
+/**
+ * Resolves Minecraft language files through the Mojang version manifest and asset indexes,
+ * verifying every download before it is stored.
+ */
 internal class MojangAssetResolver(
     private val http: LocalizationHttpClient,
     private val store: VerifiedFileStore,

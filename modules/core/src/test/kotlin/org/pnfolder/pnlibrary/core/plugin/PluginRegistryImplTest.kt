@@ -42,10 +42,12 @@ import org.pnfolder.pnlibrary.api.updates.UpdateRegistration
 import org.pnfolder.pnlibrary.api.updates.UpdateService
 import org.pnfolder.pnlibrary.config.ConfigurationServiceImpl
 import org.pnfolder.pnlibrary.core.commands.CommandService
-import org.pnfolder.pnlibrary.core.downloads.DownloadService
+import org.pnfolder.pnlibrary.core.downloads.DirectDownloadManager
 import org.pnfolder.pnlibrary.core.events.EventServiceImpl
 import org.pnfolder.pnlibrary.core.expansions.ExpansionManagerImpl
 import org.pnfolder.pnlibrary.core.placeholders.PlaceholderHub
+import org.pnfolder.pnlibrary.core.remote.RemotePolicyMonitor
+import org.pnfolder.pnlibrary.core.remote.RemotePolicyNoticeRenderer
 import org.pnfolder.pnlibrary.core.services.ServiceManagerImpl
 import org.pnfolder.pnlibrary.core.tasks.TaskService
 import org.pnfolder.pnlibrary.core.tasks.TaskServiceImpl
@@ -63,7 +65,7 @@ class PluginRegistryImplTest {
     @Test
     fun `failed file registration rolls back previously registered dependency downloads`() {
         val owner = Any()
-        val downloads = mock(DownloadService::class.java)
+        val downloads = mock(DirectDownloadManager::class.java)
         val dependencyRegistration = mock(DownloadRegistration::class.java)
         val failure = IllegalStateException("file registration failed")
         val request = FileDownloads.builder().dataDirectory(Paths.get("plugins/example"))
@@ -86,7 +88,7 @@ class PluginRegistryImplTest {
         val firstOwner = Any()
         val secondOwner = Any()
         val commands = mock(CommandService::class.java)
-        val downloads = mock(DownloadService::class.java)
+        val downloads = mock(DirectDownloadManager::class.java)
         val failure = IllegalStateException("plugin cleanup failed")
         doThrow(failure).`when`(commands).unregisterOwner(firstOwner)
         val registry = registry(commands = commands, directDownloads = downloads)
@@ -638,15 +640,14 @@ class PluginRegistryImplTest {
             commands: CommandService? = null,
             libraryVersion: String? = null,
             updates: UpdateService = emptyProxy(UpdateService::class.java),
-            directDownloads: DownloadService? = null,
+            directDownloads: DirectDownloadManager? = null,
             expansions: ExpansionManagerImpl = ExpansionManagerImpl { _, _ -> },
             libraryExpansions: ExpansionManagerImpl = ExpansionManagerImpl { _, _ -> },
         ): PluginRegistryImpl =
             PluginRegistryImpl(
                 ownership = platform,
                 identity = platform,
-                execution = platform,
-                platformLogging = platform,
+                remotePolicies = RemotePolicyMonitor(platform, platform, RemotePolicyNoticeRenderer(platform)),
                 events = events,
                 tasks = tasks,
                 services = ServiceManagerImpl(),

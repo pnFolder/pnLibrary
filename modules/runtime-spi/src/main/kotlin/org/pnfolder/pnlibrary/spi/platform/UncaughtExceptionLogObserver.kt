@@ -15,6 +15,7 @@ class UncaughtExceptionLogObserver(private val owner: Any) {
     private var installed: Thread.UncaughtExceptionHandler? = null
 
     @Synchronized
+    /** Installs or removes the uncaught-exception hook; `null` restores the previous handler. */
     fun observe(observer: ((Any, LogLevel, String, Throwable?) -> Unit)?) {
         callback = observer
         if (observer != null && installed == null) {

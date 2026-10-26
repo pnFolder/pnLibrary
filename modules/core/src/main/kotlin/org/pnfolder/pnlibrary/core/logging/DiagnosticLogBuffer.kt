@@ -1,6 +1,7 @@
 package org.pnfolder.pnlibrary.core.logging
 
 import org.pnfolder.pnlibrary.api.logging.LogLevel
+import org.pnfolder.pnlibrary.common.lang.runCatchingNonFatal
 import org.pnfolder.pnlibrary.core.diagnostics.DiagnosticRedactor
 import org.pnfolder.pnlibrary.core.diagnostics.DiagnosticThrowables
 import org.pnfolder.pnlibrary.spi.platform.PlatformOwnership
@@ -155,7 +156,7 @@ internal class DiagnosticLogBuffer(private val capacity: Int = 2_000) {
     )
 
     private fun notifyChanged() {
-        changeListener?.let { listener -> runCatching { listener(snapshot()) } }
+        changeListener?.let { listener -> runCatchingNonFatal { listener(snapshot()) } }
     }
 
     private fun fingerprint(plugin: String, level: LogLevel, message: String, error: Throwable?): String =

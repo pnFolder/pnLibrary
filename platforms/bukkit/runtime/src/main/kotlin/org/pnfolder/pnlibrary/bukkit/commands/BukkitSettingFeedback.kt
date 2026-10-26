@@ -3,6 +3,7 @@ package org.pnfolder.pnlibrary.bukkit.commands
 import org.bukkit.entity.Player
 import org.bukkit.plugin.Plugin
 import org.pnfolder.pnlibrary.bukkit.BukkitTitle
+import org.pnfolder.pnlibrary.common.lang.runCatchingNonFatal
 import org.pnfolder.pnlibrary.core.updates.catalog.UpdateCatalogCommands.SettingSaved
 
 /**
@@ -16,13 +17,13 @@ import org.pnfolder.pnlibrary.core.updates.catalog.UpdateCatalogCommands.Setting
 internal class BukkitSettingFeedback(private val plugin: Plugin) {
     /** Shows the title and plays the chime for [player]. */
     fun show(player: Player, saved: SettingSaved) {
-        runCatching { title(player, saved) }
-        runCatching { chime(player, notes(saved)) }
+        runCatchingNonFatal { title(player, saved) }
+        runCatchingNonFatal { chime(player, notes(saved)) }
     }
 
     private fun title(player: Player, saved: SettingSaved) {
         val (title, subtitle) = BukkitTitle.settingSaved(saved)
-        val timed = runCatching {
+        val timed = runCatchingNonFatal {
             Player::class.java.getMethod(
                 "sendTitle", String::class.java, String::class.java, Int::class.javaPrimitiveType, Int::class.javaPrimitiveType, Int::class.javaPrimitiveType,
             ).invoke(player, title, subtitle, FADE_IN_TICKS, STAY_TICKS, FADE_OUT_TICKS)
@@ -49,7 +50,7 @@ internal class BukkitSettingFeedback(private val plugin: Plugin) {
     }
 
     /** Sound names changed in 1.9; the presence of the enum constant tells which generation this server is. */
-    private val modernSounds: Boolean = runCatching {
+    private val modernSounds: Boolean = runCatchingNonFatal {
         Class.forName("org.bukkit.Sound").getField("ENTITY_EXPERIENCE_ORB_PICKUP")
     }.isSuccess
 

@@ -2,6 +2,7 @@ package org.pnfolder.pnlibrary.core.updates.engine
 
 import org.pnfolder.pnlibrary.common.io.AtomicFiles
 import org.pnfolder.pnlibrary.common.io.Digests
+import org.pnfolder.pnlibrary.common.lang.runCatchingNonFatal
 import java.net.URI
 import java.nio.charset.StandardCharsets
 import java.nio.file.Files
@@ -56,7 +57,7 @@ internal class ReleaseCatalogStore(private val root: Path) {
         val suffix = ".corrupt-${System.currentTimeMillis()}"
         // A file that cannot be moved stays in place and fails verification again on the next read.
         listOf(dataPath(uri), digestPath(uri)).forEach { path ->
-            if (Files.exists(path)) runCatching {
+            if (Files.exists(path)) runCatchingNonFatal {
                 Files.move(path, path.resolveSibling(path.fileName.toString() + suffix), StandardCopyOption.REPLACE_EXISTING)
             }
         }

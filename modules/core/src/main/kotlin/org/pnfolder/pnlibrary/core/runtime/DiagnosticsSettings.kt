@@ -4,6 +4,7 @@ import org.pnfolder.pnlibrary.api.config.ConfigComment
 import org.pnfolder.pnlibrary.api.config.ConfigNewLine
 import org.pnfolder.pnlibrary.api.config.ConfigRange
 import org.pnfolder.pnlibrary.api.runtime.PnLibraryConfig
+import org.pnfolder.pnlibrary.common.lang.runCatchingNonFatal
 import java.time.Duration
 
 /**
@@ -18,6 +19,9 @@ import java.time.Duration
     "Диагностический отчёт собирает сведения о сервере и плагинах, чтобы упростить поддержку.",
     "Отчёт всегда сохраняется на сервере. Отправка во внешний сервис всегда идёт в зашифрованном виде.",
 )
+/**
+ * Configuration section for diagnostic report collection, retention and delivery.
+ */
 internal class DiagnosticsSettings {
     @field:ConfigComment(
         "=== Отправка отчёта ===",
@@ -182,7 +186,7 @@ internal class DiagnosticsSettings {
         journalForeignPlugins = journalForeignPlugins,
         journalJoinNotice = journalJoinNotice,
         journalJoinNoticeHours = journalJoinNoticeHours,
-        timeZone = timeZone.trim().takeIf { runCatching { java.time.ZoneId.of(it) }.isSuccess }
+        timeZone = timeZone.trim().takeIf { runCatchingNonFatal { java.time.ZoneId.of(it) }.isSuccess }
             ?: java.time.ZoneId.systemDefault().id,
     )
 }

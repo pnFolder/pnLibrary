@@ -38,18 +38,26 @@ import org.pnfolder.pnlibrary.api.version.SemanticVersion
 import org.pnfolder.pnlibrary.config.ConfigurationRuntime
 import org.pnfolder.pnlibrary.core.commands.CommandFeedbackScope
 import org.pnfolder.pnlibrary.core.commands.CommandService
-import org.pnfolder.pnlibrary.core.downloads.DownloadService
+import org.pnfolder.pnlibrary.core.downloads.DirectDownloadManager
 import org.pnfolder.pnlibrary.core.expansions.LocalizationExpansion
 import org.pnfolder.pnlibrary.core.lifecycle.ResourceCleanup
+import org.pnfolder.pnlibrary.core.plugin.module.ModuleActionService
+import org.pnfolder.pnlibrary.core.plugin.module.ModuleDefinitionBuilder
+import org.pnfolder.pnlibrary.core.plugin.module.ModuleDependencyValidator
+import org.pnfolder.pnlibrary.core.plugin.module.ModuleExpansions
+import org.pnfolder.pnlibrary.core.plugin.module.ModuleLifecycleReporter
+import org.pnfolder.pnlibrary.core.plugin.module.ModuleMessages
+import org.pnfolder.pnlibrary.core.plugin.module.ModuleMetadataFactory
+import org.pnfolder.pnlibrary.core.plugin.module.ModuleProductResolver
+import org.pnfolder.pnlibrary.core.plugin.module.ModuleResourceFactory
+import org.pnfolder.pnlibrary.core.plugin.module.ModuleResources
+import org.pnfolder.pnlibrary.core.plugin.module.ModuleServiceKeyFactory
 import org.pnfolder.pnlibrary.core.remote.RemotePolicyMonitor
-import org.pnfolder.pnlibrary.core.remote.RemotePolicyNoticeRenderer
-import org.pnfolder.pnlibrary.core.services.ServiceScopeFactory
+import org.pnfolder.pnlibrary.core.services.ServiceManagerImpl
 import org.pnfolder.pnlibrary.core.tasks.TaskService
 import org.pnfolder.pnlibrary.core.text.ComponentCache
 import org.pnfolder.pnlibrary.localization.MinecraftLocalization
-import org.pnfolder.pnlibrary.spi.platform.PlatformExecution
 import org.pnfolder.pnlibrary.spi.platform.PlatformIdentity
-import org.pnfolder.pnlibrary.spi.platform.PlatformLogging
 import org.pnfolder.pnlibrary.spi.platform.PlatformOwnership
 import java.util.Collections
 import java.util.IdentityHashMap
@@ -67,11 +75,10 @@ import java.util.function.Consumer
 internal class PluginRegistryImpl(
     private val ownership: PlatformOwnership,
     private val identity: PlatformIdentity,
-    private val execution: PlatformExecution,
-    private val platformLogging: PlatformLogging,
+    private val remotePolicies: RemotePolicyMonitor,
     private val events: EventService,
     private val tasks: TaskService,
-    private val services: ServiceScopeFactory,
+    private val services: ServiceManagerImpl,
     private val logging: LoggingService,
     private val metrics: MetricsService,
     private val diagnostics: DiagnosticsService,
@@ -79,7 +86,7 @@ internal class PluginRegistryImpl(
     private val shared: SharedFeatures,
     private val configurations: ConfigurationRuntime,
     private val commands: CommandService? = null,
-    private val directDownloads: DownloadService? = null,
+    private val directDownloads: DirectDownloadManager? = null,
     libraryVersion: String? = null,
 ) : PluginRegistry {
 
@@ -96,8 +103,6 @@ internal class PluginRegistryImpl(
         events, tasks, services, logging, metrics, diagnostics, updates,
         shared.placeholders, shared.currency, configurations, directDownloads, sharedComponentCache,
     )
-    private val remotePolicyNotices = RemotePolicyNoticeRenderer(platformLogging)
-    private val remotePolicies = RemotePolicyMonitor(ownership, execution, remotePolicyNotices)
     private val dependencyValidator = ModuleDependencyValidator(ownership) {
         directDownloads != null
     }

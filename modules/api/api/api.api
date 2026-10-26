@@ -1879,12 +1879,11 @@ public abstract class org/pnfolder/pnlibrary/api/events/Event {
 }
 
 public abstract interface annotation class org/pnfolder/pnlibrary/api/events/EventHandler : java/lang/annotation/Annotation {
-	public abstract fun ignoreCancelled ()Z
+	public abstract fun ignoreDenied ()Z
 	public abstract fun priority ()I
 }
 
 public final class org/pnfolder/pnlibrary/api/events/EventListenerBuilder {
-	public final fun ignoreCancelled ()Lorg/pnfolder/pnlibrary/api/events/EventListenerBuilder;
 	public final fun ignoreDenied ()Lorg/pnfolder/pnlibrary/api/events/EventListenerBuilder;
 	public final fun listen (Ljava/util/function/Consumer;)Lorg/pnfolder/pnlibrary/api/events/EventSubscription;
 	public final fun priority (I)Lorg/pnfolder/pnlibrary/api/events/EventListenerBuilder;

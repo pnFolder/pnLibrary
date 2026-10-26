@@ -3,7 +3,9 @@ param(
     [string]$BaseApiPath,
     [string]$CurrentApiPath = 'modules/api/api/api.api',
     [string]$BaseVersionPath,
-    [string]$CurrentVersionPath = 'modules/api/src/main/kotlin/org/pnfolder/pnlibrary/api/version/PnLibraryApi.kt'
+    [string]$CurrentVersionPath = 'modules/api/src/main/kotlin/org/pnfolder/pnlibrary/api/version/PnLibraryApi.kt',
+    # Project version such as 0.0.1-dev.4. Defaults to gradle.properties; a -dev version has no published API to protect.
+    [string]$ProjectVersion
 )
 
 $ErrorActionPreference = 'Stop'
@@ -102,6 +104,17 @@ if ($currentVersion -lt $baseVersion) {
 $baseDeclarations = if ($allModules) { Get-RepositoryApiDeclarations $BaseRef } else { Get-ApiDeclarations $baseApi }
 $currentDeclarations = if ($allModules) { Get-RepositoryApiDeclarations '' } else { Get-ApiDeclarations $currentApi }
 $removed = @($baseDeclarations | Where-Object { -not $currentDeclarations.Contains($_) } | Sort-Object)
+
+if (-not $ProjectVersion -and (Test-Path -LiteralPath 'gradle.properties' -PathType Leaf)) {
+    $declared = Select-String -LiteralPath 'gradle.properties' -Pattern '^version=(.+)$' | Select-Object -First 1
+    if ($declared) { $ProjectVersion = $declared.Matches[0].Groups[1].Value.Trim() }
+}
+$isDevelopment = $ProjectVersion -match '-dev(\.|$)'
+
+if ($removed.Count -gt 0 -and $isDevelopment -and $currentVersion -le $baseVersion) {
+    Write-Warning "Development version ${ProjectVersion}: $($removed.Count) public ABI declaration(s) were removed without raising the API generation:`n$($removed -join "`n")"
+    exit 0
+}
 
 if ($removed.Count -gt 0 -and $currentVersion -le $baseVersion) {
     Write-Error "Public ABI removed $($removed.Count) declaration(s) without raising the API generation above ${baseVersion}:`n$($removed -join "`n")"

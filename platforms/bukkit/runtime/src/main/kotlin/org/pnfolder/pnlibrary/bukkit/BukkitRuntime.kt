@@ -5,6 +5,7 @@ import org.pnfolder.pnlibrary.bukkit.api.BukkitPlatform
 import org.pnfolder.pnlibrary.bukkit.inventory.MenuService
 import org.pnfolder.pnlibrary.bukkit.inventory.MenuServiceImpl
 import org.pnfolder.pnlibrary.bukkit.server.ServerInfo
+import org.pnfolder.pnlibrary.common.lang.runCatchingNonFatal
 import org.pnfolder.pnlibrary.core.lifecycle.runtimeTaskScope
 import org.pnfolder.pnlibrary.core.runtime.PnLibraryRuntimeHost
 
@@ -40,13 +41,13 @@ internal class BukkitRuntime(private val plugin: JavaPlugin) {
     }
 
     fun stop() {
-        runCatching { integrations?.stop() }
+        runCatchingNonFatal { integrations?.stop() }
         integrations = null
-        runCatching { menus?.close() }
+        runCatchingNonFatal { menus?.close() }
         menus = null
-        runCatching { audiences?.close() }
+        runCatchingNonFatal { audiences?.close() }
         audiences = null
-        runCatching { host?.close() }
+        runCatchingNonFatal { host?.close() }
         host = null
     }
 

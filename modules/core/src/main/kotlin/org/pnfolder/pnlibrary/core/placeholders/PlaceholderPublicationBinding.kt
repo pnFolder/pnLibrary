@@ -6,6 +6,7 @@ import org.pnfolder.pnlibrary.api.placeholders.PlaceholderAdapterState
 import org.pnfolder.pnlibrary.api.placeholders.PlaceholderPublication
 import org.pnfolder.pnlibrary.api.placeholders.PlaceholderResolver
 import org.pnfolder.pnlibrary.api.plugin.PluginId
+import org.pnfolder.pnlibrary.common.lang.runCatchingNonFatal
 import java.util.Locale
 import java.util.concurrent.atomic.AtomicBoolean
 
@@ -39,7 +40,7 @@ internal class PlaceholderPublicationBinding(
 
         closeDelegate()
         publicationFailed = false
-        runCatching { adapter.publish(owner, key, resolver, publication) }
+        runCatchingNonFatal { adapter.publish(owner, key, resolver, publication) }
             .onSuccess { delegate = it }
             .onFailure { publicationFailed = true }
     }
@@ -55,7 +56,7 @@ internal class PlaceholderPublicationBinding(
     }
 
     private fun closeDelegate() {
-        delegate?.let { registration -> runCatching(registration::close) }
+        delegate?.let { registration -> runCatchingNonFatal(registration::close) }
         delegate = null
     }
 }

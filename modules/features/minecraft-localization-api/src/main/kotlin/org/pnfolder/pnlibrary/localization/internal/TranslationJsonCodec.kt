@@ -4,6 +4,9 @@ import com.google.gson.JsonParser
 import org.pnfolder.pnlibrary.localization.TranslationException
 import java.nio.charset.StandardCharsets
 
+/**
+ * Reads a language file into a flat key-to-text map; accepts JSON objects and `key=value` lines.
+ */
 internal object TranslationJsonCodec {
     fun parse(bytes: ByteArray): Map<String, String> = try {
         val text = String(bytes, StandardCharsets.UTF_8)

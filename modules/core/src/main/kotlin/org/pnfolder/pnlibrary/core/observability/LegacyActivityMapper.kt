@@ -8,6 +8,7 @@ import org.pnfolder.pnlibrary.api.observability.Observation
 import org.pnfolder.pnlibrary.api.observability.ObservationLevel
 import org.pnfolder.pnlibrary.api.observability.ObservationQuery
 import org.pnfolder.pnlibrary.api.observability.ObservationRequest
+import org.pnfolder.pnlibrary.common.lang.runCatchingNonFatal
 
 /** Conversion rules kept in one place for the deprecated activity API. */
 internal object LegacyActivityMapper {
@@ -42,6 +43,6 @@ internal object LegacyActivityMapper {
 
     private fun category(value: String?): ActivityCategory {
         if (value == null) return ActivityCategory.SYSTEM
-        return runCatching { ActivityCategory.valueOf(value) }.getOrDefault(ActivityCategory.SYSTEM)
+        return runCatchingNonFatal { ActivityCategory.valueOf(value) }.getOrDefault(ActivityCategory.SYSTEM)
     }
 }

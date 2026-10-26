@@ -4,6 +4,7 @@ import org.pnfolder.pnlibrary.api.updates.UpdateActor
 import org.pnfolder.pnlibrary.api.updates.UpdatePlanSnapshot
 import org.pnfolder.pnlibrary.api.updates.UpdateState
 import org.pnfolder.pnlibrary.api.updates.release.UpdatePlan
+import org.pnfolder.pnlibrary.common.lang.runCatchingNonFatal
 import org.pnfolder.pnlibrary.core.updates.engine.ResolutionResult
 import org.pnfolder.pnlibrary.core.updates.history.UpdateStateStore
 import org.pnfolder.pnlibrary.core.updates.policy.UpdateConfiguration
@@ -87,7 +88,7 @@ internal class UpdateOrchestrator(
     private fun performCheck(promise: CompletableFuture<UpdatePlanSnapshot>, forceRemote: Boolean, actor: UpdateActor) {
         if (promise.isDone) { releaseInFlight(promise); return }
         try {
-            val completed = runCatching {
+            val completed = runCatchingNonFatal {
                 beforeCheck()
                 val checked = snapshot(resolve(forceRemote))
                 check(!closed.get()) { "Update orchestrator is closed" }
@@ -250,7 +251,7 @@ internal class UpdateOrchestrator(
     private fun observeFailure(planId: UUID, actor: UpdateActor, operation: String, error: Throwable) {
         val selected = synchronized(lock) { current?.takeIf { it.id == planId } }
         // A rejected operation is an audit event, not a replacement for the current valid plan.
-        runCatching {
+        runCatchingNonFatal {
             observeState(UpdatePlanSnapshot(
                 planId, selected?.revision ?: 0, UpdateState.FAILED,
                 selected?.plan, selected?.blockers.orEmpty(), rootMessage(error),

@@ -8,6 +8,7 @@ import org.pnfolder.pnlibrary.api.logging.LogLevel
 import org.pnfolder.pnlibrary.api.observability.ObservabilityReport
 import org.pnfolder.pnlibrary.api.observability.ObservabilityReportRequest
 import org.pnfolder.pnlibrary.api.runtime.PnLibraryConfig
+import org.pnfolder.pnlibrary.common.lang.runCatchingNonFatal
 import org.pnfolder.pnlibrary.core.diagnostics.DiagnosticsRegistry
 import org.pnfolder.pnlibrary.core.logging.DiagnosticCapture
 import org.pnfolder.pnlibrary.core.logging.DiagnosticLogBuffer
@@ -111,7 +112,7 @@ internal class SupportRuntime(
         }
 
         worker.scheduleWithFixedDelay(
-            { if (!isRuntimeClosed()) runCatching { performMaintenance() }.onFailure(warnBackgroundFailure("Diagnostic retention maintenance")) },
+            { if (!isRuntimeClosed()) runCatchingNonFatal { performMaintenance() }.onFailure(warnBackgroundFailure("Diagnostic retention maintenance")) },
             MAINTENANCE_INTERVAL_HOURS,
             MAINTENANCE_INTERVAL_HOURS,
             TimeUnit.HOURS,
@@ -119,7 +120,7 @@ internal class SupportRuntime(
 
         uploader?.let { remote ->
             worker.scheduleWithFixedDelay(
-                { if (!isRuntimeClosed()) runCatching { uploadLedger.cleanup(remote) }.onFailure(warnBackgroundFailure("Uploaded report cleanup")) },
+                { if (!isRuntimeClosed()) runCatchingNonFatal { uploadLedger.cleanup(remote) }.onFailure(warnBackgroundFailure("Uploaded report cleanup")) },
                 0,
                 24,
                 TimeUnit.HOURS,
@@ -137,7 +138,7 @@ internal class SupportRuntime(
             reportsCreated.incrementAndGet()
             lastReportUtc = Instant.now().toString()
             lastReportDurationMs = (System.nanoTime() - startedAt) / 1_000_000
-            lastReportSizeBytes = runCatching { Files.size(report.localFile) }.getOrNull()
+            lastReportSizeBytes = runCatchingNonFatal { Files.size(report.localFile) }.getOrNull()
             reportDurationTotalMs.addAndGet(lastReportDurationMs ?: 0L)
             reportSizeTotalBytes.addAndGet(lastReportSizeBytes ?: 0L)
             report
@@ -152,7 +153,7 @@ internal class SupportRuntime(
     }
 
     fun reportSummary(): Map<String, Any?> {
-        val historyFiles = runCatching { history.files() }.getOrDefault(emptyList())
+        val historyFiles = runCatchingNonFatal { history.files() }.getOrDefault(emptyList())
         return linkedMapOf(
             "inProgress" to reportInProgress.get(),
             "created" to reportsCreated.get(),
@@ -195,7 +196,7 @@ internal class SupportRuntime(
         diagnostics.onEventsChanged(null)
         diagnostics.onActivityEvent(null)
         worker.shutdownNow()
-        if (persistRequested.getAndSet(false)) runCatching { writeHistory() }
+        if (persistRequested.getAndSet(false)) runCatchingNonFatal { writeHistory() }
         diagnostics.clear()
         service.close()
     }
@@ -208,7 +209,7 @@ internal class SupportRuntime(
         if (!persistRequested.compareAndSet(false, true)) return
         try {
             worker.schedule(
-                { if (persistRequested.getAndSet(false)) runCatching { writeHistory() } },
+                { if (persistRequested.getAndSet(false)) runCatchingNonFatal { writeHistory() } },
                 HISTORY_FLUSH_DELAY_MS,
                 TimeUnit.MILLISECONDS,
             )

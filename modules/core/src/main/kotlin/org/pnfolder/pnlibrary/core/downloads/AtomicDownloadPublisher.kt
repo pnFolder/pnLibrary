@@ -1,6 +1,7 @@
 package org.pnfolder.pnlibrary.core.downloads
 
 import org.pnfolder.pnlibrary.common.io.AtomicFiles
+import org.pnfolder.pnlibrary.common.lang.runCatchingNonFatal
 import org.pnfolder.pnlibrary.core.lifecycle.ResourceCleanup
 import java.nio.file.Files
 import java.nio.file.LinkOption
@@ -76,7 +77,7 @@ internal class AtomicDownloadPublisher(
         ResourceCleanup.closeAll(
             *downloads.map { download -> ({ Files.deleteIfExists(download.staging); Unit }) }.toTypedArray(),
             *backups.map { backup -> ({ Files.deleteIfExists(backup.file); Unit }) }.toTypedArray(),
-            { runCatching { Files.deleteIfExists(transactionDirectory) }; Unit },
+            { runCatchingNonFatal { Files.deleteIfExists(transactionDirectory) }; Unit },
         )
     }
 

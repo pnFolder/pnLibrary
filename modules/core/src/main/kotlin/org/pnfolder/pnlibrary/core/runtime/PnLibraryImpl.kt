@@ -25,6 +25,7 @@ import org.pnfolder.pnlibrary.api.services.ServiceManager
 import org.pnfolder.pnlibrary.api.tasks.TaskScope
 import org.pnfolder.pnlibrary.api.updates.UpdateService
 import org.pnfolder.pnlibrary.api.version.SemanticVersion
+import org.pnfolder.pnlibrary.common.lang.runCatchingNonFatal
 import org.pnfolder.pnlibrary.common.time.DisplayZone
 import org.pnfolder.pnlibrary.core.commands.standardCommandFeedback
 import org.pnfolder.pnlibrary.core.diagnostics.DiagnosticsRegistry
@@ -42,6 +43,8 @@ import org.pnfolder.pnlibrary.core.observability.SupportRuntime
 import org.pnfolder.pnlibrary.core.platform.PlatformProviderImpl
 import org.pnfolder.pnlibrary.core.plugin.PluginRegistryImpl
 import org.pnfolder.pnlibrary.core.plugin.SharedFeatures
+import org.pnfolder.pnlibrary.core.remote.RemotePolicyMonitor
+import org.pnfolder.pnlibrary.core.remote.RemotePolicyNoticeRenderer
 import org.pnfolder.pnlibrary.core.runtime.details.RuntimeDiagnosticsAssembler
 import org.pnfolder.pnlibrary.core.runtime.details.RuntimeFeatureSet
 import org.pnfolder.pnlibrary.core.runtime.details.RuntimeJournal
@@ -162,7 +165,7 @@ internal class PnLibraryImpl(
         if (!config.journalJoinNotice) return emptyList()
         val now = System.currentTimeMillis()
         val since = now - Duration.ofHours(config.journalJoinNoticeHours.toLong()).toMillis()
-        return runCatching {
+        return runCatchingNonFatal {
             joinDigest(journal.read(sinceMillis = since, limit = 5_000), now, config.journalJoinNoticeHours, startedAtMillis, EVENTS_COMMAND)
         }.getOrDefault(emptyList())
     }
@@ -189,8 +192,7 @@ internal class PnLibraryImpl(
     override val plugins: PluginRegistry = PluginRegistryImpl(
         ownership = platformOwnership,
         identity = platformIdentity,
-        execution = platformExecution,
-        platformLogging = support.capture,
+        remotePolicies = RemotePolicyMonitor(platformOwnership, platformExecution, RemotePolicyNoticeRenderer(support.capture)),
         events = eventService,
         tasks = taskService,
         services = serviceManager,

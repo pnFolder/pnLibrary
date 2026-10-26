@@ -3,6 +3,7 @@ package org.pnfolder.pnlibrary.core.diagnostics
 import org.pnfolder.pnlibrary.api.diagnostics.DiagnosticConfiguration
 import org.pnfolder.pnlibrary.api.diagnostics.DiagnosticRegistration
 import org.pnfolder.pnlibrary.api.diagnostics.DiagnosticsContributor
+import org.pnfolder.pnlibrary.common.lang.runCatchingNonFatal
 import java.nio.file.Path
 import java.util.concurrent.ConcurrentHashMap
 import java.util.concurrent.atomic.AtomicBoolean
@@ -61,7 +62,7 @@ internal class DiagnosticContributors(
             }
             registered.contributor.configurationFiles().forEach { path ->
                 if (destination.size < MAXIMUM_CONFIGURATION_FILES && path !in destination) {
-                    runCatching {
+                    runCatchingNonFatal {
                         destination[path] = RegisteredDiagnosticConfiguration(
                             plugin,
                             registered.dataDirectory,

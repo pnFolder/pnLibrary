@@ -13,6 +13,7 @@ import org.pnfolder.pnlibrary.api.text.ComponentSerializer
 import org.pnfolder.pnlibrary.api.text.ComponentSerializerType
 import org.pnfolder.pnlibrary.api.text.ComponentService
 import org.pnfolder.pnlibrary.api.text.ComponentTemplate
+import org.pnfolder.pnlibrary.common.lang.runCatchingNonFatal
 import java.util.Collections
 import java.util.UUID
 import java.util.concurrent.CompletionStage
@@ -105,7 +106,7 @@ internal class ComponentServiceImpl(
     private fun adaptive(input: String): Component {
         if (input.isBlank()) return Component.empty()
         val trimmed = input.trimStart()
-        if ((trimmed.startsWith('{') || trimmed.startsWith('[')) && runCatching { GSON.deserialize(input) }.isSuccess)
+        if ((trimmed.startsWith('{') || trimmed.startsWith('[')) && runCatchingNonFatal { GSON.deserialize(input) }.isSuccess)
             return GSON.deserialize(input)
         return MINI.deserialize(toMiniMessage(input))
     }

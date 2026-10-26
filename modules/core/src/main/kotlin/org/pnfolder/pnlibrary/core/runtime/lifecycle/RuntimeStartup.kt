@@ -1,6 +1,7 @@
 package org.pnfolder.pnlibrary.core.runtime.lifecycle
 
 import org.pnfolder.pnlibrary.api.runtime.PnLibrary
+import org.pnfolder.pnlibrary.common.lang.runCatchingNonFatal
 import org.pnfolder.pnlibrary.core.runtime.details.RuntimeUpdateMonitor
 import org.pnfolder.pnlibrary.spi.platform.PlatformIdentity
 import org.pnfolder.pnlibrary.spi.platform.PlatformOwnership
@@ -28,7 +29,7 @@ internal object RuntimeStartup {
             )
             Started(library, update.currentVersion, update.monitor)
         } catch (error: Throwable) {
-            runCatching { library.close() }.onFailure(error::addSuppressed)
+            runCatchingNonFatal { library.close() }.onFailure(error::addSuppressed)
             throw error
         }
     }

@@ -3,6 +3,7 @@ package org.pnfolder.pnlibrary.core.metrics
 import org.pnfolder.pnlibrary.api.metrics.MetricsProvider
 import org.pnfolder.pnlibrary.api.metrics.MetricsProviderConfiguration
 import org.pnfolder.pnlibrary.api.metrics.PluginMetrics
+import org.pnfolder.pnlibrary.common.lang.runCatchingNonFatal
 import org.pnfolder.pnlibrary.spi.metrics.PlatformMetricsFactory
 
 /**
@@ -26,7 +27,7 @@ abstract class ProviderMetricsFactory : PlatformMetricsFactory {
             configurations.filter { it.enabled }.forEach { configuration -> opened += open(owner, configuration) }
             require(opened.isNotEmpty()) { "At least one metrics provider must be enabled" }
         } catch (error: Throwable) {
-            opened.asReversed().forEach { session -> runCatching { session.close() } }
+            opened.asReversed().forEach { session -> runCatchingNonFatal { session.close() } }
             throw error
         }
         return if (opened.size == 1) opened.single() else CompositePluginMetrics(opened)

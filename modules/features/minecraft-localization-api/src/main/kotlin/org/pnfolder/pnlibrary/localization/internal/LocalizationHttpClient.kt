@@ -9,6 +9,10 @@ import java.nio.file.Path
 import java.nio.file.StandardOpenOption
 import java.time.Duration
 
+/**
+ * HTTPS-only client for the fixed set of Mojang hosts, with bounded timeouts and no redirects.
+ * Open so tests can replace the transport.
+ */
 internal open class LocalizationHttpClient(
     private val connectTimeout: Duration,
     private val readTimeout: Duration,

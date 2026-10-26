@@ -23,6 +23,7 @@ import org.pnfolder.pnlibrary.api.currency.CurrencyWithdrawals
 import org.pnfolder.pnlibrary.api.currency.ManagedCurrencyBuilder
 import org.pnfolder.pnlibrary.api.placeholders.PlaceholderService
 import org.pnfolder.pnlibrary.api.plugin.PluginId
+import org.pnfolder.pnlibrary.common.lang.runCatchingNonFatal
 import java.math.BigDecimal
 import java.util.Collections
 import java.util.UUID
@@ -218,9 +219,9 @@ internal class CurrencyHub : CurrencyProviderRegistry, AutoCloseable {
                 entries.remove(key, this)
                 registeredAliases.forEach { aliases.remove(key.owner to it, key) }
             }
-            attachments.toList().forEach { runCatching(it::close) }
+            attachments.toList().forEach { runCatchingNonFatal(it::close) }
             attachments.clear()
-            if (provider is AutoCloseable) runCatching(provider::close)
+            if (provider is AutoCloseable) runCatchingNonFatal(provider::close)
         }
         fun attach(registration: AutoCloseable) {
             attachments += registration

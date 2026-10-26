@@ -1,4 +1,4 @@
-package org.pnfolder.pnlibrary.core.plugin
+package org.pnfolder.pnlibrary.core.plugin.module
 
 import org.pnfolder.pnlibrary.api.config.ConfigScope
 import org.pnfolder.pnlibrary.api.currency.CurrencyService
@@ -22,11 +22,12 @@ import org.pnfolder.pnlibrary.api.updates.UpdateService
 import org.pnfolder.pnlibrary.config.ConfigurationRuntime
 import org.pnfolder.pnlibrary.core.cooldowns.CooldownServiceImpl
 import org.pnfolder.pnlibrary.core.downloads.CompositeDownloadRegistration
-import org.pnfolder.pnlibrary.core.downloads.DownloadService
+import org.pnfolder.pnlibrary.core.downloads.DirectDownloadManager
 import org.pnfolder.pnlibrary.core.lifecycle.ResourceCleanup
 import org.pnfolder.pnlibrary.core.metrics.ErrorPipeline
-import org.pnfolder.pnlibrary.core.placeholders.PlaceholderRuntime
-import org.pnfolder.pnlibrary.core.services.ServiceScopeFactory
+import org.pnfolder.pnlibrary.core.placeholders.PlaceholderHub
+import org.pnfolder.pnlibrary.core.plugin.MetricsControllerImpl
+import org.pnfolder.pnlibrary.core.services.ServiceManagerImpl
 import org.pnfolder.pnlibrary.core.tasks.TaskService
 import org.pnfolder.pnlibrary.core.text.ComponentCache
 import org.pnfolder.pnlibrary.core.text.ComponentServiceImpl
@@ -36,15 +37,15 @@ import org.pnfolder.pnlibrary.currency.CurrencyRuntime
 internal class ModuleResourceFactory(
     private val events: EventService,
     private val tasks: TaskService,
-    private val services: ServiceScopeFactory,
+    private val services: ServiceManagerImpl,
     private val logging: LoggingService,
     private val metrics: MetricsService,
     private val diagnostics: DiagnosticsService,
     private val updates: UpdateService,
-    private val placeholders: PlaceholderRuntime,
+    private val placeholders: PlaceholderHub,
     private val currency: CurrencyRuntime,
     private val configurations: ConfigurationRuntime,
-    private val directDownloads: DownloadService?,
+    private val directDownloads: DirectDownloadManager?,
     private val componentCache: ComponentCache,
 ) {
     fun create(

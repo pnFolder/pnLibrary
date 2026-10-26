@@ -1,5 +1,7 @@
 package org.pnfolder.pnlibrary.core.runtime.lifecycle
 
+import org.pnfolder.pnlibrary.common.lang.runCatchingNonFatal
+
 /** Executes runtime shutdown actions in declaration order while isolating failures. */
 internal class RuntimeShutdown {
     private val actions = mutableListOf<() -> Unit>()
@@ -11,7 +13,7 @@ internal class RuntimeShutdown {
     fun run() {
         val failures = mutableListOf<Throwable>()
         actions.forEach { action ->
-            runCatching(action).onFailure(failures::add)
+            runCatchingNonFatal(action).onFailure(failures::add)
         }
 
         val first = failures.firstOrNull() ?: return

@@ -1,6 +1,5 @@
-package org.pnfolder.pnlibrary.core.plugin
+package org.pnfolder.pnlibrary.core.plugin.module
 
-import org.junit.jupiter.api.Assertions.assertEquals
 import org.junit.jupiter.api.Assertions.assertSame
 import org.junit.jupiter.api.Assertions.assertThrows
 import org.junit.jupiter.api.Assertions.assertTrue
@@ -26,9 +25,9 @@ import org.pnfolder.pnlibrary.api.plugin.PluginId
 import org.pnfolder.pnlibrary.api.tasks.TaskScope
 import org.pnfolder.pnlibrary.api.updates.UpdateService
 import org.pnfolder.pnlibrary.config.ConfigurationRuntime
-import org.pnfolder.pnlibrary.core.placeholders.PlaceholderRuntime
+import org.pnfolder.pnlibrary.core.placeholders.PlaceholderHub
+import org.pnfolder.pnlibrary.core.services.ServiceManagerImpl
 import org.pnfolder.pnlibrary.core.services.ServiceScope
-import org.pnfolder.pnlibrary.core.services.ServiceScopeFactory
 import org.pnfolder.pnlibrary.core.tasks.TaskService
 import org.pnfolder.pnlibrary.core.text.ComponentCache
 import org.pnfolder.pnlibrary.currency.CurrencyRuntime
@@ -41,7 +40,7 @@ class ModuleResourceFactoryTest {
     private val events = mock(EventService::class.java)
     private val tasks = mock(TaskService::class.java)
     private val configurations = mock(ConfigurationRuntime::class.java)
-    private val placeholders = mock(PlaceholderRuntime::class.java)
+    private val placeholders = mock(PlaceholderHub::class.java)
     private val currency = mock(CurrencyRuntime::class.java)
     private val logging = mock(LoggingService::class.java)
     private val diagnostics = mock(DiagnosticsService::class.java)
@@ -51,6 +50,7 @@ class ModuleResourceFactoryTest {
     private val placeholderScope = mock(PlaceholderService::class.java)
     private val currencyScope = mock(CurrencyService::class.java)
     private val serviceScope = mock(ServiceScope::class.java)
+    private val serviceManager = mock(ServiceManagerImpl::class.java)
     private val storageFactory = mock(CurrencyStorageFactory::class.java)
     private val logger = mock(PnLogger::class.java)
 
@@ -62,10 +62,11 @@ class ModuleResourceFactoryTest {
         `when`(currency.scope(key, placeholderScope)).thenReturn(currencyScope)
         `when`(currency.storages).thenReturn(storageFactory)
         `when`(logging.logger(owner, id.value)).thenReturn(logger)
+        `when`(serviceManager.ownedBy(key)).thenReturn(serviceScope)
         return ModuleResourceFactory(
             events = events,
             tasks = tasks,
-            services = ServiceScopeFactory { requested -> assertEquals(key, requested); serviceScope },
+            services = serviceManager,
             logging = logging,
             metrics = mock(MetricsService::class.java),
             diagnostics = diagnostics,

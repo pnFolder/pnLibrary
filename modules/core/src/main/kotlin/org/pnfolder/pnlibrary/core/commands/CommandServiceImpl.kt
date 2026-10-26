@@ -11,6 +11,7 @@ import org.pnfolder.pnlibrary.api.commands.NoPermission
 import org.pnfolder.pnlibrary.api.commands.completedExecution
 import org.pnfolder.pnlibrary.api.commands.completedSuggestions
 import org.pnfolder.pnlibrary.api.logging.LogLevel
+import org.pnfolder.pnlibrary.common.lang.runCatchingNonFatal
 import org.pnfolder.pnlibrary.spi.commands.PlatformCommandAdapter
 import org.pnfolder.pnlibrary.spi.commands.PlatformCommandDispatcher
 import org.pnfolder.pnlibrary.spi.commands.PlatformCommandRegistration
@@ -200,7 +201,7 @@ internal class CommandServiceImpl(
         if (!closed.compareAndSet(false, true)) return
         val current = synchronized(lock) { registrations.toList() }
         closeRegistrations(current.asReversed())
-        runCatching { commandAdapter.close() }.onFailure { error ->
+        runCatchingNonFatal { commandAdapter.close() }.onFailure { error ->
             logging.log(this, LogLevel.ERROR, "Command adapter cleanup failed", error)
         }
     }
@@ -240,7 +241,7 @@ internal class CommandServiceImpl(
 
     private fun closeRegistrations(current: Iterable<Registration>) {
         current.forEach { registration ->
-            runCatching(registration::close).onFailure { error ->
+            runCatchingNonFatal(registration::close).onFailure { error ->
                 logging.log(registration.owner, LogLevel.ERROR, "Command cleanup failed", error)
             }
         }

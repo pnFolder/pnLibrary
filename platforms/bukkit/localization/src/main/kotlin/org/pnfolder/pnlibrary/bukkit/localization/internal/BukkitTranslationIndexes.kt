@@ -7,6 +7,7 @@ import org.bukkit.block.Biome
 import org.bukkit.enchantments.Enchantment
 import org.bukkit.entity.EntityType
 import org.bukkit.potion.PotionEffectType
+import org.pnfolder.pnlibrary.common.lang.runCatchingNonFatal
 import org.pnfolder.pnlibrary.localization.TranslatableType
 import org.pnfolder.pnlibrary.localization.TranslationCategory
 import org.pnfolder.pnlibrary.localization.TranslationIndex
@@ -18,6 +19,9 @@ import java.util.Locale
 // keysOf returns modern (1.13+) keys first, then pre-1.13 legacy keys; translate() picks the first the
 // loaded table actually contains, so the version-correct key wins without the version being passed in.
 
+/**
+ * Translation keys of a [Material], block and item variants.
+ */
 internal object MaterialTranslatable : TranslatableType<Material> {
     override fun keysOf(value: Material): List<String> {
         val path = value.name.lowercase(Locale.ROOT)
@@ -32,6 +36,9 @@ internal object MaterialTranslatable : TranslatableType<Material> {
     override fun fallbackName(value: Material): String = value.name.lowercase(Locale.ROOT).replace('_', ' ')
 }
 
+/**
+ * Translation key of an [Enchantment].
+ */
 internal object EnchantmentTranslatable : TranslatableType<Enchantment> {
     override fun keysOf(value: Enchantment): List<String> {
         val modern = namespacedKey(value)?.substringAfter(':')
@@ -43,6 +50,9 @@ internal object EnchantmentTranslatable : TranslatableType<Enchantment> {
     override fun fallbackName(value: Enchantment): String = legacyName(value).lowercase(Locale.ROOT).replace('_', ' ')
 }
 
+/**
+ * Translation key of an [EntityType].
+ */
 internal object EntityTranslatable : TranslatableType<EntityType> {
     override fun keysOf(value: EntityType): List<String> {
         val path = namespacedKey(value)?.substringAfter(':') ?: value.name.lowercase(Locale.ROOT)
@@ -54,6 +64,9 @@ internal object EntityTranslatable : TranslatableType<EntityType> {
     override fun fallbackName(value: EntityType): String = value.name.lowercase(Locale.ROOT).replace('_', ' ')
 }
 
+/**
+ * Translation key of a [PotionEffectType].
+ */
 internal object EffectTranslatable : TranslatableType<PotionEffectType> {
     override fun keysOf(value: PotionEffectType): List<String> {
         val modern = namespacedKey(value)?.substringAfter(':')
@@ -65,6 +78,9 @@ internal object EffectTranslatable : TranslatableType<PotionEffectType> {
     override fun fallbackName(value: PotionEffectType): String = effectName(value).lowercase(Locale.ROOT).replace('_', ' ')
 }
 
+/**
+ * Translation key of a [Biome].
+ */
 internal object BiomeTranslatable : TranslatableType<Biome> {
     override fun keysOf(value: Biome): List<String> {
         val path = namespacedKey(value)?.substringAfter(':') ?: value.name.lowercase(Locale.ROOT)
@@ -74,11 +90,17 @@ internal object BiomeTranslatable : TranslatableType<Biome> {
     override fun fallbackName(value: Biome): String = value.name.lowercase(Locale.ROOT).replace('_', ' ')
 }
 
+/**
+ * Translation key of a [DyeColor].
+ */
 internal object ColorTranslatable : TranslatableType<DyeColor> {
     override fun keysOf(value: DyeColor): List<String> = listOf(TranslationCategory.COLOR.key(value.name.lowercase(Locale.ROOT)))
     override fun fallbackName(value: DyeColor): String = value.name.lowercase(Locale.ROOT).replace('_', ' ')
 }
 
+/**
+ * Translation key of a [GameMode].
+ */
 internal object GameModeTranslatable : TranslatableType<GameMode> {
     override fun keysOf(value: GameMode): List<String> = listOf(TranslationCategory.GAME_MODE.key(value.name.lowercase(Locale.ROOT)))
     override fun fallbackName(value: GameMode): String = value.name.lowercase(Locale.ROOT).replace('_', ' ')
@@ -203,13 +225,13 @@ private fun staticFieldName(type: Class<*>, value: Any): String? =
 /** Legacy constant name (e.g. `DAMAGE_ALL`), read from the static field to avoid `getName()` on unbound wrappers. */
 private fun legacyName(enchantment: Enchantment): String =
     staticFieldName(Enchantment::class.java, enchantment)
-        ?: runCatching { @Suppress("DEPRECATION") enchantment.name }.getOrNull()
+        ?: runCatchingNonFatal { @Suppress("DEPRECATION") enchantment.name }.getOrNull()
         ?: "unknown"
 
 /** Legacy constant name (e.g. `FAST_DIGGING`), read from the static field to avoid `getName()` on unbound wrappers. */
 private fun effectName(effect: PotionEffectType): String =
     staticFieldName(PotionEffectType::class.java, effect)
-        ?: runCatching { effect.name }.getOrNull()
+        ?: runCatchingNonFatal { effect.name }.getOrNull()
         ?: "unknown"
 
 /** `DIAMOND_SWORD` -> `diamondSword`, the shape of a pre-1.13 tile/item key fragment. */

@@ -2,6 +2,7 @@ package org.pnfolder.pnlibrary.core.runtime.lifecycle
 
 import org.pnfolder.pnlibrary.api.logging.LogLevel
 import org.pnfolder.pnlibrary.api.runtime.PnLibrary
+import org.pnfolder.pnlibrary.common.lang.runCatchingNonFatal
 import org.pnfolder.pnlibrary.core.runtime.PnLibraryConfigLoader
 import org.pnfolder.pnlibrary.core.runtime.PnLibraryLauncher
 import org.pnfolder.pnlibrary.core.runtime.platform.PlatformRuntimeContext
@@ -25,7 +26,7 @@ internal object RuntimeBootstrapCoordinator {
             val runtime = RuntimeStartup.start(owner, library, context.identity, context.ownership)
             Started(runtime.library, runtime.currentVersion, runtime.updateMonitor, context.summaryName)
         } catch (error: Throwable) {
-            runCatching { library.close() }.onFailure(error::addSuppressed)
+            runCatchingNonFatal { library.close() }.onFailure(error::addSuppressed)
             throw error
         }
     }

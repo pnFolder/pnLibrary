@@ -16,9 +16,13 @@ import org.pnfolder.pnlibrary.api.currency.CurrencyTransactionRequest
 import org.pnfolder.pnlibrary.api.currency.CurrencyTransactionStatus
 import org.pnfolder.pnlibrary.api.currency.CurrencyTransactionType
 import org.pnfolder.pnlibrary.api.plugin.PluginId
+import java.lang.reflect.InvocationTargetException
+import java.lang.reflect.Proxy
 import java.math.BigDecimal
 import java.math.RoundingMode
+import java.sql.Connection
 import java.util.UUID
+import javax.sql.DataSource
 
 /** Runs the JDBC storage against an in-memory H2 database in MySQL mode, the dialect servers use most. */
 class JdbcCurrencyStorageTest {
@@ -69,6 +73,47 @@ class JdbcCurrencyStorageTest {
             assertEquals(1, result.importedTransactions)
             assertEquals(0, BigDecimal("7.5").compareTo(it.balance(currency, account).join()))
             assertTrue(it.history(currency, CurrencyHistoryQuery()).join().items.single().status == CurrencyTransactionStatus.COMMITTED)
+        }
+    }
+
+    @Test
+    fun `borrowed connections go back with their original transaction settings`() {
+        val borrowed = mutableListOf<Connection>()
+        val tracking = Proxy.newProxyInstance(javaClass.classLoader, arrayOf(DataSource::class.java)) { _, method, args ->
+            val result = try {
+                method.invoke(source, *(args ?: emptyArray()))
+            } catch (error: InvocationTargetException) {
+                throw error.targetException
+            }
+            if (method.name != "getConnection") return@newProxyInstance result
+            val real = result as Connection
+            // Keep the connection open after "close" so its state can be inspected, as a pool would.
+            (Proxy.newProxyInstance(javaClass.classLoader, arrayOf(Connection::class.java)) { _, call, callArgs ->
+                if (call.name == "close") null else call.invoke(real, *(callArgs ?: emptyArray()))
+            } as Connection).also { borrowed += it }
+        } as DataSource
+
+        JdbcCurrencyStorage(tracking, "pn_currency_pooled").use {
+            it.transact(
+                currency,
+                descriptor,
+                CurrencyTransactionRequest(
+                    type = CurrencyTransactionType.CREDIT,
+                    amount = BigDecimal("1"),
+                    target = account,
+                    actor = CurrencyActor.system("test"),
+                    service = "test-suite",
+                    reason = "unit-test",
+                    idempotencyKey = "pooled-1",
+                ),
+            ).join()
+            it.export(currency).join()
+        }
+
+        assertTrue(borrowed.isNotEmpty())
+        borrowed.forEach { connection ->
+            assertTrue(connection.autoCommit)
+            assertEquals(Connection.TRANSACTION_READ_COMMITTED, connection.transactionIsolation)
         }
     }
 

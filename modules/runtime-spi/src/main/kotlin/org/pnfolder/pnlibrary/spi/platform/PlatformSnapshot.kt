@@ -2,12 +2,19 @@ package org.pnfolder.pnlibrary.spi.platform
 
 /** Immutable platform snapshot used by diagnostics and lifecycle messages. */
 data class PlatformSnapshot(
+    /** Platform product name. */
     val name: String,
+    /** Platform version string. */
     val version: String,
+    /** Platform vendor, when the platform reports one. */
     val vendor: String? = null,
+    /** Number of online players, or `null` when unknown. */
     val onlinePlayers: Int? = null,
+    /** Names of backend servers registered with a proxy. */
     val registeredServers: List<String> = emptyList(),
+    /** Installed plugins reported by the platform. */
     val plugins: List<PluginSnapshot> = emptyList(),
+    /** JVM the platform runs on. */
     val java: JavaSnapshot = JavaSnapshot.current(),
 ) {
     fun asMap(): Map<String, Any?> = linkedMapOf(
@@ -22,6 +29,7 @@ data class PlatformSnapshot(
     )
 
     companion object {
+        /** Snapshot for a platform whose details cannot be read. */
         fun unknown(platform: String) = PlatformSnapshot(platform, "неизвестна")
     }
 }

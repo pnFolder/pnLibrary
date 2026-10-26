@@ -25,7 +25,7 @@ class EventServiceImplTest {
     }
 
     @Test
-    fun `denied result is visible immediately and skips ignoreCancelled listeners`() {
+    fun `denied result is visible immediately and skips ignoreDenied listeners`() {
         EventServiceImpl { _, _, _ -> }.use { events ->
             val scope = events.scope(PluginId.of("test"))
             scope.subscribe(ResultEvent::class.java, EventPriority.LOW, Consumer {
@@ -45,7 +45,7 @@ class EventServiceImplTest {
     }
 
     @Test
-    fun `allowed result keeps ignoreCancelled listeners running`() {
+    fun `allowed result keeps ignoreDenied listeners running`() {
         var ran = false
         EventServiceImpl { _, _, _ -> }.use { events ->
             events.scope(PluginId.of("test")).subscribe(ResultEvent::class.java, EventPriority.NORMAL, true, Consumer {
@@ -139,7 +139,7 @@ class EventServiceImplTest {
     }
 
     @Test
-    fun `builder applies priority and ignoreCancelled then registers on listen`() {
+    fun `builder applies priority and ignoreDenied then registers on listen`() {
         val calls = mutableListOf<String>()
         EventServiceImpl { _, _, _ -> }.use { events ->
             val scope = events.scope(PluginId.of("test"))
@@ -147,7 +147,7 @@ class EventServiceImplTest {
                 it.result = ResultedEvent.ComponentResult.denied(Component.text("no"))
             }
             scope.on<ResultEvent>().priority(EventPriority.LOW).listen { calls += "low" }
-            scope.on<ResultEvent>().ignoreCancelled().listen { calls += "skipped-once-denied" }
+            scope.on<ResultEvent>().ignoreDenied().listen { calls += "skipped-once-denied" }
             scope.on<ResultEvent>().priority(EventPriority.HIGH).listen { calls += "high" }
 
             events.callEvent(ResultEvent())

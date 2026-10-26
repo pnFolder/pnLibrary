@@ -1,6 +1,7 @@
 package org.pnfolder.pnlibrary.core.metrics.bstats
 
 import org.bstats.config.MetricsConfig
+import org.pnfolder.pnlibrary.common.lang.runCatchingNonFatal
 import java.io.File
 import java.io.IOException
 import java.util.Locale
@@ -63,7 +64,7 @@ class BStatsSettings(
                 logResponseStatusText = flag(existing["logResponseStatusText"], false),
                 createdNow = !file.exists(),
             )
-            if (uuid == null) runCatching { write(file, settings) }
+            if (uuid == null) runCatchingNonFatal { write(file, settings) }
             return settings
         }
 

@@ -15,6 +15,7 @@ import org.pnfolder.pnlibrary.bukkit.compat.ServerCapabilities
 import org.pnfolder.pnlibrary.bukkit.remote.BukkitRemotePolicyContextFactory
 import org.pnfolder.pnlibrary.bukkit.server.ServerInfo
 import org.pnfolder.pnlibrary.bukkit.tasks.BukkitTaskAdapter
+import org.pnfolder.pnlibrary.common.lang.runCatchingNonFatal
 import org.pnfolder.pnlibrary.core.lifecycle.registerRuntimeCommand
 import org.pnfolder.pnlibrary.spi.audiences.PlatformAudienceAdapter
 import org.pnfolder.pnlibrary.spi.commands.PlatformCommandAdapter
@@ -157,7 +158,7 @@ internal class BukkitPlatformAdapter(
         val result = CompletableFuture<Map<String, Any?>>()
         executeGlobal(
             Runnable {
-                runCatching {
+                runCatchingNonFatal {
                     diagnosticsCollector.collect(snapshot(), includeSensitive)
                 }.onSuccess(result::complete)
                     .onFailure(result::completeExceptionally)

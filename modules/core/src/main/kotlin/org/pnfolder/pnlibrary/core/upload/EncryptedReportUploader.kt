@@ -35,8 +35,11 @@ internal class EncryptedReportUploader @JvmOverloads constructor(
         return uploadBytes(payload.toByteArray(StandardCharsets.UTF_8), "application/json; charset=UTF-8")
     }
 
-    override fun uploadFile(file: Path, contentType: String): UploadReceipt =
-        uploadBytes(Files.readAllBytes(file), contentType)
+    override fun uploadFile(file: Path, contentType: String): UploadReceipt {
+        val size = Files.size(file)
+        if (size > MAX_UPLOAD_BYTES) throw IOException("Report is too large to upload: $size bytes")
+        return uploadBytes(Files.readAllBytes(file), contentType)
+    }
 
     private fun uploadBytes(body: ByteArray, contentType: String): UploadReceipt {
         val connection = open(endpoint, "POST")
@@ -58,7 +61,7 @@ internal class EncryptedReportUploader @JvmOverloads constructor(
 
     @Throws(IOException::class)
     override fun delete(receipt: UploadReceipt): Boolean {
-        if (!receipt.canDelete()) return false
+        if (!receipt.canDelete() || !ID.matches(receipt.id) || !TOKEN.matches(receipt.deleteToken)) return false
         val deleteUri = endpoint.resolve(ensureSlash(endpoint.path) + receipt.id)
         val connection = open(deleteUri, "DELETE")
         connection.setRequestProperty("Authorization", "Bearer ${receipt.deleteToken}")
@@ -79,7 +82,7 @@ internal class EncryptedReportUploader @JvmOverloads constructor(
             }
             val id = value.get("id").asString
             val token = value.get("deleteToken").asString
-            require(id.matches(Regex("[A-Za-z0-9_-]{8,128}")) && token.matches(Regex("[A-Za-z0-9_-]{24,256}"))) {
+            require(ID.matches(id) && TOKEN.matches(token)) {
                 "Invalid storage receipt tokens"
             }
             val created = if (value.has("created")) value.get("created").asLong else 0L
@@ -118,5 +121,8 @@ internal class EncryptedReportUploader @JvmOverloads constructor(
     /** Shared JSON codec for validated storage receipts. */
     companion object {
         private val JSON = Gson()
+        private val ID = Regex("[A-Za-z0-9_-]{8,128}")
+        private val TOKEN = Regex("[A-Za-z0-9_-]{24,256}")
+        private const val MAX_UPLOAD_BYTES = 64L * 1024 * 1024
     }
 }

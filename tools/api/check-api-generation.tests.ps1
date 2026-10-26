@@ -11,7 +11,8 @@ function Invoke-Case {
         [string]$CurrentApi,
         [int]$BaseVersion,
         [int]$CurrentVersion,
-        [int]$ExpectedExit
+        [int]$ExpectedExit,
+        [string]$ProjectVersion = '1.0.0'
     )
 
     $caseRoot = Join-Path $testRoot $Name
@@ -29,7 +30,8 @@ function Invoke-Case {
         -BaseApiPath $baseApiPath `
         -CurrentApiPath $currentApiPath `
         -BaseVersionPath $baseVersionPath `
-        -CurrentVersionPath $currentVersionPath | Out-Host
+        -CurrentVersionPath $currentVersionPath `
+        -ProjectVersion $ProjectVersion | Out-Host
     if ($LASTEXITCODE -ne $ExpectedExit) {
         throw "$Name expected exit $ExpectedExit but received $LASTEXITCODE"
     }
@@ -54,6 +56,7 @@ public final class example/Api {
 try {
     Invoke-Case 'compatible-addition' $base $addition 4 4 0
     Invoke-Case 'forbidden-removal' $base $removal 4 4 1
+    Invoke-Case 'development-removal-only-warns' $base $removal 4 4 0 '0.0.1-dev.4'
     Invoke-Case 'generation-increase' $base $removal 4 5 0
     Invoke-Case 'generation-decrease' $base $addition 4 3 1
     $repo = Join-Path $testRoot 'all-modules'

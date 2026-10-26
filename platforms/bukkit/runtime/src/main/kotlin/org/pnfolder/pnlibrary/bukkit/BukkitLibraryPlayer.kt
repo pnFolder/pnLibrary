@@ -17,6 +17,7 @@ import org.pnfolder.pnlibrary.api.audiences.PlayerCapability
 import org.pnfolder.pnlibrary.api.audiences.PlayerEffect
 import org.pnfolder.pnlibrary.api.audiences.PlayerParticle
 import org.pnfolder.pnlibrary.common.lang.Failures
+import org.pnfolder.pnlibrary.common.lang.runCatchingNonFatal
 import java.time.Duration
 import java.util.UUID
 
@@ -61,7 +62,7 @@ internal class BukkitLibraryPlayer(
         val ticks = (effect.duration.toMillis() / MILLIS_PER_TICK)
             .coerceIn(1L, Int.MAX_VALUE.toLong())
             .toInt()
-        val configured = runCatching {
+        val configured = runCatchingNonFatal {
             PotionEffect::class.java.getConstructor(
                 PotionEffectType::class.java,
                 Int::class.javaPrimitiveType,
@@ -120,14 +121,14 @@ internal class BukkitLibraryPlayer(
 
     /** Renders a supported particle, returning [Delivery.Unsupported] when the server lacks the required API. */
     override fun spawnParticle(particle: PlayerParticle): Delivery {
-        val type = runCatching { Class.forName("org.bukkit.Particle") }.getOrNull() ?: return Delivery.Unsupported
+        val type = runCatchingNonFatal { Class.forName("org.bukkit.Particle") }.getOrNull() ?: return Delivery.Unsupported
         val constant = type.enumConstants.firstOrNull {
             (it as Enum<*>).name.equals(particle.key, ignoreCase = true)
         } ?: return Delivery.Unsupported
         val method = player.javaClass.methods.firstOrNull {
             it.name == "spawnParticle" && it.parameterTypes.size == 7 && it.parameterTypes[0] == type
         } ?: return Delivery.Unsupported
-        return runCatching {
+        return runCatchingNonFatal {
             method.invoke(
                 player,
                 constant,

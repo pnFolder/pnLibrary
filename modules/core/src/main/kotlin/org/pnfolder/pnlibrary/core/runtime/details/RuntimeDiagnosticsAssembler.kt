@@ -2,6 +2,7 @@ package org.pnfolder.pnlibrary.core.runtime.details
 
 import org.pnfolder.pnlibrary.api.runtime.PnLibraryConfig
 import org.pnfolder.pnlibrary.api.updates.UpdateService
+import org.pnfolder.pnlibrary.common.lang.runCatchingNonFatal
 import org.pnfolder.pnlibrary.core.commands.CommandServiceImpl
 import org.pnfolder.pnlibrary.core.diagnostics.DiagnosticsRegistry
 import org.pnfolder.pnlibrary.core.metrics.MetricsServiceImpl
@@ -48,7 +49,7 @@ internal class RuntimeDiagnosticsAssembler(
                     dataFolder.toAbsolutePath().normalize().toString(),
                 "configuration" to RuntimeConfigurationDetails.of(config),
             ),
-            "journal" to runCatching(journal).getOrElse { linkedMapOf("error" to (it.message ?: it.javaClass.simpleName)) },
+            "journal" to runCatchingNonFatal(journal).getOrElse { linkedMapOf("error" to (it.message ?: it.javaClass.simpleName)) },
             "tasks" to RuntimeTaskDetails.entries(taskSnapshots),
             "taskSummary" to RuntimeTaskDetails.summary(taskSnapshots),
             "updates" to updateSnapshots.map(RuntimeUpdateDetails::registration),

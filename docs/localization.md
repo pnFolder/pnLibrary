@@ -27,10 +27,12 @@ pnLibrary загружает официальные переводы Mojang и �
 ```kotlin
 val localization = module.localization
 
-localization.locale(version, MinecraftLocale.RU_RU).thenAccept { ru ->
-    val bukkit = BukkitLocaleTranslations.wrap(ru)
+localization.bukkitLocale(version, MinecraftLocale.RU_RU).thenAccept { bukkit ->
     sender.sendMessage(bukkit.translate(Material.DIAMOND_SWORD).text)   // «Алмазный меч»
 }
+
+Из Java: `BukkitLocalization.locale(localization, version, MinecraftLocale.RU_RU)`. Нейтральную таблицу, загруженную через
+`localization.locale(...)`, можно обернуть вручную: `BukkitLocaleTranslations.wrap(table)`.
 ```
 
 `version` — это `MinecraftVersion` сервера. Языки задаются типом `MinecraftLocale` (опечатку в коде поймает компилятор); строку с кодом

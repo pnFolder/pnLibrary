@@ -2,6 +2,7 @@ package org.pnfolder.pnlibrary.bukkit
 
 import org.bukkit.Bukkit
 import org.bukkit.plugin.Plugin
+import org.pnfolder.pnlibrary.common.lang.runCatchingNonFatal
 import org.pnfolder.pnlibrary.core.metrics.bstats.BStatsClient
 import org.pnfolder.pnlibrary.core.metrics.bstats.BStatsSettings
 import java.io.File
@@ -29,7 +30,7 @@ internal object BukkitBStats {
     )
 
     private fun isFolia(): Boolean =
-        runCatching { Class.forName("io.papermc.paper.threadedregions.RegionizedServer") }.isSuccess
+        runCatchingNonFatal { Class.forName("io.papermc.paper.threadedregions.RegionizedServer") }.isSuccess
 
     /** Around Minecraft 1.8 `getOnlinePlayers` changed from an array to a collection; both are read. */
     private fun playerAmount(): Int = try {

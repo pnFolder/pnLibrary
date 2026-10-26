@@ -18,3 +18,26 @@ class FailuresTest {
         assertDoesNotThrow { Failures.rethrowIfFatal(IllegalStateException("boom")) }
     }
 }
+
+class RunCatchingNonFatalTest {
+    @Test
+    fun `ordinary failures and results are returned`() {
+        org.junit.jupiter.api.Assertions.assertEquals(7, runCatchingNonFatal { 7 }.getOrNull())
+        org.junit.jupiter.api.Assertions.assertTrue(runCatchingNonFatal { error("boom") }.isFailure)
+    }
+
+    @Test
+    fun `a failing JVM escapes`() {
+        assertThrows(OutOfMemoryError::class.java) { runCatchingNonFatal { throw OutOfMemoryError() } }
+    }
+
+    @Test
+    fun `an interrupt is recorded on the thread`() {
+        try {
+            org.junit.jupiter.api.Assertions.assertTrue(runCatchingNonFatal { throw InterruptedException() }.isFailure)
+            org.junit.jupiter.api.Assertions.assertTrue(Thread.interrupted())
+        } finally {
+            Thread.interrupted()
+        }
+    }
+}

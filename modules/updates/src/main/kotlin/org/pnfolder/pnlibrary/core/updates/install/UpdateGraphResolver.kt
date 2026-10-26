@@ -7,6 +7,7 @@ import org.pnfolder.pnlibrary.api.updates.release.ProductRelease
 import org.pnfolder.pnlibrary.api.updates.release.UpdatePlan
 import org.pnfolder.pnlibrary.api.version.PnLibraryApi
 import org.pnfolder.pnlibrary.common.jvm.JavaRuntime
+import org.pnfolder.pnlibrary.common.lang.runCatchingNonFatal
 import org.pnfolder.pnlibrary.core.updates.engine.FreezeStore
 import org.pnfolder.pnlibrary.core.updates.engine.RefreshMode
 import org.pnfolder.pnlibrary.core.updates.engine.ResolutionResult
@@ -100,7 +101,7 @@ internal class UpdateGraphResolver(
             configuration.installation.allowNewPlugins,
         // An unreadable inventory makes external plugin dependencies count as missing,
         // so releases that need them are skipped instead of installed blindly.
-        installedExternalPlugins = runCatching { inventory.installedPlugins() }
+        installedExternalPlugins = runCatchingNonFatal { inventory.installedPlugins() }
             .getOrNull()
             .orEmpty()
             .keys,

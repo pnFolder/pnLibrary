@@ -13,6 +13,10 @@ internal interface MenuExecution {
     fun execute(player: Player, action: () -> Unit)
 }
 
+/**
+ * Runs menu actions on the thread that owns the player: immediately when already there, otherwise
+ * scheduled on the player's region (Folia) or the main thread.
+ */
 internal class NativeMenuExecution(private val plugin: Plugin) : MenuExecution {
     private fun owns(player: Player): Boolean = if (ServerCapabilities.isFolia) {
         Bukkit::class.java.getMethod("isOwnedByCurrentRegion", Entity::class.java).invoke(null, player) as Boolean

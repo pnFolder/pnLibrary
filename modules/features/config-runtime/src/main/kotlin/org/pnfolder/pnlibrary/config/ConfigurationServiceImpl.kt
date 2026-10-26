@@ -8,6 +8,7 @@ import org.pnfolder.pnlibrary.api.config.ConfigTypeRegistration
 import org.pnfolder.pnlibrary.api.config.ConfigValueValidator
 import org.pnfolder.pnlibrary.api.config.ManagedConfig
 import org.pnfolder.pnlibrary.api.plugin.PluginId
+import org.pnfolder.pnlibrary.common.lang.Failures
 import org.pnfolder.pnlibrary.config.yaml.AnnotatedYamlCodec
 import org.pnfolder.pnlibrary.config.yaml.CodeFirstYaml
 import org.pnfolder.pnlibrary.config.yaml.RuntimeConfigType
@@ -174,26 +175,39 @@ class ConfigurationServiceImpl(
             }
         }
 
-        override fun loadAll() = snapshot().forEach { it.load() }
-        override fun reloadAll() = snapshot().forEach { it.reload() }
-        override fun saveAll() = snapshot().filter { it.isLoaded }.forEach { it.save() }
+        override fun loadAll() = eachHandle { it.load() }
+        override fun reloadAll() = eachHandle { it.reload() }
+        override fun saveAll() = eachHandle(onlyLoaded = true) { it.save() }
+
         override fun close() {
             if (!scopeClosed.compareAndSet(false, true)) return
-            synchronized(handles) { handles.toList().also { handles.clear() } }.forEach { it.close() }
-            synchronized(runtimeTypes) {
-                val owned = runtimeTypes.filter { it.owner == pluginId }
-                owned.forEach { it.deactivate() }
-                runtimeTypes.removeAll(owned.toSet())
-            }
-            synchronized(scopes) {
-                scopes[owner]?.let { owned ->
-                    owned.remove(pluginId, this)
-                    if (owned.isEmpty()) scopes.remove(owner)
-                }
-            }
+            val owned = synchronized(handles) { handles.toList().also { handles.clear() } }
+            runAll(
+                { runAll(owned.map { handle -> { handle.close() } }) },
+                {
+                    synchronized(runtimeTypes) {
+                        val published = runtimeTypes.filter { it.owner == pluginId }
+                        published.forEach { it.deactivate() }
+                        runtimeTypes.removeAll(published.toSet())
+                    }
+                },
+                {
+                    synchronized(scopes) {
+                        scopes[owner]?.let { byPlugin ->
+                            byPlugin.remove(pluginId, this)
+                            if (byPlugin.isEmpty()) scopes.remove(owner)
+                        }
+                    }
+                },
+            )
         }
-        private fun snapshot() = synchronized(handles) { handles.toList() }
 
+        /** Applies [action] to every handle even when one fails, then rethrows the first failure with the rest suppressed. */
+        private fun eachHandle(onlyLoaded: Boolean = false, action: (ManagedConfig<*>) -> Unit) = runAll(
+            snapshot().filter { !onlyLoaded || it.isLoaded }.map { handle -> { action(handle) } },
+        )
+
+        private fun snapshot() = synchronized(handles) { handles.toList() }
     }
 
     private fun visibleTypes(consumer: PluginId): List<RuntimeConfigType> = synchronized(runtimeTypes) {
@@ -222,4 +236,21 @@ class ConfigurationServiceImpl(
     }
 
     private class OwnedConfig<T>(val file: Path, private val delegate: ManagedConfig<T>) : ManagedConfig<T> by delegate
+}
+
+private fun runAll(vararg steps: () -> Unit) = runAll(steps.toList())
+
+/** Runs every step even when earlier ones fail; the first failure is rethrown with later ones suppressed into it. */
+private fun runAll(steps: List<() -> Unit>) {
+    var failure: Throwable? = null
+    steps.forEach { step ->
+        try {
+            step()
+        } catch (error: Throwable) {
+            Failures.rethrowIfFatal(error)
+            val first = failure
+            if (first == null) failure = error else if (error !== first) first.addSuppressed(error)
+        }
+    }
+    failure?.let { throw it }
 }

@@ -3,6 +3,7 @@ package org.pnfolder.pnlibrary.core.runtime
 import org.pnfolder.pnlibrary.api.runtime.PnLibrary
 import org.pnfolder.pnlibrary.api.runtime.PnLibraryConfig
 import org.pnfolder.pnlibrary.api.runtime.PnLibraryProvider
+import org.pnfolder.pnlibrary.common.lang.runCatchingNonFatal
 import org.pnfolder.pnlibrary.core.commands.ProxyControlCommand
 import org.pnfolder.pnlibrary.core.diagnostics.DiagnosticsRegistry
 import org.pnfolder.pnlibrary.core.runtime.platform.PlatformRuntimeContext
@@ -64,7 +65,7 @@ internal object PnLibraryLauncher {
             }
             created
         } catch (error: Throwable) {
-            runCatching { created.close() }.onFailure(error::addSuppressed)
+            runCatchingNonFatal { created.close() }.onFailure(error::addSuppressed)
             throw error
         }
     }

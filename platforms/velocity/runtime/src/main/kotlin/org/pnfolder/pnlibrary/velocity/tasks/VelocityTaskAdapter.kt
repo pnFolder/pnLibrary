@@ -2,6 +2,7 @@ package org.pnfolder.pnlibrary.velocity.tasks
 
 import com.velocitypowered.api.proxy.ProxyServer
 import org.pnfolder.pnlibrary.api.tasks.TaskExecution
+import org.pnfolder.pnlibrary.common.lang.runCatchingNonFatal
 import org.pnfolder.pnlibrary.spi.tasks.PlatformTaskAdapter
 import org.pnfolder.pnlibrary.spi.tasks.PlatformTaskHandle
 import org.pnfolder.pnlibrary.spi.tasks.PlatformTaskRequest
@@ -94,7 +95,7 @@ internal class VelocityTaskAdapter internal constructor(
 
         var failure: Throwable? = null
         handles.toList().forEach { handle ->
-            runCatching { handle.cancel() }.onFailure { error ->
+            runCatchingNonFatal { handle.cancel() }.onFailure { error ->
                 if (failure == null) failure = error
                 else if (failure !== error) failure?.addSuppressed(error)
             }

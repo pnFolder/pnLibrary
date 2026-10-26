@@ -12,6 +12,7 @@ import org.pnfolder.pnlibrary.api.audiences.Delivery
 import org.pnfolder.pnlibrary.api.audiences.LibraryAudience
 import org.pnfolder.pnlibrary.api.audiences.LibraryPlayer
 import org.pnfolder.pnlibrary.common.lang.Failures
+import org.pnfolder.pnlibrary.common.lang.runCatchingNonFatal
 import java.lang.reflect.Array
 import java.util.UUID
 import java.util.concurrent.atomic.AtomicBoolean
@@ -93,7 +94,7 @@ internal class BukkitAudienceService internal constructor(plugin: Plugin, privat
 
     /** Uses optional Spigot action-bar APIs, falling back to ordinary chat. */
     private fun sendLegacyActionBar(player: Player, message: String) {
-        runCatching {
+        runCatchingNonFatal {
             val chatType = Class.forName("net.md_5.bungee.api.ChatMessageType").getField("ACTION_BAR").get(null)
             val componentType = Class.forName("net.md_5.bungee.api.chat.BaseComponent")
             val textComponent = Class.forName("net.md_5.bungee.api.chat.TextComponent")
@@ -139,7 +140,7 @@ internal class BukkitAudienceService internal constructor(plugin: Plugin, privat
 
     /** Releases the underlying Adventure audience provider when one was created. */
     override fun close() {
-        runCatching { audiences?.close() }
+        runCatchingNonFatal { audiences?.close() }
     }
 
     private companion object {

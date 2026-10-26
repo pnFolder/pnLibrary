@@ -37,9 +37,9 @@ interface EventService : AutoCloseable {
         pluginId: PluginId,
         eventType: Class<E>,
         priority: Int,
-        ignoreCancelled: Boolean,
+        ignoreDenied: Boolean,
         listener: Consumer<E>,
-    ): EventSubscription = scope(pluginId).subscribe(eventType, priority, ignoreCancelled, listener)
+    ): EventSubscription = scope(pluginId).subscribe(eventType, priority, ignoreDenied, listener)
 
     /**
      * Invokes every matching listener synchronously and returns the same event instance.

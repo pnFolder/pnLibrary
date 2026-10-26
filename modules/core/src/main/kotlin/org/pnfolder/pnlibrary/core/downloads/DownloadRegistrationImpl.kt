@@ -5,6 +5,7 @@ import org.pnfolder.pnlibrary.api.downloads.DownloadSnapshot
 import org.pnfolder.pnlibrary.api.downloads.DownloadState
 import org.pnfolder.pnlibrary.api.downloads.FileDownload
 import org.pnfolder.pnlibrary.api.downloads.FileDownloads
+import org.pnfolder.pnlibrary.common.lang.runCatchingNonFatal
 import org.pnfolder.pnlibrary.core.lifecycle.ResourceCleanup
 import java.util.Collections
 import java.util.concurrent.CompletableFuture
@@ -107,7 +108,7 @@ internal class DownloadRegistrationImpl(
             snapshots()
         }
         promise.complete(result)
-        runCatching { blocked(reason) }
+        runCatchingNonFatal { blocked(reason) }
         return promise
     }
 
@@ -120,7 +121,7 @@ internal class DownloadRegistrationImpl(
             promise.complete(snapshots())
             return
         }
-        val outcome = runCatching {
+        val outcome = runCatchingNonFatal {
             install(declarations) {
                 check(!closed.get() && !managerIsClosed()) { "Download registration is closed" }
             }
@@ -141,7 +142,7 @@ internal class DownloadRegistrationImpl(
         promise.complete(result)
         if (closed.get() || managerIsClosed()) return
         outcome.onSuccess {
-            if (declarations.containsDependencies()) runCatching { dependenciesStaged(declarations) }
+            if (declarations.containsDependencies()) runCatchingNonFatal { dependenciesStaged(declarations) }
         }.onFailure { error -> ResourceCleanup.suppressInto(error, { failed(declarations, error) }) }
     }
 

@@ -7,6 +7,7 @@ import org.pnfolder.pnlibrary.api.commands.CommandDefinition
 import org.pnfolder.pnlibrary.api.commands.command
 import org.pnfolder.pnlibrary.api.runtime.PnLibrary
 import org.pnfolder.pnlibrary.api.updates.UpdateActor
+import org.pnfolder.pnlibrary.common.lang.runCatchingNonFatal
 import java.util.UUID
 
 /**
@@ -58,7 +59,7 @@ class ProxyUpdateCommand(private val library: PnLibrary) {
             }
             "stage" -> {
                 val current = library.updates.currentPlan().orElse(null)
-                val requested = if (context.contains("plan")) runCatching { UUID.fromString(context.get<String>("plan")) }.getOrNull() else current?.id
+                val requested = if (context.contains("plan")) runCatchingNonFatal { UUID.fromString(context.get<String>("plan")) }.getOrNull() else current?.id
                 if (requested == null) context.sender.send(Component.text("Нет плана обновления, или его ID указан неверно."))
                 else library.updates.stage(requested, actor(context)).whenComplete { snapshot, error ->
                     context.sender.send(Component.text(error?.let { "Не удалось подготовить обновление: ${it.message}" }
@@ -76,7 +77,7 @@ class ProxyUpdateCommand(private val library: PnLibrary) {
 
     private fun rollbackSaved(context: CommandContext, confirmed: Boolean, restoreConfigurations: Boolean = false) {
         if (!context.sender.isConsole) { context.sender.send(Component.text("На прокси откат доступен только из консоли.")); return }
-        val id = runCatching { UUID.fromString(context.get<String>("transaction")) }.getOrNull()
+        val id = runCatchingNonFatal { UUID.fromString(context.get<String>("transaction")) }.getOrNull()
         if (id == null) { context.sender.send(Component.text("Неверный ID набора.")); return }
         if (!confirmed) {
             val option = if (restoreConfigurations) " configs" else ""

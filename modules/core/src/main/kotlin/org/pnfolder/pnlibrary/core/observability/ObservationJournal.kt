@@ -3,6 +3,7 @@ package org.pnfolder.pnlibrary.core.observability
 import com.google.gson.GsonBuilder
 import org.pnfolder.pnlibrary.api.observability.Observation
 import org.pnfolder.pnlibrary.common.io.TextFiles
+import org.pnfolder.pnlibrary.common.lang.runCatchingNonFatal
 import java.nio.charset.StandardCharsets
 import java.nio.file.Files
 import java.nio.file.Path
@@ -69,7 +70,7 @@ internal class ObservationJournal(
     private fun load() = synchronized(lock) {
         if (!Files.isRegularFile(file)) return
         Files.readAllLines(file, StandardCharsets.UTF_8)
-            .mapNotNull { line -> runCatching { gson.fromJson(line, Observation::class.java) }.getOrNull() }
+            .mapNotNull { line -> runCatchingNonFatal { gson.fromJson(line, Observation::class.java) }.getOrNull() }
             .forEach(observations::addLast)
     }
 

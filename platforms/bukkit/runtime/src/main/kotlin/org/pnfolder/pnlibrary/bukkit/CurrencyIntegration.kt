@@ -5,6 +5,7 @@ import org.pnfolder.pnlibrary.api.currency.CurrencyProvider
 import org.pnfolder.pnlibrary.api.currency.CurrencyRegistration
 import org.pnfolder.pnlibrary.api.currency.currencyProviders
 import org.pnfolder.pnlibrary.api.plugin.PluginId
+import org.pnfolder.pnlibrary.common.lang.runCatchingNonFatal
 
 /**
  * Exposes an external economy plugin (Vault, PlayerPoints, ...) as a pnLibrary currency.
@@ -29,7 +30,7 @@ internal class CurrencyIntegration(
     }
 
     override fun close() {
-        registration?.let { runCatching(it::close) }
+        registration?.let { runCatchingNonFatal(it::close) }
         registration = null
     }
 }

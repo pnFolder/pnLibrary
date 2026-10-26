@@ -1,4 +1,4 @@
-package org.pnfolder.pnlibrary.core.plugin
+package org.pnfolder.pnlibrary.core.plugin.module
 
 import org.junit.jupiter.api.AfterEach
 import org.junit.jupiter.api.Assertions.assertEquals

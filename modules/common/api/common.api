@@ -57,6 +57,10 @@ public final class org/pnfolder/pnlibrary/common/lang/Failures {
 	public static final fun rethrowIfFatal (Ljava/lang/Throwable;)V
 }
 
+public final class org/pnfolder/pnlibrary/common/lang/FailuresKt {
+	public static final fun runCatchingNonFatal (Lkotlin/jvm/functions/Function0;)Ljava/lang/Object;
+}
+
 public final class org/pnfolder/pnlibrary/common/minecraft/MinecraftVersion : java/lang/Enum {
 	public static final field Companion Lorg/pnfolder/pnlibrary/common/minecraft/MinecraftVersion$Companion;
 	public static final field UNKNOWN Lorg/pnfolder/pnlibrary/common/minecraft/MinecraftVersion;

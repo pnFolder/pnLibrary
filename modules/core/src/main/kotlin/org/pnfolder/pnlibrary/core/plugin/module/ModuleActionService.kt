@@ -1,4 +1,4 @@
-package org.pnfolder.pnlibrary.core.plugin
+package org.pnfolder.pnlibrary.core.plugin.module
 
 import org.pnfolder.pnlibrary.api.actions.Action
 import org.pnfolder.pnlibrary.api.actions.ActionContext

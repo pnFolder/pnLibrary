@@ -36,12 +36,12 @@ interface EventScope : AutoCloseable {
      * Registers a listener with complete dispatch options.
      *
      * A listener also receives subclasses and implementations of [eventType].
-     * Set [ignoreCancelled] to skip the listener once the event is denied ([Event.isAllowed] is `false`).
+     * Set [ignoreDenied] to skip the listener once the event is denied ([Event.isAllowed] is `false`).
      */
     fun <E : Event> subscribe(
         eventType: Class<E>,
         priority: Int,
-        ignoreCancelled: Boolean,
+        ignoreDenied: Boolean,
         listener: Consumer<E>,
     ): EventSubscription
 

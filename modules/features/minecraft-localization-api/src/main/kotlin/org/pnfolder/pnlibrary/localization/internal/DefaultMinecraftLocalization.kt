@@ -25,6 +25,10 @@ import java.util.concurrent.RejectedExecutionException
 import java.util.concurrent.Semaphore
 import java.util.concurrent.atomic.AtomicBoolean
 
+/**
+ * Default Minecraft localization service: resolves Mojang language assets, caches verified translations
+ * and serves them per locale.
+ */
 internal class DefaultMinecraftLocalization internal constructor(
     cacheDirectory: Path,
     private val manifestTtl: Duration,
@@ -219,6 +223,9 @@ internal class DefaultMinecraftLocalization internal constructor(
     }
 }
 
+/**
+ * Immutable translations of one locale together with their metadata and fuzzy-search indexes.
+ */
 internal class LoadedLocale private constructor(
     override val locale: String,
     private val data: LocaleData,

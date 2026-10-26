@@ -2,6 +2,7 @@ package org.pnfolder.pnlibrary.core.metrics
 
 import org.pnfolder.pnlibrary.api.metrics.ErrorReporter
 import org.pnfolder.pnlibrary.api.metrics.TelemetryError
+import org.pnfolder.pnlibrary.common.lang.runCatchingNonFatal
 import java.util.concurrent.ConcurrentHashMap
 import java.util.concurrent.atomic.AtomicBoolean
 import java.util.concurrent.atomic.AtomicLong
@@ -29,7 +30,7 @@ internal class ErrorPipeline(
             .joinToString("|")
         if (seen.add(fingerprint)) {
             forwarded.incrementAndGet()
-            runCatching { delegate?.capture(safe) }
+            runCatchingNonFatal { delegate?.capture(safe) }
                 .onFailure { forwardingFailures.incrementAndGet() }
         } else {
             deduplicated.incrementAndGet()
@@ -41,7 +42,7 @@ internal class ErrorPipeline(
     }
 
     override fun close() {
-        if (closed.compareAndSet(false, true)) runCatching { delegate?.close() }
+        if (closed.compareAndSet(false, true)) runCatchingNonFatal { delegate?.close() }
     }
 
     fun diagnosticSnapshot(): Map<String, Any?> = linkedMapOf(

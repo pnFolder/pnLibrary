@@ -1,5 +1,6 @@
 package org.pnfolder.pnlibrary.core.journal
 
+import org.pnfolder.pnlibrary.common.lang.runCatchingNonFatal
 import java.io.ByteArrayInputStream
 import java.io.ByteArrayOutputStream
 import java.io.DataInputStream
@@ -75,7 +76,7 @@ internal object JournalBlockCodec {
             try { input.readFully(payload) } catch (_: EOFException) { break }
             remaining -= length
             if (CRC32().apply { update(payload) }.value != expectedCrc) continue
-            runCatching { decodePayload(payload) }.getOrElse { emptyList() }.forEach(record)
+            runCatchingNonFatal { decodePayload(payload) }.getOrElse { emptyList() }.forEach(record)
         }
     }
 

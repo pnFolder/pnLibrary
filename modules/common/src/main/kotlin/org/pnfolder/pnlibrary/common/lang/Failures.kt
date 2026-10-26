@@ -12,3 +12,15 @@ object Failures {
         if (error is VirtualMachineError) throw error
     }
 }
+
+/**
+ * Like [runCatching], but a failing JVM is rethrown and an interrupt is not lost: the interrupt flag is restored
+ * before the failure is returned.
+ */
+inline fun <T> runCatchingNonFatal(block: () -> T): Result<T> = try {
+    Result.success(block())
+} catch (error: Throwable) {
+    Failures.rethrowIfFatal(error)
+    if (error is InterruptedException) Thread.currentThread().interrupt()
+    Result.failure(error)
+}
