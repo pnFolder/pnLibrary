@@ -41,15 +41,12 @@ import org.pnfolder.pnlibrary.core.commands.CommandService
 import org.pnfolder.pnlibrary.core.downloads.DownloadService
 import org.pnfolder.pnlibrary.core.expansions.LocalizationExpansion
 import org.pnfolder.pnlibrary.core.lifecycle.ResourceCleanup
-import org.pnfolder.pnlibrary.core.remote.RemotePolicyMonitor
-import org.pnfolder.pnlibrary.core.remote.RemotePolicyNoticeRenderer
+import org.pnfolder.pnlibrary.core.remote.RemotePolicyEnforcer
 import org.pnfolder.pnlibrary.core.services.ServiceScopeFactory
 import org.pnfolder.pnlibrary.core.tasks.TaskService
 import org.pnfolder.pnlibrary.core.text.ComponentCache
 import org.pnfolder.pnlibrary.localization.MinecraftLocalization
-import org.pnfolder.pnlibrary.spi.platform.PlatformExecution
 import org.pnfolder.pnlibrary.spi.platform.PlatformIdentity
-import org.pnfolder.pnlibrary.spi.platform.PlatformLogging
 import org.pnfolder.pnlibrary.spi.platform.PlatformOwnership
 import java.util.Collections
 import java.util.IdentityHashMap
@@ -67,8 +64,7 @@ import java.util.function.Consumer
 internal class PluginRegistryImpl(
     private val ownership: PlatformOwnership,
     private val identity: PlatformIdentity,
-    private val execution: PlatformExecution,
-    private val platformLogging: PlatformLogging,
+    private val remotePolicies: RemotePolicyEnforcer,
     private val events: EventService,
     private val tasks: TaskService,
     private val services: ServiceScopeFactory,
@@ -96,8 +92,6 @@ internal class PluginRegistryImpl(
         events, tasks, services, logging, metrics, diagnostics, updates,
         shared.placeholders, shared.currency, configurations, directDownloads, sharedComponentCache,
     )
-    private val remotePolicyNotices = RemotePolicyNoticeRenderer(platformLogging)
-    private val remotePolicies = RemotePolicyMonitor(ownership, execution, remotePolicyNotices)
     private val dependencyValidator = ModuleDependencyValidator(ownership) {
         directDownloads != null
     }

@@ -42,6 +42,8 @@ import org.pnfolder.pnlibrary.core.observability.SupportRuntime
 import org.pnfolder.pnlibrary.core.platform.PlatformProviderImpl
 import org.pnfolder.pnlibrary.core.plugin.PluginRegistryImpl
 import org.pnfolder.pnlibrary.core.plugin.SharedFeatures
+import org.pnfolder.pnlibrary.core.remote.RemotePolicyMonitor
+import org.pnfolder.pnlibrary.core.remote.RemotePolicyNoticeRenderer
 import org.pnfolder.pnlibrary.core.runtime.details.RuntimeDiagnosticsAssembler
 import org.pnfolder.pnlibrary.core.runtime.details.RuntimeFeatureSet
 import org.pnfolder.pnlibrary.core.runtime.details.RuntimeJournal
@@ -189,8 +191,7 @@ internal class PnLibraryImpl(
     override val plugins: PluginRegistry = PluginRegistryImpl(
         ownership = platformOwnership,
         identity = platformIdentity,
-        execution = platformExecution,
-        platformLogging = support.capture,
+        remotePolicies = RemotePolicyMonitor(platformOwnership, platformExecution, RemotePolicyNoticeRenderer(support.capture)),
         events = eventService,
         tasks = taskService,
         services = serviceManager,

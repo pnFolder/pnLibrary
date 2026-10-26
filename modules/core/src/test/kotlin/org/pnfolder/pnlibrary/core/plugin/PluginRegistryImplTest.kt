@@ -46,6 +46,8 @@ import org.pnfolder.pnlibrary.core.downloads.DownloadService
 import org.pnfolder.pnlibrary.core.events.EventServiceImpl
 import org.pnfolder.pnlibrary.core.expansions.ExpansionManagerImpl
 import org.pnfolder.pnlibrary.core.placeholders.PlaceholderHub
+import org.pnfolder.pnlibrary.core.remote.RemotePolicyMonitor
+import org.pnfolder.pnlibrary.core.remote.RemotePolicyNoticeRenderer
 import org.pnfolder.pnlibrary.core.services.ServiceManagerImpl
 import org.pnfolder.pnlibrary.core.tasks.TaskService
 import org.pnfolder.pnlibrary.core.tasks.TaskServiceImpl
@@ -645,8 +647,7 @@ class PluginRegistryImplTest {
             PluginRegistryImpl(
                 ownership = platform,
                 identity = platform,
-                execution = platform,
-                platformLogging = platform,
+                remotePolicies = RemotePolicyMonitor(platform, platform, RemotePolicyNoticeRenderer(platform)),
                 events = events,
                 tasks = tasks,
                 services = ServiceManagerImpl(),
