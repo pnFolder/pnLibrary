@@ -1,5 +1,6 @@
 package org.pnfolder.pnlibrary.core.upload
 
+import org.pnfolder.pnlibrary.common.lang.runCatchingNonFatal
 import java.io.IOException
 import java.net.URI
 import java.nio.file.Path
@@ -79,7 +80,7 @@ internal class UploadLedger @JvmOverloads constructor(
     @Synchronized
     fun diagnosticSnapshot(): Map<String, Any?> {
         // Diagnostics must render even with an unreadable ledger; cleanup() surfaces the I/O error.
-        val entries = runCatching { persistence.read() }.getOrDefault(emptyList())
+        val entries = runCatchingNonFatal { persistence.read() }.getOrDefault(emptyList())
         val now = clock.instant().epochSecond
         return linkedMapOf(
             "pendingCount" to entries.size,

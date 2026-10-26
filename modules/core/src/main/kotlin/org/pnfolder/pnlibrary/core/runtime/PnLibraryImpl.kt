@@ -25,6 +25,7 @@ import org.pnfolder.pnlibrary.api.services.ServiceManager
 import org.pnfolder.pnlibrary.api.tasks.TaskScope
 import org.pnfolder.pnlibrary.api.updates.UpdateService
 import org.pnfolder.pnlibrary.api.version.SemanticVersion
+import org.pnfolder.pnlibrary.common.lang.runCatchingNonFatal
 import org.pnfolder.pnlibrary.common.time.DisplayZone
 import org.pnfolder.pnlibrary.core.commands.standardCommandFeedback
 import org.pnfolder.pnlibrary.core.diagnostics.DiagnosticsRegistry
@@ -164,7 +165,7 @@ internal class PnLibraryImpl(
         if (!config.journalJoinNotice) return emptyList()
         val now = System.currentTimeMillis()
         val since = now - Duration.ofHours(config.journalJoinNoticeHours.toLong()).toMillis()
-        return runCatching {
+        return runCatchingNonFatal {
             joinDigest(journal.read(sinceMillis = since, limit = 5_000), now, config.journalJoinNoticeHours, startedAtMillis, EVENTS_COMMAND)
         }.getOrDefault(emptyList())
     }

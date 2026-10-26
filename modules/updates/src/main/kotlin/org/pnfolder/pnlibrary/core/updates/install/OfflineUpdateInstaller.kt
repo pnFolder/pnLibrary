@@ -3,6 +3,7 @@ package org.pnfolder.pnlibrary.core.updates.install
 import org.pnfolder.pnlibrary.api.updates.ProductId
 import org.pnfolder.pnlibrary.api.version.ApiVersionRange
 import org.pnfolder.pnlibrary.api.version.SemanticVersion
+import org.pnfolder.pnlibrary.common.lang.runCatchingNonFatal
 import org.pnfolder.pnlibrary.core.updates.engine.ArtifactSpecification
 import org.pnfolder.pnlibrary.core.updates.engine.ArtifactVerifier
 import org.pnfolder.pnlibrary.core.updates.engine.TransactionArtifact
@@ -62,8 +63,8 @@ object OfflineUpdateInstaller {
                     }
                     transactions.markInstalled(prepared.journal, prepared.purpose)
                 } catch (error: Throwable) {
-                    restoredConfigurations?.let { runCatching { restorer.undo(it) }.onFailure(error::addSuppressed) }
-                    runCatching { transactions.revertInstallation(child) }.onFailure(error::addSuppressed)
+                    restoredConfigurations?.let { runCatchingNonFatal { restorer.undo(it) }.onFailure(error::addSuppressed) }
+                    runCatchingNonFatal { transactions.revertInstallation(child) }.onFailure(error::addSuppressed)
                     throw error
                 }
             }

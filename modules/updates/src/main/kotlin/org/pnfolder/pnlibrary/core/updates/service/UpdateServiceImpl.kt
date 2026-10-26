@@ -14,6 +14,7 @@ import org.pnfolder.pnlibrary.api.updates.backup.UpdateBackup
 import org.pnfolder.pnlibrary.api.updates.backup.UpdateHistoryEntry
 import org.pnfolder.pnlibrary.api.version.SemanticVersion
 import org.pnfolder.pnlibrary.common.jvm.JavaRuntime
+import org.pnfolder.pnlibrary.common.lang.runCatchingNonFatal
 import org.pnfolder.pnlibrary.console.ConsoleTheme
 import org.pnfolder.pnlibrary.core.updates.catalog.UpdateAnnouncementRenderer
 import org.pnfolder.pnlibrary.core.updates.catalog.UpdateCommandWords
@@ -207,7 +208,7 @@ class UpdateServiceImpl(
             if (description != null) {
                 runtime.recordSettingsChange(registration, description, actor)
                 // The setting is already persisted, so a failed recheck is reported but does not fail the change.
-                if (recheck) runCatching { orchestrator.checkNow(actor = actor) }.onFailure { error ->
+                if (recheck) runCatchingNonFatal { orchestrator.checkNow(actor = actor) }.onFailure { error ->
                     logging.log(this, LogLevel.WARNING, "Update recheck after a settings change failed", error)
                 }
             }

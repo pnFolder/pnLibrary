@@ -1,5 +1,6 @@
 package org.pnfolder.pnlibrary.core.updates.engine
 
+import org.pnfolder.pnlibrary.common.lang.runCatchingNonFatal
 import java.nio.file.Files
 import java.nio.file.Path
 import java.time.Instant
@@ -12,7 +13,7 @@ internal class RollbackCatalog(
 ) {
     /** Returns the most recently modified rollback candidate, if any. */
     fun latest(): Path? = journals.journals()
-        .filter { path -> runCatching { isCandidate(journals.load(path)) }.getOrDefault(false) }
+        .filter { path -> runCatchingNonFatal { isCandidate(journals.load(path)) }.getOrDefault(false) }
         .maxByOrNull { Files.getLastModifiedTime(it).toMillis() }
 
     /** Resolves exactly one saved transaction; never substitutes the latest one. */
@@ -29,7 +30,7 @@ internal class RollbackCatalog(
 
     /** Lists validated rollback candidates, newest first, skipping incomplete or corrupt transactions. */
     fun all(): List<Path> = journals.journals().filter { path ->
-        runCatching { isCandidate(journals.load(path)) }.getOrDefault(false)
+        runCatchingNonFatal { isCandidate(journals.load(path)) }.getOrDefault(false)
     }.sortedByDescending { path ->
         journals.load(path).createdAt?.let(Instant::parse) ?: Instant.MIN
     }

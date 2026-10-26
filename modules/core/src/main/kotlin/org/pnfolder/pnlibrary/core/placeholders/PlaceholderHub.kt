@@ -15,6 +15,7 @@ import org.pnfolder.pnlibrary.api.placeholders.PlaceholderRequest
 import org.pnfolder.pnlibrary.api.placeholders.PlaceholderService
 import org.pnfolder.pnlibrary.api.plugin.PluginId
 import org.pnfolder.pnlibrary.api.runtime.PnLibraryIdentity
+import org.pnfolder.pnlibrary.common.lang.runCatchingNonFatal
 import org.pnfolder.pnlibrary.spi.platform.PlatformIdentity
 import java.util.Collections
 import java.util.Locale
@@ -89,7 +90,7 @@ internal class PlaceholderHub(
         return AutoCloseable {
             if (adapters.remove(key, adapter)) {
                 entries.values.forEach { it.detach(key) }
-                if (adapter is AutoCloseable) runCatching(adapter::close)
+                if (adapter is AutoCloseable) runCatchingNonFatal(adapter::close)
             }
         }
     }
@@ -187,7 +188,7 @@ internal class PlaceholderHub(
                 formatterRegistry.removeOwnedBy(owner)
                 adapterHandles.toList().also { adapterHandles.clear() }
             }
-            handles.forEach { runCatching(it::close) }
+            handles.forEach { runCatchingNonFatal(it::close) }
         }
     }
 
@@ -203,7 +204,7 @@ internal class PlaceholderHub(
                         adapter.state == PlaceholderAdapterState.REGISTERED
                 }
                 .mapNotNull { adapter ->
-                    runCatching { adapter.resolve(playerId, reference) }.getOrNull()
+                    runCatchingNonFatal { adapter.resolve(playerId, reference) }.getOrNull()
                 }
                 .firstOrNull()
             return CompletableFuture.completedFuture(external)
@@ -226,7 +227,7 @@ internal class PlaceholderHub(
         val (entry, parameters) = entryLookup.find(consumer, reference)
         if (entry == null) return failed(IllegalArgumentException("Unknown placeholder: $reference"))
         val request = PlaceholderRequest(entry.owner, consumer, playerId, parameters, values)
-        return runCatching {
+        return runCatchingNonFatal {
             @Suppress("UNCHECKED_CAST")
             (entry as PlaceholderEntry<Any>).update(consumer, request, value)
         }.fold(

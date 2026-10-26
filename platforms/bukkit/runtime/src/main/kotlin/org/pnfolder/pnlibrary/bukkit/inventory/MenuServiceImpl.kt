@@ -21,6 +21,7 @@ import org.bukkit.plugin.Plugin
 import org.pnfolder.pnlibrary.api.tasks.TaskExecution
 import org.pnfolder.pnlibrary.api.tasks.TaskScope
 import org.pnfolder.pnlibrary.api.tasks.TaskSpec
+import org.pnfolder.pnlibrary.common.lang.runCatchingNonFatal
 import java.time.Duration
 import java.util.IdentityHashMap
 import java.util.UUID
@@ -63,7 +64,7 @@ internal class MenuServiceImpl(
             if (!session.finished.get()) menu.renderer?.render(session)
             if (!session.finished.get()) menu.openHandler?.handle(session)
         } catch (error: Throwable) {
-            runCatching { session.terminate(closeView = true, notifyOwner = false) }.onFailure(error::addSuppressed)
+            runCatchingNonFatal { session.terminate(closeView = true, notifyOwner = false) }.onFailure(error::addSuppressed)
             throw error
         }
         return session
@@ -163,7 +164,7 @@ internal class MenuServiceImpl(
 
     private fun closeAll(actions: List<() -> Unit>) {
         val failures = mutableListOf<Throwable>()
-        actions.forEach { action -> runCatching(action).onFailure(failures::add) }
+        actions.forEach { action -> runCatchingNonFatal(action).onFailure(failures::add) }
         failures.firstOrNull()?.let { first -> failures.drop(1).forEach(first::addSuppressed); throw first }
     }
 

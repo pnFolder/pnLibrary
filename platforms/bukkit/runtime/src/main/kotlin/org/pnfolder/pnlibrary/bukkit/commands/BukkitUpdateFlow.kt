@@ -18,6 +18,7 @@ import org.pnfolder.pnlibrary.api.updates.UpdateState
 import org.pnfolder.pnlibrary.api.updates.release.ProductChange
 import org.pnfolder.pnlibrary.bukkit.updates.UpdateAction
 import org.pnfolder.pnlibrary.bukkit.updates.UpdateConfirmationTokens
+import org.pnfolder.pnlibrary.common.lang.runCatchingNonFatal
 import org.pnfolder.pnlibrary.core.updates.catalog.UpdateCatalogCommands
 import org.pnfolder.pnlibrary.core.updates.catalog.UpdateCatalogView
 import java.time.Duration
@@ -58,7 +59,7 @@ internal class BukkitUpdateFlow(
         val reply = context.sender
         if (!replies.ready(reply)) return
         val native = (reply as? BukkitCommandSender)?.native ?: return
-        val id = runCatching { UUID.fromString(context.get<String>("transaction")) }.getOrNull()
+        val id = runCatchingNonFatal { UUID.fromString(context.get<String>("transaction")) }.getOrNull()
             ?: return replies.say(reply, ChatTone.FAILURE, "Некорректный ID резервного набора.")
         val action = if (restoreConfigurations) UpdateAction.ROLLBACK_CONFIGS else UpdateAction.ROLLBACK
         askToConfirm(

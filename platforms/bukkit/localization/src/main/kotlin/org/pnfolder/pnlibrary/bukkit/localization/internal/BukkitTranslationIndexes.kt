@@ -7,6 +7,7 @@ import org.bukkit.block.Biome
 import org.bukkit.enchantments.Enchantment
 import org.bukkit.entity.EntityType
 import org.bukkit.potion.PotionEffectType
+import org.pnfolder.pnlibrary.common.lang.runCatchingNonFatal
 import org.pnfolder.pnlibrary.localization.TranslatableType
 import org.pnfolder.pnlibrary.localization.TranslationCategory
 import org.pnfolder.pnlibrary.localization.TranslationIndex
@@ -203,13 +204,13 @@ private fun staticFieldName(type: Class<*>, value: Any): String? =
 /** Legacy constant name (e.g. `DAMAGE_ALL`), read from the static field to avoid `getName()` on unbound wrappers. */
 private fun legacyName(enchantment: Enchantment): String =
     staticFieldName(Enchantment::class.java, enchantment)
-        ?: runCatching { @Suppress("DEPRECATION") enchantment.name }.getOrNull()
+        ?: runCatchingNonFatal { @Suppress("DEPRECATION") enchantment.name }.getOrNull()
         ?: "unknown"
 
 /** Legacy constant name (e.g. `FAST_DIGGING`), read from the static field to avoid `getName()` on unbound wrappers. */
 private fun effectName(effect: PotionEffectType): String =
     staticFieldName(PotionEffectType::class.java, effect)
-        ?: runCatching { effect.name }.getOrNull()
+        ?: runCatchingNonFatal { effect.name }.getOrNull()
         ?: "unknown"
 
 /** `DIAMOND_SWORD` -> `diamondSword`, the shape of a pre-1.13 tile/item key fragment. */

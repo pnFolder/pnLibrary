@@ -10,6 +10,7 @@ import org.pnfolder.pnlibrary.api.updates.backup.UpdateConfigurationBackup
 import org.pnfolder.pnlibrary.api.updates.release.ProductChange
 import org.pnfolder.pnlibrary.api.updates.release.UpdatePlan
 import org.pnfolder.pnlibrary.api.version.SemanticVersion
+import org.pnfolder.pnlibrary.common.lang.runCatchingNonFatal
 import org.pnfolder.pnlibrary.core.updates.engine.ArtifactVerifier
 import org.pnfolder.pnlibrary.core.updates.engine.TransactionJournal
 import org.pnfolder.pnlibrary.core.updates.engine.TrustedHttpClient
@@ -79,7 +80,7 @@ internal class UpdateInstaller(
         val journal = TransactionJournal.load(path)
         UpdateBackup(UUID.fromString(journal.id), journal.createdAt?.let(Instant::parse), journal.planId?.let(UUID::fromString),
             journal.artifacts.map { UpdateBackupComponent(ProductId.of(it.component), it.expectedVersion, it.previousVersion) },
-            journal.configurationSnapshot?.let { id -> runCatching { configurations.read(UUID.fromString(id)).files.size }.getOrDefault(0) } ?: 0)
+            journal.configurationSnapshot?.let { id -> runCatchingNonFatal { configurations.read(UUID.fromString(id)).files.size }.getOrDefault(0) } ?: 0)
     }
 
     fun rollbackLatest(): UpdatePlanSnapshot {

@@ -10,6 +10,7 @@ import org.pnfolder.pnlibrary.api.remote.RemotePolicySettings
 import org.pnfolder.pnlibrary.api.tasks.TaskExecution
 import org.pnfolder.pnlibrary.api.tasks.TaskScope
 import org.pnfolder.pnlibrary.api.tasks.TaskSpec
+import org.pnfolder.pnlibrary.common.lang.runCatchingNonFatal
 import org.pnfolder.pnlibrary.spi.platform.PlatformExecution
 import org.pnfolder.pnlibrary.spi.platform.PlatformOwnerControl
 import java.util.concurrent.atomic.AtomicBoolean
@@ -55,7 +56,7 @@ internal class RemotePolicyMonitor(
         closeModule: () -> Unit,
         closePlugin: () -> Unit,
     ) {
-        runCatching { RemotePolicyEngine.check(policy.source, policyContext) }
+        runCatchingNonFatal { RemotePolicyEngine.check(policy.source, policyContext) }
             .onSuccess { decision ->
                 execution.executeGlobal(Runnable {
                     if (isClosed()) return@Runnable

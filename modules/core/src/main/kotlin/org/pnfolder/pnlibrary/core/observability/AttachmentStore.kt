@@ -4,6 +4,7 @@ import com.google.gson.GsonBuilder
 import com.google.gson.reflect.TypeToken
 import org.pnfolder.pnlibrary.common.io.Digests
 import org.pnfolder.pnlibrary.common.io.TextFiles
+import org.pnfolder.pnlibrary.common.lang.runCatchingNonFatal
 import java.nio.file.Files
 import java.nio.file.Path
 import java.util.UUID
@@ -108,7 +109,7 @@ internal class AttachmentStore(dataFolder: Path) {
     private fun loadManifest() {
         if (!Files.isRegularFile(manifest)) return
         val type = object : TypeToken<List<AttachmentManifestEntry>>() {}.type
-        val entries = runCatching {
+        val entries = runCatchingNonFatal {
             gson.fromJson<List<AttachmentManifestEntry>>(TextFiles.read(manifest), type)
         }.getOrDefault(emptyList())
         entries.mapNotNull(::restore).forEach { attachment -> attachments[attachment.id] = attachment }

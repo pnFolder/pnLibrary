@@ -6,6 +6,7 @@ import com.google.gson.JsonParser
 import org.pnfolder.pnlibrary.api.updates.UpdateChannel
 import org.pnfolder.pnlibrary.common.io.AtomicFiles
 import org.pnfolder.pnlibrary.common.io.TextFiles
+import org.pnfolder.pnlibrary.common.lang.runCatchingNonFatal
 import java.nio.charset.StandardCharsets.UTF_8
 import java.nio.file.Files
 import java.nio.file.Path
@@ -55,7 +56,7 @@ internal class UpdatePolicyOverrides(
             val root = JsonParser.parseString(TextFiles.read(file, UTF_8)).asJsonObject
             State(
                 channels = root.getAsJsonObject("channels")?.entrySet().orEmpty().mapNotNull { (product, value) ->
-                    runCatching { UpdateChannel.valueOf(value.asString) }.getOrNull()?.let { product to it }
+                    runCatchingNonFatal { UpdateChannel.valueOf(value.asString) }.getOrNull()?.let { product to it }
                 }.toMap(),
                 automatic = root.getAsJsonObject("automatic")?.entrySet().orEmpty()
                     .associate { (product, value) -> product to value.asBoolean },

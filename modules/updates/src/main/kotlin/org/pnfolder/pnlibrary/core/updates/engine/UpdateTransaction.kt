@@ -1,5 +1,6 @@
 package org.pnfolder.pnlibrary.core.updates.engine
 
+import org.pnfolder.pnlibrary.common.lang.runCatchingNonFatal
 import java.nio.file.Files
 import java.nio.file.Path
 import java.nio.file.Paths
@@ -100,9 +101,9 @@ internal class UpdateTransaction(
             return TransactionResult(journal.state, journalPath)
         } catch (error: Throwable) {
             if (activationStarted) {
-                runCatching { rollbackInternal(journalPath, journal) }.onFailure(error::addSuppressed)
+                runCatchingNonFatal { rollbackInternal(journalPath, journal) }.onFailure(error::addSuppressed)
             } else {
-                runCatching { journals.transition(journalPath, journal, TransactionState.FAILED) }.onFailure(error::addSuppressed)
+                runCatchingNonFatal { journals.transition(journalPath, journal, TransactionState.FAILED) }.onFailure(error::addSuppressed)
             }
             throw error
         }

@@ -3,6 +3,7 @@ package org.pnfolder.pnlibrary.core.runtime.details
 import org.pnfolder.pnlibrary.api.logging.LogLevel
 import org.pnfolder.pnlibrary.api.runtime.PnLibraryConfig
 import org.pnfolder.pnlibrary.common.concurrent.ManagedWorker
+import org.pnfolder.pnlibrary.common.lang.runCatchingNonFatal
 import org.pnfolder.pnlibrary.core.journal.JournalLevel
 import org.pnfolder.pnlibrary.core.journal.JournalRecord
 import org.pnfolder.pnlibrary.core.journal.JournalStore
@@ -21,7 +22,7 @@ internal class RuntimeJournal(dataFolder: Path, config: PnLibraryConfig, private
             JournalLevel.WARNING to Duration.ofDays(config.journalWarningDays.toLong()),
             JournalLevel.ERROR to Duration.ofDays(config.journalErrorDays.toLong()),
         ),
-    ).also { runCatching { it.prune() } }
+    ).also { runCatchingNonFatal { it.prune() } }
     private val worker = ManagedWorker("pnLibrary-journal")
     private val failures = AtomicLong()
 

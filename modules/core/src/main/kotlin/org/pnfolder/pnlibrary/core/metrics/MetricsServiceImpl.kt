@@ -4,6 +4,7 @@ import org.pnfolder.pnlibrary.api.metrics.ErrorReporter
 import org.pnfolder.pnlibrary.api.metrics.MetricsProviderConfiguration
 import org.pnfolder.pnlibrary.api.metrics.MetricsService
 import org.pnfolder.pnlibrary.api.metrics.PluginMetrics
+import org.pnfolder.pnlibrary.common.lang.runCatchingNonFatal
 import org.pnfolder.pnlibrary.spi.metrics.PlatformMetricsFactory
 import java.util.Collections
 import java.util.IdentityHashMap
@@ -67,7 +68,7 @@ internal class MetricsServiceImpl(private val factory: PlatformMetricsFactory) :
     override fun close() {
         if (closed) return
         closed = true
-        sessions.toList().forEach { runCatching { it.close() } }
+        sessions.toList().forEach { runCatchingNonFatal { it.close() } }
         sessions.clear()
     }
 }

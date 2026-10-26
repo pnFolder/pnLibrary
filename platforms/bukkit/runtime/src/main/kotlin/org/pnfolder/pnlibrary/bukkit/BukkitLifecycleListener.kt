@@ -17,6 +17,7 @@ import org.pnfolder.pnlibrary.api.tasks.TaskExecution
 import org.pnfolder.pnlibrary.api.tasks.TaskSpec
 import org.pnfolder.pnlibrary.api.updates.UpdateState
 import org.pnfolder.pnlibrary.bukkit.commands.BukkitControlCommand
+import org.pnfolder.pnlibrary.common.lang.runCatchingNonFatal
 import org.pnfolder.pnlibrary.core.events.PlayerLifecyclePublisher
 import org.pnfolder.pnlibrary.core.lifecycle.journalJoinNotice
 import org.pnfolder.pnlibrary.core.lifecycle.runtimeTaskScope
@@ -58,7 +59,7 @@ internal class BukkitLifecycleListener(
         plugin.server.pluginManager.registerEvents(this, plugin)
         // ServerLoadEvent exists on modern Bukkit/Paper, but this module also
         // targets old 1.8 APIs. Register it reflectively when available.
-        runCatching {
+        runCatchingNonFatal {
             val eventType = Class.forName("org.bukkit.event.server.ServerLoadEvent").asSubclass(Event::class.java)
             plugin.server.pluginManager.registerEvent(
                 eventType,
@@ -125,7 +126,7 @@ internal class BukkitLifecycleListener(
     /** Drains queued readiness callbacks once. */
     private fun markServerReady() {
         if (!serverReady.compareAndSet(false, true)) return
-        readyCallbacks.toList().forEach { runCatching(it::run) }
+        readyCallbacks.toList().forEach { runCatchingNonFatal(it::run) }
         readyCallbacks.clear()
     }
 

@@ -12,6 +12,7 @@ import org.pnfolder.pnlibrary.api.updates.UpdateActor
 import org.pnfolder.pnlibrary.api.updates.UpdateSnapshot
 import org.pnfolder.pnlibrary.api.updates.UpdateState
 import org.pnfolder.pnlibrary.api.updates.backup.UpdateHistoryEntry
+import org.pnfolder.pnlibrary.common.lang.runCatchingNonFatal
 import org.pnfolder.pnlibrary.common.text.RussianText
 import org.pnfolder.pnlibrary.core.updates.engine.FreezeDuration
 import java.time.Duration
@@ -210,7 +211,7 @@ class UpdateCatalogCommands(
         val duration = when (value) {
             in OFF -> null
             in ON -> DEFAULT_HOLD
-            else -> runCatching { FreezeDuration.parse(value) }.getOrElse {
+            else -> runCatchingNonFatal { FreezeDuration.parse(value) }.getOrElse {
                 context.sender.send(error("Пауза — от 1m до 7d (например 3d) или off, получено: $value."))
                 return
             }

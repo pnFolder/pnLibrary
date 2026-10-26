@@ -8,6 +8,7 @@ import org.pnfolder.pnlibrary.api.updates.UpdateState
 import org.pnfolder.pnlibrary.api.updates.backup.UpdateHistoryEntry
 import org.pnfolder.pnlibrary.api.updates.release.ProductChange
 import org.pnfolder.pnlibrary.api.version.SemanticVersion
+import org.pnfolder.pnlibrary.common.lang.runCatchingNonFatal
 import org.pnfolder.pnlibrary.core.updates.engine.RefreshMode
 import org.pnfolder.pnlibrary.core.updates.engine.ResolutionResult
 import org.pnfolder.pnlibrary.core.updates.history.UpdateEventJournal
@@ -71,9 +72,9 @@ internal class UpdateOrchestratorRuntime(
         beforeCheck = { installer.reconcileRecoveredFailures(registrations(), ::recordHealth) },
         automaticOverridesActive = automaticOverridesActive,
         observeState = { snapshot, actor, operation ->
-            runCatching { journal.record(snapshot, actor, operation) }.onFailure { error ->
+            runCatchingNonFatal { journal.record(snapshot, actor, operation) }.onFailure { error ->
                 // An observation failure must not turn an already staged transaction into a failed operation.
-                if (!closed.get()) runCatching { logging.log(this, LogLevel.WARNING, "Could not persist update observation", error) }
+                if (!closed.get()) runCatchingNonFatal { logging.log(this, LogLevel.WARNING, "Could not persist update observation", error) }
             }
         },
     ).also { created ->
@@ -83,7 +84,7 @@ internal class UpdateOrchestratorRuntime(
         })
     } } catch (error: Throwable) {
         executor.shutdownNow()
-        runCatching { releaseLockWhenIdle() }.onFailure(error::addSuppressed)
+        runCatchingNonFatal { releaseLockWhenIdle() }.onFailure(error::addSuppressed)
         throw error
     }
 
@@ -114,7 +115,7 @@ internal class UpdateOrchestratorRuntime(
     /** Records components that appeared, disappeared or changed since the previous start. */
     /** Records a change an administrator made to one component's settings and remembers it for the next start. */
     fun recordSettingsChange(registration: RegisteredUpdate, message: String, actor: UpdateActor) {
-        runCatching {
+        runCatchingNonFatal {
             journal.recordComponent(
                 ComponentLedger.OPERATION_SETTINGS_CHANGED, registration.product, registration.version, registration.version,
                 message, actor,
@@ -127,7 +128,7 @@ internal class UpdateOrchestratorRuntime(
     }
 
     private fun observeComponents(installed: List<RegisteredUpdate>) {
-        runCatching {
+        runCatchingNonFatal {
             componentLedger.observe(
                 installed.associate { registration ->
                     val snapshot = registration.snapshot
@@ -145,7 +146,7 @@ internal class UpdateOrchestratorRuntime(
     private fun recordHealth(report: UpdateHealthReport) {
         if (report.healthy) report.changes.forEach { verifiedByHealth += it.product.value }
         journal.recordHealth(report)
-        if (!closed.get()) runCatching { logging.log(this, if (report.healthy) LogLevel.INFO else LogLevel.WARNING, report.message) }
+        if (!closed.get()) runCatchingNonFatal { logging.log(this, if (report.healthy) LogLevel.INFO else LogLevel.WARNING, report.message) }
     }
 
     fun historyPage(page: Int, product: String?): CompletionStage<List<UpdateHistoryEntry>> = readAsync {
@@ -171,7 +172,7 @@ internal class UpdateOrchestratorRuntime(
             check(!closed.get()) { "Update service is closed" }
             executor.execute {
                 if (result.isDone) return@execute
-                runCatching(action).fold(result::complete, result::completeExceptionally)
+                runCatchingNonFatal(action).fold(result::complete, result::completeExceptionally)
             }
         } catch (error: Exception) {
             result.completeExceptionally(error)

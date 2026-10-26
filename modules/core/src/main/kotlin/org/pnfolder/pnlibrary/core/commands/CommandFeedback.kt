@@ -15,6 +15,7 @@ import org.pnfolder.pnlibrary.api.commands.OnCooldown
 import org.pnfolder.pnlibrary.api.commands.PlayerNotFound
 import org.pnfolder.pnlibrary.api.commands.PlayerOnly
 import org.pnfolder.pnlibrary.api.runtime.PnLibraryConfig
+import org.pnfolder.pnlibrary.common.lang.runCatchingNonFatal
 import java.util.concurrent.ConcurrentHashMap
 
 /** Shown when no level of the chain sets a usage line; `{usage}` is the generated usage text. */
@@ -91,7 +92,7 @@ internal class StandardCommandFeedback(
 internal fun standardCommandFeedback(config: PnLibraryConfig): StandardCommandFeedback = StandardCommandFeedback(
     deniedMessage = config.noPermissionMessage,
     deniedSound = config.noPermissionSound.takeIf { it.isNotBlank() }
-        ?.let { name -> runCatching { Sound.sound(Key.key(name), Sound.Source.MASTER, 1f, 1f) }.getOrNull() },
+        ?.let { name -> runCatchingNonFatal { Sound.sound(Key.key(name), Sound.Source.MASTER, 1f, 1f) }.getOrNull() },
     usageFormat = config.usageMessage,
     invalidArgumentMessage = config.invalidArgumentMessage,
     playerNotFoundMessage = config.playerNotFoundMessage,

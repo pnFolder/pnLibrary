@@ -2,6 +2,7 @@ package org.pnfolder.pnlibrary.bungee
 
 import net.md_5.bungee.api.plugin.Plugin
 import org.pnfolder.pnlibrary.bungee.api.BungeePlatform
+import org.pnfolder.pnlibrary.common.lang.runCatchingNonFatal
 import org.pnfolder.pnlibrary.core.runtime.PnLibraryRuntimeHost
 
 /**
@@ -31,7 +32,7 @@ internal class BungeeRuntime(private val plugin: Plugin) {
     }
 
     fun stop() {
-        playerEvents?.let { runCatching { plugin.proxy.pluginManager.unregisterListener(it) } }
+        playerEvents?.let { runCatchingNonFatal { plugin.proxy.pluginManager.unregisterListener(it) } }
         playerEvents = null
         host?.close()
         host = null

@@ -17,6 +17,7 @@ import org.pnfolder.pnlibrary.api.version.ApiVersionRange
 import org.pnfolder.pnlibrary.api.version.SemanticVersion
 import org.pnfolder.pnlibrary.common.io.AtomicFiles
 import org.pnfolder.pnlibrary.common.io.TextFiles
+import org.pnfolder.pnlibrary.common.lang.runCatchingNonFatal
 import java.nio.charset.StandardCharsets
 import java.nio.file.Files
 import java.nio.file.Path
@@ -81,7 +82,7 @@ internal class UpdateStateStore(
         } catch (error: Exception) {
             if (quarantine) {
                 val target = path.resolveSibling("${path.fileName}.corrupt-${Instant.now().toEpochMilli()}")
-                runCatching { Files.move(path, target, StandardCopyOption.REPLACE_EXISTING) }
+                runCatchingNonFatal { Files.move(path, target, StandardCopyOption.REPLACE_EXISTING) }
                     .onSuccess { warning("Corrupt update state was quarantined: ${error.message}") }
                     .onFailure { moveError ->
                         warning("Corrupt update state could not be quarantined (${moveError.message}): ${error.message}")
@@ -175,10 +176,10 @@ internal class UpdateStateStore(
     private fun prune() {
         // A history file that vanished or is locked counts as empty; retention retries on the next write.
         val files = historyFiles().toMutableList()
-        var bytes = files.sumOf { runCatching { Files.size(it) }.getOrDefault(0) }
+        var bytes = files.sumOf { runCatchingNonFatal { Files.size(it) }.getOrDefault(0) }
         while (files.size > maximumEntries || bytes > maximumBytes) {
             val oldest = files.removeLast()
-            bytes -= runCatching { Files.size(oldest) }.getOrDefault(0)
+            bytes -= runCatchingNonFatal { Files.size(oldest) }.getOrDefault(0)
             Files.deleteIfExists(oldest)
         }
     }

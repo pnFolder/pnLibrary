@@ -1,6 +1,7 @@
 package org.pnfolder.pnlibrary.core.logging
 
 import org.pnfolder.pnlibrary.api.logging.LogLevel
+import org.pnfolder.pnlibrary.common.lang.runCatchingNonFatal
 import org.pnfolder.pnlibrary.spi.platform.PlatformLogging
 import org.pnfolder.pnlibrary.spi.platform.PlatformOwnership
 
@@ -52,9 +53,9 @@ internal class DiagnosticCapture(
     }
 
     private fun capture(owner: Any, level: LogLevel, message: String, error: Throwable?, includeJournal: Boolean): DiagnosticLogBuffer.CaptureResult? {
-        if (includeJournal) runCatching { journal?.invoke(owner, level, message, error) }
-        if (error != null && level == LogLevel.ERROR) runCatching { onError(owner, message, error) }
-        return runCatching { incidents?.record(ownership, owner, level, message, error) }.getOrNull()
+        if (includeJournal) runCatchingNonFatal { journal?.invoke(owner, level, message, error) }
+        if (error != null && level == LogLevel.ERROR) runCatchingNonFatal { onError(owner, message, error) }
+        return runCatchingNonFatal { incidents?.record(ownership, owner, level, message, error) }.getOrNull()
     }
 
     private inline fun emit(action: () -> Unit) {

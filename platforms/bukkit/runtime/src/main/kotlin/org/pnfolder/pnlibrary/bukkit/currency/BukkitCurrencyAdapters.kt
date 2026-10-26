@@ -12,6 +12,7 @@ import org.pnfolder.pnlibrary.api.currency.CurrencyRejectReason
 import org.pnfolder.pnlibrary.api.currency.CurrencyReset
 import org.pnfolder.pnlibrary.api.currency.CurrencyResult
 import org.pnfolder.pnlibrary.api.currency.CurrencyWithdrawals
+import org.pnfolder.pnlibrary.common.lang.runCatchingNonFatal
 import java.math.BigDecimal
 import java.math.RoundingMode
 import java.util.concurrent.CompletableFuture
@@ -20,7 +21,7 @@ import java.util.concurrent.CompletionStage
 /** Discovers optional economy plugins without linking their APIs on unsupported servers. */
 internal object BukkitCurrencyAdapters {
     /** Loads the registered Vault economy service, or null when unavailable. */
-    fun vault(plugin: Plugin): CurrencyProvider? = runCatching {
+    fun vault(plugin: Plugin): CurrencyProvider? = runCatchingNonFatal {
         val type = Class.forName("net.milkbowl.vault.economy.Economy")
         @Suppress("UNCHECKED_CAST")
         val economy = plugin.server.servicesManager.load(type as Class<Any>) ?: return null
@@ -28,7 +29,7 @@ internal object BukkitCurrencyAdapters {
     }.getOrNull()
 
     /** Resolves the enabled PlayerPoints plugin API, or null when unavailable. */
-    fun playerPoints(plugin: Plugin): CurrencyProvider? = runCatching {
+    fun playerPoints(plugin: Plugin): CurrencyProvider? = runCatchingNonFatal {
         val target = plugin.server.pluginManager.getPlugin("PlayerPoints") ?: return null
         val api = target.javaClass.methods.firstOrNull { it.name == "getAPI" && it.parameterCount == 0 }
             ?.invoke(target) ?: return null

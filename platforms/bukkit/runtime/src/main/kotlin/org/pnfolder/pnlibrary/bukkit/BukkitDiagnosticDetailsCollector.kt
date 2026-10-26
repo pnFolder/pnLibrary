@@ -2,6 +2,7 @@ package org.pnfolder.pnlibrary.bukkit
 
 import org.bukkit.Bukkit
 import org.pnfolder.pnlibrary.bukkit.compat.ServerCapabilities
+import org.pnfolder.pnlibrary.common.lang.runCatchingNonFatal
 import org.pnfolder.pnlibrary.spi.platform.DiagnosticDetailsCollector
 import org.pnfolder.pnlibrary.spi.platform.DiagnosticSections
 import org.pnfolder.pnlibrary.spi.platform.PlatformSnapshot
@@ -17,7 +18,7 @@ internal class BukkitDiagnosticDetailsCollector {
                 installed = plugins.map { it.name }.toSet(),
             )
             val pings = server.onlinePlayers.mapNotNull { player ->
-                runCatching {
+                runCatchingNonFatal {
                     (player.javaClass.getMethod("getPing").invoke(player) as? Number)?.toLong()
                 }.getOrNull()
             }
@@ -69,7 +70,7 @@ internal class BukkitDiagnosticDetailsCollector {
      * Reads a cheap counter exposed by Paper-based servers. `World.getEntities()` and `getLoadedChunks()` copy
      * every element on the main thread, so they are never used as a fallback; the value is simply omitted.
      */
-    private fun count(world: Any, method: String): Int? = runCatching {
+    private fun count(world: Any, method: String): Int? = runCatchingNonFatal {
         (world.javaClass.getMethod(method).invoke(world) as? Number)?.toInt()
     }.getOrNull()
 

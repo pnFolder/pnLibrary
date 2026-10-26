@@ -3,6 +3,7 @@ package org.pnfolder.pnlibrary.core.runtime.details
 import org.pnfolder.pnlibrary.api.metrics.MetricsProvider
 import org.pnfolder.pnlibrary.api.metrics.MetricsProviderConfiguration
 import org.pnfolder.pnlibrary.api.metrics.PluginMetrics
+import org.pnfolder.pnlibrary.common.lang.runCatchingNonFatal
 import org.pnfolder.pnlibrary.core.metrics.MetricsServiceImpl
 import org.pnfolder.pnlibrary.spi.platform.PlatformIdentity
 
@@ -15,7 +16,7 @@ internal class RuntimeMetricsBootstrap(
 ) {
     fun start(): PluginMetrics? {
         var openedSession: PluginMetrics? = null
-        return runCatching {
+        return runCatchingNonFatal {
             registry.open(
                 owner,
                 listOf(
@@ -35,7 +36,7 @@ internal class RuntimeMetricsBootstrap(
                 metrics.start()
             }
         }.onFailure { error ->
-            runCatching { openedSession?.close() }
+            runCatchingNonFatal { openedSession?.close() }
             warning("Metrics could not be started: ${error.message ?: error.javaClass.simpleName}")
         }.getOrNull()
     }

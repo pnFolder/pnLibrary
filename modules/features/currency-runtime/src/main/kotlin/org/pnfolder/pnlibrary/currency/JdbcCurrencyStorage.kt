@@ -14,6 +14,7 @@ import org.pnfolder.pnlibrary.api.currency.CurrencyTransaction
 import org.pnfolder.pnlibrary.api.currency.CurrencyTransactionRequest
 import org.pnfolder.pnlibrary.api.currency.CurrencyTransactionStatus
 import org.pnfolder.pnlibrary.common.concurrent.ManagedWorker
+import org.pnfolder.pnlibrary.common.lang.runCatchingNonFatal
 import java.math.BigDecimal
 import java.sql.Connection
 import java.sql.SQLException
@@ -109,7 +110,7 @@ internal class JdbcCurrencyStorage(
                 connection.commit()
                 transaction
             } catch (error: Throwable) {
-                runCatching { connection.rollback() }
+                runCatchingNonFatal { connection.rollback() }
                 val idempotencyKey = request.idempotencyKey
                 if (error is SQLException && idempotencyKey != null && error.sqlState?.startsWith("23") == true) {
                     ledger.findIdempotent(connection, currency, idempotencyKey)
@@ -187,7 +188,7 @@ internal class JdbcCurrencyStorage(
         return try {
             operation().also { connection.commit() }
         } catch (error: Throwable) {
-            runCatching { connection.rollback() }
+            runCatchingNonFatal { connection.rollback() }
             throw error
         }
     }

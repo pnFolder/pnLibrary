@@ -5,6 +5,7 @@ import org.pnfolder.pnlibrary.api.updates.ProductId
 import org.pnfolder.pnlibrary.api.updates.backup.UpdateConfigurationBackup
 import org.pnfolder.pnlibrary.common.io.AtomicFiles
 import org.pnfolder.pnlibrary.common.io.TextFiles
+import org.pnfolder.pnlibrary.common.lang.runCatchingNonFatal
 import org.pnfolder.pnlibrary.core.updates.engine.UpdatePaths
 import java.nio.channels.FileChannel
 import java.nio.charset.StandardCharsets.UTF_8
@@ -48,7 +49,7 @@ internal class ConfigurationRestorer(private val snapshots: ConfigurationSnapsho
             journal.state = "APPLIED"
             save(file, journal)
         } catch (error: Throwable) {
-            runCatching { recover(file, journal) }.onFailure(error::addSuppressed)
+            runCatchingNonFatal { recover(file, journal) }.onFailure(error::addSuppressed)
             throw error
         }
         return id

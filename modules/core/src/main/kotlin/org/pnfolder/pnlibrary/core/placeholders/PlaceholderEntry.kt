@@ -11,6 +11,7 @@ import org.pnfolder.pnlibrary.api.placeholders.PlaceholderRegistration
 import org.pnfolder.pnlibrary.api.placeholders.PlaceholderRequest
 import org.pnfolder.pnlibrary.api.placeholders.PlaceholderUpdater
 import org.pnfolder.pnlibrary.api.plugin.PluginId
+import org.pnfolder.pnlibrary.common.lang.runCatchingNonFatal
 import java.util.Collections
 import java.util.Locale
 import java.util.concurrent.CompletableFuture
@@ -116,7 +117,7 @@ internal class PlaceholderEntry<T : Any>(
 
         disable()
         invalidateCache()
-        publicationBindings.toList().forEach { binding -> runCatching(binding::close) }
+        publicationBindings.toList().forEach { binding -> runCatchingNonFatal(binding::close) }
         publicationBindings.clear()
         closeCallback?.invoke()
         closeCallback = null

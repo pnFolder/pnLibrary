@@ -1,5 +1,6 @@
 package org.pnfolder.pnlibrary.core.updates.engine
 
+import org.pnfolder.pnlibrary.common.lang.runCatchingNonFatal
 import java.nio.file.Path
 import java.time.Instant
 
@@ -26,7 +27,7 @@ internal class TransactionHealth(
     /** Returns transactions waiting for post-restart product-version confirmation. */
     fun awaiting(): List<PendingTransaction> = journals.journals()
         .mapNotNull { path ->
-            val journal = runCatching { journals.load(path) }.getOrNull() ?: return@mapNotNull null
+            val journal = runCatchingNonFatal { journals.load(path) }.getOrNull() ?: return@mapNotNull null
             if (journal.state != TransactionState.AWAITING_HEALTH || journal.purpose !in setOf(null, "STAGE")) return@mapNotNull null
             PendingTransaction(path, journal.artifacts.mapNotNull { artifact ->
                 artifact.expectedVersion?.let { artifact.component to it }

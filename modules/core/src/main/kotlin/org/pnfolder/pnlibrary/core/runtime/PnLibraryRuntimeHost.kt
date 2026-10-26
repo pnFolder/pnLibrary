@@ -5,6 +5,7 @@ import org.pnfolder.pnlibrary.api.remote.PolicyErrorAction
 import org.pnfolder.pnlibrary.api.remote.RemotePolicySettings
 import org.pnfolder.pnlibrary.api.runtime.PnLibrary
 import org.pnfolder.pnlibrary.api.runtime.PnLibraryIdentity
+import org.pnfolder.pnlibrary.common.lang.runCatchingNonFatal
 import org.pnfolder.pnlibrary.core.runtime.details.RuntimeRemotePolicy
 import org.pnfolder.pnlibrary.core.runtime.lifecycle.RuntimeBootstrapCoordinator
 import org.pnfolder.pnlibrary.core.runtime.platform.PlatformRegistration
@@ -52,14 +53,14 @@ class PnLibraryRuntimeHost private constructor(
     override fun close() {
         if (!closed.compareAndSet(false, true)) return
         val failures = mutableListOf<Throwable>()
-        runCatching { updateMonitor.close() }.onFailure(failures::add)
-        runCatching {
+        runCatchingNonFatal { updateMonitor.close() }.onFailure(failures::add)
+        runCatchingNonFatal {
             library.logging.shutdownBox(library.owner, PnLibraryIdentity.NAME, library.version)
                 .ok("Платформа", platformName)
                 .ok("Ресурсы", "задачи и регистрации освобождаются")
                 .show()
         }.onFailure(failures::add)
-        runCatching { library.close() }.onFailure(failures::add)
+        runCatchingNonFatal { library.close() }.onFailure(failures::add)
 
         val first = failures.firstOrNull() ?: return
         failures.drop(1).forEach(first::addSuppressed)
@@ -123,7 +124,7 @@ class PnLibraryRuntimeHost private constructor(
                             closeRuntime = host::close,
                         )
                     }
-                    runCatching {
+                    runCatchingNonFatal {
                         val box = started.library.logging.box(owner, PnLibraryIdentity.NAME, started.currentVersion)
                             .ok("Runtime", "общие сервисы запущены")
                             .ok("Платформа", started.platformName)
@@ -132,8 +133,8 @@ class PnLibraryRuntimeHost private constructor(
                     }
                 }
             } catch (error: Throwable) {
-                runCatching { started.updateMonitor.close() }.onFailure(error::addSuppressed)
-                runCatching { started.library.close() }.onFailure(error::addSuppressed)
+                runCatchingNonFatal { started.updateMonitor.close() }.onFailure(error::addSuppressed)
+                runCatchingNonFatal { started.library.close() }.onFailure(error::addSuppressed)
                 throw error
             }
         }
@@ -153,7 +154,7 @@ class PnLibraryRuntimeHost private constructor(
                 host.registerPlatform(type, implementation)
                 host
             } catch (error: Throwable) {
-                runCatching { host.close() }.onFailure(error::addSuppressed)
+                runCatchingNonFatal { host.close() }.onFailure(error::addSuppressed)
                 throw error
             }
         }
@@ -177,14 +178,14 @@ class PnLibraryRuntimeHost private constructor(
             val host = try {
                 startAndRegisterPlatform(owner, platform, type, implementation)
             } catch (error: Throwable) {
-                runCatching { platform.close() }.onFailure(error::addSuppressed)
+                runCatchingNonFatal { platform.close() }.onFailure(error::addSuppressed)
                 throw error
             }
             return try {
                 onReady()
                 host
             } catch (error: Throwable) {
-                runCatching { host.close() }.onFailure(error::addSuppressed)
+                runCatchingNonFatal { host.close() }.onFailure(error::addSuppressed)
                 throw error
             }
         }

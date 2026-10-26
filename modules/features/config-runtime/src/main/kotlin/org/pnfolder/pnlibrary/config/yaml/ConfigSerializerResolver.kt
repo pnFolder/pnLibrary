@@ -5,6 +5,7 @@ import org.pnfolder.pnlibrary.api.config.ConfigSerializeWith
 import org.pnfolder.pnlibrary.api.config.ConfigSerializer
 import org.pnfolder.pnlibrary.api.config.ConfigTextForm
 import org.pnfolder.pnlibrary.api.config.ConfigTextParser
+import org.pnfolder.pnlibrary.common.lang.runCatchingNonFatal
 import java.lang.reflect.Field
 
 /**
@@ -45,7 +46,7 @@ internal class ConfigSerializerResolver(
     fun textParser(type: Class<out ConfigTextParser<*>>):
         ConfigTextParser<Any> = synchronized(textParsers) {
         textParsers.getOrPut(type) {
-            runCatching { type.getField("INSTANCE").get(null) }.getOrNull()
+            runCatchingNonFatal { type.getField("INSTANCE").get(null) }.getOrNull()
                 ?: type.getDeclaredConstructor().also { it.isAccessible = true }.newInstance()
         } as ConfigTextParser<Any>
     }
@@ -53,7 +54,7 @@ internal class ConfigSerializerResolver(
     /** Returns the shared instance of a [org.pnfolder.pnlibrary.api.config.ConfigNodeForm] rewriter. */
     fun nodeRewriter(type: Class<out ConfigNodeRewriter>): ConfigNodeRewriter = synchronized(textParsers) {
         textParsers.getOrPut(type) {
-            runCatching { type.getField("INSTANCE").get(null) }.getOrNull()
+            runCatchingNonFatal { type.getField("INSTANCE").get(null) }.getOrNull()
                 ?: type.getDeclaredConstructor().also { it.isAccessible = true }.newInstance()
         } as ConfigNodeRewriter
     }

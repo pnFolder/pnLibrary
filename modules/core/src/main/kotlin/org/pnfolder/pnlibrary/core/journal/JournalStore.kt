@@ -1,5 +1,6 @@
 package org.pnfolder.pnlibrary.core.journal
 
+import org.pnfolder.pnlibrary.common.lang.runCatchingNonFatal
 import java.nio.channels.FileChannel
 import java.nio.file.Files
 import java.nio.file.Path
@@ -54,7 +55,7 @@ internal class JournalStore(
         val today = today()
         if (lastPrunedOn != today) {
             lastPrunedOn = today
-            runCatching { prune() }
+            runCatchingNonFatal { prune() }
         }
         val block = JournalBlockCodec.encode(listOf(record))
         require(block.size <= maximumDiskBytes) { "Journal block exceeds disk budget" }
@@ -209,6 +210,6 @@ internal class JournalStore(
     }
 
     private fun dateOf(file: Path): LocalDate? =
-        runCatching { LocalDate.parse(file.fileName.toString().substringAfter('-').take(10)) }
+        runCatchingNonFatal { LocalDate.parse(file.fileName.toString().substringAfter('-').take(10)) }
             .getOrNull()
 }

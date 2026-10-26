@@ -10,6 +10,7 @@ import org.pnfolder.pnlibrary.api.events.EventSubscription
 import org.pnfolder.pnlibrary.api.events.Listener
 import org.pnfolder.pnlibrary.api.plugin.PluginId
 import org.pnfolder.pnlibrary.common.lang.Failures
+import org.pnfolder.pnlibrary.common.lang.runCatchingNonFatal
 import java.util.concurrent.CopyOnWriteArrayList
 import java.util.concurrent.atomic.AtomicBoolean
 import java.util.concurrent.atomic.AtomicLong
@@ -130,7 +131,7 @@ internal class EventServiceImpl(
                 }
                 return ListenerRegistration(listener, registered)
             } catch (error: Throwable) {
-                registered.forEach { runCatching { it.close() } }
+                registered.forEach { runCatchingNonFatal { it.close() } }
                 throw error
             }
         }

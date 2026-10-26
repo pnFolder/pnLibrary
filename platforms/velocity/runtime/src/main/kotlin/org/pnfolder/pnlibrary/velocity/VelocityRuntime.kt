@@ -3,6 +3,7 @@ package org.pnfolder.pnlibrary.velocity
 import com.velocitypowered.api.event.proxy.ProxyInitializeEvent
 import com.velocitypowered.api.event.proxy.ProxyShutdownEvent
 import com.velocitypowered.api.proxy.ProxyServer
+import org.pnfolder.pnlibrary.common.lang.runCatchingNonFatal
 import org.pnfolder.pnlibrary.core.runtime.PnLibraryRuntimeHost
 import org.pnfolder.pnlibrary.velocity.api.VelocityPlatform
 import org.slf4j.Logger
@@ -59,7 +60,7 @@ internal class VelocityRuntime(
      */
     @Suppress("UNUSED_PARAMETER")
     fun onShutdown(event: ProxyShutdownEvent) {
-        playerEvents?.let { runCatching { server.eventManager.unregisterListener(owner, it) } }
+        playerEvents?.let { runCatchingNonFatal { server.eventManager.unregisterListener(owner, it) } }
         playerEvents = null
         val host = runtimeHost
         runtimeHost = null
