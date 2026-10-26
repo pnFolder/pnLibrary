@@ -62,9 +62,10 @@ internal class JdbcCurrencyStorage(
         descriptor: CurrencyDescriptor,
         request: CurrencyTransactionRequest,
     ): CurrencyTransaction = dataSource.connection.use { connection ->
-            connection.autoCommit = false
-            connection.transactionIsolation = Connection.TRANSACTION_SERIALIZABLE
-            try {
+        val previous = ConnectionSettings.capture(connection)
+        connection.autoCommit = false
+        connection.transactionIsolation = Connection.TRANSACTION_SERIALIZABLE
+        try {
                 request.idempotencyKey?.let { ledger.findIdempotent(connection, currency, it) }?.let {
                     connection.rollback()
                     return@use it
@@ -114,8 +115,11 @@ internal class JdbcCurrencyStorage(
                 val idempotencyKey = request.idempotencyKey
                 if (error is SQLException && idempotencyKey != null && error.sqlState?.startsWith("23") == true) {
                     ledger.findIdempotent(connection, currency, idempotencyKey)
+                        ?.also { runCatchingNonFatal { connection.rollback() } }
                         ?: throw error
                 } else throw error
+            } finally {
+                previous.restore(connection)
             }
         }
 
@@ -183,6 +187,7 @@ internal class JdbcCurrencyStorage(
     }
 
     private fun <T> committed(connection: Connection, isolation: Int, operation: () -> T): T {
+        val previous = ConnectionSettings.capture(connection)
         connection.autoCommit = false
         connection.transactionIsolation = isolation
         return try {
@@ -190,8 +195,22 @@ internal class JdbcCurrencyStorage(
         } catch (error: Throwable) {
             runCatchingNonFatal { connection.rollback() }
             throw error
+        } finally {
+            previous.restore(connection)
         }
     }
 
     private fun <T> async(operation: () -> T): CompletionStage<T> = worker.submit(operation)
+}
+
+/** Transaction settings of a borrowed connection, put back before it returns to the caller's pool. */
+private class ConnectionSettings(private val autoCommit: Boolean, private val isolation: Int) {
+    fun restore(connection: Connection) {
+        runCatchingNonFatal { connection.autoCommit = autoCommit }
+        runCatchingNonFatal { connection.transactionIsolation = isolation }
+    }
+
+    companion object {
+        fun capture(connection: Connection) = ConnectionSettings(connection.autoCommit, connection.transactionIsolation)
+    }
 }
