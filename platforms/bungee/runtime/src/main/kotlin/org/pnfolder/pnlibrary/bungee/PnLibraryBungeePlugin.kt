@@ -6,7 +6,9 @@ import net.md_5.bungee.api.plugin.Plugin
 class PnLibraryBungeePlugin : Plugin() {
     private val runtime = BungeeRuntime(this)
 
+    /** Starts the library runtime. */
     override fun onEnable() = runtime.start()
 
+    /** Stops the library runtime. */
     override fun onDisable() = runtime.stop()
 }

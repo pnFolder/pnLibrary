@@ -1,5 +1,6 @@
 package org.pnfolder.pnlibrary.api.runtime
 
+import org.pnfolder.pnlibrary.common.lang.runCatchingNonFatal
 import java.time.Duration
 import java.util.regex.Pattern
 import java.util.regex.PatternSyntaxException
@@ -52,6 +53,22 @@ import java.util.regex.PatternSyntaxException
  * whose values must be redacted
  * @property redactValuePatterns regular expressions whose matches are redacted inside
  * scalar configuration values
+ * @property journalInfoDays days of journal entries kept at the info level
+ * @property journalWarningDays days of journal entries kept at the warning level
+ * @property journalErrorDays days of journal entries kept at the error level
+ * @property noPermissionMessage message shown when a caller lacks the required permission
+ * @property journalForeignPlugins whether journal entries from other plugins are recorded
+ * @property timeZone time zone id used when displaying times, such as `UTC`
+ * @property journalJoinNotice whether players see a summary of recent journal entries on join
+ * @property noPermissionSound sound key played with [noPermissionMessage]; empty disables it
+ * @property usageMessage message shown for incorrect command usage; `{usage}` is replaced
+ * @property invalidArgumentMessage message shown for an invalid argument value; supports
+ * `{value}`, `{argument}`, and `{usage}` placeholders
+ * @property playerNotFoundMessage message shown when a named player is not online; `{value}`
+ * is replaced
+ * @property playerOnlyMessage message shown when a player-only command runs from the console
+ * @property consoleOnlyMessage message shown when a console-only command runs in game
+ * @property journalJoinNoticeHours hours after join during which the join notice is shown
  * @throws IllegalArgumentException if a numeric limit, provider, mode, path, or regular
  * expression is invalid
  */
@@ -97,7 +114,7 @@ data class PnLibraryConfig @JvmOverloads constructor(
         require(noPermissionMessage.isNotBlank() && noPermissionMessage.length <= 256) {
             "Setting noPermissionMessage must be 1 to 256 characters"
         }
-        require(runCatching { java.time.ZoneId.of(timeZone) }.isSuccess) {
+        require(runCatchingNonFatal { java.time.ZoneId.of(timeZone) }.isSuccess) {
             "Setting timeZone must be a time zone id such as UTC or Europe/Moscow"
         }
         require(journalJoinNoticeHours in 1..720) { "Setting journalJoinNoticeHours must be between 1 and 720" }

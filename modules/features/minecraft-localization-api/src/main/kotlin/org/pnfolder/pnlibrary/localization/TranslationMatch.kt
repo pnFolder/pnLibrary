@@ -60,6 +60,7 @@ interface TranslationIndex<T> {
     /** Same as the two-argument form with a similarity of 0.7. */
     fun best(text: String): TranslationMatch<T>? = best(text, minSimilarity = 0.7)
 
+    /** Factories for [TranslationIndex]. */
     companion object {
         /**
          * Builds a reverse-search index from pre-resolved [matches]; used by platform modules to expose their own value

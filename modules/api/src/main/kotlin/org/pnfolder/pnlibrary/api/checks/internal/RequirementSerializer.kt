@@ -25,6 +25,7 @@ object RequirementSerializer : ConfigSerializer<Requirement> {
     )
     private val entryKeys = listOf("optional", "deny_commands", "success_commands", "deny", "success", "if")
 
+    /** Reads a [Requirement] from a single expression or an object with `checks`. */
     override fun deserialize(value: Any?, context: ConfigSerializationContext): Requirement {
         if (value is String) return Requirement(CheckExpression.parse(value))
         require(value is Map<*, *>) {
@@ -94,6 +95,7 @@ object RequirementSerializer : ConfigSerializer<Requirement> {
         )
     }
 
+    /** Writes [value] in the shortest configuration form that keeps its meaning. */
     override fun serialize(value: Requirement, context: ConfigSerializationContext): Any? {
         val single = value.entries.entries.singleOrNull()
         if (single != null && single.key == "check" && !single.value.optional && value.minimum == 0 &&
@@ -170,12 +172,14 @@ object RequirementSerializer : ConfigSerializer<Requirement> {
 
 /** Reads one entry of a DeluxeMenus `requirements:` block: the fields of a check plus `optional`, `deny` and `success`. */
 object RequirementEntrySerializer : ConfigSerializer<Requirement.Entry> {
+    /** Reads one check entry from an expression or an object with a `type`. */
     override fun deserialize(value: Any?, context: ConfigSerializationContext): Requirement.Entry {
         if (value is String) return Requirement.Entry(CheckExpression.parse(value))
         require(value is Map<*, *>) { "A check must be an object with a 'type'" }
         return RequirementSerializer.entry(value.entries.associate { it.key.toString() to it.value }, context, context.path)
     }
 
+    /** Always fails: an entry is written by its [Requirement]. */
     override fun serialize(value: Requirement.Entry, context: ConfigSerializationContext): Any? =
         throw UnsupportedOperationException("A requirement entry is written by its requirement")
 }

@@ -41,6 +41,7 @@ data class RepeatAction(
         }
     }
 
+    /** Limits for repeat actions. */
     companion object {
         /** The most runs one repeat may schedule. */
         const val MAX_TIMES = 1000

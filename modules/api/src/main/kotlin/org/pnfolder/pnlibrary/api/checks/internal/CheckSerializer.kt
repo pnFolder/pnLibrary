@@ -53,6 +53,7 @@ object CheckSerializer : ConfigSerializer<Check> {
         "<" to Comparison.LESS_THAN,
     )
 
+    /** Reads a [Check] from its configuration form. */
     override fun deserialize(value: Any?, context: ConfigSerializationContext): Check = read(value, context.path)
 
     /**
@@ -73,6 +74,7 @@ object CheckSerializer : ConfigSerializer<Check> {
     fun write(check: Check): Any = if (check is NamedCheck) check.name else describe(check)
         ?: throw UnsupportedOperationException("${check.javaClass.simpleName} cannot be written to configuration")
 
+    /** Writes [value] in its configuration form. */
     override fun serialize(value: Check, context: ConfigSerializationContext): Any? = write(value)
 
     /**

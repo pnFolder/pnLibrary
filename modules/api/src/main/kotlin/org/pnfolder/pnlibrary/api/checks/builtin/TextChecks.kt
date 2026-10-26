@@ -4,6 +4,7 @@ import org.pnfolder.pnlibrary.api.checks.Check
 import org.pnfolder.pnlibrary.api.checks.CheckContext
 import org.pnfolder.pnlibrary.api.checks.internal.CheckSerializer
 import org.pnfolder.pnlibrary.api.config.ConfigSerializeWith
+import org.pnfolder.pnlibrary.common.lang.runCatchingNonFatal
 import java.util.UUID
 import java.util.regex.PatternSyntaxException
 
@@ -77,7 +78,7 @@ data class TypeCheck(
         return when (type) {
             ValueType.INT -> text.toLongOrNull() != null
             ValueType.DOUBLE -> text.toDoubleOrNull() != null
-            ValueType.UUID -> runCatching { UUID.fromString(text) }.isSuccess
+            ValueType.UUID -> runCatchingNonFatal { UUID.fromString(text) }.isSuccess
         }
     }
 }

@@ -70,6 +70,7 @@ class JulLogObserver(
             runOwn { loggerFor(owner).log(julLevel(level), message, error) }
         }
 
+    /** Level mapping for `java.util.logging`. */
     companion object {
         /** The `java.util.logging` level a record of [level] is written at; errors are SEVERE. */
         @JvmStatic

@@ -11,14 +11,20 @@ private const val KEY_COUNT = 35
  * Latin QWERTY languages that add no letters on these keys (English-GB, Polish, Dutch, ...) need no entry of their own:
  * they read the same as [EN_US]. Scripts that compose characters from several keys or need ligatures (Korean,
  * Japanese, Arabic's lam-alef) cannot be described as one character per key and are out of scope.
+ *
+ * @property id short layout identifier, such as `en_us`
  */
 class KeyboardLayout private constructor(val id: String, private val keys: String) {
+    /** Two layouts are equal when both their id and key characters match. */
     override fun equals(other: Any?): Boolean = other is KeyboardLayout && id == other.id && keys == other.keys
 
+    /** Hash consistent with [equals]. */
     override fun hashCode(): Int = 31 * id.hashCode() + keys.hashCode()
 
+    /** The layout [id]. */
     override fun toString(): String = id
 
+    /** The built-in layouts. */
     companion object {
         /** US QWERTY, the reference for the key order. */
         @JvmField

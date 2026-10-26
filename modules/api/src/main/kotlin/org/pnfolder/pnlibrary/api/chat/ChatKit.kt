@@ -6,6 +6,7 @@ import net.kyori.adventure.text.event.HoverEvent
 import net.kyori.adventure.text.format.TextColor
 import net.kyori.adventure.text.format.TextDecoration
 import org.pnfolder.pnlibrary.api.commands.CommandSender
+import org.pnfolder.pnlibrary.common.lang.runCatchingNonFatal
 import java.net.URI
 
 /**
@@ -191,7 +192,7 @@ open class ChatKit(val reader: ChatReader) {
     fun glyph(symbol: Char): String = shown(symbol.toString())
 
     /** Whether [value] is an HTTPS link without credentials, the only kind a page may open. */
-    fun safeLink(value: String): Boolean = runCatching {
+    fun safeLink(value: String): Boolean = runCatchingNonFatal {
         val uri = URI(value)
         value.length <= MAX_LINK && uri.scheme.equals("https", true) && uri.host != null && uri.userInfo == null
     }.getOrDefault(false)

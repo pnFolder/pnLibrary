@@ -13,6 +13,7 @@ import org.pnfolder.pnlibrary.api.config.ConfigTextParser
 object ActionText : ConfigTextParser<Action> {
     private val tag = Regex("""^\[([A-Za-z]+)]\s*(.*)$""")
 
+    /** Parses a tagged action line such as `[message] text` into an [Action]. */
     override fun parse(text: String, context: ConfigSerializationContext): Action {
         val match = tag.find(text.trim())
         val example = match?.let { suggestion(it.groupValues[1].lowercase(), it.groupValues[2]) }

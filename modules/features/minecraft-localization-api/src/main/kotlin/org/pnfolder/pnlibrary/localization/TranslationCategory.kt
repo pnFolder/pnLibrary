@@ -5,6 +5,8 @@ package org.pnfolder.pnlibrary.localization
  *
  * Namespaced categories follow `<category>.<namespace>.<path>` (e.g. `item.minecraft.diamond`);
  * a few legacy categories such as game modes follow `<category>.<path>` (e.g. `gameMode.survival`).
+ *
+ * @property id key prefix of the category, such as `item`
  */
 enum class TranslationCategory(val id: String, private val namespaced: Boolean = true) {
     BLOCK("block"),
@@ -24,7 +26,9 @@ enum class TranslationCategory(val id: String, private val namespaced: Boolean =
     fun key(path: String, namespace: String = VANILLA_NAMESPACE): String =
         if (namespaced) "$id.$namespace.$path" else "$id.$path"
 
+    /** Constants shared by all categories. */
     companion object {
+        /** Namespace of vanilla Minecraft keys. */
         const val VANILLA_NAMESPACE = "minecraft"
     }
 }
