@@ -20,8 +20,8 @@ internal class RemotePolicyMonitor(
     private val ownership: PlatformOwnerControl,
     private val execution: PlatformExecution,
     private val notices: RemotePolicyNoticeRenderer,
-) : RemotePolicyEnforcer {
-    override fun start(
+) {
+    fun start(
         owner: Any,
         metadata: PluginMetadata,
         policy: RemotePolicySettings,

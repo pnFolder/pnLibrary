@@ -7,7 +7,7 @@ import java.util.concurrent.atomic.AtomicBoolean
 import java.util.concurrent.atomic.AtomicLong
 
 /** Thread-safe implementation of the typed, plugin-owned service registry. */
-internal class ServiceManagerImpl : ServiceManager, ServiceScopeFactory, AutoCloseable {
+internal class ServiceManagerImpl : ServiceManager, AutoCloseable {
     private val lock = Any()
     private val providers = hashMapOf<Class<*>, MutableList<Registration<*>>>()
     private val registrationsByOwner = hashMapOf<PluginId, MutableList<Registration<*>>>()
@@ -31,7 +31,7 @@ internal class ServiceManagerImpl : ServiceManager, ServiceScopeFactory, AutoClo
         priority: Int = 0,
     ) = add(owner, type, service, priority)
 
-    override fun ownedBy(owner: PluginId): ServiceScope = OwnedServices(owner)
+    fun ownedBy(owner: PluginId): ServiceScope = OwnedServices(owner)
 
     private fun <T : Any> add(owner: PluginId?, type: Class<T>, service: T, priority: Int) {
         synchronized(lock) {

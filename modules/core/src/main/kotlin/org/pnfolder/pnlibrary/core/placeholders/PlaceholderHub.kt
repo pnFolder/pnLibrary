@@ -36,7 +36,7 @@ import java.util.function.Consumer
 internal class PlaceholderHub(
     private val platform: PlatformIdentity,
     private val valueStore: GlobalPlaceholderValueStore = GlobalPlaceholderValueStore(),
-) : PlaceholderRuntime {
+) : PlaceholderAdapterRegistry {
     private val entries = ConcurrentHashMap<String, PlaceholderEntry<*>>()
     private val adapters = ConcurrentHashMap<String, PlaceholderAdapter>()
     private val formatterRegistry = PlaceholderFormatterRegistry()
@@ -80,7 +80,7 @@ internal class PlaceholderHub(
         commandEntry.publish(PlaceholderPublication("placeholderapi", PnLibraryIdentity.PRODUCT_ID, "defaultvalue"))
     }
 
-    override fun scope(owner: PluginId, placeholderApiEnabled: Boolean): PlaceholderService =
+    fun scope(owner: PluginId, placeholderApiEnabled: Boolean = true): PlaceholderService =
         Scope(owner, placeholderApiEnabled)
 
     override fun register(adapter: PlaceholderAdapter): AutoCloseable {

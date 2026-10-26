@@ -7,12 +7,10 @@ import org.pnfolder.pnlibrary.config.ConfigurationRuntime
 import org.pnfolder.pnlibrary.config.ConfigurationServiceImpl
 import org.pnfolder.pnlibrary.core.downloads.DirectDownloadManager
 import org.pnfolder.pnlibrary.core.downloads.DownloadConfiguration
-import org.pnfolder.pnlibrary.core.downloads.DownloadService
 import org.pnfolder.pnlibrary.core.expansions.ExpansionManagerImpl
 import org.pnfolder.pnlibrary.core.expansions.LocalizationExpansion
 import org.pnfolder.pnlibrary.core.placeholders.GlobalPlaceholderValueStore
 import org.pnfolder.pnlibrary.core.placeholders.PlaceholderHub
-import org.pnfolder.pnlibrary.core.placeholders.PlaceholderRuntime
 import org.pnfolder.pnlibrary.core.runtime.platform.PlatformRuntimeContext
 import org.pnfolder.pnlibrary.core.services.ServiceManagerImpl
 import org.pnfolder.pnlibrary.core.ui.ConsoleStyle
@@ -37,12 +35,12 @@ internal class RuntimeFeatureSet(
     private val downloadConfiguration = DownloadConfiguration.load(dataFolder.resolve("downloads.yml")) {
         logging.log(this, LogLevel.WARNING, it)
     }
-    val downloads: DownloadService = DirectDownloadManager(
+    val downloads: DirectDownloadManager = DirectDownloadManager(
         platform.identity, platform.ownership, platform.ownership, platform.readiness,
         logging, dataFolder, downloadConfiguration,
     )
     val placeholderValues = GlobalPlaceholderValueStore()
-    val placeholders: PlaceholderRuntime = PlaceholderHub(platform.identity, placeholderValues)
+    val placeholders: PlaceholderHub = PlaceholderHub(platform.identity, placeholderValues)
     val currency: CurrencyRuntime = CurrencyFeature()
     private val onExpansionFailure: (Expansion, Exception) -> Unit = { expansion, error ->
         logging.log(this, LogLevel.WARNING, "Expansion '${expansion.id}' failed: ${error.message}", error)

@@ -32,7 +32,7 @@ internal class DirectDownloadManager(
     private val http: TrustedHttpClient = TrustedHttpClient(
         Duration.ofSeconds(8), Duration.ofSeconds(30),
     ),
-) : DownloadService {
+) : AutoCloseable {
     private val closed = AtomicBoolean(false)
     private val executor: ExecutorService = Executors.newSingleThreadExecutor { action ->
         Thread(action, "pnLibrary-direct-downloads").apply { isDaemon = true }
@@ -49,7 +49,7 @@ internal class DirectDownloadManager(
         requireNotNull(libraryData.parent) { "Library data directory must have a parent plugins directory" },
     )
 
-    override fun register(owner: Any, request: FileDownloads): DownloadRegistration = register(owner, request, null)
+    fun register(owner: Any, request: FileDownloads): DownloadRegistration = register(owner, request, null)
 
     private fun register(
         owner: Any,
@@ -83,7 +83,7 @@ internal class DirectDownloadManager(
         .onFailure { logging.log(owner, LogLevel.WARNING, "Could not read installed plugins; dependencies are treated as missing: ${it.message}") }
         .getOrNull().orEmpty()
 
-    override fun registerDependencies(owner: Any, dependencies: List<PluginDependency>): DownloadRegistration? {
+    fun registerDependencies(owner: Any, dependencies: List<PluginDependency>): DownloadRegistration? {
         val installed = installedPlugins(owner)
         readiness.whenServerReady(Runnable { confirmDownloadedDependencies(owner, installedPlugins(owner)) })
         val download = dependencyRequestFactory.create(dependencies, installed) ?: return null
