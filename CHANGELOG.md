@@ -1,5 +1,10 @@
 # Изменения
 
+## События
+
+- `@EventHandler(ignoreCancelled)` и `EventListenerBuilder.ignoreCancelled()` переименованы в `ignoreDenied`: события в pnLibrary
+  не отменяются, а отклоняются результатом. Устаревший псевдоним удалён, пока API не опубликован.
+
 ## Внутренние контракты и фабрики ресурсов
 
 - Реестр плагинов и фабрика ресурсов модулей зависят от контрактов конфигураций, валюты, плейсхолдеров,
@@ -203,7 +208,7 @@
 **События (ломающие изменения)**
 - `Cancellable` удалён. Новый `ResultedEvent<R>`: событие несёт типизированный результат
   (`GenericResult`, `ComponentResult` с причиной в виде `Component`). У любого события есть `isAllowed`.
-- Подписка через билдер: `scope.on<Event>().priority(...).ignoreCancelled().listen { ... }`.
+- Подписка через билдер: `scope.on<Event>().priority(...).ignoreDenied().listen { ... }`.
 
 **Конфигурация (ломающие изменения)**
 - Конфигурация вынесена в модули `pnlibrary-config-api` и `pnlibrary-config`. Описание: [docs/configuration.md](docs/configuration.md).

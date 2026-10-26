@@ -1,5 +1,3 @@
-@file:Suppress("DEPRECATION")
-
 package org.pnfolder.pnlibrary.core.events
 
 import org.pnfolder.pnlibrary.api.events.Event
@@ -85,7 +83,7 @@ internal class EventServiceImpl(
         for (index in matching.indices) {
             val subscription = matching[index]
             if (subscription.isClosed) continue
-            if (subscription.ignoreCancelled && !event.isAllowed) continue
+            if (subscription.ignoreDenied && !event.isAllowed) continue
             try {
                 subscription.invoke(event)
             } catch (error: Throwable) {
@@ -139,7 +137,7 @@ internal class EventServiceImpl(
         override fun <E : Event> subscribe(
             eventType: Class<E>,
             priority: Int,
-            ignoreCancelled: Boolean,
+            ignoreDenied: Boolean,
             listener: Consumer<E>,
         ): EventSubscription {
             check(!closed.get() && !scopeClosed.get()) { "EventScope is closed" }
@@ -147,7 +145,7 @@ internal class EventServiceImpl(
                 scope = this,
                 eventType = eventType,
                 priority = priority,
-                ignoreCancelled = ignoreCancelled,
+                ignoreDenied = ignoreDenied,
                 listener = listener,
                 order = sequence.getAndIncrement(),
             )
@@ -184,7 +182,7 @@ internal class EventServiceImpl(
             return subscribe(
                 eventType,
                 handler.annotation.priority,
-                handler.annotation.ignoreCancelled,
+                handler.annotation.ignoreDenied,
                 Consumer { event -> handler.invoke(listener, event) },
             )
         }
@@ -194,7 +192,7 @@ internal class EventServiceImpl(
         val scope: Scope,
         val eventType: Class<E>,
         val priority: Int,
-        val ignoreCancelled: Boolean,
+        val ignoreDenied: Boolean,
         private val listener: Consumer<E>,
         val order: Long,
     ) : EventSubscription {
