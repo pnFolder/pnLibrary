@@ -50,6 +50,21 @@ class ConfigurationServiceImplTest {
     }
 
     @Test
+    fun `loadAll loads the healthy files even when one file is broken`() {
+        Files.writeString(directory.resolve("broken.yml"), "retries: [unclosed")
+        service().use { service ->
+            val scope = scope(service)
+            val broken = scope.yaml<ServiceSettings>("broken.yml") { ServiceSettings() }
+            val healthy = scope.yaml<ServiceSettings>("healthy.yml") { ServiceSettings() }
+
+            assertThrows(RuntimeException::class.java) { scope.loadAll() }
+
+            assertTrue(healthy.isLoaded)
+            assertTrue(!broken.isLoaded)
+        }
+    }
+
+    @Test
     fun `annotation and builder validators report together`() {
         Files.writeString(directory.resolve("settings.yml"), "retries: 99\nname: \"\"\n")
         val validator = ConfigValidatorBuilder<ServiceSettings>()
