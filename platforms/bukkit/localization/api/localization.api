@@ -21,6 +21,17 @@ public final class org/pnfolder/pnlibrary/bukkit/localization/BukkitLocaleTransl
 	public final fun wrap (Lorg/pnfolder/pnlibrary/localization/LocaleTranslations;)Lorg/pnfolder/pnlibrary/bukkit/localization/BukkitLocaleTranslations;
 }
 
+public final class org/pnfolder/pnlibrary/bukkit/localization/BukkitLocalization {
+	public static final field INSTANCE Lorg/pnfolder/pnlibrary/bukkit/localization/BukkitLocalization;
+	public static final fun locale (Lorg/pnfolder/pnlibrary/localization/MinecraftLocalization;Lorg/pnfolder/pnlibrary/common/minecraft/MinecraftVersion;Ljava/lang/String;)Ljava/util/concurrent/CompletionStage;
+	public static final fun locale (Lorg/pnfolder/pnlibrary/localization/MinecraftLocalization;Lorg/pnfolder/pnlibrary/common/minecraft/MinecraftVersion;Lorg/pnfolder/pnlibrary/localization/MinecraftLocale;)Ljava/util/concurrent/CompletionStage;
+}
+
+public final class org/pnfolder/pnlibrary/bukkit/localization/BukkitLocalizationKt {
+	public static final fun bukkitLocale (Lorg/pnfolder/pnlibrary/localization/MinecraftLocalization;Lorg/pnfolder/pnlibrary/common/minecraft/MinecraftVersion;Ljava/lang/String;)Ljava/util/concurrent/CompletionStage;
+	public static final fun bukkitLocale (Lorg/pnfolder/pnlibrary/localization/MinecraftLocalization;Lorg/pnfolder/pnlibrary/common/minecraft/MinecraftVersion;Lorg/pnfolder/pnlibrary/localization/MinecraftLocale;)Ljava/util/concurrent/CompletionStage;
+}
+
 public final class org/pnfolder/pnlibrary/bukkit/localization/BukkitTranslatables {
 	public static final field BIOME Lorg/pnfolder/pnlibrary/localization/TranslatableType;
 	public static final field COLOR Lorg/pnfolder/pnlibrary/localization/TranslatableType;
