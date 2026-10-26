@@ -3,7 +3,6 @@ package org.pnfolder.pnlibrary.config.yaml
 import org.pnfolder.pnlibrary.api.config.ConfigNodeRewriter
 import org.pnfolder.pnlibrary.api.config.ConfigSerializeWith
 import org.pnfolder.pnlibrary.api.config.ConfigSerializer
-import org.pnfolder.pnlibrary.api.config.ConfigTextForm
 import org.pnfolder.pnlibrary.api.config.ConfigTextParser
 import org.pnfolder.pnlibrary.common.lang.runCatchingNonFatal
 import java.lang.reflect.Field
@@ -41,7 +40,7 @@ internal class ConfigSerializerResolver(
             ?.java
             ?.let(::annotationInstance) as? ConfigSerializer<Any>
 
-    /** Returns the shared instance of a [ConfigTextForm] parser. */
+    /** Returns the shared instance of a [org.pnfolder.pnlibrary.api.config.ConfigTextForm] parser. */
     @Suppress("UNCHECKED_CAST")
     fun textParser(type: Class<out ConfigTextParser<*>>):
         ConfigTextParser<Any> = synchronized(textParsers) {

@@ -2,7 +2,6 @@ package org.pnfolder.pnlibrary.api.actions.builtin
 
 import org.pnfolder.pnlibrary.api.actions.Action
 import org.pnfolder.pnlibrary.api.actions.ActionContext
-import org.pnfolder.pnlibrary.api.audiences.LibraryPlayer
 import org.pnfolder.pnlibrary.api.audiences.PlayerEffect
 import java.time.Duration
 
@@ -10,7 +9,7 @@ import java.time.Duration
  * Applies a temporary status effect to the player that triggered the action.
  *
  * The action delegates platform-specific effect resolution to
- * [LibraryPlayer.applyEffect]. If the platform adapter cannot resolve or apply
+ * [org.pnfolder.pnlibrary.api.audiences.LibraryPlayer.applyEffect]. If the platform adapter cannot resolve or apply
  * the effect, execution continues and a warning is written to the action logger.
  *
  * @property key namespaced or platform-native effect key

@@ -1,14 +1,5 @@
 package org.pnfolder.pnlibrary.api.actions.internal
 
-import org.pnfolder.pnlibrary.api.actions.builtin.CommandAction
-import org.pnfolder.pnlibrary.api.actions.builtin.DelayAction
-import org.pnfolder.pnlibrary.api.actions.builtin.GroupAction
-import org.pnfolder.pnlibrary.api.actions.builtin.IfAction
-import org.pnfolder.pnlibrary.api.actions.builtin.MessageAction
-import org.pnfolder.pnlibrary.api.actions.builtin.RepeatAction
-import org.pnfolder.pnlibrary.api.actions.builtin.RequireAction
-import org.pnfolder.pnlibrary.api.actions.builtin.SoundAction
-import org.pnfolder.pnlibrary.api.actions.builtin.TitleAction
 import org.pnfolder.pnlibrary.api.config.ConfigNodeRewriter
 
 /**
@@ -16,16 +7,16 @@ import org.pnfolder.pnlibrary.api.config.ConfigNodeRewriter
  *
  * | Written | Read as |
  * |---|---|
- * | `type: message`, `message: text` | [MessageAction] with one line |
- * | `type: sound`, `sound: entity.villager.no` | [SoundAction]; Bukkit names such as `ENTITY_VILLAGER_NO` work too |
- * | `type: title`, `fade-in`, `stay`, `fade-out` | [TitleAction] |
- * | `type: delay`, `duration`, `do` | [DelayAction]; without `do` it pauses the rest of the list |
- * | `type: repeat`, `times`, `every`, `do` | [RepeatAction] |
- * | `type: group`, `do` | [GroupAction] |
- * | `type: if`, `check`, `do`, `else` | [IfAction]; a list under `check` means all of them |
- * | `type: chance`, `probability: 10%`, `do`, `else` | [IfAction] with a chance check |
- * | `type: console` or `type: player`, `command` | [CommandAction] run by the console or the player |
- * | `type: requirements` with the DeluxeMenus block | [RequireAction] |
+ * | `type: message`, `message: text` | [org.pnfolder.pnlibrary.api.actions.builtin.MessageAction] with one line |
+ * | `type: sound`, `sound: entity.villager.no` | [org.pnfolder.pnlibrary.api.actions.builtin.SoundAction]; Bukkit names such as `ENTITY_VILLAGER_NO` work too |
+ * | `type: title`, `fade-in`, `stay`, `fade-out` | [org.pnfolder.pnlibrary.api.actions.builtin.TitleAction] |
+ * | `type: delay`, `duration`, `do` | [org.pnfolder.pnlibrary.api.actions.builtin.DelayAction]; without `do` it pauses the rest of the list |
+ * | `type: repeat`, `times`, `every`, `do` | [org.pnfolder.pnlibrary.api.actions.builtin.RepeatAction] |
+ * | `type: group`, `do` | [org.pnfolder.pnlibrary.api.actions.builtin.GroupAction] |
+ * | `type: if`, `check`, `do`, `else` | [org.pnfolder.pnlibrary.api.actions.builtin.IfAction]; a list under `check` means all of them |
+ * | `type: chance`, `probability: 10%`, `do`, `else` | [org.pnfolder.pnlibrary.api.actions.builtin.IfAction] with a chance check |
+ * | `type: console` or `type: player`, `command` | [org.pnfolder.pnlibrary.api.actions.builtin.CommandAction] run by the console or the player |
+ * | `type: requirements` with the DeluxeMenus block | [org.pnfolder.pnlibrary.api.actions.builtin.RequireAction] |
  *
  * The older `if` form with `all`, `any` and `then` is read as well.
  */

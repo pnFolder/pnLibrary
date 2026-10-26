@@ -2,14 +2,13 @@ package org.pnfolder.pnlibrary.api.actions.builtin
 
 import org.pnfolder.pnlibrary.api.actions.Action
 import org.pnfolder.pnlibrary.api.actions.ActionContext
-import org.pnfolder.pnlibrary.api.audiences.LibraryPlayer
 import org.pnfolder.pnlibrary.api.audiences.PlayerParticle
 
 /**
  * Spawns particles around the player that triggered the action.
  *
  * The action is intentionally small and delegates particle lookup to
- * [LibraryPlayer.spawnParticle] so platform modules can handle version-specific
+ * [org.pnfolder.pnlibrary.api.audiences.LibraryPlayer.spawnParticle] so platform modules can handle version-specific
  * names and native particle data.
  *
  * @property key namespaced or platform-native particle key

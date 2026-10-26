@@ -6,7 +6,6 @@ import net.kyori.adventure.text.Component
 import org.pnfolder.pnlibrary.api.actions.builtin.DelayAction
 import org.pnfolder.pnlibrary.api.audiences.LibraryAudience
 import org.pnfolder.pnlibrary.api.audiences.LibraryPlayer
-import org.pnfolder.pnlibrary.api.checks.Check
 import org.pnfolder.pnlibrary.api.checks.CheckContext
 import org.pnfolder.pnlibrary.api.checks.Requirement
 import org.pnfolder.pnlibrary.api.internal.Suggestions
@@ -44,7 +43,7 @@ import java.util.Collections
  * @property logger plugin-bound logger used for warnings and diagnostics
  * @property tasks plugin-bound task scope used for deferred work
  * @property serializerType default text serializer for this invocation
- * @property values named scalar-like values consumed by [Check] implementations
+ * @property values named scalar-like values consumed by [org.pnfolder.pnlibrary.api.checks.Check] implementations
  * @property placeholders plugin-scoped placeholder service used for controlled updates, or `null`
  * @property templates named action lists that `[run]` actions can call
  * @property checks named requirements from the `checks:` block, used by `if` and `require` actions
