@@ -2,6 +2,9 @@ package org.pnfolder.pnlibrary.core.downloads
 
 import org.junit.jupiter.api.Assertions.assertArrayEquals
 import org.junit.jupiter.api.Assertions.assertEquals
+import org.junit.jupiter.api.Assertions.assertSame
+import org.junit.jupiter.api.Assertions.assertThrows
+import org.junit.jupiter.api.Assertions.assertTrue
 import org.junit.jupiter.api.Test
 import org.junit.jupiter.api.io.TempDir
 import org.pnfolder.pnlibrary.api.downloads.DownloadDestination
@@ -40,5 +43,23 @@ class DownloadArtifactPreparerTest {
 
         assertEquals(directory.resolve("plugin-data/models/model.bin").toAbsolutePath(), prepared.target)
         assertArrayEquals(payload, Files.readAllBytes(prepared.staging))
+    }
+
+    @Test
+    fun `failed jar verification removes the staged file and preserves the failure`() {
+        val libraryData = directory.resolve("plugins/pnLibrary")
+        val request = FileDownloads.builder().file("plugin") {
+            it.url("https://example.org/plugin.jar").destination(DownloadDestination.CACHE, "plugin.jar")
+        }.build()
+        val http = object : TrustedHttpClient(Duration.ofSeconds(1), Duration.ofSeconds(1)) {
+            override fun get(uri: URI, maximumBytes: Int) = "invalid jar".toByteArray()
+        }
+        val preparer = DownloadArtifactPreparer(PlatformType.BUKKIT, libraryData, DownloadConfiguration(), http)
+        val failure = IllegalArgumentException("Plugin identity does not match")
+
+        assertSame(failure, assertThrows(IllegalArgumentException::class.java) {
+            preparer.prepare(request, request.files.single()) { _, _ -> throw failure }
+        })
+        assertTrue(Files.list(libraryData.resolve("downloads/staging")).use { !it.findAny().isPresent })
     }
 }

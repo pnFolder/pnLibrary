@@ -4,19 +4,23 @@ import org.junit.jupiter.api.Assertions.assertEquals
 import org.junit.jupiter.api.Test
 import org.pnfolder.pnlibrary.api.currency.CurrencyAccount
 import org.pnfolder.pnlibrary.api.currency.CurrencyActor
+import org.pnfolder.pnlibrary.api.currency.CurrencyDescriptor
 import org.pnfolder.pnlibrary.api.currency.CurrencyTransactionRequest
 import org.pnfolder.pnlibrary.api.currency.CurrencyTransactionStatus
 import org.pnfolder.pnlibrary.api.currency.CurrencyTransactionType
 import java.math.BigDecimal
+import java.math.RoundingMode
 import java.util.UUID
 
 class CurrencyMutationEngineTest {
+    private val descriptor = CurrencyDescriptor("Coins", "C", 2, RoundingMode.DOWN)
     @Test
     fun `credit adds amount to target`() {
         val mutation = CurrencyMutationEngine.evaluate(
             request(CurrencyTransactionType.CREDIT, "2.50", target = account()),
             sourceBefore = null,
             targetBefore = decimal("10.00"),
+            descriptor = descriptor,
         )
 
         assertEquals(CurrencyTransactionStatus.COMMITTED, mutation.status)
@@ -29,6 +33,7 @@ class CurrencyMutationEngineTest {
             request(CurrencyTransactionType.DEBIT, "10.01", source = account()),
             sourceBefore = decimal("10.00"),
             targetBefore = null,
+            descriptor = descriptor,
         )
 
         assertEquals(CurrencyTransactionStatus.REJECTED, mutation.status)
@@ -42,6 +47,7 @@ class CurrencyMutationEngineTest {
             request(CurrencyTransactionType.TRANSFER, "3.25", source = account(), target = account()),
             sourceBefore = decimal("8.00"),
             targetBefore = decimal("1.50"),
+            descriptor = descriptor,
         )
 
         assertEquals(CurrencyTransactionStatus.COMMITTED, mutation.status)

@@ -1,5 +1,6 @@
 package org.pnfolder.pnlibrary.currency
 
+import org.pnfolder.pnlibrary.api.currency.CurrencyDescriptor
 import org.pnfolder.pnlibrary.api.currency.CurrencyTransactionRequest
 import org.pnfolder.pnlibrary.api.currency.CurrencyTransactionStatus
 import org.pnfolder.pnlibrary.api.currency.CurrencyTransactionType
@@ -8,7 +9,7 @@ import java.math.BigDecimal
 /** Pure balance transition shared by persistent currency backends. */
 internal object CurrencyMutationEngine {
     /**
-     * Evaluates one already validated request without performing persistence.
+     * Validates and evaluates one request without performing persistence.
      *
      * A rejected transition preserves both balances. Storage implementations are
      * responsible for descriptor normalization before reading and after committing.
@@ -17,7 +18,11 @@ internal object CurrencyMutationEngine {
         request: CurrencyTransactionRequest,
         sourceBefore: BigDecimal?,
         targetBefore: BigDecimal?,
+        descriptor: CurrencyDescriptor,
     ): CurrencyMutation {
+        CurrencyRequestValidation.failure(descriptor, request)?.let { failure ->
+            return rejected(sourceBefore, targetBefore, failure)
+        }
         var sourceAfter = sourceBefore
         var targetAfter = targetBefore
 
@@ -48,13 +53,13 @@ internal object CurrencyMutationEngine {
         )
     }
 
-    private fun rejected(source: BigDecimal?, target: BigDecimal?) = CurrencyMutation(
+    private fun rejected(source: BigDecimal?, target: BigDecimal?, failure: String = "Insufficient funds") = CurrencyMutation(
         status = CurrencyTransactionStatus.REJECTED,
         sourceBefore = source,
         sourceAfter = source,
         targetBefore = target,
         targetAfter = target,
-        failure = "Insufficient funds",
+        failure = failure,
     )
 }
 

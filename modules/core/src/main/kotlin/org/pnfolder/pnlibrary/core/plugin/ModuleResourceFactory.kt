@@ -19,32 +19,32 @@ import org.pnfolder.pnlibrary.api.tasks.TaskScope
 import org.pnfolder.pnlibrary.api.updates.ProductDescriptor
 import org.pnfolder.pnlibrary.api.updates.UpdateRegistration
 import org.pnfolder.pnlibrary.api.updates.UpdateService
-import org.pnfolder.pnlibrary.config.ConfigurationServiceImpl
+import org.pnfolder.pnlibrary.config.ConfigurationRuntime
 import org.pnfolder.pnlibrary.core.cooldowns.CooldownServiceImpl
 import org.pnfolder.pnlibrary.core.downloads.CompositeDownloadRegistration
-import org.pnfolder.pnlibrary.core.downloads.DirectDownloadManager
+import org.pnfolder.pnlibrary.core.downloads.DownloadService
 import org.pnfolder.pnlibrary.core.lifecycle.ResourceCleanup
 import org.pnfolder.pnlibrary.core.metrics.ErrorPipeline
-import org.pnfolder.pnlibrary.core.placeholders.PlaceholderHub
-import org.pnfolder.pnlibrary.core.services.ServiceManagerImpl
+import org.pnfolder.pnlibrary.core.placeholders.PlaceholderRuntime
+import org.pnfolder.pnlibrary.core.services.ServiceScopeFactory
 import org.pnfolder.pnlibrary.core.tasks.TaskService
 import org.pnfolder.pnlibrary.core.text.ComponentCache
 import org.pnfolder.pnlibrary.core.text.ComponentServiceImpl
-import org.pnfolder.pnlibrary.currency.CurrencyFeature
+import org.pnfolder.pnlibrary.currency.CurrencyRuntime
 
 /** Opens every per-module resource and releases the ones already opened when a later one fails. */
 internal class ModuleResourceFactory(
     private val events: EventService,
     private val tasks: TaskService,
-    private val services: ServiceManagerImpl,
+    private val services: ServiceScopeFactory,
     private val logging: LoggingService,
     private val metrics: MetricsService,
     private val diagnostics: DiagnosticsService,
     private val updates: UpdateService,
-    private val placeholders: PlaceholderHub,
-    private val currency: CurrencyFeature,
-    private val configurations: ConfigurationServiceImpl,
-    private val directDownloads: DirectDownloadManager?,
+    private val placeholders: PlaceholderRuntime,
+    private val currency: CurrencyRuntime,
+    private val configurations: ConfigurationRuntime,
+    private val directDownloads: DownloadService?,
     private val componentCache: ComponentCache,
 ) {
     fun create(
@@ -130,7 +130,7 @@ internal class ModuleResourceFactory(
                 { placeholderScope?.close() },
                 { configScope?.close() },
                 { eventScope?.close() },
-                { services.unregisterAll(moduleKey) },
+                { serviceScope.close() },
                 { taskScope?.close() },
             )
             throw error

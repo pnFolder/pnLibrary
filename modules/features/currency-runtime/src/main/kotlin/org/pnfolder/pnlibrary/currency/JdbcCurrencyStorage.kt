@@ -76,7 +76,7 @@ internal class JdbcCurrencyStorage(
                     .toMutableMap()
                 val sourceBefore = request.source?.let { balances[it] ?: BigDecimal.ZERO }?.let(descriptor::normalize)
                 val targetBefore = request.target?.let { balances[it] ?: BigDecimal.ZERO }?.let(descriptor::normalize)
-                val mutation = CurrencyMutationEngine.evaluate(request, sourceBefore, targetBefore)
+                val mutation = CurrencyMutationEngine.evaluate(request, sourceBefore, targetBefore, descriptor)
                 if (mutation.status == CurrencyTransactionStatus.COMMITTED) {
                     request.source?.let {
                         ledger.writeBalance(connection, currency, it, descriptor.normalize(requireNotNull(mutation.sourceAfter)))
@@ -90,7 +90,7 @@ internal class JdbcCurrencyStorage(
                     currency = currency,
                     type = request.type,
                     status = mutation.status,
-                    amount = descriptor.normalize(request.amount),
+                    amount = if (mutation.status == CurrencyTransactionStatus.COMMITTED) descriptor.normalize(request.amount) else request.amount,
                     source = request.source,
                     target = request.target,
                     actor = request.actor,

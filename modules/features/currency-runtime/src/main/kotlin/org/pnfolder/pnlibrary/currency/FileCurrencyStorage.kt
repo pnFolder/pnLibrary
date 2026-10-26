@@ -170,13 +170,14 @@ internal class FileCurrencyStorage(
         val targetKey = request.target?.let { accountKey(currency, it) }
         val sourceBefore = sourceKey?.let { balances[it] ?: BigDecimal.ZERO }?.let(descriptor::normalize)
         val targetBefore = targetKey?.let { balances[it] ?: BigDecimal.ZERO }?.let(descriptor::normalize)
-        val mutation = CurrencyMutationEngine.evaluate(request, sourceBefore, targetBefore)
+        val mutation = CurrencyMutationEngine.evaluate(request, sourceBefore, targetBefore, descriptor)
         if (mutation.status == CurrencyTransactionStatus.COMMITTED) {
             sourceKey?.let { balances[it] = descriptor.normalize(requireNotNull(mutation.sourceAfter)) }
             targetKey?.let { balances[it] = descriptor.normalize(requireNotNull(mutation.targetAfter)) }
         }
         return CurrencyTransaction(
-            UUID.randomUUID(), currency, request.type, mutation.status, descriptor.normalize(request.amount),
+            UUID.randomUUID(), currency, request.type, mutation.status,
+            if (mutation.status == CurrencyTransactionStatus.COMMITTED) descriptor.normalize(request.amount) else request.amount,
             request.source, request.target, request.actor, request.service, request.reason, request.metadata,
             mutation.sourceBefore, mutation.sourceAfter, mutation.targetBefore, mutation.targetAfter,
             Instant.now(), mutation.failure, request.idempotencyKey,

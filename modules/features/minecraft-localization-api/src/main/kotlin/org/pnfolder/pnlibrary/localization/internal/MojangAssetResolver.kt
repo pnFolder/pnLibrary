@@ -1,6 +1,5 @@
 package org.pnfolder.pnlibrary.localization.internal
 
-import com.google.gson.JsonArray
 import com.google.gson.JsonObject
 import com.google.gson.JsonParser
 import org.pnfolder.pnlibrary.common.minecraft.MinecraftVersion
@@ -22,14 +21,16 @@ internal class MojangAssetResolver(
     private val store: VerifiedFileStore,
 ) {
     private val versionAssets = ConcurrentHashMap<MinecraftVersion, VersionAssets>()
-    fun manifestBytes(): ByteArray = http.get(MANIFEST, MANIFEST_LIMIT)
+    fun manifestBytes(): ByteArray = http.get(MANIFEST, MANIFEST_LIMIT).also(::validateManifest)
+
+    fun validateManifest(bytes: ByteArray) {
+        manifestEntries(bytes)
+    }
 
     fun versions(manifest: ByteArray): List<MinecraftVersion> {
-        val root = parse(manifest, "version manifest")
-        return root.getAsJsonArray("versions").orEmpty()
+        return manifestEntries(manifest)
             .mapNotNull { entry ->
-                val value = entry.asJsonObject
-                if (value.string("type") != "release") null else MinecraftVersion.parse(value.string("id"))
+                if (entry.string("type") != "release") null else MinecraftVersion.parse(entry.string("id"))
             }
             .filter { it.known }
             .distinct()
@@ -59,8 +60,7 @@ internal class MojangAssetResolver(
         versionAssets.computeIfAbsent(version) { resolveVersionAssets(it, manifest) }
 
     private fun resolveVersionAssets(version: MinecraftVersion, manifest: ByteArray): VersionAssets {
-        val versionEntry = parse(manifest, "version manifest").getAsJsonArray("versions").orEmpty()
-            .map { it.asJsonObject }
+        val versionEntry = manifestEntries(manifest)
             .firstOrNull { it.string("id") == version.text }
             ?: throw TranslationException(
                 TranslationException.Reason.UNSUPPORTED_VERSION, "Minecraft ${version.text} is absent from the Mojang manifest",
@@ -209,9 +209,24 @@ internal class MojangAssetResolver(
         throw TranslationException(TranslationException.Reason.MALFORMED_DATA, "Malformed Minecraft $name", error)
     }
 
+    private fun manifestEntries(bytes: ByteArray): List<JsonObject> = try {
+        val entries = parse(bytes, "version manifest").getAsJsonArray("versions")
+            ?: throw malformed("Version manifest has no versions")
+        entries.map { entry ->
+            val value = entry.asJsonObject
+            if (listOf("id", "type", "url").any { value.string(it).isNullOrBlank() }) {
+                throw malformed("Version manifest entry requires id, type and URL")
+            }
+            value
+        }
+    } catch (error: TranslationException) {
+        throw error
+    } catch (error: RuntimeException) {
+        throw TranslationException(TranslationException.Reason.MALFORMED_DATA, "Malformed Minecraft version manifest", error)
+    }
+
     private fun malformed(message: String) = TranslationException(TranslationException.Reason.MALFORMED_DATA, message)
     private fun JsonObject.string(name: String): String? = get(name)?.takeUnless { it.isJsonNull }?.asString
-    private fun JsonArray?.orEmpty() = this?.toList().orEmpty()
 
     companion object {
         val MANIFEST: URI = URI.create("https://piston-meta.mojang.com/mc/game/version_manifest_v2.json")

@@ -126,7 +126,15 @@ internal class DefaultMinecraftLocalization internal constructor(
     @Synchronized
     private fun manifest(allowStale: Boolean): ByteArray? {
         val path = store.manifest()
-        val cached = store.read(path, MAX_MANIFEST_BYTES)
+        val cached = store.read(path, MAX_MANIFEST_BYTES)?.let { bytes ->
+            try {
+                resolver.validateManifest(bytes)
+                bytes
+            } catch (_: TranslationException) {
+                store.quarantine(path)
+                null
+            }
+        }
         val fresh = cached != null && Duration.ofMillis(System.currentTimeMillis() - Files.getLastModifiedTime(path).toMillis()) <= manifestTtl
         if (fresh) return cached
         return try {

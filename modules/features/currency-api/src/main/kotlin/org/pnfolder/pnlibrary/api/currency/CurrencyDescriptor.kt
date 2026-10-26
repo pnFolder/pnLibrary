@@ -29,7 +29,11 @@ data class CurrencyDescriptor(
     fun normalize(amount: BigDecimal): BigDecimal = amount.setScale(fractionDigits, roundingMode)
 
     /** Returns whether [amount] already conforms without numerical rounding. */
-    fun accepts(amount: BigDecimal): Boolean = normalize(amount).compareTo(amount) == 0
+    fun accepts(amount: BigDecimal): Boolean = try {
+        normalize(amount).compareTo(amount) == 0
+    } catch (_: ArithmeticException) {
+        false
+    }
 
     /** Creates currency descriptors. */
     companion object {

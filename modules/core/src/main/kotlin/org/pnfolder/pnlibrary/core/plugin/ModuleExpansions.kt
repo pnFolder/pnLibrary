@@ -2,7 +2,6 @@ package org.pnfolder.pnlibrary.core.plugin
 
 import org.pnfolder.pnlibrary.api.expansions.Expansion
 import org.pnfolder.pnlibrary.api.expansions.ExpansionManager
-import org.pnfolder.pnlibrary.core.expansions.ExpansionManagerImpl
 import org.pnfolder.pnlibrary.core.expansions.ModuleBinding
 import org.pnfolder.pnlibrary.core.expansions.ModuleBoundExpansion
 import org.pnfolder.pnlibrary.core.lifecycle.ResourceCleanup
@@ -12,8 +11,8 @@ import org.pnfolder.pnlibrary.core.lifecycle.ResourceCleanup
  * library expansion. Lookups read the plugins' registry; the library's own expansions are reached only through [view].
  */
 internal class ModuleExpansions(
-    private val shared: ExpansionManagerImpl,
-    private val library: ExpansionManagerImpl,
+    private val shared: ExpansionManager,
+    private val library: ExpansionManager,
 ) : ExpansionManager by shared, AutoCloseable {
     private val lock = Any()
     private val registered = linkedMapOf<Expansion, AutoCloseable>()

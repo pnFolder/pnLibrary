@@ -15,6 +15,7 @@ import java.net.URI
 import java.nio.charset.StandardCharsets
 import java.nio.file.Files
 import java.nio.file.Path
+import java.nio.file.attribute.FileTime
 import java.security.MessageDigest
 import java.time.Duration
 import java.util.concurrent.CompletableFuture
@@ -124,6 +125,44 @@ class LocalizationServiceTest {
             assertEquals(listOf("en_us", "ru_ru"), service.availableLocales(MinecraftVersion.V1_21_4).toCompletableFuture().join())
         }
         assertTrue(Files.list(path.parent).use { files -> files.anyMatch { ".corrupt-" in it.fileName.toString() } })
+    }
+
+    @Test
+    fun `quarantines corrupt manifests even while their cache is fresh`() {
+        val path = directory.resolve("minecraft/version-manifest.json")
+        Files.createDirectories(path.parent)
+        for (corrupt in listOf("not-json", "{}", "{\"versions\":{}}", "{\"versions\":[null]}")) {
+            Files.write(path, corrupt.toByteArray())
+            val fixture = Fixture()
+            service(fixture).use { service ->
+                assertEquals(listOf(MinecraftVersion.V1_21_4), service.availableVersions().toCompletableFuture().join())
+                assertEquals(1, fixture.calls[MojangAssetResolver.MANIFEST])
+            }
+        }
+        assertTrue(Files.list(path.parent).use { files -> files.anyMatch { ".corrupt-" in it.fileName.toString() } })
+    }
+
+    @Test
+    fun `malformed remote manifest does not replace a valid stale cache`() {
+        service(Fixture()).use { it.availableVersions().toCompletableFuture().join() }
+        val path = directory.resolve("minecraft/version-manifest.json")
+        val original = Files.readAllBytes(path)
+        Files.setLastModifiedTime(path, FileTime.fromMillis(0))
+        service(Fixture(manifestOverride = "{}".toByteArray())).use { service ->
+            assertEquals(listOf(MinecraftVersion.V1_21_4), service.availableVersions().toCompletableFuture().join())
+        }
+        assertArrayEquals(original, Files.readAllBytes(path))
+    }
+
+    @Test
+    fun `malformed remote manifest fails with a typed error and is not cached`() {
+        service(Fixture(manifestOverride = "{\"versions\":[null]}".toByteArray())).use { service ->
+            val error = assertThrows(CompletionException::class.java) {
+                service.availableLocales(MinecraftVersion.V1_21_4).toCompletableFuture().join()
+            }.cause
+            assertEquals(TranslationException.Reason.MALFORMED_DATA, (error as TranslationException).reason)
+        }
+        assertFalse(Files.exists(directory.resolve("minecraft/version-manifest.json")))
     }
 
     @Test
@@ -299,7 +338,10 @@ class LocalizationServiceTest {
         }
     }
 
-    private class Fixture(private val delayMillis: Long = 0) : LocalizationHttpClient(Duration.ZERO, Duration.ZERO) {
+    private class Fixture(
+        private val delayMillis: Long = 0,
+        private val manifestOverride: ByteArray? = null,
+    ) : LocalizationHttpClient(Duration.ZERO, Duration.ZERO) {
         val calls = ConcurrentHashMap<URI, Int>()
         @Volatile
         var assetDownloads = 0
@@ -312,7 +354,7 @@ class LocalizationServiceTest {
         override fun get(uri: URI, maximumBytes: Int): ByteArray {
             calls.merge(uri, 1, Int::plus)
             return when (uri) {
-                MojangAssetResolver.MANIFEST -> """{"versions":[
+                MojangAssetResolver.MANIFEST -> manifestOverride ?: """{"versions":[
                     {"id":"1.21.4","type":"release","url":"$versionUri"},
                     {"id":"99.1","type":"release","url":"https://piston-meta.mojang.com/v1/future.json"},
                     {"id":"1.21.5-pre1","type":"snapshot","url":"https://piston-meta.mojang.com/v1/snapshot.json"}
