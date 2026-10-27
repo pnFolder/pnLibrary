@@ -448,7 +448,7 @@ val writeReleaseManifest = tasks.register("writeReleaseManifest") {
     inputs.files(artifactNames.map { directory.map { dir -> dir.file(it) } })
     inputs.property("repository", rootProject.property("pnlibrary.repository").toString())
     outputs.files((listOf("release-manifest.json", "checksums.sha256") + releasePlatforms.flatMap {
-        listOf("pnLibrary-$pnVer-${it.id}.jar.meta.json", "pnLibrary-$pnVer-${it.id}.jar.sha256")
+        listOf("pnLibrary-$pnVer-${it.id}.jar.meta.json")
     }).map { directory.map { dir -> dir.file(it) } })
     doLast {
         val libs = directory.get().asFile
@@ -484,9 +484,8 @@ val writeReleaseManifest = tasks.register("writeReleaseManifest") {
             )
         }
         libs.resolve("checksums.sha256").writeText(hashes.entries.joinToString("\n", postfix = "\n") { "${it.value}  ${it.key}" })
-        val assets = artifactNames + releasePlatforms.flatMap {
-            listOf("pnLibrary-$pnVer-${it.id}.jar.meta.json", "pnLibrary-$pnVer-${it.id}.jar.sha256")
-        } + listOf("checksums.sha256", "release-manifest.json")
+        // The .meta.json files are build-time inputs for update-catalog.ps1 and are not release assets.
+        val assets = artifactNames + listOf("checksums.sha256", "release-manifest.json")
         val manifest = linkedMapOf(
             "schema" to 1, "product" to rootProject.property("pnlibrary.product-id").toString(),
             "repository" to repository,
