@@ -3550,6 +3550,29 @@ public final class org/pnfolder/pnlibrary/api/updates/BlockedReason$NoCompatible
 	public fun toString ()Ljava/lang/String;
 }
 
+public final class org/pnfolder/pnlibrary/api/updates/CatalogSource {
+	public static final field Companion Lorg/pnfolder/pnlibrary/api/updates/CatalogSource$Companion;
+	public static final field DEFAULT_BRANCH Ljava/lang/String;
+	public static final field DEFAULT_PATH Ljava/lang/String;
+	public fun <init> (Ljava/lang/String;Ljava/lang/String;)V
+	public fun <init> (Ljava/lang/String;Ljava/lang/String;Ljava/lang/String;)V
+	public fun <init> (Ljava/lang/String;Ljava/lang/String;Ljava/lang/String;Ljava/lang/String;)V
+	public synthetic fun <init> (Ljava/lang/String;Ljava/lang/String;Ljava/lang/String;Ljava/lang/String;ILkotlin/jvm/internal/DefaultConstructorMarker;)V
+	public fun equals (Ljava/lang/Object;)Z
+	public final fun getApiUrl ()Ljava/lang/String;
+	public final fun getBranch ()Ljava/lang/String;
+	public final fun getCdnUrl ()Ljava/lang/String;
+	public final fun getOwner ()Ljava/lang/String;
+	public final fun getPath ()Ljava/lang/String;
+	public final fun getRawUrl ()Ljava/lang/String;
+	public final fun getRepository ()Ljava/lang/String;
+	public fun hashCode ()I
+	public fun toString ()Ljava/lang/String;
+}
+
+public final class org/pnfolder/pnlibrary/api/updates/CatalogSource$Companion {
+}
+
 public final class org/pnfolder/pnlibrary/api/updates/PluginUpdateArtifact {
 	public fun <init> (Ljava/lang/String;ILjava/lang/Integer;Lorg/pnfolder/pnlibrary/api/platform/PlatformType;)V
 	public synthetic fun <init> (Ljava/lang/String;ILjava/lang/Integer;Lorg/pnfolder/pnlibrary/api/platform/PlatformType;ILkotlin/jvm/internal/DefaultConstructorMarker;)V
@@ -3562,16 +3585,13 @@ public final class org/pnfolder/pnlibrary/api/updates/PluginUpdateArtifact {
 
 public final class org/pnfolder/pnlibrary/api/updates/PluginUpdateRequest {
 	public static final field Companion Lorg/pnfolder/pnlibrary/api/updates/PluginUpdateRequest$Companion;
-	public static final field DEFAULT_BRANCH Ljava/lang/String;
-	public static final field DEFAULT_CATALOG_PATH Ljava/lang/String;
 	public synthetic fun <init> (Lorg/pnfolder/pnlibrary/api/updates/PluginUpdateRequest$Builder;Lkotlin/jvm/internal/DefaultConstructorMarker;)V
 	public final fun artifactFor (I)Lorg/pnfolder/pnlibrary/api/updates/PluginUpdateArtifact;
 	public final fun artifactFor (ILorg/pnfolder/pnlibrary/api/platform/PlatformType;)Lorg/pnfolder/pnlibrary/api/updates/PluginUpdateArtifact;
 	public static final fun builder ()Lorg/pnfolder/pnlibrary/api/updates/PluginUpdateRequest$Builder;
 	public final fun getArtifacts ()Ljava/util/List;
 	public final fun getAutomaticDownload ()Z
-	public final fun getBranch ()Ljava/lang/String;
-	public final fun getCatalogPath ()Ljava/lang/String;
+	public final fun getCatalog ()Lorg/pnfolder/pnlibrary/api/updates/CatalogSource;
 	public final fun getChannel ()Lorg/pnfolder/pnlibrary/api/updates/UpdateChannel;
 	public final fun getConfigurationBackup ()Lorg/pnfolder/pnlibrary/api/updates/backup/UpdateConfigurationBackup;
 	public final fun getRepositoryName ()Ljava/lang/String;

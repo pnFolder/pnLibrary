@@ -1,6 +1,7 @@
 package org.pnfolder.pnlibrary.core.updates.install
 
 import com.google.gson.JsonParser
+import org.pnfolder.pnlibrary.api.updates.CatalogSource
 import org.pnfolder.pnlibrary.core.updates.engine.RefreshMode
 import org.pnfolder.pnlibrary.core.updates.engine.ReleaseCatalog
 import org.pnfolder.pnlibrary.core.updates.engine.ReleaseCatalogClient
@@ -25,14 +26,8 @@ internal class ReleaseCatalogGateway(
     private val http: TrustedHttpClient,
     private val requestExecutor: Executor,
 ) {
-    fun load(
-        owner: String,
-        repository: String,
-        refreshMode: RefreshMode,
-        branch: String = "main",
-        catalogPath: String = ".pnlibrary",
-    ): ReleaseCatalog {
-        val endpoints = CatalogEndpoints(owner, repository, branch, catalogPath)
+    fun load(source: CatalogSource, refreshMode: RefreshMode): ReleaseCatalog {
+        val endpoints = CatalogEndpoints(source)
         val result = CompletableFuture<ReleaseCatalog>()
         val failures = Collections.synchronizedList(mutableListOf<String>())
         val remaining = AtomicInteger(ENDPOINT_COUNT)
@@ -97,16 +92,10 @@ internal class ReleaseCatalogGateway(
         val api: URI,
         val cdn: URI,
     ) {
-        constructor(owner: String, repository: String, branch: String, path: String) : this(
-            raw = URI.create(
-                "https://raw.githubusercontent.com/$owner/$repository/refs/heads/$branch/$path/releases.json",
-            ),
-            api = URI.create(
-                "https://api.github.com/repos/$owner/$repository/contents/$path/releases.json?ref=$branch",
-            ),
-            cdn = URI.create(
-                "https://cdn.jsdelivr.net/gh/$owner/$repository@$branch/$path/releases.json",
-            ),
+        constructor(source: CatalogSource) : this(
+            raw = URI.create(source.rawUrl),
+            api = URI.create(source.apiUrl),
+            cdn = URI.create(source.cdnUrl),
         )
     }
 
