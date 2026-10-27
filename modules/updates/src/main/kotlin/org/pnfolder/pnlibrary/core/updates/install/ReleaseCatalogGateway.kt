@@ -29,19 +29,21 @@ internal class ReleaseCatalogGateway(
         owner: String,
         repository: String,
         refreshMode: RefreshMode,
+        branch: String = "main",
+        catalogPath: String = ".pnlibrary",
     ): ReleaseCatalog {
-        val endpoints = CatalogEndpoints(owner, repository)
+        val endpoints = CatalogEndpoints(owner, repository, branch, catalogPath)
         val result = CompletableFuture<ReleaseCatalog>()
         val failures = Collections.synchronizedList(mutableListOf<String>())
         val remaining = AtomicInteger(ENDPOINT_COUNT)
 
-        submit("raw", result, failures, remaining) {
+        submit("raw", result, failures, remaining, endpoints) {
             client.load(endpoints.raw, refreshMode).join()
         }
-        submit("api", result, failures, remaining) {
+        submit("api", result, failures, remaining, endpoints) {
             loadFromContentsApi(endpoints.api)
         }
-        submit("jsDelivr", result, failures, remaining) {
+        submit("jsDelivr", result, failures, remaining, endpoints) {
             client.load(endpoints.cdn, RefreshMode.FORCE_REMOTE).join()
         }
 
@@ -53,6 +55,7 @@ internal class ReleaseCatalogGateway(
         result: CompletableFuture<ReleaseCatalog>,
         failures: MutableList<String>,
         remaining: AtomicInteger,
+        endpoints: CatalogEndpoints,
         request: () -> ReleaseCatalog,
     ) {
         CompletableFuture.supplyAsync(request, requestExecutor)
@@ -66,8 +69,9 @@ internal class ReleaseCatalogGateway(
                 if (remaining.decrementAndGet() == 0) {
                     result.completeExceptionally(
                         IllegalStateException(
-                            "Release catalog unavailable via GitHub raw, Contents API and jsDelivr: " +
-                                failures.joinToString("; "),
+                            "Release catalog not found at ${endpoints.raw}; check the repository branch " +
+                                "(PluginUpdateRequest.Builder.branch). " +
+                                "Tried GitHub raw, Contents API and jsDelivr: " + failures.joinToString("; "),
                             error.cause ?: error,
                         ),
                     )
@@ -93,15 +97,15 @@ internal class ReleaseCatalogGateway(
         val api: URI,
         val cdn: URI,
     ) {
-        constructor(owner: String, repository: String) : this(
+        constructor(owner: String, repository: String, branch: String, path: String) : this(
             raw = URI.create(
-                "https://raw.githubusercontent.com/$owner/$repository/refs/heads/main/.pnlibrary/releases.json",
+                "https://raw.githubusercontent.com/$owner/$repository/refs/heads/$branch/$path/releases.json",
             ),
             api = URI.create(
-                "https://api.github.com/repos/$owner/$repository/contents/.pnlibrary/releases.json?ref=main",
+                "https://api.github.com/repos/$owner/$repository/contents/$path/releases.json?ref=$branch",
             ),
             cdn = URI.create(
-                "https://cdn.jsdelivr.net/gh/$owner/$repository@main/.pnlibrary/releases.json",
+                "https://cdn.jsdelivr.net/gh/$owner/$repository@$branch/$path/releases.json",
             ),
         )
     }

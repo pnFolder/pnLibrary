@@ -70,6 +70,8 @@ internal class UpdateGraphResolver(
             owner = registration.request.repositoryOwner,
             repository = registration.request.repositoryName,
             refreshMode = refreshMode,
+            branch = registration.request.branch,
+            catalogPath = registration.request.catalogPath,
         )
         require(catalog.product.equals(registration.product, ignoreCase = true)) {
             "Release catalog product ${catalog.product} does not match ${registration.descriptor.id}"

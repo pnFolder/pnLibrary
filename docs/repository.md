@@ -133,3 +133,16 @@
 
 Репозиторий, имя и id продукта, которые знает установщик, берутся из `pnlibrary.repository`, `pnlibrary.name` и
 `pnlibrary.product-id` в `gradle.properties`. Менять их нужно только там.
+
+## Ветка и папка каталога
+
+По умолчанию каталог читается из ветки `main`, из папки `.pnlibrary`. Если основная ветка называется иначе, укажите её:
+
+```java
+.updates("PnFolder", "pnCases", updater -> updater
+        .branch("master")            // по умолчанию "main"
+        .catalogPath("updates")      // по умолчанию ".pnlibrary", необязательно
+        .artifact("(?i)^pnCases-[0-9].*\.jar$", 17))
+```
+
+Если каталог не найден, в сообщении об ошибке будет полный адрес `releases.json`, чтобы сразу видеть, какую ветку проверить.
