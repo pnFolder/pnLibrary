@@ -4,6 +4,7 @@ import org.junit.jupiter.api.Assertions.assertEquals
 import org.junit.jupiter.api.Assertions.assertTimeoutPreemptively
 import org.junit.jupiter.api.Test
 import org.junit.jupiter.api.io.TempDir
+import org.pnfolder.pnlibrary.api.updates.CatalogSource
 import org.pnfolder.pnlibrary.core.updates.engine.RefreshMode
 import org.pnfolder.pnlibrary.core.updates.engine.ReleaseCatalog
 import org.pnfolder.pnlibrary.core.updates.engine.ReleaseCatalogClient
@@ -47,7 +48,7 @@ class ReleaseCatalogGatewayTest {
             // A real deadlock hangs forever; a generous bound only guards against that, not against a loaded CI
             // runner's thread-scheduling jitter across the two single-thread executors used here.
             assertTimeoutPreemptively(Duration.ofSeconds(15)) {
-                loaded.set(gateway.load("owner", "example", RefreshMode.FORCE_REMOTE))
+                loaded.set(gateway.load(CatalogSource("owner", "example"), RefreshMode.FORCE_REMOTE))
             }
             val catalog = loaded.get()
             assertEquals("example", catalog.product)
@@ -75,7 +76,7 @@ class ReleaseCatalogGatewayTest {
         val client = ReleaseCatalogClient(http, ReleaseCatalogStore(temporaryDirectory.resolve("branch")), executor, Duration.ofMinutes(30))
         try {
             val error = org.junit.jupiter.api.Assertions.assertThrows(Exception::class.java) {
-                ReleaseCatalogGateway(client, http, executor).load("PnFolder", "pnCases", RefreshMode.FORCE_REMOTE, "master", "updates")
+                ReleaseCatalogGateway(client, http, executor).load(CatalogSource("PnFolder", "pnCases", "master", "updates"), RefreshMode.FORCE_REMOTE)
             }
             val raw = "https://raw.githubusercontent.com/PnFolder/pnCases/refs/heads/master/updates/releases.json"
             org.junit.jupiter.api.Assertions.assertTrue(requested.contains(raw), requested.toString())

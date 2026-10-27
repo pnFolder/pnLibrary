@@ -66,13 +66,7 @@ internal class UpdateGraphResolver(
         registrations: List<RegisteredUpdate>,
         refreshMode: RefreshMode,
     ): List<ProductRelease> = registrations.flatMap { registration ->
-        val catalog = catalogs.load(
-            owner = registration.request.repositoryOwner,
-            repository = registration.request.repositoryName,
-            refreshMode = refreshMode,
-            branch = registration.request.branch,
-            catalogPath = registration.request.catalogPath,
-        )
+        val catalog = catalogs.load(registration.request.catalog, refreshMode)
         require(catalog.product.equals(registration.product, ignoreCase = true)) {
             "Release catalog product ${catalog.product} does not match ${registration.descriptor.id}"
         }

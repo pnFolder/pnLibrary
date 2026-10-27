@@ -12,6 +12,7 @@ import org.mockito.Mockito.verifyNoInteractions
 import org.mockito.Mockito.`when`
 import org.pnfolder.pnlibrary.api.platform.PlatformType
 import org.pnfolder.pnlibrary.api.runtime.PnLibraryIdentity
+import org.pnfolder.pnlibrary.api.updates.CatalogSource
 import org.pnfolder.pnlibrary.api.updates.PluginUpdateRequest
 import org.pnfolder.pnlibrary.api.updates.ProductDescriptor
 import org.pnfolder.pnlibrary.api.updates.ProductId
@@ -75,7 +76,7 @@ class UpdateGraphResolverTest {
 
     @Test
     fun `a catalog for another product is rejected`() {
-        `when`(catalogs.load("owner", "example", RefreshMode.CACHED)).thenReturn(ReleaseCatalog("someone-else", emptyList()))
+        `when`(catalogs.load(CatalogSource("owner", "example"), RefreshMode.CACHED)).thenReturn(ReleaseCatalog("someone-else", emptyList()))
 
         val error = assertThrows(IllegalArgumentException::class.java) { resolver().resolve(listOf(registration())) }
 
@@ -84,18 +85,18 @@ class UpdateGraphResolverTest {
 
     @Test
     fun `the requested refresh mode reaches the catalog gateway`() {
-        `when`(catalogs.load("owner", "example", RefreshMode.FORCE_REMOTE)).thenReturn(ReleaseCatalog(PnLibraryIdentity.PRODUCT_ID, emptyList()))
+        `when`(catalogs.load(CatalogSource("owner", "example"), RefreshMode.FORCE_REMOTE)).thenReturn(ReleaseCatalog(PnLibraryIdentity.PRODUCT_ID, emptyList()))
 
         resolver().resolve(listOf(library()), RefreshMode.FORCE_REMOTE)
 
-        verify(catalogs).load("owner", "example", RefreshMode.FORCE_REMOTE)
-        verify(catalogs, never()).load("owner", "example", RefreshMode.CACHED)
+        verify(catalogs).load(CatalogSource("owner", "example"), RefreshMode.FORCE_REMOTE)
+        verify(catalogs, never()).load(CatalogSource("owner", "example"), RefreshMode.CACHED)
     }
 
     @Test
     fun `an unreadable plugin inventory does not stop resolution`() {
         `when`(inventory.installedPlugins()).thenThrow(IllegalStateException("scan failed"))
-        `when`(catalogs.load("owner", "example", RefreshMode.CACHED)).thenReturn(ReleaseCatalog(PnLibraryIdentity.PRODUCT_ID, emptyList()))
+        `when`(catalogs.load(CatalogSource("owner", "example"), RefreshMode.CACHED)).thenReturn(ReleaseCatalog(PnLibraryIdentity.PRODUCT_ID, emptyList()))
 
         val result = resolver().resolve(listOf(library()))
 
