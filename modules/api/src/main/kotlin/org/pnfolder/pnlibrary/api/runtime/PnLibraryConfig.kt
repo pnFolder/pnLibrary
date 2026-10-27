@@ -69,6 +69,7 @@ import java.util.regex.PatternSyntaxException
  * @property playerOnlyMessage message shown when a player-only command runs from the console
  * @property consoleOnlyMessage message shown when a console-only command runs in game
  * @property journalJoinNoticeHours hours after join during which the join notice is shown
+ * @property eventHistoryDays days of per-day event call counts kept for `/pn bus history`; `0` keeps none
  * @throws IllegalArgumentException if a numeric limit, provider, mode, path, or regular
  * expression is invalid
  */
@@ -109,6 +110,7 @@ data class PnLibraryConfig @JvmOverloads constructor(
     val playerOnlyMessage: String = "Эту команду можно использовать только в игре.",
     val consoleOnlyMessage: String = "Эту команду можно использовать только из консоли.",
     val journalJoinNoticeHours: Int = 24,
+    val eventHistoryDays: Int = 30,
 ) {
     init {
         require(noPermissionMessage.isNotBlank() && noPermissionMessage.length <= 256) {
@@ -117,6 +119,7 @@ data class PnLibraryConfig @JvmOverloads constructor(
         require(runCatchingNonFatal { java.time.ZoneId.of(timeZone) }.isSuccess) {
             "Setting timeZone must be a time zone id such as UTC or Europe/Moscow"
         }
+        require(eventHistoryDays in 0..3650) { "Setting eventHistoryDays must be between 0 and 3650" }
         require(journalJoinNoticeHours in 1..720) { "Setting journalJoinNoticeHours must be between 1 and 720" }
         require(noPermissionSound.isEmpty() || Regex("[a-z0-9_.:/-]+").matches(noPermissionSound)) {
             "Setting noPermissionSound must be empty or a sound key such as entity.villager.no"

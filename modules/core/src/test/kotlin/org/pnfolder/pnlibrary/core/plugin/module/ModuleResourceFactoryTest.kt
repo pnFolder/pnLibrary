@@ -55,7 +55,7 @@ class ModuleResourceFactoryTest {
     private val logger = mock(PnLogger::class.java)
 
     private fun factory(): ModuleResourceFactory {
-        `when`(events.scope(key)).thenReturn(eventScope)
+        `when`(events.scope(key, PluginId.of("native"), id)).thenReturn(eventScope)
         `when`(tasks.scope(owner, key)).thenReturn(taskScope)
         `when`(configurations.scope(owner, key)).thenReturn(configScope)
         `when`(placeholders.scope(key, false)).thenReturn(placeholderScope)
@@ -80,7 +80,7 @@ class ModuleResourceFactoryTest {
     }
 
     private fun ModuleResourceFactory.create() =
-        create(owner, id, key, ModuleDefinitionBuilder().apply { placeholderApiEnabled = false }, product = null)
+        create(owner, id, key, PluginId.of("native"), ModuleDefinitionBuilder().apply { placeholderApiEnabled = false }, product = null)
 
     @Test
     fun `substitute runtimes supply module scopes and registrations that end with the module`() {

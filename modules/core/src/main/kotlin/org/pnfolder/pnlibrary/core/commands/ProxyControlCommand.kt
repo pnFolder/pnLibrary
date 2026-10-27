@@ -15,6 +15,7 @@ import org.pnfolder.pnlibrary.core.updates.catalog.ProxyUpdateCommand
  * | Command | What it does |
  * |---|---|
  * | `/pn events …` | the journal of events |
+ * | `/pn bus …` | listeners, calls and traces of the event bus |
  * | `/pn debug …` | the encrypted report for support |
  * | `/pn update …` | the update catalog, plan, staging and rollback; console only |
  *
@@ -27,9 +28,10 @@ class ProxyControlCommand(private val library: PnLibrary) {
     /** Builds the command: the shared `events` and `debug` commands and the update controls mounted under it. */
     fun definition(): CommandDefinition = command("pn") {
         aliases("pnlib", "pnlibrary")
-        executes { it.sender.send(Component.text("Команды pnLibrary: /pn events, /pn debug, /pn update")) }
+        executes { it.sender.send(Component.text("Команды pnLibrary: /pn events, /pn bus, /pn debug, /pn update")) }
         library.mountableCommand("events")?.let { mount("events", it) }
         library.mountableCommand("debug")?.let { mount("debug", it) }
+        mount("bus", EventBusCommand(library).definition())
         mount("update", ProxyUpdateCommand(library).definition())
     }
 }

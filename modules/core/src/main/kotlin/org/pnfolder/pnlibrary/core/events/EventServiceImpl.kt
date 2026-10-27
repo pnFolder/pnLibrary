@@ -1,21 +1,37 @@
 package org.pnfolder.pnlibrary.core.events
 
+import org.pnfolder.pnlibrary.api.events.DispatchMode
 import org.pnfolder.pnlibrary.api.events.Event
+import org.pnfolder.pnlibrary.api.events.EventDay
+import org.pnfolder.pnlibrary.api.events.EventInfo
+import org.pnfolder.pnlibrary.api.events.EventInspector
 import org.pnfolder.pnlibrary.api.events.EventListenerRegistration
 import org.pnfolder.pnlibrary.api.events.EventScope
 import org.pnfolder.pnlibrary.api.events.EventService
 import org.pnfolder.pnlibrary.api.events.EventSubscription
+import org.pnfolder.pnlibrary.api.events.EventTrace
+import org.pnfolder.pnlibrary.api.events.InternalEventApi
 import org.pnfolder.pnlibrary.api.events.Listener
+import org.pnfolder.pnlibrary.api.events.ListenerInfo
+import org.pnfolder.pnlibrary.api.events.ResultedEvent
+import org.pnfolder.pnlibrary.api.plugin.ModuleId
 import org.pnfolder.pnlibrary.api.plugin.PluginId
+import org.pnfolder.pnlibrary.common.concurrent.ManagedWorker
 import org.pnfolder.pnlibrary.common.lang.Failures
 import org.pnfolder.pnlibrary.common.lang.runCatchingNonFatal
+import java.util.concurrent.CompletableFuture
+import java.util.concurrent.CompletionStage
 import java.util.concurrent.CopyOnWriteArrayList
+import java.util.concurrent.Executor
 import java.util.concurrent.atomic.AtomicBoolean
 import java.util.concurrent.atomic.AtomicLong
+import java.util.concurrent.atomic.LongAdder
 import java.util.function.Consumer
+import java.util.function.Supplier
 
 /** Thread-safe, mode-aware implementation of the platform-independent event bus. */
 internal class EventServiceImpl(
+    private val history: EventHistory? = null,
     private val errorLogger: (PluginId, String, Throwable) -> Unit,
 ) : EventService {
 
@@ -24,16 +40,31 @@ internal class EventServiceImpl(
     private val sequence = AtomicLong()
     private val closed = AtomicBoolean(false)
 
-    override fun scope(pluginId: PluginId): EventScope {
+    override fun scope(pluginId: PluginId): EventScope = scopeFor(pluginId, pluginId, null)
+
+    override fun scope(pluginId: PluginId, plugin: PluginId, module: ModuleId): EventScope =
+        scopeFor(pluginId, plugin, module)
+
+    private fun scopeFor(pluginId: PluginId, plugin: PluginId, module: ModuleId?): EventScope {
         return synchronized(scopes) {
             check(!closed.get()) { "EventService is closed" }
-            scopes.getOrPut(pluginId) { Scope(pluginId) }
+            scopes.getOrPut(pluginId) { Scope(pluginId, plugin, module) }
         }
     }
 
-    override fun <E : Event> callEvent(event: E): E {
+    override fun <E : Event> callEvent(event: E): E = callAs(event, DispatchMode.SYNC)
+
+    private val worker = ManagedWorker("pnLibrary-events")
+
+    override fun <E : Event> callEventAsync(event: E): CompletionStage<E> = worker.submit { callAs(event, DispatchMode.ASYNC) }
+
+    override fun <E : Event> callEventAsync(event: E, executor: Executor): CompletionStage<E> =
+        CompletableFuture.supplyAsync(Supplier { callAs(event, DispatchMode.ASYNC) }, executor)
+
+    private fun <E : Event> callAs(event: E, mode: DispatchMode): E {
         check(!closed.get()) { "EventService is closed" }
-        dispatchInline(event)
+        dispatchInline(event, mode)
+        count(event)
         return event
     }
 
@@ -78,24 +109,127 @@ internal class EventServiceImpl(
         return built
     }
 
-    private fun dispatchInline(event: Event) {
+    /** Traced event types and their capacity; empty almost always, so dispatch only reads one volatile field. */
+    @Volatile private var traced: Map<Class<out Event>, Int> = emptyMap()
+    private val recorded = java.util.ArrayDeque<EventTrace>()
+
+    private class Counter(type: Class<*>) {
+        val type = java.lang.ref.WeakReference(type)
+        val calls = LongAdder()
+        val denied = LongAdder()
+    }
+
+    private val counters = java.util.concurrent.ConcurrentHashMap<String, Counter>()
+
+    private fun count(event: Event) {
+        val name = event.javaClass.name
+        val counter = counters[name] ?: counters.computeIfAbsent(name) { Counter(event.javaClass) }
+        counter.calls.increment()
+        if (!event.isAllowed) counter.denied.increment()
+        history?.record(name, !event.isAllowed)
+    }
+
+    override val inspector: EventInspector = object : EventInspector {
+        override fun listeners(eventType: Class<out Event>): List<ListenerInfo> =
+            handlersFor(eventType).filterNot { it.isClosed }.map { it.info() }
+
+        override fun listeners(): List<ListenerInfo> = subscriptions.asSequence()
+            .filterNot { it.isClosed }
+            .sortedWith(compareBy<Subscription<out Event>> { it.eventType.name }.thenBy { it.priority }.thenBy { it.order })
+            .map { it.info() }
+            .toList()
+
+        override fun eventType(name: String): Class<out Event>? {
+            val type = subscriptions.firstOrNull { !it.isClosed && it.eventType.name == name }?.eventType
+                ?: counters[name]?.type?.get()
+            return type?.asSubclass(Event::class.java)
+        }
+
+        override fun events(): List<EventInfo> {
+            val types = LinkedHashMap<String, Class<*>?>()
+            subscriptions.filterNot { it.isClosed }.forEach { types.putIfAbsent(it.eventType.name, it.eventType) }
+            counters.forEach { (name, counter) -> if (types[name] == null) types[name] = counter.type.get() }
+            return types.entries.map { (name, type) ->
+                val counter = counters[name]
+                val listeners = if (type == null) 0 else handlersFor(type).count { !it.isClosed }
+                EventInfo(name, listeners, counter?.calls?.sum() ?: 0, counter?.denied?.sum() ?: 0)
+            }.sortedBy { it.eventType }
+        }
+
+        override fun history(eventType: String?): List<EventDay> = history?.entries(eventType).orEmpty()
+
+        override val historyDays: Int get() = history?.retention ?: 0
+
+        override fun enableTracing(eventType: Class<out Event>, capacity: Int) {
+            require(capacity in 1..1_000) { "Trace capacity must be between 1 and 1000" }
+            synchronized(recorded) { traced = traced + (eventType to capacity) }
+        }
+
+        override fun disableTracing(eventType: Class<out Event>) {
+            synchronized(recorded) { traced = traced - eventType }
+        }
+
+        override fun tracedEvents(): List<String> = traced.keys.map { it.name }.sorted()
+
+        override fun traces(): List<EventTrace> = synchronized(recorded) { recorded.toList() }
+
+        override fun clearTraces() {
+            synchronized(recorded) { recorded.clear() }
+        }
+    }
+
+    private fun tracingCapacity(type: Class<*>): Int? =
+        traced.takeIf { it.isNotEmpty() }?.entries?.firstOrNull { it.key.isAssignableFrom(type) }?.value
+
+    private fun resultText(event: Event): String? = (event as? ResultedEvent<*>)?.result?.toString()
+
+    private fun record(event: Event, steps: List<EventTrace.Step>, capacity: Int, mode: DispatchMode) {
+        val trace = EventTrace(event.eventName, event.isAllowed, resultText(event), steps, mode, Thread.currentThread().name)
+        synchronized(recorded) {
+            recorded.addLast(trace)
+            while (recorded.size > capacity) recorded.removeFirst()
+        }
+    }
+
+    @OptIn(InternalEventApi::class)
+    private fun dispatchInline(event: Event, mode: DispatchMode) {
+        event.bindDispatch(mode, Thread.currentThread())
         val matching = handlersFor(event.javaClass)
+        val capacity = tracingCapacity(event.javaClass)
+        val steps = if (capacity != null) ArrayList<EventTrace.Step>(matching.size) else null
         for (index in matching.indices) {
             val subscription = matching[index]
             if (subscription.isClosed) continue
-            if (subscription.ignoreDenied && !event.isAllowed) continue
+            val before = if (steps != null) resultText(event) else null
+            if (subscription.ignoreDenied && !event.isAllowed) {
+                steps?.add(EventTrace.Step(subscription.scope.plugin, subscription.scope.module, subscription.priority, true, false, 0, before, before))
+                continue
+            }
+            val started = if (steps != null) System.nanoTime() else 0L
+            var failed = false
+            subscription.invocations.increment()
             try {
                 subscription.invoke(event)
             } catch (error: Throwable) {
+                failed = true
+                subscription.failures.increment()
                 // A broken listener is logged and skipped; a dying JVM (out of memory, stack overflow) is not ours to hide.
                 Failures.rethrowIfFatal(error)
                 errorLogger(
-                    subscription.scope.pluginId,
+                    subscription.scope.plugin,
                     "[pnLibrary/events] Listener failed for ${event.javaClass.name}",
                     error,
                 )
+            } finally {
+                steps?.add(
+                    EventTrace.Step(
+                        subscription.scope.plugin, subscription.scope.module, subscription.priority, false, failed,
+                        System.nanoTime() - started, before, resultText(event),
+                    ),
+                )
             }
         }
+        if (steps != null && capacity != null) record(event, steps, capacity, mode)
     }
 
     override fun unregisterAll(pluginId: PluginId) {
@@ -108,9 +242,11 @@ internal class EventServiceImpl(
         current.forEach { it.closeInternal() }
         subscriptions.clear()
         invalidateHandlers(null)
+        worker.close()
+        history?.close()
     }
 
-    private inner class Scope(override val pluginId: PluginId) : EventScope {
+    private inner class Scope(override val pluginId: PluginId, val plugin: PluginId, val module: ModuleId?) : EventScope {
         private val scopeClosed = AtomicBoolean(false)
         private val ownedSubscriptions = CopyOnWriteArrayList<Subscription<out Event>>()
         override val isClosed: Boolean get() = scopeClosed.get()
@@ -139,6 +275,14 @@ internal class EventServiceImpl(
             priority: Int,
             ignoreDenied: Boolean,
             listener: Consumer<E>,
+        ): EventSubscription = subscribe(eventType, priority, ignoreDenied, listener, listener.javaClass.name)
+
+        private fun <E : Event> subscribe(
+            eventType: Class<E>,
+            priority: Int,
+            ignoreDenied: Boolean,
+            listener: Consumer<E>,
+            source: String,
         ): EventSubscription {
             check(!closed.get() && !scopeClosed.get()) { "EventScope is closed" }
             val subscription = Subscription(
@@ -148,6 +292,7 @@ internal class EventServiceImpl(
                 ignoreDenied = ignoreDenied,
                 listener = listener,
                 order = sequence.getAndIncrement(),
+                source = source,
             )
             ownedSubscriptions += subscription
             subscriptions += subscription
@@ -184,6 +329,7 @@ internal class EventServiceImpl(
                 handler.annotation.priority,
                 handler.annotation.ignoreDenied,
                 Consumer { event -> handler.invoke(listener, event) },
+                "${listener.javaClass.name}#${handler.method.name}",
             )
         }
     }
@@ -195,9 +341,16 @@ internal class EventServiceImpl(
         val ignoreDenied: Boolean,
         private val listener: Consumer<E>,
         val order: Long,
+        val source: String,
     ) : EventSubscription {
+        val invocations = LongAdder()
+        val failures = LongAdder()
         private val subscriptionClosed = AtomicBoolean(false)
         override val isClosed: Boolean get() = subscriptionClosed.get()
+
+        fun info() = ListenerInfo(
+            scope.plugin, scope.module, eventType.name, priority, ignoreDenied, source, invocations.sum(), failures.sum(),
+        )
 
         fun invoke(event: Event) {
             listener.accept(eventType.cast(event))

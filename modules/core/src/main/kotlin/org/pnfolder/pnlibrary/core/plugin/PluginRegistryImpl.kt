@@ -150,7 +150,7 @@ internal class PluginRegistryImpl(
     ): Context {
         val owner = parent.owner
         val metadata = metadataFactory.create(owner, id, definition)
-        val resources = resourceFactory.create(owner, id, serviceKey, definition, productDescriptor)
+        val resources = resourceFactory.create(owner, id, serviceKey, parent.nativeId, definition, productDescriptor)
         return Context(
             parent = parent,
             id = id,
@@ -166,7 +166,7 @@ internal class PluginRegistryImpl(
 
     private inner class Plugin(
         override val owner: Any,
-        private val nativeId: PluginId,
+        val nativeId: PluginId,
         private val registrationId: Long,
     ) : PluginRegistration {
         private val moduleContexts = linkedMapOf<ModuleId, Context>()

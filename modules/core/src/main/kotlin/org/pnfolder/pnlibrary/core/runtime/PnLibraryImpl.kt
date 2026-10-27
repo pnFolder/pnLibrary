@@ -30,6 +30,7 @@ import org.pnfolder.pnlibrary.common.time.DisplayZone
 import org.pnfolder.pnlibrary.core.commands.standardCommandFeedback
 import org.pnfolder.pnlibrary.core.diagnostics.DiagnosticsRegistry
 import org.pnfolder.pnlibrary.core.diagnostics.diagnosticCommand
+import org.pnfolder.pnlibrary.core.events.EventHistory
 import org.pnfolder.pnlibrary.core.events.EventServiceImpl
 import org.pnfolder.pnlibrary.core.journal.joinDigest
 import org.pnfolder.pnlibrary.core.journal.journalCommand
@@ -177,7 +178,9 @@ internal class PnLibraryImpl(
     private val serviceManager get() = features.services
     override val services: ServiceManager get() = serviceManager
     override val expansions: ExpansionManager get() = features.expansions
-    private val eventService = EventServiceImpl { pluginId, message, error ->
+    private val eventService = EventServiceImpl(
+        EventHistory(dataFolder.resolve("event-history.tsv"), config.eventHistoryDays, { DisplayZone.zone }),
+    ) { pluginId, message, error ->
         val identifiedMessage = "[$pluginId] $message"
         recordAndLog(owner, identifiedMessage, error)
     }
