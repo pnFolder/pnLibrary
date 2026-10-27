@@ -11,7 +11,7 @@ import java.util.function.Supplier
 /**
  * Validated GitHub release and artifact-selection policy for one plugin.
  *
- * Use [builder] to configure the repository, channel, and at least one artifact. When
+ * Use [builder] to configure the repository (and, when its main branch is not `main`, the [branch]), channel, and at least one artifact. When
  * ranges overlap, [artifactFor] chooses the compatible artifact with the highest
  * [PluginUpdateArtifact.minimumJava], allowing newer runtimes to receive newer builds.
  *
@@ -31,6 +31,12 @@ class PluginUpdateRequest private constructor(builder: Builder) {
 
     /** GitHub repository name. */
     val repositoryName: String = builder.repositoryName
+
+    /** Branch of the repository that holds the release catalog; `main` unless [Builder.branch] says otherwise. */
+    val branch: String = builder.branch
+
+    /** Folder of the release catalog inside the repository; `.pnlibrary` unless [Builder.catalogPath] says otherwise. */
+    val catalogPath: String = builder.catalogPath
 
     private val channelSource: Supplier<UpdateChannel> = builder.channelSource
 
@@ -75,6 +81,8 @@ class PluginUpdateRequest private constructor(builder: Builder) {
     class Builder internal constructor() {
         internal var repositoryOwner = ""
         internal var repositoryName = ""
+        internal var branch = DEFAULT_BRANCH
+        internal var catalogPath = DEFAULT_CATALOG_PATH
         internal var channelSource: Supplier<UpdateChannel> = Supplier { UpdateChannel.STABLE }
         internal var automaticDownload = true
         internal val artifacts = mutableListOf<PluginUpdateArtifact>()
@@ -93,6 +101,27 @@ class PluginUpdateRequest private constructor(builder: Builder) {
             }
             repositoryOwner = owner
             repositoryName = name
+        }
+
+        /**
+         * Sets the branch that holds `releases.json`, for repositories whose main branch is not `main`
+         * (`master`, `develop`, ...). The default is `main`.
+         */
+        fun branch(name: String): Builder = apply {
+            require(name.matches(BRANCH) && !name.contains("..") && !name.startsWith("/") && !name.endsWith("/")) {
+                "Invalid branch name: $name"
+            }
+            branch = name
+        }
+
+        /**
+         * Sets the folder of the catalog inside the repository, for example `updates` to read
+         * `updates/releases.json`. The default is `.pnlibrary`.
+         */
+        fun catalogPath(path: String): Builder = apply {
+            val clean = path.trim('/')
+            require(clean.isNotEmpty() && clean.matches(BRANCH) && !clean.contains("..")) { "Invalid catalog path: $path" }
+            catalogPath = clean
         }
 
         /** Sets the default release channel of the plugin. An administrator's choice in pnLibrary overrides it. */
@@ -148,6 +177,13 @@ class PluginUpdateRequest private constructor(builder: Builder) {
     /** Java-friendly entry point for constructing validated update requests. */
     companion object {
         private val REPOSITORY_PART = Regex("[A-Za-z0-9_.-]+")
+        private val BRANCH = Regex("[A-Za-z0-9_./-]+")
+
+        /** Branch read when the plugin names none. */
+        const val DEFAULT_BRANCH = "main"
+
+        /** Catalog folder used when the plugin names none. */
+        const val DEFAULT_CATALOG_PATH = ".pnlibrary"
 
         /** Creates an empty update-request builder. */
         @JvmStatic

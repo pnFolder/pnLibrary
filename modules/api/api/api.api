@@ -3562,12 +3562,16 @@ public final class org/pnfolder/pnlibrary/api/updates/PluginUpdateArtifact {
 
 public final class org/pnfolder/pnlibrary/api/updates/PluginUpdateRequest {
 	public static final field Companion Lorg/pnfolder/pnlibrary/api/updates/PluginUpdateRequest$Companion;
+	public static final field DEFAULT_BRANCH Ljava/lang/String;
+	public static final field DEFAULT_CATALOG_PATH Ljava/lang/String;
 	public synthetic fun <init> (Lorg/pnfolder/pnlibrary/api/updates/PluginUpdateRequest$Builder;Lkotlin/jvm/internal/DefaultConstructorMarker;)V
 	public final fun artifactFor (I)Lorg/pnfolder/pnlibrary/api/updates/PluginUpdateArtifact;
 	public final fun artifactFor (ILorg/pnfolder/pnlibrary/api/platform/PlatformType;)Lorg/pnfolder/pnlibrary/api/updates/PluginUpdateArtifact;
 	public static final fun builder ()Lorg/pnfolder/pnlibrary/api/updates/PluginUpdateRequest$Builder;
 	public final fun getArtifacts ()Ljava/util/List;
 	public final fun getAutomaticDownload ()Z
+	public final fun getBranch ()Ljava/lang/String;
+	public final fun getCatalogPath ()Ljava/lang/String;
 	public final fun getChannel ()Lorg/pnfolder/pnlibrary/api/updates/UpdateChannel;
 	public final fun getConfigurationBackup ()Lorg/pnfolder/pnlibrary/api/updates/backup/UpdateConfigurationBackup;
 	public final fun getRepositoryName ()Ljava/lang/String;
@@ -3583,7 +3587,9 @@ public final class org/pnfolder/pnlibrary/api/updates/PluginUpdateRequest$Builde
 	public static synthetic fun artifact$default (Lorg/pnfolder/pnlibrary/api/updates/PluginUpdateRequest$Builder;Ljava/lang/String;ILjava/lang/Integer;ILjava/lang/Object;)Lorg/pnfolder/pnlibrary/api/updates/PluginUpdateRequest$Builder;
 	public static synthetic fun artifact$default (Lorg/pnfolder/pnlibrary/api/updates/PluginUpdateRequest$Builder;Ljava/lang/String;Lorg/pnfolder/pnlibrary/api/platform/PlatformType;ILjava/lang/Integer;ILjava/lang/Object;)Lorg/pnfolder/pnlibrary/api/updates/PluginUpdateRequest$Builder;
 	public final fun automaticDownload (Z)Lorg/pnfolder/pnlibrary/api/updates/PluginUpdateRequest$Builder;
+	public final fun branch (Ljava/lang/String;)Lorg/pnfolder/pnlibrary/api/updates/PluginUpdateRequest$Builder;
 	public final fun build ()Lorg/pnfolder/pnlibrary/api/updates/PluginUpdateRequest;
+	public final fun catalogPath (Ljava/lang/String;)Lorg/pnfolder/pnlibrary/api/updates/PluginUpdateRequest$Builder;
 	public final fun channel (Ljava/util/function/Supplier;)Lorg/pnfolder/pnlibrary/api/updates/PluginUpdateRequest$Builder;
 	public final fun channel (Lorg/pnfolder/pnlibrary/api/updates/UpdateChannel;)Lorg/pnfolder/pnlibrary/api/updates/PluginUpdateRequest$Builder;
 	public final fun configurationBackup (Ljava/nio/file/Path;[Ljava/lang/String;)Lorg/pnfolder/pnlibrary/api/updates/PluginUpdateRequest$Builder;

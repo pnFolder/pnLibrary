@@ -62,6 +62,29 @@ class ReleaseCatalogGatewayTest {
         }
     }
 
+    @Test
+    fun `reads the catalog from the requested branch and folder and names the address when it is missing`() {
+        val executor = Executors.newFixedThreadPool(4)
+        val requested = java.util.concurrent.CopyOnWriteArrayList<String>()
+        val http = object : TrustedHttpClient(Duration.ofSeconds(1), Duration.ofSeconds(1)) {
+            override fun get(uri: URI, maximumBytes: Int): ByteArray {
+                requested += uri.toString()
+                throw java.io.IOException("HTTP 404")
+            }
+        }
+        val client = ReleaseCatalogClient(http, ReleaseCatalogStore(temporaryDirectory.resolve("branch")), executor, Duration.ofMinutes(30))
+        try {
+            val error = org.junit.jupiter.api.Assertions.assertThrows(Exception::class.java) {
+                ReleaseCatalogGateway(client, http, executor).load("PnFolder", "pnCases", RefreshMode.FORCE_REMOTE, "master", "updates")
+            }
+            val raw = "https://raw.githubusercontent.com/PnFolder/pnCases/refs/heads/master/updates/releases.json"
+            org.junit.jupiter.api.Assertions.assertTrue(requested.contains(raw), requested.toString())
+            org.junit.jupiter.api.Assertions.assertTrue(generateSequence(error as Throwable) { it.cause }.any { it.message?.contains(raw) == true })
+        } finally {
+            executor.shutdownNow()
+        }
+    }
+
     private fun catalogJson(): String = """
         {
           "schema": 1,
