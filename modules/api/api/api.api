@@ -3038,19 +3038,39 @@ public final class org/pnfolder/pnlibrary/api/remote/RemotePolicyExplanation$Com
 
 public final class org/pnfolder/pnlibrary/api/remote/RemotePolicyResult {
 	public static final field Companion Lorg/pnfolder/pnlibrary/api/remote/RemotePolicyResult$Companion;
-	public synthetic fun <init> (ZLorg/pnfolder/pnlibrary/api/remote/RemotePolicyExplanation;Lkotlin/jvm/internal/DefaultConstructorMarker;)V
+	public synthetic fun <init> (ZLorg/pnfolder/pnlibrary/api/remote/RemotePolicyExplanation;Ljava/lang/String;Ljava/lang/String;Ljava/util/Map;Ljava/util/List;Ljava/util/Map;Lkotlin/jvm/internal/DefaultConstructorMarker;)V
 	public static final fun allow ()Lorg/pnfolder/pnlibrary/api/remote/RemotePolicyResult;
+	public static final fun allowing (Ljava/lang/String;)Lorg/pnfolder/pnlibrary/api/remote/RemotePolicyResult$Builder;
 	public static final fun deny (Ljava/lang/String;)Lorg/pnfolder/pnlibrary/api/remote/RemotePolicyResult;
 	public static final fun deny (Lorg/pnfolder/pnlibrary/api/remote/RemotePolicyExplanation;)Lorg/pnfolder/pnlibrary/api/remote/RemotePolicyResult;
+	public static final fun denying (Ljava/lang/String;)Lorg/pnfolder/pnlibrary/api/remote/RemotePolicyResult$Builder;
 	public final fun getAllowed ()Z
+	public final fun getDetails ()Ljava/util/Map;
 	public final fun getExplanation ()Lorg/pnfolder/pnlibrary/api/remote/RemotePolicyExplanation;
+	public final fun getHeadline ()Ljava/lang/String;
+	public final fun getLinks ()Ljava/util/Map;
 	public final fun getMessage ()Ljava/lang/String;
+	public final fun getStatus ()Ljava/lang/String;
+	public final fun getSteps ()Ljava/util/List;
+}
+
+public final class org/pnfolder/pnlibrary/api/remote/RemotePolicyResult$Builder {
+	public final fun build ()Lorg/pnfolder/pnlibrary/api/remote/RemotePolicyResult;
+	public final fun detail (Ljava/lang/String;Ljava/lang/Object;)Lorg/pnfolder/pnlibrary/api/remote/RemotePolicyResult$Builder;
+	public final fun headline (Ljava/lang/String;)Lorg/pnfolder/pnlibrary/api/remote/RemotePolicyResult$Builder;
+	public final fun link (Ljava/lang/String;Ljava/lang/String;)Lorg/pnfolder/pnlibrary/api/remote/RemotePolicyResult$Builder;
+	public final fun reason (Ljava/lang/String;)Lorg/pnfolder/pnlibrary/api/remote/RemotePolicyResult$Builder;
+	public final fun reason (Ljava/lang/String;Ljava/util/function/Consumer;)Lorg/pnfolder/pnlibrary/api/remote/RemotePolicyResult$Builder;
+	public final fun status (Ljava/lang/String;)Lorg/pnfolder/pnlibrary/api/remote/RemotePolicyResult$Builder;
+	public final fun step (Ljava/lang/String;)Lorg/pnfolder/pnlibrary/api/remote/RemotePolicyResult$Builder;
 }
 
 public final class org/pnfolder/pnlibrary/api/remote/RemotePolicyResult$Companion {
 	public final fun allow ()Lorg/pnfolder/pnlibrary/api/remote/RemotePolicyResult;
+	public final fun allowing (Ljava/lang/String;)Lorg/pnfolder/pnlibrary/api/remote/RemotePolicyResult$Builder;
 	public final fun deny (Ljava/lang/String;)Lorg/pnfolder/pnlibrary/api/remote/RemotePolicyResult;
 	public final fun deny (Lorg/pnfolder/pnlibrary/api/remote/RemotePolicyExplanation;)Lorg/pnfolder/pnlibrary/api/remote/RemotePolicyResult;
+	public final fun denying (Ljava/lang/String;)Lorg/pnfolder/pnlibrary/api/remote/RemotePolicyResult$Builder;
 }
 
 public final class org/pnfolder/pnlibrary/api/remote/RemotePolicySettings {

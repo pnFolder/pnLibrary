@@ -16,6 +16,8 @@ dependencies {
     implementation(project(":modules:features:currency-api"))
     implementation(project(":platforms:bukkit:api"))
     implementation(libs.kotlin.stdlib)
+    implementation(project(":platforms:loader"))
+    implementation(libs.libby.bukkit)
     implementation(libs.faststats.bukkit.j8)
     api(project(":modules:common"))
     api(project(":modules:console"))

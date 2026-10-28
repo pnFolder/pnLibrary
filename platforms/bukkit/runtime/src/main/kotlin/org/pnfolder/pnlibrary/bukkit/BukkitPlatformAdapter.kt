@@ -125,8 +125,20 @@ internal class BukkitPlatformAdapter(
 
     /** Disables an installed native plugin through Bukkit's plugin manager. */
     override fun disableOwner(owner: Any): Boolean {
-        Bukkit.getPluginManager().disablePlugin(plugins.requireInstalled(owner, "Disabled owner"))
+        val installed = plugins.requireInstalled(owner, "Disabled owner")
+        BukkitDependentGuard.disableDependentsOf(installed) { plugin.logger.warning(it) }
+        Bukkit.getPluginManager().disablePlugin(installed)
         return true
+    }
+
+    /** Disables dependents as they enable and switches [owner] off once the server has started. */
+    override fun disableDependents(owner: Any): Boolean {
+        if (owner !== plugin) return false
+        val later: (Runnable) -> Unit = { task ->
+            if (ServerCapabilities.isFolia) schedulerBridge.executeGlobal(task)
+            else Bukkit.getScheduler().runTask(plugin, task)
+        }
+        return runCatchingNonFatal { BukkitDependentGuard(plugin, later) { plugin.logger.warning(it) }.arm() }.isSuccess
     }
 
     /** Registers or removes the observer of server and plugin warnings, errors and uncaught thread exceptions. */

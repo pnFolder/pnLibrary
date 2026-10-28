@@ -66,6 +66,7 @@ fun ShadowJar.applyCommonConfig() {
     relocate("com.google.gson",         "org.pnfolder.pnlibrary.libs.gson")
     relocate("org.yaml.snakeyaml",      "org.pnfolder.pnlibrary.libs.yaml")
     relocate("org.bstats",              "org.pnfolder.pnlibrary.libs.bstats")
+    relocate("net.byteflux.libby",      "org.pnfolder.pnlibrary.libs.libby")
 
     exclude("META-INF/versions/**")
     exclude("module-info.class")
@@ -140,20 +141,50 @@ dependencies {
     universalRuntime(project(":platforms:velocity:faststats"))
 }
 
+// The universal JAR is light: Kotlin and Adventure are not packed. At start, Libby (packed and relocated) downloads
+// them from Maven Central, checking the SHA-256 listed in the loader module's RuntimeLibraries.
+// The platform JARs above stay complete.
 tasks.register<ShadowJar>("shadowUniversal") {
     group = "distribution"
-    description = "Universal fat JAR for Bukkit/Paper, BungeeCord and Velocity"
+    description = "Light universal JAR for Bukkit/Paper, BungeeCord and Velocity; Kotlin and Adventure are downloaded at start"
     archiveBaseName = "${rootProject.property("pnlibrary.name")}"
     configurations = listOf(universalRuntime)
     applyCommonConfig()
     archiveClassifier = "universal"
+    dependencies {
+        exclude(dependency("org.jetbrains.kotlin:.*"))
+        exclude(dependency("org.jetbrains:annotations"))
+        exclude(dependency("org.intellij:annotations"))
+        exclude(dependency("net.kyori:.*"))
+    }
+    filesMatching("plugin.yml") { expand("version" to pnVer) }
+    filesMatching("bungee.yml") { expand("version" to pnVer) }
+    filesMatching("velocity-plugin.json") { expand("version" to pnVer) }
+}
+
+// The same universal JAR with Kotlin and Adventure packed, for servers that cannot reach a repository at start or
+// when a download must never be needed. It is a manual download: it is not in the release catalog, because the
+// updater picks one UNIVERSAL file per release and two would be ambiguous. LibraryLoader sees Kotlin already there
+// and downloads nothing.
+tasks.register<ShadowJar>("shadowUniversalFull") {
+    group = "distribution"
+    description = "Complete universal JAR for Bukkit/Paper, BungeeCord and Velocity; nothing is downloaded at start"
+    archiveBaseName = "${rootProject.property("pnlibrary.name")}"
+    configurations = listOf(universalRuntime)
+    applyCommonConfig()
+    archiveClassifier = "universal-full"
+    dependsOn("generateUniversalMetadata")
+    from(layout.buildDirectory.dir("generated/pnlibraryMetadata/universal"))
     filesMatching("plugin.yml") { expand("version" to pnVer) }
     filesMatching("bungee.yml") { expand("version" to pnVer) }
     filesMatching("velocity-plugin.json") { expand("version" to pnVer) }
 }
 
 tasks.named("build") {
-    dependsOn("shadowBukkit", "shadowBungee", "shadowVelocity", "shadowUniversal", "shadowUpdater", "copyDeveloperArtifacts")
+    dependsOn(
+        "shadowBukkit", "shadowBungee", "shadowVelocity", "shadowUniversal", "shadowUniversalFull",
+        "shadowUpdater", "copyDeveloperArtifacts",
+    )
 }
 
 // A separate classpath avoids locking the plugin JAR that the updater must replace on Windows.
