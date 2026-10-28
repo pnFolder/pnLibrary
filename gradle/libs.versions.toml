@@ -5,7 +5,7 @@ dokka                   = "2.2.0"
 mavenPublish            = "0.35.0"
 gson                    = "2.11.0"
 snakeyaml               = "2.3"
-junit                   = "5.11.4"
+junit                   = "5.14.4"
 mockito                 = "5.20.0"
 spigot18                = "1.8.8-R0.1-SNAPSHOT"
 paper                   = "1.21.4-R0.1-SNAPSHOT"
@@ -22,7 +22,7 @@ kotlin-compiler-embeddable = { module = "org.jetbrains.kotlin:kotlin-compiler-em
 gson                      = { module = "com.google.code.gson:gson",                              version.ref = "gson"                   }
 snakeyaml                 = { module = "org.yaml:snakeyaml",                                     version.ref = "snakeyaml"              }
 junit-jupiter             = { module = "org.junit.jupiter:junit-jupiter",                        version.ref = "junit"                  }
-junit-launcher            = { module = "org.junit.platform:junit-platform-launcher",             version = "1.11.4"                     }
+junit-launcher            = { module = "org.junit.platform:junit-platform-launcher",             version = "1.14.4"                     }
 mockito-core              = { module = "org.mockito:mockito-core",                               version.ref = "mockito"                }
 mockito-kotlin            = { module = "org.mockito.kotlin:mockito-kotlin",                      version = "5.4.0"                      }
 h2                        = { module = "com.h2database:h2",                                      version = "2.2.224"                    }
