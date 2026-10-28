@@ -1,0 +1,39 @@
+package org.pnfolder.pnlibrary.core.events
+
+import org.junit.jupiter.api.Assertions.assertEquals
+import org.junit.jupiter.api.Assertions.assertTrue
+import org.junit.jupiter.api.Test
+import org.junit.jupiter.api.io.TempDir
+import java.nio.file.Files
+import java.nio.file.Path
+import java.time.LocalDate
+
+class EventHistoryTest {
+    @Test
+    fun `counts calls per day and survives a restart`(@TempDir dir: Path) {
+        val file = dir.resolve("history.tsv")
+        EventHistory(file, 30).use { history ->
+            history.record("a.Buy", denied = false)
+            history.record("a.Buy", denied = true)
+            history.record("a.Join", denied = false)
+        }
+        val reloaded = EventHistory(file, 30)
+        val buy = reloaded.entries("a.Buy").single()
+        assertEquals(2L, buy.calls)
+        assertEquals(1L, buy.denied)
+        assertEquals(LocalDate.now(), buy.date)
+        assertEquals(2, reloaded.entries().size)
+    }
+
+    @Test
+    fun `drops days older than the retention and keeps nothing at zero`(@TempDir dir: Path) {
+        val file = dir.resolve("history.tsv")
+        val old = LocalDate.now().minusDays(40)
+        val recent = LocalDate.now().minusDays(2)
+        Files.write(file, ("$old\ta.Buy\t5\t0\n$recent\ta.Buy\t3\t1\nbroken line\n").toByteArray(Charsets.UTF_8))
+        assertEquals(listOf(recent), EventHistory(file, 30).entries().map { it.date })
+        val off = EventHistory(file, 0)
+        off.record("a.Buy", denied = false)
+        assertTrue(off.entries().isEmpty())
+    }
+}

@@ -44,6 +44,6 @@ class ProxyControlCommandTest {
         val route = CommandTreeRouter().route(definition, CommandContext(sender, emptyList(), "pn", "")) as CommandRoute.Executable
         route.node.execution.execute(route.context).toCompletableFuture().join()
 
-        assertEquals(listOf("Команды pnLibrary: /pn events, /pn debug, /pn update"), sent)
+        assertEquals(listOf("Команды pnLibrary: /pn events, /pn bus, /pn debug, /pn update"), sent)
     }
 }

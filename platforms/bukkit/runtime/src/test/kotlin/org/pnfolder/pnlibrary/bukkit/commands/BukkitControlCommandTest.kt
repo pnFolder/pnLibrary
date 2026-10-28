@@ -37,10 +37,10 @@ class BukkitControlCommandTest {
         // The root has no permission of its own: every administrative word asks for pnlibrary.admin by itself.
         assertEquals(null, definition.permission)
         assertEquals(
-            listOf("status", "check", "updates", "update", "support", "error", "error-repeat", "error-chain", "money"),
+            listOf("status", "check", "updates", "update", "support", "error", "error-repeat", "error-chain", "bus", "money"),
             definition.root.children.map { it.name },
         )
-        val administrative = definition.root.children.filter { it.name != "money" }
+        val administrative = definition.root.children.filter { it.name != "money" && it.name != "bus" }
         assertTrue(administrative.all { it.permission == "pnlibrary.admin" }, administrative.map { it.name }.toString())
         val update = definition.root.children.single { it.name == "update" }
         val catalog = definition.root.children.single { it.name == "updates" }

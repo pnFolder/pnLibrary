@@ -90,3 +90,71 @@ PnLibraryProvider.get().events.callEventAsync(event, executor)   // CompletionSt
 
 Для работы с миром передайте executor, который переходит на главный поток сервера. Вызов события после закрытия шины и подписка
 в закрытой области (`EventScope`) бросают `IllegalStateException`. Закрытие модуля снимает все его подписки.
+
+## 7. Трассировка: кто что изменил
+
+Если результат события оказался неожиданным, включите запись:
+
+```kotlin
+val events = PnLibraryProvider.get().events
+events.inspector.enableTracing(ShopPurchaseEvent::class.java, capacity = 32)
+
+ShopPurchaseEvent(player, 1500).callEvent()
+
+events.inspector.traces().last().steps.forEach { step ->
+    println("${step.plugin}/${step.module} priority=${step.priority} skipped=${step.skipped} failed=${step.failed} " +
+        "${step.resultBefore} -> ${step.resultAfter} (${step.nanos} ns)")
+}
+events.inspector.disableTracing(ShopPurchaseEvent::class.java)
+```
+
+Для каждого слушателя видно, плагин и приоритет, пропущен ли он из-за `ignoreDenied`, упал ли он, сколько занял и
+как изменил результат. Результаты сравниваются по `toString()`, поэтому дайте своему классу результата понятный
+`toString()`. Для типов, которые не записываются, трассировка ничего не стоит.
+
+## 8. Кто подписан на событие
+
+Список слушателей доступен и тогда, когда событие ещё ни разу не вызывали:
+
+```kotlin
+val events = PnLibraryProvider.get().events
+
+events.inspector.listenerCount(ShopPurchaseEvent::class.java)          // сколько слушателей получат событие
+events.inspector.listeners(ShopPurchaseEvent::class.java).forEach {     // в порядке вызова
+    println("${it.plugin}/${it.module} priority=${it.priority} ignoreDenied=${it.ignoreDenied} ${it.source} " +
+        "runs=${it.invocations} failures=${it.failures}")
+}
+events.inspector.listeners()                                            // все слушатели всех плагинов
+```
+
+В списке для события есть и слушатели его родительских классов, потому что они тоже его получат. `source` показывает
+`Класс#метод` для `@EventHandler` или класс лямбды. Счётчики `invocations` и `failures` ведутся с момента регистрации.
+
+Все эти методы собраны в отдельном классе `EventInspector` (`events.inspector`). Там же:
+
+```kotlin
+val bus = PnLibraryProvider.get().events.inspector
+bus.events()                                     // каждое событие: слушателей, вызовов, отказов
+bus.plugins(ShopPurchaseEvent::class.java)       // какие плагины слушают
+bus.listeners(PluginId.of("shop"), ModuleId.of("cart"))  // слушатели одного модуля
+```
+
+В игре и в консоли то же самое показывает команда `/pn bus` (право `pnlibrary.events.bus`).
+
+## 9. История вызовов по дням
+
+pnLibrary считает, сколько раз в какой день вызвали каждое событие и сколько вызовов были отклонены. Счётчики лежат в
+`event-history.tsv` в папке данных и переживают перезапуск; запись идёт в фоне не чаще раза в минуту и при остановке.
+
+```kotlin
+val bus = PnLibraryProvider.get().events.inspector
+bus.historyDays                                   // сколько дней хранится
+bus.history().forEach { println("${it.date} ${it.eventType} ${it.calls} ${it.denied}") }
+bus.history("com.shop.ShopPurchaseEvent")         // только одно событие, новые дни первыми
+```
+
+Срок хранения задаётся только в коде: `PnLibraryConfig(eventHistoryDays = 90)` (по умолчанию 30, от 0 до 3650;
+`0` отключает историю). В файле настроек pnLibrary этого параметра нет, пользователи его не меняют. Старые дни удаляются сами.
+
+В игре и консоли: `/pn bus history [страница]` показывает дни «Сегодня», «Вчера» и даты, а `/pn bus history of <событие>`
+только одно событие. Строки с полосками, клик по строке открывает событие.

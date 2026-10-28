@@ -10,6 +10,7 @@ import org.pnfolder.pnlibrary.api.commands.command
 import org.pnfolder.pnlibrary.api.currency.CurrencyProviderRegistry
 import org.pnfolder.pnlibrary.api.runtime.PnLibrary
 import org.pnfolder.pnlibrary.bukkit.currency.CurrencyCommandExecutor
+import org.pnfolder.pnlibrary.core.commands.EventBusCommand
 import org.pnfolder.pnlibrary.core.lifecycle.mountableCommand
 import org.pnfolder.pnlibrary.core.updates.catalog.UpdateCatalogCommands
 import org.pnfolder.pnlibrary.core.updates.catalog.UpdateCatalogRoutes
@@ -27,6 +28,7 @@ import org.pnfolder.pnlibrary.core.updates.catalog.UpdateCatalogRoutes
  * | `/pn update confirm <token>` | carries out what the token was issued for | `pnlibrary.admin` |
  * | `/pn update status [plugin]` | the state of the update plan | `pnlibrary.admin` |
  * | `/pn events …` | the journal of events | `pnlibrary.events.view` |
+ * | `/pn bus …` | listeners, calls and traces of the event bus | `pnlibrary.events.bus` |
  * | `/pn debug …` | the encrypted report for support | `pnlibrary.debug` |
  * | `/pn money …` | currencies and balances | as in the currency settings |
  * | `/pn support`, `error …` | the support link, test errors | `pnlibrary.admin` |
@@ -111,6 +113,7 @@ internal class BukkitControlCommand(
         }
         library.mountableCommand("events")?.let { mount("events", it) }
         library.mountableCommand("debug")?.let { mount("debug", it) }
+        mount("bus", EventBusCommand(library).definition())
         mount("money", CurrencyCommandExecutor(plugin, currencies).definition())
         literal("support") {
             permission(ADMIN)
@@ -140,6 +143,7 @@ internal class BukkitControlCommand(
         if (sender.hasPermission(ADMIN)) return catalog.showList(context)
         val available = buildList {
             if (sender.hasPermission("pnlibrary.events.view")) add("/pn events")
+            if (sender.hasPermission("pnlibrary.events.bus")) add("/pn bus")
             if (sender.hasPermission("pnlibrary.debug")) add("/pn debug")
             add("/pn money")
         }

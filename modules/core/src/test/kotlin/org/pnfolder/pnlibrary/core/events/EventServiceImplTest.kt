@@ -4,6 +4,7 @@ import net.kyori.adventure.text.Component
 import org.junit.jupiter.api.Assertions.*
 import org.junit.jupiter.api.Test
 import org.pnfolder.pnlibrary.api.events.*
+import org.pnfolder.pnlibrary.api.plugin.ModuleId
 import org.pnfolder.pnlibrary.api.plugin.PluginId
 import org.pnfolder.pnlibrary.api.runtime.PnLibrary
 import org.pnfolder.pnlibrary.api.runtime.PnLibraryProvider
@@ -41,6 +42,80 @@ class EventServiceImplTest {
             assertEquals("handled", event.value)
             assertFalse(event.isAllowed)
             assertEquals(Component.text("nope"), event.denyReason)
+        }
+    }
+
+    @Test
+    fun `tracing records each listener with its effect on the result`() {
+        EventServiceImpl { _, _, _ -> }.use { events ->
+            val scope = events.scope(PluginId.of("test"))
+            scope.subscribe(ResultEvent::class.java, EventPriority.LOW, Consumer {
+                it.result = ResultedEvent.ComponentResult.denied(Component.text("nope"))
+            })
+            scope.subscribe(ResultEvent::class.java, EventPriority.NORMAL, true, Consumer { error("skipped") })
+            scope.subscribe(ResultEvent::class.java, EventPriority.HIGH, Consumer { error("boom") })
+            events.callEvent(ResultEvent())
+            assertTrue(events.inspector.traces().isEmpty())
+
+            events.inspector.enableTracing(ResultEvent::class.java, 2)
+            repeat(3) { events.callEvent(ResultEvent()) }
+            val traces = events.inspector.traces()
+            assertEquals(2, traces.size)
+            val trace = traces.last()
+            assertFalse(trace.allowed)
+            assertEquals("denied", trace.result)
+            assertEquals(3, trace.steps.size)
+            assertTrue(trace.steps[0].changedResult)
+            assertEquals("allowed", trace.steps[0].resultBefore)
+            assertTrue(trace.steps[1].skipped)
+            assertTrue(trace.steps[2].failed)
+
+            events.inspector.disableTracing(ResultEvent::class.java)
+            events.callEvent(ResultEvent())
+            assertEquals(2, events.inspector.traces().size)
+            events.inspector.clearTraces()
+            assertTrue(events.inspector.traces().isEmpty())
+        }
+    }
+
+    @Test
+    fun `listeners lists subscribers before any event is called`() {
+        EventServiceImpl { _, _, _ -> }.use { events ->
+            val a = events.scope(PluginId.of("m-a"), PluginId.of("shop"), ModuleId.of("cart"))
+            val b = events.scope(PluginId.of("b"))
+            a.subscribe(ResultEvent::class.java, EventPriority.HIGH, Consumer { })
+            b.subscribe(ResultEvent::class.java, EventPriority.LOW, true, Consumer { error("boom") })
+            a.subscribe(TestEvent::class.java, EventPriority.NORMAL, Consumer { })
+
+            assertEquals(2, events.inspector.listenerCount(ResultEvent::class.java))
+            val result = events.inspector.listeners(ResultEvent::class.java)
+            assertEquals(listOf(EventPriority.LOW, EventPriority.HIGH), result.map { it.priority })
+            assertTrue(result[0].ignoreDenied)
+            assertEquals("shop", result[1].plugin.value)
+            assertEquals("cart", result[1].module?.value)
+            assertNull(result[0].module)
+            assertEquals(0, result[0].invocations)
+            assertEquals(3, events.inspector.listeners().size)
+
+            events.callEvent(ResultEvent())
+            val after = events.inspector.listeners(ResultEvent::class.java)
+            assertEquals(1, after[0].invocations)
+            assertEquals(1, after[0].failures)
+            assertEquals(0, after[1].failures)
+        }
+    }
+
+    @Test
+    fun `inspector counts calls and resolves event types by name`() {
+        EventServiceImpl { _, _, _ -> }.use { events ->
+            events.scope(PluginId.of("a")).subscribe(ResultEvent::class.java, Consumer { })
+            assertEquals(ResultEvent::class.java, events.inspector.eventType(ResultEvent::class.java.name))
+            events.callEvent(ResultEvent())
+            events.callEvent(ResultEvent())
+            val info = events.inspector.event(ResultEvent::class.java)!!
+            assertEquals(1, info.listeners)
+            assertEquals(2, info.calls)
+            assertEquals(listOf(PluginId.of("a")), events.inspector.plugins(ResultEvent::class.java))
         }
     }
 
@@ -241,6 +316,37 @@ class EventServiceImplTest {
                 assertEquals("event-test-worker", listenerThread.get().name)
             }
         } finally { executor.shutdownNow() }
+    }
+
+    @Test
+    fun `async call without executor uses the bus thread and traces the mode`() {
+        EventServiceImpl { _, _, _ -> }.use { events ->
+            events.scope(PluginId.of("test")).subscribe(TestEvent::class.java, Consumer { })
+            events.inspector.enableTracing(TestEvent::class.java)
+            val caller = Thread.currentThread().name
+            events.callEventAsync(TestEvent()).toCompletableFuture().get(5, java.util.concurrent.TimeUnit.SECONDS)
+            events.callEvent(TestEvent())
+            val (async, sync) = events.inspector.traces()
+            assertEquals(org.pnfolder.pnlibrary.api.events.DispatchMode.ASYNC, async.mode)
+            assertEquals("pnLibrary-events", async.thread)
+            assertEquals(org.pnfolder.pnlibrary.api.events.DispatchMode.SYNC, sync.mode)
+            assertEquals(caller, sync.thread)
+        }
+    }
+
+    @Test
+    fun `event knows its dispatch mode and thread`() {
+        EventServiceImpl { _, _, _ -> }.use { events ->
+            val seen = java.util.concurrent.CopyOnWriteArrayList<Boolean>()
+            events.scope(PluginId.of("test")).subscribe(TestEvent::class.java, Consumer { seen += it.isAsync })
+            val event = TestEvent()
+            assertEquals(null, event.dispatchMode)
+            events.callEvent(event)
+            assertEquals(org.pnfolder.pnlibrary.api.events.DispatchMode.SYNC, event.dispatchMode)
+            events.callEventAsync(event).toCompletableFuture().get(5, java.util.concurrent.TimeUnit.SECONDS)
+            assertEquals("pnLibrary-events", event.dispatchThread?.name)
+            assertEquals(listOf(false, true), seen.toList())
+        }
     }
 
     @Test

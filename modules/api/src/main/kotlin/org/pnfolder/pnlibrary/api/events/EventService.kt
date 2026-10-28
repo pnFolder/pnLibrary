@@ -1,11 +1,10 @@
 package org.pnfolder.pnlibrary.api.events
 
+import org.pnfolder.pnlibrary.api.plugin.ModuleId
 import org.pnfolder.pnlibrary.api.plugin.PluginId
-import java.util.concurrent.CompletableFuture
 import java.util.concurrent.CompletionStage
 import java.util.concurrent.Executor
 import java.util.function.Consumer
-import java.util.function.Supplier
 
 /**
  * Process-wide platform-independent event bus.
@@ -20,6 +19,12 @@ import java.util.function.Supplier
 interface EventService : AutoCloseable {
     /** Returns the existing plugin scope or creates it atomically. */
     fun scope(pluginId: PluginId): EventScope
+
+    /**
+     * Returns the scope of one module. [pluginId] is the unique key of the scope; [plugin] and [module] are the
+     * names reported by [inspector] and [EventTrace] for everything registered through it.
+     */
+    fun scope(pluginId: PluginId, plugin: PluginId, module: ModuleId): EventScope
 
     /** Registers all annotated methods from [listener] under [pluginId]. */
     fun register(pluginId: PluginId, listener: Listener): EventListenerRegistration =
@@ -48,12 +53,21 @@ interface EventService : AutoCloseable {
     fun <E : Event> callEvent(event: E): E
 
     /**
+     * Dispatches [event] on the bus's own background thread ([DispatchMode.ASYNC]) and completes with the same
+     * instance once every listener has run. Listeners must not touch the game world; use the overload with an
+     * executor when they need to.
+     */
+    fun <E : Event> callEventAsync(event: E): CompletionStage<E>
+
+    /**
      * Dispatches [event] on [executor] and completes with the same instance once every listener has run.
      * Listeners then run on the executor's thread, not the caller's, so pass a platform-appropriate executor
      * (for example one that hops to the server thread) when listeners touch the game world.
      */
-    fun <E : Event> callEventAsync(event: E, executor: Executor): CompletionStage<E> =
-        CompletableFuture.supplyAsync(Supplier { callEvent(event) }, executor)
+    fun <E : Event> callEventAsync(event: E, executor: Executor): CompletionStage<E>
+
+    /** Read-only view of listeners, call counters and traces of this bus. */
+    val inspector: EventInspector
 
     /** Removes and closes the scope belonging to [pluginId]. */
     fun unregisterAll(pluginId: PluginId)

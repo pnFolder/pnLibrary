@@ -52,6 +52,7 @@ internal class ModuleResourceFactory(
         owner: Any,
         moduleId: ModuleId,
         moduleKey: PluginId,
+        pluginId: PluginId,
         definition: ModuleDefinitionBuilder,
         product: ProductDescriptor?,
     ): ModuleResources {
@@ -69,7 +70,7 @@ internal class ModuleResourceFactory(
 
         try {
             taskScope = tasks.scope(owner, moduleKey)
-            eventScope = events.scope(moduleKey)
+            eventScope = events.scope(moduleKey, pluginId, moduleId)
             configScope = configurations.scope(owner, moduleKey)
             placeholderScope = placeholders.scope(moduleKey, definition.placeholderApiEnabled)
             currencyScope = currency.scope(moduleKey, placeholderScope)
