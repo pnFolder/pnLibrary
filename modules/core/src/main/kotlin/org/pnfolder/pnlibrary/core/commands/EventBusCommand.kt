@@ -494,6 +494,7 @@ class EventBusCommand(private val library: PnLibrary) {
 
     private fun shortName(name: String): String = name.substringAfterLast('.')
 
+    /** Constants of the `/pn bus` command. */
     companion object {
         /** Permission of the whole `/pn bus` tree. */
         const val PERMISSION = "pnlibrary.events.bus"
