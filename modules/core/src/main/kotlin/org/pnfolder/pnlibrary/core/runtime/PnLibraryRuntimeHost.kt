@@ -73,7 +73,7 @@ class PnLibraryRuntimeHost private constructor(
          * The policy of pnLibrary itself on Bukkit, Velocity and BungeeCord, published in the `pnlibrary-policy`
          * repository. It executes Java code with the server's permissions, so only that trusted source is used.
          *
-         * Checks begin after native readiness, asynchronously, and repeat every six hours. Only an explicit denial
+         * Checks begin after native readiness, asynchronously, and repeat every two hours. Only an explicit denial
          * stops pnLibrary (a library has no module to stop, so DISABLE_PLUGIN is the only valid action). A policy that
          * cannot be downloaded or compiled at start, for example offline or on a JRE without `javac`, stops pnLibrary
          * too; after one successful check such a failure only logs a warning.
