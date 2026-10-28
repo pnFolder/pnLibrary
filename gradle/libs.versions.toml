@@ -15,6 +15,7 @@ adventure               = "4.17.0"
 adventure-platform      = "4.4.1"
 placeholderapi          = "2.12.3"
 faststats               = "0.29.0"
+libby                   = "1.3.2"
 
 [libraries]
 kotlin-stdlib             = { module = "org.jetbrains.kotlin:kotlin-stdlib",                     version.ref = "kotlin"                 }
@@ -41,6 +42,10 @@ placeholderapi            = { module = "me.clip:placeholderapi",                
 faststats-bukkit-j8       = { module = "dev.faststats.metrics.j8:bukkit", version.ref = "faststats" }
 faststats-bungeecord-j8   = { module = "dev.faststats.metrics.j8:bungeecord", version.ref = "faststats" }
 faststats-core-j8         = { module = "dev.faststats.metrics.j8:core", version.ref = "faststats" }
+libby-core                = { module = "net.byteflux:libby-core",                               version.ref = "libby"                    }
+libby-bukkit              = { module = "net.byteflux:libby-bukkit",                             version.ref = "libby"                    }
+libby-bungee              = { module = "net.byteflux:libby-bungee",                             version.ref = "libby"                    }
+libby-velocity            = { module = "net.byteflux:libby-velocity",                           version.ref = "libby"                    }
 faststats-velocity        = { module = "dev.faststats.metrics:velocity", version.ref = "faststats" }
 
 [plugins]

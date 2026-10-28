@@ -13,6 +13,8 @@ dependencies {
     implementation(project(":modules:core"))
     implementation(project(":platforms:bungee:api"))
     implementation(libs.kotlin.stdlib)
+    implementation(project(":platforms:loader"))
+    implementation(libs.libby.bungee)
     implementation(libs.faststats.bungeecord.j8)
     implementation(libs.adventure.legacy)
     compileOnly(libs.bungeecord.api)

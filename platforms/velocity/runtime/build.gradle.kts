@@ -14,6 +14,8 @@ dependencies {
     implementation(project(":modules:core"))
     implementation(project(":platforms:velocity:api"))
     implementation(libs.kotlin.stdlib)
+    implementation(project(":platforms:loader"))
+    implementation(libs.libby.velocity)
     // The adapter is instantiated only after the factory checks for Java 21. The bridge is built for Java 21,
     // so this Java 17 module asks for that variant explicitly instead of failing Gradle's JVM-version matching.
     compileOnly(project(":platforms:velocity:faststats")) {
@@ -74,44 +76,109 @@ val generateVelocityDescriptor by tasks.registering {
             |}
             |""".trimMargin(),
         )
-        val target = descriptorDir.get().file("org/pnfolder/pnlibrary/velocity/PnLibraryVelocityPlugin.kt").asFile
+        val target = descriptorDir.get().file("org/pnfolder/pnlibrary/velocity/PnLibraryVelocityPlugin.java").asFile
         target.parentFile.mkdirs()
         val authorLiterals = authors.joinToString(", ") { "\"$it\"" }
         target.writeText(
             """
-            |package org.pnfolder.pnlibrary.velocity
+            |package org.pnfolder.pnlibrary.velocity;
             |
-            |import com.google.inject.Inject
-            |import com.velocitypowered.api.event.Subscribe
-            |import com.velocitypowered.api.event.proxy.ProxyInitializeEvent
-            |import com.velocitypowered.api.event.proxy.ProxyShutdownEvent
-            |import com.velocitypowered.api.plugin.Plugin
-            |import com.velocitypowered.api.plugin.annotation.DataDirectory
-            |import com.velocitypowered.api.proxy.ProxyServer
-            |import org.slf4j.Logger
-            |import java.nio.file.Path
+            |import com.google.inject.Inject;
+            |import com.velocitypowered.api.event.Subscribe;
+            |import com.velocitypowered.api.event.proxy.ProxyInitializeEvent;
+            |import com.velocitypowered.api.event.proxy.ProxyShutdownEvent;
+            |import com.velocitypowered.api.plugin.Plugin;
+            |import com.velocitypowered.api.plugin.annotation.DataDirectory;
+            |import com.velocitypowered.api.proxy.ProxyServer;
+            |import java.lang.reflect.Constructor;
+            |import java.lang.reflect.InvocationTargetException;
+            |import java.lang.reflect.Method;
+            |import java.nio.file.Path;
+            |import net.byteflux.libby.VelocityLibraryManager;
+            |import org.pnfolder.pnlibrary.loader.LibraryLoader;
+            |import org.pnfolder.pnlibrary.loader.LibrarySettings;
+            |import org.pnfolder.pnlibrary.loader.StartupFailure;
+            |import org.pnfolder.pnlibrary.console.ConsoleTheme;
+            |import net.kyori.adventure.text.Component;
+            |import org.pnfolder.pnlibrary.loader.RuntimeLibraries;
+            |import org.slf4j.Logger;
             |
-            |/** Generated from gradle.properties. Change the pnlibrary.* keys there, not this file. */
+            |/**
+            | * Generated from gradle.properties. Change the pnlibrary.* keys there, not this file.
+            | *
+            | * <p>Plain Java on purpose: the light JAR has no Kotlin until {@link LibraryLoader} has added it,
+            | * so the Kotlin runtime is created by reflection after that.
+            | */
             |@Plugin(
-            |    id = "$productId",
-            |    name = "$productName",
-            |    version = "$productVersion",
-            |    description = "$description",
-            |    url = "$repositoryUrl",
-            |    authors = [$authorLiterals],
+            |    id = "\"$productId\"",
+            |    name = "\"$productName\"",
+            |    version = "\"$productVersion\"",
+            |    description = "\"$description\"",
+            |    url = "\"$repositoryUrl\"",
+            |    authors = {$authorLiterals}
             |)
-            |class PnLibraryVelocityPlugin @Inject constructor(
-            |    server: ProxyServer,
-            |    logger: Logger,
-            |    @DataDirectory dataDirectory: Path,
-            |) {
-            |    private val runtime = VelocityRuntime(this, server, logger, dataDirectory)
+            |public final class PnLibraryVelocityPlugin {
+            |    private static final String RUNTIME = "org.pnfolder.pnlibrary.velocity.VelocityRuntime";
+            |
+            |    private final ProxyServer server;
+            |    private final Logger logger;
+            |    private final Path dataDirectory;
+            |    private Object runtime;
+            |
+            |    @Inject
+            |    public PnLibraryVelocityPlugin(ProxyServer server, Logger logger, @DataDirectory Path dataDirectory) {
+            |        this.server = server;
+            |        this.logger = logger;
+            |        this.dataDirectory = dataDirectory;
+            |    }
             |
             |    @Subscribe
-            |    fun onInitialize(event: ProxyInitializeEvent) = runtime.onInitialize(event)
+            |    public void onInitialize(ProxyInitializeEvent event) throws Exception {
+            |        LibrarySettings settings = LibrarySettings.DEFAULT;
+            |        try {
+            |            ClassLoader loader = getClass().getClassLoader();
+            |            LibraryLoader.load(new VelocityLibraryManager<>(logger, dataDirectory, server.getPluginManager(), this, settings.directoryFor(dataDirectory)), loader, settings, RuntimeLibraries.VELOCITY);
+            |            Class<?> type = Class.forName(RUNTIME, true, loader);
+            |            Constructor<?> constructor = type.getConstructors()[0];
+            |            runtime = constructor.newInstance(this, server, logger, dataDirectory);
+            |            invoke("onInitialize", event);
+            |        } catch (Exception | LinkageError failure) {
+            |            runtime = null;
+            |            report(settings, failure);
+            |        }
+            |    }
+            |
+            |    private void report(LibrarySettings settings, Throwable failure) {
+            |        try {
+            |            StartupFailure.report(ConsoleTheme.plain(),
+            |                line -> server.getConsoleCommandSource().sendMessage(Component.text(line)), settings,
+            |                dataDirectory, failure);
+            |        } catch (RuntimeException | LinkageError cardFailed) {
+            |            logger.error("pnLibrary could not start: " + failure);
+            |        }
+            |    }
             |
             |    @Subscribe
-            |    fun onShutdown(event: ProxyShutdownEvent) = runtime.onShutdown(event)
+            |    public void onShutdown(ProxyShutdownEvent event) throws Exception {
+            |        if (runtime != null) {
+            |            invoke("onShutdown", event);
+            |        }
+            |    }
+            |
+            |    private void invoke(String name, Object event) throws Exception {
+            |        for (Method method : runtime.getClass().getMethods()) {
+            |            if (method.getName().equals(name) && method.getParameterCount() == 1) {
+            |                try {
+            |                    method.invoke(runtime, event);
+            |                } catch (InvocationTargetException failure) {
+            |                    if (failure.getCause() instanceof Exception) throw (Exception) failure.getCause();
+            |                    throw failure;
+            |                }
+            |                return;
+            |            }
+            |        }
+            |        throw new NoSuchMethodException(name);
+            |    }
             |}
             |""".trimMargin(),
         )
@@ -119,9 +186,10 @@ val generateVelocityDescriptor by tasks.registering {
 }
 
 kotlin.sourceSets.named("main") {
-    kotlin.srcDir(descriptorDir)
     resources.srcDir(descriptorResources)
 }
+sourceSets.named("main") { java.srcDir(descriptorDir) }
 tasks.named("compileKotlin") { dependsOn(generateVelocityDescriptor) }
+tasks.named("compileJava") { dependsOn(generateVelocityDescriptor) }
 tasks.named("processResources") { dependsOn(generateVelocityDescriptor) }
 tasks.matching { it.name == "sourcesJar" }.configureEach { dependsOn(generateVelocityDescriptor) }

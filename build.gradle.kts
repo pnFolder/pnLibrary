@@ -56,6 +56,7 @@ subprojects {
         maven("https://repo.md-5.net/content/repositories/snapshots/")          { name = "bungeecord" }
         maven("https://repo.extendedclip.com/releases/")                        { name = "placeholderapi" }
         maven("https://repo.faststats.dev/releases")                            { name = "faststats" }
+        maven("https://repo.alessiodp.com/releases/")                          { name = "libby" }
     }
 
     // Bytecode and API level: Java 8 unless a module sets `pn.java.release` in its gradle.properties
