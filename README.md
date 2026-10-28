@@ -85,6 +85,7 @@ API содержит только интерфейсы и модели, реал
 - [События: слушатели, приоритеты, результаты](docs/events.md)
 - [Конфигурации](docs/configuration.md)
 - [Обновления: команды, права, откат](docs/updates.md)
+- [Подключение плагина к pnLibrary: для людей и ИИ](integration/README.md)
 - [Папка `.pnlibrary` в репозитории плагина](docs/repository.md)
 - [Валюта](docs/currency.md)
 - [Локализация Minecraft](docs/localization.md)

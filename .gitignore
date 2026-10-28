@@ -16,3 +16,6 @@ __pycache__/
 
 # Local agent notes
 .superpowers/
+
+# Local handoff notes
+/handoff.md
