@@ -171,6 +171,7 @@ public abstract interface class org/pnfolder/pnlibrary/spi/platform/PlatformLogg
 }
 
 public abstract interface class org/pnfolder/pnlibrary/spi/platform/PlatformOwnerControl {
+	public fun disableDependents (Ljava/lang/Object;)Z
 	public fun disableOwner (Ljava/lang/Object;)Z
 	public fun remotePolicyContext (Ljava/lang/Object;Ljava/util/Map;)Lorg/pnfolder/pnlibrary/api/remote/RemotePolicyContext;
 }

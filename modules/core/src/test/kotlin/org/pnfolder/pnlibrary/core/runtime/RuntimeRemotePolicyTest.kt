@@ -18,6 +18,7 @@ import org.pnfolder.pnlibrary.api.runtime.PnLibrary
 import org.pnfolder.pnlibrary.api.tasks.*
 import org.pnfolder.pnlibrary.common.minecraft.MinecraftVersion
 import org.pnfolder.pnlibrary.core.lifecycle.RuntimeResources
+import org.pnfolder.pnlibrary.core.remote.PolicyDeniedException
 import org.pnfolder.pnlibrary.core.runtime.details.RuntimeRemotePolicy
 import org.pnfolder.pnlibrary.spi.platform.PlatformAdapter
 import java.nio.file.Files
@@ -46,7 +47,7 @@ class RuntimeRemotePolicyTest {
     }
 
     @Test
-    fun `library policy waits for readiness schedules once and uses library owned tasks`() {
+    fun `library policy is checked at start, then scheduled once after readiness with library owned tasks`() {
         val fixture = fixture(PlatformType.BUKKIT)
         val policy = policy("AllowPolicy", true)
         fixture.start(policy)
@@ -54,42 +55,64 @@ class RuntimeRemotePolicyTest {
         fixture.ready.single().run()
         fixture.ready.single().run()
         assertEquals(policy.checkEvery, fixture.task!!.interval)
+        assertEquals(policy.checkEvery, fixture.task!!.delay)
         assertEquals(TaskExecution.Kind.ASYNC, fixture.task!!.execution.kind)
         verify(fixture.tasks, times(1)).schedule(policyArgument(TaskSpec::class.java))
-        verify(fixture.platform).remotePolicyContext(fixture.owner, policy.values)
+        verify(fixture.platform, atLeastOnce()).remotePolicyContext(fixture.owner, policy.values)
         verify(fixture.library, never()).plugins
     }
 
     @Test
-    fun `allowed and denied decisions use the same engine on all three platforms`() {
+    fun `a denial stops startup before the plugin reports itself enabled on all three platforms`() {
         for (type in listOf(PlatformType.BUKKIT, PlatformType.VELOCITY, PlatformType.BUNGEECORD)) {
-            for (allowed in listOf(true, false)) {
-                val fixture = fixture(type)
-                fixture.start(policy("Policy${type.name}$allowed", allowed))
-                fixture.ready.single().run()
-                fixture.task!!.action.run(mock(TaskContext::class.java))
-                assertEquals(if (allowed) 0 else 1, fixture.closes, "$type, allowed=$allowed")
-                if (!allowed) verify(fixture.platform).disableOwner(fixture.owner)
-                else verify(fixture.platform, never()).disableOwner(fixture.owner)
-            }
+            val fixture = fixture(type)
+            assertThrows(PolicyDeniedException::class.java) { fixture.start(policy("Denied${type.name}", false)) }
+            assertTrue(fixture.ready.isEmpty(), "$type schedules nothing after a denial")
+            assertNull(fixture.task)
+            verify(fixture.platform).disableDependents(fixture.owner)
+            verify(fixture.platform).disableOwner(fixture.owner)
         }
     }
 
     @Test
-    fun `native disabling is used when supported and closure is the proxy fallback`() {
+    fun `an allowed policy keeps the plugin running on all three platforms`() {
+        for (type in listOf(PlatformType.BUKKIT, PlatformType.VELOCITY, PlatformType.BUNGEECORD)) {
+            val fixture = fixture(type)
+            fixture.start(policy("Allowed${type.name}", true))
+            fixture.ready.single().run()
+            fixture.task!!.action.run(mock(TaskContext::class.java))
+            assertEquals(0, fixture.closes, "$type")
+            verify(fixture.platform, never()).disableOwner(fixture.owner)
+        }
+    }
+
+    @Test
+    fun `a platform that guards dependents switches the owner off itself`() {
         val fixture = fixture(PlatformType.BUKKIT)
-        `when`(fixture.platform.disableOwner(fixture.owner)).thenReturn(true)
-        fixture.start(policy("DeniedPolicy", false))
+        `when`(fixture.platform.disableDependents(fixture.owner)).thenReturn(true)
+        assertThrows(PolicyDeniedException::class.java) { fixture.start(policy("GuardedPolicy", false)) }
+        verify(fixture.platform).disableDependents(fixture.owner)
+        verify(fixture.platform, never()).disableOwner(fixture.owner)
+    }
+
+    @Test
+    fun `a later denial disables the owner and closes the runtime only without native support`() {
+        val fixture = fixture(PlatformType.BUKKIT)
+        val file = directory.resolve("FlipPolicy.java")
+        val allow = policy("FlipPolicy", true)
+        fixture.start(allow)
         fixture.ready.single().run()
+        Files.write(file, Files.readAllBytes(file).toString(Charsets.UTF_8)
+            .replace("RemotePolicyResult.allow()", "RemotePolicyResult.deny(\"No longer supported\")").toByteArray())
         fixture.task!!.action.run(mock(TaskContext::class.java))
         verify(fixture.platform).disableOwner(fixture.owner)
-        assertEquals(0, fixture.closes)
+        assertEquals(1, fixture.closes)
     }
 
     @Test
     fun `a policy that cannot be checked keeps the library running when told to`() {
         val missing = RemotePolicySettings.builder().source(directory.resolve("Missing.java").toUri().toString())
-            .onError(org.pnfolder.pnlibrary.api.remote.PolicyErrorAction.KEEP_RUNNING).build()
+            .onError(PolicyErrorAction.KEEP_RUNNING).build()
         val fixture = fixture(PlatformType.BUKKIT)
         fixture.start(missing)
         fixture.ready.single().run()
@@ -100,21 +123,15 @@ class RuntimeRemotePolicyTest {
 
     @Test
     fun `a policy that cannot be checked at start stops the plugin, but after one success a failure only warns`() {
-        val untilChecked = org.pnfolder.pnlibrary.api.remote.PolicyErrorAction.DENY_UNTIL_CHECKED
+        val untilChecked = PolicyErrorAction.DENY_UNTIL_CHECKED
         val missing = RemotePolicySettings.builder().source(directory.resolve("Absent.java").toUri().toString())
             .onError(untilChecked).build()
-        val atStart = fixture(PlatformType.BUKKIT)
-        atStart.start(missing)
-        atStart.ready.single().run()
-        atStart.task!!.action.run(mock(TaskContext::class.java))
-        assertEquals(1, atStart.closes)
+        assertThrows(PolicyDeniedException::class.java) { fixture(PlatformType.BUKKIT).start(missing) }
 
-        val allowed = policy("LaterPolicy", true)
-        val checkedOnce = allowed.copy(onError = untilChecked)
+        val checkedOnce = policy("LaterPolicy", true).copy(onError = untilChecked)
         val later = fixture(PlatformType.BUKKIT)
         later.start(checkedOnce)
         later.ready.single().run()
-        later.task!!.action.run(mock(TaskContext::class.java))
         Files.delete(directory.resolve("LaterPolicy.java"))
         later.task!!.action.run(mock(TaskContext::class.java))
         assertEquals(0, later.closes)
@@ -124,31 +141,25 @@ class RuntimeRemotePolicyTest {
     @Test
     fun `unreadable policy and setup failures stop the library rather than ignore its policy`() {
         val missing = RemotePolicySettings.builder().source(directory.resolve("Missing.java").toUri().toString()).build()
-        val fixture = fixture(PlatformType.VELOCITY)
-        fixture.start(missing)
-        fixture.ready.single().run()
-        fixture.task!!.action.run(mock(TaskContext::class.java))
-        assertEquals(1, fixture.closes)
+        assertThrows(PolicyDeniedException::class.java) { fixture(PlatformType.VELOCITY).start(missing) }
 
         val unsupported = fixture(PlatformType.BUNGEECORD)
         val policy = policy("SetupPolicy", true)
         `when`(unsupported.platform.remotePolicyContext(unsupported.owner, policy.values)).thenThrow(UnsupportedOperationException("not supported"))
-        unsupported.start(policy)
-        unsupported.ready.single().run()
-        assertEquals(1, unsupported.closes)
+        assertThrows(UnsupportedOperationException::class.java) { unsupported.start(policy) }
         assertNull(unsupported.task)
     }
 
     @Test
     fun `shutdown prevents pending startup and already scheduled policy callbacks`() {
         val beforeReady = fixture(PlatformType.BUKKIT)
-        beforeReady.start(policy("ClosedPolicy", false))
+        beforeReady.start(policy("ClosedPolicy", true))
         beforeReady.closed = true
         beforeReady.ready.single().run()
         assertNull(beforeReady.task)
 
         val afterReady = fixture(PlatformType.VELOCITY)
-        afterReady.start(policy("LatePolicy", false))
+        afterReady.start(policy("LatePolicy", false).copy(source = policy("LateAllow", true).source))
         afterReady.ready.single().run()
         afterReady.closed = true
         afterReady.task!!.action.run(mock(TaskContext::class.java))

@@ -10,4 +10,11 @@ interface PlatformOwnerControl {
 
     /** Disables the native plugin [owner]; returns `false` when the platform cannot do it. */
     fun disableOwner(owner: Any): Boolean = false
+
+    /**
+     * Stops plugins that depend on [owner] from running while [owner] itself is being switched off, including those
+     * the server has not enabled yet, and switches [owner] off once the server has started.
+     * Returns `false` when the platform cannot do it; the caller then disables [owner] directly.
+     */
+    fun disableDependents(owner: Any): Boolean = false
 }

@@ -5,10 +5,12 @@ import static org.junit.jupiter.api.Assertions.assertTrue;
 
 import java.lang.reflect.InvocationTargetException;
 import java.nio.file.Paths;
+import java.util.ArrayList;
 import java.util.List;
 import net.byteflux.libby.Library;
 import org.junit.jupiter.api.Test;
 import org.pnfolder.pnlibrary.console.ConsoleTheme;
+import org.pnfolder.pnlibrary.console.ReportedFailure;
 
 class StartupFailureTest {
     private static final Library LIBRARY =
@@ -64,5 +66,19 @@ class StartupFailureTest {
         String text = render(error, settings);
 
         assertTrue(text.indexOf("mine.example") < text.indexOf("repo1.maven.org"), text);
+    }
+
+    @Test
+    void aFailureThatWasAlreadyExplainedPrintsNoSecondCard() {
+        class Explained extends RuntimeException implements ReportedFailure {
+        }
+        List<String> printed = new ArrayList<>();
+        Throwable wrapped = new InvocationTargetException(new Explained());
+
+        StartupFailure.report(ConsoleTheme.plain(), printed::add, LibrarySettings.DEFAULT, Paths.get("srv", "plugins"), wrapped);
+
+        assertTrue(StartupFailure.isReported(wrapped));
+        assertTrue(printed.isEmpty());
+        assertFalse(StartupFailure.isReported(new IllegalStateException("boom")));
     }
 }

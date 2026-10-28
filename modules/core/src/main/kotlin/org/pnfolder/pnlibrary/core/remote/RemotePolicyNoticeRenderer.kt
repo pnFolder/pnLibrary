@@ -4,6 +4,7 @@ import org.pnfolder.pnlibrary.api.chat.ChatTone
 import org.pnfolder.pnlibrary.api.plugin.PluginMetadata
 import org.pnfolder.pnlibrary.api.remote.DenyAction
 import org.pnfolder.pnlibrary.api.remote.RemotePolicyExplanation
+import org.pnfolder.pnlibrary.api.remote.RemotePolicyResult
 import org.pnfolder.pnlibrary.api.remote.RemotePolicySettings
 import org.pnfolder.pnlibrary.api.runtime.PnLibraryIdentity
 import org.pnfolder.pnlibrary.common.text.RussianText
@@ -20,6 +21,19 @@ internal class RemotePolicyNoticeRenderer(private val logging: PlatformLogging) 
         policy: RemotePolicySettings,
         allowed: Boolean,
         explanation: RemotePolicyExplanation,
+    ) = render(owner, metadata, policy, allowed, explanation, null)
+
+    /** Prints the card for a policy decision, including the custom status, details, steps and links it carries. */
+    fun render(owner: Any, metadata: PluginMetadata, policy: RemotePolicySettings, result: RemotePolicyResult) =
+        render(owner, metadata, policy, result.allowed, result.explanation, result)
+
+    private fun render(
+        owner: Any,
+        metadata: PluginMetadata,
+        policy: RemotePolicySettings,
+        allowed: Boolean,
+        explanation: RemotePolicyExplanation,
+        result: RemotePolicyResult?,
     ) {
         val action = when {
             allowed -> "Плагин продолжает работу"
@@ -32,14 +46,26 @@ internal class RemotePolicyNoticeRenderer(private val logging: PlatformLogging) 
             .mascot(
                 if (allowed) "^.^" else "x.x",
                 metadata.name,
-                if (allowed) "версия поддерживается" else "для запуска требуется обновление",
+                result?.headline ?: if (allowed) "версия поддерживается" else "для запуска требуется обновление",
             )
             .blank()
             .detail("Установлена", metadata.version)
-            .lastDetail("Состояние", if (allowed) "совместима" else "не поддерживается")
+        result?.details?.forEach { (label, value) -> card.detail(label, value) }
+        card.lastDetail("Состояние", result?.status ?: if (allowed) "совместима" else "не поддерживается")
             .blank()
             .section(if (allowed) "Результат" else "Почему запуск остановлен")
             .tree(explanation.toConsoleTree())
+        if (result != null && result.steps.isNotEmpty()) {
+            card.section("Что делать")
+            result.steps.dropLast(1).forEach { card.item(it) }
+            card.lastItem(result.steps.last())
+        }
+        if (result != null && result.links.isNotEmpty()) {
+            card.section("Ссылки")
+            val links = result.links.entries.toList()
+            links.dropLast(1).forEach { card.item(it.key + ": " + it.value) }
+            card.lastItem(links.last().key + ": " + links.last().value)
+        }
         if (!allowed) card.section("Не получается?").lastItem("Напишите в поддержку: " + support(policy))
         card.blank()
             .status(action)

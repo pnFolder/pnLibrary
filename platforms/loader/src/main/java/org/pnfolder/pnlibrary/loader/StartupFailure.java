@@ -7,6 +7,7 @@ import java.util.List;
 import org.pnfolder.pnlibrary.console.ConsoleCard;
 import org.pnfolder.pnlibrary.console.ConsoleSink;
 import org.pnfolder.pnlibrary.console.ConsoleTheme;
+import org.pnfolder.pnlibrary.console.ReportedFailure;
 
 /**
  * The console card shown when pnLibrary cannot start: what went wrong, what to do about it and where to ask.
@@ -54,9 +55,17 @@ public final class StartupFailure {
                 .build();
     }
 
-    /** Builds the card and prints it line by line. */
+    /** Whether {@code error} was already explained in the console, so no second card is wanted. */
+    public static boolean isReported(Throwable error) {
+        return unwrap(error) instanceof ReportedFailure;
+    }
+
+    /** Builds the card and prints it line by line, unless the error was already explained. */
     public static void report(ConsoleTheme theme, ConsoleSink sink, LibrarySettings settings, Path dataFolder,
                               Throwable error) {
+        if (isReported(error)) {
+            return;
+        }
         card(theme, settings, dataFolder, error).send(sink);
     }
 

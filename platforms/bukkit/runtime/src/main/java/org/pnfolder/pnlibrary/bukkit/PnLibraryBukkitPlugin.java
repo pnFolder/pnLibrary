@@ -31,7 +31,10 @@ public final class PnLibraryBukkitPlugin extends JavaPlugin {
             type.getMethod("start").invoke(runtime);
         } catch (ReflectiveOperationException | RuntimeException | LinkageError failure) {
             report(settings, failure);
-            getServer().getPluginManager().disablePlugin(this);
+            if (!StartupFailure.isReported(failure)) {
+                // A policy denial switches pnLibrary off itself, once the plugins that depend on it have been stopped.
+                getServer().getPluginManager().disablePlugin(this);
+            }
         }
     }
 
