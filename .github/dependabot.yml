@@ -1,0 +1,30 @@
+version: 2
+updates:
+  - package-ecosystem: gradle
+    directory: /
+    schedule:
+      interval: weekly
+    open-pull-requests-limit: 5
+    target-branch: main
+    commit-message:
+      prefix: "deps"
+    groups:
+      kotlin:
+        patterns:
+          - "org.jetbrains.kotlin*"
+      adventure:
+        patterns:
+          - "net.kyori*"
+      junit:
+        patterns:
+          - "org.junit*"
+    ignore:
+      # The runtime targets Java 8 and old servers, so major jumps are reviewed by hand.
+      - dependency-name: "*"
+        update-types: ["version-update:semver-major"]
+  - package-ecosystem: github-actions
+    directory: /
+    schedule:
+      interval: weekly
+    commit-message:
+      prefix: "ci"

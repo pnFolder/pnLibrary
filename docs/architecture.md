@@ -95,7 +95,9 @@ Velocity требует 17, Paper Brigadier и FastStats для Velocity тре�
 | `platforms/velocity/faststats` | мост FastStats для Velocity (Java 21) |
 | `distribution` | сборка jar-файлов и офлайн-установщика обновлений |
 | `examples/acceptance-bukkit` | приёмочный плагин на Java |
-| `tools/release`, `tools/api` | скрипты, которые запускает CI: выпуск релиза и проверка поколения API |
+| `examples/bootstrap-bukkit` | пример плагина со встроенным установщиком pnLibrary |
+| `integration` | инструкция для авторов плагинов и ИИ, заготовка папки `.pnlibrary`, см. [integration/README.md](../integration/README.md) |
+| `tools/release`, `tools/api`, `tools/ci` | скрипты, которые запускает CI: выпуск релиза, проверка поколения API, подготовка нативных сборок |
 | `tools/support` | `decode_pnsupport.py`: расшифровка отчётов `/pn debug` |
 
 ## Пакеты `core`
