@@ -20,6 +20,7 @@ import java.lang.reflect.Constructor;
 public final class PnLibraryBukkitPlugin extends JavaPlugin {
     private Object runtime;
 
+    /** Starts the runtime; a refused remote policy or failed startup disables the plugin. */
     @Override
     public void onEnable() {
         LibrarySettings settings = LibrarySettings.DEFAULT;
@@ -49,6 +50,7 @@ public final class PnLibraryBukkitPlugin extends JavaPlugin {
         }
     }
 
+    /** Stops the runtime and releases everything it registered. */
     @Override
     public void onDisable() {
         if (runtime == null) {

@@ -54,6 +54,7 @@ class PaperNativeCommandRegistrar(
         )
     }
 
+    /** Registers [command] natively through Paper's Brigadier API on behalf of [owner]. */
     override fun register(
         owner: Any,
         command: CommandDefinition,

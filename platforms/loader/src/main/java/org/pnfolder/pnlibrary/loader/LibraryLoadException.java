@@ -6,7 +6,9 @@ import net.byteflux.libby.Library;
 public final class LibraryLoadException extends RuntimeException {
     private static final long serialVersionUID = 1L;
 
+    /** The failed library as {@code group:name:version}. */
     private final String library;
+    /** How many times the download was tried. */
     private final int attempts;
 
     LibraryLoadException(Library library, int attempts, Throwable cause) {
@@ -19,12 +21,20 @@ public final class LibraryLoadException extends RuntimeException {
         return library.getGroupId() + ":" + library.getArtifactId() + ":" + library.getVersion();
     }
 
-    /** The library as {@code group:name:version}. */
+    /**
+     * The library that failed.
+     *
+     * @return the library as {@code group:name:version}
+     */
     public String library() {
         return library;
     }
 
-    /** How many times the download was tried. */
+    /**
+     * How many times the download was tried.
+     *
+     * @return the number of attempts made
+     */
     public int attempts() {
         return attempts;
     }

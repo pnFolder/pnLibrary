@@ -43,12 +43,15 @@ class CatalogSource @JvmOverloads constructor(
     /** Short human-readable form, for example `PnFolder/pnCases@master:updates`. */
     override fun toString(): String = "$owner/$repository@$branch:$path"
 
+    /** Two sources are equal when owner, repository, branch and path all match. */
     override fun equals(other: Any?): Boolean =
         other is CatalogSource && owner == other.owner && repository == other.repository &&
             branch == other.branch && path == other.path
 
+    /** Hash consistent with [equals]. */
     override fun hashCode(): Int = arrayOf(owner, repository, branch, path).contentHashCode()
 
+    /** Constants and factories for [CatalogSource]. */
     companion object {
         private val REPOSITORY_PART = Regex("[A-Za-z0-9_.-]+")
         private val NAME = Regex("[A-Za-z0-9_./-]+")

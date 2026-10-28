@@ -16,7 +16,15 @@ public final class LibraryLoader {
     private LibraryLoader() {
     }
 
-    /** Loads {@code libraries} as {@code settings} say, unless Kotlin is already visible to {@code loader}. */
+    /**
+     * Loads {@code libraries} as {@code settings} say, unless Kotlin is already visible to {@code loader}.
+     *
+     * @param manager Libby manager that downloads and attaches the JARs
+     * @param loader class loader the libraries must become visible to
+     * @param settings folder, repositories and retry policy
+     * @param libraries libraries to load, in order
+     * @throws LibraryLoadException if a library cannot be loaded after every attempt
+     */
     public static void load(LibraryManager manager, ClassLoader loader, LibrarySettings settings, Library... libraries) {
         if (present(loader)) {
             return;

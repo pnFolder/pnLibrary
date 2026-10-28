@@ -21,7 +21,15 @@ public final class StartupFailure {
     private StartupFailure() {
     }
 
-    /** Builds the card for {@code error}. */
+    /**
+     * Builds the card for {@code error}.
+     *
+     * @param theme console colours and symbols
+     * @param settings library settings, to name the repositories and folder in the advice
+     * @param dataFolder the plugin's own data folder
+     * @param error what stopped startup
+     * @return the finished card
+     */
     public static ConsoleCard card(ConsoleTheme theme, LibrarySettings settings, Path dataFolder, Throwable error) {
         Throwable cause = unwrap(error);
         ConsoleCard.Builder card = ConsoleCard.builder(theme, "ОШИБКА ЗАПУСКА")
@@ -55,12 +63,25 @@ public final class StartupFailure {
                 .build();
     }
 
-    /** Whether {@code error} was already explained in the console, so no second card is wanted. */
+    /**
+     * Whether {@code error} was already explained in the console, so no second card is wanted.
+     *
+     * @param error what stopped startup
+     * @return {@code true} if a card was already shown for it
+     */
     public static boolean isReported(Throwable error) {
         return unwrap(error) instanceof ReportedFailure;
     }
 
-    /** Builds the card and prints it line by line, unless the error was already explained. */
+    /**
+     * Builds the card and prints it line by line, unless the error was already explained.
+     *
+     * @param theme console colours and symbols
+     * @param sink where the lines go
+     * @param settings library settings, to name the repositories and folder in the advice
+     * @param dataFolder the plugin's own data folder
+     * @param error what stopped startup
+     */
     public static void report(ConsoleTheme theme, ConsoleSink sink, LibrarySettings settings, Path dataFolder,
                               Throwable error) {
         if (isReported(error)) {

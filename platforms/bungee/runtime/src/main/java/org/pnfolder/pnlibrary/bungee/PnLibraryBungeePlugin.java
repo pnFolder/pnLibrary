@@ -21,6 +21,7 @@ import java.lang.reflect.Constructor;
 public final class PnLibraryBungeePlugin extends Plugin {
     private Object runtime;
 
+    /** Starts the runtime; a refused remote policy or failed startup stops it. */
     @Override
     public void onEnable() {
         LibrarySettings settings = LibrarySettings.DEFAULT;
@@ -47,6 +48,7 @@ public final class PnLibraryBungeePlugin extends Plugin {
         }
     }
 
+    /** Stops the runtime and releases everything it registered. */
     @Override
     public void onDisable() {
         if (runtime == null) {
