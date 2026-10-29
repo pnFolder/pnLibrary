@@ -17,7 +17,7 @@ internal class UpdateAutomaticPolicy(
             val chosen = overrides?.automatic(component.value)
             if (component.value == PnLibraryIdentity.PRODUCT_ID) chosen ?: configuration.library.automaticDownload
             else {
-                configuration.pluginUpdatesEnabled && component.value !in configuration.ignoredPlugins &&
+                component.value !in configuration.ignoredPlugins &&
                     (chosen ?: (configuration.pluginAutomaticDownload ||
                         registrations().firstOrNull { it.descriptor.id == component }
                             ?.request?.automaticDownload == true))

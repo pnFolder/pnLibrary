@@ -34,7 +34,7 @@ class UpdateOrchestratorTest {
         val staged = AtomicInteger()
         val announced = AtomicInteger()
         val orchestrator = UpdateOrchestrator(
-            UpdateConfiguration(downloads = UpdateConfiguration.Downloads(automatic = true)),
+            UpdateConfiguration(library = UpdateConfiguration.LibraryPolicy(automaticDownload = true)),
             UpdateStateStore(directory), executor,
             resolver = {
                 entered.countDown()
@@ -272,7 +272,7 @@ class UpdateOrchestratorTest {
         val observations = mutableListOf<Pair<String, UpdateActor>>()
         val executor = Executors.newSingleThreadScheduledExecutor()
         val orchestrator = UpdateOrchestrator(
-            UpdateConfiguration(downloads = UpdateConfiguration.Downloads(automatic = true)),
+            UpdateConfiguration(library = UpdateConfiguration.LibraryPolicy(automaticDownload = true)),
             UpdateStateStore(directory), executor,
             resolver = { ResolutionResult.Ready(plan("2.0.0")) }, stageAction = {}, announcement = {},
             observeState = { _, recordedActor, operation -> observations.add(operation to recordedActor) },

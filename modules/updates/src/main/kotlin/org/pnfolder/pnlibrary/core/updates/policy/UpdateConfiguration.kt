@@ -10,19 +10,17 @@ import java.util.Locale
 import java.util.function.Supplier
 
 /**
- * Administrator update policy from `updates.yml`: notifications, downloads and installation limits.
+ * Update policy: the few choices in `updates.yml` plus the fixed rules of [UpdateDefaults].
  *
  * Per-plugin channel, automatic download and temporary pause are chosen with commands and kept in
- * `updates/`; the file only lists plugins that must never be updated ([ignoredPlugins]).
+ * `updates/`; the file lists automatic downloads, new plugins and plugins that must never be updated ([ignoredPlugins]).
  */
 internal data class UpdateConfiguration(
-    val enabled: Boolean = true,
     val checks: Checks = Checks(),
     val notifications: Notifications = Notifications(),
     val downloads: Downloads = Downloads(),
     val installation: Installation = Installation(),
     val library: LibraryPolicy = LibraryPolicy(),
-    val pluginUpdatesEnabled: Boolean = true,
     val pluginAutomaticDownload: Boolean = false,
     val ignoredPlugins: Set<String> = emptySet(),
 ) {
@@ -30,29 +28,21 @@ internal data class UpdateConfiguration(
         val channel: UpdateChannel = UpdateChannel.DEV,
         val automaticDownload: Boolean = false,
     )
-    data class Checks(val enabled: Boolean = true, val interval: Duration = Duration.ofHours(6))
-    data class Notifications(
-        val console: Boolean = true,
-        val repeatInterval: Duration = Duration.ofHours(6),
-    )
+    data class Checks(val interval: Duration = UpdateDefaults.CHECK_INTERVAL)
+    data class Notifications(val repeatInterval: Duration = UpdateDefaults.NOTIFICATION_REPEAT)
     data class Downloads(
-        val automatic: Boolean = false,
-        val allowManagedPlugins: Boolean = true,
-        val connectTimeout: Duration = Duration.ofSeconds(10),
-        val readTimeout: Duration = Duration.ofSeconds(30),
-        val maxArtifactBytes: Long = 512L * 1024 * 1024,
+        val allowManagedPlugins: Boolean = UpdateDefaults.ALLOW_MANAGED_PLUGINS,
+        val connectTimeout: Duration = UpdateDefaults.CONNECT_TIMEOUT,
+        val readTimeout: Duration = UpdateDefaults.READ_TIMEOUT,
+        val maxArtifactBytes: Long = UpdateDefaults.MAX_ARTIFACT_BYTES,
     )
     data class Installation(
         val allowNewPlugins: Boolean = false,
-        val requireSha256: Boolean = true,
+        val requireSha256: Boolean = UpdateDefaults.REQUIRE_SHA256,
     )
 
-    // `enabled: false` is a safe/manual mode, never a blindfold: checks and warnings remain active.
-    val effectiveChecksEnabled get() = true
-    val effectiveConsoleNotifications get() = notifications.console
-    val effectiveAutomaticDownloads get() = enabled && (
-        downloads.automatic || library.automaticDownload || pluginAutomaticDownload
-    )
+    /** Whether any component may be downloaded without a command. */
+    val effectiveAutomaticDownloads get() = library.automaticDownload || pluginAutomaticDownload
 
     companion object {
         private val VALIDATOR = ConfigValueValidator<UpdateSettings> { settings ->

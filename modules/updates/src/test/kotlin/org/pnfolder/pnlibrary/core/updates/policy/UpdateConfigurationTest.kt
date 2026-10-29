@@ -6,7 +6,6 @@ import org.junit.jupiter.api.io.TempDir
 import org.pnfolder.pnlibrary.api.updates.UpdateChannel
 import java.nio.file.Files
 import java.nio.file.Path
-import java.time.Duration
 
 class UpdateConfigurationTest {
     @TempDir lateinit var directory: Path
@@ -32,7 +31,6 @@ class UpdateConfigurationTest {
               channel: beta
               automatic-download: true
             plugins:
-              enabled: true
               automatic-download: false
         """.trimIndent())
 
@@ -41,7 +39,6 @@ class UpdateConfigurationTest {
         // the library channel is fixed to dev in code; the file value is not applied
         assertEquals(UpdateChannel.DEV, configuration.library.channel)
         assertTrue(configuration.library.automaticDownload)
-        assertTrue(configuration.pluginUpdatesEnabled)
         assertFalse(configuration.pluginAutomaticDownload)
         assertTrue(configuration.ignoredPlugins.isEmpty())
     }
@@ -76,56 +73,54 @@ class UpdateConfigurationTest {
     }
 
     @Test
-    fun `check interval is configurable but checks cannot be switched off`() {
+    fun `switches, intervals and limits of the old file are ignored and cannot weaken the fixed rules`() {
         val file = directory.resolve("updates.yml")
-        Files.writeString(file, "checks: { enabled: false, interval: 30m }\n")
+        Files.writeString(file, """
+            enabled: false
+            checks: { enabled: false, interval: 30m }
+            notifications: { console: false, repeat-interval: 1d }
+            downloads: { connect-timeout: 1s, max-artifact-megabytes: 1 }
+            installation: { require-sha256: false }
+            plugins: { enabled: false }
+        """.trimIndent())
         val warnings = mutableListOf<String>()
 
         val configuration = UpdateConfiguration.load(file, warnings::add)
 
-        assertTrue(configuration.effectiveChecksEnabled)
-        assertEquals(Duration.ofMinutes(30), configuration.checks.interval)
+        assertEquals(UpdateDefaults.CHECK_INTERVAL, configuration.checks.interval)
+        assertEquals(UpdateDefaults.NOTIFICATION_REPEAT, configuration.notifications.repeatInterval)
+        assertEquals(UpdateDefaults.CONNECT_TIMEOUT, configuration.downloads.connectTimeout)
+        assertEquals(UpdateDefaults.MAX_ARTIFACT_BYTES, configuration.downloads.maxArtifactBytes)
+        assertTrue(configuration.installation.requireSha256)
+        val text = Files.readString(file)
+        listOf("checks", "notifications", "downloads", "require-sha256", "interval").forEach { assertFalse(text.contains(it), it) }
     }
 
     @Test
-    fun `check interval below the minimum is raised to it`() {
-        val file = directory.resolve("updates.yml")
-        Files.writeString(file, "checks: { interval: 1m }\n")
-        val warnings = mutableListOf<String>()
-
-        val configuration = UpdateConfiguration.load(file, warnings::add)
-
-        assertEquals(Duration.ofMinutes(5), configuration.checks.interval)
-    }
-
-    @Test
-    fun `creates a conservative commented file`() {
+    fun `creates a short commented file with only the choices of an administrator`() {
         val warnings = mutableListOf<String>()
         val file = directory.resolve("updates.yml")
         val configuration = UpdateConfiguration.load(file, warnings::add)
 
-        assertTrue(configuration.enabled)
-        assertTrue(configuration.checks.enabled)
-        assertEquals(Duration.ofHours(6), configuration.notifications.repeatInterval)
-        assertFalse(configuration.downloads.automatic)
+        assertFalse(configuration.effectiveAutomaticDownloads)
         assertFalse(configuration.installation.allowNewPlugins)
         assertTrue(configuration.installation.requireSha256)
         assertTrue(warnings.isEmpty())
         val text = Files.readString(file)
-        assertTrue(text.contains("require-sha256: true"))
-        assertTrue(text.contains("repeat-interval: 6h"))
-        assertTrue(text.contains("# Главный выключатель автоматических действий"))
+        assertTrue(text.contains("allow-new-plugins: false"))
+        assertTrue(text.contains("ignored: []"))
+        assertFalse(text.contains("interval"))
     }
 
     @Test
     fun `an unreadable file falls back to safe defaults with a warning`() {
         val file = directory.resolve("updates.yml")
-        Files.writeString(file, "enabled: [unclosed\n")
+        Files.writeString(file, "plugins: [unclosed\n")
         val warnings = mutableListOf<String>()
 
         val configuration = UpdateConfiguration.load(file, warnings::add)
 
-        assertFalse(configuration.downloads.automatic)
+        assertFalse(configuration.effectiveAutomaticDownloads)
         assertTrue(warnings.isNotEmpty())
     }
 
@@ -133,32 +128,15 @@ class UpdateConfigurationTest {
     fun `an invalid flag falls back to its safe default without granting rights`() {
         val file = directory.resolve("updates.yml")
         Files.writeString(file, """
-            downloads: { automatic: perhaps }
+            library: { automatic-download: perhaps }
             installation: { allow-new-plugins: perhaps }
         """.trimIndent())
         val warnings = mutableListOf<String>()
 
         val configuration = UpdateConfiguration.load(file, warnings::add)
 
-        assertFalse(configuration.downloads.automatic)
+        assertFalse(configuration.library.automaticDownload)
         assertFalse(configuration.installation.allowNewPlugins)
         assertTrue(warnings.isNotEmpty())
-    }
-
-    @Test
-    fun `master disable keeps checks and warnings but blocks automatic downloads`() {
-        val file = directory.resolve("updates.yml")
-        Files.writeString(file, """
-            enabled: false
-            notifications: { console: true }
-            downloads: { automatic: true, allow-managed-plugins: true }
-            installation: { allow-new-plugins: true }
-        """.trimIndent())
-
-        val configuration = UpdateConfiguration.load(file) { }
-
-        assertTrue(configuration.effectiveChecksEnabled)
-        assertTrue(configuration.effectiveConsoleNotifications)
-        assertFalse(configuration.effectiveAutomaticDownloads)
     }
 }

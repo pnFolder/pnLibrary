@@ -113,9 +113,25 @@ class ConfigurationServiceImplTest {
             listOf("settings.yml", "old.yml").forEach { name ->
                 val text = Files.readString(directory.resolve(name))
                 assertEquals(1, text.split("discord.gg").size - 1, "$name: $text")
-                assertTrue(text.contains("write to our Discord"), text)
-                assertTrue(text.contains("пишите в наш Discord"), text)
+                assertTrue(text.contains("write to us"), text)
+                assertTrue(text.contains("пишите нам"), text)
+                assertTrue(text.contains("# Discord: https://discord.gg/"), text)
             }
+        }
+    }
+
+    @Test
+    fun `an older support note is replaced by the current one instead of being repeated`() {
+        val older = "# Если у вас возникли проблемы с плагином, пишите в наш Discord: мы всегда рады помочь.\n" +
+            "# If you have any problem with a plugin, write to our Discord: we are always happy to help.\n" +
+            "# https://discord.gg/old\n"
+        Files.writeString(directory.resolve("old.yml"), "_config-version: 1\n" + older + "retries: 4\n")
+        service().use { service ->
+            scope(service).yaml<ServiceSettings>("old.yml") { ServiceSettings() }.load()
+            val text = Files.readString(directory.resolve("old.yml"))
+            assertEquals(1, text.split("If you have any problem").size - 1, text)
+            assertFalse(text.contains("discord.gg/old"), text)
+            assertTrue(text.contains("retries: 4"), text)
         }
     }
 

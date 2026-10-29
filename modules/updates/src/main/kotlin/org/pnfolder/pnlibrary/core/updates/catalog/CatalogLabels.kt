@@ -6,7 +6,7 @@ import org.pnfolder.pnlibrary.api.updates.UpdateState
 import org.pnfolder.pnlibrary.core.updates.install.ComponentLedger
 
 /** The words and colors of update states and history operations, shared by every catalog page. */
-internal object CatalogLabels {
+object CatalogLabels {
     /** States with an update on its way: available, downloading or waiting for a restart. */
     val PENDING: Set<UpdateState> = setOf(UpdateState.UPDATE_AVAILABLE, UpdateState.UPDATE_STAGED, UpdateState.DOWNLOADING)
 

@@ -23,6 +23,7 @@ import org.pnfolder.pnlibrary.core.updates.catalog.UpdateCatalogRoutes
  * | Command | What it does | Permission |
  * |---|---|---|
  * | `/pn`, `status`, `check`, `updates …` | the list of plugins, their state, the update catalog | `pnlibrary.admin` |
+ * | `/pn gui` | the inventory menu: plugins, updates, history, errors (players only) | `pnlibrary.admin` |
  * | `/pn update <plugin>` | stages the update of one plugin | `pnlibrary.admin` |
  * | `/pn update rollback`, `restart` | asks to roll back or to restart; answers with a token | `pnlibrary.admin` |
  * | `/pn update confirm <token>` | carries out what the token was issued for | `pnlibrary.admin` |
@@ -55,6 +56,7 @@ internal class BukkitControlCommand(
     )
     private val updates = BukkitUpdateFlow(plugin, library, catalog, replies)
     private val support = BukkitSupportCommands(plugin, library, replies)
+    private val menu = PluginsMenu(plugin, library, replies)
 
     /** Builds the permission-aware control command tree. */
     fun definition(): CommandDefinition = command("pn") {
@@ -72,6 +74,10 @@ internal class BukkitControlCommand(
         literal("check") {
             permission(ADMIN)
             executes(updates::checkUpdates)
+        }
+        literal("gui") {
+            permission(ADMIN)
+            executes { replies.native(it) { sender, reply -> menu.openFor(sender, reply) } }
         }
         literal("updates") {
             permission(ADMIN)

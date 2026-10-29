@@ -85,9 +85,7 @@ internal class UpdateGraphResolver(
 
     private fun frozenProducts(registrations: List<RegisteredUpdate>): Set<ProductId> {
         val configuredFreezes = registrations.mapNotNull { registration ->
-            registration.descriptor.id.takeIf {
-                !configuration.pluginUpdatesEnabled || registration.product in configuration.ignoredPlugins
-            }
+            registration.descriptor.id.takeIf { registration.product in configuration.ignoredPlugins }
         }
         return (freezes.active().keys + configuredFreezes).toSet()
     }
