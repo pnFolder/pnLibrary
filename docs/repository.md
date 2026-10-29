@@ -6,7 +6,9 @@
 ```
 .pnlibrary/
 ├── releases.json        список релизов (его читают обновления и установщик)
-├── releases.example.json  образец заполненного списка
+├── example/               демонстрация, не используется библиотекой
+│   ├── releases.example.json  образец списка со всеми каналами
+│   └── changelogs/        changelog-файлы образца
 └── changelogs/
     └── <версия>.md      описание версии, по файлу на каждый релиз из releases.json
 ```
