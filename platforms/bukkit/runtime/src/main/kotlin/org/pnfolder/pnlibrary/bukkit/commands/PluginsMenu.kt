@@ -80,6 +80,7 @@ internal class PluginsMenu(
         LISTENED("со слушателями", { it.listeners > 0 }),
         CALLED("вызывались", { it.calls > 0 }),
         DENIED("с отказами", { it.denied > 0 }),
+        TODAY("сегодня", { info -> info.lastCalledAt?.atZone(DisplayZone.zone)?.toLocalDate() == LocalDate.now(DisplayZone.zone) }),
     }
 
     private enum class TaskFilter(val label: String, val keep: (TaskSnapshot) -> Boolean) {
@@ -941,7 +942,7 @@ internal class PluginsMenu(
 
     private fun busEvents(player: Player, filter: BusFilter, page: Int) {
         val next = BusFilter.values()[(filter.ordinal + 1) % BusFilter.values().size]
-        val rows = bus.events().filter(filter.keep).sortedByDescending { it.calls }.map { info ->
+        val rows = bus.events().filter(filter.keep).sortedWith(compareByDescending<EventInfo> { it.lastCalledAt }.thenByDescending { it.calls }).map { info ->
             Row(
                 eventItem(info),
                 goClick { who, click ->
@@ -976,6 +977,7 @@ internal class PluginsMenu(
             add("Плагин" to (owner?.let { "${it.name} ${it.description.version}" } ?: "сервер или библиотека"))
             add("Слушателей" to "${info.listeners}")
             add("Вызовов" to "${info.calls}")
+            info.lastCalledAt?.let { add("Последний" to "${stamp(it)}, ${ago(it)}") }
             if (info.denied > 0) add("Отказов" to "${info.denied}")
             add("Запись" to if (recording) "● идёт" else "не ведётся")
         }
@@ -1000,6 +1002,7 @@ internal class PluginsMenu(
             add("Слушателей" to "${info.listeners}")
             add("Вызовов" to "${info.calls}")
             add("Отказов" to "${info.denied}")
+            add("Последний вызов" to (info.lastCalledAt?.let { "${stamp(it)}, ${ago(it)}" } ?: "с запуска не было"))
             val days = bus.history(name).map { it.date }
             val today = LocalDate.now(DisplayZone.zone)
             if (days.isNotEmpty()) {
