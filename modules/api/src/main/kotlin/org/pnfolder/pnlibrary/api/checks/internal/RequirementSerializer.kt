@@ -4,6 +4,7 @@ import org.pnfolder.pnlibrary.api.actions.Action
 import org.pnfolder.pnlibrary.api.checks.Requirement
 import org.pnfolder.pnlibrary.api.config.ConfigSerializationContext
 import org.pnfolder.pnlibrary.api.config.ConfigSerializer
+import org.pnfolder.pnlibrary.api.internal.InternalPnLibraryApi
 import org.pnfolder.pnlibrary.api.internal.Suggestions
 
 /**
@@ -18,6 +19,7 @@ import org.pnfolder.pnlibrary.api.internal.Suggestions
  * `deny` and `success` hold actions written with a `type`. `deny_commands` and `success_commands` are their
  * DeluxeMenus names.
  */
+@InternalPnLibraryApi
 object RequirementSerializer : ConfigSerializer<Requirement> {
     private val shortKeys = listOf("check", "deny", "success", "deny_commands", "success_commands")
     private val groupKeys = listOf(
@@ -171,6 +173,7 @@ object RequirementSerializer : ConfigSerializer<Requirement> {
 }
 
 /** Reads one entry of a DeluxeMenus `requirements:` block: the fields of a check plus `optional`, `deny` and `success`. */
+@InternalPnLibraryApi
 object RequirementEntrySerializer : ConfigSerializer<Requirement.Entry> {
     /** Reads one check entry from an expression or an object with a `type`. */
     override fun deserialize(value: Any?, context: ConfigSerializationContext): Requirement.Entry {

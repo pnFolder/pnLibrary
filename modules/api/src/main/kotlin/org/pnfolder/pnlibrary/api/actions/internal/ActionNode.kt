@@ -1,6 +1,7 @@
 package org.pnfolder.pnlibrary.api.actions.internal
 
 import org.pnfolder.pnlibrary.api.config.ConfigNodeRewriter
+import org.pnfolder.pnlibrary.api.internal.InternalPnLibraryApi
 
 /**
  * Turns the friendly action objects into the fields of the action classes before they are read.
@@ -20,6 +21,7 @@ import org.pnfolder.pnlibrary.api.config.ConfigNodeRewriter
  *
  * The older `if` form with `all`, `any` and `then` is read as well.
  */
+@InternalPnLibraryApi
 object ActionNode : ConfigNodeRewriter {
     /** Rewrites the older `if` form into the current action node shape. */
     override fun rewrite(node: Map<String, Any?>, path: String): Map<String, Any?> {

@@ -21,6 +21,7 @@ import org.pnfolder.pnlibrary.api.checks.builtin.ValueCheck
 import org.pnfolder.pnlibrary.api.checks.builtin.ValueType
 import org.pnfolder.pnlibrary.api.config.ConfigSerializationContext
 import org.pnfolder.pnlibrary.api.config.ConfigSerializer
+import org.pnfolder.pnlibrary.api.internal.InternalPnLibraryApi
 import org.pnfolder.pnlibrary.api.internal.Suggestions
 import java.util.Locale
 
@@ -43,6 +44,7 @@ import java.util.Locale
  * | `regex matches` | `input`, `regex` |
  * | `==`, `!=`, `>=`, `<=`, `>`, `<` | `input`, `output`, compared as numbers |
  */
+@InternalPnLibraryApi
 object CheckSerializer : ConfigSerializer<Check> {
     internal val comparators = mapOf(
         "==" to Comparison.NUMBER_EQUALS,

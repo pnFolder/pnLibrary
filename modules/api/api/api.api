@@ -2181,6 +2181,9 @@ public final class org/pnfolder/pnlibrary/api/expansions/ExpansionState : java/l
 	public static fun values ()[Lorg/pnfolder/pnlibrary/api/expansions/ExpansionState;
 }
 
+public abstract interface annotation class org/pnfolder/pnlibrary/api/internal/InternalPnLibraryApi : java/lang/annotation/Annotation {
+}
+
 public final class org/pnfolder/pnlibrary/api/logging/LogLevel : java/lang/Enum {
 	public static final field ERROR Lorg/pnfolder/pnlibrary/api/logging/LogLevel;
 	public static final field INFO Lorg/pnfolder/pnlibrary/api/logging/LogLevel;
