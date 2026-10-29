@@ -58,6 +58,7 @@ class CommandBuilder internal constructor(name: String) {
     private val name = normalizeCommandName(name, "command name")
     private val aliases = linkedSetOf<String>()
     private var permission: String? = null
+    private var alsoPermissions: List<String> = emptyList()
     private var consoleBypassesPermission: Boolean = false
     private var noPermissionMessage: String? = null
     @PublishedApi internal val errorHandlers = linkedMapOf<Class<out CommandError>, CommandErrorHandler<*>>()
@@ -79,10 +80,14 @@ class CommandBuilder internal constructor(name: String) {
     }
 
     /** Requires the non-blank root permission [value]. */
-    fun permission(value: String): CommandBuilder = apply {
+    fun permission(value: String): CommandBuilder = permission(value, *emptyArray<String>())
+
+    /** Requires the non-blank root permission [value]; with [others] a sender needs only one of them. */
+    fun permission(value: String, vararg others: String): CommandBuilder = apply {
         permission = value.trim().also {
             require(it.isNotEmpty()) { "Command permission must not be blank" }
         }
+        alsoPermissions = others.map { other -> other.trim().also { require(it.isNotEmpty()) { "Command permission must not be blank" } } }
     }
 
     /**
@@ -204,7 +209,7 @@ class CommandBuilder internal constructor(name: String) {
     fun build(): CommandDefinition {
         val commandHandlers = errorHandlers.toMap() // read before the node builder, which has a map of the same name
         val rootBuilder = CommandNodeBuilder(CommandNodeKind.ROOT, name).apply {
-            permission?.let(::permission)
+            permission?.let { permission(it, *alsoPermissions.toTypedArray()) }
             noPermissionMessage?.let(::noPermissionMessage)
             commandHandlers.forEach { (type, handler) -> putErrorHandler(type, handler) }
             when (senderRule) {

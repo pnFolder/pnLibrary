@@ -32,6 +32,7 @@ class ProxyControlCommand(private val library: PnLibrary) {
         library.mountableCommand("events")?.let { mount("events", it) }
         library.mountableCommand("debug")?.let { mount("debug", it) }
         mount("bus", EventBusCommand(library).definition())
+        mount("tasks", TaskCommand(library).definition())
         mount("update", ProxyUpdateCommand(library).definition())
     }
 }

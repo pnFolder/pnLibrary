@@ -10,12 +10,15 @@ import org.bukkit.plugin.Plugin
 import org.pnfolder.pnlibrary.api.chat.ChatNotice
 import org.pnfolder.pnlibrary.api.chat.ChatTone
 import org.pnfolder.pnlibrary.api.events.DispatchMode
+import org.pnfolder.pnlibrary.api.events.EventDescription
 import org.pnfolder.pnlibrary.api.events.EventInfo
 import org.pnfolder.pnlibrary.api.events.EventTrace
 import org.pnfolder.pnlibrary.api.events.ListenerInfo
 import org.pnfolder.pnlibrary.api.platform.platform
 import org.pnfolder.pnlibrary.api.runtime.PnLibrary
 import org.pnfolder.pnlibrary.api.runtime.PnLibraryIdentity
+import org.pnfolder.pnlibrary.api.tasks.TaskSnapshot
+import org.pnfolder.pnlibrary.api.tasks.TaskStatus
 import org.pnfolder.pnlibrary.api.updates.UpdateChannel
 import org.pnfolder.pnlibrary.api.updates.UpdateSnapshot
 import org.pnfolder.pnlibrary.api.updates.UpdateState
@@ -27,9 +30,12 @@ import org.pnfolder.pnlibrary.bukkit.inventory.MenuBuilder
 import org.pnfolder.pnlibrary.bukkit.inventory.MenuClickHandler
 import org.pnfolder.pnlibrary.bukkit.inventory.Menus
 import org.pnfolder.pnlibrary.common.time.DisplayZone
+import org.pnfolder.pnlibrary.core.commands.TaskLabels
 import org.pnfolder.pnlibrary.core.lifecycle.JournalGroup
+import org.pnfolder.pnlibrary.core.lifecycle.cancelTask
 import org.pnfolder.pnlibrary.core.lifecycle.journalDetail
 import org.pnfolder.pnlibrary.core.lifecycle.journalGroups
+import org.pnfolder.pnlibrary.core.lifecycle.taskSnapshots
 import org.pnfolder.pnlibrary.core.updates.catalog.CatalogLabels
 import org.pnfolder.pnlibrary.core.updates.catalog.UpdateCatalogView
 import org.pnfolder.pnlibrary.core.updates.policy.UpdateDefaults
@@ -47,7 +53,7 @@ import org.pnfolder.pnlibrary.api.commands.CommandSender as Reply
  *
  * Screens: the home page, the list of plugins (all, with updates, with problems), the card of one plugin, its
  * channel, pause and releases, the history of one plugin or of all and one entry of it, the saved backups with a
- * rollback choice, the journal with one event, and the plugin events (event bus) with their listeners, days and
+ * rollback choice, the journal with one event, the tasks of every plugin, and the plugin events (event bus) with their listeners, days and
  * recorded calls.
  * Every action calls the same services as the commands and asks for the same permissions, so the audit record is the
  * same, and every answer is a chat notice in the library's own style. Buttons are textured heads with an ordinary
@@ -73,6 +79,13 @@ internal class PluginsMenu(
         LISTENED("со слушателями", { it.listeners > 0 }),
         CALLED("вызывались", { it.calls > 0 }),
         DENIED("с отказами", { it.denied > 0 }),
+    }
+
+    private enum class TaskFilter(val label: String, val keep: (TaskSnapshot) -> Boolean) {
+        ALL("все", { true }),
+        ACTIVE("работают", { TaskLabels.isActive(it.status) }),
+        FAILED("с ошибками", { it.status == TaskStatus.FAILED || it.lastFailure != null }),
+        DONE("закончены", { it.status == TaskStatus.COMPLETED || it.status == TaskStatus.CANCELLED }),
     }
 
     private class Row(val stack: ItemStack, val click: MenuClickHandler? = null)
@@ -122,7 +135,7 @@ internal class PluginsMenu(
         builder.button(15,
             section(Icons.PROBLEMS, "BARRIER", "Проблемы", "Ошибки проверки и блокировки обновлений.", "Найдено" to "$problems"),
             go { plugins(it, Filter.PROBLEMS, 0) })
-        builder.button(28, section(Icons.HISTORY, "BOOK", "История", "Проверки, обновления, откаты и ошибки."), go { history(it, null, 0) })
+        builder.button(29, section(Icons.HISTORY, "BOOK", "История", "Проверки, обновления, откаты и ошибки."), go { history(it, null, 0) })
         builder.button(
             30,
             section(
@@ -133,10 +146,15 @@ internal class PluginsMenu(
         )
         builder.button(
             32,
+            section(Icons.CLOCK, "CLOCK", "Задачи плагинов", "Что плагины делают по расписанию и для чего.", "Всего" to "${library.taskSnapshots().size}"),
+            go { allowed(it, TASKS) { tasks(it, TaskFilter.ALL, 0) } },
+        )
+        builder.button(
+            31,
             section(Icons.UPDATES, "REDSTONE_TORCH", "События плагинов", "Как плагины общаются друг с другом: слушатели, вызовы, ошибки."),
             go { allowed(it, BUS) { busHome(it) } },
         )
-        builder.button(34, section(Icons.BACKUPS, "CHEST", "Резервные копии", "Откат к сохранённым версиям плагинов."), go { backups(it, 0) })
+        builder.button(33, section(Icons.BACKUPS, "CHEST", "Резервные копии", "Откат к сохранённым версиям плагинов."), go { backups(it, 0) })
         builder.button(
             24,
             icon(Icons.CHECK, "COMPASS", "Проверить всё", Style.lore(listOf("Спросить каталоги релизов прямо сейчас."), emptyList(), Style.left("проверить"))),
@@ -287,20 +305,35 @@ internal class PluginsMenu(
     }
 
     private fun holds(player: Player, product: String) {
-        val held = library.updates.get(product)?.snapshot?.state == UpdateState.FROZEN
+        val until = library.updates.heldUntil(product)?.takeIf { it.isAfter(Instant.now()) }
+        val remaining = until?.let { Duration.between(Instant.now(), it) }
+        val chosen = remaining?.let { holdIndex(it) } ?: -1
         val builder = frame(Menus.chest(title("Пауза $product")).rows(SMALL_ROWS), SMALL_ROWS)
+        builder.slot(
+            4,
+            icon(
+                Icons.CLOCK, "CLOCK", "Пауза сейчас",
+                Style.lore(
+                    listOf("Пока пауза идёт, обновления не предлагаются и не скачиваются."),
+                    listOf("Состояние" to (remaining?.let { "‖ осталось ${left(it)}" } ?: "нет паузы")),
+                ),
+                alternative = "WATCH", warn = remaining != null,
+            ),
+        )
         HOLDS.forEachIndexed { index, (label, duration) ->
+            val selected = index == chosen
+            val note = if (selected) listOf("Выбрано" to "● осталось ${left(remaining!!)}") else emptyList()
             builder.button(
                 10 + index,
                 icon(
                     Icons.CLOCK, "CLOCK", label,
-                    Style.lore(listOf("Обновления не предлагаются и не скачиваются."), emptyList(), Style.left("приостановить")),
-                    alternative = "WATCH",
+                    Style.lore(listOf("Приостановить обновления на этот срок."), note, Style.left(if (selected) "начать срок заново" else "приостановить")),
+                    alternative = "WATCH", good = selected,
                 ),
                 go { who -> allowed(who, SETTINGS) { chooseHold(who, product, duration) } },
             )
         }
-        if (held) {
+        if (remaining != null) {
             builder.button(
                 16,
                 icon(Icons.RESET, "REDSTONE", "Снять паузу", Style.lore(listOf("Вернуть обновления сейчас."), emptyList(), Style.left("снять")), good = true),
@@ -309,6 +342,21 @@ internal class PluginsMenu(
         }
         builder.button(SMALL_BACK, backItem(), go { card(it, product) })
         show(player, builder.build())
+    }
+
+    /** The index of the shortest pause in [HOLDS] that is at least [remaining]; the last one when none is. */
+    private fun holdIndex(remaining: Duration): Int = HOLDS.indexOfFirst { it.second >= remaining }.takeIf { it >= 0 } ?: (HOLDS.size - 1)
+
+    /** A time span in words: `1 д 4 ч`, `5 ч 12 мин`, `23 мин`. */
+    private fun left(span: Duration): String {
+        val days = span.toDays()
+        val hours = span.toHours() % HOURS_PER_DAY
+        val minutes = span.toMinutes() % MINUTES_PER_HOUR
+        return when {
+            days > 0 -> "$days д $hours ч"
+            hours > 0 -> "$hours ч $minutes мин"
+            else -> "${minutes.coerceAtLeast(1)} мин"
+        }
     }
 
     private fun releases(player: Player, product: String, page: Int) {
@@ -391,7 +439,10 @@ internal class PluginsMenu(
         val next = LEVEL_CYCLE[(LEVEL_CYCLE.indexOf(level) + 1) % LEVEL_CYCLE.size]
         val cycle = icon(
             Icons.SETTINGS, "HOPPER", "Уровень: ${level?.let { LEVELS.getValue(it) } ?: "все"}",
-            Style.lore(listOf("Какие события показывать."), listOf("Дальше" to (next?.let { LEVELS.getValue(it) } ?: "все")), Style.left("переключить")),
+            Style.lore(
+                listOf("Какие события показывать."), emptyList(), Style.left("переключить"),
+                extra = Style.choices(LEVEL_CYCLE.map { it?.let { name -> LEVELS.getValue(name) } ?: "все" }, LEVEL_CYCLE.indexOf(level)),
+            ),
         )
         list(
             player, title, journalRows(level) { who -> journal(who, level, page) }, page, PAGE_SIZE,
@@ -436,6 +487,13 @@ internal class PluginsMenu(
     private fun settings(player: Player) {
         val all = snapshots()
         val automatic = all.count { it.automaticDownload }
+        val everyoneAuto = all.isNotEmpty() && automatic == all.size
+        val untils = all.mapNotNull { library.updates.heldUntil(it.product) }.filter { it.isAfter(Instant.now()) }
+        val longest = untils.maxOrNull()?.let { Duration.between(Instant.now(), it) }
+        val pauseChoices = listOf("нет паузы") + HOLDS.take(CYCLE_HOLDS).map { "на ${it.first}" }
+        val pauseSelected = longest?.let { span ->
+            1 + (HOLDS.take(CYCLE_HOLDS).indexOfFirst { it.second >= span }.takeIf { it >= 0 } ?: (CYCLE_HOLDS - 1))
+        } ?: 0
         val builder = frame(Menus.chest(title("Настройки")).rows(SMALL_ROWS + 1), SMALL_ROWS + 1)
         builder.slot(
             4,
@@ -447,46 +505,51 @@ internal class PluginsMenu(
                         "Проверка" to "каждые ${UpdateDefaults.CHECK_INTERVAL.toHours()} ч",
                         "Консоль" to "сообщения всегда",
                         "Канал" to "только dev",
-                        "Автозагрузка" to "у $automatic из ${all.size}",
                     ),
                 ),
             ),
         )
-        builder.button(
-            10,
-            icon(
-                Icons.TOGGLE, "REDSTONE_TORCH", "Автозагрузка: всем",
-                Style.lore(listOf("Готовить новые версии для всех плагинов."), emptyList(), Style.left("включить")),
-                alternative = "REDSTONE_TORCH_ON", good = true,
-            ),
-            go { who -> allowed(who, SETTINGS) { everyone(who, "Автозагрузка включена для всех плагинов.") { setAutomatic(it, true, who) } } },
-        )
+        val autoNote = if (!everyoneAuto && automatic > 0) listOf("Сейчас" to "у $automatic из ${all.size}") else emptyList()
         builder.button(
             11,
             icon(
-                Icons.TOGGLE, "LEVER", "Автозагрузка: никому",
-                Style.lore(listOf("Не готовить версии без команды."), emptyList(), Style.left("выключить")), muted = true,
-            ),
-            go { who -> allowed(who, SETTINGS) { everyone(who, "Автозагрузка выключена для всех плагинов.") { setAutomatic(it, false, who) } } },
-        )
-        HOLDS.take(3).forEachIndexed { index, (label, duration) ->
-            builder.button(
-                13 + index,
-                icon(
-                    Icons.CLOCK, "CLOCK", "Пауза всем: $label",
-                    Style.lore(listOf("Все плагины на время не обновляются."), emptyList(), Style.left("приостановить")),
-                    alternative = "WATCH",
+                Icons.TOGGLE, "REDSTONE_TORCH", "Автозагрузка для всех",
+                Style.lore(
+                    listOf("Готовить новые версии всех плагинов сразу, без команды."), autoNote,
+                    Style.left(if (everyoneAuto) "выключить у всех" else "включить у всех"),
+                    extra = Style.choices(listOf("включена у всех", "выключена"), if (everyoneAuto) 0 else 1),
                 ),
-                go { who ->
-                    allowed(who, SETTINGS) { everyone(who, "Обновления всех плагинов приостановлены: $label.") { hold(it, duration, who) } }
-                },
-            )
+                alternative = "REDSTONE_TORCH_ON", good = everyoneAuto, muted = !everyoneAuto && automatic == 0,
+            ),
+            go { who ->
+                allowed(who, SETTINGS) {
+                    val done = if (everyoneAuto) "Автозагрузка выключена для всех плагинов." else "Автозагрузка включена для всех плагинов."
+                    everyone(who, done) { setAutomatic(it, !everyoneAuto, who) }
+                }
+            },
+        )
+        val pauseNote = buildList {
+            if (untils.isNotEmpty()) add("Осталось" to left(longest!!))
+            if (untils.isNotEmpty()) add("На паузе" to "${untils.size} из ${all.size}")
         }
         builder.button(
-            16,
-            icon(Icons.RESET, "REDSTONE", "Снять все паузы",
-                Style.lore(listOf("Вернуть обновления всем сразу."), emptyList(), Style.left("снять")), good = true),
-            go { who -> allowed(who, SETTINGS) { everyone(who, "Все паузы сняты.") { hold(it, null, who) } } },
+            15,
+            icon(
+                Icons.CLOCK, "CLOCK", "Пауза для всех",
+                Style.lore(
+                    listOf("Все плагины на время не обновляются."), pauseNote, Style.left("следующий срок"),
+                    extra = Style.choices(pauseChoices, pauseSelected),
+                ),
+                alternative = "WATCH", warn = untils.isNotEmpty(),
+            ),
+            go { who ->
+                allowed(who, SETTINGS) {
+                    val nextIndex = (pauseSelected + 1) % pauseChoices.size
+                    val duration = HOLDS.take(CYCLE_HOLDS).getOrNull(nextIndex - 1)
+                    val done = if (duration == null) "Все паузы сняты." else "Обновления всех плагинов приостановлены: ${duration.first}."
+                    everyone(who, done) { hold(it, duration?.second, who) }
+                }
+            },
         )
         builder.button(SMALL_BACK + 9, backItem(), go { home(it) })
         show(player, builder.build())
@@ -583,6 +646,135 @@ internal class PluginsMenu(
         show(player, builder.build())
     }
 
+    // --- tasks ---------------------------------------------------------------------------------------------------
+
+    /** Every task of every plugin, newest first, with a filter that shows all its choices at once. */
+    private fun tasks(player: Player, filter: TaskFilter, page: Int) {
+        val next = TaskFilter.values()[(filter.ordinal + 1) % TaskFilter.values().size]
+        val all = library.taskSnapshots()
+        val rows = all.filter(filter.keep).sortedByDescending { it.createdAt }.map { task ->
+            Row(taskItem(task), go { who -> taskDetail(who, task.id.value) { tasks(it, filter, page) } })
+        }
+        val cycle = icon(
+            Icons.SETTINGS, "HOPPER", "Фильтр задач",
+            Style.lore(
+                listOf("Какие задачи показывать."), emptyList(), Style.left("переключить"),
+                extra = Style.choices(TaskFilter.values().map { "${it.label} ${all.count(it.keep)}" }, filter.ordinal),
+            ),
+        )
+        list(
+            player, "Задачи: ${filter.label}", rows, page, PAGE_SIZE, { who, to -> tasks(who, filter, to) }, { home(it) }, "Задач нет",
+            extra = { it.button(FILTER, cycle, go { who -> tasks(who, next, 0) }) },
+        )
+    }
+
+    private fun taskItem(task: TaskSnapshot): ItemStack {
+        val material = when (task.status) {
+            TaskStatus.SCHEDULED -> "CLOCK"
+            TaskStatus.RUNNING -> "EMERALD"
+            TaskStatus.COMPLETED -> "PAPER"
+            TaskStatus.CANCELLED -> "COAL"
+            TaskStatus.FAILED -> "BARRIER"
+        }
+        val description = task.description?.let { wrap(it, limit = 3) } ?: listOf("Плагин не описал эту задачу.")
+        val parameters = buildList {
+            add("Плагин" to ownerLine(task.ownerName))
+            add("Состояние" to TaskLabels.label(task.status))
+            add("Запусков" to "${task.runCount}")
+            task.lastFailure?.let { add("Ошибка" to "✖ ${it.take(MESSAGE_PREVIEW)}") }
+        }
+        val lore = Style.lore(description, parameters, Style.left("подробности"))
+        return icon(
+            null, material, TaskLabels.title(task), lore, alternative = "WATCH".takeIf { material == "CLOCK" },
+            danger = task.status == TaskStatus.FAILED, good = task.status == TaskStatus.RUNNING, muted = task.status == TaskStatus.CANCELLED,
+        )
+    }
+
+    /** One task: what it is for, how it is used, who owns it, when it ran and how it failed; active ones can be stopped. */
+    private fun taskDetail(player: Player, id: String, back: (Player) -> Unit) {
+        val task = library.taskSnapshots().firstOrNull { it.id.value == id }
+        if (task == null) {
+            tell(player, ChatTone.INFO, "Эта задача уже исчезла из списка.")
+            return back(player)
+        }
+        val builder = frame(Menus.chest(title("Задача")).rows(DETAIL_ROWS), DETAIL_ROWS)
+        val parameters = buildList {
+            add("Плагин" to ownerLine(task.ownerName))
+            add("Состояние" to TaskLabels.label(task.status))
+            add("Запусков" to "${task.runCount}, пропущено ${task.skippedCount}")
+            add("Выполняется" to task.executionKind.name.lowercase())
+            task.key?.let { add("Ключ" to it) }
+            if (task.tags.isNotEmpty()) add("Теги" to task.tags.joinToString(", "))
+        }
+        val about = task.description?.let { wrap(it) } ?: listOf("Плагин не описал эту задачу.")
+        builder.slot(
+            4,
+            icon(
+                null, "CLOCK", TaskLabels.title(task), Style.lore(about, parameters), alternative = "WATCH",
+                danger = task.status == TaskStatus.FAILED, good = task.status == TaskStatus.RUNNING,
+            ),
+        )
+        val usage = task.usage?.let { wrap(it) } ?: listOf("Не указано. Плагин может добавить usage в TaskSpec.")
+        builder.slot(20, icon(Icons.CHANGELOG, "WRITTEN_BOOK", "Как используется", Style.lore(usage, emptyList()), muted = task.usage == null))
+        val times = buildList {
+            add("Создана" to TIME_SECONDS.format(task.createdAt))
+            task.nextRunAt?.let { add("Следующий запуск" to TIME_SECONDS.format(it)) }
+            task.lastStartedAt?.let { add("Последний запуск" to TIME_SECONDS.format(it)) }
+            task.lastCompletedAt?.let { add("Закончилась" to TIME_SECONDS.format(it)) }
+        }
+        builder.slot(22, icon(Icons.CLOCK, "CLOCK", "Время", Style.lore(emptyList(), times), alternative = "WATCH"))
+        task.lastFailure?.let { failure ->
+            val lore = Style.lore(emptyList(), emptyList(), extra = wrap(failure).map { Style.danger(it) })
+            builder.slot(24, icon(Icons.PROBLEMS, "BARRIER", "Последняя ошибка", lore, danger = true))
+        }
+        if (TaskLabels.isActive(task.status)) {
+            builder.button(
+                30,
+                icon(
+                    Icons.ROLLBACK, "TNT", "Остановить задачу",
+                    Style.lore(listOf("Больше не будет запускаться."), emptyList(), Style.left("остановить")), danger = true,
+                ),
+                go { who ->
+                    allowed(who, TASKS) {
+                        val stopped = library.cancelTask(task.id.value)
+                        tell(who, if (stopped) ChatTone.SUCCESS else ChatTone.INFO, if (stopped) "Задача остановлена." else "Задача уже не работает.")
+                        taskDetail(who, id, back)
+                    }
+                },
+            )
+        }
+        builder.button(DETAIL_BACK, backItem(), go { back(it) })
+        show(player, builder.build())
+    }
+
+    // --- plugins that own things ---------------------------------------------------------------------------------
+
+    /** The Bukkit plugin whose class loader loaded [type], or `null` for the server and library classes. */
+    private fun pluginOf(type: Class<*>?): Plugin? {
+        val loader = type?.classLoader ?: return null
+        return library.plugins.all().mapNotNull { it.owner as? Plugin }.firstOrNull { it.javaClass.classLoader === loader }
+    }
+
+    private fun pluginByName(name: String): Plugin? =
+        runCatching { plugin.server.pluginManager.getPlugin(name) }.getOrNull()
+            ?: library.plugins.all().mapNotNull { it.owner as? Plugin }.firstOrNull { it.javaClass.simpleName == name || it.name.equals(name, true) }
+
+    /** `Name 1.2.3` for a plugin, or the plain [name] when the server does not know it. */
+    private fun ownerLine(name: String): String = pluginByName(name)?.let { "${it.name} ${it.description.version}" } ?: name
+
+    /** The lines that say which plugin owns something: its name, version and authors. */
+    private fun ownerParameters(owner: Plugin?): List<Pair<String, String>> = owner?.let {
+        buildList {
+            add("Плагин" to it.name)
+            add("Версия" to it.description.version)
+            if (it.description.authors.isNotEmpty()) add("Автор" to it.description.authors.joinToString(", "))
+        }
+    } ?: listOf("Плагин" to "сервер или библиотека")
+
+    /** [text] as `[ label ]` followed by indented lines, for a value that does not fit one line. */
+    private fun labelled(label: String, text: String): List<Pair<String, String>> =
+        wrap(text).mapIndexed { index, line -> (if (index == 0) label else "") to line }
+
     // --- plugin events (the event bus) ---------------------------------------------------------------------------
 
     private val bus get() = library.events.inspector
@@ -672,7 +864,10 @@ internal class PluginsMenu(
         }
         val cycle = icon(
             Icons.SETTINGS, "HOPPER", "Показать: ${filter.label}",
-            Style.lore(listOf("Какие события показывать."), listOf("Дальше" to next.label), Style.left("переключить")),
+            Style.lore(
+                listOf("Какие события показывать."), emptyList(), Style.left("переключить"),
+                extra = Style.choices(BusFilter.values().map { it.label }, filter.ordinal),
+            ),
         )
         list(
             player, "События: ${filter.label}", rows, page, PAGE_SIZE, { who, to -> busEvents(who, filter, to) }, { busHome(it) }, "Событий нет",
@@ -682,14 +877,18 @@ internal class PluginsMenu(
 
     private fun eventItem(info: EventInfo): ItemStack {
         val recording = info.eventType in bus.tracedEvents()
+        val type = bus.eventType(info.eventType)
+        val owner = pluginOf(type)
+        val purpose = type?.getAnnotation(EventDescription::class.java)?.purpose?.takeIf { it.isNotBlank() }?.let { wrap(it, limit = 3) }.orEmpty()
         val parameters = buildList {
+            add("Плагин" to (owner?.let { "${it.name} ${it.description.version}" } ?: "сервер или библиотека"))
             add("Слушателей" to "${info.listeners}")
             add("Вызовов" to "${info.calls}")
             if (info.denied > 0) add("Отказов" to "${info.denied}")
             add("Запись" to if (recording) "● идёт" else "не ведётся")
         }
         val material = if (info.listeners > 0) "REDSTONE_TORCH" else "COAL"
-        val lore = Style.lore(emptyList(), parameters, Style.left("открыть событие"), Style.right(if (recording) "остановить запись" else "начать запись"))
+        val lore = Style.lore(purpose, parameters, Style.left("открыть событие"), Style.right(if (recording) "остановить запись" else "начать запись"))
         return icon(null, material, shortName(info.eventType), lore, alternative = "REDSTONE_TORCH_ON".takeIf { info.listeners > 0 }, warn = info.denied > 0)
     }
 
@@ -701,17 +900,19 @@ internal class PluginsMenu(
             return back(player)
         }
         val recording = name in bus.tracedEvents()
+        val type = bus.eventType(name)
+        val about = type?.getAnnotation(EventDescription::class.java)
         val builder = frame(Menus.chest(title(shortName(name))).rows(DETAIL_ROWS), DETAIL_ROWS)
-        builder.slot(
-            4,
-            icon(
-                null, "NETHER_STAR", shortName(name),
-                Style.lore(
-                    wrap(name),
-                    listOf("Слушателей" to "${info.listeners}", "Вызовов" to "${info.calls}", "Отказов" to "${info.denied}"),
-                ),
-            ),
-        )
+        val parameters = buildList {
+            addAll(ownerParameters(pluginOf(type)))
+            add("Слушателей" to "${info.listeners}")
+            add("Вызовов" to "${info.calls}")
+            add("Отказов" to "${info.denied}")
+            addAll(labelled("Класс", name))
+            about?.usage?.takeIf { it.isNotBlank() }?.let { addAll(labelled("Как использовать", it)) }
+        }
+        val purpose = about?.purpose?.takeIf { it.isNotBlank() }?.let { wrap(it) } ?: listOf("Автор плагина не описал это событие.")
+        builder.slot(4, icon(null, "NETHER_STAR", shortName(name), Style.lore(purpose, parameters)))
         val record = Style.lore(
             listOf("Запоминать каждый вызов: кто ответил и что изменил."),
             listOf("Сейчас" to if (recording) "● запись идёт" else "не ведётся"),
@@ -760,6 +961,7 @@ internal class PluginsMenu(
     private fun listenerItem(info: ListenerInfo): ItemStack {
         val owner = info.module?.let { "${info.plugin}/$it" } ?: info.plugin.toString()
         val parameters = buildList {
+            add("Плагин" to ownerLine(info.plugin.toString()))
             add("Событие" to shortName(info.eventType))
             add("Приоритет" to "${info.priority}")
             add("Запусков" to "${info.invocations}")
@@ -1302,6 +1504,15 @@ internal class PluginsMenu(
 
         fun description(text: String): String = DESCRIPTION + text
 
+        /** Every choice of a switch on its own line; the chosen one has a coloured mark and a gradient, the others are dim. */
+        fun choices(options: List<String>, selected: Int): List<String> = options.mapIndexed { index, label ->
+            if (index == selected) {
+                MenuHeads.color("   &#6EE7A0➤ ") + MenuHeads.gradient(label, "D19BFF", "FF9BD2")
+            } else {
+                MenuHeads.color("   &#64546E· &#8B7A99") + label
+            }
+        }
+
         fun danger(text: String): String = MenuHeads.color(" &#FF7A7A") + text
 
         /** A bracketed label such as `[ Версия ]`, in a colour that stays the same for the same word. */
@@ -1389,6 +1600,10 @@ internal class PluginsMenu(
         val LEVELS = mapOf("error" to "ошибки", "warning" to "предупреждения", "info" to "сведения")
         const val CLOSE = 53
         const val BUS = "pnlibrary.events.bus"
+        const val CYCLE_HOLDS = 3
+        const val HOURS_PER_DAY = 24
+        const val MINUTES_PER_HOUR = 60
+        const val TASKS = "pnlibrary.tasks"
         const val DETAIL_ROWS = 5
         const val DETAIL_BACK = 40
         const val CHANGE_FIRST = 19

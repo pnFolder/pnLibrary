@@ -22,7 +22,9 @@ import org.pnfolder.pnlibrary.api.runtime.PnLibraryConfig
 import org.pnfolder.pnlibrary.api.runtime.PnLibraryIdentity
 import org.pnfolder.pnlibrary.api.runtime.PnLibraryProvider
 import org.pnfolder.pnlibrary.api.services.ServiceManager
+import org.pnfolder.pnlibrary.api.tasks.TaskId
 import org.pnfolder.pnlibrary.api.tasks.TaskScope
+import org.pnfolder.pnlibrary.api.tasks.TaskSnapshot
 import org.pnfolder.pnlibrary.api.updates.UpdateService
 import org.pnfolder.pnlibrary.api.version.SemanticVersion
 import org.pnfolder.pnlibrary.common.lang.runCatchingNonFatal
@@ -188,6 +190,10 @@ internal class PnLibraryImpl(
                 .take(limit)
         }.getOrDefault(emptyList())
     }
+
+    override fun taskSnapshots(): List<TaskSnapshot> = taskService.query()
+
+    override fun cancelTask(id: String): Boolean = runCatchingNonFatal { taskService.cancel(TaskId(id)) }.getOrDefault(false)
 
     override fun journalDetail(id: String): JournalDetail? = runCatchingNonFatal {
         val records = journal.read(limit = JOURNAL_SCAN).filter { it.fingerprint == id }
