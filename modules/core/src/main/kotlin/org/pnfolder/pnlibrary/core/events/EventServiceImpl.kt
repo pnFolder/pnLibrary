@@ -120,6 +120,8 @@ internal class EventServiceImpl(
         val type = java.lang.ref.WeakReference(type)
         val calls = LongAdder()
         val denied = LongAdder()
+
+        @Volatile var lastMillis = 0L
     }
 
     private val counters = java.util.concurrent.ConcurrentHashMap<String, Counter>()
@@ -128,6 +130,7 @@ internal class EventServiceImpl(
         val name = event.javaClass.name
         val counter = counters[name] ?: counters.computeIfAbsent(name) { Counter(event.javaClass) }
         counter.calls.increment()
+        counter.lastMillis = System.currentTimeMillis()
         if (!event.isAllowed) counter.denied.increment()
         history?.record(name, !event.isAllowed)
     }
@@ -155,7 +158,10 @@ internal class EventServiceImpl(
             return types.entries.map { (name, type) ->
                 val counter = counters[name]
                 val listeners = if (type == null) 0 else handlersFor(type).count { !it.isClosed }
-                EventInfo(name, listeners, counter?.calls?.sum() ?: 0, counter?.denied?.sum() ?: 0)
+                EventInfo(
+                    name, listeners, counter?.calls?.sum() ?: 0, counter?.denied?.sum() ?: 0,
+                    counter?.lastMillis?.takeIf { it > 0 }?.let(java.time.Instant::ofEpochMilli),
+                )
             }.sortedBy { it.eventType }
         }
 

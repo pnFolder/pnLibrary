@@ -1941,17 +1941,20 @@ public final class org/pnfolder/pnlibrary/api/events/EventHour {
 }
 
 public final class org/pnfolder/pnlibrary/api/events/EventInfo {
-	public fun <init> (Ljava/lang/String;IJJ)V
+	public fun <init> (Ljava/lang/String;IJJLjava/time/Instant;)V
+	public synthetic fun <init> (Ljava/lang/String;IJJLjava/time/Instant;ILkotlin/jvm/internal/DefaultConstructorMarker;)V
 	public final fun component1 ()Ljava/lang/String;
 	public final fun component2 ()I
 	public final fun component3 ()J
 	public final fun component4 ()J
-	public final fun copy (Ljava/lang/String;IJJ)Lorg/pnfolder/pnlibrary/api/events/EventInfo;
-	public static synthetic fun copy$default (Lorg/pnfolder/pnlibrary/api/events/EventInfo;Ljava/lang/String;IJJILjava/lang/Object;)Lorg/pnfolder/pnlibrary/api/events/EventInfo;
+	public final fun component5 ()Ljava/time/Instant;
+	public final fun copy (Ljava/lang/String;IJJLjava/time/Instant;)Lorg/pnfolder/pnlibrary/api/events/EventInfo;
+	public static synthetic fun copy$default (Lorg/pnfolder/pnlibrary/api/events/EventInfo;Ljava/lang/String;IJJLjava/time/Instant;ILjava/lang/Object;)Lorg/pnfolder/pnlibrary/api/events/EventInfo;
 	public fun equals (Ljava/lang/Object;)Z
 	public final fun getCalls ()J
 	public final fun getDenied ()J
 	public final fun getEventType ()Ljava/lang/String;
+	public final fun getLastCalledAt ()Ljava/time/Instant;
 	public final fun getListeners ()I
 	public fun hashCode ()I
 	public fun toString ()Ljava/lang/String;
