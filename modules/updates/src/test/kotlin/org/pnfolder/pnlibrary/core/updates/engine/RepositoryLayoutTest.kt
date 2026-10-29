@@ -16,28 +16,34 @@ class RepositoryLayoutTest {
         .firstOrNull(Files::isDirectory)
         ?: error("The .pnlibrary folder was not found above ${Paths.get("").toAbsolutePath()}")
 
-    /** The real catalog lies in `.pnlibrary`; the demonstration catalog and its changelogs in `integration/.pnlibrary`. */
-    private fun location(name: String): Path =
-        if (name.endsWith(".example.json")) folder.resolveSibling("integration").resolve(".pnlibrary").resolve(name) else folder.resolve(name)
+    /** The real catalog of pnLibrary and the filled example for plugin authors in `integration/template/.pnlibrary`. */
+    private class Place(val file: Path, val product: String, val linkPrefix: String)
 
-    private fun changelogs(name: String): Path = location(name).resolveSibling("changelogs")
+    private val places: Map<String, Place> = mapOf(
+        "releases.json" to Place(folder.resolve("releases.json"), "pnlibrary", "/.pnlibrary/changelogs/"),
+        "template releases.json" to Place(
+            folder.resolveSibling("integration").resolve("template").resolve(".pnlibrary").resolve("releases.json"),
+            "myplugin",
+            "/.pnlibrary/changelogs/",
+        ),
+    )
+
+    private fun changelogs(name: String): Path = places.getValue(name).file.resolveSibling("changelogs")
 
     private fun catalog(name: String): ReleaseCatalog {
-        val file = location(name)
-        assertTrue(Files.isRegularFile(file), "$name is missing from .pnlibrary")
+        val file = places.getValue(name).file
+        assertTrue(Files.isRegularFile(file), "$name is missing")
         return ReleaseCatalogCodec().decode(Files.readAllBytes(file))
     }
 
     @Test
-    fun `releases json and its example are valid catalogs of this product`() {
-        listOf("releases.json", "releases.example.json").forEach { name ->
-            assertEquals("pnlibrary", catalog(name).product, name)
-        }
+    fun `releases json and the template example are valid catalogs of their product`() {
+        places.forEach { (name, place) -> assertEquals(place.product, catalog(name).product, name) }
     }
 
     @Test
     fun `every listed version has a changelog file named after it`() {
-        listOf("releases.json", "releases.example.json").forEach { name ->
+        places.keys.forEach { name ->
             catalog(name).releases.forEach { release ->
                 val changelog = changelogs(name).resolve("${release.version}.md")
                 assertTrue(Files.isRegularFile(changelog), "$name lists ${release.version} but ${changelog.fileName} is missing")
@@ -47,36 +53,31 @@ class RepositoryLayoutTest {
 
     @Test
     fun `every universal artifact names a universal jar and carries a checksum`() {
-        listOf("releases.json", "releases.example.json").forEach { name ->
-            catalog(name).releases.forEach { release ->
-                release.artifacts.filter { it.platform == PlatformType.UNIVERSAL }.forEach { artifact ->
-                    assertTrue(
-                        artifact.file.matches(Regex("(?i)^pnLibrary-[0-9][^/\\\\]*-universal\\.jar\$")),
-                        "$name: the universal artifact of ${release.version} must be named a universal jar",
-                    )
-                    assertNotNull(artifact.sha256, "$name: the universal artifact of ${release.version} has no sha256")
-                }
+        catalog("releases.json").releases.forEach { release ->
+            release.artifacts.filter { it.platform == PlatformType.UNIVERSAL }.forEach { artifact ->
+                assertTrue(
+                    artifact.file.matches(Regex("(?i)^pnLibrary-[0-9][^/\\\\]*-universal\\.jar\$")),
+                    "the universal artifact of ${release.version} must be named a universal jar",
+                )
+                assertNotNull(artifact.sha256, "the universal artifact of ${release.version} has no sha256")
             }
         }
     }
 
     @Test
     fun `a changelog link points at the file of its own version`() {
-        listOf("releases.json", "releases.example.json").forEach { name ->
+        places.forEach { (name, place) ->
             catalog(name).releases.forEach { release ->
                 val link = release.changelogUrl ?: return@forEach
                 assertNotNull(link.path)
-                assertTrue(
-                    link.path.endsWith("${if (name.endsWith(".example.json")) "/integration" else ""}/.pnlibrary/changelogs/${release.version}.md"),
-                    "$name: the changelog link of ${release.version} is $link",
-                )
+                assertTrue(link.path.endsWith("${place.linkPrefix}${release.version}.md"), "$name: the changelog link of ${release.version} is $link")
             }
         }
     }
 
     @Test
     fun `the channel of a release matches the word in its version`() {
-        listOf("releases.json", "releases.example.json").forEach { name ->
+        places.keys.forEach { name ->
             catalog(name).releases.forEach { release ->
                 val word = release.version.prerelease.firstOrNull()
                 assertEquals(release.channel.name.lowercase(), word, "$name: ${release.version} is listed in channel ${release.channel}")

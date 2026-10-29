@@ -39,7 +39,7 @@
 
 ```
 .pnlibrary/
-├── releases.json        список выпущенных версий
+├── releases.json        список выпущенных версий (заполненный образец: template/.pnlibrary/releases.json)
 └── changelogs/
     └── <версия>.md      описание каждой версии
 ```
