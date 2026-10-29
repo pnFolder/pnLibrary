@@ -16,6 +16,7 @@ public final class org/pnfolder/pnlibrary/common/concurrent/ManagedWorker : java
 	public fun <init> (Ljava/lang/String;IILjava/time/Duration;)V
 	public synthetic fun <init> (Ljava/lang/String;IILjava/time/Duration;ILkotlin/jvm/internal/DefaultConstructorMarker;)V
 	public fun close ()V
+	public final fun queued ()I
 	public final fun submit (Lkotlin/jvm/functions/Function0;)Ljava/util/concurrent/CompletableFuture;
 }
 

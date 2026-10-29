@@ -54,7 +54,7 @@ internal class EventServiceImpl(
 
     override fun <E : Event> callEvent(event: E): E = callAs(event, DispatchMode.SYNC)
 
-    private val worker = ManagedWorker("pnLibrary-events")
+    private val worker = ManagedWorker("pnLibrary-events", parallelism = ASYNC_THREADS)
 
     override fun <E : Event> callEventAsync(event: E): CompletionStage<E> = worker.submit { callAs(event, DispatchMode.ASYNC) }
 
@@ -163,6 +163,8 @@ internal class EventServiceImpl(
 
         override fun hourly(eventType: String?): List<org.pnfolder.pnlibrary.api.events.EventHour> =
             history?.hourly(eventType).orEmpty()
+
+        override fun asyncQueued(): Int = worker.queued()
 
         override fun exportHistory(json: Boolean): java.nio.file.Path? = history?.export(json)
 
@@ -396,4 +398,7 @@ internal class EventServiceImpl(
         }
     }
 
+    private companion object {
+        const val ASYNC_THREADS = 2
+    }
 }

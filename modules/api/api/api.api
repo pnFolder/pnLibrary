@@ -1950,6 +1950,7 @@ public final class org/pnfolder/pnlibrary/api/events/EventInfo {
 }
 
 public abstract interface class org/pnfolder/pnlibrary/api/events/EventInspector {
+	public fun asyncQueued ()I
 	public abstract fun clearTraces ()V
 	public abstract fun disableTracing (Ljava/lang/Class;)V
 	public abstract fun enableTracing (Ljava/lang/Class;I)V

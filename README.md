@@ -65,7 +65,7 @@ val plugin = library.plugins.register(this)
 val bukkit = library.platform<BukkitPlatform>()   // меню, предметы, визуальные сущности
 ```
 
-API содержит только интерфейсы и модели, реализация живёт в рантайме. Плагин никогда не зависит от классов
+API состоит из интерфейсов, моделей и небольших служебных помощников (билдеры, ключи, сериализаторы); реализация живёт в рантайме. Плагин никогда не зависит от классов
 `core`, а публичный API защищён проверкой бинарной совместимости.
 
 ## Сборка
@@ -87,6 +87,13 @@ API содержит только интерфейсы и модели, реал
 - [Обновления: команды, права, откат](docs/updates.md)
 - [Подключение плагина к pnLibrary: для людей и ИИ](integration/README.md)
 - [Папка `.pnlibrary` в репозитории плагина](docs/repository.md)
+- [Действия](docs/actions.md)
+- [Проверки](docs/checks.md)
+- [Каталог релизов](docs/releases.md)
+- [Плейсхолдеры](docs/placeholders.md)
+- [Задачи](docs/tasks.md)
+- [Диагностика](docs/diagnostics.md)
+- [Метрики](docs/metrics.md)
 - [Валюта](docs/currency.md)
 - [Локализация Minecraft](docs/localization.md)
 - [Расширения](docs/expansions.md)
