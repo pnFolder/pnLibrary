@@ -9,6 +9,10 @@ import org.bukkit.inventory.ItemStack
 import org.bukkit.plugin.Plugin
 import org.pnfolder.pnlibrary.api.chat.ChatNotice
 import org.pnfolder.pnlibrary.api.chat.ChatTone
+import org.pnfolder.pnlibrary.api.events.DispatchMode
+import org.pnfolder.pnlibrary.api.events.EventInfo
+import org.pnfolder.pnlibrary.api.events.EventTrace
+import org.pnfolder.pnlibrary.api.events.ListenerInfo
 import org.pnfolder.pnlibrary.api.platform.platform
 import org.pnfolder.pnlibrary.api.runtime.PnLibrary
 import org.pnfolder.pnlibrary.api.runtime.PnLibraryIdentity
@@ -22,14 +26,19 @@ import org.pnfolder.pnlibrary.bukkit.inventory.Menu
 import org.pnfolder.pnlibrary.bukkit.inventory.MenuBuilder
 import org.pnfolder.pnlibrary.bukkit.inventory.MenuClickHandler
 import org.pnfolder.pnlibrary.bukkit.inventory.Menus
+import org.pnfolder.pnlibrary.common.time.DisplayZone
 import org.pnfolder.pnlibrary.core.lifecycle.JournalGroup
+import org.pnfolder.pnlibrary.core.lifecycle.journalDetail
 import org.pnfolder.pnlibrary.core.lifecycle.journalGroups
 import org.pnfolder.pnlibrary.core.updates.catalog.CatalogLabels
 import org.pnfolder.pnlibrary.core.updates.catalog.UpdateCatalogView
 import org.pnfolder.pnlibrary.core.updates.policy.UpdateDefaults
 import java.time.Duration
+import java.time.Instant
+import java.time.LocalDate
 import java.time.ZoneId
 import java.time.format.DateTimeFormatter
+import java.util.Locale
 import org.bukkit.command.CommandSender as NativeSender
 import org.pnfolder.pnlibrary.api.commands.CommandSender as Reply
 
@@ -37,7 +46,9 @@ import org.pnfolder.pnlibrary.api.commands.CommandSender as Reply
  * The inventory menu of `/pn gui`: everything the update commands do, on several connected screens.
  *
  * Screens: the home page, the list of plugins (all, with updates, with problems), the card of one plugin, its
- * channel, pause and releases, the history of one plugin or of all, and the saved backups with a rollback choice.
+ * channel, pause and releases, the history of one plugin or of all and one entry of it, the saved backups with a
+ * rollback choice, the journal with one event, and the plugin events (event bus) with their listeners, days and
+ * recorded calls.
  * Every action calls the same services as the commands and asks for the same permissions, so the audit record is the
  * same, and every answer is a chat notice in the library's own style. Buttons are textured heads with an ordinary
  * item as the fallback, so the menu opens on every server from 1.8.
@@ -48,6 +59,21 @@ internal class PluginsMenu(
     private val replies: BukkitCommandReplies,
 ) {
     private enum class Filter(val title: String) { ALL("Плагины"), UPDATES("Обновления"), PROBLEMS("Проблемы") }
+
+    private enum class Tone(val from: String, val to: String) {
+        NORMAL("D19BFF", "F5C6FF"),
+        GOOD("6EE7A0", "B8F5D2"),
+        WARN("FDE047", "FFB347"),
+        DANGER("FF7A7A", "FFB0A0"),
+        MUTED("9AA4AD", "C9D0D6"),
+    }
+
+    private enum class BusFilter(val label: String, val keep: (EventInfo) -> Boolean) {
+        ALL("все", { true }),
+        LISTENED("со слушателями", { it.listeners > 0 }),
+        CALLED("вызывались", { it.calls > 0 }),
+        DENIED("с отказами", { it.denied > 0 }),
+    }
 
     private class Row(val stack: ItemStack, val click: MenuClickHandler? = null)
 
@@ -96,23 +122,28 @@ internal class PluginsMenu(
         builder.button(15,
             section(Icons.PROBLEMS, "BARRIER", "Проблемы", "Ошибки проверки и блокировки обновлений.", "Найдено" to "$problems"),
             go { plugins(it, Filter.PROBLEMS, 0) })
-        builder.button(29, section(Icons.HISTORY, "BOOK", "История", "Проверки, обновления, откаты и ошибки."), go { history(it, null, 0) })
+        builder.button(28, section(Icons.HISTORY, "BOOK", "История", "Проверки, обновления, откаты и ошибки."), go { history(it, null, 0) })
         builder.button(
-            31,
+            30,
             section(
-                Icons.PROBLEMS, "BOOK", "Журнал событий", "Ошибки и предупреждения сервера за последние сутки.",
+                Icons.PROBLEMS, "BOOK", "Журнал сервера", "Ошибки и предупреждения сервера за последние сутки.",
                 "Ошибок" to if (errors > 0) "✖ $errors" else "✔ нет",
             ),
             go { journal(it, null, 0) },
         )
-        builder.button(33, section(Icons.BACKUPS, "CHEST", "Резервные копии", "Откат к сохранённым версиям плагинов."), go { backups(it, 0) })
+        builder.button(
+            32,
+            section(Icons.UPDATES, "REDSTONE_TORCH", "События плагинов", "Как плагины общаются друг с другом: слушатели, вызовы, ошибки."),
+            go { allowed(it, BUS) { busHome(it) } },
+        )
+        builder.button(34, section(Icons.BACKUPS, "CHEST", "Резервные копии", "Откат к сохранённым версиям плагинов."), go { backups(it, 0) })
         builder.button(
             24,
             icon(Icons.CHECK, "COMPASS", "Проверить всё", Style.lore(listOf("Спросить каталоги релизов прямо сейчас."), emptyList(), Style.left("проверить"))),
             go { checkAll(it) },
         )
         builder.button(20, section(Icons.SETTINGS, "REDSTONE", "Настройки", "Автозагрузка и пауза для всех плагинов сразу."), go { settings(it) })
-        builder.button(22, section(Icons.TOOLS, "ANVIL", "Инструменты", "Статус, события, отчёт для поддержки, валюты."), go { tools(it) })
+        builder.button(22, section(Icons.TOOLS, "ANVIL", "Инструменты", "Статус сервера, отчёт для поддержки, валюты."), go { tools(it) })
         builder.button(
             SUPPORT_SLOT,
             icon(Icons.SUPPORT, "PAPER", "Поддержка", Style.lore(listOf("Если возникла проблема, мы поможем."), emptyList(), Style.left("получить ссылку"))),
@@ -159,7 +190,7 @@ internal class PluginsMenu(
         }
         val rows = when (filter) {
             Filter.ALL -> shown + unmanaged(updatable.map { it.product.lowercase() }.toSet())
-            Filter.PROBLEMS -> shown + journalRows("error")
+            Filter.PROBLEMS -> shown + journalRows("error") { who -> plugins(who, filter, page) }
             Filter.UPDATES -> shown
         }
         list(player, filter.title, rows, page, PAGE_SIZE, { who, to -> plugins(who, filter, to) }, { home(it) }, "Здесь пусто")
@@ -305,8 +336,12 @@ internal class PluginsMenu(
             replies.onServerThread {
                 if (!player.isOnline) return@onServerThread
                 val (total, entries) = result ?: (0 to emptyList())
-                val rows = if (error != null) emptyList() else entries.map { Row(historyItem(it)) }
                 val back: (Player) -> Unit = if (product == null) { who -> home(who) } else { who -> card(who, product) }
+                val rows = if (error != null) {
+                    emptyList()
+                } else {
+                    entries.map { entry -> Row(historyItem(entry), go { historyEntry(it, entry) { who -> history(who, product, page) } }) }
+                }
                 val title = if (product == null) "История" else "История $product"
                 list(player, title, rows, page, HISTORY_PAGE, { who, to -> history(who, product, to) }, back, "Записей пока нет", total)
             }
@@ -352,48 +387,48 @@ internal class PluginsMenu(
 
     /** The journal of the last day: equal events merged, each opening its card in the chat. */
     private fun journal(player: Player, level: String?, page: Int) {
-        val title = "Журнал" + (level?.let { " " + LEVELS.getValue(it) } ?: "")
+        val title = "Журнал сервера" + (level?.let { " " + LEVELS.getValue(it) } ?: "")
         val next = LEVEL_CYCLE[(LEVEL_CYCLE.indexOf(level) + 1) % LEVEL_CYCLE.size]
         val cycle = icon(
             Icons.SETTINGS, "HOPPER", "Уровень: ${level?.let { LEVELS.getValue(it) } ?: "все"}",
             Style.lore(listOf("Какие события показывать."), listOf("Дальше" to (next?.let { LEVELS.getValue(it) } ?: "все")), Style.left("переключить")),
         )
         list(
-            player, title, journalRows(level), page, PAGE_SIZE, { who, to -> journal(who, level, to) }, { home(it) }, "За сутки событий нет",
+            player, title, journalRows(level) { who -> journal(who, level, page) }, page, PAGE_SIZE,
+            { who, to -> journal(who, level, to) }, { home(it) }, "За сутки событий нет",
             extra = { it.button(FILTER, cycle, go { who -> journal(who, next, 0) }) },
         )
     }
 
-    private fun journalRows(level: String?): List<Row> = library.journalGroups(level, JOURNAL_HOURS, JOURNAL_LIMIT).map { group ->
-        Row(
-            journalItem(group),
-            goClick { who, click ->
-                who.closeInventory()
-                who.performCommand(
+    private fun journalRows(level: String?, back: (Player) -> Unit): List<Row> =
+        library.journalGroups(level, JOURNAL_HOURS, JOURNAL_LIMIT).map { group ->
+            Row(
+                journalItem(group),
+                goClick { who, click ->
                     when (click) {
-                        ClickType.RIGHT -> "pn events times ${group.id}"
-                        ClickType.SHIFT_LEFT -> "pn events full ${group.id}"
-                        else -> "pn events view ${group.id}"
-                    },
-                )
-            },
-        )
+                        ClickType.RIGHT -> chat(who, "pn events times ${group.id}")
+                        ClickType.SHIFT_LEFT -> chat(who, "pn events full ${group.id}")
+                        else -> journalEvent(who, group.id, back)
+                    }
+                },
+            )
+        }
+
+    private fun chat(player: Player, command: String) {
+        player.closeInventory()
+        player.performCommand(command)
     }
 
     private fun journalItem(group: JournalGroup): ItemStack {
-        val material = when (group.level) {
-            "error" -> "BARRIER"
-            "warning" -> "GOLD_INGOT"
-            else -> "PAPER"
-        }
+        val material = journalMaterial(group.level)
         val parameters = listOf(
             "Источник" to group.source,
-            "Когда" to TIME.format(java.time.Instant.ofEpochMilli(group.lastMillis)),
+            "Когда" to TIME.format(Instant.ofEpochMilli(group.lastMillis)),
             "Повторов" to "${group.count}",
         )
         val lore = Style.lore(
             listOf(group.message.take(MESSAGE_PREVIEW)), parameters,
-            Style.left("подробности в чате"), Style.right("все повторы"), Style.shiftLeft("полный текст ошибки"),
+            Style.left("открыть событие"), Style.right("все повторы в чат"), Style.shiftLeft("полный текст в чат"),
         )
         return icon(null, material, "${LEVELS.getValue(group.level)}: ${group.source}", lore, danger = group.level == "error", warn = group.level == "warning")
     }
@@ -461,8 +496,6 @@ internal class PluginsMenu(
         val builder = frame(Menus.chest(title("Инструменты")).rows(SMALL_ROWS + 1), SMALL_ROWS + 1)
         val entries = listOf(
             Triple(Icons.CHECK, "COMPASS", "Статус сервера") to ("Версии сервера и всех плагинов." to "pn status"),
-            Triple(Icons.HISTORY, "BOOK", "События") to ("Журнал событий сервера." to "pn events"),
-            Triple(Icons.OVERVIEW, "REDSTONE_COMPARATOR", "Шина событий") to ("Слушатели, вызовы и трассы." to "pn bus"),
             Triple(Icons.CHANGELOG, "WRITTEN_BOOK", "Отчёт для поддержки") to ("Зашифрованный отчёт, который можно отправить нам." to "pn debug"),
             Triple(Icons.RELEASES, "GOLD_NUGGET", "Валюты") to ("Валюты и балансы игроков." to "pn money list"),
         )
@@ -482,6 +515,417 @@ internal class PluginsMenu(
         )
         builder.button(SMALL_BACK + 9, backItem(), go { home(it) })
         show(player, builder.build())
+    }
+
+    // --- journal event and history entry -------------------------------------------------------------------------
+
+    /** One journal event with its text, stack trace, repeats and facts; [back] returns to the list it was opened from. */
+    private fun journalEvent(player: Player, id: String, back: (Player) -> Unit) {
+        val detail = library.journalDetail(id)
+        if (detail == null) {
+            tell(player, ChatTone.INFO, "Это событие уже вышло из журнала.")
+            return back(player)
+        }
+        val builder = frame(Menus.chest(title("Событие")).rows(DETAIL_ROWS), DETAIL_ROWS)
+        val error = detail.level == "error"
+        val summary = Style.lore(
+            wrap(detail.message),
+            listOf(
+                "Важность" to LEVELS.getValue(detail.level),
+                "Источник" to detail.source,
+                "Повторов" to "${detail.times.size}",
+                "Последний раз" to TIME_SECONDS.format(Instant.ofEpochMilli(detail.times.first())),
+            ),
+        )
+        builder.slot(4, icon(null, journalMaterial(detail.level), "Событие ${detail.source}", summary, danger = error, warn = detail.level == "warning"))
+        detail.stackTrace?.let { trace ->
+            val lore = Style.lore(emptyList(), emptyList(), Style.left("весь текст в чат"), extra = wrap(trace, limit = TRACE_LINES).map { Style.danger(it) })
+            builder.button(
+                20,
+                icon(Icons.PROBLEMS, "BOOK", "Текст ошибки", lore, danger = true),
+                go { who -> who.closeInventory(); who.performCommand("pn events full $id") },
+            )
+        }
+        val times = detail.times.take(TIMES_SHOWN).map { TIME_SECONDS.format(Instant.ofEpochMilli(it)) }
+        builder.slot(22, icon(Icons.CLOCK, "CLOCK", "Когда случалось", Style.lore(times, emptyList()), alternative = "WATCH"))
+        if (detail.details.isNotEmpty()) {
+            val facts = detail.details.entries.take(DETAILS_SHOWN).map { (key, value) -> key to value.take(MESSAGE_PREVIEW) }
+            builder.slot(24, icon(Icons.CHANGELOG, "PAPER", "Подробности", Style.lore(emptyList(), facts)))
+        }
+        builder.button(
+            30,
+            icon(
+                Icons.CHECK, "COMPASS", "Показать в чате",
+                Style.lore(listOf("То же самое, что команда /pn events view."), emptyList(), Style.left("открыть в чате")),
+            ),
+            go { who -> who.closeInventory(); who.performCommand("pn events view $id") },
+        )
+        builder.button(DETAIL_BACK, backItem(), go { back(it) })
+        show(player, builder.build())
+    }
+
+    /** One entry of the update history with the whole message and a button for every plugin it touched. */
+    private fun historyEntry(player: Player, entry: UpdateHistoryEntry, back: (Player) -> Unit) {
+        val builder = frame(Menus.chest(title("Запись истории")).rows(DETAIL_ROWS), DETAIL_ROWS)
+        builder.slot(4, historyItem(entry, full = true))
+        entry.changes.take(CHANGE_BUTTONS).forEachIndexed { index, change ->
+            val product = change.product.value
+            val known = library.updates.get(product) != null
+            val lore = Style.lore(
+                listOf("Версия изменилась."),
+                listOf("Было" to "${change.from}", "Стало" to "${change.to}"),
+                *if (known) arrayOf(Style.left("открыть карточку")) else emptyArray(),
+            )
+            val stack = icon(Icons.PLUGIN, "PAPER", product, lore, muted = !known)
+            if (known) builder.button(CHANGE_FIRST + index, stack, go { card(it, product) }) else builder.slot(CHANGE_FIRST + index, stack)
+        }
+        builder.button(DETAIL_BACK, backItem(), go { back(it) })
+        show(player, builder.build())
+    }
+
+    // --- plugin events (the event bus) ---------------------------------------------------------------------------
+
+    private val bus get() = library.events.inspector
+
+    /** The start page of the plugin events: what they are, the counters and the way to every view. */
+    private fun busHome(player: Player) {
+        val events = bus.events()
+        val listeners = bus.listeners()
+        val today = LocalDate.now(DisplayZone.zone)
+        val calls = bus.history().filter { it.date == today }.sumOf { it.calls }
+        val failures = listeners.sumOf { it.failures }
+        val traced = bus.tracedEvents().size
+        val builder = frame(Menus.chest(title("События плагинов")).rows(HOME_ROWS), HOME_ROWS)
+        builder.slot(
+            4,
+            icon(
+                Icons.OVERVIEW, "NETHER_STAR", "События плагинов",
+                Style.lore(
+                    wrap("Так плагины сообщают друг другу, что произошло. Одни вызывают событие, другие слушают его и отвечают."),
+                    listOf(
+                        "Событий" to "${events.size}",
+                        "Слушателей" to "${listeners.size}",
+                        "Вызовов сегодня" to "$calls",
+                        "Ошибок" to if (failures > 0) "✖ $failures" else "✔ нет",
+                    ),
+                ),
+            ),
+        )
+        builder.button(
+            20, section(Icons.UPDATES, "REDSTONE_TORCH", "Все события", "Какие события есть и как часто их вызывают.", "Всего" to "${events.size}"),
+            go { busEvents(it, BusFilter.ALL, 0) },
+        )
+        builder.button(
+            22, section(Icons.PLUGINS, "COMPARATOR", "Слушатели", "Кто и на какие события подписан.", "Всего" to "${listeners.size}"),
+            go { busListeners(it, ListenerQuery("Слушатели", { who -> busHome(who) }), 0) },
+        )
+        builder.button(
+            24, section(Icons.RELEASES, "BOOKSHELF", "По плагинам", "Слушатели, сгруппированные по плагинам."),
+            go { busPlugins(it, 0) },
+        )
+        builder.button(
+            28, section(Icons.CLOCK, "CLOCK", "Медленные", "Слушатели, которые дольше всех работают."),
+            go {
+                val slow = ListenerQuery("Медленные", { who -> busHome(who) }, { l -> l.invocations > 0 }, compareByDescending { l -> l.averageNanos })
+                busListeners(it, slow, 0)
+            },
+        )
+        builder.button(
+            30,
+            icon(
+                Icons.PROBLEMS, "BARRIER", "Ошибки слушателей",
+                Style.lore(listOf("Слушатели, которые падали."), listOf("Ошибок" to "$failures"), Style.left("открыть")), danger = failures > 0,
+            ),
+            go { busListeners(it, ListenerQuery("Ошибки", { who -> busHome(who) }, { l -> l.failures > 0 }, compareByDescending { l -> l.failures }), 0) },
+        )
+        builder.button(
+            32, section(Icons.CHANGELOG, "WRITTEN_BOOK", "Записи вызовов", "Подробный разбор записанных вызовов.", "Записывается" to "$traced"),
+            go { busTraces(it, null, 0) },
+        )
+        builder.button(34, section(Icons.HISTORY, "BOOK", "История по дням", "Сколько раз вызывали события каждый день."), go { busDays(it, null, 0) })
+        builder.button(
+            38,
+            icon(
+                Icons.BACKUPS, "CHEST", "Выгрузить в файл",
+                Style.lore(listOf("Записать счётчики в CSV рядом с историей."), emptyList(), Style.left("выгрузить")),
+            ),
+            go { busExport(it) },
+        )
+        builder.button(HOME_CLOSE, backItem(), go { home(it) })
+        show(player, builder.build())
+    }
+
+    private fun busEvents(player: Player, filter: BusFilter, page: Int) {
+        val next = BusFilter.values()[(filter.ordinal + 1) % BusFilter.values().size]
+        val rows = bus.events().filter(filter.keep).sortedByDescending { it.calls }.map { info ->
+            Row(
+                eventItem(info),
+                goClick { who, click ->
+                    if (click == ClickType.RIGHT) {
+                        switchTrace(info.eventType)
+                        busEvents(who, filter, page)
+                    } else {
+                        busEvent(who, info.eventType) { busEvents(it, filter, page) }
+                    }
+                },
+            )
+        }
+        val cycle = icon(
+            Icons.SETTINGS, "HOPPER", "Показать: ${filter.label}",
+            Style.lore(listOf("Какие события показывать."), listOf("Дальше" to next.label), Style.left("переключить")),
+        )
+        list(
+            player, "События: ${filter.label}", rows, page, PAGE_SIZE, { who, to -> busEvents(who, filter, to) }, { busHome(it) }, "Событий нет",
+            extra = { it.button(FILTER, cycle, go { who -> busEvents(who, next, 0) }) },
+        )
+    }
+
+    private fun eventItem(info: EventInfo): ItemStack {
+        val recording = info.eventType in bus.tracedEvents()
+        val parameters = buildList {
+            add("Слушателей" to "${info.listeners}")
+            add("Вызовов" to "${info.calls}")
+            if (info.denied > 0) add("Отказов" to "${info.denied}")
+            add("Запись" to if (recording) "● идёт" else "не ведётся")
+        }
+        val material = if (info.listeners > 0) "REDSTONE_TORCH" else "COAL"
+        val lore = Style.lore(emptyList(), parameters, Style.left("открыть событие"), Style.right(if (recording) "остановить запись" else "начать запись"))
+        return icon(null, material, shortName(info.eventType), lore, alternative = "REDSTONE_TORCH_ON".takeIf { info.listeners > 0 }, warn = info.denied > 0)
+    }
+
+    /** One event: its counters, the recording switch and the ways to its listeners, days and recorded calls. */
+    private fun busEvent(player: Player, name: String, back: (Player) -> Unit) {
+        val info = bus.events().firstOrNull { it.eventType == name }
+        if (info == null) {
+            tell(player, ChatTone.INFO, "Такого события больше нет.")
+            return back(player)
+        }
+        val recording = name in bus.tracedEvents()
+        val builder = frame(Menus.chest(title(shortName(name))).rows(DETAIL_ROWS), DETAIL_ROWS)
+        builder.slot(
+            4,
+            icon(
+                null, "NETHER_STAR", shortName(name),
+                Style.lore(
+                    wrap(name),
+                    listOf("Слушателей" to "${info.listeners}", "Вызовов" to "${info.calls}", "Отказов" to "${info.denied}"),
+                ),
+            ),
+        )
+        val record = Style.lore(
+            listOf("Запоминать каждый вызов: кто ответил и что изменил."),
+            listOf("Сейчас" to if (recording) "● запись идёт" else "не ведётся"),
+            Style.left(if (recording) "остановить" else "начать"),
+        )
+        builder.button(
+            20,
+            icon(Icons.TOGGLE, "LEVER", "Запись вызовов", record, good = recording),
+            go { who -> switchTrace(name); busEvent(who, name, back) },
+        )
+        builder.button(
+            22,
+            section(Icons.PLUGINS, "COMPARATOR", "Слушатели", "Кто слушает это событие, по порядку вызова.", "Всего" to "${info.listeners}"),
+            go { who -> busListeners(who, ListenerQuery("Слушатели ${shortName(name)}", { busEvent(it, name, back) }, { l -> l.eventType == name }), 0) },
+        )
+        builder.button(24, section(Icons.HISTORY, "BOOK", "История", "Вызовы этого события по дням."), go { busDays(it, name, 0) })
+        builder.button(
+            30, section(Icons.CHANGELOG, "WRITTEN_BOOK", "Записанные вызовы", "Что случалось при каждом вызове."),
+            go { busTraces(it, name, 0) },
+        )
+        builder.button(DETAIL_BACK, backItem(), go { back(it) })
+        show(player, builder.build())
+    }
+
+    private fun switchTrace(name: String) {
+        val type = bus.eventType(name) ?: return
+        if (name in bus.tracedEvents()) bus.disableTracing(type) else bus.enableTracing(type)
+    }
+
+    /** What a list of listeners shows: its [title], which listeners to keep, their order and where to go back. */
+    private class ListenerQuery(
+        val title: String,
+        val back: (Player) -> Unit,
+        val keep: (ListenerInfo) -> Boolean = { true },
+        val order: Comparator<ListenerInfo>? = null,
+    )
+
+    private fun busListeners(player: Player, query: ListenerQuery, page: Int) {
+        val all = bus.listeners().filter(query.keep).let { if (query.order != null) it.sortedWith(query.order) else it }
+        val rows = all.map { info ->
+            Row(listenerItem(info), go { who -> busEvent(who, info.eventType) { busListeners(it, query, page) } })
+        }
+        list(player, query.title, rows, page, PAGE_SIZE, { who, to -> busListeners(who, query, to) }, query.back, "Слушателей нет")
+    }
+
+    private fun listenerItem(info: ListenerInfo): ItemStack {
+        val owner = info.module?.let { "${info.plugin}/$it" } ?: info.plugin.toString()
+        val parameters = buildList {
+            add("Событие" to shortName(info.eventType))
+            add("Приоритет" to "${info.priority}")
+            add("Запусков" to "${info.invocations}")
+            add("Среднее" to duration(info.averageNanos))
+            add("Максимум" to duration(info.maxNanos))
+            if (info.failures > 0) add("Ошибок" to "✖ ${info.failures}")
+            if (info.ignoreDenied) add("Особенность" to "работает даже после отказа")
+            add("Откуда" to info.source.take(MESSAGE_PREVIEW))
+        }
+        val lore = Style.lore(emptyList(), parameters, Style.left("открыть событие"))
+        return icon(null, "COMPARATOR", owner, lore, alternative = "REDSTONE_COMPARATOR", danger = info.failures > 0)
+    }
+
+    private fun busPlugins(player: Player, page: Int) {
+        val rows = bus.listeners().groupBy { it.plugin.toString() }.entries.sortedByDescending { it.value.size }.map { (id, group) ->
+            val failures = group.sumOf { it.failures }
+            val parameters = buildList {
+                add("Слушателей" to "${group.size}")
+                add("Событий" to "${group.map { it.eventType }.distinct().size}")
+                add("Запусков" to "${group.sumOf { it.invocations }}")
+                add("Время всего" to duration(group.sumOf { it.totalNanos }))
+                if (failures > 0) add("Ошибок" to "✖ $failures")
+            }
+            val query = ListenerQuery(
+                "Плагин $id", { who -> busPlugins(who, page) }, { l -> l.plugin.toString() == id }, compareByDescending { l -> l.totalNanos },
+            )
+            Row(
+                icon(null, "BOOKSHELF", id, Style.lore(emptyList(), parameters, Style.left("слушатели плагина")), danger = failures > 0),
+                go { busListeners(it, query, 0) },
+            )
+        }
+        list(player, "События по плагинам", rows, page, PAGE_SIZE, { who, to -> busPlugins(who, to) }, { busHome(it) }, "Слушателей нет")
+    }
+
+    /** One row per day, newest first; for one [event] a click opens the event, otherwise the day. */
+    private fun busDays(player: Player, event: String?, page: Int) {
+        val back: (Player) -> Unit = if (event == null) { who -> busHome(who) } else { who -> busEvent(who, event) { busHome(it) } }
+        val today = LocalDate.now(DisplayZone.zone)
+        val days = bus.history(event).groupBy { it.date }.entries.sortedByDescending { it.key }
+        val busiest = days.maxOfOrNull { (_, entries) -> entries.sumOf { it.calls } } ?: 1L
+        val rows = days.map { (date, entries) ->
+            val total = entries.sumOf { it.calls }
+            val denied = entries.sumOf { it.denied }
+            val parameters = buildList {
+                add("Вызовов" to "$total")
+                if (event == null) add("Событий" to "${entries.size}")
+                if (denied > 0) add("Отказов" to "$denied")
+                add("Нагрузка" to bar(total, busiest))
+            }
+            val hint = if (event == null) Style.left("события этого дня") else Style.left("открыть событие")
+            val click = if (event == null) go { who -> busDay(who, date, 0, page) } else go { who -> busEvent(who, event) { busDays(it, event, page) } }
+            Row(icon(null, "PAPER", dayTitle(date, today), Style.lore(emptyList(), parameters, hint)), click)
+        }
+        val title = if (event == null) "История событий" else "История ${shortName(event)}"
+        val empty = if (bus.historyDays <= 0) "История выключена в коде" else "Вызовов за это время не было"
+        list(player, title, rows, page, PAGE_SIZE, { who, to -> busDays(who, event, to) }, back, empty)
+    }
+
+    private fun busDay(player: Player, date: LocalDate, page: Int, daysPage: Int) {
+        val entries = bus.history().filter { it.date == date }.sortedByDescending { it.calls }
+        val busiest = entries.firstOrNull()?.calls ?: 1L
+        val rows = entries.map { day ->
+            val parameters = buildList {
+                add("Вызовов" to "${day.calls}")
+                if (day.denied > 0) add("Отказов" to "${day.denied}")
+                add("Нагрузка" to bar(day.calls, busiest))
+            }
+            Row(
+                icon(null, "PAPER", shortName(day.eventType), Style.lore(emptyList(), parameters, Style.left("открыть событие")), warn = day.denied > 0),
+                go { who -> busEvent(who, day.eventType) { busDay(it, date, page, daysPage) } },
+            )
+        }
+        val today = LocalDate.now(DisplayZone.zone)
+        list(
+            player, dayTitle(date, today), rows, page, PAGE_SIZE, { who, to -> busDay(who, date, to, daysPage) },
+            { busDays(it, null, daysPage) }, "В этот день вызовов не было",
+        )
+    }
+
+    /** Recorded calls, newest first, each with the answer of every listener; clearing sits in the footer. */
+    private fun busTraces(player: Player, event: String?, page: Int) {
+        val all = bus.traces().filter { event == null || it.eventName == event }.reversed()
+        val rows = all.map { Row(traceItem(it)) }
+        val back: (Player) -> Unit = if (event == null) { who -> busHome(who) } else { who -> busEvent(who, event) { busHome(it) } }
+        val clear = icon(
+            Icons.RESET, "TNT", "Очистить записи",
+            Style.lore(listOf("Забыть все записанные вызовы."), emptyList(), Style.left("очистить")), danger = true,
+        )
+        list(
+            player, "Записанные вызовы", rows, page, PAGE_SIZE, { who, to -> busTraces(who, event, to) }, back,
+            "Пока ничего не записано. Включите запись на странице события.",
+            extra = { if (all.isNotEmpty()) it.button(FILTER, clear, go { who -> bus.clearTraces(); busTraces(who, event, 0) }) },
+        )
+    }
+
+    private fun traceItem(trace: EventTrace): ItemStack {
+        val steps = trace.steps.take(TRACE_STEPS).map { step ->
+            val owner = step.module?.let { "${step.plugin}/$it" } ?: step.plugin.toString()
+            val action = when {
+                step.skipped -> "пропущен"
+                step.failed -> "упал"
+                step.changedResult -> "${step.resultBefore} → ${step.resultAfter}"
+                else -> "без изменений"
+            }
+            "" to "$owner · $action"
+        }
+        val parameters = buildList {
+            add("Результат" to (trace.result ?: "-"))
+            add("Режим" to if (trace.mode == DispatchMode.ASYNC) "async, мир не трогать" else "sync")
+            add("Поток" to trace.thread)
+            add("Ответили" to "${trace.steps.size}")
+            addAll(steps)
+        }
+        val verdict = if (trace.allowed) "разрешено" else "отклонено"
+        return icon(null, "PAPER", "${shortName(trace.eventName)}: $verdict", Style.lore(emptyList(), parameters), danger = !trace.allowed)
+    }
+
+    private fun busExport(player: Player) {
+        val file = bus.exportHistory(false)
+        if (file == null) tell(player, ChatTone.FAILURE, "Выгрузка недоступна.", "История выключена или файл не записать.")
+        else tell(player, ChatTone.SUCCESS, "Счётчики записаны.", file.toString())
+    }
+
+    private fun duration(nanos: Long): String =
+        if (nanos >= NANOS_PER_MILLI) "%.1f мс".format(nanos / NANOS_PER_MILLI.toDouble()) else "%.1f мкс".format(nanos / NANOS_PER_MICRO.toDouble())
+
+    private fun shortName(name: String): String = name.substringAfterLast('.')
+
+    private fun dayTitle(date: LocalDate, today: LocalDate): String = when (date) {
+        today -> "Сегодня"
+        today.minusDays(1) -> "Вчера"
+        else -> DAY.format(date)
+    }
+
+    private fun bar(value: Long, busiest: Long): String {
+        val width = ((value * BAR_WIDTH + busiest - 1) / busiest.coerceAtLeast(1)).toInt().coerceIn(1, BAR_WIDTH)
+        return "█".repeat(width)
+    }
+
+    /** [text] cut into lines of at most [width] letters at word borders, at most [limit] lines, ending with "…" when cut. */
+    private fun wrap(text: String, width: Int = WRAP_WIDTH, limit: Int = WRAP_LINES): List<String> {
+        val lines = ArrayList<String>()
+        for (raw in text.lines()) {
+            var line = StringBuilder()
+            for (word in raw.trim().split(' ')) {
+                if (line.isNotEmpty() && line.length + 1 + word.length > width) {
+                    lines += line.toString()
+                    line = StringBuilder()
+                }
+                var rest = word
+                while (rest.length > width) {
+                    lines += rest.take(width)
+                    rest = rest.drop(width)
+                }
+                if (line.isNotEmpty()) line.append(' ')
+                line.append(rest)
+            }
+            lines += line.toString()
+        }
+        return if (lines.size > limit) lines.take(limit) + "…" else lines
+    }
+
+    private fun journalMaterial(level: String): String = when (level) {
+        "error" -> "BARRIER"
+        "warning" -> "GOLD_INGOT"
+        else -> "PAPER"
     }
 
     // --- actions -------------------------------------------------------------------------------------------------
@@ -733,16 +1177,18 @@ internal class PluginsMenu(
         return icon(Icons.CLOCK, "CLOCK", "Пауза", lore, alternative = "WATCH", warn = held)
     }
 
-    private fun historyItem(entry: UpdateHistoryEntry): ItemStack {
+    private fun historyItem(entry: UpdateHistoryEntry, full: Boolean = false): ItemStack {
         val failed = entry.state == UpdateState.FAILED
         val parameters = buildList {
             add("Когда" to TIME.format(entry.occurredAt))
             add("Кто" to entry.actor.name)
             entry.changes.forEach { add(it.product.value to "${it.from} » ${it.to}") }
         }
-        val note = listOfNotNull(entry.message?.let { if (failed) Style.danger(it) else Style.description(it) })
+        val note = entry.message?.let { wrap(it, limit = if (full) NOTE_LINES else 2) }.orEmpty()
+            .map { if (failed) Style.danger(it) else Style.description(it) }
         val title = "${CatalogLabels.operationLabel(entry.operation)}: ${CatalogLabels.stateLabel(entry.state)}"
-        return icon(null, if (failed) "BARRIER" else "PAPER", title, Style.lore(emptyList(), parameters, extra = note), danger = failed)
+        val hints = if (full) emptyArray() else arrayOf(Style.left("подробности"))
+        return icon(null, if (failed) "BARRIER" else "PAPER", title, Style.lore(emptyList(), parameters, *hints, extra = note), danger = failed)
     }
 
     private fun backupItem(backup: UpdateBackup, withHint: Boolean = true): ItemStack {
@@ -758,15 +1204,15 @@ internal class PluginsMenu(
     private fun section(texture: String?, material: String, label: String, description: String, vararg parameters: Pair<String, String>): ItemStack =
         icon(texture, material, label, Style.lore(listOf(description), parameters.toList(), Style.left("открыть")))
 
-    private fun backItem(label: String = "Вернуться"): ItemStack =
-        icon(Icons.BACK, "ARROW", label, Style.lore(emptyList(), emptyList(), Style.left("назад")), danger = true)
+    private fun backItem(label: String = "Назад"): ItemStack =
+        icon(Icons.BACK, "ARROW", "« $label", Style.lore(emptyList(), emptyList(), Style.left("вернуться")), warn = true)
 
     private fun closeItem(): ItemStack =
         icon(Icons.BACK, "BARRIER", "Закрыть", Style.lore(emptyList(), emptyList(), Style.left("закрыть меню")), danger = true)
 
-    private fun title(text: String): String = "§0pnLibrary | $text"
+    private fun title(text: String): String = "§0pnLibrary §5» §0$text"
 
-    /** Light-blue corner brackets on the four corners of a [rows]-row menu, then the dark glass between them. */
+    /** Violet corner brackets on the four corners of a [rows]-row menu, then the dark glass between them. */
     private fun frame(builder: MenuBuilder, rows: Int): MenuBuilder {
         val last = (rows - 1) * 9
         listOf(0, 1, 9, 7, 8, 17, last, last + 1, last - 9, last + 7, last + 8, last - 1).forEach { builder.slot(it, accent()) }
@@ -780,7 +1226,7 @@ internal class PluginsMenu(
 
     private fun pane(): ItemStack = glass("BLACK_STAINED_GLASS_PANE", LEGACY_BLACK)
 
-    private fun accent(): ItemStack = glass("LIGHT_BLUE_STAINED_GLASS_PANE", LEGACY_LIGHT_BLUE)
+    private fun accent(): ItemStack = glass("PURPLE_STAINED_GLASS_PANE", LEGACY_PURPLE)
 
     private fun glass(modern: String, legacyData: Short): ItemStack {
         val stack = item(modern, " ", emptyList(), "STAINED_GLASS_PANE")
@@ -803,15 +1249,16 @@ internal class PluginsMenu(
         danger: Boolean = false,
         muted: Boolean = false,
     ): ItemStack {
-        val color = when {
-            danger -> Style.DANGER
-            warn -> Style.WARN
-            good -> Style.GOOD
-            muted -> Style.MUTED
-            else -> Style.NAME
+        val tone = when {
+            danger -> Tone.DANGER
+            warn -> Tone.WARN
+            good -> Tone.GOOD
+            muted -> Tone.MUTED
+            else -> Tone.NORMAL
         }
+        val name = Style.name(label, tone)
         val head = texture?.let { MenuHeads.head(it) }
-        return decorate(head ?: item(material, color + label, emptyList(), alternative), color + label, lore)
+        return decorate(head ?: item(material, name, emptyList(), alternative), name, lore)
     }
 
     private fun item(material: String, name: String, lore: List<String> = emptyList(), alternative: String? = null): ItemStack {
@@ -834,32 +1281,31 @@ internal class PluginsMenu(
         }
     }
 
-    /** Colours and lines of the menu, in the style of the organisation's other plugins. */
+    /** Colours and lines of the menu: the library's violet and pink, a gradient on every name and click hint. */
     private object Style {
-        val NAME = MenuHeads.color("&#5FD7FF")
-        val GOOD = MenuHeads.color("&#A7F3D0")
-        val WARN = MenuHeads.color("&#FFB347")
-        val DANGER = MenuHeads.color("&#FC7165")
-        val MUTED = MenuHeads.color("&#9AA4AD")
-        private val DESCRIPTION = MenuHeads.color(" &#E3EBF2")
-        private val SUB = MenuHeads.color("   &#69747E↳ &#A7F3D0")
-        private val LEFT = MenuHeads.color(" &#FFB347[&#FFA43C Л&#FF9536К&#FF8630М &#FF772A] &f")
-        private val RIGHT = MenuHeads.color(" &#FF8A8A[&#FF7979 П&#F96868К&#F25757М &#EB4646] &f")
-        private val SHIFT_LEFT = MenuHeads.color(" &#65D1FC[&#5FC7F6 Shift&#59BCF0 +&#53B1EA Л&#4DA6E4К&#479BDEМ &#4190D8] &f")
-        private val TAGS = listOf("5FD7FF", "A7F3D0", "C4A7FF", "FFB347", "65D1FC", "FF8A8A", "EFF7B9")
+        private val DIM = MenuHeads.color("&#64546E")
+        private val PLAIN = MenuHeads.color("&#F7F2F7")
+        private val DESCRIPTION = MenuHeads.color(" &#E9DDF2")
+        private val SUB = MenuHeads.color("   &#8B7A99↳ &#F7F2F7")
+        private val TAGS = listOf("D19BFF", "5BC8F5", "6EE7A0", "FFB347", "FF9BD2", "FDE047", "B79CFF")
 
-        fun left(action: String): String = LEFT + action
+        fun name(label: String, tone: Tone): String = MenuHeads.gradient(label, tone.from, tone.to)
 
-        fun right(action: String): String = RIGHT + action
+        private fun click(label: String, from: String, to: String, action: String): String =
+            "$DIM ▸ " + MenuHeads.gradient(label, from, to) + "  $PLAIN" + action
 
-        fun shiftLeft(action: String): String = SHIFT_LEFT + action
+        fun left(action: String): String = click("Клик", "D19BFF", "F5C6FF", action)
+
+        fun right(action: String): String = click("Правый клик", "FF9BD2", "FF7A9B", action)
+
+        fun shiftLeft(action: String): String = click("Shift + клик", "5BC8F5", "B5ECFF", action)
 
         fun description(text: String): String = DESCRIPTION + text
 
-        fun danger(text: String): String = MenuHeads.color(" &#FC7165") + text
+        fun danger(text: String): String = MenuHeads.color(" &#FF7A7A") + text
 
         /** A bracketed label such as `[ Версия ]`, in a colour that stays the same for the same word. */
-        fun tag(label: String): String = MenuHeads.color(" &#${TAGS[Math.floorMod(label.hashCode(), TAGS.size)]}[ $label ] &f")
+        fun tag(label: String): String = "$DIM [ " + MenuHeads.color("&#${TAGS[Math.floorMod(label.hashCode(), TAGS.size)]}") + label + " $DIM] $PLAIN"
 
         /**
          * Description lines, a blank line, `[ label ] value` lines (an empty label continues the line above with an
@@ -875,8 +1321,14 @@ internal class PluginsMenu(
             lines.forEach { add(description(it)) }
             if (lines.isNotEmpty() && parameters.isNotEmpty()) add("")
             parameters.forEach { (label, value) -> add(if (label.isEmpty()) SUB + value else tag(label) + value) }
-            if (extra.isNotEmpty()) { add(""); addAll(extra) }
-            if (hints.isNotEmpty()) { add(""); addAll(hints) }
+            if (extra.isNotEmpty()) {
+                add("")
+                addAll(extra)
+            }
+            if (hints.isNotEmpty()) {
+                add("")
+                addAll(hints)
+            }
             add("")
         }
     }
@@ -936,13 +1388,30 @@ internal class PluginsMenu(
         val LEVEL_CYCLE = listOf<String?>(null, "error", "warning", "info")
         val LEVELS = mapOf("error" to "ошибки", "warning" to "предупреждения", "info" to "сведения")
         const val CLOSE = 53
+        const val BUS = "pnlibrary.events.bus"
+        const val DETAIL_ROWS = 5
+        const val DETAIL_BACK = 40
+        const val CHANGE_FIRST = 19
+        const val CHANGE_BUTTONS = 7
+        const val WRAP_WIDTH = 44
+        const val WRAP_LINES = 8
+        const val TRACE_LINES = 12
+        const val NOTE_LINES = 8
+        const val TIMES_SHOWN = 10
+        const val DETAILS_SHOWN = 8
+        const val TRACE_STEPS = 6
+        const val BAR_WIDTH = 12
+        const val NANOS_PER_MICRO = 1_000L
+        const val NANOS_PER_MILLI = 1_000_000L
+        val TIME_SECONDS: DateTimeFormatter = DateTimeFormatter.ofPattern("dd.MM HH:mm:ss").withZone(ZoneId.systemDefault())
+        val DAY: DateTimeFormatter = DateTimeFormatter.ofPattern("d MMMM", Locale("ru"))
         const val BLOCKER_LINES = 3
         const val CHECK_REOPEN_TICKS = 60L
         const val SOUND_VOLUME = 0.22f
         const val SOUND_PITCH = 1.15f
         val LEGACY_GLASS = setOf("STAINED_GLASS_PANE", "LEGACY_STAINED_GLASS_PANE")
         const val LEGACY_BLACK: Short = 15
-        const val LEGACY_LIGHT_BLUE: Short = 3
+        const val LEGACY_PURPLE: Short = 10
         val TIME: DateTimeFormatter = DateTimeFormatter.ofPattern("dd.MM.yyyy HH:mm").withZone(ZoneId.systemDefault())
 
         val OPEN_SOUND: Sound? = listOf("BLOCK_BARREL_OPEN", "BLOCK_CHEST_OPEN", "CHEST_OPEN")

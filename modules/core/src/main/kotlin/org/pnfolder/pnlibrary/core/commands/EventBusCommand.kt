@@ -49,7 +49,7 @@ class EventBusCommand(private val library: PnLibrary) {
     /** Builds the command tree to mount under `/pn bus`. */
     fun definition(): CommandDefinition = command("bus") {
         permission(PERMISSION)
-        noPermissionMessage("Шина событий доступна администраторам. Нужно право $PERMISSION.")
+        noPermissionMessage("События плагинов доступны администраторам. Нужно право $PERMISSION.")
         consoleBypassesPermission()
         executes { list(it, "all", 1) }
         FILTERS.forEach { (word, _) ->
@@ -158,7 +158,7 @@ class EventBusCommand(private val library: PnLibrary) {
         val count = "$total ${RussianText.plural(total.toLong(), "слушатель", "слушателя", "слушателей")}$queued"
         val lines = mutableListOf(
             kit.blank(),
-            kit.header("Шина событий", kit.text(count, ChatPalette.LABEL)),
+            kit.header("События плагинов", kit.text(count, ChatPalette.LABEL)),
             tabs(kit, all, word),
             kit.blank(),
         )

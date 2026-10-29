@@ -21,7 +21,34 @@ internal interface RuntimeResources {
 
     /** Journal records of the last [sinceHours] hours, equal events merged, newest first; [level] is `info`, `warning`, `error` or `null`. */
     fun journalGroups(level: String?, sinceHours: Int, limit: Int): List<JournalGroup>
+
+    /** The whole event behind a [JournalGroup.id], or `null` when it is no longer in the journal. */
+    fun journalDetail(id: String): JournalDetail?
 }
+
+/**
+ * One journal event with everything the journal knows about it, for a menu.
+ *
+ * @property id the id that `/pn events view <id>` opens
+ * @property level `info`, `warning` or `error`
+ * @property source plugin or component that wrote the event
+ * @property message the whole text of the newest repeat
+ * @property stackTrace the stack trace with its causes, or `null` when the event has none
+ * @property details other facts the event carries, such as a player or a version
+ * @property times when it happened, newest first, in epoch milliseconds
+ */
+data class JournalDetail(
+    val id: String,
+    val level: String,
+    val source: String,
+    val message: String,
+    val stackTrace: String?,
+    val details: Map<String, String>,
+    val times: List<Long>,
+)
+
+/** The whole journal event with the id [id]; `null` when there is none or the runtime has no journal. */
+fun PnLibrary.journalDetail(id: String): JournalDetail? = (this as? RuntimeResources)?.journalDetail(id)
 
 /**
  * Equal journal events merged into one line, for menus.

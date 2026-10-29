@@ -34,6 +34,24 @@ internal object MenuHeads {
         return coloured.replace('&', '§')
     }
 
+    /** [text] whose colour moves from [from] to [to] (both `RRGGBB`) letter by letter; one colour below 1.16. */
+    fun gradient(text: String, from: String, to: String): String {
+        if (!hexSupported || text.length < 2) return color("&#$from") + text
+        val start = from.toInt(RADIX)
+        val end = to.toInt(RADIX)
+        return buildString {
+            text.forEachIndexed { index, char ->
+                val step = index.toDouble() / (text.length - 1)
+                val rgb = intArrayOf(RED_SHIFT, GREEN_SHIFT, 0).map { shift ->
+                    val a = start shr shift and 0xFF
+                    val b = end shr shift and 0xFF
+                    (a + (b - a) * step).toInt()
+                }
+                append(color("&#" + "%02X%02X%02X".format(rgb[0], rgb[1], rgb[2]))).append(char)
+            }
+        }
+    }
+
     private fun create(hash: String): ItemStack? = runCatching {
         val stack = skull() ?: return null
         val meta = stack.itemMeta as? SkullMeta ?: return null
@@ -98,6 +116,8 @@ internal object MenuHeads {
 
     private const val RADIX = 16
     private const val PROFILE_NAME_LENGTH = 14
+    private const val RED_SHIFT = 16
+    private const val GREEN_SHIFT = 8
 
     private val LEGACY = listOf(
         0x000000 to "§0", 0x0000AA to "§1", 0x00AA00 to "§2", 0x00AAAA to "§3", 0xAA0000 to "§4", 0xAA00AA to "§5",

@@ -33,8 +33,10 @@ import org.pnfolder.pnlibrary.core.diagnostics.diagnosticCommand
 import org.pnfolder.pnlibrary.core.events.EventHistory
 import org.pnfolder.pnlibrary.core.events.EventServiceImpl
 import org.pnfolder.pnlibrary.core.journal.JournalLevel
+import org.pnfolder.pnlibrary.core.journal.JournalRecord
 import org.pnfolder.pnlibrary.core.journal.joinDigest
 import org.pnfolder.pnlibrary.core.journal.journalCommand
+import org.pnfolder.pnlibrary.core.lifecycle.JournalDetail
 import org.pnfolder.pnlibrary.core.lifecycle.JournalGroup
 import org.pnfolder.pnlibrary.core.lifecycle.ResourceCleanup
 import org.pnfolder.pnlibrary.core.lifecycle.RuntimeResources
@@ -187,6 +189,20 @@ internal class PnLibraryImpl(
         }.getOrDefault(emptyList())
     }
 
+    override fun journalDetail(id: String): JournalDetail? = runCatchingNonFatal {
+        val records = journal.read(limit = JOURNAL_SCAN).filter { it.fingerprint == id }
+        val newest = records.maxByOrNull { it.timeMillis } ?: return@runCatchingNonFatal null
+        JournalDetail(
+            id = id,
+            level = newest.level.fileGroup,
+            source = newest.source,
+            message = newest.message,
+            stackTrace = newest.details[JournalRecord.STACKTRACE],
+            details = newest.details - JournalRecord.STACKTRACE,
+            times = records.map { it.timeMillis }.sortedDescending().take(JOURNAL_TIMES),
+        )
+    }.getOrNull()
+
     private val commandService get() = platformServices.commands
     override fun registerRuntimeCommand(command: CommandDefinition): CommandRegistration =
         commandService.register(owner, command)
@@ -305,5 +321,6 @@ internal class PnLibraryImpl(
         /** How the journal command is written in chat buttons and notices: it lives under `/pn` on every platform. */
         const val EVENTS_COMMAND = "/pn events"
         const val JOURNAL_SCAN = 5_000
+        const val JOURNAL_TIMES = 50
     }
 }
