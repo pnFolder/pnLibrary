@@ -161,6 +161,9 @@ internal class EventServiceImpl(
 
         override fun history(eventType: String?): List<EventDay> = history?.entries(eventType).orEmpty()
 
+        override fun hourly(eventType: String?): List<org.pnfolder.pnlibrary.api.events.EventHour> =
+            history?.hourly(eventType).orEmpty()
+
         override val historyDays: Int get() = history?.retention ?: 0
 
         override fun enableTracing(eventType: Class<out Event>, capacity: Int) {
