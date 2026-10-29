@@ -1957,6 +1957,8 @@ public abstract interface class org/pnfolder/pnlibrary/api/events/EventInspector
 	public fun event (Ljava/lang/Class;)Lorg/pnfolder/pnlibrary/api/events/EventInfo;
 	public abstract fun eventType (Ljava/lang/String;)Ljava/lang/Class;
 	public abstract fun events ()Ljava/util/List;
+	public fun exportHistory (Z)Ljava/nio/file/Path;
+	public static synthetic fun exportHistory$default (Lorg/pnfolder/pnlibrary/api/events/EventInspector;ZILjava/lang/Object;)Ljava/nio/file/Path;
 	public abstract fun getHistoryDays ()I
 	public abstract fun history (Ljava/lang/String;)Ljava/util/List;
 	public static synthetic fun history$default (Lorg/pnfolder/pnlibrary/api/events/EventInspector;Ljava/lang/String;ILjava/lang/Object;)Ljava/util/List;
@@ -3761,7 +3763,8 @@ public final class org/pnfolder/pnlibrary/api/updates/CatalogSource {
 	public fun <init> (Ljava/lang/String;Ljava/lang/String;)V
 	public fun <init> (Ljava/lang/String;Ljava/lang/String;Ljava/lang/String;)V
 	public fun <init> (Ljava/lang/String;Ljava/lang/String;Ljava/lang/String;Ljava/lang/String;)V
-	public synthetic fun <init> (Ljava/lang/String;Ljava/lang/String;Ljava/lang/String;Ljava/lang/String;ILkotlin/jvm/internal/DefaultConstructorMarker;)V
+	public fun <init> (Ljava/lang/String;Ljava/lang/String;Ljava/lang/String;Ljava/lang/String;Lorg/pnfolder/pnlibrary/api/updates/CatalogSource$RefType;)V
+	public synthetic fun <init> (Ljava/lang/String;Ljava/lang/String;Ljava/lang/String;Ljava/lang/String;Lorg/pnfolder/pnlibrary/api/updates/CatalogSource$RefType;ILkotlin/jvm/internal/DefaultConstructorMarker;)V
 	public fun equals (Ljava/lang/Object;)Z
 	public final fun getApiUrl ()Ljava/lang/String;
 	public final fun getBranch ()Ljava/lang/String;
@@ -3769,12 +3772,22 @@ public final class org/pnfolder/pnlibrary/api/updates/CatalogSource {
 	public final fun getOwner ()Ljava/lang/String;
 	public final fun getPath ()Ljava/lang/String;
 	public final fun getRawUrl ()Ljava/lang/String;
+	public final fun getRefType ()Lorg/pnfolder/pnlibrary/api/updates/CatalogSource$RefType;
 	public final fun getRepository ()Ljava/lang/String;
 	public fun hashCode ()I
 	public fun toString ()Ljava/lang/String;
 }
 
 public final class org/pnfolder/pnlibrary/api/updates/CatalogSource$Companion {
+}
+
+public final class org/pnfolder/pnlibrary/api/updates/CatalogSource$RefType : java/lang/Enum {
+	public static final field BRANCH Lorg/pnfolder/pnlibrary/api/updates/CatalogSource$RefType;
+	public static final field COMMIT Lorg/pnfolder/pnlibrary/api/updates/CatalogSource$RefType;
+	public static final field TAG Lorg/pnfolder/pnlibrary/api/updates/CatalogSource$RefType;
+	public static fun getEntries ()Lkotlin/enums/EnumEntries;
+	public static fun valueOf (Ljava/lang/String;)Lorg/pnfolder/pnlibrary/api/updates/CatalogSource$RefType;
+	public static fun values ()[Lorg/pnfolder/pnlibrary/api/updates/CatalogSource$RefType;
 }
 
 public final class org/pnfolder/pnlibrary/api/updates/PluginUpdateArtifact {
@@ -3816,6 +3829,7 @@ public final class org/pnfolder/pnlibrary/api/updates/PluginUpdateRequest$Builde
 	public final fun catalogPath (Ljava/lang/String;)Lorg/pnfolder/pnlibrary/api/updates/PluginUpdateRequest$Builder;
 	public final fun channel (Ljava/util/function/Supplier;)Lorg/pnfolder/pnlibrary/api/updates/PluginUpdateRequest$Builder;
 	public final fun channel (Lorg/pnfolder/pnlibrary/api/updates/UpdateChannel;)Lorg/pnfolder/pnlibrary/api/updates/PluginUpdateRequest$Builder;
+	public final fun commit (Ljava/lang/String;)Lorg/pnfolder/pnlibrary/api/updates/PluginUpdateRequest$Builder;
 	public final fun configurationBackup (Ljava/nio/file/Path;[Ljava/lang/String;)Lorg/pnfolder/pnlibrary/api/updates/PluginUpdateRequest$Builder;
 	public final fun exactArtifact (Ljava/lang/String;)Lorg/pnfolder/pnlibrary/api/updates/PluginUpdateRequest$Builder;
 	public final fun exactArtifact (Ljava/lang/String;I)Lorg/pnfolder/pnlibrary/api/updates/PluginUpdateRequest$Builder;
@@ -3823,6 +3837,7 @@ public final class org/pnfolder/pnlibrary/api/updates/PluginUpdateRequest$Builde
 	public static synthetic fun exactArtifact$default (Lorg/pnfolder/pnlibrary/api/updates/PluginUpdateRequest$Builder;Ljava/lang/String;ILjava/lang/Integer;ILjava/lang/Object;)Lorg/pnfolder/pnlibrary/api/updates/PluginUpdateRequest$Builder;
 	public final fun repository (Ljava/lang/String;Ljava/lang/String;)Lorg/pnfolder/pnlibrary/api/updates/PluginUpdateRequest$Builder;
 	public final fun supportedApi (II)Lorg/pnfolder/pnlibrary/api/updates/PluginUpdateRequest$Builder;
+	public final fun tag (Ljava/lang/String;)Lorg/pnfolder/pnlibrary/api/updates/PluginUpdateRequest$Builder;
 }
 
 public final class org/pnfolder/pnlibrary/api/updates/PluginUpdateRequest$Companion {

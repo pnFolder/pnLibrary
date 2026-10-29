@@ -13,7 +13,6 @@ import org.pnfolder.pnlibrary.core.updates.engine.ArtifactSpecification
 import org.pnfolder.pnlibrary.core.updates.engine.TransactionArtifact
 import org.pnfolder.pnlibrary.core.updates.engine.TrustedHttpClient
 import org.pnfolder.pnlibrary.core.updates.engine.UpdateTransaction
-import java.io.ByteArrayInputStream
 import java.nio.file.Path
 import java.util.UUID
 
@@ -60,12 +59,11 @@ internal class UpdatePlanStager(
         val downloadUri = requireNotNull(artifact.downloadUri) {
             "Release artifact has no verified download URL: ${artifact.file}"
         }
-        val bytes = http.get(downloadUri, maximumArtifactBytes.toInt())
         val stagedFile = stagingDirectory.resolve(change.product.value).resolve(artifact.file)
-        ArtifactDownloader(maximumArtifactBytes).download(
-            openStream = { ByteArrayInputStream(bytes) },
-            destination = stagedFile,
-        )
+        // The body goes straight to disk, so a large file never sits in memory.
+        http.stream(downloadUri, maximumArtifactBytes) { input ->
+            ArtifactDownloader(maximumArtifactBytes).download(openStream = { input }, destination = stagedFile)
+        }
 
         val specification = ArtifactSpecification(
             product = change.product,

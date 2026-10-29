@@ -30,6 +30,7 @@ import org.pnfolder.pnlibrary.common.time.DisplayZone
  * | `/pn bus slow [page]` | listeners that ran, the slowest on average first |
  * | `/pn bus top [calls\|denied]` | the ten most called (or most denied) events |
  * | `/pn bus range [1h\|24h\|7d\|30d]` | calls in the last hour, day, week or month, busiest first |
+ * | `/pn bus export [csv\|json]` | writes the counters of days and hours to a file next to the history |
  * | `/pn bus errors [page]` | listeners that threw, the most failures first |
  * | `/pn bus plugin <id> [page]` | the listeners of one plugin with time and failures |
  * | `/pn bus trace <event>`, `trace off <event>` | switches the recording of an event on or off |
@@ -79,6 +80,11 @@ class EventBusCommand(private val library: PnLibrary) {
         literal("range") {
             executes { range(it, "24h") }
             RANGES.keys.forEach { word -> literal(word) { executes { range(it, word) } } }
+        }
+        literal("export") {
+            executes { export(it, json = false) }
+            literal("csv") { executes { export(it, json = false) } }
+            literal("json") { executes { export(it, json = true) } }
         }
         literal("errors") {
             executes { slowOrErrors(it, 1, errors = true) }
@@ -367,6 +373,14 @@ class EventBusCommand(private val library: PnLibrary) {
         lines.forEach(context.sender::send)
     }
 
+    private fun export(context: CommandContext, json: Boolean) {
+        val file = bus.exportHistory(json)
+        context.sender.send(
+            if (file == null) Component.text("Выгрузка недоступна: история выключена или файл не записать.", ChatPalette.DANGER)
+            else Component.text("Счётчики записаны в $file", ChatPalette.OK),
+        )
+    }
+
     private fun pluginView(context: CommandContext, id: String, requestedPage: Int) {
         val all = bus.listeners().filter { it.plugin.toString().equals(id, ignoreCase = true) }.sortedByDescending { it.totalNanos }
         listenerPage(context, requestedPage, all, "Плагин $id", "У плагина нет слушателей.", "$ROOT plugin $id")
@@ -608,6 +622,7 @@ class EventBusCommand(private val library: PnLibrary) {
             "$ROOT view <событие>" to "карточка события",
             "$ROOT listeners" to "все слушатели",
             "$ROOT slow [страница]" to "самые медленные слушатели",
+            "$ROOT export [csv|json]" to "выгрузить счётчики в файл",
             "$ROOT range [1h|24h|7d|30d]" to "вызовы за период",
             "$ROOT top [calls|denied]" to "самые частые события",
             "$ROOT errors [страница]" to "слушатели с ошибками",

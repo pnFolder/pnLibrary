@@ -164,6 +164,8 @@ internal class EventServiceImpl(
         override fun hourly(eventType: String?): List<org.pnfolder.pnlibrary.api.events.EventHour> =
             history?.hourly(eventType).orEmpty()
 
+        override fun exportHistory(json: Boolean): java.nio.file.Path? = history?.export(json)
+
         override val historyDays: Int get() = history?.retention ?: 0
 
         override fun enableTracing(eventType: Class<out Event>, capacity: Int) {
