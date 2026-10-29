@@ -38,6 +38,9 @@ internal data class UpdateConfiguration(
     data class Downloads(
         val automatic: Boolean = false,
         val allowManagedPlugins: Boolean = true,
+        val connectTimeout: Duration = Duration.ofSeconds(10),
+        val readTimeout: Duration = Duration.ofSeconds(30),
+        val maxArtifactBytes: Long = 512L * 1024 * 1024,
     )
     data class Installation(
         val allowNewPlugins: Boolean = false,

@@ -36,7 +36,7 @@ internal class UpdateInstaller(
     private val libraryConfiguration = UpdateConfigurationBackup(dataFolder, listOf("updates.yml"))
     private val transaction = UpdateTransaction(
         dataFolder.resolve("updates/transactions"),
-        ArtifactVerifier(MAXIMUM_ARTIFACT_BYTES),
+        ArtifactVerifier(configuration.downloads.maxArtifactBytes),
         dataFolder.parent,
     )
     private val stager = UpdatePlanStager(
@@ -44,7 +44,7 @@ internal class UpdateInstaller(
         dataFolder = dataFolder,
         http = http,
         transaction = transaction,
-        maximumArtifactBytes = MAXIMUM_ARTIFACT_BYTES,
+        maximumArtifactBytes = configuration.downloads.maxArtifactBytes,
         requireSha256 = configuration.installation.requireSha256,
     )
 
@@ -174,9 +174,5 @@ internal class UpdateInstaller(
                     "Загрузка плагина ${change.product} отключена политикой обновлений"
                 }
             }
-    }
-
-    private companion object {
-        const val MAXIMUM_ARTIFACT_BYTES = 512L * 1024L * 1024L
     }
 }

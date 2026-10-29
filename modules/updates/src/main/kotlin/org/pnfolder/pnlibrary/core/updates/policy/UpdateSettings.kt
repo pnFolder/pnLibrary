@@ -33,6 +33,10 @@ internal class UpdateSettings {
     var plugins: Plugins = Plugins()
 
     @field:ConfigNewLine
+    @field:ConfigComment("=== Проверка новых версий ===")
+    var checks: Checks = Checks()
+
+    @field:ConfigNewLine
     @field:ConfigComment("=== Уведомления о найденных обновлениях ===")
     var notifications: Notifications = Notifications()
 
@@ -72,13 +76,23 @@ internal class UpdateSettings {
         var ignored: List<String> = emptyList()
     }
 
+    /** How often the release catalogs are asked for new versions. */
+    class Checks {
+        @field:ConfigComment(
+            "Как часто проверять новые версии: число и единица s, m, h, d или w (например, 30m, 6h, 1d).",
+            "Первая проверка идёт сразу при старте. Меньше 5m не принимается: так GitHub не заблокирует сервер.",
+        )
+        @field:ConfigPattern(DURATION_PATTERN)
+        var interval: String = "6h"
+    }
+
     /** Messages about found updates. */
     class Notifications {
         @field:ConfigDefaultOnInvalid
         @field:ConfigComment("Писать о найденных обновлениях в консоль.")
         var console: Boolean = true
 
-        @field:ConfigComment("Как часто повторять одно и то же сообщение: число и единица m, h или d (например, 30m, 6h, 1d).")
+        @field:ConfigComment("Как часто повторять одно и то же сообщение: число и единица s, m, h, d или w (например, 30m, 6h, 1d).")
         @field:ConfigPattern(DURATION_PATTERN)
         var repeatInterval: String = "6h"
     }
@@ -92,6 +106,17 @@ internal class UpdateSettings {
         @field:ConfigDefaultOnInvalid
         @field:ConfigComment("Разрешить обновлять плагины, которыми управляет pnLibrary.")
         var allowManagedPlugins: Boolean = true
+
+        @field:ConfigComment("Сколько ждать соединения при скачивании файла обновления (например, 10s).")
+        @field:ConfigPattern(DURATION_PATTERN)
+        var connectTimeout: String = "10s"
+
+        @field:ConfigComment("Сколько ждать данных при скачивании файла обновления, если сервер молчит (например, 30s).")
+        @field:ConfigPattern(DURATION_PATTERN)
+        var readTimeout: String = "30s"
+
+        @field:ConfigComment("Наибольший размер одного файла обновления в мегабайтах, от 1 до 1024.")
+        var maxArtifactMegabytes: Int = 512
     }
 
     /** Safety rules of installation. */
@@ -108,6 +133,9 @@ internal class UpdateSettings {
     /** Converts the file model to the immutable runtime policy. */
     fun toConfiguration(): UpdateConfiguration = UpdateConfiguration(
         enabled = enabled,
+        checks = UpdateConfiguration.Checks(
+            interval = parseDuration(checks.interval).coerceAtLeast(MINIMUM_CHECK_INTERVAL),
+        ),
         notifications = UpdateConfiguration.Notifications(
             console = notifications.console,
             repeatInterval = parseDuration(notifications.repeatInterval),
@@ -115,6 +143,9 @@ internal class UpdateSettings {
         downloads = UpdateConfiguration.Downloads(
             automatic = downloads.automatic,
             allowManagedPlugins = downloads.allowManagedPlugins,
+            connectTimeout = parseDuration(downloads.connectTimeout),
+            readTimeout = parseDuration(downloads.readTimeout),
+            maxArtifactBytes = downloads.maxArtifactMegabytes.coerceIn(1, 1024) * BYTES_PER_MEGABYTE,
         ),
         installation = UpdateConfiguration.Installation(
             allowNewPlugins = installation.allowNewPlugins,
@@ -134,14 +165,18 @@ internal class UpdateSettings {
         val PLUGIN_ID = Regex("[a-z0-9][a-z0-9_.-]*")
 
         private const val CHANNEL_PATTERN = "(?i)stable|rc|beta|alpha|dev"
-        private const val DURATION_PATTERN = "[1-9][0-9]*[mhd]"
+        private const val DURATION_PATTERN = "[1-9][0-9]*[smhdw]"
+        private const val BYTES_PER_MEGABYTE = 1024L * 1024L
+        private val MINIMUM_CHECK_INTERVAL: Duration = Duration.ofMinutes(5)
 
         private fun parseDuration(value: String): Duration {
             val amount = value.dropLast(1).toLong()
             return when (value.last()) {
+                's' -> Duration.ofSeconds(amount)
                 'm' -> Duration.ofMinutes(amount)
                 'h' -> Duration.ofHours(amount)
-                else -> Duration.ofDays(amount)
+                'd' -> Duration.ofDays(amount)
+                else -> Duration.ofDays(amount * 7)
             }
         }
     }

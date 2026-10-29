@@ -30,10 +30,11 @@ enum class PolicyErrorAction {
  * Reusable declaration for a remotely sourced policy.
  *
  * @property source absolute HTTPS or file URI of the `.java` policy source
- * @property checkEvery interval between policy refreshes
+ * @property checkEvery interval between policy refreshes, at least one minute
  * @property onDeny action applied after a denied result
  * @property onError what an unreachable, uncompilable or failing policy means
  * @property supportUrl where administrators get help when the plugin cannot run; `null` means the pnFolder Discord
+ * @property startupTimeout how long the start of the plugin waits for the first check before treating it as failed
  * @property values immutable application-defined policy values
  */
 data class RemotePolicySettings(
@@ -43,6 +44,7 @@ data class RemotePolicySettings(
     val values: Map<String, String> = emptyMap(),
     val onError: PolicyErrorAction = PolicyErrorAction.DENY,
     val supportUrl: String? = null,
+    val startupTimeout: Duration = DEFAULT_STARTUP_TIMEOUT,
 ) {
     /** Fluent Java-friendly builder for [RemotePolicySettings]. */
     class Builder internal constructor() {
@@ -51,6 +53,7 @@ data class RemotePolicySettings(
         private var onDeny: DenyAction = DenyAction.DISABLE_PLUGIN
         private var onError: PolicyErrorAction = PolicyErrorAction.DENY
         private var supportUrl: String? = null
+        private var startupTimeout: Duration = DEFAULT_STARTUP_TIMEOUT
         private val values = linkedMapOf<String, String>()
 
         /** Sets and validates the `.java` policy source URI. */
@@ -67,10 +70,16 @@ data class RemotePolicySettings(
             source = uri.toASCIIString()
         }
 
-        /** Sets the positive refresh interval. */
+        /** Sets the refresh interval; below one minute the policy would be downloaded and compiled in a loop. */
         fun checkEvery(value: Duration): Builder = apply {
-            require(!value.isZero && !value.isNegative) { "Remote policy interval must be positive" }
+            require(value >= MINIMUM_CHECK_EVERY) { "Remote policy interval must be at least one minute" }
             checkEvery = value
+        }
+
+        /** Sets how long the start of the plugin waits for the first check; 20 seconds by default. */
+        fun startupTimeout(value: Duration): Builder = apply {
+            require(!value.isZero && !value.isNegative) { "Remote policy startup timeout must be positive" }
+            startupTimeout = value
         }
 
         /** Sets the action applied to a denied result. */
@@ -108,11 +117,15 @@ data class RemotePolicySettings(
             Collections.unmodifiableMap(LinkedHashMap(values)),
             onError,
             supportUrl,
+            startupTimeout,
         )
     }
 
     /** Creates remote-policy declarations. */
     companion object {
+        private val MINIMUM_CHECK_EVERY: Duration = Duration.ofMinutes(1)
+        private val DEFAULT_STARTUP_TIMEOUT: Duration = Duration.ofSeconds(20)
+
         /** Creates a Java-friendly fluent remote-policy builder. */
         @JvmStatic
         fun builder(): Builder = Builder()
