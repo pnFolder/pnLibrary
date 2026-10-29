@@ -32,6 +32,9 @@ class ManagedWorker(
             ArrayBlockingQueue(capacity), { action -> Thread(action, name).apply { isDaemon = true } })
     }
 
+    /** How many accepted operations still wait for a free thread. */
+    fun queued(): Int = executor.queue.size
+
     /** Returns a promise for accepted work, or a failed promise when the bounded queue is full. */
     fun <T> submit(action: () -> T): CompletableFuture<T> = synchronized(lock) {
         check(!closed) { "Worker is closed" }

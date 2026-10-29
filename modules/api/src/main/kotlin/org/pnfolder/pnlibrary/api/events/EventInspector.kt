@@ -64,6 +64,9 @@ interface EventInspector {
      */
     fun hourly(eventType: String? = null): List<EventHour> = emptyList()
 
+    /** How many asynchronous events were accepted and still wait for a free thread. */
+    fun asyncQueued(): Int = 0
+
     /**
      * Writes the per-day and per-hour counters to a file next to the history file.
      *

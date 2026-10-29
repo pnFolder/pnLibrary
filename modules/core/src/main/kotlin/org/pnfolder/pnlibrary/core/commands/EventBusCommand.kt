@@ -154,9 +154,11 @@ class EventBusCommand(private val library: PnLibrary) {
         val pages = pageCount(shown.size)
         val page = requestedPage.coerceIn(1, pages)
         val total = bus.listeners().size
+        val queued = bus.asyncQueued().let { if (it > 0) ", в очереди $it" else "" }
+        val count = "$total ${RussianText.plural(total.toLong(), "слушатель", "слушателя", "слушателей")}$queued"
         val lines = mutableListOf(
             kit.blank(),
-            kit.header("Шина событий", kit.text("$total ${RussianText.plural(total.toLong(), "слушатель", "слушателя", "слушателей")}", ChatPalette.LABEL)),
+            kit.header("Шина событий", kit.text(count, ChatPalette.LABEL)),
             tabs(kit, all, word),
             kit.blank(),
         )
