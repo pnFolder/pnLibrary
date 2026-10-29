@@ -303,6 +303,7 @@ internal class TaskServiceImpl(
             lastDuration = lastDuration,
             cancellable = spec.cancellable,
             runnableNow = spec.runnableNow,
+            hidden = spec.hidden,
         )
 
         private fun terminal() {

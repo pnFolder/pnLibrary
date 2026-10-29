@@ -102,6 +102,7 @@ class TaskQuery private constructor(
  * @property lastDuration how long the latest finished invocation took
  * @property cancellable whether an administrator may stop the task from the commands and the menu
  * @property runnableNow whether an administrator may start the task at once from the commands and the menu
+ * @property hidden whether the task asked to be left out of the commands and the menu
  */
 data class TaskSnapshot(
     val id: TaskId,
@@ -125,4 +126,5 @@ data class TaskSnapshot(
     val lastDuration: Duration? = null,
     val cancellable: Boolean = true,
     val runnableNow: Boolean = true,
+    val hidden: Boolean = false,
 )
