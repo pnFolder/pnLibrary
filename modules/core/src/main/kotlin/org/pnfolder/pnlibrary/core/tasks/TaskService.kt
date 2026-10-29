@@ -6,6 +6,7 @@ import org.pnfolder.pnlibrary.api.tasks.TaskId
 import org.pnfolder.pnlibrary.api.tasks.TaskQuery
 import org.pnfolder.pnlibrary.api.tasks.TaskScope
 import org.pnfolder.pnlibrary.api.tasks.TaskSnapshot
+import org.pnfolder.pnlibrary.core.lifecycle.TaskControl
 
 /**
  * Cross-platform scheduling service with owner-scoped resource management.
@@ -38,6 +39,12 @@ internal interface TaskService : AutoCloseable {
 
     /** Cancels the task identified by [id] and reports whether it was active. */
     fun cancel(id: TaskId): Boolean = get(id)?.cancelIfActive() ?: false
+
+    /** Cancels the task for an administrator; a task made with `cancellable = false` refuses. */
+    fun cancelByAdmin(id: TaskId): TaskControl = TaskControl.UNAVAILABLE
+
+    /** Runs the waiting repeating task now, outside its schedule; a task made with `runnableNow = false` refuses. */
+    fun runNow(id: TaskId): TaskControl = TaskControl.UNAVAILABLE
 
     /** Closes and removes [owner]'s scope when one exists. */
     fun close(owner: Any)

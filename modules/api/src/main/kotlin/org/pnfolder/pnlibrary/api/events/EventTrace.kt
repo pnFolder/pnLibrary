@@ -2,6 +2,7 @@ package org.pnfolder.pnlibrary.api.events
 
 import org.pnfolder.pnlibrary.api.plugin.ModuleId
 import org.pnfolder.pnlibrary.api.plugin.PluginId
+import java.time.Instant
 
 /**
  * One finished dispatch of an event, recorded while tracing is enabled for its type.
@@ -18,6 +19,7 @@ import org.pnfolder.pnlibrary.api.plugin.PluginId
  * @property steps one entry per matching listener, in the order they were considered
  * @property mode how the event was dispatched
  * @property thread name of the thread the listeners ran on
+ * @property at when the dispatch finished, or `null` for a trace recorded without a time
  */
 data class EventTrace(
     val eventName: String,
@@ -26,6 +28,7 @@ data class EventTrace(
     val steps: List<Step>,
     val mode: DispatchMode = DispatchMode.SYNC,
     val thread: String = "",
+    val at: Instant? = null,
 ) {
     /**
      * What happened to one listener during a single dispatch.

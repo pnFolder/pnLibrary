@@ -26,8 +26,11 @@ internal interface RuntimeResources {
     /** Every live and retained task of every plugin. */
     fun taskSnapshots(): List<TaskSnapshot>
 
-    /** Cancels the task with this id and reports whether it was still active. */
-    fun cancelTask(id: String): Boolean
+    /** Stops the task with this id for an administrator; the task may forbid it. */
+    fun cancelTask(id: String): TaskControl
+
+    /** Starts the waiting task with this id at once for an administrator; the task may forbid it. */
+    fun runTaskNow(id: String): TaskControl
 
     /** The whole event behind a [JournalGroup.id], or `null` when it is no longer in the journal. */
     fun journalDetail(id: String): JournalDetail?
@@ -57,8 +60,23 @@ data class JournalDetail(
 /** Every live and retained task of every plugin; empty when the runtime has no task service. */
 fun PnLibrary.taskSnapshots(): List<TaskSnapshot> = (this as? RuntimeResources)?.taskSnapshots().orEmpty()
 
-/** Cancels the task with this id and reports whether it was still active. */
-fun PnLibrary.cancelTask(id: String): Boolean = (this as? RuntimeResources)?.cancelTask(id) ?: false
+/** What came of an administrator stopping or starting a task. */
+enum class TaskControl {
+    /** The task did what was asked. */
+    DONE,
+
+    /** The plugin that owns the task does not allow it. */
+    FORBIDDEN,
+
+    /** The task is not in a state where this is possible, or it is gone. */
+    UNAVAILABLE,
+}
+
+/** Stops the task with this id for an administrator; the task may forbid it. */
+fun PnLibrary.cancelTask(id: String): TaskControl = (this as? RuntimeResources)?.cancelTask(id) ?: TaskControl.UNAVAILABLE
+
+/** Starts the waiting task with this id at once for an administrator; the task may forbid it. */
+fun PnLibrary.runTaskNow(id: String): TaskControl = (this as? RuntimeResources)?.runTaskNow(id) ?: TaskControl.UNAVAILABLE
 
 /** The whole journal event with the id [id]; `null` when there is none or the runtime has no journal. */
 fun PnLibrary.journalDetail(id: String): JournalDetail? = (this as? RuntimeResources)?.journalDetail(id)

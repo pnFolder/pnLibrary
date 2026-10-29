@@ -10,6 +10,7 @@ import org.pnfolder.pnlibrary.api.tasks.TaskStatus
 import org.pnfolder.pnlibrary.core.tasks.TaskHistoryStore
 import java.nio.file.Files
 import java.nio.file.Path
+import java.time.Duration
 import java.time.Instant
 
 class TaskHistoryStoreTest {
@@ -33,6 +34,11 @@ class TaskHistoryStoreTest {
         lastFailure = failure,
         description = "Writes players",
         usage = null,
+        source = "org.example.Saver",
+        interval = Duration.ofMinutes(5),
+        lastDuration = Duration.ofNanos(1_500_000),
+        cancellable = false,
+        runnableNow = true,
     )
 
     @Test
@@ -55,5 +61,20 @@ class TaskHistoryStoreTest {
         Files.writeString(file, Files.readString(file) + "garbage line\n")
 
         assertEquals(listOf(task("one")), store.load())
+    }
+
+    @Test
+    fun `a line of the first format still loads with default new fields`() {
+        val file = directory.resolve("history.tsv")
+        val fields = listOf(
+            "id1", "Old", "", "Shop", "ASYNC", "COMPLETED", "", "2026-10-29T10:00:00Z", "", "2", "0", "", "", "", "", "",
+        )
+        Files.writeString(file, "#pnlibrary-task-history 1\n" + fields.joinToString("\t") + "\n")
+
+        val loaded = TaskHistoryStore(file).load().single()
+
+        assertEquals("Old", loaded.name)
+        assertEquals(true, loaded.cancellable)
+        assertEquals(null, loaded.source)
     }
 }
