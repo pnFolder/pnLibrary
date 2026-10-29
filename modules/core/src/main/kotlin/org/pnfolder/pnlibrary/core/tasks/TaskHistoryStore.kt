@@ -39,13 +39,13 @@ internal class TaskHistoryStore(private val file: Path) {
         task.id.value, task.name, task.key, task.ownerName, task.executionKind.name, task.status.name,
         task.tags.joinToString(TAG_SEPARATOR), task.createdAt, task.nextRunAt, task.runCount, task.skippedCount,
         task.lastStartedAt, task.lastCompletedAt, task.lastFailure, task.description, task.usage,
-        task.source, task.interval?.toMillis(), task.lastDuration?.toNanos(), task.cancellable, task.runnableNow,
+        task.source, task.interval?.toMillis(), task.lastDuration?.toNanos(), task.cancellable, task.runnableNow, task.hidden,
     ).joinToString(TAB) { escape(it?.toString().orEmpty()) }
 
     private fun parse(line: String): TaskSnapshot {
         val f = line.split(TAB).map(::unescape)
-        require(f.size == FIELDS || f.size == FIRST_FIELDS) { "Task history line has ${f.size} fields" }
-        val newer = f.size == FIELDS
+        require(f.size == FIELDS || f.size == SECOND_FIELDS || f.size == FIRST_FIELDS) { "Task history line has ${f.size} fields" }
+        val newer = f.size >= SECOND_FIELDS
         fun text(index: Int): String? = f[index].ifEmpty { null }
         fun time(index: Int): Instant? = text(index)?.let(Instant::parse)
         return TaskSnapshot(
@@ -70,6 +70,7 @@ internal class TaskHistoryStore(private val file: Path) {
             lastDuration = if (newer) text(18)?.let { Duration.ofNanos(it.toLong()) } else null,
             cancellable = !newer || f[19].toBoolean(),
             runnableNow = !newer || f[20].toBoolean(),
+            hidden = f.size == FIELDS && f[21].toBoolean(),
         )
     }
 
@@ -109,9 +110,10 @@ internal class TaskHistoryStore(private val file: Path) {
     }
 
     private companion object {
-        const val HEADER = "#pnlibrary-task-history 2"
+        const val HEADER = "#pnlibrary-task-history 3"
         const val FIRST_FIELDS = 16
-        const val FIELDS = 21
+        const val SECOND_FIELDS = 21
+        const val FIELDS = 22
         const val TAB = "\t"
         const val BACKSLASH = '\\'
         const val TAG_SEPARATOR = "\u001F"

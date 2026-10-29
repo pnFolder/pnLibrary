@@ -34,6 +34,7 @@ interface TaskContext {
  * @property description optional sentence on what the task is for, shown by `/pn tasks` and the menu
  * @property usage optional note on how the task is used or what it changes
  * @property cancellable whether an administrator may stop the task from `/pn tasks` or the menu; the owner can always cancel it
+ * @property hidden whether the task is left out of `/pn tasks` and the menu; shown by default
  * @property runnableNow whether an administrator may start a waiting repeating task at once from `/pn tasks` or the menu
  * @property key optional conflict-resolution key within an owner scope
  * @property conflictPolicy behavior when [key] is already registered
@@ -51,6 +52,7 @@ class TaskSpec private constructor(
     val usage: String?,
     val cancellable: Boolean,
     val runnableNow: Boolean,
+    val hidden: Boolean,
     val key: String?,
     val conflictPolicy: TaskConflictPolicy,
     val execution: TaskExecution,
@@ -68,6 +70,7 @@ class TaskSpec private constructor(
         private var usage: String? = null
         private var cancellable = true
         private var runnableNow = true
+        private var hidden = false
         private var key: String? = null
         private var conflictPolicy = TaskConflictPolicy.REJECT
         private var execution = TaskExecution.global()
@@ -83,6 +86,7 @@ class TaskSpec private constructor(
         internal val configuredUsage: String? get() = usage
         internal val configuredCancellable: Boolean get() = cancellable
         internal val configuredRunnableNow: Boolean get() = runnableNow
+        internal val configuredHidden: Boolean get() = hidden
         internal val configuredKey: String? get() = key
         internal val configuredConflictPolicy: TaskConflictPolicy get() = conflictPolicy
         internal val configuredExecution: TaskExecution get() = execution
@@ -104,6 +108,9 @@ class TaskSpec private constructor(
 
         /** Sets whether an administrator may start the task at once from the commands and the menu; `true` by default. */
         fun runnableNow(value: Boolean): Builder = apply { runnableNow = value }
+
+        /** Sets whether the task is left out of the commands and the menu; `false` by default. */
+        fun hidden(value: Boolean): Builder = apply { hidden = value }
 
         /** Sets an optional conflict-resolution key. */
         fun key(value: String?): Builder = apply { key = value }
@@ -156,7 +163,7 @@ class TaskSpec private constructor(
             key?.let { require(it.isNotBlank()) { "Task key must not be blank" } }
             require(tags.none { it.isBlank() }) { "Task tags must not be blank" }
             return TaskSpec(name, description?.takeIf { it.isNotBlank() }, usage?.takeIf { it.isNotBlank() },
-                cancellable, runnableNow, key, conflictPolicy, execution, delay, interval,
+                cancellable, runnableNow, hidden, key, conflictPolicy, execution, delay, interval,
                 Collections.unmodifiableList(ArrayList(conditions)),
                 Collections.unmodifiableList(ArrayList(cancellationConditions)),
                 Collections.unmodifiableSet(LinkedHashSet(tags)),
@@ -202,6 +209,10 @@ class TaskSpecBuilder internal constructor() {
     var runnableNow: Boolean
         get() = delegate.configuredRunnableNow
         set(value) { delegate.runnableNow(value) }
+    /** Whether the task is left out of the commands and the menu; `false` by default. */
+    var hidden: Boolean
+        get() = delegate.configuredHidden
+        set(value) { delegate.hidden(value) }
     /** Optional conflict-resolution key within the owner scope. */
     var key: String?
         get() = delegate.configuredKey

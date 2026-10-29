@@ -39,6 +39,7 @@ class TaskHistoryStoreTest {
         lastDuration = Duration.ofNanos(1_500_000),
         cancellable = false,
         runnableNow = true,
+        hidden = true,
     )
 
     @Test

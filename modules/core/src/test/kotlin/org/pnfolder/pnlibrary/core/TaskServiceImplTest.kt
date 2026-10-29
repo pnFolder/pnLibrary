@@ -240,6 +240,16 @@ class TaskServiceImplTest {
     }
 
     @Test
+    fun `a task is visible unless it asks to be hidden`() {
+        val service = TaskServiceImpl(RecordingAdapter())
+        val scope = service.scope(Any())
+        scope.schedule(TaskSpec.builder().name("shown").action { }.build())
+        scope.schedule(TaskSpec.builder().name("secret").hidden(true).action { }.build())
+
+        assertEquals(mapOf("shown" to false, "secret" to true), service.query().associate { it.name to it.hidden })
+    }
+
+    @Test
     fun `run now is refused when the task forbids it`() {
         val adapter = RecordingAdapter()
         val service = TaskServiceImpl(adapter)

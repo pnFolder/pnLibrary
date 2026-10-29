@@ -193,7 +193,7 @@ internal class PnLibraryImpl(
         }.getOrDefault(emptyList())
     }
 
-    override fun taskSnapshots(): List<TaskSnapshot> = taskService.query()
+    override fun taskSnapshots(): List<TaskSnapshot> = taskService.query().filterNot { it.hidden }
 
     override fun cancelTask(id: String): TaskControl =
         runCatchingNonFatal { taskService.cancelByAdmin(TaskId(id)) }.getOrDefault(TaskControl.UNAVAILABLE)
