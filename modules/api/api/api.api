@@ -3075,8 +3075,8 @@ public final class org/pnfolder/pnlibrary/api/remote/RemotePolicyResult$Companio
 
 public final class org/pnfolder/pnlibrary/api/remote/RemotePolicySettings {
 	public static final field Companion Lorg/pnfolder/pnlibrary/api/remote/RemotePolicySettings$Companion;
-	public fun <init> (Ljava/lang/String;Ljava/time/Duration;Lorg/pnfolder/pnlibrary/api/remote/DenyAction;Ljava/util/Map;Lorg/pnfolder/pnlibrary/api/remote/PolicyErrorAction;Ljava/lang/String;)V
-	public synthetic fun <init> (Ljava/lang/String;Ljava/time/Duration;Lorg/pnfolder/pnlibrary/api/remote/DenyAction;Ljava/util/Map;Lorg/pnfolder/pnlibrary/api/remote/PolicyErrorAction;Ljava/lang/String;ILkotlin/jvm/internal/DefaultConstructorMarker;)V
+	public fun <init> (Ljava/lang/String;Ljava/time/Duration;Lorg/pnfolder/pnlibrary/api/remote/DenyAction;Ljava/util/Map;Lorg/pnfolder/pnlibrary/api/remote/PolicyErrorAction;Ljava/lang/String;Ljava/time/Duration;)V
+	public synthetic fun <init> (Ljava/lang/String;Ljava/time/Duration;Lorg/pnfolder/pnlibrary/api/remote/DenyAction;Ljava/util/Map;Lorg/pnfolder/pnlibrary/api/remote/PolicyErrorAction;Ljava/lang/String;Ljava/time/Duration;ILkotlin/jvm/internal/DefaultConstructorMarker;)V
 	public static final fun builder ()Lorg/pnfolder/pnlibrary/api/remote/RemotePolicySettings$Builder;
 	public final fun component1 ()Ljava/lang/String;
 	public final fun component2 ()Ljava/time/Duration;
@@ -3084,13 +3084,15 @@ public final class org/pnfolder/pnlibrary/api/remote/RemotePolicySettings {
 	public final fun component4 ()Ljava/util/Map;
 	public final fun component5 ()Lorg/pnfolder/pnlibrary/api/remote/PolicyErrorAction;
 	public final fun component6 ()Ljava/lang/String;
-	public final fun copy (Ljava/lang/String;Ljava/time/Duration;Lorg/pnfolder/pnlibrary/api/remote/DenyAction;Ljava/util/Map;Lorg/pnfolder/pnlibrary/api/remote/PolicyErrorAction;Ljava/lang/String;)Lorg/pnfolder/pnlibrary/api/remote/RemotePolicySettings;
-	public static synthetic fun copy$default (Lorg/pnfolder/pnlibrary/api/remote/RemotePolicySettings;Ljava/lang/String;Ljava/time/Duration;Lorg/pnfolder/pnlibrary/api/remote/DenyAction;Ljava/util/Map;Lorg/pnfolder/pnlibrary/api/remote/PolicyErrorAction;Ljava/lang/String;ILjava/lang/Object;)Lorg/pnfolder/pnlibrary/api/remote/RemotePolicySettings;
+	public final fun component7 ()Ljava/time/Duration;
+	public final fun copy (Ljava/lang/String;Ljava/time/Duration;Lorg/pnfolder/pnlibrary/api/remote/DenyAction;Ljava/util/Map;Lorg/pnfolder/pnlibrary/api/remote/PolicyErrorAction;Ljava/lang/String;Ljava/time/Duration;)Lorg/pnfolder/pnlibrary/api/remote/RemotePolicySettings;
+	public static synthetic fun copy$default (Lorg/pnfolder/pnlibrary/api/remote/RemotePolicySettings;Ljava/lang/String;Ljava/time/Duration;Lorg/pnfolder/pnlibrary/api/remote/DenyAction;Ljava/util/Map;Lorg/pnfolder/pnlibrary/api/remote/PolicyErrorAction;Ljava/lang/String;Ljava/time/Duration;ILjava/lang/Object;)Lorg/pnfolder/pnlibrary/api/remote/RemotePolicySettings;
 	public fun equals (Ljava/lang/Object;)Z
 	public final fun getCheckEvery ()Ljava/time/Duration;
 	public final fun getOnDeny ()Lorg/pnfolder/pnlibrary/api/remote/DenyAction;
 	public final fun getOnError ()Lorg/pnfolder/pnlibrary/api/remote/PolicyErrorAction;
 	public final fun getSource ()Ljava/lang/String;
+	public final fun getStartupTimeout ()Ljava/time/Duration;
 	public final fun getSupportUrl ()Ljava/lang/String;
 	public final fun getValues ()Ljava/util/Map;
 	public fun hashCode ()I
@@ -3104,6 +3106,7 @@ public final class org/pnfolder/pnlibrary/api/remote/RemotePolicySettings$Builde
 	public final fun onError (Lorg/pnfolder/pnlibrary/api/remote/PolicyErrorAction;)Lorg/pnfolder/pnlibrary/api/remote/RemotePolicySettings$Builder;
 	public final fun sha256 (Ljava/lang/String;)Lorg/pnfolder/pnlibrary/api/remote/RemotePolicySettings$Builder;
 	public final fun source (Ljava/lang/String;)Lorg/pnfolder/pnlibrary/api/remote/RemotePolicySettings$Builder;
+	public final fun startupTimeout (Ljava/time/Duration;)Lorg/pnfolder/pnlibrary/api/remote/RemotePolicySettings$Builder;
 	public final fun support (Ljava/lang/String;)Lorg/pnfolder/pnlibrary/api/remote/RemotePolicySettings$Builder;
 	public final fun value (Ljava/lang/String;Ljava/lang/String;)Lorg/pnfolder/pnlibrary/api/remote/RemotePolicySettings$Builder;
 	public final fun values (Ljava/util/Map;)Lorg/pnfolder/pnlibrary/api/remote/RemotePolicySettings$Builder;

@@ -63,12 +63,12 @@ class UpdateServiceImpl(
     // Keep a manual `/pn update` responsive even when GitHub is unreachable.
     // The check can cover several registered products, so long per-request
     // timeouts otherwise add up and look like a frozen command.
-    private val resources = UpdateRuntimeResources(dataFolder)
+    private val resources = UpdateRuntimeResources(dataFolder, configuration)
     private val overrides = UpdatePolicyOverrides(dataFolder.resolve("updates/settings.json")) {
         logging.log(this, LogLevel.WARNING, it)
     }
     private val automaticPolicy = UpdateAutomaticPolicy(configuration, overrides) { registrations.snapshot() }
-    private val installer = UpdateInstaller(identity, dataFolder, configuration, resources.http)
+    private val installer = UpdateInstaller(identity, dataFolder, configuration, resources.downloadHttp)
     private val freezes = FreezeStore(dataFolder.resolve("updates/freezes.json"))
     private val graphResolver = UpdateGraphResolver(inventory, identity, configuration, resources.catalogGateway, freezes, overrides)
     private val runtime = UpdateOrchestratorRuntime(

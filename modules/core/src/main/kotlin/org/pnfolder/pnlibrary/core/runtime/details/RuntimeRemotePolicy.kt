@@ -13,7 +13,6 @@ import org.pnfolder.pnlibrary.core.remote.PolicyDeniedException
 import org.pnfolder.pnlibrary.core.remote.RemotePolicyMonitor
 import org.pnfolder.pnlibrary.core.remote.RemotePolicyNoticeRenderer
 import org.pnfolder.pnlibrary.spi.platform.PlatformAdapter
-import java.time.Duration
 import java.util.concurrent.atomic.AtomicBoolean
 
 /** Connects the existing policy engine to the library owner, without creating a synthetic module. */
@@ -24,12 +23,10 @@ internal object RuntimeRemotePolicy {
         }
         return RemotePolicySettings.builder().source(policy.source).checkEvery(policy.checkEvery)
             .onDeny(policy.onDeny).onError(policy.onError).values(policy.values)
+            .startupTimeout(policy.startupTimeout)
             .apply { policy.supportUrl?.let { support(it) } }
             .build()
     }
-
-    /** How long server start may wait for the policy before the policy's error action applies. */
-    private val STARTUP_TIMEOUT: Duration = Duration.ofSeconds(20)
 
     /**
      * Checks the policy now, before the plugin reports itself enabled, so a denied library never shows as running.
@@ -52,7 +49,7 @@ internal object RuntimeRemotePolicy {
             System.getProperty("java.version", "unknown"), JavaRuntime.feature,
         )
         val monitor = RemotePolicyMonitor(platform, platform, RemotePolicyNoticeRenderer(platform))
-        val startup = monitor.checkAtStartup(owner, metadata, policy, logger, STARTUP_TIMEOUT)
+        val startup = monitor.checkAtStartup(owner, metadata, policy, logger, policy.startupTimeout)
         if (startup == null) {
             val guarded = try { platform.disableDependents(owner) } catch (_: Throwable) { false }
             if (!guarded) runCatchingNonFatal { platform.disableOwner(owner) }

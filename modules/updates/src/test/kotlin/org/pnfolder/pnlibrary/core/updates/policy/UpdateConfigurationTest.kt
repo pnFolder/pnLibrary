@@ -75,16 +75,26 @@ class UpdateConfigurationTest {
     }
 
     @Test
-    fun `check interval is not configurable because the developer owns scheduling`() {
+    fun `check interval is configurable but checks cannot be switched off`() {
         val file = directory.resolve("updates.yml")
-        Files.writeString(file, "checks: { enabled: false, interval: 30d }\n")
+        Files.writeString(file, "checks: { enabled: false, interval: 30m }\n")
         val warnings = mutableListOf<String>()
 
         val configuration = UpdateConfiguration.load(file, warnings::add)
 
         assertTrue(configuration.effectiveChecksEnabled)
-        assertEquals(Duration.ofHours(6), configuration.checks.interval)
-        assertTrue(warnings.any { it.contains("checks") })
+        assertEquals(Duration.ofMinutes(30), configuration.checks.interval)
+    }
+
+    @Test
+    fun `check interval below the minimum is raised to it`() {
+        val file = directory.resolve("updates.yml")
+        Files.writeString(file, "checks: { interval: 1m }\n")
+        val warnings = mutableListOf<String>()
+
+        val configuration = UpdateConfiguration.load(file, warnings::add)
+
+        assertEquals(Duration.ofMinutes(5), configuration.checks.interval)
     }
 
     @Test
