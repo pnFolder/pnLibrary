@@ -29,6 +29,7 @@ fun interface CommandAvailability {
  * @property name literal value, argument name, or root command name
  * @property argumentType parser used by an argument node
  * @property permission optional permission required to enter this node
+ * @property alsoPermissions other permissions that let a sender in just as [permission] does
  * @property consoleBypassesPermission whether the console ignores [permission]
  * @property availability contextual availability rule
  * @property execution execution callback for this route
@@ -53,7 +54,9 @@ class CommandNode internal constructor(
     val noPermissionMessage: String? = null,
     errorHandlers: Map<Class<out CommandError>, CommandErrorHandler<*>> = emptyMap(),
     val senderRule: SenderRule = SenderRule.ANY,
+    alsoPermissions: List<String> = emptyList(),
 ) {
+    val alsoPermissions: List<String> = Collections.unmodifiableList(ArrayList(alsoPermissions))
     val errorHandlers: Map<Class<out CommandError>, CommandErrorHandler<*>> = Collections.unmodifiableMap(LinkedHashMap(errorHandlers))
     val children: List<CommandNode> = Collections.unmodifiableList(ArrayList(children))
 }
@@ -70,6 +73,7 @@ class CommandNodeBuilder internal constructor(
         CommandNodeKind.ARGUMENT -> normalizeArgumentName(name)
     }
     private var permission: String? = null
+    private var alsoPermissions: List<String> = emptyList()
     private var consoleBypassesPermission = false
     private var noPermissionMessage: String? = null
     @PublishedApi internal val errorHandlers = linkedMapOf<Class<out CommandError>, CommandErrorHandler<*>>()
@@ -82,8 +86,15 @@ class CommandNodeBuilder internal constructor(
     private val mounted = mutableListOf<CommandNode>()
 
     /** Requires the non-blank permission [value] for this node. */
-    fun permission(value: String): CommandNodeBuilder = apply {
+    fun permission(value: String): CommandNodeBuilder = permission(value, *emptyArray<String>())
+
+    /**
+     * Requires the non-blank permission [value] for this node. With [others] a sender needs only one of them, so a
+     * narrow permission such as `pnlibrary.updates.download` can open a node next to the wide `pnlibrary.admin`.
+     */
+    fun permission(value: String, vararg others: String): CommandNodeBuilder = apply {
         permission = value.trim().also { require(it.isNotEmpty()) { "Command permission must not be blank" } }
+        alsoPermissions = others.map { other -> other.trim().also { require(it.isNotEmpty()) { "Command permission must not be blank" } } }
     }
 
     /** Sets the message shown to a sender who lacks this node's permission; it overrides the command's own text. */
@@ -203,6 +214,7 @@ class CommandNodeBuilder internal constructor(
         return CommandNode(
             kind, name, argumentType, permission, consoleBypassesPermission, availability,
             execution, suggestions, executable, children.map(CommandNodeBuilder::build) + mounted, noPermissionMessage, errorHandlers, senderRule,
+            alsoPermissions,
         )
     }
 
@@ -242,6 +254,7 @@ private fun rebased(node: CommandNode, mountName: String? = null): CommandNode {
         node.noPermissionMessage,
         node.errorHandlers,
         node.senderRule,
+        node.alsoPermissions,
     )
 }
 

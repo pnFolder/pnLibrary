@@ -22,7 +22,10 @@ permissions:
     description: Смотреть журнал событий (/pn events) и получать сводку ошибок при входе
     default: op
   pnlibrary.events.bus:
-    description: 'Смотреть шину событий (/pn bus): слушатели, вызовы, трассировка'
+    description: 'Смотреть события плагинов (/pn bus): слушатели, вызовы, трассировка'
+    default: op
+  pnlibrary.tasks:
+    description: 'Смотреть задачи плагинов (/pn tasks) и отменять их'
     default: op
   pnlibrary.updates.view:
     description: Просматривать совместимый план обновлений

@@ -94,6 +94,8 @@ class TaskQuery private constructor(
  * @property lastStartedAt most recent invocation start time
  * @property lastCompletedAt most recent successful completion time
  * @property lastFailure rendered most recent failure, when one occurred
+ * @property description optional sentence on what the task is for
+ * @property usage optional note on how the task is used
  */
 data class TaskSnapshot(
     val id: TaskId,
@@ -110,4 +112,6 @@ data class TaskSnapshot(
     val lastStartedAt: Instant?,
     val lastCompletedAt: Instant?,
     val lastFailure: String?,
+    val description: String? = null,
+    val usage: String? = null,
 )

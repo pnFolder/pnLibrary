@@ -11,6 +11,7 @@ import org.pnfolder.pnlibrary.api.currency.CurrencyProviderRegistry
 import org.pnfolder.pnlibrary.api.runtime.PnLibrary
 import org.pnfolder.pnlibrary.bukkit.currency.CurrencyCommandExecutor
 import org.pnfolder.pnlibrary.core.commands.EventBusCommand
+import org.pnfolder.pnlibrary.core.commands.TaskCommand
 import org.pnfolder.pnlibrary.core.lifecycle.mountableCommand
 import org.pnfolder.pnlibrary.core.updates.catalog.UpdateCatalogCommands
 import org.pnfolder.pnlibrary.core.updates.catalog.UpdateCatalogRoutes
@@ -30,6 +31,7 @@ import org.pnfolder.pnlibrary.core.updates.catalog.UpdateCatalogRoutes
  * | `/pn update status [plugin]` | the state of the update plan | `pnlibrary.admin` |
  * | `/pn events …` | the journal of events | `pnlibrary.events.view` |
  * | `/pn bus …` | listeners, calls and traces of the event bus | `pnlibrary.events.bus` |
+ * | `/pn tasks …` | scheduled tasks of every plugin, with what each is for | `pnlibrary.tasks` |
  * | `/pn debug …` | the encrypted report for support | `pnlibrary.debug` |
  * | `/pn money …` | currencies and balances | as in the currency settings |
  * | `/pn support` | the support link | `pnlibrary.admin` |
@@ -64,7 +66,7 @@ internal class BukkitControlCommand(
         aliases("pnlib", "pnlibrary")
         executes(::overview)
         literal("status") {
-            permission(ADMIN)
+            permission(ADMIN, VIEW)
             executes { replies.native(it) { sender, reply -> updates.sendStatus(sender, reply, null) } }
             argument("plugin", ArgumentType.string()) {
                 suggests { productNames() }
@@ -72,15 +74,15 @@ internal class BukkitControlCommand(
             }
         }
         literal("check") {
-            permission(ADMIN)
+            permission(ADMIN, VIEW)
             executes(updates::checkUpdates)
         }
         literal("gui") {
-            permission(ADMIN)
+            permission(ADMIN, VIEW)
             executes { replies.native(it) { sender, reply -> menu.openFor(sender, reply) } }
         }
         literal("updates") {
-            permission(ADMIN)
+            permission(ADMIN, VIEW)
             executes(catalog::showList)
             catalog.install { name, configure -> literal(name, configure) }
             literal("rollback") {
@@ -93,7 +95,7 @@ internal class BukkitControlCommand(
         }
         // Words after `update` are subcommands first and a plugin name second, so no plugin may be named like one.
         literal("update") {
-            permission(ADMIN)
+            permission(ADMIN, DOWNLOAD)
             argument("plugin", ArgumentType.string()) {
                 suggests { productNames() }
                 executes { replies.native(it) { sender, reply -> updates.update(sender, reply, it.get<String>("plugin")) } }
@@ -113,9 +115,10 @@ internal class BukkitControlCommand(
         library.mountableCommand("events")?.let { mount("events", it) }
         library.mountableCommand("debug")?.let { mount("debug", it) }
         mount("bus", EventBusCommand(library).definition())
+        mount("tasks", TaskCommand(library).definition())
         mount("money", CurrencyCommandExecutor(plugin, currencies).definition())
         literal("support") {
-            permission(ADMIN)
+            permission(ADMIN, VIEW)
             executes { replies.native(it) { _, reply -> support.support(reply) } }
         }
     }
@@ -127,6 +130,7 @@ internal class BukkitControlCommand(
         val available = buildList {
             if (sender.hasPermission("pnlibrary.events.view")) add("/pn events")
             if (sender.hasPermission("pnlibrary.events.bus")) add("/pn bus")
+            if (sender.hasPermission("pnlibrary.tasks")) add("/pn tasks")
             if (sender.hasPermission("pnlibrary.debug")) add("/pn debug")
             add("/pn money")
         }
@@ -141,6 +145,8 @@ internal class BukkitControlCommand(
 
         /** The permission of the control tree: updates, support helpers and the status pages. */
         const val ADMIN = "pnlibrary.admin"
+        const val VIEW = "pnlibrary.updates.view"
+        const val DOWNLOAD = "pnlibrary.updates.download"
 
         /** The command a confirmation card offers to carry out what [token] was issued for. */
         fun confirmCommand(token: String): String = "/pn update confirm $token"

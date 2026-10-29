@@ -256,6 +256,8 @@ internal class TaskServiceImpl(
             lastStartedAt = started,
             lastCompletedAt = completed,
             lastFailure = failure,
+            description = spec.description,
+            usage = spec.usage,
         )
 
         private fun terminal() = synchronized(lock) {

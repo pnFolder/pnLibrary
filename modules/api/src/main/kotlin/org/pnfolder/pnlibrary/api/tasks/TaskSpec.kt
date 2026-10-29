@@ -31,6 +31,8 @@ interface TaskContext {
  * Immutable declaration used to schedule one task.
  *
  * @property name optional human-readable task name
+ * @property description optional sentence on what the task is for, shown by `/pn tasks` and the menu
+ * @property usage optional note on how the task is used or what it changes
  * @property key optional conflict-resolution key within an owner scope
  * @property conflictPolicy behavior when [key] is already registered
  * @property execution platform execution context
@@ -43,6 +45,8 @@ interface TaskContext {
  */
 class TaskSpec private constructor(
     val name: String?,
+    val description: String?,
+    val usage: String?,
     val key: String?,
     val conflictPolicy: TaskConflictPolicy,
     val execution: TaskExecution,
@@ -56,6 +60,8 @@ class TaskSpec private constructor(
     /** Fluent Java-friendly builder for a validated [TaskSpec]. */
     class Builder internal constructor() {
         private var name: String? = null
+        private var description: String? = null
+        private var usage: String? = null
         private var key: String? = null
         private var conflictPolicy = TaskConflictPolicy.REJECT
         private var execution = TaskExecution.global()
@@ -67,6 +73,8 @@ class TaskSpec private constructor(
         private var action: TaskAction? = null
 
         internal val configuredName: String? get() = name
+        internal val configuredDescription: String? get() = description
+        internal val configuredUsage: String? get() = usage
         internal val configuredKey: String? get() = key
         internal val configuredConflictPolicy: TaskConflictPolicy get() = conflictPolicy
         internal val configuredExecution: TaskExecution get() = execution
@@ -76,6 +84,12 @@ class TaskSpec private constructor(
 
         /** Sets an optional human-readable task name. */
         fun name(value: String?): Builder = apply { name = value }
+
+        /** Sets an optional sentence on what the task is for. */
+        fun description(value: String?): Builder = apply { description = value }
+
+        /** Sets an optional note on how the task is used or what it changes. */
+        fun usage(value: String?): Builder = apply { usage = value }
 
         /** Sets an optional conflict-resolution key. */
         fun key(value: String?): Builder = apply { key = value }
@@ -127,7 +141,7 @@ class TaskSpec private constructor(
             interval?.let { require(!it.isNegative && !it.isZero) { "Task interval must be positive" } }
             key?.let { require(it.isNotBlank()) { "Task key must not be blank" } }
             require(tags.none { it.isBlank() }) { "Task tags must not be blank" }
-            return TaskSpec(name, key, conflictPolicy, execution, delay, interval,
+            return TaskSpec(name, description?.takeIf { it.isNotBlank() }, usage?.takeIf { it.isNotBlank() }, key, conflictPolicy, execution, delay, interval,
                 Collections.unmodifiableList(ArrayList(conditions)),
                 Collections.unmodifiableList(ArrayList(cancellationConditions)),
                 Collections.unmodifiableSet(LinkedHashSet(tags)),
@@ -157,6 +171,14 @@ class TaskSpecBuilder internal constructor() {
     var name: String?
         get() = delegate.configuredName
         set(value) { delegate.name(value) }
+    /** Optional sentence on what the task is for. */
+    var description: String?
+        get() = delegate.configuredDescription
+        set(value) { delegate.description(value) }
+    /** Optional note on how the task is used or what it changes. */
+    var usage: String?
+        get() = delegate.configuredUsage
+        set(value) { delegate.usage(value) }
     /** Optional conflict-resolution key within the owner scope. */
     var key: String?
         get() = delegate.configuredKey

@@ -7,6 +7,7 @@ import org.pnfolder.pnlibrary.api.commands.CommandRegistration
 import org.pnfolder.pnlibrary.api.commands.command
 import org.pnfolder.pnlibrary.api.runtime.PnLibrary
 import org.pnfolder.pnlibrary.api.tasks.TaskScope
+import org.pnfolder.pnlibrary.api.tasks.TaskSnapshot
 
 /** Private runtime capabilities, deliberately absent from the consumer API facade. */
 internal interface RuntimeResources {
@@ -21,6 +22,12 @@ internal interface RuntimeResources {
 
     /** Journal records of the last [sinceHours] hours, equal events merged, newest first; [level] is `info`, `warning`, `error` or `null`. */
     fun journalGroups(level: String?, sinceHours: Int, limit: Int): List<JournalGroup>
+
+    /** Every live and retained task of every plugin. */
+    fun taskSnapshots(): List<TaskSnapshot>
+
+    /** Cancels the task with this id and reports whether it was still active. */
+    fun cancelTask(id: String): Boolean
 
     /** The whole event behind a [JournalGroup.id], or `null` when it is no longer in the journal. */
     fun journalDetail(id: String): JournalDetail?
@@ -46,6 +53,12 @@ data class JournalDetail(
     val details: Map<String, String>,
     val times: List<Long>,
 )
+
+/** Every live and retained task of every plugin; empty when the runtime has no task service. */
+fun PnLibrary.taskSnapshots(): List<TaskSnapshot> = (this as? RuntimeResources)?.taskSnapshots().orEmpty()
+
+/** Cancels the task with this id and reports whether it was still active. */
+fun PnLibrary.cancelTask(id: String): Boolean = (this as? RuntimeResources)?.cancelTask(id) ?: false
 
 /** The whole journal event with the id [id]; `null` when there is none or the runtime has no journal. */
 fun PnLibrary.journalDetail(id: String): JournalDetail? = (this as? RuntimeResources)?.journalDetail(id)

@@ -131,7 +131,8 @@ internal class CommandTreeRouter {
         val permission = node.permission
         val permissionAllowed = permission == null ||
             (context.sender.isConsole && node.consoleBypassesPermission) ||
-            context.sender.hasPermission(permission)
+            context.sender.hasPermission(permission) ||
+            node.alsoPermissions.any { context.sender.hasPermission(it) }
         return permissionAllowed && node.availability.isAvailable(context)
     }
 
