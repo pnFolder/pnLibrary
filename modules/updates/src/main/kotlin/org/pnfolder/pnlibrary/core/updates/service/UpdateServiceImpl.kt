@@ -84,7 +84,7 @@ class UpdateServiceImpl(
         automaticAllowed = { snapshot ->
             automaticPolicy.allows(snapshot) && installer.automaticUpdatesHealthy(registrations.snapshot().map { it.descriptor.id }.toSet())
         },
-        automaticOverridesActive = { configuration.enabled && overrides.anyAutomaticEnabled() },
+        automaticOverridesActive = { overrides.anyAutomaticEnabled() },
     )
     private val orchestrator get() = runtime.orchestrator
 

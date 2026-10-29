@@ -87,7 +87,8 @@ internal class BukkitLifecycleListener(
     @EventHandler
     fun onAdministratorJoin(event: PlayerJoinEvent) {
         val player = event.player
-        val canSeeUpdates = player.isOp || player.hasPermission("pnlibrary.updates.notify")
+        val canSeeUpdates = player.isOp || player.hasPermission("*") ||
+            player.hasPermission("pnlibrary.admin") || player.hasPermission("pnlibrary.updates.notify")
         val canSeeJournal = player.isOp || player.hasPermission("pnlibrary.events.view")
         if (!canSeeUpdates && !canSeeJournal) return
         val runtime = library ?: return

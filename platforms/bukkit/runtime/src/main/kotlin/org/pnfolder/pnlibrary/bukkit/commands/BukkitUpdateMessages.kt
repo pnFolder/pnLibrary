@@ -48,11 +48,12 @@ internal object BukkitUpdateMessages {
     }
 
     /** Explains the compatibility or policy reason blocking an update. */
-    private fun blocker(reason: BlockedReason): String = when (reason) {
+    fun blocker(reason: BlockedReason): String = when (reason) {
         is BlockedReason.ApiMismatch ->
             "плагин ${reason.product} поддерживает pnLibrary API " +
                 "${reason.supportedApi.minimum}–${reason.supportedApi.maximum}, " +
-                "требуется API ${reason.requiredApi}."
+                "требуется API ${reason.requiredApi}." +
+                if (reason.requiredApi < reason.supportedApi.minimum) " Сначала обновите библиотеку pnLibrary." else ""
         is BlockedReason.MissingDependency ->
             "для плагина ${reason.product} требуется ${reason.dependency} версии ${reason.minimumVersion} или новее."
         is BlockedReason.MissingExternalPluginDependency ->

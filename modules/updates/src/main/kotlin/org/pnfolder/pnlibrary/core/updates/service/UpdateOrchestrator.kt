@@ -58,7 +58,7 @@ internal class UpdateOrchestrator(
     private val sessionHistory = ArrayDeque<UpdatePlanSnapshot>()
 
     fun start() {
-        if (!configuration.effectiveChecksEnabled || closed.get() || !started.compareAndSet(false, true)) return
+        if (closed.get() || !started.compareAndSet(false, true)) return
         executor.scheduleWithFixedDelay(
             { checkNow(false, UpdateActor.SYSTEM).exceptionally { null } },
             0,
@@ -142,7 +142,7 @@ internal class UpdateOrchestrator(
 
     /** Queues a fresh graph check after any currently running check has released the coalescing slot. */
     fun registrationsChanged() {
-        if (closed.get() || !started.get() || !configuration.effectiveChecksEnabled) return
+        if (closed.get() || !started.get()) return
         try {
             executor.execute { if (!closed.get()) checkNow(false, UpdateActor.SYSTEM) }
         } catch (_: RejectedExecutionException) {
@@ -237,7 +237,7 @@ internal class UpdateOrchestrator(
         }
         store.save(snapshot)
         observeState(snapshot, actor, operation)
-        if (closed.get() || !configuration.effectiveConsoleNotifications) return
+        if (closed.get()) return
         val fingerprint = fingerprint(snapshot.state, snapshot.plan, snapshot.blockers)
         val now = clock.instant()
         val repeat = announcedAt?.let { !now.isBefore(it.plus(configuration.notifications.repeatInterval)) } ?: true

@@ -9,8 +9,8 @@ import java.util.UUID
 
 class UpdateAutomaticPolicyTest {
     @Test
-    fun `generic downloads permission does not opt the library into automatic replacement`() {
-        val config = UpdateConfiguration(downloads = UpdateConfiguration.Downloads(automatic = true))
+    fun `plugin automatic download does not opt the library into automatic replacement`() {
+        val config = UpdateConfiguration(pluginAutomaticDownload = true)
         assertFalse(UpdateAutomaticPolicy(config) { emptyList() }.allows(plan("pnlibrary")))
         assertTrue(UpdateAutomaticPolicy(config.copy(library = UpdateConfiguration.LibraryPolicy(automaticDownload = true))) {
             emptyList()
@@ -24,7 +24,7 @@ class UpdateAutomaticPolicyTest {
         assertFalse(UpdateAutomaticPolicy(config) { emptyList() }.allows(combined))
         val allowed = config.copy(pluginAutomaticDownload = true)
         assertTrue(UpdateAutomaticPolicy(allowed) { emptyList() }.allows(combined))
-        assertFalse(UpdateAutomaticPolicy(allowed.copy(pluginUpdatesEnabled = false)) { emptyList() }.allows(combined))
+        assertFalse(UpdateAutomaticPolicy(allowed.copy(ignoredPlugins = setOf("managed-module"))) { emptyList() }.allows(combined))
     }
 
     @Test
