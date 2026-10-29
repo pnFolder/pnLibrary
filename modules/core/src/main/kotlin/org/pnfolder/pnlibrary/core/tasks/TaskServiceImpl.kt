@@ -12,9 +12,11 @@ import org.pnfolder.pnlibrary.api.tasks.TaskSnapshot
 import org.pnfolder.pnlibrary.api.tasks.TaskSpec
 import org.pnfolder.pnlibrary.api.tasks.TaskStatus
 import org.pnfolder.pnlibrary.core.lifecycle.ResourceCleanup
+import org.pnfolder.pnlibrary.core.lifecycle.TaskControl
 import org.pnfolder.pnlibrary.spi.tasks.PlatformTaskAdapter
 import org.pnfolder.pnlibrary.spi.tasks.PlatformTaskHandle
 import org.pnfolder.pnlibrary.spi.tasks.PlatformTaskRequest
+import java.time.Duration
 import java.time.Instant
 import java.util.Collections
 import java.util.IdentityHashMap
@@ -57,6 +59,18 @@ internal class TaskServiceImpl(
             .filter { TaskQueryMatcher.matches(it, query) })
     }
     override fun query(owner: Any, query: TaskQuery): List<TaskSnapshot> = snapshots(owner, query)
+
+    override fun cancelByAdmin(id: TaskId): TaskControl {
+        val task = synchronized(lock) { active[id] } ?: return TaskControl.UNAVAILABLE
+        if (!task.spec.cancellable) return TaskControl.FORBIDDEN
+        return if (task.cancelIfActive()) TaskControl.DONE else TaskControl.UNAVAILABLE
+    }
+
+    override fun runNow(id: TaskId): TaskControl {
+        val task = synchronized(lock) { active[id] } ?: return TaskControl.UNAVAILABLE
+        if (!task.spec.runnableNow) return TaskControl.FORBIDDEN
+        return if (task.runNow()) TaskControl.DONE else TaskControl.UNAVAILABLE
+    }
     override fun close(owner: Any) {
         val current = synchronized(scopes) { scopes.remove(owner)?.values?.toList().orEmpty() }
         ResourceCleanup.closeAll(*current.map { scope -> ({ scope.cancelAll() }) }.toTypedArray())
@@ -98,7 +112,7 @@ internal class TaskServiceImpl(
                 active[managed.id] = managed
                 val native = try {
                     adapter.schedule(PlatformTaskRequest(
-                        spec.execution.kind, spec.execution.target, spec.delay, spec.interval, Runnable(managed::invoke),
+                        spec.execution.kind, spec.execution.target, spec.delay, spec.interval, Runnable { managed.invoke() },
                         owner = owner,
                     ))
                 } catch (error: Throwable) {
@@ -163,6 +177,9 @@ internal class TaskServiceImpl(
 
         @Volatile
         private var failure: String? = null
+
+        @Volatile
+        private var lastDuration: Duration? = null
         override val status get() = state.get()
         override val isCancelled get() = cancelled.get()
 
@@ -173,19 +190,31 @@ internal class TaskServiceImpl(
             }
         }
 
-        fun invoke() {
+        fun invoke() = execute(manual = false)
+
+        /** Starts a waiting task now, on its own execution context, and leaves its schedule as it was. */
+        fun runNow(): Boolean {
+            if (cancelled.get() || status != TaskStatus.SCHEDULED) return false
+            adapter.schedule(
+                PlatformTaskRequest(spec.execution.kind, spec.execution.target, Duration.ZERO, null, Runnable { execute(manual = true) }, owner = owner),
+            )
+            return true
+        }
+
+        private fun execute(manual: Boolean) {
             if (cancelled.get()) return
             if (!running.compareAndSet(false, true)) {
-                skipped.incrementAndGet()
+                if (!manual) skipped.incrementAndGet()
                 return
             }
             try {
-                nextRun = null
-                if (spec.cancellationConditions.any { it.asBoolean }) {
+                val plannedNext = nextRun
+                if (!manual) nextRun = null
+                if (!manual && spec.cancellationConditions.any { it.asBoolean }) {
                     cancel()
                     return
                 }
-                if (spec.conditions.any { !it.asBoolean }) {
+                if (!manual && spec.conditions.any { !it.asBoolean }) {
                     skipped.incrementAndGet()
                     if (spec.interval == null) {
                         complete()
@@ -198,6 +227,7 @@ internal class TaskServiceImpl(
                 val runStartedAt = Instant.now()
                 started = runStartedAt
                 val number = runs.incrementAndGet()
+                val clock = System.nanoTime()
                 spec.action.run(object : TaskContext {
                     override val id = this@ManagedTask.id
                     override val name = spec.name
@@ -206,12 +236,14 @@ internal class TaskServiceImpl(
                     override val startedAt = runStartedAt
                     override fun cancel() = this@ManagedTask.cancel()
                 })
+                lastDuration = Duration.ofNanos(System.nanoTime() - clock)
                 if (!cancelled.get()) {
                     if (spec.interval == null) {
                         complete()
+                        if (manual) native.get()?.cancel()
                     } else {
                         state.set(TaskStatus.SCHEDULED)
-                        nextRun = Instant.now().plus(spec.interval)
+                        nextRun = if (manual) plannedNext else Instant.now().plus(spec.interval)
                     }
                 }
             } catch (error: Throwable) {
@@ -266,6 +298,11 @@ internal class TaskServiceImpl(
             lastFailure = failure,
             description = spec.description,
             usage = spec.usage,
+            source = sourceOf(spec.action.javaClass),
+            interval = spec.interval,
+            lastDuration = lastDuration,
+            cancellable = spec.cancellable,
+            runnableNow = spec.runnableNow,
         )
 
         private fun terminal() {
@@ -294,6 +331,9 @@ internal class TaskServiceImpl(
         val snapshots = synchronized(lock) { history.values.map { it.snapshot } }
         store?.save(snapshots)
     }
+
+    /** The class that holds the action; a lambda reports the class it was written in. */
+    private fun sourceOf(type: Class<*>): String = type.name.substringBefore("\$\$Lambda").substringBefore('/')
 
     private fun ownerName(owner: Any) = owner.javaClass.simpleName.ifBlank { owner.toString() }
     private fun immutableSnapshots(values: Collection<TaskSnapshot>): List<TaskSnapshot> =

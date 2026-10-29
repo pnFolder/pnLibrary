@@ -1,5 +1,6 @@
 package org.pnfolder.pnlibrary.api.tasks
 
+import java.time.Duration
 import java.time.Instant
 import java.util.Collections
 
@@ -96,6 +97,11 @@ class TaskQuery private constructor(
  * @property lastFailure rendered most recent failure, when one occurred
  * @property description optional sentence on what the task is for
  * @property usage optional note on how the task is used
+ * @property source class of the task action, as far as it can be told
+ * @property interval repeat interval, or `null` for a one-shot task
+ * @property lastDuration how long the latest finished invocation took
+ * @property cancellable whether an administrator may stop the task from the commands and the menu
+ * @property runnableNow whether an administrator may start the task at once from the commands and the menu
  */
 data class TaskSnapshot(
     val id: TaskId,
@@ -114,4 +120,9 @@ data class TaskSnapshot(
     val lastFailure: String?,
     val description: String? = null,
     val usage: String? = null,
+    val source: String? = null,
+    val interval: Duration? = null,
+    val lastDuration: Duration? = null,
+    val cancellable: Boolean = true,
+    val runnableNow: Boolean = true,
 )

@@ -7,12 +7,14 @@ import org.pnfolder.pnlibrary.api.tasks.TaskStatus
 import org.pnfolder.pnlibrary.common.io.AtomicFiles
 import java.nio.file.Files
 import java.nio.file.Path
+import java.time.Duration
 import java.time.Instant
 
 /**
  * The finished tasks kept on disk, one tab-separated line each, so the history survives a restart.
  *
- * The first line holds the format version; a line that cannot be read is skipped, so a damaged file never stops
+ * The first line holds the format version. Lines of the first format (16 fields) still load, with the newer fields at
+ * their defaults. A line that cannot be read is skipped, so a damaged file never stops
  * the server from starting. Text fields escape tab, line break and backslash.
  */
 internal class TaskHistoryStore(private val file: Path) {
@@ -37,11 +39,13 @@ internal class TaskHistoryStore(private val file: Path) {
         task.id.value, task.name, task.key, task.ownerName, task.executionKind.name, task.status.name,
         task.tags.joinToString(TAG_SEPARATOR), task.createdAt, task.nextRunAt, task.runCount, task.skippedCount,
         task.lastStartedAt, task.lastCompletedAt, task.lastFailure, task.description, task.usage,
+        task.source, task.interval?.toMillis(), task.lastDuration?.toNanos(), task.cancellable, task.runnableNow,
     ).joinToString(TAB) { escape(it?.toString().orEmpty()) }
 
     private fun parse(line: String): TaskSnapshot {
         val f = line.split(TAB).map(::unescape)
-        require(f.size == FIELDS) { "Task history line has ${f.size} fields" }
+        require(f.size == FIELDS || f.size == FIRST_FIELDS) { "Task history line has ${f.size} fields" }
+        val newer = f.size == FIELDS
         fun text(index: Int): String? = f[index].ifEmpty { null }
         fun time(index: Int): Instant? = text(index)?.let(Instant::parse)
         return TaskSnapshot(
@@ -61,6 +65,11 @@ internal class TaskHistoryStore(private val file: Path) {
             lastFailure = text(13),
             description = text(14),
             usage = text(15),
+            source = if (newer) text(16) else null,
+            interval = if (newer) text(17)?.let { Duration.ofMillis(it.toLong()) } else null,
+            lastDuration = if (newer) text(18)?.let { Duration.ofNanos(it.toLong()) } else null,
+            cancellable = !newer || f[19].toBoolean(),
+            runnableNow = !newer || f[20].toBoolean(),
         )
     }
 
@@ -100,8 +109,9 @@ internal class TaskHistoryStore(private val file: Path) {
     }
 
     private companion object {
-        const val HEADER = "#pnlibrary-task-history 1"
-        const val FIELDS = 16
+        const val HEADER = "#pnlibrary-task-history 2"
+        const val FIRST_FIELDS = 16
+        const val FIELDS = 21
         const val TAB = "\t"
         const val BACKSLASH = '\\'
         const val TAG_SEPARATOR = "\u001F"

@@ -194,7 +194,7 @@ internal class EventServiceImpl(
     private fun resultText(event: Event): String? = (event as? ResultedEvent<*>)?.result?.toString()
 
     private fun record(event: Event, steps: List<EventTrace.Step>, capacity: Int, mode: DispatchMode) {
-        val trace = EventTrace(event.eventName, event.isAllowed, resultText(event), steps, mode, Thread.currentThread().name)
+        val trace = EventTrace(event.eventName, event.isAllowed, resultText(event), steps, mode, Thread.currentThread().name, java.time.Instant.now())
         synchronized(recorded) {
             recorded.addLast(trace)
             while (recorded.size > capacity) recorded.removeFirst()

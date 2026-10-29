@@ -4,6 +4,7 @@ import org.junit.jupiter.api.Assertions.*
 import org.junit.jupiter.api.Test
 import org.pnfolder.pnlibrary.api.plugin.PluginId
 import org.pnfolder.pnlibrary.api.tasks.*
+import org.pnfolder.pnlibrary.core.lifecycle.TaskControl
 import org.pnfolder.pnlibrary.core.tasks.TaskServiceImpl
 import org.pnfolder.pnlibrary.spi.tasks.*
 import java.time.Duration
@@ -200,6 +201,52 @@ class TaskServiceImplTest {
             @Suppress("UNCHECKED_CAST")
             (scope.query() as MutableList<TaskSnapshot>).clear()
         }
+    }
+
+    @Test
+    fun `an administrator cannot stop a task that forbids it but its owner can`() {
+        val service = TaskServiceImpl(RecordingAdapter())
+        val task = service.scope(Any()).schedule(TaskSpec.builder().name("locked").cancellable(false).action { }.build())
+
+        assertEquals(TaskControl.FORBIDDEN, service.cancelByAdmin(task.id))
+        assertEquals(TaskStatus.SCHEDULED, task.status)
+        assertTrue(service.query().single().let { !it.cancellable })
+
+        task.cancel()
+        assertEquals(TaskStatus.CANCELLED, task.status)
+        assertEquals(TaskControl.UNAVAILABLE, service.cancelByAdmin(task.id))
+    }
+
+    @Test
+    fun `run now executes a waiting repeating task once and keeps its schedule`() {
+        val adapter = RecordingAdapter()
+        val service = TaskServiceImpl(adapter)
+        var runs = 0
+        val task = service.scope(Any()).schedule(
+            TaskSpec.builder().name("report").interval(Duration.ofMinutes(5)).delay(Duration.ofMinutes(1)).action { runs++ }.build(),
+        )
+        val planned = service.query().single().nextRunAt
+
+        assertEquals(TaskControl.DONE, service.runNow(task.id))
+        adapter.fire(1)
+
+        assertEquals(1, runs)
+        val snapshot = service.query().single()
+        assertEquals(TaskStatus.SCHEDULED, snapshot.status)
+        assertEquals(planned, snapshot.nextRunAt)
+        assertEquals(1L, snapshot.runCount)
+        assertNotNull(snapshot.lastDuration)
+        assertEquals(Duration.ofMinutes(5), snapshot.interval)
+    }
+
+    @Test
+    fun `run now is refused when the task forbids it`() {
+        val adapter = RecordingAdapter()
+        val service = TaskServiceImpl(adapter)
+        val task = service.scope(Any()).schedule(TaskSpec.builder().name("fixed").runnableNow(false).action { }.build())
+
+        assertEquals(TaskControl.FORBIDDEN, service.runNow(task.id))
+        assertEquals(1, adapter.requests.size)
     }
 
     private fun spec(name: String) = TaskSpec.builder().name(name).action { }.build()

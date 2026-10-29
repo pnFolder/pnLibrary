@@ -15,7 +15,9 @@ import org.pnfolder.pnlibrary.api.tasks.TaskSnapshot
 import org.pnfolder.pnlibrary.api.tasks.TaskStatus
 import org.pnfolder.pnlibrary.common.text.RussianText
 import org.pnfolder.pnlibrary.common.time.DisplayZone
+import org.pnfolder.pnlibrary.core.lifecycle.TaskControl
 import org.pnfolder.pnlibrary.core.lifecycle.cancelTask
+import org.pnfolder.pnlibrary.core.lifecycle.runTaskNow
 import org.pnfolder.pnlibrary.core.lifecycle.taskSnapshots
 import java.time.Instant
 import java.time.format.DateTimeFormatter
@@ -46,6 +48,22 @@ object TaskLabels {
     /** The task's own name, otherwise its key, otherwise the start of its id. */
     fun title(task: TaskSnapshot): String = task.name ?: task.key ?: task.id.value.take(SHORT_ID)
 
+    /** A length of time in words: `250 мс`, `3 с`, `5 мин`, `1 ч 20 мин`, `2 д 3 ч`. */
+    fun span(value: java.time.Duration): String {
+        val millis = value.toMillis()
+        return when {
+            millis < MILLIS_PER_SECOND -> "$millis мс"
+            millis < MILLIS_PER_SECOND * SECONDS_PER_MINUTE -> "${millis / MILLIS_PER_SECOND} с"
+            value.toHours() < 1 -> "${value.toMinutes()} мин"
+            value.toDays() < 1 -> "${value.toHours()} ч ${value.toMinutes() % SECONDS_PER_MINUTE} мин".replace(" 0 мин", "")
+            else -> "${value.toDays()} д ${value.toHours() % HOURS_PER_DAY} ч".replace(" 0 ч", "")
+        }
+    }
+
+    private const val MILLIS_PER_SECOND = 1000L
+    private const val SECONDS_PER_MINUTE = 60L
+    private const val HOURS_PER_DAY = 24L
+
     /** The first characters of the id, enough to type. */
     const val SHORT_ID = 8
 }
@@ -57,7 +75,8 @@ object TaskLabels {
  * |---|---|
  * | `/pn tasks [all\|active\|failed\|done] [page]` | tasks with tabs; click a row to open it |
  * | `/pn tasks view <id>` | one task: what it is for, how it is used, owner, runs, times and the last failure |
- * | `/pn tasks cancel <id>` | stops a task that has not finished |
+ * | `/pn tasks cancel <id>` | stops a task that has not finished, unless its plugin forbids it |
+ * | `/pn tasks run <id>` | starts a waiting repeating task at once, unless its plugin forbids it |
  *
  * A task may carry a description and a usage note given by its plugin; both are optional. The id may be shortened to
  * its first characters. Requires `pnlibrary.tasks`; the console always may use it.
@@ -79,6 +98,14 @@ class TaskCommand(private val library: PnLibrary) {
             argument("id", ArgumentType.string()) {
                 suggests { library.taskSnapshots().map { it.id.value.take(TaskLabels.SHORT_ID) } }
                 executes { view(it, it.get<String>("id")) }
+            }
+        }
+        literal("run") {
+            argument("id", ArgumentType.string()) {
+                suggests {
+                    library.taskSnapshots().filter { it.status == TaskStatus.SCHEDULED && it.runnableNow }.map { it.id.value.take(TaskLabels.SHORT_ID) }
+                }
+                executes { run(it, it.get<String>("id")) }
             }
         }
         literal("cancel") {
@@ -113,6 +140,7 @@ class TaskCommand(private val library: PnLibrary) {
             lines += kit.commandHints(
                 "$ROOT [all|active|failed|done] [страница]" to "список задач",
                 "$ROOT view <id>" to "карточка задачи",
+                "$ROOT run <id>" to "запустить сейчас",
                 "$ROOT cancel <id>" to "остановить задачу",
             )
         }
@@ -170,22 +198,32 @@ class TaskCommand(private val library: PnLibrary) {
             lines += kit.note("Плагин не описал эту задачу. Описание задаётся в TaskSpec: description и usage.", ChatPalette.FAINT)
         }
         lines += kit.field("Владелец", kit.text(task.ownerName, ChatPalette.TEXT))
+        task.source?.let { lines += kit.field("Класс", kit.text(it, ChatPalette.TEXT)) }
         task.key?.let { lines += kit.field("Ключ", kit.text(it, ChatPalette.TEXT)) }
         lines += kit.field("Выполняется", kit.text(task.executionKind.name.lowercase(), ChatPalette.TEXT))
         lines += kit.field("Запусков", kit.text("${task.runCount}, пропущено ${task.skippedCount}", ChatPalette.TEXT))
+        task.interval?.let { lines += kit.field("Повторяется", kit.text("каждые ${TaskLabels.span(it)}", ChatPalette.TEXT)) }
         lines += kit.field("Создана", kit.text(time(task.createdAt), ChatPalette.TEXT))
         task.nextRunAt?.let { lines += kit.field("Следующий запуск", kit.text(time(it), ChatPalette.TEXT)) }
         task.lastStartedAt?.let { lines += kit.field("Последний запуск", kit.text(time(it), ChatPalette.TEXT)) }
+        task.lastDuration?.let { lines += kit.field("Заняла", kit.text(TaskLabels.span(it), ChatPalette.TEXT)) }
         task.lastCompletedAt?.let { lines += kit.field("Закончилась", kit.text(time(it), ChatPalette.TEXT)) }
+        lines += kit.field("Часовой пояс", kit.text(DisplayZone.zone.id, ChatPalette.FAINT))
         if (task.tags.isNotEmpty()) lines += kit.field("Теги", kit.text(task.tags.joinToString(", "), ChatPalette.SOFT))
         task.lastFailure?.let { lines += kit.field("Ошибка", kit.text(it, ChatPalette.DANGER)) }
         lines += kit.blank()
-        val stop = if (TaskLabels.isActive(task.status)) {
+        if (!task.cancellable && TaskLabels.isActive(task.status)) lines += kit.note("Плагин не разрешает останавливать эту задачу.", ChatPalette.FAINT)
+        val stop = if (TaskLabels.isActive(task.status) && task.cancellable) {
             kit.button("отменить", "$ROOT cancel ${task.id.value}", "Остановить задачу", ChatPalette.DANGER)
         } else {
             null
         }
-        kit.actions(kit.button("назад", ROOT, "К списку задач", ChatPalette.ACCENT), stop)?.let { lines += it }
+        val start = if (task.status == TaskStatus.SCHEDULED && task.runnableNow) {
+            kit.button("запустить сейчас", "$ROOT run ${task.id.value}", "Выполнить, не дожидаясь срока", ChatPalette.OK)
+        } else {
+            null
+        }
+        kit.actions(kit.button("назад", ROOT, "К списку задач", ChatPalette.ACCENT), start, stop)?.let { lines += it }
         lines.forEach(context.sender::send)
     }
 
@@ -196,10 +234,30 @@ class TaskCommand(private val library: PnLibrary) {
             context.sender.send(kit.text("Такой задачи нет или id неоднозначен: $typed. Список: $ROOT", ChatPalette.DANGER))
             return
         }
-        val stopped = library.cancelTask(task.id.value)
+        val title = TaskLabels.title(task)
         context.sender.send(
-            if (stopped) kit.text("Задача ${TaskLabels.title(task)} остановлена.", ChatPalette.OK)
-            else kit.text("Задача ${TaskLabels.title(task)} уже не работает.", ChatPalette.SOFT),
+            when (library.cancelTask(task.id.value)) {
+                TaskControl.DONE -> kit.text("Задача $title остановлена.", ChatPalette.OK)
+                TaskControl.FORBIDDEN -> kit.text("Плагин не разрешает останавливать задачу $title.", ChatPalette.DANGER)
+                TaskControl.UNAVAILABLE -> kit.text("Задача $title уже не работает.", ChatPalette.SOFT)
+            },
+        )
+    }
+
+    private fun run(context: CommandContext, typed: String) {
+        val kit = kit(context)
+        val task = find(typed)
+        if (task == null) {
+            context.sender.send(kit.text("Такой задачи нет или id неоднозначен: $typed. Список: $ROOT", ChatPalette.DANGER))
+            return
+        }
+        val title = TaskLabels.title(task)
+        context.sender.send(
+            when (library.runTaskNow(task.id.value)) {
+                TaskControl.DONE -> kit.text("Задача $title запущена.", ChatPalette.OK)
+                TaskControl.FORBIDDEN -> kit.text("Плагин не разрешает запускать задачу $title вручную.", ChatPalette.DANGER)
+                TaskControl.UNAVAILABLE -> kit.text("Задачу $title сейчас запустить нельзя: она не ждёт срока.", ChatPalette.SOFT)
+            },
         )
     }
 

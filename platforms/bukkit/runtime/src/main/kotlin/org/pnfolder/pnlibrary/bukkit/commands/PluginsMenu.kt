@@ -32,9 +32,11 @@ import org.pnfolder.pnlibrary.bukkit.inventory.Menus
 import org.pnfolder.pnlibrary.common.time.DisplayZone
 import org.pnfolder.pnlibrary.core.commands.TaskLabels
 import org.pnfolder.pnlibrary.core.lifecycle.JournalGroup
+import org.pnfolder.pnlibrary.core.lifecycle.TaskControl
 import org.pnfolder.pnlibrary.core.lifecycle.cancelTask
 import org.pnfolder.pnlibrary.core.lifecycle.journalDetail
 import org.pnfolder.pnlibrary.core.lifecycle.journalGroups
+import org.pnfolder.pnlibrary.core.lifecycle.runTaskNow
 import org.pnfolder.pnlibrary.core.lifecycle.taskSnapshots
 import org.pnfolder.pnlibrary.core.updates.catalog.CatalogLabels
 import org.pnfolder.pnlibrary.core.updates.catalog.UpdateCatalogView
@@ -42,7 +44,6 @@ import org.pnfolder.pnlibrary.core.updates.policy.UpdateDefaults
 import java.time.Duration
 import java.time.Instant
 import java.time.LocalDate
-import java.time.ZoneId
 import java.time.format.DateTimeFormatter
 import java.util.Locale
 import org.bukkit.command.CommandSender as NativeSender
@@ -344,6 +345,13 @@ internal class PluginsMenu(
         show(player, builder.build())
     }
 
+    /** Grey lines under the pause choices: how many plugins the pause reaches and how many have no update registration. */
+    private fun pauseFootnote(registered: Int, unregistered: Int): List<String> = buildList {
+        add("")
+        add(Style.description("Пауза касается плагинов с обновлениями: $registered."))
+        if (unregistered > 0) add(Style.description("Без регистрации обновлений: $unregistered, их пауза не касается."))
+    }
+
     /** The index of the shortest pause in [HOLDS] that is at least [remaining]; the last one when none is. */
     private fun holdIndex(remaining: Duration): Int = HOLDS.indexOfFirst { it.second >= remaining }.takeIf { it >= 0 } ?: (HOLDS.size - 1)
 
@@ -366,7 +374,7 @@ internal class PluginsMenu(
             val link = release.changelogUrl
             val parameters = buildList {
                 add("Канал" to release.channel.name.lowercase())
-                release.publishedAt?.let { add("Выпущен" to TIME.format(it)) }
+                release.publishedAt?.let { add("Выпущен" to time(it)) }
                 if (current) add("Состояние" to "установлена сейчас")
             }
             val lore = Style.lore(emptyList(), parameters, *if (link != null) arrayOf(Style.left("получить список изменений")) else emptyArray())
@@ -474,7 +482,7 @@ internal class PluginsMenu(
         val material = journalMaterial(group.level)
         val parameters = listOf(
             "Источник" to group.source,
-            "Когда" to TIME.format(Instant.ofEpochMilli(group.lastMillis)),
+            "Когда" to time(Instant.ofEpochMilli(group.lastMillis)),
             "Повторов" to "${group.count}",
         )
         val lore = Style.lore(
@@ -537,8 +545,12 @@ internal class PluginsMenu(
             icon(
                 Icons.CLOCK, "CLOCK", "Пауза для всех",
                 Style.lore(
-                    listOf("Все плагины на время не обновляются."), pauseNote, Style.left("следующий срок"),
-                    extra = Style.choices(pauseChoices, pauseSelected),
+                    listOf(
+                        "Все плагины на время не обновляются.",
+                        "Срок заменяет личные паузы плагинов; «нет паузы» снимает и их.",
+                    ),
+                    pauseNote, Style.left("следующий срок"),
+                    extra = Style.choices(pauseChoices, pauseSelected) + pauseFootnote(all.size, connectedCount() - all.size),
                 ),
                 alternative = "WATCH", warn = untils.isNotEmpty(),
             ),
@@ -597,7 +609,8 @@ internal class PluginsMenu(
                 "Важность" to LEVELS.getValue(detail.level),
                 "Источник" to detail.source,
                 "Повторов" to "${detail.times.size}",
-                "Последний раз" to TIME_SECONDS.format(Instant.ofEpochMilli(detail.times.first())),
+                "Последний раз" to stamp(Instant.ofEpochMilli(detail.times.first())),
+                "" to ago(Instant.ofEpochMilli(detail.times.first())),
             ),
         )
         builder.slot(4, icon(null, journalMaterial(detail.level), "Событие ${detail.source}", summary, danger = error, warn = detail.level == "warning"))
@@ -609,8 +622,18 @@ internal class PluginsMenu(
                 go { who -> who.closeInventory(); who.performCommand("pn events full $id") },
             )
         }
-        val times = detail.times.take(TIMES_SHOWN).map { TIME_SECONDS.format(Instant.ofEpochMilli(it)) }
-        builder.slot(22, icon(Icons.CLOCK, "CLOCK", "Когда случалось", Style.lore(times, emptyList()), alternative = "WATCH"))
+        val moments = detail.times.map { Instant.ofEpochMilli(it) }
+        val more = moments.size - TIMES_PREVIEW
+        val timesLore = Style.lore(
+            moments.take(TIMES_PREVIEW).map { stamp(it) },
+            listOf("Пояс" to DisplayZone.zone.id),
+            *if (more > 0) arrayOf(Style.left("все ${moments.size} раз")) else emptyArray(),
+            extra = if (more > 0) listOf(Style.description("и ещё $more")) else emptyList(),
+        )
+        builder.button(
+            22, icon(Icons.CLOCK, "CLOCK", "Когда случалось", timesLore, alternative = "WATCH"),
+            go { who -> if (more > 0) journalTimes(who, id, 0, back) },
+        )
         if (detail.details.isNotEmpty()) {
             val facts = detail.details.entries.take(DETAILS_SHOWN).map { (key, value) -> key to value.take(MESSAGE_PREVIEW) }
             builder.slot(24, icon(Icons.CHANGELOG, "PAPER", "Подробности", Style.lore(emptyList(), facts)))
@@ -625,6 +648,21 @@ internal class PluginsMenu(
         )
         builder.button(DETAIL_BACK, backItem(), go { back(it) })
         show(player, builder.build())
+    }
+
+    /** Every time a journal event happened, newest first, in the configured time zone. */
+    private fun journalTimes(player: Player, id: String, page: Int, back: (Player) -> Unit) {
+        val detail = library.journalDetail(id)
+        if (detail == null) {
+            tell(player, ChatTone.INFO, "Это событие уже вышло из журнала.")
+            return back(player)
+        }
+        val rows = detail.times.mapIndexed { index, millis ->
+            val moment = Instant.ofEpochMilli(millis)
+            val lore = Style.lore(emptyList(), listOf("Было" to ago(moment), "Номер" to "${detail.times.size - index} из ${detail.times.size}"))
+            Row(icon(Icons.CLOCK, "CLOCK", stamp(moment), lore, alternative = "WATCH"))
+        }
+        list(player, "Когда случалось", rows, page, PAGE_SIZE, { who, to -> journalTimes(who, id, to, back) }, { journalEvent(it, id, back) }, "Времени нет")
     }
 
     /** One entry of the update history with the whole message and a button for every plugin it touched. */
@@ -690,7 +728,7 @@ internal class PluginsMenu(
         )
     }
 
-    /** One task: what it is for, how it is used, who owns it, when it ran and how it failed; active ones can be stopped. */
+    /** One task: what it is for, who owns it, how it runs, when; waiting tasks can be started, active ones stopped. */
     private fun taskDetail(player: Player, id: String, back: (Player) -> Unit) {
         val task = library.taskSnapshots().firstOrNull { it.id.value == id }
         if (task == null) {
@@ -698,53 +736,107 @@ internal class PluginsMenu(
             return back(player)
         }
         val builder = frame(Menus.chest(title("Задача")).rows(DETAIL_ROWS), DETAIL_ROWS)
-        val parameters = buildList {
+        val summary = buildList {
             add("Плагин" to ownerLine(task.ownerName))
             add("Состояние" to TaskLabels.label(task.status))
-            add("Запусков" to "${task.runCount}, пропущено ${task.skippedCount}")
-            add("Выполняется" to task.executionKind.name.lowercase())
-            task.key?.let { add("Ключ" to it) }
-            if (task.tags.isNotEmpty()) add("Теги" to task.tags.joinToString(", "))
+            task.interval?.let { add("Повторяется" to "каждые ${TaskLabels.span(it)}") }
         }
         val about = task.description?.let { wrap(it) } ?: listOf("Плагин не описал эту задачу.")
         builder.slot(
             4,
             icon(
-                null, "CLOCK", TaskLabels.title(task), Style.lore(about, parameters), alternative = "WATCH",
+                null, "CLOCK", TaskLabels.title(task), Style.lore(about, summary), alternative = "WATCH",
                 danger = task.status == TaskStatus.FAILED, good = task.status == TaskStatus.RUNNING,
             ),
         )
         val usage = task.usage?.let { wrap(it) } ?: listOf("Не указано. Плагин может добавить usage в TaskSpec.")
         builder.slot(20, icon(Icons.CHANGELOG, "WRITTEN_BOOK", "Как используется", Style.lore(usage, emptyList()), muted = task.usage == null))
+        val runs = buildList {
+            add("Запусков" to "${task.runCount}")
+            add("Пропущено" to "${task.skippedCount}")
+            task.lastDuration?.let { add("Последний заняла" to TaskLabels.span(it)) }
+            add("Где" to executionWords(task))
+        }
+        builder.slot(21, icon(Icons.SETTINGS, "COMPARATOR", "Как выполняется", Style.lore(emptyList(), runs)))
         val times = buildList {
-            add("Создана" to TIME_SECONDS.format(task.createdAt))
-            task.nextRunAt?.let { add("Следующий запуск" to TIME_SECONDS.format(it)) }
-            task.lastStartedAt?.let { add("Последний запуск" to TIME_SECONDS.format(it)) }
-            task.lastCompletedAt?.let { add("Закончилась" to TIME_SECONDS.format(it)) }
+            add("Создана" to stamp(task.createdAt))
+            task.nextRunAt?.let { add("Следующий запуск" to stamp(it)); add("" to ago(it)) }
+            task.lastStartedAt?.let { add("Последний запуск" to stamp(it)); add("" to ago(it)) }
+            task.lastCompletedAt?.let { add("Закончилась" to stamp(it)) }
+            add("Пояс" to DisplayZone.zone.id)
         }
         builder.slot(22, icon(Icons.CLOCK, "CLOCK", "Время", Style.lore(emptyList(), times), alternative = "WATCH"))
+        val origin = buildList {
+            task.source?.let { addAll(labelled("Класс", it)) }
+            task.key?.let { add("Ключ" to it) }
+            if (task.tags.isNotEmpty()) addAll(labelled("Теги", task.tags.joinToString(", ")))
+            add("Остановить можно" to if (task.cancellable) "да" else "нет, запретил плагин")
+            add("Запустить сейчас" to if (task.runnableNow) "можно" else "нельзя, запретил плагин")
+            add("Номер" to task.id.value.take(TaskLabels.SHORT_ID))
+        }
+        builder.slot(23, icon(Icons.PLUGIN, "PAPER", "Откуда и права", Style.lore(emptyList(), origin)))
         task.lastFailure?.let { failure ->
             val lore = Style.lore(emptyList(), emptyList(), extra = wrap(failure).map { Style.danger(it) })
             builder.slot(24, icon(Icons.PROBLEMS, "BARRIER", "Последняя ошибка", lore, danger = true))
         }
-        if (TaskLabels.isActive(task.status)) {
+        if (task.status == TaskStatus.SCHEDULED && task.runnableNow) {
             builder.button(
-                30,
+                29,
                 icon(
-                    Icons.ROLLBACK, "TNT", "Остановить задачу",
-                    Style.lore(listOf("Больше не будет запускаться."), emptyList(), Style.left("остановить")), danger = true,
+                    Icons.CHECK, "EMERALD", "Запустить сейчас",
+                    Style.lore(listOf("Выполнить один раз, не дожидаясь срока. Расписание не меняется."), emptyList(), Style.left("запустить")), good = true,
                 ),
                 go { who ->
                     allowed(who, TASKS) {
-                        val stopped = library.cancelTask(task.id.value)
-                        tell(who, if (stopped) ChatTone.SUCCESS else ChatTone.INFO, if (stopped) "Задача остановлена." else "Задача уже не работает.")
+                        when (library.runTaskNow(task.id.value)) {
+                            TaskControl.DONE -> tell(who, ChatTone.SUCCESS, "Задача запущена.")
+                            TaskControl.FORBIDDEN -> tell(who, ChatTone.FAILURE, "Плагин не разрешает запускать эту задачу вручную.")
+                            TaskControl.UNAVAILABLE -> tell(who, ChatTone.INFO, "Сейчас запустить нельзя: задача не ждёт срока.")
+                        }
                         taskDetail(who, id, back)
                     }
                 },
             )
         }
+        if (TaskLabels.isActive(task.status)) {
+            if (task.cancellable) {
+                builder.button(
+                    31,
+                    icon(
+                        Icons.ROLLBACK, "TNT", "Остановить задачу",
+                        Style.lore(listOf("Больше не будет запускаться."), emptyList(), Style.left("остановить")), danger = true,
+                    ),
+                    go { who ->
+                        allowed(who, TASKS) {
+                            when (library.cancelTask(task.id.value)) {
+                                TaskControl.DONE -> tell(who, ChatTone.SUCCESS, "Задача остановлена.")
+                                TaskControl.FORBIDDEN -> tell(who, ChatTone.FAILURE, "Плагин не разрешает останавливать эту задачу.")
+                                TaskControl.UNAVAILABLE -> tell(who, ChatTone.INFO, "Задача уже не работает.")
+                            }
+                            taskDetail(who, id, back)
+                        }
+                    },
+                )
+            } else {
+                builder.slot(
+                    31,
+                    icon(
+                        Icons.PROBLEMS, "BARRIER", "Остановка закрыта",
+                        Style.lore(listOf("Плагин запретил останавливать эту задачу из меню и команд."), emptyList()), muted = true,
+                    ),
+                )
+            }
+        }
         builder.button(DETAIL_BACK, backItem(), go { back(it) })
         show(player, builder.build())
+    }
+
+    /** Where a task runs, in words. */
+    private fun executionWords(task: TaskSnapshot): String = when (task.executionKind.name) {
+        "ASYNC" -> "отдельный поток, мир не трогать"
+        "ENTITY" -> "поток существа"
+        "REGION" -> "поток региона"
+        else -> "основной поток сервера"
     }
 
     // --- plugins that own things ---------------------------------------------------------------------------------
@@ -908,6 +1000,12 @@ internal class PluginsMenu(
             add("Слушателей" to "${info.listeners}")
             add("Вызовов" to "${info.calls}")
             add("Отказов" to "${info.denied}")
+            val days = bus.history(name).map { it.date }
+            val today = LocalDate.now(DisplayZone.zone)
+            if (days.isNotEmpty()) {
+                add("Первый день" to dayTitle(days.min(), today))
+                add("Последний день" to dayTitle(days.max(), today))
+            }
             addAll(labelled("Класс", name))
             about?.usage?.takeIf { it.isNotBlank() }?.let { addAll(labelled("Как использовать", it)) }
         }
@@ -1044,7 +1142,7 @@ internal class PluginsMenu(
     /** Recorded calls, newest first, each with the answer of every listener; clearing sits in the footer. */
     private fun busTraces(player: Player, event: String?, page: Int) {
         val all = bus.traces().filter { event == null || it.eventName == event }.reversed()
-        val rows = all.map { Row(traceItem(it)) }
+        val rows = all.map { trace -> Row(traceItem(trace), go { who -> busTrace(who, trace, 0) { busTraces(it, event, page) } }) }
         val back: (Player) -> Unit = if (event == null) { who -> busHome(who) } else { who -> busEvent(who, event) { busHome(it) } }
         val clear = icon(
             Icons.RESET, "TNT", "Очистить записи",
@@ -1069,6 +1167,7 @@ internal class PluginsMenu(
             "" to "$owner · $action"
         }
         val parameters = buildList {
+            trace.at?.let { add("Когда" to stamp(it)); add("" to ago(it)) }
             add("Результат" to (trace.result ?: "-"))
             add("Режим" to if (trace.mode == DispatchMode.ASYNC) "async, мир не трогать" else "sync")
             add("Поток" to trace.thread)
@@ -1076,7 +1175,32 @@ internal class PluginsMenu(
             addAll(steps)
         }
         val verdict = if (trace.allowed) "разрешено" else "отклонено"
-        return icon(null, "PAPER", "${shortName(trace.eventName)}: $verdict", Style.lore(emptyList(), parameters), danger = !trace.allowed)
+        val lore = Style.lore(emptyList(), parameters, Style.left("все ответы"))
+        return icon(null, "PAPER", "${shortName(trace.eventName)}: $verdict", lore, danger = !trace.allowed)
+    }
+
+    /** One recorded call with every listener that answered, in the order they were asked. */
+    private fun busTrace(player: Player, trace: EventTrace, page: Int, back: (Player) -> Unit) {
+        val rows = trace.steps.mapIndexed { index, step ->
+            val owner = step.module?.let { "${step.plugin}/$it" } ?: step.plugin.toString()
+            val action = when {
+                step.skipped -> "пропущен"
+                step.failed -> "упал"
+                step.changedResult -> "изменил результат"
+                else -> "без изменений"
+            }
+            val parameters = buildList {
+                add("Плагин" to ownerLine(step.plugin.toString()))
+                add("Порядок" to "${index + 1} из ${trace.steps.size}")
+                add("Приоритет" to "${step.priority}")
+                add("Что сделал" to action)
+                if (step.changedResult) add("Результат" to "${step.resultBefore} → ${step.resultAfter}")
+                if (!step.skipped) add("Время" to duration(step.nanos))
+            }
+            Row(icon(null, "PAPER", owner, Style.lore(emptyList(), parameters), danger = step.failed, warn = step.changedResult, muted = step.skipped))
+        }
+        val title = "${shortName(trace.eventName)}${trace.at?.let { ", ${stamp(it)}" }.orEmpty()}"
+        list(player, title.take(TITLE_LIMIT), rows, page, PAGE_SIZE, { who, to -> busTrace(who, trace, to, back) }, back, "Никто не отвечал")
     }
 
     private fun busExport(player: Player) {
@@ -1090,10 +1214,33 @@ internal class PluginsMenu(
 
     private fun shortName(name: String): String = name.substringAfterLast('.')
 
+    /** A moment in the configured time zone, to the minute: `29 октября 2026, 14:05`; the year is left out for this year. */
+    private fun time(moment: Instant): String = format(moment, withSeconds = false)
+
+    /** A moment in the configured time zone, to the second: `29 октября 2026, 14:05:09`. */
+    private fun stamp(moment: Instant): String = format(moment, withSeconds = true)
+
+    private fun format(moment: Instant, withSeconds: Boolean): String {
+        val zone = DisplayZone.zone
+        val year = if (moment.atZone(zone).year == LocalDate.now(zone).year) "" else " yyyy"
+        val clock = if (withSeconds) "HH:mm:ss" else "HH:mm"
+        return DateTimeFormatter.ofPattern("d MMMM$year, $clock", Locale("ru")).withZone(zone).format(moment)
+    }
+
+    /** How long ago [moment] was, or how long until it: `только что`, `5 мин назад`, `через 2 ч 10 мин`. */
+    private fun ago(moment: Instant): String {
+        val span = Duration.between(moment, Instant.now())
+        return when {
+            span.abs().seconds < SECONDS_PER_MINUTE -> "только что"
+            span.isNegative -> "через ${left(span.negated())}"
+            else -> "${left(span)} назад"
+        }
+    }
+
     private fun dayTitle(date: LocalDate, today: LocalDate): String = when (date) {
         today -> "Сегодня"
         today.minusDays(1) -> "Вчера"
-        else -> DAY.format(date)
+        else -> (if (date.year == today.year) DAY else DAY_YEAR).format(date)
     }
 
     private fun bar(value: Long, busiest: Long): String {
@@ -1382,7 +1529,7 @@ internal class PluginsMenu(
     private fun historyItem(entry: UpdateHistoryEntry, full: Boolean = false): ItemStack {
         val failed = entry.state == UpdateState.FAILED
         val parameters = buildList {
-            add("Когда" to TIME.format(entry.occurredAt))
+            add("Когда" to time(entry.occurredAt))
             add("Кто" to entry.actor.name)
             entry.changes.forEach { add(it.product.value to "${it.from} » ${it.to}") }
         }
@@ -1395,7 +1542,7 @@ internal class PluginsMenu(
 
     private fun backupItem(backup: UpdateBackup, withHint: Boolean = true): ItemStack {
         val parameters = buildList {
-            backup.createdAt?.let { add("Создана" to TIME.format(it)) }
+            backup.createdAt?.let { add("Создана" to time(it)) }
             backup.components.forEach { add(it.product.value to "${it.backupVersion ?: "?"} (было ${it.updatedVersion ?: "?"})") }
             if (backup.configurationFiles > 0) add("Файлов настроек" to "${backup.configurationFiles}")
         }
@@ -1618,8 +1765,11 @@ internal class PluginsMenu(
         const val BAR_WIDTH = 12
         const val NANOS_PER_MICRO = 1_000L
         const val NANOS_PER_MILLI = 1_000_000L
-        val TIME_SECONDS: DateTimeFormatter = DateTimeFormatter.ofPattern("dd.MM HH:mm:ss").withZone(ZoneId.systemDefault())
         val DAY: DateTimeFormatter = DateTimeFormatter.ofPattern("d MMMM", Locale("ru"))
+        val DAY_YEAR: DateTimeFormatter = DateTimeFormatter.ofPattern("d MMMM yyyy", Locale("ru"))
+        const val SECONDS_PER_MINUTE = 60L
+        const val TITLE_LIMIT = 30
+        const val TIMES_PREVIEW = 5
         const val BLOCKER_LINES = 3
         const val CHECK_REOPEN_TICKS = 60L
         const val SOUND_VOLUME = 0.22f
@@ -1627,7 +1777,6 @@ internal class PluginsMenu(
         val LEGACY_GLASS = setOf("STAINED_GLASS_PANE", "LEGACY_STAINED_GLASS_PANE")
         const val LEGACY_BLACK: Short = 15
         const val LEGACY_PURPLE: Short = 10
-        val TIME: DateTimeFormatter = DateTimeFormatter.ofPattern("dd.MM.yyyy HH:mm").withZone(ZoneId.systemDefault())
 
         val OPEN_SOUND: Sound? = listOf("BLOCK_BARREL_OPEN", "BLOCK_CHEST_OPEN", "CHEST_OPEN")
             .firstNotNullOfOrNull { name -> Sound.values().firstOrNull { it.name == name } }

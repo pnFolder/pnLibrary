@@ -42,6 +42,7 @@ import org.pnfolder.pnlibrary.core.lifecycle.JournalDetail
 import org.pnfolder.pnlibrary.core.lifecycle.JournalGroup
 import org.pnfolder.pnlibrary.core.lifecycle.ResourceCleanup
 import org.pnfolder.pnlibrary.core.lifecycle.RuntimeResources
+import org.pnfolder.pnlibrary.core.lifecycle.TaskControl
 import org.pnfolder.pnlibrary.core.lifecycle.journalJoinNotice
 import org.pnfolder.pnlibrary.core.lifecycle.registerRuntimeCommand
 import org.pnfolder.pnlibrary.core.logging.LoggingServiceImpl
@@ -194,7 +195,11 @@ internal class PnLibraryImpl(
 
     override fun taskSnapshots(): List<TaskSnapshot> = taskService.query()
 
-    override fun cancelTask(id: String): Boolean = runCatchingNonFatal { taskService.cancel(TaskId(id)) }.getOrDefault(false)
+    override fun cancelTask(id: String): TaskControl =
+        runCatchingNonFatal { taskService.cancelByAdmin(TaskId(id)) }.getOrDefault(TaskControl.UNAVAILABLE)
+
+    override fun runTaskNow(id: String): TaskControl =
+        runCatchingNonFatal { taskService.runNow(TaskId(id)) }.getOrDefault(TaskControl.UNAVAILABLE)
 
     override fun journalDetail(id: String): JournalDetail? = runCatchingNonFatal {
         val records = journal.read(limit = JOURNAL_SCAN).filter { it.fingerprint == id }
