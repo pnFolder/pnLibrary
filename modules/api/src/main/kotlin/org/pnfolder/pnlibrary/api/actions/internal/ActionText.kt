@@ -3,6 +3,7 @@ package org.pnfolder.pnlibrary.api.actions.internal
 import org.pnfolder.pnlibrary.api.actions.Action
 import org.pnfolder.pnlibrary.api.config.ConfigSerializationContext
 import org.pnfolder.pnlibrary.api.config.ConfigTextParser
+import org.pnfolder.pnlibrary.api.internal.InternalPnLibraryApi
 
 /**
  * Rejects an action written as one line of text and explains how to write it with a `type`.
@@ -10,6 +11,7 @@ import org.pnfolder.pnlibrary.api.config.ConfigTextParser
  * Actions are only written as objects. A line such as `[console] give %player_name% apple` is reported with
  * the object it stands for, so moving an old configuration is a matter of copying the suggestion.
  */
+@InternalPnLibraryApi
 object ActionText : ConfigTextParser<Action> {
     private val tag = Regex("""^\[([A-Za-z]+)]\s*(.*)$""")
 

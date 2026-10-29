@@ -1,3 +1,5 @@
+@file:OptIn(org.pnfolder.pnlibrary.api.internal.InternalPnLibraryApi::class)
+
 package org.pnfolder.pnlibrary.core.actions
 
 import org.junit.jupiter.api.Assertions.assertEquals

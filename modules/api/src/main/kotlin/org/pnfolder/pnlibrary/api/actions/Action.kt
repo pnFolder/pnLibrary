@@ -1,3 +1,5 @@
+@file:OptIn(org.pnfolder.pnlibrary.api.internal.InternalPnLibraryApi::class)
+
 package org.pnfolder.pnlibrary.api.actions
 
 import org.pnfolder.pnlibrary.api.actions.builtin.ActionBarAction
