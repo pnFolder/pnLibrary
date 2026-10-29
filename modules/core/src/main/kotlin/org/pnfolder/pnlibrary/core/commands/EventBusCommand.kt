@@ -28,6 +28,8 @@ import org.pnfolder.pnlibrary.common.time.DisplayZone
  * | `/pn bus view <event>` | one event: counters, a recording switch and its listeners in dispatch order |
  * | `/pn bus listeners [page]` | every listener of every plugin |
  * | `/pn bus slow [page]` | listeners that ran, the slowest on average first |
+ * | `/pn bus errors [page]` | listeners that threw, the most failures first |
+ * | `/pn bus plugin <id> [page]` | the listeners of one plugin with time and failures |
  * | `/pn bus trace <event>`, `trace off <event>` | switches the recording of an event on or off |
  * | `/pn bus traces [event]` | recorded calls, listener by listener, with the result before and after each |
  * | `/pn bus history [page]` | one line per day: calls, different events, denials; click a day to open it |
@@ -64,8 +66,19 @@ class EventBusCommand(private val library: PnLibrary) {
             argument("page", ArgumentType.integer()) { executes { listeners(it, it.get<Int>("page")) } }
         }
         literal("slow") {
-            executes { slow(it, 1) }
-            argument("page", ArgumentType.integer()) { executes { slow(it, it.get<Int>("page")) } }
+            executes { slowOrErrors(it, 1, errors = false) }
+            argument("page", ArgumentType.integer()) { executes { slowOrErrors(it, it.get<Int>("page"), errors = false) } }
+        }
+        literal("errors") {
+            executes { slowOrErrors(it, 1, errors = true) }
+            argument("page", ArgumentType.integer()) { executes { slowOrErrors(it, it.get<Int>("page"), errors = true) } }
+        }
+        literal("plugin") {
+            argument("id", ArgumentType.string()) {
+                suggests { bus.listeners().map { l -> l.plugin.toString() }.distinct() }
+                executes { pluginView(it, it.get<String>("id"), 1) }
+                argument("page", ArgumentType.integer()) { executes { pluginView(it, it.get<String>("id"), it.get<Int>("page")) } }
+            }
         }
         literal("trace") {
             // Without a name the page lists the events, each with its own recording switch, so nothing has to be remembered.
@@ -283,28 +296,50 @@ class EventBusCommand(private val library: PnLibrary) {
         lines.forEach(context.sender::send)
     }
 
-    private fun slow(context: CommandContext, requestedPage: Int) {
+    private fun slowOrErrors(context: CommandContext, requestedPage: Int, errors: Boolean) {
+        val all = if (errors) bus.listeners().filter { it.failures > 0 }.sortedByDescending { it.failures }
+        else bus.listeners().filter { it.invocations > 0 }.sortedByDescending { it.averageNanos }
+        listenerPage(
+            context, requestedPage, all, if (errors) "Слушатели с ошибками" else "Медленные слушатели",
+            if (errors) "Ошибок не было." else "Слушатели ещё не запускались.", if (errors) "$ROOT errors" else "$ROOT slow",
+        )
+    }
+
+    private fun pluginView(context: CommandContext, id: String, requestedPage: Int) {
+        val all = bus.listeners().filter { it.plugin.toString().equals(id, ignoreCase = true) }.sortedByDescending { it.totalNanos }
+        listenerPage(context, requestedPage, all, "Плагин $id", "У плагина нет слушателей.", "$ROOT plugin $id")
+    }
+
+    private fun listenerPage(
+        context: CommandContext,
+        requestedPage: Int,
+        all: List<ListenerInfo>,
+        title: String,
+        empty: String,
+        base: String,
+    ) {
         val kit = kit(context)
-        val all = bus.listeners().filter { it.invocations > 0 }.sortedByDescending { it.averageNanos }
         val pages = pageCount(all.size)
         val page = requestedPage.coerceIn(1, pages)
         val lines = mutableListOf(
             kit.blank(),
-            kit.header("Медленные слушатели", kit.text("${all.size}", ChatPalette.LABEL)),
+            kit.header(title, kit.text("${all.size}", ChatPalette.LABEL)),
             kit.blank(),
         )
-        if (all.isEmpty()) lines += kit.note("Слушатели ещё не запускались.")
+        if (all.isEmpty()) lines += kit.note(empty)
         all.drop((page - 1) * PAGE_SIZE).take(PAGE_SIZE).forEach { info ->
             val owner = info.module?.let { "${info.plugin}/$it" } ?: info.plugin.toString()
-            lines += kit.text("   ").append(kit.text(owner, ChatPalette.ACCENT)).append(kit.dot())
+            var line = kit.text("   ").append(kit.text(owner, ChatPalette.ACCENT)).append(kit.dot())
                 .append(kit.text(shortName(info.eventType), ChatPalette.TEXT))
                 .append(kit.text("  средн. ${micros(info.averageNanos)}", ChatPalette.LABEL))
                 .append(kit.text("  макс. ${micros(info.maxNanos)}", ChatPalette.SOFT))
                 .append(kit.text("  запусков ${info.invocations}", ChatPalette.FAINT))
+            if (info.failures > 0) line = line.append(kit.text("  ошибок ${info.failures}", ChatPalette.DANGER))
+            lines += line
         }
         if (pages > 1) {
             lines += kit.blank()
-            lines += pager(kit, "$ROOT slow", page, pages)
+            lines += pager(kit, base, page, pages)
         }
         lines += kit.blank()
         lines += footer(kit, ROOT, kit.button("назад", ROOT, "К списку событий", ChatPalette.ACCENT))
@@ -511,6 +546,8 @@ class EventBusCommand(private val library: PnLibrary) {
             "$ROOT view <событие>" to "карточка события",
             "$ROOT listeners" to "все слушатели",
             "$ROOT slow [страница]" to "самые медленные слушатели",
+            "$ROOT errors [страница]" to "слушатели с ошибками",
+            "$ROOT plugin <плагин>" to "слушатели одного плагина",
             "$ROOT trace <событие>" to "записывать вызовы",
             "$ROOT traces" to "записанные вызовы",
             "$ROOT history [страница]" to "вызовы по дням",
