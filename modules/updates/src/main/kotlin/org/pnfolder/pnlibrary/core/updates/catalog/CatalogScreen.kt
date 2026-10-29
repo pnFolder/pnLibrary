@@ -63,6 +63,17 @@ internal class CatalogScreen(routes: UpdateCatalogRoutes, now: Instant, zone: Zo
         return framed(result)
     }
 
+    /** The support card: a friendly line and the button that opens [link]. */
+    fun support(link: String): List<Component> = framed(
+        listOfNotNull(
+            header("Поддержка pnFolder"),
+            blank(),
+            note("Если возникла проблема с плагином, напишите нам: мы всегда рады помочь."),
+            blank(),
+            actions(supportButton(link)),
+        ),
+    )
+
     /** Only the components with an available or prepared update, or nothing when there are none. */
     fun announcement(snapshots: List<UpdateSnapshot>, support: String?): List<Component> {
         val actionable = snapshots.filter { it.state == UpdateState.UPDATE_AVAILABLE || it.state == UpdateState.UPDATE_STAGED }
