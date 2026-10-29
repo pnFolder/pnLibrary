@@ -6,7 +6,7 @@
       "version": "1.2.0-dev.3",
       "channel": "dev",
       "description": "Сборка разработки: третья после ветвления 1.2.0.",
-      "changelogUrl": "https://github.com/pnFolder/pnLibrary/blob/main/.pnlibrary/example/changelogs/1.2.0-dev.3.md",
+      "changelogUrl": "https://github.com/pnFolder/pnLibrary/blob/main/integration/.pnlibrary/changelogs/1.2.0-dev.3.md",
       "publishedAt": "2026-10-25T12:00:00Z",
       "api": {
         "minimum": 8,
@@ -26,7 +26,7 @@
       "version": "1.2.0-dev.2",
       "channel": "dev",
       "description": "Сборка разработки: вторая.",
-      "changelogUrl": "https://github.com/pnFolder/pnLibrary/blob/main/.pnlibrary/example/changelogs/1.2.0-dev.2.md",
+      "changelogUrl": "https://github.com/pnFolder/pnLibrary/blob/main/integration/.pnlibrary/changelogs/1.2.0-dev.2.md",
       "publishedAt": "2026-10-22T12:00:00Z",
       "api": {
         "minimum": 8,
@@ -46,7 +46,7 @@
       "version": "1.2.0-rc.1",
       "channel": "rc",
       "description": "Кандидат в релиз 1.2.0.",
-      "changelogUrl": "https://github.com/pnFolder/pnLibrary/blob/main/.pnlibrary/example/changelogs/1.2.0-rc.1.md",
+      "changelogUrl": "https://github.com/pnFolder/pnLibrary/blob/main/integration/.pnlibrary/changelogs/1.2.0-rc.1.md",
       "publishedAt": "2026-10-20T12:00:00Z",
       "api": {
         "minimum": 8,
@@ -66,7 +66,7 @@
       "version": "1.2.0-beta.1",
       "channel": "beta",
       "description": "Бета 1.2.0.",
-      "changelogUrl": "https://github.com/pnFolder/pnLibrary/blob/main/.pnlibrary/example/changelogs/1.2.0-beta.1.md",
+      "changelogUrl": "https://github.com/pnFolder/pnLibrary/blob/main/integration/.pnlibrary/changelogs/1.2.0-beta.1.md",
       "publishedAt": "2026-10-18T12:00:00Z",
       "api": {
         "minimum": 8,
@@ -86,7 +86,7 @@
       "version": "1.2.0-alpha.1",
       "channel": "alpha",
       "description": "Альфа 1.2.0.",
-      "changelogUrl": "https://github.com/pnFolder/pnLibrary/blob/main/.pnlibrary/example/changelogs/1.2.0-alpha.1.md",
+      "changelogUrl": "https://github.com/pnFolder/pnLibrary/blob/main/integration/.pnlibrary/changelogs/1.2.0-alpha.1.md",
       "publishedAt": "2026-10-17T12:00:00Z",
       "api": {
         "minimum": 8,
@@ -106,7 +106,7 @@
       "version": "1.1.0-stable.1",
       "channel": "stable",
       "description": "Стабильный релиз 1.1.0: ссылки на changelog и задержки задач в тиках.",
-      "changelogUrl": "https://github.com/pnFolder/pnLibrary/blob/main/.pnlibrary/example/changelogs/1.1.0-stable.1.md",
+      "changelogUrl": "https://github.com/pnFolder/pnLibrary/blob/main/integration/.pnlibrary/changelogs/1.1.0-stable.1.md",
       "publishedAt": "2026-10-16T12:00:00Z",
       "api": {
         "minimum": 8,
@@ -170,7 +170,7 @@
       "version": "1.0.0-stable.1",
       "channel": "stable",
       "description": "Первый тестовый стабильный релиз.",
-      "changelogUrl": "https://github.com/pnFolder/pnLibrary/blob/main/.pnlibrary/example/changelogs/1.0.0-stable.1.md",
+      "changelogUrl": "https://github.com/pnFolder/pnLibrary/blob/main/integration/.pnlibrary/changelogs/1.0.0-stable.1.md",
       "publishedAt": "2026-10-01T12:00:00Z",
       "api": {
         "minimum": 8,
