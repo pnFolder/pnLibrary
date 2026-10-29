@@ -2,14 +2,15 @@ package org.pnfolder.pnlibrary.core.events
 
 import org.pnfolder.pnlibrary.api.events.EventDay
 import org.pnfolder.pnlibrary.common.concurrent.ManagedWorker
+import org.pnfolder.pnlibrary.common.io.AtomicFiles
 import org.pnfolder.pnlibrary.common.lang.runCatchingNonFatal
 import java.nio.file.Files
 import java.nio.file.Path
-import java.nio.file.StandardCopyOption
 import java.time.LocalDate
 import java.time.ZoneId
 import java.util.TreeMap
 import java.util.concurrent.atomic.AtomicBoolean
+import java.util.concurrent.atomic.AtomicLong
 
 /**
  * Per-day call counters of every event type, kept for [retentionDays] and stored in a small text file so the
@@ -17,7 +18,8 @@ import java.util.concurrent.atomic.AtomicBoolean
  *
  * Counting is a map update under a lock. Writing happens on a background worker at most once per [flushEveryMillis]
  * and once more on [close], so a crash loses at most a minute of counts. A retention of `0` keeps nothing.
- * The file holds one `date<TAB>event<TAB>calls<TAB>denied` line per day and event.
+ * The file starts with a `# pnLibrary event history v1` line and then holds one `date<TAB>event<TAB>calls<TAB>denied`
+ * line per day and event; lines that do not fit that shape are ignored.
  */
 internal class EventHistory(
     private val file: Path?,
@@ -30,7 +32,7 @@ internal class EventHistory(
 
     private val days = TreeMap<LocalDate, MutableMap<String, Counts>>()
     private val dirty = AtomicBoolean(false)
-    private var lastFlush = clock()
+    private val lastFlush = AtomicLong(clock())
     private val worker = if (file != null && retentionDays > 0) ManagedWorker("pnLibrary-event-history") else null
 
     /** How many days are kept; `0` means the history is off. */
@@ -52,8 +54,8 @@ internal class EventHistory(
         }
         dirty.set(true)
         val now = clock()
-        if (now - lastFlush >= flushEveryMillis) {
-            lastFlush = now
+        val previous = lastFlush.get()
+        if (now - previous >= flushEveryMillis && lastFlush.compareAndSet(previous, now)) {
             worker?.let { runCatchingNonFatal { it.submit { flush() } } }
         }
     }
@@ -95,6 +97,7 @@ internal class EventHistory(
         if (retentionDays <= 0 || !dirty.getAndSet(false)) return
         val text = synchronized(days) {
             buildString {
+                append(HEADER).append('\n')
                 days.forEach { (date, events) ->
                     events.forEach { (name, counts) ->
                         append("$date\t$name\t${counts.calls}\t${counts.denied}\n")
@@ -104,14 +107,16 @@ internal class EventHistory(
         }
         runCatchingNonFatal {
             Files.createDirectories(target.parent)
-            val temporary = target.resolveSibling(target.fileName.toString() + ".tmp")
-            Files.write(temporary, text.toByteArray(Charsets.UTF_8))
-            Files.move(temporary, target, StandardCopyOption.REPLACE_EXISTING)
+            AtomicFiles.write(target, text.toByteArray(Charsets.UTF_8))
         }.onFailure { dirty.set(true) }
     }
 
     override fun close() {
         worker?.close()
         flush()
+    }
+
+    private companion object {
+        const val HEADER = "# pnLibrary event history v1"
     }
 }

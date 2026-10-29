@@ -63,8 +63,11 @@ internal class EventServiceImpl(
 
     private fun <E : Event> callAs(event: E, mode: DispatchMode): E {
         check(!closed.get()) { "EventService is closed" }
-        dispatchInline(event, mode)
-        count(event)
+        try {
+            dispatchInline(event, mode)
+        } finally {
+            count(event)
+        }
         return event
     }
 
@@ -215,11 +218,14 @@ internal class EventServiceImpl(
                 subscription.failures.increment()
                 // A broken listener is logged and skipped; a dying JVM (out of memory, stack overflow) is not ours to hide.
                 Failures.rethrowIfFatal(error)
-                errorLogger(
-                    subscription.scope.plugin,
-                    "[pnLibrary/events] Listener failed for ${event.javaClass.name}",
-                    error,
-                )
+                // A logger that throws must not cost the remaining listeners their turn.
+                runCatchingNonFatal {
+                    errorLogger(
+                        subscription.scope.plugin,
+                        "[pnLibrary/events] Listener failed for ${event.javaClass.name}",
+                        error,
+                    )
+                }
             } finally {
                 steps?.add(
                     EventTrace.Step(

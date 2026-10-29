@@ -6,7 +6,6 @@ import org.pnfolder.pnlibrary.api.remote.DenyAction
 import org.pnfolder.pnlibrary.api.remote.PolicyErrorAction
 import org.pnfolder.pnlibrary.api.remote.RemotePolicyContext
 import org.pnfolder.pnlibrary.api.remote.RemotePolicyExplanation
-import org.pnfolder.pnlibrary.api.remote.RemotePolicyResult
 import org.pnfolder.pnlibrary.api.remote.RemotePolicySettings
 import org.pnfolder.pnlibrary.api.tasks.TaskExecution
 import org.pnfolder.pnlibrary.api.tasks.TaskScope
@@ -15,9 +14,11 @@ import org.pnfolder.pnlibrary.common.lang.runCatchingNonFatal
 import org.pnfolder.pnlibrary.spi.platform.PlatformExecution
 import org.pnfolder.pnlibrary.spi.platform.PlatformOwnerControl
 import java.net.SocketTimeoutException
+import java.net.URI
 import java.time.Duration
-import java.util.concurrent.CompletableFuture
+import java.util.concurrent.Callable
 import java.util.concurrent.ExecutionException
+import java.util.concurrent.Executors
 import java.util.concurrent.TimeUnit
 import java.util.concurrent.TimeoutException
 import java.util.concurrent.atomic.AtomicBoolean
@@ -28,6 +29,11 @@ internal class RemotePolicyMonitor(
     private val execution: PlatformExecution,
     private val notices: RemotePolicyNoticeRenderer,
 ) {
+    /** Runs startup checks; daemon threads so a hung download never keeps the JVM alive, and an idle one is dropped. */
+    private val startupChecks = Executors.newCachedThreadPool { task ->
+        Thread(task, "pnlibrary-policy-check").apply { isDaemon = true }
+    }
+
     fun start(
         owner: Any,
         metadata: PluginMetadata,
@@ -77,16 +83,14 @@ internal class RemotePolicyMonitor(
         timeout: Duration,
     ): StartupCheck? {
         val context = ownership.remotePolicyContext(owner, policy.values)
-        val outcome = CompletableFuture<RemotePolicyResult>()
-        Thread({
-            runCatchingNonFatal { RemotePolicyEngine.check(policy.source, context) }
-                .onSuccess(outcome::complete).onFailure(outcome::completeExceptionally)
-        }, "pnlibrary-policy-check").apply { isDaemon = true }.start()
+        val outcome = startupChecks.submit(Callable { RemotePolicyEngine.check(policy.source, context) })
         return try {
             val decision = outcome.get(timeout.toMillis(), TimeUnit.MILLISECONDS)
             notices.render(owner, metadata, policy, decision)
             if (decision.allowed) StartupCheck.PASSED else null
         } catch (failure: Throwable) {
+            // A check that outlived its wait must not keep compiling or downloading in the background.
+            outcome.cancel(true)
             val error = when (failure) {
                 is TimeoutException -> SocketTimeoutException("Проверка не уложилась в ${timeout.seconds} с")
                 is ExecutionException -> failure.cause ?: failure
@@ -102,7 +106,7 @@ internal class RemotePolicyMonitor(
                 val explanation = RemotePolicyExplanation.builder("Ошибка проверки")
                     .child(RemotePolicyFailureInterpreter.message(error))
                 if (RemotePolicyFailureInterpreter.isNetwork(error)) {
-                    explanation.child("Для запуска нужен интернет: откройте серверу доступ к raw.githubusercontent.com")
+                    explanation.child("Для запуска нужен интернет: откройте серверу доступ к ${hostOf(policy.source)}")
                 }
                 notices.render(owner, metadata, policy, false, explanation.build())
                 logger.error("Remote policy failed for ${metadata.name}", error)
@@ -146,7 +150,7 @@ internal class RemotePolicyMonitor(
                     val explanation = RemotePolicyExplanation.builder("Ошибка проверки")
                         .child(RemotePolicyFailureInterpreter.message(error))
                     if (RemotePolicyFailureInterpreter.isNetwork(error)) {
-                        explanation.child("Для запуска нужен интернет: откройте серверу доступ к raw.githubusercontent.com")
+                        explanation.child("Для запуска нужен интернет: откройте серверу доступ к ${hostOf(policy.source)}")
                     }
                     notices.render(owner, metadata, policy, false, explanation.build())
                     logger.error("Remote policy failed for ${metadata.name}", error)
@@ -154,6 +158,9 @@ internal class RemotePolicyMonitor(
                 })
             }
     }
+
+    private fun hostOf(source: String): String =
+        runCatchingNonFatal { URI(source).host }.getOrNull()?.takeIf { it.isNotBlank() } ?: "хосту политики"
 
     private fun deny(
         owner: Any,
