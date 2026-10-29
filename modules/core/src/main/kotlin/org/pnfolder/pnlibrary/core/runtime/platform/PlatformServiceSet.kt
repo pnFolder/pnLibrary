@@ -4,11 +4,13 @@ import org.pnfolder.pnlibrary.api.tasks.TaskServiceSettings
 import org.pnfolder.pnlibrary.core.audiences.AudienceServiceImpl
 import org.pnfolder.pnlibrary.core.commands.CommandServiceImpl
 import org.pnfolder.pnlibrary.core.commands.StandardCommandFeedback
+import org.pnfolder.pnlibrary.core.tasks.TaskHistoryStore
 import org.pnfolder.pnlibrary.core.tasks.TaskServiceImpl
 import org.pnfolder.pnlibrary.spi.audiences.PlatformAudienceAdapter
 import org.pnfolder.pnlibrary.spi.commands.PlatformCommandAdapter
 import org.pnfolder.pnlibrary.spi.platform.PlatformLogging
 import org.pnfolder.pnlibrary.spi.tasks.PlatformTaskAdapter
+import java.nio.file.Path
 
 /** Creates the services that are direct translations of native platform adapters. */
 internal class PlatformServiceSet(
@@ -17,6 +19,7 @@ internal class PlatformServiceSet(
     taskAdapter: PlatformTaskAdapter,
     platformLogging: PlatformLogging,
     taskHistoryCapacity: Int,
+    taskHistoryFile: Path? = null,
     errorLogger: (Any, String, Throwable) -> Unit,
     commandFeedback: StandardCommandFeedback = StandardCommandFeedback(),
 ) {
@@ -24,6 +27,7 @@ internal class PlatformServiceSet(
         adapter = taskAdapter,
         settings = TaskServiceSettings(taskHistoryCapacity),
         errorLogger = errorLogger,
+        store = taskHistoryFile?.let(::TaskHistoryStore),
     )
     val commands = CommandServiceImpl(commandAdapter, platformLogging, commandFeedback)
     val audiences = AudienceServiceImpl(audienceAdapter)
