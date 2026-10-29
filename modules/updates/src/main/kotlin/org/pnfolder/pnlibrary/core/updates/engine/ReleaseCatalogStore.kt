@@ -60,11 +60,25 @@ internal class ReleaseCatalogStore(private val root: Path) {
             if (Files.exists(path)) runCatchingNonFatal {
                 Files.move(path, path.resolveSibling(path.fileName.toString() + suffix), StandardCopyOption.REPLACE_EXISTING)
             }
+            pruneQuarantine(path)
+        }
+    }
+
+    /** Keeps the newest [KEPT_CORRUPT] quarantined copies of [path] so a flapping catalog cannot fill the disk. */
+    private fun pruneQuarantine(path: Path) = runCatchingNonFatal {
+        val prefix = path.fileName.toString() + ".corrupt-"
+        Files.newDirectoryStream(root) { it.fileName.toString().startsWith(prefix) }.use { stream ->
+            stream.sortedByDescending { it.fileName.toString().removePrefix(prefix).toLongOrNull() ?: 0L }
+                .drop(KEPT_CORRUPT).forEach { runCatchingNonFatal { Files.deleteIfExists(it) } }
         }
     }
 
     internal fun dataPath(uri: URI): Path = root.resolve(key(uri) + ".data")
     private fun digestPath(uri: URI): Path = root.resolve(key(uri) + ".sha256")
+
+    private companion object {
+        const val KEPT_CORRUPT = 3
+    }
 
     private fun key(uri: URI) = Digests.sha256(uri.toASCIIString().toByteArray(StandardCharsets.UTF_8))
 }
