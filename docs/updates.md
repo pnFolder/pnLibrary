@@ -40,7 +40,7 @@ pnLibrary обновляет себя и плагины pnFolder, которые
 ```yaml
 enabled: true
 library:
-  channel: stable             # stable, rc, beta, alpha или dev
+  channel: dev                # stable, rc, beta, alpha или dev; пока нет стабильных релизов, нужен dev
   automatic-download: true
 ```
 
