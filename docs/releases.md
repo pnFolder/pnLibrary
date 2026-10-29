@@ -61,8 +61,10 @@ Maven публикует артефакты, настроенные в Gradle ч
 - Поле `channel` в каталоге должно совпадать со словом версии; тест `RepositoryLayoutTest` это проверяет.
 - Канал самой pnLibrary сейчас зафиксирован в коде как `dev` (см. `TODO` в `UpdateSettings`).
 
-Пример каталога со всеми каналами: [.pnlibrary/releases.example.json](../.pnlibrary/releases.example.json).
-Для каждой версии в `.pnlibrary/changelogs/` лежит файл `<версия>.md`.
+Пример каталога со всеми каналами: [.pnlibrary/example/releases.example.json](../.pnlibrary/example/releases.example.json)
+(демонстрация лежит отдельно от настоящего каталога, её changelog-файлы в `.pnlibrary/example/changelogs/`).
+Для каждой настоящей версии в `.pnlibrary/changelogs/` лежит файл `<версия>.md`.
+Имя JAR содержит полную версию с суффиксом: `pnLibrary-0.1.0-stable.1-universal.jar`.
 
 ### Для ИИ: чек-лист публикации
 

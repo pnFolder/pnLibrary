@@ -16,8 +16,13 @@ class RepositoryLayoutTest {
         .firstOrNull(Files::isDirectory)
         ?: error("The .pnlibrary folder was not found above ${Paths.get("").toAbsolutePath()}")
 
+    /** The real catalog lies in `.pnlibrary`; the demonstration catalog and its changelogs in `.pnlibrary/example`. */
+    private fun location(name: String): Path = if (name.endsWith(".example.json")) folder.resolve("example").resolve(name) else folder.resolve(name)
+
+    private fun changelogs(name: String): Path = location(name).resolveSibling("changelogs")
+
     private fun catalog(name: String): ReleaseCatalog {
-        val file = folder.resolve(name)
+        val file = location(name)
         assertTrue(Files.isRegularFile(file), "$name is missing from .pnlibrary")
         return ReleaseCatalogCodec().decode(Files.readAllBytes(file))
     }
@@ -33,7 +38,7 @@ class RepositoryLayoutTest {
     fun `every listed version has a changelog file named after it`() {
         listOf("releases.json", "releases.example.json").forEach { name ->
             catalog(name).releases.forEach { release ->
-                val changelog = folder.resolve("changelogs").resolve("${release.version}.md")
+                val changelog = changelogs(name).resolve("${release.version}.md")
                 assertTrue(Files.isRegularFile(changelog), "$name lists ${release.version} but ${changelog.fileName} is missing")
             }
         }
@@ -61,7 +66,7 @@ class RepositoryLayoutTest {
                 val link = release.changelogUrl ?: return@forEach
                 assertNotNull(link.path)
                 assertTrue(
-                    link.path.endsWith("/.pnlibrary/changelogs/${release.version}.md"),
+                    link.path.endsWith("/${folder.fileName}/${folder.relativize(changelogs(name)).joinToString("/")}/${release.version}.md"),
                     "$name: the changelog link of ${release.version} is $link",
                 )
             }
