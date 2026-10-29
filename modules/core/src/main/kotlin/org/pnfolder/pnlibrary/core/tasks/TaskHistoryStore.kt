@@ -4,8 +4,7 @@ import org.pnfolder.pnlibrary.api.tasks.TaskExecution
 import org.pnfolder.pnlibrary.api.tasks.TaskId
 import org.pnfolder.pnlibrary.api.tasks.TaskSnapshot
 import org.pnfolder.pnlibrary.api.tasks.TaskStatus
-import org.pnfolder.pnlibrary.common.io.AtomicFiles
-import java.nio.file.Files
+import org.pnfolder.pnlibrary.common.io.TsvRecords
 import java.nio.file.Path
 import java.time.Duration
 import java.time.Instant
@@ -19,31 +18,21 @@ import java.time.Instant
  */
 internal class TaskHistoryStore(private val file: Path) {
     /** The saved snapshots, oldest first; empty when there is no file or it cannot be read. */
-    fun load(): List<TaskSnapshot> {
-        if (!Files.isRegularFile(file)) return emptyList()
-        return runCatching {
-            Files.readAllLines(file, Charsets.UTF_8).drop(1).mapNotNull { line -> runCatching { parse(line) }.getOrNull() }
-        }.getOrDefault(emptyList())
-    }
+    fun load(): List<TaskSnapshot> = TsvRecords.read(file).mapNotNull { fields -> runCatching { parse(fields) }.getOrNull() }
 
     /** Replaces the file with [snapshots]; a failure is ignored because the history is only a convenience. */
     fun save(snapshots: List<TaskSnapshot>) {
-        val text = (listOf(HEADER) + snapshots.map(::format)).joinToString("\n", postfix = "\n")
-        runCatching {
-            Files.createDirectories(file.parent)
-            AtomicFiles.write(file, text.toByteArray(Charsets.UTF_8))
-        }
+        TsvRecords.write(file, HEADER, snapshots.map(::format))
     }
 
-    private fun format(task: TaskSnapshot): String = listOf(
+    private fun format(task: TaskSnapshot): List<Any?> = listOf(
         task.id.value, task.name, task.key, task.ownerName, task.executionKind.name, task.status.name,
         task.tags.joinToString(TAG_SEPARATOR), task.createdAt, task.nextRunAt, task.runCount, task.skippedCount,
         task.lastStartedAt, task.lastCompletedAt, task.lastFailure, task.description, task.usage,
         task.source, task.interval?.toMillis(), task.lastDuration?.toNanos(), task.cancellable, task.runnableNow, task.hidden,
-    ).joinToString(TAB) { escape(it?.toString().orEmpty()) }
+    )
 
-    private fun parse(line: String): TaskSnapshot {
-        val f = line.split(TAB).map(::unescape)
+    private fun parse(f: List<String>): TaskSnapshot {
         require(f.size == FIELDS || f.size == SECOND_FIELDS || f.size == FIRST_FIELDS) { "Task history line has ${f.size} fields" }
         val newer = f.size >= SECOND_FIELDS
         fun text(index: Int): String? = f[index].ifEmpty { null }
@@ -74,48 +63,11 @@ internal class TaskHistoryStore(private val file: Path) {
         )
     }
 
-    private fun escape(value: String): String = buildString {
-        for (char in value) {
-            when (char) {
-                BACKSLASH -> append(BACKSLASH).append(BACKSLASH)
-                TAB.single() -> append(BACKSLASH).append('t')
-                '\n' -> append(BACKSLASH).append('n')
-                '\r' -> Unit
-                else -> append(char)
-            }
-        }
-    }
-
-    private fun unescape(value: String): String {
-        if (BACKSLASH !in value) return value
-        val out = StringBuilder()
-        var index = 0
-        while (index < value.length) {
-            val char = value[index]
-            if (char == BACKSLASH && index + 1 < value.length) {
-                index++
-                out.append(
-                    when (value[index]) {
-                        't' -> '\t'
-                        'n' -> '\n'
-                        else -> value[index]
-                    },
-                )
-            } else {
-                out.append(char)
-            }
-            index++
-        }
-        return out.toString()
-    }
-
     private companion object {
         const val HEADER = "#pnlibrary-task-history 3"
         const val FIRST_FIELDS = 16
         const val SECOND_FIELDS = 21
         const val FIELDS = 22
-        const val TAB = "\t"
-        const val BACKSLASH = '\\'
         const val TAG_SEPARATOR = "\u001F"
     }
 }
