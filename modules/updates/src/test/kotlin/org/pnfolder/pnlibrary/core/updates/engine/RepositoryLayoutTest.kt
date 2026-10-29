@@ -16,8 +16,9 @@ class RepositoryLayoutTest {
         .firstOrNull(Files::isDirectory)
         ?: error("The .pnlibrary folder was not found above ${Paths.get("").toAbsolutePath()}")
 
-    /** The real catalog lies in `.pnlibrary`; the demonstration catalog and its changelogs in `.pnlibrary/example`. */
-    private fun location(name: String): Path = if (name.endsWith(".example.json")) folder.resolve("example").resolve(name) else folder.resolve(name)
+    /** The real catalog lies in `.pnlibrary`; the demonstration catalog and its changelogs in `integration/.pnlibrary`. */
+    private fun location(name: String): Path =
+        if (name.endsWith(".example.json")) folder.resolveSibling("integration").resolve(".pnlibrary").resolve(name) else folder.resolve(name)
 
     private fun changelogs(name: String): Path = location(name).resolveSibling("changelogs")
 
@@ -66,7 +67,7 @@ class RepositoryLayoutTest {
                 val link = release.changelogUrl ?: return@forEach
                 assertNotNull(link.path)
                 assertTrue(
-                    link.path.endsWith("/${folder.fileName}/${folder.relativize(changelogs(name)).joinToString("/")}/${release.version}.md"),
+                    link.path.endsWith("${if (name.endsWith(".example.json")) "/integration" else ""}/.pnlibrary/changelogs/${release.version}.md"),
                     "$name: the changelog link of ${release.version} is $link",
                 )
             }
