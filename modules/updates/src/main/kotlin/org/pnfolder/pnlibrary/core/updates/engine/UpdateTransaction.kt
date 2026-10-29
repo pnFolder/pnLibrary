@@ -96,8 +96,13 @@ internal class UpdateTransaction(
                 target.parent?.let(Files::createDirectories)
                 // Copy beside the target first, then atomically swap it in: a crash never leaves a partial jar.
                 val publishing = target.resolveSibling("${target.fileName}.publishing")
-                Files.copy(Paths.get(record.staged), publishing, StandardCopyOption.REPLACE_EXISTING)
-                retryWhileLocked { AtomicFiles.move(publishing, target) }
+                try {
+                    Files.copy(Paths.get(record.staged), publishing, StandardCopyOption.REPLACE_EXISTING)
+                    retryWhileLocked { AtomicFiles.move(publishing, target) }
+                } catch (error: Throwable) {
+                    runCatchingNonFatal { Files.deleteIfExists(publishing) }
+                    throw error
+                }
             }
             journals.transition(journalPath, journal, TransactionState.AWAITING_HEALTH)
             return TransactionResult(journal.state, journalPath)

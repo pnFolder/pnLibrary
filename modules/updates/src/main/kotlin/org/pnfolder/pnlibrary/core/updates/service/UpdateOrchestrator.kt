@@ -52,7 +52,7 @@ internal class UpdateOrchestrator(
     private var inFlight: CompletableFuture<UpdatePlanSnapshot>? = null
     private var inFlightForced = false
     private var current: UpdatePlanSnapshot? = store.current()
-    private var revision = current?.revision ?: 0
+    private val revision = java.util.concurrent.atomic.AtomicLong(current?.revision ?: 0L)
     private var announcedFingerprint: String? = null
     private var announcedAt: Instant? = null
     private val sessionHistory = ArrayDeque<UpdatePlanSnapshot>()
@@ -126,7 +126,7 @@ internal class UpdateOrchestrator(
     private fun failedSnapshot(error: Throwable): UpdatePlanSnapshot {
         val previous = synchronized(lock) { current }
         return UpdatePlanSnapshot(
-            UUID.randomUUID(), ++revision, UpdateState.FAILED,
+            UUID.randomUUID(), revision.incrementAndGet(), UpdateState.FAILED,
             previous?.plan, previous?.blockers.orEmpty(), rootMessage(error),
         )
     }
@@ -195,7 +195,7 @@ internal class UpdateOrchestrator(
                     val selected = action()
                     val restored = UpdatePlanSnapshot(
                         selected.id,
-                        ++revision,
+                        revision.incrementAndGet(),
                         UpdateState.ROLLED_BACK,
                         selected.plan,
                         selected.blockers,
@@ -226,7 +226,7 @@ internal class UpdateOrchestrator(
         val fingerprint = fingerprint(state, plan, blockers)
         val previous = synchronized(lock) { current }
         if (previous != null && fingerprint(previous.state, previous.plan, previous.blockers) == fingerprint) return previous
-        return UpdatePlanSnapshot(UUID.randomUUID(), ++revision, state, plan, blockers, null)
+        return UpdatePlanSnapshot(UUID.randomUUID(), revision.incrementAndGet(), state, plan, blockers, null)
     }
 
     private fun publish(snapshot: UpdatePlanSnapshot, actor: UpdateActor = UpdateActor.UNKNOWN, operation: String = "STATE_OBSERVED") {
