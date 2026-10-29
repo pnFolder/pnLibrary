@@ -65,6 +65,14 @@ interface EventInspector {
     fun hourly(eventType: String? = null): List<EventHour> = emptyList()
 
     /**
+     * Writes the per-day and per-hour counters to a file next to the history file.
+     *
+     * @param json `true` for a JSON file, `false` for CSV
+     * @return the file written, or `null` when the history is off or cannot be written
+     */
+    fun exportHistory(json: Boolean = false): java.nio.file.Path? = null
+
+    /**
      * Starts recording every dispatch of [eventType] and its subclasses, keeping the latest
      * [EventTrace]s up to [capacity]. Tracing costs nothing for event types that are not traced.
      * Results are compared through `toString()`, so give a custom [ResultedEvent.Result] a readable one.

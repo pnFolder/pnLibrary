@@ -1957,6 +1957,8 @@ public abstract interface class org/pnfolder/pnlibrary/api/events/EventInspector
 	public fun event (Ljava/lang/Class;)Lorg/pnfolder/pnlibrary/api/events/EventInfo;
 	public abstract fun eventType (Ljava/lang/String;)Ljava/lang/Class;
 	public abstract fun events ()Ljava/util/List;
+	public fun exportHistory (Z)Ljava/nio/file/Path;
+	public static synthetic fun exportHistory$default (Lorg/pnfolder/pnlibrary/api/events/EventInspector;ZILjava/lang/Object;)Ljava/nio/file/Path;
 	public abstract fun getHistoryDays ()I
 	public abstract fun history (Ljava/lang/String;)Ljava/util/List;
 	public static synthetic fun history$default (Lorg/pnfolder/pnlibrary/api/events/EventInspector;Ljava/lang/String;ILjava/lang/Object;)Ljava/util/List;

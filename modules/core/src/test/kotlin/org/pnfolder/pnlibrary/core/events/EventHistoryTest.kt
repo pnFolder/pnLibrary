@@ -57,4 +57,18 @@ class EventHistoryTest {
         Files.write(file, "$old\ta.Buy\t5\t0\n".toByteArray(Charsets.UTF_8))
         assertTrue(EventHistory(file, 60).hourly().isEmpty())
     }
+
+    @Test
+    fun `exports days and hours as csv and json beside the history file`(@TempDir dir: Path) {
+        val file = dir.resolve("history.tsv")
+        EventHistory(file, 30).use { history ->
+            history.record("a.Buy", denied = true)
+            val csv = Files.readString(history.export(json = false)!!)
+            assertTrue(csv.startsWith("period,time,event,calls,denied"), csv)
+            assertTrue(csv.contains("day,") && csv.contains("hour,") && csv.contains(",a.Buy,1,1"), csv)
+            val json = Files.readString(history.export(json = true)!!)
+            assertTrue(json.contains("\"event\":\"a.Buy\"") && json.contains("\"hours\":["), json)
+        }
+        assertTrue(EventHistory(null, 30).export(json = false) == null)
+    }
 }

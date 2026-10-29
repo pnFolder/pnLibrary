@@ -86,6 +86,33 @@ internal class EventHistory(
         }
     }
 
+    /** Writes days and hours to `event-history.csv` or `event-history.json` beside the history file; `null` if not possible. */
+    fun export(json: Boolean): Path? {
+        val source = file ?: return null
+        if (retentionDays <= 0) return null
+        val days = entries()
+        val hours = hourly()
+        val text = if (json) {
+            fun quote(value: String) = "\"" + value.replace("\\", "\\\\").replace("\"", "\\\"") + "\""
+            buildString {
+                append("{\"days\":[")
+                append(days.joinToString(",") { """{"date":"${it.date}","event":${quote(it.eventType)},"calls":${it.calls},"denied":${it.denied}}""" })
+                append("],\"hours\":[")
+                append(hours.joinToString(",") { """{"hour":"${it.hour}","event":${quote(it.eventType)},"calls":${it.calls},"denied":${it.denied}}""" })
+                append("]}").append(NL)
+            }
+        } else {
+            fun cell(value: String) = if (value.any { it == ',' || it == '"' }) "\"" + value.replace("\"", "\"\"") + "\"" else value
+            buildString {
+                append("period,time,event,calls,denied").append(NL)
+                days.forEach { append("day,${it.date},${cell(it.eventType)},${it.calls},${it.denied}").append(NL) }
+                hours.forEach { append("hour,${it.hour},${cell(it.eventType)},${it.calls},${it.denied}").append(NL) }
+            }
+        }
+        val target = source.resolveSibling(if (json) "event-history.json" else "event-history.csv")
+        return runCatchingNonFatal { AtomicFiles.write(target, text.toByteArray(Charsets.UTF_8)); target }.getOrNull()
+    }
+
     private fun pruneHours(now: LocalDateTime) {
         val keep = minOf(retentionDays, MAX_HOURLY_DAYS) * 24L
         hours.headMap(now.truncatedTo(ChronoUnit.HOURS).minusHours(keep - 1)).clear()
@@ -157,5 +184,6 @@ internal class EventHistory(
     private companion object {
         const val HEADER = "# pnLibrary event history v1"
         const val MAX_HOURLY_DAYS = 30
+        const val NL = '\n'
     }
 }
