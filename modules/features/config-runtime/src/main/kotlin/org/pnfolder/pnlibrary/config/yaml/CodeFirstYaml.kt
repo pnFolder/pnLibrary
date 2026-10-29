@@ -56,9 +56,9 @@ class CodeFirstYaml<T> @JvmOverloads constructor(
         val parent = file.absoluteFile.parentFile
         require(parent.isDirectory || parent.mkdirs()) { "Cannot create configuration directory $parent" }
         val rawDefaultsYaml = fileStore.normalize(codec.encode(defaults))
-        val defaultsYaml = options.migrations?.let {
-            fileStore.normalize(migrationEngine.stampDefaults(rawDefaultsYaml, it))
-        } ?: rawDefaultsYaml
+        val defaultsYaml = SupportHeader.apply(
+            options.migrations?.let { fileStore.normalize(migrationEngine.stampDefaults(rawDefaultsYaml, it)) } ?: rawDefaultsYaml,
+        )
         if (!file.exists()) {
             check(options.missingFile == MissingFilePolicy.CREATE) { "Configuration ${file.name} does not exist" }
             fileStore.write(defaultsYaml)
@@ -107,7 +107,7 @@ class CodeFirstYaml<T> @JvmOverloads constructor(
                 addComments = options.comments == CommentPolicy.ADD_MISSING,
             )
         }
-        val synchronized = syncResult.content
+        val synchronized = SupportHeader.apply(syncResult.content)
         val value = decodeAndValidate(synchronized)
         if (synchronized == original) {
             loadedValue = value
@@ -145,9 +145,9 @@ class CodeFirstYaml<T> @JvmOverloads constructor(
     @Synchronized
     override fun save(value: T) {
         val raw = fileStore.normalize(codec.encode(value))
-        val encoded = options.migrations?.let {
-            fileStore.normalize(migrationEngine.stampDefaults(raw, it))
-        } ?: raw
+        val encoded = SupportHeader.apply(
+            options.migrations?.let { fileStore.normalize(migrationEngine.stampDefaults(raw, it)) } ?: raw,
+        )
         decodeAndValidate(encoded)
         fileStore.write(encoded)
         loadedValue = value

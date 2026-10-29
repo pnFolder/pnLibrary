@@ -102,6 +102,24 @@ class ConfigurationServiceImplTest {
     }
 
     @Test
+    fun `every file carries the support note once, new or already existing`() {
+        Files.writeString(directory.resolve("old.yml"), "retries: 4"+"\n"+"name: custom"+"\n")
+        service().use { service ->
+            val scope = scope(service)
+            scope.yaml<ServiceSettings>("settings.yml") { ServiceSettings() }.load()
+            val old = scope.yaml<ServiceSettings>("old.yml") { ServiceSettings() }
+            old.load()
+            old.reload()
+            listOf("settings.yml", "old.yml").forEach { name ->
+                val text = Files.readString(directory.resolve(name))
+                assertEquals(1, text.split("discord.gg").size - 1, "$name: $text")
+                assertTrue(text.contains("write to our Discord"), text)
+                assertTrue(text.contains("пишите в наш Discord"), text)
+            }
+        }
+    }
+
+    @Test
     fun `administrator comments survive reload and a missing marker is added`() {
         Files.writeString(directory.resolve("settings.yml"), "# my note\nretries: 4\nname: custom\n")
         service().use { service ->
