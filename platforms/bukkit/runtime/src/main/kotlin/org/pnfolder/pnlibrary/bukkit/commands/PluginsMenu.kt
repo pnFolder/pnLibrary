@@ -3,6 +3,7 @@ package org.pnfolder.pnlibrary.bukkit.commands
 import org.bukkit.Material
 import org.bukkit.Sound
 import org.bukkit.entity.Player
+import org.bukkit.event.inventory.ClickType
 import org.bukkit.inventory.ItemFlag
 import org.bukkit.inventory.ItemStack
 import org.bukkit.plugin.Plugin
@@ -11,6 +12,7 @@ import org.pnfolder.pnlibrary.api.chat.ChatTone
 import org.pnfolder.pnlibrary.api.platform.platform
 import org.pnfolder.pnlibrary.api.runtime.PnLibrary
 import org.pnfolder.pnlibrary.api.runtime.PnLibraryIdentity
+import org.pnfolder.pnlibrary.api.updates.UpdateChannel
 import org.pnfolder.pnlibrary.api.updates.UpdateSnapshot
 import org.pnfolder.pnlibrary.api.updates.UpdateState
 import org.pnfolder.pnlibrary.api.updates.backup.UpdateBackup
@@ -70,6 +72,11 @@ internal class PluginsMenu(
                     listOf("Библиотека для плагинов pnFolder: обновления, настройки и поддержка."),
                     listOf(
                         "Версия" to library.version,
+                        "Итог" to when {
+                            problems > 0 -> "✖ проблем: $problems"
+                            pending > 0 -> "✦ к обновлению: $pending"
+                            else -> "✔ всё актуально"
+                        },
                         "Плагинов" to "${connectedCount()}",
                         "Обновлений" to "$pending",
                         "Проблем" to "$problems",
@@ -127,7 +134,18 @@ internal class PluginsMenu(
                 Filter.UPDATES -> it.state in CatalogLabels.PENDING
                 Filter.PROBLEMS -> it.state in CatalogLabels.PROBLEMS
             }
-        }.map { snapshot -> Row(plate(snapshot), go { card(it, snapshot.product) }) }
+        }.map { snapshot ->
+            Row(
+                plate(snapshot, hints = true),
+                goClick { who, click ->
+                    when (click) {
+                        ClickType.RIGHT -> checkOne(who, snapshot.product)
+                        ClickType.SHIFT_LEFT -> allowed(who, SETTINGS) { toggleAuto(who, snapshot) }
+                        else -> card(who, snapshot.product)
+                    }
+                },
+            )
+        }
         val rows = if (filter == Filter.ALL) shown + unmanaged(updatable.map { it.product.lowercase() }.toSet()) else shown
         list(player, filter.title, rows, page, PAGE_SIZE, { who, to -> plugins(who, filter, to) }, { home(it) }, "Здесь пусто")
     }
@@ -155,17 +173,25 @@ internal class PluginsMenu(
             go { checkOne(it, registration.snapshot.product) },
         )
         builder.button(12, autoItem(snapshot), go { who -> allowed(who, SETTINGS) { toggleAuto(who, snapshot) } })
-        builder.slot(
-            13,
-            icon(
-                Icons.LOCKED, "BARRIER", "Канал обновлений",
-                Style.lore(
-                    listOf("Сейчас работает только канал dev, остальные пока недоступны."),
-                    listOf("Канал" to snapshot.channel.name.lowercase()),
+        if (CHANNEL_SWITCH) {
+            builder.button(
+                13,
+                section(Icons.SETTINGS, "LEVER", "Канал", "Какие версии предлагать.", "Сейчас" to snapshot.channel.name.lowercase()),
+                go { channels(it, snapshot.product) },
+            )
+        } else {
+            builder.slot(
+                13,
+                icon(
+                    Icons.LOCKED, "BARRIER", "Канал обновлений",
+                    Style.lore(
+                        listOf("Сейчас работает только канал dev, остальные пока недоступны."),
+                        listOf("Канал" to snapshot.channel.name.lowercase()),
+                    ),
+                    muted = true,
                 ),
-                muted = true,
-            ),
-        )
+            )
+        }
         builder.button(14, holdItem(snapshot), go { holds(it, snapshot.product) })
         builder.button(
             15,
@@ -182,6 +208,35 @@ internal class PluginsMenu(
             )
         }
         builder.button(CARD_BACK, backItem(), go { plugins(it, Filter.ALL, 0) })
+        show(player, builder.build())
+    }
+
+    /** The channel choice. It stays in the code and is switched on by [CHANNEL_SWITCH] once more than `dev` works. */
+    private fun channels(player: Player, product: String) {
+        val current = library.updates.get(product)?.snapshot?.channel
+        val builder = frame(Menus.chest(title("Канал $product")).rows(SMALL_ROWS), SMALL_ROWS)
+        UpdateChannel.values().forEachIndexed { index, channel ->
+            val chosen = channel == current
+            val lore = Style.lore(
+                listOf(CHANNEL_HINTS.getValue(channel)),
+                if (chosen) listOf("Состояние" to "выбран сейчас") else emptyList(),
+                *if (chosen) emptyArray() else arrayOf(Style.left("выбрать")),
+            )
+            builder.button(
+                10 + index,
+                icon(null, CHANNEL_ITEMS.getValue(channel), channel.name.lowercase(), lore, good = chosen),
+                go { who -> allowed(who, SETTINGS) { chooseChannel(who, product, channel) } },
+            )
+        }
+        builder.button(
+            16,
+            icon(
+                Icons.RESET, "BARRIER", "Сбросить",
+                Style.lore(listOf("Вернуть канал, который указал плагин."), emptyList(), Style.left("сбросить")), muted = true,
+            ),
+            go { who -> allowed(who, SETTINGS) { chooseChannel(who, product, null) } },
+        )
+        builder.button(SMALL_BACK, backItem(), go { card(it, product) })
         show(player, builder.build())
     }
 
@@ -401,6 +456,16 @@ internal class PluginsMenu(
         }
     }
 
+    private fun chooseChannel(player: Player, product: String, channel: UpdateChannel?) {
+        library.updates.setChannel(product, channel, replies.updateActor(player)).whenComplete { _, error ->
+            replies.onServerThread {
+                if (error != null) tell(player, ChatTone.FAILURE, "Не удалось изменить канал.", reason(error))
+                else tell(player, ChatTone.SUCCESS, "Канал $product: ${channel?.name?.lowercase() ?: "как указал плагин"}.")
+                card(player, product)
+            }
+        }
+    }
+
     private fun chooseHold(player: Player, product: String, duration: Duration?) {
         library.updates.setHeld(product, duration, replies.updateActor(player)).whenComplete { _, error ->
             replies.onServerThread {
@@ -500,11 +565,19 @@ internal class PluginsMenu(
                 Style.lore(emptyList(), emptyList(), Style.left("страница ${current + 2}")), good = true)
             builder.button(NEXT, following, go { reopen(it, current + 1) })
         }
+        builder.button(
+            REFRESH,
+            icon(Icons.CHECK, "COMPASS", "Обновить список", Style.lore(listOf("Перечитать данные заново."), emptyList(), Style.left("обновить"))),
+            go { reopen(it, current) },
+        )
         builder.button(CLOSE, closeItem(), go { it.closeInventory() })
         show(player, builder.build())
     }
 
     private fun go(action: (Player) -> Unit) = MenuClickHandler { action(it.player) }
+
+    /** A handler that also learns which click was used: left, right or shift-left. */
+    private fun goClick(action: (Player, ClickType) -> Unit) = MenuClickHandler { action(it.player, it.click) }
 
     private fun show(player: Player, menu: Menu) {
         library.platform<BukkitPlatform>().menus.open(plugin, player, menu)
@@ -534,7 +607,7 @@ internal class PluginsMenu(
             Row(icon(Icons.PLUGIN, "PAPER", nameOf(registration.owner), Style.lore(emptyList(), parameters)))
         }
 
-    private fun plate(snapshot: UpdateSnapshot, withHint: Boolean = true): ItemStack {
+    private fun plate(snapshot: UpdateSnapshot, withHint: Boolean = true, hints: Boolean = false): ItemStack {
         val material = when (snapshot.state) {
             UpdateState.UP_TO_DATE -> "EMERALD"
             UpdateState.UPDATE_AVAILABLE -> "GOLD_INGOT"
@@ -553,13 +626,27 @@ internal class PluginsMenu(
             add("Версия" to snapshot.currentVersion)
             snapshot.latestVersion?.let { add("Последняя" to it) }
             add("Канал" to snapshot.channel.name.lowercase())
-            add("Состояние" to CatalogLabels.stateLabel(snapshot.state))
-            add("Автозагрузка" to if (snapshot.automaticDownload) "включена" else "выключена")
+            add("Состояние" to "${stateSymbol(snapshot.state)} ${CatalogLabels.stateLabel(snapshot.state)}")
+            add("Автозагрузка" to if (snapshot.automaticDownload) "✔ включена" else "✖ выключена")
             snapshot.supportedApi?.let { add("API pnLibrary" to "${it.minimum}–${it.maximum}") }
         }
         val problems = (listOfNotNull(snapshot.message.takeIf { problem }) + blockers).map { Style.danger(it) }
-        val lore = Style.lore(emptyList(), parameters, *if (withHint) arrayOf(Style.left("открыть карточку")) else emptyArray(), extra = problems)
+        val clicks = when {
+            hints -> arrayOf(Style.left("открыть карточку"), Style.right("проверить"), Style.shiftLeft("переключить автозагрузку"))
+            withHint -> arrayOf(Style.left("открыть карточку"))
+            else -> emptyArray()
+        }
+        val lore = Style.lore(emptyList(), parameters, *clicks, extra = problems)
         return icon(null, material, snapshot.product, lore, alternative = "WATCH".takeIf { material == "CLOCK" }, danger = problem)
+    }
+
+    private fun stateSymbol(state: UpdateState): String = when (state) {
+        UpdateState.UP_TO_DATE -> "✔"
+        UpdateState.UPDATE_AVAILABLE -> "✦"
+        UpdateState.UPDATE_STAGED, UpdateState.DOWNLOADING, UpdateState.ROLLED_BACK -> "➜"
+        UpdateState.FROZEN -> "‖"
+        UpdateState.CHECKING -> "…"
+        UpdateState.FAILED, UpdateState.BLOCKED, UpdateState.INCOMPATIBLE -> "✖"
     }
 
     private fun autoItem(snapshot: UpdateSnapshot): ItemStack = icon(
@@ -686,9 +773,15 @@ internal class PluginsMenu(
         private val DESCRIPTION = MenuHeads.color(" &#E3EBF2")
         private val SUB = MenuHeads.color("   &#69747E↳ &#A7F3D0")
         private val LEFT = MenuHeads.color(" &#FFB347[&#FFA43C Л&#FF9536К&#FF8630М &#FF772A] &f")
+        private val RIGHT = MenuHeads.color(" &#FF8A8A[&#FF7979 П&#F96868К&#F25757М &#EB4646] &f")
+        private val SHIFT_LEFT = MenuHeads.color(" &#65D1FC[&#5FC7F6 Shift&#59BCF0 +&#53B1EA Л&#4DA6E4К&#479BDEМ &#4190D8] &f")
         private val TAGS = listOf("5FD7FF", "A7F3D0", "C4A7FF", "FFB347", "65D1FC", "FF8A8A", "EFF7B9")
 
         fun left(action: String): String = LEFT + action
+
+        fun right(action: String): String = RIGHT + action
+
+        fun shiftLeft(action: String): String = SHIFT_LEFT + action
 
         fun description(text: String): String = DESCRIPTION + text
 
@@ -764,6 +857,7 @@ internal class PluginsMenu(
         const val BACK = 45
         const val PREVIOUS = 48
         const val NEXT = 50
+        const val REFRESH = 49
         const val CLOSE = 53
         const val BLOCKER_LINES = 3
         const val CHECK_REOPEN_TICKS = 60L
@@ -777,6 +871,23 @@ internal class PluginsMenu(
         val OPEN_SOUND: Sound? = listOf("BLOCK_BARREL_OPEN", "BLOCK_CHEST_OPEN", "CHEST_OPEN")
             .firstNotNullOfOrNull { name -> Sound.values().firstOrNull { it.name == name } }
 
+        /** Whether the menu may change the update channel; only `dev` works for now, so the choice is switched off. */
+        const val CHANNEL_SWITCH = false
+
+        val CHANNEL_ITEMS = mapOf(
+            UpdateChannel.STABLE to "EMERALD",
+            UpdateChannel.RC to "GOLD_INGOT",
+            UpdateChannel.BETA to "IRON_INGOT",
+            UpdateChannel.ALPHA to "REDSTONE",
+            UpdateChannel.DEV to "COAL",
+        )
+        val CHANNEL_HINTS = mapOf(
+            UpdateChannel.STABLE to "Только проверенные релизы.",
+            UpdateChannel.RC to "Кандидаты в релиз и стабильные.",
+            UpdateChannel.BETA to "Бета-версии, кандидаты и стабильные.",
+            UpdateChannel.ALPHA to "Ранние версии: возможны ошибки.",
+            UpdateChannel.DEV to "Все версии, включая ежедневные сборки.",
+        )
         val HOLDS = listOf(
             "1 час" to Duration.ofHours(1),
             "6 часов" to Duration.ofHours(6),
