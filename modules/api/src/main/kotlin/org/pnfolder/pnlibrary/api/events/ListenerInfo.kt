@@ -19,6 +19,8 @@ import org.pnfolder.pnlibrary.api.plugin.PluginId
  * @property source `Class#method` for an `@EventHandler` method, or the listener class for a lambda
  * @property invocations how many times the listener has run since it was registered
  * @property failures how many of those runs threw an exception
+ * @property totalNanos time all runs took together, in nanoseconds; `0` when the bus does not measure
+ * @property maxNanos the slowest single run, in nanoseconds
  */
 data class ListenerInfo(
     val plugin: PluginId,
@@ -29,4 +31,21 @@ data class ListenerInfo(
     val source: String,
     val invocations: Long,
     val failures: Long,
-)
+    val totalNanos: Long = 0,
+    val maxNanos: Long = 0,
+) {
+    /** Keeps the constructor of releases that did not measure time. */
+    constructor(
+        plugin: PluginId,
+        module: ModuleId?,
+        eventType: String,
+        priority: Int,
+        ignoreDenied: Boolean,
+        source: String,
+        invocations: Long,
+        failures: Long,
+    ) : this(plugin, module, eventType, priority, ignoreDenied, source, invocations, failures, 0, 0)
+
+    /** Mean time of one run in nanoseconds, or `0` when the listener has not run. */
+    val averageNanos: Long get() = if (invocations > 0) totalNanos / invocations else 0
+}

@@ -26,6 +26,20 @@ class EventServiceImplTest {
     }
 
     @Test
+    fun `listener timings are measured without tracing`() {
+        EventServiceImpl { _, _, _ -> }.use { events ->
+            val scope = events.scope(PluginId.of("test"))
+            scope.subscribe(TestEvent::class.java, EventPriority.NORMAL, Consumer { Thread.sleep(5) })
+            repeat(2) { events.callEvent(TestEvent()) }
+            val info = events.inspector.listeners().single()
+            assertEquals(2, info.invocations)
+            assertTrue(info.totalNanos >= 8_000_000, "total ${info.totalNanos}")
+            assertTrue(info.maxNanos in 4_000_000..info.totalNanos)
+            assertTrue(info.averageNanos > 0)
+        }
+    }
+
+    @Test
     fun `denied result is visible immediately and skips ignoreDenied listeners`() {
         EventServiceImpl { _, _, _ -> }.use { events ->
             val scope = events.scope(PluginId.of("test"))
