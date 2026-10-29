@@ -84,6 +84,8 @@ internal class PluginsMenu(
     }
 
     private enum class TaskFilter(val label: String, val keep: (TaskSnapshot) -> Boolean) {
+        TODAY("сегодня", { TaskLabels.isToday(it) || TaskLabels.isActive(it.status) }),
+        OLDER("раньше", { !TaskLabels.isToday(it) && !TaskLabels.isActive(it.status) }),
         ALL("все", { true }),
         ACTIVE("работают", { TaskLabels.isActive(it.status) }),
         FAILED("с ошибками", { it.status == TaskStatus.FAILED || it.lastFailure != null }),
@@ -149,7 +151,7 @@ internal class PluginsMenu(
         builder.button(
             32,
             section(Icons.CLOCK, "CLOCK", "Задачи плагинов", "Что плагины делают по расписанию и для чего.", "Всего" to "${library.taskSnapshots().size}"),
-            go { allowed(it, TASKS) { tasks(it, TaskFilter.ALL, 0) } },
+            go { allowed(it, TASKS) { tasks(it, TaskFilter.TODAY, 0) } },
         )
         builder.button(
             31,
@@ -691,7 +693,7 @@ internal class PluginsMenu(
     private fun tasks(player: Player, filter: TaskFilter, page: Int) {
         val next = TaskFilter.values()[(filter.ordinal + 1) % TaskFilter.values().size]
         val all = library.taskSnapshots()
-        val rows = all.filter(filter.keep).sortedByDescending { it.createdAt }.map { task ->
+        val rows = all.filter(filter.keep).sortedByDescending { TaskLabels.activity(it) }.map { task ->
             Row(taskItem(task), go { who -> taskDetail(who, task.id.value) { tasks(it, filter, page) } })
         }
         val cycle = icon(
@@ -756,7 +758,7 @@ internal class PluginsMenu(
             add("Запусков" to "${task.runCount}")
             add("Пропущено" to "${task.skippedCount}")
             task.lastDuration?.let { add("Последний заняла" to TaskLabels.span(it)) }
-            add("Где" to executionWords(task))
+            add("Где" to TaskLabels.where(task))
         }
         builder.slot(21, icon(Icons.SETTINGS, "COMPARATOR", "Как выполняется", Style.lore(emptyList(), runs)))
         val times = buildList {
@@ -771,14 +773,24 @@ internal class PluginsMenu(
             task.source?.let { addAll(labelled("Класс", it)) }
             task.key?.let { add("Ключ" to it) }
             if (task.tags.isNotEmpty()) addAll(labelled("Теги", task.tags.joinToString(", ")))
-            add("Остановить можно" to if (task.cancellable) "да" else "нет, запретил плагин")
-            add("Запустить сейчас" to if (task.runnableNow) "можно" else "нельзя, запретил плагин")
+            add("Остановить" to TaskLabels.stopAnswer(task))
+            add("Запустить сейчас" to TaskLabels.runAnswer(task))
             add("Номер" to task.id.value.take(TaskLabels.SHORT_ID))
         }
         builder.slot(23, icon(Icons.PLUGIN, "PAPER", "Откуда и права", Style.lore(emptyList(), origin)))
         task.lastFailure?.let { failure ->
             val lore = Style.lore(emptyList(), emptyList(), extra = wrap(failure).map { Style.danger(it) })
             builder.slot(24, icon(Icons.PROBLEMS, "BARRIER", "Последняя ошибка", lore, danger = true))
+        }
+        if (!(task.status == TaskStatus.SCHEDULED && task.runnableNow)) {
+            builder.slot(
+                29,
+                icon(
+                    Icons.PROBLEMS, "BARRIER", "Запуск закрыт",
+                    Style.lore(listOf(TaskLabels.runAnswer(task).replaceFirstChar { it.uppercase() } + "."), emptyList()),
+                    muted = true,
+                ),
+            )
         }
         if (task.status == TaskStatus.SCHEDULED && task.runnableNow) {
             builder.button(
@@ -797,6 +809,15 @@ internal class PluginsMenu(
                         taskDetail(who, id, back)
                     }
                 },
+            )
+        }
+        if (!TaskLabels.isActive(task.status)) {
+            builder.slot(
+                31,
+                icon(
+                    Icons.PROBLEMS, "BARRIER", "Остановка закрыта",
+                    Style.lore(listOf(TaskLabels.stopAnswer(task).replaceFirstChar { it.uppercase() } + "."), emptyList()), muted = true,
+                ),
             )
         }
         if (TaskLabels.isActive(task.status)) {
@@ -830,14 +851,6 @@ internal class PluginsMenu(
         }
         builder.button(DETAIL_BACK, backItem(), go { back(it) })
         show(player, builder.build())
-    }
-
-    /** Where a task runs, in words. */
-    private fun executionWords(task: TaskSnapshot): String = when (task.executionKind.name) {
-        "ASYNC" -> "отдельный поток, мир не трогать"
-        "ENTITY" -> "поток существа"
-        "REGION" -> "поток региона"
-        else -> "основной поток сервера"
     }
 
     // --- plugins that own things ---------------------------------------------------------------------------------
