@@ -67,4 +67,14 @@ class RepositoryLayoutTest {
             }
         }
     }
+
+    @Test
+    fun `the channel of a release matches the word in its version`() {
+        listOf("releases.json", "releases.example.json").forEach { name ->
+            catalog(name).releases.forEach { release ->
+                val word = release.version.prerelease.firstOrNull()
+                assertEquals(release.channel.name.lowercase(), word, "$name: ${release.version} is listed in channel ${release.channel}")
+            }
+        }
+    }
 }
