@@ -1,6 +1,8 @@
 package org.pnfolder.pnlibrary.core.updates.engine
 
+import org.pnfolder.pnlibrary.common.io.AtomicFiles
 import org.pnfolder.pnlibrary.common.lang.runCatchingNonFatal
+import java.nio.file.FileSystemException
 import java.nio.file.Files
 import java.nio.file.Path
 import java.nio.file.Paths
@@ -95,7 +97,7 @@ internal class UpdateTransaction(
                 // Copy beside the target first, then atomically swap it in: a crash never leaves a partial jar.
                 val publishing = target.resolveSibling("${target.fileName}.publishing")
                 Files.copy(Paths.get(record.staged), publishing, StandardCopyOption.REPLACE_EXISTING)
-                Files.move(publishing, target, StandardCopyOption.ATOMIC_MOVE, StandardCopyOption.REPLACE_EXISTING)
+                retryWhileLocked { AtomicFiles.move(publishing, target) }
             }
             journals.transition(journalPath, journal, TransactionState.AWAITING_HEALTH)
             return TransactionResult(journal.state, journalPath)
@@ -193,7 +195,7 @@ internal class UpdateTransaction(
             val target = Paths.get(record.target)
             if (record.targetExisted) {
                 Files.createDirectories(target.parent)
-                Files.copy(Paths.get(record.backup), target, StandardCopyOption.REPLACE_EXISTING)
+                retryWhileLocked { Files.copy(Paths.get(record.backup), target, StandardCopyOption.REPLACE_EXISTING) }
             } else {
                 Files.deleteIfExists(target)
             }
@@ -227,5 +229,29 @@ internal class UpdateTransaction(
         val journal = journals.load(path)
         journal.appliedOperation = operation
         journals.save(path, journal)
+    }
+
+    /**
+     * Runs [action], trying again a few times when the file system refuses it. On Windows a jar that antivirus or the
+     * previous JVM still holds open cannot be replaced for a moment, and failing the whole transaction for that is
+     * worse than waiting a second.
+     */
+    private fun retryWhileLocked(action: () -> Unit) {
+        var attempt = 1
+        while (true) {
+            try {
+                action()
+                return
+            } catch (error: FileSystemException) {
+                if (attempt >= LOCK_ATTEMPTS) throw error
+                attempt++
+                Thread.sleep(LOCK_RETRY_MILLIS)
+            }
+        }
+    }
+
+    private companion object {
+        const val LOCK_ATTEMPTS = 5
+        const val LOCK_RETRY_MILLIS = 200L
     }
 }

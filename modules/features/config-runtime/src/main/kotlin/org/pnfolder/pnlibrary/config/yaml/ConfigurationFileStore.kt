@@ -37,7 +37,13 @@ internal class ConfigurationFileStore(
             "${file.name}.before-sync-",
             ".bak",
         ).toFile()
-        target.writeText(content, Charsets.UTF_8)
+        try {
+            target.writeText(content, Charsets.UTF_8)
+        } catch (error: Throwable) {
+            // An empty backup would count against the retention limit and push out a real one.
+            deleteBestEffort(target)
+            throw error
+        }
         existingBackups()
             .sortedByDescending(File::lastModified)
             .drop(MAX_BACKUPS)
