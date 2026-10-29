@@ -117,6 +117,14 @@ object UpdateCatalogView {
         zone: ZoneId = org.pnfolder.pnlibrary.common.time.DisplayZone.zone,
     ): List<Component> = CatalogScreen(routes, now, zone).announcement(snapshots, support)
 
+    /** Renders the support card with a button that opens [link]. */
+    fun support(
+        link: String,
+        routes: UpdateCatalogRoutes,
+        now: Instant = Instant.now(),
+        zone: ZoneId = org.pnfolder.pnlibrary.common.time.DisplayZone.zone,
+    ): List<Component> = CatalogScreen(routes, now, zone).support(link)
+
     /** Renders one short message of an update command: a mark in the tone's color, the text and its detail. */
     fun notice(notice: ChatNotice, routes: UpdateCatalogRoutes): List<Component> = kit(routes).notice(notice)
 
