@@ -156,6 +156,7 @@ internal class PnLibraryImpl(
         taskAdapter = taskAdapter,
         platformLogging = support.capture,
         taskHistoryCapacity = config.taskHistoryCapacity,
+        taskHistoryFile = dataFolder.resolve("task-history.tsv"),
         errorLogger = ::recordAndLog,
         commandFeedback = standardCommandFeedback(config),
     )

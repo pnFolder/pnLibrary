@@ -28,12 +28,19 @@ internal class TaskServiceImpl(
     private val adapter: PlatformTaskAdapter,
     private val settings: TaskServiceSettings = TaskServiceSettings(),
     private val errorLogger: (Any, String, Throwable) -> Unit = { _, _, _ -> },
+    private val store: TaskHistoryStore? = null,
 ) : TaskService {
     private val lock = Any()
     private val scopes = IdentityHashMap<Any, MutableMap<PluginId, Scope>>()
     private val active = LinkedHashMap<TaskId, ManagedTask>()
     private val history = LinkedHashMap<TaskId, Archived>()
     private val closed = AtomicBoolean(false)
+    private var lastSaved = 0L
+
+    init {
+        // Tasks of earlier runs have no owner object any more, so only the global list shows them.
+        store?.load()?.takeLast(settings.historyCapacity.coerceAtLeast(0))?.forEach { history[it.id] = Archived(Any(), Any(), it) }
+    }
 
     override fun scope(owner: Any): TaskScope {
         return scope(owner, PluginId.of(owner.javaClass.simpleName.ifBlank { "owner" }))
@@ -62,6 +69,7 @@ internal class TaskServiceImpl(
         ResourceCleanup.closeAll(
             *current.map { scope -> ({ scope.cancelAll() }) }.toTypedArray(),
             { adapter.close() },
+            { saveHistory() },
         )
     }
 
@@ -260,17 +268,39 @@ internal class TaskServiceImpl(
             usage = spec.usage,
         )
 
-        private fun terminal() = synchronized(lock) {
-            if (active.remove(id) == null) return@synchronized
-            if (settings.historyCapacity > 0) {
-                history[id] = Archived(owner, scopeToken, snapshot())
-                while (history.size > settings.historyCapacity) history.remove(history.keys.first())
+        private fun terminal() {
+            val archived = synchronized(lock) {
+                if (active.remove(id) == null) return
+                if (settings.historyCapacity > 0) {
+                    history[id] = Archived(owner, scopeToken, snapshot())
+                    while (history.size > settings.historyCapacity) history.remove(history.keys.first())
+                    true
+                } else {
+                    false
+                }
             }
+            if (archived) saveHistoryIfDue()
         }
+    }
+
+    /** Writes the history at most every [SAVE_EVERY_MILLIS], so a plugin that runs many short tasks does not hammer the disk. */
+    private fun saveHistoryIfDue() {
+        val now = System.currentTimeMillis()
+        val due = synchronized(lock) { (now - lastSaved >= SAVE_EVERY_MILLIS).also { if (it) lastSaved = now } }
+        if (due) saveHistory()
+    }
+
+    private fun saveHistory() {
+        val snapshots = synchronized(lock) { history.values.map { it.snapshot } }
+        store?.save(snapshots)
     }
 
     private fun ownerName(owner: Any) = owner.javaClass.simpleName.ifBlank { owner.toString() }
     private fun immutableSnapshots(values: Collection<TaskSnapshot>): List<TaskSnapshot> =
         Collections.unmodifiableList(ArrayList(values))
     private data class Archived(val owner: Any, val scopeToken: Any, val snapshot: TaskSnapshot)
+
+    private companion object {
+        const val SAVE_EVERY_MILLIS = 30_000L
+    }
 }
