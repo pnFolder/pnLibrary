@@ -70,7 +70,10 @@ class UpdatePlanStagerTest {
         val current = plugins.resolve("library.jar")
         Files.write(current, byteArrayOf(9))
         val http = object : TrustedHttpClient(Duration.ofSeconds(1), Duration.ofSeconds(1)) {
-            override fun get(uri: URI, maximumBytes: Int): ByteArray { downloads++; return bytes }
+            override fun <T> stream(uri: URI, maximumBytes: Long, reader: (java.io.InputStream) -> T): T {
+                downloads++
+                return reader(java.io.ByteArrayInputStream(bytes))
+            }
         }
         val artifact = ArtifactDescriptor("library-new.jar", PlatformType.BUKKIT, 8, null,
             size, hash, URI("https://github.com/example/repo/releases/download/v2/library-new.jar"))

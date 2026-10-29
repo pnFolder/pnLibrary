@@ -27,6 +27,16 @@ open class TrustedHttpClient(
     /** Downloads at most [maximumBytes] from validated HTTPS [uri]. */
     open fun get(uri: URI, maximumBytes: Int): ByteArray {
         require(maximumBytes > 0) { "maximumBytes must be positive" }
+        return stream(uri, maximumBytes.toLong()) { readBounded(it, maximumBytes) }
+    }
+
+    /**
+     * Opens validated HTTPS [uri], follows redirects and hands the body to [reader] without keeping it in memory.
+     * The response is refused up front when it announces more than [maximumBytes]; [reader] must enforce the limit
+     * for a body that does not announce its size.
+     */
+    open fun <T> stream(uri: URI, maximumBytes: Long, reader: (InputStream) -> T): T {
+        require(maximumBytes > 0) { "maximumBytes must be positive" }
         var current = validate(uri)
         repeat(MAX_REDIRECTS + 1) { redirect ->
             val connection = (current.toURL().openConnection() as HttpURLConnection).apply {
@@ -49,7 +59,7 @@ open class TrustedHttpClient(
                     "Update response exceeds $maximumBytes bytes"
                 }
                 connection.inputStream.use { input ->
-                    return readBounded(input, maximumBytes)
+                    return reader(input)
                 }
             } finally {
                 connection.disconnect()
