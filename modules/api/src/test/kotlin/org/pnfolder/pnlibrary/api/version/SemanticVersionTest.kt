@@ -32,6 +32,14 @@ class SemanticVersionTest {
     }
 
     @Test
+    fun `channel suffixes order from dev to stable and a bare release is newest`() {
+        val order = listOf("dev.9", "alpha.1", "beta.1", "rc.1", "stable.1", "stable.2").map { SemanticVersion.parse("0.1.0-$it") }
+        assertEquals(order, order.shuffled().sorted())
+        assertTrue(SemanticVersion.parse("0.1.0") > order.last())
+        assertTrue(SemanticVersion.parse("0.1.1-dev.1") > order.last())
+    }
+
+    @Test
     fun `rejects invalid semver leading zeros and empty identifiers`() {
         assertNull(SemanticVersion.tryParse("02.0.0"))
         assertNull(SemanticVersion.tryParse("2.0.0-beta..1"))

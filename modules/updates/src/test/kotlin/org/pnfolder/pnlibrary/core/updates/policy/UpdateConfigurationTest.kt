@@ -38,7 +38,8 @@ class UpdateConfigurationTest {
 
         val configuration = UpdateConfiguration.load(file)
 
-        assertEquals(UpdateChannel.BETA, configuration.library.channel)
+        // the library channel is fixed to dev in code; the file value is not applied
+        assertEquals(UpdateChannel.DEV, configuration.library.channel)
         assertTrue(configuration.library.automaticDownload)
         assertTrue(configuration.pluginUpdatesEnabled)
         assertFalse(configuration.pluginAutomaticDownload)

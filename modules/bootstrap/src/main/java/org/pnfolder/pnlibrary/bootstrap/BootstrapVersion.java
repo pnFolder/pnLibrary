@@ -74,7 +74,12 @@ public final class BootstrapVersion {
         boolean rightNumeric = numeric(right);
         if (leftNumeric && rightNumeric) return compareNumeric(left, right);
         if (leftNumeric != rightNumeric) return leftNumeric ? -1 : 1;
-        return left.compareTo(right);
+        return rankWord(left).compareTo(rankWord(right));
+    }
+
+    /** The word {@code dev} is the least mature channel, so it sorts before every other word. */
+    private static String rankWord(String word) {
+        return "dev".equals(word) ? "" : word;
     }
 
     private static int compareNumeric(String left, String right) {
