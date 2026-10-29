@@ -18,7 +18,33 @@ internal interface RuntimeResources {
 
     /** The notice for an administrator who has just joined: recent problems from the journal, or nothing. */
     fun journalJoinNotice(): List<Component>
+
+    /** Journal records of the last [sinceHours] hours, equal events merged, newest first; [level] is `info`, `warning`, `error` or `null`. */
+    fun journalGroups(level: String?, sinceHours: Int, limit: Int): List<JournalGroup>
 }
+
+/**
+ * Equal journal events merged into one line, for menus.
+ *
+ * @property id the id that `/pn events view <id>` opens
+ * @property level `info`, `warning` or `error`
+ * @property source plugin or component that wrote the event
+ * @property message the first line of the event text
+ * @property count how many times it happened in the window
+ * @property lastMillis when it happened last, in epoch milliseconds
+ */
+data class JournalGroup(
+    val id: String,
+    val level: String,
+    val source: String,
+    val message: String,
+    val count: Int,
+    val lastMillis: Long,
+)
+
+/** Journal events of the last [sinceHours] hours for a menu; empty when the runtime has no journal. */
+fun PnLibrary.journalGroups(level: String? = null, sinceHours: Int = 24, limit: Int = 200): List<JournalGroup> =
+    (this as? RuntimeResources)?.journalGroups(level, sinceHours, limit).orEmpty()
 
 /**
  * Native pnLibrary integration only. Consumer plugins obtain tasks through ModuleContext.tasks.

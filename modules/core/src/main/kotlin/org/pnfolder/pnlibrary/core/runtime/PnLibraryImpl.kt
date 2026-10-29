@@ -32,8 +32,10 @@ import org.pnfolder.pnlibrary.core.diagnostics.DiagnosticsRegistry
 import org.pnfolder.pnlibrary.core.diagnostics.diagnosticCommand
 import org.pnfolder.pnlibrary.core.events.EventHistory
 import org.pnfolder.pnlibrary.core.events.EventServiceImpl
+import org.pnfolder.pnlibrary.core.journal.JournalLevel
 import org.pnfolder.pnlibrary.core.journal.joinDigest
 import org.pnfolder.pnlibrary.core.journal.journalCommand
+import org.pnfolder.pnlibrary.core.lifecycle.JournalGroup
 import org.pnfolder.pnlibrary.core.lifecycle.ResourceCleanup
 import org.pnfolder.pnlibrary.core.lifecycle.RuntimeResources
 import org.pnfolder.pnlibrary.core.lifecycle.journalJoinNotice
@@ -170,6 +172,21 @@ internal class PnLibraryImpl(
             joinDigest(journal.read(sinceMillis = since, limit = 5_000), now, config.journalJoinNoticeHours, startedAtMillis, EVENTS_COMMAND)
         }.getOrDefault(emptyList())
     }
+    override fun journalGroups(level: String?, sinceHours: Int, limit: Int): List<JournalGroup> {
+        val since = System.currentTimeMillis() - Duration.ofHours(sinceHours.toLong()).toMillis()
+        val levels = JournalLevel.values().filter { level == null || it.fileGroup == level }.toSet()
+        return runCatchingNonFatal {
+            journal.read(levels = levels, sinceMillis = since, limit = JOURNAL_SCAN)
+                .groupBy { it.fingerprint }
+                .map { (id, group) ->
+                    val newest = group.maxByOrNull { it.timeMillis }!!
+                    JournalGroup(id, newest.level.fileGroup, newest.source, newest.message.lineSequence().first(), group.size, newest.timeMillis)
+                }
+                .sortedByDescending { it.lastMillis }
+                .take(limit)
+        }.getOrDefault(emptyList())
+    }
+
     private val commandService get() = platformServices.commands
     override fun registerRuntimeCommand(command: CommandDefinition): CommandRegistration =
         commandService.register(owner, command)
@@ -287,5 +304,6 @@ internal class PnLibraryImpl(
     private companion object {
         /** How the journal command is written in chat buttons and notices: it lives under `/pn` on every platform. */
         const val EVENTS_COMMAND = "/pn events"
+        const val JOURNAL_SCAN = 5_000
     }
 }
