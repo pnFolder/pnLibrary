@@ -22,6 +22,8 @@ import org.pnfolder.pnlibrary.bukkit.inventory.Menu
 import org.pnfolder.pnlibrary.bukkit.inventory.MenuBuilder
 import org.pnfolder.pnlibrary.bukkit.inventory.MenuClickHandler
 import org.pnfolder.pnlibrary.bukkit.inventory.Menus
+import org.pnfolder.pnlibrary.core.lifecycle.JournalGroup
+import org.pnfolder.pnlibrary.core.lifecycle.journalGroups
 import org.pnfolder.pnlibrary.core.updates.catalog.CatalogLabels
 import org.pnfolder.pnlibrary.core.updates.catalog.UpdateCatalogView
 import org.pnfolder.pnlibrary.core.updates.policy.UpdateDefaults
@@ -61,7 +63,8 @@ internal class PluginsMenu(
     fun home(player: Player) {
         val snapshots = snapshots()
         val pending = snapshots.count { it.state in CatalogLabels.PENDING }
-        val problems = snapshots.count { it.state in CatalogLabels.PROBLEMS }
+        val errors = library.journalGroups("error", JOURNAL_HOURS, JOURNAL_LIMIT).size
+        val problems = snapshots.count { it.state in CatalogLabels.PROBLEMS } + errors
         val plan = library.updates.currentPlan().orElse(null)
         val builder = frame(Menus.chest(title("Главная")).rows(HOME_ROWS), HOME_ROWS)
         builder.slot(
@@ -93,8 +96,16 @@ internal class PluginsMenu(
         builder.button(15,
             section(Icons.PROBLEMS, "BARRIER", "Проблемы", "Ошибки проверки и блокировки обновлений.", "Найдено" to "$problems"),
             go { plugins(it, Filter.PROBLEMS, 0) })
-        builder.button(30, section(Icons.HISTORY, "BOOK", "История", "Проверки, обновления, откаты и ошибки."), go { history(it, null, 0) })
-        builder.button(32, section(Icons.BACKUPS, "CHEST", "Резервные копии", "Откат к сохранённым версиям плагинов."), go { backups(it, 0) })
+        builder.button(29, section(Icons.HISTORY, "BOOK", "История", "Проверки, обновления, откаты и ошибки."), go { history(it, null, 0) })
+        builder.button(
+            31,
+            section(
+                Icons.PROBLEMS, "BOOK", "Журнал событий", "Ошибки и предупреждения сервера за последние сутки.",
+                "Ошибок" to if (errors > 0) "✖ $errors" else "✔ нет",
+            ),
+            go { journal(it, null, 0) },
+        )
+        builder.button(33, section(Icons.BACKUPS, "CHEST", "Резервные копии", "Откат к сохранённым версиям плагинов."), go { backups(it, 0) })
         builder.button(
             24,
             icon(Icons.CHECK, "COMPASS", "Проверить всё", Style.lore(listOf("Спросить каталоги релизов прямо сейчас."), emptyList(), Style.left("проверить"))),
@@ -146,7 +157,11 @@ internal class PluginsMenu(
                 },
             )
         }
-        val rows = if (filter == Filter.ALL) shown + unmanaged(updatable.map { it.product.lowercase() }.toSet()) else shown
+        val rows = when (filter) {
+            Filter.ALL -> shown + unmanaged(updatable.map { it.product.lowercase() }.toSet())
+            Filter.PROBLEMS -> shown + journalRows("error")
+            Filter.UPDATES -> shown
+        }
         list(player, filter.title, rows, page, PAGE_SIZE, { who, to -> plugins(who, filter, to) }, { home(it) }, "Здесь пусто")
     }
 
@@ -333,6 +348,54 @@ internal class PluginsMenu(
         }
         builder.button(SMALL_BACK, backItem("Отмена"), go { backups(it, 0) })
         show(player, builder.build())
+    }
+
+    /** The journal of the last day: equal events merged, each opening its card in the chat. */
+    private fun journal(player: Player, level: String?, page: Int) {
+        val title = "Журнал" + (level?.let { " " + LEVELS.getValue(it) } ?: "")
+        val next = LEVEL_CYCLE[(LEVEL_CYCLE.indexOf(level) + 1) % LEVEL_CYCLE.size]
+        val cycle = icon(
+            Icons.SETTINGS, "HOPPER", "Уровень: ${level?.let { LEVELS.getValue(it) } ?: "все"}",
+            Style.lore(listOf("Какие события показывать."), listOf("Дальше" to (next?.let { LEVELS.getValue(it) } ?: "все")), Style.left("переключить")),
+        )
+        list(
+            player, title, journalRows(level), page, PAGE_SIZE, { who, to -> journal(who, level, to) }, { home(it) }, "За сутки событий нет",
+            extra = { it.button(FILTER, cycle, go { who -> journal(who, next, 0) }) },
+        )
+    }
+
+    private fun journalRows(level: String?): List<Row> = library.journalGroups(level, JOURNAL_HOURS, JOURNAL_LIMIT).map { group ->
+        Row(
+            journalItem(group),
+            goClick { who, click ->
+                who.closeInventory()
+                who.performCommand(
+                    when (click) {
+                        ClickType.RIGHT -> "pn events times ${group.id}"
+                        ClickType.SHIFT_LEFT -> "pn events full ${group.id}"
+                        else -> "pn events view ${group.id}"
+                    },
+                )
+            },
+        )
+    }
+
+    private fun journalItem(group: JournalGroup): ItemStack {
+        val material = when (group.level) {
+            "error" -> "BARRIER"
+            "warning" -> "GOLD_INGOT"
+            else -> "PAPER"
+        }
+        val parameters = listOf(
+            "Источник" to group.source,
+            "Когда" to TIME.format(java.time.Instant.ofEpochMilli(group.lastMillis)),
+            "Повторов" to "${group.count}",
+        )
+        val lore = Style.lore(
+            listOf(group.message.take(MESSAGE_PREVIEW)), parameters,
+            Style.left("подробности в чате"), Style.right("все повторы"), Style.shiftLeft("полный текст ошибки"),
+        )
+        return icon(null, material, "${LEVELS.getValue(group.level)}: ${group.source}", lore, danger = group.level == "error", warn = group.level == "warning")
     }
 
     private fun settings(player: Player) {
@@ -546,6 +609,7 @@ internal class PluginsMenu(
         back: (Player) -> Unit,
         emptyText: String,
         total: Int = rows.size,
+        extra: (MenuBuilder) -> Unit = {},
     ) {
         val pages = ((total - 1) / perPage + 1).coerceAtLeast(1)
         val current = page.coerceIn(0, pages - 1)
@@ -570,6 +634,7 @@ internal class PluginsMenu(
             icon(Icons.CHECK, "COMPASS", "Обновить список", Style.lore(listOf("Перечитать данные заново."), emptyList(), Style.left("обновить"))),
             go { reopen(it, current) },
         )
+        extra(builder)
         builder.button(CLOSE, closeItem(), go { it.closeInventory() })
         show(player, builder.build())
     }
@@ -750,9 +815,15 @@ internal class PluginsMenu(
     }
 
     private fun item(material: String, name: String, lore: List<String> = emptyList(), alternative: String? = null): ItemStack {
-        val type = listOfNotNull(material, alternative).firstNotNullOfOrNull { Material.matchMaterial(it) } ?: Material.PAPER
+        val type = listOfNotNull(material, alternative).firstNotNullOfOrNull { resolve(it) } ?: Material.PAPER
         return decorate(ItemStack(type), name, lore)
     }
+
+    /** Looks a material up by its current name, then by the name the server keeps for older ones. */
+    private fun resolve(name: String): Material? =
+        runCatching { Material.getMaterial(name) }.getOrNull()
+            ?: Material.matchMaterial(name)
+            ?: runCatching { Material.getMaterial("LEGACY_$name") }.getOrNull()
 
     private fun decorate(stack: ItemStack, name: String, lore: List<String>): ItemStack = stack.also {
         it.itemMeta?.let { meta ->
@@ -858,6 +929,12 @@ internal class PluginsMenu(
         const val PREVIOUS = 48
         const val NEXT = 50
         const val REFRESH = 49
+        const val FILTER = 47
+        const val JOURNAL_HOURS = 24
+        const val JOURNAL_LIMIT = 200
+        const val MESSAGE_PREVIEW = 70
+        val LEVEL_CYCLE = listOf<String?>(null, "error", "warning", "info")
+        val LEVELS = mapOf("error" to "ошибки", "warning" to "предупреждения", "info" to "сведения")
         const val CLOSE = 53
         const val BLOCKER_LINES = 3
         const val CHECK_REOPEN_TICKS = 60L
