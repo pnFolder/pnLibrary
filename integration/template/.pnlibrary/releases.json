@@ -1,5 +1,146 @@
 {
   "schema": 1,
   "product": "myplugin",
-  "releases": []
+  "releases": [
+    {
+      "version": "1.2.0-dev.3",
+      "channel": "dev",
+      "description": "Сборка разработки: третья после ветвления 1.2.0.",
+      "changelogUrl": "https://github.com/Owner/MyPlugin/blob/main/.pnlibrary/changelogs/1.2.0-dev.3.md",
+      "publishedAt": "2026-10-25T12:00:00Z",
+      "api": {
+        "minimum": 8,
+        "maximum": 8
+      },
+      "artifacts": [
+        {
+          "file": "MyPlugin-1.2.0-dev.3.jar",
+          "platform": "BUKKIT",
+          "url": "https://github.com/Owner/MyPlugin/releases/download/v1.2.0-dev.3/MyPlugin-1.2.0-dev.3.jar",
+          "sha256": "49bc55bcc1eea415c692375a73da6585a5a8a16655c646641b184fe77e156a3b",
+          "size": 180000
+        }
+      ]
+    },
+    {
+      "version": "1.2.0-dev.2",
+      "channel": "dev",
+      "description": "Сборка разработки: вторая.",
+      "changelogUrl": "https://github.com/Owner/MyPlugin/blob/main/.pnlibrary/changelogs/1.2.0-dev.2.md",
+      "publishedAt": "2026-10-22T12:00:00Z",
+      "api": {
+        "minimum": 8,
+        "maximum": 8
+      },
+      "artifacts": [
+        {
+          "file": "MyPlugin-1.2.0-dev.2.jar",
+          "platform": "BUKKIT",
+          "url": "https://github.com/Owner/MyPlugin/releases/download/v1.2.0-dev.2/MyPlugin-1.2.0-dev.2.jar",
+          "sha256": "a5d90b9493db0adb6d6e89474f0102ab7afba856524f614c67585567ac40308c",
+          "size": 181500
+        }
+      ]
+    },
+    {
+      "version": "1.2.0-rc.1",
+      "channel": "rc",
+      "description": "Кандидат в релиз 1.2.0.",
+      "changelogUrl": "https://github.com/Owner/MyPlugin/blob/main/.pnlibrary/changelogs/1.2.0-rc.1.md",
+      "publishedAt": "2026-10-20T12:00:00Z",
+      "api": {
+        "minimum": 8,
+        "maximum": 8
+      },
+      "artifacts": [
+        {
+          "file": "MyPlugin-1.2.0-rc.1.jar",
+          "platform": "BUKKIT",
+          "url": "https://github.com/Owner/MyPlugin/releases/download/v1.2.0-rc.1/MyPlugin-1.2.0-rc.1.jar",
+          "sha256": "0554e683e58c39f99de50b9cc41da255b556ee41e5e8b72942ce6727e5eeccba",
+          "size": 183000
+        }
+      ]
+    },
+    {
+      "version": "1.2.0-beta.1",
+      "channel": "beta",
+      "description": "Бета 1.2.0.",
+      "changelogUrl": "https://github.com/Owner/MyPlugin/blob/main/.pnlibrary/changelogs/1.2.0-beta.1.md",
+      "publishedAt": "2026-10-18T12:00:00Z",
+      "api": {
+        "minimum": 8,
+        "maximum": 8
+      },
+      "artifacts": [
+        {
+          "file": "MyPlugin-1.2.0-beta.1.jar",
+          "platform": "BUKKIT",
+          "url": "https://github.com/Owner/MyPlugin/releases/download/v1.2.0-beta.1/MyPlugin-1.2.0-beta.1.jar",
+          "sha256": "676196c0f957cdaf276e7d847f258e5a1d8863b0d762dbf465b51aedfb2a55ba",
+          "size": 184500
+        }
+      ]
+    },
+    {
+      "version": "1.2.0-alpha.1",
+      "channel": "alpha",
+      "description": "Альфа 1.2.0.",
+      "changelogUrl": "https://github.com/Owner/MyPlugin/blob/main/.pnlibrary/changelogs/1.2.0-alpha.1.md",
+      "publishedAt": "2026-10-17T12:00:00Z",
+      "api": {
+        "minimum": 8,
+        "maximum": 8
+      },
+      "artifacts": [
+        {
+          "file": "MyPlugin-1.2.0-alpha.1.jar",
+          "platform": "BUKKIT",
+          "url": "https://github.com/Owner/MyPlugin/releases/download/v1.2.0-alpha.1/MyPlugin-1.2.0-alpha.1.jar",
+          "sha256": "56c75a9d717d25009671407ad3975cbee60b565e91d749c319467188cc06f833",
+          "size": 186000
+        }
+      ]
+    },
+    {
+      "version": "1.1.0-stable.1",
+      "channel": "stable",
+      "description": "Стабильный релиз 1.1.0: ссылки на changelog и задержки задач в тиках.",
+      "changelogUrl": "https://github.com/Owner/MyPlugin/blob/main/.pnlibrary/changelogs/1.1.0-stable.1.md",
+      "publishedAt": "2026-10-16T12:00:00Z",
+      "api": {
+        "minimum": 8,
+        "maximum": 8
+      },
+      "artifacts": [
+        {
+          "file": "MyPlugin-1.1.0-stable.1.jar",
+          "platform": "BUKKIT",
+          "url": "https://github.com/Owner/MyPlugin/releases/download/v1.1.0-stable.1/MyPlugin-1.1.0-stable.1.jar",
+          "sha256": "1cb8b36e731bfd6db5a3e417e61002086d998fe5c8ac2d1cceff0626f144cd1f",
+          "size": 187500
+        }
+      ]
+    },
+    {
+      "version": "1.0.0-stable.1",
+      "channel": "stable",
+      "description": "Первый тестовый стабильный релиз.",
+      "changelogUrl": "https://github.com/Owner/MyPlugin/blob/main/.pnlibrary/changelogs/1.0.0-stable.1.md",
+      "publishedAt": "2026-10-01T12:00:00Z",
+      "api": {
+        "minimum": 8,
+        "maximum": 8
+      },
+      "artifacts": [
+        {
+          "file": "MyPlugin-1.0.0-stable.1.jar",
+          "platform": "BUKKIT",
+          "url": "https://github.com/Owner/MyPlugin/releases/download/v1.0.0-stable.1/MyPlugin-1.0.0-stable.1.jar",
+          "sha256": "f3885d38fe05a7fdceba88ef3351ab924d59879f2d03c0e1a3729af7a473d5da",
+          "size": 189000
+        }
+      ]
+    }
+  ]
 }

@@ -10,7 +10,7 @@
     └── <версия>.md      описание версии, по файлу на каждый релиз из releases.json
 ```
 
-Образец списка со всеми каналами и его changelog-файлы лежат в [integration/.pnlibrary](../integration/.pnlibrary).
+Заполненный образец со всеми каналами и changelog-файлами лежит в [integration/template/.pnlibrary](../integration/template/.pnlibrary).
 
 Репозиторий читается с ветки `main`. Файлы нужно закоммитить в неё до выхода релиза.
 
