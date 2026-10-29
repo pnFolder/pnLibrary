@@ -1915,6 +1915,23 @@ public abstract interface annotation class org/pnfolder/pnlibrary/api/events/Eve
 	public abstract fun priority ()I
 }
 
+public final class org/pnfolder/pnlibrary/api/events/EventHour {
+	public fun <init> (Ljava/time/LocalDateTime;Ljava/lang/String;JJ)V
+	public final fun component1 ()Ljava/time/LocalDateTime;
+	public final fun component2 ()Ljava/lang/String;
+	public final fun component3 ()J
+	public final fun component4 ()J
+	public final fun copy (Ljava/time/LocalDateTime;Ljava/lang/String;JJ)Lorg/pnfolder/pnlibrary/api/events/EventHour;
+	public static synthetic fun copy$default (Lorg/pnfolder/pnlibrary/api/events/EventHour;Ljava/time/LocalDateTime;Ljava/lang/String;JJILjava/lang/Object;)Lorg/pnfolder/pnlibrary/api/events/EventHour;
+	public fun equals (Ljava/lang/Object;)Z
+	public final fun getCalls ()J
+	public final fun getDenied ()J
+	public final fun getEventType ()Ljava/lang/String;
+	public final fun getHour ()Ljava/time/LocalDateTime;
+	public fun hashCode ()I
+	public fun toString ()Ljava/lang/String;
+}
+
 public final class org/pnfolder/pnlibrary/api/events/EventInfo {
 	public fun <init> (Ljava/lang/String;IJJ)V
 	public final fun component1 ()Ljava/lang/String;
@@ -1943,6 +1960,8 @@ public abstract interface class org/pnfolder/pnlibrary/api/events/EventInspector
 	public abstract fun getHistoryDays ()I
 	public abstract fun history (Ljava/lang/String;)Ljava/util/List;
 	public static synthetic fun history$default (Lorg/pnfolder/pnlibrary/api/events/EventInspector;Ljava/lang/String;ILjava/lang/Object;)Ljava/util/List;
+	public fun hourly (Ljava/lang/String;)Ljava/util/List;
+	public static synthetic fun hourly$default (Lorg/pnfolder/pnlibrary/api/events/EventInspector;Ljava/lang/String;ILjava/lang/Object;)Ljava/util/List;
 	public fun listenerCount (Ljava/lang/Class;)I
 	public abstract fun listeners ()Ljava/util/List;
 	public abstract fun listeners (Ljava/lang/Class;)Ljava/util/List;

@@ -56,6 +56,15 @@ interface EventInspector {
     val historyDays: Int
 
     /**
+     * Per-hour counters of the last [historyDays] days (at most 30), newest first and then by event name; only
+     * [eventType] when given. Empty when the history is off.
+     *
+     * @param eventType class name of one event, or `null` for all
+     * @return one entry per hour and event that was called
+     */
+    fun hourly(eventType: String? = null): List<EventHour> = emptyList()
+
+    /**
      * Starts recording every dispatch of [eventType] and its subclasses, keeping the latest
      * [EventTrace]s up to [capacity]. Tracing costs nothing for event types that are not traced.
      * Results are compared through `toString()`, so give a custom [ResultedEvent.Result] a readable one.

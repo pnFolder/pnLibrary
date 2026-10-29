@@ -29,6 +29,7 @@ import org.pnfolder.pnlibrary.common.time.DisplayZone
  * | `/pn bus listeners [page]` | every listener of every plugin |
  * | `/pn bus slow [page]` | listeners that ran, the slowest on average first |
  * | `/pn bus top [calls\|denied]` | the ten most called (or most denied) events |
+ * | `/pn bus range [1h\|24h\|7d\|30d]` | calls in the last hour, day, week or month, busiest first |
  * | `/pn bus errors [page]` | listeners that threw, the most failures first |
  * | `/pn bus plugin <id> [page]` | the listeners of one plugin with time and failures |
  * | `/pn bus trace <event>`, `trace off <event>` | switches the recording of an event on or off |
@@ -74,6 +75,10 @@ class EventBusCommand(private val library: PnLibrary) {
             executes { top(it, denied = false) }
             literal("calls") { executes { top(it, denied = false) } }
             literal("denied") { executes { top(it, denied = true) } }
+        }
+        literal("range") {
+            executes { range(it, "24h") }
+            RANGES.keys.forEach { word -> literal(word) { executes { range(it, word) } } }
         }
         literal("errors") {
             executes { slowOrErrors(it, 1, errors = true) }
@@ -331,6 +336,37 @@ class EventBusCommand(private val library: PnLibrary) {
         lines.forEach(context.sender::send)
     }
 
+    private fun range(context: CommandContext, word: String) {
+        val kit = kit(context)
+        val hours = RANGES.getValue(word)
+        val since = java.time.LocalDateTime.now(DisplayZone.zone).truncatedTo(java.time.temporal.ChronoUnit.HOURS).minusHours(hours - 1L)
+        val totals = HashMap<String, LongArray>()
+        bus.hourly().filter { !it.hour.isBefore(since) }.forEach {
+            val sums = totals.getOrPut(it.eventType) { LongArray(2) }
+            sums[0] += it.calls
+            sums[1] += it.denied
+        }
+        val ranked = totals.entries.sortedByDescending { it.value[0] }.take(TOP_SIZE)
+        val busiest = ranked.firstOrNull()?.value?.get(0) ?: 0
+        val lines = mutableListOf(
+            kit.blank(),
+            kit.header("Вызовы за $word", kit.text("${totals.values.sumOf { it[0] }}", ChatPalette.LABEL)),
+            kit.blank(),
+        )
+        if (bus.historyDays <= 0) lines += kit.note("История выключена.")
+        else if (ranked.isEmpty()) lines += kit.note("За этот период событий не было.")
+        ranked.forEach { (name, sums) ->
+            var line = kit.text("   ").append(kit.text(bar(kit, sums[0], busiest), ChatPalette.SOFT))
+                .append(kit.text(" ${sums[0]}  ", ChatPalette.LABEL)).append(kit.text(shortName(name), ChatPalette.TEXT))
+                .append(kit.text("  ${"%.1f".format(sums[0].toDouble() / hours)}/ч", ChatPalette.FAINT))
+            if (sums[1] > 0) line = line.append(kit.text("  отказов ${sums[1]}", ChatPalette.DANGER))
+            lines += line
+        }
+        lines += kit.blank()
+        lines += footer(kit, ROOT, kit.button("назад", ROOT, "К списку событий", ChatPalette.ACCENT))
+        lines.forEach(context.sender::send)
+    }
+
     private fun pluginView(context: CommandContext, id: String, requestedPage: Int) {
         val all = bus.listeners().filter { it.plugin.toString().equals(id, ignoreCase = true) }.sortedByDescending { it.totalNanos }
         listenerPage(context, requestedPage, all, "Плагин $id", "У плагина нет слушателей.", "$ROOT plugin $id")
@@ -572,6 +608,7 @@ class EventBusCommand(private val library: PnLibrary) {
             "$ROOT view <событие>" to "карточка события",
             "$ROOT listeners" to "все слушатели",
             "$ROOT slow [страница]" to "самые медленные слушатели",
+            "$ROOT range [1h|24h|7d|30d]" to "вызовы за период",
             "$ROOT top [calls|denied]" to "самые частые события",
             "$ROOT errors [страница]" to "слушатели с ошибками",
             "$ROOT plugin <плагин>" to "слушатели одного плагина",
@@ -604,6 +641,7 @@ class EventBusCommand(private val library: PnLibrary) {
         private const val ROOT = "/pn bus"
         private const val PAGE_SIZE = 8
         private const val TOP_SIZE = 10
+        private val RANGES = linkedMapOf("1h" to 1, "24h" to 24, "7d" to 168, "30d" to 720)
         private const val MAX_TRACES = 6
         private const val DAYS_PER_PAGE = 7
         private const val EVENTS_PER_PAGE = 6

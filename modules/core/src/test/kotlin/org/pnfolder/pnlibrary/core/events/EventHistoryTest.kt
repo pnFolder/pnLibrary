@@ -36,4 +36,25 @@ class EventHistoryTest {
         off.record("a.Buy", denied = false)
         assertTrue(off.entries().isEmpty())
     }
+
+    @Test
+    fun `counts calls per hour and survives a restart`(@TempDir dir: Path) {
+        val file = dir.resolve("history.tsv")
+        EventHistory(file, 30).use { history ->
+            history.record("a.Buy", denied = false)
+            history.record("a.Buy", denied = true)
+        }
+        val hour = EventHistory(file, 30).hourly("a.Buy").single()
+        assertEquals(2L, hour.calls)
+        assertEquals(1L, hour.denied)
+        assertEquals(java.time.LocalDateTime.now().truncatedTo(java.time.temporal.ChronoUnit.HOURS), hour.hour)
+    }
+
+    @Test
+    fun `drops hours older than 30 days`(@TempDir dir: Path) {
+        val file = dir.resolve("history.tsv")
+        val old = java.time.LocalDateTime.now().minusDays(40).truncatedTo(java.time.temporal.ChronoUnit.HOURS)
+        Files.write(file, "$old\ta.Buy\t5\t0\n".toByteArray(Charsets.UTF_8))
+        assertTrue(EventHistory(file, 60).hourly().isEmpty())
+    }
 }
