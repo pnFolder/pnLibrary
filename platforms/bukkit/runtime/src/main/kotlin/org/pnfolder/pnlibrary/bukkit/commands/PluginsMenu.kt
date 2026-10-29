@@ -31,6 +31,8 @@ import org.pnfolder.pnlibrary.bukkit.inventory.MenuClickHandler
 import org.pnfolder.pnlibrary.bukkit.inventory.Menus
 import org.pnfolder.pnlibrary.common.time.DisplayZone
 import org.pnfolder.pnlibrary.core.commands.TaskLabels
+import org.pnfolder.pnlibrary.core.commands.TaskPeriod
+import org.pnfolder.pnlibrary.core.commands.TaskState
 import org.pnfolder.pnlibrary.core.lifecycle.JournalGroup
 import org.pnfolder.pnlibrary.core.lifecycle.TaskControl
 import org.pnfolder.pnlibrary.core.lifecycle.cancelTask
@@ -81,15 +83,6 @@ internal class PluginsMenu(
         CALLED("вызывались", { it.calls > 0 }),
         DENIED("с отказами", { it.denied > 0 }),
         TODAY("сегодня", { info -> info.lastCalledAt?.atZone(DisplayZone.zone)?.toLocalDate() == LocalDate.now(DisplayZone.zone) }),
-    }
-
-    private enum class TaskFilter(val label: String, val keep: (TaskSnapshot) -> Boolean) {
-        TODAY("сегодня", { TaskLabels.isToday(it) || TaskLabels.isActive(it.status) }),
-        OLDER("раньше", { !TaskLabels.isToday(it) && !TaskLabels.isActive(it.status) }),
-        ALL("все", { true }),
-        ACTIVE("работают", { TaskLabels.isActive(it.status) }),
-        FAILED("с ошибками", { it.status == TaskStatus.FAILED || it.lastFailure != null }),
-        DONE("закончены", { it.status == TaskStatus.COMPLETED || it.status == TaskStatus.CANCELLED }),
     }
 
     private class Row(val stack: ItemStack, val click: MenuClickHandler? = null)
@@ -151,7 +144,7 @@ internal class PluginsMenu(
         builder.button(
             32,
             section(Icons.CLOCK, "CLOCK", "Задачи плагинов", "Что плагины делают по расписанию и для чего.", "Всего" to "${library.taskSnapshots().size}"),
-            go { allowed(it, TASKS) { tasks(it, TaskFilter.TODAY, 0) } },
+            go { allowed(it, TASKS) { tasks(it, TaskPeriod.TODAY, TaskState.ALL, 0) } },
         )
         builder.button(
             31,
@@ -689,23 +682,37 @@ internal class PluginsMenu(
 
     // --- tasks ---------------------------------------------------------------------------------------------------
 
-    /** Every task of every plugin, newest first, with a filter that shows all its choices at once. */
-    private fun tasks(player: Player, filter: TaskFilter, page: Int) {
-        val next = TaskFilter.values()[(filter.ordinal + 1) % TaskFilter.values().size]
+    /** Every task of every plugin, newest first, with two switches that show all their choices: the date and the state. */
+    private fun tasks(player: Player, period: TaskPeriod, state: TaskState, page: Int) {
+        val nextPeriod = TaskPeriod.values()[(period.ordinal + 1) % TaskPeriod.values().size]
+        val nextState = TaskState.values()[(state.ordinal + 1) % TaskState.values().size]
         val all = library.taskSnapshots()
-        val rows = all.filter(filter.keep).sortedByDescending { TaskLabels.activity(it) }.map { task ->
-            Row(taskItem(task), go { who -> taskDetail(who, task.id.value) { tasks(it, filter, page) } })
+        val inPeriod = all.filter(period::keep)
+        val rows = inPeriod.filter(state::keep).sortedByDescending { TaskLabels.activity(it) }.map { task ->
+            Row(taskItem(task), go { who -> taskDetail(who, task.id.value) { tasks(it, period, state, page) } })
         }
-        val cycle = icon(
-            Icons.SETTINGS, "HOPPER", "Фильтр задач",
+        val byDate = icon(
+            Icons.CLOCK, "CLOCK", "Когда",
+            Style.lore(
+                listOf("Задачи за какое время показывать."), emptyList(), Style.left("переключить"),
+                extra = Style.choices(TaskPeriod.values().map { "${it.label} ${all.count(it::keep)}" }, period.ordinal),
+            ),
+            alternative = "WATCH",
+        )
+        val byState = icon(
+            Icons.SETTINGS, "HOPPER", "Какие",
             Style.lore(
                 listOf("Какие задачи показывать."), emptyList(), Style.left("переключить"),
-                extra = Style.choices(TaskFilter.values().map { "${it.label} ${all.count(it.keep)}" }, filter.ordinal),
+                extra = Style.choices(TaskState.values().map { "${it.label} ${inPeriod.count(it::keep)}" }, state.ordinal),
             ),
         )
         list(
-            player, "Задачи: ${filter.label}", rows, page, PAGE_SIZE, { who, to -> tasks(who, filter, to) }, { home(it) }, "Задач нет",
-            extra = { it.button(FILTER, cycle, go { who -> tasks(who, next, 0) }) },
+            player, "Задачи: ${period.label}, ${state.label}", rows, page, PAGE_SIZE, { who, to -> tasks(who, period, state, to) }, { home(it) },
+            "Задач нет",
+            extra = {
+                it.button(DATE_FILTER, byDate, go { who -> tasks(who, nextPeriod, state, 0) })
+                it.button(FILTER, byState, go { who -> tasks(who, period, nextState, 0) })
+            },
         )
     }
 
@@ -1756,6 +1763,7 @@ internal class PluginsMenu(
         const val NEXT = 50
         const val REFRESH = 49
         const val FILTER = 47
+        const val DATE_FILTER = 46
         const val JOURNAL_HOURS = 24
         const val JOURNAL_LIMIT = 200
         const val MESSAGE_PREVIEW = 70

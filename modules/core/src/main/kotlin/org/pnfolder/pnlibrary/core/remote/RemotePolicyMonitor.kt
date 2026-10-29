@@ -50,7 +50,7 @@ internal class RemotePolicyMonitor(
         tasks.schedule(
             TaskSpec.builder()
                 .name("remote policy: ${metadata.id.value}")
-                .description("Проверяет, разрешён ли запуск плагина по удалённой политике.")
+                .description("Проверка безопасности.")
                 // Stopping the check would let a banned plugin keep running.
                 .cancellable(false)
                 .runnableNow(false)

@@ -25,6 +25,58 @@ import java.time.LocalDate
 import java.time.format.DateTimeFormatter
 import java.util.Locale
 
+/** Which tasks to show by date; tasks that are still active always count as current. */
+enum class TaskPeriod(val word: String, val label: String) {
+    /** Something happened today, in the configured time zone. */
+    TODAY("today", "сегодня"),
+
+    /** Something happened in the last seven days. */
+    WEEK("week", "7 дней"),
+
+    /** Finished before today. */
+    OLDER("older", "раньше"),
+
+    /** Any date. */
+    ANY("any", "любое время"),
+    ;
+
+    /** Whether [task] belongs to this period. */
+    fun keep(task: TaskSnapshot): Boolean = when (this) {
+        TODAY -> TaskLabels.isToday(task) || TaskLabels.isActive(task.status)
+        WEEK -> TaskLabels.activity(task).isAfter(Instant.now().minus(Duration.ofDays(WEEK_DAYS))) || TaskLabels.isActive(task.status)
+        OLDER -> !TaskLabels.isToday(task) && !TaskLabels.isActive(task.status)
+        ANY -> true
+    }
+
+    private companion object {
+        const val WEEK_DAYS = 7L
+    }
+}
+
+/** Which tasks to show by state. */
+enum class TaskState(val word: String, val label: String) {
+    /** Every state. */
+    ALL("all", "все"),
+
+    /** Waiting or running. */
+    ACTIVE("active", "работают"),
+
+    /** Failed, or failed at least once. */
+    FAILED("failed", "с ошибками"),
+
+    /** Completed or cancelled. */
+    DONE("done", "закончены"),
+    ;
+
+    /** Whether [task] is in this state. */
+    fun keep(task: TaskSnapshot): Boolean = when (this) {
+        ALL -> true
+        ACTIVE -> TaskLabels.isActive(task.status)
+        FAILED -> task.status == TaskStatus.FAILED || task.lastFailure != null
+        DONE -> task.status == TaskStatus.COMPLETED || task.status == TaskStatus.CANCELLED
+    }
+}
+
 /** Russian words, colours and times for tasks, shared by `/pn tasks` and the menu. */
 object TaskLabels {
     /** The state of [status] in words. */
@@ -123,7 +175,7 @@ object TaskLabels {
  *
  * | Command | What it shows |
  * |---|---|
- * | `/pn tasks [today\|older\|all\|active\|failed\|done] [page]` | tasks with tabs; today's by default; click a row to open it |
+ * | `/pn tasks [today\|week\|older\|any] [all\|active\|failed\|done] [page]` | tasks with tabs by date and by state; today by default |
  * | `/pn tasks view <id>` | one task: what it is for, owner, how it runs, times, rights and the last failure |
  * | `/pn tasks run <id>` | starts a waiting task at once, unless its plugin forbids it |
  * | `/pn tasks cancel <id>` | stops a task that has not finished, unless its plugin forbids it |
@@ -137,11 +189,23 @@ class TaskCommand(private val library: PnLibrary) {
         permission(PERMISSION)
         noPermissionMessage("Задачи плагинов доступны администраторам. Нужно право $PERMISSION.")
         consoleBypassesPermission()
-        executes { list(it, "today", 1) }
-        FILTERS.forEach { (word, _) ->
-            literal(word) {
-                executes { list(it, word, 1) }
-                argument("page", ArgumentType.integer()) { executes { list(it, word, it.get<Int>("page")) } }
+        executes { list(it, TaskPeriod.TODAY, TaskState.ALL, 1) }
+        TaskPeriod.values().forEach { period ->
+            literal(period.word) {
+                executes { list(it, period, TaskState.ALL, 1) }
+                argument("page", ArgumentType.integer()) { executes { list(it, period, TaskState.ALL, it.get<Int>("page")) } }
+                TaskState.values().forEach { state ->
+                    literal(state.word) {
+                        executes { list(it, period, state, 1) }
+                        argument("page", ArgumentType.integer()) { executes { list(it, period, state, it.get<Int>("page")) } }
+                    }
+                }
+            }
+        }
+        TaskState.values().forEach { state ->
+            literal(state.word) {
+                executes { list(it, TaskPeriod.ANY, state, 1) }
+                argument("page", ArgumentType.integer()) { executes { list(it, TaskPeriod.ANY, state, it.get<Int>("page")) } }
             }
         }
         literal("view") {
@@ -176,28 +240,28 @@ class TaskCommand(private val library: PnLibrary) {
 
     // --- the list ------------------------------------------------------------------------------------------------
 
-    private fun list(context: CommandContext, word: String, requestedPage: Int) {
+    private fun list(context: CommandContext, period: TaskPeriod, state: TaskState, requestedPage: Int) {
         val kit = kit(context)
         val all = library.taskSnapshots().sortedByDescending { TaskLabels.activity(it) }
-        val shown = all.filter(FILTERS.first { it.first == word }.second)
+        val inPeriod = all.filter(period::keep)
+        val shown = inPeriod.filter(state::keep)
         val pages = ((shown.size + PAGE_SIZE - 1) / PAGE_SIZE).coerceAtLeast(1)
         val page = requestedPage.coerceIn(1, pages)
         val count = "${all.size} ${RussianText.plural(all.size.toLong(), "задача", "задачи", "задач")}"
-        val lines = mutableListOf(kit.blank(), kit.header("Задачи плагинов", kit.text(count, ChatPalette.LABEL)), tabs(kit, all, word), kit.blank())
+        val lines = mutableListOf(kit.blank(), kit.header("Задачи плагинов", kit.text(count, ChatPalette.LABEL)))
+        lines += tabs(kit, "Когда", TaskPeriod.values().toList(), period, { it.label }, { p -> all.count(p::keep) }) { "$ROOT ${it.word} ${state.word}" }
+        lines += tabs(kit, "Какие", TaskState.values().toList(), state, { it.label }, { s -> inPeriod.count(s::keep) }) { "$ROOT ${period.word} ${it.word}" }
+        lines += kit.blank()
         if (shown.isEmpty()) lines += kit.note("Здесь пока пусто.", ChatPalette.FAINT)
         shown.drop((page - 1) * PAGE_SIZE).take(PAGE_SIZE).forEach { lines += row(kit, it) }
         if (pages > 1) {
             lines += kit.blank()
-            lines += pager(kit, "$ROOT $word", page, pages)
-        }
-        if (word == "today" && all.size > shown.size) {
-            lines += kit.blank()
-            lines += kit.note("Старые задачи и история: вкладка «раньше» или «все».", ChatPalette.FAINT)
+            lines += pager(kit, "$ROOT ${period.word} ${state.word}", page, pages)
         }
         if (!kit.reader.interactive) {
             lines += kit.blank()
             lines += kit.commandHints(
-                "$ROOT [today|older|all|active|failed|done] [страница]" to "список задач",
+                "$ROOT [today|week|older|any] [all|active|failed|done] [страница]" to "список задач",
                 "$ROOT view <id>" to "карточка задачи",
                 "$ROOT run <id>" to "запустить сейчас",
                 "$ROOT cancel <id>" to "остановить задачу",
@@ -206,18 +270,26 @@ class TaskCommand(private val library: PnLibrary) {
         lines.forEach(context.sender::send)
     }
 
-    private fun tabs(kit: ChatKit, all: List<TaskSnapshot>, current: String): Component {
-        var line = kit.text(" Показать: ", ChatPalette.LABEL)
-        FILTERS.forEachIndexed { index, (word, predicate) ->
+    /** One row of tabs: [title], then a button per choice with its count; the current one is marked. */
+    private fun <T> tabs(
+        kit: ChatKit,
+        title: String,
+        choices: List<T>,
+        current: T,
+        label: (T) -> String,
+        count: (T) -> Int,
+        command: (T) -> String,
+    ): Component {
+        var line = kit.text(" $title: ", ChatPalette.LABEL)
+        choices.forEachIndexed { index, choice ->
             if (index > 0) line = line.append(kit.text(" "))
-            val label = "${LABELS.getValue(word)} ${all.count(predicate)}"
-            line = line.append(
-                if (word == current) {
-                    kit.selected(label, ChatPalette.ACCENT)
-                } else {
-                    kit.option(label, "$ROOT $word", "Показать: ${LABELS.getValue(word)}", ChatPalette.SOFT)
-                },
-            )
+            val text = "${label(choice)} ${count(choice)}"
+            val tab = if (choice == current) {
+                kit.selected(text, ChatPalette.ACCENT)
+            } else {
+                kit.option(text, command(choice), "Показать: ${label(choice)}", ChatPalette.SOFT)
+            }
+            line = line.append(tab)
         }
         return line
     }
@@ -374,18 +446,5 @@ class TaskCommand(private val library: PnLibrary) {
         private const val ROOT = "/pn tasks"
         private const val PAGE_SIZE = 6
         private const val DESCRIPTION_PREVIEW = 70
-
-        private val FILTERS: List<Pair<String, (TaskSnapshot) -> Boolean>> = listOf(
-            "today" to { t: TaskSnapshot -> TaskLabels.isToday(t) || TaskLabels.isActive(t.status) },
-            "older" to { t: TaskSnapshot -> !TaskLabels.isToday(t) && !TaskLabels.isActive(t.status) },
-            "all" to { _: TaskSnapshot -> true },
-            "active" to { t: TaskSnapshot -> TaskLabels.isActive(t.status) },
-            "failed" to { t: TaskSnapshot -> t.status == TaskStatus.FAILED || t.lastFailure != null },
-            "done" to { t: TaskSnapshot -> t.status == TaskStatus.COMPLETED || t.status == TaskStatus.CANCELLED },
-        )
-        private val LABELS = mapOf(
-            "today" to "сегодня", "older" to "раньше", "all" to "все",
-            "active" to "работают", "failed" to "с ошибками", "done" to "закончены",
-        )
     }
 }

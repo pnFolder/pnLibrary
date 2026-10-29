@@ -41,8 +41,8 @@ class ProxyUpdateCommandTest {
     @Test
     fun `settings are changed by the console with an attributed actor`() {
         val updates = Updates()
-        execute(updates, Sender(), "set", "pnlibrary", "channel", "BETA")
-        assertEquals("pnlibrary" to UpdateChannel.BETA, updates.channelSet)
+        execute(updates, Sender(), "set", "pnlibrary", "channel", "DEV")
+        assertEquals("pnlibrary" to UpdateChannel.DEV, updates.channelSet)
         assertEquals(UpdateActor.Kind.CONSOLE, updates.actor?.kind)
         execute(updates, Sender(), "set", "pnlibrary", "channel", "default")
         assertEquals("pnlibrary" to null, updates.channelSet)

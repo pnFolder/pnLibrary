@@ -8,6 +8,7 @@ import org.pnfolder.pnlibrary.api.commands.ArgumentType
 import org.pnfolder.pnlibrary.api.commands.CommandContext
 import org.pnfolder.pnlibrary.api.commands.CommandNodeBuilder
 import org.pnfolder.pnlibrary.api.runtime.PnLibrary
+import org.pnfolder.pnlibrary.api.updates.UpdateChannel
 import org.pnfolder.pnlibrary.api.updates.UpdateActor
 import org.pnfolder.pnlibrary.api.updates.UpdateSnapshot
 import org.pnfolder.pnlibrary.api.updates.UpdateState
@@ -101,7 +102,7 @@ class UpdateCatalogCommands(
                 suggests { productNames() }
                 literal("channel") {
                     argument("value", ArgumentType.string()) {
-                        suggests { UpdateCatalogView.CHANNELS.map { it.name.lowercase(Locale.ROOT) } + DEFAULT_CHANNEL }
+                        suggests { available().map { it.name.lowercase(Locale.ROOT) } + DEFAULT_CHANNEL }
                         executes(::setChannel)
                     }
                 }
@@ -180,6 +181,9 @@ class UpdateCatalogCommands(
         return registration?.snapshot
     }
 
+    /** The channels an administrator may choose; only `dev` is published for now, so the others stay switched off. */
+    private fun available(): List<UpdateChannel> = if (ONLY_DEV) listOf(UpdateChannel.DEV) else UpdateCatalogView.CHANNELS
+
     /** Sets the release channel, or removes the administrator's choice with `default` so the plugin decides again. */
     private fun setChannel(context: CommandContext) {
         val value = context.get<String>("value")
@@ -191,7 +195,11 @@ class UpdateCatalogCommands(
         }
         val channel = UpdateCatalogView.CHANNELS.firstOrNull { it.name.equals(value, ignoreCase = true) }
         if (channel == null) {
-            context.sender.send(error("Неизвестный канал $value. Доступны: ${UpdateCatalogView.CHANNELS.joinToString { it.name.lowercase(Locale.ROOT) }}."))
+            context.sender.send(error("Неизвестный канал $value. Доступны: ${available().joinToString { it.name.lowercase(Locale.ROOT) }}."))
+            return
+        }
+        if (channel !in available()) {
+            context.sender.send(error("Сейчас работает только канал dev, остальные пока не выпускаются. Выберите dev или default."))
             return
         }
         change(context, "Канал", { it.channel.name.lowercase(Locale.ROOT) }, channel.name.lowercase(Locale.ROOT)) { product,
@@ -316,5 +324,8 @@ class UpdateCatalogCommands(
         val OFF = setOf("off", "false", "no", "0", "выкл")
         val DEFAULT_HOLD: Duration = Duration.ofDays(7)
         const val DEFAULT_CHANNEL = "default"
+
+        /** Whether only the `dev` channel can be chosen; set to `false` when more channels are published. */
+        const val ONLY_DEV = true
     }
 }
