@@ -50,7 +50,7 @@ internal class UpdateSettings {
 
     /** Update policy of pnLibrary itself. */
     class Library {
-        @field:ConfigComment("Канал релизов: stable, rc, beta, alpha или dev. Пока у pnLibrary нет стабильных релизов, нужен dev.")
+        @field:ConfigComment("Канал релизов pnLibrary сейчас фиксирован (dev) и это значение не применяется.")
         @field:ConfigPattern(CHANNEL_PATTERN)
         var channel: String = "dev"
 
@@ -152,7 +152,8 @@ internal class UpdateSettings {
             requireSha256 = installation.requireSha256,
         ),
         library = UpdateConfiguration.LibraryPolicy(
-            channel = UpdateChannel.valueOf(library.channel.trim().uppercase(Locale.ROOT)),
+            // TODO: применять library.channel, когда появятся стабильные релизы pnLibrary.
+            channel = UpdateChannel.DEV,
             automaticDownload = library.automaticDownload,
         ),
         pluginUpdatesEnabled = plugins.enabled,

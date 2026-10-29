@@ -6,7 +6,8 @@ import java.util.Collections
  * Platform-independent semantic version.
  *
  * Implements SemVer 2.0.0 precedence for the numeric core and arbitrary prerelease identifiers.
- * Numeric identifiers are compared numerically, so `beta.10` is newer than `beta.2`. Build
+ * Numeric identifiers are compared numerically, so `beta.10` is newer than `beta.2`. The word `dev` is the one
+ * deviation from plain SemVer: it ranks below every other word, so channels order `dev < alpha < beta < rc < stable`. Build
  * metadata is validated but omitted from this value because it does not affect precedence.
  *
  * Kotlin: `SemanticVersion.parse("2.0.0-beta.2").isAtLeast("2.0.0-beta.1")`.
@@ -51,12 +52,15 @@ class SemanticVersion private constructor(
                     .takeIf { it != 0 } ?: left.compareTo(right)
                 leftNumber -> -1
                 rightNumber -> 1
-                else -> left.compareTo(right)
+                else -> rankWord(left).compareTo(rankWord(right))
             }
             if (result != 0) return result
         }
         return 0
     }
+
+    // `dev` is the least mature channel, but alphabetically it would sit between `beta` and `rc`.
+    private fun rankWord(word: String) = if (word == "dev") "" else word
 
     /** Returns whether two versions have equal SemVer precedence. */
     override fun equals(other: Any?): Boolean = other is SemanticVersion && compareTo(other) == 0
