@@ -27,6 +27,9 @@ import org.pnfolder.pnlibrary.common.time.DisplayZone
  * | `/pn bus [all\|listened\|called\|denied] [page]` | events with tabs, listener and call counters; click a row to open it |
  * | `/pn bus view <event>` | one event: counters, a recording switch and its listeners in dispatch order |
  * | `/pn bus listeners [page]` | every listener of every plugin |
+ * | `/pn bus slow [page]` | listeners that ran, the slowest on average first |
+ * | `/pn bus errors [page]` | listeners that threw, the most failures first |
+ * | `/pn bus plugin <id> [page]` | the listeners of one plugin with time and failures |
  * | `/pn bus trace <event>`, `trace off <event>` | switches the recording of an event on or off |
  * | `/pn bus traces [event]` | recorded calls, listener by listener, with the result before and after each |
  * | `/pn bus history [page]` | one line per day: calls, different events, denials; click a day to open it |
@@ -61,6 +64,21 @@ class EventBusCommand(private val library: PnLibrary) {
         literal("listeners") {
             executes { listeners(it, 1) }
             argument("page", ArgumentType.integer()) { executes { listeners(it, it.get<Int>("page")) } }
+        }
+        literal("slow") {
+            executes { slowOrErrors(it, 1, errors = false) }
+            argument("page", ArgumentType.integer()) { executes { slowOrErrors(it, it.get<Int>("page"), errors = false) } }
+        }
+        literal("errors") {
+            executes { slowOrErrors(it, 1, errors = true) }
+            argument("page", ArgumentType.integer()) { executes { slowOrErrors(it, it.get<Int>("page"), errors = true) } }
+        }
+        literal("plugin") {
+            argument("id", ArgumentType.string()) {
+                suggests { bus.listeners().map { l -> l.plugin.toString() }.distinct() }
+                executes { pluginView(it, it.get<String>("id"), 1) }
+                argument("page", ArgumentType.integer()) { executes { pluginView(it, it.get<String>("id"), it.get<Int>("page")) } }
+            }
         }
         literal("trace") {
             // Without a name the page lists the events, each with its own recording switch, so nothing has to be remembered.
@@ -278,6 +296,60 @@ class EventBusCommand(private val library: PnLibrary) {
         lines.forEach(context.sender::send)
     }
 
+    private fun slowOrErrors(context: CommandContext, requestedPage: Int, errors: Boolean) {
+        val all = if (errors) bus.listeners().filter { it.failures > 0 }.sortedByDescending { it.failures }
+        else bus.listeners().filter { it.invocations > 0 }.sortedByDescending { it.averageNanos }
+        listenerPage(
+            context, requestedPage, all, if (errors) "Слушатели с ошибками" else "Медленные слушатели",
+            if (errors) "Ошибок не было." else "Слушатели ещё не запускались.", if (errors) "$ROOT errors" else "$ROOT slow",
+        )
+    }
+
+    private fun pluginView(context: CommandContext, id: String, requestedPage: Int) {
+        val all = bus.listeners().filter { it.plugin.toString().equals(id, ignoreCase = true) }.sortedByDescending { it.totalNanos }
+        listenerPage(context, requestedPage, all, "Плагин $id", "У плагина нет слушателей.", "$ROOT plugin $id")
+    }
+
+    private fun listenerPage(
+        context: CommandContext,
+        requestedPage: Int,
+        all: List<ListenerInfo>,
+        title: String,
+        empty: String,
+        base: String,
+    ) {
+        val kit = kit(context)
+        val pages = pageCount(all.size)
+        val page = requestedPage.coerceIn(1, pages)
+        val lines = mutableListOf(
+            kit.blank(),
+            kit.header(title, kit.text("${all.size}", ChatPalette.LABEL)),
+            kit.blank(),
+        )
+        if (all.isEmpty()) lines += kit.note(empty)
+        all.drop((page - 1) * PAGE_SIZE).take(PAGE_SIZE).forEach { info ->
+            val owner = info.module?.let { "${info.plugin}/$it" } ?: info.plugin.toString()
+            var line = kit.text("   ").append(kit.text(owner, ChatPalette.ACCENT)).append(kit.dot())
+                .append(kit.text(shortName(info.eventType), ChatPalette.TEXT))
+                .append(kit.text("  средн. ${micros(info.averageNanos)}", ChatPalette.LABEL))
+                .append(kit.text("  макс. ${micros(info.maxNanos)}", ChatPalette.SOFT))
+                .append(kit.text("  запусков ${info.invocations}", ChatPalette.FAINT))
+            if (info.failures > 0) line = line.append(kit.text("  ошибок ${info.failures}", ChatPalette.DANGER))
+            lines += line
+        }
+        if (pages > 1) {
+            lines += kit.blank()
+            lines += pager(kit, base, page, pages)
+        }
+        lines += kit.blank()
+        lines += footer(kit, ROOT, kit.button("назад", ROOT, "К списку событий", ChatPalette.ACCENT))
+        lines.forEach(context.sender::send)
+    }
+
+    private fun micros(nanos: Long): String =
+        if (nanos >= NANOS_PER_MILLI) "%.1f мс".format(nanos / NANOS_PER_MILLI.toDouble())
+        else "%.1f мкс".format(nanos / NANOS_PER_MICRO.toDouble())
+
     /** A listener as a row: owner, priority and flags, with the source and counters in the hover card. */
     private fun listenerRow(kit: ChatKit, info: ListenerInfo, withEvent: Boolean): Component {
         val owner = info.module?.let { "${info.plugin}/$it" } ?: info.plugin.toString()
@@ -295,6 +367,7 @@ class EventBusCommand(private val library: PnLibrary) {
                 kit.hoverField("Источник", kit.text(info.source, ChatPalette.TEXT)),
                 kit.hoverField("Приоритет", kit.text(info.priority.toString(), ChatPalette.TEXT)),
                 kit.hoverField("Запусков", kit.text(info.invocations.toString(), ChatPalette.TEXT)),
+                kit.hoverField("Среднее время", kit.text(micros(info.averageNanos), ChatPalette.TEXT)),
                 kit.hoverField("Ошибок", kit.text(info.failures.toString(), if (info.failures > 0) ChatPalette.DANGER else ChatPalette.TEXT)),
             ),
         ).clickEvent(ClickEvent.runCommand("$ROOT view ${info.eventType}"))
@@ -472,6 +545,9 @@ class EventBusCommand(private val library: PnLibrary) {
             "$ROOT [all|listened|called|denied] [страница]" to "список событий",
             "$ROOT view <событие>" to "карточка события",
             "$ROOT listeners" to "все слушатели",
+            "$ROOT slow [страница]" to "самые медленные слушатели",
+            "$ROOT errors [страница]" to "слушатели с ошибками",
+            "$ROOT plugin <плагин>" to "слушатели одного плагина",
             "$ROOT trace <событие>" to "записывать вызовы",
             "$ROOT traces" to "записанные вызовы",
             "$ROOT history [страница]" to "вызовы по дням",
@@ -508,6 +584,7 @@ class EventBusCommand(private val library: PnLibrary) {
         private const val BAR_WIDTH = 12
         private val DAY = java.time.format.DateTimeFormatter.ofPattern("d MMMM", java.util.Locale("ru"))
         private const val NANOS_PER_MICRO = 1_000L
+        private const val NANOS_PER_MILLI = 1_000_000L
 
         /** Tab words in order, with what each one keeps. */
         private val FILTERS: List<Pair<String, (EventInfo) -> Boolean>> = listOf(

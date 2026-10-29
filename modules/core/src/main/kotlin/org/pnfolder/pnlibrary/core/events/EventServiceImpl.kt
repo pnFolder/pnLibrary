@@ -208,7 +208,7 @@ internal class EventServiceImpl(
                 steps?.add(EventTrace.Step(subscription.scope.plugin, subscription.scope.module, subscription.priority, true, false, 0, before, before))
                 continue
             }
-            val started = if (steps != null) System.nanoTime() else 0L
+            val started = System.nanoTime()
             var failed = false
             subscription.invocations.increment()
             try {
@@ -227,10 +227,13 @@ internal class EventServiceImpl(
                     )
                 }
             } finally {
+                val elapsed = System.nanoTime() - started
+                subscription.totalNanos.add(elapsed)
+                subscription.maxNanos.accumulateAndGet(elapsed, ::maxOf)
                 steps?.add(
                     EventTrace.Step(
                         subscription.scope.plugin, subscription.scope.module, subscription.priority, false, failed,
-                        System.nanoTime() - started, before, resultText(event),
+                        elapsed, before, resultText(event),
                     ),
                 )
             }
@@ -351,11 +354,14 @@ internal class EventServiceImpl(
     ) : EventSubscription {
         val invocations = LongAdder()
         val failures = LongAdder()
+        val totalNanos = LongAdder()
+        val maxNanos = AtomicLong()
         private val subscriptionClosed = AtomicBoolean(false)
         override val isClosed: Boolean get() = subscriptionClosed.get()
 
         fun info() = ListenerInfo(
             scope.plugin, scope.module, eventType.name, priority, ignoreDenied, source, invocations.sum(), failures.sum(),
+            totalNanos.sum(), maxNanos.get(),
         )
 
         fun invoke(event: Event) {
