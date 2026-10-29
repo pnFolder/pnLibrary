@@ -8,7 +8,7 @@ import java.time.Duration
  * Checks and warnings are never switched off by a file: an administrator pauses one plugin with a command
  * (`hold`), which always expires. Every number the update system relies on lives here, so it is found in one place.
  */
-internal object UpdateDefaults {
+object UpdateDefaults {
     /** How often the release catalogs are asked for new versions; the first check runs at startup. */
     val CHECK_INTERVAL: Duration = Duration.ofHours(6)
 

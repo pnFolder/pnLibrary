@@ -37,7 +37,7 @@ class BukkitControlCommandTest {
         // The root has no permission of its own: every administrative word asks for pnlibrary.admin by itself.
         assertEquals(null, definition.permission)
         assertEquals(
-            listOf("status", "check", "gui", "updates", "update", "support", "error", "error-repeat", "error-chain", "bus", "money"),
+            listOf("status", "check", "gui", "updates", "update", "support", "bus", "money"),
             definition.root.children.map { it.name },
         )
         val administrative = definition.root.children.filter { it.name != "money" && it.name != "bus" }
@@ -47,7 +47,7 @@ class BukkitControlCommandTest {
         assertEquals(listOf("list", "available", "info", "settings", "set", "history", "backups", "rollback"), catalog.children.map { it.name })
         assertEquals(listOf("page", "plugin"), catalog.children.single { it.name == "history" }.children.map { it.name })
         assertEquals("plugin", catalog.children.single { it.name == "info" }.children.single().name)
-        assertEquals(listOf("plugin", "confirm", "status", "rollback", "restart"), update.children.map { it.name })
+        assertEquals(listOf("plugin", "confirm", "rollback", "restart"), update.children.map { it.name })
         assertEquals(CommandNodeKind.ARGUMENT, update.children.first().kind)
         assertEquals("token", update.children.single { it.name == "confirm" }.children.single().name)
     }

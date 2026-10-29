@@ -11,7 +11,6 @@ import org.pnfolder.pnlibrary.api.chat.ChatTone
 import org.pnfolder.pnlibrary.api.platform.platform
 import org.pnfolder.pnlibrary.api.runtime.PnLibrary
 import org.pnfolder.pnlibrary.api.runtime.PnLibraryIdentity
-import org.pnfolder.pnlibrary.api.updates.UpdateChannel
 import org.pnfolder.pnlibrary.api.updates.UpdateSnapshot
 import org.pnfolder.pnlibrary.api.updates.UpdateState
 import org.pnfolder.pnlibrary.api.updates.backup.UpdateBackup
@@ -23,6 +22,7 @@ import org.pnfolder.pnlibrary.bukkit.inventory.MenuClickHandler
 import org.pnfolder.pnlibrary.bukkit.inventory.Menus
 import org.pnfolder.pnlibrary.core.updates.catalog.CatalogLabels
 import org.pnfolder.pnlibrary.core.updates.catalog.UpdateCatalogView
+import org.pnfolder.pnlibrary.core.updates.policy.UpdateDefaults
 import java.time.Duration
 import java.time.ZoneId
 import java.time.format.DateTimeFormatter
@@ -68,7 +68,12 @@ internal class PluginsMenu(
                 Icons.OVERVIEW, "NETHER_STAR", "${PnLibraryIdentity.NAME} ${library.version}",
                 Style.lore(
                     listOf("Библиотека для плагинов pnFolder: обновления, настройки и поддержка."),
-                    listOf("Плагинов подключено" to "${connectedCount()}", "Обновлений" to "$pending", "Проблем" to "$problems"),
+                    listOf(
+                        "Версия" to library.version,
+                        "Плагинов" to "${connectedCount()}",
+                        "Обновлений" to "$pending",
+                        "Проблем" to "$problems",
+                    ),
                 ),
             ),
         )
@@ -81,13 +86,15 @@ internal class PluginsMenu(
         builder.button(15,
             section(Icons.PROBLEMS, "BARRIER", "Проблемы", "Ошибки проверки и блокировки обновлений.", "Найдено" to "$problems"),
             go { plugins(it, Filter.PROBLEMS, 0) })
-        builder.button(29, section(Icons.HISTORY, "BOOK", "История", "Проверки, обновления, откаты и ошибки."), go { history(it, null, 0) })
-        builder.button(31, section(Icons.BACKUPS, "CHEST", "Резервные копии", "Откат к сохранённым версиям плагинов."), go { backups(it, 0) })
+        builder.button(30, section(Icons.HISTORY, "BOOK", "История", "Проверки, обновления, откаты и ошибки."), go { history(it, null, 0) })
+        builder.button(32, section(Icons.BACKUPS, "CHEST", "Резервные копии", "Откат к сохранённым версиям плагинов."), go { backups(it, 0) })
         builder.button(
-            33,
+            24,
             icon(Icons.CHECK, "COMPASS", "Проверить всё", Style.lore(listOf("Спросить каталоги релизов прямо сейчас."), emptyList(), Style.left("проверить"))),
             go { checkAll(it) },
         )
+        builder.button(20, section(Icons.SETTINGS, "REDSTONE", "Настройки", "Автозагрузка и пауза для всех плагинов сразу."), go { settings(it) })
+        builder.button(22, section(Icons.TOOLS, "ANVIL", "Инструменты", "Статус, события, отчёт для поддержки, валюты."), go { tools(it) })
         builder.button(
             SUPPORT_SLOT,
             icon(Icons.SUPPORT, "PAPER", "Поддержка", Style.lore(listOf("Если возникла проблема, мы поможем."), emptyList(), Style.left("получить ссылку"))),
@@ -148,10 +155,16 @@ internal class PluginsMenu(
             go { checkOne(it, registration.snapshot.product) },
         )
         builder.button(12, autoItem(snapshot), go { who -> allowed(who, SETTINGS) { toggleAuto(who, snapshot) } })
-        builder.button(
+        builder.slot(
             13,
-            section(Icons.CHANNEL, "LEVER", "Канал", "Какие версии предлагать: стабильные или ранние.", "Сейчас" to snapshot.channel.name.lowercase()),
-            go { channels(it, snapshot.product) },
+            icon(
+                Icons.LOCKED, "BARRIER", "Канал обновлений",
+                Style.lore(
+                    listOf("Сейчас работает только канал dev, остальные пока недоступны."),
+                    listOf("Канал" to snapshot.channel.name.lowercase()),
+                ),
+                muted = true,
+            ),
         )
         builder.button(14, holdItem(snapshot), go { holds(it, snapshot.product) })
         builder.button(
@@ -169,32 +182,6 @@ internal class PluginsMenu(
             )
         }
         builder.button(CARD_BACK, backItem(), go { plugins(it, Filter.ALL, 0) })
-        show(player, builder.build())
-    }
-
-    private fun channels(player: Player, product: String) {
-        val current = library.updates.get(product)?.snapshot?.channel
-        val builder = frame(Menus.chest(title("Канал $product")).rows(SMALL_ROWS), SMALL_ROWS)
-        UpdateChannel.values().forEachIndexed { index, channel ->
-            val chosen = channel == current
-            val lore = Style.lore(
-                listOf(CHANNEL_HINTS.getValue(channel)),
-                if (chosen) listOf("Состояние" to "выбран сейчас") else emptyList(),
-                *if (chosen) emptyArray() else arrayOf(Style.left("выбрать")),
-            )
-            builder.button(
-                10 + index,
-                icon(null, CHANNEL_ITEMS.getValue(channel), channel.name.lowercase(), lore, good = chosen),
-                go { who -> allowed(who, SETTINGS) { chooseChannel(who, product, channel) } },
-            )
-        }
-        builder.button(
-            16,
-            icon(Icons.RESET, "BARRIER", "Сбросить",
-                Style.lore(listOf("Вернуть канал, который указал плагин."), emptyList(), Style.left("сбросить")), muted = true),
-            go { who -> allowed(who, SETTINGS) { chooseChannel(who, product, null) } },
-        )
-        builder.button(SMALL_BACK, backItem(), go { card(it, product) })
         show(player, builder.build())
     }
 
@@ -293,6 +280,92 @@ internal class PluginsMenu(
         show(player, builder.build())
     }
 
+    private fun settings(player: Player) {
+        val all = snapshots()
+        val automatic = all.count { it.automaticDownload }
+        val builder = frame(Menus.chest(title("Настройки")).rows(SMALL_ROWS + 1), SMALL_ROWS + 1)
+        builder.slot(
+            4,
+            icon(
+                Icons.SETTINGS, "REDSTONE", "Как это работает",
+                Style.lore(
+                    listOf("Проверка и сообщения включены всегда, отключить библиотеку нельзя."),
+                    listOf(
+                        "Проверка" to "каждые ${UpdateDefaults.CHECK_INTERVAL.toHours()} ч",
+                        "Консоль" to "сообщения всегда",
+                        "Канал" to "только dev",
+                        "Автозагрузка" to "у $automatic из ${all.size}",
+                    ),
+                ),
+            ),
+        )
+        builder.button(
+            10,
+            icon(
+                Icons.TOGGLE, "REDSTONE_TORCH", "Автозагрузка: всем",
+                Style.lore(listOf("Готовить новые версии для всех плагинов."), emptyList(), Style.left("включить")),
+                alternative = "REDSTONE_TORCH_ON", good = true,
+            ),
+            go { who -> allowed(who, SETTINGS) { everyone(who, "Автозагрузка включена для всех плагинов.") { setAutomatic(it, true, who) } } },
+        )
+        builder.button(
+            11,
+            icon(
+                Icons.TOGGLE, "LEVER", "Автозагрузка: никому",
+                Style.lore(listOf("Не готовить версии без команды."), emptyList(), Style.left("выключить")), muted = true,
+            ),
+            go { who -> allowed(who, SETTINGS) { everyone(who, "Автозагрузка выключена для всех плагинов.") { setAutomatic(it, false, who) } } },
+        )
+        HOLDS.take(3).forEachIndexed { index, (label, duration) ->
+            builder.button(
+                13 + index,
+                icon(
+                    Icons.CLOCK, "CLOCK", "Пауза всем: $label",
+                    Style.lore(listOf("Все плагины на время не обновляются."), emptyList(), Style.left("приостановить")),
+                    alternative = "WATCH",
+                ),
+                go { who ->
+                    allowed(who, SETTINGS) { everyone(who, "Обновления всех плагинов приостановлены: $label.") { hold(it, duration, who) } }
+                },
+            )
+        }
+        builder.button(
+            16,
+            icon(Icons.RESET, "REDSTONE", "Снять все паузы",
+                Style.lore(listOf("Вернуть обновления всем сразу."), emptyList(), Style.left("снять")), good = true),
+            go { who -> allowed(who, SETTINGS) { everyone(who, "Все паузы сняты.") { hold(it, null, who) } } },
+        )
+        builder.button(SMALL_BACK + 9, backItem(), go { home(it) })
+        show(player, builder.build())
+    }
+
+    private fun tools(player: Player) {
+        val builder = frame(Menus.chest(title("Инструменты")).rows(SMALL_ROWS + 1), SMALL_ROWS + 1)
+        val entries = listOf(
+            Triple(Icons.CHECK, "COMPASS", "Статус сервера") to ("Версии сервера и всех плагинов." to "pn status"),
+            Triple(Icons.HISTORY, "BOOK", "События") to ("Журнал событий сервера." to "pn events"),
+            Triple(Icons.OVERVIEW, "REDSTONE_COMPARATOR", "Шина событий") to ("Слушатели, вызовы и трассы." to "pn bus"),
+            Triple(Icons.CHANGELOG, "WRITTEN_BOOK", "Отчёт для поддержки") to ("Зашифрованный отчёт, который можно отправить нам." to "pn debug"),
+            Triple(Icons.RELEASES, "GOLD_NUGGET", "Валюты") to ("Валюты и балансы игроков." to "pn money list"),
+        )
+        entries.forEachIndexed { index, (face, info) ->
+            val (texture, material, label) = face
+            val (description, command) = info
+            builder.button(
+                10 + index,
+                icon(texture, material, label, Style.lore(listOf(description), listOf("Команда" to "/$command"), Style.left("выполнить"))),
+                go { who -> who.closeInventory(); who.performCommand(command) },
+            )
+        }
+        builder.button(
+            SUPPORT_TOOL_SLOT,
+            icon(Icons.SUPPORT, "PAPER", "Поддержка", Style.lore(listOf("Ссылка на помощь."), emptyList(), Style.left("получить"))),
+            go { support(it) },
+        )
+        builder.button(SMALL_BACK + 9, backItem(), go { home(it) })
+        show(player, builder.build())
+    }
+
     // --- actions -------------------------------------------------------------------------------------------------
 
     private fun checkAll(player: Player) {
@@ -328,16 +401,6 @@ internal class PluginsMenu(
         }
     }
 
-    private fun chooseChannel(player: Player, product: String, channel: UpdateChannel?) {
-        library.updates.setChannel(product, channel, replies.updateActor(player)).whenComplete { _, error ->
-            replies.onServerThread {
-                if (error != null) tell(player, ChatTone.FAILURE, "Не удалось изменить канал.", reason(error))
-                else tell(player, ChatTone.SUCCESS, "Канал $product: ${channel?.name?.lowercase() ?: "как указал плагин"}.")
-                card(player, product)
-            }
-        }
-    }
-
     private fun chooseHold(player: Player, product: String, duration: Duration?) {
         library.updates.setHeld(product, duration, replies.updateActor(player)).whenComplete { _, error ->
             replies.onServerThread {
@@ -347,6 +410,24 @@ internal class PluginsMenu(
             }
         }
     }
+
+    /** Runs [change] for every registered plugin, then reports [done] and reopens the settings. */
+    private fun everyone(player: Player, done: String, change: (UpdateSnapshot) -> java.util.concurrent.CompletionStage<*>) {
+        val stages = snapshots().map { change(it).toCompletableFuture() }
+        java.util.concurrent.CompletableFuture.allOf(*stages.toTypedArray()).whenComplete { _, error ->
+            replies.onServerThread {
+                if (error != null) tell(player, ChatTone.FAILURE, "Не всё удалось изменить.", reason(error))
+                else tell(player, ChatTone.SUCCESS, done)
+                settings(player)
+            }
+        }
+    }
+
+    private fun setAutomatic(snapshot: UpdateSnapshot, enable: Boolean, player: Player) =
+        library.updates.setAutomaticDownload(snapshot.product, enable, replies.updateActor(player))
+
+    private fun hold(snapshot: UpdateSnapshot, duration: Duration?, player: Player) =
+        library.updates.setHeld(snapshot.product, duration, replies.updateActor(player))
 
     private fun rollback(player: Player, backup: UpdateBackup, restoreConfigurations: Boolean) {
         player.closeInventory()
@@ -551,7 +632,7 @@ internal class PluginsMenu(
 
     private fun glass(modern: String, legacyData: Short): ItemStack {
         val stack = item(modern, " ", emptyList(), "STAINED_GLASS_PANE")
-        if (stack.type.name == "STAINED_GLASS_PANE") stack.durability = legacyData
+        if (stack.type.name in LEGACY_GLASS) stack.durability = legacyData
         return stack
     }
 
@@ -602,10 +683,10 @@ internal class PluginsMenu(
         val WARN = MenuHeads.color("&#FFB347")
         val DANGER = MenuHeads.color("&#FC7165")
         val MUTED = MenuHeads.color("&#9AA4AD")
-        private val DESCRIPTION = MenuHeads.color(" &#A6B0BA")
-        private val PARAMETER = MenuHeads.color(" &#C2CBD3")
-        private val VALUE = MenuHeads.color(" &#69747E↳ &#A7F3D0")
+        private val DESCRIPTION = MenuHeads.color(" &#E3EBF2")
+        private val SUB = MenuHeads.color("   &#69747E↳ &#A7F3D0")
         private val LEFT = MenuHeads.color(" &#FFB347[&#FFA43C Л&#FF9536К&#FF8630М &#FF772A] &f")
+        private val TAGS = listOf("5FD7FF", "A7F3D0", "C4A7FF", "FFB347", "65D1FC", "FF8A8A", "EFF7B9")
 
         fun left(action: String): String = LEFT + action
 
@@ -613,7 +694,13 @@ internal class PluginsMenu(
 
         fun danger(text: String): String = MenuHeads.color(" &#FC7165") + text
 
-        /** Description lines, a blank line, `label` / `↳ value` pairs, a blank line, then the click hints; framed by blank lines. */
+        /** A bracketed label such as `[ Версия ]`, in a colour that stays the same for the same word. */
+        fun tag(label: String): String = MenuHeads.color(" &#${TAGS[Math.floorMod(label.hashCode(), TAGS.size)]}[ $label ] &f")
+
+        /**
+         * Description lines, a blank line, `[ label ] value` lines (an empty label continues the line above with an
+         * indented `↳ value`), a blank line, then the click hints; framed by blank lines.
+         */
         fun lore(
             lines: List<String>,
             parameters: List<Pair<String, String>>,
@@ -623,7 +710,7 @@ internal class PluginsMenu(
             add("")
             lines.forEach { add(description(it)) }
             if (lines.isNotEmpty() && parameters.isNotEmpty()) add("")
-            parameters.forEach { (label, value) -> add(PARAMETER + label); add(VALUE + value) }
+            parameters.forEach { (label, value) -> add(if (label.isEmpty()) SUB + value else tag(label) + value) }
             if (extra.isNotEmpty()) { add(""); addAll(extra) }
             if (hints.isNotEmpty()) { add(""); addAll(hints) }
             add("")
@@ -643,7 +730,9 @@ internal class PluginsMenu(
         const val BACK = "69ea1d86247f4af351ed1866bca6a3040a06c68177c78e42316a1098e60fb7d3"
         const val NEXT = "8271a47104495e357c3e8e80f511a9f102b0700ca9b88e88b795d33ff20105eb"
         const val TOGGLE = "5f9e02768935593321437f2d6709a59a6e5437eb4301631965e9df5359ac87ef"
-        const val CHANNEL = "8426f715b80dd90eb1e1929f6ec4bc3583de8f821bdd4f4c1722e69c98b50506"
+        const val LOCKED = "27548362a24c0fa8453e4d93e68c5969ddbde57bf6666c0319c1ed1e84d89065"
+        const val SETTINGS = "5949a18cb52c293fe7de7ba1014671340ed7ff8e5d705b2d60bf84d53148e04"
+        const val TOOLS = "79924bcfd7ec6ea437438b75b72ee41a2b57104dba25ecafa6118e68e1b81c9d"
         const val RELEASES = "c67d5d37cd64ce3fb57377d25d6152aa4ac2e37954248d5d91f88fbd791f4766"
         const val CHANGELOG = "97a530f5c5742bf19e175a4d78ad435ac0f4396d3b5464bd6182ab382aca417d"
         const val RESTART = "87d885b32b0dd2d6b7f1b582a34186f8a5373c46589a273423132b448b803462"
@@ -665,6 +754,7 @@ internal class PluginsMenu(
         const val CARD_ROWS = 4
         const val CARD_BACK = 31
         const val SMALL_ROWS = 3
+        const val SUPPORT_TOOL_SLOT = 16
         const val SMALL_BACK = 22
         const val LIST_ROWS = 6
         const val PAGE_SIZE = 45
@@ -679,6 +769,7 @@ internal class PluginsMenu(
         const val CHECK_REOPEN_TICKS = 60L
         const val SOUND_VOLUME = 0.22f
         const val SOUND_PITCH = 1.15f
+        val LEGACY_GLASS = setOf("STAINED_GLASS_PANE", "LEGACY_STAINED_GLASS_PANE")
         const val LEGACY_BLACK: Short = 15
         const val LEGACY_LIGHT_BLUE: Short = 3
         val TIME: DateTimeFormatter = DateTimeFormatter.ofPattern("dd.MM.yyyy HH:mm").withZone(ZoneId.systemDefault())
@@ -686,20 +777,6 @@ internal class PluginsMenu(
         val OPEN_SOUND: Sound? = listOf("BLOCK_BARREL_OPEN", "BLOCK_CHEST_OPEN", "CHEST_OPEN")
             .firstNotNullOfOrNull { name -> Sound.values().firstOrNull { it.name == name } }
 
-        val CHANNEL_ITEMS = mapOf(
-            UpdateChannel.STABLE to "EMERALD",
-            UpdateChannel.RC to "GOLD_INGOT",
-            UpdateChannel.BETA to "IRON_INGOT",
-            UpdateChannel.ALPHA to "REDSTONE",
-            UpdateChannel.DEV to "COAL",
-        )
-        val CHANNEL_HINTS = mapOf(
-            UpdateChannel.STABLE to "Только проверенные релизы.",
-            UpdateChannel.RC to "Кандидаты в релиз и стабильные.",
-            UpdateChannel.BETA to "Бета-версии, кандидаты и стабильные.",
-            UpdateChannel.ALPHA to "Ранние версии: возможны ошибки.",
-            UpdateChannel.DEV to "Все версии, включая ежедневные сборки.",
-        )
         val HOLDS = listOf(
             "1 час" to Duration.ofHours(1),
             "6 часов" to Duration.ofHours(6),
