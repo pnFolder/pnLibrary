@@ -27,7 +27,7 @@ internal data class UpdateConfiguration(
     val ignoredPlugins: Set<String> = emptySet(),
 ) {
     data class LibraryPolicy(
-        val channel: UpdateChannel = UpdateChannel.STABLE,
+        val channel: UpdateChannel = UpdateChannel.DEV,
         val automaticDownload: Boolean = false,
     )
     data class Checks(val enabled: Boolean = true, val interval: Duration = Duration.ofHours(6))

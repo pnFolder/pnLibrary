@@ -18,6 +18,9 @@ import java.time.Duration
     "",
     "Диагностический отчёт собирает сведения о сервере и плагинах, чтобы упростить поддержку.",
     "Отчёт всегда сохраняется на сервере. Отправка во внешний сервис всегда идёт в зашифрованном виде.",
+    "",
+    "Если у вас возникли проблемы с плагином, пишите в наш Discord: мы всегда рады помочь.",
+    "If you have any problem with a plugin, write to our Discord: we are always happy to help.",
 )
 /**
  * Configuration section for diagnostic report collection, retention and delivery.

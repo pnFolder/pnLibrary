@@ -50,9 +50,9 @@ internal class UpdateSettings {
 
     /** Update policy of pnLibrary itself. */
     class Library {
-        @field:ConfigComment("Канал релизов: stable, rc, beta, alpha или dev.")
+        @field:ConfigComment("Канал релизов: stable, rc, beta, alpha или dev. Пока у pnLibrary нет стабильных релизов, нужен dev.")
         @field:ConfigPattern(CHANNEL_PATTERN)
-        var channel: String = "stable"
+        var channel: String = "dev"
 
         @field:ConfigDefaultOnInvalid
         @field:ConfigComment("Скачивать новую версию pnLibrary автоматически.")
