@@ -28,6 +28,7 @@ import org.pnfolder.pnlibrary.common.time.DisplayZone
  * | `/pn bus view <event>` | one event: counters, a recording switch and its listeners in dispatch order |
  * | `/pn bus listeners [page]` | every listener of every plugin |
  * | `/pn bus slow [page]` | listeners that ran, the slowest on average first |
+ * | `/pn bus top [calls\|denied]` | the ten most called (or most denied) events |
  * | `/pn bus errors [page]` | listeners that threw, the most failures first |
  * | `/pn bus plugin <id> [page]` | the listeners of one plugin with time and failures |
  * | `/pn bus trace <event>`, `trace off <event>` | switches the recording of an event on or off |
@@ -68,6 +69,11 @@ class EventBusCommand(private val library: PnLibrary) {
         literal("slow") {
             executes { slowOrErrors(it, 1, errors = false) }
             argument("page", ArgumentType.integer()) { executes { slowOrErrors(it, it.get<Int>("page"), errors = false) } }
+        }
+        literal("top") {
+            executes { top(it, denied = false) }
+            literal("calls") { executes { top(it, denied = false) } }
+            literal("denied") { executes { top(it, denied = true) } }
         }
         literal("errors") {
             executes { slowOrErrors(it, 1, errors = true) }
@@ -303,6 +309,26 @@ class EventBusCommand(private val library: PnLibrary) {
             context, requestedPage, all, if (errors) "Слушатели с ошибками" else "Медленные слушатели",
             if (errors) "Ошибок не было." else "Слушатели ещё не запускались.", if (errors) "$ROOT errors" else "$ROOT slow",
         )
+    }
+
+    private fun top(context: CommandContext, denied: Boolean) {
+        val kit = kit(context)
+        fun count(info: EventInfo) = if (denied) info.denied else info.calls
+        val ranked = bus.events().filter { count(it) > 0 }.sortedByDescending(::count).take(TOP_SIZE)
+        val busiest = ranked.firstOrNull()?.let(::count) ?: 0
+        val lines = mutableListOf(
+            kit.blank(),
+            kit.header(if (denied) "Чаще всего отклонялись" else "Чаще всего вызывались", kit.text("${ranked.size}", ChatPalette.LABEL)),
+            kit.blank(),
+        )
+        if (ranked.isEmpty()) lines += kit.note(if (denied) "Отказов не было." else "Событий ещё не было.")
+        ranked.forEach {
+            lines += kit.text("   ").append(kit.text(bar(kit, count(it), busiest), ChatPalette.SOFT))
+                .append(kit.text(" ${count(it)}  ", ChatPalette.LABEL)).append(kit.text(shortName(it.eventType), ChatPalette.TEXT))
+        }
+        lines += kit.blank()
+        lines += footer(kit, ROOT, kit.button("назад", ROOT, "К списку событий", ChatPalette.ACCENT))
+        lines.forEach(context.sender::send)
     }
 
     private fun pluginView(context: CommandContext, id: String, requestedPage: Int) {
@@ -546,6 +572,7 @@ class EventBusCommand(private val library: PnLibrary) {
             "$ROOT view <событие>" to "карточка события",
             "$ROOT listeners" to "все слушатели",
             "$ROOT slow [страница]" to "самые медленные слушатели",
+            "$ROOT top [calls|denied]" to "самые частые события",
             "$ROOT errors [страница]" to "слушатели с ошибками",
             "$ROOT plugin <плагин>" to "слушатели одного плагина",
             "$ROOT trace <событие>" to "записывать вызовы",
@@ -576,6 +603,7 @@ class EventBusCommand(private val library: PnLibrary) {
         const val PERMISSION = "pnlibrary.events.bus"
         private const val ROOT = "/pn bus"
         private const val PAGE_SIZE = 8
+        private const val TOP_SIZE = 10
         private const val MAX_TRACES = 6
         private const val DAYS_PER_PAGE = 7
         private const val EVENTS_PER_PAGE = 6
