@@ -32,7 +32,7 @@ import org.pnfolder.pnlibrary.core.updates.catalog.UpdateCatalogRoutes
  * | `/pn bus …` | listeners, calls and traces of the event bus | `pnlibrary.events.bus` |
  * | `/pn debug …` | the encrypted report for support | `pnlibrary.debug` |
  * | `/pn money …` | currencies and balances | as in the currency settings |
- * | `/pn support`, `error …` | the support link, test errors | `pnlibrary.admin` |
+ * | `/pn support` | the support link | `pnlibrary.admin` |
  *
  * The root itself has no permission, so a moderator who may only read events can still enter `/pn events`.
  * The update flow lives in [BukkitUpdateFlow], support helpers in [BukkitSupportCommands], and reply rendering in
@@ -103,13 +103,6 @@ internal class BukkitControlCommand(
                     executes { replies.native(it) { sender, reply -> updates.confirm(sender, reply, it.get<String>("token")) } }
                 }
             }
-            literal("status") {
-                executes { replies.native(it) { _, reply -> updates.sendUpdateStatus(reply, null) } }
-                argument("plugin", ArgumentType.string()) {
-                    suggests { productNames() }
-                    executes { replies.native(it) { _, reply -> updates.sendUpdateStatus(reply, it.get<String>("plugin")) } }
-                }
-            }
             literal("rollback") {
                 executes { replies.native(it) { sender, reply -> updates.rollbackUpdate(sender, reply) } }
             }
@@ -124,22 +117,6 @@ internal class BukkitControlCommand(
         literal("support") {
             permission(ADMIN)
             executes { replies.native(it) { _, reply -> support.support(reply) } }
-        }
-        literal("error") {
-            permission(ADMIN)
-            executes { replies.native(it) { _, reply -> support.error(reply) } }
-        }
-        literal("error-repeat") {
-            permission(ADMIN)
-            executes { replies.native(it) { _, reply -> support.errorRepeat(reply, null) } }
-            argument("count", ArgumentType.integer()) {
-                suggests { REPEAT_COUNTS }
-                executes { replies.native(it) { _, reply -> support.errorRepeat(reply, it.get<Int>("count")) } }
-            }
-        }
-        literal("error-chain") {
-            permission(ADMIN)
-            executes { replies.native(it) { _, reply -> support.errorChain(reply) } }
         }
     }
 
