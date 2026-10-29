@@ -29,7 +29,7 @@ jobs:
       ORG_GRADLE_PROJECT_POM_LICENSE_URL: ${{ vars.MAVEN_LICENSE_URL }}
       ORG_GRADLE_PROJECT_POM_LICENSE_DIST: repo
     steps:
-      - uses: actions/checkout@v4
+      - uses: actions/checkout@v7
         with:
           ref: refs/tags/${{ inputs.tag }}
       - uses: actions/setup-java@v4
