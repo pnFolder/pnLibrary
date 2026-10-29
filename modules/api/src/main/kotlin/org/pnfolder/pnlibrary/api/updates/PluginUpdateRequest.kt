@@ -33,7 +33,7 @@ class PluginUpdateRequest private constructor(builder: Builder) {
     val repositoryName: String = builder.repositoryName
 
     /** Repository, branch and folder of the release catalog; `main` and `.pnlibrary` unless the builder says otherwise. */
-    val catalog: CatalogSource = CatalogSource(repositoryOwner, repositoryName, builder.branch, builder.catalogPath)
+    val catalog: CatalogSource = CatalogSource(repositoryOwner, repositoryName, builder.branch, builder.catalogPath, builder.refType)
 
     private val channelSource: Supplier<UpdateChannel> = builder.channelSource
 
@@ -80,6 +80,7 @@ class PluginUpdateRequest private constructor(builder: Builder) {
         internal var repositoryName = ""
         internal var branch = CatalogSource.DEFAULT_BRANCH
         internal var catalogPath = CatalogSource.DEFAULT_PATH
+        internal var refType = CatalogSource.RefType.BRANCH
         internal var channelSource: Supplier<UpdateChannel> = Supplier { UpdateChannel.STABLE }
         internal var automaticDownload = true
         internal val artifacts = mutableListOf<PluginUpdateArtifact>()
@@ -107,6 +108,21 @@ class PluginUpdateRequest private constructor(builder: Builder) {
         fun branch(name: String): Builder = apply {
             CatalogSource("o", "r", branch = name)
             branch = name
+            refType = CatalogSource.RefType.BRANCH
+        }
+
+        /** Reads the catalog as it was at tag [name], for plugins that publish releases from tags. */
+        fun tag(name: String): Builder = apply {
+            CatalogSource("o", "r", branch = name, refType = CatalogSource.RefType.TAG)
+            branch = name
+            refType = CatalogSource.RefType.TAG
+        }
+
+        /** Reads the catalog as it was at commit [hash] (7 to 40 hexadecimal characters). */
+        fun commit(hash: String): Builder = apply {
+            CatalogSource("o", "r", branch = hash, refType = CatalogSource.RefType.COMMIT)
+            branch = hash
+            refType = CatalogSource.RefType.COMMIT
         }
 
         /**
