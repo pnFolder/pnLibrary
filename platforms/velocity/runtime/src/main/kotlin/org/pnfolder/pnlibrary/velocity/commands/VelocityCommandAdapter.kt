@@ -10,6 +10,7 @@ import org.pnfolder.pnlibrary.api.audiences.Delivery
 import org.pnfolder.pnlibrary.api.commands.CommandContext
 import org.pnfolder.pnlibrary.api.commands.CommandDefinition
 import org.pnfolder.pnlibrary.api.commands.CommandSender
+import org.pnfolder.pnlibrary.core.commands.ProxyCommandNames
 import org.pnfolder.pnlibrary.spi.commands.GenericPlatformCommandAdapter
 import org.pnfolder.pnlibrary.spi.commands.NativeCommandRegistrar
 import org.pnfolder.pnlibrary.spi.commands.PlatformCommandRegistration
@@ -38,7 +39,7 @@ internal class VelocityCommandAdapter internal constructor(
         alias: String,
         arguments: Array<String>,
     ): CommandContext = CommandContext(
-        sender = VelocityCommandSender(audience(source)),
+        sender = VelocityCommandSender(audience(source), ProxyCommandNames.owns(alias)),
         arguments = arguments.toList(),
         invokedAlias = alias,
         currentInput = arguments.lastOrNull().orEmpty(),
@@ -49,12 +50,15 @@ internal class VelocityCommandAdapter internal constructor(
 /** Adapts a portable command sender to the native Velocity audience. */
 private class VelocityCommandSender(
     private val audience: AudienceSender,
+    private val proxyControl: Boolean,
 ) : CommandSender, AudienceSender by audience {
     /** Sends the command response through the wrapped audience. */
-    override fun send(message: Component) = audience.sendMessage(message)
+    override fun send(message: Component) = audience.sendMessage(shown(message))
 
     // Explicit overrides preserve native delivery instead of CommandSender's fallback defaults.
-    override fun sendMessage(text: Component) = audience.sendMessage(text)
+    override fun sendMessage(text: Component) = audience.sendMessage(shown(text))
+
+    private fun shown(message: Component) = if (proxyControl) ProxyCommandNames.rewrite(message) else message
     override fun actionBar(text: Component) = audience.actionBar(text)
     override fun playSound(sound: Sound): Delivery = audience.playSound(sound)
 }

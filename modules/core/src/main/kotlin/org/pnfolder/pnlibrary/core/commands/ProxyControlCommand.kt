@@ -26,7 +26,8 @@ import org.pnfolder.pnlibrary.core.updates.catalog.ProxyUpdateCommand
  * | `/pn support` | the support link | `pnlibrary.admin` |
  *
  * It works for the console and for players, and the output is clickable wherever the sender can click.
- * `/pnlib` and `/pnlibrary` work as well, so the controls stay reachable when another plugin owns `/pn`.
+ * The proxy answers to `/pnproxy` and `/pnp`, not `/pn`, so it never hides the `/pn` of a game server; the text and
+ * buttons are written with `/pn` and the platform adapters show them as `/pnproxy` (see [ProxyCommandNames]).
  */
 class ProxyControlCommand(private val library: PnLibrary) {
     /** Registers the command for this library runtime. */
@@ -35,8 +36,8 @@ class ProxyControlCommand(private val library: PnLibrary) {
     /** Builds the command: the update controls and the shared `events`, `bus`, `tasks` and `debug` commands. */
     fun definition(): CommandDefinition {
         val updates = ProxyUpdateCommand(library)
-        return command("pn") {
-            aliases("pnlib", "pnlibrary")
+        return command(ProxyCommandNames.NAME) {
+            aliases(*ProxyCommandNames.ALIASES.toTypedArray())
             executes { updates.overview(it, OTHERS) }
             updates.install(this)
             library.mountableCommand("events")?.let { mount("events", it) }

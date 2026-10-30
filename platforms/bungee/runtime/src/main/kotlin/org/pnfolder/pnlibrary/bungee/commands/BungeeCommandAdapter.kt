@@ -11,6 +11,7 @@ import org.pnfolder.pnlibrary.api.commands.CommandContext
 import org.pnfolder.pnlibrary.api.commands.CommandDefinition
 import org.pnfolder.pnlibrary.api.commands.CommandSender
 import org.pnfolder.pnlibrary.bungee.BungeeAudienceAdapter
+import org.pnfolder.pnlibrary.core.commands.ProxyCommandNames
 import org.pnfolder.pnlibrary.spi.commands.GenericPlatformCommandAdapter
 import org.pnfolder.pnlibrary.spi.commands.NativeCommandRegistrar
 import org.pnfolder.pnlibrary.spi.commands.PlatformCommandRegistration
@@ -42,7 +43,7 @@ internal class BungeeCommandAdapter internal constructor(
         alias: String,
         arguments: Array<String>,
     ): CommandContext = CommandContext(
-        sender = BungeeCommandSender(audience(source)),
+        sender = BungeeCommandSender(audience(source), ProxyCommandNames.owns(alias)),
         arguments = arguments.toList(),
         invokedAlias = alias,
         currentInput = arguments.lastOrNull().orEmpty(),
@@ -53,11 +54,14 @@ internal class BungeeCommandAdapter internal constructor(
 /** Delegates portable command replies to the native audience bridge. */
 private class BungeeCommandSender(
     private val audience: AudienceSender,
+    private val proxyControl: Boolean,
 ) : CommandSender, AudienceSender by audience {
 
-    override fun send(message: Component) = audience.sendMessage(message)
+    override fun send(message: Component) = audience.sendMessage(shown(message))
 
-    override fun sendMessage(text: Component) = audience.sendMessage(text)
+    override fun sendMessage(text: Component) = audience.sendMessage(shown(text))
+
+    private fun shown(message: Component) = if (proxyControl) ProxyCommandNames.rewrite(message) else message
 
     override fun actionBar(text: Component) = audience.actionBar(text)
 

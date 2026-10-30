@@ -15,8 +15,8 @@ class ProxyControlCommandTest {
 
     @Test
     fun `the proxy has one pn command with other labels for the case that pn is taken`() {
-        assertEquals("pn", definition.name)
-        assertEquals(setOf("pnlib", "pnlibrary"), definition.aliases)
+        assertEquals("pnproxy", definition.name)
+        assertEquals(setOf("pnp"), definition.aliases)
     }
 
     @Test
