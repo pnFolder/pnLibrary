@@ -82,7 +82,7 @@ internal class StandardCommandFeedback(
     )
 
     /** Sends the standard text for [error], with its placeholders filled in. */
-    fun answer(context: CommandContext, error: CommandError) {
+    fun answer(context: CommandContext, error: CommandError, help: List<String> = emptyList()) {
         var type: Class<*>? = error.javaClass
         var template = error.defaultMessage
         while (template == null && type != null) {
@@ -91,7 +91,7 @@ internal class StandardCommandFeedback(
         }
         val text = error.format(template ?: texts.getValue(CommandFailed::class.java))
         val tone = if (error is NoPermission || error is OnCooldown) ChatTone.WARNING else ChatTone.FAILURE
-        if (error is BadUsage) context.sender.usageNotice(text) else context.sender.chatNotice(tone, text)
+        if (error is BadUsage) context.sender.usageNotice(text, help) else context.sender.chatNotice(tone, text)
         if (error is NoPermission) deniedSound?.let { context.sender.playSound(it) }
     }
 }
@@ -114,7 +114,7 @@ internal fun CommandSender.chatNotice(tone: ChatTone, text: String, detail: Stri
 }
 
 /** A usage line: the mark, the text, and each `<placeholder>` in the accent; a click puts the command in the chat box. */
-internal fun CommandSender.usageNotice(text: String) {
+internal fun CommandSender.usageNotice(text: String, help: List<String> = emptyList()) {
     val kit = ChatKit(ChatReader.of(this))
     val placeholder = Regex("""<[^>]+>|\[[^]]+]""")
     var line = kit.mark(ChatTone.WARNING)
@@ -130,4 +130,5 @@ internal fun CommandSender.usageNotice(text: String) {
             .hoverEvent(kit.tooltip(kit.text("Нажмите, чтобы вставить команду", ChatPalette.TEXT), kit.text(command, ChatPalette.LABEL)))
     }
     send(line)
+    help.forEach { send(kit.text("    $it", ChatPalette.LABEL)) }
 }
