@@ -14,7 +14,6 @@ import org.pnfolder.pnlibrary.core.link.RemoteExecutor
 import org.pnfolder.pnlibrary.core.link.ServerGroups
 import org.pnfolder.pnlibrary.core.menu.OwnerInfo
 import org.pnfolder.pnlibrary.core.menu.ProxyMenu
-import org.pnfolder.pnlibrary.core.menu.RemoteMenuHost
 import org.pnfolder.pnlibrary.core.runtime.PnLibraryRuntimeHost
 import org.pnfolder.pnlibrary.velocity.api.VelocityPlatform
 import org.slf4j.Logger
@@ -38,7 +37,6 @@ internal class VelocityRuntime(
     private var playerEvents: VelocityPlayerEvents? = null
     private var linkListener: VelocityLinkListener? = null
     private var networkTask: ScheduledTask? = null
-    private var menuHost: RemoteMenuHost? = null
 
     /**
      * Starts the shared runtime when Velocity announces proxy initialization.
@@ -73,20 +71,12 @@ internal class VelocityRuntime(
         LinkHub.key = key
         LinkHub.folder = dataDirectory
         LinkHub.transport = transport
-        val menus = key?.let {
-            ProxyMenu.host(
-                started.library, it, transport,
-                later = { delay, action -> server.scheduler.buildTask(owner, Runnable { action() }).delay(delay, TimeUnit.MILLISECONDS).schedule() },
-                describe = { instance ->
-                    instance?.let { server.pluginManager.fromInstance(it).orElse(null)?.description }?.let { description ->
-                        OwnerInfo(description.name.orElse(description.id), description.version.orElse(null), description.authors)
-                    }
-                },
-                warn = { logger.warn(it) },
-            )
+        val data = ProxyMenu.server(started.library) { instance ->
+            instance?.let { server.pluginManager.fromInstance(it).orElse(null)?.description }?.let { description ->
+                OwnerInfo(description.name.orElse(description.id), description.version.orElse(null), description.authors)
+            }
         }
-        menuHost = menus
-        val link = VelocityLinkListener(LinkReceiver(key, executor = RemoteExecutor(started.library), transport = transport, views = menus))
+        val link = VelocityLinkListener(LinkReceiver(key, executor = RemoteExecutor(started.library), transport = transport, data = data))
         server.channelRegistrar.register(VelocityLinkListener.CHANNEL)
         server.eventManager.register(owner, link)
         linkListener = link
@@ -115,8 +105,6 @@ internal class VelocityRuntime(
         playerEvents?.let { runCatchingNonFatal { server.eventManager.unregisterListener(owner, it) } }
         playerEvents = null
         networkTask?.cancel()
-        menuHost?.stop()
-        menuHost = null
         LinkHub.transport = null
         LinkHub.key = null
         networkTask = null

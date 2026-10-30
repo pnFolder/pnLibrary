@@ -20,7 +20,7 @@ class LinkReceiver(
     private val executor: RemoteExecutor? = null,
     private val transport: LinkTransport? = null,
     private val replies: RemoteReplies = LinkHub.replies,
-    private val views: ViewHandler? = null,
+    private val data: DataHandler? = null,
 ) {
     /** Whether the link can accept anything at all. */
     val enabled: Boolean get() = key != null
@@ -40,12 +40,12 @@ class LinkReceiver(
             deliver(it, key)
             return true
         }
-        LinkCodec.decodeView(message, key)?.let {
-            routeView(server, it.copy(origin = server), key)
+        LinkCodec.decodeCall(message, key)?.let {
+            routeCall(server, it.copy(origin = server), key)
             return true
         }
-        LinkCodec.decodeFrame(message, key)?.let {
-            transport?.send(it.to, message)
+        LinkCodec.decodeChunk(message, key)?.let {
+            if (it.to == LinkNames.PROXY_ORIGIN) LinkHub.data.accept(it) else transport?.send(it.to, message)
             return true
         }
         return false
@@ -62,24 +62,21 @@ class LinkReceiver(
         }
     }
 
-    /** Passes a viewer's step on to the server whose menu it is for, or tells the viewer why it cannot. */
-    private fun routeView(server: String, request: ViewRequest, key: ByteArray) {
-        if (request.target.equals(LinkNames.PROXY, ignoreCase = true)) {
-            views?.handle(request) ?: replyViewError(server, request, key, "Меню прокси выключено.")
+    /** Passes a question on to the server it is for, answers it here when it is for the proxy, or tells the asker why it cannot. */
+    private fun routeCall(server: String, call: DataCall, key: ByteArray) {
+        if (call.target.equals(LinkNames.PROXY, ignoreCase = true)) {
+            val handler = data ?: return refuse(server, call, key, "Прокси не отвечает на запросы меню.")
+            handler.handle(call) { ok, text -> answer(server, call.id, ok, text, key) }
             return
         }
-        val unreachable = when {
-            transport?.send(request.target, LinkCodec.encodeView(request, key)) != true -> "Сервер ${request.target} недоступен."
-            else -> return
-        }
-        replyViewError(server, request, key, unreachable)
+        if (transport?.send(call.target, LinkCodec.encodeCall(call, key)) != true) refuse(server, call, key, "Сервер ${call.target} недоступен.")
     }
 
-    private fun replyViewError(server: String, request: ViewRequest, key: ByteArray, text: String) {
-        if (request.action == ViewAction.CLOSE) return
-        val notice = ViewNotices.encode(net.kyori.adventure.text.Component.text(text))
-        val frame = ViewFrame(request.session, server, "", 0, emptyMap(), listOf(notice), true, Instant.now())
-        LinkCodec.encodeFrame(frame, key)?.let { transport?.send(server, it) }
+    private fun refuse(server: String, call: DataCall, key: ByteArray, text: String) = answer(server, call.id, false, text, key)
+
+    private fun answer(server: String, id: java.util.UUID, ok: Boolean, text: String, key: ByteArray) {
+        val pieces = DataChunks.split(id, server, ok, text, key) ?: DataChunks.split(id, server, false, "Ответ слишком большой.", key).orEmpty()
+        pieces.forEach { transport?.send(server, it) }
     }
 
     private fun deliver(result: RemoteResult, key: ByteArray) {

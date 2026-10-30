@@ -119,14 +119,8 @@ interface MenuViewer {
 /** A plugin as the menu lists it. */
 data class OwnerInfo(val name: String, val version: String?, val authors: List<String>)
 
-/** What the menu needs from the platform it runs on. */
-interface MenuHost {
-    /** Runs [action] on the thread that may touch the platform; the answers of asynchronous work come back through it. */
-    fun sync(action: () -> Unit)
-
-    /** Runs [action] on that thread after [delayMillis]. */
-    fun later(delayMillis: Long, action: () -> Unit)
-
+/** Finds the plugins of the platform. */
+interface PluginDirectory {
     /** The plugin that [owner] is, or null when it is not one. */
     fun owner(owner: Any?): OwnerInfo?
 
@@ -135,6 +129,18 @@ interface MenuHost {
 
     /** The plugin whose code defines [type], or null. */
     fun ownerOf(type: Class<*>?): OwnerInfo?
+}
+
+/** What the menu needs from the platform it runs on. */
+interface MenuHost : PluginDirectory {
+    /** Runs [action] on the thread that may touch the platform; the answers of asynchronous work come back through it. */
+    fun sync(action: () -> Unit)
+
+    /** Runs [action] on that thread after [delayMillis]. */
+    fun later(delayMillis: Long, action: () -> Unit)
+
+    /** Runs [action] away from that thread, where waiting for another server is allowed. */
+    fun async(action: () -> Unit)
 
     /** Opens the menu of the server called [target] for [viewer]; false when that is not possible from here. */
     fun openRemote(viewer: MenuViewer, target: String): Boolean

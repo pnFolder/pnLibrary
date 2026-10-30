@@ -14,7 +14,6 @@ import org.pnfolder.pnlibrary.core.link.RemoteExecutor
 import org.pnfolder.pnlibrary.core.link.ServerGroups
 import org.pnfolder.pnlibrary.core.menu.OwnerInfo
 import org.pnfolder.pnlibrary.core.menu.ProxyMenu
-import org.pnfolder.pnlibrary.core.menu.RemoteMenuHost
 import org.pnfolder.pnlibrary.core.runtime.PnLibraryRuntimeHost
 import java.util.concurrent.TimeUnit
 
@@ -30,7 +29,6 @@ internal class BungeeRuntime(private val plugin: Plugin) {
     private var playerEvents: BungeePlayerEvents? = null
     private var linkListener: BungeeLinkListener? = null
     private var networkTask: ScheduledTask? = null
-    private var menuHost: RemoteMenuHost? = null
 
     fun start() {
         val adapter = BungeePlatformAdapter(plugin)
@@ -50,16 +48,10 @@ internal class BungeeRuntime(private val plugin: Plugin) {
         LinkHub.key = key
         LinkHub.folder = plugin.dataFolder.toPath()
         LinkHub.transport = transport
-        val menus = key?.let {
-            ProxyMenu.host(
-                started.library, it, transport,
-                later = { delay, action -> plugin.proxy.scheduler.schedule(plugin, Runnable { action() }, delay, TimeUnit.MILLISECONDS) },
-                describe = { owner -> (owner as? Plugin)?.description?.let { OwnerInfo(it.name, it.version, listOfNotNull(it.author)) } },
-                warn = { plugin.logger.warning(it) },
-            )
+        val data = ProxyMenu.server(started.library) { owner ->
+            (owner as? Plugin)?.description?.let { OwnerInfo(it.name, it.version, listOfNotNull(it.author)) }
         }
-        menuHost = menus
-        val link = BungeeLinkListener(LinkReceiver(key, executor = RemoteExecutor(started.library), transport = transport, views = menus))
+        val link = BungeeLinkListener(LinkReceiver(key, executor = RemoteExecutor(started.library), transport = transport, data = data))
         plugin.proxy.registerChannel(LinkCodec.CHANNEL)
         plugin.proxy.pluginManager.registerListener(plugin, link)
         linkListener = link
@@ -80,8 +72,6 @@ internal class BungeeRuntime(private val plugin: Plugin) {
 
     fun stop() {
         networkTask?.cancel()
-        menuHost?.stop()
-        menuHost = null
         LinkHub.transport = null
         LinkHub.key = null
         networkTask = null

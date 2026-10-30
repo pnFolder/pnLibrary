@@ -60,7 +60,7 @@ internal class BukkitControlCommand(
     )
     private val updates = BukkitUpdateFlow(plugin, library, catalog, replies)
     private val support = BukkitSupportCommands(plugin, library, replies)
-    private val menu = PluginsMenu(plugin, library, replies).also { RemoteMenus.home = it::home }
+    private val menu = PluginsMenu(plugin, library, replies)
 
     /** Builds the permission-aware control command tree. */
     fun definition(): CommandDefinition = command("pn") {
