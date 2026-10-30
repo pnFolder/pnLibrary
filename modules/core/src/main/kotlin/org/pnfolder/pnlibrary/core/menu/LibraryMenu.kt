@@ -899,6 +899,9 @@ class LibraryMenu(
 
     private val comparer = ServerGroups { null }
 
+    /** The proxy as a member of groups, then the servers. */
+    private fun members(map: NetworkReport): List<NetworkServer> = listOf(NetworkServer(ServerGroups.PROXY, true, map.proxy)) + map.servers
+
     /** The groups live on the proxy; this asks it from a menu that is not its own. */
     private val proxyData by lazy { RemoteMenuData(LinkNames.PROXY) }
 
@@ -936,7 +939,7 @@ class LibraryMenu(
     /** The groups of servers the proxy keeps; a click opens one group. */
     private fun groups(player: MenuViewer, page: Int): Unit = withGroups(player) { all, map ->
         val rows = all.map { group ->
-            val bad = comparer.compare(group, map.servers).count { !it.ok }
+            val bad = comparer.compare(group, members(map)).count { !it.ok }
             val material = if (group.servers.isEmpty()) "CHEST" else if (bad == 0) "EMERALD_BLOCK" else "REDSTONE_BLOCK"
             val parameters = listOf(
                 "Серверов" to "${group.servers.size}",
@@ -973,7 +976,7 @@ class LibraryMenu(
             groups(player, 0)
             return@withGroups
         }
-        val states = comparer.compare(group, map.servers)
+        val states = comparer.compare(group, members(map))
         val rows = states.map { state ->
             val material = if (state.ok) "EMERALD_BLOCK" else "REDSTONE_BLOCK"
             val parameters = buildList {
@@ -987,7 +990,8 @@ class LibraryMenu(
                 if (how == ClickType.RIGHT) editGroup(who, GroupEdit(GroupOp.REMOVE_SERVER, name, state.server)) { group(who, name) }
                 else groupServer(who, name, state.server)
             }
-            Row(icon(Icons.OVERVIEW, material, state.server, Style.lore(emptyList(), parameters, *hints), muted = state.known == null), click)
+            val lore = Style.lore(emptyList(), parameters, *hints)
+            Row(icon(Icons.OVERVIEW, material, ServerGroups.label(state.server), lore, muted = state.known == null), click)
         }
         list(
             player, "Группа ${group.name}", rows, 0, PAGE_SIZE, { who, _ -> group(who, name) }, { groups(it, 0) }, "Серверов нет",
@@ -1031,10 +1035,11 @@ class LibraryMenu(
             groups(player, 0)
             return@withGroups
         }
-        val rows = map.servers.filter { server -> group.servers.none { it.equals(server.name, true) } }.map { server ->
+        val rows = members(map).filter { server -> group.servers.none { it.equals(server.name, true) } }.map { server ->
             val others = all.filter { other -> other !== group && other.servers.any { it.equals(server.name, true) } }.map { it.name }
             val parameters = listOf("Уже в группах" to others.joinToString(", ").ifEmpty { "нет" })
-            val item = icon(Icons.OVERVIEW, "EMERALD_BLOCK", server.name, Style.lore(emptyList(), parameters, Style.left("добавить в группу")))
+            val hint = Style.left("добавить в группу")
+            val item = icon(Icons.OVERVIEW, "EMERALD_BLOCK", ServerGroups.label(server.name), Style.lore(emptyList(), parameters, hint))
             Row(item, go { who -> editGroup(who, GroupEdit(GroupOp.ADD_SERVER, name, server.name)) { group(who, name) } })
         }
         list(player, "Добавить в $name", rows, page, PAGE_SIZE, { who, to -> pickServer(who, name, to) }, { group(it, name) }, "Все серверы уже в группе")
@@ -1092,7 +1097,7 @@ class LibraryMenu(
             group(player, name)
             return@withGroups
         }
-        val have = map.servers.firstOrNull { it.name.equals(server, true) }?.report?.plugins.orEmpty()
+        val have = members(map).firstOrNull { it.name.equals(server, true) }?.report?.plugins.orEmpty()
         val names = (group.plugins + group.wanted(server)).sortedBy { it.lowercase() }
         val rows = names.map { plugin ->
             val wanted = group.wanted(server).any { it.equals(plugin, true) }
@@ -1114,7 +1119,8 @@ class LibraryMenu(
             Row(item, go { who -> editGroup(who, GroupEdit(op, name, server, plugin)) { groupServer(who, name, server) } })
         }
         list(
-            player, "$name · $server", rows, 0, PAGE_SIZE, { who, _ -> groupServer(who, name, server) }, { group(it, name) }, "У группы нет плагинов",
+            player, "$name · ${ServerGroups.label(server)}", rows, 0, PAGE_SIZE, { who, _ -> groupServer(who, name, server) },
+            { group(it, name) }, "У группы нет плагинов",
             extra = {
                 val add = icon(
                     Icons.PLUGIN, "LIME_DYE", "Ещё плагин этому серверу",
@@ -1132,10 +1138,10 @@ class LibraryMenu(
 
     private fun askGroup(player: MenuViewer, states: List<ServerGroups.ServerState>, action: RemoteAction) {
         var sent = 0
-        states.forEach { state ->
+        states.filter { it.server != ServerGroups.PROXY }.forEach { state ->
             val products = if (action == RemoteAction.UPDATE) state.outdated else listOf(null)
             products.forEach { product ->
-                val label = product?.let { "${state.server} · $it" } ?: state.server
+                val label = product?.let { "${ServerGroups.label(state.server)} · $it" } ?: ServerGroups.label(state.server)
                 val error = RemoteControl.send(state.server, action, product, player.name) { result ->
                     sync {
                         if (player.online) tell(player, if (result.ok) ChatTone.SUCCESS else ChatTone.FAILURE, "$label: ${result.text}")

@@ -18,7 +18,9 @@ class ServerGroupsTest {
 
         assertTrue(groups.create("grief"))
         assertFalse(groups.create("GRIEF"))
-        assertFalse(groups.create("create"))
+        assertTrue(groups.create("create"))
+        assertFalse(groups.create("two words"))
+        assertTrue(groups.delete("create"))
         assertTrue(groups.edit("Grief") { it.copy(servers = it.servers + "g1", plugins = it.plugins + "shop") })
 
         val again = ServerGroups { folder.resolve(ServerGroups.FILE) }.get("grief")!!
@@ -49,6 +51,22 @@ class ServerGroupsTest {
         groups.edit("lobby") { it.with("l2", "chat", true).reset("l2") }
         assertEquals(setOf("shop", "chat"), groups.get("lobby")!!.wanted("l2"))
         assertFalse(groups.get("lobby")!!.customized("l2"))
+    }
+
+    @Test
+    fun `the proxy is a member under a name no server has`() {
+        val group = ServerGroups.Group("all", setOf(ServerGroups.PROXY, "proxy"), setOf("shop"))
+        val servers = listOf(
+            NetworkServer(ServerGroups.PROXY, true, report(LinkPlugin("shop", "1", null, "UP_TO_DATE"))),
+            NetworkServer("proxy", true, report()),
+        )
+
+        val states = ServerGroups { null }.compare(group, servers).associateBy { it.server }
+
+        assertTrue(states.getValue(ServerGroups.PROXY).ok)
+        assertEquals(listOf("shop"), states.getValue("proxy").missing)
+        assertEquals("Прокси", ServerGroups.label(ServerGroups.PROXY))
+        assertEquals("proxy", ServerGroups.label("proxy"))
     }
 
     @Test

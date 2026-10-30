@@ -5,6 +5,7 @@ import org.pnfolder.pnlibrary.api.chat.ChatKit
 import org.pnfolder.pnlibrary.api.chat.ChatPalette
 import org.pnfolder.pnlibrary.api.chat.ChatReader
 import org.pnfolder.pnlibrary.api.commands.ArgumentType
+import org.pnfolder.pnlibrary.api.commands.CommandBuilder
 import org.pnfolder.pnlibrary.api.commands.CommandContext
 import org.pnfolder.pnlibrary.api.commands.CommandDefinition
 import org.pnfolder.pnlibrary.api.commands.CommandNodeBuilder
@@ -19,18 +20,22 @@ import org.pnfolder.pnlibrary.core.link.ServerGroups
  * `/pn groups` on a proxy: groups of servers and the plugins each of them should have, compared with what the
  * servers reported. A group is for answering "does every grief server have its plugins, and are they current".
  *
+ * Every command starts with a word and then names the group, so a group may be called anything, even `create`.
+ * A server may be in any number of groups, and inside a group one server may differ from the rest. The proxy itself
+ * is a member under the name `@proxy`, which no server can have.
+ *
  * | Command | What it does |
  * |---|---|
  * | `/pn groups` | the groups and how many of their servers are in order |
- * | `/pn groups <group>` | each server of the group: what is missing and what can be updated |
+ * | `/pn groups info <group>` | each server of the group: what is missing and what can be updated |
  * | `/pn groups create <group>`, `delete <group>` | makes or deletes a group |
- * | `/pn groups <group> servers add <server>`, `servers remove <server>` | changes the servers of the group (`add-server` also works) |
- * | `/pn groups <group> plugins add <plugin>`, `plugins remove <plugin>` | changes the plugins every server of the group has |
- * | `/pn groups <group> server <server>` | what the group asks of one server and how it differs from the rest |
- * | `/pn groups <group> server <server> skip <plugin>`, `extra <plugin>`, `reset` | this server drops a plugin, carries one more, or goes back to the rest |
- * | `/pn groups of <server>` | the groups a server is in; a server may be in any number of them |
- * | `/pn groups <group> check` | every server of the group looks for updates |
- * | `/pn groups <group> update` | every server downloads the updates of the group's plugins |
+ * | `/pn groups join <group> <server>`, `leave <group> <server>` | puts a server in the group or takes it out |
+ * | `/pn groups require <group> <plugin>`, `drop <group> <plugin>` | every server of the group has the plugin, or no longer has to |
+ * | `/pn groups server <group> <server>` | what the group asks of one server and how it differs from the rest |
+ * | `/pn groups skip <group> <server> <plugin>`, `extra <group> <server> <plugin>` | this server does not need a plugin, or needs one more |
+ * | `/pn groups reset <group> <server>` | this server goes back to what the rest have |
+ * | `/pn groups of <server>` | the groups a server is in |
+ * | `/pn groups check <group>`, `update <group>` | every server of the group looks for updates, or downloads them |
  *
  * @param groups the stored groups
  * @param servers the servers to compare with
@@ -43,85 +48,85 @@ class GroupsCommand(private val groups: ServerGroups, private val servers: () ->
         literal("create") {
             argument("group", ArgumentType.string()) { executes { create(it, it.get<String>("group")) } }
         }
-        literal("delete") {
-            argument("group", ArgumentType.string()) {
-                suggests { groups.all().map { it.name } }
-                executes { delete(it, it.get<String>("group")) }
+        withGroup("delete") { executes { delete(it, it.get<String>("group")) } }
+        withGroup("info") { executes { view(it, it.get<String>("group")) } }
+        withGroup("join") { valued(true, ServerGroups.Group::addServer) }
+        withGroup("leave") { valued(true, ServerGroups.Group::removeServer) }
+        withGroup("require") { valued(false, ServerGroups.Group::addPlugin) }
+        withGroup("drop") { valued(false, ServerGroups.Group::removePlugin) }
+        withGroup("check") {
+            permission(RemoteAction.CHECK.permission)
+            executes { ask(it, RemoteAction.CHECK) }
+        }
+        withGroup("update") {
+            permission(RemoteAction.UPDATE.permission)
+            executes { ask(it, RemoteAction.UPDATE) }
+        }
+        withGroup("server") { withServer { executes { viewServer(it, it.get<String>("group"), it.get<String>("server")) } } }
+        withGroup("skip") { withServer { override(false) } }
+        withGroup("extra") { withServer { override(true) } }
+        withGroup("reset") {
+            withServer {
+                executes { context ->
+                    val server = context.get<String>("server")
+                    val done = "Сервер ${ServerGroups.label(server)} в группе теперь как все."
+                    say(context, groups.edit(context.get<String>("group")) { it.reset(server) }, done)
+                }
             }
         }
         literal("of") {
             argument("server", ArgumentType.string()) {
-                suggests { servers().map { it.name } }
+                suggests { serverNames() }
                 executes { of(it, it.get<String>("server")) }
             }
         }
-        argument("group", ArgumentType.string()) {
-            suggests { groups.all().map { it.name } }
-            executes { view(it, it.get<String>("group")) }
-            literal("servers") {
-                valued("add", true, ServerGroups.Group::addServer)
-                valued("remove", true, ServerGroups.Group::removeServer)
-            }
-            literal("plugins") {
-                valued("add", false, ServerGroups.Group::addPlugin)
-                valued("remove", false, ServerGroups.Group::removePlugin)
-            }
-            valued("add-server", true, ServerGroups.Group::addServer)
-            valued("remove-server", true, ServerGroups.Group::removeServer)
-            valued("add-plugin", false, ServerGroups.Group::addPlugin)
-            valued("remove-plugin", false, ServerGroups.Group::removePlugin)
-            literal("server") {
-                argument("server", ArgumentType.string()) {
-                    suggests { context -> groups.get(context.get<String>("group"))?.servers.orEmpty().toList() }
-                    executes { viewServer(it, it.get<String>("group"), it.get<String>("server")) }
-                    literal("skip") { override(false) }
-                    literal("extra") { override(true) }
-                    literal("reset") {
-                        executes { context ->
-                            val server = context.get<String>("server")
-                            say(context, groups.edit(context.get<String>("group")) { it.reset(server) }, "Сервер $server в группе теперь как все.")
-                        }
-                    }
-                }
-            }
-            literal("check") {
-                permission(RemoteAction.CHECK.permission)
-                executes { ask(it, RemoteAction.CHECK) }
-            }
-            literal("update") {
-                permission(RemoteAction.UPDATE.permission)
-                executes { ask(it, RemoteAction.UPDATE) }
-            }
-        }
     }
 
-    /** The word [word], then one value: a server when [server] is true, otherwise a plugin. */
-    private fun CommandNodeBuilder.valued(word: String, server: Boolean, edit: (ServerGroups.Group, String) -> ServerGroups.Group) {
+    /** The word [word], then the name of a group. */
+    private fun CommandBuilder.withGroup(word: String, inside: CommandNodeBuilder.() -> Unit) {
         literal(word) {
-            argument("value", ArgumentType.string()) {
-                suggests { context -> if (server) serverNames() else pluginNames(groups.get(context.get<String>("group"))) }
-                executes { context ->
-                    val name = context.get<String>("group")
-                    say(context, groups.edit(name) { edit(it, context.get<String>("value")) }, "Группа $name изменена.")
-                }
+            argument("group", ArgumentType.string()) {
+                suggests { groups.all().map { it.name } }
+                inside()
             }
         }
     }
 
-    /** `skip <plugin>` or `extra <plugin>` of one server inside the group; [extra] says which. */
+    /** The name of a server of the group, chosen from the servers the group has. */
+    private fun CommandNodeBuilder.withServer(inside: CommandNodeBuilder.() -> Unit) {
+        argument("server", ArgumentType.string()) {
+            suggests { context -> groups.get(context.get<String>("group"))?.servers.orEmpty().toList() }
+            inside()
+        }
+    }
+
+    /** One more word: a server when [server] is true, otherwise a plugin. */
+    private fun CommandNodeBuilder.valued(server: Boolean, edit: (ServerGroups.Group, String) -> ServerGroups.Group) {
+        val word = if (server) "server" else "plugin"
+        argument(word, ArgumentType.string()) {
+            suggests { context -> if (server) serverNames() else pluginNames(groups.get(context.get<String>("group"))) }
+            executes { context ->
+                val name = context.get<String>("group")
+                say(context, groups.edit(name) { edit(it, context.get<String>(word)) }, "Группа $name изменена.")
+            }
+        }
+    }
+
+    /** A plugin after a server of the group: that server skips it, or carries it besides the rest; [extra] says which. */
     private fun CommandNodeBuilder.override(extra: Boolean) {
         argument("plugin", ArgumentType.string()) {
             suggests { context -> pluginNames(groups.get(context.get<String>("group"))) }
             executes { context ->
                 val server = context.get<String>("server")
                 val plugin = context.get<String>("plugin")
-                val text = if (extra) "Серверу $server в группе добавлен плагин $plugin." else "Серверу $server в группе плагин $plugin не нужен."
+                val label = ServerGroups.label(server)
+                val text = if (extra) "Серверу $label в группе добавлен плагин $plugin." else "Серверу $label в группе плагин $plugin не нужен."
                 say(context, groups.edit(context.get<String>("group")) { it.with(server, plugin, extra) }, text)
             }
         }
     }
 
-    private fun serverNames() = servers().map { it.name }
+    private fun serverNames() = servers().map { it.name }.filterNot { it == ServerGroups.PROXY } + ServerGroups.PROXY
 
     private fun pluginNames(group: ServerGroups.Group?) = servers().flatMap { it.report.plugins }.map { it.product }.distinct() + group?.plugins.orEmpty()
 
@@ -135,14 +140,14 @@ class GroupsCommand(private val groups: ServerGroups, private val servers: () ->
     private fun of(context: CommandContext, server: String) {
         val kit = kit(context)
         val member = groups.of(server)
-        val lines = mutableListOf(kit.blank(), kit.header(server, kit.text("в группах", ChatPalette.LABEL)))
+        val lines = mutableListOf(kit.blank(), kit.header(ServerGroups.label(server), kit.text("в группах", ChatPalette.LABEL)))
         if (member.isEmpty()) lines += kit.note("Сервер не состоит ни в одной группе.", ChatPalette.FAINT)
         member.forEach { group ->
             val wanted = group.wanted(server).joinToString(", ").ifEmpty { "нет плагинов" }
             var line = kit.text(" ").append(kit.text(group.name, ChatPalette.ACCENT)).append(kit.dot()).append(kit.text(wanted, ChatPalette.SOFT))
             if (kit.reader.interactive) {
                 line = line.hoverEvent(kit.tooltip(kit.text("Открыть сервер в группе ›", ChatPalette.ACCENT)))
-                    .clickEvent(ClickEvent.runCommand("$ROOT ${group.name} server $server"))
+                    .clickEvent(ClickEvent.runCommand("$ROOT server ${group.name} $server"))
             }
             lines += line
         }
@@ -153,14 +158,14 @@ class GroupsCommand(private val groups: ServerGroups, private val servers: () ->
         val kit = kit(context)
         val group = groups.get(name)
         if (group == null || group.servers.none { it.equals(server, true) }) {
-            context.sender.send(kit.text("В группе $name нет сервера $server.", ChatPalette.DANGER))
+            context.sender.send(kit.text("В группе $name нет сервера ${ServerGroups.label(server)}.", ChatPalette.DANGER))
             return
         }
         val have = servers().firstOrNull { it.name.equals(server, true) }?.report?.plugins.orEmpty()
         val note = kit.text(if (group.customized(server)) "свои настройки" else "как у всех", ChatPalette.LABEL)
-        val lines = mutableListOf(kit.blank(), kit.header("$name · $server", note))
+        val lines = mutableListOf(kit.blank(), kit.header("$name · ${ServerGroups.label(server)}", note))
         val all = (group.plugins + group.wanted(server)).sortedBy { it.lowercase() }
-        if (all.isEmpty()) lines += kit.note("У группы нет плагинов: $ROOT $name plugins add <плагин>", ChatPalette.FAINT)
+        if (all.isEmpty()) lines += kit.note("У группы нет плагинов: $ROOT require $name <плагин>", ChatPalette.FAINT)
         all.forEach { plugin ->
             val wanted = group.wanted(server).any { it.equals(plugin, true) }
             val mark = if (wanted) "нужен" else "не нужен"
@@ -172,9 +177,9 @@ class GroupsCommand(private val groups: ServerGroups, private val servers: () ->
         }
         lines += kit.blank()
         lines += kit.commandHints(
-            "$ROOT $name server $server skip <плагин>" to "этому серверу плагин не нужен",
-            "$ROOT $name server $server extra <плагин>" to "этому серверу нужен ещё плагин",
-            "$ROOT $name server $server reset" to "сделать как у всех",
+            "$ROOT skip $name $server <плагин>" to "этому серверу плагин не нужен",
+            "$ROOT extra $name $server <плагин>" to "этому серверу нужен ещё плагин",
+            "$ROOT reset $name $server" to "сделать как у всех",
         )
         lines.forEach(context.sender::send)
     }
@@ -185,7 +190,7 @@ class GroupsCommand(private val groups: ServerGroups, private val servers: () ->
         val kit = kit(context)
         val made = groups.create(name)
         val text = when {
-            made -> "Группа $name создана. Добавьте серверы и плагины: $ROOT $name servers add <сервер>, $ROOT $name plugins add <плагин>"
+            made -> "Группа $name создана. Добавьте серверы и плагины: $ROOT join $name <сервер>, $ROOT require $name <плагин>"
             !ServerGroups.validName(name) -> "Имя группы: до 32 символов, без пробелов, не create и не delete."
             else -> "Группа $name уже есть или файл не записался."
         }
@@ -218,18 +223,18 @@ class GroupsCommand(private val groups: ServerGroups, private val servers: () ->
                 )
             if (kit.reader.interactive) {
                 line = line.hoverEvent(kit.tooltip(kit.text("Нажмите, чтобы открыть группу ›", ChatPalette.ACCENT)))
-                    .clickEvent(ClickEvent.runCommand("$ROOT ${group.name}"))
+                    .clickEvent(ClickEvent.runCommand("$ROOT info ${group.name}"))
             }
             lines += line
         }
         if (!kit.reader.interactive) {
             lines += kit.blank()
             lines += kit.commandHints(
-                "$ROOT <группа>" to "состояние группы",
+                "$ROOT info <группа>" to "состояние группы",
                 "$ROOT create <группа>" to "новая группа",
-                "$ROOT <группа> servers add <сервер>" to "добавить сервер",
-                "$ROOT <группа> plugins add <плагин>" to "плагин для всех серверов группы",
-                "$ROOT <группа> server <сервер>" to "свои настройки одного сервера",
+                "$ROOT join <группа> <сервер>" to "добавить сервер",
+                "$ROOT require <группа> <плагин>" to "плагин для всех серверов группы",
+                "$ROOT server <группа> <сервер>" to "свои настройки одного сервера",
                 "$ROOT of <сервер>" to "в каких группах сервер",
             )
         }
@@ -247,7 +252,7 @@ class GroupsCommand(private val groups: ServerGroups, private val servers: () ->
         lines += kit.field("Плагины", kit.text(group.plugins.joinToString(", ").ifEmpty { "не заданы" }, ChatPalette.TEXT))
         lines += kit.blank()
         lines += kit.section("Серверы")
-        if (group.servers.isEmpty()) lines += kit.note("Серверов нет: $ROOT ${group.name} servers add <сервер>", ChatPalette.FAINT)
+        if (group.servers.isEmpty()) lines += kit.note("Серверов нет: $ROOT join ${group.name} <сервер>", ChatPalette.FAINT)
         groups.compare(group, servers()).forEach { state ->
             val verdict = when {
                 state.known == null -> kit.text("не присылал отчёт", ChatPalette.DANGER)
@@ -256,11 +261,11 @@ class GroupsCommand(private val groups: ServerGroups, private val servers: () ->
                 else -> kit.text("", ChatPalette.TEXT)
             }
             var line = kit.text(" ").append(kit.text(kit.glyph('●'), if (state.ok) ChatPalette.ACCENT else ChatPalette.DANGER))
-                .append(kit.text(" ${state.server}  ", ChatPalette.ACCENT)).append(verdict)
+                .append(kit.text(" ${ServerGroups.label(state.server)}  ", ChatPalette.ACCENT)).append(verdict)
                 .let { if (state.customized) it.append(kit.text("свои настройки  ", ChatPalette.LABEL)) else it }
             if (kit.reader.interactive) {
                 line = line.hoverEvent(kit.tooltip(kit.text("Настройки сервера в группе ›", ChatPalette.ACCENT)))
-                    .clickEvent(ClickEvent.runCommand("$ROOT ${group.name} server ${state.server}"))
+                    .clickEvent(ClickEvent.runCommand("$ROOT server ${group.name} ${state.server}"))
             }
             if (state.missing.isNotEmpty()) line = line.append(kit.text("нет: ${state.missing.joinToString(", ")}  ", ChatPalette.DANGER))
             if (state.outdated.isNotEmpty()) line = line.append(kit.text("можно обновить: ${state.outdated.joinToString(", ")}", ChatPalette.SOFT))
@@ -268,8 +273,8 @@ class GroupsCommand(private val groups: ServerGroups, private val servers: () ->
         }
         lines += kit.blank()
         lines += kit.actions(
-            kit.button("[Проверить]", "$ROOT ${group.name} check", "Каждый сервер группы проверит обновления", ChatPalette.ACCENT),
-            kit.button("[Обновить]", "$ROOT ${group.name} update", "Скачать обновления плагинов группы на всех серверах", ChatPalette.ACCENT),
+            kit.button("[Проверить]", "$ROOT check ${group.name}", "Каждый сервер группы проверит обновления", ChatPalette.ACCENT),
+            kit.button("[Обновить]", "$ROOT update ${group.name}", "Скачать обновления плагинов группы на всех серверах", ChatPalette.ACCENT),
             kit.button("[К списку]", ROOT, "Все группы", ChatPalette.SOFT),
         ) ?: kit.blank()
         lines.forEach(context.sender::send)
@@ -287,8 +292,13 @@ class GroupsCommand(private val groups: ServerGroups, private val servers: () ->
         var sent = 0
         groups.compare(group, servers()).forEach { state ->
             val products = if (action == RemoteAction.UPDATE) state.outdated else listOf(null)
+            if (state.server == ServerGroups.PROXY) {
+                if (products.isNotEmpty()) sender.send(kit.text("Прокси: проверка и обновление идут своими командами /pnproxy.", ChatPalette.LABEL))
+                return@forEach
+            }
             products.forEach { product ->
-                val label = product?.let { "${state.server} · $it" } ?: state.server
+                val name = ServerGroups.label(state.server)
+                val label = product?.let { "$name · $it" } ?: name
                 val error = RemoteControl.send(state.server, action, product, sender.name) { result ->
                     sender.send(kit.text("$label: ${result.text}", if (result.ok) ChatPalette.ACCENT else ChatPalette.DANGER))
                 }

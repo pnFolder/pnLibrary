@@ -10,6 +10,8 @@ import org.pnfolder.pnlibrary.api.runtime.PnLibrary
 import org.pnfolder.pnlibrary.core.lifecycle.mountableCommand
 import org.pnfolder.pnlibrary.core.lifecycle.registerRuntimeCommand
 import org.pnfolder.pnlibrary.core.link.LinkHub
+import org.pnfolder.pnlibrary.core.link.LinkReports
+import org.pnfolder.pnlibrary.core.link.NetworkServer
 import org.pnfolder.pnlibrary.core.link.ServerGroups
 import org.pnfolder.pnlibrary.core.updates.catalog.ProxyUpdateCommand
 import java.util.Collections
@@ -82,8 +84,14 @@ class ProxyControlCommand(
             mount("bus", EventBusCommand(library).definition())
             mount("tasks", TaskCommand(library).definition())
             mount("servers", ServersCommand(ServersCommand.fromReports()).definition())
-            mount("groups", GroupsCommand(ServerGroups { LinkHub.folder?.resolve(ServerGroups.FILE) }, ServersCommand.fromReports()).definition())
+            mount("groups", GroupsCommand(ServerGroups { LinkHub.folder?.resolve(ServerGroups.FILE) }, withProxy()).definition())
         }
+    }
+
+    /** The servers that reported and the proxy itself, which groups know as [ServerGroups.PROXY]. */
+    private fun withProxy(): () -> List<NetworkServer> {
+        val servers = ServersCommand.fromReports()
+        return { listOf(NetworkServer(ServerGroups.PROXY, true, LinkReports.build(library, "proxy", 0))) + servers() }
     }
 
     private companion object {
