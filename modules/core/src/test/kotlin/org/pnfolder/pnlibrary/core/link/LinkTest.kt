@@ -59,4 +59,18 @@ class LinkTest {
         assertTrue(LinkSecret.read(folder)!!.contentEquals(made))
         assertTrue(LinkSecret.readOrCreate(folder)!!.contentEquals(made))
     }
+
+    @Test
+    fun `the network map keeps every server and drops forgeries`() {
+        val network = NetworkReport(report, listOf(NetworkServer("lobby", true, report), NetworkServer("games", false, report)), report.sentAt)
+        val message = LinkCodec.encodeNetwork(network, key)
+
+        val decoded = LinkCodec.decodeNetwork(message, key)!!
+        assertEquals(listOf("lobby", "games"), decoded.servers.map { it.name })
+        assertEquals(listOf(true, false), decoded.servers.map { it.online })
+        assertEquals(report.plugins, decoded.servers.first().report.plugins)
+        assertNull(LinkCodec.decodeNetwork(message, ByteArray(32) { 7 }))
+        assertNull(LinkCodec.decode(message, key))
+        assertNull(LinkCodec.decodeNetwork(LinkCodec.encode(report, key), key))
+    }
 }

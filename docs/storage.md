@@ -34,3 +34,5 @@
 ## link.key
 
 Shared key of the link between a proxy and its game servers (`pnlibrary:link` plugin message channel). The proxy creates the file in its pnLibrary folder; copy it to the same folder on each game server and restart. A server reports its pnLibrary version, players and plugin update states every 30 seconds while a player is online; the proxy shows them in `/pn servers`. Reports are signed (HMAC-SHA256), so messages sent by players are ignored. The link only reports: nothing is run on a server.
+
+The proxy also sends every game server a signed map of the network every 30 seconds (its own report and the latest report of each server). A game server shows it in `/pn gui` under «Сеть»: pick the proxy or another server and see its plugins and update states. This is read-only.

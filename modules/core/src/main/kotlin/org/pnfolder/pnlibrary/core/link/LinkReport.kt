@@ -29,3 +29,22 @@ data class LinkReport(
     val plugins: List<LinkPlugin>,
     val sentAt: Instant,
 )
+
+/**
+ * One game server in the map of the network, as the proxy knows it.
+ *
+ * @property name the name the proxy knows the server under
+ * @property online whether the server reported recently
+ * @property report the latest report of the server
+ */
+data class NetworkServer(val name: String, val online: Boolean, val report: LinkReport)
+
+/**
+ * The map of the network the proxy sends to every game server: its own report and the latest report of each
+ * server. A game server shows it in its menu, so any server can be used to look at the whole network.
+ *
+ * @property proxy the report of the proxy itself
+ * @property servers the game servers that reported to the proxy
+ * @property sentAt when the proxy built the map
+ */
+data class NetworkReport(val proxy: LinkReport, val servers: List<NetworkServer>, val sentAt: Instant)

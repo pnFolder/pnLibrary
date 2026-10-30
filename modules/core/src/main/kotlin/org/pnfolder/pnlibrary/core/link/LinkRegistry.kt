@@ -29,4 +29,11 @@ class LinkRegistry {
 object LinkHub {
     /** Servers heard from since the proxy started. */
     val registry = LinkRegistry()
+
+    /** The latest network map this game server received from its proxy, or null when none has arrived. */
+    @Volatile
+    var network: ReceivedNetwork? = null
+
+    /** A network map and when it arrived. */
+    data class ReceivedNetwork(val report: NetworkReport, val receivedAt: Instant)
 }

@@ -40,6 +40,8 @@ import org.pnfolder.pnlibrary.core.lifecycle.journalDetail
 import org.pnfolder.pnlibrary.core.lifecycle.journalGroups
 import org.pnfolder.pnlibrary.core.lifecycle.runTaskNow
 import org.pnfolder.pnlibrary.core.lifecycle.taskSnapshots
+import org.pnfolder.pnlibrary.core.link.LinkHub
+import org.pnfolder.pnlibrary.core.link.NetworkServer
 import org.pnfolder.pnlibrary.core.updates.catalog.CatalogLabels
 import org.pnfolder.pnlibrary.core.updates.catalog.UpdateCatalogView
 import org.pnfolder.pnlibrary.core.updates.catalog.UpdateStatusMessages
@@ -165,6 +167,17 @@ internal class PluginsMenu(
             icon(Icons.SUPPORT, "PAPER", "Поддержка", Style.lore(listOf("Если возникла проблема, мы поможем."), emptyList(), Style.left("получить ссылку"))),
             go { support(it) },
         )
+        LinkHub.network?.let { received ->
+            val servers = received.report.servers
+            builder.button(
+                NETWORK_SLOT,
+                section(
+                    Icons.OVERVIEW, "ENDER_EYE", "Сеть", "Прокси и другие серверы сети: их плагины и обновления.",
+                    "Серверов" to "${servers.size + 1}", "Данные" to ago(received.receivedAt),
+                ),
+                go { network(it, 0) },
+            )
+        }
         builder.button(HOME_CLOSE, closeItem(), go { it.closeInventory() })
         if (plan != null && plan.state == UpdateState.UPDATE_STAGED) {
             val restart = icon(
@@ -892,6 +905,67 @@ internal class PluginsMenu(
     // --- plugin events (the event bus) ---------------------------------------------------------------------------
 
     private val bus get() = library.events.inspector
+
+    /** The servers of the network as the proxy last described them; a click opens one server. */
+    private fun network(player: Player, page: Int) {
+        val received = LinkHub.network
+        if (received == null) {
+            home(player)
+            return
+        }
+        val map = received.report
+        val proxy = NetworkServer("Прокси", true, map.proxy)
+        val rows = (listOf(proxy) + map.servers).map { server -> Row(serverItem(server), go { who -> networkServer(who, server, page) }) }
+        list(player, "Сеть", rows, page, PAGE_SIZE, { who, to -> network(who, to) }, { home(it) }, "Серверов нет")
+    }
+
+    private fun serverItem(server: NetworkServer): ItemStack {
+        val report = server.report
+        val updates = report.plugins.count { it.state == UpdateState.UPDATE_AVAILABLE.name }
+        val problems = report.plugins.count { runCatching { UpdateState.valueOf(it.state) }.getOrNull() in CatalogLabels.PROBLEMS }
+        val parameters = listOf(
+            "Сервер" to report.platform,
+            "pnLibrary" to report.libraryVersion,
+            "Игроков" to "${report.players}",
+            "Плагинов" to "${report.plugins.size}",
+            "Обновлений" to if (updates > 0) "✦ $updates" else "✔ нет",
+            "Проблем" to if (problems > 0) "✖ $problems" else "✔ нет",
+            "На связи" to if (server.online) "✔ да" else "✖ нет",
+        )
+        val material = when {
+            !server.online -> "BARRIER"
+            problems > 0 -> "REDSTONE_BLOCK"
+            updates > 0 -> "GOLD_BLOCK"
+            else -> "EMERALD_BLOCK"
+        }
+        return icon(Icons.OVERVIEW, material, server.name, Style.lore(emptyList(), parameters, Style.left("открыть")), muted = !server.online)
+    }
+
+    /** The plugins of one server of the network, as that server reported them. */
+    private fun networkServer(player: Player, server: NetworkServer, backPage: Int, page: Int = 0) {
+        val rows = server.report.plugins.map { plugin ->
+            val state = runCatching { UpdateState.valueOf(plugin.state) }.getOrNull()
+            val material = when (state) {
+                UpdateState.UP_TO_DATE -> "EMERALD"
+                UpdateState.UPDATE_AVAILABLE -> "GOLD_INGOT"
+                UpdateState.UPDATE_STAGED, UpdateState.DOWNLOADING, UpdateState.ROLLED_BACK -> "DIAMOND"
+                UpdateState.FROZEN -> "CLOCK"
+                UpdateState.CHECKING -> "COMPASS"
+                null -> "PAPER"
+                else -> "BARRIER"
+            }
+            val parameters = buildList {
+                add("Версия" to plugin.version)
+                plugin.latest?.let { add("Последняя" to it) }
+                add("Состояние" to (state?.let { "${stateSymbol(it)} ${CatalogLabels.stateLabel(it)}" } ?: plugin.state))
+            }
+            Row(icon(Icons.PLUGIN, material, plugin.product, Style.lore(emptyList(), parameters), muted = state == null))
+        }
+        list(
+            player, server.name, rows, page, PAGE_SIZE, { who, to -> networkServer(who, server, backPage, to) }, { network(it, backPage) },
+            "Плагинов нет",
+        )
+    }
 
     /** The start page of the plugin events: what they are, the counters and the way to every view. */
     private fun busHome(player: Player) {
@@ -1745,6 +1819,7 @@ internal class PluginsMenu(
         const val SETTINGS = "pnlibrary.updates.settings"
         const val ROLLBACK = "pnlibrary.updates.rollback"
         const val HOME_ROWS = 5
+        const val NETWORK_SLOT = 34
         const val HOME_CLOSE = 40
         const val SUPPORT_SLOT = 38
         const val RESTART_SLOT = 41
