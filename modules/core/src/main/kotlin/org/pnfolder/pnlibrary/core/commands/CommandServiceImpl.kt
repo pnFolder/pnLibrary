@@ -160,7 +160,7 @@ internal class CommandServiceImpl(
             if (handledBy(scope.handlers)) return
             scope = scope.parent
         }
-        react(registration) { standard.answer(context, error, helpFor(nodes.lastOrNull(), context)) }
+        react(registration) { standard.answer(context, error, helpFor(nodes.firstOrNull(), context)) }
     }
 
     /** What to tell a sender who stopped at [node]: its own description, then each way on that has one. */
