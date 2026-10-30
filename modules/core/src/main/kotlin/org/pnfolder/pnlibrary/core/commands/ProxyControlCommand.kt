@@ -6,6 +6,8 @@ import org.pnfolder.pnlibrary.api.commands.command
 import org.pnfolder.pnlibrary.api.runtime.PnLibrary
 import org.pnfolder.pnlibrary.core.lifecycle.mountableCommand
 import org.pnfolder.pnlibrary.core.lifecycle.registerRuntimeCommand
+import org.pnfolder.pnlibrary.core.link.LinkHub
+import org.pnfolder.pnlibrary.core.link.ServerGroups
 import org.pnfolder.pnlibrary.core.updates.catalog.ProxyUpdateCommand
 
 /**
@@ -19,6 +21,7 @@ import org.pnfolder.pnlibrary.core.updates.catalog.ProxyUpdateCommand
  * | `/pn bus …` | listeners, calls and traces of the event bus | `pnlibrary.events.bus` |
  * | `/pn tasks …` | scheduled tasks of every plugin | `pnlibrary.tasks` |
  * | `/pn servers …` | the game servers that report to this proxy | `pnlibrary.servers` |
+ * | `/pn groups …` | groups of servers and the plugins they should have | `pnlibrary.groups` |
  * | `/pn debug …` | the encrypted report for support | `pnlibrary.debug` |
  * | `/pn support` | the support link | `pnlibrary.admin` |
  *
@@ -41,6 +44,7 @@ class ProxyControlCommand(private val library: PnLibrary) {
             mount("bus", EventBusCommand(library).definition())
             mount("tasks", TaskCommand(library).definition())
             mount("servers", ServersCommand(ServersCommand.fromReports()).definition())
+            mount("groups", GroupsCommand(ServerGroups { LinkHub.folder?.resolve(ServerGroups.FILE) }, ServersCommand.fromReports()).definition())
         }
     }
 
@@ -51,6 +55,7 @@ class ProxyControlCommand(private val library: PnLibrary) {
             "/pn bus" to "pnlibrary.events.bus",
             "/pn tasks" to "pnlibrary.tasks",
             "/pn servers" to ServersCommand.PERMISSION,
+            "/pn groups" to GroupsCommand.PERMISSION,
             "/pn debug" to "pnlibrary.debug",
         )
     }

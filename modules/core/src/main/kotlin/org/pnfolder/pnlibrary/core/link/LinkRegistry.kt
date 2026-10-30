@@ -30,6 +30,10 @@ object LinkHub {
     /** Servers heard from since the proxy started. */
     val registry = LinkRegistry()
 
+    /** The pnLibrary folder of this proxy or server, where `link.key` and `groups.tsv` live. */
+    @Volatile
+    var folder: java.nio.file.Path? = null
+
     /** The shared key, or null when the link is off. */
     @Volatile
     var key: ByteArray? = null
