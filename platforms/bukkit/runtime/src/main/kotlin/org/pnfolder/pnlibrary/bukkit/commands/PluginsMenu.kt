@@ -41,6 +41,7 @@ import org.pnfolder.pnlibrary.core.lifecycle.journalGroups
 import org.pnfolder.pnlibrary.core.lifecycle.runTaskNow
 import org.pnfolder.pnlibrary.core.lifecycle.taskSnapshots
 import org.pnfolder.pnlibrary.core.link.LinkHub
+import org.pnfolder.pnlibrary.core.link.LinkNames
 import org.pnfolder.pnlibrary.core.link.NetworkServer
 import org.pnfolder.pnlibrary.core.link.RemoteAction
 import org.pnfolder.pnlibrary.core.link.RemoteControl
@@ -917,8 +918,8 @@ internal class PluginsMenu(
             return
         }
         val map = received.report
-        val proxy = NetworkServer("Прокси", true, map.proxy)
-        val rows = (listOf(proxy) + map.servers).map { server -> Row(serverItem(server), go { who -> networkServer(who, server, page) }) }
+        val proxy = NetworkServer(PROXY_LABEL, true, map.proxy)
+        val rows = (listOf(proxy) + map.servers).map { server -> Row(serverItem(server), go { who -> remoteHome(who, server, page) }) }
         list(
             player, "Сеть", rows, page, PAGE_SIZE, { who, to -> network(who, to) }, { home(it) }, "Серверов нет",
             extra = {
@@ -971,7 +972,7 @@ internal class PluginsMenu(
             }
             val known = state.known
             val hints = if (known != null) arrayOf(Style.left("открыть сервер")) else emptyArray()
-            val click = known?.let { server -> go { who -> networkServer(who, server, 0) } }
+            val click = known?.let { server -> go { who -> remoteHome(who, server, 0) } }
             Row(icon(Icons.OVERVIEW, material, state.server, Style.lore(emptyList(), parameters, *hints), muted = known == null), click)
         }
         list(
@@ -1030,9 +1031,89 @@ internal class PluginsMenu(
         return icon(Icons.OVERVIEW, material, server.name, Style.lore(emptyList(), parameters, Style.left("открыть")), muted = !server.online)
     }
 
+    /**
+     * The home page of another server, laid out like [home]. The tiles that need data the link does not carry yet
+     * are shown dimmed and do nothing.
+     */
+    private fun remoteHome(player: Player, server: NetworkServer, backPage: Int) {
+        val plugins = server.report.plugins
+        val pending = plugins.count { runCatching { UpdateState.valueOf(it.state) }.getOrNull() in CatalogLabels.PENDING }
+        val problems = plugins.count { runCatching { UpdateState.valueOf(it.state) }.getOrNull() in CatalogLabels.PROBLEMS }
+        val builder = frame(Menus.chest(title("Главная · ${server.name}")).rows(HOME_ROWS), HOME_ROWS)
+        builder.slot(
+            4,
+            icon(
+                Icons.OVERVIEW, "NETHER_STAR", "${PnLibraryIdentity.NAME} ${server.report.libraryVersion}",
+                Style.lore(
+                    listOf("Сервер ${server.name}: ${server.report.platform}."),
+                    listOf(
+                        "Итог" to when {
+                            !server.online -> "✖ нет связи"
+                            problems > 0 -> "✖ проблем: $problems"
+                            pending > 0 -> "✦ к обновлению: $pending"
+                            else -> "✔ всё актуально"
+                        },
+                        "Игроков" to "${server.report.players}",
+                        "Плагинов" to "${plugins.size}",
+                        "Обновлений" to "$pending",
+                        "Проблем" to "$problems",
+                    ),
+                ),
+                muted = !server.online,
+            ),
+        )
+        builder.button(
+            11,
+            section(Icons.PLUGINS, "BOOKSHELF", "Плагины", "Все плагины, подключённые к библиотеке.", "Всего" to "${plugins.size}"),
+            go { networkServer(it, server, backPage, Filter.ALL) },
+        )
+        builder.button(
+            13,
+            section(Icons.UPDATES, "GOLD_INGOT", "Обновления", "Плагины, для которых вышла новая версия.", "Доступно" to "$pending"),
+            go { networkServer(it, server, backPage, Filter.UPDATES) },
+        )
+        builder.button(
+            15,
+            section(Icons.PROBLEMS, "BARRIER", "Проблемы", "Ошибки проверки и блокировки обновлений.", "Найдено" to "$problems"),
+            go { networkServer(it, server, backPage, Filter.PROBLEMS) },
+        )
+        builder.button(
+            24,
+            icon(
+                Icons.CHECK, "COMPASS", "Проверить всё",
+                Style.lore(listOf("Попросить ${server.name} спросить каталоги релизов."), emptyList(), Style.left("проверить")),
+            ),
+            go { who -> allowed(who, RemoteAction.CHECK.permission) { remote(who, server, RemoteAction.CHECK, null) } },
+        )
+        listOf(
+            29 to Triple(Icons.HISTORY, "BOOK", "История"),
+            30 to Triple(Icons.PROBLEMS, "BOOK", "Журнал сервера"),
+            31 to Triple(Icons.UPDATES, "REDSTONE_TORCH", "События плагинов"),
+            32 to Triple(Icons.CLOCK, "CLOCK", "Задачи плагинов"),
+            33 to Triple(Icons.BACKUPS, "CHEST", "Резервные копии"),
+            20 to Triple(Icons.SETTINGS, "REDSTONE", "Настройки"),
+            22 to Triple(Icons.TOOLS, "ANVIL", "Инструменты"),
+        ).forEach { (slot, tile) ->
+            val (texture, material, label) = tile
+            val lore = Style.lore(listOf("Для другого сервера этот раздел пока недоступен."), emptyList())
+            val click = go { who -> tell(who, ChatTone.INFO, "$label: пока нельзя открыть для другого сервера.") }
+            builder.button(slot, icon(texture, material, label, lore, muted = true), click)
+        }
+        builder.button(HOME_CLOSE, backItem(), go { network(it, backPage) })
+        show(player, builder.build())
+    }
+
     /** The plugins of one server of the network, as that server reported them. */
-    private fun networkServer(player: Player, server: NetworkServer, backPage: Int, page: Int = 0) {
-        val rows = server.report.plugins.map { plugin ->
+    private fun networkServer(player: Player, server: NetworkServer, backPage: Int, filter: Filter = Filter.ALL, page: Int = 0) {
+        val shown = server.report.plugins.filter { plugin ->
+            val state = runCatching { UpdateState.valueOf(plugin.state) }.getOrNull()
+            when (filter) {
+                Filter.ALL -> true
+                Filter.UPDATES -> state in CatalogLabels.PENDING
+                Filter.PROBLEMS -> state in CatalogLabels.PROBLEMS
+            }
+        }
+        val rows = shown.map { plugin ->
             val state = runCatching { UpdateState.valueOf(plugin.state) }.getOrNull()
             val material = when (state) {
                 UpdateState.UP_TO_DATE -> "EMERALD"
@@ -1051,34 +1132,35 @@ internal class PluginsMenu(
             val update = plugin.latest != null
             val hints = if (update) arrayOf(Style.left("скачать обновление там")) else emptyArray()
             val click = if (update) {
-                go { who -> allowed(who, RemoteAction.UPDATE.permission) { remote(who, server.name, RemoteAction.UPDATE, plugin.product) } }
+                go { who -> allowed(who, RemoteAction.UPDATE.permission) { remote(who, server, RemoteAction.UPDATE, plugin.product) } }
             } else {
                 null
             }
             Row(icon(Icons.PLUGIN, material, plugin.product, Style.lore(emptyList(), parameters, *hints), muted = state == null), click)
         }
         list(
-            player, server.name, rows, page, PAGE_SIZE, { who, to -> networkServer(who, server, backPage, to) }, { network(it, backPage) },
-            "Плагинов нет",
+            player, "${server.name} · ${filter.title}", rows, page, PAGE_SIZE, { who, to -> networkServer(who, server, backPage, filter, to) },
+            { remoteHome(it, server, backPage) }, "Здесь пусто",
             extra = {
                 val check = icon(
                     Icons.CHECK, "COMPASS", "Проверить там",
                     Style.lore(listOf("Попросить ${server.name} проверить обновления."), emptyList(), Style.left("проверить")),
                 )
-                val ask = go { who -> allowed(who, RemoteAction.CHECK.permission) { remote(who, server.name, RemoteAction.CHECK, null) } }
+                val ask = go { who -> allowed(who, RemoteAction.CHECK.permission) { remote(who, server, RemoteAction.CHECK, null) } }
                 it.button(NETWORK_CHECK, check, ask)
             },
         )
     }
 
     /** Asks [target] for [action] through the link and tells [player] what came back. */
-    private fun remote(player: Player, target: String, action: RemoteAction, product: String?) {
+    private fun remote(player: Player, server: NetworkServer, action: RemoteAction, product: String?) {
+        val target = if (server.name == PROXY_LABEL) LinkNames.PROXY else server.name
         val error = RemoteControl.send(target, action, product, player.name) { result ->
             replies.onServerThread {
-                if (player.isOnline) tell(player, if (result.ok) ChatTone.SUCCESS else ChatTone.FAILURE, "$target: ${result.text}")
+                if (player.isOnline) tell(player, if (result.ok) ChatTone.SUCCESS else ChatTone.FAILURE, "${server.name}: ${result.text}")
             }
         }
-        if (error != null) tell(player, ChatTone.FAILURE, error) else tell(player, ChatTone.PROGRESS, "Запрос отправлен на $target…")
+        if (error != null) tell(player, ChatTone.FAILURE, error) else tell(player, ChatTone.PROGRESS, "Запрос отправлен: ${server.name}…")
     }
 
     /** The start page of the plugin events: what they are, the counters and the way to every view. */
@@ -1935,6 +2017,7 @@ internal class PluginsMenu(
         const val HOME_ROWS = 5
         const val NETWORK_SLOT = 34
         const val NETWORK_CHECK = 49
+        const val PROXY_LABEL = "Прокси"
         const val NETWORK_UPDATE = 51
         const val HOME_CLOSE = 40
         const val SUPPORT_SLOT = 38
