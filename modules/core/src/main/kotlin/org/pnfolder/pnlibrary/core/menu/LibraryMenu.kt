@@ -149,16 +149,15 @@ class LibraryMenu(
             icon(Icons.SUPPORT, "PAPER", "Поддержка", Style.lore(listOf("Если возникла проблема, мы поможем."), emptyList(), Style.left("получить ссылку"))),
             go { support(it) },
         )
-        LinkHub.network?.takeIf { !remote }?.let { received ->
-            val servers = received.report.servers
-            builder.button(
-                NETWORK_SLOT,
-                section(
-                    Icons.OVERVIEW, "ENDER_EYE", "Сеть", "Прокси и другие серверы сети: их плагины и обновления.",
-                    "Серверов" to "${servers.size + 1}", "Данные" to ago(received.receivedAt),
-                ),
-                go { network(it, 0) },
-            )
+        if (!remote && (LinkHub.network != null || LinkHub.key != null)) {
+            val received = LinkHub.network
+            val about = "Прокси и другие серверы сети: их плагины и обновления."
+            val item = if (received == null) {
+                section(Icons.OVERVIEW, "ENDER_EYE", "Сеть", about, "Данные" to "ещё не пришли")
+            } else {
+                section(Icons.OVERVIEW, "ENDER_EYE", "Сеть", about, "Серверов" to "${received.report.servers.size + 1}", "Данные" to ago(received.receivedAt))
+            }
+            builder.button(NETWORK_SLOT, item, go { who -> network(who, 0) })
         }
         builder.button(HOME_CLOSE, closeItem(), go { it.close() })
         if (plan != null && plan.state == UpdateState.UPDATE_STAGED) {
@@ -888,6 +887,7 @@ class LibraryMenu(
         val received = LinkHub.network
         if (received == null) {
             home(player)
+            tell(player, ChatTone.INFO, "Прокси ещё не прислал карту сети.", "Она приходит, когда на сервере есть игрок. Попробуйте через минуту.")
             return
         }
         val map = received.report
