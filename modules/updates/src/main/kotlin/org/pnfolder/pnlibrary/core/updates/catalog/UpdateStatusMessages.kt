@@ -1,4 +1,4 @@
-package org.pnfolder.pnlibrary.bukkit.commands
+package org.pnfolder.pnlibrary.core.updates.catalog
 
 import org.pnfolder.pnlibrary.api.chat.ChatNotice
 import org.pnfolder.pnlibrary.api.chat.ChatTone
@@ -8,8 +8,8 @@ import org.pnfolder.pnlibrary.api.updates.UpdatePlanSnapshot
 import org.pnfolder.pnlibrary.api.updates.UpdateSnapshot
 import org.pnfolder.pnlibrary.api.updates.UpdateState
 
-/** Pure, platform-independent wording of the update state used by Bukkit update commands. */
-internal object BukkitUpdateMessages {
+/** Pure, platform-independent wording of the update state used by the update commands. */
+object UpdateStatusMessages {
     /** Describes the effective plan and product state as short messages. */
     fun status(input: Pair<UpdatePlanSnapshot, UpdateSnapshot>): List<ChatNotice> {
         val (plan, plugin) = input

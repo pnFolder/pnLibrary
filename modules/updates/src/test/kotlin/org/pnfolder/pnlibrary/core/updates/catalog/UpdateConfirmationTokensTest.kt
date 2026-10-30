@@ -1,4 +1,4 @@
-package org.pnfolder.pnlibrary.bukkit.updates
+package org.pnfolder.pnlibrary.core.updates.catalog
 
 import org.junit.jupiter.api.Assertions.*
 import org.junit.jupiter.api.Test

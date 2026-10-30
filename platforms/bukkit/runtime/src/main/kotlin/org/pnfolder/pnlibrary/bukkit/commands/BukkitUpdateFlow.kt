@@ -16,11 +16,12 @@ import org.pnfolder.pnlibrary.api.updates.UpdatePlanSnapshot
 import org.pnfolder.pnlibrary.api.updates.UpdateRegistration
 import org.pnfolder.pnlibrary.api.updates.UpdateState
 import org.pnfolder.pnlibrary.api.updates.release.ProductChange
-import org.pnfolder.pnlibrary.bukkit.updates.UpdateAction
-import org.pnfolder.pnlibrary.bukkit.updates.UpdateConfirmationTokens
 import org.pnfolder.pnlibrary.common.lang.runCatchingNonFatal
+import org.pnfolder.pnlibrary.core.updates.catalog.UpdateAction
 import org.pnfolder.pnlibrary.core.updates.catalog.UpdateCatalogCommands
 import org.pnfolder.pnlibrary.core.updates.catalog.UpdateCatalogView
+import org.pnfolder.pnlibrary.core.updates.catalog.UpdateConfirmationTokens
+import org.pnfolder.pnlibrary.core.updates.catalog.UpdateStatusMessages
 import java.time.Duration
 import java.util.UUID
 import java.util.concurrent.atomic.AtomicBoolean
@@ -115,7 +116,7 @@ internal class BukkitUpdateFlow(
             ?: return replies.say(reply, ChatTone.WARNING, "Проверка обновлений ещё не завершалась.", "Запустите её командой /pn check.")
         val registrations = if (requested == null) library.updates.all() else listOfNotNull(library.updates.get(requested))
         if (registrations.isEmpty()) return replies.notRegistered(reply, requested ?: "с указанным именем")
-        replies.notices(reply, registrations.flatMap { BukkitUpdateMessages.status(plan to it.snapshot) })
+        replies.notices(reply, registrations.flatMap { UpdateStatusMessages.status(plan to it.snapshot) })
     }
 
     // --- update ------------------------------------------------------------------------------------------------
@@ -163,7 +164,7 @@ internal class BukkitUpdateFlow(
             it.product.value.equals(registration.snapshot.product, ignoreCase = true)
         }
         if (result.state != UpdateState.UPDATE_AVAILABLE || change == null) {
-            replies.notices(reply, BukkitUpdateMessages.status(result to registration.snapshot))
+            replies.notices(reply, UpdateStatusMessages.status(result to registration.snapshot))
             return
         }
         stageUpdate(sender, reply, result, change)
