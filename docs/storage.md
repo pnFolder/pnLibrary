@@ -30,3 +30,7 @@
 - перевести `event-history.tsv` на `TsvRecords`;
 - общий лимит размера и очистка старого для журнала, наблюдений и истории сессий;
 - одна страница в меню «Данные библиотеки»: что и сколько занимает, кнопка очистки каждой части.
+
+## link.key
+
+Shared key of the link between a proxy and its game servers (`pnlibrary:link` plugin message channel). The proxy creates the file in its pnLibrary folder; copy it to the same folder on each game server and restart. A server reports its pnLibrary version, players and plugin update states every 30 seconds while a player is online; the proxy shows them in `/pn servers`. Reports are signed (HMAC-SHA256), so messages sent by players are ignored. The link only reports: nothing is run on a server.

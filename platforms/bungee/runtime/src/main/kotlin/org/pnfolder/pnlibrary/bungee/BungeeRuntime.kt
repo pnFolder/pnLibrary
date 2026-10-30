@@ -3,6 +3,9 @@ package org.pnfolder.pnlibrary.bungee
 import net.md_5.bungee.api.plugin.Plugin
 import org.pnfolder.pnlibrary.bungee.api.BungeePlatform
 import org.pnfolder.pnlibrary.common.lang.runCatchingNonFatal
+import org.pnfolder.pnlibrary.core.link.LinkCodec
+import org.pnfolder.pnlibrary.core.link.LinkReceiver
+import org.pnfolder.pnlibrary.core.link.LinkSecret
 import org.pnfolder.pnlibrary.core.runtime.PnLibraryRuntimeHost
 
 /**
@@ -15,6 +18,7 @@ import org.pnfolder.pnlibrary.core.runtime.PnLibraryRuntimeHost
 internal class BungeeRuntime(private val plugin: Plugin) {
     private var host: PnLibraryRuntimeHost? = null
     private var playerEvents: BungeePlayerEvents? = null
+    private var linkListener: BungeeLinkListener? = null
 
     fun start() {
         val adapter = BungeePlatformAdapter(plugin)
@@ -29,9 +33,16 @@ internal class BungeeRuntime(private val plugin: Plugin) {
         val listener = BungeePlayerEvents(started.library)
         plugin.proxy.pluginManager.registerListener(plugin, listener)
         playerEvents = listener
+        val link = BungeeLinkListener(LinkReceiver(LinkSecret.readOrCreate(plugin.dataFolder.toPath())))
+        plugin.proxy.registerChannel(LinkCodec.CHANNEL)
+        plugin.proxy.pluginManager.registerListener(plugin, link)
+        linkListener = link
     }
 
     fun stop() {
+        linkListener?.let { runCatchingNonFatal { plugin.proxy.pluginManager.unregisterListener(it) } }
+        linkListener = null
+        runCatchingNonFatal { plugin.proxy.unregisterChannel(LinkCodec.CHANNEL) }
         playerEvents?.let { runCatchingNonFatal { plugin.proxy.pluginManager.unregisterListener(it) } }
         playerEvents = null
         host?.close()
