@@ -133,4 +133,58 @@ class LinkTest {
 
         assertEquals("ok", got?.text)
     }
+
+    private val view = ViewRequest(
+        java.util.UUID.randomUUID(), "games", "", ViewAction.CLICK, "Admin", setOf("pnlibrary.admin"), 13, "LEFT", Instant.now(),
+    )
+
+    @Test
+    fun `a viewer step and a page of a menu survive the trip and reject forgeries`() {
+        val step = LinkCodec.decodeView(LinkCodec.encodeView(view, key), key)!!
+        assertEquals(13, step.slot)
+        assertEquals(ViewAction.CLICK, step.action)
+        assertEquals(setOf("pnlibrary.admin"), step.permissions)
+        assertNull(LinkCodec.decodeView(LinkCodec.encodeView(view, key), ByteArray(32) { 7 }))
+
+        val items = mapOf(0 to ByteArray(300) { 1 }, 13 to ByteArray(2_000) { it.toByte() })
+        val frame = ViewFrame(view.session, "lobby", "Главная", 5, items, listOf("{\"text\":\"ok\"}"), false, Instant.now())
+        val message = LinkCodec.encodeFrame(frame, key)!!
+        val page = LinkCodec.decodeFrame(message, key)!!
+        assertEquals("Главная", page.title)
+        assertEquals(5, page.rows)
+        assertTrue(items[13]!!.contentEquals(page.items.getValue(13)))
+        assertEquals(frame.notices, page.notices)
+        assertNull(LinkCodec.decodeFrame(message, ByteArray(32) { 7 }))
+        assertNull(LinkCodec.decodeView(message, key))
+    }
+
+    @Test
+    fun `a page that cannot fit one plugin message is refused`() {
+        val random = java.util.Random(1)
+        val big = (0 until 40).associateWith { ByteArray(5_000).also(random::nextBytes) }
+
+        assertNull(LinkCodec.encodeFrame(ViewFrame(view.session, "lobby", "x", 5, big, emptyList(), false, Instant.now()), key))
+    }
+
+    @Test
+    fun `the proxy passes a viewer step to its server and a page back to the viewer`() {
+        val sent = mutableListOf<Pair<String, ByteArray>>()
+        val receiver = LinkReceiver(key, LinkRegistry(), transport = LinkTransport { server, bytes -> sent.add(server to bytes); server != "gone" })
+
+        assertTrue(receiver.receive("lobby", true, LinkCodec.encodeView(view, key)))
+        assertEquals("games", sent.single().first)
+        assertEquals("lobby", LinkCodec.decodeView(sent.single().second, key)!!.origin)
+
+        sent.clear()
+        val frame = LinkCodec.encodeFrame(ViewFrame(view.session, "lobby", "t", 1, emptyMap(), emptyList(), false, Instant.now()), key)!!
+        assertTrue(receiver.receive("games", true, frame))
+        assertEquals("lobby", sent.single().first)
+
+        sent.clear()
+        receiver.receive("lobby", true, LinkCodec.encodeView(view.copy(target = "gone"), key))
+        val failure = LinkCodec.decodeFrame(sent.last().second, key)!!
+        assertEquals("lobby", sent.last().first)
+        assertTrue(failure.closed)
+        assertFalse(receiver.receive("lobby", false, LinkCodec.encodeView(view, key)))
+    }
 }
