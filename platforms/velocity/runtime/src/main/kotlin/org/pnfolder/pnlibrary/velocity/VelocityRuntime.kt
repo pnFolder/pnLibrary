@@ -3,13 +3,16 @@ package org.pnfolder.pnlibrary.velocity
 import com.velocitypowered.api.event.proxy.ProxyInitializeEvent
 import com.velocitypowered.api.event.proxy.ProxyShutdownEvent
 import com.velocitypowered.api.proxy.ProxyServer
+import com.velocitypowered.api.scheduler.ScheduledTask
 import org.pnfolder.pnlibrary.common.lang.runCatchingNonFatal
 import org.pnfolder.pnlibrary.core.link.LinkReceiver
 import org.pnfolder.pnlibrary.core.link.LinkSecret
+import org.pnfolder.pnlibrary.core.link.NetworkPublisher
 import org.pnfolder.pnlibrary.core.runtime.PnLibraryRuntimeHost
 import org.pnfolder.pnlibrary.velocity.api.VelocityPlatform
 import org.slf4j.Logger
 import java.nio.file.Path
+import java.util.concurrent.TimeUnit
 
 /**
  * Velocity runtime behind the generated `PnLibraryVelocityPlugin` descriptor class.
@@ -27,6 +30,7 @@ internal class VelocityRuntime(
     private var runtimeHost: PnLibraryRuntimeHost? = null
     private var playerEvents: VelocityPlayerEvents? = null
     private var linkListener: VelocityLinkListener? = null
+    private var networkTask: ScheduledTask? = null
 
     /**
      * Starts the shared runtime when Velocity announces proxy initialization.
@@ -54,10 +58,23 @@ internal class VelocityRuntime(
         val listener = VelocityPlayerEvents(started.library)
         server.eventManager.register(owner, listener)
         playerEvents = listener
-        val link = VelocityLinkListener(LinkReceiver(LinkSecret.readOrCreate(dataDirectory)))
+        val key = LinkSecret.readOrCreate(dataDirectory)
+        val link = VelocityLinkListener(LinkReceiver(key))
         server.channelRegistrar.register(VelocityLinkListener.CHANNEL)
         server.eventManager.register(owner, link)
         linkListener = link
+        if (key != null) {
+            val publisher = NetworkPublisher(started.library, key, { "Velocity ${server.version.version}" }, { server.playerCount })
+            networkTask = server.scheduler.buildTask(owner, Runnable {
+                val message = publisher.message()
+                server.allServers.forEach { runCatchingNonFatal { it.sendPluginMessage(VelocityLinkListener.CHANNEL, message) } }
+            }).delay(NETWORK_DELAY_SECONDS, TimeUnit.SECONDS).repeat(NETWORK_PERIOD_SECONDS, TimeUnit.SECONDS).schedule()
+        }
+    }
+
+    private companion object {
+        const val NETWORK_DELAY_SECONDS = 10L
+        const val NETWORK_PERIOD_SECONDS = 30L
     }
 
     /**
@@ -69,6 +86,8 @@ internal class VelocityRuntime(
     fun onShutdown(event: ProxyShutdownEvent) {
         playerEvents?.let { runCatchingNonFatal { server.eventManager.unregisterListener(owner, it) } }
         playerEvents = null
+        networkTask?.cancel()
+        networkTask = null
         linkListener?.let { runCatchingNonFatal { server.eventManager.unregisterListener(owner, it) } }
         linkListener = null
         runCatchingNonFatal { server.channelRegistrar.unregister(VelocityLinkListener.CHANNEL) }
