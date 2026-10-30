@@ -105,7 +105,7 @@ class CommandServiceImplTest {
         ).toCompletableFuture().join()
 
         assertEquals("builders", selected)
-        assertEquals(listOf(Component.text("Command execution failed.")), sender.messages)
+        assertEquals(listOf("Команда не выполнилась."), sender.messages.map(::textOf))
         assertTrue(platform.errors.any { it.message == "private predicate" })
     }
 
@@ -151,7 +151,7 @@ class CommandServiceImplTest {
 
         assertEquals(1, executions)
         assertTrue(deniedSuggestions.isEmpty())
-        assertEquals(listOf(Component.text("Недостаточно прав для этой команды.")), denied.messages)
+        assertEquals(listOf("Недостаточно прав для этой команды."), denied.messages.map(::textOf))
     }
 
     @Test
@@ -167,7 +167,7 @@ class CommandServiceImplTest {
 
         native.dispatcher.execute(native.command, context(denied)).toCompletableFuture().join()
 
-        assertEquals(listOf(Component.text("Нужна покупка доступа: /shop buy hello")), denied.messages)
+        assertEquals(listOf("Нужна покупка доступа: /shop buy hello"), denied.messages.map(::textOf))
     }
 
     @Test
@@ -213,7 +213,7 @@ class CommandServiceImplTest {
         val suggestions = native.dispatcher
             .suggest(native.command, context(sender)).toCompletableFuture().join()
 
-        assertEquals(listOf(Component.text("Command execution failed.")), sender.messages)
+        assertEquals(listOf("Команда не выполнилась."), sender.messages.map(::textOf))
         assertTrue(suggestions.isEmpty())
         assertEquals(2, platform.errors.size)
         assertTrue(platform.errors.any { it.message == "private detail" })
@@ -286,8 +286,8 @@ class CommandServiceImplTest {
         native.dispatcher.execute(native.command, context(sender, "staff")).toCompletableFuture().join()
 
         assertEquals(
-            listOf(Component.text("Это только для VIP"), Component.text("Текст команды")),
-            sender.messages,
+            listOf("Это только для VIP", "Текст команды"),
+            sender.messages.map(::textOf),
         )
     }
 
@@ -305,7 +305,7 @@ class CommandServiceImplTest {
 
         native.dispatcher.execute(native.command, context(sender)).toCompletableFuture().join()
 
-        assertEquals(listOf(Component.text("Настроенный текст из config.yml")), sender.messages)
+        assertEquals(listOf("Настроенный текст из config.yml"), sender.messages.map(::textOf))
     }
 
     private fun say(text: String) = CommandErrorHandler<CommandError> { context, error ->
@@ -318,7 +318,10 @@ class CommandServiceImplTest {
     private fun run(native: RecordingCommands, sender: TestSender, vararg arguments: String) =
         native.dispatcher.execute(native.command, context(sender, *arguments)).toCompletableFuture().join()
 
-    private fun textOf(component: Component) = (component as net.kyori.adventure.text.TextComponent).content()
+    /** The text of a message without the mark that opens a notice. */
+    private fun textOf(component: Component) =
+        net.kyori.adventure.text.serializer.plain.PlainTextComponentSerializer.plainText().serialize(component)
+            .replace(Regex("""^ {2}\S """), "")
 
     /** An error of the plugin's own: fields instead of a map of strings, and its text built from them. */
     private class NoMoney(val price: Int) : CommandError() {
@@ -353,7 +356,7 @@ class CommandServiceImplTest {
         run(native, sender, "staff")
 
         assertEquals(listOf("node:example.vip", "command:sender:example.staff"), seen)
-        assertEquals(listOf(Component.text("Свой ответ")), sender.messages)
+        assertEquals(listOf("Свой ответ"), sender.messages.map(::textOf))
     }
 
     @Test
@@ -368,7 +371,7 @@ class CommandServiceImplTest {
 
         run(native, sender)
 
-        assertEquals(listOf(Component.text("Настроенный текст")), sender.messages)
+        assertEquals(listOf("Настроенный текст"), sender.messages.map(::textOf))
     }
 
     @Test
@@ -393,8 +396,8 @@ class CommandServiceImplTest {
         run(native, sender, "module")
 
         assertEquals(
-            listOf("Текст узла", "Текст модуля", "Текст плагина", "Стандарт библиотеки").map(Component::text),
-            sender.messages,
+            listOf("Текст узла", "Текст модуля", "Текст плагина", "Стандарт библиотеки"),
+            sender.messages.map(::textOf),
         )
     }
 
@@ -411,7 +414,7 @@ class CommandServiceImplTest {
         run(native, denied)
         run(native, allowed, "zzz")
 
-        assertEquals(listOf(Component.text("Нет прав")), denied.messages)
+        assertEquals(listOf("Нет прав"), denied.messages.map(::textOf))
         assertEquals(listOf(sound), denied.sounds)
         assertTrue(textOf(allowed.messages.single()).startsWith("Подсказка → /hello"))
     }
