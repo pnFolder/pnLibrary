@@ -1,6 +1,10 @@
 package org.pnfolder.pnlibrary.core.commands
 
 import net.kyori.adventure.text.Component
+import org.pnfolder.pnlibrary.api.chat.ChatKit
+import org.pnfolder.pnlibrary.api.chat.ChatNotice
+import org.pnfolder.pnlibrary.api.chat.ChatReader
+import org.pnfolder.pnlibrary.api.chat.ChatTone
 import org.pnfolder.pnlibrary.api.commands.CommandContext
 import org.pnfolder.pnlibrary.api.commands.CommandDefinition
 import org.pnfolder.pnlibrary.api.commands.CommandRegistration
@@ -65,7 +69,7 @@ class ProxyControlCommand(
             }
         }
         val context = CommandContext(sender, words.drop(1), ProxyCommandNames.NAME, words.last())
-        val stage = dispatch(built, context) ?: return listOf(Component.text("Команды прокси сейчас недоступны."))
+        val stage = dispatch(built, context) ?: return ChatKit(ChatReader.PLAYER).notice(ChatNotice(ChatTone.FAILURE, "Команды прокси сейчас недоступны."))
         stage.toCompletableFuture().get(RUN_TIMEOUT_SECONDS, TimeUnit.SECONDS)
         return printed.toList()
     }
