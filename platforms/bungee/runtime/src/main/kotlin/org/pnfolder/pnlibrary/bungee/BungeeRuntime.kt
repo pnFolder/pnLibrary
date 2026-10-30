@@ -43,6 +43,7 @@ internal class BungeeRuntime(private val plugin: Plugin) {
         val key = LinkSecret.readOrCreate(plugin.dataFolder.toPath())
         val transport = LinkTransport { name, bytes -> plugin.proxy.getServerInfo(name)?.sendData(LinkCodec.CHANNEL, bytes, false) ?: false }
         LinkHub.key = key
+        LinkHub.folder = plugin.dataFolder.toPath()
         LinkHub.transport = transport
         val link = BungeeLinkListener(LinkReceiver(key, executor = RemoteExecutor(started.library), transport = transport))
         plugin.proxy.registerChannel(LinkCodec.CHANNEL)

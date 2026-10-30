@@ -66,6 +66,7 @@ internal class VelocityRuntime(
             server.getServer(name).map { it.sendPluginMessage(VelocityLinkListener.CHANNEL, bytes) }.orElse(false)
         }
         LinkHub.key = key
+        LinkHub.folder = dataDirectory
         LinkHub.transport = transport
         val link = VelocityLinkListener(LinkReceiver(key, executor = RemoteExecutor(started.library), transport = transport))
         server.channelRegistrar.register(VelocityLinkListener.CHANNEL)

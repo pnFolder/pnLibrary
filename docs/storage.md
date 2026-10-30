@@ -40,3 +40,7 @@ The proxy also sends every game server a signed map of the network every 30 seco
 ### Controlling another server
 
 From `/pn servers <name> check | update <plugin> | auto <plugin> on|off` (or the buttons in the «Сеть» menu) a server can ask another one to look for updates, download a plugin update or switch automatic download. The request is signed with `link.key`, goes through the proxy and is answered the same way. The person asking needs the matching permission on the server they ask from (`pnlibrary.updates.view`, `.download`, `.settings`); the receiving server trusts anyone who holds the key, so keep `link.key` private. Nothing else can be sent: no commands, no files. A request id is accepted once.
+
+## groups.tsv
+
+Groups of servers on the proxy, next to `link.key`: which servers belong to a group and which plugins each of them should have. Managed with `/pn groups` (create, delete, add-server, remove-server, add-plugin, remove-plugin); `/pn groups <group>` shows which servers lack a plugin or can update it, and `check` / `update` send the matching requests to all servers of the group. The file may be edited by hand: one record per line, `group<TAB>group|server|plugin<TAB>value`.
