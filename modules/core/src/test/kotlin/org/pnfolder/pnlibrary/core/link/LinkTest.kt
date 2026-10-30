@@ -65,7 +65,7 @@ class LinkTest {
     fun `the network map keeps every server and drops forgeries`() {
         val network = NetworkReport(
             report, listOf(NetworkServer("lobby", true, report), NetworkServer("games", false, report)), report.sentAt,
-            listOf(ServerGroups.Group("grief", setOf("lobby"), setOf("shop"))),
+            listOf(ServerGroups.Group("grief", setOf("lobby"), setOf("shop", "chat"), mapOf("lobby" to setOf("quiz")), mapOf("lobby" to setOf("chat")))),
         )
         val message = LinkCodec.encodeNetwork(network, key)
 

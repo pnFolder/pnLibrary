@@ -33,6 +33,7 @@ import org.pnfolder.pnlibrary.core.link.DataChunks
 import org.pnfolder.pnlibrary.core.link.DataClient
 import org.pnfolder.pnlibrary.core.link.LinkCodec
 import org.pnfolder.pnlibrary.core.link.LinkHub
+import org.pnfolder.pnlibrary.core.link.ServerGroups
 import java.lang.reflect.Proxy
 import java.time.Duration
 import java.time.Instant
@@ -162,6 +163,17 @@ class MenuDataTest {
             assertEquals(7, remote.historyCount(null).toCompletableFuture().get())
             assertTrue(remote.checkAll(UpdateActor(UpdateActor.Kind.PLAYER, "id", "Admin")).toCompletableFuture().get())
             assertNull(remote.snapshot("none"))
+        }
+    }
+
+    @Test
+    fun `groups with the differences of their servers travel through the link and are edited there`() {
+        val group = ServerGroups.Group("lobby", setOf("l1", "l2"), setOf("shop", "chat"), mapOf("l2" to setOf("quiz")), mapOf("l1" to setOf("chat")))
+        over("groups" to listOf(group), "editGroup" to true) { remote ->
+            val back = remote.groups().single()
+            assertEquals(setOf("shop"), back.wanted("l1"))
+            assertEquals(setOf("shop", "chat", "quiz"), back.wanted("l2"))
+            assertTrue(remote.editGroup(GroupEdit(GroupOp.SKIP, "lobby", "l2", "chat")))
         }
     }
 

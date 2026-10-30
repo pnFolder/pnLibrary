@@ -93,6 +93,11 @@ class MenuDataServer(
             MenuCalls.EXPORT_EVENT_HISTORY -> give(data.exportEventHistory(args.get("json")?.asBoolean == true))
             MenuCalls.EVENT_ABOUT -> give(data.eventAbout(text("type").orEmpty()))
             MenuCalls.OWNER_NAMED -> give(data.ownerNamed(text("name").orEmpty()))
+            MenuCalls.GROUPS -> give(data.groups())
+            MenuCalls.EDIT_GROUP -> {
+                val op = GroupOp.values().firstOrNull { it.name == text("op") } ?: return reply(false, "Неизвестное изменение группы.")
+                give(data.editGroup(GroupEdit(op, text("group").orEmpty(), text("server"), text("plugin"))))
+            }
             MenuCalls.COMMAND -> {
                 val permissions = args.getAsJsonArray("permissions")?.map { it.asString }?.toSet().orEmpty()
                 val viewer = ViewerInfo(call.viewer.ifEmpty { "игрок" }, permissions)
