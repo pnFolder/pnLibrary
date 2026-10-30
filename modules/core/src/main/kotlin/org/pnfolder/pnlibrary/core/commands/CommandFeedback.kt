@@ -2,12 +2,18 @@ package org.pnfolder.pnlibrary.core.commands
 
 import net.kyori.adventure.key.Key
 import net.kyori.adventure.sound.Sound
-import net.kyori.adventure.text.Component
+import net.kyori.adventure.text.event.ClickEvent
+import org.pnfolder.pnlibrary.api.chat.ChatKit
+import org.pnfolder.pnlibrary.api.chat.ChatNotice
+import org.pnfolder.pnlibrary.api.chat.ChatPalette
+import org.pnfolder.pnlibrary.api.chat.ChatReader
+import org.pnfolder.pnlibrary.api.chat.ChatTone
 import org.pnfolder.pnlibrary.api.commands.BadUsage
 import org.pnfolder.pnlibrary.api.commands.CommandContext
 import org.pnfolder.pnlibrary.api.commands.CommandError
 import org.pnfolder.pnlibrary.api.commands.CommandErrorHandler
 import org.pnfolder.pnlibrary.api.commands.CommandFailed
+import org.pnfolder.pnlibrary.api.commands.CommandSender
 import org.pnfolder.pnlibrary.api.commands.ConsoleOnly
 import org.pnfolder.pnlibrary.api.commands.InvalidArgument
 import org.pnfolder.pnlibrary.api.commands.NoPermission
@@ -83,7 +89,9 @@ internal class StandardCommandFeedback(
             template = texts[type]
             type = type.superclass
         }
-        context.sender.send(Component.text(error.format(template ?: texts.getValue(CommandFailed::class.java))))
+        val text = error.format(template ?: texts.getValue(CommandFailed::class.java))
+        val tone = if (error is NoPermission || error is OnCooldown) ChatTone.WARNING else ChatTone.FAILURE
+        if (error is BadUsage) context.sender.usageNotice(text) else context.sender.chatNotice(tone, text)
         if (error is NoPermission) deniedSound?.let { context.sender.playSound(it) }
     }
 }
@@ -99,3 +107,27 @@ internal fun standardCommandFeedback(config: PnLibraryConfig): StandardCommandFe
     playerOnlyMessage = config.playerOnlyMessage,
     consoleOnlyMessage = config.consoleOnlyMessage,
 )
+
+/** Sends [text] to this sender as a marked notice, the look of every other chat message of the library. */
+internal fun CommandSender.chatNotice(tone: ChatTone, text: String, detail: String? = null) {
+    ChatKit(ChatReader.of(this)).notice(ChatNotice(tone, text, detail)).forEach(::send)
+}
+
+/** A usage line: the mark, the text, and each `<placeholder>` in the accent; a click puts the command in the chat box. */
+internal fun CommandSender.usageNotice(text: String) {
+    val kit = ChatKit(ChatReader.of(this))
+    val placeholder = Regex("""<[^>]+>|\[[^]]+]""")
+    var line = kit.mark(ChatTone.WARNING)
+    var from = 0
+    placeholder.findAll(text).forEach { found ->
+        line = line.append(kit.text(text.substring(from, found.range.first), ChatPalette.TEXT)).append(kit.text(found.value, ChatPalette.ACCENT))
+        from = found.range.last + 1
+    }
+    line = line.append(kit.text(text.substring(from), ChatPalette.TEXT))
+    val command = Regex("""/\S.*""").find(text)?.value?.substringBefore('<')?.trimEnd()
+    if (command != null && kit.reader.interactive) {
+        line = line.clickEvent(ClickEvent.suggestCommand("$command "))
+            .hoverEvent(kit.tooltip(kit.text("Нажмите, чтобы вставить команду", ChatPalette.TEXT), kit.text(command, ChatPalette.LABEL)))
+    }
+    send(line)
+}

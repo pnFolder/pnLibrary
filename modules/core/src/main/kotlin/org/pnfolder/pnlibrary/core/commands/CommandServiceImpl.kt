@@ -1,6 +1,6 @@
 package org.pnfolder.pnlibrary.core.commands
 
-import net.kyori.adventure.text.Component
+import org.pnfolder.pnlibrary.api.chat.ChatTone
 import org.pnfolder.pnlibrary.api.commands.CommandContext
 import org.pnfolder.pnlibrary.api.commands.CommandDefinition
 import org.pnfolder.pnlibrary.api.commands.CommandError
@@ -152,7 +152,7 @@ internal class CommandServiceImpl(
         for (node in nodes) {
             if (handledBy(node.errorHandlers)) return
             val text = node.noPermissionMessage
-            if (error is NoPermission && text != null && react(registration) { context.sender.send(Component.text(text)) }) return
+            if (error is NoPermission && text != null && react(registration) { context.sender.chatNotice(ChatTone.WARNING, text) }) return
         }
         var scope = registration.feedback
         while (scope != null) {
@@ -215,7 +215,7 @@ internal class CommandServiceImpl(
             failuresByCommand[commandName] = (failuresByCommand[commandName] ?: 0L) + 1L
         }
         logging.log(owner, LogLevel.ERROR, "Command execution failed", error)
-        context.sender.send(Component.text("Command execution failed."))
+        context.sender.chatNotice(ChatTone.FAILURE, "Команда не выполнилась.")
     }
 
     private fun suggestionFailed(owner: Any, error: Throwable) {
