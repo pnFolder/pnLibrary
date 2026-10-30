@@ -18,6 +18,7 @@ import org.pnfolder.pnlibrary.core.updates.catalog.ProxyUpdateCommand
  * | `/pn events …` | the journal of events | `pnlibrary.events.view` |
  * | `/pn bus …` | listeners, calls and traces of the event bus | `pnlibrary.events.bus` |
  * | `/pn tasks …` | scheduled tasks of every plugin | `pnlibrary.tasks` |
+ * | `/pn servers …` | the game servers that report to this proxy | `pnlibrary.servers` |
  * | `/pn debug …` | the encrypted report for support | `pnlibrary.debug` |
  * | `/pn support` | the support link | `pnlibrary.admin` |
  *
@@ -39,6 +40,7 @@ class ProxyControlCommand(private val library: PnLibrary) {
             library.mountableCommand("debug")?.let { mount("debug", it) }
             mount("bus", EventBusCommand(library).definition())
             mount("tasks", TaskCommand(library).definition())
+            mount("servers", ServersCommand().definition())
         }
     }
 
@@ -48,6 +50,7 @@ class ProxyControlCommand(private val library: PnLibrary) {
             "/pn events" to "pnlibrary.events.view",
             "/pn bus" to "pnlibrary.events.bus",
             "/pn tasks" to "pnlibrary.tasks",
+            "/pn servers" to ServersCommand.PERMISSION,
             "/pn debug" to "pnlibrary.debug",
         )
     }

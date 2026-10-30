@@ -21,6 +21,7 @@ internal class BukkitRuntime(private val plugin: JavaPlugin) {
     private var audiences: BukkitAudienceService? = null
     private var menus: MenuServiceImpl? = null
     private var integrations: BukkitIntegrations? = null
+    private var link: BukkitLinkReporter? = null
 
     fun start() {
         val audienceService = BukkitAudienceService(plugin)
@@ -34,6 +35,7 @@ internal class BukkitRuntime(private val plugin: JavaPlugin) {
             integrations = optional
             plugin.server.pluginManager.registerEvents(optional, plugin)
             optional.start(runtime)
+            link = BukkitLinkReporter(plugin, runtime.library).also { it.start() }
         } catch (error: Throwable) {
             stop()
             throw error
@@ -41,6 +43,8 @@ internal class BukkitRuntime(private val plugin: JavaPlugin) {
     }
 
     fun stop() {
+        runCatchingNonFatal { link?.stop() }
+        link = null
         runCatchingNonFatal { integrations?.stop() }
         integrations = null
         runCatchingNonFatal { menus?.close() }
