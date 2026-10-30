@@ -30,6 +30,21 @@ object LinkHub {
     /** Servers heard from since the proxy started. */
     val registry = LinkRegistry()
 
+    /** The shared key, or null when the link is off. */
+    @Volatile
+    var key: ByteArray? = null
+
+    /** On a game server: sends bytes to the proxy through any player online; returns false when there is none. */
+    @Volatile
+    var uplink: ((ByteArray) -> Boolean)? = null
+
+    /** On the proxy: sends bytes to a game server by name. */
+    @Volatile
+    var transport: LinkTransport? = null
+
+    /** The answers awaited for the requests made from here. */
+    val replies = RemoteReplies()
+
     /** The latest network map this game server received from its proxy, or null when none has arrived. */
     @Volatile
     var network: ReceivedNetwork? = null

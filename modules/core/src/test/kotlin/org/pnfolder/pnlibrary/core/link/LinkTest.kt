@@ -73,4 +73,60 @@ class LinkTest {
         assertNull(LinkCodec.decode(message, key))
         assertNull(LinkCodec.decodeNetwork(LinkCodec.encode(report, key), key))
     }
+
+    private val request = RemoteRequest(java.util.UUID.randomUUID(), "games", "", "Admin", RemoteAction.UPDATE, "shop", Instant.now())
+
+    @Test
+    fun `requests and answers survive the trip and reject forgeries`() {
+        val sent = LinkCodec.decodeRequest(LinkCodec.encodeRequest(request, key), key)!!
+        assertEquals(request.id, sent.id)
+        assertEquals(RemoteAction.UPDATE, sent.action)
+        assertEquals("shop", sent.product)
+        assertNull(LinkCodec.decodeRequest(LinkCodec.encodeRequest(request, key), ByteArray(32) { 7 }))
+
+        val result = RemoteResult(request.id, "lobby", true, "Готово", Instant.now())
+        val answer = LinkCodec.decodeResult(LinkCodec.encodeResult(result, key), key)!!
+        assertEquals("Готово", answer.text)
+        assertTrue(answer.ok)
+        assertNull(LinkCodec.decodeRequest(LinkCodec.encodeResult(result, key), key))
+    }
+
+    @Test
+    fun `the proxy passes a request to its target and the answer back to who asked`() {
+        val sent = mutableListOf<Pair<String, ByteArray>>()
+        val replies = RemoteReplies()
+        val transport = LinkTransport { server, bytes ->
+            sent += server to bytes
+            server != "gone"
+        }
+        val receiver = LinkReceiver(key, LinkRegistry(), transport = transport, replies = replies)
+
+        assertTrue(receiver.receive("lobby", true, LinkCodec.encodeRequest(request, key)))
+        val forwarded = LinkCodec.decodeRequest(sent.single().second, key)!!
+        assertEquals("games", sent.single().first)
+        assertEquals("lobby", forwarded.origin)
+
+        sent.clear()
+        assertTrue(receiver.receive("games", true, LinkCodec.encodeResult(RemoteResult(request.id, "lobby", true, "ok", Instant.now()), key)))
+        assertEquals("lobby", sent.single().first)
+
+        sent.clear()
+        receiver.receive("lobby", true, LinkCodec.encodeRequest(request.copy(target = "gone", id = java.util.UUID.randomUUID()), key))
+        val failure = LinkCodec.decodeResult(sent.last().second, key)!!
+        assertEquals("lobby", sent.last().first)
+        assertFalse(failure.ok)
+        assertFalse(receiver.receive("lobby", false, LinkCodec.encodeRequest(request, key)))
+    }
+
+    @Test
+    fun `an answer to the proxy itself reaches whoever waits for it`() {
+        val replies = RemoteReplies()
+        var got: RemoteResult? = null
+        replies.expect(request.id) { got = it }
+        val receiver = LinkReceiver(key, LinkRegistry(), replies = replies)
+
+        receiver.receive("games", true, LinkCodec.encodeResult(RemoteResult(request.id, LinkNames.PROXY_ORIGIN, true, "ok", Instant.now()), key))
+
+        assertEquals("ok", got?.text)
+    }
 }

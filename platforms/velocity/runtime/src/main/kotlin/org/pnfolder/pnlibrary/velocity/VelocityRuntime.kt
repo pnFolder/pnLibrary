@@ -5,9 +5,12 @@ import com.velocitypowered.api.event.proxy.ProxyShutdownEvent
 import com.velocitypowered.api.proxy.ProxyServer
 import com.velocitypowered.api.scheduler.ScheduledTask
 import org.pnfolder.pnlibrary.common.lang.runCatchingNonFatal
+import org.pnfolder.pnlibrary.core.link.LinkHub
 import org.pnfolder.pnlibrary.core.link.LinkReceiver
 import org.pnfolder.pnlibrary.core.link.LinkSecret
+import org.pnfolder.pnlibrary.core.link.LinkTransport
 import org.pnfolder.pnlibrary.core.link.NetworkPublisher
+import org.pnfolder.pnlibrary.core.link.RemoteExecutor
 import org.pnfolder.pnlibrary.core.runtime.PnLibraryRuntimeHost
 import org.pnfolder.pnlibrary.velocity.api.VelocityPlatform
 import org.slf4j.Logger
@@ -59,7 +62,12 @@ internal class VelocityRuntime(
         server.eventManager.register(owner, listener)
         playerEvents = listener
         val key = LinkSecret.readOrCreate(dataDirectory)
-        val link = VelocityLinkListener(LinkReceiver(key))
+        val transport = LinkTransport { name, bytes ->
+            server.getServer(name).map { it.sendPluginMessage(VelocityLinkListener.CHANNEL, bytes) }.orElse(false)
+        }
+        LinkHub.key = key
+        LinkHub.transport = transport
+        val link = VelocityLinkListener(LinkReceiver(key, executor = RemoteExecutor(started.library), transport = transport))
         server.channelRegistrar.register(VelocityLinkListener.CHANNEL)
         server.eventManager.register(owner, link)
         linkListener = link
@@ -87,6 +95,8 @@ internal class VelocityRuntime(
         playerEvents?.let { runCatchingNonFatal { server.eventManager.unregisterListener(owner, it) } }
         playerEvents = null
         networkTask?.cancel()
+        LinkHub.transport = null
+        LinkHub.key = null
         networkTask = null
         linkListener?.let { runCatchingNonFatal { server.eventManager.unregisterListener(owner, it) } }
         linkListener = null

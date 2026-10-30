@@ -40,7 +40,7 @@ class ProxyControlCommand(private val library: PnLibrary) {
             library.mountableCommand("debug")?.let { mount("debug", it) }
             mount("bus", EventBusCommand(library).definition())
             mount("tasks", TaskCommand(library).definition())
-            mount("servers", ServersCommand().definition())
+            mount("servers", ServersCommand(ServersCommand.fromReports()).definition())
         }
     }
 

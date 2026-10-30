@@ -5,9 +5,12 @@ import net.md_5.bungee.api.scheduler.ScheduledTask
 import org.pnfolder.pnlibrary.bungee.api.BungeePlatform
 import org.pnfolder.pnlibrary.common.lang.runCatchingNonFatal
 import org.pnfolder.pnlibrary.core.link.LinkCodec
+import org.pnfolder.pnlibrary.core.link.LinkHub
 import org.pnfolder.pnlibrary.core.link.LinkReceiver
 import org.pnfolder.pnlibrary.core.link.LinkSecret
+import org.pnfolder.pnlibrary.core.link.LinkTransport
 import org.pnfolder.pnlibrary.core.link.NetworkPublisher
+import org.pnfolder.pnlibrary.core.link.RemoteExecutor
 import org.pnfolder.pnlibrary.core.runtime.PnLibraryRuntimeHost
 import java.util.concurrent.TimeUnit
 
@@ -38,7 +41,10 @@ internal class BungeeRuntime(private val plugin: Plugin) {
         plugin.proxy.pluginManager.registerListener(plugin, listener)
         playerEvents = listener
         val key = LinkSecret.readOrCreate(plugin.dataFolder.toPath())
-        val link = BungeeLinkListener(LinkReceiver(key))
+        val transport = LinkTransport { name, bytes -> plugin.proxy.getServerInfo(name)?.sendData(LinkCodec.CHANNEL, bytes, false) ?: false }
+        LinkHub.key = key
+        LinkHub.transport = transport
+        val link = BungeeLinkListener(LinkReceiver(key, executor = RemoteExecutor(started.library), transport = transport))
         plugin.proxy.registerChannel(LinkCodec.CHANNEL)
         plugin.proxy.pluginManager.registerListener(plugin, link)
         linkListener = link
@@ -58,6 +64,8 @@ internal class BungeeRuntime(private val plugin: Plugin) {
 
     fun stop() {
         networkTask?.cancel()
+        LinkHub.transport = null
+        LinkHub.key = null
         networkTask = null
         linkListener?.let { runCatchingNonFatal { plugin.proxy.pluginManager.unregisterListener(it) } }
         linkListener = null
