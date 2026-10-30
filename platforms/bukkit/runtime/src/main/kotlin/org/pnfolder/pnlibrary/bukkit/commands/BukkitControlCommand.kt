@@ -11,6 +11,7 @@ import org.pnfolder.pnlibrary.api.currency.CurrencyProviderRegistry
 import org.pnfolder.pnlibrary.api.runtime.PnLibrary
 import org.pnfolder.pnlibrary.bukkit.currency.CurrencyCommandExecutor
 import org.pnfolder.pnlibrary.core.commands.EventBusCommand
+import org.pnfolder.pnlibrary.core.commands.ServersCommand
 import org.pnfolder.pnlibrary.core.commands.TaskCommand
 import org.pnfolder.pnlibrary.core.lifecycle.mountableCommand
 import org.pnfolder.pnlibrary.core.updates.catalog.UpdateCatalogCommands
@@ -32,6 +33,7 @@ import org.pnfolder.pnlibrary.core.updates.catalog.UpdateCatalogRoutes
  * | `/pn events …` | the journal of events | `pnlibrary.events.view` |
  * | `/pn bus …` | listeners, calls and traces of the event bus | `pnlibrary.events.bus` |
  * | `/pn tasks …` | scheduled tasks of every plugin, with what each is for | `pnlibrary.tasks` |
+ * | `/pn servers …` | the servers of the network and update controls for them | `pnlibrary.servers` |
  * | `/pn debug …` | the encrypted report for support | `pnlibrary.debug` |
  * | `/pn money …` | currencies and balances | as in the currency settings |
  * | `/pn support` | the support link | `pnlibrary.admin` |
@@ -116,6 +118,7 @@ internal class BukkitControlCommand(
         library.mountableCommand("debug")?.let { mount("debug", it) }
         mount("bus", EventBusCommand(library).definition())
         mount("tasks", TaskCommand(library).definition())
+        mount("servers", ServersCommand(ServersCommand.fromNetworkMap()).definition())
         mount("money", CurrencyCommandExecutor(plugin, currencies).definition())
         literal("support") {
             permission(ADMIN, VIEW)
@@ -131,6 +134,7 @@ internal class BukkitControlCommand(
             if (sender.hasPermission("pnlibrary.events.view")) add("/pn events")
             if (sender.hasPermission("pnlibrary.events.bus")) add("/pn bus")
             if (sender.hasPermission("pnlibrary.tasks")) add("/pn tasks")
+            if (sender.hasPermission(ServersCommand.PERMISSION)) add("/pn servers")
             if (sender.hasPermission("pnlibrary.debug")) add("/pn debug")
             add("/pn money")
         }

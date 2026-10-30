@@ -42,6 +42,8 @@ import org.pnfolder.pnlibrary.core.lifecycle.runTaskNow
 import org.pnfolder.pnlibrary.core.lifecycle.taskSnapshots
 import org.pnfolder.pnlibrary.core.link.LinkHub
 import org.pnfolder.pnlibrary.core.link.NetworkServer
+import org.pnfolder.pnlibrary.core.link.RemoteAction
+import org.pnfolder.pnlibrary.core.link.RemoteControl
 import org.pnfolder.pnlibrary.core.updates.catalog.CatalogLabels
 import org.pnfolder.pnlibrary.core.updates.catalog.UpdateCatalogView
 import org.pnfolder.pnlibrary.core.updates.catalog.UpdateStatusMessages
@@ -959,12 +961,37 @@ internal class PluginsMenu(
                 plugin.latest?.let { add("Последняя" to it) }
                 add("Состояние" to (state?.let { "${stateSymbol(it)} ${CatalogLabels.stateLabel(it)}" } ?: plugin.state))
             }
-            Row(icon(Icons.PLUGIN, material, plugin.product, Style.lore(emptyList(), parameters), muted = state == null))
+            val update = plugin.latest != null
+            val hints = if (update) arrayOf(Style.left("скачать обновление там")) else emptyArray()
+            val click = if (update) {
+                go { who -> allowed(who, RemoteAction.UPDATE.permission) { remote(who, server.name, RemoteAction.UPDATE, plugin.product) } }
+            } else {
+                null
+            }
+            Row(icon(Icons.PLUGIN, material, plugin.product, Style.lore(emptyList(), parameters, *hints), muted = state == null), click)
         }
         list(
             player, server.name, rows, page, PAGE_SIZE, { who, to -> networkServer(who, server, backPage, to) }, { network(it, backPage) },
             "Плагинов нет",
+            extra = {
+                val check = icon(
+                    Icons.CHECK, "COMPASS", "Проверить там",
+                    Style.lore(listOf("Попросить ${server.name} проверить обновления."), emptyList(), Style.left("проверить")),
+                )
+                val ask = go { who -> allowed(who, RemoteAction.CHECK.permission) { remote(who, server.name, RemoteAction.CHECK, null) } }
+                it.button(NETWORK_CHECK, check, ask)
+            },
         )
+    }
+
+    /** Asks [target] for [action] through the link and tells [player] what came back. */
+    private fun remote(player: Player, target: String, action: RemoteAction, product: String?) {
+        val error = RemoteControl.send(target, action, product, player.name) { result ->
+            replies.onServerThread {
+                if (player.isOnline) tell(player, if (result.ok) ChatTone.SUCCESS else ChatTone.FAILURE, "$target: ${result.text}")
+            }
+        }
+        if (error != null) tell(player, ChatTone.FAILURE, error) else tell(player, ChatTone.PROGRESS, "Запрос отправлен на $target…")
     }
 
     /** The start page of the plugin events: what they are, the counters and the way to every view. */
@@ -1820,6 +1847,7 @@ internal class PluginsMenu(
         const val ROLLBACK = "pnlibrary.updates.rollback"
         const val HOME_ROWS = 5
         const val NETWORK_SLOT = 34
+        const val NETWORK_CHECK = 49
         const val HOME_CLOSE = 40
         const val SUPPORT_SLOT = 38
         const val RESTART_SLOT = 41

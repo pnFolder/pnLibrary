@@ -7,6 +7,7 @@ import java.io.DataOutputStream
 import java.security.MessageDigest
 import java.time.Duration
 import java.time.Instant
+import java.util.UUID
 import javax.crypto.Mac
 import javax.crypto.spec.SecretKeySpec
 
@@ -32,6 +33,9 @@ object LinkCodec {
 
     private const val VERSION = 1
     private const val NETWORK_VERSION = 2
+    private const val REQUEST_VERSION = 3
+    private const val RESULT_VERSION = 4
+    private const val MAX_RESULT_TEXT = 1_000
     private const val MAC_ALGORITHM = "HmacSHA256"
     private const val MAC_BYTES = 32
     private const val MAX_TEXT = 200
@@ -71,6 +75,55 @@ object LinkCodec {
             if (!fresh(proxy.sentAt, now)) return@verified null
             val count = input.readInt().coerceIn(0, MAX_SERVERS)
             NetworkReport(proxy, List(count) { NetworkServer(input.readUTF(), input.readBoolean(), readReport(input)) }, proxy.sentAt)
+        }
+
+    /** Encodes a remote request and signs it with [key]. */
+    fun encodeRequest(request: RemoteRequest, key: ByteArray): ByteArray = signed(key) { out ->
+        out.writeByte(REQUEST_VERSION)
+        out.writeLong(request.id.mostSignificantBits)
+        out.writeLong(request.id.leastSignificantBits)
+        out.writeLong(request.sentAt.toEpochMilli())
+        out.writeUTF(request.target.take(MAX_TEXT))
+        out.writeUTF(request.origin.take(MAX_TEXT))
+        out.writeUTF(request.actor.take(MAX_TEXT))
+        out.writeUTF(request.action.name)
+        out.writeUTF(request.product.orEmpty().take(MAX_TEXT))
+    }
+
+    /** Reads a remote request, or returns null when the signature, the version, the time or the action is wrong. */
+    fun decodeRequest(message: ByteArray, key: ByteArray, now: Instant = Instant.now()): RemoteRequest? =
+        verified(message, key) { input ->
+            if (input.readUnsignedByte() != REQUEST_VERSION) return@verified null
+            val id = UUID(input.readLong(), input.readLong())
+            val sentAt = Instant.ofEpochMilli(input.readLong())
+            if (!fresh(sentAt, now)) return@verified null
+            val target = input.readUTF()
+            val origin = input.readUTF()
+            val actor = input.readUTF()
+            val actionName = input.readUTF()
+            val action = RemoteAction.values().firstOrNull { it.name == actionName } ?: return@verified null
+            RemoteRequest(id, target, origin, actor, action, input.readUTF().ifEmpty { null }, sentAt)
+        }
+
+    /** Encodes the answer to a remote request and signs it with [key]. */
+    fun encodeResult(result: RemoteResult, key: ByteArray): ByteArray = signed(key) { out ->
+        out.writeByte(RESULT_VERSION)
+        out.writeLong(result.id.mostSignificantBits)
+        out.writeLong(result.id.leastSignificantBits)
+        out.writeLong(result.sentAt.toEpochMilli())
+        out.writeUTF(result.origin.take(MAX_TEXT))
+        out.writeBoolean(result.ok)
+        out.writeUTF(result.text.take(MAX_RESULT_TEXT))
+    }
+
+    /** Reads the answer to a remote request, or returns null when the signature, the version or the time is wrong. */
+    fun decodeResult(message: ByteArray, key: ByteArray, now: Instant = Instant.now()): RemoteResult? =
+        verified(message, key) { input ->
+            if (input.readUnsignedByte() != RESULT_VERSION) return@verified null
+            val id = UUID(input.readLong(), input.readLong())
+            val sentAt = Instant.ofEpochMilli(input.readLong())
+            if (!fresh(sentAt, now)) return@verified null
+            RemoteResult(id, input.readUTF(), input.readBoolean(), input.readUTF(), sentAt)
         }
 
     private fun fresh(sentAt: Instant, now: Instant): Boolean = Math.abs(Duration.between(sentAt, now).toMillis()) <= TOLERANCE.toMillis()

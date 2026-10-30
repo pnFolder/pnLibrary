@@ -11,6 +11,7 @@ import org.pnfolder.pnlibrary.core.link.LinkCodec
 import org.pnfolder.pnlibrary.core.link.LinkHub
 import org.pnfolder.pnlibrary.core.link.LinkReports
 import org.pnfolder.pnlibrary.core.link.LinkSecret
+import org.pnfolder.pnlibrary.core.link.RemoteExecutor
 import java.time.Instant
 
 /**
@@ -22,16 +23,25 @@ import java.time.Instant
 internal class BukkitLinkReporter(private val plugin: JavaPlugin, private val library: PnLibrary) : PluginMessageListener {
     private var task: BukkitTask? = null
     private var key: ByteArray? = null
+    private val executor = RemoteExecutor(library)
 
     fun start() {
         val key = LinkSecret.read(plugin.dataFolder.toPath()) ?: return
         this.key = key
+        LinkHub.key = key
+        LinkHub.uplink = { bytes ->
+            val carrier = Bukkit.getOnlinePlayers().firstOrNull()
+            carrier?.sendPluginMessage(plugin, LinkCodec.CHANNEL, bytes)
+            carrier != null
+        }
         plugin.server.messenger.registerIncomingPluginChannel(plugin, LinkCodec.CHANNEL, this)
         plugin.server.messenger.registerOutgoingPluginChannel(plugin, LinkCodec.CHANNEL)
         task = plugin.server.scheduler.runTaskTimer(plugin, Runnable { report(key) }, FIRST_DELAY_TICKS, PERIOD_TICKS)
     }
 
     fun stop() {
+        LinkHub.uplink = null
+        LinkHub.key = null
         task?.cancel()
         task = null
         runCatchingNonFatal { plugin.server.messenger.unregisterIncomingPluginChannel(plugin, LinkCodec.CHANNEL) }
@@ -42,7 +52,17 @@ internal class BukkitLinkReporter(private val plugin: JavaPlugin, private val li
     override fun onPluginMessageReceived(channel: String, player: Player, message: ByteArray) {
         if (channel != LinkCodec.CHANNEL) return
         val key = key ?: return
-        LinkCodec.decodeNetwork(message, key)?.let { LinkHub.network = LinkHub.ReceivedNetwork(it, Instant.now()) }
+        LinkCodec.decodeNetwork(message, key)?.let {
+            LinkHub.network = LinkHub.ReceivedNetwork(it, Instant.now())
+            return
+        }
+        LinkCodec.decodeRequest(message, key)?.let { request ->
+            executor.run(request) { result ->
+                plugin.server.scheduler.runTask(plugin, Runnable { player.sendPluginMessage(plugin, LinkCodec.CHANNEL, LinkCodec.encodeResult(result, key)) })
+            }
+            return
+        }
+        LinkCodec.decodeResult(message, key)?.let { LinkHub.replies.complete(it) }
     }
 
     private fun report(key: ByteArray) {
