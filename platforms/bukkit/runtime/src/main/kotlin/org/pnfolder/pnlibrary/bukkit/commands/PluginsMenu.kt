@@ -24,7 +24,7 @@ internal class PluginsMenu(
 ) {
     private val adapter = BukkitMenuAdapter(plugin, library)
     private val host = BukkitMenuHost(plugin, library, replies, adapter)
-    private val data = LocalMenuData(library, host) { viewer, line -> RemoteMenus.run(plugin, viewer, line) }
+    private val data = LocalMenuData(library, host, run = { viewer, line -> RemoteMenus.run(plugin, viewer, line) })
     private val menu = LibraryMenu(data, host)
 
     init {

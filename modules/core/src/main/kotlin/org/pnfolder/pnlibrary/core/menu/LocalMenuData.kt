@@ -21,6 +21,7 @@ import org.pnfolder.pnlibrary.core.lifecycle.journalDetail
 import org.pnfolder.pnlibrary.core.lifecycle.journalGroups
 import org.pnfolder.pnlibrary.core.lifecycle.runTaskNow
 import org.pnfolder.pnlibrary.core.lifecycle.taskSnapshots
+import org.pnfolder.pnlibrary.core.link.ServerGroups
 import org.pnfolder.pnlibrary.core.updates.catalog.UpdateStatusMessages
 import java.time.Duration
 import java.time.Instant
@@ -34,11 +35,13 @@ import java.util.concurrent.CompletionStage
  * @param library this server's library
  * @param directory the plugins of this platform
  * @param run runs a chat command for a viewer and returns what it printed
+ * @param groups the groups of servers, on a proxy; null on a game server
  */
 class LocalMenuData(
     private val library: PnLibrary,
     private val directory: PluginDirectory,
     private val run: (ViewerInfo, String) -> List<Component> = { _, _ -> emptyList() },
+    private val groups: ServerGroups? = null,
 ) : MenuData {
     private val bus get() = library.events.inspector
 
@@ -121,6 +124,25 @@ class LocalMenuData(
     }
 
     override fun ownerNamed(name: String): OwnerInfo? = directory.ownerNamed(name)
+
+    override fun groups(): List<ServerGroups.Group> = groups?.all().orEmpty()
+
+    override fun editGroup(edit: GroupEdit): Boolean {
+        val store = groups ?: return false
+        val server = edit.server.orEmpty()
+        val plugin = edit.plugin.orEmpty()
+        return when (edit.op) {
+            GroupOp.CREATE -> store.create(edit.group)
+            GroupOp.DELETE -> store.delete(edit.group)
+            GroupOp.ADD_SERVER -> store.edit(edit.group) { it.addServer(server) }
+            GroupOp.REMOVE_SERVER -> store.edit(edit.group) { it.removeServer(server) }
+            GroupOp.ADD_PLUGIN -> store.edit(edit.group) { it.addPlugin(plugin) }
+            GroupOp.REMOVE_PLUGIN -> store.edit(edit.group) { it.removePlugin(plugin) }
+            GroupOp.NEED -> store.edit(edit.group) { it.with(server, plugin, true) }
+            GroupOp.SKIP -> store.edit(edit.group) { it.with(server, plugin, false) }
+            GroupOp.RESET -> store.edit(edit.group) { it.reset(server) }
+        }
+    }
 
     override fun command(viewer: ViewerInfo, line: String): List<Component> = run(viewer, line)
 }

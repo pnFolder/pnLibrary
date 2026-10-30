@@ -15,6 +15,7 @@ import org.pnfolder.pnlibrary.api.updates.backup.UpdateHistoryEntry
 import org.pnfolder.pnlibrary.core.lifecycle.JournalDetail
 import org.pnfolder.pnlibrary.core.lifecycle.JournalGroup
 import org.pnfolder.pnlibrary.core.lifecycle.TaskControl
+import org.pnfolder.pnlibrary.core.link.ServerGroups
 import java.time.Duration
 import java.time.Instant
 import java.util.UUID
@@ -31,6 +32,39 @@ data class EventAbout(val purpose: String, val usage: String, val owner: OwnerIn
 
 /** Who asks for a chat command to be run on another server: the name and the permissions held at home. */
 data class ViewerInfo(val name: String, val permissions: Set<String>)
+
+/** What a change to a group of servers does; the server and the plugin are those the operation needs. */
+enum class GroupOp {
+    /** Makes the group. */
+    CREATE,
+
+    /** Deletes the group. */
+    DELETE,
+
+    /** Puts a server in the group. */
+    ADD_SERVER,
+
+    /** Takes a server out of the group. */
+    REMOVE_SERVER,
+
+    /** Asks every server of the group for a plugin. */
+    ADD_PLUGIN,
+
+    /** Stops asking any server of the group for a plugin. */
+    REMOVE_PLUGIN,
+
+    /** One server of the group needs a plugin, whatever the rest do. */
+    NEED,
+
+    /** One server of the group does not need a plugin, whatever the rest do. */
+    SKIP,
+
+    /** One server of the group goes back to what the rest have. */
+    RESET,
+}
+
+/** One change to a group of servers on the proxy. */
+data class GroupEdit(val op: GroupOp, val group: String, val server: String? = null, val plugin: String? = null)
 
 /**
  * Everything the menu reads from a server and everything it asks a server to do.
@@ -135,6 +169,12 @@ interface MenuData {
 
     /** The plugin called [name], or null. */
     fun ownerNamed(name: String): OwnerInfo?
+
+    /** The groups of servers a proxy keeps; empty on a game server. */
+    fun groups(): List<ServerGroups.Group>
+
+    /** Applies one change to the groups; returns false when there is no such group or the name is unfit. */
+    fun editGroup(edit: GroupEdit): Boolean
 
     /** Runs a chat command such as `pn status` for [viewer] and returns what it printed. */
     fun command(viewer: ViewerInfo, line: String): List<Component>

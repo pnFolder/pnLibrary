@@ -26,6 +26,7 @@ import org.pnfolder.pnlibrary.core.lifecycle.TaskControl
 import org.pnfolder.pnlibrary.core.link.DataClient
 import org.pnfolder.pnlibrary.core.link.DataException
 import org.pnfolder.pnlibrary.core.link.LinkHub
+import org.pnfolder.pnlibrary.core.link.ServerGroups
 import java.lang.reflect.Type
 import java.time.Duration
 import java.time.Instant
@@ -71,9 +72,12 @@ object MenuCalls {
     const val EVENT_ABOUT = "eventAbout"
     const val OWNER_NAMED = "ownerNamed"
     const val COMMAND = "command"
+    const val GROUPS = "groups"
+    const val EDIT_GROUP = "editGroup"
 
     /** The calls that change nothing, whose answers may be remembered for a moment. */
     val READS = setOf(
+        GROUPS,
         VERSION, SNAPSHOTS, SNAPSHOT, PLUGINS, PLAN, HELD_UNTIL, HISTORY_COUNT, HISTORY_PAGE, BACKUPS, JOURNAL_GROUPS, JOURNAL_DETAIL, TASKS,
         EVENTS, LISTENERS, EVENT_HISTORY, EVENT_HISTORY_DAYS, TRACED_EVENTS, TRACES, EVENT_ABOUT, OWNER_NAMED,
     )
@@ -191,6 +195,11 @@ class RemoteMenuData(
     override fun eventAbout(eventType: String): EventAbout? = ask(MenuCalls.EVENT_ABOUT, args("type" to eventType))
 
     override fun ownerNamed(name: String): OwnerInfo? = ask(MenuCalls.OWNER_NAMED, args("name" to name))
+
+    override fun groups(): List<ServerGroups.Group> = ask(MenuCalls.GROUPS)
+
+    override fun editGroup(edit: GroupEdit): Boolean =
+        ask(MenuCalls.EDIT_GROUP, args("op" to edit.op.name, "group" to edit.group, "server" to edit.server, "plugin" to edit.plugin))
 
     override fun command(viewer: ViewerInfo, line: String): List<Component> {
         val permissions = JsonArray().also { array -> viewer.permissions.forEach { array.add(it) } }

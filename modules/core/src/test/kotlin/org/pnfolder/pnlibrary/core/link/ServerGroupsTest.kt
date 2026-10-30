@@ -31,6 +31,38 @@ class ServerGroupsTest {
     }
 
     @Test
+    fun `one server of a group can skip a plugin or carry one more`(@TempDir folder: Path) {
+        val groups = ServerGroups { folder.resolve(ServerGroups.FILE) }
+        groups.create("lobby")
+        groups.create("event")
+        groups.edit("lobby") { it.copy(servers = setOf("l1", "l2"), plugins = setOf("shop", "chat")) }
+        groups.edit("event") { it.copy(servers = setOf("l1"), plugins = setOf("quiz")) }
+        groups.edit("lobby") { it.with("l2", "chat", false).with("l2", "parkour", true) }
+
+        val lobby = ServerGroups { folder.resolve(ServerGroups.FILE) }.get("lobby")!!
+        assertEquals(setOf("shop", "chat"), lobby.wanted("l1"))
+        assertEquals(setOf("shop", "parkour"), lobby.wanted("l2"))
+        assertTrue(lobby.customized("l2"))
+        assertFalse(lobby.customized("l1"))
+        assertEquals(listOf("event", "lobby"), groups.of("L1").map { it.name })
+
+        groups.edit("lobby") { it.with("l2", "chat", true).reset("l2") }
+        assertEquals(setOf("shop", "chat"), groups.get("lobby")!!.wanted("l2"))
+        assertFalse(groups.get("lobby")!!.customized("l2"))
+    }
+
+    @Test
+    fun `a skipped plugin is not missing on that server`() {
+        val group = ServerGroups.Group("lobby", setOf("l1"), setOf("shop", "chat")).with("l1", "chat", false)
+        val servers = listOf(NetworkServer("l1", true, report(LinkPlugin("shop", "1", null, "UP_TO_DATE"))))
+
+        val state = ServerGroups { null }.compare(group, servers).single()
+
+        assertTrue(state.ok)
+        assertTrue(state.customized)
+    }
+
+    @Test
     fun `a server is compared with what the group asks for`(@TempDir folder: Path) {
         val groups = ServerGroups { folder.resolve(ServerGroups.FILE) }
         val group = ServerGroups.Group("grief", setOf("g1", "g2", "g3"), setOf("shop", "warps"))

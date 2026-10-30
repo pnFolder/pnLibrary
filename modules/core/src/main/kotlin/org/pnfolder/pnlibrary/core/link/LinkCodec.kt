@@ -36,6 +36,7 @@ object LinkCodec {
 
     private const val MAX_GROUPS = 30
     private const val MAX_GROUP_ITEMS = 60
+    private const val PAIR = '\u0001'
     private const val VERSION = 1
     private const val NETWORK_VERSION = 2
     private const val REQUEST_VERSION = 3
@@ -78,8 +79,16 @@ object LinkCodec {
             out.writeUTF(group.name.take(MAX_TEXT))
             writeNames(out, group.servers)
             writeNames(out, group.plugins)
+            writeNames(out, pairs(group.extra))
+            writeNames(out, pairs(group.skip))
         }
     }
+
+    private fun pairs(overrides: Map<String, Set<String>>): Set<String> =
+        overrides.flatMap { (server, plugins) -> plugins.map { "$server$PAIR$it" } }.toSet()
+
+    private fun unpair(pairs: Set<String>): Map<String, Set<String>> =
+        pairs.mapNotNull { pair -> pair.split(PAIR, limit = 2).takeIf { it.size == 2 } }.groupBy({ it[0] }, { it[1] }).mapValues { it.value.toSet() }
 
     private fun writeNames(out: DataOutputStream, names: Set<String>) {
         val shown = names.take(MAX_GROUP_ITEMS)
@@ -97,7 +106,9 @@ object LinkCodec {
             if (!fresh(proxy.sentAt, now)) return@verified null
             val count = input.readInt().coerceIn(0, MAX_SERVERS)
             val servers = List(count) { NetworkServer(input.readUTF(), input.readBoolean(), readReport(input)) }
-            val groups = List(input.readInt().coerceIn(0, MAX_GROUPS)) { ServerGroups.Group(input.readUTF(), readNames(input), readNames(input)) }
+            val groups = List(input.readInt().coerceIn(0, MAX_GROUPS)) {
+                ServerGroups.Group(input.readUTF(), readNames(input), readNames(input), unpair(readNames(input)), unpair(readNames(input)))
+            }
             NetworkReport(proxy, servers, proxy.sentAt, groups)
         }
 

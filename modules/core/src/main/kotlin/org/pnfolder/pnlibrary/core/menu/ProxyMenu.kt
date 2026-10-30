@@ -3,6 +3,8 @@ package org.pnfolder.pnlibrary.core.menu
 import net.kyori.adventure.text.Component
 import org.pnfolder.pnlibrary.api.runtime.PnLibrary
 import org.pnfolder.pnlibrary.core.commands.ProxyCommandNames
+import org.pnfolder.pnlibrary.core.link.LinkHub
+import org.pnfolder.pnlibrary.core.link.ServerGroups
 import java.util.concurrent.Executors
 
 /** The way a proxy runs a chat command for a viewer on another server, kept apart so the command package does not depend on the menu. */
@@ -48,6 +50,7 @@ object ProxyMenu {
             ProxyMenuCommands.runner?.invoke(viewer, line).orEmpty().map(ProxyCommandNames::rewrite)
         }
         val executor = Executors.newCachedThreadPool { task -> Thread(task, "pnlibrary-menu-data").apply { isDaemon = true } }
-        return MenuDataServer(LocalMenuData(library, directory, run), executor)
+        val groups = ServerGroups { LinkHub.folder?.resolve(ServerGroups.FILE) }
+        return MenuDataServer(LocalMenuData(library, directory, run, groups), executor)
     }
 }
