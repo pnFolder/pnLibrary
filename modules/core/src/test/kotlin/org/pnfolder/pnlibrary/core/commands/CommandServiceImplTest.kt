@@ -402,6 +402,22 @@ class CommandServiceImplTest {
     }
 
     @Test
+    fun `a sender who stops at a command is told what it does under the usage line`() {
+        val native = RecordingCommands()
+        service(native).register(Any(), command("hello") {
+            literal("make") {
+                description("Делает группу.")
+                argument("name", ArgumentType.string()) { executes { } }
+            }
+        })
+        val sender = TestSender()
+
+        run(native, sender, "make")
+
+        assertEquals(listOf("Использование: /hello make <name>", "    Делает группу."), sender.messages.map(::textOf))
+    }
+
+    @Test
     fun `the standard answer can add a sound and reshape the usage line`() {
         val native = RecordingCommands()
         val sound = net.kyori.adventure.sound.Sound.sound(net.kyori.adventure.key.Key.key("entity.villager.no"), net.kyori.adventure.sound.Sound.Source.MASTER,
