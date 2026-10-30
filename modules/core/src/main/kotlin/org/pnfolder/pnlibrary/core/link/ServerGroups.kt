@@ -185,10 +185,14 @@ class ServerGroups(private val file: () -> Path?) {
         private const val EXTRA = "extra"
         private const val SKIP = "skip"
         private const val MAX_NAME = 32
-        private val RESERVED = setOf("create", "delete", "of")
 
-        /** Whether [name] may name a group: short, no spaces, and not a word of the command. */
-        fun validName(name: String): Boolean =
-            name.length in 1..MAX_NAME && name.none { it.isWhitespace() || it.isISOControl() } && name.lowercase() !in RESERVED
+        /** The name under which the proxy is a member of a group; no server can have it, so it never clashes with a real one. */
+        const val PROXY = "@proxy"
+
+        /** How [server] is shown to people: the proxy by a word, a server by its name. */
+        fun label(server: String): String = if (server == PROXY) "Прокси" else server
+
+        /** Whether [name] may name a group: short and without spaces. Any word will do, `create` too. */
+        fun validName(name: String): Boolean = name.length in 1..MAX_NAME && name.none { it.isWhitespace() || it.isISOControl() }
     }
 }
