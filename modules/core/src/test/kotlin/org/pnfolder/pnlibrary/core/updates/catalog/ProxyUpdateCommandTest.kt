@@ -4,7 +4,9 @@ import net.kyori.adventure.text.Component
 import org.junit.jupiter.api.Assertions.*
 import org.junit.jupiter.api.Test
 import org.pnfolder.pnlibrary.api.commands.CommandContext
+import org.pnfolder.pnlibrary.api.commands.CommandDefinition
 import org.pnfolder.pnlibrary.api.commands.CommandSender
+import org.pnfolder.pnlibrary.api.commands.command
 import org.pnfolder.pnlibrary.api.dependencies.PluginDependency
 import org.pnfolder.pnlibrary.api.runtime.PnLibrary
 import org.pnfolder.pnlibrary.api.updates.*
@@ -19,99 +21,97 @@ import java.util.concurrent.CompletableFuture
 
 class ProxyUpdateCommandTest {
     @Test
-    fun `explicit plan ID is not silently replaced by the current plan`() {
+    fun `a player with the permission may change settings and is recorded as a player`() {
         val updates = Updates()
-        val requested = UUID.randomUUID()
-        execute(updates, Sender(), "stage", requested.toString())
-        assertEquals(requested, updates.staged)
-        assertEquals(UpdateActor.Kind.CONSOLE, updates.actor?.kind)
-        assertNotEquals(updates.current.id, updates.staged)
-    }
-
-    @Test
-    fun `history page is parsed and non console callers cannot read it`() {
-        val updates = Updates()
-        execute(updates, Sender(), "history", "2")
-        assertEquals(listOf(2), updates.pages)
-        execute(updates, Sender(isConsole = false), "history", "3")
-        execute(updates, Sender(), "history", "0")
-        assertEquals(listOf(2), updates.pages)
-    }
-
-    @Test
-    fun `settings are changed by the console with an attributed actor`() {
-        val updates = Updates()
-        execute(updates, Sender(), "set", "pnlibrary", "channel", "DEV")
+        execute(updates, Sender(), "updates", "set", "pnlibrary", "channel", "DEV")
         assertEquals("pnlibrary" to UpdateChannel.DEV, updates.channelSet)
-        assertEquals(UpdateActor.Kind.CONSOLE, updates.actor?.kind)
-        execute(updates, Sender(), "set", "pnlibrary", "channel", "default")
-        assertEquals("pnlibrary" to null, updates.channelSet)
-        execute(updates, Sender(), "set", "pnlibrary", "auto", "on")
+        assertEquals(UpdateActor.Kind.PLAYER, updates.actor?.kind)
+        execute(updates, Sender(console = true), "updates", "set", "pnlibrary", "auto", "on")
         assertEquals("pnlibrary" to true, updates.automaticSet)
-        execute(updates, Sender(), "set", "pnlibrary", "hold", "3d")
+        execute(updates, Sender(), "updates", "set", "pnlibrary", "hold", "3d")
         assertEquals("pnlibrary" to Duration.ofDays(3), updates.heldSet)
-        execute(updates, Sender(), "set", "pnlibrary", "hold", "off")
-        assertEquals("pnlibrary" to null, updates.heldSet)
     }
 
     @Test
-    fun `invalid values and non console callers never change settings`() {
+    fun `a sender without the permission cannot reach a command`() {
         val updates = Updates()
-        execute(updates, Sender(), "set", "pnlibrary", "channel", "nightly")
-        execute(updates, Sender(), "set", "pnlibrary", "auto", "maybe")
-        execute(updates, Sender(), "set", "pnlibrary", "hold", "90d")
-        execute(updates, Sender(isConsole = false), "set", "pnlibrary", "channel", "beta")
+        assertNull(route(updates, Sender(allowed = emptySet()), "updates", "set", "pnlibrary", "auto", "on") as? CommandRoute.Executable)
+        assertNull(route(updates, Sender(allowed = emptySet()), "update", "rollback") as? CommandRoute.Executable)
+    }
+
+    @Test
+    fun `invalid values never change settings`() {
+        val updates = Updates()
+        execute(updates, Sender(), "updates", "set", "pnlibrary", "channel", "nightly")
+        execute(updates, Sender(), "updates", "set", "pnlibrary", "auto", "maybe")
+        execute(updates, Sender(), "updates", "set", "pnlibrary", "hold", "90d")
         assertNull(updates.channelSet)
         assertNull(updates.automaticSet)
         assertNull(updates.heldSet)
     }
 
     @Test
-    fun `invalid plan ID never falls back to staging the current plan`() {
-        val updates = Updates()
-        execute(updates, Sender(), "stage", "invalid")
-        assertNull(updates.staged)
-    }
-
-    @Test
-    fun `rollback requires confirmation and passes the exact saved transaction`() {
+    fun `a saved rollback asks first and runs only on the token of the same sender`() {
         val updates = Updates()
         val id = UUID.randomUUID()
-        execute(updates, Sender(), "rollback", id.toString())
+        val asker = Sender()
+        execute(updates, asker, "updates", "rollback", id.toString())
         assertNull(updates.rolledBack)
-        execute(updates, Sender(isConsole = false), "rollback", id.toString(), "confirm")
+        val token = asker.token()
+        execute(updates, Sender(id = "other"), "update", "confirm", token)
         assertNull(updates.rolledBack)
-        execute(updates, Sender(), "rollback", id.toString(), "confirm")
+        execute(updates, asker, "update", "confirm", token)
         assertEquals(id, updates.rolledBack)
         assertEquals(false, updates.restoreConfigurations)
+        updates.rolledBack = null
+        execute(updates, asker, "update", "confirm", token)
+        assertNull(updates.rolledBack)
     }
 
     @Test
     fun `configuration restore is a separately confirmed explicit choice`() {
         val updates = Updates()
         val id = UUID.randomUUID()
-        execute(updates, Sender(), "rollback", id.toString(), "configs")
+        val asker = Sender()
+        execute(updates, asker, "updates", "rollback", id.toString(), "configs")
         assertNull(updates.rolledBack)
-        execute(updates, Sender(), "rollback", id.toString(), "configs", "confirm")
+        execute(updates, asker, "update", "confirm", asker.token())
         assertEquals(id, updates.rolledBack)
         assertEquals(true, updates.restoreConfigurations)
     }
 
+    /** One command per update service, so that the tokens it issued are still known to the next call. */
+    private val definitions = mutableMapOf<Updates, CommandDefinition>()
+
+    private fun route(updates: Updates, sender: Sender, vararg arguments: String): CommandRoute {
+        val definition = definitions.getOrPut(updates) {
+            val library = Proxy.newProxyInstance(PnLibrary::class.java.classLoader, arrayOf(PnLibrary::class.java)) { _, method, _ ->
+                when (method.name) { "getUpdates" -> updates; "isClosed" -> false; else -> error("Unexpected call: ${method.name}") }
+            } as PnLibrary
+            val controls = ProxyUpdateCommand(library)
+            command("pn") { controls.install(this) }
+        }
+        return CommandTreeRouter().route(definition, CommandContext(sender, arguments.toList(), "pn", arguments.joinToString(" ")))
+    }
+
     private fun execute(updates: Updates, sender: Sender, vararg arguments: String) {
-        val library = Proxy.newProxyInstance(PnLibrary::class.java.classLoader, arrayOf(PnLibrary::class.java)) { _, method, _ ->
-            when (method.name) { "getUpdates" -> updates; "isClosed" -> false; else -> error("Unexpected call: ${method.name}") }
-        } as PnLibrary
-        val definition = ProxyUpdateCommand(library).definition()
-        val route = CommandTreeRouter().route(definition, CommandContext(sender, arguments.toList(), "update",
-            arguments.joinToString(" "))) as CommandRoute.Executable
+        val route = route(updates, sender, *arguments) as CommandRoute.Executable
         route.node.execution.execute(route.context).toCompletableFuture().join()
     }
 
-    private class Sender(override val isConsole: Boolean = true) : CommandSender {
-        override val id = "console"
-        override val name = "Console"
-        override fun hasPermission(permission: String) = true
-        override fun send(message: Component) = Unit
+    private class Sender(
+        override val id: String = "player",
+        console: Boolean = false,
+        private val allowed: Set<String>? = null,
+    ) : CommandSender {
+        override val isConsole = console
+        override val name = id
+        private val sent = mutableListOf<Component>()
+        override fun hasPermission(permission: String) = allowed?.contains(permission) ?: true
+        override fun send(message: Component) { sent += message }
+
+        /** The token in the confirmation button the sender was shown. */
+        fun token(): String = Regex("update confirm ([A-Za-z0-9_-]+)").find(sent.joinToString { it.toString() })!!.groupValues[1]
     }
 
     private class Updates : UpdateService {

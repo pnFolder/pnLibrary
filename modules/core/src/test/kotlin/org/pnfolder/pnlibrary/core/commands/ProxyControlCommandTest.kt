@@ -20,30 +20,39 @@ class ProxyControlCommandTest {
     }
 
     @Test
-    fun `the update controls hang under update and keep their own words`() {
-        val update = definition.root.children.single { it.name == "update" }
-
-        assertEquals(CommandNodeKind.LITERAL, update.kind)
-        val words = update.children.map { it.name }
-        assertTrue(words.containsAll(listOf("plan", "check", "stage", "rollback", "list", "available", "history")), words.toString())
+    fun `the proxy has the same words as Bukkit`() {
+        val words = definition.root.children.map { it.name }
+        assertTrue(words.containsAll(listOf("status", "check", "updates", "update", "support", "bus", "tasks")), words.toString())
     }
 
     @Test
-    fun `pn alone names what is there`() {
+    fun `the update controls keep the catalog words under updates`() {
+        val updates = definition.root.children.single { it.name == "updates" }
+
+        assertEquals(CommandNodeKind.LITERAL, updates.kind)
+        val words = updates.children.map { it.name }
+        assertTrue(words.containsAll(listOf("list", "available", "history", "rollback")), words.toString())
+        val update = definition.root.children.single { it.name == "update" }
+        assertTrue(update.children.map { it.name }.containsAll(listOf("confirm", "rollback")))
+    }
+
+    @Test
+    fun `pn alone tells a sender without the admin permission what it may use`() {
         val sent = mutableListOf<String>()
         val sender = object : CommandSender {
-            override val id = "console"
-            override val name = "Console"
-            override val isConsole = true
-            override fun hasPermission(permission: String) = true
+            override val id = "player"
+            override val name = "Player"
+            override val isConsole = false
+            override fun hasPermission(permission: String) = permission == "pnlibrary.tasks"
             override fun send(message: Component) {
-                sent += (message as net.kyori.adventure.text.TextComponent).content()
+                sent += message.toString()
             }
         }
 
         val route = CommandTreeRouter().route(definition, CommandContext(sender, emptyList(), "pn", "")) as CommandRoute.Executable
         route.node.execution.execute(route.context).toCompletableFuture().join()
 
-        assertEquals(listOf("Команды pnLibrary: /pn events, /pn bus, /pn debug, /pn update"), sent)
+        assertTrue(sent.joinToString().contains("/pn tasks"), sent.toString())
+        assertTrue(!sent.joinToString().contains("/pn debug"), sent.toString())
     }
 }

@@ -42,6 +42,7 @@ import org.pnfolder.pnlibrary.core.lifecycle.runTaskNow
 import org.pnfolder.pnlibrary.core.lifecycle.taskSnapshots
 import org.pnfolder.pnlibrary.core.updates.catalog.CatalogLabels
 import org.pnfolder.pnlibrary.core.updates.catalog.UpdateCatalogView
+import org.pnfolder.pnlibrary.core.updates.catalog.UpdateStatusMessages
 import org.pnfolder.pnlibrary.core.updates.policy.UpdateDefaults
 import java.time.Duration
 import java.time.Instant
@@ -1499,7 +1500,7 @@ internal class PluginsMenu(
         }
         val problem = snapshot.state in CatalogLabels.PROBLEMS
         val blockers = if (snapshot.state == UpdateState.BLOCKED) {
-            library.updates.currentPlan().orElse(null)?.blockers.orEmpty().take(BLOCKER_LINES).map { BukkitUpdateMessages.blocker(it) }
+            library.updates.currentPlan().orElse(null)?.blockers.orEmpty().take(BLOCKER_LINES).map { UpdateStatusMessages.blocker(it) }
         } else {
             emptyList()
         }

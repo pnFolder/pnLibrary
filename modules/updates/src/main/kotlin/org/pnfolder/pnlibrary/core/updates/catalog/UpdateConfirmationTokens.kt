@@ -1,4 +1,4 @@
-package org.pnfolder.pnlibrary.bukkit.updates
+package org.pnfolder.pnlibrary.core.updates.catalog
 
 import java.security.SecureRandom
 import java.time.Duration
@@ -8,7 +8,7 @@ import java.util.UUID
 import java.util.concurrent.ConcurrentHashMap
 
 /** Describes the operation authorized by a single-use confirmation token. */
-internal enum class UpdateAction {
+enum class UpdateAction {
     /** Restart the server to apply the staged plan. */
     RESTART,
 
@@ -27,12 +27,12 @@ internal enum class UpdateAction {
  *
  * Grants expire according to the supplied clock; mismatched requests cannot consume them.
  */
-internal class UpdateConfirmationTokens(
+class UpdateConfirmationTokens(
     private val random: SecureRandom = SecureRandom(),
     private val clock: () -> Instant = Instant::now,
 ) {
     /** Immutable authorization captured when a token is issued. */
-    internal data class Grant(
+    data class Grant(
         val player: UUID,
         val plan: UUID,
         val revision: Long,
