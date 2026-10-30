@@ -11,6 +11,7 @@ import org.pnfolder.pnlibrary.core.link.LinkSecret
 import org.pnfolder.pnlibrary.core.link.LinkTransport
 import org.pnfolder.pnlibrary.core.link.NetworkPublisher
 import org.pnfolder.pnlibrary.core.link.RemoteExecutor
+import org.pnfolder.pnlibrary.core.link.ServerGroups
 import org.pnfolder.pnlibrary.core.runtime.PnLibraryRuntimeHost
 import org.pnfolder.pnlibrary.velocity.api.VelocityPlatform
 import org.slf4j.Logger
@@ -73,7 +74,8 @@ internal class VelocityRuntime(
         server.eventManager.register(owner, link)
         linkListener = link
         if (key != null) {
-            val publisher = NetworkPublisher(started.library, key, { "Velocity ${server.version.version}" }, { server.playerCount })
+            val publisher = NetworkPublisher(started.library, key, { "Velocity ${server.version.version}" }, { server.playerCount },
+                groups = { ServerGroups { LinkHub.folder?.resolve(ServerGroups.FILE) }.all() })
             networkTask = server.scheduler.buildTask(owner, Runnable {
                 val message = publisher.message()
                 server.allServers.forEach { runCatchingNonFatal { it.sendPluginMessage(VelocityLinkListener.CHANNEL, message) } }
