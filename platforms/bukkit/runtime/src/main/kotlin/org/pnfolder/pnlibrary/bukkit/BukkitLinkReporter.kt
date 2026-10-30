@@ -6,8 +6,8 @@ import org.bukkit.plugin.java.JavaPlugin
 import org.bukkit.plugin.messaging.PluginMessageListener
 import org.bukkit.scheduler.BukkitTask
 import org.pnfolder.pnlibrary.api.runtime.PnLibrary
+import org.pnfolder.pnlibrary.bukkit.commands.BukkitMenuAdapter
 import org.pnfolder.pnlibrary.bukkit.commands.RemoteMenuClient
-import org.pnfolder.pnlibrary.bukkit.commands.RemoteMenuHost
 import org.pnfolder.pnlibrary.bukkit.commands.RemoteMenus
 import org.pnfolder.pnlibrary.common.lang.runCatchingNonFatal
 import org.pnfolder.pnlibrary.core.link.LinkCodec
@@ -15,6 +15,7 @@ import org.pnfolder.pnlibrary.core.link.LinkHub
 import org.pnfolder.pnlibrary.core.link.LinkReports
 import org.pnfolder.pnlibrary.core.link.LinkSecret
 import org.pnfolder.pnlibrary.core.link.RemoteExecutor
+import org.pnfolder.pnlibrary.core.menu.RemoteMenuHost
 import java.time.Instant
 
 /**
@@ -37,8 +38,14 @@ internal class BukkitLinkReporter(private val plugin: JavaPlugin, private val li
             carrier?.sendPluginMessage(plugin, LinkCodec.CHANNEL, bytes)
             carrier != null
         }
-        RemoteMenus.host = RemoteMenuHost(plugin, library, key)
-        RemoteMenus.client = RemoteMenuClient(plugin, library, key)
+        RemoteMenus.host = RemoteMenuHost(
+            key,
+            home = { RemoteMenus.home?.invoke(it) },
+            send = { bytes, _ -> LinkHub.uplink?.invoke(bytes) == true },
+            run = RemoteMenus::run,
+            warn = { plugin.logger.warning(it) },
+        )
+        RemoteMenus.client = RemoteMenuClient(plugin, library, key, BukkitMenuAdapter(plugin, library))
         plugin.server.messenger.registerIncomingPluginChannel(plugin, LinkCodec.CHANNEL, this)
         plugin.server.messenger.registerOutgoingPluginChannel(plugin, LinkCodec.CHANNEL)
         task = plugin.server.scheduler.runTaskTimer(plugin, Runnable { report(key) }, FIRST_DELAY_TICKS, PERIOD_TICKS)

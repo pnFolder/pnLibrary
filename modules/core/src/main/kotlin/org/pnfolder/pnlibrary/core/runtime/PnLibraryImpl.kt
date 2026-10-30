@@ -3,6 +3,7 @@ package org.pnfolder.pnlibrary.core.runtime
 import net.kyori.adventure.text.Component
 import org.pnfolder.pnlibrary.api.activity.ActivityService
 import org.pnfolder.pnlibrary.api.audiences.AudienceService
+import org.pnfolder.pnlibrary.api.commands.CommandContext
 import org.pnfolder.pnlibrary.api.commands.CommandDefinition
 import org.pnfolder.pnlibrary.api.commands.CommandRegistration
 import org.pnfolder.pnlibrary.api.config.ConfigurationService
@@ -62,6 +63,7 @@ import org.pnfolder.pnlibrary.core.runtime.platform.PlatformDataFolderResolver
 import org.pnfolder.pnlibrary.core.runtime.platform.PlatformRegistration
 import org.pnfolder.pnlibrary.core.runtime.platform.PlatformRuntimeContext
 import org.pnfolder.pnlibrary.core.runtime.platform.PlatformServiceSet
+import org.pnfolder.pnlibrary.spi.commands.PlatformCommandDispatcher
 import java.nio.file.Path
 import java.time.Duration
 import java.time.ZoneId
@@ -216,6 +218,10 @@ internal class PnLibraryImpl(
     }.getOrNull()
 
     private val commandService get() = platformServices.commands
+    /** Runs a registered command for a viewer who is not on this server, or returns null when the command service cannot. */
+    internal fun dispatchCommand(command: CommandDefinition, context: CommandContext): java.util.concurrent.CompletionStage<Void>? =
+        (commandService as? PlatformCommandDispatcher)?.execute(command, context)
+
     override fun registerRuntimeCommand(command: CommandDefinition): CommandRegistration =
         commandService.register(owner, command)
     private val audienceService get() = platformServices.audiences

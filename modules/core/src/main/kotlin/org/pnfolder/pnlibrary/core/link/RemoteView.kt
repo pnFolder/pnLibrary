@@ -64,6 +64,12 @@ class ViewFrame(
     val sentAt: Instant,
 )
 
+/** Takes the steps of viewers of this server's menu. */
+fun interface ViewHandler {
+    /** Handles [request], a step of a viewer on another server. */
+    fun handle(request: ViewRequest)
+}
+
 /** Turns chat messages into the text that travels in a [ViewFrame] and back. */
 object ViewNotices {
     private val gson = GsonComponentSerializer.gson()
