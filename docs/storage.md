@@ -43,4 +43,6 @@ From `/pn servers <name> check | update <plugin> | auto <plugin> on|off` (or the
 
 ## groups.tsv
 
-Groups of servers on the proxy, next to `link.key`: which servers belong to a group and which plugins each of them should have. Managed with `/pn groups` (create, delete, add-server, remove-server, add-plugin, remove-plugin); `/pn groups <group>` shows which servers lack a plugin or can update it, and `check` / `update` send the matching requests to all servers of the group. The file may be edited by hand: one record per line, `group<TAB>group|server|plugin<TAB>value`.
+Группы серверов на прокси, рядом с `link.key`. Формат `#pnlibrary-groups 2`, одна запись на строку, поля через табуляцию: `group`,
+`server`, `plugin`, `extra` (группа, вид, сервер, плагин) и `skip`. Файл можно править вручную, но проще командами и меню, см.
+[Сеть и группы](network.md).

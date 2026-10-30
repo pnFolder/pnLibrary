@@ -87,6 +87,7 @@ API состоит из интерфейсов, моделей и небольш
 - [События: слушатели, приоритеты, результаты](docs/events.md)
 - [Конфигурации](docs/configuration.md)
 - [Обновления: команды, права, откат](docs/updates.md)
+- [Сеть: прокси, ключ связи, группы серверов](docs/network.md)
 - [Подключение плагина к pnLibrary: для людей и ИИ](integration/README.md)
 - [Папка `.pnlibrary` в репозитории плагина](docs/repository.md)
 - [Действия](docs/actions.md)
