@@ -1,6 +1,9 @@
 package org.pnfolder.pnlibrary.core.menu
 
+import org.pnfolder.pnlibrary.api.chat.ChatKit
 import org.pnfolder.pnlibrary.api.chat.ChatNotice
+import org.pnfolder.pnlibrary.api.chat.ChatPalette
+import org.pnfolder.pnlibrary.api.chat.ChatReader
 import org.pnfolder.pnlibrary.api.chat.ChatTone
 import org.pnfolder.pnlibrary.api.events.DispatchMode
 import org.pnfolder.pnlibrary.api.events.EventInfo
@@ -964,8 +967,11 @@ class LibraryMenu(
     /** Puts [command] in the chat line of [player] to finish, with a click on the message. */
     private fun suggest(player: MenuViewer, text: String, command: String) {
         player.close()
-        val line = net.kyori.adventure.text.Component.text(" $text $command")
+        val kit = ChatKit(ChatReader.PLAYER)
+        val line = kit.mark(ChatTone.INFO).append(kit.text(text, ChatPalette.TEXT)).append(kit.text(" "))
+            .append(kit.bracketed("Ввести команду", ChatPalette.ACCENT))
             .clickEvent(net.kyori.adventure.text.event.ClickEvent.suggestCommand(command))
+            .hoverEvent(kit.tooltip(kit.text("Нажмите, чтобы вставить в чат", ChatPalette.TEXT), kit.text(command.trim(), ChatPalette.LABEL)))
         player.send(listOf(line))
     }
 
@@ -1776,7 +1782,7 @@ class LibraryMenu(
             val lines = try {
                 data.command(viewer, line)
             } catch (error: Exception) {
-                listOf(net.kyori.adventure.text.Component.text("Команда не выполнилась: /$line (${error.message ?: error.javaClass.simpleName})"))
+                ChatKit(ChatReader.PLAYER).notice(ChatNotice(ChatTone.FAILURE, "Команда не выполнилась: /$line", error.message ?: error.javaClass.simpleName))
             }
             player.send(lines)
         }

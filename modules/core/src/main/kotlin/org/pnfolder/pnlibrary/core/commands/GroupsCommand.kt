@@ -2,8 +2,10 @@ package org.pnfolder.pnlibrary.core.commands
 
 import net.kyori.adventure.text.event.ClickEvent
 import org.pnfolder.pnlibrary.api.chat.ChatKit
+import org.pnfolder.pnlibrary.api.chat.ChatNotice
 import org.pnfolder.pnlibrary.api.chat.ChatPalette
 import org.pnfolder.pnlibrary.api.chat.ChatReader
+import org.pnfolder.pnlibrary.api.chat.ChatTone
 import org.pnfolder.pnlibrary.api.commands.ArgumentType
 import org.pnfolder.pnlibrary.api.commands.CommandBuilder
 import org.pnfolder.pnlibrary.api.commands.CommandContext
@@ -131,10 +133,13 @@ class GroupsCommand(private val groups: ServerGroups, private val servers: () ->
     private fun pluginNames(group: ServerGroups.Group?) = servers().flatMap { it.report.plugins }.map { it.product }.distinct() + group?.plugins.orEmpty()
 
     private fun say(context: CommandContext, saved: Boolean, done: String) {
-        val kit = kit(context)
-        context.sender.send(
-            if (saved) kit.text(done, ChatPalette.ACCENT) else kit.text("Нет группы ${context.get<String>("group")}.", ChatPalette.DANGER),
-        )
+        if (saved) notice(context, ChatTone.SUCCESS, done)
+        else notice(context, ChatTone.FAILURE, "Нет группы ${context.get<String>("group")}.", "Список: $ROOT")
+    }
+
+    /** One message in the style of the other chat commands. */
+    private fun notice(context: CommandContext, tone: ChatTone, text: String, detail: String? = null) {
+        kit(context).notice(ChatNotice(tone, text, detail)).forEach(context.sender::send)
     }
 
     private fun of(context: CommandContext, server: String) {
@@ -158,7 +163,7 @@ class GroupsCommand(private val groups: ServerGroups, private val servers: () ->
         val kit = kit(context)
         val group = groups.get(name)
         if (group == null || group.servers.none { it.equals(server, true) }) {
-            context.sender.send(kit.text("В группе $name нет сервера ${ServerGroups.label(server)}.", ChatPalette.DANGER))
+            notice(context, ChatTone.FAILURE, "В группе $name нет сервера ${ServerGroups.label(server)}.", "Добавить: $ROOT join $name $server")
             return
         }
         val have = servers().firstOrNull { it.name.equals(server, true) }?.report?.plugins.orEmpty()
@@ -187,20 +192,16 @@ class GroupsCommand(private val groups: ServerGroups, private val servers: () ->
     private fun kit(context: CommandContext) = ChatKit(ChatReader.of(context.sender))
 
     private fun create(context: CommandContext, name: String) {
-        val kit = kit(context)
-        val made = groups.create(name)
-        val text = when {
-            made -> "Группа $name создана. Добавьте серверы и плагины: $ROOT join $name <сервер>, $ROOT require $name <плагин>"
-            !ServerGroups.validName(name) -> "Имя группы: до 32 символов, без пробелов, не create и не delete."
-            else -> "Группа $name уже есть или файл не записался."
+        when {
+            groups.create(name) -> notice(context, ChatTone.SUCCESS, "Группа $name создана.", "Добавьте серверы: $ROOT join $name <сервер>")
+            !ServerGroups.validName(name) -> notice(context, ChatTone.FAILURE, "Не подходит имя группы.", "До 32 символов, без пробелов.")
+            else -> notice(context, ChatTone.FAILURE, "Группа $name уже есть или файл не записался.")
         }
-        context.sender.send(kit.text(text, if (made) ChatPalette.ACCENT else ChatPalette.DANGER))
     }
 
     private fun delete(context: CommandContext, name: String) {
-        val kit = kit(context)
-        val deleted = groups.delete(name)
-        context.sender.send(if (deleted) kit.text("Группа $name удалена.", ChatPalette.ACCENT) else kit.text("Нет группы $name.", ChatPalette.DANGER))
+        if (groups.delete(name)) notice(context, ChatTone.SUCCESS, "Группа $name удалена.")
+        else notice(context, ChatTone.FAILURE, "Нет группы $name.", "Список: $ROOT")
     }
 
     private fun list(context: CommandContext) {
@@ -245,7 +246,7 @@ class GroupsCommand(private val groups: ServerGroups, private val servers: () ->
         val kit = kit(context)
         val group = groups.get(name)
         if (group == null) {
-            context.sender.send(kit.text("Нет группы $name. Список: $ROOT", ChatPalette.DANGER))
+            notice(context, ChatTone.FAILURE, "Нет группы $name.", "Список: $ROOT")
             return
         }
         val lines = mutableListOf(kit.blank(), kit.header(group.name, kit.text("группа серверов", ChatPalette.LABEL)))
@@ -285,7 +286,7 @@ class GroupsCommand(private val groups: ServerGroups, private val servers: () ->
         val name = context.get<String>("group")
         val group = groups.get(name)
         if (group == null) {
-            context.sender.send(kit.text("Нет группы $name. Список: $ROOT", ChatPalette.DANGER))
+            notice(context, ChatTone.FAILURE, "Нет группы $name.", "Список: $ROOT")
             return
         }
         val sender = context.sender
@@ -293,19 +294,20 @@ class GroupsCommand(private val groups: ServerGroups, private val servers: () ->
         groups.compare(group, servers()).forEach { state ->
             val products = if (action == RemoteAction.UPDATE) state.outdated else listOf(null)
             if (state.server == ServerGroups.PROXY) {
-                if (products.isNotEmpty()) sender.send(kit.text("Прокси: проверка и обновление идут своими командами /pnproxy.", ChatPalette.LABEL))
+                if (products.isNotEmpty()) notice(context, ChatTone.INFO, "Прокси: проверка и обновление идут своими командами.", "/pnproxy")
                 return@forEach
             }
             products.forEach { product ->
                 val name = ServerGroups.label(state.server)
                 val label = product?.let { "$name · $it" } ?: name
                 val error = RemoteControl.send(state.server, action, product, sender.name) { result ->
-                    sender.send(kit.text("$label: ${result.text}", if (result.ok) ChatPalette.ACCENT else ChatPalette.DANGER))
+                    kit.notice(ChatNotice(if (result.ok) ChatTone.SUCCESS else ChatTone.FAILURE, label, result.text)).forEach(sender::send)
                 }
-                if (error == null) sent++ else sender.send(kit.text("$label: $error", ChatPalette.DANGER))
+                if (error == null) sent++ else notice(context, ChatTone.FAILURE, label, error)
             }
         }
-        sender.send(kit.text(if (sent == 0) "Делать нечего." else "Запросов отправлено: $sent. Ответы придут сюда.", ChatPalette.LABEL))
+        if (sent == 0) notice(context, ChatTone.INFO, "Делать нечего.")
+        else notice(context, ChatTone.PROGRESS, "Запросов отправлено: $sent.", "Ответы придут сюда.")
     }
 
     /** Constants of the `/pn groups` command. */
