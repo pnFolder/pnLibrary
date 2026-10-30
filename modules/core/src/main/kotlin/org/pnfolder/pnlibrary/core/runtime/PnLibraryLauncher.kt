@@ -6,6 +6,7 @@ import org.pnfolder.pnlibrary.api.runtime.PnLibraryProvider
 import org.pnfolder.pnlibrary.common.lang.runCatchingNonFatal
 import org.pnfolder.pnlibrary.core.commands.ProxyControlCommand
 import org.pnfolder.pnlibrary.core.diagnostics.DiagnosticsRegistry
+import org.pnfolder.pnlibrary.core.menu.ProxyMenuCommands
 import org.pnfolder.pnlibrary.core.runtime.platform.PlatformRuntimeContext
 
 /**
@@ -61,7 +62,9 @@ internal object PnLibraryLauncher {
             PnLibraryProvider.install(created)
             platform.binding.bind(created)
             if (platform.identity.isProxy) {
-                ProxyControlCommand(created).register()
+                val control = ProxyControlCommand(created) { command, context -> created.dispatchCommand(command, context) }
+                control.register()
+                ProxyMenuCommands.runner = { viewer, line -> control.run(viewer.id, viewer.name, viewer::hasPermission, line) }
             }
             created
         } catch (error: Throwable) {

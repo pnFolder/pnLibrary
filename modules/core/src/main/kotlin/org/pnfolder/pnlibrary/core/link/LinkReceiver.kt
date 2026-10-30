@@ -20,6 +20,7 @@ class LinkReceiver(
     private val executor: RemoteExecutor? = null,
     private val transport: LinkTransport? = null,
     private val replies: RemoteReplies = LinkHub.replies,
+    private val views: ViewHandler? = null,
 ) {
     /** Whether the link can accept anything at all. */
     val enabled: Boolean get() = key != null
@@ -63,14 +64,21 @@ class LinkReceiver(
 
     /** Passes a viewer's step on to the server whose menu it is for, or tells the viewer why it cannot. */
     private fun routeView(server: String, request: ViewRequest, key: ByteArray) {
+        if (request.target.equals(LinkNames.PROXY, ignoreCase = true)) {
+            views?.handle(request) ?: replyViewError(server, request, key, "Меню прокси выключено.")
+            return
+        }
         val unreachable = when {
-            request.target.equals(LinkNames.PROXY, ignoreCase = true) -> "У прокси нет меню. Команды: /pnproxy."
             transport?.send(request.target, LinkCodec.encodeView(request, key)) != true -> "Сервер ${request.target} недоступен."
             else -> return
         }
+        replyViewError(server, request, key, unreachable)
+    }
+
+    private fun replyViewError(server: String, request: ViewRequest, key: ByteArray, text: String) {
         if (request.action == ViewAction.CLOSE) return
-        val notice = ViewNotices.encode(net.kyori.adventure.text.Component.text(unreachable))
-        val frame = ViewFrame(request.session, server, "", 1, emptyMap(), listOf(notice), true, Instant.now())
+        val notice = ViewNotices.encode(net.kyori.adventure.text.Component.text(text))
+        val frame = ViewFrame(request.session, server, "", 0, emptyMap(), listOf(notice), true, Instant.now())
         LinkCodec.encodeFrame(frame, key)?.let { transport?.send(server, it) }
     }
 

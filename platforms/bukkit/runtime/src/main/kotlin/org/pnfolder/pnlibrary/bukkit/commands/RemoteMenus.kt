@@ -2,51 +2,48 @@ package org.pnfolder.pnlibrary.bukkit.commands
 
 import net.kyori.adventure.text.Component
 import org.bukkit.Bukkit
+import org.bukkit.Material
 import org.bukkit.command.CommandSender
 import org.bukkit.command.ConsoleCommandSender
 import org.bukkit.entity.Player
-import org.bukkit.event.inventory.ClickType
-import org.bukkit.event.inventory.InventoryAction
-import org.bukkit.inventory.Inventory
+import org.bukkit.inventory.ItemFlag
 import org.bukkit.inventory.ItemStack
 import org.bukkit.plugin.Plugin
-import org.bukkit.util.io.BukkitObjectInputStream
-import org.bukkit.util.io.BukkitObjectOutputStream
 import org.pnfolder.pnlibrary.api.platform.platform
 import org.pnfolder.pnlibrary.api.runtime.PnLibrary
+import org.pnfolder.pnlibrary.api.updates.UpdateActor
 import org.pnfolder.pnlibrary.bukkit.api.BukkitPlatform
-import org.pnfolder.pnlibrary.bukkit.inventory.Menu
-import org.pnfolder.pnlibrary.bukkit.inventory.MenuClick
-import org.pnfolder.pnlibrary.bukkit.inventory.MenuSession
-import org.pnfolder.pnlibrary.bukkit.inventory.Menus
-import org.pnfolder.pnlibrary.common.lang.runCatchingNonFatal
 import org.pnfolder.pnlibrary.core.link.LinkCodec
 import org.pnfolder.pnlibrary.core.link.LinkHub
 import org.pnfolder.pnlibrary.core.link.ViewAction
 import org.pnfolder.pnlibrary.core.link.ViewFrame
 import org.pnfolder.pnlibrary.core.link.ViewNotices
 import org.pnfolder.pnlibrary.core.link.ViewRequest
-import java.io.ByteArrayInputStream
-import java.io.ByteArrayOutputStream
-import java.lang.reflect.InvocationHandler
-import java.lang.reflect.Method
+import org.pnfolder.pnlibrary.core.menu.ClickType
+import org.pnfolder.pnlibrary.core.menu.ItemSpec
+import org.pnfolder.pnlibrary.core.menu.ItemSpecs
+import org.pnfolder.pnlibrary.core.menu.Menu
+import org.pnfolder.pnlibrary.core.menu.MenuHost
+import org.pnfolder.pnlibrary.core.menu.MenuViewer
+import org.pnfolder.pnlibrary.core.menu.OwnerInfo
+import org.pnfolder.pnlibrary.core.menu.RemoteMenuHost
 import java.lang.reflect.Proxy
-import java.time.Duration
 import java.time.Instant
 import java.util.UUID
 import java.util.concurrent.ConcurrentHashMap
+import org.pnfolder.pnlibrary.bukkit.inventory.Menus as BukkitMenus
 
 /**
- * The menu of another server of the network, shown as a copy of that server's own menu.
+ * The menu of another server, shown as a copy of that server's own menu.
  *
- * The server that owns the menu draws every page itself and sends it as a list of item stacks; the viewer's server
- * puts the page on screen and sends back each click. So the copy is the original, whatever the original shows, and
- * the actions run on the owning server with the permissions the viewer holds at home.
+ * The server that owns the menu draws every page and sends it as a list of item descriptions; the viewer's server turns
+ * them into stacks and sends back each click. So the copy is the original, whatever the original shows, and the actions
+ * run on the owning server with the permissions the viewer holds at home. The proxy owns a menu too.
  */
 internal object RemoteMenus {
-    /** Opens the home page of this server for a player, real or remote; set by the control command. */
+    /** Opens the home page of this server for a viewer; set by the control command. */
     @Volatile
-    var home: ((Player) -> Unit)? = null
+    var home: ((MenuViewer) -> Unit)? = null
 
     /** The side that draws menus for viewers on other servers, or null while the link is off. */
     @Volatile
@@ -63,123 +60,8 @@ internal object RemoteMenus {
         "pnlibrary.debug", "pnlibrary.currency.list",
     )
 
-    /** Whether a viewer with [held] permissions may open or use the menu of this server. */
-    fun mayView(held: Set<String>): Boolean = "pnlibrary.admin" in held || "pnlibrary.servers" in held
-
-    internal fun serialize(stack: ItemStack): ByteArray {
-        val bytes = ByteArrayOutputStream()
-        BukkitObjectOutputStream(bytes).use { it.writeObject(stack) }
-        return bytes.toByteArray()
-    }
-
-    internal fun deserialize(bytes: ByteArray): ItemStack? = runCatchingNonFatal {
-        BukkitObjectInputStream(ByteArrayInputStream(bytes)).use { it.readObject() as? ItemStack }
-    }.getOrNull()
-}
-
-/** A player of another server, as the owning server's menu code sees them. */
-internal class RemoteViewer(
-    val session: UUID,
-    val name: String,
-    val origin: String,
-    val permissions: Set<String>,
-    private val host: RemoteMenuHost,
-) : InvocationHandler {
-    /** The page the viewer has on screen. */
-    @Volatile
-    var menu: Menu? = null
-
-    @Volatile
-    var touched: Instant = Instant.now()
-
-    /** The stand-in the menu code receives as its `Player`; only the few calls the menu makes are answered. */
-    val player: Player = Proxy.newProxyInstance(Player::class.java.classLoader, arrayOf(Player::class.java), this) as Player
-
-    override fun invoke(proxy: Any, method: Method, args: Array<out Any?>?): Any? = when (method.name) {
-        "getUniqueId" -> session
-        "getName", "getDisplayName" -> name
-        "isOnline" -> true
-        "hasPermission" -> holds(args?.firstOrNull())
-        "closeInventory" -> host.close(this)
-        "performCommand" -> host.command(this, args?.firstOrNull() as? String ?: "")
-        "equals" -> proxy === args?.firstOrNull()
-        "hashCode" -> System.identityHashCode(proxy)
-        "toString" -> "RemoteViewer($name@$origin)"
-        else -> defaultOf(method.returnType)
-    }
-
-    /** Whether the viewer holds [permission], as their own server said. */
-    fun holds(permission: Any?): Boolean {
-        val node = (permission as? String) ?: permission?.toString() ?: return false
-        return node in permissions || "pnlibrary.admin" in permissions && node.startsWith("pnlibrary.")
-    }
-
-    companion object {
-        /** The viewer behind [player], or null when [player] is an ordinary player. */
-        fun of(player: Player): RemoteViewer? =
-            if (Proxy.isProxyClass(player.javaClass)) Proxy.getInvocationHandler(player) as? RemoteViewer else null
-
-        private fun defaultOf(type: Class<*>): Any? = when (type) {
-            java.lang.Boolean.TYPE -> false
-            java.lang.Integer.TYPE -> 0
-            java.lang.Long.TYPE -> 0L
-            java.lang.Double.TYPE -> 0.0
-            java.lang.Float.TYPE -> 0f
-            else -> null
-        }
-    }
-}
-
-/** Draws the menu for viewers on other servers and carries out their clicks. */
-internal class RemoteMenuHost(
-    private val plugin: Plugin,
-    private val library: PnLibrary,
-    private val key: ByteArray,
-) {
-    private val sessions = ConcurrentHashMap<UUID, RemoteViewer>()
-
-    /** Handles a viewer's step; call it on the server thread. */
-    fun handle(request: ViewRequest) {
-        purge()
-        when (request.action) {
-            ViewAction.OPEN -> {
-                if (!RemoteMenus.mayView(request.permissions)) {
-                    return finish(request.session, request.origin, Component.text("Недостаточно прав для меню этого сервера."))
-                }
-                val viewer = RemoteViewer(request.session, request.viewer, request.origin, request.permissions, this)
-                sessions[request.session] = viewer
-                runCatchingNonFatal { RemoteMenus.home?.invoke(viewer.player) }.onFailure { error ->
-                    finish(request.session, request.origin, Component.text("Не удалось открыть меню: ${error.message ?: error.javaClass.simpleName}"))
-                }
-            }
-            ViewAction.CLICK -> sessions[request.session]?.let { click(it, request) }
-                ?: finish(request.session, request.origin, Component.text("Сеанс меню закончился. Откройте его снова."))
-            ViewAction.CLOSE -> sessions.remove(request.session)
-        }
-    }
-
-    /** Shows [menu] to [viewer]: sends the page to the viewer's server. */
-    fun render(viewer: RemoteViewer, menu: Menu) {
-        viewer.menu = menu
-        viewer.touched = Instant.now()
-        val items = menu.items.mapNotNull { (slot, entry) -> entry.item?.let { slot to RemoteMenus.serialize(it) } }.toMap()
-        send(ViewFrame(viewer.session, viewer.origin, menu.title, menu.rows, items, emptyList(), false, Instant.now()), viewer)
-    }
-
-    /** Sends [lines] to the viewer as chat messages. */
-    fun notice(viewer: RemoteViewer, lines: List<Component>) {
-        if (lines.isEmpty()) return
-        send(ViewFrame(viewer.session, viewer.origin, "", 0, emptyMap(), lines.map(ViewNotices::encode), false, Instant.now()), viewer)
-    }
-
-    /** Closes the viewer's menu on their server. */
-    fun close(viewer: RemoteViewer) {
-        sessions.remove(viewer.session)
-        send(ViewFrame(viewer.session, viewer.origin, "", 0, emptyMap(), emptyList(), true, Instant.now()), viewer)
-    }
-
-    /** Runs [command] for [viewer] with the permissions they hold and sends what it says back to them. */
-    fun command(viewer: RemoteViewer, command: String) {
+    /** Runs [command] for [viewer] on this server and returns what it printed, for a viewer on another server. */
+    fun run(viewer: MenuViewer, command: String): List<Component> {
         val lines = mutableListOf<Component>()
         val sender = Proxy.newProxyInstance(
             ConsoleCommandSender::class.java.classLoader,
@@ -187,8 +69,7 @@ internal class RemoteMenuHost(
         ) { proxy, method, args ->
             when (method.name) {
                 "getName" -> viewer.name
-                "hasPermission" -> viewer.holds(args?.firstOrNull())
-                "isPermissionSet", "isOp" -> false
+                "hasPermission" -> (args?.firstOrNull() as? String)?.let(viewer::hasPermission) ?: false
                 "sendMessage", "sendRawMessage" -> {
                     args?.forEach { collect(it, lines) }
                     null
@@ -203,9 +84,8 @@ internal class RemoteMenuHost(
                 }
             }
         } as CommandSender
-        val done = runCatchingNonFatal { Bukkit.dispatchCommand(sender, command) }
-        if (done.isFailure) lines += Component.text("Команда не выполнилась: /$command")
-        notice(viewer, lines)
+        if (!Bukkit.dispatchCommand(sender, command)) lines += Component.text("Команда не найдена: /$command")
+        return lines
     }
 
     private fun collect(value: Any?, lines: MutableList<Component>) {
@@ -215,55 +95,130 @@ internal class RemoteMenuHost(
             is Array<*> -> value.forEach { collect(it, lines) }
         }
     }
+}
 
-    private fun click(viewer: RemoteViewer, request: ViewRequest) {
-        viewer.touched = Instant.now()
-        val menu = viewer.menu ?: return
-        val entry = menu.items[request.slot] ?: return
-        val type = ClickType.values().firstOrNull { it.name == request.click } ?: ClickType.LEFT
-        val handler = entry.handler ?: return
-        runCatchingNonFatal {
-            handler.handle(MenuClick(RemoteSession(viewer, menu), request.slot, entry.item, null, type, InventoryAction.PICKUP_ALL, true))
-        }.onFailure { error ->
-            plugin.logger.warning("Remote menu click failed: ${error.message}")
+/** Turns the portable menu into Bukkit inventories. */
+internal class BukkitMenuAdapter(private val plugin: Plugin, private val library: PnLibrary) {
+    /** The viewer for [player] on this server. */
+    fun viewer(player: Player): MenuViewer = BukkitViewer(player)
+
+    /** The stack for [spec]: the head when the server can make one, otherwise the ordinary item. */
+    fun stack(spec: ItemSpec): ItemStack {
+        val name = MenuHeads.downgrade(spec.name)
+        val lore = spec.lore.map(MenuHeads::downgrade)
+        val head = spec.texture?.let { MenuHeads.head(it) }
+        val base = head ?: ItemStack(listOfNotNull(spec.material, spec.alternative).firstNotNullOfOrNull(::resolve) ?: Material.PAPER)
+        if (head == null && spec.legacyData != 0.toShort() && base.type.name in LEGACY_GLASS) base.durability = spec.legacyData
+        return base.also {
+            it.itemMeta?.let { meta ->
+                meta.setDisplayName(name)
+                meta.lore = lore
+                ItemFlag.values().forEach { flag -> meta.addItemFlags(flag) }
+                it.itemMeta = meta
+            }
         }
     }
 
-    private fun finish(session: UUID, origin: String, message: Component) {
-        val frame = ViewFrame(session, origin, "", 0, emptyMap(), listOf(ViewNotices.encode(message)), true, Instant.now())
-        LinkCodec.encodeFrame(frame, key)?.let { LinkHub.uplink?.invoke(it) }
-    }
-
-    private fun send(frame: ViewFrame, viewer: RemoteViewer) {
-        val message = LinkCodec.encodeFrame(frame, key)
-        if (message == null) {
-            val text = Component.text("Страница меню слишком большая для передачи.")
-            finish(viewer.session, viewer.origin, text)
-            return
+    /** The inventory page for [menu]; a click goes to its handler as a click by the local player. */
+    fun page(menu: Menu): org.pnfolder.pnlibrary.bukkit.inventory.Menu {
+        val builder = BukkitMenus.chest(menu.title).rows(menu.rows)
+        menu.items.forEach { (slot, entry) ->
+            val item = entry.item?.let(::stack)
+            val handler = entry.handler
+            if (handler == null) {
+                builder.slot(slot, item)
+            } else if (item != null) {
+                builder.button(slot, item) { click ->
+                    handler.handle(org.pnfolder.pnlibrary.core.menu.MenuClick(viewer(click.player), slot, kind(click.click)))
+                }
+            }
         }
-        LinkHub.uplink?.invoke(message)
+        return builder.build()
     }
 
-    private fun purge() {
-        val limit = Instant.now().minus(IDLE)
-        sessions.values.removeIf { it.touched.isBefore(limit) }
+    /** Opens [menu] for [player] with the quiet chest sound of the menu. */
+    fun open(player: Player, menu: Menu) {
+        library.platform<BukkitPlatform>().menus.open(plugin, player, page(menu))
+        OPEN_SOUND?.let { player.playSound(player.location, it, SOUND_VOLUME, SOUND_PITCH) }
     }
 
-    /** Stops every session. */
-    fun stop() = sessions.clear()
+    private fun kind(click: org.bukkit.event.inventory.ClickType): ClickType = ClickType.values().firstOrNull { it.name == click.name } ?: ClickType.OTHER
 
-    private class RemoteSession(private val viewer: RemoteViewer, override val menu: Menu) : MenuSession {
-        override val player: Player get() = viewer.player
-        override val inventory: Inventory get() = throw UnsupportedOperationException("A remote menu has no inventory here.")
-        override fun set(slot: Int, item: ItemStack?) = Unit
-        override fun get(slot: Int): ItemStack? = menu.items[slot]?.item
-        override fun refresh() = Unit
-        override fun refreshAfter(delay: Duration) = Unit
-        override fun close() = viewer.player.closeInventory()
+    private fun resolve(name: String): Material? =
+        runCatching { Material.getMaterial(name) }.getOrNull()
+            ?: Material.matchMaterial(name)
+            ?: runCatching { Material.getMaterial("LEGACY_$name") }.getOrNull()
+
+    private inner class BukkitViewer(private val player: Player) : MenuViewer {
+        override val id: UUID get() = player.uniqueId
+        override val name: String get() = player.name
+        override val online: Boolean get() = player.isOnline
+        override val remote: Boolean get() = false
+        override val actor: UpdateActor get() = UpdateActor(UpdateActor.Kind.PLAYER, player.uniqueId.toString(), player.name)
+
+        override fun hasPermission(permission: String): Boolean = player.hasPermission(permission)
+        override fun open(menu: Menu) = open(player, menu)
+        override fun close() = player.closeInventory()
+        override fun send(lines: List<Component>) {
+            library.audiences.player(player.uniqueId)?.let { audience -> lines.forEach(audience::sendMessage) }
+        }
+
+        override fun runCommand(command: String) {
+            player.closeInventory()
+            player.performCommand(command)
+        }
+
+        /** The player behind this viewer. */
+        val native: Player get() = player
     }
+
+    /** The player behind [viewer], or null when it is not a local one. */
+    fun playerOf(viewer: MenuViewer): Player? = (viewer as? BukkitViewer)?.native
 
     private companion object {
-        val IDLE: Duration = Duration.ofMinutes(10)
+        val LEGACY_GLASS = setOf("STAINED_GLASS_PANE", "LEGACY_STAINED_GLASS_PANE")
+        const val SOUND_VOLUME = 0.22f
+        const val SOUND_PITCH = 1.15f
+        val OPEN_SOUND: org.bukkit.Sound? = listOf("BLOCK_BARREL_OPEN", "BLOCK_CHEST_OPEN", "CHEST_OPEN")
+            .firstNotNullOfOrNull { name -> org.bukkit.Sound.values().firstOrNull { it.name == name } }
+    }
+}
+
+/** What the portable menu needs from a Bukkit server. */
+internal class BukkitMenuHost(
+    private val plugin: Plugin,
+    private val library: PnLibrary,
+    private val replies: BukkitCommandReplies,
+    private val adapter: BukkitMenuAdapter,
+) : MenuHost {
+    override fun sync(action: () -> Unit) = replies.onServerThread(action)
+
+    override fun later(delayMillis: Long, action: () -> Unit) {
+        plugin.server.scheduler.runTaskLater(plugin, Runnable { if (!library.isClosed) action() }, (delayMillis / MILLIS_PER_TICK).coerceAtLeast(1))
+    }
+
+    override fun owner(owner: Any?): OwnerInfo? = (owner as? Plugin)?.let(::info)
+
+    override fun ownerNamed(name: String): OwnerInfo? =
+        (
+            runCatching { plugin.server.pluginManager.getPlugin(name) }.getOrNull()
+                ?: library.plugins.all().mapNotNull { it.owner as? Plugin }.firstOrNull { it.javaClass.simpleName == name || it.name.equals(name, true) }
+            )?.let(::info)
+
+    override fun ownerOf(type: Class<*>?): OwnerInfo? {
+        val loader = type?.classLoader ?: return null
+        return library.plugins.all().mapNotNull { it.owner as? Plugin }.firstOrNull { it.javaClass.classLoader === loader }?.let(::info)
+    }
+
+    override fun openRemote(viewer: org.pnfolder.pnlibrary.core.menu.MenuViewer, target: String): Boolean {
+        val player = adapter.playerOf(viewer) ?: return false
+        return RemoteMenus.client?.open(player, target) == true
+    }
+
+    private fun info(plugin: Plugin) = OwnerInfo(plugin.name, plugin.description.version, plugin.description.authors)
+
+    private companion object {
+        const val MILLIS_PER_TICK = 50L
     }
 }
 
@@ -272,6 +227,7 @@ internal class RemoteMenuClient(
     private val plugin: Plugin,
     private val library: PnLibrary,
     private val key: ByteArray,
+    private val adapter: BukkitMenuAdapter,
 ) {
     private class Shown(val player: Player, val target: String) {
         @Volatile
@@ -311,11 +267,11 @@ internal class RemoteMenuClient(
             return
         }
         if (frame.rows == 0) return
-        val builder = Menus.chest(frame.title).rows(frame.rows)
+        val builder = BukkitMenus.chest(frame.title).rows(frame.rows)
         frame.items.forEach { (slot, bytes) ->
-            val stack = RemoteMenus.deserialize(bytes) ?: return@forEach
-            if (slot in 0 until frame.rows * 9) {
-                builder.button(slot, stack) { click -> send(frame.session, shown, ViewAction.CLICK, slot, click.click.name) }
+            val spec = ItemSpecs.decode(bytes) ?: return@forEach
+            if (slot in 0 until frame.rows * SLOTS_PER_ROW) {
+                builder.button(slot, adapter.stack(spec)) { click -> send(frame.session, shown, ViewAction.CLICK, slot, click.click.name) }
             }
         }
         builder.onClose { if (!shown.replacing && sessions.remove(frame.session) != null) send(frame.session, shown, ViewAction.CLOSE, 0, "") }
@@ -334,4 +290,8 @@ internal class RemoteMenuClient(
 
     /** Forgets every open copy. */
     fun stop() = sessions.clear()
+
+    private companion object {
+        const val SLOTS_PER_ROW = 9
+    }
 }

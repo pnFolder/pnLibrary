@@ -11,13 +11,12 @@ import java.util.UUID
 import java.util.concurrent.ConcurrentHashMap
 
 /**
- * Textured player heads and `&#RRGGBB` colours for the menu, built by reflection so the same jar works on 1.8 and on
+ * Textured player heads for the menu, and the downgrade of hex colours for old servers, built by reflection so the same jar works on 1.8 and on
  * current Paper. A head that cannot be made is reported as `null`, and the caller falls back to an ordinary item.
  */
 internal object MenuHeads {
     private const val TEXTURES = "https://textures.minecraft.net/texture/"
     private val cache = ConcurrentHashMap<String, ItemStack>()
-    private val hexPattern = Regex("&#([0-9A-Fa-f]{6})")
 
     /** True when the server's chat accepts `§x` hex colours (1.16 and newer). */
     val hexSupported: Boolean = runCatching { Class.forName("net.md_5.bungee.api.ChatColor").getMethod("of", String::class.java) }.isSuccess
@@ -25,32 +24,11 @@ internal object MenuHeads {
     /** A head carrying the skin whose texture [hash] is published on textures.minecraft.net, or `null`. */
     fun head(hash: String): ItemStack? = cache[hash]?.clone() ?: create(hash)?.also { cache[hash] = it.clone() }
 
-    /** Turns `&#RRGGBB` and `&` codes of a template into section-sign codes, or the nearest legacy colour below 1.16. */
-    fun color(template: String): String {
-        val coloured = hexPattern.replace(template) { match ->
-            val rgb = match.groupValues[1]
-            if (hexSupported) "§x" + rgb.map { "§$it" }.joinToString("") else nearest(rgb)
-        }
-        return coloured.replace('&', '§')
-    }
+    private val hexCode = Regex("§x(§[0-9A-Fa-f]){6}")
 
-    /** [text] whose colour moves from [from] to [to] (both `RRGGBB`) letter by letter; one colour below 1.16. */
-    fun gradient(text: String, from: String, to: String): String {
-        if (!hexSupported || text.length < 2) return color("&#$from") + text
-        val start = from.toInt(RADIX)
-        val end = to.toInt(RADIX)
-        return buildString {
-            text.forEachIndexed { index, char ->
-                val step = index.toDouble() / (text.length - 1)
-                val rgb = intArrayOf(RED_SHIFT, GREEN_SHIFT, 0).map { shift ->
-                    val a = start shr shift and 0xFF
-                    val b = end shr shift and 0xFF
-                    (a + (b - a) * step).toInt()
-                }
-                append(color("&#" + "%02X%02X%02X".format(rgb[0], rgb[1], rgb[2]))).append(char)
-            }
-        }
-    }
+    /** On a server older than 1.16 turns hex colour codes in [text] into the nearest basic colour; otherwise returns it unchanged. */
+    fun downgrade(text: String): String =
+        if (hexSupported) text else hexCode.replace(text) { match -> nearest(match.value.filter { it != '§' }.drop(1)) }
 
     private fun create(hash: String): ItemStack? = runCatching {
         val stack = skull() ?: return null
