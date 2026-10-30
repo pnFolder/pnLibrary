@@ -21,51 +21,45 @@ class PnLibraryConfigLoaderTest {
         assertEquals("encrypted", defaults.uploadMode)
         assertEquals(true, defaults.privacy)
         val text = Files.readString(file)
-        assertTrue(text.contains("upload: true"))
-        assertTrue(text.contains("# Отправлять ли готовый отчёт"))
-        assertTrue(text.contains("log-records: 200"))
-        assertFalse(text.contains("upload-mode"))
+        assertTrue(text.contains("privacy: true"))
+        assertTrue(text.contains("# Не включать в отчёт личные данные"))
+        assertTrue(text.contains("database.password"))
+        assertFalse(text.contains("upload"))
+        assertFalse(text.contains("log-records"))
+        assertEquals(true, defaults.upload)
+        assertEquals(200, defaults.logRecords)
 
         Files.writeString(file, """
-            upload: false
-            logs: true
-            log-records: 42
-            cooldown-seconds: 5
-            keep-reports: 3
-            max-report-bytes: 65536
-            delete-after-days: 0
-            configs: false
+            history-retention-days: 60
             privacy: false
         """.trimIndent())
 
         val configured = PnLibraryConfigLoader.load(temporary)
-        assertEquals(false, configured.upload)
-        assertEquals(42, configured.logRecords)
-        assertEquals(3, configured.keepReports)
+        assertEquals(60, configured.historyRetentionDays)
         assertEquals(false, configured.privacy)
-        assertTrue(Files.readString(file).contains("# Прикладывать конфигурационные файлы плагинов"))
+        assertTrue(Files.readString(file).contains("# Не включать в отчёт личные данные"))
     }
 
     @Test
     fun `removes unknown keys after a backup and reports them`() {
         val file = temporary.resolve("config.yml")
-        Files.writeString(file, "uplod: false\nupload: false\n")
+        Files.writeString(file, "privcy: false\nprivacy: false\n")
         val warnings = mutableListOf<String>()
 
         val config = PnLibraryConfigLoader.load(temporary, warnings::add)
 
-        assertFalse(config.upload)
-        assertTrue(warnings.any { it.contains("uplod") })
-        assertFalse(Files.readString(file).contains("uplod"))
+        assertFalse(config.privacy)
+        assertTrue(warnings.any { it.contains("privcy") })
+        assertFalse(Files.readString(file).contains("privcy"))
         assertTrue(Files.list(temporary).use { files -> files.anyMatch { it.fileName.toString().endsWith(".bak") } })
     }
 
     @Test
     fun `rejects values outside the documented range`() {
-        Files.writeString(temporary.resolve("config.yml"), "log-records: 99999\n")
+        Files.writeString(temporary.resolve("config.yml"), "history-retention-days: 7\n")
 
         val error = assertThrows(IllegalArgumentException::class.java) { PnLibraryConfigLoader.load(temporary) }
 
-        assertTrue(error.message.orEmpty().contains("log-records"))
+        assertTrue(error.message.orEmpty().contains("history-retention-days"))
     }
 }
