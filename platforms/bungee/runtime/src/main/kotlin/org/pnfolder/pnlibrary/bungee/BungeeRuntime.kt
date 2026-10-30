@@ -11,6 +11,7 @@ import org.pnfolder.pnlibrary.core.link.LinkSecret
 import org.pnfolder.pnlibrary.core.link.LinkTransport
 import org.pnfolder.pnlibrary.core.link.NetworkPublisher
 import org.pnfolder.pnlibrary.core.link.RemoteExecutor
+import org.pnfolder.pnlibrary.core.link.ServerGroups
 import org.pnfolder.pnlibrary.core.runtime.PnLibraryRuntimeHost
 import java.util.concurrent.TimeUnit
 
@@ -50,7 +51,8 @@ internal class BungeeRuntime(private val plugin: Plugin) {
         plugin.proxy.pluginManager.registerListener(plugin, link)
         linkListener = link
         if (key != null) {
-            val publisher = NetworkPublisher(started.library, key, { "${plugin.proxy.name} ${plugin.proxy.version}" }, { plugin.proxy.onlineCount })
+            val publisher = NetworkPublisher(started.library, key, { "${plugin.proxy.name} ${plugin.proxy.version}" }, { plugin.proxy.onlineCount },
+                groups = { ServerGroups { LinkHub.folder?.resolve(ServerGroups.FILE) }.all() })
             networkTask = plugin.proxy.scheduler.schedule(plugin, {
                 val message = publisher.message()
                 plugin.proxy.servers.values.forEach { runCatchingNonFatal { it.sendData(LinkCodec.CHANNEL, message, false) } }

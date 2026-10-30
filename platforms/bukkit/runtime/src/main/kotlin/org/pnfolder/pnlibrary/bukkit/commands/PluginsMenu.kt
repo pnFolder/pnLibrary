@@ -44,6 +44,7 @@ import org.pnfolder.pnlibrary.core.link.LinkHub
 import org.pnfolder.pnlibrary.core.link.NetworkServer
 import org.pnfolder.pnlibrary.core.link.RemoteAction
 import org.pnfolder.pnlibrary.core.link.RemoteControl
+import org.pnfolder.pnlibrary.core.link.ServerGroups
 import org.pnfolder.pnlibrary.core.updates.catalog.CatalogLabels
 import org.pnfolder.pnlibrary.core.updates.catalog.UpdateCatalogView
 import org.pnfolder.pnlibrary.core.updates.catalog.UpdateStatusMessages
@@ -918,7 +919,93 @@ internal class PluginsMenu(
         val map = received.report
         val proxy = NetworkServer("Прокси", true, map.proxy)
         val rows = (listOf(proxy) + map.servers).map { server -> Row(serverItem(server), go { who -> networkServer(who, server, page) }) }
-        list(player, "Сеть", rows, page, PAGE_SIZE, { who, to -> network(who, to) }, { home(it) }, "Серверов нет")
+        list(
+            player, "Сеть", rows, page, PAGE_SIZE, { who, to -> network(who, to) }, { home(it) }, "Серверов нет",
+            extra = {
+                if (map.groups.isNotEmpty()) {
+                    val item = section(Icons.OVERVIEW, "BOOKSHELF", "Группы", "Серверы с общим набором плагинов.", "Групп" to "${map.groups.size}")
+                    it.button(NETWORK_CHECK, item, go { who -> groups(who, 0) })
+                }
+            },
+        )
+    }
+
+    private val comparer = ServerGroups { null }
+
+    /** The groups of servers the proxy keeps; a click opens one group. */
+    private fun groups(player: Player, page: Int) {
+        val map = LinkHub.network?.report
+        if (map == null) {
+            home(player)
+            return
+        }
+        val rows = map.groups.map { group ->
+            val bad = comparer.compare(group, map.servers).count { !it.ok }
+            val material = if (group.servers.isEmpty()) "CHEST" else if (bad == 0) "EMERALD_BLOCK" else "REDSTONE_BLOCK"
+            val parameters = listOf(
+                "Серверов" to "${group.servers.size}",
+                "Плагинов" to "${group.plugins.size}",
+                "Состояние" to if (bad == 0) "✔ в порядке" else "✖ требуют внимания: $bad",
+            )
+            val item = icon(Icons.OVERVIEW, material, group.name, Style.lore(emptyList(), parameters, Style.left("открыть")))
+            Row(item, go { who -> group(who, group.name, page) })
+        }
+        list(player, "Группы", rows, page, PAGE_SIZE, { who, to -> groups(who, to) }, { network(it, 0) }, "Групп нет")
+    }
+
+    /** One group: each server with what it lacks, and buttons that ask all of them at once. */
+    private fun group(player: Player, name: String, backPage: Int) {
+        val map = LinkHub.network?.report
+        val group = map?.groups?.firstOrNull { it.name == name }
+        if (map == null || group == null) {
+            groups(player, 0)
+            return
+        }
+        val states = comparer.compare(group, map.servers)
+        val rows = states.map { state ->
+            val material = if (state.ok) "EMERALD_BLOCK" else "REDSTONE_BLOCK"
+            val parameters = buildList {
+                add("На связи" to if (state.known?.online == true) "✔ да" else "✖ нет")
+                if (state.missing.isNotEmpty()) add("Нет плагинов" to state.missing.joinToString(", "))
+                if (state.outdated.isNotEmpty()) add("Можно обновить" to state.outdated.joinToString(", "))
+            }
+            val known = state.known
+            val hints = if (known != null) arrayOf(Style.left("открыть сервер")) else emptyArray()
+            val click = known?.let { server -> go { who -> networkServer(who, server, 0) } }
+            Row(icon(Icons.OVERVIEW, material, state.server, Style.lore(emptyList(), parameters, *hints), muted = known == null), click)
+        }
+        list(
+            player, "Группа ${group.name}", rows, 0, PAGE_SIZE, { who, _ -> group(who, name, backPage) }, { groups(it, backPage) }, "Серверов нет",
+            extra = {
+                val check = icon(
+                    Icons.CHECK, "COMPASS", "Проверить всех",
+                    Style.lore(listOf("Каждый сервер группы проверит обновления."), emptyList(), Style.left("проверить")),
+                )
+                it.button(NETWORK_CHECK, check, go { who -> allowed(who, RemoteAction.CHECK.permission) { askGroup(who, states, RemoteAction.CHECK) } })
+                val update = icon(
+                    Icons.PLUGIN, "GOLD_INGOT", "Обновить всех",
+                    Style.lore(listOf("Скачать обновления плагинов группы."), emptyList(), Style.left("скачать")),
+                )
+                it.button(NETWORK_UPDATE, update, go { who -> allowed(who, RemoteAction.UPDATE.permission) { askGroup(who, states, RemoteAction.UPDATE) } })
+            },
+        )
+    }
+
+    private fun askGroup(player: Player, states: List<ServerGroups.ServerState>, action: RemoteAction) {
+        var sent = 0
+        states.forEach { state ->
+            val products = if (action == RemoteAction.UPDATE) state.outdated else listOf(null)
+            products.forEach { product ->
+                val label = product?.let { "${state.server} · $it" } ?: state.server
+                val error = RemoteControl.send(state.server, action, product, player.name) { result ->
+                    replies.onServerThread {
+                        if (player.isOnline) tell(player, if (result.ok) ChatTone.SUCCESS else ChatTone.FAILURE, "$label: ${result.text}")
+                    }
+                }
+                if (error == null) sent++ else tell(player, ChatTone.FAILURE, "$label: $error")
+            }
+        }
+        tell(player, ChatTone.PROGRESS, if (sent == 0) "Делать нечего." else "Запросов отправлено: $sent.")
     }
 
     private fun serverItem(server: NetworkServer): ItemStack {
@@ -1848,6 +1935,7 @@ internal class PluginsMenu(
         const val HOME_ROWS = 5
         const val NETWORK_SLOT = 34
         const val NETWORK_CHECK = 49
+        const val NETWORK_UPDATE = 51
         const val HOME_CLOSE = 40
         const val SUPPORT_SLOT = 38
         const val RESTART_SLOT = 41

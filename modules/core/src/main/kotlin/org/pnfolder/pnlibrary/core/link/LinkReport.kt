@@ -46,5 +46,11 @@ data class NetworkServer(val name: String, val online: Boolean, val report: Link
  * @property proxy the report of the proxy itself
  * @property servers the game servers that reported to the proxy
  * @property sentAt when the proxy built the map
+ * @property groups the groups of servers kept on the proxy
  */
-data class NetworkReport(val proxy: LinkReport, val servers: List<NetworkServer>, val sentAt: Instant)
+data class NetworkReport(
+    val proxy: LinkReport,
+    val servers: List<NetworkServer>,
+    val sentAt: Instant,
+    val groups: List<ServerGroups.Group> = emptyList(),
+)

@@ -31,6 +31,8 @@ object LinkCodec {
     /** Most servers the network map carries. */
     const val MAX_SERVERS = 30
 
+    private const val MAX_GROUPS = 30
+    private const val MAX_GROUP_ITEMS = 60
     private const val VERSION = 1
     private const val NETWORK_VERSION = 2
     private const val REQUEST_VERSION = 3
@@ -65,7 +67,22 @@ object LinkCodec {
             out.writeBoolean(it.online)
             writeReport(out, it.report, MAX_NETWORK_PLUGINS)
         }
+        val groups = network.groups.take(MAX_GROUPS)
+        out.writeInt(groups.size)
+        groups.forEach { group ->
+            out.writeUTF(group.name.take(MAX_TEXT))
+            writeNames(out, group.servers)
+            writeNames(out, group.plugins)
+        }
     }
+
+    private fun writeNames(out: DataOutputStream, names: Set<String>) {
+        val shown = names.take(MAX_GROUP_ITEMS)
+        out.writeInt(shown.size)
+        shown.forEach { out.writeUTF(it.take(MAX_TEXT)) }
+    }
+
+    private fun readNames(input: DataInputStream): Set<String> = List(input.readInt().coerceIn(0, MAX_GROUP_ITEMS)) { input.readUTF() }.toSet()
 
     /** Reads a network map, or returns null when the signature, the version or the time is wrong. */
     fun decodeNetwork(message: ByteArray, key: ByteArray, now: Instant = Instant.now()): NetworkReport? =
@@ -74,7 +91,9 @@ object LinkCodec {
             val proxy = readReport(input)
             if (!fresh(proxy.sentAt, now)) return@verified null
             val count = input.readInt().coerceIn(0, MAX_SERVERS)
-            NetworkReport(proxy, List(count) { NetworkServer(input.readUTF(), input.readBoolean(), readReport(input)) }, proxy.sentAt)
+            val servers = List(count) { NetworkServer(input.readUTF(), input.readBoolean(), readReport(input)) }
+            val groups = List(input.readInt().coerceIn(0, MAX_GROUPS)) { ServerGroups.Group(input.readUTF(), readNames(input), readNames(input)) }
+            NetworkReport(proxy, servers, proxy.sentAt, groups)
         }
 
     /** Encodes a remote request and signs it with [key]. */

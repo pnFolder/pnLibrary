@@ -17,6 +17,7 @@ class NetworkPublisher(
     private val platform: () -> String,
     private val players: () -> Int,
     private val registry: LinkRegistry = LinkHub.registry,
+    private val groups: () -> List<ServerGroups.Group> = { emptyList() },
 ) {
     /** The message to send now; the same bytes go to every server. */
     fun message(now: Instant = Instant.now()): ByteArray {
@@ -24,7 +25,7 @@ class NetworkPublisher(
             NetworkServer(it.name, Duration.between(it.receivedAt, now) < ONLINE, it.report)
         }
         val proxy = LinkReports.build(library, platform(), players(), now)
-        return LinkCodec.encodeNetwork(NetworkReport(proxy, servers, now), key)
+        return LinkCodec.encodeNetwork(NetworkReport(proxy, servers, now, groups()), key)
     }
 
     private companion object {
