@@ -8,6 +8,8 @@ import java.security.MessageDigest
 import java.time.Duration
 import java.time.Instant
 import java.util.UUID
+import java.util.zip.DeflaterOutputStream
+import java.util.zip.InflaterInputStream
 import javax.crypto.Mac
 import javax.crypto.spec.SecretKeySpec
 
@@ -28,6 +30,9 @@ object LinkCodec {
     /** Most plugins listed per server inside the network map. */
     const val MAX_NETWORK_PLUGINS = 40
 
+    /** Most bytes one page of a remote menu may take; a plugin message may not be larger than this. */
+    const val MAX_FRAME_BYTES = 32_000
+
     /** Most servers the network map carries. */
     const val MAX_SERVERS = 30
 
@@ -37,6 +42,15 @@ object LinkCodec {
     private const val NETWORK_VERSION = 2
     private const val REQUEST_VERSION = 3
     private const val RESULT_VERSION = 4
+    private const val VIEW_VERSION = 5
+    private const val FRAME_VERSION = 6
+    private const val MAX_PERMISSIONS = 40
+    private const val MAX_SLOTS = 54
+    private const val MAX_STACK_BYTES = 20_000
+    private const val MAX_NOTICES = 20
+    private const val MAX_NOTICE_BYTES = 12_000
+    private const val MAX_INFLATED_BYTES = 400_000
+    private const val BUFFER = 4_096
     private const val MAX_RESULT_TEXT = 1_000
     private const val MAC_ALGORITHM = "HmacSHA256"
     private const val MAC_BYTES = 32
@@ -144,6 +158,115 @@ object LinkCodec {
             if (!fresh(sentAt, now)) return@verified null
             RemoteResult(id, input.readUTF(), input.readBoolean(), input.readUTF(), sentAt)
         }
+
+    /** Encodes a viewer's step in another server's menu and signs it with [key]. */
+    fun encodeView(request: ViewRequest, key: ByteArray): ByteArray = signed(key) { out ->
+        out.writeByte(VIEW_VERSION)
+        out.writeLong(request.session.mostSignificantBits)
+        out.writeLong(request.session.leastSignificantBits)
+        out.writeLong(request.sentAt.toEpochMilli())
+        out.writeUTF(request.target.take(MAX_TEXT))
+        out.writeUTF(request.origin.take(MAX_TEXT))
+        out.writeUTF(request.action.name)
+        out.writeUTF(request.viewer.take(MAX_TEXT))
+        val permissions = request.permissions.take(MAX_PERMISSIONS)
+        out.writeInt(permissions.size)
+        permissions.forEach { out.writeUTF(it.take(MAX_TEXT)) }
+        out.writeInt(request.slot)
+        out.writeUTF(request.click.take(MAX_TEXT))
+    }
+
+    /** Reads a viewer's step, or returns null when the signature, the version, the time or the action is wrong. */
+    fun decodeView(message: ByteArray, key: ByteArray, now: Instant = Instant.now()): ViewRequest? =
+        verified(message, key) { input ->
+            if (input.readUnsignedByte() != VIEW_VERSION) return@verified null
+            val session = UUID(input.readLong(), input.readLong())
+            val sentAt = Instant.ofEpochMilli(input.readLong())
+            if (!fresh(sentAt, now)) return@verified null
+            val target = input.readUTF()
+            val origin = input.readUTF()
+            val actionName = input.readUTF()
+            val action = ViewAction.values().firstOrNull { it.name == actionName } ?: return@verified null
+            val viewer = input.readUTF()
+            val permissions = List(input.readInt().coerceIn(0, MAX_PERMISSIONS)) { input.readUTF() }.toSet()
+            ViewRequest(session, target, origin, action, viewer, permissions, input.readInt(), input.readUTF(), sentAt)
+        }
+
+    /**
+     * Encodes a page of a menu, compressed, and signs it with [key]; returns null when it would not fit in one plugin
+     * message.
+     */
+    fun encodeFrame(frame: ViewFrame, key: ByteArray): ByteArray? {
+        val packed = ByteArrayOutputStream()
+        DataOutputStream(DeflaterOutputStream(packed)).use { out ->
+            out.writeUTF(frame.title.take(MAX_TEXT))
+            out.writeInt(frame.rows)
+            out.writeInt(frame.items.size)
+            frame.items.forEach { (slot, bytes) ->
+                out.writeInt(slot)
+                out.writeInt(bytes.size)
+                out.write(bytes)
+            }
+            out.writeInt(frame.notices.size)
+            frame.notices.forEach { notice ->
+                val bytes = notice.toByteArray(Charsets.UTF_8)
+                out.writeInt(bytes.size)
+                out.write(bytes)
+            }
+        }
+        val compressed = packed.toByteArray()
+        val message = signed(key) { out ->
+            out.writeByte(FRAME_VERSION)
+            out.writeLong(frame.session.mostSignificantBits)
+            out.writeLong(frame.session.leastSignificantBits)
+            out.writeLong(frame.sentAt.toEpochMilli())
+            out.writeUTF(frame.to.take(MAX_TEXT))
+            out.writeBoolean(frame.closed)
+            out.writeInt(compressed.size)
+            out.write(compressed)
+        }
+        return message.takeIf { it.size <= MAX_FRAME_BYTES }
+    }
+
+    /** Reads a page of a menu, or returns null when the signature, the version or the time is wrong. */
+    fun decodeFrame(message: ByteArray, key: ByteArray, now: Instant = Instant.now()): ViewFrame? =
+        verified(message, key) { input ->
+            if (input.readUnsignedByte() != FRAME_VERSION) return@verified null
+            val session = UUID(input.readLong(), input.readLong())
+            val sentAt = Instant.ofEpochMilli(input.readLong())
+            if (!fresh(sentAt, now)) return@verified null
+            val to = input.readUTF()
+            val closed = input.readBoolean()
+            val compressed = ByteArray(input.readInt().coerceIn(0, MAX_FRAME_BYTES)).also { input.readFully(it) }
+            val body = inflate(compressed) ?: return@verified null
+            DataInputStream(ByteArrayInputStream(body)).use { packed ->
+                val title = packed.readUTF()
+                val rows = packed.readInt().coerceIn(0, 6)
+                val items = linkedMapOf<Int, ByteArray>()
+                repeat(packed.readInt().coerceIn(0, MAX_SLOTS)) {
+                    val slot = packed.readInt()
+                    items[slot] = ByteArray(packed.readInt().coerceIn(0, MAX_STACK_BYTES)).also { packed.readFully(it) }
+                }
+                val notices = List(packed.readInt().coerceIn(0, MAX_NOTICES)) {
+                    String(ByteArray(packed.readInt().coerceIn(0, MAX_NOTICE_BYTES)).also { packed.readFully(it) }, Charsets.UTF_8)
+                }
+                ViewFrame(session, to, title, rows, items, notices, closed, sentAt)
+            }
+        }
+
+    private fun inflate(bytes: ByteArray): ByteArray? = runCatching {
+        InflaterInputStream(ByteArrayInputStream(bytes)).use { input ->
+            val out = ByteArrayOutputStream()
+            val buffer = ByteArray(BUFFER)
+            while (true) {
+                val read = input.read(buffer)
+                if (read < 0) break
+                out.write(buffer, 0, read)
+                if (out.size() > MAX_INFLATED_BYTES) return null
+            }
+            out.toByteArray()
+        }
+    }.getOrNull()
 
     private fun fresh(sentAt: Instant, now: Instant): Boolean = Math.abs(Duration.between(sentAt, now).toMillis()) <= TOLERANCE.toMillis()
 

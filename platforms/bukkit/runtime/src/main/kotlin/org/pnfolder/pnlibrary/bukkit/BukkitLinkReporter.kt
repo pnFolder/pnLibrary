@@ -6,6 +6,9 @@ import org.bukkit.plugin.java.JavaPlugin
 import org.bukkit.plugin.messaging.PluginMessageListener
 import org.bukkit.scheduler.BukkitTask
 import org.pnfolder.pnlibrary.api.runtime.PnLibrary
+import org.pnfolder.pnlibrary.bukkit.commands.RemoteMenuClient
+import org.pnfolder.pnlibrary.bukkit.commands.RemoteMenuHost
+import org.pnfolder.pnlibrary.bukkit.commands.RemoteMenus
 import org.pnfolder.pnlibrary.common.lang.runCatchingNonFatal
 import org.pnfolder.pnlibrary.core.link.LinkCodec
 import org.pnfolder.pnlibrary.core.link.LinkHub
@@ -34,12 +37,18 @@ internal class BukkitLinkReporter(private val plugin: JavaPlugin, private val li
             carrier?.sendPluginMessage(plugin, LinkCodec.CHANNEL, bytes)
             carrier != null
         }
+        RemoteMenus.host = RemoteMenuHost(plugin, library, key)
+        RemoteMenus.client = RemoteMenuClient(plugin, library, key)
         plugin.server.messenger.registerIncomingPluginChannel(plugin, LinkCodec.CHANNEL, this)
         plugin.server.messenger.registerOutgoingPluginChannel(plugin, LinkCodec.CHANNEL)
         task = plugin.server.scheduler.runTaskTimer(plugin, Runnable { report(key) }, FIRST_DELAY_TICKS, PERIOD_TICKS)
     }
 
     fun stop() {
+        RemoteMenus.host?.stop()
+        RemoteMenus.client?.stop()
+        RemoteMenus.host = null
+        RemoteMenus.client = null
         LinkHub.uplink = null
         LinkHub.key = null
         task?.cancel()
@@ -60,6 +69,14 @@ internal class BukkitLinkReporter(private val plugin: JavaPlugin, private val li
             executor.run(request) { result ->
                 plugin.server.scheduler.runTask(plugin, Runnable { player.sendPluginMessage(plugin, LinkCodec.CHANNEL, LinkCodec.encodeResult(result, key)) })
             }
+            return
+        }
+        LinkCodec.decodeView(message, key)?.let { request ->
+            RemoteMenus.host?.handle(request)
+            return
+        }
+        LinkCodec.decodeFrame(message, key)?.let { frame ->
+            RemoteMenus.client?.accept(frame)
             return
         }
         LinkCodec.decodeResult(message, key)?.let { LinkHub.replies.complete(it) }

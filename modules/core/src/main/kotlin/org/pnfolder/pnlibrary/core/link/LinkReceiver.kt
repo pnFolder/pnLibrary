@@ -39,6 +39,14 @@ class LinkReceiver(
             deliver(it, key)
             return true
         }
+        LinkCodec.decodeView(message, key)?.let {
+            routeView(server, it.copy(origin = server), key)
+            return true
+        }
+        LinkCodec.decodeFrame(message, key)?.let {
+            transport?.send(it.to, message)
+            return true
+        }
         return false
     }
 
@@ -51,6 +59,19 @@ class LinkReceiver(
         if (transport?.send(request.target, LinkCodec.encodeRequest(request, key)) != true) {
             toOrigin(RemoteResult(request.id, server, false, "Сервер ${request.target} недоступен.", Instant.now()))
         }
+    }
+
+    /** Passes a viewer's step on to the server whose menu it is for, or tells the viewer why it cannot. */
+    private fun routeView(server: String, request: ViewRequest, key: ByteArray) {
+        val unreachable = when {
+            request.target.equals(LinkNames.PROXY, ignoreCase = true) -> "У прокси нет меню. Команды: /pnproxy."
+            transport?.send(request.target, LinkCodec.encodeView(request, key)) != true -> "Сервер ${request.target} недоступен."
+            else -> return
+        }
+        if (request.action == ViewAction.CLOSE) return
+        val notice = ViewNotices.encode(net.kyori.adventure.text.Component.text(unreachable))
+        val frame = ViewFrame(request.session, server, "", 1, emptyMap(), listOf(notice), true, Instant.now())
+        LinkCodec.encodeFrame(frame, key)?.let { transport?.send(server, it) }
     }
 
     private fun deliver(result: RemoteResult, key: ByteArray) {

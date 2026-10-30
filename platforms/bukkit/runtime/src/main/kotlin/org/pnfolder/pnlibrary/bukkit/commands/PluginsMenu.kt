@@ -919,7 +919,7 @@ internal class PluginsMenu(
         }
         val map = received.report
         val proxy = NetworkServer(PROXY_LABEL, true, map.proxy)
-        val rows = (listOf(proxy) + map.servers).map { server -> Row(serverItem(server), go { who -> remoteHome(who, server, page) }) }
+        val rows = (listOf(proxy) + map.servers).map { server -> Row(serverItem(server), go { who -> openServer(who, server, page) }) }
         list(
             player, "Сеть", rows, page, PAGE_SIZE, { who, to -> network(who, to) }, { home(it) }, "Серверов нет",
             extra = {
@@ -972,7 +972,7 @@ internal class PluginsMenu(
             }
             val known = state.known
             val hints = if (known != null) arrayOf(Style.left("открыть сервер")) else emptyArray()
-            val click = known?.let { server -> go { who -> remoteHome(who, server, 0) } }
+            val click = known?.let { server -> go { who -> openServer(who, server, 0) } }
             Row(icon(Icons.OVERVIEW, material, state.server, Style.lore(emptyList(), parameters, *hints), muted = known == null), click)
         }
         list(
@@ -1029,6 +1029,13 @@ internal class PluginsMenu(
             else -> "EMERALD_BLOCK"
         }
         return icon(Icons.OVERVIEW, material, server.name, Style.lore(emptyList(), parameters, Style.left("открыть")), muted = !server.online)
+    }
+
+    /** Opens the menu of [server]: a copy of its own menu, or the short page the proxy gets, which has no menu of its own. */
+    private fun openServer(player: Player, server: NetworkServer, backPage: Int) {
+        val client = RemoteMenus.client
+        if (server.name == PROXY_LABEL || client == null) return remoteHome(player, server, backPage)
+        if (!client.open(player, server.name)) tell(player, ChatTone.FAILURE, "Некому передать запрос: на ${server.name} нет игроков онлайн.")
     }
 
     /**
@@ -1583,7 +1590,7 @@ internal class PluginsMenu(
                 val snapshots = snapshots()
                 val news = UpdateCatalogView.announcement(snapshots, BukkitControlCommand.ROUTES, PnLibraryIdentity.SUPPORT_URL)
                 if (news.isEmpty()) tell(player, ChatTone.SUCCESS, "Проверка завершена: все плагины используют актуальные версии.")
-                else audience(player)?.let { news.forEach(it::sendMessage) }
+                else deliver(player, news)
             }
         }
     }
@@ -1658,7 +1665,7 @@ internal class PluginsMenu(
     private fun support(player: Player) {
         player.closeInventory()
         val card = UpdateCatalogView.support(PnLibraryIdentity.SUPPORT_URL, BukkitControlCommand.ROUTES)
-        audience(player)?.let { card.forEach(it::sendMessage) }
+        deliver(player, card)
     }
 
     /** Runs [action] when [player] holds [permission], otherwise says what is missing. */
@@ -1669,10 +1676,16 @@ internal class PluginsMenu(
 
     private fun audience(player: Player) = library.audiences.player(player.uniqueId)
 
+    /** Sends [lines] to [player] in chat; for a viewer from another server they travel back to that server. */
+    private fun deliver(player: Player, lines: List<net.kyori.adventure.text.Component>) {
+        val viewer = RemoteViewer.of(player)
+        if (viewer != null) RemoteMenus.host?.notice(viewer, lines) else audience(player)?.let { lines.forEach(it::sendMessage) }
+    }
+
     /** Sends one notice in the style of the chat commands. */
     private fun tell(player: Player, tone: ChatTone, text: String, detail: String? = null) {
         val lines = UpdateCatalogView.notice(ChatNotice(tone, text, detail), BukkitControlCommand.ROUTES)
-        audience(player)?.let { lines.forEach(it::sendMessage) }
+        deliver(player, lines)
     }
 
     private fun reason(error: Throwable): String {
@@ -1732,6 +1745,10 @@ internal class PluginsMenu(
     private fun goClick(action: (Player, ClickType) -> Unit) = MenuClickHandler { action(it.player, it.click) }
 
     private fun show(player: Player, menu: Menu) {
+        RemoteViewer.of(player)?.let { viewer ->
+            RemoteMenus.host?.render(viewer, menu)
+            return
+        }
         library.platform<BukkitPlatform>().menus.open(plugin, player, menu)
         OPEN_SOUND?.let { player.playSound(player.location, it, SOUND_VOLUME, SOUND_PITCH) }
     }
