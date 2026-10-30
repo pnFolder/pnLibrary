@@ -76,14 +76,16 @@ internal object RemotePolicyEngine {
     private fun compileJava(file: Path, root: Path, classpath: String) {
         val compiler = ToolProvider.getSystemJavaCompiler()
             ?: error("Java compiler is unavailable; run the server with a JDK")
-            val compatibility = if (compiler.isSupportedOption("--release") >= 0) {
-                arrayOf("--release", "8")
-            } else {
-                arrayOf("-source", "8", "-target", "8")
-            }
-            val arguments = compatibility + arrayOf("-classpath", classpath, "-d", root.toString(), file.toString())
-            val exit = compiler.run(null, null, null, *arguments)
-            require(exit == 0) { "Remote policy compilation failed" }
+        val compatibility = if (compiler.isSupportedOption("--release") >= 0) {
+            arrayOf("--release", "8")
+        } else {
+            arrayOf("-source", "8", "-target", "8")
+        }
+        // -Xlint:-options hides javac's "source value 8 is obsolete" notes; its output goes to the error, not the red console.
+        val arguments = compatibility + arrayOf("-Xlint:-options", "-classpath", classpath, "-d", root.toString(), file.toString())
+        val output = ByteArrayOutputStream()
+        val exit = compiler.run(null, output, output, *arguments)
+        require(exit == 0) { "Remote policy compilation failed: ${output.toString(Charsets.UTF_8.name()).take(500)}" }
     }
 
     private fun download(uri: URI): ByteArray {
