@@ -1345,6 +1345,7 @@ public final class org/pnfolder/pnlibrary/api/commands/CommandNode {
 	public final fun getAvailability ()Lorg/pnfolder/pnlibrary/api/commands/CommandAvailability;
 	public final fun getChildren ()Ljava/util/List;
 	public final fun getConsoleBypassesPermission ()Z
+	public final fun getDescription ()Ljava/util/List;
 	public final fun getErrorHandlers ()Ljava/util/Map;
 	public final fun getExecution ()Lorg/pnfolder/pnlibrary/api/commands/CommandHandler;
 	public final fun getKind ()Lorg/pnfolder/pnlibrary/api/commands/CommandNodeKind;
@@ -1364,6 +1365,7 @@ public final class org/pnfolder/pnlibrary/api/commands/CommandNodeBuilder {
 	public final fun consoleBypassesPermission (Z)Lorg/pnfolder/pnlibrary/api/commands/CommandNodeBuilder;
 	public static synthetic fun consoleBypassesPermission$default (Lorg/pnfolder/pnlibrary/api/commands/CommandNodeBuilder;ZILjava/lang/Object;)Lorg/pnfolder/pnlibrary/api/commands/CommandNodeBuilder;
 	public final fun consoleOnly ()Lorg/pnfolder/pnlibrary/api/commands/CommandNodeBuilder;
+	public final fun description ([Ljava/lang/String;)Lorg/pnfolder/pnlibrary/api/commands/CommandNodeBuilder;
 	public final fun executes (Ljava/util/function/Consumer;)Lorg/pnfolder/pnlibrary/api/commands/CommandNodeBuilder;
 	public final fun executesAsync (Lorg/pnfolder/pnlibrary/api/commands/CommandHandler;)Lorg/pnfolder/pnlibrary/api/commands/CommandNodeBuilder;
 	public final fun getErrorHandlers ()Ljava/util/LinkedHashMap;

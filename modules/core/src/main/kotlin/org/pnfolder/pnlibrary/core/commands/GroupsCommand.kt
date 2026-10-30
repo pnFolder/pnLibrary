@@ -48,26 +48,35 @@ class GroupsCommand(private val groups: ServerGroups, private val servers: () ->
         permission(PERMISSION, "pnlibrary.admin")
         executes(::list)
         literal("create") {
+            description("Создаёт пустую группу серверов. Имя любое, до 32 символов, без пробелов.")
             argument("group", ArgumentType.string()) { executes { create(it, it.get<String>("group")) } }
         }
-        withGroup("delete") { executes { delete(it, it.get<String>("group")) } }
-        withGroup("info") { executes { view(it, it.get<String>("group")) } }
-        withGroup("join") { valued(true, ServerGroups.Group::addServer) }
-        withGroup("leave") { valued(true, ServerGroups.Group::removeServer) }
-        withGroup("require") { valued(false, ServerGroups.Group::addPlugin) }
-        withGroup("drop") { valued(false, ServerGroups.Group::removePlugin) }
-        withGroup("check") {
+        withGroup("delete", "Удаляет группу. Серверы и плагины не трогает, пропадает только список.") {
+            executes { delete(it, it.get<String>("group")) }
+        }
+        withGroup("info", "Каждый сервер группы: чего ему не хватает и что можно обновить.") { executes { view(it, it.get<String>("group")) } }
+        withGroup("join", "Добавляет сервер в группу. Сервер может быть в нескольких группах; прокси добавляется как @proxy.") {
+            valued(true, ServerGroups.Group::addServer)
+        }
+        withGroup("leave", "Убирает сервер из группы вместе с его особыми настройками.") { valued(true, ServerGroups.Group::removeServer) }
+        withGroup("require", "Плагин, который нужен каждому серверу группы. Если его нет, группа покажет это в списке.") {
+            valued(false, ServerGroups.Group::addPlugin)
+        }
+        withGroup("drop", "Плагин больше не обязателен для серверов группы.") { valued(false, ServerGroups.Group::removePlugin) }
+        withGroup("check", "Каждый сервер группы проверит обновления своих плагинов.") {
             permission(RemoteAction.CHECK.permission)
             executes { ask(it, RemoteAction.CHECK) }
         }
-        withGroup("update") {
+        withGroup("update", "Каждый сервер группы скачает доступные обновления плагинов группы.") {
             permission(RemoteAction.UPDATE.permission)
             executes { ask(it, RemoteAction.UPDATE) }
         }
-        withGroup("server") { withServer { executes { viewServer(it, it.get<String>("group"), it.get<String>("server")) } } }
-        withGroup("skip") { withServer { override(false) } }
-        withGroup("extra") { withServer { override(true) } }
-        withGroup("reset") {
+        withGroup("server", "Показывает, что группа требует от одного сервера и чем он отличается от остальных.") {
+            withServer { executes { viewServer(it, it.get<String>("group"), it.get<String>("server")) } }
+        }
+        withGroup("skip", "Этому серверу плагин группы не нужен; у остальных серверов группы он остаётся.") { withServer { override(false) } }
+        withGroup("extra", "Этому серверу нужен ещё один плагин, которого нет у остальных серверов группы.") { withServer { override(true) } }
+        withGroup("reset", "Возвращает сервер к тому, что требуется от всех серверов группы.") {
             withServer {
                 executes { context ->
                     val server = context.get<String>("server")
@@ -77,6 +86,7 @@ class GroupsCommand(private val groups: ServerGroups, private val servers: () ->
             }
         }
         literal("of") {
+            description("В каких группах состоит сервер и какие плагины они от него требуют.")
             argument("server", ArgumentType.string()) {
                 suggests { serverNames() }
                 executes { of(it, it.get<String>("server")) }
@@ -85,8 +95,9 @@ class GroupsCommand(private val groups: ServerGroups, private val servers: () ->
     }
 
     /** The word [word], then the name of a group. */
-    private fun CommandBuilder.withGroup(word: String, inside: CommandNodeBuilder.() -> Unit) {
+    private fun CommandBuilder.withGroup(word: String, about: String, inside: CommandNodeBuilder.() -> Unit) {
         literal(word) {
+            description(about)
             argument("group", ArgumentType.string()) {
                 suggests { groups.all().map { it.name } }
                 inside()

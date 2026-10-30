@@ -799,7 +799,10 @@ class LibraryMenu(
                 29,
                 icon(
                     Icons.CHECK, "EMERALD", "Запустить сейчас",
-                    Style.lore(listOf("Выполнить один раз, не дожидаясь срока. Расписание не меняется."), emptyList(), Style.left("запустить")), good = true,
+                    Style.lore(
+                        listOf("Выполнить один раз, не дожидаясь срока. Расписание не меняется."),
+                        emptyList(), Style.left("запустить"),
+                    ), good = true,
                 ),
                 go { who ->
                     allowed(who, TASKS) {
@@ -957,7 +960,10 @@ class LibraryMenu(
             extra = {
                 val create = icon(
                     Icons.PLUGIN, "WRITABLE_BOOK", "Новая группа",
-                    Style.lore(listOf("Имя группы пишется в чате."), emptyList(), Style.left("создать")), good = true,
+                    Style.lore(
+                        listOf("Группа — набор серверов с общим списком плагинов.", "Имя пишется в чате: любое, без пробелов."),
+                        emptyList(), Style.left("создать"),
+                    ), good = true,
                 )
                 it.button(GROUP_ADD, create, go { who -> suggest(who, "Назовите группу и нажмите Enter:", "/pnproxy groups create ") })
             },
@@ -1004,27 +1010,42 @@ class LibraryMenu(
             extra = {
                 val check = icon(
                     Icons.CHECK, "COMPASS", "Проверить всех",
-                    Style.lore(listOf("Каждый сервер группы проверит обновления."), emptyList(), Style.left("проверить")),
+                    Style.lore(
+                        listOf("Серверы группы проверят, вышли ли обновления.", "Ничего не скачивается."),
+                        emptyList(), Style.left("проверить"),
+                    ),
                 )
                 it.button(NETWORK_CHECK, check, go { who -> allowed(who, RemoteAction.CHECK.permission) { askGroup(who, states, RemoteAction.CHECK) } })
                 val update = icon(
                     Icons.PLUGIN, "GOLD_INGOT", "Обновить всех",
-                    Style.lore(listOf("Скачать обновления плагинов группы."), emptyList(), Style.left("скачать")),
+                    Style.lore(
+                        listOf("Серверы группы скачают найденные обновления.", "Они применятся после перезапуска."),
+                        emptyList(), Style.left("скачать"),
+                    ),
                 )
                 it.button(NETWORK_UPDATE, update, go { who -> allowed(who, RemoteAction.UPDATE.permission) { askGroup(who, states, RemoteAction.UPDATE) } })
                 val servers = icon(
                     Icons.OVERVIEW, "LIME_DYE", "Добавить сервер",
-                    Style.lore(listOf("Сервер может быть в нескольких группах."), emptyList(), Style.left("выбрать")), good = true,
+                    Style.lore(
+                        listOf("Добавляет сервер или прокси в группу.", "Сервер может состоять в нескольких группах."),
+                        emptyList(), Style.left("выбрать"),
+                    ), good = true,
                 )
                 it.button(GROUP_ADD, servers, go { who -> pickServer(who, name, 0) })
                 val plugins = icon(
                     Icons.PLUGIN, "BOOKSHELF", "Плагины группы",
-                    Style.lore(listOf("Общий набор: ${group.plugins.size}."), emptyList(), Style.left("открыть")),
+                    Style.lore(
+                        listOf("Плагины, нужные каждому серверу группы: ${group.plugins.size}.", "Если плагина нет, сервер будет в красном."),
+                        emptyList(), Style.left("открыть"),
+                    ),
                 )
                 it.button(GROUP_PLUGINS, plugins, go { who -> groupPlugins(who, name, 0) })
                 val delete = icon(
                     Icons.PROBLEMS, "TNT", "Удалить группу",
-                    Style.lore(listOf("Серверы и плагины останутся."), emptyList(), Style.shiftLeft("удалить")), danger = true,
+                    Style.lore(
+                        listOf("Удаляется только список группы.", "Серверы и их плагины не трогаются."),
+                        emptyList(), Style.shiftLeft("удалить"),
+                    ), danger = true,
                 )
                 it.button(GROUP_DELETE, delete, goClick { who, how ->
                     if (how == ClickType.SHIFT_LEFT) editGroup(who, GroupEdit(GroupOp.DELETE, name)) { groups(who, 0) }
@@ -1067,7 +1088,7 @@ class LibraryMenu(
             extra = {
                 val add = icon(
                     Icons.PLUGIN, "LIME_DYE", "Добавить плагин",
-                    Style.lore(listOf("Он нужен каждому серверу группы."), emptyList(), Style.left("выбрать")), good = true,
+                    Style.lore(listOf("Плагин станет обязательным", "для каждого сервера группы."), emptyList(), Style.left("выбрать")), good = true,
                 )
                 it.button(GROUP_ADD, add, go { who -> pickPlugin(who, name, null, 0) })
             },
@@ -1130,12 +1151,18 @@ class LibraryMenu(
             extra = {
                 val add = icon(
                     Icons.PLUGIN, "LIME_DYE", "Ещё плагин этому серверу",
-                    Style.lore(listOf("Остальным серверам группы он не нужен."), emptyList(), Style.left("выбрать")), good = true,
+                    Style.lore(
+                        listOf("Плагин нужен только этому серверу,", "остальные серверы группы его не ждут."),
+                        emptyList(), Style.left("выбрать"),
+                    ), good = true,
                 )
                 it.button(GROUP_ADD, add, go { who -> pickPlugin(who, name, server, 0) })
                 val reset = icon(
                     Icons.CHECK, "COMPASS", "Как у всех",
-                    Style.lore(listOf("Убрать все отличия этого сервера."), emptyList(), Style.left("сбросить")),
+                    Style.lore(
+                        listOf("Сервер снова ждёт то же, что и вся группа.", "Его особые настройки удаляются."),
+                        emptyList(), Style.left("сбросить"),
+                    ),
                 )
                 it.button(GROUP_PLUGINS, reset, go { who -> editGroup(who, GroupEdit(GroupOp.RESET, name, server)) { groupServer(who, name, server) } })
             },

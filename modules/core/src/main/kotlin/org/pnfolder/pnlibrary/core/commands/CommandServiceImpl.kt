@@ -6,6 +6,7 @@ import org.pnfolder.pnlibrary.api.commands.CommandDefinition
 import org.pnfolder.pnlibrary.api.commands.CommandError
 import org.pnfolder.pnlibrary.api.commands.CommandFailure
 import org.pnfolder.pnlibrary.api.commands.CommandNode
+import org.pnfolder.pnlibrary.api.commands.CommandNodeKind
 import org.pnfolder.pnlibrary.api.commands.CommandRegistration
 import org.pnfolder.pnlibrary.api.commands.NoPermission
 import org.pnfolder.pnlibrary.api.commands.completedExecution
@@ -159,7 +160,16 @@ internal class CommandServiceImpl(
             if (handledBy(scope.handlers)) return
             scope = scope.parent
         }
-        react(registration) { standard.answer(context, error) }
+        react(registration) { standard.answer(context, error, helpFor(nodes.lastOrNull(), context)) }
+    }
+
+    /** What to tell a sender who stopped at [node]: its own description, then each way on that has one. */
+    private fun helpFor(node: CommandNode?, context: CommandContext): List<String> {
+        if (node == null) return emptyList()
+        val ways = node.children
+            .filter { it.description.isNotEmpty() && it.permission.let { needed -> needed == null || context.sender.hasPermission(needed) } }
+            .map { (if (it.kind == CommandNodeKind.ARGUMENT) "<${it.name}>" else it.name) + " — " + it.description.first() }
+        return node.description + ways
     }
 
     /**

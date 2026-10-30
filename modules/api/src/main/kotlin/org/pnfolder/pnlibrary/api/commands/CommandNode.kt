@@ -39,6 +39,7 @@ fun interface CommandAvailability {
  * @property noPermissionMessage text shown when the sender lacks [permission], or `null` to use the command's own
  * @property errorHandlers handlers for errors that occur at or below this node, by error class
  * @property senderRule who may enter this node
+ * @property description what this node does and how, one line each; shown under the usage line when a sender stops here
  */
 class CommandNode internal constructor(
     val kind: CommandNodeKind,
@@ -55,7 +56,9 @@ class CommandNode internal constructor(
     errorHandlers: Map<Class<out CommandError>, CommandErrorHandler<*>> = emptyMap(),
     val senderRule: SenderRule = SenderRule.ANY,
     alsoPermissions: List<String> = emptyList(),
+    description: List<String> = emptyList(),
 ) {
+    val description: List<String> = Collections.unmodifiableList(ArrayList(description))
     val alsoPermissions: List<String> = Collections.unmodifiableList(ArrayList(alsoPermissions))
     val errorHandlers: Map<Class<out CommandError>, CommandErrorHandler<*>> = Collections.unmodifiableMap(LinkedHashMap(errorHandlers))
     val children: List<CommandNode> = Collections.unmodifiableList(ArrayList(children))
@@ -78,6 +81,7 @@ class CommandNodeBuilder internal constructor(
     private var noPermissionMessage: String? = null
     @PublishedApi internal val errorHandlers = linkedMapOf<Class<out CommandError>, CommandErrorHandler<*>>()
     private var senderRule = SenderRule.ANY
+    private var description: List<String> = emptyList()
     private var availability = CommandAvailability { true }
     private var execution = CommandHandler { completedExecution() }
     private var suggestions = SuggestionHandler { completedSuggestions(emptyList()) }
@@ -131,6 +135,9 @@ class CommandNodeBuilder internal constructor(
     /** Kotlin form with plain text: `onError<InvalidArgument>("«{value}» не подходит для {argument}")`. */
     @JvmSynthetic
     inline fun <reified E : CommandError> onError(message: String): CommandNodeBuilder = onError(E::class.java, message)
+
+    /** Says in a few lines what this node does and how it works; a sender who stops here is shown them under the usage. */
+    fun description(vararg lines: String): CommandNodeBuilder = apply { description = lines.map(String::trim).filter { it.isNotEmpty() } }
 
     /** Lets only players enter this node; the console gets the [PlayerOnly] answer. */
     fun playerOnly(): CommandNodeBuilder = apply { senderRule = SenderRule.PLAYER }
@@ -214,7 +221,7 @@ class CommandNodeBuilder internal constructor(
         return CommandNode(
             kind, name, argumentType, permission, consoleBypassesPermission, availability,
             execution, suggestions, executable, children.map(CommandNodeBuilder::build) + mounted, noPermissionMessage, errorHandlers, senderRule,
-            alsoPermissions,
+            alsoPermissions, description,
         )
     }
 
@@ -255,6 +262,7 @@ private fun rebased(node: CommandNode, mountName: String? = null): CommandNode {
         node.errorHandlers,
         node.senderRule,
         node.alsoPermissions,
+        node.description,
     )
 }
 
