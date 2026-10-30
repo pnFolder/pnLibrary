@@ -3,11 +3,9 @@ package org.pnfolder.pnlibrary.core.menu
 import org.pnfolder.pnlibrary.api.chat.ChatNotice
 import org.pnfolder.pnlibrary.api.chat.ChatTone
 import org.pnfolder.pnlibrary.api.events.DispatchMode
-import org.pnfolder.pnlibrary.api.events.EventDescription
 import org.pnfolder.pnlibrary.api.events.EventInfo
 import org.pnfolder.pnlibrary.api.events.EventTrace
 import org.pnfolder.pnlibrary.api.events.ListenerInfo
-import org.pnfolder.pnlibrary.api.runtime.PnLibrary
 import org.pnfolder.pnlibrary.api.runtime.PnLibraryIdentity
 import org.pnfolder.pnlibrary.api.tasks.TaskSnapshot
 import org.pnfolder.pnlibrary.api.tasks.TaskStatus
@@ -22,11 +20,6 @@ import org.pnfolder.pnlibrary.core.commands.TaskPeriod
 import org.pnfolder.pnlibrary.core.commands.TaskState
 import org.pnfolder.pnlibrary.core.lifecycle.JournalGroup
 import org.pnfolder.pnlibrary.core.lifecycle.TaskControl
-import org.pnfolder.pnlibrary.core.lifecycle.cancelTask
-import org.pnfolder.pnlibrary.core.lifecycle.journalDetail
-import org.pnfolder.pnlibrary.core.lifecycle.journalGroups
-import org.pnfolder.pnlibrary.core.lifecycle.runTaskNow
-import org.pnfolder.pnlibrary.core.lifecycle.taskSnapshots
 import org.pnfolder.pnlibrary.core.link.LinkHub
 import org.pnfolder.pnlibrary.core.link.LinkNames
 import org.pnfolder.pnlibrary.core.link.NetworkServer
@@ -36,7 +29,6 @@ import org.pnfolder.pnlibrary.core.link.ServerGroups
 import org.pnfolder.pnlibrary.core.updates.catalog.CatalogLabels
 import org.pnfolder.pnlibrary.core.updates.catalog.UpdateCatalogRoutes
 import org.pnfolder.pnlibrary.core.updates.catalog.UpdateCatalogView
-import org.pnfolder.pnlibrary.core.updates.catalog.UpdateStatusMessages
 import org.pnfolder.pnlibrary.core.updates.policy.UpdateDefaults
 import java.time.Duration
 import java.time.Instant
@@ -56,9 +48,12 @@ import java.util.Locale
  * item as the fallback, so the menu opens on every server from 1.8.
  */
 class LibraryMenu(
-    private val library: PnLibrary,
+    private val data: MenuData,
     private val host: MenuHost,
+    private val remoteName: String? = null,
 ) {
+    private val remote get() = remoteName != null
+
     private enum class Filter(val title: String) { ALL("Плагины"), UPDATES("Обновления"), PROBLEMS("Проблемы") }
 
     private enum class Tone(val from: String, val to: String) {
@@ -85,18 +80,18 @@ class LibraryMenu(
     fun home(player: MenuViewer) {
         val snapshots = snapshots()
         val pending = snapshots.count { it.state in CatalogLabels.PENDING }
-        val errors = library.journalGroups("error", JOURNAL_HOURS, JOURNAL_LIMIT).size
+        val errors = data.journalGroups("error", JOURNAL_HOURS, JOURNAL_LIMIT).size
         val problems = snapshots.count { it.state in CatalogLabels.PROBLEMS } + errors
-        val plan = library.updates.currentPlan().orElse(null)
+        val plan = data.plan()
         val builder = frame(Menus.chest(title("Главная")).rows(HOME_ROWS), HOME_ROWS)
         builder.slot(
             4,
             icon(
-                Icons.OVERVIEW, "NETHER_STAR", "${PnLibraryIdentity.NAME} ${library.version}",
+                Icons.OVERVIEW, "NETHER_STAR", "${PnLibraryIdentity.NAME} ${data.version()}",
                 Style.lore(
                     listOf("Библиотека для плагинов pnFolder: обновления, настройки и поддержка."),
                     listOf(
-                        "Версия" to library.version,
+                        "Версия" to data.version(),
                         "Итог" to when {
                             problems > 0 -> "✖ проблем: $problems"
                             pending > 0 -> "✦ к обновлению: $pending"
@@ -129,7 +124,7 @@ class LibraryMenu(
         )
         builder.button(
             32,
-            section(Icons.CLOCK, "CLOCK", "Задачи плагинов", "Что плагины делают по расписанию и для чего.", "Всего" to "${library.taskSnapshots().size}"),
+            section(Icons.CLOCK, "CLOCK", "Задачи плагинов", "Что плагины делают по расписанию и для чего.", "Всего" to "${data.tasks().size}"),
             go { allowed(it, TASKS) { tasks(it, TaskPeriod.TODAY, TaskState.ALL, 0) } },
         )
         builder.button(
@@ -150,7 +145,7 @@ class LibraryMenu(
             icon(Icons.SUPPORT, "PAPER", "Поддержка", Style.lore(listOf("Если возникла проблема, мы поможем."), emptyList(), Style.left("получить ссылку"))),
             go { support(it) },
         )
-        LinkHub.network?.takeIf { !player.remote }?.let { received ->
+        LinkHub.network?.takeIf { !remote }?.let { received ->
             val servers = received.report.servers
             builder.button(
                 NETWORK_SLOT,
@@ -167,15 +162,15 @@ class LibraryMenu(
                 Icons.RESTART, "DIAMOND", "Перезапуск",
                 Style.lore(listOf("Обновления подготовлены."), emptyList(), Style.left("подтвердить в чате")),
             )
-            builder.button(RESTART_SLOT, restart, go { it.close(); it.runCommand("pn update restart") })
+            builder.button(RESTART_SLOT, restart, go { it.close(); runCommand(it, "pn update restart") })
         }
-        if (plan?.plan?.changes?.isNotEmpty() == true) {
+        if (plan?.hasChanges == true) {
             val rollback = icon(
                 Icons.ROLLBACK, "TNT", "Откатить план",
                 Style.lore(listOf("Откатит все связанные плагины плана."), emptyList(), Style.left("подтвердить в чате")),
                 danger = true,
             )
-            builder.button(ROLLBACK_SLOT, rollback, go { it.close(); it.runCommand("pn update rollback") })
+            builder.button(ROLLBACK_SLOT, rollback, go { it.close(); runCommand(it, "pn update rollback") })
         }
         show(player, builder.build())
     }
@@ -209,8 +204,7 @@ class LibraryMenu(
     }
 
     private fun card(player: MenuViewer, product: String) {
-        val registration = library.updates.get(product) ?: return home(player)
-        val snapshot = registration.snapshot
+        val snapshot = data.snapshot(product) ?: return home(player)
         val builder = frame(Menus.chest(title(snapshot.product)).rows(CARD_ROWS), CARD_ROWS)
         builder.slot(4, plate(snapshot, withHint = false))
         val update = if (snapshot.state == UpdateState.UPDATE_AVAILABLE) {
@@ -224,11 +218,11 @@ class LibraryMenu(
         } else {
             icon(null, "COAL", "Обновить", Style.lore(listOf("Сейчас нет доступного обновления."), emptyList()), muted = true)
         }
-        builder.button(10, update, go { allowed(it, DOWNLOAD) { it.close(); it.runCommand("pn update ${snapshot.product}") } })
+        builder.button(10, update, go { allowed(it, DOWNLOAD) { it.close(); runCommand(it, "pn update ${snapshot.product}") } })
         builder.button(
             11,
             icon(Icons.CHECK, "COMPASS", "Проверить", Style.lore(listOf("Проверить обновления этого плагина."), emptyList(), Style.left("проверить"))),
-            go { checkOne(it, registration.snapshot.product) },
+            go { checkOne(it, snapshot.product) },
         )
         builder.button(12, autoItem(snapshot), go { who -> allowed(who, SETTINGS) { toggleAuto(who, snapshot) } })
         if (CHANNEL_SWITCH) {
@@ -271,7 +265,7 @@ class LibraryMenu(
 
     /** The channel choice. It stays in the code and is switched on by [CHANNEL_SWITCH] once more than `dev` works. */
     private fun channels(player: MenuViewer, product: String) {
-        val current = library.updates.get(product)?.snapshot?.channel
+        val current = data.snapshot(product)?.channel
         val builder = frame(Menus.chest(title("Канал $product")).rows(SMALL_ROWS), SMALL_ROWS)
         UpdateChannel.values().forEachIndexed { index, channel ->
             val chosen = channel == current
@@ -299,7 +293,7 @@ class LibraryMenu(
     }
 
     private fun holds(player: MenuViewer, product: String) {
-        val until = library.updates.heldUntil(product)?.takeIf { it.isAfter(Instant.now()) }
+        val until = data.heldUntil(product)?.takeIf { it.isAfter(Instant.now()) }
         val remaining = until?.let { Duration.between(Instant.now(), it) }
         val chosen = remaining?.let { holdIndex(it) } ?: -1
         val builder = frame(Menus.chest(title("Пауза $product")).rows(SMALL_ROWS), SMALL_ROWS)
@@ -361,7 +355,7 @@ class LibraryMenu(
     }
 
     private fun releases(player: MenuViewer, product: String, page: Int) {
-        val snapshot = library.updates.get(product)?.snapshot ?: return home(player)
+        val snapshot = data.snapshot(product) ?: return home(player)
         val rows = snapshot.availableReleases.map { release ->
             val current = release.version == snapshot.currentVersion
             val link = release.changelogUrl
@@ -379,10 +373,10 @@ class LibraryMenu(
 
     private fun history(player: MenuViewer, product: String?, page: Int) {
         val normalized = product?.lowercase()
-        library.updates.historyCount(normalized).thenCompose { total ->
-            library.updates.historyPage(page + 1, normalized).thenApply { total to it }
+        data.historyCount(normalized).thenCompose { total ->
+            data.historyPage(page + 1, normalized).thenApply { total to it }
         }.whenComplete { result, error ->
-            host.sync {
+            sync {
                 if (!player.online) return@sync
                 val (total, entries) = result ?: (0 to emptyList())
                 val back: (MenuViewer) -> Unit = if (product == null) { who -> home(who) } else { who -> card(who, product) }
@@ -398,8 +392,8 @@ class LibraryMenu(
     }
 
     private fun backups(player: MenuViewer, page: Int) {
-        library.updates.backups().whenComplete { all, error ->
-            host.sync {
+        data.backups().whenComplete { all, error ->
+            sync {
                 if (!player.online) return@sync
                 val rows = if (error != null) {
                     emptyList()
@@ -453,7 +447,7 @@ class LibraryMenu(
     }
 
     private fun journalRows(level: String?, back: (MenuViewer) -> Unit): List<Row> =
-        library.journalGroups(level, JOURNAL_HOURS, JOURNAL_LIMIT).map { group ->
+        data.journalGroups(level, JOURNAL_HOURS, JOURNAL_LIMIT).map { group ->
             Row(
                 journalItem(group),
                 goClick { who, click ->
@@ -468,7 +462,7 @@ class LibraryMenu(
 
     private fun chat(player: MenuViewer, command: String) {
         player.close()
-        player.runCommand(command)
+        runCommand(player, command)
     }
 
     private fun journalItem(group: JournalGroup): ItemSpec {
@@ -489,7 +483,7 @@ class LibraryMenu(
         val all = snapshots()
         val automatic = all.count { it.automaticDownload }
         val everyoneAuto = all.isNotEmpty() && automatic == all.size
-        val untils = all.mapNotNull { library.updates.heldUntil(it.product) }.filter { it.isAfter(Instant.now()) }
+        val untils = all.mapNotNull { data.heldUntil(it.product) }.filter { it.isAfter(Instant.now()) }
         val longest = untils.maxOrNull()?.let { Duration.between(Instant.now(), it) }
         val pauseChoices = listOf("нет паузы") + HOLDS.take(CYCLE_HOLDS).map { "на ${it.first}" }
         val pauseSelected = longest?.let { span ->
@@ -573,7 +567,7 @@ class LibraryMenu(
             builder.button(
                 10 + index,
                 icon(texture, material, label, Style.lore(listOf(description), listOf("Команда" to "/$command"), Style.left("выполнить"))),
-                go { who -> who.close(); who.runCommand(command) },
+                go { who -> who.close(); runCommand(who, command) },
             )
         }
         builder.button(
@@ -589,7 +583,7 @@ class LibraryMenu(
 
     /** One journal event with its text, stack trace, repeats and facts; [back] returns to the list it was opened from. */
     private fun journalEvent(player: MenuViewer, id: String, back: (MenuViewer) -> Unit) {
-        val detail = library.journalDetail(id)
+        val detail = data.journalDetail(id)
         if (detail == null) {
             tell(player, ChatTone.INFO, "Это событие уже вышло из журнала.")
             return back(player)
@@ -612,7 +606,7 @@ class LibraryMenu(
             builder.button(
                 20,
                 icon(Icons.PROBLEMS, "BOOK", "Текст ошибки", lore, danger = true),
-                go { who -> who.close(); who.runCommand("pn events full $id") },
+                go { who -> who.close(); runCommand(who, "pn events full $id") },
             )
         }
         val moments = detail.times.map { Instant.ofEpochMilli(it) }
@@ -637,7 +631,7 @@ class LibraryMenu(
                 Icons.CHECK, "COMPASS", "Показать в чате",
                 Style.lore(listOf("То же самое, что команда /pn events view."), emptyList(), Style.left("открыть в чате")),
             ),
-            go { who -> who.close(); who.runCommand("pn events view $id") },
+            go { who -> who.close(); runCommand(who, "pn events view $id") },
         )
         builder.button(DETAIL_BACK, backItem(), go { back(it) })
         show(player, builder.build())
@@ -645,7 +639,7 @@ class LibraryMenu(
 
     /** Every time a journal event happened, newest first, in the configured time zone. */
     private fun journalTimes(player: MenuViewer, id: String, page: Int, back: (MenuViewer) -> Unit) {
-        val detail = library.journalDetail(id)
+        val detail = data.journalDetail(id)
         if (detail == null) {
             tell(player, ChatTone.INFO, "Это событие уже вышло из журнала.")
             return back(player)
@@ -664,7 +658,7 @@ class LibraryMenu(
         builder.slot(4, historyItem(entry, full = true))
         entry.changes.take(CHANGE_BUTTONS).forEachIndexed { index, change ->
             val product = change.product.value
-            val known = library.updates.get(product) != null
+            val known = data.snapshot(product) != null
             val lore = Style.lore(
                 listOf("Версия изменилась."),
                 listOf("Было" to "${change.from}", "Стало" to "${change.to}"),
@@ -683,7 +677,7 @@ class LibraryMenu(
     private fun tasks(player: MenuViewer, period: TaskPeriod, state: TaskState, page: Int) {
         val nextPeriod = TaskPeriod.values()[(period.ordinal + 1) % TaskPeriod.values().size]
         val nextState = TaskState.values()[(state.ordinal + 1) % TaskState.values().size]
-        val all = library.taskSnapshots()
+        val all = data.tasks()
         val inPeriod = all.filter(period::keep)
         val rows = inPeriod.filter(state::keep).sortedByDescending { TaskLabels.activity(it) }.map { task ->
             Row(taskItem(task), go { who -> taskDetail(who, task.id.value) { tasks(it, period, state, page) } })
@@ -737,7 +731,7 @@ class LibraryMenu(
 
     /** One task: what it is for, who owns it, how it runs, when; waiting tasks can be started, active ones stopped. */
     private fun taskDetail(player: MenuViewer, id: String, back: (MenuViewer) -> Unit) {
-        val task = library.taskSnapshots().firstOrNull { it.id.value == id }
+        val task = data.tasks().firstOrNull { it.id.value == id }
         if (task == null) {
             tell(player, ChatTone.INFO, "Эта задача уже исчезла из списка.")
             return back(player)
@@ -805,7 +799,7 @@ class LibraryMenu(
                 ),
                 go { who ->
                     allowed(who, TASKS) {
-                        when (library.runTaskNow(task.id.value)) {
+                        when (data.runTask(task.id.value)) {
                             TaskControl.DONE -> tell(who, ChatTone.SUCCESS, "Задача запущена.")
                             TaskControl.FORBIDDEN -> tell(who, ChatTone.FAILURE, "Плагин не разрешает запускать эту задачу вручную.")
                             TaskControl.UNAVAILABLE -> tell(who, ChatTone.INFO, "Сейчас запустить нельзя: задача не ждёт срока.")
@@ -834,7 +828,7 @@ class LibraryMenu(
                     ),
                     go { who ->
                         allowed(who, TASKS) {
-                            when (library.cancelTask(task.id.value)) {
+                            when (data.cancelTask(task.id.value)) {
                                 TaskControl.DONE -> tell(who, ChatTone.SUCCESS, "Задача остановлена.")
                                 TaskControl.FORBIDDEN -> tell(who, ChatTone.FAILURE, "Плагин не разрешает останавливать эту задачу.")
                                 TaskControl.UNAVAILABLE -> tell(who, ChatTone.INFO, "Задача уже не работает.")
@@ -859,11 +853,11 @@ class LibraryMenu(
 
     // --- plugins that own things ---------------------------------------------------------------------------------
 
-    /** The plugin whose class loader loaded [type], or `null` for the server and library classes. */
-    private fun pluginOf(type: Class<*>?): OwnerInfo? = host.ownerOf(type)
+    /** What the event called [name] says about itself, or null when it is unknown. */
+    private fun aboutOf(name: String): EventAbout? = data.eventAbout(name)
 
     /** `Name 1.2.3` for a plugin, or the plain [name] when the server does not know it. */
-    private fun ownerLine(name: String): String = host.ownerNamed(name)?.let { versioned(it) } ?: name
+    private fun ownerLine(name: String): String = data.ownerNamed(name)?.let { versioned(it) } ?: name
 
     private fun versioned(owner: OwnerInfo): String = listOfNotNull(owner.name, owner.version).joinToString(" ")
 
@@ -881,8 +875,6 @@ class LibraryMenu(
         wrap(text).mapIndexed { index, line -> (if (index == 0) label else "") to line }
 
     // --- plugin events (the event bus) ---------------------------------------------------------------------------
-
-    private val bus get() = library.events.inspector
 
     /** The servers of the network as the proxy last described them; a click opens one server. */
     private fun network(player: MenuViewer, page: Int) {
@@ -973,7 +965,7 @@ class LibraryMenu(
             products.forEach { product ->
                 val label = product?.let { "${state.server} · $it" } ?: state.server
                 val error = RemoteControl.send(state.server, action, product, player.name) { result ->
-                    host.sync {
+                    sync {
                         if (player.online) tell(player, if (result.ok) ChatTone.SUCCESS else ChatTone.FAILURE, "$label: ${result.text}")
                     }
                 }
@@ -1013,12 +1005,12 @@ class LibraryMenu(
 
     /** The start page of the plugin events: what they are, the counters and the way to every view. */
     private fun busHome(player: MenuViewer) {
-        val events = bus.events()
-        val listeners = bus.listeners()
+        val events = data.events()
+        val listeners = data.listeners()
         val today = LocalDate.now(DisplayZone.zone)
-        val calls = bus.history().filter { it.date == today }.sumOf { it.calls }
+        val calls = data.eventHistory(null).filter { it.date == today }.sumOf { it.calls }
         val failures = listeners.sumOf { it.failures }
-        val traced = bus.tracedEvents().size
+        val traced = data.tracedEvents().size
         val builder = frame(Menus.chest(title("События плагинов")).rows(HOME_ROWS), HOME_ROWS)
         builder.slot(
             4,
@@ -1081,7 +1073,7 @@ class LibraryMenu(
 
     private fun busEvents(player: MenuViewer, filter: BusFilter, page: Int) {
         val next = BusFilter.values()[(filter.ordinal + 1) % BusFilter.values().size]
-        val rows = bus.events().filter(filter.keep).sortedWith(compareByDescending<EventInfo> { it.lastCalledAt }.thenByDescending { it.calls }).map { info ->
+        val rows = data.events().filter(filter.keep).sortedWith(compareByDescending<EventInfo> { it.lastCalledAt }.thenByDescending { it.calls }).map { info ->
             Row(
                 eventItem(info),
                 goClick { who, click ->
@@ -1108,10 +1100,10 @@ class LibraryMenu(
     }
 
     private fun eventItem(info: EventInfo): ItemSpec {
-        val recording = info.eventType in bus.tracedEvents()
-        val type = bus.eventType(info.eventType)
-        val owner = pluginOf(type)
-        val purpose = type?.getAnnotation(EventDescription::class.java)?.purpose?.takeIf { it.isNotBlank() }?.let { wrap(it, limit = 3) }.orEmpty()
+        val recording = info.eventType in data.tracedEvents()
+        val about = aboutOf(info.eventType)
+        val owner = about?.owner
+        val purpose = about?.purpose?.takeIf { it.isNotBlank() }?.let { wrap(it, limit = 3) }.orEmpty()
         val parameters = buildList {
             add("Плагин" to (owner?.let { versioned(it) } ?: "сервер или библиотека"))
             add("Слушателей" to "${info.listeners}")
@@ -1127,22 +1119,21 @@ class LibraryMenu(
 
     /** One event: its counters, the recording switch and the ways to its listeners, days and recorded calls. */
     private fun busEvent(player: MenuViewer, name: String, back: (MenuViewer) -> Unit) {
-        val info = bus.events().firstOrNull { it.eventType == name }
+        val info = data.events().firstOrNull { it.eventType == name }
         if (info == null) {
             tell(player, ChatTone.INFO, "Такого события больше нет.")
             return back(player)
         }
-        val recording = name in bus.tracedEvents()
-        val type = bus.eventType(name)
-        val about = type?.getAnnotation(EventDescription::class.java)
+        val recording = name in data.tracedEvents()
+        val about = aboutOf(name)
         val builder = frame(Menus.chest(title(shortName(name))).rows(DETAIL_ROWS), DETAIL_ROWS)
         val parameters = buildList {
-            addAll(ownerParameters(pluginOf(type)))
+            addAll(ownerParameters(about?.owner))
             add("Слушателей" to "${info.listeners}")
             add("Вызовов" to "${info.calls}")
             add("Отказов" to "${info.denied}")
             add("Последний вызов" to (info.lastCalledAt?.let { "${stamp(it)}, ${ago(it)}" } ?: "с запуска не было"))
-            val days = bus.history(name).map { it.date }
+            val days = data.eventHistory(name).map { it.date }
             val today = LocalDate.now(DisplayZone.zone)
             if (days.isNotEmpty()) {
                 add("Первый день" to dayTitle(days.min(), today))
@@ -1178,8 +1169,7 @@ class LibraryMenu(
     }
 
     private fun switchTrace(name: String) {
-        val type = bus.eventType(name) ?: return
-        if (name in bus.tracedEvents()) bus.disableTracing(type) else bus.enableTracing(type)
+        data.setTracing(name, name !in data.tracedEvents())
     }
 
     /** What a list of listeners shows: its [title], which listeners to keep, their order and where to go back. */
@@ -1191,7 +1181,7 @@ class LibraryMenu(
     )
 
     private fun busListeners(player: MenuViewer, query: ListenerQuery, page: Int) {
-        val all = bus.listeners().filter(query.keep).let { if (query.order != null) it.sortedWith(query.order) else it }
+        val all = data.listeners().filter(query.keep).let { if (query.order != null) it.sortedWith(query.order) else it }
         val rows = all.map { info ->
             Row(listenerItem(info), go { who -> busEvent(who, info.eventType) { busListeners(it, query, page) } })
         }
@@ -1216,7 +1206,7 @@ class LibraryMenu(
     }
 
     private fun busPlugins(player: MenuViewer, page: Int) {
-        val rows = bus.listeners().groupBy { it.plugin.toString() }.entries.sortedByDescending { it.value.size }.map { (id, group) ->
+        val rows = data.listeners().groupBy { it.plugin.toString() }.entries.sortedByDescending { it.value.size }.map { (id, group) ->
             val failures = group.sumOf { it.failures }
             val parameters = buildList {
                 add("Слушателей" to "${group.size}")
@@ -1240,7 +1230,7 @@ class LibraryMenu(
     private fun busDays(player: MenuViewer, event: String?, page: Int) {
         val back: (MenuViewer) -> Unit = if (event == null) { who -> busHome(who) } else { who -> busEvent(who, event) { busHome(it) } }
         val today = LocalDate.now(DisplayZone.zone)
-        val days = bus.history(event).groupBy { it.date }.entries.sortedByDescending { it.key }
+        val days = data.eventHistory(event).groupBy { it.date }.entries.sortedByDescending { it.key }
         val busiest = days.maxOfOrNull { (_, entries) -> entries.sumOf { it.calls } } ?: 1L
         val rows = days.map { (date, entries) ->
             val total = entries.sumOf { it.calls }
@@ -1256,12 +1246,12 @@ class LibraryMenu(
             Row(icon(null, "PAPER", dayTitle(date, today), Style.lore(emptyList(), parameters, hint)), click)
         }
         val title = if (event == null) "История событий" else "История ${shortName(event)}"
-        val empty = if (bus.historyDays <= 0) "История выключена в коде" else "Вызовов за это время не было"
+        val empty = if (data.eventHistoryDays() <= 0) "История выключена в коде" else "Вызовов за это время не было"
         list(player, title, rows, page, PAGE_SIZE, { who, to -> busDays(who, event, to) }, back, empty)
     }
 
     private fun busDay(player: MenuViewer, date: LocalDate, page: Int, daysPage: Int) {
-        val entries = bus.history().filter { it.date == date }.sortedByDescending { it.calls }
+        val entries = data.eventHistory(null).filter { it.date == date }.sortedByDescending { it.calls }
         val busiest = entries.firstOrNull()?.calls ?: 1L
         val rows = entries.map { day ->
             val parameters = buildList {
@@ -1283,7 +1273,7 @@ class LibraryMenu(
 
     /** Recorded calls, newest first, each with the answer of every listener; clearing sits in the footer. */
     private fun busTraces(player: MenuViewer, event: String?, page: Int) {
-        val all = bus.traces().filter { event == null || it.eventName == event }.reversed()
+        val all = data.traces().filter { event == null || it.eventName == event }.reversed()
         val rows = all.map { trace -> Row(traceItem(trace), go { who -> busTrace(who, trace, 0) { busTraces(it, event, page) } }) }
         val back: (MenuViewer) -> Unit = if (event == null) { who -> busHome(who) } else { who -> busEvent(who, event) { busHome(it) } }
         val clear = icon(
@@ -1293,7 +1283,7 @@ class LibraryMenu(
         list(
             player, "Записанные вызовы", rows, page, PAGE_SIZE, { who, to -> busTraces(who, event, to) }, back,
             "Пока ничего не записано. Включите запись на странице события.",
-            extra = { if (all.isNotEmpty()) it.button(FILTER, clear, go { who -> bus.clearTraces(); busTraces(who, event, 0) }) },
+            extra = { if (all.isNotEmpty()) it.button(FILTER, clear, go { who -> data.clearTraces(); busTraces(who, event, 0) }) },
         )
     }
 
@@ -1346,9 +1336,9 @@ class LibraryMenu(
     }
 
     private fun busExport(player: MenuViewer) {
-        val file = bus.exportHistory(false)
+        val file = data.exportEventHistory(false)
         if (file == null) tell(player, ChatTone.FAILURE, "Выгрузка недоступна.", "История выключена или файл не записать.")
-        else tell(player, ChatTone.SUCCESS, "Счётчики записаны.", file.toString())
+        else tell(player, ChatTone.SUCCESS, "Счётчики записаны.", file)
     }
 
     private fun duration(nanos: Long): String =
@@ -1424,8 +1414,8 @@ class LibraryMenu(
     private fun checkAll(player: MenuViewer) {
         player.close()
         tell(player, ChatTone.PROGRESS, "Проверяю обновления…")
-        library.updates.checkNow(player.actor).whenComplete { _, error ->
-            host.sync {
+        data.checkAll(player.actor).whenComplete { _, error ->
+            sync {
                 if (!player.online) return@sync
                 if (error != null) return@sync tell(player, ChatTone.FAILURE, "Не удалось проверить обновления.", reason(error))
                 val snapshots = snapshots()
@@ -1439,14 +1429,14 @@ class LibraryMenu(
     private fun checkOne(player: MenuViewer, product: String) {
         player.close()
         tell(player, ChatTone.PROGRESS, "Проверяю обновления $product…")
-        library.updates.get(product)?.checkNow()
-        host.later(CHECK_REOPEN_MILLIS) { if (player.online) card(player, product) }
+        data.checkOne(product, player.actor)
+        later(CHECK_REOPEN_MILLIS) { if (player.online) card(player, product) }
     }
 
     private fun toggleAuto(player: MenuViewer, snapshot: UpdateSnapshot) {
         val enable = !snapshot.automaticDownload
-        library.updates.setAutomaticDownload(snapshot.product, enable, player.actor).whenComplete { _, error ->
-            host.sync {
+        data.setAutomatic(snapshot.product, enable, player.actor).whenComplete { _, error ->
+            sync {
                 if (error != null) tell(player, ChatTone.FAILURE, "Не удалось изменить автозагрузку.", reason(error))
                 else tell(player, ChatTone.SUCCESS, "Автозагрузка ${snapshot.product}: ${if (enable) "включена" else "выключена"}.")
                 card(player, snapshot.product)
@@ -1455,8 +1445,8 @@ class LibraryMenu(
     }
 
     private fun chooseChannel(player: MenuViewer, product: String, channel: UpdateChannel?) {
-        library.updates.setChannel(product, channel, player.actor).whenComplete { _, error ->
-            host.sync {
+        data.setChannel(product, channel, player.actor).whenComplete { _, error ->
+            sync {
                 if (error != null) tell(player, ChatTone.FAILURE, "Не удалось изменить канал.", reason(error))
                 else tell(player, ChatTone.SUCCESS, "Канал $product: ${channel?.name?.lowercase() ?: "как указал плагин"}.")
                 card(player, product)
@@ -1465,8 +1455,8 @@ class LibraryMenu(
     }
 
     private fun chooseHold(player: MenuViewer, product: String, duration: Duration?) {
-        library.updates.setHeld(product, duration, player.actor).whenComplete { _, error ->
-            host.sync {
+        data.setHeld(product, duration, player.actor).whenComplete { _, error ->
+            sync {
                 if (error != null) tell(player, ChatTone.FAILURE, "Не удалось изменить паузу.", reason(error))
                 else tell(player, ChatTone.SUCCESS, if (duration == null) "Пауза $product снята." else "Обновления $product приостановлены.")
                 card(player, product)
@@ -1478,7 +1468,7 @@ class LibraryMenu(
     private fun everyone(player: MenuViewer, done: String, change: (UpdateSnapshot) -> java.util.concurrent.CompletionStage<*>) {
         val stages = snapshots().map { change(it).toCompletableFuture() }
         java.util.concurrent.CompletableFuture.allOf(*stages.toTypedArray()).whenComplete { _, error ->
-            host.sync {
+            sync {
                 if (error != null) tell(player, ChatTone.FAILURE, "Не всё удалось изменить.", reason(error))
                 else tell(player, ChatTone.SUCCESS, done)
                 settings(player)
@@ -1487,15 +1477,15 @@ class LibraryMenu(
     }
 
     private fun setAutomatic(snapshot: UpdateSnapshot, enable: Boolean, player: MenuViewer) =
-        library.updates.setAutomaticDownload(snapshot.product, enable, player.actor)
+        data.setAutomatic(snapshot.product, enable, player.actor)
 
     private fun hold(snapshot: UpdateSnapshot, duration: Duration?, player: MenuViewer) =
-        library.updates.setHeld(snapshot.product, duration, player.actor)
+        data.setHeld(snapshot.product, duration, player.actor)
 
     private fun rollback(player: MenuViewer, backup: UpdateBackup, restoreConfigurations: Boolean) {
         player.close()
-        library.updates.rollback(backup.id, restoreConfigurations, player.actor).whenComplete { _, error ->
-            host.sync {
+        data.rollback(backup.id, restoreConfigurations, player.actor).whenComplete { _, error ->
+            sync {
                 if (!player.online) return@sync
                 if (error != null) tell(player, ChatTone.FAILURE, "Не удалось подготовить откат.", reason(error))
                 else tell(player, ChatTone.SUCCESS, "Резервный набор подготовлен.", "Полностью перезапустите сервер, чтобы применить его.")
@@ -1575,34 +1565,65 @@ class LibraryMenu(
         show(player, builder.build())
     }
 
-    private fun go(action: (MenuViewer) -> Unit) = MenuClickHandler { action(it.player) }
+    private fun go(action: (MenuViewer) -> Unit) = MenuClickHandler { click -> away(click.player) { action(click.player) } }
 
     /** A handler that also learns which click was used: left, right or shift-left. */
-    private fun goClick(action: (MenuViewer, ClickType) -> Unit) = MenuClickHandler { action(it.player, it.click) }
+    private fun goClick(action: (MenuViewer, ClickType) -> Unit) = MenuClickHandler { click -> away(click.player) { action(click.player, click.click) } }
+
+    /** Runs [action] where it may wait for the data: here at once, for another server away from the server thread. */
+    private fun away(player: MenuViewer? = null, action: () -> Unit) {
+        if (!remote) return action()
+        host.async {
+            try {
+                action()
+            } catch (error: Exception) {
+                if (player != null) tell(player, ChatTone.FAILURE, "Сервер $remoteName не ответил.", reason(error))
+            }
+        }
+    }
+
+    /** Opens the home page of the server of this menu for [player]. */
+    fun open(player: MenuViewer) = away(player) { home(player) }
+
+    /** Runs [action] on the thread of the screen: the server thread here; for another server the waiting thread keeps going. */
+    private fun sync(action: () -> Unit) = if (remote) away(null, action) else host.sync(action)
+
+    private fun later(delayMillis: Long, action: () -> Unit) = host.later(delayMillis) { away(null, action) }
+
+    /** Runs a chat command: on the server of the menu, with the permissions the viewer holds at home, and prints the answer to the viewer. */
+    private fun runCommand(player: MenuViewer, line: String) {
+        if (!remote) return player.runCommand(line)
+        away(player) {
+            val viewer = ViewerInfo(player.name, MenuPermissions.ALL.filter(player::hasPermission).toSet())
+            val lines = try {
+                data.command(viewer, line)
+            } catch (error: Exception) {
+                listOf(net.kyori.adventure.text.Component.text("Команда не выполнилась: /$line (${error.message ?: error.javaClass.simpleName})"))
+            }
+            player.send(lines)
+        }
+    }
 
     private fun show(player: MenuViewer, menu: Menu) = player.open(menu)
 
-    private fun snapshots(): List<UpdateSnapshot> = library.updates.all().map { it.snapshot }.sortedBy { it.product.lowercase() }
+    private fun snapshots(): List<UpdateSnapshot> = data.snapshots()
 
     private fun connectedCount(): Int {
         val names = snapshots().map { it.product.lowercase() }.toSet()
-        return names.size + library.plugins.all().count { nameOf(it.owner).lowercase() !in names }
+        return names.size + data.plugins().count { it.name.lowercase() !in names }
     }
 
-    private fun nameOf(owner: Any): String = host.owner(owner)?.name ?: owner.javaClass.simpleName
-
     /** Plugins connected to the library that have no update registration: they are listed so none is missing. */
-    private fun unmanaged(known: Set<String>): List<Row> = library.plugins.all()
-        .filter { nameOf(it.owner).lowercase() !in known }
-        .sortedBy { nameOf(it.owner).lowercase() }
-        .map { registration ->
-            val owner = host.owner(registration.owner)
+    private fun unmanaged(known: Set<String>): List<Row> = data.plugins()
+        .filter { it.name.lowercase() !in known }
+        .sortedBy { it.name.lowercase() }
+        .map { plugin ->
             val parameters = buildList {
-                owner?.version?.let { add("Версия" to it) }
-                add("Модулей" to "${registration.all().size}")
+                plugin.version?.let { add("Версия" to it) }
+                add("Модулей" to "${plugin.modules}")
                 add("Обновления" to "плагин не подключён к системе обновлений")
             }
-            Row(icon(Icons.PLUGIN, "PAPER", nameOf(registration.owner), Style.lore(emptyList(), parameters)))
+            Row(icon(Icons.PLUGIN, "PAPER", plugin.name, Style.lore(emptyList(), parameters)))
         }
 
     private fun plate(snapshot: UpdateSnapshot, withHint: Boolean = true, hints: Boolean = false): ItemSpec {
@@ -1616,7 +1637,7 @@ class LibraryMenu(
         }
         val problem = snapshot.state in CatalogLabels.PROBLEMS
         val blockers = if (snapshot.state == UpdateState.BLOCKED) {
-            library.updates.currentPlan().orElse(null)?.blockers.orEmpty().take(BLOCKER_LINES).map { UpdateStatusMessages.blocker(it) }
+            data.plan()?.blockers.orEmpty().take(BLOCKER_LINES)
         } else {
             emptyList()
         }

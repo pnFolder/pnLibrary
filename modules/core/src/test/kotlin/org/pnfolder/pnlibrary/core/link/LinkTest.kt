@@ -4,6 +4,7 @@ import org.junit.jupiter.api.Assertions.assertEquals
 import org.junit.jupiter.api.Assertions.assertFalse
 import org.junit.jupiter.api.Assertions.assertNotNull
 import org.junit.jupiter.api.Assertions.assertNull
+import org.junit.jupiter.api.Assertions.assertThrows
 import org.junit.jupiter.api.Assertions.assertTrue
 import org.junit.jupiter.api.Test
 import org.junit.jupiter.api.io.TempDir
@@ -134,57 +135,91 @@ class LinkTest {
         assertEquals("ok", got?.text)
     }
 
-    private val view = ViewRequest(
-        java.util.UUID.randomUUID(), "games", "", ViewAction.CLICK, "Admin", setOf("pnlibrary.admin"), 13, "LEFT", Instant.now(),
-    )
+    private val call = DataCall(java.util.UUID.randomUUID(), "games", "", "Admin", "snapshots", "{\"product\":\"shop\"}", Instant.now())
 
     @Test
-    fun `a viewer step and a page of a menu survive the trip and reject forgeries`() {
-        val step = LinkCodec.decodeView(LinkCodec.encodeView(view, key), key)!!
-        assertEquals(13, step.slot)
-        assertEquals(ViewAction.CLICK, step.action)
-        assertEquals(setOf("pnlibrary.admin"), step.permissions)
-        assertNull(LinkCodec.decodeView(LinkCodec.encodeView(view, key), ByteArray(32) { 7 }))
-
-        val items = mapOf(0 to ByteArray(300) { 1 }, 13 to ByteArray(2_000) { it.toByte() })
-        val frame = ViewFrame(view.session, "lobby", "Главная", 5, items, listOf("{\"text\":\"ok\"}"), false, Instant.now())
-        val message = LinkCodec.encodeFrame(frame, key)!!
-        val page = LinkCodec.decodeFrame(message, key)!!
-        assertEquals("Главная", page.title)
-        assertEquals(5, page.rows)
-        assertTrue(items[13]!!.contentEquals(page.items.getValue(13)))
-        assertEquals(frame.notices, page.notices)
-        assertNull(LinkCodec.decodeFrame(message, ByteArray(32) { 7 }))
-        assertNull(LinkCodec.decodeView(message, key))
+    fun `a question survives the trip and rejects forgeries`() {
+        val decoded = LinkCodec.decodeCall(LinkCodec.encodeCall(call, key), key)!!
+        assertEquals("snapshots", decoded.method)
+        assertEquals("{\"product\":\"shop\"}", decoded.args)
+        assertNull(LinkCodec.decodeCall(LinkCodec.encodeCall(call, key), ByteArray(32) { 7 }))
+        assertNull(LinkCodec.decodeChunk(LinkCodec.encodeCall(call, key), key))
     }
 
     @Test
-    fun `a page that cannot fit one plugin message is refused`() {
+    fun `a long answer travels in pieces and comes back whole`() {
         val random = java.util.Random(1)
-        val big = (0 until 40).associateWith { ByteArray(5_000).also(random::nextBytes) }
+        val text = (0 until 120_000).map { ('a' + random.nextInt(26)) }.joinToString("")
+        val pieces = DataChunks.split(call.id, "lobby", true, text, key)!!
 
-        assertNull(LinkCodec.encodeFrame(ViewFrame(view.session, "lobby", "x", 5, big, emptyList(), false, Instant.now()), key))
+        assertTrue(pieces.size > 1)
+        assertTrue(pieces.all { it.size <= LinkCodec.MAX_FRAME_BYTES })
+        val chunks = pieces.map { LinkCodec.decodeChunk(it, key)!! }
+        assertEquals(text, DataChunks.join(chunks.sortedBy { it.index }.map { it.bytes }))
+        assertNull(LinkCodec.decodeChunk(pieces.first(), ByteArray(32) { 7 }))
     }
 
     @Test
-    fun `the proxy passes a viewer step to its server and a page back to the viewer`() {
+    fun `the asker gets the answer when the last piece arrives and an error when the server refuses`() {
+        val asked = mutableListOf<DataCall>()
+        LinkHub.key = key
+        LinkHub.uplink = { bytes -> asked.add(LinkCodec.decodeCall(bytes, key)!!); true }
+        try {
+            val client = DataClient()
+            val good = client.call("games", "Admin", "version", "{}")
+            val bad = client.call("games", "Admin", "plan", "{}")
+            assertFalse(good.isDone)
+
+            val text = "x".repeat(100_000)
+            val pieces = DataChunks.split(asked[0].id, "lobby", true, text, key)!!.map { LinkCodec.decodeChunk(it, key)!! }
+            pieces.dropLast(1).forEach(client::accept)
+            assertFalse(good.isDone)
+            client.accept(pieces.last())
+            assertEquals(text, good.get())
+
+            DataChunks.split(asked[1].id, "lobby", false, "нет доступа", key)!!.forEach { client.accept(LinkCodec.decodeChunk(it, key)!!) }
+            assertTrue(bad.isCompletedExceptionally)
+            assertEquals("нет доступа", assertThrows(java.util.concurrent.ExecutionException::class.java) { bad.get() }.cause?.message)
+        } finally {
+            LinkHub.uplink = null
+            LinkHub.key = null
+        }
+    }
+
+    @Test
+    fun `the proxy passes a question on, takes the answer back and tells the asker when the server is gone`() {
         val sent = mutableListOf<Pair<String, ByteArray>>()
         val receiver = LinkReceiver(key, LinkRegistry(), transport = LinkTransport { server, bytes -> sent.add(server to bytes); server != "gone" })
 
-        assertTrue(receiver.receive("lobby", true, LinkCodec.encodeView(view, key)))
+        assertTrue(receiver.receive("lobby", true, LinkCodec.encodeCall(call, key)))
         assertEquals("games", sent.single().first)
-        assertEquals("lobby", LinkCodec.decodeView(sent.single().second, key)!!.origin)
+        assertEquals("lobby", LinkCodec.decodeCall(sent.single().second, key)!!.origin)
 
         sent.clear()
-        val frame = LinkCodec.encodeFrame(ViewFrame(view.session, "lobby", "t", 1, emptyMap(), emptyList(), false, Instant.now()), key)!!
-        assertTrue(receiver.receive("games", true, frame))
+        val answer = DataChunks.split(call.id, "lobby", true, "[]", key)!!.single()
+        assertTrue(receiver.receive("games", true, answer))
         assertEquals("lobby", sent.single().first)
 
         sent.clear()
-        receiver.receive("lobby", true, LinkCodec.encodeView(view.copy(target = "gone"), key))
-        val failure = LinkCodec.decodeFrame(sent.last().second, key)!!
+        receiver.receive("lobby", true, LinkCodec.encodeCall(call.copy(target = "gone"), key))
+        val refused = LinkCodec.decodeChunk(sent.last().second, key)!!
         assertEquals("lobby", sent.last().first)
-        assertTrue(failure.closed)
-        assertFalse(receiver.receive("lobby", false, LinkCodec.encodeView(view, key)))
+        assertFalse(refused.ok)
+        assertFalse(receiver.receive("lobby", false, LinkCodec.encodeCall(call, key)))
+    }
+
+    @Test
+    fun `the proxy answers a question for itself through its handler`() {
+        val sent = mutableListOf<Pair<String, ByteArray>>()
+        val receiver = LinkReceiver(
+            key, LinkRegistry(), transport = LinkTransport { server, bytes -> sent.add(server to bytes); true },
+            data = DataHandler { question, reply -> reply(true, "answer to ${question.method}") },
+        )
+
+        receiver.receive("lobby", true, LinkCodec.encodeCall(call.copy(target = LinkNames.PROXY), key))
+
+        val chunk = LinkCodec.decodeChunk(sent.single().second, key)!!
+        assertEquals("lobby", sent.single().first)
+        assertEquals("answer to snapshots", DataChunks.join(listOf(chunk.bytes)))
     }
 }

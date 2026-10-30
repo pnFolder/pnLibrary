@@ -1,67 +1,53 @@
 package org.pnfolder.pnlibrary.core.menu
 
+import net.kyori.adventure.text.Component
 import org.pnfolder.pnlibrary.api.runtime.PnLibrary
 import org.pnfolder.pnlibrary.core.commands.ProxyCommandNames
-import org.pnfolder.pnlibrary.core.link.LinkTransport
+import java.util.concurrent.Executors
 
-/** The way the proxy menu runs chat commands, kept apart so the command package does not depend on the menu. */
+/** The way a proxy runs a chat command for a viewer on another server, kept apart so the command package does not depend on the menu. */
 object ProxyMenuCommands {
     /** Runs a chat command for a viewer and returns what it printed; set by the runtime on a proxy. */
     @Volatile
-    var runner: ((MenuViewer, String) -> List<net.kyori.adventure.text.Component>)? = null
+    var runner: ((ViewerInfo, String) -> List<Component>)? = null
+}
+
+/** The permissions the library checks in its menu; the viewer's server tells the server it asks which of them the viewer holds. */
+object MenuPermissions {
+    /** Every permission the menu uses. */
+    val ALL = listOf(
+        "pnlibrary.admin", "pnlibrary.servers", "pnlibrary.updates.view", "pnlibrary.updates.download", "pnlibrary.updates.rollback",
+        "pnlibrary.updates.settings", "pnlibrary.updates.restart", "pnlibrary.events.view", "pnlibrary.events.bus", "pnlibrary.tasks",
+        "pnlibrary.debug", "pnlibrary.currency.list",
+    )
 }
 
 /**
- * The menu of a proxy.
+ * The questions about a proxy's library that game servers ask.
  *
- * A proxy has no inventories, so it never shows the menu to anyone itself. A player on a game server opens it from the
- * network menu: the proxy draws the pages with the same [LibraryMenu] as every server and sends them over the link.
- * The chat commands its buttons run go through [ProxyMenuCommands].
+ * A proxy has no inventories and builds no menu. The server a player stands on builds the menu of the proxy from these
+ * answers and asks the proxy to run the commands behind its buttons.
  */
 object ProxyMenu {
     /**
-     * Makes the host that answers viewers of the proxy's menu.
+     * Makes the handler that answers game servers.
      *
      * @param library the proxy's library
-     * @param key the shared link key
-     * @param transport sends to game servers by name
-     * @param later runs an action on the proxy after a delay in milliseconds
      * @param describe the plugin behind a registration owner, or null
-     * @param warn reports a failure of a click
      */
-    fun host(
-        library: PnLibrary,
-        key: ByteArray,
-        transport: LinkTransport,
-        later: (Long, () -> Unit) -> Unit,
-        describe: (Any?) -> OwnerInfo?,
-        warn: (String) -> Unit,
-    ): RemoteMenuHost {
-        val menu = LibraryMenu(library, ProxyMenuHost(later, describe))
-        return RemoteMenuHost(
-            key,
-            home = menu::home,
-            send = { bytes, origin -> transport.send(origin, bytes) },
-            run = { viewer, command -> ProxyMenuCommands.runner?.invoke(viewer, command).orEmpty() },
-            rewrite = ProxyCommandNames::rewrite,
-            warn = warn,
-        )
-    }
+    fun server(library: PnLibrary, describe: (Any?) -> OwnerInfo?): MenuDataServer {
+        val directory = object : PluginDirectory {
+            override fun owner(owner: Any?): OwnerInfo? = describe(owner)
 
-    private class ProxyMenuHost(
-        private val later: (Long, () -> Unit) -> Unit,
-        private val describe: (Any?) -> OwnerInfo?,
-    ) : MenuHost {
-        override fun sync(action: () -> Unit) = action()
+            override fun ownerNamed(name: String): OwnerInfo? =
+                library.plugins.all().mapNotNull { describe(it.owner) }.firstOrNull { it.name.equals(name, ignoreCase = true) }
 
-        override fun later(delayMillis: Long, action: () -> Unit) = later.invoke(delayMillis, action)
-
-        override fun owner(owner: Any?): OwnerInfo? = describe(owner)
-
-        override fun ownerNamed(name: String): OwnerInfo? = null
-
-        override fun ownerOf(type: Class<*>?): OwnerInfo? = null
-
-        override fun openRemote(viewer: MenuViewer, target: String): Boolean = false
+            override fun ownerOf(type: Class<*>?): OwnerInfo? = null
+        }
+        val run = { viewer: ViewerInfo, line: String ->
+            ProxyMenuCommands.runner?.invoke(viewer, line).orEmpty().map(ProxyCommandNames::rewrite)
+        }
+        val executor = Executors.newCachedThreadPool { task -> Thread(task, "pnlibrary-menu-data").apply { isDaemon = true } }
+        return MenuDataServer(LocalMenuData(library, directory, run), executor)
     }
 }

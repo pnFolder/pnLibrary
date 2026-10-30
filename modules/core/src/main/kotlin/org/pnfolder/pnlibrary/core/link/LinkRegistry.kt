@@ -46,6 +46,9 @@ object LinkHub {
     @Volatile
     var transport: LinkTransport? = null
 
+    /** The questions asked of other servers from here and not yet answered. */
+    val data = DataClient()
+
     /** The answers awaited for the requests made from here. */
     val replies = RemoteReplies()
 

@@ -64,7 +64,9 @@ internal object PnLibraryLauncher {
             if (platform.identity.isProxy) {
                 val control = ProxyControlCommand(created) { command, context -> created.dispatchCommand(command, context) }
                 control.register()
-                ProxyMenuCommands.runner = { viewer, line -> control.run(viewer.id, viewer.name, viewer::hasPermission, line) }
+                ProxyMenuCommands.runner = { viewer, line ->
+                    control.run(java.util.UUID.nameUUIDFromBytes(viewer.name.toByteArray()), viewer.name, viewer.permissions::contains, line)
+                }
             }
             created
         } catch (error: Throwable) {

@@ -6,16 +6,14 @@ import org.bukkit.plugin.java.JavaPlugin
 import org.bukkit.plugin.messaging.PluginMessageListener
 import org.bukkit.scheduler.BukkitTask
 import org.pnfolder.pnlibrary.api.runtime.PnLibrary
-import org.pnfolder.pnlibrary.bukkit.commands.BukkitMenuAdapter
-import org.pnfolder.pnlibrary.bukkit.commands.RemoteMenuClient
 import org.pnfolder.pnlibrary.bukkit.commands.RemoteMenus
 import org.pnfolder.pnlibrary.common.lang.runCatchingNonFatal
+import org.pnfolder.pnlibrary.core.link.DataChunks
 import org.pnfolder.pnlibrary.core.link.LinkCodec
 import org.pnfolder.pnlibrary.core.link.LinkHub
 import org.pnfolder.pnlibrary.core.link.LinkReports
 import org.pnfolder.pnlibrary.core.link.LinkSecret
 import org.pnfolder.pnlibrary.core.link.RemoteExecutor
-import org.pnfolder.pnlibrary.core.menu.RemoteMenuHost
 import java.time.Instant
 
 /**
@@ -38,24 +36,12 @@ internal class BukkitLinkReporter(private val plugin: JavaPlugin, private val li
             carrier?.sendPluginMessage(plugin, LinkCodec.CHANNEL, bytes)
             carrier != null
         }
-        RemoteMenus.host = RemoteMenuHost(
-            key,
-            home = { RemoteMenus.home?.invoke(it) },
-            send = { bytes, _ -> LinkHub.uplink?.invoke(bytes) == true },
-            run = RemoteMenus::run,
-            warn = { plugin.logger.warning(it) },
-        )
-        RemoteMenus.client = RemoteMenuClient(plugin, library, key, BukkitMenuAdapter(plugin, library))
         plugin.server.messenger.registerIncomingPluginChannel(plugin, LinkCodec.CHANNEL, this)
         plugin.server.messenger.registerOutgoingPluginChannel(plugin, LinkCodec.CHANNEL)
         task = plugin.server.scheduler.runTaskTimer(plugin, Runnable { report(key) }, FIRST_DELAY_TICKS, PERIOD_TICKS)
     }
 
     fun stop() {
-        RemoteMenus.host?.stop()
-        RemoteMenus.client?.stop()
-        RemoteMenus.host = null
-        RemoteMenus.client = null
         LinkHub.uplink = null
         LinkHub.key = null
         task?.cancel()
@@ -78,15 +64,26 @@ internal class BukkitLinkReporter(private val plugin: JavaPlugin, private val li
             }
             return
         }
-        LinkCodec.decodeView(message, key)?.let { request ->
-            RemoteMenus.host?.handle(request)
+        LinkCodec.decodeCall(message, key)?.let { call ->
+            val data = RemoteMenus.data
+            if (data == null) answer(player, call.id, call.origin, false, "Меню этого сервера не готово.", key)
+            else data.handle(call) { ok, text -> answer(player, call.id, call.origin, ok, text, key) }
             return
         }
-        LinkCodec.decodeFrame(message, key)?.let { frame ->
-            RemoteMenus.client?.accept(frame)
+        LinkCodec.decodeChunk(message, key)?.let { chunk ->
+            LinkHub.data.accept(chunk)
             return
         }
         LinkCodec.decodeResult(message, key)?.let { LinkHub.replies.complete(it) }
+    }
+
+    /** Sends the answer to a question back through the proxy; it can be called from any thread. */
+    private fun answer(carrier: Player, id: java.util.UUID, to: String, ok: Boolean, text: String, key: ByteArray) {
+        val pieces = DataChunks.split(id, to, ok, text, key) ?: DataChunks.split(id, to, false, "Ответ слишком большой.", key).orEmpty()
+        plugin.server.scheduler.runTask(plugin, Runnable {
+            val sender = if (carrier.isOnline) carrier else Bukkit.getOnlinePlayers().firstOrNull()
+            pieces.forEach { sender?.sendPluginMessage(plugin, LinkCodec.CHANNEL, it) }
+        })
     }
 
     private fun report(key: ByteArray) {
