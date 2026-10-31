@@ -1,0 +1,753 @@
+<!doctype html>
+<html lang="ru">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>Проверка pnLibrary</title>
+<style>
+:root {
+  --bg: #f6f7f9; --card: #ffffff; --text: #1d2330; --muted: #5d667a; --line: #dfe3ea;
+  --accent: #2f6fed; --ok: #1f9d55; --warn: #b7791f; --bad: #c53030; --code: #eef1f6;
+}
+@media (prefers-color-scheme: dark) {
+  :root { --bg: #11141b; --card: #1a1f2a; --text: #e6e9f0; --muted: #98a1b5; --line: #2b3342; --accent: #6b9bff; --ok: #4ccc85; --warn: #e0a84a; --bad: #ff7b7b; --code: #232a38; }
+}
+* { box-sizing: border-box; }
+body { margin: 0; background: var(--bg); color: var(--text); font: 16px/1.55 system-ui, "Segoe UI", sans-serif; }
+.wrap { max-width: 920px; margin: 0 auto; padding: 0 16px 80px; }
+header.top { position: sticky; top: 0; z-index: 5; background: var(--bg); border-bottom: 1px solid var(--line); padding: 12px 0; }
+header.top .row { display: flex; gap: 12px; align-items: center; flex-wrap: wrap; }
+h1 { font-size: 20px; margin: 0; }
+.bar { flex: 1 1 200px; height: 10px; background: var(--line); border-radius: 6px; overflow: hidden; }
+.bar > i { display: block; height: 100%; width: 0; background: var(--ok); transition: width .2s; }
+.count { color: var(--muted); font-size: 14px; white-space: nowrap; }
+button { font: inherit; font-size: 14px; border: 1px solid var(--line); background: var(--card); color: var(--text); border-radius: 8px; padding: 5px 10px; cursor: pointer; }
+button:hover { border-color: var(--accent); }
+nav.toc { margin: 16px 0; display: flex; flex-wrap: wrap; gap: 6px; }
+nav.toc a { font-size: 14px; padding: 4px 10px; border: 1px solid var(--line); border-radius: 999px; color: var(--text); text-decoration: none; background: var(--card); }
+nav.toc a:hover { border-color: var(--accent); }
+h2 { font-size: 22px; margin: 36px 0 6px; scroll-margin-top: 70px; }
+p.lead { color: var(--muted); margin: 0 0 12px; }
+.item { background: var(--card); border: 1px solid var(--line); border-radius: 12px; margin: 10px 0; }
+.item > summary { list-style: none; cursor: pointer; display: flex; gap: 10px; align-items: flex-start; padding: 12px 14px; }
+.item > summary::-webkit-details-marker { display: none; }
+.item > summary input { margin-top: 5px; width: 18px; height: 18px; flex: none; }
+.item > summary .t { flex: 1; font-weight: 600; }
+.item > summary .arrow { color: var(--muted); transition: transform .15s; }
+.item[open] > summary .arrow { transform: rotate(90deg); }
+.item.done { opacity: .6; }
+.item.done > summary .t { text-decoration: line-through; }
+.body { padding: 0 16px 14px 42px; border-top: 1px solid var(--line); }
+.body h4 { margin: 14px 0 4px; font-size: 13px; text-transform: uppercase; letter-spacing: .04em; color: var(--muted); }
+.body ol, .body ul { margin: 4px 0; padding-left: 22px; }
+.body li { margin: 4px 0; }
+.expect { border-left: 4px solid var(--ok); background: var(--code); padding: 8px 12px; border-radius: 0 8px 8px 0; }
+.fail { border-left: 4px solid var(--bad); background: var(--code); padding: 8px 12px; border-radius: 0 8px 8px 0; }
+.note { border-left: 4px solid var(--warn); background: var(--code); padding: 8px 12px; border-radius: 0 8px 8px 0; margin: 10px 0; }
+code { background: var(--code); padding: 1px 5px; border-radius: 5px; font: 13.5px ui-monospace, Consolas, monospace; }
+.codeblock { position: relative; margin: 8px 0; }
+pre { margin: 0; background: var(--code); padding: 10px 12px; border-radius: 8px; overflow-x: auto; font: 13px/1.5 ui-monospace, Consolas, monospace; }
+.codeblock button { position: absolute; top: 6px; right: 6px; font-size: 12px; padding: 2px 8px; }
+textarea.memo { width: 100%; min-height: 54px; margin-top: 12px; font: inherit; font-size: 14px; background: var(--bg); color: var(--text); border: 1px dashed var(--line); border-radius: 8px; padding: 8px; resize: vertical; }
+table { border-collapse: collapse; width: 100%; font-size: 14px; margin: 8px 0; }
+th, td { border: 1px solid var(--line); padding: 6px 8px; text-align: left; vertical-align: top; }
+th { background: var(--code); }
+.hide-done .item.done { display: none; }
+footer { margin-top: 40px; color: var(--muted); font-size: 14px; }
+@media (max-width: 560px) { .body { padding-left: 16px; } }
+</style>
+</head>
+<body>
+<div class="wrap">
+
+<header class="top">
+  <div class="row">
+    <h1>Проверка pnLibrary</h1>
+    <div class="bar"><i id="bar"></i></div>
+    <span class="count" id="count">0 из 0</span>
+    <button id="toggleDone">Скрыть готовое</button>
+    <button id="openAll">Раскрыть всё</button>
+    <button id="closeAll">Свернуть всё</button>
+    <button id="reset">Сбросить</button>
+  </div>
+</header>
+
+<p class="lead" style="margin-top:16px">
+  Ставь галочку, когда пункт сработал так, как написано в зелёном блоке. Если нет, смотри красный блок и пиши заметку внизу пункта.
+  Галочки и заметки сохраняются в этом браузере сами. Пути: репозиторий
+  <code>C:\Users\lpvan\Documents\Codex\2026-09-17\a\pnFolder\pnLibrary</code>, серверы
+  <code>C:\Users\lpvan\Downloads\Server</code>.
+</p>
+
+<div class="note">
+  <b>Как читать.</b> «Консоль» значит окно сервера, где можно вводить команды без слеша или со слешем. «В игре» значит зайти игроком с правами оператора.
+  Все команды ниже можно копировать кнопкой в углу блока. Команды PowerShell запускай из папки репозитория.
+</div>
+
+<nav class="toc">
+  <a href="#prep">0. Подготовка</a>
+  <a href="#single">1. Один сервер</a>
+  <a href="#selfupdate">2. Обновление pnLibrary</a>
+  <a href="#rollback">3. Откат</a>
+  <a href="#catalog">4. Тестовый каталог плагина</a>
+  <a href="#scenarios">5. Плохие плагины</a>
+  <a href="#network">6. Прокси + сервер</a>
+  <a href="#groups">7. Группы серверов</a>
+  <a href="#events">8. События и API</a>
+  <a href="#diag">9. Диагностика</a>
+  <a href="#stop">10. Остановка</a>
+</nav>
+
+<!-- ============================================================ 0 -->
+<h2 id="prep">0. Подготовка</h2>
+<p class="lead">Без этого дальше идти нельзя: на серверах должна лежать именно свежая сборка.</p>
+
+<details class="item" data-id="prep-check"><summary><input type="checkbox"><span class="t">Автотесты проходят</span><span class="arrow">›</span></summary><div class="body">
+<h4>Что сделать</h4>
+<div class="codeblock"><button>Копировать</button><pre>./gradlew spotlessApply check</pre></div>
+<h4>Ожидаем</h4><div class="expect">Конец вывода без слов <code>FAILED</code> и <code>BUILD FAILED</code>.</div>
+<h4>Если не так</h4><div class="fail">Не продолжай. Если Gradle пишет что-то в <code>api</code>, сначала <code>./gradlew apiDump</code>, потом <code>check</code> отдельно.</div>
+</div></details>
+
+<details class="item" data-id="prep-build"><summary><input type="checkbox"><span class="t">Собрать jar и разложить по пяти серверам</span><span class="arrow">›</span></summary><div class="body">
+<h4>Что сделать</h4>
+<ol>
+<li>Собрать (только эта задача обновляет universal-jar, задача <code>jar</code> нет):
+<div class="codeblock"><button>Копировать</button><pre>./gradlew :distribution:shadowUniversal</pre></div></li>
+<li>Скопировать в пять папок, старый файл перезаписывается:
+<div class="codeblock"><button>Копировать</button><pre>$jar = "distribution\build\libs\pnLibrary-0.0.1-dev.5-universal.jar"
+foreach ($d in "Paper-Standalone\plugins","Velocity\plugins","Velocity\Backend\plugins","BungeeCord\plugins","BungeeCord\Backend\plugins") {
+  Copy-Item $jar "C:\Users\lpvan\Downloads\Server\$d" -Force
+}</pre></div></li>
+<li>Сверить контрольные суммы (все шесть строк должны быть одинаковыми):
+<div class="codeblock"><button>Копировать</button><pre>Get-FileHash $jar -Algorithm MD5 | Select-Object Hash
+foreach ($d in "Paper-Standalone\plugins","Velocity\plugins","Velocity\Backend\plugins","BungeeCord\plugins","BungeeCord\Backend\plugins") {
+  (Get-FileHash "C:\Users\lpvan\Downloads\Server\$d\pnLibrary-0.0.1-dev.5-universal.jar" -Algorithm MD5).Hash
+}</pre></div></li>
+<li>В каждой из пяти папок <code>plugins</code> должен лежать только один файл pnLibrary (старые убери).</li>
+</ol>
+<h4>Ожидаем</h4><div class="expect">Шесть одинаковых хешей, по одному jar pnLibrary в каждой папке.</div>
+<h4>Если не так</h4><div class="fail">Хеши разные: значит собран не тот jar или копирование не удалось. Повтори копирование.</div>
+</div></details>
+
+<details class="item" data-id="prep-start"><summary><input type="checkbox"><span class="t">Запустить все пять серверов, в консоли нет ошибок</span><span class="arrow">›</span></summary><div class="body">
+<h4>Что сделать</h4>
+<ol>
+<li>Запусти по очереди: <code>Paper-Standalone</code>, <code>Velocity</code>, <code>Velocity\Backend</code>, <code>BungeeCord</code>, <code>BungeeCord\Backend</code>.</li>
+<li>Для каждого дождись окончания запуска и прочитай консоль целиком.</li>
+</ol>
+<h4>Ожидаем</h4>
+<div class="expect">Виден баннер pnLibrary с версией <code>0.0.1-dev.5</code> и платформой. Нет красных строк, <code>Exception</code>, <code>NoClassDefFoundError</code>, строк про Java 8 от javac.</div>
+<h4>Если не так</h4><div class="fail">Скопируй красные строки в заметку, сделай скриншот и пришли мне.</div>
+</div></details>
+
+<!-- ============================================================ 1 -->
+<h2 id="single">1. Один сервер (Paper-Standalone)</h2>
+<p class="lead">Базовые команды без прокси. Выполняй в игре от оператора и в консоли.</p>
+
+<details class="item" data-id="s-pn"><summary><input type="checkbox"><span class="t">/pn работает в игре и в консоли</span><span class="arrow">›</span></summary><div class="body">
+<h4>Что сделать</h4>
+<ol><li>В консоли: <code>pn</code></li><li>В игре: <code>/pn</code></li><li>Проверь запасные имена: <code>/pnlib</code> и <code>/pnlibrary</code></li></ol>
+<h4>Ожидаем</h4><div class="expect">Список управляемых плагинов: текущая и доступная версия, состояние. Все три имени отвечают одинаково.</div>
+<h4>Если не так</h4><div class="fail">Команда «неизвестна»: проверь, что jar в <code>plugins</code> и плагин включён (<code>plugins</code> в консоли).</div>
+</div></details>
+
+<details class="item" data-id="s-gui"><summary><input type="checkbox"><span class="t">Меню /pn gui открывается</span><span class="arrow">›</span></summary><div class="body">
+<h4>Что сделать</h4>
+<ol><li>В игре от оператора: <code>/pn gui</code></li><li>Нажми по очереди на каждый раздел и вернись назад.</li><li>Без прав (сними оп) меню не должно давать управлять.</li></ol>
+<h4>Ожидаем</h4><div class="expect">Меню открывается, кнопки реагируют, ошибок в консоли нет. Иконки «Сеть» нет, пока не настроен <code>link.key</code> (это нормально).</div>
+<h4>Если не так</h4><div class="fail">Скриншот меню и строка из консоли.</div>
+</div></details>
+
+<details class="item" data-id="s-help"><summary><input type="checkbox"><span class="t">Описание под командой при неполном вводе</span><span class="arrow">›</span></summary><div class="body">
+<h4>Что сделать</h4>
+<ol><li>Введи команду не до конца: <code>/pn groups join</code></li><li>Введи несуществующее: <code>/pn qwerty</code></li></ol>
+<h4>Ожидаем</h4><div class="expect">Строка «Использование» с подсвеченными аргументами, под ней описание. Клик по подсказке вставляет команду в чат. Текст в стиле библиотеки, без сырых ошибок.</div>
+<h4>Если не так</h4><div class="fail">Скриншот. Это проверка описаний команд, которую мы ещё не смотрели в игре.</div>
+</div></details>
+
+<details class="item" data-id="s-perm"><summary><input type="checkbox"><span class="t">Права: без права команда не работает</span><span class="arrow">›</span></summary><div class="body">
+<h4>Что сделать</h4>
+<ol><li>Зайди игроком без оп. Введи <code>/pn</code> и <code>/pn check</code>.</li><li>Выдай одно право (например через LuckPerms): <code>pnlibrary.updates.view</code>. Повтори.</li><li>Проверь, что <code>/pn update pnlibrary</code> всё ещё закрыта (нужно <code>pnlibrary.updates.download</code>).</li></ol>
+<h4>Ожидаем</h4><div class="expect">Без права: сообщение об отсутствии прав. С <code>view</code>: список виден, скачивание закрыто. Список прав: <code>pnlibrary.admin, .debug, .events.view, .events.bus, .tasks, .groups, .servers, .updates.view/.settings/.rollback/.download/.restart/.notify</code>.</div>
+<h4>Если не так</h4><div class="fail">Игрок без прав смог что-то изменить: серьёзная ошибка, не выпускай версию.</div>
+</div></details>
+
+<!-- ============================================================ 2 -->
+<h2 id="selfupdate">2. Обновление самой pnLibrary</h2>
+<p class="lead">Нужно, чтобы на сервере стояла версия старее той, что в каталоге. В каталоге на GitHub сейчас лежит <code>0.0.1-dev.5</code>, значит ставим <code>0.0.1-dev.4</code>.</p>
+
+<details class="item" data-id="u-old"><summary><input type="checkbox"><span class="t">Собрать «старую» версию 0.0.1-dev.4 и поставить</span><span class="arrow">›</span></summary><div class="body">
+<h4>Что сделать</h4>
+<ol>
+<li>Останови <code>Paper-Standalone</code>.</li>
+<li>Собери старую версию:
+<div class="codeblock"><button>Копировать</button><pre>./gradlew :distribution:shadowUniversal -Pversion=0.0.1-dev.4</pre></div></li>
+<li>Удали из <code>Paper-Standalone\plugins</code> файл dev.5 и положи туда <code>distribution\build\libs\pnLibrary-0.0.1-dev.4-universal.jar</code>.</li>
+<li>Если Gradle не принял <code>-Pversion</code>: временно поменяй <code>version=</code> в <code>gradle.properties</code> на <code>0.0.1-dev.4</code>, собери, потом верни <code>0.0.1-dev.5</code> и пересобери. <b>Не коммить</b> эту правку.</li>
+<li>Запусти сервер. В баннере должна быть <code>0.0.1-dev.4</code>.</li>
+</ol>
+<h4>Ожидаем</h4><div class="expect">Сервер стартует на dev.4.</div>
+<h4>Если не так</h4><div class="fail">В баннере dev.5: значит собралась не старая версия. Проверь имя файла в <code>distribution\build\libs</code>.</div>
+</div></details>
+
+<details class="item" data-id="u-check"><summary><input type="checkbox"><span class="t">Проверка видит новую версию</span><span class="arrow">›</span></summary><div class="body">
+<h4>Что сделать</h4>
+<ol><li>Консоль: <code>pn check</code></li><li>Затем: <code>pn updates info pnlibrary</code></li></ol>
+<h4>Ожидаем</h4><div class="expect">В списке у pnLibrary доступна <code>0.0.1-dev.5</code>. В карточке видны версия, канал (dev), API, Java, ссылки.</div>
+<h4>Если не так</h4><div class="fail">«Каталог не найден»: в сообщении будет полный адрес <code>releases.json</code>. Открой его в браузере. Нет сети или GitHub недоступен.</div>
+</div></details>
+
+<details class="item" data-id="u-stage"><summary><input type="checkbox"><span class="t">Подготовка обновления: jar на ходу не заменяется</span><span class="arrow">›</span></summary><div class="body">
+<h4>Что сделать</h4>
+<ol><li>Консоль: <code>pn update pnlibrary</code></li><li>Потом: <code>pn update status</code></li><li>Посмотри папку <code>plugins\pnLibrary\updates\transactions</code> и то, что в <code>plugins</code> лежит всё ещё dev.4.</li></ol>
+<h4>Ожидаем</h4><div class="expect">Статус «подготовлено», появилась папка транзакции. Рабочий jar в <code>plugins</code> не изменился. Сервер сам не перезапустился.</div>
+<h4>Если не так</h4><div class="fail">Если jar в <code>plugins</code> подменился на ходу, это ошибка: главное правило нарушено.</div>
+</div></details>
+
+<details class="item" data-id="u-code"><summary><input type="checkbox"><span class="t">Код подтверждения перезапуска</span><span class="arrow">›</span></summary><div class="body">
+<h4>Что сделать</h4>
+<ol>
+<li><code>pn update restart</code> — в ответ придёт код.</li>
+<li>Введи неправильный код: <code>pn update confirm 000000</code>. Должен отклонить.</li>
+<li>Подожди 30 секунд и введи настоящий код. Должен отклонить как просроченный.</li>
+<li>Запроси новый код и сразу подтверди: <code>pn update confirm &lt;код&gt;</code>.</li>
+<li>Если запускал из игры, код игрока не должен подойти в консоли и наоборот.</li>
+</ol>
+<h4>Ожидаем</h4><div class="expect">Чужой, неверный и просроченный код отклоняются понятным сообщением. Правильный принимается один раз.</div>
+<h4>Если не так</h4><div class="fail">Старый или чужой код сработал: это ошибка безопасности.</div>
+</div></details>
+
+<details class="item" data-id="u-apply"><summary><input type="checkbox"><span class="t">После ручного перезапуска сервер на dev.5</span><span class="arrow">›</span></summary><div class="body">
+<h4>Что сделать</h4>
+<ol>
+<li>Останови сервер сам (<code>stop</code>) и запусти снова.</li>
+<li>Если версия осталась dev.4: подготовленные файлы применяет установщик при остановленном сервере. Останови сервер и выполни (имя jar уточни в <code>distribution\build\libs</code>):
+<div class="codeblock"><button>Копировать</button><pre>java -jar pnLibrary-updater-0.0.1-dev.5.jar --server-stopped plugins/pnLibrary</pre></div>
+Запускай из папки сервера. Потом запусти сервер.</li>
+<li>В консоли: <code>pn updates history</code></li>
+</ol>
+<h4>Ожидаем</h4><div class="expect">Баннер <code>0.0.1-dev.5</code>. В истории запись о переходе dev.4 → dev.5 с итогом «успешно».</div>
+<h4>Если не так</h4><div class="fail">Запиши, применилось ли обновление само при старте или только через установщик, и пришли консоль. Это важно: от этого зависит, что писать в инструкции.</div>
+</div></details>
+
+<details class="item" data-id="u-pause"><summary><input type="checkbox"><span class="t">Пауза, канал и автозагрузка</span><span class="arrow">›</span></summary><div class="body">
+<h4>Что сделать</h4>
+<ol>
+<li>Верни dev.4 (как в первом пункте этого раздела).</li>
+<li><code>pn updates set pnlibrary hold 1m</code>, потом <code>pn update pnlibrary</code>.</li>
+<li>Через минуту повтори <code>pn update pnlibrary</code>.</li>
+<li><code>pn updates set pnlibrary channel stable</code>, потом <code>pn updates info pnlibrary</code>. Верни <code>dev</code>.</li>
+<li>Открой <code>plugins\pnLibrary\updates.yml</code>: <code>library.automatic-download</code> поставь <code>false</code>, перезапусти, сделай <code>pn check</code>. Файл не заменяй целиком.</li>
+</ol>
+<h4>Ожидаем</h4><div class="expect">Во время паузы подготовка отклонена с причиной «пауза». Через минуту пауза снялась сама. Канал <code>stable</code> прячет dev-версии. При <code>automatic-download: false</code> версия сама не готовится, при <code>true</code> готовится после <code>check</code>.</div>
+<h4>Если не так</h4><div class="fail">Пауза не снялась или канал не влияет — запиши.</div>
+</div></details>
+
+<!-- ============================================================ 3 -->
+<h2 id="rollback">3. Откат</h2>
+
+<details class="item" data-id="r-list"><summary><input type="checkbox"><span class="t">Откат к сохранённому набору</span><span class="arrow">›</span></summary><div class="body">
+<h4>Что сделать</h4>
+<ol>
+<li>После успешного обновления из раздела 2: <code>pn updates backups</code> — запомни номер транзакции.</li>
+<li><code>pn updates rollback &lt;транзакция&gt;</code> → получишь код → <code>pn update confirm &lt;код&gt;</code>.</li>
+<li>Останови сервер, запусти установщик так же, как в разделе 2, запусти сервер.</li>
+<li><code>pn updates history</code></li>
+</ol>
+<h4>Ожидаем</h4><div class="expect">Версия вернулась на dev.4, запись об откате есть в истории. Откат с <code>configs</code> (<code>pn updates rollback &lt;транзакция&gt; configs</code>) возвращает ещё и конфиги, посторонние файлы в папке остаются.</div>
+<h4>Если не так</h4><div class="fail">Установщик завершился с ошибкой: сервер запускать нельзя. Сохрани его вывод и пришли.</div>
+</div></details>
+
+<details class="item" data-id="r-health"><summary><input type="checkbox"><span class="t">Новая версия не запустилась → автоматический откат</span><span class="arrow">›</span></summary><div class="body">
+<h4>Что сделать</h4>
+<ol>
+<li>Подготовь обновление как в разделе 2.</li>
+<li>Перед применением испорти подготовленный jar (поменяй один байт в файле внутри <code>updates\transactions\&lt;id&gt;</code>) <b>только в тестовой копии сервера</b>.</li>
+<li>Примени обновление и запусти сервер.</li>
+</ol>
+<h4>Ожидаем</h4><div class="expect">Установщик сверяет суммы и отказывается ставить повреждённый файл, прежний jar остаётся. Если новая версия всё же поставилась и не запустилась, в истории будет событие <code>HEALTH_ROLLBACK</code>, автоподготовка остановлена.</div>
+<h4>Если не так</h4><div class="fail">Повреждённый jar был установлен без проверки — серьёзная ошибка.</div>
+</div></details>
+
+<details class="item" data-id="r-lock"><summary><input type="checkbox"><span class="t">Установщик не работает при живом сервере</span><span class="arrow">›</span></summary><div class="body">
+<h4>Что сделать</h4>
+<ol><li>Запусти сервер.</li><li>Попробуй запустить установщик из раздела 2 при работающем сервере.</li></ol>
+<h4>Ожидаем</h4><div class="expect">Установщик отказывается из-за файла <code>install.lock</code>.</div>
+<h4>Если не так</h4><div class="fail">Установщик начал менять файлы при живом сервере — ошибка.</div>
+</div></details>
+
+<!-- ============================================================ 4 -->
+<h2 id="catalog">4. Тестовый каталог для плагина</h2>
+<p class="lead">
+  Обновления плагинов читают список версий из GitHub (<code>.pnlibrary/releases.json</code>), поэтому для проверки «плохих» плагинов нужен свой тестовый репозиторий.
+  Подопытным будет приёмочный плагин <code>pnLibraryAcceptance</code> из папки <code>examples/acceptance-bukkit</code>: он уже умеет читать каталог из любого репозитория через свой <code>config.yml</code>.
+  Делается один раз, потом ты только меняешь <code>releases.json</code>.
+</p>
+
+<details class="item" data-id="c-repo"><summary><input type="checkbox"><span class="t">Создать тестовый репозиторий и выложить jar</span><span class="arrow">›</span></summary><div class="body">
+<h4>Что сделать</h4>
+<ol>
+<li>На GitHub создай <b>публичный</b> репозиторий, например <code>pn-catalog-test</code> (под своим аккаунтом, не в pnFolder).</li>
+<li>Собери приёмочный плагин:
+<div class="codeblock"><button>Копировать</button><pre>./gradlew :examples:acceptance-bukkit:jar
+Get-ChildItem examples\acceptance-bukkit\build\libs</pre></div>
+Имя файла будет вида <code>pnLibrary-acceptance-0.0.1-dev.5-bukkit-java8.jar</code>.</li>
+<li>Скопируй этот jar в <code>Paper-Standalone\plugins</code> как «установленную» версию (рядом с pnLibrary).</li>
+<li>Для «новой» версии пересобери с другим номером и переименуй:
+<div class="codeblock"><button>Копировать</button><pre>./gradlew :examples:acceptance-bukkit:jar -Pversion=0.1.0-stable.1
+Get-ChildItem examples\acceptance-bukkit\build\libs</pre></div>
+Вернись к обычной сборке потом: <code>./gradlew :distribution:shadowUniversal</code> (версия в <code>gradle.properties</code> остаётся dev.5).</li>
+<li>На GitHub в тестовом репозитории: Releases → Draft a new release → тег <code>v0.1.0-stable.1</code> → прикрепи этот jar → Publish.</li>
+<li>Посчитай хеш этого же файла:
+<div class="codeblock"><button>Копировать</button><pre>Get-FileHash .\pnLibrary-acceptance-0.1.0-stable.1-bukkit-java8.jar -Algorithm SHA256</pre></div></li>
+<li>В репозитории создай файл <code>.pnlibrary/releases.json</code> в ветке <code>main</code> по образцу ниже (подставь свой ник, хеш и размер файла в байтах: <code>(Get-Item файл).Length</code>).</li>
+</ol>
+
+<h4>Образец releases.json (нормальная версия)</h4>
+<div class="codeblock"><button>Копировать</button><pre>{
+  "schema": 1,
+  "product": "pnlibraryacceptance",
+  "releases": [
+    {
+      "version": "0.1.0-stable.1",
+      "channel": "stable",
+      "description": "Тестовая версия для проверки обновлений.",
+      "publishedAt": "2026-10-31T12:00:00Z",
+      "api": { "minimum": 1, "maximum": 1 },
+      "artifacts": [
+        {
+          "file": "pnLibrary-acceptance-0.1.0-stable.1-bukkit-java8.jar",
+          "platform": "BUKKIT",
+          "java": { "minimum": 8 },
+          "url": "https://github.com/ТВОЙ_НИК/pn-catalog-test/releases/download/v0.1.0-stable.1/pnLibrary-acceptance-0.1.0-stable.1-bukkit-java8.jar",
+          "sha256": "ВСТАВЬ_ХЕШ_64_СИМВОЛА",
+          "size": 12345
+        }
+      ]
+    }
+  ]
+}</pre></div>
+<div class="note"><b>id продукта.</b> Поле <code>product</code> должно совпадать с id, под которым плагин зарегистрирован. Узнай его так: запусти сервер с приёмочным плагином и введи <code>pn updates list</code> — id виден в списке и в <code>pn updates info &lt;имя&gt;</code>. Если id другой, поправь <code>product</code>.</div>
+<div class="note"><b>Каталог читается с ветки main.</b> После правки <code>releases.json</code> нужно закоммитить в main. GitHub может отдавать старую копию до нескольких минут: если изменение не видно, подожди и повтори <code>pn check</code>.</div>
+
+<h4>Настройка приёмочного плагина</h4>
+<p>Останови сервер, запусти его один раз, чтобы создался <code>plugins\pnLibraryAcceptance\config.yml</code>, и поправь блок <code>updates</code>:</p>
+<div class="codeblock"><button>Копировать</button><pre>updates:
+  enabled: true
+  channel: STABLE
+  repository-owner: ТВОЙ_НИК
+  repository-name: pn-catalog-test
+  artifact-pattern: '(?i)^pnLibrary-acceptance-.*-bukkit-java8\.jar$'</pre></div>
+<p>Перезапусти сервер, потом в консоли: <code>pnaccept update</code> и <code>pn check</code>.</p>
+
+<h4>Ожидаем</h4>
+<div class="expect">В <code>pn</code> у pnLibraryAcceptance доступна версия <code>0.1.0-stable.1</code>. <code>pn update pnlibraryacceptance</code> (используй имя из списка) скачивает файл, сверяет хеш и готовит обновление.</div>
+<h4>Если не так</h4>
+<div class="fail">Плагин не виден в списке: проверь <code>updates.enabled: true</code> и что jar приёмочного плагина лежит в <code>plugins</code>. Каталог не найден: открой адрес из сообщения в браузере, он должен показывать твой JSON.</div>
+</div></details>
+
+<!-- ============================================================ 5 -->
+<h2 id="scenarios">5. Плохие плагины: что должно блокироваться</h2>
+<p class="lead">
+  Для каждого пункта меняешь <code>releases.json</code> в тестовом репозитории (или конфиг), коммитишь в main, делаешь <code>pn check</code> и смотришь
+  <code>pn updates info &lt;плагин&gt;</code> и <code>pn update status</code>. После пункта возвращай файл к нормальному виду.
+</p>
+
+<details class="item" data-id="b-sha"><summary><input type="checkbox"><span class="t">Неверная контрольная сумма</span><span class="arrow">›</span></summary><div class="body">
+<h4>Что сделать</h4><ol><li>В <code>sha256</code> замени несколько символов.</li><li><code>pn check</code>, затем <code>pn update &lt;плагин&gt;</code>.</li><li>Посмотри <code>plugins\pnLibrary\updates</code>.</li></ol>
+<h4>Ожидаем</h4><div class="expect">Подготовка отклонена, сообщение про несовпадение суммы. Файл в рабочую папку не попал, недокачанных файлов нет.</div>
+<h4>Если не так</h4><div class="fail">Файл всё же подготовлен — серьёзная ошибка проверки целостности.</div>
+</div></details>
+
+<details class="item" data-id="b-nosha"><summary><input type="checkbox"><span class="t">Нет контрольной суммы</span><span class="arrow">›</span></summary><div class="body">
+<h4>Что сделать</h4><ol><li>Удали строку <code>"sha256"</code> из артефакта (и запятую перед ней).</li><li><code>pn check</code> и <code>pn update &lt;плагин&gt;</code>.</li></ol>
+<h4>Ожидаем</h4><div class="expect">Подготовка отклонена: сумма обязательна (<code>require-sha256</code> включён по умолчанию).</div>
+<h4>Если не так</h4><div class="fail">Установилось без суммы — ошибка.</div>
+</div></details>
+
+<details class="item" data-id="b-size"><summary><input type="checkbox"><span class="t">Размер файла не совпал</span><span class="arrow">›</span></summary><div class="body">
+<h4>Что сделать</h4><ol><li>В <code>size</code> поставь число на 100 больше настоящего.</li><li><code>pn update &lt;плагин&gt;</code>.</li></ol>
+<h4>Ожидаем</h4><div class="expect">Подготовка отклонена из-за размера.</div>
+<h4>Если не так</h4><div class="fail">Приняло файл — запиши.</div>
+</div></details>
+
+<details class="item" data-id="b-api"><summary><input type="checkbox"><span class="t">Плагину нужна другая версия API pnLibrary</span><span class="arrow">›</span></summary><div class="body">
+<h4>Что сделать</h4>
+<ol><li>У релиза поставь <code>"api": { "minimum": 2, "maximum": 2 }</code> (сейчас API библиотеки равно 1).</li><li><code>pn check</code>, затем <code>pn updates info &lt;плагин&gt;</code>, <code>pn update status</code>.</li><li>Открой меню <code>/pn gui</code> и найди этот плагин.</li></ol>
+<h4>Ожидаем</h4><div class="expect">Релиз заблокирован: причина «несовместимое API» или «нет подходящего релиза», в сообщении видны нужный и поддерживаемый диапазоны. Когда библиотека слишком старая для плагина, есть подсказка сначала обновить pnLibrary. Остальные плагины не страдают.</div>
+<h4>Если не так</h4><div class="fail">Обновление молча проигнорировано без причины или, наоборот, подготовлено.</div>
+<div class="note">Обратный случай (плагин поддерживает только старое API, а библиотека новее) воспроизвести сейчас нельзя, пока не выйдет API 2. Он покрыт автотестами.</div>
+</div></details>
+
+<details class="item" data-id="b-java"><summary><input type="checkbox"><span class="t">Нужна более новая Java</span><span class="arrow">›</span></summary><div class="body">
+<h4>Что сделать</h4><ol><li>У артефакта поставь <code>"java": { "minimum": 99 }</code>.</li><li><code>pn check</code>, <code>pn updates info &lt;плагин&gt;</code>.</li></ol>
+<h4>Ожидаем</h4><div class="expect">Нет подходящего файла для этой Java, подготовка отклонена с понятной причиной.</div>
+<h4>Если не так</h4><div class="fail">Подготовлен файл для несовместимой Java.</div>
+</div></details>
+
+<details class="item" data-id="b-platform"><summary><input type="checkbox"><span class="t">Файл для другой платформы</span><span class="arrow">›</span></summary><div class="body">
+<h4>Что сделать</h4><ol><li>У артефакта поставь <code>"platform": "VELOCITY"</code> (а сервер у тебя Bukkit).</li><li><code>pn check</code>, <code>pn updates info &lt;плагин&gt;</code>.</li></ol>
+<h4>Ожидаем</h4><div class="expect">Для этой платформы файла нет, обновление не готовится.</div>
+<h4>Если не так</h4><div class="fail">Подготовился чужой файл.</div>
+</div></details>
+
+<details class="item" data-id="b-http"><summary><input type="checkbox"><span class="t">Ссылка не HTTPS и битый JSON</span><span class="arrow">›</span></summary><div class="body">
+<h4>Что сделать</h4>
+<ol><li>В <code>url</code> замени <code>https://</code> на <code>http://</code>, сделай <code>pn check</code>.</li><li>Верни. Потом сломай JSON (убери закрывающую скобку), снова <code>pn check</code>.</li></ol>
+<h4>Ожидаем</h4><div class="expect">В обоих случаях каталог отклонён, в сообщении путь к полю (например <code>releases[0].artifacts[0].url</code>) или полный адрес каталога. Сервер не падает, рабочие плагины не затронуты.</div>
+<h4>Если не так</h4><div class="fail">Исключение в консоли вместо понятного сообщения.</div>
+</div></details>
+
+<details class="item" data-id="b-dep"><summary><input type="checkbox"><span class="t">Нужен сторонний плагин, которого нет</span><span class="arrow">›</span></summary><div class="body">
+<h4>Что сделать</h4>
+<ol><li>В конфиге приёмочного плагина: <code>dependency.enabled: true</code>, <code>dependency.name: NoSuchPlugin</code>, <code>minimum-version: 1.0.0</code>, <code>url: https://example.org/NoSuchPlugin.jar</code>, <code>automatic-download: false</code>. Перезапусти.</li><li><code>pn check</code>, <code>pn updates info &lt;плагин&gt;</code>.</li></ol>
+<h4>Ожидаем</h4><div class="expect">Обновление заблокировано: не хватает стороннего плагина, показана ссылка на страницу загрузки. Автоматически он не скачивается.</div>
+<h4>Если не так</h4><div class="fail">Блокировки нет или нет ссылки.</div>
+<div class="note">Верни <code>dependency.enabled: false</code> после проверки.</div>
+</div></details>
+
+<details class="item" data-id="b-hold"><summary><input type="checkbox"><span class="t">Пауза и игнорирование плагина</span><span class="arrow">›</span></summary><div class="body">
+<h4>Что сделать</h4>
+<ol><li><code>pn updates set &lt;плагин&gt; hold on</code>, <code>pn update &lt;плагин&gt;</code> — должно блокироваться (пауза 7 дней). Снять: <code>hold off</code>.</li><li>В <code>plugins\pnLibrary\updates.yml</code> в <code>plugins.ignored</code> добавь id плагина строчными. Перезапусти. <code>pn check</code>.</li></ol>
+<h4>Ожидаем</h4><div class="expect">При паузе причина «пауза». Игнорируемый плагин не обновляется никогда. Остальные плагины в плане обновляются как обычно.</div>
+<h4>Если не так</h4><div class="fail">Плагин обновился несмотря на паузу или игнор.</div>
+</div></details>
+
+<details class="item" data-id="b-new"><summary><input type="checkbox"><span class="t">Установка нового плагина, которого на сервере нет</span><span class="arrow">›</span></summary><div class="body">
+<h4>Что сделать</h4>
+<ol><li>Убери приёмочный плагин из <code>plugins</code> нельзя (он же и регистрирует обновления), поэтому проверь через конфиг: в <code>updates.yml</code> <code>installation.allow-new-plugins: false</code>.</li><li>Посмотри, что <code>pn updates available</code> не предлагает ставить то, чего нет. Потом поставь <code>true</code>, перезапусти и повтори.</li></ol>
+<h4>Ожидаем</h4><div class="expect">При <code>false</code> новые плагины не ставятся, при <code>true</code> ставятся с подтверждением.</div>
+<h4>Если не так</h4><div class="fail">Новый плагин поставился при <code>false</code>.</div>
+<div class="note">Этот сценарий требует плагин, который есть в каталоге, но не установлен. Если такого у тебя нет, пропусти и отметь в заметке «не проверялось».</div>
+</div></details>
+
+<details class="item" data-id="b-names"><summary><input type="checkbox"><span class="t">Зарезервированные имена плагина</span><span class="arrow">›</span></summary><div class="body">
+<h4>Что сделать</h4>
+<ol><li>Собери тестовый плагин с именем <code>confirm</code> (или <code>status</code>, <code>rollback</code>, <code>restart</code>), который вызывает регистрацию обновлений.</li><li>Запусти.</li></ol>
+<h4>Ожидаем</h4><div class="expect">Регистрация обновлений отклонена с понятным сообщением в консоли.</div>
+<h4>Если не так</h4><div class="fail">Плагин зарегистрировался и команда <code>/pn update confirm</code> стала конфликтовать.</div>
+<div class="note">Это самый трудозатратный сценарий. Он покрыт автотестами, ручную проверку можно пропустить.</div>
+</div></details>
+
+<!-- ============================================================ 6 -->
+<h2 id="network">6. Прокси и игровой сервер</h2>
+<p class="lead">
+  Проверяется связка <b>Velocity + Velocity\Backend</b> и отдельно <b>BungeeCord + BungeeCord\Backend</b>. Повтори каждый пункт для обеих пар.
+  Связь работает только пока на игровом сервере есть игрок онлайн.
+</p>
+
+<div class="note">
+  <b>Папки с ключом.</b><br>
+  Velocity (прокси): <code>C:\Users\lpvan\Downloads\Server\Velocity\plugins\pnlibrary\link.key</code> (папка с маленькой буквы).<br>
+  Velocity (игровой): <code>C:\Users\lpvan\Downloads\Server\Velocity\Backend\plugins\pnLibrary\link.key</code> (с большой L).<br>
+  BungeeCord (прокси): <code>C:\Users\lpvan\Downloads\Server\BungeeCord\plugins\pnLibrary\link.key</code>.<br>
+  BungeeCord (игровой): <code>C:\Users\lpvan\Downloads\Server\BungeeCord\Backend\plugins\pnLibrary\link.key</code>.<br>
+  Ключ создаёт <b>только прокси</b>. Игровой сервер файл только читает.
+</div>
+
+<details class="item" data-id="n-key"><summary><input type="checkbox"><span class="t">Ключ связи: создать и скопировать</span><span class="arrow">›</span></summary><div class="body">
+<h4>Что сделать</h4>
+<ol>
+<li>Останови игровой сервер (Backend).</li>
+<li>Запусти прокси. Проверь, что файл <code>link.key</code> появился в папке прокси.</li>
+<li>Скопируй ключ на игровой сервер (Velocity):
+<div class="codeblock"><button>Копировать</button><pre>New-Item -ItemType Directory -Force "C:\Users\lpvan\Downloads\Server\Velocity\Backend\plugins\pnLibrary" | Out-Null
+Copy-Item "C:\Users\lpvan\Downloads\Server\Velocity\plugins\pnlibrary\link.key" "C:\Users\lpvan\Downloads\Server\Velocity\Backend\plugins\pnLibrary\link.key" -Force</pre></div></li>
+<li>То же для BungeeCord:
+<div class="codeblock"><button>Копировать</button><pre>New-Item -ItemType Directory -Force "C:\Users\lpvan\Downloads\Server\BungeeCord\Backend\plugins\pnLibrary" | Out-Null
+Copy-Item "C:\Users\lpvan\Downloads\Server\BungeeCord\plugins\pnLibrary\link.key" "C:\Users\lpvan\Downloads\Server\BungeeCord\Backend\plugins\pnLibrary\link.key" -Force</pre></div></li>
+<li>Убедись, что файлы одинаковые:
+<div class="codeblock"><button>Копировать</button><pre>Get-FileHash "C:\Users\lpvan\Downloads\Server\Velocity\plugins\pnlibrary\link.key","C:\Users\lpvan\Downloads\Server\Velocity\Backend\plugins\pnLibrary\link.key" -Algorithm MD5 | Select-Object Hash,Path
+Get-FileHash "C:\Users\lpvan\Downloads\Server\BungeeCord\plugins\pnLibrary\link.key","C:\Users\lpvan\Downloads\Server\BungeeCord\Backend\plugins\pnLibrary\link.key" -Algorithm MD5 | Select-Object Hash,Path</pre></div></li>
+<li>Запусти игровой сервер.</li>
+</ol>
+<h4>Ожидаем</h4><div class="expect">Два хеша в каждой паре одинаковые. Игровой сервер запустился без ошибок про ключ.</div>
+<h4>Если не так</h4><div class="fail">Хеши разные — скопируй заново. Файл в формате «одна строка base64, не меньше 32 байт»; повреждённый файл отключает связь.</div>
+</div></details>
+
+<details class="item" data-id="n-map"><summary><input type="checkbox"><span class="t">Карта сети дошла, иконка «Сеть» видна</span><span class="arrow">›</span></summary><div class="body">
+<h4>Что сделать</h4>
+<ol>
+<li>Зайди игроком (оператором) на сервер <b>через прокси</b>.</li>
+<li>Подожди 30–40 секунд.</li>
+<li>На игровом сервере: <code>/pn gui</code> → иконка «Сеть».</li>
+<li>На игровом сервере: <code>/pn servers</code>.</li>
+<li>На прокси в консоли: <code>pnproxy servers</code> (или короткое <code>pnp servers</code>).</li>
+</ol>
+<h4>Ожидаем</h4><div class="expect">В меню есть «Сеть», внутри видны прокси и серверы с плагинами и состоянием обновлений. Прокси показывает игровой сервер, версию pnLibrary и игроков.</div>
+<h4>Если не так</h4>
+<div class="fail">
+Иконки «Сеть» нет совсем: нет <code>link.key</code> на игровом сервере или он битый.<br>
+Иконка есть, но в подсказке «данные ещё не пришли»: подожди ещё 30 секунд, проверь, что игрок реально онлайн, и что ключи одинаковые.<br>
+Ничего не приходит: сравни хеши ключей (пункт выше).
+</div>
+</div></details>
+
+<details class="item" data-id="n-nobody"><summary><input type="checkbox"><span class="t">Без игрока связь молчит (это нормально)</span><span class="arrow">›</span></summary><div class="body">
+<h4>Что сделать</h4>
+<ol><li>Выйди со всех серверов, подожди минуту.</li><li>Из консоли игрового сервера: <code>pn servers</code> — данные могут быть старые.</li><li>Зайди снова и подожди полминуты.</li></ol>
+<h4>Ожидаем</h4><div class="expect">Без игрока новые данные не приходят и ошибок нет. С игроком карта обновляется.</div>
+<h4>Если не так</h4><div class="fail">Ошибки в консоли, когда на сервере нет игроков.</div>
+</div></details>
+
+<details class="item" data-id="n-wrongkey"><summary><input type="checkbox"><span class="t">Ключи разные — сообщения отбрасываются без шума</span><span class="arrow">›</span></summary><div class="body">
+<h4>Что сделать</h4>
+<ol><li>Останови игровой сервер.</li><li>В его <code>link.key</code> поменяй один символ (сохрани копию ключа заранее).</li><li>Запусти, зайди игроком, подожди минуту.</li><li>Верни правильный ключ и перезапусти.</li></ol>
+<h4>Ожидаем</h4><div class="expect">Карта сети не приходит, но в консоли нет ошибок и спама. После возврата ключа связь возвращается.</div>
+<h4>Если не так</h4><div class="fail">Сервер падает или сыплет исключениями при неправильном ключе.</div>
+</div></details>
+
+<details class="item" data-id="n-regen"><summary><input type="checkbox"><span class="t">Удалили папку на прокси → новый ключ</span><span class="arrow">›</span></summary><div class="body">
+<h4>Что сделать</h4>
+<ol><li>Остановить прокси и игровой сервер.</li><li>Удали папку pnLibrary на <b>прокси</b> (сначала сохрани копию рядом, например <code>pnlibrary.bak</code>, чтобы не потерять данные).</li><li>Запусти прокси: появился новый <code>link.key</code>.</li><li>Запусти игровой сервер со старым ключом, зайди, подожди минуту — связи быть не должно.</li><li>Скопируй новый ключ на игровой сервер, перезапусти — связь вернулась.</li></ol>
+<h4>Ожидаем</h4><div class="expect">Ключ создаётся заново, старый не работает, новый возвращает связь. Группы (<code>groups.tsv</code>) в удалённой папке тоже пропали.</div>
+<h4>Если не так</h4><div class="fail">Ключ не создался или связь не вернулась после копирования.</div>
+</div></details>
+
+<details class="item" data-id="n-remote"><summary><input type="checkbox"><span class="t">Управление другим сервером</span><span class="arrow">›</span></summary><div class="body">
+<h4>Что сделать</h4>
+<ol>
+<li>Нужен игрок на сервере, с которого спрашиваешь. С игрового сервера: <code>/pn servers &lt;имя другого сервера&gt; check</code>.</li>
+<li>Попробуй <code>/pn servers &lt;имя&gt; update &lt;плагин&gt;</code> и <code>/pn servers &lt;имя&gt; auto &lt;плагин&gt; on</code>.</li>
+<li>То же кнопками в меню «Сеть» → сервер.</li>
+<li>Попробуй без нужного права (<code>pnlibrary.updates.view</code> / <code>.download</code> / <code>.settings</code>).</li>
+</ol>
+<h4>Ожидаем</h4><div class="expect">Другой сервер выполняет проверку, скачивание или смену автозагрузки и отвечает. Без права запрос не уходит. Ничего кроме этих трёх действий отправить нельзя. Меню другого сервера открывается у тебя на экране.</div>
+<h4>Если не так</h4><div class="fail">Ответ не приходит: проверь, что на спрашивающем сервере есть игрок, ключи совпадают, имя сервера написано как в списке.</div>
+</div></details>
+
+<details class="item" data-id="n-proxy"><summary><input type="checkbox"><span class="t">Прокси: команды и права</span><span class="arrow">›</span></summary><div class="body">
+<h4>Что сделать</h4>
+<ol><li>В консоли прокси: <code>pnproxy</code>, <code>pnp</code>, <code>pnproxy servers</code>, <code>pnproxy update check</code>, <code>pnproxy update status</code>.</li><li>Всё, что меняет что-то, должно работать только из консоли прокси. Попробуй от игрока на прокси.</li></ol>
+<h4>Ожидаем</h4><div class="expect">Команды отвечают, подсказки используют имя <code>/pnproxy</code>. Изменяющие действия игроком недоступны.</div>
+<h4>Если не так</h4><div class="fail">Подсказки предлагают <code>/pn</code> вместо <code>/pnproxy</code> на прокси, или игрок смог менять.</div>
+</div></details>
+
+<!-- ============================================================ 7 -->
+<h2 id="groups">7. Группы серверов</h2>
+<p class="lead">Команды на прокси начинаются с <code>pnproxy groups …</code>, на игровом сервере с <code>/pn groups …</code>. Нужна работающая связь из раздела 6. Правки нужно право <code>pnlibrary.groups</code>.</p>
+
+<details class="item" data-id="g-cmd"><summary><input type="checkbox"><span class="t">Создать группу и наполнить</span><span class="arrow">›</span></summary><div class="body">
+<h4>Что сделать</h4>
+<ol>
+<li>На прокси (замени <code>lobby</code> и <code>backend</code> на реальные имена; имена серверов смотри в <code>pnproxy servers</code>):
+<div class="codeblock"><button>Копировать</button><pre>pnproxy groups create lobby
+pnproxy groups join lobby backend
+pnproxy groups require lobby pnLibrary
+pnproxy groups info lobby
+pnproxy groups</pre></div></li>
+<li>Проверка имени-команды: <code>pnproxy groups create create</code> — должна создаться группа с именем «create».</li>
+</ol>
+<h4>Ожидаем</h4><div class="expect">Группа создана, сервер добавлен, в <code>info</code> видно, чего не хватает и что можно обновить. Сообщения оформлены в стиле библиотеки, а при неполной команде под строкой «Использование» есть описание.</div>
+<h4>Если не так</h4><div class="fail">Сырой текст ошибки или команда не принимает имя группы <code>create</code>.</div>
+</div></details>
+
+<details class="item" data-id="g-diff"><summary><input type="checkbox"><span class="t">Отличия сервера: skip, extra, reset, of</span><span class="arrow">›</span></summary><div class="body">
+<h4>Что сделать</h4>
+<div class="codeblock"><button>Копировать</button><pre>pnproxy groups skip lobby backend pnLibrary
+pnproxy groups server lobby backend
+pnproxy groups extra lobby backend SomePlugin
+pnproxy groups of backend
+pnproxy groups reset lobby backend
+pnproxy groups server lobby backend</pre></div>
+<h4>Ожидаем</h4><div class="expect">После <code>skip</code> группа не ждёт плагин от этого сервера (сам плагин остаётся включённым). <code>extra</code> добавляет лишнее требование. <code>reset</code> возвращает сервер «как все». <code>of</code> показывает все группы сервера.</div>
+<h4>Если не так</h4><div class="fail">Отличие не применилось или применилось к другим серверам группы.</div>
+</div></details>
+
+<details class="item" data-id="g-multi"><summary><input type="checkbox"><span class="t">Сервер в нескольких группах и прокси как участник</span><span class="arrow">›</span></summary><div class="body">
+<h4>Что сделать</h4>
+<div class="codeblock"><button>Копировать</button><pre>pnproxy groups create survival
+pnproxy groups join survival backend
+pnproxy groups join lobby @proxy
+pnproxy groups of backend
+pnproxy groups of @proxy</pre></div>
+<h4>Ожидаем</h4><div class="expect">Сервер состоит в обеих группах. Прокси участвует под именем <code>@proxy</code>, оно не путается с сервером под названием «proxy».</div>
+<h4>Если не так</h4><div class="fail">Сервер можно добавить только в одну группу или <code>@proxy</code> не принимается.</div>
+</div></details>
+
+<details class="item" data-id="g-menu"><summary><input type="checkbox"><span class="t">Меню Сеть → Группы</span><span class="arrow">›</span></summary><div class="body">
+<h4>Что сделать</h4>
+<ol><li>В игре на игровом сервере: <code>/pn gui</code> → Сеть → Группы.</li><li>Создай группу кнопкой: она вставит команду в чат, допиши имя.</li><li>Добавь сервер и плагин, кликни по серверу и посмотри его отличия.</li><li>Удали группу кнопкой.</li><li>Попробуй без права <code>pnlibrary.groups</code>.</li></ol>
+<h4>Ожидаем</h4><div class="expect">Меню строит сервер игрока, а прокси только отвечает. Без права правки закрыты. Изменения видны и в командах.</div>
+<h4>Если не так</h4><div class="fail">Скриншот меню.</div>
+</div></details>
+
+<details class="item" data-id="g-file"><summary><input type="checkbox"><span class="t">Группы хранятся в groups.tsv и переживают перезапуск</span><span class="arrow">›</span></summary><div class="body">
+<h4>Что сделать</h4>
+<ol><li>Открой <code>groups.tsv</code> рядом с <code>link.key</code> на прокси. Первая строка <code>#pnlibrary-groups 2</code>.</li><li>Перезапусти прокси. Проверь <code>pnproxy groups</code>.</li><li>Испорти одну строку в файле, перезапусти: нечитаемая строка пропускается, прокси не падает.</li></ol>
+<h4>Ожидаем</h4><div class="expect">Группы на месте после перезапуска. Битая строка не роняет прокси.</div>
+<h4>Если не так</h4><div class="fail">Группы пропали или прокси упал на битой строке.</div>
+</div></details>
+
+<!-- ============================================================ 8 -->
+<h2 id="events">8. События, задачи и API для плагинов</h2>
+
+<details class="item" data-id="e-join"><summary><input type="checkbox"><span class="t">Заход и выход игрока видны как события библиотеки</span><span class="arrow">›</span></summary><div class="body">
+<h4>Что сделать</h4>
+<ol><li>Зайди и выйди игроком на Paper-Standalone, потом через Velocity, потом через BungeeCord.</li><li>На сервере: <code>/pn bus</code> и <code>/pn bus history</code>. На прокси: <code>pnproxy bus</code>.</li></ol>
+<h4>Ожидаем</h4><div class="expect">Событие <code>PlayerJoinedEvent</code> и <code>PlayerLeftEvent</code> считаются по одному разу на каждый заход и выход, на каждой платформе. В истории есть дни «Сегодня» и «Вчера».</div>
+<h4>Если не так</h4><div class="fail">Событие приходит дважды или не приходит.</div>
+</div></details>
+
+<details class="item" data-id="e-accept"><summary><input type="checkbox"><span class="t">Приёмочный плагин: все подкоманды</span><span class="arrow">›</span></summary><div class="body">
+<h4>Что сделать</h4>
+<div class="codeblock"><button>Копировать</button><pre>/pnaccept status
+/pnaccept event
+/pnaccept task
+/pnaccept cooldown
+/pnaccept metrics
+/pnaccept update
+/pnaccept download
+/pnaccept diagnostics</pre></div>
+<p>Затем <code>/pn events</code>, <code>/pn tasks</code>.</p>
+<h4>Ожидаем</h4><div class="expect">Каждая команда отвечает без ошибок. Событие, задача и счётчики видны в <code>/pn bus</code> и <code>/pn tasks</code>. <code>download</code> и часть остальных подсказывают включить опцию в <code>config.yml</code>, это нормально.</div>
+<h4>Если не так</h4><div class="fail">Исключение в консоли.</div>
+</div></details>
+
+<details class="item" data-id="e-cleanup"><summary><input type="checkbox"><span class="t">Выключение плагина убирает его слушатели и задачи</span><span class="arrow">›</span></summary><div class="body">
+<h4>Что сделать</h4>
+<ol><li><code>/pnaccept event</code>, затем <code>/pn bus</code> — виден слушатель приёмочного плагина.</li><li>Выключи плагин (<code>plugman</code> или перезапуск без него) и снова <code>/pn bus</code>.</li></ol>
+<h4>Ожидаем</h4><div class="expect">После выключения слушателей и задач плагина нет.</div>
+<h4>Если не так</h4><div class="fail">Слушатели остались — утечка.</div>
+</div></details>
+
+<!-- ============================================================ 9 -->
+<h2 id="diag">9. Диагностика и данные</h2>
+
+<details class="item" data-id="d-debug"><summary><input type="checkbox"><span class="t">Отчёт /pn debug создаётся и расшифровывается</span><span class="arrow">›</span></summary><div class="body">
+<h4>Что сделать</h4>
+<ol><li>Консоль: <code>pn debug</code> (право <code>pnlibrary.debug</code>).</li><li>Найди созданный файл отчёта (<code>.pnsupport</code>, путь будет в сообщении).</li><li>Расшифруй:
+<div class="codeblock"><button>Копировать</button><pre>python tools\support\decode_pnsupport.py ПУТЬ_К_ОТЧЁТУ</pre></div>
+Если скрипт просит другой формат аргументов, запусти его без аргументов: он покажет подсказку.</li></ol>
+<h4>Ожидаем</h4><div class="expect">Отчёт расшифровывается, внутри данные сервера и плагинов. Пути из <code>excluded-paths</code> и данные, скрытые в <code>privacy</code>, в отчёт не попали.</div>
+<h4>Если не так</h4><div class="fail">Секретные данные видны в открытом виде — серьёзная ошибка приватности.</div>
+</div></details>
+
+<details class="item" data-id="d-journal"><summary><input type="checkbox"><span class="t">Журнал ошибок и сводка при входе</span><span class="arrow">›</span></summary><div class="body">
+<h4>Что сделать</h4>
+<ol><li>Вызови ошибку (например <code>/pnaccept diagnostics</code>, или сломай что-то заведомо, как в разделе 5).</li><li><code>/pn events</code> и <code>/pn events error</code> (уровень пишется строчными).</li><li>Выйди и зайди оператором.</li></ol>
+<h4>Ожидаем</h4><div class="expect">Запись видна в журнале. При входе админ видит сводку (если включён <code>journal-join-notice</code>).</div>
+<h4>Если не так</h4><div class="fail">Ошибка не записалась.</div>
+</div></details>
+
+<details class="item" data-id="d-retention"><summary><input type="checkbox"><span class="t">config.yml: ключи работают</span><span class="arrow">›</span></summary><div class="body">
+<h4>Что сделать</h4>
+<ol><li>Открой <code>plugins\pnLibrary\config.yml</code>. Ключи: <code>privacy</code>, <code>excluded-paths</code>, <code>history-retention-days</code> (от 30), <code>journal-foreign-plugins</code>, <code>journal-join-notice</code>, <code>time-zone</code>, <code>no-permission-message</code>.</li><li>Поменяй <code>time-zone</code> (например <code>Asia/Tokyo</code>) и <code>no-permission-message</code>, перезапусти.</li><li>Поставь <code>history-retention-days: 1</code> — должно быть принято как минимум 30 или отклонено с понятным сообщением.</li></ol>
+<h4>Ожидаем</h4><div class="expect">Время в журнале в нужном поясе, сообщение об отсутствии прав новое. Значение ниже 30 не ломает запуск.</div>
+<h4>Если не так</h4><div class="fail">Сервер не стартует из-за неверного значения.</div>
+</div></details>
+
+<!-- ============================================================ 10 -->
+<h2 id="stop">10. Остановка и перезагрузка</h2>
+
+<details class="item" data-id="x-stop"><summary><input type="checkbox"><span class="t">Нормальная остановка всех серверов</span><span class="arrow">›</span></summary><div class="body">
+<h4>Что сделать</h4>
+<ol><li>На каждом из пяти серверов введи <code>stop</code> и дождись завершения.</li><li>Прочитай конец консоли.</li></ol>
+<h4>Ожидаем</h4><div class="expect">Нет ошибок и предупреждений от pnLibrary, процесс завершается сам, а не висит.</div>
+<h4>Если не так</h4><div class="fail">Процесс не завершается: запиши, какой сервер и что в консоли.</div>
+</div></details>
+
+<details class="item" data-id="x-reload"><summary><input type="checkbox"><span class="t">/reload и повторная загрузка</span><span class="arrow">›</span></summary><div class="body">
+<h4>Что сделать</h4>
+<ol><li>На Paper-Standalone: <code>/pnaccept event</code>, <code>/pn bus</code>.</li><li>Выполни <code>/reload confirm</code> (или перезагрузи плагин менеджером), снова <code>/pnaccept event</code>, <code>/pn bus</code>.</li></ol>
+<h4>Ожидаем</h4><div class="expect">Слушатель и задачи не удвоились.</div>
+<h4>Если не так</h4><div class="fail">Счётчики идут через два.</div>
+<div class="note"><code>/reload</code> официально не поддерживается Paper и может сломать посторонние плагины. Если сомневаешься, пропусти пункт и отметь в заметке.</div>
+</div></details>
+
+<details class="item" data-id="x-stopdl"><summary><input type="checkbox"><span class="t">Остановка во время скачивания не оставляет мусор</span><span class="arrow">›</span></summary><div class="body">
+<h4>Что сделать</h4>
+<ol><li>Запусти <code>pn update &lt;плагин&gt;</code> с большим файлом (или с отключённой сетью на середине).</li><li>Сразу <code>stop</code>.</li><li>Посмотри <code>plugins\pnLibrary\updates</code> и запусти сервер.</li></ol>
+<h4>Ожидаем</h4><div class="expect">Нет битых файлов. После запуска состояние чистое, обновление можно подготовить заново.</div>
+<h4>Если не так</h4><div class="fail">Остался неполный файл, который мешает следующей подготовке.</div>
+</div></details>
+
+<footer>
+  <p><b>Что эта проверка не покрывает:</b> удалённые политики (<code>remote-policy</code>), нативные проверки на реальных серверах
+  (<code>:modules:updates:verifyNativeProxyUpdates</code>, <code>:modules:updates:verifyNativeBukkitUpdates</code>, см. <code>docs/updates.md</code>),
+  Folia, встроенный установщик <code>PnLibraryBootstrap</code> и публикацию в Maven Central.</p>
+  <p>Итог проверки впиши сюда (сохраняется автоматически):</p>
+  <textarea class="memo" id="summary" placeholder="Версия, дата, что не прошло, ссылки на скриншоты"></textarea>
+</footer>
+
+</div>
+
+<script>
+(function () {
+  var KEY = "pnlibrary-verification-v1";
+  var state = { done: {}, notes: {}, summary: "" };
+  try { var raw = localStorage.getItem(KEY); if (raw) state = Object.assign(state, JSON.parse(raw)); } catch (e) {}
+  function save() { try { localStorage.setItem(KEY, JSON.stringify(state)); } catch (e) {} }
+
+  var items = Array.prototype.slice.call(document.querySelectorAll(".item"));
+
+  items.forEach(function (item) {
+    var id = item.dataset.id;
+    var box = item.querySelector("summary input");
+    var body = item.querySelector(".body");
+
+    box.checked = !!state.done[id];
+    item.classList.toggle("done", box.checked);
+
+    box.addEventListener("click", function (e) { e.stopPropagation(); });
+    box.addEventListener("change", function () {
+      state.done[id] = box.checked;
+      item.classList.toggle("done", box.checked);
+      save(); progress();
+    });
+
+    var memo = document.createElement("textarea");
+    memo.className = "memo";
+    memo.placeholder = "Заметка: что получилось, что в консоли";
+    memo.value = state.notes[id] || "";
+    memo.addEventListener("input", function () { state.notes[id] = memo.value; save(); });
+    body.appendChild(memo);
+  });
+
+  document.querySelectorAll(".codeblock").forEach(function (block) {
+    var btn = block.querySelector("button");
+    var pre = block.querySelector("pre");
+    btn.addEventListener("click", function () {
+      var text = pre.textContent;
+      var ok = function () { btn.textContent = "Скопировано"; setTimeout(function () { btn.textContent = "Копировать"; }, 1200); };
+      if (navigator.clipboard && navigator.clipboard.writeText) {
+        navigator.clipboard.writeText(text).then(ok, function () { fallback(text); ok(); });
+      } else { fallback(text); ok(); }
+    });
+  });
+  function fallback(text) {
+    var t = document.createElement("textarea");
+    t.value = text; document.body.appendChild(t); t.select();
+    try { document.execCommand("copy"); } catch (e) {}
+    document.body.removeChild(t);
+  }
+
+  function progress() {
+    var total = items.length;
+    var done = items.filter(function (i) { return i.querySelector("summary input").checked; }).length;
+    document.getElementById("bar").style.width = (total ? done * 100 / total : 0) + "%";
+    document.getElementById("count").textContent = done + " из " + total;
+  }
+  progress();
+
+  var summary = document.getElementById("summary");
+  summary.value = state.summary || "";
+  summary.addEventListener("input", function () { state.summary = summary.value; save(); });
+
+  var hide = document.getElementById("toggleDone");
+  hide.addEventListener("click", function () {
+    var on = document.body.classList.toggle("hide-done");
+    hide.textContent = on ? "Показать готовое" : "Скрыть готовое";
+  });
+  document.getElementById("openAll").addEventListener("click", function () { items.forEach(function (i) { i.open = true; }); });
+  document.getElementById("closeAll").addEventListener("click", function () { items.forEach(function (i) { i.open = false; }); });
+  document.getElementById("reset").addEventListener("click", function () {
+    if (!confirm("Сбросить все галочки и заметки?")) return;
+    state = { done: {}, notes: {}, summary: "" };
+    save(); location.reload();
+  });
+})();
+</script>
+</body>
+</html>
