@@ -9,10 +9,18 @@ import org.bukkit.entity.Player
 import org.bukkit.inventory.ItemFlag
 import org.bukkit.inventory.ItemStack
 import org.bukkit.plugin.Plugin
+import org.pnfolder.pnlibrary.api.chat.ChatKit
+import org.pnfolder.pnlibrary.api.chat.ChatNotice
+import org.pnfolder.pnlibrary.api.chat.ChatReader
+import org.pnfolder.pnlibrary.api.chat.ChatTone
 import org.pnfolder.pnlibrary.api.platform.platform
 import org.pnfolder.pnlibrary.api.runtime.PnLibrary
+import org.pnfolder.pnlibrary.api.tasks.TaskExecution
+import org.pnfolder.pnlibrary.api.tasks.TaskSpec
 import org.pnfolder.pnlibrary.api.updates.UpdateActor
 import org.pnfolder.pnlibrary.bukkit.api.BukkitPlatform
+import org.pnfolder.pnlibrary.bukkit.inventory.MenuSession
+import org.pnfolder.pnlibrary.core.lifecycle.runtimeTaskScope
 import org.pnfolder.pnlibrary.core.link.LinkHub
 import org.pnfolder.pnlibrary.core.menu.ClickType
 import org.pnfolder.pnlibrary.core.menu.ItemSpec
@@ -25,6 +33,7 @@ import org.pnfolder.pnlibrary.core.menu.OwnerInfo
 import org.pnfolder.pnlibrary.core.menu.RemoteMenuData
 import org.pnfolder.pnlibrary.core.menu.ViewerInfo
 import java.lang.reflect.Proxy
+import java.time.Duration
 import java.util.UUID
 import java.util.concurrent.ConcurrentHashMap
 import java.util.concurrent.TimeUnit
@@ -120,7 +129,11 @@ internal class BukkitMenuAdapter(private val plugin: Plugin, private val library
                 builder.slot(slot, item)
             } else if (item != null) {
                 builder.button(slot, item) { click ->
-                    handler.handle(org.pnfolder.pnlibrary.core.menu.MenuClick(viewer(click.player), slot, kind(click.click)))
+                    if (mayUse(click.player)) {
+                        handler.handle(org.pnfolder.pnlibrary.core.menu.MenuClick(viewer(click.player), slot, kind(click.click)))
+                    } else {
+                        revoke(click.player, click.session)
+                    }
                 }
             }
         }
@@ -129,8 +142,38 @@ internal class BukkitMenuAdapter(private val plugin: Plugin, private val library
 
     /** Opens [menu] for [player] with the quiet chest sound of the menu. */
     fun open(player: Player, menu: Menu) {
-        library.platform<BukkitPlatform>().menus.open(plugin, player, page(menu))
+        val session = library.platform<BukkitPlatform>().menus.open(plugin, player, page(menu))
+        watch(player, session)
         OPEN_SOUND?.let { player.playSound(player.location, it, SOUND_VOLUME, SOUND_PITCH) }
+    }
+
+    /** Whether [player] may still use the menu: the permissions `/pn gui` itself asks for. */
+    private fun mayUse(player: Player): Boolean = MENU_ACCESS.any(player::hasPermission)
+
+    /**
+     * Rechecks the right to the menu while [session] is open, so a player who loses it (for example when a
+     * permission plugin takes the group away) is not left with a working menu. The task ends with the session.
+     */
+    private fun watch(player: Player, session: MenuSession) {
+        val menus = library.platform<BukkitPlatform>().menus
+        library.runtimeTaskScope().schedule(
+            TaskSpec.builder()
+                .execution(TaskExecution.entity(player))
+                .delay(RECHECK)
+                .interval(RECHECK)
+                .cancellable(false)
+                .hidden(true)
+                .cancelWhen { !player.isOnline || menus.session(player) !== session }
+                .action { if (!mayUse(player)) revoke(player, session) }
+                .build(),
+        )
+    }
+
+    /** Closes [session] because [player] no longer holds the right to the menu, and says so. */
+    private fun revoke(player: Player, session: MenuSession) {
+        session.close()
+        val notice = ChatNotice(ChatTone.FAILURE, "Меню закрыто: не хватает права.", MENU_ACCESS.first())
+        library.audiences.player(player.uniqueId)?.let { audience -> ChatKit(ChatReader.PLAYER).notice(notice).forEach(audience::sendMessage) }
     }
 
     private fun kind(click: org.bukkit.event.inventory.ClickType): ClickType = ClickType.values().firstOrNull { it.name == click.name } ?: ClickType.OTHER
@@ -171,6 +214,9 @@ internal class BukkitMenuAdapter(private val plugin: Plugin, private val library
     fun playerOf(viewer: MenuViewer): Player? = (viewer as? BukkitViewer)?.native
 
     private companion object {
+        /** Any of these opens `/pn gui`; losing all of them closes the menu. */
+        val MENU_ACCESS = listOf("pnlibrary.admin", "pnlibrary.updates.view")
+        val RECHECK: Duration = Duration.ofSeconds(2)
         val LEGACY_GLASS = setOf("STAINED_GLASS_PANE", "LEGACY_STAINED_GLASS_PANE")
         const val SOUND_VOLUME = 0.22f
         const val SOUND_PITCH = 1.15f
