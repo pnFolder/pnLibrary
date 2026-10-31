@@ -26,6 +26,12 @@ internal interface NativeInvocation<S> {
 
     /** Returns the suggestions for the partial argument at the end of [input]. */
     fun suggest(source: S, input: String): CompletionStage<List<String>>
+
+    /**
+     * Whether [source] may enter [node]. A node it may not enter is left out of the tree the client receives, so
+     * Tab does not offer it. Defaults to everything allowed.
+     */
+    fun allowed(source: S, node: CommandNode): Boolean = true
 }
 
 /**
@@ -37,6 +43,7 @@ internal object BrigadierTrees {
     /** Returns the root node of [definition]; its aliases are registered by the caller. */
     fun <S> build(definition: CommandDefinition, invocation: NativeInvocation<S>): LiteralCommandNode<S> {
         val root = LiteralArgumentBuilder.literal<S>(definition.name)
+            .requires { invocation.allowed(it, definition.root) }
         populate(root, definition.root, invocation)
         return root.build()
     }
@@ -53,10 +60,13 @@ internal object BrigadierTrees {
 
     private fun <S> child(node: CommandNode, invocation: NativeInvocation<S>): ArgumentBuilder<S, *> {
         if (node.kind == CommandNodeKind.LITERAL) {
-            return LiteralArgumentBuilder.literal<S>(node.name).also { populate(it, node, invocation) }
+            return LiteralArgumentBuilder.literal<S>(node.name)
+                .requires { invocation.allowed(it, node) }
+                .also { populate(it, node, invocation) }
         }
         val spec = node.argumentType?.spec ?: ArgumentSpec.TEXT
         val builder = RequiredArgumentBuilder.argument<S, Any>(node.name, typeOf(spec))
+            .requires { invocation.allowed(it, node) }
             .suggests(suggestionsFor(invocation))
         populate(builder, node, invocation)
         return builder

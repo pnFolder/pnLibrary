@@ -6,8 +6,11 @@ import io.papermc.paper.plugin.lifecycle.event.handler.LifecycleEventHandler
 import io.papermc.paper.plugin.lifecycle.event.registrar.ReloadableRegistrarEvent
 import io.papermc.paper.plugin.lifecycle.event.types.LifecycleEvents
 import org.bukkit.command.CommandSender
+import org.bukkit.command.ConsoleCommandSender
 import org.bukkit.plugin.Plugin
 import org.pnfolder.pnlibrary.api.commands.CommandDefinition
+import org.pnfolder.pnlibrary.api.commands.CommandNode
+import org.pnfolder.pnlibrary.api.commands.SenderRule
 import org.pnfolder.pnlibrary.spi.commands.NativeCommandRegistrar
 import org.pnfolder.pnlibrary.spi.commands.PlatformCommandRegistration
 import java.util.concurrent.CompletionStage
@@ -94,6 +97,22 @@ class PaperNativeCommandRegistrar(
             }
             val line = CommandLine.of(input, keepTrailing = false)
             entry.execute(source.sender, line.label, line.arguments.toTypedArray())
+        }
+
+        override fun allowed(source: CommandSourceStack, node: CommandNode): Boolean {
+            val sender = source.sender
+            val console = sender is ConsoleCommandSender
+            val permission = node.permission
+            val permitted = permission == null ||
+                (console && node.consoleBypassesPermission) ||
+                sender.hasPermission(permission) ||
+                node.alsoPermissions.any { sender.hasPermission(it) }
+            val senderFits = when (node.senderRule) {
+                SenderRule.PLAYER -> !console
+                SenderRule.CONSOLE -> console
+                SenderRule.ANY -> true
+            }
+            return permitted && senderFits
         }
 
         override fun suggest(source: CommandSourceStack, input: String): CompletionStage<List<String>> {
