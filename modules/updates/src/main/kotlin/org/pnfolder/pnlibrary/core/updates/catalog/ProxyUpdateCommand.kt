@@ -188,7 +188,8 @@ class ProxyUpdateCommand(private val library: PnLibrary) {
             }
             UpdateAction.ROLLBACK -> library.updates.rollback(grant.plan, false, actor(sender)).whenComplete { _, error -> done(error) }
             UpdateAction.ROLLBACK_CONFIGS -> library.updates.rollback(grant.plan, true, actor(sender)).whenComplete { _, error -> done(error) }
-            UpdateAction.RESTART -> say(sender, ChatTone.WARNING, "Перезапустите прокси его обычной командой.")
+            UpdateAction.RESTART, UpdateAction.RESTART_LATER, UpdateAction.RESTART_EMPTY ->
+                say(sender, ChatTone.WARNING, "Перезапустите прокси его обычной командой.")
         }
     }
 

@@ -676,6 +676,7 @@ public class org/pnfolder/pnlibrary/api/chat/ChatKit {
 	public final fun chip (ILjava/lang/String;Lnet/kyori/adventure/text/format/TextColor;)Lnet/kyori/adventure/text/Component;
 	public final fun commandHints ([Lkotlin/Pair;)Ljava/util/List;
 	public final fun confirmation (Ljava/lang/String;Ljava/util/List;Ljava/lang/String;Ljava/lang/String;Ljava/lang/String;)Ljava/util/List;
+	public final fun confirmationChoices (Ljava/lang/String;Ljava/util/List;Ljava/util/List;)Ljava/util/List;
 	public final fun dot ()Lnet/kyori/adventure/text/Component;
 	public final fun field (Ljava/lang/String;Lnet/kyori/adventure/text/Component;)Lnet/kyori/adventure/text/Component;
 	public final fun framed (Ljava/util/List;)Ljava/util/List;
@@ -770,6 +771,21 @@ public final class org/pnfolder/pnlibrary/api/chat/ChatTone : java/lang/Enum {
 	public static fun getEntries ()Lkotlin/enums/EnumEntries;
 	public static fun valueOf (Ljava/lang/String;)Lorg/pnfolder/pnlibrary/api/chat/ChatTone;
 	public static fun values ()[Lorg/pnfolder/pnlibrary/api/chat/ChatTone;
+}
+
+public final class org/pnfolder/pnlibrary/api/chat/ConfirmChoice {
+	public fun <init> (Ljava/lang/String;Ljava/lang/String;Ljava/lang/String;)V
+	public final fun component1 ()Ljava/lang/String;
+	public final fun component2 ()Ljava/lang/String;
+	public final fun component3 ()Ljava/lang/String;
+	public final fun copy (Ljava/lang/String;Ljava/lang/String;Ljava/lang/String;)Lorg/pnfolder/pnlibrary/api/chat/ConfirmChoice;
+	public static synthetic fun copy$default (Lorg/pnfolder/pnlibrary/api/chat/ConfirmChoice;Ljava/lang/String;Ljava/lang/String;Ljava/lang/String;ILjava/lang/Object;)Lorg/pnfolder/pnlibrary/api/chat/ConfirmChoice;
+	public fun equals (Ljava/lang/Object;)Z
+	public final fun getCommand ()Ljava/lang/String;
+	public final fun getHint ()Ljava/lang/String;
+	public final fun getLabel ()Ljava/lang/String;
+	public fun hashCode ()I
+	public fun toString ()Ljava/lang/String;
 }
 
 public abstract interface class org/pnfolder/pnlibrary/api/checks/Check {
