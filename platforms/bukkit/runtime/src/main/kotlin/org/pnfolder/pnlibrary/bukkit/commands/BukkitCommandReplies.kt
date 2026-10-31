@@ -6,6 +6,7 @@ import org.bukkit.entity.Player
 import org.bukkit.plugin.Plugin
 import org.pnfolder.pnlibrary.api.chat.ChatNotice
 import org.pnfolder.pnlibrary.api.chat.ChatTone
+import org.pnfolder.pnlibrary.api.chat.ConfirmChoice
 import org.pnfolder.pnlibrary.api.commands.CommandContext
 import org.pnfolder.pnlibrary.api.runtime.PnLibrary
 import org.pnfolder.pnlibrary.api.updates.UpdateActor
@@ -35,6 +36,10 @@ internal class BukkitCommandReplies(
     fun confirm(reply: Reply, title: String, lines: List<String>, label: String, command: String) =
         UpdateCatalogView.confirmation(title, lines + "Подтверждение действует 30 секунд.", label, command,
             "Выполнить: $command", routes(reply)).forEach(reply::send)
+
+    /** A confirmation card with several answers on one line. */
+    fun confirmChoices(reply: Reply, title: String, lines: List<String>, choices: List<ConfirmChoice>) =
+        UpdateCatalogView.confirmationChoices(title, lines + "Подтверждение действует 30 секунд.", choices, routes(reply)).forEach(reply::send)
 
     /** Returns a callback that reports [reply]-bound successes. */
     fun reported(reply: Reply): (String) -> Unit = { text -> say(reply, ChatTone.SUCCESS, text) }

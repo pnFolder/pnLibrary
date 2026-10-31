@@ -112,6 +112,9 @@ internal class BukkitControlCommand(
             }
             literal("restart") {
                 executes { replies.native(it) { sender, reply -> updates.restartUpdate(sender, reply) } }
+                literal("cancel") {
+                    executes { replies.native(it) { _, reply -> updates.cancelRestart(reply) } }
+                }
             }
         }
         library.mountableCommand("events")?.let { mount("events", it) }

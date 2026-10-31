@@ -4,6 +4,7 @@ import net.kyori.adventure.text.Component
 import org.pnfolder.pnlibrary.api.chat.ChatKit
 import org.pnfolder.pnlibrary.api.chat.ChatNotice
 import org.pnfolder.pnlibrary.api.chat.ChatReader
+import org.pnfolder.pnlibrary.api.chat.ConfirmChoice
 import org.pnfolder.pnlibrary.api.updates.UpdateChannel
 import org.pnfolder.pnlibrary.api.updates.UpdateSnapshot
 import org.pnfolder.pnlibrary.api.updates.backup.UpdateBackup
@@ -66,7 +67,8 @@ object UpdateCatalogView {
         routes: UpdateCatalogRoutes,
         now: Instant = Instant.now(),
         zone: ZoneId = org.pnfolder.pnlibrary.common.time.DisplayZone.zone,
-    ): List<Component> = BackupsScreen(routes, now, zone).backups(backups, page)
+        query: BackupQuery = BackupQuery(),
+    ): List<Component> = BackupsScreen(routes, now, zone).backups(backups, page, query)
 
     /**
      * Renders the details card of one component: versions, release date, other channels and its pause.
@@ -145,6 +147,14 @@ object UpdateCatalogView {
         hint: String,
         routes: UpdateCatalogRoutes,
     ): List<Component> = kit(routes).confirmation(title, lines, label, command, hint)
+
+    /** A confirmation card with several answers on one line, such as restarting now or later. */
+    fun confirmationChoices(
+        title: String,
+        lines: List<String>,
+        choices: List<ConfirmChoice>,
+        routes: UpdateCatalogRoutes,
+    ): List<Component> = kit(routes).confirmationChoices(title, lines, choices)
 
     private fun kit(routes: UpdateCatalogRoutes) = ChatKit(ChatReader(routes.interactive, routes.ascii))
 }

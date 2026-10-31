@@ -26,6 +26,7 @@ class EventListenerBuilder<E : Event> internal constructor(
 
     /** Skips this listener when the event is already denied ([Event.isAllowed] is `false`). Off by default. */
     fun ignoreDenied(): EventListenerBuilder<E> = apply { ignoreDenied = true }
+
     /** Registers [listener] with the configured options and returns the live subscription. */
     fun listen(listener: Consumer<E>): EventSubscription =
         scope.subscribe(eventType, priority, ignoreDenied, listener)

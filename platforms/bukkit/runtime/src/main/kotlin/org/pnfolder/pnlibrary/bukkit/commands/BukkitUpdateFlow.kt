@@ -1,14 +1,12 @@
 package org.pnfolder.pnlibrary.bukkit.commands
 
-import net.kyori.adventure.text.Component
-import net.kyori.adventure.text.serializer.legacy.LegacyComponentSerializer
 import org.bukkit.Bukkit
 import org.bukkit.command.CommandSender
 import org.bukkit.command.ConsoleCommandSender
 import org.bukkit.entity.Player
 import org.bukkit.plugin.Plugin
-import org.pnfolder.pnlibrary.api.chat.ChatPalette
 import org.pnfolder.pnlibrary.api.chat.ChatTone
+import org.pnfolder.pnlibrary.api.chat.ConfirmChoice
 import org.pnfolder.pnlibrary.api.commands.CommandContext
 import org.pnfolder.pnlibrary.api.runtime.PnLibrary
 import org.pnfolder.pnlibrary.api.runtime.PnLibraryIdentity
@@ -41,6 +39,7 @@ internal class BukkitUpdateFlow(
     private val replies: BukkitCommandReplies,
 ) {
     private val tokens = UpdateConfirmationTokens()
+    private val restarter = ServerRestarter(plugin)
 
     /** Replies immediately, then shows the refreshed list of updates on the server thread. */
     fun checkUpdates(context: CommandContext) {
@@ -177,7 +176,10 @@ internal class BukkitUpdateFlow(
         library.updates.stage(plan.id, replies.updateActor(sender)).whenComplete { _, error ->
             replies.onServerThread {
                 if (error != null) replies.fail(reply, "Не удалось подготовить обновление", error)
-                else replies.say(reply, ChatTone.SUCCESS, "Обновление $transition подготовлено.", "Перезапустите сервер, чтобы применить его.")
+                else {
+                    replies.say(reply, ChatTone.SUCCESS, "Обновление $transition подготовлено.", "Перезапустите сервер, чтобы применить его.")
+                    suggestRestart(sender, reply)
+                }
             }
         }
     }
@@ -205,18 +207,42 @@ internal class BukkitUpdateFlow(
             return replies.say(reply, ChatTone.FAILURE, "Недостаточно прав для перезапуска.")
         }
         val plan = library.updates.currentPlan().orElse(null)
-        if (plan == null || plan.state != UpdateState.UPDATE_STAGED) {
+        if (plan == null || plan.state != UpdateState.UPDATE_STAGED && plan.state != UpdateState.ROLLED_BACK) {
             return replies.say(reply, ChatTone.WARNING, "Нет подготовленных обновлений, которым нужен перезапуск.")
         }
-        if (sender !is Player) {
-            return replies.say(reply, ChatTone.WARNING, "Из консоли перезапускайте сервер его обычной командой.")
+        askRestart(sender, reply, plan.id, plan.revision)
+    }
+
+    /** Offers the three ways to restart; each button carries its own confirmation. */
+    private fun askRestart(sender: CommandSender, reply: Reply, plan: UUID, revision: Long) {
+        fun command(action: UpdateAction) =
+            BukkitControlCommand.confirmCommand(tokens.issue(identityOf(sender), plan, revision, action, CONFIRMATION_TIME))
+        val script = if (restarter.script() == null) {
+            "Скрипт перезапуска (restart-script в spigot.yml) не найден: сервер остановится, запустите его сами."
+        } else {
+            "Сервер поднимется сам."
         }
-        askToConfirm(
-            sender, reply, plan.id, plan.revision, UpdateAction.RESTART,
+        replies.confirmChoices(
+            reply,
             "Перезапуск сервера",
-            listOf("Игроков на сервере: ${Bukkit.getOnlinePlayers().size}.", "Подготовленные обновления применятся после перезапуска."),
-            "[Подтвердить перезапуск]",
+            listOf("Игроков на сервере: ${Bukkit.getOnlinePlayers().size}.", "Подготовленные версии применятся после перезапуска.", script),
+            listOf(
+                ConfirmChoice("Сейчас", command(UpdateAction.RESTART), "Перезапустить сразу, игрокам придёт отсчёт"),
+                ConfirmChoice("Через 5 мин", command(UpdateAction.RESTART_LATER), "Предупредить игроков и перезапустить через 5 минут"),
+                ConfirmChoice("Когда никого нет", command(UpdateAction.RESTART_EMPTY), "Перезапустить, как только все выйдут"),
+            ),
         )
+    }
+
+    /** Offers a restart when [sender] may restart, otherwise just says the server has to be restarted. */
+    private fun suggestRestart(sender: CommandSender, reply: Reply) {
+        if (sender.hasPermission("pnlibrary.updates.restart")) restartUpdate(sender, reply)
+    }
+
+    /** Withdraws a restart that is counting down or waiting for the server to empty. */
+    fun cancelRestart(reply: Reply) {
+        if (restarter.cancel()) replies.say(reply, ChatTone.SUCCESS, "Перезапуск отменён.")
+        else replies.say(reply, ChatTone.WARNING, "Перезапуск не запланирован.")
     }
 
     /** Runs what [token] grants: a rollback of the plan, a rollback to a saved backup set, or the restart. */
@@ -225,7 +251,9 @@ internal class BukkitUpdateFlow(
             ?: return replies.say(reply, ChatTone.FAILURE, "Подтверждение недействительно, истекло или уже использовано.")
         when (grant.action) {
             UpdateAction.PLAN_ROLLBACK -> runPlanRollback(sender, reply, grant)
-            UpdateAction.RESTART -> runRestart(sender, reply, grant)
+            UpdateAction.RESTART -> runRestart(sender, reply, grant, ServerRestarter.Mode.NOW)
+            UpdateAction.RESTART_LATER -> runRestart(sender, reply, grant, ServerRestarter.Mode.IN_FIVE_MINUTES)
+            UpdateAction.RESTART_EMPTY -> runRestart(sender, reply, grant, ServerRestarter.Mode.WHEN_EMPTY)
             UpdateAction.ROLLBACK -> runSavedRollback(sender, reply, grant.plan, restoreConfigurations = false)
             UpdateAction.ROLLBACK_CONFIGS -> runSavedRollback(sender, reply, grant.plan, restoreConfigurations = true)
         }
@@ -242,7 +270,10 @@ internal class BukkitUpdateFlow(
         library.updates.rollback(replies.updateActor(sender)).whenComplete { _, error ->
             replies.onServerThread {
                 if (error != null) replies.fail(reply, "Не удалось подготовить откат", error)
-                else replies.say(reply, ChatTone.SUCCESS, "Предыдущие версии плагинов подготовлены.", "Полностью перезапустите сервер.")
+                else {
+                    replies.say(reply, ChatTone.SUCCESS, "Предыдущие версии плагинов подготовлены.", "Полностью перезапустите сервер.")
+                    suggestRestart(sender, reply)
+                }
             }
         }
     }
@@ -254,34 +285,32 @@ internal class BukkitUpdateFlow(
         library.updates.rollback(id, restoreConfigurations, replies.updateActor(sender)).whenComplete { _, error ->
             replies.onServerThread {
                 if (error != null) replies.fail(reply, "Не удалось подготовить откат", error)
-                else replies.say(reply, ChatTone.SUCCESS, "Резервный набор подготовлен.", "Полностью перезапустите сервер, чтобы применить его.")
+                else {
+                    replies.say(reply, ChatTone.SUCCESS, "Резервный набор подготовлен.", "Полностью перезапустите сервер, чтобы применить его.")
+                    suggestRestart(sender, reply)
+                }
             }
         }
     }
 
-    @Suppress("DEPRECATION")
-    private fun runRestart(sender: CommandSender, reply: Reply, grant: UpdateConfirmationTokens.Grant) {
+    private fun runRestart(sender: CommandSender, reply: Reply, grant: UpdateConfirmationTokens.Grant, mode: ServerRestarter.Mode) {
         if (!sender.hasPermission("pnlibrary.updates.restart")) {
             return replies.say(reply, ChatTone.FAILURE, "Недостаточно прав для перезапуска.")
         }
         if (!planIsStill(grant)) return replies.say(reply, ChatTone.FAILURE, "План обновления изменился; запросите перезапуск заново.")
-        Bukkit.broadcastMessage(RESTART_NOTICE)
-        Bukkit.getScheduler().runTaskLater(plugin, Runnable { Bukkit.spigot().restart() }, RESTART_DELAY_TICKS)
+        when (restarter.start(mode)) {
+            ServerRestarter.Started.COUNTDOWN -> replies.say(reply, ChatTone.SUCCESS, "Перезапуск запланирован.", "Отменить: /pn update restart cancel")
+            ServerRestarter.Started.WAITING_FOR_EMPTY ->
+                replies.say(reply, ChatTone.SUCCESS, "Перезапущу сервер, когда на нём никого не останется.", "Отменить: /pn update restart cancel")
+        }
     }
 
     private companion object {
-        /** The chat-wide restart warning in the palette; the broadcast API takes legacy text on every version. */
-        val RESTART_NOTICE: String = LegacyComponentSerializer.legacySection().serialize(
-            Component.text("[pnFolder] ", ChatPalette.ACCENT)
-                .append(Component.text("Сервер перезапускается для применения обновлений.", ChatPalette.TEXT)),
-        )
-
         val CONFIRMATION_TIME: Duration = Duration.ofSeconds(30)
 
         /** The identity the console's tokens are bound to. */
         val CONSOLE_ID: UUID = UUID(0L, 0L)
         const val PROGRESS_TICKS = 100L
         const val TIMEOUT_TICKS = 1_200L
-        const val RESTART_DELAY_TICKS = 40L
     }
 }

@@ -136,8 +136,39 @@ class UpdateCatalogCommands(
         }
         addLiteral("backups") {
             (backupsPermission ?: viewPermission)?.let(::permission)
-            executes(::showBackups)
-            argument("page", ArgumentType.integer()) { executes(::showBackups) }
+            backupFilters(emptySet())
+        }
+    }
+
+    /**
+     * The words after `backups`: `plugin <name>`, `since <7d|date>` and `sort <new|old|plugin>`, each at most once and
+     * in any order, then an optional page. Every path through them shows the list.
+     */
+    private fun CommandNodeBuilder.backupFilters(used: Set<String>) {
+        executes(::showBackups)
+        argument("page", ArgumentType.integer()) { executes(::showBackups) }
+        if ("plugin" !in used) {
+            literal("plugin") {
+                argument("backupPlugin", ArgumentType.string()) {
+                    suggests { productNames() }
+                    backupFilters(used + "plugin")
+                }
+            }
+        }
+        if ("since" !in used) {
+            literal("since") {
+                argument("backupSince", ArgumentType.string()) {
+                    suggests { listOf("1d", "7d", "30d") }
+                    backupFilters(used + "since")
+                }
+            }
+        }
+        if ("sort" !in used) {
+            literal("sort") {
+                argument("backupSort", ArgumentType.choice(*BackupOrder.values().map { it.word }.toTypedArray())) {
+                    backupFilters(used + "sort")
+                }
+            }
         }
     }
 
@@ -288,12 +319,25 @@ class UpdateCatalogCommands(
     private fun showBackups(context: CommandContext) {
         if (!ready(context)) return
         val page = requestedPage(context) ?: return
+        val query = backupQuery(context) ?: return
         library.updates.backups().whenComplete { backups, failure ->
             deliver(Runnable {
                 if (failure != null) context.sender.send(error("Не удалось прочитать резервные наборы."))
-                else UpdateCatalogView.backups(backups, page, routesFor(context)).forEach(context.sender::send)
+                else UpdateCatalogView.backups(backups, page, routesFor(context), query = query).forEach(context.sender::send)
             })
         }
+    }
+
+    /** What the words after `backups` ask for, or null after telling the sender that a value is wrong. */
+    private fun backupQuery(context: CommandContext): BackupQuery? {
+        val plugin = if (context.contains("backupPlugin")) context.get<String>("backupPlugin") else null
+        val sinceText = if (context.contains("backupSince")) context.get<String>("backupSince") else null
+        val since = sinceText?.let {
+            BackupQuery.parseSince(it, java.time.Instant.now(), org.pnfolder.pnlibrary.common.time.DisplayZone.zone)
+                ?: return context.sender.send(error("Не понял «$it»: после since напишите ${BackupQuery.SINCE_HELP}.")).let { null }
+        }
+        val order = if (context.contains("backupSort")) BackupQuery.orderOf(context.get<String>("backupSort")) else BackupOrder.NEWEST
+        return BackupQuery(plugin?.lowercase(Locale.ROOT), since, sinceText, order ?: BackupOrder.NEWEST)
     }
 
     private fun historyFailure(failure: Throwable, product: String?): String {

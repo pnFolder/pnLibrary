@@ -9,8 +9,14 @@ import java.util.concurrent.ConcurrentHashMap
 
 /** Describes the operation authorized by a single-use confirmation token. */
 enum class UpdateAction {
-    /** Restart the server to apply the staged plan. */
+    /** Restart the server at once (after a short countdown for players) to apply the staged plan. */
     RESTART,
+
+    /** Restart the server after a five-minute countdown shown to the players. */
+    RESTART_LATER,
+
+    /** Restart the server as soon as no player is online. */
+    RESTART_EMPTY,
 
     /** Roll back the whole current update plan. */
     PLAN_ROLLBACK,

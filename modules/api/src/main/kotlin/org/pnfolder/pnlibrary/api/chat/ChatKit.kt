@@ -174,6 +174,22 @@ open class ChatKit(val reader: ChatReader) {
         return framed(result)
     }
 
+    /**
+     * Like [confirmation], but with several answers on one line; a reader that cannot click gets one line per
+     * answer with the command to type.
+     */
+    fun confirmationChoices(title: String, lines: List<String>, choices: List<ConfirmChoice>): List<Component> {
+        val result = mutableListOf(header(title), blank())
+        lines.forEach { result += note(it, ChatPalette.TEXT) }
+        result += blank()
+        if (reader.interactive) {
+            actions(*choices.map { button(it.label, it.command, it.hint, ChatPalette.DANGER) }.toTypedArray())?.let { result += it }
+        } else {
+            choices.forEach { result += text("  ${it.label}: ", ChatPalette.LABEL).append(text(it.command, ChatPalette.LABEL)) }
+        }
+        return framed(result)
+    }
+
     /** Plain text in [color]; the console gets the ASCII form. */
     fun text(value: String, color: TextColor? = null): Component {
         val component = Component.text(shown(value))

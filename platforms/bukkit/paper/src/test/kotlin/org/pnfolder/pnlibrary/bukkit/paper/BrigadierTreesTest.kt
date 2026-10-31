@@ -83,6 +83,34 @@ class BrigadierTreesTest {
     }
 
     @Test
+    fun `a subcommand the sender may not enter is not offered by tab`() {
+        val guarded = command("guarded") {
+            literal("open") { executes { } }
+            literal("admin") {
+                permission("demo.admin")
+                executes { }
+            }
+        }
+        val byPermission = object : NativeInvocation<Set<String>> {
+            override fun execute(source: Set<String>, input: String) = Unit
+            override fun suggest(source: Set<String>, input: String): CompletionStage<List<String>> =
+                CompletableFuture.completedFuture(emptyList())
+
+            override fun allowed(source: Set<String>, node: org.pnfolder.pnlibrary.api.commands.CommandNode): Boolean =
+                node.permission == null || node.permission in source
+        }
+        val dispatcher = CommandDispatcher<Set<String>>()
+        dispatcher.root.addChild(BrigadierTrees.build(guarded, byPermission))
+
+        // The client tree is built from the nodes a source may use, so that is what decides what Tab offers.
+        fun offered(source: Set<String>) =
+            dispatcher.root.getChild("guarded").children.filter { it.canUse(source) }.map { it.name }.sorted()
+
+        assertEquals(listOf("open"), offered(emptySet()))
+        assertEquals(listOf("admin", "open"), offered(setOf("demo.admin")))
+    }
+
+    @Test
     fun `a command line is split into the label and its arguments`() {
         val typed = CommandLine.of("pnlibrary:pn events  abc", keepTrailing = false)
         assertEquals("pn", typed.label)

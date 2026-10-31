@@ -93,6 +93,7 @@ API состоит из интерфейсов, моделей и небольш
 - [Действия](docs/actions.md)
 - [Проверки](docs/checks.md)
 - [Каталог релизов](docs/releases.md)
+- [Ручная проверка перед выпуском](docs/verification.html)
 - [Плейсхолдеры](docs/placeholders.md)
 - [Задачи](docs/tasks.md)
 - [Диагностика](docs/diagnostics.md)
