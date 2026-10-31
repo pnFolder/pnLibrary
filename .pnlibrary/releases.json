@@ -3,6 +3,59 @@
   "product": "pnlibrary",
   "releases": [
     {
+      "version": "0.0.1-dev.6",
+      "channel": "dev",
+      "description": "Updates: smart restart after staging (now / in 5 minutes / when empty) with player countdown; backups list with plugin and date filters and sorting; /pn gui rechecks permissions; Tab hides subcommands without permission; structure cleanup.",
+      "changelogUrl": "https://github.com/pnFolder/pnLibrary/blob/main/.pnlibrary/changelogs/0.0.1-dev.6.md",
+      "publishedAt": "2026-10-31T21:03:46Z",
+      "api": {
+        "minimum": 1,
+        "maximum": 1
+      },
+      "artifacts": [
+        {
+          "file": "pnLibrary-0.0.1-dev.6-bukkit-java8.jar",
+          "platform": "BUKKIT",
+          "java": {
+            "minimum": 8
+          },
+          "url": "https://github.com/pnFolder/pnLibrary/releases/download/v0.0.1-dev.6/pnLibrary-0.0.1-dev.6-bukkit-java8.jar",
+          "sha256": "2f3ab337688dc3f0825e0f24bd2a062b6b9fe02a111f1f029d907e268a3a82f0",
+          "size": 7800711
+        },
+        {
+          "file": "pnLibrary-0.0.1-dev.6-bungeecord-java8.jar",
+          "platform": "BUNGEECORD",
+          "java": {
+            "minimum": 8
+          },
+          "url": "https://github.com/pnFolder/pnLibrary/releases/download/v0.0.1-dev.6/pnLibrary-0.0.1-dev.6-bungeecord-java8.jar",
+          "sha256": "fc579102e6207f7e469c2ca56a3dd377419c459b4fee5ca8b174fba93247d33e",
+          "size": 7016818
+        },
+        {
+          "file": "pnLibrary-0.0.1-dev.6-velocity-java17.jar",
+          "platform": "VELOCITY",
+          "java": {
+            "minimum": 17
+          },
+          "url": "https://github.com/pnFolder/pnLibrary/releases/download/v0.0.1-dev.6/pnLibrary-0.0.1-dev.6-velocity-java17.jar",
+          "sha256": "7a1b29741ff48ea8ec853aa35c8d03e584e842e810e50046535673eb66d04323",
+          "size": 7043016
+        },
+        {
+          "file": "pnLibrary-0.0.1-dev.6-universal.jar",
+          "platform": "UNIVERSAL",
+          "java": {
+            "minimum": 8
+          },
+          "url": "https://github.com/pnFolder/pnLibrary/releases/download/v0.0.1-dev.6/pnLibrary-0.0.1-dev.6-universal.jar",
+          "sha256": "66ead1bdb4e453bb895a40d4f44540df414370cf8243ada4699b46077ff6a507",
+          "size": 5075112
+        }
+      ]
+    },
+    {
       "version": "0.0.1-dev.5",
       "channel": "dev",
       "description": "Documented the public API (KDoc), replaced runCatching with runCatchingNonFatal, removed unused imports.",
