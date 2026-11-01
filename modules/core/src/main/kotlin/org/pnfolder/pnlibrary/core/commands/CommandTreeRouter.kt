@@ -37,26 +37,36 @@ internal class CommandTreeRouter {
         blocked(node, routed)?.let { return problem(it, nodes) }
         val path = mutableListOf(command.name)
 
-        context.arguments.forEach { token ->
+        var index = 0
+        while (index < context.arguments.size) {
+            val token = context.arguments[index]
             val literal = node.children.firstOrNull {
                 it.kind == CommandNodeKind.LITERAL && it.name.equals(token, ignoreCase = true)
             }
             val child = literal ?: node.children.firstOrNull { it.kind == CommandNodeKind.ARGUMENT }
-                ?: return problem(UnknownArgument(usage(path, node, routed), token), nodes)
+            if (child == null) {
+                if (node.acceptsExtraArguments && node.isExecutable) return CommandRoute.Executable(node, routed, nodes)
+                return problem(UnknownArgument(usage(path, node, routed), token), nodes)
+            }
             nodes += child
             blocked(child, routed)?.let { return problem(it, nodes) }
             if (child.kind == CommandNodeKind.ARGUMENT) {
-                val parsed = parse(child, token) ?: return problem(
-                    (child.argumentType ?: ArgumentType.string()).error(usage(path, node, routed), child.name, token),
+                // A greedy argument takes the rest of the line as one value and ends the walk.
+                val greedy = child.argumentType?.spec?.kind == ArgumentSpec.Kind.GREEDY
+                val text = if (greedy) context.arguments.drop(index).joinToString(" ") else token
+                val parsed = parse(child, text) ?: return problem(
+                    (child.argumentType ?: ArgumentType.string()).error(usage(path, node, routed), child.name, text),
                     nodes,
                 )
                 values[child.name] = parsed
                 path += "<${child.name}>"
+                if (greedy) index = context.arguments.size - 1
             } else {
                 path += child.name
             }
             node = child
             routed = context.copy(parsedValues = values.toMap())
+            index++
         }
 
         return if (node.isExecutable) CommandRoute.Executable(node, routed, nodes)
@@ -84,11 +94,14 @@ internal class CommandTreeRouter {
         val partial = if (context.arguments.isEmpty()) context.currentInput else context.arguments.last()
 
         consumed.forEach { token ->
+            // Everything typed after a greedy argument still belongs to that argument.
+            if (node.argumentType?.spec?.kind == ArgumentSpec.Kind.GREEDY) return@forEach
             val literal = node.children.firstOrNull {
                 it.kind == CommandNodeKind.LITERAL && it.name.equals(token, ignoreCase = true)
             }
             val child = literal ?: node.children.firstOrNull { it.kind == CommandNodeKind.ARGUMENT }
-                ?: return completedSuggestions(emptyList())
+                ?: return if (node.acceptsExtraArguments) node.suggestions.suggest(routed.copy(currentInput = partial))
+                else completedSuggestions(emptyList())
             if (!allowed(child, routed)) return completedSuggestions(emptyList())
             if (child.kind == CommandNodeKind.ARGUMENT) {
                 val parsed = parse(child, token) ?: return completedSuggestions(emptyList())
@@ -109,7 +122,7 @@ internal class CommandTreeRouter {
             ?.takeIf { allowed(it, suggestionContext) }
         val stage = when {
             argument != null -> argument.suggestions.suggest(suggestionContext).thenApply { it + builtInSuggestions(argument) }
-            node.children.isEmpty() -> node.suggestions.suggest(suggestionContext)
+            node.children.isEmpty() || node.acceptsExtraArguments -> node.suggestions.suggest(suggestionContext)
             else -> completedSuggestions(emptyList())
         }
         return stage.thenApply { dynamic ->

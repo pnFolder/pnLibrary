@@ -20,7 +20,7 @@ class ArgumentSpec private constructor(
     choices: List<String>,
 ) {
     /** The shape of a token. */
-    enum class Kind { TEXT, INTEGER, LONG, DECIMAL, BOOLEAN, CHOICE }
+    enum class Kind { TEXT, INTEGER, LONG, DECIMAL, BOOLEAN, CHOICE, GREEDY }
 
     val choices: List<String> = choices.toList()
 
@@ -29,6 +29,10 @@ class ArgumentSpec private constructor(
         /** Any single word. */
         @JvmField
         val TEXT: ArgumentSpec = ArgumentSpec(Kind.TEXT, null, null, emptyList())
+
+        /** Every remaining word of the line, joined by single spaces. */
+        @JvmField
+        val GREEDY: ArgumentSpec = ArgumentSpec(Kind.GREEDY, null, null, emptyList())
 
         /** A true/false token. */
         @JvmField
@@ -88,6 +92,7 @@ fun interface ArgumentType<T : Any> {
         }
 
         private val STRING = typed(ArgumentSpec.TEXT) { it }
+        private val GREEDY_STRING = typed(ArgumentSpec.GREEDY) { it.takeIf(String::isNotBlank) }
         private val INTEGER = typed(ArgumentSpec.integer()) { it.toIntOrNull() }
         private val LONG = typed(ArgumentSpec.long()) { it.toLongOrNull() }
         private val DECIMAL = typed(ArgumentSpec.decimal()) { it.toBigDecimalOrNull() }
@@ -102,6 +107,13 @@ fun interface ArgumentType<T : Any> {
         /** Returns the parser that preserves the input token as a string. */
         @JvmStatic
         fun string(): ArgumentType<String> = STRING
+
+        /**
+         * Returns the argument that takes the rest of the line, such as a clan name or a search phrase with spaces. It
+         * must be the last node of its branch: the router hands it every remaining word joined by single spaces.
+         */
+        @JvmStatic
+        fun greedyString(): ArgumentType<String> = GREEDY_STRING
 
         /** Returns the base-10 32-bit integer parser. */
         @JvmStatic

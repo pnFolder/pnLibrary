@@ -143,6 +143,63 @@ class CommandTreeRouterTest {
         }
     }
 
+    @Test
+    fun `greedy argument takes the rest of the line as one value`() {
+        val definition = command("clan") {
+            literal("create") {
+                argument("name", ArgumentType.greedyString()) { executes { } }
+            }
+        }
+        val router = CommandTreeRouter()
+
+        val route = router.route(definition, context(listOf("create", "Dark", "Knights", "of", "Pn")))
+        val missing = router.route(definition, context(listOf("create")))
+
+        assertEquals("Dark Knights of Pn", (route as CommandRoute.Executable).context.get<String>("name"))
+        assertTrue(missing is CommandRoute.Problem)
+    }
+
+    @Test
+    fun `greedy argument must end its branch`() {
+        org.junit.jupiter.api.Assertions.assertThrows(IllegalArgumentException::class.java) {
+            command("clan") {
+                argument("name", ArgumentType.greedyString()) {
+                    literal("more") { executes { } }
+                }
+            }
+        }
+    }
+
+    @Test
+    fun `node that accepts extra arguments runs on words no child matches`() {
+        val definition = command("shop") {
+            executes { }
+            acceptsExtraArguments()
+            literal("reload") { executes { } }
+        }
+        val strict = command("strict") {
+            executes { }
+            literal("reload") { executes { } }
+        }
+        val router = CommandTreeRouter()
+
+        val unknown = router.route(definition, context(listOf("whatever", "else")))
+        val known = router.route(definition, context(listOf("reload")))
+        val refused = router.route(strict, context(listOf("whatever")))
+
+        assertTrue(unknown is CommandRoute.Executable)
+        assertEquals(listOf("whatever", "else"), (unknown as CommandRoute.Executable).context.arguments)
+        assertEquals("reload", (known as CommandRoute.Executable).node.name)
+        assertTrue((refused as CommandRoute.Problem).error is org.pnfolder.pnlibrary.api.commands.UnknownArgument)
+    }
+
+    @Test
+    fun `an alias may use any script`() {
+        val definition = command("trade") { aliases("обмен"); executes { } }
+
+        assertEquals(setOf("обмен"), definition.aliases)
+    }
+
     private fun context(arguments: List<String>, permissions: Set<String> = emptySet()) = CommandContext(
         sender = TestSender(permissions),
         arguments = arguments,
