@@ -56,7 +56,21 @@ internal object BrigadierTrees {
             }
         }
         node.children.forEach { builder.then(child(it, invocation)) }
+        if (node.acceptsExtraArguments && node.isExecutable && node.children.none { it.kind == CommandNodeKind.ARGUMENT }) {
+            // Free words after this node are not rejected by the client: the portable router decides what they mean.
+            builder.then(
+                RequiredArgumentBuilder.argument<S, Any>(EXTRA_ARGUMENTS, typeOf(ArgumentSpec.GREEDY))
+                    .requires { invocation.allowed(it, node) }
+                    .suggests(suggestionsFor(invocation))
+                    .executes { context ->
+                        invocation.execute(context.source, context.input)
+                        Command.SINGLE_SUCCESS
+                    },
+            )
+        }
     }
+
+    private const val EXTRA_ARGUMENTS = "arguments"
 
     private fun <S> child(node: CommandNode, invocation: NativeInvocation<S>): ArgumentBuilder<S, *> {
         if (node.kind == CommandNodeKind.LITERAL) {
@@ -89,6 +103,7 @@ internal object BrigadierTrees {
         ArgumentSpec.Kind.DECIMAL ->
             if (spec.minimum == -Double.MAX_VALUE && spec.maximum == Double.MAX_VALUE) StringArgumentType.word()
             else DoubleArgumentType.doubleArg(bound(spec.minimum, spec), bound(spec.maximum, spec))
+        ArgumentSpec.Kind.GREEDY -> StringArgumentType.greedyString()
         ArgumentSpec.Kind.BOOLEAN, ArgumentSpec.Kind.CHOICE, ArgumentSpec.Kind.TEXT -> StringArgumentType.word()
     } as ArgumentType<Any>
 

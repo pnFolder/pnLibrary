@@ -119,4 +119,23 @@ class BrigadierTreesTest {
         val completing = CommandLine.of("/pn events view ", keepTrailing = true)
         assertEquals(listOf("events", "view", ""), completing.arguments)
     }
+
+    @Test
+    fun `free text reaches the router through a greedy argument and an extra-words node`() {
+        val shop = command("shop") {
+            executes { }
+            acceptsExtraArguments()
+            literal("reload") { executes { } }
+            literal("name") {
+                argument("title", ArgumentType.greedyString()) { executes { } }
+            }
+        }
+        val dispatcher = CommandDispatcher<String>().also { it.root.addChild(BrigadierTrees.build(shop, invocation)) }
+
+        dispatcher.execute("shop name Dark Knights of Pn", "player")
+        dispatcher.execute("shop anything at all", "player")
+        dispatcher.execute("shop reload", "player")
+
+        assertEquals(listOf("shop name Dark Knights of Pn", "shop anything at all", "shop reload"), executed)
+    }
 }

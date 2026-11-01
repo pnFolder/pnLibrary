@@ -1163,6 +1163,7 @@ public final class org/pnfolder/pnlibrary/api/checks/internal/RequirementSeriali
 public final class org/pnfolder/pnlibrary/api/commands/ArgumentSpec {
 	public static final field BOOLEAN Lorg/pnfolder/pnlibrary/api/commands/ArgumentSpec;
 	public static final field Companion Lorg/pnfolder/pnlibrary/api/commands/ArgumentSpec$Companion;
+	public static final field GREEDY Lorg/pnfolder/pnlibrary/api/commands/ArgumentSpec;
 	public static final field TEXT Lorg/pnfolder/pnlibrary/api/commands/ArgumentSpec;
 	public synthetic fun <init> (Lorg/pnfolder/pnlibrary/api/commands/ArgumentSpec$Kind;Ljava/lang/Double;Ljava/lang/Double;Ljava/util/List;Lkotlin/jvm/internal/DefaultConstructorMarker;)V
 	public static final fun choice (Ljava/util/List;)Lorg/pnfolder/pnlibrary/api/commands/ArgumentSpec;
@@ -1201,6 +1202,7 @@ public final class org/pnfolder/pnlibrary/api/commands/ArgumentSpec$Kind : java/
 	public static final field BOOLEAN Lorg/pnfolder/pnlibrary/api/commands/ArgumentSpec$Kind;
 	public static final field CHOICE Lorg/pnfolder/pnlibrary/api/commands/ArgumentSpec$Kind;
 	public static final field DECIMAL Lorg/pnfolder/pnlibrary/api/commands/ArgumentSpec$Kind;
+	public static final field GREEDY Lorg/pnfolder/pnlibrary/api/commands/ArgumentSpec$Kind;
 	public static final field INTEGER Lorg/pnfolder/pnlibrary/api/commands/ArgumentSpec$Kind;
 	public static final field LONG Lorg/pnfolder/pnlibrary/api/commands/ArgumentSpec$Kind;
 	public static final field TEXT Lorg/pnfolder/pnlibrary/api/commands/ArgumentSpec$Kind;
@@ -1218,6 +1220,7 @@ public abstract interface class org/pnfolder/pnlibrary/api/commands/ArgumentType
 	public static fun enumeration (Ljava/lang/Class;)Lorg/pnfolder/pnlibrary/api/commands/ArgumentType;
 	public fun error (Ljava/lang/String;Ljava/lang/String;Ljava/lang/String;)Lorg/pnfolder/pnlibrary/api/commands/CommandError;
 	public fun getSpec ()Lorg/pnfolder/pnlibrary/api/commands/ArgumentSpec;
+	public static fun greedyString ()Lorg/pnfolder/pnlibrary/api/commands/ArgumentType;
 	public static fun integer ()Lorg/pnfolder/pnlibrary/api/commands/ArgumentType;
 	public static fun integer (II)Lorg/pnfolder/pnlibrary/api/commands/ArgumentType;
 	public static fun long ()Lorg/pnfolder/pnlibrary/api/commands/ArgumentType;
@@ -1233,6 +1236,7 @@ public final class org/pnfolder/pnlibrary/api/commands/ArgumentType$Companion {
 	public final fun decimal ()Lorg/pnfolder/pnlibrary/api/commands/ArgumentType;
 	public final fun decimal (DD)Lorg/pnfolder/pnlibrary/api/commands/ArgumentType;
 	public final fun enumeration (Ljava/lang/Class;)Lorg/pnfolder/pnlibrary/api/commands/ArgumentType;
+	public final fun greedyString ()Lorg/pnfolder/pnlibrary/api/commands/ArgumentType;
 	public final fun integer ()Lorg/pnfolder/pnlibrary/api/commands/ArgumentType;
 	public final fun integer (II)Lorg/pnfolder/pnlibrary/api/commands/ArgumentType;
 	public final fun long ()Lorg/pnfolder/pnlibrary/api/commands/ArgumentType;
@@ -1252,6 +1256,7 @@ public abstract interface class org/pnfolder/pnlibrary/api/commands/CommandAvail
 }
 
 public final class org/pnfolder/pnlibrary/api/commands/CommandBuilder {
+	public final fun acceptsExtraArguments ()Lorg/pnfolder/pnlibrary/api/commands/CommandBuilder;
 	public final fun aliases ([Ljava/lang/String;)Lorg/pnfolder/pnlibrary/api/commands/CommandBuilder;
 	public final fun argument (Ljava/lang/String;Lorg/pnfolder/pnlibrary/api/commands/ArgumentType;Ljava/util/function/Consumer;)Lorg/pnfolder/pnlibrary/api/commands/CommandBuilder;
 	public final synthetic fun argument (Ljava/lang/String;Lorg/pnfolder/pnlibrary/api/commands/ArgumentType;Lkotlin/jvm/functions/Function1;)Lorg/pnfolder/pnlibrary/api/commands/CommandBuilder;
@@ -1356,6 +1361,7 @@ public abstract interface class org/pnfolder/pnlibrary/api/commands/CommandHandl
 }
 
 public final class org/pnfolder/pnlibrary/api/commands/CommandNode {
+	public final fun getAcceptsExtraArguments ()Z
 	public final fun getAlsoPermissions ()Ljava/util/List;
 	public final fun getArgumentType ()Lorg/pnfolder/pnlibrary/api/commands/ArgumentType;
 	public final fun getAvailability ()Lorg/pnfolder/pnlibrary/api/commands/CommandAvailability;
@@ -1374,6 +1380,7 @@ public final class org/pnfolder/pnlibrary/api/commands/CommandNode {
 }
 
 public final class org/pnfolder/pnlibrary/api/commands/CommandNodeBuilder {
+	public final fun acceptsExtraArguments ()Lorg/pnfolder/pnlibrary/api/commands/CommandNodeBuilder;
 	public final fun argument (Ljava/lang/String;Lorg/pnfolder/pnlibrary/api/commands/ArgumentType;Ljava/util/function/Consumer;)Lorg/pnfolder/pnlibrary/api/commands/CommandNodeBuilder;
 	public final synthetic fun argument (Ljava/lang/String;Lorg/pnfolder/pnlibrary/api/commands/ArgumentType;Lkotlin/jvm/functions/Function1;)Lorg/pnfolder/pnlibrary/api/commands/CommandNodeBuilder;
 	public final fun availableIf (Lorg/pnfolder/pnlibrary/api/commands/CommandAvailability;)Lorg/pnfolder/pnlibrary/api/commands/CommandNodeBuilder;

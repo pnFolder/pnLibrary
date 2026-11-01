@@ -40,6 +40,8 @@ fun interface CommandAvailability {
  * @property errorHandlers handlers for errors that occur at or below this node, by error class
  * @property senderRule who may enter this node
  * @property description what this node does and how, one line each; shown under the usage line when a sender stops here
+ * @property acceptsExtraArguments whether an executable node still runs when the sender types words no child matches;
+ * the handler then sees every typed word in [CommandContext.arguments]
  */
 class CommandNode internal constructor(
     val kind: CommandNodeKind,
@@ -57,6 +59,7 @@ class CommandNode internal constructor(
     val senderRule: SenderRule = SenderRule.ANY,
     alsoPermissions: List<String> = emptyList(),
     description: List<String> = emptyList(),
+    val acceptsExtraArguments: Boolean = false,
 ) {
     val description: List<String> = Collections.unmodifiableList(ArrayList(description))
     val alsoPermissions: List<String> = Collections.unmodifiableList(ArrayList(alsoPermissions))
@@ -86,6 +89,7 @@ class CommandNodeBuilder internal constructor(
     private var execution = CommandHandler { completedExecution() }
     private var suggestions = SuggestionHandler { completedSuggestions(emptyList()) }
     private var executable = false
+    private var acceptsExtraArguments = false
     private val children = mutableListOf<CommandNodeBuilder>()
     private val mounted = mutableListOf<CommandNode>()
 
@@ -154,6 +158,13 @@ class CommandNodeBuilder internal constructor(
     /** Restricts node availability using [rule]. */
     fun availableIf(rule: CommandAvailability): CommandNodeBuilder = apply { availability = rule }
 
+    /**
+     * Lets this executable node run when the sender types words that none of its children match, instead of answering
+     * with an unknown-argument error. The handler reads the words from [CommandContext.arguments]. A modern Paper
+     * client is told the node takes free text, so it does not reject them early.
+     */
+    fun acceptsExtraArguments(): CommandNodeBuilder = apply { acceptsExtraArguments = true }
+
     /** Installs a synchronous execution [handler]. */
     fun executes(handler: Consumer<CommandContext>): CommandNodeBuilder = apply {
         executable = true
@@ -221,7 +232,7 @@ class CommandNodeBuilder internal constructor(
         return CommandNode(
             kind, name, argumentType, permission, consoleBypassesPermission, availability,
             execution, suggestions, executable, children.map(CommandNodeBuilder::build) + mounted, noPermissionMessage, errorHandlers, senderRule,
-            alsoPermissions, description,
+            alsoPermissions, description, acceptsExtraArguments,
         )
     }
 
@@ -231,6 +242,9 @@ class CommandNodeBuilder internal constructor(
         require(duplicate == null) { "Duplicate command child '${duplicate?.key?.second}'" }
         require(children.count { it.kind == CommandNodeKind.ARGUMENT } <= 1) {
             "A command node cannot have multiple argument children"
+        }
+        children.firstOrNull { it.argumentType?.spec?.kind == ArgumentSpec.Kind.GREEDY && it.children.isNotEmpty() }?.let {
+            throw IllegalArgumentException("Greedy argument '${it.name}' must be the last node of its branch")
         }
     }
 }
@@ -263,6 +277,7 @@ private fun rebased(node: CommandNode, mountName: String? = null): CommandNode {
         node.senderRule,
         node.alsoPermissions,
         node.description,
+        node.acceptsExtraArguments,
     )
 }
 

@@ -65,6 +65,7 @@ class CommandBuilder internal constructor(name: String) {
     private var senderRule = SenderRule.ANY
     private var execution = CommandHandler { completedExecution() }
     private var executable = false
+    private var acceptsExtraArguments = false
     private var suggestions = SuggestionHandler { completedSuggestions(emptyList()) }
     private var availability = CommandAvailability { true }
     private val children = mutableListOf<CommandNodeBuilder>()
@@ -73,7 +74,7 @@ class CommandBuilder internal constructor(name: String) {
     /** Adds normalized command aliases. */
     fun aliases(vararg values: String): CommandBuilder = apply {
         values.forEach { value ->
-            val alias = normalizeCommandName(value, "command alias")
+            val alias = normalizeCommandName(value, "command alias", ALIAS_NAME)
             require(alias != name) { "Command alias must differ from the primary name" }
             aliases += alias
         }
@@ -139,6 +140,12 @@ class CommandBuilder internal constructor(name: String) {
     fun consoleBypassesPermission(enabled: Boolean = true): CommandBuilder = apply {
         consoleBypassesPermission = enabled
     }
+
+    /**
+     * Lets the root run when the sender types words that none of its children match, instead of answering with an
+     * unknown-argument error; the handler reads them from [CommandContext.arguments].
+     */
+    fun acceptsExtraArguments(): CommandBuilder = apply { acceptsExtraArguments = true }
 
     /** Installs a synchronous root execution [handler]. */
     fun executes(handler: Consumer<CommandContext>): CommandBuilder = apply {
@@ -220,6 +227,7 @@ class CommandBuilder internal constructor(name: String) {
             consoleBypassesPermission(consoleBypassesPermission)
             availableIf(availability)
             if (executable) executesAsync(execution)
+            if (acceptsExtraArguments) acceptsExtraArguments()
             suggestsAsync(suggestions)
             children.forEach { child -> addBuiltChild(child) }
             addMounted(mounted)
@@ -252,9 +260,12 @@ fun completedSuggestions(values: List<String>): CompletionStage<List<String>> =
 
 private val COMMAND_NAME = Regex("[a-z0-9][a-z0-9:_-]*")
 
-private fun normalizeCommandName(value: String, field: String): String =
+/** An alias may also be spelled in any script, such as a Cyrillic `обмен`. */
+private val ALIAS_NAME = Regex("[\\p{L}\\p{N}][\\p{L}\\p{N}:_-]*")
+
+private fun normalizeCommandName(value: String, field: String, pattern: Regex = COMMAND_NAME): String =
     value.trim().lowercase(Locale.ROOT).also {
-        require(COMMAND_NAME.matches(it)) {
-            "$field must match ${COMMAND_NAME.pattern}"
+        require(pattern.matches(it)) {
+            "$field must match ${pattern.pattern}"
         }
     }
