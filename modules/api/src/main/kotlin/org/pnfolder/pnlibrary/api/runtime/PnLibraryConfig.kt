@@ -70,6 +70,8 @@ import java.util.regex.PatternSyntaxException
  * @property consoleOnlyMessage message shown when a console-only command runs in game
  * @property journalJoinNoticeHours hours after join during which the join notice is shown
  * @property eventHistoryDays days of per-day event call counts kept for `/pn bus history`; `0` keeps none
+ * @property blackBox whether log lines are recorded in the black box (diagnostics buffer and journal); `false` leaves the
+ * console as the only place they appear, whatever a plugin asks for
  * @throws IllegalArgumentException if a numeric limit, provider, mode, path, or regular
  * expression is invalid
  */
@@ -111,6 +113,7 @@ data class PnLibraryConfig @JvmOverloads constructor(
     val consoleOnlyMessage: String = "Эту команду можно использовать только из консоли.",
     val journalJoinNoticeHours: Int = 24,
     val eventHistoryDays: Int = 30,
+    val blackBox: Boolean = true,
 ) {
     init {
         require(noPermissionMessage.isNotBlank() && noPermissionMessage.length <= 256) {

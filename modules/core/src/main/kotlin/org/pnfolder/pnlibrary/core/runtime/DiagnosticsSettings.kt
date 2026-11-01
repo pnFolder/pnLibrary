@@ -46,6 +46,15 @@ internal class DiagnosticsSettings {
 
     @field:ConfigNewLine
     @field:ConfigComment(
+        "=== Чёрный ящик ===",
+        "Записывать ли строки логов плагинов, подключённых к pnLibrary, в чёрный ящик: журнал и буфер последних записей,",
+        "из которого собирается диагностический отчёт. По умолчанию включено, плагины сами решают, что важно записать.",
+        "Ставьте false, чтобы строки остались только в консоли. Тогда в отчёте не будет последних записей логов.",
+    )
+    var blackBox: Boolean = true
+
+    @field:ConfigNewLine
+    @field:ConfigComment(
         "=== Журнал событий ===",
         "Писать ли в журнал предупреждения и ошибки плагинов, которые не подключены к pnLibrary.",
         "По умолчанию выключено: в журнале только pnLibrary и плагины, которые пишут через неё.",
@@ -82,6 +91,7 @@ internal class DiagnosticsSettings {
         privacy = privacy,
         noPermissionMessage = noPermissionMessage,
         journalForeignPlugins = journalForeignPlugins,
+        blackBox = blackBox,
         journalJoinNotice = journalJoinNotice,
         timeZone = timeZone.trim().takeIf { runCatchingNonFatal { java.time.ZoneId.of(it) }.isSuccess }
             ?: java.time.ZoneId.systemDefault().id,

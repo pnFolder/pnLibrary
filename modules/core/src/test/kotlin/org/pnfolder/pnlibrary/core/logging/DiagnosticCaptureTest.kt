@@ -65,6 +65,32 @@ class DiagnosticCaptureTest {
     }
 
     @Test
+    fun `the administrator can switch the black box off for every line`() {
+        val buffer = DiagnosticLogBuffer()
+        var journaled = 0
+        var observed = 0
+        var printed = 0
+        var enabled = true
+        val native = object : PlatformLogging {
+            override fun log(owner: Any, level: LogLevel, message: String, error: Throwable?) { printed++ }
+        }
+        val capture = DiagnosticCapture(ownership, native, buffer, { _, _, _, _ -> journaled++ }, { enabled }) { _, _, _ -> observed++ }
+        val error = IllegalStateException("failure")
+
+        capture.write(this, LogLevel.ERROR, "recorded", error, true)
+        assertEquals(1, journaled)
+        assertEquals(1L, buffer.summary()["occurrenceCount"])
+
+        enabled = false
+        capture.write(this, LogLevel.ERROR, "not recorded", error, true)
+
+        assertEquals(2, printed)
+        assertEquals(1, journaled)
+        assertEquals(1L, buffer.summary()["occurrenceCount"])
+        assertEquals(2, observed)
+    }
+
+    @Test
     fun `a debug line is kept in the black box and never printed`() {
         var journaled = 0
         var printed = 0
