@@ -7,6 +7,7 @@ import org.junit.jupiter.api.Test
 import org.pnfolder.pnlibrary.api.metrics.MetricsBuilder
 import org.pnfolder.pnlibrary.api.metrics.MetricsProvider
 import org.pnfolder.pnlibrary.api.metrics.PluginMetrics
+import org.pnfolder.pnlibrary.api.platform.PlatformType
 import java.util.function.Supplier
 
 class MetricsBuilderTest {
@@ -23,6 +24,33 @@ class MetricsBuilderTest {
         )
         assertEquals(32592, configurations[0].projectId)
         assertEquals("token", configurations[1].token)
+    }
+
+    @Test
+    fun `picks the bStats project of the running platform`() {
+        val configuration = MetricsBuilder()
+            .bStats(PlatformType.BUKKIT, 1)
+            .bStats(mapOf(PlatformType.VELOCITY to 3))
+            .bStats(10)
+            .build().single()
+
+        assertEquals(1, configuration.forPlatform(PlatformType.BUKKIT).projectId)
+        assertEquals(3, configuration.forPlatform(PlatformType.VELOCITY).projectId)
+        assertEquals(10, configuration.forPlatform(PlatformType.BUNGEECORD).projectId)
+    }
+
+    @Test
+    fun `a platform without a bStats project is rejected`() {
+        val configuration = MetricsBuilder().bStats(PlatformType.BUKKIT, 1).build().single()
+
+        assertThrows(IllegalArgumentException::class.java) { configuration.forPlatform(PlatformType.VELOCITY) }
+    }
+
+    @Test
+    fun `rejects a repeated bStats project for one platform`() {
+        val builder = MetricsBuilder().bStats(PlatformType.BUKKIT, 1)
+
+        assertThrows(IllegalStateException::class.java) { builder.bStats(PlatformType.BUKKIT, 2) }
     }
 
     @Test

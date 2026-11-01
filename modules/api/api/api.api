@@ -2291,6 +2291,8 @@ public abstract interface class org/pnfolder/pnlibrary/api/metrics/ErrorReporter
 public final class org/pnfolder/pnlibrary/api/metrics/MetricsBuilder {
 	public fun <init> ()V
 	public final fun bStats (I)Lorg/pnfolder/pnlibrary/api/metrics/MetricsBuilder;
+	public final fun bStats (Ljava/util/Map;)Lorg/pnfolder/pnlibrary/api/metrics/MetricsBuilder;
+	public final fun bStats (Lorg/pnfolder/pnlibrary/api/platform/PlatformType;I)Lorg/pnfolder/pnlibrary/api/metrics/MetricsBuilder;
 	public final fun build ()Ljava/util/List;
 	public final fun charts (Ljava/util/function/Consumer;)Lorg/pnfolder/pnlibrary/api/metrics/MetricsBuilder;
 	public final fun configure (Lorg/pnfolder/pnlibrary/api/metrics/PluginMetrics;)V
@@ -2348,17 +2350,20 @@ public final class org/pnfolder/pnlibrary/api/metrics/MetricsProvider : java/lan
 }
 
 public final class org/pnfolder/pnlibrary/api/metrics/MetricsProviderConfiguration {
-	public fun <init> (Lorg/pnfolder/pnlibrary/api/metrics/MetricsProvider;ZLjava/lang/Integer;Ljava/lang/String;)V
-	public synthetic fun <init> (Lorg/pnfolder/pnlibrary/api/metrics/MetricsProvider;ZLjava/lang/Integer;Ljava/lang/String;ILkotlin/jvm/internal/DefaultConstructorMarker;)V
+	public fun <init> (Lorg/pnfolder/pnlibrary/api/metrics/MetricsProvider;ZLjava/lang/Integer;Ljava/util/Map;Ljava/lang/String;)V
+	public synthetic fun <init> (Lorg/pnfolder/pnlibrary/api/metrics/MetricsProvider;ZLjava/lang/Integer;Ljava/util/Map;Ljava/lang/String;ILkotlin/jvm/internal/DefaultConstructorMarker;)V
 	public final fun component1 ()Lorg/pnfolder/pnlibrary/api/metrics/MetricsProvider;
 	public final fun component2 ()Z
 	public final fun component3 ()Ljava/lang/Integer;
-	public final fun component4 ()Ljava/lang/String;
-	public final fun copy (Lorg/pnfolder/pnlibrary/api/metrics/MetricsProvider;ZLjava/lang/Integer;Ljava/lang/String;)Lorg/pnfolder/pnlibrary/api/metrics/MetricsProviderConfiguration;
-	public static synthetic fun copy$default (Lorg/pnfolder/pnlibrary/api/metrics/MetricsProviderConfiguration;Lorg/pnfolder/pnlibrary/api/metrics/MetricsProvider;ZLjava/lang/Integer;Ljava/lang/String;ILjava/lang/Object;)Lorg/pnfolder/pnlibrary/api/metrics/MetricsProviderConfiguration;
+	public final fun component4 ()Ljava/util/Map;
+	public final fun component5 ()Ljava/lang/String;
+	public final fun copy (Lorg/pnfolder/pnlibrary/api/metrics/MetricsProvider;ZLjava/lang/Integer;Ljava/util/Map;Ljava/lang/String;)Lorg/pnfolder/pnlibrary/api/metrics/MetricsProviderConfiguration;
+	public static synthetic fun copy$default (Lorg/pnfolder/pnlibrary/api/metrics/MetricsProviderConfiguration;Lorg/pnfolder/pnlibrary/api/metrics/MetricsProvider;ZLjava/lang/Integer;Ljava/util/Map;Ljava/lang/String;ILjava/lang/Object;)Lorg/pnfolder/pnlibrary/api/metrics/MetricsProviderConfiguration;
 	public final fun credentials ()Lorg/pnfolder/pnlibrary/api/metrics/MetricsCredentials;
 	public fun equals (Ljava/lang/Object;)Z
+	public final fun forPlatform (Lorg/pnfolder/pnlibrary/api/platform/PlatformType;)Lorg/pnfolder/pnlibrary/api/metrics/MetricsProviderConfiguration;
 	public final fun getEnabled ()Z
+	public final fun getPlatformProjectIds ()Ljava/util/Map;
 	public final fun getProjectId ()Ljava/lang/Integer;
 	public final fun getProvider ()Lorg/pnfolder/pnlibrary/api/metrics/MetricsProvider;
 	public final fun getToken ()Ljava/lang/String;

@@ -106,7 +106,7 @@ internal class PnLibraryImpl(
 
     private val closedFlag = AtomicBoolean(false)
     override val isClosed: Boolean get() = closedFlag.get()
-    private val metricsService = MetricsServiceImpl(metricsFactory)
+    private val metricsService = MetricsServiceImpl(metricsFactory, platform.identity.type)
     private var libraryMetrics: PluginMetrics? = null
     val dataFolder: Path = PlatformDataFolderResolver.resolve(owner, dataFolderHint)
     init {
