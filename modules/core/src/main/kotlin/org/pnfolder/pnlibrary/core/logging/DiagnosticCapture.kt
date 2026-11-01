@@ -28,7 +28,7 @@ internal class DiagnosticCapture(
      * Writes one line. With [record] `false` it is console only and never reaches the black box; a [LogLevel.DEBUG]
      * line is the opposite and never reaches the console.
      */
-    fun write(owner: Any, level: LogLevel, message: String, error: Throwable?, record: Boolean) {
+    fun write(owner: Any, level: LogLevel, message: String, error: Throwable? = null, record: Boolean = true) {
         val result = if (record) capture(owner, level, message, error, true) else null
         if (level == LogLevel.DEBUG) return
         val output = when {

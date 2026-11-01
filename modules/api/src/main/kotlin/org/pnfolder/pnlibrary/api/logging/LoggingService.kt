@@ -49,7 +49,7 @@ interface PnLogger {
      * short form below uses) it also goes into the black box: the diagnostics buffer, the journal and, for an
      * error with an exception, the error report. With [record] `false` it is console only and leaves no trace.
      */
-    fun log(level: LogLevel, message: String, error: Throwable?, record: Boolean)
+    fun log(level: LogLevel, message: String, error: Throwable? = null, record: Boolean = true)
 
     /** Writes normal operational information to the console and the black box. */
     fun info(message: String) = log(LogLevel.INFO, message, null, true)
