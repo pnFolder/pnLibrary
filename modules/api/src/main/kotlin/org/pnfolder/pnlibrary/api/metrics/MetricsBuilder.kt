@@ -3,12 +3,15 @@ package org.pnfolder.pnlibrary.api.metrics
 import org.pnfolder.pnlibrary.api.metrics.MetricsProvider
 import org.pnfolder.pnlibrary.api.metrics.MetricsProviderConfiguration
 import org.pnfolder.pnlibrary.api.metrics.PluginMetrics
+import org.pnfolder.pnlibrary.api.platform.PlatformType
 import java.util.function.Consumer
 
 /** Builds provider-neutral metrics configuration without exposing provider internals. */
 class MetricsBuilder {
     private val configurations = mutableListOf<MetricsProviderConfiguration>()
     private val configurers = mutableListOf<Consumer<PluginMetrics>>()
+    private var bStatsDefault: Int? = null
+    private val bStatsByPlatform = linkedMapOf<PlatformType, Int>()
 
     /** Whether metrics start together with the module. */
     var enabled: Boolean = true
@@ -19,10 +22,23 @@ class MetricsBuilder {
         enabled = value
     }
 
-    /** Enables bStats for this module. */
+    /** Enables bStats for this module with one project used on every platform without its own ID. */
     fun bStats(projectId: Int): MetricsBuilder = apply {
         require(projectId > 0) { "Metrics project ID must be positive" }
-        add(MetricsProviderConfiguration(MetricsProvider.BSTATS, projectId = projectId))
+        check(bStatsDefault == null) { "Metrics provider ${MetricsProvider.BSTATS} is already configured" }
+        bStatsDefault = projectId
+    }
+
+    /** Enables bStats for this module with the project of one platform; bStats keeps a separate project per platform. */
+    fun bStats(platform: PlatformType, projectId: Int): MetricsBuilder = apply {
+        require(projectId > 0) { "Metrics project ID must be positive" }
+        check(platform !in bStatsByPlatform) { "bStats project for ${platform.displayName} is already configured" }
+        bStatsByPlatform[platform] = projectId
+    }
+
+    /** Enables bStats for this module with the projects of several platforms at once. */
+    fun bStats(projectIds: Map<PlatformType, Int>): MetricsBuilder = apply {
+        projectIds.forEach { (platform, projectId) -> bStats(platform, projectId) }
     }
 
     /** Enables FastStats for this module. */
@@ -38,8 +54,19 @@ class MetricsBuilder {
 
     /** Returns the configured providers, rejecting an empty setup. */
     fun build(): List<MetricsProviderConfiguration> {
-        require(configurations.isNotEmpty()) { "At least one metrics provider is required" }
-        return configurations.toList()
+        val bStats = if (bStatsDefault != null || bStatsByPlatform.isNotEmpty()) {
+            listOf(
+                MetricsProviderConfiguration(
+                    MetricsProvider.BSTATS,
+                    projectId = bStatsDefault,
+                    platformProjectIds = bStatsByPlatform.toMap(),
+                ),
+            )
+        } else {
+            emptyList()
+        }
+        require(configurations.isNotEmpty() || bStats.isNotEmpty()) { "At least one metrics provider is required" }
+        return bStats + configurations
     }
 
     /** Replays registered chart callbacks when a runtime session is created or restarted. */

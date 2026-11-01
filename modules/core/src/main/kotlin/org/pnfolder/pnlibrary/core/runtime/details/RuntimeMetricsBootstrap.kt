@@ -3,6 +3,7 @@ package org.pnfolder.pnlibrary.core.runtime.details
 import org.pnfolder.pnlibrary.api.metrics.MetricsProvider
 import org.pnfolder.pnlibrary.api.metrics.MetricsProviderConfiguration
 import org.pnfolder.pnlibrary.api.metrics.PluginMetrics
+import org.pnfolder.pnlibrary.api.platform.PlatformType
 import org.pnfolder.pnlibrary.common.lang.runCatchingNonFatal
 import org.pnfolder.pnlibrary.core.metrics.MetricsServiceImpl
 import org.pnfolder.pnlibrary.spi.platform.PlatformIdentity
@@ -22,7 +23,8 @@ internal class RuntimeMetricsBootstrap(
                 listOf(
                     MetricsProviderConfiguration(
                         provider = MetricsProvider.BSTATS,
-                        projectId = BSTATS_PROJECT_ID,
+                        projectId = BSTATS_PROJECT_IDS.getValue(PlatformType.BUKKIT),
+                        platformProjectIds = BSTATS_PROJECT_IDS,
                     ),
                     MetricsProviderConfiguration(
                         provider = MetricsProvider.FASTSTATS,
@@ -42,7 +44,12 @@ internal class RuntimeMetricsBootstrap(
     }
 
     private companion object {
-        const val BSTATS_PROJECT_ID = 34864
+        // bStats keeps one project per platform.
+        val BSTATS_PROJECT_IDS = mapOf(
+            PlatformType.BUKKIT to 34864,
+            PlatformType.BUNGEECORD to 35054,
+            PlatformType.VELOCITY to 35053,
+        )
         const val FASTSTATS_TOKEN = "f42221b1c859605f4c717b427f5df910"
     }
 }

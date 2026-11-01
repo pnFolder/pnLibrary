@@ -4,6 +4,7 @@ import org.pnfolder.pnlibrary.api.metrics.ErrorReporter
 import org.pnfolder.pnlibrary.api.metrics.MetricsProviderConfiguration
 import org.pnfolder.pnlibrary.api.metrics.MetricsService
 import org.pnfolder.pnlibrary.api.metrics.PluginMetrics
+import org.pnfolder.pnlibrary.api.platform.PlatformType
 import org.pnfolder.pnlibrary.common.lang.runCatchingNonFatal
 import org.pnfolder.pnlibrary.spi.metrics.PlatformMetricsFactory
 import java.util.Collections
@@ -11,13 +12,16 @@ import java.util.IdentityHashMap
 import java.util.concurrent.atomic.AtomicBoolean
 
 /** Owns every platform metrics session and provides idempotent managed close handles. */
-internal class MetricsServiceImpl(private val factory: PlatformMetricsFactory) : MetricsService, AutoCloseable {
+internal class MetricsServiceImpl(
+    private val factory: PlatformMetricsFactory,
+    private val platform: PlatformType? = null,
+) : MetricsService, AutoCloseable {
     private var closed = false
 
     @Synchronized
     override fun openErrorReporter(owner: Any, configurations: Collection<MetricsProviderConfiguration>): ErrorReporter? {
         check(!closed) { "Metrics service is closed" }
-        return factory.openErrorReporter(owner, configurations)
+        return factory.openErrorReporter(owner, forPlatform(configurations))
     }
     private val sessions = Collections.newSetFromMap(IdentityHashMap<PluginMetrics, Boolean>())
 
@@ -30,8 +34,12 @@ internal class MetricsServiceImpl(private val factory: PlatformMetricsFactory) :
         require(configurations.any { it.enabled }) {
             "At least one metrics provider must be enabled"
         }
-        return manage(factory.open(owner, configurations))
+        return manage(factory.open(owner, forPlatform(configurations)))
     }
+
+    /** Picks the bStats project of the running platform; without a known platform the configurations stay as given. */
+    private fun forPlatform(configurations: Collection<MetricsProviderConfiguration>): Collection<MetricsProviderConfiguration> =
+        platform?.let { type -> configurations.map { if (it.enabled) it.forPlatform(type) else it } } ?: configurations
 
     private fun manage(delegate: PluginMetrics): PluginMetrics {
         val managed = ManagedMetrics(delegate) { synchronized(this) { sessions.remove(it) } }

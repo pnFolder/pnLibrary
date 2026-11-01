@@ -7,6 +7,7 @@ import org.pnfolder.pnlibrary.api.metrics.ErrorReporter
 import org.pnfolder.pnlibrary.api.metrics.MetricsProvider
 import org.pnfolder.pnlibrary.api.metrics.MetricsProviderConfiguration
 import org.pnfolder.pnlibrary.api.metrics.PluginMetrics
+import org.pnfolder.pnlibrary.api.platform.PlatformType
 import org.pnfolder.pnlibrary.core.metrics.MetricsServiceImpl
 import org.pnfolder.pnlibrary.spi.metrics.PlatformMetricsFactory
 import java.util.concurrent.Executors
@@ -17,6 +18,37 @@ import java.util.function.Supplier
 class MetricsServiceImplTest {
     private val bStats = listOf(MetricsProviderConfiguration(MetricsProvider.BSTATS, projectId = 123))
     private val fastStats = listOf(MetricsProviderConfiguration(MetricsProvider.FASTSTATS, token = "token"))
+
+    @Test
+    fun `opens the bStats project of the running platform`() {
+        var projectId: Int? = null
+        val registry = MetricsServiceImpl(
+            object : PlatformMetricsFactory {
+                override fun open(owner: Any, configurations: Collection<MetricsProviderConfiguration>): PluginMetrics {
+                    projectId = configurations.single().projectId
+                    return FakeMetrics {}
+                }
+
+                override fun openErrorReporter(
+                    owner: Any,
+                    configurations: Collection<MetricsProviderConfiguration>,
+                ): ErrorReporter? = null
+            },
+            PlatformType.VELOCITY,
+        )
+        registry.open(
+            Any(),
+            listOf(
+                MetricsProviderConfiguration(
+                    MetricsProvider.BSTATS,
+                    projectId = 1,
+                    platformProjectIds = mapOf(PlatformType.VELOCITY to 3),
+                ),
+            ),
+        )
+        assertEquals(3, projectId)
+        registry.close()
+    }
 
     @Test
     fun `closed registry rejects every metrics factory entry point`() {
