@@ -75,6 +75,9 @@ internal class AnnotatedYamlCodec<T : Any>(
     private val schemaInspector = ConfigSchemaInspector(introspector, serializerResolver)
     private val polymorphicResolver = ConfigPolymorphicResolver(runtimeTypes, consumer, introspector)
     override val requiredPaths: Set<String> = schemaInspector.requiredPaths(type)
+
+    /** Dotted paths of the `@ConfigSecret` fields, which diagnostic reports never show. */
+    val secretPaths: List<String> = introspector.secretPaths(type)
     private val yaml = DumperOptions().apply {
         defaultFlowStyle = DumperOptions.FlowStyle.BLOCK
         isPrettyFlow = false

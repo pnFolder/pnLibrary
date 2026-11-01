@@ -30,6 +30,13 @@ class ConfigurationServiceImpl(
     private val runtimeTypes = linkedSetOf<TypeRegistration>()
     private val closed = AtomicBoolean(false)
 
+    /**
+     * Told about every registered file, so that diagnostics can read it and hide its `@ConfigSecret` fields. The
+     * returned handle is closed together with the scope.
+     */
+    @Volatile
+    var fileListener: ((ManagedConfigFile) -> AutoCloseable?)? = null
+
     /** Returns the scope of [owner], using the plugin id the platform reports for it. */
     override fun scope(owner: Any): ConfigScope {
         val pluginId = PluginId.of(platform.ownerDetails(owner)["id"] ?: owner.javaClass.simpleName)
@@ -85,6 +92,7 @@ class ConfigurationServiceImpl(
         private val logger: Logger,
     ) : ConfigScope {
         private val handles = linkedSetOf<ManagedConfig<*>>()
+        private val announcements = mutableListOf<AutoCloseable>()
         private val serializers = BuiltInConfigSerializers.create()
         private val scopeClosed = AtomicBoolean(false)
         override val size: Int get() = synchronized(handles) { handles.size }
@@ -128,12 +136,16 @@ class ConfigurationServiceImpl(
                 options = options,
             )
             val owned = OwnedConfig(target, handle)
+            val announced = runCatching {
+                fileListener?.invoke(ManagedConfigFile(pluginId, directory, relative.toString().replace('\\', '/'), codec.secretPaths))
+            }.getOrNull()
             synchronized(handles) {
                 check(!scopeClosed.get()) { "Configuration scope is closed" }
                 check(handles.none { (it as? OwnedConfig<*>)?.file == target }) {
                     "Configuration $path is already registered"
                 }
                 handles += owned
+                announced?.let { announcements += it }
             }
             return owned
         }
@@ -184,6 +196,7 @@ class ConfigurationServiceImpl(
             val owned = synchronized(handles) { handles.toList().also { handles.clear() } }
             runAll(
                 { runAll(owned.map { handle -> { handle.close() } }) },
+                { runAll(synchronized(handles) { announcements.toList().also { announcements.clear() } }.map { it -> { it.close() } }) },
                 {
                     synchronized(runtimeTypes) {
                         val published = runtimeTypes.filter { it.owner == pluginId }
@@ -254,3 +267,16 @@ private fun runAll(steps: List<() -> Unit>) {
     }
     failure?.let { throw it }
 }
+
+/**
+ * A file registered through a configuration scope.
+ *
+ * @property path path relative to [directory], with `/` separators
+ * @property secretPaths dotted paths of the `@ConfigSecret` fields
+ */
+class ManagedConfigFile(
+    val pluginId: PluginId,
+    val directory: Path,
+    val path: String,
+    val secretPaths: List<String>,
+)

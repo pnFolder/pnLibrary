@@ -4,6 +4,7 @@ import org.pnfolder.pnlibrary.api.config.ConfigIgnore
 import org.pnfolder.pnlibrary.api.config.ConfigKey
 import org.pnfolder.pnlibrary.api.config.ConfigNamingStrategy
 import org.pnfolder.pnlibrary.api.config.ConfigOrder
+import org.pnfolder.pnlibrary.api.config.ConfigSecret
 import java.lang.reflect.Field
 import java.lang.reflect.Modifier
 import java.lang.reflect.ParameterizedType
@@ -49,6 +50,25 @@ internal class ConfigObjectIntrospector(
         ?.value
         ?.takeIf(String::isNotBlank)
         ?: applyNaming(field.name, defaultNaming)
+
+    /** Returns the dotted YAML paths of every `@ConfigSecret` field of [type], including those of nested sections. */
+    fun secretPaths(type: Class<*>): List<String> = buildList { collectSecrets(type, "", 0, this) }
+
+    private fun collectSecrets(type: Class<*>, prefix: String, depth: Int, out: MutableList<String>) {
+        if (depth >= 8) return
+        fields(type).forEach { field ->
+            val path = prefix + key(field)
+            if (field.isAnnotationPresent(ConfigSecret::class.java)) {
+                out += path
+                return@forEach
+            }
+            val raw = rawClass(field.genericType)
+            val nested = !raw.isPrimitive && !raw.isEnum && !raw.isArray && !isScalar(raw) &&
+                !Collection::class.java.isAssignableFrom(raw) && !Map::class.java.isAssignableFrom(raw) &&
+                !raw.name.startsWith("java.") && !raw.name.startsWith("kotlin.")
+            if (nested) collectSecrets(raw, "$path.", depth + 1, out)
+        }
+    }
 
     /** Reads an already-discovered field from [owner]. */
     fun read(field: Field, owner: Any): Any? = field.get(owner)

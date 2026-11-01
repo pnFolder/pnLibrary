@@ -8,6 +8,8 @@ import org.pnfolder.pnlibrary.api.commands.CommandDefinition
 import org.pnfolder.pnlibrary.api.commands.CommandRegistration
 import org.pnfolder.pnlibrary.api.config.ConfigurationService
 import org.pnfolder.pnlibrary.api.diagnostics.DebugRequest
+import org.pnfolder.pnlibrary.api.diagnostics.DiagnosticConfiguration
+import org.pnfolder.pnlibrary.api.diagnostics.DiagnosticsContributor
 import org.pnfolder.pnlibrary.api.diagnostics.DiagnosticReport
 import org.pnfolder.pnlibrary.api.events.EventService
 import org.pnfolder.pnlibrary.api.expansions.ExpansionManager
@@ -147,7 +149,20 @@ internal class PnLibraryImpl(
         capture = support.capture,
     )
 
-    private val features = RuntimeFeatureSet(platform, dataFolder, support.capture)
+    private val features = RuntimeFeatureSet(platform, dataFolder, support.capture).also { set ->
+        // Every file a plugin registers goes into its report, with the @ConfigSecret fields hidden.
+        set.configurations.fileListener = { file ->
+            val configuration = DiagnosticConfiguration.builder(file.path).also { builder ->
+                file.secretPaths.forEach(builder::exclude)
+            }.build()
+            val contributor = object : DiagnosticsContributor {
+                override val id: String = "config:${file.path}"
+                override fun collect(): Map<String, Any?> = emptyMap()
+                override fun configurations(): Collection<DiagnosticConfiguration> = listOf(configuration)
+            }
+            diagnostics.register(file.pluginId.value, file.directory, contributor)
+        }
+    }
     private val configurationService get() = features.configurations
     override val configurations: ConfigurationService get() = configurationService
     private val updateService get() = features.updates
