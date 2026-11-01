@@ -51,7 +51,7 @@ internal class SupportRuntime(
     private val diagnosticBridge = DiagnosticObservationBridge(observations)
     val service = ObservabilityServiceImpl(diagnostics, observations)
     val logs = DiagnosticLogBuffer(config.logRecords.coerceIn(10, 2_000))
-    val capture = DiagnosticCapture(ownership, platformLogging, logs, journal, { config.blackBox }) { logOwner, message, error ->
+    val capture = DiagnosticCapture(ownership, platformLogging, logs, journal) { logOwner, message, error ->
         service.record(
             type = "RUNTIME_ERROR",
             category = ActivityCategory.ERROR,

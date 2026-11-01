@@ -11,7 +11,6 @@ internal class DiagnosticCapture(
     private val native: PlatformLogging,
     private val incidents: DiagnosticLogBuffer? = null,
     private val journal: ((Any, LogLevel, String, Throwable?) -> Unit)? = null,
-    private val recording: () -> Boolean = { true },
     private val onError: (Any, String, Throwable) -> Unit = { _, _, _ -> },
 ) : PlatformLogging {
     private val emitting = ThreadLocal<Boolean>()
@@ -62,11 +61,8 @@ internal class DiagnosticCapture(
     }
 
     private fun capture(owner: Any, level: LogLevel, message: String, error: Throwable?, includeJournal: Boolean): DiagnosticLogBuffer.CaptureResult? {
-        // The administrator's switch covers the black box (journal and incident buffer); error observation has its own.
-        val keep = recording()
-        if (includeJournal && keep) runCatchingNonFatal { journal?.invoke(owner, level, message, error) }
+        if (includeJournal) runCatchingNonFatal { journal?.invoke(owner, level, message, error) }
         if (error != null && level == LogLevel.ERROR) runCatchingNonFatal { onError(owner, message, error) }
-        if (!keep) return null
         return runCatchingNonFatal { incidents?.record(ownership, owner, level, message, error) }.getOrNull()
     }
 
