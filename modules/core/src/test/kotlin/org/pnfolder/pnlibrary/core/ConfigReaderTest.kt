@@ -53,6 +53,28 @@ class ConfigReaderTest {
     }
 
     @Test
+    fun `administrator path with a file prefix hides the value only in that file`() {
+        val plugin = Files.createDirectory(dataFolder.resolve("pnExample"))
+        plugin.resolve("config.yml").toFile().writeText("note: a\nother: b")
+        plugin.resolve("messages.yml").toFile().writeText("note: a\nother: b")
+        val reader = ConfigReader(
+            dataFolder,
+            org.pnfolder.pnlibrary.api.runtime.PnLibraryConfig(
+                excludedPaths = listOf("pnExample/config.yml:note", "other"),
+            ),
+        )
+
+        fun values(file: String): Map<String, Any?> {
+            @Suppress("UNCHECKED_CAST")
+            val data = reader.readAndRedact(DiagnosticConfiguration.builder(file).build(), plugin)["data"] as Map<String, Any?>
+            return data
+        }
+
+        assertEquals(mapOf("note" to "[EXCLUDED BY RULE]", "other" to "[EXCLUDED BY RULE]"), values("config.yml"))
+        assertEquals(mapOf("note" to "a", "other" to "[EXCLUDED BY RULE]"), values("messages.yml"))
+    }
+
+    @Test
     fun `blocks path traversal`() {
         val spec = DiagnosticConfiguration.builder("config.yml").build()
         val reader = ConfigReader(dataFolder)
