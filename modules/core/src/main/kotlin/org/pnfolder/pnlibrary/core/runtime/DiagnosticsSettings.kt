@@ -22,17 +22,20 @@ import org.pnfolder.pnlibrary.common.lang.runCatchingNonFatal
 internal class DiagnosticsSettings {
     @field:ConfigComment(
         "=== Приватность ===",
-        "Не включать в отчёт личные данные игроков: имена, UUID, адреса, пинг и названия текущих серверов.",
-        "Ставьте false, только если эти данные нужны для разбора проблемы.",
+        "Скрывать ли в отчёте личные данные игроков: имена, UUID, адреса, пинг и названия текущих серверов.",
+        "По умолчанию false: данные показываются, так проблему разобрать проще. Поставьте true, чтобы скрыть их.",
     )
-    var privacy: Boolean = true
+    var privacy: Boolean = false
 
     @field:ConfigComment(
-        "Значения в конфигурациях плагинов, которые никогда не попадут в отчёт. Путь пишется через точку.",
-        "Пример: чтобы скрыть пароль базы данных из database.yml, где он лежит в разделе database, ключ password:",
+        "Значения в файлах настроек плагинов, которые никогда не попадут в отчёт.",
+        "Путь пишется через точку от корня файла: раздел, затем ключ. Он действует для файлов ВСЕХ плагинов сразу,",
+        "поэтому называйте путь так, как он выглядит в файле плагина (чаще всего config.yml).",
+        "Пример: в config.yml плагина есть раздел database, а в нём ключ password. Чтобы скрыть его, допишите:",
         "excluded-paths:",
         "  - database.password",
         "  - discord.webhook-url",
+        "Пароли, токены и ключи pnLibrary скрывает сама, перечислять их не нужно.",
     )
     var excludedPaths: List<String> = emptyList()
 
@@ -51,12 +54,6 @@ internal class DiagnosticsSettings {
         "По умолчанию выключено: в журнале только pnLibrary и плагины, которые пишут через неё.",
     )
     var journalForeignPlugins: Boolean = false
-
-    @field:ConfigComment(
-        "Показывать ли администратору при входе краткую сводку: что сломалось недавно, при запуске, только что",
-        "или повторяется. Если всё в порядке, сообщение не показывается. Нужно право pnlibrary.events.view или OP.",
-    )
-    var journalJoinNotice: Boolean = true
 
     @field:ConfigNewLine
     @field:ConfigComment(
@@ -82,7 +79,6 @@ internal class DiagnosticsSettings {
         privacy = privacy,
         noPermissionMessage = noPermissionMessage,
         journalForeignPlugins = journalForeignPlugins,
-        journalJoinNotice = journalJoinNotice,
         timeZone = timeZone.trim().takeIf { runCatchingNonFatal { java.time.ZoneId.of(it) }.isSuccess }
             ?: java.time.ZoneId.systemDefault().id,
     )

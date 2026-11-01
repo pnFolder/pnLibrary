@@ -173,7 +173,6 @@ internal class PnLibraryImpl(
     override fun mountableCommand(name: String): CommandDefinition? = mountable[name]
 
     override fun journalJoinNotice(): List<Component> {
-        if (!config.journalJoinNotice) return emptyList()
         val now = System.currentTimeMillis()
         val since = now - Duration.ofHours(config.journalJoinNoticeHours.toLong()).toMillis()
         return runCatchingNonFatal {
