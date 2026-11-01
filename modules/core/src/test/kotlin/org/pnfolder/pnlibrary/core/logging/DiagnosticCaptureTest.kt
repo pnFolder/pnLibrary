@@ -40,6 +40,47 @@ class DiagnosticCaptureTest {
     }
 
     @Test
+    fun `a line written without record reaches the console only`() {
+        val buffer = DiagnosticLogBuffer()
+        var journaled = 0
+        var observed = 0
+        var printed = 0
+        val native = object : PlatformLogging {
+            override fun log(owner: Any, level: LogLevel, message: String, error: Throwable?) { printed++ }
+        }
+        val capture = DiagnosticCapture(ownership, native, buffer, { _, _, _, _ -> journaled++ }) { _, _, _ -> observed++ }
+        val error = IllegalStateException("failure")
+
+        capture.write(this, LogLevel.ERROR, "noisy but harmless", error, false)
+        assertEquals(1, printed)
+        assertEquals(0, journaled)
+        assertEquals(0, observed)
+        assertEquals(0L, buffer.summary()["occurrenceCount"])
+
+        capture.write(this, LogLevel.ERROR, "critical", error, true)
+        assertEquals(2, printed)
+        assertEquals(1, journaled)
+        assertEquals(1, observed)
+        assertEquals(1L, buffer.summary()["occurrenceCount"])
+    }
+
+    @Test
+    fun `a debug line is kept in the black box and never printed`() {
+        var journaled = 0
+        var printed = 0
+        val native = object : PlatformLogging {
+            override fun log(owner: Any, level: LogLevel, message: String, error: Throwable?) { printed++ }
+        }
+        val capture = DiagnosticCapture(ownership, native, DiagnosticLogBuffer(), { _, _, _, _ -> journaled++ })
+
+        capture.write(this, LogLevel.DEBUG, "detail", null, true)
+        capture.write(this, LogLevel.DEBUG, "skipped detail", null, false)
+
+        assertEquals(0, printed)
+        assertEquals(1, journaled)
+    }
+
+    @Test
     fun `an echo delivered on another thread is ignored but unrelated lines still count`() {
         var journaled = 0
         lateinit var capture: DiagnosticCapture

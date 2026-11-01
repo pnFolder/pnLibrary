@@ -4,6 +4,9 @@ import org.pnfolder.pnlibrary.api.plugin.LifecycleRow
 
 /** Semantic severity and presentation category for plugin log messages. */
 enum class LogLevel {
+    /** Detail for a support report; the console does not show it. */
+    DEBUG,
+
     /** Normal operational information. */
     INFO,
     /** Positive completion or readiness information. */
@@ -41,18 +44,51 @@ interface LoggingService {
  * aggregate repeated diagnostic incidents before writing to the native console.
  */
 interface PnLogger {
+    /**
+     * Writes one line at [level] and decides where it goes. The console always gets it. With [record] `true` (what every
+     * short form below uses) it also goes into the black box: the diagnostics buffer, the journal and, for an
+     * error with an exception, the error report. With [record] `false` it is console only and leaves no trace.
+     */
+    fun log(level: LogLevel, message: String, error: Throwable?, record: Boolean)
 
-    /** Writes normal operational information. */
-    fun info(message: String)
+    /** Writes normal operational information to the console and the black box. */
+    fun info(message: String) = log(LogLevel.INFO, message, null, true)
 
-    /** Writes positive completion or readiness information. */
-    fun success(message: String)
+    /** Writes normal operational information; with [record] `false` it stays out of the black box. */
+    fun info(message: String, record: Boolean) = log(LogLevel.INFO, message, null, record)
 
-    /** Writes a recoverable problem requiring attention. */
-    fun warning(message: String)
+    /** Writes positive completion or readiness information to the console and the black box. */
+    fun success(message: String) = log(LogLevel.SUCCESS, message, null, true)
 
-    /** Writes a failure with an optional original [error] for diagnostics. */
-    fun error(message: String, error: Throwable? = null)
+    /** Writes positive completion information; with [record] `false` it stays out of the black box. */
+    fun success(message: String, record: Boolean) = log(LogLevel.SUCCESS, message, null, record)
+
+    /** Writes a recoverable problem requiring attention to the console and the black box. */
+    fun warning(message: String) = log(LogLevel.WARNING, message, null, true)
+
+    /** Writes a recoverable problem; with [record] `false` it stays out of the black box. */
+    fun warning(message: String, record: Boolean) = log(LogLevel.WARNING, message, null, record)
+
+    /** Writes a recoverable problem with the [error] that caused it, so the report keeps the stack trace. */
+    fun warning(message: String, error: Throwable?) = log(LogLevel.WARNING, message, error, true)
+
+    /** Writes a recoverable problem with its [error]; with [record] `false` it stays out of the black box. */
+    fun warning(message: String, error: Throwable?, record: Boolean) = log(LogLevel.WARNING, message, error, record)
+
+    /** Writes a failure to the console and the black box. */
+    fun error(message: String) = log(LogLevel.ERROR, message, null, true)
+
+    /** Writes a failure with its original [error], which the report keeps with the stack trace. */
+    fun error(message: String, error: Throwable?) = log(LogLevel.ERROR, message, error, true)
+
+    /** Writes a failure with its [error]; with [record] `false` it stays out of the black box. */
+    fun error(message: String, error: Throwable?, record: Boolean) = log(LogLevel.ERROR, message, error, record)
+
+    /**
+     * Writes a detail for a support report only: the black box keeps it and the console stays quiet. Use it where the
+     * old code logged at `FINE`.
+     */
+    fun debug(message: String) = log(LogLevel.DEBUG, message, null, true)
 }
 
 /**
