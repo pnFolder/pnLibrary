@@ -9,8 +9,8 @@ import org.pnfolder.pnlibrary.api.commands.CommandRegistration
 import org.pnfolder.pnlibrary.api.config.ConfigurationService
 import org.pnfolder.pnlibrary.api.diagnostics.DebugRequest
 import org.pnfolder.pnlibrary.api.diagnostics.DiagnosticConfiguration
-import org.pnfolder.pnlibrary.api.diagnostics.DiagnosticsContributor
 import org.pnfolder.pnlibrary.api.diagnostics.DiagnosticReport
+import org.pnfolder.pnlibrary.api.diagnostics.DiagnosticsContributor
 import org.pnfolder.pnlibrary.api.events.EventService
 import org.pnfolder.pnlibrary.api.expansions.ExpansionManager
 import org.pnfolder.pnlibrary.api.logging.LoggingService
@@ -46,7 +46,6 @@ import org.pnfolder.pnlibrary.core.lifecycle.JournalGroup
 import org.pnfolder.pnlibrary.core.lifecycle.ResourceCleanup
 import org.pnfolder.pnlibrary.core.lifecycle.RuntimeResources
 import org.pnfolder.pnlibrary.core.lifecycle.TaskControl
-import org.pnfolder.pnlibrary.core.lifecycle.journalJoinNotice
 import org.pnfolder.pnlibrary.core.lifecycle.registerRuntimeCommand
 import org.pnfolder.pnlibrary.core.logging.LoggingServiceImpl
 import org.pnfolder.pnlibrary.core.metrics.MetricsServiceImpl
