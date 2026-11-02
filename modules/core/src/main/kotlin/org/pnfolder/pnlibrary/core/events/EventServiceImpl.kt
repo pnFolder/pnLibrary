@@ -13,7 +13,6 @@ import org.pnfolder.pnlibrary.api.events.EventTrace
 import org.pnfolder.pnlibrary.api.events.InternalEventApi
 import org.pnfolder.pnlibrary.api.events.Listener
 import org.pnfolder.pnlibrary.api.events.ListenerInfo
-import org.pnfolder.pnlibrary.api.events.ResultedEvent
 import org.pnfolder.pnlibrary.api.plugin.ModuleId
 import org.pnfolder.pnlibrary.api.plugin.PluginId
 import org.pnfolder.pnlibrary.common.concurrent.ManagedWorker
@@ -66,78 +65,23 @@ internal class EventServiceImpl(
         try {
             dispatchInline(event, mode)
         } finally {
-            count(event)
+            counters.count(event)
         }
         return event
     }
 
-    /**
-     * Sorted listeners per event class. Adding or closing a subscription for type T drops only the cached
-     * lists of classes that T matches, so churn on one event never slows the others. A list built while a
-     * change was happening is returned for that call but not cached. Weak keys let an unloaded plugin's
-     * event classes be collected when nothing listens to them.
-     */
-    private val generation = AtomicLong()
-    private val cache = java.util.WeakHashMap<Class<*>, List<Subscription<out Event>>>()
+    private val handlers = HandlerCache<Subscription<out Event>>(
+        all = { subscriptions.asSequence() },
+        matches = { subscription, type -> !subscription.isClosed && subscription.eventType.isAssignableFrom(type) },
+        order = compareBy<Subscription<out Event>> { it.priority }.thenBy { it.order },
+    )
 
-    /** The most recently used lookup, readable without a lock: hot events repeat the same class. */
-    private class Last(val type: Class<*>, val handlers: List<Subscription<out Event>>)
-    @Volatile private var last: Last? = null
-
-    /** Forgets cached lists affected by a subscription to [changed]; `null` forgets everything. */
-    private fun invalidateHandlers(changed: Class<*>?) {
-        synchronized(cache) {
-            generation.incrementAndGet()
-            last = null
-            if (changed == null) cache.clear() else cache.keys.removeAll { changed.isAssignableFrom(it) }
-        }
-    }
-
-    private fun handlersFor(type: Class<*>): List<Subscription<out Event>> {
-        last?.let { if (it.type === type) return it.handlers }
-        val before = generation.get()
-        // Setting `last` inside the lock keeps it consistent with invalidation: a list read just before a
-        // change can never be republished as the fast-path entry after the change cleared it.
-        synchronized(cache) { cache[type]?.also { last = Last(type, it) } }?.let { return it }
-        val built = subscriptions.asSequence()
-            .filter { !it.isClosed && it.eventType.isAssignableFrom(type) }
-            .sortedWith(compareBy<Subscription<out Event>> { it.priority }.thenBy { it.order })
-            .toList()
-        synchronized(cache) {
-            if (generation.get() == before) {
-                cache[type] = built
-                last = Last(type, built)
-            }
-        }
-        return built
-    }
-
-    /** Traced event types and their capacity; empty almost always, so dispatch only reads one volatile field. */
-    @Volatile private var traced: Map<Class<out Event>, Int> = emptyMap()
-    private val recorded = java.util.ArrayDeque<EventTrace>()
-
-    private class Counter(type: Class<*>) {
-        val type = java.lang.ref.WeakReference(type)
-        val calls = LongAdder()
-        val denied = LongAdder()
-
-        @Volatile var lastMillis = 0L
-    }
-
-    private val counters = java.util.concurrent.ConcurrentHashMap<String, Counter>()
-
-    private fun count(event: Event) {
-        val name = event.javaClass.name
-        val counter = counters[name] ?: counters.computeIfAbsent(name) { Counter(event.javaClass) }
-        counter.calls.increment()
-        counter.lastMillis = System.currentTimeMillis()
-        if (!event.isAllowed) counter.denied.increment()
-        history?.record(name, !event.isAllowed)
-    }
+    private val tracer = EventTracer()
+    private val counters = EventCounters(history)
 
     override val inspector: EventInspector = object : EventInspector {
         override fun listeners(eventType: Class<out Event>): List<ListenerInfo> =
-            handlersFor(eventType).filterNot { it.isClosed }.map { it.info() }
+            handlers.handlersFor(eventType).filterNot { it.isClosed }.map { it.info() }
 
         override fun listeners(): List<ListenerInfo> = subscriptions.asSequence()
             .filterNot { it.isClosed }
@@ -147,21 +91,16 @@ internal class EventServiceImpl(
 
         override fun eventType(name: String): Class<out Event>? {
             val type = subscriptions.firstOrNull { !it.isClosed && it.eventType.name == name }?.eventType
-                ?: counters[name]?.type?.get()
+                ?: counters.type(name)
             return type?.asSubclass(Event::class.java)
         }
 
         override fun events(): List<EventInfo> {
             val types = LinkedHashMap<String, Class<*>?>()
             subscriptions.filterNot { it.isClosed }.forEach { types.putIfAbsent(it.eventType.name, it.eventType) }
-            counters.forEach { (name, counter) -> if (types[name] == null) types[name] = counter.type.get() }
+            counters.types().forEach { (name, type) -> if (types[name] == null) types[name] = type }
             return types.entries.map { (name, type) ->
-                val counter = counters[name]
-                val listeners = if (type == null) 0 else handlersFor(type).count { !it.isClosed }
-                EventInfo(
-                    name, listeners, counter?.calls?.sum() ?: 0, counter?.denied?.sum() ?: 0,
-                    counter?.lastMillis?.takeIf { it > 0 }?.let(java.time.Instant::ofEpochMilli),
-                )
+                counters.info(name, if (type == null) 0 else handlers.handlersFor(type).count { !it.isClosed })
             }.sortedBy { it.eventType }
         }
 
@@ -176,47 +115,27 @@ internal class EventServiceImpl(
 
         override val historyDays: Int get() = history?.retention ?: 0
 
-        override fun enableTracing(eventType: Class<out Event>, capacity: Int) {
-            require(capacity in 1..1_000) { "Trace capacity must be between 1 and 1000" }
-            synchronized(recorded) { traced = traced + (eventType to capacity) }
-        }
+        override fun enableTracing(eventType: Class<out Event>, capacity: Int) = tracer.enable(eventType, capacity)
 
-        override fun disableTracing(eventType: Class<out Event>) {
-            synchronized(recorded) { traced = traced - eventType }
-        }
+        override fun disableTracing(eventType: Class<out Event>) = tracer.disable(eventType)
 
-        override fun tracedEvents(): List<String> = traced.keys.map { it.name }.sorted()
+        override fun tracedEvents(): List<String> = tracer.tracedNames()
 
-        override fun traces(): List<EventTrace> = synchronized(recorded) { recorded.toList() }
+        override fun traces(): List<EventTrace> = tracer.traces()
 
-        override fun clearTraces() {
-            synchronized(recorded) { recorded.clear() }
-        }
-    }
-
-    private fun tracingCapacity(type: Class<*>): Int? =
-        traced.takeIf { it.isNotEmpty() }?.entries?.firstOrNull { it.key.isAssignableFrom(type) }?.value
-
-    private fun resultText(event: Event): String? = (event as? ResultedEvent<*>)?.result?.toString()
-
-    private fun record(event: Event, steps: List<EventTrace.Step>, capacity: Int, mode: DispatchMode) {
-        val trace = EventTrace(event.eventName, event.isAllowed, resultText(event), steps, mode, Thread.currentThread().name, java.time.Instant.now())
-        synchronized(recorded) {
-            recorded.addLast(trace)
-            while (recorded.size > capacity) recorded.removeFirst()
-        }
+        override fun clearTraces() = tracer.clear()
     }
 
     @OptIn(InternalEventApi::class)
     private fun dispatchInline(event: Event, mode: DispatchMode) {
         event.bindDispatch(mode, Thread.currentThread())
-        val matching = handlersFor(event.javaClass)
-        val capacity = tracingCapacity(event.javaClass)
+        val matching = handlers.handlersFor(event.javaClass)
+        val capacity = tracer.capacity(event.javaClass)
         val steps = if (capacity != null) ArrayList<EventTrace.Step>(matching.size) else null
         for (index in matching.indices) {
             val subscription = matching[index]
             if (subscription.isClosed) continue
-            val before = if (steps != null) resultText(event) else null
+            val before = if (steps != null) tracer.resultText(event) else null
             if (subscription.ignoreDenied && !event.isAllowed) {
                 steps?.add(EventTrace.Step(subscription.scope.plugin, subscription.scope.module, subscription.priority, true, false, 0, before, before))
                 continue
@@ -246,12 +165,12 @@ internal class EventServiceImpl(
                 steps?.add(
                     EventTrace.Step(
                         subscription.scope.plugin, subscription.scope.module, subscription.priority, false, failed,
-                        elapsed, before, resultText(event),
+                        elapsed, before, tracer.resultText(event),
                     ),
                 )
             }
         }
-        if (steps != null && capacity != null) record(event, steps, capacity, mode)
+        if (steps != null && capacity != null) tracer.record(event, steps, capacity, mode)
     }
 
     override fun unregisterAll(pluginId: PluginId) {
@@ -263,7 +182,7 @@ internal class EventServiceImpl(
         val current = synchronized(scopes) { scopes.values.toList().also { scopes.clear() } }
         current.forEach { it.closeInternal() }
         subscriptions.clear()
-        invalidateHandlers(null)
+        handlers.invalidate(null)
         worker.close()
         history?.close()
     }
@@ -318,7 +237,7 @@ internal class EventServiceImpl(
             )
             ownedSubscriptions += subscription
             subscriptions += subscription
-            invalidateHandlers(eventType)
+            handlers.invalidate(eventType)
             if (closed.get() || scopeClosed.get()) subscription.close()
             return subscription
         }
@@ -384,23 +303,8 @@ internal class EventServiceImpl(
         override fun close() {
             if (!subscriptionClosed.compareAndSet(false, true)) return
             subscriptions.remove(this)
-            invalidateHandlers(eventType)
+            handlers.invalidate(eventType)
             scope.remove(this)
-        }
-    }
-
-    private class ListenerRegistration(
-        override val listener: Listener,
-        private val subscriptions: List<EventSubscription>,
-    ) : EventListenerRegistration {
-        private val registrationClosed = AtomicBoolean(false)
-        override val handlerCount: Int get() = subscriptions.size
-        override val isClosed: Boolean
-            get() = registrationClosed.get() || subscriptions.all { it.isClosed }
-
-        override fun close() {
-            if (!registrationClosed.compareAndSet(false, true)) return
-            subscriptions.forEach { it.close() }
         }
     }
 
