@@ -30,8 +30,6 @@ include(
     ":platforms:velocity:runtime",
     ":platforms:velocity:bootstrap",
     ":platforms:velocity:faststats",
-    // Packaging and examples.
+    // Packaging.
     ":distribution",
-    ":examples:acceptance-bukkit",
-    ":examples:bootstrap-bukkit",
 )

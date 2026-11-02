@@ -104,4 +104,3 @@ API состоит из интерфейсов, моделей и небольш
 - [Удалённые политики](docs/remote-policies.md)
 - [Встраиваемый установщик для всех платформ](modules/bootstrap/README.md)
 - [Консольные карточки](modules/console/README.md)
-- [Приёмочный плагин](examples/acceptance-bukkit/README.md)
