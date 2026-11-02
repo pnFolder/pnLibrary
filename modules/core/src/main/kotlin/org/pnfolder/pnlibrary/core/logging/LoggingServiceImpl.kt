@@ -26,14 +26,8 @@ internal class LoggingServiceImpl(
     private enum class MessageKind { GENERIC, ENABLED, DISABLED }
 
     override fun logger(owner: Any, name: String): PnLogger = object : PnLogger {
-        private fun write(level: LogLevel, message: String, error: Throwable? = null) {
-            val formatted = "[$name] $message"
-            writeCaptured(owner, level, formatted, error)
-        }
-        override fun info(message: String) = write(LogLevel.INFO, message)
-        override fun success(message: String) = write(LogLevel.SUCCESS, message)
-        override fun warning(message: String) = write(LogLevel.WARNING, message)
-        override fun error(message: String, error: Throwable?) = write(LogLevel.ERROR, message, error)
+        override fun log(level: LogLevel, message: String, error: Throwable?, record: Boolean) =
+            capture.write(owner, level, "[$name] $message", error, record)
     }
 
     override fun box(owner: Any, title: String): MessageBox =

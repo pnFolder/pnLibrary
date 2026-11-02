@@ -21,8 +21,16 @@ internal class DiagnosticCapture(
         const val ECHO_LIMIT = 512
     }
 
-    override fun log(owner: Any, level: LogLevel, message: String, error: Throwable?) {
-        val result = capture(owner, level, message, error, true)
+    override fun log(owner: Any, level: LogLevel, message: String, error: Throwable?) =
+        write(owner, level, message, error, true)
+
+    /**
+     * Writes one line. With [record] `false` it is console only and never reaches the black box; a [LogLevel.DEBUG]
+     * line is the opposite and never reaches the console.
+     */
+    fun write(owner: Any, level: LogLevel, message: String, error: Throwable? = null, record: Boolean = true) {
+        val result = if (record) capture(owner, level, message, error, true) else null
+        if (level == LogLevel.DEBUG) return
         val output = when {
             result == null || result.emitOriginal -> message
             result.summary != null -> result.summary

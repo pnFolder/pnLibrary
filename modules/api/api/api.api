@@ -2252,6 +2252,7 @@ public abstract interface annotation class org/pnfolder/pnlibrary/api/internal/I
 }
 
 public final class org/pnfolder/pnlibrary/api/logging/LogLevel : java/lang/Enum {
+	public static final field DEBUG Lorg/pnfolder/pnlibrary/api/logging/LogLevel;
 	public static final field ERROR Lorg/pnfolder/pnlibrary/api/logging/LogLevel;
 	public static final field INFO Lorg/pnfolder/pnlibrary/api/logging/LogLevel;
 	public static final field SUCCESS Lorg/pnfolder/pnlibrary/api/logging/LogLevel;
@@ -2280,11 +2281,20 @@ public abstract interface class org/pnfolder/pnlibrary/api/logging/MessageBox {
 }
 
 public abstract interface class org/pnfolder/pnlibrary/api/logging/PnLogger {
-	public abstract fun error (Ljava/lang/String;Ljava/lang/Throwable;)V
-	public static synthetic fun error$default (Lorg/pnfolder/pnlibrary/api/logging/PnLogger;Ljava/lang/String;Ljava/lang/Throwable;ILjava/lang/Object;)V
-	public abstract fun info (Ljava/lang/String;)V
-	public abstract fun success (Ljava/lang/String;)V
-	public abstract fun warning (Ljava/lang/String;)V
+	public fun debug (Ljava/lang/String;)V
+	public fun error (Ljava/lang/String;)V
+	public fun error (Ljava/lang/String;Ljava/lang/Throwable;)V
+	public fun error (Ljava/lang/String;Ljava/lang/Throwable;Z)V
+	public fun info (Ljava/lang/String;)V
+	public fun info (Ljava/lang/String;Z)V
+	public abstract fun log (Lorg/pnfolder/pnlibrary/api/logging/LogLevel;Ljava/lang/String;Ljava/lang/Throwable;Z)V
+	public static synthetic fun log$default (Lorg/pnfolder/pnlibrary/api/logging/PnLogger;Lorg/pnfolder/pnlibrary/api/logging/LogLevel;Ljava/lang/String;Ljava/lang/Throwable;ZILjava/lang/Object;)V
+	public fun success (Ljava/lang/String;)V
+	public fun success (Ljava/lang/String;Z)V
+	public fun warning (Ljava/lang/String;)V
+	public fun warning (Ljava/lang/String;Ljava/lang/Throwable;)V
+	public fun warning (Ljava/lang/String;Ljava/lang/Throwable;Z)V
+	public fun warning (Ljava/lang/String;Z)V
 }
 
 public abstract interface class org/pnfolder/pnlibrary/api/metrics/ErrorReporter : java/lang/AutoCloseable {
