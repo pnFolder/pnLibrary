@@ -29,14 +29,14 @@ jobs:
         platform: ${{ inputs.platform == 'all' && fromJSON('["paper","folia","velocity","bungee"]') || fromJSON(format('["{0}"]', inputs.platform)) }}
     steps:
       - uses: actions/checkout@v4
-      - uses: actions/setup-java@v4
+      - uses: actions/setup-java@v6
         with:
           distribution: temurin
           java-version: ${{ inputs.java }}
       - name: Remember server JVM
         shell: bash
         run: echo "SERVER_JAVA=$JAVA_HOME/bin/java" >> "$GITHUB_ENV"
-      - uses: actions/setup-java@v4
+      - uses: actions/setup-java@v6
         with:
           distribution: temurin
           java-version: '21'
