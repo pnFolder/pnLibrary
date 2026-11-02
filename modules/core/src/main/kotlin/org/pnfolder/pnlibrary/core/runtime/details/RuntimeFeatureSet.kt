@@ -3,7 +3,6 @@ package org.pnfolder.pnlibrary.core.runtime.details
 import org.pnfolder.pnlibrary.api.currency.CurrencyProviderRegistry
 import org.pnfolder.pnlibrary.api.expansions.Expansion
 import org.pnfolder.pnlibrary.api.logging.LogLevel
-import org.pnfolder.pnlibrary.config.ConfigurationRuntime
 import org.pnfolder.pnlibrary.config.ConfigurationServiceImpl
 import org.pnfolder.pnlibrary.core.downloads.DirectDownloadManager
 import org.pnfolder.pnlibrary.core.downloads.DownloadConfiguration
@@ -27,7 +26,7 @@ internal class RuntimeFeatureSet(
     logging: PlatformLogging,
 ) {
     val services = ServiceManagerImpl()
-    val configurations: ConfigurationRuntime = ConfigurationServiceImpl(platform.ownership)
+    val configurations: ConfigurationServiceImpl = ConfigurationServiceImpl(platform.ownership)
     val updates = UpdateServiceImpl(
         logging, platform.ownership, platform.ownership, platform.identity, platform.readiness, dataFolder,
         ConsoleStyle.THEME,

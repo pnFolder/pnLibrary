@@ -40,6 +40,20 @@ annotation class ConfigKey(val value: String)
 @Retention(AnnotationRetention.RUNTIME)
 annotation class ConfigIgnore
 
+/**
+ * Marks a field whose value must never appear in a diagnostic report, such as a password, a token or a webhook.
+ *
+ * It applies to the file this class is registered for, and to a nested section when put on the field holding it.
+ * The value is hidden in every report with no entry in `plugins/pnLibrary/config.yml`:
+ * ```kotlin
+ * @field:ConfigSecret
+ * var password: String = ""
+ * ```
+ */
+@Target(AnnotationTarget.FIELD)
+@Retention(AnnotationRetention.RUNTIME)
+annotation class ConfigSecret
+
 /** Inserts an empty line before the annotated field when pnLibrary renders YAML. */
 @Target(AnnotationTarget.FIELD)
 @Retention(AnnotationRetention.RUNTIME)

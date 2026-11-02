@@ -19,10 +19,10 @@ class PnLibraryConfigLoaderTest {
         val file = temporary.resolve("config.yml")
         assertTrue(Files.isRegularFile(file))
         assertEquals("encrypted", defaults.uploadMode)
-        assertEquals(true, defaults.privacy)
+        assertEquals(false, defaults.privacy)
         val text = Files.readString(file)
-        assertTrue(text.contains("privacy: true"))
-        assertTrue(text.contains("# Не включать в отчёт личные данные"))
+        assertTrue(text.contains("privacy: false"))
+        assertTrue(text.contains("# Скрывать ли в отчёте личные данные"))
         assertTrue(text.contains("database.password"))
         assertFalse(text.contains("upload"))
         assertFalse(text.contains("log-records"))
@@ -31,13 +31,13 @@ class PnLibraryConfigLoaderTest {
 
         Files.writeString(file, """
             history-retention-days: 60
-            privacy: false
+            privacy: true
         """.trimIndent())
 
         val configured = PnLibraryConfigLoader.load(temporary)
         assertEquals(60, configured.historyRetentionDays)
-        assertEquals(false, configured.privacy)
-        assertTrue(Files.readString(file).contains("# Не включать в отчёт личные данные"))
+        assertEquals(true, configured.privacy)
+        assertTrue(Files.readString(file).contains("# Скрывать ли в отчёте личные данные"))
     }
 
     @Test

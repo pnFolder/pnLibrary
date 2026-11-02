@@ -17,7 +17,7 @@ plugins {
 // `./gradlew spotlessApply` fixes what can be fixed automatically (imports, whitespace, blank lines).
 spotless {
     kotlin {
-        target("modules/**/*.kt", "platforms/**/*.kt", "examples/**/*.kt")
+        target("modules/**/*.kt", "platforms/**/*.kt")
         targetExclude("**/build/**")
         ktlint()
     }
@@ -202,22 +202,4 @@ dependencies {
     dokka(project(":platforms:bukkit:runtime"))
     dokka(project(":platforms:bungee:runtime"))
     dokka(project(":platforms:velocity:runtime"))
-}
-
-// Builds the local acceptance kit and copies only the current-version JARs to the Paper test server named by
-// the `pnlibrary.installDir` Gradle property (for example in ~/.gradle/gradle.properties). Existing unrelated
-// plugin files are left untouched.
-tasks.register<Copy>("installAcceptanceToPaper") {
-    group = "distribution"
-    description = "Builds pnLibrary and acceptance, then installs them into the local Paper plugins directory"
-    dependsOn(":examples:acceptance-bukkit:assembleAcceptanceKit")
-    val releaseVersion = version.toString()
-    from(layout.buildDirectory.dir("acceptance-bukkit")) {
-        include("pnLibrary-${releaseVersion}-bukkit-java8.jar")
-        include("pnLibrary-acceptance-${releaseVersion}-bukkit-java8.jar")
-    }
-    val installDir = providers.gradleProperty("pnlibrary.installDir")
-    into(installDir.map { file(it) }.orElse(provider {
-        throw GradleException("Set the pnlibrary.installDir Gradle property to the plugins directory of a test server")
-    }))
 }

@@ -59,7 +59,6 @@ import java.util.regex.PatternSyntaxException
  * @property noPermissionMessage message shown when a caller lacks the required permission
  * @property journalForeignPlugins whether journal entries from other plugins are recorded
  * @property timeZone time zone id used when displaying times, such as `UTC`
- * @property journalJoinNotice whether players see a summary of recent journal entries on join
  * @property noPermissionSound sound key played with [noPermissionMessage]; empty disables it
  * @property usageMessage message shown for incorrect command usage; `{usage}` is replaced
  * @property invalidArgumentMessage message shown for an invalid argument value; supports
@@ -95,14 +94,13 @@ data class PnLibraryConfig @JvmOverloads constructor(
     val excludedPaths: List<String> = emptyList(),
     val secretKeyPatterns: List<String> = emptyList(),
     val redactValuePatterns: List<String> = emptyList(),
-    val privacy: Boolean = true,
+    val privacy: Boolean = false,
     val journalInfoDays: Int = 7,
     val journalWarningDays: Int = 30,
     val journalErrorDays: Int = 90,
     val noPermissionMessage: String = "Недостаточно прав для этой команды.",
     val journalForeignPlugins: Boolean = false,
     val timeZone: String = "UTC",
-    val journalJoinNotice: Boolean = true,
     val noPermissionSound: String = "",
     val usageMessage: String = "Использование: {usage}",
     val invalidArgumentMessage: String = "Неверное значение «{value}» для {argument}. {usage}",

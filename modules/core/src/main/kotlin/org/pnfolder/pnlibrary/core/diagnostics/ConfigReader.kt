@@ -95,7 +95,17 @@ internal class ConfigReader(
         val valueRegexes = compileRegexes(
             globalConfig.redactValuePatterns + configSpec.valuePatterns
         )
-        val excludedSubtrees = (globalConfig.excludedPaths + configSpec.excludedPaths).toSet()
+        // An entry is either a path for every file, or `plugin/file.yml:path` for that one file only.
+        val fileKey = "${rootDirectory.fileName}/$relPath"
+        val administratorPaths = globalConfig.excludedPaths.mapNotNull { entry ->
+            val colon = entry.indexOf(':')
+            when {
+                colon < 0 -> entry
+                entry.substring(0, colon).trim().equals(fileKey, ignoreCase = true) -> entry.substring(colon + 1).trim()
+                else -> null
+            }
+        }
+        val excludedSubtrees = (administratorPaths + configSpec.excludedPaths).toSet()
 
         val redactedData = redactTree(
             data = rawMap,
