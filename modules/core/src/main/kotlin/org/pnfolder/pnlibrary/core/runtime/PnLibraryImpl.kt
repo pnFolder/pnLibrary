@@ -8,9 +8,7 @@ import org.pnfolder.pnlibrary.api.commands.CommandDefinition
 import org.pnfolder.pnlibrary.api.commands.CommandRegistration
 import org.pnfolder.pnlibrary.api.config.ConfigurationService
 import org.pnfolder.pnlibrary.api.diagnostics.DebugRequest
-import org.pnfolder.pnlibrary.api.diagnostics.DiagnosticConfiguration
 import org.pnfolder.pnlibrary.api.diagnostics.DiagnosticReport
-import org.pnfolder.pnlibrary.api.diagnostics.DiagnosticsContributor
 import org.pnfolder.pnlibrary.api.events.EventService
 import org.pnfolder.pnlibrary.api.expansions.ExpansionManager
 import org.pnfolder.pnlibrary.api.logging.LoggingService
@@ -34,12 +32,11 @@ import org.pnfolder.pnlibrary.common.lang.runCatchingNonFatal
 import org.pnfolder.pnlibrary.common.time.DisplayZone
 import org.pnfolder.pnlibrary.core.commands.standardCommandFeedback
 import org.pnfolder.pnlibrary.core.diagnostics.DiagnosticsRegistry
+import org.pnfolder.pnlibrary.core.diagnostics.configFileDiagnostics
 import org.pnfolder.pnlibrary.core.diagnostics.diagnosticCommand
 import org.pnfolder.pnlibrary.core.events.EventHistory
 import org.pnfolder.pnlibrary.core.events.EventServiceImpl
-import org.pnfolder.pnlibrary.core.journal.JournalLevel
-import org.pnfolder.pnlibrary.core.journal.JournalRecord
-import org.pnfolder.pnlibrary.core.journal.joinDigest
+import org.pnfolder.pnlibrary.core.journal.JournalQueries
 import org.pnfolder.pnlibrary.core.journal.journalCommand
 import org.pnfolder.pnlibrary.core.lifecycle.JournalDetail
 import org.pnfolder.pnlibrary.core.lifecycle.JournalGroup
@@ -66,7 +63,6 @@ import org.pnfolder.pnlibrary.core.runtime.platform.PlatformRuntimeContext
 import org.pnfolder.pnlibrary.core.runtime.platform.PlatformServiceSet
 import org.pnfolder.pnlibrary.spi.commands.PlatformCommandDispatcher
 import java.nio.file.Path
-import java.time.Duration
 import java.time.ZoneId
 import java.util.concurrent.atomic.AtomicBoolean
 
@@ -149,18 +145,7 @@ internal class PnLibraryImpl(
     )
 
     private val features = RuntimeFeatureSet(platform, dataFolder, support.capture).also { set ->
-        // Every file a plugin registers goes into its report, with the @ConfigSecret fields hidden.
-        set.configurations.fileListener = { file ->
-            val configuration = DiagnosticConfiguration.builder(file.path).also { builder ->
-                file.secretPaths.forEach(builder::exclude)
-            }.build()
-            val contributor = object : DiagnosticsContributor {
-                override val id: String = "config:${file.path}"
-                override fun collect(): Map<String, Any?> = emptyMap()
-                override fun configurations(): Collection<DiagnosticConfiguration> = listOf(configuration)
-            }
-            diagnostics.register(file.pluginId.value, file.directory, contributor)
-        }
+        set.configurations.fileListener = configFileDiagnostics(diagnostics)
     }
     private val configurationService get() = features.configurations
     override val configurations: ConfigurationService get() = configurationService
@@ -186,27 +171,12 @@ internal class PnLibraryImpl(
 
     override fun mountableCommand(name: String): CommandDefinition? = mountable[name]
 
-    override fun journalJoinNotice(): List<Component> {
-        val now = System.currentTimeMillis()
-        val since = now - Duration.ofHours(config.journalJoinNoticeHours.toLong()).toMillis()
-        return runCatchingNonFatal {
-            joinDigest(journal.read(sinceMillis = since, limit = 5_000), now, config.journalJoinNoticeHours, startedAtMillis, EVENTS_COMMAND)
-        }.getOrDefault(emptyList())
-    }
-    override fun journalGroups(level: String?, sinceHours: Int, limit: Int): List<JournalGroup> {
-        val since = System.currentTimeMillis() - Duration.ofHours(sinceHours.toLong()).toMillis()
-        val levels = JournalLevel.values().filter { level == null || it.fileGroup == level }.toSet()
-        return runCatchingNonFatal {
-            journal.read(levels = levels, sinceMillis = since, limit = JOURNAL_SCAN)
-                .groupBy { it.fingerprint }
-                .map { (id, group) ->
-                    val newest = group.maxByOrNull { it.timeMillis }!!
-                    JournalGroup(id, newest.level.fileGroup, newest.source, newest.message.lineSequence().first(), group.size, newest.timeMillis)
-                }
-                .sortedByDescending { it.lastMillis }
-                .take(limit)
-        }.getOrDefault(emptyList())
-    }
+    private val journalQueries = JournalQueries(journalRuntime.store, config, startedAtMillis, EVENTS_COMMAND)
+
+    override fun journalJoinNotice(): List<Component> = journalQueries.joinNotice()
+
+    override fun journalGroups(level: String?, sinceHours: Int, limit: Int): List<JournalGroup> =
+        journalQueries.groups(level, sinceHours, limit)
 
     override fun taskSnapshots(): List<TaskSnapshot> = taskService.query().filterNot { it.hidden }
 
@@ -216,19 +186,7 @@ internal class PnLibraryImpl(
     override fun runTaskNow(id: String): TaskControl =
         runCatchingNonFatal { taskService.runNow(TaskId(id)) }.getOrDefault(TaskControl.UNAVAILABLE)
 
-    override fun journalDetail(id: String): JournalDetail? = runCatchingNonFatal {
-        val records = journal.read(limit = JOURNAL_SCAN).filter { it.fingerprint == id }
-        val newest = records.maxByOrNull { it.timeMillis } ?: return@runCatchingNonFatal null
-        JournalDetail(
-            id = id,
-            level = newest.level.fileGroup,
-            source = newest.source,
-            message = newest.message,
-            stackTrace = newest.details[JournalRecord.STACKTRACE],
-            details = newest.details - JournalRecord.STACKTRACE,
-            times = records.map { it.timeMillis }.sortedDescending().take(JOURNAL_TIMES),
-        )
-    }.getOrNull()
+    override fun journalDetail(id: String): JournalDetail? = journalQueries.detail(id)
 
     private val commandService get() = platformServices.commands
     /** Runs a registered command for a viewer who is not on this server, or returns null when the command service cannot. */
@@ -351,7 +309,5 @@ internal class PnLibraryImpl(
     private companion object {
         /** How the journal command is written in chat buttons and notices: it lives under `/pn` on every platform. */
         const val EVENTS_COMMAND = "/pn events"
-        const val JOURNAL_SCAN = 5_000
-        const val JOURNAL_TIMES = 50
     }
 }
