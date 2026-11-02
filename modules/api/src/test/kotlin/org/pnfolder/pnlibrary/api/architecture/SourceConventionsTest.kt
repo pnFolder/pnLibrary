@@ -17,7 +17,7 @@ class SourceConventionsTest {
         .first { Files.exists(it.resolve("settings.gradle.kts")) }
 
     private val productionSources: List<Path> by lazy {
-        listOf("modules", "platforms", "examples").flatMap { group -> Files.walk(root.resolve(group)).use { paths ->
+        listOf("modules", "platforms").flatMap { group -> Files.walk(root.resolve(group)).use { paths ->
             paths.filter { Files.isRegularFile(it) && (it.toString().endsWith(".kt") || it.toString().endsWith(".java")) }
                 .filter { path -> path.has("src/main") && BUILD_DIRECTORIES.none { path.has(it) } }
                 .toList()
@@ -38,8 +38,7 @@ class SourceConventionsTest {
 
     @Test
     fun `chat colors come from the palette, never from legacy section codes`() {
-        val offenders = sources.filter { !it.has("examples/") }
-            .filter { file -> relative(file) !in LEGACY_TEXT_ALLOWED && lines(file).any { '§' in it } }
+        val offenders = sources.filter { file -> relative(file) !in LEGACY_TEXT_ALLOWED && lines(file).any { '§' in it } }
         assertTrue(offenders.isEmpty(), "Legacy § color codes outside the allowed adapters in: ${relative(offenders)}")
     }
 

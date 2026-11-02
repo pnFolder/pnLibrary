@@ -196,6 +196,9 @@ public abstract interface class org/pnfolder/pnlibrary/api/config/ConfigScope : 
 	public abstract fun yaml (Ljava/lang/String;Ljava/lang/Class;Ljava/util/function/Supplier;Lorg/pnfolder/pnlibrary/api/config/ConfigOptions;Lorg/pnfolder/pnlibrary/api/config/ConfigValueValidator;)Lorg/pnfolder/pnlibrary/api/config/ManagedConfig;
 }
 
+public abstract interface annotation class org/pnfolder/pnlibrary/api/config/ConfigSecret : java/lang/annotation/Annotation {
+}
+
 public final class org/pnfolder/pnlibrary/api/config/ConfigSerializationContext {
 	public fun <init> (Ljava/lang/String;Ljava/lang/reflect/Type;Ljava/lang/Class;Ljava/util/List;Ljava/lang/Object;Lorg/pnfolder/pnlibrary/api/config/ConfigValueDecoder;Lorg/pnfolder/pnlibrary/api/config/ConfigValueEncoder;)V
 	public synthetic fun <init> (Ljava/lang/String;Ljava/lang/reflect/Type;Ljava/lang/Class;Ljava/util/List;Ljava/lang/Object;Lorg/pnfolder/pnlibrary/api/config/ConfigValueDecoder;Lorg/pnfolder/pnlibrary/api/config/ConfigValueEncoder;ILkotlin/jvm/internal/DefaultConstructorMarker;)V

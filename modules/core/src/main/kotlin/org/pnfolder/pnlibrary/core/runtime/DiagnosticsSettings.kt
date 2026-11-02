@@ -22,17 +22,36 @@ import org.pnfolder.pnlibrary.common.lang.runCatchingNonFatal
 internal class DiagnosticsSettings {
     @field:ConfigComment(
         "=== Приватность ===",
-        "Не включать в отчёт личные данные игроков: имена, UUID, адреса, пинг и названия текущих серверов.",
-        "Ставьте false, только если эти данные нужны для разбора проблемы.",
+        "Скрывать ли в отчёте личные данные игроков: имена, UUID, адреса, пинг и названия текущих серверов.",
+        "По умолчанию false: данные показываются, так проблему разобрать проще. Поставьте true, чтобы скрыть их.",
     )
-    var privacy: Boolean = true
+    var privacy: Boolean = false
 
     @field:ConfigComment(
-        "Значения в конфигурациях плагинов, которые никогда не попадут в отчёт. Путь пишется через точку.",
-        "Пример: чтобы скрыть пароль базы данных из database.yml, где он лежит в разделе database, ключ password:",
+        "Значения в файлах настроек плагинов, которые никогда не попадут в отчёт.",
+        "Пароли, токены и ключи pnLibrary скрывает сама. Здесь перечисляют то, что скрыть нужно дополнительно.",
+        "",
+        "Как заполнять. Допустим, у плагина есть файл plugins/pnExample/config.yml:",
+        "",
+        "    database:",
+        "      host: localhost",
+        "      password: qwerty123        <- не должен попасть в отчёт",
+        "    discord:",
+        "      webhook-url: https://...   <- и это тоже",
+        "    messages:",
+        "      welcome: Привет            <- а это можно показывать",
+        "",
+        "Тогда ниже пишем путь к каждому значению: раздел, точка, ключ (от корня файла).",
+        "Путь без названия файла действует на файлы ВСЕХ плагинов. Чтобы скрыть значение только в одном файле",
+        "одного плагина, впереди пишут папка плагина, файл и двоеточие:",
+        "",
         "excluded-paths:",
-        "  - database.password",
-        "  - discord.webhook-url",
+        "  - database.password                          # во всех файлах всех плагинов",
+        "  - pnExample/config.yml:discord.webhook-url   # только в этом файле этого плагина",
+        "  - pnShop/messages.yml:database               # весь раздел database, только в этом файле",
+        "",
+        "Если указать только раздел (например, database), скроется весь раздел целиком.",
+        "Плагин может сам пометить свои поля аннотацией @ConfigSecret: тогда они скрыты без записи здесь.",
     )
     var excludedPaths: List<String> = emptyList()
 
@@ -51,12 +70,6 @@ internal class DiagnosticsSettings {
         "По умолчанию выключено: в журнале только pnLibrary и плагины, которые пишут через неё.",
     )
     var journalForeignPlugins: Boolean = false
-
-    @field:ConfigComment(
-        "Показывать ли администратору при входе краткую сводку: что сломалось недавно, при запуске, только что",
-        "или повторяется. Если всё в порядке, сообщение не показывается. Нужно право pnlibrary.events.view или OP.",
-    )
-    var journalJoinNotice: Boolean = true
 
     @field:ConfigNewLine
     @field:ConfigComment(
@@ -82,7 +95,6 @@ internal class DiagnosticsSettings {
         privacy = privacy,
         noPermissionMessage = noPermissionMessage,
         journalForeignPlugins = journalForeignPlugins,
-        journalJoinNotice = journalJoinNotice,
         timeZone = timeZone.trim().takeIf { runCatchingNonFatal { java.time.ZoneId.of(it) }.isSuccess }
             ?: java.time.ZoneId.systemDefault().id,
     )

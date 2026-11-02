@@ -633,7 +633,7 @@ pnproxy groups of @proxy</pre></div>
 
 <details class="item" data-id="d-retention"><summary><input type="checkbox"><span class="t">config.yml: ключи работают</span><span class="arrow">›</span></summary><div class="body">
 <h4>Что сделать</h4>
-<ol><li>Открой <code>plugins\pnLibrary\config.yml</code>. Ключи: <code>privacy</code>, <code>excluded-paths</code>, <code>history-retention-days</code> (от 30), <code>journal-foreign-plugins</code>, <code>journal-join-notice</code>, <code>time-zone</code>, <code>no-permission-message</code>.</li><li>Поменяй <code>time-zone</code> (например <code>Asia/Tokyo</code>) и <code>no-permission-message</code>, перезапусти.</li><li>Поставь <code>history-retention-days: 1</code> — должно быть принято как минимум 30 или отклонено с понятным сообщением.</li></ol>
+<ol><li>Открой <code>plugins\pnLibrary\config.yml</code>. Ключи: <code>privacy</code>, <code>excluded-paths</code>, <code>history-retention-days</code> (от 30), <code>journal-foreign-plugins</code>, <code>time-zone</code>, <code>no-permission-message</code>.</li><li>Поменяй <code>time-zone</code> (например <code>Asia/Tokyo</code>) и <code>no-permission-message</code>, перезапусти.</li><li>Поставь <code>history-retention-days: 1</code> — должно быть принято как минимум 30 или отклонено с понятным сообщением.</li></ol>
 <h4>Ожидаем</h4><div class="expect">Время в журнале в нужном поясе, сообщение об отсутствии прав новое. Значение ниже 30 не ломает запуск.</div>
 <h4>Если не так</h4><div class="fail">Сервер не стартует из-за неверного значения.</div>
 </div></details>
