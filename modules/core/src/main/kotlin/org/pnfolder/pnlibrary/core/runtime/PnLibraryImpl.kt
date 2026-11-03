@@ -61,6 +61,9 @@ import org.pnfolder.pnlibrary.core.runtime.platform.PlatformDataFolderResolver
 import org.pnfolder.pnlibrary.core.runtime.platform.PlatformRegistration
 import org.pnfolder.pnlibrary.core.runtime.platform.PlatformRuntimeContext
 import org.pnfolder.pnlibrary.core.runtime.platform.PlatformServiceSet
+import org.pnfolder.pnlibrary.core.stats.StatsCollector
+import org.pnfolder.pnlibrary.core.stats.StatsRecorder
+import org.pnfolder.pnlibrary.core.stats.statsCommand
 import org.pnfolder.pnlibrary.spi.commands.PlatformCommandDispatcher
 import java.nio.file.Path
 import java.time.ZoneId
@@ -252,6 +255,9 @@ internal class PnLibraryImpl(
         // The platform's `/pn` control command holds these as `/pn debug` and `/pn events`.
         mountable["debug"] = diagnosticCommand(this, "/pn debug")
         mountable["events"] = journalCommand(journal, EVENTS_COMMAND)
+        val stats = StatsCollector(::taskSnapshots, { events.inspector.events() }, journal)
+        statsRecorder = StatsRecorder(stats, journal).also(StatsRecorder::start)
+        mountable["stats"] = statsCommand(stats, requireNotNull(statsRecorder))
         registerRuntimeCommand(
             libraryInfoCommand(this, platformIdentity) {
                 platformOwnership.ownerDetails(owner)["version"] ?: "неизвестна"
@@ -267,6 +273,8 @@ internal class PnLibraryImpl(
     private fun recordAndLog(logOwner: Any, message: String, error: Throwable) {
         support.recordRuntimeError(logOwner, message, error)
     }
+
+    private var statsRecorder: StatsRecorder? = null
 
     private fun startLibraryMetrics() {
         libraryMetrics = RuntimeMetricsBootstrap(
@@ -294,7 +302,7 @@ internal class PnLibraryImpl(
                 events = AutoCloseable(eventService::close),
                 services = serviceManager,
                 tasks = taskService,
-                support = AutoCloseable { ResourceCleanup.closeAll({ support.close() }, { journalRuntime.close() }) },
+                support = AutoCloseable { ResourceCleanup.closeAll({ statsRecorder?.close() }, { support.close() }, { journalRuntime.close() }) },
                 releaseProvider = { PnLibraryProvider.clear(this) },
                 closePlatform = { closePlatform() },
                 onClose = onClose,

@@ -85,6 +85,7 @@ class ProxyControlCommand(
             updates.install(this)
             library.mountableCommand("events")?.let { mount("events", it) }
             library.mountableCommand("debug")?.let { mount("debug", it) }
+            library.mountableCommand("stats")?.let { mount("stats", it) }
             mount("bus", EventBusCommand(library).definition())
             mount("tasks", TaskCommand(library).definition())
             mount("servers", ServersCommand(ServersCommand.fromReports()).definition())
