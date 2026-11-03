@@ -74,6 +74,15 @@ internal class TaskScreens(session: MenuSession, routes: MenuRoutes) : MenuScree
             return back(player)
         }
         val builder = frame(Menus.chest(title("Задача")).rows(DETAIL_ROWS), DETAIL_ROWS)
+        taskSummary(builder, task)
+        taskFacts(builder, task)
+        runControl(builder, task, back)
+        stopControl(builder, task, back)
+        builder.button(DETAIL_BACK, backItem(), go { back(it) })
+        show(player, builder.build())
+    }
+
+    private fun taskSummary(builder: MenuBuilder, task: TaskSnapshot) {
         val summary = buildList {
             add("Плагин" to ownerLine(task.ownerName))
             add("Состояние" to TaskLabels.label(task.status))
@@ -87,6 +96,9 @@ internal class TaskScreens(session: MenuSession, routes: MenuRoutes) : MenuScree
                 danger = task.status == TaskStatus.FAILED, good = task.status == TaskStatus.RUNNING,
             ),
         )
+    }
+
+    private fun taskFacts(builder: MenuBuilder, task: TaskSnapshot) {
         val usage = task.usage?.let { wrap(it) } ?: listOf("Не указано. Плагин может добавить usage в TaskSpec.")
         builder.slot(20, icon(Icons.CHANGELOG, "WRITTEN_BOOK", "Как используется", Style.lore(usage, emptyList()), muted = task.usage == null))
         val runs = buildList {
@@ -117,6 +129,9 @@ internal class TaskScreens(session: MenuSession, routes: MenuRoutes) : MenuScree
             val lore = Style.lore(emptyList(), emptyList(), extra = wrap(failure).map { Style.danger(it) })
             builder.slot(24, icon(Icons.PROBLEMS, "BARRIER", "Последняя ошибка", lore, danger = true))
         }
+    }
+
+    private fun runControl(builder: MenuBuilder, task: TaskSnapshot, back: (MenuViewer) -> Unit) {
         if (!(task.status == TaskStatus.SCHEDULED && task.runnableNow)) {
             builder.slot(
                 29,
@@ -144,11 +159,14 @@ internal class TaskScreens(session: MenuSession, routes: MenuRoutes) : MenuScree
                             TaskControl.FORBIDDEN -> tell(who, ChatTone.FAILURE, "Плагин не разрешает запускать эту задачу вручную.")
                             TaskControl.UNAVAILABLE -> tell(who, ChatTone.INFO, "Сейчас запустить нельзя: задача не ждёт срока.")
                         }
-                        taskDetail(who, id, back)
+                        taskDetail(who, task.id.value, back)
                     }
                 },
             )
         }
+    }
+
+    private fun stopControl(builder: MenuBuilder, task: TaskSnapshot, back: (MenuViewer) -> Unit) {
         if (!TaskLabels.isActive(task.status)) {
             builder.slot(
                 31,
@@ -173,7 +191,7 @@ internal class TaskScreens(session: MenuSession, routes: MenuRoutes) : MenuScree
                                 TaskControl.FORBIDDEN -> tell(who, ChatTone.FAILURE, "Плагин не разрешает останавливать эту задачу.")
                                 TaskControl.UNAVAILABLE -> tell(who, ChatTone.INFO, "Задача уже не работает.")
                             }
-                            taskDetail(who, id, back)
+                            taskDetail(who, task.id.value, back)
                         }
                     },
                 )
@@ -187,8 +205,6 @@ internal class TaskScreens(session: MenuSession, routes: MenuRoutes) : MenuScree
                 )
             }
         }
-        builder.button(DETAIL_BACK, backItem(), go { back(it) })
-        show(player, builder.build())
     }
 
     /** What the event called [name] says about itself, or null when it is unknown. */
