@@ -2,17 +2,17 @@ package org.pnfolder.pnlibrary.core.menu
 
 import org.pnfolder.pnlibrary.api.chat.ChatTone
 import org.pnfolder.pnlibrary.api.runtime.PnLibraryIdentity
-import org.pnfolder.pnlibrary.api.updates.UpdateChannel
 import org.pnfolder.pnlibrary.api.updates.UpdateSnapshot
 import org.pnfolder.pnlibrary.api.updates.UpdateState
 import org.pnfolder.pnlibrary.core.updates.catalog.CatalogLabels
 import org.pnfolder.pnlibrary.core.updates.catalog.UpdateCatalogView
 import java.time.Duration
-import java.time.Instant
 
 internal enum class Filter(val title: String) { ALL("Плагины"), UPDATES("Обновления"), PROBLEMS("Проблемы") }
 
 internal class UpdateScreens(session: MenuSession, routes: MenuRoutes) : MenuScreens(session, routes) {
+    private val policy = PluginPolicyScreens(session, routes)
+
     fun plugins(player: MenuViewer, filter: Filter, page: Int) {
         val updatable = snapshots()
         val shown = updatable.filter {
@@ -67,7 +67,7 @@ internal class UpdateScreens(session: MenuSession, routes: MenuRoutes) : MenuScr
             builder.button(
                 13,
                 section(Icons.SETTINGS, "LEVER", "Канал", "Какие версии предлагать.", "Сейчас" to snapshot.channel.name.lowercase()),
-                go { channels(it, snapshot.product) },
+                go { policy.channels(it, snapshot.product) },
             )
         } else {
             builder.slot(
@@ -82,7 +82,7 @@ internal class UpdateScreens(session: MenuSession, routes: MenuRoutes) : MenuScr
                 ),
             )
         }
-        builder.button(14, holdItem(snapshot), go { holds(it, snapshot.product) })
+        builder.button(14, holdItem(snapshot), go { policy.holds(it, snapshot.product) })
         builder.button(
             15,
             section(Icons.RELEASES, "BOOKSHELF", "Релизы", "Известные версии плагина.", "Найдено" to "${snapshot.availableReleases.size}"),
@@ -100,78 +100,6 @@ internal class UpdateScreens(session: MenuSession, routes: MenuRoutes) : MenuScr
         builder.button(CARD_BACK, backItem(), go { plugins(it, Filter.ALL, 0) })
         show(player, builder.build())
     }
-
-    /** The channel choice. It stays in the code and is switched on by [CHANNEL_SWITCH] once more than `dev` works. */
-    private fun channels(player: MenuViewer, product: String) {
-        val current = data.snapshot(product)?.channel
-        val builder = frame(Menus.chest(title("Канал $product")).rows(SMALL_ROWS), SMALL_ROWS)
-        UpdateChannel.values().forEachIndexed { index, channel ->
-            val chosen = channel == current
-            val lore = Style.lore(
-                listOf(CHANNEL_HINTS.getValue(channel)),
-                if (chosen) listOf("Состояние" to "выбран сейчас") else emptyList(),
-                *if (chosen) emptyArray() else arrayOf(Style.left("выбрать")),
-            )
-            builder.button(
-                10 + index,
-                icon(null, CHANNEL_ITEMS.getValue(channel), channel.name.lowercase(), lore, good = chosen),
-                go { who -> allowed(who, SETTINGS) { chooseChannel(who, product, channel) } },
-            )
-        }
-        builder.button(
-            16,
-            icon(
-                Icons.RESET, "BARRIER", "Сбросить",
-                Style.lore(listOf("Вернуть канал, который указал плагин."), emptyList(), Style.left("сбросить")), muted = true,
-            ),
-            go { who -> allowed(who, SETTINGS) { chooseChannel(who, product, null) } },
-        )
-        builder.button(SMALL_BACK, backItem(), go { card(it, product) })
-        show(player, builder.build())
-    }
-
-    private fun holds(player: MenuViewer, product: String) {
-        val until = data.heldUntil(product)?.takeIf { it.isAfter(Instant.now()) }
-        val remaining = until?.let { Duration.between(Instant.now(), it) }
-        val chosen = remaining?.let { holdIndex(it) } ?: -1
-        val builder = frame(Menus.chest(title("Пауза $product")).rows(SMALL_ROWS), SMALL_ROWS)
-        builder.slot(
-            4,
-            icon(
-                Icons.CLOCK, "CLOCK", "Пауза сейчас",
-                Style.lore(
-                    listOf("Пока пауза идёт, обновления не предлагаются и не скачиваются."),
-                    listOf("Состояние" to (remaining?.let { "‖ осталось ${left(it)}" } ?: "нет паузы")),
-                ),
-                alternative = "WATCH", warn = remaining != null,
-            ),
-        )
-        HOLDS.forEachIndexed { index, (label, duration) ->
-            val selected = index == chosen
-            val note = if (selected) listOf("Выбрано" to "● осталось ${left(remaining!!)}") else emptyList()
-            builder.button(
-                10 + index,
-                icon(
-                    Icons.CLOCK, "CLOCK", label,
-                    Style.lore(listOf("Приостановить обновления на этот срок."), note, Style.left(if (selected) "начать срок заново" else "приостановить")),
-                    alternative = "WATCH", good = selected,
-                ),
-                go { who -> allowed(who, SETTINGS) { chooseHold(who, product, duration) } },
-            )
-        }
-        if (remaining != null) {
-            builder.button(
-                16,
-                icon(Icons.RESET, "REDSTONE", "Снять паузу", Style.lore(listOf("Вернуть обновления сейчас."), emptyList(), Style.left("снять")), good = true),
-                go { who -> allowed(who, SETTINGS) { chooseHold(who, product, null) } },
-            )
-        }
-        builder.button(SMALL_BACK, backItem(), go { card(it, product) })
-        show(player, builder.build())
-    }
-
-    /** The index of the shortest pause in [HOLDS] that is at least [remaining]; the last one when none is. */
-    private fun holdIndex(remaining: Duration): Int = HOLDS.indexOfFirst { it.second >= remaining }.takeIf { it >= 0 } ?: (HOLDS.size - 1)
 
     private fun releases(player: MenuViewer, product: String, page: Int) {
         val snapshot = data.snapshot(product) ?: return routes.home(player)
@@ -219,26 +147,6 @@ internal class UpdateScreens(session: MenuSession, routes: MenuRoutes) : MenuScr
                 if (error != null) tell(player, ChatTone.FAILURE, "Не удалось изменить автозагрузку.", reason(error))
                 else tell(player, ChatTone.SUCCESS, "Автозагрузка ${snapshot.product}: ${if (enable) "включена" else "выключена"}.")
                 card(player, snapshot.product)
-            }
-        }
-    }
-
-    private fun chooseChannel(player: MenuViewer, product: String, channel: UpdateChannel?) {
-        data.setChannel(product, channel, player.actor).whenComplete { _, error ->
-            sync {
-                if (error != null) tell(player, ChatTone.FAILURE, "Не удалось изменить канал.", reason(error))
-                else tell(player, ChatTone.SUCCESS, "Канал $product: ${channel?.name?.lowercase() ?: "как указал плагин"}.")
-                card(player, product)
-            }
-        }
-    }
-
-    private fun chooseHold(player: MenuViewer, product: String, duration: Duration?) {
-        data.setHeld(product, duration, player.actor).whenComplete { _, error ->
-            sync {
-                if (error != null) tell(player, ChatTone.FAILURE, "Не удалось изменить паузу.", reason(error))
-                else tell(player, ChatTone.SUCCESS, if (duration == null) "Пауза $product снята." else "Обновления $product приостановлены.")
-                card(player, product)
             }
         }
     }
