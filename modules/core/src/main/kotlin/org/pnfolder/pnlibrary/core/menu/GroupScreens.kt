@@ -95,70 +95,75 @@ internal class GroupScreens(session: MenuSession, routes: MenuRoutes) : MenuScre
             return@withGroups
         }
         val states = comparer.compare(group, routes.members(map))
-        val rows = states.map { state ->
-            val material = if (state.ok) "EMERALD_BLOCK" else "REDSTONE_BLOCK"
-            val parameters = buildList {
-                add("На связи" to if (state.known?.online == true) "✔ да" else "✖ нет")
-                add("Свои настройки" to if (state.customized) "есть" else "нет, как у всех")
-                if (state.missing.isNotEmpty()) add("Нет плагинов" to state.missing.joinToString(", "))
-                if (state.outdated.isNotEmpty()) add("Можно обновить" to state.outdated.joinToString(", "))
-            }
-            val hints = arrayOf(Style.left("настроить сервер"), Style.right("убрать из группы"))
-            val click = goClick { who, how ->
-                if (how == ClickType.RIGHT) editGroup(who, GroupEdit(GroupOp.REMOVE_SERVER, name, state.server)) { group(who, name) }
-                else groupServer(who, name, state.server)
-            }
-            val lore = Style.lore(emptyList(), parameters, *hints)
-            Row(icon(Icons.OVERVIEW, material, ServerGroups.label(state.server), lore, muted = state.known == null), click)
-        }
+        val rows = states.map { serverRow(name, it) }
         list(
             player, "Группа ${group.name}", rows, 0, PAGE_SIZE, { who, _ -> group(who, name) }, { groups(it, 0) }, "Серверов нет",
-            extra = {
-                val check = icon(
-                    Icons.CHECK, "COMPASS", "Проверить всех",
-                    Style.lore(
-                        listOf("Серверы группы проверят, вышли ли обновления.", "Ничего не скачивается."),
-                        emptyList(), Style.left("проверить"),
-                    ),
-                )
-                it.button(NETWORK_CHECK, check, go { who -> allowed(who, RemoteAction.CHECK.permission) { askGroup(who, states, RemoteAction.CHECK) } })
-                val update = icon(
-                    Icons.PLUGIN, "GOLD_INGOT", "Обновить всех",
-                    Style.lore(
-                        listOf("Серверы группы скачают найденные обновления.", "Они применятся после перезапуска."),
-                        emptyList(), Style.left("скачать"),
-                    ),
-                )
-                it.button(NETWORK_UPDATE, update, go { who -> allowed(who, RemoteAction.UPDATE.permission) { askGroup(who, states, RemoteAction.UPDATE) } })
-                val servers = icon(
-                    Icons.OVERVIEW, "LIME_DYE", "Добавить сервер",
-                    Style.lore(
-                        listOf("Добавляет сервер или прокси в группу.", "Сервер может состоять в нескольких группах."),
-                        emptyList(), Style.left("выбрать"),
-                    ), good = true,
-                )
-                it.button(GROUP_ADD, servers, go { who -> pickServer(who, name, 0) })
-                val plugins = icon(
-                    Icons.PLUGIN, "BOOKSHELF", "Плагины группы",
-                    Style.lore(
-                        listOf("Плагины, нужные каждому серверу группы: ${group.plugins.size}.", "Если плагина нет, сервер будет в красном."),
-                        emptyList(), Style.left("открыть"),
-                    ),
-                )
-                it.button(GROUP_PLUGINS, plugins, go { who -> groupPlugins(who, name, 0) })
-                val delete = icon(
-                    Icons.PROBLEMS, "TNT", "Удалить группу",
-                    Style.lore(
-                        listOf("Удаляется только список группы.", "Серверы и их плагины не трогаются."),
-                        emptyList(), Style.shiftLeft("удалить"),
-                    ), danger = true,
-                )
-                it.button(GROUP_DELETE, delete, goClick { who, how ->
-                    if (how == ClickType.SHIFT_LEFT) editGroup(who, GroupEdit(GroupOp.DELETE, name)) { groups(who, 0) }
-                    else tell(who, ChatTone.PROGRESS, "Чтобы удалить группу, нажмите с Shift.")
-                })
-            },
+            extra = { groupButtons(it, name, group, states) },
         )
+    }
+
+    /** One server of a group as a row: green when nothing is missing; left click opens its settings, right click removes it. */
+    private fun serverRow(name: String, state: ServerGroups.ServerState): Row {
+        val material = if (state.ok) "EMERALD_BLOCK" else "REDSTONE_BLOCK"
+        val parameters = buildList {
+            add("На связи" to if (state.known?.online == true) "✔ да" else "✖ нет")
+            add("Свои настройки" to if (state.customized) "есть" else "нет, как у всех")
+            if (state.missing.isNotEmpty()) add("Нет плагинов" to state.missing.joinToString(", "))
+            if (state.outdated.isNotEmpty()) add("Можно обновить" to state.outdated.joinToString(", "))
+        }
+        val hints = arrayOf(Style.left("настроить сервер"), Style.right("убрать из группы"))
+        val click = goClick { who, how ->
+            if (how == ClickType.RIGHT) editGroup(who, GroupEdit(GroupOp.REMOVE_SERVER, name, state.server)) { group(who, name) }
+            else groupServer(who, name, state.server)
+        }
+        val lore = Style.lore(emptyList(), parameters, *hints)
+        return Row(icon(Icons.OVERVIEW, material, ServerGroups.label(state.server), lore, muted = state.known == null), click)
+    }
+
+    private fun groupButtons(builder: MenuBuilder, name: String, group: ServerGroups.Group, states: List<ServerGroups.ServerState>) {
+        val check = icon(
+            Icons.CHECK, "COMPASS", "Проверить всех",
+            Style.lore(
+                listOf("Серверы группы проверят, вышли ли обновления.", "Ничего не скачивается."),
+                emptyList(), Style.left("проверить"),
+            ),
+        )
+        builder.button(NETWORK_CHECK, check, go { who -> allowed(who, RemoteAction.CHECK.permission) { askGroup(who, states, RemoteAction.CHECK) } })
+        val update = icon(
+            Icons.PLUGIN, "GOLD_INGOT", "Обновить всех",
+            Style.lore(
+                listOf("Серверы группы скачают найденные обновления.", "Они применятся после перезапуска."),
+                emptyList(), Style.left("скачать"),
+            ),
+        )
+        builder.button(NETWORK_UPDATE, update, go { who -> allowed(who, RemoteAction.UPDATE.permission) { askGroup(who, states, RemoteAction.UPDATE) } })
+        val servers = icon(
+            Icons.OVERVIEW, "LIME_DYE", "Добавить сервер",
+            Style.lore(
+                listOf("Добавляет сервер или прокси в группу.", "Сервер может состоять в нескольких группах."),
+                emptyList(), Style.left("выбрать"),
+            ), good = true,
+        )
+        builder.button(GROUP_ADD, servers, go { who -> pickServer(who, name, 0) })
+        val plugins = icon(
+            Icons.PLUGIN, "BOOKSHELF", "Плагины группы",
+            Style.lore(
+                listOf("Плагины, нужные каждому серверу группы: ${group.plugins.size}.", "Если плагина нет, сервер будет в красном."),
+                emptyList(), Style.left("открыть"),
+            ),
+        )
+        builder.button(GROUP_PLUGINS, plugins, go { who -> groupPlugins(who, name, 0) })
+        val delete = icon(
+            Icons.PROBLEMS, "TNT", "Удалить группу",
+            Style.lore(
+                listOf("Удаляется только список группы.", "Серверы и их плагины не трогаются."),
+                emptyList(), Style.shiftLeft("удалить"),
+            ), danger = true,
+        )
+        builder.button(GROUP_DELETE, delete, goClick { who, how ->
+            if (how == ClickType.SHIFT_LEFT) editGroup(who, GroupEdit(GroupOp.DELETE, name)) { groups(who, 0) }
+            else tell(who, ChatTone.PROGRESS, "Чтобы удалить группу, нажмите с Shift.")
+        })
     }
 
     /** Servers of the network that are not in the group yet; a click puts one in. */
