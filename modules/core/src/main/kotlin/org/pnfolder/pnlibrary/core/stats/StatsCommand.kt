@@ -12,11 +12,11 @@ import org.pnfolder.pnlibrary.core.stats.StatsSnapshot
  * `/pn stats`: the numbers of the server right now (tasks, events, warnings and errors of the day) and how they
  * looked at the last few hourly snapshots kept in the journal. Requires `pnlibrary.stats`; the console always may.
  */
-internal fun statsCommand(collector: StatsCollector, recorder: StatsRecorder): CommandDefinition = command("stats") {
+internal fun statsCommand(snapshot: () -> StatsSnapshot, recorder: StatsRecorder): CommandDefinition = command("stats") {
     permission(PERMISSION)
     noPermissionMessage("Статистика доступна администраторам. Нужно право $PERMISSION.")
     consoleBypassesPermission()
-    executes { context -> statsLines(collector.collect(), recorder.history(HISTORY_DAYS, HISTORY_ROWS)).forEach(context.sender::send) }
+    executes { context -> statsLines(snapshot(), recorder.history(HISTORY_DAYS, HISTORY_ROWS)).forEach(context.sender::send) }
 }
 
 private const val PERMISSION = "pnlibrary.stats"

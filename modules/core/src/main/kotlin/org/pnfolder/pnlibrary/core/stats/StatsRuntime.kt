@@ -14,11 +14,24 @@ internal class StatsRuntime(
     private val collector = StatsCollector(tasks, events, journal)
     private val recorder = StatsRecorder(collector, journal)
 
-    fun snapshot(): StatsSnapshot = collector.collect()
+    @Volatile private var last: StatsSnapshot? = null
 
-    fun command(): CommandDefinition = statsCommand(collector, recorder)
+    /**
+     * The numbers now. Taking them reads the journal files, so a snapshot younger than [FRESH_MILLIS] is reused: one
+     * open menu or a repeated command must not read the disk again each time.
+     */
+    fun snapshot(): StatsSnapshot {
+        last?.takeIf { System.currentTimeMillis() - it.timeMillis < FRESH_MILLIS }?.let { return it }
+        return collector.collect().also { last = it }
+    }
+
+    fun command(): CommandDefinition = statsCommand(::snapshot, recorder)
 
     fun start() = recorder.start()
 
     override fun close() = recorder.close()
+
+    private companion object {
+        const val FRESH_MILLIS = 5_000L
+    }
 }
