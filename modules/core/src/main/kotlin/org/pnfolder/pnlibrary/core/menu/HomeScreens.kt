@@ -14,8 +14,16 @@ internal class HomeScreens(session: MenuSession, routes: MenuRoutes) : MenuScree
         val pending = snapshots.count { it.state in CatalogLabels.PENDING }
         val errors = data.journalGroups("error", JOURNAL_HOURS, JOURNAL_LIMIT).size
         val problems = snapshots.count { it.state in CatalogLabels.PROBLEMS } + errors
-        val plan = data.plan()
         val builder = frame(Menus.chest(title("Главная")).rows(HOME_ROWS), HOME_ROWS)
+        summary(builder, pending, problems)
+        sections(builder, pending, problems, errors)
+        network(builder)
+        builder.button(HOME_CLOSE, closeItem(), go { it.close() })
+        planButtons(builder, data.plan())
+        show(player, builder.build())
+    }
+
+    private fun summary(builder: MenuBuilder, pending: Int, problems: Int) {
         builder.slot(
             4,
             icon(
@@ -36,6 +44,9 @@ internal class HomeScreens(session: MenuSession, routes: MenuRoutes) : MenuScree
                 ),
             ),
         )
+    }
+
+    private fun sections(builder: MenuBuilder, pending: Int, problems: Int, errors: Int) {
         builder.button(11,
             section(Icons.PLUGINS, "BOOKSHELF", "Плагины", "Все плагины, подключённые к библиотеке.", "Всего" to "${connectedCount()}"),
             go { routes.plugins(it, Filter.ALL, 0) })
@@ -82,6 +93,9 @@ internal class HomeScreens(session: MenuSession, routes: MenuRoutes) : MenuScree
             icon(Icons.SUPPORT, "PAPER", "Поддержка", Style.lore(listOf("Если возникла проблема, мы поможем."), emptyList(), Style.left("получить ссылку"))),
             go { routes.support(it) },
         )
+    }
+
+    private fun network(builder: MenuBuilder) {
         if (!remote && (LinkHub.network != null || LinkHub.key != null)) {
             val received = LinkHub.network
             val about = "Прокси и другие серверы сети: их плагины и обновления."
@@ -92,7 +106,9 @@ internal class HomeScreens(session: MenuSession, routes: MenuRoutes) : MenuScree
             }
             builder.button(NETWORK_SLOT, item, go { who -> routes.network(who, 0) })
         }
-        builder.button(HOME_CLOSE, closeItem(), go { it.close() })
+    }
+
+    private fun planButtons(builder: MenuBuilder, plan: PlanInfo?) {
         if (plan != null && plan.state == UpdateState.UPDATE_STAGED) {
             val restart = icon(
                 Icons.RESTART, "DIAMOND", "Перезапуск",
@@ -108,6 +124,5 @@ internal class HomeScreens(session: MenuSession, routes: MenuRoutes) : MenuScree
             )
             builder.button(ROLLBACK_SLOT, rollback, go { it.close(); runCommand(it, "pn update rollback") })
         }
-        show(player, builder.build())
     }
 }
