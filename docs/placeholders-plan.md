@@ -88,6 +88,64 @@ module("war") {
 - Внутри реестр по-прежнему хранит плоские имена (`score.top.{place}`), дерево только способ записи,
   поэтому существующий поиск по адресу и шаблоны работают без изменений.
 
+## 4b. Аргументы (игроки, числа, выбор)
+
+Параметр ветки имеет тип. Тип проверяет и превращает кусок текста в значение, и сам подсказывает админу, что
+ожидается. Неверное значение не падает: плейсхолдер остаётся в тексте, причина в журнале.
+
+```kotlin
+module("war") {
+    placeholders(papi = "clans") {
+        int("score") {
+            value { clans.scoreOf(player) }                                // {pnclans/war:score}       -> очки того, для кого рендерим
+            player("who") { value { clans.scoreOf(arg) } }                 // {pnclans/war:score.Alex}  -> очки игрока Alex (ник или UUID)
+            int("top") {
+                param("place", range = 1..100) { value { clans.topScore(arg) } }   // {pnclans/war:score.top.3}
+            }
+        }
+        text("clan") {
+            value { clans.clanOf(player)?.name }                           // {pnclans/war:clan}
+            choice("field", "name", "tag", "members") { value { clans.clanField(player, arg) } }   // {pnclans/war:clan.tag}
+        }
+    }
+}
+```
+
+- Типы аргумента: `player` (ник или UUID, находит игрока в сети или в хранилище, доступно как `arg`), `int`,
+  `number`, `text`, `bool`, `choice(варианты)`. Для `int`/`number` можно указать `range`.
+- `player(...)` отдаёт объект игрока, а не строку. Если игрока нет, плейсхолдер считается ненайденным, без падения.
+- Подсказки: `/pn placeholders` показывает для ветки её параметры и допустимые значения.
+
+## 4c. Форматирование
+
+Формат применяется после значения через `|`, цепочкой слева направо:
+
+```
+{pnclans/war:score|number}              -> 1 234 567
+{pnclans/war:score.Alex|number|pad(8)}  -> "   1 234"
+{pnclans/war:clan.name|upper}           -> RED WOLVES
+{pnclans/war:bank|money}                -> 12 500 монет
+{pnclans/war:uptime|duration}           -> 2д 3ч
+```
+
+- Встроенные форматы: `number`, `round(n)`, `percent`, `money`, `duration`, `date`, `upper`, `lower`, `title`,
+  `pad(n)`, `trim`, `default(текст)` (запасное значение, если пусто).
+- Тип значения определяет, какие форматы применимы: число принимает `number`, `round`, текст принимает `upper`.
+  Неподходящий формат не падает: значение остаётся как есть, предупреждение в журнал.
+- Свой формат автор регистрирует рядом с плейсхолдерами, и он виден всем плагинам библиотеки:
+
+```kotlin
+module("war") {
+    formats {
+        format<Int>("rank") { value -> "#$value" }                          // {pnclans/war:score|war/rank}
+    }
+}
+```
+
+- Формат по умолчанию для самого плейсхолдера: `int("bank") { format("money"); value { … } }`. Тогда
+  `{pnclans/war:bank}` сразу даёт `12 500 монет`, а `{pnclans/war:bank|number}` перезапишет его.
+- Формат тоже имеет адрес, как плейсхолдер: `плагин/модуль` + имя; без адреса берутся встроенные.
+
 ## 5. Что умеет плейсхолдер
 
 - Форматы через `|`.
