@@ -146,6 +146,78 @@ module("war") {
   `{pnclans/war:bank}` сразу даёт `12 500 монет`, а `{pnclans/war:bank|number}` перезапишет его.
 - Формат тоже имеет адрес, как плейсхолдер: `плагин/модуль` + имя; без адреса берутся встроенные.
 
+## 4d. Все вариации дерева
+
+Любая ветка (обычная или с аргументом) может иметь своё значение и продолжаться дальше без ограничения глубины.
+Аргумент в пути можно ставить где угодно, в том числе несколько подряд и после других аргументов.
+
+```kotlin
+module("war") {
+    placeholders(papi = "clans") {
+        int("score") {                                              // {pnclans/war:score}                        очки того, для кого рендерим
+            value { clans.scoreOf(player) }
+            player("who") {                                         // {pnclans/war:score.Alex}                   очки Alex
+                value { clans.scoreOf(arg) }
+                int("kills") { value { clans.killsOf(arg) } }       // {pnclans/war:score.Alex.kills}             убийства Alex
+                text("clan") {                                      // {pnclans/war:score.Alex.clan}              клан Alex
+                    value { clans.clanOf(arg)?.name }
+                    choice("field", "tag", "members") {             // {pnclans/war:score.Alex.clan.tag}          поле клана Alex
+                        value { clans.clanField(clans.clanOf(arg), argOf("field")) }
+                    }
+                }
+                param("season", int) {                              // {pnclans/war:score.Alex.3}                 очки Alex в сезоне 3
+                    value { clans.scoreOf(argOf("who"), season = arg) }
+                    int("kills") { ... }                            // {pnclans/war:score.Alex.3.kills}           убийства Alex в сезоне 3
+                }
+            }
+            int("top") {                                            // {pnclans/war:score.top}                    лидер
+                value { clans.topScore(1) }
+                param("place", int, range = 1..100) {               // {pnclans/war:score.top.3}                  третье место
+                    value { clans.topScore(arg) }
+                    player("name") { ... }                          // {pnclans/war:score.top.3.name}             ник третьего
+                }
+            }
+        }
+    }
+}
+```
+
+Правила:
+- Путь читается слева направо, каждая часть это либо имя ветки, либо значение аргумента. Первое, что подошло по
+  типу, выигрывает; имя ветки сильнее аргумента (`top` не станет ником игрока, если есть ветка `top`).
+- Значение любого уровня: `arg` (последний аргумент) и `argOf("имя")` (любой аргумент по пути). Родительские
+  аргументы доступны потомкам.
+- Один уровень может иметь и имена, и аргумент одновременно (`score.top` и `score.Alex`). Если ник совпал с
+  именем ветки, выигрывает ветка; точный игрок указывается через `player:Alex`.
+- Ветка без `value` только группирует: `{pnclans/war:score.top}` без значения ответит «не найдено».
+- Глубина не ограничена, но в `/pn placeholders` дерево показывается раскрывающимся списком, а длинные пути
+  видны полностью (`score.Alex.clan.tag`).
+
+## 4e. Свои форматы: все варианты
+
+Свой формат это функция «значение в текст». Регистрируется один раз и доступен как `{…|имя}`, цепочкой с другими.
+
+```kotlin
+module("war") {
+    formats {
+        format<Int>("rank") { "#$it" }                               // {pnclans/war:score|war/rank}           -> #3
+        format<Int>("stars", count = true) { n -> "★".repeat(n) }    // {pnclans/war:score|war/stars}          -> ★★★
+        format<Int>("pad0", arg = int) { n, width -> "%0${width}d".format(n) }   // {pnclans/war:score|war/pad0(5)}   -> 00042
+        format<String>("tag") { "[$it]" }                            // {pnclans/war:clan.tag|war/tag}         -> [WOLF]
+        format<Any>("safe") { it?.toString() ?: "—" }                // для любого типа
+    }
+}
+```
+
+- Форматы принимают тип значения (`Int`, `String`, `Any`) и необязательные аргументы в скобках (`pad0(5)`).
+- Формат автора лежит в его модуле: полный вызов `{…|плагин/модуль:имя}` или короткий `war/rank` внутри
+  своего плагина. Встроенные вызываются без адреса.
+- Формат может быть общим для плагина (вне модуля) и виден всем плагинам, как и плейсхолдеры (доступ тот же).
+- Цепочка: `{pnclans/war:score.Alex|number|war/rank|pad(8)}`: каждый следующий получает результат предыдущего
+  (после первого преобразования значение становится текстом).
+- Ошибка внутри формата не роняет текст: значение подставляется без этого формата, в журнал идёт запись.
+- Формат по умолчанию для плейсхолдера или всей группы: `format("money")`; перекрывается любым `|` в тексте.
+
 ## 5. Что умеет плейсхолдер
 
 - Форматы через `|`.
