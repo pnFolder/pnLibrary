@@ -39,8 +39,6 @@ import org.pnfolder.pnlibrary.core.events.EventDispatcher
 import org.pnfolder.pnlibrary.core.events.EventHistory
 import org.pnfolder.pnlibrary.core.journal.JournalDetail
 import org.pnfolder.pnlibrary.core.journal.JournalGroup
-import org.pnfolder.pnlibrary.core.journal.JournalQueries
-import org.pnfolder.pnlibrary.core.journal.journalCommand
 import org.pnfolder.pnlibrary.core.lifecycle.RuntimeResources
 import org.pnfolder.pnlibrary.core.lifecycle.registerRuntimeCommand
 import org.pnfolder.pnlibrary.core.logging.ModuleLogging
@@ -111,7 +109,8 @@ internal class PnLibraryImpl(
         DisplayZone.zone = ZoneId.of(config.timeZone)
     }
 
-    private val journalRuntime = RuntimeJournal(dataFolder, config, platformOwnership)
+    private val startedAtMillis = System.currentTimeMillis()
+    private val journalRuntime = RuntimeJournal(dataFolder, config, platformOwnership, startedAtMillis, EVENTS_COMMAND)
     private val journal get() = journalRuntime.store
     private val support = SupportRuntime(
         owner = owner,
@@ -166,18 +165,14 @@ internal class PnLibraryImpl(
     private val taskService get() = platformServices.tasks
     override val runtimeTasks: TaskScope get() = taskService.scope(owner)
 
-    private val startedAtMillis = System.currentTimeMillis()
-
     private val mountable = LinkedHashMap<String, CommandDefinition>()
 
     override fun mountableCommand(name: String): CommandDefinition? = mountable[name]
 
-    private val journalQueries = JournalQueries(journalRuntime.store, config, startedAtMillis, EVENTS_COMMAND)
-
-    override fun journalJoinNotice(): List<Component> = journalQueries.joinNotice()
+    override fun journalJoinNotice(): List<Component> = journalRuntime.queries.joinNotice()
 
     override fun journalGroups(level: String?, sinceHours: Int, limit: Int): List<JournalGroup> =
-        journalQueries.groups(level, sinceHours, limit)
+        journalRuntime.queries.groups(level, sinceHours, limit)
 
     override fun taskSnapshots(): List<TaskSnapshot> = taskService.query().filterNot { it.hidden }
 
@@ -187,7 +182,7 @@ internal class PnLibraryImpl(
     override fun runTaskNow(id: String): TaskControl =
         runCatchingNonFatal { taskService.runNow(TaskId(id)) }.getOrDefault(TaskControl.UNAVAILABLE)
 
-    override fun journalDetail(id: String): JournalDetail? = journalQueries.detail(id)
+    override fun journalDetail(id: String): JournalDetail? = journalRuntime.queries.detail(id)
 
     private val commandService get() = platformServices.commands
     /** Runs a registered command for a viewer who is not on this server, or returns null when the command service cannot. */
@@ -252,7 +247,7 @@ internal class PnLibraryImpl(
         startLibraryMetrics()
         // The platform's `/pn` control command holds these as `/pn debug` and `/pn events`.
         mountable["debug"] = diagnosticCommand(this, "/pn debug")
-        mountable["events"] = journalCommand(journal, EVENTS_COMMAND)
+        mountable["events"] = journalRuntime.command()
         stats.start()
         mountable["stats"] = stats.command()
         registerRuntimeCommand(
