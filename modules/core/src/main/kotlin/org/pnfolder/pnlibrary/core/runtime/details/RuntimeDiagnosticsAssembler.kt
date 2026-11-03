@@ -3,7 +3,7 @@ package org.pnfolder.pnlibrary.core.runtime.details
 import org.pnfolder.pnlibrary.api.runtime.PnLibraryConfig
 import org.pnfolder.pnlibrary.api.updates.UpdateService
 import org.pnfolder.pnlibrary.common.lang.runCatchingNonFatal
-import org.pnfolder.pnlibrary.core.commands.CommandServiceImpl
+import org.pnfolder.pnlibrary.core.commands.CommandRegistry
 import org.pnfolder.pnlibrary.core.diagnostics.DiagnosticsRegistry
 import org.pnfolder.pnlibrary.core.metrics.MetricsServiceImpl
 import org.pnfolder.pnlibrary.core.observability.SupportRuntime
@@ -23,7 +23,7 @@ internal class RuntimeDiagnosticsAssembler(
     private val diagnostics: DiagnosticsRegistry,
     private val support: SupportRuntime,
     private val metrics: MetricsServiceImpl,
-    private val commands: CommandServiceImpl,
+    private val commands: CommandRegistry,
     private val journal: () -> Map<String, Any?> = { emptyMap() },
 ) {
     /** Returns one ordered snapshot of library, task, update, metric, and support state. */

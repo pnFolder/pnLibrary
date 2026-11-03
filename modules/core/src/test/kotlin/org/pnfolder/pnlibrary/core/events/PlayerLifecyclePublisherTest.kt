@@ -19,7 +19,7 @@ import java.util.function.Consumer
 class PlayerLifecyclePublisherTest {
     private val id = UUID.randomUUID()
 
-    private fun library(events: EventServiceImpl, player: LibraryPlayer?): PnLibrary {
+    private fun library(events: EventDispatcher, player: LibraryPlayer?): PnLibrary {
         val audiences = mock(AudienceService::class.java)
         `when`(audiences.player(id)).thenReturn(player)
         val library = mock(PnLibrary::class.java)
@@ -31,7 +31,7 @@ class PlayerLifecyclePublisherTest {
     @Test
     fun `join and quit reach portable listeners with the resolved player`() {
         val player = mock(LibraryPlayer::class.java)
-        EventServiceImpl { _, _, _ -> }.use { events ->
+        EventDispatcher { _, _, _ -> }.use { events ->
             val seen = mutableListOf<PlayerLifecycleEvent>()
             val scope = events.scope(PluginId.of("test"))
             scope.subscribe(PlayerLifecycleEvent::class.java, Consumer { seen += it })
@@ -49,7 +49,7 @@ class PlayerLifecyclePublisherTest {
 
     @Test
     fun `a player the platform no longer knows is announced without a player object`() {
-        EventServiceImpl { _, _, _ -> }.use { events ->
+        EventDispatcher { _, _, _ -> }.use { events ->
             var seen: PlayerLeftEvent? = null
             events.scope(PluginId.of("test")).subscribe(PlayerLeftEvent::class.java, Consumer { seen = it })
             PlayerLifecyclePublisher.left(library(events, null), id, "Alex")
@@ -60,7 +60,7 @@ class PlayerLifecyclePublisherTest {
 
     @Test
     fun `a closed event service drops the announcement instead of failing the platform listener`() {
-        val events = EventServiceImpl { _, _, _ -> }
+        val events = EventDispatcher { _, _, _ -> }
         val library = library(events, null)
         events.close()
         PlayerLifecyclePublisher.joined(library, id, "Steve")

@@ -5,7 +5,7 @@ import org.junit.jupiter.api.Test
 import org.pnfolder.pnlibrary.api.plugin.PluginId
 import org.pnfolder.pnlibrary.api.tasks.*
 import org.pnfolder.pnlibrary.core.lifecycle.TaskControl
-import org.pnfolder.pnlibrary.core.tasks.TaskServiceImpl
+import org.pnfolder.pnlibrary.core.tasks.ScheduledTasks
 import org.pnfolder.pnlibrary.spi.tasks.*
 import java.time.Duration
 import java.util.concurrent.atomic.AtomicBoolean
@@ -14,7 +14,7 @@ class TaskServiceImplTest {
     @Test
     fun `closed service rejects both native owner and named module scopes`() {
         val adapter = RecordingAdapter()
-        val service = TaskServiceImpl(adapter)
+        val service = ScheduledTasks(adapter)
         service.close()
         assertThrows(IllegalStateException::class.java) { service.scope(Any()) }
         assertThrows(IllegalStateException::class.java) {
@@ -26,7 +26,7 @@ class TaskServiceImplTest {
     @Test
     fun `scope cleanup continues after native cancellation fails`() {
         val adapter = RecordingAdapter(failingCancelIndex = 0)
-        val service = TaskServiceImpl(adapter)
+        val service = ScheduledTasks(adapter)
         val scope = service.scope(Any())
         val first = scope.schedule(spec("first"))
         val second = scope.schedule(spec("second"))
@@ -43,7 +43,7 @@ class TaskServiceImplTest {
     @Test
     fun `service cleanup closes all owners and adapter despite a cancellation failure`() {
         val adapter = RecordingAdapter(failingCancelIndex = 0)
-        val service = TaskServiceImpl(adapter)
+        val service = ScheduledTasks(adapter)
         val first = service.scope(Any()).schedule(spec("first-owner"))
         val second = service.scope(Any()).schedule(spec("second-owner"))
         assertThrows(IllegalStateException::class.java) { service.close() }
@@ -59,7 +59,7 @@ class TaskServiceImplTest {
         val actionFailure = IllegalStateException("action failed")
         val loggerFailure = IllegalArgumentException("logger failed")
         val reported = mutableListOf<Throwable>()
-        val service = TaskServiceImpl(adapter, errorLogger = { _, _, error ->
+        val service = ScheduledTasks(adapter, errorLogger = { _, _, error ->
             reported += error
             throw loggerFailure
         })
@@ -77,7 +77,7 @@ class TaskServiceImplTest {
     fun `native task request retains scope owner identity`() {
         val adapter = RecordingAdapter()
         val owner = Any()
-        val service = TaskServiceImpl(adapter)
+        val service = ScheduledTasks(adapter)
         try {
             service.scope(owner).schedule(spec("owned"))
             assertSame(owner, adapter.requests.single().owner)
@@ -89,7 +89,7 @@ class TaskServiceImplTest {
     @Test
     fun `task can cancel itself and native handle is cancelled`() {
         val adapter = RecordingAdapter()
-        val service = TaskServiceImpl(adapter)
+        val service = ScheduledTasks(adapter)
         val handle = service.scope(Any()).schedule(TaskSpec.builder()
             .name("self-stop").interval(Duration.ofSeconds(1)).action { it.cancel() }.build())
         adapter.fire(0)
@@ -100,7 +100,7 @@ class TaskServiceImplTest {
     @Test
     fun `duplicate names are listed while keyed conflicts follow policy`() {
         val adapter = RecordingAdapter()
-        val scope = TaskServiceImpl(adapter).scope(Any())
+        val scope = ScheduledTasks(adapter).scope(Any())
         repeat(2) { scope.schedule(spec("same")) }
         assertEquals(2, scope.query(TaskQuery.builder().nameContains("same").build()).size)
         val first = scope.schedule(TaskSpec.builder().key("singleton").action { }.build())
@@ -115,7 +115,7 @@ class TaskServiceImplTest {
     @Test
     fun `false conditions skip repeat but complete one shot`() {
         val adapter = RecordingAdapter()
-        val scope = TaskServiceImpl(adapter).scope(Any())
+        val scope = ScheduledTasks(adapter).scope(Any())
         val repeating = scope.schedule(TaskSpec.builder().interval(Duration.ofSeconds(1))
             .condition { false }.action { fail("must not run") }.build())
         val once = scope.schedule(TaskSpec.builder().condition { false }.action { fail("must not run") }.build())
@@ -130,7 +130,7 @@ class TaskServiceImplTest {
     @Test
     fun `scope query cannot see another owner and history is bounded`() {
         val adapter = RecordingAdapter()
-        val service = TaskServiceImpl(adapter, TaskServiceSettings(historyCapacity = 1))
+        val service = ScheduledTasks(adapter, TaskServiceSettings(historyCapacity = 1))
         val a = service.scope(Any())
         val b = service.scope(Any())
         a.schedule(spec("a"))
@@ -145,7 +145,7 @@ class TaskServiceImplTest {
     @Test
     fun `registration callback cancelling before attachment cancels returned native handle`() {
         val adapter = RecordingAdapter(fireDuringSchedule = true)
-        val handle = TaskServiceImpl(adapter).scope(Any()).schedule(TaskSpec.builder().action { it.cancel() }.build())
+        val handle = ScheduledTasks(adapter).scope(Any()).schedule(TaskSpec.builder().action { it.cancel() }.build())
         assertTrue(handle.isCancelled)
         assertTrue(adapter.handles.single().cancelled.get())
     }
@@ -153,14 +153,14 @@ class TaskServiceImplTest {
     @Test
     fun `completed synchronous task cancels native handle after attachment`() {
         val adapter = RecordingAdapter(fireDuringSchedule = true)
-        val handle = TaskServiceImpl(adapter).scope(Any()).schedule(TaskSpec.builder().action { }.build())
+        val handle = ScheduledTasks(adapter).scope(Any()).schedule(TaskSpec.builder().action { }.build())
         assertEquals(TaskStatus.COMPLETED, handle.status)
         assertTrue(adapter.handles.single().cancelled.get())
     }
 
     @Test
     fun `closed scope rejects new tasks`() {
-        val scope = TaskServiceImpl(RecordingAdapter()).scope(Any())
+        val scope = ScheduledTasks(RecordingAdapter()).scope(Any())
         scope.close()
         assertThrows(IllegalStateException::class.java) {
             scope.schedule(TaskSpec.builder().action { }.build())
@@ -170,7 +170,7 @@ class TaskServiceImplTest {
     @Test
     fun `closing one owner cancels only that owner's tasks`() {
         val adapter = RecordingAdapter()
-        val service = TaskServiceImpl(adapter)
+        val service = ScheduledTasks(adapter)
         val pluginOwner = Any()
         val otherOwner = Any()
         val pluginTask = service.scope(pluginOwner).schedule(spec("plugin"))
@@ -188,7 +188,7 @@ class TaskServiceImplTest {
 
     @Test
     fun `canonical task lookup works for service and owner scope`() {
-        val service = TaskServiceImpl(RecordingAdapter())
+        val service = ScheduledTasks(RecordingAdapter())
         val scope = service.scope(Any())
         val handle = scope.schedule(TaskSpec.builder().key("cleanup").action { }.build())
 
@@ -205,7 +205,7 @@ class TaskServiceImplTest {
 
     @Test
     fun `an administrator cannot stop a task that forbids it but its owner can`() {
-        val service = TaskServiceImpl(RecordingAdapter())
+        val service = ScheduledTasks(RecordingAdapter())
         val task = service.scope(Any()).schedule(TaskSpec.builder().name("locked").cancellable(false).action { }.build())
 
         assertEquals(TaskControl.FORBIDDEN, service.cancelByAdmin(task.id))
@@ -220,7 +220,7 @@ class TaskServiceImplTest {
     @Test
     fun `run now executes a waiting repeating task once and keeps its schedule`() {
         val adapter = RecordingAdapter()
-        val service = TaskServiceImpl(adapter)
+        val service = ScheduledTasks(adapter)
         var runs = 0
         val task = service.scope(Any()).schedule(
             TaskSpec.builder().name("report").interval(Duration.ofMinutes(5)).delay(Duration.ofMinutes(1)).action { runs++ }.build(),
@@ -241,7 +241,7 @@ class TaskServiceImplTest {
 
     @Test
     fun `a task is visible unless it asks to be hidden`() {
-        val service = TaskServiceImpl(RecordingAdapter())
+        val service = ScheduledTasks(RecordingAdapter())
         val scope = service.scope(Any())
         scope.schedule(TaskSpec.builder().name("shown").action { }.build())
         scope.schedule(TaskSpec.builder().name("secret").hidden(true).action { }.build())
@@ -252,7 +252,7 @@ class TaskServiceImplTest {
     @Test
     fun `run now is refused when the task forbids it`() {
         val adapter = RecordingAdapter()
-        val service = TaskServiceImpl(adapter)
+        val service = ScheduledTasks(adapter)
         val task = service.scope(Any()).schedule(TaskSpec.builder().name("fixed").runnableNow(false).action { }.build())
 
         assertEquals(TaskControl.FORBIDDEN, service.runNow(task.id))

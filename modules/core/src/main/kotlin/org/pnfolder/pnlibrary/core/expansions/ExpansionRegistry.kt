@@ -5,7 +5,7 @@ import org.pnfolder.pnlibrary.api.expansions.ExpansionManager
 import org.pnfolder.pnlibrary.core.lifecycle.ResourceCleanup
 
 /** Thread-safe expansion registry; [onFailure] receives every exception an expansion throws while starting or stopping. */
-internal class ExpansionManagerImpl(
+internal class ExpansionRegistry(
     private val onFailure: (Expansion, Exception) -> Unit,
 ) : ExpansionManager, AutoCloseable {
     private val lock = Any()

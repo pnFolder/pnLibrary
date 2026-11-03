@@ -34,7 +34,7 @@ internal const val DEFAULT_NO_PERMISSION = "Недостаточно прав д
  *
  * @param standard the library's reactions, used when nothing more specific answers
  */
-internal class CommandServiceImpl(
+internal class CommandRegistry(
     private val commandAdapter: PlatformCommandAdapter,
     private val logging: PlatformLogging,
     private val standard: StandardCommandFeedback = StandardCommandFeedback(),

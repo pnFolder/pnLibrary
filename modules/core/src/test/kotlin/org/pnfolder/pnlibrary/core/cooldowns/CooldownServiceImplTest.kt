@@ -11,7 +11,7 @@ import java.util.UUID
 class CooldownServiceImplTest {
     @Test
     fun `all operations use the same trimmed case insensitive action key`() {
-        val service = CooldownServiceImpl()
+        val service = InMemoryCooldowns()
         val player = UUID.randomUUID()
 
         assertTrue(service.acquire(player, "  LOGIN  ", Duration.ofMinutes(1)).allowed)
@@ -22,7 +22,7 @@ class CooldownServiceImplTest {
 
     @Test
     fun `cleanup remains idempotent after close while reads reject`() {
-        val service = CooldownServiceImpl()
+        val service = InMemoryCooldowns()
         val player = UUID.randomUUID()
         service.set(player, "example", Duration.ofMinutes(1))
 

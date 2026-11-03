@@ -34,8 +34,8 @@ import org.pnfolder.pnlibrary.core.commands.standardCommandFeedback
 import org.pnfolder.pnlibrary.core.diagnostics.DiagnosticsRegistry
 import org.pnfolder.pnlibrary.core.diagnostics.configFileDiagnostics
 import org.pnfolder.pnlibrary.core.diagnostics.diagnosticCommand
+import org.pnfolder.pnlibrary.core.events.EventDispatcher
 import org.pnfolder.pnlibrary.core.events.EventHistory
-import org.pnfolder.pnlibrary.core.events.EventServiceImpl
 import org.pnfolder.pnlibrary.core.journal.JournalQueries
 import org.pnfolder.pnlibrary.core.journal.journalCommand
 import org.pnfolder.pnlibrary.core.lifecycle.JournalDetail
@@ -44,7 +44,7 @@ import org.pnfolder.pnlibrary.core.lifecycle.ResourceCleanup
 import org.pnfolder.pnlibrary.core.lifecycle.RuntimeResources
 import org.pnfolder.pnlibrary.core.lifecycle.TaskControl
 import org.pnfolder.pnlibrary.core.lifecycle.registerRuntimeCommand
-import org.pnfolder.pnlibrary.core.logging.LoggingServiceImpl
+import org.pnfolder.pnlibrary.core.logging.ModuleLogging
 import org.pnfolder.pnlibrary.core.metrics.MetricsServiceImpl
 import org.pnfolder.pnlibrary.core.observability.SupportRuntime
 import org.pnfolder.pnlibrary.core.platform.PlatformProviderImpl
@@ -138,7 +138,7 @@ internal class PnLibraryImpl(
     override val observability get() = support.service
     override val activity: ActivityService get() = observability
     override val metrics: MetricsService get() = metricsService
-    override val logging: LoggingService = LoggingServiceImpl(
+    override val logging: LoggingService = ModuleLogging(
         platformLogging,
         platformOwnership,
         platformDiagnostics,
@@ -203,7 +203,7 @@ internal class PnLibraryImpl(
     private val serviceManager get() = features.services
     override val services: ServiceManager get() = serviceManager
     override val expansions: ExpansionManager get() = features.expansions
-    private val eventService = EventServiceImpl(
+    private val eventService = EventDispatcher(
         EventHistory(dataFolder.resolve("event-history.tsv"), config.eventHistoryDays, { DisplayZone.zone }),
     ) { pluginId, message, error ->
         val identifiedMessage = "[$pluginId] $message"

@@ -13,7 +13,7 @@ class LoggingServiceImplTest {
     @Test
     fun `startup box uses the shared console palette`() {
         val platform = ConsolePlatform()
-        LoggingServiceImpl(platform, platform, platform, platform)
+        ModuleLogging(platform, platform, platform, platform)
             .box(this, "Demo", "1.0.0")
             .ok("Хранилище", "подключено")
             .warn("Кэш", "пуст")

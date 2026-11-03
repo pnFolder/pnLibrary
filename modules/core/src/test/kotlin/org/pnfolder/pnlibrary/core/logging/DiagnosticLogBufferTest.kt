@@ -81,7 +81,7 @@ class DiagnosticLogBufferTest {
     @Test
     fun `logger prints the full repeated error only once`() {
         val platform = TestPlatform()
-        val logger = LoggingServiceImpl(
+        val logger = ModuleLogging(
             platform,
             platform,
             platform,

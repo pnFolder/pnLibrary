@@ -9,7 +9,7 @@ import org.pnfolder.pnlibrary.api.plugin.PluginId
 class ServiceManagerImplTest {
     @Test
     fun `service manager directly registers and unregisters a service`() {
-        ServiceManagerImpl().use { services ->
+        ServiceRegistry().use { services ->
             services.register(GreetingService::class.java, Greeting("hello"))
 
             assertEquals("hello", services.require(GreetingService::class.java).value)
@@ -20,7 +20,7 @@ class ServiceManagerImplTest {
 
     @Test
     fun `highest numeric priority wins and all providers remain available`() {
-        ServiceManagerImpl().use { services ->
+        ServiceRegistry().use { services ->
             services.register(PluginId.of("fallback"), GreetingService::class.java, Greeting("fallback"), -100)
             val preferredOwner = PluginId.of("preferred")
             services.register(
@@ -40,7 +40,7 @@ class ServiceManagerImplTest {
 
     @Test
     fun `all services owned by a plugin are removed together`() {
-        ServiceManagerImpl().use { services ->
+        ServiceRegistry().use { services ->
             val owned = services.ownedBy(PluginId.of("example"))
             owned.register(GreetingService::class.java, Greeting("hello"))
 
@@ -56,7 +56,7 @@ class ServiceManagerImplTest {
 
     @Test
     fun `one owner cannot accidentally publish the same contract twice`() {
-        ServiceManagerImpl().use { services ->
+        ServiceRegistry().use { services ->
             val owner = PluginId.of("example")
             services.register(owner, GreetingService::class.java, Greeting("first"))
 

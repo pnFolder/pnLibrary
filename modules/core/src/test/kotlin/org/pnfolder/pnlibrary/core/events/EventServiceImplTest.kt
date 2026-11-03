@@ -15,7 +15,7 @@ class EventServiceImplTest {
     @Test
     fun `call returns only after listeners run in priority order`() {
         val calls = mutableListOf<String>()
-        EventServiceImpl { _, _, _ -> }.use { events ->
+        EventDispatcher { _, _, _ -> }.use { events ->
             val scope = events.scope(PluginId.of("test"))
             scope.subscribe(TestEvent::class.java, EventPriority.HIGH, Consumer { calls += "high" })
             scope.subscribe(Event::class.java, EventPriority.LOW, Consumer { calls += "base" })
@@ -27,7 +27,7 @@ class EventServiceImplTest {
 
     @Test
     fun `listener timings are measured without tracing`() {
-        EventServiceImpl { _, _, _ -> }.use { events ->
+        EventDispatcher { _, _, _ -> }.use { events ->
             val scope = events.scope(PluginId.of("test"))
             scope.subscribe(TestEvent::class.java, EventPriority.NORMAL, Consumer { Thread.sleep(5) })
             repeat(2) { events.callEvent(TestEvent()) }
@@ -41,7 +41,7 @@ class EventServiceImplTest {
 
     @Test
     fun `denied result is visible immediately and skips ignoreDenied listeners`() {
-        EventServiceImpl { _, _, _ -> }.use { events ->
+        EventDispatcher { _, _, _ -> }.use { events ->
             val scope = events.scope(PluginId.of("test"))
             scope.subscribe(ResultEvent::class.java, EventPriority.LOW, Consumer {
                 it.value = "handled"
@@ -61,7 +61,7 @@ class EventServiceImplTest {
 
     @Test
     fun `tracing records each listener with its effect on the result`() {
-        EventServiceImpl { _, _, _ -> }.use { events ->
+        EventDispatcher { _, _, _ -> }.use { events ->
             val scope = events.scope(PluginId.of("test"))
             scope.subscribe(ResultEvent::class.java, EventPriority.LOW, Consumer {
                 it.result = ResultedEvent.ComponentResult.denied(Component.text("nope"))
@@ -94,7 +94,7 @@ class EventServiceImplTest {
 
     @Test
     fun `listeners lists subscribers before any event is called`() {
-        EventServiceImpl { _, _, _ -> }.use { events ->
+        EventDispatcher { _, _, _ -> }.use { events ->
             val a = events.scope(PluginId.of("m-a"), PluginId.of("shop"), ModuleId.of("cart"))
             val b = events.scope(PluginId.of("b"))
             a.subscribe(ResultEvent::class.java, EventPriority.HIGH, Consumer { })
@@ -121,7 +121,7 @@ class EventServiceImplTest {
 
     @Test
     fun `inspector counts calls and resolves event types by name`() {
-        EventServiceImpl { _, _, _ -> }.use { events ->
+        EventDispatcher { _, _, _ -> }.use { events ->
             events.scope(PluginId.of("a")).subscribe(ResultEvent::class.java, Consumer { })
             assertEquals(ResultEvent::class.java, events.inspector.eventType(ResultEvent::class.java.name))
             events.callEvent(ResultEvent())
@@ -136,7 +136,7 @@ class EventServiceImplTest {
     @Test
     fun `allowed result keeps ignoreDenied listeners running`() {
         var ran = false
-        EventServiceImpl { _, _, _ -> }.use { events ->
+        EventDispatcher { _, _, _ -> }.use { events ->
             events.scope(PluginId.of("test")).subscribe(ResultEvent::class.java, EventPriority.NORMAL, true, Consumer {
                 ran = true
             })
@@ -151,7 +151,7 @@ class EventServiceImplTest {
     @Test
     fun `typed subscription receives every resulted event`() {
         var seen = 0
-        EventServiceImpl { _, _, _ -> }.use { events ->
+        EventDispatcher { _, _, _ -> }.use { events ->
             events.scope(PluginId.of("test")).subscribe(
                 ResultedEvent::class.java as Class<ResultedEvent<*>>,
                 Consumer { seen++ },
@@ -165,7 +165,7 @@ class EventServiceImplTest {
     @Test
     fun `annotated handlers register in order and close together`() {
         val calls = mutableListOf<String>()
-        EventServiceImpl { _, _, _ -> }.use { events ->
+        EventDispatcher { _, _, _ -> }.use { events ->
             val registration = events.scope(PluginId.of("test")).register(AnnotatedListener(calls))
             events.callEvent(TestEvent())
             assertEquals(listOf("early", "normal"), calls)
@@ -180,7 +180,7 @@ class EventServiceImplTest {
     fun `listener failure is logged and isolated`() {
         val errors = mutableListOf<Throwable>()
         var completed = false
-        EventServiceImpl { _, _, error -> errors += error }.use { events ->
+        EventDispatcher { _, _, error -> errors += error }.use { events ->
             val scope = events.scope(PluginId.of("test"))
             scope.subscribe(TestEvent::class.java, Consumer { error("broken") })
             scope.subscribe(TestEvent::class.java, Consumer { completed = true })
@@ -192,7 +192,7 @@ class EventServiceImplTest {
 
     @Test
     fun `scope and service lifecycle is enforced`() {
-        val events = EventServiceImpl { _, _, _ -> }
+        val events = EventDispatcher { _, _, _ -> }
         val id = PluginId.of("test")
         val scope = events.scope(id)
         assertSame(scope, events.scope(id))
@@ -209,7 +209,7 @@ class EventServiceImplTest {
     fun `dispatch uses calling thread`() {
         val callingThread = Thread.currentThread()
         var listenerThread: Thread? = null
-        EventServiceImpl { _, _, _ -> }.use { events ->
+        EventDispatcher { _, _, _ -> }.use { events ->
             events.scope(PluginId.of("test")).subscribe(TestEvent::class.java, Consumer {
                 listenerThread = Thread.currentThread()
             })
@@ -220,7 +220,7 @@ class EventServiceImplTest {
 
     @Test
     fun `invalid annotated signature fails during registration`() {
-        EventServiceImpl { _, _, _ -> }.use { events ->
+        EventDispatcher { _, _, _ -> }.use { events ->
             assertThrows(IllegalArgumentException::class.java) {
                 events.scope(PluginId.of("test")).register(InvalidListener())
             }
@@ -230,7 +230,7 @@ class EventServiceImplTest {
     @Test
     fun `builder applies priority and ignoreDenied then registers on listen`() {
         val calls = mutableListOf<String>()
-        EventServiceImpl { _, _, _ -> }.use { events ->
+        EventDispatcher { _, _, _ -> }.use { events ->
             val scope = events.scope(PluginId.of("test"))
             scope.on<ResultEvent>().priority(EventPriority.LOWEST).listen {
                 it.result = ResultedEvent.ComponentResult.denied(Component.text("no"))
@@ -246,7 +246,7 @@ class EventServiceImplTest {
 
     @Test
     fun `builder registers nothing until listen is called`() {
-        EventServiceImpl { _, _, _ -> }.use { events ->
+        EventDispatcher { _, _, _ -> }.use { events ->
             val scope = events.scope(PluginId.of("test"))
             scope.on<ResultEvent>().priority(EventPriority.HIGH).ignoreDenied()
             var ran = false
@@ -261,7 +261,7 @@ class EventServiceImplTest {
     @Test
     fun `listeners added or removed after a warm call take effect on the next call`() {
         val calls = mutableListOf<String>()
-        EventServiceImpl { _, _, _ -> }.use { events ->
+        EventDispatcher { _, _, _ -> }.use { events ->
             val scope = events.scope(PluginId.of("test"))
             val first = scope.subscribe(TestEvent::class.java, EventPriority.NORMAL, Consumer { calls += "first" })
             events.callEvent(TestEvent())
@@ -280,7 +280,7 @@ class EventServiceImplTest {
     @Test
     fun `closing a plugin scope removes its listeners from an already cached dispatch`() {
         var ran = 0
-        EventServiceImpl { _, _, _ -> }.use { events ->
+        EventDispatcher { _, _, _ -> }.use { events ->
             val id = PluginId.of("test")
             events.scope(id).subscribe(TestEvent::class.java, Consumer { ran++ })
             events.callEvent(TestEvent())
@@ -292,7 +292,7 @@ class EventServiceImplTest {
 
     @Test
     fun `an event nobody listens to dispatches without error and is not retained`() {
-        EventServiceImpl { _, _, _ -> }.use { events ->
+        EventDispatcher { _, _, _ -> }.use { events ->
             repeat(1_000) { events.callEvent(TestEvent()) }
         }
     }
@@ -300,7 +300,7 @@ class EventServiceImplTest {
     @Test
     fun `changing listeners of one event leaves another event's dispatch correct`() {
         val calls = mutableListOf<String>()
-        EventServiceImpl { _, _, _ -> }.use { events ->
+        EventDispatcher { _, _, _ -> }.use { events ->
             val scope = events.scope(PluginId.of("test"))
             scope.subscribe(ResultEvent::class.java, Consumer { calls += "result" })
             scope.subscribe(TestEvent::class.java, Consumer { calls += "test" })
@@ -320,7 +320,7 @@ class EventServiceImplTest {
         val listenerThread = java.util.concurrent.atomic.AtomicReference<Thread>()
         val executor = java.util.concurrent.Executors.newSingleThreadExecutor { Thread(it, "event-test-worker") }
         try {
-            EventServiceImpl { _, _, _ -> }.use { events ->
+            EventDispatcher { _, _, _ -> }.use { events ->
                 events.scope(PluginId.of("test")).subscribe(TestEvent::class.java, Consumer {
                     listenerThread.set(Thread.currentThread())
                 })
@@ -334,7 +334,7 @@ class EventServiceImplTest {
 
     @Test
     fun `async call without executor uses the bus thread and traces the mode`() {
-        EventServiceImpl { _, _, _ -> }.use { events ->
+        EventDispatcher { _, _, _ -> }.use { events ->
             events.scope(PluginId.of("test")).subscribe(TestEvent::class.java, Consumer { })
             events.inspector.enableTracing(TestEvent::class.java)
             val caller = Thread.currentThread().name
@@ -350,7 +350,7 @@ class EventServiceImplTest {
 
     @Test
     fun `event knows its dispatch mode and thread`() {
-        EventServiceImpl { _, _, _ -> }.use { events ->
+        EventDispatcher { _, _, _ -> }.use { events ->
             val seen = java.util.concurrent.CopyOnWriteArrayList<Boolean>()
             events.scope(PluginId.of("test")).subscribe(TestEvent::class.java, Consumer { seen += it.isAsync })
             val event = TestEvent()
@@ -365,7 +365,7 @@ class EventServiceImplTest {
 
     @Test
     fun `a listener added while other threads dispatch is seen by the next call`() {
-        EventServiceImpl { _, _, _ -> }.use { events ->
+        EventDispatcher { _, _, _ -> }.use { events ->
             val scope = events.scope(PluginId.of("test"))
             val running = java.util.concurrent.atomic.AtomicBoolean(true)
             val readers = (1..4).map { Thread { while (running.get()) events.callEvent(TestEvent()) }.apply { start() } }
@@ -389,7 +389,7 @@ class EventServiceImplTest {
     fun `a failing listener is logged and skipped but a dying JVM is not hidden`() {
         val logged = mutableListOf<Throwable>()
         var after = 0
-        EventServiceImpl { _, _, error -> logged += error }.use { events ->
+        EventDispatcher { _, _, error -> logged += error }.use { events ->
             val scope = events.scope(PluginId.of("test"))
             scope.subscribe(TestEvent::class.java, EventPriority.LOW, Consumer { error("plugin bug") })
             scope.subscribe(TestEvent::class.java, EventPriority.HIGH, Consumer { after++ })
@@ -404,7 +404,7 @@ class EventServiceImplTest {
 
     @Test
     fun `callResult returns the typed result the listeners left`() {
-        EventServiceImpl { _, _, _ -> }.use { events ->
+        EventDispatcher { _, _, _ -> }.use { events ->
             val library = Proxy.newProxyInstance(javaClass.classLoader, arrayOf(PnLibrary::class.java)) { _, method, _ ->
                 if (method.name == "getEvents") events else error("unused ${method.name}")
             } as PnLibrary

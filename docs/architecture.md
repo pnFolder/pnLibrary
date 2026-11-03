@@ -48,7 +48,7 @@ bukkit.menus.open(this, player, menu)
 
 `ConfigurationRuntime` и `CurrencyRuntime` лежат в реализационных feature-модулях: это граница их интеграции
 с `core`. Плагины используют контракты из `*-api`. Внутри `core` у одной реализации нет отдельного интерфейса:
-`PlaceholderHub`, `DirectDownloadManager`, `ServiceManagerImpl` и `RemotePolicyMonitor` используются как есть,
+`PlaceholderHub`, `DirectDownloadManager`, `ServiceRegistry` и `RemotePolicyMonitor` используются как есть,
 а тесты подменяют их через Mockito.
 
 Общие сервисы закрывает рантайм, а полученные от них scope и регистрации — модуль. Если создание модуля

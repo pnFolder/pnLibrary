@@ -7,7 +7,7 @@ import java.util.concurrent.atomic.AtomicBoolean
 import java.util.concurrent.atomic.AtomicLong
 
 /** Thread-safe implementation of the typed, plugin-owned service registry. */
-internal class ServiceManagerImpl : ServiceManager, AutoCloseable {
+internal class ServiceRegistry : ServiceManager, AutoCloseable {
     private val lock = Any()
     private val providers = hashMapOf<Class<*>, MutableList<Registration<*>>>()
     private val registrationsByOwner = hashMapOf<PluginId, MutableList<Registration<*>>>()
@@ -79,11 +79,11 @@ internal class ServiceManagerImpl : ServiceManager, AutoCloseable {
         }
 
         override fun <T : Any> unregister(type: Class<T>) =
-            this@ServiceManagerImpl.unregister(owner, type)
+            this@ServiceRegistry.unregister(owner, type)
 
-        override fun <T : Any> get(type: Class<T>): T? = this@ServiceManagerImpl.get(type)
+        override fun <T : Any> get(type: Class<T>): T? = this@ServiceRegistry.get(type)
 
-        override fun <T : Any> all(type: Class<T>): List<T> = this@ServiceManagerImpl.all(type)
+        override fun <T : Any> all(type: Class<T>): List<T> = this@ServiceRegistry.all(type)
         override fun close() {
             if (ownerClosed.compareAndSet(false, true)) unregisterAll(owner)
         }

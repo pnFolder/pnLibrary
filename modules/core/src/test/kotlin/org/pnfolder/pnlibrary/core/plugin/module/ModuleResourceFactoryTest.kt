@@ -26,7 +26,7 @@ import org.pnfolder.pnlibrary.api.tasks.TaskScope
 import org.pnfolder.pnlibrary.api.updates.UpdateService
 import org.pnfolder.pnlibrary.config.ConfigurationRuntime
 import org.pnfolder.pnlibrary.core.placeholders.PlaceholderHub
-import org.pnfolder.pnlibrary.core.services.ServiceManagerImpl
+import org.pnfolder.pnlibrary.core.services.ServiceRegistry
 import org.pnfolder.pnlibrary.core.services.ServiceScope
 import org.pnfolder.pnlibrary.core.tasks.TaskService
 import org.pnfolder.pnlibrary.core.text.ComponentCache
@@ -50,7 +50,7 @@ class ModuleResourceFactoryTest {
     private val placeholderScope = mock(PlaceholderService::class.java)
     private val currencyScope = mock(CurrencyService::class.java)
     private val serviceScope = mock(ServiceScope::class.java)
-    private val serviceManager = mock(ServiceManagerImpl::class.java)
+    private val serviceManager = mock(ServiceRegistry::class.java)
     private val storageFactory = mock(CurrencyStorageFactory::class.java)
     private val logger = mock(PnLogger::class.java)
 

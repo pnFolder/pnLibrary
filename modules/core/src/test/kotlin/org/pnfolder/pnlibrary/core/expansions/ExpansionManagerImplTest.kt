@@ -12,7 +12,7 @@ import org.pnfolder.pnlibrary.api.expansions.ExpansionState
 class ExpansionManagerImplTest {
     private val events = mutableListOf<String>()
     private val failures = mutableListOf<String>()
-    private val manager = ExpansionManagerImpl { expansion, error -> failures += "${expansion.id}: ${error.message}" }
+    private val manager = ExpansionRegistry { expansion, error -> failures += "${expansion.id}: ${error.message}" }
 
     private inner class Probe(
         id: String,

@@ -19,7 +19,7 @@ import java.util.LinkedHashMap
 import java.util.concurrent.atomic.AtomicBoolean
 
 /** Schedules tasks through the platform adapter, grouped into per-plugin scopes and kept in a bounded history. */
-internal class TaskServiceImpl(
+internal class ScheduledTasks(
     private val adapter: PlatformTaskAdapter,
     private val settings: TaskServiceSettings = TaskServiceSettings(),
     private val errorLogger: (Any, String, Throwable) -> Unit = { _, _, _ -> },

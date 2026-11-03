@@ -20,14 +20,14 @@ import org.pnfolder.pnlibrary.api.updates.ProductDescriptor
 import org.pnfolder.pnlibrary.api.updates.UpdateRegistration
 import org.pnfolder.pnlibrary.api.updates.UpdateService
 import org.pnfolder.pnlibrary.config.ConfigurationRuntime
-import org.pnfolder.pnlibrary.core.cooldowns.CooldownServiceImpl
+import org.pnfolder.pnlibrary.core.cooldowns.InMemoryCooldowns
 import org.pnfolder.pnlibrary.core.downloads.CompositeDownloadRegistration
 import org.pnfolder.pnlibrary.core.downloads.DirectDownloadManager
 import org.pnfolder.pnlibrary.core.lifecycle.ResourceCleanup
 import org.pnfolder.pnlibrary.core.metrics.ErrorPipeline
 import org.pnfolder.pnlibrary.core.placeholders.PlaceholderHub
 import org.pnfolder.pnlibrary.core.plugin.MetricsControllerImpl
-import org.pnfolder.pnlibrary.core.services.ServiceManagerImpl
+import org.pnfolder.pnlibrary.core.services.ServiceRegistry
 import org.pnfolder.pnlibrary.core.tasks.TaskService
 import org.pnfolder.pnlibrary.core.text.ComponentCache
 import org.pnfolder.pnlibrary.core.text.ComponentServiceImpl
@@ -37,7 +37,7 @@ import org.pnfolder.pnlibrary.currency.CurrencyRuntime
 internal class ModuleResourceFactory(
     private val events: EventService,
     private val tasks: TaskService,
-    private val services: ServiceManagerImpl,
+    private val services: ServiceRegistry,
     private val logging: LoggingService,
     private val metrics: MetricsService,
     private val diagnostics: DiagnosticsService,
@@ -112,7 +112,7 @@ internal class ModuleResourceFactory(
                 configs = configScope,
                 placeholders = placeholderScope,
                 components = ComponentServiceImpl(placeholderScope, componentCache),
-                cooldowns = CooldownServiceImpl(),
+                cooldowns = InMemoryCooldowns(),
                 currency = currencyScope,
                 metrics = metricsController,
                 errors = errorReporter,

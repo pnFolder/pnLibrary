@@ -29,7 +29,7 @@ import java.util.function.Consumer
 import java.util.function.Supplier
 
 /** Thread-safe, mode-aware implementation of the platform-independent event bus. */
-internal class EventServiceImpl(
+internal class EventDispatcher(
     private val history: EventHistory? = null,
     private val errorLogger: (PluginId, String, Throwable) -> Unit,
 ) : EventService {
@@ -242,7 +242,7 @@ internal class EventServiceImpl(
             return subscription
         }
 
-        override fun <E : Event> callEvent(event: E): E = this@EventServiceImpl.callEvent(event)
+        override fun <E : Event> callEvent(event: E): E = this@EventDispatcher.callEvent(event)
 
         override fun close() {
             closeInternal()

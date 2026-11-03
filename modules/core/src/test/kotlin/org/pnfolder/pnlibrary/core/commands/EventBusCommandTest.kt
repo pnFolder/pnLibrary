@@ -13,15 +13,15 @@ import org.pnfolder.pnlibrary.api.events.Event
 import org.pnfolder.pnlibrary.api.events.EventPriority
 import org.pnfolder.pnlibrary.api.plugin.PluginId
 import org.pnfolder.pnlibrary.api.runtime.PnLibrary
+import org.pnfolder.pnlibrary.core.events.EventDispatcher
 import org.pnfolder.pnlibrary.core.events.EventHistory
-import org.pnfolder.pnlibrary.core.events.EventServiceImpl
 import java.util.function.Consumer
 
 class EventBusCommandTest {
     private class Ping : Event()
 
     private val history = EventHistory(null, 30)
-    private val events = EventServiceImpl(history) { _, _, _ -> }
+    private val events = EventDispatcher(history) { _, _, _ -> }
     private val library = mock(PnLibrary::class.java).also { `when`(it.events).thenReturn(events) }
     private val definition = EventBusCommand(library).definition()
 

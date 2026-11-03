@@ -36,7 +36,7 @@ class CommandServiceImplTest {
     fun `diagnostic snapshots stay coherent during concurrent registration`() {
         val native = RecordingCommands()
         val platform = TestPlatform(native)
-        val service = CommandServiceImpl(native, platform)
+        val service = CommandRegistry(native, platform)
         val owner = Any()
         val executor = Executors.newFixedThreadPool(2)
         val start = CountDownLatch(1)
@@ -66,7 +66,7 @@ class CommandServiceImplTest {
     fun `builder overload registers a command without manual definition construction`() {
         val native = RecordingCommands()
         val platform = TestPlatform(native)
-        val service = CommandServiceImpl(platform.commandAdapter, platform)
+        val service = CommandRegistry(platform.commandAdapter, platform)
 
         val registration = service.register(Any(), "hello") {
             executes { }
@@ -82,7 +82,7 @@ class CommandServiceImplTest {
     fun `service dispatches a tree leaf and sanitizes predicate failures`() {
         val native = RecordingCommands()
         val platform = TestPlatform(native)
-        val service = CommandServiceImpl(platform.commandAdapter, platform)
+        val service = CommandRegistry(platform.commandAdapter, platform)
         var selected: String? = null
         service.register(Any(), command("group") {
             argument("group", ArgumentType.string()) {
@@ -112,7 +112,7 @@ class CommandServiceImplTest {
     @Test
     fun `authorized execution and suggestions reach the portable definition`() {
         val native = RecordingCommands()
-        val service = CommandServiceImpl(TestPlatform(native).commandAdapter, TestPlatform(native))
+        val service = CommandRegistry(TestPlatform(native).commandAdapter, TestPlatform(native))
         var executed = false
         service.register(Any(), command("hello") {
             permission("example.hello")
@@ -131,7 +131,7 @@ class CommandServiceImplTest {
     @Test
     fun `permission denial blocks execution and suggestions while configured console bypass works`() {
         val native = RecordingCommands()
-        val service = CommandServiceImpl(TestPlatform(native).commandAdapter, TestPlatform(native))
+        val service = CommandRegistry(TestPlatform(native).commandAdapter, TestPlatform(native))
         var executions = 0
         service.register(Any(), command("hello") {
             permission("example.hello")
@@ -157,7 +157,7 @@ class CommandServiceImplTest {
     @Test
     fun `a command can replace the default no-permission message with its own text`() {
         val native = RecordingCommands()
-        val service = CommandServiceImpl(TestPlatform(native).commandAdapter, TestPlatform(native))
+        val service = CommandRegistry(TestPlatform(native).commandAdapter, TestPlatform(native))
         service.register(Any(), command("hello") {
             permission("example.hello")
             noPermissionMessage("Нужна покупка доступа: /shop buy hello")
@@ -173,7 +173,7 @@ class CommandServiceImplTest {
     @Test
     fun `name and alias collisions fail before native registration`() {
         val native = RecordingCommands()
-        val service = CommandServiceImpl(TestPlatform(native).commandAdapter, TestPlatform(native))
+        val service = CommandRegistry(TestPlatform(native).commandAdapter, TestPlatform(native))
         service.register(Any(), command("first") { aliases("shared") })
 
         assertThrows(IllegalArgumentException::class.java) {
@@ -188,7 +188,7 @@ class CommandServiceImplTest {
     @Test
     fun `failed native registration rolls reservations back`() {
         val native = RecordingCommands().apply { failNextRegistration = true }
-        val service = CommandServiceImpl(TestPlatform(native).commandAdapter, TestPlatform(native))
+        val service = CommandRegistry(TestPlatform(native).commandAdapter, TestPlatform(native))
 
         assertThrows(IllegalStateException::class.java) {
             service.register(Any(), command("hello") { aliases("hi") })
@@ -202,7 +202,7 @@ class CommandServiceImplTest {
     fun `handler failures are logged and sanitized`() {
         val native = RecordingCommands()
         val platform = TestPlatform(native)
-        val service = CommandServiceImpl(platform.commandAdapter, platform)
+        val service = CommandRegistry(platform.commandAdapter, platform)
         service.register(Any(), command("hello") {
             executesAsync { CompletableFuture.failedFuture(IllegalStateException("private detail")) }
             suggestsAsync { CompletableFuture.failedFuture(IllegalArgumentException("private suggestion")) }
@@ -223,7 +223,7 @@ class CommandServiceImplTest {
     @Test
     fun `registration owner and service closing unregister natively once`() {
         val native = RecordingCommands()
-        val service = CommandServiceImpl(TestPlatform(native).commandAdapter, TestPlatform(native))
+        val service = CommandRegistry(TestPlatform(native).commandAdapter, TestPlatform(native))
         val firstOwner = Any()
         val registration = service.register(firstOwner, command("first") {})
         service.register(firstOwner, command("second") {})
@@ -249,7 +249,7 @@ class CommandServiceImplTest {
     fun `one native close failure does not leak remaining registrations`() {
         val native = RecordingCommands().apply { failingCloseName = "second" }
         val platform = TestPlatform(native)
-        val service = CommandServiceImpl(platform.commandAdapter, platform)
+        val service = CommandRegistry(platform.commandAdapter, platform)
         service.register(Any(), command("first") {})
         service.register(Any(), command("second") {})
         service.register(Any(), command("third") {})
@@ -264,7 +264,7 @@ class CommandServiceImplTest {
     @Test
     fun `a subcommand message wins over the command message and the configured default`() {
         val native = RecordingCommands()
-        val service = CommandServiceImpl(
+        val service = CommandRegistry(
             TestPlatform(native).commandAdapter, TestPlatform(native), "Настроенный текст из config.yml",
         )
         service.register(Any(), command("hello") {
@@ -294,7 +294,7 @@ class CommandServiceImplTest {
     @Test
     fun `the configured default replaces the built in text when nothing more specific is set`() {
         val native = RecordingCommands()
-        val service = CommandServiceImpl(
+        val service = CommandRegistry(
             TestPlatform(native).commandAdapter, TestPlatform(native), "Настроенный текст из config.yml",
         )
         service.register(Any(), command("hello") {
@@ -313,7 +313,7 @@ class CommandServiceImplTest {
     }
 
     private fun service(native: RecordingCommands, standard: StandardCommandFeedback = StandardCommandFeedback()) =
-        CommandServiceImpl(TestPlatform(native).commandAdapter, TestPlatform(native), standard)
+        CommandRegistry(TestPlatform(native).commandAdapter, TestPlatform(native), standard)
 
     private fun run(native: RecordingCommands, sender: TestSender, vararg arguments: String) =
         native.dispatcher.execute(native.command, context(sender, *arguments)).toCompletableFuture().join()

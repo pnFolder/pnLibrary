@@ -53,7 +53,7 @@ import org.pnfolder.pnlibrary.core.plugin.module.ModuleResourceFactory
 import org.pnfolder.pnlibrary.core.plugin.module.ModuleResources
 import org.pnfolder.pnlibrary.core.plugin.module.ModuleServiceKeyFactory
 import org.pnfolder.pnlibrary.core.remote.RemotePolicyMonitor
-import org.pnfolder.pnlibrary.core.services.ServiceManagerImpl
+import org.pnfolder.pnlibrary.core.services.ServiceRegistry
 import org.pnfolder.pnlibrary.core.tasks.TaskService
 import org.pnfolder.pnlibrary.core.text.ComponentCache
 import org.pnfolder.pnlibrary.localization.MinecraftLocalization
@@ -78,7 +78,7 @@ internal class PluginRegistryImpl(
     private val remotePolicies: RemotePolicyMonitor,
     private val events: EventService,
     private val tasks: TaskService,
-    private val services: ServiceManagerImpl,
+    private val services: ServiceRegistry,
     private val logging: LoggingService,
     private val metrics: MetricsService,
     private val diagnostics: DiagnosticsService,
