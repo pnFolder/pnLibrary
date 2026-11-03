@@ -107,6 +107,7 @@ class ProxyControlCommand(
             "/pn events" to "pnlibrary.events.view",
             "/pn bus" to "pnlibrary.events.bus",
             "/pn tasks" to "pnlibrary.tasks",
+            "/pn stats" to "pnlibrary.stats",
             "/pn servers" to ServersCommand.PERMISSION,
             "/pn groups" to GroupsCommand.PERMISSION,
             "/pn debug" to "pnlibrary.debug",

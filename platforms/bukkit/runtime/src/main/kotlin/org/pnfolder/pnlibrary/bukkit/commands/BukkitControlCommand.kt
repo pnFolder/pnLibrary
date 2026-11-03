@@ -138,6 +138,7 @@ internal class BukkitControlCommand(
             if (sender.hasPermission("pnlibrary.events.view")) add("/pn events")
             if (sender.hasPermission("pnlibrary.events.bus")) add("/pn bus")
             if (sender.hasPermission("pnlibrary.tasks")) add("/pn tasks")
+            if (sender.hasPermission("pnlibrary.stats")) add("/pn stats")
             if (sender.hasPermission(ServersCommand.PERMISSION)) add("/pn servers")
             if (sender.hasPermission("pnlibrary.debug")) add("/pn debug")
             add("/pn money")

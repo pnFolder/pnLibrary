@@ -46,6 +46,7 @@
 |---|---|
 | `pnlibrary.admin` | всё управление pnLibrary |
 | `pnlibrary.events.view` | `/pn events` и сводку ошибок при входе |
+| `pnlibrary.stats` | `/pn stats` и страница статистики в меню |
 | `pnlibrary.debug` | `/pn debug` |
 
 ## Подключение к плагину
