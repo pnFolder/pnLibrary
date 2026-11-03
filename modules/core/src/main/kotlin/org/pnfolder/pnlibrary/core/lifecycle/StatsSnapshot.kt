@@ -1,4 +1,4 @@
-package org.pnfolder.pnlibrary.core.stats
+package org.pnfolder.pnlibrary.core.lifecycle
 
 /**
  * Aggregated numbers about one moment of the server.
@@ -17,7 +17,7 @@ package org.pnfolder.pnlibrary.core.stats
  * @property errors24h errors in the journal over the last 24 hours
  * @property errorSources plugins with the most errors over the last 24 hours, worst first
  */
-internal data class StatsSnapshot(
+data class StatsSnapshot(
     val timeMillis: Long,
     val tasksActive: Int,
     val tasksFailed: Int,
@@ -30,7 +30,7 @@ internal data class StatsSnapshot(
     val errorSources: List<Pair<String, Int>>,
 ) {
     /** The snapshot as journal details; [fromDetails] reads it back. */
-    fun toDetails(): Map<String, String> = mapOf(
+    internal fun toDetails(): Map<String, String> = mapOf(
         "tasksActive" to tasksActive.toString(),
         "tasksFailed" to tasksFailed.toString(),
         "taskRuns" to taskRuns.toString(),
@@ -44,10 +44,10 @@ internal data class StatsSnapshot(
 
     companion object {
         /** Journal record type of a stored snapshot. */
-        const val RECORD_TYPE = "STATS"
+        internal const val RECORD_TYPE = "STATS"
 
         /** Reads a snapshot written by [toDetails], or returns null when a number is missing or broken. */
-        fun fromDetails(timeMillis: Long, details: Map<String, String>): StatsSnapshot? {
+        internal fun fromDetails(timeMillis: Long, details: Map<String, String>): StatsSnapshot? {
             fun int(key: String) = details[key]?.toIntOrNull()
             fun long(key: String) = details[key]?.toLongOrNull()
             return StatsSnapshot(

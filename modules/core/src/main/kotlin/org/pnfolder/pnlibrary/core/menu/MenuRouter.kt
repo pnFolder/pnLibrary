@@ -17,6 +17,7 @@ internal class MenuRouter(private val session: MenuSession) : MenuRoutes {
     private val taskScreens = TaskScreens(session, this)
     private val networkScreens = NetworkScreens(session, this)
     private val groupScreens = GroupScreens(session, this)
+    private val statsScreens = StatsScreens(session, this)
     private val busScreens = BusScreens(session, this)
     private val busHistoryScreens = BusHistoryScreens(session, this)
 
@@ -46,6 +47,7 @@ internal class MenuRouter(private val session: MenuSession) : MenuRoutes {
     override fun setAutomatic(snapshot: UpdateSnapshot, enable: Boolean, player: MenuViewer): java.util.concurrent.CompletionStage<*> =
         updateScreens.setAutomatic(snapshot, enable, player)
     override fun settings(player: MenuViewer) = settingsScreens.settings(player)
+    override fun stats(player: MenuViewer) = statsScreens.stats(player)
     override fun support(player: MenuViewer) = settingsScreens.support(player)
     override fun tasks(player: MenuViewer, period: TaskPeriod, state: TaskState, page: Int) = taskScreens.tasks(player, period, state, page)
     override fun tools(player: MenuViewer) = settingsScreens.tools(player)

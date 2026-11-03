@@ -5,6 +5,7 @@ import org.pnfolder.pnlibrary.common.lang.runCatchingNonFatal
 import org.pnfolder.pnlibrary.core.journal.JournalLevel
 import org.pnfolder.pnlibrary.core.journal.JournalRecord
 import org.pnfolder.pnlibrary.core.journal.JournalStore
+import org.pnfolder.pnlibrary.core.lifecycle.StatsSnapshot
 import java.time.Duration
 import java.util.concurrent.Executors
 import java.util.concurrent.TimeUnit
@@ -43,11 +44,11 @@ internal class StatsRecorder(
     }
 
     /** The stored snapshots of the last [days] days, newest first. */
-    fun history(days: Long, limit: Int): List<StatsSnapshot> =
-        journal.read(setOf(JournalLevel.INFO), sinceMillis = System.currentTimeMillis() - Duration.ofDays(days).toMillis(), limit = READ_LIMIT)
-            .filter { it.type == StatsSnapshot.RECORD_TYPE }
+    fun history(days: Long, limit: Int): List<StatsSnapshot> {
+        val since = System.currentTimeMillis() - Duration.ofDays(days).toMillis()
+        return journal.read(setOf(JournalLevel.INFO), sinceMillis = since, limit = limit, type = StatsSnapshot.RECORD_TYPE)
             .mapNotNull { StatsSnapshot.fromDetails(it.timeMillis, it.details) }
-            .take(limit)
+    }
 
     override fun close() {
         executor.shutdownNow()
@@ -56,8 +57,5 @@ internal class StatsRecorder(
 
     private companion object {
         val EVERY: Duration = Duration.ofHours(1)
-
-        /** INFO is busy, so the read is wide; only the newest few snapshots are kept from it. */
-        const val READ_LIMIT = 5_000
     }
 }

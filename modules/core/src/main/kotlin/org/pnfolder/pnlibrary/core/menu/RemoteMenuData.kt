@@ -22,6 +22,7 @@ import org.pnfolder.pnlibrary.api.updates.backup.UpdateBackup
 import org.pnfolder.pnlibrary.api.updates.backup.UpdateHistoryEntry
 import org.pnfolder.pnlibrary.core.lifecycle.JournalDetail
 import org.pnfolder.pnlibrary.core.lifecycle.JournalGroup
+import org.pnfolder.pnlibrary.core.lifecycle.StatsSnapshot
 import org.pnfolder.pnlibrary.core.lifecycle.TaskControl
 import org.pnfolder.pnlibrary.core.link.DataClient
 import org.pnfolder.pnlibrary.core.link.DataException
@@ -58,6 +59,7 @@ object MenuCalls {
     const val JOURNAL_GROUPS = "journalGroups"
     const val JOURNAL_DETAIL = "journalDetail"
     const val TASKS = "tasks"
+    const val STATS = "stats"
     const val RUN_TASK = "runTask"
     const val CANCEL_TASK = "cancelTask"
     const val EVENTS = "events"
@@ -78,7 +80,7 @@ object MenuCalls {
     /** The calls that change nothing, whose answers may be remembered for a moment. */
     val READS = setOf(
         GROUPS,
-        VERSION, SNAPSHOTS, SNAPSHOT, PLUGINS, PLAN, HELD_UNTIL, HISTORY_COUNT, HISTORY_PAGE, BACKUPS, JOURNAL_GROUPS, JOURNAL_DETAIL, TASKS,
+        VERSION, SNAPSHOTS, SNAPSHOT, PLUGINS, PLAN, HELD_UNTIL, HISTORY_COUNT, HISTORY_PAGE, BACKUPS, JOURNAL_GROUPS, JOURNAL_DETAIL, TASKS, STATS,
         EVENTS, LISTENERS, EVENT_HISTORY, EVENT_HISTORY_DAYS, TRACED_EVENTS, TRACES, EVENT_ABOUT, OWNER_NAMED,
     )
 
@@ -165,6 +167,8 @@ class RemoteMenuData(
     override fun journalDetail(id: String): JournalDetail? = ask(MenuCalls.JOURNAL_DETAIL, args("id" to id))
 
     override fun tasks(): List<TaskSnapshot> = ask(MenuCalls.TASKS)
+
+    override fun stats(): StatsSnapshot = ask(MenuCalls.STATS)
 
     override fun runTask(id: String): TaskControl = ask(MenuCalls.RUN_TASK, args("id" to id))
 

@@ -255,9 +255,8 @@ internal class PnLibraryImpl(
         // The platform's `/pn` control command holds these as `/pn debug` and `/pn events`.
         mountable["debug"] = diagnosticCommand(this, "/pn debug")
         mountable["events"] = journalCommand(journal, EVENTS_COMMAND)
-        val stats = StatsCollector(::taskSnapshots, { events.inspector.events() }, journal)
-        statsRecorder = StatsRecorder(stats, journal).also(StatsRecorder::start)
-        mountable["stats"] = statsCommand(stats, requireNotNull(statsRecorder))
+        statsRecorder = StatsRecorder(statsCollector, journal).also(StatsRecorder::start)
+        mountable["stats"] = statsCommand(statsCollector, requireNotNull(statsRecorder))
         registerRuntimeCommand(
             libraryInfoCommand(this, platformIdentity) {
                 platformOwnership.ownerDetails(owner)["version"] ?: "неизвестна"
@@ -274,7 +273,10 @@ internal class PnLibraryImpl(
         support.recordRuntimeError(logOwner, message, error)
     }
 
+    private val statsCollector by lazy { StatsCollector(::taskSnapshots, { events.inspector.events() }, journal) }
     private var statsRecorder: StatsRecorder? = null
+
+    override fun statsSnapshot() = statsCollector.collect()
 
     private fun startLibraryMetrics() {
         libraryMetrics = RuntimeMetricsBootstrap(

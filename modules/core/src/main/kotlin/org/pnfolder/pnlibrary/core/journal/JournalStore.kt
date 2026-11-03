@@ -80,13 +80,15 @@ internal class JournalStore(
      * @param levels levels to include; an empty set means every level
      * @param source exact source name, or `null` for every source
      * @param sinceMillis earliest time to include, or `null` for no lower bound
+     * @param type record type to return; with `null` every type except [JournalRecord.STATS_TYPE]
      */
     fun read(
         levels: Set<JournalLevel> = emptySet(),
         source: String? = null,
         sinceMillis: Long? = null,
         limit: Int = 100,
-    ): List<JournalRecord> = readSnapshot(levels, source, sinceMillis, limit).records
+        type: String? = null,
+    ): List<JournalRecord> = readSnapshot(levels, source, sinceMillis, limit, type).records
 
     /** Newest-first read; [Snapshot.truncated] tells whether the byte budget stopped it before all matches. */
     private fun readSnapshot(
@@ -94,6 +96,7 @@ internal class JournalStore(
         source: String?,
         sinceMillis: Long?,
         limit: Int,
+        type: String? = null,
     ): Snapshot {
         require(limit in 1..100_000) { "Journal limit must be between 1 and 100000" }
         val wanted = if (levels.isEmpty()) JournalLevel.values().toSet() else levels
@@ -115,7 +118,8 @@ internal class JournalStore(
                 if (size > remaining) { truncated = true; break }
                 Files.newInputStream(file).buffered().use { input ->
                     JournalBlockCodec.visit(input, size) { record ->
-                        if ((source == null || record.source == source) && (sinceMillis == null || record.timeMillis >= sinceMillis)) {
+                        val typeFits = if (type == null) record.type != JournalRecord.STATS_TYPE else record.type == type
+                        if (typeFits && (source == null || record.source == source) && (sinceMillis == null || record.timeMillis >= sinceMillis)) {
                             if (newest.size < limit) newest.add(record)
                             else if (record.timeMillis > newest.peek().timeMillis) { newest.poll(); newest.add(record) }
                         }

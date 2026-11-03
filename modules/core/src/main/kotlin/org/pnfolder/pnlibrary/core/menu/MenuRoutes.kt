@@ -32,6 +32,7 @@ internal interface MenuRoutes {
     fun plugins(player: MenuViewer, filter: Filter, page: Int)
     fun setAutomatic(snapshot: UpdateSnapshot, enable: Boolean, player: MenuViewer): java.util.concurrent.CompletionStage<*>
     fun settings(player: MenuViewer)
+    fun stats(player: MenuViewer)
     fun support(player: MenuViewer)
     fun tasks(player: MenuViewer, period: TaskPeriod, state: TaskState, page: Int)
     fun tools(player: MenuViewer)

@@ -8,6 +8,7 @@ import org.pnfolder.pnlibrary.api.commands.command
 import org.pnfolder.pnlibrary.api.runtime.PnLibrary
 import org.pnfolder.pnlibrary.api.tasks.TaskScope
 import org.pnfolder.pnlibrary.api.tasks.TaskSnapshot
+import org.pnfolder.pnlibrary.core.lifecycle.StatsSnapshot
 
 /** Private runtime capabilities, deliberately absent from the consumer API facade. */
 internal interface RuntimeResources {
@@ -25,6 +26,9 @@ internal interface RuntimeResources {
 
     /** Every live and retained task of every plugin. */
     fun taskSnapshots(): List<TaskSnapshot>
+
+    /** The numbers of the server right now: tasks, events, and the errors and warnings of the day. */
+    fun statsSnapshot(): StatsSnapshot
 
     /** Stops the task with this id for an administrator; the task may forbid it. */
     fun cancelTask(id: String): TaskControl
@@ -112,6 +116,9 @@ fun PnLibrary.runtimeTaskScope(): TaskScope = runtimeResources().runtimeTasks
 
 /** Lines to show an administrator on joining, empty when the journal has nothing to report or the notice is off. */
 fun PnLibrary.journalJoinNotice(): List<Component> = runtimeResources().journalJoinNotice()
+
+/** The numbers of the server right now. */
+fun PnLibrary.statsSnapshot(): StatsSnapshot = runtimeResources().statsSnapshot()
 
 /** Registers a pnLibrary-owned command from core or a bundled native integration. */
 fun PnLibrary.registerRuntimeCommand(command: CommandDefinition): CommandRegistration =

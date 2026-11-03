@@ -14,6 +14,7 @@ import org.pnfolder.pnlibrary.api.updates.backup.UpdateBackup
 import org.pnfolder.pnlibrary.api.updates.backup.UpdateHistoryEntry
 import org.pnfolder.pnlibrary.core.lifecycle.JournalDetail
 import org.pnfolder.pnlibrary.core.lifecycle.JournalGroup
+import org.pnfolder.pnlibrary.core.lifecycle.StatsSnapshot
 import org.pnfolder.pnlibrary.core.lifecycle.TaskControl
 import org.pnfolder.pnlibrary.core.link.ServerGroups
 import java.time.Duration
@@ -130,6 +131,9 @@ interface MenuData {
 
     /** Every task of every plugin. */
     fun tasks(): List<TaskSnapshot>
+
+    /** The numbers of the server: tasks, events, and the errors and warnings of the day. */
+    fun stats(): StatsSnapshot
 
     /** Starts the waiting task at once. */
     fun runTask(id: String): TaskControl

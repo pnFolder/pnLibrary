@@ -43,6 +43,9 @@ internal data class JournalRecord(
         }
 
     companion object {
+        /** Type of the hourly statistics records; they are not events, so reads without a type skip them. */
+        const val STATS_TYPE = org.pnfolder.pnlibrary.core.lifecycle.StatsSnapshot.RECORD_TYPE
+
         /** Upper bound for stored text; longer messages are cut so one record always fits a block. */
         const val MAX_MESSAGE_CHARS = 8_000
 

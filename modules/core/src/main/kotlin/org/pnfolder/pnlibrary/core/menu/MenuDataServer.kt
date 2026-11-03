@@ -74,6 +74,7 @@ class MenuDataServer(
             MenuCalls.JOURNAL_GROUPS -> give(data.journalGroups(text("level"), args.get("hours")?.asInt ?: 24, args.get("limit")?.asInt ?: 200))
             MenuCalls.JOURNAL_DETAIL -> give(data.journalDetail(text("id").orEmpty()))
             MenuCalls.TASKS -> give(data.tasks())
+            MenuCalls.STATS -> give(data.stats())
             MenuCalls.RUN_TASK -> give(data.runTask(text("id").orEmpty()))
             MenuCalls.CANCEL_TASK -> give(data.cancelTask(text("id").orEmpty()))
             MenuCalls.EVENTS -> give(data.events())

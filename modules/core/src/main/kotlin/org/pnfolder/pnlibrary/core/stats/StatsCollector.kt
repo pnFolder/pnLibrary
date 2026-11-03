@@ -5,6 +5,7 @@ import org.pnfolder.pnlibrary.api.tasks.TaskSnapshot
 import org.pnfolder.pnlibrary.api.tasks.TaskStatus
 import org.pnfolder.pnlibrary.core.journal.JournalLevel
 import org.pnfolder.pnlibrary.core.journal.JournalStore
+import org.pnfolder.pnlibrary.core.lifecycle.StatsSnapshot
 import java.time.Duration
 
 /** Takes a [StatsSnapshot] from the task list, the event counters and the journal. */
