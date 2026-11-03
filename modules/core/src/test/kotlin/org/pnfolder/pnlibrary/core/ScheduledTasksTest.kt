@@ -10,7 +10,7 @@ import org.pnfolder.pnlibrary.spi.tasks.*
 import java.time.Duration
 import java.util.concurrent.atomic.AtomicBoolean
 
-class TaskServiceImplTest {
+class ScheduledTasksTest {
     @Test
     fun `closed service rejects both native owner and named module scopes`() {
         val adapter = RecordingAdapter()

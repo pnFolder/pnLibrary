@@ -11,7 +11,7 @@ import org.pnfolder.pnlibrary.api.runtime.PnLibraryProvider
 import java.lang.reflect.Proxy
 import java.util.function.Consumer
 
-class EventServiceImplTest {
+class EventDispatcherTest {
     @Test
     fun `call returns only after listeners run in priority order`() {
         val calls = mutableListOf<String>()

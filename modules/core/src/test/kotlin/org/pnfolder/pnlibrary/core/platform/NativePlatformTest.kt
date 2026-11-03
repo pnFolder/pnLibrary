@@ -5,7 +5,7 @@ import org.junit.jupiter.api.Assertions.assertSame
 import org.junit.jupiter.api.Assertions.assertThrows
 import org.junit.jupiter.api.Test
 
-class PlatformProviderImplTest {
+class NativePlatformTest {
     private interface TestPlatform
     private object Implementation : TestPlatform
     private object Replacement : TestPlatform

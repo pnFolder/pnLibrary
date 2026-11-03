@@ -15,7 +15,7 @@ import java.util.concurrent.TimeUnit
 import java.util.concurrent.atomic.AtomicInteger
 import java.util.function.Supplier
 
-class MetricsServiceImplTest {
+class MetricsSessionsTest {
     private val bStats = listOf(MetricsProviderConfiguration(MetricsProvider.BSTATS, projectId = 123))
     private val fastStats = listOf(MetricsProviderConfiguration(MetricsProvider.FASTSTATS, token = "token"))
 

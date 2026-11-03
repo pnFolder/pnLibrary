@@ -17,7 +17,7 @@ import java.util.concurrent.Executors
 import java.util.concurrent.RejectedExecutionException
 import java.util.concurrent.TimeUnit
 
-class DownloadRegistrationImplTest {
+class DownloadBatchTest {
     @Test
     fun `future continuation can immediately start a fresh download`() {
         val queue = mutableListOf<Runnable>()

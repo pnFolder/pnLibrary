@@ -16,7 +16,7 @@ import org.pnfolder.pnlibrary.api.audiences.PlayerParticle
 import org.pnfolder.pnlibrary.spi.audiences.PlatformAudienceAdapter
 import java.util.UUID
 
-class AudienceServiceImplTest {
+class PlatformAudiencesTest {
     @Test
     fun `lookups delegate while close suppresses stale resolution`() {
         val console = Sender("console", console = true)

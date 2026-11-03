@@ -9,7 +9,7 @@ import org.junit.jupiter.api.assertThrows
 import org.pnfolder.pnlibrary.api.expansions.AbstractExpansion
 import org.pnfolder.pnlibrary.api.expansions.ExpansionState
 
-class ExpansionManagerImplTest {
+class ExpansionRegistryTest {
     private val events = mutableListOf<String>()
     private val failures = mutableListOf<String>()
     private val manager = ExpansionRegistry { expansion, error -> failures += "${expansion.id}: ${error.message}" }

@@ -25,7 +25,7 @@ import java.util.concurrent.TimeUnit
 import java.util.jar.JarEntry
 import java.util.jar.JarOutputStream
 
-class DirectDownloadManagerTest {
+class DirectDownloadsTest {
     @TempDir lateinit var directory: Path
 
     @Test

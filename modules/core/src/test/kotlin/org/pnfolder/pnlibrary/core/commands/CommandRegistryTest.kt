@@ -31,7 +31,7 @@ import java.util.concurrent.CountDownLatch
 import java.util.concurrent.Executors
 import java.util.concurrent.TimeUnit
 
-class CommandServiceImplTest {
+class CommandRegistryTest {
     @Test
     fun `diagnostic snapshots stay coherent during concurrent registration`() {
         val native = RecordingCommands()

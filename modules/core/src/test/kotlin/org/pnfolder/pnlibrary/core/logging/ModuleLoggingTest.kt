@@ -9,7 +9,7 @@ import org.pnfolder.pnlibrary.core.ui.ConsoleStyle
 import org.pnfolder.pnlibrary.spi.platform.PlatformAdapter
 import java.nio.file.Files
 
-class LoggingServiceImplTest {
+class ModuleLoggingTest {
     @Test
     fun `startup box uses the shared console palette`() {
         val platform = ConsolePlatform()

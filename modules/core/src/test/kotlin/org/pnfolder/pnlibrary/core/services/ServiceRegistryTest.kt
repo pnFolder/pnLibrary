@@ -6,7 +6,7 @@ import org.junit.jupiter.api.Assertions.assertThrows
 import org.junit.jupiter.api.Test
 import org.pnfolder.pnlibrary.api.plugin.PluginId
 
-class ServiceManagerImplTest {
+class ServiceRegistryTest {
     @Test
     fun `service manager directly registers and unregisters a service`() {
         ServiceRegistry().use { services ->

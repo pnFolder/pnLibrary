@@ -8,7 +8,7 @@ import org.junit.jupiter.api.Test
 import java.time.Duration
 import java.util.UUID
 
-class CooldownServiceImplTest {
+class InMemoryCooldownsTest {
     @Test
     fun `all operations use the same trimmed case insensitive action key`() {
         val service = InMemoryCooldowns()

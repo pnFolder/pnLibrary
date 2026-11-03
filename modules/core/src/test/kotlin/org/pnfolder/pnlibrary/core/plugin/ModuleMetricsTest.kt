@@ -15,7 +15,7 @@ import org.pnfolder.pnlibrary.core.plugin.module.ModuleMetricsDefinition
 import java.util.function.Consumer
 import java.util.function.Supplier
 
-class MetricsControllerImplTest {
+class ModuleMetricsTest {
     @Test
     fun `adding bStats to a FastStats only configuration opens both providers`() {
         val service = RecordingMetricsService()
