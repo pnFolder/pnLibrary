@@ -1,6 +1,7 @@
 package org.pnfolder.pnlibrary.core.menu
 
 import org.pnfolder.pnlibrary.api.runtime.PnLibraryIdentity
+import org.pnfolder.pnlibrary.api.updates.UpdateSnapshot
 import org.pnfolder.pnlibrary.core.updates.catalog.UpdateCatalogView
 import org.pnfolder.pnlibrary.core.updates.policy.UpdateDefaults
 import java.time.Duration
@@ -16,15 +17,15 @@ internal class SettingsScreens(session: MenuSession, routes: MenuRoutes) : MenuS
 
     fun settings(player: MenuViewer) {
         val all = snapshots()
-        val automatic = all.count { it.automaticDownload }
-        val everyoneAuto = all.isNotEmpty() && automatic == all.size
-        val untils = all.mapNotNull { data.heldUntil(it.product) }.filter { it.isAfter(Instant.now()) }
-        val longest = untils.maxOrNull()?.let { Duration.between(Instant.now(), it) }
-        val pauseChoices = listOf("нет паузы") + HOLDS.take(CYCLE_HOLDS).map { "на ${it.first}" }
-        val pauseSelected = longest?.let { span ->
-            1 + (HOLDS.take(CYCLE_HOLDS).indexOfFirst { it.second >= span }.takeIf { it >= 0 } ?: (CYCLE_HOLDS - 1))
-        } ?: 0
         val builder = frame(Menus.chest(title("Настройки")).rows(SMALL_ROWS + 1), SMALL_ROWS + 1)
+        howItWorks(builder)
+        autoForAll(builder, all)
+        pauseForAll(builder, all)
+        builder.button(SMALL_BACK + 9, backItem(), go { routes.home(it) })
+        show(player, builder.build())
+    }
+
+    private fun howItWorks(builder: MenuBuilder) {
         builder.slot(
             4,
             icon(
@@ -39,6 +40,11 @@ internal class SettingsScreens(session: MenuSession, routes: MenuRoutes) : MenuS
                 ),
             ),
         )
+    }
+
+    private fun autoForAll(builder: MenuBuilder, all: List<UpdateSnapshot>) {
+        val automatic = all.count { it.automaticDownload }
+        val everyoneAuto = all.isNotEmpty() && automatic == all.size
         val autoNote = if (!everyoneAuto && automatic > 0) listOf("Сейчас" to "у $automatic из ${all.size}") else emptyList()
         builder.button(
             11,
@@ -58,6 +64,15 @@ internal class SettingsScreens(session: MenuSession, routes: MenuRoutes) : MenuS
                 }
             },
         )
+    }
+
+    private fun pauseForAll(builder: MenuBuilder, all: List<UpdateSnapshot>) {
+        val untils = all.mapNotNull { data.heldUntil(it.product) }.filter { it.isAfter(Instant.now()) }
+        val longest = untils.maxOrNull()?.let { Duration.between(Instant.now(), it) }
+        val pauseChoices = listOf("нет паузы") + HOLDS.take(CYCLE_HOLDS).map { "на ${it.first}" }
+        val pauseSelected = longest?.let { span ->
+            1 + (HOLDS.take(CYCLE_HOLDS).indexOfFirst { it.second >= span }.takeIf { it >= 0 } ?: (CYCLE_HOLDS - 1))
+        } ?: 0
         val pauseNote = buildList {
             if (untils.isNotEmpty()) add("Осталось" to left(longest!!))
             if (untils.isNotEmpty()) add("На паузе" to "${untils.size} из ${all.size}")
@@ -85,8 +100,6 @@ internal class SettingsScreens(session: MenuSession, routes: MenuRoutes) : MenuS
                 }
             },
         )
-        builder.button(SMALL_BACK + 9, backItem(), go { routes.home(it) })
-        show(player, builder.build())
     }
 
     fun tools(player: MenuViewer) {
