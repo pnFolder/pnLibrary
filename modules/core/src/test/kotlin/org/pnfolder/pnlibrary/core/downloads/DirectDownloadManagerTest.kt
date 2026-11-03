@@ -166,11 +166,11 @@ class DirectDownloadManagerTest {
         automatic: Boolean = true,
         installed: Map<String, String> = emptyMap(),
         platformType: PlatformType = PlatformType.BUKKIT,
-    ): DirectDownloadManager {
+    ): DirectDownloads {
         return manager(bytes, automatic, null, null, installed, platformType)
     }
 
-    private fun blockingManager(bytes: ByteArray, entered: CountDownLatch, release: CountDownLatch): DirectDownloadManager =
+    private fun blockingManager(bytes: ByteArray, entered: CountDownLatch, release: CountDownLatch): DirectDownloads =
         manager(bytes, true, entered, release, emptyMap(), PlatformType.BUKKIT)
 
     private fun manager(
@@ -180,7 +180,7 @@ class DirectDownloadManagerTest {
         release: CountDownLatch?,
         installed: Map<String, String>,
         platformType: PlatformType,
-    ): DirectDownloadManager {
+    ): DirectDownloads {
         val platform = Proxy.newProxyInstance(javaClass.classLoader, arrayOf(PlatformAdapter::class.java)) { _, method, _ ->
             when (method.name) {
                 "getType" -> platformType
@@ -203,7 +203,7 @@ class DirectDownloadManagerTest {
                 return bytes.also { require(it.size <= maximumBytes) }
             }
         }
-        return DirectDownloadManager(platform, platform, platform, platform, platform, directory.resolve("plugins/pnLibrary"), DownloadConfiguration(
+        return DirectDownloads(platform, platform, platform, platform, platform, directory.resolve("plugins/pnLibrary"), DownloadConfiguration(
             automatic = automatic,
         ), http)
     }

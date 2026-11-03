@@ -12,7 +12,7 @@ import java.util.IdentityHashMap
 import java.util.concurrent.atomic.AtomicBoolean
 
 /** Owns every platform metrics session and provides idempotent managed close handles. */
-internal class MetricsServiceImpl(
+internal class MetricsSessions(
     private val factory: PlatformMetricsFactory,
     private val platform: PlatformType? = null,
 ) : MetricsService, AutoCloseable {

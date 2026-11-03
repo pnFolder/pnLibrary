@@ -4,7 +4,7 @@ import org.pnfolder.pnlibrary.api.currency.CurrencyProviderRegistry
 import org.pnfolder.pnlibrary.api.expansions.Expansion
 import org.pnfolder.pnlibrary.api.logging.LogLevel
 import org.pnfolder.pnlibrary.config.ConfigurationServiceImpl
-import org.pnfolder.pnlibrary.core.downloads.DirectDownloadManager
+import org.pnfolder.pnlibrary.core.downloads.DirectDownloads
 import org.pnfolder.pnlibrary.core.downloads.DownloadConfiguration
 import org.pnfolder.pnlibrary.core.expansions.ExpansionRegistry
 import org.pnfolder.pnlibrary.core.expansions.LocalizationExpansion
@@ -34,7 +34,7 @@ internal class RuntimeFeatureSet(
     private val downloadConfiguration = DownloadConfiguration.load(dataFolder.resolve("downloads.yml")) {
         logging.log(this, LogLevel.WARNING, it)
     }
-    val downloads: DirectDownloadManager = DirectDownloadManager(
+    val downloads: DirectDownloads = DirectDownloads(
         platform.identity, platform.ownership, platform.ownership, platform.readiness,
         logging, dataFolder, downloadConfiguration,
     )

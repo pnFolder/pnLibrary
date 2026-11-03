@@ -12,7 +12,7 @@ class PlatformProviderImplTest {
 
     @Test
     fun `registers and removes a typed platform implementation`() {
-        val provider = PlatformProviderImpl()
+        val provider = NativePlatform()
 
         assertNull(provider.get(TestPlatform::class.java))
         val registration = provider.register(TestPlatform::class.java, Implementation)
@@ -24,7 +24,7 @@ class PlatformProviderImplTest {
 
     @Test
     fun `rejects duplicate registration and missing required platform`() {
-        val provider = PlatformProviderImpl()
+        val provider = NativePlatform()
         provider.register(TestPlatform::class.java, Implementation)
 
         assertThrows(IllegalArgumentException::class.java) {
@@ -39,7 +39,7 @@ class PlatformProviderImplTest {
 
     @Test
     fun `stale registration handle cannot remove a replacement`() {
-        val provider = PlatformProviderImpl()
+        val provider = NativePlatform()
         val first = provider.register(TestPlatform::class.java, Implementation)
 
         provider.close()

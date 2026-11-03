@@ -4,7 +4,7 @@ import org.pnfolder.pnlibrary.api.platform.PlatformProvider
 import java.util.concurrent.ConcurrentHashMap
 
 /** Small runtime registry for the single native platform implementation. */
-internal class PlatformProviderImpl : PlatformProvider, AutoCloseable {
+internal class NativePlatform : PlatformProvider, AutoCloseable {
     private val implementations = ConcurrentHashMap<Class<*>, Any>()
 
     override fun <T : Any> get(type: Class<T>): T? = implementations[type]?.let(type::cast)

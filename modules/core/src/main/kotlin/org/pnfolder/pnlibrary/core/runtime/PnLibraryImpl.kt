@@ -45,9 +45,9 @@ import org.pnfolder.pnlibrary.core.lifecycle.RuntimeResources
 import org.pnfolder.pnlibrary.core.lifecycle.TaskControl
 import org.pnfolder.pnlibrary.core.lifecycle.registerRuntimeCommand
 import org.pnfolder.pnlibrary.core.logging.ModuleLogging
-import org.pnfolder.pnlibrary.core.metrics.MetricsServiceImpl
+import org.pnfolder.pnlibrary.core.metrics.MetricsSessions
 import org.pnfolder.pnlibrary.core.observability.SupportRuntime
-import org.pnfolder.pnlibrary.core.platform.PlatformProviderImpl
+import org.pnfolder.pnlibrary.core.platform.NativePlatform
 import org.pnfolder.pnlibrary.core.plugin.PluginRegistryImpl
 import org.pnfolder.pnlibrary.core.plugin.SharedFeatures
 import org.pnfolder.pnlibrary.core.remote.RemotePolicyMonitor
@@ -106,7 +106,7 @@ internal class PnLibraryImpl(
 
     private val closedFlag = AtomicBoolean(false)
     override val isClosed: Boolean get() = closedFlag.get()
-    private val metricsService = MetricsServiceImpl(metricsFactory, platform.identity.type)
+    private val metricsService = MetricsSessions(metricsFactory, platform.identity.type)
     private var libraryMetrics: PluginMetrics? = null
     val dataFolder: Path = PlatformDataFolderResolver.resolve(owner, dataFolderHint)
     init {
@@ -213,7 +213,7 @@ internal class PnLibraryImpl(
     private val placeholderValueStore get() = features.placeholderValues
     private val placeholderHub get() = features.placeholders
     private val currencyFeature get() = features.currency
-    private val platformProvider = PlatformProviderImpl()
+    private val platformProvider = NativePlatform()
     override val platforms: PlatformProvider get() = platformProvider
     override val placeholderAdapters: PlaceholderAdapterRegistry get() = placeholderHub
     override val placeholderValues: PlaceholderValueStore get() = placeholderValueStore

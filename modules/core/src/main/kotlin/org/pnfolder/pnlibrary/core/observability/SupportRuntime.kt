@@ -49,7 +49,7 @@ internal class SupportRuntime(
 ) : AutoCloseable {
     private val observations = ObservabilityRuntime(dataFolder)
     private val diagnosticBridge = DiagnosticObservationBridge(observations)
-    val service = ObservabilityServiceImpl(diagnostics, observations)
+    val service = ObservabilityHub(diagnostics, observations)
     val logs = DiagnosticLogBuffer(config.logRecords.coerceIn(10, 2_000))
     val capture = DiagnosticCapture(ownership, platformLogging, logs, journal) { logOwner, message, error ->
         service.record(

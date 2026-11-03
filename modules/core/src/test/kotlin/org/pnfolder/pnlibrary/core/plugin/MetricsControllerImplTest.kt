@@ -19,7 +19,7 @@ class MetricsControllerImplTest {
     @Test
     fun `adding bStats to a FastStats only configuration opens both providers`() {
         val service = RecordingMetricsService()
-        val controller = MetricsControllerImpl(
+        val controller = ModuleMetrics(
             Any(), service,
             ModuleMetricsDefinition(providers = listOf(fastStats()), enabled = false),
         )
@@ -41,7 +41,7 @@ class MetricsControllerImplTest {
             override fun close() = Unit
         }
         val service = RecordingMetricsService(reporter)
-        val controller = MetricsControllerImpl(Any(), service, definition(), null)
+        val controller = ModuleMetrics(Any(), service, definition(), null)
         assertEquals(reporter, controller.errorReporterOrNull())
         controller.disable()
         assertEquals(null, controller.errorReporterOrNull())
@@ -54,7 +54,7 @@ class MetricsControllerImplTest {
     @Test
     fun `runtime chart configuration restarts session and replays all charts`() {
         val service = RecordingMetricsService()
-        val controller = MetricsControllerImpl(Any(), service, definition(), null)
+        val controller = ModuleMetrics(Any(), service, definition(), null)
 
         controller.configure(Consumer { it.simplePie("mode", Supplier { "test" }) })
         controller.configure(Consumer { it.simplePie("database", Supplier { "mysql" }) })
@@ -69,7 +69,7 @@ class MetricsControllerImplTest {
     @Test
     fun `metrics can be disabled enabled and moved to another provider setup`() {
         val service = RecordingMetricsService()
-        val controller = MetricsControllerImpl(
+        val controller = ModuleMetrics(
             owner = Any(),
             service = service,
             definition = definition(
@@ -101,7 +101,7 @@ class MetricsControllerImplTest {
     @Test
     fun `unchanged provider configuration does not restart the session`() {
         val service = RecordingMetricsService()
-        val controller = MetricsControllerImpl(Any(), service, definition(), null)
+        val controller = ModuleMetrics(Any(), service, definition(), null)
 
         controller.update(bStats(10))
 
@@ -111,7 +111,7 @@ class MetricsControllerImplTest {
 
     @Test
     fun `enabling without an enabled provider is rejected`() {
-        val controller = MetricsControllerImpl(
+        val controller = ModuleMetrics(
             Any(), RecordingMetricsService(),
             ModuleMetricsDefinition(enabled = false),
         )
@@ -122,7 +122,7 @@ class MetricsControllerImplTest {
 
     @Test
     fun `closed controller rejects mutation`() {
-        val controller = MetricsControllerImpl(
+        val controller = ModuleMetrics(
             Any(),
             RecordingMetricsService(),
             definition(enabled = false),

@@ -8,7 +8,7 @@ import org.pnfolder.pnlibrary.api.metrics.MetricsProvider
 import org.pnfolder.pnlibrary.api.metrics.MetricsProviderConfiguration
 import org.pnfolder.pnlibrary.api.metrics.PluginMetrics
 import org.pnfolder.pnlibrary.api.platform.PlatformType
-import org.pnfolder.pnlibrary.core.metrics.MetricsServiceImpl
+import org.pnfolder.pnlibrary.core.metrics.MetricsSessions
 import org.pnfolder.pnlibrary.spi.metrics.PlatformMetricsFactory
 import java.util.concurrent.Executors
 import java.util.concurrent.TimeUnit
@@ -22,7 +22,7 @@ class MetricsServiceImplTest {
     @Test
     fun `opens the bStats project of the running platform`() {
         var projectId: Int? = null
-        val registry = MetricsServiceImpl(
+        val registry = MetricsSessions(
             object : PlatformMetricsFactory {
                 override fun open(owner: Any, configurations: Collection<MetricsProviderConfiguration>): PluginMetrics {
                     projectId = configurations.single().projectId
@@ -53,7 +53,7 @@ class MetricsServiceImplTest {
     @Test
     fun `closed registry rejects every metrics factory entry point`() {
         var opened = 0
-        val registry = MetricsServiceImpl(object : PlatformMetricsFactory {
+        val registry = MetricsSessions(object : PlatformMetricsFactory {
             override fun open(owner: Any, configurations: Collection<MetricsProviderConfiguration>): PluginMetrics {
                 opened++
                 return FakeMetrics {}
@@ -78,7 +78,7 @@ class MetricsServiceImplTest {
     @Test
     fun `an enabled provider is required and runtime closes sessions`() {
         var closed = 0
-        val registry = MetricsServiceImpl(object : PlatformMetricsFactory {
+        val registry = MetricsSessions(object : PlatformMetricsFactory {
             override fun open(owner: Any, configurations: Collection<MetricsProviderConfiguration>): PluginMetrics =
                 FakeMetrics { closed++ }
         })
@@ -99,7 +99,7 @@ class MetricsServiceImplTest {
     @Test
     fun `managed metrics closes delegate only once under concurrent close`() {
         val closed = AtomicInteger()
-        val registry = MetricsServiceImpl(object : PlatformMetricsFactory {
+        val registry = MetricsSessions(object : PlatformMetricsFactory {
             override fun open(owner: Any, configurations: Collection<MetricsProviderConfiguration>): PluginMetrics =
                 FakeMetrics { closed.incrementAndGet() }
         })
@@ -120,7 +120,7 @@ class MetricsServiceImplTest {
     fun `provider configuration is delegated and managed`() {
         var received: List<MetricsProviderConfiguration> = emptyList()
         var closed = 0
-        val registry = MetricsServiceImpl(object : PlatformMetricsFactory {
+        val registry = MetricsSessions(object : PlatformMetricsFactory {
             override fun open(owner: Any, configurations: Collection<MetricsProviderConfiguration>): PluginMetrics {
                 received = configurations.toList()
                 return FakeMetrics { closed++ }

@@ -11,7 +11,7 @@ import java.util.concurrent.atomic.AtomicBoolean
 import java.util.function.Consumer
 
 /** Enables, reconfigures and closes one module's metrics session. */
-internal class MetricsControllerImpl(
+internal class ModuleMetrics(
     private val owner: Any,
     private val service: MetricsService,
     definition: ModuleMetricsDefinition,

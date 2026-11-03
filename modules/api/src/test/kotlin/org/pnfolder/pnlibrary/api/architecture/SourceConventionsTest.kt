@@ -116,7 +116,7 @@ class SourceConventionsTest {
          */
         val LEGACY_TEXT_ALLOWED = setOf(
             "modules/api/src/main/kotlin/org/pnfolder/pnlibrary/api/text/ComponentSerializerType.kt",
-            "modules/core/src/main/kotlin/org/pnfolder/pnlibrary/core/text/ComponentServiceImpl.kt",
+            "modules/core/src/main/kotlin/org/pnfolder/pnlibrary/core/text/CachedComponents.kt",
             "modules/core/src/main/kotlin/org/pnfolder/pnlibrary/core/diagnostics/DiagnosticRedactor.kt",
             "modules/core/src/main/kotlin/org/pnfolder/pnlibrary/core/menu/MenuColors.kt",
             "modules/features/currency-api/src/main/kotlin/org/pnfolder/pnlibrary/api/currency/CurrencyCommandSettings.kt",

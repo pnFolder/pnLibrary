@@ -1,6 +1,6 @@
 package org.pnfolder.pnlibrary.localization
 
-import org.pnfolder.pnlibrary.localization.internal.TranslationIndexImpl
+import org.pnfolder.pnlibrary.localization.internal.TranslationSearchIndex
 import org.pnfolder.pnlibrary.localization.layout.KeyboardLayout
 import org.pnfolder.pnlibrary.localization.layout.KeyboardLayouts
 
@@ -69,6 +69,6 @@ interface TranslationIndex<T> {
         @JvmStatic
         @JvmOverloads
         fun <T> of(matches: List<TranslationMatch<T>>, layouts: KeyboardLayouts = KeyboardLayouts.builtIn): TranslationIndex<T> =
-            TranslationIndexImpl(matches, layouts)
+            TranslationSearchIndex(matches, layouts)
     }
 }

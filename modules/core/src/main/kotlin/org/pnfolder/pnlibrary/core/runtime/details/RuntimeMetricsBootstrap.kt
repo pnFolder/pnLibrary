@@ -5,12 +5,12 @@ import org.pnfolder.pnlibrary.api.metrics.MetricsProviderConfiguration
 import org.pnfolder.pnlibrary.api.metrics.PluginMetrics
 import org.pnfolder.pnlibrary.api.platform.PlatformType
 import org.pnfolder.pnlibrary.common.lang.runCatchingNonFatal
-import org.pnfolder.pnlibrary.core.metrics.MetricsServiceImpl
+import org.pnfolder.pnlibrary.core.metrics.MetricsSessions
 import org.pnfolder.pnlibrary.spi.platform.PlatformIdentity
 
 /** Starts the built-in runtime telemetry without coupling the composition root to its details. */
 internal class RuntimeMetricsBootstrap(
-    private val registry: MetricsServiceImpl,
+    private val registry: MetricsSessions,
     private val platform: PlatformIdentity,
     private val owner: Any,
     private val warning: (String) -> Unit,

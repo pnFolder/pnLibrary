@@ -27,7 +27,7 @@ import java.nio.file.Path
  * [PnLibrary.observability][org.pnfolder.pnlibrary.api.runtime.PnLibrary.observability] are this one object seen
  * through three interfaces. Storage and retention stay inside [ObservabilityRuntime].
  */
-internal class ObservabilityServiceImpl(
+internal class ObservabilityHub(
     private val diagnostics: DiagnosticsRegistry,
     private val runtime: ObservabilityRuntime,
 ) : DiagnosticsService, ActivityService, ObservabilityService {

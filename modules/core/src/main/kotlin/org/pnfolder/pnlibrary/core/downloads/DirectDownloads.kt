@@ -21,7 +21,7 @@ import java.util.concurrent.Executors
 import java.util.concurrent.atomic.AtomicBoolean
 
 /** Downloads, verifies and atomically publishes files declared by plugins, including missing plugin dependencies. */
-internal class DirectDownloadManager(
+internal class DirectDownloads(
     private val identity: PlatformIdentity,
     private val ownership: PlatformOwnerMetadata,
     private val inventory: PlatformPluginInventory,
@@ -37,7 +37,7 @@ internal class DirectDownloadManager(
     private val executor: ExecutorService = Executors.newSingleThreadExecutor { action ->
         Thread(action, "pnLibrary-direct-downloads").apply { isDaemon = true }
     }
-    private val registrations = CopyOnWriteArrayList<DownloadRegistrationImpl>()
+    private val registrations = CopyOnWriteArrayList<DownloadBatch>()
     private val pluginJarVerifier = PluginJarVerifier(identity)
     private val filePublisher = AtomicDownloadPublisher(libraryData)
     private val artifactPreparer = DownloadArtifactPreparer(
@@ -55,7 +55,7 @@ internal class DirectDownloadManager(
         owner: Any,
         request: FileDownloads,
         verifier: ((FileDownload, Path) -> Unit)?,
-    ): DownloadRegistration = DownloadRegistrationImpl(
+    ): DownloadRegistration = DownloadBatch(
         request = request,
         configuration = configuration,
         executor = executor,

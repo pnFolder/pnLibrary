@@ -22,15 +22,15 @@ import org.pnfolder.pnlibrary.api.updates.UpdateService
 import org.pnfolder.pnlibrary.config.ConfigurationRuntime
 import org.pnfolder.pnlibrary.core.cooldowns.InMemoryCooldowns
 import org.pnfolder.pnlibrary.core.downloads.CompositeDownloadRegistration
-import org.pnfolder.pnlibrary.core.downloads.DirectDownloadManager
+import org.pnfolder.pnlibrary.core.downloads.DirectDownloads
 import org.pnfolder.pnlibrary.core.lifecycle.ResourceCleanup
 import org.pnfolder.pnlibrary.core.metrics.ErrorPipeline
 import org.pnfolder.pnlibrary.core.placeholders.PlaceholderHub
-import org.pnfolder.pnlibrary.core.plugin.MetricsControllerImpl
+import org.pnfolder.pnlibrary.core.plugin.ModuleMetrics
 import org.pnfolder.pnlibrary.core.services.ServiceRegistry
 import org.pnfolder.pnlibrary.core.tasks.TaskService
+import org.pnfolder.pnlibrary.core.text.CachedComponents
 import org.pnfolder.pnlibrary.core.text.ComponentCache
-import org.pnfolder.pnlibrary.core.text.ComponentServiceImpl
 import org.pnfolder.pnlibrary.currency.CurrencyRuntime
 
 /** Opens every per-module resource and releases the ones already opened when a later one fails. */
@@ -45,7 +45,7 @@ internal class ModuleResourceFactory(
     private val placeholders: PlaceholderHub,
     private val currency: CurrencyRuntime,
     private val configurations: ConfigurationRuntime,
-    private val directDownloads: DirectDownloadManager?,
+    private val directDownloads: DirectDownloads?,
     private val componentCache: ComponentCache,
 ) {
     fun create(
@@ -61,7 +61,7 @@ internal class ModuleResourceFactory(
         var configScope: ConfigScope? = null
         var placeholderScope: PlaceholderService? = null
         var currencyScope: CurrencyService? = null
-        var metricsController: MetricsControllerImpl? = null
+        var metricsController: ModuleMetrics? = null
         var errorReporter: ErrorReporter? = null
         var diagnosticRegistration: DiagnosticRegistration? = null
         var updateRegistration: UpdateRegistration? = null
@@ -86,7 +86,7 @@ internal class ModuleResourceFactory(
 
                 override fun close() = Unit
             })
-            metricsController = MetricsControllerImpl(
+            metricsController = ModuleMetrics(
                 owner,
                 metrics,
                 definition.metrics,
@@ -111,7 +111,7 @@ internal class ModuleResourceFactory(
                 logger = logging.logger(owner, moduleId.value),
                 configs = configScope,
                 placeholders = placeholderScope,
-                components = ComponentServiceImpl(placeholderScope, componentCache),
+                components = CachedComponents(placeholderScope, componentCache),
                 cooldowns = InMemoryCooldowns(),
                 currency = currencyScope,
                 metrics = metricsController,

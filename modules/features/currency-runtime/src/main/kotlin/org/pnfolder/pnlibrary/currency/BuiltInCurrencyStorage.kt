@@ -11,7 +11,7 @@ import java.util.concurrent.CompletionStage
 import javax.sql.DataSource
 
 /** Creates built-in storage backends and coordinates portable snapshot migrations. */
-internal class CurrencyStorageFactoryImpl : CurrencyStorageFactory {
+internal class BuiltInCurrencyStorage : CurrencyStorageFactory {
     override fun file(path: Path): CurrencyStorage = FileCurrencyStorage(path, 100_000)
     override fun file(path: Path, maximumTransactions: Int): CurrencyStorage = FileCurrencyStorage(path, maximumTransactions)
     override fun jdbc(dataSource: DataSource): CurrencyStorage = JdbcCurrencyStorage(dataSource, "pnlibrary_currency")

@@ -20,7 +20,7 @@ import java.util.concurrent.CompletionStage
 import java.util.concurrent.atomic.AtomicLong
 
 /** Serializes, deserializes and renders components for one plugin with optional caching. */
-internal class ComponentServiceImpl(
+internal class CachedComponents(
     private val placeholders: PlaceholderService,
     private val sharedCache: ComponentCache,
 ) : ComponentService {

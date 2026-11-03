@@ -22,7 +22,7 @@ class AudienceServiceImplTest {
         val console = Sender("console", console = true)
         val player = Player(UUID.randomUUID(), "Alice")
         val adapter = RecordingAdapter(console, mutableListOf(player))
-        val service = AudienceServiceImpl(adapter)
+        val service = PlatformAudiences(adapter)
 
         assertSame(console, service.console())
         assertSame(player, service.player(player.uniqueId))
@@ -40,7 +40,7 @@ class AudienceServiceImplTest {
         val broken = Sender("broken", calls = calls, failMessages = true)
         val last = Sender("last", calls = calls, soundAccepted = false)
         val members = mutableListOf<LibraryPlayer>()
-        val service = AudienceServiceImpl(RecordingAdapter(Sender("console"), members))
+        val service = PlatformAudiences(RecordingAdapter(Sender("console"), members))
         val composite = service.combine(listOf(first, broken, first, last))
 
         composite.sendMessage(Component.text("hello"))

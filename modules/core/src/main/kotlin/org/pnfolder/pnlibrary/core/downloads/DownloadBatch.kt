@@ -15,7 +15,7 @@ import java.util.concurrent.atomic.AtomicBoolean
 import java.util.concurrent.atomic.AtomicReference
 
 /** Tracks the files of one download request and runs at most one download of them at a time. */
-internal class DownloadRegistrationImpl(
+internal class DownloadBatch(
     private val request: FileDownloads,
     private val configuration: DownloadConfiguration,
     private val executor: Executor,
@@ -24,7 +24,7 @@ internal class DownloadRegistrationImpl(
     private val blocked: (String) -> Unit,
     private val dependenciesStaged: (List<FileDownload>) -> Unit,
     private val failed: (List<FileDownload>, Throwable) -> Unit,
-    private val remove: (DownloadRegistrationImpl) -> Unit,
+    private val remove: (DownloadBatch) -> Unit,
 ) : DownloadRegistration {
     private val stateLock = Any()
     private val closed = AtomicBoolean(false)

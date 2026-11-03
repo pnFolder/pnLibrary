@@ -14,7 +14,7 @@ import kotlin.math.abs
  * Search index over translated names: exact lookup, search and fuzzy matching that also
  * tolerates text typed in a different keyboard layout.
  */
-internal class TranslationIndexImpl<T>(
+internal class TranslationSearchIndex<T>(
     matches: List<TranslationMatch<T>>,
     override val layouts: KeyboardLayouts = KeyboardLayouts.builtIn,
 ) : TranslationIndex<T> {
@@ -98,7 +98,7 @@ internal class TranslationIndexImpl<T>(
         fun normalize(value: String): String = Normalizer.normalize(value, Normalizer.Form.NFKC)
             .trim().lowercase(Locale.ROOT).replace('ё', 'е').replace(WHITESPACE, " ")
 
-        fun keys(values: Map<String, String>, layouts: KeyboardLayouts) = TranslationIndexImpl(
+        fun keys(values: Map<String, String>, layouts: KeyboardLayouts) = TranslationSearchIndex(
             values.map { (key, value) -> TranslationMatch(key, value, key) },
             layouts,
         )

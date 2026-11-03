@@ -16,7 +16,7 @@ import java.util.UUID
 import java.util.concurrent.atomic.AtomicBoolean
 
 /** Resolves consoles, players and composite audiences through the platform adapter; returns empty results once closed. */
-internal class AudienceServiceImpl(
+internal class PlatformAudiences(
     private val adapter: PlatformAudienceAdapter,
 ) : AudienceService, AutoCloseable {
     private val closed = AtomicBoolean(false)

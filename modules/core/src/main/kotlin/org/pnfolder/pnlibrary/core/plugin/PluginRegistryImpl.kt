@@ -38,7 +38,7 @@ import org.pnfolder.pnlibrary.api.version.SemanticVersion
 import org.pnfolder.pnlibrary.config.ConfigurationRuntime
 import org.pnfolder.pnlibrary.core.commands.CommandFeedbackScope
 import org.pnfolder.pnlibrary.core.commands.CommandService
-import org.pnfolder.pnlibrary.core.downloads.DirectDownloadManager
+import org.pnfolder.pnlibrary.core.downloads.DirectDownloads
 import org.pnfolder.pnlibrary.core.expansions.LocalizationExpansion
 import org.pnfolder.pnlibrary.core.lifecycle.ResourceCleanup
 import org.pnfolder.pnlibrary.core.plugin.module.ModuleActionService
@@ -86,7 +86,7 @@ internal class PluginRegistryImpl(
     private val shared: SharedFeatures,
     private val configurations: ConfigurationRuntime,
     private val commands: CommandService? = null,
-    private val directDownloads: DirectDownloadManager? = null,
+    private val directDownloads: DirectDownloads? = null,
     libraryVersion: String? = null,
 ) : PluginRegistry {
 

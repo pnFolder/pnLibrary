@@ -37,7 +37,7 @@ class DownloadRegistrationImplTest {
     fun `close between initial validation and job reservation cannot reopen registration`() {
         val queue = mutableListOf<Runnable>()
         var checks = 0
-        lateinit var registration: DownloadRegistrationImpl
+        lateinit var registration: DownloadBatch
         registration = registration(
             executor = Executor { queue += it },
             managerIsClosed = {
@@ -115,7 +115,7 @@ class DownloadRegistrationImplTest {
         failed: (List<FileDownload>, Throwable) -> Unit = { _, _ -> },
         dependenciesStaged: (List<FileDownload>) -> Unit = {},
         managerIsClosed: () -> Boolean = { false },
-    ): DownloadRegistrationImpl = DownloadRegistrationImpl(
+    ): DownloadBatch = DownloadBatch(
         request = FileDownloads.builder().file(key) {
             it.url("https://example.org/manual.bin").destination(DownloadDestination.DATA_FOLDER, "manual.bin")
         }.build(),
@@ -139,7 +139,7 @@ class DownloadRegistrationImplTest {
         var removed = false
         val executor = Executors.newSingleThreadExecutor()
         try {
-            val registration = DownloadRegistrationImpl(
+            val registration = DownloadBatch(
                 request = request,
                 configuration = DownloadConfiguration(),
                 executor = executor,
