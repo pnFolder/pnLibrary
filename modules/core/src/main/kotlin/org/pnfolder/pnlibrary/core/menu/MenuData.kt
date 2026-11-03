@@ -12,11 +12,11 @@ import org.pnfolder.pnlibrary.api.updates.UpdateSnapshot
 import org.pnfolder.pnlibrary.api.updates.UpdateState
 import org.pnfolder.pnlibrary.api.updates.backup.UpdateBackup
 import org.pnfolder.pnlibrary.api.updates.backup.UpdateHistoryEntry
-import org.pnfolder.pnlibrary.core.lifecycle.JournalDetail
-import org.pnfolder.pnlibrary.core.lifecycle.JournalGroup
-import org.pnfolder.pnlibrary.core.lifecycle.StatsSnapshot
-import org.pnfolder.pnlibrary.core.lifecycle.TaskControl
+import org.pnfolder.pnlibrary.core.journal.JournalDetail
+import org.pnfolder.pnlibrary.core.journal.JournalGroup
 import org.pnfolder.pnlibrary.core.link.ServerGroups
+import org.pnfolder.pnlibrary.core.stats.StatsSnapshot
+import org.pnfolder.pnlibrary.core.tasks.TaskControl
 import java.time.Duration
 import java.time.Instant
 import java.util.UUID

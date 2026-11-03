@@ -4,8 +4,8 @@ import org.junit.jupiter.api.Assertions.*
 import org.junit.jupiter.api.Test
 import org.pnfolder.pnlibrary.api.plugin.PluginId
 import org.pnfolder.pnlibrary.api.tasks.*
-import org.pnfolder.pnlibrary.core.lifecycle.TaskControl
 import org.pnfolder.pnlibrary.core.tasks.ScheduledTasks
+import org.pnfolder.pnlibrary.core.tasks.TaskControl
 import org.pnfolder.pnlibrary.spi.tasks.*
 import java.time.Duration
 import java.util.concurrent.atomic.AtomicBoolean

@@ -1,4 +1,4 @@
-package org.pnfolder.pnlibrary.core.lifecycle
+package org.pnfolder.pnlibrary.core.stats
 
 import org.junit.jupiter.api.Assertions.assertEquals
 import org.junit.jupiter.api.Assertions.assertNull

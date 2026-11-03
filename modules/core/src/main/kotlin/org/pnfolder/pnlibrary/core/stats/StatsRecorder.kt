@@ -5,7 +5,7 @@ import org.pnfolder.pnlibrary.common.lang.runCatchingNonFatal
 import org.pnfolder.pnlibrary.core.journal.JournalLevel
 import org.pnfolder.pnlibrary.core.journal.JournalRecord
 import org.pnfolder.pnlibrary.core.journal.JournalStore
-import org.pnfolder.pnlibrary.core.lifecycle.StatsSnapshot
+import org.pnfolder.pnlibrary.core.stats.StatsSnapshot
 import java.time.Duration
 import java.util.concurrent.Executors
 import java.util.concurrent.TimeUnit

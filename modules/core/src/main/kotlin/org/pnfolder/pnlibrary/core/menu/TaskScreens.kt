@@ -7,7 +7,7 @@ import org.pnfolder.pnlibrary.common.time.DisplayZone
 import org.pnfolder.pnlibrary.core.commands.TaskLabels
 import org.pnfolder.pnlibrary.core.commands.TaskPeriod
 import org.pnfolder.pnlibrary.core.commands.TaskState
-import org.pnfolder.pnlibrary.core.lifecycle.TaskControl
+import org.pnfolder.pnlibrary.core.tasks.TaskControl
 
 internal class TaskScreens(session: MenuSession, routes: MenuRoutes) : MenuScreens(session, routes) {
     /** Every task of every plugin, newest first, with two switches that show all their choices: the date and the state. */

@@ -1,4 +1,4 @@
-package org.pnfolder.pnlibrary.core.lifecycle
+package org.pnfolder.pnlibrary.core.stats
 
 /**
  * Aggregated numbers about one moment of the server.
@@ -44,7 +44,7 @@ data class StatsSnapshot(
 
     companion object {
         /** Journal record type of a stored snapshot. */
-        internal const val RECORD_TYPE = "STATS"
+        internal const val RECORD_TYPE = org.pnfolder.pnlibrary.core.journal.JournalRecord.STATS_TYPE
 
         /** Reads a snapshot written by [toDetails], or returns null when a number is missing or broken. */
         internal fun fromDetails(timeMillis: Long, details: Map<String, String>): StatsSnapshot? {

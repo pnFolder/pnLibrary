@@ -2,7 +2,7 @@ package org.pnfolder.pnlibrary.core.menu
 
 import org.pnfolder.pnlibrary.api.chat.ChatTone
 import org.pnfolder.pnlibrary.common.time.DisplayZone
-import org.pnfolder.pnlibrary.core.lifecycle.JournalGroup
+import org.pnfolder.pnlibrary.core.journal.JournalGroup
 import java.time.Instant
 
 internal class JournalScreens(session: MenuSession, routes: MenuRoutes) : MenuScreens(session, routes) {

@@ -8,7 +8,10 @@ import org.pnfolder.pnlibrary.api.commands.command
 import org.pnfolder.pnlibrary.api.runtime.PnLibrary
 import org.pnfolder.pnlibrary.api.tasks.TaskScope
 import org.pnfolder.pnlibrary.api.tasks.TaskSnapshot
-import org.pnfolder.pnlibrary.core.lifecycle.StatsSnapshot
+import org.pnfolder.pnlibrary.core.journal.JournalDetail
+import org.pnfolder.pnlibrary.core.journal.JournalGroup
+import org.pnfolder.pnlibrary.core.stats.StatsSnapshot
+import org.pnfolder.pnlibrary.core.tasks.TaskControl
 
 /** Private runtime capabilities, deliberately absent from the consumer API facade. */
 internal interface RuntimeResources {
@@ -40,41 +43,8 @@ internal interface RuntimeResources {
     fun journalDetail(id: String): JournalDetail?
 }
 
-/**
- * One journal event with everything the journal knows about it, for a menu.
- *
- * @property id the id that `/pn events view <id>` opens
- * @property level `info`, `warning` or `error`
- * @property source plugin or component that wrote the event
- * @property message the whole text of the newest repeat
- * @property stackTrace the stack trace with its causes, or `null` when the event has none
- * @property details other facts the event carries, such as a player or a version
- * @property times when it happened, newest first, in epoch milliseconds
- */
-data class JournalDetail(
-    val id: String,
-    val level: String,
-    val source: String,
-    val message: String,
-    val stackTrace: String?,
-    val details: Map<String, String>,
-    val times: List<Long>,
-)
-
 /** Every live and retained task of every plugin; empty when the runtime has no task service. */
 fun PnLibrary.taskSnapshots(): List<TaskSnapshot> = (this as? RuntimeResources)?.taskSnapshots().orEmpty()
-
-/** What came of an administrator stopping or starting a task. */
-enum class TaskControl {
-    /** The task did what was asked. */
-    DONE,
-
-    /** The plugin that owns the task does not allow it. */
-    FORBIDDEN,
-
-    /** The task is not in a state where this is possible, or it is gone. */
-    UNAVAILABLE,
-}
 
 /** Stops the task with this id for an administrator; the task may forbid it. */
 fun PnLibrary.cancelTask(id: String): TaskControl = (this as? RuntimeResources)?.cancelTask(id) ?: TaskControl.UNAVAILABLE
@@ -84,25 +54,6 @@ fun PnLibrary.runTaskNow(id: String): TaskControl = (this as? RuntimeResources)?
 
 /** The whole journal event with the id [id]; `null` when there is none or the runtime has no journal. */
 fun PnLibrary.journalDetail(id: String): JournalDetail? = (this as? RuntimeResources)?.journalDetail(id)
-
-/**
- * Equal journal events merged into one line, for menus.
- *
- * @property id the id that `/pn events view <id>` opens
- * @property level `info`, `warning` or `error`
- * @property source plugin or component that wrote the event
- * @property message the first line of the event text
- * @property count how many times it happened in the window
- * @property lastMillis when it happened last, in epoch milliseconds
- */
-data class JournalGroup(
-    val id: String,
-    val level: String,
-    val source: String,
-    val message: String,
-    val count: Int,
-    val lastMillis: Long,
-)
 
 /** Journal events of the last [sinceHours] hours for a menu; empty when the runtime has no journal. */
 fun PnLibrary.journalGroups(level: String? = null, sinceHours: Int = 24, limit: Int = 200): List<JournalGroup> =

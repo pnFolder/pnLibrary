@@ -2,7 +2,7 @@ package org.pnfolder.pnlibrary.core.metrics
 
 import org.pnfolder.pnlibrary.api.metrics.MetricsProvider
 import org.pnfolder.pnlibrary.api.metrics.PluginMetrics
-import org.pnfolder.pnlibrary.core.lifecycle.ResourceCleanup
+import org.pnfolder.pnlibrary.core.cleanup.ResourceCleanup
 import java.util.Collections
 import java.util.concurrent.atomic.AtomicBoolean
 import java.util.function.Supplier

@@ -2,7 +2,7 @@ package org.pnfolder.pnlibrary.core.expansions
 
 import org.pnfolder.pnlibrary.api.expansions.Expansion
 import org.pnfolder.pnlibrary.api.expansions.ExpansionManager
-import org.pnfolder.pnlibrary.core.lifecycle.ResourceCleanup
+import org.pnfolder.pnlibrary.core.cleanup.ResourceCleanup
 
 /** Thread-safe expansion registry; [onFailure] receives every exception an expansion throws while starting or stopping. */
 internal class ExpansionRegistry(

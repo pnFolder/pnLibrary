@@ -9,8 +9,8 @@ import org.pnfolder.pnlibrary.api.tasks.TaskScope
 import org.pnfolder.pnlibrary.api.tasks.TaskServiceSettings
 import org.pnfolder.pnlibrary.api.tasks.TaskSnapshot
 import org.pnfolder.pnlibrary.api.tasks.TaskSpec
-import org.pnfolder.pnlibrary.core.lifecycle.ResourceCleanup
-import org.pnfolder.pnlibrary.core.lifecycle.TaskControl
+import org.pnfolder.pnlibrary.core.cleanup.ResourceCleanup
+import org.pnfolder.pnlibrary.core.tasks.TaskControl
 import org.pnfolder.pnlibrary.spi.tasks.PlatformTaskAdapter
 import org.pnfolder.pnlibrary.spi.tasks.PlatformTaskRequest
 import java.util.Collections

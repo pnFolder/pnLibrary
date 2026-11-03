@@ -6,7 +6,7 @@ import org.pnfolder.pnlibrary.api.chat.ChatPalette
 import org.pnfolder.pnlibrary.api.commands.CommandDefinition
 import org.pnfolder.pnlibrary.api.commands.command
 import org.pnfolder.pnlibrary.core.journal.ago
-import org.pnfolder.pnlibrary.core.lifecycle.StatsSnapshot
+import org.pnfolder.pnlibrary.core.stats.StatsSnapshot
 
 /**
  * `/pn stats`: the numbers of the server right now (tasks, events, warnings and errors of the day) and how they

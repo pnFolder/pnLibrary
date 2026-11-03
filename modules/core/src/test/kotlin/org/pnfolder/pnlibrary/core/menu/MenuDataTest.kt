@@ -26,14 +26,14 @@ import org.pnfolder.pnlibrary.api.updates.release.ProductChange
 import org.pnfolder.pnlibrary.api.updates.release.ReleaseSummary
 import org.pnfolder.pnlibrary.api.version.ApiVersionRange
 import org.pnfolder.pnlibrary.api.version.SemanticVersion
-import org.pnfolder.pnlibrary.core.lifecycle.JournalGroup
-import org.pnfolder.pnlibrary.core.lifecycle.TaskControl
+import org.pnfolder.pnlibrary.core.journal.JournalGroup
 import org.pnfolder.pnlibrary.core.link.DataCall
 import org.pnfolder.pnlibrary.core.link.DataChunks
 import org.pnfolder.pnlibrary.core.link.DataClient
 import org.pnfolder.pnlibrary.core.link.LinkCodec
 import org.pnfolder.pnlibrary.core.link.LinkHub
 import org.pnfolder.pnlibrary.core.link.ServerGroups
+import org.pnfolder.pnlibrary.core.tasks.TaskControl
 import java.lang.reflect.Proxy
 import java.time.Duration
 import java.time.Instant

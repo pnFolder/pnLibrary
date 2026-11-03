@@ -3,8 +3,8 @@ package org.pnfolder.pnlibrary.core.journal
 import net.kyori.adventure.text.Component
 import org.pnfolder.pnlibrary.api.runtime.PnLibraryConfig
 import org.pnfolder.pnlibrary.common.lang.runCatchingNonFatal
-import org.pnfolder.pnlibrary.core.lifecycle.JournalDetail
-import org.pnfolder.pnlibrary.core.lifecycle.JournalGroup
+import org.pnfolder.pnlibrary.core.journal.JournalDetail
+import org.pnfolder.pnlibrary.core.journal.JournalGroup
 import java.time.Duration
 
 /** What the menu and the join notice read from the journal: equal events merged, one event with its details. */

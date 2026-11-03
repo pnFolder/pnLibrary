@@ -6,7 +6,7 @@ import org.pnfolder.pnlibrary.api.downloads.FileDownloads
 import org.pnfolder.pnlibrary.api.platform.PlatformType
 import org.pnfolder.pnlibrary.common.io.Digests
 import org.pnfolder.pnlibrary.common.jvm.JavaRuntime
-import org.pnfolder.pnlibrary.core.lifecycle.ResourceCleanup
+import org.pnfolder.pnlibrary.core.cleanup.ResourceCleanup
 import org.pnfolder.pnlibrary.core.updates.engine.TrustedHttpClient
 import java.nio.file.Files
 import java.nio.file.Path

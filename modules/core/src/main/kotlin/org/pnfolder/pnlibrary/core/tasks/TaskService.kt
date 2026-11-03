@@ -6,7 +6,7 @@ import org.pnfolder.pnlibrary.api.tasks.TaskId
 import org.pnfolder.pnlibrary.api.tasks.TaskQuery
 import org.pnfolder.pnlibrary.api.tasks.TaskScope
 import org.pnfolder.pnlibrary.api.tasks.TaskSnapshot
-import org.pnfolder.pnlibrary.core.lifecycle.TaskControl
+import org.pnfolder.pnlibrary.core.tasks.TaskControl
 
 /**
  * Cross-platform scheduling service with owner-scoped resource management.
