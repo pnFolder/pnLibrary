@@ -4,6 +4,7 @@ import org.pnfolder.pnlibrary.api.runtime.PnLibraryIdentity
 import org.pnfolder.pnlibrary.api.updates.UpdatePlanSnapshot
 import org.pnfolder.pnlibrary.api.updates.UpdateSnapshot
 import org.pnfolder.pnlibrary.api.updates.UpdateState
+import org.pnfolder.pnlibrary.api.updates.release.ProductChange
 import org.pnfolder.pnlibrary.api.updates.release.ReleaseSummary
 import org.pnfolder.pnlibrary.console.ConsoleCard
 import org.pnfolder.pnlibrary.console.ConsoleTheme
@@ -28,51 +29,10 @@ internal object UpdateAnnouncementRenderer {
             .blank()
         val changes = snapshot.plan?.changes.orEmpty()
         if (changes.isNotEmpty()) {
-            card.section("ОБНОВЛЕНИЯ")
-            changes.forEachIndexed { index, change ->
-                val release = snapshot.plan?.selected?.firstOrNull { it.product == change.product }
-                val channel = release?.channel?.let(UpdateChannelLabels::channelTitle) ?: "не указан"
-                val api = release?.supportedApi?.let { "${it.minimum}–${it.maximum}" } ?: "не указан"
-                val artifact = release?.artifacts?.firstOrNull()
-                val platform = artifact?.platform?.displayName ?: "не указана"
-                val java = artifact?.let { "${it.minimumJava}+" } ?: "не указана"
-                val file = artifact?.file ?: "файл не указан"
-                card.firstDetail("Плагин", change.product.value)
-                    .detail("Версия", "${change.from ?: "не установлена"} → ${change.to}")
-                    .detail("Канал", channel)
-                    .detail("Описание", release?.description?.takeIf { it.isNotBlank() } ?: "не указано")
-                    .detail("Источник", if (release?.repository.isNullOrBlank()) "не указан" else "GitHub Releases")
-                    .detail("Платформа", platform)
-                    .detail("Совместимость API", api)
-                    .detail("Java", java)
-                    .detail("Почему выбрана", "версия новее и совместима")
-                    .lastDetail("Файл", file)
-                release?.changelogUrl?.let { url ->
-                    card.detail("Изменения", url)
-                }
-                if (index != changes.lastIndex) card.blank()
-            }
-            val histories = registrations.filter { it.availableReleases.isNotEmpty() }
-            if (histories.isNotEmpty()) {
-                card.blank().section("ПОСЛЕДНИЕ ВЕРСИИ")
-                histories.forEachIndexed { index, registration ->
-                    val latestByChannel = registration.availableReleases
-                        .groupBy(ReleaseSummary::channel)
-                        .mapValues { (_, releases) -> releases.maxByOrNull { it.version } }
-                    latestByChannel.values.filterNotNull().forEach { release ->
-                        card.firstDetail(UpdateChannelLabels.channelTitle(release.channel), release.version)
-                            .lastDetail("Опубликована", release.publishedAt?.toString() ?: "дата неизвестна")
-                    }
-                    if (index != histories.lastIndex) card.blank()
-                }
-            }
-        } else if (snapshot.blockers.isNotEmpty()) {
-            card.section("ПРИЧИНА")
-            snapshot.blockers.forEachIndexed { index, blocker ->
-                if (index == snapshot.blockers.lastIndex) card.lastItem(blocker.toString()) else card.item(blocker.toString())
-            }
+            changesSection(card, snapshot, changes)
+            latestSection(card, registrations)
         } else {
-            snapshot.message?.takeIf(String::isNotBlank)?.let { card.section("ПРИЧИНА").lastItem(it) }
+            reasonSection(card, snapshot)
         }
         card.blank().section("СОСТОЯНИЕ").lastItem(result).blank()
         if (snapshot.state == UpdateState.UPDATE_AVAILABLE) {
@@ -81,5 +41,60 @@ internal object UpdateAnnouncementRenderer {
                 .blank()
         }
         return card.status(result).build().render()
+    }
+
+    private fun changesSection(card: ConsoleCard.Builder, snapshot: UpdatePlanSnapshot, changes: List<ProductChange>) {
+        card.section("ОБНОВЛЕНИЯ")
+        changes.forEachIndexed { index, change ->
+            val release = snapshot.plan?.selected?.firstOrNull { it.product == change.product }
+            val channel = release?.channel?.let(UpdateChannelLabels::channelTitle) ?: "не указан"
+            val api = release?.supportedApi?.let { "${it.minimum}–${it.maximum}" } ?: "не указан"
+            val artifact = release?.artifacts?.firstOrNull()
+            val platform = artifact?.platform?.displayName ?: "не указана"
+            val java = artifact?.let { "${it.minimumJava}+" } ?: "не указана"
+            val file = artifact?.file ?: "файл не указан"
+            card.firstDetail("Плагин", change.product.value)
+                .detail("Версия", "${change.from ?: "не установлена"} → ${change.to}")
+                .detail("Канал", channel)
+                .detail("Описание", release?.description?.takeIf { it.isNotBlank() } ?: "не указано")
+                .detail("Источник", if (release?.repository.isNullOrBlank()) "не указан" else "GitHub Releases")
+                .detail("Платформа", platform)
+                .detail("Совместимость API", api)
+                .detail("Java", java)
+                .detail("Почему выбрана", "версия новее и совместима")
+                .lastDetail("Файл", file)
+            release?.changelogUrl?.let { url ->
+                card.detail("Изменения", url)
+            }
+            if (index != changes.lastIndex) card.blank()
+        }
+    }
+
+    private fun latestSection(card: ConsoleCard.Builder, registrations: List<UpdateSnapshot>) {
+        val histories = registrations.filter { it.availableReleases.isNotEmpty() }
+        if (histories.isNotEmpty()) {
+            card.blank().section("ПОСЛЕДНИЕ ВЕРСИИ")
+            histories.forEachIndexed { index, registration ->
+                val latestByChannel = registration.availableReleases
+                    .groupBy(ReleaseSummary::channel)
+                    .mapValues { (_, releases) -> releases.maxByOrNull { it.version } }
+                latestByChannel.values.filterNotNull().forEach { release ->
+                    card.firstDetail(UpdateChannelLabels.channelTitle(release.channel), release.version)
+                        .lastDetail("Опубликована", release.publishedAt?.toString() ?: "дата неизвестна")
+                }
+                if (index != histories.lastIndex) card.blank()
+            }
+        }
+    }
+
+    private fun reasonSection(card: ConsoleCard.Builder, snapshot: UpdatePlanSnapshot) {
+        if (snapshot.blockers.isNotEmpty()) {
+            card.section("ПРИЧИНА")
+            snapshot.blockers.forEachIndexed { index, blocker ->
+                if (index == snapshot.blockers.lastIndex) card.lastItem(blocker.toString()) else card.item(blocker.toString())
+            }
+        } else {
+            snapshot.message?.takeIf(String::isNotBlank)?.let { card.section("ПРИЧИНА").lastItem(it) }
+        }
     }
 }
