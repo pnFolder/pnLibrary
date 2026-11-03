@@ -151,42 +151,28 @@ internal class ConfigReader(
                 continue
             }
 
-            // Layer 3: Nested object / map
-            if (value is Map<*, *>) {
-                @Suppress("UNCHECKED_CAST")
-                result[key] = redactTree(
-                    data = value as Map<String, Any?>,
-                    currentPath = fullPath,
-                    excludedSubtrees = excludedSubtrees,
-                    keyRegexes = keyRegexes,
-                    valueRegexes = valueRegexes,
-                    depth = depth + 1
-                )
-            } else if (value is List<*>) {
-                result[key] = value.take(MAX_ENTRIES_PER_LIST).map { item ->
-                    if (item is Map<*, *>) {
-                        @Suppress("UNCHECKED_CAST")
-                        redactTree(
-                            data = item as Map<String, Any?>,
-                            currentPath = fullPath,
-                            excludedSubtrees = excludedSubtrees,
-                            keyRegexes = keyRegexes,
-                            valueRegexes = valueRegexes,
-                            depth = depth + 1
-                        )
-                    } else when (item) {
-                        null, is Number, is Boolean -> item
-                        else -> redactStringValue(item.toString(), valueRegexes)
-                    }
-                }
-            } else {
-                result[key] = when (value) {
-                    null, is Number, is Boolean -> value
-                    else -> redactStringValue(value.toString(), valueRegexes)
-                }
-            }
+            result[key] = redactValue(value, fullPath, excludedSubtrees, keyRegexes, valueRegexes, depth)
         }
         return result
+    }
+
+    private fun redactValue(
+        value: Any?,
+        path: String,
+        excludedSubtrees: Set<String>,
+        keyRegexes: List<Pattern>,
+        valueRegexes: List<Pattern>,
+        depth: Int,
+    ): Any? = when (value) {
+        is Map<*, *> -> {
+            @Suppress("UNCHECKED_CAST")
+            redactTree(value as Map<String, Any?>, path, excludedSubtrees, keyRegexes, valueRegexes, depth + 1)
+        }
+        is List<*> -> value.take(MAX_ENTRIES_PER_LIST).map { item ->
+            redactValue(item, path, excludedSubtrees, keyRegexes, valueRegexes, depth)
+        }
+        null, is Number, is Boolean -> value
+        else -> redactStringValue(value.toString(), valueRegexes)
     }
 
     private fun redactStringValue(input: String, valueRegexes: List<Pattern>): String {
