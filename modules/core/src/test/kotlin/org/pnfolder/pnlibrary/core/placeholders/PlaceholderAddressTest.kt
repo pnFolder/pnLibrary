@@ -24,15 +24,24 @@ class PlaceholderAddressTest {
     }
 
     @Test
-    fun `placeholder api form uses the prefix and a dot between module and name`() {
+    fun `placeholder api form uses the given prefix and a tilde between module and name`() {
         val address = PlaceholderAddress("pnclans", "war", "score")
-        assertEquals("pnclans_war.score", address.forPlaceholderApi())
-        assertEquals("clans_war.score", address.forPlaceholderApi("clans"))
+        assertEquals("clans_war~score", address.forPlaceholderApi("clans"))
     }
 
     @Test
     fun `a plugin id with an underscore is rejected because placeholder api splits on it`() {
         assertThrows(IllegalArgumentException::class.java) { PlaceholderAddress("pn_clans", "war", "score") }
+    }
+
+    @Test
+    fun `a name may be a pattern with dots and braces`() {
+        assertEquals("pnclans/war:player.{name}.kills", PlaceholderAddress.parse("pnclans/war:player.{name}.kills").toString())
+    }
+
+    @Test
+    fun `of gives null instead of failing for a plugin id with an underscore`() {
+        assertNull(PlaceholderAddress.of("pn_clans", "war", "score"))
     }
 
     @Test

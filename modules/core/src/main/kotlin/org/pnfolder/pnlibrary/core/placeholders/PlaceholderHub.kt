@@ -41,6 +41,7 @@ internal class PlaceholderHub(
     private val adapters = ConcurrentHashMap<String, PlaceholderAdapter>()
     private val formatterRegistry = PlaceholderFormatterRegistry()
     private val entryLookup = PlaceholderEntryLookup(entries, PluginId.of(SYSTEM_NAMESPACE))
+    private val addresses = PlaceholderAddressIndex()
 
     init {
         formatterRegistry.registerBuiltIns()
@@ -80,8 +81,18 @@ internal class PlaceholderHub(
         commandEntry.publish(PlaceholderPublication("placeholderapi", PnLibraryIdentity.PRODUCT_ID, "defaultvalue"))
     }
 
-    fun scope(owner: PluginId, placeholderApiEnabled: Boolean = true): PlaceholderService =
-        Scope(owner, placeholderApiEnabled)
+    /** [plugin] and [module] give the scope's placeholders a readable `plugin/module:name` address. */
+    fun scope(
+        owner: PluginId,
+        placeholderApiEnabled: Boolean = true,
+        plugin: String? = null,
+        module: String = PlaceholderAddress.DEFAULT_MODULE,
+    ): PlaceholderService = Scope(owner, placeholderApiEnabled, plugin, module)
+
+    private fun find(consumer: PluginId, reference: String): PlaceholderEntryLookup.Match {
+        val address = PlaceholderAddress.parse(reference)
+        return if (address != null) addresses.find(address) else entryLookup.find(consumer, reference)
+    }
 
     override fun register(adapter: PlaceholderAdapter): AutoCloseable {
         val key = adapter.id.lowercase(Locale.ROOT)
@@ -117,6 +128,8 @@ internal class PlaceholderHub(
     private inner class Scope(
         private val owner: PluginId,
         private val placeholderApiEnabled: Boolean,
+        private val plugin: String?,
+        private val module: String,
     ) : PlaceholderService {
         private val owned = ConcurrentHashMap.newKeySet<String>()
         private val adapterHandles = ConcurrentHashMap.newKeySet<AutoCloseable>()
@@ -145,9 +158,16 @@ internal class PlaceholderHub(
                 val full = id(owner, key.value)
                 require(entries.putIfAbsent(full, entry) == null) { "Placeholder $full is already registered" }
                 owned += full
+                val address = plugin?.let { PlaceholderAddress.of(it, module, key.value) }
+                if (address != null && !addresses.add(address, entry)) {
+                    entries.remove(full, entry)
+                    owned.remove(full)
+                    throw IllegalArgumentException("Placeholder $address is already registered")
+                }
                 entry.whenClosed {
                     entries.remove(full, entry)
                     owned.remove(full)
+                    if (address != null) addresses.remove(address, entry)
                 }
             }
         }.also(configure::accept).install()
@@ -169,7 +189,7 @@ internal class PlaceholderHub(
             templateRenderer(owner).render(template, playerId, values)
 
         override fun contains(expression: String): Boolean =
-            entryLookup.find(owner, expression.substringBefore('|')).entry != null
+            find(owner, expression.substringBefore('|')).entry != null
         override fun provider(pluginId: PluginId): PlaceholderProvider = object : PlaceholderProvider {
             override val pluginId = pluginId
             override fun resolve(key: String, playerId: UUID?): CompletionStage<Any?> =
@@ -196,7 +216,7 @@ internal class PlaceholderHub(
         val pieces = expression.split('|')
         val reference = pieces.first().trim()
         values[reference]?.let { return CompletableFuture.completedFuture(format(consumer, it, pieces.drop(1), playerId, values)) }
-        val (entry, params) = entryLookup.find(consumer, reference)
+        val (entry, params) = find(consumer, reference)
         if (entry == null) {
             val external = adapters.values.asSequence()
                 .filter { adapter ->
@@ -224,7 +244,7 @@ internal class PlaceholderHub(
         values: Map<String, Any?>,
     ): CompletionStage<Any?> {
         val reference = expression.substringBefore('|').trim()
-        val (entry, parameters) = entryLookup.find(consumer, reference)
+        val (entry, parameters) = find(consumer, reference)
         if (entry == null) return failed(IllegalArgumentException("Unknown placeholder: $reference"))
         val request = PlaceholderRequest(entry.owner, consumer, playerId, parameters, values)
         return runCatchingNonFatal {

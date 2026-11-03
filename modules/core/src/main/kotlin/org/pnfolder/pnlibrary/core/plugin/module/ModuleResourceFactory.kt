@@ -72,7 +72,7 @@ internal class ModuleResourceFactory(
             taskScope = tasks.scope(owner, moduleKey)
             eventScope = events.scope(moduleKey, pluginId, moduleId)
             configScope = configurations.scope(owner, moduleKey)
-            placeholderScope = placeholders.scope(moduleKey, definition.placeholderApiEnabled)
+            placeholderScope = placeholders.scope(moduleKey, definition.placeholderApiEnabled, pluginId.value, moduleId.value)
             currencyScope = currency.scope(moduleKey, placeholderScope)
 
             serviceScope.register(CurrencyService::class.java, currencyScope)
