@@ -60,9 +60,7 @@ import org.pnfolder.pnlibrary.core.runtime.platform.PlatformDataFolderResolver
 import org.pnfolder.pnlibrary.core.runtime.platform.PlatformRegistration
 import org.pnfolder.pnlibrary.core.runtime.platform.PlatformRuntimeContext
 import org.pnfolder.pnlibrary.core.runtime.platform.PlatformServiceSet
-import org.pnfolder.pnlibrary.core.stats.StatsCollector
-import org.pnfolder.pnlibrary.core.stats.StatsRecorder
-import org.pnfolder.pnlibrary.core.stats.statsCommand
+import org.pnfolder.pnlibrary.core.stats.StatsRuntime
 import org.pnfolder.pnlibrary.core.tasks.TaskControl
 import org.pnfolder.pnlibrary.spi.commands.PlatformCommandDispatcher
 import java.nio.file.Path
@@ -255,8 +253,8 @@ internal class PnLibraryImpl(
         // The platform's `/pn` control command holds these as `/pn debug` and `/pn events`.
         mountable["debug"] = diagnosticCommand(this, "/pn debug")
         mountable["events"] = journalCommand(journal, EVENTS_COMMAND)
-        statsRecorder = StatsRecorder(statsCollector, journal).also(StatsRecorder::start)
-        mountable["stats"] = statsCommand(statsCollector, requireNotNull(statsRecorder))
+        stats.start()
+        mountable["stats"] = stats.command()
         registerRuntimeCommand(
             libraryInfoCommand(this, platformIdentity) {
                 platformOwnership.ownerDetails(owner)["version"] ?: "неизвестна"
@@ -273,10 +271,9 @@ internal class PnLibraryImpl(
         support.recordRuntimeError(logOwner, message, error)
     }
 
-    private val statsCollector by lazy { StatsCollector(::taskSnapshots, { events.inspector.events() }, journal) }
-    private var statsRecorder: StatsRecorder? = null
+    private val stats = StatsRuntime(::taskSnapshots, { events.inspector.events() }, journal)
 
-    override fun statsSnapshot() = statsCollector.collect()
+    override fun statsSnapshot() = stats.snapshot()
 
     private fun startLibraryMetrics() {
         libraryMetrics = RuntimeMetricsBootstrap(
@@ -304,7 +301,7 @@ internal class PnLibraryImpl(
                 events = AutoCloseable(eventService::close),
                 services = serviceManager,
                 tasks = taskService,
-                support = AutoCloseable { ResourceCleanup.closeAll({ statsRecorder?.close() }, { support.close() }, { journalRuntime.close() }) },
+                support = AutoCloseable { ResourceCleanup.closeAll({ stats.close() }, { support.close() }, { journalRuntime.close() }) },
                 releaseProvider = { PnLibraryProvider.clear(this) },
                 closePlatform = { closePlatform() },
                 onClose = onClose,
