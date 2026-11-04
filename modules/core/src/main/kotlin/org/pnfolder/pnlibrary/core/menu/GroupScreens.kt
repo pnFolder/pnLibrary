@@ -237,47 +237,50 @@ internal class GroupScreens(session: MenuSession, routes: MenuRoutes) : MenuScre
         }
         val have = routes.members(map).firstOrNull { it.name.equals(server, true) }?.report?.plugins.orEmpty()
         val names = (group.plugins + group.wanted(server)).sortedBy { it.lowercase() }
-        val rows = names.map { plugin ->
-            val wanted = group.wanted(server).any { it.equals(plugin, true) }
-            val common = group.plugins.any { it.equals(plugin, true) }
-            val present = have.any { it.product.equals(plugin, true) }
-            val material = when {
-                !wanted -> "GRAY_DYE"
-                present -> "EMERALD_BLOCK"
-                else -> "REDSTONE_BLOCK"
-            }
-            val parameters = listOf(
-                "Нужен серверу" to if (wanted) "✔ да" else "✖ нет",
-                "Откуда" to if (!wanted) "убран только у этого сервера" else if (common) "общий для группы" else "только этому серверу",
-                "На сервере" to if (present) "✔ стоит" else "✖ нет",
-            )
-            val hint = Style.left(if (wanted) "не нужен этому серверу" else "нужен этому серверу")
-            val item = icon(Icons.PLUGIN, material, plugin, Style.lore(emptyList(), parameters, hint), muted = !wanted)
-            val op = if (wanted) GroupOp.SKIP else GroupOp.NEED
-            Row(item, go { who -> editGroup(who, GroupEdit(op, name, server, plugin)) { groupServer(who, name, server) } })
-        }
+        val rows = names.map { plugin -> serverPluginRow(name, server, group, plugin, have.any { it.product.equals(plugin, true) }) }
         list(
             player, "$name · ${ServerGroups.label(server)}", rows, 0, PAGE_SIZE, { who, _ -> groupServer(who, name, server) },
             { group(it, name) }, "У группы нет плагинов",
-            extra = {
-                val add = icon(
-                    Icons.PLUGIN, "LIME_DYE", "Ещё плагин этому серверу",
-                    Style.lore(
-                        listOf("Плагин нужен только этому серверу,", "остальные серверы группы его не ждут."),
-                        emptyList(), Style.left("выбрать"),
-                    ), good = true,
-                )
-                it.button(GROUP_ADD, add, go { who -> pickPlugin(who, name, server, 0) })
-                val reset = icon(
-                    Icons.CHECK, "COMPASS", "Как у всех",
-                    Style.lore(
-                        listOf("Сервер снова ждёт то же, что и вся группа.", "Его особые настройки удаляются."),
-                        emptyList(), Style.left("сбросить"),
-                    ),
-                )
-                it.button(GROUP_PLUGINS, reset, go { who -> editGroup(who, GroupEdit(GroupOp.RESET, name, server)) { groupServer(who, name, server) } })
-            },
+            extra = { serverButtons(it, name, server) },
         )
+    }
+
+    private fun serverPluginRow(name: String, server: String, group: ServerGroups.Group, plugin: String, present: Boolean): Row {
+        val wanted = group.wanted(server).any { it.equals(plugin, true) }
+        val common = group.plugins.any { it.equals(plugin, true) }
+        val material = when {
+            !wanted -> "GRAY_DYE"
+            present -> "EMERALD_BLOCK"
+            else -> "REDSTONE_BLOCK"
+        }
+        val parameters = listOf(
+            "Нужен серверу" to if (wanted) "✔ да" else "✖ нет",
+            "Откуда" to if (!wanted) "убран только у этого сервера" else if (common) "общий для группы" else "только этому серверу",
+            "На сервере" to if (present) "✔ стоит" else "✖ нет",
+        )
+        val hint = Style.left(if (wanted) "не нужен этому серверу" else "нужен этому серверу")
+        val item = icon(Icons.PLUGIN, material, plugin, Style.lore(emptyList(), parameters, hint), muted = !wanted)
+        val op = if (wanted) GroupOp.SKIP else GroupOp.NEED
+        return Row(item, go { who -> editGroup(who, GroupEdit(op, name, server, plugin)) { groupServer(who, name, server) } })
+    }
+
+    private fun serverButtons(builder: MenuBuilder, name: String, server: String) {
+        val add = icon(
+            Icons.PLUGIN, "LIME_DYE", "Ещё плагин этому серверу",
+            Style.lore(
+                listOf("Плагин нужен только этому серверу,", "остальные серверы группы его не ждут."),
+                emptyList(), Style.left("выбрать"),
+            ), good = true,
+        )
+        builder.button(GROUP_ADD, add, go { who -> pickPlugin(who, name, server, 0) })
+        val reset = icon(
+            Icons.CHECK, "COMPASS", "Как у всех",
+            Style.lore(
+                listOf("Сервер снова ждёт то же, что и вся группа.", "Его особые настройки удаляются."),
+                emptyList(), Style.left("сбросить"),
+            ),
+        )
+        builder.button(GROUP_PLUGINS, reset, go { who -> editGroup(who, GroupEdit(GroupOp.RESET, name, server)) { groupServer(who, name, server) } })
     }
 
     private fun askGroup(player: MenuViewer, states: List<ServerGroups.ServerState>, action: RemoteAction) {
