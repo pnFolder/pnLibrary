@@ -25,6 +25,14 @@ internal class StatsRuntime(
         return collector.collect().also { last = it }
     }
 
+    /** The numbers as `pnlibrary` placeholders see them. */
+    fun values(): Map<String, Long> = snapshot().let {
+        mapOf(
+            "errors" to it.errors24h.toLong(), "warnings" to it.warnings24h.toLong(), "tasks" to it.tasksActive.toLong(),
+            "tasks.failed" to it.tasksFailed.toLong(), "events" to it.eventsCalled,
+        )
+    }
+
     fun command(): CommandDefinition = statsCommand(::snapshot, recorder)
 
     fun start() = recorder.start()

@@ -46,6 +46,9 @@
 Обновляй эту секцию в конце каждой сессии: одна запись, что сделано и что осталось.
 
 
+### 2026-11-04 (аудит и нарезка)
+- Аудит кода агентом (только чтение). Исправлено: подсказки команд ждут не больше 50 мс на главном потоке (было `get(1 секунда)`), добавлены тесты шифрования отчётов; риск с `join()` в каталоге релизов оказался ложным. Нарезано: `PlaceholderHub` (358 до 296), `PluginRegistryImpl` (324 до 299), `EventDispatcher` (314 до 283), `TaskCommand` (301 до 275); разбиты длинные методы в `/pn bus`, `/pn`, `/pn money`, `ModuleLogging`, `ObservabilityRuntime`, `MenuDataServer`, `ManagedTask`, `CodeFirstYaml.load`, `RuntimeDiagnosticsAssembler`, экранах меню. Остаётся длиннее 300 только `PnLibraryImpl` (320, корень сборки). Не тронуто: `UpdateTransaction.prepareForRestart`, `UpdateResolver.resolveForApi`, `JournalCard.card` (журнал не трогать). Дальше: тесты на меню, задачи, связь, журнал; разнести `core/commands` по папкам функций; API 2 одной возможностью.
+
 ### 2026-11-04
 - Система плейсхолдеров в `next`: адрес `плагин/модуль:имя`, дерево-DSL с аргументами, форматы по уровням, генерация `from/table/list`, доступ, публикация в PlaceholderAPI из той же регистрации (`~` между модулем и именем), `/pn placeholders`, право `pnlibrary.placeholders`. План и отличия: `docs/placeholders-plan.md`, раздел 12. Встроенные форматы round, percent, money, pad, title, date добавлены. Добавлены: адреса форматов `плагин/модуль:имя`, вложенные объекты в `from`, страница в `/pn gui`, тесты `ExternalNames` и подбора имён PlaceholderAPI (нашли и исправили: точное имя шло после шаблона). Решено не делать: настройки форматов аннотациями. `PlaceholderInstaller`/`PlaceholderGeneration` оставлены в `api` как `internal`. На живом сервере не проверялось.
 ### 2026-11-02

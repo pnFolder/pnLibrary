@@ -253,7 +253,7 @@ internal class PnLibraryImpl(
         stats.start()
         mountable["stats"] = stats.command()
         mountable["placeholders"] = placeholdersCommand(placeholderHub)
-        LibraryPlaceholders(placeholderHub, startedAtMillis, { plugins.all().size }, ::statisticValues).register()
+        LibraryPlaceholders(placeholderHub, startedAtMillis, { plugins.all().size }, stats::values).register()
         registerRuntimeCommand(
             libraryInfoCommand(this, platformIdentity) {
                 platformOwnership.ownerDetails(owner)["version"] ?: "неизвестна"
@@ -274,13 +274,6 @@ internal class PnLibraryImpl(
 
     override fun statsSnapshot() = stats.snapshot()
     override fun placeholderInfos() = placeholderHub.describe()
-
-    private fun statisticValues(): Map<String, Long> = stats.snapshot().let {
-        mapOf(
-            "errors" to it.errors24h.toLong(), "warnings" to it.warnings24h.toLong(), "tasks" to it.tasksActive.toLong(),
-            "tasks.failed" to it.tasksFailed.toLong(), "events" to it.eventsCalled,
-        )
-    }
 
     private fun startLibraryMetrics() {
         libraryMetrics = RuntimeMetricsBootstrap(
