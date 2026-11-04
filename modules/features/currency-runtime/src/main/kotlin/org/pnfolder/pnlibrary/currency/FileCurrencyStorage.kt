@@ -117,31 +117,8 @@ internal class FileCurrencyStorage(
             val backup = snapshotState()
             try {
                 if (mode == CurrencyImportMode.REPLACE) removeCurrency(snapshot.currency)
-                var importedAccounts = 0
-                var skippedAccounts = 0
-                var importedTransactions = 0
-                var skippedTransactions = 0
-                snapshot.balances.forEach { (accountId, balance) ->
-                    val key = accountKey(snapshot.currency, CurrencyAccount(accountId))
-                    if (mode == CurrencyImportMode.MERGE_KEEP_TARGET && balances.containsKey(key)) {
-                        skippedAccounts++
-                    } else {
-                        balances[key] = balance
-                        importedAccounts++
-                    }
-                }
-                val ids = transactions.mapTo(hashSetOf()) { it.id }
-                snapshot.transactions.forEach { transaction ->
-                    val duplicateKey = transaction.idempotencyKey?.let { idempotencyKey(snapshot.currency, it) }
-                    if (transaction.id in ids || duplicateKey != null && duplicateKey in idempotency) {
-                        skippedTransactions++
-                    } else {
-                        transactions += transaction
-                        ids += transaction.id
-                        duplicateKey?.let { idempotency[it] = transaction }
-                        importedTransactions++
-                    }
-                }
+                val accounts = importBalances(snapshot, mode)
+                val moved = importTransactions(snapshot)
                 while (transactions.size > maximumTransactions) transactions.removeAt(0).also { removed ->
                     removed.idempotencyKey?.let { idempotency.remove(idempotencyKey(removed.currency, it), removed) }
                 }
@@ -149,16 +126,51 @@ internal class FileCurrencyStorage(
                 CurrencyImportResult(
                     currency = snapshot.currency,
                     mode = mode,
-                    importedAccounts = importedAccounts,
-                    skippedAccounts = skippedAccounts,
-                    importedTransactions = importedTransactions,
-                    skippedTransactions = skippedTransactions,
+                    importedAccounts = accounts.first,
+                    skippedAccounts = accounts.second,
+                    importedTransactions = moved.first,
+                    skippedTransactions = moved.second,
                 )
             } catch (error: Throwable) {
                 restore(backup)
                 throw error
             }
         }
+    }
+
+    /** Returns how many accounts were imported and how many were skipped because the target already had them. */
+    private fun importBalances(snapshot: CurrencyStorageSnapshot, mode: CurrencyImportMode): Pair<Int, Int> {
+        var imported = 0
+        var skipped = 0
+        snapshot.balances.forEach { (accountId, balance) ->
+            val key = accountKey(snapshot.currency, CurrencyAccount(accountId))
+            if (mode == CurrencyImportMode.MERGE_KEEP_TARGET && balances.containsKey(key)) {
+                skipped++
+            } else {
+                balances[key] = balance
+                imported++
+            }
+        }
+        return imported to skipped
+    }
+
+    /** Returns how many transactions were imported and how many were skipped as duplicates. */
+    private fun importTransactions(snapshot: CurrencyStorageSnapshot): Pair<Int, Int> {
+        var imported = 0
+        var skipped = 0
+        val ids = transactions.mapTo(hashSetOf()) { it.id }
+        snapshot.transactions.forEach { transaction ->
+            val duplicateKey = transaction.idempotencyKey?.let { idempotencyKey(snapshot.currency, it) }
+            if (transaction.id in ids || duplicateKey != null && duplicateKey in idempotency) {
+                skipped++
+            } else {
+                transactions += transaction
+                ids += transaction.id
+                duplicateKey?.let { idempotency[it] = transaction }
+                imported++
+            }
+        }
+        return imported to skipped
     }
 
     override fun close() {
