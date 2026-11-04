@@ -147,11 +147,20 @@ private fun strip(kit: ChatKit, relevant: List<JournalRecord>, now: Long, window
     val errors = IntArray(STRIP_COLUMNS)
     val warnings = IntArray(STRIP_COLUMNS)
     relevant.forEach { if (it.level == JournalLevel.ERROR) errors[columnOf(it.timeMillis)]++ else warnings[columnOf(it.timeMillis)]++ }
-    val startColumn = columnOf(startedAtMillis)
+    val columns = StripColumns(errors, warnings, columnOf(startedAtMillis))
+    val withDate = windowMillis > Duration.ofHours(24).toMillis()
+    return stripLine(kit, columns).hoverEvent(stripTip(kit, columns, now, columnMillis, windowHours, withDate))
+}
 
+/** Problems per column of the strip; [startColumn] is the column of the server start. */
+private class StripColumns(val errors: IntArray, val warnings: IntArray, val startColumn: Int) {
+    fun total(column: Int) = errors[column] + warnings[column]
+}
+
+private fun stripLine(kit: ChatKit, columns: StripColumns): Component {
     var line = kit.text("  ")
     for (column in 0 until STRIP_COLUMNS) {
-        val total = errors[column] + warnings[column]
+        val total = columns.total(column)
         val height = when {
             total == 0 -> 0
             total == 1 -> 1
@@ -161,29 +170,42 @@ private fun strip(kit: ChatKit, relevant: List<JournalRecord>, now: Long, window
         }
         val color = when {
             total == 0 -> ChatPalette.FAINT
-            column == startColumn -> ChatPalette.ORANGE
-            errors[column] > 0 -> ChatPalette.DANGER
+            column == columns.startColumn -> ChatPalette.ORANGE
+            columns.errors[column] > 0 -> ChatPalette.DANGER
             else -> ChatPalette.WARN
         }
         line = line.append(kit.text(if (height == 0) "·" else STRIP_HEIGHTS[height].toString(), color))
     }
-    line = line.append(kit.text("  сейчас", ChatPalette.FAINT))
+    return line.append(kit.text("  сейчас", ChatPalette.FAINT))
+}
 
-    val worst = (0 until STRIP_COLUMNS).filter { errors[it] + warnings[it] > 0 }
-        .sortedWith(compareByDescending<Int> { errors[it] * 1_000 + warnings[it] }.thenByDescending { it })
+private fun stripTip(kit: ChatKit, columns: StripColumns, now: Long, columnMillis: Long, windowHours: Int, withDate: Boolean) =
+    kit.tooltip(*stripTipLines(kit, columns, now, columnMillis, windowHours, withDate).toTypedArray())
+
+private fun stripTipLines(
+    kit: ChatKit,
+    columns: StripColumns,
+    now: Long,
+    columnMillis: Long,
+    windowHours: Int,
+    withDate: Boolean,
+): List<Component> {
+    val worst = (0 until STRIP_COLUMNS).filter { columns.total(it) > 0 }
+        .sortedWith(compareByDescending<Int> { columns.errors[it] * 1_000 + columns.warnings[it] }.thenByDescending { it })
         .take(STRIP_WORST)
-    val withDate = windowMillis > Duration.ofHours(24).toMillis()
-    val tip = mutableListOf<Component>(kit.text("Последние $windowHours ${RussianText.plural(windowHours.toLong(), "час", "часа", "часов")}",
-        ChatPalette.LABEL), kit.blank())
+    val tip = mutableListOf<Component>(
+        kit.text("Последние $windowHours ${RussianText.plural(windowHours.toLong(), "час", "часа", "часов")}", ChatPalette.LABEL),
+        kit.blank(),
+    )
     worst.forEach { column ->
         val start = now - (STRIP_COLUMNS - column) * columnMillis
         var row = kit.text(clock(start, withDate) + "  ", ChatPalette.SOFT)
-        if (errors[column] > 0) row = row.append(kit.text("● ${errors[column]}  ", ChatPalette.DANGER))
-        if (warnings[column] > 0) row = row.append(kit.text("▲ ${warnings[column]}", ChatPalette.WARN))
+        if (columns.errors[column] > 0) row = row.append(kit.text("● ${columns.errors[column]}  ", ChatPalette.DANGER))
+        if (columns.warnings[column] > 0) row = row.append(kit.text("▲ ${columns.warnings[column]}", ChatPalette.WARN))
         tip += row
     }
     tip += kit.text("Остальное время тихо", ChatPalette.FAINT)
-    return line.hoverEvent(kit.tooltip(*tip.toTypedArray()))
+    return tip
 }
 
 /** `  ● pnShop ×3 старт  Database is locked`, clickable to open the card; the reason word is dropped when plain. */
