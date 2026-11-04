@@ -87,6 +87,11 @@ class UpdateCatalogCommands(
                 executes { showSettings(it, it.get<String>("plugin")) }
             }
         }
+        installSettings(addLiteral)
+        installHistory(addLiteral)
+    }
+
+    private fun installSettings(addLiteral: (String, CommandNodeBuilder.() -> Unit) -> Unit) {
         addLiteral("set") {
             managePermission?.let(::permission)
             argument("plugin", ArgumentType.string()) {
@@ -111,6 +116,9 @@ class UpdateCatalogCommands(
                 }
             }
         }
+    }
+
+    private fun installHistory(addLiteral: (String, CommandNodeBuilder.() -> Unit) -> Unit) {
         addLiteral("history") {
             viewPermission?.let(::permission)
             executes { showHistory(it, product = null) }

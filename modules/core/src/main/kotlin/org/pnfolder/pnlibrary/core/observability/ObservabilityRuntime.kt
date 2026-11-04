@@ -82,31 +82,8 @@ internal class ObservabilityRuntime(
         val events = journal.recent()
         val attachments = attachmentStore.all()
         val statuses = statusRegistry.snapshot()
-        val now = System.currentTimeMillis()
-        val recentWindow = events.filter { now - it.timestamp <= ANALYTICS_WINDOW_MS }
-        val lastHour = events.filter { now - it.timestamp <= 60 * 60_000L }
-        val lastDay = events.filter { now - it.timestamp <= 24 * 60 * 60_000L }
-        val recentErrors = recentWindow.count { it.errorType != null || it.level == ObservationLevel.ERROR || it.level == ObservationLevel.CRITICAL }
-        val recent = events.takeLast(MAX_ANALYTICS_EVENTS).map { event ->
-            linkedMapOf<String, Any?>(
-                "id" to event.id,
-                "timestampUtc" to Instant.ofEpochMilli(event.timestamp).toString(),
-                "plugin" to (event.plugin ?: "[unknown]"),
-                "source" to (event.source ?: "[unknown]"),
-                "level" to event.level.name,
-                "message" to event.message,
-                "errorType" to event.errorType,
-                "dataKeys" to event.data.keys.sorted(),
-            )
-        }
-        val statusHealth = when {
-            events.any { it.level == ObservationLevel.CRITICAL } -> "critical"
-            events.any { it.level == ObservationLevel.ERROR } ||
-                statuses.any { it.state.equals("failed", ignoreCase = true) || it.state.equals("degraded", ignoreCase = true) } -> "attention"
-            else -> "healthy"
-        }
         linkedMapOf(
-            "status" to statusHealth,
+            "status" to health(events, statuses),
             "eventCount" to events.size,
             "byLevel" to events.groupingBy { it.level.name }.eachCount(),
             "bySource" to events.groupingBy { it.source ?: "[unknown]" }.eachCount(),
@@ -119,32 +96,64 @@ internal class ObservabilityRuntime(
             "errorTypes" to events.mapNotNull { it.errorType }.groupingBy { it }.eachCount(),
             "statusCount" to statuses.size,
             "statusStates" to statuses.groupingBy { it.state }.eachCount(),
-            "recent" to recent,
-            "attachmentCount" to attachments.size,
-            "attachmentBytes" to attachments.sumOf { it.size },
-            "attachmentsByContentType" to attachments.groupingBy { it.contentType }.eachCount(),
-            "attachmentsByObservation" to attachments.groupingBy { it.observationId }.eachCount(),
-            "attachmentSize" to linkedMapOf(
-                "minBytes" to attachments.minOfOrNull { it.size },
-                "maxBytes" to attachments.maxOfOrNull { it.size },
-                "averageBytes" to attachments.map { it.size }.average().takeIf { attachments.isNotEmpty() },
-            ),
+            "recent" to recentEvents(events),
             "oldestUtc" to events.minOfOrNull { it.timestamp }?.let(Instant::ofEpochMilli)?.toString(),
             "newestUtc" to events.maxOfOrNull { it.timestamp }?.let(Instant::ofEpochMilli)?.toString(),
-            "activity" to linkedMapOf(
-                "windowMinutes" to ANALYTICS_WINDOW_MS / 60_000,
-                "eventsLastWindow" to recentWindow.size,
-                "errorsLastWindow" to recentErrors,
-                "errorRateLastWindow" to recentErrors.toDouble() / recentWindow.size.coerceAtLeast(1),
-                "activeSourcesLastWindow" to recentWindow.mapNotNull { it.source }.distinct().size,
-                "activePluginsLastWindow" to recentWindow.mapNotNull { it.plugin }.distinct().size,
-                "eventsLastHour" to lastHour.size,
-                "errorsLastHour" to lastHour.count { it.errorType != null },
-                "eventsLastDay" to lastDay.size,
-                "errorsLastDay" to lastDay.count { it.errorType != null },
-                "eventRatePerMinuteLastHour" to lastHour.size.toDouble() / 60.0,
-                "errorRatePerMinuteLastDay" to lastDay.count { it.errorType != null }.toDouble() / (24 * 60.0),
-            ),
+            "activity" to activity(events),
+        ) + attachmentFigures(attachments)
+    }
+
+    private fun recentEvents(events: List<Observation>): List<Map<String, Any?>> = events.takeLast(MAX_ANALYTICS_EVENTS).map { event ->
+        linkedMapOf<String, Any?>(
+            "id" to event.id,
+            "timestampUtc" to Instant.ofEpochMilli(event.timestamp).toString(),
+            "plugin" to (event.plugin ?: "[unknown]"),
+            "source" to (event.source ?: "[unknown]"),
+            "level" to event.level.name,
+            "message" to event.message,
+            "errorType" to event.errorType,
+            "dataKeys" to event.data.keys.sorted(),
+        )
+    }
+
+    private fun health(events: List<Observation>, statuses: List<ComponentStatus>): String = when {
+        events.any { it.level == ObservationLevel.CRITICAL } -> "critical"
+        events.any { it.level == ObservationLevel.ERROR } ||
+            statuses.any { it.state.equals("failed", ignoreCase = true) || it.state.equals("degraded", ignoreCase = true) } -> "attention"
+        else -> "healthy"
+    }
+
+    private fun attachmentFigures(attachments: List<StoredAttachment>): Map<String, Any?> = linkedMapOf(
+        "attachmentCount" to attachments.size,
+        "attachmentBytes" to attachments.sumOf { it.size },
+        "attachmentsByContentType" to attachments.groupingBy { it.contentType }.eachCount(),
+        "attachmentsByObservation" to attachments.groupingBy { it.observationId }.eachCount(),
+        "attachmentSize" to linkedMapOf(
+            "minBytes" to attachments.minOfOrNull { it.size },
+            "maxBytes" to attachments.maxOfOrNull { it.size },
+            "averageBytes" to attachments.map { it.size }.average().takeIf { attachments.isNotEmpty() },
+        ),
+    )
+
+    private fun activity(events: List<Observation>): Map<String, Any?> {
+        val now = System.currentTimeMillis()
+        val window = events.filter { now - it.timestamp <= ANALYTICS_WINDOW_MS }
+        val lastHour = events.filter { now - it.timestamp <= HOUR_MS }
+        val lastDay = events.filter { now - it.timestamp <= DAY_MS }
+        val windowErrors = window.count { it.errorType != null || it.level == ObservationLevel.ERROR || it.level == ObservationLevel.CRITICAL }
+        return linkedMapOf(
+            "windowMinutes" to ANALYTICS_WINDOW_MS / 60_000,
+            "eventsLastWindow" to window.size,
+            "errorsLastWindow" to windowErrors,
+            "errorRateLastWindow" to windowErrors.toDouble() / window.size.coerceAtLeast(1),
+            "activeSourcesLastWindow" to window.mapNotNull { it.source }.distinct().size,
+            "activePluginsLastWindow" to window.mapNotNull { it.plugin }.distinct().size,
+            "eventsLastHour" to lastHour.size,
+            "errorsLastHour" to lastHour.count { it.errorType != null },
+            "eventsLastDay" to lastDay.size,
+            "errorsLastDay" to lastDay.count { it.errorType != null },
+            "eventRatePerMinuteLastHour" to lastHour.size.toDouble() / 60.0,
+            "errorRatePerMinuteLastDay" to lastDay.count { it.errorType != null }.toDouble() / (24 * 60.0),
         )
     }
 
@@ -167,6 +176,8 @@ internal class ObservabilityRuntime(
 
     private companion object {
         const val MAX_ANALYTICS_EVENTS = 32
+        const val HOUR_MS = 60 * 60_000L
+        const val DAY_MS = 24 * HOUR_MS
         const val MAX_ANALYTICS_MESSAGES = 32
         const val ANALYTICS_WINDOW_MS = 5 * 60_000L
     }

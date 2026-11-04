@@ -4,6 +4,7 @@ import org.bukkit.entity.Player
 import org.bukkit.plugin.Plugin
 import org.pnfolder.pnlibrary.api.chat.ChatTone
 import org.pnfolder.pnlibrary.api.commands.ArgumentType
+import org.pnfolder.pnlibrary.api.commands.CommandBuilder
 import org.pnfolder.pnlibrary.api.commands.CommandContext
 import org.pnfolder.pnlibrary.api.commands.CommandDefinition
 import org.pnfolder.pnlibrary.api.commands.command
@@ -67,6 +68,24 @@ internal class BukkitControlCommand(
         // Other labels for the same command: they keep it reachable when another plugin already owns `/pn`.
         aliases("pnlib", "pnlibrary")
         executes(::overview)
+        statusViews()
+        updateViews()
+        library.mountableCommand("events")?.let { mount("events", it) }
+        library.mountableCommand("debug")?.let { mount("debug", it) }
+        library.mountableCommand("stats")?.let { mount("stats", it) }
+        library.mountableCommand("placeholders")?.let { mount("placeholders", it) }
+        mount("bus", EventBusCommand(library).definition())
+        mount("tasks", TaskCommand(library).definition())
+        mount("servers", ServersCommand(ServersCommand.fromNetworkMap()).definition())
+        mount("money", CurrencyCommandExecutor(plugin, currencies).definition())
+        literal("support") {
+            permission(ADMIN, VIEW)
+            executes { replies.native(it) { _, reply -> support.support(reply) } }
+        }
+    }
+
+    /** Status, check, the menu and the update catalog. */
+    private fun CommandBuilder.statusViews() {
         literal("status") {
             permission(ADMIN, VIEW)
             executes { replies.native(it) { sender, reply -> updates.sendStatus(sender, reply, null) } }
@@ -95,6 +114,10 @@ internal class BukkitControlCommand(
                 }
             }
         }
+    }
+
+    /** Staging, confirming, rolling back and restarting an update. */
+    private fun CommandBuilder.updateViews() {
         // Words after `update` are subcommands first and a plugin name second, so no plugin may be named like one.
         literal("update") {
             permission(ADMIN, DOWNLOAD)
@@ -116,18 +139,6 @@ internal class BukkitControlCommand(
                     executes { replies.native(it) { _, reply -> updates.cancelRestart(reply) } }
                 }
             }
-        }
-        library.mountableCommand("events")?.let { mount("events", it) }
-        library.mountableCommand("debug")?.let { mount("debug", it) }
-        library.mountableCommand("stats")?.let { mount("stats", it) }
-        library.mountableCommand("placeholders")?.let { mount("placeholders", it) }
-        mount("bus", EventBusCommand(library).definition())
-        mount("tasks", TaskCommand(library).definition())
-        mount("servers", ServersCommand(ServersCommand.fromNetworkMap()).definition())
-        mount("money", CurrencyCommandExecutor(plugin, currencies).definition())
-        literal("support") {
-            permission(ADMIN, VIEW)
-            executes { replies.native(it) { _, reply -> support.support(reply) } }
         }
     }
 
