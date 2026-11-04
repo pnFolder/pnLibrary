@@ -24,8 +24,13 @@ internal class PlaceholderDefinitionBuilder<T : Any>(
     private val key: PlaceholderKey<T>,
     private val placeholderApiEnabled: Boolean,
     private val adapterLookup: (String) -> PlaceholderAdapter?,
+    private val formatApplier: (Any?, String, PlaceholderRequest, Map<String, PlaceholderFormatterRegistry.FormatterDefinition<*>>) -> Any? =
+        { value, _, _, _ -> value },
+    /** Asks whether this plugin may use a PlaceholderAPI prefix; a prefix belongs to the first plugin that took it. */
+    private val claimPrefix: (String) -> Boolean = { true },
     private val install: (PlaceholderEntry<T>) -> Unit,
 ) : PlaceholderBuilder<T> {
+    private var defaultFormat: String? = null
     private var resolver: ((PlaceholderRequest) -> CompletionStage<T?>)? = null
     private var updater: PlaceholderUpdater<T>? = null
     private var access = PlaceholderAccess.ownerOnly()
@@ -53,6 +58,11 @@ internal class PlaceholderDefinitionBuilder<T : Any>(
 
     override fun cache(policy: PlaceholderCachePolicy) = apply { cachePolicy = policy }
     override fun fallback(value: T) = apply { fallback = value }
+
+    override fun defaultFormat(name: String) = apply {
+        require(name.matches(PlaceholderFormatterRegistry.VALID_NAME)) { "Invalid format name: $name" }
+        defaultFormat = name
+    }
     override fun publish(publication: PlaceholderPublication) = apply { publications += publication }
 
     override fun format(name: String, formatter: PlaceholderFormatter<T>) = apply {
@@ -74,11 +84,16 @@ internal class PlaceholderDefinitionBuilder<T : Any>(
             fallback = fallback,
             adapterLookup = adapterLookup,
             formats = formats.toMap(),
+            defaultFormat = defaultFormat,
+            publishedFormat = defaultFormat?.let { name ->
+                { value, request -> formatApplier(value, name, request, formats.toMap()) }
+            },
         )
         install(entry)
         publications
             .filter { publication ->
-                publication.adapterId.lowercase(Locale.ROOT) != "placeholderapi" || placeholderApiEnabled
+                publication.adapterId.lowercase(Locale.ROOT) != "placeholderapi" ||
+                    (placeholderApiEnabled && publication.namespace?.let(claimPrefix) != false)
             }
             .forEach(entry::publish)
         return entry

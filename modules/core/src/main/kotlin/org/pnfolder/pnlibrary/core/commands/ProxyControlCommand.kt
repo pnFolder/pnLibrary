@@ -86,6 +86,7 @@ class ProxyControlCommand(
             library.mountableCommand("events")?.let { mount("events", it) }
             library.mountableCommand("debug")?.let { mount("debug", it) }
             library.mountableCommand("stats")?.let { mount("stats", it) }
+            library.mountableCommand("placeholders")?.let { mount("placeholders", it) }
             mount("bus", EventBusCommand(library).definition())
             mount("tasks", TaskCommand(library).definition())
             mount("servers", ServersCommand(ServersCommand.fromReports()).definition())
@@ -108,6 +109,7 @@ class ProxyControlCommand(
             "/pn bus" to "pnlibrary.events.bus",
             "/pn tasks" to "pnlibrary.tasks",
             "/pn stats" to "pnlibrary.stats",
+            "/pn placeholders" to "pnlibrary.placeholders",
             "/pn servers" to ServersCommand.PERMISSION,
             "/pn groups" to GroupsCommand.PERMISSION,
             "/pn debug" to "pnlibrary.debug",

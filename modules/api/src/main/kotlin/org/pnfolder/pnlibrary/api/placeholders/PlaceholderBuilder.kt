@@ -38,6 +38,13 @@ interface PlaceholderBuilder<T : Any> {
      */
     fun format(name: String, formatter: PlaceholderFormatter<T>): PlaceholderBuilder<T>
 
+    /**
+     * Sets the format applied when the text names none, so `{key}` reads like `{key|name}`.
+     * A format in the text replaces it, and `{key|raw}` turns it off. The default does nothing for builders
+     * that do not support it.
+     */
+    fun defaultFormat(name: String): PlaceholderBuilder<T> = this
+
     /** Requests publication through an external placeholder adapter. */
     fun publish(publication: PlaceholderPublication): PlaceholderBuilder<T>
 

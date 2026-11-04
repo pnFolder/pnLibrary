@@ -44,6 +44,12 @@ internal class PlaceholderApiAdapter(
         return resolved.takeUnless { it == token }
     }
 
+    /** Lets PlaceholderAPI replace every `%...%` it knows in [text]; the rest stays. */
+    override fun render(playerId: UUID?, text: String): String {
+        if (state == PlaceholderAdapterState.UNAVAILABLE || state == PlaceholderAdapterState.CLOSED) return text
+        return PlaceholderAPI.setPlaceholders(playerId?.let(plugin.server::getOfflinePlayer), text)
+    }
+
     /** Publishes a resolver under a namespace and owns its external registration. */
     override fun publish(
         owner: PluginId,
@@ -55,6 +61,7 @@ internal class PlaceholderApiAdapter(
         check(plugin.server.pluginManager.isPluginEnabled("PlaceholderAPI")) { "PlaceholderAPI is not installed" }
         val namespace = (publication.namespace ?: owner.value).lowercase(Locale.ROOT)
         val externalName = (publication.name ?: key.replace('.', '_')).lowercase(Locale.ROOT)
+        require('_' !in namespace) { "PlaceholderAPI prefix '$namespace' must not contain '_'" }
         val expansion = groups.computeIfAbsent(namespace) { Expansion(it) }
         if (!expansion.isRegistered) {
             check(expansion.register())
@@ -93,18 +100,27 @@ internal class PlaceholderApiAdapter(
         override fun getAuthor() = this@PlaceholderApiAdapter.plugin.description.authors.joinToString(",").ifBlank { PnLibraryIdentity.NAME }
         override fun getVersion() = this@PlaceholderApiAdapter.plugin.description.version
         override fun persist() = true
-        /** Matches the longest published key and forwards its optional parameter to the resolver. */
-    override fun onRequest(player: OfflinePlayer?, params: String): String? {
+        /** Finds the published name that fits [params] best and hands its parameters to the resolver. */
+        override fun onRequest(player: OfflinePlayer?, params: String): String? {
+            val wait = if (this@PlaceholderApiAdapter.plugin.server.isPrimaryThread) MAIN_THREAD_WAIT_MILLIS else OTHER_THREAD_WAIT_MILLIS
+            val values = mapOf<String, Any?>(PlaceholderAdapter.WAIT_MILLIS_KEY to wait)
+            val byPattern = handlers.entries
+                .mapNotNull { (name, handler) -> ExternalNames.match(name, params)?.let { Triple(name, handler, it) } }
+                .maxByOrNull { (name, _, _) -> ExternalNames.specificity(name) }
+            if (byPattern != null) {
+                val (_, handler, parameters) = byPattern
+                return answer(handler, PlaceholderRequest(handler.owner, handler.owner, player?.uniqueId, parameters, values))
+            }
             val match = handlers.entries.sortedByDescending { it.key.length }.firstOrNull {
-                params.equals(it.key, true) || params.startsWith(it.key + "_", true)
+                '{' !in it.key && (params.equals(it.key, true) || params.startsWith(it.key + "_", true))
             } ?: return null
             val suffix = params.removePrefix(match.key).removePrefix("_")
-            val request = PlaceholderRequest(
-                match.value.owner, match.value.owner, player?.uniqueId,
-                if (suffix.isEmpty()) emptyMap() else mapOf("value" to suffix), emptyMap(),
-            )
-            return match.value.resolver.resolve(request)?.toString()
+            val parameters = if (suffix.isEmpty()) emptyMap() else mapOf("value" to suffix)
+            return answer(match.value, PlaceholderRequest(match.value.owner, match.value.owner, player?.uniqueId, parameters, values))
         }
+
+        private fun answer(handler: Handler, request: PlaceholderRequest): String? =
+            handler.resolver.resolve(request)?.toString()
     }
 
     /** Associates a published resolver with its portable owner. */
@@ -113,3 +129,6 @@ internal class PlaceholderApiAdapter(
         val resolver: PlaceholderResolver<Any>,
     )
 }
+
+private const val MAIN_THREAD_WAIT_MILLIS = 50L
+private const val OTHER_THREAD_WAIT_MILLIS = 1000L

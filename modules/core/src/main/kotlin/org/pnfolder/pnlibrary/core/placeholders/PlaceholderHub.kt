@@ -36,12 +36,17 @@ import java.util.function.Consumer
 internal class PlaceholderHub(
     private val platform: PlatformIdentity,
     private val valueStore: GlobalPlaceholderValueStore = GlobalPlaceholderValueStore(),
+    /** Receives the text of every problem worth the administrator's attention; each distinct one once. */
+    private val issues: (String) -> Unit = {},
 ) : PlaceholderAdapterRegistry {
     private val entries = ConcurrentHashMap<String, PlaceholderEntry<*>>()
     private val adapters = ConcurrentHashMap<String, PlaceholderAdapter>()
     private val formatterRegistry = PlaceholderFormatterRegistry()
     private val entryLookup = PlaceholderEntryLookup(entries, PluginId.of(SYSTEM_NAMESPACE))
     private val addresses = PlaceholderAddressIndex()
+    private val pluginOf = ConcurrentHashMap<PluginId, String>()
+    private val reported = ConcurrentHashMap.newKeySet<String>()
+    private val prefixOwners = ConcurrentHashMap<String, String>()
 
     init {
         formatterRegistry.registerBuiltIns()
@@ -87,12 +92,37 @@ internal class PlaceholderHub(
         placeholderApiEnabled: Boolean = true,
         plugin: String? = null,
         module: String = PlaceholderAddress.DEFAULT_MODULE,
-    ): PlaceholderService = Scope(owner, placeholderApiEnabled, plugin, module)
+    ): PlaceholderService = Scope(owner, placeholderApiEnabled, plugin, module).also { if (plugin != null) pluginOf[owner] = plugin }
+
+    /** Tells the administrator once about [message]. */
+    fun report(message: String) {
+        if (reported.size < MAXIMUM_REPORTED && reported.add(message)) issues(message)
+    }
 
     private fun find(consumer: PluginId, reference: String): PlaceholderEntryLookup.Match {
-        val address = PlaceholderAddress.parse(reference)
-        return if (address != null) addresses.find(address) else entryLookup.find(consumer, reference)
+        PlaceholderAddress.parse(reference)?.let { return addresses.find(it) }
+        if (reference.contains('/')) return PlaceholderEntryLookup.Match(null, emptyMap())
+        val local = entryLookup.find(consumer, reference)
+        if (local.entry != null || reference.contains(':')) return local
+        return pluginOf[consumer]?.let { addresses.findInPlugin(it, reference) } ?: local
     }
+
+    /** Every registered placeholder for `/pn placeholders`. */
+    fun describe(): List<PlaceholderInfo> {
+        val byAddress = addresses.all().associate { (address, entry) -> entry to address.toString() }
+        return entries.values.map { entry ->
+            PlaceholderInfo(
+                address = byAddress[entry] ?: "${entry.owner.value}:${entry.key.value}",
+                type = entry.key.type.simpleName,
+                format = entry.defaultFormat,
+                published = entry.publishedAs.map { publication -> publication.namespace.orEmpty() + "_" + publication.name.orEmpty() },
+                enabled = entry.isEnabled,
+            )
+        }.sortedBy(PlaceholderInfo::address)
+    }
+
+    /** Adds a placeholder of the library itself under `pnlibrary/main:key`, visible to every plugin. */
+    fun <T : Any> library(key: String, type: Class<T>, value: () -> T) = system(key, type, value)
 
     override fun register(adapter: PlaceholderAdapter): AutoCloseable {
         val key = adapter.id.lowercase(Locale.ROOT)
@@ -112,7 +142,7 @@ internal class PlaceholderHub(
     private fun <T : Any> system(key: String, type: Class<T>, value: () -> T) {
         val owner = PluginId.of(SYSTEM_NAMESPACE)
         val typedKey = PlaceholderKey.of(key, type)
-        entries[id(owner, key)] = PlaceholderEntry(
+        val entry = PlaceholderEntry(
             owner = owner,
             key = typedKey,
             resolver = { CompletableFuture.completedFuture(value()) },
@@ -123,6 +153,8 @@ internal class PlaceholderHub(
             fallback = null,
             adapterLookup = ::get,
         )
+        entries[id(owner, key)] = entry
+        PlaceholderAddress.of(SYSTEM_NAMESPACE, PlaceholderAddress.DEFAULT_MODULE, key)?.let { addresses.add(it, entry) }
     }
 
     private inner class Scope(
@@ -132,6 +164,18 @@ internal class PlaceholderHub(
         private val module: String,
     ) : PlaceholderService {
         private val owned = ConcurrentHashMap.newKeySet<String>()
+        private val prefixes = ConcurrentHashMap.newKeySet<String>()
+        private val ownerName = plugin ?: owner.value
+
+        private fun claimPrefix(prefix: String): Boolean {
+            val holder = prefixOwners.putIfAbsent(prefix, ownerName) ?: ownerName
+            if (holder != ownerName) {
+                report("PlaceholderAPI prefix '$prefix' already belongs to $holder, so $ownerName does not publish under it")
+                return false
+            }
+            prefixes += prefix
+            return true
+        }
         private val adapterHandles = ConcurrentHashMap.newKeySet<AutoCloseable>()
         private val closed = AtomicBoolean(false)
         private val mutationLock = Any()
@@ -152,6 +196,8 @@ internal class PlaceholderHub(
             key = key,
             placeholderApiEnabled = placeholderApiEnabled,
             adapterLookup = this@PlaceholderHub::get,
+            formatApplier = { value, name, request, own -> formatterRegistry.format(owner, value, listOf(name), request, own) },
+            claimPrefix = ::claimPrefix,
         ) { entry ->
             synchronized(mutationLock) {
                 check(!closed.get()) { "Placeholder scope $owner is closed" }
@@ -186,7 +232,7 @@ internal class PlaceholderHub(
             updateFor(owner, expression, value, playerId, values)
 
         override fun render(template: String, playerId: UUID?, values: Map<String, Any?>): CompletionStage<String> =
-            templateRenderer(owner).render(template, playerId, values)
+            templateRenderer(owner).render(template, playerId, values).thenApply { text -> renderExternal(text, playerId) }
 
         override fun contains(expression: String): Boolean =
             find(owner, expression.substringBefore('|')).entry != null
@@ -202,6 +248,8 @@ internal class PlaceholderHub(
         override fun adapters(): PlaceholderAdapterRegistry = ownedAdapters
         override fun close() {
             if (!closed.compareAndSet(false, true)) return
+            pluginOf.remove(owner)
+            prefixes.forEach { prefixOwners.remove(it, ownerName) }
             val handles = synchronized(mutationLock) {
                 owned.forEach { entries.remove(it)?.close() }
                 owned.clear()
@@ -227,13 +275,29 @@ internal class PlaceholderHub(
                     runCatchingNonFatal { adapter.resolve(playerId, reference) }.getOrNull()
                 }
                 .firstOrNull()
+            if (external == null) report("Placeholder {$reference} is not registered (asked by $consumer)")
             return CompletableFuture.completedFuture(external)
         }
-        if (!entry.access.allows(entry.owner, consumer)) return failed(SecurityException("Plugin $consumer cannot read ${entry.owner}:${entry.key.value}"))
+        if (!entry.access.allows(entry.owner, consumer)) {
+            report("Plugin $consumer may not read {$reference}")
+            return failed(SecurityException("Plugin $consumer cannot read ${entry.owner}:${entry.key.value}"))
+        }
         val request = PlaceholderRequest(entry.owner, consumer, playerId, params, values)
+        val pipeline = pipelineOf(entry.defaultFormat, pieces.drop(1))
         @Suppress("UNCHECKED_CAST")
         return (entry as PlaceholderEntry<Any>).resolve(request)
-            .thenApply { format(consumer, it, pieces.drop(1), playerId, values, request, entry.formats) }
+            .thenApply { format(consumer, it, pipeline, playerId, values, request, entry.formats) }
+            .exceptionally { error ->
+                report("Placeholder {$reference} failed: ${error.cause?.message ?: error.message}")
+                null
+            }
+    }
+
+    /** The formats to run: the text's own, else the placeholder's default; `raw` switches the default off. */
+    private fun pipelineOf(default: String?, fromText: List<String>): List<String> {
+        val explicit = fromText.map(String::trim).filterNot { it == RAW }
+        if (explicit.isNotEmpty() || fromText.any { it.trim() == RAW }) return explicit
+        return listOfNotNull(default)
     }
 
     private fun updateFor(
@@ -256,8 +320,13 @@ internal class PlaceholderHub(
         )
     }
 
+    /** Lets every available outside system (PlaceholderAPI) replace what is left of its own tokens. */
+    private fun renderExternal(text: String, playerId: UUID?): String = adapters.values
+        .filter { it.state == PlaceholderAdapterState.AVAILABLE || it.state == PlaceholderAdapterState.REGISTERED }
+        .fold(text) { current, adapter -> runCatchingNonFatal { adapter.render(playerId, current) }.getOrDefault(current) }
+
     private fun templateRenderer(consumer: PluginId) = PlaceholderTemplateRenderer(
-        resolve = { expression, playerId, values -> resolveFor(consumer, expression, playerId, values) },
+        resolve = { expression, playerId, values -> resolveFor(consumer, expression, playerId, values).exceptionally { null } },
         format = { value, pipeline, playerId, values -> format(consumer, value, pipeline, playerId, values) },
     )
 
@@ -281,6 +350,8 @@ internal class PlaceholderHub(
 
     private companion object {
         const val SYSTEM_NAMESPACE = PnLibraryIdentity.PRODUCT_ID
+        const val RAW = "raw"
+        const val MAXIMUM_REPORTED = 500
     }
 
 }

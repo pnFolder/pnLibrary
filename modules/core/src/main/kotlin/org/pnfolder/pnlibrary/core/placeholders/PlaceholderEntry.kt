@@ -16,6 +16,9 @@ import java.util.Collections
 import java.util.Locale
 import java.util.concurrent.CompletableFuture
 import java.util.concurrent.CompletionStage
+import java.util.concurrent.ExecutionException
+import java.util.concurrent.TimeUnit
+import java.util.concurrent.TimeoutException
 import java.util.concurrent.atomic.AtomicBoolean
 
 /** One registered placeholder, including its cache, update policy and external publications. */
@@ -31,11 +34,20 @@ internal class PlaceholderEntry<T : Any>(
     private val adapterLookup: (String) -> PlaceholderAdapter?,
     /** Formats only this placeholder understands, by lowercase name. */
     val formats: Map<String, PlaceholderFormatterRegistry.FormatterDefinition<T>> = emptyMap(),
+    /** Format applied when the text names none; `null` for a plain value. */
+    val defaultFormat: String? = null,
+    private val publishedFormat: ((Any?, PlaceholderRequest) -> Any?)? = null,
 ) : PlaceholderRegistration<T> {
     private val enabled = AtomicBoolean(true)
     private val closed = AtomicBoolean(false)
     private val cache = Collections.synchronizedMap(LinkedHashMap<String, CachedPlaceholderValue<T>>())
     private val publicationBindings = Collections.synchronizedList(mutableListOf<PlaceholderPublicationBinding>())
+    private val publishedNames = mutableListOf<PlaceholderPublication>()
+    private val stale: MutableMap<String, Any> = Collections.synchronizedMap(
+        object : LinkedHashMap<String, Any>() {
+            override fun removeEldestEntry(eldest: MutableMap.MutableEntry<String, Any>) = size > MAXIMUM_STALE
+        },
+    )
 
     @Volatile
     private var closeCallback: (() -> Unit)? = null
@@ -91,13 +103,36 @@ internal class PlaceholderEntry<T : Any>(
         return operation.update(request, value).also { invalidateCache() }
     }
 
+    /** What this placeholder was asked to publish outside, for the administrator's list. */
+    val publishedAs: List<PlaceholderPublication> get() = synchronized(publishedNames) { publishedNames.toList() }
+
     fun publish(publication: PlaceholderPublication) {
-        val binding = PlaceholderPublicationBinding(publication, owner, key.value) { request ->
-            @Suppress("UNCHECKED_CAST")
-            resolve(request).toCompletableFuture().join() as Any?
-        }
+        synchronized(publishedNames) { publishedNames += publication }
+        val binding = PlaceholderPublicationBinding(publication, owner, key.value, ::published)
         publicationBindings += binding
         adapterLookup(publication.adapterId)?.let(binding::attach)
+    }
+
+    /**
+     * The value for an outside system that wants an answer now. Waits at most [PlaceholderAdapter.WAIT_MILLIS_KEY] milliseconds
+     * (the caller says how long in the request values); when the value is late, the last known one is returned
+     * and the late result is kept for the next ask.
+     */
+    private fun published(request: PlaceholderRequest): Any? {
+        val staleKey = request.playerId.toString() + request.parameters.toSortedMap()
+        val stage = resolve(request)
+        stage.thenAccept { value -> if (value != null) stale[staleKey] = value }
+        val waitMillis = (request.values[PlaceholderAdapter.WAIT_MILLIS_KEY] as? Long) ?: DEFAULT_WAIT_MILLIS
+        val value: Any? = try {
+            if (waitMillis <= 0) stage.toCompletableFuture().getNow(null)
+            else stage.toCompletableFuture().get(waitMillis, TimeUnit.MILLISECONDS)
+        } catch (_: TimeoutException) {
+            null
+        } catch (_: ExecutionException) {
+            null
+        }
+        val answer = value ?: stale[staleKey] ?: fallback
+        return publishedFormat?.invoke(answer, request) ?: answer
     }
 
     fun attach(adapter: PlaceholderAdapter) {
@@ -157,3 +192,6 @@ private data class CachedPlaceholderValue<T>(
     fun expired(policy: PlaceholderCachePolicy): Boolean =
         System.currentTimeMillis() - writtenAtMillis >= policy.expireAfterWrite.toMillis()
 }
+
+private const val DEFAULT_WAIT_MILLIS = 50L
+private const val MAXIMUM_STALE = 256

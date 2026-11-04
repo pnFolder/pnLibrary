@@ -39,7 +39,9 @@ internal class RuntimeFeatureSet(
         logging, dataFolder, downloadConfiguration,
     )
     val placeholderValues = GlobalPlaceholderValueStore()
-    val placeholders: PlaceholderHub = PlaceholderHub(platform.identity, placeholderValues)
+    val placeholders: PlaceholderHub = PlaceholderHub(platform.identity, placeholderValues) { problem ->
+        logging.log(this, LogLevel.WARNING, problem)
+    }
     val currency: CurrencyRuntime = CurrencyFeature()
     private val onExpansionFailure: (Expansion, Exception) -> Unit = { expansion, error ->
         logging.log(this, LogLevel.WARNING, "Expansion '${expansion.id}' failed: ${error.message}", error)

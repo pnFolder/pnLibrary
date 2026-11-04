@@ -35,7 +35,7 @@ internal class PlaceholderEntryLookup(
                 PlaceholderPatternMatcher.match(entry.key.value, key)
                     ?.let { parameters -> entry to parameters }
             }
-            .maxByOrNull { (entry, _) -> entry.key.value.length }
+            .maxByOrNull { (entry, _) -> PlaceholderPatternMatcher.specificity(entry.key.value) }
             ?.let { (entry, parameters) -> Match(entry, parameters) }
             ?: Match(null, emptyMap())
     }

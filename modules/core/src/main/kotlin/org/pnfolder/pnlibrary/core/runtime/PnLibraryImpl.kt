@@ -44,6 +44,8 @@ import org.pnfolder.pnlibrary.core.lifecycle.registerRuntimeCommand
 import org.pnfolder.pnlibrary.core.logging.ModuleLogging
 import org.pnfolder.pnlibrary.core.metrics.MetricsSessions
 import org.pnfolder.pnlibrary.core.observability.SupportRuntime
+import org.pnfolder.pnlibrary.core.placeholders.LibraryPlaceholders
+import org.pnfolder.pnlibrary.core.placeholders.placeholdersCommand
 import org.pnfolder.pnlibrary.core.platform.NativePlatform
 import org.pnfolder.pnlibrary.core.plugin.PluginRegistryImpl
 import org.pnfolder.pnlibrary.core.plugin.SharedFeatures
@@ -250,6 +252,8 @@ internal class PnLibraryImpl(
         mountable["events"] = journalRuntime.command()
         stats.start()
         mountable["stats"] = stats.command()
+        mountable["placeholders"] = placeholdersCommand(placeholderHub)
+        LibraryPlaceholders(placeholderHub, startedAtMillis, { plugins.all().size }, ::statisticValues).register()
         registerRuntimeCommand(
             libraryInfoCommand(this, platformIdentity) {
                 platformOwnership.ownerDetails(owner)["version"] ?: "неизвестна"
@@ -269,6 +273,13 @@ internal class PnLibraryImpl(
     private val stats = StatsRuntime(::taskSnapshots, { events.inspector.events() }, journal)
 
     override fun statsSnapshot() = stats.snapshot()
+
+    private fun statisticValues(): Map<String, Long> = stats.snapshot().let {
+        mapOf(
+            "errors" to it.errors24h.toLong(), "warnings" to it.warnings24h.toLong(), "tasks" to it.tasksActive.toLong(),
+            "tasks.failed" to it.tasksFailed.toLong(), "events" to it.eventsCalled,
+        )
+    }
 
     private fun startLibraryMetrics() {
         libraryMetrics = RuntimeMetricsBootstrap(

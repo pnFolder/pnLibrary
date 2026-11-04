@@ -20,7 +20,7 @@ object MenuPermissions {
     val ALL = listOf(
         "pnlibrary.admin", "pnlibrary.servers", "pnlibrary.updates.view", "pnlibrary.updates.download", "pnlibrary.updates.rollback",
         "pnlibrary.updates.settings", "pnlibrary.updates.restart", "pnlibrary.events.view", "pnlibrary.events.bus", "pnlibrary.tasks",
-        "pnlibrary.stats", "pnlibrary.debug", "pnlibrary.currency.list",
+        "pnlibrary.stats", "pnlibrary.placeholders", "pnlibrary.debug", "pnlibrary.currency.list",
     )
 }
 
