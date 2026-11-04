@@ -7,7 +7,7 @@ import org.bukkit.inventory.ItemStack
 import java.util.Locale
 
 /** Bukkit item service. Reading builds an [ItemSpec], so read and hand-made items are created by the same code. */
-internal object ItemServiceImpl : ItemService {
+internal object BukkitItems : ItemService {
     override fun create(spec: ItemSpec): ItemStack {
         val item = decodeOrNull(spec.exact) ?: spec.texture?.let { texture ->
             PlayerHeads.create(withoutPrefix(texture), spec.name ?: "&fItem").apply { amount = spec.amount }

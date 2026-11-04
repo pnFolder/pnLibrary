@@ -36,7 +36,7 @@ internal class BungeeRuntime(private val plugin: Plugin) {
             plugin,
             adapter,
             BungeePlatform::class.java,
-            BungeePlatformImpl(plugin.proxy),
+            BungeePlatformServices(plugin.proxy),
             adapter::markReady,
         )
         host = started

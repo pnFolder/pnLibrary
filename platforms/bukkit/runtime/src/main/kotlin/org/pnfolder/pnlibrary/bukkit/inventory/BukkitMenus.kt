@@ -28,7 +28,7 @@ import java.util.UUID
 import java.util.concurrent.atomic.AtomicBoolean
 
 /** Runtime implementation of the public Bukkit menu contract. */
-internal class MenuServiceImpl(
+internal class BukkitMenus(
     private val host: Plugin,
     private val tasks: TaskScope,
     private val execution: MenuExecution = NativeMenuExecution(host),

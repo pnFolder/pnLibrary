@@ -50,8 +50,8 @@ class ItemUtilitiesTest {
 
     @Test
     fun `real item check excludes null air and empty stacks`() {
-        assertFalse(ItemServiceImpl.isReal(null))
-        assertFalse(ItemServiceImpl.isReal(ItemStack(Material.AIR)))
-        assertTrue(ItemServiceImpl.isReal(ItemStack(Material.STONE)))
+        assertFalse(BukkitItems.isReal(null))
+        assertFalse(BukkitItems.isReal(ItemStack(Material.AIR)))
+        assertTrue(BukkitItems.isReal(ItemStack(Material.STONE)))
     }
 }

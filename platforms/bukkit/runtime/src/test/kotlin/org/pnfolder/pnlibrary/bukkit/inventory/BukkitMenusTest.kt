@@ -24,7 +24,7 @@ import java.util.concurrent.Executors
 import java.util.concurrent.TimeUnit
 import java.util.concurrent.atomic.AtomicReference
 
-class MenuServiceImplTest {
+class BukkitMenusTest {
     private val owner = mock<Plugin>().also { `when`(it.isEnabled).thenReturn(true) }
     private val host = mock<Plugin>().also { plugin ->
         val server = mock<Server>()
@@ -39,7 +39,7 @@ class MenuServiceImplTest {
             if (region.get() == player.uniqueId) action() else queued.add(player to action)
         }
     }
-    private val service = MenuServiceImpl(host, mock<TaskScope>(), execution) { menu, holder ->
+    private val service = BukkitMenus(host, mock<TaskScope>(), execution) { menu, holder ->
         mock<Inventory>().also { `when`(it.holder).thenReturn(holder); `when`(it.size).thenReturn(menu.size) }
     }
     private fun menu(renderer: MenuRenderer? = null) = Menu("test", 1, MenuType.CHEST,

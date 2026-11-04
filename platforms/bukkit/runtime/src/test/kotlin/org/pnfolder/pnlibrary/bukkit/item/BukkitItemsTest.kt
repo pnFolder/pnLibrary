@@ -11,7 +11,7 @@ import org.mockito.Mockito.mock
 import org.mockito.Mockito.mockStatic
 import org.mockito.Mockito.verify
 
-class ItemServiceImplTest {
+class BukkitItemsTest {
     @Test
     fun `a format renames the keys and reads fields of its own into the same spec`() {
         val seen = mutableListOf<Any>()
@@ -34,7 +34,7 @@ class ItemServiceImplTest {
             set("name", "не тот ключ")
         }
 
-        val spec = ItemServiceImpl.read(config, format)!!
+        val spec = BukkitItems.read(config, format)!!
 
         assertEquals("DIAMOND_SWORD", spec.material)
         assertEquals(3, spec.amount)
@@ -48,7 +48,7 @@ class ItemServiceImplTest {
 
     @Test
     fun `the default format keeps its keys and a base64 material becomes a texture`() {
-        val spec = ItemServiceImpl.read(mapOf("material" to "base64:abc", "texture" to "hash", "lore" to listOf("a", "b")))!!
+        val spec = BukkitItems.read(mapOf("material" to "base64:abc", "texture" to "hash", "lore" to listOf("a", "b")))!!
         assertEquals("hash", spec.texture)
         assertEquals(listOf("a", "b"), spec.lore)
         assertEquals("STONE", spec.material)
@@ -76,8 +76,8 @@ class ItemServiceImplTest {
                 val result = if (useSection) {
                     val config = MemoryConfiguration()
                     values.forEach { (key, value) -> config.set(key, value) }
-                    ItemServiceImpl.fromSection(config)
-                } else ItemServiceImpl.fromMap(values)
+                    BukkitItems.fromSection(config)
+                } else BukkitItems.fromMap(values)
 
                 assertSame(item, result)
                 assertEquals(4, result?.amount)
@@ -92,7 +92,7 @@ class ItemServiceImplTest {
         val head = TestItem(null, 1)
         mockStatic(PlayerHeads::class.java).use { heads ->
             heads.`when`<ItemStack> { PlayerHeads.create("texture", "&fItem") }.thenReturn(head)
-            assertEquals(12, ItemServiceImpl.fromMap(mapOf("texture" to "texture", "amount" to 12))?.amount)
+            assertEquals(12, BukkitItems.fromMap(mapOf("texture" to "texture", "amount" to 12))?.amount)
         }
     }
 
@@ -106,7 +106,7 @@ class ItemServiceImplTest {
                     assertEquals(12, invocation.getArgument<ItemStack>(0).amount)
                     "encoded-stack"
                 }
-            ItemServiceImpl.writeExact(parent, "reward", source)
+            BukkitItems.writeExact(parent, "reward", source)
         }
         assertEquals(12, source.amount)
         assertEquals(12, parent.getInt("reward.amount"))

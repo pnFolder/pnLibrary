@@ -57,7 +57,7 @@ internal class VelocityRuntime(
             owner,
             adapter,
             VelocityPlatform::class.java,
-            VelocityPlatformImpl(server),
+            VelocityPlatformServices(server),
             adapter::markReady,
         )
         runtimeHost = started
