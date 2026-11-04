@@ -1,6 +1,7 @@
 package org.pnfolder.pnlibrary.core.commands
 
 import org.pnfolder.pnlibrary.api.commands.ArgumentType
+import org.pnfolder.pnlibrary.api.commands.CommandBuilder
 import org.pnfolder.pnlibrary.api.commands.CommandDefinition
 import org.pnfolder.pnlibrary.api.commands.command
 import org.pnfolder.pnlibrary.api.events.EventInspector
@@ -42,6 +43,15 @@ class EventBusCommand(private val library: PnLibrary) {
         permission(PERMISSION)
         noPermissionMessage("События плагинов доступны администраторам. Нужно право $PERMISSION.")
         consoleBypassesPermission()
+        eventViews()
+        listenerViews()
+        problemViews()
+        traceViews()
+        historyViews()
+    }
+
+    /** The list of events and the view of one of them. */
+    private fun CommandBuilder.eventViews() {
         executes { events.list(it, "all", 1) }
         FILTERS.forEach { (word, _) ->
             literal(word) {
@@ -55,6 +65,10 @@ class EventBusCommand(private val library: PnLibrary) {
                 executes { events.view(it, it.get<String>("event")) }
             }
         }
+    }
+
+    /** Listeners: all, slow, top, by range and export. */
+    private fun CommandBuilder.listenerViews() {
         literal("listeners") {
             executes { listeners.listeners(it, 1) }
             argument("page", ArgumentType.integer()) { executes { listeners.listeners(it, it.get<Int>("page")) } }
@@ -77,6 +91,9 @@ class EventBusCommand(private val library: PnLibrary) {
             literal("csv") { executes { listeners.export(it, json = false) } }
             literal("json") { executes { listeners.export(it, json = true) } }
         }
+    }
+    /** Listeners with errors and the listeners of one plugin. */
+    private fun CommandBuilder.problemViews() {
         literal("errors") {
             executes { listeners.slowOrErrors(it, 1, errors = true) }
             argument("page", ArgumentType.integer()) { executes { listeners.slowOrErrors(it, it.get<Int>("page"), errors = true) } }
@@ -88,6 +105,10 @@ class EventBusCommand(private val library: PnLibrary) {
                 argument("page", ArgumentType.integer()) { executes { listeners.pluginView(it, it.get<String>("id"), it.get<Int>("page")) } }
             }
         }
+    }
+
+    /** Recording of events and the recorded calls. */
+    private fun CommandBuilder.traceViews() {
         literal("trace") {
             // Without a name the page lists the events, each with its own recording switch, so nothing has to be remembered.
             executes { events.list(it, "all", 1) }
@@ -109,6 +130,16 @@ class EventBusCommand(private val library: PnLibrary) {
                 executes { traces.traces(it, it.get<String>("event")) }
             }
         }
+        literal("clear") {
+            executes {
+                bus.clearTraces()
+                traces.traces(it, null)
+            }
+        }
+    }
+
+    /** The history of events by day and by event. */
+    private fun CommandBuilder.historyViews() {
         literal("history") {
             executes { history.history(it, null, 1) }
             argument("page", ArgumentType.integer()) { executes { history.history(it, null, it.get<Int>("page")) } }
@@ -125,12 +156,6 @@ class EventBusCommand(private val library: PnLibrary) {
                     executes { history.history(it, it.get<String>("event"), 1) }
                     argument("page", ArgumentType.integer()) { executes { history.history(it, it.get<String>("event"), it.get<Int>("page")) } }
                 }
-            }
-        }
-        literal("clear") {
-            executes {
-                bus.clearTraces()
-                traces.traces(it, null)
             }
         }
     }
