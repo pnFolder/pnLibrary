@@ -16,12 +16,13 @@ import org.pnfolder.pnlibrary.api.commands.CommandDefinition
 import org.pnfolder.pnlibrary.api.commands.CommandSender
 import org.pnfolder.pnlibrary.bukkit.BukkitAudienceAdapter
 import org.pnfolder.pnlibrary.bukkit.BukkitAudienceService
+import org.pnfolder.pnlibrary.core.commands.MAIN_THREAD_SUGGESTION_MILLIS
+import org.pnfolder.pnlibrary.core.commands.suggestionsWithin
 import org.pnfolder.pnlibrary.spi.commands.GenericPlatformCommandAdapter
 import org.pnfolder.pnlibrary.spi.commands.NativeCommandRegistrar
 import org.pnfolder.pnlibrary.spi.commands.PlatformCommandRegistration
 import java.lang.reflect.Constructor
 import java.util.concurrent.CompletionStage
-import java.util.concurrent.TimeUnit
 import org.bukkit.command.CommandSender as NativeCommandSender
 
 /**
@@ -94,7 +95,7 @@ private class DefaultBukkitNativeCommandRegistrar : NativeCommandRegistrar<Nativ
             true
         }
         val completer = TabCompleter { sender, _, label, args ->
-            suggest(sender, label, args).toCompletableFuture().get(1, TimeUnit.SECONDS)
+            suggest(sender, label, args).suggestionsWithin(MAIN_THREAD_SUGGESTION_MILLIS)
         }
         val declared = (ownerPlugin as? JavaPlugin)?.getCommand(command.name)
         if (declared != null) {
