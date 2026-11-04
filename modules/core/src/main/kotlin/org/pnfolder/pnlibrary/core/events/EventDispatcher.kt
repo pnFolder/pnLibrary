@@ -3,6 +3,7 @@ package org.pnfolder.pnlibrary.core.events
 import org.pnfolder.pnlibrary.api.events.DispatchMode
 import org.pnfolder.pnlibrary.api.events.Event
 import org.pnfolder.pnlibrary.api.events.EventDay
+import org.pnfolder.pnlibrary.api.events.EventHour
 import org.pnfolder.pnlibrary.api.events.EventInfo
 import org.pnfolder.pnlibrary.api.events.EventInspector
 import org.pnfolder.pnlibrary.api.events.EventListenerRegistration
@@ -105,24 +106,14 @@ internal class EventDispatcher(
         }
 
         override fun history(eventType: String?): List<EventDay> = history?.entries(eventType).orEmpty()
-
-        override fun hourly(eventType: String?): List<org.pnfolder.pnlibrary.api.events.EventHour> =
-            history?.hourly(eventType).orEmpty()
-
+        override fun hourly(eventType: String?): List<EventHour> = history?.hourly(eventType).orEmpty()
         override fun asyncQueued(): Int = worker.queued()
-
         override fun exportHistory(json: Boolean): java.nio.file.Path? = history?.export(json)
-
         override val historyDays: Int get() = history?.retention ?: 0
-
         override fun enableTracing(eventType: Class<out Event>, capacity: Int) = tracer.enable(eventType, capacity)
-
         override fun disableTracing(eventType: Class<out Event>) = tracer.disable(eventType)
-
         override fun tracedEvents(): List<String> = tracer.tracedNames()
-
         override fun traces(): List<EventTrace> = tracer.traces()
-
         override fun clearTraces() = tracer.clear()
     }
 
@@ -134,43 +125,47 @@ internal class EventDispatcher(
         val steps = if (capacity != null) ArrayList<EventTrace.Step>(matching.size) else null
         for (index in matching.indices) {
             val subscription = matching[index]
-            if (subscription.isClosed) continue
-            val before = if (steps != null) tracer.resultText(event) else null
-            if (subscription.ignoreDenied && !event.isAllowed) {
-                steps?.add(EventTrace.Step(subscription.scope.plugin, subscription.scope.module, subscription.priority, true, false, 0, before, before))
-                continue
-            }
-            val started = System.nanoTime()
-            var failed = false
-            subscription.invocations.increment()
-            try {
-                subscription.invoke(event)
-            } catch (error: Throwable) {
-                failed = true
-                subscription.failures.increment()
-                // A broken listener is logged and skipped; a dying JVM (out of memory, stack overflow) is not ours to hide.
-                Failures.rethrowIfFatal(error)
-                // A logger that throws must not cost the remaining listeners their turn.
-                runCatchingNonFatal {
-                    errorLogger(
-                        subscription.scope.plugin,
-                        "[pnLibrary/events] Listener failed for ${event.javaClass.name}",
-                        error,
-                    )
-                }
-            } finally {
-                val elapsed = System.nanoTime() - started
-                subscription.totalNanos.add(elapsed)
-                subscription.maxNanos.accumulateAndGet(elapsed, ::maxOf)
-                steps?.add(
-                    EventTrace.Step(
-                        subscription.scope.plugin, subscription.scope.module, subscription.priority, false, failed,
-                        elapsed, before, tracer.resultText(event),
-                    ),
-                )
-            }
+            if (!subscription.isClosed) deliver(subscription, event, steps)
         }
         if (steps != null && capacity != null) tracer.record(event, steps, capacity, mode)
+    }
+
+    /** Hands [event] to one listener; a failing listener is logged and skipped, and a trace step is kept when [steps] records. */
+    private fun deliver(subscription: Subscription<out Event>, event: Event, steps: MutableList<EventTrace.Step>?) {
+        val before = if (steps != null) tracer.resultText(event) else null
+        if (subscription.ignoreDenied && !event.isAllowed) {
+            steps?.add(EventTrace.Step(subscription.scope.plugin, subscription.scope.module, subscription.priority, true, false, 0, before, before))
+            return
+        }
+        val started = System.nanoTime()
+        var failed = false
+        subscription.invocations.increment()
+        try {
+            subscription.invoke(event)
+        } catch (error: Throwable) {
+            failed = true
+            subscription.failures.increment()
+            // A broken listener is logged and skipped; a dying JVM (out of memory, stack overflow) is not ours to hide.
+            Failures.rethrowIfFatal(error)
+            // A logger that throws must not cost the remaining listeners their turn.
+            runCatchingNonFatal {
+                errorLogger(
+                    subscription.scope.plugin,
+                    "[pnLibrary/events] Listener failed for ${event.javaClass.name}",
+                    error,
+                )
+            }
+        } finally {
+            val elapsed = System.nanoTime() - started
+            subscription.totalNanos.add(elapsed)
+            subscription.maxNanos.accumulateAndGet(elapsed, ::maxOf)
+            steps?.add(
+                EventTrace.Step(
+                    subscription.scope.plugin, subscription.scope.module, subscription.priority, false, failed,
+                    elapsed, before, tracer.resultText(event),
+                ),
+            )
+        }
     }
 
     override fun unregisterAll(pluginId: PluginId) {
@@ -211,30 +206,12 @@ internal class EventDispatcher(
             }
         }
 
-        override fun <E : Event> subscribe(
-            eventType: Class<E>,
-            priority: Int,
-            ignoreDenied: Boolean,
-            listener: Consumer<E>,
-        ): EventSubscription = subscribe(eventType, priority, ignoreDenied, listener, listener.javaClass.name)
+        override fun <E : Event> subscribe(eventType: Class<E>, priority: Int, ignoreDenied: Boolean, listener: Consumer<E>): EventSubscription =
+            subscribe(eventType, priority, ignoreDenied, listener, listener.javaClass.name)
 
-        private fun <E : Event> subscribe(
-            eventType: Class<E>,
-            priority: Int,
-            ignoreDenied: Boolean,
-            listener: Consumer<E>,
-            source: String,
-        ): EventSubscription {
+        private fun <E : Event> subscribe(eventType: Class<E>, priority: Int, ignoreDenied: Boolean, listener: Consumer<E>, source: String): EventSubscription {
             check(!closed.get() && !scopeClosed.get()) { "EventScope is closed" }
-            val subscription = Subscription(
-                scope = this,
-                eventType = eventType,
-                priority = priority,
-                ignoreDenied = ignoreDenied,
-                listener = listener,
-                order = sequence.getAndIncrement(),
-                source = source,
-            )
+            val subscription = Subscription(this, eventType, priority, ignoreDenied, listener, sequence.getAndIncrement(), source)
             ownedSubscriptions += subscription
             subscriptions += subscription
             handlers.invalidate(eventType)
@@ -259,19 +236,11 @@ internal class EventDispatcher(
             ownedSubscriptions.remove(subscription)
         }
 
-        private fun subscribeHandler(
-            listener: Listener,
-            handler: EventHandlerInspector.Handler,
-        ): EventSubscription {
+        private fun subscribeHandler(listener: Listener, handler: EventHandlerInspector.Handler): EventSubscription {
             @Suppress("UNCHECKED_CAST")
             val eventType = handler.eventType as Class<Event>
-            return subscribe(
-                eventType,
-                handler.annotation.priority,
-                handler.annotation.ignoreDenied,
-                Consumer { event -> handler.invoke(listener, event) },
-                "${listener.javaClass.name}#${handler.method.name}",
-            )
+            val source = "${listener.javaClass.name}#${handler.method.name}"
+            return subscribe(eventType, handler.annotation.priority, handler.annotation.ignoreDenied, Consumer { handler.invoke(listener, it) }, source)
         }
     }
 
