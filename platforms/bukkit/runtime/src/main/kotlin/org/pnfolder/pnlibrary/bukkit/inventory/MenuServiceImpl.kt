@@ -103,6 +103,10 @@ internal class MenuServiceImpl(
         }
         val definition = session.menu.items[event.rawSlot]
         event.isCancelled = definition?.editable != true
+        handle(session, event, definition?.handler)
+    }
+
+    private fun handle(session: Session, event: InventoryClickEvent, itemHandler: MenuClickHandler?) {
         val renameText = if (session.menu.type == MenuType.ANVIL) {
             renameText(session.inventory)
         } else {
@@ -118,7 +122,7 @@ internal class MenuServiceImpl(
             true,
             renameText,
         )
-        definition?.handler?.handle(click)
+        itemHandler?.handle(click)
         session.menu.clickHandler?.handle(click)
     }
 
