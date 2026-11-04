@@ -1,4 +1,4 @@
-package org.pnfolder.pnlibrary.core.commands
+package org.pnfolder.pnlibrary.core.commands.proxy
 
 import net.kyori.adventure.text.Component
 import org.junit.jupiter.api.Assertions.assertEquals
@@ -9,6 +9,8 @@ import org.pnfolder.pnlibrary.api.commands.CommandContext
 import org.pnfolder.pnlibrary.api.commands.CommandNodeKind
 import org.pnfolder.pnlibrary.api.commands.CommandSender
 import org.pnfolder.pnlibrary.api.runtime.PnLibrary
+import org.pnfolder.pnlibrary.core.commands.CommandRoute
+import org.pnfolder.pnlibrary.core.commands.CommandTreeRouter
 
 class ProxyControlCommandTest {
     private val definition = ProxyControlCommand(mock(PnLibrary::class.java)).definition()

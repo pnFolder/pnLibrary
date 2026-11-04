@@ -4,7 +4,7 @@ import org.pnfolder.pnlibrary.api.runtime.PnLibrary
 import org.pnfolder.pnlibrary.api.runtime.PnLibraryConfig
 import org.pnfolder.pnlibrary.api.runtime.PnLibraryProvider
 import org.pnfolder.pnlibrary.common.lang.runCatchingNonFatal
-import org.pnfolder.pnlibrary.core.commands.ProxyControlCommand
+import org.pnfolder.pnlibrary.core.commands.proxy.ProxyControlCommand
 import org.pnfolder.pnlibrary.core.diagnostics.DiagnosticsRegistry
 import org.pnfolder.pnlibrary.core.menu.ProxyMenuCommands
 import org.pnfolder.pnlibrary.core.runtime.platform.PlatformRuntimeContext

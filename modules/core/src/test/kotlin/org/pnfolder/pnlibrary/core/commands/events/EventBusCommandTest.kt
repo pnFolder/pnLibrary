@@ -1,4 +1,4 @@
-package org.pnfolder.pnlibrary.core.commands
+package org.pnfolder.pnlibrary.core.commands.events
 
 import net.kyori.adventure.text.Component
 import net.kyori.adventure.text.serializer.plain.PlainTextComponentSerializer
@@ -13,6 +13,8 @@ import org.pnfolder.pnlibrary.api.events.Event
 import org.pnfolder.pnlibrary.api.events.EventPriority
 import org.pnfolder.pnlibrary.api.plugin.PluginId
 import org.pnfolder.pnlibrary.api.runtime.PnLibrary
+import org.pnfolder.pnlibrary.core.commands.CommandRoute
+import org.pnfolder.pnlibrary.core.commands.CommandTreeRouter
 import org.pnfolder.pnlibrary.core.events.EventDispatcher
 import org.pnfolder.pnlibrary.core.events.EventHistory
 import java.util.function.Consumer

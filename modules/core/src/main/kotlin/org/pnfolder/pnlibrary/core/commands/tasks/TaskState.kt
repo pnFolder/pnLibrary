@@ -1,4 +1,4 @@
-package org.pnfolder.pnlibrary.core.commands
+package org.pnfolder.pnlibrary.core.commands.tasks
 
 import org.pnfolder.pnlibrary.api.tasks.TaskSnapshot
 import org.pnfolder.pnlibrary.api.tasks.TaskStatus

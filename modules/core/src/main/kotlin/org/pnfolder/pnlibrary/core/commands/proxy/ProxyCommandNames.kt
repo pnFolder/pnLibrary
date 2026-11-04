@@ -1,4 +1,4 @@
-package org.pnfolder.pnlibrary.core.commands
+package org.pnfolder.pnlibrary.core.commands.proxy
 
 import net.kyori.adventure.text.Component
 import net.kyori.adventure.text.TextReplacementConfig

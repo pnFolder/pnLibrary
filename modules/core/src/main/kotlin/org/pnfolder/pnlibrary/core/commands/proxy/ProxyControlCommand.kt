@@ -1,4 +1,4 @@
-package org.pnfolder.pnlibrary.core.commands
+package org.pnfolder.pnlibrary.core.commands.proxy
 
 import net.kyori.adventure.text.Component
 import org.pnfolder.pnlibrary.api.chat.ChatKit
@@ -11,6 +11,10 @@ import org.pnfolder.pnlibrary.api.commands.CommandRegistration
 import org.pnfolder.pnlibrary.api.commands.CommandSender
 import org.pnfolder.pnlibrary.api.commands.command
 import org.pnfolder.pnlibrary.api.runtime.PnLibrary
+import org.pnfolder.pnlibrary.core.commands.events.EventBusCommand
+import org.pnfolder.pnlibrary.core.commands.events.resolve
+import org.pnfolder.pnlibrary.core.commands.groups.GroupsCommand
+import org.pnfolder.pnlibrary.core.commands.tasks.TaskCommand
 import org.pnfolder.pnlibrary.core.lifecycle.mountableCommand
 import org.pnfolder.pnlibrary.core.lifecycle.registerRuntimeCommand
 import org.pnfolder.pnlibrary.core.link.LinkHub

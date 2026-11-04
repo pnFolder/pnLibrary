@@ -1,4 +1,4 @@
-package org.pnfolder.pnlibrary.core.commands
+package org.pnfolder.pnlibrary.core.commands.events
 
 import net.kyori.adventure.text.Component
 import org.pnfolder.pnlibrary.api.chat.ChatPalette

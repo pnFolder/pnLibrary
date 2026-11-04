@@ -4,9 +4,9 @@ import org.pnfolder.pnlibrary.api.chat.ChatTone
 import org.pnfolder.pnlibrary.api.tasks.TaskSnapshot
 import org.pnfolder.pnlibrary.api.tasks.TaskStatus
 import org.pnfolder.pnlibrary.common.time.DisplayZone
-import org.pnfolder.pnlibrary.core.commands.TaskLabels
-import org.pnfolder.pnlibrary.core.commands.TaskPeriod
-import org.pnfolder.pnlibrary.core.commands.TaskState
+import org.pnfolder.pnlibrary.core.commands.tasks.TaskLabels
+import org.pnfolder.pnlibrary.core.commands.tasks.TaskPeriod
+import org.pnfolder.pnlibrary.core.commands.tasks.TaskState
 import org.pnfolder.pnlibrary.core.tasks.TaskControl
 
 internal class TaskScreens(session: MenuSession, routes: MenuRoutes) : MenuScreens(session, routes) {

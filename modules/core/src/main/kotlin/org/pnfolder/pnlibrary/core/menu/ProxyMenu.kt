@@ -2,7 +2,7 @@ package org.pnfolder.pnlibrary.core.menu
 
 import net.kyori.adventure.text.Component
 import org.pnfolder.pnlibrary.api.runtime.PnLibrary
-import org.pnfolder.pnlibrary.core.commands.ProxyCommandNames
+import org.pnfolder.pnlibrary.core.commands.proxy.ProxyCommandNames
 import org.pnfolder.pnlibrary.core.link.LinkHub
 import org.pnfolder.pnlibrary.core.link.ServerGroups
 import java.util.concurrent.Executors

@@ -1,8 +1,8 @@
 package org.pnfolder.pnlibrary.core.menu
 
 import org.pnfolder.pnlibrary.api.updates.UpdateSnapshot
-import org.pnfolder.pnlibrary.core.commands.TaskPeriod
-import org.pnfolder.pnlibrary.core.commands.TaskState
+import org.pnfolder.pnlibrary.core.commands.tasks.TaskPeriod
+import org.pnfolder.pnlibrary.core.commands.tasks.TaskState
 import org.pnfolder.pnlibrary.core.link.NetworkReport
 import org.pnfolder.pnlibrary.core.link.NetworkServer
 import java.time.Duration

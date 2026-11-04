@@ -12,7 +12,7 @@ import org.pnfolder.pnlibrary.api.commands.CommandDefinition
 import org.pnfolder.pnlibrary.api.commands.CommandSender
 import org.pnfolder.pnlibrary.bungee.BungeeAudienceAdapter
 import org.pnfolder.pnlibrary.core.commands.PROXY_SUGGESTION_MILLIS
-import org.pnfolder.pnlibrary.core.commands.ProxyCommandNames
+import org.pnfolder.pnlibrary.core.commands.proxy.ProxyCommandNames
 import org.pnfolder.pnlibrary.core.commands.suggestionsWithin
 import org.pnfolder.pnlibrary.spi.commands.GenericPlatformCommandAdapter
 import org.pnfolder.pnlibrary.spi.commands.NativeCommandRegistrar

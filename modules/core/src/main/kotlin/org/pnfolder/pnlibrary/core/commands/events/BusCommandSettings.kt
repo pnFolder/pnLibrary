@@ -1,4 +1,4 @@
-package org.pnfolder.pnlibrary.core.commands
+package org.pnfolder.pnlibrary.core.commands.events
 
 import org.pnfolder.pnlibrary.api.events.EventInfo
 

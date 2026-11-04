@@ -2,8 +2,8 @@ package org.pnfolder.pnlibrary.core.menu
 
 import org.pnfolder.pnlibrary.api.runtime.PnLibraryIdentity
 import org.pnfolder.pnlibrary.api.updates.UpdateState
-import org.pnfolder.pnlibrary.core.commands.TaskPeriod
-import org.pnfolder.pnlibrary.core.commands.TaskState
+import org.pnfolder.pnlibrary.core.commands.tasks.TaskPeriod
+import org.pnfolder.pnlibrary.core.commands.tasks.TaskState
 import org.pnfolder.pnlibrary.core.link.LinkHub
 import org.pnfolder.pnlibrary.core.updates.catalog.CatalogLabels
 
