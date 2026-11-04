@@ -10,6 +10,7 @@ import java.util.concurrent.ConcurrentHashMap
 /** Stores formatter definitions and applies formatter pipelines with owner-aware lookup. */
 internal class PlaceholderFormatterRegistry {
     private val formatters = ConcurrentHashMap<String, FormatterDefinition<*>>()
+    private val byAddress = ConcurrentHashMap<String, FormatterDefinition<*>>()
     private val systemOwner = PluginId.of(SYSTEM_NAMESPACE)
 
     fun registerBuiltIns() {
@@ -50,8 +51,19 @@ internal class PlaceholderFormatterRegistry {
         formatters[id(owner, name)] = FormatterDefinition(owner, type, formatter)
     }
 
+    /** Makes a format reachable from any plugin as `plugin/module:name`. */
+    fun <T : Any> registerAddress(
+        owner: PluginId,
+        address: String,
+        type: Class<T>,
+        formatter: PlaceholderFormatter<T>,
+    ) {
+        byAddress[address.lowercase(Locale.ROOT)] = FormatterDefinition(owner, type, formatter)
+    }
+
     fun removeOwnedBy(owner: PluginId) {
         formatters.entries.removeIf { (_, definition) -> definition.owner == owner }
+        byAddress.entries.removeIf { (_, definition) -> definition.owner == owner }
     }
 
     fun format(
@@ -63,8 +75,8 @@ internal class PlaceholderFormatterRegistry {
     ): Any? {
         var current = value
         pipeline.forEach { expression ->
-            val name = expression.substringBefore(':').trim()
-            val arguments = expression.substringAfter(':', "").split(',').filter(String::isNotBlank)
+            val (name, rest) = splitName(expression)
+            val arguments = rest.split(',').filter(String::isNotBlank)
             if (name == "default" && (current == null || current.toString().isBlank())) {
                 current = arguments.joinToString(",")
             } else {
@@ -85,6 +97,7 @@ internal class PlaceholderFormatterRegistry {
     ): Any? {
         if (value == null) return null
         val definition = own[name.lowercase(Locale.ROOT)]
+            ?: byAddress[name.lowercase(Locale.ROOT)].takeIf { '/' in name }
             ?: formatters[id(owner, name)]
             ?: formatters[id(consumer, name)]
             ?: formatters[id(systemOwner, name)]
@@ -93,6 +106,14 @@ internal class PlaceholderFormatterRegistry {
 
         @Suppress("UNCHECKED_CAST")
         return (definition as FormatterDefinition<Any>).formatter.format(value, arguments, request)
+    }
+
+    /** The name and the arguments of `pad:5,0`; a name with a slash is an address and keeps its colon: `plugin/module:rank:5`. */
+    private fun splitName(expression: String): Pair<String, String> {
+        val head = expression.substringBefore(':')
+        if ('/' !in head) return head.trim() to expression.substringAfter(':', "")
+        val afterAddress = expression.substringAfter(':', "")
+        return (head + ":" + afterAddress.substringBefore(':')).trim() to afterAddress.substringAfter(':', "")
     }
 
     private fun id(owner: PluginId, name: String): String =

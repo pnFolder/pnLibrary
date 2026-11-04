@@ -222,6 +222,7 @@ internal class PlaceholderHub(
             synchronized(mutationLock) {
                 check(!closed.get()) { "Placeholder scope $owner is closed" }
                 formatterRegistry.register(owner, name, type, formatter)
+                plugin?.let { formatterRegistry.registerAddress(owner, "$it/$module:$name", type, formatter) }
             }
         }
 

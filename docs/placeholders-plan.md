@@ -355,5 +355,7 @@ placeholders(papi = "clans") {
 - Сделано: дерево, аргументы, форматы по уровням, генерация, доступ, публикация в PlaceholderAPI, `render`, `/pn placeholders`, встроенные форматы number, round, percent, money, group, short, duration, date, upper, lower, title, capitalize, pad, trim, default, plural, boolean.
 - Аргументы формата пишутся как `имя:арг1,арг2`, например `pad:5,0`.
 - Ожидание PlaceholderAPI на главном потоке 50 мс, вне его до 1 с.
-- Не сделано: настройки форматов в аннотациях конфига, страница в `/pn gui`, адреса форматов `war/rank`, раскрытие вложенных классов в `from`.
+- Формат модуля виден другим плагинам по адресу `плагин/модуль:имя`: `{pntop/main:place|pnclans/war:rank}`, с аргументами `pnclans/war:pad0:3`. Закрывается вместе с модулем.
+- Решено не делать: настройки форматов в аннотациях конфига (`formatSettings`), хватает аргументов формата.
+- Не сделано: страница в `/pn gui`, раскрытие вложенных классов в `from`.
 - `PlaceholderInstaller` и `PlaceholderGeneration` остаются в `api` как `internal`: плагин их не видит. Модель дерева (`Node`, `Segment`) тоже `internal`; вынос в `core` потребовал бы сделать её публичной, а это хуже.

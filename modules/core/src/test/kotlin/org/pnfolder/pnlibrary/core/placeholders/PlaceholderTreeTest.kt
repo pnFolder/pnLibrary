@@ -35,6 +35,21 @@ class PlaceholderTreeTest {
     private fun read(service: PlaceholderService, text: String, player: UUID? = null): Any? =
         service.resolve(text, player).toCompletableFuture().get()
 
+    @Test
+    fun `a format of one plugin can be used by another by its address`() {
+        val (war, _) = module("pnclans", "war")
+        war.formats {
+            format<Int>("rank") { "#$it" }
+            format<Int>("pad0") { n, args -> n.toString().padStart(args.first().toInt(), '0') }
+        }
+        val (top, service) = module("pntop", "main")
+        top.placeholders { int("place") { value { 3 } } }
+
+        assertEquals("#3", read(service, "pntop/main:place|pnclans/war:rank"))
+        assertEquals("003", read(service, "pntop/main:place|pnclans/war:pad0:3"))
+        assertEquals(3, read(service, "pntop/main:place|pnclans/war:missing"))
+    }
+
     data class Clan(val name: String, val members: Int, val open: Boolean)
 
     @Test
