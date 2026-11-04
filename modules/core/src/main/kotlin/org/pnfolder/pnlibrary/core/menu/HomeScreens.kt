@@ -65,6 +65,11 @@ internal class HomeScreens(session: MenuSession, routes: MenuRoutes) : MenuScree
             ),
             go { routes.journal(it, null, 0) },
         )
+        toolSections(builder)
+    }
+
+    /** Tasks, events, statistics, placeholders, backups, checking, settings, tools and support. */
+    private fun toolSections(builder: MenuBuilder) {
         builder.button(
             32,
             section(Icons.CLOCK, "CLOCK", "Задачи плагинов", "Что плагины делают по расписанию и для чего.", "Всего" to "${data.tasks().size}"),

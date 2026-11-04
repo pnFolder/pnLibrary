@@ -2,6 +2,7 @@ package org.pnfolder.pnlibrary.core.menu
 
 import org.pnfolder.pnlibrary.api.chat.ChatTone
 import org.pnfolder.pnlibrary.common.time.DisplayZone
+import org.pnfolder.pnlibrary.core.journal.JournalDetail
 import org.pnfolder.pnlibrary.core.journal.JournalGroup
 import java.time.Instant
 
@@ -85,6 +86,20 @@ internal class JournalScreens(session: MenuSession, routes: MenuRoutes) : MenuSc
                 go { who -> who.close(); runCommand(who, "pn events full $id") },
             )
         }
+        eventTimesAndFacts(builder, detail, id, back)
+        builder.button(
+            30,
+            icon(
+                Icons.CHECK, "COMPASS", "Показать в чате",
+                Style.lore(listOf("То же самое, что команда /pn events view."), emptyList(), Style.left("открыть в чате")),
+            ),
+            go { who -> who.close(); runCommand(who, "pn events view $id") },
+        )
+        builder.button(DETAIL_BACK, backItem(), go { back(it) })
+        show(player, builder.build())
+    }
+
+    private fun eventTimesAndFacts(builder: MenuBuilder, detail: JournalDetail, id: String, back: (MenuViewer) -> Unit) {
         val moments = detail.times.map { Instant.ofEpochMilli(it) }
         val more = moments.size - TIMES_PREVIEW
         val timesLore = Style.lore(
@@ -101,16 +116,6 @@ internal class JournalScreens(session: MenuSession, routes: MenuRoutes) : MenuSc
             val facts = detail.details.entries.take(DETAILS_SHOWN).map { (key, value) -> key to value.take(MESSAGE_PREVIEW) }
             builder.slot(24, icon(Icons.CHANGELOG, "PAPER", "Подробности", Style.lore(emptyList(), facts)))
         }
-        builder.button(
-            30,
-            icon(
-                Icons.CHECK, "COMPASS", "Показать в чате",
-                Style.lore(listOf("То же самое, что команда /pn events view."), emptyList(), Style.left("открыть в чате")),
-            ),
-            go { who -> who.close(); runCommand(who, "pn events view $id") },
-        )
-        builder.button(DETAIL_BACK, backItem(), go { back(it) })
-        show(player, builder.build())
     }
 
     /** Every time a journal event happened, newest first, in the configured time zone. */
