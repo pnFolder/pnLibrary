@@ -37,14 +37,23 @@ class MenuDataServer(
     private fun answer(call: DataCall, reply: (Boolean, String) -> Unit) {
         val args = runCatching { JsonParser.parseString(call.args).asJsonObject }.getOrDefault(JsonObject())
         val actor = UpdateActor(UpdateActor.Kind.INTEGRATION, "remote:${call.origin}", "${call.viewer.ifEmpty { "игрок" }} (${call.origin})")
+        val ask = Question(call, args, actor, reply)
+        if (updates(ask) || journalAndTasks(ask) || events(ask) || network(ask)) return
+        reply(false, "Неизвестный запрос: ${call.method}")
+    }
+
+    private class Question(val call: DataCall, val args: JsonObject, val actor: UpdateActor, val reply: (Boolean, String) -> Unit) {
         fun text(name: String): String? = args.get(name)?.takeIf { !it.isJsonNull }?.asString
-        fun done(stage: CompletionStage<Boolean>) {
-            stage.whenComplete { value, error ->
-                if (error != null) reply(false, generateSequence(error) { it.cause }.last().let { it.message ?: it.javaClass.simpleName })
-                else reply(true, MenuCalls.gson.toJson(value))
-            }
-        }
+
         fun give(value: Any?) = reply(true, MenuCalls.gson.toJson(value))
+
+        fun done(stage: CompletionStage<Boolean>) {
+            stage.whenComplete { value, error -> finish(reply, value, error) }
+        }
+    }
+
+    /** Facts and actions of the update catalog. Returns false when the question is not one of these. */
+    private fun updates(ask: Question): Boolean = with(ask) {
         when (call.method) {
             MenuCalls.VERSION -> give(data.version())
             MenuCalls.SNAPSHOTS -> give(data.snapshots())
@@ -71,6 +80,14 @@ class MenuDataServer(
                 done(data.setHeld(text("product").orEmpty(), duration, actor))
             }
             MenuCalls.ROLLBACK -> done(data.rollback(UUID.fromString(text("id")), args.get("restore")?.asBoolean == true, actor))
+            else -> return@with false
+        }
+        true
+    }
+
+    /** The journal, tasks, statistics and placeholders. Returns false when the question is not one of these. */
+    private fun journalAndTasks(ask: Question): Boolean = with(ask) {
+        when (call.method) {
             MenuCalls.JOURNAL_GROUPS -> give(data.journalGroups(text("level"), args.get("hours")?.asInt ?: 24, args.get("limit")?.asInt ?: 200))
             MenuCalls.JOURNAL_DETAIL -> give(data.journalDetail(text("id").orEmpty()))
             MenuCalls.TASKS -> give(data.tasks())
@@ -78,6 +95,14 @@ class MenuDataServer(
             MenuCalls.PLACEHOLDERS -> give(data.placeholders())
             MenuCalls.RUN_TASK -> give(data.runTask(text("id").orEmpty()))
             MenuCalls.CANCEL_TASK -> give(data.cancelTask(text("id").orEmpty()))
+            else -> return@with false
+        }
+        true
+    }
+
+    /** Events, listeners, traces and their history. Returns false when the question is not one of these. */
+    private fun events(ask: Question): Boolean = with(ask) {
+        when (call.method) {
             MenuCalls.EVENTS -> give(data.events())
             MenuCalls.LISTENERS -> give(data.listeners())
             MenuCalls.EVENT_HISTORY -> give(data.eventHistory(text("type")))
@@ -94,10 +119,18 @@ class MenuDataServer(
             }
             MenuCalls.EXPORT_EVENT_HISTORY -> give(data.exportEventHistory(args.get("json")?.asBoolean == true))
             MenuCalls.EVENT_ABOUT -> give(data.eventAbout(text("type").orEmpty()))
+            else -> return@with false
+        }
+        true
+    }
+
+    /** Owners, server groups and chat commands. Returns false when the question is not one of these. */
+    private fun network(ask: Question): Boolean = with(ask) {
+        when (call.method) {
             MenuCalls.OWNER_NAMED -> give(data.ownerNamed(text("name").orEmpty()))
             MenuCalls.GROUPS -> give(data.groups())
             MenuCalls.EDIT_GROUP -> {
-                val op = GroupOp.values().firstOrNull { it.name == text("op") } ?: return reply(false, "Неизвестное изменение группы.")
+                val op = GroupOp.values().firstOrNull { it.name == text("op") } ?: run { reply(false, "Неизвестное изменение группы."); return@with true }
                 give(data.editGroup(GroupEdit(op, text("group").orEmpty(), text("server"), text("plugin"))))
             }
             MenuCalls.COMMAND -> {
@@ -105,12 +138,14 @@ class MenuDataServer(
                 val viewer = ViewerInfo(call.viewer.ifEmpty { "игрок" }, permissions)
                 give(MenuCalls.encodeLines(data.command(viewer, text("line").orEmpty())))
             }
-            else -> reply(false, "Неизвестный запрос: ${call.method}")
-        }
-    }
 
-    private fun finish(reply: (Boolean, String) -> Unit, value: Any?, error: Throwable?) {
-        if (error != null) reply(false, generateSequence(error) { it.cause }.last().let { it.message ?: it.javaClass.simpleName })
-        else reply(true, MenuCalls.gson.toJson(value))
+            else -> return@with false
+        }
+        true
     }
+}
+
+private fun finish(reply: (Boolean, String) -> Unit, value: Any?, error: Throwable?) {
+    if (error != null) reply(false, generateSequence(error) { it.cause }.last().let { it.message ?: it.javaClass.simpleName })
+    else reply(true, MenuCalls.gson.toJson(value))
 }
