@@ -81,51 +81,60 @@ internal class ManagedTask(
                 cancel()
                 return
             }
-            if (!manual && spec.conditions.any { !it.asBoolean }) {
-                skipped.incrementAndGet()
-                if (spec.interval == null) {
-                    complete()
-                } else {
-                    nextRun = Instant.now().plus(spec.interval)
-                }
-                return
-            }
-            state.set(TaskStatus.RUNNING)
-            val runStartedAt = Instant.now()
-            started = runStartedAt
-            val number = runs.incrementAndGet()
-            val clock = System.nanoTime()
-            spec.action.run(object : TaskContext {
-                override val id = this@ManagedTask.id
-                override val name = spec.name
-                override val runNumber = number
-                override val scheduledAt = created.plus(spec.delay)
-                override val startedAt = runStartedAt
-                override fun cancel() = this@ManagedTask.cancel()
-            })
-            lastDuration = Duration.ofNanos(System.nanoTime() - clock)
-            if (!cancelled.get()) {
-                if (spec.interval == null) {
-                    complete()
-                    if (manual) native.get()?.cancel()
-                } else {
-                    state.set(TaskStatus.SCHEDULED)
-                    nextRun = if (manual) plannedNext else Instant.now().plus(spec.interval)
-                }
-            }
+            if (!manual && spec.conditions.any { !it.asBoolean }) return skip()
+            runAction()
+            if (!cancelled.get()) finishRun(manual, plannedNext)
         } catch (error: Throwable) {
-            failure = "${error.javaClass.simpleName}: ${error.message.orEmpty()}"
-            state.set(TaskStatus.FAILED)
-            completed = Instant.now()
-            ResourceCleanup.suppressInto(
-                error,
-                { native.get()?.cancel() },
-                { errorLogger(owner, "[pnLibrary/tasks] Task ${spec.name ?: id} failed", error) },
-            )
-            terminal()
+            fail(error)
         } finally {
             running.set(false)
         }
+    }
+
+    /** A condition said no: the run is skipped, and a one-time task is over. */
+    private fun skip() {
+        skipped.incrementAndGet()
+        if (spec.interval == null) complete() else nextRun = Instant.now().plus(spec.interval)
+    }
+
+    private fun runAction() {
+        state.set(TaskStatus.RUNNING)
+        val runStartedAt = Instant.now()
+        started = runStartedAt
+        val number = runs.incrementAndGet()
+        val clock = System.nanoTime()
+        spec.action.run(object : TaskContext {
+            override val id = this@ManagedTask.id
+            override val name = spec.name
+            override val runNumber = number
+            override val scheduledAt = created.plus(spec.delay)
+            override val startedAt = runStartedAt
+            override fun cancel() = this@ManagedTask.cancel()
+        })
+        lastDuration = Duration.ofNanos(System.nanoTime() - clock)
+    }
+
+    /** After a run: a one-time task completes, a repeating one waits for its next time. */
+    private fun finishRun(manual: Boolean, plannedNext: Instant?) {
+        if (spec.interval == null) {
+            complete()
+            if (manual) native.get()?.cancel()
+        } else {
+            state.set(TaskStatus.SCHEDULED)
+            nextRun = if (manual) plannedNext else Instant.now().plus(spec.interval)
+        }
+    }
+
+    private fun fail(error: Throwable) {
+        failure = "${error.javaClass.simpleName}: ${error.message.orEmpty()}"
+        state.set(TaskStatus.FAILED)
+        completed = Instant.now()
+        ResourceCleanup.suppressInto(
+            error,
+            { native.get()?.cancel() },
+            { errorLogger(owner, "[pnLibrary/tasks] Task ${spec.name ?: id} failed", error) },
+        )
+        terminal()
     }
 
     private fun complete() {
