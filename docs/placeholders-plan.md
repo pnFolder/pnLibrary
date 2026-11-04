@@ -350,3 +350,10 @@ placeholders(papi = "clans") {
 6. Встроенные `pnlibrary/main:…`.
 7. `/pn placeholders`, `test`, страница меню, право.
 8. Перевод старых ключей и адаптеры для совместимости (плагины на dev.6 запускаются без пересборки).
+
+## 12. Что сделано и чем отличается от плана
+- Сделано: дерево, аргументы, форматы по уровням, генерация, доступ, публикация в PlaceholderAPI, `render`, `/pn placeholders`, встроенные форматы number, round, percent, money, group, short, duration, date, upper, lower, title, capitalize, pad, trim, default, plural, boolean.
+- Аргументы формата пишутся как `имя:арг1,арг2`, например `pad:5,0`.
+- Ожидание PlaceholderAPI на главном потоке 50 мс, вне его до 1 с.
+- Не сделано: настройки форматов в аннотациях конфига, страница в `/pn gui`, адреса форматов `war/rank`, раскрытие вложенных классов в `from`.
+- Логика `PlaceholderInstaller` и `PlaceholderGeneration` лежит в `api`, по слоям её место в `core`.

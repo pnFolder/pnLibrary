@@ -45,6 +45,9 @@
 ## Журнал (новое сверху)
 Обновляй эту секцию в конце каждой сессии: одна запись, что сделано и что осталось.
 
+
+### 2026-11-04
+- Система плейсхолдеров в `next`: адрес `плагин/модуль:имя`, дерево-DSL с аргументами, форматы по уровням, генерация `from/table/list`, доступ, публикация в PlaceholderAPI из той же регистрации (`~` между модулем и именем), `/pn placeholders`, право `pnlibrary.placeholders`. План и отличия: `docs/placeholders-plan.md`, раздел 12. Встроенные форматы round, percent, money, pad, title, date добавлены. Не сделано: настройки форматов аннотациями, страница в `/pn gui`, адреса форматов, вложенные классы в `from`, вынос `PlaceholderInstaller`/`PlaceholderGeneration` из `api` в `core`. На живом сервере не проверялось.
 ### 2026-11-02
 - Все 13 плагинов (pnAuth, pnBans, pnCaptcha, pnCases 1.5.4-remaster, pnChat, pnClans, pnMarket, pnRelics, pnRelog, pnRtp, pnSeller, pnSouls, pnTrades) выпущены обычными релизами и подключены к pnLibrary `0.0.1-dev.6`. В каждом заполнены `.pnlibrary/releases.json` и changelog.
 - В `main` влиты PR #87 (флаг `record` у логгера) и #88 (конфиг: `privacy` по умолчанию false, пример `excluded-paths`, аннотация `@ConfigSecret`, путь `плагин/файл.yml:ключ`). Релиз `0.0.1-dev.7` с ними ещё не выпущен.
