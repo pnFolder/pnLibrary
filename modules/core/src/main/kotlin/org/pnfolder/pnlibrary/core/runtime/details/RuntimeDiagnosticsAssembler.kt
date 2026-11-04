@@ -38,17 +38,7 @@ internal class RuntimeDiagnosticsAssembler(
         val reports = support.reportSummary()
         val observability = support.observabilityAnalytics()
         return linkedMapOf(
-            "library" to linkedMapOf<String, Any?>(
-                "version" to version,
-                "closed" to isClosed(),
-                "platform" to identity.id,
-                "implementation" to identity.implementationName,
-                "proxy" to identity.isProxy,
-                "server" to identity.isServer,
-                "dataFolder" to if (config.privacy) "[redacted]" else
-                    dataFolder.toAbsolutePath().normalize().toString(),
-                "configuration" to RuntimeConfigurationDetails.of(config),
-            ),
+            "library" to library(),
             "journal" to runCatchingNonFatal(journal).getOrElse { linkedMapOf("error" to (it.message ?: it.javaClass.simpleName)) },
             "tasks" to RuntimeTaskDetails.entries(taskSnapshots),
             "taskSummary" to RuntimeTaskDetails.summary(taskSnapshots),
@@ -73,18 +63,37 @@ internal class RuntimeDiagnosticsAssembler(
             "nativeLogs" to nativeLogs,
             "reports" to reports,
             "observability" to observability,
-            "configurationDeclarations" to diagnostics.configurations("all").map { declaration ->
-                linkedMapOf<String, Any?>(
-                    "plugin" to declaration.plugin,
-                    "path" to declaration.configuration.path,
-                    "dataDirectory" to if (config.privacy) "[redacted]"
-                    else declaration.dataDirectory?.toString(),
-                )
-            },
-            "updateGraph" to linkedMapOf<String, Any?>(
-                "current" to updates.currentPlan().orElse(null)?.let(RuntimeUpdateDetails::of),
-                "history" to updates.history().map(RuntimeUpdateDetails::of),
-            ),
+            "configurationDeclarations" to configurationDeclarations(),
+            "updateGraph" to updateGraph(),
         )
     }
+
+    private fun library(): Map<String, Any?> = linkedMapOf(
+
+            "version" to version,
+            "closed" to isClosed(),
+            "platform" to identity.id,
+            "implementation" to identity.implementationName,
+            "proxy" to identity.isProxy,
+            "server" to identity.isServer,
+            "dataFolder" to if (config.privacy) "[redacted]" else
+                dataFolder.toAbsolutePath().normalize().toString(),
+            "configuration" to RuntimeConfigurationDetails.of(config),
+    )
+
+    private fun configurationDeclarations() = diagnostics.configurations("all").map { declaration ->
+
+            linkedMapOf<String, Any?>(
+                "plugin" to declaration.plugin,
+                "path" to declaration.configuration.path,
+                "dataDirectory" to if (config.privacy) "[redacted]"
+                else declaration.dataDirectory?.toString(),
+            )
+    }
+
+    private fun updateGraph(): Map<String, Any?> = linkedMapOf(
+
+            "current" to updates.currentPlan().orElse(null)?.let(RuntimeUpdateDetails::of),
+            "history" to updates.history().map(RuntimeUpdateDetails::of),
+    )
 }
