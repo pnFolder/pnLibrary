@@ -1,15 +1,12 @@
 package org.pnfolder.pnlibrary.core.placeholders
 
-import org.pnfolder.pnlibrary.api.placeholders.PlaceholderAccess
 import org.pnfolder.pnlibrary.api.placeholders.PlaceholderAdapter
 import org.pnfolder.pnlibrary.api.placeholders.PlaceholderAdapterRegistry
 import org.pnfolder.pnlibrary.api.placeholders.PlaceholderAdapterState
 import org.pnfolder.pnlibrary.api.placeholders.PlaceholderBuilder
-import org.pnfolder.pnlibrary.api.placeholders.PlaceholderCachePolicy
 import org.pnfolder.pnlibrary.api.placeholders.PlaceholderFormatter
 import org.pnfolder.pnlibrary.api.placeholders.PlaceholderKey
 import org.pnfolder.pnlibrary.api.placeholders.PlaceholderProvider
-import org.pnfolder.pnlibrary.api.placeholders.PlaceholderPublication
 import org.pnfolder.pnlibrary.api.placeholders.PlaceholderRegistration
 import org.pnfolder.pnlibrary.api.placeholders.PlaceholderRequest
 import org.pnfolder.pnlibrary.api.placeholders.PlaceholderService
@@ -44,46 +41,14 @@ internal class PlaceholderHub(
     private val formatterRegistry = PlaceholderFormatterRegistry()
     private val entryLookup = PlaceholderEntryLookup(entries, PluginId.of(SYSTEM_NAMESPACE))
     private val addresses = PlaceholderAddressIndex()
+    private val builtIn = BuiltInPlaceholders(entries, addresses, ::get)
     private val pluginOf = ConcurrentHashMap<PluginId, String>()
     private val reported = ConcurrentHashMap.newKeySet<String>()
     private val prefixOwners = ConcurrentHashMap<String, String>()
 
     init {
         formatterRegistry.registerBuiltIns()
-        registerSystemPlaceholders()
-        registerDefaultValueCommand()
-    }
-
-    private fun registerSystemPlaceholders() {
-        system("server.platform", String::class.java) { platform.type.displayName }
-        system("server.implementation", String::class.java) { platform.implementationName }
-        system("server.proxy", Boolean::class.javaObjectType) { platform.isProxy }
-        system("runtime.java", String::class.java) {
-            System.getProperty("java.version", "unknown")
-        }
-    }
-
-    private fun registerDefaultValueCommand() {
-        val owner = PluginId.of(SYSTEM_NAMESPACE)
-        val commands = DefaultValueCommandResolver(valueStore)
-        val commandKey = PlaceholderKey.of("defaultvalue", String::class.java)
-        val commandEntry = PlaceholderEntry(
-            owner,
-            commandKey,
-            { request ->
-                CompletableFuture.completedFuture(
-                    commands.resolve(request.parameters["value"].orEmpty(), request.playerId),
-                )
-            },
-            null,
-            PlaceholderAccess.shared(),
-            PlaceholderAccess.ownerOnly(),
-            cachePolicy = PlaceholderCachePolicy.none(),
-            fallback = null,
-            adapterLookup = ::get,
-        )
-        entries[id(owner, commandKey.value)] = commandEntry
-        commandEntry.publish(PlaceholderPublication("placeholderapi", PnLibraryIdentity.PRODUCT_ID, "defaultvalue"))
+        builtIn.registerAll(platform, valueStore)
     }
 
     /** [plugin] and [module] give the scope's placeholders a readable `plugin/module:name` address. */
@@ -122,7 +87,7 @@ internal class PlaceholderHub(
     }
 
     /** Adds a placeholder of the library itself under `pnlibrary/main:key`, visible to every plugin. */
-    fun <T : Any> library(key: String, type: Class<T>, value: () -> T) = system(key, type, value)
+    fun <T : Any> library(key: String, type: Class<T>, value: () -> T) = builtIn.add(key, type, value)
 
     override fun register(adapter: PlaceholderAdapter): AutoCloseable {
         val key = adapter.id.lowercase(Locale.ROOT)
@@ -138,24 +103,6 @@ internal class PlaceholderHub(
     override fun get(id: String): PlaceholderAdapter? = adapters[id.lowercase(Locale.ROOT)]
     override fun all(): List<PlaceholderAdapter> =
         Collections.unmodifiableList(adapters.values.sortedBy(PlaceholderAdapter::id))
-
-    private fun <T : Any> system(key: String, type: Class<T>, value: () -> T) {
-        val owner = PluginId.of(SYSTEM_NAMESPACE)
-        val typedKey = PlaceholderKey.of(key, type)
-        val entry = PlaceholderEntry(
-            owner = owner,
-            key = typedKey,
-            resolver = { CompletableFuture.completedFuture(value()) },
-            updater = null,
-            access = PlaceholderAccess.shared(),
-            updateAccess = PlaceholderAccess.ownerOnly(),
-            cachePolicy = PlaceholderCachePolicy.none(),
-            fallback = null,
-            adapterLookup = ::get,
-        )
-        entries[id(owner, key)] = entry
-        PlaceholderAddress.of(SYSTEM_NAMESPACE, PlaceholderAddress.DEFAULT_MODULE, key)?.let { addresses.add(it, entry) }
-    }
 
     private inner class Scope(
         private val owner: PluginId,
@@ -284,7 +231,7 @@ internal class PlaceholderHub(
             return failed(SecurityException("Plugin $consumer cannot read ${entry.owner}:${entry.key.value}"))
         }
         val request = PlaceholderRequest(entry.owner, consumer, playerId, params, values)
-        val pipeline = pipelineOf(entry.defaultFormat, pieces.drop(1))
+        val pipeline = PlaceholderFormatterRegistry.pipelineOf(entry.defaultFormat, pieces.drop(1))
         @Suppress("UNCHECKED_CAST")
         return (entry as PlaceholderEntry<Any>).resolve(request)
             .thenApply { format(consumer, it, pipeline, playerId, values, request, entry.formats) }
@@ -292,13 +239,6 @@ internal class PlaceholderHub(
                 report("Placeholder {$reference} failed: ${error.cause?.message ?: error.message}")
                 null
             }
-    }
-
-    /** The formats to run: the text's own, else the placeholder's default; `raw` switches the default off. */
-    private fun pipelineOf(default: String?, fromText: List<String>): List<String> {
-        val explicit = fromText.map(String::trim).filterNot { it == RAW }
-        if (explicit.isNotEmpty() || fromText.any { it.trim() == RAW }) return explicit
-        return listOfNotNull(default)
     }
 
     private fun updateFor(
@@ -351,8 +291,6 @@ internal class PlaceholderHub(
 
     private companion object {
         const val SYSTEM_NAMESPACE = PnLibraryIdentity.PRODUCT_ID
-        const val RAW = "raw"
         const val MAXIMUM_REPORTED = 500
     }
-
 }

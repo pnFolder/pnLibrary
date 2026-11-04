@@ -129,5 +129,13 @@ internal class PlaceholderFormatterRegistry {
     internal companion object {
         const val SYSTEM_NAMESPACE = PnLibraryIdentity.PRODUCT_ID
         val VALID_NAME = Regex("[a-z0-9_-]+")
+        /** The formats to run: the text's own, else the placeholder's default; `raw` switches the default off. */
+        fun pipelineOf(default: String?, fromText: List<String>): List<String> {
+            val explicit = fromText.map(String::trim).filterNot { it == RAW }
+            if (explicit.isNotEmpty() || fromText.any { it.trim() == RAW }) return explicit
+            return listOfNotNull(default)
+        }
+
+        private const val RAW = "raw"
     }
 }
