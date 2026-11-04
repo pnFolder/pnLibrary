@@ -356,4 +356,4 @@ placeholders(papi = "clans") {
 - Аргументы формата пишутся как `имя:арг1,арг2`, например `pad:5,0`.
 - Ожидание PlaceholderAPI на главном потоке 50 мс, вне его до 1 с.
 - Не сделано: настройки форматов в аннотациях конфига, страница в `/pn gui`, адреса форматов `war/rank`, раскрытие вложенных классов в `from`.
-- Логика `PlaceholderInstaller` и `PlaceholderGeneration` лежит в `api`, по слоям её место в `core`.
+- `PlaceholderInstaller` и `PlaceholderGeneration` остаются в `api` как `internal`: плагин их не видит. Модель дерева (`Node`, `Segment`) тоже `internal`; вынос в `core` потребовал бы сделать её публичной, а это хуже.
