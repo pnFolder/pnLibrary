@@ -225,10 +225,7 @@ internal class GroupScreens(session: MenuSession, routes: MenuRoutes) : MenuScre
         list(player, "Добавить плагин", rows, page, PAGE_SIZE, { who, to -> pickPlugin(who, name, server, to) }, back, "Все известные плагины уже есть")
     }
 
-    /**
-     * One server inside a group: every plugin the group or the server asks for. A click switches whether this server needs
-     * the plugin, whatever the other servers of the group do.
-     */
+    /** One server of a group: a click switches whether it needs a plugin, whatever the other servers do. */
     private fun groupServer(player: MenuViewer, name: String, server: String): Unit = withGroups(player) { all, map ->
         val group = all.firstOrNull { it.name == name }
         if (group == null || group.servers.none { it.equals(server, true) }) {
