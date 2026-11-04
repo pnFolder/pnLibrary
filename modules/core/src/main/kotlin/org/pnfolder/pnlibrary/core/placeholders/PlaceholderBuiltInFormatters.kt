@@ -4,6 +4,10 @@ import org.pnfolder.pnlibrary.common.text.RussianText
 import java.math.BigDecimal
 import java.math.RoundingMode
 import java.time.Duration
+import java.time.Instant
+import java.time.ZoneId
+import java.time.format.DateTimeFormatter
+import java.time.temporal.TemporalAccessor
 import java.util.Locale
 
 /** Stateless implementations of pnLibrary's built-in placeholder formatters. */
@@ -44,6 +48,59 @@ internal object PlaceholderBuiltInFormatters {
     /** Makes the first letter a capital one. */
     fun capitalize(value: Any): String =
         value.toString().replaceFirstChar { it.titlecase(Locale.ROOT) }
+
+    /** Rounds and drops trailing zeros: `round:2` turns `3.10` into `3.1`. */
+    fun round(value: Any, arguments: List<String>): String {
+        val number = decimal(value) ?: return value.toString()
+        val decimals = arguments.firstOrNull()?.trim()?.toIntOrNull()?.coerceIn(0, 12) ?: 0
+        return number.setScale(decimals, RoundingMode.HALF_UP).stripTrailingZeros().toPlainString()
+    }
+
+    /** Shows a fraction as percent: `percent:1` turns `0.256` into `25.6%`. */
+    fun percent(value: Any, arguments: List<String>): String {
+        val number = decimal(value) ?: return value.toString()
+        val decimals = arguments.firstOrNull()?.trim()?.toIntOrNull()?.coerceIn(0, 12) ?: 0
+        return number.multiply(BigDecimal(100)).setScale(decimals, RoundingMode.HALF_UP).toPlainString() + "%"
+    }
+
+    /** Groups thousands and fixes the decimals: `money` turns `1234.5` into `1 234.50`; `money:0` drops the cents. */
+    fun money(value: Any, arguments: List<String>): String {
+        val number = decimal(value) ?: return value.toString()
+        val decimals = arguments.firstOrNull()?.trim()?.toIntOrNull()?.coerceIn(0, 12) ?: 2
+        val fixed = number.setScale(decimals, RoundingMode.HALF_UP).toPlainString()
+        val whole = fixed.substringBefore('.')
+        val sign = if (whole.startsWith("-")) "-" else ""
+        val digits = whole.removePrefix("-").reversed().chunked(3).joinToString(" ").reversed()
+        val fraction = fixed.substringAfter('.', "")
+        return sign + digits + if (fraction.isEmpty()) "" else ".$fraction"
+    }
+
+    /** Pads on the left to a width: `pad:5,0` turns `42` into `00042`; the filler is a space by default. */
+    fun pad(value: Any, arguments: List<String>): String {
+        val width = arguments.firstOrNull()?.trim()?.toIntOrNull()?.coerceIn(0, 64) ?: return value.toString()
+        val filler = arguments.getOrNull(1)?.firstOrNull() ?: ' '
+        return value.toString().padStart(width, filler)
+    }
+
+    /** Makes every word start with a capital letter. */
+    fun title(value: Any): String =
+        value.toString().split(' ').joinToString(" ") { word -> word.lowercase(Locale.ROOT).replaceFirstChar { it.titlecase(Locale.ROOT) } }
+
+    /** Shows a moment, given as epoch milliseconds or a java.time value, in the pattern of the argument. */
+    fun date(value: Any, arguments: List<String>): String {
+        val instant = when (value) {
+            is Instant -> value
+            is Number -> Instant.ofEpochMilli(value.toLong())
+            is TemporalAccessor -> return runCatching { formatter(arguments).format(value) }.getOrDefault(value.toString())
+            else -> return value.toString()
+        }
+        return runCatching { formatter(arguments).format(instant.atZone(ZoneId.systemDefault())) }.getOrDefault(value.toString())
+    }
+
+    private fun formatter(arguments: List<String>): DateTimeFormatter =
+        DateTimeFormatter.ofPattern(arguments.firstOrNull()?.trim()?.takeIf { it.isNotEmpty() } ?: DEFAULT_DATE)
+
+    private const val DEFAULT_DATE = "dd.MM.yyyy HH:mm"
 
     private fun decimal(value: Any): BigDecimal? = when (value) {
         is BigDecimal -> value

@@ -34,4 +34,25 @@ class PlaceholderBuiltInFormattersTest {
         assertEquals("2.3M", PlaceholderBuiltInFormatters.short(2_300_000))
         assertEquals("Hello", PlaceholderBuiltInFormatters.capitalize("hello"))
     }
+
+    @Test
+    fun `round and percent`() {
+        assertEquals("3.1", PlaceholderBuiltInFormatters.round("3.10", listOf("2")))
+        assertEquals("25.6%", PlaceholderBuiltInFormatters.percent(0.256, listOf("1")))
+        assertEquals("50%", PlaceholderBuiltInFormatters.percent(0.5, emptyList()))
+    }
+
+    @Test
+    fun `money groups thousands and fixes cents`() {
+        assertEquals("1 234.50", PlaceholderBuiltInFormatters.money(1234.5, emptyList()))
+        assertEquals("-1 000", PlaceholderBuiltInFormatters.money(-1000, listOf("0")))
+    }
+
+    @Test
+    fun `pad title and date`() {
+        assertEquals("00042", PlaceholderBuiltInFormatters.pad(42, listOf("5", "0")))
+        assertEquals("Hello World", PlaceholderBuiltInFormatters.title("hELLO world"))
+        assertEquals("1970", PlaceholderBuiltInFormatters.date(0L, listOf("yyyy")))
+        assertEquals("soon", PlaceholderBuiltInFormatters.date("soon", emptyList()))
+    }
 }

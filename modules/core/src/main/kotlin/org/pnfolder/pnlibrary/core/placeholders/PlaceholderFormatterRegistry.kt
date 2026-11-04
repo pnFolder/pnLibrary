@@ -32,6 +32,12 @@ internal class PlaceholderFormatterRegistry {
         register(systemOwner, "short", Any::class.java) { value, _, _ -> PlaceholderBuiltInFormatters.short(value) }
         register(systemOwner, "capitalize", Any::class.java) { value, _, _ -> PlaceholderBuiltInFormatters.capitalize(value) }
         register(systemOwner, "trim", Any::class.java) { value, _, _ -> value.toString().trim() }
+        register(systemOwner, "round", Any::class.java) { value, arguments, _ -> PlaceholderBuiltInFormatters.round(value, arguments) }
+        register(systemOwner, "percent", Any::class.java) { value, arguments, _ -> PlaceholderBuiltInFormatters.percent(value, arguments) }
+        register(systemOwner, "money", Any::class.java) { value, arguments, _ -> PlaceholderBuiltInFormatters.money(value, arguments) }
+        register(systemOwner, "pad", Any::class.java) { value, arguments, _ -> PlaceholderBuiltInFormatters.pad(value, arguments) }
+        register(systemOwner, "title", Any::class.java) { value, _, _ -> PlaceholderBuiltInFormatters.title(value) }
+        register(systemOwner, "date", Any::class.java) { value, arguments, _ -> PlaceholderBuiltInFormatters.date(value, arguments) }
     }
 
     fun <T : Any> register(
