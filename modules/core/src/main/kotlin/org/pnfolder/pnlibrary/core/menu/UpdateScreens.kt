@@ -45,6 +45,28 @@ internal class UpdateScreens(session: MenuSession, routes: MenuRoutes) : MenuScr
         val snapshot = data.snapshot(product) ?: return routes.home(player)
         val builder = frame(Menus.chest(title(snapshot.product)).rows(CARD_ROWS), CARD_ROWS)
         builder.slot(4, plate(snapshot, withHint = false))
+        cardActions(builder, snapshot)
+        channelSlot(builder, snapshot)
+        builder.button(14, holdItem(snapshot), go { policy.holds(it, snapshot.product) })
+        builder.button(
+            15,
+            section(Icons.RELEASES, "BOOKSHELF", "Релизы", "Известные версии плагина.", "Найдено" to "${snapshot.availableReleases.size}"),
+            go { releases(it, snapshot.product, 0) },
+        )
+        builder.button(16, section(Icons.HISTORY, "BOOK", "История", "Записи только этого плагина."), go { routes.history(it, snapshot.product, 0) })
+        snapshot.latestChangelogUrl?.let { link ->
+            builder.button(
+                22,
+                icon(Icons.CHANGELOG, "WRITTEN_BOOK", "Список изменений",
+                    Style.lore(listOf("Что нового в последней версии."), emptyList(), Style.left("получить ссылку"))),
+                go { who -> who.close(); tell(who, ChatTone.INFO, "Список изменений ${snapshot.product}", link) },
+            )
+        }
+        builder.button(CARD_BACK, backItem(), go { plugins(it, Filter.ALL, 0) })
+        show(player, builder.build())
+    }
+
+    private fun cardActions(builder: MenuBuilder, snapshot: UpdateSnapshot) {
         val update = if (snapshot.state == UpdateState.UPDATE_AVAILABLE) {
             icon(
                 null, "EMERALD", "Обновить",
@@ -63,6 +85,9 @@ internal class UpdateScreens(session: MenuSession, routes: MenuRoutes) : MenuScr
             go { checkOne(it, snapshot.product) },
         )
         builder.button(12, autoItem(snapshot), go { who -> allowed(who, SETTINGS) { toggleAuto(who, snapshot) } })
+    }
+
+    private fun channelSlot(builder: MenuBuilder, snapshot: UpdateSnapshot) {
         if (CHANNEL_SWITCH) {
             builder.button(
                 13,
@@ -82,23 +107,6 @@ internal class UpdateScreens(session: MenuSession, routes: MenuRoutes) : MenuScr
                 ),
             )
         }
-        builder.button(14, holdItem(snapshot), go { policy.holds(it, snapshot.product) })
-        builder.button(
-            15,
-            section(Icons.RELEASES, "BOOKSHELF", "Релизы", "Известные версии плагина.", "Найдено" to "${snapshot.availableReleases.size}"),
-            go { releases(it, snapshot.product, 0) },
-        )
-        builder.button(16, section(Icons.HISTORY, "BOOK", "История", "Записи только этого плагина."), go { routes.history(it, snapshot.product, 0) })
-        snapshot.latestChangelogUrl?.let { link ->
-            builder.button(
-                22,
-                icon(Icons.CHANGELOG, "WRITTEN_BOOK", "Список изменений",
-                    Style.lore(listOf("Что нового в последней версии."), emptyList(), Style.left("получить ссылку"))),
-                go { who -> who.close(); tell(who, ChatTone.INFO, "Список изменений ${snapshot.product}", link) },
-            )
-        }
-        builder.button(CARD_BACK, backItem(), go { plugins(it, Filter.ALL, 0) })
-        show(player, builder.build())
     }
 
     private fun releases(player: MenuViewer, product: String, page: Int) {

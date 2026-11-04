@@ -24,6 +24,13 @@ internal class BusScreens(session: MenuSession, routes: MenuRoutes) : MenuScreen
         val failures = listeners.sumOf { it.failures }
         val traced = data.tracedEvents().size
         val builder = frame(Menus.chest(title("События плагинов")).rows(HOME_ROWS), HOME_ROWS)
+        busSummary(builder, events.size, listeners.size, calls, failures)
+        busButtons(builder, events.size, listeners.size, failures, traced)
+        builder.button(HOME_CLOSE, backItem(), go { routes.home(it) })
+        show(player, builder.build())
+    }
+
+    private fun busSummary(builder: MenuBuilder, events: Int, listeners: Int, calls: Any, failures: Long) {
         builder.slot(
             4,
             icon(
@@ -31,20 +38,23 @@ internal class BusScreens(session: MenuSession, routes: MenuRoutes) : MenuScreen
                 Style.lore(
                     wrap("Так плагины сообщают друг другу, что произошло. Одни вызывают событие, другие слушают его и отвечают."),
                     listOf(
-                        "Событий" to "${events.size}",
-                        "Слушателей" to "${listeners.size}",
+                        "Событий" to "$events",
+                        "Слушателей" to "$listeners",
                         "Вызовов сегодня" to "$calls",
                         "Ошибок" to if (failures > 0) "✖ $failures" else "✔ нет",
                     ),
                 ),
             ),
         )
+    }
+
+    private fun busButtons(builder: MenuBuilder, events: Int, listeners: Int, failures: Long, traced: Int) {
         builder.button(
-            20, section(Icons.UPDATES, "REDSTONE_TORCH", "Все события", "Какие события есть и как часто их вызывают.", "Всего" to "${events.size}"),
+            20, section(Icons.UPDATES, "REDSTONE_TORCH", "Все события", "Какие события есть и как часто их вызывают.", "Всего" to "$events"),
             go { busEvents(it, BusFilter.ALL, 0) },
         )
         builder.button(
-            22, section(Icons.PLUGINS, "COMPARATOR", "Слушатели", "Кто и на какие события подписан.", "Всего" to "${listeners.size}"),
+            22, section(Icons.PLUGINS, "COMPARATOR", "Слушатели", "Кто и на какие события подписан.", "Всего" to "$listeners"),
             go { busListeners(it, ListenerQuery("Слушатели", { who -> busHome(who) }), 0) },
         )
         builder.button(
@@ -79,8 +89,6 @@ internal class BusScreens(session: MenuSession, routes: MenuRoutes) : MenuScreen
             ),
             go { busExport(it) },
         )
-        builder.button(HOME_CLOSE, backItem(), go { routes.home(it) })
-        show(player, builder.build())
     }
 
     private fun busEvents(player: MenuViewer, filter: BusFilter, page: Int) {

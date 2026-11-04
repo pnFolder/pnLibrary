@@ -45,55 +45,19 @@ internal class CurrencyCommandExecutor(
         }
         argument("currency", ArgumentType.string()) {
             suggests { currencies.all().map { it.key.toString() } }
-            literal("balance") {
-                availableIf { operationAllowed(it, "balance") }
-                executes(::executePortable)
-                argument("player", ArgumentType.string()) {
-                    suggests { onlinePlayers() }
-                    executes(::executePortable)
-                }
-            }
-            literal("add") {
-                availableIf { operationAllowed(it, "add") }
-                argument("player", ArgumentType.string()) {
-                    suggests { onlinePlayers() }
-                    argument("amount", ArgumentType.decimal()) { executes(::executePortable) }
-                }
-            }
-            literal("take") {
-                availableIf { operationAllowed(it, "take") }
-                argument("player", ArgumentType.string()) {
-                    suggests { onlinePlayers() }
-                    argument("amount", ArgumentType.decimal()) { executes(::executePortable) }
-                }
-            }
-            literal("set") {
-                availableIf { operationAllowed(it, "set") }
-                argument("player", ArgumentType.string()) {
-                    suggests { onlinePlayers() }
-                    argument("amount", ArgumentType.decimal()) { executes(::executePortable) }
-                }
-            }
-            literal("reset") {
-                availableIf { operationAllowed(it, "reset") }
-                argument("player", ArgumentType.string()) {
-                    suggests { onlinePlayers() }
-                    executes(::executePortable)
-                }
-            }
-            literal("pay") {
-                availableIf { operationAllowed(it, "pay") }
-                argument("player", ArgumentType.string()) {
-                    suggests { onlinePlayers() }
-                    argument("amount", ArgumentType.decimal()) { executes(::executePortable) }
-                }
-            }
-            literal("history") {
-                availableIf { operationAllowed(it, "history") }
-                executes(::executePortable)
-                argument("player", ArgumentType.string()) {
-                    suggests { onlinePlayers() }
-                    executes(::executePortable)
+            // The order is the order of the tab suggestions.
+            listOf("balance", "add", "take", "set", "reset", "pay", "history").forEach { operation ->
+                literal(operation) {
+                    availableIf { operationAllowed(it, operation) }
+                    if (operation in WITHOUT_PLAYER_ALLOWED) executes(::executePortable)
+                    argument("player", ArgumentType.string()) {
+                        suggests { onlinePlayers() }
+                        if (operation in WITH_AMOUNT) {
+                            argument("amount", ArgumentType.decimal()) { executes(::executePortable) }
+                        } else {
+                            executes(::executePortable)
+                        }
+                    }
                 }
             }
         }
@@ -158,3 +122,9 @@ internal class CurrencyCommandExecutor(
 
     private fun permissionPart(value: String) = value.lowercase().replace(Regex("[^a-z0-9_.-]"), ".")
 }
+
+/** Operations that also work without a player name (they act on the sender). */
+private val WITHOUT_PLAYER_ALLOWED = setOf("balance", "history")
+
+/** Operations that take an amount after the player. */
+private val WITH_AMOUNT = setOf("add", "take", "set", "pay")
