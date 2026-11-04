@@ -1,6 +1,7 @@
 package org.pnfolder.pnlibrary.core.remote
 
 import org.pnfolder.pnlibrary.api.logging.PnLogger
+import org.pnfolder.pnlibrary.api.plugin.ModuleContext
 import org.pnfolder.pnlibrary.api.plugin.PluginMetadata
 import org.pnfolder.pnlibrary.api.remote.DenyAction
 import org.pnfolder.pnlibrary.api.remote.PolicyErrorAction
@@ -33,6 +34,18 @@ internal class RemotePolicyMonitor(
     private val startupChecks = Executors.newCachedThreadPool { task ->
         Thread(task, "pnlibrary-policy-check").apply { isDaemon = true }
     }
+
+    /** Starts the policy of [module]; a denial closes the module, or the whole plugin through [closePlugin]. */
+    fun start(owner: Any, module: ModuleContext, policy: RemotePolicySettings, closePlugin: () -> Unit) = start(
+        owner = owner,
+        metadata = module.metadata,
+        policy = policy,
+        tasks = module.tasks,
+        isClosed = { module.isClosed },
+        logger = module.logger,
+        closeModule = module::close,
+        closePlugin = closePlugin,
+    )
 
     fun start(
         owner: Any,
