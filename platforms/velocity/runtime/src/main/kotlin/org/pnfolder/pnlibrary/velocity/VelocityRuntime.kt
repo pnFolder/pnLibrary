@@ -64,6 +64,11 @@ internal class VelocityRuntime(
         val listener = VelocityPlayerEvents(started.library)
         server.eventManager.register(owner, listener)
         playerEvents = listener
+        connectLink(started)
+    }
+
+    /** Opens the plugin-message link to the backend servers and, when it is secured, starts announcing this proxy. */
+    private fun connectLink(started: PnLibraryRuntimeHost) {
         val key = LinkSecret.readOrCreate(dataDirectory)
         val transport = LinkTransport { name, bytes ->
             server.getServer(name).map { it.sendPluginMessage(VelocityLinkListener.CHANNEL, bytes) }.orElse(false)

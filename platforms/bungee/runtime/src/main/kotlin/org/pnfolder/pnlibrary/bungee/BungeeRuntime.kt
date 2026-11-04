@@ -43,6 +43,11 @@ internal class BungeeRuntime(private val plugin: Plugin) {
         val listener = BungeePlayerEvents(started.library)
         plugin.proxy.pluginManager.registerListener(plugin, listener)
         playerEvents = listener
+        connectLink(started)
+    }
+
+    /** Opens the plugin-message link to the backend servers and, when it is secured, starts announcing this proxy. */
+    private fun connectLink(started: PnLibraryRuntimeHost) {
         val key = LinkSecret.readOrCreate(plugin.dataFolder.toPath())
         val transport = LinkTransport { name, bytes -> plugin.proxy.getServerInfo(name)?.sendData(LinkCodec.CHANNEL, bytes, false) ?: false }
         LinkHub.key = key
