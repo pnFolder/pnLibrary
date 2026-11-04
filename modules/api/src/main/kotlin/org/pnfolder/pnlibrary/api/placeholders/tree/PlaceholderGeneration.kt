@@ -74,13 +74,32 @@ internal fun <R : Any, A> BranchScope<*, A>.generateFrom(
     val holder = by?.let { Node(Segment.Arg(checkPart(it), ArgTypes.player), type).also { node -> root.children += node } } ?: root
     val nodes = linkedMapOf<String, Node>()
     readableProperties(type).toSortedMap().forEach { (name, method) ->
-        val node = Node(Segment.Literal(checkPart(name.lowercase())), boxed(method.returnType))
-        node.value = { call -> CompletableFuture.completedFuture(source(call)?.let(method::invoke)) }
+        val node = propertyNode(name, method, source)
         holder.children += node
         nodes[name.lowercase()] = node
     }
     return Generated(nodes, holder.children)
 }
+
+/** A leaf for a plain property, or a branch with a leaf per plain property of an object one level down: `leader.name`. */
+private fun propertyNode(name: String, method: Method, source: (PlaceholderCall<Any?>) -> Any?): Node {
+    val type = boxed(method.returnType)
+    val node = Node(Segment.Literal(checkPart(name.lowercase())), type)
+    val inner = if (isPlain(type)) emptyMap() else readableProperties(type).filterValues { isPlain(boxed(it.returnType)) }
+    if (inner.isEmpty()) {
+        node.value = { call -> CompletableFuture.completedFuture(source(call)?.let(method::invoke)) }
+        return node
+    }
+    inner.toSortedMap().forEach { (innerName, innerMethod) ->
+        val leaf = Node(Segment.Literal(checkPart(innerName.lowercase())), boxed(innerMethod.returnType))
+        leaf.value = { call -> CompletableFuture.completedFuture(source(call)?.let(method::invoke)?.let(innerMethod::invoke)) }
+        node.children += leaf
+    }
+    return node
+}
+
+private fun isPlain(type: Class<*>): Boolean =
+    type.isEnum || type.isArray || type.name.startsWith("java.") || type.name.startsWith("kotlin.") || type.name.startsWith("net.kyori.")
 
 /**
  * Makes a branch [word] whose sub-branches are the properties of [R]: `from<Clan>("clan") { ... }` gives

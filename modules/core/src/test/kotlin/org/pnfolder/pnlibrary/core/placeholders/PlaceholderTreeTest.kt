@@ -50,6 +50,20 @@ class PlaceholderTreeTest {
         assertEquals(3, read(service, "pntop/main:place|pnclans/war:missing"))
     }
 
+    data class Member(val name: String, val level: Int)
+
+    data class Guild(val title: String, val leader: Member)
+
+    @Test
+    fun `from opens an object one level down`() {
+        val (war, service) = module("pnclans", "war")
+        war.placeholders { text("x") { value { "" } }; from<Guild, Unit>("guild") { Guild("Wolves", Member("Alex", 9)) } }
+
+        assertEquals("Wolves", read(service, "pnclans/war:guild.title"))
+        assertEquals("Alex", read(service, "pnclans/war:guild.leader.name"))
+        assertEquals(9, read(service, "pnclans/war:guild.leader.level"))
+    }
+
     data class Clan(val name: String, val members: Int, val open: Boolean)
 
     @Test

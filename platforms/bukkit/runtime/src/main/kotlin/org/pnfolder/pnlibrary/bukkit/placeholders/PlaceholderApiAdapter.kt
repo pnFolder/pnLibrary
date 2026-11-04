@@ -104,19 +104,8 @@ internal class PlaceholderApiAdapter(
         override fun onRequest(player: OfflinePlayer?, params: String): String? {
             val wait = if (this@PlaceholderApiAdapter.plugin.server.isPrimaryThread) MAIN_THREAD_WAIT_MILLIS else OTHER_THREAD_WAIT_MILLIS
             val values = mapOf<String, Any?>(PlaceholderAdapter.WAIT_MILLIS_KEY to wait)
-            val byPattern = handlers.entries
-                .mapNotNull { (name, handler) -> ExternalNames.match(name, params)?.let { Triple(name, handler, it) } }
-                .maxByOrNull { (name, _, _) -> ExternalNames.specificity(name) }
-            if (byPattern != null) {
-                val (_, handler, parameters) = byPattern
-                return answer(handler, PlaceholderRequest(handler.owner, handler.owner, player?.uniqueId, parameters, values))
-            }
-            val match = handlers.entries.sortedByDescending { it.key.length }.firstOrNull {
-                '{' !in it.key && (params.equals(it.key, true) || params.startsWith(it.key + "_", true))
-            } ?: return null
-            val suffix = params.removePrefix(match.key).removePrefix("_")
-            val parameters = if (suffix.isEmpty()) emptyMap() else mapOf("value" to suffix)
-            return answer(match.value, PlaceholderRequest(match.value.owner, match.value.owner, player?.uniqueId, parameters, values))
+            val (handler, parameters) = PublishedNames.find(handlers, params) ?: return null
+            return answer(handler, PlaceholderRequest(handler.owner, handler.owner, player?.uniqueId, parameters, values))
         }
 
         private fun answer(handler: Handler, request: PlaceholderRequest): String? =
