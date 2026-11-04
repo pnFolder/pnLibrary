@@ -41,10 +41,7 @@ internal class CommandTreeRouter {
         var index = 0
         while (index < context.arguments.size) {
             val token = context.arguments[index]
-            val literal = node.children.firstOrNull {
-                it.kind == CommandNodeKind.LITERAL && it.name.equals(token, ignoreCase = true)
-            }
-            val child = literal ?: node.children.firstOrNull { it.kind == CommandNodeKind.ARGUMENT }
+            val child = childFor(node, token)
             if (child == null) {
                 if (node.acceptsExtraArguments && node.isExecutable) return CommandRoute.Executable(node, routed, nodes)
                 return problem(UnknownArgument(usage(path, node, routed), token), nodes)
@@ -97,10 +94,7 @@ internal class CommandTreeRouter {
         consumed.forEach { token ->
             // Everything typed after a greedy argument still belongs to that argument.
             if (node.argumentType?.spec?.kind == ArgumentSpec.Kind.GREEDY) return@forEach
-            val literal = node.children.firstOrNull {
-                it.kind == CommandNodeKind.LITERAL && it.name.equals(token, ignoreCase = true)
-            }
-            val child = literal ?: node.children.firstOrNull { it.kind == CommandNodeKind.ARGUMENT }
+            val child = childFor(node, token)
                 ?: return if (node.acceptsExtraArguments) node.suggestions.suggest(routed.copy(currentInput = partial))
                 else completedSuggestions(emptyList())
             if (!allowed(child, routed)) return completedSuggestions(emptyList())
@@ -112,7 +106,16 @@ internal class CommandTreeRouter {
             routed = context.copy(parsedValues = values.toMap(), currentInput = partial)
         }
 
-        val suggestionContext = routed.copy(currentInput = partial)
+        return lastSuggestions(node, routed.copy(currentInput = partial), partial)
+    }
+
+    /** A literal child that matches [token] wins over the argument child. */
+    private fun childFor(node: CommandNode, token: String): CommandNode? =
+        node.children.firstOrNull { it.kind == CommandNodeKind.LITERAL && it.name.equals(token, ignoreCase = true) }
+            ?: node.children.firstOrNull { it.kind == CommandNodeKind.ARGUMENT }
+
+    /** What can be typed after the last complete token: the literals of [node] and its argument's suggestions. */
+    private fun lastSuggestions(node: CommandNode, suggestionContext: CommandContext, partial: String): CompletionStage<List<String>> {
         val literals = node.children.asSequence()
             .filter { it.kind == CommandNodeKind.LITERAL }
             .filter { allowed(it, suggestionContext) }
