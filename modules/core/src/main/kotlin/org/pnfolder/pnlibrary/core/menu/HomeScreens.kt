@@ -80,6 +80,11 @@ internal class HomeScreens(session: MenuSession, routes: MenuRoutes) : MenuScree
             section(Icons.OVERVIEW, "COMPARATOR", "Статистика", "Задачи, события, ошибки и предупреждения за сутки."),
             go { allowed(it, STATS) { routes.stats(it) } },
         )
+        builder.button(
+            23,
+            section(Icons.TOOLS, "NAME_TAG", "Плейсхолдеры", "Что плагины публикуют для текста и PlaceholderAPI."),
+            go { allowed(it, PLACEHOLDERS) { routes.placeholders(it, 0) } },
+        )
         builder.button(33, section(Icons.BACKUPS, "CHEST", "Резервные копии", "Откат к сохранённым версиям плагинов."), go { routes.backups(it, 0) })
         builder.button(
             24,

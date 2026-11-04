@@ -26,6 +26,7 @@ import org.pnfolder.pnlibrary.core.link.DataClient
 import org.pnfolder.pnlibrary.core.link.DataException
 import org.pnfolder.pnlibrary.core.link.LinkHub
 import org.pnfolder.pnlibrary.core.link.ServerGroups
+import org.pnfolder.pnlibrary.core.placeholders.PlaceholderInfo
 import org.pnfolder.pnlibrary.core.stats.StatsSnapshot
 import org.pnfolder.pnlibrary.core.tasks.TaskControl
 import java.lang.reflect.Type
@@ -60,6 +61,7 @@ object MenuCalls {
     const val JOURNAL_DETAIL = "journalDetail"
     const val TASKS = "tasks"
     const val STATS = "stats"
+    const val PLACEHOLDERS = "placeholders"
     const val RUN_TASK = "runTask"
     const val CANCEL_TASK = "cancelTask"
     const val EVENTS = "events"
@@ -81,6 +83,7 @@ object MenuCalls {
     val READS = setOf(
         GROUPS,
         VERSION, SNAPSHOTS, SNAPSHOT, PLUGINS, PLAN, HELD_UNTIL, HISTORY_COUNT, HISTORY_PAGE, BACKUPS, JOURNAL_GROUPS, JOURNAL_DETAIL, TASKS, STATS,
+        PLACEHOLDERS,
         EVENTS, LISTENERS, EVENT_HISTORY, EVENT_HISTORY_DAYS, TRACED_EVENTS, TRACES, EVENT_ABOUT, OWNER_NAMED,
     )
 
@@ -169,6 +172,8 @@ class RemoteMenuData(
     override fun tasks(): List<TaskSnapshot> = ask(MenuCalls.TASKS)
 
     override fun stats(): StatsSnapshot = ask(MenuCalls.STATS)
+
+    override fun placeholders(): List<PlaceholderInfo> = ask(MenuCalls.PLACEHOLDERS)
 
     override fun runTask(id: String): TaskControl = ask(MenuCalls.RUN_TASK, args("id" to id))
 

@@ -10,6 +10,7 @@ import org.pnfolder.pnlibrary.api.tasks.TaskScope
 import org.pnfolder.pnlibrary.api.tasks.TaskSnapshot
 import org.pnfolder.pnlibrary.core.journal.JournalDetail
 import org.pnfolder.pnlibrary.core.journal.JournalGroup
+import org.pnfolder.pnlibrary.core.placeholders.PlaceholderInfo
 import org.pnfolder.pnlibrary.core.stats.StatsSnapshot
 import org.pnfolder.pnlibrary.core.tasks.TaskControl
 
@@ -32,6 +33,9 @@ internal interface RuntimeResources {
 
     /** The numbers of the server right now: tasks, events, and the errors and warnings of the day. */
     fun statsSnapshot(): StatsSnapshot
+
+    /** Every registered placeholder with its type, format and PlaceholderAPI names. */
+    fun placeholderInfos(): List<PlaceholderInfo> = emptyList()
 
     /** Stops the task with this id for an administrator; the task may forbid it. */
     fun cancelTask(id: String): TaskControl
@@ -70,6 +74,9 @@ fun PnLibrary.journalJoinNotice(): List<Component> = runtimeResources().journalJ
 
 /** The numbers of the server right now. */
 fun PnLibrary.statsSnapshot(): StatsSnapshot = runtimeResources().statsSnapshot()
+
+/** Every registered placeholder; empty when the runtime has no placeholders. */
+fun PnLibrary.placeholderInfos(): List<PlaceholderInfo> = (this as? RuntimeResources)?.placeholderInfos().orEmpty()
 
 /** Registers a pnLibrary-owned command from core or a bundled native integration. */
 fun PnLibrary.registerRuntimeCommand(command: CommandDefinition): CommandRegistration =

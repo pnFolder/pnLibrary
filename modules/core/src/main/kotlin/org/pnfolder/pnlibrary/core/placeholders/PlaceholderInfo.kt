@@ -1,7 +1,7 @@
 package org.pnfolder.pnlibrary.core.placeholders
 
 /** One placeholder as the administrator sees it in `/pn placeholders`. */
-internal data class PlaceholderInfo(
+data class PlaceholderInfo(
     val address: String,
     val type: String,
     val format: String?,

@@ -29,6 +29,7 @@ internal interface MenuRoutes {
     fun network(player: MenuViewer, page: Int)
     fun ownerLine(name: String): String
     fun ownerParameters(owner: OwnerInfo?): List<Pair<String, String>>
+    fun placeholders(player: MenuViewer, page: Int)
     fun plugins(player: MenuViewer, filter: Filter, page: Int)
     fun setAutomatic(snapshot: UpdateSnapshot, enable: Boolean, player: MenuViewer): java.util.concurrent.CompletionStage<*>
     fun settings(player: MenuViewer)

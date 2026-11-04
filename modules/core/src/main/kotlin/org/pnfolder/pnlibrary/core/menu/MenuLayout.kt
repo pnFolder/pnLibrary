@@ -51,6 +51,7 @@ internal const val HOURS_PER_DAY = 24
 internal const val MINUTES_PER_HOUR = 60
 internal const val TASKS = "pnlibrary.tasks"
 internal const val STATS = "pnlibrary.stats"
+internal const val PLACEHOLDERS = "pnlibrary.placeholders"
 internal const val DETAIL_ROWS = 5
 internal const val DETAIL_BACK = 40
 internal const val CHANGE_FIRST = 19

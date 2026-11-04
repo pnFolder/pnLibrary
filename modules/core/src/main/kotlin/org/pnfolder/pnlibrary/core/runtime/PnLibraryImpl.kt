@@ -273,6 +273,7 @@ internal class PnLibraryImpl(
     private val stats = StatsRuntime(::taskSnapshots, { events.inspector.events() }, journal)
 
     override fun statsSnapshot() = stats.snapshot()
+    override fun placeholderInfos() = placeholderHub.describe()
 
     private fun statisticValues(): Map<String, Long> = stats.snapshot().let {
         mapOf(

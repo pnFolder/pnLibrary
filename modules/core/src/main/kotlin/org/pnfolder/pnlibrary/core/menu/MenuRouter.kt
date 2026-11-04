@@ -18,6 +18,7 @@ internal class MenuRouter(private val session: MenuSession) : MenuRoutes {
     private val networkScreens = NetworkScreens(session, this)
     private val groupScreens = GroupScreens(session, this)
     private val statsScreens = StatsScreens(session, this)
+    private val placeholderScreens = PlaceholderScreens(session, this)
     private val busScreens = BusScreens(session, this)
     private val busHistoryScreens = BusHistoryScreens(session, this)
 
@@ -43,6 +44,7 @@ internal class MenuRouter(private val session: MenuSession) : MenuRoutes {
     override fun network(player: MenuViewer, page: Int) = networkScreens.network(player, page)
     override fun ownerLine(name: String): String = taskScreens.ownerLine(name)
     override fun ownerParameters(owner: OwnerInfo?): List<Pair<String, String>> = taskScreens.ownerParameters(owner)
+    override fun placeholders(player: MenuViewer, page: Int) = placeholderScreens.placeholders(player, page)
     override fun plugins(player: MenuViewer, filter: Filter, page: Int) = updateScreens.plugins(player, filter, page)
     override fun setAutomatic(snapshot: UpdateSnapshot, enable: Boolean, player: MenuViewer): java.util.concurrent.CompletionStage<*> =
         updateScreens.setAutomatic(snapshot, enable, player)

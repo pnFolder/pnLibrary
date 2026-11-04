@@ -15,6 +15,7 @@ import org.pnfolder.pnlibrary.api.updates.backup.UpdateHistoryEntry
 import org.pnfolder.pnlibrary.core.journal.JournalDetail
 import org.pnfolder.pnlibrary.core.journal.JournalGroup
 import org.pnfolder.pnlibrary.core.link.ServerGroups
+import org.pnfolder.pnlibrary.core.placeholders.PlaceholderInfo
 import org.pnfolder.pnlibrary.core.stats.StatsSnapshot
 import org.pnfolder.pnlibrary.core.tasks.TaskControl
 import java.time.Duration
@@ -134,6 +135,9 @@ interface MenuData {
 
     /** The numbers of the server: tasks, events, and the errors and warnings of the day. */
     fun stats(): StatsSnapshot
+
+    /** Every registered placeholder of the server. */
+    fun placeholders(): List<PlaceholderInfo>
 
     /** Starts the waiting task at once. */
     fun runTask(id: String): TaskControl

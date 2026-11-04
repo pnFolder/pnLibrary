@@ -357,5 +357,6 @@ placeholders(papi = "clans") {
 - Ожидание PlaceholderAPI на главном потоке 50 мс, вне его до 1 с.
 - Формат модуля виден другим плагинам по адресу `плагин/модуль:имя`: `{pntop/main:place|pnclans/war:rank}`, с аргументами `pnclans/war:pad0:3`. Закрывается вместе с модулем.
 - Решено не делать: настройки форматов в аннотациях конфига (`formatSettings`), хватает аргументов формата.
-- Не сделано: страница в `/pn gui`, раскрытие вложенных классов в `from`.
+- Страница «Плейсхолдеры» в `/pn gui` (право `pnlibrary.placeholders`): список с типом, форматом и именами в PlaceholderAPI; проверка значения осталась в `/pn placeholders test`.
+- `from` раскрывает вложенный объект на один уровень: `guild.leader.name`.
 - `PlaceholderInstaller` и `PlaceholderGeneration` остаются в `api` как `internal`: плагин их не видит. Модель дерева (`Node`, `Segment`) тоже `internal`; вынос в `core` потребовал бы сделать её публичной, а это хуже.

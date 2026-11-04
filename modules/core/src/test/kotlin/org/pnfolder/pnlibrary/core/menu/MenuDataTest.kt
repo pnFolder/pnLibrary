@@ -167,6 +167,14 @@ class MenuDataTest {
     }
 
     @Test
+    fun `the placeholders of a server travel through the link`() {
+        val info = org.pnfolder.pnlibrary.core.placeholders.PlaceholderInfo("pnclans/war:score", "Integer", "number", listOf("cl_war~score"), true)
+        over("placeholders" to listOf(info)) { remote ->
+            assertEquals(listOf(info), remote.placeholders())
+        }
+    }
+
+    @Test
     fun `groups with the differences of their servers travel through the link and are edited there`() {
         val group = ServerGroups.Group("lobby", setOf("l1", "l2"), setOf("shop", "chat"), mapOf("l2" to setOf("quiz")), mapOf("l1" to setOf("chat")))
         over("groups" to listOf(group), "editGroup" to true) { remote ->
