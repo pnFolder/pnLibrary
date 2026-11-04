@@ -2,6 +2,7 @@ package org.pnfolder.pnlibrary.core.upload
 
 import java.io.ByteArrayOutputStream
 import java.io.IOException
+import java.io.InputStream
 import java.net.HttpURLConnection
 import java.net.URI
 import java.nio.charset.StandardCharsets
@@ -37,18 +38,39 @@ internal object MultipartFileClient {
         require(isSafeHeaderValue(contentType)) { "Invalid multipart content type" }
         require(fields.keys.all(FIELD_NAME::matches)) { "Invalid multipart field name" }
         val boundary = "----pnLibrary-${UUID.randomUUID()}"
+        val prefix = prefix(boundary, fields, fileField, file, contentType)
+        val suffix = "\r\n--$boundary--\r\n".toByteArray(StandardCharsets.UTF_8)
+        val connection = open(endpoint, boundary, prefix.size().toLong() + Files.size(file) + suffix.size)
+        try {
+            connection.outputStream.use { output ->
+                prefix.writeTo(output)
+                Files.newInputStream(file).use { it.copyTo(output) }
+                output.write(suffix)
+            }
+            if (connection.responseCode !in 200..299) throw IOException("${endpoint.host} HTTP ${connection.responseCode}")
+            return connection.inputStream.use { readBounded(it, endpoint) }.trim()
+        } finally {
+            connection.disconnect()
+        }
+    }
+
+    /** The text fields and the headers of the file part, everything before the file bytes. */
+    private fun prefix(boundary: String, fields: Map<String, String>, fileField: String, file: Path, contentType: String): ByteArrayOutputStream {
         val prefix = ByteArrayOutputStream()
         fields.forEach { (name, value) ->
             prefix.write("--$boundary\r\nContent-Disposition: form-data; name=\"$name\"\r\n\r\n$value\r\n".toByteArray())
         }
         val safeName = file.fileName.toString().replace(Regex("[^A-Za-z0-9._-]"), "_")
-            val fileHeaders = buildString {
-                append("--$boundary\r\n")
-                append("Content-Disposition: form-data; name=\"$fileField\"; filename=\"$safeName\"\r\n")
-                append("Content-Type: $contentType\r\n\r\n")
-            }
-            prefix.write(fileHeaders.toByteArray())
-        val suffix = "\r\n--$boundary--\r\n".toByteArray(StandardCharsets.UTF_8)
+        val fileHeaders = buildString {
+            append("--$boundary\r\n")
+            append("Content-Disposition: form-data; name=\"$fileField\"; filename=\"$safeName\"\r\n")
+            append("Content-Type: $contentType\r\n\r\n")
+        }
+        prefix.write(fileHeaders.toByteArray())
+        return prefix
+    }
+
+    private fun open(endpoint: URI, boundary: String, length: Long): HttpURLConnection {
         val connection = endpoint.toURL().openConnection() as HttpURLConnection
         connection.connectTimeout = 10_000
         connection.readTimeout = 30_000
@@ -57,29 +79,20 @@ internal object MultipartFileClient {
         connection.setRequestProperty("Content-Type", "multipart/form-data; boundary=$boundary")
         connection.setRequestProperty("User-Agent", "pnLibrary-Diagnostics")
         connection.doOutput = true
-        connection.setFixedLengthStreamingMode(prefix.size().toLong() + Files.size(file) + suffix.size)
-        try {
-            connection.outputStream.use { output ->
-                prefix.writeTo(output)
-                Files.newInputStream(file).use { it.copyTo(output) }
-                output.write(suffix)
-            }
-            if (connection.responseCode !in 200..299) throw IOException("${endpoint.host} HTTP ${connection.responseCode}")
-            val response = connection.inputStream.use { input ->
-                val result = ByteArrayOutputStream()
-                val buffer = ByteArray(1024)
-                while (true) {
-                    val count = input.read(buffer)
-                    if (count < 0) break
-                    result.write(buffer, 0, count)
-                    if (result.size() > 16_384) throw IOException("${endpoint.host} response is too large")
-                }
-                result.toString(StandardCharsets.UTF_8.name())
-            }
-            return response.trim()
-        } finally {
-            connection.disconnect()
+        connection.setFixedLengthStreamingMode(length)
+        return connection
+    }
+
+    private fun readBounded(input: InputStream, endpoint: URI): String {
+        val result = ByteArrayOutputStream()
+        val buffer = ByteArray(1024)
+        while (true) {
+            val count = input.read(buffer)
+            if (count < 0) break
+            result.write(buffer, 0, count)
+            if (result.size() > 16_384) throw IOException("${endpoint.host} response is too large")
         }
+        return result.toString(StandardCharsets.UTF_8.name())
     }
 
     private fun isSafeHeaderValue(value: String): Boolean =
