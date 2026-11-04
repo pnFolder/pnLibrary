@@ -62,6 +62,15 @@ internal class ModuleLogging(
         override fun show() {
             check(!shown) { "MessageBox has already been shown" }
             shown = true
+            val card = Card()
+            card.header()
+            card.details()
+            card.result()
+            card.support()
+        }
+
+        /** The look of one startup card: colours, the product facts and the blocks printed in order. */
+        private inner class Card {
             // The startup card keeps its own established console look: yellow brand, gray labels, dark rules.
             val accent = ConsoleStyle.color(NamedTextColor.YELLOW)
             val success = ConsoleStyle.color(NamedTextColor.GREEN)
@@ -76,93 +85,98 @@ internal class ModuleLogging(
                 MessageKind.DISABLED -> danger
                 MessageKind.GENERIC -> accent
             }
-            val stateLabel = when (kind) {
-                MessageKind.ENABLED -> "ПЛАГИН ВКЛЮЧЁН"
-                MessageKind.DISABLED -> "ПЛАГИН ВЫКЛЮЧЁН"
-                MessageKind.GENERIC -> "СООБЩЕНИЕ"
+            private val ownerMetadata = ownership.ownerMetadata(owner)
+            val product = explicitName ?: ownerMetadata?.name ?: title.split(Regex("\\s+"), limit = 2).firstOrNull().orEmpty()
+
+            private fun line(text: String) = logging.console(owner, text)
+
+            fun header() {
+                val stateLabel = when (kind) {
+                    MessageKind.ENABLED -> "ПЛАГИН ВКЛЮЧЁН"
+                    MessageKind.DISABLED -> "ПЛАГИН ВЫКЛЮЧЁН"
+                    MessageKind.GENERIC -> "СООБЩЕНИЕ"
+                }
+                val environment = diagnostics.snapshot()
+                val version = explicitVersion ?: ownerMetadata?.version ?: "неизвестна"
+                val authors = ownerMetadata?.authors?.joinToString(", ").orEmpty().ifBlank { "неизвестны" }
+                line("")
+                line("$accent          ━━━━━━━━━━━ ${bold}PNFOLDER PLUGIN$accent ━━━━━━━━━━━")
+                line("$stateColor /\\_/\\")
+                line("$stateColor( ${face()} )     ${text}$bold$product $soft› ${accent}pnFolder")
+                line("$stateColor > ^ <      $stateColor● $bold$stateLabel")
+                line("")
+                line("$soft            ┌ ${hint}Версия       $text$version")
+                line("$soft            ├ ${hint}Автор        $text$authors")
+                line("$soft            ├ ${hint}Ядро         $text${environment.name} ${environment.version}")
+                line("$soft            ├ ${hint}Java         $text${environment.java.version}")
+                line("$soft            └ ${hint}Библиотека   ${text}pnLibrary $soft• $hint${identity.id}")
+                line("")
             }
-            val longestLabel = rows.maxOfOrNull { it.label.length } ?: 0
-            fun statusColor(status: String) = when (status) {
+
+            fun details() {
+                val sectionTitle = when (kind) {
+                    MessageKind.ENABLED -> "СОСТОЯНИЕ СИСТЕМЫ"
+                    MessageKind.DISABLED -> "ЗАВЕРШЕНИЕ РАБОТЫ"
+                    MessageKind.GENERIC -> "ПОДРОБНОСТИ"
+                }
+                line("$soft          ─────────── ${text}$bold$sectionTitle$soft ───────────")
+                line("")
+                val longestLabel = rows.maxOfOrNull { it.label.length } ?: 0
+                rows.forEach { row ->
+                    val label = row.label.padEnd(longestLabel)
+                    line("$soft          ${symbolOf(row.status)} $text$label  ${colorOf(row.status)}$bold[ ${row.status} ]")
+                    if (row.detail.isNotBlank()) line("$soft            └ $hint${row.detail}")
+                    row.error?.let { writeCaptured(owner, LogLevel.ERROR, "$title — ${row.label}", it) }
+                }
+                line("")
+                line("$soft          ───────────────────────────────────────────────")
+            }
+
+            fun result() {
+                val resultText = when (kind) {
+                    MessageKind.ENABLED -> "$product успешно включён"
+                    MessageKind.DISABLED -> "$product корректно выключен"
+                    MessageKind.GENERIC -> "$product — готово"
+                }
+                val resultDetail = when (kind) {
+                    MessageKind.ENABLED -> "Все основные системы готовы. Плагин работает в штатном режиме."
+                    MessageKind.DISABLED -> "Все зарегистрированные ресурсы освобождены. До следующего запуска."
+                    MessageKind.GENERIC -> "Все строки сообщения выведены одним блоком."
+                }
+                val resultSymbol = when (kind) {
+                    MessageKind.ENABLED -> "✓"
+                    MessageKind.DISABLED -> "■"
+                    MessageKind.GENERIC -> "◆"
+                }
+                line("$stateColor          $resultSymbol $text$bold$resultText")
+                line("$hint            $resultDetail")
+                line("")
+            }
+
+            fun support() {
+                line("$accent          ✦ ${bold}PNFOLDER SUPPORT $soft• ${text}НА СВЯЗИ")
+                line("$text            Есть вопрос, ошибка, идея или просто нужна помощь?")
+                line("$hint            Пишите по любому поводу — разберёмся, подскажем и поможем.")
+                line("$hint            Нужен новый плагин? Обсудим бесплатную или заказную разработку.")
+                line("$hint            Questions, bugs or ideas? Write to us any time: we are always glad to help.")
+                line("$accent            Discord $soft› ${text}${ConsoleStyle.UNDERLINE}${PnLibraryIdentity.SUPPORT_URL}")
+                line("$soft          ───────────────────────────────────────────────")
+                line("")
+            }
+
+            private fun colorOf(status: String) = when (status) {
                 "OK" -> success
                 "WARN" -> warning
                 "FAIL" -> danger
                 else -> hint
             }
-            val titleParts = title.split(Regex("\\s+"), limit = 2)
-            val ownerMetadata = ownership.ownerMetadata(owner)
-            val environment = diagnostics.snapshot()
-            val product = explicitName ?: ownerMetadata?.name ?: titleParts.firstOrNull().orEmpty()
-            val version = explicitVersion ?: ownerMetadata?.version ?: "неизвестна"
-            val authors = ownerMetadata?.authors?.joinToString(", ").orEmpty().ifBlank { "неизвестны" }
-            val engineName = environment.name
-            val engineVersion = environment.version
-            val javaVersion = environment.java.version
 
-            logging.console(owner, "")
-            logging.console(owner, "$accent          ━━━━━━━━━━━ ${bold}PNFOLDER PLUGIN$accent ━━━━━━━━━━━")
-            logging.console(owner, "$stateColor /\\_/\\")
-            logging.console(owner, "$stateColor( ${face()} )     ${text}$bold$product $soft› ${accent}pnFolder")
-            logging.console(owner, "$stateColor > ^ <      $stateColor● $bold$stateLabel")
-            logging.console(owner, "")
-            logging.console(owner, "$soft            ┌ ${hint}Версия       $text$version")
-            logging.console(owner, "$soft            ├ ${hint}Автор        $text$authors")
-            logging.console(owner, "$soft            ├ ${hint}Ядро         $text$engineName $engineVersion")
-            logging.console(owner, "$soft            ├ ${hint}Java         $text$javaVersion")
-            logging.console(owner, "$soft            └ ${hint}Библиотека   ${text}pnLibrary $soft• $hint${identity.id}")
-            logging.console(owner, "")
-            val sectionTitle = when (kind) {
-                MessageKind.ENABLED -> "СОСТОЯНИЕ СИСТЕМЫ"
-                MessageKind.DISABLED -> "ЗАВЕРШЕНИЕ РАБОТЫ"
-                MessageKind.GENERIC -> "ПОДРОБНОСТИ"
+            private fun symbolOf(status: String) = when (status) {
+                "OK" -> "◆"
+                "WARN" -> "▲"
+                "FAIL" -> "✕"
+                else -> "◇"
             }
-            logging.console(owner, "$soft          ─────────── ${text}$bold$sectionTitle$soft ───────────")
-            logging.console(owner, "")
-            rows.forEach { row ->
-                val color = statusColor(row.status)
-                val label = row.label.padEnd(longestLabel)
-                val symbol = when (row.status) {
-                    "OK" -> "◆"
-                    "WARN" -> "▲"
-                    "FAIL" -> "✕"
-                    else -> "◇"
-                }
-                logging.console(owner, "$soft          $symbol $text$label  $color$bold[ ${row.status} ]")
-                if (row.detail.isNotBlank()) {
-                    logging.console(owner, "$soft            └ $hint${row.detail}")
-                }
-                row.error?.let {
-                    val message = "$title — ${row.label}"
-                    writeCaptured(owner, LogLevel.ERROR, message, it)
-                }
-            }
-            logging.console(owner, "")
-            logging.console(owner, "$soft          ───────────────────────────────────────────────")
-            val resultText = when (kind) {
-                MessageKind.ENABLED -> "$product успешно включён"
-                MessageKind.DISABLED -> "$product корректно выключен"
-                MessageKind.GENERIC -> "$product — готово"
-            }
-            val resultDetail = when (kind) {
-                MessageKind.ENABLED -> "Все основные системы готовы. Плагин работает в штатном режиме."
-                MessageKind.DISABLED -> "Все зарегистрированные ресурсы освобождены. До следующего запуска."
-                MessageKind.GENERIC -> "Все строки сообщения выведены одним блоком."
-            }
-            val resultSymbol = when (kind) {
-                MessageKind.ENABLED -> "✓"
-                MessageKind.DISABLED -> "■"
-                MessageKind.GENERIC -> "◆"
-            }
-            logging.console(owner, "$stateColor          $resultSymbol $text$bold$resultText")
-            logging.console(owner, "$hint            $resultDetail")
-            logging.console(owner, "")
-            logging.console(owner, "$accent          ✦ ${bold}PNFOLDER SUPPORT $soft• ${text}НА СВЯЗИ")
-            logging.console(owner, "$text            Есть вопрос, ошибка, идея или просто нужна помощь?")
-            logging.console(owner, "$hint            Пишите по любому поводу — разберёмся, подскажем и поможем.")
-            logging.console(owner, "$hint            Нужен новый плагин? Обсудим бесплатную или заказную разработку.")
-            logging.console(owner, "$hint            Questions, bugs or ideas? Write to us any time: we are always glad to help.")
-            logging.console(owner, "$accent            Discord $soft› ${text}${ConsoleStyle.UNDERLINE}${PnLibraryIdentity.SUPPORT_URL}")
-            logging.console(owner, "$soft          ───────────────────────────────────────────────")
-            logging.console(owner, "")
         }
 
         private fun face() = when {
