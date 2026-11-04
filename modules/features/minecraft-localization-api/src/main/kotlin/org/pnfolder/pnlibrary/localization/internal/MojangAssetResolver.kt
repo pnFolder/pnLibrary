@@ -10,6 +10,7 @@ import java.nio.charset.StandardCharsets
 import java.nio.file.Files
 import java.nio.file.Path
 import java.util.concurrent.ConcurrentHashMap
+import java.util.zip.ZipEntry
 import java.util.zip.ZipFile
 
 /**
@@ -179,20 +180,8 @@ internal class MojangAssetResolver(
                 if (entry.isDirectory || entry.size > LANGUAGE_LIMIT) throw TranslationException(
                     TranslationException.Reason.INTEGRITY, "Minecraft language entry exceeds $LANGUAGE_LIMIT bytes",
                 )
-                zip.getInputStream(entry).use { input ->
-                    val output = ByteArrayOutputStream(minOf(entry.size.coerceAtLeast(0L).toInt(), 8192))
-                    val buffer = ByteArray(8192)
-                    while (true) {
-                        val read = input.read(buffer)
-                        if (read < 0) break
-                        if (output.size() + read > LANGUAGE_LIMIT) throw TranslationException(
-                            TranslationException.Reason.INTEGRITY, "Minecraft language entry exceeds $LANGUAGE_LIMIT bytes",
-                        )
-                        output.write(buffer, 0, read)
-                    }
-                    val bytes = output.toByteArray()
-                    return ResolvedLanguage(bytes, store.sha1(bytes))
-                }
+                val bytes = readEntry(zip, entry)
+                return ResolvedLanguage(bytes, store.sha1(bytes))
             }
         } catch (error: TranslationException) {
             throw error
@@ -209,6 +198,21 @@ internal class MojangAssetResolver(
                 temporary.toFile().deleteOnExit()
             }
         }
+    }
+
+    /** Reads a language file, stopping as soon as it grows past [LANGUAGE_LIMIT] whatever the archive claims. */
+    private fun readEntry(zip: ZipFile, entry: ZipEntry): ByteArray = zip.getInputStream(entry).use { input ->
+        val output = ByteArrayOutputStream(minOf(entry.size.coerceAtLeast(0L).toInt(), 8192))
+        val buffer = ByteArray(8192)
+        while (true) {
+            val read = input.read(buffer)
+            if (read < 0) break
+            if (output.size() + read > LANGUAGE_LIMIT) throw TranslationException(
+                TranslationException.Reason.INTEGRITY, "Minecraft language entry exceeds $LANGUAGE_LIMIT bytes",
+            )
+            output.write(buffer, 0, read)
+        }
+        output.toByteArray()
     }
 
     private fun unavailable(version: MinecraftVersion, locale: String) = TranslationException(
