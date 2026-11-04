@@ -47,7 +47,7 @@
 
 
 ### 2026-11-04 (платформы)
-- Переименованы `MenuServiceImpl` в `BukkitMenus`, `ItemServiceImpl` в `BukkitItems`, `*PlatformImpl` в `*PlatformServices`. Разбиты длинные методы: запуск Velocity/Bungee (связь вынесена), клик по меню Bukkit, `CommandTreeRouter`, `FileCurrencyStorage.importSnapshot`, `MojangAssetResolver`, `DiagnosticLogBuffer.record`, `MultipartFileClient.post`, `GroupScreens.groupServer`. Не трогал `OfflineUpdateInstaller.apply` и `ModuleResourceFactory.create` (откат при сбое).
+- Переименованы `MenuServiceImpl` в `BukkitMenus`, `ItemServiceImpl` в `BukkitItems`, `*PlatformImpl` в `*PlatformServices`. Разбиты длинные методы: запуск Velocity/Bungee (связь вынесена), клик по меню Bukkit, `CommandTreeRouter`, `FileCurrencyStorage.importSnapshot`, `MojangAssetResolver`, `DiagnosticLogBuffer.record`, `MultipartFileClient.post`, `GroupScreens.groupServer`. Не трогал `OfflineUpdateInstaller.apply` и `ModuleResourceFactory.create` (откат при сбое). Добавлены тесты: `JournalQueries`, `ItemSpec`/`ItemFormat`, Bungee (аудитория, игрок, контекст политик), Velocity (контекст политик), `CurrencyTransactionJson`. Из `FileCurrencyStorage` вынесен `CurrencyTransactionJson` (файл 264 строки), разбиты `JournalDigest.strip` и `GroupScreens.groupServer`. Циклов между пакетами `core` нет (проверено скриптом по импортам). Длиннее 300 строк остаётся только `PnLibraryImpl` (320, корень сборки).
 ### 2026-11-04 (папки команд)
 - `core/commands` разнесён по функциям: `events` (шина), `tasks`, `groups`, `proxy` (прокси, серверы); в корне остались общие `CommandRegistry`, `CommandService`, `CommandTreeRouter`, `CommandFeedback`, `TabSuggestions`. Поведение не менялось, `check` и `apiCheck` зелёные.
 ### 2026-11-04 (аудит и нарезка)
