@@ -268,7 +268,6 @@ internal class PluginRegistryImpl(
         override val downloads: DownloadRegistration? get() = resources.downloads
 
         fun startRemotePolicy(policy: RemotePolicySettings) = remotePolicies.start(owner, this, policy, parent::close)
-
         override val lifecycle: PluginLifecycle = ModuleLifecycleReporter(
             owner = owner,
             moduleId = id,

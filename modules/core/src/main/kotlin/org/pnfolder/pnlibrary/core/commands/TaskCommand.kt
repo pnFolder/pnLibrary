@@ -13,12 +13,10 @@ import org.pnfolder.pnlibrary.api.runtime.PnLibrary
 import org.pnfolder.pnlibrary.api.tasks.TaskSnapshot
 import org.pnfolder.pnlibrary.api.tasks.TaskStatus
 import org.pnfolder.pnlibrary.common.text.RussianText
-import org.pnfolder.pnlibrary.common.time.DisplayZone
 import org.pnfolder.pnlibrary.core.lifecycle.cancelTask
 import org.pnfolder.pnlibrary.core.lifecycle.runTaskNow
 import org.pnfolder.pnlibrary.core.lifecycle.taskSnapshots
 import org.pnfolder.pnlibrary.core.tasks.TaskControl
-import java.time.Instant
 
 /**
  * `/pn tasks`: the scheduled tasks of every plugin, drawn like the other `/pn` pages.
@@ -187,27 +185,9 @@ class TaskCommand(private val library: PnLibrary) {
         if (task.description == null && task.usage == null) {
             lines += kit.note("Плагин не описал эту задачу. Описание задаётся в TaskSpec: description и usage.", ChatPalette.FAINT)
         }
-        lines += kit.blank()
-        lines += kit.section("Кто и как")
-        lines += kit.field("Плагин", kit.text(task.ownerName, ChatPalette.TEXT))
-        task.source?.let { lines += kit.field("Класс", kit.text(it, ChatPalette.TEXT)) }
-        task.key?.let { lines += kit.field("Ключ", kit.text(it, ChatPalette.TEXT)) }
-        if (task.tags.isNotEmpty()) lines += kit.field("Теги", kit.text(task.tags.joinToString(", "), ChatPalette.SOFT))
-        lines += kit.field("Выполняется", kit.text(TaskLabels.where(task), ChatPalette.TEXT))
-        task.interval?.let { lines += kit.field("Повторяется", kit.text("каждые ${TaskLabels.span(it)}", ChatPalette.TEXT)) }
-        lines += kit.field("Запусков", kit.text("${task.runCount}, пропущено ${task.skippedCount}", ChatPalette.TEXT))
-        task.lastDuration?.let { lines += kit.field("Последний заняла", kit.text(TaskLabels.span(it), ChatPalette.TEXT)) }
-        lines += kit.blank()
-        lines += kit.section("Когда")
-        lines += kit.field("Создана", moment(kit, task.createdAt))
-        task.nextRunAt?.let { lines += kit.field("Следующий запуск", moment(kit, it)) }
-        task.lastStartedAt?.let { lines += kit.field("Последний запуск", moment(kit, it)) }
-        task.lastCompletedAt?.let { lines += kit.field("Закончилась", moment(kit, it)) }
-        lines += kit.field("Часовой пояс", kit.text(DisplayZone.zone.id, ChatPalette.FAINT))
-        lines += kit.blank()
-        lines += kit.section("Права")
-        lines += kit.field("Остановить", answer(kit, TaskLabels.stopAnswer(task)))
-        lines += kit.field("Запустить сейчас", answer(kit, TaskLabels.runAnswer(task)))
+        lines += TaskDetail.who(kit, task)
+        lines += TaskDetail.whenLines(kit, task)
+        lines += TaskDetail.rights(kit, task)
         task.lastFailure?.let {
             lines += kit.blank()
             lines += kit.section("Ошибка")
@@ -217,11 +197,6 @@ class TaskCommand(private val library: PnLibrary) {
         kit.actions(kit.button("назад", ROOT, "К списку задач", ChatPalette.ACCENT), start(kit, task), stop(kit, task))?.let { lines += it }
         lines.forEach(context.sender::send)
     }
-
-    private fun moment(kit: ChatKit, at: Instant): Component =
-        kit.text(TaskLabels.moment(at), ChatPalette.TEXT).append(kit.text("  ${TaskLabels.ago(at)}", ChatPalette.FAINT))
-
-    private fun answer(kit: ChatKit, text: String): Component = kit.text(text, if (text == "да") ChatPalette.OK else ChatPalette.SOFT)
 
     /** The run button, or a grey one that says why running is closed. */
     private fun start(kit: ChatKit, task: TaskSnapshot): Component? {
