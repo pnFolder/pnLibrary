@@ -128,7 +128,7 @@ internal class GroupsPages(private val groups: ServerGroups, private val servers
         groups.compare(group, servers()).forEach { state ->
             val verdict = when {
                 state.known == null -> kit.text("не присылал отчёт", ChatPalette.DANGER)
-                !state.known.online -> kit.text("нет связи", ChatPalette.DANGER)
+                !state.known!!.online -> kit.text("нет связи", ChatPalette.DANGER)
                 state.ok -> kit.text("всё в порядке", ChatPalette.ACCENT)
                 else -> kit.text("", ChatPalette.TEXT)
             }

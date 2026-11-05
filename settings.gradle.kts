@@ -7,6 +7,7 @@ include(
     ":modules:runtime-spi",
     ":modules:console",
     // Runtime.
+    ":modules:link",
     ":modules:core",
     ":modules:updates",
     ":modules:bootstrap",
