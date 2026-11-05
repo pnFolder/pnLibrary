@@ -5,10 +5,12 @@ import net.kyori.adventure.text.event.ClickEvent
 import org.pnfolder.pnlibrary.api.chat.ChatKit
 import org.pnfolder.pnlibrary.api.chat.ChatPalette
 import org.pnfolder.pnlibrary.api.commands.CommandContext
+import org.pnfolder.pnlibrary.api.events.Event
 import org.pnfolder.pnlibrary.api.events.EventInfo
 import org.pnfolder.pnlibrary.api.events.EventInspector
 import org.pnfolder.pnlibrary.api.runtime.PnLibrary
 import org.pnfolder.pnlibrary.common.text.RussianText
+import org.pnfolder.pnlibrary.core.commands.chatPager
 
 internal class BusEventPages(private val library: PnLibrary) {
     private val bus: EventInspector get() = library.events.inspector
@@ -18,6 +20,7 @@ internal class BusEventPages(private val library: PnLibrary) {
         val all = bus.events()
         val filter = FILTERS.first { it.first == word }
         val shown = all.filter(filter.second)
+        val traced = bus.tracedEvents()
         val pages = pageCount(shown.size)
         val page = requestedPage.coerceIn(1, pages)
         val total = bus.listeners().size
@@ -30,13 +33,13 @@ internal class BusEventPages(private val library: PnLibrary) {
             kit.blank(),
         )
         if (shown.isEmpty()) lines += kit.note("Здесь пока пусто.")
-        shown.drop((page - 1) * PAGE_SIZE).take(PAGE_SIZE).forEach { lines += row(kit, it) }
+        shown.drop((page - 1) * PAGE_SIZE).take(PAGE_SIZE).forEach { lines += row(kit, it, traced) }
         if (pages > 1) {
             lines += kit.blank()
-            lines += pager(kit, "$ROOT $word", page, pages)
+            lines += chatPager(kit, "$ROOT $word", page, pages)
         }
         lines += kit.blank()
-        lines += footer(kit, ROOT, kit.option("все слушатели", "$ROOT listeners", "Каждый слушатель каждого плагина", ChatPalette.ACCENT),
+        lines += footer(kit, kit.option("все слушатели", "$ROOT listeners", "Каждый слушатель каждого плагина", ChatPalette.ACCENT),
             kit.option("записи", "$ROOT traces", "Записанные вызовы", ChatPalette.ACCENT),
             kit.option("история", "$ROOT history", "Сколько раз вызывали по дням", ChatPalette.ACCENT))
         lines += hints(kit)
@@ -64,9 +67,9 @@ internal class BusEventPages(private val library: PnLibrary) {
     }
 
     /** One event as a row: a dot that is lit while someone listens, the name, the counters and the recording mark. */
-    private fun row(kit: ChatKit, info: EventInfo): Component {
+    private fun row(kit: ChatKit, info: EventInfo, traced: List<String>): Component {
         val listened = info.listeners > 0
-        val tracing = info.eventType in bus.tracedEvents()
+        val tracing = info.eventType in traced
         var line = kit.text(" ").append(kit.text(kit.glyph('●'), if (listened) ChatPalette.OK else ChatPalette.FAINT))
             .append(kit.text(" ${shortName(info.eventType)}", ChatPalette.ACCENT))
             .append(kit.text("  ${info.listeners} ${RussianText.plural(info.listeners.toLong(), "слушатель", "слушателя", "слушателей")}", ChatPalette.TEXT))
@@ -124,9 +127,9 @@ internal class BusEventPages(private val library: PnLibrary) {
             kit.section("Слушатели"),
         )
         if (listeners.isEmpty()) lines += kit.note("   Никто не слушает это событие.")
-        listeners.forEach { lines += listenerRow(kit, it, withEvent = false) }
+        listeners.forEach { lines += eventListenerRow(kit, it) }
         lines += kit.blank()
-        lines += footer(kit, ROOT, kit.button("назад", ROOT, "К списку событий", ChatPalette.ACCENT),
+        lines += footer(kit, backToEvents(kit),
             kit.button("записи", "$ROOT traces $name", "Записанные вызовы этого события", ChatPalette.ACCENT),
             kit.button("история", "$ROOT history of $name", "Вызовы этого события по дням", ChatPalette.ACCENT))
         if (!kit.reader.interactive) lines += kit.note("Запись: $ROOT trace $name | $ROOT trace off $name")
@@ -143,14 +146,19 @@ internal class BusEventPages(private val library: PnLibrary) {
         return enable.append(kit.text(" ")).append(disable)
     }
 
-    fun switchTrace(context: CommandContext, typed: String, on: Boolean) {
+    fun startTrace(context: CommandContext, typed: String) = withEventType(context, typed) { bus.enableTracing(it) }
+
+    fun stopTrace(context: CommandContext, typed: String) = withEventType(context, typed) { bus.disableTracing(it) }
+
+    /** Runs [change] for the event [typed] names and shows the event, or says that there is no such event. */
+    private fun withEventType(context: CommandContext, typed: String, change: (Class<out Event>) -> Unit) {
         val name = bus.resolve(typed)
         val type = bus.eventType(name)
         if (type == null) {
             context.sender.send(kit(context).text("Такого события нет: $name. Список: $ROOT", ChatPalette.DANGER))
             return
         }
-        if (on) bus.enableTracing(type) else bus.disableTracing(type)
+        change(type)
         view(context, type.name)
     }
 }

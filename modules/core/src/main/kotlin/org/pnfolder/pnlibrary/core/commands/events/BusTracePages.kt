@@ -23,7 +23,7 @@ internal class BusTracePages(private val library: PnLibrary) {
         )
         if (all.isEmpty()) lines += kit.note("Пусто. Включите запись на странице события: $ROOT view <событие>")
         all.takeLast(MAX_TRACES).reversed().forEach { lines += traceBlock(kit, it) }
-        lines += footer(kit, ROOT, kit.button("назад", ROOT, "К списку событий", ChatPalette.ACCENT),
+        lines += footer(kit, backToEvents(kit),
             if (all.isEmpty()) null else kit.button("очистить", "$ROOT clear", "Забыть записанные вызовы", ChatPalette.DANGER))
         lines.forEach(context.sender::send)
     }
