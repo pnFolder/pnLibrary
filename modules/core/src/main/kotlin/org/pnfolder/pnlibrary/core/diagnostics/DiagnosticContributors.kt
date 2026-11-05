@@ -88,7 +88,8 @@ internal class DiagnosticContributors(
         }
     }
 
-    private data class RegisteredContributor(
+    // Identity equality: closing an old registration must not remove an equal one registered after it.
+    private class RegisteredContributor(
         val contributor: DiagnosticsContributor,
         val dataDirectory: Path?,
     )

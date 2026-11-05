@@ -8,7 +8,7 @@ import java.nio.file.Path
 import java.util.concurrent.ConcurrentHashMap
 
 /**
- * Thread-safe implementation of [DiagnosticsService].
+ * Per-plugin diagnostic state behind [DiagnosticsService].
  *
  * Converts throwables immediately so plugin exceptions are never retained
  * beyond the call frame. All stored strings are bounded and redacted by
@@ -30,17 +30,7 @@ internal class DiagnosticsRegistry(eventLimit: Int = DEFAULT_EVENT_LIMIT) : Diag
     private var eventChangeListener: (() -> Unit)? = null
 
     @Volatile
-    private var activityListener: (
-        (
-            plugin: String,
-            level: DiagnosticLevel,
-            category: String,
-            code: String,
-            message: String,
-            error: Throwable?,
-            context: Map<String, Any?>,
-        ) -> Unit
-    )? = null
+    private var activityListener: DiagnosticEventListener? = null
 
     /**
      * Installs a best-effort callback invoked after an event changes.
@@ -52,27 +42,18 @@ internal class DiagnosticsRegistry(eventLimit: Int = DEFAULT_EVENT_LIMIT) : Diag
         eventChangeListener = listener
     }
 
-    fun onActivityEvent(listener: ((String, DiagnosticLevel, String, String, String, Throwable?, Map<String, Any?>) -> Unit)?) {
+    /** Installs the observer that sees every recorded event after redaction; `null` removes it. */
+    fun onActivityEvent(listener: DiagnosticEventListener?) {
         activityListener = listener
     }
 
     override val apiVersion: Int get() = DiagnosticsService.API_VERSION
 
-    // ── Registration ─────────────────────────────────────────────────────────
+    override fun register(plugin: String, contributor: DiagnosticsContributor): DiagnosticRegistration =
+        stateOf(plugin).contributors.register(contributor, null)
 
-    override fun register(plugin: String, contributor: DiagnosticsContributor): DiagnosticRegistration {
-        return registerInternal(plugin, null, contributor)
-    }
-
-    override fun register(plugin: String, dataDirectory: Path, contributor: DiagnosticsContributor): DiagnosticRegistration {
-        return registerInternal(plugin, dataDirectory.toAbsolutePath().normalize(), contributor)
-    }
-
-    private fun registerInternal(plugin: String, dataDirectory: Path?, contributor: DiagnosticsContributor): DiagnosticRegistration {
-        return stateOf(plugin).contributors.register(contributor, dataDirectory)
-    }
-
-    // ── Status ───────────────────────────────────────────────────────────────
+    override fun register(plugin: String, dataDirectory: Path, contributor: DiagnosticsContributor): DiagnosticRegistration =
+        stateOf(plugin).contributors.register(contributor, dataDirectory.toAbsolutePath().normalize())
 
     override fun status(
         plugin: String, component: String,
@@ -89,14 +70,12 @@ internal class DiagnosticsRegistry(eventLimit: Int = DEFAULT_EVENT_LIMIT) : Diag
         plugins.remove(sanitizer.key(plugin))
     }
 
-    /** Clears process state when the installed runtime is shut down or reloaded. */
+    /** Drops every plugin and both listeners, so a reloaded runtime starts from nothing. */
     fun clear() {
         plugins.clear()
         eventChangeListener = null
         activityListener = null
     }
-
-    // ── Event recording ──────────────────────────────────────────────────────
 
     override fun record(
         plugin: String, level: DiagnosticLevel,
@@ -125,13 +104,11 @@ internal class DiagnosticsRegistry(eventLimit: Int = DEFAULT_EVENT_LIMIT) : Diag
         fields: Map<String, Any?>,
     ) {
         try {
-            activityListener?.invoke(plugin, level, component, code, message, error, fields)
+            activityListener?.onEvent(plugin, level, component, code, message, error, fields)
         } catch (_: Exception) {
             // Compatibility listeners are observers and must never reject diagnostics.
         }
     }
-
-    // ── Snapshot ─────────────────────────────────────────────────────────────
 
     /**
      * Builds a snapshot of all (or one) plugin's diagnostic state.
@@ -254,4 +231,17 @@ internal class DiagnosticsRegistry(eventLimit: Int = DEFAULT_EVENT_LIMIT) : Diag
         const val DEFAULT_EVENT_LIMIT = 100
         const val DEFAULT_HISTORY_LIMIT = 64
     }
+}
+
+/** Sees every recorded diagnostic event after its text and fields were redacted. */
+internal fun interface DiagnosticEventListener {
+    fun onEvent(
+        plugin: String,
+        level: DiagnosticLevel,
+        component: String,
+        code: String,
+        message: String,
+        error: Throwable?,
+        fields: Map<String, Any?>,
+    )
 }
