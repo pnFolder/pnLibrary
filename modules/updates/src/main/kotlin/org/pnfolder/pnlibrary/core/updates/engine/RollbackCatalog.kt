@@ -21,9 +21,7 @@ internal class RollbackCatalog(
         val path = root.toAbsolutePath().normalize().resolve(id.toString()).resolve("journal.json")
         val journal = journals.load(path)
         require(journal.purpose in setOf(null, "STAGE")) { "Internal installation transaction is not a saved component set" }
-        require(journal.state in ROLLBACK_STATES) {
-            "Transaction $id cannot be rolled back from ${journal.state}"
-        }
+        require(journal.isRestorable()) { "Transaction $id cannot be rolled back from ${journal.state}" }
         require(journals.hasRollbackData(journal)) { "Transaction $id has no complete rollback data" }
         return path
     }
@@ -36,9 +34,13 @@ internal class RollbackCatalog(
     }
 
     private fun isCandidate(journal: TransactionJournal): Boolean =
-        journal.purpose in setOf(null, "STAGE") && journal.state in ROLLBACK_STATES && journals.hasRollbackData(journal)
-
-    private companion object {
-        val ROLLBACK_STATES = setOf(TransactionState.COMMITTED, TransactionState.FAILED)
-    }
+        journal.purpose in setOf(null, "STAGE") && journal.isRestorable() && journals.hasRollbackData(journal)
 }
+
+/**
+ * Whether the set reached the disk and its backups can be restored: it committed, or the restarted server failed
+ * its health check. A set that failed before publication changed nothing, and "restoring" it would put back files
+ * that may be older than what is installed now, or delete a component installed later.
+ */
+internal fun TransactionJournal.isRestorable(): Boolean =
+    state == TransactionState.COMMITTED || (state == TransactionState.FAILED && healthFailure)

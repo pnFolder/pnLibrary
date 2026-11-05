@@ -91,19 +91,7 @@ internal class UpdateTransaction(
             }
             journals.transition(journalPath, journal, TransactionState.PUBLISHING)
             activationStarted = true
-            records.forEach { record ->
-                val target = Paths.get(record.target)
-                target.parent?.let(Files::createDirectories)
-                // Copy beside the target first, then atomically swap it in: a crash never leaves a partial jar.
-                val publishing = target.resolveSibling("${target.fileName}.publishing")
-                try {
-                    Files.copy(Paths.get(record.staged), publishing, StandardCopyOption.REPLACE_EXISTING)
-                    retryWhileLocked { AtomicFiles.move(publishing, target) }
-                } catch (error: Throwable) {
-                    runCatchingNonFatal { Files.deleteIfExists(publishing) }
-                    throw error
-                }
-            }
+            records.forEach { record -> replaceAtomically(Paths.get(record.staged), Paths.get(record.target)) }
             journals.transition(journalPath, journal, TransactionState.AWAITING_HEALTH)
             return TransactionResult(journal.state, journalPath)
         } catch (error: Throwable) {
@@ -149,9 +137,7 @@ internal class UpdateTransaction(
         val normalized = journalPath.toAbsolutePath().normalize()
         require(normalized.startsWith(root.toAbsolutePath().normalize())) { "Rollback journal must stay inside transaction root" }
         val journal = journals.load(normalized)
-        require(journal.state == TransactionState.FAILED || journal.state == TransactionState.COMMITTED) {
-            "Transaction ${journal.id} cannot be rolled back from ${journal.state}"
-        }
+        require(journal.isRestorable()) { "Transaction ${journal.id} cannot be rolled back from ${journal.state}" }
         require(journals.hasRollbackData(journal)) { "Transaction ${journal.id} has no complete rollback data" }
         require(journal.purpose in setOf(null, "STAGE")) { "Internal installation transactions cannot be selected for rollback" }
         journal.rollbackRequested = true
@@ -199,14 +185,30 @@ internal class UpdateTransaction(
         journal.artifacts.forEach { record ->
             val target = Paths.get(record.target)
             if (record.targetExisted) {
-                Files.createDirectories(target.parent)
-                retryWhileLocked { Files.copy(Paths.get(record.backup), target, StandardCopyOption.REPLACE_EXISTING) }
+                replaceAtomically(Paths.get(record.backup), target)
             } else {
-                Files.deleteIfExists(target)
+                retryWhileLocked { Files.deleteIfExists(target) }
+                // A crash during publication can leave the copy that was about to be swapped in.
+                Files.deleteIfExists(publishingCopy(target))
             }
         }
         journals.transition(path, journal, TransactionState.ROLLED_BACK)
     }
+
+    /** Copies [source] beside [target] first and then swaps it in, so a crash never leaves a half-written jar. */
+    private fun replaceAtomically(source: Path, target: Path) {
+        target.parent?.let(Files::createDirectories)
+        val publishing = publishingCopy(target)
+        try {
+            Files.copy(source, publishing, StandardCopyOption.REPLACE_EXISTING)
+            retryWhileLocked { AtomicFiles.move(publishing, target) }
+        } catch (error: Throwable) {
+            runCatchingNonFatal { Files.deleteIfExists(publishing) }.onFailure(error::addSuppressed)
+            throw error
+        }
+    }
+
+    private fun publishingCopy(target: Path): Path = target.resolveSibling("${target.fileName}.publishing")
 
     internal fun readJournal(path: Path): TransactionJournal = journals.load(path)
 
