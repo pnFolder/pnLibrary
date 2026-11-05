@@ -39,6 +39,14 @@ internal class EventDispatcher(
     private val subscriptions = CopyOnWriteArrayList<Subscription<out Event>>()
     private val sequence = AtomicLong()
     private val closed = AtomicBoolean(false)
+    private val worker = ManagedWorker("pnLibrary-events", parallelism = ASYNC_THREADS)
+    private val handlers = HandlerCache<Subscription<out Event>>(
+        all = { subscriptions.asSequence() },
+        matches = { subscription, type -> !subscription.isClosed && subscription.eventType.isAssignableFrom(type) },
+        order = compareBy<Subscription<out Event>> { it.priority }.thenBy { it.order },
+    )
+    private val tracer = EventTracer()
+    private val counters = EventCounters(history)
 
     override fun scope(pluginId: PluginId): EventScope = scopeFor(pluginId, pluginId, null)
 
@@ -54,8 +62,6 @@ internal class EventDispatcher(
 
     override fun <E : Event> callEvent(event: E): E = callAs(event, DispatchMode.SYNC)
 
-    private val worker = ManagedWorker("pnLibrary-events", parallelism = ASYNC_THREADS)
-
     override fun <E : Event> callEventAsync(event: E): CompletionStage<E> = worker.submit { callAs(event, DispatchMode.ASYNC) }
 
     override fun <E : Event> callEventAsync(event: E, executor: Executor): CompletionStage<E> =
@@ -70,15 +76,6 @@ internal class EventDispatcher(
         }
         return event
     }
-
-    private val handlers = HandlerCache<Subscription<out Event>>(
-        all = { subscriptions.asSequence() },
-        matches = { subscription, type -> !subscription.isClosed && subscription.eventType.isAssignableFrom(type) },
-        order = compareBy<Subscription<out Event>> { it.priority }.thenBy { it.order },
-    )
-
-    private val tracer = EventTracer()
-    private val counters = EventCounters(history)
 
     override val inspector: EventInspector = object : EventInspector {
         override fun listeners(eventType: Class<out Event>): List<ListenerInfo> =
@@ -121,16 +118,16 @@ internal class EventDispatcher(
     private fun dispatchInline(event: Event, mode: DispatchMode) {
         event.bindDispatch(mode, Thread.currentThread())
         val matching = handlers.handlersFor(event.javaClass)
-        val capacity = tracer.capacity(event.javaClass)
-        val steps = if (capacity != null) ArrayList<EventTrace.Step>(matching.size) else null
+        val tracedAs = tracer.tracedAs(event.javaClass)
+        val steps = if (tracedAs != null) ArrayList<EventTrace.Step>(matching.size) else null
         for (index in matching.indices) {
             val subscription = matching[index]
             if (!subscription.isClosed) deliver(subscription, event, steps)
         }
-        if (steps != null && capacity != null) tracer.record(event, steps, capacity, mode)
+        if (tracedAs != null && steps != null) tracer.record(tracedAs, event, steps, mode)
     }
 
-    /** Hands [event] to one listener; a failing listener is logged and skipped, and a trace step is kept when [steps] records. */
+    /** A failing listener is logged and skipped; [steps] is null unless the event is traced. */
     private fun deliver(subscription: Subscription<out Event>, event: Event, steps: MutableList<EventTrace.Step>?) {
         val before = if (steps != null) tracer.resultText(event) else null
         if (subscription.ignoreDenied && !event.isAllowed) {
