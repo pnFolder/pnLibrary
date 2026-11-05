@@ -163,9 +163,7 @@ class ServersCommand(private val servers: () -> List<NetworkServer>) {
         lines.forEach(context.sender::send)
     }
 
-    /** Constants and the sources of the `/pn servers` command. */
     companion object {
-        /** Permission of the command, next to `pnlibrary.admin`. */
         const val PERMISSION = "pnlibrary.servers"
         private const val ROOT = "/pn servers"
         private val STALE: Duration = Duration.ofMinutes(2)

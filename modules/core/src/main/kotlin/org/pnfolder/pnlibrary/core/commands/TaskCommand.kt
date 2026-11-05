@@ -36,11 +36,9 @@ enum class TaskPeriod(val word: String, val label: String) {
     /** Finished before today. */
     OLDER("older", "раньше"),
 
-    /** Any date. */
     ANY("any", "любое время"),
     ;
 
-    /** Whether [task] belongs to this period. */
     fun keep(task: TaskSnapshot): Boolean = when (this) {
         TODAY -> TaskLabels.isToday(task) || TaskLabels.isActive(task.status)
         WEEK -> TaskLabels.activity(task).isAfter(Instant.now().minus(Duration.ofDays(WEEK_DAYS))) || TaskLabels.isActive(task.status)
@@ -53,9 +51,7 @@ enum class TaskPeriod(val word: String, val label: String) {
     }
 }
 
-/** Which tasks to show by state. */
 enum class TaskState(val word: String, val label: String) {
-    /** Every state. */
     ALL("all", "все"),
 
     /** Waiting or running. */
@@ -68,7 +64,6 @@ enum class TaskState(val word: String, val label: String) {
     DONE("done", "закончены"),
     ;
 
-    /** Whether [task] is in this state. */
     fun keep(task: TaskSnapshot): Boolean = when (this) {
         ALL -> true
         ACTIVE -> TaskLabels.isActive(task.status)
@@ -79,7 +74,6 @@ enum class TaskState(val word: String, val label: String) {
 
 /** Russian words, colours and times for tasks, shared by `/pn tasks` and the menu. */
 object TaskLabels {
-    /** The state of [status] in words. */
     fun label(status: TaskStatus): String = when (status) {
         TaskStatus.SCHEDULED -> "ожидает запуска"
         TaskStatus.RUNNING -> "выполняется"
@@ -88,7 +82,6 @@ object TaskLabels {
         TaskStatus.FAILED -> "упала"
     }
 
-    /** The chat colour that goes with [status]. */
     fun color(status: TaskStatus): TextColor = when (status) {
         TaskStatus.SCHEDULED -> ChatPalette.INFO
         TaskStatus.RUNNING -> ChatPalette.OK
@@ -125,7 +118,6 @@ object TaskLabels {
         else -> "да"
     }
 
-    /** Where the task runs, in words. */
     fun where(task: TaskSnapshot): String = when (task.executionKind.name) {
         "ASYNC" -> "отдельный поток, мир не трогать"
         "ENTITY" -> "поток существа"
@@ -184,7 +176,6 @@ object TaskLabels {
  * be shortened to its first characters. Requires `pnlibrary.tasks`; the console always may use it.
  */
 class TaskCommand(private val library: PnLibrary) {
-    /** Builds the command tree to mount under `/pn tasks`. */
     fun definition(): CommandDefinition = command("tasks") {
         permission(PERMISSION)
         noPermissionMessage("Задачи плагинов доступны администраторам. Нужно право $PERMISSION.")
@@ -439,9 +430,7 @@ class TaskCommand(private val library: PnLibrary) {
         return line.append(if (page < pages) link(page + 1, "дальше ›") else kit.text("[дальше ›]", ChatPalette.FAINT))
     }
 
-    /** Constants of the `/pn tasks` command. */
     companion object {
-        /** Permission of the whole `/pn tasks` tree. */
         const val PERMISSION = "pnlibrary.tasks"
         private const val ROOT = "/pn tasks"
         private const val PAGE_SIZE = 6

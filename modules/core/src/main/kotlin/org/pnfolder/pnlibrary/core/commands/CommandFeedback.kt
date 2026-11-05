@@ -81,7 +81,6 @@ internal class StandardCommandFeedback(
         CommandFailed::class.java to failedMessage,
     )
 
-    /** Sends the standard text for [error], with its placeholders filled in. */
     fun answer(context: CommandContext, error: CommandError, help: List<String> = emptyList()) {
         var type: Class<*>? = error.javaClass
         var template = error.defaultMessage

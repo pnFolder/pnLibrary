@@ -46,7 +46,6 @@ import org.pnfolder.pnlibrary.common.time.DisplayZone
 class EventBusCommand(private val library: PnLibrary) {
     private val bus: EventInspector get() = library.events.inspector
 
-    /** Builds the command tree to mount under `/pn bus`. */
     fun definition(): CommandDefinition = command("bus") {
         permission(PERMISSION)
         noPermissionMessage("События плагинов доступны администраторам. Нужно право $PERMISSION.")
@@ -651,9 +650,7 @@ class EventBusCommand(private val library: PnLibrary) {
 
     private fun shortName(name: String): String = name.substringAfterLast('.')
 
-    /** Constants of the `/pn bus` command. */
     companion object {
-        /** Permission of the whole `/pn bus` tree. */
         const val PERMISSION = "pnlibrary.events.bus"
         private const val ROOT = "/pn bus"
         private const val PAGE_SIZE = 8

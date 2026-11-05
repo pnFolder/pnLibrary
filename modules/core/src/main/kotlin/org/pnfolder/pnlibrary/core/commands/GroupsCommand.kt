@@ -321,9 +321,7 @@ class GroupsCommand(private val groups: ServerGroups, private val servers: () ->
         else notice(context, ChatTone.PROGRESS, "Запросов отправлено: $sent.", "Ответы придут сюда.")
     }
 
-    /** Constants of the `/pn groups` command. */
     companion object {
-        /** Permission of the command, next to `pnlibrary.admin`. */
         const val PERMISSION = "pnlibrary.groups"
         private const val ROOT = "/pn groups"
     }
