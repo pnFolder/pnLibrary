@@ -70,7 +70,6 @@ internal class MenuServiceImpl(
         return session
     }
 
-    /** Returns the player's currently tracked menu session. */
     override fun session(player: Player): MenuSession? = synchronized(stateLock) { sessions[player.uniqueId] }
     override fun close(owner: Plugin) {
         val current = synchronized(stateLock) { owners[owner]?.toList().orEmpty() }
@@ -154,7 +153,6 @@ internal class MenuServiceImpl(
         return inventory === session.inventory && holder.id == session.id
     }
 
-    /** Creates the native inventory matching the requested menu type. */
     private fun create(menu: Menu, holder: InventoryHolder): Inventory {
         inventoryFactory?.let { return it(menu, holder) }
         if (menu.type == MenuType.CHEST) return Bukkit.createInventory(holder, menu.size, menu.title)
@@ -187,26 +185,22 @@ internal class MenuServiceImpl(
         override val inventory: Inventory,
     ) : MenuSession {
         val finished = AtomicBoolean(false)
-        /** Updates a validated inventory slot. */
         override fun set(slot: Int, item: ItemStack?) {
             execution.requireOwner(player)
             check(!finished.get()) { "Menu session is closed" }
             require(slot in 0 until inventory.size)
             inventory.setItem(slot, item)
         }
-        /** Reads the item in the requested slot. */
         override fun get(slot: Int): ItemStack? {
             execution.requireOwner(player)
             check(!finished.get()) { "Menu session is closed" }
             return inventory.getItem(slot)
         }
-        /** Invokes the menu renderer while the session remains active. */
         override fun refresh() {
             execution.requireOwner(player)
             if (!finished.get()) menu.renderer?.render(this)
         }
 
-        /** Schedules a refresh on the player's execution context. */
         override fun refreshAfter(delay: Duration) {
             if (finished.get()) return
             tasks.schedule(TaskSpec.builder()

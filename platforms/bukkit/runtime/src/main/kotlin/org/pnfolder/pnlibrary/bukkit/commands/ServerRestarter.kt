@@ -17,16 +17,13 @@ import java.io.File
  * Only one restart can be waiting; a new request replaces it and [cancel] withdraws it.
  */
 internal class ServerRestarter(private val plugin: Plugin) {
-    /** When the restart happens. */
     enum class Mode { NOW, IN_FIVE_MINUTES, WHEN_EMPTY }
 
     @Volatile
     private var waiting: BukkitTask? = null
 
-    /** What starting a restart did, for the answer to the administrator. */
     enum class Started { COUNTDOWN, WAITING_FOR_EMPTY }
 
-    /** Starts a restart in [mode] and returns how it will proceed. */
     fun start(mode: Mode): Started {
         cancel()
         return when (mode) {

@@ -15,7 +15,6 @@ import org.pnfolder.pnlibrary.core.updates.catalog.UpdateCatalogCommands.Setting
  * break the command that was just completed.
  */
 internal class BukkitSettingFeedback(private val plugin: Plugin) {
-    /** Shows the title and plays the chime for [player]. */
     fun show(player: Player, saved: SettingSaved) {
         runCatchingNonFatal { title(player, saved) }
         runCatchingNonFatal { chime(player, notes(saved)) }

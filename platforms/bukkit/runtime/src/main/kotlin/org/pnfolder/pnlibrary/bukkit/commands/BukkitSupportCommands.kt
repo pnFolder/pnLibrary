@@ -14,16 +14,13 @@ internal class BukkitSupportCommands(
 ) {
     private val testErrors = BukkitDiagnosticTestErrors(plugin, library)
 
-    /** Shows where to get support. */
     fun support(reply: Reply) =
         replies.say(reply, ChatTone.INFO, "Поддержка pnFolder: ${PnLibraryIdentity.SUPPORT_URL}")
 
-    /** Logs one uniquely identifiable test error. */
     fun error(reply: Reply) = testErrors.unique(replies.reported(reply))
 
     /** Logs the same test error [count] times, or the default number of times when `null`. */
     fun errorRepeat(reply: Reply, count: Int?) = testErrors.repeated(replies.reported(reply), count)
 
-    /** Logs a test error with a nested cause chain. */
     fun errorChain(reply: Reply) = testErrors.chained(replies.reported(reply))
 }

@@ -62,7 +62,6 @@ internal class BukkitControlCommand(
     private val support = BukkitSupportCommands(plugin, library, replies)
     private val menu = PluginsMenu(plugin, library, replies)
 
-    /** Builds the permission-aware control command tree. */
     fun definition(): CommandDefinition = command("pn") {
         // Other labels for the same command: they keep it reachable when another plugin already owns `/pn`.
         aliases("pnlib", "pnlibrary")

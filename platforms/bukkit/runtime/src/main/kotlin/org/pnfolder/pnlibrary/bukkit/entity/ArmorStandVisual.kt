@@ -50,7 +50,6 @@ internal class ArmorStandVisual private constructor(
 
     override fun remove() { stand.remove() }
 
-    /** The [VisualService] of the Bukkit runtime. */
     companion object Factory : VisualService {
         private const val HEAD_OFFSET = 1.55
         private const val TEXT_OFFSET = 0.20

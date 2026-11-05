@@ -99,7 +99,6 @@ internal object RemoteMenus {
 
 /** Turns the portable menu into Bukkit inventories. */
 internal class BukkitMenuAdapter(private val plugin: Plugin, private val library: PnLibrary) {
-    /** The viewer for [player] on this server. */
     fun viewer(player: Player): MenuViewer = BukkitViewer(player)
 
     /** The stack for [spec]: the head when the server can make one, otherwise the ordinary item. */
@@ -202,7 +201,6 @@ internal class BukkitMenuAdapter(private val plugin: Plugin, private val library
             player.performCommand(command)
         }
 
-        /** The player behind this viewer. */
         val native: Player get() = player
     }
 

@@ -41,28 +41,20 @@ interface BukkitLocaleTranslations : LocaleTranslations {
     /** Translates [gameMode]; a convenience for `translate(BukkitTranslatables.GAME_MODE, gameMode)`. */
     fun translate(gameMode: GameMode): Translation = translate(BukkitTranslatables.GAME_MODE, gameMode)
 
-    /** Returns a reverse-search index of Bukkit materials. */
     fun materials(): TranslationIndex<Material>
 
-    /** Returns a reverse-search index of Bukkit enchantments. */
     fun enchantments(): TranslationIndex<Enchantment>
 
-    /** Returns a reverse-search index of Bukkit entity types. */
     fun entities(): TranslationIndex<EntityType>
 
-    /** Returns a reverse-search index of Bukkit potion effects. */
     fun effects(): TranslationIndex<PotionEffectType>
 
-    /** Returns a reverse-search index of Bukkit biomes. */
     fun biomes(): TranslationIndex<Biome>
 
-    /** Returns a reverse-search index of Bukkit dye colors. */
     fun colors(): TranslationIndex<DyeColor>
 
-    /** Returns a reverse-search index of Bukkit game modes. */
     fun gameModes(): TranslationIndex<GameMode>
 
-    /** Factories for [BukkitLocaleTranslations]. */
     companion object {
         /** Wraps a neutral [translations] table, resolving its entries to Bukkit value types. */
         @JvmStatic

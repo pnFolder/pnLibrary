@@ -109,7 +109,6 @@ internal class BukkitUpdateFlow(
         UpdateCatalogView.status(facts, entries.map { it.snapshot }, replies.routes(reply), PnLibraryIdentity.SUPPORT_URL).forEach(reply::send)
     }
 
-    /** Reports the current plan for all or one registered product. */
     fun sendUpdateStatus(reply: Reply, requested: String?) {
         val plan = library.updates.currentPlan().orElse(null)
             ?: return replies.say(reply, ChatTone.WARNING, "Проверка обновлений ещё не завершалась.", "Запустите её командой /pn check.")
