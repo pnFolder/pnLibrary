@@ -24,7 +24,6 @@ interface MenuService {
      */
     fun open(owner: Plugin, player: Player, menu: Menu): MenuSession
 
-    /** Returns the player's active pnLibrary menu session, or `null`. */
     fun session(player: Player): MenuSession?
 
     /** Closes every session owned by [owner] without invoking plugin close callbacks. */

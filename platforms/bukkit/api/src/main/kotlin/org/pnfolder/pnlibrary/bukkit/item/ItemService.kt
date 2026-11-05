@@ -29,7 +29,6 @@ import org.bukkit.inventory.ItemStack
  */
 interface ItemService {
 
-    /** Creates a new item from [spec]. */
     fun create(spec: ItemSpec): ItemStack
 
     /** Reads [section] in the default format; `null` when the section is absent. */
@@ -86,6 +85,5 @@ interface ItemService {
      */
     fun decode(encoded: String): ItemStack
 
-    /** Whether [item] is a non-air stack with a positive amount. */
     fun isReal(item: ItemStack?): Boolean
 }

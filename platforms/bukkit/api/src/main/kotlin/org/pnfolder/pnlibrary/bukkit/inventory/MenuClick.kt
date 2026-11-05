@@ -32,10 +32,8 @@ data class MenuClick(
     val renameText: String? = null,
 ) {
 
-    /** Player associated with [session]. */
     val player: Player get() = session.player
 
-    /** Closes the active session. */
     fun close() = session.close()
 
     /** Immediately invokes the configured renderer when the session is still active. */
