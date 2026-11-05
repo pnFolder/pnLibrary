@@ -4,11 +4,13 @@ import org.bukkit.entity.Player
 import org.bukkit.plugin.Plugin
 import org.pnfolder.pnlibrary.api.chat.ChatTone
 import org.pnfolder.pnlibrary.api.runtime.PnLibrary
+import org.pnfolder.pnlibrary.bukkit.tasks.ServerScheduler
 import org.pnfolder.pnlibrary.core.link.Link
 import org.pnfolder.pnlibrary.core.menu.LibraryMenu
 import org.pnfolder.pnlibrary.core.menu.LocalMenuData
 import org.pnfolder.pnlibrary.core.menu.MenuDataServer
 import org.pnfolder.pnlibrary.core.menu.MenuViewer
+import java.util.concurrent.Executors
 import org.bukkit.command.CommandSender as NativeSender
 import org.pnfolder.pnlibrary.api.commands.CommandSender as Reply
 
@@ -23,15 +25,19 @@ internal class PluginsMenu(
     library: PnLibrary,
     private val replies: BukkitCommandReplies,
     link: Link,
+    scheduler: ServerScheduler,
 ) {
-    private val adapter = BukkitMenuAdapter(plugin, library)
-    private val host = BukkitMenuHost(plugin, library, replies, adapter, link)
-    private val data = LocalMenuData(library, host, run = { viewer, line -> RemoteMenus.run(plugin, viewer, line) })
+    private val adapter = BukkitMenuAdapter(plugin, library, scheduler)
+    private val host = BukkitMenuHost(plugin, library, replies, adapter, link, scheduler)
+    private val data = LocalMenuData(library, host, run = { viewer, line -> RemoteMenus.run(scheduler, viewer, line) })
     private val menu = LibraryMenu(data, host)
 
     init {
-        val executor = java.util.concurrent.Executors.newCachedThreadPool { task -> Thread(task, "pnlibrary-menu-data").apply { isDaemon = true } }
-        link.answerCallsWith(MenuDataServer(data, executor))
+        // Only a server with a link is asked menu questions by other servers; without one no thread pool is needed.
+        if (link.enabled) {
+            val executor = Executors.newCachedThreadPool { task -> Thread(task, "pnlibrary-menu-data").apply { isDaemon = true } }
+            link.answerCallsWith(MenuDataServer(data, executor))
+        }
     }
 
     /** Opens the menu for [sender], or explains that the console has no inventory. */

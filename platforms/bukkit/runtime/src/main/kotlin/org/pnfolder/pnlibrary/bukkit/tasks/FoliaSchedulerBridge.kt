@@ -6,41 +6,55 @@ import org.pnfolder.pnlibrary.api.tasks.TaskExecution
 import org.pnfolder.pnlibrary.bukkit.commands.BukkitCommandSender
 import org.pnfolder.pnlibrary.bukkit.compat.Folia
 import org.pnfolder.pnlibrary.spi.tasks.PlatformTaskRequest
+import java.time.Duration
 
-/** Puts a portable task on the Folia scheduler that matches its execution: asynchronous, a player's region or global. */
+/**
+ * Puts a portable task on the Folia scheduler that matches its execution: asynchronous, a player's region or global.
+ *
+ * Region schedulers count from one tick: they refuse a delay or period of zero for delayed and repeating work, so
+ * both are raised to one tick there.
+ */
 internal class FoliaSchedulerBridge(private val plugin: Plugin) {
 
     fun schedule(request: PlatformTaskRequest): Any {
-        val task = request.callback
-        val interval = request.interval
         val native = when (request.executionKind) {
-            TaskExecution.Kind.ASYNC -> when {
-                interval != null -> Folia.runAsyncRepeating(plugin, request.delay, interval, task)
-                request.delay.isZero -> Folia.runAsync(plugin, task)
-                else -> Folia.runAsyncLater(plugin, request.delay, task)
-            }
+            TaskExecution.Kind.ASYNC -> scheduleAsync(request)
             TaskExecution.Kind.ENTITY -> scheduleOnPlayer(player(request.target), request)
-            TaskExecution.Kind.GLOBAL -> when {
-                interval != null -> Folia.runGlobalRepeating(plugin, durationToTicks(request.delay), durationToTicks(interval), task)
-                request.delay.isZero -> Folia.runGlobal(plugin, task)
-                else -> Folia.runGlobalLater(plugin, durationToTicks(request.delay), task)
-            }
+            TaskExecution.Kind.GLOBAL -> scheduleGlobal(request)
         }
         return checkNotNull(native) { "Folia did not schedule the task: the player has already left" }
     }
 
     fun cancel(task: Any) = Folia.cancel(task)
 
-    // Entity schedulers count from one tick: a delay of zero is not accepted for a delayed or repeating task.
-    private fun scheduleOnPlayer(player: Player, request: PlatformTaskRequest): Any? {
-        val delay = durationToTicks(request.delay).coerceAtLeast(1)
+    private fun scheduleAsync(request: PlatformTaskRequest): Any? {
         val interval = request.interval
         return when {
-            interval != null -> Folia.runOnRepeating(player, plugin, delay, durationToTicks(interval), request.callback)
-            request.delay.isZero -> Folia.runOn(player, plugin, request.callback)
-            else -> Folia.runOnLater(player, plugin, delay, request.callback)
+            interval != null -> Folia.runAsyncRepeating(plugin, request.delay, interval, request.callback)
+            request.delay.isZero -> Folia.runAsync(plugin, request.callback)
+            else -> Folia.runAsyncLater(plugin, request.delay, request.callback)
         }
     }
+
+    private fun scheduleGlobal(request: PlatformTaskRequest): Any? {
+        val interval = request.interval
+        return when {
+            interval != null -> Folia.runGlobalRepeating(plugin, ticks(request.delay), ticks(interval), request.callback)
+            request.delay.isZero -> Folia.runGlobal(plugin, request.callback)
+            else -> Folia.runGlobalLater(plugin, ticks(request.delay), request.callback)
+        }
+    }
+
+    private fun scheduleOnPlayer(player: Player, request: PlatformTaskRequest): Any? {
+        val interval = request.interval
+        return when {
+            interval != null -> Folia.runOnRepeating(player, plugin, ticks(request.delay), ticks(interval), request.callback)
+            request.delay.isZero -> Folia.runOn(player, plugin, request.callback)
+            else -> Folia.runOnLater(player, plugin, ticks(request.delay), request.callback)
+        }
+    }
+
+    private fun ticks(value: Duration): Long = durationToTicks(value).coerceAtLeast(1)
 
     private fun player(target: Any?): Player {
         val native = (target as? BukkitCommandSender)?.native ?: target

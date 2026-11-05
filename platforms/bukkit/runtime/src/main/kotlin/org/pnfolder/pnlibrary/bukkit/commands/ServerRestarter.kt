@@ -5,8 +5,8 @@ import net.kyori.adventure.text.serializer.legacy.LegacyComponentSerializer
 import org.bukkit.Bukkit
 import org.bukkit.configuration.file.YamlConfiguration
 import org.bukkit.plugin.Plugin
-import org.bukkit.scheduler.BukkitTask
 import org.pnfolder.pnlibrary.api.chat.ChatPalette
+import org.pnfolder.pnlibrary.bukkit.tasks.ServerScheduler
 import java.io.File
 
 /**
@@ -16,12 +16,12 @@ import java.io.File
  * missing the server cannot come back by itself, so it is stopped cleanly and the administrator is told to start it.
  * Only one restart can be waiting; a new request replaces it and [cancel] withdraws it.
  */
-internal class ServerRestarter(private val plugin: Plugin) {
+internal class ServerRestarter(private val plugin: Plugin, private val scheduler: ServerScheduler) {
     /** When the restart happens. */
     enum class Mode { NOW, IN_FIVE_MINUTES, WHEN_EMPTY }
 
     @Volatile
-    private var waiting: BukkitTask? = null
+    private var waiting: ServerScheduler.Scheduled? = null
 
     /** What starting a restart did, for the answer to the administrator. */
     enum class Started { COUNTDOWN, WAITING_FOR_EMPTY }
@@ -46,24 +46,24 @@ internal class ServerRestarter(private val plugin: Plugin) {
 
     private fun countdown(seconds: Int): Started {
         var left = seconds
-        waiting = Bukkit.getScheduler().runTaskTimer(plugin, Runnable {
+        waiting = scheduler.repeat(0L, TICKS_PER_SECOND) {
             if (left in WARNINGS && Bukkit.getOnlinePlayers().isNotEmpty()) announce("Сервер перезапустится через ${wait(left)} для применения обновлений.")
             if (left <= 0) {
                 cancel()
                 restart()
             }
             left--
-        }, 0L, TICKS_PER_SECOND)
+        }
         return Started.COUNTDOWN
     }
 
     private fun waitForEmpty(): Started {
-        waiting = Bukkit.getScheduler().runTaskTimer(plugin, Runnable {
+        waiting = scheduler.repeat(0L, EMPTY_CHECK_TICKS) {
             if (Bukkit.getOnlinePlayers().isEmpty()) {
                 cancel()
                 restart()
             }
-        }, 0L, EMPTY_CHECK_TICKS)
+        }
         return Started.WAITING_FOR_EMPTY
     }
 

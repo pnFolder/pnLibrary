@@ -1,7 +1,6 @@
 package org.pnfolder.pnlibrary.bukkit.commands
 
 import net.kyori.adventure.text.Component
-import org.bukkit.Bukkit
 import org.bukkit.Material
 import org.bukkit.entity.Player
 import org.bukkit.inventory.ItemFlag
@@ -18,6 +17,7 @@ import org.pnfolder.pnlibrary.api.tasks.TaskSpec
 import org.pnfolder.pnlibrary.api.updates.UpdateActor
 import org.pnfolder.pnlibrary.bukkit.api.BukkitPlatform
 import org.pnfolder.pnlibrary.bukkit.inventory.MenuSession
+import org.pnfolder.pnlibrary.bukkit.tasks.ServerScheduler
 import org.pnfolder.pnlibrary.core.lifecycle.runtimeTaskScope
 import org.pnfolder.pnlibrary.core.menu.ClickType
 import org.pnfolder.pnlibrary.core.menu.ItemSpec
@@ -28,7 +28,11 @@ import java.util.UUID
 import org.pnfolder.pnlibrary.bukkit.inventory.Menus as BukkitMenus
 
 /** Turns the portable menu into Bukkit inventories. */
-internal class BukkitMenuAdapter(private val plugin: Plugin, private val library: PnLibrary) {
+internal class BukkitMenuAdapter(
+    private val plugin: Plugin,
+    private val library: PnLibrary,
+    private val scheduler: ServerScheduler,
+) {
     /** The viewer for [player] on this server. */
     fun viewer(player: Player): MenuViewer = BukkitViewer(player)
 
@@ -121,23 +125,21 @@ internal class BukkitMenuAdapter(private val plugin: Plugin, private val library
         override val actor: UpdateActor get() = UpdateActor(UpdateActor.Kind.PLAYER, player.uniqueId.toString(), player.name)
 
         override fun hasPermission(permission: String): Boolean = player.hasPermission(permission)
-        override fun open(menu: Menu) = onServerThread { open(player, menu) }
-        override fun close() = onServerThread { player.closeInventory() }
+        override fun open(menu: Menu) = onPlayerThread { open(player, menu) }
+        override fun close() = onPlayerThread { player.closeInventory() }
         override fun send(lines: List<Component>) {
             library.audiences.player(player.uniqueId)?.let { audience -> lines.forEach(audience::sendMessage) }
         }
 
-        override fun runCommand(command: String) = onServerThread {
+        override fun runCommand(command: String) = onPlayerThread {
             player.closeInventory()
             player.performCommand(command)
         }
 
         /** The player behind this viewer. */
         val native: Player get() = player
-    }
 
-    private fun onServerThread(action: () -> Unit) {
-        if (Bukkit.isPrimaryThread()) action() else plugin.server.scheduler.runTask(plugin, Runnable { if (!library.isClosed) action() })
+        private fun onPlayerThread(action: () -> Unit) = scheduler.onPlayer(player) { if (!library.isClosed) action() }
     }
 
     /** The player behind [viewer], or null when it is not a local one. */

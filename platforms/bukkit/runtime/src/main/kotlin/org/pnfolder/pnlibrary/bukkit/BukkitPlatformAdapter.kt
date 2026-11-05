@@ -15,6 +15,7 @@ import org.pnfolder.pnlibrary.bukkit.compat.ServerCapabilities
 import org.pnfolder.pnlibrary.bukkit.remote.BukkitRemotePolicyContextFactory
 import org.pnfolder.pnlibrary.bukkit.server.ServerInfo
 import org.pnfolder.pnlibrary.bukkit.tasks.BukkitTaskAdapter
+import org.pnfolder.pnlibrary.bukkit.tasks.ServerScheduler
 import org.pnfolder.pnlibrary.common.lang.runCatchingNonFatal
 import org.pnfolder.pnlibrary.core.lifecycle.registerRuntimeCommand
 import org.pnfolder.pnlibrary.core.link.Link
@@ -66,7 +67,9 @@ internal class BukkitPlatformAdapter(
         JulLogObserver.matchPlugin(loggerName, Bukkit.getPluginManager().plugins.asList()) { it.name }
     }
     private val uncaughtExceptionObserver = UncaughtExceptionLogObserver(plugin)
-    private val schedulerBridge = BukkitSchedulerBridge(plugin, ::log)
+
+    /** Where pnLibrary's own work runs: the main thread, or on Folia the global region or a player's region. */
+    val scheduler = ServerScheduler(plugin)
     private var lifecycleListener: BukkitLifecycleListener? = null
 
     override val type: PlatformType = PlatformType.BUKKIT
@@ -138,11 +141,7 @@ internal class BukkitPlatformAdapter(
     /** Disables dependents as they enable and switches [owner] off once the server has started. */
     override fun disableDependents(owner: Any): Boolean {
         if (owner !== plugin) return false
-        val later: (Runnable) -> Unit = { task ->
-            if (ServerCapabilities.isFolia) schedulerBridge.executeGlobal(task)
-            else Bukkit.getScheduler().runTask(plugin, task)
-        }
-        return runCatchingNonFatal { BukkitDependentGuard(plugin, later) { plugin.logger.warning(it) }.arm() }.isSuccess
+        return runCatchingNonFatal { BukkitDependentGuard(plugin, scheduler::nextTick) { plugin.logger.warning(it) }.arm() }.isSuccess
     }
 
     /** Registers or removes the observer of server and plugin warnings, errors and uncaught thread exceptions. */
@@ -159,7 +158,7 @@ internal class BukkitPlatformAdapter(
     override fun bind(library: PnLibrary) {
         lifecycle.bind {
             lifecycleListener = lifecycle.track(BukkitLifecycleListener(plugin, library).start())
-            lifecycle.track(library.registerRuntimeCommand(BukkitControlCommand(plugin, library, library.currencyProviders, link).definition()))
+            lifecycle.track(library.registerRuntimeCommand(BukkitControlCommand(plugin, library, library.currencyProviders, link, scheduler).definition()))
         }
     }
 
@@ -185,17 +184,7 @@ internal class BukkitPlatformAdapter(
 
     override fun executeGlobal(task: Runnable) {
         if (lifecycle.isClosed) return
-
-        if (ServerCapabilities.isFolia) {
-            schedulerBridge.executeGlobal(task)
-            return
-        }
-
-        if (Bukkit.isPrimaryThread()) {
-            task.run()
-        } else {
-            Bukkit.getScheduler().runTask(plugin, task)
-        }
+        dispatch { scheduler.execute(task) }
     }
 
     /** Runs work after server readiness, falling back to global dispatch. */
@@ -203,17 +192,16 @@ internal class BukkitPlatformAdapter(
         lifecycleListener?.whenServerReady(task) ?: executeGlobal(task)
     }
 
-    /** Routes player replies to their Folia region, otherwise to global dispatch. */
+    /** Routes player replies to the player's thread, everything else to global dispatch. */
     override fun executeReply(recipient: Any, task: Runnable) {
         if (lifecycle.isClosed) return
+        val player = ((recipient as? BukkitCommandSender)?.native ?: recipient) as? Player
+        if (player == null) dispatch { scheduler.execute(task) } else dispatch { scheduler.onPlayer(player, task) }
+    }
 
-        val nativeRecipient = (recipient as? BukkitCommandSender)?.native ?: recipient
-        if (nativeRecipient is Player && ServerCapabilities.isFolia) {
-            schedulerBridge.executeEntity(nativeRecipient, task)
-            return
-        }
-
-        executeGlobal(task)
+    // A reply that cannot be scheduled (the plugin is being disabled) must not fail the code that sent it.
+    private fun dispatch(schedule: () -> Unit) {
+        runCatchingNonFatal(schedule).onFailure { log(plugin, LogLevel.ERROR, "Не удалось передать задачу планировщику сервера", it) }
     }
 
     /** Releases registrations, cancels native tasks and stops native log observation once. */

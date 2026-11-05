@@ -4,8 +4,8 @@ import org.bukkit.Bukkit
 import org.bukkit.entity.Player
 import org.bukkit.plugin.java.JavaPlugin
 import org.bukkit.plugin.messaging.PluginMessageListener
-import org.bukkit.scheduler.BukkitTask
 import org.pnfolder.pnlibrary.api.runtime.PnLibrary
+import org.pnfolder.pnlibrary.bukkit.tasks.ServerScheduler
 import org.pnfolder.pnlibrary.common.lang.runCatchingNonFatal
 import org.pnfolder.pnlibrary.core.link.DataChunks
 import org.pnfolder.pnlibrary.core.link.Link
@@ -13,6 +13,7 @@ import org.pnfolder.pnlibrary.core.link.LinkCodec
 import org.pnfolder.pnlibrary.core.link.LinkReports
 import org.pnfolder.pnlibrary.core.link.LinkSecret
 import org.pnfolder.pnlibrary.core.link.RemoteExecutor
+import java.util.UUID
 
 /**
  * Sends this server's report to the proxy over the link channel, every half minute while a player is online.
@@ -24,15 +25,16 @@ internal class BukkitLinkReporter(
     private val plugin: JavaPlugin,
     private val library: PnLibrary,
     private val link: Link,
+    private val scheduler: ServerScheduler,
 ) : PluginMessageListener {
-    private var task: BukkitTask? = null
+    private var task: ServerScheduler.Scheduled? = null
     private val executor = RemoteExecutor(library)
 
     fun start() {
         val key = link.key ?: return
         plugin.server.messenger.registerIncomingPluginChannel(plugin, LinkCodec.CHANNEL, this)
         plugin.server.messenger.registerOutgoingPluginChannel(plugin, LinkCodec.CHANNEL)
-        task = plugin.server.scheduler.runTaskTimer(plugin, Runnable { report(key) }, FIRST_DELAY_TICKS, PERIOD_TICKS)
+        task = scheduler.repeat(FIRST_DELAY_TICKS, PERIOD_TICKS) { report(key) }
     }
 
     fun stop() {
@@ -42,7 +44,7 @@ internal class BukkitLinkReporter(
         runCatchingNonFatal { plugin.server.messenger.unregisterOutgoingPluginChannel(plugin, LinkCodec.CHANNEL) }
     }
 
-    /** Keeps the network map that the proxy sent; a map without the right signature is dropped. */
+    /** Handles what the proxy sent: the network map, a request, a menu question, a piece of data or a result. Anything not signed with the key is dropped. */
     override fun onPluginMessageReceived(channel: String, player: Player, message: ByteArray) {
         if (channel != LinkCodec.CHANNEL) return
         val key = link.key ?: return
@@ -52,7 +54,7 @@ internal class BukkitLinkReporter(
         }
         LinkCodec.decodeRequest(message, key)?.let { request ->
             executor.run(request) { result ->
-                plugin.server.scheduler.runTask(plugin, Runnable { player.sendPluginMessage(plugin, LinkCodec.CHANNEL, LinkCodec.encodeResult(result, key)) })
+                scheduler.nextTick { player.sendPluginMessage(plugin, LinkCodec.CHANNEL, LinkCodec.encodeResult(result, key)) }
             }
             return
         }
@@ -70,12 +72,12 @@ internal class BukkitLinkReporter(
     }
 
     /** Sends the answer to a question back through the proxy; it can be called from any thread. */
-    private fun answer(carrier: Player, id: java.util.UUID, to: String, ok: Boolean, text: String, key: ByteArray) {
+    private fun answer(carrier: Player, id: UUID, to: String, ok: Boolean, text: String, key: ByteArray) {
         val pieces = DataChunks.split(id, to, ok, text, key) ?: DataChunks.split(id, to, false, "Ответ слишком большой.", key).orEmpty()
-        plugin.server.scheduler.runTask(plugin, Runnable {
+        scheduler.nextTick {
             val sender = if (carrier.isOnline) carrier else Bukkit.getOnlinePlayers().firstOrNull()
             pieces.forEach { sender?.sendPluginMessage(plugin, LinkCodec.CHANNEL, it) }
-        })
+        }
     }
 
     private fun report(key: ByteArray) {
