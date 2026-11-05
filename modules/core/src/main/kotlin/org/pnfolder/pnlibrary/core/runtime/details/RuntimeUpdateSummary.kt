@@ -4,7 +4,6 @@ import org.pnfolder.pnlibrary.api.updates.UpdateRegistration
 import java.time.Duration
 import java.time.Instant
 
-/** Aggregates update registrations into the stable runtime diagnostic summary. */
 internal object RuntimeUpdateSummary {
     fun of(registrations: List<UpdateRegistration>): Map<String, Any?> {
         val latestPublishedAtByChannel: Map<String, Instant> = registrations

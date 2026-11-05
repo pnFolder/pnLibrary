@@ -3,7 +3,6 @@ package org.pnfolder.pnlibrary.core.platform
 import org.pnfolder.pnlibrary.api.platform.PlatformProvider
 import java.util.concurrent.ConcurrentHashMap
 
-/** Small runtime registry for the single native platform implementation. */
 internal class PlatformProviderImpl : PlatformProvider, AutoCloseable {
     private val implementations = ConcurrentHashMap<Class<*>, Any>()
 

@@ -10,7 +10,6 @@ import org.pnfolder.pnlibrary.core.plugin.module.ModuleMetricsDefinition
 import java.util.concurrent.atomic.AtomicBoolean
 import java.util.function.Consumer
 
-/** Enables, reconfigures and closes one module's metrics session. */
 internal class MetricsControllerImpl(
     private val owner: Any,
     private val service: MetricsService,
@@ -38,7 +37,6 @@ internal class MetricsControllerImpl(
     override fun errorReporterOrNull(): ErrorReporter? =
         session?.errorReporter?.let { errorReporter ?: it }
 
-    /** Returns the reporter owned by the live provider session. */
     internal fun sessionErrorReporter(): ErrorReporter? = session?.errorReporter
 
     override fun enable() = synchronized(lock) {

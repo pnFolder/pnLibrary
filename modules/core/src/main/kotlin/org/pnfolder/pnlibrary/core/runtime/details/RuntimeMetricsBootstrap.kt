@@ -8,7 +8,6 @@ import org.pnfolder.pnlibrary.common.lang.runCatchingNonFatal
 import org.pnfolder.pnlibrary.core.metrics.MetricsServiceImpl
 import org.pnfolder.pnlibrary.spi.platform.PlatformIdentity
 
-/** Starts the built-in runtime telemetry without coupling the composition root to its details. */
 internal class RuntimeMetricsBootstrap(
     private val registry: MetricsServiceImpl,
     private val platform: PlatformIdentity,

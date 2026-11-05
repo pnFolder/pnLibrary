@@ -18,7 +18,6 @@ import org.pnfolder.pnlibrary.api.updates.UpdateRegistration
 import org.pnfolder.pnlibrary.core.lifecycle.ResourceCleanup
 import org.pnfolder.pnlibrary.core.services.ServiceScope
 
-/** Resources owned by one module, closed together in dependency order. */
 internal class ModuleResources(
     val tasks: TaskScope,
     val events: EventScope,

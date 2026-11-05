@@ -19,7 +19,6 @@ import org.pnfolder.pnlibrary.currency.CurrencyRuntime
 import org.pnfolder.pnlibrary.spi.platform.PlatformLogging
 import java.nio.file.Path
 
-/** Composes bundled features and their shared registrations independently of the runtime facade. */
 internal class RuntimeFeatureSet(
     platform: PlatformRuntimeContext,
     dataFolder: Path,

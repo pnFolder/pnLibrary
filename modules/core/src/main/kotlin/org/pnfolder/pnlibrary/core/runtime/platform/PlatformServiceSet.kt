@@ -12,7 +12,6 @@ import org.pnfolder.pnlibrary.spi.platform.PlatformLogging
 import org.pnfolder.pnlibrary.spi.tasks.PlatformTaskAdapter
 import java.nio.file.Path
 
-/** Creates the services that are direct translations of native platform adapters. */
 internal class PlatformServiceSet(
     commandAdapter: PlatformCommandAdapter,
     audienceAdapter: PlatformAudienceAdapter,

@@ -5,7 +5,6 @@ import org.pnfolder.pnlibrary.common.lang.runCatchingNonFatal
 import org.pnfolder.pnlibrary.spi.platform.PlatformLogging
 import org.pnfolder.pnlibrary.spi.platform.PlatformOwnership
 
-/** One capture path for library logs, service failures and observed native logs. */
 internal class DiagnosticCapture(
     private val ownership: PlatformOwnership,
     private val native: PlatformLogging,

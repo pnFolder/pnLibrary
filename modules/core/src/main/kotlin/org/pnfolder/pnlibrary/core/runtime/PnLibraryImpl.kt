@@ -231,7 +231,6 @@ internal class PnLibraryImpl(
     }.getOrNull()
 
     private val commandService get() = platformServices.commands
-    /** Runs a registered command for a viewer who is not on this server, or returns null when the command service cannot. */
     internal fun dispatchCommand(command: CommandDefinition, context: CommandContext): java.util.concurrent.CompletionStage<Void>? =
         (commandService as? PlatformCommandDispatcher)?.execute(command, context)
 

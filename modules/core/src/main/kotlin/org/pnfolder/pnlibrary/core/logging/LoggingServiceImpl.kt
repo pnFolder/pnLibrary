@@ -12,7 +12,6 @@ import org.pnfolder.pnlibrary.spi.platform.PlatformLogging
 import org.pnfolder.pnlibrary.spi.platform.PlatformOwnership
 import org.pnfolder.pnlibrary.spi.platform.PlatformSnapshotProvider
 
-/** Adapts library logging, diagnostics capture, and lifecycle summaries to one platform. */
 internal class LoggingServiceImpl(
     private val logging: PlatformLogging,
     private val ownership: PlatformOwnership,

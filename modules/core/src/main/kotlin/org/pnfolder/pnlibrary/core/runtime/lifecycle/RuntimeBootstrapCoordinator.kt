@@ -7,7 +7,6 @@ import org.pnfolder.pnlibrary.core.runtime.PnLibraryConfigLoader
 import org.pnfolder.pnlibrary.core.runtime.PnLibraryLauncher
 import org.pnfolder.pnlibrary.core.runtime.platform.PlatformRuntimeContext
 
-/** Coordinates native bootstrap, shared runtime startup, and platform-facing startup metadata. */
 internal object RuntimeBootstrapCoordinator {
     data class Started(
         val library: PnLibrary,

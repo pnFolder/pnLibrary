@@ -2,7 +2,6 @@ package org.pnfolder.pnlibrary.core.runtime.details
 
 import org.pnfolder.pnlibrary.api.runtime.PnLibraryConfig
 
-/** Stable, privacy-aware representation of runtime configuration for diagnostics. */
 internal object RuntimeConfigurationDetails {
     fun of(config: PnLibraryConfig): Map<String, Any?> = linkedMapOf(
         "privacy" to config.privacy,

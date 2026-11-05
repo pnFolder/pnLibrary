@@ -11,7 +11,6 @@ import java.time.Instant
 import java.util.ArrayDeque
 import java.util.LinkedHashMap
 
-/** Bounded session history that aggregates repeated warnings and errors without losing their timeline. */
 internal class DiagnosticLogBuffer(private val capacity: Int = 2_000) {
     internal data class CaptureResult(val emitOriginal: Boolean, val summary: String? = null)
 
@@ -108,7 +107,6 @@ internal class DiagnosticLogBuffer(private val capacity: Int = 2_000) {
         )
     }
 
-    /** Removes incidents last seen before [cutoffMs]; returns how many were dropped. */
     @Synchronized
     fun expireOlderThan(cutoffMs: Long): Int {
         val expired = incidents.values.filter { Instant.parse(it.lastSeenUtc).toEpochMilli() < cutoffMs }

@@ -13,7 +13,6 @@ import java.nio.file.Path
 import java.time.Duration
 import java.util.concurrent.atomic.AtomicLong
 
-/** Owns journal storage, asynchronous writes, failure counters and draining at shutdown. */
 internal class RuntimeJournal(dataFolder: Path, config: PnLibraryConfig, private val ownership: PlatformOwnership) : AutoCloseable {
     val store = JournalStore(
         dataFolder.resolve("journal"),
