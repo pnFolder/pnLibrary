@@ -47,7 +47,6 @@ internal class EventHistory(
         if (file != null && retentionDays > 0) runCatchingNonFatal { load(file) }
     }
 
-    /** Counts one call of [eventType]. */
     fun record(eventType: String, denied: Boolean) {
         if (retentionDays <= 0) return
         val now = LocalDateTime.now(zone())
