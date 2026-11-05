@@ -62,27 +62,52 @@ object LinkCodec {
             readReport(input).takeIf { fresh(it.sentAt, now) }
         }
 
-    /** Encodes the network map and signs it with [key]; the plugin lists are cut shorter so the whole map fits. */
-    fun encodeNetwork(network: NetworkReport, key: ByteArray): ByteArray = signed(key) { out ->
-        out.writeByte(NETWORK_VERSION)
-        writeReport(out, network.proxy, MAX_NETWORK_PLUGINS)
-        val servers = network.servers.take(MAX_SERVERS)
-        out.writeInt(servers.size)
-        servers.forEach {
-            out.writeUTF(it.name.take(MAX_TEXT))
-            out.writeBoolean(it.online)
-            writeReport(out, it.report, MAX_NETWORK_PLUGINS)
-        }
-        val groups = network.groups.take(MAX_GROUPS)
-        out.writeInt(groups.size)
-        groups.forEach { group ->
-            out.writeUTF(group.name.take(MAX_TEXT))
-            writeNames(out, group.servers)
-            writeNames(out, group.plugins)
-            writeNames(out, pairs(group.extra))
-            writeNames(out, pairs(group.skip))
+    /**
+     * Encodes the network map and signs it with [key].
+     *
+     * Servers refuse plugin messages over 32767 bytes and kick the player who carried one, so when the map is larger
+     * than [MAX_FRAME_BYTES] the plugin lists, then the groups and the servers are cut until it fits.
+     */
+    fun encodeNetwork(network: NetworkReport, key: ByteArray): ByteArray {
+        var plugins = MAX_NETWORK_PLUGINS
+        var items = MAX_GROUP_ITEMS
+        var servers = MAX_SERVERS
+        var groups = MAX_GROUPS
+        while (true) {
+            val bytes = networkBytes(network, key, plugins, items, servers, groups)
+            if (bytes.size <= MAX_FRAME_BYTES || (plugins == 0 && items == 0 && servers == 0 && groups == 0)) return bytes
+            if (plugins > 0) {
+                plugins /= 2
+            } else if (items > 0) {
+                items /= 2
+            } else {
+                servers /= 2
+                groups /= 2
+            }
         }
     }
+
+    private fun networkBytes(network: NetworkReport, key: ByteArray, pluginLimit: Int, itemLimit: Int, serverLimit: Int, groupLimit: Int): ByteArray =
+        signed(key) { out ->
+            out.writeByte(NETWORK_VERSION)
+            writeReport(out, network.proxy, pluginLimit)
+            val servers = network.servers.take(serverLimit)
+            out.writeInt(servers.size)
+            servers.forEach {
+                out.writeUTF(it.name.take(MAX_TEXT))
+                out.writeBoolean(it.online)
+                writeReport(out, it.report, pluginLimit)
+            }
+            val groups = network.groups.take(groupLimit)
+            out.writeInt(groups.size)
+            groups.forEach { group ->
+                out.writeUTF(group.name.take(MAX_TEXT))
+                writeNames(out, group.servers, itemLimit)
+                writeNames(out, group.plugins, itemLimit)
+                writeNames(out, pairs(group.extra), itemLimit)
+                writeNames(out, pairs(group.skip), itemLimit)
+            }
+        }
 
     private fun pairs(overrides: Map<String, Set<String>>): Set<String> =
         overrides.flatMap { (server, plugins) -> plugins.map { "$server$PAIR$it" } }.toSet()
@@ -90,8 +115,8 @@ object LinkCodec {
     private fun unpair(pairs: Set<String>): Map<String, Set<String>> =
         pairs.mapNotNull { pair -> pair.split(PAIR, limit = 2).takeIf { it.size == 2 } }.groupBy({ it[0] }, { it[1] }).mapValues { it.value.toSet() }
 
-    private fun writeNames(out: DataOutputStream, names: Set<String>) {
-        val shown = names.take(MAX_GROUP_ITEMS)
+    private fun writeNames(out: DataOutputStream, names: Set<String>, limit: Int) {
+        val shown = names.take(limit)
         out.writeInt(shown.size)
         shown.forEach { out.writeUTF(it.take(MAX_TEXT)) }
     }

@@ -10,7 +10,6 @@ import org.pnfolder.pnlibrary.api.tasks.TaskServiceSettings
 import org.pnfolder.pnlibrary.api.tasks.TaskSnapshot
 import org.pnfolder.pnlibrary.api.tasks.TaskSpec
 import org.pnfolder.pnlibrary.core.cleanup.ResourceCleanup
-import org.pnfolder.pnlibrary.core.tasks.TaskControl
 import org.pnfolder.pnlibrary.spi.tasks.PlatformTaskAdapter
 import org.pnfolder.pnlibrary.spi.tasks.PlatformTaskRequest
 import java.util.Collections
@@ -47,11 +46,9 @@ internal class ScheduledTasks(
     }
 
     override fun get(id: TaskId): TaskHandle? = synchronized(lock) { active[id] }
-    override fun query(query: TaskQuery): List<TaskSnapshot> = synchronized(lock) {
-        immutableSnapshots((active.values.map { it.snapshot() } + history.values.map { it.snapshot })
-            .filter { TaskQueryMatcher.matches(it, query) })
-    }
-    override fun query(owner: Any, query: TaskQuery): List<TaskSnapshot> = snapshots(owner, query)
+    override fun query(query: TaskQuery): List<TaskSnapshot> = snapshots(query) { _, _ -> true }
+
+    override fun query(owner: Any, query: TaskQuery): List<TaskSnapshot> = snapshots(query) { taskOwner, _ -> taskOwner === owner }
 
     override fun cancelByAdmin(id: TaskId): TaskControl {
         val task = synchronized(lock) { active[id] } ?: return TaskControl.UNAVAILABLE
@@ -80,10 +77,13 @@ internal class ScheduledTasks(
         )
     }
 
-    private fun snapshots(owner: Any, query: TaskQuery) = synchronized(lock) {
-        immutableSnapshots((active.values.filter { it.owner === owner }.map { it.snapshot() } +
-            history.values.filter { it.owner === owner }.map { it.snapshot })
-            .filter { TaskQueryMatcher.matches(it, query) })
+    /** Active and finished tasks matching [query] whose owner and scope token pass [belongs]. */
+    private fun snapshots(query: TaskQuery, belongs: (owner: Any, scopeToken: Any) -> Boolean): List<TaskSnapshot> {
+        val all = synchronized(lock) {
+            active.values.filter { belongs(it.owner, it.scopeToken) }.map { it.snapshot() } +
+                history.values.filter { belongs(it.owner, it.scopeToken) }.map { it.snapshot }
+        }
+        return Collections.unmodifiableList(all.filter { TaskQueryMatcher.matches(it, query) })
     }
 
     private inner class Scope(override val owner: Any, private val scopeId: PluginId) : TaskScope {
@@ -128,11 +128,7 @@ internal class ScheduledTasks(
         override fun getByKey(key: String): TaskHandle? = synchronized(lock) {
             active.values.firstOrNull { it.scopeToken === scopeToken && it.spec.key == key }
         }
-        override fun query(query: TaskQuery): List<TaskSnapshot> = synchronized(lock) {
-            immutableSnapshots((active.values.filter { it.scopeToken === scopeToken }.map { it.snapshot() } +
-                history.values.filter { it.scopeToken === scopeToken }.map { it.snapshot })
-                .filter { TaskQueryMatcher.matches(it, query) })
-        }
+        override fun query(query: TaskQuery): List<TaskSnapshot> = snapshots(query) { _, token -> token === scopeToken }
 
         override fun cancelAll() {
             if (!scopeClosed.compareAndSet(false, true)) return
@@ -180,8 +176,6 @@ internal class ScheduledTasks(
         store?.save(snapshots)
     }
 
-    private fun immutableSnapshots(values: Collection<TaskSnapshot>): List<TaskSnapshot> =
-        Collections.unmodifiableList(ArrayList(values))
     private data class Archived(val owner: Any, val scopeToken: Any, val snapshot: TaskSnapshot)
 
     private companion object {

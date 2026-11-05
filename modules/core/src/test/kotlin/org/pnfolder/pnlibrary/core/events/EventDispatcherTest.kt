@@ -93,6 +93,20 @@ class EventDispatcherTest {
     }
 
     @Test
+    fun `a traced type with a small capacity keeps the calls of another traced type`() {
+        EventDispatcher { _, _, _ -> }.use { events ->
+            events.inspector.enableTracing(ResultEvent::class.java, 3)
+            events.inspector.enableTracing(TestEvent::class.java, 1)
+            repeat(3) { events.callEvent(ResultEvent()) }
+            repeat(2) { events.callEvent(TestEvent()) }
+
+            val names = events.inspector.traces().map { it.eventName }
+            assertEquals(3, names.count { it == ResultEvent().eventName })
+            assertEquals(1, names.count { it == TestEvent().eventName })
+        }
+    }
+
+    @Test
     fun `listeners lists subscribers before any event is called`() {
         EventDispatcher { _, _, _ -> }.use { events ->
             val a = events.scope(PluginId.of("m-a"), PluginId.of("shop"), ModuleId.of("cart"))

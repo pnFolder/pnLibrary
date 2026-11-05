@@ -95,7 +95,9 @@ internal class PnLibraryImpl(
 
     // Support and journal come first: every later part reports its failures through them.
     private val journalRuntime = RuntimeJournal(dataFolder, config, platform.ownership, startedAtMillis, EVENTS_COMMAND)
-    private var libraryMetrics: PluginMetrics? = null
+
+    // Written by init and close, read by error reports from any thread.
+    @Volatile private var libraryMetrics: PluginMetrics? = null
     private val support: SupportRuntime = SupportRuntime(
         owner = owner,
         ownership = platform.ownership,

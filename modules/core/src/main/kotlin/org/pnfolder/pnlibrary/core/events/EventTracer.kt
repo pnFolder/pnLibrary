@@ -4,12 +4,16 @@ import org.pnfolder.pnlibrary.api.events.DispatchMode
 import org.pnfolder.pnlibrary.api.events.Event
 import org.pnfolder.pnlibrary.api.events.EventTrace
 import org.pnfolder.pnlibrary.api.events.ResultedEvent
+import java.time.Instant
+import java.util.ArrayDeque
 
 /** Keeps the recorded calls of the events an administrator switched tracing on for. */
 internal class EventTracer {
     /** Traced event types and their capacity; empty almost always, so dispatch only reads one volatile field. */
     @Volatile private var traced: Map<Class<out Event>, Int> = emptyMap()
-    private val recorded = java.util.ArrayDeque<EventTrace>()
+
+    /** Calls per traced type, so a type with a small capacity never pushes out the calls of another. */
+    private val recorded = HashMap<Class<out Event>, ArrayDeque<EventTrace>>()
 
     fun enable(eventType: Class<out Event>, capacity: Int) {
         require(capacity in 1..1_000) { "Trace capacity must be between 1 and 1000" }
@@ -22,23 +26,29 @@ internal class EventTracer {
 
     fun tracedNames(): List<String> = traced.keys.map { it.name }.sorted()
 
-    fun traces(): List<EventTrace> = synchronized(recorded) { recorded.toList() }
+    /** Every recorded call, oldest first. */
+    fun traces(): List<EventTrace> = synchronized(recorded) { recorded.values.flatten() }.sortedBy { it.at }
 
     fun clear() {
         synchronized(recorded) { recorded.clear() }
     }
 
-    /** How many calls to keep for events of [type], or null when none is traced. */
-    fun capacity(type: Class<*>): Int? =
-        traced.takeIf { it.isNotEmpty() }?.entries?.firstOrNull { it.key.isAssignableFrom(type) }?.value
+    /** The traced type that [type] is recorded under, or null when it is not traced. */
+    fun tracedAs(type: Class<*>): Class<out Event>? {
+        val current = traced
+        if (current.isEmpty()) return null
+        return current.keys.firstOrNull { it.isAssignableFrom(type) }
+    }
 
     fun resultText(event: Event): String? = (event as? ResultedEvent<*>)?.result?.toString()
 
-    fun record(event: Event, steps: List<EventTrace.Step>, capacity: Int, mode: DispatchMode) {
-        val trace = EventTrace(event.eventName, event.isAllowed, resultText(event), steps, mode, Thread.currentThread().name, java.time.Instant.now())
+    fun record(tracedAs: Class<out Event>, event: Event, steps: List<EventTrace.Step>, mode: DispatchMode) {
+        val trace = EventTrace(event.eventName, event.isAllowed, resultText(event), steps, mode, Thread.currentThread().name, Instant.now())
         synchronized(recorded) {
-            recorded.addLast(trace)
-            while (recorded.size > capacity) recorded.removeFirst()
+            val capacity = traced[tracedAs] ?: return
+            val calls = recorded.getOrPut(tracedAs) { ArrayDeque() }
+            calls.addLast(trace)
+            while (calls.size > capacity) calls.removeFirst()
         }
     }
 }

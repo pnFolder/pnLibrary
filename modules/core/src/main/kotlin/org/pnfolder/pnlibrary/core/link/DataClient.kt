@@ -4,8 +4,7 @@ import java.time.Instant
 import java.util.UUID
 import java.util.concurrent.CompletableFuture
 import java.util.concurrent.ConcurrentHashMap
-import java.util.concurrent.Executors
-import java.util.concurrent.TimeUnit
+import java.util.concurrent.ScheduledFuture
 
 /**
  * The questions this server asked and has no answer to yet.
@@ -20,10 +19,12 @@ class DataClient(
 ) {
     private class Pending(val future: CompletableFuture<String>) {
         val pieces = ConcurrentHashMap<Int, ByteArray>()
+
+        @Volatile var timeout: ScheduledFuture<*>? = null
     }
 
     private val waiting = ConcurrentHashMap<UUID, Pending>()
-    private val timer = Executors.newSingleThreadScheduledExecutor { task -> Thread(task, "pnlibrary-link-data").apply { isDaemon = true } }
+    private val timeouts = LinkTimeouts("pnlibrary-link-data")
 
     /**
      * Asks [target] for [method]. The future holds the answer, or fails with a [DataException] when the server is not
@@ -41,15 +42,16 @@ class DataClient(
             future.completeExceptionally(DataException("Запрос слишком длинный."))
             return future
         }
-        waiting[call.id] = Pending(future)
+        val pending = Pending(future)
+        waiting[call.id] = pending
         if (!uplink(bytes)) {
             waiting.remove(call.id)
             future.completeExceptionally(DataException("Некому передать запрос: на этом сервере нет игроков онлайн."))
             return future
         }
-        timer.schedule({
-            waiting.remove(call.id)?.future?.completeExceptionally(DataException("Сервер $target не ответил за $timeoutSeconds секунд."))
-        }, timeoutSeconds, TimeUnit.SECONDS)
+        pending.timeout = timeouts.after(timeoutSeconds) {
+            if (waiting.remove(call.id, pending)) fail(pending, "Сервер $target не ответил за $timeoutSeconds секунд.")
+        }
         return future
     }
 
@@ -59,6 +61,7 @@ class DataClient(
         pending.pieces[chunk.index] = chunk.bytes
         if (pending.pieces.size < chunk.count) return
         if (!waiting.remove(chunk.id, pending)) return
+        pending.timeout?.cancel(false)
         val pieces = (0 until chunk.count).map { pending.pieces[it] }
         if (pieces.any { it == null }) return fail(pending, "Ответ неполный.")
         val text = DataChunks.join(pieces.filterNotNull())

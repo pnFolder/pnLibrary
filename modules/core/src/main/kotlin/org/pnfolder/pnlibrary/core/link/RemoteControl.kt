@@ -3,8 +3,7 @@ package org.pnfolder.pnlibrary.core.link
 import java.time.Instant
 import java.util.UUID
 import java.util.concurrent.ConcurrentHashMap
-import java.util.concurrent.Executors
-import java.util.concurrent.TimeUnit
+import java.util.concurrent.ScheduledFuture
 
 /** Sends bytes to the game server called [server]; returns false when it cannot be reached. */
 fun interface LinkTransport {
@@ -14,26 +13,32 @@ fun interface LinkTransport {
 
 /** The answers still awaited for requests this server made. */
 class RemoteReplies {
-    private val waiting = ConcurrentHashMap<UUID, (RemoteResult) -> Unit>()
-    private val timer = Executors.newSingleThreadScheduledExecutor { task -> Thread(task, "pnlibrary-link-replies").apply { isDaemon = true } }
+    private class Waiting(val onResult: (RemoteResult) -> Unit) {
+        @Volatile var timeout: ScheduledFuture<*>? = null
+    }
+
+    private val waiting = ConcurrentHashMap<UUID, Waiting>()
+    private val timeouts = LinkTimeouts("pnlibrary-link-replies")
 
     /** Waits for the answer to request [id]; if none comes in time, [onResult] gets a failure instead. */
     fun expect(id: UUID, onResult: (RemoteResult) -> Unit) {
-        waiting[id] = onResult
-        timer.schedule({
-            waiting.remove(id)?.invoke(RemoteResult(id, "", false, "Сервер не ответил за $TIMEOUT_SECONDS секунд.", Instant.now()))
-        }, TIMEOUT_SECONDS, TimeUnit.SECONDS)
+        val entry = Waiting(onResult)
+        waiting[id] = entry
+        entry.timeout = timeouts.after(TIMEOUT_SECONDS) {
+            if (waiting.remove(id, entry)) onResult(RemoteResult(id, "", false, "Сервер не ответил за $TIMEOUT_SECONDS секунд.", Instant.now()))
+        }
     }
 
     /** Stops waiting for [id]. */
     fun cancel(id: UUID) {
-        waiting.remove(id)
+        waiting.remove(id)?.timeout?.cancel(false)
     }
 
     /** Hands [result] to whoever waits for it; returns false when nobody does. */
     fun complete(result: RemoteResult): Boolean {
-        val handler = waiting.remove(result.id) ?: return false
-        handler(result)
+        val entry = waiting.remove(result.id) ?: return false
+        entry.timeout?.cancel(false)
+        entry.onResult(result)
         return true
     }
 

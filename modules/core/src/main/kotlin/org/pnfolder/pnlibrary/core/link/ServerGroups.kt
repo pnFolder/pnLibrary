@@ -16,6 +16,8 @@ import java.nio.file.Path
  * @param file where the groups are kept, or null while the proxy has no folder yet
  */
 class ServerGroups(private val file: () -> Path?) {
+    private val lock = Any()
+
     /**
      * One group: the servers in it and the plugins each of them should have.
      *
@@ -128,22 +130,22 @@ class ServerGroups(private val file: () -> Path?) {
 
     /** Makes an empty group; returns false when the name is taken, reserved or unfit. */
     fun create(name: String): Boolean {
-        if (!validName(name) || get(name) != null) return false
-        return write(all() + Group(name, emptySet(), emptySet()))
+        if (!validName(name)) return false
+        return synchronized(lock) { get(name) == null && write(all() + Group(name, emptySet(), emptySet())) }
     }
 
     /** Deletes the group called [name]; returns whether there was one. */
-    fun delete(name: String): Boolean {
+    fun delete(name: String): Boolean = synchronized(lock) {
         val groups = all()
         val group = groups.firstOrNull { it.name.equals(name, ignoreCase = true) } ?: return false
-        return write(groups - group)
+        write(groups - group)
     }
 
     /** Replaces the group called [name] with [change] of it; returns false when there is no such group. */
-    fun edit(name: String, change: (Group) -> Group): Boolean {
+    fun edit(name: String, change: (Group) -> Group): Boolean = synchronized(lock) {
         val groups = all()
         val group = groups.firstOrNull { it.name.equals(name, ignoreCase = true) } ?: return false
-        return write(groups.map { if (it === group) change(group).copy(name = group.name) else it })
+        write(groups.map { if (it === group) change(group).copy(name = group.name) else it })
     }
 
     /** Compares each server of [group] with its report in [servers]. */

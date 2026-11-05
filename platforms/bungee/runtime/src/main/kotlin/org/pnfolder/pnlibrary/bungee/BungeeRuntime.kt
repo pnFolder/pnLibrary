@@ -50,7 +50,7 @@ internal class BungeeRuntime(private val plugin: Plugin) {
     private fun connectLink(started: PnLibraryRuntimeHost) {
         val folder = plugin.dataFolder.toPath()
         val transport = LinkTransport { name, bytes -> plugin.proxy.getServerInfo(name)?.sendData(LinkCodec.CHANNEL, bytes, false) ?: false }
-        val network = Link(LinkSecret.readOrCreate(folder), folder, transport)
+        val network = Link(LinkSecret.readOrCreate(folder, plugin.logger::warning), folder, transport)
         val control = ProxyControlCommand(started.library, network)
         control.register()
         val data = ProxyMenu.server(started.library, network, control) { owner ->

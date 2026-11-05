@@ -259,6 +259,43 @@ class ScheduledTasksTest {
         assertEquals(1, adapter.requests.size)
     }
 
+    @Test
+    fun `a finished task cannot be cancelled and keeps its status`() {
+        val adapter = RecordingAdapter()
+        val task = ScheduledTasks(adapter).scope(Any()).schedule(spec("once"))
+        adapter.fire(0)
+
+        assertFalse(task.cancelIfActive())
+        assertEquals(TaskStatus.COMPLETED, task.status)
+        assertFalse(task.isCancelled)
+    }
+
+    @Test
+    fun `a run the platform already queued does nothing after cancel`() {
+        val adapter = RecordingAdapter()
+        var runs = 0
+        val task = ScheduledTasks(adapter).scope(Any())
+            .schedule(TaskSpec.builder().interval(Duration.ofSeconds(1)).action { runs++ }.build())
+        task.cancel()
+        adapter.fire(0)
+
+        assertEquals(0, runs)
+        assertEquals(TaskStatus.CANCELLED, task.status)
+    }
+
+    @Test
+    fun `a repeating task that failed does not run again`() {
+        val adapter = RecordingAdapter()
+        var runs = 0
+        val task = ScheduledTasks(adapter).scope(Any())
+            .schedule(TaskSpec.builder().interval(Duration.ofSeconds(1)).action { runs++; error("broken") }.build())
+        adapter.fire(0)
+        adapter.fire(0)
+
+        assertEquals(1, runs)
+        assertEquals(TaskStatus.FAILED, task.status)
+    }
+
     private fun spec(name: String) = TaskSpec.builder().name(name).action { }.build()
     private class RecordingAdapter(
         private val fireDuringSchedule: Boolean = false,
