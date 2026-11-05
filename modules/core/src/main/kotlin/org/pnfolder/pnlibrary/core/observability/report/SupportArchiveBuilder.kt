@@ -28,10 +28,8 @@ internal class SupportArchiveBuilder(
         require(maximumUncompressedBytes > 0) { "maximumUncompressedBytes must be positive" }
     }
 
-    /** Serializes [value] as pretty JSON at [path]. */
     fun json(path: String, value: Any?) = bytes(path, gson.toJson(value).toByteArray(StandardCharsets.UTF_8))
 
-    /** Stores UTF-8 [value] at [path]. */
     fun text(path: String, value: String) = bytes(path, value.toByteArray(StandardCharsets.UTF_8))
 
     /**
