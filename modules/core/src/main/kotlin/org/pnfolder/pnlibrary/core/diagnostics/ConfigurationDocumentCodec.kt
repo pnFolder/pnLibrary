@@ -18,6 +18,9 @@ import java.util.Properties
 internal class ConfigurationDocumentCodec(
     private val redactor: DiagnosticRedactor = DiagnosticRedactor(),
 ) {
+    /** Whether [path] has an extension that [parse] turns into real keys rather than one `raw` text. */
+    fun isStructured(path: String): Boolean = STRUCTURED_EXTENSIONS.any { path.lowercase().endsWith(it) }
+
     /** Parses [content] according to the extension of [path]. */
     fun parse(path: String, content: ByteArray): Map<String, Any?> {
         val text = content.toString(Charsets.UTF_8)
@@ -144,6 +147,7 @@ internal class ConfigurationDocumentCodec(
     }
 
     private companion object {
+        val STRUCTURED_EXTENSIONS = listOf(".yml", ".yaml", ".json", ".properties", ".toml", ".conf")
         const val MAX_RAW_CHARACTERS = 4_096
         const val MAX_YAML_ALIASES = 50
         val GSON = Gson()

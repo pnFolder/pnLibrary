@@ -45,13 +45,12 @@ class DiagnosticCommandExecutor @JvmOverloads constructor(
             return
         }
 
-        val remaining = remainingCooldown(requesterId)
+        val remaining = startCooldown(requesterId)
         if (remaining > 0) {
             publish(DiagnosticCommandEvent.CoolingDown(remaining))
             return
         }
 
-        lastRequestTimes[requesterId] = clock.millis()
         publish(DiagnosticCommandEvent.Started(request.target))
         val tasks = library.runtimeTaskScope()
         tasks.schedule(TaskSpec.builder()
@@ -70,11 +69,21 @@ class DiagnosticCommandExecutor @JvmOverloads constructor(
             .build())
     }
 
-    private fun remainingCooldown(requesterId: String): Long {
+    /**
+     * Starts the requester's cooldown and returns 0, or returns the whole seconds still left of it.
+     * Check and start are one atomic step, so two quick requests cannot both pass.
+     */
+    private fun startCooldown(requesterId: String): Long {
         val cooldownMillis = library.configuration.cooldown.toMillis()
-        if (cooldownMillis == 0L) return 0
-        val elapsed = clock.millis() - (lastRequestTimes[requesterId] ?: return 0)
-        return if (elapsed >= cooldownMillis) 0 else (cooldownMillis - elapsed + 999L) / 1_000L
+        val now = clock.millis()
+        var remaining = 0L
+        lastRequestTimes.compute(requesterId) { _, last ->
+            val elapsed = if (last == null) Long.MAX_VALUE else now - last
+            if (cooldownMillis == 0L || elapsed >= cooldownMillis) return@compute now
+            remaining = (cooldownMillis - elapsed + 999L) / 1_000L
+            last
+        }
+        return remaining
     }
 }
 
