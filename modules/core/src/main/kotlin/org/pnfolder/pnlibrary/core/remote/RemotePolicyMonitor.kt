@@ -65,9 +65,7 @@ internal class RemotePolicyMonitor(
         )
     }
 
-    /** How the check made while the plugin was starting ended. */
     enum class StartupCheck {
-        /** The policy allowed the plugin. */
         PASSED,
 
         /** The policy could not be checked, and [PolicyErrorAction.KEEP_RUNNING] lets the plugin start anyway. */
