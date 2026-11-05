@@ -12,7 +12,6 @@ internal data class PlaceholderAddress(val plugin: String, val module: String, v
         require(NAME.matches(name)) { "Invalid name in placeholder address: $name" }
     }
 
-    /** The address as written in configs and chat. */
     override fun toString() = "$plugin/$module:$name"
 
     /** The `%prefix_module~name%` body PlaceholderAPI receives, without the percent signs. */

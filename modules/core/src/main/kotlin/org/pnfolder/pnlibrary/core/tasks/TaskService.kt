@@ -49,6 +49,5 @@ internal interface TaskService : AutoCloseable {
     /** Closes and removes [owner]'s scope when one exists. */
     fun close(owner: Any)
 
-    /** Closes all scopes and stops the background scheduler. This operation is idempotent. */
     override fun close()
 }

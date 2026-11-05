@@ -33,7 +33,6 @@ internal class VelocityCommandAdapter internal constructor(
         },
     )
 
-    /** Converts a native invocation into the portable command context. */
     override fun context(
         source: CommandSource,
         alias: String,
@@ -52,7 +51,6 @@ private class VelocityCommandSender(
     private val audience: AudienceSender,
     private val proxyControl: Boolean,
 ) : CommandSender, AudienceSender by audience {
-    /** Sends the command response through the wrapped audience. */
     override fun send(message: Component) = audience.sendMessage(shown(message))
 
     // Explicit overrides preserve native delivery instead of CommandSender's fallback defaults.
@@ -68,7 +66,6 @@ private class DefaultVelocityNativeCommandRegistrar(
     private val server: ProxyServer,
 ) : NativeCommandRegistrar<CommandSource> {
 
-    /** Registers execution and asynchronous suggestions with Velocity. */
     override fun register(
         owner: Any,
         command: CommandDefinition,

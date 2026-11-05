@@ -65,83 +65,55 @@ import org.pnfolder.pnlibrary.core.tasks.TaskControl
 import org.pnfolder.pnlibrary.spi.commands.PlatformCommandDispatcher
 import java.nio.file.Path
 import java.time.ZoneId
+import java.util.concurrent.CompletionStage
 import java.util.concurrent.atomic.AtomicBoolean
 
 /**
- * Composes all service implementations into one [PnLibrary] runtime.
- *
- * This is the internal composition root for diagnostics, events, logging,
- * metrics, updates, and tasks. Platform modules depend on [PnLibrary] and must
- * not cast the facade to this implementation.
+ * Internal composition root: creates every runtime part in dependency order, then [init] starts them.
+ * Platform modules depend on [PnLibrary] and must not cast the facade to this class.
  */
 internal class PnLibraryImpl(
     override val owner: Any,
     private val platform: PlatformRuntimeContext,
     override val diagnostics: DiagnosticsRegistry,
-    val config: PnLibraryConfig = PnLibraryConfig(),
+    private val config: PnLibraryConfig = PnLibraryConfig(),
     private val onClose: () -> Unit = {},
 ) : PnLibrary, PlatformRegistration, RuntimeResources {
-
-    // Keep the service wiring readable while the platform boundary remains one context object.
-    private val platformIdentity get() = platform.identity
-    private val platformOwnership get() = platform.ownership
-    private val platformExecution get() = platform.execution
-    private val platformLogging get() = platform.logging
-    private val platformDiagnostics get() = platform.diagnostics
-    private val platformLogObservation get() = platform.logObservation
-    private val metricsFactory get() = platform.metricsFactory
-    private val commandAdapter get() = platform.commandAdapter
-    private val audienceAdapter get() = platform.audienceAdapter
-    private val taskAdapter get() = platform.taskAdapter
-    private val dataFolderHint get() = platform.dataFolder
-    private val closePlatform get() = platform.shutdown::close
+    private val closedFlag = AtomicBoolean(false)
+    private val startedAtMillis = System.currentTimeMillis()
 
     override val configuration: PnLibraryConfig get() = config
-
-    override val version: String = platformOwnership.ownerDetails(owner)["version"] ?: "unknown"
-    override fun isAtLeastVersion(minimumVersion: String): Boolean =
-        SemanticVersion.tryParse(version)?.isAtLeast(minimumVersion) ?: false
-
-    private val closedFlag = AtomicBoolean(false)
     override val isClosed: Boolean get() = closedFlag.get()
-    private val metricsService = MetricsSessions(metricsFactory, platform.identity.type)
-    private var libraryMetrics: PluginMetrics? = null
-    val dataFolder: Path = PlatformDataFolderResolver.resolve(owner, dataFolderHint)
+    override val version: String = platform.ownership.ownerDetails(owner)["version"] ?: "unknown"
+    val dataFolder: Path = PlatformDataFolderResolver.resolve(owner, platform.dataFolder)
+
     init {
         DisplayZone.zone = ZoneId.of(config.timeZone)
     }
 
-    private val startedAtMillis = System.currentTimeMillis()
-    private val journalRuntime = RuntimeJournal(dataFolder, config, platformOwnership, startedAtMillis, EVENTS_COMMAND)
-    private val journal get() = journalRuntime.store
-    private val support = SupportRuntime(
+    // Support and journal come first: every later part reports its failures through them.
+    private val journalRuntime = RuntimeJournal(dataFolder, config, platform.ownership, startedAtMillis, EVENTS_COMMAND)
+    private var libraryMetrics: PluginMetrics? = null
+    private val support: SupportRuntime = SupportRuntime(
         owner = owner,
-        ownership = platformOwnership,
-        identity = platformIdentity,
-        platformDiagnostics = platformDiagnostics,
-        platformLogObservation = platformLogObservation,
-        platformLogging = platformLogging,
+        ownership = platform.ownership,
+        identity = platform.identity,
+        platformDiagnostics = platform.diagnostics,
+        platformLogObservation = platform.logObservation,
+        platformLogging = platform.logging,
         diagnostics = diagnostics,
         config = config,
         dataFolder = dataFolder,
         runtimeDiagnostics = { runtimeDiagnostics.assemble() },
         journal = journalRuntime::record,
-        onRuntimeError = { logOwner, error ->
-            libraryMetrics?.errorReporter?.capture(
-                throwable = error,
-                operation = "pnlibrary.runtime",
-                attributes = mapOf("source" to logOwner.javaClass.name),
-            )
-        },
+        onRuntimeError = ::reportRuntimeError,
     )
-    override val observability get() = support.service
-    override val activity: ActivityService get() = observability
-    override val metrics: MetricsService get() = metricsService
+    private val metricsService = MetricsSessions(platform.metricsFactory, platform.identity.type)
     override val logging: LoggingService = ModuleLogging(
-        platformLogging,
-        platformOwnership,
-        platformDiagnostics,
-        platformIdentity,
+        platform.logging,
+        platform.ownership,
+        platform.diagnostics,
+        platform.identity,
         support.logs,
         capture = support.capture,
     )
@@ -149,172 +121,164 @@ internal class PnLibraryImpl(
     private val features = RuntimeFeatureSet(platform, dataFolder, support.capture).also { set ->
         set.configurations.fileListener = configFileDiagnostics(diagnostics)
     }
-    private val configurationService get() = features.configurations
-    override val configurations: ConfigurationService get() = configurationService
-    private val updateService get() = features.updates
-    private val directDownloadManager get() = features.downloads
-    override val updates: UpdateService get() = updateService
     private val platformServices = PlatformServiceSet(
-        commandAdapter = commandAdapter,
-        audienceAdapter = audienceAdapter,
-        taskAdapter = taskAdapter,
+        commandAdapter = platform.commandAdapter,
+        audienceAdapter = platform.audienceAdapter,
+        taskAdapter = platform.taskAdapter,
         platformLogging = support.capture,
         taskHistoryCapacity = config.taskHistoryCapacity,
         taskHistoryFile = dataFolder.resolve("task-history.tsv"),
-        errorLogger = ::recordAndLog,
+        errorLogger = support::recordRuntimeError,
         commandFeedback = standardCommandFeedback(config),
     )
-    private val taskService get() = platformServices.tasks
-    override val runtimeTasks: TaskScope get() = taskService.scope(owner)
-
-    private val mountable = LinkedHashMap<String, CommandDefinition>()
-
-    override fun mountableCommand(name: String): CommandDefinition? = mountable[name]
-
-    override fun journalJoinNotice(): List<Component> = journalRuntime.queries.joinNotice()
-
-    override fun journalGroups(level: String?, sinceHours: Int, limit: Int): List<JournalGroup> =
-        journalRuntime.queries.groups(level, sinceHours, limit)
-
-    override fun taskSnapshots(): List<TaskSnapshot> = taskService.query().filterNot { it.hidden }
-
-    override fun cancelTask(id: String): TaskControl =
-        runCatchingNonFatal { taskService.cancelByAdmin(TaskId(id)) }.getOrDefault(TaskControl.UNAVAILABLE)
-
-    override fun runTaskNow(id: String): TaskControl =
-        runCatchingNonFatal { taskService.runNow(TaskId(id)) }.getOrDefault(TaskControl.UNAVAILABLE)
-
-    override fun journalDetail(id: String): JournalDetail? = journalRuntime.queries.detail(id)
-
-    private val commandService get() = platformServices.commands
-    /** Runs a registered command for a viewer who is not on this server, or returns null when the command service cannot. */
-    internal fun dispatchCommand(command: CommandDefinition, context: CommandContext): java.util.concurrent.CompletionStage<Void>? =
-        (commandService as? PlatformCommandDispatcher)?.execute(command, context)
-
-    override fun registerRuntimeCommand(command: CommandDefinition): CommandRegistration =
-        commandService.register(owner, command)
-    private val audienceService get() = platformServices.audiences
-    override val audiences: AudienceService get() = audienceService
-    private val serviceManager get() = features.services
-    override val services: ServiceManager get() = serviceManager
-    override val expansions: ExpansionManager get() = features.expansions
+    private val tasks = platformServices.tasks
+    private val commands = platformServices.commands
     private val eventService = EventDispatcher(
         EventHistory(dataFolder.resolve("event-history.tsv"), config.eventHistoryDays, { DisplayZone.zone }),
-    ) { pluginId, message, error ->
-        val identifiedMessage = "[$pluginId] $message"
-        recordAndLog(owner, identifiedMessage, error)
-    }
-    override val events: EventService get() = eventService
-    private val placeholderValueStore get() = features.placeholderValues
-    private val placeholderHub get() = features.placeholders
-    private val currencyFeature get() = features.currency
+    ) { pluginId, message, error -> support.recordRuntimeError(owner, "[$pluginId] $message", error) }
     private val platformProvider = NativePlatform()
+
+    override val observability get() = support.service
+    override val activity: ActivityService get() = support.service
+    override val metrics: MetricsService get() = metricsService
+    override val configurations: ConfigurationService get() = features.configurations
+    override val updates: UpdateService get() = features.updates
+    override val runtimeTasks: TaskScope get() = tasks.scope(owner)
+    override val audiences: AudienceService get() = platformServices.audiences
+    override val services: ServiceManager get() = features.services
+    override val expansions: ExpansionManager get() = features.expansions
+    override val events: EventService get() = eventService
     override val platforms: PlatformProvider get() = platformProvider
-    override val placeholderAdapters: PlaceholderAdapterRegistry get() = placeholderHub
-    override val placeholderValues: PlaceholderValueStore get() = placeholderValueStore
+    override val placeholderAdapters: PlaceholderAdapterRegistry get() = features.placeholders
+    override val placeholderValues: PlaceholderValueStore get() = features.placeholderValues
+
     override val plugins: PluginRegistry = PluginRegistryImpl(
-        ownership = platformOwnership,
-        identity = platformIdentity,
-        remotePolicies = RemotePolicyMonitor(platformOwnership, platformExecution, RemotePolicyNoticeRenderer(support.capture)),
+        ownership = platform.ownership,
+        identity = platform.identity,
+        remotePolicies = RemotePolicyMonitor(platform.ownership, platform.execution, RemotePolicyNoticeRenderer(support.capture)),
         events = eventService,
-        tasks = taskService,
-        services = serviceManager,
+        tasks = tasks,
+        services = features.services,
         logging = logging,
         libraryVersion = version,
-        configurations = configurationService,
+        configurations = features.configurations,
         metrics = metricsService,
         diagnostics = diagnostics,
-        updates = updateService,
-        shared = SharedFeatures(placeholderHub, currencyFeature, features.expansions, features.libraryExpansions),
-        commands = commandService,
-        directDownloads = directDownloadManager,
+        updates = features.updates,
+        shared = SharedFeatures(features.placeholders, features.currency, features.expansions, features.libraryExpansions),
+        commands = commands,
+        directDownloads = features.downloads,
     )
     private val runtimeDiagnostics: RuntimeDiagnosticsAssembler = RuntimeDiagnosticsAssembler(
         version = version,
         isClosed = { isClosed },
-        identity = platformIdentity,
+        identity = platform.identity,
         dataFolder = dataFolder,
         config = config,
-        tasks = taskService,
-        updates = updateService,
+        tasks = tasks,
+        updates = features.updates,
         diagnostics = diagnostics,
         support = support,
         metrics = metricsService,
-        commands = commandService,
+        commands = commands,
         journal = journalRuntime::summary,
     )
+    private val stats = StatsRuntime(::taskSnapshots, { events.inspector.events() }, journalRuntime.store)
+    private val mountable = LinkedHashMap<String, CommandDefinition>()
 
     fun init() {
         support.initialize { isClosed }
-        startLibraryMetrics()
-        // The platform's `/pn` control command holds these as `/pn debug` and `/pn events`.
+        libraryMetrics = RuntimeMetricsBootstrap(
+            registry = metricsService,
+            platform = platform.identity,
+            owner = owner,
+            warning = { message -> logging.logger(owner, PnLibraryIdentity.NAME).warning(message) },
+        ).start()
+        stats.start()
+        // The platform's `/pn` control command mounts these as its subcommands.
         mountable["debug"] = diagnosticCommand(this, "/pn debug")
         mountable["events"] = journalRuntime.command()
-        stats.start()
         mountable["stats"] = stats.command()
-        mountable["placeholders"] = placeholdersCommand(placeholderHub)
-        LibraryPlaceholders(placeholderHub, startedAtMillis, { plugins.all().size }, stats::values).register()
-        registerRuntimeCommand(
-            libraryInfoCommand(this, platformIdentity) {
-                platformOwnership.ownerDetails(owner)["version"] ?: "неизвестна"
-            },
-        )
+        mountable["placeholders"] = placeholdersCommand(features.placeholders)
+        LibraryPlaceholders(features.placeholders, startedAtMillis, { plugins.all().size }, stats::values).register()
+        registerRuntimeCommand(libraryInfoCommand(this, platform.identity) {
+            platform.ownership.ownerDetails(owner)["version"] ?: "неизвестна"
+        })
     }
+
+    override fun close() {
+        if (!closedFlag.compareAndSet(false, true)) return
+        RuntimeShutdownPlan(
+            plugins = plugins,
+            commands = commands,
+            audiences = platformServices.audiences,
+            platforms = platformProvider,
+            currency = features.currency,
+            expansions = features.expansions,
+            libraryExpansions = features.libraryExpansions,
+            configurations = features.configurations,
+            libraryMetrics = { libraryMetrics },
+            metrics = metricsService,
+            updates = features.updates,
+            events = AutoCloseable(eventService::close),
+            services = features.services,
+            tasks = tasks,
+            support = AutoCloseable { ResourceCleanup.closeAll(stats::close, support::close, journalRuntime::close) },
+            releaseProvider = { PnLibraryProvider.clear(this) },
+            closePlatform = platform.shutdown::close,
+            onClose = onClose,
+        ).run()
+        libraryMetrics = null
+    }
+
+    override fun isAtLeastVersion(minimumVersion: String): Boolean =
+        SemanticVersion.tryParse(version)?.isAtLeast(minimumVersion) ?: false
 
     override fun createDiagnosticReport(request: DebugRequest): DiagnosticReport {
         check(!isClosed) { "pnLibrary instance is closed" }
         return support.createDiagnosticReport(request)
     }
 
-    private fun recordAndLog(logOwner: Any, message: String, error: Throwable) {
-        support.recordRuntimeError(logOwner, message, error)
-    }
+    override fun registerRuntimeCommand(command: CommandDefinition): CommandRegistration = commands.register(owner, command)
 
-    private val stats = StatsRuntime(::taskSnapshots, { events.inspector.events() }, journal)
+    override fun mountableCommand(name: String): CommandDefinition? = mountable[name]
 
-    override fun statsSnapshot() = stats.snapshot()
-    override fun placeholderInfos() = placeholderHub.describe()
-
-    private fun startLibraryMetrics() {
-        libraryMetrics = RuntimeMetricsBootstrap(
-            registry = metricsService,
-            platform = platformIdentity,
-            owner = owner,
-            warning = { message -> logging.logger(owner, PnLibraryIdentity.NAME).warning(message) },
-        ).start()
-    }
-
-    override fun close() {
-        if (closedFlag.compareAndSet(false, true)) {
-            RuntimeShutdownPlan(
-                plugins = plugins,
-                commands = commandService,
-                audiences = audienceService,
-                platforms = platformProvider,
-                currency = currencyFeature,
-                expansions = features.expansions,
-                libraryExpansions = features.libraryExpansions,
-                configurations = configurationService,
-                libraryMetrics = { libraryMetrics },
-                metrics = metricsService,
-                updates = updateService,
-                events = AutoCloseable(eventService::close),
-                services = serviceManager,
-                tasks = taskService,
-                support = AutoCloseable { ResourceCleanup.closeAll({ stats.close() }, { support.close() }, { journalRuntime.close() }) },
-                releaseProvider = { PnLibraryProvider.clear(this) },
-                closePlatform = { closePlatform() },
-                onClose = onClose,
-            ).run()
-            libraryMetrics = null
-        }
-    }
+    /** Runs a command for a viewer on another server, or returns `null` when this platform cannot dispatch it. */
+    internal fun dispatchCommand(command: CommandDefinition, context: CommandContext): CompletionStage<Void>? =
+        (commands as? PlatformCommandDispatcher)?.execute(command, context)
 
     override fun <T : Any> registerPlatform(type: Class<T>, implementation: T): AutoCloseable =
         platformProvider.register(type, implementation)
 
+    override fun taskSnapshots(): List<TaskSnapshot> = tasks.query().filterNot { it.hidden }
+
+    override fun cancelTask(id: String): TaskControl =
+        runCatchingNonFatal { tasks.cancelByAdmin(TaskId(id)) }.getOrDefault(TaskControl.UNAVAILABLE)
+
+    override fun runTaskNow(id: String): TaskControl =
+        runCatchingNonFatal { tasks.runNow(TaskId(id)) }.getOrDefault(TaskControl.UNAVAILABLE)
+
+    override fun journalJoinNotice(): List<Component> = journalRuntime.queries.joinNotice()
+
+    override fun journalGroups(level: String?, sinceHours: Int, limit: Int): List<JournalGroup> =
+        journalRuntime.queries.groups(level, sinceHours, limit)
+
+    override fun journalDetail(id: String): JournalDetail? = journalRuntime.queries.detail(id)
+
+    override fun statsSnapshot() = stats.snapshot()
+
+    override fun placeholderInfos() = features.placeholders.describe()
+
+    private fun reportRuntimeError(logOwner: Any, error: Throwable) {
+        libraryMetrics?.errorReporter?.capture(
+            throwable = error,
+            operation = "pnlibrary.runtime",
+            attributes = mapOf("source" to logOwner.javaClass.name),
+        )
+    }
+
     private companion object {
-        /** How the journal command is written in chat buttons and notices: it lives under `/pn` on every platform. */
+        /** The journal lives under `/pn` on every platform; chat buttons and notices link to it. */
         const val EVENTS_COMMAND = "/pn events"
     }
 }

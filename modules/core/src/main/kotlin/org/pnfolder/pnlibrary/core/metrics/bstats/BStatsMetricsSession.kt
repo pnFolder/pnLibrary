@@ -32,7 +32,6 @@ class BStatsMetricsSession(
         addChart(native)
     }
 
-    /** Stops the native bStats submission service. */
     override fun shutdown() {
         shutdown.invoke()
     }

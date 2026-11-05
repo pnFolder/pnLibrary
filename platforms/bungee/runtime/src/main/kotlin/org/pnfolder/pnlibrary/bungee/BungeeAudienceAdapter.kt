@@ -19,10 +19,8 @@ internal class BungeeAudienceAdapter(
     private val plugin: Plugin,
 ) : PlatformAudienceAdapter {
 
-    /** Returns the proxy console audience. */
     override fun console(): AudienceSender = wrap(plugin.proxy.console)
 
-    /** Finds an online player by UUID. */
     override fun player(uniqueId: UUID): LibraryPlayer? = plugin.proxy.getPlayer(uniqueId)?.let(BungeeLibraryPlayer::of)
 
     /** Wraps supported native senders; unsupported objects return null. */
@@ -32,7 +30,6 @@ internal class BungeeAudienceAdapter(
         else -> null
     }
 
-    /** Returns portable views of the currently connected players. */
     override fun onlinePlayers(): List<LibraryPlayer> = plugin.proxy.players.map(BungeeLibraryPlayer::of)
 
     /** Wraps generic senders; action-bar messages fall back to chat and sounds are unsupported. */

@@ -50,7 +50,6 @@ internal class PlaceholderApiAdapter(
         return PlaceholderAPI.setPlaceholders(playerId?.let(plugin.server::getOfflinePlayer), text)
     }
 
-    /** Publishes a resolver under a namespace and owns its external registration. */
     override fun publish(
         owner: PluginId,
         key: String,
@@ -72,7 +71,6 @@ internal class PlaceholderApiAdapter(
         return object : ExternalPlaceholderRegistration {
             private val active = AtomicBoolean(true)
             override val state: PlaceholderAdapterState get() = if (active.get()) PlaceholderAdapterState.REGISTERED else PlaceholderAdapterState.CLOSED
-            /** Unregisters all published expansions once. */
     override fun close() {
                 if (!active.compareAndSet(true, false)) return
                 expansion.handlers.remove(externalName)
@@ -84,7 +82,6 @@ internal class PlaceholderApiAdapter(
         }
     }
 
-    /** Unregisters all published expansions once. */
     override fun close() {
         if (!closed.compareAndSet(false, true)) return
         groups.values.forEach(PlaceholderExpansion::unregister)

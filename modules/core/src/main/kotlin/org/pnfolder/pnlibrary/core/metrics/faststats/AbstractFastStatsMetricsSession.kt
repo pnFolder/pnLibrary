@@ -25,7 +25,6 @@ abstract class AbstractFastStatsMetricsSession(
     constructor(token: CharArray, contextFactory: FastStatsContextFactory) :
         this(MetricsCredentials.FastStats(token), contextFactory)
 
-    /** Forwards pnLibrary telemetry errors to the FastStats error tracker. */
     override val errorReporter = FastStatsErrorReporter()
     private val started = AtomicBoolean(false)
     private val pending = mutableListOf<Chart>()
@@ -51,7 +50,6 @@ abstract class AbstractFastStatsMetricsSession(
         context?.ready()
     }
 
-    /** Releases the platform-specific FastStats context. */
     override fun shutdown() {
         context?.shutdown()
         pending.clear()

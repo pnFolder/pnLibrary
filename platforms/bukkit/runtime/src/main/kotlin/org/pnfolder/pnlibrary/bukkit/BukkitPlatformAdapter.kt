@@ -96,7 +96,6 @@ internal class BukkitPlatformAdapter(
     override val logHandler: (Any, LogLevel, String, Throwable?) -> Unit =
         logObserver.logHandler { owner -> (owner as? Plugin)?.logger ?: plugin.logger }
 
-    /** Sends legacy-formatted output to the server console. */
     override fun console(owner: Any, message: String) {
         Bukkit.getConsoleSender().sendMessage(message)
     }
@@ -104,7 +103,6 @@ internal class BukkitPlatformAdapter(
     /** Reads native plugin metadata, warning and returning null for unsupported owners. */
     override fun ownerMetadata(owner: Any): PluginSnapshot? = plugins.metadata(owner, this)
 
-    /** Returns installed plugin versions for compatibility checks. */
     override fun installedPlugins(): Map<String, String> = plugins.versions()
 
     /** Collects typed platform metadata without individual player identities. */
@@ -116,14 +114,12 @@ internal class BukkitPlatformAdapter(
             plugins = plugins.snapshots(),
         )
 
-    /** Creates a policy context for an installed native Bukkit plugin owner. */
     override fun remotePolicyContext(
         owner: Any,
         values: Map<String, String>,
     ): RemotePolicyContext =
         BukkitRemotePolicyContextFactory.create(plugins.requireInstalled(owner, "Remote policy owner"), values)
 
-    /** Disables an installed native plugin through Bukkit's plugin manager. */
     override fun disableOwner(owner: Any): Boolean {
         val installed = plugins.requireInstalled(owner, "Disabled owner")
         BukkitDependentGuard.disableDependentsOf(installed) { plugin.logger.warning(it) }
@@ -159,7 +155,6 @@ internal class BukkitPlatformAdapter(
         }
     }
 
-    /** Collects details on the appropriate server scheduler with a bounded wait. */
     override fun diagnosticDetails(
         includeSensitive: Boolean,
     ): Map<String, Any?> {
@@ -180,7 +175,6 @@ internal class BukkitPlatformAdapter(
         return result.get(DIAGNOSTIC_TIMEOUT_SECONDS, TimeUnit.SECONDS)
     }
 
-    /** Runs work on the primary thread or Folia global-region scheduler. */
     override fun executeGlobal(task: Runnable) {
         if (lifecycle.isClosed) return
 

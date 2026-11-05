@@ -18,16 +18,13 @@ internal class BukkitAudienceAdapter(
     private val audiences: BukkitAudienceService,
 ) : PlatformAudienceAdapter {
 
-    /** Returns the server console audience. */
     override fun console(): AudienceSender = wrap(Bukkit.getConsoleSender())
 
-    /** Finds an online player by UUID. */
     override fun player(uniqueId: UUID): LibraryPlayer? = Bukkit.getPlayer(uniqueId)?.let { BukkitLibraryPlayer(it, audiences) }
 
     /** Wraps native Bukkit senders; unsupported objects return null. */
     override fun sender(native: Any): AudienceSender? = (native as? CommandSender)?.let(::wrap)
 
-    /** Returns portable views of the currently connected players. */
     override fun onlinePlayers(): List<LibraryPlayer> = Bukkit.getOnlinePlayers().map { BukkitLibraryPlayer(it, audiences) }
 
     /** Uses the player transport where available, otherwise a legacy sender wrapper. */

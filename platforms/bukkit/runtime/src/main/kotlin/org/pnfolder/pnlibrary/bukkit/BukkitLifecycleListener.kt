@@ -131,7 +131,6 @@ internal class BukkitLifecycleListener(
         readyCallbacks.clear()
     }
 
-    /** Unregisters listeners and releases queued callbacks once. */
     override fun close() {
         if (!closed.compareAndSet(false, true)) return
         HandlerList.unregisterAll(this)

@@ -17,7 +17,6 @@ internal class VelocityAudienceAdapter(
     private val server: ProxyServer,
 ) : PlatformAudienceAdapter {
 
-    /** Returns the proxy console as a portable audience. */
     override fun console(): AudienceSender = wrap(server.consoleCommandSource)
 
     /** Resolves a player by UUID, returning `null` when the player is offline. */
@@ -31,7 +30,6 @@ internal class VelocityAudienceAdapter(
         else -> null
     }
 
-    /** Returns all currently connected players. */
     override fun onlinePlayers(): List<LibraryPlayer> =
         server.allPlayers.map(VelocityLibraryPlayer::of)
 
@@ -42,20 +40,16 @@ internal class VelocityAudienceAdapter(
         override val isConsole: Boolean
             get() = source is ConsoleCommandSource
 
-        /** Checks permissions on the native command source. */
         override fun hasPermission(permission: String): Boolean = source.hasPermission(permission)
 
-        /** Sends an Adventure component to the native source. */
         override fun sendMessage(text: Component) {
             source.sendMessage(text)
         }
 
-        /** Dispatches an action bar using the native audience. */
         override fun actionBar(text: Component) {
             source.sendActionBar(text)
         }
 
-        /** Dispatches a sound using the native audience. */
         override fun playSound(sound: Sound): Delivery {
             source.playSound(sound)
             return Delivery.Delivered

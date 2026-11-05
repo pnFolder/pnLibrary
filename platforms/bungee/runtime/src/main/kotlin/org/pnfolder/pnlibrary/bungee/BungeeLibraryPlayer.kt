@@ -33,15 +33,12 @@ internal class BungeeLibraryPlayer private constructor(
     override val uniqueId: UUID get() = player.uniqueId
     override val name: String get() = player.name
 
-    /** Checks the native proxy permission. */
     override fun hasPermission(permission: String): Boolean = player.hasPermission(permission)
 
-    /** Sends an Adventure component through BungeeCord's legacy component bridge. */
     override fun sendMessage(text: Component) {
         player.sendMessage(*TextComponent.fromLegacyText(LEGACY.serialize(text)))
     }
 
-    /** Sends a native action-bar message to this player. */
     override fun actionBar(text: Component) {
         player.sendMessage(ChatMessageType.ACTION_BAR, *TextComponent.fromLegacyText(LEGACY.serialize(text)))
     }

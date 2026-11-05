@@ -38,7 +38,6 @@ internal class BungeeCommandAdapter internal constructor(
         { sender -> requireNotNull(BungeeAudienceAdapter(plugin).sender(sender)) },
     )
 
-    /** Converts native invocation arguments to the portable command context. */
     override fun context(
         source: NativeCommandSender,
         alias: String,

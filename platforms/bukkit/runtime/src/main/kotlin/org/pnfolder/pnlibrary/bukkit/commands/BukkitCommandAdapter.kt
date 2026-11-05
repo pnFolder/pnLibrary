@@ -44,7 +44,6 @@ internal class BukkitCommandAdapter internal constructor(
         { audiences.nativeTransportAvailable },
     )
 
-    /** Converts native invocation arguments to the portable command context. */
     override fun context(
         source: NativeCommandSender,
         alias: String,
@@ -81,7 +80,6 @@ internal class BukkitCommandSender(
 /** Native registration boundary used by the runtime and command tests. */
 /** Uses declared plugin commands where available, otherwise the legacy command map. */
 private class DefaultBukkitNativeCommandRegistrar : NativeCommandRegistrar<NativeCommandSender> {
-    /** Registers portable execution and completion handlers with the native command manager. */
     override fun register(
         owner: Any,
         command: CommandDefinition,
