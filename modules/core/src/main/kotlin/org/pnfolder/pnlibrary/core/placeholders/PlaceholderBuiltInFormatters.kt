@@ -41,7 +41,6 @@ internal object PlaceholderBuiltInFormatters {
         return scaled.toPlainString() + suffix
     }
 
-    /** Makes the first letter a capital one. */
     fun capitalize(value: Any): String =
         value.toString().replaceFirstChar { it.titlecase(Locale.ROOT) }
 
