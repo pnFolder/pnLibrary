@@ -158,7 +158,8 @@ internal class BukkitPlatformAdapter(
     override fun bind(library: PnLibrary) {
         lifecycle.bind {
             lifecycleListener = lifecycle.track(BukkitLifecycleListener(plugin, library).start())
-            lifecycle.track(library.registerRuntimeCommand(BukkitControlCommand(plugin, library, library.currencyProviders, link, scheduler).definition()))
+            val control = lifecycle.track(BukkitControlCommand(plugin, library, library.currencyProviders, link, scheduler))
+            lifecycle.track(library.registerRuntimeCommand(control.definition()))
         }
     }
 

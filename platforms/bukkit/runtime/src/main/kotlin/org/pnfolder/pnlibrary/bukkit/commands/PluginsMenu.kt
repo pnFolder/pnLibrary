@@ -10,6 +10,7 @@ import org.pnfolder.pnlibrary.core.menu.LibraryMenu
 import org.pnfolder.pnlibrary.core.menu.LocalMenuData
 import org.pnfolder.pnlibrary.core.menu.MenuDataServer
 import org.pnfolder.pnlibrary.core.menu.MenuViewer
+import java.util.concurrent.ExecutorService
 import java.util.concurrent.Executors
 import org.bukkit.command.CommandSender as NativeSender
 import org.pnfolder.pnlibrary.api.commands.CommandSender as Reply
@@ -26,7 +27,8 @@ internal class PluginsMenu(
     private val replies: BukkitCommandReplies,
     link: Link,
     scheduler: ServerScheduler,
-) {
+) : AutoCloseable {
+    private var menuData: ExecutorService? = null
     private val adapter = BukkitMenuAdapter(plugin, library, scheduler)
     private val host = BukkitMenuHost(plugin, library, replies, adapter, link, scheduler)
     private val data = LocalMenuData(library, host, run = { viewer, line -> RemoteMenus.run(scheduler, viewer, line) })
@@ -36,8 +38,14 @@ internal class PluginsMenu(
         // Only a server with a link is asked menu questions by other servers; without one no thread pool is needed.
         if (link.enabled) {
             val executor = Executors.newCachedThreadPool { task -> Thread(task, "pnlibrary-menu-data").apply { isDaemon = true } }
+            menuData = executor
             link.answerCallsWith(MenuDataServer(data, executor))
         }
+    }
+
+    /** Stops the threads that answer menu questions from other servers. */
+    override fun close() {
+        menuData?.shutdown()
     }
 
     /** Opens the menu for [sender], or explains that the console has no inventory. */
