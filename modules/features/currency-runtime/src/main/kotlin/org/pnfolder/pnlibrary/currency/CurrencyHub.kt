@@ -33,7 +33,7 @@ import java.util.concurrent.ConcurrentHashMap
 import java.util.concurrent.atomic.AtomicBoolean
 import java.util.function.Consumer
 
-/** Thread-safe registry coordinating currency ownership, visibility, aliases, and lifecycle. */
+/** Registered currencies with their owners, aliases and visibility; [scope] gives one plugin its own view. */
 internal class CurrencyHub : CurrencyProviderRegistry, AutoCloseable {
     private val entries = ConcurrentHashMap<CurrencyKey, Entry>()
     private val aliases = ConcurrentHashMap<Pair<PluginId, String>, CurrencyKey>()
@@ -74,7 +74,7 @@ internal class CurrencyHub : CurrencyProviderRegistry, AutoCloseable {
         provider: CurrencyProvider,
         access: CurrencyAccess,
         requestedAliases: Set<String>,
-    ): CurrencyRegistration {
+    ): Entry {
         check(!closed.get()) { "Currency registry is closed" }
         val key = CurrencyKey(owner, normalizeCurrencyName(name))
         val normalizedAliases = requestedAliases.map(::normalizeCurrencyName).toSet()
@@ -108,7 +108,12 @@ internal class CurrencyHub : CurrencyProviderRegistry, AutoCloseable {
             val builder = ManagedCurrencyDefinition(owner, name)
             configure.accept(builder)
             val registration = own(install(owner, name, builder.provider(), builder.access, builder.aliases))
-            builder.installPlaceholders(registration, placeholders).forEach { (registration as Entry).attach(it) }
+            try {
+                builder.installPlaceholders(registration, placeholders).forEach(registration::attach)
+            } catch (error: Throwable) {
+                registration.close()
+                throw error
+            }
             return registration
         }
 
@@ -144,7 +149,7 @@ internal class CurrencyHub : CurrencyProviderRegistry, AutoCloseable {
             owned.clear()
         }
 
-        private fun own(registration: CurrencyRegistration) = registration.also { owned += it.key }
+        private fun own(registration: Entry) = registration.also { owned += it.key }
         private fun checkOpen() = check(!scopeClosed.get()) { "Currencies for $owner are closed" }
     }
 
@@ -177,7 +182,7 @@ internal class CurrencyHub : CurrencyProviderRegistry, AutoCloseable {
             provider.balance(CurrencyAccount(playerId)).thenApply(descriptor::normalize)
         }
         override fun has(playerId: UUID, amount: BigDecimal): CompletionStage<Boolean> {
-            if (!valid(amount, true)) return CompletableFuture.completedFuture(false)
+            if (!acceptsBalance(amount)) return CompletableFuture.completedFuture(false)
             return balance(playerId).thenApply { it >= descriptor.normalize(amount) }
         }
         override fun deposit(playerId: UUID, amount: BigDecimal) = amountOperation(CurrencyCapability.DEPOSIT, amount) {
@@ -186,7 +191,7 @@ internal class CurrencyHub : CurrencyProviderRegistry, AutoCloseable {
         override fun withdraw(playerId: UUID, amount: BigDecimal) = amountOperation(CurrencyCapability.WITHDRAW, amount) {
             (provider as CurrencyWithdrawals).withdraw(CurrencyAccount(playerId), it)
         }
-        override fun setBalance(playerId: UUID, amount: BigDecimal) = amountOperation(CurrencyCapability.SET_BALANCE, amount, true) {
+        override fun setBalance(playerId: UUID, amount: BigDecimal) = amountOperation(CurrencyCapability.SET_BALANCE, amount, ::acceptsBalance) {
             (provider as CurrencyBalanceMutation).setBalance(CurrencyAccount(playerId), it)
         }
         override fun reset(playerId: UUID) = resultOperation(CurrencyCapability.RESET) {
@@ -230,12 +235,12 @@ internal class CurrencyHub : CurrencyProviderRegistry, AutoCloseable {
         private fun amountOperation(
             capability: CurrencyCapability,
             amount: BigDecimal,
-            allowZero: Boolean = false,
+            accepts: (BigDecimal) -> Boolean = ::acceptsAmount,
             operation: (BigDecimal) -> CompletionStage<CurrencyResult>,
         ): CompletionStage<CurrencyResult> {
             if (state != CurrencyRegistrationState.ACTIVE) return unavailable()
             if (!supports(capability)) return unsupported(capability)
-            if (!valid(amount, allowZero)) return invalidAmount()
+            if (!accepts(amount)) return invalidAmount()
             return safeResult { operation(descriptor.normalize(amount)) }
         }
         private fun resultOperation(
@@ -246,8 +251,8 @@ internal class CurrencyHub : CurrencyProviderRegistry, AutoCloseable {
             if (!supports(capability)) return unsupported(capability)
             return safeResult(operation)
         }
-        private fun valid(amount: BigDecimal, allowZero: Boolean = false): Boolean =
-            descriptor.accepts(amount) && if (allowZero) amount.signum() >= 0 else amount.signum() > 0
+        private fun acceptsAmount(amount: BigDecimal) = descriptor.accepts(amount) && amount.signum() > 0
+        private fun acceptsBalance(amount: BigDecimal) = descriptor.accepts(amount) && amount.signum() >= 0
         private fun unavailable() = CompletableFuture.completedFuture(CurrencyResult.unavailable("Currency $key is not active"))
         private fun unsupported(capability: CurrencyCapability) = CompletableFuture.completedFuture(
             CurrencyResult.unsupported("Currency $key does not support $capability"),
