@@ -66,7 +66,7 @@ internal class UpdateSettings {
     fun toConfiguration(): UpdateConfiguration = UpdateConfiguration(
         installation = UpdateConfiguration.Installation(allowNewPlugins = installation.allowNewPlugins),
         library = UpdateConfiguration.LibraryPolicy(
-            // TODO: применять library.channel, когда появятся стабильные релизы pnLibrary.
+            // TODO: apply library.channel once pnLibrary has stable releases.
             channel = UpdateChannel.DEV,
             automaticDownload = library.automaticDownload,
         ),
