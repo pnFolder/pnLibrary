@@ -12,10 +12,11 @@ pnLibrary — один jar на сервер (Bukkit/Paper/Folia, BungeeCord, Ve
 
 ```kotlin
 val library = PnLibraryProvider.get()          // в plugin.yml: depend: [pnLibrary]
-val context = library.plugins.register(this)   // ModuleContext плагина
+val registration = library.plugins.register(this)     // регистрация плагина
+val context = registration.registerModule("main")      // ModuleContext модуля
 ```
 
-Через `ModuleContext` плагин получает все сервисы ниже; всё, что он зарегистрировал, закрывается вместе с ним.
+Через `ModuleContext` модуль плагина получает все сервисы ниже; всё, что он зарегистрировал, закрывается вместе с ним.
 
 ## Весь функционал
 

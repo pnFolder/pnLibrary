@@ -68,7 +68,8 @@ dependencies {
 
 ```kotlin
 val library = PnLibraryProvider.get()
-val plugin = library.plugins.register(this)
+val registration = library.plugins.register(this)
+val context = registration.registerModule("main")   // ModuleContext: tasks, events, configs, placeholders, updates
 val bukkit = library.platform<BukkitPlatform>()   // меню, предметы, визуальные сущности
 ```
 
