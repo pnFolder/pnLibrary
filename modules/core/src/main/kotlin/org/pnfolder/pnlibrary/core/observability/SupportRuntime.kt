@@ -108,7 +108,8 @@ internal class SupportRuntime(
         diagnostics.onEventsChanged(::persistHistory)
         diagnostics.onActivityEvent(diagnosticBridge::record)
         platformLogObservation.observeNativeLogs { nativeOwner, level, message, error ->
-            capture.observe(nativeOwner, level, message, error, config.journalForeignPlugins || nativeOwner === owner)
+            if (config.journalForeignPlugins || nativeOwner === owner) capture.observe(nativeOwner, level, message, error)
+            else capture.observeWithoutJournal(nativeOwner, level, message, error)
         }
 
         worker.scheduleWithFixedDelay(

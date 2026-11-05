@@ -21,7 +21,7 @@ class DiagnosticCaptureTest {
         val native = object : PlatformLogging {
             override fun log(owner: Any, level: LogLevel, message: String, error: Throwable?) {
                 printed++
-                capture.observe(owner, level, message, error, true)
+                capture.observe(owner, level, message, error)
             }
         }
         capture = DiagnosticCapture(ownership, native, buffer, { _, _, _, _ -> journaled++ }) { _, _, _ -> observed++ }
@@ -32,7 +32,7 @@ class DiagnosticCaptureTest {
         assertEquals(2, observed)
         assertEquals(2L, buffer.summary()["occurrenceCount"])
 
-        capture.observe(this, LogLevel.ERROR, "foreign failure", error, false)
+        capture.observeWithoutJournal(this, LogLevel.ERROR, "foreign failure", error)
         assertEquals(1, printed)
         assertEquals(2, journaled)
         assertEquals(3, observed)
@@ -57,7 +57,7 @@ class DiagnosticCaptureTest {
         assertEquals(0, observed)
         assertEquals(0L, buffer.summary()["occurrenceCount"])
 
-        capture.write(this, LogLevel.ERROR, "critical", error, true)
+        capture.write(this, LogLevel.ERROR, "critical", error)
         assertEquals(2, printed)
         assertEquals(1, journaled)
         assertEquals(1, observed)
@@ -73,7 +73,7 @@ class DiagnosticCaptureTest {
         }
         val capture = DiagnosticCapture(ownership, native, DiagnosticLogBuffer(), { _, _, _, _ -> journaled++ })
 
-        capture.write(this, LogLevel.DEBUG, "detail", null, true)
+        capture.write(this, LogLevel.DEBUG, "detail", null)
         capture.write(this, LogLevel.DEBUG, "skipped detail", null, false)
 
         assertEquals(0, printed)
@@ -86,14 +86,14 @@ class DiagnosticCaptureTest {
         lateinit var capture: DiagnosticCapture
         val native = object : PlatformLogging {
             override fun log(owner: Any, level: LogLevel, message: String, error: Throwable?) {
-                Thread { capture.observe(owner, level, message, error, true) }.apply { start() }.join()
+                Thread { capture.observe(owner, level, message, error) }.apply { start() }.join()
             }
         }
         capture = DiagnosticCapture(ownership, native, DiagnosticLogBuffer(), { _, _, _, _ -> journaled++ })
         capture.log(this, LogLevel.WARNING, "disk is slow", null)
         assertEquals(1, journaled)
 
-        Thread { capture.observe(this, LogLevel.WARNING, "someone else's warning", null, true) }.apply { start() }.join()
+        Thread { capture.observe(this, LogLevel.WARNING, "someone else's warning", null) }.apply { start() }.join()
         assertEquals(2, journaled)
     }
 

@@ -42,7 +42,13 @@ internal class DiagnosticCapture(
     override fun console(owner: Any, message: String) = emit { native.console(owner, message) }
 
     /** Native observers already have console output; never emit it again or capture our own echo. */
-    fun observe(owner: Any, level: LogLevel, message: String, error: Throwable?, includeJournal: Boolean) {
+    fun observe(owner: Any, level: LogLevel, message: String, error: Throwable?) = observeLine(owner, level, message, error, true)
+
+    /** Like [observe] for lines of other plugins: they reach the black box but not the journal. */
+    fun observeWithoutJournal(owner: Any, level: LogLevel, message: String, error: Throwable?) =
+        observeLine(owner, level, message, error, false)
+
+    private fun observeLine(owner: Any, level: LogLevel, message: String, error: Throwable?, includeJournal: Boolean) {
         if (emitting.get() == true || echoedRecently(level, message)) return
         capture(owner, level, message, error, includeJournal)
     }
