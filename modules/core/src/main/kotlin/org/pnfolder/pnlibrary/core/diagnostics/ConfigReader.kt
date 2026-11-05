@@ -88,7 +88,6 @@ internal class ConfigReader(
             return result
         }
 
-        // ── Multi-Layer Redaction ──────────────────────────────────────────────
         val keyRegexes = compileRegexes(
             globalConfig.secretKeyPatterns + configSpec.secretKeyPatterns
         )
@@ -139,19 +138,16 @@ internal class ConfigReader(
             if (entryCount++ >= MAX_ENTRIES_PER_MAP) break
             val fullPath = if (currentPath.isEmpty()) key else "$currentPath.$key"
 
-            // Layer 1: Subtree exclusion
             if (excludedSubtrees.contains(fullPath)) {
                 result[key] = "[EXCLUDED BY RULE]"
                 continue
             }
 
-            // Layer 2: Built-in & Custom Secret Key regex matching
             if (isSecretKey(key, fullPath, keyRegexes)) {
                 result[key] = "[REDACTED SECRET KEY]"
                 continue
             }
 
-            // Layer 3: Nested object / map
             if (value is Map<*, *>) {
                 @Suppress("UNCHECKED_CAST")
                 result[key] = redactTree(

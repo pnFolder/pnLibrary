@@ -58,8 +58,6 @@ internal class DiagnosticsRegistry(eventLimit: Int = DEFAULT_EVENT_LIMIT) : Diag
 
     override val apiVersion: Int get() = DiagnosticsService.API_VERSION
 
-    // ── Registration ─────────────────────────────────────────────────────────
-
     override fun register(plugin: String, contributor: DiagnosticsContributor): DiagnosticRegistration {
         return registerInternal(plugin, null, contributor)
     }
@@ -71,8 +69,6 @@ internal class DiagnosticsRegistry(eventLimit: Int = DEFAULT_EVENT_LIMIT) : Diag
     private fun registerInternal(plugin: String, dataDirectory: Path?, contributor: DiagnosticsContributor): DiagnosticRegistration {
         return stateOf(plugin).contributors.register(contributor, dataDirectory)
     }
-
-    // ── Status ───────────────────────────────────────────────────────────────
 
     override fun status(
         plugin: String, component: String,
@@ -95,8 +91,6 @@ internal class DiagnosticsRegistry(eventLimit: Int = DEFAULT_EVENT_LIMIT) : Diag
         eventChangeListener = null
         activityListener = null
     }
-
-    // ── Event recording ──────────────────────────────────────────────────────
 
     override fun record(
         plugin: String, level: DiagnosticLevel,
@@ -131,8 +125,6 @@ internal class DiagnosticsRegistry(eventLimit: Int = DEFAULT_EVENT_LIMIT) : Diag
         }
     }
 
-    // ── Snapshot ─────────────────────────────────────────────────────────────
-
     /**
      * Builds a snapshot of all (or one) plugin's diagnostic state.
      *
@@ -164,7 +156,6 @@ internal class DiagnosticsRegistry(eventLimit: Int = DEFAULT_EVENT_LIMIT) : Diag
         }
     }
 
-    /** Returns merged configuration declarations for a given plugin. */
     fun configurations(plugin: String): List<RegisteredDiagnosticConfiguration> {
         if (plugin.equals("all", ignoreCase = true)) {
             return plugins.keys.sorted().flatMap { pluginKey ->

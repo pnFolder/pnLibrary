@@ -18,7 +18,6 @@ import java.util.Properties
 internal class ConfigurationDocumentCodec(
     private val redactor: DiagnosticRedactor = DiagnosticRedactor(),
 ) {
-    /** Parses [content] according to the extension of [path]. */
     fun parse(path: String, content: ByteArray): Map<String, Any?> {
         val text = content.toString(Charsets.UTF_8)
         val lowercasePath = path.lowercase()
@@ -32,7 +31,6 @@ internal class ConfigurationDocumentCodec(
         }
     }
 
-    /** Renders a neutral [data] tree using the extension of [path]. */
     fun render(path: String, data: Map<String, Any?>): String {
         val lowercasePath = path.lowercase()
         return when {
