@@ -16,5 +16,9 @@ public final class FastStatsBridge {
 
     public static Metric<?> object(String id, Callable<com.google.gson.JsonObject> value) { return Metric.object(id, value); }
 
-    public static ErrorTracker errorTracker() { return ErrorTracker.contextAware(); }
+    /**
+     * A tracker that reports only what is passed to it. The context-aware one hooks every error from pnLibrary's class
+     * loader, and each plugin module makes its own tracker, so every plugin's project received the errors of all others.
+     */
+    public static ErrorTracker errorTracker() { return ErrorTracker.contextUnaware(); }
 }
