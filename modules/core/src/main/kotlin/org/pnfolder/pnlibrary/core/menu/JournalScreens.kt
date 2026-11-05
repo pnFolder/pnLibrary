@@ -64,25 +64,9 @@ internal class JournalScreens(session: MenuSession, routes: MenuRoutes) : MenuSc
             return back(player)
         }
         val builder = frame(Menus.chest(title("Событие")).rows(DETAIL_ROWS), DETAIL_ROWS)
-        val error = detail.level == "error"
-        val summary = Style.lore(
-            wrap(detail.message),
-            listOf(
-                "Важность" to LEVELS.getValue(detail.level),
-                "Источник" to detail.source,
-                "Повторов" to "${detail.times.size}",
-                "Последний раз" to stamp(Instant.ofEpochMilli(detail.times.first())),
-                "" to ago(Instant.ofEpochMilli(detail.times.first())),
-            ),
-        )
-        builder.slot(4, icon(null, journalMaterial(detail.level), "Событие ${detail.source}", summary, danger = error, warn = detail.level == "warning"))
+        builder.slot(4, journalSummary(detail))
         detail.stackTrace?.let { trace ->
-            val lore = Style.lore(emptyList(), emptyList(), Style.left("весь текст в чат"), extra = wrap(trace, limit = TRACE_LINES).map { Style.danger(it) })
-            builder.button(
-                20,
-                icon(Icons.PROBLEMS, "BOOK", "Текст ошибки", lore, danger = true),
-                go { who -> who.close(); runCommand(who, "pn events full $id") },
-            )
+            builder.button(20, traceItem(trace), go { who -> who.close(); runCommand(who, "pn events full $id") })
         }
         eventTimesAndFacts(builder, detail, id, back)
         builder.button(
@@ -95,6 +79,27 @@ internal class JournalScreens(session: MenuSession, routes: MenuRoutes) : MenuSc
         )
         builder.button(DETAIL_BACK, backItem(), go { back(it) })
         show(player, builder.build())
+    }
+
+    private fun journalSummary(detail: JournalDetail): ItemSpec {
+        val last = Instant.ofEpochMilli(detail.times.first())
+        val summary = Style.lore(
+            wrap(detail.message),
+            listOf(
+                "Важность" to LEVELS.getValue(detail.level),
+                "Источник" to detail.source,
+                "Повторов" to "${detail.times.size}",
+                "Последний раз" to stamp(last),
+                "" to ago(last),
+            ),
+        )
+        val material = journalMaterial(detail.level)
+        return icon(null, material, "Событие ${detail.source}", summary, danger = detail.level == "error", warn = detail.level == "warning")
+    }
+
+    private fun traceItem(trace: String): ItemSpec {
+        val lore = Style.lore(emptyList(), emptyList(), Style.left("весь текст в чат"), extra = wrap(trace, limit = TRACE_LINES).map { Style.danger(it) })
+        return icon(Icons.PROBLEMS, "BOOK", "Текст ошибки", lore, danger = true)
     }
 
     private fun eventTimesAndFacts(builder: MenuBuilder, detail: JournalDetail, id: String, back: (MenuViewer) -> Unit) {

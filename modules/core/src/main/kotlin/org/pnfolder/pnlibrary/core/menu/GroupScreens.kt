@@ -114,6 +114,11 @@ internal class GroupScreens(session: MenuSession, routes: MenuRoutes) : MenuScre
     }
 
     private fun groupButtons(builder: MenuBuilder, name: String, group: ServerGroups.Group, states: List<ServerGroups.ServerState>) {
+        askAllButtons(builder, states)
+        membershipButtons(builder, name, group)
+    }
+
+    private fun askAllButtons(builder: MenuBuilder, states: List<ServerGroups.ServerState>) {
         val check = icon(
             Icons.CHECK, "COMPASS", "Проверить всех",
             Style.lore(
@@ -130,6 +135,9 @@ internal class GroupScreens(session: MenuSession, routes: MenuRoutes) : MenuScre
             ),
         )
         builder.button(NETWORK_UPDATE, update, go { who -> allowed(who, RemoteAction.UPDATE.permission) { askGroup(who, states, RemoteAction.UPDATE) } })
+    }
+
+    private fun membershipButtons(builder: MenuBuilder, name: String, group: ServerGroups.Group) {
         val servers = icon(
             Icons.OVERVIEW, "LIME_DYE", "Добавить сервер",
             Style.lore(

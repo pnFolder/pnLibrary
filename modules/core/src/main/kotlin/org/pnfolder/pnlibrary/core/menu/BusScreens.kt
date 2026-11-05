@@ -48,6 +48,11 @@ internal class BusScreens(session: MenuSession, routes: MenuRoutes) : MenuScreen
     }
 
     private fun busButtons(builder: MenuBuilder, events: Int, listeners: Int, failures: Long, traced: Int) {
+        busListButtons(builder, events, listeners)
+        busDiagnosticButtons(builder, failures, traced)
+    }
+
+    private fun busListButtons(builder: MenuBuilder, events: Int, listeners: Int) {
         builder.button(
             20, section(Icons.UPDATES, "REDSTONE_TORCH", "Все события", "Какие события есть и как часто их вызывают.", "Всего" to "$events"),
             go { busEvents(it, BusFilter.ALL, 0) },
@@ -60,6 +65,9 @@ internal class BusScreens(session: MenuSession, routes: MenuRoutes) : MenuScreen
             24, section(Icons.RELEASES, "BOOKSHELF", "По плагинам", "Слушатели, сгруппированные по плагинам."),
             go { busPlugins(it, 0) },
         )
+    }
+
+    private fun busDiagnosticButtons(builder: MenuBuilder, failures: Long, traced: Int) {
         builder.button(
             28, section(Icons.CLOCK, "CLOCK", "Медленные", "Слушатели, которые дольше всех работают."),
             go {
@@ -142,26 +150,38 @@ internal class BusScreens(session: MenuSession, routes: MenuRoutes) : MenuScreen
             tell(player, ChatTone.INFO, "Такого события больше нет.")
             return back(player)
         }
-        val recording = name in data.tracedEvents()
-        val about = routes.aboutOf(name)
         val builder = frame(Menus.chest(title(shortName(name))).rows(DETAIL_ROWS), DETAIL_ROWS)
+        builder.slot(4, eventCard(name, info))
+        eventButtons(builder, name, info, back)
+        builder.button(DETAIL_BACK, backItem(), go { back(it) })
+        show(player, builder.build())
+    }
+
+    private fun eventCard(name: String, info: EventInfo): ItemSpec {
+        val about = routes.aboutOf(name)
         val parameters = buildList {
             addAll(routes.ownerParameters(about?.owner))
             add("Слушателей" to "${info.listeners}")
             add("Вызовов" to "${info.calls}")
             add("Отказов" to "${info.denied}")
             add("Последний вызов" to (info.lastCalledAt?.let { "${stamp(it)}, ${ago(it)}" } ?: "с запуска не было"))
-            val days = data.eventHistory(name).map { it.date }
-            val today = LocalDate.now(DisplayZone.zone)
-            if (days.isNotEmpty()) {
-                add("Первый день" to dayTitle(days.min(), today))
-                add("Последний день" to dayTitle(days.max(), today))
-            }
+            addAll(eventDays(name))
             addAll(routes.labelled("Класс", name))
             about?.usage?.takeIf { it.isNotBlank() }?.let { addAll(routes.labelled("Как использовать", it)) }
         }
         val purpose = about?.purpose?.takeIf { it.isNotBlank() }?.let { wrap(it) } ?: listOf("Автор плагина не описал это событие.")
-        builder.slot(4, icon(null, "NETHER_STAR", shortName(name), Style.lore(purpose, parameters)))
+        return icon(null, "NETHER_STAR", shortName(name), Style.lore(purpose, parameters))
+    }
+
+    private fun eventDays(name: String): List<Pair<String, String>> {
+        val days = data.eventHistory(name).map { it.date }
+        if (days.isEmpty()) return emptyList()
+        val today = LocalDate.now(DisplayZone.zone)
+        return listOf("Первый день" to dayTitle(days.min(), today), "Последний день" to dayTitle(days.max(), today))
+    }
+
+    private fun eventButtons(builder: MenuBuilder, name: String, info: EventInfo, back: (MenuViewer) -> Unit) {
+        val recording = name in data.tracedEvents()
         val record = Style.lore(
             listOf("Запоминать каждый вызов: кто ответил и что изменил."),
             listOf("Сейчас" to if (recording) "● запись идёт" else "не ведётся"),
@@ -182,8 +202,6 @@ internal class BusScreens(session: MenuSession, routes: MenuRoutes) : MenuScreen
             30, section(Icons.CHANGELOG, "WRITTEN_BOOK", "Записанные вызовы", "Что случалось при каждом вызове."),
             go { routes.busTraces(it, name, 0) },
         )
-        builder.button(DETAIL_BACK, backItem(), go { back(it) })
-        show(player, builder.build())
     }
 
     private fun switchTrace(name: String) {

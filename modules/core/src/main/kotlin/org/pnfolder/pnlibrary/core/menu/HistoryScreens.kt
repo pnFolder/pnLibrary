@@ -19,7 +19,10 @@ internal class HistoryScreens(session: MenuSession, routes: MenuRoutes) : MenuSc
                 val rows = if (error != null) {
                     emptyList()
                 } else {
-                    entries.map { entry -> Row(historyItem(entry), go { historyEntry(it, entry) { who -> history(who, product, page) } }) }
+                    entries.map { entry ->
+                        val item = historyItem(entry, NOTE_PREVIEW_LINES, Style.left("подробности"))
+                        Row(item, go { historyEntry(it, entry) { who -> history(who, product, page) } })
+                    }
                 }
                 val title = if (product == null) "История" else "История $product"
                 list(player, title, rows, page, HISTORY_PAGE, { who, to -> history(who, product, to) }, back, "Записей пока нет", total)
@@ -34,7 +37,9 @@ internal class HistoryScreens(session: MenuSession, routes: MenuRoutes) : MenuSc
                 val rows = if (error != null) {
                     emptyList()
                 } else {
-                    all.sortedByDescending { it.createdAt }.map { backup -> Row(backupItem(backup), go { backupChoice(it, backup) }) }
+                    all.sortedByDescending { it.createdAt }.map { backup ->
+                        Row(backupItem(backup, Style.left("выбрать откат")), go { backupChoice(it, backup) })
+                    }
                 }
                 list(player, "Резервные копии", rows, page, PAGE_SIZE, { who, to -> backups(who, to) }, { routes.home(it) }, "Резервных копий нет")
             }
@@ -43,7 +48,7 @@ internal class HistoryScreens(session: MenuSession, routes: MenuRoutes) : MenuSc
 
     private fun backupChoice(player: MenuViewer, backup: UpdateBackup) {
         val builder = frame(Menus.chest(title("Откат")).rows(SMALL_ROWS), SMALL_ROWS)
-        builder.slot(4, backupItem(backup, withHint = false))
+        builder.slot(4, backupItem(backup))
         val plain = Style.lore(
             listOf("Вернутся сохранённые JAR.", "Конфигурации не изменятся.", "Применится после перезапуска."),
             emptyList(), Style.left("откатить"),
@@ -66,7 +71,7 @@ internal class HistoryScreens(session: MenuSession, routes: MenuRoutes) : MenuSc
 
     private fun historyEntry(player: MenuViewer, entry: UpdateHistoryEntry, back: (MenuViewer) -> Unit) {
         val builder = frame(Menus.chest(title("Запись истории")).rows(DETAIL_ROWS), DETAIL_ROWS)
-        builder.slot(4, historyItem(entry, full = true))
+        builder.slot(4, historyItem(entry, NOTE_LINES))
         entry.changes.take(CHANGE_BUTTONS).forEachIndexed { index, change ->
             val product = change.product.value
             val known = data.snapshot(product) != null
@@ -93,27 +98,26 @@ internal class HistoryScreens(session: MenuSession, routes: MenuRoutes) : MenuSc
         }
     }
 
-    private fun historyItem(entry: UpdateHistoryEntry, full: Boolean = false): ItemSpec {
+    private fun historyItem(entry: UpdateHistoryEntry, noteLines: Int, vararg clicks: String): ItemSpec {
         val failed = entry.state == UpdateState.FAILED
         val parameters = buildList {
             add("Когда" to time(entry.occurredAt))
             add("Кто" to entry.actor.name)
             entry.changes.forEach { add(it.product.value to "${it.from} » ${it.to}") }
         }
-        val note = entry.message?.let { wrap(it, limit = if (full) NOTE_LINES else 2) }.orEmpty()
+        val note = entry.message?.let { wrap(it, limit = noteLines) }.orEmpty()
             .map { if (failed) Style.danger(it) else Style.description(it) }
         val title = "${CatalogLabels.operationLabel(entry.operation)}: ${CatalogLabels.stateLabel(entry.state)}"
-        val hints = if (full) emptyArray() else arrayOf(Style.left("подробности"))
-        return icon(null, if (failed) "BARRIER" else "PAPER", title, Style.lore(emptyList(), parameters, *hints, extra = note), danger = failed)
+        return icon(null, if (failed) "BARRIER" else "PAPER", title, Style.lore(emptyList(), parameters, *clicks, extra = note), danger = failed)
     }
 
-    private fun backupItem(backup: UpdateBackup, withHint: Boolean = true): ItemSpec {
+    private fun backupItem(backup: UpdateBackup, vararg clicks: String): ItemSpec {
         val parameters = buildList {
             backup.createdAt?.let { add("Создана" to time(it)) }
             backup.components.forEach { add(it.product.value to "${it.backupVersion ?: "?"} (было ${it.updatedVersion ?: "?"})") }
             if (backup.configurationFiles > 0) add("Файлов настроек" to "${backup.configurationFiles}")
         }
-        val lore = Style.lore(emptyList(), parameters, *if (withHint) arrayOf(Style.left("выбрать откат")) else emptyArray())
+        val lore = Style.lore(emptyList(), parameters, *clicks)
         return icon(Icons.BACKUPS, "CHEST", "Резервный набор", lore)
     }
 }

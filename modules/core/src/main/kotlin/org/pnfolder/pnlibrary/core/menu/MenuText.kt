@@ -23,14 +23,13 @@ internal fun duration(nanos: Long): String =
 
 internal fun shortName(name: String): String = name.substringAfterLast('.')
 
-internal fun time(moment: Instant): String = format(moment, withSeconds = false)
+internal fun time(moment: Instant): String = format(moment, "HH:mm")
 
-internal fun stamp(moment: Instant): String = format(moment, withSeconds = true)
+internal fun stamp(moment: Instant): String = format(moment, "HH:mm:ss")
 
-internal fun format(moment: Instant, withSeconds: Boolean): String {
+private fun format(moment: Instant, clock: String): String {
     val zone = DisplayZone.zone
     val year = if (moment.atZone(zone).year == LocalDate.now(zone).year) "" else " yyyy"
-    val clock = if (withSeconds) "HH:mm:ss" else "HH:mm"
     return DateTimeFormatter.ofPattern("d MMMM$year, $clock", Locale("ru")).withZone(zone).format(moment)
 }
 

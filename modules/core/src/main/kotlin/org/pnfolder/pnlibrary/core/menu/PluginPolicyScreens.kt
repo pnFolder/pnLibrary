@@ -35,34 +35,34 @@ internal class PluginPolicyScreens(session: MenuSession, routes: MenuRoutes) : M
         show(player, builder.build())
     }
 
+    private fun holdSummary(remaining: Duration?) = icon(
+        Icons.CLOCK, "CLOCK", "Пауза сейчас",
+        Style.lore(
+            listOf("Пока пауза идёт, обновления не предлагаются и не скачиваются."),
+            listOf("Состояние" to (remaining?.let { "‖ осталось ${left(it)}" } ?: "нет паузы")),
+        ),
+        alternative = "WATCH", warn = remaining != null,
+    )
+
+    private fun holdChoice(label: String, selectedRemaining: Duration?): ItemSpec {
+        val note = selectedRemaining?.let { listOf("Выбрано" to "● осталось ${left(it)}") } ?: emptyList()
+        val action = if (selectedRemaining != null) "начать срок заново" else "приостановить"
+        return icon(
+            Icons.CLOCK, "CLOCK", label,
+            Style.lore(listOf("Приостановить обновления на этот срок."), note, Style.left(action)),
+            alternative = "WATCH", good = selectedRemaining != null,
+        )
+    }
+
     fun holds(player: MenuViewer, product: String) {
         val until = data.heldUntil(product)?.takeIf { it.isAfter(Instant.now()) }
         val remaining = until?.let { Duration.between(Instant.now(), it) }
         val chosen = remaining?.let { holdIndex(it) } ?: -1
         val builder = frame(Menus.chest(title("Пауза $product")).rows(SMALL_ROWS), SMALL_ROWS)
-        builder.slot(
-            4,
-            icon(
-                Icons.CLOCK, "CLOCK", "Пауза сейчас",
-                Style.lore(
-                    listOf("Пока пауза идёт, обновления не предлагаются и не скачиваются."),
-                    listOf("Состояние" to (remaining?.let { "‖ осталось ${left(it)}" } ?: "нет паузы")),
-                ),
-                alternative = "WATCH", warn = remaining != null,
-            ),
-        )
+        builder.slot(4, holdSummary(remaining))
         HOLDS.forEachIndexed { index, (label, duration) ->
-            val selected = index == chosen
-            val note = if (selected) listOf("Выбрано" to "● осталось ${left(remaining!!)}") else emptyList()
-            builder.button(
-                10 + index,
-                icon(
-                    Icons.CLOCK, "CLOCK", label,
-                    Style.lore(listOf("Приостановить обновления на этот срок."), note, Style.left(if (selected) "начать срок заново" else "приостановить")),
-                    alternative = "WATCH", good = selected,
-                ),
-                go { who -> allowed(who, SETTINGS) { chooseHold(who, product, duration) } },
-            )
+            val item = holdChoice(label, if (index == chosen) remaining else null)
+            builder.button(10 + index, item, go { who -> allowed(who, SETTINGS) { chooseHold(who, product, duration) } })
         }
         if (remaining != null) {
             builder.button(

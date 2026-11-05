@@ -106,6 +106,10 @@ internal class TaskScreens(session: MenuSession, routes: MenuRoutes) : MenuScree
             add("Где" to TaskLabels.where(task))
         }
         builder.slot(21, icon(Icons.SETTINGS, "COMPARATOR", "Как выполняется", Style.lore(emptyList(), runs)))
+        taskTimes(builder, task)
+    }
+
+    private fun taskTimes(builder: MenuBuilder, task: TaskSnapshot) {
         val times = buildList {
             add("Создана" to stamp(task.createdAt))
             task.nextRunAt?.let { add("Следующий запуск" to stamp(it)); add("" to ago(it)) }
@@ -131,79 +135,54 @@ internal class TaskScreens(session: MenuSession, routes: MenuRoutes) : MenuScree
 
     private fun runControl(builder: MenuBuilder, task: TaskSnapshot, back: (MenuViewer) -> Unit) {
         if (!(task.status == TaskStatus.SCHEDULED && task.runnableNow)) {
-            builder.slot(
-                29,
-                icon(
-                    Icons.PROBLEMS, "BARRIER", "Запуск закрыт",
-                    Style.lore(listOf(TaskLabels.runAnswer(task).replaceFirstChar { it.uppercase() } + "."), emptyList()),
-                    muted = true,
-                ),
-            )
+            val reason = TaskLabels.runAnswer(task).replaceFirstChar { it.uppercase() } + "."
+            builder.slot(29, closedControl("Запуск закрыт", reason))
+            return
         }
-        if (task.status == TaskStatus.SCHEDULED && task.runnableNow) {
-            builder.button(
-                29,
-                icon(
-                    Icons.CHECK, "EMERALD", "Запустить сейчас",
-                    Style.lore(
-                        listOf("Выполнить один раз, не дожидаясь срока. Расписание не меняется."),
-                        emptyList(), Style.left("запустить"),
-                    ), good = true,
-                ),
-                go { who ->
-                    allowed(who, TASKS) {
-                        when (data.runTask(task.id.value)) {
-                            TaskControl.DONE -> tell(who, ChatTone.SUCCESS, "Задача запущена.")
-                            TaskControl.FORBIDDEN -> tell(who, ChatTone.FAILURE, "Плагин не разрешает запускать эту задачу вручную.")
-                            TaskControl.UNAVAILABLE -> tell(who, ChatTone.INFO, "Сейчас запустить нельзя: задача не ждёт срока.")
-                        }
-                        taskDetail(who, task.id.value, back)
-                    }
-                },
-            )
+        val run = icon(
+            Icons.CHECK, "EMERALD", "Запустить сейчас",
+            Style.lore(listOf("Выполнить один раз, не дожидаясь срока. Расписание не меняется."), emptyList(), Style.left("запустить")),
+            good = true,
+        )
+        builder.button(29, run, go { who -> allowed(who, TASKS) { runNow(who, task, back) } })
+    }
+
+    private fun runNow(who: MenuViewer, task: TaskSnapshot, back: (MenuViewer) -> Unit) {
+        when (data.runTask(task.id.value)) {
+            TaskControl.DONE -> tell(who, ChatTone.SUCCESS, "Задача запущена.")
+            TaskControl.FORBIDDEN -> tell(who, ChatTone.FAILURE, "Плагин не разрешает запускать эту задачу вручную.")
+            TaskControl.UNAVAILABLE -> tell(who, ChatTone.INFO, "Сейчас запустить нельзя: задача не ждёт срока.")
         }
+        taskDetail(who, task.id.value, back)
     }
 
     private fun stopControl(builder: MenuBuilder, task: TaskSnapshot, back: (MenuViewer) -> Unit) {
         if (!TaskLabels.isActive(task.status)) {
-            builder.slot(
-                31,
-                icon(
-                    Icons.PROBLEMS, "BARRIER", "Остановка закрыта",
-                    Style.lore(listOf(TaskLabels.stopAnswer(task).replaceFirstChar { it.uppercase() } + "."), emptyList()), muted = true,
-                ),
-            )
+            builder.slot(31, closedControl("Остановка закрыта", TaskLabels.stopAnswer(task).replaceFirstChar { it.uppercase() } + "."))
+            return
         }
-        if (TaskLabels.isActive(task.status)) {
-            if (task.cancellable) {
-                builder.button(
-                    31,
-                    icon(
-                        Icons.ROLLBACK, "TNT", "Остановить задачу",
-                        Style.lore(listOf("Больше не будет запускаться."), emptyList(), Style.left("остановить")), danger = true,
-                    ),
-                    go { who ->
-                        allowed(who, TASKS) {
-                            when (data.cancelTask(task.id.value)) {
-                                TaskControl.DONE -> tell(who, ChatTone.SUCCESS, "Задача остановлена.")
-                                TaskControl.FORBIDDEN -> tell(who, ChatTone.FAILURE, "Плагин не разрешает останавливать эту задачу.")
-                                TaskControl.UNAVAILABLE -> tell(who, ChatTone.INFO, "Задача уже не работает.")
-                            }
-                            taskDetail(who, task.id.value, back)
-                        }
-                    },
-                )
-            } else {
-                builder.slot(
-                    31,
-                    icon(
-                        Icons.PROBLEMS, "BARRIER", "Остановка закрыта",
-                        Style.lore(listOf("Плагин запретил останавливать эту задачу из меню и команд."), emptyList()), muted = true,
-                    ),
-                )
-            }
+        if (!task.cancellable) {
+            builder.slot(31, closedControl("Остановка закрыта", "Плагин запретил останавливать эту задачу из меню и команд."))
+            return
         }
+        val stop = icon(
+            Icons.ROLLBACK, "TNT", "Остановить задачу",
+            Style.lore(listOf("Больше не будет запускаться."), emptyList(), Style.left("остановить")), danger = true,
+        )
+        builder.button(31, stop, go { who -> allowed(who, TASKS) { stopNow(who, task, back) } })
     }
+
+    private fun stopNow(who: MenuViewer, task: TaskSnapshot, back: (MenuViewer) -> Unit) {
+        when (data.cancelTask(task.id.value)) {
+            TaskControl.DONE -> tell(who, ChatTone.SUCCESS, "Задача остановлена.")
+            TaskControl.FORBIDDEN -> tell(who, ChatTone.FAILURE, "Плагин не разрешает останавливать эту задачу.")
+            TaskControl.UNAVAILABLE -> tell(who, ChatTone.INFO, "Задача уже не работает.")
+        }
+        taskDetail(who, task.id.value, back)
+    }
+
+    private fun closedControl(name: String, reason: String) =
+        icon(Icons.PROBLEMS, "BARRIER", name, Style.lore(listOf(reason), emptyList()), muted = true)
 
     /** What the event called [name] says about itself, or null when it is unknown. */
     fun aboutOf(name: String): EventAbout? = data.eventAbout(name)

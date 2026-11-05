@@ -64,6 +64,7 @@ internal class HomeScreens(session: MenuSession, routes: MenuRoutes) : MenuScree
             go { routes.journal(it, null, 0) },
         )
         toolSections(builder)
+        maintenanceSections(builder)
     }
 
     private fun toolSections(builder: MenuBuilder) {
@@ -87,6 +88,9 @@ internal class HomeScreens(session: MenuSession, routes: MenuRoutes) : MenuScree
             section(Icons.TOOLS, "NAME_TAG", "Плейсхолдеры", "Что плагины публикуют для текста и PlaceholderAPI."),
             go { allowed(it, PLACEHOLDERS) { routes.placeholders(it, 0) } },
         )
+    }
+
+    private fun maintenanceSections(builder: MenuBuilder) {
         builder.button(33, section(Icons.BACKUPS, "CHEST", "Резервные копии", "Откат к сохранённым версиям плагинов."), go { routes.backups(it, 0) })
         builder.button(
             24,

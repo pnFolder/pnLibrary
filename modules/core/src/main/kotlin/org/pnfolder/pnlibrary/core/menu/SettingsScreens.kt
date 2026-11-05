@@ -90,15 +90,14 @@ internal class SettingsScreens(session: MenuSession, routes: MenuRoutes) : MenuS
                 ),
                 alternative = "WATCH", warn = untils.isNotEmpty(),
             ),
-            go { who ->
-                allowed(who, SETTINGS) {
-                    val nextIndex = (pauseSelected + 1) % pauseChoices.size
-                    val duration = HOLDS.take(CYCLE_HOLDS).getOrNull(nextIndex - 1)
-                    val done = if (duration == null) "Все паузы сняты." else "Обновления всех плагинов приостановлены: ${duration.first}."
-                    routes.everyone(who, done) { routes.hold(it, duration?.second, who) }
-                }
-            },
+            go { who -> allowed(who, SETTINGS) { cyclePause(who, (pauseSelected + 1) % pauseChoices.size) } },
         )
+    }
+
+    private fun cyclePause(who: MenuViewer, nextIndex: Int) {
+        val duration = HOLDS.take(CYCLE_HOLDS).getOrNull(nextIndex - 1)
+        val done = if (duration == null) "Все паузы сняты." else "Обновления всех плагинов приостановлены: ${duration.first}."
+        routes.everyone(who, done) { routes.hold(it, duration?.second, who) }
     }
 
     fun tools(player: MenuViewer) {
