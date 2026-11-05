@@ -57,7 +57,7 @@ class PlaceholderTreeTest {
     @Test
     fun `from opens an object one level down`() {
         val (war, service) = module("pnclans", "war")
-        war.placeholders { text("x") { value { "" } }; from<Guild, Unit>("guild") { Guild("Wolves", Member("Alex", 9)) } }
+        war.placeholders { text("x") { value { "" } }; from<Guild>("guild") { Guild("Wolves", Member("Alex", 9)) } }
 
         assertEquals("Wolves", read(service, "pnclans/war:guild.title"))
         assertEquals("Alex", read(service, "pnclans/war:guild.leader.name"))
@@ -130,7 +130,7 @@ class PlaceholderTreeTest {
     fun `branches are made from the properties of a class`() {
         val (war, service) = module("pnclans", "war")
         war.placeholders {
-            from<Clan, Unit>("clan") { Clan("wolves", 12, true) }.only(Clan::name, Clan::members).rename(Clan::members, "size")
+            from<Clan>("clan") { Clan("wolves", 12, true) }.only(Clan::name, Clan::members).rename(Clan::members, "size")
         }
 
         assertEquals("wolves", read(service, "pnclans/war:clan.name"))

@@ -121,6 +121,22 @@ inline fun <reified R : Any, A> BranchScope<*, A>.from(
     (call as PlaceholderCall<PlayerArg>).source()
 }
 
+/** Like [from] at the top of a group, where there is no argument yet: `from<Clan>("clan") { ... }`. */
+inline fun <reified R : Any> GroupScope.from(
+    word: String,
+    noinline source: PlaceholderCall<Unit>.() -> R?,
+): Generated<R> = generateFrom(word, R::class.java, null) { call -> @Suppress("UNCHECKED_CAST") (call as PlaceholderCall<Unit>).source() }
+
+/** Like [from] with a player in the path, at the top of a group: `from<Clan>("clanof", by = "who") { ... }`. */
+inline fun <reified R : Any> GroupScope.from(
+    word: String,
+    by: String,
+    noinline source: PlaceholderCall<PlayerArg>.() -> R?,
+): Generated<R> = generateFrom(word, R::class.java, by) { call ->
+    @Suppress("UNCHECKED_CAST")
+    (call as PlaceholderCall<PlayerArg>).source()
+}
+
 /** One branch [word] per key of [keys]: `price.sword`, `price.apple`. A key that is not listed gives no value. */
 inline fun <reified R : Any, A> BranchScope<*, A>.table(
     word: String,
