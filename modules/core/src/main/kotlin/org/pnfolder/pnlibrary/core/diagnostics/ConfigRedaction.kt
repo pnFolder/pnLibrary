@@ -73,15 +73,15 @@ internal class ConfigRedaction(
     }
 
     private fun replaceValuePatterns(input: String): String = valuePatterns.fold(input) { text, pattern ->
-        // A pattern that fails on this input is skipped; the other layers still apply.
-        runCatchingNonFatal { pattern.matcher(text).replaceAll(SECRET_VALUE) }.getOrDefault(text)
+        // A pattern that fails on this input hides the whole value: a report must never leak what it could not check.
+        runCatchingNonFatal { pattern.matcher(text).replaceAll(SECRET_VALUE) }.getOrDefault(SECRET_VALUE)
     }
 
     private fun isBuiltInSecret(key: String, path: String): Boolean =
         BUILT_IN_SECRET_KEY.matcher(key).matches() || BUILT_IN_SECRET_KEY.matcher(path).matches()
 
     private fun matchesKeyPattern(key: String, path: String): Boolean = keyPatterns.any { pattern ->
-        runCatchingNonFatal { pattern.matcher(key).find() || pattern.matcher(path).find() }.getOrDefault(false)
+        runCatchingNonFatal { pattern.matcher(key).find() || pattern.matcher(path).find() }.getOrDefault(true)
     }
 
     companion object {
