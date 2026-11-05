@@ -35,7 +35,6 @@ internal class ConfigurationDocumentCodec(
         }
     }
 
-    /** Renders a neutral [data] tree using the extension of [path]. */
     fun render(path: String, data: Map<String, Any?>): String {
         val lowercasePath = path.lowercase()
         return when {

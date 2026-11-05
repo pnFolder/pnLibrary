@@ -89,9 +89,7 @@ fun interface FastStatsContextFactory {
 /** Minimal lifecycle contract shared by all FastStats platform contexts. */
 interface FastStatsContext {
 
-    /** Starts submission after initialization. */
     fun ready()
 
-    /** Releases native scheduling and submission resources. */
     fun shutdown()
 }

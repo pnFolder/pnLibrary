@@ -141,7 +141,6 @@ internal class DiagnosticsRegistry(eventLimit: Int = DEFAULT_EVENT_LIMIT) : Diag
         }
     }
 
-    /** Returns merged configuration declarations for a given plugin. */
     fun configurations(plugin: String): List<RegisteredDiagnosticConfiguration> {
         if (plugin.equals("all", ignoreCase = true)) {
             return plugins.keys.sorted().flatMap { pluginKey ->

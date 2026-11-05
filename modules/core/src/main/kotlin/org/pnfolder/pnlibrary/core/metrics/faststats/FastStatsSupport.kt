@@ -13,7 +13,6 @@ import java.util.function.Supplier
 
 /** Shared, platform-neutral FastStats helpers used by every platform adapter. */
 internal object FastStatsSupport {
-    /** Validates and normalizes a metric identifier accepted by FastStats. */
     @JvmStatic
     fun validId(id: String): String = MetricsChartId.normalize(id)
 
@@ -48,10 +47,8 @@ internal object FastStatsSupport {
 
 /** Sends pnLibrary telemetry errors to the FastStats tracker. */
 class FastStatsErrorReporter : ErrorReporter {
-    /** Native FastStats error tracker that receives captured errors. */
     val tracker = FastStatsBridge.errorTracker()
 
-    /** Converts a [TelemetryError] into a tracked FastStats error with its attributes. */
     override fun capture(error: TelemetryError) {
         val throwable = RuntimeException("${error.type}: ${error.message}").apply {
             stackTrace = error.stackTrace.map { frame ->

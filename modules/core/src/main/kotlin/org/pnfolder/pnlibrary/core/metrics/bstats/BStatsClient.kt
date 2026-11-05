@@ -64,7 +64,6 @@ class BStatsClient(
         base.addCustomChart(chart)
     }
 
-    /** Stops sending. */
     fun shutdown() {
         base.shutdown()
     }
