@@ -58,7 +58,6 @@ internal class ConfigPolymorphicResolver(
             (rawType.isAnnotationPresent(ConfigTypes::class.java) || annotations.any { it is ConfigTypes })
     }
 
-    /** Selects the declaration written for concrete [implementation]. */
     fun encodingType(
         baseType: Class<*>,
         annotations: List<Annotation>,
@@ -70,7 +69,6 @@ internal class ConfigPolymorphicResolver(
             "Configuration implementation ${implementation.name} is not declared by ${baseType.name}",
         )
 
-    /** Resolves one stored discriminator [value] to a concrete implementation. */
     fun decodingType(
         baseType: Class<*>,
         annotations: List<Annotation>,

@@ -20,7 +20,6 @@ internal class ConfigSchemaInspector(
     private val introspector: ConfigObjectIntrospector,
     private val serializers: ConfigSerializerResolver,
 ) {
-    /** Returns every required YAML path reachable from [rootType]. */
     fun requiredPaths(rootType: Class<*>): Set<String> = requiredPaths(rootType, "")
 
     /** Builds comment and layout metadata used when rendering generated YAML. */
@@ -42,7 +41,6 @@ internal class ConfigSchemaInspector(
             )
         }
 
-    /** Evaluates all validation annotations reachable from [value]. */
     fun validate(value: Any?, type: Class<*>): List<ConfigProblem> = buildList {
         validateObject(value, type, "", this)
     }

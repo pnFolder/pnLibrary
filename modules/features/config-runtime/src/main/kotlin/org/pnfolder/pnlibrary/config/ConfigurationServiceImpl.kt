@@ -56,7 +56,6 @@ class ConfigurationServiceImpl(
         }
     }
 
-    /** Closes and forgets every scope that [owner] created. */
     override fun close(owner: Any) {
         synchronized(scopes) { scopes.remove(owner)?.values?.toList().orEmpty() }.forEach { it.close() }
     }

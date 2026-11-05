@@ -44,7 +44,6 @@ class CodeFirstYaml<T> @JvmOverloads constructor(
     /** `true` after a successful [load] or [reload] and before [unload]. */
     override val isLoaded: Boolean get() = loadedValue != null
 
-    /** Returns the current in-memory value. */
     override fun get(): T = loadedValue ?: error("Configuration ${file.name} is not loaded")
 
     /**
@@ -137,7 +136,6 @@ class CodeFirstYaml<T> @JvmOverloads constructor(
     @Synchronized
     override fun reload(): ConfigLoadResult<T> = load()
 
-    /** Saves the current in-memory value. */
     @Synchronized
     override fun save() = save(get())
 
@@ -161,7 +159,6 @@ class CodeFirstYaml<T> @JvmOverloads constructor(
         return updated
     }
 
-    /** Runs the validator against the current value. */
     override fun validate(): List<ConfigProblem> = validator.validate(get())
 
     /** Saves and returns the code-defined defaults. */

@@ -86,7 +86,6 @@ internal class AnnotatedYamlCodec<T : Any>(
         width = 120
     }.let { options -> Yaml(SafeConstructor(LoaderOptions()), Representer(options), options) }
 
-    /** Serializes [value] and decorates generated YAML with schema comments. */
     override fun encode(value: T): String {
         val raw = yaml.dump(toYamlValue(value, type, "", emptyList(), value))
         val body = YamlSchemaDecorator.decorate(raw, schemaInspector.metadata(type, value))

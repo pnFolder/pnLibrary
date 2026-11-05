@@ -45,7 +45,6 @@ internal class ConfigObjectIntrospector(
             .onEach { it.isAccessible = true }
     }
 
-    /** Resolves the serialized key for [field]. */
     fun key(field: Field): String = field.getAnnotation(ConfigKey::class.java)
         ?.value
         ?.takeIf(String::isNotBlank)
@@ -70,7 +69,6 @@ internal class ConfigObjectIntrospector(
         }
     }
 
-    /** Reads an already-discovered field from [owner]. */
     fun read(field: Field, owner: Any): Any? = field.get(owner)
 
     /** Resolves the concrete raw class represented by [type], or [Any] if unknown. */
@@ -101,7 +99,6 @@ internal class ConfigObjectIntrospector(
         )
     }
 
-    /** Materializes converted [values] using the declared collection [type]. */
     @Suppress("UNCHECKED_CAST")
     fun collection(type: Class<*>, values: Collection<Any?>, path: String): Collection<Any?> {
         if (type.isInterface || Modifier.isAbstract(type.modifiers)) return when {
@@ -116,7 +113,6 @@ internal class ConfigObjectIntrospector(
         return collection
     }
 
-    /** Materializes converted [values] using the declared map [type]. */
     @Suppress("UNCHECKED_CAST")
     fun map(type: Class<*>, values: Map<Any?, Any?>, path: String): Map<Any?, Any?> {
         if (type.isInterface || Modifier.isAbstract(type.modifiers)) {

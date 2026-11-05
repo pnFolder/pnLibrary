@@ -101,7 +101,6 @@ internal class JdbcCurrencyLedger(
         }
     }
 
-    /** Appends [value] to the ledger. */
     fun insertTransaction(connection: Connection, value: CurrencyTransaction) {
         connection.prepareStatement(schema.insertTransactionSql()).use { statement ->
             val values = listOf(
@@ -141,7 +140,6 @@ internal class JdbcCurrencyLedger(
         }
     }
 
-    /** Deletes every balance and ledger row of [currency]. */
     fun deleteCurrency(connection: Connection, currency: CurrencyKey) {
         listOf(transactionsTable, accountsTable).forEach { table ->
             connection.prepareStatement("DELETE FROM $table WHERE currency_id = ?").use { statement ->
