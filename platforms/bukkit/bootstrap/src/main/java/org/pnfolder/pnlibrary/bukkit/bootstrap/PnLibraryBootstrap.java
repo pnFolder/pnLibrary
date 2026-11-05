@@ -30,7 +30,6 @@ public final class PnLibraryBootstrap {
      * Installs the newest stable pnLibrary when it is missing, for a plugin that works with any version. When there
      * is no stable release the newest release of any kind is used.
      *
-     * @param plugin plugin that needs pnLibrary
      * @return {@code true} when a suitable pnLibrary is running
      */
     public static boolean ensureInstalled(JavaPlugin plugin) {
@@ -40,8 +39,6 @@ public final class PnLibraryBootstrap {
     /**
      * Installs pnLibrary from the default repository when it is missing, or checks the installed version.
      *
-     * @param plugin plugin that needs pnLibrary
-     * @param minimumVersion lowest pnLibrary version the plugin works with
      * @return {@code true} when a suitable pnLibrary is running
      */
     public static boolean ensureInstalled(JavaPlugin plugin, String minimumVersion) {
@@ -51,8 +48,6 @@ public final class PnLibraryBootstrap {
     /**
      * Installs pnLibrary according to {@code options} when it is missing, or checks the installed version.
      *
-     * @param plugin plugin that needs pnLibrary
-     * @param options minimum version, repository and size limit
      * @return {@code true} when a suitable pnLibrary is running
      */
     public static boolean ensureInstalled(JavaPlugin plugin, BootstrapOptions options) {
@@ -88,8 +83,6 @@ public final class PnLibraryBootstrap {
     /**
      * Checks that pnLibrary runs and is at least {@code minimumVersion}, without installing anything.
      *
-     * @param plugin plugin that needs pnLibrary
-     * @param minimumVersion lowest pnLibrary version the plugin works with
      * @return {@code true} when a suitable pnLibrary is running
      */
     public static boolean ensureCompatible(JavaPlugin plugin, String minimumVersion) {

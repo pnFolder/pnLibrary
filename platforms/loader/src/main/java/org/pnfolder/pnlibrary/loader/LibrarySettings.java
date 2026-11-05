@@ -18,7 +18,6 @@ import java.util.List;
  * SHA-256 recorded at build time, so a mirror cannot swap a library.
  */
 public final class LibrarySettings {
-    /** The settings every platform uses. */
     public static final LibrarySettings DEFAULT = builder()
             // .repository("https://example.com/maven/")   // your own mirror, tried before Maven Central
             .fallback("https://maven-central.storage-download.googleapis.com/maven2/")
@@ -40,21 +39,12 @@ public final class LibrarySettings {
         this.attempts = builder.attempts;
     }
 
-    /**
-     * Starts a settings builder with the defaults.
-     *
-     * @return a new builder
-     */
     public static Builder builder() {
         return new Builder();
     }
 
     /**
-     * Folder for downloaded JARs, as an absolute path. {@code dataFolder} is the plugin's own folder, for example
-     * {@code plugins/pnLibrary}; the server folder is the parent of its {@code plugins} folder.
-     *
-     * @param dataFolder the plugin's own data folder
-     * @return absolute path of the folder that holds downloaded JARs
+     * Resolves the download folder from the plugin's data folder; the server folder is the parent of its plugins folder.
      */
     public String directoryFor(Path dataFolder) {
         Path plugin = dataFolder.toAbsolutePath().normalize();
@@ -64,43 +54,26 @@ public final class LibrarySettings {
         return base.resolve(directory).normalize().toString();
     }
 
-    /**
-     * Own repositories for every library, tried before Maven Central, in this order.
-     *
-     * @return repository URLs
-     */
+    /** Own repositories, tried before Maven Central, in this order. */
     public List<String> repositories() {
         return repositories;
     }
 
-    /**
-     * Mirrors tried after Maven Central.
-     *
-     * @return mirror URLs
-     */
+    /** Mirrors tried after Maven Central. */
     public List<String> fallbacks() {
         return fallbacks;
     }
 
-    /**
-     * Whether Maven Central is used at all. When false only {@link #repositories()} are.
-     *
-     * @return {@code true} if Maven Central is used
-     */
+    /** Whether Maven Central is used at all. When false only repositories() are. */
     public boolean mavenCentral() {
         return mavenCentral;
     }
 
-    /**
-     * Tries per library; Libby gives each download only a few seconds, so one slow answer should not be final.
-     *
-     * @return attempts per library, at least 1
-     */
+    /** Tries per library; Libby gives each download only a few seconds, so one slow answer should not be final. */
     public int attempts() {
         return attempts;
     }
 
-    /** Builder of {@link LibrarySettings}. */
     public static final class Builder {
         private String directory = "libraries/pnlibrary";
         private boolean inServerFolder = true;
@@ -112,58 +85,32 @@ public final class LibrarySettings {
         private Builder() {
         }
 
-        /**
-         * Stores JARs in this folder of the server (next to {@code plugins}); the default is {@code libraries/pnlibrary}.
-         *
-         * @param directory relative folder name
-         * @return this builder
-         */
+        /** Stores JARs in this folder of the server (next to plugins); the default is libraries/pnlibrary. */
         public Builder serverDirectory(String directory) {
             this.directory = requireRelative(directory);
             this.inServerFolder = true;
             return this;
         }
 
-        /**
-         * Stores JARs in this folder inside the plugin's own data folder, for example {@code lib}.
-         *
-         * @param directory relative folder name
-         * @return this builder
-         */
+        /** Stores JARs in this folder inside the plugin's own data folder, for example lib. */
         public Builder pluginDirectory(String directory) {
             this.directory = requireRelative(directory);
             this.inServerFolder = false;
             return this;
         }
 
-        /**
-         * Adds an own repository, tried before Maven Central. Call again for more; the order is kept.
-         *
-         * @param url repository URL
-         * @return this builder
-         */
+        /** Adds an own repository, tried before Maven Central. Call again for more; the order is kept. */
         public Builder repository(String url) {
             repositories.add(requireUrl(url));
             return this;
         }
 
-        /**
-         * Adds a mirror tried after Maven Central.
-         *
-         * @param url mirror URL
-         * @return this builder
-         */
         public Builder fallback(String url) {
             fallbacks.add(requireUrl(url));
             return this;
         }
 
-        /**
-         * {@code false} to download only from {@link #repository(String)} entries; {@code true} by default.
-         *
-         * @param mavenCentral whether Maven Central is used
-         * @return this builder
-         */
+        /** false to download only from repository entries; true by default. */
         public Builder mavenCentral(boolean mavenCentral) {
             this.mavenCentral = mavenCentral;
             return this;
@@ -172,9 +119,7 @@ public final class LibrarySettings {
         /**
          * Tries per library, at least 1; 3 by default.
          *
-         * @param attempts attempts per library
-         * @return this builder
-         * @throws IllegalArgumentException if {@code attempts} is below 1
+         * @throws IllegalArgumentException if attempts is below 1
          */
         public Builder attempts(int attempts) {
             if (attempts < 1) {
@@ -184,12 +129,7 @@ public final class LibrarySettings {
             return this;
         }
 
-        /**
-         * Creates the immutable settings.
-         *
-         * @return the settings
-         * @throws IllegalStateException if Maven Central is off and no repository is set
-         */
+        /** @throws IllegalStateException if Maven Central is off and no repository is set */
         public LibrarySettings build() {
             if (!mavenCentral && repositories.isEmpty()) {
                 throw new IllegalStateException("Without Maven Central at least one repository is needed");
