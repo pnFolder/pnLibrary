@@ -12,6 +12,7 @@ import org.pnfolder.pnlibrary.core.link.LinkSecret
 import org.pnfolder.pnlibrary.core.link.LinkTransport
 import org.pnfolder.pnlibrary.core.link.NetworkPublisher
 import org.pnfolder.pnlibrary.core.link.RemoteExecutor
+import org.pnfolder.pnlibrary.core.menu.MenuDataServer
 import org.pnfolder.pnlibrary.core.menu.OwnerInfo
 import org.pnfolder.pnlibrary.core.menu.ProxyMenu
 import org.pnfolder.pnlibrary.core.runtime.PnLibraryRuntimeHost
@@ -36,6 +37,7 @@ internal class VelocityRuntime(
     private var runtimeHost: PnLibraryRuntimeHost? = null
     private var playerEvents: VelocityPlayerEvents? = null
     private var linkListener: VelocityLinkListener? = null
+    private var menuData: MenuDataServer? = null
     private var networkTask: ScheduledTask? = null
 
     /**
@@ -80,6 +82,7 @@ internal class VelocityRuntime(
                 OwnerInfo(description.name.orElse(description.id), description.version.orElse(null), description.authors)
             }
         }
+        menuData = data
         val link = VelocityLinkListener(LinkReceiver(network, RemoteExecutor(started.library), data))
         server.channelRegistrar.register(VelocityLinkListener.CHANNEL)
         server.eventManager.register(owner, link)
@@ -111,6 +114,8 @@ internal class VelocityRuntime(
         networkTask = null
         linkListener?.let { runCatchingNonFatal { server.eventManager.unregisterListener(owner, it) } }
         linkListener = null
+        menuData?.let { runCatchingNonFatal(it::close) }
+        menuData = null
         runCatchingNonFatal { server.channelRegistrar.unregister(VelocityLinkListener.CHANNEL) }
         val host = runtimeHost
         runtimeHost = null

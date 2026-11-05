@@ -12,6 +12,7 @@ import org.pnfolder.pnlibrary.core.link.LinkSecret
 import org.pnfolder.pnlibrary.core.link.LinkTransport
 import org.pnfolder.pnlibrary.core.link.NetworkPublisher
 import org.pnfolder.pnlibrary.core.link.RemoteExecutor
+import org.pnfolder.pnlibrary.core.menu.MenuDataServer
 import org.pnfolder.pnlibrary.core.menu.OwnerInfo
 import org.pnfolder.pnlibrary.core.menu.ProxyMenu
 import org.pnfolder.pnlibrary.core.runtime.PnLibraryRuntimeHost
@@ -28,6 +29,7 @@ internal class BungeeRuntime(private val plugin: Plugin) {
     private var host: PnLibraryRuntimeHost? = null
     private var playerEvents: BungeePlayerEvents? = null
     private var linkListener: BungeeLinkListener? = null
+    private var menuData: MenuDataServer? = null
     private var networkTask: ScheduledTask? = null
 
     fun start() {
@@ -59,6 +61,7 @@ internal class BungeeRuntime(private val plugin: Plugin) {
         val data = ProxyMenu.server(started.library, network, control) { owner ->
             (owner as? Plugin)?.description?.let { OwnerInfo(it.name, it.version, listOfNotNull(it.author)) }
         }
+        menuData = data
         val link = BungeeLinkListener(LinkReceiver(network, RemoteExecutor(started.library), data))
         plugin.proxy.registerChannel(LinkCodec.CHANNEL)
         plugin.proxy.pluginManager.registerListener(plugin, link)
@@ -82,6 +85,8 @@ internal class BungeeRuntime(private val plugin: Plugin) {
         networkTask = null
         linkListener?.let { runCatchingNonFatal { plugin.proxy.pluginManager.unregisterListener(it) } }
         linkListener = null
+        menuData?.let { runCatchingNonFatal(it::close) }
+        menuData = null
         runCatchingNonFatal { plugin.proxy.unregisterChannel(LinkCodec.CHANNEL) }
         playerEvents?.let { runCatchingNonFatal { plugin.proxy.pluginManager.unregisterListener(it) } }
         playerEvents = null
